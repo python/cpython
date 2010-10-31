@@ -502,8 +502,7 @@ class SMTPSimTests(unittest.TestCase):
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
         try: smtp.login(sim_auth[0], sim_auth[1])
         except smtplib.SMTPAuthenticationError as err:
-            if sim_auth_login_password not in str(err):
-                raise "expected encoded password not found in error message"
+            self.assertIn(sim_auth_login_password, str(err))
         smtp.close()
 
     def testAUTH_CRAM_MD5(self):
@@ -512,8 +511,7 @@ class SMTPSimTests(unittest.TestCase):
 
         try: smtp.login(sim_auth[0], sim_auth[1])
         except smtplib.SMTPAuthenticationError as err:
-            if sim_auth_credentials['cram-md5'] not in str(err):
-                raise "expected encoded credentials not found in error message"
+            self.assertIn(sim_auth_credentials['cram-md5'], str(err))
         smtp.close()
 
     #TODO: add tests for correct AUTH method fallback now that the
