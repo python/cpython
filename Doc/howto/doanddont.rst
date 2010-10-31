@@ -281,23 +281,22 @@ Compare::
 More useful functions in :mod:`os.path`: :func:`basename`,  :func:`dirname` and
 :func:`splitext`.
 
-There are also many useful built-in functions people seem not to be aware of for
-some reason: :func:`min` and :func:`max` can find the minimum/maximum of any
-sequence with comparable semantics, for example, yet many people write their own
-:func:`max`/:func:`min`. Another highly useful function is :func:`reduce`. A
-classical use of :func:`reduce` is something like ::
+There are also many useful built-in functions people seem not to be aware of
+for some reason: :func:`min` and :func:`max` can find the minimum/maximum of
+any sequence with comparable semantics, for example, yet many people write
+their own :func:`max`/:func:`min`. Another highly useful function is
+:func:`reduce` which can be used to repeatly apply a binary operation to a
+sequence, reducing it to a single value.  For example, compute a factorial
+with a series of multiply operations::
 
-   import sys, operator
-   nums = map(float, sys.argv[1:])
-   print reduce(operator.add, nums)/len(nums)
+   >>> n = 4
+   >>> import operator
+   >>> reduce(operator.mul, range(1, n+1))
+   24
 
-This cute little script prints the average of all numbers given on the command
-line. The :func:`reduce` adds up all the numbers, and the rest is just some
-pre- and postprocessing.
-
-On the same note, note that :func:`float`, :func:`int` and :func:`long` all
-accept arguments of type string, and so are suited to parsing --- assuming you
-are ready to deal with the :exc:`ValueError` they raise.
+When it comes to parsing numbers, note that :func:`float`, :func:`int` and
+:func:`long` all accept string arguments and will reject ill-formed strings
+by raising an :exc:`ValueError`.
 
 
 Using Backslash to Continue Statements
