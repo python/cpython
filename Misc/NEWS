@@ -239,6 +239,8 @@ Tests
 Build
 -----
 
+- Issue #10268: Add a --enable-loadable-sqlite-extensions option to configure.
+
 - Issue #8852: Allow the socket module to build on OpenSolaris.
 
 - Drop -OPT:Olimit compiler option.
