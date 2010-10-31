@@ -143,6 +143,9 @@ C-API
 Library
 -------
 
+- Issue #10266: uu.decode didn't close in_file explicitly when it was given
+  as a filename.  Patch by Brian Brazil.
+
 - Issue #10246: uu.encode didn't close file objects explicitly when filenames
   were given to it.  Patch by Brian Brazil.
 
