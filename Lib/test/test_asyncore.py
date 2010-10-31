@@ -564,6 +564,7 @@ class BaseTestAPI(unittest.TestCase):
                 asyncore.dispatcher.handle_accept(self)
 
             def handle_accepted(self, sock, addr):
+                sock.close()
                 self.flag = True
 
         server = TestListener()
@@ -721,6 +722,7 @@ class BaseTestAPI(unittest.TestCase):
             s = asyncore.dispatcher(socket.socket())
             self.assertFalse(s.socket.getsockopt(socket.SOL_SOCKET,
                                                  socket.SO_REUSEADDR))
+            s.socket.close()
             s.create_socket(socket.AF_INET, socket.SOCK_STREAM)
             s.set_reuse_addr()
             self.assertTrue(s.socket.getsockopt(socket.SOL_SOCKET,
