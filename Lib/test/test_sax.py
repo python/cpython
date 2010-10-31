@@ -463,7 +463,8 @@ class XMLFilterBaseTest(unittest.TestCase):
 #
 # ===========================================================================
 
-xml_test_out = open(TEST_XMLFILE_OUT).read()
+with open(TEST_XMLFILE_OUT) as f:
+    xml_test_out = f.read()
 
 class ExpatReaderTest(XmlTestBase):
 
@@ -475,7 +476,8 @@ class ExpatReaderTest(XmlTestBase):
         xmlgen = XMLGenerator(result)
 
         parser.setContentHandler(xmlgen)
-        parser.parse(open(TEST_XMLFILE))
+        with open(TEST_XMLFILE) as f:
+            parser.parse(f)
 
         self.assertEquals(result.getvalue(), xml_test_out)
 
@@ -625,8 +627,9 @@ class ExpatReaderTest(XmlTestBase):
 
         parser.setContentHandler(xmlgen)
         inpsrc = InputSource()
-        inpsrc.setByteStream(open(TEST_XMLFILE))
-        parser.parse(inpsrc)
+        with open(TEST_XMLFILE) as f:
+            inpsrc.setByteStream(f)
+            parser.parse(inpsrc)
 
         self.assertEquals(result.getvalue(), xml_test_out)
 
