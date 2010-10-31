@@ -1227,10 +1227,13 @@ available.  They are listed here in alphabetical order.
 
    Sums *start* and the items of an *iterable* from left to right and returns the
    total.  *start* defaults to ``0``. The *iterable*'s items are normally numbers,
-   and are not allowed to be strings.  The fast, correct way to concatenate a
-   sequence of strings is by calling ``''.join(sequence)``. Note that
-   ``sum(range(n), m)`` is equivalent to ``reduce(operator.add, range(n), m)``
-   To add floating point values with extended precision, see :func:`math.fsum`\.
+   and the start value is not allowed to be a string.
+
+   For some use cases, there a good alternatives to :func:`sum`.
+   The preferred, fast way to concatenate a sequence of strings is by calling
+   ``''.join(sequence)``.  To add floating point values with extended precision,
+   see :func:`math.fsum`\.  To concatenate a series of iterables, consider using
+   :func:`itertools.chain`.
 
    .. versionadded:: 2.3
 
