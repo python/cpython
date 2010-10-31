@@ -428,15 +428,15 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         } else { /* make it a tuple of non-dotted attrnames */
             PyObject *attr_chain = PyTuple_New(dot_count + 1);
             PyObject *attr_chain_item;
+            Py_ssize_t unibuff_from = 0;
+            Py_ssize_t unibuff_till = 0;
+            Py_ssize_t attr_chain_idx = 0;
 
             if (attr_chain == NULL) {
                 Py_DECREF(attr);
                 return NULL;
             }
 
-            Py_ssize_t unibuff_from = 0;
-            Py_ssize_t unibuff_till = 0;
-            Py_ssize_t attr_chain_idx = 0;
             for (; dot_count > 0; --dot_count) {
                 while (item_buffer[unibuff_till] != (Py_UNICODE)'.') {
                     ++unibuff_till;
