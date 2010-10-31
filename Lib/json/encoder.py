@@ -259,6 +259,9 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         tuple=tuple,
     ):
 
+    if _indent is not None and not isinstance(_indent, str):
+        _indent = ' ' * _indent
+
     def _iterencode_list(lst, _current_indent_level):
         if not lst:
             yield '[]'
@@ -271,7 +274,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         buf = '['
         if _indent is not None:
             _current_indent_level += 1
-            newline_indent = '\n' + (' ' * (_indent * _current_indent_level))
+            newline_indent = '\n' + _indent * _current_indent_level
             separator = _item_separator + newline_indent
             buf += newline_indent
         else:
@@ -307,7 +310,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                     yield chunk
         if newline_indent is not None:
             _current_indent_level -= 1
-            yield '\n' + (' ' * (_indent * _current_indent_level))
+            yield '\n' + _indent * _current_indent_level
         yield ']'
         if markers is not None:
             del markers[markerid]
@@ -324,7 +327,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         yield '{'
         if _indent is not None:
             _current_indent_level += 1
-            newline_indent = '\n' + (' ' * (_indent * _current_indent_level))
+            newline_indent = '\n' + _indent * _current_indent_level
             item_separator = _item_separator + newline_indent
             yield newline_indent
         else:
@@ -383,7 +386,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                     yield chunk
         if newline_indent is not None:
             _current_indent_level -= 1
-            yield '\n' + (' ' * (_indent * _current_indent_level))
+            yield '\n' + _indent * _current_indent_level
         yield '}'
         if markers is not None:
             del markers[markerid]

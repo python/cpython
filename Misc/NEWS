@@ -59,6 +59,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5729:  json.dumps() now supports using a string such as '\t'
+  for pretty-printing multilevel objects.
+
 - Issue #10253: FileIO leaks a file descriptor when trying to open a file
   for append that isn't seekable.  Patch by Brian Brazil.
 
