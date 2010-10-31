@@ -33,7 +33,7 @@
 /* Define if --enable-ipv6 is specified */
 #undef ENABLE_IPV6
 
-/* Define if flock needs to be linked with bsd library */
+/* Define if flock needs to be linked with bsd library. */
 #undef FLOCK_NEEDS_LIBBSD
 
 /* Define if getpgrp() must be called as getpgrp(0). */
@@ -211,7 +211,7 @@
 /* Define to 1 if you have the `finite' function. */
 #undef HAVE_FINITE
 
-/* Define if you have the 'flock' function. */
+/* Define to 1 if you have the `flock' function. */
 #undef HAVE_FLOCK
 
 /* Define to 1 if you have the `fork' function. */
