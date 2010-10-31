@@ -799,11 +799,12 @@ class saved_test_environment:
 
     def get_asyncore_socket_map(self):
         asyncore = sys.modules.get('asyncore')
-        return asyncore and asyncore.socket_map or {}
+        # XXX Making a copy keeps objects alive until __exit__ gets called.
+        return asyncore and asyncore.socket_map.copy() or {}
     def restore_asyncore_socket_map(self, saved_map):
         asyncore = sys.modules.get('asyncore')
         if asyncore is not None:
-            asyncore.socket_map.clear()
+            asyncore.close_all(ignore_all=True)
             asyncore.socket_map.update(saved_map)
 
     def resource_info(self):
@@ -819,9 +820,11 @@ class saved_test_environment:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        saved_values = self.saved_values
+        del self.saved_values
         for name, get, restore in self.resource_info():
             current = get()
-            original = self.saved_values[name]
+            original = saved_values.pop(name)
             # Check for changes to the resource's value
             if current != original:
                 self.changed = True
