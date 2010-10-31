@@ -645,8 +645,8 @@ Tell Turtle's state
       >>> turtle.forward(100)
       >>> turtle.pos()
       (64.28,76.60)
-      >>> print(turtle.xcor())
-      64.2787609687
+      >>> print(round(turtle.xcor(), 5))
+      64.27876
 
 
 .. function:: ycor()
@@ -660,8 +660,8 @@ Tell Turtle's state
       >>> turtle.forward(100)
       >>> print(turtle.pos())
       (50.00,86.60)
-      >>> print(turtle.ycor())
-      86.6025403784
+      >>> print(round(turtle.ycor(), 5))
+      86.60254
 
 
 .. function:: heading()
@@ -813,20 +813,16 @@ Drawing state
       >>> sorted(turtle.pen().items())
       [('fillcolor', 'black'), ('outline', 1), ('pencolor', 'red'),
        ('pendown', True), ('pensize', 10), ('resizemode', 'noresize'),
-       ('shown', True), ('speed', 9), ('stretchfactor', (1, 1)), ('tilt', 0)]
+       ('shearfactor', 0.0), ('shown', True), ('speed', 9),
+       ('stretchfactor', (1.0, 1.0)), ('tilt', 0.0)]
       >>> penstate=turtle.pen()
       >>> turtle.color("yellow", "")
       >>> turtle.penup()
-      >>> sorted(turtle.pen().items())
-      [('fillcolor', ''), ('outline', 1), ('pencolor', 'yellow'),
-       ('pendown', False), ('pensize', 10), ('resizemode', 'noresize'),
-       ('shown', True), ('speed', 9), ('stretchfactor', (1, 1)), ('tilt', 0)]
+      >>> sorted(turtle.pen().items())[:3]
+      [('fillcolor', ''), ('outline', 1), ('pencolor', 'yellow')]
       >>> turtle.pen(penstate, fillcolor="green")
-      >>> sorted(turtle.pen().items())
-      [('fillcolor', 'green'), ('outline', 1), ('pencolor', 'red'),
-       ('pendown', True), ('pensize', 10), ('resizemode', 'noresize'),
-       ('shown', True), ('speed', 9), ('stretchfactor', (1, 1)), ('tilt', 0)]
-
+      >>> sorted(turtle.pen().items())[:3]
+      [('fillcolor', 'green'), ('outline', 1), ('pencolor', 'red')]
 
 .. function:: isdown()
 
@@ -887,10 +883,10 @@ Color control
        (0.2, 0.8, 0.5490196078431373)
        >>> colormode(255)
        >>> turtle.pencolor()
-       (51, 204, 140)
+       (51.0, 204.0, 140.0)
        >>> turtle.pencolor('#32c18f')
        >>> turtle.pencolor()
-       (50, 193, 143)
+       (50.0, 193.0, 143.0)
 
 
 .. function:: fillcolor(*args)
@@ -927,13 +923,13 @@ Color control
        'violet'
        >>> col = turtle.pencolor()
        >>> col
-       (50, 193, 143)
+       (50.0, 193.0, 143.0)
        >>> turtle.fillcolor(col)
        >>> turtle.fillcolor()
-       (50, 193, 143)
+       (50.0, 193.0, 143.0)
        >>> turtle.fillcolor('#ffffff')
        >>> turtle.fillcolor()
-       (255, 255, 255)
+       (255.0, 255.0, 255.0)
 
 
 .. function:: color(*args)
@@ -966,7 +962,7 @@ Color control
        ('red', 'green')
        >>> color("#285078", "#a0c8f0")
        >>> color()
-       ((40, 80, 120), (160, 200, 240))
+       ((40.0, 80.0, 120.0), (160.0, 200.0, 240.0))
 
 
 See also: Screen method :func:`colormode`.
@@ -1160,7 +1156,7 @@ Appearance
    .. doctest::
 
       >>> turtle.shapesize()
-      (1, 1, 1)
+      (1.0, 1.0, 1)
       >>> turtle.resizemode("user")
       >>> turtle.shapesize(5, 5, 12)
       >>> turtle.shapesize()
@@ -1187,7 +1183,7 @@ Appearance
        >>> turtle.shapesize(5,2)
        >>> turtle.shearfactor(0.5)
        >>> turtle.shearfactor()
-       >>> 0.5
+       0.5
 
 
 .. function:: tilt(angle)
@@ -1271,11 +1267,12 @@ Appearance
 
    .. doctest::
 
+      >>> turtle = Turtle()
       >>> turtle.shape("square")
       >>> turtle.shapesize(4,2)
       >>> turtle.shearfactor(-0.5)
       >>> turtle.shapetransform()
-      >>> (4.0, -1.0, -0.0, 2.0)
+      (4.0, -1.0, -0.0, 2.0)
 
 
 .. function:: get_shapepoly()
@@ -1524,7 +1521,7 @@ Window control
       'orange'
       >>> screen.bgcolor("#800080")
       >>> screen.bgcolor()
-      (128, 0, 128)
+      (128.0, 0.0, 128.0)
 
 
 .. function:: bgpic(picname=None)
