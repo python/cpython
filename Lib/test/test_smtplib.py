@@ -487,6 +487,7 @@ class SMTPSimTests(unittest.TestCase):
 
         expected_auth_ok = (235, b'plain auth ok')
         self.assertEqual(smtp.login(sim_auth[0], sim_auth[1]), expected_auth_ok)
+        smtp.close()
 
     # SimSMTPChannel doesn't fully support LOGIN or CRAM-MD5 auth because they
     # require a synchronous read to obtain the credentials...so instead smtpd
@@ -503,6 +504,7 @@ class SMTPSimTests(unittest.TestCase):
         except smtplib.SMTPAuthenticationError as err:
             if sim_auth_login_password not in str(err):
                 raise "expected encoded password not found in error message"
+        smtp.close()
 
     def testAUTH_CRAM_MD5(self):
         self.serv.add_feature("AUTH CRAM-MD5")
@@ -512,6 +514,7 @@ class SMTPSimTests(unittest.TestCase):
         except smtplib.SMTPAuthenticationError as err:
             if sim_auth_credentials['cram-md5'] not in str(err):
                 raise "expected encoded credentials not found in error message"
+        smtp.close()
 
     #TODO: add tests for correct AUTH method fallback now that the
     #test infrastructure can support it.
