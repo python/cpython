@@ -341,6 +341,7 @@ class OtherFileTests(unittest.TestCase):
         f.truncate(15)
         self.assertEqual(f.tell(), 5)
         self.assertEqual(f.seek(0, os.SEEK_END), 15)
+        f.close()
 
     def testTruncateOnWindows(self):
         def bug801631():

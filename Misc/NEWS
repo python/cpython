@@ -66,6 +66,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10253: FileIO leaks a file descriptor when trying to open a file
+  for append that isn't seekable.  Patch by Brian Brazil.
+
 - Issue #6105: json.dumps now respects OrderedDict's iteration order.
 
 - Issue #9295: Fix a crash under Windows when calling close() on a file
