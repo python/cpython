@@ -2541,24 +2541,24 @@ class MiscIOTest(unittest.TestCase):
 
     def _check_warn_on_dealloc_fd(self, *args, **kwargs):
         fds = []
-        try:
-            r, w = os.pipe()
-            fds += r, w
-            self._check_warn_on_dealloc(r, *args, **kwargs)
-            # When using closefd=False, there's no warning
-            r, w = os.pipe()
-            fds += r, w
-            with warnings.catch_warnings(record=True) as recorded:
-                open(r, *args, closefd=False, **kwargs)
-                support.gc_collect()
-            self.assertEqual(recorded, [])
-        finally:
+        def cleanup_fds():
             for fd in fds:
                 try:
                     os.close(fd)
                 except EnvironmentError as e:
                     if e.errno != errno.EBADF:
                         raise
+        self.addCleanup(cleanup_fds)
+        r, w = os.pipe()
+        fds += r, w
+        self._check_warn_on_dealloc(r, *args, **kwargs)
+        # When using closefd=False, there's no warning
+        r, w = os.pipe()
+        fds += r, w
+        with warnings.catch_warnings(record=True) as recorded:
+            open(r, *args, closefd=False, **kwargs)
+            support.gc_collect()
+        self.assertEqual(recorded, [])
 
     def test_warn_on_dealloc_fd(self):
         self._check_warn_on_dealloc_fd("rb", buffering=0)
