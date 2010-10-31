@@ -540,19 +540,20 @@ class IEEEFormatTestCase(unittest.TestCase):
 
     @requires_IEEE_754
     def test_format_testfile(self):
-        for line in open(format_testfile):
-            if line.startswith('--'):
-                continue
-            line = line.strip()
-            if not line:
-                continue
+        with open(format_testfile) as testfile:
+            for line in open(format_testfile):
+                if line.startswith('--'):
+                    continue
+                line = line.strip()
+                if not line:
+                    continue
 
-            lhs, rhs = map(str.strip, line.split('->'))
-            fmt, arg = lhs.split()
-            arg = float(arg)
-            self.assertEqual(fmt % arg, rhs)
-            if not math.isnan(arg) and copysign(1.0, arg) > 0.0:
-                self.assertEqual(fmt % -arg, '-' + rhs)
+                lhs, rhs = map(str.strip, line.split('->'))
+                fmt, arg = lhs.split()
+                arg = float(arg)
+                self.assertEqual(fmt % arg, rhs)
+                if not math.isnan(arg) and copysign(1.0, arg) > 0.0:
+                    self.assertEqual(fmt % -arg, '-' + rhs)
 
     def test_issue5864(self):
         self.assertEquals(format(123.456, '.4'), '123.5')
