@@ -322,15 +322,15 @@ def _find_mac(command, args, hw_identifiers, get_index):
             # LC_ALL to get English output, 2>/dev/null to
             # prevent output on stderr
             cmd = 'LC_ALL=C %s %s 2>/dev/null' % (executable, args)
-            pipe = os.popen(cmd)
+            with os.popen(cmd) as pipe:
+                for line in pipe:
+                    words = line.lower().split()
+                    for i in range(len(words)):
+                        if words[i] in hw_identifiers:
+                            return int(
+                                words[get_index(i)].replace(':', ''), 16)
         except IOError:
             continue
-
-        for line in pipe:
-            words = line.lower().split()
-            for i in range(len(words)):
-                if words[i] in hw_identifiers:
-                    return int(words[get_index(i)].replace(':', ''), 16)
     return None
 
 def _ifconfig_getnode():
