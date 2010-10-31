@@ -604,9 +604,10 @@ class BarrierTests(BaseTestCase):
     Tests for Barrier objects.
     """
     N = 5
+    defaultTimeout = 0.5
 
     def setUp(self):
-        self.barrier = self.barriertype(self.N, timeout=0.5)
+        self.barrier = self.barriertype(self.N, timeout=self.defaultTimeout)
     def tearDown(self):
         self.barrier.abort()
 
@@ -775,12 +776,14 @@ class BarrierTests(BaseTestCase):
         """
         Test the barrier's default timeout
         """
+        #create a barrier with a low default timeout
+        barrier = self.barriertype(self.N, timeout=0.1)
         def f():
-            i = self.barrier.wait()
+            i = barrier.wait()
             if i == self.N // 2:
                 # One thread is later than the default timeout of 0.1s.
-                time.sleep(0.15)
-            self.assertRaises(threading.BrokenBarrierError, self.barrier.wait)
+                time.sleep(0.2)
+            self.assertRaises(threading.BrokenBarrierError, barrier.wait)
         self.run_threads(f)
 
     def test_single_thread(self):
