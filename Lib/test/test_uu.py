@@ -196,6 +196,23 @@ class UUFileTest(unittest.TestCase):
         finally:
             self._kill(f)
 
+    def test_decode_filename(self):
+        f = None
+        try:
+            support.unlink(self.tmpin)
+            f = open(self.tmpin, 'wb')
+            f.write(encodedtextwrapped(0o644, self.tmpout))
+            f.close()
+
+            uu.decode(self.tmpin)
+
+            f = open(self.tmpout, 'rb')
+            s = f.read()
+            f.close()
+            self.assertEqual(s, plaintext)
+        finally:
+            self._kill(f)
+
     def test_decodetwice(self):
         # Verify that decode() will refuse to overwrite an existing file
         f = None
