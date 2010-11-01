@@ -65,13 +65,20 @@ __version__ = '1.1'
 __all__ = [
     'ArgumentParser',
     'ArgumentError',
-    'Namespace',
-    'Action',
+    'ArgumentTypeError',
     'FileType',
     'HelpFormatter',
+    'ArgumentDefaultsHelpFormatter',
     'RawDescriptionHelpFormatter',
     'RawTextHelpFormatter',
-    'ArgumentDefaultsHelpFormatter',
+    'Namespace',
+    'Action',
+    'ONE_OR_MORE',
+    'OPTIONAL',
+    'PARSER',
+    'REMAINDER',
+    'SUPPRESS',
+    'ZERO_OR_MORE',
 ]
 
 
