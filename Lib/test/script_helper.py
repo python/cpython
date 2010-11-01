@@ -24,6 +24,8 @@ def _assert_python(expected_success, *args):
         out, err = p.communicate()
     finally:
         subprocess._cleanup()
+        p.stdout.close()
+        p.stderr.close()
     rc = p.returncode
     if (rc and expected_success) or (not rc and not expected_success):
         raise AssertionError(
