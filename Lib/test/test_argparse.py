@@ -1,6 +1,7 @@
 # Author: Steven J. Bethard <steven.bethard@gmail.com>.
 
 import codecs
+import inspect
 import os
 import shutil
 import sys
@@ -4244,6 +4245,15 @@ class TestImportStar(TestCase):
     def test(self):
         for name in argparse.__all__:
             self.assertTrue(hasattr(argparse, name))
+
+    def test_all_exports_everything_but_modules(self):
+        items = [
+            name
+            for name, value in vars(argparse).items()
+            if not name.startswith("_")
+            if not inspect.ismodule(value)
+        ]
+        self.assertEqual(sorted(items), sorted(argparse.__all__))
 
 def test_main():
     # silence warnings about version argument - these are expected
