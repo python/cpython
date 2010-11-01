@@ -1796,13 +1796,13 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                     chars = self.prefix_chars
                     if arg_count == 0 and option_string[1] not in chars:
                         action_tuples.append((action, [], option_string))
-                        for char in self.prefix_chars:
-                            option_string = char + explicit_arg[0]
-                            explicit_arg = explicit_arg[1:] or None
-                            optionals_map = self._option_string_actions
-                            if option_string in optionals_map:
-                                action = optionals_map[option_string]
-                                break
+                        char = option_string[0]
+                        option_string = char + explicit_arg[0]
+                        new_explicit_arg = explicit_arg[1:] or None
+                        optionals_map = self._option_string_actions
+                        if option_string in optionals_map:
+                            action = optionals_map[option_string]
+                            explicit_arg = new_explicit_arg
                         else:
                             msg = _('ignored explicit argument %r')
                             raise ArgumentError(action, msg % explicit_arg)
