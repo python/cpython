@@ -297,22 +297,11 @@ class SMTPServer(asyncore.dispatcher):
                 localaddr, remoteaddr), file=DEBUGSTREAM)
 
     def handle_accept(self):
-        try:
-            conn, addr = self.accept()
-        except TypeError:
-            # sometimes accept() might return None
-            return
-        except socket.error as err:
-            # ECONNABORTED might be thrown
-            if err.args[0] != errno.ECONNABORTED:
-                raise
-            return
-        else:
-            # sometimes addr == None instead of (ip, port)
-            if addr == None:
-                return
-        print('Incoming connection from %s' % repr(addr), file=DEBUGSTREAM)
-        channel = SMTPChannel(self, conn, addr)
+        pair = self.accept()
+        if pair is not None:
+            conn, addr = pair
+            print('Incoming connection from %s' % repr(addr), file=DEBUGSTREAM)
+            channel = SMTPChannel(self, conn, addr)
 
     # API for "doing something useful with the message"
     def process_message(self, peer, mailfrom, rcpttos, data):
