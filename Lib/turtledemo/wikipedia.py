@@ -56,7 +56,7 @@ def main():
         for t in s.turtles():
             t.undo()
     et = clock()
-    return "Laufzeit: %.3f sec" % (z1+et-at)
+    return "runtime: %.3f sec" % (z1+et-at)
 
 
 if __name__ == '__main__':
