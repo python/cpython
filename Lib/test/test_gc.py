@@ -489,6 +489,8 @@ class GCTests(unittest.TestCase):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE)
             stdout, stderr = p.communicate()
+            p.stdout.close()
+            p.stderr.close()
             self.assertEqual(p.returncode, 0)
             self.assertEqual(stdout.strip(), b"")
             return strip_python_stderr(stderr)
