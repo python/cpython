@@ -2131,7 +2131,8 @@ class TarFile(object):
                 directories.append(tarinfo)
                 tarinfo = copy.copy(tarinfo)
                 tarinfo.mode = 0o700
-            self.extract(tarinfo, path)
+            # Do not set_attrs directories, as we will do that further down
+            self.extract(tarinfo, path, set_attrs=not tarinfo.isdir())
 
         # Reverse sort directories.
         directories.sort(key=lambda a: a.name)
@@ -2150,11 +2151,12 @@ class TarFile(object):
                 else:
                     self._dbg(1, "tarfile: %s" % e)
 
-    def extract(self, member, path=""):
+    def extract(self, member, path="", set_attrs=True):
         """Extract a member from the archive to the current working directory,
            using its full name. Its file information is extracted as accurately
            as possible. `member' may be a filename or a TarInfo object. You can
-           specify a different directory using `path'.
+           specify a different directory using `path'. File attributes (owner,
+           mtime, mode) are set unless `set_attrs' is False.
         """
         self._check("r")
 
@@ -2168,7 +2170,8 @@ class TarFile(object):
             tarinfo._link_target = os.path.join(path, tarinfo.linkname)
 
         try:
-            self._extract_member(tarinfo, os.path.join(path, tarinfo.name))
+            self._extract_member(tarinfo, os.path.join(path, tarinfo.name),
+                                 set_attrs=set_attrs)
         except EnvironmentError as e:
             if self.errorlevel > 0:
                 raise
@@ -2221,7 +2224,7 @@ class TarFile(object):
             # blkdev, etc.), return None instead of a file object.
             return None
 
-    def _extract_member(self, tarinfo, targetpath):
+    def _extract_member(self, tarinfo, targetpath, set_attrs=True):
         """Extract the TarInfo object tarinfo to a physical
            file called targetpath.
         """
@@ -2258,10 +2261,11 @@ class TarFile(object):
         else:
             self.makefile(tarinfo, targetpath)
 
-        self.chown(tarinfo, targetpath)
-        if not tarinfo.issym():
-            self.chmod(tarinfo, targetpath)
-            self.utime(tarinfo, targetpath)
+        if set_attrs:
+            self.chown(tarinfo, targetpath)
+            if not tarinfo.issym():
+                self.chmod(tarinfo, targetpath)
+                self.utime(tarinfo, targetpath)
 
     #--------------------------------------------------------------------------
     # Below are the different file methods. They are called via

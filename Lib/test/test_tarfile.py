@@ -377,6 +377,15 @@ class MiscReadTest(CommonReadTest):
         finally:
             tar.close()
 
+    def test_extract_directory(self):
+        dirtype = "ustar/dirtype"
+        with tarfile.open(tarname, encoding="iso8859-1") as tar:
+            tarinfo = tar.getmember(dirtype)
+            tar.extract(tarinfo)
+            self.assertEqual(os.path.getmtime(dirtype), tarinfo.mtime)
+            if sys.platform != "win32":
+                self.assertEqual(os.stat(dirtype).st_mode & 0o777, 0o755)
+
     def test_init_close_fobj(self):
         # Issue #7341: Close the internal file object in the TarFile
         # constructor in case of an error. For the test we rely on
