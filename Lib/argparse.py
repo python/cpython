@@ -392,10 +392,16 @@ class HelpFormatter(object):
                     for action in group._group_actions:
                         group_actions.add(action)
                     if not group.required:
-                        inserts[start] = '['
+                        if start in inserts:
+                            inserts[start] += ' ['
+                        else:
+                            inserts[start] = '['
                         inserts[end] = ']'
                     else:
-                        inserts[start] = '('
+                        if start in inserts:
+                            inserts[start] += ' ('
+                        else:
+                            inserts[start] = '('
                         inserts[end] = ')'
                     for i in range(start + 1, end):
                         inserts[i] = '|'

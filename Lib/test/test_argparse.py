@@ -2174,6 +2174,25 @@ class TestMutuallyExclusiveGroupErrors(TestCase):
         raises(ValueError, add_argument, 'bar', nargs=1)
         raises(ValueError, add_argument, 'bar', nargs=argparse.PARSER)
 
+    def test_help(self):
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        group1 = parser.add_mutually_exclusive_group()
+        group1.add_argument('--foo', action='store_true')
+        group1.add_argument('--bar', action='store_false')
+        group2 = parser.add_mutually_exclusive_group()
+        group2.add_argument('--soup', action='store_true')
+        group2.add_argument('--nuts', action='store_false')
+        expected = '''\
+            usage: PROG [-h] [--foo | --bar] [--soup | --nuts]
+
+            optional arguments:
+              -h, --help  show this help message and exit
+              --foo
+              --bar
+              --soup
+              --nuts
+              '''
+        self.assertEqual(parser.format_help(), textwrap.dedent(expected))
 
 class MEMixin(object):
 
