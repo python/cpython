@@ -1994,8 +1994,8 @@ Methods specific to Screen, not inherited from TurtleScreen
       >>> screen.title("Welcome to the turtle zoo!")
 
 
-The public classes of the module :mod:`turtle`
-==============================================
+Public classes
+==============
 
 
 .. class:: RawTurtle(canvas)
