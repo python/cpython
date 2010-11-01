@@ -282,8 +282,8 @@ implement its socket handling::
            self.buffer = self.buffer[sent:]
 
 
-    client = HTTPClient('www.python.org', '/')
-    asyncore.loop()
+   client = HTTPClient('www.python.org', '/')
+   asyncore.loop()
 
 .. _asyncore-example-2:
 
