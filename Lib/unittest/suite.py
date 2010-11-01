@@ -80,23 +80,11 @@ class TestSuite(BaseTestSuite):
     subclassing, do not forget to call the base class constructor.
     """
 
+    def run(self, result, debug=False):
+        topLevel = False
+        if getattr(result, '_testRunEntered', False) is False:
+            result._testRunEntered = topLevel = True
 
-    def run(self, result):
-        self._wrapped_run(result)
-        self._tearDownPreviousClass(None, result)
-        self._handleModuleTearDown(result)
-        return result
-
-    def debug(self):
-        """Run the tests without collecting errors in a TestResult"""
-        debug = _DebugResult()
-        self._wrapped_run(debug, True)
-        self._tearDownPreviousClass(None, debug)
-        self._handleModuleTearDown(debug)
-
-    ################################
-    # private methods
-    def _wrapped_run(self, result, debug=False):
         for test in self:
             if result.shouldStop:
                 break
@@ -111,12 +99,22 @@ class TestSuite(BaseTestSuite):
                     getattr(result, '_moduleSetUpFailed', False)):
                     continue
 
-            if hasattr(test, '_wrapped_run'):
-                test._wrapped_run(result, debug)
-            elif not debug:
+            if not debug:
                 test(result)
             else:
                 test.debug()
+
+        if topLevel:
+            self._tearDownPreviousClass(None, result)
+            self._handleModuleTearDown(result)
+        return result
+
+    def debug(self):
+        """Run the tests without collecting errors in a TestResult"""
+        debug = _DebugResult()
+        self.run(debug, True)
+
+    ################################
 
     def _handleClassSetUp(self, test, result):
         previousClass = getattr(result, '_previousTestClass', None)

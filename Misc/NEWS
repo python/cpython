@@ -66,6 +66,8 @@ Core and Builtins
 Library
 -------
 
+- Issue 120176: Wrapped TestSuite subclass does not get __call__ executed
+
 - Issue 6706: asyncore accept() method no longer raises EWOULDBLOCK/ECONNABORTED
   on incomplete connection attempt but returns None instead.
 

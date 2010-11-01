@@ -35,6 +35,7 @@ class TestResult(object):
     formatted traceback of the error that occurred.
     """
     _previousTestClass = None
+    _testRunEntered = False
     _moduleSetUpFailed = False
     def __init__(self, stream=None, descriptions=None, verbosity=None):
         self.failfast = False
