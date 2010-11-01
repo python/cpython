@@ -3109,6 +3109,8 @@ int main()
 [ac_cv_buggy_getaddrinfo=yes]))
 fi
 
+AC_MSG_RESULT($ac_cv_buggy_getaddrinfo)
+
 if test $have_getaddrinfo = no -o "$ac_cv_buggy_getaddrinfo" = yes
 then
 	if test $ipv6 = yes
@@ -3120,6 +3122,7 @@ then
 else
 	AC_DEFINE(HAVE_GETADDRINFO, 1, [Define if you have the getaddrinfo function.])
 fi
+
 AC_CHECK_FUNCS(getnameinfo)
 
 # checks for structures
