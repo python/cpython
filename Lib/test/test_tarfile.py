@@ -355,11 +355,13 @@ class MiscReadTest(CommonReadTest):
         # Test if extractall() correctly restores directory permissions
         # and times (see issue1735).
         tar = tarfile.open(tarname, encoding="iso8859-1")
+        DIR = os.path.join(TEMPDIR, "extractall")
+        os.mkdir(DIR)
         try:
             directories = [t for t in tar if t.isdir()]
-            tar.extractall(TEMPDIR, directories)
+            tar.extractall(DIR, directories)
             for tarinfo in directories:
-                path = os.path.join(TEMPDIR, tarinfo.name)
+                path = os.path.join(DIR, tarinfo.name)
                 if sys.platform != "win32":
                     # Win32 has no support for fine grained permissions.
                     self.assertEqual(tarinfo.mode & 0o777, os.stat(path).st_mode & 0o777)
@@ -376,15 +378,22 @@ class MiscReadTest(CommonReadTest):
                 self.assertEqual(tarinfo.mtime, file_mtime, errmsg)
         finally:
             tar.close()
+            shutil.rmtree(DIR)
 
     def test_extract_directory(self):
         dirtype = "ustar/dirtype"
-        with tarfile.open(tarname, encoding="iso8859-1") as tar:
-            tarinfo = tar.getmember(dirtype)
-            tar.extract(tarinfo)
-            self.assertEqual(os.path.getmtime(dirtype), tarinfo.mtime)
-            if sys.platform != "win32":
-                self.assertEqual(os.stat(dirtype).st_mode & 0o777, 0o755)
+        DIR = os.path.join(TEMPDIR, "extractdir")
+        os.mkdir(DIR)
+        try:
+            with tarfile.open(tarname, encoding="iso8859-1") as tar:
+                tarinfo = tar.getmember(dirtype)
+                tar.extract(tarinfo, path=DIR)
+                extracted = os.path.join(DIR, dirtype)
+                self.assertEqual(os.path.getmtime(extracted), tarinfo.mtime)
+                if sys.platform != "win32":
+                    self.assertEqual(os.stat(extracted).st_mode & 0o777, 0o755)
+        finally:
+            shutil.rmtree(DIR)
 
     def test_init_close_fobj(self):
         # Issue #7341: Close the internal file object in the TarFile
