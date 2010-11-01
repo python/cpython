@@ -345,5 +345,19 @@ class Test_TestSuite(unittest.TestCase, TestEquality):
         self.assertEqual(result.testsRun, 2)
 
 
+    def test_overriding_call(self):
+        class MySuite(unittest.TestSuite):
+            called = False
+            def __call__(self, *args, **kw):
+                self.called = True
+                unittest.TestSuite.__call__(self, *args, **kw)
+
+        suite = MySuite()
+        wrapper = unittest.TestSuite()
+        wrapper.addTest(suite)
+        wrapper(unittest.TestResult())
+        self.assertTrue(suite.called)
+
+
 if __name__ == '__main__':
     unittest.main()
