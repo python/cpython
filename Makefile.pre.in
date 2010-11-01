@@ -893,6 +893,7 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		importlib/test/extension importlib/test/frozen \
 		importlib/test/import_ importlib/test/source \
 		setuptools setuptools/command setuptools/tests setuptools.egg-info \
+		turtledemo \
 		multiprocessing multiprocessing/dummy \
 		unittest unittest/test \
 		curses pydoc_data $(MACHDEPS)

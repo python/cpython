@@ -44,9 +44,9 @@ for t in p,q:
 
 ## Want to get some info?
 
-print(s1, s2)
-print(p, q)
-print(s1.turtles())
-print(s2.turtles())
+#print(s1, s2)
+#print(p, q)
+#print(s1.turtles())
+#print(s2.turtles())
 
 TK.mainloop()
