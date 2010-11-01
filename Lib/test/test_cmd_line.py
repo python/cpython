@@ -186,6 +186,7 @@ sys.stdout.buffer.write(path)"""
             code = '; '.join(code)
             p = _spawn_python('-S', '-c', code)
             stdout, _ = p.communicate()
+            p.stdout.close()
             self.assertTrue(path1.encode('ascii') in stdout)
             self.assertTrue(path2.encode('ascii') in stdout)
 
