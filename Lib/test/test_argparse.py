@@ -465,6 +465,30 @@ class TestOptionalsAlternatePrefixCharsAddedHelp(ParserTestCase):
         ('/ba +f', NS(f=True, bar=None, baz=42))
     ]
 
+
+class TestOptionalsAlternatePrefixCharsMultipleShortArgs(ParserTestCase):
+    """Verify that Optionals must be called with their defined prefixes"""
+
+    parser_signature = Sig(prefix_chars='+-', add_help=False)
+    argument_signatures = [
+        Sig('-x', action='store_true'),
+        Sig('+y', action='store_true'),
+        Sig('+z', action='store_true'),
+    ]
+    failures = ['-w',
+                '-xyz',
+                '+x',
+                '-y',
+                '+xyz',
+    ]
+    successes = [
+        ('', NS(x=False, y=False, z=False)),
+        ('-x', NS(x=True, y=False, z=False)),
+        ('+y -x', NS(x=True, y=True, z=False)),
+        ('+yz -x', NS(x=True, y=True, z=True)),
+    ]
+
+
 class TestOptionalsShortLong(ParserTestCase):
     """Test a combination of single- and double-dash option strings"""
 
