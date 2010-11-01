@@ -329,19 +329,11 @@ class DictTest(unittest.TestCase):
         k, v = 'abc', 'def'
         d[k] = v
         self.assertRaises(KeyError, d.pop, 'ghi')
-        try:
-            d.pop('ghi')
-        except KeyError as e:
-            self.assertEquals(e.args[0], 'ghi')
 
         self.assertEqual(d.pop(k), v)
         self.assertEqual(len(d), 0)
 
         self.assertRaises(KeyError, d.pop, k)
-        try:
-            d.pop(k)
-        except KeyError as e:
-            self.assertEquals(e.args[0], k)
 
         self.assertEqual(d.pop(k, v), v)
         d[k] = v
