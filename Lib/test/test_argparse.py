@@ -27,6 +27,13 @@ class TestCase(unittest.TestCase):
             print(obj2)
         super(TestCase, self).assertEqual(obj1, obj2)
 
+    def setUp(self):
+        # The tests assume that line wrapping occurs at 80 columns, but this
+        # behaviour can be overridden by setting the COLUMNS environment
+        # variable.  To ensure that this assumption is true, unset COLUMNS.
+        env = test_support.EnvironmentVarGuard()
+        env.unset("COLUMNS")
+        self.addCleanup(env.__exit__)
 
 
 class TempDirMixin(object):
@@ -1726,6 +1733,7 @@ class TestAddSubparsers(TestCase):
         return parser
 
     def setUp(self):
+        super(TestAddSubparsers, self).setUp()
         self.parser = self._get_parser()
         self.command_help_parser = self._get_parser(subparser_help=True)
 
@@ -1953,6 +1961,7 @@ class TestParentParsers(TestCase):
         self.assertRaises(ArgumentParserError, *args, **kwargs)
 
     def setUp(self):
+        super(TestParentParsers, self).setUp()
         self.wxyz_parent = ErrorRaisingArgumentParser(add_help=False)
         self.wxyz_parent.add_argument('--w')
         x_group = self.wxyz_parent.add_argument_group('x')
