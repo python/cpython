@@ -59,6 +59,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10184: Touch directories only once when extracting a tarfile.
+
 - Issue #10199: New package, ``turtledemo`` now contains selected demo
   scripts that were formerly found under Demo/turtle.
 
