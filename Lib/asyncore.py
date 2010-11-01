@@ -350,12 +350,15 @@ class dispatcher:
         # XXX can return either an address pair or None
         try:
             conn, addr = self.socket.accept()
-            return conn, addr
-        except socket.error, why:
-            if why.args[0] == EWOULDBLOCK:
-                pass
+        except TypeError:
+            return None
+        except socket.error as why:
+            if why.args[0] in (EWOULDBLOCK, ECONNABORTED):
+                return None
             else:
                 raise
+        else:
+            return conn, addr
 
     def send(self, data):
         try:
