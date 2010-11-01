@@ -59,6 +59,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10199: New package, ``turtledemo`` now contains selected demo
+  scripts that were formerly found under Demo/turtle.
+
 - Issue #10265: Close file objects explicitly in sunau.  Patch by Brian Brazil.
 
 - Issue #10266: uu.decode didn't close in_file explicitly when it was given
