@@ -1259,7 +1259,11 @@ class _TestManagerRestart(BaseTestCase):
         authkey = os.urandom(32)
         manager = QueueManager(
             address=('localhost', 0), authkey=authkey, serializer=SERIALIZER)
-        addr = manager.get_server().address
+        srvr = manager.get_server()
+        addr = srvr.address
+        # Close the connection.Listener socket which gets opened as a part
+        # of manager.get_server(). It's not needed for the test.
+        srvr.listener.close()
         manager.start()
 
         p = self.Process(target=self._putter, args=(manager.address, authkey))

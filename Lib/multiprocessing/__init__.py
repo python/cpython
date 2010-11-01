@@ -116,7 +116,8 @@ def cpu_count():
             num = 0
     elif 'bsd' in sys.platform or sys.platform == 'darwin':
         try:
-            num = int(os.popen('sysctl -n hw.ncpu').read())
+            with os.popen('sysctl -n hw.ncpu') as p:
+                num = int(p.read())
         except ValueError:
             num = 0
     else:
