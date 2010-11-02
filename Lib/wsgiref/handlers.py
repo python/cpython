@@ -46,7 +46,7 @@ class BaseHandler:
     traceback_limit = None  # Print entire traceback to self.get_stderr()
     error_status = "500 Internal Server Error"
     error_headers = [('Content-Type','text/plain')]
-    error_body = "A server error occurred.  Please contact the administrator."
+    error_body = b"A server error occurred.  Please contact the administrator."
 
     # State variables (don't mess with these)
     status = result = None
@@ -137,7 +137,7 @@ class BaseHandler:
             self.set_content_length()
 
     def start_response(self, status, headers,exc_info=None):
-        """'start_response()' callable as specified by PEP 333"""
+        """'start_response()' callable as specified by PEP 3333"""
 
         if exc_info:
             try:
@@ -149,49 +149,48 @@ class BaseHandler:
         elif self.headers is not None:
             raise AssertionError("Headers already set!")
 
+        self.status = status
+        self.headers = self.headers_class(headers)
         status = self._convert_string_type(status, "Status")
         assert len(status)>=4,"Status must be at least 4 characters"
         assert int(status[:3]),"Status message must begin w/3-digit code"
         assert status[3]==" ", "Status message must have a space after code"
 
-        str_headers = []
-        for name,val in headers:
-            name = self._convert_string_type(name, "Header name")
-            val = self._convert_string_type(val, "Header value")
-            str_headers.append((name, val))
-            assert not is_hop_by_hop(name),"Hop-by-hop headers not allowed"
+        if __debug__:
+            for name, val in headers:
+                name = self._convert_string_type(name, "Header name")
+                val = self._convert_string_type(val, "Header value")
+                assert not is_hop_by_hop(name),"Hop-by-hop headers not allowed"
 
-        self.status = status
-        self.headers = self.headers_class(str_headers)
         return self.write
 
     def _convert_string_type(self, value, title):
         """Convert/check value type."""
-        if isinstance(value, str):
+        if type(value) is str:
             return value
-        assert isinstance(value, bytes), \
-            "{0} must be a string or bytes object (not {1})".format(title, value)
-        return str(value, "iso-8859-1")
+        raise AssertionError(
+            "{0} must be of type str (got {1})".format(title, repr(value))
+        )
 
     def send_preamble(self):
         """Transmit version/status/date/server, via self._write()"""
         if self.origin_server:
             if self.client_is_modern():
-                self._write('HTTP/%s %s\r\n' % (self.http_version,self.status))
+                self._write(('HTTP/%s %s\r\n' % (self.http_version,self.status)).encode('iso-8859-1'))
                 if 'Date' not in self.headers:
                     self._write(
-                        'Date: %s\r\n' % format_date_time(time.time())
+                        ('Date: %s\r\n' % format_date_time(time.time())).encode('iso-8859-1')
                     )
                 if self.server_software and 'Server' not in self.headers:
-                    self._write('Server: %s\r\n' % self.server_software)
+                    self._write(('Server: %s\r\n' % self.server_software).encode('iso-8859-1'))
         else:
-            self._write('Status: %s\r\n' % self.status)
+            self._write(('Status: %s\r\n' % self.status).encode('iso-8859-1'))
 
     def write(self, data):
-        """'write()' callable as specified by PEP 333"""
+        """'write()' callable as specified by PEP 3333"""
 
-        assert isinstance(data, (str, bytes)), \
-            "write() argument must be a string or bytes"
+        assert type(data) is bytes, \
+            "write() argument must be a bytes instance"
 
         if not self.status:
             raise AssertionError("write() before start_response()")
@@ -256,7 +255,7 @@ class BaseHandler:
         self.headers_sent = True
         if not self.origin_server or self.client_is_modern():
             self.send_preamble()
-            self._write(str(self.headers))
+            self._write(bytes(self.headers))
 
 
     def result_is_file(self):
@@ -376,12 +375,6 @@ class SimpleHandler(BaseHandler):
         self.environ.update(self.base_env)
 
     def _write(self,data):
-        if isinstance(data, str):
-            try:
-                data = data.encode("iso-8859-1")
-            except UnicodeEncodeError:
-                raise ValueError("Unicode data must contain only code points"
-                    " representable in ISO-8859-1 encoding")
         self.stdout.write(data)
 
     def _flush(self):
