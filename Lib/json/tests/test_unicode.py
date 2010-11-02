@@ -78,3 +78,5 @@ class TestUnicode(TestCase):
         self.assertEquals(type(json.loads(u'""')), unicode)
         self.assertEquals(type(json.loads(u'"a"')), unicode)
         self.assertEquals(type(json.loads(u'["a"]')[0]), unicode)
+        # Issue 10038.
+        self.assertEquals(type(json.loads('"foo"')), unicode)

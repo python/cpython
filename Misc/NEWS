@@ -13,11 +13,11 @@ Core and Builtins
 - Issue #10221: dict.pop(k) now has a key error message that includes the
   missing key (same message d[k] returns for missing keys).
 
-- Issue #10125: Don't segfault when the iterator passed to ``file.writelines()``
-  closes the file.
+- Issue #10125: Don't segfault when the iterator passed to
+  ``file.writelines()`` closes the file.
 
-- Issue #10186: Fix the SyntaxError caret when the offset is equal to the length
-  of the offending line.
+- Issue #10186: Fix the SyntaxError caret when the offset is equal to the
+  length of the offending line.
 
 - Issue #9997: Don't let the name "top" have special significance in scope
   resolution.
@@ -66,10 +66,14 @@ Core and Builtins
 Library
 -------
 
-- Issue 120176: Wrapped TestSuite subclass does not get __call__ executed
+- Issue #10038: json.loads() on str should always return unicode (regression
+  from Python 2.6).  Patch by Walter Dörwald.
 
-- Issue 6706: asyncore accept() method no longer raises EWOULDBLOCK/ECONNABORTED
-  on incomplete connection attempt but returns None instead.
+- Issue #120176: Wrapped TestSuite subclass does not get __call__ executed.
+
+- Issue #6706: asyncore accept() method no longer raises
+  EWOULDBLOCK/ECONNABORTED on incomplete connection attempt but returns None
+  instead.
 
 - Issue #10266: uu.decode didn't close in_file explicitly when it was given
   as a filename.  Patch by Brian Brazil.
