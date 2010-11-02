@@ -416,6 +416,7 @@ class ThreadJoinOnShutdown(unittest.TestCase):
         p = subprocess.Popen([sys.executable, "-c", script], stdout=subprocess.PIPE)
         rc = p.wait()
         data = p.stdout.read().decode().replace('\r', '')
+        p.stdout.close()
         self.assertEqual(data, "end of main\nend of thread\n")
         self.assertFalse(rc == 2, "interpreter was blocked")
         self.assertTrue(rc == 0, "Unexpected error")
