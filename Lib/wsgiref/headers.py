@@ -30,21 +30,20 @@ class Headers:
     """Manage a collection of HTTP response headers"""
 
     def __init__(self,headers):
-        if not isinstance(headers, list):
+        if type(headers) is not list:
             raise TypeError("Headers must be a list of name/value tuples")
-        self._headers = []
-        for k, v in headers:
-            k = self._convert_string_type(k)
-            v = self._convert_string_type(v)
-            self._headers.append((k, v))
+        self._headers = headers
+        if __debug__:
+            for k, v in headers:
+                self._convert_string_type(k)
+                self._convert_string_type(v)
 
     def _convert_string_type(self, value):
         """Convert/check value type."""
-        if isinstance(value, str):
+        if type(value) is str:
             return value
-        assert isinstance(value, bytes), ("Header names/values must be"
-            " a string or bytes object (not {0})".format(value))
-        return str(value, "iso-8859-1")
+        raise AssertionError("Header names/values must be"
+            " of type str (got {0})".format(repr(value)))
 
     def __len__(self):
         """Return the total number of headers, including duplicates."""
@@ -138,6 +137,9 @@ class Headers:
         """str() returns the formatted headers, complete with end line,
         suitable for direct HTTP transmission."""
         return '\r\n'.join(["%s: %s" % kv for kv in self._headers]+['',''])
+
+    def __bytes__(self):
+        return str(self).encode('iso-8859-1')
 
     def setdefault(self,name,value):
         """Return first matching header value for 'name', or 'value'
