@@ -558,7 +558,7 @@ class NNTPv2Handler(NNTPv1Handler):
     def handle_CAPABILITIES(self):
         self.push_lit("""\
             101 Capability list:
-            VERSION 2
+            VERSION 2 3
             IMPLEMENTATION INN 2.5.1
             AUTHINFO USER
             HDR
@@ -935,7 +935,7 @@ class NNTPv2Tests(NNTPv1v2TestsMixin, MockedNNTPTestsMixin, unittest.TestCase):
     def test_caps(self):
         caps = self.server.getcapabilities()
         self.assertEqual(caps, {
-            'VERSION': ['2'],
+            'VERSION': ['2', '3'],
             'IMPLEMENTATION': ['INN', '2.5.1'],
             'AUTHINFO': ['USER'],
             'HDR': [],
@@ -945,7 +945,7 @@ class NNTPv2Tests(NNTPv1v2TestsMixin, MockedNNTPTestsMixin, unittest.TestCase):
             'POST': [],
             'READER': [],
             })
-        self.assertEqual(self.server.nntp_version, 2)
+        self.assertEqual(self.server.nntp_version, 3)
 
 
 class MiscTests(unittest.TestCase):
