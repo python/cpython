@@ -1784,6 +1784,28 @@ class TestAddSubparsers(TestCase):
             NS(foo=True, bar=0.125, w=None, x='c'),
         )
 
+    def test_parse_known_args(self):
+        self.assertEqual(
+            self.parser.parse_known_args('0.5 1 b -w 7'.split()),
+            (NS(foo=False, bar=0.5, w=7, x='b'), []),
+        )
+        self.assertEqual(
+            self.parser.parse_known_args('0.5 -p 1 b -w 7'.split()),
+            (NS(foo=False, bar=0.5, w=7, x='b'), ['-p']),
+        )
+        self.assertEqual(
+            self.parser.parse_known_args('0.5 1 b -w 7 -p'.split()),
+            (NS(foo=False, bar=0.5, w=7, x='b'), ['-p']),
+        )
+        self.assertEqual(
+            self.parser.parse_known_args('0.5 1 b -q -rs -w 7'.split()),
+            (NS(foo=False, bar=0.5, w=7, x='b'), ['-q', '-rs']),
+        )
+        self.assertEqual(
+            self.parser.parse_known_args('0.5 -W 1 b -X Y -w 7 Z'.split()),
+            (NS(foo=False, bar=0.5, w=7, x='b'), ['-W', '-X', 'Y', 'Z']),
+        )
+
     def test_dest(self):
         parser = ErrorRaisingArgumentParser()
         parser.add_argument('--foo', action='store_true')
