@@ -243,6 +243,8 @@ Tools/Demos
 Tests
 -----
 
+- Issue #10294: Remove dead code form test_unicode_file.
+
 - Issue #10123: Don't use non-ascii filenames in test_doctest tests. Add a
   new test specific to unicode (non-ascii name and filename).
 

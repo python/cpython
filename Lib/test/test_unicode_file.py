@@ -51,22 +51,6 @@ class TestUnicodeFiles(unittest.TestCase):
 
         self.assertIn(base, file_list)
 
-    # Do as many "equivalancy' tests as we can - ie, check that although we
-    # have different types for the filename, they refer to the same file.
-    def _do_equivalent(self, filename1, filename2):
-        # Note we only check "filename1 against filename2" - we don't bother
-        # checking "filename2 against 1", as we assume we are called again with
-        # the args reversed.
-        self.assertTrue(type(filename1)!=type(filename2),
-                    "No point checking equivalent filenames of the same type")
-        # stat and lstat should return the same results.
-        self.assertEqual(os.stat(filename1),
-                             os.stat(filename2))
-        self.assertEqual(os.lstat(filename1),
-                             os.lstat(filename2))
-        # Copy/rename etc tests using equivalent filename
-        self._do_copyish(filename1, filename2)
-
     # Tests that copy, move, etc one file to another.
     def _do_copyish(self, filename1, filename2):
         # Should be able to rename the file using either name.
@@ -129,16 +113,6 @@ class TestUnicodeFiles(unittest.TestCase):
             self._do_single(filename)
         finally:
             os.unlink(filename)
-
-    def _test_equivalent(self, filename1, filename2):
-        remove_if_exists(filename1)
-        self.assertTrue(not os.path.exists(filename2))
-        f = file(filename1, "w")
-        f.close()
-        try:
-            self._do_equivalent(filename1, filename2)
-        finally:
-            os.unlink(filename1)
 
     # The 'test' functions are unittest entry points, and simply call our
     # _test functions with each of the filename combinations we wish to test
