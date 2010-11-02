@@ -716,7 +716,6 @@ class BasicTCPTest(SocketConnectedTest):
         fd = self.cli_conn.fileno()
         sock = socket.fromfd(fd, socket.AF_INET, socket.SOCK_STREAM)
         self.addCleanup(sock.close)
-        self.assertIsInstance(sock, socket.socket)
         msg = sock.recv(1024)
         self.assertEqual(msg, MSG)
 
