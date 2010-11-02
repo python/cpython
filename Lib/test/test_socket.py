@@ -512,6 +512,7 @@ class GeneralModuleTests(unittest.TestCase):
         # Testing getsockname()
         port = self._get_unused_port()
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
         sock.bind(("0.0.0.0", port))
         name = sock.getsockname()
         # XXX(nnorwitz): http://tinyurl.com/os5jz seems to indicate
@@ -525,12 +526,14 @@ class GeneralModuleTests(unittest.TestCase):
         # Testing getsockopt()
         # We know a socket should start without reuse==0
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
         reuse = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR)
         self.assertFalse(reuse != 0, "initial mode is reuse")
 
     def testSetSockOpt(self):
         # Testing setsockopt()
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         reuse = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR)
         self.assertFalse(reuse == 0, "failed to set reuse mode")
@@ -712,10 +715,22 @@ class BasicTCPTest(SocketConnectedTest):
             return # On Windows, this doesn't exist
         fd = self.cli_conn.fileno()
         sock = socket.fromfd(fd, socket.AF_INET, socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+        self.assertIsInstance(sock, socket.socket)
         msg = sock.recv(1024)
         self.assertEqual(msg, MSG)
 
     def _testFromFd(self):
+        self.serv_conn.send(MSG)
+
+    def testDup(self):
+        # Testing dup()
+        sock = self.cli_conn.dup()
+        self.addCleanup(sock.close)
+        msg = sock.recv(1024)
+        self.assertEqual(msg, MSG)
+
+    def _testDup(self):
         self.serv_conn.send(MSG)
 
     def testShutdown(self):
@@ -828,6 +843,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         read, write, err = select.select([self.serv], [], [])
         if self.serv in read:
             conn, addr = self.serv.accept()
+            conn.close()
         else:
             self.fail("Error trying to do accept after select.")
 
@@ -838,6 +854,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
     def testConnect(self):
         # Testing non-blocking connect
         conn, addr = self.serv.accept()
+        conn.close()
 
     def _testConnect(self):
         self.cli.settimeout(10)
@@ -856,6 +873,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         read, write, err = select.select([conn], [], [])
         if conn in read:
             msg = conn.recv(len(MSG))
+            conn.close()
             self.assertEqual(msg, MSG)
         else:
             self.fail("Error during select call to non-blocking socket.")
@@ -1105,6 +1123,7 @@ class NetworkConnectionNoServer(unittest.TestCase):
     def test_connect(self):
         port = test_support.find_unused_port()
         cli = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.addCleanup(cli.close)
         with self.assertRaises(socket.error) as cm:
             cli.connect((HOST, port))
         self.assertEqual(cm.exception.errno, errno.ECONNREFUSED)
@@ -1142,16 +1161,19 @@ class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
 
     def _justAccept(self):
         conn, addr = self.serv.accept()
+        conn.close()
 
     testFamily = _justAccept
     def _testFamily(self):
         self.cli = socket.create_connection((HOST, self.port), timeout=30)
+        self.addCleanup(self.cli.close)
         self.assertEqual(self.cli.family, 2)
 
     testSourceAddress = _justAccept
     def _testSourceAddress(self):
         self.cli = socket.create_connection((HOST, self.port), timeout=30,
                 source_address=('', self.source_port))
+        self.addCleanup(self.cli.close)
         self.assertEqual(self.cli.getsockname()[1], self.source_port)
         # The port number being used is sufficient to show that the bind()
         # call happened.
@@ -1163,6 +1185,7 @@ class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
         socket.setdefaulttimeout(42)
         try:
             self.cli = socket.create_connection((HOST, self.port))
+            self.addCleanup(self.cli.close)
         finally:
             socket.setdefaulttimeout(None)
         self.assertEquals(self.cli.gettimeout(), 42)
@@ -1174,6 +1197,7 @@ class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
         socket.setdefaulttimeout(30)
         try:
             self.cli = socket.create_connection((HOST, self.port), timeout=None)
+            self.addCleanup(self.cli.close)
         finally:
             socket.setdefaulttimeout(None)
         self.assertEqual(self.cli.gettimeout(), None)
@@ -1186,6 +1210,7 @@ class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
     testTimeoutValueNonamed = _justAccept
     def _testTimeoutValueNonamed(self):
         self.cli = socket.create_connection((HOST, self.port), 30)
+        self.addCleanup(self.cli.close)
         self.assertEqual(self.cli.gettimeout(), 30)
 
 @unittest.skipUnless(thread, 'Threading required for this test.')
@@ -1205,6 +1230,7 @@ class NetworkConnectionBehaviourTest(SocketTCPTest, ThreadableTest):
 
     def testInsideTimeout(self):
         conn, addr = self.serv.accept()
+        self.addCleanup(conn.close)
         time.sleep(3)
         conn.send("done!")
     testOutsideTimeout = testInsideTimeout
