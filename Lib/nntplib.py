@@ -361,7 +361,9 @@ class _NNTPBase:
         else:
             self._caps = caps
             if 'VERSION' in caps:
-                self.nntp_version = int(caps['VERSION'][0])
+                # The server can advertise several supported versions,
+                # choose the highest.
+                self.nntp_version = max(map(int, caps['VERSION']))
 
     def getwelcome(self):
         """Get the welcome message from the server
