@@ -440,7 +440,6 @@ scanstring_str(PyObject *pystr, Py_ssize_t end, char *encoding, int strict, Py_s
     Py_ssize_t len = PyString_GET_SIZE(pystr);
     Py_ssize_t begin = end - 1;
     Py_ssize_t next;
-    int has_unicode = 0;
     char *buf = PyString_AS_STRING(pystr);
     PyObject *chunks = PyList_New(0);
     if (chunks == NULL) {
@@ -463,9 +462,6 @@ scanstring_str(PyObject *pystr, Py_ssize_t end, char *encoding, int strict, Py_s
                 raise_errmsg("Invalid control character at", pystr, next);
                 goto bail;
             }
-            else if (c > 0x7f) {
-                has_unicode = 1;
-            }
         }
         if (!(c == '"' || c == '\\')) {
             raise_errmsg("Unterminated string starting at", pystr, begin);
@@ -477,15 +473,10 @@ scanstring_str(PyObject *pystr, Py_ssize_t end, char *encoding, int strict, Py_s
             if (strchunk == NULL) {
                 goto bail;
             }
-            if (has_unicode) {
-                chunk = PyUnicode_FromEncodedObject(strchunk, encoding, NULL);
-                Py_DECREF(strchunk);
-                if (chunk == NULL) {
-                    goto bail;
-                }
-            }
-            else {
-                chunk = strchunk;
+            chunk = PyUnicode_FromEncodedObject(strchunk, encoding, NULL);
+            Py_DECREF(strchunk);
+            if (chunk == NULL) {
+                goto bail;
             }
             if (PyList_Append(chunks, chunk)) {
                 Py_DECREF(chunk);
@@ -593,21 +584,9 @@ scanstring_str(PyObject *pystr, Py_ssize_t end, char *encoding, int strict, Py_s
             }
 #endif
         }
-        if (c > 0x7f) {
-            has_unicode = 1;
-        }
-        if (has_unicode) {
-            chunk = PyUnicode_FromUnicode(&c, 1);
-            if (chunk == NULL) {
-                goto bail;
-            }
-        }
-        else {
-            char c_char = Py_CHARMASK(c);
-            chunk = PyString_FromStringAndSize(&c_char, 1);
-            if (chunk == NULL) {
-                goto bail;
-            }
+        chunk = PyUnicode_FromUnicode(&c, 1);
+        if (chunk == NULL) {
+            goto bail;
         }
         if (PyList_Append(chunks, chunk)) {
             Py_DECREF(chunk);
