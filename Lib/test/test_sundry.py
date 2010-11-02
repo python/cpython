@@ -10,7 +10,6 @@ class TestUntestedModules(unittest.TestCase):
             import bdb
             import cgitb
             import code
-            import compileall
 
             import distutils.bcppcompiler
             import distutils.ccompiler
@@ -47,27 +46,20 @@ class TestUntestedModules(unittest.TestCase):
             import html.entities
             import imghdr
             import keyword
-            import linecache
             import macurl2path
             import mailcap
-            import nntplib
             import nturl2path
-            import opcode
             import os2emxpath
             import pstats
             import py_compile
             import sndhdr
-            import symbol
             import tabnanny
             import timeit
-            import token
             try:
                 import tty     # not available on Windows
             except ImportError:
                 if support.verbose:
                     print("skipping tty")
-            import webbrowser
-            import xml
 
 
 def test_main():
