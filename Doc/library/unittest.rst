@@ -652,8 +652,8 @@ Test cases
          :meth:`failIfEqual`.
 
 
-   .. method:: assertAlmostEqual(first, second, *, places=7, msg=None)
-               failUnlessAlmostEqual(first, second, *, places=7, msg=None)
+   .. method:: assertAlmostEqual(first, second, places=7, msg=None)
+               failUnlessAlmostEqual(first, second, places=7, msg=None)
 
       Test that *first* and *second* are approximately equal by computing the
       difference, rounding to the given number of decimal *places* (default 7),
@@ -668,8 +668,8 @@ Test cases
          :meth:`failUnlessAlmostEqual`.
 
 
-   .. method:: assertNotAlmostEqual(first, second, *, places=7, msg=None)
-               failIfAlmostEqual(first, second, *, places=7, msg=None)
+   .. method:: assertNotAlmostEqual(first, second, places=7, msg=None)
+               failIfAlmostEqual(first, second, places=7, msg=None)
 
       Test that *first* and *second* are not approximately equal by computing
       the difference, rounding to the given number of decimal *places* (default

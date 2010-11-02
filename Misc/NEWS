@@ -143,6 +143,9 @@ C-API
 Library
 -------
 
+- The keyword only restriction for the places argument in
+  unittest.TestCase.assert[Not]AlmostEqual methods has been removed.
+
 - Issue 6706: asyncore accept() method no longer raises EWOULDBLOCK/ECONNABORTED
   on incomplete connection attempt but returns None instead.
 

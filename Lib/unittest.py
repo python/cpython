@@ -634,7 +634,7 @@ class TestCase(object):
             msg = self._formatMessage(msg, '%r == %r' % (first, second))
             raise self.failureException(msg)
 
-    def assertAlmostEqual(self, first, second, *, places=7, msg=None):
+    def assertAlmostEqual(self, first, second, places=7, msg=None):
         """Fail if the two objects are unequal as determined by their
            difference rounded to the given number of decimal places
            (default 7) and comparing to zero.
@@ -647,7 +647,7 @@ class TestCase(object):
             msg = self._formatMessage(msg, standardMsg)
             raise self.failureException(msg)
 
-    def assertNotAlmostEqual(self, first, second, *, places=7, msg=None):
+    def assertNotAlmostEqual(self, first, second, places=7, msg=None):
         """Fail if the two objects are equal as determined by their
            difference rounded to the given number of decimal places
            (default 7) and comparing to zero.
