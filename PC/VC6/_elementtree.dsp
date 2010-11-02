@@ -43,8 +43,8 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 F90=df.exe
-# ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /Zi /O2 /I "..\..\Include" /I ".." /I "..\..\Modules\expat" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "XML_NS" /D "XML_DTD" /D "BYTEORDER=1234" /D "XML_CONTEXT_BYTES=1024" /D "USE_PYEXPAT_CAPI" /D "XML_STATIC" /D "HAVE_MEMMOVE" /YX /FD /c
+# ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "Py_BUILD_CORE_MODULE" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /Zi /O2 /I "..\..\Include" /I ".." /I "..\..\Modules\expat" /D "Py_BUILD_CORE_MODULE" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "XML_NS" /D "XML_DTD" /D "BYTEORDER=1234" /D "XML_CONTEXT_BYTES=1024" /D "USE_PYEXPAT_CAPI" /D "XML_STATIC" /D "HAVE_MEMMOVE" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -71,8 +71,8 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 F90=df.exe
-# ADD BASE CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "..\..\Include" /I ".." /I "..\..\Modules\expat" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "XML_NS" /D "XML_DTD" /D "BYTEORDER=1234" /D "XML_CONTEXT_BYTES=1024" /D "USE_PYEXPAT_CAPI" /D "XML_STATIC" /D "HAVE_MEMMOVE" /YX /FD /c
+# ADD BASE CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /D "Py_BUILD_CORE_MODULE" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "..\..\Include" /I ".." /I "..\..\Modules\expat" /D "Py_BUILD_CORE_MODULE" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "XML_NS" /D "XML_DTD" /D "BYTEORDER=1234" /D "XML_CONTEXT_BYTES=1024" /D "USE_PYEXPAT_CAPI" /D "XML_STATIC" /D "HAVE_MEMMOVE" /YX /FD /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
