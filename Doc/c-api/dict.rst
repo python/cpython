@@ -112,20 +112,18 @@ Dictionary Objects
 
 .. c:function:: PyObject* PyDict_Items(PyObject *p)
 
-   Return a :c:type:`PyListObject` containing all the items from the
-   dictionary, as in the dictionary method :meth:`dict.items`.
+   Return a :c:type:`PyListObject` containing all the items from the dictionary.
 
 
 .. c:function:: PyObject* PyDict_Keys(PyObject *p)
 
-   Return a :c:type:`PyListObject` containing all the keys from the dictionary,
-   as in the dictionary method :meth:`dict.keys`.
+   Return a :c:type:`PyListObject` containing all the keys from the dictionary.
 
 
 .. c:function:: PyObject* PyDict_Values(PyObject *p)
 
-   Return a :c:type:`PyListObject` containing all the values from the
-   dictionary *p*, as in the dictionary method :meth:`dict.values`.
+   Return a :c:type:`PyListObject` containing all the values from the dictionary
+   *p*.
 
 
 .. c:function:: Py_ssize_t PyDict_Size(PyObject *p)
