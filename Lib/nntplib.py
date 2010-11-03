@@ -205,11 +205,12 @@ def _parse_overview(lines, fmt, data_process_func=None):
             is_metadata = field_name.startswith(':')
             if i >= n_defaults and not is_metadata:
                 # Non-default header names are included in full in the response
-                h = field_name + ":"
-                if token[:len(h)].lower() != h:
+                # (unless the field is totally empty)
+                h = field_name + ": "
+                if token and token[:len(h)].lower() != h:
                     raise NNTPDataError("OVER/XOVER response doesn't include "
                                         "names of additional headers")
-                token = token[len(h):].lstrip(" ")
+                token = token[len(h):] if token else None
             fields[fmt[i]] = token
         overview.append((article_number, fields))
     return overview
