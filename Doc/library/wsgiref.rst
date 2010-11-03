@@ -456,6 +456,32 @@ input, output, and error streams.
    environment.
 
 
+.. class:: IISCGIHandler()
+
+   A specialized alternative to :class:`CGIHandler`, for use when deploying on
+   Microsoft's IIS web server, without having set the config allowPathInfo
+   option (IIS>=7) or metabase allowPathInfoForScriptMappings (IIS<7).
+
+   By default, IIS gives a ``PATH_INFO`` that duplicates the ``SCRIPT_NAME`` at
+   the front, causing problems for WSGI applications that wish to implement
+   routing. This handler strips any such duplicated path.
+
+   IIS can be configured to pass the correct ``PATH_INFO``, but this causes
+   another bug where ``PATH_TRANSLATED`` is wrong. Luckily this variable is
+   rarely used and is not guaranteed by WSGI. On IIS<7, though, the
+   setting can only be made on a vhost level, affecting all other script
+   mappings, many of which break when exposed to the ``PATH_TRANSLATED`` bug.
+   For this reason IIS<7 is almost never deployed with the fix. (Even IIS7
+   rarely uses it because there is still no UI for it.)
+
+   There is no way for CGI code to tell whether the option was set, so a
+   separate handler class is provided.  It is used in the same way as
+   :class:`CGIHandler`, i.e., by calling ``IISCGIHandler().run(app)``, where
+   ``app`` is the WSGI application object you wish to invoke.
+
+   .. versionadded:: 3.2
+
+
 .. class:: BaseCGIHandler(stdin, stdout, stderr, environ, multithread=True, multiprocess=False)
 
    Similar to :class:`CGIHandler`, but instead of using the :mod:`sys` and
@@ -694,6 +720,24 @@ input, output, and error streams.
 
       If :attr:`origin_server` is true, this string attribute is used to set the HTTP
       version of the response set to the client.  It defaults to ``"1.0"``.
+
+
+.. function:: read_environ()
+
+   Transcode CGI variables from ``os.environ`` to PEP 3333 "bytes in unicode"
+   strings, returning a new dictionary.  This function is used by
+   :class:`CGIHandler` and :class:`IISCGIHandler` in place of directly using
+   ``os.environ``, which is not necessarily WSGI-compliant on all platforms
+   and web servers using Python 3 -- specifically, ones where the OS's
+   actual environment is Unicode (i.e. Windows), or ones where the environment
+   is bytes, but the system encoding used by Python to decode it is anything
+   other than ISO-8859-1 (e.g. Unix systems using UTF-8).
+
+   If you are implementing a CGI-based handler of your own, you probably want
+   to use this routine instead of just copying values out of ``os.environ``
+   directly.
+
+   .. versionadded:: 3.2
 
 
 Examples

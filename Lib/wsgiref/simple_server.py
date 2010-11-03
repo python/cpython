@@ -15,7 +15,7 @@ import sys
 import urllib.parse
 from wsgiref.handlers import SimpleHandler
 
-__version__ = "0.1"
+__version__ = "0.2"
 __all__ = ['WSGIServer', 'WSGIRequestHandler', 'demo_app', 'make_server']
 
 
@@ -74,13 +74,14 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
     def get_environ(self):
         env = self.server.base_environ.copy()
         env['SERVER_PROTOCOL'] = self.request_version
+        env['SERVER_SOFTWARE'] = self.server_version
         env['REQUEST_METHOD'] = self.command
         if '?' in self.path:
             path,query = self.path.split('?',1)
         else:
             path,query = self.path,''
 
-        env['PATH_INFO'] = urllib.parse.unquote(path)
+        env['PATH_INFO'] = urllib.parse.unquote_to_bytes(path).decode('iso-8859-1')
         env['QUERY_STRING'] = query
 
         host = self.address_string()
