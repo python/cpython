@@ -914,7 +914,7 @@ Test cases
       .. versionadded:: 3.1
 
 
-   .. method:: assertIsInstance(obj, cls[, msg])
+   .. method:: assertIsInstance(obj, cls, msg=None)
 
       This signals a test failure if *obj* is not an instance of *cls* (which
       can be a class or a tuple of classes, as supported by :func:`isinstance`).
@@ -922,7 +922,7 @@ Test cases
       .. versionadded:: 3.2
 
 
-   .. method:: assertNotIsInstance(obj, cls[, msg])
+   .. method:: assertNotIsInstance(obj, cls, msg=None)
 
       The inverse of the :meth:`assertIsInstance` method.  This signals a test
       failure if *obj* is an instance of *cls*.
@@ -1258,7 +1258,7 @@ Test cases
 
 
 
-   .. method:: assertMultiLineEqual(self, first, second, msg=None)
+   .. method:: assertMultiLineEqual(first, second, msg=None)
 
       Test that the multiline string *first* is equal to the string *second*.
       When not equal a diff of the two strings highlighting the differences
@@ -1562,7 +1562,7 @@ Loading and running tests
 
    :class:`TestLoader` objects have the following methods:
 
-a
+
    .. method:: loadTestsFromTestCase(testCaseClass)
 
       Return a suite of all tests cases contained in the :class:`TestCase`\ -derived
