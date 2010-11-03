@@ -59,6 +59,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #10155: Add IISCGIHandler to wsgiref.handlers to support IIS
+  CGI environment better, and to correct unicode environment values
+  for WSGI 1.0.1.
+
 - Issue #10281: nntplib now returns None for absent fields in the OVER/XOVER
   response, instead of raising an exception.
 

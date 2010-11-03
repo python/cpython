@@ -5,7 +5,10 @@ from .headers import Headers
 
 import sys, os, time
 
-__all__ = ['BaseHandler', 'SimpleHandler', 'BaseCGIHandler', 'CGIHandler']
+__all__ = [
+    'BaseHandler', 'SimpleHandler', 'BaseCGIHandler', 'CGIHandler',
+    'IISCGIHandler', 'read_environ'
+]
 
 # Weekday and month names for HTTP date/time formatting; always English!
 _weekdayname = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
@@ -18,6 +21,74 @@ def format_date_time(timestamp):
     return "%s, %02d %3s %4d %02d:%02d:%02d GMT" % (
         _weekdayname[wd], day, _monthname[month], year, hh, mm, ss
     )
+
+_is_request = {
+    'SCRIPT_NAME', 'PATH_INFO', 'QUERY_STRING', 'REQUEST_METHOD', 'AUTH_TYPE',
+    'CONTENT_TYPE', 'CONTENT_LENGTH', 'HTTPS', 'REMOTE_USER', 'REMOTE_IDENT',
+}.__contains__
+
+def _needs_transcode(k):
+    return _is_request(k) or k.startswith('HTTP_') or k.startswith('SSL_') \
+        or (k.startswith('REDIRECT_') and _needs_transcode(k[9:]))
+
+def read_environ():
+    """Read environment, fixing HTTP variables"""
+    enc = sys.getfilesystemencoding()
+    esc = 'surrogateescape'
+    try:
+        ''.encode('utf-8', esc)
+    except LookupError:
+        esc = 'replace'
+    environ = {}
+
+    # Take the basic environment from native-unicode os.environ. Attempt to
+    # fix up the variables that come from the HTTP request to compensate for
+    # the bytes->unicode decoding step that will already have taken place.
+    for k, v in os.environ.items():
+        if _needs_transcode(k):
+
+            # On win32, the os.environ is natively Unicode. Different servers
+            # decode the request bytes using different encodings.
+            if sys.platform == 'win32':
+                software = os.environ.get('SERVER_SOFTWARE', '').lower()
+
+                # On IIS, the HTTP request will be decoded as UTF-8 as long
+                # as the input is a valid UTF-8 sequence. Otherwise it is
+                # decoded using the system code page (mbcs), with no way to
+                # detect this has happened. Because UTF-8 is the more likely
+                # encoding, and mbcs is inherently unreliable (an mbcs string
+                # that happens to be valid UTF-8 will not be decoded as mbcs)
+                # always recreate the original bytes as UTF-8.
+                if software.startswith('microsoft-iis/'):
+                    v = v.encode('utf-8').decode('iso-8859-1')
+
+                # Apache mod_cgi writes bytes-as-unicode (as if ISO-8859-1) direct
+                # to the Unicode environ. No modification needed.
+                elif software.startswith('apache/'):
+                    pass
+
+                # Python 3's http.server.CGIHTTPRequestHandler decodes
+                # using the urllib.unquote default of UTF-8, amongst other
+                # issues.
+                elif (
+                    software.startswith('simplehttp/')
+                    and 'python/3' in software
+                ):
+                    v = v.encode('utf-8').decode('iso-8859-1')
+
+                # For other servers, guess that they have written bytes to
+                # the environ using stdio byte-oriented interfaces, ending up
+                # with the system code page.
+                else:
+                    v = v.encode(enc, 'replace').decode('iso-8859-1')
+
+            # Recover bytes from unicode environ, using surrogate escapes
+            # where available (Python 3.1+).
+            else:
+                v = v.encode(enc, esc).decode('iso-8859-1')
+
+        environ[k] = v
+    return environ
 
 
 class BaseHandler:
@@ -36,7 +107,7 @@ class BaseHandler:
     # os_environ is used to supply configuration from the OS environment:
     # by default it's a copy of 'os.environ' as of import time, but you can
     # override this in e.g. your __init__ method.
-    os_environ = dict(os.environ.items())
+    os_environ= read_environ()
 
     # Collaborator classes
     wsgi_file_wrapper = FileWrapper     # set to None to disable
@@ -431,6 +502,42 @@ class CGIHandler(BaseCGIHandler):
 
     def __init__(self):
         BaseCGIHandler.__init__(
-            self, sys.stdin, sys.stdout, sys.stderr, dict(os.environ.items()),
-            multithread=False, multiprocess=True
+            self, sys.stdin.buffer, sys.stdout.buffer, sys.stderr,
+            read_environ(), multithread=False, multiprocess=True
+        )
+
+
+class IISCGIHandler(BaseCGIHandler):
+    """CGI-based invocation with workaround for IIS path bug
+
+    This handler should be used in preference to CGIHandler when deploying on
+    Microsoft IIS without having set the config allowPathInfo option (IIS>=7)
+    or metabase allowPathInfoForScriptMappings (IIS<7).
+    """
+    wsgi_run_once = True
+    os_environ = {}
+
+    # By default, IIS gives a PATH_INFO that duplicates the SCRIPT_NAME at
+    # the front, causing problems for WSGI applications that wish to implement
+    # routing. This handler strips any such duplicated path.
+
+    # IIS can be configured to pass the correct PATH_INFO, but this causes
+    # another bug where PATH_TRANSLATED is wrong. Luckily this variable is
+    # rarely used and is not guaranteed by WSGI. On IIS<7, though, the
+    # setting can only be made on a vhost level, affecting all other script
+    # mappings, many of which break when exposed to the PATH_TRANSLATED bug.
+    # For this reason IIS<7 is almost never deployed with the fix. (Even IIS7
+    # rarely uses it because there is still no UI for it.)
+
+    # There is no way for CGI code to tell whether the option was set, so a
+    # separate handler class is provided.
+    def __init__(self):
+        environ= read_environ()
+        path = environ.get('PATH_INFO', '')
+        script = environ.get('SCRIPT_NAME', '')
+        if (path+'/').startswith(script+'/'):
+            environ['PATH_INFO'] = path[len(script):]
+        BaseCGIHandler.__init__(
+            self, sys.stdin.buffer, sys.stdout.buffer, sys.stderr,
+            environ, multithread=False, multiprocess=True
         )

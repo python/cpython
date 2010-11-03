@@ -131,7 +131,7 @@ class IntegrationTests(TestCase):
     def check_hello(self, out, has_length=True):
         self.assertEqual(out,
             ("HTTP/1.0 200 OK\r\n"
-            "Server: WSGIServer/0.1 Python/"+sys.version.split()[0]+"\r\n"
+            "Server: WSGIServer/0.2 Python/"+sys.version.split()[0]+"\r\n"
             "Content-Type: text/plain\r\n"
             "Date: Mon, 05 Jun 2006 18:49:54 GMT\r\n" +
             (has_length and  "Content-Length: 13\r\n" or "") +
@@ -187,7 +187,7 @@ class IntegrationTests(TestCase):
         ver = sys.version.split()[0].encode('ascii')
         self.assertEqual(
                 b"HTTP/1.0 200 OK\r\n"
-                b"Server: WSGIServer/0.1 Python/" + ver + b"\r\n"
+                b"Server: WSGIServer/0.2 Python/" + ver + b"\r\n"
                 b"Content-Type: text/plain; charset=utf-8\r\n"
                 b"Date: Wed, 24 Dec 2008 13:29:32 GMT\r\n"
                 b"\r\n"
