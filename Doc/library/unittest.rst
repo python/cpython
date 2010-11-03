@@ -989,7 +989,8 @@ Test cases
          :meth:`failUnlessRaises`; use :meth:`assertRaises`.
 
 
-   .. method:: assertRaisesRegexp(exception, regexp[, callable, ...])
+   .. method:: assertRaisesRegexp(exception, regexp, callable, *args, **kwds)
+               assertRaisesRegexp(exception, regexp)
 
       Like :meth:`assertRaises` but also tests that *regexp* matches
       on the string representation of the raised exception.  *regexp* may be
@@ -1041,7 +1042,8 @@ Test cases
       .. versionadded:: 3.2
 
 
-   .. method:: assertWarnsRegexp(warning, regexp[, callable, ...])
+   .. method:: assertWarnsRegexp(warning, regexp, callable, *args, **kwds)
+               assertWarnsRegexp(warning, regexp)
 
       Like :meth:`assertWarns` but also tests that *regexp* matches on the
       message of the triggered warning.  *regexp* may be a regular expression
