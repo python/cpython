@@ -59,11 +59,11 @@
 			<Tool
 				Name="VCPreLinkEventTool"
 				Description="Generate build information..."
-				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Release"
+				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Release $(IntDir)"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="getbuildinfo.o"
+				AdditionalDependencies="$(IntDir)\getbuildinfo.o"
 				OutputFile="$(OutDir)\$(PyDllName).dll"
 				IgnoreDefaultLibraryNames="libc"
 				ProgramDatabaseFile="$(OutDir)$(PyDllName).pdb"
@@ -134,11 +134,11 @@
 			<Tool
 				Name="VCPreLinkEventTool"
 				Description="Generate build information..."
-				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Release"
+				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Release $(IntDir)"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="getbuildinfo.o"
+				AdditionalDependencies="$(IntDir)\getbuildinfo.o"
 				OutputFile="$(OutDir)\$(PyDllName).dll"
 				IgnoreDefaultLibraryNames="libc"
 				ProgramDatabaseFile="$(OutDir)$(PyDllName).pdb"
@@ -212,11 +212,11 @@
 			<Tool
 				Name="VCPreLinkEventTool"
 				Description="Generate build information..."
-				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Debug"
+				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Debug $(IntDir)"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="getbuildinfo.o"
+				AdditionalDependencies="$(IntDir)\getbuildinfo.o"
 				OutputFile="$(OutDir)\$(PyDllName)_d.dll"
 				IgnoreDefaultLibraryNames="libc"
 				ProgramDatabaseFile="$(OutDir)$(PyDllName)_d.pdb"
@@ -290,11 +290,11 @@
 			<Tool
 				Name="VCPreLinkEventTool"
 				Description="Generate build information..."
-				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Debug"
+				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Debug $(IntDir)"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="getbuildinfo.o"
+				AdditionalDependencies="$(IntDir)\getbuildinfo.o"
 				OutputFile="$(OutDir)\$(PyDllName)_d.dll"
 				IgnoreDefaultLibraryNames="libc"
 				ProgramDatabaseFile="$(OutDir)$(PyDllName)_d.pdb"
@@ -364,11 +364,11 @@
 			<Tool
 				Name="VCPreLinkEventTool"
 				Description="Generate build information..."
-				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Release"
+				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Release $(IntDir)"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="getbuildinfo.o"
+				AdditionalDependencies="$(IntDir)\getbuildinfo.o"
 				OutputFile="$(OutDir)\$(PyDllName).dll"
 				IgnoreDefaultLibraryNames="libc"
 				ProgramDatabaseFile="$(OutDir)$(PyDllName).pdb"
@@ -439,11 +439,11 @@
 			<Tool
 				Name="VCPreLinkEventTool"
 				Description="Generate build information..."
-				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Release"
+				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Release $(IntDir)"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="getbuildinfo.o"
+				AdditionalDependencies="$(IntDir)\getbuildinfo.o"
 				OutputFile="$(OutDir)\$(PyDllName).dll"
 				IgnoreDefaultLibraryNames="libc"
 				ProgramDatabaseFile="$(OutDir)$(PyDllName).pdb"
@@ -514,11 +514,11 @@
 			<Tool
 				Name="VCPreLinkEventTool"
 				Description="Generate build information..."
-				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Release"
+				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Release ($IntDir)"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="getbuildinfo.o"
+				AdditionalDependencies="$(IntDir)\getbuildinfo.o"
 				OutputFile="$(OutDir)\$(PyDllName).dll"
 				IgnoreDefaultLibraryNames="libc"
 				ProgramDatabaseFile="$(OutDir)$(PyDllName).pdb"
@@ -589,11 +589,11 @@
 			<Tool
 				Name="VCPreLinkEventTool"
 				Description="Generate build information..."
-				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Release"
+				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; Release $(IntDir)"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="getbuildinfo.o"
+				AdditionalDependencies="$(IntDir)\getbuildinfo.o"
 				OutputFile="$(OutDir)\$(PyDllName).dll"
 				IgnoreDefaultLibraryNames="libc"
 				ProgramDatabaseFile="$(OutDir)$(PyDllName).pdb"
