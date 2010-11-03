@@ -59,6 +59,12 @@ Core and Builtins
 Library
 -------
 
+- wsgiref now implements and validates PEP 3333, rather than an experimental
+  extension of PEP 333.  (Note: earlier versions of Python 3.x may have
+  incorrectly validated some non-compliant applications as WSGI compliant;
+  if your app validates with Python <3.2b1+, but not on this version, it is
+  likely the case that your app was not compliant.)
+
 - Issue #10280: NNTP.nntp_version should reflect the highest version
   advertised by the server.
 

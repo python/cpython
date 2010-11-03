@@ -1,4 +1,4 @@
-"""BaseHTTPServer that implements the Python WSGI protocol (PEP 333, rev 1.21)
+"""BaseHTTPServer that implements the Python WSGI protocol (PEP 3333)
 
 This is both an example of how WSGI can be implemented, and a basis for running
 simple web applications on a local machine, such as might be done when testing
@@ -133,7 +133,7 @@ def demo_app(environ,start_response):
     h = sorted(environ.items())
     for k,v in h:
         print(k,'=',repr(v), file=stdout)
-    start_response(b"200 OK", [(b'Content-Type',b'text/plain; charset=utf-8')])
+    start_response("200 OK", [('Content-Type','text/plain; charset=utf-8')])
     return [stdout.getvalue().encode("utf-8")]
 
 
