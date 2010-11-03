@@ -59,6 +59,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10281: nntplib now returns None for absent fields in the OVER/XOVER
+  response, instead of raising an exception.
+
 - wsgiref now implements and validates PEP 3333, rather than an experimental
   extension of PEP 333.  (Note: earlier versions of Python 3.x may have
   incorrectly validated some non-compliant applications as WSGI compliant;

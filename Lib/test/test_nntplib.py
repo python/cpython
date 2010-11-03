@@ -457,7 +457,7 @@ class NNTPv1Handler:
                     "\tThu, 22 Jul 2010 09:14:14 -0400"
                     "\t<A29863FA-F388-40C3-AA25-0FD06B09B5BF@gmail.com>"
                     "\t\t6683\t16"
-                    "\tXref: news.gmane.org gmane.comp.python.authors:58"
+                    "\t"
                     "\n"
                 # An UTF-8 overview line from fr.comp.lang.python
                 "59\tRe: Message d'erreur incompréhensible (par moi)"
@@ -824,6 +824,8 @@ class NNTPv1v2TestsMixin:
             ":lines": "16",
             "xref": "news.gmane.org gmane.comp.python.authors:57"
             })
+        art_num, over = overviews[1]
+        self.assertEqual(over["xref"], None)
         art_num, over = overviews[2]
         self.assertEqual(over["subject"],
                          "Re: Message d'erreur incompréhensible (par moi)")
@@ -1028,6 +1030,29 @@ class MiscTests(unittest.TestCase):
             ':lines': '17',
             'xref': 'news.example.com misc.test:3000363',
         })
+        # Second example; here the "Xref" field is totally absent (including
+        # the header name) and comes out as None
+        lines = [
+            '3000234\tI am just a test article\t"Demo User" '
+            '<nobody@example.com>\t6 Oct 1998 04:38:40 -0500\t'
+            '<45223423@example.com>\t<45454@example.net>\t1234\t'
+            '17\t\t',
+        ]
+        overview = nntplib._parse_overview(lines, fmt)
+        (art_num, fields), = overview
+        self.assertEqual(fields['xref'], None)
+        # Third example; the "Xref" is an empty string, while "references"
+        # is a single space.
+        lines = [
+            '3000234\tI am just a test article\t"Demo User" '
+            '<nobody@example.com>\t6 Oct 1998 04:38:40 -0500\t'
+            '<45223423@example.com>\t \t1234\t'
+            '17\tXref: \t',
+        ]
+        overview = nntplib._parse_overview(lines, fmt)
+        (art_num, fields), = overview
+        self.assertEqual(fields['references'], ' ')
+        self.assertEqual(fields['xref'], '')
 
     def test_parse_datetime(self):
         def gives(a, b, *c):

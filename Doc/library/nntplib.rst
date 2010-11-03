@@ -252,6 +252,8 @@ response indicates an error, the method raises one of the above exceptions.
      (including headers and body)
    * the ``:lines`` metadata: the number of lines in the article body
 
+   The value of each item is either a string, or :const:`None` if not present.
+
    It is advisable to use the :func:`decode_header` function on header
    values when they may contain non-ASCII characters::
 
