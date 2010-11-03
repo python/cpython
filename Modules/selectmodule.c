@@ -47,7 +47,7 @@ extern void bzero(void *, int);
 #endif
 
 #ifdef MS_WINDOWS
-#  include <winsock.h>
+#  include <winsock2.h>
 #else
 #  define SOCKET int
 #  ifdef __BEOS__
