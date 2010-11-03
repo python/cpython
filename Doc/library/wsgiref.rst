@@ -22,7 +22,7 @@ be used to add WSGI support to a web server or framework.  It provides utilities
 for manipulating WSGI environment variables and response headers, base classes
 for implementing WSGI servers, a demo HTTP server that serves WSGI applications,
 and a validation tool that checks WSGI servers and applications for conformance
-to the WSGI specification (:pep:`333`).
+to the WSGI specification (:pep:`3333`).
 
 See http://www.wsgi.org for more information about WSGI, and links to tutorials
 and other resources.
@@ -39,9 +39,9 @@ and other resources.
 
 This module provides a variety of utility functions for working with WSGI
 environments.  A WSGI environment is a dictionary containing HTTP request
-variables as described in :pep:`333`.  All of the functions taking an *environ*
+variables as described in :pep:`3333`.  All of the functions taking an *environ*
 parameter expect a WSGI-compliant dictionary to be supplied; please see
-:pep:`333` for a detailed specification.
+:pep:`3333` for a detailed specification.
 
 
 .. function:: guess_scheme(environ)
@@ -60,7 +60,7 @@ parameter expect a WSGI-compliant dictionary to be supplied; please see
 .. function:: request_uri(environ, include_query=True)
 
    Return the full request URI, optionally including the query string, using the
-   algorithm found in the "URL Reconstruction" section of :pep:`333`.  If
+   algorithm found in the "URL Reconstruction" section of :pep:`3333`.  If
    *include_query* is false, the query string is not included in the resulting URI.
 
 
@@ -104,7 +104,7 @@ parameter expect a WSGI-compliant dictionary to be supplied; please see
 
    This routine adds various parameters required for WSGI, including ``HTTP_HOST``,
    ``SERVER_NAME``, ``SERVER_PORT``, ``REQUEST_METHOD``, ``SCRIPT_NAME``,
-   ``PATH_INFO``, and all of the :pep:`333`\ -defined ``wsgi.*`` variables.  It
+   ``PATH_INFO``, and all of the :pep:`3333`\ -defined ``wsgi.*`` variables.  It
    only supplies default values, and does not replace any existing settings for
    these variables.
 
@@ -152,8 +152,8 @@ also provides these miscellaneous utilities:
    support both :meth:`__getitem__` and :meth:`__iter__` iteration styles, for
    compatibility with Python 2.1 and Jython. As the object is iterated over, the
    optional *blksize* parameter will be repeatedly passed to the *filelike*
-   object's :meth:`read` method to obtain strings to yield.  When :meth:`read`
-   returns an empty string, iteration is ended and is not resumable.
+   object's :meth:`read` method to obtain bytestrings to yield.  When :meth:`read`
+   returns an empty bytestring, iteration is ended and is not resumable.
 
    If *filelike* has a :meth:`close` method, the returned object will also have a
    :meth:`close` method, and it will invoke the *filelike* object's :meth:`close`
@@ -187,7 +187,7 @@ manipulation of WSGI response headers using a mapping-like interface.
 .. class:: Headers(headers)
 
    Create a mapping-like object wrapping *headers*, which must be a list of header
-   name/value tuples as described in :pep:`333`.
+   name/value tuples as described in :pep:`3333`.
 
    :class:`Headers` objects support typical mapping operations including
    :meth:`__getitem__`, :meth:`get`, :meth:`__setitem__`, :meth:`setdefault`,
@@ -210,11 +210,11 @@ manipulation of WSGI response headers using a mapping-like interface.
    :meth:`items`, which is the same as the length of the wrapped header list.  In
    fact, the :meth:`items` method just returns a copy of the wrapped header list.
 
-   Calling ``str()`` on a :class:`Headers` object returns a formatted string
+   Calling ``bytes()`` on a :class:`Headers` object returns a formatted bytestring
    suitable for transmission as HTTP response headers.  Each header is placed on a
    line with its value, separated by a colon and a space. Each line is terminated
-   by a carriage return and line feed, and the string is terminated with a blank
-   line.
+   by a carriage return and line feed, and the bytestring is terminated with a
+   blank line.
 
    In addition to their mapping interface and formatting features, :class:`Headers`
    objects also have the following methods for querying and adding multi-valued
@@ -272,7 +272,7 @@ request.  (E.g., using the :func:`shift_path_info` function from
    Create a new WSGI server listening on *host* and *port*, accepting connections
    for *app*.  The return value is an instance of the supplied *server_class*, and
    will process requests using the specified *handler_class*.  *app* must be a WSGI
-   application object, as defined by :pep:`333`.
+   application object, as defined by :pep:`3333`.
 
    Example usage::
 
@@ -346,7 +346,7 @@ request.  (E.g., using the :func:`shift_path_info` function from
       :attr:`base_environ` dictionary attribute and then adds various headers derived
       from the HTTP request.  Each call to this method should return a new dictionary
       containing all of the relevant CGI environment variables as specified in
-      :pep:`333`.
+      :pep:`3333`.
 
 
    .. method:: WSGIRequestHandler.get_stderr()
@@ -376,7 +376,7 @@ application objects that validate communications between a WSGI server or
 gateway and a WSGI application object, to check both sides for protocol
 conformance.
 
-Note that this utility does not guarantee complete :pep:`333` compliance; an
+Note that this utility does not guarantee complete :pep:`3333` compliance; an
 absence of errors from this module does not necessarily mean that errors do not
 exist.  However, if this module does produce an error, then it is virtually
 certain that either the server or application is not 100% compliant.
@@ -401,7 +401,7 @@ Paste" library.
 
    This wrapper may also generate output using the :mod:`warnings` module to
    indicate behaviors that are questionable but which may not actually be
-   prohibited by :pep:`333`.  Unless they are suppressed using Python command-line
+   prohibited by :pep:`3333`.  Unless they are suppressed using Python command-line
    options or the :mod:`warnings` API, any such warnings will be written to
    ``sys.stderr`` (*not* ``wsgi.errors``, unless they happen to be the same
    object).
@@ -626,7 +626,7 @@ input, output, and error streams.
 
       This method can access the current error information using ``sys.exc_info()``,
       and should pass that information to *start_response* when calling it (as
-      described in the "Error Handling" section of :pep:`333`).
+      described in the "Error Handling" section of :pep:`3333`).
 
       The default implementation just uses the :attr:`error_status`,
       :attr:`error_headers`, and :attr:`error_body` attributes to generate an output
@@ -641,23 +641,23 @@ input, output, and error streams.
    .. attribute:: BaseHandler.error_status
 
       The HTTP status used for error responses.  This should be a status string as
-      defined in :pep:`333`; it defaults to a 500 code and message.
+      defined in :pep:`3333`; it defaults to a 500 code and message.
 
 
    .. attribute:: BaseHandler.error_headers
 
       The HTTP headers used for error responses.  This should be a list of WSGI
-      response headers (``(name, value)`` tuples), as described in :pep:`333`.  The
+      response headers (``(name, value)`` tuples), as described in :pep:`3333`.  The
       default list just sets the content type to ``text/plain``.
 
 
    .. attribute:: BaseHandler.error_body
 
-      The error response body.  This should be an HTTP response body string. It
+      The error response body.  This should be an HTTP response body bytestring. It
       defaults to the plain text, "A server error occurred.  Please contact the
       administrator."
 
-   Methods and attributes for :pep:`333`'s "Optional Platform-Specific File
+   Methods and attributes for :pep:`3333`'s "Optional Platform-Specific File
    Handling" feature:
 
 
