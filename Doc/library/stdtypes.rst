@@ -804,22 +804,20 @@ constructor, :func:`bytes`, and from literals; use a ``b`` prefix with normal
 string syntax: ``b'xyzzy'``.  To construct byte arrays, use the
 :func:`bytearray` function.
 
-.. warning::
+While string objects are sequences of characters (represented by strings of
+length 1), bytes and bytearray objects are sequences of *integers* (between 0
+and 255), representing the ASCII value of single bytes.  That means that for
+a bytes or bytearray object *b*, ``b[0]`` will be an integer, while
+``b[0:1]`` will be a bytes or bytearray object of length 1.  The
+representation of bytes objects uses the literal format (``b'...'``) since it
+is generally more useful than e.g. ``bytes([50, 19, 100])``.  You can always
+convert a bytes object into a list of integers using ``list(b)``.
 
-   While string objects are sequences of characters (represented by strings of
-   length 1), bytes and bytearray objects are sequences of *integers* (between 0
-   and 255), representing the ASCII value of single bytes.  That means that for
-   a bytes or bytearray object *b*, ``b[0]`` will be an integer, while
-   ``b[0:1]`` will be a bytes or bytearray object of length 1.  The
-   representation of bytes objects uses the literal format (``b'...'``) since it
-   is generally more useful than e.g. ``bytes([50, 19, 100])``.  You can always
-   convert a bytes object into a list of integers using ``list(b)``.
-
-   Also, while in previous Python versions, byte strings and Unicode strings
-   could be exchanged for each other rather freely (barring encoding issues),
-   strings and bytes are now completely separate concepts.  There's no implicit
-   en-/decoding if you pass an object of the wrong type.  A string always
-   compares unequal to a bytes or bytearray object.
+Also, while in previous Python versions, byte strings and Unicode strings
+could be exchanged for each other rather freely (barring encoding issues),
+strings and bytes are now completely separate concepts.  There's no implicit
+en-/decoding if you pass an object of the wrong type.  A string always
+compares unequal to a bytes or bytearray object.
 
 Lists are constructed with square brackets, separating items with commas: ``[a,
 b, c]``.  Tuples are constructed by the comma operator (not within square
