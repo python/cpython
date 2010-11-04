@@ -10,6 +10,10 @@ What's New in Python 3.2 Beta 1?
 Core and Builtins
 -----------------
 
+- Issue #10293: Remove obsolete field in the PyMemoryView structure,
+  unused undocumented value PyBUF_SHADOW, and strangely-looking code in
+  PyMemoryView_GetContiguous.
+
 - Issue #6081: Add str.format_map, similar to str.format(**mapping).
 
 - If FileIO.__init__ fails, close the file descriptor.

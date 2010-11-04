@@ -189,7 +189,6 @@ typedef void (*releasebufferproc)(PyObject *, Py_buffer *);
 
 #define PyBUF_READ  0x100
 #define PyBUF_WRITE 0x200
-#define PyBUF_SHADOW 0x400
 
 /* End buffer interface */
 
