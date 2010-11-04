@@ -11,8 +11,7 @@ typedef void (*destructor2)(void *, void*);
 
 static int cobject_deprecation_warning(void)
 {
-    return PyErr_WarnEx(PyExc_PendingDeprecationWarning,
-        "The CObject type is marked Pending Deprecation in Python 2.7.  "
+    return PyErr_WarnPy3k("CObject type is not supported in 3.x. "
         "Please use capsule objects instead.", 1);
 }
 
