@@ -338,22 +338,10 @@ def classify_class_attrs(cls):
     return result
 
 # ----------------------------------------------------------- class helpers
-def _searchbases(cls, accum):
-    # Simulate the "classic class" search order.
-    if cls in accum:
-        return
-    accum.append(cls)
-    for base in cls.__bases__:
-        _searchbases(base, accum)
 
 def getmro(cls):
     "Return tuple of base classes (including cls) in method resolution order."
-    if hasattr(cls, "__mro__"):
-        return cls.__mro__
-    else:
-        result = []
-        _searchbases(cls, result)
-        return tuple(result)
+    return cls.__mro__
 
 # -------------------------------------------------- source code extraction
 def indentsize(line):
