@@ -817,6 +817,7 @@ on_completion_display_matches_hook(char **matches,
 #endif
 }
 
+#endif
 
 /* C function to call the Python completer. */
 
@@ -855,7 +856,6 @@ on_completion(const char *text, int state)
     }
     return result;
 }
-#endif
 
 
 /* A more flexible constructor that saves the "begidx" and "endidx"
