@@ -571,14 +571,19 @@ class _NNTPBase:
         cmd = 'NEWNEWS {0} {1} {2}'.format(group, date_str, time_str)
         return self._longcmdstring(cmd, file)
 
-    def list(self, *, file=None):
-        """Process a LIST command. Argument:
+    def list(self, group_pattern=None, *, file=None):
+        """Process a LIST or LIST ACTIVE command. Arguments:
+        - group_pattern: a pattern indicating which groups to query
         - file: Filename string or file object to store the result in
         Returns:
         - resp: server response if successful
         - list: list of (group, last, first, flag) (strings)
         """
-        resp, lines = self._longcmdstring('LIST', file)
+        if group_pattern is not None:
+            command = 'LIST ACTIVE ' + group_pattern
+        else:
+            command = 'LIST'
+        resp, lines = self._longcmdstring(command, file)
         return resp, self._grouplist(lines)
 
     def _getdescriptions(self, group_pattern, return_all):

@@ -182,13 +182,15 @@ response indicates an error, the method raises one of the above exceptions.
    This command is frequently disabled by NNTP server administrators.
 
 
-.. method:: NNTP.list(*, file=None)
+.. method:: NNTP.list(group_pattern=None, *, file=None)
 
-   Send a ``LIST`` command.  Return a pair ``(response, list)`` where *list* is a
-   list of tuples representing all the groups available from this NNTP server.
-   Each tuple has the form ``(group, last, first, flag)``, where
-   *group* is a group name, *last* and *first* are the last and first article
-   numbers, and *flag* usually takes one of these values:
+   Send a ``LIST`` or ``LIST ACTIVE`` command.  Return a pair
+   ``(response, list)`` where *list* is a list of tuples representing all
+   the groups available from this NNTP server, optionally matching the
+   pattern string *group_pattern*.  Each tuple has the form
+   ``(group, last, first, flag)``, where *group* is a group name, *last*
+   and *first* are the last and first article numbers, and *flag* usually
+   takes one of these values:
 
    * ``y``: Local postings and articles from peers are allowed.
    * ``m``: The group is moderated and all postings must be approved.
@@ -200,8 +202,12 @@ response indicates an error, the method raises one of the above exceptions.
    If *flag* has another value, then the status of the newsgroup should be
    considered unknown.
 
-   This command will often return very large results.  It is best to cache the
-   results offline unless you really need to refresh them.
+   This command can return very large results, especially if *group_pattern*
+   is not specified.  It is best to cache the results offline unless you
+   really need to refresh them.
+
+   .. versionchanged:: 3.2
+      *group_pattern* was added.
 
 
 .. method:: NNTP.descriptions(grouppattern)

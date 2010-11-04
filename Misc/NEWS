@@ -65,6 +65,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10283: Add a ``group_pattern`` argument to NNTP.list().
+
 - Issue #10155: Add IISCGIHandler to wsgiref.handlers to support IIS
   CGI environment better, and to correct unicode environment values
   for WSGI 1.0.1.
