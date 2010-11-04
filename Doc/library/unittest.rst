@@ -871,34 +871,18 @@ Test cases
          :meth:`failIf`; use :meth:`assertFalse`.
 
 
-   .. method:: assertIs(expr1, expr2, msg=None)
+   .. method:: assertIs(first, second, msg=None)
+               assertIsNot(first, second, msg=None)
 
-      This signals a test failure if *expr1* and *expr2* don't evaluate to the same
-      object.
-
-      .. versionadded:: 3.1
-
-
-   .. method:: assertIsNot(expr1, expr2, msg=None)
-
-      The inverse of the :meth:`assertIs` method.
-      This signals a test failure if *expr1* and *expr2* evaluate to the same
-      object.
+      Test that *first* and *second* evaluate (or don't evaluate) to the same object.
 
       .. versionadded:: 3.1
 
 
    .. method:: assertIsNone(expr, msg=None)
+               assertIsNotNone(expr, msg=None)
 
-      This signals a test failure if *expr* is not None.
-
-      .. versionadded:: 3.1
-
-
-   .. method:: assertIsNotNone(expr, msg=None)
-
-      The inverse of the :meth:`assertIsNone` method.
-      This signals a test failure if *expr* is None.
+      Test that *expr* is (or is not) None.
 
       .. versionadded:: 3.1
 
@@ -906,7 +890,7 @@ Test cases
    .. method:: assertIn(first, second, msg=None)
                assertNotIn(first, second, msg=None)
 
-      Tests that *first* is or is not in *second* with an explanatory error
+      Test that *first* is (or is not) in *second* with an explanatory error
       message as appropriate.
 
       If specified, *msg* will be used as the error message on failure.
@@ -915,17 +899,10 @@ Test cases
 
 
    .. method:: assertIsInstance(obj, cls, msg=None)
+               assertNotIsInstance(obj, cls, msg=None)
 
-      This signals a test failure if *obj* is not an instance of *cls* (which
-      can be a class or a tuple of classes, as supported by :func:`isinstance`).
-
-      .. versionadded:: 3.2
-
-
-   .. method:: assertNotIsInstance(obj, cls, msg=None)
-
-      The inverse of the :meth:`assertIsInstance` method.  This signals a test
-      failure if *obj* is an instance of *cls*.
+      Test that *obj* is (or is not) an instance of *cls* (which can be a
+      class or a tuple of classes, as supported by :func:`isinstance`).
 
       .. versionadded:: 3.2
 
