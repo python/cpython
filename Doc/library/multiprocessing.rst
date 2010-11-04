@@ -16,7 +16,7 @@ to this, the :mod:`multiprocessing` module allows the programmer to fully
 leverage multiple processors on a given machine.  It runs on both Unix and
 Windows.
 
-.. warning::
+.. note::
 
     Some of this package's functionality requires a functioning shared semaphore
     implementation on the host operating system. Without one, the
