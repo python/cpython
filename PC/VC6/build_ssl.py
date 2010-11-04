@@ -194,7 +194,7 @@ def main():
             copy(r"crypto\opensslconf.h", r"crypto\opensslconf_%s.h" % arch)
 
         # If the assembler files don't exist in tmpXX, copy them there
-        if perl is None:
+        if perl is None and os.path.exists("asm"+dirsuffix):
             if not os.path.exists("tmp"+dirsuffix):
                 os.mkdir("tmp"+dirsuffix)
             for f in os.listdir("asm"+dirsuffix):
