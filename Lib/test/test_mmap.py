@@ -534,6 +534,15 @@ class MmapTests(unittest.TestCase):
         m.seek(8)
         self.assertRaises(ValueError, m.write, b"bar")
 
+    def test_non_ascii_byte(self):
+        for b in (129, 200, 255): # > 128
+            m = mmap.mmap(-1, 1)
+            m.write_byte(b)
+            self.assertEquals(m[0], b)
+            m.seek(0)
+            self.assertEquals(m.read_byte(), b)
+            m.close()
+
     if os.name == 'nt':
         def test_tagname(self):
             data1 = b"0123456789"

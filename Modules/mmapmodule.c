@@ -204,7 +204,7 @@ mmap_read_byte_method(mmap_object *self,
     if (self->pos < self->size) {
         char value = self->data[self->pos];
         self->pos += 1;
-        return Py_BuildValue("b", value);
+        return Py_BuildValue("B", (unsigned char)value);
     } else {
         PyErr_SetString(PyExc_ValueError, "read byte out of range");
         return NULL;
