@@ -10,6 +10,8 @@ What's New in Python 3.2 Beta 1?
 Core and Builtins
 -----------------
 
+- Issue #6081: Add str.format_map, similar to str.format(**mapping).
+
 - If FileIO.__init__ fails, close the file descriptor.
 
 - Issue #10221: dict.pop(k) now has a key error message that includes the

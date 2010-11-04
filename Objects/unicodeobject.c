@@ -9028,6 +9028,11 @@ PyDoc_STRVAR(format__doc__,
 \n\
 ");
 
+PyDoc_STRVAR(format_map__doc__,
+             "S.format_map(mapping) -> str\n\
+\n\
+");
+
 static PyObject *
 unicode__format__(PyObject* self, PyObject* args)
 {
@@ -9109,6 +9114,7 @@ static PyMethodDef unicode_methods[] = {
     {"isprintable", (PyCFunction) unicode_isprintable, METH_NOARGS, isprintable__doc__},
     {"zfill", (PyCFunction) unicode_zfill, METH_VARARGS, zfill__doc__},
     {"format", (PyCFunction) do_string_format, METH_VARARGS | METH_KEYWORDS, format__doc__},
+    {"format_map", (PyCFunction) do_string_format_map, METH_O, format_map__doc__},
     {"__format__", (PyCFunction) unicode__format__, METH_VARARGS, p_format__doc__},
     {"maketrans", (PyCFunction) unicode_maketrans,
      METH_VARARGS | METH_STATIC, maketrans__doc__},

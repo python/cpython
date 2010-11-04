@@ -1038,6 +1038,14 @@ functions based on regular expressions.
    that can be specified in format strings.
 
 
+.. method:: str.format_map(mapping)
+
+   Similar to ``str.forrmat(**mapping)``, except that ``mapping`` is
+   used directly and not copied to a :class:`dict` .  This is useful
+   if for example ``mapping`` is a dict subclass.
+
+    .. versionadded:: 3.2
+
 .. method:: str.index(sub[, start[, end]])
 
    Like :meth:`find`, but raise :exc:`ValueError` when the substring is not found.
