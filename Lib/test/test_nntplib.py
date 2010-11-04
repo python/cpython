@@ -22,16 +22,22 @@ class NetworkedNNTPTestsMixin:
         self.assertEqual(str, type(welcome))
 
     def test_help(self):
-        resp, list = self.server.help()
+        resp, lines = self.server.help()
         self.assertTrue(resp.startswith("100 "), resp)
-        for line in list:
+        for line in lines:
             self.assertEqual(str, type(line))
 
     def test_list(self):
-        resp, list = self.server.list()
-        if len(list) > 0:
-            self.assertEqual(GroupInfo, type(list[0]))
-            self.assertEqual(str, type(list[0].group))
+        resp, groups = self.server.list()
+        if len(groups) > 0:
+            self.assertEqual(GroupInfo, type(groups[0]))
+            self.assertEqual(str, type(groups[0].group))
+
+    def test_list_active(self):
+        resp, groups = self.server.list(self.GROUP_PAT)
+        if len(groups) > 0:
+            self.assertEqual(GroupInfo, type(groups[0]))
+            self.assertEqual(str, type(groups[0].group))
 
     def test_unknown_command(self):
         with self.assertRaises(nntplib.NNTPPermanentError) as cm:
@@ -383,6 +389,17 @@ class NNTPv1Handler:
                 free.it.comp.lang.python.learner 0000000000 0000000001 y
                 tw.bbs.comp.lang.python 0000000304 0000000304 y
                 .""")
+        elif action == "ACTIVE":
+            if param == "*distutils*":
+                self.push_lit("""\
+                    215 Newsgroups in form "group high low flags"
+                    gmane.comp.python.distutils.devel 0000014104 0000000001 m
+                    gmane.comp.python.distutils.cvs 0000000000 0000000001 m
+                    .""")
+            else:
+                self.push_lit("""\
+                    215 Newsgroups in form "group high low flags"
+                    .""")
         elif action == "OVERVIEW.FMT":
             self.push_lit("""\
                 215 Order of fields in overview database.
@@ -608,6 +625,12 @@ class NNTPv1v2TestsMixin:
         self.assertEqual(g,
             GroupInfo("comp.lang.python.announce", "0000001153",
                       "0000000993", "m"))
+        resp, groups = self.server.list("*distutils*")
+        self.assertEqual(len(groups), 2)
+        g = groups[0]
+        self.assertEqual(g,
+            GroupInfo("gmane.comp.python.distutils.devel", "0000014104",
+                      "0000000001", "m"))
 
     def test_stat(self):
         resp, art_num, message_id = self.server.stat(3000234)
