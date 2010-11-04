@@ -809,7 +809,6 @@ Test cases
 
 
    .. method:: assertEqual(first, second, msg=None)
-               failUnlessEqual(first, second, msg=None)
 
       Test that *first* and *second* are equal.  If the values do not compare
       equal, the test will fail with the explanation given by *msg*, or
@@ -831,12 +830,8 @@ Test cases
          :meth:`assertMultiLineEqual` added as the default type equality
          function for comparing strings.
 
-      .. deprecated:: 3.1
-         :meth:`failUnlessEqual`; use :meth:`assertEqual`.
-
 
    .. method:: assertNotEqual(first, second, msg=None)
-               failIfEqual(first, second, msg=None)
 
       Test that *first* and *second* are not equal.  If the values do compare
       equal, the test will fail with the explanation given by *msg*, or
@@ -845,30 +840,18 @@ Test cases
       default value for *msg* can be computed to include representations of both
       *first* and *second*.
 
-      .. deprecated:: 3.1
-         :meth:`failIfEqual`; use :meth:`assertNotEqual`.
-
 
    .. method:: assertTrue(expr, msg=None)
-               assert_(expr, msg=None)
-               failUnless(expr, msg=None)
 
       Signal a test failure if *expr* is false; the explanation for the failure
       will be *msg* if given, otherwise it will be :const:`None`.
 
-      .. deprecated:: 3.1
-         :meth:`failUnless` and :meth:`assert_`; use :meth:`assertTrue`.
-
 
    .. method:: assertFalse(expr, msg=None)
-               failIf(expr, msg=None)
 
       The inverse of the :meth:`assertTrue` method is the :meth:`assertFalse` method.
       This signals a test failure if *expr* is true, with *msg* or :const:`None`
       for the error message.
-
-      .. deprecated:: 3.1
-         :meth:`failIf`; use :meth:`assertFalse`.
 
 
    .. method:: assertIs(first, second, msg=None)
@@ -929,9 +912,7 @@ Test cases
    +---------------------------------------------------------+--------------------------------------+------------+
 
    .. method:: assertRaises(exception, callable, *args, **kwds)
-               failUnlessRaises(exception, callable, *args, **kwds)
                assertRaises(exception)
-               failUnlessRaises(exception)
 
       Test that an exception is raised when *callable* is called with any
       positional or keyword arguments that are also passed to
@@ -961,9 +942,6 @@ Test cases
 
       .. versionchanged:: 3.2
          Added the :attr:`exception` attribute.
-
-      .. deprecated:: 3.1
-         :meth:`failUnlessRaises`; use :meth:`assertRaises`.
 
 
    .. method:: assertRaisesRegexp(exception, regexp, callable, *args, **kwds)
@@ -1079,7 +1057,6 @@ Test cases
 
 
    .. method:: assertAlmostEqual(first, second, places=7, msg=None, delta=None)
-               failUnlessAlmostEqual(first, second, places=7, msg=None, delta=None)
 
       Test that *first* and *second* are approximately equal by computing the
       difference, rounding to the given number of decimal *places* (default 7),
@@ -1099,12 +1076,8 @@ Test cases
          Objects that compare equal are automatically almost equal.
          Added the ``delta`` keyword argument.
 
-      .. deprecated:: 3.1
-         :meth:`failUnlessAlmostEqual`; use :meth:`assertAlmostEqual`.
-
 
    .. method:: assertNotAlmostEqual(first, second, places=7, msg=None, delta=None)
-               failIfAlmostEqual(first, second, places=7, msg=None, delta=None)
 
       Test that *first* and *second* are not approximately equal by computing
       the difference, rounding to the given number of decimal *places* (default
@@ -1123,9 +1096,6 @@ Test cases
       .. versionchanged:: 3.2
          Objects that compare equal automatically fail.  Added the ``delta``
          keyword argument.
-
-      .. deprecated:: 3.1
-         :meth:`failIfAlmostEqual`; use :meth:`assertNotAlmostEqual`.
 
 
    .. method:: assertGreater(first, second, msg=None)
@@ -1450,6 +1420,30 @@ Test cases
    which test code can use to check and report errors.  This is used to create
    test cases using legacy test code, allowing it to be integrated into a
    :mod:`unittest`-based test framework.
+
+
+Deprecated aliases
+##################
+
+For historical reasons, some of the :class:`TestCase` methods had one or more
+aliases that are now deprecated.  The following table lists the correct names
+along with their deprecated aliases:
+
+   ==============================  ===============================
+    Method Name                     Deprecated alias(es)
+   ==============================  ===============================
+    :meth:`.assertEqual`            failUnlessEqual, assertEquals
+    :meth:`.assertNotEqual`         failIfEqual
+    :meth:`.assertTrue`             failUnless, assert\_
+    :meth:`.assertFalse`            failIf
+    :meth:`.assertRaises`           failUnlessRaises
+    :meth:`.assertAlmostEqual`      failUnlessAlmostEqual
+    :meth:`.assertNotAlmostEqual`   failIfAlmostEqual
+   ==============================  ===============================
+
+   .. deprecated:: 3.1
+         the aliases listed in the second column
+
 
 
 .. _testsuite-objects:
