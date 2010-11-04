@@ -117,17 +117,17 @@ Dictionary Objects
 
 .. cfunction:: PyObject* PyDict_Items(PyObject *p)
 
-   Return a :c:type:`PyListObject` containing all the items from the dictionary.
+   Return a :ctype:`PyListObject` containing all the items from the dictionary.
 
 
 .. cfunction:: PyObject* PyDict_Keys(PyObject *p)
 
-   Return a :c:type:`PyListObject` containing all the keys from the dictionary.
+   Return a :ctype:`PyListObject` containing all the keys from the dictionary.
 
 
 .. cfunction:: PyObject* PyDict_Values(PyObject *p)
 
-   Return a :c:type:`PyListObject` containing all the values from the dictionary
+   Return a :ctype:`PyListObject` containing all the values from the dictionary
    *p*.
 
 
