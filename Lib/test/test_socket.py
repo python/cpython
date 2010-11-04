@@ -177,6 +177,11 @@ class ThreadedUDPSocketTest(SocketUDPTest, ThreadableTest):
     def clientSetUp(self):
         self.cli = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
+    def clientTearDown(self):
+        self.cli.close()
+        self.cli = None
+        ThreadableTest.clientTearDown(self)
+
 class SocketConnectedTest(ThreadedTCPSocketTest):
     """Socket tests for client-server connection.
 
