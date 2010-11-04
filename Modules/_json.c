@@ -1387,8 +1387,6 @@ encoder_listencode_dict(PyEncoderObject *s, PyObject *rval, PyObject *dct, Py_ss
     PyObject *item = NULL;
     int skipkeys;
     Py_ssize_t idx;
-    PyObject *mapping;
-    static PyObject *code = NULL;
 
     if (open_dict == NULL || close_dict == NULL || empty_dict == NULL) {
         open_dict = PyUnicode_InternFromString("{");
@@ -1430,30 +1428,37 @@ encoder_listencode_dict(PyEncoderObject *s, PyObject *rval, PyObject *dct, Py_ss
     }
 
     if (PyObject_IsTrue(s->sort_keys)) {
-        if (code == NULL) {
-            code = Py_CompileString("sorted(d.items(), key=lambda kv: kv[0])",
-                                    "_json.c", Py_eval_input);
-            if (code == NULL)
-                goto bail;
-        }
-
-        mapping = PyDict_New();
-        if (mapping == NULL)
-            goto bail;
-        if (PyDict_SetItemString(mapping, "d", dct) == -1) {
-            Py_DECREF(mapping);
-            goto bail;
-        }
-        items = PyEval_EvalCode((PyCodeObject *)code, PyEval_GetGlobals(), mapping);
-        Py_DECREF(mapping);
-        } else {
-        items = PyMapping_Items(dct);
-        }
+        /* First sort the keys then replace them with (key, value) tuples. */
+        Py_ssize_t i, nitems;
+        items = PyMapping_Keys(dct);
         if (items == NULL)
+            goto bail;
+        if (!PyList_Check(items)) {
+            PyErr_SetString(PyExc_ValueError, "keys must return list");
+            goto bail;
+        }
+        if (PyList_Sort(items) < 0)
+            goto bail;
+        nitems = PyList_GET_SIZE(items);
+        for (i = 0; i < nitems; i++) {
+            PyObject *key, *value;
+            key = PyList_GET_ITEM(items, i);
+            value = PyDict_GetItem(dct, key);
+            item = PyTuple_Pack(2, key, value);
+            if (item == NULL)
+                goto bail;
+            PyList_SET_ITEM(items, i, item);
+            Py_DECREF(key);
+        }
+    }
+    else {
+        items = PyMapping_Items(dct);
+    }
+    if (items == NULL)
         goto bail;
     it = PyObject_GetIter(items);
-        Py_DECREF(items);
-        if (it == NULL)
+    Py_DECREF(items);
+    if (it == NULL)
         goto bail;
     skipkeys = PyObject_IsTrue(s->skipkeys);
     idx = 0;
