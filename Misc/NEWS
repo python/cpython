@@ -702,6 +702,9 @@ Build
 Tests
 -----
 
+- Issue #3699: Fix test_bigaddrspace and extend it to test bytestrings
+  as well as unicode strings.  Initial patch by Sandro Tosi.
+
 - Issue #9628: fix runtests.sh -x option so more than one test can be excluded.
 
 - Issue #9894: Do not hardcode ENOENT in test_subprocess.
