@@ -949,6 +949,7 @@ class NNTPv1Tests(NNTPv1v2TestsMixin, MockedNNTPTestsMixin, unittest.TestCase):
         caps = self.server.getcapabilities()
         self.assertEqual(caps, {})
         self.assertEqual(self.server.nntp_version, 1)
+        self.assertEqual(self.server.nntp_implementation, None)
 
 
 class NNTPv2Tests(NNTPv1v2TestsMixin, MockedNNTPTestsMixin, unittest.TestCase):
@@ -971,6 +972,7 @@ class NNTPv2Tests(NNTPv1v2TestsMixin, MockedNNTPTestsMixin, unittest.TestCase):
             'READER': [],
             })
         self.assertEqual(self.server.nntp_version, 3)
+        self.assertEqual(self.server.nntp_implementation, 'INN 2.5.1')
 
 
 class MiscTests(unittest.TestCase):

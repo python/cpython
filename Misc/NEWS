@@ -65,6 +65,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10282: Add a ``nntp_implementation`` attribute to NNTP objects.
+
 - Issue #10283: Add a ``group_pattern`` argument to NNTP.list().
 
 - Issue #10155: Add IISCGIHandler to wsgiref.handlers to support IIS

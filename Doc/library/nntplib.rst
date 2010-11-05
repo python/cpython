@@ -54,7 +54,7 @@ The module itself defines the following classes:
 
 .. class:: NNTP(host, port=119, user=None, password=None, readermode=None, usenetrc=True, [timeout])
 
-   Return a new instance of the :class:`NNTP` class, representing a connection
+   Return a new :class:`NNTP` object, representing a connection
    to the NNTP server running on host *host*, listening at port *port*.
    An optional *timeout* can be specified for the socket connection.
    If the optional *user* and *password* are provided, or if suitable
@@ -111,19 +111,41 @@ The module itself defines the following classes:
 NNTP Objects
 ------------
 
-:class:`NNTP` instances have the following methods.  The *response* that is
-returned as the first item in the return tuple of almost all methods is the
-server's response: a string beginning with a three-digit code. If the server's
-response indicates an error, the method raises one of the above exceptions.
+When connected, :class:`NNTP` objects support the following methods and
+attributes.
 
-.. note::
-   Many of the following methods take an optional keyword-only argument *file*.
-   When the *file* argument is supplied, it must be either a :term:`file object`
-   opened for binary writing, or the name of an on-disk file to be written to.
-   The method will then write any data returned by the server (except for the
-   response line and the terminating dot) to the file; any list of lines,
-   tuples or objects that the method normally returns will be empty.
+Attributes
+^^^^^^^^^^
 
+.. attribute:: NNTP.nntp_version
+
+   An integer representing the version of the NNTP protocol supported by the
+   server.  In practice, this should be ``2`` for servers advertising
+   :rfc:`3977` compliance and ``1`` for others.
+
+   .. versionadded:: 3.2
+
+.. attribute:: NNTP.nntp_implementation
+
+   A string describing the software name and version of the NNTP server,
+   or :const:`None` if not advertised by the server.
+
+   .. versionadded:: 3.2
+
+Methods
+^^^^^^^
+
+The *response* that is returned as the first item in the return tuple of almost
+all methods is the server's response: a string beginning with a three-digit
+code.  If the server's response indicates an error, the method raises one of
+the above exceptions.
+
+Many of the following methods take an optional keyword-only argument *file*.
+When the *file* argument is supplied, it must be either a :term:`file object`
+opened for binary writing, or the name of an on-disk file to be written to.
+The method will then write any data returned by the server (except for the
+response line and the terminating dot) to the file; any list of lines,
+tuples or objects that the method normally returns will be empty.
 
 .. versionchanged:: 3.2
    Many of the following methods have been reworked and fixed, which makes
