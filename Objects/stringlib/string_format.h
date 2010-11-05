@@ -509,7 +509,6 @@ get_field_object(SubString *input, PyObject *args, PyObject *kwargs,
             goto error;
         }
         Py_DECREF(key);
-        Py_INCREF(obj);
     }
     else {
         /* look up in args */
