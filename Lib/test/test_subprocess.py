@@ -121,6 +121,8 @@ class ProcessTestCase(BaseTestCase):
         # .stdin is None when not redirected
         p = subprocess.Popen([sys.executable, "-c", 'print("banana")'],
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.addCleanup(p.stdout.close)
+        self.addCleanup(p.stderr.close)
         p.wait()
         self.assertEqual(p.stdin, None)
 
@@ -131,6 +133,8 @@ class ProcessTestCase(BaseTestCase):
                              'test of stdout in a different '
                              'process ...")'],
                              stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.addCleanup(p.stdin.close)
+        self.addCleanup(p.stderr.close)
         p.wait()
         self.assertEqual(p.stdout, None)
 
@@ -138,6 +142,8 @@ class ProcessTestCase(BaseTestCase):
         # .stderr is None when not redirected
         p = subprocess.Popen([sys.executable, "-c", 'print("banana")'],
                          stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self.addCleanup(p.stdout.close)
+        self.addCleanup(p.stdin.close)
         p.wait()
         self.assertEqual(p.stderr, None)
 
@@ -200,6 +206,7 @@ class ProcessTestCase(BaseTestCase):
         p = subprocess.Popen([sys.executable, "-c",
                           'import sys; sys.stdout.write("orange")'],
                          stdout=subprocess.PIPE)
+        self.addCleanup(p.stdout.close)
         self.assertEqual(p.stdout.read(), b"orange")
 
     def test_stdout_filedes(self):
@@ -230,6 +237,7 @@ class ProcessTestCase(BaseTestCase):
         p = subprocess.Popen([sys.executable, "-c",
                           'import sys; sys.stderr.write("strawberry")'],
                          stderr=subprocess.PIPE)
+        self.addCleanup(p.stderr.close)
         self.assertStderrEqual(p.stderr.read(), b"strawberry")
 
     def test_stderr_filedes(self):
@@ -264,6 +272,7 @@ class ProcessTestCase(BaseTestCase):
                               'sys.stderr.write("orange")'],
                              stdout=subprocess.PIPE,
                              stderr=subprocess.STDOUT)
+        self.addCleanup(p.stdout.close)
         self.assertStderrEqual(p.stdout.read(), b"appleorange")
 
     def test_stdout_stderr_file(self):
@@ -300,6 +309,7 @@ class ProcessTestCase(BaseTestCase):
                               'sys.stdout.write(os.getcwd())'],
                              stdout=subprocess.PIPE,
                              cwd=tmpdir)
+        self.addCleanup(p.stdout.close)
         normcase = os.path.normcase
         self.assertEqual(normcase(p.stdout.read().decode("utf-8")),
                          normcase(tmpdir))
@@ -312,6 +322,7 @@ class ProcessTestCase(BaseTestCase):
                               'sys.stdout.write(os.getenv("FRUIT"))'],
                              stdout=subprocess.PIPE,
                              env=newenv)
+        self.addCleanup(p.stdout.close)
         self.assertEqual(p.stdout.read(), b"orange")
 
     def test_communicate_stdin(self):
@@ -427,6 +438,7 @@ class ProcessTestCase(BaseTestCase):
                               'sys.stdout.write("\\nline6");'],
                              stdout=subprocess.PIPE,
                              universal_newlines=1)
+        self.addCleanup(p.stdout.close)
         stdout = p.stdout.read()
         self.assertEqual(stdout, "line1\nline2\nline3\nline4\nline5\nline6")
 
@@ -699,6 +711,7 @@ class POSIXProcessTestCase(BaseTestCase):
                               'sys.stdout.write(os.getenv("FRUIT"))'],
                              stdout=subprocess.PIPE,
                              preexec_fn=lambda: os.putenv("FRUIT", "apple"))
+        self.addCleanup(p.stdout.close)
         self.assertEqual(p.stdout.read(), b"apple")
 
     def test_preexec_exception(self):
@@ -787,6 +800,7 @@ class POSIXProcessTestCase(BaseTestCase):
         p = subprocess.Popen(["echo $FRUIT"], shell=1,
                              stdout=subprocess.PIPE,
                              env=newenv)
+        self.addCleanup(p.stdout.close)
         self.assertEqual(p.stdout.read().strip(b" \t\r\n\f"), b"apple")
 
     def test_shell_string(self):
@@ -796,6 +810,7 @@ class POSIXProcessTestCase(BaseTestCase):
         p = subprocess.Popen("echo $FRUIT", shell=1,
                              stdout=subprocess.PIPE,
                              env=newenv)
+        self.addCleanup(p.stdout.close)
         self.assertEqual(p.stdout.read().strip(b" \t\r\n\f"), b"apple")
 
     def test_call_string(self):
@@ -828,6 +843,7 @@ class POSIXProcessTestCase(BaseTestCase):
         for sh in shells:
             p = subprocess.Popen("echo $0", executable=sh, shell=True,
                                  stdout=subprocess.PIPE)
+            self.addCleanup(p.stdout.close)
             self.assertEqual(p.stdout.read().strip(), bytes(sh, 'ascii'))
 
     def _kill_process(self, method, *args):
