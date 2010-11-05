@@ -289,6 +289,8 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             self.wfile.write(stdout)
             if stderr:
                 self.log_error('%s', stderr)
+            p.stderr.close()
+            p.stdout.close()
             status = p.returncode
             if status:
                 self.log_error("CGI script exit status %#x", status)
