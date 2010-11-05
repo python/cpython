@@ -22,6 +22,10 @@ in both directions.  This matches the definition of the "proleptic Gregorian"
 calendar in Dershowitz and Reingold's book "Calendrical Calculations", where
 it's the base calendar for all computations.
 
+.. seealso::
+
+   Latest version of the `calendar module Python source code
+   <http://svn.python.org/view/python/branches/release27-maint/Lib/calendar.py?view=markup>`_
 
 .. class:: Calendar([firstweekday])
 

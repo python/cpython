@@ -44,6 +44,10 @@ In addition to containers, the collections module provides some ABCs
 provides a particular interface, for example, whether it is hashable or
 a mapping.
 
+.. seealso::
+
+   Latest version of the `collections module Python source code
+   <http://svn.python.org/view/python/branches/release27-maint/Lib/collections.py?view=markup>`_
 
 :class:`Counter` objects
 ------------------------
@@ -969,6 +973,9 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
    ``__hash__ = Set._hash``.
 
 .. seealso::
+
+   * Latest version of the `Python source code for the collections abstract base classes
+     <http://svn.python.org/view/python/branches/release27-maint/Lib/_abcoll.py?view=markup>`_
 
    * `OrderedSet recipe <http://code.activestate.com/recipes/576694/>`_ for an
      example built on :class:`MutableSet`.
