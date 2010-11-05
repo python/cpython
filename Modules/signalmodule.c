@@ -166,16 +166,20 @@ checksignals_witharg(void * unused)
 static void
 signal_handler(int sig_num)
 {
-#ifdef WITH_THREAD
-#ifdef WITH_PTH
+    int save_errno = errno;
+
+#if defined(WITH_THREAD) && defined(WITH_PTH)
     if (PyThread_get_thread_ident() != main_thread) {
         pth_raise(*(pth_t *) main_thread, sig_num);
-        return;
     }
+    else
 #endif
+    {
+#ifdef WITH_THREAD
     /* See NOTES section above */
-    if (getpid() == main_pid) {
+    if (getpid() == main_pid)
 #endif
+    {
         Handlers[sig_num].tripped = 1;
         /* Set is_tripped after setting .tripped, as it gets
            cleared in PyErr_CheckSignals() before .tripped. */
@@ -183,24 +187,26 @@ signal_handler(int sig_num)
         Py_AddPendingCall(checksignals_witharg, NULL);
         if (wakeup_fd != -1)
             write(wakeup_fd, "\0", 1);
-#ifdef WITH_THREAD
     }
-#endif
-#ifdef SIGCHLD
-    if (sig_num == SIGCHLD) {
-        /* To avoid infinite recursion, this signal remains
-           reset until explicit re-instated.
-           Don't clear the 'func' field as it is our pointer
-           to the Python handler... */
-        return;
-    }
-#endif
+
 #ifndef HAVE_SIGACTION
+#ifdef SIGCHLD
+    /* To avoid infinite recursion, this signal remains
+       reset until explicit re-instated.
+       Don't clear the 'func' field as it is our pointer
+       to the Python handler... */
+    if (sig_num != SIGCHLD)
+#endif
     /* If the handler was not set up with sigaction, reinstall it.  See
      * Python/pythonrun.c for the implementation of PyOS_setsig which
      * makes this true.  See also issue8354. */
     PyOS_setsig(sig_num, signal_handler);
 #endif
+    }
+
+    /* Issue #10311: asynchronously executing signal handlers should not
+       mutate errno under the feet of unsuspecting C code. */
+    errno = save_errno;
 }
 
 
