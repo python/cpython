@@ -1,3 +1,5 @@
+.. _sortinghowto:
+
 Sorting HOW TO
 **************
 
