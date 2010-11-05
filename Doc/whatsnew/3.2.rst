@@ -245,12 +245,6 @@ Some smaller changes made to the core Python language are:
 
   (Added by Antoine Pitrou; :issue:`9757`.)
 
-* A warning message will now get printed at interpreter shutdown if the
-  :data:`gc.garbage` list isn't empty.  This is meant to make the programmer
-  aware that their code contains object finalization issues.
-
-  (Added by Antoine Pitrou; :issue:`477863`.)
-
 * Mark Dickinson crafted an elegant and efficient scheme for assuring that
   different numeric datatypes will have the same hash value whenever their
   actual values are equal::
@@ -283,6 +277,36 @@ Some smaller changes made to the core Python language are:
    ...        # implicit "del e" here
 
   (See :issue:`4617`.)
+
+* A new warning category, :exc:`ResourceWarning`, has been added.  It is
+  emitted when certain potential issues with resource consumption or cleanup
+  are detected.  It is silenced by default in normal release builds, but
+  can be easily enabled through the means provided by the :mod:`warnings`
+  module, or on the command line.
+
+  :exc:`ResourceWarning` is issued at interpreter shutdown if the
+  :data:`gc.garbage` list isn't empty.  This is meant to make the programmer
+  aware that their code contains object finalization issues.
+
+  (Added by Antoine Pitrou and Georg Brandl; :issue:`477863`.)
+
+  :exc:`ResourceWarning` is also issued when a :term:`file object` is destroyed
+  without having been explicitly closed.  While the deallocator for such
+  object ensures it closes the underlying operating system resource
+  (usually, a file descriptor), the delay in deallocating the object could
+  produce various issues, especially under Windows.  Here is an example
+  of enabling the warning from the command line::
+
+      $ ./python -Wdefault
+      Python 3.2a3+ (py3k, Nov  5 2010, 22:58:04)
+      [GCC 4.4.3] on linux2
+      Type "help", "copyright", "credits" or "license" for more information.
+      >>> f = open("foo", "wb")
+      >>> del f
+      __main__:1: ResourceWarning: unclosed file <_io.BufferedWriter name='foo'>
+      >>>
+
+  (Added by Antoine Pitrou, :issue:`10093`.)
 
 
 New, Improved, and Deprecated Modules
@@ -442,6 +466,14 @@ New, Improved, and Deprecated Modules
   <http://www.openssl.org/docs/apps/ciphers.html#CIPHER_LIST_FORMAT>`__.  (Added
   by Antoine Pitrou; :issue:`8322`.)
 
+  When linked against a recent enough version of OpenSSL, the :mod:`ssl`
+  module now supports the Server Name Indication extension to the TLS
+  protocol, allowing for several "virtual hosts" using different certificates
+  on a single IP/port.  This extension is only supported in client mode,
+  and is activated by passing the *server_hostname* argument to
+  :meth:`SSLContext.wrap_socket`.
+  (Added by Antoine Pitrou, :issue:`5639`.)
+
   Various options have been added to the :mod:`ssl` module, such as
   :data:`~ssl.OP_NO_SSLv2` which allows to force disabling of the insecure and
   obsolete SSLv2 protocol.  (Added by Antoine Pitrou; :issue:`4870`.)
@@ -545,6 +577,11 @@ A number of small performance enhancements have been added:
   whenever the same string is repeated for multiple keys.
 
   (Contributed by Antoine Pitrou; :issue:`7451`.)
+
+* JSON encoding now uses the C speedups also when the ``sort_keys`` argument
+  is true.
+
+  (Contributed by Raymond Hettinger and Antoine Pitrou, :issue:`10314`.)
 
 * Python's peephole optimizer now recognizes patterns such ``x in {1, 2, 3}`` as
   being a test for membership in a set of constants.  The optimizer recasts the
