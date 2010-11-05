@@ -327,6 +327,8 @@ class ThreadTests(BaseTestCase):
             """],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
+        self.addCleanup(p.stdout.close)
+        self.addCleanup(p.stderr.close)
         stdout, stderr = p.communicate()
         rc = p.returncode
         self.assertFalse(rc == 2, "interpreted was blocked")
@@ -352,6 +354,8 @@ class ThreadTests(BaseTestCase):
             """],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
+        self.addCleanup(p.stdout.close)
+        self.addCleanup(p.stderr.close)
         stdout, stderr = p.communicate()
         self.assertEqual(stdout.strip(),
             b"Woke up, sleep function is: <built-in function sleep>")
