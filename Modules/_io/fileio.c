@@ -952,6 +952,14 @@ fileio_isatty(fileio *self)
     return PyBool_FromLong(res);
 }
 
+static PyObject *
+fileio_getstate(fileio *self)
+{
+    PyErr_Format(PyExc_TypeError,
+                 "cannot serialize '%s' object", Py_TYPE(self)->tp_name);
+    return NULL;
+}
+
 
 PyDoc_STRVAR(fileio_doc,
 "file(name: str[, mode: str]) -> file IO object\n"
@@ -1046,6 +1054,7 @@ static PyMethodDef fileio_methods[] = {
     {"fileno",   (PyCFunction)fileio_fileno,   METH_NOARGS,      fileno_doc},
     {"isatty",   (PyCFunction)fileio_isatty,   METH_NOARGS,      isatty_doc},
     {"_dealloc_warn", (PyCFunction)fileio_dealloc_warn, METH_O, NULL},
+    {"__getstate__", (PyCFunction)fileio_getstate, METH_NOARGS, NULL},
     {NULL,           NULL}             /* sentinel */
 };
 
