@@ -3097,17 +3097,20 @@ socket_gethostname(PyObject *self, PyObject *unused)
     /* Don't use winsock's gethostname, as this returns the ANSI
        version of the hostname, whereas we need a Unicode string.
        Otherwise, gethostname apparently also returns the DNS name. */
-    wchar_t buf[MAX_COMPUTERNAME_LENGTH];
-    DWORD size = sizeof(buf);
+    wchar_t buf[MAX_COMPUTERNAME_LENGTH + 1];
+    DWORD size = sizeof(buf) / sizeof(wchar_t);
+    PyObject *result;
     if (!GetComputerNameExW(ComputerNamePhysicalDnsHostname, buf, &size)) {
         if (GetLastError() == ERROR_MORE_DATA) {
             /* MSDN says this may occur "because DNS allows longer names */
-            PyObject *result = PyUnicode_FromUnicode(NULL, size);
+            if (size == 0) /* XXX: I'm not sure how to handle this */
+                return PyUnicode_FromUnicode(NULL, 0);
+            result = PyUnicode_FromUnicode(NULL, size - 1);
             if (!result)
                 return NULL;
-            if (GetComputerName(ComputerNamePhysicalDnsHostname,
-                                PyUnicode_AS_UNICODE(result),
-                                size+1))
+            if (GetComputerNameExW(ComputerNamePhysicalDnsHostname,
+                                   PyUnicode_AS_UNICODE(result),
+                                   &size))
                 return result;
             Py_DECREF(result);
         }
