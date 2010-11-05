@@ -143,6 +143,9 @@ C-API
 Library
 -------
 
+- Issue #10311: The signal module now restores errno before returning from
+  its low-level signal handler.  Patch by Hallvard B Furuseth.
+
 - The keyword only restriction for the places argument in
   unittest.TestCase.assert[Not]AlmostEqual methods has been removed.
 
