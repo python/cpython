@@ -6,7 +6,7 @@ import builtins
 from itertools import islice
 try:
     from _thread import get_ident
-except AttributeError:
+except ImportError:
     from _dummy_thread import get_ident
 
 def recursive_repr(fillvalue='...'):

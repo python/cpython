@@ -16,11 +16,13 @@ Suggested usage is::
 __all__ = ['error', 'start_new_thread', 'exit', 'get_ident', 'allocate_lock',
            'interrupt_main', 'LockType']
 
-import traceback as _traceback
-import time
-
 # A dummy value
 TIMEOUT_MAX = 2**31
+
+# NOTE: this module can be imported early in the extension building process,
+# and so top level imports of other modules should be avoided.  Instead, all
+# imports are done when needed on a function-by-function basis.  Since threads
+# are disabled, the import lock should not be an issue anyway (??).
 
 class error(Exception):
     """Dummy implementation of _thread.error."""
@@ -52,7 +54,8 @@ def start_new_thread(function, args, kwargs={}):
     except SystemExit:
         pass
     except:
-        _traceback.print_exc()
+        import traceback
+        traceback.print_exc()
     _main = True
     global _interrupt
     if _interrupt:
@@ -116,6 +119,7 @@ class LockType(object):
                 return True
             else:
                 if timeout > 0:
+                    import time
                     time.sleep(timeout)
                 return False
 
