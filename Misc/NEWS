@@ -252,6 +252,10 @@ Extensions
 C-API
 -----
 
+- Issue #10288: The deprecated family of "char"-handling macros
+  (ISLOWER()/ISUPPER()/etc) have now been removed: use Py_ISLOWER() etc
+  instead.
+
 - Issue #9778: Hash values are now always the size of pointers. A new Py_hash_t
   type has been introduced.
 
