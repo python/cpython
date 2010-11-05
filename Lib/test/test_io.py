@@ -30,6 +30,7 @@ import abc
 import signal
 import errno
 import warnings
+import pickle
 from itertools import cycle, count
 from collections import deque
 from test import support
@@ -2565,6 +2566,23 @@ class MiscIOTest(unittest.TestCase):
         self._check_warn_on_dealloc_fd("rb")
         self._check_warn_on_dealloc_fd("r")
 
+
+    def test_pickling(self):
+        # Pickling file objects is forbidden
+        for kwargs in [
+                {"mode": "w"},
+                {"mode": "wb"},
+                {"mode": "wb", "buffering": 0},
+                {"mode": "r"},
+                {"mode": "rb"},
+                {"mode": "rb", "buffering": 0},
+                {"mode": "w+"},
+                {"mode": "w+b"},
+                {"mode": "w+b", "buffering": 0},
+            ]:
+            for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.open(support.TESTFN, **kwargs) as f:
+                    self.assertRaises(TypeError, pickle.dumps, f, protocol)
 
 class CMiscIOTest(MiscIOTest):
     io = io
