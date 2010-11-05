@@ -1370,10 +1370,10 @@ _PyGC_Fini(void)
         && garbage != NULL && PyList_GET_SIZE(garbage) > 0) {
         char *message;
         if (debug & DEBUG_UNCOLLECTABLE)
-            message = "gc: %" PY_FORMAT_SIZE_T "d uncollectable objects at " \
+            message = "gc: %zd uncollectable objects at " \
                 "shutdown";
         else
-            message = "gc: %" PY_FORMAT_SIZE_T "d uncollectable objects at " \
+            message = "gc: %zd uncollectable objects at " \
                 "shutdown; use gc.set_debug(gc.DEBUG_UNCOLLECTABLE) to list them";
         if (PyErr_WarnFormat(PyExc_ResourceWarning, 0, message,
                              PyList_GET_SIZE(garbage)) < 0)
