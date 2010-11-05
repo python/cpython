@@ -170,7 +170,8 @@ There are three built-in functions that are very useful when used with lists:
 ``filter(function, sequence)`` returns a sequence consisting of those items from
 the sequence for which ``function(item)`` is true. If *sequence* is a
 :class:`string` or :class:`tuple`, the result will be of the same type;
-otherwise, it is always a :class:`list`. For example, to compute some primes::
+otherwise, it is always a :class:`list`. For example, to compute primes up
+to 25::
 
    >>> def f(x): return x % 2 != 0 and x % 3 != 0
    ...
