@@ -1575,7 +1575,10 @@ class TNavigator(object):
         >>> turtle.left(90)
         >>> turtle.heading()
         90
-        >>> turtle.degrees(400.0)  # angle measurement in gon
+
+        Change angle measurement unit to grad (also known as gon,
+        grade, or gradian and equals 1/100-th of the right angle.)
+        >>> turtle.degrees(400.0)
         >>> turtle.heading()
         100
 

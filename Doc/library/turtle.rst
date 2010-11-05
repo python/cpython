@@ -1,9 +1,9 @@
-========================================
-:mod:`turtle` --- Turtle graphics for Tk
-========================================
+=================================
+:mod:`turtle` --- Turtle graphics
+=================================
 
 .. module:: turtle
-   :synopsis: Turtle graphics for Tk
+   :synopsis: An educational framework for simple graphics applications
 .. sectionauthor:: Gregor Lingl <gregor.lingl@aon.at>
 
 .. testsetup:: default
@@ -58,7 +58,7 @@ The object-oriented interface uses essentially two+two classes:
    or TurtleScreen as argument, so the RawTurtle objects know where to draw.
 
    Derived from RawTurtle is the subclass :class:`Turtle` (alias: :class:`Pen`),
-   which draws on "the" :class:`Screen` - instance which is automatically
+   which draws on "the" :class:`Screen` instance which is automatically
    created, if not already present.
 
    All methods of RawTurtle/Turtle also exist as functions, i.e. part of the
@@ -71,7 +71,7 @@ function derived from a Screen method is called.  An (unnamed) turtle object is
 automatically created whenever any of the functions derived from a Turtle method
 is called.
 
-To use multiple turtles an a screen one has to use the object-oriented interface.
+To use multiple turtles on a screen one has to use the object-oriented interface.
 
 .. note::
    In the following documentation the argument list for functions is given.
@@ -79,7 +79,7 @@ To use multiple turtles an a screen one has to use the object-oriented interface
    omitted here.
 
 
-Overview over available Turtle and Screen methods
+Overview of available Turtle and Screen methods
 =================================================
 
 Turtle methods
@@ -645,8 +645,8 @@ Tell Turtle's state
       >>> turtle.forward(100)
       >>> turtle.pos()
       (64.28,76.60)
-      >>> print(turtle.xcor())
-      64.2787609687
+      >>> print(round(turtle.xcor(), 5))
+      64.27876
 
 
 .. function:: ycor()
@@ -660,8 +660,8 @@ Tell Turtle's state
       >>> turtle.forward(100)
       >>> print(turtle.pos())
       (50.00,86.60)
-      >>> print(turtle.ycor())
-      86.6025403784
+      >>> print(round(turtle.ycor(), 5))
+      86.60254
 
 
 .. function:: heading()
@@ -714,7 +714,10 @@ Settings for measurement
       >>> turtle.left(90)
       >>> turtle.heading()
       90.0
-      >>> turtle.degrees(400.0)  # angle measurement in gon
+
+      Change angle measurement unit to grad (also known as gon,
+      grade, or gradian and equals 1/100-th of the right angle.)
+      >>> turtle.degrees(400.0)
       >>> turtle.heading()
       100.0
       >>> turtle.degrees(360)
@@ -810,20 +813,16 @@ Drawing state
       >>> sorted(turtle.pen().items())
       [('fillcolor', 'black'), ('outline', 1), ('pencolor', 'red'),
        ('pendown', True), ('pensize', 10), ('resizemode', 'noresize'),
-       ('shown', True), ('speed', 9), ('stretchfactor', (1, 1)), ('tilt', 0)]
+       ('shearfactor', 0.0), ('shown', True), ('speed', 9),
+       ('stretchfactor', (1.0, 1.0)), ('tilt', 0.0)]
       >>> penstate=turtle.pen()
       >>> turtle.color("yellow", "")
       >>> turtle.penup()
-      >>> sorted(turtle.pen().items())
-      [('fillcolor', ''), ('outline', 1), ('pencolor', 'yellow'),
-       ('pendown', False), ('pensize', 10), ('resizemode', 'noresize'),
-       ('shown', True), ('speed', 9), ('stretchfactor', (1, 1)), ('tilt', 0)]
+      >>> sorted(turtle.pen().items())[:3]
+      [('fillcolor', ''), ('outline', 1), ('pencolor', 'yellow')]
       >>> turtle.pen(penstate, fillcolor="green")
-      >>> sorted(turtle.pen().items())
-      [('fillcolor', 'green'), ('outline', 1), ('pencolor', 'red'),
-       ('pendown', True), ('pensize', 10), ('resizemode', 'noresize'),
-       ('shown', True), ('speed', 9), ('stretchfactor', (1, 1)), ('tilt', 0)]
-
+      >>> sorted(turtle.pen().items())[:3]
+      [('fillcolor', 'green'), ('outline', 1), ('pencolor', 'red')]
 
 .. function:: isdown()
 
@@ -884,10 +883,10 @@ Color control
        (0.2, 0.8, 0.5490196078431373)
        >>> colormode(255)
        >>> turtle.pencolor()
-       (51, 204, 140)
+       (51.0, 204.0, 140.0)
        >>> turtle.pencolor('#32c18f')
        >>> turtle.pencolor()
-       (50, 193, 143)
+       (50.0, 193.0, 143.0)
 
 
 .. function:: fillcolor(*args)
@@ -924,13 +923,13 @@ Color control
        'violet'
        >>> col = turtle.pencolor()
        >>> col
-       (50, 193, 143)
+       (50.0, 193.0, 143.0)
        >>> turtle.fillcolor(col)
        >>> turtle.fillcolor()
-       (50, 193, 143)
+       (50.0, 193.0, 143.0)
        >>> turtle.fillcolor('#ffffff')
        >>> turtle.fillcolor()
-       (255, 255, 255)
+       (255.0, 255.0, 255.0)
 
 
 .. function:: color(*args)
@@ -963,7 +962,7 @@ Color control
        ('red', 'green')
        >>> color("#285078", "#a0c8f0")
        >>> color()
-       ((40, 80, 120), (160, 200, 240))
+       ((40.0, 80.0, 120.0), (160.0, 200.0, 240.0))
 
 
 See also: Screen method :func:`colormode`.
@@ -1157,7 +1156,7 @@ Appearance
    .. doctest::
 
       >>> turtle.shapesize()
-      (1, 1, 1)
+      (1.0, 1.0, 1)
       >>> turtle.resizemode("user")
       >>> turtle.shapesize(5, 5, 12)
       >>> turtle.shapesize()
@@ -1184,7 +1183,7 @@ Appearance
        >>> turtle.shapesize(5,2)
        >>> turtle.shearfactor(0.5)
        >>> turtle.shearfactor()
-       >>> 0.5
+       0.5
 
 
 .. function:: tilt(angle)
@@ -1268,11 +1267,12 @@ Appearance
 
    .. doctest::
 
+      >>> turtle = Turtle()
       >>> turtle.shape("square")
       >>> turtle.shapesize(4,2)
       >>> turtle.shearfactor(-0.5)
       >>> turtle.shapetransform()
-      >>> (4.0, -1.0, -0.0, 2.0)
+      (4.0, -1.0, -0.0, 2.0)
 
 
 .. function:: get_shapepoly()
@@ -1456,8 +1456,8 @@ Special Turtle methods
 
 .. _compoundshapes:
 
-Excursus about the use of compound shapes
------------------------------------------
+Compound shapes
+---------------
 
 To use compound turtle shapes, which consist of several polygons of different
 color, you must use the helper class :class:`Shape` explicitly as described
@@ -1511,6 +1511,7 @@ Window control
    :param args: a color string or three numbers in the range 0..colormode or a
                 3-tuple of such numbers
 
+
    Set or return background color of the TurtleScreen.
 
    .. doctest::
@@ -1520,7 +1521,7 @@ Window control
       'orange'
       >>> screen.bgcolor("#800080")
       >>> screen.bgcolor()
-      (128, 0, 128)
+      (128.0, 0.0, 128.0)
 
 
 .. function:: bgpic(picname=None)
@@ -1548,7 +1549,7 @@ Window control
 
    .. note::
       This TurtleScreen method is available as a global function only under the
-      name ``clearscreen``.  The global function ``clear`` is another one
+      name ``clearscreen``.  The global function ``clear`` is a different one
       derived from the Turtle method ``clear``.
 
 
@@ -1643,10 +1644,12 @@ Animation control
    :param n: nonnegative integer
    :param delay: nonnegative integer
 
-   Turn turtle animation on/off and set delay for update drawings.  If *n* is
-   given, only each n-th regular screen update is really performed.  (Can be
-   used to accelerate the drawing of complex graphics.)  Second argument sets
-   delay value (see :func:`delay`).
+   Turn turtle animation on/off and set delay for update drawings.  If
+   *n* is given, only each n-th regular screen update is really
+   performed.  (Can be used to accelerate the drawing of complex
+   graphics.)  When called without arguments, returns the currently
+   stored value of n. Second argument sets delay value (see
+   :func:`delay`).
 
    .. doctest::
 
@@ -1790,8 +1793,8 @@ Input methods
    :param title: string
    :param prompt: string
    :param default: number (optional)
-   :param prompt: number (optional)
-   :param prompt: number (optional)
+   :param minval: number (optional)
+   :param maxval: number (optional)
 
    Pop up a dialog window for input of a number. title is the title of the
    dialog window, prompt is a text mostly describing what numerical information
@@ -1991,8 +1994,8 @@ Methods specific to Screen, not inherited from TurtleScreen
       >>> screen.title("Welcome to the turtle zoo!")
 
 
-The public classes of the module :mod:`turtle`
-==============================================
+Public classes
+==============
 
 
 .. class:: RawTurtle(canvas)
@@ -2323,7 +2326,7 @@ The demoscripts are:
 +----------------+------------------------------+-----------------------+
 | round_dance    | dancing turtles rotating     | compound shapes, clone|
 |                | pairwise in opposite         | shapesize, tilt,      |
-|                | direction                    | get_polyshape, update |
+|                | direction                    | get_shapepoly, update |
 +----------------+------------------------------+-----------------------+
 | tree           | a (graphical) breadth        | :func:`clone`         |
 |                | first tree (using generators)|                       |
