@@ -750,7 +750,7 @@ class Win32KillTests(unittest.TestCase):
         # Let the interpreter startup before we send signals. See #3137.
         count, max = 0, 20
         while count < max and proc.poll() is None:
-            if m[0] == '0':
+            if m[0] == '1':
                 break
             time.sleep(0.5)
             count += 1
