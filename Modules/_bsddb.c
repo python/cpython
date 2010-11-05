@@ -9976,8 +9976,21 @@ PyMODINIT_FUNC  PyInit__bsddb(void)    /* Note the two underscores */
     }
 #endif
 
-    PyDict_SetItemString(d, "api", py_api);
-    Py_DECREF(py_api);
+    /* Check error control */
+    /*
+    ** PyErr_NoMemory();
+    ** py_api = NULL;
+    */
+
+    if (py_api) {
+        PyDict_SetItemString(d, "api", py_api);
+        Py_DECREF(py_api);
+    } else { /* Something bad happened */
+        PyErr_WriteUnraisable(m);
+        PyErr_Warn(PyExc_RuntimeWarning,
+                "_bsddb/_pybsddb C API will be not available");
+        PyErr_Clear();
+    }
 
     /* Check for errors */
     if (PyErr_Occurred()) {
