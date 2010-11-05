@@ -592,15 +592,15 @@ class GeneralModuleTests(unittest.TestCase):
         finally:
             sock.close()
 
+    @unittest.skipUnless(os.name == "nt", "Windows specific")
     def test_sock_ioctl(self):
-        if os.name != "nt":
-            return
         self.assertTrue(hasattr(socket.socket, 'ioctl'))
         self.assertTrue(hasattr(socket, 'SIO_RCVALL'))
         self.assertTrue(hasattr(socket, 'RCVALL_ON'))
         self.assertTrue(hasattr(socket, 'RCVALL_OFF'))
         self.assertTrue(hasattr(socket, 'SIO_KEEPALIVE_VALS'))
         s = socket.socket()
+        self.addCleanup(s.close)
         self.assertRaises(ValueError, s.ioctl, -1, None)
         s.ioctl(socket.SIO_KEEPALIVE_VALS, (1, 100, 100))
 
