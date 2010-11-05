@@ -354,6 +354,7 @@ class _NNTPBase:
 
         # Inquire about capabilities (RFC 3977)
         self.nntp_version = 1
+        self.nntp_implementation = None
         try:
             resp, caps = self.capabilities()
         except NNTPPermanentError:
@@ -365,6 +366,8 @@ class _NNTPBase:
                 # The server can advertise several supported versions,
                 # choose the highest.
                 self.nntp_version = max(map(int, caps['VERSION']))
+            if 'IMPLEMENTATION' in caps:
+                self.nntp_implementation = ' '.join(caps['IMPLEMENTATION'])
 
     def getwelcome(self):
         """Get the welcome message from the server
