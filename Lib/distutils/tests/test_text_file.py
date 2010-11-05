@@ -58,28 +58,46 @@ class TextFileTestCase(support.TempdirManager, unittest.TestCase):
         finally:
             out_file.close()
 
-        in_file = TextFile (filename, strip_comments=0, skip_blanks=0,
-                            lstrip_ws=0, rstrip_ws=0)
-        test_input (1, "no processing", in_file, result1)
+        in_file = TextFile(filename, strip_comments=0, skip_blanks=0,
+                           lstrip_ws=0, rstrip_ws=0)
+        try:
+            test_input(1, "no processing", in_file, result1)
+        finally:
+            in_file.close()
 
-        in_file = TextFile (filename, strip_comments=1, skip_blanks=0,
-                            lstrip_ws=0, rstrip_ws=0)
-        test_input (2, "strip comments", in_file, result2)
+        in_file = TextFile(filename, strip_comments=1, skip_blanks=0,
+                           lstrip_ws=0, rstrip_ws=0)
+        try:
+            test_input(2, "strip comments", in_file, result2)
+        finally:
+            in_file.close()
 
-        in_file = TextFile (filename, strip_comments=0, skip_blanks=1,
-                            lstrip_ws=0, rstrip_ws=0)
-        test_input (3, "strip blanks", in_file, result3)
+        in_file = TextFile(filename, strip_comments=0, skip_blanks=1,
+                           lstrip_ws=0, rstrip_ws=0)
+        try:
+            test_input(3, "strip blanks", in_file, result3)
+        finally:
+            in_file.close()
 
-        in_file = TextFile (filename)
-        test_input (4, "default processing", in_file, result4)
+        in_file = TextFile(filename)
+        try:
+            test_input(4, "default processing", in_file, result4)
+        finally:
+            in_file.close()
 
-        in_file = TextFile (filename, strip_comments=1, skip_blanks=1,
-                            join_lines=1, rstrip_ws=1)
-        test_input (5, "join lines without collapsing", in_file, result5)
+        in_file = TextFile(filename, strip_comments=1, skip_blanks=1,
+                           join_lines=1, rstrip_ws=1)
+        try:
+            test_input(5, "join lines without collapsing", in_file, result5)
+        finally:
+            in_file.close()
 
-        in_file = TextFile (filename, strip_comments=1, skip_blanks=1,
-                            join_lines=1, rstrip_ws=1, collapse_join=1)
-        test_input (6, "join lines with collapsing", in_file, result6)
+        in_file = TextFile(filename, strip_comments=1, skip_blanks=1,
+                           join_lines=1, rstrip_ws=1, collapse_join=1)
+        try:
+            test_input(6, "join lines with collapsing", in_file, result6)
+        finally:
+            in_file.close()
 
 def test_suite():
     return unittest.makeSuite(TextFileTestCase)
