@@ -590,6 +590,7 @@ class PdbTestCase(unittest.TestCase):
             stdin=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             )
+        self.addCleanup(proc.stdout.close)
         stdout, stderr = proc.communicate(b'quit\n')
         self.assertNotIn(b'SyntaxError', stdout,
                          "Got a syntax error running test script under PDB")
