@@ -811,17 +811,15 @@ Test cases
    .. method:: assertEqual(first, second, msg=None)
 
       Test that *first* and *second* are equal.  If the values do not compare
-      equal, the test will fail with the explanation given by *msg*, or
-      :const:`None`.  Note that using :meth:`assertEqual` improves upon
-      doing the comparison as the first parameter to :meth:`assertTrue`: the
-      default value for *msg* include representations of both *first* and
-      *second*.
+      equal, the test will fail.
 
       In addition, if *first* and *second* are the exact same type and one of
       list, tuple, dict, set, frozenset or str or any type that a subclass
       registers with :meth:`addTypeEqualityFunc` the type specific equality
       function will be called in order to generate a more useful default
       error message.
+
+      If specified, *msg* will be used as the error message on failure.
 
       .. versionchanged:: 3.1
          Added the automatic calling of type specific equality function.
@@ -834,24 +832,18 @@ Test cases
    .. method:: assertNotEqual(first, second, msg=None)
 
       Test that *first* and *second* are not equal.  If the values do compare
-      equal, the test will fail with the explanation given by *msg*, or
-      :const:`None`.  Note that using :meth:`assertNotEqual` improves upon doing
-      the comparison as the first parameter to :meth:`assertTrue` is that the
-      default value for *msg* can be computed to include representations of both
-      *first* and *second*.
-
+      equal, the test will fail.
 
    .. method:: assertTrue(expr, msg=None)
+               assertFalse(expr, msg=None)
 
-      Signal a test failure if *expr* is false; the explanation for the failure
-      will be *msg* if given, otherwise it will be :const:`None`.
+      Test that *expr* is true (or false).
 
-
-   .. method:: assertFalse(expr, msg=None)
-
-      The inverse of the :meth:`assertTrue` method is the :meth:`assertFalse` method.
-      This signals a test failure if *expr* is true, with *msg* or :const:`None`
-      for the error message.
+      Note that this is equivalent to ``bool(expr) is True`` and not to ``expr
+      is True`` (use ``assertIs(expr, True)`` for the latter).  This method
+      should also be avoided when more specific methods are available (e.g.
+      ``assertEqual(a, b)`` instead of ``assertTrue(a == b)``), because they
+      provide a better error message in case of failure.
 
 
    .. method:: assertIs(first, second, msg=None)
@@ -873,10 +865,7 @@ Test cases
    .. method:: assertIn(first, second, msg=None)
                assertNotIn(first, second, msg=None)
 
-      Test that *first* is (or is not) in *second* with an explanatory error
-      message as appropriate.
-
-      If specified, *msg* will be used as the error message on failure.
+      Test that *first* is (or is not) in *second*.
 
       .. versionadded:: 3.1
 
@@ -893,7 +882,6 @@ Test cases
 
    It is also possible to check that exceptions and warnings are raised using
    the following methods:
-
 
    +---------------------------------------------------------+--------------------------------------+------------+
    | Method                                                  | Checks that                          | New in     |
@@ -1057,45 +1045,23 @@ Test cases
 
 
    .. method:: assertAlmostEqual(first, second, places=7, msg=None, delta=None)
+               assertNotAlmostEqual(first, second, places=7, msg=None, delta=None)
 
-      Test that *first* and *second* are approximately equal by computing the
-      difference, rounding to the given number of decimal *places* (default 7),
-      and comparing to zero.
-
-      Note that comparing a given number of decimal places is not the same as
-      comparing a given number of significant digits. If the values do not
-      compare equal, the test will fail with the explanation given by *msg*, or
-      :const:`None`.
+      Test that *first* and *second* are approximately (or not approximately)
+      equal by computing the difference, rounding to the given number of
+      decimal *places* (default 7), and comparing to zero.  Note that these
+      methods round the values to the given number of *decimal places* (i.e.
+      like the :func:`round` function) and not *significant digits*.
 
       If *delta* is supplied instead of *places* then the difference
-      between *first* and *second* must be less than *delta*.
+      between *first* and *second* must be less (or more) than *delta*.
 
       Supplying both *delta* and *places* raises a ``TypeError``.
 
       .. versionchanged:: 3.2
-         Objects that compare equal are automatically almost equal.
+         assertAlmostEqual automatically considers almost equal objects that compare equal.
+         assertNotAlmostEqual automatically fails if the objects compare equal.
          Added the ``delta`` keyword argument.
-
-
-   .. method:: assertNotAlmostEqual(first, second, places=7, msg=None, delta=None)
-
-      Test that *first* and *second* are not approximately equal by computing
-      the difference, rounding to the given number of decimal *places* (default
-      7), and comparing to zero.
-
-      Note that comparing a given number of decimal places is not the same as
-      comparing a given number of significant digits. If the values do not
-      compare equal, the test will fail with the explanation given by *msg*, or
-      :const:`None`.
-
-      If *delta* is supplied instead of *places* then the difference
-      between *first* and *second* must be more than *delta*.
-
-      Supplying both *delta* and *places* raises a ``TypeError``.
-
-      .. versionchanged:: 3.2
-         Objects that compare equal automatically fail.  Added the ``delta``
-         keyword argument.
 
 
    .. method:: assertGreater(first, second, msg=None)
@@ -1104,8 +1070,7 @@ Test cases
                assertLessEqual(first, second, msg=None)
 
       Test that *first* is respectively >, >=, < or <= than *second* depending
-      on the method name.  If not, the test will fail with an explanation
-      or with the explanation given by *msg*::
+      on the method name.  If not, the test will fail::
 
          >>> self.assertGreaterEqual(3, 4)
          AssertionError: "3" unexpectedly not greater than or equal to "4"
@@ -1114,23 +1079,16 @@ Test cases
 
 
    .. method:: assertRegexpMatches(text, regexp, msg=None)
+               assertNotRegexpMatches(text, regexp, msg=None)
 
-      Verifies that a *regexp* search matches *text*.  Fails with an error
-      message including the pattern and the *text*.  *regexp* may be
-      a regular expression object or a string containing a regular expression
-      suitable for use by :func:`re.search`.
-
-      .. versionadded:: 3.1
-
-
-   .. method:: assertNotRegexpMatches(text, regexp, msg=None)
-
-      Verifies that a *regexp* search does not match *text*.  Fails with an error
-      message including the pattern and the part of *text* that matches.  *regexp*
+      Test that a *regexp* search matches (or does not match) *text*.  In case
+      of failure, the error message will include the pattern and the *text* (or
+      the pattern and the part of *text* that unexpectedly matched).  *regexp*
       may be a regular expression object or a string containing a regular
       expression suitable for use by :func:`re.search`.
 
-      .. versionadded:: 3.2
+      .. versionadded:: 3.1 :meth:`~TestCase.assertRegexpMatches`
+      .. versionadded:: 3.2 :meth:`~TestCase.assertNotRegexpMatches`
 
 
    .. method:: assertDictContainsSubset(expected, actual, msg=None)
@@ -1138,8 +1096,6 @@ Test cases
       Tests whether the key/value pairs in dictionary *actual* are a
       superset of those in *expected*.  If not, an error message listing
       the missing keys and mismatched values is generated.
-
-      If specified, *msg* will be used as the error message on failure.
 
       .. versionadded:: 3.1
 
@@ -1156,8 +1112,6 @@ Test cases
       sorted(actual))`` but it works with sequences of unhashable objects as
       well.
 
-      If specified, *msg* will be used as the error message on failure.
-
       .. versionadded:: 3.2
 
 
@@ -1172,8 +1126,6 @@ Test cases
       but it works with sequences of unhashable objects as well. Because
       duplicates are ignored, this method has been deprecated in favour of
       :meth:`assertItemsEqual`.
-
-      If specified, *msg* will be used as the error message on failure.
 
       .. versionadded:: 3.1
       .. deprecated:: 3.2
@@ -1214,8 +1166,6 @@ Test cases
       will be included in the error message. This method is used by default
       when comparing strings with :meth:`assertEqual`.
 
-      If specified, *msg* will be used as the error message on failure.
-
       .. versionadded:: 3.1
 
 
@@ -1225,8 +1175,6 @@ Test cases
       *seq1* and *seq2* must be instances of *seq_type* or a failure will
       be raised.  If the sequences are different an error message is
       constructed that shows the difference between the two.
-
-      If specified, *msg* will be used as the error message on failure.
 
       This method is used to implement :meth:`assertListEqual` and
       :meth:`assertTupleEqual`.
@@ -1243,8 +1191,6 @@ Test cases
       These methods are used by default when comparing lists or tuples with
       :meth:`assertEqual`.
 
-      If specified, *msg* will be used as the error message on failure.
-
       .. versionadded:: 3.1
 
 
@@ -1257,8 +1203,6 @@ Test cases
       Fails if either of *set1* or *set2* does not have a :meth:`set.difference`
       method.
 
-      If specified, *msg* will be used as the error message on failure.
-
       .. versionadded:: 3.1
 
 
@@ -1268,8 +1212,6 @@ Test cases
       constructed that shows the differences in the dictionaries. This
       method will be used by default to compare dictionaries in
       calls to :meth:`assertEqual`.
-
-      If specified, *msg* will be used as the error message on failure.
 
       .. versionadded:: 3.1
 
