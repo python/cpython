@@ -178,6 +178,7 @@ zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''')
         (p, e) = self.STRINGS[-1]
         process = subprocess.Popen([sys.executable, "-mquopri"],
                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self.addCleanup(process.stdout.close)
         cout, cerr = process.communicate(p)
         # On Windows, Python will output the result to stdout using
         # CRLF, as the mode of stdout is text mode. To compare this
@@ -188,6 +189,7 @@ zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''')
         (p, e) = self.STRINGS[-1]
         process = subprocess.Popen([sys.executable, "-mquopri", "-d"],
                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self.addCleanup(process.stdout.close)
         cout, cerr = process.communicate(e)
         self.assertEqual(cout.splitlines(), p.splitlines())
 
