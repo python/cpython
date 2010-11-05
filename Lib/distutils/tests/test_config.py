@@ -105,8 +105,12 @@ class PyPIRCCommandTestCase(support.TempdirManager,
         self.assertTrue(not os.path.exists(rc))
         cmd._store_pypirc('tarek', 'xxx')
         self.assertTrue(os.path.exists(rc))
-        content = open(rc).read()
-        self.assertEquals(content, WANTED)
+        f = open(rc)
+        try:
+            content = f.read()
+            self.assertEquals(content, WANTED)
+        finally:
+            f.close()
 
 def test_suite():
     return unittest.makeSuite(PyPIRCCommandTestCase)

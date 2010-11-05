@@ -779,14 +779,16 @@ class CCompiler:
             library_dirs = []
         fd, fname = tempfile.mkstemp(".c", funcname, text=True)
         f = os.fdopen(fd, "w")
-        for incl in includes:
-            f.write("""#include "%s"\n""" % incl)
-        f.write("""\
+        try:
+            for incl in includes:
+                f.write("""#include "%s"\n""" % incl)
+            f.write("""\
 main (int argc, char **argv) {
     %s();
 }
 """ % funcname)
-        f.close()
+        finally:
+            f.close()
         try:
             objects = self.compile([fname], include_dirs=include_dirs)
         except CompileError:

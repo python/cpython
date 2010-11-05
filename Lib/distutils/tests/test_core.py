@@ -52,7 +52,11 @@ class CoreTestCase(support.EnvironGuard, unittest.TestCase):
             shutil.rmtree(path)
 
     def write_setup(self, text, path=test.support.TESTFN):
-        open(path, "w").write(text)
+        f = open(path, "w")
+        try:
+            f.write(text)
+        finally:
+            f.close()
         return path
 
     def test_run_setup_provides_file(self):

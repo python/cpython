@@ -1012,9 +1012,11 @@ class DistributionMetadata:
     def write_pkg_info(self, base_dir):
         """Write the PKG-INFO file into the release tree.
         """
-        pkg_info = open( os.path.join(base_dir, 'PKG-INFO'), 'w')
-        self.write_pkg_file(pkg_info)
-        pkg_info.close()
+        pkg_info = open(os.path.join(base_dir, 'PKG-INFO'), 'w')
+        try:
+            self.write_pkg_file(pkg_info)
+        finally:
+            pkg_info.close()
 
     def write_pkg_file(self, file):
         """Write the PKG-INFO format data to a file object.

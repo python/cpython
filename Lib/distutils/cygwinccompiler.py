@@ -350,11 +350,14 @@ def check_config_h():
     # let's see if __GNUC__ is mentioned in python.h
     fn = sysconfig.get_config_h_filename()
     try:
-        with open(fn) as config_h:
+        config_h = open(fn)
+        try:
             if "__GNUC__" in config_h.read():
                 return CONFIG_H_OK, "'%s' mentions '__GNUC__'" % fn
             else:
                 return CONFIG_H_NOTOK, "'%s' does not mention '__GNUC__'" % fn
+        finally:
+            config_h.close()
     except IOError as exc:
         return (CONFIG_H_UNCERTAIN,
                 "couldn't read '%s': %s" % (fn, exc.strerror))

@@ -88,8 +88,10 @@ class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
         mkpath(self.target, verbose=0)
         a_file = os.path.join(self.target, 'ok.txt')
         f = open(a_file, 'w')
-        f.write('some content')
-        f.close()
+        try:
+            f.write('some content')
+        finally:
+            f.close()
 
         wanted = ['copying %s -> %s' % (a_file, self.target2)]
         copy_tree(self.target, self.target2, verbose=1)
