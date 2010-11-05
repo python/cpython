@@ -357,6 +357,9 @@ class ProcessTestCase(BaseTestCase):
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
+        self.addCleanup(p.stdout.close)
+        self.addCleanup(p.stderr.close)
+        self.addCleanup(p.stdin.close)
         (stdout, stderr) = p.communicate(b"banana")
         self.assertEqual(stdout, b"banana")
         self.assertStderrEqual(stderr, b"pineapple")
@@ -405,6 +408,9 @@ class ProcessTestCase(BaseTestCase):
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
+        self.addCleanup(p.stdout.close)
+        self.addCleanup(p.stderr.close)
+        self.addCleanup(p.stdin.close)
         string_to_write = b"abc"*pipe_buf
         (stdout, stderr) = p.communicate(string_to_write)
         self.assertEqual(stdout, string_to_write)
@@ -417,6 +423,9 @@ class ProcessTestCase(BaseTestCase):
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
+        self.addCleanup(p.stdout.close)
+        self.addCleanup(p.stderr.close)
+        self.addCleanup(p.stdin.close)
         p.stdin.write(b"banana")
         (stdout, stderr) = p.communicate(b"split")
         self.assertEqual(stdout, b"bananasplit")
@@ -459,6 +468,8 @@ class ProcessTestCase(BaseTestCase):
                               'sys.stdout.write("\\nline6");'],
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                              universal_newlines=1)
+        self.addCleanup(p.stdout.close)
+        self.addCleanup(p.stderr.close)
         (stdout, stderr) = p.communicate()
         self.assertEqual(stdout, "line1\nline2\nline3\nline4\nline5\nline6")
 
@@ -1004,6 +1015,7 @@ class Win32ProcessTestCase(BaseTestCase):
         p = subprocess.Popen(["set"], shell=1,
                              stdout=subprocess.PIPE,
                              env=newenv)
+        self.addCleanup(p.stdout.close)
         self.assertIn(b"physalis", p.stdout.read())
 
     def test_shell_string(self):
@@ -1013,6 +1025,7 @@ class Win32ProcessTestCase(BaseTestCase):
         p = subprocess.Popen("set", shell=1,
                              stdout=subprocess.PIPE,
                              env=newenv)
+        self.addCleanup(p.stdout.close)
         self.assertIn(b"physalis", p.stdout.read())
 
     def test_call_string(self):
@@ -1032,6 +1045,9 @@ class Win32ProcessTestCase(BaseTestCase):
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
+        self.addCleanup(p.stdout.close)
+        self.addCleanup(p.stderr.close)
+        self.addCleanup(p.stdin.close)
         # Wait for the interpreter to be completely initialized before
         # sending any signal.
         p.stdout.read(1)
@@ -1142,6 +1158,7 @@ class CommandsWithSpaces (BaseTestCase):
     def with_spaces(self, *args, **kwargs):
         kwargs['stdout'] = subprocess.PIPE
         p = subprocess.Popen(*args, **kwargs)
+        self.addCleanup(p.stdout.close)
         self.assertEqual(
           p.stdout.read ().decode("mbcs"),
           "2 [%r, 'ab cd']" % self.fname
