@@ -48,8 +48,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    connection attempt (if not specified, the global default timeout setting
    will be used).
 
-   .. versionchanged:: 2.6
-      *timeout* was added.
+   .. versionadded:: 2.6
 
 
 .. class:: LMTP([host[, port[, local_hostname]]])
