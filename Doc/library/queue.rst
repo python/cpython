@@ -24,6 +24,11 @@ the first retrieved (operating like a stack).  With a priority queue,
 the entries are kept sorted (using the :mod:`heapq` module) and the
 lowest valued entry is retrieved first.
 
+.. seealso::
+
+   Latest version of the `queue module Python source code
+   <http://svn.python.org/view/python/branches/release27-maint/Lib/queue.py?view=markup>`_
+
 The :mod:`Queue` module defines the following classes and exceptions:
 
 .. class:: Queue(maxsize=0)

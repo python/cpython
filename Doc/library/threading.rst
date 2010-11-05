@@ -26,6 +26,10 @@ The :mod:`dummy_threading` module is provided for situations where
    Starting with Python 2.5, several Thread methods raise :exc:`RuntimeError`
    instead of :exc:`AssertionError` if called erroneously.
 
+.. seealso::
+
+   Latest version of the `threading module Python source code
+   <http://svn.python.org/view/python/branches/release27-maint/Lib/threading.py?view=markup>`_
 
 This module defines the following functions and objects:
 
