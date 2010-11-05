@@ -178,7 +178,7 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
     for (f = format; *f; f++) {
         if (*f == '%') {
             const char* p = f;
-            while (*++f && *f != '%' && !ISALPHA(*f))
+            while (*++f && *f != '%' && !Py_ISALPHA(*f))
                 ;
 
             /* skip the 'l' or 'z' in {%ld, %zd, %lu, %zu} since
@@ -247,15 +247,15 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
             /* parse the width.precision part (we're only
                interested in the precision value, if any) */
             n = 0;
-            while (ISDIGIT(*f))
+            while (Py_ISDIGIT(*f))
                 n = (n*10) + *f++ - '0';
             if (*f == '.') {
                 f++;
                 n = 0;
-                while (ISDIGIT(*f))
+                while (Py_ISDIGIT(*f))
                     n = (n*10) + *f++ - '0';
             }
-            while (*f && *f != '%' && !ISALPHA(*f))
+            while (*f && *f != '%' && !Py_ISALPHA(*f))
                 f++;
             /* handle the long flag, but only for %ld and %lu.
                others can be added when necessary. */
@@ -446,22 +446,22 @@ PyObject *PyBytes_DecodeEscape(const char *s,
             *p++ = c;
             break;
         case 'x':
-            if (s+1 < end && ISXDIGIT(s[0]) && ISXDIGIT(s[1])) {
+            if (s+1 < end && Py_ISXDIGIT(s[0]) && Py_ISXDIGIT(s[1])) {
                 unsigned int x = 0;
                 c = Py_CHARMASK(*s);
                 s++;
-                if (ISDIGIT(c))
+                if (Py_ISDIGIT(c))
                     x = c - '0';
-                else if (ISLOWER(c))
+                else if (Py_ISLOWER(c))
                     x = 10 + c - 'a';
                 else
                     x = 10 + c - 'A';
                 x = x << 4;
                 c = Py_CHARMASK(*s);
                 s++;
-                if (ISDIGIT(c))
+                if (Py_ISDIGIT(c))
                     x += c - '0';
-                else if (ISLOWER(c))
+                else if (Py_ISLOWER(c))
                     x += 10 + c - 'a';
                 else
                     x += 10 + c - 'A';
@@ -1406,7 +1406,7 @@ do_strip(PyBytesObject *self, int striptype)
 
     i = 0;
     if (striptype != RIGHTSTRIP) {
-        while (i < len && ISSPACE(s[i])) {
+        while (i < len && Py_ISSPACE(s[i])) {
             i++;
         }
     }
@@ -1415,7 +1415,7 @@ do_strip(PyBytesObject *self, int striptype)
     if (striptype != LEFTSTRIP) {
         do {
             j--;
-        } while (j >= i && ISSPACE(s[j]));
+        } while (j >= i && Py_ISSPACE(s[j]));
         j++;
     }
 
@@ -2347,11 +2347,11 @@ hex_digit_to_int(Py_UNICODE c)
 {
     if (c >= 128)
         return -1;
-    if (ISDIGIT(c))
+    if (Py_ISDIGIT(c))
         return c - '0';
     else {
-        if (ISUPPER(c))
-            c = TOLOWER(c);
+        if (Py_ISUPPER(c))
+            c = Py_TOLOWER(c);
         if (c >= 'a' && c <= 'f')
             return c - 'a' + 10;
     }

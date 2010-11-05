@@ -757,9 +757,9 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                  continue;
              if (*(f+1)=='S' || *(f+1)=='R' || *(f+1)=='A')
                  ++callcount;
-             while (ISDIGIT((unsigned)*f))
+             while (Py_ISDIGIT((unsigned)*f))
                  width = (width*10) + *f++ - '0';
-             while (*++f && *f != '%' && !ISALPHA((unsigned)*f))
+             while (*++f && *f != '%' && !Py_ISALPHA((unsigned)*f))
                  ;
              if (*f == 's')
                  ++callcount;
@@ -790,9 +790,9 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 #endif
             const char* p = f;
             width = 0;
-            while (ISDIGIT((unsigned)*f))
+            while (Py_ISDIGIT((unsigned)*f))
                 width = (width*10) + *f++ - '0';
-            while (*++f && *f != '%' && !ISALPHA((unsigned)*f))
+            while (*++f && *f != '%' && !Py_ISALPHA((unsigned)*f))
                 ;
 
             /* skip the 'l' or 'z' in {%ld, %zd, %lu, %zu} since
@@ -965,12 +965,12 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
             zeropad = (*f == '0');
             /* parse the width.precision part */
             width = 0;
-            while (ISDIGIT((unsigned)*f))
+            while (Py_ISDIGIT((unsigned)*f))
                 width = (width*10) + *f++ - '0';
             precision = 0;
             if (*f == '.') {
                 f++;
-                while (ISDIGIT((unsigned)*f))
+                while (Py_ISDIGIT((unsigned)*f))
                     precision = (precision*10) + *f++ - '0';
             }
             /* Handle %ld, %lu, %lld and %llu. */
@@ -1419,8 +1419,8 @@ normalize_encoding(const char *encoding,
     while (*e) {
         if (l == l_end)
             return 0;
-        if (ISUPPER(*e)) {
-            *l++ = TOLOWER(*e++);
+        if (Py_ISUPPER(*e)) {
+            *l++ = Py_TOLOWER(*e++);
         }
         else if (*e == '_') {
             *l++ = '-';
@@ -3790,7 +3790,7 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
             }
             for (i = 0; i < digits; ++i) {
                 c = (unsigned char) s[i];
-                if (!ISXDIGIT(c)) {
+                if (!Py_ISXDIGIT(c)) {
                     endinpos = (s+i+1)-starts;
                     if (unicode_decode_call_errorhandler(
                             errors, &errorHandler,
@@ -4156,7 +4156,7 @@ PyObject *PyUnicode_DecodeRawUnicodeEscape(const char *s,
         outpos = p-PyUnicode_AS_UNICODE(v);
         for (x = 0, i = 0; i < count; ++i, ++s) {
             c = (unsigned char)*s;
-            if (!ISXDIGIT(c)) {
+            if (!Py_ISXDIGIT(c)) {
                 endinpos = s-starts;
                 if (unicode_decode_call_errorhandler(
                         errors, &errorHandler,
