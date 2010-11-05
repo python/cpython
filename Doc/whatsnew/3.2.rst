@@ -488,6 +488,12 @@ New, Improved, and Deprecated Modules
   5-tuple), and :data:`ssl.OPENSSL_VERSION_NUMBER` (an integer).  (Added by
   Antoine Pitrou; :issue:`8321`.)
 
+* :class:`http.client.HTTPSConnection`, :class:`urllib.request.HTTPSHandler`
+  and :func:`urllib.request.urlopen` now take optional arguments to allow for
+  server certificate checking against a set of Certificate Authorities,
+  as recommended in public uses of HTTPS.
+  (Added by Antoine Pitrou, :issue:`9003`.)
+
 * Instances of :class:`unittest.TestCase` have two new methods
   :meth:`~unittest.TestCase.assertWarns` and :meth:`~unittest.TestCase.assertWarnsRegexp`
   to check that a given warning type was triggered by the code under test::
