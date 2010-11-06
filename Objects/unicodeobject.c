@@ -9026,12 +9026,14 @@ unicode_endswith(PyUnicodeObject *self,
 PyDoc_STRVAR(format__doc__,
              "S.format(*args, **kwargs) -> str\n\
 \n\
-");
+Return a formatted version of S, using substitutions from args and kwargs.\n\
+The substitutions are identified by braces ('{' and '}').");
 
 PyDoc_STRVAR(format_map__doc__,
              "S.format_map(mapping) -> str\n\
 \n\
-");
+Return a formatted version of S, using substitutions from mapping.\n\
+The substitutions are identified by braces ('{' and '}').");
 
 static PyObject *
 unicode__format__(PyObject* self, PyObject* args)
@@ -9049,7 +9051,7 @@ unicode__format__(PyObject* self, PyObject* args)
 PyDoc_STRVAR(p_format__doc__,
              "S.__format__(format_spec) -> str\n\
 \n\
-");
+Return a formatted version of S as described by format_spec.");
 
 static PyObject *
 unicode__sizeof__(PyUnicodeObject *v)
