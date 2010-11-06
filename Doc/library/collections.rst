@@ -19,25 +19,13 @@ This module implements specialized container datatypes providing alternatives to
 Python's general purpose built-in containers, :class:`dict`, :class:`list`,
 :class:`set`, and :class:`tuple`.
 
-=====================   ====================================================================
-:func:`namedtuple`      factory function for creating tuple subclasses with named fields
-:class:`deque`          list-like container with fast appends and pops on either end
-:class:`Counter`        dict subclass for counting hashable objects
-:class:`OrderedDict`    dict subclass that remembers the order entries were added
-:class:`defaultdict`    dict subclass that calls a factory function to supply missing values
-=====================   ====================================================================
-
-.. versionchanged:: 2.4
-   Added :class:`deque`.
-
-.. versionchanged:: 2.5
-   Added :class:`defaultdict`.
-
-.. versionchanged:: 2.6
-   Added :func:`namedtuple` and added abstract base classes.
-
-.. versionchanged:: 2.7
-   Added :class:`Counter` and :class:`OrderedDict`.
+=====================   ====================================================================  ===========================
+:func:`namedtuple`      factory function for creating tuple subclasses with named fields      .. versionadded:: 2.6
+:class:`deque`          list-like container with fast appends and pops on either end          .. versionadded:: 2.4
+:class:`Counter`        dict subclass for counting hashable objects                           .. versionadded:: 2.7
+:class:`OrderedDict`    dict subclass that remembers the order entries were added             .. versionadded:: 2.7
+:class:`defaultdict`    dict subclass that calls a factory function to supply missing values  .. versionadded:: 2.5
+=====================   ====================================================================  ===========================
 
 In addition to containers, the collections module provides some ABCs
 (abstract base classes) that can be used to test whether a class
