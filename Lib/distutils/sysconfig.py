@@ -453,32 +453,6 @@ def _init_nt():
     _config_vars = g
 
 
-def _init_mac():
-    """Initialize the module as appropriate for Macintosh systems"""
-    g = {}
-    # set basic install directories
-    g['LIBDEST'] = get_python_lib(plat_specific=0, standard_lib=1)
-    g['BINLIBDEST'] = get_python_lib(plat_specific=1, standard_lib=1)
-
-    # XXX hmmm.. a normal install puts include files here
-    g['INCLUDEPY'] = get_python_inc(plat_specific=0)
-
-    import MacOS
-    if not hasattr(MacOS, 'runtimemodel'):
-        g['SO'] = '.ppc.slb'
-    else:
-        g['SO'] = '.%s.slb' % MacOS.runtimemodel
-
-    # XXX are these used anywhere?
-    g['install_lib'] = os.path.join(EXEC_PREFIX, "Lib")
-    g['install_platlib'] = os.path.join(EXEC_PREFIX, "Mac", "Lib")
-
-    # These are used by the extension module build
-    g['srcdir'] = ':'
-    global _config_vars
-    _config_vars = g
-
-
 def _init_os2():
     """Initialize the module as appropriate for OS/2"""
     g = {}
