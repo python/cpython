@@ -16,6 +16,11 @@ example of the algorithm (the boundary conditions are already right!).
 
 .. versionadded:: 2.1
 
+.. seealso::
+
+   Latest version of the `bisect module Python source code
+   <http://svn.python.org/view/python/branches/release27-maint/Lib/bisect.py?view=markup>`_
+
 The following functions are provided:
 
 

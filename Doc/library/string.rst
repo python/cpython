@@ -17,6 +17,11 @@ template strings or the ``%`` operator described in the
 :ref:`string-formatting` section. Also, see the :mod:`re` module for
 string functions based on regular expressions.
 
+.. seealso::
+
+   Latest version of the `string module Python source code
+   <http://svn.python.org/view/python/branches/release27-maint/Lib/string.py?view=markup>`_
+
 
 String constants
 ----------------

@@ -11,6 +11,11 @@ The :mod:`filecmp` module defines functions to compare files and directories,
 with various optional time/correctness trade-offs. For comparing files,
 see also the :mod:`difflib` module.
 
+.. seealso::
+
+   Latest version of the `filecmp Python source code
+   <http://svn.python.org/view/python/branches/release27-maint/Lib/filecmp.py?view=markup>`_
+
 The :mod:`filecmp` module defines the following functions:
 
 

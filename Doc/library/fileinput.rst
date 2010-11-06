@@ -44,6 +44,11 @@ hook must be a function that takes two arguments, *filename* and *mode*, and
 returns an accordingly opened file-like object. Two useful hooks are already
 provided by this module.
 
+.. seealso::
+
+   Latest version of the `fileinput Python source code
+   <http://svn.python.org/view/python/branches/release27-maint/Lib/fileinput.py?view=markup>`_
+
 The following function is the primary interface of this module:
 
 

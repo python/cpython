@@ -33,6 +33,11 @@ following URL schemes: ``file``, ``ftp``, ``gopher``, ``hdl``, ``http``,
 .. versionadded:: 2.5
    Support for the ``sftp`` and ``sips`` schemes.
 
+.. seealso::
+
+   Latest version of the `urlparse module Python source code
+   <http://svn.python.org/view/python/branches/release27-maint/Lib/urlparse.py?view=markup>`_
+
 The :mod:`urlparse` module defines the following functions:
 
 

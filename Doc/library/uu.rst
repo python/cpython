@@ -22,6 +22,11 @@ that, when required, the mode is ``'rb'`` or ``'wb'`` on Windows.
 
 This code was contributed by Lance Ellinghouse, and modified by Jack Jansen.
 
+.. seealso::
+
+   Latest version of the `uu module Python source code
+   <http://svn.python.org/view/python/branches/release27-maint/Lib/uu.py?view=markup>`_
+
 The :mod:`uu` module defines the following functions:
 
 
