@@ -235,15 +235,6 @@ def change_root (new_root, pathname):
             path = path[1:]
         return os.path.join(new_root, path)
 
-    elif os.name == 'mac':
-        if not os.path.isabs(pathname):
-            return os.path.join(new_root, pathname)
-        else:
-            # Chop off volume name from start of path
-            elements = pathname.split(":", 1)
-            pathname = ":" + elements[1]
-            return os.path.join(new_root, pathname)
-
     else:
         raise DistutilsPlatformError("nothing known about platform '%s'" % os.name)
 
