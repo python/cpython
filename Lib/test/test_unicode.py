@@ -720,49 +720,11 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('{a}'.format_map(InternalMapping()), 'hello')
 
 
-        # classes we'll use for testing
         class C:
             def __init__(self, x=100):
                 self._x = x
             def __format__(self, spec):
                 return spec
-
-        class D:
-            def __init__(self, x):
-                self.x = x
-            def __format__(self, spec):
-                return str(self.x)
-
-        # class with __str__, but no __format__
-        class E:
-            def __init__(self, x):
-                self.x = x
-            def __str__(self):
-                return 'E(' + self.x + ')'
-
-        # class with __repr__, but no __format__ or __str__
-        class F:
-            def __init__(self, x):
-                self.x = x
-            def __repr__(self):
-                return 'F(' + self.x + ')'
-
-        # class with __format__ that forwards to string, for some format_spec's
-        class G:
-            def __init__(self, x):
-                self.x = x
-            def __str__(self):
-                return "string is " + self.x
-            def __format__(self, format_spec):
-                if format_spec == 'd':
-                    return 'G(' + self.x + ')'
-                return object.__format__(self, format_spec)
-
-        # class that returns a bad type from __format__
-        class H:
-            def __format__(self, format_spec):
-                return 1.0
-
         self.assertEqual('{foo._x}'.format_map({'foo': C(20)}), '20')
 
         # test various errors
