@@ -65,6 +65,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10229: Fix caching error in gettext.
+
 - Issue #10252: Close file objects in a timely manner in distutils code and
   tests.  Patch by Brian Brazil, completed by Éric Araujo.
 
