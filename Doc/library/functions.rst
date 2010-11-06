@@ -1117,7 +1117,7 @@ are always available.  They are listed here in alphabetical order.
    total.  *start* defaults to ``0``. The *iterable*'s items are normally numbers,
    and the start value is not allowed to be a string.
 
-   For some use cases, there a good alternatives to :func:`sum`.
+   For some use cases, there are good alternatives to :func:`sum`.
    The preferred, fast way to concatenate a sequence of strings is by calling
    ``''.join(sequence)``.  To add floating point values with extended precision,
    see :func:`math.fsum`\.  To concatenate a series of iterables, consider using
