@@ -377,9 +377,7 @@ def _find_exe_version(cmd):
     try:
         out_string = out.read()
     finally:
-        out.stdin.close()
-        out.stdout.close()
-        out.stderr.close()
+        out.close()
     result = RE_VERSION.search(out_string)
     if result is None:
         return None
