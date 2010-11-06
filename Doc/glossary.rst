@@ -362,6 +362,26 @@ Glossary
       value is assigned.  ``**`` is used to accept or pass a dictionary of
       keyword arguments.  See :term:`argument`.
 
+   key function
+      A key function or collation function is a callable that returns a value
+      used for sorting or ordering.  For example, :func:`locale.strxfrm` is
+      used to produce a sort key that is aware of locale specific sort
+      conventions.
+
+      A number of tools in Python accept key functions to control how elements
+      are ordered or grouped.  They include :func:`min`, :func:`max`,
+      :func:`sorted`, :meth:`list.sort`, :func:`heapq.nsmallest`,
+      :func:`heapq.nlargest`, and :func:`itertools.groupby`.
+
+      There are several ways to create a key function.  For example. the
+      :meth:`str.lower` method can serve as a key function for case insensitive
+      sorts.  Alternatively, an ad-hoc key function can be built from a
+      :keyword:`lambda` expression such as ``lambda r: (r[0], r[2])``.  Also,
+      the :mod:`operator` module provides three key function constuctors:
+      :func:`~operator.attrgetter`, :func:`~operator.itemgetter`, and
+      :func:`~operator.methodcaller`.  See the :ref:`sorting-howto` for
+      examples of how to create and use key functions.
+
    lambda
       An anonymous inline function consisting of a single :term:`expression`
       which is evaluated when the function is called.  The syntax to create
