@@ -10,8 +10,10 @@
 """
 
 ISSUE_URI = 'http://bugs.python.org/issue%s'
+SOURCE_URI = 'http://svn.python.org/view/python/branches/py3k/%s?view=markup'
 
 from docutils import nodes, utils
+from sphinx.util.nodes import split_explicit_title
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
 from docutils.parsers.rst.states import Body
@@ -41,6 +43,16 @@ def issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
     issue = utils.unescape(text)
     text = 'issue ' + issue
     refnode = nodes.reference(text, text, refuri=ISSUE_URI % issue)
+    return [refnode], []
+
+
+# Support for linking to Python source files easily
+
+def source_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
+    has_t, title, target = split_explicit_title(text)
+    title = utils.unescape(title)
+    target = utils.unescape(target)
+    refnode = nodes.reference(title, title, refuri=SOURCE_URI % target)
     return [refnode], []
 
 
@@ -214,6 +226,7 @@ def parse_pdb_command(env, sig, signode):
 
 def setup(app):
     app.add_role('issue', issue_role)
+    app.add_role('source', source_role)
     app.add_directive('impl-detail', ImplementationDetail)
     app.add_builder(PydocTopicsBuilder)
     app.add_builder(suspicious.CheckSuspiciousMarkupBuilder)
