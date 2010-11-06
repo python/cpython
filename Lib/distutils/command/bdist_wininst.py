@@ -356,5 +356,9 @@ class bdist_wininst (Command):
             sfix = ''
 
         filename = os.path.join(directory, "wininst-%.1f%s.exe" % (bv, sfix))
-        return open(filename, "rb").read()
+        f = open(filename, "rb")
+        try:
+            return f.read()
+        finally:
+            f.close()
 # class bdist_wininst

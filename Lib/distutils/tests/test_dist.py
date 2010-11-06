@@ -102,29 +102,29 @@ class DistributionTestCase(support.TempdirManager,
 
     def test_command_packages_configfile(self):
         sys.argv.append("build")
+        self.addCleanup(os.unlink, TESTFN)
         f = open(TESTFN, "w")
         try:
             print >>f, "[global]"
             print >>f, "command_packages = foo.bar, splat"
-            f.close()
-            d = self.create_distribution([TESTFN])
-            self.assertEqual(d.get_command_packages(),
-                             ["distutils.command", "foo.bar", "splat"])
-
-            # ensure command line overrides config:
-            sys.argv[1:] = ["--command-packages", "spork", "build"]
-            d = self.create_distribution([TESTFN])
-            self.assertEqual(d.get_command_packages(),
-                             ["distutils.command", "spork"])
-
-            # Setting --command-packages to '' should cause the default to
-            # be used even if a config file specified something else:
-            sys.argv[1:] = ["--command-packages", "", "build"]
-            d = self.create_distribution([TESTFN])
-            self.assertEqual(d.get_command_packages(), ["distutils.command"])
-
         finally:
-            os.unlink(TESTFN)
+            f.close()
+
+        d = self.create_distribution([TESTFN])
+        self.assertEqual(d.get_command_packages(),
+                         ["distutils.command", "foo.bar", "splat"])
+
+        # ensure command line overrides config:
+        sys.argv[1:] = ["--command-packages", "spork", "build"]
+        d = self.create_distribution([TESTFN])
+        self.assertEqual(d.get_command_packages(),
+                         ["distutils.command", "spork"])
+
+        # Setting --command-packages to '' should cause the default to
+        # be used even if a config file specified something else:
+        sys.argv[1:] = ["--command-packages", "", "build"]
+        d = self.create_distribution([TESTFN])
+        self.assertEqual(d.get_command_packages(), ["distutils.command"])
 
     def test_write_pkg_file(self):
         # Check DistributionMetadata handling of Unicode fields
@@ -341,8 +341,10 @@ class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
         temp_dir = self.mkdtemp()
         user_filename = os.path.join(temp_dir, user_filename)
         f = open(user_filename, 'w')
-        f.write('.')
-        f.close()
+        try:
+            f.write('.')
+        finally:
+            f.close()
 
         try:
             dist = Distribution()
