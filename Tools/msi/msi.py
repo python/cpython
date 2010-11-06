@@ -1049,9 +1049,6 @@ def add_files(db):
         if dir=="command" and parent.physical=="distutils":
             lib.glob("wininst*.exe")
             lib.add_file("command_template")
-        if dir=="setuptools":
-            lib.add_file("cli.exe")
-            lib.add_file("gui.exe")
         if dir=="lib2to3":
             lib.removefile("pickle", "*.pickle")
         if dir=="macholib":
