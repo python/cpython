@@ -1042,9 +1042,17 @@ functions based on regular expressions.
 
    Similar to ``str.format(**mapping)``, except that ``mapping`` is
    used directly and not copied to a :class:`dict` .  This is useful
-   if for example ``mapping`` is a dict subclass.
+   if for example ``mapping`` is a dict subclass:
 
-    .. versionadded:: 3.2
+   >>> class Default(dict):
+   ...     def __missing__(self, key):
+   ...         return key
+   ...
+   >>> '{name} was born in {country}'.format_map(Default(name='Guido'))
+   'Guido was born in country'
+
+   .. versionadded:: 3.2
+
 
 .. method:: str.index(sub[, start[, end]])
 
