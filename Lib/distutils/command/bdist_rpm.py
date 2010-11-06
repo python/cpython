@@ -355,22 +355,26 @@ class bdist_rpm (Command):
             src_rpm, non_src_rpm, spec_path)
 
         out = os.popen(q_cmd)
-        binary_rpms = []
-        source_rpm = None
-        while 1:
-            line = out.readline()
-            if not line:
-                break
-            l = string.split(string.strip(line))
-            assert(len(l) == 2)
-            binary_rpms.append(l[1])
-            # The source rpm is named after the first entry in the spec file
-            if source_rpm is None:
-                source_rpm = l[0]
+        try:
+            binary_rpms = []
+            source_rpm = None
+            while 1:
+                line = out.readline()
+                if not line:
+                    break
+                l = string.split(string.strip(line))
+                assert(len(l) == 2)
+                binary_rpms.append(l[1])
+                # The source rpm is named after the first entry in the spec file
+                if source_rpm is None:
+                    source_rpm = l[0]
 
-        status = out.close()
-        if status:
-            raise DistutilsExecError("Failed to execute: %s" % repr(q_cmd))
+            status = out.close()
+            if status:
+                raise DistutilsExecError("Failed to execute: %s" % repr(q_cmd))
+
+        finally:
+            out.close()
 
         self.spawn(rpm_cmd)
 

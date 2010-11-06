@@ -50,9 +50,11 @@ class SysconfigTestCase(support.EnvironGuard,
     def test_parse_makefile_base(self):
         self.makefile = test.test_support.TESTFN
         fd = open(self.makefile, 'w')
-        fd.write(r"CONFIG_ARGS=  '--arg1=optarg1' 'ENV=LIB'" '\n')
-        fd.write('VAR=$OTHER\nOTHER=foo')
-        fd.close()
+        try:
+            fd.write(r"CONFIG_ARGS=  '--arg1=optarg1' 'ENV=LIB'" '\n')
+            fd.write('VAR=$OTHER\nOTHER=foo')
+        finally:
+            fd.close()
         d = sysconfig.parse_makefile(self.makefile)
         self.assertEquals(d, {'CONFIG_ARGS': "'--arg1=optarg1' 'ENV=LIB'",
                               'OTHER': 'foo'})
@@ -60,9 +62,11 @@ class SysconfigTestCase(support.EnvironGuard,
     def test_parse_makefile_literal_dollar(self):
         self.makefile = test.test_support.TESTFN
         fd = open(self.makefile, 'w')
-        fd.write(r"CONFIG_ARGS=  '--arg1=optarg1' 'ENV=\$$LIB'" '\n')
-        fd.write('VAR=$OTHER\nOTHER=foo')
-        fd.close()
+        try:
+            fd.write(r"CONFIG_ARGS=  '--arg1=optarg1' 'ENV=\$$LIB'" '\n')
+            fd.write('VAR=$OTHER\nOTHER=foo')
+        finally:
+            fd.close()
         d = sysconfig.parse_makefile(self.makefile)
         self.assertEquals(d, {'CONFIG_ARGS': r"'--arg1=optarg1' 'ENV=\$LIB'",
                               'OTHER': 'foo'})

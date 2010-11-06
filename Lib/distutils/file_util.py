@@ -224,6 +224,8 @@ def write_file (filename, contents):
     sequence of strings without line terminators) to it.
     """
     f = open(filename, "w")
-    for line in contents:
-        f.write(line + "\n")
-    f.close()
+    try:
+        for line in contents:
+            f.write(line + "\n")
+    finally:
+        f.close()
