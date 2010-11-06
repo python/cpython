@@ -3,6 +3,8 @@ import unittest
 import os
 import sys
 
+from test.support import run_unittest
+
 from distutils.command.build_clib import build_clib
 from distutils.errors import DistutilsSetupError
 from distutils.tests import support
@@ -141,4 +143,4 @@ def test_suite():
     return unittest.makeSuite(BuildCLibTestCase)
 
 if __name__ == "__main__":
-    unittest.main(defaultTest="test_suite")
+    run_unittest(test_suite())

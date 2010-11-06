@@ -6,7 +6,7 @@ import os
 import shutil
 import sys
 import test.support
-from test.support import captured_stdout
+from test.support import captured_stdout, run_unittest
 import unittest
 from distutils.tests import support
 
@@ -105,4 +105,4 @@ def test_suite():
     return unittest.makeSuite(CoreTestCase)
 
 if __name__ == "__main__":
-    unittest.main(defaultTest="test_suite")
+    run_unittest(test_suite())

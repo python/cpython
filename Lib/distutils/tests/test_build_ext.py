@@ -14,6 +14,7 @@ from distutils.errors import (
 
 import unittest
 from test import support
+from test.support import run_unittest
 
 # http://bugs.python.org/issue4373
 # Don't load the xx module more than once.

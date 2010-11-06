@@ -3,6 +3,7 @@
 import sys
 import unittest
 from tempfile import NamedTemporaryFile
+from test.support import run_unittest
 
 from distutils import log
 
@@ -33,4 +34,4 @@ def test_suite():
     return unittest.makeSuite(TestLog)
 
 if __name__ == "__main__":
-    unittest.main(defaultTest="test_suite")
+    run_unittest(test_suite())

@@ -8,6 +8,7 @@ from distutils.core import Distribution
 from distutils import sysconfig
 
 from distutils.tests import support
+from test.support import run_unittest
 
 
 class BuildScriptsTestCase(support.TempdirManager,
@@ -108,4 +109,4 @@ def test_suite():
     return unittest.makeSuite(BuildScriptsTestCase)
 
 if __name__ == "__main__":
-    unittest.main(defaultTest="test_suite")
+    run_unittest(test_suite())

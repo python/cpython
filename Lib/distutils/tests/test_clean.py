@@ -6,6 +6,7 @@ import getpass
 
 from distutils.command.clean import clean
 from distutils.tests import support
+from test.support import run_unittest
 
 class cleanTestCase(support.TempdirManager,
                     support.LoggingSilencer,
@@ -47,4 +48,4 @@ def test_suite():
     return unittest.makeSuite(cleanTestCase)
 
 if __name__ == "__main__":
-    unittest.main(defaultTest="test_suite")
+    run_unittest(test_suite())
