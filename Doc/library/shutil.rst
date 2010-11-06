@@ -16,6 +16,11 @@ collections of files.  In particular, functions are provided  which support file
 copying and removal. For operations on individual files, see also the
 :mod:`os` module.
 
+.. seealso::
+
+   Latest version of the `shutil module Python source code
+   <http://svn.python.org/view/python/branches/release27-maint/Lib/shutil.py?view=markup>`_
+
 .. warning::
 
    Even the higher-level file copying functions (:func:`copy`, :func:`copy2`)
@@ -26,6 +31,7 @@ copying and removal. For operations on individual files, see also the
    This means that resources will be lost and file type and creator codes will
    not be correct. On Windows, file owners, ACLs and alternate data streams
    are not copied.
+
 
 Directory and files operations
 ------------------------------

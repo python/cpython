@@ -13,6 +13,11 @@ implemented in Python.  The scanner in this module returns comments as tokens as
 well, making it useful for implementing "pretty-printers," including colorizers
 for on-screen displays.
 
+.. seealso::
+
+   Latest version of the `tokenize module Python source code
+   <http://svn.python.org/view/python/branches/release27-maint/Lib/tokenize.py?view=markup>`_
+
 The primary entry point is a :term:`generator`:
 
 .. function:: generate_tokens(readline)

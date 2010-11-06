@@ -12,6 +12,11 @@ attempting to optimize internally, using a cache, the common case where many
 lines are read from a single file.  This is used by the :mod:`traceback` module
 to retrieve source lines for inclusion in  the formatted traceback.
 
+.. seealso::
+
+   Latest version of the `linecache module Python source code
+   <http://svn.python.org/view/python/branches/release27-maint/Lib/linecache.py?view=markup>`_
+
 The :mod:`linecache` module defines the following functions:
 
 

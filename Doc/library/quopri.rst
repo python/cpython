@@ -18,6 +18,10 @@ few nonprintable characters; the base64 encoding scheme available via the
 :mod:`base64` module is more compact if there are many such characters, as when
 sending a graphics file.
 
+.. seealso::
+
+   Latest version of the `quopri module Python source code
+   <http://svn.python.org/view/python/branches/release27-maint/Lib/quopri.py?view=markup>`_
 
 .. function:: decode(input, output[,header])
 

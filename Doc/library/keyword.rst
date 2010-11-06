@@ -20,3 +20,8 @@ This module allows a Python program to determine if a string is a keyword.
    keywords are defined to only be active when particular :mod:`__future__`
    statements are in effect, these will be included as well.
 
+
+.. seealso::
+
+   Latest version of the `keyword module Python source code
+   <http://svn.python.org/view/python/branches/release27-maint/Lib/keyword.py?view=markup>`_

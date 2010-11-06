@@ -28,6 +28,11 @@ width constraint.
 .. versionchanged:: 2.6
    Added support for :class:`set` and :class:`frozenset`.
 
+.. seealso::
+
+   Latest version of the `pprint module Python source code
+   <http://svn.python.org/view/python/branches/release27-maint/Lib/pprint.py?view=markup>`_
+
 The :mod:`pprint` module defines one class:
 
 .. First the implementation class:

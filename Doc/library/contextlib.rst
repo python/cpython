@@ -11,6 +11,11 @@ This module provides utilities for common tasks involving the :keyword:`with`
 statement. For more information see also :ref:`typecontextmanager` and
 :ref:`context-managers`.
 
+.. seealso::
+
+   Latest version of the `contextlib Python source code
+   <http://svn.python.org/view/python/branches/release27-maint/Lib/contextlib.py?view=markup>`_
+
 Functions provided:
 
 

@@ -10,6 +10,10 @@
 The :mod:`sched` module defines a class which implements a general purpose event
 scheduler:
 
+.. seealso::
+
+   Latest version of the `sched module Python source code
+   <http://svn.python.org/view/python/branches/release27-maint/Lib/sched.py?view=markup>`_
 
 .. class:: scheduler(timefunc, delayfunc)
 
