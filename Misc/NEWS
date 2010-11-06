@@ -143,6 +143,16 @@ C-API
 Library
 -------
 
+- Issue #10126: Fix distutils' test_build when Python was built with
+  --enable-shared.
+  
+- Fix typo in one sdist option (medata-check).
+
+- Issue #9199: Fix incorrect use of distutils.cmd.Command.announce.
+
+- Issue #1718574: Fix options that were supposed to accept arguments but did
+  not in build_clib.
+
 - Issue #9281: Prevent race condition with mkdir in distutils.  Patch by
   Arfrever.
 
