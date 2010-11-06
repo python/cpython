@@ -182,8 +182,11 @@ class InstallTestCase(support.TempdirManager,
 
         # let's check the RECORD file was created with one
         # line (the egg info file)
-        with open(cmd.record) as f:
+        f = open(cmd.record)
+        try:
             self.assertEquals(len(f.readlines()), 1)
+        finally:
+            f.close()
 
     def test_debug_mode(self):
         # this covers the code called when DEBUG is set

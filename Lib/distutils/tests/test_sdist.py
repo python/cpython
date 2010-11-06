@@ -215,8 +215,12 @@ class SDistTestCase(PyPIRCCommandTestCase):
         self.assertEquals(len(content), 11)
 
         # checking the MANIFEST
-        manifest = open(join(self.tmp_dir, 'MANIFEST')).read()
-        self.assertEquals(manifest, MANIFEST % {'sep': os.sep})
+        f = open(join(self.tmp_dir, 'MANIFEST'))
+        try:
+            manifest = f.read()
+            self.assertEquals(manifest, MANIFEST % {'sep': os.sep})
+        finally:
+            f.close()
 
     def test_metadata_check_option(self):
         # testing the `medata-check` option

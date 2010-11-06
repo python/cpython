@@ -31,8 +31,10 @@ class FileUtilTestCase(support.TempdirManager, unittest.TestCase):
 
     def test_move_file_verbosity(self):
         f = open(self.source, 'w')
-        f.write('some content')
-        f.close()
+        try:
+            f.write('some content')
+        finally:
+            f.close()
 
         move_file(self.source, self.target, verbose=0)
         wanted = []

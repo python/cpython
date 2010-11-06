@@ -143,6 +143,9 @@ C-API
 Library
 -------
 
+- Issue #10252: Close file objects in a timely manner in distutils code and
+  tests.  Patch by Brian Brazil, completed by Éric Araujo.
+
 - Issue #10311: The signal module now restores errno before returning from
   its low-level signal handler.  Patch by Hallvard B Furuseth.
 
