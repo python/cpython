@@ -515,6 +515,7 @@ class TestShutil(unittest.TestCase):
 
         # check if the compressed tarball was created
         tarball = base_name + '.zip'
+        self.assertTrue(os.path.exists(tarball))
 
 
     def test_make_archive(self):
