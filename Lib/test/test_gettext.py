@@ -75,6 +75,7 @@ class GettextBaseTest(unittest.TestCase):
         fp.close()
         self.env = support.EnvironmentVarGuard()
         self.env['LANGUAGE'] = 'xx'
+        gettext._translations.clear()
 
     def tearDown(self):
         self.env.__exit__()
