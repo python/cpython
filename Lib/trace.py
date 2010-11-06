@@ -53,7 +53,6 @@ import linecache
 import os
 import re
 import sys
-import threading
 import time
 import token
 import tokenize
@@ -61,6 +60,22 @@ import inspect
 import gc
 import dis
 import pickle
+
+try:
+    import threading
+except ImportError:
+    _settrace = sys.settrace
+
+    def _unsettrace():
+        sys.settrace(None)
+else:
+    def _settrace(func):
+        threading.settrace(func)
+        sys.settrace(func)
+
+    def _unsettrace():
+        sys.settrace(None)
+        threading.settrace(None)
 
 def usage(outfile):
     outfile.write("""Usage: %s [OPTIONS] <file> [ARGS]
@@ -491,14 +506,12 @@ class Trace:
         if globals is None: globals = {}
         if locals is None: locals = {}
         if not self.donothing:
-            threading.settrace(self.globaltrace)
-            sys.settrace(self.globaltrace)
+            _settrace(self.globaltrace)
         try:
             exec(cmd, globals, locals)
         finally:
             if not self.donothing:
-                sys.settrace(None)
-                threading.settrace(None)
+                _unsettrace()
 
     def runfunc(self, func, *args, **kw):
         result = None
