@@ -150,7 +150,7 @@ The :mod:`functools` module defines the following functions:
 
    To allow access to the original function for introspection and other purposes
    (e.g. bypassing a caching decorator such as :func:`lru_cache`), this function
-   automatically adds a __wrapped__ attribute to the the wrapped that refers to
+   automatically adds a __wrapped__ attribute to the wrapper that refers to
    the original function.
 
    The main intended use for this function is in :term:`decorator` functions which
