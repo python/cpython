@@ -892,7 +892,6 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		importlib importlib/test importlib/test/builtin \
 		importlib/test/extension importlib/test/frozen \
 		importlib/test/import_ importlib/test/source \
-		setuptools setuptools/command setuptools/tests setuptools.egg-info \
 		turtledemo \
 		multiprocessing multiprocessing/dummy \
 		unittest unittest/test \
