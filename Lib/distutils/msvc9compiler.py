@@ -263,10 +263,12 @@ def query_vcvarsall(version, arch="x86"):
     popen = subprocess.Popen('"%s" %s & set' % (vcvarsall, arch),
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
-
-    stdout, stderr = popen.communicate()
-    if popen.wait() != 0:
-        raise DistutilsPlatformError(stderr.decode("mbcs"))
+    try:
+        stdout, stderr = popen.communicate()
+        if popen.wait() != 0:
+            raise DistutilsPlatformError(stderr.decode("mbcs"))
+    finally:
+        popen.close()
 
     stdout = stdout.decode("mbcs")
     for line in stdout.split("\n"):
