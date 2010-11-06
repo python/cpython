@@ -804,7 +804,7 @@ the items are returned in the order their keys were first added.
           >>> d.move_to_end('b')
           >>> ''.join(d.keys)
           'acdeb'
-          >>> d.move_to_end('b', 0)
+          >>> d.move_to_end('b', last=False)
           >>> ''.join(d.keys)
           'bacde'
 
