@@ -1040,7 +1040,7 @@ functions based on regular expressions.
 
 .. method:: str.format_map(mapping)
 
-   Similar to ``str.forrmat(**mapping)``, except that ``mapping`` is
+   Similar to ``str.format(**mapping)``, except that ``mapping`` is
    used directly and not copied to a :class:`dict` .  This is useful
    if for example ``mapping`` is a dict subclass.
 
