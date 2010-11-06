@@ -69,10 +69,11 @@ def mkpath(name, mode=0777, verbose=1, dry_run=0):
         if not dry_run:
             try:
                 os.mkdir(head, mode)
-                created_dirs.append(head)
             except OSError, exc:
-                raise DistutilsFileError, \
-                      "could not create '%s': %s" % (head, exc[-1])
+                if not (exc.errno == errno.EEXIST and os.path.isdir(head)):
+                    raise DistutilsFileError(
+                          "could not create '%s': %s" % (head, exc.args[-1]))
+            created_dirs.append(head)
 
         _path_created[abs_head] = 1
     return created_dirs

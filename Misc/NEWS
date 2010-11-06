@@ -69,6 +69,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9281: Prevent race condition with mkdir in distutils.  Patch by
+  Arfrever.
+
 - Issue #10229: Fix caching error in gettext.
 
 - Issue #10252: Close file objects in a timely manner in distutils code and
