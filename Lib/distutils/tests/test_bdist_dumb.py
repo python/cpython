@@ -3,6 +3,7 @@
 import unittest
 import sys
 import os
+from test.support import run_unittest
 
 from distutils.core import Distribution
 from distutils.command.bdist_dumb import bdist_dumb
@@ -77,4 +78,4 @@ def test_suite():
     return unittest.makeSuite(BuildDumbTestCase)
 
 if __name__ == '__main__':
-    test_support.run_unittest(test_suite())
+    run_unittest(test_suite())

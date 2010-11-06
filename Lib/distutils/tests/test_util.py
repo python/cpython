@@ -3,6 +3,7 @@ import os
 import sys
 import unittest
 from copy import copy
+from test.support import run_unittest
 
 from distutils.errors import DistutilsPlatformError, DistutilsByteCompileError
 from distutils.util import (get_platform, convert_path, change_root,
@@ -274,4 +275,4 @@ def test_suite():
     return unittest.makeSuite(UtilTestCase)
 
 if __name__ == "__main__":
-    unittest.main(defaultTest="test_suite")
+    run_unittest(test_suite())

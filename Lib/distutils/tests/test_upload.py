@@ -1,13 +1,12 @@
 """Tests for distutils.command.upload."""
-import sys
 import os
 import unittest
 import http.client as httpclient
+from test.support import run_unittest
 
 from distutils.command.upload import upload
 from distutils.core import Distribution
 
-from distutils.tests import support
 from distutils.tests.test_config import PYPIRC, PyPIRCCommandTestCase
 
 PYPIRC_LONG_PASSWORD = """\
@@ -136,4 +135,4 @@ def test_suite():
     return unittest.makeSuite(uploadTestCase)
 
 if __name__ == "__main__":
-    unittest.main(defaultTest="test_suite")
+    run_unittest(test_suite())

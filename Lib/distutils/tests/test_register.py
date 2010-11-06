@@ -6,7 +6,7 @@ import getpass
 import urllib
 import warnings
 
-from test.support import check_warnings
+from test.support import check_warnings, run_unittest
 
 from distutils.command import register as register_module
 from distutils.command.register import register
@@ -259,4 +259,4 @@ def test_suite():
     return unittest.makeSuite(RegisterTestCase)
 
 if __name__ == "__main__":
-    unittest.main(defaultTest="test_suite")
+    run_unittest(test_suite())
