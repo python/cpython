@@ -1,8 +1,9 @@
 from test.support import run_unittest
-from test.test_math import parse_testfile, test_file
+from test.test_math import parse_testfile, test_file, requires_IEEE_754
 import unittest
 import cmath, math
 from cmath import phase, polar, rect, pi
+import sysconfig
 
 INF = float('inf')
 NAN = float('nan')
@@ -60,6 +61,12 @@ class CMathTests(unittest.TestCase):
 
     def tearDown(self):
         self.test_values.close()
+
+    def assertComplexIdentical(self, a, b):
+        """Fail if two complex numbers value or sign is different."""
+        self.assertEqual(a, b)
+        self.assertEqual(math.copysign(1., a.real), math.copysign(1., b.real))
+        self.assertEqual(math.copysign(1., a.imag), math.copysign(1., b.imag))
 
     def rAssertAlmostEqual(self, a, b, rel_err = 2e-15, abs_err = 5e-323,
                            msg=None):
@@ -472,6 +479,15 @@ class CMathTests(unittest.TestCase):
         self.assertTrue(cmath.isinf(complex(INF, INF)))
         self.assertTrue(cmath.isinf(complex(NAN, INF)))
         self.assertTrue(cmath.isinf(complex(INF, NAN)))
+
+    @requires_IEEE_754
+    @unittest.skipIf(sysconfig.get_config_var('TANH_PRESERVES_ZERO_SIGN') == 0,
+                     "system tanh() function doesn't copy the sign")
+    def testTanhSign(self):
+        self.assertComplexIdentical(cmath.tanh(complex(0., .0j)), complex(0., .0j))
+        self.assertComplexIdentical(cmath.tanh(complex(0., -.0j)), complex(0., -.0j))
+        self.assertComplexIdentical(cmath.tanh(complex(-0., .0j)), complex(-0., .0j))
+        self.assertComplexIdentical(cmath.tanh(complex(-0., -.0j)), complex(-0., -.0j))
 
 
 def test_main():
