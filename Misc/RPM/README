@@ -2,11 +2,6 @@ This directory contains support file used to build RPM releases of
 Python.  Its contents are maintained by Sean Reifschneider
 <jafo@tummy.com>.
 
-It is recommended that RPM builders use the python*.src.rpm file
-downloaded from the "ftp.python.org:/pub/python/<version>/rpms".  These
-may be more up to date than the files included in the base Python
-release tar-file.
-
 If you wish to build RPMs from the base Python release tar-file, note
 that you will have to download the
 "doc/<version>/html-<version>.tar.bz2"
@@ -14,3 +9,25 @@ file from python.org and place it into your "SOURCES" directory for
 the build to complete.  This is the same directory that you place the
 Python-2.3.1 release tar-file in.  You can then use the ".spec" file in
 this directory to build RPMs.
+
+You may also wish to pursue RPMs provided by distribution makers to see if
+they have one suitable for your uses.  If, for example, you just want a
+slightly newer version of Python than what the distro provides, you could
+pick up the closest SRPM your distro provides, and then modify it to
+the newer version, and build that.  It may be as simple as just changing
+the "version" information in the spec file (or it may require fixing
+patches).
+
+NOTE: I am *NOT* recommending just using the binary RPM, and never do an
+install with "--force" or "--nodeps".
+
+Also worth pursuing may be newer versions provided by similar distros.  For
+example, a Python 3 SRPM from Fedora may be a good baseline to try building
+on CentOS.
+
+Many newer SRPMs won't install on older distros because of format changes.
+You can anually extract these SRPMS with:
+
+   mkdir foo
+   cd foo
+   rpm2cpio <../python3-*.src.rpm | cpio -ivd
