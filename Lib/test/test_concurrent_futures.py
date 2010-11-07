@@ -815,10 +815,6 @@ class FutureTests(unittest.TestCase):
         self.assertTrue(isinstance(f1.exception(timeout=5), IOError))
 
 def test_main():
-    # FIXME: remove this temporary hack to check a failure
-    # on "x86 FreeBSD 7.2 3.x"  buildbot
-    import os; os.system("ulimit -a")
-
     test.support.run_unittest(ProcessPoolExecutorTest,
                               ThreadPoolExecutorTest,
                               ProcessPoolWaitTests,
