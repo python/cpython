@@ -26,7 +26,7 @@ example, a Python 3 SRPM from Fedora may be a good baseline to try building
 on CentOS.
 
 Many newer SRPMs won't install on older distros because of format changes.
-You can anually extract these SRPMS with:
+You can manually extract these SRPMS with:
 
    mkdir foo
    cd foo
