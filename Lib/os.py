@@ -390,8 +390,8 @@ def get_exec_path(env=None):
     if env is None:
         env = environ
 
-    # {b'PATH': ...}.get('PATH') and {'PATH': ...}.get(b'PATH') emit a
-    # BytesWarning when using python -b or python -bb: ignore the warning
+    # {b'PATH': ...}.get('PATH') and {'PATH': ...}.get(b'PATH') emit a
+    # BytesWarning when using python -b or python -bb: ignore the warning
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", BytesWarning)
 
