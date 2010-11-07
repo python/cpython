@@ -175,7 +175,7 @@ add_define(PyObject *dict, const char *key, long value)
     PyObject *k = PyUnicode_FromString(key);
     PyObject *v = PyLong_FromLong(value);
     if (v && k) {
-        PyDict_SetItem(dict,k,v);
+        PyDict_SetItem(dict, k, v);
     }
     Py_XDECREF(k);
     Py_XDECREF(v);
