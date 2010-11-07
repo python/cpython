@@ -616,6 +616,8 @@ Library
 Extension Modules
 -----------------
 
+- Issue #6317: Now winsound.PlaySound can accept non ascii filename.
+
 - Issue #9054: Fix a crash occurring when using the pyexpat module
   with expat version 2.0.1.
 
