@@ -64,11 +64,10 @@ The :mod:`urlparse` module defines the following functions:
       'http://www.cwi.nl:80/%7Eguido/Python.html'
 
 
-   If the scheme value is not specified, urlparse following the syntax
-   specifications from RFC 1808, expects the netloc value to start with '//',
-   Otherwise, it is not possible to distinguish between net_loc and path
-   component and would classify the indistinguishable component as path as in
-   a relative url.
+   Following the syntax specifications in :rfc:`1808`, urlparse recognizes
+   a netloc only if it is properly introduced by '//'.  Otherwise the
+   input is presumed to be a relative URL and thus to start with
+   a path component.
 
        >>> from urlparse import urlparse
        >>> urlparse('//www.cwi.nl:80/%7Eguido/Python.html')
