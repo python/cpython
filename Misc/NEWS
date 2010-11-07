@@ -251,6 +251,8 @@ Library
 Extension Modules
 -----------------
 
+- Issue #6317: Now winsound.PlaySound only accepts unicode.
+
 - Issue #6317: Now winsound.PlaySound can accept non ascii filename.
 
 - Issue #9377: Use Unicode API for gethostname on Windows.
