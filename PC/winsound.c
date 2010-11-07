@@ -73,8 +73,6 @@ static PyObject *
 sound_playsound(PyObject *s, PyObject *args)
 {
     Py_UNICODE *wsound;
-    PyObject *osound;
-    const char *sound;
     int flags;
     int ok;
 
@@ -95,31 +93,7 @@ sound_playsound(PyObject *s, PyObject *args)
         Py_INCREF(Py_None);
         return Py_None;
     }
-    /* Drop the argument parsing error as narrow strings
-       are also valid. */
-    PyErr_Clear();
-    if (!PyArg_ParseTuple(args, "O&i:PlaySound",
-                          PyUnicode_FSConverter, &osound, &flags))
-        return NULL;
-    if (flags & SND_ASYNC && flags & SND_MEMORY) {
-        /* Sidestep reference counting headache; unfortunately this also
-           prevent SND_LOOP from memory. */
-        PyErr_SetString(PyExc_RuntimeError, "Cannot play asynchronously from memory");
-        Py_DECREF(osound);
-        return NULL;
-    }
-    sound = PyBytes_AsString(osound);
-    Py_BEGIN_ALLOW_THREADS
-    ok = PlaySoundA(sound, NULL, flags);
-    Py_END_ALLOW_THREADS
-    if (!ok) {
-        PyErr_SetString(PyExc_RuntimeError, "Failed to play sound");
-        Py_DECREF(osound);
-        return NULL;
-    }
-    Py_DECREF(osound);
-    Py_INCREF(Py_None);
-    return Py_None;
+    return NULL;
 }
 
 static PyObject *
