@@ -424,7 +424,9 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     if fromfile:
         tests = []
         fp = open(os.path.join(support.SAVEDCWD, fromfile))
+        count_pat = re.compile(r'\[\s*\d+/\s*\d+\]')
         for line in fp:
+            line = count_pat.sub('', line)
             guts = line.split() # assuming no test has whitespace in its name
             if guts and not guts[0].startswith('#'):
                 tests.extend(guts)
