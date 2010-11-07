@@ -2465,7 +2465,7 @@ bytearray_rstrip(PyByteArrayObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(decode_doc,
-"B.decode([encoding='utf-8'[, errors='strict']]) -> str\n\
+"B.decode(encoding='utf-8', errors='strict') -> str\n\
 \n\
 Decode B using the codec registered for encoding. Default encoding\n\
 is 'utf-8'. errors may be given to set a different error\n\

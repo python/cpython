@@ -7393,7 +7393,7 @@ unicode_count(PyUnicodeObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(encode__doc__,
-             "S.encode([encoding='utf-8'[, errors='strict']]) -> bytes\n\
+             "S.encode(encoding='utf-8', errors='strict') -> bytes\n\
 \n\
 Encode S using the codec registered for encoding. Default encoding\n\
 is 'utf-8'. errors may be given to set a different error\n\
