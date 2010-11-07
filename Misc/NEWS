@@ -65,6 +65,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #10329: The trace module writes reports using the input Python script
+  encoding, instead of the locale encoding. Patch written by Alexander
+  Belopolsky.
+
 - Issue #10126: Fix distutils' test_build when Python was built with
   --enable-shared.
 

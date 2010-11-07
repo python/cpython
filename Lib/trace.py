@@ -330,9 +330,10 @@ class CoverageResults:
 
             source = linecache.getlines(filename)
             coverpath = os.path.join(dir, modulename + ".cover")
+            with open(filename, 'rb') as fp:
+                encoding, _ = tokenize.detect_encoding(fp.readline)
             n_hits, n_lines = self.write_results_file(coverpath, source,
-                                                      lnotab, count)
-
+                                                      lnotab, count, encoding)
             if summary and n_lines:
                 percent = int(100 * n_hits / n_lines)
                 sums[modulename] = n_lines, percent, modulename, filename
@@ -351,11 +352,11 @@ class CoverageResults:
             except IOError as err:
                 print("Can't save counts files because %s" % err, file=sys.stderr)
 
-    def write_results_file(self, path, lines, lnotab, lines_hit):
+    def write_results_file(self, path, lines, lnotab, lines_hit, encoding=None):
         """Return a coverage results file in path."""
 
         try:
-            outfile = open(path, "w")
+            outfile = open(path, "w", encoding=encoding)
         except IOError as err:
             print(("trace: Could not open %r for writing: %s"
                                   "- skipping" % (path, err)), file=sys.stderr)
