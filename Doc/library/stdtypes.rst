@@ -992,12 +992,12 @@ functions based on regular expressions.
    interpreted as in slice notation.
 
 
-.. method:: str.encode(encoding=sys.getdefaultencoding(), errors="strict")
+.. method:: str.encode(encoding="utf-8", errors="strict")
 
-   Return an encoded version of the string as a bytes object.  Default encoding
-   is the current default string encoding.  *errors* may be given to set a
-   different error handling scheme.  The default for *errors* is ``'strict'``,
-   meaning that encoding errors raise a :exc:`UnicodeError`.  Other possible
+   Return an encoded version of the string as a bytes object. Default encoding
+   is ``'utf-8'``. *errors* may be given to set a different error handling scheme.
+   The default for *errors* is ``'strict'``, meaning that encoding errors raise
+   a :exc:`UnicodeError`. Other possible
    values are ``'ignore'``, ``'replace'``, ``'xmlcharrefreplace'``,
    ``'backslashreplace'`` and any other name registered via
    :func:`codecs.register_error`, see section :ref:`codec-base-classes`. For a
@@ -1765,11 +1765,11 @@ Wherever one of these methods needs to interpret the bytes as characters
       b = a.replace(b"a", b"f")
 
 
-.. method:: bytes.decode(encoding=sys.getdefaultencoding(), errors="strict")
-            bytearray.decode(encoding=sys.getdefaultencoding(), errors="strict")
+.. method:: bytes.decode(encoding="utf-8", errors="strict")
+            bytearray.decode(encoding="utf-8", errors="strict")
 
-   Return a string decoded from the given bytes.  Default encoding is the
-   current default string encoding.  *errors* may be given to set a different
+   Return a string decoded from the given bytes.  Default encoding is
+   ``'utf-8'``. *errors* may be given to set a different
    error handling scheme.  The default for *errors* is ``'strict'``, meaning
    that encoding errors raise a :exc:`UnicodeError`.  Other possible values are
    ``'ignore'``, ``'replace'`` and any other name registered via
