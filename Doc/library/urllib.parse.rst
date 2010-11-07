@@ -48,11 +48,10 @@ The :mod:`urllib.parse` module defines the following functions:
       >>> o.geturl()
       'http://www.cwi.nl:80/%7Eguido/Python.html'
 
-   If the scheme value is not specified, urlparse expects the netloc value to
-   start with '//', following the syntax specifications from :rfc:`1808`.
-   Otherwise, it is not possible to distinguish between netloc and path
-   components, and would the indistinguishable component would be classified
-   as the path as in a relative URL.
+   Following the syntax specifications in :rfc:`1808`, urlparse recognizes
+   a netloc only if it is properly introduced by '//'.  Otherwise the
+   input is presumed to be a relative URL and thus to start with
+   a path component.
 
        >>> from urlparse import urlparse
        >>> urlparse('//www.cwi.nl:80/%7Eguido/Python.html')
