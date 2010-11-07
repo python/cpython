@@ -1858,11 +1858,14 @@ sinh1052 sinh -inf inf -> inf nan       invalid ignore-real-sign
 -- tanh: Hyperbolic Tangent --
 ------------------------------
 
--- zeros
-tanh0000 tanh 0.0 0.0 -> 0.0 0.0
-tanh0001 tanh 0.0 -0.0 -> 0.0 -0.0
-tanh0002 tanh -0.0 0.0 -> -0.0 0.0
-tanh0003 tanh -0.0 -0.0 -> -0.0 -0.0
+-- Disabled test: replaced by test_math.testTanhSign()
+-- and test_cmath.testTanhSign()
+
+-- -- zeros
+-- tanh0000 tanh 0.0 0.0 -> 0.0 0.0
+-- tanh0001 tanh 0.0 -0.0 -> 0.0 -0.0
+-- tanh0002 tanh -0.0 0.0 -> -0.0 0.0
+-- tanh0003 tanh -0.0 -0.0 -> -0.0 -0.0
 
 -- random inputs
 tanh0004 tanh -21.200500450664993 -1.6970729480342996 -> -1.0 1.9241352344849399e-19

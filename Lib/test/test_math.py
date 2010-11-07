@@ -8,6 +8,7 @@ import os
 import sys
 import random
 import struct
+import sysconfig
 
 eps = 1E-05
 NAN = float('nan')
@@ -891,11 +892,15 @@ class MathTests(unittest.TestCase):
         self.ftest('tanh(inf)', math.tanh(INF), 1)
         self.ftest('tanh(-inf)', math.tanh(NINF), -1)
         self.assertTrue(math.isnan(math.tanh(NAN)))
+
+    @requires_IEEE_754
+    @unittest.skipIf(sysconfig.get_config_var('TANH_PRESERVES_ZERO_SIGN') == 0,
+                     "system tanh() function doesn't copy the sign")
+    def testTanhSign(self):
         # check that tanh(-0.) == -0. on IEEE 754 systems
-        if float.__getformat__("double").startswith("IEEE"):
-            self.assertEqual(math.tanh(-0.), -0.)
-            self.assertEqual(math.copysign(1., math.tanh(-0.)),
-                             math.copysign(1., -0.))
+        self.assertEqual(math.tanh(-0.), -0.)
+        self.assertEqual(math.copysign(1., math.tanh(-0.)),
+                         math.copysign(1., -0.))
 
     def test_trunc(self):
         self.assertEqual(math.trunc(1), 1)
@@ -1008,8 +1013,7 @@ class MathTests(unittest.TestCase):
                 self.fail(message)
             self.ftest("%s:%s(%r)" % (id, fn, ar), result, er)
 
-    @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
-                         "test requires IEEE 754 doubles")
+    @requires_IEEE_754
     def test_mtestfile(self):
         ALLOWED_ERROR = 20  # permitted error, in ulps
         fail_fmt = "{}:{}({!r}): expected {!r}, got {!r}"
