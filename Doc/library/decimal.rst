@@ -51,6 +51,7 @@ arithmetic.  It offers several advantages over the :class:`float` datatype:
   alterable precision (defaulting to 28 places) which can be as large as needed for
   a given problem:
 
+     >>> from decimal import *
      >>> getcontext().prec = 6
      >>> Decimal(1) / Decimal(7)
      Decimal('0.142857')
