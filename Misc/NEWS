@@ -248,8 +248,8 @@ Library
 
 - Issue #9948: Fixed problem of losing filename case information.
 
-Extensions
-----------
+Extension Modules
+-----------------
 
 - Issue #6317: Now winsound.PlaySound can accept non ascii filename.
 
@@ -793,8 +793,8 @@ Core and Builtins
     - format(complex(-0.0, 2.0), '-') omitted the real part from the output,
     - format(complex(0.0, 2.0), '-') included a sign and parentheses.
 
-Extensions
-----------
+Extension Modules
+-----------------
 
 - Issue #6608: time.asctime is now checking struct tm fields its input
   before passing it to the system asctime.  Patch by MunSic Jeong.
