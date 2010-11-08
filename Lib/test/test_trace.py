@@ -334,6 +334,20 @@ class TestCoverage(unittest.TestCase):
         self.assertIn(modname, coverage)
         self.assertEqual(coverage[modname], (5, 100))
 
+### Tests that don't mess with sys.settrace and can be traced
+### themselves TODO: Skip tests that do mess with sys.settrace when
+### regrtest is invoked with -T option.
+class Test_Ignore(unittest.TestCase):
+    def test_ignored(self):
+        ignore = trace.Ignore(['x', 'y.z'], ['/foo/bar'])
+        self.assertTrue(ignore.names('x.py', 'x'))
+        self.assertFalse(ignore.names('xy.py', 'xy'))
+        self.assertFalse(ignore.names('y.py', 'y'))
+        self.assertTrue(ignore.names('/foo/bar/baz.py', 'baz'))
+        self.assertFalse(ignore.names('bar/z.py', 'z'))
+        # Matched before.
+        self.assertTrue(ignore.names('bar/baz.py', 'baz'))
+
 
 def test_main():
     run_unittest(__name__)
