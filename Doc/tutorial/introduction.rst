@@ -178,6 +178,13 @@ several ways.  They can be enclosed in single quotes or double quotes::
    >>> '"Isn\'t," she said.'
    '"Isn\'t," she said.'
 
+The interpreter prints the result of string operations in the same way as they
+are typed for input: inside quotes, and with quotes and other funny characters
+escaped by backslashes, to show the precise value.  The string is enclosed in
+double quotes if the string contains a single quote and no double quotes, else
+it's enclosed in single quotes.  The :keyword:`print` statement produces a more
+readable output for such input strings.
+
 String literals can span multiple lines in several ways.  Continuation lines can
 be used, with a backslash as the last character on the line indicating that the
 next line is a logical continuation of the line::
