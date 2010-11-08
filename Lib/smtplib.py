@@ -42,8 +42,11 @@ Example:
 # This was modified from the Python 1.5 library HTTP lib.
 
 import socket
+import io
 import re
 import email.utils
+import email.message
+import email.generator
 import base64
 import hmac
 from email.base64mime import body_encode as encode_base64
@@ -57,6 +60,7 @@ __all__ = ["SMTPException","SMTPServerDisconnected","SMTPResponseException",
 SMTP_PORT = 25
 SMTP_SSL_PORT = 465
 CRLF="\r\n"
+bCRLF=b"\r\n"
 
 OLDSTYLE_AUTH = re.compile(r"auth=(.*)", re.I)
 
@@ -147,6 +151,7 @@ def quoteaddr(addr):
     else:
         return "<%s>" % m
 
+# Legacy method kept for backward compatibility.
 def quotedata(data):
     """Quote data for email.
 
@@ -155,6 +160,12 @@ def quotedata(data):
     """
     return re.sub(r'(?m)^\.', '..',
         re.sub(r'(?:\r\n|\n|\r(?!\n))', CRLF, data))
+
+def _quote_periods(bindata):
+    return re.sub(br'(?m)^\.', '..', bindata)
+
+def _fix_eols(data):
+    return  re.sub(r'(?:\r\n|\n|\r(?!\n))', CRLF, data)
 
 try:
     import ssl
@@ -469,7 +480,9 @@ class SMTP:
         Automatically quotes lines beginning with a period per rfc821.
         Raises SMTPDataError if there is an unexpected reply to the
         DATA command; the return value from this method is the final
-        response code received when the all data is sent.
+        response code received when the all data is sent.  If msg
+        is a string, lone '\r' and '\n' characters are converted to
+        '\r\n' characters.  If msg is bytes, it is transmitted as is.
         """
         self.putcmd("data")
         (code,repl)=self.getreply()
@@ -477,10 +490,12 @@ class SMTP:
         if code != 354:
             raise SMTPDataError(code,repl)
         else:
-            q = quotedata(msg)
-            if q[-2:] != CRLF:
-                q = q + CRLF
-            q = q + "." + CRLF
+            if isinstance(msg, str):
+                msg = _fix_eols(msg).encode('ascii')
+            q = _quote_periods(msg)
+            if q[-2:] != bCRLF:
+                q = q + bCRLF
+            q = q + b"." + bCRLF
             self.send(q)
             (code,msg)=self.getreply()
             if self.debuglevel >0 : print("data:", (code,msg), file=stderr)
@@ -648,6 +663,10 @@ class SMTP:
             - rcpt_options : List of ESMTP options (such as DSN commands) for
                              all the rcpt commands.
 
+        msg may be a string containing characters in the ASCII range, or a byte
+        string.  A string is encoded to bytes using the ascii codec, and lone
+        \r and \n characters are converted to \r\n characters.
+
         If there has been no previous EHLO or HELO command this session, this
         method tries ESMTP EHLO first.  If the server does ESMTP, message size
         and each of the specified options will be passed to it.  If EHLO
@@ -693,6 +712,8 @@ class SMTP:
         """
         self.ehlo_or_helo_if_needed()
         esmtp_opts = []
+        if isinstance(msg, str):
+            msg = _fix_eols(msg).encode('ascii')
         if self.does_esmtp:
             # Hmmm? what's this? -ddm
             # self.esmtp_features['7bit']=""
@@ -700,7 +721,6 @@ class SMTP:
                 esmtp_opts.append("size=%d" % len(msg))
             for option in mail_options:
                 esmtp_opts.append(option)
-
         (code,resp) = self.mail(from_addr, esmtp_opts)
         if code != 250:
             self.rset()
@@ -722,6 +742,33 @@ class SMTP:
             raise SMTPDataError(code, resp)
         #if we got here then somebody got our mail
         return senderrs
+
+    def send_message(self, msg, from_addr=None, to_addrs=None,
+                mail_options=[], rcpt_options={}):
+        """Converts message to a bytestring and passes it to sendmail.
+
+        The arguments are as for sendmail, except that msg is an
+        email.message.Message object.  If from_addr is None, the from_addr is
+        taken from the 'From' header of the Message.  If to_addrs is None, its
+        value is composed from the addresses listed in the 'To', 'CC', and
+        'Bcc' fields.  Regardless of the values of from_addr and to_addr, any
+        Bcc field in the Message object is deleted.  The Message object is then
+        serialized using email.generator.BytesGenerator and sendmail is called
+        to transmit the message.
+        """
+        if from_addr is None:
+            from_addr = msg['From']
+        if to_addrs is None:
+            addr_fields = [f for f in (msg['To'], msg['Bcc'], msg['CC'])
+                            if f is not None]
+            to_addrs = [a[1] for a in email.utils.getaddresses(addr_fields)]
+        del msg['Bcc']
+        with io.BytesIO() as bytesmsg:
+            g = email.generator.BytesGenerator(bytesmsg)
+            g.flatten(msg, linesep='\r\n')
+            flatmsg = bytesmsg.getvalue()
+        return self.sendmail(from_addr, to_addrs, flatmsg, mail_options,
+                             rcpt_options)
 
 
     def close(self):

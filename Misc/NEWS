@@ -60,6 +60,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10321: Added support for binary data to smtplib.SMTP.sendmail,
+  and a new method send_message to send an email.message.Message object.
+
 - Issue #6011: sysconfig and distutils.sysconfig use the surrogateescape error
   handler to parse the Makefile file.  Avoid a UnicodeDecodeError if the source
   code directory name contains a non-ASCII character and the locale encoding is
