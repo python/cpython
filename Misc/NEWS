@@ -60,6 +60,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #2236: distutils' mkpath ignored the mode parameter.
+
 - Issue #10321: Added support for binary data to smtplib.SMTP.sendmail,
   and a new method send_message to send an email.message.Message object.
 
