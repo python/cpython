@@ -10,7 +10,8 @@ PyAPI_FUNC(wchar_t *) _Py_char2wchar(
     size_t *size);
 
 PyAPI_FUNC(char*) _Py_wchar2char(
-    const wchar_t *text);
+    const wchar_t *text,
+    size_t *error_pos);
 
 #if defined(HAVE_STAT) && !defined(MS_WINDOWS)
 PyAPI_FUNC(int) _Py_wstat(

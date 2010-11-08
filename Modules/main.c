@@ -646,7 +646,7 @@ Py_Main(int argc, wchar_t **argv)
             if (fp == NULL) {
                 char *cfilename_buffer;
                 const char *cfilename;
-                cfilename_buffer = _Py_wchar2char(filename);
+                cfilename_buffer = _Py_wchar2char(filename, NULL);
                 if (cfilename_buffer != NULL)
                     cfilename = cfilename_buffer;
                 else
