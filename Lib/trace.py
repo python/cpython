@@ -128,11 +128,10 @@ PRAGMA_NOCOVER = "#pragma NO COVER"
 rx_blank = re.compile(r'^\s*(#.*)?$')
 
 class Ignore:
-    def __init__(self, modules = None, dirs = None):
-        self._mods = modules or []
-        self._dirs = dirs or []
-
-        self._dirs = list(map(os.path.normpath, self._dirs))
+    def __init__(self, modules=None, dirs=None):
+        self._mods = set() if not modules else set(modules)
+        self._dirs = [] if not dirs else [os.path.normpath(d)
+                                          for d in dirs]
         self._ignore = { '<string>': 1 }
 
     def names(self, filename, modulename):
@@ -140,24 +139,22 @@ class Ignore:
             return self._ignore[modulename]
 
         # haven't seen this one before, so see if the module name is
-        # on the ignore list.  Need to take some care since ignoring
-        # "cmp" musn't mean ignoring "cmpcache" but ignoring
-        # "Spam" must also mean ignoring "Spam.Eggs".
+        # on the ignore list.
+        if modulename in self._mods:  # Identical names, so ignore
+            self._ignore[modulename] = 1
+            return 1
+
+        # check if the module is a proper submodule of something on
+        # the ignore list
         for mod in self._mods:
-            if mod == modulename:  # Identical names, so ignore
-                self._ignore[modulename] = 1
-                return 1
-            # check if the module is a proper submodule of something on
-            # the ignore list
-            n = len(mod)
-            # (will not overflow since if the first n characters are the
-            # same and the name has not already occurred, then the size
-            # of "name" is greater than that of "mod")
-            if mod == modulename[:n] and modulename[n] == '.':
+            # Need to take some care since ignoring
+            # "cmp" mustn't mean ignoring "cmpcache" but ignoring
+            # "Spam" must also mean ignoring "Spam.Eggs".
+            if modulename.startswith(mod + '.'):
                 self._ignore[modulename] = 1
                 return 1
 
-        # Now check that __file__ isn't in one of the directories
+        # Now check that filename isn't in one of the directories
         if filename is None:
             # must be a built-in, so we must ignore
             self._ignore[modulename] = 1
