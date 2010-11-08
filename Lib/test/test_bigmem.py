@@ -821,6 +821,7 @@ class TupleTest(unittest.TestCase):
 
     @precisionbigmemtest(size=_1G - 1, memuse=9)
     def test_from_2G_generator(self, size):
+        self.skipTest("test needs much more memory than advertised, see issue5438")
         try:
             t = tuple(range(size))
         except MemoryError:
@@ -834,6 +835,7 @@ class TupleTest(unittest.TestCase):
 
     @precisionbigmemtest(size=_1G - 25, memuse=9)
     def test_from_almost_2G_generator(self, size):
+        self.skipTest("test needs much more memory than advertised, see issue5438")
         try:
             t = tuple(range(size))
             count = 0
@@ -854,11 +856,11 @@ class TupleTest(unittest.TestCase):
         self.assertEquals(s[-5:], '0, 0)')
         self.assertEquals(s.count('0'), size)
 
-    @bigmemtest(minsize=_2G // 3 + 2, memuse=8 + 3)
+    @bigmemtest(minsize=_2G // 3 + 2, memuse=8 + 3 * character_size)
     def test_repr_small(self, size):
         return self.basic_test_repr(size)
 
-    @bigmemtest(minsize=_2G + 2, memuse=8 + 3)
+    @bigmemtest(minsize=_2G + 2, memuse=8 + 3 * character_size)
     def test_repr_large(self, size):
         return self.basic_test_repr(size)
 
@@ -1029,11 +1031,11 @@ class ListTest(unittest.TestCase):
         self.assertEquals(s[-5:], '0, 0]')
         self.assertEquals(s.count('0'), size)
 
-    @bigmemtest(minsize=_2G // 3 + 2, memuse=8 + 3)
+    @bigmemtest(minsize=_2G // 3 + 2, memuse=8 + 3 * character_size)
     def test_repr_small(self, size):
         return self.basic_test_repr(size)
 
-    @bigmemtest(minsize=_2G + 2, memuse=8 + 3)
+    @bigmemtest(minsize=_2G + 2, memuse=8 + 3 * character_size)
     def test_repr_large(self, size):
         return self.basic_test_repr(size)
 
