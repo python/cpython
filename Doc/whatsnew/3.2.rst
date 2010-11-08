@@ -540,6 +540,14 @@ New, Improved, and Deprecated Modules
 
   (Contributed by Neil Schemenauer and Nick Coghlan; :issue:`5178`.)
 
+* The :mod:`smtplib` :class:`~smtplib.SMTP` class now accepts a byte string
+  for the *msg* argument to the :meth:`~smtplib.SMTP.sendmail` method,
+  and a new method, :meth:`~smtplib.SMTP.send_message` accepts a
+  :class:`~email.message.Message` object and can optionally obtain the
+  *from_addr* and *to_addrs* addresses directly from the object.
+
+  (Contributed by R. David Murray, :issue:`10321`.)
+
 
 Multi-threading
 ===============

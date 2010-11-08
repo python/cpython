@@ -274,8 +274,13 @@ An :class:`SMTP` instance has the following methods:
    .. note::
 
       The *from_addr* and *to_addrs* parameters are used to construct the message
-      envelope used by the transport agents. The :class:`SMTP` does not modify the
+      envelope used by the transport agents.  ``sendmail`` does not modify the
       message headers in any way.
+
+   msg may be a string containing characters in the ASCII range, or a byte
+   string.  A string is encoded to bytes using the ascii codec, and lone ``\r``
+   and ``\n`` characters are converted to ``\r\n`` characters.  A byte string
+   is not modified.
 
    If there has been no previous ``EHLO`` or ``HELO`` command this session, this
    method tries ESMTP ``EHLO`` first. If the server does ESMTP, message size and
@@ -310,6 +315,27 @@ An :class:`SMTP` instance has the following methods:
 
    Unless otherwise noted, the connection will be open even after an exception is
    raised.
+
+   .. versionchanged:: 3.2 *msg* may be a byte string.
+
+
+.. method:: SMTP.send_message(msg, from_addr=None, to_addrs=None, mail_options=[], rcpt_options=[])
+
+   This is a convenience method for calling :meth:`sendmail` with the message
+   represented by an :class:`email.message.Message` object.  The arguments have
+   the same meaning as for :meth:`sendmail`, except that *msg* is a ``Message``
+   object.
+
+   If *from_addr* is ``None``, ``send_message`` sets its value to the value of
+   the :mailheader:`From` header from *msg*.  If *to_addrs* is ``None``,
+   ``send_message`` combines the values (if any) of the :mailheader:`To`,
+   :mailheader:`CC`, and :mailheader:`Bcc` fields from *msg*.  Regardless of
+   the values of *from_addr* and *to_addrs*, ``send_message`` deletes any  Bcc
+   field from *msg*.  It then serializes *msg* using
+   :class:`~email.generator.BytesGenerator` with ``\r\n`` as the *linesep*, and
+   calls :meth:`sendmail` to transmit the resulting message.
+
+   .. versionadded:: 3.2
 
 
 .. method:: SMTP.quit()
@@ -366,5 +392,5 @@ example doesn't do any processing of the :rfc:`822` headers.  In particular, the
 .. note::
 
    In general, you will want to use the :mod:`email` package's features to
-   construct an email message, which you can then convert to a string and send
-   via :meth:`sendmail`; see :ref:`email-examples`.
+   construct an email message, which you can then send
+   via :meth:`~smtplib.SMTP.send_message`; see :ref:`email-examples`.
