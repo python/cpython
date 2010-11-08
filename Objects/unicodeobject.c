@@ -1811,7 +1811,7 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 
         wchar = _Py_char2wchar(s, &len);
         if (wchar == NULL)
-            return NULL;
+            return PyErr_NoMemory();
 
         unicode = PyUnicode_FromWideChar(wchar, len);
         PyMem_Free(wchar);
