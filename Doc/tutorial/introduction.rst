@@ -194,7 +194,7 @@ The interpreter prints the result of string operations in the same way as they
 are typed for input: inside quotes, and with quotes and other funny characters
 escaped by backslashes, to show the precise value.  The string is enclosed in
 double quotes if the string contains a single quote and no double quotes, else
-it's enclosed in single quotes.  The :func:`print` function produces a  more
+it's enclosed in single quotes.  The :func:`print` function produces a more
 readable output for such input strings.
 
 String literals can span multiple lines in several ways.  Continuation lines can
