@@ -9987,8 +9987,10 @@ PyMODINIT_FUNC  PyInit__bsddb(void)    /* Note the two underscores */
         Py_DECREF(py_api);
     } else { /* Something bad happened */
         PyErr_WriteUnraisable(m);
-        PyErr_Warn(PyExc_RuntimeWarning,
-                "_bsddb/_pybsddb C API will be not available");
+        if(PyErr_Warn(PyExc_RuntimeWarning,
+                "_bsddb/_pybsddb C API will be not available")) {
+            PyErr_WriteUnraisable(m);
+        }
         PyErr_Clear();
     }
 
