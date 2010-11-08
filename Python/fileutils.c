@@ -132,14 +132,20 @@ oom:
    This function is the reverse of _Py_char2wchar().
 
    Return a pointer to a newly allocated byte string (use PyMem_Free() to free
-   the memory), or NULL on error (conversion error or memory error). */
+   the memory), or NULL on conversion or memory allocation error.
+
+   If error_pos is not NULL: *error_pos is the index of the invalid character
+   on conversion error, or (size_t)-1 otherwise. */
 char*
-_Py_wchar2char(const wchar_t *text)
+_Py_wchar2char(const wchar_t *text, size_t *error_pos)
 {
     const size_t len = wcslen(text);
     char *result = NULL, *bytes = NULL;
     size_t i, size, converted;
     wchar_t c, buf[2];
+
+    if (error_pos != NULL)
+        *error_pos = (size_t)-1;
 
     /* The function works in two steps:
        1. compute the length of the output buffer in bytes (size)
@@ -168,6 +174,8 @@ _Py_wchar2char(const wchar_t *text)
                 if (converted == (size_t)-1) {
                     if (result != NULL)
                         PyMem_Free(result);
+                    if (error_pos != NULL)
+                        *error_pos = i;
                     return NULL;
                 }
                 if (bytes != NULL) {
@@ -208,7 +216,7 @@ _Py_wstat(const wchar_t* path, struct stat *buf)
 {
     int err;
     char *fname;
-    fname = _Py_wchar2char(path);
+    fname = _Py_wchar2char(path, NULL);
     if (fname == NULL) {
         errno = EINVAL;
         return -1;
@@ -263,7 +271,7 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
         errno = EINVAL;
         return NULL;
     }
-    cpath = _Py_wchar2char(path);
+    cpath = _Py_wchar2char(path, NULL);
     if (cpath == NULL)
         return NULL;
     f = fopen(cpath, cmode);
@@ -317,7 +325,7 @@ _Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
     int res;
     size_t r1;
 
-    cpath = _Py_wchar2char(path);
+    cpath = _Py_wchar2char(path, NULL);
     if (cpath == NULL) {
         errno = EINVAL;
         return -1;
@@ -361,7 +369,7 @@ _Py_wrealpath(const wchar_t *path,
     wchar_t *wresolved_path;
     char *res;
     size_t r;
-    cpath = _Py_wchar2char(path);
+    cpath = _Py_wchar2char(path, NULL);
     if (cpath == NULL) {
         errno = EINVAL;
         return NULL;

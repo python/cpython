@@ -1606,14 +1606,31 @@ PyUnicode_EncodeFSDefault(PyObject *unicode)
         wchar_t *wchar;
         char *bytes;
         PyObject *bytes_obj;
+        size_t error_pos;
 
         wchar = PyUnicode_AsWideCharString(unicode, NULL);
         if (wchar == NULL)
             return NULL;
-        bytes = _Py_wchar2char(wchar);
-        PyMem_Free(wchar);
-        if (bytes == NULL)
+        bytes = _Py_wchar2char(wchar, &error_pos);
+        if (bytes == NULL) {
+            if (error_pos != (size_t)-1) {
+                char *errmsg = strerror(errno);
+                PyObject *exc = NULL;
+                if (errmsg == NULL)
+                    errmsg = "Py_wchar2char() failed";
+                raise_encode_exception(&exc,
+                    "filesystemencoding",
+                    PyUnicode_AS_UNICODE(unicode), PyUnicode_GET_SIZE(unicode),
+                    error_pos, error_pos+1,
+                    errmsg);
+                Py_XDECREF(exc);
+            }
+            else
+                PyErr_NoMemory();
+            PyMem_Free(wchar);
             return NULL;
+        }
+        PyMem_Free(wchar);
 
         bytes_obj = PyBytes_FromString(bytes);
         PyMem_Free(bytes);
