@@ -339,14 +339,15 @@ class TestCoverage(unittest.TestCase):
 ### regrtest is invoked with -T option.
 class Test_Ignore(unittest.TestCase):
     def test_ignored(self):
-        ignore = trace.Ignore(['x', 'y.z'], ['/foo/bar'])
+        jn = os.path.join
+        ignore = trace.Ignore(['x', 'y.z'], [jn('foo', 'bar')])
         self.assertTrue(ignore.names('x.py', 'x'))
         self.assertFalse(ignore.names('xy.py', 'xy'))
         self.assertFalse(ignore.names('y.py', 'y'))
-        self.assertTrue(ignore.names('/foo/bar/baz.py', 'baz'))
-        self.assertFalse(ignore.names('bar/z.py', 'z'))
+        self.assertTrue(ignore.names(jn('foo', 'bar', 'baz.py'), 'baz'))
+        self.assertFalse(ignore.names(jn('bar', 'z.py'), 'z'))
         # Matched before.
-        self.assertTrue(ignore.names('bar/baz.py', 'baz'))
+        self.assertTrue(ignore.names(jn('bar', 'baz.py'), 'baz'))
 
 
 def test_main():
