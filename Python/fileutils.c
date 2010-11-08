@@ -16,7 +16,10 @@
    Return a pointer to a newly allocated wide character string (use
    PyMem_Free() to free the memory) and write the number of written wide
    characters excluding the null character into *size if size is not NULL, or
-   NULL on error (conversion error or memory error). */
+   NULL on error (conversion or memory allocation error).
+
+   Conversion errors should never happen, unless there is a bug in the C
+   library. */
 wchar_t*
 _Py_char2wchar(const char* arg, size_t *size)
 {
@@ -64,7 +67,8 @@ _Py_char2wchar(const char* arg, size_t *size)
        actual output could use less memory. */
     argsize = strlen(arg) + 1;
     res = (wchar_t*)PyMem_Malloc(argsize*sizeof(wchar_t));
-    if (!res) goto oom;
+    if (!res)
+        goto oom;
     in = (unsigned char*)arg;
     out = res;
     memset(&mbs, 0, sizeof mbs);
@@ -79,6 +83,7 @@ _Py_char2wchar(const char* arg, size_t *size)
                unless there is a bug in the C library, or I
                misunderstood how mbrtowc works. */
             fprintf(stderr, "unexpected mbrtowc result -2\n");
+            PyMem_Free(res);
             return NULL;
         }
         if (converted == (size_t)-1) {
