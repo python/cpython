@@ -37,7 +37,7 @@ as parts of multiline values or ignored.
 
 Configuration files may include comments, prefixed by specific characters (``#``
 and ``;`` by default).  Comments may appear on their own in an otherwise empty
-line, or may be entered in lines holding values or spection names.  In the
+line, or may be entered in lines holding values or section names.  In the
 latter case, they need to be preceded by a whitespace character to be recognized
 as a comment.  (For backwards compatibility, by default only ``;`` starts an
 inline comment, while ``#`` does not.)
