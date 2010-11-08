@@ -182,7 +182,7 @@ class HashLibTestCase(unittest.TestCase):
     def test_case_md5_huge(self, size):
         if size == _4G + 5:
             try:
-                self.check('md5', 'A'*size, 'c9af2dff37468ce5dfee8f2cfc0a9c6d')
+                self.check('md5', b'A'*size, 'c9af2dff37468ce5dfee8f2cfc0a9c6d')
             except OverflowError:
                 pass # 32-bit arch
 
@@ -190,7 +190,7 @@ class HashLibTestCase(unittest.TestCase):
     def test_case_md5_uintmax(self, size):
         if size == _4G - 1:
             try:
-                self.check('md5', 'A'*size, '28138d306ff1b8281f1a9067e1a1a2b3')
+                self.check('md5', b'A'*size, '28138d306ff1b8281f1a9067e1a1a2b3')
             except OverflowError:
                 pass # 32-bit arch
 
