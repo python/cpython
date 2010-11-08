@@ -263,7 +263,7 @@ absolutize(wchar_t *path)
    bytes long.
 */
 static int
-search_for_prefix(wchar_t *argv0_path, wchar_t *home)
+search_for_prefix(wchar_t *argv0_path, wchar_t *home, wchar_t *_prefix)
 {
     size_t n;
     wchar_t *vpath;
@@ -310,7 +310,7 @@ search_for_prefix(wchar_t *argv0_path, wchar_t *home)
     } while (prefix[0]);
 
     /* Look at configure's PREFIX */
-    wcsncpy(prefix, L"" PREFIX, MAXPATHLEN);
+    wcsncpy(prefix, _prefix, MAXPATHLEN);
     joinpath(prefix, lib_python);
     joinpath(prefix, LANDMARK);
     if (ismodule(prefix))
@@ -325,7 +325,7 @@ search_for_prefix(wchar_t *argv0_path, wchar_t *home)
    MAXPATHLEN bytes long.
 */
 static int
-search_for_exec_prefix(wchar_t *argv0_path, wchar_t *home)
+search_for_exec_prefix(wchar_t *argv0_path, wchar_t *home, wchar_t *_exec_prefix)
 {
     size_t n;
 
@@ -387,7 +387,7 @@ search_for_exec_prefix(wchar_t *argv0_path, wchar_t *home)
     } while (exec_prefix[0]);
 
     /* Look at configure's EXEC_PREFIX */
-    wcsncpy(exec_prefix, L"" EXEC_PREFIX, MAXPATHLEN);
+    wcsncpy(exec_prefix, _exec_prefix, MAXPATHLEN);
     joinpath(exec_prefix, lib_python);
     joinpath(exec_prefix, L"lib-dynload");
     if (isdir(exec_prefix))
@@ -397,7 +397,6 @@ search_for_exec_prefix(wchar_t *argv0_path, wchar_t *home)
     return 0;
 }
 
-
 static void
 calculate_path(void)
 {
@@ -405,7 +404,6 @@ calculate_path(void)
 
     static wchar_t delimiter[2] = {DELIM, '\0'};
     static wchar_t separator[2] = {SEP, '\0'};
-    wchar_t *pythonpath = L"" PYTHONPATH;
     char *_rtpypath = Py_GETENV("PYTHONPATH"); /* XXX use wide version on Windows */
     wchar_t rtpypath[MAXPATHLEN+1];
     wchar_t *home = Py_GetPythonHome();
@@ -419,7 +417,7 @@ calculate_path(void)
     wchar_t *buf;
     size_t bufsz;
     size_t prefixsz;
-    wchar_t *defpath = pythonpath;
+    wchar_t *defpath;
 #ifdef WITH_NEXT_FRAMEWORK
     NSModule pythonModule;
 #endif
@@ -429,8 +427,19 @@ calculate_path(void)
 #else
     unsigned long nsexeclength = MAXPATHLEN;
 #endif
-        char execpath[MAXPATHLEN+1];
+    char execpath[MAXPATHLEN+1];
 #endif
+    wchar_t *_pythonpath, *_prefix, *_exec_prefix;
+
+    _pythonpath = _Py_char2wchar(PYTHONPATH, NULL);
+    _prefix = _Py_char2wchar(PREFIX, NULL);
+    _exec_prefix = _Py_char2wchar(EXEC_PREFIX, NULL);
+
+    if (!_pythonpath || !_prefix || !_exec_prefix) {
+        Py_FatalError(
+            "Unable to decode path variables in getpath.c: "
+            "memory error");
+    }
 
     if (_path) {
         path_buffer = _Py_char2wchar(_path, NULL);
@@ -555,11 +564,11 @@ calculate_path(void)
        MAXPATHLEN bytes long.
     */
 
-    if (!(pfound = search_for_prefix(argv0_path, home))) {
+    if (!(pfound = search_for_prefix(argv0_path, home, _prefix))) {
         if (!Py_FrozenFlag)
             fprintf(stderr,
                 "Could not find platform independent libraries <prefix>\n");
-        wcsncpy(prefix, L"" PREFIX, MAXPATHLEN);
+        wcsncpy(prefix, _prefix, MAXPATHLEN);
         joinpath(prefix, lib_python);
     }
     else
@@ -572,17 +581,17 @@ calculate_path(void)
         reduce(zip_path);
     }
     else
-        wcsncpy(zip_path, L"" PREFIX, MAXPATHLEN);
+        wcsncpy(zip_path, _prefix, MAXPATHLEN);
     joinpath(zip_path, L"lib/python00.zip");
     bufsz = wcslen(zip_path);   /* Replace "00" with version */
     zip_path[bufsz - 6] = VERSION[0];
     zip_path[bufsz - 5] = VERSION[2];
 
-    if (!(efound = search_for_exec_prefix(argv0_path, home))) {
+    if (!(efound = search_for_exec_prefix(argv0_path, home, _exec_prefix))) {
         if (!Py_FrozenFlag)
             fprintf(stderr,
                 "Could not find platform dependent libraries <exec_prefix>\n");
-        wcsncpy(exec_prefix, L"" EXEC_PREFIX, MAXPATHLEN);
+        wcsncpy(exec_prefix, _exec_prefix, MAXPATHLEN);
         joinpath(exec_prefix, L"lib/lib-dynload");
     }
     /* If we found EXEC_PREFIX do *not* reduce it!  (Yet.) */
@@ -604,8 +613,8 @@ calculate_path(void)
             bufsz += wcslen(rtpypath) + 1;
     }
 
+    defpath = _pythonpath;
     prefixsz = wcslen(prefix) + 1;
-
     while (1) {
         wchar_t *delim = wcschr(defpath, DELIM);
 
@@ -650,7 +659,7 @@ calculate_path(void)
         /* Next goes merge of compile-time $PYTHONPATH with
          * dynamically located prefix.
          */
-        defpath = pythonpath;
+        defpath = _pythonpath;
         while (1) {
             wchar_t *delim = wcschr(defpath, DELIM);
 
@@ -694,7 +703,7 @@ calculate_path(void)
                 wcscpy(prefix, separator);
     }
     else
-        wcsncpy(prefix, L"" PREFIX, MAXPATHLEN);
+        wcsncpy(prefix, _prefix, MAXPATHLEN);
 
     if (efound > 0) {
         reduce(exec_prefix);
@@ -704,7 +713,11 @@ calculate_path(void)
                 wcscpy(exec_prefix, separator);
     }
     else
-        wcsncpy(exec_prefix, L"" EXEC_PREFIX, MAXPATHLEN);
+        wcsncpy(exec_prefix, _exec_prefix, MAXPATHLEN);
+
+    PyMem_Free(_pythonpath);
+    PyMem_Free(_prefix);
+    PyMem_Free(_exec_prefix);
 }
 
 
