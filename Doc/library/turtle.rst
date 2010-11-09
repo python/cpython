@@ -23,6 +23,16 @@ command ``turtle.forward(15)``, and it moves (on-screen!) 15 pixels in the
 direction it is facing, drawing a line as it moves.  Give it the command
 ``turtle.left(25)``, and it rotates in-place 25 degrees clockwise.
 
+.. sidebar:: Turtle star
+
+   Turtle can draw intricate shapes using programs that repeat simple
+   moves.
+
+   .. image:: turtle-star.*
+      :align: center
+
+   .. literalinclude:: ../includes/turtle-star.py
+
 By combining together these and similar commands, intricate shapes and pictures
 can easily be drawn.
 
