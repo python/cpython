@@ -4,8 +4,10 @@ import textwrap
 import unittest
 import contextlib
 from test import support
-from nntplib import NNTP, GroupInfo
+from nntplib import NNTP, GroupInfo, _have_ssl
 import nntplib
+if _have_ssl:
+    import ssl
 
 TIMEOUT = 30
 
@@ -106,7 +108,7 @@ class NetworkedNNTPTestsMixin:
              "references", ":bytes", ":lines"}
             )
         for v in art_dict.values():
-            self.assertIsInstance(v, str)
+            self.assertIsInstance(v, (str, type(None)))
 
     def test_xover(self):
         resp, count, first, last, name = self.server.group(self.GROUP_NAME)
@@ -162,26 +164,19 @@ class NetworkedNNTPTestsMixin:
         self.server.quit()
         self.server = None
 
-
-class NetworkedNNTPTests(NetworkedNNTPTestsMixin, unittest.TestCase):
-    NNTP_HOST = 'news.gmane.org'
-    GROUP_NAME = 'gmane.comp.python.devel'
-    GROUP_PAT = 'gmane.comp.python.d*'
-
-    def setUp(self):
-        support.requires("network")
-        with support.transient_internet(self.NNTP_HOST):
-            self.server = NNTP(self.NNTP_HOST, timeout=TIMEOUT, usenetrc=False)
-
-    def tearDown(self):
-        if self.server is not None:
-            self.server.quit()
-
-    # Disabled with gmane as it produces too much data
-    test_list = None
+    def test_login(self):
+        baduser = "notarealuser"
+        badpw = "notarealpassword"
+        # Check that bogus credentials cause failure
+        self.assertRaises(nntplib.NNTPError, self.server.login,
+                     user=baduser, password=badpw, usenetrc=False)
+        # FIXME: We should check that correct credentials succeed, but that
+        # would require valid details for some server somewhere to be in the
+        # test suite, I think. Gmane is anonymous, at least as used for the
+        # other tests.
 
     def test_capabilities(self):
-        # As of this writing, gmane implements NNTP version 2 and has a
+        # The server under test implements NNTP version 2 and has a
         # couple of well-known capabilities. Just sanity check that we
         # got them.
         def _check_caps(caps):
@@ -193,6 +188,63 @@ class NetworkedNNTPTests(NetworkedNNTPTestsMixin, unittest.TestCase):
         # This re-emits the command
         resp, caps = self.server.capabilities()
         _check_caps(caps)
+
+    if _have_ssl:
+        def test_starttls(self):
+            file = self.server.file
+            sock = self.server.sock
+            try:
+                self.server.starttls()
+            except nntplib.NNTPPermanentError:
+                self.skipTest("STARTTLS not supported by server.")
+            else:
+                # Check that the socket and internal pseudo-file really were
+                # changed.
+                self.assertNotEqual(file, self.server.file)
+                self.assertNotEqual(sock, self.server.sock)
+                # Check that the new socket really is an SSL one
+                self.assertIsInstance(self.server.sock, ssl.SSLSocket)
+                # Check that trying starttls when it's already active fails.
+                self.assertRaises(ValueError, self.server.starttls)
+
+
+class NetworkedNNTPTests(NetworkedNNTPTestsMixin, unittest.TestCase):
+    # This server supports STARTTLS (gmane doesn't)
+    NNTP_HOST = 'news.trigofacile.com'
+    GROUP_NAME = 'fr.comp.lang.python'
+    GROUP_PAT = 'fr.comp.lang.*'
+
+    def setUp(self):
+        support.requires("network")
+        with support.transient_internet(self.NNTP_HOST):
+            self.server = NNTP(self.NNTP_HOST, timeout=TIMEOUT, usenetrc=False)
+
+    def tearDown(self):
+        if self.server is not None:
+            self.server.quit()
+
+
+if _have_ssl:
+    class NetworkedNNTP_SSLTests(NetworkedNNTPTestsMixin, unittest.TestCase):
+        NNTP_HOST = 'snews.gmane.org'
+        GROUP_NAME = 'gmane.comp.python.devel'
+        GROUP_PAT = 'gmane.comp.python.d*'
+
+        def setUp(self):
+            support.requires("network")
+            with support.transient_internet(self.NNTP_HOST):
+                self.server = nntplib.NNTP_SSL(self.NNTP_HOST, timeout=TIMEOUT,
+                                               usenetrc=False)
+
+        def tearDown(self):
+            if self.server is not None:
+                self.server.quit()
+
+        # Disabled with gmane as it produces too much data
+        test_list = None
+
+        # Disabled as the connection will already be encrypted.
+        test_starttls = None
 
 
 #
@@ -261,7 +313,6 @@ class MockedNNTPTestsMixin:
         # Using BufferedRWPair instead of BufferedRandom ensures the file
         # isn't seekable.
         file = io.BufferedRWPair(self.sio, self.sio)
-        kwargs.setdefault('usenetrc', False)
         self.server = nntplib._NNTPBase(file, 'test.server', *args, **kwargs)
         return self.server
 
@@ -1134,9 +1185,10 @@ class MiscTests(unittest.TestCase):
 
 
 def test_main():
-    support.run_unittest(MiscTests, NNTPv1Tests, NNTPv2Tests,
-                         NetworkedNNTPTests
-                         )
+    tests = [MiscTests, NNTPv1Tests, NNTPv2Tests, NetworkedNNTPTests]
+    if _have_ssl:
+        tests.append(NetworkedNNTP_SSLTests)
+    support.run_unittest(*tests)
 
 
 if __name__ == "__main__":

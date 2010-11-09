@@ -69,6 +69,13 @@ import collections
 import datetime
 import warnings
 
+try:
+    import ssl
+except ImportError:
+    _have_ssl = False
+else:
+    _have_ssl = True
+
 from email.header import decode_header as _email_decode_header
 from socket import _GLOBAL_DEFAULT_TIMEOUT
 
@@ -111,7 +118,7 @@ class NNTPDataError(NNTPError):
 
 # Standard port used by NNTP servers
 NNTP_PORT = 119
-
+NNTP_SSL_PORT = 563
 
 # Response numbers that are followed by additional text (e.g. article)
 _LONGRESP = {
@@ -263,6 +270,23 @@ def _unparse_datetime(dt, legacy=False):
     return date_str, time_str
 
 
+if _have_ssl:
+
+    def _encrypt_on(sock, context):
+        """Wrap a socket in SSL/TLS. Arguments:
+        - sock: Socket to wrap
+        - context: SSL context to use for the encrypted connection
+        Returns:
+        - sock: New, encrypted socket.
+        """
+        # Generate a default SSL context if none was passed.
+        if context is None:
+            context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            # SSLv2 considered harmful.
+            context.options |= ssl.OP_NO_SSLv2
+        return context.wrap_socket(sock)
+
+
 # The classes themselves
 class _NNTPBase:
     # UTF-8 is the character set for all NNTP commands and responses: they
@@ -280,18 +304,13 @@ class _NNTPBase:
     encoding = 'utf-8'
     errors = 'surrogateescape'
 
-    def __init__(self, file, host, user=None, password=None,
-                 readermode=None, usenetrc=True,
-                 timeout=_GLOBAL_DEFAULT_TIMEOUT):
+    def __init__(self, file, host,
+                 readermode=None, timeout=_GLOBAL_DEFAULT_TIMEOUT):
         """Initialize an instance.  Arguments:
         - file: file-like object (open for read/write in binary mode)
         - host: hostname of the server (used if `usenetrc` is True)
-        - user: username to authenticate with
-        - password: password to use with username
         - readermode: if true, send 'mode reader' command after
                       connecting.
-        - usenetrc: allow loading username and password from ~/.netrc file
-                    if not specified explicitly
         - timeout: timeout (in seconds) used for socket connections
 
         readermode is sometimes necessary if you are connecting to an
@@ -300,74 +319,32 @@ class _NNTPBase:
         unexpected NNTPPermanentErrors, you might need to set
         readermode.
         """
+        self.host = host
         self.file = file
         self.debugging = 0
         self.welcome = self._getresp()
 
-        # 'mode reader' is sometimes necessary to enable 'reader' mode.
-        # However, the order in which 'mode reader' and 'authinfo' need to
-        # arrive differs between some NNTP servers. Try to send
-        # 'mode reader', and if it fails with an authorization failed
-        # error, try again after sending authinfo.
-        readermode_afterauth = 0
+        # 'MODE READER' is sometimes necessary to enable 'reader' mode.
+        # However, the order in which 'MODE READER' and 'AUTHINFO' need to
+        # arrive differs between some NNTP servers. If _setreadermode() fails
+        # with an authorization failed error, it will set this to True;
+        # the login() routine will interpret that as a request to try again
+        # after performing its normal function.
+        self.readermode_afterauth = False
         if readermode:
-            try:
-                self.welcome = self._shortcmd('mode reader')
-            except NNTPPermanentError:
-                # error 500, probably 'not implemented'
-                pass
-            except NNTPTemporaryError as e:
-                if user and e.response.startswith('480'):
-                    # Need authorization before 'mode reader'
-                    readermode_afterauth = 1
-                else:
-                    raise
-        # If no login/password was specified, try to get them from ~/.netrc
-        # Presume that if .netc has an entry, NNRP authentication is required.
-        try:
-            if usenetrc and not user:
-                import netrc
-                credentials = netrc.netrc()
-                auth = credentials.authenticators(host)
-                if auth:
-                    user = auth[0]
-                    password = auth[2]
-        except IOError:
-            pass
-        # Perform NNTP authentication if needed.
-        if user:
-            resp = self._shortcmd('authinfo user '+user)
-            if resp.startswith('381'):
-                if not password:
-                    raise NNTPReplyError(resp)
-                else:
-                    resp = self._shortcmd(
-                            'authinfo pass '+password)
-                    if not resp.startswith('281'):
-                        raise NNTPPermanentError(resp)
-            if readermode_afterauth:
-                try:
-                    self.welcome = self._shortcmd('mode reader')
-                except NNTPPermanentError:
-                    # error 500, probably 'not implemented'
-                    pass
+            self._setreadermode()
 
-        # Inquire about capabilities (RFC 3977)
-        self.nntp_version = 1
-        self.nntp_implementation = None
-        try:
-            resp, caps = self.capabilities()
-        except NNTPPermanentError:
-            # Server doesn't support capabilities
-            self._caps = {}
-        else:
-            self._caps = caps
-            if 'VERSION' in caps:
-                # The server can advertise several supported versions,
-                # choose the highest.
-                self.nntp_version = max(map(int, caps['VERSION']))
-            if 'IMPLEMENTATION' in caps:
-                self.nntp_implementation = ' '.join(caps['IMPLEMENTATION'])
+        # RFC 4642 2.2.2: Both the client and the server MUST know if there is
+        # a TLS session active.  A client MUST NOT attempt to start a TLS
+        # session if a TLS session is already active.
+        self.tls_on = False
+
+        # Inquire about capabilities (RFC 3977).
+        self._caps = None
+        self.getcapabilities()
+
+        # Log in and encryption setup order is left to subclasses.
+        self.authenticated = False
 
     def getwelcome(self):
         """Get the welcome message from the server
@@ -382,6 +359,22 @@ class _NNTPBase:
         """Get the server capabilities, as read by __init__().
         If the CAPABILITIES command is not supported, an empty dict is
         returned."""
+        if self._caps is None:
+            self.nntp_version = 1
+            self.nntp_implementation = None
+            try:
+                resp, caps = self.capabilities()
+            except NNTPPermanentError:
+                # Server doesn't support capabilities
+                self._caps = {}
+            else:
+                self._caps = caps
+                if 'VERSION' in caps:
+                    # The server can advertise several supported versions,
+                    # choose the highest.
+                    self.nntp_version = max(map(int, caps['VERSION']))
+                if 'IMPLEMENTATION' in caps:
+                    self.nntp_implementation = ' '.join(caps['IMPLEMENTATION'])
         return self._caps
 
     def set_debuglevel(self, level):
@@ -918,6 +911,77 @@ class _NNTPBase:
             self._close()
         return resp
 
+    def login(self, user=None, password=None, usenetrc=True):
+        if self.authenticated:
+            raise ValueError("Already logged in.")
+        if not user and not usenetrc:
+            raise ValueError(
+                "At least one of `user` and `usenetrc` must be specified")
+        # If no login/password was specified but netrc was requested,
+        # try to get them from ~/.netrc
+        # Presume that if .netrc has an entry, NNRP authentication is required.
+        try:
+            if usenetrc and not user:
+                import netrc
+                credentials = netrc.netrc()
+                auth = credentials.authenticators(self.host)
+                if auth:
+                    user = auth[0]
+                    password = auth[2]
+        except IOError:
+            pass
+        # Perform NNTP authentication if needed.
+        if not user:
+            return
+        resp = self._shortcmd('authinfo user ' + user)
+        if resp.startswith('381'):
+            if not password:
+                raise NNTPReplyError(resp)
+            else:
+                resp = self._shortcmd('authinfo pass ' + password)
+                if not resp.startswith('281'):
+                    raise NNTPPermanentError(resp)
+        # Attempt to send mode reader if it was requested after login.
+        if self.readermode_afterauth:
+            self._setreadermode()
+
+    def _setreadermode(self):
+        try:
+            self.welcome = self._shortcmd('mode reader')
+        except NNTPPermanentError:
+            # Error 5xx, probably 'not implemented'
+            pass
+        except NNTPTemporaryError as e:
+            if e.response.startswith('480'):
+                # Need authorization before 'mode reader'
+                self.readermode_afterauth = True
+            else:
+                raise
+
+    if _have_ssl:
+        def starttls(self, context=None):
+            """Process a STARTTLS command. Arguments:
+            - context: SSL context to use for the encrypted connection
+            """
+            # Per RFC 4642, STARTTLS MUST NOT be sent after authentication or if
+            # a TLS session already exists.
+            if self.tls_on:
+                raise ValueError("TLS is already enabled.")
+            if self.authenticated:
+                raise ValueError("TLS cannot be started after authentication.")
+            resp = self._shortcmd('STARTTLS')
+            if resp.startswith('382'):
+                self.file.close()
+                self.sock = _encrypt_on(self.sock, context)
+                self.file = self.sock.makefile("rwb")
+                self.tls_on = True
+                # Capabilities may change after TLS starts up, so ask for them
+                # again.
+                self._caps = None
+                self.getcapabilities()
+            else:
+                raise NNTPError("TLS failed to start.")
+
 
 class NNTP(_NNTPBase):
 
@@ -945,14 +1009,43 @@ class NNTP(_NNTPBase):
         self.port = port
         self.sock = socket.create_connection((host, port), timeout)
         file = self.sock.makefile("rwb")
-        _NNTPBase.__init__(self, file, host, user, password,
-                           readermode, usenetrc, timeout)
+        _NNTPBase.__init__(self, file, host,
+                           readermode, timeout)
+        if user or usenetrc:
+            self.login(user, password, usenetrc)
 
     def _close(self):
         try:
             _NNTPBase._close(self)
         finally:
             self.sock.close()
+
+
+if _have_ssl:
+    class NNTP_SSL(_NNTPBase):
+
+        def __init__(self, host, port=NNTP_SSL_PORT,
+                    user=None, password=None, ssl_context=None,
+                    readermode=None, usenetrc=True,
+                    timeout=_GLOBAL_DEFAULT_TIMEOUT):
+            """This works identically to NNTP.__init__, except for the change
+            in default port and the `ssl_context` argument for SSL connections.
+            """
+            self.sock = socket.create_connection((host, port), timeout)
+            self.sock = _encrypt_on(self.sock, ssl_context)
+            file = self.sock.makefile("rwb")
+            _NNTPBase.__init__(self, file, host,
+                               readermode=readermode, timeout=timeout)
+            if user or usenetrc:
+                self.login(user, password, usenetrc)
+
+        def _close(self):
+            try:
+                _NNTPBase._close(self)
+            finally:
+                self.sock.close()
+
+    __all__.append("NNTP_SSL")
 
 
 # Test retrieval when run as a script.
@@ -966,13 +1059,27 @@ if __name__ == '__main__':
                         help='group to fetch messages from (default: %(default)s)')
     parser.add_argument('-s', '--server', default='news.gmane.org',
                         help='NNTP server hostname (default: %(default)s)')
-    parser.add_argument('-p', '--port', default=NNTP_PORT, type=int,
-                        help='NNTP port number (default: %(default)s)')
+    parser.add_argument('-p', '--port', default=-1, type=int,
+                        help='NNTP port number (default: %s / %s)' % (NNTP_PORT, NNTP_SSL_PORT))
     parser.add_argument('-n', '--nb-articles', default=10, type=int,
                         help='number of articles to fetch (default: %(default)s)')
+    parser.add_argument('-S', '--ssl', action='store_true', default=False,
+                        help='use NNTP over SSL')
     args = parser.parse_args()
 
-    s = NNTP(host=args.server, port=args.port)
+    port = args.port
+    if not args.ssl:
+        if port == -1:
+            port = NNTP_PORT
+        s = NNTP(host=args.server, port=port)
+    else:
+        if port == -1:
+            port = NNTP_SSL_PORT
+        s = NNTP_SSL(host=args.server, port=port)
+
+    caps = s.getcapabilities()
+    if 'STARTTLS' in caps:
+        s.starttls()
     resp, count, first, last, name = s.group(args.group)
     print('Group', name, 'has', count, 'articles, range', first, 'to', last)
 

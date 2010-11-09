@@ -69,6 +69,22 @@ The module itself defines the following classes:
    *readermode* defaults to ``None``. *usenetrc* defaults to ``True``.
 
 
+.. class:: NNTP_SSL(host, port=563, user=None, password=None, ssl_context=None, readermode=None, usenetrc=True, [timeout])
+
+   Return a new :class:`NNTP_SSL` object, representing an encrypted
+   connection to the NNTP server running on host *host*, listening at
+   port *port*.  :class:`NNTP_SSL` objects have the same methods as
+   :class:`NNTP` objects.  If *port* is omitted, port 563 (NNTPS) is used.
+   *ssl_context* is also optional, and is a :class:`~ssl.SSLContext` object.
+   All other parameters behave the same as for :class:`NNTP`.
+
+   Note that SSL-on-563 is discouraged per :rfc:`4642`, in favor of
+   STARTTLS as described below.  However, some servers only support the
+   former.
+
+   .. versionadded:: 3.2
+
+
 .. exception:: NNTPError
 
    Derived from the standard exception :exc:`Exception`, this is the base
@@ -111,8 +127,8 @@ The module itself defines the following classes:
 NNTP Objects
 ------------
 
-When connected, :class:`NNTP` objects support the following methods and
-attributes.
+When connected, :class:`NNTP` and :class:`NNTP_SSL` objects support the
+following methods and attributes.
 
 Attributes
 ^^^^^^^^^^
@@ -175,6 +191,35 @@ tuples or objects that the method normally returns will be empty.
       >>> s = NNTP('news.gmane.org')
       >>> 'POST' in s.getcapabilities()
       True
+
+   .. versionadded:: 3.2
+
+
+.. method:: NNTP.login(user=None, password=None, usenetrc=True)
+
+   Send ``AUTHINFO`` commands with the user name and password.  If *user*
+   and *password* are None and *usenetrc* is True, credentials from
+   ``~/.netrc`` will be used if possible.
+
+   Unless intentionally delayed, login is normally performed during the
+   :class:`NNTP` object initialization and separately calling this function
+   is unnecessary.  To force authentication to be delayed, you must not set
+   *user* or *password* when creating the object, and must set *usenetrc* to
+   False.
+
+   .. versionadded:: 3.2
+
+
+.. method:: NNTP.starttls(ssl_context=None)
+
+   Send a ``STARTTLS`` command.  The *ssl_context* argument is optional
+   and should be a :class:`ssl.SSLContext` object.  This will enable
+   encryption on the NNTP connection.
+
+   Note that this may not be done after authentication information has
+   been transmitted, and authentication occurs by default if possible during a
+   :class:`NNTP` object initialization.  See :meth:`NNTP.login` for information
+   on suppressing this behavior.
 
    .. versionadded:: 3.2
 
