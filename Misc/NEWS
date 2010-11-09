@@ -60,6 +60,16 @@ Core and Builtins
 Library
 -------
 
+- Issue #9244: multiprocessing pool worker processes could terminate
+  unexpectedly if the return value of a task could not be pickled.  Only
+  the ``repr`` of such errors are now sent back, wrapped in an
+  ``MaybeEncodingError`` exception.
+
+- Issue #9244: The ``apply_async()`` and ``map_async()`` methods
+  of ``multiprocessing.Pool`` now accepts a ``error_callback`` argument.
+  This can be a callback with the signature ``callback(exc)``, which will
+  be called if the target raises an exception.
+
 - Issue #10022: The dictionary returned by the ``getpeercert()`` method
   of SSL sockets now has additional items such as ``issuer`` and ``notBefore``.
 
