@@ -3101,7 +3101,7 @@ imp_make_magic(long magic)
     buf[3] = (char) ((magic >> 24) & 0xff);
 
     return PyBytes_FromStringAndSize(buf, 4);
-};
+}
 
 static PyObject *
 imp_get_magic(PyObject *self, PyObject *noargs)

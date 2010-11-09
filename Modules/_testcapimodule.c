@@ -1792,7 +1792,7 @@ test_unicode_compare_with_ascii(PyObject *self) {
         return NULL;
     }
     Py_RETURN_NONE;
-};
+}
 
 /* This is here to provide a docstring for test_descr. */
 static PyObject *
