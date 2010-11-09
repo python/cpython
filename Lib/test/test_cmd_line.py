@@ -5,18 +5,8 @@
 import test.support, unittest
 import os
 import sys
-from test.script_helper import spawn_python, kill_python, assert_python_ok, assert_python_failure
-
-# spawn_python normally enforces use of -E to avoid environmental effects
-# but one test checks PYTHONPATH behaviour explicitly
-# XXX (ncoghlan): Give script_helper.spawn_python an option to switch
-# off the -E flag that is normally inserted automatically
 import subprocess
-def _spawn_python_with_env(*args):
-    cmd_line = [sys.executable]
-    cmd_line.extend(args)
-    return subprocess.Popen(cmd_line, stdin=subprocess.PIPE,
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+from test.script_helper import spawn_python, kill_python, assert_python_ok, assert_python_failure
 
 
 # XXX (ncoghlan): Move to script_helper and make consistent with run_python
@@ -217,23 +207,19 @@ class CmdLineTest(unittest.TestCase):
         self.assertTrue(data.startswith(b'x'), data)
 
     def test_large_PYTHONPATH(self):
-        with test.support.EnvironmentVarGuard() as env:
-            path1 = "ABCDE" * 100
-            path2 = "FGHIJ" * 100
-            env['PYTHONPATH'] = path1 + os.pathsep + path2
+        path1 = "ABCDE" * 100
+        path2 = "FGHIJ" * 100
+        path = path1 + os.pathsep + path2
 
-            code = """
-import sys
-path = ":".join(sys.path)
-path = path.encode("ascii", "backslashreplace")
-sys.stdout.buffer.write(path)"""
-            code = code.strip().splitlines()
-            code = '; '.join(code)
-            p = _spawn_python_with_env('-S', '-c', code)
-            stdout, _ = p.communicate()
-            p.stdout.close()
-            self.assertIn(path1.encode('ascii'), stdout)
-            self.assertIn(path2.encode('ascii'), stdout)
+        code = """if 1:
+            import sys
+            path = ":".join(sys.path)
+            path = path.encode("ascii", "backslashreplace")
+            sys.stdout.buffer.write(path)"""
+        rc, out, err = assert_python_ok('-S', '-c', code,
+                                        PYTHONPATH=path)
+        self.assertIn(path1.encode('ascii'), out)
+        self.assertIn(path2.encode('ascii'), out)
 
 
 def test_main():
