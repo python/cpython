@@ -1054,10 +1054,10 @@ class IMAP4:
 
     def _quote(self, arg):
 
-        arg = arg.replace(b'\\', b'\\\\')
-        arg = arg.replace(b'"', b'\\"')
+        arg = arg.replace('\\', '\\\\')
+        arg = arg.replace('"', '\\"')
 
-        return b'"' + arg + b'"'
+        return '"' + arg + '"'
 
 
     def _simple_command(self, name, *args):

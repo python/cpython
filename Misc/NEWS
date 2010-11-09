@@ -60,6 +60,8 @@ Core and Builtins
 Library
 -------
 
+- Fix IMAP.login() to work properly.
+
 - Issue #9244: multiprocessing pool worker processes could terminate
   unexpectedly if the return value of a task could not be pickled.  Only
   the ``repr`` of such errors are now sent back, wrapped in an
