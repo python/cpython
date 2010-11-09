@@ -2879,6 +2879,9 @@ Build
 Documentation
 -------------
 
+- Issue #7707: Document that ``multiprocessing.Queue`` operations during import
+  can lead to deadlocks.
+
 - Issue #9817: Add expat COPYING file; add expat, libffi and expat licenses
   to Doc/license.rst.
 
