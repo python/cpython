@@ -2271,9 +2271,8 @@ scripts can be run and viewed using the supplied demo viewer as follows::
 
    python -m turtledemo
 
-Alternatively, you can run the demo scripts individually.  For example,
+Alternatively, you can run the demo scripts individually.  For example, ::
 
-::
    python -m turtledemo.bytedesign
 
 The :mod:`turtledemo` package directory contains:
