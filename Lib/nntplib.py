@@ -308,7 +308,7 @@ class _NNTPBase:
                  readermode=None, timeout=_GLOBAL_DEFAULT_TIMEOUT):
         """Initialize an instance.  Arguments:
         - file: file-like object (open for read/write in binary mode)
-        - host: hostname of the server (used if `usenetrc` is True)
+        - host: hostname of the server
         - readermode: if true, send 'mode reader' command after
                       connecting.
         - timeout: timeout (in seconds) used for socket connections
@@ -986,7 +986,7 @@ class _NNTPBase:
 class NNTP(_NNTPBase):
 
     def __init__(self, host, port=NNTP_PORT, user=None, password=None,
-                 readermode=None, usenetrc=True,
+                 readermode=None, usenetrc=False,
                  timeout=_GLOBAL_DEFAULT_TIMEOUT):
         """Initialize an instance.  Arguments:
         - host: hostname to connect to
@@ -1026,7 +1026,7 @@ if _have_ssl:
 
         def __init__(self, host, port=NNTP_SSL_PORT,
                     user=None, password=None, ssl_context=None,
-                    readermode=None, usenetrc=True,
+                    readermode=None, usenetrc=False,
                     timeout=_GLOBAL_DEFAULT_TIMEOUT):
             """This works identically to NNTP.__init__, except for the change
             in default port and the `ssl_context` argument for SSL connections.

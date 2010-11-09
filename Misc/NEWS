@@ -60,6 +60,8 @@ Core and Builtins
 Library
 -------
 
+- ``usenetrc`` is now false by default for NNTP objects.
+
 - Issue #1926: Add support for NNTP over SSL on port 563, as well as
   STARTTLS.  Patch by Andrew Vant.
 
