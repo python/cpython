@@ -248,7 +248,7 @@ _set_str(const char *name, PyObject **target, PyObject *src, const char *dflt)
 static int
 dialect_check_quoting(int quoting)
 {
-    StyleDesc *qs = quote_styles;
+    StyleDesc *qs;
 
     for (qs = quote_styles; qs->name; qs++) {
         if (qs->style == quoting)
