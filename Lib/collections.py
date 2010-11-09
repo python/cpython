@@ -14,7 +14,7 @@ from itertools import repeat as _repeat, chain as _chain, starmap as _starmap, \
                       ifilter as _ifilter, imap as _imap
 try:
     from thread import get_ident
-except AttributeError:
+except ImportError:
     from dummy_thread import get_ident
 
 def _recursive_repr(user_function):
