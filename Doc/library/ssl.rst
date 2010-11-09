@@ -433,11 +433,9 @@ They also have the following additional methods and attributes:
    certificate was not validated, the dict is empty.  If the certificate was
    validated, it returns a dict with the keys ``subject`` (the principal for
    which the certificate was issued), and ``notAfter`` (the time after which the
-   certificate should not be trusted).  The certificate was already validated,
-   so the ``notBefore`` and ``issuer`` fields are not returned.  If a
-   certificate contains an instance of the *Subject Alternative Name* extension
-   (see :rfc:`3280`), there will also be a ``subjectAltName`` key in the
-   dictionary.
+   certificate should not be trusted).  If a certificate contains an instance
+   of the *Subject Alternative Name* extension (see :rfc:`3280`), there will
+   also be a ``subjectAltName`` key in the dictionary.
 
    The "subject" field is a tuple containing the sequence of relative
    distinguished names (RDNs) given in the certificate's data structure for the
@@ -458,6 +456,10 @@ They also have the following additional methods and attributes:
    was required (:const:`CERT_OPTIONAL` or :const:`CERT_REQUIRED`), it will have
    been validated, but if :const:`CERT_NONE` was used to establish the
    connection, the certificate, if present, will not have been validated.
+
+   .. versionchanged:: 3.2
+      The returned dictionary includes additional items such as ``issuer``
+      and ``notBefore``.
 
 .. method:: SSLSocket.cipher()
 
