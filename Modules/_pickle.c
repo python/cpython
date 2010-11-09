@@ -71,7 +71,7 @@ enum opcode {
 
     /* Protocol 3 (Python 3.x) */
     BINBYTES       = 'B',
-    SHORT_BINBYTES = 'C',
+    SHORT_BINBYTES = 'C'
 };
 
 /* These aren't opcodes -- they're ways to pickle bools before protocol 2
@@ -103,7 +103,7 @@ enum {
     MAX_WRITE_BUF_SIZE = 64 * 1024,
 
     /* Prefetch size when unpickling (disabled on unpeekable streams) */
-    PREFETCH = 8192 * 16,
+    PREFETCH = 8192 * 16
 };
 
 /* Exception classes for pickle. These should override the ones defined in
