@@ -583,7 +583,7 @@ proxy_iternext(PyWeakReference *proxy)
 }
 
 
-WRAP_METHOD(proxy_bytes, "__bytes__");
+WRAP_METHOD(proxy_bytes, "__bytes__")
 
 
 static PyMethodDef proxy_methods[] = {
