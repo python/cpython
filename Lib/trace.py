@@ -432,10 +432,9 @@ def find_strings(filename, encoding=None):
 def find_executable_linenos(filename):
     """Return dict where keys are line numbers in the line number table."""
     try:
-        with io.FileIO(filename, 'r') as file:
-            encoding, lines = tokenize.detect_encoding(file.readline)
-        with open(filename, "r", encoding=encoding) as f:
+        with tokenize.open(filename) as f:
             prog = f.read()
+            encoding = f.encoding
     except IOError as err:
         print(("Not printing coverage data for %r: %s"
                               % (filename, err)), file=sys.stderr)

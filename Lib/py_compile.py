@@ -104,9 +104,7 @@ def compile(file, cfile=None, dfile=None, doraise=False):
     byte-compile all installed files (or all files in selected
     directories).
     """
-    with open(file, "rb") as f:
-        encoding = tokenize.detect_encoding(f.readline)[0]
-    with open(file, encoding=encoding) as f:
+    with tokenize.open(file) as f:
         try:
             timestamp = int(os.fstat(f.fileno()).st_mtime)
         except AttributeError:

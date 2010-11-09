@@ -564,7 +564,8 @@ Non-ascii identifiers
 
 from test import support
 from tokenize import (tokenize, _tokenize, untokenize, NUMBER, NAME, OP,
-                     STRING, ENDMARKER, tok_name, detect_encoding)
+                     STRING, ENDMARKER, tok_name, detect_encoding,
+                     open as tokenize_open)
 from io import BytesIO
 from unittest import TestCase
 import os, sys, glob
@@ -856,6 +857,26 @@ class TestDetectEncoding(TestCase):
 
         readline = self.get_readline((b'# coding: bad\n',))
         self.assertRaises(SyntaxError, detect_encoding, readline)
+
+    def test_open(self):
+        filename = support.TESTFN + '.py'
+        self.addCleanup(support.unlink, filename)
+
+        # test coding cookie
+        for encoding in ('iso-8859-15', 'utf-8'):
+            with open(filename, 'w', encoding=encoding) as fp:
+                print("# coding: %s" % encoding, file=fp)
+                print("print('euro:\u20ac')", file=fp)
+            with tokenize_open(filename) as fp:
+                assert fp.encoding == encoding
+                assert fp.mode == 'r'
+
+        # test BOM (no coding cookie)
+        with open(filename, 'w', encoding='utf-8-sig') as fp:
+            print("print('euro:\u20ac')", file=fp)
+        with tokenize_open(filename) as fp:
+            assert fp.encoding == 'utf-8-sig'
+            assert fp.mode == 'r'
 
 class TestTokenize(TestCase):
 
