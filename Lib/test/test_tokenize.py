@@ -868,15 +868,15 @@ class TestDetectEncoding(TestCase):
                 print("# coding: %s" % encoding, file=fp)
                 print("print('euro:\u20ac')", file=fp)
             with tokenize_open(filename) as fp:
-                assert fp.encoding == encoding
-                assert fp.mode == 'r'
+                self.assertEqual(fp.encoding, encoding)
+                self.assertEqual(fp.mode, 'r')
 
         # test BOM (no coding cookie)
         with open(filename, 'w', encoding='utf-8-sig') as fp:
             print("print('euro:\u20ac')", file=fp)
         with tokenize_open(filename) as fp:
-            assert fp.encoding == 'utf-8-sig'
-            assert fp.mode == 'r'
+            self.assertEqual(fp.encoding, 'utf-8-sig')
+            self.assertEqual(fp.mode, 'r')
 
 class TestTokenize(TestCase):
 
