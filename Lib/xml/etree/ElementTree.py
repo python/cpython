@@ -913,8 +913,9 @@ def _namespaces(elem, default_namespace=None):
         iterate = elem.getiterator # cET compatibility
     for elem in iterate():
         tag = elem.tag
-        if isinstance(tag, QName) and tag.text not in qnames:
-            add_qname(tag.text)
+        if isinstance(tag, QName):
+            if tag.text not in qnames:
+                add_qname(tag.text)
         elif isinstance(tag, str):
             if tag not in qnames:
                 add_qname(tag)
