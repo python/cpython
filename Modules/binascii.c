@@ -1337,8 +1337,7 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
             ((data[in] == '\t' || data[in] == ' ') && (in + 1 == datalen)) ||
             ((data[in] < 33) &&
              (data[in] != '\r') && (data[in] != '\n') &&
-             (quotetabs ||
-            (!quotetabs && ((data[in] != '\t') && (data[in] != ' '))))))
+             (quotetabs || ((data[in] != '\t') && (data[in] != ' ')))))
         {
             if ((linelen + 3) >= MAXLINESIZE) {
                 linelen = 0;
