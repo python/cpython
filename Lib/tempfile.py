@@ -108,30 +108,19 @@ class _RandomNameSequence:
 
     _RandomNameSequence is an iterator."""
 
-    characters = ("abcdefghijklmnopqrstuvwxyz" +
-                  "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
-                  "0123456789_")
+    characters = "abcdefghijklmnopqrstuvwxyz0123456789_"
 
     def __init__(self):
-        self.mutex = _allocate_lock()
         self.rng = _Random()
-        self.normcase = _os.path.normcase
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        m = self.mutex
         c = self.characters
         choose = self.rng.choice
-
-        m.acquire()
-        try:
-            letters = [choose(c) for dummy in "123456"]
-        finally:
-            m.release()
-
-        return self.normcase(''.join(letters))
+        letters = [choose(c) for dummy in "123456"]
+        return ''.join(letters)
 
 def _candidate_tempdir_list():
     """Generate a list of candidate temporary directories which
