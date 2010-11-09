@@ -2879,12 +2879,6 @@ Build
 Documentation
 -------------
 
-- Issue #8028: ``terminate()`` was missing from the list of
-  ``multiprocessing.Process`` methods only intended for use by the parent.
-
-- Issue #7707: Document that ``multiprocessing.Queue`` operations during import
-  can lead to deadlocks.
-
 - Issue #9817: Add expat COPYING file; add expat, libffi and expat licenses
   to Doc/license.rst.
 
