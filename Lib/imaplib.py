@@ -248,6 +248,7 @@ class IMAP4:
     def shutdown(self):
         """Close I/O established in "open"."""
         self.file.close()
+        self.sock.shutdown(socket.SHUT_RDWR)
         self.sock.close()
 
 
