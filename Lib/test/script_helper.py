@@ -17,12 +17,13 @@ from test.support import make_legacy_pyc
 # Executing the interpreter in a subprocess
 def _assert_python(expected_success, *args, **env_vars):
     cmd_line = [sys.executable]
-    if env_vars:
-        env = env_vars
-    else:
-        env = os.environ
+    if not env_vars:
         cmd_line.append('-E')
     cmd_line.extend(args)
+    # Need to preserve the original environment, for in-place testing of
+    # shared library builds.
+    env = os.environ.copy()
+    env.update(env_vars)
     p = subprocess.Popen(cmd_line, stdin=subprocess.PIPE,
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                          env=env)
