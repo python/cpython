@@ -60,6 +60,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4471: Properly shutdown socket in IMAP.shutdown().  Patch by
+  Lorenzo M. Catucci.
+
 - Fix IMAP.login() to work properly.
 
 - Issue #9244: multiprocessing pool worker processes could terminate
