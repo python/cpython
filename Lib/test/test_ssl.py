@@ -109,7 +109,7 @@ class BasicSocketTests(unittest.TestCase):
         # note that this uses an 'unofficial' function in _ssl.c,
         # provided solely for this test, to exercise the certificate
         # parsing code
-        p = ssl._ssl._test_decode_cert(CERTFILE, False)
+        p = ssl._ssl._test_decode_cert(CERTFILE)
         if support.verbose:
             sys.stdout.write("\n" + pprint.pformat(p) + "\n")
 
@@ -1059,6 +1059,11 @@ else:
                     self.fail(
                         "Missing or invalid 'organizationName' field in certificate subject; "
                         "should be 'Python Software Foundation'.")
+                self.assertIn('notBefore', cert)
+                self.assertIn('notAfter', cert)
+                before = ssl.cert_time_to_seconds(cert['notBefore'])
+                after = ssl.cert_time_to_seconds(cert['notAfter'])
+                self.assertLess(before, after)
                 s.close()
             finally:
                 server.stop()

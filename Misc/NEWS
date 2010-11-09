@@ -60,6 +60,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10022: The dictionary returned by the ``getpeercert()`` method
+  of SSL sockets now has additional items such as ``issuer`` and ``notBefore``.
+
 - ``usenetrc`` is now false by default for NNTP objects.
 
 - Issue #1926: Add support for NNTP over SSL on port 563, as well as

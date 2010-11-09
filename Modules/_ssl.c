@@ -700,7 +700,7 @@ _get_peer_alt_names (X509 *certificate) {
 }
 
 static PyObject *
-_decode_certificate (X509 *certificate, int verbose) {
+_decode_certificate(X509 *certificate) {
 
     PyObject *retval = NULL;
     BIO *biobuf = NULL;
@@ -729,65 +729,60 @@ _decode_certificate (X509 *certificate, int verbose) {
     }
     Py_DECREF(peer);
 
-    if (verbose) {
-        issuer = _create_tuple_for_X509_NAME(
-            X509_get_issuer_name(certificate));
-        if (issuer == NULL)
-            goto fail0;
-        if (PyDict_SetItemString(retval, (const char *)"issuer", issuer) < 0) {
-            Py_DECREF(issuer);
-            goto fail0;
-        }
+    issuer = _create_tuple_for_X509_NAME(
+        X509_get_issuer_name(certificate));
+    if (issuer == NULL)
+        goto fail0;
+    if (PyDict_SetItemString(retval, (const char *)"issuer", issuer) < 0) {
         Py_DECREF(issuer);
-
-        version = PyLong_FromLong(X509_get_version(certificate) + 1);
-        if (PyDict_SetItemString(retval, "version", version) < 0) {
-            Py_DECREF(version);
-            goto fail0;
-        }
-        Py_DECREF(version);
+        goto fail0;
     }
+    Py_DECREF(issuer);
+
+    version = PyLong_FromLong(X509_get_version(certificate) + 1);
+    if (PyDict_SetItemString(retval, "version", version) < 0) {
+        Py_DECREF(version);
+        goto fail0;
+    }
+    Py_DECREF(version);
 
     /* get a memory buffer */
     biobuf = BIO_new(BIO_s_mem());
 
-    if (verbose) {
-
-        (void) BIO_reset(biobuf);
-        serialNumber = X509_get_serialNumber(certificate);
-        /* should not exceed 20 octets, 160 bits, so buf is big enough */
-        i2a_ASN1_INTEGER(biobuf, serialNumber);
-        len = BIO_gets(biobuf, buf, sizeof(buf)-1);
-        if (len < 0) {
-            _setSSLError(NULL, 0, __FILE__, __LINE__);
-            goto fail1;
-        }
-        sn_obj = PyUnicode_FromStringAndSize(buf, len);
-        if (sn_obj == NULL)
-            goto fail1;
-        if (PyDict_SetItemString(retval, "serialNumber", sn_obj) < 0) {
-            Py_DECREF(sn_obj);
-            goto fail1;
-        }
-        Py_DECREF(sn_obj);
-
-        (void) BIO_reset(biobuf);
-        notBefore = X509_get_notBefore(certificate);
-        ASN1_TIME_print(biobuf, notBefore);
-        len = BIO_gets(biobuf, buf, sizeof(buf)-1);
-        if (len < 0) {
-            _setSSLError(NULL, 0, __FILE__, __LINE__);
-            goto fail1;
-        }
-        pnotBefore = PyUnicode_FromStringAndSize(buf, len);
-        if (pnotBefore == NULL)
-            goto fail1;
-        if (PyDict_SetItemString(retval, "notBefore", pnotBefore) < 0) {
-            Py_DECREF(pnotBefore);
-            goto fail1;
-        }
-        Py_DECREF(pnotBefore);
+    (void) BIO_reset(biobuf);
+    serialNumber = X509_get_serialNumber(certificate);
+    /* should not exceed 20 octets, 160 bits, so buf is big enough */
+    i2a_ASN1_INTEGER(biobuf, serialNumber);
+    len = BIO_gets(biobuf, buf, sizeof(buf)-1);
+    if (len < 0) {
+        _setSSLError(NULL, 0, __FILE__, __LINE__);
+        goto fail1;
     }
+    sn_obj = PyUnicode_FromStringAndSize(buf, len);
+    if (sn_obj == NULL)
+        goto fail1;
+    if (PyDict_SetItemString(retval, "serialNumber", sn_obj) < 0) {
+        Py_DECREF(sn_obj);
+        goto fail1;
+    }
+    Py_DECREF(sn_obj);
+
+    (void) BIO_reset(biobuf);
+    notBefore = X509_get_notBefore(certificate);
+    ASN1_TIME_print(biobuf, notBefore);
+    len = BIO_gets(biobuf, buf, sizeof(buf)-1);
+    if (len < 0) {
+        _setSSLError(NULL, 0, __FILE__, __LINE__);
+        goto fail1;
+    }
+    pnotBefore = PyUnicode_FromStringAndSize(buf, len);
+    if (pnotBefore == NULL)
+        goto fail1;
+    if (PyDict_SetItemString(retval, "notBefore", pnotBefore) < 0) {
+        Py_DECREF(pnotBefore);
+        goto fail1;
+    }
+    Py_DECREF(pnotBefore);
 
     (void) BIO_reset(biobuf);
     notAfter = X509_get_notAfter(certificate);
@@ -839,10 +834,9 @@ PySSL_test_decode_certificate (PyObject *mod, PyObject *args) {
     PyObject *filename;
     X509 *x=NULL;
     BIO *cert;
-    int verbose = 1;
 
-    if (!PyArg_ParseTuple(args, "O&|i:test_decode_certificate",
-                          PyUnicode_FSConverter, &filename, &verbose))
+    if (!PyArg_ParseTuple(args, "O&:test_decode_certificate",
+                          PyUnicode_FSConverter, &filename))
         return NULL;
 
     if ((cert=BIO_new(BIO_s_file())) == NULL) {
@@ -864,7 +858,7 @@ PySSL_test_decode_certificate (PyObject *mod, PyObject *args) {
         goto fail0;
     }
 
-    retval = _decode_certificate(x, verbose);
+    retval = _decode_certificate(x);
     X509_free(x);
 
   fail0:
@@ -910,7 +904,7 @@ PySSL_peercert(PySSLSocket *self, PyObject *args)
         if ((verification & SSL_VERIFY_PEER) == 0)
             return PyDict_New();
         else
-            return _decode_certificate (self->peer_cert, 0);
+            return _decode_certificate(self->peer_cert);
     }
 }
 
