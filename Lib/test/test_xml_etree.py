@@ -1119,6 +1119,11 @@ def qname():
     >>> elem = ET.Element(ET.QName("uri", "tag"))
     >>> serialize(elem) # 1.3
     '<ns0:tag xmlns:ns0="uri" />'
+    >>> elem = ET.Element(ET.QName("uri", "tag"))
+    >>> subelem = ET.SubElement(elem, ET.QName("uri", "tag1"))
+    >>> subelem = ET.SubElement(elem, ET.QName("uri", "tag2"))
+    >>> serialize(elem) # 1.4
+    '<ns0:tag xmlns:ns0="uri"><ns0:tag1 /><ns0:tag2 /></ns0:tag>'
 
     2) decorated attributes
 
