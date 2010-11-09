@@ -143,6 +143,9 @@ C-API
 Library
 -------
 
+- Issue #4471: Properly shutdown socket in IMAP.shutdown().  Patch by
+  Lorenzo M. Catucci.
+
 - Fix IMAP.login() to work properly.
 
 - Issue #10126: Fix distutils' test_build when Python was built with

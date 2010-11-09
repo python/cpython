@@ -220,6 +220,7 @@ class RemoteIMAPTest(unittest.TestCase):
 
     def test_logout(self):
         rs = self.server.logout()
+        self.server = None
         self.assertEqual(rs[0], 'BYE')
 
 
