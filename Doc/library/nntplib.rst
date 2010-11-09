@@ -52,24 +52,26 @@ headers, and that you have right to post on the particular newsgroup)::
 The module itself defines the following classes:
 
 
-.. class:: NNTP(host, port=119, user=None, password=None, readermode=None, usenetrc=True, [timeout])
+.. class:: NNTP(host, port=119, user=None, password=None, readermode=None, usenetrc=False, [timeout])
 
    Return a new :class:`NNTP` object, representing a connection
    to the NNTP server running on host *host*, listening at port *port*.
    An optional *timeout* can be specified for the socket connection.
    If the optional *user* and *password* are provided, or if suitable
    credentials are present in :file:`/.netrc` and the optional flag *usenetrc*
-   is true (the default), the ``AUTHINFO USER`` and ``AUTHINFO PASS`` commands
-   are used to identify and authenticate the user to the server.  If the optional
+   is true, the ``AUTHINFO USER`` and ``AUTHINFO PASS`` commands are used
+   to identify and authenticate the user to the server.  If the optional
    flag *readermode* is true, then a ``mode reader`` command is sent before
    authentication is performed.  Reader mode is sometimes necessary if you are
    connecting to an NNTP server on the local machine and intend to call
    reader-specific commands, such as ``group``.  If you get unexpected
    :exc:`NNTPPermanentError`\ s, you might need to set *readermode*.
-   *readermode* defaults to ``None``. *usenetrc* defaults to ``True``.
+
+   .. versionchanged:: 3.2
+      *usenetrc* is now False by default.
 
 
-.. class:: NNTP_SSL(host, port=563, user=None, password=None, ssl_context=None, readermode=None, usenetrc=True, [timeout])
+.. class:: NNTP_SSL(host, port=563, user=None, password=None, ssl_context=None, readermode=None, usenetrc=False, [timeout])
 
    Return a new :class:`NNTP_SSL` object, representing an encrypted
    connection to the NNTP server running on host *host*, listening at
