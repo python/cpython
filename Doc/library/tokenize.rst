@@ -101,14 +101,16 @@ function it uses to do this is available:
     If no encoding is specified, then the default of ``'utf-8'`` will be
     returned.
 
-    :func:`detect_encoding` is useful for robustly reading Python source files.
-    A common pattern for this follows::
+    Use :func:`open` to open Python source files: it uses
+    :func:`detect_encoding` to detect the file encoding.
 
-        def read_python_source(file_name):
-            with open(file_name, "rb") as fp:
-                encoding = tokenize.detect_encoding(fp.readline)[0]
-            with open(file_name, "r", encoding=encoding) as fp:
-                return fp.read()
+
+.. function:: open(filename)
+
+   Open a file in read only mode using the encoding detected by
+   :func:`detect_encoding`.
+
+   .. versionadded:: 3.2
 
 
 Example of a script rewriter that transforms float literals into Decimal
@@ -152,5 +154,4 @@ objects::
             else:
                 result.append((toknum, tokval))
         return untokenize(result).decode('utf-8')
-
 

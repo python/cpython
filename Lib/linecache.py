@@ -123,9 +123,7 @@ def updatecache(filename, module_globals=None):
         else:
             return []
     try:
-        with open(fullname, 'rb') as fp:
-            coding, line = tokenize.detect_encoding(fp.readline)
-        with open(fullname, 'r', encoding=coding) as fp:
+        with tokenize.open(fullname) as fp:
             lines = fp.readlines()
     except IOError:
         return []

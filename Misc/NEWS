@@ -60,6 +60,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10335: Add tokenize.open(), detect the file encoding using
+  tokenize.detect_encoding() and open it in read only mode.
+
 - Issue #10321: Added support for binary data to smtplib.SMTP.sendmail,
   and a new method send_message to send an email.message.Message object.
 
