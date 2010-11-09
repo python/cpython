@@ -22,7 +22,7 @@ struct arrayobject; /* Forward */
  * functions aren't visible yet.
  */
 struct arraydescr {
-    int typecode;
+    Py_UNICODE typecode;
     int itemsize;
     PyObject * (*getitem)(struct arrayobject *, Py_ssize_t);
     int (*setitem)(struct arrayobject *, Py_ssize_t, PyObject *);
@@ -1428,7 +1428,7 @@ representation.");
 static PyObject *
 array_tostring(arrayobject *self, PyObject *unused)
 {
-    if (PyErr_WarnEx(PyExc_DeprecationWarning, 
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
             "tostring() is deprecated. Use tobytes() instead.", 2) != 0)
         return NULL;
     return array_tobytes(self, unused);
@@ -1680,17 +1680,16 @@ static PyObject *array_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
  * NULL is returned to indicate a failure.
  */
 static PyObject *
-make_array(PyTypeObject *arraytype, int typecode, PyObject *items)
+make_array(PyTypeObject *arraytype, Py_UNICODE typecode, PyObject *items)
 {
     PyObject *new_args;
     PyObject *array_obj;
     PyObject *typecode_obj;
-    Py_UNICODE typecode_str[1] = {typecode};
 
     assert(arraytype != NULL);
     assert(items != NULL);
 
-    typecode_obj = PyUnicode_FromUnicode(typecode_str, 1);
+    typecode_obj = PyUnicode_FromUnicode(&typecode, 1);
     if (typecode_obj == NULL)
         return NULL;
 
@@ -1720,13 +1719,16 @@ array_reconstructor(PyObject *self, PyObject *args)
     PyObject *items;
     PyObject *converted_items;
     PyObject *result;
-    int typecode;
+    int typecode_int;
+    Py_UNICODE typecode;
     enum machine_format_code mformat_code;
     struct arraydescr *descr;
 
     if (!PyArg_ParseTuple(args, "OCiO:array._array_reconstructor",
-                    &arraytype, &typecode, &mformat_code, &items))
+                    &arraytype, &typecode_int, &mformat_code, &items))
         return NULL;
+
+    typecode = (Py_UNICODE)typecode_int;
 
     if (!PyType_Check(arraytype)) {
         PyErr_Format(PyExc_TypeError,
