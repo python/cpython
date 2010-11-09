@@ -10,7 +10,7 @@ import os.path
 import SocketServer
 import time
 
-from test_support import reap_threads, verbose
+from test_support import reap_threads, verbose, transient_internet
 import unittest
 
 try:
@@ -178,8 +178,45 @@ class ThreadedNetworkedTestsSSL(BaseThreadedNetworkedTests):
     imap_class = IMAP4_SSL
 
 
-def test_main():
+class RemoteIMAPTest(unittest.TestCase):
+    host = 'cyrus.andrew.cmu.edu'
+    port = 143
+    username = 'anonymous'
+    password = 'pass'
+    imap_class = imaplib.IMAP4
 
+    def setUp(self):
+        with transient_internet(self.host):
+            self.server = self.imap_class(self.host, self.port)
+
+    def tearDown(self):
+        if self.server is not None:
+            self.server.logout()
+
+    def test_logincapa(self):
+        self.assertTrue('LOGINDISABLED' in self.server.capabilities)
+
+    def test_anonlogin(self):
+        self.assertTrue('AUTH=ANONYMOUS' in self.server.capabilities)
+        rs = self.server.login(self.username, self.password)
+        self.assertEqual(rs[0], 'OK')
+
+    def test_logout(self):
+        rs = self.server.logout()
+        self.assertEqual(rs[0], 'BYE')
+
+
+@unittest.skipUnless(ssl, "SSL not available")
+class RemoteIMAP_SSLTest(RemoteIMAPTest):
+    port = 993
+    imap_class = IMAP4_SSL
+
+    def test_logincapa(self):
+        self.assertFalse('LOGINDISABLED' in self.server.capabilities)
+        self.assertTrue('AUTH=PLAIN' in self.server.capabilities)
+
+
+def test_main():
     tests = [TestImaplib]
 
     if support.is_resource_enabled('network'):
@@ -189,7 +226,10 @@ def test_main():
                                     "keycert.pem")
             if not os.path.exists(CERTFILE):
                 raise support.TestFailed("Can't read certificate files!")
-        tests.extend([ThreadedNetworkedTests, ThreadedNetworkedTestsSSL])
+        tests.extend([
+            ThreadedNetworkedTests, ThreadedNetworkedTestsSSL,
+            RemoteIMAPTest, RemoteIMAP_SSLTest,
+        ])
 
     support.run_unittest(*tests)
 
