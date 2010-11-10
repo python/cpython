@@ -379,7 +379,7 @@ Here is a brief demonstration::
 
    >>> basket = {'apple', 'orange', 'apple', 'pear', 'orange', 'banana'}
    >>> print(basket)                      # show that duplicates have been removed
-   {'orange', 'bananna', 'pear', 'apple'}
+   {'orange', 'banana', 'pear', 'apple'}
    >>> 'orange' in basket                 # fast membership testing
    True
    >>> 'crabgrass' in basket
