@@ -35,6 +35,11 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    complicated way on how many elements the sequences have in common; best case
    time is linear.
 
+   **Heuristic:** To speed-up matching, items whose duplicates appear more than 1% of
+   the time in sequences of at least 200 items are treated as junk.  This has the
+   unfortunate side-effect of giving bad results for sequences constructed from
+   a small set of items.  An option to turn off the heuristic will be added to
+   Python 3.2.
 
 .. class:: Differ
 
