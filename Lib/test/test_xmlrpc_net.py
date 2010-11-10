@@ -38,6 +38,7 @@ class CurrentTimeTest(unittest.TestCase):
     def test_python_builders(self):
         # Get the list of builders from the XMLRPC buildbot interface at
         # python.org.
+        self.skipTest("XMLRPC interface removed in Buildbot 0.8.2")
         server = xmlrpclib.ServerProxy("http://www.python.org/dev/buildbot/all/xmlrpc/")
         try:
             builders = server.getAllBuilders()
