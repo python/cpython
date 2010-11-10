@@ -884,14 +884,17 @@ class IMAP4:
 
 
     def _command_complete(self, name, tag):
-        self._check_bye()
+        # BYE is expected after LOGOUT
+        if name != 'LOGOUT':
+            self._check_bye()
         try:
             typ, data = self._get_tagged_response(tag)
         except self.abort, val:
             raise self.abort('command: %s => %s' % (name, val))
         except self.error, val:
             raise self.error('command: %s => %s' % (name, val))
-        self._check_bye()
+        if name != 'LOGOUT':
+            self._check_bye()
         if typ == 'BAD':
             raise self.error('%s command error: %s %s' % (name, typ, data))
         return typ, data
