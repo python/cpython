@@ -52,8 +52,6 @@ class CfgParserTestCaseClass(unittest.TestCase):
 class BasicTestCase(CfgParserTestCaseClass):
 
     def basic_test(self, cf):
-        L = cf.sections()
-        L.sort()
         E = ['Commented Bar',
              'Foo Bar',
              'Internationalized Stuff',
@@ -64,20 +62,34 @@ class BasicTestCase(CfgParserTestCaseClass):
              'Spacey Bar From The Beginning',
              'Types',
              ]
+
         if self.allow_no_value:
             E.append('NoValue')
         E.sort()
+
+        # API access
+        L = cf.sections()
+        L.sort()
         eq = self.assertEqual
+        eq(L, E)
+
+        # mapping access
+        L = [section for section in cf]
+        L.sort()
+        E.append(configparser.DEFAULTSECT)
+        E.sort()
         eq(L, E)
 
         # The use of spaces in the section names serves as a
         # regression test for SourceForge bug #583248:
         # http://www.python.org/sf/583248
-        eq(cf.get('Foo Bar', 'foo'), 'bar')
-        eq(cf.get('Spacey Bar', 'foo'), 'bar')
-        eq(cf.get('Spacey Bar From The Beginning', 'foo'), 'bar')
+
+        # API access
+        eq(cf.get('Foo Bar', 'foo'), 'bar1')
+        eq(cf.get('Spacey Bar', 'foo'), 'bar2')
+        eq(cf.get('Spacey Bar From The Beginning', 'foo'), 'bar3')
         eq(cf.get('Spacey Bar From The Beginning', 'baz'), 'qwe')
-        eq(cf.get('Commented Bar', 'foo'), 'bar')
+        eq(cf.get('Commented Bar', 'foo'), 'bar4')
         eq(cf.get('Commented Bar', 'baz'), 'qwe')
         eq(cf.get('Spaces', 'key with spaces'), 'value')
         eq(cf.get('Spaces', 'another with spaces'), 'splat!')
@@ -89,40 +101,69 @@ class BasicTestCase(CfgParserTestCaseClass):
         if self.allow_no_value:
             eq(cf.get('NoValue', 'option-without-value'), None)
 
-        # test vars= and default=
-        eq(cf.get('Foo Bar', 'foo', default='baz'), 'bar')
+        # test vars= and fallback=
+        eq(cf.get('Foo Bar', 'foo', fallback='baz'), 'bar1')
         eq(cf.get('Foo Bar', 'foo', vars={'foo': 'baz'}), 'baz')
         with self.assertRaises(configparser.NoSectionError):
             cf.get('No Such Foo Bar', 'foo')
         with self.assertRaises(configparser.NoOptionError):
             cf.get('Foo Bar', 'no-such-foo')
-        eq(cf.get('No Such Foo Bar', 'foo', default='baz'), 'baz')
-        eq(cf.get('Foo Bar', 'no-such-foo', default='baz'), 'baz')
-        eq(cf.get('Spacey Bar', 'foo', default=None), 'bar')
-        eq(cf.get('No Such Spacey Bar', 'foo', default=None), None)
-        eq(cf.getint('Types', 'int', default=18), 42)
-        eq(cf.getint('Types', 'no-such-int', default=18), 18)
-        eq(cf.getint('Types', 'no-such-int', default="18"), "18") # sic!
+        eq(cf.get('No Such Foo Bar', 'foo', fallback='baz'), 'baz')
+        eq(cf.get('Foo Bar', 'no-such-foo', fallback='baz'), 'baz')
+        eq(cf.get('Spacey Bar', 'foo', fallback=None), 'bar2')
+        eq(cf.get('No Such Spacey Bar', 'foo', fallback=None), None)
+        eq(cf.getint('Types', 'int', fallback=18), 42)
+        eq(cf.getint('Types', 'no-such-int', fallback=18), 18)
+        eq(cf.getint('Types', 'no-such-int', fallback="18"), "18") # sic!
         self.assertAlmostEqual(cf.getfloat('Types', 'float',
-                                           default=0.0), 0.44)
+                                           fallback=0.0), 0.44)
         self.assertAlmostEqual(cf.getfloat('Types', 'no-such-float',
-                                           default=0.0), 0.0)
-        eq(cf.getfloat('Types', 'no-such-float', default="0.0"), "0.0") # sic!
-        eq(cf.getboolean('Types', 'boolean', default=True), False)
-        eq(cf.getboolean('Types', 'no-such-boolean', default="yes"),
+                                           fallback=0.0), 0.0)
+        eq(cf.getfloat('Types', 'no-such-float', fallback="0.0"), "0.0") # sic!
+        eq(cf.getboolean('Types', 'boolean', fallback=True), False)
+        eq(cf.getboolean('Types', 'no-such-boolean', fallback="yes"),
            "yes") # sic!
-        eq(cf.getboolean('Types', 'no-such-boolean', default=True), True)
-        eq(cf.getboolean('No Such Types', 'boolean', default=True), True)
+        eq(cf.getboolean('Types', 'no-such-boolean', fallback=True), True)
+        eq(cf.getboolean('No Such Types', 'boolean', fallback=True), True)
         if self.allow_no_value:
-            eq(cf.get('NoValue', 'option-without-value', default=False), None)
+            eq(cf.get('NoValue', 'option-without-value', fallback=False), None)
             eq(cf.get('NoValue', 'no-such-option-without-value',
-                      default=False), False)
+                      fallback=False), False)
 
+        # mapping access
+        eq(cf['Foo Bar']['foo'], 'bar1')
+        eq(cf['Spacey Bar']['foo'], 'bar2')
+        eq(cf['Spacey Bar From The Beginning']['foo'], 'bar3')
+        eq(cf['Spacey Bar From The Beginning']['baz'], 'qwe')
+        eq(cf['Commented Bar']['foo'], 'bar4')
+        eq(cf['Commented Bar']['baz'], 'qwe')
+        eq(cf['Spaces']['key with spaces'], 'value')
+        eq(cf['Spaces']['another with spaces'], 'splat!')
+        eq(cf['Long Line']['foo'],
+           'this line is much, much longer than my editor\nlikes it.')
+        if self.allow_no_value:
+            eq(cf['NoValue']['option-without-value'], None)
+
+        # API access
         self.assertNotIn('__name__', cf.options("Foo Bar"),
                          '__name__ "option" should not be exposed by the API!')
 
+        # mapping access
+        self.assertNotIn('__name__', cf['Foo Bar'],
+                         '__name__ "option" should not be exposed by '
+                         'mapping protocol access')
+        self.assertFalse('__name__' in cf['Foo Bar'])
+        with self.assertRaises(ValueError):
+            cf['Foo Bar']['__name__']
+        with self.assertRaises(ValueError):
+            del cf['Foo Bar']['__name__']
+        with self.assertRaises(ValueError):
+            cf['Foo Bar']['__name__'] = "can't write to this special name"
+
         # Make sure the right things happen for remove_option();
         # added to include check for SourceForge bug #123324:
+
+        # API acceess
         self.assertTrue(cf.remove_option('Foo Bar', 'foo'),
                         "remove_option() failed to report existence of option")
         self.assertFalse(cf.has_option('Foo Bar', 'foo'),
@@ -138,17 +179,25 @@ class BasicTestCase(CfgParserTestCaseClass):
         eq(cf.get('Long Line', 'foo'),
            'this line is much, much longer than my editor\nlikes it.')
 
+        # mapping access
+        del cf['Spacey Bar']['foo']
+        self.assertFalse('foo' in cf['Spacey Bar'])
+        with self.assertRaises(KeyError):
+            del cf['Spacey Bar']['foo']
+        with self.assertRaises(KeyError):
+            del cf['No Such Section']['foo']
+
     def test_basic(self):
         config_string = """\
 [Foo Bar]
-foo{0[0]}bar
+foo{0[0]}bar1
 [Spacey Bar]
-foo {0[0]} bar
+foo {0[0]} bar2
 [Spacey Bar From The Beginning]
-  foo {0[0]} bar
+  foo {0[0]} bar3
   baz {0[0]} qwe
 [Commented Bar]
-foo{0[1]} bar {1[1]} comment
+foo{0[1]} bar4 {1[1]} comment
 baz{0[0]}qwe {1[0]}another one
 [Long Line]
 foo{0[1]} this line is much, much longer than my editor
@@ -205,17 +254,17 @@ boolean {0[0]} NO
     def test_basic_from_dict(self):
         config = {
             "Foo Bar": {
-                "foo": "bar",
+                "foo": "bar1",
             },
             "Spacey Bar": {
-                "foo": "bar",
+                "foo": "bar2",
             },
             "Spacey Bar From The Beginning": {
-                "foo": "bar",
+                "foo": "bar3",
                 "baz": "qwe",
             },
             "Commented Bar": {
-                "foo": "bar",
+                "foo": "bar4",
                 "baz": "qwe",
             },
             "Long Line": {
@@ -270,14 +319,18 @@ boolean {0[0]} NO
         cf = self.newconfig()
         cf.add_section("A")
         cf.add_section("a")
+        cf.add_section("B")
         L = cf.sections()
         L.sort()
         eq = self.assertEqual
-        eq(L, ["A", "a"])
+        eq(L, ["A", "B", "a"])
         cf.set("a", "B", "value")
         eq(cf.options("a"), ["b"])
         eq(cf.get("a", "b"), "value",
            "could not locate option, expecting case-insensitive option names")
+        with self.assertRaises(configparser.NoSectionError):
+            # section names are case-sensitive
+            cf.set("b", "A", "value")
         self.assertTrue(cf.has_option("a", "b"))
         cf.set("A", "A-B", "A-B value")
         for opt in ("a-b", "A-b", "a-B", "A-B"):
@@ -291,7 +344,7 @@ boolean {0[0]} NO
 
         # SF bug #432369:
         cf = self.fromstring(
-            "[MySection]\nOption{} first line\n\tsecond line\n".format(
+            "[MySection]\nOption{} first line   \n\tsecond line   \n".format(
                 self.delimiters[0]))
         eq(cf.options("MySection"), ["option"])
         eq(cf.get("MySection", "Option"), "first line\nsecond line")
@@ -302,6 +355,46 @@ boolean {0[0]} NO
                              defaults={"key":"value"})
         self.assertTrue(cf.has_option("section", "Key"))
 
+
+    def test_case_sensitivity_mapping_access(self):
+        cf = self.newconfig()
+        cf["A"] = {}
+        cf["a"] = {"B": "value"}
+        cf["B"] = {}
+        L = [section for section in cf]
+        L.sort()
+        eq = self.assertEqual
+        elem_eq = self.assertItemsEqual
+        eq(L, ["A", "B", configparser.DEFAULTSECT, "a"])
+        eq(cf["a"].keys(), {"b"})
+        eq(cf["a"]["b"], "value",
+           "could not locate option, expecting case-insensitive option names")
+        with self.assertRaises(KeyError):
+            # section names are case-sensitive
+            cf["b"]["A"] = "value"
+        self.assertTrue("b" in cf["a"])
+        cf["A"]["A-B"] = "A-B value"
+        for opt in ("a-b", "A-b", "a-B", "A-B"):
+            self.assertTrue(
+                opt in cf["A"],
+                "has_option() returned false for option which should exist")
+        eq(cf["A"].keys(), {"a-b"})
+        eq(cf["a"].keys(), {"b"})
+        del cf["a"]["B"]
+        elem_eq(cf["a"].keys(), {})
+
+        # SF bug #432369:
+        cf = self.fromstring(
+            "[MySection]\nOption{} first line   \n\tsecond line   \n".format(
+                self.delimiters[0]))
+        eq(cf["MySection"].keys(), {"option"})
+        eq(cf["MySection"]["Option"], "first line\nsecond line")
+
+        # SF bug #561822:
+        cf = self.fromstring("[section]\n"
+                             "nekey{}nevalue\n".format(self.delimiters[0]),
+                             defaults={"key":"value"})
+        self.assertTrue("Key" in cf["section"])
 
     def test_default_case_sensitivity(self):
         cf = self.newconfig({"foo": "Bar"})

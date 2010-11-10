@@ -7,7 +7,9 @@
 .. moduleauthor:: Ken Manheimer <klm@zope.com>
 .. moduleauthor:: Barry Warsaw <bwarsaw@python.org>
 .. moduleauthor:: Eric S. Raymond <esr@thyrsus.com>
+.. moduleauthor:: Łukasz Langa <lukasz@langa.pl>
 .. sectionauthor:: Christopher G. Petrilli <petrilli@amber.org>
+.. sectionauthor:: Łukasz Langa <lukasz@langa.pl>
 
 .. index::
    pair: .ini; file
@@ -26,26 +28,219 @@ customized by end users easily.
    This library does *not* interpret or write the value-type prefixes used in
    the Windows Registry extended version of INI syntax.
 
+.. seealso::
+
+   Module :mod:`shlex`
+      Support for a creating Unix shell-like mini-languages which can be used
+      as an alternate format for application configuration files.
+
+Quick Start
+-----------
+
+.. highlightlang:: none
+
+Let's take a very basic configuration file that looks like this::
+
+  [DEFAULT]
+    ServerAliveInterval = 45
+    Compression = yes
+    CompressionLevel = 9
+    ForwardX11 = yes
+
+  [bitbucket.org]
+    User = hg
+
+  [topsecret.server.com]
+    Port = 50022
+    ForwardX11 = no
+
+The supported file structure of INI files is described `in the following section
+<#supported-ini-file-structure>`_, fow now all there's to know is that the file
+consists of sections, each of which contains keys with values.
+:mod:`configparser` classes can read and write such files. Let's start by
+creating the above configuration file programatically.
+
+.. highlightlang:: python
+.. doctest::
+
+    >>> import configparser
+    >>> config = configparser.RawConfigParser()
+    >>> config['DEFAULT'] = {'ServerAliveInterval': '45',
+    ...                      'Compression': 'yes',
+    ...                      'CompressionLevel': '9'}
+    >>> config['bitbucket.org'] = {}
+    >>> config['bitbucket.org']['User'] = 'hg'
+    >>> config['topsecret.server.com'] = {}
+    >>> topsecret = config['topsecret.server.com']
+    >>> topsecret['Port'] = '50022'     # mutates the parser
+    >>> topsecret['ForwardX11'] = 'no'  # same here
+    >>> config['DEFAULT']['ForwardX11'] = 'yes'
+    >>> with open('example.ini', 'w') as configfile:
+    ...   config.write(configfile)
+    ...
+
+As you can see, we can treat a config parser just like a dictionary. There are
+a few differences, `outlined later on <#mapping-protocol-access>`_, but the
+behaviour is very close to what you'd expect from a dictionary.
+
+Now that we've created and saved a configuration file, let's try reading it
+back and exploring the data it holds.
+
+.. highlightlang:: python
+.. doctest::
+
+    >>> import configparser
+    >>> config = configparser.RawConfigParser()
+    >>> config.sections()
+    []
+    >>> config.read('example.ini')
+    ['example.ini']
+    >>> config.sections()
+    ['bitbucket.org', 'topsecret.server.com']
+    >>> 'bitbucket.org' in config
+    True
+    >>> 'bytebong.com' in config
+    False
+    >>> config['bitbucket.org']['User']
+    'hg'
+    >>> config['DEFAULT']['Compression']
+    'yes'
+    >>> topsecret = config['topsecret.server.com']
+    >>> topsecret['ForwardX11']
+    'no'
+    >>> topsecret['Port']
+    '50022'
+    >>> for key in config['bitbucket.org']: print(key)
+    ...
+    user
+    compressionlevel
+    serveraliveinterval
+    compression
+    forwardx11
+    >>> config['bitbucket.org']['ForwardX11']
+    'yes'
+
+As we can see above, the API is pretty straight forward. The only bit of magic
+involves the ``DEFAULT`` section which provides default values for all other
+sections [customizable]_. Another thing to note is that keys in sections are
+case-insensitive so they're stored in lowercase [customizable]_.
+
+Supported Datatypes
+-------------------
+
+Config parsers do not guess datatypes of values in configuration files, always
+storing them internally as strings. This means that if you need other datatypes,
+you should convert on your own:
+
+.. highlightlang:: python
+.. doctest::
+
+    >>> int(topsecret['Port'])
+    50022
+    >>> float(topsecret['CompressionLevel'])
+    9.0
+
+Converting to the boolean type is not that simple, though. Wrapping the return
+value around ``bool()`` would do us no good since ``bool('False')`` is still
+``True``. This is why config parsers also provide :meth:`getboolean`. This handy
+method is also case insensitive and correctly recognizes boolean values from
+``'yes'``/``'no'``, ``'on'``/``'off'`` and ``'1'``/``'0'`` [customizable]_.  An
+example of getting the boolean value:
+
+.. highlightlang:: python
+.. doctest::
+
+    >>> topsecret.getboolean('ForwardX11')
+    False
+    >>> config['bitbucket.org'].getboolean('ForwardX11')
+    True
+    >>> config.getboolean('bitbucket.org', 'Compression')
+    True
+
+Apart from :meth:`getboolean`, config parsers also provide equivalent
+:meth:`getint` and :meth:`getfloat` methods but these are far less useful
+because explicit casting is enough for these types.
+
+Fallback Values
+---------------
+
+As with a regular dictionary, you can use a section's :meth:`get` method to
+provide fallback values:
+
+.. highlightlang:: python
+.. doctest::
+
+    >>> topsecret.get('Port')
+    '50022'
+    >>> topsecret.get('CompressionLevel')
+    '9'
+    >>> topsecret.get('Cipher')
+    >>> topsecret.get('Cipher', '3des-cbc')
+    '3des-cbc'
+
+Please note that default values have precedence over fallback values. For
+instance, in our example the ``CompressionLevel`` key was specified only in the
+``DEFAULT`` section. If we try to get it from the section
+``topsecret.server.com``, we will always get the default, even if we specify
+a fallback:
+
+.. highlightlang:: python
+.. doctest::
+
+    >>> topsecret.get('CompressionLevel', '3')
+    '9'
+
+One more thing to be aware of is that the parser-level :meth:`get` method
+provides a custom, more complex interface, maintained for backwards
+compatibility. When using this method, a fallback value can be provided via the
+``fallback`` keyword-only argument:
+
+.. highlightlang:: python
+.. doctest::
+
+    >>> config.get('bitbucket.org', 'monster',
+    ...            fallback='No such things as monsters')
+    'No such things as monsters'
+
+The same ``fallback`` argument can be used with the :meth:`getint`,
+:meth:`getfloat` and :meth:`getboolean` methods, for example:
+
+.. highlightlang:: python
+.. doctest::
+
+    >>> 'BatchMode' in topsecret
+    False
+    >>> topsecret.getboolean('BatchMode', fallback=True)
+    True
+    >>> config['DEFAULT']['BatchMode'] = 'no'
+    >>> topsecret.getboolean('BatchMode', fallback=True)
+    False
+
+Supported INI File Structure
+----------------------------
+
 A configuration file consists of sections, each led by a ``[section]`` header,
 followed by key/value entries separated by a specific string (``=`` or ``:`` by
-default). By default, section names are case sensitive but keys are not. Leading
-und trailing whitespace is removed from keys and from values.  Values can be
-omitted, in which case the key/value delimiter may also be left out.  Values
-can also span multiple lines, as long as they are indented deeper than the first
-line of the value.  Depending on the parser's mode, blank lines may be treated
-as parts of multiline values or ignored.
+default [customizable]_). By default, section names are case sensitive but keys
+are not [customizable]_. Leading und trailing whitespace is removed from keys and from values.
+Values can be omitted, in which case the key/value delimiter may also be left
+out.  Values can also span multiple lines, as long as they are indented deeper
+than the first line of the value.  Depending on the parser's mode, blank lines
+may be treated as parts of multiline values or ignored.
 
 Configuration files may include comments, prefixed by specific characters (``#``
-and ``;`` by default).  Comments may appear on their own in an otherwise empty
-line, or may be entered in lines holding values or section names.  In the
-latter case, they need to be preceded by a whitespace character to be recognized
-as a comment.  (For backwards compatibility, by default only ``;`` starts an
-inline comment, while ``#`` does not.)
+and ``;`` by default [customizable]_).  Comments may appear on their own in an
+otherwise empty line, or may be entered in lines holding values or section
+names.  In the latter case, they need to be preceded by a whitespace character
+to be recognized as a comment.  (For backwards compatibility, by default only
+``;`` starts an inline comment, while ``#`` does not [customizable]_.)
 
 On top of the core functionality, :class:`SafeConfigParser` supports
 interpolation.  This means values can contain format strings which refer to
-other values in the same section, or values in a special ``DEFAULT`` section.
-Additional defaults can be provided on initialization.
+other values in the same section, or values in a special ``DEFAULT`` section
+[customizable]_.  Additional defaults can be provided on initialization.
+
+.. highlightlang:: none
 
 For example::
 
@@ -80,7 +275,6 @@ For example::
             of a value
          # Did I mention we can indent comments, too?
 
-
 In the example above, :class:`SafeConfigParser` would resolve ``%(home_dir)s``
 to the value of ``home_dir`` (``/Users`` in this case).  ``%(my_dir)s`` in
 effect would resolve to ``/Users/lumberjack``.  All interpolations are done on
@@ -92,15 +286,406 @@ value of ``my_pictures`` and ``%(home_dir)s/lumberjack`` as the value of
 ``my_dir``.  Other features presented in the example are handled in the same
 manner by both parsers.
 
-Default values can be specified by passing them as a dictionary when
-constructing the :class:`SafeConfigParser`.
+Mapping Protocol Access
+-----------------------
 
-Sections are normally stored in an :class:`collections.OrderedDict` which
-maintains the order of all keys.  An alternative dictionary type can be passed
-to the :meth:`__init__` method.  For example, if a dictionary type is passed
-that sorts its keys, the sections will be sorted on write-back, as will be the
-keys within each section.
+.. versionadded:: 3.2
+.. highlightlang:: python
 
+Mapping protocol access is a generic name for functionality that enables using
+custom objects as if they were dictionaries. In case of :mod:`configparser`,
+the mapping interface implementation is using the
+``parser['section']['option']`` notation.
+
+``parser['section']`` in particular returns a proxy for the section's data in
+the parser. This means that the values are not copied but they are taken from
+the original parser on demand. What's even more important is that when values
+are changed on a section proxy, they are actually mutated in the original
+parser.
+
+:mod:`configparser` objects behave as close to actual dictionaries as possible.
+The mapping interface is complete and adheres to the ``MutableMapping`` ABC.
+However, there are a few differences that should be taken into account:
+
+* by default, all keys in sections are accessible in a case-insensitive manner
+  [customizable]_. E.g. ``for option in parser["section"]`` yields only
+  ``optionxform``'ed option key names. This means lowercased keys by default.
+  At the same time, for a section that holds the key ``"a"``, both expressions
+  return ``True``::
+
+  "a" in parser["section"]
+  "A" in parser["section"]
+
+* all sections include ``DEFAULTSECT`` values as well which means that
+  ``.clear()`` on a section may not leave the section visibly empty. This is
+  because default values cannot be deleted from the section (because technically
+  they are not there). If they are overriden in the section, deleting causes the
+  default value to be visible again. Trying to delete a default value causes
+  a ``KeyError``.
+
+* trying to delete the ``DEFAULTSECT`` throws ``ValueError``
+
+* there are two parser-level methods in the legacy API that hide
+  the dictionary interface and are incompatible:
+
+  * ``parser.get(section, option, **kwargs)`` - the second argument is **not**
+    a fallback value
+
+  * ``parser.items(section)`` - this returns a list of ``(option, value)``
+    pairs for a specified ``section``.
+
+The mapping protocol is implemented on top of the existing legacy API so that
+subclassing the original interface makes the mappings work as expected as well.
+One difference is the explicit lack of support for the `__name__` special key.
+This is because the existing behaviour of `__name__` is very inconsistent and
+supporting it would only lead to problems. Details `here
+<http://mail.python.org/pipermail/python-dev/2010-July/102556.html>`_.
+
+Customizing Parser Behaviour
+----------------------------
+
+There are nearly as many INI format variants as there are applications using it.
+:mod:`configparser` goes a long way to provide support for the largest sensible
+set of INI styles available. The default functionality is mainly dictated by
+historical background and it's very likely that you will want to customize some
+of the features.
+
+The most natural way to change the way a specific config parser works is to use
+the :meth:`__init__` options:
+
+* *defaults*, default value: ``None``
+
+  This option accepts a dictionary of key-value pairs which will be initially
+  put in the ``DEFAULTSECT``. This makes for an elegant way to support concise
+  configuration files that don't specify values which are the same as the
+  documented default.
+
+  Hint: if you want to specify default values for a specific section, use the
+  :meth:`read_dict` before you read the actual file.
+
+* *dict_type*, default value: :class:`collections.OrderedDict`
+
+  This option has a major impact on how the mapping protocol will behave and how
+  the written configuration files will look like. With the default ordered
+  dictionary, every section is stored in the order they were added to the
+  parser. Same goes for options within sections.
+
+  An alternative dictionary type can be used for example to sort sections and
+  options on write-back. You can also use a regular dictionary for performance
+  reasons.
+
+  Please note: there are ways to add a set of key-value pairs in a single
+  operation. When you use a regular dictionary in those operations, the order of
+  the keys may be random. For example:
+
+  .. highlightlang:: python
+  .. doctest::
+
+    >>> parser = configparser.RawConfigParser()
+    >>> parser.read_dict({'section1': {'key1': 'value1',
+    ...                                'key2': 'value2',
+    ...                                'key3': 'value3'},
+    ...                   'section2': {'keyA': 'valueA',
+    ...                                'keyB': 'valueB',
+    ...                                'keyC': 'valueC'},
+    ...                   'section3': {'foo': 'x',
+    ...                                'bar': 'y',
+    ...                                'baz': 'z'}
+    ... })
+    >>> parser.sections()
+    ['section3', 'section2', 'section1']
+    >>> [option for option in parser['section3']]
+    ['baz', 'foo', 'bar']
+
+  In these operations you need to use an ordered dictionary as well:
+
+  .. highlightlang:: python
+  .. doctest::
+
+    >>> from collections import OrderedDict
+    >>> parser = configparser.RawConfigParser()
+    >>> parser.read_dict(
+    ...   OrderedDict((
+    ...     ('s1',
+    ...      OrderedDict((
+    ...        ('1', '2'),
+    ...        ('3', '4'),
+    ...        ('5', '6'),
+    ...      ))
+    ...     ),
+    ...     ('s2',
+    ...      OrderedDict((
+    ...        ('a', 'b'),
+    ...        ('c', 'd'),
+    ...        ('e', 'f'),
+    ...      ))
+    ...     ),
+    ...   ))
+    ... )
+    >>> parser.sections()
+    ['s1', 's2']
+    >>> [option for option in parser['s1']]
+    ['1', '3', '5']
+    >>> [option for option in parser['s2'].values()]
+    ['b', 'd', 'f']
+
+* *allow_no_value*, default value: ``False``
+
+  Some configuration files are known to include settings without values, but
+  which otherwise conform to the syntax supported by :mod:`configparser`.  The
+  *allow_no_value* parameter to the :meth:`__init__` method can be used to
+  indicate that such values should be accepted:
+
+  .. highlightlang:: python
+  .. doctest::
+
+    >>> import configparser
+
+    >>> sample_config = """
+    ... [mysqld]
+    ...   user = mysql
+    ...   pid-file = /var/run/mysqld/mysqld.pid
+    ...   skip-external-locking
+    ...   old_passwords = 1
+    ...   skip-bdb
+    ...   skip-innodb # we don't need ACID today
+    ... """
+    >>> config = configparser.RawConfigParser(allow_no_value=True)
+    >>> config.read_string(sample_config)
+
+    >>> # Settings with values are treated as before:
+    >>> config["mysqld"]["user"]
+    'mysql'
+
+    >>> # Settings without values provide None:
+    >>> config["mysqld"]["skip-bdb"]
+
+    >>> # Settings which aren't specified still raise an error:
+    >>> config["mysqld"]["does-not-exist"]
+    Traceback (most recent call last):
+      ...
+    KeyError: 'does-not-exist'
+
+* *delimiters*, default value: ``('=', ':')``
+
+  Delimiters are substrings that delimit keys from values within a section. The
+  first occurence of a delimiting substring on a line is considered a delimiter.
+  This means values (but not keus) can contain substrings that are in the
+  *delimiters*.
+
+  See also the *space_around_delimiters* argument to
+  :meth:`RawConfigParser.write`.
+
+* *comment_prefixes*, default value: ``_COMPATIBLE`` (``'#'`` valid on empty
+  lines, ``';'`` valid also on non-empty lines)
+
+  Comment prefixes are substrings that indicate the start of a valid comment
+  within a config file. The peculiar default value allows for comments starting
+  with ``'#'`` or ``';'`` but only the latter can be used in a non-empty line.
+  This is obviously dictated by backwards compatibiliy. A more predictable
+  approach would be to specify prefixes as ``('#', ';')`` which will allow for
+  both prefixes to be used in non-empty lines.
+
+  Please note that config parsers don't support escaping of comment prefixes so
+  leaving characters out of *comment_prefixes* is a way of ensuring they can be
+  used as parts of keys or values.
+
+* *strict*, default value: ``False``
+
+  If set to ``True``, the parser will not allow for any section or option
+  duplicates while reading from a single source (using :meth:`read_file`,
+  :meth:`read_string` or :meth:`read_dict`). The default is ``False`` only
+  because of backwards compatibility reasons. It's recommended to use strict
+  parsers in new applications.
+
+* *empty_lines_in_values*, default value: ``True``
+
+  .. highlightlang:: none
+
+  In config parsers, values can be multiline as long as they're indented deeper
+  than the key that holds them. By default parsers also let empty lines to be
+  parts of values. At the same time, keys can be arbitrarily indented themselves
+  to improve readability. In consequence, when configuration files get big and
+  complex, it's easy for the user to lose track of the file structure. Take for
+  instance::
+
+    [Section]
+    key = multiline
+      value with a gotcha
+
+     this = is still a part of the multiline value of 'key'
+
+
+  This can be especially problematic for the user to see if she's using
+  a proportional font to edit the file. That's why when your application does
+  not need values with empty lines, you should consider disallowing them. This
+  will make empty lines split keys every time. In the example above, it would
+  produce two keys, ``key`` and ``this``.
+
+.. highlightlang:: python
+
+More advanced customization may be achieved by overriding default values of the
+following parser members:
+
+* `RawConfigParser.BOOLEAN_STATES`
+
+  By default when using :meth:`getboolean`, config parsers consider the
+  following values ``True``: ``'1'``, ``'yes'``, ``'true'``, ``'on'`` and the
+  following values ``False``: ``'0'``, ``'no'``, ``'false'``, ``'off'``. You can
+  override this by specifying a custom dictionary of strings and their boolean
+  outcomes. For example:
+
+  .. highlightlang:: python
+  .. doctest::
+
+    >>> custom = configparser.RawConfigParser()
+    >>> custom['section1'] = {'funky': 'nope'}
+    >>> custom['section1'].getboolean('funky')
+    Traceback (most recent call last):
+    ...
+    ValueError: Not a boolean: nope
+    >>> custom.BOOLEAN_STATES = {'sure': True, 'nope': False}
+    >>> custom['section1'].getboolean('funky')
+    False
+
+  Other typical boolean pairs include ``accept``/``reject`` or
+  ``enabled``/``disabled``.
+
+* :meth:`RawConfigParser.optionxform`
+
+  This is a method that transforms option names on every read or set operation.
+  By default it converts the name to lowercase. This also means that when
+  a configuration file gets written, all keys will be lowercase. If you find
+  that behaviour unsuitable, you can override this method.  For example:
+
+  .. highlightlang:: python
+  .. doctest::
+
+    >>> config = """
+    ... [Section1]
+    ... Key = Value
+    ...
+    ... [Section2]
+    ... AnotherKey = Value
+    ... """
+    >>> typical = configparser.RawConfigParser()
+    >>> typical.read_string(config)
+    >>> list(typical['Section1'].keys())
+    ['key']
+    >>> list(typical['Section2'].keys())
+    ['anotherkey']
+    >>> custom = configparser.RawConfigParser()
+    >>> custom.optionxform = lambda option: option
+    >>> custom.read_string(config)
+    >>> list(custom['Section1'].keys())
+    ['Key']
+    >>> list(custom['Section2'].keys())
+    ['AnotherKey']
+
+Legacy API Examples
+-------------------
+
+Mainly because of backwards compatibility concerns, :mod:`configparser`
+provides also a legacy API with explicit ``get``/``set`` methods. While there
+are valid use cases for the methods outlined below, mapping protocol access
+is preferred for new projects. The legacy API is at times more advanced,
+low-level and downright counterintuitive.
+
+An example of writing to a configuration file::
+
+   import configparser
+
+   config = configparser.RawConfigParser()
+
+   # Please note that using RawConfigParser's and the raw mode of
+   # ConfigParser's respective set functions, you can assign non-string values
+   # to keys internally, but will receive an error when attempting to write to
+   # a file or when you get it in non-raw mode. Setting values using the
+   # mapping protocol or SafeConfigParser's set() does not allow such
+   # assignments to take place.
+   config.add_section('Section1')
+   config.set('Section1', 'int', '15')
+   config.set('Section1', 'bool', 'true')
+   config.set('Section1', 'float', '3.1415')
+   config.set('Section1', 'baz', 'fun')
+   config.set('Section1', 'bar', 'Python')
+   config.set('Section1', 'foo', '%(bar)s is %(baz)s!')
+
+   # Writing our configuration file to 'example.cfg'
+   with open('example.cfg', 'w') as configfile:
+       config.write(configfile)
+
+An example of reading the configuration file again::
+
+   import configparser
+
+   config = configparser.RawConfigParser()
+   config.read('example.cfg')
+
+   # getfloat() raises an exception if the value is not a float
+   # getint() and getboolean() also do this for their respective types
+   float = config.getfloat('Section1', 'float')
+   int = config.getint('Section1', 'int')
+   print(float + int)
+
+   # Notice that the next output does not interpolate '%(bar)s' or '%(baz)s'.
+   # This is because we are using a RawConfigParser().
+   if config.getboolean('Section1', 'bool'):
+       print(config.get('Section1', 'foo'))
+
+To get interpolation, you will need to use a :class:`SafeConfigParser` or, if
+you absolutely have to, a :class:`ConfigParser`::
+
+   import configparser
+
+   cfg = configparser.SafeConfigParser()
+   cfg.read('example.cfg')
+
+   # Set the optional `raw` argument of get() to True if you wish to disable
+   # interpolation in a single get operation.
+   print(cfg.get('Section1', 'foo', raw=False)) # -> "Python is fun!"
+   print(cfg.get('Section1', 'foo', raw=True))  # -> "%(bar)s is %(baz)s!"
+
+   # The optional `vars` argument is a dict with members that will take
+   # precedence in interpolation.
+   print(cfg.get('Section1', 'foo', vars={'bar': 'Documentation',
+                                             'baz': 'evil'}))
+
+   # The optional `fallback` argument can be used to provide a fallback value
+   print(cfg.get('Section1', 'foo'))
+         # -> "Python is fun!"
+
+   print(cfg.get('Section1', 'foo', fallback='Monty is not.'))
+         # -> "Python is fun!"
+
+   print(cfg.get('Section1', 'monster', fallback='No such things as monsters.'))
+         # -> "No such things as monsters."
+
+   # A bare print(cfg.get('Section1', 'monster')) would raise NoOptionError
+   # but we can also use:
+
+   print(cfg.get('Section1', 'monster', fallback=None))
+         # -> None
+
+
+Defaults are available in all three types of ConfigParsers. They are used in
+interpolation if an option used is not defined elsewhere. ::
+
+   import configparser
+
+   # New instance with 'bar' and 'baz' defaulting to 'Life' and 'hard' each
+   config = configparser.SafeConfigParser({'bar': 'Life', 'baz': 'hard'})
+   config.read('example.cfg')
+
+   print(config.get('Section1', 'foo')) # -> "Python is fun!"
+   config.remove_option('Section1', 'bar')
+   config.remove_option('Section1', 'baz')
+   print(config.get('Section1', 'foo')) # -> "Life is hard!"
+
+.. _rawconfigparser-objects:
+
+RawConfigParser Objects
+-----------------------
 
 .. class:: RawConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=_COMPATIBLE, strict=False, empty_lines_in_values=True)
 
@@ -133,147 +718,6 @@ keys within each section.
    .. versionchanged:: 3.2
       *allow_no_value*, *delimiters*, *comment_prefixes*, *strict* and
       *empty_lines_in_values* were added.
-
-
-.. class:: SafeConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=_COMPATIBLE, strict=False, empty_lines_in_values=True)
-
-   Derived class of :class:`ConfigParser` that implements a sane variant of the
-   magical interpolation feature.  This implementation is more predictable as it
-   validates the interpolation syntax used within a configuration file.  This
-   class also enables escaping the interpolation character (e.g. a key can have
-   ``%`` as part of the value by specifying ``%%`` in the file).
-
-   Applications that don't require interpolation should use
-   :class:`RawConfigParser`, otherwise :class:`SafeConfigParser` is the best
-   option.
-
-   .. versionchanged:: 3.1
-      The default *dict_type* is :class:`collections.OrderedDict`.
-
-   .. versionchanged:: 3.2
-      *allow_no_value*, *delimiters*, *comment_prefixes*, *strict* and
-      *empty_lines_in_values* were added.
-
-
-.. class:: ConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=_COMPATIBLE, strict=False, empty_lines_in_values=True)
-
-   Derived class of :class:`RawConfigParser` that implements the magical
-   interpolation feature and adds optional arguments to the :meth:`get` and
-   :meth:`items` methods.
-
-   :class:`SafeConfigParser` is generally recommended over this class if you
-   need interpolation.
-
-   The values in *defaults* must be appropriate for the ``%()s`` string
-   interpolation.  Note that *__name__* is an intrinsic default; its value is
-   the section name, and will override any value provided in *defaults*.
-
-   All option names used in interpolation will be passed through the
-   :meth:`optionxform` method just like any other option name reference.  For
-   example, using the default implementation of :meth:`optionxform` (which
-   converts option names to lower case), the values ``foo %(bar)s`` and ``foo
-   %(BAR)s`` are equivalent.
-
-   .. versionchanged:: 3.1
-      The default *dict_type* is :class:`collections.OrderedDict`.
-
-   .. versionchanged:: 3.2
-      *allow_no_value*, *delimiters*, *comment_prefixes*,
-      *strict* and *empty_lines_in_values* were added.
-
-
-.. exception:: Error
-
-   Base class for all other configparser exceptions.
-
-
-.. exception:: NoSectionError
-
-   Exception raised when a specified section is not found.
-
-
-.. exception:: DuplicateSectionError
-
-   Exception raised if :meth:`add_section` is called with the name of a section
-   that is already present or in strict parsers when a section if found more
-   than once in a single input file, string or dictionary.
-
-   .. versionadded:: 3.2
-      Optional ``source`` and ``lineno`` attributes and arguments to
-      :meth:`__init__` were added.
-
-
-.. exception:: DuplicateOptionError
-
-   Exception raised by strict parsers if a single option appears twice during
-   reading from a single file, string or dictionary. This catches misspellings
-   and case sensitivity-related errors, e.g. a dictionary may have two keys
-   representing the same case-insensitive configuration key.
-
-
-.. exception:: NoOptionError
-
-   Exception raised when a specified option is not found in the specified
-   section.
-
-
-.. exception:: InterpolationError
-
-   Base class for exceptions raised when problems occur performing string
-   interpolation.
-
-
-.. exception:: InterpolationDepthError
-
-   Exception raised when string interpolation cannot be completed because the
-   number of iterations exceeds :const:`MAX_INTERPOLATION_DEPTH`. Subclass of
-   :exc:`InterpolationError`.
-
-
-.. exception:: InterpolationMissingOptionError
-
-   Exception raised when an option referenced from a value does not exist. Subclass
-   of :exc:`InterpolationError`.
-
-
-.. exception:: InterpolationSyntaxError
-
-   Exception raised when the source text into which substitutions are made does not
-   conform to the required syntax. Subclass of :exc:`InterpolationError`.
-
-
-.. exception:: MissingSectionHeaderError
-
-   Exception raised when attempting to parse a file which has no section headers.
-
-
-.. exception:: ParsingError
-
-   Exception raised when errors occur attempting to parse a file.
-
-   .. versionchanged:: 3.2
-      The ``filename`` attribute and :meth:`__init__` argument were renamed to
-      ``source`` for consistency.
-
-.. data:: MAX_INTERPOLATION_DEPTH
-
-   The maximum depth for recursive interpolation for :meth:`get` when the *raw*
-   parameter is false.  This is relevant only for the :class:`ConfigParser` class.
-
-
-.. seealso::
-
-   Module :mod:`shlex`
-      Support for a creating Unix shell-like mini-languages which can be used as an
-      alternate format for application configuration files.
-
-
-.. _rawconfigparser-objects:
-
-RawConfigParser Objects
------------------------
-
-:class:`RawConfigParser` instances have the following methods:
 
 
 .. method:: RawConfigParser.defaults()
@@ -373,29 +817,34 @@ RawConfigParser Objects
 
    .. versionadded:: 3.2
 
-.. method:: RawConfigParser.get(section, option, [vars, default])
+.. method:: RawConfigParser.get(section, option, [vars, fallback])
 
    Get an *option* value for the named *section*. If *vars* is provided, it
    must be a dictionary.  The *option* is looked up in *vars* (if provided),
    *section*, and in *DEFAULTSECT* in that order. If the key is not found and
-   *default* is provided, it is used as a fallback value. ``None`` can be
-   provided as a *default* value.
+   *fallback* is provided, it is used as a fallback value. ``None`` can be
+   provided as a *fallback* value.
+
+   .. versionchanged:: 3.2
+      Arguments *vars* and *fallback* are keyword only to protect users from
+      trying to use the third argument as the *fallback* fallback (especially
+      when using the mapping protocol).
 
 
-.. method:: RawConfigParser.getint(section, option, [vars, default])
+.. method:: RawConfigParser.getint(section, option, [vars, fallback])
 
    A convenience method which coerces the *option* in the specified *section* to
-   an integer. See :meth:`get` for explanation of *vars* and *default*.
+   an integer. See :meth:`get` for explanation of *vars* and *fallback*.
 
 
-.. method:: RawConfigParser.getfloat(section, option, [vars, default])
+.. method:: RawConfigParser.getfloat(section, option, [vars, fallback])
 
    A convenience method which coerces the *option* in the specified *section* to
    a floating point number.  See :meth:`get` for explanation of *vars* and
-   *default*.
+   *fallback*.
 
 
-.. method:: RawConfigParser.getboolean(section, option, [vars, default])
+.. method:: RawConfigParser.getboolean(section, option, [vars, fallback])
 
    A convenience method which coerces the *option* in the specified *section*
    to a Boolean value.  Note that the accepted values for the option are
@@ -403,30 +852,39 @@ RawConfigParser Objects
    return ``True``, and ``"0"``, ``"no"``, ``"false"``, and ``"off"``, which
    cause it to return ``False``.  These string values are checked in
    a case-insensitive manner.  Any other value will cause it to raise
-   :exc:`ValueError`. See :meth:`get` for explanation of *vars* and *default*.
+   :exc:`ValueError`. See :meth:`get` for explanation of *vars* and *fallback*.
 
 
 .. method:: RawConfigParser.items(section)
 
-   Return a list of ``(name, value)`` pairs for each option in the given *section*.
+   Return a list of ``(name, value)`` pairs for each option in the given
+   *section*.
 
 
 .. method:: RawConfigParser.set(section, option, value)
 
    If the given section exists, set the given option to the specified value;
    otherwise raise :exc:`NoSectionError`.  While it is possible to use
-   :class:`RawConfigParser` (or :class:`ConfigParser` with *raw* parameters set to
-   true) for *internal* storage of non-string values, full functionality (including
-   interpolation and output to files) can only be achieved using string values.
+   :class:`RawConfigParser` (or :class:`ConfigParser` with *raw* parameters set
+   to true) for *internal* storage of non-string values, full functionality
+   (including interpolation and output to files) can only be achieved using
+   string values.
+
+.. warning::
+
+   This method lets users assign non-string values to keys internally. This
+   behaviour is unsupported and will cause errors when attempting to write to
+   a file or get it in non-raw mode. **Use the mapping protocol API** which does
+   not allow such assignments to take place.
 
 
 .. method:: RawConfigParser.write(fileobject, space_around_delimiters=True)
 
-   Write a representation of the configuration to the specified :term:`file object`,
-   which must be opened in text mode (accepting strings).  This representation
-   can be parsed by a future :meth:`read` call. If ``space_around_delimiters``
-   is ``True`` (the default), delimiters between keys and values are surrounded
-   by spaces.
+   Write a representation of the configuration to the specified
+   :term:`file object`, which must be opened in text mode (accepting strings).
+   This representation can be parsed by a future :meth:`read` call. If
+   ``space_around_delimiters`` is ``True`` (the default), delimiters between
+   keys and values are surrounded by spaces.
 
 
 .. method:: RawConfigParser.remove_option(section, option)
@@ -474,39 +932,72 @@ RawConfigParser Objects
 ConfigParser Objects
 --------------------
 
+.. warning::
+   Whenever you can, consider using :class:`SafeConfigParser` which
+   adds validation and escaping for the interpolation.
+
 The :class:`ConfigParser` class extends some methods of the
-:class:`RawConfigParser` interface, adding some optional arguments. Whenever you
-can, consider using :class:`SafeConfigParser` which adds validation and escaping
-for the interpolation.
+:class:`RawConfigParser` interface, adding some optional arguments.
+
+.. class:: ConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=_COMPATIBLE, strict=False, empty_lines_in_values=True)
+
+   Derived class of :class:`RawConfigParser` that implements the magical
+   interpolation feature and adds optional arguments to the :meth:`get` and
+   :meth:`items` methods.
+
+   :class:`SafeConfigParser` is generally recommended over this class if you
+   need interpolation.
+
+   The values in *defaults* must be appropriate for the ``%()s`` string
+   interpolation.  Note that *__name__* is an intrinsic default; its value is
+   the section name, and will override any value provided in *defaults*.
+
+   All option names used in interpolation will be passed through the
+   :meth:`optionxform` method just like any other option name reference.  For
+   example, using the default implementation of :meth:`optionxform` (which
+   converts option names to lower case), the values ``foo %(bar)s`` and ``foo
+   %(BAR)s`` are equivalent.
+
+   .. versionchanged:: 3.1
+      The default *dict_type* is :class:`collections.OrderedDict`.
+
+   .. versionchanged:: 3.2
+      *allow_no_value*, *delimiters*, *comment_prefixes*,
+      *strict* and *empty_lines_in_values* were added.
 
 
-.. method:: ConfigParser.get(section, option, raw=False, [vars, default])
+.. method:: ConfigParser.get(section, option, raw=False, [vars, fallback])
 
    Get an *option* value for the named *section*.  If *vars* is provided, it
    must be a dictionary.  The *option* is looked up in *vars* (if provided),
    *section*, and in *DEFAULTSECT* in that order. If the key is not found and
-   *default* is provided, it is used as a fallback value. ``None`` can be
-   provided as a *default* value.
+   *fallback* is provided, it is used as a fallback value. ``None`` can be
+   provided as a *fallback* value.
 
    All the ``'%'`` interpolations are expanded in the return values, unless the
    *raw* argument is true.  Values for interpolation keys are looked up in the
    same manner as the option.
 
+   .. versionchanged:: 3.2
+      Arguments *raw*, *vars* and *fallback* are keyword only to protect users
+      from trying to use the third argument as the *fallback* fallback
+      (especially when using the mapping protocol).
 
-.. method:: ConfigParser.getint(section, option, raw=False, [vars, default])
+
+.. method:: ConfigParser.getint(section, option, raw=False, [vars, fallback])
 
    A convenience method which coerces the *option* in the specified *section* to
-   an integer. See :meth:`get` for explanation of *raw*, *vars* and *default*.
+   an integer. See :meth:`get` for explanation of *raw*, *vars* and *fallback*.
 
 
-.. method:: ConfigParser.getfloat(section, option, raw=False, [vars, default])
+.. method:: ConfigParser.getfloat(section, option, raw=False, [vars, fallback])
 
    A convenience method which coerces the *option* in the specified *section* to
    a floating point number. See :meth:`get` for explanation of *raw*, *vars*
-   and *default*.
+   and *fallback*.
 
 
-.. method:: ConfigParser.getboolean(section, option, raw=False, [vars, default])
+.. method:: ConfigParser.getboolean(section, option, raw=False, [vars, fallback])
 
    A convenience method which coerces the *option* in the specified *section*
    to a Boolean value.  Note that the accepted values for the option are
@@ -515,7 +1006,7 @@ for the interpolation.
    cause it to return ``False``.  These string values are checked in
    a case-insensitive manner.  Any other value will cause it to raise
    :exc:`ValueError`. See :meth:`get` for explanation of *raw*, *vars* and
-   *default*.
+   *fallback*.
 
 
 .. method:: ConfigParser.items(section, raw=False, vars=None)
@@ -525,14 +1016,38 @@ for the interpolation.
    method.
 
 
+.. data:: MAX_INTERPOLATION_DEPTH
+
+   The maximum depth for recursive interpolation for :meth:`get` when the *raw*
+   parameter is false.  This is relevant only for the :class:`ConfigParser` class.
+
 .. _safeconfigparser-objects:
 
 SafeConfigParser Objects
 ------------------------
 
+.. class:: SafeConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=_COMPATIBLE, strict=False, empty_lines_in_values=True)
+
+   Derived class of :class:`ConfigParser` that implements a sane variant of the
+   magical interpolation feature.  This implementation is more predictable as it
+   validates the interpolation syntax used within a configuration file.  This
+   class also enables escaping the interpolation character (e.g. a key can have
+   ``%`` as part of the value by specifying ``%%`` in the file).
+
+   Applications that don't require interpolation should use
+   :class:`RawConfigParser`, otherwise :class:`SafeConfigParser` is the best
+   option.
+
+   .. versionchanged:: 3.1
+      The default *dict_type* is :class:`collections.OrderedDict`.
+
+   .. versionchanged:: 3.2
+      *allow_no_value*, *delimiters*, *comment_prefixes*, *strict* and
+      *empty_lines_in_values* were added.
+
+
 The :class:`SafeConfigParser` class implements the same extended interface as
 :class:`ConfigParser`, with the following addition:
-
 
 .. method:: SafeConfigParser.set(section, option, value)
 
@@ -541,126 +1056,82 @@ The :class:`SafeConfigParser` class implements the same extended interface as
    not, :exc:`TypeError` is raised.
 
 
-Examples
---------
+Exceptions
+----------
 
-An example of writing to a configuration file::
+.. exception:: Error
 
-   import configparser
+   Base class for all other configparser exceptions.
 
-   config = configparser.RawConfigParser()
 
-   # When adding sections or items, add them in the reverse order of
-   # how you want them to be displayed in the actual file.
-   # In addition, please note that using RawConfigParser's and the raw
-   # mode of ConfigParser's respective set functions, you can assign
-   # non-string values to keys internally, but will receive an error
-   # when attempting to write to a file or when you get it in non-raw
-   # mode. SafeConfigParser does not allow such assignments to take place.
-   config.add_section('Section1')
-   config.set('Section1', 'int', '15')
-   config.set('Section1', 'bool', 'true')
-   config.set('Section1', 'float', '3.1415')
-   config.set('Section1', 'baz', 'fun')
-   config.set('Section1', 'bar', 'Python')
-   config.set('Section1', 'foo', '%(bar)s is %(baz)s!')
+.. exception:: NoSectionError
 
-   # Writing our configuration file to 'example.cfg'
-   with open('example.cfg', 'w') as configfile:
-       config.write(configfile)
+   Exception raised when a specified section is not found.
 
-An example of reading the configuration file again::
 
-   import configparser
+.. exception:: DuplicateSectionError
 
-   config = configparser.RawConfigParser()
-   config.read('example.cfg')
+   Exception raised if :meth:`add_section` is called with the name of a section
+   that is already present or in strict parsers when a section if found more
+   than once in a single input file, string or dictionary.
 
-   # getfloat() raises an exception if the value is not a float
-   # getint() and getboolean() also do this for their respective types
-   float = config.getfloat('Section1', 'float')
-   int = config.getint('Section1', 'int')
-   print(float + int)
+   .. versionadded:: 3.2
+      Optional ``source`` and ``lineno`` attributes and arguments to
+      :meth:`__init__` were added.
 
-   # Notice that the next output does not interpolate '%(bar)s' or '%(baz)s'.
-   # This is because we are using a RawConfigParser().
-   if config.getboolean('Section1', 'bool'):
-       print(config.get('Section1', 'foo'))
 
-To get interpolation, you will need to use a :class:`ConfigParser` or
-:class:`SafeConfigParser`::
+.. exception:: DuplicateOptionError
 
-   import configparser
+   Exception raised by strict parsers if a single option appears twice during
+   reading from a single file, string or dictionary. This catches misspellings
+   and case sensitivity-related errors, e.g. a dictionary may have two keys
+   representing the same case-insensitive configuration key.
 
-   config = configparser.ConfigParser()
-   config.read('example.cfg')
 
-   # Set the third, optional argument of get to 1 if you wish to use raw mode.
-   print(config.get('Section1', 'foo', 0)) # -> "Python is fun!"
-   print(config.get('Section1', 'foo', 1)) # -> "%(bar)s is %(baz)s!"
+.. exception:: NoOptionError
 
-   # The optional fourth argument is a dict with members that will take
-   # precedence in interpolation.
-   print(config.get('Section1', 'foo', 0, {'bar': 'Documentation',
-                                           'baz': 'evil'}))
+   Exception raised when a specified option is not found in the specified
+   section.
 
-Defaults are available in all three types of ConfigParsers. They are used in
-interpolation if an option used is not defined elsewhere. ::
 
-   import configparser
+.. exception:: InterpolationError
 
-   # New instance with 'bar' and 'baz' defaulting to 'Life' and 'hard' each
-   config = configparser.SafeConfigParser({'bar': 'Life', 'baz': 'hard'})
-   config.read('example.cfg')
+   Base class for exceptions raised when problems occur performing string
+   interpolation.
 
-   print(config.get('Section1', 'foo')) # -> "Python is fun!"
-   config.remove_option('Section1', 'bar')
-   config.remove_option('Section1', 'baz')
-   print(config.get('Section1', 'foo')) # -> "Life is hard!"
 
-The function ``opt_move`` below can be used to move options between sections::
+.. exception:: InterpolationDepthError
 
-   def opt_move(config, section1, section2, option):
-       try:
-           config.set(section2, option, config.get(section1, option, 1))
-       except configparser.NoSectionError:
-           # Create non-existent section
-           config.add_section(section2)
-           opt_move(config, section1, section2, option)
-       else:
-           config.remove_option(section1, option)
+   Exception raised when string interpolation cannot be completed because the
+   number of iterations exceeds :const:`MAX_INTERPOLATION_DEPTH`. Subclass of
+   :exc:`InterpolationError`.
 
-Some configuration files are known to include settings without values, but which
-otherwise conform to the syntax supported by :mod:`configparser`.  The
-*allow_no_value* parameter to the :meth:`__init__` method can be used to
-indicate that such values should be accepted:
 
-.. doctest::
+.. exception:: InterpolationMissingOptionError
 
-   >>> import configparser
-   >>> import io
+   Exception raised when an option referenced from a value does not exist. Subclass
+   of :exc:`InterpolationError`.
 
-   >>> sample_config = """
-   ... [mysqld]
-   ...   user = mysql
-   ...   pid-file = /var/run/mysqld/mysqld.pid
-   ...   skip-external-locking
-   ...   old_passwords = 1
-   ...   skip-bdb
-   ...   skip-innodb # we don't need ACID today
-   ... """
-   >>> config = configparser.RawConfigParser(allow_no_value=True)
-   >>> config.read_file(io.BytesIO(sample_config))
 
-   >>> # Settings with values are treated as before:
-   >>> config.get("mysqld", "user")
-   'mysql'
+.. exception:: InterpolationSyntaxError
 
-   >>> # Settings without values provide None:
-   >>> config.get("mysqld", "skip-bdb")
+   Exception raised when the source text into which substitutions are made does not
+   conform to the required syntax. Subclass of :exc:`InterpolationError`.
 
-   >>> # Settings which aren't specified still raise an error:
-   >>> config.get("mysqld", "does-not-exist")
-   Traceback (most recent call last):
-     ...
-   configparser.NoOptionError: No option 'does-not-exist' in section: 'mysqld'
+
+.. exception:: MissingSectionHeaderError
+
+   Exception raised when attempting to parse a file which has no section headers.
+
+
+.. exception:: ParsingError
+
+   Exception raised when errors occur attempting to parse a file.
+
+   .. versionchanged:: 3.2
+      The ``filename`` attribute and :meth:`__init__` argument were renamed to
+      ``source`` for consistency.
+
+.. [customizable] Config parsers allow for very heavy customization. If you're
+                  interested in changing the behaviour outlined by the footnote
+                  reference, consult the `Customizing Parser Behaviour`_ section.
