@@ -76,7 +76,7 @@ collections         rhettinger, stutzbach
 colorsys
 compileall
 concurrent.futures  brian.quinlan
-configparser
+configparser        lukasz.langa
 contextlib
 copy                alexandre.vassalotti
 copyreg             alexandre.vassalotti
