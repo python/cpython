@@ -10,9 +10,6 @@ What's New in Python 3.1.3?
 Core and Builtins
 -----------------
 
-- Issue #10372: Import the warnings module only after the IO library is
-  initialized, so as to avoid bootstrap issues with the '-W' option.
-
 - Issue #10221: dict.pop(k) now has a key error message that includes the
   missing key (same message d[k] returns for missing keys).
 
