@@ -355,17 +355,17 @@ search_for_exec_prefix(wchar_t *argv0_path, wchar_t *home, wchar_t *_exec_prefix
             char buf[MAXPATHLEN+1];
             PyObject *decoded;
             wchar_t rel_builddir_path[MAXPATHLEN+1];
-            size_t n;
             n = fread(buf, 1, MAXPATHLEN, f);
             buf[n] = '\0';
             fclose(f);
             decoded = PyUnicode_DecodeUTF8(buf, n, "surrogateescape");
             if (decoded != NULL) {
-                n = PyUnicode_AsWideChar((PyUnicodeObject*)decoded,
+                Py_ssize_t k;
+                k = PyUnicode_AsWideChar((PyUnicodeObject*)decoded,
                                          rel_builddir_path, MAXPATHLEN);
                 Py_DECREF(decoded);
-                if (n >= 0) {
-                    rel_builddir_path[n] = L'\0';
+                if (k >= 0) {
+                    rel_builddir_path[k] = L'\0';
                     wcscpy(exec_prefix, argv0_path);
                     joinpath(exec_prefix, rel_builddir_path);
                     return -1;
