@@ -299,18 +299,20 @@ Py_InitializeEx(int install_sigs)
     if (install_sigs)
         initsigs(); /* Signal handling stuff, including initintr() */
 
-    /* Initialize warnings. */
-    if (PySys_HasWarnOptions()) {
-        PyObject *warnings_module = PyImport_ImportModule("warnings");
-        if (!warnings_module)
-            PyErr_Clear();
-        Py_XDECREF(warnings_module);
-    }
-
     initmain(); /* Module __main__ */
     if (initstdio() < 0)
         Py_FatalError(
             "Py_Initialize: can't initialize sys standard streams");
+
+    /* Initialize warnings. */
+    if (PySys_HasWarnOptions()) {
+        PyObject *warnings_module = PyImport_ImportModule("warnings");
+        if (warnings_module == NULL) {
+            fprintf(stderr, "'import warnings' failed; traceback:\n");
+            PyErr_Print();
+        }
+        Py_XDECREF(warnings_module);
+    }
 
     if (!Py_NoSiteFlag)
         initsite(); /* Module site */

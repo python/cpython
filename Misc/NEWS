@@ -10,6 +10,9 @@ What's New in Python 3.2 Alpha 4?
 Core and Builtins
 -----------------
 
+- Issue #10372: Import the warnings module only after the IO library is
+  initialized, so as to avoid bootstrap issues with the '-W' option.
+
 - Issue #10293: Remove obsolete field in the PyMemoryView structure,
   unused undocumented value PyBUF_SHADOW, and strangely-looking code in
   PyMemoryView_GetContiguous.
