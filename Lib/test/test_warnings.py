@@ -7,6 +7,7 @@ import unittest
 import tempfile
 import subprocess
 from test import support
+from test.script_helper import assert_python_ok
 
 from test import warning_tests
 
@@ -393,6 +394,22 @@ class WCmdLineTests(unittest.TestCase):
                               self.module._setoption, 'ignore:2::4:-5')
             self.module._setoption('error::Warning::0')
             self.assertRaises(UserWarning, self.module.warn, 'convert to error')
+
+    def test_improper_option(self):
+        # Same as above, but check that the message is printed out when
+        # the interpreter is executed. This also checks that options are
+        # actually parsed at all.
+        rc, out, err = assert_python_ok("-Wxxx", "-c", "pass")
+        self.assertIn(b"Invalid -W option ignored: invalid action: 'xxx'", err)
+
+    def test_warnings_bootstrap(self):
+        # Check that the warnings module does get loaded when -W<some option>
+        # is used (see issue #10372 for an example of silent bootstrap failure).
+        rc, out, err = assert_python_ok("-Wi", "-c",
+            "import sys; sys.modules['warnings'].warn('foo', RuntimeWarning)")
+        # '-Wi' was observed
+        self.assertFalse(out.strip())
+        self.assertNotIn(b'RuntimeWarning', err)
 
 class CWCmdLineTests(BaseTest, WCmdLineTests):
     module = c_warnings
