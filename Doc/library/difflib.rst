@@ -37,6 +37,16 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    complicated way on how many elements the sequences have in common; best case
    time is linear.
 
+   **Automatic junk heuristic:** :class:`SequenceMatcher` supports a heuristic that
+   automatically treats certain sequence items as junk. The heuristic counts how many
+   times each individual item appears in the sequence. If an item's duplicates (after
+   the first one) account for more than 1% of the sequence and the sequence is at least
+   200 items long, this item is marked as "popular" and is treated as junk for
+   the purpose of sequence matching. This heuristic can be turned off by setting
+   the ``autojunk`` argument to ``False`` when creating the :class:`SequenceMatcher`.
+
+   .. versionadded:: 2.7
+      The *autojunk* parameter.
 
 .. class:: Differ
 
@@ -334,7 +344,7 @@ SequenceMatcher Objects
 The :class:`SequenceMatcher` class has this constructor:
 
 
-.. class:: SequenceMatcher([isjunk[, a[, b]]])
+.. class:: SequenceMatcher([isjunk[, a[, b[, autojunk=True]]]])
 
    Optional argument *isjunk* must be ``None`` (the default) or a one-argument
    function that takes a sequence element and returns true if and only if the
@@ -349,6 +359,9 @@ The :class:`SequenceMatcher` class has this constructor:
 
    The optional arguments *a* and *b* are sequences to be compared; both default to
    empty strings.  The elements of both sequences must be :term:`hashable`.
+
+   The optional argument *autojunk* can be used to disable the automatic junk
+   heuristic.
 
    :class:`SequenceMatcher` objects have the following methods:
 

@@ -151,7 +151,7 @@ class SequenceMatcher:
         Return an upper bound on ratio() very quickly.
     """
 
-    def __init__(self, isjunk=None, a='', b=''):
+    def __init__(self, isjunk=None, a='', b='', autojunk=True):
         """Construct a SequenceMatcher.
 
         Optional arg isjunk is None (the default), or a one-argument
@@ -169,6 +169,10 @@ class SequenceMatcher:
         Optional arg b is the second of two sequences to be compared.  By
         default, an empty string.  The elements of b must be hashable. See
         also .set_seqs() and .set_seq2().
+
+        Optional arg autojunk should be set to False to disable the
+        "automatic junk heuristic" that treats popular elements as junk
+        (see module documentation for more information).
         """
 
         # Members:
@@ -207,11 +211,13 @@ class SequenceMatcher:
         #      DOES NOT WORK for x in a!
         # isbpopular
         #      for x in b, isbpopular(x) is true iff b is reasonably long
-        #      (at least 200 elements) and x accounts for more than 1% of
-        #      its elements.  DOES NOT WORK for x in a!
+        #      (at least 200 elements) and x accounts for more than 1 + 1% of
+        #      its elements (when autojunk is enabled).
+        #      DOES NOT WORK for x in a!
 
         self.isjunk = isjunk
         self.a = self.b = None
+        self.autojunk = autojunk
         self.set_seqs(a, b)
 
     def set_seqs(self, a, b):
@@ -288,7 +294,7 @@ class SequenceMatcher:
     # from starting any matching block at a junk element ...
     # also creates the fast isbjunk function ...
     # b2j also does not contain entries for "popular" elements, meaning
-    # elements that account for more than 1% of the total elements, and
+    # elements that account for more than 1 + 1% of the total elements, and
     # when the sequence is reasonably large (>= 200 elements); this can
     # be viewed as an adaptive notion of semi-junk, and yields an enormous
     # speedup when, e.g., comparing program files with hundreds of
@@ -309,44 +315,37 @@ class SequenceMatcher:
         # out the junk later is much cheaper than building b2j "right"
         # from the start.
         b = self.b
-        n = len(b)
         self.b2j = b2j = {}
-        populardict = {}
+
         for i, elt in enumerate(b):
-            if elt in b2j:
-                indices = b2j[elt]
-                if n >= 200 and len(indices) * 100 > n:
-                    populardict[elt] = 1
-                    del indices[:]
-                else:
-                    indices.append(i)
-            else:
-                b2j[elt] = [i]
+            indices = b2j.setdefault(elt, [])
+            indices.append(i)
 
-        # Purge leftover indices for popular elements.
-        for elt in populardict:
-            del b2j[elt]
-
-        # Now b2j.keys() contains elements uniquely, and especially when
-        # the sequence is a string, that's usually a good deal smaller
-        # than len(string).  The difference is the number of isjunk calls
-        # saved.
+        # Purge junk elements
+        junk = set()
         isjunk = self.isjunk
-        junkdict = {}
         if isjunk:
-            for d in populardict, b2j:
-                for elt in d.keys():
-                    if isjunk(elt):
-                        junkdict[elt] = 1
-                        del d[elt]
+            for elt in list(b2j.keys()):  # using list() since b2j is modified
+                if isjunk(elt):
+                    junk.add(elt)
+                    del b2j[elt]
 
-        # Now for x in b, isjunk(x) == x in junkdict, but the
-        # latter is much faster.  Note too that while there may be a
-        # lot of junk in the sequence, the number of *unique* junk
-        # elements is probably small.  So the memory burden of keeping
-        # this dict alive is likely trivial compared to the size of b2j.
-        self.isbjunk = junkdict.__contains__
-        self.isbpopular = populardict.__contains__
+        # Purge popular elements that are not junk
+        popular = set()
+        n = len(b)
+        if self.autojunk and n >= 200:
+            ntest = n // 100 + 1
+            for elt, idxs in list(b2j.items()):
+                if len(idxs) > ntest:
+                    popular.add(elt)
+                    del b2j[elt]
+
+        # Now for x in b, isjunk(x) == x in junk, but the latter is much faster.
+        # Sicne the number of *unique* junk elements is probably small, the
+        # memory burden of keeping this set alive is likely trivial compared to
+        # the size of b2j.
+        self.isbjunk = junk.__contains__
+        self.isbpopular = popular.__contains__
 
     def find_longest_match(self, alo, ahi, blo, bhi):
         """Find longest matching block in a[alo:ahi] and b[blo:bhi].

@@ -213,6 +213,10 @@ Library
 - Issue #808164: Fixed socket.close to avoid references to globals, to
   avoid issues when socket.close is called from a __del__ method.
 
+- Issue #2986: difflib.SequenceMatcher gets a new parameter, autojunk, which
+  can be set to False to turn off the previously undocumented 'popularity'
+  heuristic. Patch by Terry Reedy and Eli Bendersky
+
 - Issue #8797: urllib2 does a retry for Basic Authentication failure instead of
   falling into recursion.
 
