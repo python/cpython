@@ -319,7 +319,7 @@ class ParsingError(Error):
         warnings.warn(
             "This 'filename' attribute will be removed in future versions.  "
             "Use 'source' instead.",
-            PendingDeprecationWarning, stacklevel=2
+            DeprecationWarning, stacklevel=2
         )
         return self.source
 
@@ -329,7 +329,7 @@ class ParsingError(Error):
         warnings.warn(
             "The 'filename' attribute will be removed in future versions.  "
             "Use 'source' instead.",
-            PendingDeprecationWarning, stacklevel=2
+            DeprecationWarning, stacklevel=2
         )
         self.source = value
 
@@ -410,8 +410,8 @@ class RawConfigParser(MutableMapping):
         self._dict = dict_type
         self._sections = self._dict()
         self._defaults = self._dict()
-        self._views = self._dict()
-        self._views[DEFAULTSECT] = SectionProxy(self, DEFAULTSECT)
+        self._proxies = self._dict()
+        self._proxies[DEFAULTSECT] = SectionProxy(self, DEFAULTSECT)
         if defaults:
             for key, value in defaults.items():
                 self._defaults[self.optionxform(key)] = value
@@ -457,7 +457,7 @@ class RawConfigParser(MutableMapping):
         if section in self._sections:
             raise DuplicateSectionError(section)
         self._sections[section] = self._dict()
-        self._views[section] = SectionProxy(self, section)
+        self._proxies[section] = SectionProxy(self, section)
 
     def has_section(self, section):
         """Indicate whether the named section is present in the configuration.
@@ -553,7 +553,7 @@ class RawConfigParser(MutableMapping):
         warnings.warn(
             "This method will be removed in future versions.  "
             "Use 'parser.read_file()' instead.",
-            PendingDeprecationWarning, stacklevel=2
+            DeprecationWarning, stacklevel=2
         )
         self.read_file(fp, source=filename)
 
@@ -702,13 +702,13 @@ class RawConfigParser(MutableMapping):
         existed = section in self._sections
         if existed:
             del self._sections[section]
-            del self._views[section]
+            del self._proxies[section]
         return existed
 
     def __getitem__(self, key):
         if key != DEFAULTSECT and not self.has_section(key):
             raise KeyError(key)
-        return self._views[key]
+        return self._proxies[key]
 
     def __setitem__(self, key, value):
         # To conform with the mapping protocol, overwrites existing values in
@@ -812,7 +812,7 @@ class RawConfigParser(MutableMapping):
                         cursect = self._dict()
                         cursect['__name__'] = sectname
                         self._sections[sectname] = cursect
-                        self._views[sectname] = SectionProxy(self, sectname)
+                        self._proxies[sectname] = SectionProxy(self, sectname)
                         elements_added.add(sectname)
                     # So sections can't start with a continuation line
                     optname = None
