@@ -138,8 +138,24 @@ class BaseXYTestCase(unittest.TestCase):
         eq(base64.urlsafe_b64decode(b'01a-b_cd'), b'\xd3V\xbeo\xf7\x1d')
         self.assertRaises(TypeError, base64.urlsafe_b64decode, "")
 
-    def test_b64decode_error(self):
+    def test_b64decode_padding_error(self):
         self.assertRaises(binascii.Error, base64.b64decode, b'abc')
+
+    def test_b64decode_invalid_chars(self):
+        # issue 1466065: Test some invalid characters.
+        tests = ((b'%3d==', b'\xdd'),
+                 (b'$3d==', b'\xdd'),
+                 (b'[==', b''),
+                 (b'YW]3=', b'am'),
+                 (b'3{d==', b'\xdd'),
+                 (b'3d}==', b'\xdd'),
+                 (b'@@', b''),
+                 (b'!', b''),
+                 (b'YWJj\nYWI=', b'abcab'))
+        for bstr, res in tests:
+            self.assertEquals(base64.b64decode(bstr), res)
+            with self.assertRaises(binascii.Error):
+                base64.b64decode(bstr, validate=True)
 
     def test_b32encode(self):
         eq = self.assertEqual

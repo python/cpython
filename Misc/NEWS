@@ -63,6 +63,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1466065: Add 'validate' option to base64.b64decode to raise
+  an error if there are non-base64 alphabet characters in the input.
+
 - Issue #10386: Add __all__ to token module; this simplifies importing
   in tokenize module and prevents leaking of private names through
   import *.
