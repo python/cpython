@@ -63,6 +63,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #10386: Add __all__ to token module; this simplifies importing
+  in tokenize module and prevents leaking of private names through
+  import *.
+
 - Issue #4471: Properly shutdown socket in IMAP.shutdown().  Patch by
   Lorenzo M. Catucci.
 

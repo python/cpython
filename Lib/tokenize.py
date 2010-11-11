@@ -33,9 +33,8 @@ from io import TextIOWrapper
 cookie_re = re.compile("coding[:=]\s*([-\w.]+)")
 
 import token
-__all__ = [x for x in dir(token) if not x.startswith("_")]
-__all__.extend(["COMMENT", "tokenize", "detect_encoding", "NL", "untokenize",
-                "ENCODING", "TokenInfo"])
+__all__ = token.__all__ + ["COMMENT", "tokenize", "detect_encoding",
+                           "NL", "untokenize", "ENCODING", "TokenInfo"]
 del token
 
 COMMENT = N_TOKENS
