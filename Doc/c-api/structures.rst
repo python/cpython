@@ -137,12 +137,10 @@ convention flags can be combined with a binding flag.
 
    This is the typical calling convention, where the methods have the type
    :ctype:`PyCFunction`. The function expects two :ctype:`PyObject\*` values.
-   The first one is the *self* object for methods; for module functions, it
-   has the value given to :cfunc:`Py_InitModule4` (or *NULL* if
-   :cfunc:`Py_InitModule` was used).  The second parameter (often called
-   *args*) is a tuple object representing all arguments. This parameter is
-   typically processed using :cfunc:`PyArg_ParseTuple` or
-   :cfunc:`PyArg_UnpackTuple`.
+   The first one is the *self* object for methods; for module functions, it is
+   the module object.  The second parameter (often called *args*) is a tuple
+   object representing all arguments.  This parameter is typically processed
+   using :cfunc:`PyArg_ParseTuple` or :cfunc:`PyArg_UnpackTuple`.
 
 
 .. data:: METH_KEYWORDS
@@ -158,9 +156,9 @@ convention flags can be combined with a binding flag.
 
    Methods without parameters don't need to check whether arguments are given if
    they are listed with the :const:`METH_NOARGS` flag.  They need to be of type
-   :ctype:`PyCFunction`.  When used with object methods, the first parameter is
-   typically named ``self`` and will hold a reference to the object instance.
-   In all cases the second parameter will be *NULL*.
+   :ctype:`PyCFunction`.  The first parameter is typically named ``self`` and
+   will hold a reference to the module or object instance.  In all cases the
+   second parameter will be *NULL*.
 
 
 .. data:: METH_O
