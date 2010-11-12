@@ -110,6 +110,41 @@ class PyDecoratorMethod(PyDecoratorMixin, PyClassmember):
         return PyClassmember.run(self)
 
 
+# Support for documenting version of removal in deprecations
+
+from sphinx.locale import versionlabels
+from sphinx.util.compat import Directive
+
+versionlabels['deprecated-removed'] = \
+    'Deprecated since version %s, will be removed in version %s'
+
+class DeprecatedRemoved(Directive):
+    has_content = True
+    required_arguments = 2
+    optional_arguments = 1
+    final_argument_whitespace = True
+    option_spec = {}
+
+    def run(self):
+        node = addnodes.versionmodified()
+        node.document = self.state.document
+        node['type'] = 'deprecated-removed'
+        version = (self.arguments[0], self.arguments[1])
+        node['version'] = version
+        if len(self.arguments) == 3:
+            inodes, messages = self.state.inline_text(self.arguments[2],
+                                                      self.lineno+1)
+            node.extend(inodes)
+            if self.content:
+                self.state.nested_parse(self.content, self.content_offset, node)
+            ret = [node] + messages
+        else:
+            ret = [node]
+        env = self.state.document.settings.env
+        env.note_versionchange('deprecated', version[0], node, self.lineno)
+        return ret
+
+
 # Support for building "topic help" for pydoc
 
 pydoc_topic_labels = [
@@ -202,6 +237,8 @@ def parse_opcode_signature(env, sig, signode):
     return opname.strip()
 
 
+# Support for documenting pdb commands
+
 pdbcmd_sig_re = re.compile(r'([a-z()!]+)\s*(.*)')
 
 # later...
@@ -228,6 +265,7 @@ def setup(app):
     app.add_role('issue', issue_role)
     app.add_role('source', source_role)
     app.add_directive('impl-detail', ImplementationDetail)
+    app.add_directive('deprecated-removed', DeprecatedRemoved)
     app.add_builder(PydocTopicsBuilder)
     app.add_builder(suspicious.CheckSuspiciousMarkupBuilder)
     app.add_description_unit('opcode', 'opcode', '%s (opcode)',
