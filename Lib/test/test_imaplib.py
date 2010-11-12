@@ -209,8 +209,6 @@ class RemoteIMAPTest(unittest.TestCase):
 
     def test_logincapa(self):
         self.assertTrue('LOGINDISABLED' in self.server.capabilities)
-
-    def test_anonlogin(self):
         self.assertTrue('AUTH=ANONYMOUS' in self.server.capabilities)
         rs = self.server.login(self.username, self.password)
         self.assertEqual(rs[0], 'OK')
@@ -219,6 +217,18 @@ class RemoteIMAPTest(unittest.TestCase):
         rs = self.server.logout()
         self.server = None
         self.assertEqual(rs[0], 'BYE')
+
+
+@unittest.skipUnless(ssl, "SSL not available")
+class RemoteIMAP_STARTTLSTest(RemoteIMAPTest):
+
+    def setUp(self):
+        super().setUp()
+        rs = self.server.starttls()
+        self.assertEqual(rs[0], 'OK')
+
+    def test_logincapa(self):
+        self.assertFalse('LOGINDISABLED' in self.server.capabilities)
 
 
 @unittest.skipUnless(ssl, "SSL not available")
@@ -243,7 +253,7 @@ def test_main():
                 raise support.TestFailed("Can't read certificate files!")
         tests.extend([
             ThreadedNetworkedTests, ThreadedNetworkedTestsSSL,
-            RemoteIMAPTest, RemoteIMAP_SSLTest,
+            RemoteIMAPTest, RemoteIMAP_SSLTest, RemoteIMAP_STARTTLSTest,
         ])
 
     support.run_unittest(*tests)
