@@ -56,6 +56,7 @@ Three exceptions are defined as attributes of the :class:`IMAP4` class:
    write permission, and the mailbox will need to be re-opened to re-obtain write
    permission.
 
+
 There's also a subclass for secure connections:
 
 
@@ -67,6 +68,7 @@ There's also a subclass for secure connections:
    If *port* is omitted, the standard IMAP4-over-SSL port (993) is used.  *keyfile*
    and *certfile* are also optional - they can contain a PEM formatted private key
    and certificate chain file for the SSL connection.
+
 
 The second subclass allows for connections created by a child process:
 
@@ -404,6 +406,15 @@ An :class:`IMAP4` instance has the following methods:
    numbers of matching messages.
 
    This is an ``IMAP4rev1`` extension command.
+
+
+.. method:: IMAP4.starttls(ssl_context=None)
+
+   Send a ``STARTTLS`` command.  The *ssl_context* argument is optional
+   and should be a :class:`ssl.SSLContext` object.  This will enable
+   encryption on the IMAP connection.
+
+   .. versionadded:: 3.2
 
 
 .. method:: IMAP4.status(mailbox, names)

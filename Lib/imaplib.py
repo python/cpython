@@ -24,6 +24,12 @@ __version__ = "2.58"
 
 import binascii, errno, random, re, socket, subprocess, sys, time
 
+try:
+    import ssl
+    HAVE_SSL = True
+except ImportError:
+    HAVE_SSL = False
+
 __all__ = ["IMAP4", "IMAP4_stream", "Internaldate2tuple",
            "Int2AP", "ParseFlags", "Time2Internaldate"]
 
@@ -71,6 +77,7 @@ Commands = {
         'SETANNOTATION':('AUTH', 'SELECTED'),
         'SETQUOTA':     ('AUTH', 'SELECTED'),
         'SORT':         ('SELECTED',),
+        'STARTTLS':     ('NONAUTH',),
         'STATUS':       ('AUTH', 'SELECTED'),
         'STORE':        ('SELECTED',),
         'SUBSCRIBE':    ('AUTH', 'SELECTED'),
@@ -156,6 +163,7 @@ class IMAP4:
         self.continuation_response = '' # Last continuation response
         self.is_readonly = False        # READ-ONLY desired state
         self.tagnum = 0
+        self._tls_established = False
 
         # Open socket to server.
 
@@ -711,6 +719,33 @@ class IMAP4:
         return self._untagged_response(typ, dat, name)
 
 
+    def starttls(self, ssl_context=None):
+        name = 'STARTTLS'
+        if not HAVE_SSL:
+            raise self.error('SSL support missing')
+        if self._tls_established:
+            raise self.abort('TLS session already established')
+        if name not in self.capabilities:
+            raise self.abort('TLS not supported by server')
+        # Generate a default SSL context if none was passed.
+        if ssl_context is None:
+            ssl_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            # SSLv2 considered harmful.
+            ssl_context.options |= ssl.OP_NO_SSLv2
+        typ, dat = self._simple_command(name)
+        if typ == 'OK':
+            self.sock = ssl_context.wrap_socket(self.sock)
+            self.file = self.sock.makefile('rb')
+            self._tls_established = True
+            typ, dat = self.capability()
+            if dat == [None]:
+                raise self.error('no CAPABILITY response from server')
+            self.capabilities = tuple(dat[-1].upper().split())
+        else:
+            raise self.error("Couldn't establish TLS session")
+        return self._untagged_response(typ, dat, name)
+
+
     def status(self, mailbox, names):
         """Request named status conditions for mailbox.
 
@@ -1125,12 +1160,8 @@ class IMAP4:
                 n -= 1
 
 
+if HAVE_SSL:
 
-try:
-    import ssl
-except ImportError:
-    pass
-else:
     class IMAP4_SSL(IMAP4):
 
         """IMAP4 client class over SSL connection
