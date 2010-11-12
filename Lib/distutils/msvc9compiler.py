@@ -282,7 +282,6 @@ def query_vcvarsall(version, arch="x86"):
                 result[key] = removeDuplicates(value)
 
     finally:
-        popen.stdin.close()
         popen.stdout.close()
         popen.stderr.close()
 
