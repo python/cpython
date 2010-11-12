@@ -44,6 +44,7 @@ The module defines the following items:
 
 
 .. class:: ZipFile
+   :noindex:
 
    The class for reading and writing ZIP files.  See section
    :ref:`zipfile-objects` for constructor details.
