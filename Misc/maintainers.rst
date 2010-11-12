@@ -86,7 +86,7 @@ cProfile
 crypt
 csv
 ctypes              theller
-curses              akuchling
+curses
 datetime            alexander.belopolsky
 dbm
 decimal             facundobatista, rhettinger, mark.dickinson
@@ -137,7 +137,7 @@ linecache
 locale              loewis, lemburg
 logging             vinay.sajip
 macpath
-mailbox             akuchling
+mailbox
 mailcap
 marshal
 math                mark.dickinson, rhettinger, stutzbach
