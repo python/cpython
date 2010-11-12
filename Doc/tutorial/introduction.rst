@@ -1,4 +1,4 @@
-.. _tut-informal:
+﻿.. _tut-informal:
 
 **********************************
 An Informal Introduction to Python
@@ -220,9 +220,10 @@ the following:
 
 Or, strings can be surrounded in a pair of matching triple-quotes: ``"""`` or
 ``'''``.  End of lines do not need to be escaped when using triple-quotes, but
-they will be included in the string. ::
+they will be included in the string.  So the following uses one escape to
+avoid an unwanted initial blank line.  ::
 
-   print("""
+   print("""\
    Usage: thingy [OPTIONS]
         -h                        Display this usage message
         -H hostname               Hostname to connect to
@@ -610,7 +611,7 @@ This example introduces several new features.
 
      >>> a, b = 0, 1
      >>> while b < 1000:
-     ...     print(b, end=' ')
+     ...     print(b, end=',')
      ...     a, b = b, a+b
      ...
-     1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987
+     1,1,2,3,5,8,13,21,34,55,89,144,233,377,610,987,
