@@ -13,8 +13,8 @@ Core and Builtins
 - Issue #10372: Import the warnings module only after the IO library is
   initialized, so as to avoid bootstrap issues with the '-W' option.
 
-- Issue #10293: Remove obsolete field in the PyMemoryView structure,
-  unused undocumented value PyBUF_SHADOW, and strangely-looking code in
+- Issue #10293: Remove obsolete field in the PyMemoryView structure, unused
+  undocumented value PyBUF_SHADOW, and strangely-looking code in
   PyMemoryView_GetContiguous.
 
 - Issue #6081: Add str.format_map, similar to str.format(**mapping).
@@ -24,35 +24,35 @@ Core and Builtins
 - Issue #10221: dict.pop(k) now has a key error message that includes the
   missing key (same message d[k] returns for missing keys).
 
-- Issue #5437: A preallocated MemoryError instance should not hold traceback
+- Issue #5437: A preallocated MemoryError instance should not keep traceback
   data (including local variables caught in the stack trace) alive infinitely.
 
 - Issue #10186: Fix the SyntaxError caret when the offset is equal to the length
   of the offending line.
 
-- Issue #10089: Add support for arbitrary -X options on the command-line.
-  They can be retrieved through a new attribute ``sys._xoptions``.
+- Issue #10089: Add support for arbitrary -X options on the command line.  They
+  can be retrieved through a new attribute ``sys._xoptions``.
 
-- Issue #4388: On Mac OS X, decode command line arguments from UTF-8, instead
-  of the locale encoding. If the LANG (and LC_ALL and LC_CTYPE) environment
+- Issue #4388: On Mac OS X, decode command line arguments from UTF-8, instead of
+  the locale encoding.  If the LANG (and LC_ALL and LC_CTYPE) environment
   variable is not set, the locale encoding is ISO-8859-1, whereas most programs
-  (including Python) expect UTF-8. Python already uses UTF-8 for the filesystem
+  (including Python) expect UTF-8.  Python already uses UTF-8 for the filesystem
   encoding and to encode command line arguments on this OS.
 
-- Issue #9713, #10114: Parser functions (eg. PyParser_ASTFromFile) expects
-  filenames encoded to the filesystem encoding with surrogateescape error
+- Issue #9713, #10114: Parser functions (e.g. PyParser_ASTFromFile) expect
+  filenames encoded to the filesystem encoding with the surrogateescape error
   handler (to support undecodable bytes), instead of UTF-8 in strict mode.
 
 - Issue #9997: Don't let the name "top" have special significance in scope
   resolution.
 
-- Issue #9862: Compensate for broken PIPE_BUF in AIX by hard coding
-  its value as the default 512 when compiling on AIX.
+- Issue #9862: Compensate for broken PIPE_BUF in AIX by hard coding its value as
+  the default 512 when compiling on AIX.
 
 - Use locale encoding instead of UTF-8 to encode and decode filenames if
   Py_FileSystemDefaultEncoding is not set.
 
-- Issue #10095: fp_setreadl() doesn't reopen the file, reuse instead the file
+- Issue #10095: fp_setreadl() doesn't reopen the file, instead reuse the file
   descriptor.
 
 - Issue #9418: Moved private string methods ``_formatter_parser`` and
@@ -65,47 +65,46 @@ Library
 
 - Issue #5111: IPv6 Host in the Header is wrapped inside [ ]. Patch by Chandru.
 
-- Fix Fraction.__hash__ so that Fraction.__hash__(-1) is -2.  (See
-  also issue #10356.)
+- Fix Fraction.__hash__ so that Fraction.__hash__(-1) is -2.  (See also issue
+  #10356.)
 
-- Issue #4471: Add the IMAP.starttls() method to enable encryption on
-  standard IMAP4 connections.  Original patch by Lorenzo M. Catucci.
+- Issue #4471: Add the IMAP.starttls() method to enable encryption on standard
+  IMAP4 connections.  Original patch by Lorenzo M. Catucci.
 
-- Issue #1466065: Add 'validate' option to base64.b64decode to raise
-  an error if there are non-base64 alphabet characters in the input.
+- Issue #1466065: Add 'validate' option to base64.b64decode to raise an error if
+  there are non-base64 alphabet characters in the input.
 
-- Issue #10386: Add __all__ to token module; this simplifies importing
-  in tokenize module and prevents leaking of private names through
-  import *.
+- Issue #10386: Add __all__ to token module; this simplifies importing in
+  tokenize module and prevents leaking of private names through import *.
 
-- Issue #4471: Properly shutdown socket in IMAP.shutdown().  Patch by
-  Lorenzo M. Catucci.
+- Issue #4471: Properly shutdown socket in IMAP.shutdown().  Patch by Lorenzo
+  M. Catucci.
 
 - Fix IMAP.login() to work properly.
 
 - Issue #9244: multiprocessing pool worker processes could terminate
-  unexpectedly if the return value of a task could not be pickled.  Only
-  the ``repr`` of such errors are now sent back, wrapped in an
+  unexpectedly if the return value of a task could not be pickled.  Only the
+  ``repr`` of such errors are now sent back, wrapped in an
   ``MaybeEncodingError`` exception.
 
-- Issue #9244: The ``apply_async()`` and ``map_async()`` methods
-  of ``multiprocessing.Pool`` now accepts a ``error_callback`` argument.
-  This can be a callback with the signature ``callback(exc)``, which will
-  be called if the target raises an exception.
+- Issue #9244: The ``apply_async()`` and ``map_async()`` methods of
+  ``multiprocessing.Pool`` now accepts a ``error_callback`` argument.  This can
+  be a callback with the signature ``callback(exc)``, which will be called if
+  the target raises an exception.
 
-- Issue #10022: The dictionary returned by the ``getpeercert()`` method
-  of SSL sockets now has additional items such as ``issuer`` and ``notBefore``.
+- Issue #10022: The dictionary returned by the ``getpeercert()`` method of SSL
+  sockets now has additional items such as ``issuer`` and ``notBefore``.
 
 - ``usenetrc`` is now false by default for NNTP objects.
 
-- Issue #1926: Add support for NNTP over SSL on port 563, as well as
-  STARTTLS.  Patch by Andrew Vant.
+- Issue #1926: Add support for NNTP over SSL on port 563, as well as STARTTLS.
+  Patch by Andrew Vant.
 
 - Issue #10335: Add tokenize.open(), detect the file encoding using
   tokenize.detect_encoding() and open it in read only mode.
 
-- Issue #10321: Added support for binary data to smtplib.SMTP.sendmail,
-  and a new method send_message to send an email.message.Message object.
+- Issue #10321: Add support for binary data to smtplib.SMTP.sendmail, and a new
+  method send_message to send an email.message.Message object.
 
 - Issue #6011: sysconfig and distutils.sysconfig use the surrogateescape error
   handler to parse the Makefile file.  Avoid a UnicodeDecodeError if the source
@@ -130,60 +129,59 @@ Library
 - Issue #10180: Pickling file objects is now explicitly forbidden, since
   unpickling them produced nonsensical results.
 
-- Issue #10311: The signal module now restores errno before returning from
-  its low-level signal handler.  Patch by Hallvard B Furuseth.
+- Issue #10311: The signal module now restores errno before returning from its
+  low-level signal handler.  Patch by Hallvard B Furuseth.
 
 - Issue #10282: Add a ``nntp_implementation`` attribute to NNTP objects.
 
 - Issue #10283: Add a ``group_pattern`` argument to NNTP.list().
 
-- Issue #10155: Add IISCGIHandler to wsgiref.handlers to support IIS
-  CGI environment better, and to correct unicode environment values
-  for WSGI 1.0.1.
+- Issue #10155: Add IISCGIHandler to wsgiref.handlers to support IIS CGI
+  environment better, and to correct unicode environment values for WSGI 1.0.1.
 
 - Issue #10281: nntplib now returns None for absent fields in the OVER/XOVER
   response, instead of raising an exception.
 
 - wsgiref now implements and validates PEP 3333, rather than an experimental
   extension of PEP 333.  (Note: earlier versions of Python 3.x may have
-  incorrectly validated some non-compliant applications as WSGI compliant;
-  if your app validates with Python <3.2b1+, but not on this version, it is
-  likely the case that your app was not compliant.)
+  incorrectly validated some non-compliant applications as WSGI compliant; if
+  your app validates with Python <3.2b1+, but not on this version, it is likely
+  the case that your app was not compliant.)
 
-- Issue #10280: NNTP.nntp_version should reflect the highest version
-  advertised by the server.
+- Issue #10280: NNTP.nntp_version should reflect the highest version advertised
+  by the server.
 
 - Issue #10184: Touch directories only once when extracting a tarfile.
 
-- Issue #10199: New package, ``turtledemo`` now contains selected demo
-  scripts that were formerly found under Demo/turtle.
+- Issue #10199: New package, ``turtledemo`` now contains selected demo scripts
+  that were formerly found under Demo/turtle.
 
 - Issue #10265: Close file objects explicitly in sunau.  Patch by Brian Brazil.
 
-- Issue #10266: uu.decode didn't close in_file explicitly when it was given
-  as a filename.  Patch by Brian Brazil.
+- Issue #10266: uu.decode didn't close in_file explicitly when it was given as a
+  filename.  Patch by Brian Brazil.
 
-- Issue #10110: Queue objects didn't recognize full queues when the
-  maxsize parameter had been reduced.
+- Issue #10110: Queue objects didn't recognize full queues when the maxsize
+  parameter had been reduced.
 
 - Issue #10160: Speed up operator.attrgetter.  Patch by Christos Georgiou.
 
 - logging: Added style option to basicConfig() to allow %, {} or $-formatting.
 
-- Issue #5729:  json.dumps() now supports using a string such as '\t'
-  for pretty-printing multilevel objects.
+- Issue #5729: json.dumps() now supports using a string such as '\t' for
+  pretty-printing multilevel objects.
 
-- Issue #10253: FileIO leaks a file descriptor when trying to open a file
-  for append that isn't seekable.  Patch by Brian Brazil.
+- Issue #10253: FileIO leaks a file descriptor when trying to open a file for
+  append that isn't seekable.  Patch by Brian Brazil.
 
-- Support context manager protocol for file-like objects returned by
-  mailbox ``get_file()`` methods.
+- Support context manager protocol for file-like objects returned by mailbox
+  ``get_file()`` methods.
 
 - Issue #10246: uu.encode didn't close file objects explicitly when filenames
   were given to it.  Patch by Brian Brazil.
 
-- Issue #10198: fix duplicate header written to wave files when writeframes()
-  is called without data.
+- Issue #10198: fix duplicate header written to wave files when writeframes() is
+  called without data.
 
 - Close file objects in modulefinder in a timely manner.
 
@@ -193,20 +191,20 @@ Library
 
 - Close a file object in pkgutil in a timely manner.
 
-- Issue #10233: Close file objects in a timely manner in the tarfile module
-  and its test suite.
+- Issue #10233: Close file objects in a timely manner in the tarfile module and
+  its test suite.
 
 - Issue #10093: ResourceWarnings are now issued when files and sockets are
-  deallocated without explicit closing.  These warnings are silenced by
-  default, except in pydebug mode.
+  deallocated without explicit closing.  These warnings are silenced by default,
+  except in pydebug mode.
 
-- tarfile.py: Add support for all missing variants of the GNU sparse
-  extensions and create files with holes when extracting sparse members.
+- tarfile.py: Add support for all missing variants of the GNU sparse extensions
+  and create files with holes when extracting sparse members.
 
 - Issue #10218: Return timeout status from ``Condition.wait`` in threading.
 
-- Issue #7351: Add ``zipfile.BadZipFile`` spelling of the exception name
-  and deprecate the old name ``zipfile.BadZipfile``.
+- Issue #7351: Add ``zipfile.BadZipFile`` spelling of the exception name and
+  deprecate the old name ``zipfile.BadZipfile``.
 
 - Issue #5027: The standard ``xml`` namespace is now understood by
   xml.sax.saxutils.XMLGenerator as being bound to
@@ -218,21 +216,19 @@ Library
 
 - logging: Added style option to Formatter to allow %, {} or $-formatting.
 
-- Issue #5178: Added tempfile.TemporaryDirectory class that can be used
-  as a context manager.
+- Issue #5178: Added tempfile.TemporaryDirectory class that can be used as a
+  context manager.
 
 - Issue #1349106: Generator (and BytesGenerator) flatten method and Header
   encode method now support a 'linesep' argument.
 
-- Issue #5639: Add a *server_hostname* argument to ``SSLContext.wrap_socket``
-  in order to support the TLS SNI extension.  ``HTTPSConnection`` and
-  ``urlopen()`` also use this argument, so that HTTPS virtual hosts are now
-  supported.
+- Issue #5639: Add a *server_hostname* argument to ``SSLContext.wrap_socket`` in
+  order to support the TLS SNI extension.  ``HTTPSConnection`` and ``urlopen()``
+  also use this argument, so that HTTPS virtual hosts are now supported.
 
 - Issue #10166: Avoid recursion in pstats Stats.add() for many stats items.
 
-- Issue #10163: Skip unreadable registry keys during mimetypes
-  initialization.
+- Issue #10163: Skip unreadable registry keys during mimetypes initialization.
 
 - logging: Made StreamHandler terminator configurable.
 
@@ -245,9 +241,9 @@ Library
 - logging: Added _logRecordClass, getLogRecordClass, setLogRecordClass to
   increase flexibility of LogRecord creation.
 
-- Issue #5117: Case normalization was needed on ntpath.relpath(). And
-  fixed root directory issue on posixpath.relpath(). (Ported working fixes
-  from ntpath)
+- Issue #5117: Case normalization was needed on ntpath.relpath().  Also fixed
+  root directory issue on posixpath.relpath().  (Ported working fixes from
+  ntpath.)
 
 - Issue #1343: xml.sax.saxutils.XMLGenerator now has an option
   short_empty_elements to direct it to use self-closing tags when appropriate.
@@ -266,34 +262,33 @@ Library
 - Issue #9409: Fix the regex to match all kind of filenames, for interactive
   debugging in doctests.
 
-- Issue #9183: ``datetime.timezone(datetime.timedelta(0))`` will now
-  return the same instance as ``datetime.timezone.utc``.
+- Issue #9183: ``datetime.timezone(datetime.timedelta(0))`` will now return the
+  same instance as ``datetime.timezone.utc``.
 
-- Issue #7523: Add SOCK_CLOEXEC and SOCK_NONBLOCK to the socket module,
-  where supported by the system.  Patch by Nikita Vetoshkin.
+- Issue #7523: Add SOCK_CLOEXEC and SOCK_NONBLOCK to the socket module, where
+  supported by the system.  Patch by Nikita Vetoshkin.
 
 - Issue #10063: file:// scheme will stop accessing remote hosts via ftp
   protocol. file:// urls had fallback to access remote hosts via ftp. This was
-  not correct, change is made to raise a URLError when a remote host is tried
-  to access via file:// scheme.
+  not correct, change is made to raise a URLError when a remote host is tried to
+  access via file:// scheme.
 
 - Issue #1710703: Write structures for an empty ZIP archive when a ZipFile is
   created in modes 'a' or 'w' and then closed without adding any files. Raise
   BadZipfile (rather than IOError) when opening small non-ZIP files.
 
-- Issue #10041: The signature of optional arguments in socket.makefile()
-  didn't match that of io.open(), and they also didn't get forwarded
-  properly to TextIOWrapper in text mode.  Patch by Kai Zhu.
+- Issue #10041: The signature of optional arguments in socket.makefile() didn't
+  match that of io.open(), and they also didn't get forwarded properly to
+  TextIOWrapper in text mode.  Patch by Kai Zhu.
 
 - Issue #9003: http.client.HTTPSConnection, urllib.request.HTTPSHandler and
-  urllib.request.urlopen now take optional arguments to allow for
-  server certificate checking, as recommended in public uses of HTTPS.
+  urllib.request.urlopen now take optional arguments to allow for server
+  certificate checking, as recommended in public uses of HTTPS.
 
 - Issue #6612: Fix site and sysconfig to catch os.getcwd() error, eg. if the
   current directory was deleted. Patch written by W. Trevor King.
 
-- Issue #3873: Speed up unpickling from file objects which have a peek()
-  method.
+- Issue #3873: Speed up unpickling from file objects that have a peek() method.
 
 - Issue #10075: Add a session_stats() method to SSLContext objects.
 
@@ -314,12 +309,12 @@ Extension Modules
 
 - Issue #678250: Make mmap flush a noop on ACCESS_READ and ACCESS_COPY.
 
-- Issue #9054: Fix a crash occurring when using the pyexpat module
-  with expat version 2.0.1.
+- Issue #9054: Fix a crash occurring when using the pyexpat module with expat
+  version 2.0.1.
 
-- Issue #5355: Provide mappings from Expat error numbers to string
-  descriptions and backwards, in order to actually make it possible
-  to analyze error codes provided by ExpatError.
+- Issue #5355: Provide mappings from Expat error numbers to string descriptions
+  and backwards, in order to actually make it possible to analyze error codes
+  provided by ExpatError.
 
 - The Unicode database was updated to 6.0.0.
 
@@ -327,8 +322,7 @@ C-API
 -----
 
 - Issue #10288: The deprecated family of "char"-handling macros
-  (ISLOWER()/ISUPPER()/etc) have now been removed: use Py_ISLOWER() etc
-  instead.
+  (ISLOWER()/ISUPPER()/etc) have now been removed: use Py_ISLOWER() etc instead.
 
 - Issue #9778: Hash values are now always the size of pointers. A new Py_hash_t
   type has been introduced.
@@ -336,22 +330,22 @@ C-API
 Tools/Demos
 -----------
 
-- Issue #10117: Tools/scripts/reindent.py now accepts source files
-  that use encoding other than ASCII or UTF-8.  Source encoding is
-  preserved when reindented code is written to a file.
+- Issue #10117: Tools/scripts/reindent.py now accepts source files that use
+  encoding other than ASCII or UTF-8.  Source encoding is preserved when
+  reindented code is written to a file.
 
 - Issue #7287: Demo/imputil/knee.py was removed.
 
 Tests
 -----
 
-- Issue #3699: Fix test_bigaddrspace and extend it to test bytestrings
-  as well as unicode strings.  Initial patch by Sandro Tosi.
+- Issue #3699: Fix test_bigaddrspace and extend it to test bytestrings as well
+  as unicode strings.  Initial patch by Sandro Tosi.
 
 - Issue #10294: Remove dead code form test_unicode_file.
 
-- Issue #10123: Don't use non-ascii filenames in test_doctest tests. Add a
-  new test specific to unicode (non-ascii name and filename).
+- Issue #10123: Don't use non-ascii filenames in test_doctest tests. Add a new
+  test specific to unicode (non-ascii name and filename).
 
 Build
 -----
@@ -366,8 +360,8 @@ Build
 
 - Accept Oracle Berkeley DB 5.0 and 5.1 as backend for the dbm extension.
 
-- Issue #7473: avoid link errors when building a framework with a different
-  set of architectures than the one that is currently installed.
+- Issue #7473: avoid link errors when building a framework with a different set
+  of architectures than the one that is currently installed.
 
 
 What's New in Python 3.2 Alpha 3?
