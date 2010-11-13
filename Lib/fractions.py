@@ -528,12 +528,8 @@ class Fraction(numbers.Rational):
             return Fraction(round(self / shift) * shift)
 
     def __hash__(self):
-        """hash(self)
+        """hash(self)"""
 
-        Tricky because values that are exactly representable as a
-        float must have the same hash as that float.
-
-        """
         # XXX since this method is expensive, consider caching the result
 
         # In order to make sure that the hash of a Fraction agrees
@@ -550,7 +546,8 @@ class Fraction(numbers.Rational):
             hash_ = _PyHASH_INF
         else:
             hash_ = abs(self._numerator) * dinv % _PyHASH_MODULUS
-        return hash_ if self >= 0 else -hash_
+        result = hash_ if self >= 0 else -hash_
+        return -2 if result == -1 else result
 
     def __eq__(a, b):
         """a == b"""
