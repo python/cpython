@@ -1591,7 +1591,7 @@ attributes of *A* as they are defined within the body of the class statement.
 Once those definitions are executed, the ordered dictionary is fully populated
 and the metaclass's :meth:`__new__` method gets invoked.  That method builds
 the new type and it saves the ordered dictionary keys in an attribute
-called *members*.
+called ``members``.
 
 
 Customizing instance and subclass checks
