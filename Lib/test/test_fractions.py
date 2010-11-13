@@ -546,6 +546,9 @@ class FractionTest(unittest.TestCase):
         self.assertEquals(hash(2.5), hash(F(5, 2)))
         self.assertEquals(hash(10**50), hash(F(10**50)))
         self.assertNotEquals(hash(float(10**23)), hash(F(10**23)))
+        # Check that __hash__ produces the same value as hash(), for
+        # consistency with int and Decimal.  (See issue #10356.)
+        self.assertEquals(hash(F(-1)), F(-1).__hash__())
 
     def testApproximatePi(self):
         # Algorithm borrowed from
