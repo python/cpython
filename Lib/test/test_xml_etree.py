@@ -102,6 +102,80 @@ def interface():
     '<tag key="value" />'
     """
 
+def qname():
+    """
+    Test QName handling.
+
+    1) decorated tags
+
+    >>> from xml.etree import ElementTree as ET
+    >>> elem = ET.Element("{uri}tag")
+    >>> serialize(ET, elem) # 1.1
+    '<ns0:tag xmlns:ns0="uri" />'
+    >>> elem = ET.Element(ET.QName("{uri}tag"))
+    >>> serialize(ET, elem) # 1.2
+    '<ns0:tag xmlns:ns0="uri" />'
+    >>> elem = ET.Element(ET.QName("uri", "tag"))
+    >>> serialize(ET, elem) # 1.3
+    '<ns0:tag xmlns:ns0="uri" />'
+    >>> elem = ET.Element(ET.QName("uri", "tag"))
+    >>> subelem = ET.SubElement(elem, ET.QName("uri", "tag1"))
+    >>> subelem = ET.SubElement(elem, ET.QName("uri", "tag2"))
+    >>> serialize(ET, elem) # 1.4
+    '<ns0:tag xmlns:ns0="uri"><ns0:tag1 /><ns0:tag2 /></ns0:tag>'
+
+    2) decorated attributes
+
+    >>> elem.clear()
+    >>> elem.attrib["{uri}key"] = "value"
+    >>> serialize(ET, elem) # 2.1
+    '<ns0:tag ns0:key="value" xmlns:ns0="uri" />'
+
+    >>> elem.clear()
+    >>> elem.attrib[ET.QName("{uri}key")] = "value"
+    >>> serialize(ET, elem) # 2.2
+    '<ns0:tag ns0:key="value" xmlns:ns0="uri" />'
+
+    3) decorated values are not converted by default, but the
+       QName wrapper can be used for values
+
+    >>> elem.clear()
+    >>> elem.attrib["{uri}key"] = "{uri}value"
+    >>> serialize(ET, elem) # 3.1
+    '<ns0:tag ns0:key="{uri}value" xmlns:ns0="uri" />'
+
+    >>> elem.clear()
+    >>> elem.attrib["{uri}key"] = ET.QName("{uri}value")
+    >>> serialize(ET, elem) # 3.2
+    '<ns0:tag ns0:key="ns0:value" xmlns:ns0="uri" />'
+
+    >>> elem.clear()
+    >>> subelem = ET.Element("tag")
+    >>> subelem.attrib["{uri1}key"] = ET.QName("{uri2}value")
+    >>> elem.append(subelem)
+    >>> elem.append(subelem)
+    >>> serialize(ET, elem) # 3.3
+    '<ns0:tag xmlns:ns0="uri"><tag ns1:key="ns2:value" xmlns:ns1="uri1" xmlns:ns2="uri2" /><tag ns1:key="ns2:value" xmlns:ns1="uri1" xmlns:ns2="uri2" /></ns0:tag>'
+
+    4) Direct QName tests
+
+    >>> str(ET.QName('ns', 'tag'))
+    '{ns}tag'
+    >>> str(ET.QName('{ns}tag'))
+    '{ns}tag'
+    >>> q1 = ET.QName('ns', 'tag')
+    >>> q2 = ET.QName('ns', 'tag')
+    >>> q1 == q2
+    True
+    >>> q2 = ET.QName('ns', 'other-tag')
+    >>> q1 == q2
+    False
+    >>> q1 == 'ns:tag'
+    False
+    >>> q1 == '{ns}tag'
+    True
+    """
+
 def find():
     """
     Test find methods (including xpath syntax).
