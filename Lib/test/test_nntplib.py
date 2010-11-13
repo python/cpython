@@ -160,21 +160,6 @@ class NetworkedNNTPTestsMixin:
         self.check_article_resp(resp, article, last)
         self.assertEqual(article.lines, head.lines + [b''] + body.lines)
 
-    def test_quit(self):
-        self.server.quit()
-        self.server = None
-
-    def test_login(self):
-        baduser = "notarealuser"
-        badpw = "notarealpassword"
-        # Check that bogus credentials cause failure
-        self.assertRaises(nntplib.NNTPError, self.server.login,
-                     user=baduser, password=badpw, usenetrc=False)
-        # FIXME: We should check that correct credentials succeed, but that
-        # would require valid details for some server somewhere to be in the
-        # test suite, I think. Gmane is anonymous, at least as used for the
-        # other tests.
-
     def test_capabilities(self):
         # The server under test implements NNTP version 2 and has a
         # couple of well-known capabilities. Just sanity check that we
@@ -207,6 +192,25 @@ class NetworkedNNTPTestsMixin:
                 # Check that trying starttls when it's already active fails.
                 self.assertRaises(ValueError, self.server.starttls)
 
+    def test_zlogin(self):
+        # This test must be the penultimate because further commands will be
+        # refused.
+        baduser = "notarealuser"
+        badpw = "notarealpassword"
+        # Check that bogus credentials cause failure
+        self.assertRaises(nntplib.NNTPError, self.server.login,
+                          user=baduser, password=badpw, usenetrc=False)
+        # FIXME: We should check that correct credentials succeed, but that
+        # would require valid details for some server somewhere to be in the
+        # test suite, I think. Gmane is anonymous, at least as used for the
+        # other tests.
+
+    def test_zzquit(self):
+        # This test must be called last, hence the name
+        cls = type(self)
+        self.server.quit()
+        cls.server = None
+
 
 class NetworkedNNTPTests(NetworkedNNTPTestsMixin, unittest.TestCase):
     # This server supports STARTTLS (gmane doesn't)
@@ -214,33 +218,42 @@ class NetworkedNNTPTests(NetworkedNNTPTestsMixin, unittest.TestCase):
     GROUP_NAME = 'fr.comp.lang.python'
     GROUP_PAT = 'fr.comp.lang.*'
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         support.requires("network")
-        with support.transient_internet(self.NNTP_HOST):
-            self.server = NNTP(self.NNTP_HOST, timeout=TIMEOUT, usenetrc=False)
+        with support.transient_internet(cls.NNTP_HOST):
+            cls.server = NNTP(cls.NNTP_HOST, timeout=TIMEOUT, usenetrc=False)
 
-    def tearDown(self):
-        if self.server is not None:
-            self.server.quit()
+    @classmethod
+    def tearDownClass(cls):
+        if cls.server is not None:
+            cls.server.quit()
 
 
 if _have_ssl:
     class NetworkedNNTP_SSLTests(NetworkedNNTPTestsMixin, unittest.TestCase):
-        NNTP_HOST = 'snews.gmane.org'
-        GROUP_NAME = 'gmane.comp.python.devel'
-        GROUP_PAT = 'gmane.comp.python.d*'
 
-        def setUp(self):
+        # Technical limits for this public NNTP server (see http://www.aioe.org):
+        # "Only two concurrent connections per IP address are allowed and
+        # 400 connections per day are accepted from each IP address."
+
+        NNTP_HOST = 'nntp.aioe.org'
+        GROUP_NAME = 'comp.lang.python'
+        GROUP_PAT = 'comp.lang.*'
+
+        @classmethod
+        def setUpClass(cls):
             support.requires("network")
-            with support.transient_internet(self.NNTP_HOST):
-                self.server = nntplib.NNTP_SSL(self.NNTP_HOST, timeout=TIMEOUT,
-                                               usenetrc=False)
+            with support.transient_internet(cls.NNTP_HOST):
+                cls.server = nntplib.NNTP_SSL(cls.NNTP_HOST, timeout=TIMEOUT,
+                                              usenetrc=False)
 
-        def tearDown(self):
-            if self.server is not None:
-                self.server.quit()
+        @classmethod
+        def tearDownClass(cls):
+            if cls.server is not None:
+                cls.server.quit()
 
-        # Disabled with gmane as it produces too much data
+        # Disabled as it produces too much data
         test_list = None
 
         # Disabled as the connection will already be encrypted.
