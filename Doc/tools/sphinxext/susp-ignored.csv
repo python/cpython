@@ -296,15 +296,15 @@ faq/windows,393,:REG,.py :REG_SZ: c:\<path to python>\python.exe -u %s %s
 library/bisect,32,:hi,all(val >= x for val in a[i:hi])
 library/bisect,42,:hi,all(val > x for val in a[i:hi])
 library/http.client,52,:port,host:port
-library/nntplib,272,:bytes,:bytes
-library/nntplib,272,:lines,:lines
-library/nntplib,272,:lines,"['xref', 'from', ':lines', ':bytes', 'references', 'date', 'message-id', 'subject']"
-library/nntplib,272,:bytes,"['xref', 'from', ':lines', ':bytes', 'references', 'date', 'message-id', 'subject']"
+library/nntplib,,:bytes,:bytes
+library/nntplib,,:lines,:lines
+library/nntplib,,:lines,"['xref', 'from', ':lines', ':bytes', 'references', 'date', 'message-id', 'subject']"
+library/nntplib,,:bytes,"['xref', 'from', ':lines', ':bytes', 'references', 'date', 'message-id', 'subject']"
 library/pickle,,:memory,"conn = sqlite3.connect("":memory:"")"
 library/profile,,:lineno,"(sort by filename:lineno),"
 library/socket,,::,"(10, 1, 6, '', ('2001:888:2000:d::a2', 80, 0, 0))]"
-library/stdtypes,1026,:end,s[start:end]
-library/stdtypes,1195,:end,s[start:end]
+library/stdtypes,,:end,s[start:end]
+library/stdtypes,,:end,s[start:end]
 library/urllib.request,,:close,Connection:close
 library/urllib.request,,:password,"""joe:password@python.org"""
 library/urllib.request,,:lang,"xmlns=""http://www.w3.org/1999/xhtml"" xml:lang=""en"" lang=""en"">\n\n<head>\n"
@@ -321,3 +321,6 @@ whatsnew/2.7,862,::,"export PYTHONWARNINGS=all,error:::Cookie:0"
 whatsnew/2.7,862,:Cookie,"export PYTHONWARNINGS=all,error:::Cookie:0"
 whatsnew/2.7,1619,::,>>> urlparse.urlparse('http://[1080::8:800:200C:417A]/foo')
 whatsnew/2.7,1619,::,"ParseResult(scheme='http', netloc='[1080::8:800:200C:417A]',"
+library/configparser,,`,# Set the optional `raw` argument of get() to True if you wish to disable
+library/configparser,,`,# The optional `vars` argument is a dict with members that will take
+library/configparser,,`,# The optional `fallback` argument can be used to provide a fallback value
