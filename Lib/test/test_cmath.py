@@ -511,10 +511,8 @@ class CMathTests(unittest.TestCase):
     @unittest.skipIf(sysconfig.get_config_var('TANH_PRESERVES_ZERO_SIGN') == 0,
                      "system tanh() function doesn't copy the sign")
     def testTanhSign(self):
-        self.assertComplexIdentical(cmath.tanh(complex(0., .0j)), complex(0., .0j))
-        self.assertComplexIdentical(cmath.tanh(complex(0., -.0j)), complex(0., -.0j))
-        self.assertComplexIdentical(cmath.tanh(complex(-0., .0j)), complex(-0., .0j))
-        self.assertComplexIdentical(cmath.tanh(complex(-0., -.0j)), complex(-0., -.0j))
+        for z in complex_zeros:
+            self.assertComplexIdentical(cmath.tanh(z), z)
 
 
 def test_main():
