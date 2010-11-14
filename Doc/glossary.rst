@@ -322,7 +322,7 @@ Glossary
       slowly.  See also :term:`interactive`.
 
    iterable
-      A container object capable of returning its members one at a
+      An object capable of returning its members one at a
       time. Examples of iterables include all sequence types (such as
       :class:`list`, :class:`str`, and :class:`tuple`) and some non-sequence
       types like :class:`dict` and :class:`file` and objects of any classes you
