@@ -96,6 +96,25 @@ class HeaderTests(TestCase):
         conn.putheader('Content-length', 42)
         self.assertTrue(b'Content-length: 42' in conn._buffer)
 
+    def test_ipv6host_header(self):
+        # Default host header on IPv6 transaction should wrapped by [] if
+        # its actual IPv6 address
+        expected = b'GET /foo HTTP/1.1\r\nHost: [2001::]:81\r\n' \
+                   b'Accept-Encoding: identity\r\n\r\n'
+        conn = client.HTTPConnection('[2001::]:81')
+        sock = FakeSocket('')
+        conn.sock = sock
+        conn.request('GET', '/foo')
+        self.assertTrue(sock.data.startswith(expected))
+
+        expected = b'GET /foo HTTP/1.1\r\nHost: [2001:102A::]\r\n' \
+                   b'Accept-Encoding: identity\r\n\r\n'
+        conn = client.HTTPConnection('[2001:102A::]')
+        sock = FakeSocket('')
+        conn.sock = sock
+        conn.request('GET', '/foo')
+        self.assertTrue(sock.data.startswith(expected))
+
 
 class BasicTest(TestCase):
     def test_status_lines(self):
