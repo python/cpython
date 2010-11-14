@@ -873,6 +873,13 @@ class HTTPConnection:
                         host_enc = self.host.encode("ascii")
                     except UnicodeEncodeError:
                         host_enc = self.host.encode("idna")
+
+                    # As per RFC 273, IPv6 address should be wrapped with []
+                    # when used as Host header
+
+                    if self.host.find(':') >= 0:
+                        host_enc = b'[' + host_enc + b']'
+
                     if self.port == self.default_port:
                         self.putheader('Host', host_enc)
                     else:

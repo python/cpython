@@ -155,6 +155,8 @@ C-API
 Library
 -------
 
+- Issue #5111: IPv6 Host in the Header is wrapped inside [ ]. Patch by Chandru.
+
 - Issue #4471: Properly shutdown socket in IMAP.shutdown().  Patch by
   Lorenzo M. Catucci.
 
