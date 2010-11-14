@@ -15,6 +15,11 @@ Library
 
 - Issue #5111: IPv6 Host in the Header is wrapped inside [ ]. Patch by Chandru.
 
+Build
+-----
+
+- Issue #1303434: Generate ZIP file containing all PDBs.
+
 
 What's New in Python 2.7.1 release candidate 1?
 ===============================================
