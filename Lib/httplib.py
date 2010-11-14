@@ -879,6 +879,9 @@ class HTTPConnection:
                         host_enc = self.host.encode("ascii")
                     except UnicodeEncodeError:
                         host_enc = self.host.encode("idna")
+                    # Wrap the IPv6 Host Header with [] (RFC 2732)
+                    if host_enc.find(':') >= 0:
+                        host_enc = "[" + host_enc + "]"
                     if self.port == self.default_port:
                         self.putheader('Host', host_enc)
                     else:
