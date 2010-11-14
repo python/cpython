@@ -13,6 +13,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5111: IPv6 Host in the Header is wrapped inside [ ]. Patch by Chandru.
+
 
 What's New in Python 2.7.1 release candidate 1?
 ===============================================
