@@ -757,13 +757,31 @@ functions.
    *msg* using the string formatting operator. (Note that this means that you can
    use keywords in the format string, together with a single dictionary argument.)
 
-   There are two keyword arguments in *kwargs* which are inspected: *exc_info*
+   There are three keyword arguments in *kwargs* which are inspected: *exc_info*
    which, if it does not evaluate as false, causes exception information to be
    added to the logging message. If an exception tuple (in the format returned by
    :func:`sys.exc_info`) is provided, it is used; otherwise, :func:`sys.exc_info`
    is called to get the exception information.
 
-   The other optional keyword argument is *extra* which can be used to pass a
+   The second optional keyword argument is *stack_info*, which defaults to
+   False. If specified as True, stack information is added to the logging
+   message, including the actual logging call. Note that this is not the same
+   stack information as that displayed through specifying *exc_info*: The
+   former is stack frames from the bottom of the stack up to the logging call
+   in the current thread, whereas the latter is information about stack frames
+   which have been unwound, following an exception, while searching for
+   exception handlers.
+
+   You can specify *stack_info* independently of *exc_info*, e.g. to just show
+   how you got to a certain point in your code, even when no exceptions were
+   raised. The stack frames are printed following a header line which says::
+
+       Stack (most recent call last):
+
+   This mimics the `Traceback (most recent call last):` which is used when
+   displaying exception frames.
+
+   The third optional keyword argument is *extra* which can be used to pass a
    dictionary which is used to populate the __dict__ of the LogRecord created for
    the logging event with user-defined attributes. These custom attributes can then
    be used as you like. For example, they could be incorporated into logged
@@ -796,6 +814,8 @@ functions.
    above example). In such circumstances, it is likely that specialized
    :class:`Formatter`\ s would be used with particular :class:`Handler`\ s.
 
+   .. versionadded:: 3.2
+      The *stack_info* parameter was added.
 
 .. function:: info(msg, *args, **kwargs)
 
@@ -1038,13 +1058,31 @@ instantiated directly, but always through the module-level function
    *msg* using the string formatting operator. (Note that this means that you can
    use keywords in the format string, together with a single dictionary argument.)
 
-   There are two keyword arguments in *kwargs* which are inspected: *exc_info*
+   There are three keyword arguments in *kwargs* which are inspected: *exc_info*
    which, if it does not evaluate as false, causes exception information to be
    added to the logging message. If an exception tuple (in the format returned by
    :func:`sys.exc_info`) is provided, it is used; otherwise, :func:`sys.exc_info`
    is called to get the exception information.
 
-   The other optional keyword argument is *extra* which can be used to pass a
+   The second optional keyword argument is *stack_info*, which defaults to
+   False. If specified as True, stack information is added to the logging
+   message, including the actual logging call. Note that this is not the same
+   stack information as that displayed through specifying *exc_info*: The
+   former is stack frames from the bottom of the stack up to the logging call
+   in the current thread, whereas the latter is information about stack frames
+   which have been unwound, following an exception, while searching for
+   exception handlers.
+
+   You can specify *stack_info* independently of *exc_info*, e.g. to just show
+   how you got to a certain point in your code, even when no exceptions were
+   raised. The stack frames are printed following a header line which says::
+
+       Stack (most recent call last):
+
+   This mimics the `Traceback (most recent call last):` which is used when
+   displaying exception frames.
+
+   The third keyword argument is *extra* which can be used to pass a
    dictionary which is used to populate the __dict__ of the LogRecord created for
    the logging event with user-defined attributes. These custom attributes can then
    be used as you like. For example, they could be incorporated into logged
@@ -1077,6 +1115,9 @@ instantiated directly, but always through the module-level function
    context (such as remote client IP address and authenticated user name, in the
    above example). In such circumstances, it is likely that specialized
    :class:`Formatter`\ s would be used with particular :class:`Handler`\ s.
+
+   .. versionadded:: 3.2
+      The *stack_info* parameter was added.
 
 
 .. method:: Logger.info(msg, *args, **kwargs)
@@ -1142,10 +1183,11 @@ instantiated directly, but always through the module-level function
    Removes the specified handler *hdlr* from this logger.
 
 
-.. method:: Logger.findCaller()
+.. method:: Logger.findCaller(stack_info=False)
 
    Finds the caller's source filename and line number. Returns the filename, line
-   number and function name as a 3-element tuple.
+   number, function name and stack information as a 4-element tuple. The stack
+   information is returned as *None* unless *stack_info* is *True*.
 
 
 .. method:: Logger.handle(record)
@@ -1156,7 +1198,7 @@ instantiated directly, but always through the module-level function
    Logger-level filtering is applied using :meth:`~Logger.filter`.
 
 
-.. method:: Logger.makeRecord(name, lvl, fn, lno, msg, args, exc_info, func=None, extra=None)
+.. method:: Logger.makeRecord(name, lvl, fn, lno, msg, args, exc_info, func=None, extra=None, sinfo=None)
 
    This is a factory method which can be overridden in subclasses to create
    specialized :class:`LogRecord` instances.
@@ -3043,6 +3085,9 @@ Currently, the useful mapping keys in a :class:`LogRecord` are:
       formatter to handle the event doesn't use the cached value but
       recalculates it afresh.
 
+      If stack information is available, it's appended after the exception
+      information, using :meth:`formatStack` to transform it if necessary.
+
 
    .. method:: formatTime(record, datefmt=None)
 
@@ -3061,6 +3106,12 @@ Currently, the useful mapping keys in a :class:`LogRecord` are:
       returned by :func:`sys.exc_info`) as a string. This default implementation
       just uses :func:`traceback.print_exception`. The resulting string is
       returned.
+
+   .. method:: formatStack(stack_info)
+
+      Formats the specified stack information (a string as returned by
+      :func:`traceback.print_stack`, but with the last newline removed) as a
+      string. This default implementation just returns the input value.
 
 .. _filter:
 
@@ -3131,7 +3182,7 @@ every time something is logged, and can be created manually via
 wire).
 
 
-.. class:: LogRecord(name, lvl, pathname, lineno, msg, args, exc_info, func=None)
+.. class:: LogRecord(name, lvl, pathname, lineno, msg, args, exc_info, func=None, sinfo=None)
 
    Contains all the information pertinent to the event being logged.
 
@@ -3177,6 +3228,12 @@ wire).
    .. attribute:: pathname
 
       Absolute pathname of the source file of origin.
+
+   .. attribute:: stack_info
+
+      Stack frame information (where available) from the bottom of the stack
+      in the current thread, up to and including the stack frame of the
+      logging call which resulted in the creation of this record.
 
    .. method:: getMessage()
 
