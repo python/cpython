@@ -63,6 +63,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #1553375: logging: Added stack_info kwarg to display stack information.
+
 - Issue #5111: IPv6 Host in the Header is wrapped inside [ ]. Patch by Chandru.
 
 - Fix Fraction.__hash__ so that Fraction.__hash__(-1) is -2.  (See also issue

@@ -238,7 +238,7 @@ class LogRecord(object):
     information to be logged.
     """
     def __init__(self, name, level, pathname, lineno,
-                 msg, args, exc_info, func=None):
+                 msg, args, exc_info, func=None, sinfo=None):
         """
         Initialize a logging record with interesting information.
         """
@@ -272,6 +272,7 @@ class LogRecord(object):
             self.module = "Unknown module"
         self.exc_info = exc_info
         self.exc_text = None      # used to cache the traceback text
+        self.stack_info = sinfo
         self.lineno = lineno
         self.funcName = func
         self.created = ct
@@ -515,6 +516,19 @@ class Formatter(object):
     def formatMessage(self, record):
         return self._style.format(record)
 
+    def formatStack(self, stack_info):
+        """
+        This method is provided as an extension point for specialized
+        formatting of stack information.
+
+        The input data is a string as returned from a call to
+        :func:`traceback.print_stack`, but with the last trailing newline
+        removed.
+
+        The base implementation just returns the value passed in.
+        """
+        return stack_info
+
     def format(self, record):
         """
         Format the specified record as text.
@@ -541,6 +555,10 @@ class Formatter(object):
             if s[-1:] != "\n":
                 s = s + "\n"
             s = s + record.exc_text
+        if record.stack_info:
+            if s[-1:] != "\n":
+                s = s + "\n"
+            s = s + self.formatStack(record.stack_info)
         return s
 
 #
@@ -1213,11 +1231,12 @@ class Logger(Filterer):
         if self.isEnabledFor(ERROR):
             self._log(ERROR, msg, args, **kwargs)
 
-    def exception(self, msg, *args):
+    def exception(self, msg, *args, **kwargs):
         """
         Convenience method for logging an ERROR with exception information.
         """
-        self.error(msg, exc_info=1, *args)
+        kwargs['exc_info'] = True
+        self.error(msg, *args, **kwargs)
 
     def critical(self, msg, *args, **kwargs):
         """
@@ -1250,7 +1269,7 @@ class Logger(Filterer):
         if self.isEnabledFor(level):
             self._log(level, msg, args, **kwargs)
 
-    def findCaller(self):
+    def findCaller(self, stack_info=False):
         """
         Find the stack frame of the caller so that we can note the source
         file name, line number and function name.
@@ -1260,23 +1279,34 @@ class Logger(Filterer):
         #IronPython isn't run with -X:Frames.
         if f is not None:
             f = f.f_back
-        rv = "(unknown file)", 0, "(unknown function)"
+        rv = "(unknown file)", 0, "(unknown function)", None
         while hasattr(f, "f_code"):
             co = f.f_code
             filename = os.path.normcase(co.co_filename)
             if filename == _srcfile:
                 f = f.f_back
                 continue
-            rv = (co.co_filename, f.f_lineno, co.co_name)
+            sinfo = None
+            if stack_info:
+                sio = io.StringIO()
+                sio.write('Stack (most recent call last):\n')
+                traceback.print_stack(f, file=sio)
+                sinfo = sio.getvalue()
+                if sinfo[-1] == '\n':
+                    sinfo = sinfo[:-1]
+                sio.close()
+            rv = (co.co_filename, f.f_lineno, co.co_name, sinfo)
             break
         return rv
 
-    def makeRecord(self, name, level, fn, lno, msg, args, exc_info, func=None, extra=None):
+    def makeRecord(self, name, level, fn, lno, msg, args, exc_info,
+                   func=None, extra=None, sinfo=None):
         """
         A factory method which can be overridden in subclasses to create
         specialized LogRecords.
         """
-        rv = _logRecordClass(name, level, fn, lno, msg, args, exc_info, func)
+        rv = _logRecordClass(name, level, fn, lno, msg, args, exc_info, func,
+                             sinfo)
         if extra is not None:
             for key in extra:
                 if (key in ["message", "asctime"]) or (key in rv.__dict__):
@@ -1284,17 +1314,18 @@ class Logger(Filterer):
                 rv.__dict__[key] = extra[key]
         return rv
 
-    def _log(self, level, msg, args, exc_info=None, extra=None):
+    def _log(self, level, msg, args, exc_info=None, extra=None, stack_info=False):
         """
         Low-level logging routine which creates a LogRecord and then calls
         all the handlers of this logger to handle the record.
         """
+        sinfo = None
         if _srcfile:
             #IronPython doesn't track Python frames, so findCaller throws an
             #exception on some versions of IronPython. We trap it here so that
             #IronPython can use logging.
             try:
-                fn, lno, func = self.findCaller()
+                fn, lno, func, sinfo = self.findCaller(stack_info)
             except ValueError:
                 fn, lno, func = "(unknown file)", 0, "(unknown function)"
         else:
@@ -1302,7 +1333,8 @@ class Logger(Filterer):
         if exc_info:
             if not isinstance(exc_info, tuple):
                 exc_info = sys.exc_info()
-        record = self.makeRecord(self.name, level, fn, lno, msg, args, exc_info, func, extra)
+        record = self.makeRecord(self.name, level, fn, lno, msg, args,
+                                 exc_info, func, extra, sinfo)
         self.handle(record)
 
     def handle(self, record):
@@ -1657,12 +1689,13 @@ def error(msg, *args, **kwargs):
         basicConfig()
     root.error(msg, *args, **kwargs)
 
-def exception(msg, *args):
+def exception(msg, *args, **kwargs):
     """
     Log a message with severity 'ERROR' on the root logger,
     with exception information.
     """
-    error(msg, exc_info=1, *args)
+    kwargs['exc_info'] = True
+    error(msg, *args, **kwargs)
 
 def warning(msg, *args, **kwargs):
     """
