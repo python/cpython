@@ -10,6 +10,10 @@ import imp
 import sys
 import time
 import shutil
+# HACK: preloading tempfile is necessary to avoid failures when test_tempfile
+# is run after test_threaded_import.  This has to do with dark secrets of
+# the import machinery and phantom copies of the random module.
+import tempfile
 import unittest
 from test.support import verbose, import_module, run_unittest, TESTFN
 thread = import_module('_thread')
