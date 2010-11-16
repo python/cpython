@@ -13,6 +13,10 @@ and a utility function  :func:`dedent`.  If you're just wrapping or filling one
 or two  text strings, the convenience functions should be good enough;
 otherwise,  you should use an instance of :class:`TextWrapper` for efficiency.
 
+.. seealso::
+
+   Latest version of the :source:`textwrap module Python source code
+   <Lib/textwrap.py>`
 
 .. function:: wrap(text, width=70, **kwargs)
 

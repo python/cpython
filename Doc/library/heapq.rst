@@ -11,6 +11,11 @@
 This module provides an implementation of the heap queue algorithm, also known
 as the priority queue algorithm.
 
+.. seealso::
+
+   Latest version of the :source:`heapq Python source code
+   <Lib/heapq.py>`
+
 Heaps are arrays for which ``heap[k] <= heap[2*k+1]`` and ``heap[k] <=
 heap[2*k+2]`` for all *k*, counting elements from zero.  For the sake of
 comparison, non-existing elements are considered to be infinite.  The

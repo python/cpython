@@ -14,6 +14,11 @@ approach.  The module is called :mod:`bisect` because it uses a basic bisection
 algorithm to do its work.  The source code may be most useful as a working
 example of the algorithm (the boundary conditions are already right!).
 
+.. seealso::
+
+   Latest version of the :source:`bisect module Python source code
+   <Lib/bisect.py>`
+
 The following functions are provided:
 
 

@@ -10,6 +10,10 @@ disassembling it. The CPython bytecode which this module takes as an
 input is defined in the file :file:`Include/opcode.h` and used by the compiler
 and the interpreter.
 
+.. seealso::
+
+   Latest version of the :source:`dis module Python source code <Lib/dis.py>`
+
 .. impl-detail::
 
    Bytecode is an implementation detail of the CPython interpreter!  No
