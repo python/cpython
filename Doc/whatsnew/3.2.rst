@@ -97,6 +97,11 @@ and called with code like this::
    :pep:`391` - Dictionary Based Configuration for Logging
       PEP written by Vinay Sajip.
 
+PEP 3148:  The ``concurrent.futures`` module
+============================================
+
+.. (Stub section)
+
 
 PEP 3147:  PYC Repository Directories
 =====================================
