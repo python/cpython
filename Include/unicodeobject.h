@@ -7,7 +7,8 @@
 
 Unicode implementation based on original code by Fredrik Lundh,
 modified by Marc-Andre Lemburg (mal@lemburg.com) according to the
-Unicode Integration Proposal (see file Misc/unicode.txt).
+Unicode Integration Proposal. (See
+http://www.egenix.com/files/python/unicode-proposal.txt).
 
 Copyright (c) Corporation for National Research Initiatives.
 
@@ -420,8 +421,8 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
     for (i_ = 0; i_ < (length); i_++) t_[i_] = v_;\
     } while (0)
 
-/* Check if substring matches at given offset.  the offset must be
-   valid, and the substring must not be empty */
+/* Check if substring matches at given offset.  The offset must be
+   valid, and the substring must not be empty. */
 
 #define Py_UNICODE_MATCH(string, offset, substring) \
     ((*((string)->str + (offset)) == *((substring)->str)) && \
@@ -549,8 +550,8 @@ PyAPI_FUNC(int) PyUnicode_Resize(
    Coercion is done in the following way:
 
    1. bytes, bytearray and other char buffer compatible objects are decoded
-      under the assumptions that they contain data using the current
-      default encoding. Decoding is done in "strict" mode.
+      under the assumptions that they contain data using the UTF-8
+      encoding. Decoding is done in "strict" mode.
 
    2. All other objects (including Unicode objects) raise an
       exception.
@@ -661,7 +662,7 @@ PyAPI_FUNC(int) PyUnicode_ClearFreeList(void);
 
    Many of these APIs take two arguments encoding and errors. These
    parameters encoding and errors have the same semantics as the ones
-   of the builtin unicode() API.
+   of the builtin str() API.
 
    Setting encoding to NULL causes the default encoding (UTF-8) to be used.
 
@@ -680,7 +681,8 @@ PyAPI_FUNC(int) PyUnicode_ClearFreeList(void);
 /* Return a Python string holding the default encoded value of the
    Unicode object.
 
-   The resulting string is cached in the Unicode object for subsequent
+   Same as PyUnicode_AsUTF8String() except
+   the resulting string is cached in the Unicode object for subsequent
    usage by this function. The cached version is needed to implement
    the character buffer interface and will live (at least) as long as
    the Unicode object itself.
@@ -695,14 +697,14 @@ PyAPI_FUNC(PyObject *) _PyUnicode_AsDefaultEncodedString(
     PyObject *unicode,
     const char *errors);
 
-/* Returns a pointer to the default encoding (normally, UTF-8) of the
+/* Returns a pointer to the default encoding (UTF-8) of the
    Unicode object unicode and the size of the encoded representation
    in bytes stored in *size.
 
    In case of an error, no *size is set.
 
    *** This API is for interpreter INTERNAL USE ONLY and will likely
-   *** be removed or changed for Python 3.1.
+   *** be removed or changed in the future.
 
    *** If you need to access the Unicode object as UTF-8 bytes string,
    *** please use PyUnicode_AsUTF8String() instead.
@@ -713,7 +715,7 @@ PyAPI_FUNC(char *) _PyUnicode_AsStringAndSize(
     PyObject *unicode,
     Py_ssize_t *size);
 
-/* Returns a pointer to the default encoding (normally, UTf-8) of the
+/* Returns a pointer to the default encoding (UTF-8) of the
    Unicode object unicode.
 
    Use of this API is DEPRECATED since no size information can be
@@ -729,14 +731,7 @@ PyAPI_FUNC(char *) _PyUnicode_AsStringAndSize(
 
 PyAPI_FUNC(char *) _PyUnicode_AsString(PyObject *unicode);
 
-/* Returns the currently active default encoding.
-
-   The default encoding is currently implemented as run-time settable
-   process global.  This may change in future versions of the
-   interpreter to become a parameter which is managed on a per-thread
-   basis.
-
- */
+/* Returns "utf-8".  */
 
 PyAPI_FUNC(const char*) PyUnicode_GetDefaultEncoding(void);
 
