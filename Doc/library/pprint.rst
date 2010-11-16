@@ -21,6 +21,11 @@ width constraint.
 
 Dictionaries are sorted by key before the display is computed.
 
+.. seealso::
+
+   Latest version of the :source:`pprint module Python source code
+   <Lib/pprint.py>`
+
 The :mod:`pprint` module defines one class:
 
 .. First the implementation class:

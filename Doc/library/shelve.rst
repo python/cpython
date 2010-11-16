@@ -13,6 +13,10 @@ arbitrary Python objects --- anything that the :mod:`pickle` module can handle.
 This includes most class instances, recursive data types, and objects containing
 lots of shared  sub-objects.  The keys are ordinary strings.
 
+.. seealso::
+
+   Latest version of the :source:`shelve module Python source code
+   <Lib/shelve.py>`
 
 .. function:: open(filename, flag='c', protocol=None, writeback=False)
 

@@ -11,6 +11,9 @@ command interpreters.  These are often useful for test harnesses, administrative
 tools, and prototypes that will later be wrapped in a more sophisticated
 interface.
 
+.. seealso::
+
+   Latest version of the :source:`cmd module Python source code <Lib/cmd.py>`
 
 .. class:: Cmd(completekey='tab', stdin=None, stdout=None)
 

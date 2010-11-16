@@ -10,6 +10,10 @@ annotated statement coverage listings, print caller/callee relationships and
 list functions executed during a program run.  It can be used in another program
 or from the command line.
 
+.. seealso::
+
+   Latest version of the :source:`trace module Python source code
+   <Lib/trace.py>`
 
 .. _trace-cli:
 

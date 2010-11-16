@@ -17,6 +17,11 @@ The :mod:`dummy_threading` module is provided for situations where
    methods and functions in this module in the Python 2.x series are still
    supported by this module.
 
+.. seealso::
+
+   Latest version of the :source:`threading module Python source code
+   <Lib/threading.py>`
+
 This module defines the following functions and objects:
 
 
