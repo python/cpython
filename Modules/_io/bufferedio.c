@@ -387,7 +387,7 @@ buffered_clear(buffered *self)
 /* Because this can call arbitrary code, it shouldn't be called when
    the refcount is 0 (that is, not directly from tp_dealloc unless
    the refcount has been temporarily re-incremented). */
-PyObject *
+static PyObject *
 buffered_dealloc_warn(buffered *self, PyObject *source)
 {
     if (self->ok && self->raw) {
