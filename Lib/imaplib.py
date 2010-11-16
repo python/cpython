@@ -196,13 +196,7 @@ class IMAP4:
         else:
             raise self.error(self.welcome)
 
-        typ, dat = self.capability()
-        if dat == [None]:
-            raise self.error('no CAPABILITY response from server')
-        dat = str(dat[-1], "ASCII")
-        dat = dat.upper()
-        self.capabilities = tuple(dat.split())
-
+        self._get_capabilities()
         if __debug__:
             if self.debug >= 3:
                 self._mesg('CAPABILITIES: %r' % (self.capabilities,))
@@ -737,10 +731,7 @@ class IMAP4:
             self.sock = ssl_context.wrap_socket(self.sock)
             self.file = self.sock.makefile('rb')
             self._tls_established = True
-            typ, dat = self.capability()
-            if dat == [None]:
-                raise self.error('no CAPABILITY response from server')
-            self.capabilities = tuple(dat[-1].upper().split())
+            self._get_capabilities()
         else:
             raise self.error("Couldn't establish TLS session")
         return self._untagged_response(typ, dat, name)
@@ -954,6 +945,15 @@ class IMAP4:
         if typ == 'BAD':
             raise self.error('%s command error: %s %s' % (name, typ, data))
         return typ, data
+
+
+    def _get_capabilities(self):
+        typ, dat = self.capability()
+        if dat == [None]:
+            raise self.error('no CAPABILITY response from server')
+        dat = str(dat[-1], "ASCII")
+        dat = dat.upper()
+        self.capabilities = tuple(dat.split())
 
 
     def _get_response(self):

@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10429: IMAP.starttls() stored the capabilities as bytes objects,
+  rather than strings.
+
 
 What's New in Python 3.2 Alpha 4?
 =================================
