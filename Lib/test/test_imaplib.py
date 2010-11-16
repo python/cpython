@@ -60,7 +60,7 @@ class SimpleIMAPHandler(socketserver.StreamRequestHandler):
     timeout = 1
 
     def _send(self, message):
-        if verbose: print("SENT:", message.strip())
+        if verbose: print("SENT: %r" % message.strip())
         self.wfile.write(message)
 
     def handle(self):
@@ -84,7 +84,7 @@ class SimpleIMAPHandler(socketserver.StreamRequestHandler):
                 if line.endswith(b'\r\n'):
                     break
 
-            if verbose: print('GOT:', line.strip())
+            if verbose: print('GOT: %r' % line.strip())
             splitline = line.split()
             tag = splitline[0].decode('ASCII')
             cmd = splitline[1].decode('ASCII')
