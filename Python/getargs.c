@@ -1394,7 +1394,7 @@ _PyArg_VaParseTupleAndKeywords_SizeT(PyObject *args,
 int
 PyArg_ValidateKeywordArguments(PyObject *kwargs)
 {
-    if (!PyDict_CheckExact(kwargs)) {
+    if (!PyDict_Check(kwargs)) {
         PyErr_BadInternalCall();
         return 0;
     }

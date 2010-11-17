@@ -454,7 +454,7 @@ _PyDict_HasOnlyStringKeys(PyObject *dict)
 {
     Py_ssize_t pos = 0;
     PyObject *key, *value;
-    assert(PyDict_CheckExact(dict));
+    assert(PyDict_Check(dict));
     /* Shortcut */
     if (((PyDictObject *)dict)->ma_lookup == lookdict_unicode)
         return 1;

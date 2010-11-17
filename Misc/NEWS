@@ -26,6 +26,11 @@ Library
 - Issue #10429: IMAP.starttls() stored the capabilities as bytes objects,
   rather than strings.
 
+C-API
+-----
+
+- Loosen PyArg_ValidateKeywordArguments to allow dict subclasses.
+
 
 What's New in Python 3.2 Alpha 4?
 =================================
