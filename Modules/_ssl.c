@@ -1783,6 +1783,16 @@ error:
     return NULL;
 }
 
+static PyObject *
+set_default_verify_paths(PySSLContext *self, PyObject *unused)
+{
+    if (!SSL_CTX_set_default_verify_paths(self->ctx)) {
+        _setSSLError(NULL, 0, __FILE__, __LINE__);
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 static PyGetSetDef context_getsetlist[] = {
     {"options", (getter) get_options,
                 (setter) set_options, NULL},
@@ -1802,6 +1812,8 @@ static struct PyMethodDef context_methods[] = {
                               METH_VARARGS | METH_KEYWORDS, NULL},
     {"session_stats", (PyCFunction) session_stats,
                       METH_NOARGS, NULL},
+    {"set_default_verify_paths", (PyCFunction) set_default_verify_paths,
+                                 METH_NOARGS, NULL},
     {NULL, NULL}        /* sentinel */
 };
 

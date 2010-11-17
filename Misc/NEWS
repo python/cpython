@@ -13,6 +13,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10443: Add the SSLContext.set_default_verify_paths() method.
+
 - Issue #10440: Support RUSAGE_THREAD as a constant in the resource module.
   Patch by Robert Collins.
 

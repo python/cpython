@@ -412,6 +412,12 @@ class ContextTests(unittest.TestCase):
                 'cache_full': 0,
             })
 
+    def test_set_default_verify_paths(self):
+        # There's not much we can do to test that it acts as expected,
+        # so just check it doesn't crash or raise an exception.
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        ctx.set_default_verify_paths()
+
 
 class NetworkedTests(unittest.TestCase):
 
