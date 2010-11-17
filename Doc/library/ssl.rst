@@ -536,6 +536,15 @@ to speed up repeated connections from the same clients.
    following an `OpenSSL specific layout
    <http://www.openssl.org/docs/ssl/SSL_CTX_load_verify_locations.html>`_.
 
+.. method:: SSLContext.set_default_verify_paths()
+
+   Load a set of default "certification authority" (CA) certificates from
+   a filesystem path defined when building the OpenSSL library.  Unfortunately,
+   there's no easy way to know whether this method succeeds: no error is
+   returned if no certificates are to be found.  When the OpenSSL library is
+   provided as part of the operating system, though, it is likely to be
+   configured properly.
+
 .. method:: SSLContext.set_ciphers(ciphers)
 
    Set the available ciphers for sockets created with this context.
