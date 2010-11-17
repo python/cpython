@@ -10,6 +10,11 @@ What's New in Python 3.2 Beta 1?
 Core and Builtins
 -----------------
 
+- Issue #9518: Extend the PyModuleDef_HEAD_INIT macro to explicitly
+  zero-initialize all fields, fixing compiler warnings seen when building
+  extension modules with gcc with "-Wmissing-field-initializers" (implied
+  by "-W")
+
 Library
 -------
 
