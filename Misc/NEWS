@@ -78,6 +78,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10356: Decimal.__hash__(-1) should return -2.
+
 - Issue #1553375: logging: Added stack_info kwarg to display stack information.
 
 - Issue #5111: IPv6 Host in the Header is wrapped inside [ ]. Patch by Chandru.
