@@ -217,14 +217,14 @@ function to specify which processes information should be provided for.
 
 .. data:: RUSAGE_SELF
 
-   :const:`RUSAGE_SELF` should be used to request information pertaining only to
-   the process itself.
+   Pass to :func:`getrusage` to request resources consumed by the calling
+   process, which is the sum of resources used by all threads in the process.
 
 
 .. data:: RUSAGE_CHILDREN
 
-   Pass to :func:`getrusage` to request resource information for child processes of
-   the calling process.
+   Pass to :func:`getrusage` to request resources consumed by child processes
+   of the calling process which have been terminated and waited for.
 
 
 .. data:: RUSAGE_BOTH
@@ -232,3 +232,10 @@ function to specify which processes information should be provided for.
    Pass to :func:`getrusage` to request resources consumed by both the current
    process and child processes.  May not be available on all systems.
 
+
+.. data:: RUSAGE_THREAD
+
+   Pass to :func:`getrusage` to request resources consumed by the current
+   thread.  May not be available on all systems.
+
+   .. versionadded:: 3.2

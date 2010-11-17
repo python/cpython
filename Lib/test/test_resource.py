@@ -102,6 +102,10 @@ class ResourceTest(unittest.TestCase):
             usageboth = resource.getrusage(resource.RUSAGE_BOTH)
         except (ValueError, AttributeError):
             pass
+        try:
+            usage_thread = resource.getrusage(resource.RUSAGE_THREAD)
+        except (ValueError, AttributeError):
+            pass
 
 def test_main(verbose=None):
     support.run_unittest(ResourceTest)

@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10440: Support RUSAGE_THREAD as a constant in the resource module.
+  Patch by Robert Collins.
+
 - Issue #10429: IMAP.starttls() stored the capabilities as bytes objects,
   rather than strings.
 
