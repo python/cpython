@@ -1299,19 +1299,26 @@ class DecimalUsabilityTest(unittest.TestCase):
         self.assertEqual(id(dc), id(d))
 
     def test_hash_method(self):
+        def hashit(d):
+            a = hash(d)
+            b = d.__hash__()
+            self.assertEqual(a, b)
+            return a
+
         #just that it's hashable
-        hash(Decimal(23))
-        hash(Decimal('Infinity'))
-        hash(Decimal('-Infinity'))
-        hash(Decimal('nan123'))
-        hash(Decimal('-NaN'))
+        hashit(Decimal(23))
+        hashit(Decimal('Infinity'))
+        hashit(Decimal('-Infinity'))
+        hashit(Decimal('nan123'))
+        hashit(Decimal('-NaN'))
 
         test_values = [Decimal(sign*(2**m + n))
                        for m in [0, 14, 15, 16, 17, 30, 31,
-                                 32, 33, 62, 63, 64, 65, 66]
+                                 32, 33, 61, 62, 63, 64, 65, 66]
                        for n in range(-10, 10)
                        for sign in [-1, 1]]
         test_values.extend([
+                Decimal("-1"), # ==> -2
                 Decimal("-0"), # zeros
                 Decimal("0.00"),
                 Decimal("-0.000"),
@@ -1335,13 +1342,13 @@ class DecimalUsabilityTest(unittest.TestCase):
 
         # check that hash(d) == hash(int(d)) for integral values
         for value in test_values:
-            self.assertEqual(hash(value), hash(int(value)))
+            self.assertEqual(hashit(value), hashit(int(value)))
 
         #the same hash that to an int
-        self.assertEqual(hash(Decimal(23)), hash(23))
+        self.assertEqual(hashit(Decimal(23)), hashit(23))
         self.assertRaises(TypeError, hash, Decimal('sNaN'))
-        self.assertTrue(hash(Decimal('Inf')))
-        self.assertTrue(hash(Decimal('-Inf')))
+        self.assertTrue(hashit(Decimal('Inf')))
+        self.assertTrue(hashit(Decimal('-Inf')))
 
         # check that the hashes of a Decimal float match when they
         # represent exactly the same values
@@ -1350,7 +1357,7 @@ class DecimalUsabilityTest(unittest.TestCase):
         for s in test_strings:
             f = float(s)
             d = Decimal(s)
-            self.assertEqual(hash(f), hash(d))
+            self.assertEqual(hashit(f), hashit(d))
 
         # check that the value of the hash doesn't depend on the
         # current context (issue #1757)
@@ -1359,11 +1366,11 @@ class DecimalUsabilityTest(unittest.TestCase):
         x = Decimal("123456789.1")
 
         c.prec = 6
-        h1 = hash(x)
+        h1 = hashit(x)
         c.prec = 10
-        h2 = hash(x)
+        h2 = hashit(x)
         c.prec = 16
-        h3 = hash(x)
+        h3 = hashit(x)
 
         self.assertEqual(h1, h2)
         self.assertEqual(h1, h3)
