@@ -325,6 +325,10 @@ PyInit_resource(void)
     PyModule_AddIntConstant(m, "RUSAGE_BOTH", RUSAGE_BOTH);
 #endif
 
+#ifdef RUSAGE_THREAD
+    PyModule_AddIntConstant(m, "RUSAGE_THREAD", RUSAGE_THREAD);
+#endif
+
 #if defined(HAVE_LONG_LONG)
     if (sizeof(RLIM_INFINITY) > sizeof(long)) {
         v = PyLong_FromLongLong((PY_LONG_LONG) RLIM_INFINITY);
