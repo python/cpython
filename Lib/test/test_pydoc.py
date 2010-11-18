@@ -18,9 +18,6 @@ expected_text_pattern = \
 """
 NAME
     test.pydoc_mod - This is a test module for test_pydoc
-
-FILE
-    %s
 %s
 CLASSES
     builtins.object
@@ -68,9 +65,7 @@ FUNCTIONS
     nodoc_func()
 
 DATA
-    __author__ = 'Benjamin Peterson'
-    __credits__ = 'Nobody'
-    __version__ = '1.2.3.4'
+    __xyz__ = 'X, Y and Z'
 
 VERSION
     1.2.3.4
@@ -80,6 +75,9 @@ AUTHOR
 
 CREDITS
     Nobody
+
+FILE
+    %s
 """.strip()
 
 expected_html_pattern = \
@@ -164,9 +162,7 @@ war</tt></dd></dl>
 <font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
 \x20\x20\x20\x20
 <tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%%"><strong>__author__</strong> = 'Benjamin Peterson'<br>
-<strong>__credits__</strong> = 'Nobody'<br>
-<strong>__version__</strong> = '1.2.3.4'</td></tr></table><p>
+<td width="100%%"><strong>__xyz__</strong> = 'X, Y and Z'</td></tr></table><p>
 <table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#7799ee">
 <td colspan=3 valign=bottom>&nbsp;<br>
@@ -249,7 +245,7 @@ class PyDocDocTest(unittest.TestCase):
     def test_text_doc(self):
         result, doc_loc = get_pydoc_text(pydoc_mod)
         expected_text = expected_text_pattern % \
-                        (inspect.getabsfile(pydoc_mod), doc_loc)
+                        (doc_loc, inspect.getabsfile(pydoc_mod))
         if result != expected_text:
             print_diffs(expected_text, result)
             self.fail("outputs are not equal, see diff above")
