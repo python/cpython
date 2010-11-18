@@ -1280,7 +1280,7 @@ The following example uses no proxies at all, overriding environment settings::
 
 The :mod:`urllib.response` module defines functions and classes which define a
 minimal file like interface, including ``read()`` and ``readline()``. The
-typical response object is an addinfourl instance, which defines and ``info()``
+typical response object is an addinfourl instance, which defines an ``info()``
 method and that returns headers and a ``geturl()`` method that returns the url.
 Functions defined by this module are used internally by the
 :mod:`urllib.request` module.
