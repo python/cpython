@@ -2,7 +2,9 @@ import io
 import datetime
 import textwrap
 import unittest
+import functools
 import contextlib
+import collections
 from test import support
 from nntplib import NNTP, GroupInfo, _have_ssl
 import nntplib
@@ -228,6 +230,28 @@ class NetworkedNNTPTestsMixin:
         self.server.quit()
         cls.server = None
 
+    @classmethod
+    def wrap_methods(cls):
+        # Wrap all methods in a transient_internet() exception catcher
+        # XXX put a generic version in test.support?
+        def wrap_meth(meth):
+            @functools.wraps(meth)
+            def wrapped(self):
+                with support.transient_internet(self.NNTP_HOST):
+                    meth(self)
+            return wrapped
+        for name in dir(cls):
+            if not name.startswith('test_'):
+                continue
+            meth = getattr(cls, name)
+            if not isinstance(meth, collections.Callable):
+                continue
+            # Need to use a closure so that meth remains bound to its current
+            # value
+            setattr(cls, name, wrap_meth(meth))
+
+NetworkedNNTPTestsMixin.wrap_methods()
+
 
 class NetworkedNNTPTests(NetworkedNNTPTestsMixin, unittest.TestCase):
     # This server supports STARTTLS (gmane doesn't)
@@ -235,11 +259,13 @@ class NetworkedNNTPTests(NetworkedNNTPTestsMixin, unittest.TestCase):
     GROUP_NAME = 'fr.comp.lang.python'
     GROUP_PAT = 'fr.comp.lang.*'
 
+    NNTP_CLASS = NNTP
+
     @classmethod
     def setUpClass(cls):
         support.requires("network")
         with support.transient_internet(cls.NNTP_HOST):
-            cls.server = NNTP(cls.NNTP_HOST, timeout=TIMEOUT, usenetrc=False)
+            cls.server = cls.NNTP_CLASS(cls.NNTP_HOST, timeout=TIMEOUT, usenetrc=False)
 
     @classmethod
     def tearDownClass(cls):
@@ -248,7 +274,7 @@ class NetworkedNNTPTests(NetworkedNNTPTestsMixin, unittest.TestCase):
 
 
 if _have_ssl:
-    class NetworkedNNTP_SSLTests(NetworkedNNTPTestsMixin, unittest.TestCase):
+    class NetworkedNNTP_SSLTests(NetworkedNNTPTests):
 
         # Technical limits for this public NNTP server (see http://www.aioe.org):
         # "Only two concurrent connections per IP address are allowed and
@@ -258,17 +284,7 @@ if _have_ssl:
         GROUP_NAME = 'comp.lang.python'
         GROUP_PAT = 'comp.lang.*'
 
-        @classmethod
-        def setUpClass(cls):
-            support.requires("network")
-            with support.transient_internet(cls.NNTP_HOST):
-                cls.server = nntplib.NNTP_SSL(cls.NNTP_HOST, timeout=TIMEOUT,
-                                              usenetrc=False)
-
-        @classmethod
-        def tearDownClass(cls):
-            if cls.server is not None:
-                cls.server.quit()
+        NNTP_CLASS = nntplib.NNTP_SSL
 
         # Disabled as it produces too much data
         test_list = None
