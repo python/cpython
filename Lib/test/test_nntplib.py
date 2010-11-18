@@ -112,9 +112,13 @@ class NetworkedNNTPTestsMixin:
 
     def test_xover(self):
         resp, count, first, last, name = self.server.group(self.GROUP_NAME)
-        resp, lines = self.server.xover(last, last)
+        resp, lines = self.server.xover(last - 5, last)
+        if len(lines) == 0:
+            self.skipTest("no articles retrieved")
+        # The 'last' article is not necessarily part of the output (cancelled?)
         art_num, art_dict = lines[0]
-        self.assertEqual(art_num, last)
+        self.assertGreaterEqual(art_num, last - 5)
+        self.assertLessEqual(art_num, last)
         self._check_art_dict(art_dict)
 
     def test_over(self):
@@ -127,7 +131,9 @@ class NetworkedNNTPTestsMixin:
         # The "start-end" article range form
         resp, lines = self.server.over((start, last))
         art_num, art_dict = lines[-1]
-        self.assertEqual(art_num, last)
+        # The 'last' article is not necessarily part of the output (cancelled?)
+        self.assertGreaterEqual(art_num, start)
+        self.assertLessEqual(art_num, last)
         self._check_art_dict(art_dict)
         # XXX The "message_id" form is unsupported by gmane
         # 503 Overview by message-ID unsupported
@@ -149,15 +155,26 @@ class NetworkedNNTPTestsMixin:
 
     def test_article_head_body(self):
         resp, count, first, last, name = self.server.group(self.GROUP_NAME)
-        resp, head = self.server.head(last)
+        # Try to find an available article
+        for art_num in (last, first, last - 1):
+            try:
+                resp, head = self.server.head(art_num)
+            except nntplib.NNTPTemporaryError as e:
+                if not e.response.startswith("423 "):
+                    raise
+                # "423 No such article" => choose another one
+                continue
+            break
+        else:
+            self.skipTest("could not find a suitable article number")
         self.assertTrue(resp.startswith("221 "), resp)
-        self.check_article_resp(resp, head, last)
-        resp, body = self.server.body(last)
+        self.check_article_resp(resp, head, art_num)
+        resp, body = self.server.body(art_num)
         self.assertTrue(resp.startswith("222 "), resp)
-        self.check_article_resp(resp, body, last)
-        resp, article = self.server.article(last)
+        self.check_article_resp(resp, body, art_num)
+        resp, article = self.server.article(art_num)
         self.assertTrue(resp.startswith("220 "), resp)
-        self.check_article_resp(resp, article, last)
+        self.check_article_resp(resp, article, art_num)
         self.assertEqual(article.lines, head.lines + [b''] + body.lines)
 
     def test_capabilities(self):
