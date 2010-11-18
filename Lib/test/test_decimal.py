@@ -1346,7 +1346,7 @@ class DecimalUsabilityTest(unittest.TestCase):
 
         #the same hash that to an int
         self.assertEqual(hashit(Decimal(23)), hashit(23))
-        self.assertRaises(TypeError, hash, Decimal('sNaN'))
+        self.assertRaises(ValueError, hash, Decimal('sNaN'))
         self.assertTrue(hashit(Decimal('Inf')))
         self.assertTrue(hashit(Decimal('-Inf')))
 

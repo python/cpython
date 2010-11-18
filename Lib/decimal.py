@@ -943,7 +943,7 @@ class Decimal(object):
         # in the documentation.  (See library docs, 'Built-in Types').
         if self._is_special:
             if self.is_snan():
-                raise TypeError('Cannot hash a signaling NaN value.')
+                raise ValueError('Cannot hash a signaling NaN value.')
             elif self.is_nan():
                 return _PyHASH_NAN
             else:
