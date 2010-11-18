@@ -254,6 +254,32 @@ class _Condition(_Verbose):
         finally:
             self._acquire_restore(saved_state)
 
+    def wait_for(self, predicate, timeout=None):
+        endtime = None
+        waittime = timeout
+        result = predicate()
+        while not result:
+            if waittime is not None:
+                if endtime is None:
+                    endtime = _time() + waittime
+                else:
+                    waittime = endtime - _time()
+                    if waittime <= 0:
+                        if __debug__:
+                            self._note("%s.wait_for(%r, %r): Timed out.",
+                                       self, predicate, timeout)
+                        break
+            if __debug__:
+                self._note("%s.wait_for(%r, %r): Waiting with timeout=%s.",
+                           self, predicate, timeout, waittime)
+            self.wait(waittime)
+            result = predicate()
+        else:
+            if __debug__:
+                self._note("%s.wait_for(%r, %r): Success.",
+                           self, predicate, timeout)
+        return result
+
     def notify(self, n=1):
         if not self._is_owned():
             raise RuntimeError("cannot notify on un-acquired lock")
@@ -482,13 +508,12 @@ class Barrier(_Verbose):
     # Wait in the barrier until we are relased.  Raise an exception
     # if the barrier is reset or broken.
     def _wait(self, timeout):
-        while self._state == 0:
-            if self._cond.wait(timeout) is False:
-                #timed out.  Break the barrier
-                self._break()
-                raise BrokenBarrierError
-            if self._state < 0:
-                raise BrokenBarrierError
+        if not self._cond.wait_for(lambda : self._state != 0, timeout):
+            #timed out.  Break the barrier
+            self._break()
+            raise BrokenBarrierError
+        if self._state < 0:
+            raise BrokenBarrierError
         assert self._state == 1
 
     # If we are the last thread to exit the barrier, signal any threads
