@@ -1178,7 +1178,7 @@ class SafeTransport(Transport):
 
     def send_request(self, host, handler, request_body, debug):
         import socket
-        if not hasattr(http.client, "ssl"):
+        if not hasattr(http.client, "HTTPSConnection"):
             raise NotImplementedError(
                 "your version of http.client doesn't support HTTPS")
 
