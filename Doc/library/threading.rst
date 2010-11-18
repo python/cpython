@@ -539,6 +539,13 @@ state change can be interesting for only one or several waiting threads.  E.g.
 in a typical producer-consumer situation, adding one item to the buffer only
 needs to wake up one consumer thread.
 
+Note:  Condition variables can be, depending on the implementation, subject
+to both spurious wakeups (when :meth:`wait` returns without a :meth:`notify`
+call) and stolen wakeups (when another thread acquires the lock before the
+awoken thread.)  For this reason, it is always necessary to verify the state
+the thread is waiting for when :meth:`wait` returns and optionally repeat
+the call as often as necessary.
+
 
 .. class:: Condition(lock=None)
 
@@ -584,6 +591,35 @@ needs to wake up one consumer thread.
 
       .. versionchanged:: 3.2
          Previously, the method always returned ``None``.
+
+   .. method:: wait_for(predicate, timeout=None)
+
+      Wait until a condition evaluates to True.  *predicate* should be a
+      callable which result will be interpreted as a boolean value.
+      A *timeout* may be provided giving the maximum time to wait.
+
+      This utility method may call :meth:`wait` repeatedly until the predicate
+      is satisfied, or until a timeout occurs. The return value is
+      the last return value of the predicate and will evaluate to
+      ``False`` if the method timed out.
+
+      Ignoring the timeout feature, calling this method is roughly equivalent to
+      writing::
+
+        while not predicate():
+            cv.wait()
+
+      Therefore, the same rules apply as with :meth:`wait`: The lock must be
+      held when called and is re-aquired on return.  The predicate is evaluated
+      with the lock held.
+
+      Using this method, the consumer example above can be written thus::
+
+         with cv:
+             cv.wait_for(an_item_is_available)
+             get_an_available_item()
+
+      .. versionadded:: 3.2
 
    .. method:: notify()
 
