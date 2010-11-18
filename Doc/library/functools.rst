@@ -20,7 +20,7 @@ function for the purposes of this module.
 
 The :mod:`functools` module defines the following functions:
 
-..  function:: cmp_to_key(func)
+.. function:: cmp_to_key(func)
 
    Transform an old-style comparison function to a key-function.  Used with
    tools that accept key functions (such as :func:`sorted`, :func:`min`,
