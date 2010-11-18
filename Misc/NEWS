@@ -31,6 +31,12 @@ C-API
 
 - Loosen PyArg_ValidateKeywordArguments to allow dict subclasses.
 
+Tests
+-----
+
+- Issue #8886: Use context managers throughout test_zipfile. Patch by
+  Eric Carstensen.
+
 
 What's New in Python 3.2 Alpha 4?
 =================================
