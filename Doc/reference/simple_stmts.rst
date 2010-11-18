@@ -791,7 +791,7 @@ first form of :keyword:`import`, an alternate local name can be supplied by
 specifying ":keyword:`as` localname".  If a name is not found,
 :exc:`ImportError` is raised.  If the list of identifiers is replaced by a star
 (``'*'``), all public names defined in the module are bound in the local
-namespace of the :keyword:`import` statement..
+namespace of the :keyword:`import` statement.
 
 .. index:: single: __all__ (optional module attribute)
 
