@@ -788,7 +788,7 @@ Encodings and Unicode
 
 Strings are stored internally as sequences of codepoints (to be precise
 as :c:type:`Py_UNICODE` arrays). Depending on the way Python is compiled (either
-via :option:`--without-wide-unicode` or :option:`--with-wide-unicode`, with the
+via ``--without-wide-unicode`` or ``--with-wide-unicode``, with the
 former being the default) :c:type:`Py_UNICODE` is either a 16-bit or 32-bit data
 type. Once a string object is used outside of CPU and memory, CPU endianness
 and how these arrays are stored as bytes become an issue.  Transforming a
