@@ -1330,7 +1330,7 @@ class SafeTransport(Transport):
         if self._connection and host == self._connection[0]:
             return self._connection[1]
 
-        if not hasattr(http.client, "ssl"):
+        if not hasattr(http.client, "HTTPSConnection"):
             raise NotImplementedError(
             "your version of http.client doesn't support HTTPS")
         # create a HTTPS connection object from a host descriptor
