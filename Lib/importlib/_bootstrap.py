@@ -758,6 +758,8 @@ class _ImportLockContext:
 
 _IMPLICIT_META_PATH = [BuiltinImporter, FrozenImporter, _DefaultPathFinder]
 
+_ERR_MSG = 'No module named {}'
+
 def _gcd_import(name, package=None, level=0):
     """Import and return the module based on its name, the package the call is
     being made from, and the level adjustment.
@@ -808,8 +810,8 @@ def _gcd_import(name, package=None, level=0):
             try:
                 path = parent_module.__path__
             except AttributeError:
-                raise ImportError("no module named {}; "
-                                    "{} is not a package".format(name, parent))
+                msg = (_ERR_MSG + '; {} is not a package').format(name, parent)
+                raise ImportError(msg)
         meta_path = sys.meta_path + _IMPLICIT_META_PATH
         for finder in meta_path:
             loader = finder.find_module(name, path)
@@ -817,7 +819,7 @@ def _gcd_import(name, package=None, level=0):
                 loader.load_module(name)
                 break
         else:
-            raise ImportError("No module named {0}".format(name))
+            raise ImportError(_ERR_MSG.format(name))
         # Backwards-compatibility; be nicer to skip the dict lookup.
         module = sys.modules[name]
         if parent:
