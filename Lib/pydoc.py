@@ -27,13 +27,13 @@ to a file named "<name>.html".
 
 Module docs for core modules are assumed to be in
 
-    http://docs.python.org/library/
+    http://docs.python.org/X.Y/library/
 
 This can be overridden by setting the PYTHONDOCS environment variable
 to a different URL or to a local directory containing the Library
 Reference Manual pages.
 """
-
+__all__ = ['help']
 __author__ = "Ka-Ping Yee <ping@lfw.org>"
 __date__ = "26 February 2001"
 
@@ -55,14 +55,7 @@ Richard Chamberlain, for the first implementation of textdoc.
 import sys, imp, os, re, inspect, builtins, pkgutil
 from reprlib import Repr
 from traceback import extract_tb as _extract_tb
-try:
-    from collections import deque
-except ImportError:
-    # Python 2.3 compatibility
-    class deque(list):
-        def popleft(self):
-            return self.pop(0)
-
+from collections import deque
 # --------------------------------------------------------- common routines
 
 def pathdirs():
@@ -159,7 +152,8 @@ def visiblename(name, all=None):
     """Decide whether to show documentation on a variable."""
     # Certain special names are redundant.
     _hidden_names = ('__builtins__', '__doc__', '__file__', '__path__',
-                     '__module__', '__name__', '__slots__', '__package__')
+                     '__module__', '__name__', '__slots__', '__package__',
+                     '__author__', '__credits__', '__date__', '__version__')
     if name in _hidden_names: return 0
     # Private names are hidden, but special names are displayed.
     if name.startswith('__') and name.endswith('__'): return 1
@@ -306,6 +300,11 @@ def safeimport(path, forceload=0, cache={}):
 # ---------------------------------------------------- formatter base class
 
 class Doc:
+
+    PYTHONDOCS = os.environ.get("PYTHONDOCS",
+                                "http://docs.python.org/%d.%d/library"
+                                % sys.version_info[:2])
+
     def document(self, object, name=None, *args):
         """Generate documentation for an object."""
         args = (object, name) + args
@@ -340,10 +339,10 @@ class Doc:
         except TypeError:
             file = '(built-in)'
 
-        docloc = os.environ.get("PYTHONDOCS",
-                                "http://docs.python.org/library")
+        docloc = os.environ.get("PYTHONDOCS", self.PYTHONDOCS)
+
         basedir = os.path.join(sys.exec_prefix, "lib",
-                               "python"+sys.version[0:3])
+                               "python%d.%d" %  sys.version_info[:2])
         if (isinstance(object, type(os)) and
             (object.__name__ in ('errno', 'exceptions', 'gc', 'imp',
                                  'marshal', 'posix', 'signal', 'sys',
@@ -607,7 +606,7 @@ class HTMLDoc(Doc):
             head = head + ' (%s)' % ', '.join(info)
         docloc = self.getdocloc(object)
         if docloc is not None:
-            docloc = '<br><a href="%(docloc)s">Module Docs</a>' % locals()
+            docloc = '<br><a href="%(docloc)s">Module Reference</a>' % locals()
         else:
             docloc = ''
         result = self.heading(
@@ -1016,21 +1015,16 @@ class TextDoc(Doc):
         name = object.__name__ # ignore the passed-in name
         synop, desc = splitdoc(getdoc(object))
         result = self.section('NAME', name + (synop and ' - ' + synop))
-
-        try:
-            all = object.__all__
-        except AttributeError:
-            all = None
-
-        try:
-            file = inspect.getabsfile(object)
-        except TypeError:
-            file = '(built-in)'
-        result = result + self.section('FILE', file)
-
+        all = getattr(object, '__all__', None)
         docloc = self.getdocloc(object)
         if docloc is not None:
-            result = result + self.section('MODULE DOCS', docloc)
+            result = result + self.section('MODULE REFERENCE', docloc + """
+
+The following documentation is automatically generated from the Python source
+files.  It may be incomplete, incorrect or include features that are considered
+implementation detail and may vary between Python implementations.  When in
+doubt, consult the module reference at the location listed above.
+""")
 
         if desc:
             result = result + self.section('DESCRIPTION', desc)
@@ -1109,6 +1103,11 @@ class TextDoc(Doc):
             result = result + self.section('AUTHOR', str(object.__author__))
         if hasattr(object, '__credits__'):
             result = result + self.section('CREDITS', str(object.__credits__))
+        try:
+            file = inspect.getabsfile(object)
+        except TypeError:
+            file = '(built-in)'
+        result = result + self.section('FILE', file)
         return result
 
     def docclass(self, object, name=None, mod=None):
