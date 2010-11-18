@@ -63,7 +63,9 @@ documents precisely the version of the module you would get if you started the
 Python interpreter and typed ``import spam``.
 
 Module docs for core modules are assumed to reside in
-http://docs.python.org/library/.  This can be overridden by setting the
-:envvar:`PYTHONDOCS` environment variable to a different URL or to a local
-directory containing the Library Reference Manual pages.
+``http://docs.python.org/X.Y/library/`` where ``X`` and ``Y`` are the
+major and minor version numbers of the Python interpreter.  This can
+be overridden by setting the :envvar:`PYTHONDOCS` environment variable
+to a different URL or to a local directory containing the Library
+Reference Manual pages.
 
