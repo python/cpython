@@ -105,11 +105,15 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: chr(i)
 
-   Return the string of one character whose Unicode codepoint is the integer
+   Return the string representing a character whose Unicode codepoint is the integer
    *i*.  For example, ``chr(97)`` returns the string ``'a'``. This is the
-   inverse of :func:`ord`.  The valid range for the argument depends how Python
-   was configured -- it may be either UCS2 [0..0xFFFF] or UCS4 [0..0x10FFFF].
-   :exc:`ValueError` will be raised if *i* is outside that range.
+   inverse of :func:`ord`.  The valid range for the argument is from 0 through
+   1,114,111 (0x10FFFF in base 16).  :exc:`ValueError` will be raised if *i* is
+   outside that range.
+
+   Note that on narrow Unicode builds, the result is a string of
+   length two for *i* greater than 65,535 (0xFFFF in hexadecimal).
+
 
 
 .. function:: classmethod(function)
@@ -811,14 +815,14 @@ are always available.  They are listed here in alphabetical order.
 .. XXX works for bytes too, but should it?
 .. function:: ord(c)
 
-   Given a string of length one, return an integer representing the Unicode code
-   point of the character.  For example, ``ord('a')`` returns the integer ``97``
+   Given a string representing one Uncicode character, return an integer
+   representing the Unicode code
+   point of that character.  For example, ``ord('a')`` returns the integer ``97``
    and ``ord('\u2020')`` returns ``8224``.  This is the inverse of :func:`chr`.
 
-   If the argument length is not one, a :exc:`TypeError` will be raised.  (If
-   Python was built with UCS2 Unicode, then the character's code point must be
-   in the range [0..65535] inclusive; otherwise the string length is two!)
-
+   On wide Unicode builds, if the argument length is not one, a
+   :exc:`TypeError` will be raised.  On narrow Unicode builds, strings
+   of length two are accepted when they form a UTF-16 surrogate pair.
 
 .. function:: pow(x, y[, z])
 
