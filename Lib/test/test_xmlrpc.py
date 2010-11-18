@@ -149,6 +149,31 @@ class XMLRPCTestCase(unittest.TestCase):
                           ('host.tld',
                            [('Authorization', 'Basic dXNlcg==')], {}))
 
+    def test_ssl_presence(self):
+        #Check for ssl support
+        have_ssl = False
+        if hasattr(socket, 'ssl'):
+            have_ssl = True
+        else:
+            try:
+                import ssl
+            except:
+                pass
+            else:
+                have_ssl = True
+        try:
+            xmlrpc.client.ServerProxy('https://localhost:9999').bad_function()
+        except:
+            exc = sys.exc_info()
+        if exc[0] == socket.error:
+            self.assertTrue(have_ssl,
+                            "No SSL support, but xmlrpclib reports supported.")
+        elif exc[0] == NotImplementedError and str(exc[1]) == \
+                 "your version of http.client doesn't support HTTPS":
+            self.assertFalse(have_ssl,
+                             "SSL supported, but xmlrpclib reports not.")
+        else:
+            self.fail("Unable to determine status of SSL check.")
 
 
 class HelperTestCase(unittest.TestCase):
