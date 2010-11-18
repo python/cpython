@@ -10,16 +10,53 @@ libraries.  These functions compile Python source files in a directory tree,
 allowing users without permission to write to the libraries to take advantage of
 cached byte-code files.
 
-This module may also be used as a script (using the :option:`-m` Python flag) to
-compile Python sources.  Directories to recursively traverse (passing
-:option:`-l` stops the recursive behavior) for sources are listed on the command
-line.  If no arguments are given, the invocation is equivalent to ``-l
-sys.path``.  Printing lists of the files compiled can be disabled with the
-:option:`-q` flag.  In addition, the :option:`-x` option takes a regular
-expression argument.  All files that match the expression will be skipped.
-The :option:`-b` flag may be given to write legacy ``.pyc`` file path names,
-otherwise :pep:`3147` style byte-compiled path names are written.
 
+Command-line use
+----------------
+
+This module can work as a script (using :program:`python -m compileall`) to
+compile Python sources.
+
+.. program:: compileall
+
+.. cmdoption:: [directory|file]...
+
+   Positional arguments are files to compile or directories that contain
+   source files, traversed recursively.  If no argument is given, behave as if
+   the command line was ``-l <directories from sys.path>``.
+
+.. cmdoption:: -l
+
+   Do not recurse.
+
+.. cmdoption:: -f
+
+   Force rebuild even if timestamps are up-to-date.
+
+.. cmdoption:: -q
+
+   Do not print the list of files compiled.
+
+.. cmdoption:: -d destdir
+
+   Purported directory name for error messages.
+
+.. cmdoption:: -x regex
+
+   Skip files with a full path that matches given regular expression.
+
+.. cmdoption:: -i list
+
+   Expand list with its content (file and directory names).
+
+.. cmdoption:: -b
+
+   Write legacy ``.pyc`` file path names.  Default is to write :pep:`3147`-style
+   byte-compiled path names.
+
+
+Public functions
+----------------
 
 .. function:: compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None, quiet=False, legacy=False)
 
@@ -37,7 +74,7 @@ otherwise :pep:`3147` style byte-compiled path names are written.
    operation.
 
    If *legacy* is true, old-style ``.pyc`` file path names are written,
-   otherwise (the default), :pep:`3147` style path names are written.
+   otherwise (the default), :pep:`3147`-style path names are written.
 
 
 .. function:: compile_path(skip_curdir=True, maxlevels=0, force=False, legacy=False)
@@ -64,4 +101,3 @@ subdirectory and all its subdirectories::
 
    Module :mod:`py_compile`
       Byte-compile a single source file.
-

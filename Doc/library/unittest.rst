@@ -154,7 +154,7 @@ example, :meth:`~TestCase.setUp` was used to create a fresh sequence for each
 test.
 
 The final block shows a simple way to run the tests. :func:`unittest.main`
-provides a command line interface to the test script.  When run from the command
+provides a command-line interface to the test script.  When run from the command
 line, the above script produces an output that looks like this::
 
    ...
@@ -206,7 +206,7 @@ You can run tests with more detail (higher verbosity) by passing in the -v flag:
 
    python -m unittest -v test_module
 
-For a list of all the command line options::
+For a list of all the command-line options::
 
    python -m unittest -h
 
@@ -215,31 +215,33 @@ For a list of all the command line options::
    not modules or classes.
 
 
-failfast, catch and buffer command line options
+failfast, catch and buffer command-line options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-unittest supports three command options.
+:program:`unittest` supports three command-line options.
 
-* :option:`-b` / :option:`--buffer`
+.. program:: unittest
 
-  The standard output and standard error streams are buffered during the test
-  run. Output during a passing test is discarded. Output is echoed normally
-  on test fail or error and is added to the failure messages.
+.. cmdoption:: -b, --buffer
 
-* :option:`-c` / :option:`--catch`
+   The standard output and standard error streams are buffered during the test
+   run. Output during a passing test is discarded. Output is echoed normally
+   on test fail or error and is added to the failure messages.
 
-  Control-C during the test run waits for the current test to end and then
-  reports all the results so far. A second control-C raises the normal
-  :exc:`KeyboardInterrupt` exception.
+.. cmdoption:: -c, --catch
 
-  See `Signal Handling`_ for the functions that provide this functionality.
+   Control-C during the test run waits for the current test to end and then
+   reports all the results so far. A second control-C raises the normal
+   :exc:`KeyboardInterrupt` exception.
 
-* :option:`-f` / :option:`--failfast`
+   See `Signal Handling`_ for the functions that provide this functionality.
 
-  Stop the test run on the first error or failure.
+.. cmdoption:: -f, --failfast
+
+   Stop the test run on the first error or failure.
 
 .. versionadded:: 3.2
-   The command line options ``-c``, ``-b`` and ``-f`` were added.
+   The command-line options :option:`-c`, :option:`-b` and :option:`-f` were added.
 
 The command line can also be used for test discovery, for running all of the
 tests in a project or just a subset.
@@ -257,18 +259,30 @@ compatible with test discovery they must all be importable from the top level
 directory of the project (in other words, they must all be in Python packages).
 
 Test discovery is implemented in :meth:`TestLoader.discover`, but can also be
-used from the command line. The basic command line usage is::
+used from the command line. The basic command-line usage is::
 
    cd project_directory
    python -m unittest discover
 
 The ``discover`` sub-command has the following options:
 
-   -v, --verbose    Verbose output
-   -s directory     Directory to start discovery ('.' default)
-   -p pattern       Pattern to match test files ('test*.py' default)
-   -t directory     Top level directory of project (default to
-                    start directory)
+.. program:: unittest discover
+
+.. cmdoption:: -v, --verbose
+
+   Verbose output
+
+.. cmdoption:: -s directory
+
+   Directory to start discovery ('.' default)
+
+.. cmdoption:: -p pattern
+
+   Pattern to match test files ('test*.py' default)
+
+.. cmdoption:: -t directory
+
+   Top level directory of project (defaults to start directory)
 
 The :option:`-s`, :option:`-p`, and :option:`-t` options can be passed in
 as positional arguments in that order. The following two command lines
@@ -1850,7 +1864,7 @@ Loading and running tests
       >>> main(module='test_module', exit=False)
 
    The ``failfast``, ``catchbreak`` and ``buffer`` parameters have the same
-   effect as the `failfast, catch and buffer command line options`_.
+   effect as the `failfast, catch and buffer command-line options`_.
 
    Calling ``main`` actually returns an instance of the ``TestProgram`` class.
    This stores the result of the tests run as the ``result`` attribute.
@@ -2013,7 +2027,7 @@ instead of as an error.
 Signal Handling
 ---------------
 
-The :option:`-c`/:option:`--catch` command line option to unittest, along with the ``catchbreak``
+The :option:`-c` command-line option to unittest, along with the ``catchbreak``
 parameter to :func:`unittest.main()`, provide more friendly handling of
 control-C during a test run. With catch break behavior enabled control-C will
 allow the currently running test to complete, and the test run will then end

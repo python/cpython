@@ -120,7 +120,7 @@ The following exceptions are the exceptions that are usually raised.
 
    Raised when a floating point operation fails.  This exception is always defined,
    but can only be raised when Python is configured with the
-   :option:`--with-fpectl` option, or the :const:`WANT_SIGFPE_HANDLER` symbol is
+   ``--with-fpectl`` option, or the :const:`WANT_SIGFPE_HANDLER` symbol is
    defined in the :file:`pyconfig.h` file.
 
 

@@ -169,7 +169,7 @@ always available.
 
    A string giving the site-specific directory prefix where the platform-dependent
    Python files are installed; by default, this is also ``'/usr/local'``.  This can
-   be set at build time with the :option:`--exec-prefix` argument to the
+   be set at build time with the ``--exec-prefix`` argument to the
    :program:`configure` script.  Specifically, all configuration files (e.g. the
    :file:`pyconfig.h` header file) are installed in the directory ``exec_prefix +
    '/lib/pythonversion/config'``, and shared library modules are installed in
@@ -685,7 +685,7 @@ always available.
 
    A string giving the site-specific directory prefix where the platform
    independent Python files are installed; by default, this is the string
-   ``'/usr/local'``.  This can be set at build time with the :option:`--prefix`
+   ``'/usr/local'``.  This can be set at build time with the ``--prefix``
    argument to the :program:`configure` script.  The main collection of Python
    library modules is installed in the directory ``prefix + '/lib/pythonversion'``
    while the platform independent header files (all except :file:`pyconfig.h`) are
@@ -862,7 +862,7 @@ always available.
 
    Activate dumping of VM measurements using the Pentium timestamp counter, if
    *on_flag* is true. Deactivate these dumps if *on_flag* is off. The function is
-   available only if Python was compiled with :option:`--with-tsc`. To understand
+   available only if Python was compiled with ``--with-tsc``. To understand
    the output of this dump, read :file:`Python/ceval.c` in the Python sources.
 
    .. impl-detail::
