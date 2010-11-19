@@ -524,10 +524,6 @@ in a different style:
    If you don't need the "variable part" indication, use the standard
    ````code```` instead.
 
-.. describe:: var
-
-   A Python or C variable or parameter name.
-
 
 The following roles generate external links:
 
