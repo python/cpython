@@ -152,8 +152,8 @@ class XMLRPCTestCase(unittest.TestCase):
     def test_ssl_presence(self):
         try:
             import ssl
-        except:
-            have_ssl = False
+        except ImportError:
+            has_ssl = False
         else:
             has_ssl = True
         try:
