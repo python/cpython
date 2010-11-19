@@ -4,13 +4,11 @@
   Unicode HOWTO
 *****************
 
-:Release: 1.11
+:Release: 1.12
 
-This HOWTO discusses Python 2.x's support for Unicode, and explains
+This HOWTO discusses Python support for Unicode, and explains
 various problems that people commonly encounter when trying to work
-with Unicode.  (This HOWTO has not yet been updated to cover the 3.x
-versions of Python.)
-
+with Unicode.
 
 Introduction to Unicode
 =======================
@@ -44,14 +42,14 @@ In the 1980s, almost all personal computers were 8-bit, meaning that bytes could
 hold values ranging from 0 to 255.  ASCII codes only went up to 127, so some
 machines assigned values between 128 and 255 to accented characters.  Different
 machines had different codes, however, which led to problems exchanging files.
-Eventually various commonly used sets of values for the 128-255 range emerged.
+Eventually various commonly used sets of values for the 128--255 range emerged.
 Some were true standards, defined by the International Standards Organization,
 and some were **de facto** conventions that were invented by one company or
 another and managed to catch on.
 
 255 characters aren't very many.  For example, you can't fit both the accented
 characters used in Western Europe and the Cyrillic alphabet used for Russian
-into the 128-255 range because there are more than 127 such characters.
+into the 128--255 range because there are more than 127 such characters.
 
 You could write files using different codes (all your Russian files in a coding
 system called KOI8, all your French files in a different coding system called
@@ -64,8 +62,8 @@ bits means you have 2^16 = 65,536 distinct values available, making it possible
 to represent many different characters from many different alphabets; an initial
 goal was to have Unicode contain the alphabets for every single human language.
 It turns out that even 16 bits isn't enough to meet that goal, and the modern
-Unicode specification uses a wider range of codes, 0-1,114,111 (0x10ffff in
-base-16).
+Unicode specification uses a wider range of codes, 0 through 1,114,111 (0x10ffff
+in base 16).
 
 There's a related ISO standard, ISO 10646.  Unicode and ISO 10646 were
 originally separate efforts, but the specifications were merged with the 1.1
@@ -90,7 +88,7 @@ meanings.
 The Unicode standard describes how characters are represented by **code
 points**.  A code point is an integer value, usually denoted in base 16.  In the
 standard, a code point is written using the notation U+12ca to mean the
-character with value 0x12ca (4810 decimal).  The Unicode standard contains a lot
+character with value 0x12ca (4,810 decimal).  The Unicode standard contains a lot
 of tables listing characters and their corresponding code points::
 
    0061    'a'; LATIN SMALL LETTER A
@@ -117,10 +115,10 @@ Encodings
 ---------
 
 To summarize the previous section: a Unicode string is a sequence of code
-points, which are numbers from 0 to 0x10ffff.  This sequence needs to be
-represented as a set of bytes (meaning, values from 0-255) in memory.  The rules
-for translating a Unicode string into a sequence of bytes are called an
-**encoding**.
+points, which are numbers from 0 through 0x10ffff (1,114,111 decimal).  This
+sequence needs to be represented as a set of bytes (meaning, values
+from 0 through 255) in memory.  The rules for translating a Unicode string
+into a sequence of bytes are called an **encoding**.
 
 The first encoding you might think of is an array of 32-bit integers.  In this
 representation, the string "Python" would look like this::
@@ -164,7 +162,7 @@ encoding, for example, are simple; for each code point:
    case.)
 
 Latin-1, also known as ISO-8859-1, is a similar encoding.  Unicode code points
-0-255 are identical to the Latin-1 values, so converting to this encoding simply
+0--255 are identical to the Latin-1 values, so converting to this encoding simply
 requires converting code points to byte values; if a code point larger than 255
 is encountered, the string can't be encoded into Latin-1.
 
@@ -226,8 +224,8 @@ Wikipedia entries are often helpful; see the entries for "character encoding"
 <http://en.wikipedia.org/wiki/UTF-8>, for example.
 
 
-Python 2.x's Unicode Support
-============================
+Python's Unicode Support
+========================
 
 Now that you've learned the rudiments of Unicode, we can look at Python's
 Unicode features.
@@ -265,7 +263,7 @@ Unicode result).  The following examples show the differences::
     UnicodeDecodeError: 'utf8' codec can't decode byte 0x80 in position 0:
                         unexpected code byte
     >>> b'\x80abc'.decode("utf-8", "replace")
-    '\ufffdabc'
+    '�abc'
     >>> b'\x80abc'.decode("utf-8", "ignore")
     'abc'
 
@@ -281,10 +279,10 @@ that contains the corresponding code point.  The reverse operation is the
 built-in :func:`ord` function that takes a one-character Unicode string and
 returns the code point value::
 
-    >>> chr(40960)
-    '\ua000'
-    >>> ord('\ua000')
-    40960
+    >>> chr(57344)
+    '\ue000'
+    >>> ord('\ue000')
+    57344
 
 Converting to Bytes
 -------------------
@@ -326,7 +324,8 @@ Unicode Literals in Python Source Code
 
 In Python source code, specific Unicode code points can be written using the
 ``\u`` escape sequence, which is followed by four hex digits giving the code
-point.  The ``\U`` escape sequence is similar, but expects 8 hex digits, not 4::
+point.  The ``\U`` escape sequence is similar, but expects eight hex digits,
+not four::
 
     >>> s = "a\xac\u1234\u20ac\U00008000"
               ^^^^ two-digit hex escape
@@ -465,18 +464,17 @@ like those in string objects' :meth:`encode` and :meth:`decode` methods.
 
 Reading Unicode from a file is therefore simple::
 
-    f = open('unicode.rst', encoding='utf-8')
-    for line in f:
-        print(repr(line))
+    with open('unicode.rst', encoding='utf-8') as f:
+        for line in f:
+            print(repr(line))
 
 It's also possible to open files in update mode, allowing both reading and
 writing::
 
-    f = open('test', encoding='utf-8', mode='w+')
-    f.write('\u4500 blah blah blah\n')
-    f.seek(0)
-    print(repr(f.readline()[:1]))
-    f.close()
+    with open('test', encoding='utf-8', mode='w+') as f:
+        f.write('\u4500 blah blah blah\n')
+        f.seek(0)
+        print(repr(f.readline()[:1]))
 
 The Unicode character U+FEFF is used as a byte-order mark (BOM), and is often
 written as the first character of a file in order to assist with autodetection
@@ -513,14 +511,13 @@ usually just provide the Unicode string as the filename, and it will be
 automatically converted to the right encoding for you::
 
     filename = 'filename\u4500abc'
-    f = open(filename, 'w')
-    f.write('blah\n')
-    f.close()
+    with open(filename, 'w') as f:
+        f.write('blah\n')
 
 Functions in the :mod:`os` module such as :func:`os.stat` will also accept Unicode
 filenames.
 
-:func:`os.listdir`, which returns filenames, raises an issue: should it return
+Function :func:`os.listdir`, which returns filenames, raises an issue: should it return
 the Unicode version of filenames, or should it return byte strings containing
 the encoded versions?  :func:`os.listdir` will do both, depending on whether you
 provided the directory path as a byte string or a Unicode string.  If you pass a
@@ -569,14 +566,6 @@ strings, you will find your program vulnerable to bugs wherever you combine the
 two different kinds of strings.  There is no automatic encoding or decoding if
 you do e.g. ``str + bytes``, a :exc:`TypeError` is raised for this expression.
 
-It's easy to miss such problems if you only test your software with data that
-doesn't contain any accents; everything will seem to work, but there's actually
-a bug in your program waiting for the first user who attempts to use characters
-> 127.  A second tip, therefore, is:
-
-    Include characters > 127 and, even better, characters > 255 in your test
-    data.
-
 When using data coming from a web browser or some other untrusted source, a
 common technique is to check for illegal characters in a string before using the
 string in a generated command line or storing it in a database.  If you're doing
@@ -594,8 +583,8 @@ this code::
         if '/' in filename:
             raise ValueError("'/' not allowed in filenames")
         unicode_name = filename.decode(encoding)
-        f = open(unicode_name, 'r')
-        # ... return contents of file ...
+        with open(unicode_name, 'r') as f:
+            # ... return contents of file ...
 
 However, if an attacker could specify the ``'base64'`` encoding, they could pass
 ``'L2V0Yy9wYXNzd2Q='``, which is the base-64 encoded form of the string
@@ -610,27 +599,30 @@ The PDF slides for Marc-André Lemburg's presentation "Writing Unicode-aware
 Applications in Python" are available at
 <http://downloads.egenix.com/python/LSM2005-Developing-Unicode-aware-applications-in-Python.pdf>
 and discuss questions of character encodings as well as how to internationalize
-and localize an application.
+and localize an application.  These slides cover Python 2.x only.
 
 
-Revision History and Acknowledgements
-=====================================
+Acknowledgements
+================
 
 Thanks to the following people who have noted errors or offered suggestions on
 this article: Nicholas Bastin, Marius Gedminas, Kent Johnson, Ken Krugler,
 Marc-André Lemburg, Martin von Löwis, Chad Whitacre.
 
-Version 1.0: posted August 5 2005.
+.. comment
+   Revision History
 
-Version 1.01: posted August 7 2005.  Corrects factual and markup errors; adds
-several links.
+   Version 1.0: posted August 5 2005.
 
-Version 1.02: posted August 16 2005.  Corrects factual errors.
+   Version 1.01: posted August 7 2005.  Corrects factual and markup errors; adds
+   several links.
 
-Version 1.1: Feb-Nov 2008.  Updates the document with respect to Python 3 changes.
+   Version 1.02: posted August 16 2005.  Corrects factual errors.
 
-Version 1.11: posted June 20 2010.  Notes that Python 3.x is not covered,
-and that the HOWTO only covers 2.x.
+   Version 1.1: Feb-Nov 2008.  Updates the document with respect to Python 3 changes.
+
+   Version 1.11: posted June 20 2010.  Notes that Python 3.x is not covered,
+   and that the HOWTO only covers 2.x.
 
 .. comment Describe Python 3.x support (new section? new document?)
 .. comment Additional topic: building Python w/ UCS2 or UCS4 support
