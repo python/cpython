@@ -1092,7 +1092,7 @@ def getattr_static(obj, attr, default=_sentinel):
     instance_result = _sentinel
     if not isinstance(obj, type):
         instance_result = _check_instance(obj, attr)
-        klass = obj.__class__
+        klass = type(obj)
     else:
         klass = obj
 

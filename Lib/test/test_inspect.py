@@ -855,6 +855,18 @@ class TestGetattrStatic(unittest.TestCase):
         self.assertEqual(inspect.getattr_static(Thing, 'd'), meta.__dict__['d'])
 
 
+    def test_class_as_property(self):
+        class Base(object):
+            foo = 3
+
+        class Something(Base):
+            @property
+            def __class__(self):
+                return object
+
+        self.assertEqual(inspect.getattr_static(Something(), 'foo'), 3)
+        self.assertEqual(inspect.getattr_static(Something, 'foo'), 3)
+
 def test_main():
     run_unittest(
         TestDecorators, TestRetrievingSourceCode, TestOneliners, TestBuggyCases,
