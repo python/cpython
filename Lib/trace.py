@@ -47,7 +47,7 @@ Sample use, programmatically
   r = tracer.results()
   r.write_results(show_missing=True, coverdir="/tmp")
 """
-
+__all__ = ['Trace', 'CoverageResults']
 import io
 import linecache
 import os
@@ -60,6 +60,7 @@ import inspect
 import gc
 import dis
 import pickle
+from warnings import warn as _warn
 
 try:
     import threading
@@ -77,7 +78,7 @@ else:
         sys.settrace(None)
         threading.settrace(None)
 
-def usage(outfile):
+def _usage(outfile):
     outfile.write("""Usage: %s [OPTIONS] <file> [ARGS]
 
 Meta-options:
@@ -127,7 +128,7 @@ PRAGMA_NOCOVER = "#pragma NO COVER"
 # Simple rx to find lines with no code.
 rx_blank = re.compile(r'^\s*(#.*)?$')
 
-class Ignore:
+class _Ignore:
     def __init__(self, modules=None, dirs=None):
         self._mods = set() if not modules else set(modules)
         self._dirs = [] if not dirs else [os.path.normpath(d)
@@ -177,14 +178,14 @@ class Ignore:
         self._ignore[modulename] = 0
         return 0
 
-def modname(path):
+def _modname(path):
     """Return a plausible module name for the patch."""
 
     base = os.path.basename(path)
     filename, ext = os.path.splitext(base)
     return filename
 
-def fullmodname(path):
+def _fullmodname(path):
     """Return a plausible module name for the path."""
 
     # If the file 'path' is part of a package, then the filename isn't
@@ -311,17 +312,17 @@ class CoverageResults:
 
             if coverdir is None:
                 dir = os.path.dirname(os.path.abspath(filename))
-                modulename = modname(filename)
+                modulename = _modname(filename)
             else:
                 dir = coverdir
                 if not os.path.exists(dir):
                     os.makedirs(dir)
-                modulename = fullmodname(filename)
+                modulename = _fullmodname(filename)
 
             # If desired, get a list of the line numbers which represent
             # executable content (returned as a dict for better lookup speed)
             if show_missing:
-                lnotab = find_executable_linenos(filename)
+                lnotab = _find_executable_linenos(filename)
             else:
                 lnotab = {}
 
@@ -384,7 +385,7 @@ class CoverageResults:
 
         return n_hits, n_lines
 
-def find_lines_from_code(code, strs):
+def _find_lines_from_code(code, strs):
     """Return dict where keys are lines in the line number table."""
     linenos = {}
 
@@ -394,19 +395,19 @@ def find_lines_from_code(code, strs):
 
     return linenos
 
-def find_lines(code, strs):
+def _find_lines(code, strs):
     """Return lineno dict for all code objects reachable from code."""
     # get all of the lineno information from the code of this scope level
-    linenos = find_lines_from_code(code, strs)
+    linenos = _find_lines_from_code(code, strs)
 
     # and check the constants for references to other code objects
     for c in code.co_consts:
         if inspect.iscode(c):
             # find another code object, so recurse into it
-            linenos.update(find_lines(c, strs))
+            linenos.update(_find_lines(c, strs))
     return linenos
 
-def find_strings(filename, encoding=None):
+def _find_strings(filename, encoding=None):
     """Return a dict of possible docstring positions.
 
     The dict maps line numbers to strings.  There is an entry for
@@ -429,7 +430,7 @@ def find_strings(filename, encoding=None):
             prev_ttype = ttype
     return d
 
-def find_executable_linenos(filename):
+def _find_executable_linenos(filename):
     """Return dict where keys are line numbers in the line number table."""
     try:
         with tokenize.open(filename) as f:
@@ -440,8 +441,8 @@ def find_executable_linenos(filename):
                               % (filename, err)), file=sys.stderr)
         return {}
     code = compile(prog, filename, "exec")
-    strs = find_strings(filename, encoding)
-    return find_lines(code, strs)
+    strs = _find_strings(filename, encoding)
+    return _find_lines(code, strs)
 
 class Trace:
     def __init__(self, count=1, trace=1, countfuncs=0, countcallers=0,
@@ -466,7 +467,7 @@ class Trace:
         """
         self.infile = infile
         self.outfile = outfile
-        self.ignore = Ignore(ignoremods, ignoredirs)
+        self.ignore = _Ignore(ignoremods, ignoredirs)
         self.counts = {}   # keys are (filename, linenumber)
         self.pathtobasename = {} # for memoizing os.path.basename
         self.donothing = 0
@@ -525,7 +526,7 @@ class Trace:
         code = frame.f_code
         filename = code.co_filename
         if filename:
-            modulename = modname(filename)
+            modulename = _modname(filename)
         else:
             modulename = None
 
@@ -592,9 +593,9 @@ class Trace:
             code = frame.f_code
             filename = frame.f_globals.get('__file__', None)
             if filename:
-                # XXX modname() doesn't work right for packages, so
+                # XXX _modname() doesn't work right for packages, so
                 # the ignore support won't work right for packages
-                modulename = modname(filename)
+                modulename = _modname(filename)
                 if modulename is not None:
                     ignore_it = self.ignore.names(filename, modulename)
                     if not ignore_it:
@@ -809,6 +810,48 @@ def main(argv=None):
 
         if not no_report:
             results.write_results(missing, summary=summary, coverdir=coverdir)
+
+#  Deprecated API
+def usage(outfile):
+    _warn("The trace.usage() function is deprecated",
+         DeprecationWarning, 2)
+    _usage(outfile)
+
+class Ignore(_Ignore):
+    def __init__(self, modules=None, dirs=None):
+        _warn("The class trace.Ignore is deprecated",
+             DeprecationWarning, 2)
+        _Ignore.__init__(self, modules, dirs)
+
+def modname(path):
+    _warn("The trace.modname() function is deprecated",
+         DeprecationWarning, 2)
+    return _modname(path)
+
+def fullmodname(path):
+    _warn("The trace.fullmodname() function is deprecated",
+         DeprecationWarning, 2)
+    return _fullmodname(path)
+
+def find_lines_from_code(code, strs):
+    _warn("The trace.find_lines_from_code() function is deprecated",
+         DeprecationWarning, 2)
+    return _find_lines_from_code(code, strs)
+
+def find_lines(code, strs):
+    _warn("The trace.find_lines() function is deprecated",
+         DeprecationWarning, 2)
+    return _find_lines(code, strs)
+
+def find_strings(filename, encoding=None):
+    _warn("The trace.find_strings() function is deprecated",
+         DeprecationWarning, 2)
+    return _find_strings(filename, encoding=None)
+
+def find_executable_linenos(filename):
+    _warn("The trace.find_executable_linenos() function is deprecated",
+         DeprecationWarning, 2)
+    return _find_executable_linenos(filename)
 
 if __name__=='__main__':
     main()
