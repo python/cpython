@@ -70,7 +70,7 @@ are always available.  They are listed here in alphabetical order.
    Return a new array of bytes.  The :class:`bytearray` type is a mutable
    sequence of integers in the range 0 <= x < 256.  It has most of the usual
    methods of mutable sequences, described in :ref:`typesseq-mutable`, as well
-   as most methods that the :class:`str` type has, see :ref:`bytes-methods`.
+   as most methods that the :class:`bytes` type has, see :ref:`bytes-methods`.
 
    The optional *source* parameter can be used to initialize the array in a few
    different ways:
