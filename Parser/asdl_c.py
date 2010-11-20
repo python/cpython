@@ -366,19 +366,19 @@ class Obj2ModVisitor(PickleVisitor):
         self.emit("obj2ast_%s(PyObject* obj, %s* out, PyArena* arena)" % (name, ctype), 0)
         self.emit("{", 0)
         self.emit("PyObject* tmp = NULL;", 1)
+        # Prevent compiler warnings about unused variable.
+        self.emit("tmp = tmp;", 1)
         self.emit("int isinstance;", 1)
         self.emit("", 0)
 
-    def sumTrailer(self, name):
+    def sumTrailer(self, name, add_label=False):
         self.emit("", 0)
-        self.emit("tmp = PyObject_Repr(obj);", 1)
         # there's really nothing more we can do if this fails ...
-        self.emit("if (tmp == NULL) goto failed;", 1)
-        error = "expected some sort of %s, but got %%.400s" % name
-        format = "PyErr_Format(PyExc_TypeError, \"%s\", PyBytes_AS_STRING(tmp));"
+        error = "expected some sort of %s, but got %%R" % name
+        format = "PyErr_Format(PyExc_TypeError, \"%s\", obj);"
         self.emit(format % error, 1, reflow=False)
-        self.emit("failed:", 0)
-        self.emit("Py_XDECREF(tmp);", 1)
+        if add_label:
+            self.emit("failed:", 1)
         self.emit("return 1;", 1)
         self.emit("}", 0)
         self.emit("", 0)
@@ -430,7 +430,7 @@ class Obj2ModVisitor(PickleVisitor):
             self.emit("if (*out == NULL) goto failed;", 2)
             self.emit("return 0;", 2)
             self.emit("}", 1)
-        self.sumTrailer(name)
+        self.sumTrailer(name, True)
 
     def visitAttributeDeclaration(self, a, name, sum=sum):
         ctype = get_c_type(a.type)
