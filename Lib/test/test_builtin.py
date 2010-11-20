@@ -1033,6 +1033,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(range(3).count(1), 1)
         self.assertEqual(range(3).count(2), 1)
         self.assertEqual(range(3).count(3), 0)
+        self.assertIs(type(range(3).count(-1)), int)
+        self.assertIs(type(range(3).count(1)), int)
 
         self.assertEqual(range(10**20).count(1), 1)
         self.assertEqual(range(10**20).count(10**20), 0)

@@ -10,6 +10,8 @@ What's New in Python 3.2 Beta 1?
 Core and Builtins
 -----------------
 
+- Issue #10474: range().count() should return integers.
+
 - Issue #10255: Fix reference leak in Py_InitializeEx().  Patch by Neil
   Schemenauer.
 
