@@ -16,6 +16,9 @@ Library
 - Issue #10198: fix duplicate header written to wave files when writeframes()
   is called without data.
 
+- Issue #10467: Fix BytesIO.readinto() after seeking into a position after the
+  end of the file.
+
 - Issue #5111: IPv6 Host in the Header is wrapped inside [ ]. Patch by Chandru.
 
 Build
