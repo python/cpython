@@ -10,6 +10,9 @@ What's New in Python 3.1.3?
 Core and Builtins
 -----------------
 
+- Issue #10391: Don't dereference invalid memory in error messages in the ast
+  module.
+
 Library
 -------
 
