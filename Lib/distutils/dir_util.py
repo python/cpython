@@ -5,6 +5,7 @@ Utility functions for manipulating directories and directory trees."""
 __revision__ = "$Id$"
 
 import os, sys
+import errno
 from distutils.errors import DistutilsFileError, DistutilsInternalError
 from distutils import log
 
