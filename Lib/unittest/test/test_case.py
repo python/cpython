@@ -1109,3 +1109,7 @@ test case
             pickled_test = pickle.dumps(test, protocol=protocol)
             unpickled_test = pickle.loads(pickled_test)
             self.assertEqual(test, unpickled_test)
+
+            # exercise the TestCase instance in a way that will invoke
+            # the type equality lookup mechanism
+            unpickled_test.assertEqual(set(), set())
