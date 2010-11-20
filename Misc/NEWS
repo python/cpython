@@ -117,6 +117,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10465: fix broken delegating of attributes by gzip._PaddedFile.
+
 - Issue #10356: hash(Decimal("sNaN")) now raises ValueError instead of
   TypeError.
 
