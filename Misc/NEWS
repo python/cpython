@@ -46,6 +46,9 @@ C-API
 Tests
 -----
 
+- Do not fail test_socket when the IP address of the local hostname
+  cannot be looked up.
+
 - Issue #8886: Use context managers throughout test_zipfile. Patch by
   Eric Carstensen.
 
