@@ -27,6 +27,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10371: Deprecated undocumented functions in the trace module. 
+
 - Issue #10467: Fix BytesIO.readinto() after seeking into a position after the
   end of the file.
 
