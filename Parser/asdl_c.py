@@ -365,10 +365,7 @@ class Obj2ModVisitor(PickleVisitor):
         self.emit("int", 0)
         self.emit("obj2ast_%s(PyObject* obj, %s* out, PyArena* arena)" % (name, ctype), 0)
         self.emit("{", 0)
-        self.emit("PyObject* tmp = NULL;", 1)
         self.emit("int isinstance;", 1)
-        # Prevent compiler warnings about unused variable.
-        self.emit("tmp = tmp;", 1)
         self.emit("", 0)
 
     def sumTrailer(self, name, add_label=False):
@@ -403,6 +400,7 @@ class Obj2ModVisitor(PickleVisitor):
 
     def complexSum(self, sum, name):
         self.funcHeader(name)
+        self.emit("PyObject *tmp = NULL;", 1)
         for a in sum.attributes:
             self.visitAttributeDeclaration(a, name, sum=sum)
         self.emit("", 0)
