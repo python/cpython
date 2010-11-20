@@ -31,6 +31,7 @@ class CfgParserTestCaseClass(unittest.TestCase):
     empty_lines_in_values = True
     dict_type = configparser._default_dict
     strict = False
+    default_section = configparser.DEFAULTSECT
 
     def newconfig(self, defaults=None):
         arguments = dict(
@@ -41,6 +42,7 @@ class CfgParserTestCaseClass(unittest.TestCase):
             empty_lines_in_values=self.empty_lines_in_values,
             dict_type=self.dict_type,
             strict=self.strict,
+            default_section=self.default_section,
         )
         return self.config_class(**arguments)
 
@@ -76,7 +78,7 @@ class BasicTestCase(CfgParserTestCaseClass):
         # mapping access
         L = [section for section in cf]
         L.sort()
-        E.append(configparser.DEFAULTSECT)
+        E.append(self.default_section)
         E.sort()
         eq(L, E)
 
@@ -365,7 +367,7 @@ boolean {0[0]} NO
         L.sort()
         eq = self.assertEqual
         elem_eq = self.assertItemsEqual
-        eq(L, ["A", "B", configparser.DEFAULTSECT, "a"])
+        eq(L, sorted(["A", "B", self.default_section, "a"]))
         eq(cf["a"].keys(), {"b"})
         eq(cf["a"]["b"], "value",
            "could not locate option, expecting case-insensitive option names")
@@ -399,11 +401,11 @@ boolean {0[0]} NO
     def test_default_case_sensitivity(self):
         cf = self.newconfig({"foo": "Bar"})
         self.assertEqual(
-            cf.get("DEFAULT", "Foo"), "Bar",
+            cf.get(self.default_section, "Foo"), "Bar",
             "could not locate option, expecting case-insensitive option names")
         cf = self.newconfig({"Foo": "Bar"})
         self.assertEqual(
-            cf.get("DEFAULT", "Foo"), "Bar",
+            cf.get(self.default_section, "Foo"), "Bar",
             "could not locate option, expecting case-insensitive defaults")
 
     def test_parse_errors(self):
@@ -530,7 +532,7 @@ boolean {0[0]} NO
             "[Long Line]\n"
             "foo{0[0]} this line is much, much longer than my editor\n"
             "   likes it.\n"
-            "[DEFAULT]\n"
+            "[{default_section}]\n"
             "foo{0[1]} another very\n"
             " long line\n"
             "[Long Line - With Comments!]\n"
@@ -538,7 +540,8 @@ boolean {0[0]} NO
             "            also      {comment} place\n"
             "            comments  {comment} in\n"
             "            multiline {comment} values"
-            "\n".format(self.delimiters, comment=self.comment_prefixes[0])
+            "\n".format(self.delimiters, comment=self.comment_prefixes[0],
+                        default_section=self.default_section)
             )
         if self.allow_no_value:
             config_string += (
@@ -550,7 +553,7 @@ boolean {0[0]} NO
         output = io.StringIO()
         cf.write(output)
         expect_string = (
-            "[DEFAULT]\n"
+            "[{default_section}]\n"
             "foo {equals} another very\n"
             "\tlong line\n"
             "\n"
@@ -563,7 +566,8 @@ boolean {0[0]} NO
             "\talso\n"
             "\tcomments\n"
             "\tmultiline\n"
-            "\n".format(equals=self.delimiters[0])
+            "\n".format(equals=self.delimiters[0],
+                        default_section=self.default_section)
             )
         if self.allow_no_value:
             expect_string += (
@@ -724,6 +728,9 @@ class ConfigParserTestCaseNonStandardDelimiters(ConfigParserTestCase):
     delimiters = (':=', '$')
     comment_prefixes = ('//', '"')
 
+class ConfigParserTestCaseNonStandardDefaultSection(ConfigParserTestCase):
+    default_section = 'general'
+
 class MultilineValuesTestCase(BasicTestCase):
     config_class = configparser.ConfigParser
     wonderful_spam = ("I'm having spam spam spam spam "
@@ -851,13 +858,9 @@ class SafeConfigParserTestCase(ConfigParserTestCase):
         self.assertRaises(TypeError, cf.set, "sect", "option2", 1.0)
         self.assertRaises(TypeError, cf.set, "sect", "option2", object())
 
-    def test_add_section_default_1(self):
+    def test_add_section_default(self):
         cf = self.newconfig()
-        self.assertRaises(ValueError, cf.add_section, "default")
-
-    def test_add_section_default_2(self):
-        cf = self.newconfig()
-        self.assertRaises(ValueError, cf.add_section, "DEFAULT")
+        self.assertRaises(ValueError, cf.add_section, self.default_section)
 
 class SafeConfigParserTestCaseNonStandardDelimiters(SafeConfigParserTestCase):
     delimiters = (':=', '$')
@@ -884,11 +887,12 @@ class SafeConfigParserTestCaseTrickyFile(CfgParserTestCaseClass):
                                          'no values here',
                                          'tricky interpolation',
                                          'more interpolation'])
-        self.assertEqual(cf.getint('DEFAULT', 'go',
+        self.assertEqual(cf.getint(self.default_section, 'go',
                                    vars={'interpolate': '-1'}), -1)
         with self.assertRaises(ValueError):
             # no interpolation will happen
-            cf.getint('DEFAULT', 'go', raw=True, vars={'interpolate': '-1'})
+            cf.getint(self.default_section, 'go', raw=True,
+                      vars={'interpolate': '-1'})
         self.assertEqual(len(cf.get('strange', 'other').split('\n')), 4)
         self.assertEqual(len(cf.get('corruption', 'value').split('\n')), 10)
         longname = 'yeah, sections can be indented as well'
@@ -997,6 +1001,7 @@ def test_main():
         Issue7005TestCase,
         StrictTestCase,
         CompatibleTestCase,
+        ConfigParserTestCaseNonStandardDefaultSection,
         )
 
 
