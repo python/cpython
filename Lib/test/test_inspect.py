@@ -860,11 +860,15 @@ class TestGetattrStatic(unittest.TestCase):
             foo = 3
 
         class Something(Base):
+            executed = False
             @property
             def __class__(self):
+                self.executed = True
                 return object
 
-        self.assertEqual(inspect.getattr_static(Something(), 'foo'), 3)
+        instance = Something()
+        self.assertEqual(inspect.getattr_static(instance, 'foo'), 3)
+        self.assertFalse(instance.executed)
         self.assertEqual(inspect.getattr_static(Something, 'foo'), 3)
 
     def test_mro_as_property(self):
