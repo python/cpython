@@ -142,6 +142,7 @@ class RangeTest(unittest.TestCase):
         self.assertRaises(TypeError, range)
         self.assertRaises(TypeError, range, 1, 2, 3, 4)
         self.assertRaises(ValueError, range, 1, 2, 0)
+        a = int(10 * sys.maxsize)
         self.assertRaises(ValueError, range, a, a + 1, int(0))
         self.assertRaises(TypeError, range, 1., 1., 1.)
         self.assertRaises(TypeError, range, 1e100, 1e101, 1e101)
@@ -199,7 +200,7 @@ class RangeTest(unittest.TestCase):
             def __eq__(self, other):
                 return True
         always_equal = AlwaysEqual()
-        self.assertEqual(range(10).index(always_equal), 10)
+        self.assertEqual(range(10).index(always_equal), 0)
 
     def test_user_index_method(self):
         bignum = 2*sys.maxsize
