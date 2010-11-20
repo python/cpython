@@ -337,7 +337,10 @@ static PyObject *
 range_count(rangeobject *r, PyObject *ob)
 {
     if (PyLong_CheckExact(ob) || PyBool_Check(ob)) {
-        if (range_contains_long(r, ob))
+        int result = range_contains_long(r, ob);
+        if (result == -1)
+            return NULL;
+        else if (result)
             return PyLong_FromLong(1);
         else
             return PyLong_FromLong(0);
