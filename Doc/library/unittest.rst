@@ -756,7 +756,7 @@ Test cases
    .. method:: run(result=None)
 
       Run the test, collecting the result into the test result object passed as
-      *result*.  If *result* is omitted or :const:`None`, a temporary result
+      *result*.  If *result* is omitted or ``None``, a temporary result
       object is created (by calling the :meth:`defaultTestResult` method) and
       used. The result object is not returned to :meth:`run`'s caller.
 
@@ -1264,7 +1264,7 @@ Test cases
 
    .. method:: fail(msg=None)
 
-      Signals a test failure unconditionally, with *msg* or :const:`None` for
+      Signals a test failure unconditionally, with *msg* or ``None`` for
       the error message.
 
 
@@ -1279,19 +1279,19 @@ Test cases
 
    .. attribute:: longMessage
 
-      If set to True then any explicit failure message you pass in to the
+      If set to ``True`` then any explicit failure message you pass in to the
       :ref:`assert methods <assert-methods>` will be appended to the end of the
       normal failure message.  The normal messages contain useful information
       about the objects involved, for example the message from assertEqual
       shows you the repr of the two unequal objects. Setting this attribute
-      to True allows you to have a custom error message in addition to the
+      to ``True`` allows you to have a custom error message in addition to the
       normal one.
 
-      This attribute defaults to False, meaning that a custom message passed
+      This attribute defaults to ``False``, meaning that a custom message passed
       to an assert method will silence the normal message.
 
       The class setting can be overridden in individual tests by assigning an
-      instance attribute to True or False before calling the assert methods.
+      instance attribute to ``True`` or ``False`` before calling the assert methods.
 
       .. versionadded:: 3.1
 
@@ -1340,10 +1340,10 @@ Test cases
 
    .. method:: shortDescription()
 
-      Returns a description of the test, or :const:`None` if no description
+      Returns a description of the test, or ``None`` if no description
       has been provided.  The default implementation of this method
       returns the first line of the test method's docstring, if available,
-      or :const:`None`.
+      or ``None``.
 
       .. versionchanged:: 3.1,3.2
          In 3.1 this was changed to add the test name to the short description
@@ -1713,14 +1713,14 @@ Loading and running tests
 
    .. method:: wasSuccessful()
 
-      Return :const:`True` if all tests run so far have passed, otherwise returns
-      :const:`False`.
+      Return ``True`` if all tests run so far have passed, otherwise returns
+      ``False``.
 
 
    .. method:: stop()
 
       This method can be called to signal that the set of tests being run should
-      be aborted by setting the :attr:`shouldStop` attribute to :const:`True`.
+      be aborted by setting the :attr:`shouldStop` attribute to ``True``.
       :class:`TestRunner` objects should respect this flag and return without
       running any additional tests.
 
