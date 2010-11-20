@@ -13,6 +13,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10407: Fix one NameError in distutils.
+
 - Issue #10198: fix duplicate header written to wave files when writeframes()
   is called without data.
 
