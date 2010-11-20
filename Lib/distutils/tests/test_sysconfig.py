@@ -1,5 +1,6 @@
 """Tests for distutils.sysconfig."""
 import os
+import shutil
 import test
 import unittest
 
