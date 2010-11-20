@@ -1,4 +1,4 @@
-"""Module/script to "compile" all .py files to .pyc (or .pyo) file.
+"""Module/script to byte-compile all .py files to .pyc (or .pyo) files.
 
 When called as a script with arguments, this compiles the directories
 given as arguments recursively; the -l option prevents it from
@@ -9,14 +9,13 @@ recursing into subdirectories.  (Even though it should do so for
 packages -- for now, you'll have to deal with packages separately.)
 
 See module py_compile for details of the actual byte-compilation.
-
 """
 import os
-import errno
 import sys
+import errno
+import imp
 import py_compile
 import struct
-import imp
 
 __all__ = ["compile_dir","compile_file","compile_path"]
 
@@ -33,7 +32,6 @@ def compile_dir(dir, maxlevels=10, ddir=None,
     force:     if True, force compilation, even if timestamps are up-to-date
     quiet:     if True, be quiet during compilation
     legacy:    if True, produce legacy pyc paths instead of PEP 3147 paths
-
     """
     if not quiet:
         print('Listing', dir, '...')
@@ -55,10 +53,8 @@ def compile_dir(dir, maxlevels=10, ddir=None,
         if not os.path.isdir(fullname):
             if not compile_file(fullname, ddir, force, rx, quiet, legacy):
                 success = 0
-        elif maxlevels > 0 and \
-             name != os.curdir and name != os.pardir and \
-             os.path.isdir(fullname) and \
-             not os.path.islink(fullname):
+        elif (maxlevels > 0 and name != os.curdir and name != os.pardir and
+              os.path.isdir(fullname) and not os.path.islink(fullname)):
             if not compile_dir(fullname, maxlevels - 1, dfile, force, rx,
                                quiet, legacy):
                 success = 0
@@ -73,7 +69,6 @@ def compile_file(fullname, ddir=None, force=0, rx=None, quiet=False,
     force:     if True, force compilation, even if timestamps are up-to-date
     quiet:     if True, be quiet during compilation
     legacy:    if True, produce legacy pyc paths instead of PEP 3147 paths
-
     """
     success = 1
     name = os.path.basename(fullname)
@@ -141,7 +136,6 @@ def compile_path(skip_curdir=1, maxlevels=0, force=False, quiet=False,
     force: as for compile_dir() (default False)
     quiet: as for compile_dir() (default False)
     legacy: as for compile_dir() (default False)
-
     """
     success = 1
     for dir in sys.path:
@@ -165,26 +159,26 @@ def main():
     parser.add_argument('-f', action='store_true', dest='force',
                         help='force rebuild even if timestamps are up to date')
     parser.add_argument('-q', action='store_true', dest='quiet',
-                        help='quiet operation')
+                        help='reduce output')
     parser.add_argument('-b', action='store_true', dest='legacy',
-                        help='procude legacy byte-compiled file paths')
+                        help='produce legacy byte-compiled file paths')
     parser.add_argument('-d', metavar='DESTDIR',  dest='ddir', default=None,
                         help=('purported directory name for error messages; '
                               'if no directory arguments, -l sys.path '
                               'is assumed.'))
     parser.add_argument('-x', metavar='REGEXP', dest='rx', default=None,
                         help=('skip files matching the regular expression.\n\t'
-                              'The regexp is searched for in the full path'
+                              'The regexp is searched for in the full path '
                               'of the file'))
     parser.add_argument('-i', metavar='FILE', dest='flist',
-                        help='expand the list with the contenent of FILE.')
+                        help='expand the list with the content of FILE.')
     parser.add_argument('compile_dest', metavar='FILE|DIR', nargs='?')
     args = parser.parse_args()
 
     if (args.ddir and args.compile_dest != 1 and
         not os.path.isdir(args.compile_dest)):
-        raise argparse.ArgumentError("-d destdir require exactly one "
-                                     "directory argument")
+        raise argparse.ArgumentError(
+            "-d destdir requires exactly one directory argument")
     if args.rx:
         import re
         args.rx = re.compile(args.rx)
@@ -211,7 +205,7 @@ def main():
         else:
             return compile_path(legacy=args.legacy)
     except KeyboardInterrupt:
-        print("\n[interrupt]")
+        print("\n[interrupted]")
         return 0
     return 1
 
