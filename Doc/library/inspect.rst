@@ -598,10 +598,12 @@ any of these then you deserve to have everything break anyway):
   member deleted from the class, or a fake `__slots__` attribute
   attached to the instance, or any other monkeying with
   `__slots__`
-* objects that lie about their type by having `__class__` as a
-  descriptor (`getattr_static` traverses the :term:`MRO` of whatever type
-  `obj.__class__` returns instead of the real type)
 * type objects that lie about their :term:`MRO`
+
+.. note::
+
+   Classes that override :data:`~object.__mro__` as a property will have this
+   code executed by `getattr_static`.
 
 Descriptors are not resolved (for example slot descriptors or
 getset descriptors on objects implemented in C). The descriptor
