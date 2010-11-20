@@ -81,6 +81,20 @@ class TestIsInstanceExceptions(unittest.TestCase):
 
         self.assertRaises(TypeError, isinstance, I(), C())
 
+    # check that we don't mask non AttributeErrors
+    # see: http://bugs.python.org/issue1574217
+    def test_isinstance_dont_mask_non_attribute_error(self):
+        class C(object):
+            def getclass(self):
+                raise RuntimeError()
+            __class__=property(getclass)
+
+        c=C()
+        self.assertRaises(RuntimeError, isinstance, c, bool)
+
+        # test another code path
+        class D: pass
+        self.assertRaises(RuntimeError, isinstance, c, D)
 
 
 # These tests are similar to above, but tickle certain code paths in

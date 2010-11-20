@@ -10,6 +10,9 @@ What's New in Python 3.2 Beta 1?
 Core and Builtins
 -----------------
 
+- Issue #1574217: isinstance now catches only AttributeError, rather than
+  masking all errors.
+
 - Issue #10391: Don't dereference invalid memory in error messages in the ast
   module.
 
