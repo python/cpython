@@ -147,9 +147,9 @@ class TestLoader(object):
 
     def discover(self, start_dir, pattern='test*.py', top_level_dir=None):
         """Find and return all test modules from the specified start
-        directory, recursing into subdirectories to find them. Only test files
-        that match the pattern will be loaded. (Using shell style pattern
-        matching.)
+        directory, recursing into subdirectories to find them and return all
+        tests found within them. Only test files that match the pattern will
+        be loaded. (Using shell style pattern matching.)
 
         All test modules must be importable from the top level of the project.
         If the start directory is not the top level directory then the top
