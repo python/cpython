@@ -39,7 +39,7 @@ def main():
 # Don't remove this comment. Everything below it is auto-generated.
 #--cut--------------------------------------------------------------------------
 CProfileTest.expected_output['print_stats'] = """\
-         126 function calls (106 primitive calls) in 1.000 CPU seconds
+         126 function calls (106 primitive calls) in 1.000 seconds
 
    Ordered by: standard name
 

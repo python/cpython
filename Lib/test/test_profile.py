@@ -93,7 +93,7 @@ def main():
 # Don't remove this comment. Everything below it is auto-generated.
 #--cut--------------------------------------------------------------------------
 ProfileTest.expected_output['print_stats'] = """\
-         127 function calls (107 primitive calls) in 999.749 CPU seconds
+         127 function calls (107 primitive calls) in 999.749 seconds
 
    Ordered by: standard name
 
