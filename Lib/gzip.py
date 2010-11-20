@@ -98,7 +98,7 @@ class _PaddedFile:
         return self.file.seek(offset, whence)
 
     def __getattr__(self, name):
-        return getattr(name, self.file)
+        return getattr(self.file, name)
 
 
 class GzipFile(io.BufferedIOBase):

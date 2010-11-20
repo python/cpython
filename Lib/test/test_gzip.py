@@ -197,6 +197,12 @@ class TestGzip(unittest.TestCase):
                 self.assertTrue(hasattr(f, "name"))
                 self.assertEqual(f.name, self.filename)
 
+    def test_paddedfile_getattr(self):
+        self.test_write()
+        with gzip.GzipFile(self.filename, 'rb') as f:
+            self.assertTrue(hasattr(f.fileobj, "name"))
+            self.assertEqual(f.fileobj.name, self.filename)
+
     def test_mtime(self):
         mtime = 123456789
         with gzip.GzipFile(self.filename, 'w', mtime = mtime) as fWrite:
