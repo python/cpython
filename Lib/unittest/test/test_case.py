@@ -1107,3 +1107,5 @@ test case
 
             # blew up prior to fix
             pickled_test = pickle.dumps(test, protocol=protocol)
+            unpickled_test = pickle.loads(pickled_test)
+            self.assertEqual(test, unpickled_test)
