@@ -659,11 +659,11 @@ yield expression <yieldexpr>`.
 
 .. _typesseq:
 
-Sequence Types --- :class:`str`, :class:`unicode`, :class:`list`, :class:`tuple`, :class:`buffer`, :class:`xrange`
-==================================================================================================================
+Sequence Types --- :class:`str`, :class:`unicode`, :class:`list`, :class:`tuple`, :class:`bytearray`, :class:`buffer`, :class:`xrange`
+======================================================================================================================================
 
-There are six sequence types: strings, Unicode strings, lists, tuples, buffers,
-and xrange objects.
+There are seven sequence types: strings, Unicode strings, lists, tuples,
+bytearrays, buffers, and xrange objects.
 
 For other containers see the built in :class:`dict` and :class:`set` classes,
 and the :mod:`collections` module.
@@ -675,6 +675,7 @@ and the :mod:`collections` module.
    object: Unicode
    object: tuple
    object: list
+   object: bytearray
    object: buffer
    object: xrange
 
@@ -689,6 +690,8 @@ Tuples are constructed by the comma operator (not within square
 brackets), with or without enclosing parentheses, but an empty tuple
 must have the enclosing parentheses, such as ``a, b, c`` or ``()``.  A
 single item tuple must have a trailing comma, such as ``(d,)``.
+
+Bytearray objects are created with the built-in function :func:`bytearray`.
 
 Buffer objects are not directly supported by Python syntax, but can be created
 by calling the built-in function :func:`buffer`.  They don't support
@@ -834,7 +837,8 @@ String Methods
 .. index:: pair: string; methods
 
 Below are listed the string methods which both 8-bit strings and
-Unicode objects support.
+Unicode objects support.  Some of them are also available on :class:`bytearray`
+objects.
 
 In addition, Python's strings support the sequence type methods
 described in the :ref:`typesseq` section. To output formatted strings
@@ -1505,11 +1509,12 @@ Mutable Sequence Types
    triple: mutable; sequence; types
    object: list
 
-List objects support additional operations that allow in-place modification of
-the object. Other mutable sequence types (when added to the language) should
-also support these operations. Strings and tuples are immutable sequence types:
-such objects cannot be modified once created. The following operations are
-defined on mutable sequence types (where *x* is an arbitrary object):
+List and :class:`bytearray` objects support additional operations that allow
+in-place modification of the object. Other mutable sequence types (when added
+to the language) should also support these operations. Strings and tuples
+are immutable sequence types: such objects cannot be modified once created.
+The following operations are defined on mutable sequence types (where *x* is
+an arbitrary object):
 
 .. index::
    triple: operations on; sequence; types
