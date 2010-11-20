@@ -44,6 +44,8 @@ Library
 
 - Issue 10326: unittest.TestCase instances can be pickled.
 
+- Issue 9926: Wrapped TestSuite subclass does not get __call__ executed.
+
 - Issue #9920: Skip tests for cmath.atan and cmath.atanh applied to
   complex zeros on systems where the log1p function fails to respect
   the sign of zero.  This fixes a test failure on AIX.
