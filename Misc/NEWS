@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10467: Fix BytesIO.readinto() after seeking into a position after the
+  end of the file.
+
 - Issue #1682942: configparser supports alternative option/value delimiters.
 
 - Issue #5412: configparser supports mapping protocol access.
