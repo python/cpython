@@ -391,7 +391,7 @@ static PyObject *
 bytesio_readinto(bytesio *self, PyObject *args)
 {
     Py_buffer buf;
-    Py_ssize_t len;
+    Py_ssize_t len, n;
 
     CHECK_CLOSED(self);
 
@@ -399,8 +399,13 @@ bytesio_readinto(bytesio *self, PyObject *args)
         return NULL;
 
     len = buf.len;
-    if (self->pos + len > self->string_size)
-        len = self->string_size - self->pos;
+    /* adjust invalid sizes */
+    n = self->string_size - self->pos;
+    if (len > n) {
+        len = n;
+        if (len < 0)
+            len = 0;
+    }
 
     memcpy(buf.buf, self->buf + self->pos, len);
     assert(self->pos + len < PY_SSIZE_T_MAX);
