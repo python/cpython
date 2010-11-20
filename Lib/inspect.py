@@ -1080,6 +1080,13 @@ def _check_class(klass, attr):
             pass
     return _sentinel
 
+def _is_type(obj):
+    try:
+        _static_getmro(obj)
+    except TypeError:
+        return False
+    return True
+
 
 def getattr_static(obj, attr, default=_sentinel):
     """Retrieve attributes without triggering dynamic lookup via the
@@ -1093,7 +1100,7 @@ def getattr_static(obj, attr, default=_sentinel):
        documentation for details.
     """
     instance_result = _sentinel
-    if not isinstance(obj, type):
+    if not _is_type(obj):
         instance_result = _check_instance(obj, attr)
         klass = type(obj)
     else:
