@@ -2500,7 +2500,12 @@ recursive_isinstance(PyObject *inst, PyObject *cls)
         if (retval == 0) {
             PyObject *c = PyObject_GetAttr(inst, __class__);
             if (c == NULL) {
-                PyErr_Clear();
+                if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                    PyErr_Clear();
+                }
+                else {
+                    retval = -1;
+                }
             }
             else {
                 if (c != (PyObject *)(inst->ob_type) &&
@@ -2518,8 +2523,12 @@ recursive_isinstance(PyObject *inst, PyObject *cls)
             return -1;
         icls = PyObject_GetAttr(inst, __class__);
         if (icls == NULL) {
-            PyErr_Clear();
-            retval = 0;
+            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                PyErr_Clear();
+            }
+            else {
+                retval = -1;
+            }
         }
         else {
             retval = abstract_issubclass(icls, cls);
