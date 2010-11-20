@@ -622,22 +622,32 @@ class HandlerTests(unittest.TestCase):
         h = NullFTPHandler(data)
         o = h.parent = MockOpener()
 
-        for url, host, port, type_, dirs, filename, mimetype in [
+        for url, host, port, user, passwd, type_, dirs, filename, mimetype in [
             ("ftp://localhost/foo/bar/baz.html",
-             "localhost", ftplib.FTP_PORT, "I",
+             "localhost", ftplib.FTP_PORT, "", "", "I",
+             ["foo", "bar"], "baz.html", "text/html"),
+            ("ftp://parrot@localhost/foo/bar/baz.html",
+             "localhost", ftplib.FTP_PORT, "parrot", "", "I",
+             ["foo", "bar"], "baz.html", "text/html"),
+            ("ftp://%25parrot@localhost/foo/bar/baz.html",
+             "localhost", ftplib.FTP_PORT, "%parrot", "", "I",
+             ["foo", "bar"], "baz.html", "text/html"),
+            ("ftp://%2542parrot@localhost/foo/bar/baz.html",
+             "localhost", ftplib.FTP_PORT, "%42parrot", "", "I",
              ["foo", "bar"], "baz.html", "text/html"),
             ("ftp://localhost:80/foo/bar/",
-             "localhost", 80, "D",
+             "localhost", 80, "", "", "D",
              ["foo", "bar"], "", None),
             ("ftp://localhost/baz.gif;type=a",
-             "localhost", ftplib.FTP_PORT, "A",
+             "localhost", ftplib.FTP_PORT, "", "", "A",
              [], "baz.gif", None),  # XXX really this should guess image/gif
             ]:
             req = Request(url)
             req.timeout = None
             r = h.ftp_open(req)
             # ftp authentication not yet implemented by FTPHandler
-            self.assertTrue(h.user == h.passwd == "")
+            self.assertEqual(h.user, user)
+            self.assertEqual(h.passwd, passwd)
             self.assertEqual(h.host, socket.gethostbyname(host))
             self.assertEqual(h.port, port)
             self.assertEqual(h.dirs, dirs)
