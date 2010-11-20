@@ -666,6 +666,7 @@ class POSIXProcessTestCase(BaseTestCase):
             # string and instead capture the exception that we want to see
             # below for comparison.
             desired_exception = e
+            desired_exception.strerror += ': ' + repr(sys.executable)
         else:
             self.fail("chdir to nonexistant directory %s succeeded." %
                       nonexistent_dir)
