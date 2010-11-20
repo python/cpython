@@ -75,7 +75,7 @@ class Call(object):
 
     def _wait_on_event(self, handle):
         if sys.platform.startswith('win'):
-            r = ctypes.windll.kernel32.WaitForSingleObject(handle, 5 * 1000)
+            r = ctypes.windll.kernel32.WaitForSingleObject(handle, 60 * 1000)
             assert r == 0
         else:
             self.CALL_LOCKS[handle].wait()
@@ -433,7 +433,7 @@ class WaitTests(unittest.TestCase):
                      EXCEPTION_FUTURE,
                      SUCCESSFUL_FUTURE,
                      future1, future2],
-                    timeout=1,
+                    timeout=5,
                     return_when=futures.ALL_COMPLETED)
 
             self.assertEquals(set([CANCELLED_AND_NOTIFIED_FUTURE,
@@ -560,7 +560,7 @@ class ExecutorTest(unittest.TestCase):
             try:
                 for i in self.executor.map(timeout_call,
                                            [False, False, True],
-                                           timeout=1):
+                                           timeout=5):
                     results.append(i)
             except futures.TimeoutError:
                 pass
