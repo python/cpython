@@ -197,6 +197,13 @@ class AST_Tests(unittest.TestCase):
                     ast2 = mod.loads(mod.dumps(ast, protocol))
                     self.assertEquals(to_tuple(ast2), to_tuple(ast))
 
+    def test_invalid_sum(self):
+        pos = dict(lineno=2, col_offset=3)
+        m = ast.Module([ast.Expr(ast.expr(**pos), **pos)])
+        with self.assertRaises(TypeError) as cm:
+            compile(m, "<test>", "exec")
+        self.assertIn("but got <_ast.expr", str(cm.exception))
+
 
 class ASTHelpers_Test(unittest.TestCase):
 
