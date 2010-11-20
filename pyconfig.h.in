@@ -911,6 +911,9 @@
 /* Define if you are using Mach cthreads directly under /include */
 #undef HURD_C_THREADS
 
+/* Define if log1p(-0.) is 0. rather than -0. */
+#undef LOG1P_DROPS_ZERO_SIGN
+
 /* Define if you are using Mach cthreads under mach / */
 #undef MACH_C_THREADS
 
