@@ -1193,11 +1193,11 @@ class Popen(object):
                                 try:
                                     exc_type, exc_value = sys.exc_info()[:2]
                                     if isinstance(exc_value, OSError):
-                                        errno = exc_value.errno
+                                        errno_num = exc_value.errno
                                     else:
-                                        errno = 0
+                                        errno_num = 0
                                     message = '%s:%x:%s' % (exc_type.__name__,
-                                                            errno, exc_value)
+                                                            errno_num, exc_value)
                                     message = message.encode(errors="surrogatepass")
                                     os.write(errpipe_write, message)
                                 except Exception:
@@ -1252,12 +1252,12 @@ class Popen(object):
                         os.close(fd)
                 err_msg = err_msg.decode(errors="surrogatepass")
                 if issubclass(child_exception_type, OSError) and hex_errno:
-                    errno = int(hex_errno, 16)
-                    if errno != 0:
-                        err_msg = os.strerror(errno)
-                        if errno == errno.ENOENT:
+                    errno_num = int(hex_errno, 16)
+                    if errno_num != 0:
+                        err_msg = os.strerror(errno_num)
+                        if errno_num == errno.ENOENT:
                             err_msg += ': ' + repr(args[0])
-                    raise child_exception_type(errno, err_msg)
+                    raise child_exception_type(errno_num, err_msg)
                 raise child_exception_type(err_msg)
 
 
