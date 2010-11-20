@@ -91,6 +91,9 @@ Library
 - Issue #4471: Properly shutdown socket in IMAP.shutdown().  Patch by
   Lorenzo M. Catucci.
 
+- Issue #10198: fix duplicate header written to wave files when writeframes()
+  is called without data.
+
 - Issue #10126: Fix distutils' test_build when Python was built with
   --enable-shared.
   
