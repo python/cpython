@@ -30,6 +30,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10453: compileall now uses argparse instead of getopt, and thus
+  provides clean output when called with '-h'.
+
 - Issue #8078: Add constants for higher baud rates in the termios module.
   Patch by Rodolpho Eckhardt.
 
