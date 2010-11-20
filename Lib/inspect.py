@@ -1054,3 +1054,67 @@ def stack(context=1):
 def trace(context=1):
     """Return a list of records for the stack below the current exception."""
     return getinnerframes(sys.exc_info()[2], context)
+
+
+# ------------------------------------------------ static version of getattr
+
+_sentinel = object()
+
+def _check_instance(obj, attr):
+    instance_dict = {}
+    try:
+        instance_dict = object.__getattribute__(obj, "__dict__")
+    except AttributeError:
+        pass
+    return instance_dict.get(attr, _sentinel)
+
+
+def _check_class(klass, attr):
+    for entry in getmro(klass):
+        try:
+            return entry.__dict__[attr]
+        except KeyError:
+            pass
+    return _sentinel
+
+
+def getattr_static(obj, attr, default=_sentinel):
+    """Retrieve attributes without triggering dynamic lookup via the
+       descriptor protocol,  __getattr__ or __getattribute__.
+
+       Note: this function may not be able to retrieve all attributes
+       that getattr can fetch (like dynamically created attributes)
+       and may find attributes that getattr can't (like descriptors
+       that raise AttributeError). It can also return descriptor objects
+       instead of instance members in some cases. See the
+       documentation for details.
+    """
+    instance_result = _sentinel
+    if not isinstance(obj, type):
+        instance_result = _check_instance(obj, attr)
+        klass = obj.__class__
+    else:
+        klass = obj
+
+    klass_result = _check_class(klass, attr)
+
+    if instance_result is not _sentinel and klass_result is not _sentinel:
+        if (_check_class(type(klass_result), '__get__') is not _sentinel and
+            _check_class(type(klass_result), '__set__') is not _sentinel):
+            return klass_result
+
+    if instance_result is not _sentinel:
+        return instance_result
+    if klass_result is not _sentinel:
+        return klass_result
+
+    if obj is klass:
+        # for types we check the metaclass too
+        for entry in getmro(type(klass)):
+            try:
+                return entry.__dict__[attr]
+            except KeyError:
+                pass
+    if default is not _sentinel:
+        return default
+    raise AttributeError(attr)
