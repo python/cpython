@@ -1,12 +1,24 @@
---swallow-optional-blank-lines
---no-blank-lines-after-declarations
+--blank-lines-after-declarations
 --blank-lines-after-procedures
+--braces-after-func-def-line
 --braces-on-if-line
---cuddle-else
+--braces-on-struct-decl-line
+--break-after-boolean-operator
+--comment-indentation25
+--comment-line-length79
+--continue-at-parentheses
+--dont-cuddle-do-while
+--dont-cuddle-else
+--indent-level4
+--line-length79
 --no-space-after-casts
 --no-space-after-function-call-names
+--no-space-after-parentheses
 --no-tabs
---indent-level 4
---comment-indentation 25
--T PyObject
+--procnames-start-lines
+--space-after-for
+--space-after-if
+--space-after-while
+--swallow-optional-blank-lines
 -T PyCFunction
+-T PyObject
