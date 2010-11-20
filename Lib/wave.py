@@ -319,6 +319,7 @@ class Wave_write:
         self._nframeswritten = 0
         self._datawritten = 0
         self._datalength = 0
+        self._headerwritten = False
 
     def __del__(self):
         self.close()
@@ -449,7 +450,7 @@ class Wave_write:
     #
 
     def _ensure_header_written(self, datasize):
-        if not self._datawritten:
+        if not self._headerwritten:
             if not self._nchannels:
                 raise Error, '# channels not specified'
             if not self._sampwidth:
@@ -459,6 +460,7 @@ class Wave_write:
             self._write_header(datasize)
 
     def _write_header(self, initlength):
+        assert not self._headerwritten
         self._file.write('RIFF')
         if not self._nframes:
             self._nframes = initlength / (self._nchannels * self._sampwidth)
@@ -472,8 +474,10 @@ class Wave_write:
             self._sampwidth * 8, 'data'))
         self._data_length_pos = self._file.tell()
         self._file.write(struct.pack('<l', self._datalength))
+        self._headerwritten = True
 
     def _patchheader(self):
+        assert self._headerwritten
         if self._datawritten == self._datalength:
             return
         curpos = self._file.tell()
