@@ -30,6 +30,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8078: Add constants for higher baud rates in the termios module.
+  Patch by Rodolpho Eckhardt.
+
 - Issue #10407: Fix two NameErrors in distutils.
 
 - Issue #10371: Deprecated undocumented functions in the trace module.
