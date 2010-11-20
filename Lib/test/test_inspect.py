@@ -706,12 +706,162 @@ class TestGetcallargsUnboundMethods(TestGetcallargsMethods):
         locs = dict(locs or {}, inst=self.inst)
         return (func, 'inst,' + call_params_string, locs)
 
+
+class TestGetattrStatic(unittest.TestCase):
+
+    def test_basic(self):
+        class Thing(object):
+            x = object()
+
+        thing = Thing()
+        self.assertEqual(inspect.getattr_static(thing, 'x'), Thing.x)
+        self.assertEqual(inspect.getattr_static(thing, 'x', None), Thing.x)
+        with self.assertRaises(AttributeError):
+            inspect.getattr_static(thing, 'y')
+
+        self.assertEqual(inspect.getattr_static(thing, 'y', 3), 3)
+
+    def test_inherited(self):
+        class Thing(object):
+            x = object()
+        class OtherThing(Thing):
+            pass
+
+        something = OtherThing()
+        self.assertEqual(inspect.getattr_static(something, 'x'), Thing.x)
+
+    def test_instance_attr(self):
+        class Thing(object):
+            x = 2
+            def __init__(self, x):
+                self.x = x
+        thing = Thing(3)
+        self.assertEqual(inspect.getattr_static(thing, 'x'), 3)
+        del thing.x
+        self.assertEqual(inspect.getattr_static(thing, 'x'), 2)
+
+    def test_property(self):
+        class Thing(object):
+            @property
+            def x(self):
+                raise AttributeError("I'm pretending not to exist")
+        thing = Thing()
+        self.assertEqual(inspect.getattr_static(thing, 'x'), Thing.x)
+
+    def test_descriptor(self):
+        class descriptor(object):
+            def __get__(*_):
+                raise AttributeError("I'm pretending not to exist")
+        desc = descriptor()
+        class Thing(object):
+            x = desc
+        thing = Thing()
+        self.assertEqual(inspect.getattr_static(thing, 'x'), desc)
+
+    def test_classAttribute(self):
+        class Thing(object):
+            x = object()
+
+        self.assertEqual(inspect.getattr_static(Thing, 'x'), Thing.x)
+
+    def test_inherited_classattribute(self):
+        class Thing(object):
+            x = object()
+        class OtherThing(Thing):
+            pass
+
+        self.assertEqual(inspect.getattr_static(OtherThing, 'x'), Thing.x)
+
+    def test_slots(self):
+        class Thing(object):
+            y = 'bar'
+            __slots__ = ['x']
+            def __init__(self):
+                self.x = 'foo'
+        thing = Thing()
+        self.assertEqual(inspect.getattr_static(thing, 'x'), Thing.x)
+        self.assertEqual(inspect.getattr_static(thing, 'y'), 'bar')
+
+        del thing.x
+        self.assertEqual(inspect.getattr_static(thing, 'x'), Thing.x)
+
+    def test_metaclass(self):
+        class meta(type):
+            attr = 'foo'
+        class Thing(object, metaclass=meta):
+            pass
+        self.assertEqual(inspect.getattr_static(Thing, 'attr'), 'foo')
+
+        class sub(meta):
+            pass
+        class OtherThing(object, metaclass=sub):
+            x = 3
+        self.assertEqual(inspect.getattr_static(OtherThing, 'attr'), 'foo')
+
+        class OtherOtherThing(OtherThing):
+            pass
+        # this test is odd, but it was added as it exposed a bug
+        self.assertEqual(inspect.getattr_static(OtherOtherThing, 'x'), 3)
+
+    def test_no_dict_no_slots(self):
+        self.assertEqual(inspect.getattr_static(1, 'foo', None), None)
+        self.assertNotEqual(inspect.getattr_static('foo', 'lower'), None)
+
+    def test_no_dict_no_slots_instance_member(self):
+        # returns descriptor
+        with open(__file__) as handle:
+            self.assertEqual(inspect.getattr_static(handle, 'name'), type(handle).name)
+
+    def test_inherited_slots(self):
+        # returns descriptor
+        class Thing(object):
+            __slots__ = ['x']
+            def __init__(self):
+                self.x = 'foo'
+
+        class OtherThing(Thing):
+            pass
+        # it would be nice if this worked...
+        # we get the descriptor instead of the instance attribute
+        self.assertEqual(inspect.getattr_static(OtherThing(), 'x'), Thing.x)
+
+    def test_descriptor(self):
+        class descriptor(object):
+            def __get__(self, instance, owner):
+                return 3
+        class Foo(object):
+            d = descriptor()
+
+        foo = Foo()
+
+        # for a non data descriptor we return the instance attribute
+        foo.__dict__['d'] = 1
+        self.assertEqual(inspect.getattr_static(foo, 'd'), 1)
+
+        # if the descriptor is a data-desciptor we should return the
+        # descriptor
+        descriptor.__set__ = lambda s, i, v: None
+        self.assertEqual(inspect.getattr_static(foo, 'd'), Foo.__dict__['d'])
+
+
+    def test_metaclass_with_descriptor(self):
+        class descriptor(object):
+            def __get__(self, instance, owner):
+                return 3
+        class meta(type):
+            d = descriptor()
+        class Thing(object, metaclass=meta):
+            pass
+        self.assertEqual(inspect.getattr_static(Thing, 'd'), meta.__dict__['d'])
+
+
 def test_main():
     run_unittest(
         TestDecorators, TestRetrievingSourceCode, TestOneliners, TestBuggyCases,
         TestInterpreterStack, TestClassesAndFunctions, TestPredicates,
         TestGetcallargsFunctions, TestGetcallargsMethods,
-        TestGetcallargsUnboundMethods)
+        TestGetcallargsUnboundMethods, TestGetattrStatic
+    )
 
 if __name__ == "__main__":
     test_main()

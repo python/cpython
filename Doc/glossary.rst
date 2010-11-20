@@ -435,6 +435,14 @@ Glossary
       its first :term:`argument` (which is usually called ``self``).
       See :term:`function` and :term:`nested scope`.
 
+   method resolution order
+      Method Resolution Order is the order in which base classes are searched
+      for a member during lookup. See `The Python 2.3 Method Resolution Order
+      <http://www.python.org/download/releases/2.3/mro/>`_.
+
+   MRO
+      See :term:`method resolution order`.
+
    mutable
       Mutable objects can change their value but keep their :func:`id`.  See
       also :term:`immutable`.
