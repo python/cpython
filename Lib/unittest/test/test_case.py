@@ -1,5 +1,6 @@
 import difflib
 import pprint
+import pickle
 import re
 import sys
 import warnings
@@ -1095,3 +1096,14 @@ test case
 
         # This shouldn't blow up
         deepcopy(test)
+
+    def testPickle(self):
+        # Issue 10326
+
+        # Can't use TestCase classes defined in Test class as
+        # pickle does not work with inner classes
+        test = unittest.TestCase('run')
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+
+            # blew up prior to fix
+            pickled_test = pickle.dumps(test, protocol=protocol)
