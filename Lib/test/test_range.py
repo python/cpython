@@ -90,6 +90,163 @@ class RangeTest(unittest.TestCase):
         r = range(-sys.maxsize, sys.maxsize, 2)
         self.assertEqual(len(r), sys.maxsize)
 
+    def test_large_operands(self):
+        x = range(10**20, 10**20+10, 3)
+        self.assertEqual(len(x), 4)
+        self.assertEqual(len(list(x)), 4)
+
+        x = range(10**20+10, 10**20, 3)
+        self.assertEqual(len(x), 0)
+        self.assertEqual(len(list(x)), 0)
+
+        x = range(10**20, 10**20+10, -3)
+        self.assertEqual(len(x), 0)
+        self.assertEqual(len(list(x)), 0)
+
+        x = range(10**20+10, 10**20, -3)
+        self.assertEqual(len(x), 4)
+        self.assertEqual(len(list(x)), 4)
+
+        # Now test range() with longs
+        self.assertEqual(list(range(-2**100)), [])
+        self.assertEqual(list(range(0, -2**100)), [])
+        self.assertEqual(list(range(0, 2**100, -1)), [])
+        self.assertEqual(list(range(0, 2**100, -1)), [])
+
+        a = int(10 * sys.maxsize)
+        b = int(100 * sys.maxsize)
+        c = int(50 * sys.maxsize)
+
+        self.assertEqual(list(range(a, a+2)), [a, a+1])
+        self.assertEqual(list(range(a+2, a, -1)), [a+2, a+1])
+        self.assertEqual(list(range(a+4, a, -2)), [a+4, a+2])
+
+        seq = list(range(a, b, c))
+        self.assertIn(a, seq)
+        self.assertNotIn(b, seq)
+        self.assertEqual(len(seq), 2)
+
+        seq = list(range(b, a, -c))
+        self.assertIn(b, seq)
+        self.assertNotIn(a, seq)
+        self.assertEqual(len(seq), 2)
+
+        seq = list(range(-a, -b, -c))
+        self.assertIn(-a, seq)
+        self.assertNotIn(-b, seq)
+        self.assertEqual(len(seq), 2)
+
+        self.assertRaises(OverflowError, len, range(0, sys.maxsize**10))
+
+    def test_invalid_invocation(self):
+        self.assertRaises(TypeError, range)
+        self.assertRaises(TypeError, range, 1, 2, 3, 4)
+        self.assertRaises(ValueError, range, 1, 2, 0)
+        self.assertRaises(ValueError, range, a, a + 1, int(0))
+        self.assertRaises(TypeError, range, 1., 1., 1.)
+        self.assertRaises(TypeError, range, 1e100, 1e101, 1e101)
+        self.assertRaises(TypeError, range, 0, "spam")
+        self.assertRaises(TypeError, range, 0, 42, "spam")
+        # Exercise various combinations of bad arguments, to check
+        # refcounting logic
+        self.assertRaises(TypeError, range, 0.0)
+        self.assertRaises(TypeError, range, 0, 0.0)
+        self.assertRaises(TypeError, range, 0.0, 0)
+        self.assertRaises(TypeError, range, 0.0, 0.0)
+        self.assertRaises(TypeError, range, 0, 0, 1.0)
+        self.assertRaises(TypeError, range, 0, 0.0, 1)
+        self.assertRaises(TypeError, range, 0, 0.0, 1.0)
+        self.assertRaises(TypeError, range, 0.0, 0, 1)
+        self.assertRaises(TypeError, range, 0.0, 0, 1.0)
+        self.assertRaises(TypeError, range, 0.0, 0.0, 1)
+        self.assertRaises(TypeError, range, 0.0, 0.0, 1.0)
+
+    def test_index(self):
+        u = range(2)
+        self.assertEqual(u.index(0), 0)
+        self.assertEqual(u.index(1), 1)
+        self.assertRaises(ValueError, u.index, 2)
+
+        u = range(-2, 3)
+        self.assertEqual(u.count(0), 1)
+        self.assertEqual(u.index(0), 2)
+        self.assertRaises(TypeError, u.index)
+
+        class BadExc(Exception):
+            pass
+
+        class BadCmp:
+            def __eq__(self, other):
+                if other == 2:
+                    raise BadExc()
+                return False
+
+        a = range(4)
+        self.assertRaises(BadExc, a.index, BadCmp())
+
+        a = range(-2, 3)
+        self.assertEqual(a.index(0), 2)
+        self.assertEqual(range(1, 10, 3).index(4), 1)
+        self.assertEqual(range(1, -10, -3).index(-5), 2)
+
+        self.assertEqual(range(10**20).index(1), 1)
+        self.assertEqual(range(10**20).index(10**20 - 1), 10**20 - 1)
+
+        self.assertRaises(ValueError, range(1, 2**100, 2).index, 2**87)
+        self.assertEqual(range(1, 2**100, 2).index(2**87+1), 2**86)
+
+        class AlwaysEqual(object):
+            def __eq__(self, other):
+                return True
+        always_equal = AlwaysEqual()
+        self.assertEqual(range(10).index(always_equal), 10)
+
+    def test_user_index_method(self):
+        bignum = 2*sys.maxsize
+        smallnum = 42
+
+        # User-defined class with an __index__ method
+        class I:
+            def __init__(self, n):
+                self.n = int(n)
+            def __index__(self):
+                return self.n
+        self.assertEqual(list(range(I(bignum), I(bignum + 1))), [bignum])
+        self.assertEqual(list(range(I(smallnum), I(smallnum + 1))), [smallnum])
+
+        # User-defined class with a failing __index__ method
+        class IX:
+            def __index__(self):
+                raise RuntimeError
+        self.assertRaises(RuntimeError, range, IX())
+
+        # User-defined class with an invalid __index__ method
+        class IN:
+            def __index__(self):
+                return "not a number"
+
+        self.assertRaises(TypeError, range, IN())
+
+    def test_count(self):
+        self.assertEqual(range(3).count(-1), 0)
+        self.assertEqual(range(3).count(0), 1)
+        self.assertEqual(range(3).count(1), 1)
+        self.assertEqual(range(3).count(2), 1)
+        self.assertEqual(range(3).count(3), 0)
+        self.assertIs(type(range(3).count(-1)), int)
+        self.assertIs(type(range(3).count(1)), int)
+        self.assertEqual(range(10**20).count(1), 1)
+        self.assertEqual(range(10**20).count(10**20), 0)
+        self.assertEqual(range(3).index(1), 1)
+        self.assertEqual(range(1, 2**100, 2).count(2**87), 0)
+        self.assertEqual(range(1, 2**100, 2).count(2**87+1), 1)
+
+        class AlwaysEqual(object):
+            def __eq__(self, other):
+                return True
+        always_equal = AlwaysEqual()
+        self.assertEqual(range(10).count(always_equal), 10)
+
     def test_repr(self):
         self.assertEqual(repr(range(1)), 'range(0, 1)')
         self.assertEqual(repr(range(1, 2)), 'range(1, 2)')
