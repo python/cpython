@@ -366,9 +366,9 @@ class Obj2ModVisitor(PickleVisitor):
         self.emit("obj2ast_%s(PyObject* obj, %s* out, PyArena* arena)" % (name, ctype), 0)
         self.emit("{", 0)
         self.emit("PyObject* tmp = NULL;", 1)
+        self.emit("int isinstance;", 1)
         # Prevent compiler warnings about unused variable.
         self.emit("tmp = tmp;", 1)
-        self.emit("int isinstance;", 1)
         self.emit("", 0)
 
     def sumTrailer(self, name, add_label=False):
