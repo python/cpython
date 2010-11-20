@@ -10,6 +10,9 @@ What's New in Python 3.2 Beta 1?
 Core and Builtins
 -----------------
 
+- Issue #10255: Fix reference leak in Py_InitializeEx().  Patch by Neil
+  Schemenauer.
+
 - Issue #4925: Add filename to error message when executable can't be found in
   subprocess.
 

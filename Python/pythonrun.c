@@ -893,8 +893,10 @@ initstdio(void)
 
     /* Set builtins.open */
     if (PyObject_SetAttrString(bimod, "open", wrapper) == -1) {
+        Py_DECREF(wrapper);
         goto error;
     }
+    Py_DECREF(wrapper);
 
     encoding = Py_GETENV("PYTHONIOENCODING");
     errors = NULL;
