@@ -291,7 +291,7 @@ class ColNamesTests(unittest.TestCase):
         no row returned.
         """
         self.cur.execute("select * from test where 0 = 1")
-        self.assert_(self.cur.description[0][0] == "x")
+        self.assertEqual(self.cur.description[0][0], "x")
 
 class ObjectAdaptationTests(unittest.TestCase):
     def cast(obj):

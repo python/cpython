@@ -4205,11 +4205,11 @@ order (MRO) for bases """
             __getattr__ = descr
 
         self.assertRaises(AttributeError, getattr, A(), "attr")
-        self.assertEquals(descr.counter, 1)
+        self.assertEqual(descr.counter, 1)
         self.assertRaises(AttributeError, getattr, B(), "attr")
-        self.assertEquals(descr.counter, 2)
+        self.assertEqual(descr.counter, 2)
         self.assertRaises(AttributeError, getattr, C(), "attr")
-        self.assertEquals(descr.counter, 4)
+        self.assertEqual(descr.counter, 4)
 
         import gc
         class EvilGetattribute(object):
@@ -4236,7 +4236,7 @@ class DictProxyTests(unittest.TestCase):
         # Testing dict-proxy iterkeys...
         keys = [ key for key in self.C.__dict__.keys() ]
         keys.sort()
-        self.assertEquals(keys, ['__dict__', '__doc__', '__module__',
+        self.assertEqual(keys, ['__dict__', '__doc__', '__module__',
             '__weakref__', 'meth'])
 
     def test_iter_values(self):

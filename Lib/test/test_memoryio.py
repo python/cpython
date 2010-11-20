@@ -20,17 +20,17 @@ class MemorySeekTestMixin:
         buf = self.buftype("1234567890")
         bytesIo = self.ioclass(buf)
 
-        self.assertEquals(buf[:1], bytesIo.read(1))
-        self.assertEquals(buf[1:5], bytesIo.read(4))
-        self.assertEquals(buf[5:], bytesIo.read(900))
-        self.assertEquals(self.EOF, bytesIo.read())
+        self.assertEqual(buf[:1], bytesIo.read(1))
+        self.assertEqual(buf[1:5], bytesIo.read(4))
+        self.assertEqual(buf[5:], bytesIo.read(900))
+        self.assertEqual(self.EOF, bytesIo.read())
 
     def testReadNoArgs(self):
         buf = self.buftype("1234567890")
         bytesIo = self.ioclass(buf)
 
-        self.assertEquals(buf, bytesIo.read())
-        self.assertEquals(self.EOF, bytesIo.read())
+        self.assertEqual(buf, bytesIo.read())
+        self.assertEqual(self.EOF, bytesIo.read())
 
     def testSeek(self):
         buf = self.buftype("1234567890")
@@ -38,21 +38,21 @@ class MemorySeekTestMixin:
 
         bytesIo.read(5)
         bytesIo.seek(0)
-        self.assertEquals(buf, bytesIo.read())
+        self.assertEqual(buf, bytesIo.read())
 
         bytesIo.seek(3)
-        self.assertEquals(buf[3:], bytesIo.read())
+        self.assertEqual(buf[3:], bytesIo.read())
         self.assertRaises(TypeError, bytesIo.seek, 0.0)
 
     def testTell(self):
         buf = self.buftype("1234567890")
         bytesIo = self.ioclass(buf)
 
-        self.assertEquals(0, bytesIo.tell())
+        self.assertEqual(0, bytesIo.tell())
         bytesIo.seek(5)
-        self.assertEquals(5, bytesIo.tell())
+        self.assertEqual(5, bytesIo.tell())
         bytesIo.seek(10000)
-        self.assertEquals(10000, bytesIo.tell())
+        self.assertEqual(10000, bytesIo.tell())
 
 
 class MemoryTestMixin:
@@ -634,7 +634,7 @@ class CBytesIOTest(PyBytesIOTest):
         self.assertEqual(len(state), 3)
         bytearray(state[0]) # Check if state[0] supports the buffer interface.
         self.assertIsInstance(state[1], int)
-        self.assert_(isinstance(state[2], dict) or state[2] is None)
+        self.assertTrue(isinstance(state[2], dict) or state[2] is None)
         memio.close()
         self.assertRaises(ValueError, memio.__getstate__)
 
@@ -680,7 +680,7 @@ class CStringIOTest(PyStringIOTest):
         self.assertIsInstance(state[0], str)
         self.assertIsInstance(state[1], str)
         self.assertIsInstance(state[2], int)
-        self.assert_(isinstance(state[3], dict) or state[3] is None)
+        self.assertTrue(isinstance(state[3], dict) or state[3] is None)
         memio.close()
         self.assertRaises(ValueError, memio.__getstate__)
 

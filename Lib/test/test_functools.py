@@ -428,12 +428,12 @@ class TestTotalOrdering(unittest.TestCase):
                 self.value = value
             def __lt__(self, other):
                 return self.value < other.value
-        self.assert_(A(1) < A(2))
-        self.assert_(A(2) > A(1))
-        self.assert_(A(1) <= A(2))
-        self.assert_(A(2) >= A(1))
-        self.assert_(A(2) <= A(2))
-        self.assert_(A(2) >= A(2))
+        self.assertTrue(A(1) < A(2))
+        self.assertTrue(A(2) > A(1))
+        self.assertTrue(A(1) <= A(2))
+        self.assertTrue(A(2) >= A(1))
+        self.assertTrue(A(2) <= A(2))
+        self.assertTrue(A(2) >= A(2))
 
     def test_total_ordering_le(self):
         @functools.total_ordering
@@ -442,12 +442,12 @@ class TestTotalOrdering(unittest.TestCase):
                 self.value = value
             def __le__(self, other):
                 return self.value <= other.value
-        self.assert_(A(1) < A(2))
-        self.assert_(A(2) > A(1))
-        self.assert_(A(1) <= A(2))
-        self.assert_(A(2) >= A(1))
-        self.assert_(A(2) <= A(2))
-        self.assert_(A(2) >= A(2))
+        self.assertTrue(A(1) < A(2))
+        self.assertTrue(A(2) > A(1))
+        self.assertTrue(A(1) <= A(2))
+        self.assertTrue(A(2) >= A(1))
+        self.assertTrue(A(2) <= A(2))
+        self.assertTrue(A(2) >= A(2))
 
     def test_total_ordering_gt(self):
         @functools.total_ordering
@@ -456,12 +456,12 @@ class TestTotalOrdering(unittest.TestCase):
                 self.value = value
             def __gt__(self, other):
                 return self.value > other.value
-        self.assert_(A(1) < A(2))
-        self.assert_(A(2) > A(1))
-        self.assert_(A(1) <= A(2))
-        self.assert_(A(2) >= A(1))
-        self.assert_(A(2) <= A(2))
-        self.assert_(A(2) >= A(2))
+        self.assertTrue(A(1) < A(2))
+        self.assertTrue(A(2) > A(1))
+        self.assertTrue(A(1) <= A(2))
+        self.assertTrue(A(2) >= A(1))
+        self.assertTrue(A(2) <= A(2))
+        self.assertTrue(A(2) >= A(2))
 
     def test_total_ordering_ge(self):
         @functools.total_ordering
@@ -470,24 +470,24 @@ class TestTotalOrdering(unittest.TestCase):
                 self.value = value
             def __ge__(self, other):
                 return self.value >= other.value
-        self.assert_(A(1) < A(2))
-        self.assert_(A(2) > A(1))
-        self.assert_(A(1) <= A(2))
-        self.assert_(A(2) >= A(1))
-        self.assert_(A(2) <= A(2))
-        self.assert_(A(2) >= A(2))
+        self.assertTrue(A(1) < A(2))
+        self.assertTrue(A(2) > A(1))
+        self.assertTrue(A(1) <= A(2))
+        self.assertTrue(A(2) >= A(1))
+        self.assertTrue(A(2) <= A(2))
+        self.assertTrue(A(2) >= A(2))
 
     def test_total_ordering_no_overwrite(self):
         # new methods should not overwrite existing
         @functools.total_ordering
         class A(int):
             pass
-        self.assert_(A(1) < A(2))
-        self.assert_(A(2) > A(1))
-        self.assert_(A(1) <= A(2))
-        self.assert_(A(2) >= A(1))
-        self.assert_(A(2) <= A(2))
-        self.assert_(A(2) >= A(2))
+        self.assertTrue(A(1) < A(2))
+        self.assertTrue(A(2) > A(1))
+        self.assertTrue(A(1) <= A(2))
+        self.assertTrue(A(2) >= A(1))
+        self.assertTrue(A(2) <= A(2))
+        self.assertTrue(A(2) >= A(2))
 
     def test_no_operations_defined(self):
         with self.assertRaises(ValueError):
@@ -507,9 +507,9 @@ class TestLRU(unittest.TestCase):
             x, y = choice(domain), choice(domain)
             actual = f(x, y)
             expected = orig(x, y)
-            self.assertEquals(actual, expected)
-        self.assert_(f.cache_hits > f.cache_misses)
-        self.assertEquals(f.cache_hits + f.cache_misses, 1000)
+            self.assertEqual(actual, expected)
+        self.assertTrue(f.cache_hits > f.cache_misses)
+        self.assertEqual(f.cache_hits + f.cache_misses, 1000)
 
         f.cache_clear()   # test clearing
         self.assertEqual(f.cache_hits, 0)

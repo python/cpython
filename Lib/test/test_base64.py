@@ -6,7 +6,7 @@ import sys
 import subprocess
 
 
-
+
 class LegacyBase64TestCase(unittest.TestCase):
     def test_encodebytes(self):
         eq = self.assertEqual
@@ -58,7 +58,7 @@ class LegacyBase64TestCase(unittest.TestCase):
         base64.decode(infp, outfp)
         self.assertEqual(outfp.getvalue(), b'www.python.org')
 
-
+
 class BaseXYTestCase(unittest.TestCase):
     def test_b64encode(self):
         eq = self.assertEqual
@@ -153,7 +153,7 @@ class BaseXYTestCase(unittest.TestCase):
                  (b'!', b''),
                  (b'YWJj\nYWI=', b'abcab'))
         for bstr, res in tests:
-            self.assertEquals(base64.b64decode(bstr), res)
+            self.assertEqual(base64.b64decode(bstr), res)
             with self.assertRaises(binascii.Error):
                 base64.b64decode(bstr, validate=True)
 
@@ -225,7 +225,7 @@ class BaseXYTestCase(unittest.TestCase):
         self.assertTrue(issubclass(binascii.Error, ValueError))
 
 
-
+
 class TestMain(unittest.TestCase):
     def get_output(self, *args, **options):
         args = (sys.executable, '-m', 'base64') + args
@@ -244,20 +244,20 @@ class TestMain(unittest.TestCase):
             fp.write(b'a\xffb\n')
 
         output = self.get_output('-e', support.TESTFN)
-        self.assertEquals(output.rstrip(), b'Yf9iCg==')
+        self.assertEqual(output.rstrip(), b'Yf9iCg==')
 
         with open(support.TESTFN, 'rb') as fp:
             output = self.get_output('-e', stdin=fp)
-        self.assertEquals(output.rstrip(), b'Yf9iCg==')
+        self.assertEqual(output.rstrip(), b'Yf9iCg==')
 
     def test_decode(self):
         with open(support.TESTFN, 'wb') as fp:
             fp.write(b'Yf9iCg==')
         output = self.get_output('-d', support.TESTFN)
-        self.assertEquals(output.rstrip(), b'a\xffb')
+        self.assertEqual(output.rstrip(), b'a\xffb')
 
 
-
+
 def test_main():
     support.run_unittest(__name__)
 

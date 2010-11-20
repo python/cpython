@@ -101,51 +101,51 @@ class KeywordOnlyArgTestCase(unittest.TestCase):
             pass
 
     def testFunctionCall(self):
-        self.assertEquals(1, posonly_sum(1))
-        self.assertEquals(1+2, posonly_sum(1,**{"2":2}))
-        self.assertEquals(1+2+3, posonly_sum(1,*(2,3)))
-        self.assertEquals(1+2+3+4, posonly_sum(1,*(2,3),**{"4":4}))
+        self.assertEqual(1, posonly_sum(1))
+        self.assertEqual(1+2, posonly_sum(1,**{"2":2}))
+        self.assertEqual(1+2+3, posonly_sum(1,*(2,3)))
+        self.assertEqual(1+2+3+4, posonly_sum(1,*(2,3),**{"4":4}))
 
-        self.assertEquals(1, keywordonly_sum(k2=1))
-        self.assertEquals(1+2, keywordonly_sum(k1=1, k2=2))
+        self.assertEqual(1, keywordonly_sum(k2=1))
+        self.assertEqual(1+2, keywordonly_sum(k1=1, k2=2))
 
-        self.assertEquals(1+2, keywordonly_and_kwarg_sum(k1=1, k2=2))
-        self.assertEquals(1+2+3, keywordonly_and_kwarg_sum(k1=1, k2=2, k3=3))
-        self.assertEquals(1+2+3+4,
-                          keywordonly_and_kwarg_sum(k1=1, k2=2,
+        self.assertEqual(1+2, keywordonly_and_kwarg_sum(k1=1, k2=2))
+        self.assertEqual(1+2+3, keywordonly_and_kwarg_sum(k1=1, k2=2, k3=3))
+        self.assertEqual(1+2+3+4,
+                         keywordonly_and_kwarg_sum(k1=1, k2=2,
                                                     **{"a":3,"b":4}))
 
-        self.assertEquals(1+2, mixedargs_sum(1, k1=2))
-        self.assertEquals(1+2+3, mixedargs_sum(1, 2, k1=3))
-        self.assertEquals(1+2+3+4, mixedargs_sum(1, 2, k1=3, k2=4))
-        self.assertEquals(1+2+3+4+5, mixedargs_sum(1, 2, 3, k1=4, k2=5))
+        self.assertEqual(1+2, mixedargs_sum(1, k1=2))
+        self.assertEqual(1+2+3, mixedargs_sum(1, 2, k1=3))
+        self.assertEqual(1+2+3+4, mixedargs_sum(1, 2, k1=3, k2=4))
+        self.assertEqual(1+2+3+4+5, mixedargs_sum(1, 2, 3, k1=4, k2=5))
 
-        self.assertEquals(1+2, mixedargs_sum2(1, k1=2))
-        self.assertEquals(1+2+3, mixedargs_sum2(1, 2, k1=3))
-        self.assertEquals(1+2+3+4, mixedargs_sum2(1, 2, k1=3, k2=4))
-        self.assertEquals(1+2+3+4+5, mixedargs_sum2(1, 2, 3, k1=4, k2=5))
-        self.assertEquals(1+2+3+4+5+6,
-                          mixedargs_sum2(1, 2, 3, k1=4, k2=5, k3=6))
-        self.assertEquals(1+2+3+4+5+6,
-                          mixedargs_sum2(1, 2, 3, k1=4, **{'k2':5, 'k3':6}))
+        self.assertEqual(1+2, mixedargs_sum2(1, k1=2))
+        self.assertEqual(1+2+3, mixedargs_sum2(1, 2, k1=3))
+        self.assertEqual(1+2+3+4, mixedargs_sum2(1, 2, k1=3, k2=4))
+        self.assertEqual(1+2+3+4+5, mixedargs_sum2(1, 2, 3, k1=4, k2=5))
+        self.assertEqual(1+2+3+4+5+6,
+                         mixedargs_sum2(1, 2, 3, k1=4, k2=5, k3=6))
+        self.assertEqual(1+2+3+4+5+6,
+                         mixedargs_sum2(1, 2, 3, k1=4, **{'k2':5, 'k3':6}))
 
-        self.assertEquals(1, Foo(k1=1).sum())
-        self.assertEquals(1+2, Foo(k1=1,k2=2).sum())
+        self.assertEqual(1, Foo(k1=1).sum())
+        self.assertEqual(1+2, Foo(k1=1,k2=2).sum())
 
-        self.assertEquals([1,2,3], sortnum(3,2,1))
-        self.assertEquals([3,2,1], sortnum(1,2,3, reverse=True))
+        self.assertEqual([1,2,3], sortnum(3,2,1))
+        self.assertEqual([3,2,1], sortnum(1,2,3, reverse=True))
 
-        self.assertEquals(['a','b','c'], sortwords('a','c','b'))
-        self.assertEquals(['c','b','a'], sortwords('a','c','b', reverse=True))
-        self.assertEquals(['c','b','a'],
-                          sortwords('a','c','b', reverse=True, ignore='ignore'))
+        self.assertEqual(['a','b','c'], sortwords('a','c','b'))
+        self.assertEqual(['c','b','a'], sortwords('a','c','b', reverse=True))
+        self.assertEqual(['c','b','a'],
+                         sortwords('a','c','b', reverse=True, ignore='ignore'))
 
     def testKwDefaults(self):
         def foo(p1,p2=0, *, k1, k2=0):
             return p1 + p2 + k1 + k2
 
-        self.assertEquals(2, foo.__code__.co_kwonlyargcount)
-        self.assertEquals({"k2":0}, foo.__kwdefaults__)
+        self.assertEqual(2, foo.__code__.co_kwonlyargcount)
+        self.assertEqual({"k2":0}, foo.__kwdefaults__)
         foo.__kwdefaults__ = {"k1":0}
         try:
             foo(1,k1=10)

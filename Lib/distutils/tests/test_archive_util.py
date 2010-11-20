@@ -113,7 +113,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
 
         self.assertTrue(os.path.exists(tarball2))
         # let's compare both tarballs
-        self.assertEquals(self._tarinfo(tarball), self._tarinfo(tarball2))
+        self.assertEqual(self._tarinfo(tarball), self._tarinfo(tarball2))
 
         # trying an uncompressed one
         base_name = os.path.join(tmpdir2, 'archive')
@@ -153,7 +153,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
             os.chdir(old_dir)
         tarball = base_name + '.tar.Z'
         self.assertTrue(os.path.exists(tarball))
-        self.assertEquals(len(w.warnings), 1)
+        self.assertEqual(len(w.warnings), 1)
 
         # same test with dry_run
         os.remove(tarball)
@@ -167,7 +167,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
         finally:
             os.chdir(old_dir)
         self.assertTrue(not os.path.exists(tarball))
-        self.assertEquals(len(w.warnings), 1)
+        self.assertEqual(len(w.warnings), 1)
 
     @unittest.skipUnless(ZIP_SUPPORT, 'Need zip support to run')
     def test_make_zipfile(self):
@@ -184,9 +184,9 @@ class ArchiveUtilTestCase(support.TempdirManager,
         tarball = base_name + '.zip'
 
     def test_check_archive_formats(self):
-        self.assertEquals(check_archive_formats(['gztar', 'xxx', 'zip']),
-                          'xxx')
-        self.assertEquals(check_archive_formats(['gztar', 'zip']), None)
+        self.assertEqual(check_archive_formats(['gztar', 'xxx', 'zip']),
+                         'xxx')
+        self.assertEqual(check_archive_formats(['gztar', 'zip']), None)
 
     def test_make_archive(self):
         tmpdir = self.mkdtemp()
@@ -203,7 +203,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
                 make_archive('xxx', 'xxx', root_dir=self.mkdtemp())
             except:
                 pass
-            self.assertEquals(os.getcwd(), current_dir)
+            self.assertEqual(os.getcwd(), current_dir)
         finally:
             del ARCHIVE_FORMATS['xxx']
 

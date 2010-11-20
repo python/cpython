@@ -701,9 +701,9 @@ class TestCounter(unittest.TestCase):
                     ]):
             msg = (i, dup, words)
             self.assertTrue(dup is not words)
-            self.assertEquals(dup, words)
-            self.assertEquals(len(dup), len(words))
-            self.assertEquals(type(dup), type(words))
+            self.assertEqual(dup, words)
+            self.assertEqual(len(dup), len(words))
+            self.assertEqual(type(dup), type(words))
 
     def test_conversions(self):
         # Convert to: set, list, dict
@@ -922,10 +922,10 @@ class TestOrderedDict(unittest.TestCase):
                     OrderedDict(od),
                     ]):
             self.assertTrue(dup is not od)
-            self.assertEquals(dup, od)
-            self.assertEquals(list(dup.items()), list(od.items()))
-            self.assertEquals(len(dup), len(od))
-            self.assertEquals(type(dup), type(od))
+            self.assertEqual(dup, od)
+            self.assertEqual(list(dup.items()), list(od.items()))
+            self.assertEqual(len(dup), len(od))
+            self.assertEqual(type(dup), type(od))
 
     def test_yaml_linkage(self):
         # Verify that __reduce__ is setup in a way that supports PyYAML's dump() feature.

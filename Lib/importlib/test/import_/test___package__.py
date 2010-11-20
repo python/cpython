@@ -42,7 +42,7 @@ class Using__package__(unittest.TestCase):
                 module = import_util.import_('',
                                             globals={'__package__': 'pkg.fake'},
                                             fromlist=['attr'], level=2)
-        self.assertEquals(module.__name__, 'pkg')
+        self.assertEqual(module.__name__, 'pkg')
 
     def test_using___name__(self, package_as_None=False):
         # [__name__]
@@ -54,7 +54,7 @@ class Using__package__(unittest.TestCase):
                 import_util.import_('pkg.fake')
                 module = import_util.import_('', globals= globals_,
                                                 fromlist=['attr'], level=2)
-            self.assertEquals(module.__name__, 'pkg')
+            self.assertEqual(module.__name__, 'pkg')
 
     def test_None_as___package__(self):
         # [None]

@@ -93,7 +93,7 @@ class SysModuleTest(unittest.TestCase):
         try:
             sys.exit(0)
         except SystemExit as exc:
-            self.assertEquals(exc.code, 0)
+            self.assertEqual(exc.code, 0)
         except:
             self.fail("wrong exception")
         else:
@@ -104,7 +104,7 @@ class SysModuleTest(unittest.TestCase):
         try:
             sys.exit(42)
         except SystemExit as exc:
-            self.assertEquals(exc.code, 42)
+            self.assertEqual(exc.code, 42)
         except:
             self.fail("wrong exception")
         else:
@@ -114,7 +114,7 @@ class SysModuleTest(unittest.TestCase):
         try:
             sys.exit((42,))
         except SystemExit as exc:
-            self.assertEquals(exc.code, 42)
+            self.assertEqual(exc.code, 42)
         except:
             self.fail("wrong exception")
         else:
@@ -124,7 +124,7 @@ class SysModuleTest(unittest.TestCase):
         try:
             sys.exit("exit")
         except SystemExit as exc:
-            self.assertEquals(exc.code, "exit")
+            self.assertEqual(exc.code, "exit")
         except:
             self.fail("wrong exception")
         else:
@@ -134,7 +134,7 @@ class SysModuleTest(unittest.TestCase):
         try:
             sys.exit((17, 23))
         except SystemExit as exc:
-            self.assertEquals(exc.code, (17, 23))
+            self.assertEqual(exc.code, (17, 23))
         except:
             self.fail("wrong exception")
         else:
@@ -188,7 +188,7 @@ class SysModuleTest(unittest.TestCase):
             orig = sys.getcheckinterval()
             for n in 0, 100, 120, orig: # orig last to restore starting state
                 sys.setcheckinterval(n)
-                self.assertEquals(sys.getcheckinterval(), n)
+                self.assertEqual(sys.getcheckinterval(), n)
 
     @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_switchinterval(self):
@@ -202,7 +202,7 @@ class SysModuleTest(unittest.TestCase):
         try:
             for n in 0.00001, 0.05, 3.0, orig:
                 sys.setswitchinterval(n)
-                self.assertAlmostEquals(sys.getswitchinterval(), n)
+                self.assertAlmostEqual(sys.getswitchinterval(), n)
         finally:
             sys.setswitchinterval(orig)
 

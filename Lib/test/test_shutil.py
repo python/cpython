@@ -362,7 +362,7 @@ class TestShutil(unittest.TestCase):
             copied.append((src, dst))
 
         shutil.copytree(src_dir, dst_dir, copy_function=_copy)
-        self.assertEquals(len(copied), 2)
+        self.assertEqual(len(copied), 2)
 
     @support.skip_unless_symlink
     def test_copytree_dangling_symlinks(self):
@@ -477,7 +477,7 @@ class TestShutil(unittest.TestCase):
 
         self.assertTrue(os.path.exists(tarball2))
         # let's compare both tarballs
-        self.assertEquals(self._tarinfo(tarball), self._tarinfo(tarball2))
+        self.assertEqual(self._tarinfo(tarball), self._tarinfo(tarball2))
 
         # trying an uncompressed one
         base_name = os.path.join(tmpdir2, 'archive')
@@ -572,8 +572,8 @@ class TestShutil(unittest.TestCase):
         archive = tarfile.open(archive_name)
         try:
             for member in archive.getmembers():
-                self.assertEquals(member.uid, 0)
-                self.assertEquals(member.gid, 0)
+                self.assertEqual(member.uid, 0)
+                self.assertEqual(member.gid, 0)
         finally:
             archive.close()
 
@@ -588,7 +588,7 @@ class TestShutil(unittest.TestCase):
                 make_archive('xxx', 'xxx', root_dir=self.mkdtemp())
             except Exception:
                 pass
-            self.assertEquals(os.getcwd(), current_dir)
+            self.assertEqual(os.getcwd(), current_dir)
         finally:
             unregister_archive_format('xxx')
 
@@ -635,16 +635,16 @@ class TestShutil(unittest.TestCase):
             # let's try to unpack it now
             unpack_archive(filename, tmpdir2)
             diff = self._compare_dirs(tmpdir, tmpdir2)
-            self.assertEquals(diff, [])
+            self.assertEqual(diff, [])
 
     def test_unpack_registery(self):
 
         formats = get_unpack_formats()
 
         def _boo(filename, extract_dir, extra):
-            self.assertEquals(extra, 1)
-            self.assertEquals(filename, 'stuff.boo')
-            self.assertEquals(extract_dir, 'xx')
+            self.assertEqual(extra, 1)
+            self.assertEqual(filename, 'stuff.boo')
+            self.assertEqual(extract_dir, 'xx')
 
         register_unpack_format('Boo', ['.boo', '.b2'], _boo, [('extra', 1)])
         unpack_archive('stuff.boo', 'xx')
@@ -661,7 +661,7 @@ class TestShutil(unittest.TestCase):
 
         # let's leave a clean state
         unregister_unpack_format('Boo2')
-        self.assertEquals(get_unpack_formats(), formats)
+        self.assertEqual(get_unpack_formats(), formats)
 
 
 class TestMove(unittest.TestCase):

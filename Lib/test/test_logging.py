@@ -127,14 +127,14 @@ class BaseTest(unittest.TestCase):
         except AttributeError:
             # StringIO.StringIO lacks a reset() method.
             actual_lines = stream.getvalue().splitlines()
-        self.assertEquals(len(actual_lines), len(expected_values),
+        self.assertEqual(len(actual_lines), len(expected_values),
                           '%s vs. %s' % (actual_lines, expected_values))
         for actual, expected in zip(actual_lines, expected_values):
             match = pat.search(actual)
             if not match:
                 self.fail("Log line does not match expected pattern:\n" +
                             actual)
-            self.assertEquals(tuple(match.groups()), expected)
+            self.assertEqual(tuple(match.groups()), expected)
         s = stream.read()
         if s:
             self.fail("Remaining output at end of log stream:\n" + s)
@@ -729,7 +729,7 @@ class ConfigFileTest(BaseTest):
             except RuntimeError:
                 logging.exception("just testing")
             sys.stdout.seek(0)
-            self.assertEquals(output.getvalue(),
+            self.assertEqual(output.getvalue(),
                 "ERROR:root:just testing\nGot a [RuntimeError]\n")
             # Original logger output is empty
             self.assert_log_lines([])
@@ -848,7 +848,7 @@ class SocketHandlerTest(BaseTest):
         logger = logging.getLogger("tcp")
         logger.error("spam")
         logger.debug("eggs")
-        self.assertEquals(self.get_output(), "spam\neggs\n")
+        self.assertEqual(self.get_output(), "spam\neggs\n")
 
 
 class MemoryTest(BaseTest):
@@ -1564,7 +1564,7 @@ class ConfigDictTest(BaseTest):
             except RuntimeError:
                 logging.exception("just testing")
             sys.stdout.seek(0)
-            self.assertEquals(output.getvalue(),
+            self.assertEqual(output.getvalue(),
                 "ERROR:root:just testing\nGot a [RuntimeError]\n")
             # Original logger output is empty
             self.assert_log_lines([])
@@ -1579,7 +1579,7 @@ class ConfigDictTest(BaseTest):
             except RuntimeError:
                 logging.exception("just testing")
             sys.stdout.seek(0)
-            self.assertEquals(output.getvalue(),
+            self.assertEqual(output.getvalue(),
                 "ERROR:root:just testing\nGot a [RuntimeError]\n")
             # Original logger output is empty
             self.assert_log_lines([])
@@ -2001,7 +2001,7 @@ for when, exp in (('S', 1),
     def test_compute_rollover(self, when=when, exp=exp):
         rh = logging.handlers.TimedRotatingFileHandler(
             self.fn, when=when, interval=1, backupCount=0)
-        self.assertEquals(exp, rh.computeRollover(0.0))
+        self.assertEqual(exp, rh.computeRollover(0.0))
         rh.close()
     setattr(TimedRotatingFileHandlerTest, "test_compute_rollover_%s" % when, test_compute_rollover)
 

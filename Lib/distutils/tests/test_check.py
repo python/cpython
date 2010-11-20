@@ -27,7 +27,7 @@ class CheckTestCase(support.LoggingSilencer,
         # by default, check is checking the metadata
         # should have some warnings
         cmd = self._run()
-        self.assertEquals(cmd._warnings, 2)
+        self.assertEqual(cmd._warnings, 2)
 
         # now let's add the required fields
         # and run it again, to make sure we don't get
@@ -36,7 +36,7 @@ class CheckTestCase(support.LoggingSilencer,
                     'author_email': 'xxx',
                     'name': 'xxx', 'version': 'xxx'}
         cmd = self._run(metadata)
-        self.assertEquals(cmd._warnings, 0)
+        self.assertEqual(cmd._warnings, 0)
 
         # now with the strict mode, we should
         # get an error if there are missing metadata
@@ -44,7 +44,7 @@ class CheckTestCase(support.LoggingSilencer,
 
         # and of course, no error when all metadata are present
         cmd = self._run(metadata, strict=1)
-        self.assertEquals(cmd._warnings, 0)
+        self.assertEqual(cmd._warnings, 0)
 
     def test_check_document(self):
         if not HAS_DOCUTILS: # won't test without docutils
@@ -55,12 +55,12 @@ class CheckTestCase(support.LoggingSilencer,
         # let's see if it detects broken rest
         broken_rest = 'title\n===\n\ntest'
         msgs = cmd._check_rst_data(broken_rest)
-        self.assertEquals(len(msgs), 1)
+        self.assertEqual(len(msgs), 1)
 
         # and non-broken rest
         rest = 'title\n=====\n\ntest'
         msgs = cmd._check_rst_data(rest)
-        self.assertEquals(len(msgs), 0)
+        self.assertEqual(len(msgs), 0)
 
     def test_check_restructuredtext(self):
         if not HAS_DOCUTILS: # won't test without docutils
@@ -70,7 +70,7 @@ class CheckTestCase(support.LoggingSilencer,
         pkg_info, dist = self.create_dist(long_description=broken_rest)
         cmd = check(dist)
         cmd.check_restructuredtext()
-        self.assertEquals(cmd._warnings, 1)
+        self.assertEqual(cmd._warnings, 1)
 
         # let's see if we have an error with strict=1
         metadata = {'url': 'xxx', 'author': 'xxx',
@@ -83,7 +83,7 @@ class CheckTestCase(support.LoggingSilencer,
         # and non-broken rest
         metadata['long_description'] = 'title\n=====\n\ntest'
         cmd = self._run(metadata, strict=1, restructuredtext=1)
-        self.assertEquals(cmd._warnings, 0)
+        self.assertEqual(cmd._warnings, 0)
 
     def test_check_all(self):
 

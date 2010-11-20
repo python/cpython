@@ -144,7 +144,7 @@ class BasicTest(TestCase):
 
     def test_bad_status_repr(self):
         exc = client.BadStatusLine('')
-        self.assertEquals(repr(exc), '''BadStatusLine("\'\'",)''')
+        self.assertEqual(repr(exc), '''BadStatusLine("\'\'",)''')
 
     def test_partial_reads(self):
         # if we have a lenght, the system knows when to close itself
@@ -222,13 +222,13 @@ class BasicTest(TestCase):
         sock = FakeSocket(None)
         conn.sock = sock
         conn.send(expected)
-        self.assertEquals(expected, sock.data)
+        self.assertEqual(expected, sock.data)
         sock.data = b''
         conn.send(array.array('b', expected))
-        self.assertEquals(expected, sock.data)
+        self.assertEqual(expected, sock.data)
         sock.data = b''
         conn.send(io.BytesIO(expected))
-        self.assertEquals(expected, sock.data)
+        self.assertEqual(expected, sock.data)
 
     def test_chunked(self):
         chunked_start = (
@@ -242,7 +242,7 @@ class BasicTest(TestCase):
         sock = FakeSocket(chunked_start + '0\r\n')
         resp = client.HTTPResponse(sock, method="GET")
         resp.begin()
-        self.assertEquals(resp.read(), b'hello world')
+        self.assertEqual(resp.read(), b'hello world')
         resp.close()
 
         for x in ('', 'foo\r\n'):
@@ -252,7 +252,7 @@ class BasicTest(TestCase):
             try:
                 resp.read()
             except client.IncompleteRead as i:
-                self.assertEquals(i.partial, b'hello world')
+                self.assertEqual(i.partial, b'hello world')
                 self.assertEqual(repr(i),'IncompleteRead(11 bytes read)')
                 self.assertEqual(str(i),'IncompleteRead(11 bytes read)')
             else:
@@ -272,9 +272,9 @@ class BasicTest(TestCase):
         sock = FakeSocket(chunked_start + '0\r\n')
         resp = client.HTTPResponse(sock, method="HEAD")
         resp.begin()
-        self.assertEquals(resp.read(), b'')
-        self.assertEquals(resp.status, 200)
-        self.assertEquals(resp.reason, 'OK')
+        self.assertEqual(resp.read(), b'')
+        self.assertEqual(resp.status, 200)
+        self.assertEqual(resp.reason, 'OK')
         self.assertTrue(resp.isclosed())
 
     def test_negative_content_length(self):
@@ -282,7 +282,7 @@ class BasicTest(TestCase):
             'HTTP/1.1 200 OK\r\nContent-Length: -1\r\n\r\nHello\r\n')
         resp = client.HTTPResponse(sock, method="GET")
         resp.begin()
-        self.assertEquals(resp.read(), b'Hello\r\n')
+        self.assertEqual(resp.read(), b'Hello\r\n')
         resp.close()
 
     def test_incomplete_read(self):
@@ -292,7 +292,7 @@ class BasicTest(TestCase):
         try:
             resp.read()
         except client.IncompleteRead as i:
-            self.assertEquals(i.partial, b'Hello\r\n')
+            self.assertEqual(i.partial, b'Hello\r\n')
             self.assertEqual(repr(i),
                              "IncompleteRead(7 bytes read, 3 more expected)")
             self.assertEqual(str(i),
@@ -319,7 +319,7 @@ class BasicTest(TestCase):
 
 class OfflineTest(TestCase):
     def test_responses(self):
-        self.assertEquals(client.responses[client.NOT_FOUND], "Not Found")
+        self.assertEqual(client.responses[client.NOT_FOUND], "Not Found")
 
 
 class SourceAddressTest(TestCase):

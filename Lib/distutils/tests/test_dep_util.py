@@ -43,8 +43,8 @@ class DepUtilTestCase(support.TempdirManager, unittest.TestCase):
         self.write_file(two)
         self.write_file(four)
 
-        self.assertEquals(newer_pairwise([one, two], [three, four]),
-                          ([one],[three]))
+        self.assertEqual(newer_pairwise([one, two], [three, four]),
+                         ([one],[three]))
 
     def test_newer_group(self):
         tmpdir = self.mkdtemp()

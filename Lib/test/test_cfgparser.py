@@ -897,8 +897,7 @@ class SafeConfigParserTestCaseTrickyFile(CfgParserTestCaseClass):
         self.assertEqual(len(cf.get('corruption', 'value').split('\n')), 10)
         longname = 'yeah, sections can be indented as well'
         self.assertFalse(cf.getboolean(longname, 'are they subsections'))
-        self.assertEquals(cf.get(longname, 'lets use some Unicode'),
-                                           '片仮名')
+        self.assertEqual(cf.get(longname, 'lets use some Unicode'), '片仮名')
         self.assertEqual(len(cf.items('another one!')), 5) # 4 in section and
                                                            # `go` from DEFAULT
         with self.assertRaises(configparser.InterpolationMissingOptionError):
@@ -955,14 +954,14 @@ class SortedTestCase(RawConfigParserTestCase):
                              "k=v\n")
         output = io.StringIO()
         cf.write(output)
-        self.assertEquals(output.getvalue(),
-                          "[a]\n"
-                          "k = v\n\n"
-                          "[b]\n"
-                          "o1 = 4\n"
-                          "o2 = 3\n"
-                          "o3 = 2\n"
-                          "o4 = 1\n\n")
+        self.assertEqual(output.getvalue(),
+                         "[a]\n"
+                         "k = v\n\n"
+                         "[b]\n"
+                         "o1 = 4\n"
+                         "o2 = 3\n"
+                         "o3 = 2\n"
+                         "o4 = 1\n\n")
 
 
 class CompatibleTestCase(CfgParserTestCaseClass):

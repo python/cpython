@@ -19,14 +19,14 @@ class ReturnValue(unittest.TestCase):
         with util.mock_modules('pkg.__init__', 'pkg.module') as importer:
             with util.import_state(meta_path=[importer]):
                 module = import_util.import_('pkg.module')
-                self.assertEquals(module.__name__, 'pkg')
+                self.assertEqual(module.__name__, 'pkg')
 
     def test_return_from_from_import(self):
         # [from return]
         with util.mock_modules('pkg.__init__', 'pkg.module')as importer:
             with util.import_state(meta_path=[importer]):
                 module = import_util.import_('pkg.module', fromlist=['attr'])
-                self.assertEquals(module.__name__, 'pkg.module')
+                self.assertEqual(module.__name__, 'pkg.module')
 
 
 class HandlingFromlist(unittest.TestCase):
@@ -51,14 +51,14 @@ class HandlingFromlist(unittest.TestCase):
         with util.mock_modules('module') as importer:
             with util.import_state(meta_path=[importer]):
                 module = import_util.import_('module', fromlist=['attr'])
-                self.assertEquals(module.__name__, 'module')
+                self.assertEqual(module.__name__, 'module')
 
     def test_unexistent_object(self):
         # [bad object]
         with util.mock_modules('module') as importer:
             with util.import_state(meta_path=[importer]):
                 module = import_util.import_('module', fromlist=['non_existent'])
-                self.assertEquals(module.__name__, 'module')
+                self.assertEqual(module.__name__, 'module')
                 self.assertTrue(not hasattr(module, 'non_existent'))
 
     def test_module_from_package(self):
@@ -66,23 +66,23 @@ class HandlingFromlist(unittest.TestCase):
         with util.mock_modules('pkg.__init__', 'pkg.module') as importer:
             with util.import_state(meta_path=[importer]):
                 module = import_util.import_('pkg', fromlist=['module'])
-                self.assertEquals(module.__name__, 'pkg')
+                self.assertEqual(module.__name__, 'pkg')
                 self.assertTrue(hasattr(module, 'module'))
-                self.assertEquals(module.module.__name__, 'pkg.module')
+                self.assertEqual(module.module.__name__, 'pkg.module')
 
     def test_no_module_from_package(self):
         # [no module]
         with util.mock_modules('pkg.__init__') as importer:
             with util.import_state(meta_path=[importer]):
                 module = import_util.import_('pkg', fromlist='non_existent')
-                self.assertEquals(module.__name__, 'pkg')
+                self.assertEqual(module.__name__, 'pkg')
                 self.assertTrue(not hasattr(module, 'non_existent'))
 
     def test_empty_string(self):
         with util.mock_modules('pkg.__init__', 'pkg.mod') as importer:
             with util.import_state(meta_path=[importer]):
                 module = import_util.import_('pkg.mod', fromlist=[''])
-                self.assertEquals(module.__name__, 'pkg.mod')
+                self.assertEqual(module.__name__, 'pkg.mod')
 
     def basic_star_test(self, fromlist=['*']):
         # [using *]
@@ -90,7 +90,7 @@ class HandlingFromlist(unittest.TestCase):
             with util.import_state(meta_path=[mock]):
                 mock['pkg'].__all__ = ['module']
                 module = import_util.import_('pkg', fromlist=fromlist)
-                self.assertEquals(module.__name__, 'pkg')
+                self.assertEqual(module.__name__, 'pkg')
                 self.assertTrue(hasattr(module, 'module'))
                 self.assertEqual(module.module.__name__, 'pkg.module')
 
@@ -108,11 +108,11 @@ class HandlingFromlist(unittest.TestCase):
             with util.import_state(meta_path=[mock]):
                 mock['pkg'].__all__ = ['module1']
                 module = import_util.import_('pkg', fromlist=['module2', '*'])
-                self.assertEquals(module.__name__, 'pkg')
+                self.assertEqual(module.__name__, 'pkg')
                 self.assertTrue(hasattr(module, 'module1'))
                 self.assertTrue(hasattr(module, 'module2'))
-                self.assertEquals(module.module1.__name__, 'pkg.module1')
-                self.assertEquals(module.module2.__name__, 'pkg.module2')
+                self.assertEqual(module.module1.__name__, 'pkg.module1')
+                self.assertEqual(module.module2.__name__, 'pkg.module2')
 
 
 def test_main():

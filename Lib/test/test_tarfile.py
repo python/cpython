@@ -1000,7 +1000,7 @@ class WriteTest(WriteTestBase):
             tar = tarfile.open(tmpname, "r")
             try:
                 for t in tar:
-                    self.assert_(t.name == "." or t.name.startswith("./"))
+                    self.assertTrue(t.name == "." or t.name.startswith("./"))
             finally:
                 tar.close()
         finally:

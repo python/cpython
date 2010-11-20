@@ -85,7 +85,7 @@ class ImportTests(unittest.TestCase):
                 file.write("# coding: cp1252\nu = 'test.test_imp'\n")
             file, filename, info = imp.find_module(temp_mod_name)
             file.close()
-            self.assertEquals(file.encoding, 'cp1252')
+            self.assertEqual(file.encoding, 'cp1252')
         finally:
             del sys.path[0]
             support.unlink(temp_mod_name + '.py')

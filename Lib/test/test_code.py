@@ -128,9 +128,9 @@ class CodeTest(unittest.TestCase):
 
     def test_newempty(self):
         co = _testcapi.code_newempty("filename", "funcname", 15)
-        self.assertEquals(co.co_filename, "filename")
-        self.assertEquals(co.co_name, "funcname")
-        self.assertEquals(co.co_firstlineno, 15)
+        self.assertEqual(co.co_filename, "filename")
+        self.assertEqual(co.co_name, "funcname")
+        self.assertEqual(co.co_firstlineno, 15)
 
 
 class CodeWeakRefTest(unittest.TestCase):

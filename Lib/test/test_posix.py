@@ -105,7 +105,7 @@ class PosixTester(unittest.TestCase):
             try:
                 posix.initgroups(name, 13)
             except OSError as e:
-                self.assertEquals(e.errno, errno.EPERM)
+                self.assertEqual(e.errno, errno.EPERM)
             else:
                 self.fail("Expected OSError to be raised by initgroups")
 

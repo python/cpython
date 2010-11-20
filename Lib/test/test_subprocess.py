@@ -591,7 +591,7 @@ class ProcessTestCase(BaseTestCase):
                 "[sys.executable, '-c', 'print(\"Hello World!\")'])",
             'assert retcode == 0'))
         output = subprocess.check_output([sys.executable, '-c', code])
-        self.assert_(output.startswith(b'Hello World!'), ascii(output))
+        self.assertTrue(output.startswith(b'Hello World!'), ascii(output))
 
     def test_handles_closed_on_exception(self):
         # If CreateProcess exits with an error, ensure the
@@ -928,7 +928,7 @@ class POSIXProcessTestCase(BaseTestCase):
                 [sys.executable, "-c", script],
                 env=env)
             stdout = stdout.rstrip(b'\n\r')
-            self.assertEquals(stdout.decode('ascii'), ascii(value))
+            self.assertEqual(stdout.decode('ascii'), ascii(value))
 
             # test bytes
             key = key.encode("ascii", "surrogateescape")
@@ -940,7 +940,7 @@ class POSIXProcessTestCase(BaseTestCase):
                 [sys.executable, "-c", script],
                 env=env)
             stdout = stdout.rstrip(b'\n\r')
-            self.assertEquals(stdout.decode('ascii'), ascii(value))
+            self.assertEqual(stdout.decode('ascii'), ascii(value))
 
     def test_bytes_program(self):
         abs_program = os.fsencode(sys.executable)
@@ -949,19 +949,19 @@ class POSIXProcessTestCase(BaseTestCase):
 
         # absolute bytes path
         exitcode = subprocess.call([abs_program, "-c", "pass"])
-        self.assertEquals(exitcode, 0)
+        self.assertEqual(exitcode, 0)
 
         # bytes program, unicode PATH
         env = os.environ.copy()
         env["PATH"] = path
         exitcode = subprocess.call([program, "-c", "pass"], env=env)
-        self.assertEquals(exitcode, 0)
+        self.assertEqual(exitcode, 0)
 
         # bytes program, bytes PATH
         envb = os.environb.copy()
         envb[b"PATH"] = os.fsencode(path)
         exitcode = subprocess.call([program, "-c", "pass"], env=envb)
-        self.assertEquals(exitcode, 0)
+        self.assertEqual(exitcode, 0)
 
 
 @unittest.skipUnless(mswindows, "Windows specific tests")

@@ -249,8 +249,8 @@ class WaitTests(unittest.TestCase):
                     [CANCELLED_FUTURE, future1, future2],
                      return_when=futures.FIRST_COMPLETED)
 
-            self.assertEquals(set([future1]), done)
-            self.assertEquals(set([CANCELLED_FUTURE, future2]), not_done)
+            self.assertEqual(set([future1]), done)
+            self.assertEqual(set([CANCELLED_FUTURE, future2]), not_done)
         finally:
             call1.close()
             call2.close()
@@ -264,8 +264,8 @@ class WaitTests(unittest.TestCase):
                      [SUCCESSFUL_FUTURE, future1],
                      return_when=futures.FIRST_COMPLETED)
 
-            self.assertEquals(set([SUCCESSFUL_FUTURE]), finished)
-            self.assertEquals(set([future1]), pending)
+            self.assertEqual(set([SUCCESSFUL_FUTURE]), finished)
+            self.assertEqual(set([future1]), pending)
         finally:
             call1.close()
 
@@ -290,8 +290,8 @@ class WaitTests(unittest.TestCase):
                     [future1, future2, future3],
                     return_when=futures.FIRST_EXCEPTION)
 
-            self.assertEquals(set([future1, future2]), finished)
-            self.assertEquals(set([future3]), pending)
+            self.assertEqual(set([future1, future2]), finished)
+            self.assertEqual(set([future3]), pending)
         finally:
             call1.close()
             call2.close()
@@ -318,10 +318,10 @@ class WaitTests(unittest.TestCase):
                      future1, future2],
                     return_when=futures.FIRST_EXCEPTION)
 
-            self.assertEquals(set([SUCCESSFUL_FUTURE,
-                                   CANCELLED_AND_NOTIFIED_FUTURE,
-                                   future1]), finished)
-            self.assertEquals(set([CANCELLED_FUTURE, future2]), pending)
+            self.assertEqual(set([SUCCESSFUL_FUTURE,
+                                  CANCELLED_AND_NOTIFIED_FUTURE,
+                                  future1]), finished)
+            self.assertEqual(set([CANCELLED_FUTURE, future2]), pending)
 
 
         finally:
@@ -337,8 +337,8 @@ class WaitTests(unittest.TestCase):
                      [EXCEPTION_FUTURE, future1],
                      return_when=futures.FIRST_EXCEPTION)
 
-            self.assertEquals(set([EXCEPTION_FUTURE]), finished)
-            self.assertEquals(set([future1]), pending)
+            self.assertEqual(set([EXCEPTION_FUTURE]), finished)
+            self.assertEqual(set([future1]), pending)
         finally:
             call1.close()
 
@@ -361,8 +361,8 @@ class WaitTests(unittest.TestCase):
                     [future1, future2],
                     return_when=futures.ALL_COMPLETED)
 
-            self.assertEquals(set([future1, future2]), finished)
-            self.assertEquals(set(), pending)
+            self.assertEqual(set([future1, future2]), finished)
+            self.assertEqual(set(), pending)
 
 
         finally:
@@ -403,11 +403,11 @@ class WaitTests(unittest.TestCase):
                      future1, future2, future3, future4],
                     return_when=futures.ALL_COMPLETED)
 
-            self.assertEquals(set([SUCCESSFUL_FUTURE,
-                                   CANCELLED_AND_NOTIFIED_FUTURE,
-                                   future1, future2, future3, future4]),
-                              finished)
-            self.assertEquals(set(), pending)
+            self.assertEqual(set([SUCCESSFUL_FUTURE,
+                                  CANCELLED_AND_NOTIFIED_FUTURE,
+                                  future1, future2, future3, future4]),
+                             finished)
+            self.assertEqual(set(), pending)
         finally:
             call1.close()
             call2.close()
@@ -436,11 +436,11 @@ class WaitTests(unittest.TestCase):
                     timeout=5,
                     return_when=futures.ALL_COMPLETED)
 
-            self.assertEquals(set([CANCELLED_AND_NOTIFIED_FUTURE,
-                                   EXCEPTION_FUTURE,
-                                   SUCCESSFUL_FUTURE,
-                                   future1]), finished)
-            self.assertEquals(set([future2]), pending)
+            self.assertEqual(set([CANCELLED_AND_NOTIFIED_FUTURE,
+                                  EXCEPTION_FUTURE,
+                                  SUCCESSFUL_FUTURE,
+                                  future1]), finished)
+            self.assertEqual(set([future2]), pending)
 
 
         finally:
@@ -484,7 +484,7 @@ class AsCompletedTests(unittest.TestCase):
                      EXCEPTION_FUTURE,
                      SUCCESSFUL_FUTURE,
                      future1, future2]))
-            self.assertEquals(set(
+            self.assertEqual(set(
                     [CANCELLED_AND_NOTIFIED_FUTURE,
                      EXCEPTION_FUTURE,
                      SUCCESSFUL_FUTURE,
@@ -510,10 +510,10 @@ class AsCompletedTests(unittest.TestCase):
             except futures.TimeoutError:
                 pass
 
-            self.assertEquals(set([CANCELLED_AND_NOTIFIED_FUTURE,
-                                   EXCEPTION_FUTURE,
-                                   SUCCESSFUL_FUTURE]),
-                              completed_futures)
+            self.assertEqual(set([CANCELLED_AND_NOTIFIED_FUTURE,
+                                  EXCEPTION_FUTURE,
+                                  SUCCESSFUL_FUTURE]),
+                             completed_futures)
         finally:
             call1.close()
 
@@ -536,11 +536,11 @@ class ExecutorTest(unittest.TestCase):
     # ExecutorShutdownTest.
     def test_submit(self):
         future = self.executor.submit(pow, 2, 8)
-        self.assertEquals(256, future.result())
+        self.assertEqual(256, future.result())
 
     def test_submit_keyword(self):
         future = self.executor.submit(mul, 2, y=8)
-        self.assertEquals(16, future.result())
+        self.assertEqual(16, future.result())
 
     def test_map(self):
         self.assertEqual(
@@ -569,7 +569,7 @@ class ExecutorTest(unittest.TestCase):
         finally:
             timeout_call.close()
 
-        self.assertEquals([42, 42], results)
+        self.assertEqual([42, 42], results)
 
 class ThreadPoolExecutorTest(ExecutorTest):
     def setUp(self):
@@ -595,7 +595,7 @@ class FutureTests(unittest.TestCase):
         f = Future()
         f.add_done_callback(fn)
         f.set_result(5)
-        self.assertEquals(5, callback_result)
+        self.assertEqual(5, callback_result)
 
     def test_done_callback_with_exception(self):
         callback_exception = None
@@ -606,7 +606,7 @@ class FutureTests(unittest.TestCase):
         f = Future()
         f.add_done_callback(fn)
         f.set_exception(Exception('test'))
-        self.assertEquals(('test',), callback_exception.args)
+        self.assertEqual(('test',), callback_exception.args)
 
     def test_done_callback_with_cancel(self):
         was_cancelled = None
@@ -657,7 +657,7 @@ class FutureTests(unittest.TestCase):
         f = Future()
         f.set_result(5)
         f.add_done_callback(fn)
-        self.assertEquals(5, callback_result)
+        self.assertEqual(5, callback_result)
 
     def test_done_callback_already_failed(self):
         callback_exception = None
@@ -668,7 +668,7 @@ class FutureTests(unittest.TestCase):
         f = Future()
         f.set_exception(Exception('test'))
         f.add_done_callback(fn)
-        self.assertEquals(('test',), callback_exception.args)
+        self.assertEqual(('test',), callback_exception.args)
 
     def test_done_callback_already_cancelled(self):
         was_cancelled = None
@@ -707,22 +707,22 @@ class FutureTests(unittest.TestCase):
         f6 = create_future(state=FINISHED, result=5)
 
         self.assertTrue(f1.cancel())
-        self.assertEquals(f1._state, CANCELLED)
+        self.assertEqual(f1._state, CANCELLED)
 
         self.assertFalse(f2.cancel())
-        self.assertEquals(f2._state, RUNNING)
+        self.assertEqual(f2._state, RUNNING)
 
         self.assertTrue(f3.cancel())
-        self.assertEquals(f3._state, CANCELLED)
+        self.assertEqual(f3._state, CANCELLED)
 
         self.assertTrue(f4.cancel())
-        self.assertEquals(f4._state, CANCELLED_AND_NOTIFIED)
+        self.assertEqual(f4._state, CANCELLED_AND_NOTIFIED)
 
         self.assertFalse(f5.cancel())
-        self.assertEquals(f5._state, FINISHED)
+        self.assertEqual(f5._state, FINISHED)
 
         self.assertFalse(f6.cancel())
-        self.assertEquals(f6._state, FINISHED)
+        self.assertEqual(f6._state, FINISHED)
 
     def test_cancelled(self):
         self.assertFalse(PENDING_FUTURE.cancelled())
@@ -771,7 +771,7 @@ class FutureTests(unittest.TestCase):
         t = threading.Thread(target=notification)
         t.start()
 
-        self.assertEquals(f1.result(timeout=5), 42)
+        self.assertEqual(f1.result(timeout=5), 42)
 
     def test_result_with_cancel(self):
         # TODO(brian@sweetapp.com): This test is timing dependant.

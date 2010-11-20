@@ -18,11 +18,11 @@ class BuildTestCase(support.TempdirManager,
         cmd.finalize_options()
 
         # if not specified, plat_name gets the current platform
-        self.assertEquals(cmd.plat_name, get_platform())
+        self.assertEqual(cmd.plat_name, get_platform())
 
         # build_purelib is build + lib
         wanted = os.path.join(cmd.build_base, 'lib')
-        self.assertEquals(cmd.build_purelib, wanted)
+        self.assertEqual(cmd.build_purelib, wanted)
 
         # build_platlib is 'build/lib.platform-x.x[-pydebug]'
         # examples:
@@ -32,21 +32,21 @@ class BuildTestCase(support.TempdirManager,
             self.assertTrue(cmd.build_platlib.endswith('-pydebug'))
             plat_spec += '-pydebug'
         wanted = os.path.join(cmd.build_base, 'lib' + plat_spec)
-        self.assertEquals(cmd.build_platlib, wanted)
+        self.assertEqual(cmd.build_platlib, wanted)
 
         # by default, build_lib = build_purelib
-        self.assertEquals(cmd.build_lib, cmd.build_purelib)
+        self.assertEqual(cmd.build_lib, cmd.build_purelib)
 
         # build_temp is build/temp.<plat>
         wanted = os.path.join(cmd.build_base, 'temp' + plat_spec)
-        self.assertEquals(cmd.build_temp, wanted)
+        self.assertEqual(cmd.build_temp, wanted)
 
         # build_scripts is build/scripts-x.x
         wanted = os.path.join(cmd.build_base, 'scripts-' +  sys.version[0:3])
-        self.assertEquals(cmd.build_scripts, wanted)
+        self.assertEqual(cmd.build_scripts, wanted)
 
         # executable is os.path.normpath(sys.executable)
-        self.assertEquals(cmd.executable, os.path.normpath(sys.executable))
+        self.assertEqual(cmd.executable, os.path.normpath(sys.executable))
 
 def test_suite():
     return unittest.makeSuite(BuildTestCase)

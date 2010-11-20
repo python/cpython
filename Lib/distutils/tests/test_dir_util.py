@@ -38,18 +38,18 @@ class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
 
         mkpath(self.target, verbose=0)
         wanted = []
-        self.assertEquals(self._logs, wanted)
+        self.assertEqual(self._logs, wanted)
         remove_tree(self.root_target, verbose=0)
 
         mkpath(self.target, verbose=1)
         wanted = ['creating %s' % self.root_target,
                   'creating %s' % self.target]
-        self.assertEquals(self._logs, wanted)
+        self.assertEqual(self._logs, wanted)
         self._logs = []
 
         remove_tree(self.root_target, verbose=1)
         wanted = ["removing '%s' (and everything under it)" % self.root_target]
-        self.assertEquals(self._logs, wanted)
+        self.assertEqual(self._logs, wanted)
 
     @unittest.skipIf(sys.platform.startswith('win'),
                         "This test is only appropriate for POSIX-like systems.")
@@ -67,12 +67,12 @@ class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
     def test_create_tree_verbosity(self):
 
         create_tree(self.root_target, ['one', 'two', 'three'], verbose=0)
-        self.assertEquals(self._logs, [])
+        self.assertEqual(self._logs, [])
         remove_tree(self.root_target, verbose=0)
 
         wanted = ['creating %s' % self.root_target]
         create_tree(self.root_target, ['one', 'two', 'three'], verbose=1)
-        self.assertEquals(self._logs, wanted)
+        self.assertEqual(self._logs, wanted)
 
         remove_tree(self.root_target, verbose=0)
 
@@ -82,7 +82,7 @@ class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
         mkpath(self.target, verbose=0)
 
         copy_tree(self.target, self.target2, verbose=0)
-        self.assertEquals(self._logs, [])
+        self.assertEqual(self._logs, [])
 
         remove_tree(self.root_target, verbose=0)
 
@@ -96,18 +96,18 @@ class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
 
         wanted = ['copying %s -> %s' % (a_file, self.target2)]
         copy_tree(self.target, self.target2, verbose=1)
-        self.assertEquals(self._logs, wanted)
+        self.assertEqual(self._logs, wanted)
 
         remove_tree(self.root_target, verbose=0)
         remove_tree(self.target2, verbose=0)
 
     def test_ensure_relative(self):
         if os.sep == '/':
-            self.assertEquals(ensure_relative('/home/foo'), 'home/foo')
-            self.assertEquals(ensure_relative('some/path'), 'some/path')
+            self.assertEqual(ensure_relative('/home/foo'), 'home/foo')
+            self.assertEqual(ensure_relative('some/path'), 'some/path')
         else:   # \\
-            self.assertEquals(ensure_relative('c:\\home\\foo'), 'c:home\\foo')
-            self.assertEquals(ensure_relative('home\\foo'), 'home\\foo')
+            self.assertEqual(ensure_relative('c:\\home\\foo'), 'c:home\\foo')
+            self.assertEqual(ensure_relative('home\\foo'), 'home\\foo')
 
 def test_suite():
     return unittest.makeSuite(DirUtilTestCase)

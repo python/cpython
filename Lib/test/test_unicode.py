@@ -1442,24 +1442,24 @@ class UnicodeTest(string_tests.CommonTest,
         from ctypes import c_wchar, sizeof
 
         wchar, size = unicode_aswidechar('abcdef', 2)
-        self.assertEquals(size, 2)
-        self.assertEquals(wchar, 'ab')
+        self.assertEqual(size, 2)
+        self.assertEqual(wchar, 'ab')
 
         wchar, size = unicode_aswidechar('abc', 3)
-        self.assertEquals(size, 3)
-        self.assertEquals(wchar, 'abc')
+        self.assertEqual(size, 3)
+        self.assertEqual(wchar, 'abc')
 
         wchar, size = unicode_aswidechar('abc', 4)
-        self.assertEquals(size, 3)
-        self.assertEquals(wchar, 'abc\0')
+        self.assertEqual(size, 3)
+        self.assertEqual(wchar, 'abc\0')
 
         wchar, size = unicode_aswidechar('abc', 10)
-        self.assertEquals(size, 3)
-        self.assertEquals(wchar, 'abc\0')
+        self.assertEqual(size, 3)
+        self.assertEqual(wchar, 'abc\0')
 
         wchar, size = unicode_aswidechar('abc\0def', 20)
-        self.assertEquals(size, 7)
-        self.assertEquals(wchar, 'abc\0def\0')
+        self.assertEqual(size, 7)
+        self.assertEqual(wchar, 'abc\0def\0')
 
         nonbmp = chr(0x10ffff)
         if sizeof(c_wchar) == 2:
@@ -1469,8 +1469,8 @@ class UnicodeTest(string_tests.CommonTest,
             buflen = 2
             nchar = 1
         wchar, size = unicode_aswidechar(nonbmp, buflen)
-        self.assertEquals(size, nchar)
-        self.assertEquals(wchar, nonbmp + '\0')
+        self.assertEqual(size, nchar)
+        self.assertEqual(wchar, nonbmp + '\0')
 
     # Test PyUnicode_AsWideCharString()
     def test_aswidecharstring(self):
@@ -1478,12 +1478,12 @@ class UnicodeTest(string_tests.CommonTest,
         from ctypes import c_wchar, sizeof
 
         wchar, size = unicode_aswidecharstring('abc')
-        self.assertEquals(size, 3)
-        self.assertEquals(wchar, 'abc\0')
+        self.assertEqual(size, 3)
+        self.assertEqual(wchar, 'abc\0')
 
         wchar, size = unicode_aswidecharstring('abc\0def')
-        self.assertEquals(size, 7)
-        self.assertEquals(wchar, 'abc\0def\0')
+        self.assertEqual(size, 7)
+        self.assertEqual(wchar, 'abc\0def\0')
 
         nonbmp = chr(0x10ffff)
         if sizeof(c_wchar) == 2:
@@ -1491,8 +1491,8 @@ class UnicodeTest(string_tests.CommonTest,
         else: # sizeof(c_wchar) == 4
             nchar = 1
         wchar, size = unicode_aswidecharstring(nonbmp)
-        self.assertEquals(size, nchar)
-        self.assertEquals(wchar, nonbmp + '\0')
+        self.assertEqual(size, nchar)
+        self.assertEqual(wchar, nonbmp + '\0')
 
 
 def test_main():

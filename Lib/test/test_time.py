@@ -97,7 +97,7 @@ class TimeTestCase(unittest.TestCase):
         # based on its value.
         expected = "2000 01 01 00 00 00 1 001"
         result = time.strftime("%Y %m %d %H %M %S %w %j", (0,)*9)
-        self.assertEquals(expected, result)
+        self.assertEqual(expected, result)
 
     def test_strptime(self):
         # Should be able to go round-trip from strftime to strptime without
