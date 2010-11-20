@@ -587,26 +587,14 @@ but avoids executing code when it fetches attributes.
    that raise AttributeError). It can also return descriptors objects
    instead of instance members.
 
-There are several cases that will break `getattr_static` or be handled
-incorrectly. These are pathological enough not to worry about (i.e. if you do
-any of these then you deserve to have everything break anyway):
+The only known case that can cause `getattr_static` to trigger code execution,
+and cause it to return incorrect results (or even break), is where a class uses
+:data:`~object.__slots__` and provides a `__dict__` member using a property or
+descriptor. If you find other cases please report them so they can be fixed
+or documented.
 
-* :data:`~object.__dict__` existing (e.g. as a property) but returning the
-  wrong dictionary or even returning something other than a
-  dictionary
-* classes created with :data:`~object.__slots__` that have the `__slots__`
-  member deleted from the class, or a fake `__slots__` attribute
-  attached to the instance, or any other monkeying with
-  `__slots__`
-* type objects that lie about their :term:`MRO`
-
-.. note::
-
-   Classes that override :data:`~object.__mro__` as a property will have this
-   code executed by `getattr_static`.
-
-Descriptors are not resolved (for example slot descriptors or
-getset descriptors on objects implemented in C). The descriptor
+`getattr_static` does not resolve descriptors, for example slot descriptors or
+getset descriptors on objects implemented in C. The descriptor object
 is returned instead of the underlying attribute.
 
 You can handle these with code like the following. Note that
