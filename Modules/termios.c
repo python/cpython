@@ -347,6 +347,43 @@ static struct constant {
 #ifdef B230400
     {"B230400", B230400},
 #endif
+#ifdef B460800
+    {"B460800", B460800},
+#endif
+#ifdef B500000
+    {"B500000", B500000},
+#endif
+#ifdef B576000
+    {"B576000", B576000},
+#endif
+#ifdef B921600
+    {"B921600", B921600},
+#endif
+#ifdef B1000000
+    {"B1000000", B1000000},
+#endif
+#ifdef B1152000
+    {"B1152000", B1152000},
+#endif
+#ifdef B1500000
+    {"B1500000", B1500000},
+#endif
+#ifdef B2000000
+    {"B2000000", B2000000},
+#endif
+#ifdef B2500000
+    {"B2500000", B2500000},
+#endif
+#ifdef B3000000
+    {"B3000000", B3000000},
+#endif
+#ifdef B3500000
+    {"B3500000", B3500000},
+#endif
+#ifdef B4000000
+    {"B4000000", B4000000},
+#endif
+
 #ifdef CBAUDEX
     {"CBAUDEX", CBAUDEX},
 #endif
