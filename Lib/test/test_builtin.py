@@ -912,7 +912,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(list(range(0)), [])
         self.assertEqual(list(range(-3)), [])
         self.assertEqual(list(range(1, 10, 3)), [1, 4, 7])
-        #self.assertEqual(list(range(5, -5, -3)), [5, 2, -1, -4])
+        self.assertEqual(list(range(5, -5, -3)), [5, 2, -1, -4])
 
         #issue 6334: the internal stored range length was being
         #computed incorrectly in some cases involving large arguments.
