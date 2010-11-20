@@ -77,7 +77,7 @@ class TestMessageAPI(TestEmailBase):
         eq(msg.get_all('cc'), ['ccc@zzz.org', 'ddd@zzz.org', 'eee@zzz.org'])
         eq(msg.get_all('xx', 'n/a'), 'n/a')
 
-    def TEst_getset_charset(self):
+    def test_getset_charset(self):
         eq = self.assertEqual
         msg = Message()
         eq(msg.get_charset(), None)
@@ -2957,6 +2957,8 @@ class Test8BitBytesHandling(unittest.TestCase):
 
 class TestBytesGeneratorIdempotent(TestIdempotent):
 
+    maxDiff = None
+
     def _msgobj(self, filename):
         with openfile(filename, 'rb') as fp:
             data = fp.read()
@@ -2964,14 +2966,14 @@ class TestBytesGeneratorIdempotent(TestIdempotent):
         return msg, data
 
     def _idempotent(self, msg, data):
+        # 13 = b'\r'
+        linesep = '\r\n' if data[data.index(b'\n')-1] == 13 else '\n'
         b = BytesIO()
         g = email.generator.BytesGenerator(b, maxheaderlen=0)
-        g.flatten(msg)
-        self.assertEqual(data, b.getvalue())
+        g.flatten(msg, linesep=linesep)
+        self.assertByteStringsEqual(data, b.getvalue())
 
-    maxDiff = None
-
-    def assertEqual(self, str1, str2):
+    def assertByteStringsEqual(self, str1, str2):
         self.assertListEqual(str1.split(b'\n'), str2.split(b'\n'))
 
 
