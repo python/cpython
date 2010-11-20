@@ -514,6 +514,24 @@ class CMathTests(unittest.TestCase):
         for z in complex_zeros:
             self.assertComplexIdentical(cmath.tanh(z), z)
 
+    # The algorithm used for atan and atanh makes use of the system
+    # log1p function; If that system function doesn't respect the sign
+    # of zero, then atan and atanh will also have difficulties with
+    # the sign of complex zeros.
+    @requires_IEEE_754
+    @unittest.skipIf(sysconfig.get_config_var('LOG1P_DROPS_ZERO_SIGN'),
+                     "system log1p() function doesn't preserve the sign")
+    def testAtanSign(self):
+        for z in complex_zeros:
+            self.assertComplexIdentical(cmath.atan(z), z)
+
+    @requires_IEEE_754
+    @unittest.skipIf(sysconfig.get_config_var('LOG1P_DROPS_ZERO_SIGN'),
+                     "system log1p() function doesn't preserve the sign")
+    def testAtanhSign(self):
+        for z in complex_zeros:
+            self.assertComplexIdentical(cmath.atanh(z), z)
+
 
 def test_main():
     run_unittest(CMathTests)
