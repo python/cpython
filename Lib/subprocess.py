@@ -1255,6 +1255,8 @@ class Popen(object):
                     errno = int(hex_errno, 16)
                     if errno != 0:
                         err_msg = os.strerror(errno)
+                        if errno == errno.ENOENT:
+                            err_msg += ': ' + repr(args[0])
                     raise child_exception_type(errno, err_msg)
                 raise child_exception_type(err_msg)
 
