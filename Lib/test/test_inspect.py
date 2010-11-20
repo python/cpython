@@ -867,6 +867,22 @@ class TestGetattrStatic(unittest.TestCase):
         self.assertEqual(inspect.getattr_static(Something(), 'foo'), 3)
         self.assertEqual(inspect.getattr_static(Something, 'foo'), 3)
 
+    def test_mro_as_property(self):
+        class Meta(type):
+            @property
+            def __mro__(self):
+                return (object,)
+
+        class Base(object):
+            foo = 3
+
+        class Something(Base, metaclass=Meta):
+            pass
+
+        self.assertEqual(inspect.getattr_static(Something(), 'foo'), 3)
+        self.assertEqual(inspect.getattr_static(Something, 'foo'), 3)
+
+
 def test_main():
     run_unittest(
         TestDecorators, TestRetrievingSourceCode, TestOneliners, TestBuggyCases,

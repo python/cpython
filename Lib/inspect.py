@@ -1060,6 +1060,9 @@ def trace(context=1):
 
 _sentinel = object()
 
+def _static_getmro(klass):
+    return type.__dict__['__mro__'].__get__(klass)
+
 def _check_instance(obj, attr):
     instance_dict = {}
     try:
@@ -1070,7 +1073,7 @@ def _check_instance(obj, attr):
 
 
 def _check_class(klass, attr):
-    for entry in getmro(klass):
+    for entry in _static_getmro(klass):
         try:
             return entry.__dict__[attr]
         except KeyError:
@@ -1110,7 +1113,7 @@ def getattr_static(obj, attr, default=_sentinel):
 
     if obj is klass:
         # for types we check the metaclass too
-        for entry in getmro(type(klass)):
+        for entry in _static_getmro(type(klass)):
             try:
                 return entry.__dict__[attr]
             except KeyError:
