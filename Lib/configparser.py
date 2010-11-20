@@ -406,12 +406,13 @@ class RawConfigParser(MutableMapping):
     def __init__(self, defaults=None, dict_type=_default_dict,
                  allow_no_value=False, *, delimiters=('=', ':'),
                  comment_prefixes=_COMPATIBLE, strict=False,
-                 empty_lines_in_values=True):
+                 empty_lines_in_values=True,
+                 default_section=DEFAULTSECT):
         self._dict = dict_type
         self._sections = self._dict()
         self._defaults = self._dict()
         self._proxies = self._dict()
-        self._proxies[DEFAULTSECT] = SectionProxy(self, DEFAULTSECT)
+        self._proxies[default_section] = SectionProxy(self, default_section)
         if defaults:
             for key, value in defaults.items():
                 self._defaults[self.optionxform(key)] = value
@@ -435,6 +436,7 @@ class RawConfigParser(MutableMapping):
         self._strict = strict
         self._allow_no_value = allow_no_value
         self._empty_lines_in_values = empty_lines_in_values
+        self._default_section=default_section
 
     def defaults(self):
         return self._defaults
@@ -448,10 +450,9 @@ class RawConfigParser(MutableMapping):
         """Create a new section in the configuration.
 
         Raise DuplicateSectionError if a section by the specified name
-        already exists. Raise ValueError if name is DEFAULT or any of it's
-        case-insensitive variants.
+        already exists. Raise ValueError if name is DEFAULT.
         """
-        if section.upper() == DEFAULTSECT:
+        if section == self._default_section:
             raise ValueError('Invalid section name: %s' % section)
 
         if section in self._sections:
@@ -587,7 +588,7 @@ class RawConfigParser(MutableMapping):
         try:
             d2 = self._sections[section]
         except KeyError:
-            if section != DEFAULTSECT:
+            if section != self._default_section:
                 raise NoSectionError(section)
             d2 = self._dict()
         d = self._defaults.copy()
@@ -632,7 +633,7 @@ class RawConfigParser(MutableMapping):
 
     def has_option(self, section, option):
         """Check for the existence of a given option in a given section."""
-        if not section or section == DEFAULTSECT:
+        if not section or section == self._default_section:
             option = self.optionxform(option)
             return option in self._defaults
         elif section not in self._sections:
@@ -644,7 +645,7 @@ class RawConfigParser(MutableMapping):
 
     def set(self, section, option, value=None):
         """Set an option."""
-        if not section or section == DEFAULTSECT:
+        if not section or section == self._default_section:
             sectdict = self._defaults
         else:
             try:
@@ -664,7 +665,8 @@ class RawConfigParser(MutableMapping):
         else:
             d = self._delimiters[0]
         if self._defaults:
-            self._write_section(fp, DEFAULTSECT, self._defaults.items(), d)
+            self._write_section(fp, self._default_section,
+                                    self._defaults.items(), d)
         for section in self._sections:
             self._write_section(fp, section,
                                 self._sections[section].items(), d)
@@ -684,7 +686,7 @@ class RawConfigParser(MutableMapping):
 
     def remove_option(self, section, option):
         """Remove an option."""
-        if not section or section == DEFAULTSECT:
+        if not section or section == self._default_section:
             sectdict = self._defaults
         else:
             try:
@@ -706,7 +708,7 @@ class RawConfigParser(MutableMapping):
         return existed
 
     def __getitem__(self, key):
-        if key != DEFAULTSECT and not self.has_section(key):
+        if key != self._default_section and not self.has_section(key):
             raise KeyError(key)
         return self._proxies[key]
 
@@ -720,21 +722,21 @@ class RawConfigParser(MutableMapping):
         self.read_dict({key: value})
 
     def __delitem__(self, key):
-        if key == DEFAULTSECT:
+        if key == self._default_section:
             raise ValueError("Cannot remove the default section.")
         if not self.has_section(key):
             raise KeyError(key)
         self.remove_section(key)
 
     def __contains__(self, key):
-        return key == DEFAULTSECT or self.has_section(key)
+        return key == self._default_section or self.has_section(key)
 
     def __len__(self):
         return len(self._sections) + 1 # the default section
 
     def __iter__(self):
         # XXX does it break when underlying container state changed?
-        return itertools.chain((DEFAULTSECT,), self._sections.keys())
+        return itertools.chain((self._default_section,), self._sections.keys())
 
     def _read(self, fp, fpname):
         """Parse a sectioned configuration file.
@@ -806,7 +808,7 @@ class RawConfigParser(MutableMapping):
                                                         lineno)
                         cursect = self._sections[sectname]
                         elements_added.add(sectname)
-                    elif sectname == DEFAULTSECT:
+                    elif sectname == self._default_section:
                         cursect = self._defaults
                     else:
                         cursect = self._dict()
@@ -877,7 +879,7 @@ class RawConfigParser(MutableMapping):
         try:
             d.update(self._sections[section])
         except KeyError:
-            if section != DEFAULTSECT:
+            if section != self._default_section:
                 raise NoSectionError(section)
         # Update with the entry specific variables
         if vars:
@@ -999,7 +1001,7 @@ class ConfigParser(RawConfigParser):
         try:
             d.update(self._sections[section])
         except KeyError:
-            if section != DEFAULTSECT:
+            if section != self._default_section:
                 raise NoSectionError(section)
         # Update with the entry specific variables
         if vars:
