@@ -86,10 +86,10 @@ class TestIsInstanceExceptions(unittest.TestCase):
     def test_isinstance_dont_mask_non_attribute_error(self):
         class C(object):
             def getclass(self):
-                raise RuntimeError()
-            __class__=property(getclass)
+                raise RuntimeError
+            __class__ = property(getclass)
 
-        c=C()
+        c = C()
         self.assertRaises(RuntimeError, isinstance, c, bool)
 
         # test another code path
