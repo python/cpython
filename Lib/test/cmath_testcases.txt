@@ -733,10 +733,11 @@ asinh1036 asinh -inf inf -> -inf 0.78539816339744828
 ---------------------------
 
 -- zeros
-atan0000 atan 0.0 0.0 -> 0.0 0.0
-atan0001 atan 0.0 -0.0 -> 0.0 -0.0
-atan0002 atan -0.0 0.0 -> -0.0 0.0
-atan0003 atan -0.0 -0.0 -> -0.0 -0.0
+-- These are tested in testAtanSign in test_cmath.py
+-- atan0000 atan 0.0 0.0 -> 0.0 0.0
+-- atan0001 atan 0.0 -0.0 -> 0.0 -0.0
+-- atan0002 atan -0.0 0.0 -> -0.0 0.0
+-- atan0003 atan -0.0 -0.0 -> -0.0 -0.0
 
 -- values along both sides of imaginary axis
 atan0010 atan 0.0 -9.8813129168249309e-324 -> 0.0 -9.8813129168249309e-324
@@ -896,10 +897,11 @@ atan1040 atan -inf -inf -> -1.5707963267948966 -0.0
 ---------------------------------------
 
 -- zeros
-atanh0000 atanh 0.0 0.0 -> 0.0 0.0
-atanh0001 atanh 0.0 -0.0 -> 0.0 -0.0
-atanh0002 atanh -0.0 0.0 -> -0.0 0.0
-atanh0003 atanh -0.0 -0.0 -> -0.0 -0.0
+-- These are tested in testAtanhSign in test_cmath.py
+-- atanh0000 atanh 0.0 0.0 -> 0.0 0.0
+-- atanh0001 atanh 0.0 -0.0 -> 0.0 -0.0
+-- atanh0002 atanh -0.0 0.0 -> -0.0 0.0
+-- atanh0003 atanh -0.0 -0.0 -> -0.0 -0.0
 
 -- values along both sides of real axis
 atanh0010 atanh -9.8813129168249309e-324 0.0 -> -9.8813129168249309e-324 0.0
