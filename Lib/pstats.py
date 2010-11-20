@@ -359,7 +359,7 @@ class Stats:
         print >> self.stream, indent, self.total_calls, "function calls",
         if self.total_calls != self.prim_calls:
             print >> self.stream, "(%d primitive calls)" % self.prim_calls,
-        print >> self.stream, "in %.3f CPU seconds" % self.total_tt
+        print >> self.stream, "in %.3f seconds" % self.total_tt
         print >> self.stream
         width, list = self.get_print_list(amount)
         if list:
