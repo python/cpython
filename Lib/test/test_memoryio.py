@@ -452,6 +452,11 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin,
         self.assertEqual(a.tobytes(), b"1234567890d")
         memio.close()
         self.assertRaises(ValueError, memio.readinto, b)
+        memio = self.ioclass(b"123")
+        b = bytearray()
+        memio.seek(42)
+        memio.readinto(b)
+        self.assertEqual(b, b"")
 
     def test_relative_seek(self):
         buf = self.buftype("1234567890")
