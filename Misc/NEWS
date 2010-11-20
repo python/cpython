@@ -21,11 +21,30 @@ Core and Builtins
 Library
 -------
 
+- Issue #1682942: configparser supports alternative option/value delimiters.
+
+- Issue #5412: configparser supports mapping protocol access.
+
+- Issue #9411: configparser supports specifying encoding for read operations.
+
+- Issue #9421: configparser's getint(), getfloat() and getboolean() methods
+  accept vars and default arguments just like get() does.
+
+- Issue #9452: configparser supports reading from strings and dictionaries.
+
+- configparser: accepted INI file structure is now customizable, including
+  comment prefixes, name of the DEFAULT section, empty lines in multiline
+  values, and indentation.
+
 - Issue 10326: unittest.TestCase instances can be pickled.
 
 - Issue #9920: Skip tests for cmath.atan and cmath.atanh applied to
   complex zeros on systems where the log1p function fails to respect
   the sign of zero.  This fixes a test failure on AIX.
+
+- Issue #9920: Skip tests for cmath.atan and cmath.atanh applied to complex
+  zeros on systems where the log1p function fails to respect the sign of zero.
+  This fixes a test failure on AIX.
 
 - Issue #9732: Addition of getattr_static to the inspect module.
 
@@ -53,8 +72,8 @@ Tests
 - Do not fail test_socket when the IP address of the local hostname
   cannot be looked up.
 
-- Issue #8886: Use context managers throughout test_zipfile. Patch by
-  Eric Carstensen.
+- Issue #8886: Use context managers throughout test_zipfile. Patch by Eric
+  Carstensen.
 
 Build
 -----
