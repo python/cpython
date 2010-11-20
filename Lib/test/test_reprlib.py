@@ -23,7 +23,7 @@ def nestedTuple(nesting):
 class ReprTests(unittest.TestCase):
 
     def test_string(self):
-        eq = self.assertEquals
+        eq = self.assertEqual
         eq(r("abc"), "'abc'")
         eq(r("abcdefghijklmnop"),"'abcdefghijklmnop'")
 
@@ -37,7 +37,7 @@ class ReprTests(unittest.TestCase):
         eq(r(s), expected)
 
     def test_tuple(self):
-        eq = self.assertEquals
+        eq = self.assertEqual
         eq(r((1,)), "(1,)")
 
         t3 = (1, 2, 3)
@@ -52,7 +52,7 @@ class ReprTests(unittest.TestCase):
         from array import array
         from collections import deque
 
-        eq = self.assertEquals
+        eq = self.assertEqual
         # Tuples give up after 6 elements
         eq(r(()), "()")
         eq(r((1,)), "(1,)")
@@ -102,7 +102,7 @@ class ReprTests(unittest.TestCase):
                    "array('i', [1, 2, 3, 4, 5, ...])")
 
     def test_numbers(self):
-        eq = self.assertEquals
+        eq = self.assertEqual
         eq(r(123), repr(123))
         eq(r(123), repr(123))
         eq(r(1.0/3), repr(1.0/3))
@@ -112,7 +112,7 @@ class ReprTests(unittest.TestCase):
         eq(r(n), expected)
 
     def test_instance(self):
-        eq = self.assertEquals
+        eq = self.assertEqual
         i1 = ClassWithRepr("a")
         eq(r(i1), repr(i1))
 
@@ -134,7 +134,7 @@ class ReprTests(unittest.TestCase):
         # XXX anonymous functions?  see func_repr
 
     def test_builtin_function(self):
-        eq = self.assertEquals
+        eq = self.assertEqual
         # Functions
         eq(repr(hash), '<built-in function hash>')
         # Methods
@@ -142,13 +142,13 @@ class ReprTests(unittest.TestCase):
             '<built-in method split of str object at 0x'))
 
     def test_range(self):
-        eq = self.assertEquals
+        eq = self.assertEqual
         eq(repr(range(1)), 'range(0, 1)')
         eq(repr(range(1, 2)), 'range(1, 2)')
         eq(repr(range(1, 4, 3)), 'range(1, 4, 3)')
 
     def test_nesting(self):
-        eq = self.assertEquals
+        eq = self.assertEqual
         # everything is meant to give up after 6 levels.
         eq(r([[[[[[[]]]]]]]), "[[[[[[[]]]]]]]")
         eq(r([[[[[[[[]]]]]]]]), "[[[[[[[...]]]]]]]")
@@ -169,7 +169,7 @@ class ReprTests(unittest.TestCase):
         pass
 
     def test_descriptors(self):
-        eq = self.assertEquals
+        eq = self.assertEqual
         # method descriptors
         eq(repr(dict.items), "<method 'items' of 'dict' objects>")
         # XXX member descriptors
@@ -230,7 +230,7 @@ class LongReprTest(unittest.TestCase):
         del sys.path[0]
 
     def test_module(self):
-        eq = self.assertEquals
+        eq = self.assertEqual
         touch(os.path.join(self.subpkgname, self.pkgname + '.py'))
         from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import areallylongpackageandmodulenametotestreprtruncation
         eq(repr(areallylongpackageandmodulenametotestreprtruncation),
@@ -238,7 +238,7 @@ class LongReprTest(unittest.TestCase):
         eq(repr(sys), "<module 'sys' (built-in)>")
 
     def test_type(self):
-        eq = self.assertEquals
+        eq = self.assertEqual
         touch(os.path.join(self.subpkgname, 'foo.py'), '''\
 class foo(object):
     pass
@@ -259,7 +259,7 @@ class bar:
 ''')
         from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import bar
         # Module name may be prefixed with "test.", depending on how run.
-        self.assertEquals(repr(bar.bar), "<class '%s.bar'>" % bar.__name__)
+        self.assertEqual(repr(bar.bar), "<class '%s.bar'>" % bar.__name__)
 
     def test_instance(self):
         touch(os.path.join(self.subpkgname, 'baz.py'), '''\
@@ -272,7 +272,7 @@ class baz:
             "<%s.baz object at 0x" % baz.__name__))
 
     def test_method(self):
-        eq = self.assertEquals
+        eq = self.assertEqual
         touch(os.path.join(self.subpkgname, 'qux.py'), '''\
 class aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:
     def amethod(self): pass

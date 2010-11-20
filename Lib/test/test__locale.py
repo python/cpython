@@ -59,7 +59,7 @@ class _LocaleTests(unittest.TestCase):
         known_value = known_numerics.get(used_locale,
                                     ('', ''))[data_type == 'thousands_sep']
         if known_value and calc_value:
-            self.assertEquals(calc_value, known_value,
+            self.assertEqual(calc_value, known_value,
                                 self.lc_numeric_err_msg % (
                                     calc_value, known_value,
                                     calc_type, data_type, set_locale,
@@ -107,7 +107,7 @@ class _LocaleTests(unittest.TestCase):
                     set_locale = setlocale(LC_NUMERIC)
                 except Error:
                     set_locale = "<not able to determine>"
-                self.assertEquals(nl_radixchar, li_radixchar,
+                self.assertEqual(nl_radixchar, li_radixchar,
                                 "%s (nl_langinfo) != %s (localeconv) "
                                 "(set to %s, using %s)" % (
                                                 nl_radixchar, li_radixchar,
@@ -127,9 +127,9 @@ class _LocaleTests(unittest.TestCase):
             if loc == 'eu_ES' and localeconv()['decimal_point'] == "' ":
                 continue
 
-            self.assertEquals(int(eval('3.14') * 100), 314,
+            self.assertEqual(int(eval('3.14') * 100), 314,
                                 "using eval('3.14') failed for %s" % loc)
-            self.assertEquals(int(float('3.14') * 100), 314,
+            self.assertEqual(int(float('3.14') * 100), 314,
                                 "using float('3.14') failed for %s" % loc)
             if localeconv()['decimal_point'] != '.':
                 self.assertRaises(ValueError, float,

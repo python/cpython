@@ -164,11 +164,11 @@ class TracebackFormatTests(unittest.TestCase):
             raise Error("unable to create test traceback string")
 
         # Make sure that Python and the traceback module format the same thing
-        self.assertEquals(traceback_fmt, python_fmt)
+        self.assertEqual(traceback_fmt, python_fmt)
 
         # Make sure that the traceback is properly indented.
         tb_lines = python_fmt.splitlines()
-        self.assertEquals(len(tb_lines), 3)
+        self.assertEqual(len(tb_lines), 3)
         banner, location, source_line = tb_lines
         self.assertTrue(banner.startswith('Traceback'))
         self.assertTrue(location.startswith('  File'))
@@ -212,7 +212,7 @@ class BaseExceptionReportingTests:
         except ZeroDivisionError as _:
             e = _
         lines = self.get_report(e).splitlines()
-        self.assertEquals(len(lines), 4)
+        self.assertEqual(len(lines), 4)
         self.assertTrue(lines[0].startswith('Traceback'))
         self.assertTrue(lines[1].startswith('  File'))
         self.assertIn('1/0 # Marker', lines[2])
@@ -227,8 +227,8 @@ class BaseExceptionReportingTests:
         def outer_raise():
             inner_raise() # Marker
         blocks = boundaries.split(self.get_report(outer_raise))
-        self.assertEquals(len(blocks), 3)
-        self.assertEquals(blocks[1], cause_message)
+        self.assertEqual(len(blocks), 3)
+        self.assertEqual(blocks[1], cause_message)
         self.check_zero_div(blocks[0])
         self.assertIn('inner_raise() # Marker', blocks[2])
 
@@ -241,8 +241,8 @@ class BaseExceptionReportingTests:
         def outer_raise():
             inner_raise() # Marker
         blocks = boundaries.split(self.get_report(outer_raise))
-        self.assertEquals(len(blocks), 3)
-        self.assertEquals(blocks[1], context_message)
+        self.assertEqual(len(blocks), 3)
+        self.assertEqual(blocks[1], context_message)
         self.check_zero_div(blocks[0])
         self.assertIn('inner_raise() # Marker', blocks[2])
 
@@ -261,8 +261,8 @@ class BaseExceptionReportingTests:
         def outer_raise():
             inner_raise() # Marker
         blocks = boundaries.split(self.get_report(outer_raise))
-        self.assertEquals(len(blocks), 3)
-        self.assertEquals(blocks[1], cause_message)
+        self.assertEqual(len(blocks), 3)
+        self.assertEqual(blocks[1], cause_message)
         self.check_zero_div(blocks[0])
         self.assertIn('inner_raise() # Marker', blocks[2])
 
@@ -279,8 +279,8 @@ class BaseExceptionReportingTests:
         def outer_raise():
             inner_raise() # Marker
         blocks = boundaries.split(self.get_report(outer_raise))
-        self.assertEquals(len(blocks), 3)
-        self.assertEquals(blocks[1], cause_message)
+        self.assertEqual(len(blocks), 3)
+        self.assertEqual(blocks[1], cause_message)
         # The first block is the KeyError raised from the ZeroDivisionError
         self.assertIn('raise KeyError from e', blocks[0])
         self.assertNotIn('1/0', blocks[0])
@@ -313,7 +313,7 @@ class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
             traceback.format_exception(type(e), e, e.__traceback__))
         with captured_output("stderr") as sio:
             traceback.print_exception(type(e), e, e.__traceback__)
-        self.assertEquals(sio.getvalue(), s)
+        self.assertEqual(sio.getvalue(), s)
         return s
 
 

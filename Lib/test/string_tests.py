@@ -67,7 +67,7 @@ class BaseTest(unittest.TestCase):
             else:
                 obj = subtype(obj)
                 realresult = getattr(obj, methodname)(*args)
-                self.assert_(obj is not realresult)
+                self.assertIsNot(obj, realresult)
 
     # check that obj.method(*args) raises exc
     def checkraises(self, exc, obj, methodname, *args):
@@ -1197,34 +1197,34 @@ class MixinStrUnicodeTest:
             pass
         s1 = subclass("abcd")
         s2 = t().join([s1])
-        self.assert_(s1 is not s2)
-        self.assert_(type(s2) is t)
+        self.assertIsNot(s1, s2)
+        self.assertIs(type(s2), t)
 
         s1 = t("abcd")
         s2 = t().join([s1])
-        self.assert_(s1 is s2)
+        self.assertIs(s1, s2)
 
         # Should also test mixed-type join.
         if t is str:
             s1 = subclass("abcd")
             s2 = "".join([s1])
-            self.assert_(s1 is not s2)
-            self.assert_(type(s2) is t)
+            self.assertIsNot(s1, s2)
+            self.assertIs(type(s2), t)
 
             s1 = t("abcd")
             s2 = "".join([s1])
-            self.assert_(s1 is s2)
+            self.assertIs(s1, s2)
 
 ##         elif t is str8:
 ##             s1 = subclass("abcd")
 ##             s2 = "".join([s1])
-##             self.assert_(s1 is not s2)
-##             self.assert_(type(s2) is str) # promotes!
+##             self.assertIsNot(s1, s2)
+##             self.assertIs(type(s2), str) # promotes!
 
 ##             s1 = t("abcd")
 ##             s2 = "".join([s1])
-##             self.assert_(s1 is not s2)
-##             self.assert_(type(s2) is str) # promotes!
+##             self.assertIsNot(s1, s2)
+##             self.assertIs(type(s2), str) # promotes!
 
         else:
             self.fail("unexpected type for MixinStrUnicodeTest %r" % t)

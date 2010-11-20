@@ -27,7 +27,7 @@ Core and Builtins
 Library
 -------
 
-- Issue #10371: Deprecated undocumented functions in the trace module. 
+- Issue #10371: Deprecated undocumented functions in the trace module.
 
 - Issue #10467: Fix BytesIO.readinto() after seeking into a position after the
   end of the file.
@@ -77,6 +77,8 @@ C-API
 
 Tests
 -----
+
+- Issue #9424: Replace deprecated assert* methods in the Python test suite.
 
 - Do not fail test_socket when the IP address of the local hostname
   cannot be looked up.

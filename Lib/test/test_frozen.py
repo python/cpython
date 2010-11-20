@@ -22,7 +22,7 @@ class FrozenTests(unittest.TestCase):
             self.assertEqual(len(dir(__phello__)), 8, dir(__phello__))
         else:
             self.assertEqual(len(dir(__phello__)), 9, dir(__phello__))
-        self.assertEquals(__phello__.__path__, [__phello__.__name__])
+        self.assertEqual(__phello__.__path__, [__phello__.__name__])
 
         try:
             import __phello__.spam

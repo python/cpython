@@ -100,8 +100,8 @@ class BaseQueueTest(unittest.TestCase, BlockingTestMixin):
                             LifoQueue = [222, 333, 111],
                             PriorityQueue = [111, 222, 333])
         actual_order = [q.get(), q.get(), q.get()]
-        self.assertEquals(actual_order, target_order[q.__class__.__name__],
-                          "Didn't seem to queue the correct data!")
+        self.assertEqual(actual_order, target_order[q.__class__.__name__],
+                         "Didn't seem to queue the correct data!")
         for i in range(QUEUE_SIZE-1):
             q.put(i)
             self.assertTrue(q.qsize(), "Queue should not be empty")
@@ -161,8 +161,8 @@ class BaseQueueTest(unittest.TestCase, BlockingTestMixin):
         for i in range(100):
             q.put(i)
         q.join()
-        self.assertEquals(self.cum, sum(range(100)),
-                          "q.join() did not block until all tasks were done")
+        self.assertEqual(self.cum, sum(range(100)),
+                         "q.join() did not block until all tasks were done")
         for i in (0,1):
             q.put(-1)         # instruct the threads to close
         q.join()                # verify that you can join twice

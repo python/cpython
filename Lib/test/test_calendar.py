@@ -262,7 +262,7 @@ class CalendarTestCase(unittest.TestCase):
             return
         calendar.LocaleHTMLCalendar(locale='').formatmonthname(2010, 10)
         new_october = calendar.TextCalendar().formatmonthname(2010, 10, 10)
-        self.assertEquals(old_october, new_october)
+        self.assertEqual(old_october, new_october)
 
 
 class MonthCalendarTestCase(unittest.TestCase):

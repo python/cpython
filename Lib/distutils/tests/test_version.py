@@ -8,12 +8,12 @@ class VersionTestCase(unittest.TestCase):
 
     def test_prerelease(self):
         version = StrictVersion('1.2.3a1')
-        self.assertEquals(version.version, (1, 2, 3))
-        self.assertEquals(version.prerelease, ('a', 1))
-        self.assertEquals(str(version), '1.2.3a1')
+        self.assertEqual(version.version, (1, 2, 3))
+        self.assertEqual(version.prerelease, ('a', 1))
+        self.assertEqual(str(version), '1.2.3a1')
 
         version = StrictVersion('1.2.0')
-        self.assertEquals(str(version), '1.2')
+        self.assertEqual(str(version), '1.2')
 
     def test_cmp_strict(self):
         versions = (('1.5.1', '1.5.2b2', -1),
@@ -42,9 +42,9 @@ class VersionTestCase(unittest.TestCase):
                     raise AssertionError(("cmp(%s, %s) "
                                           "shouldn't raise ValueError")
                                             % (v1, v2))
-            self.assertEquals(res, wanted,
-                              'cmp(%s, %s) should be %s, got %s' %
-                              (v1, v2, wanted, res))
+            self.assertEqual(res, wanted,
+                             'cmp(%s, %s) should be %s, got %s' %
+                             (v1, v2, wanted, res))
 
 
     def test_cmp(self):
@@ -60,9 +60,9 @@ class VersionTestCase(unittest.TestCase):
 
         for v1, v2, wanted in versions:
             res = LooseVersion(v1)._cmp(LooseVersion(v2))
-            self.assertEquals(res, wanted,
-                              'cmp(%s, %s) should be %s, got %s' %
-                              (v1, v2, wanted, res))
+            self.assertEqual(res, wanted,
+                             'cmp(%s, %s) should be %s, got %s' %
+                             (v1, v2, wanted, res))
 
 def test_suite():
     return unittest.makeSuite(VersionTestCase)

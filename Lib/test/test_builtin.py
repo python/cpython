@@ -542,11 +542,11 @@ class BuiltinTest(unittest.TestCase):
         class X:
             def __hash__(self):
                 return 2**100
-        self.assertEquals(type(hash(X())), int)
+        self.assertEqual(type(hash(X())), int)
         class Z(int):
             def __hash__(self):
                 return self
-        self.assertEquals(hash(Z(42)), hash(42))
+        self.assertEqual(hash(Z(42)), hash(42))
 
     def test_hex(self):
         self.assertEqual(hex(16), '0x10')
@@ -777,7 +777,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(next(it), 1)
         self.assertRaises(StopIteration, next, it)
         self.assertRaises(StopIteration, next, it)
-        self.assertEquals(next(it, 42), 42)
+        self.assertEqual(next(it, 42), 42)
 
         class Iter(object):
             def __iter__(self):
@@ -786,7 +786,7 @@ class BuiltinTest(unittest.TestCase):
                 raise StopIteration
 
         it = iter(Iter())
-        self.assertEquals(next(it, 42), 42)
+        self.assertEqual(next(it, 42), 42)
         self.assertRaises(StopIteration, next, it)
 
         def gen():
@@ -794,9 +794,9 @@ class BuiltinTest(unittest.TestCase):
             return
 
         it = gen()
-        self.assertEquals(next(it), 1)
+        self.assertEqual(next(it), 1)
         self.assertRaises(StopIteration, next, it)
-        self.assertEquals(next(it, 42), 42)
+        self.assertEqual(next(it, 42), 42)
 
     def test_oct(self):
         self.assertEqual(oct(100), '0o144')

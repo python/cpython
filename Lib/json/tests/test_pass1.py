@@ -67,7 +67,7 @@ class TestPass1(TestCase):
         # test in/out equivalence and parsing
         res = json.loads(JSON)
         out = json.dumps(res)
-        self.assertEquals(res, json.loads(out))
+        self.assertEqual(res, json.loads(out))
         try:
             json.dumps(res, allow_nan=False)
         except ValueError:

@@ -89,7 +89,7 @@ class uploadTestCase(PyPIRCCommandTestCase):
         for attr, waited in (('username', 'me'), ('password', 'secret'),
                              ('realm', 'pypi'),
                              ('repository', 'http://pypi.python.org/pypi')):
-            self.assertEquals(getattr(cmd, attr), waited)
+            self.assertEqual(getattr(cmd, attr), waited)
 
     def test_saved_password(self):
         # file with no password
@@ -99,14 +99,14 @@ class uploadTestCase(PyPIRCCommandTestCase):
         dist = Distribution()
         cmd = upload(dist)
         cmd.finalize_options()
-        self.assertEquals(cmd.password, None)
+        self.assertEqual(cmd.password, None)
 
         # make sure we get it as well, if another command
         # initialized it at the dist level
         dist.password = 'xxx'
         cmd = upload(dist)
         cmd.finalize_options()
-        self.assertEquals(cmd.password, 'xxx')
+        self.assertEqual(cmd.password, 'xxx')
 
     def test_upload(self):
         tmp = self.mkdtemp()
@@ -124,12 +124,12 @@ class uploadTestCase(PyPIRCCommandTestCase):
 
         # what did we send ?
         headers = dict(self.conn.headers)
-        self.assertEquals(headers['Content-length'], '2087')
+        self.assertEqual(headers['Content-length'], '2087')
         self.assertTrue(headers['Content-type'].startswith('multipart/form-data'))
         self.assertFalse('\n' in headers['Authorization'])
 
-        self.assertEquals(self.conn.requests, [('POST', '/pypi')])
-        self.assert_((b'xxx') in self.conn.body)
+        self.assertEqual(self.conn.requests, [('POST', '/pypi')])
+        self.assertTrue((b'xxx') in self.conn.body)
 
 def test_suite():
     return unittest.makeSuite(uploadTestCase)

@@ -510,7 +510,7 @@ class ScopeTests(unittest.TestCase):
                 def f(self):
                     return x
 
-            self.assertEquals(x, 12) # Used to raise UnboundLocalError
+            self.assertEqual(x, 12) # Used to raise UnboundLocalError
         finally:
             sys.settrace(None)
 

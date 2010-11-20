@@ -54,7 +54,7 @@ class UseCache(unittest.TestCase):
         with self.create_mock('module') as mock:
             with util.import_state(meta_path=[mock]):
                 module = import_util.import_('module')
-                self.assertEquals(id(module), id(sys.modules['module']))
+                self.assertEqual(id(module), id(sys.modules['module']))
 
     # See test_using_cache_after_loader() for reasoning.
     @import_util.importlib_only
@@ -74,8 +74,8 @@ class UseCache(unittest.TestCase):
             with util.import_state(meta_path=[importer]):
                 module = import_util.import_('pkg', fromlist=['module'])
                 self.assertTrue(hasattr(module, 'module'))
-                self.assertEquals(id(module.module),
-                                  id(sys.modules['pkg.module']))
+                self.assertEqual(id(module.module),
+                                 id(sys.modules['pkg.module']))
 
 
 def test_main():

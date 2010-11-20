@@ -66,82 +66,82 @@ class CygwinCCompilerTestCase(support.TempdirManager,
         sys.version = ('2.6.1 (r261:67515, Dec  6 2008, 16:42:21) \n[GCC '
                        '4.0.1 (Apple Computer, Inc. build 5370)]')
 
-        self.assertEquals(check_config_h()[0], CONFIG_H_OK)
+        self.assertEqual(check_config_h()[0], CONFIG_H_OK)
 
         # then it tries to see if it can find "__GNUC__" in pyconfig.h
         sys.version = 'something without the *CC word'
 
         # if the file doesn't exist it returns  CONFIG_H_UNCERTAIN
-        self.assertEquals(check_config_h()[0], CONFIG_H_UNCERTAIN)
+        self.assertEqual(check_config_h()[0], CONFIG_H_UNCERTAIN)
 
         # if it exists but does not contain __GNUC__, it returns CONFIG_H_NOTOK
         self.write_file(self.python_h, 'xxx')
-        self.assertEquals(check_config_h()[0], CONFIG_H_NOTOK)
+        self.assertEqual(check_config_h()[0], CONFIG_H_NOTOK)
 
         # and CONFIG_H_OK if __GNUC__ is found
         self.write_file(self.python_h, 'xxx __GNUC__ xxx')
-        self.assertEquals(check_config_h()[0], CONFIG_H_OK)
+        self.assertEqual(check_config_h()[0], CONFIG_H_OK)
 
     def test_get_versions(self):
 
         # get_versions calls distutils.spawn.find_executable on
         # 'gcc', 'ld' and 'dllwrap'
-        self.assertEquals(get_versions(), (None, None, None))
+        self.assertEqual(get_versions(), (None, None, None))
 
         # Let's fake we have 'gcc' and it returns '3.4.5'
         self._exes['gcc'] = b'gcc (GCC) 3.4.5 (mingw special)\nFSF'
         res = get_versions()
-        self.assertEquals(str(res[0]), '3.4.5')
+        self.assertEqual(str(res[0]), '3.4.5')
 
         # and let's see what happens when the version
         # doesn't match the regular expression
         # (\d+\.\d+(\.\d+)*)
         self._exes['gcc'] = b'very strange output'
         res = get_versions()
-        self.assertEquals(res[0], None)
+        self.assertEqual(res[0], None)
 
         # same thing for ld
         self._exes['ld'] = b'GNU ld version 2.17.50 20060824'
         res = get_versions()
-        self.assertEquals(str(res[1]), '2.17.50')
+        self.assertEqual(str(res[1]), '2.17.50')
         self._exes['ld'] = b'@(#)PROGRAM:ld  PROJECT:ld64-77'
         res = get_versions()
-        self.assertEquals(res[1], None)
+        self.assertEqual(res[1], None)
 
         # and dllwrap
         self._exes['dllwrap'] = b'GNU dllwrap 2.17.50 20060824\nFSF'
         res = get_versions()
-        self.assertEquals(str(res[2]), '2.17.50')
+        self.assertEqual(str(res[2]), '2.17.50')
         self._exes['dllwrap'] = b'Cheese Wrap'
         res = get_versions()
-        self.assertEquals(res[2], None)
+        self.assertEqual(res[2], None)
 
     def test_get_msvcr(self):
 
         # none
         sys.version  = ('2.6.1 (r261:67515, Dec  6 2008, 16:42:21) '
                         '\n[GCC 4.0.1 (Apple Computer, Inc. build 5370)]')
-        self.assertEquals(get_msvcr(), None)
+        self.assertEqual(get_msvcr(), None)
 
         # MSVC 7.0
         sys.version = ('2.5.1 (r251:54863, Apr 18 2007, 08:51:08) '
                        '[MSC v.1300 32 bits (Intel)]')
-        self.assertEquals(get_msvcr(), ['msvcr70'])
+        self.assertEqual(get_msvcr(), ['msvcr70'])
 
         # MSVC 7.1
         sys.version = ('2.5.1 (r251:54863, Apr 18 2007, 08:51:08) '
                        '[MSC v.1310 32 bits (Intel)]')
-        self.assertEquals(get_msvcr(), ['msvcr71'])
+        self.assertEqual(get_msvcr(), ['msvcr71'])
 
         # VS2005 / MSVC 8.0
         sys.version = ('2.5.1 (r251:54863, Apr 18 2007, 08:51:08) '
                        '[MSC v.1400 32 bits (Intel)]')
-        self.assertEquals(get_msvcr(), ['msvcr80'])
+        self.assertEqual(get_msvcr(), ['msvcr80'])
 
         # VS2008 / MSVC 9.0
         sys.version = ('2.5.1 (r251:54863, Apr 18 2007, 08:51:08) '
                        '[MSC v.1500 32 bits (Intel)]')
-        self.assertEquals(get_msvcr(), ['msvcr90'])
+        self.assertEqual(get_msvcr(), ['msvcr90'])
 
         # unknown
         sys.version = ('2.5.1 (r251:54863, Apr 18 2007, 08:51:08) '

@@ -5,17 +5,17 @@ class PowTest(unittest.TestCase):
     def powtest(self, type):
         if type != float:
             for i in range(-1000, 1000):
-                self.assertEquals(pow(type(i), 0), 1)
-                self.assertEquals(pow(type(i), 1), type(i))
-                self.assertEquals(pow(type(0), 1), type(0))
-                self.assertEquals(pow(type(1), 1), type(1))
+                self.assertEqual(pow(type(i), 0), 1)
+                self.assertEqual(pow(type(i), 1), type(i))
+                self.assertEqual(pow(type(0), 1), type(0))
+                self.assertEqual(pow(type(1), 1), type(1))
 
             for i in range(-100, 100):
-                self.assertEquals(pow(type(i), 3), i*i*i)
+                self.assertEqual(pow(type(i), 3), i*i*i)
 
             pow2 = 1
             for i in range(0, 31):
-                self.assertEquals(pow(2, i), pow2)
+                self.assertEqual(pow(2, i), pow2)
                 if i != 30 : pow2 = pow2*2
 
             for othertype in (int,):
@@ -67,30 +67,30 @@ class PowTest(unittest.TestCase):
 
     def test_other(self):
         # Other tests-- not very systematic
-        self.assertEquals(pow(3,3) % 8, pow(3,3,8))
-        self.assertEquals(pow(3,3) % -8, pow(3,3,-8))
-        self.assertEquals(pow(3,2) % -2, pow(3,2,-2))
-        self.assertEquals(pow(-3,3) % 8, pow(-3,3,8))
-        self.assertEquals(pow(-3,3) % -8, pow(-3,3,-8))
-        self.assertEquals(pow(5,2) % -8, pow(5,2,-8))
+        self.assertEqual(pow(3,3) % 8, pow(3,3,8))
+        self.assertEqual(pow(3,3) % -8, pow(3,3,-8))
+        self.assertEqual(pow(3,2) % -2, pow(3,2,-2))
+        self.assertEqual(pow(-3,3) % 8, pow(-3,3,8))
+        self.assertEqual(pow(-3,3) % -8, pow(-3,3,-8))
+        self.assertEqual(pow(5,2) % -8, pow(5,2,-8))
 
-        self.assertEquals(pow(3,3) % 8, pow(3,3,8))
-        self.assertEquals(pow(3,3) % -8, pow(3,3,-8))
-        self.assertEquals(pow(3,2) % -2, pow(3,2,-2))
-        self.assertEquals(pow(-3,3) % 8, pow(-3,3,8))
-        self.assertEquals(pow(-3,3) % -8, pow(-3,3,-8))
-        self.assertEquals(pow(5,2) % -8, pow(5,2,-8))
+        self.assertEqual(pow(3,3) % 8, pow(3,3,8))
+        self.assertEqual(pow(3,3) % -8, pow(3,3,-8))
+        self.assertEqual(pow(3,2) % -2, pow(3,2,-2))
+        self.assertEqual(pow(-3,3) % 8, pow(-3,3,8))
+        self.assertEqual(pow(-3,3) % -8, pow(-3,3,-8))
+        self.assertEqual(pow(5,2) % -8, pow(5,2,-8))
 
         for i in range(-10, 11):
             for j in range(0, 6):
                 for k in range(-7, 11):
                     if j >= 0 and k != 0:
-                        self.assertEquals(
+                        self.assertEqual(
                             pow(i,j) % k,
                             pow(i,j,k)
                         )
                     if j >= 0 and k != 0:
-                        self.assertEquals(
+                        self.assertEqual(
                             pow(int(i),j) % k,
                             pow(int(i),j,k)
                         )
@@ -104,7 +104,7 @@ class PowTest(unittest.TestCase):
     def test_bug705231(self):
         # -1.0 raised to an integer should never blow up.  It did if the
         # platform pow() was buggy, and Python didn't worm around it.
-        eq = self.assertEquals
+        eq = self.assertEqual
         a = -1.0
         # The next two tests can still fail if the platform floor()
         # function doesn't treat all large inputs as integers

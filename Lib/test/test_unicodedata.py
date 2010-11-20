@@ -254,7 +254,7 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
         self.assertTrue(count >= 10) # should have tested at least the ASCII digits
 
     def test_bug_1704793(self):
-        self.assertEquals(self.db.lookup("GOTHIC LETTER FAIHU"), '\U00010346')
+        self.assertEqual(self.db.lookup("GOTHIC LETTER FAIHU"), '\U00010346')
 
     def test_ucd_510(self):
         import unicodedata

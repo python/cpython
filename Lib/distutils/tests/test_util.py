@@ -67,21 +67,21 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
         sys.version = ('2.4.4 (#71, Oct 18 2006, 08:34:43) '
                        '[MSC v.1310 32 bit (Intel)]')
         sys.platform = 'win32'
-        self.assertEquals(get_platform(), 'win32')
+        self.assertEqual(get_platform(), 'win32')
 
         # windows XP, amd64
         os.name = 'nt'
         sys.version = ('2.4.4 (#71, Oct 18 2006, 08:34:43) '
                        '[MSC v.1310 32 bit (Amd64)]')
         sys.platform = 'win32'
-        self.assertEquals(get_platform(), 'win-amd64')
+        self.assertEqual(get_platform(), 'win-amd64')
 
         # windows XP, itanium
         os.name = 'nt'
         sys.version = ('2.4.4 (#71, Oct 18 2006, 08:34:43) '
                        '[MSC v.1310 32 bit (Itanium)]')
         sys.platform = 'win32'
-        self.assertEquals(get_platform(), 'win-ia64')
+        self.assertEqual(get_platform(), 'win-ia64')
 
         # macbook
         os.name = 'posix'
@@ -100,7 +100,7 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
         cursize = sys.maxsize
         sys.maxsize = (2 ** 31)-1
         try:
-            self.assertEquals(get_platform(), 'macosx-10.3-i386')
+            self.assertEqual(get_platform(), 'macosx-10.3-i386')
         finally:
             sys.maxsize = cursize
 
@@ -111,33 +111,33 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
                                        '-fno-strict-aliasing -fno-common '
                                        '-dynamic -DNDEBUG -g -O3')
 
-        self.assertEquals(get_platform(), 'macosx-10.4-fat')
+        self.assertEqual(get_platform(), 'macosx-10.4-fat')
 
         get_config_vars()['CFLAGS'] = ('-arch x86_64 -arch i386 -isysroot '
                                        '/Developer/SDKs/MacOSX10.4u.sdk  '
                                        '-fno-strict-aliasing -fno-common '
                                        '-dynamic -DNDEBUG -g -O3')
 
-        self.assertEquals(get_platform(), 'macosx-10.4-intel')
+        self.assertEqual(get_platform(), 'macosx-10.4-intel')
 
         get_config_vars()['CFLAGS'] = ('-arch x86_64 -arch ppc -arch i386 -isysroot '
                                        '/Developer/SDKs/MacOSX10.4u.sdk  '
                                        '-fno-strict-aliasing -fno-common '
                                        '-dynamic -DNDEBUG -g -O3')
-        self.assertEquals(get_platform(), 'macosx-10.4-fat3')
+        self.assertEqual(get_platform(), 'macosx-10.4-fat3')
 
         get_config_vars()['CFLAGS'] = ('-arch ppc64 -arch x86_64 -arch ppc -arch i386 -isysroot '
                                        '/Developer/SDKs/MacOSX10.4u.sdk  '
                                        '-fno-strict-aliasing -fno-common '
                                        '-dynamic -DNDEBUG -g -O3')
-        self.assertEquals(get_platform(), 'macosx-10.4-universal')
+        self.assertEqual(get_platform(), 'macosx-10.4-universal')
 
         get_config_vars()['CFLAGS'] = ('-arch x86_64 -arch ppc64 -isysroot '
                                        '/Developer/SDKs/MacOSX10.4u.sdk  '
                                        '-fno-strict-aliasing -fno-common '
                                        '-dynamic -DNDEBUG -g -O3')
 
-        self.assertEquals(get_platform(), 'macosx-10.4-fat64')
+        self.assertEqual(get_platform(), 'macosx-10.4-fat64')
 
         for arch in ('ppc', 'i386', 'x86_64', 'ppc64'):
             get_config_vars()['CFLAGS'] = ('-arch %s -isysroot '
@@ -145,7 +145,7 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
                                            '-fno-strict-aliasing -fno-common '
                                            '-dynamic -DNDEBUG -g -O3'%(arch,))
 
-            self.assertEquals(get_platform(), 'macosx-10.4-%s'%(arch,))
+            self.assertEqual(get_platform(), 'macosx-10.4-%s'%(arch,))
 
         # linux debian sarge
         os.name = 'posix'
@@ -155,7 +155,7 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
         self._set_uname(('Linux', 'aglae', '2.6.21.1dedibox-r7',
                     '#1 Mon Apr 30 17:25:38 CEST 2007', 'i686'))
 
-        self.assertEquals(get_platform(), 'linux-i686')
+        self.assertEqual(get_platform(), 'linux-i686')
 
         # XXX more platforms to tests here
 
@@ -166,8 +166,8 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
             return '/'.join(path)
         os.path.join = _join
 
-        self.assertEquals(convert_path('/home/to/my/stuff'),
-                          '/home/to/my/stuff')
+        self.assertEqual(convert_path('/home/to/my/stuff'),
+                         '/home/to/my/stuff')
 
         # win
         os.sep = '\\'
@@ -178,10 +178,10 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
         self.assertRaises(ValueError, convert_path, '/home/to/my/stuff')
         self.assertRaises(ValueError, convert_path, 'home/to/my/stuff/')
 
-        self.assertEquals(convert_path('home/to/my/stuff'),
-                          'home\\to\\my\\stuff')
-        self.assertEquals(convert_path('.'),
-                          os.curdir)
+        self.assertEqual(convert_path('home/to/my/stuff'),
+                         'home\\to\\my\\stuff')
+        self.assertEqual(convert_path('.'),
+                         os.curdir)
 
     def test_change_root(self):
         # linux/mac
@@ -193,10 +193,10 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
             return '/'.join(path)
         os.path.join = _join
 
-        self.assertEquals(change_root('/root', '/old/its/here'),
-                          '/root/old/its/here')
-        self.assertEquals(change_root('/root', 'its/here'),
-                          '/root/its/here')
+        self.assertEqual(change_root('/root', '/old/its/here'),
+                         '/root/old/its/here')
+        self.assertEqual(change_root('/root', 'its/here'),
+                         '/root/its/here')
 
         # windows
         os.name = 'nt'
@@ -212,10 +212,10 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
             return '\\'.join(path)
         os.path.join = _join
 
-        self.assertEquals(change_root('c:\\root', 'c:\\old\\its\\here'),
-                          'c:\\root\\old\\its\\here')
-        self.assertEquals(change_root('c:\\root', 'its\\here'),
-                          'c:\\root\\its\\here')
+        self.assertEqual(change_root('c:\\root', 'c:\\old\\its\\here'),
+                         'c:\\root\\old\\its\\here')
+        self.assertEqual(change_root('c:\\root', 'its\\here'),
+                         'c:\\root\\its\\here')
 
         # BugsBunny os (it's a great os)
         os.name = 'BugsBunny'
@@ -233,16 +233,16 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
         if os.name == 'posix':  # this test won't run on windows
             check_environ()
             import pwd
-            self.assertEquals(os.environ['HOME'], pwd.getpwuid(os.getuid())[5])
+            self.assertEqual(os.environ['HOME'], pwd.getpwuid(os.getuid())[5])
         else:
             check_environ()
 
-        self.assertEquals(os.environ['PLAT'], get_platform())
-        self.assertEquals(util._environ_checked, 1)
+        self.assertEqual(os.environ['PLAT'], get_platform())
+        self.assertEqual(util._environ_checked, 1)
 
     def test_split_quoted(self):
-        self.assertEquals(split_quoted('""one"" "two" \'three\' \\four'),
-                          ['one', 'two', 'three', 'four'])
+        self.assertEqual(split_quoted('""one"" "two" \'three\' \\four'),
+                         ['one', 'two', 'three', 'four'])
 
     def test_strtobool(self):
         yes = ('y', 'Y', 'yes', 'True', 't', 'true', 'True', 'On', 'on', '1')
@@ -259,7 +259,7 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
         res = rfc822_escape(header)
         wanted = ('I am a%(8s)spoor%(8s)slonesome%(8s)s'
                   'header%(8s)s') % {'8s': '\n'+8*' '}
-        self.assertEquals(res, wanted)
+        self.assertEqual(res, wanted)
 
     def test_dont_write_bytecode(self):
         # makes sure byte_compile raise a DistutilsError

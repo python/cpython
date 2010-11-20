@@ -68,35 +68,35 @@ class OpcodeTest(unittest.TestCase):
 
         f = eval('lambda: None')
         g = eval('lambda: None')
-        self.assertNotEquals(f, g)
+        self.assertNotEqual(f, g)
 
         f = eval('lambda a: a')
         g = eval('lambda a: a')
-        self.assertNotEquals(f, g)
+        self.assertNotEqual(f, g)
 
         f = eval('lambda a=1: a')
         g = eval('lambda a=1: a')
-        self.assertNotEquals(f, g)
+        self.assertNotEqual(f, g)
 
         f = eval('lambda: 0')
         g = eval('lambda: 1')
-        self.assertNotEquals(f, g)
+        self.assertNotEqual(f, g)
 
         f = eval('lambda: None')
         g = eval('lambda a: None')
-        self.assertNotEquals(f, g)
+        self.assertNotEqual(f, g)
 
         f = eval('lambda a: None')
         g = eval('lambda b: None')
-        self.assertNotEquals(f, g)
+        self.assertNotEqual(f, g)
 
         f = eval('lambda a: None')
         g = eval('lambda a=None: None')
-        self.assertNotEquals(f, g)
+        self.assertNotEqual(f, g)
 
         f = eval('lambda a=0: None')
         g = eval('lambda a=1: None')
-        self.assertNotEquals(f, g)
+        self.assertNotEqual(f, g)
 
     def test_modulo_of_string_subclasses(self):
         class MyString(str):

@@ -80,7 +80,7 @@ class FilterTests(object):
             self.module.resetwarnings()
             self.module.filterwarnings("ignore", category=UserWarning)
             self.module.warn("FilterTests.test_ignore", UserWarning)
-            self.assertEquals(len(w), 0)
+            self.assertEqual(len(w), 0)
 
     def test_always(self):
         with original_warnings.catch_warnings(record=True,
@@ -102,10 +102,10 @@ class FilterTests(object):
             for x in range(2):
                 self.module.warn(message, UserWarning)
                 if x == 0:
-                    self.assertEquals(w[-1].message, message)
+                    self.assertEqual(w[-1].message, message)
                     del w[:]
                 elif x == 1:
-                    self.assertEquals(len(w), 0)
+                    self.assertEqual(len(w), 0)
                 else:
                     raise ValueError("loop variant unhandled")
 
@@ -116,10 +116,10 @@ class FilterTests(object):
             self.module.filterwarnings("module", category=UserWarning)
             message = UserWarning("FilterTests.test_module")
             self.module.warn(message, UserWarning)
-            self.assertEquals(w[-1].message, message)
+            self.assertEqual(w[-1].message, message)
             del w[:]
             self.module.warn(message, UserWarning)
-            self.assertEquals(len(w), 0)
+            self.assertEqual(len(w), 0)
 
     def test_once(self):
         with original_warnings.catch_warnings(record=True,
@@ -129,14 +129,14 @@ class FilterTests(object):
             message = UserWarning("FilterTests.test_once")
             self.module.warn_explicit(message, UserWarning, "test_warnings.py",
                                     42)
-            self.assertEquals(w[-1].message, message)
+            self.assertEqual(w[-1].message, message)
             del w[:]
             self.module.warn_explicit(message, UserWarning, "test_warnings.py",
                                     13)
-            self.assertEquals(len(w), 0)
+            self.assertEqual(len(w), 0)
             self.module.warn_explicit(message, UserWarning, "test_warnings2.py",
                                     42)
-            self.assertEquals(len(w), 0)
+            self.assertEqual(len(w), 0)
 
     def test_inheritance(self):
         with original_warnings.catch_warnings(module=self.module) as w:
@@ -157,7 +157,7 @@ class FilterTests(object):
                 self.module.warn("FilterTests.test_ordering", UserWarning)
             except UserWarning:
                 self.fail("order handling for actions failed")
-            self.assertEquals(len(w), 0)
+            self.assertEqual(len(w), 0)
 
     def test_filterwarnings(self):
         # Test filterwarnings().
@@ -217,7 +217,7 @@ class WarnTests(unittest.TestCase):
                 self.module.warn(ob)
                 # Don't directly compare objects since
                 # ``Warning() != Warning()``.
-                self.assertEquals(str(w[-1].message), str(UserWarning(ob)))
+                self.assertEqual(str(w[-1].message), str(UserWarning(ob)))
 
     def test_filename(self):
         with warnings_state(self.module):
@@ -448,7 +448,7 @@ class _WarningsTests(BaseTest):
                 self.assertEqual(w[-1].message, message)
                 del w[:]
                 self.module.warn_explicit(message, UserWarning, "file", 42)
-                self.assertEquals(len(w), 0)
+                self.assertEqual(len(w), 0)
                 # Test the resetting of onceregistry.
                 self.module.onceregistry = {}
                 __warningregistry__ = {}
@@ -459,7 +459,7 @@ class _WarningsTests(BaseTest):
                 del self.module.onceregistry
                 __warningregistry__ = {}
                 self.module.warn_explicit(message, UserWarning, "file", 42)
-                self.assertEquals(len(w), 0)
+                self.assertEqual(len(w), 0)
         finally:
             self.module.onceregistry = original_registry
 

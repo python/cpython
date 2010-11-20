@@ -141,7 +141,7 @@ class AST_Tests(unittest.TestCase):
                                     (eval_tests, eval_results, "eval")):
             for i, o in zip(input, output):
                 ast_tree = compile(i, "?", kind, ast.PyCF_ONLY_AST)
-                self.assertEquals(to_tuple(ast_tree), o)
+                self.assertEqual(to_tuple(ast_tree), o)
                 self._assertTrueorder(ast_tree, (0, 0))
 
     def test_slice(self):
@@ -164,20 +164,20 @@ class AST_Tests(unittest.TestCase):
 
     def test_nodeclasses(self):
         x = ast.BinOp(1, 2, 3, lineno=0)
-        self.assertEquals(x.left, 1)
-        self.assertEquals(x.op, 2)
-        self.assertEquals(x.right, 3)
-        self.assertEquals(x.lineno, 0)
+        self.assertEqual(x.left, 1)
+        self.assertEqual(x.op, 2)
+        self.assertEqual(x.right, 3)
+        self.assertEqual(x.lineno, 0)
 
         # node raises exception when not given enough arguments
         self.assertRaises(TypeError, ast.BinOp, 1, 2)
 
         # can set attributes through kwargs too
         x = ast.BinOp(left=1, op=2, right=3, lineno=0)
-        self.assertEquals(x.left, 1)
-        self.assertEquals(x.op, 2)
-        self.assertEquals(x.right, 3)
-        self.assertEquals(x.lineno, 0)
+        self.assertEqual(x.left, 1)
+        self.assertEqual(x.op, 2)
+        self.assertEqual(x.right, 3)
+        self.assertEqual(x.lineno, 0)
 
         # this used to fail because Sub._fields was None
         x = ast.Sub()
@@ -195,7 +195,7 @@ class AST_Tests(unittest.TestCase):
             for protocol in protocols:
                 for ast in (compile(i, "?", "exec", 0x400) for i in exec_tests):
                     ast2 = mod.loads(mod.dumps(ast, protocol))
-                    self.assertEquals(to_tuple(ast2), to_tuple(ast))
+                    self.assertEqual(to_tuple(ast2), to_tuple(ast))
 
     def test_invalid_sum(self):
         pos = dict(lineno=2, col_offset=3)

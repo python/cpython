@@ -149,8 +149,8 @@ class BugsTestCase(unittest.TestCase):
 
     def test_version_argument(self):
         # Python 2.4.0 crashes for any call to marshal.dumps(x, y)
-        self.assertEquals(marshal.loads(marshal.dumps(5, 0)), 5)
-        self.assertEquals(marshal.loads(marshal.dumps(5, 1)), 5)
+        self.assertEqual(marshal.loads(marshal.dumps(5, 0)), 5)
+        self.assertEqual(marshal.loads(marshal.dumps(5, 1)), 5)
 
     def test_fuzz(self):
         # simple test that it's at least not *totally* trivial to

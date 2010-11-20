@@ -229,8 +229,8 @@ class StatAttributeTests(unittest.TestCase):
         result = os.stat(fname)
 
         # Make sure direct access works
-        self.assertEquals(result[stat.ST_SIZE], 3)
-        self.assertEquals(result.st_size, 3)
+        self.assertEqual(result[stat.ST_SIZE], 3)
+        self.assertEqual(result.st_size, 3)
 
         # Make sure all the attributes are there
         members = dir(result)
@@ -241,7 +241,7 @@ class StatAttributeTests(unittest.TestCase):
                     def trunc(x): return int(x)
                 else:
                     def trunc(x): return x
-                self.assertEquals(trunc(getattr(result, attr)),
+                self.assertEqual(trunc(getattr(result, attr)),
                                   result[getattr(stat, name)])
                 self.assertIn(attr, members)
 
@@ -305,13 +305,13 @@ class StatAttributeTests(unittest.TestCase):
                 return
 
         # Make sure direct access works
-        self.assertEquals(result.f_bfree, result[3])
+        self.assertEqual(result.f_bfree, result[3])
 
         # Make sure all the attributes are there.
         members = ('bsize', 'frsize', 'blocks', 'bfree', 'bavail', 'files',
                     'ffree', 'favail', 'flag', 'namemax')
         for value, member in enumerate(members):
-            self.assertEquals(getattr(result, 'f_' + member), result[value])
+            self.assertEqual(getattr(result, 'f_' + member), result[value])
 
         # Make sure that assignment really fails
         try:
@@ -346,7 +346,7 @@ class StatAttributeTests(unittest.TestCase):
         # time stamps in stat, but not in utime.
         os.utime(support.TESTFN, (st.st_atime, int(st.st_mtime-delta)))
         st2 = os.stat(support.TESTFN)
-        self.assertEquals(st2.st_mtime, int(st.st_mtime-delta))
+        self.assertEqual(st2.st_mtime, int(st.st_mtime-delta))
 
     # Restrict test to Win32, since there is no guarantee other
     # systems support centiseconds
@@ -363,7 +363,7 @@ class StatAttributeTests(unittest.TestCase):
             def test_1565150(self):
                 t1 = 1159195039.25
                 os.utime(self.fname, (t1, t1))
-                self.assertEquals(os.stat(self.fname).st_mtime, t1)
+                self.assertEqual(os.stat(self.fname).st_mtime, t1)
 
         def test_1686475(self):
             # Verify that an open file can be stat'ed
@@ -408,24 +408,24 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
             os.environ.update(HELLO="World")
             with os.popen("/bin/sh -c 'echo $HELLO'") as popen:
                 value = popen.read().strip()
-                self.assertEquals(value, "World")
+                self.assertEqual(value, "World")
 
     def test_os_popen_iter(self):
         if os.path.exists("/bin/sh"):
             with os.popen(
                 "/bin/sh -c 'echo \"line1\nline2\nline3\"'") as popen:
                 it = iter(popen)
-                self.assertEquals(next(it), "line1\n")
-                self.assertEquals(next(it), "line2\n")
-                self.assertEquals(next(it), "line3\n")
+                self.assertEqual(next(it), "line1\n")
+                self.assertEqual(next(it), "line2\n")
+                self.assertEqual(next(it), "line3\n")
                 self.assertRaises(StopIteration, next, it)
 
     # Verify environ keys and values from the OS are of the
     # correct str type.
     def test_keyvalue_types(self):
         for key, val in os.environ.items():
-            self.assertEquals(type(key), str)
-            self.assertEquals(type(val), str)
+            self.assertEqual(type(key), str)
+            self.assertEqual(type(val), str)
 
     def test_items(self):
         for key, value in self._reference().items():
@@ -493,15 +493,15 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
                 sys.getfilesystemencoding(),)
             self.skipTest(msg)
         os.environ['unicode'] = value
-        self.assertEquals(os.environ['unicode'], value)
-        self.assertEquals(os.environb[b'unicode'], value_bytes)
+        self.assertEqual(os.environ['unicode'], value)
+        self.assertEqual(os.environb[b'unicode'], value_bytes)
 
         # os.environb -> os.environ
         value = b'\xff'
         os.environb[b'bytes'] = value
-        self.assertEquals(os.environb[b'bytes'], value)
+        self.assertEqual(os.environb[b'bytes'], value)
         value_str = value.decode(sys.getfilesystemencoding(), 'surrogateescape')
-        self.assertEquals(os.environ['bytes'], value_str)
+        self.assertEqual(os.environ['bytes'], value_str)
 
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
@@ -958,7 +958,7 @@ if sys.platform != 'win32':
         def test_listdir(self):
             expected = self.unicodefn
             found = set(os.listdir(self.dir))
-            self.assertEquals(found, expected)
+            self.assertEqual(found, expected)
 
         def test_open(self):
             for fn in self.unicodefn:
@@ -1168,8 +1168,8 @@ class Win32SymlinkTests(unittest.TestCase):
 
 class FSEncodingTests(unittest.TestCase):
     def test_nop(self):
-        self.assertEquals(os.fsencode(b'abc\xff'), b'abc\xff')
-        self.assertEquals(os.fsdecode('abc\u0141'), 'abc\u0141')
+        self.assertEqual(os.fsencode(b'abc\xff'), b'abc\xff')
+        self.assertEqual(os.fsdecode('abc\u0141'), 'abc\u0141')
 
     def test_identity(self):
         # assert fsdecode(fsencode(x)) == x
@@ -1178,7 +1178,7 @@ class FSEncodingTests(unittest.TestCase):
                 bytesfn = os.fsencode(fn)
             except UnicodeEncodeError:
                 continue
-            self.assertEquals(os.fsdecode(bytesfn), fn)
+            self.assertEqual(os.fsdecode(bytesfn), fn)
 
 
 class PidTests(unittest.TestCase):

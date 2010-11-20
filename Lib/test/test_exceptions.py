@@ -22,8 +22,8 @@ class ExceptionTests(unittest.TestCase):
             raise exc("spam")
         except exc as err:
             buf2 = str(err)
-        self.assertEquals(buf1, buf2)
-        self.assertEquals(exc.__name__, excname)
+        self.assertEqual(buf1, buf2)
+        self.assertEqual(exc.__name__, excname)
 
     def testRaising(self):
         self.raise_catch(AttributeError, "AttributeError")
@@ -156,7 +156,7 @@ class ExceptionTests(unittest.TestCase):
             except TypeError as err:
                 exc, err, tb = sys.exc_info()
                 co = tb.tb_frame.f_code
-                self.assertEquals(co.co_name, "test_capi1")
+                self.assertEqual(co.co_name, "test_capi1")
                 self.assertTrue(co.co_filename.endswith('test_exceptions.py'))
             else:
                 self.fail("Expected exception")
@@ -168,10 +168,10 @@ class ExceptionTests(unittest.TestCase):
             except RuntimeError as err:
                 exc, err, tb = sys.exc_info()
                 co = tb.tb_frame.f_code
-                self.assertEquals(co.co_name, "__init__")
+                self.assertEqual(co.co_name, "__init__")
                 self.assertTrue(co.co_filename.endswith('test_exceptions.py'))
                 co2 = tb.tb_frame.f_back.f_code
-                self.assertEquals(co2.co_name, "test_capi2")
+                self.assertEqual(co2.co_name, "test_capi2")
             else:
                 self.fail("Expected exception")
 
@@ -191,10 +191,9 @@ class ExceptionTests(unittest.TestCase):
         except NameError:
             pass
         else:
-            self.assertEqual(str(WindowsError(1001)),
-                                 "1001")
+            self.assertEqual(str(WindowsError(1001)), "1001")
             self.assertEqual(str(WindowsError(1001, "message")),
-                                 "[Error 1001] message")
+                             "[Error 1001] message")
             self.assertEqual(WindowsError(1001, "message").errno, 22)
             self.assertEqual(WindowsError(1001, "message").winerror, 1001)
 
@@ -291,16 +290,16 @@ class ExceptionTests(unittest.TestCase):
                 raise
             else:
                 # Verify module name
-                self.assertEquals(type(e).__module__, 'builtins')
+                self.assertEqual(type(e).__module__, 'builtins')
                 # Verify no ref leaks in Exc_str()
                 s = str(e)
                 for checkArgName in expected:
                     value = getattr(e, checkArgName)
-                    self.assertEquals(repr(value),
-                                      repr(expected[checkArgName]),
-                                      '%r.%s == %r, expected %r' % (
-                                      e, checkArgName,
-                                      value, expected[checkArgName]))
+                    self.assertEqual(repr(value),
+                                     repr(expected[checkArgName]),
+                                     '%r.%s == %r, expected %r' % (
+                                     e, checkArgName,
+                                     value, expected[checkArgName]))
 
                 # test for pickling support
                 for p in [pickle]:
@@ -310,9 +309,9 @@ class ExceptionTests(unittest.TestCase):
                         for checkArgName in expected:
                             got = repr(getattr(new, checkArgName))
                             want = repr(expected[checkArgName])
-                            self.assertEquals(got, want,
-                                              'pickled "%r", attribute "%s' %
-                                              (e, checkArgName))
+                            self.assertEqual(got, want,
+                                             'pickled "%r", attribute "%s' %
+                                             (e, checkArgName))
 
     def testWithTraceback(self):
         try:
@@ -387,7 +386,7 @@ class ExceptionTests(unittest.TestCase):
                 self.fancy_arg = fancy_arg
 
         x = DerivedException(fancy_arg=42)
-        self.assertEquals(x.fancy_arg, 42)
+        self.assertEqual(x.fancy_arg, 42)
 
     def testInfiniteRecursion(self):
         def f():
@@ -548,24 +547,24 @@ class ExceptionTests(unittest.TestCase):
                 yield sys.exc_info()[0]
             yield sys.exc_info()[0]
         g = yield_raise()
-        self.assertEquals(next(g), KeyError)
-        self.assertEquals(sys.exc_info()[0], None)
-        self.assertEquals(next(g), KeyError)
-        self.assertEquals(sys.exc_info()[0], None)
-        self.assertEquals(next(g), None)
+        self.assertEqual(next(g), KeyError)
+        self.assertEqual(sys.exc_info()[0], None)
+        self.assertEqual(next(g), KeyError)
+        self.assertEqual(sys.exc_info()[0], None)
+        self.assertEqual(next(g), None)
 
         # Same test, but inside an exception handler
         try:
             raise TypeError("foo")
         except TypeError:
             g = yield_raise()
-            self.assertEquals(next(g), KeyError)
-            self.assertEquals(sys.exc_info()[0], TypeError)
-            self.assertEquals(next(g), KeyError)
-            self.assertEquals(sys.exc_info()[0], TypeError)
-            self.assertEquals(next(g), TypeError)
+            self.assertEqual(next(g), KeyError)
+            self.assertEqual(sys.exc_info()[0], TypeError)
+            self.assertEqual(next(g), KeyError)
+            self.assertEqual(sys.exc_info()[0], TypeError)
+            self.assertEqual(next(g), TypeError)
             del g
-            self.assertEquals(sys.exc_info()[0], TypeError)
+            self.assertEqual(sys.exc_info()[0], TypeError)
 
     def test_generator_finalizing_and_exc_info(self):
         # See #7173
@@ -593,7 +592,7 @@ class ExceptionTests(unittest.TestCase):
             raise Exception(MyObject())
         except:
             pass
-        self.assertEquals(e, (None, None, None))
+        self.assertEqual(e, (None, None, None))
 
     def testUnicodeChangeAttributes(self):
         # See issue 7309. This was a crasher.

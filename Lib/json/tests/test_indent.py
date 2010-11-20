@@ -38,8 +38,8 @@ class TestIndent(TestCase):
         h2 = json.loads(d2)
         h3 = json.loads(d3)
 
-        self.assertEquals(h1, h)
-        self.assertEquals(h2, h)
-        self.assertEquals(h3, h)
-        self.assertEquals(d2, expect.expandtabs(2))
-        self.assertEquals(d3, expect)
+        self.assertEqual(h1, h)
+        self.assertEqual(h2, h)
+        self.assertEqual(h3, h)
+        self.assertEqual(d2, expect.expandtabs(2))
+        self.assertEqual(d3, expect)
