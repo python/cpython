@@ -7,6 +7,7 @@ import shutil
 import struct
 import subprocess
 import tempfile
+import time
 import unittest
 import io
 
@@ -112,7 +113,7 @@ class EncodingTest(unittest.TestCase):
 
 
 class CommandLineTests(unittest.TestCase):
-    """Test some aspects of compileall's CLI."""
+    """Test compileall's CLI."""
 
     def setUp(self):
         self.addCleanup(self._cleanup)
@@ -183,6 +184,57 @@ class CommandLineTests(unittest.TestCase):
         self.assertEqual(retcode, 0)
         self.assertTrue(os.path.exists(cachedir))
         self.assertFalse(os.path.exists(cachecachedir))
+
+    def test_force(self):
+        retcode = subprocess.call(
+            (sys.executable, '-m', 'compileall', '-q', self.pkgdir))
+        self.assertEqual(retcode, 0)
+        pycpath = imp.cache_from_source(os.path.join(self.pkgdir, 'bar.py'))
+        # set atime/mtime backward to avoid file timestamp resolution issues
+        os.utime(pycpath, (time.time()-60,)*2)
+        access = os.stat(pycpath).st_mtime
+        retcode = subprocess.call(
+            (sys.executable, '-m', 'compileall', '-q', '-f', self.pkgdir))
+        self.assertEqual(retcode, 0)
+        access2 = os.stat(pycpath).st_mtime
+        self.assertNotEqual(access, access2)
+
+    def test_legacy(self):
+        # create a new module
+        newpackage = os.path.join(self.pkgdir, 'spam')
+        os.mkdir(newpackage)
+        with open(os.path.join(newpackage, '__init__.py'), 'w'):
+            pass
+        with open(os.path.join(newpackage, 'ham.py'), 'w'):
+            pass
+        sourcefile = os.path.join(newpackage, 'ham.py')
+
+        retcode = subprocess.call(
+                (sys.executable, '-m', 'compileall',  '-q', '-l', self.pkgdir))
+        self.assertEqual(retcode, 0)
+        self.assertFalse(os.path.exists(imp.cache_from_source(sourcefile)))
+
+        retcode = subprocess.call(
+                (sys.executable, '-m', 'compileall', '-q', self.pkgdir))
+        self.assertEqual(retcode, 0)
+        self.assertTrue(os.path.exists(imp.cache_from_source(sourcefile)))
+
+    def test_quiet(self):
+        noise = subprocess.getoutput('{} -m compileall {}'.format(
+                                     sys.executable, self.pkgdir))
+        quiet = subprocess.getoutput(('{} -m compileall {}'.format(
+                                     sys.executable, self.pkgdir)))
+        self.assertTrue(len(noise) > len(quiet))
+
+    def test_regexp(self):
+        retcode = subprocess.call(
+            (sys.executable, '-m', 'compileall', '-q', '-x', 'bar.*', self.pkgdir))
+        self.assertEqual(retcode, 0)
+
+        sourcefile = os.path.join(self.pkgdir, 'bar.py')
+        self.assertFalse(os.path.exists(imp.cache_from_source(sourcefile)))
+        sourcefile = os.path.join(self.pkgdir, '__init__.py')
+        self.assertTrue(os.path.exists(imp.cache_from_source(sourcefile)))
 
 
 def test_main():

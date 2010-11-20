@@ -153,90 +153,68 @@ def compile_path(skip_curdir=1, maxlevels=0, force=False, quiet=False,
                                               legacy=legacy)
     return success
 
-def expand_args(args, flist):
-    """read names in flist and append to args"""
-    expanded = args[:]
-    if flist:
-        try:
-            if flist == '-':
-                fd = sys.stdin
-            else:
-                fd = open(flist)
-            while 1:
-                line = fd.readline()
-                if not line:
-                    break
-                expanded.append(line[:-1])
-        except IOError:
-            print("Error reading file list %s" % flist)
-            raise
-    return expanded
 
 def main():
     """Script main program."""
-    import getopt
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description='Utilities to support installing Python libraries.')
+    parser.add_argument('-l', action='store_const', default=10, const=0,
+                        dest='maxlevels', help="don't recurse down")
+    parser.add_argument('-f', action='store_true', dest='force',
+                        help='force rebuild even if timestamps are up to date')
+    parser.add_argument('-q', action='store_true', dest='quiet',
+                        help='quiet operation')
+    parser.add_argument('-b', action='store_true', dest='legacy',
+                        help='procude legacy byte-compiled file paths')
+    parser.add_argument('-d', metavar='DESTDIR',  dest='ddir', default=None,
+                        help=('purported directory name for error messages; '
+                              'if no directory arguments, -l sys.path '
+                              'is assumed.'))
+    parser.add_argument('-x', metavar='REGEXP', dest='rx', default=None,
+                        help=('skip files matching the regular expression.\n\t'
+                              'The regexp is searched for in the full path'
+                              'of the file'))
+    parser.add_argument('-i', metavar='FILE', dest='flist',
+                        help='expand the list with the contenent of FILE.')
+    parser.add_argument('compile_dest', metavar='FILE|DIR', nargs='?')
+    args = parser.parse_args()
+
+    if (args.ddir and args.compile_dest != 1 and
+        not os.path.isdir(args.compile_dest)):
+        raise argparse.ArgumentError("-d destdir require exactly one "
+                                     "directory argument")
+    if args.rx:
+        import re
+        args.rx = re.compile(args.rx)
+
+    # if flist is provided then load it
+    compile_dests = [args.compile_dest]
+    if args.flist:
+        with open(args.flist) as f:
+            files = f.read().split()
+            compile_dests.extend(files)
+
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'lfqd:x:i:b')
-    except getopt.error as msg:
-        print(msg)
-        print("usage: python compileall.py [-l] [-f] [-q] [-d destdir] "
-              "[-x regexp] [-i list] [directory|file ...]")
-        print("-l: don't recurse down")
-        print("-f: force rebuild even if timestamps are up-to-date")
-        print("-q: quiet operation")
-        print("-d destdir: purported directory name for error messages")
-        print("   if no directory arguments, -l sys.path is assumed")
-        print("-x regexp: skip files matching the regular expression regexp")
-        print("   the regexp is searched for in the full path of the file")
-        print("-i list: expand list with its content "
-              "(file and directory names)")
-        print("-b: Produce legacy byte-compile file paths")
-        sys.exit(2)
-    maxlevels = 10
-    ddir = None
-    force = False
-    quiet = False
-    rx = None
-    flist = None
-    legacy = False
-    for o, a in opts:
-        if o == '-l': maxlevels = 0
-        if o == '-d': ddir = a
-        if o == '-f': force = True
-        if o == '-q': quiet = True
-        if o == '-x':
-            import re
-            rx = re.compile(a)
-        if o == '-i': flist = a
-        if o == '-b': legacy = True
-    if ddir:
-        if len(args) != 1 and not os.path.isdir(args[0]):
-            print("-d destdir require exactly one directory argument")
-            sys.exit(2)
-    success = 1
-    try:
-        if args or flist:
-            try:
-                if flist:
-                    args = expand_args(args, flist)
-            except IOError:
-                success = 0
-            if success:
-                for arg in args:
-                    if os.path.isdir(arg):
-                        if not compile_dir(arg, maxlevels, ddir,
-                                           force, rx, quiet, legacy):
-                            success = 0
-                    else:
-                        if not compile_file(arg, ddir, force, rx,
-                                            quiet, legacy):
-                            success = 0
+        if compile_dests:
+            for dest in compile_dests:
+                if os.path.isdir(dest):
+                    if not compile_dir(dest, args.maxlevels, args.ddir,
+                                       args.force, args.rx, args.quiet,
+                                       args.legacy):
+                        return 0
+                else:
+                    if not compile_file(dest, args.ddir, args.force, args.rx,
+                                        args.quiet, args.legacy):
+                        return 0
         else:
-            success = compile_path(legacy=legacy)
+            return compile_path(legacy=args.legacy)
     except KeyboardInterrupt:
         print("\n[interrupt]")
-        success = 0
-    return success
+        return 0
+    return 1
+
 
 if __name__ == '__main__':
     exit_status = int(not main())
