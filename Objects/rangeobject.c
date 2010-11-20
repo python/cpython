@@ -338,9 +338,9 @@ range_count(rangeobject *r, PyObject *ob)
 {
     if (PyLong_CheckExact(ob) || PyBool_Check(ob)) {
         if (range_contains_long(r, ob))
-            Py_RETURN_TRUE;
+            return PyLong_FromLong(1);
         else
-            Py_RETURN_FALSE;
+            return PyLong_FromLong(0);
     } else {
         Py_ssize_t count;
         count = _PySequence_IterSearch((PyObject*)r, ob, PY_ITERSEARCH_COUNT);
