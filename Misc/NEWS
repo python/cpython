@@ -45,6 +45,12 @@ Tests
 - Issue #8886: Use context managers throughout test_zipfile. Patch by
   Eric Carstensen.
 
+Build
+-----
+
+- Issue #10325: Fix two issues in the fallback definitions for PY_ULLONG_MAX and
+  PY_LLONG_MAX that made them unsuitable for use in preprocessor conditionals.
+
 
 What's New in Python 3.2 Alpha 4?
 =================================

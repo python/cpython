@@ -62,15 +62,20 @@ Used in:  PY_LONG_LONG
 #define PY_LLONG_MAX LLONG_MAX
 #define PY_ULLONG_MAX ULLONG_MAX
 #elif defined(__LONG_LONG_MAX__)
-/* Otherwise, if GCC has a builtin define, use that. */
+/* Otherwise, if GCC has a builtin define, use that.  (Definition of
+ * PY_LLONG_MIN assumes two's complement with no trap representation.) */
 #define PY_LLONG_MAX __LONG_LONG_MAX__
-#define PY_LLONG_MIN (-PY_LLONG_MAX-1)
-#define PY_ULLONG_MAX (__LONG_LONG_MAX__*2ULL + 1ULL)
-#else
-/* Otherwise, rely on two's complement. */
-#define PY_ULLONG_MAX (~0ULL)
-#define PY_LLONG_MAX  ((long long)(PY_ULLONG_MAX>>1))
-#define PY_LLONG_MIN (-PY_LLONG_MAX-1)
+#define PY_LLONG_MIN (-PY_LLONG_MAX - 1)
+#define PY_ULLONG_MAX (PY_LLONG_MAX * Py_ULL(2) + 1)
+#elif defined(SIZEOF_LONG_LONG)
+/* Otherwise compute from SIZEOF_LONG_LONG, assuming two's complement, no
+   padding bits, and no trap representation.  Note: PY_ULLONG_MAX was
+   previously #defined as (~0ULL) here; but that'll give the wrong value in a
+   preprocessor expression on systems where long long != intmax_t. */
+#define PY_LLONG_MAX                                                    \
+    (1 + 2 * ((Py_LL(1) << (CHAR_BIT * SIZEOF_LONG_LONG - 2)) - 1))
+#define PY_LLONG_MIN (-PY_LLONG_MAX - 1)
+#define PY_ULLONG_MAX (PY_LLONG_MAX * Py_ULL(2) + 1)
 #endif /* LLONG_MAX */
 #endif
 #endif /* HAVE_LONG_LONG */
