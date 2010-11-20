@@ -511,8 +511,8 @@ class URLopener:
         if user: user, passwd = splitpasswd(user)
         else: passwd = None
         host = unquote(host)
-        user = unquote(user or '')
-        passwd = unquote(passwd or '')
+        user = user or ''
+        passwd = passwd or ''
         host = socket.gethostbyname(host)
         if not port:
             import ftplib
@@ -1064,7 +1064,7 @@ def splituser(host):
         _userprog = re.compile('^(.*)@(.*)$')
 
     match = _userprog.match(host)
-    if match: return map(unquote, match.group(1, 2))
+    if match: return match.group(1, 2)
     return None, host
 
 _passwdprog = None
