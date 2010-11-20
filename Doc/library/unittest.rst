@@ -8,6 +8,8 @@
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 .. sectionauthor:: Raymond Hettinger <python@rcn.com>
 
+(If you are already familiar with the basic concepts of testing, you might want
+to skip to :ref:`the list of assert methods <assert-methods>`.)
 
 The Python unit testing framework, sometimes referred to as "PyUnit," is a
 Python language version of JUnit, by Kent Beck and Erich Gamma. JUnit is, in
@@ -776,7 +778,7 @@ Test cases
       by the test to be propagated to the caller, and can be used to support
       running tests under a debugger.
 
-
+   .. _assert-methods:
 
    The :class:`TestCase` class provides a number of methods to check for and
    report failures, such as:
@@ -821,6 +823,10 @@ Test cases
    | <TestCase.assertNotIsInstance>`         |                             |               |
    +-----------------------------------------+-----------------------------+---------------+
 
+   All the assert methods (except :meth:`assertRaises`,
+   :meth:`assertRaisesRegexp`, :meth:`assertWarns`, :meth:`assertWarnsRegexp`)
+   accept a *msg* argument that, if specified, is used as the error message on
+   failure (see also :data:`longMessage`).
 
    .. method:: assertEqual(first, second, msg=None)
 
@@ -831,9 +837,8 @@ Test cases
       list, tuple, dict, set, frozenset or str or any type that a subclass
       registers with :meth:`addTypeEqualityFunc` the type specific equality
       function will be called in order to generate a more useful default
-      error message.
-
-      If specified, *msg* will be used as the error message on failure.
+      error message (see also the :ref:`list of type-specific methods
+      <type-specific-methods>`).
 
       .. versionchanged:: 3.1
          Added the automatic calling of type specific equality function.
@@ -1145,9 +1150,29 @@ Test cases
       .. deprecated:: 3.2
 
 
+   .. _type-specific-methods:
 
-   The following methods are used automatically by :meth:`~TestCase.assertEqual`
-   and usually is not necessary to invoke them directly:
+   The :meth:`assertEqual` method dispatches the equality check for objects of
+   the same type to different type-specific methods.  These methods are already
+   implemented for most of the built-in types, but it's also possible to
+   register new methods using :meth:`addTypeEqualityFunc`:
+
+   .. method:: addTypeEqualityFunc(typeobj, function)
+
+      Registers a type-specific method called by :meth:`assertEqual` to check
+      if two objects of exactly the same *typeobj* (not subclasses) compare
+      equal.  *function* must take two positional arguments and a third msg=None
+      keyword argument just as :meth:`assertEqual` does.  It must raise
+      :data:`self.failureException(msg) <failureException>` when inequality
+      between the first two parameters is detected -- possibly providing useful
+      information and explaining the inequalities in details in the error
+      message.
+
+      .. versionadded:: 3.1
+
+   The list of type-specific methods automatically used by
+   :meth:`~TestCase.assertEqual` are summarized in the following table.  Note
+   that it's usually not necessary to invoke these methods directly.
 
    +-----------------------------------------+-----------------------------+--------------+
    | Method                                  | Used to compare             | New in       |
@@ -1190,7 +1215,8 @@ Test cases
       be raised.  If the sequences are different an error message is
       constructed that shows the difference between the two.
 
-      This method is used to implement :meth:`assertListEqual` and
+      This method is not called directly by :meth:`assertEqual`, but
+      it's used to implement :meth:`assertListEqual` and
       :meth:`assertTupleEqual`.
 
       .. versionadded:: 3.1
@@ -1231,6 +1257,8 @@ Test cases
 
 
 
+   .. _other-methods-and-attrs:
+
    Finally the :class:`TestCase` provides the following methods and attributes:
 
 
@@ -1252,11 +1280,12 @@ Test cases
    .. attribute:: longMessage
 
       If set to True then any explicit failure message you pass in to the
-      assert methods will be appended to the end of the normal failure message.
-      The normal messages contain useful information about the objects involved,
-      for example the message from assertEqual shows you the repr of the two
-      unequal objects. Setting this attribute to True allows you to have a
-      custom error message in addition to the normal one.
+      :ref:`assert methods <assert-methods>` will be appended to the end of the
+      normal failure message.  The normal messages contain useful information
+      about the objects involved, for example the message from assertEqual
+      shows you the repr of the two unequal objects. Setting this attribute
+      to True allows you to have a custom error message in addition to the
+      normal one.
 
       This attribute defaults to False, meaning that a custom message passed
       to an assert method will silence the normal message.
@@ -1321,22 +1350,6 @@ Test cases
          even in the presence of a docstring. This caused compatibility issues
          with unittest extensions and adding the test name was moved to the
          :class:`TextTestResult`.
-
-   .. method:: addTypeEqualityFunc(typeobj, function)
-
-      Registers a type specific :meth:`assertEqual` equality checking
-      function to be called by :meth:`assertEqual` when both objects it has
-      been asked to compare are exactly *typeobj* (not subclasses).
-      *function* must take two positional arguments and a third msg=None
-      keyword argument just as :meth:`assertEqual` does.  It must raise
-      ``self.failureException`` when inequality between the first two
-      parameters is detected.
-
-      One good use of custom equality checking functions for a type
-      is to raise ``self.failureException`` with an error message useful
-      for debugging the problem by explaining the inequalities in detail.
-
-      .. versionadded:: 3.1
 
 
    .. method:: addCleanup(function, *args, **kwargs)
