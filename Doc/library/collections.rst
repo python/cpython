@@ -586,11 +586,15 @@ they add the ability to access fields by name instead of position index.
    .. versionchanged:: 3.1
       Added support for *rename*.
 
-Example:
 
 .. doctest::
    :options: +NORMALIZE_WHITESPACE
 
+   >>> # Basic example
+   >>> Point = namedtuple('Point', 'x y')
+   >>> p = Point(x=10, y=11)
+
+   >>> # Example using the verbose option to print the class definition
    >>> Point = namedtuple('Point', 'x y', verbose=True)
    class Point(tuple):
            'Point(x, y)'
