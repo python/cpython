@@ -587,6 +587,8 @@ but avoids executing code when it fetches attributes.
    that raise AttributeError). It can also return descriptors objects
    instead of instance members.
 
+   .. versionadded:: 3.2
+
 The only known case that can cause `getattr_static` to trigger code execution,
 and cause it to return incorrect results (or even break), is where a class uses
 :data:`~object.__slots__` and provides a `__dict__` member using a property or
@@ -621,6 +623,7 @@ code execution::
            # have to do
            pass
 
+
 Current State of a Generator
 ----------------------------
 
@@ -640,5 +643,4 @@ generator to be determined easily.
       GEN_SUSPENDED: Currently suspended at a yield expression.
       GEN_CLOSED: Execution has completed.
 
-
-
+   .. versionadded:: 3.2
