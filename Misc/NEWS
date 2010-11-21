@@ -32,6 +32,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #3709: BaseHTTPRequestHandler will buffer the headers and write to
+  output stream only when end_headers is invoked. This is a speedup and an
+  internal optimization.  Patch by endian.
+
 - Issue #10220: Added inspect.getgeneratorstate. Initial patch by
   Rodolpho Eckhardt.
 
