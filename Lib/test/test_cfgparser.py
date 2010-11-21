@@ -146,22 +146,6 @@ class BasicTestCase(CfgParserTestCaseClass):
         if self.allow_no_value:
             eq(cf['NoValue']['option-without-value'], None)
 
-        # API access
-        self.assertNotIn('__name__', cf.options("Foo Bar"),
-                         '__name__ "option" should not be exposed by the API!')
-
-        # mapping access
-        self.assertNotIn('__name__', cf['Foo Bar'],
-                         '__name__ "option" should not be exposed by '
-                         'mapping protocol access')
-        self.assertFalse('__name__' in cf['Foo Bar'])
-        with self.assertRaises(ValueError):
-            cf['Foo Bar']['__name__']
-        with self.assertRaises(ValueError):
-            del cf['Foo Bar']['__name__']
-        with self.assertRaises(ValueError):
-            cf['Foo Bar']['__name__'] = "can't write to this special name"
-
         # Make sure the right things happen for remove_option();
         # added to include check for SourceForge bug #123324:
 
@@ -640,17 +624,15 @@ boolean {0[0]} NO
             "bar{equals}%(foo)s\n"
             "\n"
             "[Interpolation Error]\n"
-            "name{equals}%(reference)s\n".format(equals=self.delimiters[0]),
             # no definition for 'reference'
-            defaults={"getname": "%(__name__)s"})
+            "name{equals}%(reference)s\n".format(equals=self.delimiters[0]))
 
     def check_items_config(self, expected):
         cf = self.fromstring(
             "[section]\n"
             "name {0[0]} value\n"
             "key{0[1]} |%(name)s| \n"
-            "getdefault{0[1]} |%(default)s|\n"
-            "getname{0[1]} |%(__name__)s|".format(self.delimiters),
+            "getdefault{0[1]} |%(default)s|\n".format(self.delimiters),
             defaults={"default": "<default>"})
         L = list(cf.items("section"))
         L.sort()
@@ -673,7 +655,6 @@ class ConfigParserTestCase(BasicTestCase):
         }
         cf = self.get_interpolation_config()
         eq = self.assertEqual
-        eq(cf.get("Foo", "getname"), "Foo")
         eq(cf.get("Foo", "bar"), "something with interpolation (1 step)")
         eq(cf.get("Foo", "bar9"),
            "something with lots of interpolation (9 steps)")
@@ -699,7 +680,6 @@ class ConfigParserTestCase(BasicTestCase):
     def test_items(self):
         self.check_items_config([('default', '<default>'),
                                  ('getdefault', '|<default>|'),
-                                 ('getname', '|section|'),
                                  ('key', '|value|'),
                                  ('name', 'value')])
 
@@ -765,7 +745,6 @@ class RawConfigParserTestCase(BasicTestCase):
     def test_interpolation(self):
         cf = self.get_interpolation_config()
         eq = self.assertEqual
-        eq(cf.get("Foo", "getname"), "%(__name__)s")
         eq(cf.get("Foo", "bar"),
            "something %(with1)s interpolation (1 step)")
         eq(cf.get("Foo", "bar9"),
@@ -778,7 +757,6 @@ class RawConfigParserTestCase(BasicTestCase):
     def test_items(self):
         self.check_items_config([('default', '<default>'),
                                  ('getdefault', '|%(default)s|'),
-                                 ('getname', '|%(__name__)s|'),
                                  ('key', '|%(name)s|'),
                                  ('name', 'value')])
 

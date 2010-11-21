@@ -29,8 +29,7 @@ ConfigParser -- responsible for parsing a list of
              strict=False, empty_lines_in_values=True):
         Create the parser. When `defaults' is given, it is initialized into the
         dictionary or intrinsic defaults. The keys must be strings, the values
-        must be appropriate for %()s string interpolation. Note that `__name__'
-        is always an intrinsic default; its value is the section's name.
+        must be appropriate for %()s string interpolation.
 
         When `dict_type' is given, it will be used to create the dictionary
         objects for the list of sections, for the options within a section, and
@@ -474,8 +473,6 @@ class RawConfigParser(MutableMapping):
         except KeyError:
             raise NoSectionError(section)
         opts.update(self._defaults)
-        if '__name__' in opts:
-            del opts['__name__']
         return list(opts.keys())
 
     def read(self, filenames, encoding=None):
@@ -593,8 +590,6 @@ class RawConfigParser(MutableMapping):
             d2 = self._dict()
         d = self._defaults.copy()
         d.update(d2)
-        if "__name__" in d:
-            del d["__name__"]
         return d.items()
 
     def _get(self, section, conv, option, **kwargs):
@@ -675,8 +670,6 @@ class RawConfigParser(MutableMapping):
         """Write a single section to the specified `fp'."""
         fp.write("[{}]\n".format(section_name))
         for key, value in section_items:
-            if key == "__name__":
-                continue
             if value is not None or not self._allow_no_value:
                 value = delimiter + str(value).replace('\n', '\n\t')
             else:
@@ -812,7 +805,6 @@ class RawConfigParser(MutableMapping):
                         cursect = self._defaults
                     else:
                         cursect = self._dict()
-                        cursect['__name__'] = sectname
                         self._sections[sectname] = cursect
                         self._proxies[sectname] = SectionProxy(self, sectname)
                         elements_added.add(sectname)
@@ -1008,8 +1000,6 @@ class ConfigParser(RawConfigParser):
             for key, value in vars.items():
                 d[self.optionxform(key)] = value
         options = list(d.keys())
-        if "__name__" in options:
-            options.remove("__name__")
         if raw:
             return [(option, d[option])
                     for option in options]
@@ -1112,9 +1102,6 @@ class SafeConfigParser(ConfigParser):
 class SectionProxy(MutableMapping):
     """A proxy for a single section from a parser."""
 
-    _noname = ("__name__ special key access and modification "
-               "not supported through the mapping interface.")
-
     def __init__(self, parser, section_name):
         """Creates a view on a section named `section_name` in `parser`."""
         self._parser = parser
@@ -1130,37 +1117,27 @@ class SectionProxy(MutableMapping):
         return '<Section: {}>'.format(self._section)
 
     def __getitem__(self, key):
-        if key == '__name__':
-            raise ValueError(self._noname)
         if not self._parser.has_option(self._section, key):
             raise KeyError(key)
         return self._parser.get(self._section, key)
 
     def __setitem__(self, key, value):
-        if key == '__name__':
-            raise ValueError(self._noname)
         self._parser._validate_value_type(value)
         return self._parser.set(self._section, key, value)
 
     def __delitem__(self, key):
-        if key == '__name__':
-            raise ValueError(self._noname)
         if not self._parser.has_option(self._section, key):
             raise KeyError(key)
         return self._parser.remove_option(self._section, key)
 
     def __contains__(self, key):
-        if key == '__name__':
-            return False
         return self._parser.has_option(self._section, key)
 
     def __len__(self):
-        # __name__ is properly hidden by .options()
         # XXX weak performance
         return len(self._parser.options(self._section))
 
     def __iter__(self):
-        # __name__ is properly hidden by .options()
         # XXX weak performance
         # XXX does not break when underlying container state changed
         return self._parser.options(self._section).__iter__()

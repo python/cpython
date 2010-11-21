@@ -333,10 +333,6 @@ However, there are a few differences that should be taken into account:
 
 The mapping protocol is implemented on top of the existing legacy API so that
 subclassing the original interface makes the mappings work as expected as well.
-One difference is the explicit lack of support for the ``'__name__'`` special
-key.  This is because the existing behavior of ``'__name__'`` is very
-inconsistent and supporting it would only lead to problems.  Details `here
-<http://mail.python.org/pipermail/python-dev/2010-July/102556.html>`_.
 
 
 Customizing Parser Behaviour
@@ -947,8 +943,7 @@ The :class:`ConfigParser` class extends some methods of the
    need interpolation.
 
    The values in *defaults* must be appropriate for the ``%()s`` string
-   interpolation.  Note that ``'__name__'`` is an intrinsic default; its value
-   is the section name, and will override any value provided in *defaults*.
+   interpolation.
 
    All option names used in interpolation will be passed through the
    :meth:`optionxform` method just like any other option name reference.  For
