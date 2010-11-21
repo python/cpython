@@ -18,7 +18,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
         def assertFalse(self, expr, msg=None) :
             return self.failIf(expr,msg=msg)
         def assertTrue(self, expr, msg=None) :
-            return self.assert_(expr, msg=msg)
+            return self.assertTrue(expr, msg=msg)
 
     if (sys.version_info < (2, 7)) or ((sys.version_info >= (3, 0)) and
             (sys.version_info < (3, 2))) :

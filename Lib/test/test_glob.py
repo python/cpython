@@ -59,8 +59,8 @@ class GlobTests(unittest.TestCase):
         if set(type(x) for x in tmp) == uniset:
             u1 = glob.glob(u'*')
             u2 = glob.glob(u'./*')
-            self.assertEquals(set(type(r) for r in u1), uniset)
-            self.assertEquals(set(type(r) for r in u2), uniset)
+            self.assertEqual(set(type(r) for r in u1), uniset)
+            self.assertEqual(set(type(r) for r in u2), uniset)
 
     def test_glob_one_directory(self):
         eq = self.assertSequencesEqual_noorder

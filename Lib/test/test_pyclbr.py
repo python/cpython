@@ -97,7 +97,7 @@ class PyclbrTest(TestCase):
                 self.assertIsInstance(py_item, (FunctionType, BuiltinFunctionType))
                 if py_item.__module__ != moduleName:
                     continue   # skip functions that came from somewhere else
-                self.assertEquals(py_item.__module__, value.module)
+                self.assertEqual(py_item.__module__, value.module)
             else:
                 self.assertIsInstance(py_item, (ClassType, type))
                 if py_item.__module__ != moduleName:
@@ -126,7 +126,7 @@ class PyclbrTest(TestCase):
 
                 try:
                     self.assertListEq(foundMethods, actualMethods, ignore)
-                    self.assertEquals(py_item.__module__, value.module)
+                    self.assertEqual(py_item.__module__, value.module)
 
                     self.assertEqualsOrIgnored(py_item.__name__, value.name,
                                                ignore)

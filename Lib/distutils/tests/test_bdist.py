@@ -25,7 +25,7 @@ class BuildTestCase(support.TempdirManager,
         cmd = bdist(dist)
         cmd.formats = ['msi']
         cmd.ensure_finalized()
-        self.assertEquals(cmd.formats, ['msi'])
+        self.assertEqual(cmd.formats, ['msi'])
 
         # what format bdist offers ?
         # XXX an explicit list in bdist is
@@ -36,7 +36,7 @@ class BuildTestCase(support.TempdirManager,
         formats.sort()
         founded = cmd.format_command.keys()
         founded.sort()
-        self.assertEquals(founded, formats)
+        self.assertEqual(founded, formats)
 
 def test_suite():
     return unittest.makeSuite(BuildTestCase)

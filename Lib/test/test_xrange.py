@@ -101,8 +101,8 @@ class XrangeTest(unittest.TestCase):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             for t in testcases:
                 r = xrange(*t)
-                self.assertEquals(list(pickle.loads(pickle.dumps(r, proto))),
-                                  list(r))
+                self.assertEqual(list(pickle.loads(pickle.dumps(r, proto))),
+                                 list(r))
 
     def test_range_iterators(self):
         # see issue 7298

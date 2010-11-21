@@ -37,12 +37,12 @@ class pget_bugTestCase(unittest.TestCase):
     def test_pget(self):
         cursor = self.secondary_db.cursor()
 
-        self.assertEquals(('eggs', 'salad', 'eggs'), cursor.pget(key='eggs', flags=db.DB_SET))
-        self.assertEquals(('eggs', 'omelet', 'eggs'), cursor.pget(db.DB_NEXT_DUP))
-        self.assertEquals(None, cursor.pget(db.DB_NEXT_DUP))
+        self.assertEqual(('eggs', 'salad', 'eggs'), cursor.pget(key='eggs', flags=db.DB_SET))
+        self.assertEqual(('eggs', 'omelet', 'eggs'), cursor.pget(db.DB_NEXT_DUP))
+        self.assertEqual(None, cursor.pget(db.DB_NEXT_DUP))
 
-        self.assertEquals(('ham', 'spam', 'ham'), cursor.pget('ham', 'spam', flags=db.DB_SET))
-        self.assertEquals(None, cursor.pget(db.DB_NEXT_DUP))
+        self.assertEqual(('ham', 'spam', 'ham'), cursor.pget('ham', 'spam', flags=db.DB_SET))
+        self.assertEqual(None, cursor.pget(db.DB_NEXT_DUP))
 
         cursor.close()
 

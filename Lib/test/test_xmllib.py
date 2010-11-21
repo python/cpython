@@ -36,9 +36,9 @@ class XMLParserTestCase(unittest.TestCase):
         h.feed(nsdoc)
         h.close()
         # The default namespace applies to elements...
-        self.assertEquals(h.name, "URI foo")
+        self.assertEqual(h.name, "URI foo")
         # but not to attributes
-        self.assertEquals(h.attr, {'attr':'val'})
+        self.assertEqual(h.attr, {'attr':'val'})
 
 
 def test_main():

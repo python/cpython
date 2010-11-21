@@ -804,8 +804,8 @@ class TestCase(object):
             self.fail(self._formatMessage(msg, standardMsg))
 
     def assertDictEqual(self, d1, d2, msg=None):
-        self.assert_(isinstance(d1, dict), 'First argument is not a dictionary')
-        self.assert_(isinstance(d2, dict), 'Second argument is not a dictionary')
+        self.assertIsInstance(d1, dict, 'First argument is not a dictionary')
+        self.assertIsInstance(d2, dict, 'Second argument is not a dictionary')
 
         if d1 != d2:
             standardMsg = '%s != %s' % (safe_repr(d1, True), safe_repr(d2, True))
@@ -889,10 +889,10 @@ class TestCase(object):
 
     def assertMultiLineEqual(self, first, second, msg=None):
         """Assert that two multi-line strings are equal."""
-        self.assert_(isinstance(first, basestring), (
-                'First argument is not a string'))
-        self.assert_(isinstance(second, basestring), (
-                'Second argument is not a string'))
+        self.assertIsInstance(first, basestring,
+                'First argument is not a string')
+        self.assertIsInstance(second, basestring,
+                'Second argument is not a string')
 
         if first != second:
             firstlines = first.splitlines(True)

@@ -38,11 +38,11 @@ class HTMLParserTestCase(unittest.TestCase):
             <a name='frob'> </a>
             """)
         parser.close()
-        self.assertEquals(parser.get_anchor_info(),
-                          [('http://foo.org/', 'splat', ''),
-                           ('http://www.python.org/', '', ''),
-                           ('', 'frob', ''),
-                           ])
+        self.assertEqual(parser.get_anchor_info(),
+                         [('http://foo.org/', 'splat', ''),
+                          ('http://www.python.org/', '', ''),
+                          ('', 'frob', ''),
+                          ])
 
     def test_decl_collection(self):
         # See SF patch #545300
@@ -56,10 +56,10 @@ class HTMLParserTestCase(unittest.TestCase):
             </html>
             """)
         parser.close()
-        self.assertEquals(parser.get_decl_info(),
-                          ["if !supportEmptyParas",
-                           "endif"
-                           ])
+        self.assertEqual(parser.get_decl_info(),
+                         ["if !supportEmptyParas",
+                          "endif"
+                          ])
 
 def test_main():
     test_support.run_unittest(HTMLParserTestCase)

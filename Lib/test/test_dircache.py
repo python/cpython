@@ -35,7 +35,7 @@ class DircacheTests(unittest.TestCase):
     def test_listdir(self):
         ## SUCCESSFUL CASES
         entries = dircache.listdir(self.tempdir)
-        self.assertEquals(entries, [])
+        self.assertEqual(entries, [])
 
         # Check that cache is actually caching, not just passing through.
         self.assertTrue(dircache.listdir(self.tempdir) is entries)
@@ -52,7 +52,7 @@ class DircacheTests(unittest.TestCase):
             time.sleep(1)
             self.writeTemp("test1")
             entries = dircache.listdir(self.tempdir)
-            self.assertEquals(entries, ['test1'])
+            self.assertEqual(entries, ['test1'])
             self.assertTrue(dircache.listdir(self.tempdir) is entries)
 
         ## UNSUCCESSFUL CASES
@@ -63,7 +63,7 @@ class DircacheTests(unittest.TestCase):
         self.mkdirTemp("A")
         lst = ['A', 'test2', 'test_nonexistent']
         dircache.annotate(self.tempdir, lst)
-        self.assertEquals(lst, ['A/', 'test2', 'test_nonexistent'])
+        self.assertEqual(lst, ['A/', 'test2', 'test_nonexistent'])
 
 
 def test_main():

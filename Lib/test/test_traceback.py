@@ -185,11 +185,11 @@ class TracebackFormatTests(unittest.TestCase):
             raise Error("unable to create test traceback string")
 
         # Make sure that Python and the traceback module format the same thing
-        self.assertEquals(traceback_fmt, python_fmt)
+        self.assertEqual(traceback_fmt, python_fmt)
 
         # Make sure that the traceback is properly indented.
         tb_lines = python_fmt.splitlines()
-        self.assertEquals(len(tb_lines), 3)
+        self.assertEqual(len(tb_lines), 3)
         banner, location, source_line = tb_lines
         self.assertTrue(banner.startswith('Traceback'))
         self.assertTrue(location.startswith('  File'))

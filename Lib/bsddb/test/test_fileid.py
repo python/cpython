@@ -35,11 +35,11 @@ class FileidResetTestCase(unittest.TestCase):
 
         self.db1 = db.DB(self.db_env)
         self.db1.open(self.db_path_1, dbtype=db.DB_HASH, flags=db.DB_RDONLY)
-        self.assertEquals(self.db1.get('spam'), 'eggs')
+        self.assertEqual(self.db1.get('spam'), 'eggs')
 
         self.db2 = db.DB(self.db_env)
         self.db2.open(self.db_path_2, dbtype=db.DB_HASH, flags=db.DB_RDONLY)
-        self.assertEquals(self.db2.get('spam'), 'spam')
+        self.assertEqual(self.db2.get('spam'), 'spam')
 
         self.db1.close()
         self.db2.close()

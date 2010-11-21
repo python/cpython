@@ -203,10 +203,10 @@ class BasicSignalTests(unittest.TestCase):
 
     def test_getsignal(self):
         hup = signal.signal(signal.SIGHUP, self.trivial_signal_handler)
-        self.assertEquals(signal.getsignal(signal.SIGHUP),
-                          self.trivial_signal_handler)
+        self.assertEqual(signal.getsignal(signal.SIGHUP),
+                         self.trivial_signal_handler)
         signal.signal(signal.SIGHUP, hup)
-        self.assertEquals(signal.getsignal(signal.SIGHUP), hup)
+        self.assertEqual(signal.getsignal(signal.SIGHUP), hup)
 
 
 @unittest.skipUnless(sys.platform == "win32", "Windows specific")
@@ -456,9 +456,9 @@ class ItimerTest(unittest.TestCase):
                           "high")
 
         # virtual itimer should be (0.0, 0.0) now
-        self.assertEquals(signal.getitimer(self.itimer), (0.0, 0.0))
+        self.assertEqual(signal.getitimer(self.itimer), (0.0, 0.0))
         # and the handler should have been called
-        self.assertEquals(self.hndl_called, True)
+        self.assertEqual(self.hndl_called, True)
 
     # Issue 3864. Unknown if this affects earlier versions of freebsd also.
     @unittest.skipIf(sys.platform=='freebsd6',
@@ -479,7 +479,7 @@ class ItimerTest(unittest.TestCase):
                           "high")
 
         # profiling itimer should be (0.0, 0.0) now
-        self.assertEquals(signal.getitimer(self.itimer), (0.0, 0.0))
+        self.assertEqual(signal.getitimer(self.itimer), (0.0, 0.0))
         # and the handler should have been called
         self.assertEqual(self.hndl_called, True)
 

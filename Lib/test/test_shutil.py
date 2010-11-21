@@ -431,7 +431,7 @@ class TestShutil(unittest.TestCase):
 
         self.assertTrue(os.path.exists(tarball2))
         # let's compare both tarballs
-        self.assertEquals(self._tarinfo(tarball), self._tarinfo(tarball2))
+        self.assertEqual(self._tarinfo(tarball), self._tarinfo(tarball2))
 
         # trying an uncompressed one
         base_name = os.path.join(tmpdir2, 'archive')
@@ -525,8 +525,8 @@ class TestShutil(unittest.TestCase):
         archive = tarfile.open(archive_name)
         try:
             for member in archive.getmembers():
-                self.assertEquals(member.uid, 0)
-                self.assertEquals(member.gid, 0)
+                self.assertEqual(member.uid, 0)
+                self.assertEqual(member.gid, 0)
         finally:
             archive.close()
 
@@ -541,7 +541,7 @@ class TestShutil(unittest.TestCase):
                 make_archive('xxx', 'xxx', root_dir=self.mkdtemp())
             except Exception:
                 pass
-            self.assertEquals(os.getcwd(), current_dir)
+            self.assertEqual(os.getcwd(), current_dir)
         finally:
             unregister_archive_format('xxx')
 

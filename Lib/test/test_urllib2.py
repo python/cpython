@@ -45,7 +45,7 @@ class TrivialTests(unittest.TestCase):
                  ('a, b, "c", "d", "e,f", g, h', ['a', 'b', '"c"', '"d"', '"e,f"', 'g', 'h']),
                  ('a="b\\"c", d="e\\,f", g="h\\\\i"', ['a="b"c"', 'd="e,f"', 'g="h\\i"'])]
         for string, list in tests:
-            self.assertEquals(urllib2.parse_http_list(string), list)
+            self.assertEqual(urllib2.parse_http_list(string), list)
 
 
 def test_request_headers_dict():
@@ -872,7 +872,7 @@ class HandlerTests(unittest.TestCase):
         r = MockResponse(200, "OK", {}, "")
         newreq = h.http_request(req)
         self.assertTrue(cj.ach_req is req is newreq)
-        self.assertEquals(req.get_origin_req_host(), "example.com")
+        self.assertEqual(req.get_origin_req_host(), "example.com")
         self.assertTrue(not req.is_unverifiable())
         newr = h.http_response(req, r)
         self.assertTrue(cj.ec_req is req)
