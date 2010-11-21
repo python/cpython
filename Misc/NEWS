@@ -172,9 +172,6 @@ Library
 
 - Issue #10465: fix broken delegating of attributes by gzip._PaddedFile.
 
-- Issue #10356: hash(Decimal("sNaN")) now raises ValueError instead of
-  TypeError.
-
 - Issue #10356: Decimal.__hash__(-1) should return -2.
 
 - Issue #1553375: logging: Added stack_info kwarg to display stack information.
