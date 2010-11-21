@@ -1128,3 +1128,23 @@ def getattr_static(obj, attr, default=_sentinel):
     if default is not _sentinel:
         return default
     raise AttributeError(attr)
+
+
+GEN_CREATED, GEN_RUNNING, GEN_SUSPENDED, GEN_CLOSED = range(4)
+
+def getgeneratorstate(generator):
+    """Get current state of a generator-iterator.
+
+    Possible states are:
+      GEN_CREATED: Waiting to start execution.
+      GEN_RUNNING: Currently being executed by the interpreter.
+      GEN_SUSPENDED: Currently suspended at a yield expression.
+      GEN_CLOSED: Execution has completed.
+    """
+    if generator.gi_running:
+        return GEN_RUNNING
+    if generator.gi_frame is None:
+        return GEN_CLOSED
+    if generator.gi_frame.f_lasti == -1:
+        return GEN_CREATED
+    return GEN_SUSPENDED

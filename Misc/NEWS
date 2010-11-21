@@ -32,6 +32,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10220: Added inspect.getgeneratorstate. Initial patch by
+  Rodolpho Eckhardt.
+
 - Issue #10453: compileall now uses argparse instead of getopt, and thus
   provides clean output when called with '-h'.
 
