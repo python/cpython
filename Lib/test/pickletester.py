@@ -564,7 +564,7 @@ class AbstractPickleTests(unittest.TestCase):
 
     def test_get(self):
         self.assertRaises(KeyError, self.loads, b'g0\np0')
-        self.assertEquals(self.loads(b'((Kdtp0\nh\x00l.))'), [(100,), (100,)])
+        self.assertEqual(self.loads(b'((Kdtp0\nh\x00l.))'), [(100,), (100,)])
 
     def test_insecure_strings(self):
         # XXX Some of these tests are temporarily disabled

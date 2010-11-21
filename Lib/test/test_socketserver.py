@@ -57,8 +57,8 @@ def simple_subprocess(testcase):
         os._exit(72)
     yield None
     pid2, status = os.waitpid(pid, 0)
-    testcase.assertEquals(pid2, pid)
-    testcase.assertEquals(72 << 8, status)
+    testcase.assertEqual(pid2, pid)
+    testcase.assertEqual(72 << 8, status)
 
 
 @unittest.skipUnless(threading, 'Threading required for this test.')
@@ -120,7 +120,7 @@ class SocketServerTest(unittest.TestCase):
 
         if verbose: print("creating server")
         server = MyServer(addr, MyHandler)
-        self.assertEquals(server.server_address, server.socket.getsockname())
+        self.assertEqual(server.server_address, server.socket.getsockname())
         return server
 
     def run_server(self, svrcls, hdlrbase, testfunc):
@@ -159,7 +159,7 @@ class SocketServerTest(unittest.TestCase):
         while data and b'\n' not in buf:
             data = receive(s, 100)
             buf += data
-        self.assertEquals(buf, TEST_STR)
+        self.assertEqual(buf, TEST_STR)
         s.close()
 
     def dgram_examine(self, proto, addr):
@@ -169,7 +169,7 @@ class SocketServerTest(unittest.TestCase):
         while data and b'\n' not in buf:
             data = receive(s, 100)
             buf += data
-        self.assertEquals(buf, TEST_STR)
+        self.assertEqual(buf, TEST_STR)
         s.close()
 
     def test_TCPServer(self):

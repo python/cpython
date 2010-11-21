@@ -40,7 +40,7 @@ class ModuleTests(unittest.TestCase):
                          sqlite.paramstyle)
 
     def CheckWarning(self):
-        self.assert_(issubclass(sqlite.Warning, Exception),
+        self.assertTrue(issubclass(sqlite.Warning, Exception),
                      "Warning is not a subclass of Exception")
 
     def CheckError(self):

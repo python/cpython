@@ -425,13 +425,13 @@ class TestTypeAliases(BaseTest):
 
     def test_str_aliases_string(self):
         self.parser.add_option("-s", type="str")
-        self.assertEquals(self.parser.get_option("-s").type, "string")
+        self.assertEqual(self.parser.get_option("-s").type, "string")
 
     def test_type_object(self):
         self.parser.add_option("-s", type=str)
-        self.assertEquals(self.parser.get_option("-s").type, "string")
+        self.assertEqual(self.parser.get_option("-s").type, "string")
         self.parser.add_option("-x", type=int)
-        self.assertEquals(self.parser.get_option("-x").type, "int")
+        self.assertEqual(self.parser.get_option("-x").type, "int")
 
 
 # Custom type for testing processing of default values.

@@ -71,7 +71,7 @@ class SysconfigTestCase(support.EnvironGuard,
 
         comp = compiler()
         sysconfig.customize_compiler(comp)
-        self.assertEquals(comp.exes['archiver'], 'my_ar -arflags')
+        self.assertEqual(comp.exes['archiver'], 'my_ar -arflags')
 
     def test_parse_makefile_base(self):
         self.makefile = TESTFN
@@ -82,7 +82,7 @@ class SysconfigTestCase(support.EnvironGuard,
         finally:
             fd.close()
         d = sysconfig.parse_makefile(self.makefile)
-        self.assertEquals(d, {'CONFIG_ARGS': "'--arg1=optarg1' 'ENV=LIB'",
+        self.assertEqual(d, {'CONFIG_ARGS': "'--arg1=optarg1' 'ENV=LIB'",
                               'OTHER': 'foo'})
 
     def test_parse_makefile_literal_dollar(self):
@@ -94,8 +94,8 @@ class SysconfigTestCase(support.EnvironGuard,
         finally:
             fd.close()
         d = sysconfig.parse_makefile(self.makefile)
-        self.assertEquals(d, {'CONFIG_ARGS': r"'--arg1=optarg1' 'ENV=\$LIB'",
-                              'OTHER': 'foo'})
+        self.assertEqual(d, {'CONFIG_ARGS': r"'--arg1=optarg1' 'ENV=\$LIB'",
+                             'OTHER': 'foo'})
 
 
 def test_suite():

@@ -2926,7 +2926,7 @@ class Test_Assertions(TestCase):
         try:
             self.assertRaises(KeyError, lambda: None)
         except self.failureException as e:
-            self.assert_("KeyError not raised" in str(e), str(e))
+            self.assertIn("KeyError not raised", str(e))
         else:
             self.fail("assertRaises() didn't fail")
         try:
@@ -2943,7 +2943,7 @@ class Test_Assertions(TestCase):
             with self.assertRaises(KeyError):
                 pass
         except self.failureException as e:
-            self.assert_("KeyError not raised" in str(e), str(e))
+            self.assertIn("KeyError not raised", str(e))
         else:
             self.fail("assertRaises() didn't fail")
         try:
@@ -2982,11 +2982,11 @@ class TestLongMessage(TestCase):
         self.assertFalse(TestCase.longMessage)
 
     def test_formatMsg(self):
-        self.assertEquals(self.testableFalse._formatMessage(None, "foo"), "foo")
-        self.assertEquals(self.testableFalse._formatMessage("foo", "bar"), "foo")
+        self.assertEqual(self.testableFalse._formatMessage(None, "foo"), "foo")
+        self.assertEqual(self.testableFalse._formatMessage("foo", "bar"), "foo")
 
-        self.assertEquals(self.testableTrue._formatMessage(None, "foo"), "foo")
-        self.assertEquals(self.testableTrue._formatMessage("foo", "bar"), "bar : foo")
+        self.assertEqual(self.testableTrue._formatMessage(None, "foo"), "foo")
+        self.assertEqual(self.testableTrue._formatMessage("foo", "bar"), "bar : foo")
 
     def assertMessages(self, methodName, args, errors):
         def getMethod(i):

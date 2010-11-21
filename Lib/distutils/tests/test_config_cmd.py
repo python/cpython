@@ -34,7 +34,7 @@ class ConfigTestCase(support.LoggingSilencer,
             f.close()
 
         dump_file(this_file, 'I am the header')
-        self.assertEquals(len(self._logs), numlines+1)
+        self.assertEqual(len(self._logs), numlines+1)
 
     def test_search_cpp(self):
         if sys.platform == 'win32':
@@ -44,10 +44,10 @@ class ConfigTestCase(support.LoggingSilencer,
 
         # simple pattern searches
         match = cmd.search_cpp(pattern='xxx', body='// xxx')
-        self.assertEquals(match, 0)
+        self.assertEqual(match, 0)
 
         match = cmd.search_cpp(pattern='_configtest', body='// xxx')
-        self.assertEquals(match, 1)
+        self.assertEqual(match, 1)
 
     def test_finalize_options(self):
         # finalize_options does a bit of transformation
@@ -59,9 +59,9 @@ class ConfigTestCase(support.LoggingSilencer,
         cmd.library_dirs = 'three%sfour' % os.pathsep
         cmd.ensure_finalized()
 
-        self.assertEquals(cmd.include_dirs, ['one', 'two'])
-        self.assertEquals(cmd.libraries, ['one'])
-        self.assertEquals(cmd.library_dirs, ['three', 'four'])
+        self.assertEqual(cmd.include_dirs, ['one', 'two'])
+        self.assertEqual(cmd.libraries, ['one'])
+        self.assertEqual(cmd.library_dirs, ['three', 'four'])
 
     def test_clean(self):
         # _clean removes files

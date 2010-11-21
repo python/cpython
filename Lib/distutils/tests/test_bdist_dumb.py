@@ -68,7 +68,7 @@ class BuildDumbTestCase(support.TempdirManager,
             base = base.replace(':', '-')
 
         wanted = ['%s.zip' % base]
-        self.assertEquals(dist_created, wanted)
+        self.assertEqual(dist_created, wanted)
 
         # now let's check what we have in the zip file
         # XXX to be done

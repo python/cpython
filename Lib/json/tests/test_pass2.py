@@ -11,4 +11,4 @@ class TestPass2(TestCase):
         # test in/out equivalence and parsing
         res = json.loads(JSON)
         out = json.dumps(res)
-        self.assertEquals(res, json.loads(out))
+        self.assertEqual(res, json.loads(out))

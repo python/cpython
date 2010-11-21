@@ -220,7 +220,7 @@ Content-Disposition: form-data; name="submit"
 -----------------------------721837373350705526688164684--
 """
         fs = cgi.FieldStorage(fp=StringIO(postdata), environ=env)
-        self.assertEquals(len(fs.list), 4)
+        self.assertEqual(len(fs.list), 4)
         expect = [{'name':'id', 'filename':None, 'value':'1234'},
                   {'name':'title', 'filename':None, 'value':''},
                   {'name':'file', 'filename':'test.txt', 'value':'Testing 123.'},
@@ -228,7 +228,7 @@ Content-Disposition: form-data; name="submit"
         for x in range(len(fs.list)):
             for k, exp in expect[x].items():
                 got = getattr(fs.list[x], k)
-                self.assertEquals(got, exp)
+                self.assertEqual(got, exp)
 
     _qs_result = {
         'key1': 'value1',

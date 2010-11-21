@@ -118,7 +118,7 @@ class SliceTest(unittest.TestCase):
 
         x = X()
         x[1:2] = 42
-        self.assertEquals(tmp, [(slice(1, 2), 42)])
+        self.assertEqual(tmp, [(slice(1, 2), 42)])
 
     def test_pickle(self):
         s = slice(10, 20, 3)

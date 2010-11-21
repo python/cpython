@@ -341,8 +341,8 @@ class IEEEFormatTestCase(unittest.TestCase):
                 return -0.0, math.atan2(0.0, -1)
             def neg_neg():
                 return -0.0, math.atan2(-0.0, -1)
-            self.assertEquals(pos_pos(), neg_pos())
-            self.assertEquals(pos_neg(), neg_neg())
+            self.assertEqual(pos_pos(), neg_pos())
+            self.assertEqual(pos_neg(), neg_neg())
 
 class FormatTestCase(unittest.TestCase):
     def test_format(self):
@@ -415,9 +415,9 @@ class FormatTestCase(unittest.TestCase):
                 self.assertEqual(fmt % -float(arg), '-' + rhs)
 
     def test_issue5864(self):
-        self.assertEquals(format(123.456, '.4'), '123.5')
-        self.assertEquals(format(1234.56, '.4'), '1.235e+03')
-        self.assertEquals(format(12345.6, '.4'), '1.235e+04')
+        self.assertEqual(format(123.456, '.4'), '123.5')
+        self.assertEqual(format(1234.56, '.4'), '1.235e+03')
+        self.assertEqual(format(12345.6, '.4'), '1.235e+04')
 
 class ReprTestCase(unittest.TestCase):
     def test_repr(self):

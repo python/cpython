@@ -535,10 +535,10 @@ class TestCollectionABCs(ABCTestCase):
         # Test issue 9214
         mymap = UserDict()
         mymap['red'] = 5
-        self.assert_(isinstance(mymap.keys(), Set))
-        self.assert_(isinstance(mymap.keys(), KeysView))
-        self.assert_(isinstance(mymap.items(), Set))
-        self.assert_(isinstance(mymap.items(), ItemsView))
+        self.assertTrue(isinstance(mymap.keys(), Set))
+        self.assertTrue(isinstance(mymap.keys(), KeysView))
+        self.assertTrue(isinstance(mymap.items(), Set))
+        self.assertTrue(isinstance(mymap.items(), ItemsView))
 
         mymap = UserDict()
         mymap['red'] = 5
@@ -669,9 +669,9 @@ class TestCounter(unittest.TestCase):
                     ]):
             msg = (i, dup, words)
             self.assertTrue(dup is not words)
-            self.assertEquals(dup, words)
-            self.assertEquals(len(dup), len(words))
-            self.assertEquals(type(dup), type(words))
+            self.assertEqual(dup, words)
+            self.assertEqual(len(dup), len(words))
+            self.assertEqual(type(dup), type(words))
 
     def test_conversions(self):
         # Convert to: set, list, dict
@@ -879,10 +879,10 @@ class TestOrderedDict(unittest.TestCase):
                     OrderedDict(od),
                     ]):
             self.assertTrue(dup is not od)
-            self.assertEquals(dup, od)
-            self.assertEquals(list(dup.items()), list(od.items()))
-            self.assertEquals(len(dup), len(od))
-            self.assertEquals(type(dup), type(od))
+            self.assertEqual(dup, od)
+            self.assertEqual(list(dup.items()), list(od.items()))
+            self.assertEqual(len(dup), len(od))
+            self.assertEqual(type(dup), type(od))
 
     def test_yaml_linkage(self):
         # Verify that __reduce__ is setup in a way that supports PyYAML's dump() feature.

@@ -27,16 +27,16 @@ class XmlTestBase(unittest.TestCase):
         self.assertRaises(KeyError, attrs.getNameByQName, "attr")
         self.assertRaises(KeyError, attrs.getQNameByName, "attr")
         self.assertRaises(KeyError, attrs.__getitem__, "attr")
-        self.assertEquals(attrs.getLength(), 0)
-        self.assertEquals(attrs.getNames(), [])
-        self.assertEquals(attrs.getQNames(), [])
-        self.assertEquals(len(attrs), 0)
+        self.assertEqual(attrs.getLength(), 0)
+        self.assertEqual(attrs.getNames(), [])
+        self.assertEqual(attrs.getQNames(), [])
+        self.assertEqual(len(attrs), 0)
         self.assertFalse("attr" in attrs)
-        self.assertEquals(list(attrs.keys()), [])
-        self.assertEquals(attrs.get("attrs"), None)
-        self.assertEquals(attrs.get("attrs", 25), 25)
-        self.assertEquals(list(attrs.items()), [])
-        self.assertEquals(list(attrs.values()), [])
+        self.assertEqual(list(attrs.keys()), [])
+        self.assertEqual(attrs.get("attrs"), None)
+        self.assertEqual(attrs.get("attrs", 25), 25)
+        self.assertEqual(list(attrs.items()), [])
+        self.assertEqual(list(attrs.values()), [])
 
     def verify_empty_nsattrs(self, attrs):
         self.assertRaises(KeyError, attrs.getValue, (ns_uri, "attr"))
@@ -44,33 +44,33 @@ class XmlTestBase(unittest.TestCase):
         self.assertRaises(KeyError, attrs.getNameByQName, "ns:attr")
         self.assertRaises(KeyError, attrs.getQNameByName, (ns_uri, "attr"))
         self.assertRaises(KeyError, attrs.__getitem__, (ns_uri, "attr"))
-        self.assertEquals(attrs.getLength(), 0)
-        self.assertEquals(attrs.getNames(), [])
-        self.assertEquals(attrs.getQNames(), [])
-        self.assertEquals(len(attrs), 0)
+        self.assertEqual(attrs.getLength(), 0)
+        self.assertEqual(attrs.getNames(), [])
+        self.assertEqual(attrs.getQNames(), [])
+        self.assertEqual(len(attrs), 0)
         self.assertFalse((ns_uri, "attr") in attrs)
-        self.assertEquals(list(attrs.keys()), [])
-        self.assertEquals(attrs.get((ns_uri, "attr")), None)
-        self.assertEquals(attrs.get((ns_uri, "attr"), 25), 25)
-        self.assertEquals(list(attrs.items()), [])
-        self.assertEquals(list(attrs.values()), [])
+        self.assertEqual(list(attrs.keys()), [])
+        self.assertEqual(attrs.get((ns_uri, "attr")), None)
+        self.assertEqual(attrs.get((ns_uri, "attr"), 25), 25)
+        self.assertEqual(list(attrs.items()), [])
+        self.assertEqual(list(attrs.values()), [])
 
     def verify_attrs_wattr(self, attrs):
-        self.assertEquals(attrs.getLength(), 1)
-        self.assertEquals(attrs.getNames(), ["attr"])
-        self.assertEquals(attrs.getQNames(), ["attr"])
-        self.assertEquals(len(attrs), 1)
+        self.assertEqual(attrs.getLength(), 1)
+        self.assertEqual(attrs.getNames(), ["attr"])
+        self.assertEqual(attrs.getQNames(), ["attr"])
+        self.assertEqual(len(attrs), 1)
         self.assertTrue("attr" in attrs)
-        self.assertEquals(list(attrs.keys()), ["attr"])
-        self.assertEquals(attrs.get("attr"), "val")
-        self.assertEquals(attrs.get("attr", 25), "val")
-        self.assertEquals(list(attrs.items()), [("attr", "val")])
-        self.assertEquals(list(attrs.values()), ["val"])
-        self.assertEquals(attrs.getValue("attr"), "val")
-        self.assertEquals(attrs.getValueByQName("attr"), "val")
-        self.assertEquals(attrs.getNameByQName("attr"), "attr")
-        self.assertEquals(attrs["attr"], "val")
-        self.assertEquals(attrs.getQNameByName("attr"), "attr")
+        self.assertEqual(list(attrs.keys()), ["attr"])
+        self.assertEqual(attrs.get("attr"), "val")
+        self.assertEqual(attrs.get("attr", 25), "val")
+        self.assertEqual(list(attrs.items()), [("attr", "val")])
+        self.assertEqual(list(attrs.values()), ["val"])
+        self.assertEqual(attrs.getValue("attr"), "val")
+        self.assertEqual(attrs.getValueByQName("attr"), "val")
+        self.assertEqual(attrs.getNameByQName("attr"), "attr")
+        self.assertEqual(attrs["attr"], "val")
+        self.assertEqual(attrs.getQNameByName("attr"), "attr")
 
 class MakeParserTest(unittest.TestCase):
     def test_make_parser2(self):
@@ -100,46 +100,46 @@ class MakeParserTest(unittest.TestCase):
 class SaxutilsTest(unittest.TestCase):
     # ===== escape
     def test_escape_basic(self):
-        self.assertEquals(escape("Donald Duck & Co"), "Donald Duck &amp; Co")
+        self.assertEqual(escape("Donald Duck & Co"), "Donald Duck &amp; Co")
 
     def test_escape_all(self):
-        self.assertEquals(escape("<Donald Duck & Co>"),
-                          "&lt;Donald Duck &amp; Co&gt;")
+        self.assertEqual(escape("<Donald Duck & Co>"),
+                         "&lt;Donald Duck &amp; Co&gt;")
 
     def test_escape_extra(self):
-        self.assertEquals(escape("Hei på deg", {"å" : "&aring;"}),
-                          "Hei p&aring; deg")
+        self.assertEqual(escape("Hei på deg", {"å" : "&aring;"}),
+                         "Hei p&aring; deg")
 
     # ===== unescape
     def test_unescape_basic(self):
-        self.assertEquals(unescape("Donald Duck &amp; Co"), "Donald Duck & Co")
+        self.assertEqual(unescape("Donald Duck &amp; Co"), "Donald Duck & Co")
 
     def test_unescape_all(self):
-        self.assertEquals(unescape("&lt;Donald Duck &amp; Co&gt;"),
-                          "<Donald Duck & Co>")
+        self.assertEqual(unescape("&lt;Donald Duck &amp; Co&gt;"),
+                         "<Donald Duck & Co>")
 
     def test_unescape_extra(self):
-        self.assertEquals(unescape("Hei på deg", {"å" : "&aring;"}),
-                          "Hei p&aring; deg")
+        self.assertEqual(unescape("Hei på deg", {"å" : "&aring;"}),
+                         "Hei p&aring; deg")
 
     def test_unescape_amp_extra(self):
-        self.assertEquals(unescape("&amp;foo;", {"&foo;": "splat"}), "&foo;")
+        self.assertEqual(unescape("&amp;foo;", {"&foo;": "splat"}), "&foo;")
 
     # ===== quoteattr
     def test_quoteattr_basic(self):
-        self.assertEquals(quoteattr("Donald Duck & Co"),
-                          '"Donald Duck &amp; Co"')
+        self.assertEqual(quoteattr("Donald Duck & Co"),
+                         '"Donald Duck &amp; Co"')
 
     def test_single_quoteattr(self):
-        self.assertEquals(quoteattr('Includes "double" quotes'),
-                          '\'Includes "double" quotes\'')
+        self.assertEqual(quoteattr('Includes "double" quotes'),
+                         '\'Includes "double" quotes\'')
 
     def test_double_quoteattr(self):
-        self.assertEquals(quoteattr("Includes 'single' quotes"),
-                          "\"Includes 'single' quotes\"")
+        self.assertEqual(quoteattr("Includes 'single' quotes"),
+                         "\"Includes 'single' quotes\"")
 
     def test_single_double_quoteattr(self):
-        self.assertEquals(quoteattr("Includes 'single' and \"double\" quotes"),
+        self.assertEqual(quoteattr("Includes 'single' and \"double\" quotes"),
                     "\"Includes 'single' and &quot;double&quot; quotes\"")
 
     # ===== make_parser
@@ -162,7 +162,7 @@ class XmlgenTest(unittest.TestCase):
         gen.endElement("doc")
         gen.endDocument()
 
-        self.assertEquals(result.getvalue(), start + "<doc></doc>")
+        self.assertEqual(result.getvalue(), start + "<doc></doc>")
 
     def test_xmlgen_content(self):
         result = StringIO()
@@ -174,7 +174,7 @@ class XmlgenTest(unittest.TestCase):
         gen.endElement("doc")
         gen.endDocument()
 
-        self.assertEquals(result.getvalue(), start + "<doc>huhei</doc>")
+        self.assertEqual(result.getvalue(), start + "<doc>huhei</doc>")
 
     def test_xmlgen_pi(self):
         result = StringIO()
@@ -186,7 +186,7 @@ class XmlgenTest(unittest.TestCase):
         gen.endElement("doc")
         gen.endDocument()
 
-        self.assertEquals(result.getvalue(), start + "<?test data?><doc></doc>")
+        self.assertEqual(result.getvalue(), start + "<?test data?><doc></doc>")
 
     def test_xmlgen_content_escape(self):
         result = StringIO()
@@ -198,7 +198,7 @@ class XmlgenTest(unittest.TestCase):
         gen.endElement("doc")
         gen.endDocument()
 
-        self.assertEquals(result.getvalue(),
+        self.assertEqual(result.getvalue(),
             start + "<doc>&lt;huhei&amp;</doc>")
 
     def test_xmlgen_attr_escape(self):
@@ -216,7 +216,7 @@ class XmlgenTest(unittest.TestCase):
         gen.endElement("doc")
         gen.endDocument()
 
-        self.assertEquals(result.getvalue(), start +
+        self.assertEqual(result.getvalue(), start +
             ("<doc a='\"'><e a=\"'\"></e>"
              "<e a=\"'&quot;\"></e>"
              "<e a=\"&#10;&#13;&#9;\"></e></doc>"))
@@ -231,7 +231,7 @@ class XmlgenTest(unittest.TestCase):
         gen.endElement("doc")
         gen.endDocument()
 
-        self.assertEquals(result.getvalue(), start + "<doc> </doc>")
+        self.assertEqual(result.getvalue(), start + "<doc> </doc>")
 
     def test_xmlgen_ns(self):
         result = StringIO()
@@ -247,7 +247,7 @@ class XmlgenTest(unittest.TestCase):
         gen.endPrefixMapping("ns1")
         gen.endDocument()
 
-        self.assertEquals(result.getvalue(), start + \
+        self.assertEqual(result.getvalue(), start + \
            ('<ns1:doc xmlns:ns1="%s"><udoc></udoc></ns1:doc>' %
                                          ns_uri))
 
@@ -260,7 +260,7 @@ class XmlgenTest(unittest.TestCase):
         gen.endElementNS((None, 'a'), 'a')
         gen.endDocument()
 
-        self.assertEquals(result.getvalue(), start+'<a b="c"></a>')
+        self.assertEqual(result.getvalue(), start+'<a b="c"></a>')
 
     def test_1463026_2(self):
         result = StringIO()
@@ -273,7 +273,7 @@ class XmlgenTest(unittest.TestCase):
         gen.endPrefixMapping(None)
         gen.endDocument()
 
-        self.assertEquals(result.getvalue(), start+'<a xmlns="qux"></a>')
+        self.assertEqual(result.getvalue(), start+'<a xmlns="qux"></a>')
 
     def test_1463026_3(self):
         result = StringIO()
@@ -286,7 +286,7 @@ class XmlgenTest(unittest.TestCase):
         gen.endPrefixMapping('my')
         gen.endDocument()
 
-        self.assertEquals(result.getvalue(),
+        self.assertEqual(result.getvalue(),
             start+'<my:a xmlns:my="qux" b="c"></my:a>')
 
     def test_5027_1(self):
@@ -309,11 +309,11 @@ class XmlgenTest(unittest.TestCase):
         parser.setContentHandler(gen)
         parser.parse(test_xml)
 
-        self.assertEquals(result.getvalue(),
-                          start + (
-                          '<a:g1 xmlns:a="http://example.com/ns">'
-                           '<a:g2 xml:lang="en">Hello</a:g2>'
-                          '</a:g1>'))
+        self.assertEqual(result.getvalue(),
+                         start + (
+                         '<a:g1 xmlns:a="http://example.com/ns">'
+                          '<a:g2 xml:lang="en">Hello</a:g2>'
+                         '</a:g1>'))
 
     def test_5027_2(self):
         # The xml prefix (as in xml:lang below) is reserved and bound by
@@ -337,11 +337,11 @@ class XmlgenTest(unittest.TestCase):
         gen.endPrefixMapping('a')
         gen.endDocument()
 
-        self.assertEquals(result.getvalue(),
-                          start + (
-                          '<a:g1 xmlns:a="http://example.com/ns">'
-                           '<a:g2 xml:lang="en">Hello</a:g2>'
-                          '</a:g1>'))
+        self.assertEqual(result.getvalue(),
+                         start + (
+                         '<a:g1 xmlns:a="http://example.com/ns">'
+                          '<a:g2 xml:lang="en">Hello</a:g2>'
+                         '</a:g1>'))
 
 
 class XMLFilterBaseTest(unittest.TestCase):
@@ -358,7 +358,7 @@ class XMLFilterBaseTest(unittest.TestCase):
         filter.endElement("doc")
         filter.endDocument()
 
-        self.assertEquals(result.getvalue(), start + "<doc>content </doc>")
+        self.assertEqual(result.getvalue(), start + "<doc>content </doc>")
 
 # ===========================================================================
 #
@@ -380,7 +380,7 @@ class ExpatReaderTest(XmlTestBase):
         parser.setContentHandler(xmlgen)
         parser.parse(open(findfile("test.xml")))
 
-        self.assertEquals(result.getvalue(), xml_test_out)
+        self.assertEqual(result.getvalue(), xml_test_out)
 
     # ===== DTDHandler support
 
@@ -408,9 +408,9 @@ class ExpatReaderTest(XmlTestBase):
         parser.feed('<doc></doc>')
         parser.close()
 
-        self.assertEquals(handler._notations,
+        self.assertEqual(handler._notations,
             [("GIF", "-//CompuServe//NOTATION Graphics Interchange Format 89a//EN", None)])
-        self.assertEquals(handler._entities, [("img", None, "expat.gif", "GIF")])
+        self.assertEqual(handler._entities, [("img", None, "expat.gif", "GIF")])
 
     # ===== EntityResolver support
 
@@ -433,8 +433,8 @@ class ExpatReaderTest(XmlTestBase):
         parser.feed('<doc>&test;</doc>')
         parser.close()
 
-        self.assertEquals(result.getvalue(), start +
-                          "<doc><entity></entity></doc>")
+        self.assertEqual(result.getvalue(), start +
+                         "<doc><entity></entity></doc>")
 
     # ===== Attributes support
 
@@ -486,18 +486,18 @@ class ExpatReaderTest(XmlTestBase):
 
         attrs = gather._attrs
 
-        self.assertEquals(attrs.getLength(), 1)
-        self.assertEquals(attrs.getNames(), [(ns_uri, "attr")])
+        self.assertEqual(attrs.getLength(), 1)
+        self.assertEqual(attrs.getNames(), [(ns_uri, "attr")])
         self.assertTrue((attrs.getQNames() == [] or
                          attrs.getQNames() == ["ns:attr"]))
-        self.assertEquals(len(attrs), 1)
+        self.assertEqual(len(attrs), 1)
         self.assertTrue((ns_uri, "attr") in attrs)
-        self.assertEquals(attrs.get((ns_uri, "attr")), "val")
-        self.assertEquals(attrs.get((ns_uri, "attr"), 25), "val")
-        self.assertEquals(list(attrs.items()), [((ns_uri, "attr"), "val")])
-        self.assertEquals(list(attrs.values()), ["val"])
-        self.assertEquals(attrs.getValue((ns_uri, "attr")), "val")
-        self.assertEquals(attrs[(ns_uri, "attr")], "val")
+        self.assertEqual(attrs.get((ns_uri, "attr")), "val")
+        self.assertEqual(attrs.get((ns_uri, "attr"), 25), "val")
+        self.assertEqual(list(attrs.items()), [((ns_uri, "attr"), "val")])
+        self.assertEqual(list(attrs.values()), ["val"])
+        self.assertEqual(attrs.getValue((ns_uri, "attr")), "val")
+        self.assertEqual(attrs[(ns_uri, "attr")], "val")
 
     # ===== InputSource support
 
@@ -509,7 +509,7 @@ class ExpatReaderTest(XmlTestBase):
         parser.setContentHandler(xmlgen)
         parser.parse(findfile("test.xml"))
 
-        self.assertEquals(result.getvalue(), xml_test_out)
+        self.assertEqual(result.getvalue(), xml_test_out)
 
     def test_expat_inpsource_sysid(self):
         parser = create_parser()
@@ -519,7 +519,7 @@ class ExpatReaderTest(XmlTestBase):
         parser.setContentHandler(xmlgen)
         parser.parse(InputSource(findfile("test.xml")))
 
-        self.assertEquals(result.getvalue(), xml_test_out)
+        self.assertEqual(result.getvalue(), xml_test_out)
 
     def test_expat_inpsource_stream(self):
         parser = create_parser()
@@ -531,7 +531,7 @@ class ExpatReaderTest(XmlTestBase):
         inpsrc.setByteStream(open(findfile("test.xml")))
         parser.parse(inpsrc)
 
-        self.assertEquals(result.getvalue(), xml_test_out)
+        self.assertEqual(result.getvalue(), xml_test_out)
 
     # ===== IncrementalParser support
 
@@ -545,7 +545,7 @@ class ExpatReaderTest(XmlTestBase):
         parser.feed("</doc>")
         parser.close()
 
-        self.assertEquals(result.getvalue(), start + "<doc></doc>")
+        self.assertEqual(result.getvalue(), start + "<doc></doc>")
 
     def test_expat_incremental_reset(self):
         result = StringIO()
@@ -566,7 +566,7 @@ class ExpatReaderTest(XmlTestBase):
         parser.feed("</doc>")
         parser.close()
 
-        self.assertEquals(result.getvalue(), start + "<doc>text</doc>")
+        self.assertEqual(result.getvalue(), start + "<doc>text</doc>")
 
     # ===== Locator support
 
@@ -580,9 +580,9 @@ class ExpatReaderTest(XmlTestBase):
         parser.feed("</doc>")
         parser.close()
 
-        self.assertEquals(parser.getSystemId(), None)
-        self.assertEquals(parser.getPublicId(), None)
-        self.assertEquals(parser.getLineNumber(), 1)
+        self.assertEqual(parser.getSystemId(), None)
+        self.assertEqual(parser.getPublicId(), None)
+        self.assertEqual(parser.getLineNumber(), 1)
 
     def test_expat_locator_withinfo(self):
         result = StringIO()
@@ -591,8 +591,8 @@ class ExpatReaderTest(XmlTestBase):
         parser.setContentHandler(xmlgen)
         parser.parse(findfile("test.xml"))
 
-        self.assertEquals(parser.getSystemId(), findfile("test.xml"))
-        self.assertEquals(parser.getPublicId(), None)
+        self.assertEqual(parser.getSystemId(), findfile("test.xml"))
+        self.assertEqual(parser.getPublicId(), None)
 
 
 # ===========================================================================
@@ -613,7 +613,7 @@ class ErrorReportingTest(unittest.TestCase):
             parser.parse(source)
             self.fail()
         except SAXException as e:
-            self.assertEquals(e.getSystemId(), name)
+            self.assertEqual(e.getSystemId(), name)
 
     def test_expat_incomplete(self):
         parser = create_parser()
@@ -677,21 +677,21 @@ class XmlReaderTest(XmlTestBase):
         attrs = AttributesNSImpl({(ns_uri, "attr") : "val"},
                                  {(ns_uri, "attr") : "ns:attr"})
 
-        self.assertEquals(attrs.getLength(), 1)
-        self.assertEquals(attrs.getNames(), [(ns_uri, "attr")])
-        self.assertEquals(attrs.getQNames(), ["ns:attr"])
-        self.assertEquals(len(attrs), 1)
+        self.assertEqual(attrs.getLength(), 1)
+        self.assertEqual(attrs.getNames(), [(ns_uri, "attr")])
+        self.assertEqual(attrs.getQNames(), ["ns:attr"])
+        self.assertEqual(len(attrs), 1)
         self.assertTrue((ns_uri, "attr") in attrs)
-        self.assertEquals(list(attrs.keys()), [(ns_uri, "attr")])
-        self.assertEquals(attrs.get((ns_uri, "attr")), "val")
-        self.assertEquals(attrs.get((ns_uri, "attr"), 25), "val")
-        self.assertEquals(list(attrs.items()), [((ns_uri, "attr"), "val")])
-        self.assertEquals(list(attrs.values()), ["val"])
-        self.assertEquals(attrs.getValue((ns_uri, "attr")), "val")
-        self.assertEquals(attrs.getValueByQName("ns:attr"), "val")
-        self.assertEquals(attrs.getNameByQName("ns:attr"), (ns_uri, "attr"))
-        self.assertEquals(attrs[(ns_uri, "attr")], "val")
-        self.assertEquals(attrs.getQNameByName((ns_uri, "attr")), "ns:attr")
+        self.assertEqual(list(attrs.keys()), [(ns_uri, "attr")])
+        self.assertEqual(attrs.get((ns_uri, "attr")), "val")
+        self.assertEqual(attrs.get((ns_uri, "attr"), 25), "val")
+        self.assertEqual(list(attrs.items()), [((ns_uri, "attr"), "val")])
+        self.assertEqual(list(attrs.values()), ["val"])
+        self.assertEqual(attrs.getValue((ns_uri, "attr")), "val")
+        self.assertEqual(attrs.getValueByQName("ns:attr"), "val")
+        self.assertEqual(attrs.getNameByQName("ns:attr"), (ns_uri, "attr"))
+        self.assertEqual(attrs[(ns_uri, "attr")], "val")
+        self.assertEqual(attrs.getQNameByName((ns_uri, "attr")), "ns:attr")
 
 
     # During the development of Python 2.5, an attempt to move the "xml"
@@ -727,7 +727,7 @@ class XmlReaderTest(XmlTestBase):
         try:
             import xml.sax.expatreader
             module = xml.sax.expatreader
-            self.assertEquals(module.__name__, "xml.sax.expatreader")
+            self.assertEqual(module.__name__, "xml.sax.expatreader")
         finally:
             sys.modules.update(old_modules)
 

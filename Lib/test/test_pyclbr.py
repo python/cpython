@@ -45,7 +45,7 @@ class PyclbrTest(TestCase):
     def assertEqualsOrIgnored(self, a, b, ignore):
         ''' succeed iff a == b or a in ignore or b in ignore '''
         if a not in ignore and b not in ignore:
-            self.assertEquals(a, b)
+            self.assertEqual(a, b)
 
     def checkModule(self, moduleName, module=None, ignore=()):
         ''' succeed iff pyclbr.readmodule_ex(modulename) corresponds
@@ -87,7 +87,7 @@ class PyclbrTest(TestCase):
                 self.assertTrue(isinstance(py_item, (FunctionType, BuiltinFunctionType)))
                 if py_item.__module__ != moduleName:
                     continue   # skip functions that came from somewhere else
-                self.assertEquals(py_item.__module__, value.module)
+                self.assertEqual(py_item.__module__, value.module)
             else:
                 self.assertTrue(isinstance(py_item, type))
                 if py_item.__module__ != moduleName:
@@ -116,7 +116,7 @@ class PyclbrTest(TestCase):
 
                 try:
                     self.assertListEq(foundMethods, actualMethods, ignore)
-                    self.assertEquals(py_item.__module__, value.module)
+                    self.assertEqual(py_item.__module__, value.module)
 
                     self.assertEqualsOrIgnored(py_item.__name__, value.name,
                                                ignore)

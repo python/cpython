@@ -20,7 +20,7 @@ class SpawnTestCase(support.TempdirManager,
                                (['nochange', 'nospace'],
                                 ['nochange', 'nospace'])):
             res = _nt_quote_args(args)
-            self.assertEquals(res, wanted)
+            self.assertEqual(res, wanted)
 
 
     @unittest.skipUnless(os.name in ('nt', 'posix'),

@@ -64,12 +64,12 @@ class WinregTests(unittest.TestCase):
 
         # Check we wrote as many items as we thought.
         nkeys, nvalues, since_mod = QueryInfoKey(key)
-        self.assertEquals(nkeys, 1, "Not the correct number of sub keys")
-        self.assertEquals(nvalues, 1, "Not the correct number of values")
+        self.assertEqual(nkeys, 1, "Not the correct number of sub keys")
+        self.assertEqual(nvalues, 1, "Not the correct number of values")
         nkeys, nvalues, since_mod = QueryInfoKey(sub_key)
-        self.assertEquals(nkeys, 0, "Not the correct number of sub keys")
-        self.assertEquals(nvalues, len(test_data),
-                          "Not the correct number of values")
+        self.assertEqual(nkeys, 0, "Not the correct number of sub keys")
+        self.assertEqual(nvalues, len(test_data),
+                         "Not the correct number of values")
         # Close this key this way...
         # (but before we do, copy the key as an integer - this allows
         # us to test that the key really gets closed).
@@ -94,8 +94,8 @@ class WinregTests(unittest.TestCase):
     def ReadTestData(self, root_key, subkeystr="sub_key"):
         # Check we can get default value for this key.
         val = QueryValue(root_key, test_key_name)
-        self.assertEquals(val, "Default value",
-                          "Registry didn't give back the correct value")
+        self.assertEqual(val, "Default value",
+                         "Registry didn't give back the correct value")
 
         key = OpenKey(root_key, test_key_name)
         # Read the sub-keys
@@ -107,22 +107,22 @@ class WinregTests(unittest.TestCase):
                     data = EnumValue(sub_key, index)
                 except EnvironmentError:
                     break
-                self.assertEquals(data in test_data, True,
-                                  "Didn't read back the correct test data")
+                self.assertEqual(data in test_data, True,
+                                 "Didn't read back the correct test data")
                 index = index + 1
-            self.assertEquals(index, len(test_data),
-                              "Didn't read the correct number of items")
+            self.assertEqual(index, len(test_data),
+                             "Didn't read the correct number of items")
             # Check I can directly access each item
             for value_name, value_data, value_type in test_data:
                 read_val, read_typ = QueryValueEx(sub_key, value_name)
-                self.assertEquals(read_val, value_data,
-                                  "Could not directly read the value")
-                self.assertEquals(read_typ, value_type,
-                                  "Could not directly read the value")
+                self.assertEqual(read_val, value_data,
+                                 "Could not directly read the value")
+                self.assertEqual(read_typ, value_type,
+                                 "Could not directly read the value")
         sub_key.Close()
         # Enumerate our main key.
         read_val = EnumKey(key, 0)
-        self.assertEquals(read_val, subkeystr, "Read subkey value wrong")
+        self.assertEqual(read_val, subkeystr, "Read subkey value wrong")
         try:
             EnumKey(key, 1)
             self.fail("Was able to get a second key when I only have one!")
@@ -141,8 +141,8 @@ class WinregTests(unittest.TestCase):
             DeleteValue(sub_key, value_name)
 
         nkeys, nvalues, since_mod = QueryInfoKey(sub_key)
-        self.assertEquals(nkeys, 0, "subkey not empty before delete")
-        self.assertEquals(nvalues, 0, "subkey not empty before delete")
+        self.assertEqual(nkeys, 0, "subkey not empty before delete")
+        self.assertEqual(nvalues, 0, "subkey not empty before delete")
         sub_key.Close()
         DeleteKey(key, subkeystr)
 

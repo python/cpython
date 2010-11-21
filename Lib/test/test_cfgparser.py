@@ -463,14 +463,14 @@ class SortedTestCase(RawConfigParserTestCase):
                         "k=v\n")
         output = io.StringIO()
         self.cf.write(output)
-        self.assertEquals(output.getvalue(),
-                          "[a]\n"
-                          "k = v\n\n"
-                          "[b]\n"
-                          "o1 = 4\n"
-                          "o2 = 3\n"
-                          "o3 = 2\n"
-                          "o4 = 1\n\n")
+        self.assertEqual(output.getvalue(),
+                         "[a]\n"
+                         "k = v\n\n"
+                         "[b]\n"
+                         "o1 = 4\n"
+                         "o2 = 3\n"
+                         "o3 = 2\n"
+                         "o4 = 1\n\n")
 
 def test_main():
     support.run_unittest(

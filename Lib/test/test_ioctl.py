@@ -50,7 +50,7 @@ class IoctlTests(unittest.TestCase):
         with open("/dev/tty", "r") as tty:
             r = fcntl.ioctl(tty, termios.TIOCGPGRP, buf, 1)
         rpgrp = buf[0]
-        self.assertEquals(r, 0)
+        self.assertEqual(r, 0)
         self.assertTrue(rpgrp in ids, "%s not in %s" % (rpgrp, ids))
 
     def test_ioctl_mutate(self):

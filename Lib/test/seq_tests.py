@@ -131,8 +131,8 @@ class CommonTest(unittest.TestCase):
             self.assertRaises(ZeroDivisionError, self.type2test, IterGenExc(s))
 
     def test_truth(self):
-        self.assert_(not self.type2test())
-        self.assert_(self.type2test([42]))
+        self.assertFalse(self.type2test())
+        self.assertTrue(self.type2test([42]))
 
     def test_getitem(self):
         u = self.type2test([0, 1, 2, 3, 4])
@@ -199,9 +199,9 @@ class CommonTest(unittest.TestCase):
     def test_contains(self):
         u = self.type2test([0, 1, 2])
         for i in u:
-            self.assert_(i in u)
+            self.assertIn(i, u)
         for i in min(u)-1, max(u)+1:
-            self.assert_(i not in u)
+            self.assertNotIn(i, u)
 
         self.assertRaises(TypeError, u.__contains__)
 
@@ -213,8 +213,8 @@ class CommonTest(unittest.TestCase):
             def __eq__(self, other):
                 return True
             __hash__ = None # Can't meet hash invariant requirements
-        self.assert_(AllEq() not in self.type2test([]))
-        self.assert_(AllEq() in self.type2test([1]))
+        self.assertNotIn(AllEq(), self.type2test([]))
+        self.assertIn(AllEq(), self.type2test([1]))
 
     def test_contains_order(self):
         # Sequences must test in-order.  If a rich comparison has side
@@ -227,7 +227,7 @@ class CommonTest(unittest.TestCase):
                 raise DoNotTestEq
 
         checkfirst = self.type2test([1, StopCompares()])
-        self.assert_(1 in checkfirst)
+        self.assertIn(1, checkfirst)
         checklast = self.type2test([StopCompares(), 1])
         self.assertRaises(DoNotTestEq, checklast.__contains__, 1)
 
@@ -268,7 +268,7 @@ class CommonTest(unittest.TestCase):
             pass
         u3 = subclass([0, 1])
         self.assertEqual(u3, u3*1)
-        self.assert_(u3 is not u3*1)
+        self.assertIsNot(u3, u3*1)
 
     def test_iadd(self):
         u = self.type2test([0, 1])

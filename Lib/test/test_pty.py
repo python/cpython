@@ -86,7 +86,7 @@ class PtyTest(unittest.TestCase):
         fcntl.fcntl(master_fd, fcntl.F_SETFL, orig_flags | os.O_NONBLOCK)
         try:
             s1 = os.read(master_fd, 1024)
-            self.assertEquals(b'', s1)
+            self.assertEqual(b'', s1)
         except OSError as e:
             if e.errno != errno.EAGAIN:
                 raise
@@ -96,14 +96,14 @@ class PtyTest(unittest.TestCase):
         debug("Writing to slave_fd")
         os.write(slave_fd, TEST_STRING_1)
         s1 = os.read(master_fd, 1024)
-        self.assertEquals(b'I wish to buy a fish license.\n',
-                          normalize_output(s1))
+        self.assertEqual(b'I wish to buy a fish license.\n',
+                         normalize_output(s1))
 
         debug("Writing chunked output")
         os.write(slave_fd, TEST_STRING_2[:5])
         os.write(slave_fd, TEST_STRING_2[5:])
         s2 = os.read(master_fd, 1024)
-        self.assertEquals(b'For my pet fish, Eric.\n', normalize_output(s2))
+        self.assertEqual(b'For my pet fish, Eric.\n', normalize_output(s2))
 
         os.close(slave_fd)
         os.close(master_fd)

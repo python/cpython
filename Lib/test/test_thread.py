@@ -61,10 +61,10 @@ class ThreadRunningTests(BasicThreadTest):
 
     def test_stack_size(self):
         # Various stack size tests.
-        self.assertEquals(thread.stack_size(), 0, "intial stack size is not 0")
+        self.assertEqual(thread.stack_size(), 0, "intial stack size is not 0")
 
         thread.stack_size(0)
-        self.assertEquals(thread.stack_size(), 0, "stack_size not reset to default")
+        self.assertEqual(thread.stack_size(), 0, "stack_size not reset to default")
 
         if os.name not in ("nt", "os2", "posix"):
             return
@@ -84,7 +84,7 @@ class ThreadRunningTests(BasicThreadTest):
             fail_msg = "stack_size(%d) failed - should succeed"
             for tss in (262144, 0x100000, 0):
                 thread.stack_size(tss)
-                self.assertEquals(thread.stack_size(), tss, fail_msg % tss)
+                self.assertEqual(thread.stack_size(), tss, fail_msg % tss)
                 verbose_print("successfully set stack_size(%d)" % tss)
 
             for tss in (262144, 0x100000):

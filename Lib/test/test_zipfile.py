@@ -55,20 +55,20 @@ class TestsWithSourceFile(unittest.TestCase):
 
         directory = fp.getvalue()
         lines = directory.splitlines()
-        self.assertEquals(len(lines), 4) # Number of files + header
+        self.assertEqual(len(lines), 4) # Number of files + header
 
         self.assertTrue('File Name' in lines[0])
         self.assertTrue('Modified' in lines[0])
         self.assertTrue('Size' in lines[0])
 
         fn, date, time, size = lines[1].split()
-        self.assertEquals(fn, 'another.name')
+        self.assertEqual(fn, 'another.name')
         # XXX: timestamp is not tested
-        self.assertEquals(size, str(len(self.data)))
+        self.assertEqual(size, str(len(self.data)))
 
         # Check the namelist
         names = zipfp.namelist()
-        self.assertEquals(len(names), 3)
+        self.assertEqual(len(names), 3)
         self.assertTrue(TESTFN in names)
         self.assertTrue("another.name" in names)
         self.assertTrue("strfile" in names)
@@ -76,18 +76,18 @@ class TestsWithSourceFile(unittest.TestCase):
         # Check infolist
         infos = zipfp.infolist()
         names = [ i.filename for i in infos ]
-        self.assertEquals(len(names), 3)
+        self.assertEqual(len(names), 3)
         self.assertTrue(TESTFN in names)
         self.assertTrue("another.name" in names)
         self.assertTrue("strfile" in names)
         for i in infos:
-            self.assertEquals(i.file_size, len(self.data))
+            self.assertEqual(i.file_size, len(self.data))
 
         # check getinfo
         for nm in (TESTFN, "another.name", "strfile"):
             info = zipfp.getinfo(nm)
-            self.assertEquals(info.filename, nm)
-            self.assertEquals(info.file_size, len(self.data))
+            self.assertEqual(info.filename, nm)
+            self.assertEqual(info.file_size, len(self.data))
 
         # Check that testzip doesn't raise an exception
         zipfp.testzip()
@@ -445,20 +445,20 @@ class TestZip64InSmallFiles(unittest.TestCase):
 
         directory = fp.getvalue()
         lines = directory.splitlines()
-        self.assertEquals(len(lines), 4) # Number of files + header
+        self.assertEqual(len(lines), 4) # Number of files + header
 
         self.assertTrue('File Name' in lines[0])
         self.assertTrue('Modified' in lines[0])
         self.assertTrue('Size' in lines[0])
 
         fn, date, time, size = lines[1].split()
-        self.assertEquals(fn, 'another.name')
+        self.assertEqual(fn, 'another.name')
         # XXX: timestamp is not tested
-        self.assertEquals(size, str(len(self.data)))
+        self.assertEqual(size, str(len(self.data)))
 
         # Check the namelist
         names = zipfp.namelist()
-        self.assertEquals(len(names), 3)
+        self.assertEqual(len(names), 3)
         self.assertTrue(TESTFN in names)
         self.assertTrue("another.name" in names)
         self.assertTrue("strfile" in names)
@@ -466,18 +466,18 @@ class TestZip64InSmallFiles(unittest.TestCase):
         # Check infolist
         infos = zipfp.infolist()
         names = [ i.filename for i in infos ]
-        self.assertEquals(len(names), 3)
+        self.assertEqual(len(names), 3)
         self.assertTrue(TESTFN in names)
         self.assertTrue("another.name" in names)
         self.assertTrue("strfile" in names)
         for i in infos:
-            self.assertEquals(i.file_size, len(self.data))
+            self.assertEqual(i.file_size, len(self.data))
 
         # check getinfo
         for nm in (TESTFN, "another.name", "strfile"):
             info = zipfp.getinfo(nm)
-            self.assertEquals(info.filename, nm)
-            self.assertEquals(info.file_size, len(self.data))
+            self.assertEqual(info.filename, nm)
+            self.assertEqual(info.file_size, len(self.data))
 
         # Check that testzip doesn't raise an exception
         zipfp.testzip()
@@ -962,9 +962,9 @@ class DecryptionTests(unittest.TestCase):
 
     def testGoodPassword(self):
         self.zip.setpassword(b"python")
-        self.assertEquals(self.zip.read("test.txt"), self.plain)
+        self.assertEqual(self.zip.read("test.txt"), self.plain)
         self.zip2.setpassword(b"12345")
-        self.assertEquals(self.zip2.read("zero"), self.plain2)
+        self.assertEqual(self.zip2.read("zero"), self.plain2)
 
 
 class TestsWithRandomBinaryFiles(unittest.TestCase):

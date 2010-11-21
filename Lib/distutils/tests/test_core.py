@@ -89,7 +89,7 @@ class CoreTestCase(support.EnvironGuard, unittest.TestCase):
         with captured_stdout() as stdout:
             distutils.core.setup(name='bar')
         stdout.seek(0)
-        self.assertEquals(stdout.read(), 'bar\n')
+        self.assertEqual(stdout.read(), 'bar\n')
 
         distutils.core.DEBUG = True
         try:
@@ -99,7 +99,7 @@ class CoreTestCase(support.EnvironGuard, unittest.TestCase):
             distutils.core.DEBUG = False
         stdout.seek(0)
         wanted = "options (after parsing config files):\n"
-        self.assertEquals(stdout.readlines()[0], wanted)
+        self.assertEqual(stdout.readlines()[0], wanted)
 
 def test_suite():
     return unittest.makeSuite(CoreTestCase)

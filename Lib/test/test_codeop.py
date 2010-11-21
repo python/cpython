@@ -37,14 +37,14 @@ class CodeopTests(unittest.TestCase):
                 ctx = {'a': 2}
                 d = { 'value': eval(code,ctx) }
                 r = { 'value': eval(str,ctx) }
-            self.assertEquals(unify_callables(r),unify_callables(d))
+            self.assertEqual(unify_callables(r),unify_callables(d))
         else:
             expected = compile(str, "<input>", symbol, PyCF_DONT_IMPLY_DEDENT)
-            self.assertEquals( compile_command(str, "<input>", symbol), expected)
+            self.assertEqual(compile_command(str, "<input>", symbol), expected)
 
     def assertIncomplete(self, str, symbol='single'):
         '''succeed iff str is the start of a valid piece of code'''
-        self.assertEquals( compile_command(str, symbol=symbol), None)
+        self.assertEqual(compile_command(str, symbol=symbol), None)
 
     def assertInvalid(self, str, symbol='single', is_syntax=1):
         '''succeed iff str is the start of an invalid piece of code'''
@@ -61,12 +61,12 @@ class CodeopTests(unittest.TestCase):
 
         # special case
         if not is_jython:
-            self.assertEquals(compile_command(""),
-                            compile("pass", "<input>", 'single',
-                                    PyCF_DONT_IMPLY_DEDENT))
-            self.assertEquals(compile_command("\n"),
-                            compile("pass", "<input>", 'single',
-                                    PyCF_DONT_IMPLY_DEDENT))
+            self.assertEqual(compile_command(""),
+                             compile("pass", "<input>", 'single',
+                                     PyCF_DONT_IMPLY_DEDENT))
+            self.assertEqual(compile_command("\n"),
+                             compile("pass", "<input>", 'single',
+                                     PyCF_DONT_IMPLY_DEDENT))
         else:
             av("")
             av("\n")
@@ -290,10 +290,10 @@ class CodeopTests(unittest.TestCase):
         ai("[i for i in range(10)] = (1, 2, 3)")
 
     def test_filename(self):
-        self.assertEquals(compile_command("a = 1\n", "abc").co_filename,
-                          compile("a = 1\n", "abc", 'single').co_filename)
-        self.assertNotEquals(compile_command("a = 1\n", "abc").co_filename,
-                             compile("a = 1\n", "def", 'single').co_filename)
+        self.assertEqual(compile_command("a = 1\n", "abc").co_filename,
+                         compile("a = 1\n", "abc", 'single').co_filename)
+        self.assertNotEqual(compile_command("a = 1\n", "abc").co_filename,
+                            compile("a = 1\n", "def", 'single').co_filename)
 
     def test_no_universal_newlines(self):
         code = compile_command("'\rfoo\r'", symbol='eval')

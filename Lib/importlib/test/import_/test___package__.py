@@ -41,7 +41,7 @@ class Using__package__(unittest.TestCase):
                 module = import_util.import_('',
                                             globals={'__package__': 'pkg.fake'},
                                             fromlist=['attr'], level=2)
-        self.assertEquals(module.__name__, 'pkg')
+        self.assertEqual(module.__name__, 'pkg')
 
     def test_using___name__(self):
         # [__name__]
@@ -52,7 +52,7 @@ class Using__package__(unittest.TestCase):
                                  globals={'__name__': 'pkg.fake',
                                           '__path__': []},
                                  fromlist=['attr'], level=2)
-            self.assertEquals(module.__name__, 'pkg')
+            self.assertEqual(module.__name__, 'pkg')
 
     def test_bad__package__(self):
         globals = {'__package__': '<not real>'}
