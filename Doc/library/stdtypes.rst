@@ -711,6 +711,12 @@ are sequences of the same type; *n*, *i* and *j* are integers:
 +------------------+--------------------------------+----------+
 | ``max(s)``       | largest item of *s*            |          |
 +------------------+--------------------------------+----------+
+| ``s.index(i)``   | index of the first occurence   |          |
+|                  | of *i* in *s*                  |          |
++------------------+--------------------------------+----------+
+| ``s.count(i)``   | total number of occurences of  |          |
+|                  | *i* in *s*                     |          |
++------------------+--------------------------------+----------+
 
 Sequence types also support comparisons.  In particular, tuples and lists are
 compared lexicographically by comparing corresponding elements.  This means that
