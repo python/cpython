@@ -554,6 +554,14 @@ New, Improved, and Deprecated Modules
   (Contributed by R. David Murray, :issue:`10321`.)
 
 
+* The :mod:`inspect` module has a new function :func:`getgenatorstate`
+  to easily identify the current state of a generator as one of
+  ``GEN_CREATED``, ``GEN_RUNNING``, ``GEN_SUSPENDED`` or ``GEN_CLOSED``.
+
+  (Contributed by Rodolpho Eckhardt and Nick Coghlan, :issue:`10220`.)
+
+.. XXX: Mention inspect.getattr_static (Michael Foord)
+
 Multi-threading
 ===============
 

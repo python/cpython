@@ -620,3 +620,25 @@ code execution::
            # in which case the descriptor itself will
            # have to do
            pass
+
+Current State of a Generator
+----------------------------
+
+When implementing coroutine schedulers and for other advanced uses of
+generators, it is useful to determine whether a generator is currently
+executing, is waiting to start or resume or execution, or has already
+terminated. func:`getgeneratorstate` allows the current state of a
+generator to be determined easily.
+
+.. function:: getgeneratorstate(generator)
+
+    Get current state of a generator-iterator.
+
+    Possible states are:
+      GEN_CREATED: Waiting to start execution.
+      GEN_RUNNING: Currently being executed by the interpreter.
+      GEN_SUSPENDED: Currently suspended at a yield expression.
+      GEN_CLOSED: Execution has completed.
+
+
+

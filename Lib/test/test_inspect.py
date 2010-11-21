@@ -887,12 +887,57 @@ class TestGetattrStatic(unittest.TestCase):
         self.assertEqual(inspect.getattr_static(Something, 'foo'), 3)
 
 
+class TestGetGeneratorState(unittest.TestCase):
+
+    def setUp(self):
+        def number_generator():
+            for number in range(5):
+                yield number
+        self.generator = number_generator()
+
+    def _generatorstate(self):
+        return inspect.getgeneratorstate(self.generator)
+
+    def test_created(self):
+        self.assertEqual(self._generatorstate(), inspect.GEN_CREATED)
+
+    def test_suspended(self):
+        next(self.generator)
+        self.assertEqual(self._generatorstate(), inspect.GEN_SUSPENDED)
+
+    def test_closed_after_exhaustion(self):
+        for i in self.generator:
+            pass
+        self.assertEqual(self._generatorstate(), inspect.GEN_CLOSED)
+
+    def test_closed_after_immediate_exception(self):
+        with self.assertRaises(RuntimeError):
+            self.generator.throw(RuntimeError)
+        self.assertEqual(self._generatorstate(), inspect.GEN_CLOSED)
+
+    def test_running(self):
+        # As mentioned on issue #10220, checking for the RUNNING state only
+        # makes sense inside the generator itself.
+        # The following generator checks for this by using the closure's
+        # reference to self and the generator state checking helper method
+        def running_check_generator():
+            for number in range(5):
+                self.assertEqual(self._generatorstate(), inspect.GEN_RUNNING)
+                yield number
+                self.assertEqual(self._generatorstate(), inspect.GEN_RUNNING)
+        self.generator = running_check_generator()
+        # Running up to the first yield
+        next(self.generator)
+        # Running after the first yield
+        next(self.generator)
+
+
 def test_main():
     run_unittest(
         TestDecorators, TestRetrievingSourceCode, TestOneliners, TestBuggyCases,
         TestInterpreterStack, TestClassesAndFunctions, TestPredicates,
         TestGetcallargsFunctions, TestGetcallargsMethods,
-        TestGetcallargsUnboundMethods, TestGetattrStatic
+        TestGetcallargsUnboundMethods, TestGetattrStatic, TestGetGeneratorState
     )
 
 if __name__ == "__main__":
