@@ -376,6 +376,7 @@ class Obj2ModVisitor(PickleVisitor):
         self.emit(format % error, 1, reflow=False)
         if add_label:
             self.emit("failed:", 1)
+            self.emit("Py_XDECREF(tmp);", 1)
         self.emit("return 1;", 1)
         self.emit("}", 0)
         self.emit("", 0)
