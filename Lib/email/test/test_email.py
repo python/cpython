@@ -3,6 +3,7 @@
 # email package unit tests
 
 import os
+import re
 import sys
 import time
 import base64
@@ -1974,17 +1975,20 @@ message 2
 # should be identical.  Note: that we ignore the Unix-From since that may
 # contain a changed date.
 class TestIdempotent(TestEmailBase):
+
+    linesep = '\n'
+
     def _msgobj(self, filename):
         with openfile(filename) as fp:
             data = fp.read()
         msg = email.message_from_string(data)
         return msg, data
 
-    def _idempotent(self, msg, text):
+    def _idempotent(self, msg, text, unixfrom=False):
         eq = self.ndiffAssertEqual
         s = StringIO()
         g = Generator(s, maxheaderlen=0)
-        g.flatten(msg)
+        g.flatten(msg, unixfrom=unixfrom)
         eq(text, s.getvalue())
 
     def test_parse_text_message(self):
@@ -2071,6 +2075,10 @@ class TestIdempotent(TestEmailBase):
         msg, text = self._msgobj('msg_36.txt')
         self._idempotent(msg, text)
 
+    def test_message_delivery_status(self):
+        msg, text = self._msgobj('msg_43.txt')
+        self._idempotent(msg, text, unixfrom=True)
+
     def test_message_signed_idempotent(self):
         msg, text = self._msgobj('msg_45.txt')
         self._idempotent(msg, text)
@@ -2087,16 +2095,16 @@ class TestIdempotent(TestEmailBase):
             params[pk] = pv
         eq(params['report-type'], 'delivery-status')
         eq(params['boundary'], 'D1690A7AC1.996856090/mail.example.com')
-        eq(msg.preamble, 'This is a MIME-encapsulated message.\n')
-        eq(msg.epilogue, '\n')
+        eq(msg.preamble, 'This is a MIME-encapsulated message.' + self.linesep)
+        eq(msg.epilogue, self.linesep)
         eq(len(msg.get_payload()), 3)
         # Make sure the subparts are what we expect
         msg1 = msg.get_payload(0)
         eq(msg1.get_content_type(), 'text/plain')
-        eq(msg1.get_payload(), 'Yadda yadda yadda\n')
+        eq(msg1.get_payload(), 'Yadda yadda yadda' + self.linesep)
         msg2 = msg.get_payload(1)
         eq(msg2.get_content_type(), 'text/plain')
-        eq(msg2.get_payload(), 'Yadda yadda yadda\n')
+        eq(msg2.get_payload(), 'Yadda yadda yadda' + self.linesep)
         msg3 = msg.get_payload(2)
         eq(msg3.get_content_type(), 'message/rfc822')
         self.assertTrue(isinstance(msg3, Message))
@@ -2105,7 +2113,7 @@ class TestIdempotent(TestEmailBase):
         eq(len(payload), 1)
         msg4 = payload[0]
         unless(isinstance(msg4, Message))
-        eq(msg4.get_payload(), 'Yadda yadda yadda\n')
+        eq(msg4.get_payload(), 'Yadda yadda yadda' + self.linesep)
 
     def test_parser(self):
         eq = self.assertEqual
@@ -2122,7 +2130,7 @@ class TestIdempotent(TestEmailBase):
         self.assertTrue(isinstance(msg1, Message))
         eq(msg1.get_content_type(), 'text/plain')
         self.assertTrue(isinstance(msg1.get_payload(), str))
-        eq(msg1.get_payload(), '\n')
+        eq(msg1.get_payload(), self.linesep)
 
 
 
@@ -2955,27 +2963,41 @@ class Test8BitBytesHandling(unittest.TestCase):
     maxDiff = None
 
 
-class TestBytesGeneratorIdempotent(TestIdempotent):
+class BaseTestBytesGeneratorIdempotent:
 
     maxDiff = None
 
     def _msgobj(self, filename):
         with openfile(filename, 'rb') as fp:
             data = fp.read()
+        data = self.normalize_linesep_regex.sub(self.blinesep, data)
         msg = email.message_from_bytes(data)
         return msg, data
 
-    def _idempotent(self, msg, data):
-        # 13 = b'\r'
-        linesep = '\r\n' if data[data.index(b'\n')-1] == 13 else '\n'
+    def _idempotent(self, msg, data, unixfrom=False):
         b = BytesIO()
         g = email.generator.BytesGenerator(b, maxheaderlen=0)
-        g.flatten(msg, linesep=linesep)
+        g.flatten(msg, unixfrom=unixfrom, linesep=self.linesep)
         self.assertByteStringsEqual(data, b.getvalue())
 
     def assertByteStringsEqual(self, str1, str2):
+        # Not using self.blinesep here is intentional.  This way the output
+        # is more useful when the failure results in mixed line endings.
         self.assertListEqual(str1.split(b'\n'), str2.split(b'\n'))
 
+
+class TestBytesGeneratorIdempotentNL(BaseTestBytesGeneratorIdempotent,
+                                    TestIdempotent):
+    linesep = '\n'
+    blinesep = b'\n'
+    normalize_linesep_regex = re.compile(br'\r\n')
+
+
+class TestBytesGeneratorIdempotentCRLF(BaseTestBytesGeneratorIdempotent,
+                                       TestIdempotent):
+    linesep = '\r\n'
+    blinesep = b'\r\n'
+    normalize_linesep_regex = re.compile(br'(?<!\r)\n')
 
 
 class TestBase64(unittest.TestCase):
