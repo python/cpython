@@ -135,8 +135,15 @@ class BasicTestCase(CfgParserTestCaseClass):
         # mapping access
         eq(cf['Foo Bar']['foo'], 'bar1')
         eq(cf['Spacey Bar']['foo'], 'bar2')
-        eq(cf['Spacey Bar From The Beginning']['foo'], 'bar3')
-        eq(cf['Spacey Bar From The Beginning']['baz'], 'qwe')
+        section = cf['Spacey Bar From The Beginning']
+        eq(section.name, 'Spacey Bar From The Beginning')
+        self.assertIs(section.parser, cf)
+        with self.assertRaises(AttributeError):
+            section.name = 'Name is read-only'
+        with self.assertRaises(AttributeError):
+            section.parser = 'Parser is read-only'
+        eq(section['foo'], 'bar3')
+        eq(section['baz'], 'qwe')
         eq(cf['Commented Bar']['foo'], 'bar4')
         eq(cf['Commented Bar']['baz'], 'qwe')
         eq(cf['Spaces']['key with spaces'], 'value')

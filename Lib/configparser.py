@@ -1102,42 +1102,52 @@ class SafeConfigParser(ConfigParser):
 class SectionProxy(MutableMapping):
     """A proxy for a single section from a parser."""
 
-    def __init__(self, parser, section_name):
-        """Creates a view on a section named `section_name` in `parser`."""
+    def __init__(self, parser, name):
+        """Creates a view on a section of the specified `name` in `parser`."""
         self._parser = parser
-        self._section = section_name
+        self._name = name
         self.getint = functools.partial(self._parser.getint,
-                                        self._section)
+                                        self._name)
         self.getfloat = functools.partial(self._parser.getfloat,
-                                          self._section)
+                                          self._name)
         self.getboolean = functools.partial(self._parser.getboolean,
-                                            self._section)
+                                            self._name)
 
     def __repr__(self):
-        return '<Section: {}>'.format(self._section)
+        return '<Section: {}>'.format(self._name)
 
     def __getitem__(self, key):
-        if not self._parser.has_option(self._section, key):
+        if not self._parser.has_option(self._name, key):
             raise KeyError(key)
-        return self._parser.get(self._section, key)
+        return self._parser.get(self._name, key)
 
     def __setitem__(self, key, value):
         self._parser._validate_value_type(value)
-        return self._parser.set(self._section, key, value)
+        return self._parser.set(self._name, key, value)
 
     def __delitem__(self, key):
-        if not self._parser.has_option(self._section, key):
+        if not self._parser.has_option(self._name, key):
             raise KeyError(key)
-        return self._parser.remove_option(self._section, key)
+        return self._parser.remove_option(self._name, key)
 
     def __contains__(self, key):
-        return self._parser.has_option(self._section, key)
+        return self._parser.has_option(self._name, key)
 
     def __len__(self):
         # XXX weak performance
-        return len(self._parser.options(self._section))
+        return len(self._parser.options(self._name))
 
     def __iter__(self):
         # XXX weak performance
         # XXX does not break when underlying container state changed
-        return self._parser.options(self._section).__iter__()
+        return self._parser.options(self._name).__iter__()
+
+    @property
+    def parser(self):
+        # The parser object of the proxy is read-only.
+        return self._parser
+
+    @property
+    def name(self):
+        # The name of the section on a proxy is read-only.
+        return self._name
