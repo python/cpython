@@ -1312,6 +1312,7 @@ groups from right to left).
 | ``(expressions...)``,                         | Binding or tuple display,           |
 | ``[expressions...]``,                         | list display,                       |
 | ``{key:datum...}``,                           | dictionary display,                 |
+| ``{expressions...}``                          | set display                         |
 +-----------------------------------------------+-------------------------------------+
 
 
