@@ -1581,16 +1581,14 @@ Range Type
 The :class:`range` type is an immutable sequence which is commonly used for
 looping.  The advantage of the :class:`range` type is that an :class:`range`
 object will always take the same amount of memory, no matter the size of the
-range it represents.  There are no consistent performance advantages.
+range it represents.
 
-Range objects have relatively little behavior: they support indexing,
-iteration, the :func:`len` function, and the following methods.
+Range objects have relatively little behavior: they support indexing, contains,
+iteration, the :func:`len` function, and the following methods:
 
 .. method:: range.count(x)
 
-   Return the number of *i*'s for which ``s[i] == x``.  Normally the
-   result will be 0 or 1, but it could be greater if *x* defines an
-   unusual equality function.
+   Return the number of *i*'s for which ``s[i] == x``.
 
     .. versionadded:: 3.2
 
