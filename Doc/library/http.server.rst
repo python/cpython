@@ -182,22 +182,29 @@ of which this module provides three different variants:
 
    .. method:: send_header(keyword, value)
 
-      Writes a specific HTTP header to the output stream. *keyword* should
-      specify the header keyword, with *value* specifying its value.
+      Stores the HTTP header to an internal buffer which will be written to the
+      output stream when :meth:`end_headers` method is invoked.
+      *keyword* should specify the header keyword, with *value*
+      specifying its value.
+
+      .. versionchanged:: 3.2 Storing the headers in an internal buffer
+
 
    .. method:: send_response_only(code, message=None)
 
       Sends the reponse header only, used for the purposes when ``100
-      Continue`` response is sent by the server to the client. If the *message*
-      is not specified, the HTTP message corresponding the response *code*  is
-      sent.
+      Continue`` response is sent by the server to the client. The headers not
+      buffered and sent directly the output stream.If the *message* is not
+      specified, the HTTP message corresponding the response *code*  is sent.
 
       .. versionadded:: 3.2
 
    .. method:: end_headers()
 
-      Sends a blank line, indicating the end of the HTTP headers in the
-      response.
+      Write the buffered HTTP headers to the output stream and send a blank
+      line, indicating the end of the HTTP headers in the response.
+
+      .. versionchanged:: 3.2 Writing the buffered headers to the output stream.
 
    .. method:: log_request(code='-', size='-')
 

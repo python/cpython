@@ -443,7 +443,10 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
     def send_header(self, keyword, value):
         """Send a MIME header."""
         if self.request_version != 'HTTP/0.9':
-            self.wfile.write(("%s: %s\r\n" % (keyword, value)).encode('ASCII', 'strict'))
+            if not hasattr(self, '_headers_buffer'):
+                self._headers_buffer = []
+            self._headers_buffer.append(
+                ("%s: %s\r\n" % (keyword, value)).encode('ASCII', 'strict'))
 
         if keyword.lower() == 'connection':
             if value.lower() == 'close':
@@ -454,7 +457,9 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
     def end_headers(self):
         """Send the blank line ending the MIME headers."""
         if self.request_version != 'HTTP/0.9':
-            self.wfile.write(b"\r\n")
+            self._headers_buffer.append(b"\r\n")
+            self.wfile.write(b"".join(self._headers_buffer))
+            self._headers_buffer = []
 
     def log_request(self, code='-', size='-'):
         """Log an accepted request.
