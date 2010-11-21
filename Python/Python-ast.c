@@ -3516,6 +3516,7 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
 
         PyErr_Format(PyExc_TypeError, "expected some sort of mod, but got %R", obj);
         failed:
+        Py_XDECREF(tmp);
         return 1;
 }
 
@@ -4711,6 +4712,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
 
         PyErr_Format(PyExc_TypeError, "expected some sort of stmt, but got %R", obj);
         failed:
+        Py_XDECREF(tmp);
         return 1;
 }
 
@@ -5826,6 +5828,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
 
         PyErr_Format(PyExc_TypeError, "expected some sort of expr, but got %R", obj);
         failed:
+        Py_XDECREF(tmp);
         return 1;
 }
 
@@ -6006,6 +6009,7 @@ obj2ast_slice(PyObject* obj, slice_ty* out, PyArena* arena)
 
         PyErr_Format(PyExc_TypeError, "expected some sort of slice, but got %R", obj);
         failed:
+        Py_XDECREF(tmp);
         return 1;
 }
 
@@ -6438,6 +6442,7 @@ obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
 
         PyErr_Format(PyExc_TypeError, "expected some sort of excepthandler, but got %R", obj);
         failed:
+        Py_XDECREF(tmp);
         return 1;
 }
 
