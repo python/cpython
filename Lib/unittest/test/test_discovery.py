@@ -5,6 +5,18 @@ import sys
 import unittest
 
 
+class TestableTestProgram(unittest.TestProgram):
+    module = '__main__'
+    exit = True
+    defaultTest = failfast = catchbreak = buffer = None
+    verbosity = 1
+    progName = ''
+    testRunner = testLoader = None
+
+    def __init__(self):
+        pass
+
+
 class TestDiscovery(unittest.TestCase):
 
     # Heavily mocked tests so I can avoid hitting the filesystem
@@ -195,8 +207,7 @@ class TestDiscovery(unittest.TestCase):
             test.test_this_does_not_exist()
 
     def test_command_line_handling_parseArgs(self):
-        # Haha - take that uninstantiable class
-        program = object.__new__(unittest.TestProgram)
+        program = TestableTestProgram()
 
         args = []
         def do_discovery(argv):
@@ -208,13 +219,27 @@ class TestDiscovery(unittest.TestCase):
         program.parseArgs(['something', 'discover', 'foo', 'bar'])
         self.assertEqual(args, ['foo', 'bar'])
 
+    def test_command_line_handling_discover_by_default(self):
+        program = TestableTestProgram()
+        program.module = None
+
+        args = []
+        def do_discovery(argv):
+            args.extend(argv)
+        program._do_discovery = do_discovery
+        program.parseArgs(['something'])
+        self.assertEqual(args, [])
+
+        program.parseArgs(['something'])
+        self.assertEqual(args, [])
+
     def test_command_line_handling_do_discovery_too_many_arguments(self):
         class Stop(Exception):
             pass
         def usageExit():
             raise Stop
 
-        program = object.__new__(unittest.TestProgram)
+        program = TestableTestProgram()
         program.usageExit = usageExit
 
         with self.assertRaises(Stop):
@@ -223,7 +248,7 @@ class TestDiscovery(unittest.TestCase):
 
 
     def test_command_line_handling_do_discovery_calls_loader(self):
-        program = object.__new__(unittest.TestProgram)
+        program = TestableTestProgram()
 
         class Loader(object):
             args = []
@@ -237,49 +262,49 @@ class TestDiscovery(unittest.TestCase):
         self.assertEqual(Loader.args, [('.', 'test*.py', None)])
 
         Loader.args = []
-        program = object.__new__(unittest.TestProgram)
+        program = TestableTestProgram()
         program._do_discovery(['--verbose'], Loader=Loader)
         self.assertEqual(program.test, 'tests')
         self.assertEqual(Loader.args, [('.', 'test*.py', None)])
 
         Loader.args = []
-        program = object.__new__(unittest.TestProgram)
+        program = TestableTestProgram()
         program._do_discovery([], Loader=Loader)
         self.assertEqual(program.test, 'tests')
         self.assertEqual(Loader.args, [('.', 'test*.py', None)])
 
         Loader.args = []
-        program = object.__new__(unittest.TestProgram)
+        program = TestableTestProgram()
         program._do_discovery(['fish'], Loader=Loader)
         self.assertEqual(program.test, 'tests')
         self.assertEqual(Loader.args, [('fish', 'test*.py', None)])
 
         Loader.args = []
-        program = object.__new__(unittest.TestProgram)
+        program = TestableTestProgram()
         program._do_discovery(['fish', 'eggs'], Loader=Loader)
         self.assertEqual(program.test, 'tests')
         self.assertEqual(Loader.args, [('fish', 'eggs', None)])
 
         Loader.args = []
-        program = object.__new__(unittest.TestProgram)
+        program = TestableTestProgram()
         program._do_discovery(['fish', 'eggs', 'ham'], Loader=Loader)
         self.assertEqual(program.test, 'tests')
         self.assertEqual(Loader.args, [('fish', 'eggs', 'ham')])
 
         Loader.args = []
-        program = object.__new__(unittest.TestProgram)
+        program = TestableTestProgram()
         program._do_discovery(['-s', 'fish'], Loader=Loader)
         self.assertEqual(program.test, 'tests')
         self.assertEqual(Loader.args, [('fish', 'test*.py', None)])
 
         Loader.args = []
-        program = object.__new__(unittest.TestProgram)
+        program = TestableTestProgram()
         program._do_discovery(['-t', 'fish'], Loader=Loader)
         self.assertEqual(program.test, 'tests')
         self.assertEqual(Loader.args, [('.', 'test*.py', 'fish')])
 
         Loader.args = []
-        program = object.__new__(unittest.TestProgram)
+        program = TestableTestProgram()
         program._do_discovery(['-p', 'fish'], Loader=Loader)
         self.assertEqual(program.test, 'tests')
         self.assertEqual(Loader.args, [('.', 'fish', None)])
@@ -287,7 +312,7 @@ class TestDiscovery(unittest.TestCase):
         self.assertFalse(program.catchbreak)
 
         Loader.args = []
-        program = object.__new__(unittest.TestProgram)
+        program = TestableTestProgram()
         program._do_discovery(['-p', 'eggs', '-s', 'fish', '-v', '-f', '-c'],
                               Loader=Loader)
         self.assertEqual(program.test, 'tests')

@@ -208,6 +208,10 @@ You can run tests with more detail (higher verbosity) by passing in the -v flag:
 
    python -m unittest -v test_module
 
+When executed without arguments :ref:`unittest-test-discovery` is started::
+
+   python -m unittest
+
 For a list of all the command-line options::
 
    python -m unittest -h
@@ -265,6 +269,12 @@ used from the command line. The basic command-line usage is::
 
    cd project_directory
    python -m unittest discover
+
+.. note::
+
+   As a shortcut, ``python -m unittest`` is the equivalent of
+   ``python -m unittest discover``. If you want to pass arguments to test
+   discovery the `discover` sub-command must be used explicitly.
 
 The ``discover`` sub-command has the following options:
 

@@ -32,6 +32,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10470: 'python -m unittest' will now run test discovery by default,
+  when no extra arguments have been provided.
+
 - Issue #3709: BaseHTTPRequestHandler will buffer the headers and write to
   output stream only when end_headers is invoked. This is a speedup and an
   internal optimization.  Patch by endian.
