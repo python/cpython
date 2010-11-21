@@ -399,26 +399,54 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: float([x])
 
-   Convert a string or a number to floating point.  If the argument is a string,
-   it must contain a possibly signed decimal or floating point number, possibly
-   embedded in whitespace. The argument may also be ``'[+|-]nan'`` or
-   ``'[+|-]inf'``.  Otherwise, the argument may be an integer or a floating
-   point number, and a floating point number with the same value (within
-   Python's floating point precision) is returned.  If no argument is given,
-   ``0.0`` is returned.
+   .. index::
+      single: NaN
+      single: Infinity
 
-   .. note::
+   Convert a string or a number to floating point.
 
-      .. index::
-         single: NaN
-         single: Infinity
+   If the argument is a string, it should contain a decimal number, optionally
+   preceded by a sign, and optionally embedded in whitespace.  The optional
+   sign may be ``'+'`` or ``'-'``; a ``'+'`` sign has no effect on the value
+   produced.  The argument may also be a string representing a NaN
+   (not-a-number), or a positive or negative infinity.  More precisely, the
+   input must conform to the following grammar after leading and trailing
+   whitespace characters are removed:
 
-      When passing in a string, values for NaN and Infinity may be returned,
-      depending on the underlying C library.  Float accepts the strings
-      ``'nan'``, ``'inf'`` and ``'-inf'`` for NaN and positive or negative
-      infinity.  The case and a leading + are ignored as well as a leading - is
-      ignored for NaN.  Float always represents NaN and infinity as ``nan``,
-      ``inf`` or ``-inf``.
+   .. productionlist::
+      sign: "+" | "-"
+      infinity: "Infinity" | "inf"
+      nan: "nan"
+      numeric-value: `floatnumber` | `infinity` | `nan`
+      numeric-string: [`sign`] `numeric-value`
+
+   Here ``floatnumber`` is the form of a Python floating-point literal,
+   described in :ref:`floating`.  Case is not significant, so, for example,
+   "inf", "Inf", "INFINITY" and "iNfINity" are all acceptable spellings for
+   positive infinity.
+
+   Otherwise, if the argument is an integer or a floating point number, a
+   floating point number with the same value (within Python's floating point
+   precision) is returned.  If the argument is outside the range of a Python
+   float, an :exc:`OverflowError` will be raised.
+
+   For a general Python object ``x``, ``float(x)`` delegates to
+   ``x.__float__()``.
+
+   If no argument is given, ``0.0`` is returned.
+
+   Examples::
+
+      >>> float('+1.23')
+      1.23
+      >>> float('   -12345\n')
+      -12345.0
+      >>> float('1e-003')
+      0.001
+      >>> float('+1E6')
+      1000000.0
+      >>> float('-Infinity')
+      -inf
 
    The float type is described in :ref:`typesnumeric`.
 
