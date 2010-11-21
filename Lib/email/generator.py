@@ -274,7 +274,7 @@ class Generator:
         for part in msg.get_payload():
             s = self._new_buffer()
             g = self.clone(s)
-            g.flatten(part, unixfrom=False)
+            g.flatten(part, unixfrom=False, linesep=self._NL)
             text = s.getvalue()
             lines = text.split(self._encoded_NL)
             # Strip off the unnecessary trailing empty line
@@ -301,7 +301,7 @@ class Generator:
         # in that case we just emit the string body.
         payload = msg.get_payload()
         if isinstance(payload, list):
-            g.flatten(msg.get_payload(0), unixfrom=False)
+            g.flatten(msg.get_payload(0), unixfrom=False, linesep=self._NL)
             payload = s.getvalue()
         self._fp.write(payload)
 
