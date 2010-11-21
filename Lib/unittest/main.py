@@ -109,7 +109,8 @@ class TestProgram(object):
         sys.exit(2)
 
     def parseArgs(self, argv):
-        if len(argv) > 1 and argv[1].lower() == 'discover':
+        if ((len(argv) > 1 and argv[1].lower() == 'discover') or
+            (len(argv) == 1 and self.module is None)):
             self._do_discovery(argv[2:])
             return
 
