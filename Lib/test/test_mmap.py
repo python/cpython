@@ -417,7 +417,7 @@ class MmapTests(unittest.TestCase):
                     data = "".join(reversed(data))
                     L[start:stop:step] = data
                     m[start:stop:step] = data
-                    self.assertEquals(m[:], "".join(L))
+                    self.assertEqual(m[:], "".join(L))
 
     def make_mmap_file (self, f, halfsize):
         # Write 2 pages worth of data to the file
@@ -512,27 +512,27 @@ class MmapTests(unittest.TestCase):
         f.close()
         # Test write_byte()
         for i in xrange(len(data)):
-            self.assertEquals(m.tell(), i)
+            self.assertEqual(m.tell(), i)
             m.write_byte(data[i])
-            self.assertEquals(m.tell(), i+1)
+            self.assertEqual(m.tell(), i+1)
         self.assertRaises(ValueError, m.write_byte, "x")
-        self.assertEquals(m[:], data)
+        self.assertEqual(m[:], data)
         # Test read_byte()
         m.seek(0)
         for i in xrange(len(data)):
-            self.assertEquals(m.tell(), i)
-            self.assertEquals(m.read_byte(), data[i])
-            self.assertEquals(m.tell(), i+1)
+            self.assertEqual(m.tell(), i)
+            self.assertEqual(m.read_byte(), data[i])
+            self.assertEqual(m.tell(), i+1)
         self.assertRaises(ValueError, m.read_byte)
         # Test read()
         m.seek(3)
-        self.assertEquals(m.read(3), "345")
-        self.assertEquals(m.tell(), 6)
+        self.assertEqual(m.read(3), "345")
+        self.assertEqual(m.tell(), 6)
         # Test write()
         m.seek(3)
         m.write("bar")
-        self.assertEquals(m.tell(), 6)
-        self.assertEquals(m[:], "012bar6789")
+        self.assertEqual(m.tell(), 6)
+        self.assertEqual(m[:], "012bar6789")
         m.seek(8)
         self.assertRaises(ValueError, m.write, "bar")
 
@@ -547,8 +547,8 @@ class MmapTests(unittest.TestCase):
             m1[:] = data1
             m2 = mmap.mmap(-1, len(data2), tagname="foo")
             m2[:] = data2
-            self.assertEquals(m1[:], data2)
-            self.assertEquals(m2[:], data2)
+            self.assertEqual(m1[:], data2)
+            self.assertEqual(m2[:], data2)
             m2.close()
             m1.close()
 
@@ -557,8 +557,8 @@ class MmapTests(unittest.TestCase):
             m1[:] = data1
             m2 = mmap.mmap(-1, len(data2), tagname="boo")
             m2[:] = data2
-            self.assertEquals(m1[:], data1)
-            self.assertEquals(m2[:], data2)
+            self.assertEqual(m1[:], data1)
+            self.assertEqual(m2[:], data2)
             m2.close()
             m1.close()
 

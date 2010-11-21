@@ -129,11 +129,11 @@ class TestLongMessage(unittest.TestCase):
         self.assertFalse(unittest.TestCase.longMessage)
 
     def test_formatMsg(self):
-        self.assertEquals(self.testableFalse._formatMessage(None, "foo"), "foo")
-        self.assertEquals(self.testableFalse._formatMessage("foo", "bar"), "foo")
+        self.assertEqual(self.testableFalse._formatMessage(None, "foo"), "foo")
+        self.assertEqual(self.testableFalse._formatMessage("foo", "bar"), "foo")
 
-        self.assertEquals(self.testableTrue._formatMessage(None, "foo"), "foo")
-        self.assertEquals(self.testableTrue._formatMessage("foo", "bar"), "bar : foo")
+        self.assertEqual(self.testableTrue._formatMessage(None, "foo"), "foo")
+        self.assertEqual(self.testableTrue._formatMessage("foo", "bar"), "bar : foo")
 
         # This blows up if _formatMessage uses string concatenation
         self.testableTrue._formatMessage(object(), 'foo')

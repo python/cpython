@@ -76,7 +76,7 @@ class GetReturnsNoneTestCase(unittest.TestCase):
                 break
 
         self.assertNotEqual(rec, None)
-        self.assert_(exceptionHappened)
+        self.assertTrue(exceptionHappened)
         self.assertEqual(count, len(string.letters))
 
         c.close()

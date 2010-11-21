@@ -175,9 +175,9 @@ class GetoptTests(unittest.TestCase):
 
     def test_issue4629(self):
         longopts, shortopts = getopt.getopt(['--help='], '', ['help='])
-        self.assertEquals(longopts, [('--help', '')])
+        self.assertEqual(longopts, [('--help', '')])
         longopts, shortopts = getopt.getopt(['--help=x'], '', ['help='])
-        self.assertEquals(longopts, [('--help', 'x')])
+        self.assertEqual(longopts, [('--help', 'x')])
         self.assertRaises(getopt.GetoptError, getopt.getopt, ['--help='], '', ['help'])
 
 def test_main():

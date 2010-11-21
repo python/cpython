@@ -28,7 +28,7 @@ class StrTest(unittest.TestCase):
             pass
         else:
             self.fail("should have raised OverflowError")
-        self.assertEquals(len(x), MAX_Py_ssize_t)
+        self.assertEqual(len(x), MAX_Py_ssize_t)
 
     ### the following test is pending a patch
     #   (http://mail.python.org/pipermail/python-dev/2006-July/067774.html)

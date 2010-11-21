@@ -24,8 +24,8 @@ if os.name != 'posix':
 class CommandTests(unittest.TestCase):
 
     def test_getoutput(self):
-        self.assertEquals(commands.getoutput('echo xyzzy'), 'xyzzy')
-        self.assertEquals(commands.getstatusoutput('echo xyzzy'), (0, 'xyzzy'))
+        self.assertEqual(commands.getoutput('echo xyzzy'), 'xyzzy')
+        self.assertEqual(commands.getstatusoutput('echo xyzzy'), (0, 'xyzzy'))
 
         # we use mkdtemp in the next line to create an empty directory
         # under our exclusive control; from that, we can invent a pathname
@@ -36,7 +36,7 @@ class CommandTests(unittest.TestCase):
             name = os.path.join(dir, "foo")
 
             status, output = commands.getstatusoutput('cat ' + name)
-            self.assertNotEquals(status, 0)
+            self.assertNotEqual(status, 0)
         finally:
             if dir is not None:
                 os.rmdir(dir)

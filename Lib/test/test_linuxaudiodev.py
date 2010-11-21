@@ -61,29 +61,29 @@ class LinuxAudioDevTests(unittest.TestCase):
         try:
             self.dev.setparameters(-1, size, nchannels, fmt)
         except ValueError, err:
-            self.assertEquals(err.args[0], "expected rate >= 0, not -1")
+            self.assertEqual(err.args[0], "expected rate >= 0, not -1")
         try:
             self.dev.setparameters(rate, -2, nchannels, fmt)
         except ValueError, err:
-            self.assertEquals(err.args[0], "expected sample size >= 0, not -2")
+            self.assertEqual(err.args[0], "expected sample size >= 0, not -2")
         try:
             self.dev.setparameters(rate, size, 3, fmt)
         except ValueError, err:
-            self.assertEquals(err.args[0], "nchannels must be 1 or 2, not 3")
+            self.assertEqual(err.args[0], "nchannels must be 1 or 2, not 3")
         try:
             self.dev.setparameters(rate, size, nchannels, 177)
         except ValueError, err:
-            self.assertEquals(err.args[0], "unknown audio encoding: 177")
+            self.assertEqual(err.args[0], "unknown audio encoding: 177")
         try:
             self.dev.setparameters(rate, size, nchannels, linuxaudiodev.AFMT_U16_LE)
         except ValueError, err:
-            self.assertEquals(err.args[0], "for linear unsigned 16-bit little-endian "
-                              "audio, expected sample size 16, not 8")
+            self.assertEqual(err.args[0], "for linear unsigned 16-bit little-endian "
+                             "audio, expected sample size 16, not 8")
         try:
             self.dev.setparameters(rate, 16, nchannels, fmt)
         except ValueError, err:
-            self.assertEquals(err.args[0], "for linear unsigned 8-bit audio, expected "
-                              "sample size 8, not 16")
+            self.assertEqual(err.args[0], "for linear unsigned 8-bit audio, expected "
+                             "sample size 8, not 16")
 
 def test_main():
     try:

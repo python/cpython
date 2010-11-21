@@ -117,7 +117,7 @@ class SliceTest(unittest.TestCase):
         x = X()
         with test_support.check_py3k_warnings():
             x[1:2] = 42
-        self.assertEquals(tmp, [(1, 2, 42)])
+        self.assertEqual(tmp, [(1, 2, 42)])
 
     def test_pickle(self):
         s = slice(10, 20, 3)

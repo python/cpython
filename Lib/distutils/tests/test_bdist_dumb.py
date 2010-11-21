@@ -78,7 +78,7 @@ class BuildDumbTestCase(support.TempdirManager,
             base = base.replace(':', '-')
 
         wanted = ['%s.zip' % base]
-        self.assertEquals(dist_created, wanted)
+        self.assertEqual(dist_created, wanted)
 
         # now let's check what we have in the zip file
         # XXX to be done
@@ -87,16 +87,16 @@ class BuildDumbTestCase(support.TempdirManager,
         pkg_dir, dist = self.create_dist()
         os.chdir(pkg_dir)
         cmd = bdist_dumb(dist)
-        self.assertEquals(cmd.bdist_dir, None)
+        self.assertEqual(cmd.bdist_dir, None)
         cmd.finalize_options()
 
         # bdist_dir is initialized to bdist_base/dumb if not set
         base = cmd.get_finalized_command('bdist').bdist_base
-        self.assertEquals(cmd.bdist_dir, os.path.join(base, 'dumb'))
+        self.assertEqual(cmd.bdist_dir, os.path.join(base, 'dumb'))
 
         # the format is set to a default value depending on the os.name
         default = cmd.default_format[os.name]
-        self.assertEquals(cmd.format, default)
+        self.assertEqual(cmd.format, default)
 
 def test_suite():
     return unittest.makeSuite(BuildDumbTestCase)

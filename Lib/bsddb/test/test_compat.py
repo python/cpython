@@ -119,7 +119,7 @@ class CompatibilityTestCase(unittest.TestCase):
             if verbose:
                 print rec
 
-        self.assert_(f.has_key('f'), 'Error, missing key!')
+        self.assertTrue(f.has_key('f'), 'Error, missing key!')
 
         # test that set_location() returns the next nearest key, value
         # on btree databases and raises KeyError on others.

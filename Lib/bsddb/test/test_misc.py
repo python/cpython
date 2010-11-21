@@ -32,7 +32,7 @@ class MiscTestCase(unittest.TestCase):
     def test02_db_home(self):
         env = db.DBEnv()
         # check for crash fixed when db_home is used before open()
-        self.assert_(env.db_home is None)
+        self.assertTrue(env.db_home is None)
         env.open(self.homeDir, db.DB_CREATE)
         if sys.version_info[0] < 3 :
             self.assertEqual(self.homeDir, env.db_home)
@@ -43,7 +43,7 @@ class MiscTestCase(unittest.TestCase):
         db = hashopen(self.filename)
         db.close()
         rp = repr(db)
-        self.assertEquals(rp, "{}")
+        self.assertEqual(rp, "{}")
 
     def test04_repr_db(self) :
         db = hashopen(self.filename)
@@ -54,7 +54,7 @@ class MiscTestCase(unittest.TestCase):
         db.close()
         db = hashopen(self.filename)
         rp = repr(db)
-        self.assertEquals(rp, repr(d))
+        self.assertEqual(rp, repr(d))
         db.close()
 
     # http://sourceforge.net/tracker/index.php?func=detail&aid=1708868&group_id=13900&atid=313900

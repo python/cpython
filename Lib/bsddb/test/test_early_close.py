@@ -162,7 +162,7 @@ class DBEnvClosedEarlyCrash(unittest.TestCase):
         txn = dbenv.txn_begin()
         c1 = d.cursor(txn)
         c2 = c1.dup()
-        self.assertEquals(("XXX", "yyy"), c1.first())
+        self.assertEqual(("XXX", "yyy"), c1.first())
 
         # Not interested in warnings about implicit close.
         import warnings

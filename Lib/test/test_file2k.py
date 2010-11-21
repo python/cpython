@@ -29,7 +29,7 @@ class AutoFileTests(unittest.TestCase):
         # verify weak references
         p = proxy(self.f)
         p.write('teststring')
-        self.assertEquals(self.f.tell(), p.tell())
+        self.assertEqual(self.f.tell(), p.tell())
         self.f.close()
         self.f = None
         self.assertRaises(ReferenceError, getattr, p, 'tell')
@@ -58,7 +58,7 @@ class AutoFileTests(unittest.TestCase):
         a = array('c', 'x'*10)
         self.f = open(TESTFN, 'rb')
         n = self.f.readinto(a)
-        self.assertEquals('12', a.tostring()[:n])
+        self.assertEqual('12', a.tostring()[:n])
 
     def testWritelinesUserList(self):
         # verify writelines with instance sequence
@@ -67,7 +67,7 @@ class AutoFileTests(unittest.TestCase):
         self.f.close()
         self.f = open(TESTFN, 'rb')
         buf = self.f.read()
-        self.assertEquals(buf, '12')
+        self.assertEqual(buf, '12')
 
     def testWritelinesIntegers(self):
         # verify writelines with integers
@@ -94,7 +94,7 @@ class AutoFileTests(unittest.TestCase):
         self.f.close()
         self.f = open(TESTFN, 'rb')
         f = self.f
-        self.assertEquals(f.name, TESTFN)
+        self.assertEqual(f.name, TESTFN)
         self.assertTrue(not f.isatty())
         self.assertTrue(not f.closed)
 
@@ -125,12 +125,12 @@ class AutoFileTests(unittest.TestCase):
         self.assertRaises(ValueError, self.f.writelines, [])
 
         # file is closed, __exit__ shouldn't do anything
-        self.assertEquals(self.f.__exit__(None, None, None), None)
+        self.assertEqual(self.f.__exit__(None, None, None), None)
         # it must also return None if an exception was given
         try:
             1 // 0
         except:
-            self.assertEquals(self.f.__exit__(*sys.exc_info()), None)
+            self.assertEqual(self.f.__exit__(*sys.exc_info()), None)
 
     def testReadWhenWriting(self):
         self.assertRaises(IOError, self.f.read)
@@ -261,7 +261,7 @@ class OtherFileTests(unittest.TestCase):
                 f.close()
             except IOError, msg:
                 self.fail('error setting buffer size %d: %s' % (s, str(msg)))
-            self.assertEquals(d, s)
+            self.assertEqual(d, s)
 
     def testTruncateOnWindows(self):
         os.unlink(TESTFN)
@@ -621,7 +621,7 @@ class StdoutTests(unittest.TestCase):
         try:
             print
         except RuntimeError as e:
-            self.assertEquals(str(e), "lost sys.stdout")
+            self.assertEqual(str(e), "lost sys.stdout")
         else:
             self.fail("Expected RuntimeError")
         finally:

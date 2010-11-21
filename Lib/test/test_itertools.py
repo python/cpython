@@ -192,7 +192,7 @@ class TestBasicOps(unittest.TestCase):
 
                 regular_combs = list(combinations(values, r))           # compare to combs without replacement
                 if n == 0 or r <= 1:
-                    self.assertEquals(result, regular_combs)            # cases that should be identical
+                    self.assertEqual(result, regular_combs)            # cases that should be identical
                 else:
                     self.assertTrue(set(result) >= set(regular_combs))     # rest should be supersets of regular combs
 
@@ -288,20 +288,20 @@ class TestBasicOps(unittest.TestCase):
                 comb = list(combinations(s, r))
 
                 # Check size
-                self.assertEquals(len(prod), n**r)
-                self.assertEquals(len(cwr), (fact(n+r-1) // fact(r) // fact(n-1)) if n else (not r))
-                self.assertEquals(len(perm), 0 if r>n else fact(n) // fact(n-r))
-                self.assertEquals(len(comb), 0 if r>n else fact(n) // fact(r) // fact(n-r))
+                self.assertEqual(len(prod), n**r)
+                self.assertEqual(len(cwr), (fact(n+r-1) // fact(r) // fact(n-1)) if n else (not r))
+                self.assertEqual(len(perm), 0 if r>n else fact(n) // fact(n-r))
+                self.assertEqual(len(comb), 0 if r>n else fact(n) // fact(r) // fact(n-r))
 
                 # Check lexicographic order without repeated tuples
-                self.assertEquals(prod, sorted(set(prod)))
-                self.assertEquals(cwr, sorted(set(cwr)))
-                self.assertEquals(perm, sorted(set(perm)))
-                self.assertEquals(comb, sorted(set(comb)))
+                self.assertEqual(prod, sorted(set(prod)))
+                self.assertEqual(cwr, sorted(set(cwr)))
+                self.assertEqual(perm, sorted(set(perm)))
+                self.assertEqual(comb, sorted(set(comb)))
 
                 # Check interrelationships
-                self.assertEquals(cwr, [t for t in prod if sorted(t)==list(t)]) # cwr: prods which are sorted
-                self.assertEquals(perm, [t for t in prod if len(set(t))==r])    # perm: prods with no dups
+                self.assertEqual(cwr, [t for t in prod if sorted(t)==list(t)]) # cwr: prods which are sorted
+                self.assertEqual(perm, [t for t in prod if len(set(t))==r])    # perm: prods with no dups
                 self.assertEqual(comb, [t for t in perm if sorted(t)==list(t)]) # comb: perms that are sorted
                 self.assertEqual(comb, [t for t in cwr if len(set(t))==r])      # comb: cwrs without dups
                 self.assertEqual(comb, filter(set(cwr).__contains__, perm))     # comb: perm that is a cwr

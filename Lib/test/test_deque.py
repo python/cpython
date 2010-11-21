@@ -234,7 +234,7 @@ class TestBasic(unittest.TestCase):
             d = deque(data[:i])
             r = d.reverse()
             self.assertEqual(list(d), list(reversed(data[:i])))
-            self.assert_(r is None)
+            self.assertIs(r, None)
             d.reverse()
             self.assertEqual(list(d), data[:i])
         self.assertRaises(TypeError, d.reverse, 1)          # Arity is zero

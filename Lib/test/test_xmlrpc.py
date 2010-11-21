@@ -44,8 +44,8 @@ alist = [{'astring': 'foo@bar.baz.spam',
 class XMLRPCTestCase(unittest.TestCase):
 
     def test_dump_load(self):
-        self.assertEquals(alist,
-                          xmlrpclib.loads(xmlrpclib.dumps((alist,)))[0][0])
+        self.assertEqual(alist,
+                         xmlrpclib.loads(xmlrpclib.dumps((alist,)))[0][0])
 
     def test_dump_bare_datetime(self):
         # This checks that an unwrapped datetime.date object can be handled
@@ -55,22 +55,22 @@ class XMLRPCTestCase(unittest.TestCase):
         dt = datetime.datetime(2005, 02, 10, 11, 41, 23)
         s = xmlrpclib.dumps((dt,))
         (newdt,), m = xmlrpclib.loads(s, use_datetime=1)
-        self.assertEquals(newdt, dt)
-        self.assertEquals(m, None)
+        self.assertEqual(newdt, dt)
+        self.assertEqual(m, None)
 
         (newdt,), m = xmlrpclib.loads(s, use_datetime=0)
-        self.assertEquals(newdt, xmlrpclib.DateTime('20050210T11:41:23'))
+        self.assertEqual(newdt, xmlrpclib.DateTime('20050210T11:41:23'))
 
     def test_datetime_before_1900(self):
         # same as before but with a date before 1900
         dt = datetime.datetime(1, 02, 10, 11, 41, 23)
         s = xmlrpclib.dumps((dt,))
         (newdt,), m = xmlrpclib.loads(s, use_datetime=1)
-        self.assertEquals(newdt, dt)
-        self.assertEquals(m, None)
+        self.assertEqual(newdt, dt)
+        self.assertEqual(m, None)
 
         (newdt,), m = xmlrpclib.loads(s, use_datetime=0)
-        self.assertEquals(newdt, xmlrpclib.DateTime('00010210T11:41:23'))
+        self.assertEqual(newdt, xmlrpclib.DateTime('00010210T11:41:23'))
 
     def test_cmp_datetime_DateTime(self):
         now = datetime.datetime.now()
@@ -98,7 +98,7 @@ class XMLRPCTestCase(unittest.TestCase):
         t.x = 100
         t.y = "Hello"
         ((t2,), dummy) = xmlrpclib.loads(xmlrpclib.dumps((t,)))
-        self.assertEquals(t2, t.__dict__)
+        self.assertEqual(t2, t.__dict__)
 
     def test_dump_big_long(self):
         self.assertRaises(OverflowError, xmlrpclib.dumps, (2L**99,))
@@ -141,8 +141,8 @@ class XMLRPCTestCase(unittest.TestCase):
         value = alist + [None]
         arg1 = (alist + [None],)
         strg = xmlrpclib.dumps(arg1, allow_none=True)
-        self.assertEquals(value,
-                          xmlrpclib.loads(strg)[0][0])
+        self.assertEqual(value,
+                         xmlrpclib.loads(strg)[0][0])
         self.assertRaises(TypeError, xmlrpclib.dumps, (arg1,))
 
     def test_default_encoding_issues(self):
@@ -178,14 +178,14 @@ class XMLRPCTestCase(unittest.TestCase):
 
         items = d.items()
         if have_unicode:
-            self.assertEquals(s, u"abc \x95")
+            self.assertEqual(s, u"abc \x95")
             self.assertIsInstance(s, unicode)
-            self.assertEquals(items, [(u"def \x96", u"ghi \x97")])
+            self.assertEqual(items, [(u"def \x96", u"ghi \x97")])
             self.assertIsInstance(items[0][0], unicode)
             self.assertIsInstance(items[0][1], unicode)
         else:
-            self.assertEquals(s, "abc \xc2\x95")
-            self.assertEquals(items, [("def \xc2\x96", "ghi \xc2\x97")])
+            self.assertEqual(s, "abc \xc2\x95")
+            self.assertEqual(items, [("def \xc2\x96", "ghi \xc2\x97")])
 
 
 class HelperTestCase(unittest.TestCase):
@@ -204,8 +204,8 @@ class FaultTestCase(unittest.TestCase):
         f = xmlrpclib.Fault(42, 'Test Fault')
         s = xmlrpclib.dumps((f,))
         (newf,), m = xmlrpclib.loads(s)
-        self.assertEquals(newf, {'faultCode': 42, 'faultString': 'Test Fault'})
-        self.assertEquals(m, None)
+        self.assertEqual(newf, {'faultCode': 42, 'faultString': 'Test Fault'})
+        self.assertEqual(m, None)
 
         s = xmlrpclib.Marshaller().dumps(f)
         self.assertRaises(xmlrpclib.Fault, xmlrpclib.loads, s)
@@ -903,7 +903,7 @@ class CGIHandlerTestCase(unittest.TestCase):
 
         content = handle[handle.find("<?xml"):]
 
-        self.assertEquals(
+        self.assertEqual(
             int(re.search('Content-Length: (\d+)', handle).group(1)),
             len(content))
 

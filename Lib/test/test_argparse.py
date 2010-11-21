@@ -2709,18 +2709,18 @@ class TestNamespaceContainsSimple(TestCase):
 
     def test_empty(self):
         ns = argparse.Namespace()
-        self.assertEquals('' in ns, False)
-        self.assertEquals('' not in ns, True)
-        self.assertEquals('x' in ns, False)
+        self.assertEqual('' in ns, False)
+        self.assertEqual('' not in ns, True)
+        self.assertEqual('x' in ns, False)
 
     def test_non_empty(self):
         ns = argparse.Namespace(x=1, y=2)
-        self.assertEquals('x' in ns, True)
-        self.assertEquals('x' not in ns, False)
-        self.assertEquals('y' in ns, True)
-        self.assertEquals('' in ns, False)
-        self.assertEquals('xx' in ns, False)
-        self.assertEquals('z' in ns, False)
+        self.assertEqual('x' in ns, True)
+        self.assertEqual('x' not in ns, False)
+        self.assertEqual('y' in ns, True)
+        self.assertEqual('' in ns, False)
+        self.assertEqual('xx' in ns, False)
+        self.assertEqual('z' in ns, False)
 
 # =====================
 # Help formatting tests

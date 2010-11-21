@@ -30,8 +30,8 @@ class FrozenTests(unittest.TestCase):
             else:
                 self.fail("import __phello__.foo should have failed")
 
-        self.assertEquals(stdout.getvalue(),
-                          'Hello world...\nHello world...\nHello world...\n')
+        self.assertEqual(stdout.getvalue(),
+                         'Hello world...\nHello world...\nHello world...\n')
 
         del sys.modules['__hello__']
         del sys.modules['__phello__']

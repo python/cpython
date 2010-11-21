@@ -102,7 +102,7 @@ class TestGzip(unittest.TestCase):
                 ztxt = zgfile.read(8192)
                 contents += ztxt
                 if not ztxt: break
-        self.assertEquals(contents, 'a'*201)
+        self.assertEqual(contents, 'a'*201)
 
     def test_buffered_reader(self):
         # Issue #7471: a GzipFile can be wrapped in a BufferedReader for
@@ -166,7 +166,7 @@ class TestGzip(unittest.TestCase):
             f.read(10)
             f.seek(10, whence=1)
             y = f.read(10)
-        self.assertEquals(y, data1[20:30])
+        self.assertEqual(y, data1[20:30])
 
     def test_seek_write(self):
         # Try seek, write test

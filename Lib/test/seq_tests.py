@@ -131,8 +131,8 @@ class CommonTest(unittest.TestCase):
             self.assertRaises(ZeroDivisionError, self.type2test, IterGenExc(s))
 
     def test_truth(self):
-        self.assert_(not self.type2test())
-        self.assert_(self.type2test([42]))
+        self.assertFalse(self.type2test())
+        self.assertTrue(self.type2test([42]))
 
     def test_getitem(self):
         u = self.type2test([0, 1, 2, 3, 4])
@@ -270,7 +270,7 @@ class CommonTest(unittest.TestCase):
             pass
         u3 = subclass([0, 1])
         self.assertEqual(u3, u3*1)
-        self.assert_(u3 is not u3*1)
+        self.assertIsNot(u3, u3*1)
 
     def test_iadd(self):
         u = self.type2test([0, 1])

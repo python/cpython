@@ -139,7 +139,7 @@ class HelperFunctionsTests(unittest.TestCase):
         user_base = site.getuserbase()
 
         # the call sets site.USER_BASE
-        self.assertEquals(site.USER_BASE, user_base)
+        self.assertEqual(site.USER_BASE, user_base)
 
         # let's set PYTHONUSERBASE and see if it uses it
         site.USER_BASE = None
@@ -157,7 +157,7 @@ class HelperFunctionsTests(unittest.TestCase):
         user_site = site.getusersitepackages()
 
         # the call sets USER_BASE *and* USER_SITE
-        self.assertEquals(site.USER_SITE, user_site)
+        self.assertEqual(site.USER_SITE, user_site)
         self.assertTrue(user_site.startswith(site.USER_BASE), user_site)
 
     def test_getsitepackages(self):
@@ -167,19 +167,19 @@ class HelperFunctionsTests(unittest.TestCase):
         if sys.platform in ('os2emx', 'riscos'):
             self.assertEqual(len(dirs), 1)
             wanted = os.path.join('xoxo', 'Lib', 'site-packages')
-            self.assertEquals(dirs[0], wanted)
+            self.assertEqual(dirs[0], wanted)
         elif os.sep == '/':
             self.assertEqual(len(dirs), 2)
             wanted = os.path.join('xoxo', 'lib', 'python' + sys.version[:3],
                                   'site-packages')
-            self.assertEquals(dirs[0], wanted)
+            self.assertEqual(dirs[0], wanted)
             wanted = os.path.join('xoxo', 'lib', 'site-python')
-            self.assertEquals(dirs[1], wanted)
+            self.assertEqual(dirs[1], wanted)
         else:
             self.assertEqual(len(dirs), 2)
-            self.assertEquals(dirs[0], 'xoxo')
+            self.assertEqual(dirs[0], 'xoxo')
             wanted = os.path.join('xoxo', 'lib', 'site-packages')
-            self.assertEquals(dirs[1], wanted)
+            self.assertEqual(dirs[1], wanted)
 
         # let's try the specific Apple location
         if (sys.platform == "darwin" and
@@ -189,10 +189,10 @@ class HelperFunctionsTests(unittest.TestCase):
             self.assertEqual(len(dirs), 4)
             wanted = os.path.join('~', 'Library', 'Python',
                                   sys.version[:3], 'site-packages')
-            self.assertEquals(dirs[2], os.path.expanduser(wanted))
+            self.assertEqual(dirs[2], os.path.expanduser(wanted))
             wanted = os.path.join('/Library', 'Python', sys.version[:3],
                                   'site-packages')
-            self.assertEquals(dirs[3], wanted)
+            self.assertEqual(dirs[3], wanted)
 
 class PthFile(object):
     """Helper class for handling testing of .pth files"""

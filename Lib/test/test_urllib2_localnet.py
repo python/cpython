@@ -371,8 +371,8 @@ class TestUrlopen(BaseTestCase):
             data = f.read()
             f.close()
 
-            self.assertEquals(data, expected_response)
-            self.assertEquals(handler.requests, ['/', '/somewhere_else'])
+            self.assertEqual(data, expected_response)
+            self.assertEqual(handler.requests, ['/', '/somewhere_else'])
         finally:
             self.server.stop()
 
@@ -392,8 +392,8 @@ class TestUrlopen(BaseTestCase):
             data = f.read()
             f.close()
 
-            self.assertEquals(data, expected_response)
-            self.assertEquals(handler.requests, ['/weeble'])
+            self.assertEqual(data, expected_response)
+            self.assertEqual(handler.requests, ['/weeble'])
         finally:
             self.server.stop()
 
@@ -407,8 +407,8 @@ class TestUrlopen(BaseTestCase):
             data = f.read()
             f.close()
 
-            self.assertEquals(data, expected_response)
-            self.assertEquals(handler.requests, ['/bizarre'])
+            self.assertEqual(data, expected_response)
+            self.assertEqual(handler.requests, ['/bizarre'])
         finally:
             self.server.stop()
 
@@ -421,8 +421,8 @@ class TestUrlopen(BaseTestCase):
             data = f.read()
             f.close()
 
-            self.assertEquals(data, expected_response)
-            self.assertEquals(handler.requests, ['/bizarre', 'get=with_feeling'])
+            self.assertEqual(data, expected_response)
+            self.assertEqual(handler.requests, ['/bizarre', 'get=with_feeling'])
         finally:
             self.server.stop()
 

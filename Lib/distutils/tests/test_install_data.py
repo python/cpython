@@ -27,14 +27,14 @@ class InstallDataTestCase(support.TempdirManager,
         self.write_file(two, 'xxx')
 
         cmd.data_files = [one, (inst2, [two])]
-        self.assertEquals(cmd.get_inputs(), [one, (inst2, [two])])
+        self.assertEqual(cmd.get_inputs(), [one, (inst2, [two])])
 
         # let's run the command
         cmd.ensure_finalized()
         cmd.run()
 
         # let's check the result
-        self.assertEquals(len(cmd.get_outputs()), 2)
+        self.assertEqual(len(cmd.get_outputs()), 2)
         rtwo = os.path.split(two)[-1]
         self.assertTrue(os.path.exists(os.path.join(inst2, rtwo)))
         rone = os.path.split(one)[-1]
@@ -47,7 +47,7 @@ class InstallDataTestCase(support.TempdirManager,
         cmd.run()
 
         # let's check the result
-        self.assertEquals(len(cmd.get_outputs()), 2)
+        self.assertEqual(len(cmd.get_outputs()), 2)
         self.assertTrue(os.path.exists(os.path.join(inst2, rtwo)))
         self.assertTrue(os.path.exists(os.path.join(inst, rone)))
         cmd.outfiles = []
@@ -65,7 +65,7 @@ class InstallDataTestCase(support.TempdirManager,
         cmd.run()
 
         # let's check the result
-        self.assertEquals(len(cmd.get_outputs()), 4)
+        self.assertEqual(len(cmd.get_outputs()), 4)
         self.assertTrue(os.path.exists(os.path.join(inst2, rtwo)))
         self.assertTrue(os.path.exists(os.path.join(inst, rone)))
 

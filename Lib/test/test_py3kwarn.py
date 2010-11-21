@@ -397,7 +397,7 @@ class TestStdlibRemovals(unittest.TestCase):
             reset_module_registry(mod)
             with check_py3k_warnings() as w:
                 mod.walk("crashers", dumbo, None)
-            self.assertEquals(str(w.message), msg)
+            self.assertEqual(str(w.message), msg)
 
     def test_reduce_move(self):
         from operator import add

@@ -384,8 +384,8 @@ class TestBuggyCases(GetSourceBase):
         self.assertRaises(IOError, inspect.findsource, co)
         self.assertRaises(IOError, inspect.getsource, co)
         linecache.cache[co.co_filename] = (1, None, lines, co.co_filename)
-        self.assertEquals(inspect.findsource(co), (lines,0))
-        self.assertEquals(inspect.getsource(co), lines[0])
+        self.assertEqual(inspect.findsource(co), (lines,0))
+        self.assertEqual(inspect.getsource(co), lines[0])
 
 # Helper for testing classify_class_attrs.
 def attrs_wo_objs(cls):

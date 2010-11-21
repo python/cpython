@@ -23,8 +23,8 @@ class TestMacOS(unittest.TestCase):
                         test_support.TESTFN])
 
             cr, tp = MacOS.GetCreatorAndType(test_support.TESTFN)
-            self.assertEquals(tp, 'ABCD')
-            self.assertEquals(cr, 'EFGH')
+            self.assertEqual(tp, 'ABCD')
+            self.assertEqual(cr, 'EFGH')
 
         finally:
             os.unlink(test_support.TESTFN)
@@ -42,8 +42,8 @@ class TestMacOS(unittest.TestCase):
                     'ABCD', 'EFGH')
 
             cr, tp = MacOS.GetCreatorAndType(test_support.TESTFN)
-            self.assertEquals(cr, 'ABCD')
-            self.assertEquals(tp, 'EFGH')
+            self.assertEqual(cr, 'ABCD')
+            self.assertEqual(tp, 'EFGH')
 
             data = subprocess.Popen(["/Developer/Tools/GetFileInfo", test_support.TESTFN],
                     stdout=subprocess.PIPE).communicate()[0]
@@ -56,8 +56,8 @@ class TestMacOS(unittest.TestCase):
                 if ln.startswith('creator:'):
                     cr = ln.split()[-1][1:-1]
 
-            self.assertEquals(cr, 'ABCD')
-            self.assertEquals(tp, 'EFGH')
+            self.assertEqual(cr, 'ABCD')
+            self.assertEqual(tp, 'EFGH')
 
         finally:
             os.unlink(test_support.TESTFN)
@@ -77,14 +77,14 @@ class TestMacOS(unittest.TestCase):
             fp = open(test_support.TESTFN, 'r')
             data = fp.read()
             fp.close()
-            self.assertEquals(data, 'hello world\n')
+            self.assertEqual(data, 'hello world\n')
 
             rfp = MacOS.openrf(test_support.TESTFN, '*rb')
             data = rfp.read(100)
             data2 = rfp.read(100)
             rfp.close()
-            self.assertEquals(data, 'goodbye world\n')
-            self.assertEquals(data2, '')
+            self.assertEqual(data, 'goodbye world\n')
+            self.assertEqual(data2, '')
 
 
         finally:

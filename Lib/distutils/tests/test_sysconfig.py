@@ -36,7 +36,7 @@ class SysconfigTestCase(support.EnvironGuard,
                             sysconfig.get_python_lib(prefix=TESTFN))
         _sysconfig = __import__('sysconfig')
         res = sysconfig.get_python_lib(True, True)
-        self.assertEquals(_sysconfig.get_path('platstdlib'), res)
+        self.assertEqual(_sysconfig.get_path('platstdlib'), res)
 
     def test_get_python_inc(self):
         inc_dir = sysconfig.get_python_inc()
@@ -56,8 +56,8 @@ class SysconfigTestCase(support.EnvironGuard,
         finally:
             fd.close()
         d = sysconfig.parse_makefile(self.makefile)
-        self.assertEquals(d, {'CONFIG_ARGS': "'--arg1=optarg1' 'ENV=LIB'",
-                              'OTHER': 'foo'})
+        self.assertEqual(d, {'CONFIG_ARGS': "'--arg1=optarg1' 'ENV=LIB'",
+                             'OTHER': 'foo'})
 
     def test_parse_makefile_literal_dollar(self):
         self.makefile = test.test_support.TESTFN
@@ -68,8 +68,8 @@ class SysconfigTestCase(support.EnvironGuard,
         finally:
             fd.close()
         d = sysconfig.parse_makefile(self.makefile)
-        self.assertEquals(d, {'CONFIG_ARGS': r"'--arg1=optarg1' 'ENV=\$LIB'",
-                              'OTHER': 'foo'})
+        self.assertEqual(d, {'CONFIG_ARGS': r"'--arg1=optarg1' 'ENV=\$LIB'",
+                             'OTHER': 'foo'})
 
 
 def test_suite():

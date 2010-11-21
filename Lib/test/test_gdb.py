@@ -127,7 +127,7 @@ class DebuggerTests(unittest.TestCase):
                           '')
 
         # Ensure no unexpected error messages:
-        self.assertEquals(err, '')
+        self.assertEqual(err, '')
 
         return out
 
@@ -155,13 +155,12 @@ class DebuggerTests(unittest.TestCase):
 
     def assertEndsWith(self, actual, exp_end):
         '''Ensure that the given "actual" string ends with "exp_end"'''
-        self.assert_(actual.endswith(exp_end),
-                     msg='%r did not end with %r' % (actual, exp_end))
+        self.assertTrue(actual.endswith(exp_end),
+                        msg='%r did not end with %r' % (actual, exp_end))
 
     def assertMultilineMatches(self, actual, pattern):
         m = re.match(pattern, actual, re.DOTALL)
-        self.assert_(m,
-                     msg='%r did not match %r' % (actual, pattern))
+        self.assertTrue(m, msg='%r did not match %r' % (actual, pattern))
 
     def get_sample_script(self):
         return findfile('gdb_sample.py')
@@ -176,7 +175,7 @@ class PrettyPrintTests(DebuggerTests):
         # matches repr(value) in this process:
         gdb_repr, gdb_output = self.get_gdb_repr('print ' + repr(val),
                                                  cmds_after_breakpoint)
-        self.assertEquals(gdb_repr, repr(val), gdb_output)
+        self.assertEqual(gdb_repr, repr(val), gdb_output)
 
     def test_int(self):
         'Verify the pretty-printing of various "int" values'
@@ -258,7 +257,7 @@ class PrettyPrintTests(DebuggerTests):
         gdb_repr, gdb_output = self.get_gdb_repr('''s = set(['a','b'])
 s.pop()
 print s''')
-        self.assertEquals(gdb_repr, "set(['b'])")
+        self.assertEqual(gdb_repr, "set(['b'])")
 
     def test_frozensets(self):
         'Verify the pretty-printing of frozensets'
@@ -274,8 +273,8 @@ try:
 except RuntimeError, e:
     print e
 ''')
-        self.assertEquals(gdb_repr,
-                          "exceptions.RuntimeError('I am an error',)")
+        self.assertEqual(gdb_repr,
+                         "exceptions.RuntimeError('I am an error',)")
 
 
         # Test division by zero:
@@ -285,8 +284,8 @@ try:
 except ZeroDivisionError, e:
     print e
 ''')
-        self.assertEquals(gdb_repr,
-                          "exceptions.ZeroDivisionError('integer division or modulo by zero',)")
+        self.assertEqual(gdb_repr,
+                         "exceptions.ZeroDivisionError('integer division or modulo by zero',)")
 
     def test_classic_class(self):
         'Verify the pretty-printing of classic class instances'
@@ -380,7 +379,7 @@ print foo''')
                                                      'backtrace'])
             )
 
-        self.assertEquals(gdb_repr, '0x0')
+        self.assertEqual(gdb_repr, '0x0')
 
     def test_NULL_ob_type(self):
         'Ensure that a PyObject* with NULL ob_type is handled gracefully'
@@ -432,12 +431,12 @@ print foo''',
         gdb_repr, gdb_output = \
             self.get_gdb_repr("a = [3, 4, 5] ; a.append(a) ; print a")
 
-        self.assertEquals(gdb_repr, '[3, 4, 5, [...]]')
+        self.assertEqual(gdb_repr, '[3, 4, 5, [...]]')
 
         gdb_repr, gdb_output = \
             self.get_gdb_repr("a = [3, 4, 5] ; b = [a] ; a.append(b) ; print a")
 
-        self.assertEquals(gdb_repr, '[3, 4, 5, [[...]]]')
+        self.assertEqual(gdb_repr, '[3, 4, 5, [[...]]]')
 
     def test_selfreferential_dict(self):
         '''Ensure that a reference loop involving a dict doesn't lead proxyval
@@ -445,7 +444,7 @@ print foo''',
         gdb_repr, gdb_output = \
             self.get_gdb_repr("a = {} ; b = {'bar':a} ; a['foo'] = b ; print a")
 
-        self.assertEquals(gdb_repr, "{'foo': {'bar': {...}}}")
+        self.assertEqual(gdb_repr, "{'foo': {'bar': {...}}}")
 
     def test_selfreferential_old_style_instance(self):
         gdb_repr, gdb_output = \
@@ -490,34 +489,34 @@ print a''')
     def test_truncation(self):
         'Verify that very long output is truncated'
         gdb_repr, gdb_output = self.get_gdb_repr('print range(1000)')
-        self.assertEquals(gdb_repr,
-                          "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, "
-                          "14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, "
-                          "27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, "
-                          "40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, "
-                          "53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, "
-                          "66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, "
-                          "79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, "
-                          "92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, "
-                          "104, 105, 106, 107, 108, 109, 110, 111, 112, 113, "
-                          "114, 115, 116, 117, 118, 119, 120, 121, 122, 123, "
-                          "124, 125, 126, 127, 128, 129, 130, 131, 132, 133, "
-                          "134, 135, 136, 137, 138, 139, 140, 141, 142, 143, "
-                          "144, 145, 146, 147, 148, 149, 150, 151, 152, 153, "
-                          "154, 155, 156, 157, 158, 159, 160, 161, 162, 163, "
-                          "164, 165, 166, 167, 168, 169, 170, 171, 172, 173, "
-                          "174, 175, 176, 177, 178, 179, 180, 181, 182, 183, "
-                          "184, 185, 186, 187, 188, 189, 190, 191, 192, 193, "
-                          "194, 195, 196, 197, 198, 199, 200, 201, 202, 203, "
-                          "204, 205, 206, 207, 208, 209, 210, 211, 212, 213, "
-                          "214, 215, 216, 217, 218, 219, 220, 221, 222, 223, "
-                          "224, 225, 226...(truncated)")
-        self.assertEquals(len(gdb_repr),
-                          1024 + len('...(truncated)'))
+        self.assertEqual(gdb_repr,
+                         "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, "
+                         "14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, "
+                         "27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, "
+                         "40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, "
+                         "53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, "
+                         "66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, "
+                         "79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, "
+                         "92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, "
+                         "104, 105, 106, 107, 108, 109, 110, 111, 112, 113, "
+                         "114, 115, 116, 117, 118, 119, 120, 121, 122, 123, "
+                         "124, 125, 126, 127, 128, 129, 130, 131, 132, 133, "
+                         "134, 135, 136, 137, 138, 139, 140, 141, 142, 143, "
+                         "144, 145, 146, 147, 148, 149, 150, 151, 152, 153, "
+                         "154, 155, 156, 157, 158, 159, 160, 161, 162, 163, "
+                         "164, 165, 166, 167, 168, 169, 170, 171, 172, 173, "
+                         "174, 175, 176, 177, 178, 179, 180, 181, 182, 183, "
+                         "184, 185, 186, 187, 188, 189, 190, 191, 192, 193, "
+                         "194, 195, 196, 197, 198, 199, 200, 201, 202, 203, "
+                         "204, 205, 206, 207, 208, 209, 210, 211, 212, 213, "
+                         "214, 215, 216, 217, 218, 219, 220, 221, 222, 223, "
+                         "224, 225, 226...(truncated)")
+        self.assertEqual(len(gdb_repr),
+                         1024 + len('...(truncated)'))
 
     def test_builtin_function(self):
         gdb_repr, gdb_output = self.get_gdb_repr('print len')
-        self.assertEquals(gdb_repr, '<built-in function len>')
+        self.assertEqual(gdb_repr, '<built-in function len>')
 
     def test_builtin_method(self):
         gdb_repr, gdb_output = self.get_gdb_repr('import sys; print sys.stdout.readlines')
