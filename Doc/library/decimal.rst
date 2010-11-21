@@ -1717,6 +1717,9 @@ to work with the :class:`Decimal` class::
    def cos(x):
        """Return the cosine of x as measured in radians.
 
+       The taylor series approximation works best for a small value of x.
+       For larger values, first compute x = x % (2 * pi).
+
        >>> print(cos(Decimal('0.5')))
        0.8775825618903727161162815826
        >>> print(cos(0.5))
@@ -1739,6 +1742,9 @@ to work with the :class:`Decimal` class::
 
    def sin(x):
        """Return the sine of x as measured in radians.
+
+       The taylor series approximation works best for a small value of x.
+       For larger values, first compute x = x % (2 * pi).
 
        >>> print(sin(Decimal('0.5')))
        0.4794255386042030002732879352
