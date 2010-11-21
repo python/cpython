@@ -224,7 +224,7 @@ class CommandLineTests(unittest.TestCase):
                                      sys.executable, self.pkgdir))
         quiet = subprocess.getoutput(('{} -m compileall {}'.format(
                                      sys.executable, self.pkgdir)))
-        self.assertTrue(len(noise) > len(quiet))
+        self.assertGreater(len(noise), len(quiet))
 
     def test_regexp(self):
         retcode = subprocess.call(
