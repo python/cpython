@@ -227,8 +227,10 @@ class NetworkedNNTPTestsMixin:
     def test_zzquit(self):
         # This test must be called last, hence the name
         cls = type(self)
-        self.server.quit()
-        cls.server = None
+        try:
+            self.server.quit()
+        finally:
+            cls.server = None
 
     @classmethod
     def wrap_methods(cls):
