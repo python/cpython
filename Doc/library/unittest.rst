@@ -220,7 +220,7 @@ For a list of all the command-line options::
 failfast, catch and buffer command-line options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:program:`unittest` supports three command-line options.
+:program:`unittest` supports these command-line options:
 
 .. program:: unittest
 
@@ -2040,7 +2040,7 @@ instead of as an error.
 Signal Handling
 ---------------
 
-The :option:`-c` command-line option to unittest, along with the ``catchbreak``
+The ``-c``/``--catch`` command-line option to unittest, along with the ``catchbreak``
 parameter to :func:`unittest.main()`, provide more friendly handling of
 control-C during a test run. With catch break behavior enabled control-C will
 allow the currently running test to complete, and the test run will then end
