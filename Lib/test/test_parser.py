@@ -21,8 +21,8 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         except parser.ParserError as why:
             self.fail("could not roundtrip %r: %s" % (s, why))
 
-        self.assertEquals(t, st2.totuple(),
-                          "could not re-generate syntax tree")
+        self.assertEqual(t, st2.totuple(),
+                         "could not re-generate syntax tree")
 
     def check_expr(self, s):
         self.roundtrip(parser.expr, s)
@@ -493,14 +493,14 @@ class CompileTestCase(unittest.TestCase):
     def test_compile_expr(self):
         st = parser.expr('2 + 3')
         code = parser.compilest(st)
-        self.assertEquals(eval(code), 5)
+        self.assertEqual(eval(code), 5)
 
     def test_compile_suite(self):
         st = parser.suite('x = 2; y = x + 3')
         code = parser.compilest(st)
         globs = {}
         exec(code, globs)
-        self.assertEquals(globs['y'], 5)
+        self.assertEqual(globs['y'], 5)
 
     def test_compile_error(self):
         st = parser.suite('1 = 3 + 4')
@@ -544,36 +544,36 @@ class STObjectTestCase(unittest.TestCase):
         st3_copy = parser.expr('list(x**3 for x in range(20))')
 
         # exercise fast path for object identity
-        self.assertEquals(st1 == st1, True)
-        self.assertEquals(st2 == st2, True)
-        self.assertEquals(st3 == st3, True)
+        self.assertEqual(st1 == st1, True)
+        self.assertEqual(st2 == st2, True)
+        self.assertEqual(st3 == st3, True)
         # slow path equality
         self.assertEqual(st1, st1_copy)
         self.assertEqual(st2, st2_copy)
         self.assertEqual(st3, st3_copy)
-        self.assertEquals(st1 == st2, False)
-        self.assertEquals(st1 == st3, False)
-        self.assertEquals(st2 == st3, False)
-        self.assertEquals(st1 != st1, False)
-        self.assertEquals(st2 != st2, False)
-        self.assertEquals(st3 != st3, False)
-        self.assertEquals(st1 != st1_copy, False)
-        self.assertEquals(st2 != st2_copy, False)
-        self.assertEquals(st3 != st3_copy, False)
-        self.assertEquals(st2 != st1, True)
-        self.assertEquals(st1 != st3, True)
-        self.assertEquals(st3 != st2, True)
+        self.assertEqual(st1 == st2, False)
+        self.assertEqual(st1 == st3, False)
+        self.assertEqual(st2 == st3, False)
+        self.assertEqual(st1 != st1, False)
+        self.assertEqual(st2 != st2, False)
+        self.assertEqual(st3 != st3, False)
+        self.assertEqual(st1 != st1_copy, False)
+        self.assertEqual(st2 != st2_copy, False)
+        self.assertEqual(st3 != st3_copy, False)
+        self.assertEqual(st2 != st1, True)
+        self.assertEqual(st1 != st3, True)
+        self.assertEqual(st3 != st2, True)
         # we don't particularly care what the ordering is;  just that
         # it's usable and self-consistent
-        self.assertEquals(st1 < st2, not (st2 <= st1))
-        self.assertEquals(st1 < st3, not (st3 <= st1))
-        self.assertEquals(st2 < st3, not (st3 <= st2))
-        self.assertEquals(st1 < st2, st2 > st1)
-        self.assertEquals(st1 < st3, st3 > st1)
-        self.assertEquals(st2 < st3, st3 > st2)
-        self.assertEquals(st1 <= st2, st2 >= st1)
-        self.assertEquals(st3 <= st1, st1 >= st3)
-        self.assertEquals(st2 <= st3, st3 >= st2)
+        self.assertEqual(st1 < st2, not (st2 <= st1))
+        self.assertEqual(st1 < st3, not (st3 <= st1))
+        self.assertEqual(st2 < st3, not (st3 <= st2))
+        self.assertEqual(st1 < st2, st2 > st1)
+        self.assertEqual(st1 < st3, st3 > st1)
+        self.assertEqual(st2 < st3, st3 > st2)
+        self.assertEqual(st1 <= st2, st2 >= st1)
+        self.assertEqual(st3 <= st1, st1 >= st3)
+        self.assertEqual(st2 <= st3, st3 >= st2)
         # transitivity
         bottom = min(st1, st2, st3)
         top = max(st1, st2, st3)
@@ -588,8 +588,8 @@ class STObjectTestCase(unittest.TestCase):
         self.assertTrue(mid <= mid)
         self.assertTrue(top <= top)
         # interaction with other types
-        self.assertEquals(st1 == 1588.602459, False)
-        self.assertEquals('spanish armada' != st2, True)
+        self.assertEqual(st1 == 1588.602459, False)
+        self.assertEqual('spanish armada' != st2, True)
         self.assertRaises(TypeError, operator.ge, st3, None)
         self.assertRaises(TypeError, operator.le, False, st1)
         self.assertRaises(TypeError, operator.lt, st1, 1815)

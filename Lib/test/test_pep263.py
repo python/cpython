@@ -26,7 +26,7 @@ class PEP263Test(unittest.TestCase):
         try:
             compile(b"# coding: cp932\nprint '\x94\x4e'", "dummy", "exec")
         except SyntaxError as v:
-            self.assertEquals(v.text, "print '\u5e74'")
+            self.assertEqual(v.text, "print '\u5e74'")
         else:
             self.fail()
 
@@ -34,7 +34,7 @@ class PEP263Test(unittest.TestCase):
         c = compile("# coding=latin-1\n\u00c6 = '\u00c6'", "dummy", "exec")
         d = {}
         exec(c, d)
-        self.assertEquals(d['\xc6'], '\xc6')
+        self.assertEqual(d['\xc6'], '\xc6')
 
     def test_issue3297(self):
         c = compile("a, b = '\U0001010F', '\\U0001010F'", "dummy", "exec")

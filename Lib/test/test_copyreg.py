@@ -40,7 +40,7 @@ class CopyRegTestCase(unittest.TestCase):
 
     def test_bool(self):
         import copy
-        self.assertEquals(True, copy.copy(True))
+        self.assertEqual(True, copy.copy(True))
 
     def test_extension_registry(self):
         mod, func, code = 'junk1 ', ' junk2', 0xabcd
@@ -101,16 +101,16 @@ class CopyRegTestCase(unittest.TestCase):
                               mod, func, code)
 
     def test_slotnames(self):
-        self.assertEquals(copyreg._slotnames(WithoutSlots), [])
-        self.assertEquals(copyreg._slotnames(WithWeakref), [])
+        self.assertEqual(copyreg._slotnames(WithoutSlots), [])
+        self.assertEqual(copyreg._slotnames(WithWeakref), [])
         expected = ['_WithPrivate__spam']
-        self.assertEquals(copyreg._slotnames(WithPrivate), expected)
-        self.assertEquals(copyreg._slotnames(WithSingleString), ['spam'])
+        self.assertEqual(copyreg._slotnames(WithPrivate), expected)
+        self.assertEqual(copyreg._slotnames(WithSingleString), ['spam'])
         expected = ['eggs', 'spam']
         expected.sort()
         result = copyreg._slotnames(WithInherited)
         result.sort()
-        self.assertEquals(result, expected)
+        self.assertEqual(result, expected)
 
 
 def test_main():

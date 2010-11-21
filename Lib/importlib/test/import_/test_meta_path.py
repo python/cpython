@@ -21,7 +21,7 @@ class CallingOrder(unittest.TestCase):
             first.modules[mod] = 42
             second.modules[mod] = -13
             with util.import_state(meta_path=[first, second]):
-                self.assertEquals(import_util.import_(mod), 42)
+                self.assertEqual(import_util.import_(mod), 42)
 
     def test_continuing(self):
         # [continuing]
@@ -31,7 +31,7 @@ class CallingOrder(unittest.TestCase):
             first.find_module = lambda self, fullname, path=None: None
             second.modules[mod_name] = 42
             with util.import_state(meta_path=[first, second]):
-                self.assertEquals(import_util.import_(mod_name), 42)
+                self.assertEqual(import_util.import_(mod_name), 42)
 
 
 class CallSignature(unittest.TestCase):
@@ -61,9 +61,9 @@ class CallSignature(unittest.TestCase):
                 args = log[0][0]
                 kwargs = log[0][1]
                 # Assuming all arguments are positional.
-                self.assertEquals(len(args), 2)
-                self.assertEquals(len(kwargs), 0)
-                self.assertEquals(args[0], mod_name)
+                self.assertEqual(len(args), 2)
+                self.assertEqual(len(kwargs), 0)
+                self.assertEqual(args[0], mod_name)
                 self.assertTrue(args[1] is None)
 
     def test_with_path(self):
@@ -83,7 +83,7 @@ class CallSignature(unittest.TestCase):
                 kwargs = log[1][1]
                 # Assuming all arguments are positional.
                 self.assertTrue(not kwargs)
-                self.assertEquals(args[0], mod_name)
+                self.assertEqual(args[0], mod_name)
                 self.assertTrue(args[1] is path)
 
 

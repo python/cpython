@@ -35,7 +35,7 @@ class TextIOWrapperTest(unittest.TestCase):
             if not c:
                 break
             reads += c
-        self.assertEquals(reads, self.normalized)
+        self.assertEqual(reads, self.normalized)
 
     def test_issue1395_2(self):
         txt = io.TextIOWrapper(io.BytesIO(self.testdata), encoding="ASCII")
@@ -47,7 +47,7 @@ class TextIOWrapperTest(unittest.TestCase):
             if not c:
                 break
             reads += c
-        self.assertEquals(reads, self.normalized)
+        self.assertEqual(reads, self.normalized)
 
     def test_issue1395_3(self):
         txt = io.TextIOWrapper(io.BytesIO(self.testdata), encoding="ASCII")
@@ -58,7 +58,7 @@ class TextIOWrapperTest(unittest.TestCase):
         reads += txt.readline()
         reads += txt.readline()
         reads += txt.readline()
-        self.assertEquals(reads, self.normalized)
+        self.assertEqual(reads, self.normalized)
 
     def test_issue1395_4(self):
         txt = io.TextIOWrapper(io.BytesIO(self.testdata), encoding="ASCII")
@@ -66,7 +66,7 @@ class TextIOWrapperTest(unittest.TestCase):
 
         reads = txt.read(4)
         reads += txt.read()
-        self.assertEquals(reads, self.normalized)
+        self.assertEqual(reads, self.normalized)
 
     def test_issue1395_5(self):
         txt = io.TextIOWrapper(io.BytesIO(self.testdata), encoding="ASCII")
@@ -76,7 +76,7 @@ class TextIOWrapperTest(unittest.TestCase):
         pos = txt.tell()
         txt.seek(0)
         txt.seek(pos)
-        self.assertEquals(txt.read(4), "BBB\n")
+        self.assertEqual(txt.read(4), "BBB\n")
 
 
 

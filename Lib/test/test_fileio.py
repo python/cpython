@@ -29,31 +29,31 @@ class AutoFileTests(unittest.TestCase):
         # verify weak references
         p = proxy(self.f)
         p.write(bytes(range(10)))
-        self.assertEquals(self.f.tell(), p.tell())
+        self.assertEqual(self.f.tell(), p.tell())
         self.f.close()
         self.f = None
         self.assertRaises(ReferenceError, getattr, p, 'tell')
 
     def testSeekTell(self):
         self.f.write(bytes(range(20)))
-        self.assertEquals(self.f.tell(), 20)
+        self.assertEqual(self.f.tell(), 20)
         self.f.seek(0)
-        self.assertEquals(self.f.tell(), 0)
+        self.assertEqual(self.f.tell(), 0)
         self.f.seek(10)
-        self.assertEquals(self.f.tell(), 10)
+        self.assertEqual(self.f.tell(), 10)
         self.f.seek(5, 1)
-        self.assertEquals(self.f.tell(), 15)
+        self.assertEqual(self.f.tell(), 15)
         self.f.seek(-5, 1)
-        self.assertEquals(self.f.tell(), 10)
+        self.assertEqual(self.f.tell(), 10)
         self.f.seek(-5, 2)
-        self.assertEquals(self.f.tell(), 15)
+        self.assertEqual(self.f.tell(), 15)
 
     def testAttributes(self):
         # verify expected attributes exist
         f = self.f
 
-        self.assertEquals(f.mode, "wb")
-        self.assertEquals(f.closed, False)
+        self.assertEqual(f.mode, "wb")
+        self.assertEqual(f.closed, False)
 
         # verify the attributes are readonly
         for attr in 'mode', 'closed':
@@ -67,7 +67,7 @@ class AutoFileTests(unittest.TestCase):
         a = array('b', b'x'*10)
         self.f = _FileIO(TESTFN, 'r')
         n = self.f.readinto(a)
-        self.assertEquals(array('b', [1, 2]), a[:n])
+        self.assertEqual(array('b', [1, 2]), a[:n])
 
     def test_none_args(self):
         self.f.write(b"hi\nbye\nabc")
@@ -82,19 +82,19 @@ class AutoFileTests(unittest.TestCase):
         self.assertRaises(TypeError, self.f.write, "Hello!")
 
     def testRepr(self):
-        self.assertEquals(repr(self.f), "<_io.FileIO name=%r mode=%r>"
+        self.assertEqual(repr(self.f), "<_io.FileIO name=%r mode=%r>"
                                         % (self.f.name, self.f.mode))
         del self.f.name
-        self.assertEquals(repr(self.f), "<_io.FileIO fd=%r mode=%r>"
+        self.assertEqual(repr(self.f), "<_io.FileIO fd=%r mode=%r>"
                                         % (self.f.fileno(), self.f.mode))
         self.f.close()
-        self.assertEquals(repr(self.f), "<_io.FileIO [closed]>")
+        self.assertEqual(repr(self.f), "<_io.FileIO [closed]>")
 
     def testErrors(self):
         f = self.f
         self.assertTrue(not f.isatty())
         self.assertTrue(not f.closed)
-        #self.assertEquals(f.name, TESTFN)
+        #self.assertEqual(f.name, TESTFN)
         self.assertRaises(ValueError, f.read, 10) # Open for reading
         f.close()
         self.assertTrue(f.closed)
@@ -237,22 +237,22 @@ class OtherFileTests(unittest.TestCase):
     def testAbles(self):
         try:
             f = _FileIO(TESTFN, "w")
-            self.assertEquals(f.readable(), False)
-            self.assertEquals(f.writable(), True)
-            self.assertEquals(f.seekable(), True)
+            self.assertEqual(f.readable(), False)
+            self.assertEqual(f.writable(), True)
+            self.assertEqual(f.seekable(), True)
             f.close()
 
             f = _FileIO(TESTFN, "r")
-            self.assertEquals(f.readable(), True)
-            self.assertEquals(f.writable(), False)
-            self.assertEquals(f.seekable(), True)
+            self.assertEqual(f.readable(), True)
+            self.assertEqual(f.writable(), False)
+            self.assertEqual(f.seekable(), True)
             f.close()
 
             f = _FileIO(TESTFN, "a+")
-            self.assertEquals(f.readable(), True)
-            self.assertEquals(f.writable(), True)
-            self.assertEquals(f.seekable(), True)
-            self.assertEquals(f.isatty(), False)
+            self.assertEqual(f.readable(), True)
+            self.assertEqual(f.writable(), True)
+            self.assertEqual(f.seekable(), True)
+            self.assertEqual(f.isatty(), False)
             f.close()
 
             if sys.platform != "win32":
@@ -264,14 +264,14 @@ class OtherFileTests(unittest.TestCase):
                     # OS'es that don't support /dev/tty.
                     pass
                 else:
-                    self.assertEquals(f.readable(), False)
-                    self.assertEquals(f.writable(), True)
+                    self.assertEqual(f.readable(), False)
+                    self.assertEqual(f.writable(), True)
                     if sys.platform != "darwin" and \
                        'bsd' not in sys.platform and \
                        not sys.platform.startswith('sunos'):
                         # Somehow /dev/tty appears seekable on some BSDs
-                        self.assertEquals(f.seekable(), False)
-                    self.assertEquals(f.isatty(), True)
+                        self.assertEqual(f.seekable(), False)
+                    self.assertEqual(f.isatty(), True)
                     f.close()
         finally:
             os.unlink(TESTFN)
@@ -305,7 +305,7 @@ class OtherFileTests(unittest.TestCase):
             f.write(b"abc")
             f.close()
             with open(TESTFN, "rb") as f:
-                self.assertEquals(f.read(), b"abc")
+                self.assertEqual(f.read(), b"abc")
         finally:
             os.unlink(TESTFN)
 

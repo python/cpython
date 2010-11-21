@@ -18,8 +18,8 @@ class InstallLibTestCase(support.TempdirManager,
         cmd = install_lib(dist)
 
         cmd.finalize_options()
-        self.assertEquals(cmd.compile, 1)
-        self.assertEquals(cmd.optimize, 0)
+        self.assertEqual(cmd.compile, 1)
+        self.assertEqual(cmd.optimize, 0)
 
         # optimize must be 0, 1, or 2
         cmd.optimize = 'foo'
@@ -29,7 +29,7 @@ class InstallLibTestCase(support.TempdirManager,
 
         cmd.optimize = '2'
         cmd.finalize_options()
-        self.assertEquals(cmd.optimize, 2)
+        self.assertEqual(cmd.optimize, 2)
 
     @unittest.skipUnless(not sys.dont_write_bytecode,
                          'byte-compile not supported')
@@ -76,7 +76,7 @@ class InstallLibTestCase(support.TempdirManager,
         cmd.distribution.script_name = 'setup.py'
 
         # get_input should return 2 elements
-        self.assertEquals(len(cmd.get_inputs()), 2)
+        self.assertEqual(len(cmd.get_inputs()), 2)
 
     def test_dont_write_bytecode(self):
         # makes sure byte_compile is not used

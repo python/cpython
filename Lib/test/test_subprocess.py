@@ -276,7 +276,7 @@ class ProcessTestCase(BaseTestCase):
         # stdout is set to 1 (#1531862).
         cmd = r"import sys, os; sys.exit(os.write(sys.stdout.fileno(), b'.\n'))"
         rc = subprocess.call([sys.executable, "-c", cmd], stdout=1)
-        self.assertEquals(rc, 2)
+        self.assertEqual(rc, 2)
 
     def test_cwd(self):
         tmpdir = tempfile.gettempdir()
@@ -566,7 +566,7 @@ class ProcessTestCase(BaseTestCase):
                 "[sys.executable, '-c', 'print(\"Hello World!\")'])",
             'assert retcode == 0'))
         output = subprocess.check_output([sys.executable, '-c', code])
-        self.assert_(output.startswith(b'Hello World!'), ascii(output))
+        self.assertTrue(output.startswith(b'Hello World!'), ascii(output))
 
     def test_handles_closed_on_exception(self):
         # If CreateProcess exits with an error, ensure the
@@ -779,7 +779,7 @@ class ProcessTestCase(BaseTestCase):
                     [sys.executable, "-c", script],
                     env=env)
                 stdout = stdout.rstrip(b'\n\r')
-                self.assertEquals(stdout, value_repr)
+                self.assertEqual(stdout, value_repr)
 
                 # test bytes
                 key = key.encode("ascii", "surrogateescape")
@@ -791,7 +791,7 @@ class ProcessTestCase(BaseTestCase):
                     [sys.executable, "-c", script],
                     env=env)
                 stdout = stdout.rstrip(b'\n\r')
-                self.assertEquals(stdout, value_repr)
+                self.assertEqual(stdout, value_repr)
 
     #
     # Windows tests
@@ -897,9 +897,9 @@ class CommandTests(unittest.TestCase):
     if os.name == 'posix':
 
         def test_getoutput(self):
-            self.assertEquals(subprocess.getoutput('echo xyzzy'), 'xyzzy')
-            self.assertEquals(subprocess.getstatusoutput('echo xyzzy'),
-                              (0, 'xyzzy'))
+            self.assertEqual(subprocess.getoutput('echo xyzzy'), 'xyzzy')
+            self.assertEqual(subprocess.getstatusoutput('echo xyzzy'),
+                             (0, 'xyzzy'))
 
             # we use mkdtemp in the next line to create an empty directory
             # under our exclusive control; from that, we can invent a pathname
@@ -910,7 +910,7 @@ class CommandTests(unittest.TestCase):
                 name = os.path.join(dir, "foo")
 
                 status, output = subprocess.getstatusoutput('cat ' + name)
-                self.assertNotEquals(status, 0)
+                self.assertNotEqual(status, 0)
             finally:
                 if dir is not None:
                     os.rmdir(dir)

@@ -110,7 +110,7 @@ class SDistTestCase(PyPIRCCommandTestCase):
         # now let's check what we have
         dist_folder = join(self.tmp_dir, 'dist')
         files = os.listdir(dist_folder)
-        self.assertEquals(files, ['fake-1.0.zip'])
+        self.assertEqual(files, ['fake-1.0.zip'])
 
         zip_file = zipfile.ZipFile(join(dist_folder, 'fake-1.0.zip'))
         try:
@@ -119,7 +119,7 @@ class SDistTestCase(PyPIRCCommandTestCase):
             zip_file.close()
 
         # making sure everything has been pruned correctly
-        self.assertEquals(len(content), 4)
+        self.assertEqual(len(content), 4)
 
     def test_make_distribution(self):
 
@@ -140,8 +140,7 @@ class SDistTestCase(PyPIRCCommandTestCase):
         dist_folder = join(self.tmp_dir, 'dist')
         result = os.listdir(dist_folder)
         result.sort()
-        self.assertEquals(result,
-                          ['fake-1.0.tar', 'fake-1.0.tar.gz'] )
+        self.assertEqual(result, ['fake-1.0.tar', 'fake-1.0.tar.gz'] )
 
         os.remove(join(dist_folder, 'fake-1.0.tar'))
         os.remove(join(dist_folder, 'fake-1.0.tar.gz'))
@@ -154,8 +153,7 @@ class SDistTestCase(PyPIRCCommandTestCase):
 
         result = os.listdir(dist_folder)
         result.sort()
-        self.assertEquals(result,
-                ['fake-1.0.tar', 'fake-1.0.tar.gz'])
+        self.assertEqual(result, ['fake-1.0.tar', 'fake-1.0.tar.gz'])
 
     def test_add_defaults(self):
 
@@ -203,7 +201,7 @@ class SDistTestCase(PyPIRCCommandTestCase):
         # now let's check what we have
         dist_folder = join(self.tmp_dir, 'dist')
         files = os.listdir(dist_folder)
-        self.assertEquals(files, ['fake-1.0.zip'])
+        self.assertEqual(files, ['fake-1.0.zip'])
 
         zip_file = zipfile.ZipFile(join(dist_folder, 'fake-1.0.zip'))
         try:
@@ -212,13 +210,13 @@ class SDistTestCase(PyPIRCCommandTestCase):
             zip_file.close()
 
         # making sure everything was added
-        self.assertEquals(len(content), 11)
+        self.assertEqual(len(content), 11)
 
         # checking the MANIFEST
         f = open(join(self.tmp_dir, 'MANIFEST'))
         try:
             manifest = f.read()
-            self.assertEquals(manifest, MANIFEST % {'sep': os.sep})
+            self.assertEqual(manifest, MANIFEST % {'sep': os.sep})
         finally:
             f.close()
 
@@ -231,7 +229,7 @@ class SDistTestCase(PyPIRCCommandTestCase):
         cmd.ensure_finalized()
         cmd.run()
         warnings = self.get_logs(WARN)
-        self.assertEquals(len(warnings), 2)
+        self.assertEqual(len(warnings), 2)
 
         # trying with a complete set of metadata
         self.clear_logs()
@@ -240,7 +238,7 @@ class SDistTestCase(PyPIRCCommandTestCase):
         cmd.metadata_check = 0
         cmd.run()
         warnings = self.get_logs(WARN)
-        self.assertEquals(len(warnings), 0)
+        self.assertEqual(len(warnings), 0)
 
     def test_check_metadata_deprecated(self):
         # makes sure make_metadata is deprecated
@@ -248,7 +246,7 @@ class SDistTestCase(PyPIRCCommandTestCase):
         with check_warnings() as w:
             warnings.simplefilter("always")
             cmd.check_metadata()
-            self.assertEquals(len(w.warnings), 1)
+            self.assertEqual(len(w.warnings), 1)
 
     def test_show_formats(self):
         with captured_stdout() as stdout:
@@ -258,7 +256,7 @@ class SDistTestCase(PyPIRCCommandTestCase):
         num_formats = len(ARCHIVE_FORMATS.keys())
         output = [line for line in stdout.getvalue().split('\n')
                   if line.strip().startswith('--formats=')]
-        self.assertEquals(len(output), num_formats)
+        self.assertEqual(len(output), num_formats)
 
     def test_finalize_options(self):
 
@@ -266,9 +264,9 @@ class SDistTestCase(PyPIRCCommandTestCase):
         cmd.finalize_options()
 
         # default options set by finalize
-        self.assertEquals(cmd.manifest, 'MANIFEST')
-        self.assertEquals(cmd.template, 'MANIFEST.in')
-        self.assertEquals(cmd.dist_dir, 'dist')
+        self.assertEqual(cmd.manifest, 'MANIFEST')
+        self.assertEqual(cmd.template, 'MANIFEST.in')
+        self.assertEqual(cmd.dist_dir, 'dist')
 
         # formats has to be a string splitable on (' ', ',') or
         # a stringlist
@@ -299,7 +297,7 @@ class SDistTestCase(PyPIRCCommandTestCase):
         finally:
             f.close()
 
-        self.assertEquals(len(manifest), 5)
+        self.assertEqual(len(manifest), 5)
 
         # adding a file
         self.write_file((self.tmp_dir, 'somecode', 'doc2.txt'), '#')
@@ -319,7 +317,7 @@ class SDistTestCase(PyPIRCCommandTestCase):
             f.close()
 
         # do we have the new file in MANIFEST ?
-        self.assertEquals(len(manifest2), 6)
+        self.assertEqual(len(manifest2), 6)
         self.assertIn('doc2.txt', manifest2[-1])
 
     def test_manifest_marker(self):

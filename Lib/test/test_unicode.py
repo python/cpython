@@ -68,7 +68,7 @@ class UnicodeTest(
         self.assertRaises(SyntaxError, eval, '\'\\Uffffffff\'')
         self.assertRaises(SyntaxError, eval, '\'\\U%08x\'' % 0x110000)
         # raw strings should not have unicode escapes
-        self.assertNotEquals(r"\u0020", " ")
+        self.assertNotEqual(r"\u0020", " ")
 
     def test_ascii(self):
         if not sys.platform.startswith('java'):
@@ -1379,8 +1379,8 @@ class UnicodeTest(
             def __str__(self):
                 return '__str__ overridden'
         s = S('xxx')
-        self.assertEquals("%s" % s, '__str__ overridden')
-        self.assertEquals("{}".format(s), '__str__ overridden')
+        self.assertEqual("%s" % s, '__str__ overridden')
+        self.assertEqual("{}".format(s), '__str__ overridden')
 
 
 def test_main():

@@ -33,6 +33,11 @@ Build
 
 - Stop packaging versioncheck tool (already done for rc1).
 
+Tests
+-----
+
+- Issue #9424: Replace deprecated assert* methods in the Python test suite.
+
 
 What's New in Python 3.1.3 release candidate 1?
 ===============================================
@@ -184,7 +189,7 @@ Library
 
 - Issue #10126: Fix distutils' test_build when Python was built with
   --enable-shared.
-  
+
 - Fix typo in one sdist option (medata-check).
 
 - Issue #9199: Fix incorrect use of distutils.cmd.Command.announce.

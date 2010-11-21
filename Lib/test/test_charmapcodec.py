@@ -27,24 +27,24 @@ codecname = 'testcodec'
 
 class CharmapCodecTest(unittest.TestCase):
     def test_constructorx(self):
-        self.assertEquals(str(b'abc', codecname), 'abc')
-        self.assertEquals(str(b'xdef', codecname), 'abcdef')
-        self.assertEquals(str(b'defx', codecname), 'defabc')
-        self.assertEquals(str(b'dxf', codecname), 'dabcf')
-        self.assertEquals(str(b'dxfx', codecname), 'dabcfabc')
+        self.assertEqual(str(b'abc', codecname), 'abc')
+        self.assertEqual(str(b'xdef', codecname), 'abcdef')
+        self.assertEqual(str(b'defx', codecname), 'defabc')
+        self.assertEqual(str(b'dxf', codecname), 'dabcf')
+        self.assertEqual(str(b'dxfx', codecname), 'dabcfabc')
 
     def test_encodex(self):
-        self.assertEquals('abc'.encode(codecname), b'abc')
-        self.assertEquals('xdef'.encode(codecname), b'abcdef')
-        self.assertEquals('defx'.encode(codecname), b'defabc')
-        self.assertEquals('dxf'.encode(codecname), b'dabcf')
-        self.assertEquals('dxfx'.encode(codecname), b'dabcfabc')
+        self.assertEqual('abc'.encode(codecname), b'abc')
+        self.assertEqual('xdef'.encode(codecname), b'abcdef')
+        self.assertEqual('defx'.encode(codecname), b'defabc')
+        self.assertEqual('dxf'.encode(codecname), b'dabcf')
+        self.assertEqual('dxfx'.encode(codecname), b'dabcfabc')
 
     def test_constructory(self):
-        self.assertEquals(str(b'ydef', codecname), 'def')
-        self.assertEquals(str(b'defy', codecname), 'def')
-        self.assertEquals(str(b'dyf', codecname), 'df')
-        self.assertEquals(str(b'dyfy', codecname), 'df')
+        self.assertEqual(str(b'ydef', codecname), 'def')
+        self.assertEqual(str(b'defy', codecname), 'def')
+        self.assertEqual(str(b'dyf', codecname), 'df')
+        self.assertEqual(str(b'dyfy', codecname), 'df')
 
     def test_maptoundefined(self):
         self.assertRaises(UnicodeError, str, b'abc\001', codecname)

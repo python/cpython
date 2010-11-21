@@ -357,12 +357,12 @@ class OperatorTestCase(unittest.TestCase):
         f = operator.methodcaller('foo')
         self.assertRaises(IndexError, f, a)
         f = operator.methodcaller('foo', 1, 2)
-        self.assertEquals(f(a), 3)
+        self.assertEqual(f(a), 3)
         f = operator.methodcaller('bar')
-        self.assertEquals(f(a), 42)
+        self.assertEqual(f(a), 42)
         self.assertRaises(TypeError, f, a, a)
         f = operator.methodcaller('bar', f=5)
-        self.assertEquals(f(a), 5)
+        self.assertEqual(f(a), 5)
 
     def test_inplace(self):
         class C(object):

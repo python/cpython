@@ -20,23 +20,23 @@ class TokenTests(unittest.TestCase):
         # Backslash means line continuation:
         x = 1 \
         + 1
-        self.assertEquals(x, 2, 'backslash for line continuation')
+        self.assertEqual(x, 2, 'backslash for line continuation')
 
         # Backslash does not means continuation in comments :\
         x = 0
-        self.assertEquals(x, 0, 'backslash ending comment')
+        self.assertEqual(x, 0, 'backslash ending comment')
 
     def testPlainIntegers(self):
-        self.assertEquals(type(000), type(0))
-        self.assertEquals(0xff, 255)
-        self.assertEquals(0o377, 255)
-        self.assertEquals(2147483647, 0o17777777777)
-        self.assertEquals(0b1001, 9)
+        self.assertEqual(type(000), type(0))
+        self.assertEqual(0xff, 255)
+        self.assertEqual(0o377, 255)
+        self.assertEqual(2147483647, 0o17777777777)
+        self.assertEqual(0b1001, 9)
         # "0x" is not a valid literal
         self.assertRaises(SyntaxError, eval, "0x")
         from sys import maxsize
         if maxsize == 2147483647:
-            self.assertEquals(-2147483647-1, -0o20000000000)
+            self.assertEqual(-2147483647-1, -0o20000000000)
             # XXX -2147483648
             self.assertTrue(0o37777777777 > 0)
             self.assertTrue(0xffffffff > 0)
@@ -48,7 +48,7 @@ class TokenTests(unittest.TestCase):
                 except OverflowError:
                     self.fail("OverflowError on huge integer literal %r" % s)
         elif maxsize == 9223372036854775807:
-            self.assertEquals(-9223372036854775807-1, -0o1000000000000000000000)
+            self.assertEqual(-9223372036854775807-1, -0o1000000000000000000000)
             self.assertTrue(0o1777777777777777777777 > 0)
             self.assertTrue(0xffffffffffffffff > 0)
             self.assertTrue(0b11111111111111111111111111111111111111111111111111111111111111 > 0)
@@ -103,28 +103,28 @@ jumps over
 the 'lazy' dog.
 """
         y = '\nThe "quick"\nbrown fox\njumps over\nthe \'lazy\' dog.\n'
-        self.assertEquals(x, y)
+        self.assertEqual(x, y)
         y = '''
 The "quick"
 brown fox
 jumps over
 the 'lazy' dog.
 '''
-        self.assertEquals(x, y)
+        self.assertEqual(x, y)
         y = "\n\
 The \"quick\"\n\
 brown fox\n\
 jumps over\n\
 the 'lazy' dog.\n\
 "
-        self.assertEquals(x, y)
+        self.assertEqual(x, y)
         y = '\n\
 The \"quick\"\n\
 brown fox\n\
 jumps over\n\
 the \'lazy\' dog.\n\
 '
-        self.assertEquals(x, y)
+        self.assertEqual(x, y)
 
     def testEllipsis(self):
         x = ...
@@ -165,8 +165,8 @@ class GrammarTests(unittest.TestCase):
         f1(*(), **{})
         def f2(one_argument): pass
         def f3(two, arguments): pass
-        self.assertEquals(f2.__code__.co_varnames, ('one_argument',))
-        self.assertEquals(f3.__code__.co_varnames, ('two', 'arguments'))
+        self.assertEqual(f2.__code__.co_varnames, ('one_argument',))
+        self.assertEqual(f3.__code__.co_varnames, ('two', 'arguments'))
         def a1(one_arg,): pass
         def a2(two, args,): pass
         def v0(*rest): pass
@@ -287,37 +287,37 @@ class GrammarTests(unittest.TestCase):
         # keyword arguments after *arglist
         def f(*args, **kwargs):
             return args, kwargs
-        self.assertEquals(f(1, x=2, *[3, 4], y=5), ((1, 3, 4),
+        self.assertEqual(f(1, x=2, *[3, 4], y=5), ((1, 3, 4),
                                                     {'x':2, 'y':5}))
         self.assertRaises(SyntaxError, eval, "f(1, *(2,3), 4)")
         self.assertRaises(SyntaxError, eval, "f(1, x=2, *(3,4), x=5)")
 
         # argument annotation tests
         def f(x) -> list: pass
-        self.assertEquals(f.__annotations__, {'return': list})
+        self.assertEqual(f.__annotations__, {'return': list})
         def f(x:int): pass
-        self.assertEquals(f.__annotations__, {'x': int})
+        self.assertEqual(f.__annotations__, {'x': int})
         def f(*x:str): pass
-        self.assertEquals(f.__annotations__, {'x': str})
+        self.assertEqual(f.__annotations__, {'x': str})
         def f(**x:float): pass
-        self.assertEquals(f.__annotations__, {'x': float})
+        self.assertEqual(f.__annotations__, {'x': float})
         def f(x, y:1+2): pass
-        self.assertEquals(f.__annotations__, {'y': 3})
+        self.assertEqual(f.__annotations__, {'y': 3})
         def f(a, b:1, c:2, d): pass
-        self.assertEquals(f.__annotations__, {'b': 1, 'c': 2})
+        self.assertEqual(f.__annotations__, {'b': 1, 'c': 2})
         def f(a, b:1, c:2, d, e:3=4, f=5, *g:6): pass
-        self.assertEquals(f.__annotations__,
-                          {'b': 1, 'c': 2, 'e': 3, 'g': 6})
+        self.assertEqual(f.__annotations__,
+                         {'b': 1, 'c': 2, 'e': 3, 'g': 6})
         def f(a, b:1, c:2, d, e:3=4, f=5, *g:6, h:7, i=8, j:9=10,
               **k:11) -> 12: pass
-        self.assertEquals(f.__annotations__,
-                          {'b': 1, 'c': 2, 'e': 3, 'g': 6, 'h': 7, 'j': 9,
-                           'k': 11, 'return': 12})
+        self.assertEqual(f.__annotations__,
+                         {'b': 1, 'c': 2, 'e': 3, 'g': 6, 'h': 7, 'j': 9,
+                          'k': 11, 'return': 12})
         # Check for SF Bug #1697248 - mixing decorators and a return annotation
         def null(x): return x
         @null
         def f(x) -> list: pass
-        self.assertEquals(f.__annotations__, {'return': list})
+        self.assertEqual(f.__annotations__, {'return': list})
 
         # test MAKE_CLOSURE with a variety of oparg's
         closure = 1
@@ -333,20 +333,20 @@ class GrammarTests(unittest.TestCase):
     def testLambdef(self):
         ### lambdef: 'lambda' [varargslist] ':' test
         l1 = lambda : 0
-        self.assertEquals(l1(), 0)
+        self.assertEqual(l1(), 0)
         l2 = lambda : a[d] # XXX just testing the expression
         l3 = lambda : [2 < x for x in [-1, 3, 0]]
-        self.assertEquals(l3(), [0, 1, 0])
+        self.assertEqual(l3(), [0, 1, 0])
         l4 = lambda x = lambda y = lambda z=1 : z : y() : x()
-        self.assertEquals(l4(), 1)
+        self.assertEqual(l4(), 1)
         l5 = lambda x, y, z=2: x + y + z
-        self.assertEquals(l5(1, 2), 5)
-        self.assertEquals(l5(1, 2, 3), 6)
+        self.assertEqual(l5(1, 2), 5)
+        self.assertEqual(l5(1, 2, 3), 6)
         check_syntax_error(self, "lambda x: x = 2")
         check_syntax_error(self, "lambda (None,): None")
         l6 = lambda x, y, *, k=20: x+y+k
-        self.assertEquals(l6(1,2), 1+2+20)
-        self.assertEquals(l6(1,2,k=10), 1+2+10)
+        self.assertEqual(l6(1,2), 1+2+20)
+        self.assertEqual(l6(1,2,k=10), 1+2+10)
 
 
     ### stmt: simple_stmt | compound_stmt
@@ -502,7 +502,7 @@ class GrammarTests(unittest.TestCase):
         try:
             assert 0, "msg"
         except AssertionError as e:
-            self.assertEquals(e.args[0], "msg")
+            self.assertEqual(e.args[0], "msg")
         else:
             if __debug__:
                 self.fail("AssertionError not raised by assert 0")
@@ -536,7 +536,7 @@ class GrammarTests(unittest.TestCase):
             x = 1
         else:
             x = 2
-        self.assertEquals(x, 2)
+        self.assertEqual(x, 2)
 
     def testFor(self):
         # 'for' exprlist 'in' exprlist ':' suite ['else' ':' suite]
@@ -688,7 +688,7 @@ class GrammarTests(unittest.TestCase):
         d[1,2,3] = 4
         L = list(d)
         L.sort(key=lambda x: x if isinstance(x, tuple) else ())
-        self.assertEquals(str(L), '[1, (1,), (1, 2), (1, 2, 3)]')
+        self.assertEqual(str(L), '[1, (1,), (1, 2), (1, 2, 3)]')
 
     def testAtoms(self):
         ### atom: '(' [testlist] ')' | '[' [testlist] ']' | '{' [dictsetmaker] '}' | NAME | NUMBER | STRING

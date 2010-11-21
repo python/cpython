@@ -101,7 +101,7 @@ class TestGzip(unittest.TestCase):
             contents += ztxt
             if not ztxt: break
         zgfile.close()
-        self.assertEquals(contents, b'a'*201)
+        self.assertEqual(contents, b'a'*201)
 
 
     def test_readline(self):
@@ -160,7 +160,7 @@ class TestGzip(unittest.TestCase):
         f.seek(10, whence=1)
         y = f.read(10)
         f.close()
-        self.assertEquals(y, data1[20:30])
+        self.assertEqual(y, data1[20:30])
 
     def test_seek_write(self):
         # Try seek, write test

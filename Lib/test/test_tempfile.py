@@ -314,7 +314,7 @@ class test__mkstemp_inner(TC):
         f.write(b"blat\x1a")
         f.write(b"extra\n")
         os.lseek(f.fd, 0, os.SEEK_SET)
-        self.assertEquals(os.read(f.fd, 20), b"blat")
+        self.assertEqual(os.read(f.fd, 20), b"blat")
 
 test_classes.append(test__mkstemp_inner)
 
@@ -872,7 +872,7 @@ class test_TemporaryFile(TC):
             with tempfile.TemporaryFile(*args, **kwargs) as fileobj:
                 fileobj.write(input)
                 fileobj.seek(0)
-                self.assertEquals(input, fileobj.read())
+                self.assertEqual(input, fileobj.read())
 
         roundtrip(b"1234", "w+b")
         roundtrip("abdc\n", "w+")

@@ -22,9 +22,9 @@ class TestLog(unittest.TestCase):
                 log.debug("debug:\xe9")
                 log.fatal("fatal:\xe9")
                 stdout.seek(0)
-                self.assertEquals(stdout.read().rstrip(), "debug:\\xe9")
+                self.assertEqual(stdout.read().rstrip(), "debug:\\xe9")
                 stderr.seek(0)
-                self.assertEquals(stderr.read().rstrip(), "fatal:\\xe9")
+                self.assertEqual(stderr.read().rstrip(), "fatal:\\xe9")
         finally:
             sys.stdout = old_stdout
             sys.stderr = old_stderr

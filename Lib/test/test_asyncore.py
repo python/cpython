@@ -254,7 +254,7 @@ class DispatcherTests(unittest.TestCase):
             sys.stderr = stderr
 
         lines = fp.getvalue().splitlines()
-        self.assertEquals(lines, ['log: %s' % l1, 'log: %s' % l2])
+        self.assertEqual(lines, ['log: %s' % l1, 'log: %s' % l2])
 
     def test_log_info(self):
         d = asyncore.dispatcher()
@@ -276,7 +276,7 @@ class DispatcherTests(unittest.TestCase):
         lines = fp.getvalue().splitlines()
         expected = ['EGGS: %s' % l1, 'info: %s' % l2, 'SPAM: %s' % l3]
 
-        self.assertEquals(lines, expected)
+        self.assertEqual(lines, expected)
 
     def test_unhandled(self):
         d = asyncore.dispatcher()
@@ -301,7 +301,7 @@ class DispatcherTests(unittest.TestCase):
                     'warning: unhandled write event',
                     'warning: unhandled connect event',
                     'warning: unhandled accept event']
-        self.assertEquals(lines, expected)
+        self.assertEqual(lines, expected)
 
     def test_issue_8594(self):
         d = asyncore.dispatcher(socket.socket())

@@ -115,7 +115,7 @@ class BaseThreadedNetworkedTests(unittest.TestCase):
 
         if verbose: print("creating server")
         server = MyServer(addr, hdlr)
-        self.assertEquals(server.server_address, server.socket.getsockname())
+        self.assertEqual(server.server_address, server.socket.getsockname())
 
         if verbose:
             print("server created")

@@ -425,8 +425,8 @@ class GeneralModuleTests(unittest.TestCase):
             return  # No inet_aton, nothing to check
         # Test that issue1008086 and issue767150 are fixed.
         # It must return 4 bytes.
-        self.assertEquals(b'\x00'*4, socket.inet_aton('0.0.0.0'))
-        self.assertEquals(b'\xff'*4, socket.inet_aton('255.255.255.255'))
+        self.assertEqual(b'\x00'*4, socket.inet_aton('0.0.0.0'))
+        self.assertEqual(b'\xff'*4, socket.inet_aton('255.255.255.255'))
 
     def testIPv4toString(self):
         if not hasattr(socket, 'inet_pton'):
@@ -434,16 +434,16 @@ class GeneralModuleTests(unittest.TestCase):
         from socket import inet_aton as f, inet_pton, AF_INET
         g = lambda a: inet_pton(AF_INET, a)
 
-        self.assertEquals(b'\x00\x00\x00\x00', f('0.0.0.0'))
-        self.assertEquals(b'\xff\x00\xff\x00', f('255.0.255.0'))
-        self.assertEquals(b'\xaa\xaa\xaa\xaa', f('170.170.170.170'))
-        self.assertEquals(b'\x01\x02\x03\x04', f('1.2.3.4'))
-        self.assertEquals(b'\xff\xff\xff\xff', f('255.255.255.255'))
+        self.assertEqual(b'\x00\x00\x00\x00', f('0.0.0.0'))
+        self.assertEqual(b'\xff\x00\xff\x00', f('255.0.255.0'))
+        self.assertEqual(b'\xaa\xaa\xaa\xaa', f('170.170.170.170'))
+        self.assertEqual(b'\x01\x02\x03\x04', f('1.2.3.4'))
+        self.assertEqual(b'\xff\xff\xff\xff', f('255.255.255.255'))
 
-        self.assertEquals(b'\x00\x00\x00\x00', g('0.0.0.0'))
-        self.assertEquals(b'\xff\x00\xff\x00', g('255.0.255.0'))
-        self.assertEquals(b'\xaa\xaa\xaa\xaa', g('170.170.170.170'))
-        self.assertEquals(b'\xff\xff\xff\xff', g('255.255.255.255'))
+        self.assertEqual(b'\x00\x00\x00\x00', g('0.0.0.0'))
+        self.assertEqual(b'\xff\x00\xff\x00', g('255.0.255.0'))
+        self.assertEqual(b'\xaa\xaa\xaa\xaa', g('170.170.170.170'))
+        self.assertEqual(b'\xff\xff\xff\xff', g('255.255.255.255'))
 
     def testIPv6toString(self):
         if not hasattr(socket, 'inet_pton'):
@@ -456,10 +456,10 @@ class GeneralModuleTests(unittest.TestCase):
             return
         f = lambda a: inet_pton(AF_INET6, a)
 
-        self.assertEquals(b'\x00' * 16, f('::'))
-        self.assertEquals(b'\x00' * 16, f('0::0'))
-        self.assertEquals(b'\x00\x01' + b'\x00' * 14, f('1::'))
-        self.assertEquals(
+        self.assertEqual(b'\x00' * 16, f('::'))
+        self.assertEqual(b'\x00' * 16, f('0::0'))
+        self.assertEqual(b'\x00\x01' + b'\x00' * 14, f('1::'))
+        self.assertEqual(
             b'\x45\xef\x76\xcb\x00\x1a\x56\xef\xaf\xeb\x0b\xac\x19\x24\xae\xae',
             f('45ef:76cb:1a:56ef:afeb:bac:1924:aeae')
         )
@@ -470,14 +470,14 @@ class GeneralModuleTests(unittest.TestCase):
         from socket import inet_ntoa as f, inet_ntop, AF_INET
         g = lambda a: inet_ntop(AF_INET, a)
 
-        self.assertEquals('1.0.1.0', f(b'\x01\x00\x01\x00'))
-        self.assertEquals('170.85.170.85', f(b'\xaa\x55\xaa\x55'))
-        self.assertEquals('255.255.255.255', f(b'\xff\xff\xff\xff'))
-        self.assertEquals('1.2.3.4', f(b'\x01\x02\x03\x04'))
+        self.assertEqual('1.0.1.0', f(b'\x01\x00\x01\x00'))
+        self.assertEqual('170.85.170.85', f(b'\xaa\x55\xaa\x55'))
+        self.assertEqual('255.255.255.255', f(b'\xff\xff\xff\xff'))
+        self.assertEqual('1.2.3.4', f(b'\x01\x02\x03\x04'))
 
-        self.assertEquals('1.0.1.0', g(b'\x01\x00\x01\x00'))
-        self.assertEquals('170.85.170.85', g(b'\xaa\x55\xaa\x55'))
-        self.assertEquals('255.255.255.255', g(b'\xff\xff\xff\xff'))
+        self.assertEqual('1.0.1.0', g(b'\x01\x00\x01\x00'))
+        self.assertEqual('170.85.170.85', g(b'\xaa\x55\xaa\x55'))
+        self.assertEqual('255.255.255.255', g(b'\xff\xff\xff\xff'))
 
     def testStringToIPv6(self):
         if not hasattr(socket, 'inet_ntop'):
@@ -490,9 +490,9 @@ class GeneralModuleTests(unittest.TestCase):
             return
         f = lambda a: inet_ntop(AF_INET6, a)
 
-        self.assertEquals('::', f(b'\x00' * 16))
-        self.assertEquals('::1', f(b'\x00' * 15 + b'\x01'))
-        self.assertEquals(
+        self.assertEqual('::', f(b'\x00' * 16))
+        self.assertEqual('::1', f(b'\x00' * 15 + b'\x01'))
+        self.assertEqual(
             'aef:b01:506:1001:ffff:9997:55:170',
             f(b'\x0a\xef\x0b\x01\x05\x06\x10\x01\xff\xff\x99\x97\x00\x55\x01\x70')
         )
@@ -1193,7 +1193,7 @@ class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
             self.cli = socket.create_connection((HOST, self.port))
         finally:
             socket.setdefaulttimeout(None)
-        self.assertEquals(self.cli.gettimeout(), 42)
+        self.assertEqual(self.cli.gettimeout(), 42)
 
     testTimeoutNone = _justAccept
     def _testTimeoutNone(self):
