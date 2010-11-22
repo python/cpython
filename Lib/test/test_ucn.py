@@ -88,9 +88,13 @@ class UnicodeNamesTest(unittest.TestCase):
         self.checkletter("CJK UNIFIED IDEOGRAPH-3400", "\u3400")
         self.checkletter("CJK UNIFIED IDEOGRAPH-4DB5", "\u4db5")
         self.checkletter("CJK UNIFIED IDEOGRAPH-4E00", "\u4e00")
-        self.checkletter("CJK UNIFIED IDEOGRAPH-9FA5", "\u9fa5")
+        self.checkletter("CJK UNIFIED IDEOGRAPH-9FCB", "\u9fCB")
         self.checkletter("CJK UNIFIED IDEOGRAPH-20000", "\U00020000")
         self.checkletter("CJK UNIFIED IDEOGRAPH-2A6D6", "\U0002a6d6")
+        self.checkletter("CJK UNIFIED IDEOGRAPH-2A700", "\U0002A700")
+        self.checkletter("CJK UNIFIED IDEOGRAPH-2B734", "\U0002B734")
+        self.checkletter("CJK UNIFIED IDEOGRAPH-2B740", "\U0002B740")
+        self.checkletter("CJK UNIFIED IDEOGRAPH-2B81D", "\U0002B81D")
 
     def test_bmp_characters(self):
         import unicodedata
