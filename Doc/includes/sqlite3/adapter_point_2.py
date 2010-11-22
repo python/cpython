@@ -1,6 +1,6 @@
 import sqlite3
 
-class Point(object):
+class Point:
     def __init__(self, x, y):
         self.x, self.y = x, y
 

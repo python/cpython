@@ -322,7 +322,7 @@ loops that truncate the stream.
 
    :func:`groupby` is equivalent to::
 
-      class groupby(object):
+      class groupby:
           # [k for k, g in groupby('AAAABBBCCDAABBB')] --> A B C D A B
           # [list(g) for k, g in groupby('AAAABBBCCD')] --> AAAA BBB CC D
           def __init__(self, iterable, key=None):
