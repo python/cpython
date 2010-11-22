@@ -216,8 +216,8 @@ class Variable:
         self._master.deletecommand(cbname)
     def trace_vinfo(self):
         """Return all trace callback information."""
-        return map(self._tk.split, self._tk.splitlist(
-            self._tk.call("trace", "vinfo", self._name)))
+        return [self._tk.split(x) for x in self._tk.splitlist(
+            self._tk.call("trace", "vinfo", self._name))]
     def __eq__(self, other):
         """Comparison for equality (==).
 
@@ -855,7 +855,7 @@ class Misc:
                      includeids and 'includeids' or None))
         if isinstance(data, str):
             data = [self.tk.split(data)]
-        return map(self.__winfo_parseitem, data)
+        return [self.__winfo_parseitem(x) for x in  data]
     def __winfo_parseitem(self, t):
         """Internal function."""
         return t[:1] + tuple(map(self.__winfo_getint, t[1:]))
@@ -1200,8 +1200,8 @@ class Misc:
         self.configure({key: value})
     def keys(self):
         """Return a list of all resource names of this widget."""
-        return map(lambda x: x[0][1:],
-               self.tk.split(self.tk.call(self._w, 'configure')))
+        return [x[0][1:] for x in
+                self.tk.split(self.tk.call(self._w, 'configure'))]
     def __str__(self):
         """Return the window path name of this widget."""
         return self._w
@@ -1223,18 +1223,18 @@ class Misc:
     def pack_slaves(self):
         """Return a list of all slaves of this widget
         in its packing order."""
-        return map(self._nametowidget,
-               self.tk.splitlist(
-                   self.tk.call('pack', 'slaves', self._w)))
+        return [self._nametowidget(x) for x in
+                self.tk.splitlist(
+                   self.tk.call('pack', 'slaves', self._w))]
     slaves = pack_slaves
     # Place method that applies to the master
     def place_slaves(self):
         """Return a list of all slaves of this widget
         in its packing order."""
-        return map(self._nametowidget,
-               self.tk.splitlist(
+        return [self._nametowidget(x) for x in
+                self.tk.splitlist(
                    self.tk.call(
-                       'place', 'slaves', self._w)))
+                       'place', 'slaves', self._w))]
     # Grid methods that apply to the master
     def grid_bbox(self, column=None, row=None, col2=None, row2=None):
         """Return a tuple of integer coordinates for the bounding
@@ -1338,9 +1338,9 @@ class Misc:
             args = args + ('-row', row)
         if column is not None:
             args = args + ('-column', column)
-        return map(self._nametowidget,
-               self.tk.splitlist(self.tk.call(
-                   ('grid', 'slaves', self._w) + args)))
+        return [self._nametowidget(x) for x in
+                self.tk.splitlist(self.tk.call(
+                   ('grid', 'slaves', self._w) + args))]
 
     # Support for the "event" command, new in Tk 4.2.
     # By Case Roole.
@@ -1452,7 +1452,7 @@ class Wm:
         if len(wlist) > 1:
             wlist = (wlist,) # Tk needs a list of windows here
         args = ('wm', 'colormapwindows', self._w) + wlist
-        return map(self._nametowidget, self.tk.call(args))
+        return [self._nametowidget(x) for x in  self.tk.call(args)]
     colormapwindows = wm_colormapwindows
     def wm_command(self, value=None):
         """Store VALUE in WM_COMMAND property. It is the command
@@ -2115,9 +2115,9 @@ class Canvas(Widget):
     def coords(self, *args):
         """Return a list of coordinates for the item given in ARGS."""
         # XXX Should use _flatten on args
-        return map(getdouble,
+        return [getdouble(x) for x in
                            self.tk.splitlist(
-                   self.tk.call((self._w, 'coords') + args)))
+                   self.tk.call((self._w, 'coords') + args))]
     def _create(self, itemType, args, kw): # Args: (val, val, ..., cnf={})
         """Internal function."""
         args = _flatten(args)

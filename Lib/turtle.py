@@ -752,7 +752,7 @@ class TurtleScreenBase(object):
         [(0.0, 9.9999999999999982), (0.0, -9.9999999999999982),
         (9.9999999999999982, 0.0)]
         >>> """
-        cl = list(self.cv.coords(item))
+        cl = self.cv.coords(item)
         pl = [(cl[i], -cl[i+1]) for i in range(0, len(cl), 2)]
         return  pl
 
