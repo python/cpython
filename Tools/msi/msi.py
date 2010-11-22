@@ -1019,6 +1019,8 @@ def add_files(db):
             lib.glob("*.pem")
             lib.glob("*.pck")
             lib.add_file("zipdir.zip")
+        if dir=='tests' and parent.physical=='distutils':
+            lib.add_file("Setup.sample")
         if dir=='decimaltestdata':
             lib.glob("*.decTest")
         if dir=='output':
