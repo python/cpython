@@ -1987,7 +1987,7 @@ to work correctly if defined on an object's type, not in the object's instance
 dictionary.  That behaviour is the reason why the following code raises an
 exception::
 
-   >>> class C(object):
+   >>> class C:
    ...     pass
    ...
    >>> c = C()

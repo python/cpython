@@ -604,7 +604,7 @@ for arbitrary getset descriptors invoking these may trigger
 code execution::
 
    # example code for resolving the builtin descriptor types
-   class _foo(object):
+   class _foo:
        __slots__ = ['foo']
 
    slot_descriptor = type(_foo.foo)

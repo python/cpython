@@ -259,7 +259,7 @@ are always available.  They are listed here in alphabetical order.
       ['Struct', '__builtins__', '__doc__', '__file__', '__name__',
        '__package__', '_clearcache', 'calcsize', 'error', 'pack', 'pack_into',
        'unpack', 'unpack_from']
-      >>> class Foo(object):
+      >>> class Foo:
       ...     def __dir__(self):
       ...         return ["kan", "ga", "roo"]
       ...
@@ -903,7 +903,7 @@ are always available.  They are listed here in alphabetical order.
    function for setting, and *fdel* a function for del'ing, an attribute.  Typical
    use is to define a managed attribute ``x``::
 
-      class C(object):
+      class C:
           def __init__(self):
               self._x = None
 
@@ -922,7 +922,7 @@ are always available.  They are listed here in alphabetical order.
    property will copy *fget*'s docstring (if it exists).  This makes it possible to
    create read-only properties easily using :func:`property` as a :term:`decorator`::
 
-      class Parrot(object):
+      class Parrot:
           def __init__(self):
               self._voltage = 100000
 
@@ -939,7 +939,7 @@ are always available.  They are listed here in alphabetical order.
    corresponding accessor function set to the decorated function.  This is
    best explained with an example::
 
-      class C(object):
+      class C:
           def __init__(self):
               self._x = None
 
@@ -1243,7 +1243,7 @@ are always available.  They are listed here in alphabetical order.
    attribute.  For example, the following two statements create identical
    :class:`type` objects:
 
-      >>> class X(object):
+      >>> class X:
       ...     a = 1
       ...
       >>> X = type('X', (object,), dict(a=1))

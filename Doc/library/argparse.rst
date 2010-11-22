@@ -1312,7 +1312,7 @@ already existing object, rather than the newly-created :class:`Namespace` object
 that is normally used.  This can be achieved by specifying the ``namespace=``
 keyword argument::
 
-   >>> class C(object):
+   >>> class C:
    ...     pass
    ...
    >>> c = C()
