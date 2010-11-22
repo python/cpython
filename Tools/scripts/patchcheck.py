@@ -45,13 +45,16 @@ def changed_files():
         sys.exit('need a checkout to get modified files')
 
     st = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
-    st.wait()
-    if vcs == 'hg':
-        return [x.decode().rstrip() for x in st.stdout]
-    else:
-        output = (x.decode().rstrip().rsplit(None, 1)[-1]
-                  for x in st.stdout if x[0] in b'AM')
+    try:
+        st.wait()
+        if vcs == 'hg':
+            return [x.decode().rstrip() for x in st.stdout]
+        else:
+            output = (x.decode().rstrip().rsplit(None, 1)[-1]
+                      for x in st.stdout if x[0] in b'AM')
         return set(path for path in output if os.path.isfile(path))
+    finally:
+        st.stdout.close()
 
 
 def report_modified_files(file_paths):
