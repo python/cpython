@@ -109,7 +109,9 @@ C-API
 Tests
 -----
 
-- Issue #9424: Replace deprecated assert* methods in the Python test suite.
+- Issue #9424: Deprecate the `unittest.TestCase` methods `assertEquals`,
+  `assertNotEquals`, `assertAlmostEquals`, `assertNotAlmostEquals` and `assert_`
+  and replace them with the correct methods in the Python test suite.
 
 - Do not fail test_socket when the IP address of the local hostname
   cannot be looked up.

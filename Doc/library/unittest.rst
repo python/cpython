@@ -1401,6 +1401,8 @@ Test cases
    :mod:`unittest`-based test framework.
 
 
+.. _deprecated-aliases:
+
 Deprecated aliases
 ##################
 
@@ -1408,20 +1410,22 @@ For historical reasons, some of the :class:`TestCase` methods had one or more
 aliases that are now deprecated.  The following table lists the correct names
 along with their deprecated aliases:
 
-   ==============================  ===============================
-    Method Name                     Deprecated alias(es)
-   ==============================  ===============================
-    :meth:`.assertEqual`            failUnlessEqual, assertEquals
-    :meth:`.assertNotEqual`         failIfEqual
-    :meth:`.assertTrue`             failUnless, assert\_
+   ==============================  ====================== ======================
+    Method Name                     Deprecated alias       Deprecated alias
+   ==============================  ====================== ======================
+    :meth:`.assertEqual`            failUnlessEqual        assertEquals
+    :meth:`.assertNotEqual`         failIfEqual            assertNotEquals
+    :meth:`.assertTrue`             failUnless             assert\_
     :meth:`.assertFalse`            failIf
     :meth:`.assertRaises`           failUnlessRaises
-    :meth:`.assertAlmostEqual`      failUnlessAlmostEqual
-    :meth:`.assertNotAlmostEqual`   failIfAlmostEqual
-   ==============================  ===============================
+    :meth:`.assertAlmostEqual`      failUnlessAlmostEqual  assertAlmostEquals
+    :meth:`.assertNotAlmostEqual`   failIfAlmostEqual      assertNotAlmostEquals
+   ==============================  ====================== ======================
 
-   .. deprecated:: 3.1
-         the aliases listed in the second column
+   .. deprecated-removed:: 3.1 3.3
+         the fail* aliases listed in the second column.
+   .. deprecated:: 3.2
+         the assert* aliases listed in the third column.
 
 
 

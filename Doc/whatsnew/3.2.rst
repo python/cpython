@@ -506,6 +506,18 @@ New, Improved, and Deprecated Modules
       with self.assertWarns(DeprecationWarning):
           legacy_function('XYZ')
 
+* The following :class:`unittest.TestCase` methods are now deprecated:
+   * :meth:`assert_` (use :meth:`.assertTrue` instead);
+   * :meth:`assertEquals` (use :meth:`.assertEqual` instead);
+   * :meth:`assertNotEquals` (use :meth:`.assertNotEqual` instead);
+   * :meth:`assertAlmostEquals` (use :meth:`.assertAlmostEqual` instead);
+   * :meth:`assertNotAlmostEquals` (use :meth:`.assertNotAlmostEqual` instead);
+
+  The ``TestCase.fail*`` methods deprecated in Python 3.1 will be removed in
+  Python 3.3. See also the :ref:`deprecated-aliases` section in the
+  :mod:`unittest` documentation.
+
+  (Contributed by Ezio Melotti; :issue:`9424`.)
 
 * The previously deprecated :func:`string.maketrans` function has been removed
   in favor of the static methods, :meth:`bytes.maketrans` and
