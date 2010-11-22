@@ -1052,39 +1052,43 @@ test case
                 with self.assertWarnsRegexp(RuntimeWarning, "o+"):
                     _runtime_warn("barz")
 
-    def testSynonymAssertMethodNames(self):
-        """Test undocumented method name synonyms.
+    def testDeprecatedMethodNames(self):
+        """Test that the deprecated methods raise a DeprecationWarning.
 
-        Please do not use these methods names in your own code.
-
-        This test confirms their continued existence and functionality
-        in order to avoid breaking existing code.
-        """
-        self.assertNotEquals(3, 5)
-        self.assertEquals(3, 3)
-        self.assertAlmostEquals(2.0, 2.0)
-        self.assertNotAlmostEquals(3.0, 5.0)
-        self.assert_(True)
-
-    def testPendingDeprecationMethodNames(self):
-        """Test fail* methods pending deprecation, they will warn in 3.2.
-
-        Do not use these methods.  They will go away in 3.3.
+        The fail* methods will be removed in 3.3. The assert* methods will
+        have to stay around for a few more versions.  See #9424.
         """
         old = (
             (self.failIfEqual, (3, 5)),
+            (self.assertNotEquals, (3, 5)),
             (self.failUnlessEqual, (3, 3)),
+            (self.assertEquals, (3, 3)),
             (self.failUnlessAlmostEqual, (2.0, 2.0)),
+            (self.assertAlmostEquals, (2.0, 2.0)),
             (self.failIfAlmostEqual, (3.0, 5.0)),
+            (self.assertNotAlmostEquals, (3.0, 5.0)),
             (self.failUnless, (True,)),
+            (self.assert_, (True,)),
             (self.failUnlessRaises, (TypeError, lambda _: 3.14 + 'spam')),
             (self.failIf, (False,)),
             (self.assertSameElements, ([1, 1, 2, 3], [1, 2, 3]))
         )
         for meth, args in old:
-            with support.check_warnings(('', DeprecationWarning)) as w:
+            with self.assertWarns(DeprecationWarning):
                 meth(*args)
-            self.assertEqual(len(w.warnings), 1)
+
+    def testDeprecatedFailMethods(self):
+        """Test that the deprecated fail* methods get removed in 3.3"""
+        if sys.version_info[:2] < (3, 3):
+            return
+        deprecated_names = [
+            'failIfEqual', 'failUnlessEqual', 'failUnlessAlmostEqual',
+            'failIfAlmostEqual', 'failUnless', 'failUnlessRaises', 'failIf',
+            'assertSameElements'
+        ]
+        for deprecated_name in deprecated_names:
+            with self.assertRaises(AttributeError):
+                getattr(self, deprecated_name)  # remove these in 3.3
 
     def testDeepcopy(self):
         # Issue: 5660
