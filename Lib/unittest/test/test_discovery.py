@@ -223,15 +223,14 @@ class TestDiscovery(unittest.TestCase):
         program = TestableTestProgram()
         program.module = None
 
-        args = []
+        self.called = False
         def do_discovery(argv):
-            args.extend(argv)
+            self.called = True
+            self.assertEqual(argv, [])
         program._do_discovery = do_discovery
         program.parseArgs(['something'])
-        self.assertEqual(args, [])
+        self.assertTrue(self.called)
 
-        program.parseArgs(['something'])
-        self.assertEqual(args, [])
 
     def test_command_line_handling_do_discovery_too_many_arguments(self):
         class Stop(Exception):
