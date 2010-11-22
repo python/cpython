@@ -86,7 +86,7 @@ crypt
 csv                 skip.montanaro
 ctypes              theller
 curses
-datetime            alexander.belopolsky
+datetime            belopolsky
 dbm
 decimal             facundobatista, rhettinger, mark.dickinson
 difflib             tim_one
@@ -214,18 +214,18 @@ termios
 test
 textwrap            georg.brandl
 threading           pitrou
-time                alexander.belopolsky
+time                belopolsky
 timeit              georg.brandl
 tkinter             gpolo
 token               georg.brandl
 tokenize
-trace               alexander.belopolsky
+trace               belopolsky
 traceback           georg.brandl*
 tty
 turtle              gregorlingl
 types
 unicodedata         loewis, lemburg, ezio.melotti
-unittest            michael.foord
+unittest            michael.foord, ezio.melotti
 urllib              orsenthil
 uu
 uuid
@@ -302,9 +302,9 @@ py3 transition      benjamin.peterson
 release management  tarek, lemburg, benjamin.peterson, barry, loewis,
                     gvanrossum, anthonybaxter
 str.format          eric.smith
-testing             michael.foord, pitrou, giampaolo.rodola
+testing             michael.foord, pitrou, giampaolo.rodola, ezio.melotti
 threads             pitrou
-time and dates      lemburg
+time and dates      lemburg, belopolsky
 unicode             lemburg, ezio.melotti, haypo
 version control
 ==================  ===========
