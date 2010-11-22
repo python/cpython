@@ -78,7 +78,7 @@ codeop
 collections         rhettinger, stutzbach
 colorsys
 compileall
-ConfigParser
+ConfigParser        lukasz.langa
 contextlib
 copy                alexandre.vassalotti
 copy_reg            alexandre.vassalotti
