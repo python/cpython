@@ -560,7 +560,16 @@ A class definition defines a class object (see section :ref:`types`):
 A class definition is an executable statement.  The inheritance list usually
 gives a list of base classes (see :ref:`metaclasses` for more advanced uses), so
 each item in the list should evaluate to a class object which allows
-subclassing.
+subclassing.  Classes without an inheritance list inherit, by default, from the
+base class :class:`object`; hence, ::
+
+   class Foo:
+       pass
+
+is equivalent to ::
+
+   class Foo(object):
+       pass
 
 The class's suite is then executed in a new execution frame (see :ref:`naming`),
 using a newly created local namespace and the original global namespace.

@@ -1318,7 +1318,7 @@ callables with the manager class.  For example::
 
    from multiprocessing.managers import BaseManager
 
-   class MathsClass(object):
+   class MathsClass:
        def add(self, x, y):
            return x + y
        def mul(self, x, y):
