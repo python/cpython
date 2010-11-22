@@ -222,7 +222,7 @@ class CommandLineTests(unittest.TestCase):
     def test_quiet(self):
         noise = subprocess.getoutput('{} -m compileall {}'.format(
                                      sys.executable, self.pkgdir))
-        quiet = subprocess.getoutput(('{} -m compileall {}'.format(
+        quiet = subprocess.getoutput(('{} -m compileall -f -q {}'.format(
                                      sys.executable, self.pkgdir)))
         self.assertGreater(len(noise), len(quiet))
 
