@@ -314,6 +314,7 @@ def _parse_makefile(filename, vars=None):
 
 
 def get_makefile_filename():
+    """Return the path of the Makefile."""
     if _PYTHON_BUILD:
         return os.path.join(_PROJECT_BASE, "Makefile")
     return os.path.join(get_path('stdlib'), "config", "Makefile")
@@ -407,7 +408,7 @@ def parse_config_h(fp, vars=None):
     return vars
 
 def get_config_h_filename():
-    """Returns the path of pyconfig.h."""
+    """Return the path of pyconfig.h."""
     if _PYTHON_BUILD:
         if os.name == "nt":
             inc_dir = os.path.join(_PROJECT_BASE, "PC")
@@ -418,17 +419,17 @@ def get_config_h_filename():
     return os.path.join(inc_dir, 'pyconfig.h')
 
 def get_scheme_names():
-    """Returns a tuple containing the schemes names."""
+    """Return a tuple containing the schemes names."""
     schemes = list(_INSTALL_SCHEMES.keys())
     schemes.sort()
     return tuple(schemes)
 
 def get_path_names():
-    """Returns a tuple containing the paths names."""
+    """Return a tuple containing the paths names."""
     return _SCHEME_KEYS
 
 def get_paths(scheme=_get_default_scheme(), vars=None, expand=True):
-    """Returns a mapping containing an install scheme.
+    """Return a mapping containing an install scheme.
 
     ``scheme`` is the install scheme name. If not provided, it will
     return the default scheme for the current platform.
@@ -439,7 +440,7 @@ def get_paths(scheme=_get_default_scheme(), vars=None, expand=True):
         return _INSTALL_SCHEMES[scheme]
 
 def get_path(name, scheme=_get_default_scheme(), vars=None, expand=True):
-    """Returns a path corresponding to the scheme.
+    """Return a path corresponding to the scheme.
 
     ``scheme`` is the install scheme name.
     """
@@ -756,7 +757,7 @@ def _print_dict(title, data):
         print('\t{0} = "{1}"'.format(key, value))
 
 def _main():
-    """Displays all information sysconfig detains."""
+    """Display all information sysconfig detains."""
     print('Platform: "{0}"'.format(get_platform()))
     print('Python version: "{0}"'.format(get_python_version()))
     print('Current installation scheme: "{0}"'.format(_get_default_scheme()))
