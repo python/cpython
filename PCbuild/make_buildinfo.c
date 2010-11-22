@@ -52,9 +52,9 @@ int make_buildinfo2(const char *tmppath)
     if (_stat(command+1, &st) < 0)
         /* subwcrev.exe not part of the release */
         return 0;
-    strcat_s(command, CMD_SIZE, "\" .. ..\\Modules\\getbuildinfo.c ");
-    strcat_s(command, CMD_SIZE, tmppath);
-    strcat_s(command, CMD_SIZE, "getbuildinfo2.c");
+    strcat_s(command, CMD_SIZE, "\" .. ..\\Modules\\getbuildinfo.c \"");
+    strcat_s(command, CMD_SIZE, tmppath); /* quoted tmppath */
+    strcat_s(command, CMD_SIZE, "getbuildinfo2.c\"");
     puts(command); fflush(stdout);
     if (system(command) < 0)
         return 0;
@@ -95,19 +95,21 @@ int main(int argc, char*argv[])
     }
 
     if ((do_unlink = make_buildinfo2(tmppath))) {
+        strcat_s(command, CMD_SIZE, "\"");
         strcat_s(command, CMD_SIZE, tmppath);
-        strcat_s(command, CMD_SIZE, "getbuildinfo2.c -DSUBWCREV ");
+        strcat_s(command, CMD_SIZE, "getbuildinfo2.c\" -DSUBWCREV ");
     } else
         strcat_s(command, CMD_SIZE, "..\\Modules\\getbuildinfo.c");
-    strcat_s(command, CMD_SIZE, " -Fo");
+    strcat_s(command, CMD_SIZE, " -Fo\"");
     strcat_s(command, CMD_SIZE, tmppath);
-    strcat_s(command, CMD_SIZE, "getbuildinfo.o -I..\\Include -I..\\PC");
+    strcat_s(command, CMD_SIZE, "getbuildinfo.o\" -I..\\Include -I..\\PC");
     puts(command); fflush(stdout);
     result = system(command);
     if (do_unlink) {
         command[0] = '\0';
+        strcat_s(command, CMD_SIZE, "\"");
         strcat_s(command, CMD_SIZE, tmppath);
-        strcat_s(command, CMD_SIZE, "getbuildinfo2.c");
+        strcat_s(command, CMD_SIZE, "getbuildinfo2.c\"");
         _unlink(command);
     }
     if (result < 0)
