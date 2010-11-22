@@ -815,8 +815,6 @@ class _TestEvent(BaseTestCase):
 #
 #
 
-@unittest.skipUnless(HAS_SHAREDCTYPES,
-                     "requires multiprocessing.sharedctypes")
 class _TestValue(BaseTestCase):
 
     ALLOWED_TYPES = ('processes',)
@@ -827,6 +825,10 @@ class _TestValue(BaseTestCase):
         ('h', -232, 234),
         ('c', latin('x'), latin('y'))
         ]
+
+    def setUp(self):
+        if not HAS_SHAREDCTYPES:
+            self.skipTest("requires multiprocessing.sharedctypes")
 
     @classmethod
     def _test(cls, values):
@@ -1662,11 +1664,13 @@ class _Foo(Structure):
         ('y', c_double)
         ]
 
-@unittest.skipUnless(HAS_SHAREDCTYPES,
-                     "requires multiprocessing.sharedctypes")
 class _TestSharedCTypes(BaseTestCase):
 
     ALLOWED_TYPES = ('processes',)
+
+    def setUp(self):
+        if not HAS_SHAREDCTYPES:
+            self.skipTest("requires multiprocessing.sharedctypes")
 
     @classmethod
     def _double(cls, x, y, foo, arr, string):
