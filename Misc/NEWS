@@ -16,7 +16,7 @@ Core and Builtins
 Library
 -------
 
-- Issue #4493: urllib2 adds '/' in front of path components which does not
+- Issue #4493: urllib.request adds '/' in front of path components which does not
   start with '/. Common behavior exhibited by browsers and other clients.
 
 - Issue #6378: idle.bat now runs with the appropriate Python version rather than
