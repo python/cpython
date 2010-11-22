@@ -12,7 +12,7 @@ import operator
 
 ##
 
-class Foo(object):
+class Foo:
     def f(self):
         print('you called Foo.f()')
     def g(self):

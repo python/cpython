@@ -682,7 +682,7 @@ Letting your object adapt itself
 This is a good approach if you write the class yourself. Let's suppose you have
 a class like this::
 
-   class Point(object):
+   class Point:
        def __init__(self, x, y):
            self.x, self.y = x, y
 
