@@ -63,7 +63,7 @@ binhex
 bisect              rhettinger
 builtins
 bz2
-calendar
+calendar            rhettinger
 cgi
 cgitb
 chunk
@@ -72,7 +72,8 @@ cmd
 code
 codecs              lemburg, doerwalter
 codeop
-collections         rhettinger, stutzbach
+collections         rhettinger
+collection._abcoll  rhettinger, stutzbach
 colorsys
 compileall
 concurrent.futures  brian.quinlan
@@ -82,7 +83,7 @@ copy                alexandre.vassalotti
 copyreg             alexandre.vassalotti
 cProfile
 crypt
-csv
+csv                 skip.montanaro
 ctypes              theller
 curses
 datetime            alexander.belopolsky
@@ -105,7 +106,7 @@ formatter
 fpectl
 fractions           mark.dickinson, rhettinger
 ftplib              giampaolo.rodola
-functools
+functools           ncoghlan, rhettinger
 gc                  pitrou
 getopt
 getpass
@@ -126,7 +127,7 @@ importlib           brett.cannon
 inspect
 io                  pitrou, benjamin.peterson, stutzbach
 itertools           rhettinger
-json                bob.ippolito (inactive)
+json                bob.ippolito (inactive), rhettinger
 keyword
 lib2to3             benjamin.peterson
 linecache
