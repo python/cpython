@@ -253,10 +253,10 @@ class Form:
         return self.tk.call('tixForm', 'info', self._w, option)
 
     def slaves(self):
-        return map(self._nametowidget,
-                   self.tk.splitlist(
+        return [self._nametowidget(x) for x in
+                self.tk.splitlist(
                        self.tk.call(
-                       'tixForm', 'slaves', self._w)))
+                       'tixForm', 'slaves', self._w))]
 
 
 
