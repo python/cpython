@@ -70,6 +70,15 @@ PRINTABLE_MASK = 0x400
 NODELTA_MASK = 0x800
 NUMERIC_MASK = 0x1000
 
+# these ranges need to match unicodedata.c:is_unified_ideograph
+cjk_ranges = [
+    ('3400', '4DB5'),
+    ('4E00', '9FCB'),
+    ('20000', '2A6D6'),
+    ('2A700', '2B734'),
+    ('2B740', '2B81D')
+]
+
 def maketables(trace=0):
 
     print("--- Reading", UNICODE_DATA % "", "...")
@@ -81,7 +90,7 @@ def maketables(trace=0):
 
     for version in old_versions:
         print("--- Reading", UNICODE_DATA % ("-"+version), "...")
-        old_unicode = UnicodeData(version)
+        old_unicode = UnicodeData(version, cjk_check=False)
         print(len(list(filter(None, old_unicode.table))), "characters")
         merge_old_version(version, unicode, old_unicode)
 
@@ -804,7 +813,8 @@ class UnicodeData:
 
     def __init__(self, version,
                  linebreakprops=False,
-                 expand=1):
+                 expand=1,
+                 cjk_check=True):
         self.changed = []
         file = open_data(UNICODE_DATA, version)
         table = [None] * 0x110000
@@ -816,6 +826,8 @@ class UnicodeData:
             char = int(s[0], 16)
             table[char] = s
 
+        cjk_ranges_found = []
+
         # expand first-last ranges
         if expand:
             field = None
@@ -826,12 +838,17 @@ class UnicodeData:
                         s[1] = ""
                         field = s
                     elif s[1][-5:] == "Last>":
+                        if s[1].startswith("<CJK Ideograph"):
+                            cjk_ranges_found.append((field[0],
+                                                     s[0]))
                         s[1] = ""
                         field = None
                 elif field:
                     f2 = field[:]
                     f2[0] = "%X" % i
                     table[i] = f2
+            if cjk_check and cjk_ranges != cjk_ranges_found:
+                raise ValueError("CJK ranges deviate: have %r" % cjk_ranges_found)
 
         # public attributes
         self.filename = UNICODE_DATA % ''
