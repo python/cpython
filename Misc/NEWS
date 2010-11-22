@@ -32,6 +32,8 @@ Library
 Build
 -----
 
+- Backport r83399 to allow test_distutils to pass on installed versions.
+
 - Issue #1303434: Generate ZIP file containing all PDBs (already done for rc1).
 
 - Stop packaging versioncheck tool (already done for rc1).
