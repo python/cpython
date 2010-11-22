@@ -1439,6 +1439,7 @@ class UnicodeTest(string_tests.CommonTest,
     # Test PyUnicode_AsWideChar()
     def test_aswidechar(self):
         from _testcapi import unicode_aswidechar
+        support.import_module('ctypes')
         from ctypes import c_wchar, sizeof
 
         wchar, size = unicode_aswidechar('abcdef', 2)
@@ -1475,6 +1476,7 @@ class UnicodeTest(string_tests.CommonTest,
     # Test PyUnicode_AsWideCharString()
     def test_aswidecharstring(self):
         from _testcapi import unicode_aswidecharstring
+        support.import_module('ctypes')
         from ctypes import c_wchar, sizeof
 
         wchar, size = unicode_aswidecharstring('abc')
