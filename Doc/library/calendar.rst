@@ -16,7 +16,7 @@ are given as integers. For related
 functionality, see also the :mod:`datetime` and :mod:`time` modules.
 
 Most of these functions and classes rely on the :mod:`datetime` module which
-uses an idealized calendar, the current Gregorian calendar indefinitely extended
+uses an idealized calendar, the current Gregorian calendar extended
 in both directions.  This matches the definition of the "proleptic Gregorian"
 calendar in Dershowitz and Reingold's book "Calendrical Calculations", where
 it's the base calendar for all computations.
