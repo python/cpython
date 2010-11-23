@@ -80,14 +80,12 @@ Registry API for Unicode encoding error handlers
    The callback gets a single argument, an instance of
    :exc:`UnicodeEncodeError`, :exc:`UnicodeDecodeError` or
    :exc:`UnicodeTranslateError` that holds information about the problematic
-   sequence of characters or bytes and their offset in the original string.  The
+   sequence of characters or bytes and their offset in the original string (see
+   :ref:`unicodeexceptions` for functions to extract this information).  The
    callback must either raise the given exception, or return a two-item tuple
    containing the replacement for the problematic sequence, and an integer
    giving the offset in the original string at which encoding/decoding should be
    resumed.
-
-   .. XXX once they are documented, link to PyUnicode*Error access functions
-      to show how to get at the exception properties
 
    Return ``0`` on success, ``-1`` on error.
 
