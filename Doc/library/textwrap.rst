@@ -121,6 +121,13 @@ indentation from strings that have unwanted whitespace to the left of the text.
          each tab character will be replaced by a single space, which is *not*
          the same as tab expansion.
 
+      .. note::
+
+         If :attr:`replace_whitespace` is false, newlines may appear in the
+         middle of a line and cause strange output. For this reason, text should
+         be split into paragraphs (using :meth:`str.splitlines` or similar)
+         which are wrapped separately.
+
 
    .. attribute:: drop_whitespace
 
