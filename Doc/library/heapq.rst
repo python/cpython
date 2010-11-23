@@ -16,11 +16,12 @@ as the priority queue algorithm.
    Latest version of the :source:`heapq Python source code
    <Lib/heapq.py>`
 
-Heaps are arrays for which ``heap[k] <= heap[2*k+1]`` and ``heap[k] <=
-heap[2*k+2]`` for all *k*, counting elements from zero.  For the sake of
-comparison, non-existing elements are considered to be infinite.  The
-interesting property of a heap is that ``heap[0]`` is always its smallest
-element.
+Heaps are binary trees for which every parent node has a value less than or
+equal to any of its children.  This implementation uses arrays for which
+``heap[k] <= heap[2*k+1]`` and ``heap[k] <= heap[2*k+2]`` for all *k*, counting
+elements from zero.  For the sake of comparison, non-existing elements are
+considered to be infinite.  The interesting property of a heap is that its
+smallest element is always the root, ``heap[0]``.
 
 The API below differs from textbook heap algorithms in two aspects: (a) We use
 zero-based indexing.  This makes the relationship between the index for a node
