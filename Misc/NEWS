@@ -32,6 +32,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #9846: zipfile is now correctly closing underlying file objects.
+
 - Issue #10459: Update CJK character names to Unicode 6.0.
 
 - Issue #4493: urllib.request adds '/' in front of path components which does not
