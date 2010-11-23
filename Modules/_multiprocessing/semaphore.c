@@ -433,7 +433,7 @@ semlock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyOS_snprintf(buffer, sizeof(buffer), "/mp%d-%d", getpid(), counter++);
+    PyOS_snprintf(buffer, sizeof(buffer), "/mp%ld-%d", (long)getpid(), counter++);
 
     SEM_CLEAR_ERROR();
     handle = SEM_CREATE(buffer, value, maxvalue);
