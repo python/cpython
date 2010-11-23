@@ -897,10 +897,8 @@ class ZipFile:
         # given a file object in the constructor
         if self._filePassed:
             zef_file = self.fp
-            should_close = False
         else:
             zef_file = io.open(self.filename, 'rb')
-            should_close = True
 
         # Make sure we have an info object
         if isinstance(name, ZipInfo):
@@ -908,8 +906,12 @@ class ZipFile:
             zinfo = name
         else:
             # Get info object for name
-            zinfo = self.getinfo(name)
-
+            try:
+                zinfo = self.getinfo(name)
+            except KeyError:
+                if not self._filePassed:
+                    zef_file.close()
+                raise
         zef_file.seek(zinfo.header_offset, 0)
 
         # Skip the file header:
@@ -923,6 +925,8 @@ class ZipFile:
             zef_file.read(fheader[_FH_EXTRA_FIELD_LENGTH])
 
         if fname != zinfo.orig_filename.encode("utf-8"):
+            if not self._filePassed:
+                zef_file.close()
             raise BadZipFile(
                   'File name in directory %r and header %r differ.'
                   % (zinfo.orig_filename, fname))
@@ -934,6 +938,8 @@ class ZipFile:
             if not pwd:
                 pwd = self.pwd
             if not pwd:
+                if not self._filePassed:
+                    zef_file.close()
                 raise RuntimeError("File %s is encrypted, "
                                    "password required for extraction" % name)
 
@@ -952,9 +958,12 @@ class ZipFile:
                 # compare against the CRC otherwise
                 check_byte = (zinfo.CRC >> 24) & 0xff
             if h[11] != check_byte:
+                if not self._filePassed:
+                    zef_file.close()
                 raise RuntimeError("Bad password for file", name)
 
-        return  ZipExtFile(zef_file, mode, zinfo, zd, close_fileobj=should_close)
+        return ZipExtFile(zef_file, mode, zinfo, zd,
+                          close_fileobj=not self._filePassed)
 
     def extract(self, member, path=None, pwd=None):
         """Extract a member from the archive to the current working directory,
