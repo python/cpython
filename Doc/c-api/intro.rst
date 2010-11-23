@@ -41,8 +41,8 @@ included in your code by the following line::
    #include "Python.h"
 
 This implies inclusion of the following standard headers: ``<stdio.h>``,
-``<string.h>``, ``<errno.h>``, ``<limits.h>``, and ``<stdlib.h>`` (if
-available).
+``<string.h>``, ``<errno.h>``, ``<limits.h>``, ``<assert.h>`` and ``<stdlib.h>``
+(if available).
 
 .. note::
 
