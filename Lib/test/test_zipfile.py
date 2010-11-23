@@ -609,7 +609,7 @@ class TestZip64InSmallFiles(unittest.TestCase):
 
 class PyZipFileTests(unittest.TestCase):
     def test_write_pyfile(self):
-        with zipfile.PyZipFile(TemporaryFile(), "w") as zipfp:
+        with TemporaryFile() as t, zipfile.PyZipFile(t, "w") as zipfp:
             fn = __file__
             if fn.endswith('.pyc') or fn.endswith('.pyo'):
                 path_split = fn.split(os.sep)
@@ -627,7 +627,7 @@ class PyZipFileTests(unittest.TestCase):
             self.assertTrue(bn + 'o' in zipfp.namelist() or
                             bn + 'c' in zipfp.namelist())
 
-        with zipfile.PyZipFile(TemporaryFile(), "w") as zipfp:
+        with TemporaryFile() as t, zipfile.PyZipFile(t, "w") as zipfp:
             fn = __file__
             if fn.endswith(('.pyc', '.pyo')):
                 fn = fn[:-1]
@@ -643,7 +643,7 @@ class PyZipFileTests(unittest.TestCase):
         import email
         packagedir = os.path.dirname(email.__file__)
 
-        with zipfile.PyZipFile(TemporaryFile(), "w") as zipfp:
+        with TemporaryFile() as t, zipfile.PyZipFile(t, "w") as zipfp:
             zipfp.writepy(packagedir)
 
             # Check for a couple of modules at different levels of the
@@ -666,24 +666,23 @@ class PyZipFileTests(unittest.TestCase):
             with open(os.path.join(TESTFN2, "mod2.txt"), "w") as fp:
                 fp.write("bla bla bla\n")
 
-            zipfp  = zipfile.PyZipFile(TemporaryFile(), "w")
-            zipfp.writepy(TESTFN2)
+            with TemporaryFile() as t, zipfile.PyZipFile(t, "w") as zipfp:
+                zipfp.writepy(TESTFN2)
 
-            names = zipfp.namelist()
-            self.assertTrue('mod1.pyc' in names or 'mod1.pyo' in names)
-            self.assertTrue('mod2.pyc' in names or 'mod2.pyo' in names)
-            self.assertNotIn('mod2.txt', names)
+                names = zipfp.namelist()
+                self.assertTrue('mod1.pyc' in names or 'mod1.pyo' in names)
+                self.assertTrue('mod2.pyc' in names or 'mod2.pyo' in names)
+                self.assertNotIn('mod2.txt', names)
 
         finally:
             shutil.rmtree(TESTFN2)
 
     def test_write_non_pyfile(self):
-        with zipfile.PyZipFile(TemporaryFile(), "w") as zipfp:
+        with TemporaryFile() as t, zipfile.PyZipFile(t, "w") as zipfp:
             with open(TESTFN, 'w') as f:
                 f.write('most definitely not a python file')
             self.assertRaises(RuntimeError, zipfp.writepy, TESTFN)
             os.remove(TESTFN)
-
 
 
 class OtherTests(unittest.TestCase):
