@@ -27,11 +27,18 @@ disabled_module_list = []
 _BUILDDIR_COOKIE = "pybuilddir.txt"
 
 def add_dir_to_list(dirlist, dir):
-    """Add the directory 'dir' to the list 'dirlist' (at the front) if
+    """Add the directory 'dir' to the list 'dirlist' (after any relative
+    directories) if:
+
     1) 'dir' is not already in 'dirlist'
-    2) 'dir' actually exists, and is a directory."""
-    if dir is not None and os.path.isdir(dir) and dir not in dirlist:
-        dirlist.insert(0, dir)
+    2) 'dir' actually exists, and is a directory.
+    """
+    if dir is None or not os.path.isdir(dir) or dir in dirlist:
+        return
+    for i, path in enumerate(dirlist):
+        if not os.path.isabs(path):
+            dirlist.insert(i + 1, dir)
+            break
 
 def macosx_sdk_root():
     """
@@ -362,7 +369,9 @@ class PyBuildExt(build_ext):
         return sys.platform
 
     def detect_modules(self):
-        # Ensure that /usr/local is always used
+        # Ensure that /usr/local is always used, but the local build
+        # directories (i.e. '.' and 'Include') must be first.  See issue
+        # 10520.
         add_dir_to_list(self.compiler.library_dirs, '/usr/local/lib')
         add_dir_to_list(self.compiler.include_dirs, '/usr/local/include')
 
@@ -437,9 +446,10 @@ class PyBuildExt(build_ext):
             # This should work on any unixy platform ;-)
             # If the user has bothered specifying additional -I and -L flags
             # in OPT and LDFLAGS we might as well use them here.
-            #   NOTE: using shlex.split would technically be more correct, but
-            # also gives a bootstrap problem. Let's hope nobody uses directories
-            # with whitespace in the name to store libraries.
+            #
+            # NOTE: using shlex.split would technically be more correct, but
+            # also gives a bootstrap problem. Let's hope nobody uses
+            # directories with whitespace in the name to store libraries.
             cflags, ldflags = sysconfig.get_config_vars(
                     'CFLAGS', 'LDFLAGS')
             for item in cflags.split():
