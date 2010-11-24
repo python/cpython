@@ -48,6 +48,11 @@ Tests
 
 - Issue #9424: Replace deprecated assert* methods in the Python test suite.
 
+Documentation
+-------------
+
+- Issue #10299: List the built-in functions in a table in functions.rst.
+
 
 What's New in Python 3.1.3 release candidate 1?
 ===============================================
