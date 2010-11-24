@@ -18,10 +18,10 @@ are always available.  They are listed here in alphabetical order.
 :func:`bool`         :func:`filter`     :func:`issubclass`  :func:`pow`       :func:`super`
 :func:`bytearray`    :func:`float`      :func:`iter`        :func:`print`     :func:`tuple`
 :func:`bytes`        :func:`format`     :func:`len`         :func:`property`  :func:`type`
-:func:`chr`          :func:`frozenset`  :func:`list`        :func:`range`     :func:`type`
-:func:`classmethod`  :func:`getattr`    :func:`locals`      :func:`repr`      :func:`vars`
-:func:`compile`      :func:`globals`    :func:`map`         :func:`reversed`  :func:`zip`
-:func:`complex`      :func:`hasattr`    :func:`max`         :func:`round`     :func:`__import__`
+:func:`chr`          :func:`frozenset`  :func:`list`        :func:`range`     :func:`vars`
+:func:`classmethod`  :func:`getattr`    :func:`locals`      :func:`repr`      :func:`zip`
+:func:`compile`      :func:`globals`    :func:`map`         :func:`reversed`  :func:`__import__`
+:func:`complex`      :func:`hasattr`    :func:`max`         :func:`round`
 :func:`delattr`      :func:`hash`       :func:`memoryview`  :func:`set`
 :func:`dict`         :func:`help`       :func:`min`         :func:`setattr`
 ===================  =================  ==================  ================  ====================

@@ -132,6 +132,11 @@ Build
 - Issue #10325: Fix two issues in the fallback definitions for PY_ULLONG_MAX and
   PY_LLONG_MAX that made them unsuitable for use in preprocessor conditionals.
 
+Documentation
+-------------
+
+- Issue #10299: List the built-in functions in a table in functions.rst.
+
 
 What's New in Python 3.2 Alpha 4?
 =================================
