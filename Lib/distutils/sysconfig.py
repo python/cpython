@@ -11,7 +11,6 @@ Email:        <fdrake@acm.org>
 
 __revision__ = "$Id$"
 
-import io
 import os
 import re
 import sys
@@ -49,6 +48,18 @@ def _python_build():
     return False
 python_build = _python_build()
 
+# Calculate the build qualifier flags if they are defined.  Adding the flags
+# to the include and lib directories only makes sense for an installation, not
+# an in-source build.
+build_flags = ''
+try:
+    if not python_build:
+        build_flags = sys.abiflags
+except AttributeError:
+    # It's not a configure-based build, so the sys module doesn't have
+    # this attribute, which is fine.
+    pass
+
 def get_python_version():
     """Return a string containing the major and minor Python version,
     leaving off the patchlevel.  Sample return values could be '1.5'
@@ -83,7 +94,8 @@ def get_python_inc(plat_specific=0, prefix=None):
             else:
                 incdir = os.path.join(get_config_var('srcdir'), 'Include')
                 return os.path.normpath(incdir)
-        return os.path.join(prefix, "include", "python" + get_python_version())
+        python_dir = 'python' + get_python_version() + build_flags
+        return os.path.join(prefix, "include", python_dir)
     elif os.name == "nt":
         return os.path.join(prefix, "include")
     elif os.name == "os2":
@@ -209,7 +221,8 @@ def get_makefile_filename():
     if python_build:
         return os.path.join(os.path.dirname(sys.executable), "Makefile")
     lib_dir = get_python_lib(plat_specific=1, standard_lib=1)
-    return os.path.join(lib_dir, "config", "Makefile")
+    config_file = 'config-{}{}'.format(get_python_version(), build_flags)
+    return os.path.join(lib_dir, config_file, 'Makefile')
 
 
 def parse_config_h(fp, g=None):

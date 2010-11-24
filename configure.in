@@ -618,7 +618,7 @@ INSTSONAME='$(LDLIBRARY)'
 DLLLIBRARY=''
 LDLIBRARYDIR=''
 RUNSHARED=''
-LDVERSION="$(VERSION)"
+LDVERSION="$VERSION"
 
 # LINKCC is the command that links the python executable -- default is $(CC).
 # If CXX is set, and if it is needed to link a main function that was

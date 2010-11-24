@@ -48,7 +48,7 @@ INSTALL_SCHEMES = {
     'unix_prefix': {
         'purelib': '$base/lib/python$py_version_short/site-packages',
         'platlib': '$platbase/lib/python$py_version_short/site-packages',
-        'headers': '$base/include/python$py_version_short/$dist_name',
+        'headers': '$base/include/python$py_version_short$abiflags/$dist_name',
         'scripts': '$base/bin',
         'data'   : '$base',
         },
@@ -82,7 +82,8 @@ if HAS_USER_SITE:
     INSTALL_SCHEMES['unix_user'] = {
         'purelib': '$usersite',
         'platlib': '$usersite',
-        'headers': '$userbase/include/python$py_version_short/$dist_name',
+        'headers':
+            '$userbase/include/python$py_version_short$abiflags/$dist_name',
         'scripts': '$userbase/bin',
         'data'   : '$userbase',
         }
@@ -322,6 +323,7 @@ class install(Command):
                             'prefix': prefix,
                             'sys_exec_prefix': exec_prefix,
                             'exec_prefix': exec_prefix,
+                            'abiflags': sys.abiflags,
                            }
 
         if HAS_USER_SITE:
