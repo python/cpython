@@ -437,6 +437,96 @@ _PyVerify_fd_dup2(int fd1, int fd2)
 #define _PyVerify_fd_dup2(A, B) (1)
 #endif
 
+/* The following structure was copied from
+   http://msdn.microsoft.com/en-us/library/ms791514.aspx as the required
+   include doesn't seem to be present in the Windows SDK (at least as included
+   with Visual Studio Express). */
+typedef struct _REPARSE_DATA_BUFFER {
+    ULONG ReparseTag;
+    USHORT ReparseDataLength;
+    USHORT Reserved;
+    union {
+        struct {
+            USHORT SubstituteNameOffset;
+            USHORT SubstituteNameLength;
+            USHORT PrintNameOffset;
+            USHORT PrintNameLength;
+            ULONG Flags;
+            WCHAR PathBuffer[1];
+        } SymbolicLinkReparseBuffer;
+
+        struct {
+            USHORT SubstituteNameOffset;
+            USHORT  SubstituteNameLength;
+            USHORT  PrintNameOffset;
+            USHORT  PrintNameLength;
+            WCHAR  PathBuffer[1];
+        } MountPointReparseBuffer;
+
+        struct {
+            UCHAR  DataBuffer[1];
+        } GenericReparseBuffer;
+    };
+} REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
+
+#define REPARSE_DATA_BUFFER_HEADER_SIZE  FIELD_OFFSET(REPARSE_DATA_BUFFER,\
+                                                      GenericReparseBuffer)
+#define MAXIMUM_REPARSE_DATA_BUFFER_SIZE  ( 16 * 1024 )
+
+static int
+_Py_ReadLink(HANDLE reparse_point_handle, ULONG *reparse_tag, wchar_t **target_path)
+{
+    char target_buffer[MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
+    REPARSE_DATA_BUFFER *rdb = (REPARSE_DATA_BUFFER *)target_buffer;
+    DWORD n_bytes_returned;
+    const wchar_t *ptr;
+    wchar_t *buf;
+    size_t len;
+
+    if (0 == DeviceIoControl(
+        reparse_point_handle,
+        FSCTL_GET_REPARSE_POINT,
+        NULL, 0, /* in buffer */
+        target_buffer, sizeof(target_buffer),
+        &n_bytes_returned,
+        NULL)) /* we're not using OVERLAPPED_IO */
+        return 0;
+
+    if (reparse_tag)
+        *reparse_tag = rdb->ReparseTag;
+
+    if (target_path) {
+        switch (rdb->ReparseTag) {
+        case IO_REPARSE_TAG_SYMLINK:
+            /* XXX: Maybe should use SubstituteName? */
+            ptr = rdb->SymbolicLinkReparseBuffer.PathBuffer +
+                  rdb->SymbolicLinkReparseBuffer.PrintNameOffset/sizeof(WCHAR);
+            len = rdb->SymbolicLinkReparseBuffer.PrintNameLength/sizeof(WCHAR);
+            break;
+        case IO_REPARSE_TAG_MOUNT_POINT:
+            ptr = rdb->MountPointReparseBuffer.PathBuffer +
+                  rdb->MountPointReparseBuffer.SubstituteNameOffset/sizeof(WCHAR);
+            len = rdb->MountPointReparseBuffer.SubstituteNameLength/sizeof(WCHAR);
+            break;
+        default:
+            SetLastError(ERROR_REPARSE_TAG_MISMATCH); /* XXX: Proper error code? */
+            return 0;
+        }
+        buf = (wchar_t *)malloc(sizeof(wchar_t)*(len+1));
+        if (!buf) {
+            SetLastError(ERROR_OUTOFMEMORY);
+            return 0;
+        }
+        wcsncpy(buf, ptr, len);
+        buf[len] = L'\0';
+        if (wcsncmp(buf, L"\\??\\", 4) == 0)
+            buf[1] = L'\\';
+        *target_path = buf;
+    }
+
+    return 1;
+}
+
 /* Return a dictionary corresponding to the POSIX environment table */
 #ifdef WITH_NEXT_FRAMEWORK
 /* On Darwin/MacOSX a shared library or framework has no access to
@@ -934,7 +1024,7 @@ attributes_to_mode(DWORD attr)
 }
 
 static int
-attribute_data_to_stat(WIN32_FILE_ATTRIBUTE_DATA *info, struct win32_stat *result)
+attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, struct win32_stat *result)
 {
     memset(result, 0, sizeof(*result));
     result->st_mode = attributes_to_mode(info->dwFileAttributes);
@@ -942,12 +1032,13 @@ attribute_data_to_stat(WIN32_FILE_ATTRIBUTE_DATA *info, struct win32_stat *resul
     FILE_TIME_to_time_t_nsec(&info->ftCreationTime, &result->st_ctime, &result->st_ctime_nsec);
     FILE_TIME_to_time_t_nsec(&info->ftLastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
     FILE_TIME_to_time_t_nsec(&info->ftLastAccessTime, &result->st_atime, &result->st_atime_nsec);
+    result->st_nlink = info->nNumberOfLinks;
 
     return 0;
 }
 
 static BOOL
-attributes_from_dir(LPCSTR pszFile, LPWIN32_FILE_ATTRIBUTE_DATA pfad)
+attributes_from_dir(LPCSTR pszFile, BY_HANDLE_FILE_INFORMATION *info)
 {
     HANDLE hFindFile;
     WIN32_FIND_DATAA FileData;
@@ -955,17 +1046,19 @@ attributes_from_dir(LPCSTR pszFile, LPWIN32_FILE_ATTRIBUTE_DATA pfad)
     if (hFindFile == INVALID_HANDLE_VALUE)
         return FALSE;
     FindClose(hFindFile);
-    pfad->dwFileAttributes = FileData.dwFileAttributes;
-    pfad->ftCreationTime   = FileData.ftCreationTime;
-    pfad->ftLastAccessTime = FileData.ftLastAccessTime;
-    pfad->ftLastWriteTime  = FileData.ftLastWriteTime;
-    pfad->nFileSizeHigh    = FileData.nFileSizeHigh;
-    pfad->nFileSizeLow     = FileData.nFileSizeLow;
+    memset(info, 0, sizeof(*info));
+    info->dwFileAttributes = FileData.dwFileAttributes;
+    info->ftCreationTime   = FileData.ftCreationTime;
+    info->ftLastAccessTime = FileData.ftLastAccessTime;
+    info->ftLastWriteTime  = FileData.ftLastWriteTime;
+    info->nFileSizeHigh    = FileData.nFileSizeHigh;
+    info->nFileSizeLow     = FileData.nFileSizeLow;
+/*  info->nNumberOfLinks   = 1; */
     return TRUE;
 }
 
 static BOOL
-attributes_from_dir_w(LPCWSTR pszFile, LPWIN32_FILE_ATTRIBUTE_DATA pfad)
+attributes_from_dir_w(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info)
 {
     HANDLE hFindFile;
     WIN32_FIND_DATAW FileData;
@@ -973,13 +1066,183 @@ attributes_from_dir_w(LPCWSTR pszFile, LPWIN32_FILE_ATTRIBUTE_DATA pfad)
     if (hFindFile == INVALID_HANDLE_VALUE)
         return FALSE;
     FindClose(hFindFile);
-    pfad->dwFileAttributes = FileData.dwFileAttributes;
-    pfad->ftCreationTime   = FileData.ftCreationTime;
-    pfad->ftLastAccessTime = FileData.ftLastAccessTime;
-    pfad->ftLastWriteTime  = FileData.ftLastWriteTime;
-    pfad->nFileSizeHigh    = FileData.nFileSizeHigh;
-    pfad->nFileSizeLow     = FileData.nFileSizeLow;
+    memset(info, 0, sizeof(*info));
+    info->dwFileAttributes = FileData.dwFileAttributes;
+    info->ftCreationTime   = FileData.ftCreationTime;
+    info->ftLastAccessTime = FileData.ftLastAccessTime;
+    info->ftLastWriteTime  = FileData.ftLastWriteTime;
+    info->nFileSizeHigh    = FileData.nFileSizeHigh;
+    info->nFileSizeLow     = FileData.nFileSizeLow;
+/*  info->nNumberOfLinks   = 1; */
     return TRUE;
+}
+
+#ifndef SYMLOOP_MAX
+#define SYMLOOP_MAX ( 88 )
+#endif
+
+static int
+win32_xstat_for_handle(HANDLE hFile, struct win32_stat *result, BOOL traverse, int depth);
+
+static int
+win32_xstat(const char *path, struct win32_stat *result, BOOL traverse, int depth)
+{
+    int code;
+    HANDLE hFile;
+    BY_HANDLE_FILE_INFORMATION info;
+    const char *dot;
+
+    hFile = CreateFileA(
+        path,
+        0, /* desired access */
+        0, /* share mode */
+        NULL, /* security attributes */
+        OPEN_EXISTING,
+        /* FILE_FLAG_BACKUP_SEMANTICS is required to open a directory */
+        FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS|FILE_FLAG_OPEN_REPARSE_POINT,
+        NULL);
+
+    if(hFile == INVALID_HANDLE_VALUE) {
+        /* Either the target doesn't exist, or we don't have access to
+           get a handle to it. If the former, we need to return an error.
+           If the latter, we can use attributes_from_dir. */
+        if (GetLastError() != ERROR_SHARING_VIOLATION)
+            goto err;
+        else {
+            /* Could not get attributes on open file. Fall back to
+               reading the directory. */
+            if (!attributes_from_dir(path, &info))
+                /* Very strange. This should not fail now */
+                goto err;
+            if (traverse && (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
+                /* Should traverse, but cannot open reparse point handle */
+                SetLastError(ERROR_SHARING_VIOLATION);
+                goto err;
+            }
+            attribute_data_to_stat(&info, result);
+        }
+    }
+    else {
+        code = win32_xstat_for_handle(hFile, result, traverse, depth);
+        CloseHandle(hFile);
+        if (code != 0)
+            return code;
+    }
+
+    /* Set S_IEXEC if it is an .exe, .bat, ... */
+    dot = strrchr(path, '.');
+    if (dot) {
+        if (stricmp(dot, ".bat") == 0 || stricmp(dot, ".cmd") == 0 ||
+            stricmp(dot, ".exe") == 0 || stricmp(dot, ".com") == 0)
+            result->st_mode |= 0111;
+    }
+    return 0;
+
+err:
+    /* Protocol violation: we explicitly clear errno, instead of
+       setting it to a POSIX error. Callers should use GetLastError. */
+    errno = 0;
+    return -1;
+}
+
+static int
+win32_xstat_w(const wchar_t *path, struct win32_stat *result, BOOL traverse, int depth)
+{
+    int code;
+    HANDLE hFile;
+    BY_HANDLE_FILE_INFORMATION info;
+    const wchar_t *dot;
+
+    hFile = CreateFileW(
+        path,
+        0, /* desired access */
+        0, /* share mode */
+        NULL, /* security attributes */
+        OPEN_EXISTING,
+        /* FILE_FLAG_BACKUP_SEMANTICS is required to open a directory */
+        FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS|FILE_FLAG_OPEN_REPARSE_POINT,
+        NULL);
+
+    if(hFile == INVALID_HANDLE_VALUE) {
+        /* Either the target doesn't exist, or we don't have access to
+           get a handle to it. If the former, we need to return an error.
+           If the latter, we can use attributes_from_dir. */
+        if (GetLastError() != ERROR_SHARING_VIOLATION)
+            goto err;
+        else {
+            /* Could not get attributes on open file. Fall back to
+               reading the directory. */
+            if (!attributes_from_dir_w(path, &info))
+                /* Very strange. This should not fail now */
+                goto err;
+            if (traverse && (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
+                /* Should traverse, but cannot open reparse point handle */
+                SetLastError(ERROR_SHARING_VIOLATION);
+                goto err;
+            }
+            attribute_data_to_stat(&info, result);
+        }
+    }
+    else {
+        code = win32_xstat_for_handle(hFile, result, traverse, depth);
+        CloseHandle(hFile);
+        if (code != 0)
+            return code;
+    }
+
+    /* Set S_IEXEC if it is an .exe, .bat, ... */
+    dot = wcsrchr(path, '.');
+    if (dot) {
+        if (_wcsicmp(dot, L".bat") == 0 || _wcsicmp(dot, L".cmd") == 0 ||
+            _wcsicmp(dot, L".exe") == 0 || _wcsicmp(dot, L".com") == 0)
+            result->st_mode |= 0111;
+    }
+    return 0;
+
+err:
+    /* Protocol violation: we explicitly clear errno, instead of
+       setting it to a POSIX error. Callers should use GetLastError. */
+    errno = 0;
+    return -1;
+}
+
+static int
+win32_xstat_for_handle(HANDLE hFile, struct win32_stat *result, BOOL traverse, int depth)
+{
+    int code;
+    BOOL reparse_tag;
+    wchar_t *target_path;
+    BY_HANDLE_FILE_INFORMATION info;
+
+    if (!GetFileInformationByHandle(hFile, &info))
+        return -1;
+
+    if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+        if (traverse) {
+            if (depth + 1 > SYMLOOP_MAX) {
+                SetLastError(ERROR_CANT_RESOLVE_FILENAME); /* XXX: ELOOP? */
+                return -1;
+            }
+            if (!_Py_ReadLink(hFile, NULL, &target_path))
+                return -1;
+            code = win32_xstat_w(target_path, result, traverse, depth + 1);
+            free(target_path);
+            return code;
+        } else {
+            if (!_Py_ReadLink(hFile, &reparse_tag, NULL))
+                return -1;
+            attribute_data_to_stat(&info, result);
+            if (reparse_tag == IO_REPARSE_TAG_SYMLINK) {
+                /* first clear the S_IFMT bits */
+                result->st_mode ^= (result->st_mode & 0170000);
+                /* now set the bits that make this a symlink */
+                result->st_mode |= 0120000;
+            }
+        }
+    } else {
+        attribute_data_to_stat(&info, result);
+    }
+    return 0;
 }
 
 /* About the following functions: win32_lstat, win32_lstat_w, win32_stat,
@@ -999,289 +1262,25 @@ attributes_from_dir_w(LPCWSTR pszFile, LPWIN32_FILE_ATTRIBUTE_DATA pfad)
 static int 
 win32_lstat(const char* path, struct win32_stat *result)
 {
-    WIN32_FILE_ATTRIBUTE_DATA info;
-    int code;
-    char *dot;
-    WIN32_FIND_DATAA find_data;
-    HANDLE find_data_handle;
-    if (!GetFileAttributesExA(path, GetFileExInfoStandard, &info)) {
-        if (GetLastError() != ERROR_SHARING_VIOLATION) {
-            /* Protocol violation: we explicitly clear errno, instead of
-               setting it to a POSIX error. Callers should use GetLastError. */
-            errno = 0;
-            return -1;
-        } else {
-            /* Could not get attributes on open file. Fall back to
-               reading the directory. */
-            if (!attributes_from_dir(path, &info)) {
-                /* Very strange. This should not fail now */
-                errno = 0;
-                return -1;
-            }
-        }
-    }
-
-    code = attribute_data_to_stat(&info, result);
-    if (code != 0)
-        return code;
-
-    /* Get WIN32_FIND_DATA structure for the path to determine if
-       it is a symlink */
-    if(info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-        find_data_handle = FindFirstFileA(path, &find_data);
-        if(find_data_handle != INVALID_HANDLE_VALUE) {
-            if(find_data.dwReserved0 == IO_REPARSE_TAG_SYMLINK) {
-                /* first clear the S_IFMT bits */
-                result->st_mode ^= (result->st_mode & 0170000);
-                /* now set the bits that make this a symlink */
-                result->st_mode |= 0120000;
-            }
-            FindClose(find_data_handle);
-        }
-    }
-
-    /* Set S_IFEXEC if it is an .exe, .bat, ... */
-    dot = strrchr(path, '.');
-    if (dot) {
-        if (stricmp(dot, ".bat") == 0 || stricmp(dot, ".cmd") == 0 ||
-            stricmp(dot, ".exe") == 0 || stricmp(dot, ".com") == 0)
-            result->st_mode |= 0111;
-    }
-    return code;
+    return win32_xstat(path, result, FALSE, 0);
 }
 
 static int
 win32_lstat_w(const wchar_t* path, struct win32_stat *result)
 {
-    int code;
-    const wchar_t *dot;
-    WIN32_FILE_ATTRIBUTE_DATA info;
-    WIN32_FIND_DATAW find_data;
-    HANDLE find_data_handle;
-    if (!GetFileAttributesExW(path, GetFileExInfoStandard, &info)) {
-        if (GetLastError() != ERROR_SHARING_VIOLATION) {
-            /* Protocol violation: we explicitly clear errno, instead of
-               setting it to a POSIX error. Callers should use GetLastError. */
-            errno = 0;
-            return -1;
-        } else {
-            /* Could not get attributes on open file. Fall back to reading
-            the directory. */
-            if (!attributes_from_dir_w(path, &info)) {
-                /* Very strange. This should not fail now */
-                errno = 0;
-                return -1;
-            }
-        }
-    }
-    code = attribute_data_to_stat(&info, result);
-    if (code < 0)
-        return code;
-
-    /* Get WIN32_FIND_DATA structure for the path to determine if
-       it is a symlink */
-    if(info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-        find_data_handle = FindFirstFileW(path, &find_data);
-        if(find_data_handle != INVALID_HANDLE_VALUE) {
-            if(find_data.dwReserved0 == IO_REPARSE_TAG_SYMLINK) {
-                /* first clear the S_IFMT bits */
-                result->st_mode ^= (result->st_mode & 0170000);
-                /* now set the bits that make this a symlink */
-                result->st_mode |= 0120000;
-            }
-            FindClose(find_data_handle);
-        }
-    }
-
-    /* Set IFEXEC if it is an .exe, .bat, ... */
-    dot = wcsrchr(path, '.');
-    if (dot) {
-        if (_wcsicmp(dot, L".bat") == 0 || _wcsicmp(dot, L".cmd") == 0 ||
-            _wcsicmp(dot, L".exe") == 0 || _wcsicmp(dot, L".com") == 0)
-            result->st_mode |= 0111;
-    }
-    return code;
-}
-
-/* Grab GetFinalPathNameByHandle dynamically from kernel32 */
-static int has_GetFinalPathNameByHandle = 0;
-static DWORD (CALLBACK *Py_GetFinalPathNameByHandleA)(HANDLE, LPSTR, DWORD,
-                                                      DWORD);
-static DWORD (CALLBACK *Py_GetFinalPathNameByHandleW)(HANDLE, LPWSTR, DWORD,
-                                                      DWORD);
-static int
-check_GetFinalPathNameByHandle()
-{
-    HINSTANCE hKernel32;
-    /* only recheck */
-    if (!has_GetFinalPathNameByHandle)
-    {
-        hKernel32 = GetModuleHandle("KERNEL32");
-        *(FARPROC*)&Py_GetFinalPathNameByHandleA = GetProcAddress(hKernel32,
-                                                "GetFinalPathNameByHandleA");
-        *(FARPROC*)&Py_GetFinalPathNameByHandleW = GetProcAddress(hKernel32,
-                                                "GetFinalPathNameByHandleW");
-        has_GetFinalPathNameByHandle = Py_GetFinalPathNameByHandleA &&
-                                       Py_GetFinalPathNameByHandleW;
-    }
-    return has_GetFinalPathNameByHandle;
+    return win32_xstat_w(path, result, FALSE, 0);
 }
 
 static int
 win32_stat(const char* path, struct win32_stat *result)
 {
-    /* Traverse the symlink to the target using
-    GetFinalPathNameByHandle()
-    */
-    int code;
-    HANDLE hFile;
-    int buf_size;
-    char *target_path;
-    int result_length;
-    WIN32_FILE_ATTRIBUTE_DATA info;
-    
-    if(!check_GetFinalPathNameByHandle()) {
-        /* if the OS doesn't have GetFinalPathNameByHandle, it doesn't
-           have symlinks, so just fall back to the traditional behavior
-           found in lstat. */
-        return win32_lstat(path, result);
-    }
-
-    hFile = CreateFileA(
-        path,
-        0, /* desired access */
-        0, /* share mode */
-        NULL, /* security attributes */
-        OPEN_EXISTING,
-        /* FILE_FLAG_BACKUP_SEMANTICS is required to open a directory */
-        FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS,
-        NULL);
-    
-    if(hFile == INVALID_HANDLE_VALUE) {
-        /* Either the target doesn't exist, or we don't have access to
-           get a handle to it. If the former, we need to return an error.
-           If the latter, we can use attributes_from_dir. */
-        if (GetLastError() != ERROR_SHARING_VIOLATION) {
-            /* Protocol violation: we explicitly clear errno, instead of
-               setting it to a POSIX error. Callers should use GetLastError. */
-            errno = 0;
-            return -1;
-        } else {
-            /* Could not get attributes on open file. Fall back to
-               reading the directory. */
-            if (!attributes_from_dir(path, &info)) {
-                /* Very strange. This should not fail now */
-                errno = 0;
-                return -1;
-            }
-        }
-        code = attribute_data_to_stat(&info, result);
-    }
-    else {
-        /* We have a good handle to the target, use it to determine the target
-           path name (then we'll call lstat on it). */
-        buf_size = Py_GetFinalPathNameByHandleA(hFile, 0, 0, VOLUME_NAME_DOS);
-        if(!buf_size) return -1;
-        /* Due to a slight discrepancy between GetFinalPathNameByHandleA
-           and GetFinalPathNameByHandleW, we must allocate one more byte
-           than reported. */
-        target_path = (char *)malloc((buf_size+2)*sizeof(char));
-        result_length = Py_GetFinalPathNameByHandleA(hFile, target_path,
-                                                     buf_size+1, VOLUME_NAME_DOS);
-
-        if(!result_length) {
-            free(target_path);
-            return -1;
-        }
-
-        if(!CloseHandle(hFile)) {
-            free(target_path);
-            return -1;
-        }
-
-        target_path[result_length] = 0;
-        code = win32_lstat(target_path, result);
-        free(target_path);
-    }
-    
-    return code;
+    return win32_xstat(path, result, TRUE, 0);
 }
 
 static int 
 win32_stat_w(const wchar_t* path, struct win32_stat *result)
 {
-    /* Traverse the symlink to the target using GetFinalPathNameByHandle() */
-    int code;
-    HANDLE hFile;
-    int buf_size;
-    wchar_t *target_path;
-    int result_length;
-    WIN32_FILE_ATTRIBUTE_DATA info;
-    
-    if(!check_GetFinalPathNameByHandle()) {
-        /* If the OS doesn't have GetFinalPathNameByHandle, it doesn't have
-           symlinks, so just fall back to the traditional behavior found
-           in lstat. */
-        return win32_lstat_w(path, result);
-    }
-
-    hFile = CreateFileW(
-        path,
-        0, /* desired access */
-        0, /* share mode */
-        NULL, /* security attributes */
-        OPEN_EXISTING,
-        /* FILE_FLAG_BACKUP_SEMANTICS is required to open a directory */
-        FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS,
-        NULL);
-
-    if(hFile == INVALID_HANDLE_VALUE) {
-        /* Either the target doesn't exist, or we don't have access to
-           get a handle to it. If the former, we need to return an error.
-           If the latter, we can use attributes_from_dir. */
-        if (GetLastError() != ERROR_SHARING_VIOLATION) {
-            /* Protocol violation: we explicitly clear errno, instead of
-               setting it to a POSIX error. Callers should use GetLastError. */
-            errno = 0;
-            return -1;
-        } else {
-            /* Could not get attributes on open file. Fall back to
-               reading the directory. */
-            if (!attributes_from_dir_w(path, &info)) {
-                /* Very strange. This should not fail now */
-                errno = 0;
-                return -1;
-            }
-        }
-        code = attribute_data_to_stat(&info, result);
-    }
-    else {
-        /* We have a good handle to the target, use it to determine the target
-           path name (then we'll call lstat on it). */
-        buf_size = Py_GetFinalPathNameByHandleW(hFile, 0, 0, VOLUME_NAME_DOS);
-        if(!buf_size)
-            return -1;
-
-        target_path = (wchar_t *)malloc((buf_size+1)*sizeof(wchar_t));
-        result_length = Py_GetFinalPathNameByHandleW(hFile, target_path,
-                                                buf_size, VOLUME_NAME_DOS);
-        
-        if(!result_length) {
-            free(target_path);
-            return -1;
-        }
-
-        if(!CloseHandle(hFile)) {
-            free(target_path);
-            return -1;
-        }
-
-        target_path[result_length] = 0;
-        code = win32_lstat_w(target_path, result);
-        free(target_path);
-    }
-    
-    return code;
+    return win32_xstat_w(path, result, TRUE, 0);
 }
 
 static int
@@ -1309,7 +1308,7 @@ win32_fstat(int file_number, struct win32_stat *result)
     if (type == FILE_TYPE_UNKNOWN) {
         DWORD error = GetLastError();
         if (error != 0) {
-        return -1;
+            return -1;
         }
         /* else: valid but unknown file */
     }
@@ -1326,17 +1325,8 @@ win32_fstat(int file_number, struct win32_stat *result)
         return -1;
     }
 
-    /* similar to stat() */
-    result->st_mode = attributes_to_mode(info.dwFileAttributes);
-    result->st_size = (((__int64)info.nFileSizeHigh)<<32) + info.nFileSizeLow;
-    FILE_TIME_to_time_t_nsec(&info.ftCreationTime, &result->st_ctime,
-                             &result->st_ctime_nsec);
-    FILE_TIME_to_time_t_nsec(&info.ftLastWriteTime, &result->st_mtime,
-                             &result->st_mtime_nsec);
-    FILE_TIME_to_time_t_nsec(&info.ftLastAccessTime, &result->st_atime,
-                             &result->st_atime_nsec);
+    attribute_data_to_stat(&info, result);
     /* specific to fstat() */
-    result->st_nlink = info.nNumberOfLinks;
     result->st_ino = (((__int64)info.nFileIndexHigh)<<32) + info.nFileIndexLow;
     return 0;
 }
@@ -2643,6 +2633,30 @@ posix__getfullpathname(PyObject *self, PyObject *args)
     }
     return PyBytes_FromString(outbuf);
 } /* end of posix__getfullpathname */
+
+/* Grab GetFinalPathNameByHandle dynamically from kernel32 */
+static int has_GetFinalPathNameByHandle = 0;
+static DWORD (CALLBACK *Py_GetFinalPathNameByHandleA)(HANDLE, LPSTR, DWORD,
+                                                      DWORD);
+static DWORD (CALLBACK *Py_GetFinalPathNameByHandleW)(HANDLE, LPWSTR, DWORD,
+                                                      DWORD);
+static int
+check_GetFinalPathNameByHandle()
+{
+    HINSTANCE hKernel32;
+    /* only recheck */
+    if (!has_GetFinalPathNameByHandle)
+    {
+        hKernel32 = GetModuleHandle("KERNEL32");
+        *(FARPROC*)&Py_GetFinalPathNameByHandleA = GetProcAddress(hKernel32,
+                                                "GetFinalPathNameByHandleA");
+        *(FARPROC*)&Py_GetFinalPathNameByHandleW = GetProcAddress(hKernel32,
+                                                "GetFinalPathNameByHandleW");
+        has_GetFinalPathNameByHandle = Py_GetFinalPathNameByHandleA &&
+                                       Py_GetFinalPathNameByHandleW;
+    }
+    return has_GetFinalPathNameByHandle;
+}
 
 /* A helper function for samepath on windows */
 static PyObject *
@@ -5043,43 +5057,6 @@ posix_symlink(PyObject *self, PyObject *args)
 PyDoc_STRVAR(win_readlink__doc__,
 "readlink(path) -> path\n\n\
 Return a string representing the path to which the symbolic link points.");
-
-/* The following structure was copied from
-   http://msdn.microsoft.com/en-us/library/ms791514.aspx as the required
-   include doesn't seem to be present in the Windows SDK (at least as included
-   with Visual Studio Express). */
-typedef struct _REPARSE_DATA_BUFFER {
-    ULONG ReparseTag;
-    USHORT ReparseDataLength;
-    USHORT Reserved;
-    union {
-        struct {
-            USHORT SubstituteNameOffset;
-            USHORT SubstituteNameLength;
-            USHORT PrintNameOffset;
-            USHORT PrintNameLength;
-            ULONG Flags;
-            WCHAR PathBuffer[1];
-        } SymbolicLinkReparseBuffer;
-
-        struct {
-            USHORT SubstituteNameOffset;
-            USHORT  SubstituteNameLength;
-            USHORT  PrintNameOffset;
-            USHORT  PrintNameLength;
-            WCHAR  PathBuffer[1];
-        } MountPointReparseBuffer;
-
-        struct {
-            UCHAR  DataBuffer[1];
-        } GenericReparseBuffer;
-    };
-} REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
-
-#define REPARSE_DATA_BUFFER_HEADER_SIZE  FIELD_OFFSET(REPARSE_DATA_BUFFER,\
-                                                      GenericReparseBuffer)
-
-#define MAXIMUM_REPARSE_DATA_BUFFER_SIZE  ( 16 * 1024 )
 
 /* Windows readlink implementation */
 static PyObject *
