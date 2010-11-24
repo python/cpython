@@ -437,6 +437,7 @@ _PyVerify_fd_dup2(int fd1, int fd2)
 #define _PyVerify_fd_dup2(A, B) (1)
 #endif
 
+#ifdef MS_WINDOWS
 /* The following structure was copied from
    http://msdn.microsoft.com/en-us/library/ms791514.aspx as the required
    include doesn't seem to be present in the Windows SDK (at least as included
@@ -526,6 +527,7 @@ _Py_ReadLink(HANDLE reparse_point_handle, ULONG *reparse_tag, wchar_t **target_p
 
     return 1;
 }
+#endif /* MS_WINDOWS */
 
 /* Return a dictionary corresponding to the POSIX environment table */
 #ifdef WITH_NEXT_FRAMEWORK
