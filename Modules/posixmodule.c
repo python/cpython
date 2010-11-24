@@ -1035,6 +1035,7 @@ attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, struct win32_stat *resu
     FILE_TIME_to_time_t_nsec(&info->ftLastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
     FILE_TIME_to_time_t_nsec(&info->ftLastAccessTime, &result->st_atime, &result->st_atime_nsec);
     result->st_nlink = info->nNumberOfLinks;
+    result->st_ino = (((__int64)info->nFileIndexHigh)<<32) + info->nFileIndexLow;
 
     return 0;
 }
@@ -2238,6 +2239,36 @@ posix_link(PyObject *self, PyObject *args)
     return posix_2str(args, "O&O&:link", link);
 }
 #endif /* HAVE_LINK */
+
+#ifdef MS_WINDOWS
+PyDoc_STRVAR(win32_link__doc__,
+"link(src, dst)\n\n\
+Create a hard link to a file.");
+
+static PyObject *
+win32_link(PyObject *self, PyObject *args)
+{
+    PyObject *osrc, *odst;
+    char *src, *dst;
+    BOOL rslt;
+
+    if (!PyArg_ParseTuple(args, "O&O&:link", PyUnicode_FSConverter, &osrc,
+                          PyUnicode_FSConverter, &odst))
+        return NULL;
+
+    src = PyBytes_AsString(osrc);
+    dst = PyBytes_AsString(odst);
+
+    Py_BEGIN_ALLOW_THREADS
+    rslt = CreateHardLink(dst, src, NULL);
+    Py_END_ALLOW_THREADS
+
+    if (rslt == 0)
+        return posix_error();
+
+    Py_RETURN_NONE;
+}
+#endif /* MS_WINDOWS */
 
 
 PyDoc_STRVAR(posix_listdir__doc__,
@@ -7808,6 +7839,7 @@ static PyMethodDef posix_methods[] = {
 #ifdef MS_WINDOWS
     {"startfile",       win32_startfile, METH_VARARGS, win32_startfile__doc__},
     {"kill",    win32_kill, METH_VARARGS, win32_kill__doc__},
+    {"link",    win32_link, METH_VARARGS, win32_link__doc__},
 #endif
 #ifdef HAVE_SETUID
     {"setuid",          posix_setuid, METH_VARARGS, posix_setuid__doc__},
