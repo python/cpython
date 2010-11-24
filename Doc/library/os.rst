@@ -1058,7 +1058,10 @@ Files and Directories
 
    Create a hard link pointing to *source* named *link_name*.
 
-   Availability: Unix.
+   Availability: Unix, Windows.
+
+   .. versionchanged:: 3.2
+      Added Windows support.
 
 
 .. function:: listdir(path='.')

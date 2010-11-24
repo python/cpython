@@ -860,6 +860,33 @@ class TestInvalidFD(unittest.TestCase):
         if hasattr(os, "write"):
             self.check(os.write, b" ")
 
+
+class LinkTests(unittest.TestCase):
+    def setUp(self):
+        self.file1 = support.TESTFN
+        self.file2 = os.path.join(support.TESTFN + "2")
+
+        for file in (self.file1, self.file2):
+            if os.path.exists(file):
+                os.unlink(file)
+
+    tearDown = setUp
+
+    def _test_link(self, file1, file2):
+        with open(file1, "w") as f1:
+            f1.write("test")
+
+        os.link(file1, file2)
+        with open(file1, "r") as f1, open(file2, "r") as f2:
+            self.assertTrue(os.path.sameopenfile(f1.fileno(), f2.fileno()))
+
+    def test_link(self):
+        self._test_link(self.file1, self.file2)
+
+    def test_link_bytes(self):
+        self._test_link(bytes(self.file1, sys.getfilesystemencoding()),
+                        bytes(self.file2, sys.getfilesystemencoding()))
+
 if sys.platform != 'win32':
     class Win32ErrorTests(unittest.TestCase):
         pass
@@ -1221,6 +1248,7 @@ def test_main():
         FSEncodingTests,
         PidTests,
         LoginTests,
+        LinkTests,
     )
 
 if __name__ == "__main__":
