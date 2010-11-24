@@ -25,8 +25,10 @@ _INSTALL_SCHEMES = {
         'platstdlib': '{platbase}/lib/python{py_version_short}',
         'purelib': '{base}/lib/python{py_version_short}/site-packages',
         'platlib': '{platbase}/lib/python{py_version_short}/site-packages',
-        'include': '{base}/include/python{py_version_short}',
-        'platinclude': '{platbase}/include/python{py_version_short}',
+        'include':
+            '{base}/include/python{py_version_short}{abiflags}',
+        'platinclude':
+            '{platbase}/include/python{py_version_short}{abiflags}',
         'scripts': '{base}/bin',
         'data': '{base}',
         },
@@ -317,7 +319,9 @@ def get_makefile_filename():
     """Return the path of the Makefile."""
     if _PYTHON_BUILD:
         return os.path.join(_PROJECT_BASE, "Makefile")
-    return os.path.join(get_path('stdlib'), "config", "Makefile")
+    return os.path.join(get_path('stdlib'),
+                        'config-{}{}'.format(_PY_VERSION_SHORT, sys.abiflags),
+                        'Makefile')
 
 
 def _init_posix(vars):
@@ -471,6 +475,7 @@ def get_config_vars(*args):
         _CONFIG_VARS['base'] = _PREFIX
         _CONFIG_VARS['platbase'] = _EXEC_PREFIX
         _CONFIG_VARS['projectbase'] = _PROJECT_BASE
+        _CONFIG_VARS['abiflags'] = sys.abiflags
 
         if os.name in ('nt', 'os2'):
             _init_non_posix(_CONFIG_VARS)
