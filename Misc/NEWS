@@ -43,6 +43,11 @@ Tests
 
 - Issue #9424: Replace deprecated assert* methods in the Python test suite.
 
+Documentation
+-------------
+
+- Issue #10299: List the built-in functions in a table in functions.rst.
+
 
 What's New in Python 2.7.1 release candidate 1?
 ===============================================
