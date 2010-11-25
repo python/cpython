@@ -475,7 +475,11 @@ def get_config_vars(*args):
         _CONFIG_VARS['base'] = _PREFIX
         _CONFIG_VARS['platbase'] = _EXEC_PREFIX
         _CONFIG_VARS['projectbase'] = _PROJECT_BASE
-        _CONFIG_VARS['abiflags'] = sys.abiflags
+        try:
+            _CONFIG_VARS['abiflags'] = sys.abiflags
+        except AttributeError:
+            # sys.abiflags may not be defined on all platforms.
+            _CONFIG_VARS['abiflags'] = ''
 
         if os.name in ('nt', 'os2'):
             _init_non_posix(_CONFIG_VARS)
