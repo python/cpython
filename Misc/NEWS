@@ -37,6 +37,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #2986: difflib.SequenceMatcher gets a new parameter, autojunk, which
+  can be set to False to turn off the previously undocumented 'popularity'
+  heuristic. Patch by Terry Reedy and Eli Bendersky.
+
 - Issue #9846: zipfile is now correctly closing underlying file objects.
 
 - Issue #10459: Update CJK character names to Unicode 6.0.
