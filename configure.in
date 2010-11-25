@@ -353,7 +353,7 @@ then
   # Furthermore, on Solaris 10, XPG6 requires the use of a C99
   # compiler
   case $ac_sys_system/$ac_sys_release in
-    SunOS/5.8|SunOS/5.9|SunOS/5.10)
+    SunOS/5.8|SunOS/5.9|SunOS/5.10|SunOS/5.11)
       AC_DEFINE(_XOPEN_SOURCE, 500, 
                 Define to the level of X/Open that your system supports)
       ;;
@@ -370,7 +370,7 @@ then
   # except for Solaris 10, where it must not be defined, 
   # as it implies XPG4.2
   case $ac_sys_system/$ac_sys_release in
-    SunOS/5.10)
+    SunOS/5.10|SunOS/5.11)
       ;;
     *)
       AC_DEFINE(_XOPEN_SOURCE_EXTENDED, 1,
