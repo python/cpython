@@ -313,6 +313,11 @@ class install(Command):
 
         py_version = sys.version.split()[0]
         (prefix, exec_prefix) = get_config_vars('prefix', 'exec_prefix')
+        try:
+            abiflags = sys.abiflags
+        except AttributeError:
+            # sys.abiflags may not be defined on all platforms.
+            abiflags = ''
         self.config_vars = {'dist_name': self.distribution.get_name(),
                             'dist_version': self.distribution.get_version(),
                             'dist_fullname': self.distribution.get_fullname(),
@@ -323,7 +328,7 @@ class install(Command):
                             'prefix': prefix,
                             'sys_exec_prefix': exec_prefix,
                             'exec_prefix': exec_prefix,
-                            'abiflags': sys.abiflags,
+                            'abiflags': abiflags,
                            }
 
         if HAS_USER_SITE:
