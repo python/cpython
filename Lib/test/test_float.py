@@ -706,11 +706,8 @@ class RoundTestCase(unittest.TestCase):
         def test(fmt, value, expected):
             # Test with both % and format().
             self.assertEqual(fmt % value, expected, fmt)
-            if not '#' in fmt:
-                # Until issue 7094 is implemented, format() for floats doesn't
-                #  support '#' formatting
-                fmt = fmt[1:] # strip off the %
-                self.assertEqual(format(value, fmt), expected, fmt)
+            fmt = fmt[1:] # strip off the %
+            self.assertEqual(format(value, fmt), expected, fmt)
 
         for fmt in ['%e', '%f', '%g', '%.0e', '%.6f', '%.20g',
                     '%#e', '%#f', '%#g', '%#.20e', '%#.15f', '%#.3g']:

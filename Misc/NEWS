@@ -15,6 +15,10 @@ Core and Builtins
 - Issue #10027. st_nlink was not being set on Windows calls to os.stat or
   os.lstat. Patch by Hirokazu Yamamoto.
 
+- Issue #7094: Added alternate formatting (specified by '#') to
+  __format__ method of float, complex, and Decimal. This allows more
+  precise control over when decimal points are displayed.
+
 - Issue #10474: range().count() should return integers.
 
 - Issue #10255: Fix reference leak in Py_InitializeEx().  Patch by Neil
