@@ -941,13 +941,8 @@ format_float_internal(PyObject *value,
        from a hard-code pseudo-locale */
     LocaleInfo locale;
 
-    /* Alternate is not allowed on floats. */
-    if (format->alternate) {
-        PyErr_SetString(PyExc_ValueError,
-                        "Alternate form (#) not allowed in float format "
-                        "specifier");
-        goto done;
-    }
+    if (format->alternate)
+        flags |= Py_DTSF_ALT;
 
     if (type == '\0') {
         /* Omitted type specifier.  Behaves in the same way as repr(x)
@@ -1104,15 +1099,7 @@ format_complex_internal(PyObject *value,
        from a hard-code pseudo-locale */
     LocaleInfo locale;
 
-    /* Alternate is not allowed on complex. */
-    if (format->alternate) {
-        PyErr_SetString(PyExc_ValueError,
-                        "Alternate form (#) not allowed in complex format "
-                        "specifier");
-        goto done;
-    }
-
-    /* Neither is zero pading. */
+    /* Zero padding is not allowed. */
     if (format->fill_char == '0') {
         PyErr_SetString(PyExc_ValueError,
                         "Zero padding is not allowed in complex format "
@@ -1134,6 +1121,9 @@ format_complex_internal(PyObject *value,
     im = PyComplex_ImagAsDouble(value);
     if (im == -1.0 && PyErr_Occurred())
         goto done;
+
+    if (format->alternate)
+        flags |= Py_DTSF_ALT;
 
     if (type == '\0') {
         /* Omitted type specifier. Should be like str(self). */

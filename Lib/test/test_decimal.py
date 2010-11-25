@@ -818,6 +818,18 @@ class DecimalFormatTest(unittest.TestCase):
 
             # issue 6850
             ('a=-7.0', '0.12345', 'aaaa0.1'),
+
+            # Issue 7094: Alternate formatting (specified by #)
+            ('.0e', '1.0', '1e+0'),
+            ('#.0e', '1.0', '1.e+0'),
+            ('.0f', '1.0', '1'),
+            ('#.0f', '1.0', '1.'),
+            ('g', '1.1', '1.1'),
+            ('#g', '1.1', '1.1'),
+            ('.0g', '1', '1'),
+            ('#.0g', '1', '1.'),
+            ('.0%', '1.0', '100%'),
+            ('#.0%', '1.0', '100.%'),
             ]
         for fmt, d, result in test_values:
             self.assertEqual(format(Decimal(d), fmt), result)

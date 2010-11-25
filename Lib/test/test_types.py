@@ -396,13 +396,9 @@ class TypesTests(unittest.TestCase):
             self.assertEqual(len(format(0, cfmt)), len(format(x, cfmt)))
 
     def test_float__format__(self):
-        # these should be rewritten to use both format(x, spec) and
-        # x.__format__(spec)
-
         def test(f, format_spec, result):
-            assert type(f) == float
-            assert type(format_spec) == str
             self.assertEqual(f.__format__(format_spec), result)
+            self.assertEqual(format(f, format_spec), result)
 
         test(0.0, 'f', '0.000000')
 
@@ -516,9 +512,27 @@ class TypesTests(unittest.TestCase):
                 self.assertRaises(ValueError, format, 1e-100, format_spec)
                 self.assertRaises(ValueError, format, -1e-100, format_spec)
 
-        # Alternate formatting is not supported
-        self.assertRaises(ValueError, format, 0.0, '#')
-        self.assertRaises(ValueError, format, 0.0, '#20f')
+        # Alternate float formatting
+        test(1.0, '.0e', '1e+00')
+        test(1.0, '#.0e', '1.e+00')
+        test(1.0, '.0f', '1')
+        test(1.0, '#.0f', '1.')
+        test(1.1, 'g', '1.1')
+        test(1.1, '#g', '1.10000')
+        test(1.0, '.0%', '100%')
+        test(1.0, '#.0%', '100.%')
+
+        # Issue 7094: Alternate formatting (specified by #)
+        test(1.0, '0e',  '1.000000e+00')
+        test(1.0, '#0e', '1.000000e+00')
+        test(1.0, '0f',  '1.000000' )
+        test(1.0, '#0f', '1.000000')
+        test(1.0, '.1e',  '1.0e+00')
+        test(1.0, '#.1e', '1.0e+00')
+        test(1.0, '.1f',  '1.0')
+        test(1.0, '#.1f', '1.0')
+        test(1.0, '.1%',  '100.0%')
+        test(1.0, '#.1%', '100.0%')
 
         # Issue 6902
         test(12345.6, "0<20", '12345.60000000000000')

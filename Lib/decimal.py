@@ -5991,7 +5991,7 @@ _exact_half = re.compile('50*$').match
 #
 # A format specifier for Decimal looks like:
 #
-#   [[fill]align][sign][0][minimumwidth][,][.precision][type]
+#   [[fill]align][sign][#][0][minimumwidth][,][.precision][type]
 
 _parse_format_specifier_regex = re.compile(r"""\A
 (?:
@@ -5999,6 +5999,7 @@ _parse_format_specifier_regex = re.compile(r"""\A
    (?P<align>[<>=^])
 )?
 (?P<sign>[-+ ])?
+(?P<alt>\#)?
 (?P<zeropad>0)?
 (?P<minimumwidth>(?!0)\d+)?
 (?P<thousands_sep>,)?
@@ -6214,7 +6215,7 @@ def _format_number(is_negative, intpart, fracpart, exp, spec):
 
     sign = _format_sign(is_negative, spec)
 
-    if fracpart:
+    if fracpart or spec['alt']:
         fracpart = spec['decimal_point'] + fracpart
 
     if exp != 0 or spec['type'] in 'eE':
