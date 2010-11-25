@@ -1448,7 +1448,7 @@ array_fromunicode(arrayobject *self, PyObject *args)
 {
     Py_UNICODE *ustr;
     Py_ssize_t n;
-    char typecode;
+    Py_UNICODE typecode;
 
     if (!PyArg_ParseTuple(args, "u#:fromunicode", &ustr, &n))
         return NULL;
@@ -1483,7 +1483,7 @@ append Unicode data to an array of some other type.");
 static PyObject *
 array_tounicode(arrayobject *self, PyObject *unused)
 {
-    char typecode;
+    Py_UNICODE typecode;
     typecode = self->ob_descr->typecode;
     if ((typecode != 'u')) {
         PyErr_SetString(PyExc_ValueError,
@@ -2002,8 +2002,8 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 static PyObject *
 array_get_typecode(arrayobject *a, void *closure)
 {
-    char tc = a->ob_descr->typecode;
-    return PyUnicode_FromStringAndSize(&tc, 1);
+    Py_UNICODE tc = a->ob_descr->typecode;
+    return PyUnicode_FromUnicode(&tc, 1);
 }
 
 static PyObject *
@@ -2075,21 +2075,21 @@ static PyMethodDef array_methods[] = {
 static PyObject *
 array_repr(arrayobject *a)
 {
-    char typecode;
+    Py_UNICODE typecode;
     PyObject *s, *v = NULL;
     Py_ssize_t len;
 
     len = Py_SIZE(a);
     typecode = a->ob_descr->typecode;
     if (len == 0) {
-        return PyUnicode_FromFormat("array('%c')", typecode);
+        return PyUnicode_FromFormat("array('%c')", (int)typecode);
     }
     if ((typecode == 'u'))
         v = array_tounicode(a, NULL);
     else
         v = array_tolist(a, NULL);
 
-    s = PyUnicode_FromFormat("array('%c', %R)", typecode, v);
+    s = PyUnicode_FromFormat("array('%c', %R)", (int)typecode, v);
     Py_DECREF(v);
     return s;
 }
