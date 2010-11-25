@@ -118,13 +118,22 @@ def lru_cache(maxsize=100):
     """Least-recently-used cache decorator.
 
     Arguments to the cached function must be hashable.
-    Cache performance statistics stored in f.hits and f.misses.
-    Clear the cache using f.clear().
-    http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used
+
+    Performance statistics stored in f.cache_hits and f.cache_misses.
+    Clear the cache and statistics using f.cache_clear().
+    The underlying function is stored in f.__wrapped__.
+
+    See:  http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used
 
     """
-    def decorating_function(user_function, tuple=tuple, sorted=sorted,
-                            len=len, KeyError=KeyError):
+    # Users should only access the lru_cache through its public API:
+    #   cache_hits, cache_misses, cache_clear(), and __wrapped__
+    # The internals of the lru_cache are encapsulated for thread safety and
+    # to allow the implementation to change (including a possible C version).
+
+    def decorating_function(user_function,
+                tuple=tuple, sorted=sorted, len=len, KeyError=KeyError):
+
         cache = OrderedDict()           # ordered least recent to most recent
         cache_popitem = cache.popitem
         cache_renew = cache.move_to_end
@@ -159,4 +168,5 @@ def lru_cache(maxsize=100):
         wrapper.cache_hits = wrapper.cache_misses = 0
         wrapper.cache_clear = cache_clear
         return wrapper
+
     return decorating_function
