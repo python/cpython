@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # life.py -- A curses-based version of Conway's Game of Life.
 # Contributed by AMK
+# Mouse support and colour by Dafydd Crosby
 #
 # An empty board will be displayed, and the following commands are available:
 #  E : Erase the board
@@ -12,8 +13,6 @@
 #  Space or Enter : Toggle the contents of the cursor's position
 #
 # TODO :
-#   Support the mouse
-#   Use colour if available
 #   Make board updates faster
 #
 
@@ -75,7 +74,11 @@ class LifeBoard:
             self.scr.addch(y+1, x+1, ' ')
         else:
             self.state[x,y] = 1
+            if curses.has_colors():
+                #Let's pick a random color!
+                self.scr.attrset(curses.color_pair(random.randrange(1,7)))
             self.scr.addch(y+1, x+1, self.char)
+            self.scr.attrset(0)
         self.scr.refresh()
 
     def erase(self):
@@ -111,7 +114,11 @@ class LifeBoard:
                 if s == 3:
                     # Birth
                     d[i,j] = 1
+                    if curses.has_colors():
+                        #Let's pick a random color!
+                        self.scr.attrset(curses.color_pair(random.randrange(1,7)))
                     self.scr.addch(j+1, i+1, self.char)
+                    self.scr.attrset(0)
                     if not live: self.boring = 0
                 elif s == 2 and live: d[i,j] = 1       # Survival
                 elif live:
@@ -140,10 +147,15 @@ def erase_menu(stdscr, menu_y):
 def display_menu(stdscr, menu_y):
     "Display the menu of possible keystroke commands"
     erase_menu(stdscr, menu_y)
+
+    # If colour, then light the menu up :-)
+    if curses.has_colors():
+        stdscr.attrset(curses.color_pair(1))
     stdscr.addstr(menu_y, 4,
                   'Use the cursor keys to move, and space or Enter to toggle a cell.')
     stdscr.addstr(menu_y+1, 4,
                   'E)rase the board, R)andom fill, S)tep once or C)ontinuously, Q)uit')
+    stdscr.attrset(0)
 
 def keyloop(stdscr):
     # Clear the screen and display the menu of keys
@@ -151,6 +163,19 @@ def keyloop(stdscr):
     stdscr_y, stdscr_x = stdscr.getmaxyx()
     menu_y = (stdscr_y-3)-1
     display_menu(stdscr, menu_y)
+
+    # If colour, then initialize the color pairs
+    if curses.has_colors():
+        curses.init_pair(1, curses.COLOR_BLUE, 0)
+        curses.init_pair(2, curses.COLOR_CYAN, 0)
+        curses.init_pair(3, curses.COLOR_GREEN, 0)
+        curses.init_pair(4, curses.COLOR_MAGENTA, 0)
+        curses.init_pair(5, curses.COLOR_RED, 0)
+        curses.init_pair(6, curses.COLOR_YELLOW, 0)
+        curses.init_pair(7, curses.COLOR_WHITE, 0)
+
+    # Set up the mask to listen for mouse events
+    curses.mousemask(curses.BUTTON1_CLICKED)
 
     # Allocate a subwindow for the Life board and create the board object
     subwin = stdscr.subwin(stdscr_y-3, stdscr_x, 0, 0)
@@ -203,6 +228,15 @@ def keyloop(stdscr):
         elif c == curses.KEY_DOWN and ypos<board.Y-1:  ypos += 1
         elif c == curses.KEY_LEFT and xpos>0:          xpos -= 1
         elif c == curses.KEY_RIGHT and xpos<board.X-1: xpos += 1
+        elif c == curses.KEY_MOUSE:
+            (mouse_id, mouse_x, mouse_y, mouse_z, button_state) = curses.getmouse()
+            if (mouse_x>0 and mouse_x<board.X+1) and (mouse_y>0 and mouse_y<board.Y+1):
+                xpos = mouse_x - 1
+                ypos = mouse_y - 1
+                board.toggle(ypos, xpos)
+            else:
+                # They've clicked outside the board
+                curses.flash()
         else:
             # Ignore incorrect keys
             pass
