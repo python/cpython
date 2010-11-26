@@ -2,6 +2,7 @@ import calendar
 import unittest
 
 from test import test_support
+import locale
 
 
 result_2004_text = """
@@ -247,6 +248,22 @@ class CalendarTestCase(unittest.TestCase):
             self.assertEqual(len(set(value)), 13)
             # verify it "acts like a sequence" in two forms of iteration
             self.assertEqual(value[::-1], list(reversed(value)))
+
+    def test_localecalendars(self):
+        # ensure that Locale{Text,HTML}Calendar resets the locale properly
+        # (it is still not thread-safe though)
+        try:
+            def_locale = locale.getdefaultlocale()
+        except locale.Error:
+            # cannot determine a default locale -- skip test
+            return
+        old_october = calendar.TextCalendar().formatmonthname(2010, 10, 10)
+        calendar.LocaleTextCalendar(
+            locale=def_locale).formatmonthname(2010, 10, 10)
+        calendar.LocaleHTMLCalendar(
+            locale=def_locale).formatmonthname(2010, 10)
+        new_october = calendar.TextCalendar().formatmonthname(2010, 10, 10)
+        self.assertEquals(old_october, new_october)
 
 
 class MonthCalendarTestCase(unittest.TestCase):
