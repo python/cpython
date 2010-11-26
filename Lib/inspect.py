@@ -737,9 +737,9 @@ def getargs(co):
     """Get information about the arguments accepted by a code object.
 
     Three things are returned: (args, varargs, varkw), where
-    'args' is the list of argument names, possibly containing nested
-    lists. Keyword-only arguments are appended. 'varargs' and 'varkw'
-    are the names of the * and ** arguments or None."""
+    'args' is the list of argument names. Keyword-only arguments are
+    appended. 'varargs' and 'varkw' are the names of the * and **
+    arguments or None."""
     args, varargs, kwonlyargs, varkw = _getfullargs(co)
     return Arguments(args + kwonlyargs, varargs, varkw)
 
@@ -747,9 +747,8 @@ def _getfullargs(co):
     """Get information about the arguments accepted by a code object.
 
     Four things are returned: (args, varargs, kwonlyargs, varkw), where
-    'args' and 'kwonlyargs' are lists of argument names (with 'args'
-    possibly containing nested lists), and 'varargs' and 'varkw' are the
-    names of the * and ** arguments or None."""
+    'args' and 'kwonlyargs' are lists of argument names, and 'varargs'
+    and 'varkw' are the names of the * and ** arguments or None."""
 
     if not iscode(co):
         raise TypeError('{!r} is not a code object'.format(co))
@@ -778,7 +777,7 @@ def getargspec(func):
     """Get the names and default values of a function's arguments.
 
     A tuple of four things is returned: (args, varargs, varkw, defaults).
-    'args' is a list of the argument names (it may contain nested lists).
+    'args' is a list of the argument names.
     'args' will include keyword-only argument names.
     'varargs' and 'varkw' are the names of the * and ** arguments or None.
     'defaults' is an n-tuple of the default values of the last n arguments.
@@ -803,7 +802,7 @@ def getfullargspec(func):
 
     A tuple of seven things is returned:
     (args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults annotations).
-    'args' is a list of the argument names (it may contain nested lists).
+    'args' is a list of the argument names.
     'varargs' and 'varkw' are the names of the * and ** arguments or None.
     'defaults' is an n-tuple of the default values of the last n arguments.
     'kwonlyargs' is a list of keyword-only argument names.
@@ -827,24 +826,11 @@ def getargvalues(frame):
     """Get information about arguments passed into a particular frame.
 
     A tuple of four things is returned: (args, varargs, varkw, locals).
-    'args' is a list of the argument names (it may contain nested lists).
+    'args' is a list of the argument names.
     'varargs' and 'varkw' are the names of the * and ** arguments or None.
     'locals' is the locals dictionary of the given frame."""
     args, varargs, varkw = getargs(frame.f_code)
     return ArgInfo(args, varargs, varkw, frame.f_locals)
-
-def joinseq(seq):
-    if len(seq) == 1:
-        return '(' + seq[0] + ',)'
-    else:
-        return '(' + ', '.join(seq) + ')'
-
-def strseq(object, convert, join=joinseq):
-    """Recursively walk a sequence, stringifying each element."""
-    if type(object) in (list, tuple):
-        return join(map(lambda o, c=convert, j=join: strseq(o, c, j), object))
-    else:
-        return convert(object)
 
 def formatannotation(annotation, base_module=None):
     if isinstance(annotation, type):
@@ -866,8 +852,7 @@ def formatargspec(args, varargs=None, varkw=None, defaults=None,
                   formatvarkw=lambda name: '**' + name,
                   formatvalue=lambda value: '=' + repr(value),
                   formatreturns=lambda text: ' -> ' + text,
-                  formatannotation=formatannotation,
-                  join=joinseq):
+                  formatannotation=formatannotation):
     """Format an argument spec from the values returned by getargspec
     or getfullargspec.
 
@@ -885,7 +870,7 @@ def formatargspec(args, varargs=None, varkw=None, defaults=None,
     if defaults:
         firstdefault = len(args) - len(defaults)
     for i, arg in enumerate(args):
-        spec = strseq(arg, formatargandannotation, join)
+        spec = formatargandannotation(arg)
         if defaults and i >= firstdefault:
             spec = spec + formatvalue(defaults[i - firstdefault])
         specs.append(spec)
@@ -911,8 +896,7 @@ def formatargvalues(args, varargs, varkw, locals,
                     formatarg=str,
                     formatvarargs=lambda name: '*' + name,
                     formatvarkw=lambda name: '**' + name,
-                    formatvalue=lambda value: '=' + repr(value),
-                    join=joinseq):
+                    formatvalue=lambda value: '=' + repr(value)):
     """Format an argument spec from the 4 values returned by getargvalues.
 
     The first four arguments are (args, varargs, varkw, locals).  The
@@ -924,7 +908,7 @@ def formatargvalues(args, varargs, varkw, locals,
         return formatarg(name) + formatvalue(locals[name])
     specs = []
     for i in range(len(args)):
-        specs.append(strseq(args[i], convert, join))
+        specs.append(convert(args[i]))
     if varargs:
         specs.append(formatvarargs(varargs) + formatvalue(locals[varargs]))
     if varkw:

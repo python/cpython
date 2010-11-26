@@ -908,13 +908,14 @@ Python-level trace functions in previous versions.
    +------------------------------+--------------------------------------+
    | :const:`PyTrace_LINE`        | Always *NULL*.                       |
    +------------------------------+--------------------------------------+
-   | :const:`PyTrace_RETURN`      | Value being returned to the caller.  |
+   | :const:`PyTrace_RETURN`      | Value being returned to the caller,  |
+   |                              | or *NULL* if caused by an exception. |
    +------------------------------+--------------------------------------+
-   | :const:`PyTrace_C_CALL`      | Name of function being called.       |
+   | :const:`PyTrace_C_CALL`      | Function object being called.        |
    +------------------------------+--------------------------------------+
-   | :const:`PyTrace_C_EXCEPTION` | Always *NULL*.                       |
+   | :const:`PyTrace_C_EXCEPTION` | Function object being called.        |
    +------------------------------+--------------------------------------+
-   | :const:`PyTrace_C_RETURN`    | Always *NULL*.                       |
+   | :const:`PyTrace_C_RETURN`    | Function object being called.        |
    +------------------------------+--------------------------------------+
 
 

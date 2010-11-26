@@ -204,18 +204,19 @@ attributes:
 
 .. function:: isclass(object)
 
-   Return true if the object is a class.
+   Return true if the object is a class, whether built-in or created in Python
+   code.
 
 
 .. function:: ismethod(object)
 
-   Return true if the object is a method.
+   Return true if the object is a bound method written in Python.
 
 
 .. function:: isfunction(object)
 
-   Return true if the object is a Python function or unnamed (:term:`lambda`)
-   function.
+   Return true if the object is a Python function, which includes functions
+   created by a :term:`lambda` expression.
 
 
 .. function:: isgeneratorfunction(object)
@@ -245,12 +246,13 @@ attributes:
 
 .. function:: isbuiltin(object)
 
-   Return true if the object is a built-in function.
+   Return true if the object is a built-in function or a bound built-in method.
 
 
 .. function:: isroutine(object)
 
    Return true if the object is a user-defined or built-in function or method.
+
 
 .. function:: isabstract(object)
 
@@ -259,8 +261,9 @@ attributes:
 
 .. function:: ismethoddescriptor(object)
 
-   Return true if the object is a method descriptor, but not if :func:`ismethod`
-   or :func:`isclass` or :func:`isfunction` are true.
+   Return true if the object is a method descriptor, but not if
+   :func:`ismethod`, :func:`isclass`, :func:`isfunction` or :func:`isbuiltin`
+   are true.
 
    This, for example, is true of ``int.__add__``.  An object passing this test
    has a :attr:`__get__` attribute but not a :attr:`__set__` attribute, but
@@ -422,19 +425,19 @@ Classes and functions
 
    Get information about arguments passed into a particular frame.  A
    :term:`named tuple` ``ArgInfo(args, varargs, keywords, locals)`` is
-   returned. *args* is a list of the argument names (it may contain nested
-   lists). *varargs* and *varkw* are the names of the ``*`` and ``**`` arguments
-   or ``None``. *locals* is the locals dictionary of the given frame.
+   returned. *args* is a list of the argument names.  *varargs* and *varkw* are
+   the names of the ``*`` and ``**`` arguments or ``None``.  *locals* is the
+   locals dictionary of the given frame.
 
 
-.. function:: formatargspec(args[, varargs, varkw, defaults, formatarg, formatvarargs, formatvarkw, formatvalue, join])
+.. function:: formatargspec(args[, varargs, varkw, defaults, formatarg, formatvarargs, formatvarkw, formatvalue])
 
    Format a pretty argument spec from the four values returned by
    :func:`getargspec`.  The format\* arguments are the corresponding optional
    formatting functions that are called to turn names and values into strings.
 
 
-.. function:: formatargvalues(args[, varargs, varkw, locals, formatarg, formatvarargs, formatvarkw, formatvalue, join])
+.. function:: formatargvalues(args[, varargs, varkw, locals, formatarg, formatvarargs, formatvarkw, formatvalue])
 
    Format a pretty argument spec from the four values returned by
    :func:`getargvalues`.  The format\* arguments are the corresponding optional
