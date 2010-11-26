@@ -52,52 +52,57 @@ for the feature and property names.
 
 .. data:: feature_namespaces
 
-   Value: ``"http://xml.org/sax/features/namespaces"`` ---  true: Perform Namespace
-   processing. ---  false: Optionally do not perform Namespace processing (implies
-   namespace-prefixes; default). ---  access: (parsing) read-only; (not parsing)
-   read/write
+   | value: ``"http://xml.org/sax/features/namespaces"``
+   | true: Perform Namespace processing.
+   | false: Optionally do not perform Namespace processing (implies
+     namespace-prefixes; default).
+   | access: (parsing) read-only; (not parsing) read/write
 
 
 .. data:: feature_namespace_prefixes
 
-   Value: ``"http://xml.org/sax/features/namespace-prefixes"`` --- true: Report
-   the original prefixed names and attributes used for Namespace
-   declarations. --- false: Do not report attributes used for Namespace
-   declarations, and optionally do not report original prefixed names
-   (default). --- access: (parsing) read-only; (not parsing) read/write
+   | value: ``"http://xml.org/sax/features/namespace-prefixes"``
+   | true: Report the original prefixed names and attributes used for Namespace
+     declarations.
+   | false: Do not report attributes used for Namespace declarations, and
+     optionally do not report original prefixed names (default).
+   | access: (parsing) read-only; (not parsing) read/write
 
 
 .. data:: feature_string_interning
 
-   Value: ``"http://xml.org/sax/features/string-interning"`` ---  true: All element
-   names, prefixes, attribute names, Namespace URIs, and local names are interned
-   using the built-in intern function. ---  false: Names are not necessarily
-   interned, although they may be (default). ---  access: (parsing) read-only; (not
-   parsing) read/write
+   | value: ``"http://xml.org/sax/features/string-interning"``
+   | true: All element names, prefixes, attribute names, Namespace URIs, and
+     local names are interned using the built-in intern function.
+   | false: Names are not necessarily interned, although they may be (default).
+   | access: (parsing) read-only; (not parsing) read/write
 
 
 .. data:: feature_validation
 
-   Value: ``"http://xml.org/sax/features/validation"`` --- true: Report all
-   validation errors (implies external-general-entities and
-   external-parameter-entities). --- false: Do not report validation errors. ---
-   access: (parsing) read-only; (not parsing) read/write
+   | value: ``"http://xml.org/sax/features/validation"``
+   | true: Report all validation errors (implies external-general-entities and
+     external-parameter-entities).
+   | false: Do not report validation errors.
+   | access: (parsing) read-only; (not parsing) read/write
 
 
 .. data:: feature_external_ges
 
-   Value: ``"http://xml.org/sax/features/external-general-entities"`` ---  true:
-   Include all external general (text) entities. ---  false: Do not include
-   external general entities. ---  access: (parsing) read-only; (not parsing)
-   read/write
+   | value: ``"http://xml.org/sax/features/external-general-entities"``
+   | true: Include all external general (text) entities.
+   | false: Do not include external general entities.
+   | access: (parsing) read-only; (not parsing) read/write
 
 
 .. data:: feature_external_pes
 
-   Value: ``"http://xml.org/sax/features/external-parameter-entities"`` ---  true:
-   Include all external parameter entities, including the external DTD subset. ---
-   false: Do not include any external parameter entities, even the external DTD
-   subset. ---  access: (parsing) read-only; (not parsing) read/write
+   | value: ``"http://xml.org/sax/features/external-parameter-entities"``
+   | true: Include all external parameter entities, including the external DTD
+     subset.
+   | false: Do not include any external parameter entities, even the external
+     DTD subset.
+   | access: (parsing) read-only; (not parsing) read/write
 
 
 .. data:: all_features
@@ -107,34 +112,38 @@ for the feature and property names.
 
 .. data:: property_lexical_handler
 
-   Value: ``"http://xml.org/sax/properties/lexical-handler"`` ---  data type:
-   xml.sax.sax2lib.LexicalHandler (not supported in Python 2) ---  description: An
-   optional extension handler for lexical events like comments. ---  access:
-   read/write
+   | value: ``"http://xml.org/sax/properties/lexical-handler"``
+   | data type: xml.sax.sax2lib.LexicalHandler (not supported in Python 2)
+   | description: An optional extension handler for lexical events like
+     comments.
+   | access: read/write
 
 
 .. data:: property_declaration_handler
 
-   Value: ``"http://xml.org/sax/properties/declaration-handler"`` ---  data type:
-   xml.sax.sax2lib.DeclHandler (not supported in Python 2) ---  description: An
-   optional extension handler for DTD-related events other than notations and
-   unparsed entities. ---  access: read/write
+   | value: ``"http://xml.org/sax/properties/declaration-handler"``
+   | data type: xml.sax.sax2lib.DeclHandler (not supported in Python 2)
+   | description: An optional extension handler for DTD-related events other
+     than notations and unparsed entities.
+   | access: read/write
 
 
 .. data:: property_dom_node
 
-   Value: ``"http://xml.org/sax/properties/dom-node"`` ---  data type:
-   org.w3c.dom.Node (not supported in Python 2)  ---  description: When parsing,
-   the current DOM node being visited if this is a DOM iterator; when not parsing,
-   the root DOM node for iteration. ---  access: (parsing) read-only; (not parsing)
-   read/write
+   | value: ``"http://xml.org/sax/properties/dom-node"``
+   | data type: org.w3c.dom.Node (not supported in Python 2)
+   | description: When parsing, the current DOM node being visited if this is
+     a DOM iterator; when not parsing, the root DOM node for iteration.
+   | access: (parsing) read-only; (not parsing) read/write
 
 
 .. data:: property_xml_string
 
-   Value: ``"http://xml.org/sax/properties/xml-string"`` ---  data type: String ---
-   description: The literal string of characters that was the source for the
-   current event. ---  access: read-only
+   | value: ``"http://xml.org/sax/properties/xml-string"``
+   | data type: String
+   | description: The literal string of characters that was the source for the
+     current event.
+   | access: read-only
 
 
 .. data:: all_properties

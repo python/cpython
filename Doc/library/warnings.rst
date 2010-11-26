@@ -164,7 +164,7 @@ the command-line options passed to :option:`-W` and calls to
 
 * :exc:`BytesWarning` is ignored unless the :option:`-b` option is given once or
   twice; in this case this warning is either printed (``-b``) or turned into an
-  exception (``-bb`).
+  exception (``-bb``).
 
 .. versionchanged:: 3.2
    :exc:`DeprecationWarning` is now ignored by default in addition to
