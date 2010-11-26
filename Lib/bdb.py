@@ -565,47 +565,41 @@ def effective(file, line, frame):
     that indicates if it is ok to delete a temporary bp.
 
     """
-    possibles = Breakpoint.bplist[file,line]
-    for i in range(0, len(possibles)):
-        b = possibles[i]
-        if b.enabled == 0:
+    possibles = Breakpoint.bplist[file, line]
+    for b in possibles:
+        if not b.enabled:
             continue
         if not checkfuncname(b, frame):
             continue
         # Count every hit when bp is enabled
-        b.hits = b.hits + 1
+        b.hits += 1
         if not b.cond:
-            # If unconditional, and ignoring,
-            # go on to next, else break
+            # If unconditional, and ignoring go on to next, else break
             if b.ignore > 0:
-                b.ignore = b.ignore -1
+                b.ignore -= 1
                 continue
             else:
-                # breakpoint and marker that's ok
-                # to delete if temporary
-                return (b,1)
+                # breakpoint and marker that it's ok to delete if temporary
+                return (b, True)
         else:
             # Conditional bp.
             # Ignore count applies only to those bpt hits where the
             # condition evaluates to true.
             try:
-                val = eval(b.cond, frame.f_globals,
-                       frame.f_locals)
+                val = eval(b.cond, frame.f_globals, frame.f_locals)
                 if val:
                     if b.ignore > 0:
-                        b.ignore = b.ignore -1
+                        b.ignore -= 1
                         # continue
                     else:
-                        return (b,1)
+                        return (b, True)
                 # else:
                 #   continue
             except:
-                # if eval fails, most conservative
-                # thing is to stop on breakpoint
-                # regardless of ignore count.
-                # Don't delete temporary,
-                # as another hint to user.
-                return (b,0)
+                # if eval fails, most conservative thing is to stop on
+                # breakpoint regardless of ignore count.  Don't delete
+                # temporary, as another hint to user.
+                return (b, False)
     return (None, None)
 
 # -------------------- testing --------------------
