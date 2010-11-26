@@ -13,8 +13,8 @@ in the Python distribution for the definitions of the names in the context of
 the language grammar.  The specific numeric values which the names map to may
 change between Python versions.
 
-This module also provides one data object and some functions.  The functions
-mirror definitions in the Python C header files.
+The module also provides a mapping from numeric codes to names and some
+functions.  The functions mirror definitions in the Python C header files.
 
 
 .. data:: tok_name
@@ -37,6 +37,65 @@ mirror definitions in the Python C header files.
 .. function:: ISEOF(x)
 
    Return true if *x* is the marker indicating the end of input.
+
+
+The token constants are:
+
+.. data:: ENDMARKER
+          NAME
+          NUMBER
+          STRING
+          NEWLINE
+          INDENT
+          DEDENT
+          LPAR
+          RPAR
+          LSQB
+          RSQB
+          COLON
+          COMMA
+          SEMI
+          PLUS
+          MINUS
+          STAR
+          SLASH
+          VBAR
+          AMPER
+          LESS
+          GREATER
+          EQUAL
+          DOT
+          PERCENT
+          BACKQUOTE
+          LBRACE
+          RBRACE
+          EQEQUAL
+          NOTEQUAL
+          LESSEQUAL
+          GREATEREQUAL
+          TILDE
+          CIRCUMFLEX
+          LEFTSHIFT
+          RIGHTSHIFT
+          DOUBLESTAR
+          PLUSEQUAL
+          MINEQUAL
+          STAREQUAL
+          SLASHEQUAL
+          PERCENTEQUAL
+          AMPEREQUAL
+          VBAREQUAL
+          CIRCUMFLEXEQUAL
+          LEFTSHIFTEQUAL
+          RIGHTSHIFTEQUAL
+          DOUBLESTAREQUAL
+          DOUBLESLASH
+          DOUBLESLASHEQUAL
+          AT
+          OP
+          ERRORTOKEN
+          N_TOKENS
+          NT_OFFSET
 
 
 .. seealso::

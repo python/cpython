@@ -236,8 +236,8 @@ and recombined later.  Here is an example of how to do that::
    def mul_stereo(sample, width, lfactor, rfactor):
        lsample = audioop.tomono(sample, width, 1, 0)
        rsample = audioop.tomono(sample, width, 0, 1)
-       lsample = audioop.mul(sample, width, lfactor)
-       rsample = audioop.mul(sample, width, rfactor)
+       lsample = audioop.mul(lsample, width, lfactor)
+       rsample = audioop.mul(rsample, width, rfactor)
        lsample = audioop.tostereo(lsample, width, 1, 0)
        rsample = audioop.tostereo(rsample, width, 0, 1)
        return audioop.add(lsample, rsample, width)
