@@ -5620,8 +5620,10 @@ posix_read(PyObject *self, PyObject *args)
     buffer = PyBytes_FromStringAndSize((char *)NULL, size);
     if (buffer == NULL)
         return NULL;
-    if (!_PyVerify_fd(fd))
+    if (!_PyVerify_fd(fd)) {
+        Py_DECREF(buffer);
         return posix_error();
+    }
     Py_BEGIN_ALLOW_THREADS
     n = read(fd, PyBytes_AS_STRING(buffer), size);
     Py_END_ALLOW_THREADS
@@ -5648,12 +5650,14 @@ posix_write(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "iy*:write", &fd, &pbuf))
         return NULL;
-    if (!_PyVerify_fd(fd))
+    if (!_PyVerify_fd(fd)) {
+        PyBuffer_Release(&pbuf);
         return posix_error();
+    }
     Py_BEGIN_ALLOW_THREADS
     size = write(fd, pbuf.buf, (size_t)pbuf.len);
     Py_END_ALLOW_THREADS
-        PyBuffer_Release(&pbuf);
+    PyBuffer_Release(&pbuf);
     if (size < 0)
         return posix_error();
     return PyLong_FromSsize_t(size);
@@ -6540,10 +6544,10 @@ posix_pathconf(PyObject *self, PyObject *args)
     limit = pathconf(path, name);
     if (limit == -1 && errno != 0) {
         if (errno == EINVAL)
-        /* could be a path or name problem */
-        posix_error();
+            /* could be a path or name problem */
+            posix_error();
         else
-        posix_error_with_filename(path);
+            posix_error_with_filename(path);
     }
     else
         result = PyLong_FromLong(limit);
@@ -6724,7 +6728,7 @@ posix_confstr(PyObject *self, PyObject *args)
     PyObject *result = NULL;
     int name;
     char buffer[255];
-        int len;
+    int len;
 
     if (!PyArg_ParseTuple(args, "O&:confstr", conv_confstr_confname, &name))
         return NULL;
