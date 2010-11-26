@@ -99,7 +99,7 @@ The :mod:`dis` module defines the following functions and constants:
 
 .. data:: opmap
 
-   Dictionary mapping bytecodes to operation names.
+   Dictionary mapping operation names to bytecodes.
 
 
 .. data:: cmp_op

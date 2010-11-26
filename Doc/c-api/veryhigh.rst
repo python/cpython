@@ -121,13 +121,13 @@ the same library that the Python runtime is using.
 
 .. cfunction:: int PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags)
 
-   Read and execute a single statement from a file associated with an interactive
-   device according to the *flags* argument.  If *filename* is *NULL*, ``"???"`` is
-   used instead.  The user will be prompted using ``sys.ps1`` and ``sys.ps2``.
-   Returns ``0`` when the input was executed successfully, ``-1`` if there was an
-   exception, or an error code from the :file:`errcode.h` include file distributed
-   as part of Python if there was a parse error.  (Note that :file:`errcode.h` is
-   not included by :file:`Python.h`, so must be included specifically if needed.)
+   Read and execute a single statement from a file associated with an
+   interactive device according to the *flags* argument.  The user will be
+   prompted using ``sys.ps1`` and ``sys.ps2``.  Returns ``0`` when the input was
+   executed successfully, ``-1`` if there was an exception, or an error code
+   from the :file:`errcode.h` include file distributed as part of Python if
+   there was a parse error.  (Note that :file:`errcode.h` is not included by
+   :file:`Python.h`, so must be included specifically if needed.)
 
 
 .. cfunction:: int PyRun_InteractiveLoop(FILE *fp, const char *filename)
@@ -136,11 +136,11 @@ the same library that the Python runtime is using.
    leaving *flags* set to *NULL*.
 
 
-.. cfunction:: int PyRun_InteractiveLoopFlags(FILE *fp,  const char *filename, PyCompilerFlags *flags)
+.. cfunction:: int PyRun_InteractiveLoopFlags(FILE *fp, const char *filename, PyCompilerFlags *flags)
 
    Read and execute statements from a file associated with an interactive device
-   until EOF is reached.  If *filename* is *NULL*, ``"???"`` is used instead.  The
-   user will be prompted using ``sys.ps1`` and ``sys.ps2``.  Returns ``0`` at EOF.
+   until EOF is reached.  The user will be prompted using ``sys.ps1`` and
+   ``sys.ps2``.  Returns ``0`` at EOF.
 
 
 .. cfunction:: struct _node* PyParser_SimpleParseString(const char *str, int start)

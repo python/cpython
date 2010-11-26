@@ -53,6 +53,13 @@ always available.
    ``modules.keys()`` only lists the imported modules.)
 
 
+.. function:: call_tracing(func, args)
+
+   Call ``func(*args)``, while tracing is enabled.  The tracing state is saved,
+   and restored afterwards.  This is intended to be called from a debugger from
+   a checkpoint, to recursively debug some other code.
+
+
 .. data:: copyright
 
    A string containing the copyright pertaining to the Python interpreter.
@@ -219,19 +226,25 @@ always available.
 
    Exit from Python.  This is implemented by raising the :exc:`SystemExit`
    exception, so cleanup actions specified by finally clauses of :keyword:`try`
-   statements are honored, and it is possible to intercept the exit attempt at an
-   outer level.  The optional argument *arg* can be an integer giving the exit
-   status (defaulting to zero), or another type of object.  If it is an integer,
-   zero is considered "successful termination" and any nonzero value is considered
-   "abnormal termination" by shells and the like.  Most systems require it to be in
-   the range 0-127, and produce undefined results otherwise.  Some systems have a
-   convention for assigning specific meanings to specific exit codes, but these are
-   generally underdeveloped; Unix programs generally use 2 for command line syntax
-   errors and 1 for all other kind of errors.  If another type of object is passed,
-   ``None`` is equivalent to passing zero, and any other object is printed to
-   ``sys.stderr`` and results in an exit code of 1.  In particular,
-   ``sys.exit("some error message")`` is a quick way to exit a program when an
-   error occurs.
+   statements are honored, and it is possible to intercept the exit attempt at
+   an outer level.
+
+   The optional argument *arg* can be an integer giving the exit status
+   (defaulting to zero), or another type of object.  If it is an integer, zero
+   is considered "successful termination" and any nonzero value is considered
+   "abnormal termination" by shells and the like.  Most systems require it to be
+   in the range 0-127, and produce undefined results otherwise.  Some systems
+   have a convention for assigning specific meanings to specific exit codes, but
+   these are generally underdeveloped; Unix programs generally use 2 for command
+   line syntax errors and 1 for all other kind of errors.  If another type of
+   object is passed, ``None`` is equivalent to passing zero, and any other
+   object is printed to :data:`stderr` and results in an exit code of 1.  In
+   particular, ``sys.exit("some error message")`` is a quick way to exit a
+   program when an error occurs.
+
+   Since :func:`exit` ultimately "only" raises an exception, it will only exit
+   the process when called from the main thread, and the exception is not
+   intercepted.
 
 
 .. data:: exitfunc
