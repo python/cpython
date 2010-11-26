@@ -1483,6 +1483,13 @@ class MinidomTest(unittest.TestCase):
         doc.appendChild(doc.createComment("foo--bar"))
         self.assertRaises(ValueError, doc.toxml)
 
+    def testEmptyXMLNSValue(self):
+        doc = parseString("<element xmlns=''>\n"
+                          "<foo/>\n</element>")
+        doc2 = parseString(doc.toxml())
+        self.confirm(doc2.namespaceURI == xml.dom.EMPTY_NAMESPACE)
+
+
 def test_main():
     run_unittest(MinidomTest)
 
