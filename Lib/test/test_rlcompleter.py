@@ -31,9 +31,9 @@ class TestRlcompleter(unittest.TestCase):
 
     def test_global_matches(self):
         # test with builtins namespace
-        self.assertEqual(self.stdcompleter.global_matches('di'),
+        self.assertEqual(sorted(self.stdcompleter.global_matches('di')),
                          [x+'(' for x in dir(builtins) if x.startswith('di')])
-        self.assertEqual(self.stdcompleter.global_matches('st'),
+        self.assertEqual(sorted(self.stdcompleter.global_matches('st')),
                          [x+'(' for x in dir(builtins) if x.startswith('st')])
         self.assertEqual(self.stdcompleter.global_matches('akaksajadhak'), [])
 
