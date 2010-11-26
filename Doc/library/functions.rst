@@ -466,7 +466,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: getattr(object, name[, default])
 
-   Return the value of the named attributed of *object*.  *name* must be a string.
+   Return the value of the named attribute of *object*.  *name* must be a string.
    If the string is the name of one of the object's attributes, the result is the
    value of that attribute.  For example, ``getattr(x, 'foobar')`` is equivalent to
    ``x.foobar``.  If the named attribute does not exist, *default* is returned if

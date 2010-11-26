@@ -255,23 +255,22 @@ Connection Objects
 .. method:: Connection.execute(sql, [parameters])
 
    This is a nonstandard shortcut that creates an intermediate cursor object by
-   calling the cursor method, then calls the cursor's
-   :meth:`execute<Cursor.execute>` method with the parameters given.
+   calling the cursor method, then calls the cursor's :meth:`execute
+   <Cursor.execute>` method with the parameters given.
 
 
 .. method:: Connection.executemany(sql, [parameters])
 
    This is a nonstandard shortcut that creates an intermediate cursor object by
-   calling the cursor method, then calls the cursor's
-   :meth:`executemany<Cursor.executemany>` method with the parameters given.
+   calling the cursor method, then calls the cursor's :meth:`executemany
+   <Cursor.executemany>` method with the parameters given.
 
 
 .. method:: Connection.executescript(sql_script)
 
    This is a nonstandard shortcut that creates an intermediate cursor object by
-   calling the cursor method, then calls the cursor's
-   :meth:`executescript<Cursor.executescript>` method with the parameters
-   given.
+   calling the cursor method, then calls the cursor's :meth:`executescript
+   <Cursor.executescript>` method with the parameters given.
 
 
 .. method:: Connection.create_function(name, num_params, func)
@@ -435,7 +434,7 @@ Cursor Objects
 
 .. class:: Cursor
 
-   A SQLite database cursor has the following attributes and methods:
+   A :class:`Cursor` instance has the following attributes and methods.
 
 .. method:: Cursor.execute(sql, [parameters])
 
@@ -853,4 +852,3 @@ threads. If you still try to do so, you will get an exception at runtime.
 
 The only exception is calling the :meth:`~Connection.interrupt` method, which
 only makes sense to call from a different thread.
-
