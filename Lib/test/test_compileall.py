@@ -137,7 +137,7 @@ class CommandLineTests(unittest.TestCase):
     for name, ext, switch in [
         ('normal', 'pyc', []),
         ('optimize', 'pyo', ['-O']),
-        ('doubleoptimize', 'pyo', ['-OO'])
+        ('doubleoptimize', 'pyo', ['-OO']),
     ]:
         def f(self, ext=ext, switch=switch):
             retcode = subprocess.call(
@@ -200,7 +200,7 @@ class CommandLineTests(unittest.TestCase):
         self.assertNotEqual(access, access2)
 
     def test_legacy(self):
-        # create a new module
+        # create a new module  XXX could rewrite using self.pkgdir
         newpackage = os.path.join(self.pkgdir, 'spam')
         os.mkdir(newpackage)
         with open(os.path.join(newpackage, '__init__.py'), 'w'):
@@ -220,10 +220,12 @@ class CommandLineTests(unittest.TestCase):
         self.assertTrue(os.path.exists(imp.cache_from_source(sourcefile)))
 
     def test_quiet(self):
-        noise = subprocess.getoutput('{} -m compileall {}'.format(
-                                     sys.executable, self.pkgdir))
-        quiet = subprocess.getoutput(('{} -m compileall -f -q {}'.format(
-                                     sys.executable, self.pkgdir)))
+        noise = subprocess.check_output(
+             [sys.executable, '-m', 'compileall', self.pkgdir],
+             stderr=subprocess.STDOUT)
+        quiet = subprocess.check_output(
+            [sys.executable, '-m', 'compileall', '-f', '-q', self.pkgdir],
+            stderr=subprocess.STDOUT)
         self.assertGreater(len(noise), len(quiet))
 
     def test_regexp(self):
