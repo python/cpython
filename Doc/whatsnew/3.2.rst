@@ -657,7 +657,7 @@ The :mod:`os` module has two new functions: :func:`~os.fsencode` and
 :data:`os.environ`, :func:`os.getenvb` function and
 :data:`os.supports_bytes_environ` constant.
 
-``'mbcs'`` encoding doesn't ignore the error handler argument anymore. By
+``'mbcs'`` encoding doesn't ignore the error handler argument any more. By
 default (strict mode), it raises an UnicodeDecodeError on undecodable byte
 sequence and UnicodeEncodeError on unencodable character. To get the ``'mbcs'``
 encoding of Python 3.1, use ``'ignore'`` error handler to decode and
@@ -721,7 +721,7 @@ require changes to your code:
 * The :mod:`nntplib` module was reworked extensively, meaning that its APIs
   are often incompatible with the 3.1 APIs.
 
-* :class:`bytearray` objects cannot be used anymore as filenames: convert them
+* :class:`bytearray` objects cannot be used any more as filenames: convert them
   to :class:`bytes`.
 
 * PyArg_Parse*() functions:
