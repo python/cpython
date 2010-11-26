@@ -265,7 +265,8 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
             if (rwa) {
             bad_mode:
                 PyErr_SetString(PyExc_ValueError,
-                                "Must have exactly one of read/write/append mode");
+                                "Must have exactly one of read/write/append "
+                                "mode and at most one plus");
                 goto error;
             }
             rwa = 1;
