@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # life.py -- A curses-based version of Conway's Game of Life.
 # Contributed by AMK
-# Mouse support and colour by Dafydd Crosby
+# Mouse support and color by Dafydd Crosby
 #
 # An empty board will be displayed, and the following commands are available:
 #  E : Erase the board
@@ -148,7 +148,7 @@ def display_menu(stdscr, menu_y):
     "Display the menu of possible keystroke commands"
     erase_menu(stdscr, menu_y)
 
-    # If colour, then light the menu up :-)
+    # If color, then light the menu up :-)
     if curses.has_colors():
         stdscr.attrset(curses.color_pair(1))
     stdscr.addstr(menu_y, 4,
@@ -164,7 +164,7 @@ def keyloop(stdscr):
     menu_y = (stdscr_y-3)-1
     display_menu(stdscr, menu_y)
 
-    # If colour, then initialize the color pairs
+    # If color, then initialize the color pairs
     if curses.has_colors():
         curses.init_pair(1, curses.COLOR_BLUE, 0)
         curses.init_pair(2, curses.COLOR_CYAN, 0)
