@@ -209,7 +209,7 @@ Python extension.  For example::
    {
        if(!PyArg_ParseTuple(args, ":numargs"))
            return NULL;
-       return Py_BuildValue("i", numargs);
+       return PyLong_FromLong(numargs);
    }
 
    static PyMethodDef EmbMethods[] = {
