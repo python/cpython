@@ -159,16 +159,11 @@ By default, Python installs several warning filters, which can be overridden by
 the command-line options passed to :option:`-W` and calls to
 :func:`filterwarnings`.
 
-* :exc:`DeprecationWarning` and :exc:`PendingDeprecationWarning`, and
-  :exc:`ImportWarning` are ignored.
+* :exc:`PendingDeprecationWarning`, and :exc:`ImportWarning` are ignored.
 
 * :exc:`BytesWarning` is ignored unless the :option:`-b` option is given once or
   twice; in this case this warning is either printed (``-b``) or turned into an
   exception (``-bb``).
-
-.. versionchanged:: 3.2
-   :exc:`DeprecationWarning` is now ignored by default in addition to
-   :exc:`PendingDeprecationWarning`.
 
 
 .. _warning-suppress:
