@@ -949,6 +949,31 @@ class OtherTests(unittest.TestCase):
     def test_read_return_size_deflated(self):
         self.check_read_return_size(zipfile.ZIP_DEFLATED)
 
+    def test_empty_zipfile(self):
+        # Check that creating a file in 'w' or 'a' mode and closing without
+        # adding any files to the archives creates a valid empty ZIP file
+        zipf = zipfile.ZipFile(TESTFN, mode="w")
+        zipf.close()
+        try:
+            zipf = zipfile.ZipFile(TESTFN, mode="r")
+        except zipfile.BadZipFile:
+            self.fail("Unable to create empty ZIP file in 'w' mode")
+
+        zipf = zipfile.ZipFile(TESTFN, mode="a")
+        zipf.close()
+        try:
+            zipf = zipfile.ZipFile(TESTFN, mode="r")
+        except:
+            self.fail("Unable to create empty ZIP file in 'a' mode")
+
+    def test_open_empty_file(self):
+        # Issue 1710703: Check that opening a file with less than 22 bytes
+        # raises a BadZipfile exception (rather than the previously unhelpful
+        # IOError)
+        f = open(TESTFN, 'w')
+        f.close()
+        self.assertRaises(zipfile.BadZipfile, zipfile.ZipFile, TESTFN, 'r')
+
     def tearDown(self):
         unlink(TESTFN)
         unlink(TESTFN2)

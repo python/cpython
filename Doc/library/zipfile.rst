@@ -122,6 +122,10 @@ ZipFile Objects
    and :program:`unzip` commands on Unix (the InfoZIP utilities) don't support
    these extensions.
 
+   If the file is created with mode ``'a'`` or ``'w'`` and then
+   :meth:`close`\ d without adding any files to the archive, the appropriate
+   ZIP structures for an empty archive will be written to the file.
+
    ZipFile is also a context manager and therefore supports the
    :keyword:`with` statement.  In the example, *myzip* is closed after the
    :keyword:`with` statement's suite is finished---even if an exception occurs::
