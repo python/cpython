@@ -574,7 +574,7 @@ form.
       >>> re.split("(?m)^$", "foo\n\nbar\n")
       ['foo\n\nbar\n']
 
-   .. versionchanged:: 2.7,3.1
+   .. versionchanged:: 2.7
       Added the optional flags argument.
 
 
@@ -652,7 +652,7 @@ form.
    character ``'0'``.  The backreference ``\g<0>`` substitutes in the entire
    substring matched by the RE.
 
-   .. versionchanged:: 2.7,3.1
+   .. versionchanged:: 2.7
       Added the optional flags argument.
 
 
@@ -661,7 +661,7 @@ form.
    Perform the same operation as :func:`sub`, but return a tuple ``(new_string,
    number_of_subs_made)``.
 
-   .. versionchanged:: 2.7,3.1
+   .. versionchanged:: 2.7
       Added the optional flags argument.
 
 
