@@ -54,18 +54,21 @@ The module defines the following items:
 
 .. exception:: error_temp
 
-   Exception raised when an error code in the range 400--499 is received.
+   Exception raised when an error code signifying a temporary error (response
+   codes in the range 400--499) is received.
 
 
 .. exception:: error_perm
 
-   Exception raised when an error code in the range 500--599 is received.
+   Exception raised when an error code signifying a permanent error (response
+   codes in the range 500--599) is received.
 
 
 .. exception:: error_proto
 
-   Exception raised when a reply is received from the server that does not begin
-   with a digit in the range 1--5.
+   Exception raised when a reply is received from the server that does not fit
+   the response specifications of the File Transfer Protocol, i.e. begin with a
+   digit in the range 1--5.
 
 
 .. data:: all_errors
@@ -158,9 +161,9 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
 
 .. method:: FTP.voidcmd(cmd)
 
-   Send a simple command string to the server and handle the response. Return
-   nothing if a response code in the range 200--299 is received. Raise an exception
-   otherwise.
+   Send a simple command string to the server and handle the response.  Return
+   nothing if a response code corresponding to success (codes in the range
+   200--299) is received.  Raise :exc:`error_reply` otherwise.
 
 
 .. method:: FTP.retrbinary(cmd, callback, blocksize=8192, rest=None)
@@ -177,12 +180,15 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
 
 .. method:: FTP.retrlines(cmd, callback=None)
 
-   Retrieve a file or directory listing in ASCII transfer mode.  *cmd*
-   should be an appropriate ``RETR`` command (see :meth:`retrbinary`) or a
-   command such as ``LIST``, ``NLST`` or ``MLSD`` (usually just the string
-   ``'LIST'``).  The *callback* function is called for each line with a
-   string argument containing the line with the trailing CRLF stripped.
-   The default *callback* prints the line to ``sys.stdout``.
+   Retrieve a file or directory listing in ASCII transfer mode.  *cmd* should be
+   an appropriate ``RETR`` command (see :meth:`retrbinary`) or a command such as
+   ``LIST``, ``NLST`` or ``MLSD`` (usually just the string ``'LIST'``).
+   ``LIST`` retrieves a list of files and information about those files.
+   ``NLST`` retrieves a list of file names.  On some servers, ``MLSD`` retrieves
+   a machine readable list of files and information about those files.  The
+   *callback* function is called for each line with a string argument containing
+   the line with the trailing CRLF stripped.  The default *callback* prints the
+   line to ``sys.stdout``.
 
 
 .. method:: FTP.set_pasv(boolean)
@@ -240,10 +246,10 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
 
 .. method:: FTP.nlst(argument[, ...])
 
-   Return a list of files as returned by the ``NLST`` command.  The optional
-   *argument* is a directory to list (default is the current server directory).
-   Multiple arguments can be used to pass non-standard options to the ``NLST``
-   command.
+   Return a list of file names as returned by the ``NLST`` command.  The
+   optional *argument* is a directory to list (default is the current server
+   directory).  Multiple arguments can be used to pass non-standard options to
+   the ``NLST`` command.
 
 
 .. method:: FTP.dir(argument[, ...])

@@ -18,6 +18,11 @@ Library
 
 - Issue #10459: Update CJK character names to Unicode 5.1.
 
+- Issue #6098: Don't claim DOM level 3 conformance in minidom.
+
+- Issue #5762: Fix AttributeError raised by ``xml.dom.minidom`` when an empty
+  XML namespace attribute is encountered.
+
 - Issue #1710703: Write structures for an empty ZIP archive when a ZipFile is
   created in modes 'a' or 'w' and then closed without adding any files. Raise
   BadZipfile (rather than IOError) when opening small non-ZIP files.

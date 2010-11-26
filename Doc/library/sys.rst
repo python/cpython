@@ -746,8 +746,9 @@ always available.
 
    ``'return'``
       A function (or other code block) is about to return.  The local trace
-      function is called; *arg* is the value that will be returned.  The trace
-      function's return value is ignored.
+      function is called; *arg* is the value that will be returned, or ``None``
+      if the event is caused by an exception being raised.  The trace function's
+      return value is ignored.
 
    ``'exception'``
       An exception has occurred.  The local trace function is called; *arg* is a
@@ -759,10 +760,10 @@ always available.
       a built-in.  *arg* is the C function object.
 
    ``'c_return'``
-      A C function has returned. *arg* is ``None``.
+      A C function has returned. *arg* is the C function object.
 
    ``'c_exception'``
-      A C function has raised an exception.  *arg* is ``None``.
+      A C function has raised an exception.  *arg* is the C function object.
 
    Note that as an exception is propagated down the chain of callers, an
    ``'exception'`` event is generated at each level.

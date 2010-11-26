@@ -1288,6 +1288,24 @@ their parent process exits.  The manager classes are defined in the
 
       Create a shared ``list`` object and return a proxy for it.
 
+   .. note::
+
+      Modifications to mutable values or items in dict and list proxies will not
+      be propagated through the manager, because the proxy has no way of knowing
+      when its values or items are modified.  To modify such an item, you can
+      re-assign the modified object to the container proxy::
+
+         # create a list proxy and append a mutable object (a dictionary)
+         lproxy = manager.list()
+         lproxy.append({})
+         # now mutate the dictionary
+         d = lproxy[0]
+         d['a'] = 1
+         d['b'] = 2
+         # at this point, the changes to d are not yet synced, but by
+         # reassigning the dictionary, the proxy is notified of the change
+         lproxy[0] = d
+
 
 Namespace objects
 >>>>>>>>>>>>>>>>>
