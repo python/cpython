@@ -14,6 +14,7 @@
 
 from tkinter import *
 
+
 class Option:
 
     varclass = StringVar            # May be overridden
@@ -45,6 +46,7 @@ class Option:
     def set(self, e=None):          # Should be overridden
         pass
 
+
 class BooleanOption(Option):
 
     varclass = BooleanVar
@@ -59,6 +61,7 @@ class BooleanOption(Option):
                                  borderwidth=2,
                                  command=self.set)
         self.button.pack(side=RIGHT)
+
 
 class EnumOption(Option):
 
@@ -76,6 +79,7 @@ class EnumOption(Option):
                 value=v,
                 command=self.set)
 
+
 class StringOption(Option):
 
     def addoption(self):
@@ -87,12 +91,14 @@ class StringOption(Option):
         self.entry.pack(side=RIGHT, fill=X, expand=1)
         self.entry.bind('<Return>', self.set)
 
+
 class ReadonlyOption(Option):
 
     def addoption(self):
         self.label = Label(self.frame, textvariable=self.var,
                            anchor=E)
         self.label.pack(side=RIGHT)
+
 
 class Dialog:
 
@@ -120,7 +126,7 @@ class Dialog:
                 cl = self.classes[c]
             except KeyError:
                 cl = 'unknown'
-            if type(cl) == TupleType:
+            if type(cl) is tuple:
                 cl = self.enumoption
             elif cl == 'boolean':
                 cl = self.booleanoption
@@ -139,6 +145,7 @@ class Dialog:
     stringoption = StringOption
     enumoption = EnumOption
     readonlyoption = ReadonlyOption
+
 
 class PackDialog(Dialog):
 
@@ -247,6 +254,7 @@ class RemotePackDialog(PackDialog):
     class enumoption(remotepackoption, EnumOption): pass
     class stringoption(remotepackoption, StringOption): pass
     class readonlyoption(remotepackoption, ReadonlyOption): pass
+
 
 class WidgetDialog(Dialog):
 
@@ -357,6 +365,7 @@ class WidgetDialog(Dialog):
             'Slider': _bistate,
             }
 
+
 class RemoteWidgetDialog(WidgetDialog):
 
     def __init__(self, master, app, widget):
@@ -407,6 +416,7 @@ class RemoteWidgetDialog(WidgetDialog):
     class stringoption(remotewidgetoption, StringOption): pass
     class readonlyoption(remotewidgetoption, ReadonlyOption): pass
 
+
 def test():
     import sys
     root = Tk()
@@ -435,12 +445,11 @@ def remotetest(root, app):
     list.app = app                  # Pass it on to handler
 
 def opendialogs(e):
-    import string
     list = e.widget
     sel = list.curselection()
     for i in sel:
         item = list.get(i)
-        widget = string.split(item)[0]
+        widget = item.split()[0]
         RemoteWidgetDialog(list, list.app, widget)
         if widget == '.': continue
         try:

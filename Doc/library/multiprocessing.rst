@@ -792,9 +792,9 @@ For example:
     >>> a.send([1, 'hello', None])
     >>> b.recv()
     [1, 'hello', None]
-    >>> b.send_bytes('thank you')
+    >>> b.send_bytes(b'thank you')
     >>> a.recv_bytes()
-    'thank you'
+    b'thank you'
     >>> import array
     >>> arr1 = array.array('i', range(5))
     >>> arr2 = array.array('i', [0] * 10)

@@ -529,7 +529,7 @@ catalogs, and the C library's search algorithms for locating message catalogs.
 
 Python applications should normally find no need to invoke these functions, and
 should use :mod:`gettext` instead.  A known exception to this rule are
-applications that link use additional C libraries which internally invoke
+applications that link with additional C libraries which internally invoke
 :cfunc:`gettext` or :func:`dcgettext`.  For these applications, it may be
 necessary to bind the text domain, so that the libraries can properly locate
 their message catalogs.

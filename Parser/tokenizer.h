@@ -15,7 +15,7 @@ extern "C" {
 enum decoding_state {
     STATE_INIT,
     STATE_RAW,
-    STATE_NORMAL, /* have a codec associated with input */
+    STATE_NORMAL        /* have a codec associated with input */
 };
 
 /* Tokenizer state */

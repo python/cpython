@@ -28,7 +28,7 @@ s = Scrollbar(f, relief=FLAT)
 s.pack(side=RIGHT, fill=Y)
 t = Text(f, relief=RAISED, borderwidth=2, yscrollcommand=s.set, setgrid=1)
 t.pack(side=LEFT, fill=BOTH, expand=1)
-t.tag_config('bold', font='-Adobe-Courier-Bold-R-Normal-*-120-*')
+t.tag_config('bold')
 s['command'] = t.yview
 
 root.title('Tk Remote Controller')

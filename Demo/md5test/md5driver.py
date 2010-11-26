@@ -80,7 +80,7 @@ def MDFilter():
     mdContext = md5()
 
     while 1:
-        data = sys.stdin.read(16)
+        data = sys.stdin.read(16).encode()
         if not data:
             break
         mdContext.update(data)

@@ -229,7 +229,7 @@ The special characters are:
    undefined.
 
 ``(?:...)``
-   A non-grouping version of regular parentheses. Matches whatever regular
+   A non-capturing version of regular parentheses.  Matches whatever regular
    expression is inside the parentheses, but the substring matched by the group
    *cannot* be retrieved after performing a match or referenced later in the
    pattern.

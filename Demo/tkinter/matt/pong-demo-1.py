@@ -1,7 +1,5 @@
 from tkinter import *
 
-import string
-
 
 class Pong(Frame):
     def createWidgets(self):
