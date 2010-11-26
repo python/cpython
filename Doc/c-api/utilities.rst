@@ -19,3 +19,4 @@ and parsing function arguments and constructing Python values from C values.
    arg.rst
    conversion.rst
    reflection.rst
+   codec.rst

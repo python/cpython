@@ -454,6 +454,83 @@ is a separate error indicator for each thread.
    the warning message.
 
 
+.. _unicodeexceptions:
+
+Unicode Exception Objects
+=========================
+
+The following functions are used to create and modify Unicode exceptions from C.
+
+.. cfunction:: PyObject* PyUnicodeDecodeError_Create(const char *encoding, const char *object, Py_ssize_t length, Py_ssize_t start, Py_ssize_t end, const char *reason)
+
+   Create a :class:`UnicodeDecodeError` object with the attributes *encoding*,
+   *object*, *length*, *start*, *end* and *reason*.
+
+.. cfunction:: PyObject* PyUnicodeEncodeError_Create(const char *encoding, const Py_UNICODE *object, Py_ssize_t length, Py_ssize_t start, Py_ssize_t end, const char *reason)
+
+   Create a :class:`UnicodeEncodeError` object with the attributes *encoding*,
+   *object*, *length*, *start*, *end* and *reason*.
+
+.. cfunction:: PyObject* PyUnicodeTranslateError_Create(const Py_UNICODE *object, Py_ssize_t length, Py_ssize_t start, Py_ssize_t end, const char *reason)
+
+   Create a :class:`UnicodeTranslateError` object with the attributes *object*,
+   *length*, *start*, *end* and *reason*.
+
+.. cfunction:: PyObject* PyUnicodeDecodeError_GetEncoding(PyObject *exc)
+               PyObject* PyUnicodeEncodeError_GetEncoding(PyObject *exc)
+
+   Return the *encoding* attribute of the given exception object.
+
+.. cfunction:: PyObject* PyUnicodeDecodeError_GetObject(PyObject *exc)
+               PyObject* PyUnicodeEncodeError_GetObject(PyObject *exc)
+               PyObject* PyUnicodeTranslateError_GetObject(PyObject *exc)
+
+   Return the *object* attribute of the given exception object.
+
+.. cfunction:: int PyUnicodeDecodeError_GetStart(PyObject *exc, Py_ssize_t *start)
+               int PyUnicodeEncodeError_GetStart(PyObject *exc, Py_ssize_t *start)
+               int PyUnicodeTranslateError_GetStart(PyObject *exc, Py_ssize_t *start)
+
+   Get the *start* attribute of the given exception object and place it into
+   *\*start*.  *start* must not be *NULL*.  Return ``0`` on success, ``-1`` on
+   failure.
+
+.. cfunction:: int PyUnicodeDecodeError_SetStart(PyObject *exc, Py_ssize_t start)
+               int PyUnicodeEncodeError_SetStart(PyObject *exc, Py_ssize_t start)
+               int PyUnicodeTranslateError_SetStart(PyObject *exc, Py_ssize_t start)
+
+   Set the *start* attribute of the given exception object to *start*.  Return
+   ``0`` on success, ``-1`` on failure.
+
+.. cfunction:: int PyUnicodeDecodeError_GetEnd(PyObject *exc, Py_ssize_t *end)
+               int PyUnicodeEncodeError_GetEnd(PyObject *exc, Py_ssize_t *end)
+               int PyUnicodeTranslateError_GetEnd(PyObject *exc, Py_ssize_t *end)
+
+   Get the *end* attribute of the given exception object and place it into
+   *\*end*.  *end* must not be *NULL*.  Return ``0`` on success, ``-1`` on
+   failure.
+
+.. cfunction:: int PyUnicodeDecodeError_SetEnd(PyObject *exc, Py_ssize_t end)
+               int PyUnicodeEncodeError_SetEnd(PyObject *exc, Py_ssize_t end)
+               int PyUnicodeTranslateError_SetEnd(PyObject *exc, Py_ssize_t end)
+
+   Set the *end* attribute of the given exception object to *end*.  Return ``0``
+   on success, ``-1`` on failure.
+
+.. cfunction:: PyObject* PyUnicodeDecodeError_GetReason(PyObject *exc)
+               PyObject* PyUnicodeEncodeError_GetReason(PyObject *exc)
+               PyObject* PyUnicodeTranslateError_GetReason(PyObject *exc)
+
+   Return the *reason* attribute of the given exception object.
+
+.. cfunction:: int PyUnicodeDecodeError_SetReason(PyObject *exc, const char *reason)
+               int PyUnicodeEncodeError_SetReason(PyObject *exc, const char *reason)
+               int PyUnicodeTranslateError_SetReason(PyObject *exc, const char *reason)
+
+   Set the *reason* attribute of the given exception object to *reason*.  Return
+   ``0`` on success, ``-1`` on failure.
+
+
 Recursion Control
 =================
 
