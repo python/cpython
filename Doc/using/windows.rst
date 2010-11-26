@@ -156,23 +156,48 @@ installation directory.  So, if you had installed Python to
 :file:`C:\\Python\\Lib\\` and third-party modules should be stored in
 :file:`C:\\Python\\Lib\\site-packages\\`.
 
-.. `` this fixes syntax highlighting errors in some editors due to the \\ hackery
+This is how :data:`sys.path` is populated on Windows:
 
-You can add folders to your search path to make Python's import mechanism search
-in these directories as well.  Use :envvar:`PYTHONPATH`, as described in
-:ref:`using-on-envvars`, to modify :data:`sys.path`.  On Windows, paths are
-separated by semicolons, though, to distinguish them from drive identifiers
-(:file:`C:\\` etc.).
+* An empty entry is added at the start, which corresponds to the current
+  directory.
 
-.. ``
+* If the environment variable :envvar:`PYTHONPATH` exists, as described in
+  :ref:`using-on-envvars`, its entries are added next.  Note that on Windows,
+  paths in this variable must be separated by semicolons, to distinguish them
+  from the colon used in drive identifiers (``C:\`` etc.).
 
-Modifying the module search path can also be done through the Windows registry
-under the key :file:`HKLM\\SOFTWARE\\Python\\PythonCore\\{version}\\PythonPath`.
-Subkeys which have semicolon-delimited path strings as their default value will
-cause each path to be searched.  Multiple subkeys can be created and are
-appended to the path in alphabetical order.  A convenient registry editor is
-:program:`regedit` (start it by typing "regedit" into :menuselection:`Start -->
-Run`).
+* Additional "application paths" can be added in the registry as subkeys of
+  :samp:`\\SOFTWARE\\Python\\PythonCore\\{version}\\PythonPath` under both the
+  ``HKEY_CURRENT_USER`` and ``HKEY_LOCAL_MACHINE`` hives.  Subkeys which have
+  semicolon-delimited path strings as their default value will cause each path
+  to be added to :data:`sys.path`.  (Note that all known installers only use
+  HKLM, so HKCU is typically empty.)
+
+* If the environment variable :envvar:`PYTHONHOME` is set, it is assumed as
+  "Python Home".  Otherwise, the path of the main Python executable is used to
+  locate a "landmark file" (``Lib\os.py``) to deduce the "Python Home".  If a
+  Python home is found, the relevant sub-directories added to :data:`sys.path`
+  (``Lib``, ``plat-win``, etc) are based on that folder.  Otherwise, the core
+  Python path is constructed from the PythonPath stored in the registry.
+
+* If the Python Home cannot be located, no :envvar:`PYTHONPATH` is specified in
+  the environment, and no registry entries can be found, a default path with
+  relative entries is used (e.g. ``.\Lib;.\plat-win``, etc).
+
+The end result of all this is:
+
+* When running :file:`python.exe`, or any other .exe in the main Python
+  directory (either an installed version, or directly from the PCbuild
+  directory), the core path is deduced, and the core paths in the registry are
+  ignored.  Other "application paths" in the registry are always read.
+
+* When Python is hosted in another .exe (different directory, embedded via COM,
+  etc), the "Python Home" will not be deduced, so the core path from the
+  registry is used.  Other "application paths" in the registry are always read.
+
+* If Python can't find its home and there is no registry (eg, frozen .exe, some
+  very strange installation setup) you get a path with some default, but
+  relative, paths.
 
 
 Executing scripts

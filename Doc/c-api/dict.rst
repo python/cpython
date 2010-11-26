@@ -15,13 +15,8 @@ Dictionary Objects
 
 .. cvar:: PyTypeObject PyDict_Type
 
-   .. index::
-      single: DictType (in module types)
-      single: DictionaryType (in module types)
-
    This instance of :ctype:`PyTypeObject` represents the Python dictionary
-   type.  This is exposed to Python programs as ``dict`` and
-   ``types.DictType``.
+   type.  This is the same object as :class:`dict` in the Python layer.
 
 
 .. cfunction:: int PyDict_Check(PyObject *p)

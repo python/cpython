@@ -1421,15 +1421,15 @@ to be ignored.
 
 .. function:: _exit(n)
 
-   Exit to the system with status *n*, without calling cleanup handlers, flushing
+   Exit the process with status *n*, without calling cleanup handlers, flushing
    stdio buffers, etc.
 
    Availability: Unix, Windows.
 
    .. note::
 
-      The standard way to exit is ``sys.exit(n)``. :func:`_exit` should normally only
-      be used in the child process after a :func:`fork`.
+      The standard way to exit is ``sys.exit(n)``.  :func:`_exit` should
+      normally only be used in the child process after a :func:`fork`.
 
 The following exit codes are defined and can be used with :func:`_exit`,
 although they are not required.  These are typically used for system programs

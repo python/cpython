@@ -18,10 +18,8 @@ called with a non-bytes parameter.
 
 .. cvar:: PyTypeObject PyBytes_Type
 
-   .. index:: single: BytesType (in module types)
-
    This instance of :ctype:`PyTypeObject` represents the Python bytes type; it
-   is the same object as ``bytes`` in the Python layer. .
+   is the same object as :class:`bytes` in the Python layer.
 
 
 .. cfunction:: int PyBytes_Check(PyObject *o)

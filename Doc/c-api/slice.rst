@@ -8,10 +8,8 @@ Slice Objects
 
 .. cvar:: PyTypeObject PySlice_Type
 
-   .. index:: single: SliceType (in module types)
-
-   The type object for slice objects.  This is the same as ``slice`` and
-   ``types.SliceType``.
+   The type object for slice objects.  This is the same as :class:`slice` in the
+   Python layer.
 
 
 .. cfunction:: int PySlice_Check(PyObject *ob)
