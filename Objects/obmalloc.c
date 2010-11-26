@@ -234,7 +234,7 @@ typedef uchar block;
 /* Pool for small blocks. */
 struct pool_header {
     union { block *_padding;
-        uint count; } ref;              /* number of allocated blocks    */
+            uint count; } ref;          /* number of allocated blocks    */
     block *freeblock;                   /* pool's free list head         */
     struct pool_header *nextpool;       /* next pool of this size class  */
     struct pool_header *prevpool;       /* previous pool       ""        */
@@ -389,7 +389,7 @@ compensating for that a pool_header's nextpool and prevpool members
 immediately follow a pool_header's first two members:
 
     union { block *_padding;
-        uint count; } ref;
+            uint count; } ref;
     block *freeblock;
 
 each of which consume sizeof(block *) bytes.  So what usedpools[i+i] really
@@ -694,7 +694,7 @@ extremely desirable that it be this fast.
 #undef Py_ADDRESS_IN_RANGE
 
 #if defined(__GNUC__) && ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 1) || \
-              (__GNUC__ >= 4))
+                          (__GNUC__ >= 4))
 #define Py_NO_INLINE __attribute__((__noinline__))
 #else
 #define Py_NO_INLINE
@@ -1422,7 +1422,7 @@ _PyObject_DebugRealloc(void *p, size_t nbytes)
     if (nbytes > original_nbytes) {
         /* growing:  mark new extra memory clean */
         memset(q + original_nbytes, CLEANBYTE,
-            nbytes - original_nbytes);
+               nbytes - original_nbytes);
     }
 
     return q;
@@ -1532,11 +1532,11 @@ _PyObject_DebugDumpAddress(const void *p)
         fputs("FORBIDDENBYTE, as expected.\n", stderr);
     else {
         fprintf(stderr, "not all FORBIDDENBYTE (0x%02x):\n",
-            FORBIDDENBYTE);
+                FORBIDDENBYTE);
         for (i = 0; i < SST; ++i) {
             const uchar byte = tail[i];
             fprintf(stderr, "        at tail+%d: 0x%02x",
-                i, byte);
+                    i, byte);
             if (byte != FORBIDDENBYTE)
                 fputs(" *** OUCH", stderr);
             fputc('\n', stderr);
@@ -1642,7 +1642,7 @@ _PyObject_DebugMallocStats(void)
     char buf[128];
 
     fprintf(stderr, "Small block threshold = %d, in %u size classes.\n",
-        SMALL_REQUEST_THRESHOLD, numclasses);
+            SMALL_REQUEST_THRESHOLD, numclasses);
 
     for (i = 0; i < numclasses; ++i)
         numpools[i] = numblocks[i] = numfreeblocks[i] = 0;
@@ -1700,7 +1700,7 @@ _PyObject_DebugMallocStats(void)
     fputc('\n', stderr);
     fputs("class   size   num pools   blocks in use  avail blocks\n"
           "-----   ----   ---------   -------------  ------------\n",
-        stderr);
+          stderr);
 
     for (i = 0; i < numclasses; ++i) {
         size_t p = numpools[i];
@@ -1715,7 +1715,7 @@ _PyObject_DebugMallocStats(void)
                         "%11" PY_FORMAT_SIZE_T "u "
                         "%15" PY_FORMAT_SIZE_T "u "
                         "%13" PY_FORMAT_SIZE_T "u\n",
-            i, size, p, b, f);
+                i, size, p, b, f);
         allocated_bytes += b * size;
         available_bytes += f * size;
         pool_header_bytes += p * POOL_OVERHEAD;
