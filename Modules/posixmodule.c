@@ -2029,7 +2029,7 @@ force write of file with filedescriptor to disk.");
 static PyObject *
 posix_fsync(PyObject *self, PyObject *fdobj)
 {
-       return posix_fildes(fdobj, fsync);
+    return posix_fildes(fdobj, fsync);
 }
 #endif /* HAVE_FSYNC */
 
@@ -2047,7 +2047,7 @@ force write of file with filedescriptor to disk.\n\
 static PyObject *
 posix_fdatasync(PyObject *self, PyObject *fdobj)
 {
-       return posix_fildes(fdobj, fdatasync);
+    return posix_fildes(fdobj, fdatasync);
 }
 #endif /* HAVE_FDATASYNC */
 
@@ -3000,7 +3000,7 @@ posix_utime(PyObject *self, PyObject *args)
             !SystemTimeToFileTime(&now, &atime)) {
             win32_error("utime", NULL);
             goto done;
-            }
+        }
     }
     else if (!PyTuple_Check(arg) || PyTuple_Size(arg) != 2) {
         PyErr_SetString(PyExc_TypeError,
@@ -4053,9 +4053,9 @@ posix_getgroups(PyObject *self, PyObject *noargs)
         for (i = 0; i < n; ++i) {
             PyObject *o = PyLong_FromLong((long)alt_grouplist[i]);
             if (o == NULL) {
-            Py_DECREF(result);
-            result = NULL;
-            break;
+                Py_DECREF(result);
+                result = NULL;
+                break;
             }
             PyList_SET_ITEM(result, i, o);
         }
@@ -5847,38 +5847,38 @@ conv_confname(PyObject *arg, int *valuep, struct constdef *table,
               size_t tablesize)
 {
     if (PyLong_Check(arg)) {
-    *valuep = PyLong_AS_LONG(arg);
-    return 1;
+        *valuep = PyLong_AS_LONG(arg);
+        return 1;
     }
     else {
-    /* look up the value in the table using a binary search */
-    size_t lo = 0;
-    size_t mid;
-    size_t hi = tablesize;
-    int cmp;
-    const char *confname;
-    if (!PyUnicode_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "configuration names must be strings or integers");
-        return 0;
-    }
-    confname = _PyUnicode_AsString(arg);
-    if (confname == NULL)
-        return 0;
-    while (lo < hi) {
-        mid = (lo + hi) / 2;
-        cmp = strcmp(confname, table[mid].name);
-        if (cmp < 0)
-        hi = mid;
-        else if (cmp > 0)
-        lo = mid + 1;
-        else {
-        *valuep = table[mid].value;
-        return 1;
+        /* look up the value in the table using a binary search */
+        size_t lo = 0;
+        size_t mid;
+        size_t hi = tablesize;
+        int cmp;
+        const char *confname;
+        if (!PyUnicode_Check(arg)) {
+            PyErr_SetString(PyExc_TypeError,
+                "configuration names must be strings or integers");
+            return 0;
         }
-    }
-    PyErr_SetString(PyExc_ValueError, "unrecognized configuration name");
-    return 0;
+        confname = _PyUnicode_AsString(arg);
+        if (confname == NULL)
+            return 0;
+        while (lo < hi) {
+            mid = (lo + hi) / 2;
+            cmp = strcmp(confname, table[mid].name);
+            if (cmp < 0)
+                hi = mid;
+            else if (cmp > 0)
+                lo = mid + 1;
+            else {
+                *valuep = table[mid].value;
+                return 1;
+            }
+        }
+        PyErr_SetString(PyExc_ValueError, "unrecognized configuration name");
+        return 0;
     }
 }
 
@@ -5961,14 +5961,14 @@ posix_fpathconf(PyObject *self, PyObject *args)
 
     if (PyArg_ParseTuple(args, "iO&:fpathconf", &fd,
                          conv_path_confname, &name)) {
-    long limit;
+        long limit;
 
-    errno = 0;
-    limit = fpathconf(fd, name);
-    if (limit == -1 && errno != 0)
-        posix_error();
-    else
-        result = PyLong_FromLong(limit);
+        errno = 0;
+        limit = fpathconf(fd, name);
+        if (limit == -1 && errno != 0)
+            posix_error();
+        else
+            result = PyLong_FromLong(limit);
     }
     return result;
 }
@@ -6793,21 +6793,21 @@ setup_confname_tables(PyObject *module)
                              sizeof(posix_constants_pathconf)
                                / sizeof(struct constdef),
                              "pathconf_names", module))
-    return -1;
+        return -1;
 #endif
 #ifdef HAVE_CONFSTR
     if (setup_confname_table(posix_constants_confstr,
                              sizeof(posix_constants_confstr)
                                / sizeof(struct constdef),
                              "confstr_names", module))
-    return -1;
+        return -1;
 #endif
 #ifdef HAVE_SYSCONF
     if (setup_confname_table(posix_constants_sysconf,
                              sizeof(posix_constants_sysconf)
                                / sizeof(struct constdef),
                              "sysconf_names", module))
-    return -1;
+        return -1;
 #endif
     return 0;
 }
@@ -6923,10 +6923,10 @@ posix_getloadavg(PyObject *self, PyObject *noargs)
 {
     double loadavg[3];
     if (getloadavg(loadavg, 3)!=3) {
-    PyErr_SetString(PyExc_OSError, "Load averages are unobtainable");
-    return NULL;
+        PyErr_SetString(PyExc_OSError, "Load averages are unobtainable");
+        return NULL;
     } else
-    return Py_BuildValue("ddd", loadavg[0], loadavg[1], loadavg[2]);
+        return Py_BuildValue("ddd", loadavg[0], loadavg[1], loadavg[2]);
 }
 #endif
 
