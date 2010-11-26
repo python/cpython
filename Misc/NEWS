@@ -54,6 +54,8 @@ Build
 
 - Stop packaging versioncheck tool (already done for rc1).
 
+- Accept Oracle Berkeley DB 4.8, 5.0 and 5.1 as backend for the dbm extension.
+
 Tests
 -----
 
