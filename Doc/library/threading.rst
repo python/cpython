@@ -781,9 +781,9 @@ Currently, :class:`Lock`, :class:`RLock`, :class:`Condition`,
 Importing in threaded code
 --------------------------
 
-While the import machinery is thread safe, there are two key
-restrictions on threaded imports due to inherent limitations in the way
-that thread safety is provided:
+While the import machinery is thread-safe, there are two key restrictions on
+threaded imports due to inherent limitations in the way that thread-safety is
+provided:
 
 * Firstly, other than in the main module, an import should not have the
   side effect of spawning a new thread and then waiting for that thread in
