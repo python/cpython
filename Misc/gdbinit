@@ -67,7 +67,7 @@ define lineno
         set $__p = $__p + 1
       end
     end
-    printf "%d\n", $__li
+    printf "%d", $__li
 end
 
 # print the current frame - verbose

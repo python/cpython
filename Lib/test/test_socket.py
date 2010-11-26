@@ -522,7 +522,11 @@ class GeneralModuleTests(unittest.TestCase):
         # XXX(nnorwitz): http://tinyurl.com/os5jz seems to indicate
         # it reasonable to get the host's addr in addition to 0.0.0.0.
         # At least for eCos.  This is required for the S/390 to pass.
-        my_ip_addr = socket.gethostbyname(socket.gethostname())
+        try:
+            my_ip_addr = socket.gethostbyname(socket.gethostname())
+        except socket.error:
+            # Probably name lookup wasn't set up right; skip this test
+            return
         self.assertTrue(name[0] in ("0.0.0.0", my_ip_addr), '%s invalid' % name[0])
         self.assertEqual(name[1], port)
 

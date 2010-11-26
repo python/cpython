@@ -129,6 +129,8 @@ latex_documents = [
      'Python Tutorial', _stdauthor, 'manual'),
     ('using/index', 'using.tex',
      'Python Setup and Usage', _stdauthor, 'manual'),
+    ('faq/index', 'faq.tex',
+     'Python Frequently Asked Questions', _stdauthor, 'manual'),
     ('whatsnew/' + version, 'whatsnew.tex',
      'What\'s New in Python', 'A. M. Kuchling', 'howto'),
 ]
