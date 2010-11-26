@@ -1,0 +1,36 @@
+[patterns]
+** = native
+
+**.bat  = CRLF
+**.def  = CRLF
+**.dsp  = CRLF
+**.dsw  = CRLF
+**.mak  = CRLF
+**.mk   = CRLF
+**.rc   = CRLF
+**.sln  = CRLF
+**.vcproj  = CRLF
+**.vsprops = CRLF
+
+**.aif  = BIN
+**.au   = BIN
+**.bmp  = BIN
+**.db   = BIN
+**.exe  = BIN
+**.icns = BIN
+**.gif  = BIN
+**.ico  = BIN
+**.info = BIN
+**.jpg  = BIN
+**.pck  = BIN
+**.png  = BIN
+**.psd  = BIN
+**.tar  = BIN
+**.xar  = BIN
+**.zip  = BIN
+
+Lib/email/test/data/msg_26.txt = BIN
+Lib/test/sndhdrdata/sndhdr.* = BIN
+
+[repository]
+native = LF

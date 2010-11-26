@@ -18,6 +18,8 @@ Library
 
 - Issue #10459: Update CJK character names to Unicode 5.1.
 
+- Issue #10092: Properly reset locale in calendar.Locale*Calendar classes.
+
 - Issue #6098: Don't claim DOM level 3 conformance in minidom.
 
 - Issue #5762: Fix AttributeError raised by ``xml.dom.minidom`` when an empty

@@ -39,7 +39,7 @@ The :mod:`locale` module defines the following exception and functions:
    If *locale* is omitted or ``None``, the current setting for *category* is
    returned.
 
-   :func:`setlocale` is not thread safe on most systems. Applications typically
+   :func:`setlocale` is not thread-safe on most systems. Applications typically
    start with a call of ::
 
       import locale
