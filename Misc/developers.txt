@@ -23,6 +23,9 @@ transliteration too.
 Permissions History
 -------------------
 
+- David Malcolm was given commit access on Oct 27 2010 by GFB,
+  at recommendation by Antoine Pitrou and Raymond Hettinger.
+
 - Tal Einat was given commit access on Oct 4 2010 by MvL,
   for improving IDLE.
 

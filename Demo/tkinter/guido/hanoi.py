@@ -125,11 +125,11 @@ class Tkhanoi:
 
 # Main program
 def main():
-    import sys, string
+    import sys
 
     # First argument is number of pegs, default 4
     if sys.argv[1:]:
-        n = string.atoi(sys.argv[1])
+        n = int(sys.argv[1])
     else:
         n = 4
 

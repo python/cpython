@@ -24,8 +24,7 @@ def dialog(master, title, text, bitmap, default, *args):
 
     # 2. Fill the top part with the bitmap and message.
 
-    msg = Message(top, width='3i', text=text,
-                  font='-Adobe-Times-Medium-R-Normal-*-180-*')
+    msg = Message(top, width='3i', text=text)
     msg.pack(side=RIGHT, expand=1, fill=BOTH, padx='3m', pady='3m')
     if bitmap:
         bm = Label(top, bitmap=bitmap)

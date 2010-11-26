@@ -2,15 +2,15 @@
 
 # Tk man page browser -- currently only shows the Tcl/Tk man pages
 
-import sys
 import os
-import string
 import re
+import sys
 from tkinter import *
-from ManPage import ManPage
 
-MANNDIRLIST = ['/depot/sundry/man/mann','/usr/local/man/mann']
-MAN3DIRLIST = ['/depot/sundry/man/man3','/usr/local/man/man3']
+from manpage import ManPage
+
+MANNDIRLIST = ['/usr/local/man/mann', '/usr/share/man/mann']
+MAN3DIRLIST = ['/usr/local/man/man3', '/usr/share/man/man3']
 
 foundmanndir = 0
 for dir in MANNDIRLIST:
@@ -197,7 +197,7 @@ class SelectionBox:
 
     def show_page(self, name):
         file = '%s/%s.?' % (self.chaptervar.get(), name)
-        fp = os.popen('nroff -man %s | ul -i' % file, 'r')
+        fp = os.popen('nroff -man -c %s | ul -i' % file, 'r')
         self.text.kill()
         self.title['text'] = name
         self.text.parsefile(fp)
@@ -221,9 +221,9 @@ class SelectionBox:
             print('Regex error:', msg)
             return
         here = self.text.index(AtInsert())
-        lineno = string.atoi(here[:string.find(here, '.')])
+        lineno = int(here[:here.find('.')])
         end = self.text.index(AtEnd())
-        endlineno = string.atoi(end[:string.find(end, '.')])
+        endlineno = int(end[:end.find('.')])
         wraplineno = lineno
         found = 0
         while 1:
@@ -237,9 +237,9 @@ class SelectionBox:
             line = self.text.get('%d.0 linestart' % lineno,
                                  '%d.0 lineend' % lineno)
             i = prog.search(line)
-            if i >= 0:
+            if i:
                 found = 1
-                n = max(1, len(prog.group(0)))
+                n = max(1, len(i.group(0)))
                 try:
                     self.text.tag_remove('sel',
                                          AtSelFirst(),
@@ -247,10 +247,10 @@ class SelectionBox:
                 except TclError:
                     pass
                 self.text.tag_add('sel',
-                                  '%d.%d' % (lineno, i),
-                                  '%d.%d' % (lineno, i+n))
+                                  '%d.%d' % (lineno, i.start()),
+                                  '%d.%d' % (lineno, i.start()+n))
                 self.text.mark_set(AtInsert(),
-                                   '%d.%d' % (lineno, i))
+                                   '%d.%d' % (lineno, i.start()))
                 self.text.yview_pickplace(AtInsert())
                 break
         if not found:

@@ -1,15 +1,41 @@
 #! /usr/bin/env python
 
 from tkinter import *
-from Canvas import Oval, Group, CanvasText
 
 
-# Fix a bug in Canvas.Group as distributed in Python 1.4.  The
-# distributed bind() method is broken.  This is what should be used:
+# Since Canvas.Group is no longer present, the following class reproduces
+# a subset of the old Group class that is used by this app.
 
-class Group(Group):
-    def bind(self, sequence=None, command=None):
-        return self.canvas.tag_bind(self.id, sequence, command)
+class Group:
+    def __init__(self, canvas, tag=None):
+        if tag is None:
+            tag = 'Group%d' % id(self)
+
+        self.tag = self.id = tag
+        self.canvas = canvas
+        self.canvas.dtag(self.tag)
+
+    def __str__(self):
+        return self.tag
+
+    def _do(self, cmd, *args):
+        return self.canvas.tk.call(self.canvas._w, cmd, self.tag, *args)
+
+    def addtag_withtag(self, tagOrId):
+        self._do('addtag', 'withtag', tagOrId)
+
+    def bind(self, sequence=None, command=None, add=None):
+        return self.canvas.tag_bind(self.id, sequence, command, add)
+
+    def move(self, x_amount, y_amount):
+        self._do('move', x_amount, y_amount)
+
+    def dtag(self, tagToDelete=None):
+        self._do('dtag', tagToDelete)
+
+    def tkraise(self, aboveThis=None):
+        self._do('raise', aboveThis)
+
 
 class Object:
 
@@ -29,7 +55,6 @@ class Object:
 
     All instance attributes are public since the derived class may
     need them.
-
     """
 
     def __init__(self, canvas, x=0, y=0, fill='red', text='object'):
@@ -44,12 +69,10 @@ class Object:
         return str(self.group)
 
     def createitems(self, fill, text):
-        self.__oval = Oval(self.canvas,
-                           self.x-20, self.y-10, self.x+20, self.y+10,
-                           fill=fill, width=3)
+        self.__oval = self.canvas.create_oval(self.x - 20, self.y - 10,
+            self.x + 20, self.y + 20, fill=fill, width=3)
         self.group.addtag_withtag(self.__oval)
-        self.__text = CanvasText(self.canvas,
-                           self.x, self.y, text=text)
+        self.__text = self.canvas.create_text(self.x, self.y, text=text)
         self.group.addtag_withtag(self.__text)
 
     def moveby(self, dx, dy):
@@ -75,18 +98,15 @@ class Object:
 
 
 class Bottom(Object):
-
     """An object to serve as the bottom of a pile."""
 
     def createitems(self, *args):
-        self.__oval = Oval(self.canvas,
-                           self.x-20, self.y-10, self.x+20, self.y+10,
-                           fill='gray', outline='')
+        self.__oval = self.canvas.create_oval(self.x - 20, self.y - 10,
+            self.x + 20, self.y + 10, fill='gray', outline='')
         self.group.addtag_withtag(self.__oval)
 
 
 class Pile:
-
     """A group of graphical objects."""
 
     def __init__(self, canvas, x, y, tag=None):

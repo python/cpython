@@ -6,11 +6,14 @@
 #
 # By Bill Janssen.
 
+import re
+import os
+import ssl
 import sys
+import tempfile
+
 
 def fetch_server_certificate (host, port):
-
-    import re, tempfile, os, ssl
 
     def subproc(cmd):
         from subprocess import Popen, PIPE, STDOUT
@@ -20,15 +23,15 @@ def fetch_server_certificate (host, port):
         return status, output
 
     def strip_to_x509_cert(certfile_contents, outfile=None):
-        m = re.search(r"^([-]+BEGIN CERTIFICATE[-]+[\r]*\n"
-                      r".*[\r]*^[-]+END CERTIFICATE[-]+)$",
+        m = re.search(br"^([-]+BEGIN CERTIFICATE[-]+[\r]*\n"
+                      br".*[\r]*^[-]+END CERTIFICATE[-]+)$",
                       certfile_contents, re.MULTILINE | re.DOTALL)
         if not m:
             return None
         else:
             tn = tempfile.mktemp()
-            fp = open(tn, "w")
-            fp.write(m.group(1) + "\n")
+            fp = open(tn, "wb")
+            fp.write(m.group(1) + b"\n")
             fp.close()
             try:
                 tn2 = (outfile or tempfile.mktemp())
@@ -67,6 +70,7 @@ def fetch_server_certificate (host, port):
                          (host, port))
     return certtext
 
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         sys.stderr.write(
@@ -75,5 +79,5 @@ if __name__ == "__main__":
         sys.exit(1)
     for arg in sys.argv[1:]:
         host, port = arg.split(":")
-        sys.stdout.write(fetch_server_certificate(host, int(port)))
+        sys.stdout.buffer.write(fetch_server_certificate(host, int(port)))
     sys.exit(0)

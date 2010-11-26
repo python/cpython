@@ -3,17 +3,15 @@
 # Scan MH folder, display results in window
 
 import os
-import sys
 import re
+import sys
 import getopt
-import string
-import mhlib
-
+import mailbox
 from tkinter import *
 
 from dialog import dialog
 
-mailbox = os.environ['HOME'] + '/Mail'
+MBOXPATH = os.environ['HOME'] + '/Mail'
 
 def main():
     global root, tk, top, mid, bot
@@ -38,8 +36,8 @@ def main():
 
     # Initialize MH
 
-    mh = mhlib.MH()
-    mhf = mh.openfolder(folder)
+    mh = mailbox.MH(MBOXPATH)
+    mhf = mh.get_folder(folder)
 
     # Build widget hierarchy
 
@@ -171,7 +169,7 @@ def open_folder(e=None):
         return
     i = sel[0]
     folder = folderbox.get(i)
-    mhf = mh.openfolder(folder)
+    mhf = mh.get_folder(folder)
     rescan()
 
 def open_message(e=None):
@@ -189,11 +187,12 @@ def open_message(e=None):
     tk.call('update', 'idletasks')
     i = sel[0]
     line = scanbox.get(i)
-    if scanparser.match(line) >= 0:
-        num = string.atoi(scanparser.group(1))
-        m = mhf.openmessage(num)
+    m = scanparser.match(line)
+    if m:
+        num = int(m.group(1))
+        m = mhf.get_message(num)
         if viewer: viewer.destroy()
-        from MimeViewer import MimeViewer
+        from mimeviewer import MimeViewer
         viewer = MimeViewer(bot, '+%s/%d' % (folder, num), m)
         viewer.pack()
         viewer.show()
@@ -212,9 +211,11 @@ def remove_message(e=None):
     todo = []
     for i in sel:
         line = scanbox.get(i)
-        if scanparser.match(line) >= 0:
-            todo.append(string.atoi(scanparser.group(1)))
-    mhf.removemessages(todo)
+        m = scanparser.match(line)
+        if m:
+            toremove = int(m.group(1))
+            todo.append(toremove)
+            mhf.remove(toremove)
     rescan()
     fixfocus(min(todo), itop)
 
@@ -240,12 +241,13 @@ def refile_message(e=None):
     todo = []
     for i in sel:
         line = scanbox.get(i)
-        if scanparser.match(line) >= 0:
-            todo.append(string.atoi(scanparser.group(1)))
+        m = scanparser.match(line)
+        if m:
+            todo.append(int(m.group(1)))
     if lastrefile != refileto or not tofolder:
         lastrefile = refileto
         tofolder = None
-        tofolder = mh.openfolder(lastrefile)
+        tofolder = mh.get_folder(lastrefile)
     mhf.refilemessages(todo, tofolder)
     rescan()
     fixfocus(min(todo), itop)
@@ -254,18 +256,18 @@ def fixfocus(near, itop):
     n = scanbox.size()
     for i in range(n):
         line = scanbox.get(repr(i))
-        if scanparser.match(line) >= 0:
-            num = string.atoi(scanparser.group(1))
+        m = scanparser.match(line)
+        if m:
+            num = int(m.group(1))
             if num >= near:
                 break
     else:
         i = 'end'
-    scanbox.select_from(i)
     scanbox.yview(itop)
 
 def setfolders():
     folderbox.delete(0, 'end')
-    for fn in mh.listallfolders():
+    for fn in mh.list_folders():
         folderbox.insert('end', fn)
 
 def rescan():
@@ -278,6 +280,7 @@ def rescan():
         scanbox.insert('end', line)
 
 def scanfolder(folder = 'inbox', sequence = 'all'):
-    return [line[:-1] for line in os.popen('scan +%s %s' % (folder, sequence), 'r').readlines()]
+    return [line[:-1] for line in
+            os.popen('scan +%s %s' % (folder, sequence), 'r').readlines()]
 
 main()

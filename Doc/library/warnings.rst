@@ -159,6 +159,20 @@ ImportWarning can also be enabled explicitly in Python code using::
    warnings.simplefilter('default', ImportWarning)
 
 
+Default Warning Filters
+~~~~~~~~~~~~~~~~~~~~~~~
+
+By default, Python installs several warning filters, which can be overridden by
+the command-line options passed to :option:`-W` and calls to
+:func:`filterwarnings`.
+
+* :exc:`PendingDeprecationWarning`, and :exc:`ImportWarning` are ignored.
+
+* :exc:`BytesWarning` is ignored unless the :option:`-b` option is given once or
+  twice; in this case this warning is either printed (``-b``) or turned into an
+  exception (``-bb``).
+
+
 .. _warning-suppress:
 
 Temporarily Suppressing Warnings
