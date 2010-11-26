@@ -191,7 +191,7 @@ documentation explores the full feature set from first principles.
 
 .. _unittest-command-line-interface:
 
-Command Line Interface
+Command-Line Interface
 ----------------------
 
 The unittest module can be used from the command line to run tests from
@@ -221,8 +221,8 @@ For a list of all the command-line options::
    not modules or classes.
 
 
-failfast, catch and buffer command-line options
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Command-line options
+~~~~~~~~~~~~~~~~~~~~
 
 :program:`unittest` supports these command-line options:
 
@@ -247,7 +247,8 @@ failfast, catch and buffer command-line options
    Stop the test run on the first error or failure.
 
 .. versionadded:: 3.2
-   The command-line options :option:`-c`, :option:`-b` and :option:`-f` were added.
+   The command-line options :option:`-b`, :option:`-c` and :option:`-f`
+   were added.
 
 The command line can also be used for test discovery, for running all of the
 tests in a project or just a subset.
@@ -1891,7 +1892,7 @@ Loading and running tests
       >>> main(module='test_module', exit=False)
 
    The ``failfast``, ``catchbreak`` and ``buffer`` parameters have the same
-   effect as the `failfast, catch and buffer command-line options`_.
+   effect as the same-name `command-line options`_.
 
    Calling ``main`` actually returns an instance of the ``TestProgram`` class.
    This stores the result of the tests run as the ``result`` attribute.
@@ -2055,12 +2056,11 @@ Signal Handling
 ---------------
 
 The :option:`-c/--catch <unittest -c>` command-line option to unittest,
-along with the ``catchbreak``
-parameter to :func:`unittest.main()`, provide more friendly handling of
-control-C during a test run. With catch break behavior enabled control-C will
-allow the currently running test to complete, and the test run will then end
-and report all the results so far. A second control-c will raise a
-:exc:`KeyboardInterrupt` in the usual way.
+along with the ``catchbreak`` parameter to :func:`unittest.main()`, provide
+more friendly handling of control-C during a test run. With catch break
+behavior enabled control-C will allow the currently running test to complete,
+and the test run will then end and report all the results so far. A second
+control-c will raise a :exc:`KeyboardInterrupt` in the usual way.
 
 The control-c handling signal handler attempts to remain compatible with code or
 tests that install their own :const:`signal.SIGINT` handler. If the ``unittest``
