@@ -268,14 +268,14 @@ write files see :func:`open`, and for accessing the filesystem see the
 
 .. function:: split(path)
 
-   Split the pathname *path* into a pair, ``(head, tail)`` where *tail* is the last
-   pathname component and *head* is everything leading up to that.  The *tail* part
-   will never contain a slash; if *path* ends in a slash, *tail* will be empty.  If
-   there is no slash in *path*, *head* will be empty.  If *path* is empty, both
-   *head* and *tail* are empty.  Trailing slashes are stripped from *head* unless
-   it is the root (one or more slashes only).  In nearly all cases, ``join(head,
-   tail)`` equals *path* (the only exception being when there were multiple slashes
-   separating *head* from *tail*).
+   Split the pathname *path* into a pair, ``(head, tail)`` where *tail* is the
+   last pathname component and *head* is everything leading up to that.  The
+   *tail* part will never contain a slash; if *path* ends in a slash, *tail*
+   will be empty.  If there is no slash in *path*, *head* will be empty.  If
+   *path* is empty, both *head* and *tail* are empty.  Trailing slashes are
+   stripped from *head* unless it is the root (one or more slashes only).  In
+   all cases, ``join(head, tail)`` returns a path to the same location as *path*
+   (but the strings may differ).
 
 
 .. function:: splitdrive(path)

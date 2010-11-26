@@ -20,8 +20,8 @@ interpreter termination.
    <http://svn.python.org/view/python/branches/release27-maint/Lib/atexit.py?view=markup>`_
 
 Note: the functions registered via this module are not called when the program
-is killed by a signal, when a Python fatal internal error is detected, or when
-:func:`os._exit` is called.
+is killed by a signal not handled by Python, when a Python fatal internal error
+is detected, or when :func:`os._exit` is called.
 
 .. index:: single: exitfunc (in sys)
 
