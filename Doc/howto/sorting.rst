@@ -1,4 +1,4 @@
-.. _sorting-howto:
+.. _sortinghowto:
 
 Sorting HOW TO
 **************

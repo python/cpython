@@ -146,7 +146,7 @@ string formatting behaviors using the same implementation as the built-in
 
       Loop over the format_string and return an iterable of tuples
       (*literal_text*, *field_name*, *format_spec*, *conversion*).  This is used
-      by :meth:`vformat` to break the string in to either literal text, or
+      by :meth:`vformat` to break the string into either literal text, or
       replacement fields.
 
       The values in the tuple conceptually represent a span of literal text

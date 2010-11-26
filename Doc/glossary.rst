@@ -356,6 +356,26 @@ Glossary
 
       More information can be found in :ref:`typeiter`.
 
+   key function
+      A key function or collation function is a callable that returns a value
+      used for sorting or ordering.  For example, :func:`locale.strxfrm` is
+      used to produce a sort key that is aware of locale specific sort
+      conventions.
+
+      A number of tools in Python accept key functions to control how elements
+      are ordered or grouped.  They include :func:`min`, :func:`max`,
+      :func:`sorted`, :meth:`list.sort`, :func:`heapq.nsmallest`,
+      :func:`heapq.nlargest`, and :func:`itertools.groupby`.
+
+      There are several ways to create a key function.  For example. the
+      :meth:`str.lower` method can serve as a key function for case insensitive
+      sorts.  Alternatively, an ad-hoc key function can be built from a
+      :keyword:`lambda` expression such as ``lambda r: (r[0], r[2])``.  Also,
+      the :mod:`operator` module provides three key function constuctors:
+      :func:`~operator.attrgetter`, :func:`~operator.itemgetter`, and
+      :func:`~operator.methodcaller`.  See the :ref:`Sorting HOW TO
+      <sortinghowto>` for examples of how to create and use key functions.
+
    keyword argument
       Arguments which are preceded with a ``variable_name=`` in the call.
       The variable name designates the local name in the function to which the
@@ -379,7 +399,7 @@ Glossary
       :keyword:`lambda` expression such as ``lambda r: (r[0], r[2])``.  Also,
       the :mod:`operator` module provides three key function constuctors:
       :func:`~operator.attrgetter`, :func:`~operator.itemgetter`, and
-      :func:`~operator.methodcaller`.  See the :ref:`sorting-howto` for
+      :func:`~operator.methodcaller`.  See the :ref:`sortinghowto` for
       examples of how to create and use key functions.
 
    lambda
