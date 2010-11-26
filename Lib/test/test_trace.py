@@ -330,7 +330,7 @@ class TestCoverage(unittest.TestCase):
             lines, cov, module = line.split()[:3]
             coverage[module] = (int(lines), int(cov[:-1]))
         # XXX This is needed to run regrtest.py as a script
-        modname = trace.fullmodname(sys.modules[modname].__file__)
+        modname = trace._fullmodname(sys.modules[modname].__file__)
         self.assertIn(modname, coverage)
         self.assertEqual(coverage[modname], (5, 100))
 
@@ -340,7 +340,7 @@ class TestCoverage(unittest.TestCase):
 class Test_Ignore(unittest.TestCase):
     def test_ignored(self):
         jn = os.path.join
-        ignore = trace.Ignore(['x', 'y.z'], [jn('foo', 'bar')])
+        ignore = trace._Ignore(['x', 'y.z'], [jn('foo', 'bar')])
         self.assertTrue(ignore.names('x.py', 'x'))
         self.assertFalse(ignore.names('xy.py', 'xy'))
         self.assertFalse(ignore.names('y.py', 'y'))
