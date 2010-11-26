@@ -200,8 +200,8 @@ faq/programming,,:chr,">=4.0) or 1+f(xc,yc,x*x-y*y+xc,2.0*x*y+yc,k-1,f):f(xc,yc,
 faq/programming,,::,for x in sequence[::-1]:
 faq/windows,229,:EOF,@setlocal enableextensions & python -x %~f0 %* & goto :EOF
 faq/windows,393,:REG,.py :REG_SZ: c:\<path to python>\python.exe -u %s %s
-library/bisect,32,:hi,all(val >= x for val in a[i:hi])
-library/bisect,42,:hi,all(val > x for val in a[i:hi])
+library/bisect,,:hi,all(val >= x for val in a[i:hi])
+library/bisect,,:hi,all(val > x for val in a[i:hi])
 library/http.client,52,:port,host:port
 library/nntplib,,:bytes,:bytes
 library/nntplib,,:lines,:lines
