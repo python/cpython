@@ -1760,25 +1760,25 @@ written in Python, such as a mail server's external command delivery program.
 
    Execute the command (a string) in a subshell.  This is implemented by calling
    the Standard C function :cfunc:`system`, and has the same limitations.
-   Changes to :data:`sys.stdin`, etc. are not reflected in the environment of the
-   executed command.
+   Changes to :data:`sys.stdin`, etc. are not reflected in the environment of
+   the executed command. If *command* generates any output, it will be sent to
+   the interpreter standard output stream.
 
    On Unix, the return value is the exit status of the process encoded in the
-   format specified for :func:`wait`.  Note that POSIX does not specify the meaning
-   of the return value of the C :cfunc:`system` function, so the return value of
-   the Python function is system-dependent.
+   format specified for :func:`wait`.  Note that POSIX does not specify the
+   meaning of the return value of the C :cfunc:`system` function, so the return
+   value of the Python function is system-dependent.
 
-   On Windows, the return value is that returned by the system shell after running
-   *command*, given by the Windows environment variable :envvar:`COMSPEC`: on
-   :program:`command.com` systems (Windows 95, 98 and ME) this is always ``0``; on
-   :program:`cmd.exe` systems (Windows NT, 2000 and XP) this is the exit status of
-   the command run; on systems using a non-native shell, consult your shell
-   documentation.
+   On Windows, the return value is that returned by the system shell after
+   running *command*.  The shell is given by the Windows environment variable
+   :envvar:`COMSPEC`: it is usually :program:`cmd.exe`, which returns the exit
+   status of the command run; on systems using a non-native shell, consult your
+   shell documentation.
 
-   The :mod:`subprocess` module provides more powerful facilities for spawning new
-   processes and retrieving their results; using that module is preferable to using
-   this function.  Use the :mod:`subprocess` module.  Check especially the
-   :ref:`subprocess-replacements` section.
+   The :mod:`subprocess` module provides more powerful facilities for spawning
+   new processes and retrieving their results; using that module is preferable
+   to using this function.  See the :ref:`subprocess-replacements` section in
+   the :mod:`subprocess` documentation for some helpful recipes.
 
    Availability: Unix, Windows.
 
