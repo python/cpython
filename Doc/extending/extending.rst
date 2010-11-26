@@ -74,7 +74,7 @@ shortly how it ends up being called)::
        if (!PyArg_ParseTuple(args, "s", &command))
            return NULL;
        sts = system(command);
-       return Py_BuildValue("i", sts);
+       return PyLong_FromLong(sts);
    }
 
 There is a straightforward translation from the argument list in Python (for
@@ -266,13 +266,10 @@ the string we just got from :cfunc:`PyArg_ParseTuple`::
 
    sts = system(command);
 
-Our :func:`spam.system` function must return the value of :cdata:`sts` as a
-Python object.  This is done using the function :cfunc:`Py_BuildValue`, which is
-something like the inverse of :cfunc:`PyArg_ParseTuple`: it takes a format
-string and an arbitrary number of C values, and returns a new Python object.
-More info on :cfunc:`Py_BuildValue` is given later. ::
+Our :func:`spam.system` function must return the value of :c:data:`sts` as a
+Python object.  This is done using the function :cfunc:`PyLong_FromLong`. ::
 
-   return Py_BuildValue("i", sts);
+   return PyLong_FromLong(sts);
 
 In this case, it will return an integer object.  (Yes, even integers are objects
 on the heap in Python!)
@@ -1193,7 +1190,7 @@ The function :cfunc:`spam_system` is modified in a trivial way::
        if (!PyArg_ParseTuple(args, "s", &command))
            return NULL;
        sts = PySpam_System(command);
-       return Py_BuildValue("i", sts);
+       return PyLong_FromLong(sts);
    }
 
 In the beginning of the module, right after the line ::
