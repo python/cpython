@@ -359,12 +359,10 @@ Finally, the module defines the following functions:
 .. function:: effective(file, line, frame)
 
    Determine if there is an effective (active) breakpoint at this line of code.
-   Return breakpoint number or 0 if none.
-
-   Called only if we know there is a breakpoint at this location.  Returns the
-   breakpoint that was triggered and a flag that indicates if it is ok to delete
-   a temporary breakpoint.
+   Return a tuple of the breakpoint and a boolean that indicates if it is ok
+   to delete a temporary breakpoint.  Return ``(None, None)`` if there is no
+   matching breakpoint.
 
 .. function:: set_trace()
 
-   Starts debugging with a :class:`Bdb` instance from caller's frame.
+   Start debugging with a :class:`Bdb` instance from caller's frame.
