@@ -244,7 +244,7 @@ The standard library now supports use of ordered dictionaries in several
 modules.
 
 * The :mod:`ConfigParser` module uses them by default, meaning that
-  configuration files can now read, modified, and then written back
+  configuration files can now be read, modified, and then written back
   in their original order.
 
 * The :meth:`~collections.somenamedtuple._asdict()` method for
