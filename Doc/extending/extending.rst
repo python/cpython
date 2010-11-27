@@ -266,7 +266,7 @@ the string we just got from :cfunc:`PyArg_ParseTuple`::
 
    sts = system(command);
 
-Our :func:`spam.system` function must return the value of :c:data:`sts` as a
+Our :func:`spam.system` function must return the value of :cdata:`sts` as a
 Python object.  This is done using the function :cfunc:`PyLong_FromLong`. ::
 
    return PyLong_FromLong(sts);
