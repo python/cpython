@@ -311,6 +311,20 @@ PyDoc_STRVAR(bin_doc,
 Return the binary representation of an integer or long integer.");
 
 
+static PyObject *
+builtin_callable(PyObject *self, PyObject *v)
+{
+    return PyBool_FromLong((long)PyCallable_Check(v));
+}
+
+PyDoc_STRVAR(callable_doc,
+"callable(object) -> bool\n\
+\n\
+Return whether the object is callable (i.e., some kind of function).\n\
+Note that classes are callable, as are instances of classes with a\n\
+__call__() method.");
+
+
 typedef struct {
     PyObject_HEAD
     PyObject *func;
@@ -2242,6 +2256,7 @@ static PyMethodDef builtin_methods[] = {
     {"any",             builtin_any,        METH_O, any_doc},
     {"ascii",           builtin_ascii,      METH_O, ascii_doc},
     {"bin",             builtin_bin,        METH_O, bin_doc},
+    {"callable",        builtin_callable,   METH_O, callable_doc},
     {"chr",             builtin_chr,        METH_VARARGS, chr_doc},
     {"compile",         (PyCFunction)builtin_compile,    METH_VARARGS | METH_KEYWORDS, compile_doc},
     {"delattr",         builtin_delattr,    METH_VARARGS, delattr_doc},

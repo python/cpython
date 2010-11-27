@@ -207,22 +207,39 @@ class BuiltinTest(unittest.TestCase):
         self.assertTrue(isinstance(x, int))
         self.assertEqual(-x, sys.maxsize+1)
 
-    # XXX(nnorwitz): This test case for callable should probably be removed.
     def test_callable(self):
-        self.assertTrue(hasattr(len, '__call__'))
+        self.assertTrue(callable(len))
+        self.assertFalse(callable("a"))
+        self.assertTrue(callable(callable))
+        self.assertTrue(callable(lambda x, y: x + y))
+        self.assertFalse(callable(__builtins__))
         def f(): pass
-        self.assertTrue(hasattr(f, '__call__'))
-        class C:
+        self.assertTrue(callable(f))
+
+        class C1:
             def meth(self): pass
-        self.assertTrue(hasattr(C, '__call__'))
-        x = C()
-        self.assertTrue(hasattr(x.meth, '__call__'))
-        self.assertTrue(not hasattr(x, '__call__'))
-        class D(C):
+        self.assertTrue(callable(C1))
+        c = C1()
+        self.assertTrue(callable(c.meth))
+        self.assertFalse(callable(c))
+
+        # __call__ is looked up on the class, not the instance
+        c.__call__ = None
+        self.assertFalse(callable(c))
+        c.__call__ = lambda self: 0
+        self.assertFalse(callable(c))
+        del c.__call__
+        self.assertFalse(callable(c))
+
+        class C2(object):
             def __call__(self): pass
-        y = D()
-        self.assertTrue(hasattr(y, '__call__'))
-        y()
+        c2 = C2()
+        self.assertTrue(callable(c2))
+        c2.__call__ = None
+        self.assertTrue(callable(c2))
+        class C3(C2): pass
+        c3 = C3()
+        self.assertTrue(callable(c3))
 
     def test_chr(self):
         self.assertEqual(chr(32), ' ')

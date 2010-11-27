@@ -121,6 +121,19 @@ are always available.  They are listed here in alphabetical order.
    Bytes objects can also be created with literals, see :ref:`strings`.
 
 
+.. function:: callable(object)
+
+   Return :const:`True` if the *object* argument appears callable,
+   :const:`False` if not.  If this returns true, it is still possible that a
+   call fails, but if it is false, calling *object* will never succeed.
+   Note that classes are callable (calling a class returns a new instance);
+   instances are callable if their class has a :meth:`__call__` method.
+
+   .. versionadded:: 3.2
+      This function was first removed in Python 3.0 and then brought back
+      in Python 3.2.
+
+
 .. function:: chr(i)
 
    Return the string representing a character whose Unicode codepoint is the integer

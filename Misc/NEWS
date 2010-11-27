@@ -10,6 +10,8 @@ What's New in Python 3.2 Beta 1?
 Core and Builtins
 -----------------
 
+- Issue #10518: Bring back the callable() builtin.
+
 - Issue #8879. Add os.link support for Windows.
 
 - Issue #10027. st_nlink was not being set on Windows calls to os.stat or
