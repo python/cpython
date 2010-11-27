@@ -151,80 +151,10 @@ is a separate error indicator for each thread.
 
 .. cfunction:: PyObject* PyErr_Format(PyObject *exception, const char *format, ...)
 
-   This function sets the error indicator and returns *NULL*. *exception* should be
-   a Python exception (class, not an instance).  *format* should be a string,
-   containing format codes, similar to :cfunc:`printf`. The ``width.precision``
-   before a format code is parsed, but the width part is ignored.
-
-   .. % This should be exactly the same as the table in PyString_FromFormat.
-   .. % One should just refer to the other.
-   .. % The descriptions for %zd and %zu are wrong, but the truth is complicated
-   .. % because not all compilers support the %z width modifier -- we fake it
-   .. % when necessary via interpolating PY_FORMAT_SIZE_T.
-   .. % Similar comments apply to the %ll width modifier and
-   .. % PY_FORMAT_LONG_LONG.
-   .. % %u, %lu, %zu should have "new in Python 2.5" blurbs.
-
-   +-------------------+---------------+--------------------------------+
-   | Format Characters | Type          | Comment                        |
-   +===================+===============+================================+
-   | :attr:`%%`        | *n/a*         | The literal % character.       |
-   +-------------------+---------------+--------------------------------+
-   | :attr:`%c`        | int           | A single character,            |
-   |                   |               | represented as an C int.       |
-   +-------------------+---------------+--------------------------------+
-   | :attr:`%d`        | int           | Exactly equivalent to          |
-   |                   |               | ``printf("%d")``.              |
-   +-------------------+---------------+--------------------------------+
-   | :attr:`%u`        | unsigned int  | Exactly equivalent to          |
-   |                   |               | ``printf("%u")``.              |
-   +-------------------+---------------+--------------------------------+
-   | :attr:`%ld`       | long          | Exactly equivalent to          |
-   |                   |               | ``printf("%ld")``.             |
-   +-------------------+---------------+--------------------------------+
-   | :attr:`%lu`       | unsigned long | Exactly equivalent to          |
-   |                   |               | ``printf("%lu")``.             |
-   +-------------------+---------------+--------------------------------+
-   | :attr:`%lld`      | long long     | Exactly equivalent to          |
-   |                   |               | ``printf("%lld")``.            |
-   +-------------------+---------------+--------------------------------+
-   | :attr:`%llu`      | unsigned      | Exactly equivalent to          |
-   |                   | long long     | ``printf("%llu")``.            |
-   +-------------------+---------------+--------------------------------+
-   | :attr:`%zd`       | Py_ssize_t    | Exactly equivalent to          |
-   |                   |               | ``printf("%zd")``.             |
-   +-------------------+---------------+--------------------------------+
-   | :attr:`%zu`       | size_t        | Exactly equivalent to          |
-   |                   |               | ``printf("%zu")``.             |
-   +-------------------+---------------+--------------------------------+
-   | :attr:`%i`        | int           | Exactly equivalent to          |
-   |                   |               | ``printf("%i")``.              |
-   +-------------------+---------------+--------------------------------+
-   | :attr:`%x`        | int           | Exactly equivalent to          |
-   |                   |               | ``printf("%x")``.              |
-   +-------------------+---------------+--------------------------------+
-   | :attr:`%s`        | char\*        | A null-terminated C character  |
-   |                   |               | array.                         |
-   +-------------------+---------------+--------------------------------+
-   | :attr:`%p`        | void\*        | The hex representation of a C  |
-   |                   |               | pointer. Mostly equivalent to  |
-   |                   |               | ``printf("%p")`` except that   |
-   |                   |               | it is guaranteed to start with |
-   |                   |               | the literal ``0x`` regardless  |
-   |                   |               | of what the platform's         |
-   |                   |               | ``printf`` yields.             |
-   +-------------------+---------------+--------------------------------+
-
-   An unrecognized format character causes all the rest of the format string to be
-   copied as-is to the result string, and any extra arguments discarded.
-
-   .. note::
-
-      The `"%lld"` and `"%llu"` format specifiers are only available
-      when :const:`HAVE_LONG_LONG` is defined.
-
-   .. versionchanged:: 2.7
-      Support for `"%lld"` and `"%llu"` added.
+   This function sets the error indicator and returns *NULL*.  *exception*
+   should be a Python exception class.  The *format* and subsequent
+   parameters help format the error message; they have the same meaning and
+   values as in :cfunc:`PyString_FromFormat`.
 
 
 .. cfunction:: void PyErr_SetNone(PyObject *type)
