@@ -174,8 +174,8 @@ class BoolTest(unittest.TestCase):
         self.assertIs(hasattr([], "wobble"), False)
 
     def test_callable(self):
-        self.assertIs(hasattr(len, '__call__'), True)
-        self.assertIs(hasattr(1, '__call__'), False)
+        self.assertIs(callable(len), True)
+        self.assertIs(callable(1), False)
 
     def test_isinstance(self):
         self.assertIs(isinstance(True, bool), True)
