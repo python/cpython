@@ -2263,6 +2263,8 @@ win32_link(PyObject *self, PyObject *args)
     rslt = CreateHardLink(dst, src, NULL);
     Py_END_ALLOW_THREADS
 
+    Py_DECREF(osrc);
+    Py_DECREF(odst);
     if (rslt == 0)
         return posix_error();
 
