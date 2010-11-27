@@ -41,6 +41,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10242: Fixed implementation of unittest.ItemsEqual and gave it
+  a new more informative name, unittest.CountEqual.
+
 - Issue #2986: difflib.SequenceMatcher gets a new parameter, autojunk, which
   can be set to False to turn off the previously undocumented 'popularity'
   heuristic. Patch by Terry Reedy and Eli Bendersky.

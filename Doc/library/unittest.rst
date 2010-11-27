@@ -1068,8 +1068,8 @@ Test cases
    | :meth:`assertDictContainsSubset(a, b) | all the key/value pairs        | 3.1          |
    | <TestCase.assertDictContainsSubset>`  | in `a` exist in `b`            |              |
    +---------------------------------------+--------------------------------+--------------+
-   | :meth:`assertItemsEqual(a, b)         | `a` and `b` have the same      | 3.2          |
-   | <TestCase.assertItemsEqual>`          | elements in the same number,   |              |
+   | :meth:`assertCountEqual(a, b)         | `a` and `b` have the same      | 3.2          |
+   | <TestCase.assertCountEqual>`          | elements in the same number,   |              |
    |                                       | regardless of their order      |              |
    +---------------------------------------+--------------------------------+--------------+
 
@@ -1130,7 +1130,7 @@ Test cases
       .. versionadded:: 3.1
 
 
-   .. method:: assertItemsEqual(actual, expected, msg=None)
+   .. method:: assertCountEqual(expected, actual, msg=None)
 
       Test that sequence *expected* contains the same elements as *actual*,
       regardless of their order. When they don't, an error message listing the
@@ -1138,12 +1138,18 @@ Test cases
 
       Duplicate elements are *not* ignored when comparing *actual* and
       *expected*. It verifies if each element has the same count in both
-      sequences. It is the equivalent of ``assertEqual(sorted(expected),
-      sorted(actual))`` but it works with sequences of unhashable objects as
-      well.
+      sequences. Equivalent to:
+      ``assertEqual(Counter(iter(expected)), Counter(iter(actual)))``
+      but works with sequences of unhashable objects as well.
 
       .. versionadded:: 3.2
 
+   .. method:: assertItemsEqual(actual, expected, msg=None)
+
+      Outdated name for :meth:`assertCountEqual`, kept for compatibility
+      with Python 2.7.
+
+      .. versionadded:: 3.2
 
    .. method:: assertSameElements(actual, expected, msg=None)
 
@@ -1155,7 +1161,7 @@ Test cases
       It is the equivalent of ``assertEqual(set(expected), set(actual))``
       but it works with sequences of unhashable objects as well. Because
       duplicates are ignored, this method has been deprecated in favour of
-      :meth:`assertItemsEqual`.
+      :meth:`assertCountEqual`.
 
       .. versionadded:: 3.1
       .. deprecated:: 3.2
