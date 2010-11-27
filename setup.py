@@ -38,7 +38,8 @@ def add_dir_to_list(dirlist, dir):
     for i, path in enumerate(dirlist):
         if not os.path.isabs(path):
             dirlist.insert(i + 1, dir)
-            break
+            return
+    dirlist.insert(0, dir)
 
 def macosx_sdk_root():
     """
