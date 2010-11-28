@@ -2252,6 +2252,22 @@ win32_link(PyObject *self, PyObject *args)
     char *src, *dst;
     BOOL rslt;
 
+    PyUnicodeObject *usrc, *udst;
+    if (PyArg_ParseTuple(args, "UU:link", &usrc, &udst)) {
+        Py_BEGIN_ALLOW_THREADS
+        rslt = CreateHardLinkW(PyUnicode_AS_UNICODE(udst),
+                               PyUnicode_AS_UNICODE(usrc), NULL);
+        Py_END_ALLOW_THREADS
+
+        if (rslt == 0)
+            return win32_error("link", NULL);
+
+        Py_RETURN_NONE;
+    }
+
+    /* Narrow strings also valid. */
+    PyErr_Clear();
+
     if (!PyArg_ParseTuple(args, "O&O&:link", PyUnicode_FSConverter, &osrc,
                           PyUnicode_FSConverter, &odst))
         return NULL;
@@ -2260,13 +2276,13 @@ win32_link(PyObject *self, PyObject *args)
     dst = PyBytes_AsString(odst);
 
     Py_BEGIN_ALLOW_THREADS
-    rslt = CreateHardLink(dst, src, NULL);
+    rslt = CreateHardLinkA(dst, src, NULL);
     Py_END_ALLOW_THREADS
 
     Py_DECREF(osrc);
     Py_DECREF(odst);
     if (rslt == 0)
-        return posix_error();
+        return win32_error("link", NULL);
 
     Py_RETURN_NONE;
 }
