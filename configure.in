@@ -1790,8 +1790,8 @@ then
 		fi ;;
 	OSF*) LDSHARED="ld -shared -expect_unresolved \"*\"";;
 	Darwin/1.3*)
-		LDSHARED='$(CC) $(LDFLAGS) -bundle'
-		LDCXXSHARED='$(CXX) $(LDFLAGS) -bundle'
+		LDSHARED='$(CC) -bundle'
+		LDCXXSHARED='$(CXX) -bundle'
 		if test "$enable_framework" ; then
 			# Link against the framework. All externals should be defined.
 			BLDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
@@ -1803,8 +1803,8 @@ then
 			LDCXXSHARED="$LDCXXSHARED -undefined suppress"
 		fi ;;
 	Darwin/1.4*|Darwin/5.*|Darwin/6.*)
-		LDSHARED='$(CC) $(LDFLAGS) -bundle'
-		LDCXXSHARED='$(CXX) $(LDFLAGS) -bundle'
+		LDSHARED='$(CC) -bundle'
+		LDCXXSHARED='$(CXX) -bundle'
 		if test "$enable_framework" ; then
 			# Link against the framework. All externals should be defined.
 			BLDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
@@ -1825,12 +1825,12 @@ then
 			if test "${enable_universalsdk}"; then
 				LDFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${LDFLAGS}"
 			fi
-			LDSHARED='$(CC) $(LDFLAGS) -bundle -undefined dynamic_lookup'
-			LDCXXSHARED='$(CXX) $(LDFLAGS) -bundle -undefined dynamic_lookup'
+			LDSHARED='$(CC) -bundle -undefined dynamic_lookup'
+			LDCXXSHARED='$(CXX) -bundle -undefined dynamic_lookup'
 			BLDSHARED="$LDSHARED"
 		else
-			LDSHARED='$(CC) $(LDFLAGS) -bundle'
-			LDCXXSHARED='$(CXX) $(LDFLAGS) -bundle'
+			LDSHARED='$(CC) -bundle'
+			LDCXXSHARED='$(CXX) -bundle'
 			if test "$enable_framework" ; then
 				# Link against the framework. All externals should be defined.
 				BLDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
@@ -1853,30 +1853,30 @@ then
 	FreeBSD*)
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
-			LDSHARED='$(CC) -shared ${LDFLAGS}'
-			LDCXXSHARED='$(CXX) -shared ${LDFLAGS}'
+			LDSHARED='$(CC) -shared'
+			LDCXXSHARED='$(CXX) -shared'
 		else
-			LDSHARED="ld -Bshareable ${LDFLAGS}"
+			LDSHARED="ld -Bshareable"
 		fi;;
 	OpenBSD*)
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
-				LDSHARED='$(CC) -shared $(CCSHARED) ${LDFLAGS}'
-				LDCXXSHARED='$(CXX) -shared $(CCSHARED) ${LDFLAGS}'
+				LDSHARED='$(CC) -shared $(CCSHARED)'
+				LDCXXSHARED='$(CXX) -shared $(CCSHARED)'
 		else
 				case `uname -r` in
 				[[01]].* | 2.[[0-7]] | 2.[[0-7]].*)
 				   LDSHARED="ld -Bshareable ${LDFLAGS}"
 				   ;;
 				*)
-				   LDSHARED='$(CC) -shared $(CCSHARED) ${LDFLAGS}'
-				   LDCXXSHARED='$(CXX) -shared $(CCSHARED) ${LDFLAGS}'
+				   LDSHARED='$(CC) -shared $(CCSHARED)'
+				   LDCXXSHARED='$(CXX) -shared $(CCSHARED)'
 				   ;;
 				esac
 		fi;;
 	NetBSD*|DragonFly*)
-		LDSHARED="cc -shared ${LDFLAGS}"
-		LDCXXSHARED="c++ -shared ${LDFLAGS}";;
+		LDSHARED="cc -shared"
+		LDCXXSHARED="c++ -shared";;
 	OpenUNIX*|UnixWare*)
 		if test "$GCC" = "yes" ; then
 			LDSHARED='$(CC) -shared'
