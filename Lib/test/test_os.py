@@ -887,6 +887,11 @@ class LinkTests(unittest.TestCase):
         self._test_link(bytes(self.file1, sys.getfilesystemencoding()),
                         bytes(self.file2, sys.getfilesystemencoding()))
 
+    def test_mbcs_name(self):
+        self.file1 += "\u65e5\u672c"
+        self.file2 = self.file1 + "2"
+        self._test_link(self.file1, self.file2)
+
 if sys.platform != 'win32':
     class Win32ErrorTests(unittest.TestCase):
         pass
