@@ -10,20 +10,20 @@ are always available.  They are listed here in alphabetical order.
 ===================  =================  ==================  ================  ====================
 ..                   ..                 Built-in Functions  ..                ..
 ===================  =================  ==================  ================  ====================
-:func:`abs`          :func:`dir`        :func:`hex`         :func:`next`      :func:`slice`
-:func:`all`          :func:`divmod`     :func:`id`          :func:`object`    :func:`sorted`
-:func:`any`          :func:`enumerate`  :func:`input`       :func:`oct`       :func:`staticmethod`
-:func:`ascii`        :func:`eval`       :func:`int`         :func:`open`      :func:`str`
-:func:`bin`          :func:`exec`       :func:`isinstance`  :func:`ord`       :func:`sum`
-:func:`bool`         :func:`filter`     :func:`issubclass`  :func:`pow`       :func:`super`
-:func:`bytearray`    :func:`float`      :func:`iter`        :func:`print`     :func:`tuple`
-:func:`bytes`        :func:`format`     :func:`len`         :func:`property`  :func:`type`
+:func:`abs`          :func:`dict`       :func:`help`        :func:`min`       :func:`setattr`
+:func:`all`          :func:`dir`        :func:`hex`         :func:`next`      :func:`slice`
+:func:`any`          :func:`divmod`     :func:`id`          :func:`object`    :func:`sorted`
+:func:`ascii`        :func:`enumerate`  :func:`input`       :func:`oct`       :func:`staticmethod`
+:func:`bin`          :func:`eval`       :func:`int`         :func:`open`      :func:`str`
+:func:`bool`         :func:`exec`       :func:`isinstance`  :func:`ord`       :func:`sum`
+:func:`bytearray`    :func:`filter`     :func:`issubclass`  :func:`pow`       :func:`super`
+:func:`bytes`        :func:`float`      :func:`iter`        :func:`print`     :func:`tuple`
+:func:`callable`     :func:`format`     :func:`len`         :func:`property`  :func:`type`
 :func:`chr`          :func:`frozenset`  :func:`list`        :func:`range`     :func:`vars`
 :func:`classmethod`  :func:`getattr`    :func:`locals`      :func:`repr`      :func:`zip`
 :func:`compile`      :func:`globals`    :func:`map`         :func:`reversed`  :func:`__import__`
 :func:`complex`      :func:`hasattr`    :func:`max`         :func:`round`
 :func:`delattr`      :func:`hash`       :func:`memoryview`  :func:`set`
-:func:`dict`         :func:`help`       :func:`min`         :func:`setattr`
 ===================  =================  ==================  ================  ====================
 
 .. function:: abs(x)
