@@ -888,4 +888,4 @@ only makes sense to call from a different thread.
 .. [#f1] The sqlite3 module is not built with loadable extension support by
   default, because some platforms (notably Mac OS X) have SQLite libraries which
   are compiled without this feature. To get loadable extension support, you must
-  modify setup.py and and remove the line that sets SQLITE_OMIT_LOAD_EXTENSION.
+  pass --enable-loadable-sqlite-extensions to configure.
