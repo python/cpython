@@ -94,14 +94,14 @@ def find_function(funcname, filename):
     # consumer of this info expects the first line to be 1
     lineno = 1
     answer = None
-    while 1:
+    while True:
         line = fp.readline()
         if line == '':
             break
         if cre.match(line):
             answer = funcname, filename, lineno
             break
-        lineno = lineno + 1
+        lineno += 1
     fp.close()
     return answer
 
@@ -140,7 +140,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.prompt = '(Pdb) '
         self.aliases = {}
         self.mainpyfile = ''
-        self._wait_for_mainpyfile = 0
+        self._wait_for_mainpyfile = False
         self.tb_lineno = {}
         # Try to load readline if it exists
         try:
@@ -235,9 +235,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """This function is called when we stop or break at this line."""
         if self._wait_for_mainpyfile:
             if (self.mainpyfile != self.canonic(frame.f_code.co_filename)
-                or frame.f_lineno<= 0):
+                or frame.f_lineno <= 0):
                 return
-            self._wait_for_mainpyfile = 0
+            self._wait_for_mainpyfile = False
         if self.bp_commands(frame):
             self.interaction(frame, None)
 
@@ -337,7 +337,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             for tmpArg in args[1:]:
                 line = line.replace("%" + str(ii),
                                       tmpArg)
-                ii = ii + 1
+                ii += 1
             line = line.replace("%*", ' '.join(args[1:]))
             args = line.split()
         # split into ';;' separated commands
@@ -962,7 +962,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """q(uit)\nexit
         Quit from the debugger. The program being executed is aborted.
         """
-        self._user_requested_quit = 1
+        self._user_requested_quit = True
         self.set_quit()
         return 1
 
@@ -974,7 +974,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Handles the receipt of EOF as a command.
         """
         self.message('')
-        self._user_requested_quit = 1
+        self._user_requested_quit = True
         self.set_quit()
         return 1
 
@@ -1326,9 +1326,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # events depends on python version). So we take special measures to
         # avoid stopping before we reach the main script (see user_line and
         # user_call for details).
-        self._wait_for_mainpyfile = 1
+        self._wait_for_mainpyfile = True
         self.mainpyfile = self.canonic(filename)
-        self._user_requested_quit = 0
+        self._user_requested_quit = False
         with open(filename, "rb") as fp:
             statement = "exec(compile(%r, %r, 'exec'))" % \
                         (fp.read(), self.mainpyfile)

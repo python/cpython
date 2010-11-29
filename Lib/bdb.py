@@ -168,7 +168,7 @@ class Bdb:
     def _set_stopinfo(self, stopframe, returnframe, stoplineno=0):
         self.stopframe = stopframe
         self.returnframe = returnframe
-        self.quitting = 0
+        self.quitting = False
         # stoplineno >= 0 means: stop at line >= the stoplineno
         # stoplineno -1 means: don't stop at all
         self.stoplineno = stoplineno
@@ -225,7 +225,7 @@ class Bdb:
     def set_quit(self):
         self.stopframe = self.botframe
         self.returnframe = None
-        self.quitting = 1
+        self.quitting = True
         sys.settrace(None)
 
     # Derived classes and clients can call the following methods
@@ -235,7 +235,7 @@ class Bdb:
     # Call self.get_*break*() to see the breakpoints or better
     # for bp in Breakpoint.bpbynumber: if bp: bp.bpprint().
 
-    def set_break(self, filename, lineno, temporary=0, cond = None,
+    def set_break(self, filename, lineno, temporary=False, cond=None,
                   funcname=None):
         filename = self.canonic(filename)
         import linecache # Import as late as possible
@@ -391,7 +391,7 @@ class Bdb:
         except BdbQuit:
             pass
         finally:
-            self.quitting = 1
+            self.quitting = True
             sys.settrace(None)
 
     def runeval(self, expr, globals=None, locals=None):
@@ -407,7 +407,7 @@ class Bdb:
         except BdbQuit:
             pass
         finally:
-            self.quitting = 1
+            self.quitting = True
             sys.settrace(None)
 
     def runctx(self, cmd, globals, locals):
@@ -425,7 +425,7 @@ class Bdb:
         except BdbQuit:
             pass
         finally:
-            self.quitting = 1
+            self.quitting = True
             sys.settrace(None)
         return res
 
@@ -457,7 +457,7 @@ class Breakpoint:
                 # index 0 is unused, except for marking an
                 # effective break .... see effective()
 
-    def __init__(self, file, line, temporary=0, cond=None, funcname=None):
+    def __init__(self, file, line, temporary=False, cond=None, funcname=None):
         self.funcname = funcname
         # Needed if funcname is not None.
         self.func_first_executable_line = None
@@ -465,11 +465,11 @@ class Breakpoint:
         self.line = line
         self.temporary = temporary
         self.cond = cond
-        self.enabled = 1
+        self.enabled = True
         self.ignore = 0
         self.hits = 0
         self.number = Breakpoint.next
-        Breakpoint.next = Breakpoint.next + 1
+        Breakpoint.next += 1
         # Build the two lists
         self.bpbynumber.append(self)
         if (file, line) in self.bplist:
@@ -486,10 +486,10 @@ class Breakpoint:
             del self.bplist[index]
 
     def enable(self):
-        self.enabled = 1
+        self.enabled = True
 
     def disable(self):
-        self.enabled = 0
+        self.enabled = False
 
     def bpprint(self, out=None):
         if out is None:
