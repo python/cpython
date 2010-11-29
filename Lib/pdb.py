@@ -774,7 +774,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             except ValueError as err:
                 self.error(err)
             else:
-                self.clear_break(bp.file, bp.line)
+                self.clear_bpbynumber(i)
+                #self.clear_break(bp.file, bp.line)
                 self.message('Deleted %s' % bp)
     do_cl = do_clear # 'c' is already an abbreviation for 'continue'
 
