@@ -1144,13 +1144,6 @@ Test cases
 
       .. versionadded:: 3.2
 
-   .. method:: assertItemsEqual(actual, expected, msg=None)
-
-      Outdated name for :meth:`assertCountEqual`, kept for compatibility
-      with Python 2.7.
-
-      .. versionadded:: 3.2
-
    .. method:: assertSameElements(actual, expected, msg=None)
 
       Test that sequence *expected* contains the same elements as *actual*,

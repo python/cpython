@@ -1029,9 +1029,6 @@ class TestCase(object):
             standardMsg = '\n'.join(errors)
             self.fail(self._formatMessage(msg, standardMsg))
 
-    # Old name for assertCountEqual()
-    assertItemsEqual = assertCountEqual
-
     def assertMultiLineEqual(self, first, second, msg=None):
         """Assert that two multi-line strings are equal."""
         self.assertIsInstance(first, str, 'First argument is not a string')
