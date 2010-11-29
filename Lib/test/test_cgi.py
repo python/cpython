@@ -131,7 +131,7 @@ class CgiTests(unittest.TestCase):
             if isinstance(expect, dict):
                 # test dict interface
                 self.assertEqual(len(expect), len(fs))
-                self.assertItemsEqual(expect.keys(), fs.keys())
+                self.assertCountEqual(expect.keys(), fs.keys())
                 ##self.assertEqual(norm(expect.values()), norm(fs.values()))
                 ##self.assertEqual(norm(expect.items()), norm(fs.items()))
                 self.assertEqual(fs.getvalue("nonexistent field", "default"), "default")
