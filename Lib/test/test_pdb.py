@@ -54,6 +54,108 @@ def test_pdb_displayhook():
     (Pdb) continue
     """
 
+def test_pdb_breakpoint_commands():
+    """Test basic commands related to breakpoints.
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb().set_trace()
+    ...     print(1)
+    ...     print(2)
+    ...     print(3)
+    ...     print(4)
+
+    First, need to clear bdb state that might be left over from previous tests.
+    Otherwise, the new breakpoints might get assigned different numbers.
+
+    >>> from bdb import Breakpoint
+    >>> Breakpoint.next = 1
+    >>> Breakpoint.bplist = {}
+    >>> Breakpoint.bpbynumber = [None]
+
+    Now test the breakpoint commands.  NORMALIZE_WHITESPACE is needed because
+    the breakpoint list outputs a tab for the "stop only" and "ignore next"
+    lines, which we don't want to put in here.
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'break 3',
+    ...     'disable 1',
+    ...     'ignore 1 10',
+    ...     'condition 1 1 < 2',
+    ...     'break 4',
+    ...     'break 4',
+    ...     'break',
+    ...     'clear 3',
+    ...     'break',
+    ...     'condition 1',
+    ...     'enable 1',
+    ...     'clear 1',
+    ...     'commands 2',
+    ...     'print 42',
+    ...     'end',
+    ...     'continue',  # will stop at breakpoint 2 (line 4)
+    ...     'clear',     # clear all!
+    ...     'y',
+    ...     'tbreak 5',
+    ...     'continue',  # will stop at temporary breakpoint
+    ...     'break',     # make sure breakpoint is gone
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>(3)test_function()
+    -> print(1)
+    (Pdb) break 3
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:3
+    (Pdb) disable 1
+    (Pdb) ignore 1 10
+    Will ignore next 10 crossings of breakpoint 1.
+    (Pdb) condition 1 1 < 2
+    (Pdb) break 4
+    Breakpoint 2 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:4
+    (Pdb) break 4
+    Breakpoint 3 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:4
+    (Pdb) break
+    Num Type         Disp Enb   Where
+    1   breakpoint   keep no    at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:3
+            stop only if 1 < 2
+            ignore next 10 hits
+    2   breakpoint   keep yes   at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:4
+    3   breakpoint   keep yes   at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:4
+    (Pdb) clear 3
+    Deleted breakpoint 3
+    (Pdb) break
+    Num Type         Disp Enb   Where
+    1   breakpoint   keep no    at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:3
+            stop only if 1 < 2
+            ignore next 10 hits
+    2   breakpoint   keep yes   at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:4
+    (Pdb) condition 1
+    Breakpoint 1 is now unconditional.
+    (Pdb) enable 1
+    (Pdb) clear 1
+    Deleted breakpoint 1
+    (Pdb) commands 2
+    (com) print 42
+    (com) end
+    (Pdb) continue
+    1
+    42
+    > <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>(4)test_function()
+    -> print(2)
+    (Pdb) clear
+    Clear all breaks? y
+    (Pdb) tbreak 5
+    Breakpoint 4 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:5
+    (Pdb) continue
+    2
+    Deleted breakpoint 4
+    > <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>(5)test_function()
+    -> print(3)
+    (Pdb) break
+    (Pdb) continue
+    3
+    4
+    """
+
 
 def test_pdb_skip_modules():
     """This illustrates the simple case of module skipping.
@@ -137,6 +239,14 @@ def test_pdb_continue_in_bottomframe():
     ...     print(2)
     ...     print(3)
     ...     print(4)
+
+    First, need to clear bdb state that might be left over from previous tests.
+    Otherwise, the new breakpoints might get assigned different numbers.
+
+    >>> from bdb import Breakpoint
+    >>> Breakpoint.next = 1
+    >>> Breakpoint.bplist = {}
+    >>> Breakpoint.bpbynumber = [None]
 
     >>> with PdbTestInput([
     ...     'next',
