@@ -43,6 +43,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10565: The collections.Iterator ABC now checks for both
+  __iter__ and __next__.
+
 - Issue #10242: Fixed implementation of unittest.ItemsEqual and gave it
   a new more informative name, unittest.CountEqual.
 
