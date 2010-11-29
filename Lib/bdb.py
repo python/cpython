@@ -3,16 +3,14 @@
 import fnmatch
 import sys
 import os
-import types
 
-__all__ = ["BdbQuit","Bdb","Breakpoint"]
+__all__ = ["BdbQuit", "Bdb", "Breakpoint"]
 
 class BdbQuit(Exception):
-    """Exception to give up completely"""
+    """Exception to give up completely."""
 
 
 class Bdb:
-
     """Generic Python debugger base class.
 
     This class takes care of details of the trace facility;
@@ -120,14 +118,14 @@ class Bdb:
 
     def break_here(self, frame):
         filename = self.canonic(frame.f_code.co_filename)
-        if not filename in self.breaks:
+        if filename not in self.breaks:
             return False
         lineno = frame.f_lineno
-        if not lineno in self.breaks[filename]:
+        if lineno not in self.breaks[filename]:
             # The line itself has no breakpoint, but maybe the line is the
             # first line of a function with breakpoint set by function name.
             lineno = frame.f_code.co_firstlineno
-            if not lineno in self.breaks[filename]:
+            if lineno not in self.breaks[filename]:
                 return False
 
         # flag says ok to delete temp. bp
@@ -243,12 +241,9 @@ class Bdb:
         import linecache # Import as late as possible
         line = linecache.getline(filename, lineno)
         if not line:
-            return 'Line %s:%d does not exist' % (filename,
-                                   lineno)
-        if not filename in self.breaks:
-            self.breaks[filename] = []
-        list = self.breaks[filename]
-        if not lineno in list:
+            return 'Line %s:%d does not exist' % (filename, lineno)
+        list = self.breaks.setdefault(filename, [])
+        if lineno not in list:
             list.append(lineno)
         bp = Breakpoint(filename, lineno, temporary, cond, funcname)
 
@@ -260,11 +255,10 @@ class Bdb:
 
     def clear_break(self, filename, lineno):
         filename = self.canonic(filename)
-        if not filename in self.breaks:
+        if filename not in self.breaks:
             return 'There are no breakpoints in %s' % filename
         if lineno not in self.breaks[filename]:
-            return 'There is no breakpoint at %s:%d' % (filename,
-                                    lineno)
+            return 'There is no breakpoint at %s:%d' % (filename, lineno)
         # If there's only one bp in the list for that file,line
         # pair, then remove the breaks entry
         for bp in Breakpoint.bplist[filename, lineno][:]:
@@ -281,7 +275,7 @@ class Bdb:
 
     def clear_all_file_breaks(self, filename):
         filename = self.canonic(filename)
-        if not filename in self.breaks:
+        if filename not in self.breaks:
             return 'There are no breakpoints in %s' % filename
         for line in self.breaks[filename]:
             blist = Breakpoint.bplist[filename, line]
@@ -354,31 +348,30 @@ class Bdb:
             i = max(0, len(stack) - 1)
         return stack, i
 
-    #
-
     def format_stack_entry(self, frame_lineno, lprefix=': '):
         import linecache, reprlib
         frame, lineno = frame_lineno
         filename = self.canonic(frame.f_code.co_filename)
         s = '%s(%r)' % (filename, lineno)
         if frame.f_code.co_name:
-            s = s + frame.f_code.co_name
+            s += frame.f_code.co_name
         else:
-            s = s + "<lambda>"
+            s += "<lambda>"
         if '__args__' in frame.f_locals:
             args = frame.f_locals['__args__']
         else:
             args = None
         if args:
-            s = s + reprlib.repr(args)
+            s += reprlib.repr(args)
         else:
-            s = s + '()'
+            s += '()'
         if '__return__' in frame.f_locals:
             rv = frame.f_locals['__return__']
-            s = s + '->'
-            s = s + reprlib.repr(rv)
+            s += '->'
+            s += reprlib.repr(rv)
         line = linecache.getline(filename, lineno, frame.f_globals)
-        if line: s = s + lprefix + line.strip()
+        if line:
+            s += lprefix + line.strip()
         return s
 
     # The following methods can be called by clients to use
@@ -442,8 +435,7 @@ def set_trace():
 
 
 class Breakpoint:
-
-    """Breakpoint class
+    """Breakpoint class.
 
     Implements temporary breakpoints, ignore counts, disabling and
     (re)-enabling, and conditionals.
@@ -484,7 +476,6 @@ class Breakpoint:
             self.bplist[file, line].append(self)
         else:
             self.bplist[file, line] = [self]
-
 
     def deleteMe(self):
         index = (self.file, self.line)
@@ -606,6 +597,7 @@ def effective(file, line, frame):
                 return (b, False)
     return (None, None)
 
+
 # -------------------- testing --------------------
 
 class Tdb(Bdb):
@@ -638,5 +630,3 @@ def bar(a):
 def test():
     t = Tdb()
     t.run('import bdb; bdb.foo(10)')
-
-# end
