@@ -357,7 +357,7 @@ boolean {0[0]} NO
         L = [section for section in cf]
         L.sort()
         eq = self.assertEqual
-        elem_eq = self.assertItemsEqual
+        elem_eq = self.assertCountEqual
         eq(L, sorted(["A", "B", self.default_section, "a"]))
         eq(cf["a"].keys(), {"b"})
         eq(cf["a"]["b"], "value",
