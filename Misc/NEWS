@@ -28,6 +28,8 @@ Library
 
 - Issue #6098: Don't claim DOM level 3 conformance in minidom.
 
+- Issue #10561: In pdb, clear the breakpoints by the breakpoint number.
+
 - Issue #5762: Fix AttributeError raised by ``xml.dom.minidom`` when an empty
   XML namespace attribute is encountered.
 

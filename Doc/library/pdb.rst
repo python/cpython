@@ -239,7 +239,8 @@ tbreak [[*filename*:]\ *lineno* | *function*\ [, *condition*]]
    Temporary breakpoint, which is removed automatically when it is first hit.  The
    arguments are the same as break.
 
-cl(ear) [*bpnumber* [*bpnumber ...*]]
+cl(ear) [*filename:lineno* | *bpnumber* [*bpnumber ...*]]
+   With a *filename:lineno* argument, clear all the breakpoints at this line.
    With a space separated list of breakpoint numbers, clear those breakpoints.
    Without argument, clear all breaks (but first ask confirmation).
 
