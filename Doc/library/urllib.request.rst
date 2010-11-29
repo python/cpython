@@ -1,4 +1,4 @@
-:mod:`urllib.request` --- extensible library for opening URLs
+:mod:`urllib.request` --- Extensible library for opening URLs
 =============================================================
 
 .. module:: urllib.request
@@ -1273,8 +1273,8 @@ The following example uses no proxies at all, overriding environment settings::
 
 
 
-:mod:`urllib.response` --- Response classes used by urllib.
-===========================================================
+:mod:`urllib.response` --- Response classes used by urllib
+==========================================================
 
 .. module:: urllib.response
    :synopsis: Response classes used by urllib.
