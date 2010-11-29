@@ -252,6 +252,12 @@ class Bdb:
             list.append(lineno)
         bp = Breakpoint(filename, lineno, temporary, cond, funcname)
 
+    def _prune_breaks(self, filename, lineno):
+        if (filename, lineno) not in Breakpoint.bplist:
+            self.breaks[filename].remove(lineno)
+        if not self.breaks[filename]:
+            del self.breaks[filename]
+
     def clear_break(self, filename, lineno):
         filename = self.canonic(filename)
         if not filename in self.breaks:
@@ -263,17 +269,15 @@ class Bdb:
         # pair, then remove the breaks entry
         for bp in Breakpoint.bplist[filename, lineno][:]:
             bp.deleteMe()
-        if (filename, lineno) not in Breakpoint.bplist:
-            self.breaks[filename].remove(lineno)
-        if not self.breaks[filename]:
-            del self.breaks[filename]
+        self._prune_breaks(filename, lineno)
 
     def clear_bpbynumber(self, arg):
         try:
             bp = self.get_bpbynumber(arg)
         except ValueError as err:
             return str(err)
-        self.clear_break(bp.file, bp.line)
+        bp.deleteMe()
+        self._prune_breaks(bp.file, bp.line)
 
     def clear_all_file_breaks(self, filename):
         filename = self.canonic(filename)

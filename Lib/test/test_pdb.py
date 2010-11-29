@@ -192,6 +192,9 @@ def test_pdb_breakpoint_commands():
     ...     'ignore 1 10',
     ...     'condition 1 1 < 2',
     ...     'break 4',
+    ...     'break 4',
+    ...     'break',
+    ...     'clear 3',
     ...     'break',
     ...     'condition 1',
     ...     'enable 1',
@@ -220,6 +223,17 @@ def test_pdb_breakpoint_commands():
     New condition set for breakpoint 1.
     (Pdb) break 4
     Breakpoint 2 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:4
+    (Pdb) break 4
+    Breakpoint 3 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:4
+    (Pdb) break
+    Num Type         Disp Enb   Where
+    1   breakpoint   keep no    at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:3
+            stop only if 1 < 2
+            ignore next 10 hits
+    2   breakpoint   keep yes   at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:4
+    3   breakpoint   keep yes   at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:4
+    (Pdb) clear 3
+    Deleted breakpoint 3 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:4
     (Pdb) break
     Num Type         Disp Enb   Where
     1   breakpoint   keep no    at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:3
@@ -244,10 +258,10 @@ def test_pdb_breakpoint_commands():
     Clear all breaks? y
     Deleted breakpoint 2 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:4
     (Pdb) tbreak 5
-    Breakpoint 3 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:5
+    Breakpoint 4 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:5
     (Pdb) continue
     2
-    Deleted breakpoint 3 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:5
+    Deleted breakpoint 4 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:5
     > <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>(5)test_function()
     -> print(3)
     (Pdb) break
