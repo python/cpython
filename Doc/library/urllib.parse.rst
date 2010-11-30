@@ -283,7 +283,7 @@ passed in, the result will contain only :class:`bytes` data.
 
 Attempting to mix :class:`str` data with :class:`bytes` or
 :class:`bytearray` in a single function call will result in a
-:exc:`TypeError` being thrown, while attempting to pass in non-ASCII
+:exc:`TypeError` being raised, while attempting to pass in non-ASCII
 byte values will trigger :exc:`UnicodeDecodeError`.
 
 To support easier conversion of result objects between :class:`str` and

@@ -320,7 +320,7 @@ However, there are a few differences that should be taken into account:
   the default value to be visible again.  Trying to delete a default value
   causes a ``KeyError``.
 
-* Trying to delete the ``DEFAULTSECT`` throws ``ValueError``.
+* Trying to delete the ``DEFAULTSECT`` raises ``ValueError``.
 
 * There are two parser-level methods in the legacy API that hide the dictionary
   interface and are incompatible:
