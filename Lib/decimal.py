@@ -132,6 +132,7 @@ __all__ = [
 ]
 
 __version__ = '1.70'    # Highest version of the spec this complies with
+                        # See http://speleotrove.com/decimal/
 
 import copy as _copy
 import math as _math
