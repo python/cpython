@@ -1130,7 +1130,10 @@ def getattr_static(obj, attr, default=_sentinel):
     raise AttributeError(attr)
 
 
-GEN_CREATED, GEN_RUNNING, GEN_SUSPENDED, GEN_CLOSED = range(4)
+GEN_CREATED = 'GEN_CREATED'
+GEN_RUNNING = 'GEN_RUNNING'
+GEN_SUSPENDED = 'GEN_SUSPENDED'
+GEN_CLOSED = 'GEN_CLOSED'
 
 def getgeneratorstate(generator):
     """Get current state of a generator-iterator.
