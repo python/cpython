@@ -1191,7 +1191,7 @@ Files and Directories
       single: UNC paths; and os.makedirs()
 
    Recursive directory creation function.  Like :func:`mkdir`, but makes all
-   intermediate-level directories needed to contain the leaf directory.  Throws an
+   intermediate-level directories needed to contain the leaf directory.  Raises an
    :exc:`error` exception if the leaf directory already exists or cannot be
    created.  The default *mode* is ``0777`` (octal).  On some systems, *mode* is
    ignored. Where it is used, the current umask value is first masked out.
