@@ -9,7 +9,6 @@
 */
 
 #include "Python.h"
-#include "unicodeobject.h"
 
 #define ALPHA_MASK 0x01
 #define DECIMAL_MASK 0x02

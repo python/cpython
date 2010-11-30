@@ -2,7 +2,6 @@
 /* Generic object operations; and implementation of None (NoObject) */
 
 #include "Python.h"
-#include "sliceobject.h" /* For PyEllipsis_Type */
 #include "frameobject.h"
 
 #ifdef __cplusplus

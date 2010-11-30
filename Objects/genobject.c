@@ -2,8 +2,6 @@
 
 #include "Python.h"
 #include "frameobject.h"
-#include "genobject.h"
-#include "ceval.h"
 #include "structmember.h"
 #include "opcode.h"
 

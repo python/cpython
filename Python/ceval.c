@@ -13,7 +13,6 @@
 
 #include "code.h"
 #include "frameobject.h"
-#include "eval.h"
 #include "opcode.h"
 #include "structmember.h"
 

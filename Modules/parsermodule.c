@@ -34,10 +34,8 @@
 #include "grammar.h"
 #include "parsetok.h"
                                         /* ISTERMINAL() / ISNONTERMINAL() */
-#include "compile.h"
 #undef Yield
 #include "ast.h"
-#include "pyarena.h"
 
 extern grammar _PyParser_Grammar; /* From graminit.c */
 

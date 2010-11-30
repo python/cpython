@@ -7,7 +7,6 @@
 #include "Python-ast.h"
 #include "grammar.h"
 #include "node.h"
-#include "pyarena.h"
 #include "ast.h"
 #include "token.h"
 #include "parsetok.h"

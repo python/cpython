@@ -4,7 +4,6 @@
 #include "token.h"
 #include "graminit.h"
 #include "code.h"
-#include "compile.h"
 #include "symtable.h"
 
 #define UNDEFINED_FUTURE_FEATURE "future feature %.100s is not defined"
