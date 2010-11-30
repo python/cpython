@@ -328,7 +328,14 @@ class TestOneTrickPonyABCs(ABCTestCase):
         for x in samples:
             self.assertTrue(isinstance(x, Iterator), repr(x))
             self.assertTrue(issubclass(type(x), Iterator), repr(type(x)))
-        self.validate_abstract_methods(Iterator, '__next__')
+        self.validate_abstract_methods(Iterator, '__next__', '__iter__')
+
+        # Issue 10565
+        class NextOnly:
+            def __next__(self):
+                yield 1
+                raise StopIteration
+        self.assertFalse(isinstance(NextOnly(), Iterator))
 
     def test_Sized(self):
         non_samples = [None, 42, 3.14, 1j,
