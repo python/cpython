@@ -15,7 +15,6 @@ Data members:
 */
 
 #include "Python.h"
-#include "structseq.h"
 #include "code.h"
 #include "frameobject.h"
 #include "eval.h"

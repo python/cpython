@@ -28,7 +28,6 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "structseq.h"
 
 #if defined(__VMS)
 #    include <unixio.h>

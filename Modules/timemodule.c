@@ -2,7 +2,6 @@
 /* Time module */
 
 #include "Python.h"
-#include "structseq.h"
 #include "_time.h"
 
 #define TZNAME_ENCODING "utf-8"

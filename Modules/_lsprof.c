@@ -1,7 +1,6 @@
 #include "Python.h"
 #include "compile.h"
 #include "frameobject.h"
-#include "structseq.h"
 #include "rotatingtree.h"
 
 #if !defined(HAVE_LONG_LONG)

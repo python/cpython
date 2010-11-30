@@ -2,7 +2,6 @@
 /* UNIX password file access module */
 
 #include "Python.h"
-#include "structseq.h"
 
 #include <sys/types.h>
 #include <pwd.h>
