@@ -52,10 +52,16 @@ The :mod:`functools` module defines the following functions:
    results, the positional and keyword arguments to the function must be
    hashable.
 
-   The wrapped function is instrumented with two attributes, :attr:`cache_hits`
-   and :attr:`cache_misses` which count the number of successful or unsuccessful
-   cache lookups.  These statistics are helpful for tuning the *maxsize*
-   parameter and for measuring the cache's effectiveness.
+   The wrapped function is instrumented with a :attr:`cache_info` attribute that
+   can be called to retrieve a named tuple with the following fields:
+
+      - :attr:`maxsize`: maximum cache size (as set by the *maxsize* parameter)
+      - :attr:`size`: current number of entries in the cache
+      - :attr:`hits`: number of successful cache lookups
+      - :attr:`misses`: number of unsuccessful cache lookups.
+
+   These statistics are helpful for tuning the *maxsize* parameter and for measuring
+   the effectiveness of the cache.
 
    The wrapped function also has a :attr:`cache_clear` attribute which can be
    called (with no arguments) to clear the cache.

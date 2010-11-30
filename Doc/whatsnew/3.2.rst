@@ -332,6 +332,8 @@ New, Improved, and Deprecated Modules
          c.execute('SELECT phonenumber FROM phonelist WHERE name=?', (name,))
          return c.fetchone()[0]
 
+  XXX: update for Issue 10586 changes to cache statistics API
+
   To help with choosing an effective cache size, the wrapped function is
   instrumented with two attributes *cache_hits* and *cache_misses*:
 
