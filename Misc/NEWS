@@ -10,6 +10,9 @@ What's New in Python 3.2 Beta 1?
 Core and Builtins
 -----------------
 
+- Issue #8685: Speed up set difference ``a - b`` when source set ``a`` is
+  much larger than operand ``b``.  Patch by Andrew Bennetts.
+
 - Issue #10518: Bring back the callable() builtin.
 
 - Issue #8879. Add os.link support for Windows.
