@@ -269,7 +269,7 @@ function for information about the exceptions it can raise.
    will only need to be aware of the simple string values.
 
 Note that the functions :func:`compilest`, :func:`expr`, and :func:`suite` may
-raise exceptions which are normally thrown by the parsing and compilation
+raise exceptions which are normally raised by the parsing and compilation
 process.  These include the built in exceptions :exc:`MemoryError`,
 :exc:`OverflowError`, :exc:`SyntaxError`, and :exc:`SystemError`.  In these
 cases, these exceptions carry all the meaning normally associated with them.
