@@ -136,6 +136,8 @@ Library
 C-API
 -----
 
+- structseq.h is now included in Python.h.
+
 - Loosen PyArg_ValidateKeywordArguments to allow dict subclasses.
 
 Tests

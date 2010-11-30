@@ -5,7 +5,6 @@
    for any kind of float exception without losing portability. */
 
 #include "Python.h"
-#include "structseq.h"
 
 #include <ctype.h>
 #include <float.h>

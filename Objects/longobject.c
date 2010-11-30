@@ -4,7 +4,6 @@
 
 #include "Python.h"
 #include "longintrepr.h"
-#include "structseq.h"
 
 #include <float.h>
 #include <ctype.h>

@@ -4,7 +4,6 @@
 /* For info also see http://www.unixpapa.com/incnote/passwd.html */
 
 #include "Python.h"
-#include "structseq.h"
 
 #include <sys/types.h>
 #ifdef HAVE_SHADOW_H

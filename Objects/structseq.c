@@ -3,7 +3,6 @@
 
 #include "Python.h"
 #include "structmember.h"
-#include "structseq.h"
 
 static char visible_length_key[] = "n_sequence_fields";
 static char real_length_key[] = "n_fields";
