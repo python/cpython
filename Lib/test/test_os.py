@@ -887,13 +887,13 @@ class LinkTests(unittest.TestCase):
         self._test_link(bytes(self.file1, sys.getfilesystemencoding()),
                         bytes(self.file2, sys.getfilesystemencoding()))
 
-    def test_mbcs_name(self):
+    def test_unicode_name(self):
         try:
-            chars = os.fsencode("\u65e5\u672c")
+            os.fsencode("\xf1")
         except UnicodeError:
             raise unittest.SkipTest("Unable to encode for this platform.")
 
-        self.file1 += chars
+        self.file1 += "\xf1"
         self.file2 = self.file1 + "2"
         self._test_link(self.file1, self.file2)
 
