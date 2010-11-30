@@ -573,6 +573,14 @@ New, Improved, and Deprecated Modules
   (Contributed by Rodolpho Eckhardt and Nick Coghlan, :issue:`10220`.)
 
 .. XXX: Mention inspect.getattr_static (Michael Foord)
+.. XXX: Mention urllib.parse changes
+          Issue 9873 (Nick Coghlan):
+            - ASCII byte sequence support in URL parsing
+            - named tuple for urldefrag return value
+          Issue 5468 (Dan Mahn) for urlencode:
+            - bytes input support
+            - non-UTF8 percent encoding of non-ASCII characters
+          Issue 2987 for IPv6 (RFC2732) support in urlparse
 
 Multi-threading
 ===============

@@ -43,6 +43,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9873: The URL parsing functions in urllib.parse now accept
+  ASCII byte sequences as input in addition to character strings.
+
 - Issue #10586: The statistics API for the new functools.lru_cache has
   been changed to a single cache_info() method returning a named tuple.
 
