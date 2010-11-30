@@ -10,7 +10,7 @@ def test_suite():
     loader = unittest.TestLoader()
     for fn in os.listdir(here):
         if fn.startswith("test") and fn.endswith(".py"):
-            modname = "json.tests." + fn[:-3]
+            modname = "test.json_tests." + fn[:-3]
             __import__(modname)
             module = sys.modules[modname]
             suite.addTests(loader.loadTestsFromModule(module))
