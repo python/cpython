@@ -63,16 +63,16 @@ The :mod:`functools` module defines the following functions:
    :attr:`__wrapped__` attribute.  This is useful for introspection, for
    bypassing the cache, or for rewrapping the function with a different cache.
 
-   A `LRU (least recently used) cache
+   An `LRU (least recently used) cache
    <http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used>`_ works
    best when more recent calls are the best predictors of upcoming calls (for
    example, the most popular articles on a news server tend to change daily).
    The cache's size limit assures that the cache does not grow without bound on
    long-running processes such as web servers.
 
-   Example -- Caching static web content::
+   Example of an LRU cache for static web content::
 
-        @functools.lru_cache(maxsize=20)
+        @lru_cache(maxsize=20)
         def get_pep(num):
             'Retrieve text of a Python Enhancement Proposal'
             resource = 'http://www.python.org/dev/peps/pep-%04d/' % num
