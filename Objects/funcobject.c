@@ -3,7 +3,6 @@
 
 #include "Python.h"
 #include "code.h"
-#include "eval.h"
 #include "structmember.h"
 
 PyObject *

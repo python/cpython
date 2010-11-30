@@ -7,7 +7,6 @@
 #include "frameobject.h"
 #include "structmember.h"
 #include "osdefs.h"
-#include "traceback.h"
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif

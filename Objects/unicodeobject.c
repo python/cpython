@@ -43,7 +43,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "Python.h"
 #include "bytes_methods.h"
 
-#include "unicodeobject.h"
 #include "ucnhash.h"
 
 #ifdef MS_WINDOWS

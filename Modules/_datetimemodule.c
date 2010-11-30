@@ -3,7 +3,6 @@
  */
 
 #include "Python.h"
-#include "modsupport.h"
 #include "structmember.h"
 
 #include <time.h>

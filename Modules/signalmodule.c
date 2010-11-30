@@ -4,7 +4,6 @@
 /* XXX Signals should be recorded per thread, now we have thread state. */
 
 #include "Python.h"
-#include "intrcheck.h"
 
 #ifdef MS_WINDOWS
 #include <Windows.h>

@@ -25,10 +25,8 @@
 
 #include "Python-ast.h"
 #include "node.h"
-#include "pyarena.h"
 #include "ast.h"
 #include "code.h"
-#include "compile.h"
 #include "symtable.h"
 #include "opcode.h"
 

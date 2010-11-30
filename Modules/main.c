@@ -2,7 +2,6 @@
 
 #include "Python.h"
 #include "osdefs.h"
-#include "import.h"
 
 #include <locale.h>
 

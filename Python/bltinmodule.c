@@ -5,7 +5,6 @@
 
 #include "node.h"
 #include "code.h"
-#include "eval.h"
 
 #include <ctype.h>
 
