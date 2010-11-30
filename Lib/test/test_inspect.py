@@ -931,6 +931,14 @@ class TestGetGeneratorState(unittest.TestCase):
         # Running after the first yield
         next(self.generator)
 
+    def test_easy_debugging(self):
+        # repr() and str() of a generator state should contain the state name
+        names = 'GEN_CREATED GEN_RUNNING GEN_SUSPENDED GEN_CLOSED'.split()
+        for name in names:
+            state = getattr(inspect, name)
+            self.assertIn(name, repr(state))
+            self.assertIn(name, str(state))
+
 
 def test_main():
     run_unittest(
