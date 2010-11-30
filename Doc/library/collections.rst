@@ -27,10 +27,9 @@ Python's general purpose built-in containers, :class:`dict`, :class:`list`,
 :class:`defaultdict`    dict subclass that calls a factory function to supply missing values  .. versionadded:: 2.5
 =====================   ====================================================================  ===========================
 
-In addition to containers, the collections module provides some ABCs
-(abstract base classes) that can be used to test whether a class
-provides a particular interface, for example, whether it is hashable or
-a mapping.
+In addition to the concrete container classes, the collections module provides
+:ref:`abstract-base-classes` that can be used to test whether a class provides a
+particular interface, for example, whether it is hashable or a mapping.
 
 .. seealso::
 
