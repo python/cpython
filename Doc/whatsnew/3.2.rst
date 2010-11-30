@@ -332,13 +332,14 @@ New, Improved, and Deprecated Modules
          c.execute('SELECT phonenumber FROM phonelist WHERE name=?', (name,))
          return c.fetchone()[0]
 
-  To help with choosing an effective cache size, the wrapped function is
-  instrumented with info function:
-
   >>> for name in user_requests:
-  ...     get_phone_number(name)
+  ...     get_phone_number(name)        # cached lookup
+
+  To help with choosing an effective cache size, the wrapped function is
+  instrumented for tracking cache statistics:
+
   >>> get_phone_number.cache_info()
-  CacheInfo(maxsize=300, size=300, hits=4805, misses=980)
+  CacheInfo(hits=4805, misses=980, maxsize=300, currsize=300)
 
   If the phonelist table gets updated, the outdated contents of the cache can be
   cleared with:
