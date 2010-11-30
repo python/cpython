@@ -501,7 +501,7 @@ class TestLRU(unittest.TestCase):
         def orig(x, y):
             return 3*x+y
         f = functools.lru_cache(maxsize=20)(orig)
-        maxsize, currsize, hits, misses = f.cache_info()
+        hits, misses, maxsize, currsize = f.cache_info()
         self.assertEqual(maxsize, 20)
         self.assertEqual(currsize, 0)
         self.assertEqual(hits, 0)
@@ -513,18 +513,18 @@ class TestLRU(unittest.TestCase):
             actual = f(x, y)
             expected = orig(x, y)
             self.assertEqual(actual, expected)
-        maxsize, currsize, hits, misses = f.cache_info()
+        hits, misses, maxsize, currsize = f.cache_info()
         self.assertTrue(hits > misses)
         self.assertEqual(hits + misses, 1000)
         self.assertEqual(currsize, 20)
 
         f.cache_clear()   # test clearing
-        maxsize, currsize, hits, misses = f.cache_info()
+        hits, misses, maxsize, currsize = f.cache_info()
         self.assertEqual(hits, 0)
         self.assertEqual(misses, 0)
         self.assertEqual(currsize, 0)
         f(x, y)
-        maxsize, currsize, hits, misses = f.cache_info()
+        hits, misses, maxsize, currsize = f.cache_info()
         self.assertEqual(hits, 0)
         self.assertEqual(misses, 1)
         self.assertEqual(currsize, 1)
@@ -532,7 +532,7 @@ class TestLRU(unittest.TestCase):
         # Test bypassing the cache
         self.assertIs(f.__wrapped__, orig)
         f.__wrapped__(x, y)
-        maxsize, currsize, hits, misses = f.cache_info()
+        hits, misses, maxsize, currsize = f.cache_info()
         self.assertEqual(hits, 0)
         self.assertEqual(misses, 1)
         self.assertEqual(currsize, 1)
@@ -548,7 +548,7 @@ class TestLRU(unittest.TestCase):
         for i in range(5):
             self.assertEqual(f(), 20)
         self.assertEqual(f_cnt, 5)
-        maxsize, currsize, hits, misses = f.cache_info()
+        hits, misses, maxsize, currsize = f.cache_info()
         self.assertEqual(hits, 0)
         self.assertEqual(misses, 5)
         self.assertEqual(currsize, 0)
@@ -564,7 +564,7 @@ class TestLRU(unittest.TestCase):
         for i in range(5):
             self.assertEqual(f(), 20)
         self.assertEqual(f_cnt, 1)
-        maxsize, currsize, hits, misses = f.cache_info()
+        hits, misses, maxsize, currsize = f.cache_info()
         self.assertEqual(hits, 4)
         self.assertEqual(misses, 1)
         self.assertEqual(currsize, 1)
@@ -581,7 +581,7 @@ class TestLRU(unittest.TestCase):
             #    *  *              *                          *
             self.assertEqual(f(x), x*10)
         self.assertEqual(f_cnt, 4)
-        maxsize, currsize, hits, misses = f.cache_info()
+        hits, misses, maxsize, currsize = f.cache_info()
         self.assertEqual(hits, 12)
         self.assertEqual(misses, 4)
         self.assertEqual(currsize, 2)

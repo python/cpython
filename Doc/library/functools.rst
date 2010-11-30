@@ -42,40 +42,52 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.2
 
 
-.. decorator:: lru_cache(maxsize)
+.. decorator:: lru_cache(maxsize=100)
 
    Decorator to wrap a function with a memoizing callable that saves up to the
    *maxsize* most recent calls.  It can save time when an expensive or I/O bound
    function is periodically called with the same arguments.
 
-   The *maxsize* parameter defaults to 100.  Since a dictionary is used to cache
-   results, the positional and keyword arguments to the function must be
-   hashable.
+   Since a dictionary is used to cache results, the positional and keyword
+   arguments to the function must be hashable.
 
-   The wrapped function is instrumented with a :attr:`cache_info` attribute that
-   can be called to retrieve a named tuple with the following fields:
+   To help measure the effectiveness of the cache and tune the *maxsize*
+   parameter, the wrapped function is instrumented with a :func:`cache_info`
+   function that returns a :term:`named tuple` showing *hits*, *misses*,
+   *maxsize* and *currsize*.
 
-      - :attr:`maxsize`: maximum cache size (as set by the *maxsize* parameter)
-      - :attr:`size`: current number of entries in the cache
-      - :attr:`hits`: number of successful cache lookups
-      - :attr:`misses`: number of unsuccessful cache lookups.
-
-   These statistics are helpful for tuning the *maxsize* parameter and for measuring
-   the effectiveness of the cache.
-
-   The wrapped function also has a :attr:`cache_clear` attribute which can be
-   called (with no arguments) to clear the cache.
+   The decorator also provides a :func:`cache_clear` function for clearing or
+   invalidating the cache.
 
    The original underlying function is accessible through the
-   :attr:`__wrapped__` attribute.  This allows introspection, bypassing
-   the cache, or rewrapping the function with a different caching tool.
+   :attr:`__wrapped__` attribute.  This is useful for introspection, for
+   bypassing the cache, or for rewrapping the function with a different cache.
 
    A `LRU (least recently used) cache
-   <http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used>`_
-   works best when more recent calls are the best predictors of upcoming calls
-   (for example, the most popular articles on a news server tend to
-   change each day).  The cache's size limit assurs that caching does not
-   grow without bound on long-running processes such as web servers.
+   <http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used>`_ works
+   best when more recent calls are the best predictors of upcoming calls (for
+   example, the most popular articles on a news server tend to change daily).
+   The cache's size limit assures that the cache does not grow without bound on
+   long-running processes such as web servers.
+
+   Example -- Caching static web content::
+
+        @functools.lru_cache(maxsize=20)
+        def get_pep(num):
+            'Retrieve text of a Python Enhancement Proposal'
+            resource = 'http://www.python.org/dev/peps/pep-%04d/' % num
+            try:
+                with urllib.request.urlopen(resource) as s:
+                    return s.read()
+            except urllib.error.HTTPError:
+                return 'Not Found'
+
+        >>> for n in 8, 290, 308, 320, 8, 218, 320, 279, 289, 320, 9991:
+        ...     pep = get_pep(n)
+        ...     print(n, len(pep))
+
+        >>> print(get_pep.cache_info())
+        CacheInfo(hits=3, misses=8, maxsize=20, currsize=8)
 
    .. versionadded:: 3.2
 

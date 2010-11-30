@@ -114,7 +114,7 @@ def cmp_to_key(mycmp):
             raise TypeError('hash not implemented')
     return K
 
-_CacheInfo = namedtuple("CacheInfo", "maxsize, size, hits, misses")
+_CacheInfo = namedtuple("CacheInfo", "hits misses maxsize currsize")
 
 def lru_cache(maxsize=100):
     """Least-recently-used cache decorator.
@@ -166,7 +166,7 @@ def lru_cache(maxsize=100):
         def cache_info():
             """Report cache statistics"""
             with lock:
-                return _CacheInfo(maxsize, len(cache), hits, misses)
+                return _CacheInfo(hits, misses, maxsize, len(cache))
 
         def cache_clear():
             """Clear the cache and cache statistics"""
