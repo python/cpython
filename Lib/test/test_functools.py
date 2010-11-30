@@ -501,6 +501,11 @@ class TestLRU(unittest.TestCase):
         def orig(x, y):
             return 3*x+y
         f = functools.lru_cache(maxsize=20)(orig)
+        maxsize, currsize, hits, misses = f.cache_info()
+        self.assertEqual(maxsize, 20)
+        self.assertEqual(currsize, 0)
+        self.assertEqual(hits, 0)
+        self.assertEqual(misses, 0)
 
         domain = range(5)
         for i in range(1000):
@@ -508,21 +513,29 @@ class TestLRU(unittest.TestCase):
             actual = f(x, y)
             expected = orig(x, y)
             self.assertEqual(actual, expected)
-        self.assertTrue(f.cache_hits > f.cache_misses)
-        self.assertEqual(f.cache_hits + f.cache_misses, 1000)
+        maxsize, currsize, hits, misses = f.cache_info()
+        self.assertTrue(hits > misses)
+        self.assertEqual(hits + misses, 1000)
+        self.assertEqual(currsize, 20)
 
         f.cache_clear()   # test clearing
-        self.assertEqual(f.cache_hits, 0)
-        self.assertEqual(f.cache_misses, 0)
+        maxsize, currsize, hits, misses = f.cache_info()
+        self.assertEqual(hits, 0)
+        self.assertEqual(misses, 0)
+        self.assertEqual(currsize, 0)
         f(x, y)
-        self.assertEqual(f.cache_hits, 0)
-        self.assertEqual(f.cache_misses, 1)
+        maxsize, currsize, hits, misses = f.cache_info()
+        self.assertEqual(hits, 0)
+        self.assertEqual(misses, 1)
+        self.assertEqual(currsize, 1)
 
         # Test bypassing the cache
         self.assertIs(f.__wrapped__, orig)
         f.__wrapped__(x, y)
-        self.assertEqual(f.cache_hits, 0)
-        self.assertEqual(f.cache_misses, 1)
+        maxsize, currsize, hits, misses = f.cache_info()
+        self.assertEqual(hits, 0)
+        self.assertEqual(misses, 1)
+        self.assertEqual(currsize, 1)
 
         # test size zero (which means "never-cache")
         @functools.lru_cache(0)
@@ -530,10 +543,15 @@ class TestLRU(unittest.TestCase):
             nonlocal f_cnt
             f_cnt += 1
             return 20
+        self.assertEqual(f.cache_info().maxsize, 0)
         f_cnt = 0
         for i in range(5):
             self.assertEqual(f(), 20)
         self.assertEqual(f_cnt, 5)
+        maxsize, currsize, hits, misses = f.cache_info()
+        self.assertEqual(hits, 0)
+        self.assertEqual(misses, 5)
+        self.assertEqual(currsize, 0)
 
         # test size one
         @functools.lru_cache(1)
@@ -541,10 +559,15 @@ class TestLRU(unittest.TestCase):
             nonlocal f_cnt
             f_cnt += 1
             return 20
+        self.assertEqual(f.cache_info().maxsize, 1)
         f_cnt = 0
         for i in range(5):
             self.assertEqual(f(), 20)
         self.assertEqual(f_cnt, 1)
+        maxsize, currsize, hits, misses = f.cache_info()
+        self.assertEqual(hits, 4)
+        self.assertEqual(misses, 1)
+        self.assertEqual(currsize, 1)
 
         # test size two
         @functools.lru_cache(2)
@@ -552,11 +575,16 @@ class TestLRU(unittest.TestCase):
             nonlocal f_cnt
             f_cnt += 1
             return x*10
+        self.assertEqual(f.cache_info().maxsize, 2)
         f_cnt = 0
         for x in 7, 9, 7, 9, 7, 9, 8, 8, 8, 9, 9, 9, 8, 8, 8, 7:
             #    *  *              *                          *
             self.assertEqual(f(x), x*10)
         self.assertEqual(f_cnt, 4)
+        maxsize, currsize, hits, misses = f.cache_info()
+        self.assertEqual(hits, 12)
+        self.assertEqual(misses, 4)
+        self.assertEqual(currsize, 2)
 
 def test_main(verbose=None):
     test_classes = (

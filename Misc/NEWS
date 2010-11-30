@@ -43,6 +43,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10586: The statistics API for the new functools.lru_cache has
+  been changed to a single cache_info() method returning a named tuple.
+
 - Issue #10323: itertools.islice() now consumes the minimum number of
   inputs before stopping.  Formerly, the final state of the underlying
   iterator was undefined.
