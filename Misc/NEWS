@@ -22,6 +22,9 @@ What's New in Python 2.7.1?
 Library
 -------
 
+- Issue #10565: The collections.Iterator ABC now checks for both
+  ``__iter__`` and ``next``.
+
 - Issue #10092: Properly reset locale in calendar.Locale*Calendar classes.
 
 - Issue #10459: Update CJK character names to Unicode 5.2.
