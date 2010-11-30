@@ -121,16 +121,15 @@ def lru_cache(maxsize=100):
 
     Arguments to the cached function must be hashable.
 
-    Significant statistics (maxsize, size, hits, misses) are
-      available through the f.cache_info() named tuple.
-    Clear the cache and statistics using f.cache_clear().
-    The underlying function is stored in f.__wrapped__.
+    View the cache statistics named tuple (maxsize, size, hits, misses) with
+    f.cache_info().  Clear the cache and statistics with f.cache_clear().
+    And access the underlying function with f.__wrapped__.
 
     See:  http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used
 
     """
     # Users should only access the lru_cache through its public API:
-    #   cache_info, cache_clear, and f.__wrapped__
+    #       cache_info, cache_clear, and f.__wrapped__
     # The internals of the lru_cache are encapsulated for thread safety and
     # to allow the implementation to change (including a possible C version).
 
@@ -141,7 +140,7 @@ def lru_cache(maxsize=100):
         cache_popitem = cache.popitem
         cache_renew = cache.move_to_end
         hits = misses = 0
-        kwd_mark = object()             # separate positional and keyword args
+        kwd_mark = object()             # separates positional and keyword args
         lock = Lock()
 
         @wraps(user_function)
@@ -165,7 +164,7 @@ def lru_cache(maxsize=100):
             return result
 
         def cache_info():
-            """Report significant cache statistics"""
+            """Report cache statistics"""
             with lock:
                 return _CacheInfo(maxsize, len(cache), hits, misses)
 

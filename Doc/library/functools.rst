@@ -72,10 +72,10 @@ The :mod:`functools` module defines the following functions:
 
    A `LRU (least recently used) cache
    <http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used>`_
-   is indicated when the pattern of calls changes over time, such as
-   when more recent calls are the best predictors of upcoming calls
+   works best when more recent calls are the best predictors of upcoming calls
    (for example, the most popular articles on a news server tend to
-   change every day).
+   change each day).  The cache's size limit assurs that caching does not
+   grow without bound on long-running processes such as web servers.
 
    .. versionadded:: 3.2
 
