@@ -866,11 +866,10 @@ class LinkTests(unittest.TestCase):
         self.file1 = support.TESTFN
         self.file2 = os.path.join(support.TESTFN + "2")
 
+    def tearDown(self):
         for file in (self.file1, self.file2):
             if os.path.exists(file):
                 os.unlink(file)
-
-    tearDown = setUp
 
     def _test_link(self, file1, file2):
         with open(file1, "w") as f1:
