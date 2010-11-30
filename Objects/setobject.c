@@ -1525,6 +1525,20 @@ PyDoc_STRVAR(difference_update_doc,
 "Remove all elements of another set from this set.");
 
 static PyObject *
+set_copy_and_difference(PySetObject *so, PyObject *other)
+{
+    PyObject *result;
+
+    result = set_copy(so);
+    if (result == NULL)
+        return NULL;
+    if (set_difference_update_internal((PySetObject *) result, other) != -1)
+        return result;
+    Py_DECREF(result);
+    return NULL;
+}
+
+static PyObject *
 set_difference(PySetObject *so, PyObject *other)
 {
     PyObject *result;
@@ -1532,13 +1546,13 @@ set_difference(PySetObject *so, PyObject *other)
     Py_ssize_t pos = 0;
 
     if (!PyAnySet_Check(other)  && !PyDict_CheckExact(other)) {
-        result = set_copy(so);
-        if (result == NULL)
-            return NULL;
-        if (set_difference_update_internal((PySetObject *)result, other) != -1)
-            return result;
-        Py_DECREF(result);
-        return NULL;
+        return set_copy_and_difference(so, other);
+    }
+
+    /* If len(so) much more than len(other), it's more efficient to simply copy
+     * so and then iterate other looking for common elements. */
+    if ((PySet_GET_SIZE(so) >> 2) > PyObject_Size(other)) {
+        return set_copy_and_difference(so, other);
     }
 
     result = make_new_set_basetype(Py_TYPE(so), NULL);
@@ -1560,6 +1574,7 @@ set_difference(PySetObject *so, PyObject *other)
         return result;
     }
 
+    /* Iterate over so, checking for common elements in other. */
     while (set_next(so, &pos, &entry)) {
         int rv = set_contains_entry((PySetObject *)other, entry);
         if (rv == -1) {
