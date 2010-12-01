@@ -978,9 +978,10 @@ Test cases
          with self.assertRaisesRegex(ValueError, 'literal'):
             int('XYZ')
 
-      .. versionadded:: 3.1 ``assertRaisesRegexp``
+      .. versionadded:: 3.1
+         under the name ``assertRaisesRegexp``.
       .. versionchanged:: 3.2
-         The method has been renamed to :meth:`assertRaisesRegex`
+         Renamed to :meth:`assertRaisesRegex`.
 
 
    .. method:: assertWarns(warning, callable, *args, **kwds)
@@ -1091,9 +1092,9 @@ Test cases
       Supplying both *delta* and *places* raises a ``TypeError``.
 
       .. versionchanged:: 3.2
-         assertAlmostEqual automatically considers almost equal objects that compare equal.
-         assertNotAlmostEqual automatically fails if the objects compare equal.
-         Added the ``delta`` keyword argument.
+         :meth:`assertAlmostEqual` automatically considers almost equal objects
+         that compare equal.  :meth:`assertNotAlmostEqual` automatically fails
+         if the objects compare equal.  Added the *delta* keyword argument.
 
 
    .. method:: assertGreater(first, second, msg=None)
@@ -1119,10 +1120,13 @@ Test cases
       may be a regular expression object or a string containing a regular
       expression suitable for use by :func:`re.search`.
 
-      .. versionadded:: 3.1 ``.assertRegexpMatches``
+      .. versionadded:: 3.1
+         under the name ``assertRegexpMatches``.
       .. versionchanged:: 3.2
-         ``.assertRegexpMatches`` has been renamed to :meth:`.assertRegex`
-      .. versionadded:: 3.2 :meth:`.assertNotRegex`
+         The method ``assertRegexpMatches()`` has been renamed to
+         :meth:`.assertRegex`.
+      .. versionadded:: 3.2
+         :meth:`.assertNotRegex`.
 
 
    .. method:: assertDictContainsSubset(expected, actual, msg=None)
@@ -1359,11 +1363,11 @@ Test cases
       returns the first line of the test method's docstring, if available,
       or ``None``.
 
-      .. versionchanged:: 3.1,3.2
+      .. versionchanged:: 3.1
          In 3.1 this was changed to add the test name to the short description
-         even in the presence of a docstring. This caused compatibility issues
+         even in the presence of a docstring.  This caused compatibility issues
          with unittest extensions and adding the test name was moved to the
-         :class:`TextTestResult`.
+         :class:`TextTestResult` in Python 3.2.
 
 
    .. method:: addCleanup(function, *args, **kwargs)
@@ -1715,7 +1719,6 @@ Loading and running tests
       The total number of tests run so far.
 
 
-   .. attribute:: buffer
 
       If set to true, ``sys.stdout`` and ``sys.stderr`` will be buffered in between
       :meth:`startTest` and :meth:`stopTest` being called. Collected output will
@@ -1881,9 +1884,12 @@ Loading and running tests
 
         stream, descriptions, verbosity
 
-   .. versionchanged:: 3.2 Added the ``warnings`` argument
+   .. versionchanged:: 3.2
+      Added the ``warnings`` argument.
 
-.. function:: main(module='__main__', defaultTest=None, argv=None, testRunner=None, testLoader=unittest.loader.defaultTestLoader, exit=True, verbosity=1, failfast=None, catchbreak=None, buffer=None, warnings=None)
+.. function:: main(module='__main__', defaultTest=None, argv=None, testRunner=None, \
+                   testLoader=unittest.loader.defaultTestLoader, exit=True, verbosity=1, \
+                   failfast=None, catchbreak=None, buffer=None, warnings=None)
 
    A command-line program that runs a set of tests; this is primarily for making
    test modules conveniently executable.  The simplest use for this function is to
@@ -1928,9 +1934,7 @@ Loading and running tests
 load_tests Protocol
 ###################
 
-
 .. versionadded:: 3.2
-
 
 Modules or packages can customize how tests are loaded from them during normal
 test runs or test discovery by implementing a function called ``load_tests``.
@@ -2078,6 +2082,8 @@ instead of as an error.
 Signal Handling
 ---------------
 
+.. versionadded:: 3.2
+
 The :option:`-c/--catch <unittest -c>` command-line option to unittest,
 along with the ``catchbreak`` parameter to :func:`unittest.main()`, provide
 more friendly handling of control-C during a test run. With catch break
@@ -2103,7 +2109,6 @@ handling functionality within test frameworks.
    (usually in response to the user pressing control-c) all registered results
    have :meth:`~TestResult.stop` called.
 
-   .. versionadded:: 3.2
 
 .. function:: registerResult(result)
 
@@ -2115,7 +2120,6 @@ handling functionality within test frameworks.
    handling is not enabled, so test frameworks can unconditionally register
    all results they create independently of whether or not handling is enabled.
 
-   .. versionadded:: 3.2
 
 .. function:: removeResult(result)
 
@@ -2123,7 +2127,6 @@ handling functionality within test frameworks.
    :meth:`~TestResult.stop` will no longer be called on that result object in
    response to a control-c.
 
-   .. versionadded:: 3.2
 
 .. function:: removeHandler(function=None)
 
@@ -2134,6 +2137,3 @@ handling functionality within test frameworks.
       @unittest.removeHandler
       def test_signal_handling(self):
           ...
-
-   .. versionadded:: 3.2
-
