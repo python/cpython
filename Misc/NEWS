@@ -46,6 +46,8 @@ Core and Builtins
 Library
 -------
 
+- Added itertools.accumulate().
+
 - Issue #4113: Added custom ``__repr__`` method to ``functools.partial``.
   Original patch by Daniel Urban.
 
