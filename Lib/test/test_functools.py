@@ -146,6 +146,32 @@ class TestPartial(unittest.TestCase):
         join = self.thetype(''.join)
         self.assertEqual(join(data), '0123456789')
 
+    def test_repr(self):
+        args = (object(), object())
+        args_repr = ', '.join(repr(a) for a in args)
+        kwargs = {'a': object(), 'b': object()}
+        kwargs_repr = ', '.join("%s=%r" % (k, v) for k, v in kwargs.items())
+        if self.thetype is functools.partial:
+            name = 'functools.partial'
+        else:
+            name = self.thetype.__name__
+
+        f = self.thetype(capture)
+        self.assertEqual('{}({!r})'.format(name, capture),
+                         repr(f))
+
+        f = self.thetype(capture, *args)
+        self.assertEqual('{}({!r}, {})'.format(name, capture, args_repr),
+                         repr(f))
+
+        f = self.thetype(capture, **kwargs)
+        self.assertEqual('{}({!r}, {})'.format(name, capture, kwargs_repr),
+                         repr(f))
+
+        f = self.thetype(capture, *args, **kwargs)
+        self.assertEqual('{}({!r}, {}, {})'.format(name, capture, args_repr, kwargs_repr),
+                         repr(f))
+
     def test_pickle(self):
         f = self.thetype(signature, 'asdf', bar=True)
         f.add_something_to__dict__ = True
@@ -162,6 +188,9 @@ class TestPartialSubclass(TestPartial):
 class TestPythonPartial(TestPartial):
 
     thetype = PythonPartial
+
+    # the python version hasn't a nice repr
+    def test_repr(self): pass
 
     # the python version isn't picklable
     def test_pickle(self): pass

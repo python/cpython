@@ -196,6 +196,48 @@ static PyGetSetDef partial_getsetlist[] = {
     {NULL} /* Sentinel */
 };
 
+static PyObject *
+partial_repr(partialobject *pto)
+{
+    PyObject *result;
+    PyObject *arglist;
+    PyObject *tmp;
+    Py_ssize_t i, n;
+
+    arglist = PyUnicode_FromString("");
+    if (arglist == NULL) {
+        return NULL;
+    }
+    /* Pack positional arguments */
+    assert (PyTuple_Check(pto->args));
+    n = PyTuple_GET_SIZE(pto->args);
+    for (i = 0; i < n; i++) {
+        tmp = PyUnicode_FromFormat("%U, %R", arglist,
+                                   PyTuple_GET_ITEM(pto->args, i));
+        Py_DECREF(arglist);
+        if (tmp == NULL)
+            return NULL;
+        arglist = tmp;
+    }
+    /* Pack keyword arguments */
+    assert (pto->kw == Py_None  ||  PyDict_Check(pto->kw));
+    if (pto->kw != Py_None) {
+        PyObject *key, *value;
+        for (i = 0; PyDict_Next(pto->kw, &i, &key, &value);) {
+            tmp = PyUnicode_FromFormat("%U, %U=%R", arglist,
+                                       key, value);
+            Py_DECREF(arglist);
+            if (tmp == NULL)
+                return NULL;
+            arglist = tmp;
+        }
+    }
+    result = PyUnicode_FromFormat("%s(%R%U)", Py_TYPE(pto)->tp_name,
+                                  pto->fn, arglist);
+    Py_DECREF(arglist);
+    return result;
+}
+
 /* Pickle strategy:
    __reduce__ by itself doesn't support getting kwargs in the unpickle
    operation so we define a __setstate__ that replaces all the information
@@ -254,7 +296,7 @@ static PyTypeObject partial_type = {
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
     0,                                  /* tp_reserved */
-    0,                                  /* tp_repr */
+    (reprfunc)partial_repr,             /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
     0,                                  /* tp_as_mapping */
