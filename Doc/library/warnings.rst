@@ -249,6 +249,8 @@ continues to increase after each operation, or else delete the previous
 entries from the warnings list before each new operation).
 
 
+.. _warning-ignored:
+
 Updating Code For New Versions of Python
 ----------------------------------------
 
@@ -278,6 +280,9 @@ code that were not there in an older interpreter, e.g.
 :exc:`DeprecationWarning` for a module that you are using. While you as a
 developer want to be notified that your code is using a deprecated module, to a
 user this information is essentially noise and provides no benefit to them.
+
+The :mod:`unittest` module has been also updated to use the ``'default'``
+filter while running tests.
 
 
 .. _warning-functions:

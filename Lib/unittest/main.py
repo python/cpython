@@ -67,12 +67,12 @@ class TestProgram(object):
     USAGE = USAGE_FROM_MODULE
 
     # defaults for testing
-    failfast = catchbreak = buffer = progName = None
+    failfast = catchbreak = buffer = progName = warnings = None
 
     def __init__(self, module='__main__', defaultTest=None, argv=None,
                     testRunner=None, testLoader=loader.defaultTestLoader,
                     exit=True, verbosity=1, failfast=None, catchbreak=None,
-                    buffer=None):
+                    buffer=None, warnings=None):
         if isinstance(module, str):
             self.module = __import__(module)
             for part in module.split('.')[1:]:
@@ -87,6 +87,18 @@ class TestProgram(object):
         self.catchbreak = catchbreak
         self.verbosity = verbosity
         self.buffer = buffer
+        if warnings is None and not sys.warnoptions:
+            # even if DreprecationWarnings are ignored by default
+            # print them anyway unless other warnings settings are
+            # specified by the warnings arg or the -W python flag
+            self.warnings = 'default'
+        else:
+            # here self.warnings is set either to the value passed
+            # to the warnings args or to None.
+            # If the user didn't pass a value self.warnings will
+            # be None. This means that the behavior is unchanged
+            # and depends on the values passed to -W.
+            self.warnings = warnings
         self.defaultTest = defaultTest
         self.testRunner = testRunner
         self.testLoader = testLoader
@@ -220,7 +232,8 @@ class TestProgram(object):
             try:
                 testRunner = self.testRunner(verbosity=self.verbosity,
                                              failfast=self.failfast,
-                                             buffer=self.buffer)
+                                             buffer=self.buffer,
+                                             warnings=self.warnings)
             except TypeError:
                 # didn't accept the verbosity, buffer or failfast arguments
                 testRunner = self.testRunner()
