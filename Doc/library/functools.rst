@@ -32,7 +32,7 @@ The :mod:`functools` module defines the following functions:
    A compare function is any callable that accept two arguments, compares them,
    and returns a negative number for less-than, zero for equality, or a positive
    number for greater-than.  A key function is a callable that accepts one
-   argument and returns another value that indicates the position in the desired
+   argument and returns another value indicating the position in the desired
    collation sequence.
 
    Example::
@@ -51,10 +51,14 @@ The :mod:`functools` module defines the following functions:
    Since a dictionary is used to cache results, the positional and keyword
    arguments to the function must be hashable.
 
+   If *maxsize* is set to None, the LRU feature is disabled and the cache
+   can grow without bound.
+
    To help measure the effectiveness of the cache and tune the *maxsize*
    parameter, the wrapped function is instrumented with a :func:`cache_info`
    function that returns a :term:`named tuple` showing *hits*, *misses*,
-   *maxsize* and *currsize*.
+   *maxsize* and *currsize*.  In a multi-threaded environment, the hits
+   and misses are approximate.
 
    The decorator also provides a :func:`cache_clear` function for clearing or
    invalidating the cache.
@@ -89,12 +93,25 @@ The :mod:`functools` module defines the following functions:
         >>> print(get_pep.cache_info())
         CacheInfo(hits=3, misses=8, maxsize=20, currsize=8)
 
+   Example of efficiently computing
+   `Fibonacci numbers <http://en.wikipedia.org/wiki/Fibonacci_number>`_
+   using a cache to implement a
+   `dynamic programming <http://en.wikipedia.org/wiki/Dynamic_programming>`_
+   technique::
+
+        @lru_cache(maxsize=None)
+        def fib(n):
+            if n < 2:
+                return n
+            return fib(n-1) + fib(n-2)
+
+        >>> print([fib(n) for n in range(16)])
+        [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610]
+
+        >>> print(fib.cache_info())
+        CacheInfo(hits=28, misses=16, maxsize=None, currsize=16)
+
    .. versionadded:: 3.2
-
-   .. seealso::
-
-      Recipe for a `plain cache without the LRU feature
-      <http://code.activestate.com/recipes/577479-simple-caching-decorator/>`_.
 
 .. decorator:: total_ordering
 
