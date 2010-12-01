@@ -1322,8 +1322,8 @@ groups from right to left).
    true numerically due to roundoff.  For example, and assuming a platform on which
    a Python float is an IEEE 754 double-precision number, in order that ``-1e-100 %
    1e100`` have the same sign as ``1e100``, the computed result is ``-1e-100 +
-   1e100``, which is numerically exactly equal to ``1e100``.  Function :func:`fmod`
-   in the :mod:`math` module returns a result whose sign matches the sign of the
+   1e100``, which is numerically exactly equal to ``1e100``.  The function
+   :func:`math.fmod` returns a result whose sign matches the sign of the
    first argument instead, and so returns ``-1e-100`` in this case. Which approach
    is more appropriate depends on the application.
 
@@ -1344,7 +1344,8 @@ groups from right to left).
    the :keyword:`is` operator, like those involving comparisons between instance
    methods, or constants.  Check their documentation for more info.
 
-.. [#] The ``%`` is also used for string formatting; the same precedence applies.
+.. [#] The ``%`` operator is also used for string formatting; the same
+   precedence applies.
 
 .. [#] The power operator ``**`` binds less tightly than an arithmetic or
    bitwise unary operator on its right, that is, ``2**-1`` is ``0.5``.
