@@ -266,7 +266,7 @@ class Test_TextTestRunner(unittest.TestCase):
         # no args -> all the warnings are printed, unittest warnings only once
         p = subprocess.Popen([sys.executable, '_test_warnings.py'], **opts)
         out, err = get_parse_out_err(p)
-        self.assertEqual(err[-1], b'OK')
+        self.assertIn(b'OK', err)
         # check that the total number of warnings in the output is correct
         self.assertEqual(len(out), 12)
         # check that the numbers of the different kind of warnings is correct
@@ -287,7 +287,7 @@ class Test_TextTestRunner(unittest.TestCase):
         for args in args_list:
             p = subprocess.Popen(args, **opts)
             out, err = get_parse_out_err(p)
-            self.assertEqual(err[-1], b'OK')
+            self.assertIn(b'OK', err)
             self.assertEqual(len(out), 0)
 
 
@@ -296,7 +296,7 @@ class Test_TextTestRunner(unittest.TestCase):
         p = subprocess.Popen([sys.executable, '_test_warnings.py', 'always'],
                              **opts)
         out, err = get_parse_out_err(p)
-        self.assertEqual(err[-1], b'OK')
+        self.assertIn(b'OK', err)
         self.assertEqual(len(out), 14)
         for msg in [b'dw', b'iw', b'uw', b'rw']:
             self.assertEqual(out.count(msg), 3)

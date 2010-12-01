@@ -46,6 +46,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10535: Enable silenced warnings in unittest by default.
+
 - Issue #9873: The URL parsing functions in urllib.parse now accept
   ASCII byte sequences as input in addition to character strings.
 
