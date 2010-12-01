@@ -329,7 +329,7 @@ argv0 = sys.argv[0]
 
     def _check_import_error(self, script_name, msg):
         msg = re.escape(msg)
-        self.assertRaisesRegexp(ImportError, msg, run_path, script_name)
+        self.assertRaisesRegex(ImportError, msg, run_path, script_name)
 
     def test_basic_script(self):
         with temp_dir() as script_dir:
@@ -403,7 +403,7 @@ argv0 = sys.argv[0]
             script_name = self._make_test_script(script_dir, mod_name, source)
             zip_name, fname = make_zip_script(script_dir, 'test_zip', script_name)
             msg = "recursion depth exceeded"
-            self.assertRaisesRegexp(RuntimeError, msg, run_path, zip_name)
+            self.assertRaisesRegex(RuntimeError, msg, run_path, zip_name)
 
 
 

@@ -312,8 +312,8 @@ class DispatcherTests(unittest.TestCase):
         d = asyncore.dispatcher(socket.socket())
         # make sure the error message no longer refers to the socket
         # object but the dispatcher instance instead
-        self.assertRaisesRegexp(AttributeError, 'dispatcher instance',
-                                getattr, d, 'foo')
+        self.assertRaisesRegex(AttributeError, 'dispatcher instance',
+                               getattr, d, 'foo')
         # cheap inheritance with the underlying socket is supposed
         # to still work but a DeprecationWarning is expected
         with warnings.catch_warnings(record=True) as w:

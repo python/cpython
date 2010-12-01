@@ -319,12 +319,12 @@ class DebuggingServerTests(unittest.TestCase):
         self.assertEqual(self.output.getvalue(), mexpect)
         debugout = smtpd.DEBUGSTREAM.getvalue()
         sender = re.compile("^sender: foo@bar.com$", re.MULTILINE)
-        self.assertRegexpMatches(debugout, sender)
+        self.assertRegex(debugout, sender)
         for addr in ('John', 'Sally', 'Fred', 'root@localhost',
                      'warped@silly.walks.com'):
             to_addr = re.compile(r"^recips: .*'{}'.*$".format(addr),
                                  re.MULTILINE)
-            self.assertRegexpMatches(debugout, to_addr)
+            self.assertRegex(debugout, to_addr)
 
     def testSendMessageWithSomeAddresses(self):
         # Make sure nothing breaks if not all of the three 'to' headers exist
@@ -347,11 +347,11 @@ class DebuggingServerTests(unittest.TestCase):
         self.assertEqual(self.output.getvalue(), mexpect)
         debugout = smtpd.DEBUGSTREAM.getvalue()
         sender = re.compile("^sender: foo@bar.com$", re.MULTILINE)
-        self.assertRegexpMatches(debugout, sender)
+        self.assertRegex(debugout, sender)
         for addr in ('John', 'Dinsdale'):
             to_addr = re.compile(r"^recips: .*'{}'.*$".format(addr),
                                  re.MULTILINE)
-            self.assertRegexpMatches(debugout, to_addr)
+            self.assertRegex(debugout, to_addr)
 
 
 class NonConnectingTests(unittest.TestCase):

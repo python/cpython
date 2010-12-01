@@ -143,7 +143,7 @@ class CompressTestCase(BaseCompressTestCase, unittest.TestCase):
     def test_incomplete_stream(self):
         # An useful error message is given
         x = zlib.compress(HAMLET_SCENE)
-        self.assertRaisesRegexp(zlib.error,
+        self.assertRaisesRegex(zlib.error,
             "Error -5 while decompressing data: incomplete or truncated stream",
             zlib.decompress, x[:-1])
 

@@ -715,8 +715,8 @@ class GzipServerTestCase(BaseServerTestCase):
         t.encode_threshold = None
         t.fake_gzip = True
         p = xmlrpclib.ServerProxy(URL, transport=t)
-        cm = self.assertRaisesRegexp(xmlrpclib.ProtocolError,
-                                     re.compile(r"\b400\b"))
+        cm = self.assertRaisesRegex(xmlrpclib.ProtocolError,
+                                    re.compile(r"\b400\b"))
         with cm:
             p.pow(6, 8)
 

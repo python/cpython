@@ -629,25 +629,25 @@ class UrlParseTestCase(unittest.TestCase):
     def test_mixed_types_rejected(self):
         # Several functions that process either strings or ASCII encoded bytes
         # accept multiple arguments. Check they reject mixed type input
-        with self.assertRaisesRegexp(TypeError, "Cannot mix str"):
+        with self.assertRaisesRegex(TypeError, "Cannot mix str"):
             urllib.parse.urlparse("www.python.org", b"http")
-        with self.assertRaisesRegexp(TypeError, "Cannot mix str"):
+        with self.assertRaisesRegex(TypeError, "Cannot mix str"):
             urllib.parse.urlparse(b"www.python.org", "http")
-        with self.assertRaisesRegexp(TypeError, "Cannot mix str"):
+        with self.assertRaisesRegex(TypeError, "Cannot mix str"):
             urllib.parse.urlsplit("www.python.org", b"http")
-        with self.assertRaisesRegexp(TypeError, "Cannot mix str"):
+        with self.assertRaisesRegex(TypeError, "Cannot mix str"):
             urllib.parse.urlsplit(b"www.python.org", "http")
-        with self.assertRaisesRegexp(TypeError, "Cannot mix str"):
+        with self.assertRaisesRegex(TypeError, "Cannot mix str"):
             urllib.parse.urlunparse(( b"http", "www.python.org","","","",""))
-        with self.assertRaisesRegexp(TypeError, "Cannot mix str"):
+        with self.assertRaisesRegex(TypeError, "Cannot mix str"):
             urllib.parse.urlunparse(("http", b"www.python.org","","","",""))
-        with self.assertRaisesRegexp(TypeError, "Cannot mix str"):
+        with self.assertRaisesRegex(TypeError, "Cannot mix str"):
             urllib.parse.urlunsplit((b"http", "www.python.org","","",""))
-        with self.assertRaisesRegexp(TypeError, "Cannot mix str"):
+        with self.assertRaisesRegex(TypeError, "Cannot mix str"):
             urllib.parse.urlunsplit(("http", b"www.python.org","","",""))
-        with self.assertRaisesRegexp(TypeError, "Cannot mix str"):
+        with self.assertRaisesRegex(TypeError, "Cannot mix str"):
             urllib.parse.urljoin("http://python.org", b"http://python.org")
-        with self.assertRaisesRegexp(TypeError, "Cannot mix str"):
+        with self.assertRaisesRegex(TypeError, "Cannot mix str"):
             urllib.parse.urljoin(b"http://python.org", "http://python.org")
 
     def _check_result_type(self, str_type):

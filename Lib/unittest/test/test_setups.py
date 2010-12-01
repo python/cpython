@@ -500,7 +500,7 @@ class TestSetups(unittest.TestCase):
 
         messages = ('setUpModule', 'tearDownModule', 'setUpClass', 'tearDownClass', 'test_something')
         for phase, msg in enumerate(messages):
-            with self.assertRaisesRegexp(Exception, msg):
+            with self.assertRaisesRegex(Exception, msg):
                 suite.debug()
 
 if __name__ == '__main__':

@@ -231,7 +231,7 @@ class TestContextDecorator(unittest.TestCase):
     def test_contextdecorator_with_exception(self):
         context = mycontext()
 
-        with self.assertRaisesRegexp(NameError, 'foo'):
+        with self.assertRaisesRegex(NameError, 'foo'):
             with context:
                 raise NameError('foo')
         self.assertIsNotNone(context.exc)
@@ -265,7 +265,7 @@ class TestContextDecorator(unittest.TestCase):
             self.assertTrue(context.started)
             raise NameError('foo')
 
-        with self.assertRaisesRegexp(NameError, 'foo'):
+        with self.assertRaisesRegex(NameError, 'foo'):
             test()
         self.assertIsNotNone(context.exc)
         self.assertIs(context.exc[0], NameError)

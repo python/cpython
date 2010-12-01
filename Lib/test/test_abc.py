@@ -192,8 +192,8 @@ class TestABC(unittest.TestCase):
     def test_register_non_class(self):
         class A(metaclass=abc.ABCMeta):
             pass
-        self.assertRaisesRegexp(TypeError, "Can only register classes",
-                                A.register, 4)
+        self.assertRaisesRegex(TypeError, "Can only register classes",
+                               A.register, 4)
 
     def test_registration_transitiveness(self):
         class A(metaclass=abc.ABCMeta):
