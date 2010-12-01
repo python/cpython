@@ -1845,11 +1845,20 @@ Loading and running tests
    instead of repeatedly creating new instances.
 
 
-.. class:: TextTestRunner(stream=sys.stderr, descriptions=True, verbosity=1, runnerclass=None)
+.. class:: TextTestRunner(stream=sys.stderr, descriptions=True, verbosity=1, runnerclass=None, warnings=None)
 
    A basic test runner implementation which prints results on standard error.  It
    has a few configurable parameters, but is essentially very simple.  Graphical
    applications which run test suites should provide alternate implementations.
+
+   By default this runner shows :exc:`DeprecationWarning`,
+   :exc:`PendingDeprecationWarning`, and :exc:`ImportWarning` even if they are
+   :ref:`ignored by default <warning-ignored>`. Deprecation warnings caused by
+   :ref:`deprecated unittest methods <deprecated-aliases>` are also
+   special-cased and, when the warning filters are ``'default'`` or ``'always'``,
+   they will appear only once per-module, in order to avoid too many warning
+   messages.  This behavior can be overridden using the :option`-Wd` or
+   :option:`-Wa` options and leaving *warnings* to ``None``.
 
    .. method:: _makeResult()
 
@@ -1864,7 +1873,9 @@ Loading and running tests
 
         stream, descriptions, verbosity
 
-.. function:: main(module='__main__', defaultTest=None, argv=None, testRunner=None, testLoader=unittest.loader.defaultTestLoader, exit=True, verbosity=1, failfast=None, catchbreak=None, buffer=None)
+   .. versionchanged:: 3.2 Added the ``warnings`` argument
+
+.. function:: main(module='__main__', defaultTest=None, argv=None, testRunner=None, testLoader=unittest.loader.defaultTestLoader, exit=True, verbosity=1, failfast=None, catchbreak=None, buffer=None, warnings=None)
 
    A command-line program that runs a set of tests; this is primarily for making
    test modules conveniently executable.  The simplest use for this function is to
@@ -1893,12 +1904,17 @@ Loading and running tests
    The ``failfast``, ``catchbreak`` and ``buffer`` parameters have the same
    effect as the same-name `command-line options`_.
 
+   The *warning* argument specifies the :ref:`warning filter <warning-filter>`
+   that should be used while running the tests.  If it's not specified, it will
+   remain ``None`` if a :option:`-W` option is passed to :program:`python`,
+   otherwise it will be set to ``'default'``.
+
    Calling ``main`` actually returns an instance of the ``TestProgram`` class.
    This stores the result of the tests run as the ``result`` attribute.
 
    .. versionchanged:: 3.2
-      The ``exit``, ``verbosity``, ``failfast``, ``catchbreak`` and ``buffer``
-      parameters were added.
+      The ``exit``, ``verbosity``, ``failfast``, ``catchbreak``, ``buffer``,
+      and ``warnings`` parameters were added.
 
 
 load_tests Protocol

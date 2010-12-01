@@ -182,6 +182,27 @@ class TestCommandLineArgs(unittest.TestCase):
                 program.parseArgs([None, opt])
                 self.assertEqual(getattr(program, attr), not_none)
 
+    def testWarning(self):
+        """Test the warnings argument"""
+        # see #10535
+        class FakeTP(unittest.TestProgram):
+            def parseArgs(self, *args, **kw): pass
+            def runTests(self, *args, **kw): pass
+        warnoptions = sys.warnoptions
+        try:
+            sys.warnoptions[:] = []
+            # no warn options, no arg -> default
+            self.assertEqual(FakeTP().warnings, 'default')
+            # no warn options, w/ arg -> arg value
+            self.assertEqual(FakeTP(warnings='ignore').warnings, 'ignore')
+            sys.warnoptions[:] = ['somevalue']
+            # warn options, no arg -> None
+            # warn options, w/ arg -> arg value
+            self.assertEqual(FakeTP().warnings, None)
+            self.assertEqual(FakeTP(warnings='ignore').warnings, 'ignore')
+        finally:
+            sys.warnoptions[:] = warnoptions
+
     def testRunTestsRunnerClass(self):
         program = self.program
 
@@ -189,12 +210,14 @@ class TestCommandLineArgs(unittest.TestCase):
         program.verbosity = 'verbosity'
         program.failfast = 'failfast'
         program.buffer = 'buffer'
+        program.warnings = 'warnings'
 
         program.runTests()
 
         self.assertEqual(FakeRunner.initArgs, {'verbosity': 'verbosity',
                                                 'failfast': 'failfast',
-                                                'buffer': 'buffer'})
+                                                'buffer': 'buffer',
+                                                'warnings': 'warnings'})
         self.assertEqual(FakeRunner.test, 'test')
         self.assertIs(program.result, RESULT)
 
