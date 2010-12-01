@@ -12,7 +12,6 @@ from test.support import run_unittest
 
 from test import inspect_fodder as mod
 from test import inspect_fodder2 as mod2
-from test import inspect_fodder3 as mod3
 
 # C module for test_findsource_binary
 import unicodedata
@@ -388,12 +387,6 @@ class TestBuggyCases(GetSourceBase):
         linecache.cache[co.co_filename] = (1, None, lines, co.co_filename)
         self.assertEqual(inspect.findsource(co), (lines,0))
         self.assertEqual(inspect.getsource(co), lines[0])
-
-class TestNoEOF(GetSourceBase):
-    fodderFile = mod3
-
-    def test_class(self):
-        self.assertSourceEqual(mod3.X, 1, 2)
 
 # Helper for testing classify_class_attrs.
 def attrs_wo_objs(cls):
