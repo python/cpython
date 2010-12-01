@@ -119,6 +119,9 @@ _CacheInfo = namedtuple("CacheInfo", "hits misses maxsize currsize")
 def lru_cache(maxsize=100):
     """Least-recently-used cache decorator.
 
+    If *maxsize* is set to None, the LRU features are disabled and the cache
+    can grow without bound.
+
     Arguments to the cached function must be hashable.
 
     View the cache statistics named tuple (hits, misses, maxsize, currsize) with
@@ -136,32 +139,51 @@ def lru_cache(maxsize=100):
     def decorating_function(user_function,
                 tuple=tuple, sorted=sorted, len=len, KeyError=KeyError):
 
-        cache = OrderedDict()           # ordered least recent to most recent
-        cache_popitem = cache.popitem
-        cache_renew = cache.move_to_end
         hits = misses = 0
         kwd_mark = object()             # separates positional and keyword args
         lock = Lock()
 
-        @wraps(user_function)
-        def wrapper(*args, **kwds):
-            nonlocal hits, misses
-            key = args
-            if kwds:
-                key += (kwd_mark,) + tuple(sorted(kwds.items()))
-            try:
-                with lock:
+        if maxsize is None:
+            cache = dict()              # simple cache without ordering or size limit
+
+            @wraps(user_function)
+            def wrapper(*args, **kwds):
+                nonlocal hits, misses
+                key = args
+                if kwds:
+                    key += (kwd_mark,) + tuple(sorted(kwds.items()))
+                try:
                     result = cache[key]
-                    cache_renew(key)            # record recent use of this key
                     hits += 1
-            except KeyError:
-                result = user_function(*args, **kwds)
-                with lock:
-                    cache[key] = result         # record recent use of this key
+                except KeyError:
+                    result = user_function(*args, **kwds)
+                    cache[key] = result
                     misses += 1
-                    if len(cache) > maxsize:
-                        cache_popitem(0)        # purge least recently used cache entry
-            return result
+                return result
+        else:
+            cache = OrderedDict()       # ordered least recent to most recent
+            cache_popitem = cache.popitem
+            cache_renew = cache.move_to_end
+
+            @wraps(user_function)
+            def wrapper(*args, **kwds):
+                nonlocal hits, misses
+                key = args
+                if kwds:
+                    key += (kwd_mark,) + tuple(sorted(kwds.items()))
+                try:
+                    with lock:
+                        result = cache[key]
+                        cache_renew(key)        # record recent use of this key
+                        hits += 1
+                except KeyError:
+                    result = user_function(*args, **kwds)
+                    with lock:
+                        cache[key] = result     # record recent use of this key
+                        misses += 1
+                        if len(cache) > maxsize:
+                            cache_popitem(0)    # purge least recently used cache entry
+                return result
 
         def cache_info():
             """Report cache statistics"""
