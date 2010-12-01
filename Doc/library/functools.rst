@@ -91,6 +91,10 @@ The :mod:`functools` module defines the following functions:
 
    .. versionadded:: 3.2
 
+   .. seealso::
+
+      Recipe for a `plain cache without the LRU feature
+      <http://code.activestate.com/recipes/577479-simple-caching-decorator/>`_.
 
 .. decorator:: total_ordering
 
