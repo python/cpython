@@ -46,6 +46,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4113: Added custom ``__repr__`` method to ``functools.partial``.
+  Original patch by Daniel Urban.
+
 - Issue #10273: Rename `assertRegexpMatches` and `assertRaisesRegexp` to
   `assertRegex` and `assertRaisesRegex`.
 
