@@ -226,7 +226,7 @@ class AbstractMemoryTests:
             self.assertTrue(wr() is None, wr())
 
     def _check_released(self, m, tp):
-        check = self.assertRaisesRegexp(ValueError, "released")
+        check = self.assertRaisesRegex(ValueError, "released")
         with check: bytes(m)
         with check: m.tobytes()
         with check: m.tolist()

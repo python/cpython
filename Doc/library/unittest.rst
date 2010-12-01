@@ -835,7 +835,7 @@ Test cases
    +-----------------------------------------+-----------------------------+---------------+
 
    All the assert methods (except :meth:`assertRaises`,
-   :meth:`assertRaisesRegexp`, :meth:`assertWarns`, :meth:`assertWarnsRegexp`)
+   :meth:`assertRaisesRegex`, :meth:`assertWarns`, :meth:`assertWarnsRegex`)
    accept a *msg* argument that, if specified, is used as the error message on
    failure (see also :data:`longMessage`).
 
@@ -919,14 +919,14 @@ Test cases
    | :meth:`assertRaises(exc, fun, *args, **kwds)            | ``fun(*args, **kwds)`` raises `exc`  |            |
    | <TestCase.assertRaises>`                                |                                      |            |
    +---------------------------------------------------------+--------------------------------------+------------+
-   | :meth:`assertRaisesRegexp(exc, re, fun, *args, **kwds)  | ``fun(*args, **kwds)`` raises `exc`  | 3.1        |
-   | <TestCase.assertRaisesRegexp>`                          | and the message matches `re`         |            |
+   | :meth:`assertRaisesRegex(exc, re, fun, *args, **kwds)   | ``fun(*args, **kwds)`` raises `exc`  | 3.1        |
+   | <TestCase.assertRaisesRegex>`                           | and the message matches `re`         |            |
    +---------------------------------------------------------+--------------------------------------+------------+
    | :meth:`assertWarns(warn, fun, *args, **kwds)            | ``fun(*args, **kwds)`` raises `warn` | 3.2        |
    | <TestCase.assertWarns>`                                 |                                      |            |
    +---------------------------------------------------------+--------------------------------------+------------+
-   | :meth:`assertWarnsRegexp(warn, re, fun, *args, **kwds)  | ``fun(*args, **kwds)`` raises `warn` | 3.2        |
-   | <TestCase.assertWarnsRegexp>`                           | and the message matches `re`         |            |
+   | :meth:`assertWarnsRegex(warn, re, fun, *args, **kwds)   | ``fun(*args, **kwds)`` raises `warn` | 3.2        |
+   | <TestCase.assertWarnsRegex>`                            | and the message matches `re`         |            |
    +---------------------------------------------------------+--------------------------------------+------------+
 
    .. method:: assertRaises(exception, callable, *args, **kwds)
@@ -962,23 +962,25 @@ Test cases
          Added the :attr:`exception` attribute.
 
 
-   .. method:: assertRaisesRegexp(exception, regexp, callable, *args, **kwds)
-               assertRaisesRegexp(exception, regexp)
+   .. method:: assertRaisesRegex(exception, regex, callable, *args, **kwds)
+               assertRaisesRegex(exception, regex)
 
-      Like :meth:`assertRaises` but also tests that *regexp* matches
-      on the string representation of the raised exception.  *regexp* may be
+      Like :meth:`assertRaises` but also tests that *regex* matches
+      on the string representation of the raised exception.  *regex* may be
       a regular expression object or a string containing a regular expression
       suitable for use by :func:`re.search`.  Examples::
 
-         self.assertRaisesRegexp(ValueError, 'invalid literal for.*XYZ$',
-                                 int, 'XYZ')
+         self.assertRaisesRegex(ValueError, 'invalid literal for.*XYZ$',
+                                int, 'XYZ')
 
       or::
 
-         with self.assertRaisesRegexp(ValueError, 'literal'):
+         with self.assertRaisesRegex(ValueError, 'literal'):
             int('XYZ')
 
-      .. versionadded:: 3.1
+      .. versionadded:: 3.1 ``assertRaisesRegexp``
+      .. versionchanged:: 3.2
+         The method has been renamed to :meth:`assertRaisesRegex`
 
 
    .. method:: assertWarns(warning, callable, *args, **kwds)
@@ -1015,21 +1017,21 @@ Test cases
       .. versionadded:: 3.2
 
 
-   .. method:: assertWarnsRegexp(warning, regexp, callable, *args, **kwds)
-               assertWarnsRegexp(warning, regexp)
+   .. method:: assertWarnsRegex(warning, regex, callable, *args, **kwds)
+               assertWarnsRegex(warning, regex)
 
-      Like :meth:`assertWarns` but also tests that *regexp* matches on the
-      message of the triggered warning.  *regexp* may be a regular expression
+      Like :meth:`assertWarns` but also tests that *regex* matches on the
+      message of the triggered warning.  *regex* may be a regular expression
       object or a string containing a regular expression suitable for use
       by :func:`re.search`.  Example::
 
-         self.assertWarnsRegexp(DeprecationWarning,
-                                r'legacy_function\(\) is deprecated',
-                                legacy_function, 'XYZ')
+         self.assertWarnsRegex(DeprecationWarning,
+                               r'legacy_function\(\) is deprecated',
+                               legacy_function, 'XYZ')
 
       or::
 
-         with self.assertWarnsRegexp(RuntimeWarning, 'unsafe frobnicating'):
+         with self.assertWarnsRegex(RuntimeWarning, 'unsafe frobnicating'):
              frobnicate('/etc/passwd')
 
       .. versionadded:: 3.2
@@ -1059,11 +1061,11 @@ Test cases
    | :meth:`assertLessEqual(a, b)          | ``a <= b``                     | 3.1          |
    | <TestCase.assertLessEqual>`           |                                |              |
    +---------------------------------------+--------------------------------+--------------+
-   | :meth:`assertRegexpMatches(s, re)     | ``regex.search(s)``            | 3.1          |
-   | <TestCase.assertRegexpMatches>`       |                                |              |
+   | :meth:`assertRegex(s, re)             | ``regex.search(s)``            | 3.1          |
+   | <TestCase.assertRegex>`               |                                |              |
    +---------------------------------------+--------------------------------+--------------+
-   | :meth:`assertNotRegexpMatches(s, re)  | ``not regex.search(s)``        | 3.2          |
-   | <TestCase.assertNotRegexpMatches>`    |                                |              |
+   | :meth:`assertNotRegex(s, re)          | ``not regex.search(s)``        | 3.2          |
+   | <TestCase.assertNotRegex>`            |                                |              |
    +---------------------------------------+--------------------------------+--------------+
    | :meth:`assertDictContainsSubset(a, b) | all the key/value pairs        | 3.1          |
    | <TestCase.assertDictContainsSubset>`  | in `a` exist in `b`            |              |
@@ -1108,17 +1110,19 @@ Test cases
       .. versionadded:: 3.1
 
 
-   .. method:: assertRegexpMatches(text, regexp, msg=None)
-               assertNotRegexpMatches(text, regexp, msg=None)
+   .. method:: assertRegex(text, regex, msg=None)
+               assertNotRegex(text, regex, msg=None)
 
-      Test that a *regexp* search matches (or does not match) *text*.  In case
+      Test that a *regex* search matches (or does not match) *text*.  In case
       of failure, the error message will include the pattern and the *text* (or
-      the pattern and the part of *text* that unexpectedly matched).  *regexp*
+      the pattern and the part of *text* that unexpectedly matched).  *regex*
       may be a regular expression object or a string containing a regular
       expression suitable for use by :func:`re.search`.
 
-      .. versionadded:: 3.1 :meth:`~TestCase.assertRegexpMatches`
-      .. versionadded:: 3.2 :meth:`~TestCase.assertNotRegexpMatches`
+      .. versionadded:: 3.1 ``.assertRegexpMatches``
+      .. versionchanged:: 3.2
+         ``.assertRegexpMatches`` has been renamed to :meth:`.assertRegex`
+      .. versionadded:: 3.2 :meth:`.assertNotRegex`
 
 
    .. method:: assertDictContainsSubset(expected, actual, msg=None)
@@ -1420,13 +1424,17 @@ along with their deprecated aliases:
     :meth:`.assertRaises`           failUnlessRaises
     :meth:`.assertAlmostEqual`      failUnlessAlmostEqual  assertAlmostEquals
     :meth:`.assertNotAlmostEqual`   failIfAlmostEqual      assertNotAlmostEquals
+    :meth:`.assertRegex`                                   assertRegexpMatches
+    :meth:`.assertRaisesRegex`                             assertRaisesRegexp
    ==============================  ====================== ======================
 
    .. deprecated-removed:: 3.1 3.3
          the fail* aliases listed in the second column.
    .. deprecated:: 3.2
          the assert* aliases listed in the third column.
-
+   .. deprecated:: 3.2
+         ``assertRegexpMatches`` and ``assertRaisesRegexp`` have been renamed to
+         :meth:`.assertRegex` and :meth:`.assertRaisesRegex`
 
 
 .. _testsuite-objects:

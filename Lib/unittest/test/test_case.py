@@ -872,44 +872,44 @@ test case
         self.assertIsNotNone('DjZoPloGears on Rails')
         self.assertRaises(self.failureException, self.assertIsNotNone, None)
 
-    def testAssertRegexpMatches(self):
-        self.assertRegexpMatches('asdfabasdf', r'ab+')
-        self.assertRaises(self.failureException, self.assertRegexpMatches,
+    def testAssertRegex(self):
+        self.assertRegex('asdfabasdf', r'ab+')
+        self.assertRaises(self.failureException, self.assertRegex,
                           'saaas', r'aaaa')
 
-    def testAssertRaisesRegexp(self):
+    def testAssertRaisesRegex(self):
         class ExceptionMock(Exception):
             pass
 
         def Stub():
             raise ExceptionMock('We expect')
 
-        self.assertRaisesRegexp(ExceptionMock, re.compile('expect$'), Stub)
-        self.assertRaisesRegexp(ExceptionMock, 'expect$', Stub)
+        self.assertRaisesRegex(ExceptionMock, re.compile('expect$'), Stub)
+        self.assertRaisesRegex(ExceptionMock, 'expect$', Stub)
 
-    def testAssertNotRaisesRegexp(self):
-        self.assertRaisesRegexp(
+    def testAssertNotRaisesRegex(self):
+        self.assertRaisesRegex(
                 self.failureException, '^Exception not raised by <lambda>$',
-                self.assertRaisesRegexp, Exception, re.compile('x'),
+                self.assertRaisesRegex, Exception, re.compile('x'),
                 lambda: None)
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
                 self.failureException, '^Exception not raised by <lambda>$',
-                self.assertRaisesRegexp, Exception, 'x',
+                self.assertRaisesRegex, Exception, 'x',
                 lambda: None)
 
-    def testAssertRaisesRegexpMismatch(self):
+    def testAssertRaisesRegexMismatch(self):
         def Stub():
             raise Exception('Unexpected')
 
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
                 self.failureException,
                 r'"\^Expected\$" does not match "Unexpected"',
-                self.assertRaisesRegexp, Exception, '^Expected$',
+                self.assertRaisesRegex, Exception, '^Expected$',
                 Stub)
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
                 self.failureException,
                 r'"\^Expected\$" does not match "Unexpected"',
-                self.assertRaisesRegexp, Exception,
+                self.assertRaisesRegex, Exception,
                 re.compile('^Expected$'), Stub)
 
     def testAssertRaisesExcValue(self):
@@ -993,26 +993,26 @@ test case
                 with self.assertWarns(DeprecationWarning):
                     _runtime_warn()
 
-    def testAssertWarnsRegexpCallable(self):
+    def testAssertWarnsRegexCallable(self):
         def _runtime_warn(msg):
             warnings.warn(msg, RuntimeWarning)
-        self.assertWarnsRegexp(RuntimeWarning, "o+",
-                               _runtime_warn, "foox")
+        self.assertWarnsRegex(RuntimeWarning, "o+",
+                              _runtime_warn, "foox")
         # Failure when no warning is triggered
         with self.assertRaises(self.failureException):
-            self.assertWarnsRegexp(RuntimeWarning, "o+",
-                                   lambda: 0)
+            self.assertWarnsRegex(RuntimeWarning, "o+",
+                                  lambda: 0)
         # Failure when another warning is triggered
         with warnings.catch_warnings():
             # Force default filter (in case tests are run with -We)
             warnings.simplefilter("default", RuntimeWarning)
             with self.assertRaises(self.failureException):
-                self.assertWarnsRegexp(DeprecationWarning, "o+",
-                                       _runtime_warn, "foox")
+                self.assertWarnsRegex(DeprecationWarning, "o+",
+                                      _runtime_warn, "foox")
         # Failure when message doesn't match
         with self.assertRaises(self.failureException):
-            self.assertWarnsRegexp(RuntimeWarning, "o+",
-                                   _runtime_warn, "barz")
+            self.assertWarnsRegex(RuntimeWarning, "o+",
+                                  _runtime_warn, "barz")
         # A little trickier: we ask RuntimeWarnings to be raised, and then
         # check for some of them.  It is implementation-defined whether
         # non-matching RuntimeWarnings are simply re-raised, or produce a
@@ -1020,15 +1020,15 @@ test case
         with warnings.catch_warnings():
             warnings.simplefilter("error", RuntimeWarning)
             with self.assertRaises((RuntimeWarning, self.failureException)):
-                self.assertWarnsRegexp(RuntimeWarning, "o+",
-                                       _runtime_warn, "barz")
+                self.assertWarnsRegex(RuntimeWarning, "o+",
+                                      _runtime_warn, "barz")
 
-    def testAssertWarnsRegexpContext(self):
-        # Same as above, but with assertWarnsRegexp as a context manager
+    def testAssertWarnsRegexContext(self):
+        # Same as above, but with assertWarnsRegex as a context manager
         def _runtime_warn(msg):
             warnings.warn(msg, RuntimeWarning)
         _runtime_warn_lineno = inspect.getsourcelines(_runtime_warn)[1]
-        with self.assertWarnsRegexp(RuntimeWarning, "o+") as cm:
+        with self.assertWarnsRegex(RuntimeWarning, "o+") as cm:
             _runtime_warn("foox")
         self.assertIsInstance(cm.warning, RuntimeWarning)
         self.assertEqual(cm.warning.args[0], "foox")
@@ -1036,18 +1036,18 @@ test case
         self.assertEqual(cm.lineno, _runtime_warn_lineno + 1)
         # Failure when no warning is triggered
         with self.assertRaises(self.failureException):
-            with self.assertWarnsRegexp(RuntimeWarning, "o+"):
+            with self.assertWarnsRegex(RuntimeWarning, "o+"):
                 pass
         # Failure when another warning is triggered
         with warnings.catch_warnings():
             # Force default filter (in case tests are run with -We)
             warnings.simplefilter("default", RuntimeWarning)
             with self.assertRaises(self.failureException):
-                with self.assertWarnsRegexp(DeprecationWarning, "o+"):
+                with self.assertWarnsRegex(DeprecationWarning, "o+"):
                     _runtime_warn("foox")
         # Failure when message doesn't match
         with self.assertRaises(self.failureException):
-            with self.assertWarnsRegexp(RuntimeWarning, "o+"):
+            with self.assertWarnsRegex(RuntimeWarning, "o+"):
                 _runtime_warn("barz")
         # A little trickier: we ask RuntimeWarnings to be raised, and then
         # check for some of them.  It is implementation-defined whether
@@ -1056,7 +1056,7 @@ test case
         with warnings.catch_warnings():
             warnings.simplefilter("error", RuntimeWarning)
             with self.assertRaises((RuntimeWarning, self.failureException)):
-                with self.assertWarnsRegexp(RuntimeWarning, "o+"):
+                with self.assertWarnsRegex(RuntimeWarning, "o+"):
                     _runtime_warn("barz")
 
     def testDeprecatedMethodNames(self):
@@ -1078,7 +1078,9 @@ test case
             (self.assert_, (True,)),
             (self.failUnlessRaises, (TypeError, lambda _: 3.14 + 'spam')),
             (self.failIf, (False,)),
-            (self.assertSameElements, ([1, 1, 2, 3], [1, 2, 3]))
+            (self.assertSameElements, ([1, 1, 2, 3], [1, 2, 3])),
+            (self.assertRaisesRegexp, (KeyError, 'foo', lambda: {}['foo'])),
+            (self.assertRegexpMatches, ('bar', 'bar')),
         )
         for meth, args in old:
             with self.assertWarns(DeprecationWarning):

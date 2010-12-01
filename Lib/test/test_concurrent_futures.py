@@ -682,18 +682,18 @@ class FutureTests(unittest.TestCase):
         self.assertTrue(was_cancelled)
 
     def test_repr(self):
-        self.assertRegexpMatches(repr(PENDING_FUTURE),
-                                 '<Future at 0x[0-9a-f]+ state=pending>')
-        self.assertRegexpMatches(repr(RUNNING_FUTURE),
-                                 '<Future at 0x[0-9a-f]+ state=running>')
-        self.assertRegexpMatches(repr(CANCELLED_FUTURE),
-                                 '<Future at 0x[0-9a-f]+ state=cancelled>')
-        self.assertRegexpMatches(repr(CANCELLED_AND_NOTIFIED_FUTURE),
-                                 '<Future at 0x[0-9a-f]+ state=cancelled>')
-        self.assertRegexpMatches(
+        self.assertRegex(repr(PENDING_FUTURE),
+                         '<Future at 0x[0-9a-f]+ state=pending>')
+        self.assertRegex(repr(RUNNING_FUTURE),
+                         '<Future at 0x[0-9a-f]+ state=running>')
+        self.assertRegex(repr(CANCELLED_FUTURE),
+                         '<Future at 0x[0-9a-f]+ state=cancelled>')
+        self.assertRegex(repr(CANCELLED_AND_NOTIFIED_FUTURE),
+                         '<Future at 0x[0-9a-f]+ state=cancelled>')
+        self.assertRegex(
                 repr(EXCEPTION_FUTURE),
                 '<Future at 0x[0-9a-f]+ state=finished raised IOError>')
-        self.assertRegexpMatches(
+        self.assertRegex(
                 repr(SUCCESSFUL_FUTURE),
                 '<Future at 0x[0-9a-f]+ state=finished returned int>')
 

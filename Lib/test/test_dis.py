@@ -354,14 +354,14 @@ class CodeInfoTests(unittest.TestCase):
     def test_code_info(self):
         self.maxDiff = 1000
         for x, expected in self.test_pairs:
-            self.assertRegexpMatches(dis.code_info(x), expected)
+            self.assertRegex(dis.code_info(x), expected)
 
     def test_show_code(self):
         self.maxDiff = 1000
         for x, expected in self.test_pairs:
             with captured_stdout() as output:
                 dis.show_code(x)
-            self.assertRegexpMatches(output.getvalue(), expected+"\n")
+            self.assertRegex(output.getvalue(), expected+"\n")
 
 def test_main():
     run_unittest(DisTests, CodeInfoTests)

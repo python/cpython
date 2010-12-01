@@ -354,7 +354,7 @@ class TestDiscovery(unittest.TestCase):
         expected_dir = os.path.abspath('foo')
         msg = re.escape(r"'foo' module incorrectly imported from %r. Expected %r. "
                 "Is this module globally installed?" % (mod_dir, expected_dir))
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             ImportError, '^%s$' % msg, loader.discover,
             start_dir='foo', pattern='foo.py'
         )
