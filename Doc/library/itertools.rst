@@ -653,6 +653,14 @@ which incur interpreter overhead.
                pending -= 1
                nexts = cycle(islice(nexts, pending))
 
+   def accumulate(iterable):
+       'Emit a running total'
+       # accumulate([1,2,3,4,5]) --> 1 3 6 10 15
+       total = 0
+       for element in iterable:
+           total += element
+           yield total
+
    def partition(pred, iterable):
        'Use a predicate to partition entries into false entries and true entries'
        # partition(is_odd, range(10)) --> 0 2 4 6 8   and  1 3 5 7 9
