@@ -630,6 +630,28 @@ class MakedirTests(unittest.TestCase):
                             'dir5', 'dir6')
         os.makedirs(path)
 
+    def test_exist_ok_existing_directory(self):
+        path = os.path.join(support.TESTFN, 'dir1')
+        mode = 0o777
+        old_mask = os.umask(0o022)
+        os.makedirs(path, mode)
+        self.assertRaises(OSError, os.makedirs, path, mode)
+        self.assertRaises(OSError, os.makedirs, path, mode, exist_ok=False)
+        self.assertRaises(OSError, os.makedirs, path, 0o776, exist_ok=True)
+        os.makedirs(path, mode=mode, exist_ok=True)
+        os.umask(old_mask)
+
+    def test_exist_ok_existing_regular_file(self):
+        base = support.TESTFN
+        path = os.path.join(support.TESTFN, 'dir1')
+        f = open(path, 'w')
+        f.write('abc')
+        f.close()
+        self.assertRaises(OSError, os.makedirs, path)
+        self.assertRaises(OSError, os.makedirs, path, exist_ok=False)
+        self.assertRaises(OSError, os.makedirs, path, exist_ok=True)
+        os.remove(path)
+
     def tearDown(self):
         path = os.path.join(support.TESTFN, 'dir1', 'dir2', 'dir3',
                             'dir4', 'dir5', 'dir6')

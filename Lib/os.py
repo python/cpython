@@ -114,18 +114,26 @@ SEEK_SET = 0
 SEEK_CUR = 1
 SEEK_END = 2
 
+
+def _get_masked_mode(mode):
+    mask = umask(0)
+    umask(mask)
+    return mode & ~mask
+
 #'
 
 # Super directory utilities.
 # (Inspired by Eric Raymond; the doc strings are mostly his)
 
-def makedirs(name, mode=0o777):
-    """makedirs(path [, mode=0o777])
+def makedirs(name, mode=0o777, exist_ok=False):
+    """makedirs(path [, mode=0o777][, exist_ok=False])
 
     Super-mkdir; create a leaf directory and all intermediate ones.
     Works like mkdir, except that any intermediate path segment (not
-    just the rightmost) will be created if it does not exist.  This is
-    recursive.
+    just the rightmost) will be created if it does not exist. If the
+    target directory with the same mode as we specified already exists,
+    raises an OSError if exist_ok is False, otherwise no exception is
+    raised.  This is recursive.
 
     """
     head, tail = path.split(name)
@@ -133,14 +141,20 @@ def makedirs(name, mode=0o777):
         head, tail = path.split(head)
     if head and tail and not path.exists(head):
         try:
-            makedirs(head, mode)
+            makedirs(head, mode, exist_ok)
         except OSError as e:
             # be happy if someone already created the path
             if e.errno != errno.EEXIST:
                 raise
         if tail == curdir:           # xxx/newdir/. exists if xxx/newdir exists
             return
-    mkdir(name, mode)
+    try:
+        mkdir(name, mode)
+    except OSError as e:
+        import stat as st
+        if not (e.errno == errno.EEXIST and exist_ok and path.isdir(name) and
+                st.S_IMODE(lstat(name).st_mode) == _get_masked_mode(mode)):
+            raise
 
 def removedirs(name):
     """removedirs(path)
