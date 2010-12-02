@@ -53,6 +53,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8989: email.utils.make_msgid now has a domain parameter that can
+  override the domain name used in the generated msgid.
+
 - Issue #9299: Add exist_ok parameter to os.makedirs to suppress the
   'File exists' exception when a target directory already exists with the
   specified mode. Patch by Ray Allen.

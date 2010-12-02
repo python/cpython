@@ -105,11 +105,17 @@ There are several useful utilities provided in the :mod:`email.utils` module:
    ``False``.  The default is ``False``.
 
 
-.. function:: make_msgid(idstring=None)
+.. function:: make_msgid(idstring=None, domain=None)
 
    Returns a string suitable for an :rfc:`2822`\ -compliant
    :mailheader:`Message-ID` header.  Optional *idstring* if given, is a string
-   used to strengthen the uniqueness of the message id.
+   used to strengthen the uniqueness of the message id.  Optional *domain* if
+   given provides the portion of the msgid after the '@'.  The default is the
+   local hostname.  It is not normally necessary to override this default, but
+   may be useful certain cases, such as a constructing distributed system that
+   uses a consistent domain name across multiple hosts.
+
+   .. versionchanged:: 3.2 domain keyword added
 
 
 .. function:: decode_rfc2231(s)
