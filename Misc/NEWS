@@ -10,6 +10,8 @@ What's New in Python 3.2 Beta 1?
 Core and Builtins
 -----------------
 
+- Issue #9915: Speed up sorting with a key.
+
 - Issue #9333: Expose os.symlink only when the SeCreateSymbolicLinkPrivilege
   is held by the user's account, i.e., when the function can actually be used.
 
