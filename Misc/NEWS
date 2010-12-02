@@ -13,6 +13,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10464: netrc now correctly handles lines with embedded '#' characters.
+
 
 What's New in Python 3.1.3?
 ===========================
