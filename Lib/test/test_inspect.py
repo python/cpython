@@ -6,9 +6,11 @@ import inspect
 import linecache
 import datetime
 import collections
+import os
+import shutil
 from os.path import normcase
 
-from test.support import run_unittest
+from test.support import run_unittest, TESTFN, DirsOnSysPath
 
 from test import inspect_fodder as mod
 from test import inspect_fodder2 as mod2
@@ -194,12 +196,12 @@ class TestInterpreterStack(IsTestBase):
 
 class GetSourceBase(unittest.TestCase):
     # Subclasses must override.
-    fodderFile = None
+    fodderModule = None
 
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
 
-        with open(inspect.getsourcefile(self.fodderFile)) as fp:
+        with open(inspect.getsourcefile(self.fodderModule)) as fp:
             self.source = fp.read()
 
     def sourcerange(self, top, bottom):
@@ -211,7 +213,7 @@ class GetSourceBase(unittest.TestCase):
                          self.sourcerange(top, bottom))
 
 class TestRetrievingSourceCode(GetSourceBase):
-    fodderFile = mod
+    fodderModule = mod
 
     def test_getclasses(self):
         classes = inspect.getmembers(mod, inspect.isclass)
@@ -297,7 +299,7 @@ class TestRetrievingSourceCode(GetSourceBase):
         inspect.getmodule(compile('a=10','','single'))
 
 class TestDecorators(GetSourceBase):
-    fodderFile = mod2
+    fodderModule = mod2
 
     def test_wrapped_decorator(self):
         self.assertSourceEqual(mod2.wrapped, 14, 17)
@@ -306,7 +308,7 @@ class TestDecorators(GetSourceBase):
         self.assertSourceEqual(mod2.gone, 9, 10)
 
 class TestOneliners(GetSourceBase):
-    fodderFile = mod2
+    fodderModule = mod2
     def test_oneline_lambda(self):
         # Test inspect.getsource with a one-line lambda function.
         self.assertSourceEqual(mod2.oll, 25, 25)
@@ -348,7 +350,7 @@ class TestOneliners(GetSourceBase):
         self.assertSourceEqual(mod2.anonymous, 55, 55)
 
 class TestBuggyCases(GetSourceBase):
-    fodderFile = mod2
+    fodderModule = mod2
 
     def test_with_comment(self):
         self.assertSourceEqual(mod2.with_comment, 58, 59)
@@ -387,6 +389,24 @@ class TestBuggyCases(GetSourceBase):
         linecache.cache[co.co_filename] = (1, None, lines, co.co_filename)
         self.assertEqual(inspect.findsource(co), (lines,0))
         self.assertEqual(inspect.getsource(co), lines[0])
+
+class TestNoEOL(GetSourceBase):
+    def __init__(self, *args, **kwargs):
+        self.tempdir = TESTFN + '_dir'
+        os.mkdir(self.tempdir)
+        with open(os.path.join(self.tempdir,
+                               'inspect_fodder3%spy' % os.extsep), 'w') as f:
+            f.write("class X:\n    pass # No EOL")
+        with DirsOnSysPath(self.tempdir):
+            import inspect_fodder3 as mod3
+        self.fodderModule = mod3
+        GetSourceBase.__init__(self, *args, **kwargs)
+
+    def tearDown(self):
+        shutil.rmtree(self.tempdir)
+
+    def test_class(self):
+        self.assertSourceEqual(self.fodderModule.X, 1, 2)
 
 # Helper for testing classify_class_attrs.
 def attrs_wo_objs(cls):
@@ -945,7 +965,8 @@ def test_main():
         TestDecorators, TestRetrievingSourceCode, TestOneliners, TestBuggyCases,
         TestInterpreterStack, TestClassesAndFunctions, TestPredicates,
         TestGetcallargsFunctions, TestGetcallargsMethods,
-        TestGetcallargsUnboundMethods, TestGetattrStatic, TestGetGeneratorState
+        TestGetcallargsUnboundMethods, TestGetattrStatic, TestGetGeneratorState,
+        TestNoEOL
     )
 
 if __name__ == "__main__":
