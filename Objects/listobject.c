@@ -940,6 +940,66 @@ reverse_slice(PyObject **lo, PyObject **hi)
  * pieces to this algorithm; read listsort.txt for overviews and details.
  */
 
+/* A sortslice contains a pointer to an array of keys and a pointer to
+ * an array of corresponding values.  In other words, keys[i]
+ * corresponds with values[i].  If values == NULL, then the keys are
+ * also the values.
+ *
+ * Several convenience routines are provided here, so that keys and
+ * values are always moved in sync.
+ */
+
+typedef struct {
+    PyObject **keys;
+    PyObject **values;
+} sortslice;
+
+Py_LOCAL_INLINE(void)
+sortslice_copy(sortslice *s1, Py_ssize_t i, sortslice *s2, Py_ssize_t j)
+{
+    s1->keys[i] = s2->keys[j];
+    if (s1->values != NULL)
+        s1->values[i] = s2->values[j];
+}
+
+Py_LOCAL_INLINE(void)
+sortslice_copy_incr(sortslice *dst, sortslice *src) {
+    *dst->keys++ = *src->keys++;
+    if (dst->values != NULL)
+        *dst->values++ = *src->values++;
+}
+
+Py_LOCAL_INLINE(void)
+sortslice_copy_decr(sortslice *dst, sortslice *src) {
+    *dst->keys-- = *src->keys--;
+    if (dst->values != NULL)
+        *dst->values-- = *src->values--;
+}
+
+
+Py_LOCAL_INLINE(void)
+sortslice_memcpy(sortslice *s1, Py_ssize_t i, sortslice *s2, Py_ssize_t j,
+                 Py_ssize_t n) {
+    memcpy(&s1->keys[i], &s2->keys[j], sizeof(PyObject *) * n);
+    if (s1->values != NULL)
+        memcpy(&s1->values[i], &s2->values[j], sizeof(PyObject *) * n);
+}
+
+Py_LOCAL_INLINE(void)
+sortslice_memmove(sortslice *s1, Py_ssize_t i, sortslice *s2, Py_ssize_t j,
+                  Py_ssize_t n) {
+    memmove(&s1->keys[i], &s2->keys[j], sizeof(PyObject *) * n);
+    if (s1->values != NULL)
+        memmove(&s1->values[i], &s2->values[j], sizeof(PyObject *) * n);
+}
+
+Py_LOCAL_INLINE(void)
+sortslice_advance(sortslice *slice, Py_ssize_t n) {
+    slice->keys += n;
+    if (slice->values != NULL)
+        slice->values += n;
+}
+
 /* Comparison function: PyObject_RichCompareBool with Py_LT.
  * Returns -1 on error, 1 if x < y, 0 if x >= y.
  */
@@ -965,19 +1025,19 @@ reverse_slice(PyObject **lo, PyObject **hi)
    the input (nothing is lost or duplicated).
 */
 static int
-binarysort(PyObject **lo, PyObject **hi, PyObject **start)
+binarysort(sortslice lo, PyObject **hi, PyObject **start)
 {
     register Py_ssize_t k;
     register PyObject **l, **p, **r;
     register PyObject *pivot;
 
-    assert(lo <= start && start <= hi);
+    assert(lo.keys <= start && start <= hi);
     /* assert [lo, start) is sorted */
-    if (lo == start)
+    if (lo.keys == start)
         ++start;
     for (; start < hi; ++start) {
         /* set l to where *start belongs */
-        l = lo;
+        l = lo.keys;
         r = start;
         pivot = *r;
         /* Invariants:
@@ -1004,6 +1064,15 @@ binarysort(PyObject **lo, PyObject **hi, PyObject **start)
         for (p = start; p > l; --p)
             *p = *(p-1);
         *l = pivot;
+        if (lo.values != NULL) {
+            Py_ssize_t offset = lo.values - lo.keys;
+            p = start + offset;
+            pivot = *p;
+            l += offset;
+            for (p = start + offset; p > l; --p)
+                *p = *(p-1);
+            *l = pivot;
+        }
     }
     return 0;
 
@@ -1272,7 +1341,7 @@ fail:
  * a convenient way to pass state around among the helper functions.
  */
 struct s_slice {
-    PyObject **base;
+    sortslice base;
     Py_ssize_t len;
 };
 
@@ -1286,7 +1355,7 @@ typedef struct s_MergeState {
     /* 'a' is temp storage to help with merges.  It contains room for
      * alloced entries.
      */
-    PyObject **a;       /* may point to temparray below */
+    sortslice a;        /* may point to temparray below */
     Py_ssize_t alloced;
 
     /* A stack of n pending runs yet to be merged.  Run #i starts at
@@ -1307,11 +1376,29 @@ typedef struct s_MergeState {
 
 /* Conceptually a MergeState's constructor. */
 static void
-merge_init(MergeState *ms)
+merge_init(MergeState *ms, int list_size, int has_keyfunc)
 {
     assert(ms != NULL);
-    ms->a = ms->temparray;
-    ms->alloced = MERGESTATE_TEMP_SIZE;
+    if (has_keyfunc) {
+        /* The temporary space for merging will need at most half the list
+         * size rounded up.  Use the minimum possible space so we can use the
+         * rest of temparray for other things.  In particular, if there is
+         * enough extra space, listsort() will use it to store the keys.
+         */
+        ms->alloced = (list_size + 1) / 2;
+
+        /* ms->alloced describes how many keys will be stored at
+           ms->temparray, but we also need to store the values.  Hence,
+           ms->alloced is capped at half of MERGESTATE_TEMP_SIZE. */
+        if (MERGESTATE_TEMP_SIZE / 2 < ms->alloced)
+            ms->alloced = MERGESTATE_TEMP_SIZE / 2;
+        ms->a.values = &ms->temparray[ms->alloced];
+    }
+    else {
+        ms->alloced = MERGESTATE_TEMP_SIZE;
+        ms->a.values = NULL;
+    }
+    ms->a.keys = ms->temparray;
     ms->n = 0;
     ms->min_gallop = MIN_GALLOP;
 }
@@ -1324,10 +1411,8 @@ static void
 merge_freemem(MergeState *ms)
 {
     assert(ms != NULL);
-    if (ms->a != ms->temparray)
-        PyMem_Free(ms->a);
-    ms->a = ms->temparray;
-    ms->alloced = MERGESTATE_TEMP_SIZE;
+    if (ms->a.keys != ms->temparray)
+        PyMem_Free(ms->a.keys);
 }
 
 /* Ensure enough temp memory for 'need' array slots is available.
@@ -1336,52 +1421,60 @@ merge_freemem(MergeState *ms)
 static int
 merge_getmem(MergeState *ms, Py_ssize_t need)
 {
+    int multiplier;
+
     assert(ms != NULL);
     if (need <= ms->alloced)
         return 0;
+
+    multiplier = ms->a.values != NULL ? 2 : 1;
+
     /* Don't realloc!  That can cost cycles to copy the old data, but
      * we don't care what's in the block.
      */
     merge_freemem(ms);
-    if ((size_t)need > PY_SSIZE_T_MAX / sizeof(PyObject*)) {
+    if ((size_t)need > PY_SSIZE_T_MAX / sizeof(PyObject*) / multiplier) {
         PyErr_NoMemory();
         return -1;
     }
-    ms->a = (PyObject **)PyMem_Malloc(need * sizeof(PyObject*));
-    if (ms->a) {
+    ms->a.keys = (PyObject**)PyMem_Malloc(multiplier * need
+                                          * sizeof(PyObject *));
+    if (ms->a.keys != NULL) {
         ms->alloced = need;
+        if (ms->a.values != NULL)
+            ms->a.values = &ms->a.keys[need];
         return 0;
     }
     PyErr_NoMemory();
-    merge_freemem(ms);          /* reset to sane state */
     return -1;
 }
 #define MERGE_GETMEM(MS, NEED) ((NEED) <= (MS)->alloced ? 0 :   \
                                 merge_getmem(MS, NEED))
 
-/* Merge the na elements starting at pa with the nb elements starting at pb
- * in a stable way, in-place.  na and nb must be > 0, and pa + na == pb.
- * Must also have that *pb < *pa, that pa[na-1] belongs at the end of the
- * merge, and should have na <= nb.  See listsort.txt for more info.
- * Return 0 if successful, -1 if error.
+/* Merge the na elements starting at ssa with the nb elements starting at
+ * ssb.keys = ssa.keys + na in a stable way, in-place.  na and nb must be > 0.
+ * Must also have that ssa.keys[na-1] belongs at the end of the merge, and
+ * should have na <= nb.  See listsort.txt for more info.  Return 0 if
+ * successful, -1 if error.
  */
 static Py_ssize_t
-merge_lo(MergeState *ms, PyObject **pa, Py_ssize_t na,
-                         PyObject **pb, Py_ssize_t nb)
+merge_lo(MergeState *ms, sortslice ssa, Py_ssize_t na,
+         sortslice ssb, Py_ssize_t nb)
 {
     Py_ssize_t k;
-    PyObject **dest;
+    sortslice dest;
     int result = -1;            /* guilty until proved innocent */
     Py_ssize_t min_gallop;
 
-    assert(ms && pa && pb && na > 0 && nb > 0 && pa + na == pb);
+    assert(ms && ssa.keys && ssb.keys && na > 0 && nb > 0);
+    assert(ssa.keys + na == ssb.keys);
     if (MERGE_GETMEM(ms, na) < 0)
         return -1;
-    memcpy(ms->a, pa, na * sizeof(PyObject*));
-    dest = pa;
-    pa = ms->a;
+    sortslice_memcpy(&ms->a, 0, &ssa, 0, na);
+    dest = ssa;
+    ssa = ms->a;
 
-    *dest++ = *pb++;
+    sortslice_copy_incr(&dest, &ssb);
     --nb;
     if (nb == 0)
         goto Succeed;
@@ -1398,11 +1491,11 @@ merge_lo(MergeState *ms, PyObject **pa, Py_ssize_t na,
          */
         for (;;) {
             assert(na > 1 && nb > 0);
-            k = ISLT(*pb, *pa);
+            k = ISLT(ssb.keys[0], ssa.keys[0]);
             if (k) {
                 if (k < 0)
                     goto Fail;
-                *dest++ = *pb++;
+                sortslice_copy_incr(&dest, &ssb);
                 ++bcount;
                 acount = 0;
                 --nb;
@@ -1412,7 +1505,7 @@ merge_lo(MergeState *ms, PyObject **pa, Py_ssize_t na,
                     break;
             }
             else {
-                *dest++ = *pa++;
+                sortslice_copy_incr(&dest, &ssa);
                 ++acount;
                 bcount = 0;
                 --na;
@@ -1433,14 +1526,14 @@ merge_lo(MergeState *ms, PyObject **pa, Py_ssize_t na,
             assert(na > 1 && nb > 0);
             min_gallop -= min_gallop > 1;
             ms->min_gallop = min_gallop;
-            k = gallop_right(*pb, pa, na, 0);
+            k = gallop_right(ssb.keys[0], ssa.keys, na, 0);
             acount = k;
             if (k) {
                 if (k < 0)
                     goto Fail;
-                memcpy(dest, pa, k * sizeof(PyObject *));
-                dest += k;
-                pa += k;
+                sortslice_memcpy(&dest, 0, &ssa, 0, k);
+                sortslice_advance(&dest, k);
+                sortslice_advance(&ssa, k);
                 na -= k;
                 if (na == 1)
                     goto CopyB;
@@ -1451,24 +1544,24 @@ merge_lo(MergeState *ms, PyObject **pa, Py_ssize_t na,
                 if (na == 0)
                     goto Succeed;
             }
-            *dest++ = *pb++;
+            sortslice_copy_incr(&dest, &ssb);
             --nb;
             if (nb == 0)
                 goto Succeed;
 
-            k = gallop_left(*pa, pb, nb, 0);
+            k = gallop_left(ssa.keys[0], ssb.keys, nb, 0);
             bcount = k;
             if (k) {
                 if (k < 0)
                     goto Fail;
-                memmove(dest, pb, k * sizeof(PyObject *));
-                dest += k;
-                pb += k;
+                sortslice_memmove(&dest, 0, &ssb, 0, k);
+                sortslice_advance(&dest, k);
+                sortslice_advance(&ssb, k);
                 nb -= k;
                 if (nb == 0)
                     goto Succeed;
             }
-            *dest++ = *pa++;
+            sortslice_copy_incr(&dest, &ssa);
             --na;
             if (na == 1)
                 goto CopyB;
@@ -1480,43 +1573,46 @@ Succeed:
     result = 0;
 Fail:
     if (na)
-        memcpy(dest, pa, na * sizeof(PyObject*));
+        sortslice_memcpy(&dest, 0, &ssa, 0, na);
     return result;
 CopyB:
     assert(na == 1 && nb > 0);
-    /* The last element of pa belongs at the end of the merge. */
-    memmove(dest, pb, nb * sizeof(PyObject *));
-    dest[nb] = *pa;
+    /* The last element of ssa belongs at the end of the merge. */
+    sortslice_memmove(&dest, 0, &ssb, 0, nb);
+    sortslice_copy(&dest, nb, &ssa, 0);
     return 0;
 }
 
-/* Merge the na elements starting at pa with the nb elements starting at pb
- * in a stable way, in-place.  na and nb must be > 0, and pa + na == pb.
- * Must also have that *pb < *pa, that pa[na-1] belongs at the end of the
- * merge, and should have na >= nb.  See listsort.txt for more info.
- * Return 0 if successful, -1 if error.
+/* Merge the na elements starting at pa with the nb elements starting at
+ * ssb.keys = ssa.keys + na in a stable way, in-place.  na and nb must be > 0.
+ * Must also have that ssa.keys[na-1] belongs at the end of the merge, and
+ * should have na >= nb.  See listsort.txt for more info.  Return 0 if
+ * successful, -1 if error.
  */
 static Py_ssize_t
-merge_hi(MergeState *ms, PyObject **pa, Py_ssize_t na, PyObject **pb, Py_ssize_t nb)
+merge_hi(MergeState *ms, sortslice ssa, Py_ssize_t na,
+         sortslice ssb, Py_ssize_t nb)
 {
     Py_ssize_t k;
-    PyObject **dest;
+    sortslice dest, basea, baseb;
     int result = -1;            /* guilty until proved innocent */
-    PyObject **basea;
-    PyObject **baseb;
     Py_ssize_t min_gallop;
 
-    assert(ms && pa && pb && na > 0 && nb > 0 && pa + na == pb);
+    assert(ms && ssa.keys && ssb.keys && na > 0 && nb > 0);
+    assert(ssa.keys + na == ssb.keys);
     if (MERGE_GETMEM(ms, nb) < 0)
         return -1;
-    dest = pb + nb - 1;
-    memcpy(ms->a, pb, nb * sizeof(PyObject*));
-    basea = pa;
+    dest = ssb;
+    sortslice_advance(&dest, nb-1);
+    sortslice_memcpy(&ms->a, 0, &ssb, 0, nb);
+    basea = ssa;
     baseb = ms->a;
-    pb = ms->a + nb - 1;
-    pa += na - 1;
+    ssb.keys = ms->a.keys + nb - 1;
+    if (ssb.values != NULL)
+        ssb.values = ms->a.values + nb - 1;
+    sortslice_advance(&ssa, na - 1);
 
-    *dest-- = *pa--;
+    sortslice_copy_decr(&dest, &ssa);
     --na;
     if (na == 0)
         goto Succeed;
@@ -1533,11 +1629,11 @@ merge_hi(MergeState *ms, PyObject **pa, Py_ssize_t na, PyObject **pb, Py_ssize_t
          */
         for (;;) {
             assert(na > 0 && nb > 1);
-            k = ISLT(*pb, *pa);
+            k = ISLT(ssb.keys[0], ssa.keys[0]);
             if (k) {
                 if (k < 0)
                     goto Fail;
-                *dest-- = *pa--;
+                sortslice_copy_decr(&dest, &ssa);
                 ++acount;
                 bcount = 0;
                 --na;
@@ -1547,7 +1643,7 @@ merge_hi(MergeState *ms, PyObject **pa, Py_ssize_t na, PyObject **pb, Py_ssize_t
                     break;
             }
             else {
-                *dest-- = *pb--;
+                sortslice_copy_decr(&dest, &ssb);
                 ++bcount;
                 acount = 0;
                 --nb;
@@ -1568,33 +1664,33 @@ merge_hi(MergeState *ms, PyObject **pa, Py_ssize_t na, PyObject **pb, Py_ssize_t
             assert(na > 0 && nb > 1);
             min_gallop -= min_gallop > 1;
             ms->min_gallop = min_gallop;
-            k = gallop_right(*pb, basea, na, na-1);
+            k = gallop_right(ssb.keys[0], basea.keys, na, na-1);
             if (k < 0)
                 goto Fail;
             k = na - k;
             acount = k;
             if (k) {
-                dest -= k;
-                pa -= k;
-                memmove(dest+1, pa+1, k * sizeof(PyObject *));
+                sortslice_advance(&dest, -k);
+                sortslice_advance(&ssa, -k);
+                sortslice_memmove(&dest, 1, &ssa, 1, k);
                 na -= k;
                 if (na == 0)
                     goto Succeed;
             }
-            *dest-- = *pb--;
+            sortslice_copy_decr(&dest, &ssb);
             --nb;
             if (nb == 1)
                 goto CopyA;
 
-            k = gallop_left(*pa, baseb, nb, nb-1);
+            k = gallop_left(ssa.keys[0], baseb.keys, nb, nb-1);
             if (k < 0)
                 goto Fail;
             k = nb - k;
             bcount = k;
             if (k) {
-                dest -= k;
-                pb -= k;
-                memcpy(dest+1, pb+1, k * sizeof(PyObject *));
+                sortslice_advance(&dest, -k);
+                sortslice_advance(&ssb, -k);
+                sortslice_memcpy(&dest, 1, &ssb, 1, k);
                 nb -= k;
                 if (nb == 1)
                     goto CopyA;
@@ -1605,7 +1701,7 @@ merge_hi(MergeState *ms, PyObject **pa, Py_ssize_t na, PyObject **pb, Py_ssize_t
                 if (nb == 0)
                     goto Succeed;
             }
-            *dest-- = *pa--;
+            sortslice_copy_decr(&dest, &ssa);
             --na;
             if (na == 0)
                 goto Succeed;
@@ -1617,15 +1713,15 @@ Succeed:
     result = 0;
 Fail:
     if (nb)
-        memcpy(dest-(nb-1), baseb, nb * sizeof(PyObject*));
+        sortslice_memcpy(&dest, -(nb-1), &baseb, 0, nb);
     return result;
 CopyA:
     assert(nb == 1 && na > 0);
-    /* The first element of pb belongs at the front of the merge. */
-    dest -= na;
-    pa -= na;
-    memmove(dest+1, pa+1, na * sizeof(PyObject *));
-    *dest = *pb;
+    /* The first element of ssb belongs at the front of the merge. */
+    sortslice_memmove(&dest, 1-na, &ssa, 1-na, na);
+    sortslice_advance(&dest, -na);
+    sortslice_advance(&ssa, -na);
+    sortslice_copy(&dest, 0, &ssb, 0);
     return 0;
 }
 
@@ -1635,7 +1731,7 @@ CopyA:
 static Py_ssize_t
 merge_at(MergeState *ms, Py_ssize_t i)
 {
-    PyObject **pa, **pb;
+    sortslice ssa, ssb;
     Py_ssize_t na, nb;
     Py_ssize_t k;
 
@@ -1644,12 +1740,12 @@ merge_at(MergeState *ms, Py_ssize_t i)
     assert(i >= 0);
     assert(i == ms->n - 2 || i == ms->n - 3);
 
-    pa = ms->pending[i].base;
+    ssa = ms->pending[i].base;
     na = ms->pending[i].len;
-    pb = ms->pending[i+1].base;
+    ssb = ms->pending[i+1].base;
     nb = ms->pending[i+1].len;
     assert(na > 0 && nb > 0);
-    assert(pa + na == pb);
+    assert(ssa.keys + na == ssb.keys);
 
     /* Record the length of the combined runs; if i is the 3rd-last
      * run now, also slide over the last run (which isn't involved
@@ -1663,10 +1759,10 @@ merge_at(MergeState *ms, Py_ssize_t i)
     /* Where does b start in a?  Elements in a before that can be
      * ignored (already in place).
      */
-    k = gallop_right(*pb, pa, na, 0);
+    k = gallop_right(*ssb.keys, ssa.keys, na, 0);
     if (k < 0)
         return -1;
-    pa += k;
+    sortslice_advance(&ssa, k);
     na -= k;
     if (na == 0)
         return 0;
@@ -1674,7 +1770,7 @@ merge_at(MergeState *ms, Py_ssize_t i)
     /* Where does a end in b?  Elements in b after that can be
      * ignored (already in place).
      */
-    nb = gallop_left(pa[na-1], pb, nb, nb-1);
+    nb = gallop_left(ssa.keys[na-1], ssb.keys, nb, nb-1);
     if (nb <= 0)
         return nb;
 
@@ -1682,9 +1778,9 @@ merge_at(MergeState *ms, Py_ssize_t i)
      * min(na, nb) elements.
      */
     if (na <= nb)
-        return merge_lo(ms, pa, na, pb, nb);
+        return merge_lo(ms, ssa, na, ssb, nb);
     else
-        return merge_hi(ms, pa, na, pb, nb);
+        return merge_hi(ms, ssa, na, ssb, nb);
 }
 
 /* Examine the stack of runs waiting to be merged, merging adjacent runs
@@ -1765,103 +1861,12 @@ merge_compute_minrun(Py_ssize_t n)
     return n + r;
 }
 
-/* Special wrapper to support stable sorting using the decorate-sort-undecorate
-   pattern.  Holds a key which is used for comparisons and the original record
-   which is returned during the undecorate phase.  By exposing only the key
-   during comparisons, the underlying sort stability characteristics are left
-   unchanged.  Also, the comparison function will only see the key instead of
-   a full record. */
-
-typedef struct {
-    PyObject_HEAD
-    PyObject *key;
-    PyObject *value;
-} sortwrapperobject;
-
-PyDoc_STRVAR(sortwrapper_doc, "Object wrapper with a custom sort key.");
-static PyObject *
-sortwrapper_richcompare(sortwrapperobject *, sortwrapperobject *, int);
 static void
-sortwrapper_dealloc(sortwrapperobject *);
-
-PyTypeObject PySortWrapper_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "sortwrapper",                              /* tp_name */
-    sizeof(sortwrapperobject),                  /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    /* methods */
-    (destructor)sortwrapper_dealloc,            /* tp_dealloc */
-    0,                                          /* tp_print */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    PyObject_GenericGetAttr,                    /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                         /* tp_flags */
-    sortwrapper_doc,                            /* tp_doc */
-    0,                                          /* tp_traverse */
-    0,                                          /* tp_clear */
-    (richcmpfunc)sortwrapper_richcompare,       /* tp_richcompare */
-};
-
-
-static PyObject *
-sortwrapper_richcompare(sortwrapperobject *a, sortwrapperobject *b, int op)
+reverse_sortslice(sortslice *s, Py_ssize_t n)
 {
-    if (!PyObject_TypeCheck(b, &PySortWrapper_Type)) {
-        PyErr_SetString(PyExc_TypeError,
-            "expected a sortwrapperobject");
-        return NULL;
-    }
-    return PyObject_RichCompare(a->key, b->key, op);
-}
-
-static void
-sortwrapper_dealloc(sortwrapperobject *so)
-{
-    Py_XDECREF(so->key);
-    Py_XDECREF(so->value);
-    PyObject_Del(so);
-}
-
-/* Returns a new reference to a sortwrapper.
-   Consumes the references to the two underlying objects. */
-
-static PyObject *
-build_sortwrapper(PyObject *key, PyObject *value)
-{
-    sortwrapperobject *so;
-
-    so = PyObject_New(sortwrapperobject, &PySortWrapper_Type);
-    if (so == NULL)
-        return NULL;
-    so->key = key;
-    so->value = value;
-    return (PyObject *)so;
-}
-
-/* Returns a new reference to the value underlying the wrapper. */
-static PyObject *
-sortwrapper_getvalue(PyObject *so)
-{
-    PyObject *value;
-
-    if (!PyObject_TypeCheck(so, &PySortWrapper_Type)) {
-        PyErr_SetString(PyExc_TypeError,
-            "expected a sortwrapperobject");
-        return NULL;
-    }
-    value = ((sortwrapperobject *)so)->value;
-    Py_INCREF(value);
-    return value;
+    reverse_slice(s->keys, &s->keys[n]);
+    if (s->values != NULL)
+        reverse_slice(s->values, &s->values[n]);
 }
 
 /* An adaptive, stable, natural mergesort.  See listsort.txt.
@@ -1873,9 +1878,9 @@ static PyObject *
 listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 {
     MergeState ms;
-    PyObject **lo, **hi;
     Py_ssize_t nremaining;
     Py_ssize_t minrun;
+    sortslice lo;
     Py_ssize_t saved_ob_size, saved_allocated;
     PyObject **saved_ob_item;
     PyObject **final_ob_item;
@@ -1883,8 +1888,8 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
     int reverse = 0;
     PyObject *keyfunc = NULL;
     Py_ssize_t i;
-    PyObject *key, *value, *kvpair;
     static char *kwlist[] = {"key", "reverse", 0};
+    PyObject **keys;
 
     assert(self != NULL);
     assert (PyList_Check(self));
@@ -1913,28 +1918,36 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
     self->ob_item = NULL;
     self->allocated = -1; /* any operation will reset it to >= 0 */
 
-    if (keyfunc != NULL) {
-        for (i=0 ; i < saved_ob_size ; i++) {
-            value = saved_ob_item[i];
-            key = PyObject_CallFunctionObjArgs(keyfunc, value,
-                                               NULL);
-            if (key == NULL) {
-                for (i=i-1 ; i>=0 ; i--) {
-                    kvpair = saved_ob_item[i];
-                    value = sortwrapper_getvalue(kvpair);
-                    saved_ob_item[i] = value;
-                    Py_DECREF(kvpair);
-                }
-                goto dsu_fail;
-            }
-            kvpair = build_sortwrapper(key, value);
-            if (kvpair == NULL)
-                goto dsu_fail;
-            saved_ob_item[i] = kvpair;
+    if (keyfunc == NULL) {
+        keys = NULL;
+        lo.keys = saved_ob_item;
+        lo.values = NULL;
+    }
+    else {
+        if (saved_ob_size < MERGESTATE_TEMP_SIZE/2)
+            /* Leverage stack space we allocated but won't otherwise use */
+            keys = &ms.temparray[saved_ob_size+1];
+        else {
+            keys = PyMem_MALLOC(sizeof(PyObject *) * saved_ob_size);
+            if (keys == NULL)
+                return NULL;
         }
+
+        for (i = 0; i < saved_ob_size ; i++) {
+            keys[i] = PyObject_CallFunctionObjArgs(keyfunc, saved_ob_item[i],
+                                                   NULL);
+            if (keys[i] == NULL) {
+                for (i=i-1 ; i>=0 ; i--)
+                    Py_DECREF(keys[i]);
+                goto keyfunc_fail;
+            }
+        }
+
+        lo.keys = keys;
+        lo.values = saved_ob_item;
     }
 
-    merge_init(&ms);
+    merge_init(&ms, saved_ob_size, keys != NULL);
 
     nremaining = saved_ob_size;
     if (nremaining < 2)
@@ -1942,30 +1955,31 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 
     /* Reverse sort stability achieved by initially reversing the list,
     applying a stable forward sort, then reversing the final result. */
-    if (reverse)
-        reverse_slice(saved_ob_item, saved_ob_item + saved_ob_size);
+    if (reverse) {
+        if (keys != NULL)
+            reverse_slice(&keys[0], &keys[saved_ob_size]);
+        reverse_slice(&saved_ob_item[0], &saved_ob_item[saved_ob_size]);
+    }
 
     /* March over the array once, left to right, finding natural runs,
      * and extending short natural runs to minrun elements.
      */
-    lo = saved_ob_item;
-    hi = lo + nremaining;
     minrun = merge_compute_minrun(nremaining);
     do {
         int descending;
         Py_ssize_t n;
 
         /* Identify next run. */
-        n = count_run(lo, hi, &descending);
+        n = count_run(lo.keys, lo.keys + nremaining, &descending);
         if (n < 0)
             goto fail;
         if (descending)
-            reverse_slice(lo, lo + n);
+            reverse_sortslice(&lo, n);
         /* If short, extend to min(minrun, nremaining). */
         if (n < minrun) {
             const Py_ssize_t force = nremaining <= minrun ?
                               nremaining : minrun;
-            if (binarysort(lo, lo + force, lo + n) < 0)
+            if (binarysort(lo, lo.keys + force, lo.keys + n) < 0)
                 goto fail;
             n = force;
         }
@@ -1977,27 +1991,27 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
         if (merge_collapse(&ms) < 0)
             goto fail;
         /* Advance to find next run. */
-        lo += n;
+        sortslice_advance(&lo, n);
         nremaining -= n;
     } while (nremaining);
-    assert(lo == hi);
 
     if (merge_force_collapse(&ms) < 0)
         goto fail;
     assert(ms.n == 1);
-    assert(ms.pending[0].base == saved_ob_item);
+    assert(keys == NULL
+           ? ms.pending[0].base.keys == saved_ob_item
+           : ms.pending[0].base.keys == &keys[0]);
     assert(ms.pending[0].len == saved_ob_size);
+    lo = ms.pending[0].base;
 
 succeed:
     result = Py_None;
 fail:
-    if (keyfunc != NULL) {
-        for (i=0 ; i < saved_ob_size ; i++) {
-            kvpair = saved_ob_item[i];
-            value = sortwrapper_getvalue(kvpair);
-            saved_ob_item[i] = value;
-            Py_DECREF(kvpair);
-        }
+    if (keys != NULL) {
+        for (i = 0; i < saved_ob_size; i++)
+            Py_DECREF(keys[i]);
+        if (keys != &ms.temparray[saved_ob_size+1])
+            PyMem_FREE(keys);
     }
 
     if (self->allocated != -1 && result != NULL) {
@@ -2013,7 +2027,7 @@ fail:
 
     merge_freemem(&ms);
 
-dsu_fail:
+keyfunc_fail:
     final_ob_item = self->ob_item;
     i = Py_SIZE(self);
     Py_SIZE(self) = saved_ob_size;
@@ -2862,4 +2876,3 @@ listreviter_len(listreviterobject *it)
         len = 0;
     return PyLong_FromSsize_t(len);
 }
-
