@@ -271,7 +271,8 @@ class TestShutil(unittest.TestCase):
             shutil.rmtree(src_dir)
             shutil.rmtree(os.path.dirname(dst_dir))
 
-    @support.skip_unless_symlink
+    @unittest.skipUnless(hasattr(os, "symlink"),
+                         "Missing symlink implementation")
     def test_dont_copy_file_onto_link_to_itself(self):
         # bug 851123.
         os.mkdir(TESTFN)
@@ -303,7 +304,8 @@ class TestShutil(unittest.TestCase):
             except OSError:
                 pass
 
-    @support.skip_unless_symlink
+    @unittest.skipUnless(hasattr(os, "symlink"),
+                         "Missing symlink implementation")
     def test_rmtree_on_symlink(self):
         # bug 1669.
         os.mkdir(TESTFN)
@@ -328,26 +330,27 @@ class TestShutil(unittest.TestCase):
             finally:
                 os.remove(TESTFN)
 
-    @unittest.skipUnless(hasattr(os, 'mkfifo'), 'requires os.mkfifo')
-    def test_copytree_named_pipe(self):
-        os.mkdir(TESTFN)
-        try:
-            subdir = os.path.join(TESTFN, "subdir")
-            os.mkdir(subdir)
-            pipe = os.path.join(subdir, "mypipe")
-            os.mkfifo(pipe)
+        @unittest.skipUnless(hasattr(os, "symlink"),
+                             "Missing symlink implementation")
+        def test_copytree_named_pipe(self):
+            os.mkdir(TESTFN)
             try:
-                shutil.copytree(TESTFN, TESTFN2)
-            except shutil.Error as e:
-                errors = e.args[0]
-                self.assertEqual(len(errors), 1)
-                src, dst, error_msg = errors[0]
-                self.assertEqual("`%s` is a named pipe" % pipe, error_msg)
-            else:
-                self.fail("shutil.Error should have been raised")
-        finally:
-            shutil.rmtree(TESTFN, ignore_errors=True)
-            shutil.rmtree(TESTFN2, ignore_errors=True)
+                subdir = os.path.join(TESTFN, "subdir")
+                os.mkdir(subdir)
+                pipe = os.path.join(subdir, "mypipe")
+                os.mkfifo(pipe)
+                try:
+                    shutil.copytree(TESTFN, TESTFN2)
+                except shutil.Error as e:
+                    errors = e.args[0]
+                    self.assertEqual(len(errors), 1)
+                    src, dst, error_msg = errors[0]
+                    self.assertEqual("`%s` is a named pipe" % pipe, error_msg)
+                else:
+                    self.fail("shutil.Error should have been raised")
+            finally:
+                shutil.rmtree(TESTFN, ignore_errors=True)
+                shutil.rmtree(TESTFN2, ignore_errors=True)
 
     def test_copytree_special_func(self):
 
@@ -364,7 +367,8 @@ class TestShutil(unittest.TestCase):
         shutil.copytree(src_dir, dst_dir, copy_function=_copy)
         self.assertEqual(len(copied), 2)
 
-    @support.skip_unless_symlink
+    @unittest.skipUnless(hasattr(os, "symlink"),
+                         "Missing symlink implementation")
     def test_copytree_dangling_symlinks(self):
 
         # a dangling symlink raises an error at the end
