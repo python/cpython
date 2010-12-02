@@ -325,8 +325,17 @@ _PyImport_ReInitLock(void)
 {
     if (import_lock != NULL)
         import_lock = PyThread_allocate_lock();
-    import_lock_thread = -1;
-    import_lock_level = 0;
+    if (import_lock_level > 1) {
+        /* Forked as a side effect of import */
+        long me = PyThread_get_thread_ident();
+        PyThread_acquire_lock(import_lock, 0);
+	/* XXX: can the previous line fail? */
+        import_lock_thread = me;
+        import_lock_level--;
+    } else {
+        import_lock_thread = -1;
+        import_lock_level = 0;
+    }
 }
 
 #endif
