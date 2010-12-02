@@ -1392,7 +1392,15 @@ Files and Directories
 
    Symbolic link support was introduced in Windows 6.0 (Vista).  :func:`symlink`
    will raise a :exc:`NotImplementedError` on Windows versions earlier than 6.0.
-   The *SeCreateSymbolicLinkPrivilege* is required in order to create symlinks.
+
+   .. note::
+
+      The *SeCreateSymbolicLinkPrivilege* is required in order to create
+      symlinks, so the function is only available when the privilege is held.
+      This privilege is not typically granted to regular users but is available
+      to accounts which can escalate privileges to the administrator level.
+      Either obtaining the privilege or running your application as an
+      administrator are ways to successfully create symlinks.
 
    Availability: Unix, Windows.
 

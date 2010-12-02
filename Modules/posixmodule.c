@@ -277,6 +277,9 @@ extern int lstat(const char *, struct stat *);
 #include <windows.h>
 #include <shellapi.h>   /* for ShellExecute() */
 #include <lmcons.h>     /* for UNLEN */
+#ifdef SE_CREATE_SYMBOLIC_LINK_NAME /* Available starting with Vista */
+#define HAVE_SYMLINK
+#endif
 #endif /* _MSC_VER */
 
 #if defined(PYCC_VACPP) && defined(PYOS_OS2)
@@ -5091,7 +5094,7 @@ posix_readlink(PyObject *self, PyObject *args)
 #endif /* HAVE_READLINK */
 
 
-#ifdef HAVE_SYMLINK
+#if defined(HAVE_SYMLINK) && !defined(MS_WINDOWS)
 PyDoc_STRVAR(posix_symlink__doc__,
 "symlink(src, dst)\n\n\
 Create a symbolic link pointing to src named dst.");
@@ -5179,7 +5182,7 @@ win_readlink(PyObject *self, PyObject *args)
 
 #endif /* !defined(HAVE_READLINK) && defined(MS_WINDOWS) */
 
-#if !defined(HAVE_SYMLINK) && defined(MS_WINDOWS)
+#if defined(HAVE_SYMLINK) && defined(MS_WINDOWS)
 
 /* Grab CreateSymbolicLinkW dynamically from kernel32 */
 static int has_CreateSymbolicLinkW = 0;
@@ -5257,7 +5260,7 @@ win_symlink(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_INCREF(Py_None);
     return Py_None;
 }
-#endif /* !defined(HAVE_SYMLINK) && defined(MS_WINDOWS) */
+#endif /* defined(HAVE_SYMLINK) && defined(MS_WINDOWS) */
 
 #ifdef HAVE_TIMES
 #if defined(PYCC_VACPP) && defined(PYOS_OS2)
@@ -7779,13 +7782,13 @@ static PyMethodDef posix_methods[] = {
     {"rmdir",           posix_rmdir, METH_VARARGS, posix_rmdir__doc__},
     {"stat",            posix_stat, METH_VARARGS, posix_stat__doc__},
     {"stat_float_times", stat_float_times, METH_VARARGS, stat_float_times__doc__},
-#ifdef HAVE_SYMLINK
+#if defined(HAVE_SYMLINK) && !defined(MS_WINDOWS)
     {"symlink",         posix_symlink, METH_VARARGS, posix_symlink__doc__},
 #endif /* HAVE_SYMLINK */
-#if !defined(HAVE_SYMLINK) && defined(MS_WINDOWS)
-    {"symlink", (PyCFunction)win_symlink, METH_VARARGS | METH_KEYWORDS,
-                win_symlink__doc__},
-#endif /* !defined(HAVE_SYMLINK) && defined(MS_WINDOWS) */
+#if defined(HAVE_SYMLINK) && defined(MS_WINDOWS)
+    {"_symlink", (PyCFunction)win_symlink, METH_VARARGS | METH_KEYWORDS,
+                 win_symlink__doc__},
+#endif /* defined(HAVE_SYMLINK) && defined(MS_WINDOWS) */
 #ifdef HAVE_SYSTEM
     {"system",          posix_system, METH_VARARGS, posix_system__doc__},
 #endif
@@ -8099,6 +8102,46 @@ static int insertvalues(PyObject *module)
 }
 #endif
 
+#if defined(HAVE_SYMLINK) && defined(MS_WINDOWS)
+void
+enable_symlink()
+{
+    HANDLE tok;
+    TOKEN_PRIVILEGES tok_priv;
+    LUID luid;
+    int meth_idx = 0;
+
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ALL_ACCESS, &tok))
+        return;
+
+    if (!LookupPrivilegeValue(NULL, SE_CREATE_SYMBOLIC_LINK_NAME, &luid))
+        return;
+
+    tok_priv.PrivilegeCount = 1;
+    tok_priv.Privileges[0].Luid = luid;
+    tok_priv.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+
+    if (!AdjustTokenPrivileges(tok, FALSE, &tok_priv,
+                               sizeof(TOKEN_PRIVILEGES),
+                               (PTOKEN_PRIVILEGES) NULL, (PDWORD) NULL))
+        return;
+
+    if(GetLastError() == ERROR_NOT_ALL_ASSIGNED) {
+        /* We couldn't acquire the necessary privilege, so leave the
+           method hidden for this user. */
+        return;
+    } else {
+        /* We've successfully acquired the symlink privilege so rename
+           the method to it's proper "os.symlink" name. */
+        while(posix_methods[meth_idx].ml_meth != (PyCFunction)win_symlink)
+            meth_idx++;
+        posix_methods[meth_idx].ml_name = "symlink";
+
+        return;
+    }
+}
+#endif /* defined(HAVE_SYMLINK) && defined(MS_WINDOWS) */
+
 static int
 all_ins(PyObject *d)
 {
@@ -8359,6 +8402,10 @@ PyMODINIT_FUNC
 INITFUNC(void)
 {
     PyObject *m, *v;
+
+#if defined(HAVE_SYMLINK) && defined(MS_WINDOWS)
+    enable_symlink();
+#endif
 
     m = PyModule_Create(&posixmodule);
     if (m == NULL)
