@@ -233,39 +233,16 @@ be found in any statistics text.
    parameter.
 
 
-Alternative Generators:
+Alternative Generator:
 
 .. class:: SystemRandom([seed])
 
    Class that uses the :func:`os.urandom` function for generating random numbers
    from sources provided by the operating system. Not available on all systems.
-   Does not rely on software state and sequences are not reproducible. Accordingly,
+   Does not rely on software state, and sequences are not reproducible. Accordingly,
    the :meth:`seed` method has no effect and is ignored.
    The :meth:`getstate` and :meth:`setstate` methods raise
    :exc:`NotImplementedError` if called.
-
-
-Examples of basic usage::
-
-   >>> random.random()        # Random float x, 0.0 <= x < 1.0
-   0.37444887175646646
-   >>> random.uniform(1, 10)  # Random float x, 1.0 <= x < 10.0
-   1.1800146073117523
-   >>> random.randint(1, 10)  # Integer from 1 to 10, endpoints included
-   7
-   >>> random.randrange(0, 101, 2)  # Even integer from 0 to 100
-   26
-   >>> random.choice('abcdefghij')  # Choose a random element
-   'c'
-
-   >>> items = [1, 2, 3, 4, 5, 6, 7]
-   >>> random.shuffle(items)
-   >>> items
-   [7, 3, 2, 5, 6, 4, 1]
-
-   >>> random.sample([1, 2, 3, 4, 5],  3)  # Choose 3 elements
-   [4, 1, 5]
-
 
 
 .. seealso::
@@ -279,6 +256,7 @@ Examples of basic usage::
    <http://code.activestate.com/recipes/576707/>`_ for a compatible alternative
    random number generator with a long period and comparatively simple update
    operations.
+
 
 Notes on Reproducibility
 ========================
@@ -297,10 +275,33 @@ change across Python versions, but two aspects are guaranteed not to change:
   sequence when the compatible seeder is given the same seed.
 
 
-.. _random-examples:
-
 Examples and Recipes
 ====================
+
+Basic usage::
+
+   >>> random.random()                      # Random float x, 0.0 <= x < 1.0
+   0.37444887175646646
+
+   >>> random.uniform(1, 10)                # Random float x, 1.0 <= x < 10.0
+   1.1800146073117523
+
+   >>> random.randrange(10)                 # Integer from 0 to 9
+   7
+
+   >>> random.randrange(0, 101, 2)          # Even integer from 0 to 100
+   26
+
+   >>> random.choice('abcdefghij')          # Single random element
+   'c'
+
+   >>> items = [1, 2, 3, 4, 5, 6, 7]
+   >>> random.shuffle(items)
+   >>> items
+   [7, 3, 2, 5, 6, 4, 1]
+
+   >>> random.sample([1, 2, 3, 4, 5],  3)   # Three samples without replacement
+   [4, 1, 5]
 
 A common task is to make a :func:`random.choice` with weighted probababilites.
 
@@ -312,9 +313,9 @@ population with repeats::
     >>> random.choice(population)
     'Green'
 
-A more general approach is to arrange the weights in a cumulative probability
-distribution with :func:`itertools.accumulate`, and then locate the random value
-with :func:`bisect.bisect`::
+A more general approach is to arrange the weights in a cumulative distribution
+with :func:`itertools.accumulate`, and then locate the random value with
+:func:`bisect.bisect`::
 
     >>> choices, weights = zip(*weighted_choices)
     >>> cumdist = list(itertools.accumulate(weights))
