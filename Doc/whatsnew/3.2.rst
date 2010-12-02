@@ -665,18 +665,19 @@ Python has been updated to Unicode 6.0.0.  The new features of the
 Unicode Standard that will affect Python users include:
 
 * adds 2,088 characters, including over 1,000 additional symbols—chief
-among them the additional emoji symbols, which are especially
-important for mobile phones;
+  among them the additional emoji symbols, which are especially
+  important for mobile phones;
 
 * corrects character properties for existing characters including
- - a general category change to two Kannada characters (U+0CF1,
-U+0CF2), which has the effect of making them newly eligible for
-inclusion in identifiers;
 
- - a general category change to one New Tai Lue numeric character
-(U+19DA), which would have the effect of disqualifying it from
-inclusion in identifiers unless grandfathering measures are in place
-for the defining identifier syntax.
+  - a general category change to two Kannada characters (U+0CF1,
+    U+0CF2), which has the effect of making them newly eligible for
+    inclusion in identifiers;
+
+  - a general category change to one New Tai Lue numeric character
+    (U+19DA), which would have the effect of disqualifying it from
+    inclusion in identifiers unless grandfathering measures are in place
+    for the defining identifier syntax.
 
 The :mod:`os` module has two new functions: :func:`~os.fsencode` and
 :func:`~os.fsdecode`. Add :data:`os.environb`: bytes version of
