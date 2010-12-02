@@ -2457,6 +2457,10 @@ multipart/report
     text/rfc822-headers
 """)
 
+    def test_make_msgid_domain(self):
+        self.assertEqual(
+            email.utils.make_msgid(domain='testdomain-string')[-19:],
+            '@testdomain-string>')
 
 
 # Test the iterator/generators
