@@ -1143,17 +1143,20 @@ Files and Directories
    Availability: Unix, Windows.
 
 
-.. function:: makedirs(path[, mode])
+.. function:: makedirs(path[, mode][, exist_ok=False])
 
    .. index::
       single: directory; creating
       single: UNC paths; and os.makedirs()
 
    Recursive directory creation function.  Like :func:`mkdir`, but makes all
-   intermediate-level directories needed to contain the leaf directory.  Raises
-   an :exc:`error` exception if the leaf directory already exists or cannot be
-   created.  The default *mode* is ``0o777`` (octal).  On some systems, *mode*
-   is ignored. Where it is used, the current umask value is first masked out.
+   intermediate-level directories needed to contain the leaf directory.  If
+   the target directory with the same mode as we specified already exists,
+   raises an :exc:`OSError` exception if *exist_ok* is False, otherwise no
+   exception is raised.  If the directory cannot be created in other cases,
+   raises an :exc:`OSError` exception.  The default *mode* is ``0o777`` (octal).
+   On some systems, *mode* is ignored. Where it is used, the current umask
+   value is first masked out.
 
    .. note::
 
@@ -1161,6 +1164,9 @@ Files and Directories
       :data:`os.pardir`.
 
    This function handles UNC paths correctly.
+
+   .. versionadded:: 3.2
+      The *exist_ok* parameter.
 
 
 .. function:: pathconf(path, name)

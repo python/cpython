@@ -46,6 +46,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #9299: Add exist_ok parameter to os.makedirs to suppress the
+  'File exists' exception when a target directory already exists with the
+  specified mode. Patch by Ray Allen.
+
 - Issue #9573: os.fork() now works correctly when triggered as a side effect
   of a module import
 
