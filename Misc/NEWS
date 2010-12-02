@@ -46,6 +46,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9573: os.fork() now works correctly when triggered as a side effect
+  of a module import
+
 - Issue #10464: netrc now correctly handles lines with embedded '#' characters.
 
 - Added itertools.accumulate().
