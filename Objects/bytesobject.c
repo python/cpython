@@ -2312,6 +2312,68 @@ bytes_decode(PyObject *self, PyObject *args, PyObject *kwargs)
     return PyUnicode_FromEncodedObject(self, encoding, errors);
 }
 
+PyDoc_STRVAR(transform__doc__,
+"B.transform(encoding, errors='strict') -> bytes\n\
+\n\
+Transform B using the codec registered for encoding. errors may be given\n\
+to set a different error handling scheme.");
+
+static PyObject *
+bytes_transform(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    const char *encoding = NULL;
+    const char *errors = NULL;
+    static char *kwlist[] = {"encoding", "errors", 0};
+    PyObject *v;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|s:transform",
+                                     kwlist, &encoding, &errors))
+        return NULL;
+
+    v = PyCodec_Encode(self, encoding, errors);
+    if (v == NULL)
+        return NULL;
+    if (!PyBytes_Check(v)) {
+        PyErr_Format(PyExc_TypeError,
+                     "encoder did not return a bytes object (type=%.400s)",
+                     Py_TYPE(v)->tp_name);
+        Py_DECREF(v);
+        return NULL;
+    }
+    return v;
+}
+
+
+PyDoc_STRVAR(untransform__doc__,
+"B.untransform(encoding, errors='strict') -> bytes\n\
+\n\
+Reverse-transform B using the codec registered for encoding. errors may\n\
+be given to set a different error handling scheme.");
+
+static PyObject *
+bytes_untransform(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    const char *encoding = NULL;
+    const char *errors = NULL;
+    static char *kwlist[] = {"encoding", "errors", 0};
+    PyObject *v;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|s:untransform",
+                                     kwlist, &encoding, &errors))
+        return NULL;
+
+    v = PyCodec_Decode(self, encoding, errors);
+    if (v == NULL)
+        return NULL;
+    if (!PyBytes_Check(v)) {
+        PyErr_Format(PyExc_TypeError,
+                     "decoder did not return a bytes object (type=%.400s)",
+                     Py_TYPE(v)->tp_name);
+        Py_DECREF(v);
+        return NULL;
+    }
+    return v;
+}
 
 PyDoc_STRVAR(splitlines__doc__,
 "B.splitlines([keepends]) -> list of lines\n\
@@ -2475,8 +2537,10 @@ bytes_methods[] = {
     {"swapcase", (PyCFunction)stringlib_swapcase, METH_NOARGS,
      _Py_swapcase__doc__},
     {"title", (PyCFunction)stringlib_title, METH_NOARGS, _Py_title__doc__},
+    {"transform", (PyCFunction)bytes_transform, METH_VARARGS | METH_KEYWORDS, transform__doc__},
     {"translate", (PyCFunction)bytes_translate, METH_VARARGS,
      translate__doc__},
+    {"untransform", (PyCFunction)bytes_untransform, METH_VARARGS | METH_KEYWORDS, untransform__doc__},
     {"upper", (PyCFunction)stringlib_upper, METH_NOARGS, _Py_upper__doc__},
     {"zfill", (PyCFunction)stringlib_zfill, METH_VARARGS, zfill__doc__},
     {"__sizeof__", (PyCFunction)bytes_sizeof, METH_NOARGS,

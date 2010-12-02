@@ -1165,6 +1165,46 @@ particular, the following variants typically exist:
 |                    |         | operand                   |
 +--------------------+---------+---------------------------+
 
+The following codecs provide bytes-to-bytes mappings.  They can be used with
+:meth:`bytes.transform` and :meth:`bytes.untransform`.
+
++--------------------+---------------------------+---------------------------+
+| Codec              | Aliases                   | Purpose                   |
++====================+===========================+===========================+
+| base64_codec       | base64, base-64           | Convert operand to MIME   |
+|                    |                           | base64                    |
++--------------------+---------------------------+---------------------------+
+| bz2_codec          | bz2                       | Compress the operand      |
+|                    |                           | using bz2                 |
++--------------------+---------------------------+---------------------------+
+| hex_codec          | hex                       | Convert operand to        |
+|                    |                           | hexadecimal               |
+|                    |                           | representation, with two  |
+|                    |                           | digits per byte           |
++--------------------+---------------------------+---------------------------+
+| quopri_codec       | quopri, quoted-printable, | Convert operand to MIME   |
+|                    | quotedprintable           | quoted printable          |
++--------------------+---------------------------+---------------------------+
+| uu_codec           | uu                        | Convert the operand using |
+|                    |                           | uuencode                  |
++--------------------+---------------------------+---------------------------+
+| zlib_codec         | zip, zlib                 | Compress the operand      |
+|                    |                           | using gzip                |
++--------------------+---------------------------+---------------------------+
+
+The following codecs provide string-to-string mappings.  They can be used with
+:meth:`str.transform` and :meth:`str.untransform`.
+
++--------------------+---------------------------+---------------------------+
+| Codec              | Aliases                   | Purpose                   |
++====================+===========================+===========================+
+| rot_13             | rot13                     | Returns the Caesar-cypher |
+|                    |                           | encryption of the operand |
++--------------------+---------------------------+---------------------------+
+
+.. versionadded:: 3.2
+   bytes-to-bytes and string-to-string codecs.
+
 
 :mod:`encodings.idna` --- Internationalized Domain Names in Applications
 ------------------------------------------------------------------------
