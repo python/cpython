@@ -1719,6 +1719,7 @@ Loading and running tests
       The total number of tests run so far.
 
 
+   .. attribute:: buffer
 
       If set to true, ``sys.stdout`` and ``sys.stderr`` will be buffered in between
       :meth:`startTest` and :meth:`stopTest` being called. Collected output will
