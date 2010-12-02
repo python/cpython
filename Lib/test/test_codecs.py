@@ -1659,6 +1659,67 @@ class BomTest(unittest.TestCase):
                 self.assertEqual(f.read(), data * 2)
 
 
+bytes_transform_encodings = [
+    "base64_codec",
+    "uu_codec",
+    "quopri_codec",
+    "hex_codec",
+]
+try:
+    import zlib
+except ImportError:
+    pass
+else:
+    bytes_transform_encodings.append("zlib_codec")
+try:
+    import bz2
+except ImportError:
+    pass
+else:
+    bytes_transform_encodings.append("bz2_codec")
+
+class TransformCodecTest(unittest.TestCase):
+    def test_basics(self):
+        binput = bytes(range(256))
+        ainput = bytearray(binput)
+        for encoding in bytes_transform_encodings:
+            # generic codecs interface
+            (o, size) = codecs.getencoder(encoding)(binput)
+            self.assertEqual(size, len(binput))
+            (i, size) = codecs.getdecoder(encoding)(o)
+            self.assertEqual(size, len(o))
+            self.assertEqual(i, binput)
+
+            # transform interface
+            boutput = binput.transform(encoding)
+            aoutput = ainput.transform(encoding)
+            self.assertEqual(boutput, aoutput)
+            self.assertIsInstance(boutput, bytes)
+            self.assertIsInstance(aoutput, bytearray)
+            bback = boutput.untransform(encoding)
+            aback = aoutput.untransform(encoding)
+            self.assertEqual(bback, aback)
+            self.assertEqual(bback, binput)
+            self.assertIsInstance(bback, bytes)
+            self.assertIsInstance(aback, bytearray)
+
+    def test_read(self):
+        for encoding in bytes_transform_encodings:
+            sin = b"\x80".transform(encoding)
+            reader = codecs.getreader(encoding)(io.BytesIO(sin))
+            sout = reader.read()
+            self.assertEqual(sout, b"\x80")
+
+    def test_readline(self):
+        for encoding in bytes_transform_encodings:
+            if encoding in ['uu_codec', 'zlib_codec']:
+                continue
+            sin = b"\x80".transform(encoding)
+            reader = codecs.getreader(encoding)(io.BytesIO(sin))
+            sout = reader.readline()
+            self.assertEqual(sout, b"\x80")
+
+
 def test_main():
     support.run_unittest(
         UTF32Test,
@@ -1686,6 +1747,7 @@ def test_main():
         TypesTest,
         SurrogateEscapeTest,
         BomTest,
+        TransformCodecTest,
     )
 
 
