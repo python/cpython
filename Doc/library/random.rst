@@ -295,3 +295,29 @@ change across Python versions, but two aspects are guaranteed not to change:
 
 * The generator's :meth:`random` method will continue to produce the same
   sequence when the compatible seeder is given the same seed.
+
+
+.. _random-examples:
+
+Examples and Recipes
+====================
+
+A common task is to make a :func:`random.choice` with weighted probababilites.
+
+If the weights are small integer ratios, a simple technique is to build a sample
+population with repeats::
+
+    >>> weighted_choices = [('Red', 3), ('Blue', 2), ('Yellow', 1), ('Green', 4)]
+    >>> population = [val for val, cnt in weighted_choices for i in range(cnt)]
+    >>> random.choice(population)
+    'Green'
+
+A more general approach is to arrange the weights in a cumulative probability
+distribution with :func:`itertools.accumulate`, and then locate the random value
+with :func:`bisect.bisect`::
+
+    >>> choices, weights = zip(*weighted_choices)
+    >>> cumdist = list(itertools.accumulate(weights))
+    >>> x = random.random() * cumdist[-1]
+    >>> choices[bisect.bisect(cumdist, x)]
+    'Blue'
