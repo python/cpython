@@ -365,11 +365,10 @@ The :class:`SequenceMatcher` class has this constructor:
    they occur. All three are reset whenever *b* is reset with :meth:`set_seqs`
    or :meth:`set_seq2`.
 
-.. versionadded:: 3.2
+   .. versionadded:: 3.2
       The *bjunk* and *bpopular* attributes.
 
    :class:`SequenceMatcher` objects have the following methods:
-
 
    .. method:: set_seqs(a, b)
 
