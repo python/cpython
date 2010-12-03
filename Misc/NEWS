@@ -149,6 +149,14 @@ Library
 - Issue #10467: Fix BytesIO.readinto() after seeking into a position after the
   end of the file.
 
+- configparser: the ConfigParser class has been deprecated in favor of
+  SafeConfigParser. Usage of RawConfigParser is now discouraged for new
+  projects in favor of SafeConfigParser(interpolation=None).
+
+- Issue #10499: configparser supports pluggable interpolation handlers. New
+  interpolation handler added (ExtendedInterpolation) which supports the syntax
+  used by zc.buildout (e.g. interpolation between sections).
+
 - Issue #1682942: configparser supports alternative option/value delimiters.
 
 - Issue #5412: configparser supports mapping protocol access.
