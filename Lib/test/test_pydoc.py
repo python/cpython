@@ -237,8 +237,10 @@ def print_diffs(text1, text2):
     print('\n' + ''.join(diffs))
 
 def get_html_title(text):
-    _, _, text = text.rpartition("<title>")
-    title, _, _ = text.rpartition("</title>")
+    # Bit of hack, but good enough for test purposes
+    header, _, _ = text.partition("</head>")
+    _, _, title = header.partition("<title>")
+    title, _, _ = title.partition("</title>")
     return title
 
 
@@ -449,7 +451,7 @@ class PyDocUrlHandlerTest(unittest.TestCase):
             self.assertEqual(result, title)
 
         path = string.__file__
-        title = "Python: getfile /" + path
+        title = "Python: getfile " + path
         url = "getfile?key=" + path
         text = pydoc._url_handler(url, "text/html")
         result = get_html_title(text)
