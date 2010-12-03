@@ -5,6 +5,8 @@ import sysconfig
 from test import support
 from test import regrtest
 
+TEMPDIR = regrtest.TEMPDIR
+
 # findtestdir() gets the dirname out of __file__, so we have to make it
 # absolute before changing the working directory.
 # For example __file__ may be relative when running trace or profile.
