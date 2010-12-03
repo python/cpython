@@ -50,12 +50,21 @@ manner similar to the Unix :program:`man` command.  The synopsis line of a
 module is the first line of its documentation string.
 
 You can also use :program:`pydoc` to start an HTTP server on the local machine
-that will serve documentation to visiting Web browsers. :program:`pydoc -p 1234`
-will start a HTTP server on port 1234, allowing you to browse
-the documentation at ``http://localhost:1234/`` in your preferred Web browser.
+that will serve documentation to visiting Web browsers.  :program:`pydoc -p 1234`
+will start a HTTP server on port 1234, allowing you to browse the
+documentation at ``http://localhost:1234/`` in your preferred Web browser.
+Specifying ``0`` as the port number will select an arbitrary unused port.
+
 :program:`pydoc -g` will start the server and additionally bring up a
 small :mod:`tkinter`\ -based graphical interface to help you search for
-documentation pages.
+documentation pages.  The ``-g`` option is deprecated, since the server can
+now be controlled directly from HTTP clients.
+
+:program:`pydoc -b` will start the server and additionally open a web
+browser to a module index page.  Each served page has a navigation bar at the
+top where you can *Get* help on an individual item, *Search* all modules with a
+keyword in their synopsis line, and go to the *Module index*, *Topics* and
+*Keywords* pages.
 
 When :program:`pydoc` generates documentation, it uses the current environment
 and path to locate modules.  Thus, invoking :program:`pydoc spam`
@@ -69,3 +78,4 @@ be overridden by setting the :envvar:`PYTHONDOCS` environment variable
 to a different URL or to a local directory containing the Library
 Reference Manual pages.
 
+.. versionchanged:: 3.2

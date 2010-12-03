@@ -566,7 +566,6 @@ New, Improved, and Deprecated Modules
 
   (Contributed by R. David Murray, :issue:`10321`.)
 
-
 * The :mod:`inspect` module has a new function :func:`getgenatorstate`
   to easily identify the current state of a generator as one of
   ``GEN_CREATED``, ``GEN_RUNNING``, ``GEN_SUSPENDED`` or ``GEN_CLOSED``.
@@ -582,6 +581,12 @@ New, Improved, and Deprecated Modules
             - bytes input support
             - non-UTF8 percent encoding of non-ASCII characters
           Issue 2987 for IPv6 (RFC2732) support in urlparse
+
+* The :mod:`pydoc` module now provides a much improved Web server interface,
+  as well as a new command-line option to automatically open a browser
+  window to display that server.
+
+  (Contributed by Ron Adam; :issue:`2001`.)
 
 Multi-threading
 ===============
