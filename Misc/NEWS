@@ -9,14 +9,8 @@ What's New in Python 3.2 Beta 1?
 
 Core and Builtins
 -----------------
-
-- Issue 7911: `unittest.TestCase.longMessage` defaults to True for improved
-  failure messages by default. Patch by Mark Roddy.
-  
+ 
 - Issue #9915: Speed up sorting with a key.
-
-- Issue #9333: Expose os.symlink only when the SeCreateSymbolicLinkPrivilege
-  is held by the user's account, i.e., when the function can actually be used.
 
 - Issue #7475: Added transform() and untransform() methods to both bytes
   and string types.  They can be used to access those codecs providing
@@ -27,37 +21,35 @@ Core and Builtins
 
 - Issue #10518: Bring back the callable() builtin.
 
-- Issue #8879. Add os.link support for Windows.
-
-- Issue #10027. st_nlink was not being set on Windows calls to os.stat or
-  os.lstat. Patch by Hirokazu Yamamoto.
-
 - Issue #7094: Added alternate formatting (specified by '#') to
   __format__ method of float, complex, and Decimal. This allows more
   precise control over when decimal points are displayed.
 
 - Issue #10474: range().count() should return integers.
 
-- Issue #10255: Fix reference leak in Py_InitializeEx().  Patch by Neil
-  Schemenauer.
-
-- Issue #4925: Add filename to error message when executable can't be found in
-  subprocess.
-
 - Issue #1574217: isinstance now catches only AttributeError, rather than
   masking all errors.
-
-- Issue #10391: Don't dereference invalid memory in error messages in the ast
-  module.
-
-- Issue #9518: Extend the PyModuleDef_HEAD_INIT macro to explicitly
-  zero-initialize all fields, fixing compiler warnings seen when building
-  extension modules with gcc with "-Wmissing-field-initializers" (implied
-  by "-W")
 
 Library
 -------
 
+- Issue #4925: Add filename to error message when executable can't be found in
+  subprocess.
+
+- Issue #10391: Don't dereference invalid memory in error messages in the ast
+  module.
+
+- Issue #10027: st_nlink was not being set on Windows calls to os.stat or
+  os.lstat. Patch by Hirokazu Yamamoto.
+
+- Issue #9333: Expose os.symlink only when the SeCreateSymbolicLinkPrivilege
+  is held by the user's account, i.e., when the function can actually be used.
+
+- Issue #8879: Add os.link support for Windows.
+
+- Issue #7911: `unittest.TestCase.longMessage` defaults to True for improved
+  failure messages by default. Patch by Mark Roddy.
+ 
 - Issue #1486713: HTMLParser now has an optional tolerant mode where it
   tries to guess at the correct parsing of invalid html.
 
@@ -180,6 +172,14 @@ Library
 
 C-API
 -----
+
+- Issue #9518: Extend the PyModuleDef_HEAD_INIT macro to explicitly
+  zero-initialize all fields, fixing compiler warnings seen when building
+  extension modules with gcc with "-Wmissing-field-initializers" (implied
+  by "-W").
+
+- Issue #10255: Fix reference leak in Py_InitializeEx().  Patch by Neil
+  Schemenauer.
 
 - structseq.h is now included in Python.h.
 
