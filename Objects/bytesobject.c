@@ -911,7 +911,7 @@ bytes_subscript(PyBytesObject* self, PyObject* item)
         char* result_buf;
         PyObject* result;
 
-        if (PySlice_GetIndicesEx((PySliceObject*)item,
+        if (PySlice_GetIndicesEx(item,
                          PyBytes_GET_SIZE(self),
                          &start, &stop, &step, &slicelength) < 0) {
             return NULL;

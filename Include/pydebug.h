@@ -1,4 +1,4 @@
-
+#ifndef Py_LIMITED_API
 #ifndef Py_PYDEBUG_H
 #define Py_PYDEBUG_H
 #ifdef __cplusplus
@@ -31,3 +31,4 @@ PyAPI_FUNC(void) Py_FatalError(const char *message);
 }
 #endif
 #endif /* !Py_PYDEBUG_H */
+#endif /* Py_LIMITED_API */

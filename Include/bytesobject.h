@@ -27,6 +27,7 @@ functions should be applied to nil objects.
 /* Caching the hash (ob_shash) saves recalculation of a string's hash value.
    This significantly speeds up dict lookups. */
 
+#ifndef Py_LIMITED_API
 typedef struct {
     PyObject_VAR_HEAD
     Py_hash_t ob_shash;
@@ -38,6 +39,7 @@ typedef struct {
      *     ob_shash is the hash of the string or -1 if not computed yet.
      */
 } PyBytesObject;
+#endif
 
 PyAPI_DATA(PyTypeObject) PyBytes_Type;
 PyAPI_DATA(PyTypeObject) PyBytesIter_Type;
@@ -58,21 +60,27 @@ PyAPI_FUNC(char *) PyBytes_AsString(PyObject *);
 PyAPI_FUNC(PyObject *) PyBytes_Repr(PyObject *, int);
 PyAPI_FUNC(void) PyBytes_Concat(PyObject **, PyObject *);
 PyAPI_FUNC(void) PyBytes_ConcatAndDel(PyObject **, PyObject *);
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyBytes_Resize(PyObject **, Py_ssize_t);
 PyAPI_FUNC(PyObject *) _PyBytes_FormatLong(PyObject*, int, int,
 						  int, char**, int*);
+#endif
 PyAPI_FUNC(PyObject *) PyBytes_DecodeEscape(const char *, Py_ssize_t,
 						   const char *, Py_ssize_t,
 						   const char *);
 
 /* Macro, trading safety for speed */
+#ifndef Py_LIMITED_API
 #define PyBytes_AS_STRING(op) (assert(PyBytes_Check(op)), \
                                 (((PyBytesObject *)(op))->ob_sval))
 #define PyBytes_GET_SIZE(op)  (assert(PyBytes_Check(op)),Py_SIZE(op))
+#endif
 
 /* _PyBytes_Join(sep, x) is like sep.join(x).  sep must be PyBytesObject*,
    x must be an iterable object. */
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _PyBytes_Join(PyObject *sep, PyObject *x);
+#endif
 
 /* Provides access to the internal data buffer and size of a string
    object or the default encoded version of an Unicode object. Passing
@@ -90,7 +98,7 @@ PyAPI_FUNC(int) PyBytes_AsStringAndSize(
 /* Using the current locale, insert the thousands grouping
    into the string pointed to by buffer.  For the argument descriptions,
    see Objects/stringlib/localeutil.h */
-
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(Py_ssize_t) _PyBytes_InsertThousandsGroupingLocale(char *buffer,
                                                    Py_ssize_t n_buffer,
                                                    char *digits,
@@ -107,6 +115,7 @@ PyAPI_FUNC(Py_ssize_t) _PyBytes_InsertThousandsGrouping(char *buffer,
                                                    Py_ssize_t min_width,
                                                    const char *grouping,
                                                    const char *thousands_sep);
+#endif
 
 /* Flags used by string formatting */
 #define F_LJUST (1<<0)

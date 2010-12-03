@@ -1,6 +1,6 @@
 
 /* Token types */
-
+#ifndef Py_LIMITED_API
 #ifndef Py_TOKEN_H
 #define Py_TOKEN_H
 #ifdef __cplusplus
@@ -85,3 +85,4 @@ PyAPI_FUNC(int) PyToken_ThreeChars(int, int, int);
 }
 #endif
 #endif /* !Py_TOKEN_H */
+#endif /* Py_LIMITED_API */

@@ -762,7 +762,7 @@ mmap_subscript(mmap_object *self, PyObject *item)
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelen;
 
-        if (PySlice_GetIndicesEx((PySliceObject *)item, self->size,
+        if (PySlice_GetIndicesEx(item, self->size,
                          &start, &stop, &step, &slicelen) < 0) {
             return NULL;
         }
@@ -888,7 +888,7 @@ mmap_ass_subscript(mmap_object *self, PyObject *item, PyObject *value)
         Py_ssize_t start, stop, step, slicelen;
         Py_buffer vbuf;
 
-        if (PySlice_GetIndicesEx((PySliceObject *)item,
+        if (PySlice_GetIndicesEx(item,
                                  self->size, &start, &stop,
                                  &step, &slicelen) < 0) {
             return -1;

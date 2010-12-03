@@ -49,6 +49,24 @@
 
 This article explains the new features in Python 3.2, compared to 3.1.
 
+PEP 382: Defining a Stable ABI
+==============================
+
+In the past, extension modules built for one Python version were often
+not usable with other Python versions. Particularly on Windows, every
+feature release of Python required rebuilding all extension modules that
+one wanted to use. This requirement was the result of the free access to
+Python interpreter internals that extension modules could use.
+
+With Python 3.2, an alternative approach becomes available: extension
+modules with restrict themselves to a limited API (by defining
+Py_LIMITED_API) cannot use many of the internals, but are constrained
+to a set of API functions that are promised to be stable for several
+releases. As a consequence, extension modules built for 3.2 in that
+mode will also work with 3.3, 3.4, and so on. Extension modules that
+make use of details of memory structures can still be built, but will
+need to be recompiled for every feature release.
+
 
 PEP 391:  Dictionary Based Configuration for Logging
 ====================================================

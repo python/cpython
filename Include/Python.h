@@ -66,6 +66,7 @@
 
 #include "object.h"
 #include "objimpl.h"
+#include "typeslots.h"
 
 #include "pydebug.h"
 
@@ -100,6 +101,7 @@
 #include "weakrefobject.h"
 #include "structseq.h"
 
+
 #include "codecs.h"
 #include "pyerrors.h"
 
@@ -130,7 +132,9 @@ extern "C" {
 #endif
 
 /* _Py_Mangle is defined in compile.c */
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject*) _Py_Mangle(PyObject *p, PyObject *name);
+#endif
 
 #ifdef __cplusplus
 }

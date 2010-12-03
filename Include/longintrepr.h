@@ -1,3 +1,4 @@
+#ifndef Py_LIMITED_API
 #ifndef Py_LONGINTREPR_H
 #define Py_LONGINTREPR_H
 #ifdef __cplusplus
@@ -99,3 +100,4 @@ PyAPI_FUNC(PyObject *) _PyLong_Copy(PyLongObject *src);
 }
 #endif
 #endif /* !Py_LONGINTREPR_H */
+#endif /* Py_LIMITED_API */

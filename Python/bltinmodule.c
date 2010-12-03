@@ -727,7 +727,7 @@ builtin_eval(PyObject *self, PyObject *args)
         "code object passed to eval() may not contain free variables");
             return NULL;
         }
-        return PyEval_EvalCode((PyCodeObject *) cmd, globals, locals);
+        return PyEval_EvalCode(cmd, globals, locals);
     }
 
     cf.cf_flags = PyCF_SOURCE_IS_UTF8;
@@ -803,7 +803,7 @@ builtin_exec(PyObject *self, PyObject *args)
                 "contain free variables");
             return NULL;
         }
-        v = PyEval_EvalCode((PyCodeObject *) prog, globals, locals);
+        v = PyEval_EvalCode(prog, globals, locals);
     }
     else {
         char *str;

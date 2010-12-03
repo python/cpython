@@ -2304,6 +2304,44 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     return (PyObject *)type;
 }
 
+static short slotoffsets[] = {
+    -1, /* invalid slot */
+#include "typeslots.inc"
+};
+
+PyObject* PyType_FromSpec(PyType_Spec *spec)
+{
+    PyHeapTypeObject *res = (PyHeapTypeObject*)PyType_GenericAlloc(&PyType_Type, 0);
+    char *res_start = (char*)res;
+    PyType_Slot *slot;
+
+    res->ht_name = PyUnicode_FromString(spec->name);
+    if (!res->ht_name)
+	goto fail;
+    res->ht_type.tp_name = _PyUnicode_AsString(res->ht_name);
+    if (!res->ht_type.tp_name)
+	goto fail;
+
+    res->ht_type.tp_basicsize = spec->basicsize;
+    res->ht_type.tp_itemsize = spec->itemsize;
+    res->ht_type.tp_flags = spec->flags | Py_TPFLAGS_HEAPTYPE;
+    
+    for (slot = spec->slots; slot->slot; slot++) {
+	if (slot->slot >= sizeof(slotoffsets)/sizeof(slotoffsets[0])) {
+	    PyErr_SetString(PyExc_RuntimeError, "invalid slot offset");
+	    goto fail;
+	}
+	*(void**)(res_start + slotoffsets[slot->slot]) = slot->pfunc;
+    }
+
+    return (PyObject*)res;
+    
+ fail:
+    Py_DECREF(res);
+    return NULL;
+}
+
+
 /* Internal API to look for a name through the MRO.
    This returns a borrowed reference, and doesn't set an exception! */
 PyObject *

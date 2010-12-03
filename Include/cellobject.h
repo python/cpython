@@ -1,5 +1,5 @@
 /* Cell object interface */
-
+#ifndef Py_LIMITED_API
 #ifndef Py_CELLOBJECT_H
 #define Py_CELLOBJECT_H
 #ifdef __cplusplus
@@ -26,3 +26,4 @@ PyAPI_FUNC(int) PyCell_Set(PyObject *, PyObject *);
 }
 #endif
 #endif /* !Py_TUPLEOBJECT_H */
+#endif /* Py_LIMITED_API */

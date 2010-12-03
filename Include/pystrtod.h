@@ -18,7 +18,9 @@ PyAPI_FUNC(char *) PyOS_double_to_string(double val,
                                          int flags,
                                          int *type);
 
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(double) _Py_parse_inf_or_nan(const char *p, char **endptr);
+#endif
 
 
 /* PyOS_double_to_string's "flags" parameter can be set to 0 or more of: */

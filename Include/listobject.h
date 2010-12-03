@@ -19,6 +19,7 @@ returned item's reference count.
 extern "C" {
 #endif
 
+#ifndef Py_LIMITED_API
 typedef struct {
     PyObject_VAR_HEAD
     /* Vector of pointers to list elements.  list[0] is ob_item[0], etc. */
@@ -37,6 +38,7 @@ typedef struct {
      */
     Py_ssize_t allocated;
 } PyListObject;
+#endif
 
 PyAPI_DATA(PyTypeObject) PyList_Type;
 PyAPI_DATA(PyTypeObject) PyListIter_Type;
@@ -58,12 +60,16 @@ PyAPI_FUNC(int) PyList_SetSlice(PyObject *, Py_ssize_t, Py_ssize_t, PyObject *);
 PyAPI_FUNC(int) PyList_Sort(PyObject *);
 PyAPI_FUNC(int) PyList_Reverse(PyObject *);
 PyAPI_FUNC(PyObject *) PyList_AsTuple(PyObject *);
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _PyList_Extend(PyListObject *, PyObject *);
+#endif
 
 /* Macro, trading safety for speed */
+#ifndef Py_LIMITED_API
 #define PyList_GET_ITEM(op, i) (((PyListObject *)(op))->ob_item[i])
 #define PyList_SET_ITEM(op, i, v) (((PyListObject *)(op))->ob_item[i] = (v))
 #define PyList_GET_SIZE(op)    Py_SIZE(op)
+#endif
 
 #ifdef __cplusplus
 }

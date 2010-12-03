@@ -641,6 +641,9 @@ Python/formatter_unicode.o: $(srcdir)/Python/formatter_unicode.c \
 				$(BYTESTR_DEPS) \
 				$(srcdir)/Objects/stringlib/formatter.h
 
+Objects/typeobject.o: $(srcdir)/Objects/typeslots.inc
+$(srcdir)/Objects/typeslots.inc: $(srcdir)/Include/typeslots.h $(srcdir)/Objects/typeslots.py
+	$(PYTHON) $(srcdir)/Objects/typeslots.py < $(srcdir)/Include/typeslots.h > $(srcdir)/Objects/typeslots.inc
 
 ############################################################################
 # Header files

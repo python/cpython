@@ -6,6 +6,7 @@
 extern "C" {
 #endif
 
+#ifndef Py_LIMITED_API
 typedef struct {
     double real;
     double imag;
@@ -28,7 +29,7 @@ PyAPI_FUNC(Py_complex) c_prod(Py_complex, Py_complex);
 PyAPI_FUNC(Py_complex) c_quot(Py_complex, Py_complex);
 PyAPI_FUNC(Py_complex) c_pow(Py_complex, Py_complex);
 PyAPI_FUNC(double) c_abs(Py_complex);
-
+#endif
 
 /* Complex object interface */
 
@@ -36,29 +37,36 @@ PyAPI_FUNC(double) c_abs(Py_complex);
 PyComplexObject represents a complex number with double-precision
 real and imaginary parts.
 */
-
+#ifndef Py_LIMITED_API
 typedef struct {
     PyObject_HEAD
     Py_complex cval;
-} PyComplexObject;     
+} PyComplexObject;
+#endif
 
 PyAPI_DATA(PyTypeObject) PyComplex_Type;
 
 #define PyComplex_Check(op) PyObject_TypeCheck(op, &PyComplex_Type)
 #define PyComplex_CheckExact(op) (Py_TYPE(op) == &PyComplex_Type)
 
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) PyComplex_FromCComplex(Py_complex);
+#endif
 PyAPI_FUNC(PyObject *) PyComplex_FromDoubles(double real, double imag);
 
 PyAPI_FUNC(double) PyComplex_RealAsDouble(PyObject *op);
 PyAPI_FUNC(double) PyComplex_ImagAsDouble(PyObject *op);
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(Py_complex) PyComplex_AsCComplex(PyObject *op);
+#endif
 
 /* Format the object based on the format_spec, as defined in PEP 3101
    (Advanced String Formatting). */
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _PyComplex_FormatAdvanced(PyObject *obj,
                                                  Py_UNICODE *format_spec,
                                                  Py_ssize_t format_spec_len);
+#endif
 
 #ifdef __cplusplus
 }

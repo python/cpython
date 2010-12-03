@@ -1755,7 +1755,6 @@ _Py_GetObjects(PyObject *self, PyObject *args)
 
 #endif
 
-
 /* Hack to force loading of pycapsule.o */
 PyTypeObject *_PyCapsule_hack = &PyCapsule_Type;
 
@@ -1899,6 +1898,19 @@ _PyTrash_destroy_chain(void)
         --_PyTrash_delete_nesting;
     }
 }
+
+#ifndef Py_TRACE_REFS
+/* For Py_LIMITED_API, we need an out-of-line version of _Py_Dealloc.
+   Define this here, so we can undefine the macro. */
+#undef _Py_Dealloc
+PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
+void
+_Py_Dealloc(PyObject *op)
+{
+    _Py_INC_TPFREES(op) _Py_COUNT_ALLOCS_COMMA
+    (*Py_TYPE(op)->tp_dealloc)(op);
+}
+#endif
 
 #ifdef __cplusplus
 }

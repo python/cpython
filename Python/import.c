@@ -806,7 +806,7 @@ PyImport_ExecCodeModuleWithPathnames(char *name, PyObject *co, char *pathname,
         PyErr_Clear(); /* Not important enough to report */
     Py_DECREF(v);
 
-    v = PyEval_EvalCode((PyCodeObject *)co, d, d);
+    v = PyEval_EvalCode(co, d, d);
     if (v == NULL)
         goto error;
     Py_DECREF(v);

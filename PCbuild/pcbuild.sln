@@ -133,6 +133,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ssl", "ssl.vcproj", "{E5B04
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "kill_python", "kill_python.vcproj", "{6DE10744-E396-40A5-B4E2-1B69AA7C8D31}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "python3dll", "python3dll.vcproj", "{885D4898-D08D-4091-9C40-C700CFE3FC5A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CF7AC3D1-E2DF-41D2-BEA6-1E2556CDEA26} = {CF7AC3D1-E2DF-41D2-BEA6-1E2556CDEA26}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xxlimited", "xxlimited.vcproj", "{F749B822-B489-4CA5-A3AD-CE078F5F338A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -553,6 +560,32 @@ Global
 		{6DE10744-E396-40A5-B4E2-1B69AA7C8D31}.Release|Win32.Build.0 = Release|Win32
 		{6DE10744-E396-40A5-B4E2-1B69AA7C8D31}.Release|x64.ActiveCfg = Release|x64
 		{6DE10744-E396-40A5-B4E2-1B69AA7C8D31}.Release|x64.Build.0 = Release|x64
+		{885D4898-D08D-4091-9C40-C700CFE3FC5A}.Debug|Win32.ActiveCfg = PGUpdate|Win32
+		{885D4898-D08D-4091-9C40-C700CFE3FC5A}.Debug|x64.ActiveCfg = PGUpdate|x64
+		{885D4898-D08D-4091-9C40-C700CFE3FC5A}.PGInstrument|Win32.ActiveCfg = PGInstrument|Win32
+		{885D4898-D08D-4091-9C40-C700CFE3FC5A}.PGInstrument|Win32.Build.0 = PGInstrument|Win32
+		{885D4898-D08D-4091-9C40-C700CFE3FC5A}.PGInstrument|x64.ActiveCfg = PGInstrument|x64
+		{885D4898-D08D-4091-9C40-C700CFE3FC5A}.PGUpdate|Win32.ActiveCfg = PGUpdate|Win32
+		{885D4898-D08D-4091-9C40-C700CFE3FC5A}.PGUpdate|Win32.Build.0 = PGUpdate|Win32
+		{885D4898-D08D-4091-9C40-C700CFE3FC5A}.PGUpdate|x64.ActiveCfg = PGUpdate|x64
+		{885D4898-D08D-4091-9C40-C700CFE3FC5A}.Release|Win32.ActiveCfg = Release|Win32
+		{885D4898-D08D-4091-9C40-C700CFE3FC5A}.Release|Win32.Build.0 = Release|Win32
+		{885D4898-D08D-4091-9C40-C700CFE3FC5A}.Release|x64.ActiveCfg = Release|x64
+		{F749B822-B489-4CA5-A3AD-CE078F5F338A}.Debug|Win32.ActiveCfg = PGUpdate|x64
+		{F749B822-B489-4CA5-A3AD-CE078F5F338A}.Debug|x64.ActiveCfg = PGUpdate|x64
+		{F749B822-B489-4CA5-A3AD-CE078F5F338A}.Debug|x64.Build.0 = PGUpdate|x64
+		{F749B822-B489-4CA5-A3AD-CE078F5F338A}.PGInstrument|Win32.ActiveCfg = PGInstrument|Win32
+		{F749B822-B489-4CA5-A3AD-CE078F5F338A}.PGInstrument|Win32.Build.0 = PGInstrument|Win32
+		{F749B822-B489-4CA5-A3AD-CE078F5F338A}.PGInstrument|x64.ActiveCfg = PGInstrument|x64
+		{F749B822-B489-4CA5-A3AD-CE078F5F338A}.PGInstrument|x64.Build.0 = PGInstrument|x64
+		{F749B822-B489-4CA5-A3AD-CE078F5F338A}.PGUpdate|Win32.ActiveCfg = PGUpdate|Win32
+		{F749B822-B489-4CA5-A3AD-CE078F5F338A}.PGUpdate|Win32.Build.0 = PGUpdate|Win32
+		{F749B822-B489-4CA5-A3AD-CE078F5F338A}.PGUpdate|x64.ActiveCfg = PGUpdate|x64
+		{F749B822-B489-4CA5-A3AD-CE078F5F338A}.PGUpdate|x64.Build.0 = PGUpdate|x64
+		{F749B822-B489-4CA5-A3AD-CE078F5F338A}.Release|Win32.ActiveCfg = Release|Win32
+		{F749B822-B489-4CA5-A3AD-CE078F5F338A}.Release|Win32.Build.0 = Release|Win32
+		{F749B822-B489-4CA5-A3AD-CE078F5F338A}.Release|x64.ActiveCfg = Release|x64
+		{F749B822-B489-4CA5-A3AD-CE078F5F338A}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,3 +1,4 @@
+#ifndef Py_LIMITED_API
 #ifndef Py_BYTES_CTYPE_H
 #define Py_BYTES_CTYPE_H
 
@@ -42,3 +43,4 @@ extern const char _Py_maketrans__doc__[];
 #define PyDoc_STRVAR_shared(name,str) const char name[] = PyDoc_STR(str)
 
 #endif /* !Py_BYTES_CTYPE_H */
+#endif /* !Py_LIMITED_API */

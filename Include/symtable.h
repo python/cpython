@@ -1,3 +1,4 @@
+#ifndef Py_LIMITED_API
 #ifndef Py_SYMTABLE_H
 #define Py_SYMTABLE_H
 
@@ -102,3 +103,4 @@ PyAPI_FUNC(void) PySymtable_Free(struct symtable *);
 }
 #endif
 #endif /* !Py_SYMTABLE_H */
+#endif /* Py_LIMITED_API */

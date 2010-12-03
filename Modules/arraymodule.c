@@ -2112,7 +2112,7 @@ array_subscr(arrayobject* self, PyObject* item)
         arrayobject* ar;
         int itemsize = self->ob_descr->itemsize;
 
-        if (PySlice_GetIndicesEx((PySliceObject*)item, Py_SIZE(self),
+        if (PySlice_GetIndicesEx(item, Py_SIZE(self),
                          &start, &stop, &step, &slicelength) < 0) {
             return NULL;
         }
@@ -2183,7 +2183,7 @@ array_ass_subscr(arrayobject* self, PyObject* item, PyObject* value)
             return (*self->ob_descr->setitem)(self, i, value);
     }
     else if (PySlice_Check(item)) {
-        if (PySlice_GetIndicesEx((PySliceObject *)item,
+        if (PySlice_GetIndicesEx(item,
                                  Py_SIZE(self), &start, &stop,
                                  &step, &slicelength) < 0) {
             return -1;

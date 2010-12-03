@@ -1272,7 +1272,7 @@ element_subscr(PyObject* self_, PyObject* item)
         if (!self->extra)
             return PyList_New(0);
 
-        if (PySlice_GetIndicesEx((PySliceObject *)item,
+        if (PySlice_GetIndicesEx(item,
                 self->extra->length,
                 &start, &stop, &step, &slicelen) < 0) {
             return NULL;
@@ -1331,7 +1331,7 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
         if (!self->extra)
             element_new_extra(self, NULL);
 
-        if (PySlice_GetIndicesEx((PySliceObject *)item,
+        if (PySlice_GetIndicesEx(item,
                 self->extra->length,
                 &start, &stop, &step, &slicelen) < 0) {
             return -1;

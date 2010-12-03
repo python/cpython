@@ -2,6 +2,7 @@
 
 /* Revealing some structures (not for general use) */
 
+#ifndef Py_LIMITED_API
 #ifndef Py_CLASSOBJECT_H
 #define Py_CLASSOBJECT_H
 #ifdef __cplusplus
@@ -54,3 +55,4 @@ PyAPI_FUNC(PyObject *) PyInstanceMethod_Function(PyObject *);
 }
 #endif
 #endif /* !Py_CLASSOBJECT_H */
+#endif /* Py_LIMITED_API */

@@ -1,6 +1,6 @@
 /*  datetime.h
  */
-
+#ifndef Py_LIMITED_API
 #ifndef DATETIME_H
 #define DATETIME_H
 #ifdef __cplusplus
@@ -234,3 +234,4 @@ static PyDateTime_CAPI *PyDateTimeAPI = NULL;
 }
 #endif
 #endif
+#endif /* !Py_LIMITED_API */

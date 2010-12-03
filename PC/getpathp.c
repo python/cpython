@@ -707,3 +707,38 @@ Py_GetProgramFullPath(void)
         calculate_path();
     return progpath;
 }
+
+/* Load python3.dll before loading any extension module that might refer 
+   to it. That way, we can be sure that always the python3.dll corresponding 
+   to this python DLL is loaded, not a python3.dll that might be on the path
+   by chance.
+   Return whether the DLL was found.
+*/
+static int python3_checked = 0;
+static HANDLE hPython3;
+int
+_Py_CheckPython3()
+{
+    wchar_t py3path[MAXPATHLEN+1];
+    wchar_t *s;
+    if (python3_checked)
+        return hPython3 != NULL;
+    python3_checked = 1;
+
+    /* If there is a python3.dll next to the python3y.dll,
+       assume this is a build tree; use that DLL */
+    wcscpy(py3path, dllpath);
+    s = wcsrchr(py3path, L'\\');
+    if (!s)
+        s = py3path;
+    wcscpy(s, L"\\python3.dll");
+    hPython3 = LoadLibraryExW(py3path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+    if (hPython3 != NULL)
+        return 1;
+
+    /* Check sys.prefix\DLLs\python3.dll */
+    wcscpy(py3path, Py_GetPrefix());
+    wcscat(py3path, L"\\DLLs\\python3.dll");
+    hPython3 = LoadLibraryExW(py3path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+    return hPython3 != NULL;
+}
