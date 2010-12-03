@@ -213,6 +213,10 @@ class SequenceMatcher:
         #      (at least 200 elements) and x accounts for more than 1 + 1% of
         #      its elements (when autojunk is enabled).
         #      DOES NOT WORK for x in a!
+        # bjunk
+        #      the items in b for which isjunk is True.
+        # bpopular
+        #      nonjunk items in b treated as junk by the heuristic (if used).
 
         self.isjunk = isjunk
         self.a = self.b = None
@@ -321,7 +325,7 @@ class SequenceMatcher:
             indices.append(i)
 
         # Purge junk elements
-        junk = set()
+        self.bjunk = junk = set()
         isjunk = self.isjunk
         if isjunk:
             for elt in list(b2j.keys()):  # using list() since b2j is modified
@@ -330,7 +334,7 @@ class SequenceMatcher:
                     del b2j[elt]
 
         # Purge popular elements that are not junk
-        popular = set()
+        self.bpopular = popular = set()
         n = len(b)
         if self.autojunk and n >= 200:
             ntest = n // 100 + 1
