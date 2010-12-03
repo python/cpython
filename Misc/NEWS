@@ -206,6 +206,9 @@ Tests
 - regrtest.py once again ensures the test directory is removed from sys.path
   when it is invoked directly as the __main__ module
 
+- `python -m test` can be used to run the test suite as well as
+  `python -m test.regrtest`.
+
 - Issue #9424: Deprecate the `unittest.TestCase` methods `assertEquals`,
   `assertNotEquals`, `assertAlmostEquals`, `assertNotAlmostEquals` and `assert_`
   and replace them with the correct methods in the Python test suite.
