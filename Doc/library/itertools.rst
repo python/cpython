@@ -90,13 +90,15 @@ loops that truncate the stream.
     parameter (which defaults to :const:`0`). Elements may be any addable type
     including :class:`Decimal` or :class:`Fraction`.  Equivalent to::
 
-        def accumulate(iterable, start=0):
+        def accumulate(iterable):
             'Return running totals'
-                # accumulate([1,2,3,4,5]) --> 1 3 6 10 15
-                total = start
-                for element in iterable:
-                    total += element
-                    yield total
+            # accumulate([1,2,3,4,5]) --> 1 3 6 10 15
+            it = iter(iterable)
+            total = next(it)
+            yield total
+            for element in it:
+                total += element
+                yield total
 
     .. versionadded:: 3.2
 

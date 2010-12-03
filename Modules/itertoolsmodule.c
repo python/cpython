@@ -2597,41 +2597,27 @@ static PyTypeObject accumulate_type;
 static PyObject *
 accumulate_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    static char *kwargs[] = {"iterable", "start", NULL};
+    static char *kwargs[] = {"iterable", NULL};
     PyObject *iterable;
     PyObject *it;
-    PyObject *start = NULL;
     accumulateobject *lz;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:accumulate",
-				                     kwargs, &iterable, &start))
-	return NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:accumulate", kwargs, &iterable))
+        return NULL;
 
     /* Get iterator. */
     it = PyObject_GetIter(iterable);
     if (it == NULL)
         return NULL;
 
-    /* Default start value */
-    if (start == NULL) {
-	    start = PyLong_FromLong(0);
-	    if (start == NULL) {
-	        Py_DECREF(it);
-	        return NULL;
-	    }
-    } else {
-        Py_INCREF(start);
-    }
-
     /* create accumulateobject structure */
     lz = (accumulateobject *)type->tp_alloc(type, 0);
     if (lz == NULL) {
         Py_DECREF(it);
-	    Py_DECREF(start);
-            return NULL;
+        return NULL;
     }
 
-    lz->total = start;
+    lz->total = NULL;
     lz->it = it;
     return (PyObject *)lz;
 }
@@ -2661,11 +2647,17 @@ accumulate_next(accumulateobject *lz)
     val = PyIter_Next(lz->it);
     if (val == NULL)
         return NULL;
-    
+ 
+    if (lz->total == NULL) {
+        Py_INCREF(val);
+        lz->total = val;
+        return lz->total;
+    }
+   
     newtotal = PyNumber_Add(lz->total, val);
-	Py_DECREF(val);
+    Py_DECREF(val);
     if (newtotal == NULL)
-	    return NULL;
+        return NULL;
 
     oldtotal = lz->total;
     lz->total = newtotal;
@@ -2676,7 +2668,7 @@ accumulate_next(accumulateobject *lz)
 }
 
 PyDoc_STRVAR(accumulate_doc,
-"accumulate(iterable, start=0) --> accumulate object\n\
+"accumulate(iterable) --> accumulate object\n\
 \n\
 Return series of accumulated sums.");
 

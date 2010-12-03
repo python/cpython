@@ -59,18 +59,18 @@ class TestBasicOps(unittest.TestCase):
 
     def test_accumulate(self):
         self.assertEqual(list(accumulate(range(10))),               # one positional arg
-                         [0, 1, 3, 6, 10, 15, 21, 28, 36, 45])
-        self.assertEqual(list(accumulate(range(10), 100)),          # two positional args
-            [100, 101, 103, 106, 110, 115, 121, 128, 136, 145])
-        self.assertEqual(list(accumulate(iterable=range(10), start=100)),   # kw args
-            [100, 101, 103, 106, 110, 115, 121, 128, 136, 145])
+                          [0, 1, 3, 6, 10, 15, 21, 28, 36, 45])
+        self.assertEqual(list(accumulate(iterable=range(10))),      # kw arg
+                          [0, 1, 3, 6, 10, 15, 21, 28, 36, 45])
         for typ in int, complex, Decimal, Fraction:                 # multiple types
-            self.assertEqual(list(accumulate(range(10), typ(0))),
+            self.assertEqual(
+                list(accumulate(map(typ, range(10)))),
                 list(map(typ, [0, 1, 3, 6, 10, 15, 21, 28, 36, 45])))
         self.assertEqual(list(accumulate([])), [])                  # empty iterable
-        self.assertRaises(TypeError, accumulate, range(10), 0, 5)   # too many args
+        self.assertEqual(list(accumulate([7])), [7])                # iterable of length one
+        self.assertRaises(TypeError, accumulate, range(10), 5)      # too many args
         self.assertRaises(TypeError, accumulate)                    # too few args
-        self.assertRaises(TypeError, accumulate, range(10), x=7)    # unexpected kwd args
+        self.assertRaises(TypeError, accumulate, x=range(10))       # unexpected kwd arg
         self.assertRaises(TypeError, list, accumulate([1, []]))     # args that don't add
 
     def test_chain(self):
