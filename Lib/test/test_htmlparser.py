@@ -8,10 +8,10 @@ from test import support
 
 class EventCollector(html.parser.HTMLParser):
 
-    def __init__(self):
+    def __init__(self, *args, **kw):
         self.events = []
         self.append = self.events.append
-        html.parser.HTMLParser.__init__(self)
+        html.parser.HTMLParser.__init__(self, *args, **kw)
 
     def get_events(self):
         # Normalize the list of events so that buffer artefacts don't
@@ -72,8 +72,10 @@ class EventCollectorExtra(EventCollector):
 
 class TestCaseBase(unittest.TestCase):
 
-    def _run_check(self, source, expected_events, collector=EventCollector):
-        parser = collector()
+    def _run_check(self, source, expected_events, collector=None):
+        if collector is None:
+            collector = EventCollector()
+        parser = collector
         for s in source:
             parser.feed(s)
         parser.close()
@@ -84,7 +86,7 @@ class TestCaseBase(unittest.TestCase):
                       "\nReceived:\n" + pprint.pformat(events))
 
     def _run_check_extra(self, source, events):
-        self._run_check(source, events, EventCollectorExtra)
+        self._run_check(source, events, EventCollectorExtra())
 
     def _parse_error(self, source):
         def parse(source=source):
@@ -321,8 +323,42 @@ DOCTYPE html [
                 ])
 
 
+class HTMLParserTolerantTestCase(TestCaseBase):
+
+    def setUp(self):
+        self.collector = EventCollector(strict=False)
+
+    def test_tolerant_parsing(self):
+        self._run_check('<html <html>te>>xt&a<<bc</a></html>\n'
+                        '<img src="URL><//img></html</html>', [
+                             ('data', '<html '),
+                             ('starttag', 'html', []),
+                             ('data', 'te>>xt'),
+                             ('entityref', 'a'),
+                             ('data', '<<bc'),
+                             ('endtag', 'a'),
+                             ('endtag', 'html'),
+                             ('data', '\n<img src="URL><//img></html'),
+                             ('endtag', 'html')],
+                        collector = self.collector)
+
+    def test_comma_between_attributes(self):
+        self._run_check('<form action="/xxx.php?a=1&amp;b=2&amp", '
+                        'method="post">', [
+                            ('starttag', 'form',
+                                [('action', '/xxx.php?a=1&b=2&amp'),
+                                 ('method', 'post')])],
+                        collector = self.collector)
+
+    def test_weird_chars_in_unquoted_attribute_values(self):
+        self._run_check('<form action=bogus|&#()value>', [
+                            ('starttag', 'form',
+                                [('action', 'bogus|&#()value')])],
+                        collector = self.collector)
+
+
 def test_main():
-    support.run_unittest(HTMLParserTestCase)
+    support.run_unittest(HTMLParserTestCase, HTMLParserTolerantTestCase)
 
 
 if __name__ == "__main__":

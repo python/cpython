@@ -12,9 +12,13 @@
 This module defines a class :class:`HTMLParser` which serves as the basis for
 parsing text files formatted in HTML (HyperText Mark-up Language) and XHTML.
 
-.. class:: HTMLParser()
+.. class:: HTMLParser(strict=True)
 
-   The :class:`HTMLParser` class is instantiated without arguments.
+   Create a parser instance.  If *strict* is ``True`` (the default), invalid
+   html results in :exc:`~html.parser.HTMLParseError` exceptions [#]_.  If
+   *strict* is ``False``, the parser uses heuristics to make a best guess at
+   the intention of any invalid html it encounters, similar to the way most
+   browsers do.
 
    An :class:`HTMLParser` instance is fed HTML data and calls handler functions when tags
    begin and end.  The :class:`HTMLParser` class is meant to be overridden by the
@@ -191,3 +195,8 @@ As a basic example, below is a very basic HTML parser that uses the
    Encountered a html end tag
 
 
+.. rubric:: Footnotes
+
+.. [#] For backward compatibility reasons *strict* mode does not throw
+       errors for all non-compliant HTML.  That is, some invalid HTML
+       is tolerated even in *strict* mode.
