@@ -1499,7 +1499,7 @@ else:
                     c.settimeout(0.2)
                     c.connect((host, port))
                     # Will attempt handshake and time out
-                    self.assertRaisesRegex(ssl.SSLError, "timed out",
+                    self.assertRaisesRegex(socket.timeout, "timed out",
                                            ssl.wrap_socket, c)
                 finally:
                     c.close()
@@ -1508,7 +1508,7 @@ else:
                     c = ssl.wrap_socket(c)
                     c.settimeout(0.2)
                     # Will attempt handshake and time out
-                    self.assertRaisesRegex(ssl.SSLError, "timed out",
+                    self.assertRaisesRegex(socket.timeout, "timed out",
                                            c.connect, (host, port))
                 finally:
                     c.close()

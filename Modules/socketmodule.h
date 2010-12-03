@@ -196,6 +196,7 @@ typedef struct {
 typedef struct {
     PyTypeObject *Sock_Type;
     PyObject *error;
+    PyObject *timeout_error;
 } PySocketModule_APIObject;
 
 #define PySocketModule_ImportModuleAndAPI() PyCapsule_Import(PySocket_CAPSULE_NAME, 1)
