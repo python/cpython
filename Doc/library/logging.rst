@@ -750,6 +750,19 @@ functions.
           # ... override behaviour here
 
 
+.. function:: getLogRecordFactory()
+
+   Return a callable which is used to create a :class:`LogRecord`.
+
+   .. versionadded:: 3.2
+
+      This function has been provided, along with :func:`setLogRecordFactory`,
+      to allow developers more control over how the :class:`LogRecord`
+      representing a logging event is constructed.
+
+   See :func:`setLogRecordFactory` for more information about the how the
+   factory is called.
+
 .. function:: debug(msg, *args, **kwargs)
 
    Logs a message with level :const:`DEBUG` on the root logger. The *msg* is the
@@ -973,6 +986,34 @@ functions.
    function is typically called before any loggers are instantiated by applications
    which need to use custom logger behavior.
 
+.. function:: setLogRecordFactory(factory)
+
+   Set a callable which is used to create a :class:`LogRecord`.
+
+   :param factory: The factory callable to be used to instantiate a log record.
+
+   .. versionadded:: 3.2
+
+   This function has been provided, along with :func:`getLogRecordFactory`, to
+   allow developers more control over how the :class:`LogRecord` representing
+   a logging event is constructed.
+
+   The factory has the following signature.
+
+   factory(name, level, fn, lno, msg, args, exc_info, func=None, sinfo=None, \*\*kwargs)
+
+      :name: The logger name.
+      :level: The logging level (numeric).
+      :fn: The full pathname of the file where the logging call was made.
+      :lno: The line number in the file where the logging call was made.
+      :msg: The logging message.
+      :args: The arguments for the logging message.
+      :exc_info: An exception tuple, or None.
+      :func: The name of the function or method which invoked the logging
+             call.
+      :sinfo: A stack traceback such as is provided by
+              :func:`traceback.print_stack`, showing the call hierarchy.
+      :kwargs: Additional keyword arguments.
 
 .. seealso::
 
@@ -3243,6 +3284,29 @@ wire).
       convert it to a string. This allows use of user-defined classes as
       messages, whose ``__str__`` method can return the actual format string to
       be used.
+
+   .. versionchanged:: 3.2
+      The creation of a ``LogRecord`` has been made more configurable by
+      providing a factory which is used to create the record. The factory can be
+      set using :func:`getLogRecordFactory` and :func:`setLogRecordFactory`
+      (see this for the factory's signature).
+
+      This functionality can be used to inject your own values into a
+      LogRecord at creation time. You can use the following pattern::
+
+          old_factory = logging.getLogRecordFactory()
+
+          def record_factory(*args, **kwargs):
+            record = old_factory(*args, **kwargs)
+            record.custom_attribute = 0xdecafbad
+            return record
+
+          logging.setLogRecordFactory(record_factory)
+
+      With this pattern, multiple factories could be chained, and as long
+      as they don't overwrite each other's attributes or unintentionally
+      overwrite the standard attributes listed above, there should be no
+      surprises.
 
 .. _logger-adapter:
 

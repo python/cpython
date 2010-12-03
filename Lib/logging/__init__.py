@@ -33,7 +33,7 @@ __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'captureWarnings', 'critical', 'debug', 'disable', 'error',
            'exception', 'fatal', 'getLevelName', 'getLogger', 'getLoggerClass',
            'info', 'log', 'makeLogRecord', 'setLoggerClass', 'warn', 'warning',
-           'getLogRecordClass', 'setLogRecordClass']
+           'getLogRecordFactory', 'setLogRecordFactory']
 
 try:
     import codecs
@@ -238,7 +238,7 @@ class LogRecord(object):
     information to be logged.
     """
     def __init__(self, name, level, pathname, lineno,
-                 msg, args, exc_info, func=None, sinfo=None):
+                 msg, args, exc_info, func=None, sinfo=None, **kwargs):
         """
         Initialize a logging record with interesting information.
         """
@@ -322,21 +322,24 @@ class LogRecord(object):
 #
 #   Determine which class to use when instantiating log records.
 #
-_logRecordClass = LogRecord
+_logRecordFactory = LogRecord
 
-def setLogRecordClass(cls):
+def setLogRecordFactory(factory):
     """
     Set the class to be used when instantiating a log record.
-    """
-    global _logRecordClass
-    _logRecordClass = cls
 
-def getLogRecordClass():
+    :param factory: A callable which will be called to instantiate
+    a log record.
+    """
+    global _logRecordFactory
+    _logRecordFactory = factory
+
+def getLogRecordFactory():
     """
     Return the class to be used when instantiating a log record.
     """
 
-    return _logRecordClass
+    return _logRecordFactory
 
 def makeLogRecord(dict):
     """
@@ -345,7 +348,7 @@ def makeLogRecord(dict):
     a socket connection (which is sent as a dictionary) into a LogRecord
     instance.
     """
-    rv = _logRecordClass(None, None, "", 0, "", (), None, None)
+    rv = _logRecordFactory(None, None, "", 0, "", (), None, None)
     rv.__dict__.update(dict)
     return rv
 
@@ -1056,7 +1059,7 @@ class Manager(object):
         self.emittedNoHandlerWarning = 0
         self.loggerDict = {}
         self.loggerClass = None
-        self.logRecordClass = None
+        self.logRecordFactory = None
 
     def getLogger(self, name):
         """
@@ -1100,12 +1103,12 @@ class Manager(object):
                                 + klass.__name__)
         self.loggerClass = klass
 
-    def setLogRecordClass(self, cls):
+    def setLogRecordFactory(self, factory):
         """
         Set the class to be used when instantiating a log record with this
         Manager.
         """
-        self.logRecordClass = cls
+        self.logRecordFactory = factory
 
     def _fixupParents(self, alogger):
         """
@@ -1305,7 +1308,7 @@ class Logger(Filterer):
         A factory method which can be overridden in subclasses to create
         specialized LogRecords.
         """
-        rv = _logRecordClass(name, level, fn, lno, msg, args, exc_info, func,
+        rv = _logRecordFactory(name, level, fn, lno, msg, args, exc_info, func,
                              sinfo)
         if extra is not None:
             for key in extra:
