@@ -35,6 +35,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10497: Fix incorrect use of gettext in argparse.
+
 - Issue #10478: Reentrant calls inside buffered IO objects (for example by
   way of a signal handler) now raise a RuntimeError instead of freezing the
   current process.
