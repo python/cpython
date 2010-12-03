@@ -9,9 +9,11 @@ import inspect
 import unittest
 import test.support
 import xml.etree
+import textwrap
+from io import StringIO
 from contextlib import contextmanager
-from test.support import (
-    TESTFN, forget, rmtree, EnvironmentVarGuard, reap_children)
+from test.support import TESTFN, forget, rmtree, EnvironmentVarGuard, \
+     reap_children, captured_output
 
 from test import pydoc_mod
 
@@ -326,6 +328,41 @@ class PyDocDocTest(unittest.TestCase):
         self.assertEqual(stripid('42'), '42')
         self.assertEqual(stripid("<type 'exceptions.Exception'>"),
                          "<type 'exceptions.Exception'>")
+
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     'Docstrings are omitted with -O2 and above')
+    def test_help_output_redirect(self):
+        # issue 940286, if output is set in Helper, then all output from
+        # Helper.help should be redirected
+        old_pattern = expected_text_pattern
+        getpager_old = pydoc.getpager
+        getpager_new = lambda: (lambda x: x)
+        self.maxDiff = None
+
+        buf = StringIO()
+        helper = pydoc.Helper(output=buf)
+        unused, doc_loc = get_pydoc_text(pydoc_mod)
+        module = "test.pydoc_mod"
+        help_header = """
+        Help on module test.pydoc_mod in test:
+
+        """.lstrip()
+        help_header = textwrap.dedent(help_header)
+        expected_help_pattern = help_header + expected_text_pattern
+
+        pydoc.getpager = getpager_new
+        try:
+            with captured_output('stdout') as output, \
+                 captured_output('stderr') as err:
+                helper.help(module)
+                result = buf.getvalue().strip()
+                expected_text = expected_help_pattern % \
+                                (doc_loc, inspect.getabsfile(pydoc_mod))
+                self.assertEqual('', output.getvalue())
+                self.assertEqual('', err.getvalue())
+                self.assertEqual(expected_text, result)
+        finally:
+            pydoc.getpager = getpager_old
 
 
 class TestDescriptions(unittest.TestCase):

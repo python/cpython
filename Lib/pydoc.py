@@ -1310,6 +1310,11 @@ doubt, consult the module reference at the location listed above.
             line += '\n' + self.indent(str(doc))
         return line
 
+class _PlainTextDoc(TextDoc):
+    """Subclass of TextDoc which overrides string styling"""
+    def bold(self, text):
+        return text
+
 # --------------------------------------------------------- user interfaces
 
 def pager(text):
@@ -1464,6 +1469,7 @@ def locate(path, forceload=0):
 # --------------------------------------- interactive interpreter interface
 
 text = TextDoc()
+plaintext = _PlainTextDoc()
 html = HTMLDoc()
 
 def resolve(thing, forceload=0):
@@ -1476,8 +1482,11 @@ def resolve(thing, forceload=0):
     else:
         return thing, getattr(thing, '__name__', None)
 
-def render_doc(thing, title='Python Library Documentation: %s', forceload=0):
+def render_doc(thing, title='Python Library Documentation: %s', forceload=0,
+        renderer=None):
     """Render text documentation, given an object or a path to an object."""
+    if renderer is None:
+        renderer = text
     object, name = resolve(thing, forceload)
     desc = describe(object)
     module = inspect.getmodule(object)
@@ -1496,12 +1505,16 @@ def render_doc(thing, title='Python Library Documentation: %s', forceload=0):
         # document its available methods instead of its value.
         object = type(object)
         desc += ' object'
-    return title % desc + '\n\n' + text.document(object, name)
+    return title % desc + '\n\n' + renderer.document(object, name)
 
-def doc(thing, title='Python Library Documentation: %s', forceload=0):
+def doc(thing, title='Python Library Documentation: %s', forceload=0,
+        output=None):
     """Display text documentation, given an object or a path to an object."""
     try:
-        pager(render_doc(thing, title, forceload))
+        if output is None:
+            pager(render_doc(thing, title, forceload))
+        else:
+            output.write(render_doc(thing, title, forceload, plaintext))
     except (ImportError, ErrorDuringImport) as value:
         print(value)
 
@@ -1755,9 +1768,9 @@ has the same effect as typing a particular string at the help> prompt.
             elif request in self.symbols: self.showsymbol(request)
             elif request in self.keywords: self.showtopic(request)
             elif request in self.topics: self.showtopic(request)
-            elif request: doc(request, 'Help on %s:')
+            elif request: doc(request, 'Help on %s:', output=self._output)
         elif isinstance(request, Helper): self()
-        else: doc(request, 'Help on %s:')
+        else: doc(request, 'Help on %s:', output=self._output)
         self.output.write('\n')
 
     def intro(self):

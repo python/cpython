@@ -33,6 +33,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #940286: pydoc.Helper.help() ignores input/output init parameters.
+
 - Issue #1745035: Add a command size and data size limit to smtpd.py, to
   prevent DoS attacks.  Patch by Savio Sena.
 
