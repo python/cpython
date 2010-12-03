@@ -58,6 +58,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10554: Add context manager support to subprocess.Popen objects.
+
 - Issue #8989: email.utils.make_msgid now has a domain parameter that can
   override the domain name used in the generated msgid.
 

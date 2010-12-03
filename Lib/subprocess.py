@@ -697,6 +697,16 @@ class Popen(object):
         data = data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
         return data.decode(encoding)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        if self.stdout:
+            self.stdout.close()
+        if self.stderr:
+            self.stderr.close()
+        if self.stdin:
+            self.stdin.close()
 
     def __del__(self, _maxsize=sys.maxsize, _active=_active):
         if not self._child_created:
