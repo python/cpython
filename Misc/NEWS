@@ -35,6 +35,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #10478: Reentrant calls inside buffered IO objects (for example by
+  way of a signal handler) now raise a RuntimeError instead of freezing the
+  current process.
+
 - logging: Added getLogRecordFactory/setLogRecordFactory with docs and tests.
 
 - Issue #10549: Fix pydoc traceback when text-documenting certain classes.
