@@ -1799,7 +1799,7 @@ class ChildLoggerTest(BaseTest):
 class DerivedLogRecord(logging.LogRecord):
     pass
 
-class LogRecordClassTest(BaseTest):
+class LogRecordFactoryTest(BaseTest):
 
     def setUp(self):
         class CheckingFilter(logging.Filter):
@@ -1817,17 +1817,17 @@ class LogRecordClassTest(BaseTest):
         BaseTest.setUp(self)
         self.filter = CheckingFilter(DerivedLogRecord)
         self.root_logger.addFilter(self.filter)
-        self.orig_cls = logging.getLogRecordClass()
+        self.orig_factory = logging.getLogRecordFactory()
 
     def tearDown(self):
         self.root_logger.removeFilter(self.filter)
         BaseTest.tearDown(self)
-        logging.setLogRecordClass(self.orig_cls)
+        logging.setLogRecordFactory(self.orig_factory)
 
     def test_logrecord_class(self):
         self.assertRaises(TypeError, self.root_logger.warning,
                           self.next_message())
-        logging.setLogRecordClass(DerivedLogRecord)
+        logging.setLogRecordFactory(DerivedLogRecord)
         self.root_logger.error(self.next_message())
         self.assert_log_lines([
            ('root', 'ERROR', '2'),
@@ -2015,7 +2015,7 @@ def test_main():
                  ConfigFileTest, SocketHandlerTest, MemoryTest,
                  EncodingTest, WarningsTest, ConfigDictTest, ManagerTest,
                  FormatterTest,
-                 LogRecordClassTest, ChildLoggerTest, QueueHandlerTest,
+                 LogRecordFactoryTest, ChildLoggerTest, QueueHandlerTest,
                  RotatingFileHandlerTest,
                  #TimedRotatingFileHandlerTest
                 )

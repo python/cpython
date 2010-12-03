@@ -33,6 +33,8 @@ Core and Builtins
 Library
 -------
 
+- logging: Added getLogRecordFactory/setLogRecordFactory with docs and tests.
+
 - Issue #10549: Fix pydoc traceback when text-documenting certain classes.
 
 - Issue #2001: New HTML server with enhanced Web page features.  Patch by Ron
