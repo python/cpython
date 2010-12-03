@@ -9,23 +9,23 @@ What's New in Python 3.2 Beta 1?
 
 Core and Builtins
 -----------------
- 
+
 - Issue #9915: Speed up sorting with a key.
 
-- Issue #7475: Added transform() and untransform() methods to both bytes
-  and string types.  They can be used to access those codecs providing
+- Issue #7475: Added transform() and untransform() methods to both bytes and
+  string types.  They can be used to access those codecs providing
   bytes-to-bytes and string-to-string mappings.
 
-- Issue #8685: Speed up set difference ``a - b`` when source set ``a`` is
-  much larger than operand ``b``.  Patch by Andrew Bennetts.
+- Issue #8685: Speed up set difference ``a - b`` when source set ``a`` is much
+  larger than operand ``b``.  Patch by Andrew Bennetts.
 
 - Issue #10518: Bring back the callable() builtin.
 
-- Issue #7094: Added alternate formatting (specified by '#') to
-  __format__ method of float, complex, and Decimal. This allows more
-  precise control over when decimal points are displayed.
+- Issue #7094: Added alternate formatting (specified by '#') to ``__format__``
+  method of float, complex, and Decimal. This allows more precise control over
+  when decimal points are displayed.
 
-- Issue #10474: range().count() should return integers.
+- Issue #10474: range.count() should return integers.
 
 - Issue #1574217: isinstance now catches only AttributeError, rather than
   masking all errors.
@@ -33,13 +33,13 @@ Core and Builtins
 Library
 -------
 
-- Issue #10360: In WeakSet, do not raise TypeErrors when testing for
-  membership of non-weakrefable objects.
+- Issue #10360: In WeakSet, do not raise TypeErrors when testing for membership
+  of non-weakrefable objects.
 
 - Issue #940286: pydoc.Helper.help() ignores input/output init parameters.
 
-- Issue #1745035: Add a command size and data size limit to smtpd.py, to
-  prevent DoS attacks.  Patch by Savio Sena.
+- Issue #1745035: Add a command size and data size limit to smtpd.py, to prevent
+  DoS attacks.  Patch by Savio Sena.
 
 - Issue #4925: Add filename to error message when executable can't be found in
   subprocess.
@@ -50,28 +50,28 @@ Library
 - Issue #10027: st_nlink was not being set on Windows calls to os.stat or
   os.lstat. Patch by Hirokazu Yamamoto.
 
-- Issue #9333: Expose os.symlink only when the SeCreateSymbolicLinkPrivilege
-  is held by the user's account, i.e., when the function can actually be used.
+- Issue #9333: Expose os.symlink only when the SeCreateSymbolicLinkPrivilege is
+  held by the user's account, i.e., when the function can actually be used.
 
 - Issue #8879: Add os.link support for Windows.
 
-- Issue #7911: `unittest.TestCase.longMessage` defaults to True for improved
+- Issue #7911: ``unittest.TestCase.longMessage`` defaults to True for improved
   failure messages by default. Patch by Mark Roddy.
- 
-- Issue #1486713: HTMLParser now has an optional tolerant mode where it
-  tries to guess at the correct parsing of invalid html.
+
+- Issue #1486713: HTMLParser now has an optional tolerant mode where it tries to
+  guess at the correct parsing of invalid html.
 
 - Issue #10554: Add context manager support to subprocess.Popen objects.
 
 - Issue #8989: email.utils.make_msgid now has a domain parameter that can
   override the domain name used in the generated msgid.
 
-- Issue #9299: Add exist_ok parameter to os.makedirs to suppress the
-  'File exists' exception when a target directory already exists with the
-  specified mode. Patch by Ray Allen.
+- Issue #9299: Add exist_ok parameter to os.makedirs to suppress the 'File
+  exists' exception when a target directory already exists with the specified
+  mode. Patch by Ray Allen.
 
-- Issue #9573: os.fork() now works correctly when triggered as a side effect
-  of a module import
+- Issue #9573: os.fork() now works correctly when triggered as a side effect of
+  a module import.
 
 - Issue #10464: netrc now correctly handles lines with embedded '#' characters.
 
@@ -85,26 +85,26 @@ Library
 
 - Issue #10535: Enable silenced warnings in unittest by default.
 
-- Issue #9873: The URL parsing functions in urllib.parse now accept
-  ASCII byte sequences as input in addition to character strings.
+- Issue #9873: The URL parsing functions in urllib.parse now accept ASCII byte
+  sequences as input in addition to character strings.
 
-- Issue #10586: The statistics API for the new functools.lru_cache has
-  been changed to a single cache_info() method returning a named tuple.
+- Issue #10586: The statistics API for the new functools.lru_cache has been
+  changed to a single cache_info() method returning a named tuple.
 
-- Issue #10323: itertools.islice() now consumes the minimum number of
-  inputs before stopping.  Formerly, the final state of the underlying
-  iterator was undefined.
+- Issue #10323: itertools.islice() now consumes the minimum number of inputs
+  before stopping.  Formerly, the final state of the underlying iterator was
+  undefined.
 
-- Issue #10565: The collections.Iterator ABC now checks for both
-  __iter__ and __next__.
+- Issue #10565: The collections.Iterator ABC now checks for both __iter__ and
+  __next__.
 
-- Issue #10242: Fixed implementation of unittest.ItemsEqual and gave it
-  a new more informative name, unittest.CountEqual.
+- Issue #10242: Fixed implementation of unittest.ItemsEqual and gave it a new
+  more informative name, unittest.CountEqual.
 
 - Issue #10561: In pdb, clear the breakpoints by the breakpoint number.
 
-- Issue #2986: difflib.SequenceMatcher gets a new parameter, autojunk, which
-  can be set to False to turn off the previously undocumented 'popularity'
+- Issue #2986: difflib.SequenceMatcher gets a new parameter, autojunk, which can
+  be set to False to turn off the previously undocumented 'popularity'
   heuristic. Patch by Terry Reedy and Eli Bendersky.
 
 - Issue #9846: zipfile is now correctly closing underlying file objects.
@@ -124,14 +124,14 @@ Library
   output stream only when end_headers is invoked. This is a speedup and an
   internal optimization.  Patch by endian.
 
-- Issue #10220: Added inspect.getgeneratorstate. Initial patch by
-  Rodolpho Eckhardt.
+- Issue #10220: Added inspect.getgeneratorstate. Initial patch by Rodolpho
+  Eckhardt.
 
 - Issue #10453: compileall now uses argparse instead of getopt, and thus
   provides clean output when called with '-h'.
 
-- Issue #8078: Add constants for higher baud rates in the termios module.
-  Patch by Rodolpho Eckhardt.
+- Issue #8078: Add constants for higher baud rates in the termios module.  Patch
+  by Rodolpho Eckhardt.
 
 - Issue #10407: Fix two NameErrors in distutils.
 
@@ -159,9 +159,9 @@ Library
 
 - Issue 9926: Wrapped TestSuite subclass does not get __call__ executed.
 
-- Issue #9920: Skip tests for cmath.atan and cmath.atanh applied to
-  complex zeros on systems where the log1p function fails to respect
-  the sign of zero.  This fixes a test failure on AIX.
+- Issue #9920: Skip tests for cmath.atan and cmath.atanh applied to complex
+  zeros on systems where the log1p function fails to respect the sign of zero.
+  This fixes a test failure on AIX.
 
 - Issue #9732: Addition of getattr_static to the inspect module.
 
@@ -175,16 +175,16 @@ Library
 - Issue #10440: Support RUSAGE_THREAD as a constant in the resource module.
   Patch by Robert Collins.
 
-- Issue #10429: IMAP.starttls() stored the capabilities as bytes objects,
-  rather than strings.
+- Issue #10429: IMAP.starttls() stored the capabilities as bytes objects, rather
+  than strings.
 
 C-API
 -----
 
 - Issue #9518: Extend the PyModuleDef_HEAD_INIT macro to explicitly
   zero-initialize all fields, fixing compiler warnings seen when building
-  extension modules with gcc with "-Wmissing-field-initializers" (implied
-  by "-W").
+  extension modules with gcc with "-Wmissing-field-initializers" (implied by
+  "-W").
 
 - Issue #10255: Fix reference leak in Py_InitializeEx().  Patch by Neil
   Schemenauer.
@@ -196,15 +196,15 @@ C-API
 Tests
 -----
 
-- regrtest.py once again ensures the test directory is removed from
-  sys.path when it is invoked directly as the __main__ module
+- regrtest.py once again ensures the test directory is removed from sys.path
+  when it is invoked directly as the __main__ module
 
 - Issue #9424: Deprecate the `unittest.TestCase` methods `assertEquals`,
   `assertNotEquals`, `assertAlmostEquals`, `assertNotAlmostEquals` and `assert_`
   and replace them with the correct methods in the Python test suite.
 
-- Do not fail test_socket when the IP address of the local hostname
-  cannot be looked up.
+- Do not fail test_socket when the IP address of the local hostname cannot be
+  looked up.
 
 - Issue #8886: Use context managers throughout test_zipfile. Patch by Eric
   Carstensen.
