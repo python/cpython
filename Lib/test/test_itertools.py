@@ -66,6 +66,7 @@ class TestBasicOps(unittest.TestCase):
             self.assertEqual(
                 list(accumulate(map(typ, range(10)))),
                 list(map(typ, [0, 1, 3, 6, 10, 15, 21, 28, 36, 45])))
+        self.assertEqual(list(accumulate('abc')), ['a', 'ab', 'abc'])   # works with non-numeric
         self.assertEqual(list(accumulate([])), [])                  # empty iterable
         self.assertEqual(list(accumulate([7])), [7])                # iterable of length one
         self.assertRaises(TypeError, accumulate, range(10), 5)      # too many args
