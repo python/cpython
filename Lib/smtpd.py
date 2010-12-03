@@ -109,6 +109,9 @@ class SMTPChannel(asynchat.async_chat):
     COMMAND = 0
     DATA = 1
 
+    data_size_limit = 33554432
+    command_size_limit = 512
+
     def __init__(self, server, conn, addr):
         asynchat.async_chat.__init__(self, conn)
         self.smtp_server = server
@@ -121,6 +124,7 @@ class SMTPChannel(asynchat.async_chat):
         self.rcpttos = []
         self.received_data = ''
         self.fqdn = socket.getfqdn()
+        self.num_bytes = 0
         try:
             self.peer = conn.getpeername()
         except socket.error as err:
@@ -262,6 +266,15 @@ class SMTPChannel(asynchat.async_chat):
 
     # Implementation of base class abstract method
     def collect_incoming_data(self, data):
+        limit = None
+        if self.smtp_state == self.COMMAND:
+            limit = self.command_size_limit
+        elif self.smtp_state == self.DATA:
+            limit = self.data_size_limit
+        if limit and self.num_bytes > limit:
+            return
+        elif limit:
+            self.num_bytes += len(data)
         self.received_lines.append(str(data, "utf8"))
 
     # Implementation of base class abstract method
@@ -270,6 +283,11 @@ class SMTPChannel(asynchat.async_chat):
         print('Data:', repr(line), file=DEBUGSTREAM)
         self.received_lines = []
         if self.smtp_state == self.COMMAND:
+            if self.num_bytes > self.command_size_limit:
+                self.push('500 Error: line too long')
+                self.num_bytes = 0
+                return
+            self.num_bytes = 0
             if not line:
                 self.push('500 Error: bad syntax')
                 return
@@ -290,6 +308,11 @@ class SMTPChannel(asynchat.async_chat):
         else:
             if self.smtp_state != self.DATA:
                 self.push('451 Internal confusion')
+                self.num_bytes = 0
+                return
+            if self.num_bytes > self.data_size_limit:
+                self.push('552 Error: Too much mail data')
+                self.num_bytes = 0
                 return
             # Remove extraneous carriage returns and de-transparency according
             # to RFC 821, Section 4.5.2.
@@ -307,6 +330,7 @@ class SMTPChannel(asynchat.async_chat):
             self.rcpttos = []
             self.mailfrom = None
             self.smtp_state = self.COMMAND
+            self.num_bytes = 0
             self.set_terminator(b'\r\n')
             if not status:
                 self.push('250 Ok')
