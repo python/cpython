@@ -191,6 +191,9 @@ C-API
 Tests
 -----
 
+- regrtest.py once again ensures the test directory is removed from
+  sys.path when it is invoked directly as the __main__ module
+
 - Issue #9424: Deprecate the `unittest.TestCase` methods `assertEquals`,
   `assertNotEquals`, `assertAlmostEquals`, `assertNotAlmostEquals` and `assert_`
   and replace them with the correct methods in the Python test suite.
