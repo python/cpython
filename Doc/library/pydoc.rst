@@ -79,3 +79,4 @@ to a different URL or to a local directory containing the Library
 Reference Manual pages.
 
 .. versionchanged:: 3.2
+   Added the ``-b`` option, deprecated the ``-g`` option.
