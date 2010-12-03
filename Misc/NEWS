@@ -58,6 +58,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1486713: HTMLParser now has an optional tolerant mode where it
+  tries to guess at the correct parsing of invalid html.
+
 - Issue #10554: Add context manager support to subprocess.Popen objects.
 
 - Issue #8989: email.utils.make_msgid now has a domain parameter that can

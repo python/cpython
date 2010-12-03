@@ -24,10 +24,14 @@ starttagopen = re.compile('<[a-zA-Z]')
 piclose = re.compile('>')
 commentclose = re.compile(r'--\s*>')
 tagfind = re.compile('[a-zA-Z][-.a-zA-Z0-9:_]*')
+# Note, the strict one of this pair isn't really strict, but we can't
+# make it correctly strict without breaking backward compatibility.
 attrfind = re.compile(
     r'\s*([a-zA-Z_][-.:a-zA-Z_0-9]*)(\s*=\s*'
     r'(\'[^\']*\'|"[^"]*"|[-a-zA-Z0-9./,:;+*%?!&$\(\)_#=~@]*))?')
-
+attrfind_tolerant = re.compile(
+    r'\s*([a-zA-Z_][-.:a-zA-Z_0-9]*)(\s*=\s*'
+    r'(\'[^\']*\'|"[^"]*"|[^>\s]*))?')
 locatestarttagend = re.compile(r"""
   <[a-zA-Z][-.a-zA-Z0-9:_]*          # tag name
   (?:\s+                             # whitespace before attribute name
@@ -37,6 +41,21 @@ locatestarttagend = re.compile(r"""
           |\"[^\"]*\"                # LIT-enclosed value
           |[^'\">\s]+                # bare value
          )
+       )?
+     )
+   )*
+  \s*                                # trailing whitespace
+""", re.VERBOSE)
+locatestarttagend_tolerant = re.compile(r"""
+  <[a-zA-Z][-.a-zA-Z0-9:_]*          # tag name
+  (?:\s*                             # optional whitespace before attribute name
+    (?:[a-zA-Z_][-.:a-zA-Z0-9_]*     # attribute name
+      (?:\s*=\s*                     # value indicator
+        (?:'[^']*'                   # LITA-enclosed value
+          |\"[^\"]*\"                # LIT-enclosed value
+          |[^'\">\s]+                # bare value
+         )
+         (?:\s*,)*                   # possibly followed by a comma
        )?
      )
    )*
@@ -86,9 +105,15 @@ class HTMLParser(_markupbase.ParserBase):
 
     CDATA_CONTENT_ELEMENTS = ("script", "style")
 
+    def __init__(self, strict=True):
+        """Initialize and reset this instance.
 
-    def __init__(self):
-        """Initialize and reset this instance."""
+        If strict is set to True (the default), errors are raised when invalid
+        HTML is encountered.  If set to False, an attempt is instead made to
+        continue parsing, making "best guesses" about the intended meaning, in
+        a fashion similar to what browsers typically do.
+        """
+        self.strict = strict
         self.reset()
 
     def reset(self):
@@ -160,9 +185,18 @@ class HTMLParser(_markupbase.ParserBase):
                 else:
                     break
                 if k < 0:
-                    if end:
+                    if not end:
+                        break
+                    if self.strict:
                         self.error("EOF in middle of construct")
-                    break
+                    k = rawdata.find('>', i + 1)
+                    if k < 0:
+                        k = rawdata.find('<', i + 1)
+                        if k < 0:
+                            k = i + 1
+                    else:
+                        k += 1
+                    self.handle_data(rawdata[i:k])
                 i = self.updatepos(i, k)
             elif startswith("&#", i):
                 match = charref.match(rawdata, i)
@@ -193,7 +227,12 @@ class HTMLParser(_markupbase.ParserBase):
                 if match:
                     # match.group() will contain at least 2 chars
                     if end and match.group() == rawdata[i:]:
-                        self.error("EOF in middle of entity or char ref")
+                        if self.strict:
+                            self.error("EOF in middle of entity or char ref")
+                        else:
+                            if k <= i:
+                                k = n
+                            i = self.updatepos(i, i + 1)
                     # incomplete
                     break
                 elif (i + 1) < n:
@@ -240,7 +279,10 @@ class HTMLParser(_markupbase.ParserBase):
         self.lasttag = tag = rawdata[i+1:k].lower()
 
         while k < endpos:
-            m = attrfind.match(rawdata, k)
+            if self.strict:
+                m = attrfind.match(rawdata, k)
+            else:
+                m = attrfind_tolerant.search(rawdata, k)
             if not m:
                 break
             attrname, rest, attrvalue = m.group(1, 2, 3)
@@ -262,8 +304,11 @@ class HTMLParser(_markupbase.ParserBase):
                          - self.__starttag_text.rfind("\n")
             else:
                 offset = offset + len(self.__starttag_text)
-            self.error("junk characters in start tag: %r"
-                       % (rawdata[k:endpos][:20],))
+            if self.strict:
+                self.error("junk characters in start tag: %r"
+                           % (rawdata[k:endpos][:20],))
+            self.handle_data(rawdata[i:endpos])
+            return endpos
         if end.endswith('/>'):
             # XHTML-style empty tag: <span attr="value" />
             self.handle_startendtag(tag, attrs)
@@ -277,7 +322,10 @@ class HTMLParser(_markupbase.ParserBase):
     # or -1 if incomplete.
     def check_for_whole_start_tag(self, i):
         rawdata = self.rawdata
-        m = locatestarttagend.match(rawdata, i)
+        if self.strict:
+            m = locatestarttagend.match(rawdata, i)
+        else:
+            m = locatestarttagend_tolerant.match(rawdata, i)
         if m:
             j = m.end()
             next = rawdata[j:j+1]
@@ -290,8 +338,13 @@ class HTMLParser(_markupbase.ParserBase):
                     # buffer boundary
                     return -1
                 # else bogus input
-                self.updatepos(i, j + 1)
-                self.error("malformed empty start tag")
+                if self.strict:
+                    self.updatepos(i, j + 1)
+                    self.error("malformed empty start tag")
+                if j > i:
+                    return j
+                else:
+                    return i + 1
             if next == "":
                 # end of input
                 return -1
@@ -300,8 +353,13 @@ class HTMLParser(_markupbase.ParserBase):
                 # end of input in or before attribute value, or we have the
                 # '/' from a '/>' ending
                 return -1
-            self.updatepos(i, j)
-            self.error("malformed start tag")
+            if self.strict:
+                self.updatepos(i, j)
+                self.error("malformed start tag")
+            if j > i:
+                return j
+            else:
+                return i + 1
         raise AssertionError("we should not get here!")
 
     # Internal -- parse endtag, return end or -1 if incomplete
@@ -314,7 +372,15 @@ class HTMLParser(_markupbase.ParserBase):
         j = match.end()
         match = endtagfind.match(rawdata, i) # </ + tag + >
         if not match:
-            self.error("bad end tag: %r" % (rawdata[i:j],))
+            if self.strict:
+                self.error("bad end tag: %r" % (rawdata[i:j],))
+            k = rawdata.find('<', i + 1, j)
+            if k > i:
+                j = k
+            if j <= i:
+                j = i + 1
+            self.handle_data(rawdata[i:j])
+            return j
         tag = match.group(1)
         self.handle_endtag(tag.lower())
         self.clear_cdata_mode()
@@ -358,7 +424,8 @@ class HTMLParser(_markupbase.ParserBase):
         pass
 
     def unknown_decl(self, data):
-        self.error("unknown declaration: %r" % (data,))
+        if self.strict:
+            self.error("unknown declaration: %r" % (data,))
 
     # Internal -- helper to remove special character quoting
     entitydefs = None
