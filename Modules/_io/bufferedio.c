@@ -224,6 +224,7 @@ typedef struct {
 
 #ifdef WITH_THREAD
     PyThread_type_lock lock;
+    volatile long owner;
 #endif
 
     Py_ssize_t buffer_size;
@@ -259,17 +260,39 @@ typedef struct {
 /* These macros protect the buffered object against concurrent operations. */
 
 #ifdef WITH_THREAD
-#define ENTER_BUFFERED(self) \
-    if (!PyThread_acquire_lock(self->lock, 0)) { \
-        Py_BEGIN_ALLOW_THREADS \
-        PyThread_acquire_lock(self->lock, 1); \
-        Py_END_ALLOW_THREADS \
+
+static int
+_enter_buffered_busy(buffered *self)
+{
+    if (self->owner == PyThread_get_thread_ident()) {
+        PyObject *r = PyObject_Repr((PyObject *) self);
+        if (r != NULL) {
+            PyErr_Format(PyExc_RuntimeError,
+                         "reentrant call inside %s",
+                         PyString_AS_STRING(r));
+            Py_DECREF(r);
+        }
+        return 0;
     }
+    Py_BEGIN_ALLOW_THREADS
+    PyThread_acquire_lock(self->lock, 1);
+    Py_END_ALLOW_THREADS
+    return 1;
+}
+
+#define ENTER_BUFFERED(self) \
+    ( (PyThread_acquire_lock(self->lock, 0) ? \
+       1 : _enter_buffered_busy(self)) \
+     && (self->owner = PyThread_get_thread_ident(), 1) )
 
 #define LEAVE_BUFFERED(self) \
-    PyThread_release_lock(self->lock);
+    do { \
+        self->owner = 0; \
+        PyThread_release_lock(self->lock); \
+    } while(0);
+
 #else
-#define ENTER_BUFFERED(self)
+#define ENTER_BUFFERED(self) 1
 #define LEAVE_BUFFERED(self)
 #endif
 
@@ -425,7 +448,8 @@ buffered_close(buffered *self, PyObject *args)
     int r;
 
     CHECK_INITIALIZED(self)
-    ENTER_BUFFERED(self)
+    if (!ENTER_BUFFERED(self))
+        return NULL;
 
     r = buffered_closed(self);
     if (r < 0)
@@ -438,7 +462,8 @@ buffered_close(buffered *self, PyObject *args)
     /* flush() will most probably re-take the lock, so drop it first */
     LEAVE_BUFFERED(self)
     res = PyObject_CallMethodObjArgs((PyObject *)self, _PyIO_str_flush, NULL);
-    ENTER_BUFFERED(self)
+    if (!ENTER_BUFFERED(self))
+        return NULL;
     if (res == NULL) {
         goto end;
     }
@@ -643,6 +668,7 @@ _buffered_init(buffered *self)
         PyErr_SetString(PyExc_RuntimeError, "can't allocate read lock");
         return -1;
     }
+    self->owner = 0;
 #endif
     /* Find out whether buffer_size is a power of 2 */
     /* XXX is this optimization useful? */
@@ -669,7 +695,8 @@ buffered_flush(buffered *self, PyObject *args)
     CHECK_INITIALIZED(self)
     CHECK_CLOSED(self, "flush of closed file")
 
-    ENTER_BUFFERED(self)
+    if (!ENTER_BUFFERED(self))
+        return NULL;
     res = _bufferedwriter_flush_unlocked(self, 0);
     if (res != NULL && self->readable) {
         /* Rewind the raw stream so that its position corresponds to
@@ -696,7 +723,8 @@ buffered_peek(buffered *self, PyObject *args)
         return NULL;
     }
 
-    ENTER_BUFFERED(self)
+    if (!ENTER_BUFFERED(self))
+        return NULL;
 
     if (self->writable) {
         res = _bufferedwriter_flush_unlocked(self, 1);
@@ -731,7 +759,8 @@ buffered_read(buffered *self, PyObject *args)
 
     if (n == -1) {
         /* The number of bytes is unspecified, read until the end of stream */
-        ENTER_BUFFERED(self)
+        if (!ENTER_BUFFERED(self))
+            return NULL;
         res = _bufferedreader_read_all(self);
         LEAVE_BUFFERED(self)
     }
@@ -739,7 +768,8 @@ buffered_read(buffered *self, PyObject *args)
         res = _bufferedreader_read_fast(self, n);
         if (res == Py_None) {
             Py_DECREF(res);
-            ENTER_BUFFERED(self)
+            if (!ENTER_BUFFERED(self))
+                return NULL;
             res = _bufferedreader_read_generic(self, n);
             LEAVE_BUFFERED(self)
         }
@@ -767,7 +797,8 @@ buffered_read1(buffered *self, PyObject *args)
     if (n == 0)
         return PyBytes_FromStringAndSize(NULL, 0);
 
-    ENTER_BUFFERED(self)
+    if (!ENTER_BUFFERED(self))
+        return NULL;
     
     if (self->writable) {
         res = _bufferedwriter_flush_unlocked(self, 1);
@@ -823,7 +854,8 @@ buffered_readinto(buffered *self, PyObject *args)
     
     /* TODO: use raw.readinto() instead! */
     if (self->writable) {
-        ENTER_BUFFERED(self)
+        if (!ENTER_BUFFERED(self))
+            return NULL;
         res = _bufferedwriter_flush_unlocked(self, 0);
         LEAVE_BUFFERED(self)
         if (res == NULL)
@@ -867,7 +899,8 @@ _buffered_readline(buffered *self, Py_ssize_t limit)
         goto end_unlocked;
     }
 
-    ENTER_BUFFERED(self)
+    if (!ENTER_BUFFERED(self))
+        goto end_unlocked;
 
     /* Now we try to get some more from the raw stream */
     if (self->writable) {
@@ -1017,7 +1050,8 @@ buffered_seek(buffered *self, PyObject *args)
         }
     }
 
-    ENTER_BUFFERED(self)
+    if (!ENTER_BUFFERED(self))
+        return NULL;
 
     /* Fallback: invoke raw seek() method and clear buffer */
     if (self->writable) {
@@ -1055,7 +1089,8 @@ buffered_truncate(buffered *self, PyObject *args)
         return NULL;
     }
 
-    ENTER_BUFFERED(self)
+    if (!ENTER_BUFFERED(self))
+        return NULL;
 
     if (self->writable) {
         res = _bufferedwriter_flush_unlocked(self, 0);
@@ -1715,7 +1750,10 @@ bufferedwriter_write(buffered *self, PyObject *args)
         return NULL;
     }
 
-    ENTER_BUFFERED(self)
+    if (!ENTER_BUFFERED(self)) {
+        PyBuffer_Release(&buf);
+        return NULL;
+    }
 
     /* Fast path: the data to write can be fully buffered. */
     if (!VALID_READ_BUFFER(self) && !VALID_WRITE_BUFFER(self)) {
