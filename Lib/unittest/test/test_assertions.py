@@ -127,7 +127,7 @@ class TestLongMessage(unittest.TestCase):
         self.testableFalse = TestableTestFalse('testTest')
 
     def testDefault(self):
-        self.assertFalse(unittest.TestCase.longMessage)
+        self.assertTrue(unittest.TestCase.longMessage)
 
     def test_formatMsg(self):
         self.assertEqual(self.testableFalse._formatMessage(None, "foo"), "foo")

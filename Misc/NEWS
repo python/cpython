@@ -10,6 +10,9 @@ What's New in Python 3.2 Beta 1?
 Core and Builtins
 -----------------
 
+- Issue 7911: `unittest.TestCase.longMessage` defaults to True for improved
+  failure messages by default. Patch by Mark Roddy.
+  
 - Issue #9915: Speed up sorting with a key.
 
 - Issue #9333: Expose os.symlink only when the SeCreateSymbolicLinkPrivilege
