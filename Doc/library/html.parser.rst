@@ -27,6 +27,8 @@ parsing text files formatted in HTML (HyperText Mark-up Language) and XHTML.
    This parser does not check that end tags match start tags or call the end-tag
    handler for elements which are closed implicitly by closing an outer element.
 
+   .. versionchanged:: 3.2 *strict* keyword added
+
 An exception is defined as well:
 
 
@@ -197,6 +199,6 @@ As a basic example, below is a very basic HTML parser that uses the
 
 .. rubric:: Footnotes
 
-.. [#] For backward compatibility reasons *strict* mode does not throw
-       errors for all non-compliant HTML.  That is, some invalid HTML
+.. [#] For backward compatibility reasons *strict* mode does not raise
+       exceptions for all non-compliant HTML.  That is, some invalid HTML
        is tolerated even in *strict* mode.
