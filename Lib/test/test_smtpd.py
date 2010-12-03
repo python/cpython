@@ -121,6 +121,24 @@ class SMTPDChannelTest(TestCase):
         self.assertEqual(self.channel.socket.last,
                          b'451 Internal confusion\r\n')
 
+    def test_command_too_long(self):
+        self.write_line(b'MAIL from ' +
+                        b'a' * self.channel.command_size_limit +
+                        b'@example')
+        self.assertEqual(self.channel.socket.last,
+                         b'500 Error: line too long\r\n')
+
+    def test_data_too_long(self):
+        # Small hack. Setting limit to 2K octets here will save us some time.
+        self.channel.data_size_limit = 2048
+        self.write_line(b'MAIL From:eggs@example')
+        self.write_line(b'RCPT To:spam@example')
+        self.write_line(b'DATA')
+        self.write_line(b'A' * self.channel.data_size_limit +
+                        b'A\r\n.')
+        self.assertEqual(self.channel.socket.last,
+                         b'552 Error: Too much mail data\r\n')
+
     def test_need_MAIL(self):
         self.write_line(b'RCPT to:spam@example')
         self.assertEqual(self.channel.socket.last,
