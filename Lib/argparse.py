@@ -1080,7 +1080,7 @@ class _SubParsersAction(Action):
             parser = self._name_parser_map[parser_name]
         except KeyError:
             tup = parser_name, ', '.join(self._name_parser_map)
-            msg = _('unknown parser %r (choices: %s)' % tup)
+            msg = _('unknown parser %r (choices: %s)') % tup
             raise ArgumentError(self, msg)
 
         # parse all the remaining options into the namespace
@@ -1121,7 +1121,7 @@ class FileType(object):
             elif 'w' in self._mode:
                 return _sys.stdout
             else:
-                msg = _('argument "-" with mode %r' % self._mode)
+                msg = _('argument "-" with mode %r') % self._mode
                 raise ValueError(msg)
 
         # all other arguments are used as file names
