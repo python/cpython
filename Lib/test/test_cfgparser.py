@@ -4,6 +4,7 @@ import io
 import os
 import unittest
 import textwrap
+import warnings
 
 from test import support
 
@@ -32,6 +33,7 @@ class CfgParserTestCaseClass(unittest.TestCase):
     dict_type = configparser._default_dict
     strict = False
     default_section = configparser.DEFAULTSECT
+    interpolation = configparser._UNSET
 
     def newconfig(self, defaults=None):
         arguments = dict(
@@ -43,8 +45,12 @@ class CfgParserTestCaseClass(unittest.TestCase):
             dict_type=self.dict_type,
             strict=self.strict,
             default_section=self.default_section,
+            interpolation=self.interpolation,
         )
-        return self.config_class(**arguments)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            instance = self.config_class(**arguments)
+        return instance
 
     def fromstring(self, string, defaults=None):
         cf = self.newconfig(defaults)
@@ -847,6 +853,70 @@ class SafeConfigParserTestCase(ConfigParserTestCase):
         cf = self.newconfig()
         self.assertRaises(ValueError, cf.add_section, self.default_section)
 
+class SafeConfigParserTestCaseExtendedInterpolation(BasicTestCase):
+    config_class = configparser.SafeConfigParser
+    interpolation = configparser.ExtendedInterpolation()
+    default_section = 'common'
+
+    def test_extended_interpolation(self):
+        cf = self.fromstring(textwrap.dedent("""
+            [common]
+            favourite Beatle = Paul
+            favourite color = green
+
+            [tom]
+            favourite band = ${favourite color} day
+            favourite pope = John ${favourite Beatle} II
+            sequel = ${favourite pope}I
+
+            [ambv]
+            favourite Beatle = George
+            son of Edward VII = ${favourite Beatle} V
+            son of George V = ${son of Edward VII}I
+
+            [stanley]
+            favourite Beatle = ${ambv:favourite Beatle}
+            favourite pope = ${tom:favourite pope}
+            favourite color = black
+            favourite state of mind = paranoid
+            favourite movie = soylent ${common:favourite color}
+            favourite song = ${favourite color} sabbath - ${favourite state of mind}
+        """).strip())
+
+        eq = self.assertEqual
+        eq(cf['common']['favourite Beatle'], 'Paul')
+        eq(cf['common']['favourite color'], 'green')
+        eq(cf['tom']['favourite Beatle'], 'Paul')
+        eq(cf['tom']['favourite color'], 'green')
+        eq(cf['tom']['favourite band'], 'green day')
+        eq(cf['tom']['favourite pope'], 'John Paul II')
+        eq(cf['tom']['sequel'], 'John Paul III')
+        eq(cf['ambv']['favourite Beatle'], 'George')
+        eq(cf['ambv']['favourite color'], 'green')
+        eq(cf['ambv']['son of Edward VII'], 'George V')
+        eq(cf['ambv']['son of George V'], 'George VI')
+        eq(cf['stanley']['favourite Beatle'], 'George')
+        eq(cf['stanley']['favourite color'], 'black')
+        eq(cf['stanley']['favourite state of mind'], 'paranoid')
+        eq(cf['stanley']['favourite movie'], 'soylent green')
+        eq(cf['stanley']['favourite pope'], 'John Paul II')
+        eq(cf['stanley']['favourite song'],
+           'black sabbath - paranoid')
+
+    def test_endless_loop(self):
+        cf = self.fromstring(textwrap.dedent("""
+            [one for you]
+            ping = ${one for me:pong}
+
+            [one for me]
+            pong = ${one for you:ping}
+        """).strip())
+
+        with self.assertRaises(configparser.InterpolationDepthError):
+            cf['one for you']['ping']
+
+
+
 class SafeConfigParserTestCaseNonStandardDelimiters(SafeConfigParserTestCase):
     delimiters = (':=', '$')
     comment_prefixes = ('//', '"')
@@ -910,7 +980,9 @@ class Issue7005TestCase(unittest.TestCase):
 
     def prepare(self, config_class):
         # This is the default, but that's the point.
-        cp = config_class(allow_no_value=False)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            cp = config_class(allow_no_value=False)
         cp.add_section("section")
         cp.set("section", "option", None)
         sio = io.StringIO()
@@ -978,6 +1050,7 @@ def test_main():
         RawConfigParserTestCaseNonStandardDelimiters,
         RawConfigParserTestSambaConf,
         SafeConfigParserTestCase,
+        SafeConfigParserTestCaseExtendedInterpolation,
         SafeConfigParserTestCaseNonStandardDelimiters,
         SafeConfigParserTestCaseNoValue,
         SafeConfigParserTestCaseTrickyFile,
