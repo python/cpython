@@ -313,6 +313,10 @@ Some smaller changes made to the core Python language are:
 
   (Added by Antoine Pitrou, :issue:`10093`.)
 
+.. XXX: Issues #9213 and #2690 make the objects returned by range()
+        more sequence like in accordance with their registration as
+        implementing the Sequence ABC
+
 
 New, Improved, and Deprecated Modules
 =====================================

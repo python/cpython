@@ -136,7 +136,12 @@ class RangeTest(unittest.TestCase):
         self.assertNotIn(-b, seq)
         self.assertEqual(len(seq), 2)
 
-        self.assertRaises(OverflowError, len, range(0, sys.maxsize**10))
+        self.assertRaises(OverflowError, len,
+                          range(-sys.maxsize, sys.maxsize))
+        self.assertRaises(OverflowError, len,
+                          range(0, 2*sys.maxsize))
+        self.assertRaises(OverflowError, len,
+                          range(0, sys.maxsize**10))
 
     def test_invalid_invocation(self):
         self.assertRaises(TypeError, range)
@@ -248,6 +253,8 @@ class RangeTest(unittest.TestCase):
         always_equal = AlwaysEqual()
         self.assertEqual(range(10).count(always_equal), 10)
 
+        self.assertEqual(len(range(sys.maxsize, sys.maxsize+10)), 10)
+
     def test_repr(self):
         self.assertEqual(repr(range(1)), 'range(0, 1)')
         self.assertEqual(repr(range(1, 2)), 'range(1, 2)')
@@ -348,6 +355,70 @@ class RangeTest(unittest.TestCase):
             iter2 = pyrange_reversed(start, end, step)
             test_id = "reversed(range({}, {}, {}))".format(start, end, step)
             self.assert_iterators_equal(iter1, iter2, test_id, limit=100)
+
+    def test_slice(self):
+        def check(start, stop, step=None):
+            i = slice(start, stop, step)
+            self.assertEqual(list(r[i]), list(r)[i])
+            self.assertEqual(len(r[i]), len(list(r)[i]))
+        for r in [range(10),
+                  range(0),
+                  range(1, 9, 3),
+                  range(8, 0, -3),
+                  range(sys.maxsize+1, sys.maxsize+10),
+                  ]:
+            check(0, 2)
+            check(0, 20)
+            check(1, 2)
+            check(20, 30)
+            check(-30, -20)
+            check(-1, 100, 2)
+            check(0, -1)
+            check(-1, -3, -1)
+
+    def test_contains(self):
+        r = range(10)
+        self.assertIn(0, r)
+        self.assertIn(1, r)
+        self.assertIn(5.0, r)
+        self.assertNotIn(5.1, r)
+        self.assertNotIn(-1, r)
+        self.assertNotIn(10, r)
+        self.assertNotIn("", r)
+        r = range(9, -1, -1)
+        self.assertIn(0, r)
+        self.assertIn(1, r)
+        self.assertIn(5.0, r)
+        self.assertNotIn(5.1, r)
+        self.assertNotIn(-1, r)
+        self.assertNotIn(10, r)
+        self.assertNotIn("", r)
+        r = range(0, 10, 2)
+        self.assertIn(0, r)
+        self.assertNotIn(1, r)
+        self.assertNotIn(5.0, r)
+        self.assertNotIn(5.1, r)
+        self.assertNotIn(-1, r)
+        self.assertNotIn(10, r)
+        self.assertNotIn("", r)
+        r = range(9, -1, -2)
+        self.assertNotIn(0, r)
+        self.assertIn(1, r)
+        self.assertIn(5.0, r)
+        self.assertNotIn(5.1, r)
+        self.assertNotIn(-1, r)
+        self.assertNotIn(10, r)
+        self.assertNotIn("", r)
+
+    def test_reverse_iteration(self):
+        for r in [range(10),
+                  range(0),
+                  range(1, 9, 3),
+                  range(8, 0, -3),
+                  range(sys.maxsize+1, sys.maxsize+10),
+                  ]:
+            self.assertEqual(list(reversed(r)), list(r)[::-1])
+
 
 def test_main():
     test.support.run_unittest(RangeTest)

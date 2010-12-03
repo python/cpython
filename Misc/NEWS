@@ -10,6 +10,8 @@ What's New in Python 3.2 Beta 1?
 Core and Builtins
 -----------------
 
+- Issue #2690: Range objects support negative indices and slicing
+
 - Issue #9915: Speed up sorting with a key.
 
 - Issue #7475: Added transform() and untransform() methods to both bytes and
@@ -652,7 +654,7 @@ Core and Builtins
 - Issue #9252: PyImport_Import no longer uses a fromlist hack to return the
   module that was imported, but instead gets the module from sys.modules.
 
-- Issue #9212: The range type_items now provides index() and count() methods, to
+- Issue #9213: The range type_items now provides index() and count() methods, to
   conform to the Sequence ABC.  Patch by Daniel Urban and Daniel Stutzbach.
 
 - Issue #7994: Issue a PendingDeprecationWarning if object.__format__ is called
