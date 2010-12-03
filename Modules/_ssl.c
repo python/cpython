@@ -370,7 +370,7 @@ static PyObject *PySSL_SSLdo_handshake(PySSLSocket *self)
             sockstate = SOCKET_OPERATION_OK;
         }
         if (sockstate == SOCKET_HAS_TIMED_OUT) {
-            PyErr_SetString(PySSLErrorObject,
+            PyErr_SetString(PySocketModule.timeout_error,
                             ERRSTR("The handshake operation timed out"));
             goto error;
         } else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
@@ -1075,7 +1075,7 @@ static PyObject *PySSL_SSLwrite(PySSLSocket *self, PyObject *args)
 
     sockstate = check_socket_and_wait_for_timeout(sock, 1);
     if (sockstate == SOCKET_HAS_TIMED_OUT) {
-        PyErr_SetString(PySSLErrorObject,
+        PyErr_SetString(PySocketModule.timeout_error,
                         "The write operation timed out");
         goto error;
     } else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
@@ -1104,7 +1104,7 @@ static PyObject *PySSL_SSLwrite(PySSLSocket *self, PyObject *args)
             sockstate = SOCKET_OPERATION_OK;
         }
         if (sockstate == SOCKET_HAS_TIMED_OUT) {
-            PyErr_SetString(PySSLErrorObject,
+            PyErr_SetString(PySocketModule.timeout_error,
                             "The write operation timed out");
             goto error;
         } else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
@@ -1211,7 +1211,7 @@ static PyObject *PySSL_SSLread(PySSLSocket *self, PyObject *args)
     if (!count) {
         sockstate = check_socket_and_wait_for_timeout(sock, 0);
         if (sockstate == SOCKET_HAS_TIMED_OUT) {
-            PyErr_SetString(PySSLErrorObject,
+            PyErr_SetString(PySocketModule.timeout_error,
                             "The read operation timed out");
             goto error;
         } else if (sockstate == SOCKET_TOO_LARGE_FOR_SELECT) {
@@ -1245,7 +1245,7 @@ static PyObject *PySSL_SSLread(PySSLSocket *self, PyObject *args)
             sockstate = SOCKET_OPERATION_OK;
         }
         if (sockstate == SOCKET_HAS_TIMED_OUT) {
-            PyErr_SetString(PySSLErrorObject,
+            PyErr_SetString(PySocketModule.timeout_error,
                             "The read operation timed out");
             goto error;
         } else if (sockstate == SOCKET_IS_NONBLOCKING) {
@@ -1340,10 +1340,10 @@ static PyObject *PySSL_SSLshutdown(PySSLSocket *self)
             break;
         if (sockstate == SOCKET_HAS_TIMED_OUT) {
             if (ssl_err == SSL_ERROR_WANT_READ)
-                PyErr_SetString(PySSLErrorObject,
+                PyErr_SetString(PySocketModule.timeout_error,
                                 "The read operation timed out");
             else
-                PyErr_SetString(PySSLErrorObject,
+                PyErr_SetString(PySocketModule.timeout_error,
                                 "The write operation timed out");
             goto error;
         }

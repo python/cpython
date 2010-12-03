@@ -4358,6 +4358,7 @@ static
 PySocketModule_APIObject PySocketModuleAPI =
 {
     &sock_type,
+    NULL,
     NULL
 };
 
@@ -4425,6 +4426,7 @@ PyInit__socket(void)
                                         socket_error, NULL);
     if (socket_timeout == NULL)
         return NULL;
+    PySocketModuleAPI.timeout_error = socket_timeout;
     Py_INCREF(socket_timeout);
     PyModule_AddObject(m, "timeout", socket_timeout);
     Py_INCREF((PyObject *)&sock_type);

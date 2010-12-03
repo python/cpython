@@ -35,6 +35,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10272: The ssl module now raises socket.timeout instead of a generic
+  SSLError on socket timeouts.
+
 - Issue #10528: Allow translators to reorder placeholders in localizable
   messages from argparse.
 
