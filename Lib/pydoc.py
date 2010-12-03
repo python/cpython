@@ -2540,7 +2540,7 @@ def _url_handler(url, content_type="text/html"):
             '<p align=right><font color="#909090" face="helvetica,'
             'arial"><strong>pydoc</strong> by Ka-Ping Yee'
             '&lt;ping@lfw.org&gt;</font>')
-        return html.page('Index of Modules', ''.join(contents))
+        return 'Index of Modules', ''.join(contents)
 
     def html_search(key):
         """Search results page."""
@@ -2568,11 +2568,11 @@ def _url_handler(url, content_type="text/html"):
             results.append(bltinlink(name) + desc)
         contents = heading + html.bigsection(
             'key = %s' % key, '#ffffff', '#ee77aa', '<br>'.join(results))
-        return html.page('Search Results', contents)
+        return 'Search Results', contents
 
     def html_getfile(path):
         """Get and display a source file listing safely."""
-        path = os.sep + path.replace('%20', ' ')
+        path = path.replace('%20', ' ')
         with open(path, 'r') as fp:
             lines = html.escape(fp.read())
         body = '<pre>%s</pre>' % lines
@@ -2581,7 +2581,7 @@ def _url_handler(url, content_type="text/html"):
             '#ffffff', '#7799ee')
         contents = heading + html.bigsection(
             'File: %s' % path, '#ffffff', '#ee77aa', body)
-        return html.page('getfile %s' % path, contents)
+        return 'getfile %s' % path, contents
 
     def html_topics():
         """Index of topic texts available."""
@@ -2597,7 +2597,7 @@ def _url_handler(url, content_type="text/html"):
         contents = html.multicolumn(names, bltinlink)
         contents = heading + html.bigsection(
             'Topics', '#ffffff', '#ee77aa', contents)
-        return html.page('Topics', contents)
+        return 'Topics', contents
 
     def html_keywords():
         """Index of keywords."""
@@ -2612,7 +2612,7 @@ def _url_handler(url, content_type="text/html"):
         contents = html.multicolumn(names, bltinlink)
         contents = heading + html.bigsection(
             'Keywords', '#ffffff', '#ee77aa', contents)
-        return html.page('Keywords', contents)
+        return 'Keywords', contents
 
     def html_topicpage(topic):
         """Topic or keyword help page."""
@@ -2636,8 +2636,8 @@ def _url_handler(url, content_type="text/html"):
         xrefs = html.multicolumn(xrefs, bltinlink)
         xrefs = html.section('Related help topics: ',
                              '#ffffff', '#ee77aa', xrefs)
-        return html.page('%s %s' % (title, topic),
-                         ''.join((heading, contents, xrefs)))
+        return ('%s %s' % (title, topic),
+                ''.join((heading, contents, xrefs)))
 
     def html_error(url):
         heading = html.heading(
@@ -2656,17 +2656,17 @@ def _url_handler(url, content_type="text/html"):
         title = url
         contents = ''
         if url in ("", ".", "index"):
-            contents = html_index()
+            title, contents = html_index()
         elif url == "topics":
-            contents = html_topics()
+            title, contents = html_topics()
         elif url == "keywords":
-            contents = html_keywords()
+            title, contents = html_keywords()
         elif url.startswith("search?key="):
-            contents = html_search(url[11:])
+            title, contents = html_search(url[11:])
         elif url.startswith("getfile?key="):
             url = url[12:]
             try:
-                contents = html_getfile(url)
+                title, contents = html_getfile(url)
             except IOError:
                 contents = html_error('could not read file %r' % url)
                 title = 'Read Error'
@@ -2680,7 +2680,7 @@ def _url_handler(url, content_type="text/html"):
                 title = describe(obj)
                 contents = html.document(obj, url)
             elif url in Helper.keywords or url in Helper.topics:
-                contents = html_topicpage(url)
+                title, contents = html_topicpage(url)
             else:
                 contents = html_error(
                     'no Python documentation found for %r' % url)
