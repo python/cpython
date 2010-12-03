@@ -326,7 +326,7 @@ _logRecordFactory = LogRecord
 
 def setLogRecordFactory(factory):
     """
-    Set the class to be used when instantiating a log record.
+    Set the factory to be used when instantiating a log record.
 
     :param factory: A callable which will be called to instantiate
     a log record.
@@ -336,7 +336,7 @@ def setLogRecordFactory(factory):
 
 def getLogRecordFactory():
     """
-    Return the class to be used when instantiating a log record.
+    Return the factory to be used when instantiating a log record.
     """
 
     return _logRecordFactory
@@ -1105,7 +1105,7 @@ class Manager(object):
 
     def setLogRecordFactory(self, factory):
         """
-        Set the class to be used when instantiating a log record with this
+        Set the factory to be used when instantiating a log record with this
         Manager.
         """
         self.logRecordFactory = factory
