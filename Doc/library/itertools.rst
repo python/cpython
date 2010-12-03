@@ -46,7 +46,7 @@ Iterator            Arguments               Results                             
 ====================    ============================    =================================================   =============================================================
 Iterator                Arguments                       Results                                             Example
 ====================    ============================    =================================================   =============================================================
-:func:`accumulate`      p[, start=0]                    p0, p0+p1, p0+p1+p2, ...                            ``accumulate([1,2,3,4,5]) --> 1 3 6 10 15``
+:func:`accumulate`      p                               p0, p0+p1, p0+p1+p2, ...                            ``accumulate([1,2,3,4,5]) --> 1 3 6 10 15``
 :func:`chain`           p, q, ...                       p0, p1, ... plast, q0, q1, ...                      ``chain('ABC', 'DEF') --> A B C D E F``
 :func:`compress`        data, selectors                 (d[0] if s[0]), (d[1] if s[1]), ...                 ``compress('ABCDEF', [1,0,1,0,1,1]) --> A C E F``
 :func:`dropwhile`       pred, seq                       seq[n], seq[n+1], starting when pred fails          ``dropwhile(lambda x: x<5, [1,4,6,4,1]) --> 6 4 1``
@@ -84,11 +84,10 @@ The following module functions all construct and return iterators. Some provide
 streams of infinite length, so they should only be accessed by functions or
 loops that truncate the stream.
 
-.. function:: accumulate(iterable, start=0)
+.. function:: accumulate(iterable)
 
-    Make an iterator that returns accumulated sums plus the value of the *start*
-    parameter (which defaults to :const:`0`). Elements may be any addable type
-    including :class:`Decimal` or :class:`Fraction`.  Equivalent to::
+    Make an iterator that returns accumulated sums. Elements may be any addable
+    type including :class:`Decimal` or :class:`Fraction`.  Equivalent to::
 
         def accumulate(iterable):
             'Return running totals'
