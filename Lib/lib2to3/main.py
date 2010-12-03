@@ -100,7 +100,7 @@ def main(fixer_pkg, args=None):
     parser.add_option("-j", "--processes", action="store", default=1,
                       type="int", help="Run 2to3 concurrently")
     parser.add_option("-x", "--nofix", action="append", default=[],
-                      help="Prevent a fixer from being run.")
+                      help="Prevent a transformation from being run")
     parser.add_option("-l", "--list-fixes", action="store_true",
                       help="List available transformations")
     parser.add_option("-p", "--print-function", action="store_true",
@@ -112,7 +112,7 @@ def main(fixer_pkg, args=None):
     parser.add_option("-w", "--write", action="store_true",
                       help="Write back modified files")
     parser.add_option("-n", "--nobackups", action="store_true", default=False,
-                      help="Don't write backups for modified files.")
+                      help="Don't write backups for modified files")
 
     # Parse command line arguments
     refactor_stdin = False
