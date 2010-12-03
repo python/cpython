@@ -32,6 +32,7 @@ __all__ = ['get_close_matches', 'ndiff', 'restore', 'SequenceMatcher',
            'Differ','IS_CHARACTER_JUNK', 'IS_LINE_JUNK', 'context_diff',
            'unified_diff', 'HtmlDiff', 'Match']
 
+import warnings
 import heapq
 from collections import namedtuple as _namedtuple
 
@@ -182,7 +183,7 @@ class SequenceMatcher:
         #      we need to do to 'a' to change it into 'b'?"
         # b2j
         #      for x in b, b2j[x] is a list of the indices (into b)
-        #      at which x appears; junk elements do not appear
+        #      at which x appears; junk and popular elements do not appear
         # fullbcount
         #      for x in b, fullbcount[x] == the number of times x
         #      appears in b; only materialized if really needed (used
@@ -204,15 +205,6 @@ class SequenceMatcher:
         #      subtle but helpful effects on the algorithm, which I'll
         #      get around to writing up someday <0.9 wink>.
         #      DON'T USE!  Only __chain_b uses this.  Use isbjunk.
-        # isbjunk
-        #      for x in b, isbjunk(x) == isjunk(x) but much faster;
-        #      it's really the __contains__ method of a hidden dict.
-        #      DOES NOT WORK for x in a!
-        # isbpopular
-        #      for x in b, isbpopular(x) is true iff b is reasonably long
-        #      (at least 200 elements) and x accounts for more than 1 + 1% of
-        #      its elements (when autojunk is enabled).
-        #      DOES NOT WORK for x in a!
         # bjunk
         #      the items in b for which isjunk is True.
         # bpopular
@@ -343,12 +335,19 @@ class SequenceMatcher:
                     popular.add(elt)
                     del b2j[elt]
 
-        # Now for x in b, isjunk(x) == x in junk, but the latter is much faster.
-        # Since the number of *unique* junk elements is probably small, the
-        # memory burden of keeping this set alive is likely trivial compared to
-        # the size of b2j.
-        self.isbjunk = junk.__contains__
-        self.isbpopular = popular.__contains__
+    def isbjunk(self, item):
+        "Deprecated; use 'item in SequenceMatcher().bjunk'."
+        warnings.warn("'SequenceMatcher().isbjunk(item)' is deprecated;\n"
+                      "use 'item in SMinstance.bjunk' instead.",
+                      DeprecationWarning, 2)
+        return item in self.bjunk
+
+    def isbpopular(self, item):
+        "Deprecated; use 'item in SequenceMatcher().bpopular'."
+        warnings.warn("'SequenceMatcher().isbpopular(item)' is deprecated;\n"
+                      "use 'item in SMinstance.bpopular' instead.",
+                      DeprecationWarning, 2)
+        return item in self.bpopular
 
     def find_longest_match(self, alo, ahi, blo, bhi):
         """Find longest matching block in a[alo:ahi] and b[blo:bhi].
@@ -406,7 +405,7 @@ class SequenceMatcher:
         # Windiff ends up at the same place as diff, but by pairing up
         # the unique 'b's and then matching the first two 'a's.
 
-        a, b, b2j, isbjunk = self.a, self.b, self.b2j, self.isbjunk
+        a, b, b2j, isbjunk = self.a, self.b, self.b2j, self.bjunk.__contains__
         besti, bestj, bestsize = alo, blo, 0
         # find longest junk-free match
         # during an iteration of the loop, j2len[j] = length of longest
