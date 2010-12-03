@@ -33,6 +33,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10360: In WeakSet, do not raise TypeErrors when testing for
+  membership of non-weakrefable objects.
+
 - Issue #940286: pydoc.Helper.help() ignores input/output init parameters.
 
 - Issue #1745035: Add a command size and data size limit to smtpd.py, to
