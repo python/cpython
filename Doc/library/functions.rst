@@ -1023,8 +1023,33 @@ are always available.  They are listed here in alphabetical order.
       >>> list(range(1, 0))
       []
 
+   Range objects implement the :class:`collections.Sequence` ABC, and provide
+   features such as containment tests, element index lookup, slicing and
+   support for negative indices:
+
+      >>> r = range(0, 20, 2)
+      >>> r
+      range(0, 20, 2)
+      >>> 11 in r
+      False
+      >>> 10 in r
+      True
+      >>> r.index(10)
+      5
+      >>> r[5]
+      10
+      >>> r[:5]
+      range(0, 10, 2)
+      >>> r[-1]
+      18
+
+   Ranges containing absolute values larger than ``sys.maxint`` are permitted
+   but some features (such as :func:`len`) will raise :exc:`OverflowError`.
+
    .. versionchanged:: 3.2
-      Testing integers for membership takes constant time instead of iterating
+      Implement the Sequence ABC
+      Support slicing and negative indices
+      Test integers for membership in constant time instead of iterating
       through all items.
 
 
