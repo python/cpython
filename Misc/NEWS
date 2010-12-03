@@ -130,6 +130,9 @@ Library
   be set to False to turn off the previously undocumented 'popularity'
   heuristic. Patch by Terry Reedy and Eli Bendersky.
 
+- Issue #10534: expose bjunk and bpopular sets; deprecate undocumented and now
+  redundant isbjunk and isbpopular methods.
+
 - Issue #9846: zipfile is now correctly closing underlying file objects.
 
 - Issue #10459: Update CJK character names to Unicode 6.0.
