@@ -963,14 +963,16 @@ sortslice_copy(sortslice *s1, Py_ssize_t i, sortslice *s2, Py_ssize_t j)
 }
 
 Py_LOCAL_INLINE(void)
-sortslice_copy_incr(sortslice *dst, sortslice *src) {
+sortslice_copy_incr(sortslice *dst, sortslice *src)
+{
     *dst->keys++ = *src->keys++;
     if (dst->values != NULL)
         *dst->values++ = *src->values++;
 }
 
 Py_LOCAL_INLINE(void)
-sortslice_copy_decr(sortslice *dst, sortslice *src) {
+sortslice_copy_decr(sortslice *dst, sortslice *src)
+{
     *dst->keys-- = *src->keys--;
     if (dst->values != NULL)
         *dst->values-- = *src->values--;
@@ -979,7 +981,8 @@ sortslice_copy_decr(sortslice *dst, sortslice *src) {
 
 Py_LOCAL_INLINE(void)
 sortslice_memcpy(sortslice *s1, Py_ssize_t i, sortslice *s2, Py_ssize_t j,
-                 Py_ssize_t n) {
+                 Py_ssize_t n)
+{
     memcpy(&s1->keys[i], &s2->keys[j], sizeof(PyObject *) * n);
     if (s1->values != NULL)
         memcpy(&s1->values[i], &s2->values[j], sizeof(PyObject *) * n);
@@ -987,14 +990,16 @@ sortslice_memcpy(sortslice *s1, Py_ssize_t i, sortslice *s2, Py_ssize_t j,
 
 Py_LOCAL_INLINE(void)
 sortslice_memmove(sortslice *s1, Py_ssize_t i, sortslice *s2, Py_ssize_t j,
-                  Py_ssize_t n) {
+                  Py_ssize_t n)
+{
     memmove(&s1->keys[i], &s2->keys[j], sizeof(PyObject *) * n);
     if (s1->values != NULL)
         memmove(&s1->values[i], &s2->values[j], sizeof(PyObject *) * n);
 }
 
 Py_LOCAL_INLINE(void)
-sortslice_advance(sortslice *slice, Py_ssize_t n) {
+sortslice_advance(sortslice *slice, Py_ssize_t n)
+{
     slice->keys += n;
     if (slice->values != NULL)
         slice->values += n;
