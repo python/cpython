@@ -10,6 +10,8 @@ What's New in Python 3.2 Beta 1?
 Core and Builtins
 -----------------
 
+- PEP 384 (Defining a Stable ABI) is implemented.
+
 - Issue #2690: Range objects support negative indices and slicing
 
 - Issue #9915: Speed up sorting with a key.

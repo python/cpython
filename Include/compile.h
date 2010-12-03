@@ -1,4 +1,4 @@
-
+#ifndef Py_LIMITED_API
 #ifndef Py_COMPILE_H
 #define Py_COMPILE_H
 
@@ -38,3 +38,4 @@ PyAPI_FUNC(PyFutureFeatures *) PyFuture_FromAST(struct _mod *, const char *);
 }
 #endif
 #endif /* !Py_COMPILE_H */
+#endif /* !Py_LIMITED_API */

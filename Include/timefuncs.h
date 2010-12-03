@@ -14,7 +14,9 @@ extern "C" {
  * to fit in a time_t.  ValueError is set on return iff the return
  * value is (time_t)-1 and PyErr_Occurred().
  */
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(time_t) _PyTime_DoubleToTimet(double x);
+#endif
 
 
 #ifdef __cplusplus

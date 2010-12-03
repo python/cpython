@@ -361,7 +361,7 @@ search_for_exec_prefix(wchar_t *argv0_path, wchar_t *home, wchar_t *_exec_prefix
             decoded = PyUnicode_DecodeUTF8(buf, n, "surrogateescape");
             if (decoded != NULL) {
                 Py_ssize_t k;
-                k = PyUnicode_AsWideChar((PyUnicodeObject*)decoded,
+                k = PyUnicode_AsWideChar(decoded,
                                          rel_builddir_path, MAXPATHLEN);
                 Py_DECREF(decoded);
                 if (k >= 0) {

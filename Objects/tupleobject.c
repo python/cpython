@@ -689,7 +689,7 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
         PyObject* it;
         PyObject **src, **dest;
 
-        if (PySlice_GetIndicesEx((PySliceObject*)item,
+        if (PySlice_GetIndicesEx(item,
                          PyTuple_GET_SIZE(self),
                          &start, &stop, &step, &slicelength) < 0) {
             return NULL;

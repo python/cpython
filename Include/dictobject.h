@@ -45,6 +45,7 @@ meaning otherwise.
  * majority of dicts (consisting mostly of usually-small instance dicts and
  * usually-small dicts created to pass keyword arguments).
  */
+#ifndef Py_LIMITED_API
 #define PyDict_MINSIZE 8
 
 typedef struct {
@@ -84,6 +85,7 @@ struct _dictobject {
     PyDictEntry *(*ma_lookup)(PyDictObject *mp, PyObject *key, Py_hash_t hash);
     PyDictEntry ma_smalltable[PyDict_MINSIZE];
 };
+#endif /* Py_LIMITED_API */
 
 PyAPI_DATA(PyTypeObject) PyDict_Type;
 PyAPI_DATA(PyTypeObject) PyDictIterKey_Type;
@@ -112,18 +114,22 @@ PyAPI_FUNC(int) PyDict_DelItem(PyObject *mp, PyObject *key);
 PyAPI_FUNC(void) PyDict_Clear(PyObject *mp);
 PyAPI_FUNC(int) PyDict_Next(
     PyObject *mp, Py_ssize_t *pos, PyObject **key, PyObject **value);
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyDict_Next(
     PyObject *mp, Py_ssize_t *pos, PyObject **key, PyObject **value, Py_hash_t *hash);
+#endif
 PyAPI_FUNC(PyObject *) PyDict_Keys(PyObject *mp);
 PyAPI_FUNC(PyObject *) PyDict_Values(PyObject *mp);
 PyAPI_FUNC(PyObject *) PyDict_Items(PyObject *mp);
 PyAPI_FUNC(Py_ssize_t) PyDict_Size(PyObject *mp);
 PyAPI_FUNC(PyObject *) PyDict_Copy(PyObject *mp);
 PyAPI_FUNC(int) PyDict_Contains(PyObject *mp, PyObject *key);
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyDict_Contains(PyObject *mp, PyObject *key, Py_hash_t hash);
 PyAPI_FUNC(PyObject *) _PyDict_NewPresized(Py_ssize_t minused);
 PyAPI_FUNC(void) _PyDict_MaybeUntrack(PyObject *mp);
 PyAPI_FUNC(int) _PyDict_HasOnlyStringKeys(PyObject *mp);
+#endif
 
 /* PyDict_Update(mp, other) is equivalent to PyDict_Merge(mp, other, 1). */
 PyAPI_FUNC(int) PyDict_Update(PyObject *mp, PyObject *other);

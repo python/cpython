@@ -1,6 +1,6 @@
 
 /* Function object interface */
-
+#ifndef Py_LIMITED_API
 #ifndef Py_FUNCOBJECT_H
 #define Py_FUNCOBJECT_H
 #ifdef __cplusplus
@@ -84,3 +84,4 @@ PyAPI_FUNC(PyObject *) PyStaticMethod_New(PyObject *);
 }
 #endif
 #endif /* !Py_FUNCOBJECT_H */
+#endif /* Py_LIMITED_API */

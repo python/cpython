@@ -1,3 +1,4 @@
+#ifndef Py_LIMITED_API
 #ifndef Py_ATOMIC_H
 #define Py_ATOMIC_H
 /* XXX: When compilers start offering a stdatomic.h with lock-free
@@ -177,3 +178,4 @@ _Py_ANNOTATE_MEMORY_ORDER(const volatile void *address, _Py_memory_order order)
 #endif
 
 #endif  /* Py_ATOMIC_H */
+#endif  /* Py_LIMITED_API */

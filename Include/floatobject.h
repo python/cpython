@@ -11,10 +11,12 @@ PyFloatObject represents a (double precision) floating point number.
 extern "C" {
 #endif
 
+#ifndef Py_LIMITED_API
 typedef struct {
     PyObject_HEAD
     double ob_fval;
 } PyFloatObject;
+#endif
 
 PyAPI_DATA(PyTypeObject) PyFloat_Type;
 
@@ -45,8 +47,11 @@ PyAPI_FUNC(PyObject *) PyFloat_FromDouble(double);
 /* Extract C double from Python float.  The macro version trades safety for
    speed. */
 PyAPI_FUNC(double) PyFloat_AsDouble(PyObject *);
+#ifndef Py_LIMITED_API
 #define PyFloat_AS_DOUBLE(op) (((PyFloatObject *)(op))->ob_fval)
+#endif
 
+#ifndef Py_LIMITED_API
 /* _PyFloat_{Pack,Unpack}{4,8}
  *
  * The struct and pickle (at least) modules need an efficient platform-
@@ -110,6 +115,7 @@ PyAPI_FUNC(int) PyFloat_ClearFreeList(void);
 PyAPI_FUNC(PyObject *) _PyFloat_FormatAdvanced(PyObject *obj,
 					       Py_UNICODE *format_spec,
 					       Py_ssize_t format_spec_len);
+#endif /* Py_LIMITED_API */
 
 #ifdef __cplusplus
 }

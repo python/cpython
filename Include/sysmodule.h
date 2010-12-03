@@ -20,7 +20,9 @@ PyAPI_FUNC(void) PySys_WriteStderr(const char *format, ...)
 PyAPI_FUNC(void) PySys_FormatStdout(const char *format, ...);
 PyAPI_FUNC(void) PySys_FormatStderr(const char *format, ...);
 
+#ifndef Py_LIMITED_API
 PyAPI_DATA(PyObject *) _PySys_TraceFunc, *_PySys_ProfileFunc;
+#endif
 
 PyAPI_FUNC(void) PySys_ResetWarnOptions(void);
 PyAPI_FUNC(void) PySys_AddWarnOption(const wchar_t *);

@@ -26,12 +26,14 @@ PyAPI_FUNC(int) PyCFunction_GetFlags(PyObject *);
 
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */
+#ifndef Py_LIMITED_API
 #define PyCFunction_GET_FUNCTION(func) \
         (((PyCFunctionObject *)func) -> m_ml -> ml_meth)
 #define PyCFunction_GET_SELF(func) \
 	(((PyCFunctionObject *)func) -> m_self)
 #define PyCFunction_GET_FLAGS(func) \
 	(((PyCFunctionObject *)func) -> m_ml -> ml_flags)
+#endif
 PyAPI_FUNC(PyObject *) PyCFunction_Call(PyObject *, PyObject *, PyObject *);
 
 struct PyMethodDef {
@@ -68,12 +70,14 @@ PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *,
 
 #define METH_COEXIST   0x0040
 
+#ifndef Py_LIMITED_API
 typedef struct {
     PyObject_HEAD
     PyMethodDef *m_ml; /* Description of the C function to call */
     PyObject    *m_self; /* Passed as 'self' arg to the C func, can be NULL */
     PyObject    *m_module; /* The __module__ attribute, can be anything */
 } PyCFunctionObject;
+#endif
 
 PyAPI_FUNC(int) PyCFunction_ClearFreeList(void);
 

@@ -1155,7 +1155,7 @@ WCharArray_set_value(CDataObject *self, PyObject *value)
         result = -1;
         goto done;
     }
-    result = PyUnicode_AsWideChar((PyUnicodeObject *)value,
+    result = PyUnicode_AsWideChar(value,
                                   (wchar_t *)self->b_ptr,
                                   self->b_size/sizeof(wchar_t));
     if (result >= 0 && (size_t)result < self->b_size/sizeof(wchar_t))
@@ -4174,7 +4174,7 @@ Array_subscript(PyObject *_self, PyObject *item)
         PyObject *np;
         Py_ssize_t start, stop, step, slicelen, cur, i;
 
-        if (PySlice_GetIndicesEx((PySliceObject *)item,
+        if (PySlice_GetIndicesEx(item,
                                  self->b_length, &start, &stop,
                                  &step, &slicelen) < 0) {
             return NULL;
@@ -4308,7 +4308,7 @@ Array_ass_subscript(PyObject *_self, PyObject *item, PyObject *value)
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelen, otherlen, i, cur;
 
-        if (PySlice_GetIndicesEx((PySliceObject *)item,
+        if (PySlice_GetIndicesEx(item,
                                  self->b_length, &start, &stop,
                                  &step, &slicelen) < 0) {
             return -1;

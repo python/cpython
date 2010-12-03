@@ -1263,7 +1263,7 @@ unicode_aswidechar(PyUnicodeObject *unicode,
 }
 
 Py_ssize_t
-PyUnicode_AsWideChar(PyUnicodeObject *unicode,
+PyUnicode_AsWideChar(PyObject *unicode,
                      wchar_t *w,
                      Py_ssize_t size)
 {
@@ -1271,7 +1271,7 @@ PyUnicode_AsWideChar(PyUnicodeObject *unicode,
         PyErr_BadInternalCall();
         return -1;
     }
-    return unicode_aswidechar(unicode, w, size);
+    return unicode_aswidechar((PyUnicodeObject*)unicode, w, size);
 }
 
 wchar_t*
@@ -9222,7 +9222,7 @@ unicode_subscript(PyUnicodeObject* self, PyObject* item)
         Py_UNICODE* result_buf;
         PyObject* result;
 
-        if (PySlice_GetIndicesEx((PySliceObject*)item, PyUnicode_GET_SIZE(self),
+        if (PySlice_GetIndicesEx(item, PyUnicode_GET_SIZE(self),
                                  &start, &stop, &step, &slicelength) < 0) {
             return NULL;
         }

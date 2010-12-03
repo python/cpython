@@ -239,14 +239,14 @@ the same library that the Python runtime is using.
    be parsed or compiled.
 
 
-.. c:function:: PyObject* PyEval_EvalCode(PyCodeObject *co, PyObject *globals, PyObject *locals)
+.. c:function:: PyObject* PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
 
    This is a simplified interface to :c:func:`PyEval_EvalCodeEx`, with just
    the code object, and the dictionaries of global and local variables.
    The other arguments are set to *NULL*.
 
 
-.. c:function:: PyObject* PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals, PyObject **args, int argcount, PyObject **kws, int kwcount, PyObject **defs, int defcount, PyObject *closure)
+.. c:function:: PyObject* PyEval_EvalCodeEx(PyObject *co, PyObject *globals, PyObject *locals, PyObject **args, int argcount, PyObject **kws, int kwcount, PyObject **defs, int defcount, PyObject *closure)
 
    Evaluate a precompiled code object, given a particular environment for its
    evaluation.  This environment consists of dictionaries of global and local

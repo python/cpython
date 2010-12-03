@@ -1,3 +1,4 @@
+#ifndef Py_LIMITED_API
 #ifndef PYCTYPE_H
 #define PYCTYPE_H
 
@@ -29,3 +30,4 @@ extern const unsigned char _Py_ctype_toupper[256];
 #define Py_TOUPPER(c) (_Py_ctype_toupper[Py_CHARMASK(c)])
 
 #endif /* !PYCTYPE_H */
+#endif /* !Py_LIMITED_API */

@@ -379,7 +379,7 @@ complete example using the GNU readline library (you may want to ignore
            if (ps1  == prompt ||                  /* ">>> " or */
                '\n' == code[i + j - 1])           /* "... " and double '\n' */
            {                                               /* so execute it */
-             dum = PyEval_EvalCode ((PyCodeObject *)src, glb, loc);
+             dum = PyEval_EvalCode (src, glb, loc);
              Py_XDECREF (dum);
              Py_XDECREF (src);
              free (code);

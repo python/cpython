@@ -1755,7 +1755,7 @@ run_mod(mod_ty mod, const char *filename, PyObject *globals, PyObject *locals,
     co = PyAST_Compile(mod, filename, flags, arena);
     if (co == NULL)
         return NULL;
-    v = PyEval_EvalCode(co, globals, locals);
+    v = PyEval_EvalCode((PyObject*)co, globals, locals);
     Py_DECREF(co);
     return v;
 }
@@ -1785,7 +1785,7 @@ run_pyc_file(FILE *fp, const char *filename, PyObject *globals,
         return NULL;
     }
     co = (PyCodeObject *)v;
-    v = PyEval_EvalCode(co, globals, locals);
+    v = PyEval_EvalCode((PyObject*)co, globals, locals);
     if (v && flags)
         flags->cf_flags |= (co->co_flags & PyCF_MASK);
     Py_DECREF(co);
@@ -1815,6 +1815,14 @@ Py_CompileStringFlags(const char *str, const char *filename, int start,
     co = PyAST_Compile(mod, filename, flags, arena);
     PyArena_Free(arena);
     return (PyObject *)co;
+}
+
+/* For use in Py_LIMITED_API */
+#undef Py_CompileString
+PyObject *
+PyCompileString(const char *str, const char *filename, int start)
+{
+    return Py_CompileStringFlags(str, filename, start, NULL);
 }
 
 struct symtable *

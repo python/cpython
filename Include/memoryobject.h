@@ -10,10 +10,12 @@ PyAPI_DATA(PyTypeObject) PyMemoryView_Type;
 
 #define PyMemoryView_Check(op) (Py_TYPE(op) == &PyMemoryView_Type)
 
+#ifndef Py_LIMITED_API
 /* Get a pointer to the underlying Py_buffer of a memoryview object. */
 #define PyMemoryView_GET_BUFFER(op) (&((PyMemoryViewObject *)(op))->view)
 /* Get a pointer to the PyObject from which originates a memoryview object. */
 #define PyMemoryView_GET_BASE(op) (((PyMemoryViewObject *)(op))->view.obj)
+#endif
 
 
 PyAPI_FUNC(PyObject *) PyMemoryView_GetContiguous(PyObject *base, 
@@ -61,11 +63,12 @@ PyAPI_FUNC(PyObject *) PyMemoryView_FromBuffer(Py_buffer *info);
 /* The struct is declared here so that macros can work, but it shouldn't
    be considered public. Don't access those fields directly, use the macros
    and functions instead! */
+#ifndef Py_LIMITED_API
 typedef struct {
     PyObject_HEAD
     Py_buffer view;
 } PyMemoryViewObject;
-
+#endif
 
 #ifdef __cplusplus
 }

@@ -1,6 +1,7 @@
 
 /* Frame object interface */
 
+#ifndef Py_LIMITED_API
 #ifndef Py_FRAMEOBJECT_H
 #define Py_FRAMEOBJECT_H
 #ifdef __cplusplus
@@ -85,3 +86,4 @@ PyAPI_FUNC(int) PyFrame_GetLineNumber(PyFrameObject *);
 }
 #endif
 #endif /* !Py_FRAMEOBJECT_H */
+#endif /* Py_LIMITED_API */

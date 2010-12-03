@@ -74,7 +74,7 @@ PyModule_Create2(struct PyModuleDef* module, int module_api_version)
         module->m_base.m_index = max_module_number;
     }
     name = module->m_name;
-    if (module_api_version != PYTHON_API_VERSION) {
+    if (module_api_version != PYTHON_API_VERSION && module_api_version != PYTHON_ABI_VERSION) {
         int err;
         err = PyErr_WarnFormat(PyExc_RuntimeWarning, 1,
             "Python C API version mismatch for module %.100s: "

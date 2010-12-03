@@ -99,9 +99,10 @@ _PySlice_FromIndices(Py_ssize_t istart, Py_ssize_t istop)
 }
 
 int
-PySlice_GetIndices(PySliceObject *r, Py_ssize_t length,
+PySlice_GetIndices(PyObject *_r, Py_ssize_t length,
                    Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step)
 {
+    PySliceObject *r = (PySliceObject*)_r;
     /* XXX support long ints */
     if (r->step == Py_None) {
         *step = 1;
@@ -130,10 +131,11 @@ PySlice_GetIndices(PySliceObject *r, Py_ssize_t length,
 }
 
 int
-PySlice_GetIndicesEx(PySliceObject *r, Py_ssize_t length,
+PySlice_GetIndicesEx(PyObject *_r, Py_ssize_t length,
                      Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step,
                      Py_ssize_t *slicelength)
 {
+    PySliceObject *r = (PySliceObject*)_r;
     /* this is harder to get right than you might think */
 
     Py_ssize_t defstart, defstop;
@@ -256,7 +258,7 @@ slice_indices(PySliceObject* self, PyObject* len)
         return NULL;
     }
 
-    if (PySlice_GetIndicesEx(self, ilen, &start, &stop,
+    if (PySlice_GetIndicesEx((PyObject*)self, ilen, &start, &stop,
                              &step, &slicelength) < 0) {
         return NULL;
     }

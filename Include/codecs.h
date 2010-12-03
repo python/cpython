@@ -45,9 +45,11 @@ PyAPI_FUNC(int) PyCodec_Register(
 
  */
 
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _PyCodec_Lookup(
        const char *encoding
        );
+#endif
 
 /* Codec registry encoding check API.
 

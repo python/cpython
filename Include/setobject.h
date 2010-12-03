@@ -18,7 +18,7 @@ Note: .pop() abuses the hash field of an Unused or Dummy slot to
 hold a search finger.  The hash field of Unused or Dummy slots has
 no meaning otherwise.
 */
-
+#ifndef Py_LIMITED_API
 #define PySet_MINSIZE 8
 
 typedef struct {
@@ -56,6 +56,7 @@ struct _setobject {
     Py_hash_t hash;                  /* only used by frozenset objects */
     PyObject *weakreflist;      /* List of weak references */
 };
+#endif /* Py_LIMITED_API */
 
 PyAPI_DATA(PyTypeObject) PySet_Type;
 PyAPI_DATA(PyTypeObject) PyFrozenSet_Type;
@@ -85,14 +86,20 @@ PyAPI_DATA(PyTypeObject) PySetIter_Type;
 PyAPI_FUNC(PyObject *) PySet_New(PyObject *);
 PyAPI_FUNC(PyObject *) PyFrozenSet_New(PyObject *);
 PyAPI_FUNC(Py_ssize_t) PySet_Size(PyObject *anyset);
+#ifndef Py_LIMITED_API
 #define PySet_GET_SIZE(so) (((PySetObject *)(so))->used)
+#endif
 PyAPI_FUNC(int) PySet_Clear(PyObject *set);
 PyAPI_FUNC(int) PySet_Contains(PyObject *anyset, PyObject *key);
 PyAPI_FUNC(int) PySet_Discard(PyObject *set, PyObject *key);
 PyAPI_FUNC(int) PySet_Add(PyObject *set, PyObject *key);
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PySet_NextEntry(PyObject *set, Py_ssize_t *pos, PyObject **key, Py_hash_t *hash);
+#endif
 PyAPI_FUNC(PyObject *) PySet_Pop(PyObject *set);
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PySet_Update(PyObject *set, PyObject *iterable);
+#endif
 
 #ifdef __cplusplus
 }

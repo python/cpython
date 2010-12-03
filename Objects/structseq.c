@@ -43,6 +43,18 @@ PyStructSequence_New(PyTypeObject *type)
     return (PyObject*)obj;
 }
 
+void
+PyStructSequence_SetItem(PyObject* op, Py_ssize_t i, PyObject* v)
+{
+    PyStructSequence_SET_ITEM(op, i, v);
+}
+
+PyObject*
+PyStructSequence_GetItem(PyObject* op, Py_ssize_t i)
+{
+    return PyStructSequence_GET_ITEM(op, i);
+}
+
 static void
 structseq_dealloc(PyStructSequence *obj)
 {
@@ -364,4 +376,12 @@ PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc)
     SET_DICT_FROM_INT(visible_length_key, desc->n_in_sequence);
     SET_DICT_FROM_INT(real_length_key, n_members);
     SET_DICT_FROM_INT(unnamed_fields_key, n_unnamed_members);
+}
+
+PyTypeObject*
+PyStructSequence_NewType(PyStructSequence_Desc *desc)
+{
+    PyTypeObject *result = (PyTypeObject*)PyType_GenericAlloc(&PyType_Type, 0);
+    PyStructSequence_InitType(result, desc);
+    return result;
 }

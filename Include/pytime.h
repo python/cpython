@@ -1,3 +1,4 @@
+#ifndef Py_LIMITED_API
 #ifndef Py_PYTIME_H
 #define Py_PYTIME_H
 
@@ -44,3 +45,4 @@ PyAPI_FUNC(void) _PyTime_Init(void);
 #endif
 
 #endif /* Py_PYTIME_H */
+#endif /* Py_LIMITED_API */

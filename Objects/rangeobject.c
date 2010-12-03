@@ -431,7 +431,6 @@ range_subscript(rangeobject* self, PyObject* item)
         return range_item(self, i);
     }
     if (PySlice_Check(item)) {
-        PySliceObject *slice = (PySliceObject*)item;
         Py_ssize_t start, stop, step, len, rlen;
         rangeobject *result;
         PyObject *substart = NULL, *substep = NULL, *substop = NULL;
@@ -441,7 +440,7 @@ range_subscript(rangeobject* self, PyObject* item)
             return NULL;
         }
 
-        if (PySlice_GetIndicesEx(slice, rlen,
+        if (PySlice_GetIndicesEx(item, rlen,
                                 &start, &stop, &step, &len) < 0) {
             return NULL;
         }
@@ -450,7 +449,7 @@ range_subscript(rangeobject* self, PyObject* item)
             Py_INCREF(substep);
         } else {
             /* NB: slice step != Py_None here */
-            substep = PyNumber_Multiply(self->step, slice->step);
+            substep = PyNumber_Multiply(self->step, ((PySliceObject*)item)->step);
             if (substep == NULL)
                 goto fail;
         }

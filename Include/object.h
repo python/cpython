@@ -61,6 +61,10 @@ whose size is determined when the object is allocated.
 #define Py_REF_DEBUG
 #endif
 
+#if defined(Py_LIMITED_API) && defined(Py_REF_DEBUG)
+#error Py_LIMITED_API is incompatible with Py_DEBUG, Py_TRACE_REFS, and Py_REF_DEBUG
+#endif
+
 #ifdef Py_TRACE_REFS
 /* Define pointers to support a doubly-linked list of all live heap objects. */
 #define _PyObject_HEAD_EXTRA            \
@@ -196,6 +200,7 @@ typedef int (*objobjproc)(PyObject *, PyObject *);
 typedef int (*visitproc)(PyObject *, void *);
 typedef int (*traverseproc)(PyObject *, visitproc, void *);
 
+#ifndef Py_LIMITED_API
 typedef struct {
     /* Number implementations must check *both*
        arguments for proper type and implement the necessary conversions
@@ -265,10 +270,17 @@ typedef struct {
      getbufferproc bf_getbuffer;
      releasebufferproc bf_releasebuffer;
 } PyBufferProcs;
+#endif /* Py_LIMITED_API */
 
 typedef void (*freefunc)(void *);
 typedef void (*destructor)(PyObject *);
+#ifndef Py_LIMITED_API
+/* We can't provide a full compile-time check that limited-API
+   users won't implement tp_print. However, not defining printfunc
+   and making tp_print of a different function pointer type
+   should at least cause a warning in most cases. */
 typedef int (*printfunc)(PyObject *, FILE *, int);
+#endif
 typedef PyObject *(*getattrfunc)(PyObject *, char *);
 typedef PyObject *(*getattrofunc)(PyObject *, PyObject *);
 typedef int (*setattrfunc)(PyObject *, char *, PyObject *);
@@ -284,6 +296,9 @@ typedef int (*initproc)(PyObject *, PyObject *, PyObject *);
 typedef PyObject *(*newfunc)(struct _typeobject *, PyObject *, PyObject *);
 typedef PyObject *(*allocfunc)(struct _typeobject *, Py_ssize_t);
 
+#ifdef Py_LIMITED_API
+typedef struct _typeobject PyTypeObject; /* opaque */
+#else
 typedef struct _typeobject {
     PyObject_VAR_HEAD
     const char *tp_name; /* For printing, in format "<module>.<name>" */
@@ -371,8 +386,25 @@ typedef struct _typeobject {
     struct _typeobject *tp_next;
 #endif
 } PyTypeObject;
+#endif
 
+typedef struct{
+    int slot;    /* slot id, see below */
+    void *pfunc; /* function pointer */
+} PyType_Slot;
 
+typedef struct{
+    const char* name;
+    const char* doc;
+    int basicsize;
+    int itemsize;
+    int flags;
+    PyType_Slot *slots; /* terminated by slot==0. */
+} PyType_Spec;
+
+PyAPI_FUNC(PyObject*) PyType_FromSpec(PyType_Spec*);
+
+#ifndef Py_LIMITED_API
 /* The *real* layout of a type object when allocated on the heap */
 typedef struct _heaptypeobject {
     /* Note: there's a dependency on the order of these members
@@ -393,7 +425,7 @@ typedef struct _heaptypeobject {
 /* access macro to the members which are floating "behind" the object */
 #define PyHeapType_GET_MEMBERS(etype) \
     ((PyMemberDef *)(((char *)etype) + Py_TYPE(etype)->tp_basicsize))
-
+#endif
 
 /* Generic type check */
 PyAPI_FUNC(int) PyType_IsSubtype(PyTypeObject *, PyTypeObject *);
@@ -412,15 +444,19 @@ PyAPI_FUNC(int) PyType_Ready(PyTypeObject *);
 PyAPI_FUNC(PyObject *) PyType_GenericAlloc(PyTypeObject *, Py_ssize_t);
 PyAPI_FUNC(PyObject *) PyType_GenericNew(PyTypeObject *,
                                                PyObject *, PyObject *);
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _PyType_Lookup(PyTypeObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, char *, PyObject **);
+#endif
 PyAPI_FUNC(unsigned int) PyType_ClearCache(void);
 PyAPI_FUNC(void) PyType_Modified(PyTypeObject *);
 
 /* Generic operations on objects */
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
 PyAPI_FUNC(void) _Py_BreakPoint(void);
 PyAPI_FUNC(void) _PyObject_Dump(PyObject *);
+#endif
 PyAPI_FUNC(PyObject *) PyObject_Repr(PyObject *);
 PyAPI_FUNC(PyObject *) PyObject_Str(PyObject *);
 PyAPI_FUNC(PyObject *) PyObject_ASCII(PyObject *);
@@ -433,9 +469,13 @@ PyAPI_FUNC(int) PyObject_HasAttrString(PyObject *, const char *);
 PyAPI_FUNC(PyObject *) PyObject_GetAttr(PyObject *, PyObject *);
 PyAPI_FUNC(int) PyObject_SetAttr(PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(int) PyObject_HasAttr(PyObject *, PyObject *);
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject **) _PyObject_GetDictPtr(PyObject *);
+#endif
 PyAPI_FUNC(PyObject *) PyObject_SelfIter(PyObject *);
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _PyObject_NextNotImplemented(PyObject *);
+#endif
 PyAPI_FUNC(PyObject *) PyObject_GenericGetAttr(PyObject *, PyObject *);
 PyAPI_FUNC(int) PyObject_GenericSetAttr(PyObject *,
                                               PyObject *, PyObject *);
@@ -469,8 +509,10 @@ PyAPI_FUNC(int) Py_ReprEnter(PyObject *);
 PyAPI_FUNC(void) Py_ReprLeave(PyObject *);
 
 /* Helpers for hash functions */
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(Py_hash_t) _Py_HashDouble(double);
 PyAPI_FUNC(Py_hash_t) _Py_HashPointer(void*);
+#endif
 
 /* Helper for passing objects to printf and the like */
 #define PyObject_REPR(obj) _PyUnicode_AsString(PyObject_Repr(obj))
@@ -649,9 +691,13 @@ PyAPI_FUNC(void) _Py_AddToAllObjects(PyObject *, int force);
 
 #define _Py_ForgetReference(op) _Py_INC_TPFREES(op)
 
+#ifdef Py_LIMITED_API
+PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
+#else
 #define _Py_Dealloc(op) (                               \
     _Py_INC_TPFREES(op) _Py_COUNT_ALLOCS_COMMA          \
     (*Py_TYPE(op)->tp_dealloc)((PyObject *)(op)))
+#endif
 #endif /* !Py_TRACE_REFS */
 
 #define Py_INCREF(op) (                         \

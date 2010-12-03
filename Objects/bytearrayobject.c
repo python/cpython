@@ -389,7 +389,7 @@ bytearray_subscript(PyByteArrayObject *self, PyObject *index)
     }
     else if (PySlice_Check(index)) {
         Py_ssize_t start, stop, step, slicelength, cur, i;
-        if (PySlice_GetIndicesEx((PySliceObject *)index,
+        if (PySlice_GetIndicesEx(index,
                                  PyByteArray_GET_SIZE(self),
                                  &start, &stop, &step, &slicelength) < 0) {
             return NULL;
@@ -573,7 +573,7 @@ bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *valu
         }
     }
     else if (PySlice_Check(index)) {
-        if (PySlice_GetIndicesEx((PySliceObject *)index,
+        if (PySlice_GetIndicesEx(index,
                                  PyByteArray_GET_SIZE(self),
                                  &start, &stop, &step, &slicelen) < 0) {
             return -1;

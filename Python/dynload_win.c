@@ -134,6 +134,15 @@ static char *GetPythonImport (HINSTANCE hModule)
                 !strncmp(import_name,"python",6)) {
                 char *pch;
 
+#ifndef _DEBUG
+                /* In a release version, don't claim that python3.dll is
+                   a Python DLL. */
+                if (strcmp(import_name, "python3.dll") == 0) {
+                    import_data += 20;
+                    continue;
+                }
+#endif
+
                 /* Ensure python prefix is followed only
                    by numbers to the end of the basename */
                 pch = import_name + 6;
@@ -162,12 +171,15 @@ static char *GetPythonImport (HINSTANCE hModule)
     return NULL;
 }
 
-
 dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
                                     const char *pathname, FILE *fp)
 {
     dl_funcptr p;
     char funcname[258], *import_python;
+
+#ifndef _DEBUG
+    _Py_CheckPython3();
+#endif
 
     PyOS_snprintf(funcname, sizeof(funcname), "PyInit_%.200s", shortname);
 

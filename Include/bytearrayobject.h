@@ -19,6 +19,7 @@ extern "C" {
  */
 
 /* Object layout */
+#ifndef Py_LIMITED_API
 typedef struct {
     PyObject_VAR_HEAD
     /* XXX(nnorwitz): should ob_exports be Py_ssize_t? */
@@ -26,6 +27,7 @@ typedef struct {
     Py_ssize_t ob_alloc; /* How many bytes allocated */
     char *ob_bytes;
 } PyByteArrayObject;
+#endif
 
 /* Type object */
 PyAPI_DATA(PyTypeObject) PyByteArray_Type;
@@ -44,12 +46,14 @@ PyAPI_FUNC(char *) PyByteArray_AsString(PyObject *);
 PyAPI_FUNC(int) PyByteArray_Resize(PyObject *, Py_ssize_t);
 
 /* Macros, trading safety for speed */
+#ifndef Py_LIMITED_API
 #define PyByteArray_AS_STRING(self) \
     (assert(PyByteArray_Check(self)), \
      Py_SIZE(self) ? ((PyByteArrayObject *)(self))->ob_bytes : _PyByteArray_empty_string)
 #define PyByteArray_GET_SIZE(self)  (assert(PyByteArray_Check(self)),Py_SIZE(self))
 
 PyAPI_DATA(char) _PyByteArray_empty_string[];
+#endif
 
 #ifdef __cplusplus
 }

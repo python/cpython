@@ -31,7 +31,9 @@ PyAPI_FUNC(int) PyArg_ValidateKeywordArguments(PyObject *);
 PyAPI_FUNC(int) PyArg_UnpackTuple(PyObject *, const char *, Py_ssize_t, Py_ssize_t, ...);
 PyAPI_FUNC(PyObject *) Py_BuildValue(const char *, ...);
 PyAPI_FUNC(PyObject *) _Py_BuildValue_SizeT(const char *, ...);
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyArg_NoKeywords(const char *funcname, PyObject *kw);
+#endif
 
 PyAPI_FUNC(int) PyArg_VaParse(PyObject *, const char *, va_list);
 PyAPI_FUNC(int) PyArg_VaParseTupleAndKeywords(PyObject *, PyObject *,
@@ -92,6 +94,12 @@ PyAPI_FUNC(int) PyModule_AddStringConstant(PyObject *, const char *, const char 
    9-Jan-1995	GvR	Initial version (incompatible with older API)
 */
 
+/* The PYTHON_ABI_VERSION is introduced in PEP 384. For the lifetime of
+   Python 3, it will stay at the value of 3; changes to the limited API
+   must be performed in a strictly backwards-compatible manner. */
+#define PYTHON_ABI_VERSION 3
+#define PYTHON_ABI_STRING "3"
+
 #ifdef Py_TRACE_REFS
  /* When we are tracing reference counts, rename PyModule_Create2 so
     modules compiled with incompatible settings will generate a
@@ -102,10 +110,17 @@ PyAPI_FUNC(int) PyModule_AddStringConstant(PyObject *, const char *, const char 
 PyAPI_FUNC(PyObject *) PyModule_Create2(struct PyModuleDef*,
                                      int apiver);
 
+#ifdef Py_LIMITED_API
+#define PyModule_Create(module) \
+	PyModule_Create2(module, PYTHON_ABI_VERSION)
+#else
 #define PyModule_Create(module) \
 	PyModule_Create2(module, PYTHON_API_VERSION)
+#endif
 
+#ifndef Py_LIMITED_API
 PyAPI_DATA(char *) _Py_PackageContext;
+#endif
 
 #ifdef __cplusplus
 }

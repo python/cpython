@@ -13,6 +13,9 @@ extern "C" {
 struct _ts; /* Forward */
 struct _is; /* Forward */
 
+#ifdef Py_LIMITED_API
+typedef struct _is PyInterpreterState;
+#else
 typedef struct _is {
 
     struct _is *next;
@@ -37,12 +40,14 @@ typedef struct _is {
 #endif
 
 } PyInterpreterState;
+#endif
 
 
 /* State unique per thread */
 
 struct _frame; /* Avoid including frameobject.h */
 
+#ifndef Py_LIMITED_API
 /* Py_tracefunc return -1 when raising an exception, or 0 for success. */
 typedef int (*Py_tracefunc)(PyObject *, struct _frame *, int, PyObject *);
 
@@ -54,7 +59,11 @@ typedef int (*Py_tracefunc)(PyObject *, struct _frame *, int, PyObject *);
 #define PyTrace_C_CALL 4
 #define PyTrace_C_EXCEPTION 5
 #define PyTrace_C_RETURN 6
+#endif
 
+#ifdef Py_LIMITED_API
+typedef struct _ts PyThreadState;
+#else
 typedef struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
@@ -106,6 +115,7 @@ typedef struct _ts {
     /* XXX signal handlers should also be here */
 
 } PyThreadState;
+#endif
 
 
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
@@ -133,9 +143,11 @@ PyAPI_FUNC(int) PyThreadState_SetAsyncExc(long, PyObject *);
 
 /* Assuming the current thread holds the GIL, this is the
    PyThreadState for the current thread. */
+#ifndef Py_LIMITED_API
 PyAPI_DATA(_Py_atomic_address) _PyThreadState_Current;
+#endif
 
-#ifdef Py_DEBUG
+#if defined(Py_DEBUG) || defined(Py_LIMITED_API)
 #define PyThreadState_GET() PyThreadState_Get()
 #else
 #define PyThreadState_GET() \
@@ -190,19 +202,25 @@ PyAPI_FUNC(PyThreadState *) PyGILState_GetThisThreadState(void);
 /* The implementation of sys._current_frames()  Returns a dict mapping
    thread id to that thread's current frame.
 */
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _PyThread_CurrentFrames(void);
+#endif
 
 /* Routines for advanced debuggers, requested by David Beazley.
    Don't use unless you know what you are doing! */
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Head(void);
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Next(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyInterpreterState_ThreadHead(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyThreadState_Next(PyThreadState *);
 
 typedef struct _frame *(*PyThreadFrameGetter)(PyThreadState *self_);
+#endif
 
 /* hook for PyEval_GetFrame(), requested for Psyco */
+#ifndef Py_LIMITED_API
 PyAPI_DATA(PyThreadFrameGetter) _PyThreadState_GetFrame;
+#endif
 
 #ifdef __cplusplus
 }

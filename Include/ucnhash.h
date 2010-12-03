@@ -1,5 +1,5 @@
 /* Unicode name database interface */
-
+#ifndef Py_LIMITED_API
 #ifndef Py_UCNHASH_H
 #define Py_UCNHASH_H
 #ifdef __cplusplus
@@ -31,3 +31,4 @@ typedef struct {
 }
 #endif
 #endif /* !Py_UCNHASH_H */
+#endif /* !Py_LIMITED_API */

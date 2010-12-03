@@ -14,7 +14,9 @@ PyAPI_FUNC(PyObject *) PyFile_GetLine(PyObject *, int);
 PyAPI_FUNC(int) PyFile_WriteObject(PyObject *, PyObject *, int);
 PyAPI_FUNC(int) PyFile_WriteString(const char *, PyObject *);
 PyAPI_FUNC(int) PyObject_AsFileDescriptor(PyObject *);
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(char *) Py_UniversalNewlineFgets(char *, int, FILE*, PyObject *);
+#endif
 
 /* The default encoding used by the platform file system APIs
    If non-NULL, this is different than the default encoding for strings
@@ -26,6 +28,7 @@ PyAPI_DATA(int) Py_HasFileSystemDefaultEncoding;
 
    The std printer acts as a preliminary sys.stderr until the new io
    infrastructure is in place. */
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) PyFile_NewStdPrinter(int);
 PyAPI_DATA(PyTypeObject) PyStdPrinter_Type;
 
@@ -39,6 +42,7 @@ int _PyVerify_fd(int fd);
 #else
 #define _PyVerify_fd(A) (1) /* dummy */
 #endif
+#endif /* Py_LIMITED_API */
 
 #ifdef __cplusplus
 }

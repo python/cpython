@@ -1398,7 +1398,7 @@ unicode_aswidechar(PyObject *self, PyObject *args)
     if (buffer == NULL)
         return PyErr_NoMemory();
 
-    size = PyUnicode_AsWideChar((PyUnicodeObject*)unicode, buffer, buflen);
+    size = PyUnicode_AsWideChar(unicode, buffer, buflen);
     if (size == -1) {
         PyMem_Free(buffer);
         return NULL;
