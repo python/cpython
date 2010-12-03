@@ -176,6 +176,9 @@ class upload(PyPIRCCommand):
             result = urlopen(request)
             status = result.getcode()
             reason = result.msg
+            if self.show_response:
+                msg = '\n'.join(('-' * 75, r.read(), '-' * 75))
+                self.announce(msg, log.INFO)
         except socket.error, e:
             self.announce(str(e), log.ERROR)
             return
@@ -189,6 +192,3 @@ class upload(PyPIRCCommand):
         else:
             self.announce('Upload failed (%s): %s' % (status, reason),
                           log.ERROR)
-        if self.show_response:
-            msg = '\n'.join(('-' * 75, r.read(), '-' * 75))
-            self.announce(msg, log.INFO)
