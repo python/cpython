@@ -653,7 +653,7 @@ class RawConfigParser(MutableMapping):
         already exists. Raise ValueError if name is DEFAULT.
         """
         if section == self.default_section:
-            raise ValueError('Invalid section name: %s' % section)
+            raise ValueError('Invalid section name: %r' % section)
 
         if section in self._sections:
             raise DuplicateSectionError(section)
