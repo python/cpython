@@ -1183,6 +1183,47 @@ class CommandsWithSpaces (BaseTestCase):
         # call() function with sequence argument with spaces on Windows
         self.with_spaces([sys.executable, self.fname, "ab cd"])
 
+
+class ContextManagerTests(ProcessTestCase):
+
+    def test_pipe(self):
+        with subprocess.Popen([sys.executable, "-c",
+                               "import sys;"
+                               "sys.stdout.write('stdout');"
+                               "sys.stderr.write('stderr');"],
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE) as proc:
+            self.assertEqual(proc.stdout.read(), b"stdout")
+            self.assertStderrEqual(proc.stderr.read(), b"stderr")
+
+        self.assertTrue(proc.stdout.closed)
+        self.assertTrue(proc.stderr.closed)
+
+    def test_returncode(self):
+        with subprocess.Popen([sys.executable, "-c",
+                               "import sys; sys.exit(100)"]) as proc:
+            proc.wait()
+        self.assertEqual(proc.returncode, 100)
+
+    def test_communicate_stdin(self):
+        with subprocess.Popen([sys.executable, "-c",
+                              "import sys;"
+                              "sys.exit(sys.stdin.read() == 'context')"],
+                             stdin=subprocess.PIPE) as proc:
+            proc.communicate(b"context")
+            self.assertEqual(proc.returncode, 1)
+
+    def test_invalid_args(self):
+        with self.assertRaises(EnvironmentError) as c:
+            with subprocess.Popen(['nonexisting_i_hope'],
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE) as proc:
+                pass
+
+            if c.exception.errno != errno.ENOENT:  # ignore "no such file"
+                raise c.exception
+
+
 def test_main():
     unit_tests = (ProcessTestCase,
                   POSIXProcessTestCase,
@@ -1191,7 +1232,8 @@ def test_main():
                   CommandTests,
                   ProcessTestCaseNoPoll,
                   HelperFunctionTests,
-                  CommandsWithSpaces)
+                  CommandsWithSpaces,
+                  ContextManagerTests)
 
     support.run_unittest(*unit_tests)
     support.reap_children()

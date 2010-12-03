@@ -208,6 +208,16 @@ This module defines one class called :class:`Popen`:
    underlying CreateProcess() function.  They can specify things such as appearance
    of the main window and priority for the new process.  (Windows only)
 
+   Popen objects are supported as context managers via the :keyword:`with` statement,
+   closing any open file descriptors on exit.
+   ::
+
+      with Popen(["ifconfig"], stdout=PIPE) as proc:
+          log.write(proc.stdout.read())
+
+   .. versionchanged:: 3.2
+      Added context manager support.
+
 
 .. data:: PIPE
 
