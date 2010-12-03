@@ -548,10 +548,7 @@ what handlers are most appropriate for their application: if you add handlers
 unit tests and deliver logs which suit their requirements.
 
 .. versionadded:: 3.1
-
-The :class:`NullHandler` class was not present in previous versions, but is
-now included, so that it need not be defined in library code.
-
+   The :class:`NullHandler` class.
 
 
 Logging Levels
@@ -688,12 +685,10 @@ provided:
    more information.
 
 .. versionadded:: 3.1
-
-The :class:`NullHandler` class was not present in previous versions.
+   The :class:`NullHandler` class.
 
 .. versionadded:: 3.2
-
-The :class:`QueueHandler` class was not present in previous versions.
+   The :class:`QueueHandler` class.
 
 The :class:`NullHandler`, :class:`StreamHandler` and :class:`FileHandler`
 classes are defined in the core logging package. The other handlers are
@@ -755,7 +750,6 @@ functions.
    Return a callable which is used to create a :class:`LogRecord`.
 
    .. versionadded:: 3.2
-
       This function has been provided, along with :func:`setLogRecordFactory`,
       to allow developers more control over how the :class:`LogRecord`
       representing a logging event is constructed.
@@ -986,6 +980,7 @@ functions.
    function is typically called before any loggers are instantiated by applications
    which need to use custom logger behavior.
 
+
 .. function:: setLogRecordFactory(factory)
 
    Set a callable which is used to create a :class:`LogRecord`.
@@ -993,14 +988,13 @@ functions.
    :param factory: The factory callable to be used to instantiate a log record.
 
    .. versionadded:: 3.2
+      This function has been provided, along with :func:`getLogRecordFactory`, to
+      allow developers more control over how the :class:`LogRecord` representing
+      a logging event is constructed.
 
-   This function has been provided, along with :func:`getLogRecordFactory`, to
-   allow developers more control over how the :class:`LogRecord` representing
-   a logging event is constructed.
+   The factory has the following signature:
 
-   The factory has the following signature.
-
-   factory(name, level, fn, lno, msg, args, exc_info, func=None, sinfo=None, \*\*kwargs)
+   ``factory(name, level, fn, lno, msg, args, exc_info, func=None, sinfo=None, \*\*kwargs)``
 
       :name: The logger name.
       :level: The logging level (numeric).
@@ -1014,6 +1008,7 @@ functions.
       :sinfo: A stack traceback such as is provided by
               :func:`traceback.print_stack`, showing the call hierarchy.
       :kwargs: Additional keyword arguments.
+
 
 .. seealso::
 
@@ -1253,9 +1248,8 @@ instantiated directly, but always through the module-level function
    False is found - that will be the last logger which is checked for the
    existence of handlers.
 
-.. versionadded:: 3.2
+   .. versionadded:: 3.2
 
-The :meth:`hasHandlers` method was not present in previous versions.
 
 .. _minimal-example:
 
@@ -2239,6 +2233,7 @@ sends logging output to a disk file.  It inherits the output functionality from
 
       Outputs the record to the file.
 
+
 .. _null-handler:
 
 NullHandler
@@ -2250,11 +2245,9 @@ The :class:`NullHandler` class, located in the core :mod:`logging` package,
 does not do any formatting or output. It is essentially a "no-op" handler
 for use by library developers.
 
-
 .. class:: NullHandler()
 
    Returns a new instance of the :class:`NullHandler` class.
-
 
    .. method:: emit(record)
 
@@ -2849,6 +2842,8 @@ supports sending logging messages to a Web server, using either ``GET`` or
 QueueHandler
 ^^^^^^^^^^^^
 
+.. versionadded:: 3.2
+
 The :class:`QueueHandler` class, located in the :mod:`logging.handlers` module,
 supports sending logging messages to a queue, such as those implemented in the
 :mod:`queue` or :mod:`multiprocessing` modules.
@@ -2892,14 +2887,13 @@ possible, while any potentially slow operations (such as sending an email via
       timeout, or a customised queue implementation.
 
 
-.. versionadded:: 3.2
-
-The :class:`QueueHandler` class was not present in previous versions.
 
 .. queue-listener:
 
 QueueListener
 ^^^^^^^^^^^^^
+
+.. versionadded:: 3.2
 
 The :class:`QueueListener` class, located in the :mod:`logging.handlers`
 module, supports receiving logging messages from a queue, such as those
@@ -2961,9 +2955,6 @@ possible, while any potentially slow operations (such as sending an email via
       Note that if you don't call this before your application exits, there
       may be some records still left on the queue, which won't be processed.
 
-.. versionadded:: 3.2
-
-The :class:`QueueListener` class was not present in previous versions.
 
 .. _zeromq-handlers:
 
@@ -3006,6 +2997,7 @@ data needed by the handler to create the socket::
         def close(self):
             self.queue.close()
 
+
 Subclassing QueueListener
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -3022,6 +3014,7 @@ of queues, for example a ZeroMQ "subscribe" socket. Here's an example::
         def dequeue(self):
             msg = self.queue.recv()
             return logging.makeLogRecord(json.loads(msg))
+
 
 .. _formatter-objects:
 
@@ -3291,22 +3284,23 @@ wire).
       set using :func:`getLogRecordFactory` and :func:`setLogRecordFactory`
       (see this for the factory's signature).
 
-      This functionality can be used to inject your own values into a
-      LogRecord at creation time. You can use the following pattern::
+   This functionality can be used to inject your own values into a
+   LogRecord at creation time. You can use the following pattern::
 
-          old_factory = logging.getLogRecordFactory()
+      old_factory = logging.getLogRecordFactory()
 
-          def record_factory(*args, **kwargs):
-            record = old_factory(*args, **kwargs)
-            record.custom_attribute = 0xdecafbad
-            return record
+      def record_factory(*args, **kwargs):
+          record = old_factory(*args, **kwargs)
+          record.custom_attribute = 0xdecafbad
+          return record
 
-          logging.setLogRecordFactory(record_factory)
+      logging.setLogRecordFactory(record_factory)
 
-      With this pattern, multiple factories could be chained, and as long
-      as they don't overwrite each other's attributes or unintentionally
-      overwrite the standard attributes listed above, there should be no
-      surprises.
+   With this pattern, multiple factories could be chained, and as long
+   as they don't overwrite each other's attributes or unintentionally
+   overwrite the standard attributes listed above, there should be no
+   surprises.
+
 
 .. _logger-adapter:
 
@@ -3315,22 +3309,21 @@ LoggerAdapter Objects
 
 :class:`LoggerAdapter` instances are used to conveniently pass contextual
 information into logging calls. For a usage example , see the section on
-`adding contextual information to your logging output`__.
+:ref:`adding contextual information to your logging output <context-info>`.
 
-__ context-info_
 
 .. class:: LoggerAdapter(logger, extra)
 
-  Returns an instance of :class:`LoggerAdapter` initialized with an
-  underlying :class:`Logger` instance and a dict-like object.
+   Returns an instance of :class:`LoggerAdapter` initialized with an
+   underlying :class:`Logger` instance and a dict-like object.
 
-  .. method:: process(msg, kwargs)
+   .. method:: process(msg, kwargs)
 
-    Modifies the message and/or keyword arguments passed to a logging call in
-    order to insert contextual information. This implementation takes the object
-    passed as *extra* to the constructor and adds it to *kwargs* using key
-    'extra'. The return value is a (*msg*, *kwargs*) tuple which has the
-    (possibly modified) versions of the arguments passed in.
+      Modifies the message and/or keyword arguments passed to a logging call in
+      order to insert contextual information. This implementation takes the object
+      passed as *extra* to the constructor and adds it to *kwargs* using key
+      'extra'. The return value is a (*msg*, *kwargs*) tuple which has the
+      (possibly modified) versions of the arguments passed in.
 
 In addition to the above, :class:`LoggerAdapter` supports the following
 methods of :class:`Logger`, i.e. :meth:`debug`, :meth:`info`, :meth:`warning`,
