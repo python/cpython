@@ -54,12 +54,6 @@ In-memory text streams are also available as :class:`StringIO` objects::
 The text stream API is described in detail in the documentation for the
 :class:`TextIOBase`.
 
-.. note::
-
-   Text I/O over a binary storage (such as a file) is significantly slower than
-   binary I/O over the same storage.  This can become noticeable if you handle
-   huge amounts of text data (for example very large log files).
-
 
 Binary I/O
 ^^^^^^^^^^
@@ -506,8 +500,8 @@ Raw File I/O
 Buffered Streams
 ^^^^^^^^^^^^^^^^
 
-In many situations, buffered I/O streams will provide higher performance
-(bandwidth and latency) than raw I/O streams.  Their API is also more usable.
+Buffered I/O streams provide a higher-level interface to an I/O device
+than raw I/O does.
 
 .. class:: BytesIO([initial_bytes])
 
@@ -784,14 +778,72 @@ Text I/O
       # .getvalue() will now raise an exception.
       output.close()
 
-   .. note::
-
-      :class:`StringIO` uses a native text storage and doesn't suffer from the
-      performance issues of other text streams, such as those based on
-      :class:`TextIOWrapper`.
 
 .. class:: IncrementalNewlineDecoder
 
    A helper codec that decodes newlines for universal newlines mode.  It
    inherits :class:`codecs.IncrementalDecoder`.
+
+
+Advanced topics
+---------------
+
+Here we will discuss several advanced topics pertaining to the concrete
+I/O implementations described above.
+
+Performance
+^^^^^^^^^^^
+
+Binary I/O
+""""""""""
+
+By reading and writing only large chunks of data even when the user asks
+for a single byte, buffered I/O is designed to hide any inefficiency in
+calling and executing the operating system's unbuffered I/O routines.  The
+gain will vary very much depending on the OS and the kind of I/O which is
+performed (for example, on some contemporary OSes such as Linux, unbuffered
+disk I/O can be as fast as buffered I/O).  The bottom line, however, is
+that buffered I/O will offer you predictable performance regardless of the
+platform and the backing device.  Therefore, it is most always preferable to
+use buffered I/O rather than unbuffered I/O.
+
+Text I/O
+""""""""
+
+Text I/O over a binary storage (such as a file) is significantly slower than
+binary I/O over the same storage, because it implies conversions from
+unicode to binary data using a character codec.  This can become noticeable
+if you handle huge amounts of text data (for example very large log files).
+
+:class:`StringIO`, however, is a native in-memory unicode container and will
+exhibit similar speed to :class:`BytesIO`.
+
+Multi-threading
+^^^^^^^^^^^^^^^
+
+:class:`FileIO` objects are thread-safe to the extent that the operating
+system calls (such as ``read(2)`` under Unix) they are wrapping are thread-safe
+too.
+
+Binary buffered objects (instances of :class:`BufferedReader`,
+:class:`BufferedWriter`, :class:`BufferedRandom` and :class:`BufferedRWPair`)
+protect their internal structures using a lock; it is therefore safe to call
+them from multiple threads at once.
+
+:class:`TextIOWrapper` objects are not thread-safe.
+
+Reentrancy
+^^^^^^^^^^
+
+Binary buffered objects (instances of :class:`BufferedReader`,
+:class:`BufferedWriter`, :class:`BufferedRandom` and :class:`BufferedRWPair`)
+are not reentrant.  While reentrant calls will not happen in normal situations,
+they can arise if you are doing I/O in a :mod:`signal` handler.  If it is
+attempted to enter a buffered object again while already being accessed
+*from the same thread*, then a :exc:`RuntimeError` is raised.
+
+The above implicitly extends to text files, since the :func:`open()`
+function will wrap a buffered object inside a :class:`TextIOWrapper`.  This
+includes standard streams and therefore affects the built-in function
+:func:`print()` as well.
 
