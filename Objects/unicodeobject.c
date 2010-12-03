@@ -7424,27 +7424,11 @@ unicode_encode(PyUnicodeObject *self, PyObject *args, PyObject *kwargs)
     static char *kwlist[] = {"encoding", "errors", 0};
     char *encoding = NULL;
     char *errors = NULL;
-    PyObject *v;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|ss:encode",
                                      kwlist, &encoding, &errors))
         return NULL;
-    v = PyUnicode_AsEncodedString((PyObject *)self, encoding, errors);
-    if (v == NULL)
-        goto onError;
-    /* XXX this check is redundant */
-    if (!PyBytes_Check(v)) {
-        PyErr_Format(PyExc_TypeError,
-                     "encoder did not return a bytes object "
-                     "(type=%.400s)",
-                     Py_TYPE(v)->tp_name);
-        Py_DECREF(v);
-        return NULL;
-    }
-    return v;
-
-  onError:
-    return NULL;
+    return PyUnicode_AsEncodedString((PyObject *)self, encoding, errors);
 }
 
 PyDoc_STRVAR(transform__doc__,
