@@ -245,7 +245,7 @@ class TestCase(object):
     # objects used in assert methods) will be printed on failure in *addition*
     # to any explicit message passed.
 
-    longMessage = False
+    longMessage = True
 
     # This attribute sets the maximum length of a diff in failure messages
     # by assert methods using difflib. It is looked up as an instance attribute

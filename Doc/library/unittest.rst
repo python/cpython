@@ -1305,8 +1305,8 @@ Test cases
       to ``True`` allows you to have a custom error message in addition to the
       normal one.
 
-      This attribute defaults to ``False``, meaning that a custom message passed
-      to an assert method will silence the normal message.
+      This attribute defaults to ``True``. If set to False then a custom message
+      passed to an assert method will silence the normal message.
 
       The class setting can be overridden in individual tests by assigning an
       instance attribute to ``True`` or ``False`` before calling the assert methods.
