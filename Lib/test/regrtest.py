@@ -1468,6 +1468,23 @@ class _ExpectedSkips:
         assert self.isvalid()
         return self.expected
 
+def _make_temp_dir_for_build(TEMPDIR):
+    # When tests are run from the Python build directory, it is best practice
+    # to keep the test files in a subfolder.  It eases the cleanup of leftover
+    # files using command "make distclean".
+    if sysconfig.is_python_build():
+        TEMPDIR = os.path.join(sysconfig.get_config_var('srcdir'), 'build')
+        TEMPDIR = os.path.abspath(TEMPDIR)
+        if not os.path.exists(TEMPDIR):
+            os.mkdir(TEMPDIR)
+
+    # Define a writable temp dir that will be used as cwd while running
+    # the tests. The name of the dir includes the pid to allow parallel
+    # testing (see the -j option).
+    TESTCWD = 'test_python_{}'.format(os.getpid())
+
+    TESTCWD = os.path.join(TEMPDIR, TESTCWD)
+    return TEMPDIR, TESTCWD
 
 if __name__ == '__main__':
     # Remove regrtest.py's own directory from the module search path. Despite
@@ -1491,21 +1508,7 @@ if __name__ == '__main__':
     # sanity check
     assert __file__ == os.path.abspath(sys.argv[0])
 
-    # When tests are run from the Python build directory, it is best practice
-    # to keep the test files in a subfolder.  It eases the cleanup of leftover
-    # files using command "make distclean".
-    if sysconfig.is_python_build():
-        TEMPDIR = os.path.join(sysconfig.get_config_var('srcdir'), 'build')
-        TEMPDIR = os.path.abspath(TEMPDIR)
-        if not os.path.exists(TEMPDIR):
-            os.mkdir(TEMPDIR)
-
-    # Define a writable temp dir that will be used as cwd while running
-    # the tests. The name of the dir includes the pid to allow parallel
-    # testing (see the -j option).
-    TESTCWD = 'test_python_{}'.format(os.getpid())
-
-    TESTCWD = os.path.join(TEMPDIR, TESTCWD)
+    TEMPDIR, TESTCWD = _make_temp_dir_for_build(TEMPDIR)
 
     # Run the tests in a context manager that temporary changes the CWD to a
     # temporary and writable directory. If it's not possible to create or
