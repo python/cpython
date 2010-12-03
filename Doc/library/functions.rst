@@ -1047,8 +1047,8 @@ are always available.  They are listed here in alphabetical order.
    but some features (such as :func:`len`) will raise :exc:`OverflowError`.
 
    .. versionchanged:: 3.2
-      Implement the Sequence ABC
-      Support slicing and negative indices
+      Implement the Sequence ABC.
+      Support slicing and negative indices.
       Test integers for membership in constant time instead of iterating
       through all items.
 
