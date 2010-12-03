@@ -3,7 +3,7 @@ import sys
 import sysconfig
 
 from test import support
-from test.regrtest import main
+from test import regrtest
 
 # findtestdir() gets the dirname out of __file__, so we have to make it
 # absolute before changing the working directory.
@@ -22,6 +22,7 @@ if sysconfig.is_python_build():
     TEMPDIR = os.path.abspath(TEMPDIR)
     if not os.path.exists(TEMPDIR):
         os.mkdir(TEMPDIR)
+    regrtest.TEMPDIR = TEMPDIR
 
 # Define a writable temp dir that will be used as cwd while running
 # the tests. The name of the dir includes the pid to allow parallel
@@ -29,10 +30,11 @@ if sysconfig.is_python_build():
 TESTCWD = 'test_python_{}'.format(os.getpid())
 
 TESTCWD = os.path.join(TEMPDIR, TESTCWD)
+regrtest.TESTCWD = TESTCWD
 
 # Run the tests in a context manager that temporary changes the CWD to a
 # temporary and writable directory. If it's not possible to create or
 # change the CWD, the original CWD will be used. The original CWD is
 # available from support.SAVEDCWD.
 with support.temp_cwd(TESTCWD, quiet=True):
-    main()
+    regrtest.main()
