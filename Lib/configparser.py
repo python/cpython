@@ -1195,12 +1195,6 @@ class SectionProxy(MutableMapping):
         """Creates a view on a section of the specified `name` in `parser`."""
         self._parser = parser
         self._name = name
-        self.getint = functools.partial(self._parser.getint,
-                                        self._name)
-        self.getfloat = functools.partial(self._parser.getfloat,
-                                          self._name)
-        self.getboolean = functools.partial(self._parser.getboolean,
-                                            self._name)
 
     def __repr__(self):
         return '<Section: {}>'.format(self._name)
@@ -1230,6 +1224,22 @@ class SectionProxy(MutableMapping):
         # XXX weak performance
         # XXX does not break when underlying container state changed
         return self._parser.options(self._name).__iter__()
+
+    def get(self, option, fallback=None, *, raw=False, vars=None):
+        return self._parser.get(self._name, option, raw=raw, vars=vars,
+                                fallback=fallback)
+
+    def getint(self, option, fallback=None, *, raw=False, vars=None):
+        return self._parser.getint(self._name, option, raw=raw, vars=vars,
+                                   fallback=fallback)
+
+    def getfloat(self, option, fallback=None, *, raw=False, vars=None):
+        return self._parser.getfloat(self._name, option, raw=raw, vars=vars,
+                                     fallback=fallback)
+
+    def getboolean(self, option, fallback=None, *, raw=False, vars=None):
+        return self._parser.getboolean(self._name, option, raw=raw, vars=vars,
+                                       fallback=fallback)
 
     @property
     def parser(self):

@@ -160,6 +160,49 @@ class BasicTestCase(CfgParserTestCaseClass):
            'this line is much, much longer than my editor\nlikes it.')
         if self.allow_no_value:
             eq(cf['NoValue']['option-without-value'], None)
+        # test vars= and fallback=
+        eq(cf['Foo Bar'].get('foo', 'baz'), 'bar1')
+        eq(cf['Foo Bar'].get('foo', fallback='baz'), 'bar1')
+        eq(cf['Foo Bar'].get('foo', vars={'foo': 'baz'}), 'baz')
+        with self.assertRaises(KeyError):
+            cf['No Such Foo Bar']['foo']
+        with self.assertRaises(KeyError):
+            cf['Foo Bar']['no-such-foo']
+        with self.assertRaises(KeyError):
+            cf['No Such Foo Bar'].get('foo', fallback='baz')
+        eq(cf['Foo Bar'].get('no-such-foo', 'baz'), 'baz')
+        eq(cf['Foo Bar'].get('no-such-foo', fallback='baz'), 'baz')
+        eq(cf['Spacey Bar'].get('foo', None), 'bar2')
+        eq(cf['Spacey Bar'].get('foo', fallback=None), 'bar2')
+        with self.assertRaises(KeyError):
+            cf['No Such Spacey Bar'].get('foo', None)
+        eq(cf['Types'].getint('int', 18), 42)
+        eq(cf['Types'].getint('int', fallback=18), 42)
+        eq(cf['Types'].getint('no-such-int', 18), 18)
+        eq(cf['Types'].getint('no-such-int', fallback=18), 18)
+        eq(cf['Types'].getint('no-such-int', "18"), "18") # sic!
+        eq(cf['Types'].getint('no-such-int', fallback="18"), "18") # sic!
+        self.assertAlmostEqual(cf['Types'].getfloat('float', 0.0), 0.44)
+        self.assertAlmostEqual(cf['Types'].getfloat('float',
+                                                    fallback=0.0), 0.44)
+        self.assertAlmostEqual(cf['Types'].getfloat('no-such-float', 0.0), 0.0)
+        self.assertAlmostEqual(cf['Types'].getfloat('no-such-float',
+                                                    fallback=0.0), 0.0)
+        eq(cf['Types'].getfloat('no-such-float', "0.0"), "0.0") # sic!
+        eq(cf['Types'].getfloat('no-such-float', fallback="0.0"), "0.0") # sic!
+        eq(cf['Types'].getboolean('boolean', True), False)
+        eq(cf['Types'].getboolean('boolean', fallback=True), False)
+        eq(cf['Types'].getboolean('no-such-boolean', "yes"), "yes") # sic!
+        eq(cf['Types'].getboolean('no-such-boolean', fallback="yes"),
+           "yes") # sic!
+        eq(cf['Types'].getboolean('no-such-boolean', True), True)
+        eq(cf['Types'].getboolean('no-such-boolean', fallback=True), True)
+        if self.allow_no_value:
+            eq(cf['NoValue'].get('option-without-value', False), None)
+            eq(cf['NoValue'].get('option-without-value', fallback=False), None)
+            eq(cf['NoValue'].get('no-such-option-without-value', False), False)
+            eq(cf['NoValue'].get('no-such-option-without-value',
+                      fallback=False), False)
 
         # Make sure the right things happen for remove_option();
         # added to include check for SourceForge bug #123324:
