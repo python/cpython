@@ -504,6 +504,12 @@ class BaseTest(unittest.TestCase):
             array.array(self.typecode)
         )
 
+        a = 5 * array.array(self.typecode, self.example[:1])
+        self.assertEqual(
+            a,
+            array.array(self.typecode, [a[0]] * 5)
+        )
+
         self.assertRaises(TypeError, a.__mul__, "bad")
 
     def test_imul(self):

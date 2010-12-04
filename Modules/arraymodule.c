@@ -674,11 +674,9 @@ array_concat(arrayobject *a, PyObject *bb)
 static PyObject *
 array_repeat(arrayobject *a, Py_ssize_t n)
 {
-    Py_ssize_t i;
     Py_ssize_t size;
     arrayobject *np;
-    char *p;
-    Py_ssize_t nbytes;
+    Py_ssize_t oldbytes, newbytes;
     if (n < 0)
         n = 0;
     if ((Py_SIZE(a) != 0) && (n > PY_SSIZE_T_MAX / Py_SIZE(a))) {
@@ -688,13 +686,23 @@ array_repeat(arrayobject *a, Py_ssize_t n)
     np = (arrayobject *) newarrayobject(&Arraytype, size, a->ob_descr);
     if (np == NULL)
         return NULL;
-    p = np->ob_item;
-    nbytes = Py_SIZE(a) * a->ob_descr->itemsize;
-    for (i = 0; i < n; i++) {
-        memcpy(p, a->ob_item, nbytes);
-        p += nbytes;
+    if (n == 0)
+        return (PyObject *)np;
+    oldbytes = Py_SIZE(a) * a->ob_descr->itemsize;
+    newbytes = oldbytes * n;
+    /* this follows the code in unicode_repeat */
+    if (oldbytes == 1) {
+        memset(np->ob_item, a->ob_item[0], newbytes);
+    } else {
+        Py_ssize_t done = oldbytes;
+        Py_MEMCPY(np->ob_item, a->ob_item, oldbytes);
+        while (done < newbytes) {
+            Py_ssize_t ncopy = (done <= newbytes-done) ? done : newbytes-done;
+            Py_MEMCPY(np->ob_item+done, np->ob_item, ncopy);
+            done += ncopy;
+        }
     }
-    return (PyObject *) np;
+    return (PyObject *)np;
 }
 
 static int
