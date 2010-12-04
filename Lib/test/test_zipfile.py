@@ -654,6 +654,22 @@ class PyZipFileTests(unittest.TestCase):
             self.assertTrue('email/mime/text.pyo' in names or
                             'email/mime/text.pyc' in names)
 
+    def test_write_with_optimization(self):
+        import email
+        packagedir = os.path.dirname(email.__file__)
+        # use .pyc if running test in optimization mode,
+        # use .pyo if running test in debug mode
+        optlevel = 1 if __debug__ else 0
+        ext = '.pyo' if optlevel == 1 else '.pyc'
+
+        with TemporaryFile() as t, \
+                 zipfile.PyZipFile(t, "w", optimize=optlevel) as zipfp:
+            zipfp.writepy(packagedir)
+
+            names = zipfp.namelist()
+            self.assertIn('email/__init__' + ext, names)
+            self.assertIn('email/mime/text' + ext, names)
+
     def test_write_python_directory(self):
         os.mkdir(TESTFN2)
         try:

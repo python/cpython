@@ -543,19 +543,20 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
     int mode = -1;
     int dont_inherit = 0;
     int supplied_flags = 0;
+    int optimize = -1;
     int is_ast;
     PyCompilerFlags cf;
     PyObject *cmd;
     static char *kwlist[] = {"source", "filename", "mode", "flags",
-                             "dont_inherit", NULL};
+                             "dont_inherit", "optimize", NULL};
     int start[] = {Py_file_input, Py_eval_input, Py_single_input};
     PyObject *result;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO&s|ii:compile",  kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO&s|iii:compile",  kwlist,
                                      &cmd,
                                      PyUnicode_FSConverter, &filename_obj,
                                      &startstr, &supplied_flags,
-                                     &dont_inherit))
+                                     &dont_inherit, &optimize))
         return NULL;
 
     filename = PyBytes_AS_STRING(filename_obj);
@@ -569,6 +570,12 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
         goto error;
     }
     /* XXX Warn if (supplied_flags & PyCF_MASK_OBSOLETE) != 0? */
+
+    if (optimize < -1 || optimize > 2) {
+        PyErr_SetString(PyExc_ValueError,
+                        "compile(): invalid optimize value");
+        goto error;
+    }
 
     if (!dont_inherit) {
         PyEval_MergeCompilerFlags(&cf);
@@ -604,8 +611,8 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
                 PyArena_Free(arena);
                 goto error;
             }
-            result = (PyObject*)PyAST_Compile(mod, filename,
-                                              &cf, arena);
+            result = (PyObject*)PyAST_CompileEx(mod, filename,
+                                                &cf, optimize, arena);
             PyArena_Free(arena);
         }
         goto finally;
@@ -615,7 +622,7 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
     if (str == NULL)
         goto error;
 
-    result = Py_CompileStringFlags(str, filename, start[mode], &cf);
+    result = Py_CompileStringExFlags(str, filename, start[mode], &cf, optimize);
     goto finally;
 
 error:

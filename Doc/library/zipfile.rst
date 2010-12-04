@@ -51,6 +51,7 @@ The module defines the following items:
 
 
 .. class:: PyZipFile
+   :noindex:
 
    Class for creating ZIP archives containing Python libraries.
 
@@ -318,37 +319,53 @@ The following data attributes are also available:
    string no longer than 65535 bytes.  Comments longer than this will be
    truncated in the written archive when :meth:`ZipFile.close` is called.
 
+
 .. _pyzipfile-objects:
 
 PyZipFile Objects
 -----------------
 
 The :class:`PyZipFile` constructor takes the same parameters as the
-:class:`ZipFile` constructor.  Instances have one method in addition to those of
-:class:`ZipFile` objects.
+:class:`ZipFile` constructor, and one additional parameter, *optimize*.
 
+.. class:: PyZipFile(file, mode='r', compression=ZIP_STORED, allowZip64=False, \
+                     optimize=-1)
 
-.. method:: PyZipFile.writepy(pathname, basename='')
+   .. versionadded:: 3.2
+      The *optimize* parameter.
 
-   Search for files :file:`\*.py` and add the corresponding file to the archive.
-   The corresponding file is a :file:`\*.pyo` file if available, else a
-   :file:`\*.pyc` file, compiling if necessary.  If the pathname is a file, the
-   filename must end with :file:`.py`, and just the (corresponding
-   :file:`\*.py[co]`) file is added at the top level (no path information).  If the
-   pathname is a file that does not end with :file:`.py`, a :exc:`RuntimeError`
-   will be raised.  If it is a directory, and the directory is not a package
-   directory, then all the files :file:`\*.py[co]` are added at the top level.  If
-   the directory is a package directory, then all :file:`\*.py[co]` are added under
-   the package name as a file path, and if any subdirectories are package
-   directories, all of these are added recursively.  *basename* is intended for
-   internal use only.  The :meth:`writepy` method makes archives with file names
-   like this::
+   Instances have one method in addition to those of :class:`ZipFile` objects:
 
-      string.pyc                                # Top level name
-      test/__init__.pyc                         # Package directory
-      test/testall.pyc                          # Module test.testall
-      test/bogus/__init__.pyc                   # Subpackage directory
-      test/bogus/myfile.pyc                     # Submodule test.bogus.myfile
+   .. method:: PyZipFile.writepy(pathname, basename='')
+
+      Search for files :file:`\*.py` and add the corresponding file to the
+      archive.
+
+      If the *optimize* parameter to :class:`PyZipFile` was not given or ``-1``,
+      the corresponding file is a :file:`\*.pyo` file if available, else a
+      :file:`\*.pyc` file, compiling if necessary.
+
+      If the *optimize* parameter to :class:`PyZipFile` was ``0``, ``1`` or
+      ``2``, only files with that optimization level (see :func:`compile`) are
+      added to the archive, compiling if necessary.
+
+      If the pathname is a file, the filename must end with :file:`.py`, and
+      just the (corresponding :file:`\*.py[co]`) file is added at the top level
+      (no path information).  If the pathname is a file that does not end with
+      :file:`.py`, a :exc:`RuntimeError` will be raised.  If it is a directory,
+      and the directory is not a package directory, then all the files
+      :file:`\*.py[co]` are added at the top level.  If the directory is a
+      package directory, then all :file:`\*.py[co]` are added under the package
+      name as a file path, and if any subdirectories are package directories,
+      all of these are added recursively.  *basename* is intended for internal
+      use only.  The :meth:`writepy` method makes archives with file names like
+      this::
+
+         string.pyc                   # Top level name
+         test/__init__.pyc            # Package directory
+         test/testall.pyc             # Module test.testall
+         test/bogus/__init__.pyc      # Subpackage directory
+         test/bogus/myfile.pyc        # Submodule test.bogus.myfile
 
 
 .. _zipinfo-objects:

@@ -1295,6 +1295,12 @@ class ZipFile:
 class PyZipFile(ZipFile):
     """Class to create ZIP archives with Python library files and packages."""
 
+    def __init__(self, file, mode="r", compression=ZIP_STORED,
+                 allowZip64=False, optimize=-1):
+        ZipFile.__init__(self, file, mode=mode, compression=compression,
+                         allowZip64=allowZip64)
+        self._optimize = optimize
+
     def writepy(self, pathname, basename=""):
         """Add all files from "pathname" to the ZIP archive.
 
@@ -1367,44 +1373,63 @@ class PyZipFile(ZipFile):
         archive name, compiling if necessary.  For example, given
         /python/lib/string, return (/python/lib/string.pyc, string).
         """
+        def _compile(file, optimize=-1):
+            import py_compile
+            if self.debug:
+                print("Compiling", file)
+            try:
+                py_compile.compile(file, doraise=True, optimize=optimize)
+            except py_compile.PyCompileError as error:
+                print(err.msg)
+                return False
+            return True
+
         file_py  = pathname + ".py"
         file_pyc = pathname + ".pyc"
         file_pyo = pathname + ".pyo"
         pycache_pyc = imp.cache_from_source(file_py, True)
         pycache_pyo = imp.cache_from_source(file_py, False)
-        if (os.path.isfile(file_pyo) and
-            os.stat(file_pyo).st_mtime >= os.stat(file_py).st_mtime):
-            # Use .pyo file.
-            arcname = fname = file_pyo
-        elif (os.path.isfile(file_pyc) and
-              os.stat(file_pyc).st_mtime >= os.stat(file_py).st_mtime):
-            # Use .pyc file.
-            arcname = fname = file_pyc
-        elif (os.path.isfile(pycache_pyc) and
-              os.stat(pycache_pyc).st_mtime >= os.stat(file_py).st_mtime):
-            # Use the __pycache__/*.pyc file, but write it to the legacy pyc
-            # file name in the archive.
-            fname = pycache_pyc
-            arcname = file_pyc
-        elif (os.path.isfile(pycache_pyo) and
-              os.stat(pycache_pyo).st_mtime >= os.stat(file_py).st_mtime):
-            # Use the __pycache__/*.pyo file, but write it to the legacy pyo
-            # file name in the archive.
-            fname = pycache_pyo
-            arcname = file_pyo
-        else:
-            # Compile py into PEP 3147 pyc file.
-            import py_compile
-            if self.debug:
-                print("Compiling", file_py)
-            try:
-                py_compile.compile(file_py, doraise=True)
-            except py_compile.PyCompileError as error:
-                print(err.msg)
-                fname = file_py
+        if self._optimize == -1:
+            # legacy mode: use whatever file is present
+            if (os.path.isfile(file_pyo) and
+                os.stat(file_pyo).st_mtime >= os.stat(file_py).st_mtime):
+                # Use .pyo file.
+                arcname = fname = file_pyo
+            elif (os.path.isfile(file_pyc) and
+                  os.stat(file_pyc).st_mtime >= os.stat(file_py).st_mtime):
+                # Use .pyc file.
+                arcname = fname = file_pyc
+            elif (os.path.isfile(pycache_pyc) and
+                  os.stat(pycache_pyc).st_mtime >= os.stat(file_py).st_mtime):
+                # Use the __pycache__/*.pyc file, but write it to the legacy pyc
+                # file name in the archive.
+                fname = pycache_pyc
+                arcname = file_pyc
+            elif (os.path.isfile(pycache_pyo) and
+                  os.stat(pycache_pyo).st_mtime >= os.stat(file_py).st_mtime):
+                # Use the __pycache__/*.pyo file, but write it to the legacy pyo
+                # file name in the archive.
+                fname = pycache_pyo
+                arcname = file_pyo
             else:
-                fname = (pycache_pyc if __debug__ else pycache_pyo)
-                arcname = (file_pyc if __debug__ else file_pyo)
+                # Compile py into PEP 3147 pyc file.
+                if _compile(file_py):
+                    fname = (pycache_pyc if __debug__ else pycache_pyo)
+                    arcname = (file_pyc if __debug__ else file_pyo)
+                else:
+                    fname = arcname = file_py
+        else:
+            # new mode: use given optimization level
+            if self._optimize == 0:
+                fname = pycache_pyc
+                arcname = file_pyc
+            else:
+                fname = pycache_pyo
+                arcname = file_pyo
+            if not (os.path.isfile(fname) and
+                    os.stat(fname).st_mtime >= os.stat(file_py).st_mtime):
+                if not _compile(file_py, optimize=self._optimize):
+                    fname = arcname = file_py
         archivename = os.path.split(arcname)[1]
         if basename:
             archivename = "%s/%s" % (basename, archivename)

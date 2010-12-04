@@ -19,8 +19,8 @@ import struct
 
 __all__ = ["compile_dir","compile_file","compile_path"]
 
-def compile_dir(dir, maxlevels=10, ddir=None,
-                force=False, rx=None, quiet=False, legacy=False):
+def compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None,
+                quiet=False, legacy=False, optimize=-1):
     """Byte-compile all modules in the given directory tree.
 
     Arguments (only dir is required):
@@ -32,6 +32,7 @@ def compile_dir(dir, maxlevels=10, ddir=None,
     force:     if True, force compilation, even if timestamps are up-to-date
     quiet:     if True, be quiet during compilation
     legacy:    if True, produce legacy pyc paths instead of PEP 3147 paths
+    optimize:  optimization level or -1 for level of the interpreter
     """
     if not quiet:
         print('Listing', dir, '...')
@@ -51,7 +52,8 @@ def compile_dir(dir, maxlevels=10, ddir=None,
         else:
             dfile = None
         if not os.path.isdir(fullname):
-            if not compile_file(fullname, ddir, force, rx, quiet, legacy):
+            if not compile_file(fullname, ddir, force, rx, quiet,
+                                legacy, optimize):
                 success = 0
         elif (maxlevels > 0 and name != os.curdir and name != os.pardir and
               os.path.isdir(fullname) and not os.path.islink(fullname)):
@@ -61,7 +63,7 @@ def compile_dir(dir, maxlevels=10, ddir=None,
     return success
 
 def compile_file(fullname, ddir=None, force=0, rx=None, quiet=False,
-                 legacy=False):
+                 legacy=False, optimize=-1):
     """Byte-compile file.
     fullname:  the file to byte-compile
     ddir:      if given, purported directory name (this is the
@@ -69,6 +71,7 @@ def compile_file(fullname, ddir=None, force=0, rx=None, quiet=False,
     force:     if True, force compilation, even if timestamps are up-to-date
     quiet:     if True, be quiet during compilation
     legacy:    if True, produce legacy pyc paths instead of PEP 3147 paths
+    optimize:  optimization level or -1 for level of the interpreter
     """
     success = 1
     name = os.path.basename(fullname)
@@ -84,7 +87,11 @@ def compile_file(fullname, ddir=None, force=0, rx=None, quiet=False,
         if legacy:
             cfile = fullname + ('c' if __debug__ else 'o')
         else:
-            cfile = imp.cache_from_source(fullname)
+            if optimize >= 0:
+                cfile = imp.cache_from_source(fullname,
+                                              debug_override=not optimize)
+            else:
+                cfile = imp.cache_from_source(fullname)
             cache_dir = os.path.dirname(cfile)
         head, tail = name[:-3], name[-3:]
         if tail == '.py':
@@ -101,7 +108,8 @@ def compile_file(fullname, ddir=None, force=0, rx=None, quiet=False,
             if not quiet:
                 print('Compiling', fullname, '...')
             try:
-                ok = py_compile.compile(fullname, cfile, dfile, True)
+                ok = py_compile.compile(fullname, cfile, dfile, True,
+                                        optimize=optimize)
             except py_compile.PyCompileError as err:
                 if quiet:
                     print('*** Error compiling', fullname, '...')
@@ -126,7 +134,7 @@ def compile_file(fullname, ddir=None, force=0, rx=None, quiet=False,
     return success
 
 def compile_path(skip_curdir=1, maxlevels=0, force=False, quiet=False,
-                 legacy=False):
+                 legacy=False, optimize=-1):
     """Byte-compile all module on sys.path.
 
     Arguments (all optional):
@@ -136,6 +144,7 @@ def compile_path(skip_curdir=1, maxlevels=0, force=False, quiet=False,
     force: as for compile_dir() (default False)
     quiet: as for compile_dir() (default False)
     legacy: as for compile_dir() (default False)
+    optimize: as for compile_dir() (default -1)
     """
     success = 1
     for dir in sys.path:
@@ -144,7 +153,7 @@ def compile_path(skip_curdir=1, maxlevels=0, force=False, quiet=False,
         else:
             success = success and compile_dir(dir, maxlevels, None,
                                               force, quiet=quiet,
-                                              legacy=legacy)
+                                              legacy=legacy, optimize=optimize)
     return success
 
 

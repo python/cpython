@@ -139,6 +139,7 @@ struct compiler {
     PyFutureFeatures *c_future; /* pointer to module's __future__ */
     PyCompilerFlags *c_flags;
 
+    int c_optimize;              /* optimization level */
     int c_interactive;           /* true if in interactive mode */
     int c_nestlevel;
 
@@ -175,7 +176,7 @@ static void compiler_pop_fblock(struct compiler *, enum fblocktype,
 static int compiler_in_loop(struct compiler *);
 
 static int inplace_binop(struct compiler *, operator_ty);
-static int expr_constant(expr_ty e);
+static int expr_constant(struct compiler *, expr_ty);
 
 static int compiler_with(struct compiler *, stmt_ty);
 static int compiler_call_helper(struct compiler *c, int n,
@@ -254,8 +255,8 @@ compiler_init(struct compiler *c)
 }
 
 PyCodeObject *
-PyAST_Compile(mod_ty mod, const char *filename, PyCompilerFlags *flags,
-              PyArena *arena)
+PyAST_CompileEx(mod_ty mod, const char *filename, PyCompilerFlags *flags,
+                int optimize, PyArena *arena)
 {
     struct compiler c;
     PyCodeObject *co = NULL;
@@ -283,6 +284,7 @@ PyAST_Compile(mod_ty mod, const char *filename, PyCompilerFlags *flags,
     c.c_future->ff_features = merged;
     flags->cf_flags = merged;
     c.c_flags = flags;
+    c.c_optimize = (optimize == -1) ? Py_OptimizeFlag : optimize;
     c.c_nestlevel = 0;
 
     c.c_st = PySymtable_Build(mod, filename, c.c_future);
@@ -1149,7 +1151,7 @@ compiler_body(struct compiler *c, asdl_seq *stmts)
     if (!asdl_seq_LEN(stmts))
         return 1;
     st = (stmt_ty)asdl_seq_GET(stmts, 0);
-    if (compiler_isdocstring(st) && Py_OptimizeFlag < 2) {
+    if (compiler_isdocstring(st) && c->c_optimize < 2) {
         /* don't generate docstrings if -OO */
         i = 1;
         VISIT(c, expr, st->v.Expr.value);
@@ -1463,7 +1465,7 @@ compiler_function(struct compiler *c, stmt_ty s)
 
     st = (stmt_ty)asdl_seq_GET(s->v.FunctionDef.body, 0);
     docstring = compiler_isdocstring(st);
-    if (docstring && Py_OptimizeFlag < 2)
+    if (docstring && c->c_optimize < 2)
         first_const = st->v.Expr.value->v.Str.s;
     if (compiler_add_o(c, c->u->u_consts, first_const) < 0)      {
         compiler_exit_scope(c);
@@ -1697,7 +1699,7 @@ compiler_if(struct compiler *c, stmt_ty s)
     if (end == NULL)
         return 0;
 
-    constant = expr_constant(s->v.If.test);
+    constant = expr_constant(c, s->v.If.test);
     /* constant = 0: "if 0"
      * constant = 1: "if 1", "if 2", ...
      * constant = -1: rest */
@@ -1759,7 +1761,7 @@ static int
 compiler_while(struct compiler *c, stmt_ty s)
 {
     basicblock *loop, *orelse, *end, *anchor = NULL;
-    int constant = expr_constant(s->v.While.test);
+    int constant = expr_constant(c, s->v.While.test);
 
     if (constant == 0) {
         if (s->v.While.orelse)
@@ -2211,7 +2213,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
     static PyObject *assertion_error = NULL;
     basicblock *end;
 
-    if (Py_OptimizeFlag)
+    if (c->c_optimize)
         return 1;
     if (assertion_error == NULL) {
         assertion_error = PyUnicode_InternFromString("AssertionError");
@@ -3011,7 +3013,7 @@ compiler_visit_keyword(struct compiler *c, keyword_ty k)
  */
 
 static int
-expr_constant(expr_ty e)
+expr_constant(struct compiler *c, expr_ty e)
 {
     char *id;
     switch (e->kind) {
@@ -3029,7 +3031,7 @@ expr_constant(expr_ty e)
         if (strcmp(id, "False") == 0) return 0;
         if (strcmp(id, "None") == 0) return 0;
         if (strcmp(id, "__debug__") == 0)
-            return ! Py_OptimizeFlag;
+            return ! c->c_optimize;
         /* fall through */
     default:
         return -1;
@@ -4080,3 +4082,13 @@ assemble(struct compiler *c, int addNone)
     assemble_free(&a);
     return co;
 }
+
+#undef PyAST_Compile
+PyAPI_FUNC(PyCodeObject *)
+PyAST_Compile(mod_ty mod, const char *filename, PyCompilerFlags *flags,
+              PyArena *arena)
+{
+    return PyAST_CompileEx(mod, filename, flags, -1, arena);
+}
+
+

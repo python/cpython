@@ -1793,8 +1793,8 @@ run_pyc_file(FILE *fp, const char *filename, PyObject *globals,
 }
 
 PyObject *
-Py_CompileStringFlags(const char *str, const char *filename, int start,
-                      PyCompilerFlags *flags)
+Py_CompileStringExFlags(const char *str, const char *filename, int start,
+                        PyCompilerFlags *flags, int optimize)
 {
     PyCodeObject *co;
     mod_ty mod;
@@ -1812,7 +1812,7 @@ Py_CompileStringFlags(const char *str, const char *filename, int start,
         PyArena_Free(arena);
         return result;
     }
-    co = PyAST_Compile(mod, filename, flags, arena);
+    co = PyAST_CompileEx(mod, filename, flags, optimize, arena);
     PyArena_Free(arena);
     return (PyObject *)co;
 }
@@ -2450,7 +2450,15 @@ PyRun_SimpleString(const char *s)
 PyAPI_FUNC(PyObject *)
 Py_CompileString(const char *str, const char *p, int s)
 {
-    return Py_CompileStringFlags(str, p, s, NULL);
+    return Py_CompileStringExFlags(str, p, s, NULL, -1);
+}
+
+#undef Py_CompileStringFlags
+PyAPI_FUNC(PyObject *)
+Py_CompileStringFlags(const char *str, const char *p, int s,
+                      PyCompilerFlags *flags)
+{
+    return Py_CompileStringExFlags(str, p, s, flags, -1);
 }
 
 #undef PyRun_InteractiveOne
