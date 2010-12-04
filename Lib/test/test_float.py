@@ -12,6 +12,16 @@ import re
 INF = float("inf")
 NAN = float("nan")
 
+have_getformat = hasattr(float, "__getformat__")
+requires_getformat = unittest.skipUnless(have_getformat,
+                                         "requires __getformat__")
+requires_setformat = unittest.skipUnless(hasattr(float, "__setformat__"),
+                                         "requires __setformat__")
+# decorator for skipping tests on non-IEEE 754 platforms
+requires_IEEE_754 = unittest.skipUnless(have_getformat and
+    float.__getformat__("double").startswith("IEEE"),
+    "test requires IEEE 754 doubles")
+
 #locate file with float format test values
 test_dir = os.path.dirname(__file__) or os.curdir
 format_testfile = os.path.join(test_dir, 'formatfloat_testcases.txt')
@@ -230,26 +240,6 @@ class GeneralFloatCases(unittest.TestCase):
             self.assertTrue(s == s, "{%r} not equal to itself" % f)
             self.assertTrue(d == d, "{%r : None} not equal to itself" % f)
 
-
-    @requires_IEEE_754
-    def test_float_mod(self):
-        # Check behaviour of % operator for IEEE 754 special cases.
-        # In particular, check signs of zeros.
-        mod = operator.mod
-
-        self.assertEqualAndEqualSign(mod(-1.0, 1.0), 0.0)
-        self.assertEqualAndEqualSign(mod(-1e-100, 1.0), 1.0)
-        self.assertEqualAndEqualSign(mod(-0.0, 1.0), 0.0)
-        self.assertEqualAndEqualSign(mod(0.0, 1.0), 0.0)
-        self.assertEqualAndEqualSign(mod(1e-100, 1.0), 1e-100)
-        self.assertEqualAndEqualSign(mod(1.0, 1.0), 0.0)
-
-        self.assertEqualAndEqualSign(mod(-1.0, -1.0), -0.0)
-        self.assertEqualAndEqualSign(mod(-1e-100, -1.0), -1e-100)
-        self.assertEqualAndEqualSign(mod(-0.0, -1.0), -0.0)
-        self.assertEqualAndEqualSign(mod(0.0, -1.0), -0.0)
-        self.assertEqualAndEqualSign(mod(1e-100, -1.0), -1.0)
-        self.assertEqualAndEqualSign(mod(1.0, -1.0), -0.0)
 
 
 class FormatFunctionsTestCase(unittest.TestCase):
