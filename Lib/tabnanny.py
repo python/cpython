@@ -264,7 +264,7 @@ class Whitespace:
         return a
 
 def format_witnesses(w):
-    firsts = map(lambda tup: str(tup[0]), w)
+    firsts = (str(tup[0]) for tup in w)
     prefix = "at tab size"
     if len(w) > 1:
         prefix = prefix + "s"
