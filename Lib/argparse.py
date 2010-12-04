@@ -88,7 +88,7 @@ import re as _re
 import sys as _sys
 import textwrap as _textwrap
 
-from gettext import gettext as _
+from gettext import gettext as _, ngettext
 
 
 def _callable(obj):
@@ -1438,7 +1438,9 @@ class _ActionsContainer(object):
             conflict_handler(action, confl_optionals)
 
     def _handle_conflict_error(self, action, conflicting_actions):
-        message = _('conflicting option string(s): %s')
+        message = ngettext('conflicting option string: %s',
+                           'conflicting option strings: %s',
+                           len(conflicting_actions))
         conflict_string = ', '.join([option_string
                                      for option_string, action
                                      in conflicting_actions])
@@ -1995,7 +1997,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 OPTIONAL: _('expected at most one argument'),
                 ONE_OR_MORE: _('expected at least one argument'),
             }
-            default = _('expected %s argument(s)') % action.nargs
+            default = ngettext('expected %s argument',
+                               'expected %s arguments',
+                               action.nargs) % action.nargs
             msg = nargs_errors.get(action.nargs, default)
             raise ArgumentError(action, msg)
 
