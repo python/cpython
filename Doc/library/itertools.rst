@@ -96,7 +96,7 @@ loops that truncate the stream.
             total = next(it)
             yield total
             for element in it:
-                total += element
+                total = total + element
                 yield total
 
     .. versionadded:: 3.2
