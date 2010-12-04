@@ -868,7 +868,7 @@ def nobody_uid():
     try:
         nobody = pwd.getpwnam('nobody')[2]
     except KeyError:
-        nobody = 1 + max(map(lambda x: x[2], pwd.getpwall()))
+        nobody = 1 + max(x[2] for x in pwd.getpwall())
     return nobody
 
 

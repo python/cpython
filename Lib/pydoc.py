@@ -1000,7 +1000,7 @@ class TextDoc(Doc):
 
     def bold(self, text):
         """Format a string in bold by overstriking."""
-        return ''.join(map(lambda ch: ch + '\b' + ch, text))
+        return ''.join(ch + '\b' + ch for ch in text)
 
     def indent(self, text, prefix='    '):
         """Indent text by prepending a given prefix to each line."""
@@ -1024,7 +1024,7 @@ class TextDoc(Doc):
                 c, bases = entry
                 result = result + prefix + classname(c, modname)
                 if bases and bases != (parent,):
-                    parents = map(lambda c, m=modname: classname(c, m), bases)
+                    parents = (classname(c, modname) for c in bases)
                     result = result + '(%s)' % ', '.join(parents)
                 result = result + '\n'
             elif type(entry) is type([]):
