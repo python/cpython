@@ -366,6 +366,11 @@ def fcmp(x, y): # fuzzy comparison function
         return (len(x) > len(y)) - (len(x) < len(y))
     return (x > y) - (x < y)
 
+# decorator for skipping tests on non-IEEE 754 platforms
+requires_IEEE_754 = unittest.skipUnless(
+    float.__getformat__("double").startswith("IEEE"),
+    "test requires IEEE 754 doubles")
+
 is_jython = sys.platform.startswith('java')
 
 # Filename used for testing
