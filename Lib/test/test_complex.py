@@ -408,6 +408,22 @@ class ComplexTest(unittest.TestCase):
         self.assertEqual(-6j,complex(repr(-6j)))
         self.assertEqual(6j,complex(repr(6j)))
 
+    @support.requires_IEEE_754
+    def test_negative_zero_repr_str(self):
+        def test(v, expected, test_fn=self.assertEqual):
+            test_fn(repr(v), expected)
+            test_fn(str(v), expected)
+
+        test(complex(0., 1.),   "1j")
+        test(complex(-0., 1.),  "(-0+1j)")
+        test(complex(0., -1.),  "-1j")
+        test(complex(-0., -1.), "(-0-1j)")
+
+        test(complex(0., 0.),   "0j")
+        test(complex(0., -0.),  "-0j")
+        test(complex(-0., 0.),  "(-0+0j)")
+        test(complex(-0., -0.), "(-0-0j)")
+
     def test_neg(self):
         self.assertEqual(-(1+6j), -1-6j)
 
