@@ -21,4 +21,4 @@ for line in sys.stdin:
 
 M = max(res.keys())+1
 for i in range(1,M):
-    print "offsetof(PyHeapTypeObject, %s)," % res[i]
+    print("offsetof(PyHeapTypeObject, %s)," % res[i])
