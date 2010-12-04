@@ -122,6 +122,19 @@ class TestCase(unittest.TestCase):
         self.assertEqual(len(d1), 1)
         self.assertEqual(len(d2), 1)
 
+    def test_keyencoding(self):
+        d = {}
+        key = 'PÃ¶p'
+        # the default keyencoding is utf-8
+        shelve.Shelf(d)[key] = [1]
+        self.assertIn(key.encode('utf-8'), d)
+        # but a different one can be given
+        shelve.Shelf(d, keyencoding='latin1')[key] = [1]
+        self.assertIn(key.encode('latin1'), d)
+        # with all consequences
+        s = shelve.Shelf(d, keyencoding='ascii')
+        self.assertRaises(UnicodeEncodeError, s.__setitem__, key, [1])
+
     def test_writeback_also_writes_immediately(self):
         # Issue 5754
         d = {}
