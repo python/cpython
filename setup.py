@@ -1579,9 +1579,10 @@ class PyBuildExt(build_ext):
 ##         # Uncomment these lines if you want to play with xxmodule.c
 ##         ext = Extension('xx', ['xxmodule.c'])
 ##         self.extensions.append(ext)
-        ext = Extension('xxlimited', ['xxlimited.c'],
-                        define_macros=[('Py_LIMITED_API', 1)])
-        self.extensions.append(ext)
+        if 'd' not in sys.abiflags:
+            ext = Extension('xxlimited', ['xxlimited.c'],
+                            define_macros=[('Py_LIMITED_API', 1)])
+            self.extensions.append(ext)
 
         # XXX handle these, but how to detect?
         # *** Uncomment and edit for PIL (TkImaging) extension only:
