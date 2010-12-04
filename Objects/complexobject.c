@@ -766,20 +766,26 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
     char *end;
     double x=0.0, y=0.0, z;
     int got_bracket=0;
-    char *s_buffer = NULL;
+    PyObject *s_buffer = NULL;
     Py_ssize_t len;
 
     if (PyUnicode_Check(v)) {
-        s_buffer = (char *)PyMem_MALLOC(PyUnicode_GET_SIZE(v) + 1);
+        Py_ssize_t i, buflen = PyUnicode_GET_SIZE(v);
+        Py_UNICODE *bufptr;
+        s_buffer = PyUnicode_TransformDecimalToASCII(
+            PyUnicode_AS_UNICODE(v), buflen);
         if (s_buffer == NULL)
-            return PyErr_NoMemory();
-        if (PyUnicode_EncodeDecimal(PyUnicode_AS_UNICODE(v),
-                                    PyUnicode_GET_SIZE(v),
-                                    s_buffer,
-                                    NULL))
+            return NULL;
+        /* Replace non-ASCII whitespace with ' ' */
+        bufptr = PyUnicode_AS_UNICODE(s_buffer);
+        for (i = 0; i < buflen; i++) {
+            Py_UNICODE ch = bufptr[i];
+            if (ch > 127 && Py_UNICODE_ISSPACE(ch))
+                bufptr[i] = ' ';
+        }
+        s = _PyUnicode_AsStringAndSize(s_buffer, &len);
+        if (s == NULL)
             goto error;
-        s = s_buffer;
-        len = strlen(s);
     }
     else if (PyObject_AsCharBuffer(v, &s, &len)) {
         PyErr_SetString(PyExc_TypeError,
@@ -894,16 +900,14 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
     if (s-start != len)
         goto parse_error;
 
-    if (s_buffer)
-        PyMem_FREE(s_buffer);
+    Py_XDECREF(s_buffer);
     return complex_subtype_from_doubles(type, x, y);
 
   parse_error:
     PyErr_SetString(PyExc_ValueError,
                     "complex() arg is a malformed string");
   error:
-    if (s_buffer)
-        PyMem_FREE(s_buffer);
+    Py_XDECREF(s_buffer);
     return NULL;
 }
 

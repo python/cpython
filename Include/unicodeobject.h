@@ -1225,6 +1225,17 @@ PyAPI_FUNC(int) PyUnicode_EncodeDecimal(
     );
 #endif
 
+/* Transforms code points that have decimal digit property to the
+   corresponding ASCII digit code points.
+
+   Returns a new Unicode string on success, NULL on failure.
+*/
+
+PyAPI_FUNC(PyObject*) PyUnicode_TransformDecimalToASCII(
+    Py_UNICODE *s,              /* Unicode buffer */
+    Py_ssize_t length           /* Number of Py_UNICODE chars to transform */
+    );
+
 /* --- File system encoding ---------------------------------------------- */
 
 /* ParseTuple converter: encode str objects to bytes using

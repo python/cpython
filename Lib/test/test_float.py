@@ -43,13 +43,29 @@ class GeneralFloatCases(unittest.TestCase):
         self.assertRaises(ValueError, float, "+.inf")
         self.assertRaises(ValueError, float, ".")
         self.assertRaises(ValueError, float, "-.")
+        self.assertRaises(ValueError, float, b"-")
+        self.assertRaises(TypeError, float, {})
+        # Lone surrogate
+        self.assertRaises(UnicodeEncodeError, float, '\uD8F0')
         # check that we don't accept alternate exponent markers
         self.assertRaises(ValueError, float, "-1.7d29")
         self.assertRaises(ValueError, float, "3D-14")
-        self.assertEqual(float(b"  \u0663.\u0661\u0664  ".decode('raw-unicode-escape')), 3.14)
+        self.assertEqual(float("  \u0663.\u0661\u0664  "), 3.14)
+        self.assertEqual(float("\N{EM SPACE}3.14\N{EN SPACE}"), 3.14)
         # extra long strings should not be a problem
         float(b'.' + b'1'*1000)
         float('.' + '1'*1000)
+
+    def test_error_message(self):
+        testlist = ('\xbd', '123\xbd', '  123 456  ')
+        for s in testlist:
+            try:
+                float(s)
+            except ValueError as e:
+                self.assertIn(s.strip(), e.args[0])
+            else:
+                self.fail("Expected int(%r) to raise a ValueError", s)
+
 
     @support.run_with_locale('LC_NUMERIC', 'fr_FR', 'de_DE')
     def test_float_with_comma(self):

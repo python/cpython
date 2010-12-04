@@ -174,22 +174,30 @@ PyFloat_FromString(PyObject *v)
 {
     const char *s, *last, *end;
     double x;
-    char buffer[256]; /* for errors */
-    char *s_buffer = NULL;
+    PyObject *s_buffer = NULL;
     Py_ssize_t len;
     PyObject *result = NULL;
 
     if (PyUnicode_Check(v)) {
-        s_buffer = (char *)PyMem_MALLOC(PyUnicode_GET_SIZE(v)+1);
+        Py_ssize_t i, buflen = PyUnicode_GET_SIZE(v);
+        Py_UNICODE *bufptr;
+        s_buffer = PyUnicode_TransformDecimalToASCII(
+            PyUnicode_AS_UNICODE(v), buflen);
         if (s_buffer == NULL)
-            return PyErr_NoMemory();
-        if (PyUnicode_EncodeDecimal(PyUnicode_AS_UNICODE(v),
-                                    PyUnicode_GET_SIZE(v),
-                                    s_buffer,
-                                    NULL))
-            goto error;
-        s = s_buffer;
-        len = strlen(s);
+            return NULL;
+        /* Replace non-ASCII whitespace with ' ' */
+        bufptr = PyUnicode_AS_UNICODE(s_buffer);
+        for (i = 0; i < buflen; i++) {
+            Py_UNICODE ch = bufptr[i];
+            if (ch > 127 && Py_UNICODE_ISSPACE(ch))
+                bufptr[i] = ' ';
+        }
+        s = _PyUnicode_AsStringAndSize(s_buffer, &len);
+        if (s == NULL) {
+            Py_DECREF(s_buffer);
+            return NULL;
+        }
+        last = s + len;
     }
     else if (PyObject_AsCharBuffer(v, &s, &len)) {
         PyErr_SetString(PyExc_TypeError,
@@ -197,29 +205,27 @@ PyFloat_FromString(PyObject *v)
         return NULL;
     }
     last = s + len;
-
-    while (Py_ISSPACE(*s))
+    /* strip space */
+    while (s < last && Py_ISSPACE(*s))
         s++;
+    while (s < last - 1 && Py_ISSPACE(last[-1]))
+        last--;
     /* We don't care about overflow or underflow.  If the platform
      * supports them, infinities and signed zeroes (on underflow) are
      * fine. */
     x = PyOS_string_to_double(s, (char **)&end, NULL);
-    if (x == -1.0 && PyErr_Occurred())
-        goto error;
-    while (Py_ISSPACE(*end))
-        end++;
-    if (end == last)
-        result = PyFloat_FromDouble(x);
-    else {
-        PyOS_snprintf(buffer, sizeof(buffer),
-                      "invalid literal for float(): %.200s", s);
-        PyErr_SetString(PyExc_ValueError, buffer);
+    if (end != last) {
+        PyErr_Format(PyExc_ValueError,
+                     "could not convert string to float: "
+                     "%R", v);
         result = NULL;
     }
+    else if (x == -1.0 && PyErr_Occurred())
+        result = NULL;
+    else
+        result = PyFloat_FromDouble(x);
 
-  error:
-    if (s_buffer)
-        PyMem_FREE(s_buffer);
+    Py_XDECREF(s_buffer);
     return result;
 }
 

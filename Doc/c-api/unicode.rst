@@ -328,6 +328,13 @@ APIs:
    Identical to :c:func:`PyUnicode_FromFormat` except that it takes exactly two
    arguments.
 
+.. c:function:: PyObject* PyUnicode_TransformDecimalToASCII(Py_UNICODE *s, Py_ssize_t size)
+
+   Create a Unicode object by replacing all decimal digits in
+   :c:type:`Py_UNICODE` buffer of the given size by ASCII digits 0--9
+   according to their decimal value.  Return *NULL* if an exception
+   occurs.
+
 
 .. c:function:: Py_UNICODE* PyUnicode_AsUnicode(PyObject *unicode)
 
