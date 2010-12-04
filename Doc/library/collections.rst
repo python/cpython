@@ -853,6 +853,8 @@ original insertion position is changed and moved to the end::
             OrderedDict.__setitem__(self, key, value)
 
 
+.. _abstract-base-classes:
+
 ABCs - abstract base classes
 ----------------------------
 
