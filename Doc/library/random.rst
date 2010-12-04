@@ -274,6 +274,7 @@ change across Python versions, but two aspects are guaranteed not to change:
 * The generator's :meth:`random` method will continue to produce the same
   sequence when the compatible seeder is given the same seed.
 
+.. _random-examples:
 
 Examples and Recipes
 ====================
