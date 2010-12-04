@@ -49,6 +49,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10601: sys.displayhook uses 'backslashreplace' error handler on
+  UnicodeEncodeError.
+
 - Add the "display" and "undisplay" pdb commands.
 
 - Issue #7245: Add a SIGINT handler in pdb that allows to break a program
