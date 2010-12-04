@@ -1428,6 +1428,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #7904: Changes to urllib.parse.urlsplit to handle schemes as defined by
+  RFC3986. Anything before :// is considered a scheme and is followed by an
+  authority (or netloc) and by '/' led path, which is optional.
+
 - Issue #1555570: email no longer inserts extra blank lines when a \r\n
   combo crosses an 8192 byte boundary.
 
