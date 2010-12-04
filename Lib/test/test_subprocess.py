@@ -59,31 +59,19 @@ class BaseTestCase(unittest.TestCase):
 
 
 class DeprecationWarningTests(BaseTestCase):
-    def setUp(self):
-        BaseTestCase.setUp(self)
-        self._saved_warn = warnings.warn
-        self._warn_calls = []
-        warnings.warn = self._record_warn
-
-    def tearDown(self):
-        warnings.warn = self._saved_warn
-        BaseTestCase.tearDown(self)
-
-    def _record_warn(self, *args):
-        """A warnings.warn function that records calls."""
-        self._warn_calls.append(args)
-        self._saved_warn(*args)
-
     def testCloseFdsWarning(self):
         quick_process = [sys.executable, "-c", "import sys; sys.exit(0)"]
-        subprocess.call(quick_process, close_fds=True)
-        self.assertEqual([], self._warn_calls)
-        subprocess.call(quick_process, close_fds=False)
-        self.assertEqual([], self._warn_calls)
-        self.assertWarns(DeprecationWarning, subprocess.call, quick_process)
-        self.assertEqual(1, len(self._warn_calls))
-        self.assertIn('close_fds parameter was not specified',
-                      self._warn_calls[0][0])
+        with warnings.catch_warnings(record=True) as warnlist:
+            warnings.simplefilter("always")
+            subprocess.call(quick_process, close_fds=True)
+            self.assertEqual([], warnlist)
+            subprocess.call(quick_process, close_fds=False)
+            self.assertEqual([], warnlist)
+            with self.assertWarns(DeprecationWarning) as wm:
+                subprocess.Popen(quick_process).wait()
+                self.assertEqual(1, len(wm.warnings))
+                self.assertIn('close_fds parameter was not specified',
+                              str(wm.warnings[0]))
 
 
 class ProcessTestCase(BaseTestCase):
