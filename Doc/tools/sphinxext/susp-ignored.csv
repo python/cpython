@@ -324,3 +324,10 @@ whatsnew/2.7,1619,::,"ParseResult(scheme='http', netloc='[1080::8:800:200C:417A]
 library/configparser,,`,# Set the optional `raw` argument of get() to True if you wish to disable
 library/configparser,,`,# The optional `vars` argument is a dict with members that will take
 library/configparser,,`,# The optional `fallback` argument can be used to provide a fallback value
+library/configparser,,:option,${section:option}
+library/configparser,,:system,path: ${Common:system_dir}/Library/Frameworks/
+library/configparser,,:home,my_dir: ${Common:home_dir}/twosheds
+library/configparser,,:path,python_dir: ${Frameworks:path}/Python/Versions/${Frameworks:Python}
+library/configparser,,:Python,python_dir: ${Frameworks:path}/Python/Versions/${Frameworks:Python}
+library/pdb,,:lineno,[filename:lineno | bpnumber [bpnumber ...]]
+library/pdb,,:lineno,filename:lineno
