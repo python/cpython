@@ -45,6 +45,8 @@ Core and Builtins
 Library
 -------
 
+- Add the "interact" pdb command.
+
 - Issue #7905: Actually respect the keyencoding parameter to shelve.Shelf.
 
 - Issue #1569291: Speed up array.repeat().

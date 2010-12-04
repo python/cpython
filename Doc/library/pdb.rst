@@ -407,6 +407,14 @@ by the local file.
 
    .. versionadded:: 3.2
 
+.. pdbcommand:: interact
+
+   Start an interative interpreter (using the :mod:`code` module) whose global
+   namespace contains all the (global and local) names found in the current
+   scope.
+
+   .. versionadded:: 3.2
+
 .. _debugger-aliases:
 
 .. pdbcommand:: alias [name [command]]

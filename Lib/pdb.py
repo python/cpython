@@ -67,15 +67,16 @@ Debugger commands
 # commands and is appended to __doc__ after the class has been defined.
 
 import sys
-import linecache
 import cmd
 import bdb
 import dis
 import os
 import re
+import code
 import pprint
-import traceback
 import inspect
+import traceback
+import linecache
 
 
 class Restart(Exception):
@@ -1167,6 +1168,16 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # None of the above...
         self.message(type(value))
 
+    def do_interact(self, arg):
+        """interact
+
+        Start an interative interpreter whose global namespace
+        contains all the (global and local) names found in the current scope.
+        """
+        ns = self.curframe.f_globals.copy()
+        ns.update(self.curframe_locals)
+        code.interact("*interactive*", local=ns)
+
     def do_alias(self, arg):
         """alias [name [command [parameter parameter ...] ]]
         Create an alias called 'name' that executes 'command'.  The
@@ -1342,8 +1353,8 @@ if __doc__ is not None:
         'help', 'where', 'down', 'up', 'break', 'tbreak', 'clear', 'disable',
         'enable', 'ignore', 'condition', 'commands', 'step', 'next', 'until',
         'jump', 'return', 'retval', 'run', 'continue', 'list', 'longlist',
-        'args', 'print', 'pp', 'whatis', 'source', 'alias', 'unalias',
-        'debug', 'quit',
+        'args', 'print', 'pp', 'whatis', 'source', 'interact', 'alias',
+        'unalias', 'debug', 'quit',
     ]
 
     for _command in _help_order:
