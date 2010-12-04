@@ -848,15 +848,11 @@ class RawConfigParser(MutableMapping):
         if vars:
             for key, value in vars.items():
                 d[self.optionxform(key)] = value
-        options = list(d.keys())
+        value_getter = lambda option: self._interpolation.before_get(self,
+            section, option, d[option], d)
         if raw:
-            return [(option, d[option])
-                    for option in options]
-        else:
-            return [(option, self._interpolation.before_get(self, section,
-                                                            option, d[option],
-                                                            d))
-                    for option in options]
+            value_getter = lambda option: d[option]
+        return [(option, value_getter(option)) for option in d.keys()]
 
     def optionxform(self, optionstr):
         return optionstr.lower()
