@@ -11,7 +11,7 @@
 
    * Anyone can add text to this document.  Do not spend very much time
    on the wording of your changes, because your text will probably
-   get rewritten to some degree.
+   get rewritten.
 
    * The maintainer will go through Misc/NEWS periodically and add
    changes; it's therefore more important to add your changes to
@@ -59,13 +59,18 @@ one wanted to use. This requirement was the result of the free access to
 Python interpreter internals that extension modules could use.
 
 With Python 3.2, an alternative approach becomes available: extension
-modules with restrict themselves to a limited API (by defining
+modules which restrict themselves to a limited API (by defining
 Py_LIMITED_API) cannot use many of the internals, but are constrained
 to a set of API functions that are promised to be stable for several
 releases. As a consequence, extension modules built for 3.2 in that
 mode will also work with 3.3, 3.4, and so on. Extension modules that
 make use of details of memory structures can still be built, but will
 need to be recompiled for every feature release.
+
+.. seealso::
+
+   :pep:`384` - PYC Repository Directories
+      PEP written by Martin von Loewis.
 
 
 PEP 391:  Dictionary Based Configuration for Logging
@@ -102,7 +107,7 @@ dictionary::
     "root": {"level": "DEBUG", "handlers": ["console", "console_priority"]}}
 
 
-If that dictionary is stored in a file called "conf.json", it can loaded
+If that dictionary is stored in a file called :file:`conf.json`, it can loaded
 and called with code like this::
 
    >>> import logging.config
@@ -118,7 +123,39 @@ and called with code like this::
 PEP 3148:  The ``concurrent.futures`` module
 ============================================
 
-.. (Stub section)
+Code for creating and managing concurrency is being collected in a new toplevel
+namespace, *concurrent*.  Its first member is a *futures* package which provides
+a uniform high level interface for managing threads and processes.
+
+The design for :mod:`concurrent.futures` was inspired by
+*java.util.concurrent.package*.  In that model, a running call and its result
+are represented by a :class:`~concurrent.futures.Future` object which abstracts
+features common to threads, processes, and remote procedure calls.  That object
+supports status checks (running or done), timeouts, cancellations, adding
+callbacks, and access to results or exceptions.XS
+
+The primary offering of the new module is a pair of executor classes for
+launching and managing calls.  The goal of the executors is to make it easier to
+use existing tools for making parallel calls. They save the effort needed to
+setup a pool of resources, launch the calls, create a results queue, add
+time-out handling, and limit the total number of threads, processes, or remote
+procedure calls.
+
+Ideally, each application should share a single executor across multiple
+components so that process and thread limits can be centrally managed.  This
+solves the design challenge that arises when each component has its own
+competing strategy for resource management.
+
+For an example of :class:`~concurrent.futures.ThreadPoolExecutor`,
+see :ref:`code for threaded parallel URL reads<threadpoolexecutor-example>`.
+
+For an example of :class:`~concurrent.futures.ProcessPoolExecutor`,
+see :ref:`code for computing prime numbers in parallel<processpoolexecutor-example>`.
+
+.. seealso::
+
+   :pep:`3148` - PYC Repository Directories
+      PEP written by Brain Quinlan.
 
 
 PEP 3147:  PYC Repository Directories
@@ -788,4 +825,5 @@ require changes to your code:
   instead; the new type has a well-defined interface for passing typing safety
   information and a less complicated signature for calling a destructor.
 
- * Remove sys.setfilesystemencoding() function: it was broken by design.
+ * The :func:`sys.setfilesystemencoding` function was removed because
+   it has a flawed design.
