@@ -106,6 +106,7 @@ class BasicTestCase(CfgParserTestCaseClass):
         self.assertAlmostEqual(cf.getfloat('Types', 'float'), 0.44)
         eq(cf.get('Types', 'float'), "0.44")
         eq(cf.getboolean('Types', 'boolean'), False)
+        eq(cf.get('Types', '123'), 'strange but acceptable')
         if self.allow_no_value:
             eq(cf.get('NoValue', 'option-without-value'), None)
 
@@ -214,6 +215,7 @@ another with spaces {0[0]} splat!
 int {0[1]} 42
 float {0[0]} 0.44
 boolean {0[0]} NO
+123 {0[1]} strange but acceptable
 """.format(self.delimiters, self.comment_prefixes)
         if self.allow_no_value:
             config_string += (
@@ -286,6 +288,7 @@ boolean {0[0]} NO
                 "int": 42,
                 "float": 0.44,
                 "boolean": False,
+                123: "strange but acceptable",
             },
         }
         if self.allow_no_value:
@@ -716,6 +719,15 @@ class ConfigParserTestCase(BasicTestCase):
                                 raw=True), '%(list)s')
         self.assertRaises(ValueError, cf.get, 'non-string',
                           'string_with_interpolation', raw=False)
+        cf.add_section(123)
+        cf.set(123, 'this is sick', True)
+        self.assertEqual(cf.get(123, 'this is sick', raw=True), True)
+        with self.assertRaises(TypeError):
+            cf.get(123, 'this is sick')
+        cf.optionxform = lambda x: x
+        cf.set('non-string', 1, 1)
+        self.assertRaises(TypeError, cf.get, 'non-string', 1, 1)
+        self.assertEqual(cf.get('non-string', 1, raw=True), 1)
 
 class ConfigParserTestCaseNonStandardDelimiters(ConfigParserTestCase):
     delimiters = (':=', '$')
@@ -783,6 +795,15 @@ class RawConfigParserTestCase(BasicTestCase):
         self.assertEqual(cf.get('non-string', 'list'),
                          [0, 1, 1, 2, 3, 5, 8, 13])
         self.assertEqual(cf.get('non-string', 'dict'), {'pi': 3.14159})
+        cf.add_section(123)
+        cf.set(123, 'this is sick', True)
+        self.assertEqual(cf.get(123, 'this is sick'), True)
+        if cf._dict.__class__ is configparser._default_dict:
+            # would not work for SortedDict; only checking for the most common
+            # default dictionary (OrderedDict)
+            cf.optionxform = lambda x: x
+            cf.set('non-string', 1, 1)
+            self.assertEqual(cf.get('non-string', 1), 1)
 
 class RawConfigParserTestCaseNonStandardDelimiters(RawConfigParserTestCase):
     delimiters = (':=', '$')
@@ -848,6 +869,8 @@ class SafeConfigParserTestCase(ConfigParserTestCase):
         self.assertRaises(TypeError, cf.set, "sect", "option2", 1)
         self.assertRaises(TypeError, cf.set, "sect", "option2", 1.0)
         self.assertRaises(TypeError, cf.set, "sect", "option2", object())
+        self.assertRaises(TypeError, cf.set, "sect", 123, "invalid opt name!")
+        self.assertRaises(TypeError, cf.add_section, 123)
 
     def test_add_section_default(self):
         cf = self.newconfig()
