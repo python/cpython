@@ -336,7 +336,7 @@ class TestCommandLineArgs(unittest.TestCase):
 
     def testParseArgsAbsolutePathsThatCannotBeConverted(self):
         program = self.program
-        # will this test work on Windows? (is '/...' considered absolute?)
+        # even on Windows '/...' is considered absolute by os.path.abspath
         argv = ['progname', '/foo/bar/baz.py', '/green/red.py']
         self._patch_isfile(argv)
 
