@@ -632,7 +632,7 @@ EXPORTS
   Py_AddPendingCall=python32.Py_AddPendingCall
   Py_AtExit=python32.Py_AtExit
   Py_BuildValue=python32.Py_BuildValue
-  Py_CompileStringFlags=python32.Py_CompileStringFlags
+  Py_CompileString=python32.Py_CompileString
   Py_DecRef=python32.Py_DecRef
   Py_EndInterpreter=python32.Py_EndInterpreter
   Py_Exit=python32.Py_Exit
