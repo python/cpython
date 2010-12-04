@@ -88,6 +88,15 @@ class CompileallTests(unittest.TestCase):
         compileall.compile_file(data_file)
         self.assertFalse(os.path.exists(os.path.join(data_dir, '__pycache__')))
 
+    def test_optimize(self):
+        # make sure compiling with different optimization settings than the
+        # interpreter's creates the correct file names
+        optimize = 1 if __debug__ else 0
+        compileall.compile_dir(self.directory, quiet=True, optimize=optimize)
+        cached = imp.cache_from_source(self.source_path,
+                                       debug_override=not optimize)
+        self.assertTrue(os.path.isfile(cached))
+
 
 class EncodingTest(unittest.TestCase):
     """Issue 6716: compileall should escape source code when printing errors

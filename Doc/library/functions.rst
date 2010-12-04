@@ -174,7 +174,7 @@ are always available.  They are listed here in alphabetical order.
    type hierarchy in :ref:`types`.
 
 
-.. function:: compile(source, filename, mode, flags=0, dont_inherit=False)
+.. function:: compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1)
 
    Compile the *source* into a code or AST object.  Code objects can be executed
    by :func:`exec` or :func:`eval`.  *source* can either be a string or an AST
@@ -206,6 +206,12 @@ are always available.  They are listed here in alphabetical order.
    can be found as the :attr:`compiler_flag` attribute on the :class:`_Feature`
    instance in the :mod:`__future__` module.
 
+   The argument *optimize* specifies the optimization level of the compiler; the
+   default value of ``-1`` selects the optimization level of the interpreter as
+   given by :option:`-O` options.  Explicit levels are ``0`` (no optimization;
+   ``__debug__`` is true), ``1`` (asserts are removed, ``__debug__`` is false)
+   or ``2`` (docstrings are removed too).
+
    This function raises :exc:`SyntaxError` if the compiled source is invalid,
    and :exc:`TypeError` if the source contains null bytes.
 
@@ -218,7 +224,7 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.2
       Allowed use of Windows and Mac newlines.  Also input in ``'exec'`` mode
-      does not have to end in a newline anymore.
+      does not have to end in a newline anymore.  Added the *optimize* parameter.
 
 
 .. function:: complex([real[, imag]])

@@ -29,8 +29,9 @@ typedef struct {
 #define FUTURE_BARRY_AS_BDFL "barry_as_FLUFL"
 
 struct _mod; /* Declare the existence of this type */
-PyAPI_FUNC(PyCodeObject *) PyAST_Compile(struct _mod *, const char *,
-					PyCompilerFlags *, PyArena *);
+#define PyAST_Compile(mod, s, f, ar) PyAST_CompileEx(mod, s, f, -1, ar)
+PyAPI_FUNC(PyCodeObject *) PyAST_CompileEx(struct _mod *, const char *,
+					   PyCompilerFlags *, int, PyArena *);
 PyAPI_FUNC(PyFutureFeatures *) PyFuture_FromAST(struct _mod *, const char *);
 
 

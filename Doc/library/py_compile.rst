@@ -22,7 +22,7 @@ byte-code cache files in the directory containing the source code.
    Exception raised when an error occurs while attempting to compile the file.
 
 
-.. function:: compile(file, cfile=None, dfile=None, doraise=False)
+.. function:: compile(file, cfile=None, dfile=None, doraise=False, optimize=-1)
 
    Compile a source file to byte-code and write out the byte-code cache  file.  The
    source code is loaded from the file name *file*.  The  byte-code is written to
@@ -36,6 +36,13 @@ byte-code cache files in the directory containing the source code.
    written to ``sys.stderr``, but no exception is raised.  This function
    returns the path to byte-compiled file, i.e. whatever *cfile* value was
    used.
+
+   *optimize* controls the optimization level and is passed to the built-in
+   :func:`compile` function.  The default of ``-1`` selects the optimization
+   level of the current interpreter.
+
+   .. versionchanged:: 3.2
+      Added the *optimize* parameter.
 
 
 .. function:: main(args=None)

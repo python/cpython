@@ -10,6 +10,8 @@ What's New in Python 3.2 Beta 1?
 Core and Builtins
 -----------------
 
+- Provide an *optimize* parameter in the built-in compile() function.
+
 - Fixed several corner case issues on os.stat/os.lstat related to reparse
   points. (Windows)
 
@@ -39,6 +41,9 @@ Core and Builtins
 
 Library
 -------
+
+- Provide an interface to set the optimization level of compilation in
+  py_compile, compileall and zipfile.PyZipFile.
 
 - Issue #7904: Changes to urllib.parse.urlsplit to handle schemes as defined by
   RFC3986. Anything before :// is considered a scheme and is followed by an

@@ -72,7 +72,7 @@ def wr_long(f, x):
                    (x >> 16) & 0xff,
                    (x >> 24) & 0xff]))
 
-def compile(file, cfile=None, dfile=None, doraise=False):
+def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1):
     """Byte-compile one Python source file to Python bytecode.
 
     :param file: The source file name.
@@ -86,6 +86,10 @@ def compile(file, cfile=None, dfile=None, doraise=False):
         will be printed, and the function will return to the caller. If an
         exception occurs and this flag is set to True, a PyCompileError
         exception will be raised.
+    :param optimize: The optimization level for the compiler.  Valid values
+        are -1, 0, 1 and 2.  A value of -1 means to use the optimization
+        level of the current interpreter, as given by -O command line options.
+
     :return: Path to the resulting byte compiled file.
 
     Note that it isn't necessary to byte-compile Python modules for
@@ -111,7 +115,8 @@ def compile(file, cfile=None, dfile=None, doraise=False):
             timestamp = int(os.stat(file).st_mtime)
         codestring = f.read()
     try:
-        codeobject = builtins.compile(codestring, dfile or file,'exec')
+        codeobject = builtins.compile(codestring, dfile or file, 'exec',
+                                      optimize=optimize)
     except Exception as err:
         py_exc = PyCompileError(err.__class__, err, dfile or file)
         if doraise:
@@ -120,7 +125,10 @@ def compile(file, cfile=None, dfile=None, doraise=False):
             sys.stderr.write(py_exc.msg + '\n')
             return
     if cfile is None:
-        cfile = imp.cache_from_source(file)
+        if optimize >= 0:
+            cfile = imp.cache_from_source(file, debug_override=not optimize)
+        else:
+            cfile = imp.cache_from_source(file)
     try:
         os.makedirs(os.path.dirname(cfile))
     except OSError as error:

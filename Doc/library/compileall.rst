@@ -58,7 +58,7 @@ compile Python sources.
 Public functions
 ----------------
 
-.. function:: compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None, quiet=False, legacy=False)
+.. function:: compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None, quiet=False, legacy=False, optimize=-1)
 
    Recursively descend the directory tree named by *dir*, compiling all :file:`.py`
    files along the way.  The *maxlevels* parameter is used to limit the depth of
@@ -76,14 +76,23 @@ Public functions
    If *legacy* is true, old-style ``.pyc`` file path names are written,
    otherwise (the default), :pep:`3147`-style path names are written.
 
+   *optimize* specifies the optimization level for the compiler.  It is passed to
+   the built-in :func:`compile` function.
 
-.. function:: compile_path(skip_curdir=True, maxlevels=0, force=False, legacy=False)
+   .. versionchanged:: 3.2
+      Added the *optimize* parameter.
+
+
+.. function:: compile_path(skip_curdir=True, maxlevels=0, force=False, legacy=False, optimize=-1)
 
    Byte-compile all the :file:`.py` files found along ``sys.path``. If
    *skip_curdir* is true (the default), the current directory is not included in
-   the search.  The *maxlevels* parameter defaults to ``0``, and the *force*
-   and *legacy* parameters default to ``False``. All are
-   passed to the :func:`compile_dir` function.
+   the search.  All other parameters are passed to the :func:`compile_dir`
+   function.
+
+   .. versionchanged:: 3.2
+      Added the *optimize* parameter.
+
 
 To force a recompile of all the :file:`.py` files in the :file:`Lib/`
 subdirectory and all its subdirectories::

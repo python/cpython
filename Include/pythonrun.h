@@ -76,9 +76,10 @@ PyAPI_FUNC(PyObject *) PyRun_FileExFlags(FILE *, const char *, int,
 #ifdef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) Py_CompileStringFlags(const char *, const char *, int);
 #else
-#define Py_CompileString(str, p, s) Py_CompileStringFlags(str, p, s, NULL)
-PyAPI_FUNC(PyObject *) Py_CompileStringFlags(const char *, const char *, int,
-                                             PyCompilerFlags *);
+#define Py_CompileString(str, p, s) Py_CompileStringExFlags(str, p, s, NULL, -1)
+#define Py_CompileStringFlags(str, p, s, f) Py_CompileStringExFlags(str, p, s, f, -1)
+PyAPI_FUNC(PyObject *) Py_CompileStringExFlags(const char *, const char *, int,
+                                               PyCompilerFlags *, int);
 #endif
 PyAPI_FUNC(struct symtable *) Py_SymtableString(const char *, const char *, int);
 

@@ -6,6 +6,7 @@ import sys
 import warnings
 import collections
 import io
+import ast
 import types
 import builtins
 import random
@@ -284,6 +285,34 @@ class BuiltinTest(unittest.TestCase):
         compile('print("\xe5")\n', '', 'exec')
         self.assertRaises(TypeError, compile, chr(0), 'f', 'exec')
         self.assertRaises(ValueError, compile, str('a = 1'), 'f', 'bad')
+
+        # test the optimize argument
+
+        codestr = '''def f():
+        """doc"""
+        try:
+            assert False
+        except AssertionError:
+            return (True, f.__doc__)
+        else:
+            return (False, f.__doc__)
+        '''
+        def f(): """doc"""
+        values = [(-1, __debug__, f.__doc__),
+                  (0, True, 'doc'),
+                  (1, False, 'doc'),
+                  (2, False, None)]
+        for optval, debugval, docstring in values:
+            # test both direct compilation and compilation via AST
+            codeobjs = []
+            codeobjs.append(compile(codestr, "<test>", "exec", optimize=optval))
+            tree = ast.parse(codestr)
+            codeobjs.append(compile(tree, "<test>", "exec", optimize=optval))
+            for code in codeobjs:
+                ns = {}
+                exec(code, ns)
+                rv = ns['f']()
+                self.assertEqual(rv, (debugval, docstring))
 
     def test_delattr(self):
         sys.spam = 1

@@ -230,6 +230,12 @@ the same library that the Python runtime is using.
 
 .. c:function:: PyObject* Py_CompileStringFlags(const char *str, const char *filename, int start, PyCompilerFlags *flags)
 
+   This is a simplified interface to :c:func:`Py_CompileStringExFlags` below, with
+   *optimize* set to ``-1``.
+
+
+.. c:function:: PyObject* Py_CompileStringExFlags(const char *str, const char *filename, int start, PyCompilerFlags *flags, int optimize)
+
    Parse and compile the Python source code in *str*, returning the resulting code
    object.  The start token is given by *start*; this can be used to constrain the
    code which can be compiled and should be :const:`Py_eval_input`,
@@ -237,6 +243,14 @@ the same library that the Python runtime is using.
    *filename* is used to construct the code object and may appear in tracebacks or
    :exc:`SyntaxError` exception messages.  This returns *NULL* if the code cannot
    be parsed or compiled.
+
+   The integer *optimize* specifies the optimization level of the compiler; a
+   value of ``-1`` selects the optimization level of the interpreter as given by
+   :option:`-O` options.  Explicit levels are ``0`` (no optimization;
+   ``__debug__`` is true), ``1`` (asserts are removed, ``__debug__`` is false)
+   or ``2`` (docstrings are removed too).
+
+   .. versionadded:: 3.2
 
 
 .. c:function:: PyObject* PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
