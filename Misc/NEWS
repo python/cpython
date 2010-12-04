@@ -5,26 +5,25 @@ Python News
 What's New in Python 3.2 Beta 1?
 ================================
 
-*Release date: XX-Dec-2010*
+*Release date: 05-Dec-2010*
 
 Core and Builtins
 -----------------
 
-- Issue #10596: Fix float.__mod__ to have the same behaviour as
-  float.__divmod__ with respect to signed zeros.  -4.0 % 4.0 should be
-  0.0, not -0.0.
+- Issue #10596: Fix float.__mod__ to have the same behaviour as float.__divmod__
+  with respect to signed zeros.  -4.0 % 4.0 should be 0.0, not -0.0.
 
-- Issue #1772833: Add the -q command-line option to suppress copyright
-  and version output in interactive mode.
+- Issue #1772833: Add the -q command-line option to suppress copyright and
+  version output in interactive mode.
 
 - Provide an *optimize* parameter in the built-in compile() function.
 
-- Fixed several corner case issues on os.stat/os.lstat related to reparse
-  points. (Windows)
+- Fixed several corner case issues on Windows in os.stat/os.lstat related to
+  reparse points.
 
 - PEP 384 (Defining a Stable ABI) is implemented.
 
-- Issue #2690: Range objects support negative indices and slicing
+- Issue #2690: Range objects support negative indices and slicing.
 
 - Issue #9915: Speed up sorting with a key.
 
@@ -56,8 +55,8 @@ Library
 
 - Add the "display" and "undisplay" pdb commands.
 
-- Issue #7245: Add a SIGINT handler in pdb that allows to break a program
-  again after a "continue" command.
+- Issue #7245: Add a SIGINT handler in pdb that allows to break a program again
+  after a "continue" command.
 
 - Add the "interact" pdb command.
 
@@ -260,8 +259,8 @@ C-API
 -----
 
 - Issue #10557: Added a new API function, PyUnicode_TransformDecimalToASCII(),
-  which transforms non-ASCII decimal digits in a Unicode string to their
-  ASCII equivalents. 
+  which transforms non-ASCII decimal digits in a Unicode string to their ASCII
+  equivalents.
 
 - Issue #9518: Extend the PyModuleDef_HEAD_INIT macro to explicitly
   zero-initialize all fields, fixing compiler warnings seen when building
@@ -279,10 +278,10 @@ Tests
 -----
 
 - regrtest.py once again ensures the test directory is removed from sys.path
-  when it is invoked directly as the __main__ module
+  when it is invoked directly as the __main__ module.
 
-- `python -m test` can be used to run the test suite as well as
-  `python -m test.regrtest`.
+- `python -m test` can be used to run the test suite as well as `python -m
+  test.regrtest`.
 
 - Do not fail test_socket when the IP address of the local hostname cannot be
   looked up.
