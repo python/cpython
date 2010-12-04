@@ -204,6 +204,16 @@ modules, classes or even individual test methods::
 You can pass in a list with any combination of module names, and fully
 qualified class or method names.
 
+Test modules can be specified by file path as well::
+
+   python -m unittest tests/test_something.py
+
+This allows you to use the shell filename completion to specify the test module.
+The file specified must still be importable as a module. The path is converted
+to a module name by removing the '.py' and converting path separators into '.'.
+If you want to execute a test file that isn't importable as a module you should
+execute the file directly instead.
+
 You can run tests with more detail (higher verbosity) by passing in the -v flag::
 
    python -m unittest -v test_module

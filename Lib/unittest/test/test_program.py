@@ -273,6 +273,85 @@ class TestCommandLineArgs(unittest.TestCase):
         program.runTests()
         self.assertTrue(self.installed)
 
+    def _patch_isfile(self, names, exists=True):
+        def isfile(path):
+            return path in names
+        original = os.path.isfile
+        os.path.isfile = isfile
+        def restore():
+            os.path.isfile = original
+        self.addCleanup(restore)
+
+
+    def testParseArgsFileNames(self):
+        # running tests with filenames instead of module names
+        program = self.program
+        argv = ['progname', 'foo.py', 'bar.Py', 'baz.PY', 'wing.txt']
+        self._patch_isfile(argv)
+
+        program.createTests = lambda: None
+        program.parseArgs(argv)
+
+        # note that 'wing.txt' is not a Python file so the name should
+        # *not* be converted to a module name
+        expected = ['foo', 'bar', 'baz', 'wing.txt']
+        self.assertEqual(program.testNames, expected)
+
+
+    def testParseArgsFilePaths(self):
+        program = self.program
+        argv = ['progname', 'foo/bar/baz.py', 'green\\red.py']
+        self._patch_isfile(argv)
+
+        program.createTests = lambda: None
+        program.parseArgs(argv)
+
+        expected = ['foo.bar.baz', 'green.red']
+        self.assertEqual(program.testNames, expected)
+
+
+    def testParseArgsNonExistentFiles(self):
+        program = self.program
+        argv = ['progname', 'foo/bar/baz.py', 'green\\red.py']
+        self._patch_isfile([])
+
+        program.createTests = lambda: None
+        program.parseArgs(argv)
+
+        self.assertEqual(program.testNames, argv[1:])
+
+    def testParseArgsAbsolutePathsThatCanBeConverted(self):
+        cur_dir = os.getcwd()
+        program = self.program
+        def _join(name):
+            return os.path.join(cur_dir, name)
+        argv = ['progname', _join('foo/bar/baz.py'), _join('green\\red.py')]
+        self._patch_isfile(argv)
+
+        program.createTests = lambda: None
+        program.parseArgs(argv)
+
+        expected = ['foo.bar.baz', 'green.red']
+        self.assertEqual(program.testNames, expected)
+
+    def testParseArgsAbsolutePathsThatCannotBeConverted(self):
+        program = self.program
+        # will this test work on Windows? (is '/...' considered absolute?)
+        argv = ['progname', '/foo/bar/baz.py', '/green/red.py']
+        self._patch_isfile(argv)
+
+        program.createTests = lambda: None
+        program.parseArgs(argv)
+
+        self.assertEqual(program.testNames, argv[1:])
+
+        # it may be better to use platform specific functions to normalise paths
+        # rather than accepting '.PY' and '\' as file seprator on Linux / Mac
+        # it would also be better to check that a filename is a valid module
+        # identifier (we have a regex for this in loader.py)
+        # for invalid filenames should we raise a useful error rather than
+        # leaving the current error message (import of filename fails) in place?
+
 
 if __name__ == '__main__':
     unittest.main()
