@@ -1879,7 +1879,7 @@ Loading and running tests
    :ref:`deprecated unittest methods <deprecated-aliases>` are also
    special-cased and, when the warning filters are ``'default'`` or ``'always'``,
    they will appear only once per-module, in order to avoid too many warning
-   messages.  This behavior can be overridden using the :option`-Wd` or
+   messages.  This behavior can be overridden using the :option:`-Wd` or
    :option:`-Wa` options and leaving *warnings* to ``None``.
 
    .. method:: _makeResult()
