@@ -73,6 +73,7 @@ class _ClosedDict(collections.MutableMapping):
     def __repr__(self):
         return '<Closed Dictionary>'
 
+
 class Shelf(collections.MutableMapping):
     """Base class for shelf implementations.
 
@@ -88,7 +89,7 @@ class Shelf(collections.MutableMapping):
         self._protocol = protocol
         self.writeback = writeback
         self.cache = {}
-        self.keyencoding = "utf-8"
+        self.keyencoding = keyencoding
 
     def __iter__(self):
         for k in self.dict.keys():
