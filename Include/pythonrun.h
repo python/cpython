@@ -74,7 +74,7 @@ PyAPI_FUNC(PyObject *) PyRun_FileExFlags(FILE *, const char *, int,
 #endif
 
 #ifdef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) Py_CompileStringFlags(const char *, const char *, int);
+PyAPI_FUNC(PyObject *) Py_CompileString(const char *, const char *, int);
 #else
 #define Py_CompileString(str, p, s) Py_CompileStringExFlags(str, p, s, NULL, -1)
 #define Py_CompileStringFlags(str, p, s, f) Py_CompileStringExFlags(str, p, s, f, -1)
