@@ -2144,9 +2144,9 @@ PyLong_FromUnicode(Py_UNICODE *u, Py_ssize_t length, int base)
     /* Replace non-ASCII whitespace with ' ' */
     ptr = PyUnicode_AS_UNICODE(asciidig);
     for (i = 0; i < length; i++) {
-      Py_UNICODE ch = ptr[i];
-      if (ch > 127 && Py_UNICODE_ISSPACE(ch))
-        ptr[i] = ' ';
+        Py_UNICODE ch = ptr[i];
+        if (ch > 127 && Py_UNICODE_ISSPACE(ch))
+            ptr[i] = ' ';
     }
     buffer = _PyUnicode_AsStringAndSize(asciidig, &buflen);
     if (buffer == NULL) {
