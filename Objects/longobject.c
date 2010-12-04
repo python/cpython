@@ -2133,17 +2133,34 @@ PyObject *
 PyLong_FromUnicode(Py_UNICODE *u, Py_ssize_t length, int base)
 {
     PyObject *result;
-    char *buffer = (char *)PyMem_MALLOC(length+1);
+    PyObject *asciidig;
+    char *buffer, *end;
+    Py_ssize_t i, buflen;
+    Py_UNICODE *ptr;
 
-    if (buffer == NULL)
+    asciidig = PyUnicode_TransformDecimalToASCII(u, length);
+    if (asciidig == NULL)
         return NULL;
-
-    if (PyUnicode_EncodeDecimal(u, length, buffer, NULL)) {
-        PyMem_FREE(buffer);
+    /* Replace non-ASCII whitespace with ' ' */
+    ptr = PyUnicode_AS_UNICODE(asciidig);
+    for (i = 0; i < length; i++) {
+      Py_UNICODE ch = ptr[i];
+      if (ch > 127 && Py_UNICODE_ISSPACE(ch))
+        ptr[i] = ' ';
+    }
+    buffer = _PyUnicode_AsStringAndSize(asciidig, &buflen);
+    if (buffer == NULL) {
+        Py_DECREF(asciidig);
         return NULL;
     }
-    result = PyLong_FromString(buffer, NULL, base);
-    PyMem_FREE(buffer);
+    result = PyLong_FromString(buffer, &end, base);
+    if (result != NULL && end != buffer + buflen) {
+        PyErr_SetString(PyExc_ValueError,
+                        "null byte in argument for int()");
+        Py_DECREF(result);
+        result = NULL;
+    }
+    Py_DECREF(asciidig);
     return result;
 }
 

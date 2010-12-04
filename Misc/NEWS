@@ -222,6 +222,10 @@ Library
 C-API
 -----
 
+- Issue #10557: Added a new API function, PyUnicode_TransformDecimalToASCII(),
+  which transforms non-ASCII decimal digits in a Unicode string to their
+  ASCII equivalents. 
+
 - Issue #9518: Extend the PyModuleDef_HEAD_INIT macro to explicitly
   zero-initialize all fields, fixing compiler warnings seen when building
   extension modules with gcc with "-Wmissing-field-initializers" (implied by

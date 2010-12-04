@@ -220,6 +220,7 @@ class ComplexTest(unittest.TestCase):
         self.assertEqual(complex(NS(1+10j)), 1+10j)
         self.assertRaises(TypeError, complex, OS(None))
         self.assertRaises(TypeError, complex, NS(None))
+        self.assertRaises(TypeError, complex, {})
 
         self.assertAlmostEqual(complex("1+10j"), 1+10j)
         self.assertAlmostEqual(complex(10), 10+0j)
@@ -325,6 +326,8 @@ class ComplexTest(unittest.TestCase):
 
         # check that complex accepts long unicode strings
         self.assertEqual(type(complex("1"*500)), complex)
+        # check whitespace processing
+        self.assertEqual(complex('\N{EM SPACE}(\N{EN SPACE}1+1j ) '), 1+1j)
 
         class EvilExc(Exception):
             pass

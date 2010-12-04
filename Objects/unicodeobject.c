@@ -6206,6 +6206,30 @@ PyObject *PyUnicode_Translate(PyObject *str,
     return NULL;
 }
 
+PyObject *
+PyUnicode_TransformDecimalToASCII(Py_UNICODE *s,
+                                  Py_ssize_t length)
+{
+    PyObject *result;
+    Py_UNICODE *p; /* write pointer into result */
+    Py_ssize_t i;
+    /* Copy to a new string */
+    result = (PyObject *)_PyUnicode_New(length);
+    Py_UNICODE_COPY(PyUnicode_AS_UNICODE(result), s, length);
+    if (result == NULL)
+        return result;
+    p = PyUnicode_AS_UNICODE(result);
+    /* Iterate over code points */
+    for (i = 0; i < length; i++) {
+        Py_UNICODE ch =s[i];
+        if (ch > 127) {
+            int decimal = Py_UNICODE_TODECIMAL(ch);
+            if (decimal >= 0)
+                p[i] = '0' + decimal;
+        }
+    }
+    return result;
+}
 /* --- Decimal Encoder ---------------------------------------------------- */
 
 int PyUnicode_EncodeDecimal(Py_UNICODE *s,
@@ -8967,6 +8991,13 @@ unicode_freelistsize(PyUnicodeObject *self)
 {
     return PyLong_FromLong(numfree);
 }
+
+static PyObject *
+unicode__decimal2ascii(PyObject *self)
+{
+    return PyUnicode_TransformDecimalToASCII(PyUnicode_AS_UNICODE(self),
+                                             PyUnicode_GET_SIZE(self));
+}
 #endif
 
 PyDoc_STRVAR(startswith__doc__,
@@ -9108,7 +9139,6 @@ unicode_getnewargs(PyUnicodeObject *v)
     return Py_BuildValue("(u#)", v->str, v->length);
 }
 
-
 static PyMethodDef unicode_methods[] = {
 
     /* Order is according to common usage: often used methods should
@@ -9170,8 +9200,9 @@ static PyMethodDef unicode_methods[] = {
 #endif
 
 #if 0
-    /* This one is just used for debugging the implementation. */
+    /* These methods are just used for debugging the implementation. */
     {"freelistsize", (PyCFunction) unicode_freelistsize, METH_NOARGS},
+    {"_decimal2ascii", (PyCFunction) unicode__decimal2ascii, METH_NOARGS},
 #endif
 
     {"__getnewargs__",  (PyCFunction)unicode_getnewargs, METH_NOARGS},

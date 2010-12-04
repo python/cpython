@@ -20,7 +20,8 @@ L = [
         ('  1\02  ', ValueError),
         ('', ValueError),
         (' ', ValueError),
-        ('  \t\t  ', ValueError)
+        ('  \t\t  ', ValueError),
+        ("\u0200", ValueError)
 ]
 
 class IntTestCases(unittest.TestCase):
@@ -35,6 +36,8 @@ class IntTestCases(unittest.TestCase):
         self.assertEqual(int(3.5), 3)
         self.assertEqual(int(-3.5), -3)
         self.assertEqual(int("-3"), -3)
+        self.assertEqual(int(" -3 "), -3)
+        self.assertEqual(int("\N{EM SPACE}-3\N{EN SPACE}"), -3)
         # Different base:
         self.assertEqual(int("10",16), 16)
         # Test conversion from strings and various anomalies
@@ -301,6 +304,16 @@ class IntTestCases(unittest.TestCase):
                 else:
                     self.fail("Failed to raise TypeError with %s" %
                               ((base, trunc_result_base),))
+
+    def test_error_message(self):
+        testlist = ('\xbd', '123\xbd', '  123 456  ')
+        for s in testlist:
+            try:
+                int(s)
+            except ValueError as e:
+                self.assertIn(s.strip(), e.args[0])
+            else:
+                self.fail("Expected int(%r) to raise a ValueError", s)
 
 def test_main():
     run_unittest(IntTestCases)
