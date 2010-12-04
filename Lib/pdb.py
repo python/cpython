@@ -125,6 +125,12 @@ def lasti2lineno(code, lasti):
     return 0
 
 
+class _rstr(str):
+    """String that doesn't quote its repr."""
+    def __repr__(self):
+        return self
+
+
 # Interaction prompt line will separate file and call info from code
 # text using value of line_prefix string.  A newline and arrow may
 # be to your liking.  You can set it once pdb is imported using the
@@ -142,6 +148,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.use_rawinput = 0
         self.prompt = '(Pdb) '
         self.aliases = {}
+        self.displaying = {}
         self.mainpyfile = ''
         self._wait_for_mainpyfile = False
         self.tb_lineno = {}
@@ -310,6 +317,20 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 break
             except KeyboardInterrupt:
                 self.message('--KeyboardInterrupt--')
+
+    # Called before loop, handles display expressions
+    def preloop(self):
+        displaying = self.displaying.get(self.curframe)
+        if displaying:
+            for expr, oldvalue in displaying.items():
+                newvalue = self._getval_except(expr)
+                # check for identity first; this prevents custom __eq__ to
+                # be called at every loop, and also prevents instances whose
+                # fields are changed to be displayed
+                if newvalue is not oldvalue and newvalue != oldvalue:
+                    displaying[expr] = newvalue
+                    self.message('display %s: %r  [old: %r]' %
+                                 (expr, newvalue, oldvalue))
 
     def interaction(self, frame, traceback):
         if self.setup(frame, traceback):
@@ -1041,6 +1062,17 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.error(traceback.format_exception_only(*exc_info)[-1].strip())
             raise
 
+    def _getval_except(self, arg, frame=None):
+        try:
+            if frame is None:
+                return eval(arg, self.curframe.f_globals, self.curframe_locals)
+            else:
+                return eval(arg, frame.f_globals, frame.f_locals)
+        except:
+            exc_info = sys.exc_info()[:2]
+            err = traceback.format_exception_only(*exc_info)[-1].strip()
+            return _rstr('** raised %s **' % err)
+
     def do_p(self, arg):
         """p(rint) expression
         Print the value of the expression.
@@ -1194,6 +1226,38 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return
         # None of the above...
         self.message(type(value))
+
+    def do_display(self, arg):
+        """display [expression]
+
+        Display the value of the expression if it changed, each time execution
+        stops in the current frame.
+
+        Without expression, list all display expressions for the current frame.
+        """
+        if not arg:
+            self.message('Currently displaying:')
+            for item in self.displaying.get(self.curframe, {}).items():
+                self.message('%s: %r' % item)
+        else:
+            val = self._getval_except(arg)
+            self.displaying.setdefault(self.curframe, {})[arg] = val
+            self.message('display %s: %r' % (arg, val))
+
+    def do_undisplay(self, arg):
+        """undisplay [expression]
+
+        Do not display the expression any more in the current frame.
+
+        Without expression, clear all display expressions for the current frame.
+        """
+        if arg:
+            try:
+                del self.displaying.get(self.curframe, {})[arg]
+            except KeyError:
+                self.error('not displaying %s' % arg)
+        else:
+            self.displaying.pop(self.curframe, None)
 
     def do_interact(self, arg):
         """interact
@@ -1380,8 +1444,8 @@ if __doc__ is not None:
         'help', 'where', 'down', 'up', 'break', 'tbreak', 'clear', 'disable',
         'enable', 'ignore', 'condition', 'commands', 'step', 'next', 'until',
         'jump', 'return', 'retval', 'run', 'continue', 'list', 'longlist',
-        'args', 'print', 'pp', 'whatis', 'source', 'interact', 'alias',
-        'unalias', 'debug', 'quit',
+        'args', 'print', 'pp', 'whatis', 'source', 'display', 'undisplay',
+        'interact', 'alias', 'unalias', 'debug', 'quit',
     ]
 
     for _command in _help_order:
