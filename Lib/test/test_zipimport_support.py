@@ -200,7 +200,7 @@ class ZipSupportTests(ImportHooksBaseTestCase):
                         pass
 
                     import pdb
-                    pdb.runcall(f)
+                    pdb.Pdb(nosigint=True).runcall(f)
                     """)
         with temp_dir() as d:
             script_name = make_script(d, 'script', test_src)
