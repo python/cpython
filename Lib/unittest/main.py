@@ -58,7 +58,24 @@ Examples:
                                                in MyTestCase
 """
 
+def _convert_name(name):
+    # on Linux / Mac OS X 'foo.PY' is not importable, but on
+    # Windows it is. Simpler to do a case insensitive match
+    # a better check would be to check that the name is a
+    # valid Python module name.
+    if os.path.isfile(name) and name.lower().endswith('.py'):
+        if os.path.isabs(name):
+            rel_path = os.path.relpath(name, os.getcwd())
+            if os.path.isabs(rel_path) or rel_path.startswith(os.pardir):
+                return name
+            name = rel_path
+        # on Windows both '\' and '/' are used as path
+        # separators. Better to replace both than rely on os.path.sep
+        return name[:-3].replace('\\', '.').replace('/', '.')
+    return name
 
+def _convert_names(names):
+    return [_convert_name(name) for name in names]
 
 class TestProgram(object):
     """A command-line program that runs a set of tests; this is primarily
@@ -153,7 +170,7 @@ class TestProgram(object):
                 # createTests will load tests from self.module
                 self.testNames = None
             elif len(args) > 0:
-                self.testNames = args
+                self.testNames = _convert_names(args)
                 if __name__ == '__main__':
                     # to support python -m unittest ...
                     self.module = None

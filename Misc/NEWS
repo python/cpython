@@ -37,6 +37,13 @@ Core and Builtins
 Library
 -------
 
+- Issue 10620: `python -m unittest` can accept file paths instead of module
+  names for running specific tests.
+
+- Issue #9424: Deprecate the `unittest.TestCase` methods `assertEquals`,
+  `assertNotEquals`, `assertAlmostEquals`, `assertNotAlmostEquals` and `assert_`
+  and replace them with the correct methods in the Python test suite.
+
 - Issue #10272: The ssl module now raises socket.timeout instead of a generic
   SSLError on socket timeouts.
 
@@ -235,10 +242,6 @@ Tests
 
 - `python -m test` can be used to run the test suite as well as
   `python -m test.regrtest`.
-
-- Issue #9424: Deprecate the `unittest.TestCase` methods `assertEquals`,
-  `assertNotEquals`, `assertAlmostEquals`, `assertNotAlmostEquals` and `assert_`
-  and replace them with the correct methods in the Python test suite.
 
 - Do not fail test_socket when the IP address of the local hostname cannot be
   looked up.
