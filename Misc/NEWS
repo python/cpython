@@ -10,6 +10,9 @@ What's New in Python 3.2 Beta 1?
 Core and Builtins
 -----------------
 
+- Issue #1772833: Add the -q command-line option to suppress copyright
+  and version output in interactive mode.
+
 - Provide an *optimize* parameter in the built-in compile() function.
 
 - Fixed several corner case issues on os.stat/os.lstat related to reparse

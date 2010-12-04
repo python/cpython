@@ -26,6 +26,9 @@ python \- an interpreted, interactive, object-oriented programming language
 .B \-m 
 .I module-name
 ]
+[
+.B \-q
+]
 .br
        [
 .B \-O
@@ -144,6 +147,10 @@ to \fI.pyo\fP.  Given twice, causes docstrings to be discarded.
 .TP
 .B \-O0
 Discard docstrings in addition to the \fB-O\fP optimizations.
+.TP
+.B \-q
+Do not print the version and copyright messages. These messages are 
+also suppressed in non-interactive mode.
 .TP
 .BI "\-Q " argument
 Division control; see PEP 238.  The argument must be one of "old" (the
