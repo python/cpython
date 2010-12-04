@@ -61,10 +61,15 @@ the Oracle Berkeley DB.
    modified by the prevailing umask).
 
 
-The object returned by :func:`.open` supports most of the same functionality as
+The object returned by :func:`.open` supports the same basic functionality as
 dictionaries; keys and their corresponding values can be stored, retrieved, and
 deleted, and the :keyword:`in` operator and the :meth:`keys` method are
-available. Key and values are always stored as bytes. This means that when
+available, as well as :meth:`get` and :meth:`setdefault`.
+
+.. versionchanged:: 3.2
+   :meth:`get` and :meth:`setdefault` are now available in all database modules.
+
+Key and values are always stored as bytes. This means that when
 strings are used they are implicitly converted to the default encoding before
 being stored.
 

@@ -203,7 +203,7 @@ class _Database(collections.MutableMapping):
         # The blocks used by the associated value are lost.
         del self._index[key]
         # XXX It's unclear why we do a _commit() here (the code always
-        # XXX has, so I'm not changing it).  _setitem__ doesn't try to
+        # XXX has, so I'm not changing it).  __setitem__ doesn't try to
         # XXX keep the directory file in synch.  Why should we?  Or
         # XXX why shouldn't __setitem__?
         self._commit()
@@ -232,7 +232,7 @@ class _Database(collections.MutableMapping):
 
     __del__ = close
 
-    def _chmod (self, file):
+    def _chmod(self, file):
         if hasattr(self._os, 'chmod'):
             self._os.chmod(file, self._mode)
 

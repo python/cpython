@@ -135,6 +135,28 @@ dbm_subscript(dbmobject *dp, register PyObject *key)
     return v;
 }
 
+PyDoc_STRVAR(dbm_get__doc__,
+"get(key[, default]) -> value\n\
+Get the value for key, or default if not present; if not given,\n\
+default is None.");
+
+static PyObject *
+dbm_get(dbmobject *dp, PyObject *args)
+{
+    PyObject *v, *res;
+    PyObject *def = Py_None;
+
+    if (!PyArg_UnpackTuple(args, "get", 1, 2, &v, &def))
+        return NULL;
+    res = dbm_subscript(dp, v);
+    if (res == NULL && PyErr_ExceptionMatches(PyExc_KeyError)) {
+        PyErr_Clear();
+        Py_INCREF(def);
+        return def;
+    }
+    return res;
+}
+
 static int
 dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
 {
@@ -174,6 +196,29 @@ dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
         }
     }
     return 0;
+}
+
+PyDoc_STRVAR(dbm_setdefault__doc__,
+"setdefault(key[, default]) -> value\n\
+Get value for key, or set it to default and return default if not present;\n\
+if not given, default is None.");
+
+static PyObject *
+dbm_setdefault(dbmobject *dp, PyObject *args)
+{
+    PyObject *v, *res;
+    PyObject *def = Py_None;
+
+    if (!PyArg_UnpackTuple(args, "setdefault", 1, 2, &v, &def))
+        return NULL;
+    res = dbm_subscript(dp, v);
+    if (res == NULL && PyErr_ExceptionMatches(PyExc_KeyError)) {
+        PyErr_Clear();
+        if (dbm_ass_sub(dp, v, def) < 0)
+            return NULL;
+        return dbm_subscript(dp, v);
+    }
+    return res;
 }
 
 static PyMappingMethods dbm_as_mapping = {
@@ -378,6 +423,8 @@ static PyMethodDef dbm_methods[] = {
     {"nextkey",   (PyCFunction)dbm_nextkey, METH_VARARGS, dbm_nextkey__doc__},
     {"reorganize",(PyCFunction)dbm_reorganize,METH_NOARGS, dbm_reorganize__doc__},
     {"sync",      (PyCFunction)dbm_sync,    METH_NOARGS, dbm_sync__doc__},
+    {"get",       (PyCFunction)dbm_get,     METH_VARARGS, dbm_get__doc__},
+    {"setdefault",(PyCFunction)dbm_setdefault,METH_VARARGS, dbm_setdefault__doc__},
     {NULL,              NULL}           /* sentinel */
 };
 

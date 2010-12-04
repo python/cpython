@@ -32,6 +32,10 @@ class TestGdbm(unittest.TestCase):
             key_set.remove(key)
             key = self.g.nextkey(key)
         self.assertRaises(KeyError, lambda: self.g['xxx'])
+        # get() and setdefault() work as in the dict interface
+        self.assertEqual(self.g.get(b'xxx', b'foo'), b'foo')
+        self.assertEqual(self.g.setdefault(b'xxx', b'foo'), b'foo')
+        self.assertEqual(self.g[b'xxx'], b'foo')
 
     def test_error_conditions(self):
         # Try to open a non-existent database.
