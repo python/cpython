@@ -339,6 +339,7 @@ import traceback
 import gc
 import signal
 import builtins
+import warnings
 
 # Exception classes used by this module.
 class CalledProcessError(Exception):
@@ -378,7 +379,6 @@ else:
         import _posixsubprocess
     except ImportError:
         _posixsubprocess = None
-        import warnings
         warnings.warn("The _posixsubprocess module is not being used. "
                       "Child process reliability may suffer if your "
                       "program uses threads.", RuntimeWarning)
@@ -605,7 +605,7 @@ def getoutput(cmd):
 class Popen(object):
     def __init__(self, args, bufsize=0, executable=None,
                  stdin=None, stdout=None, stderr=None,
-                 preexec_fn=None, close_fds=False, shell=False,
+                 preexec_fn=None, close_fds=None, shell=False,
                  cwd=None, env=None, universal_newlines=False,
                  startupinfo=None, creationflags=0,
                  restore_signals=True, start_new_session=False):
@@ -617,6 +617,15 @@ class Popen(object):
             bufsize = 0  # Restore default
         if not isinstance(bufsize, int):
             raise TypeError("bufsize must be an integer")
+
+        if close_fds is None:
+            # Notification for http://bugs.python.org/issue7213 & issue2320
+            warnings.warn(
+                    'The close_fds parameter was not specified.  Its default'
+                    ' will change from False to True in a future Python'
+                    ' version.  Most users should set it to True.  Please'
+                    ' update your code explicitly set close_fds.',
+                    DeprecationWarning)
 
         if mswindows:
             if preexec_fn is not None:

@@ -9,6 +9,7 @@ import tempfile
 import time
 import re
 import sysconfig
+import warnings
 try:
     import gc
 except ImportError:
@@ -55,6 +56,34 @@ class BaseTestCase(unittest.TestCase):
         # from a spawned Python process.
         actual = support.strip_python_stderr(stderr)
         self.assertEqual(actual, expected, msg)
+
+
+class DeprecationWarningTests(BaseTestCase):
+    def setUp(self):
+        BaseTestCase.setUp(self)
+        self._saved_warn = warnings.warn
+        self._warn_calls = []
+        warnings.warn = self._record_warn
+
+    def tearDown(self):
+        warnings.warn = self._saved_warn
+        BaseTestCase.tearDown(self)
+
+    def _record_warn(self, *args):
+        """A warnings.warn function that records calls."""
+        self._warn_calls.append(args)
+        self._saved_warn(*args)
+
+    def testCloseFdsWarning(self):
+        quick_process = [sys.executable, "-c", "import sys; sys.exit(0)"]
+        subprocess.call(quick_process, close_fds=True)
+        self.assertEqual([], self._warn_calls)
+        subprocess.call(quick_process, close_fds=False)
+        self.assertEqual([], self._warn_calls)
+        self.assertWarns(DeprecationWarning, subprocess.call, quick_process)
+        self.assertEqual(1, len(self._warn_calls))
+        self.assertIn('close_fds parameter was not specified',
+                      self._warn_calls[0][0])
 
 
 class ProcessTestCase(BaseTestCase):
@@ -1233,7 +1262,8 @@ def test_main():
                   ProcessTestCaseNoPoll,
                   HelperFunctionTests,
                   CommandsWithSpaces,
-                  ContextManagerTests)
+                  ContextManagerTests,
+                  DeprecationWarningTests)
 
     support.run_unittest(*unit_tests)
     support.reap_children()

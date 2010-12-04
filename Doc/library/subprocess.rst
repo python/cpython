@@ -153,9 +153,14 @@ This module defines one class called :class:`Popen`:
 
    If *close_fds* is true, all file descriptors except :const:`0`, :const:`1` and
    :const:`2` will be closed before the child process is executed. (Unix only).
-   Or, on Windows, if *close_fds* is true then no handles will be inherited by the
+   The recommended value for this argument is True.
+   On Windows, if *close_fds* is true then no handles will be inherited by the
    child process.  Note that on Windows, you cannot set *close_fds* to true and
    also redirect the standard handles by setting *stdin*, *stdout* or *stderr*.
+
+.. versionchanged:: 3.2
+   Callers should always specify a *close_fds* to avoid a DeprecationWarning.
+   The default value for this argument will be changing in Python 3.3.
 
    If *shell* is :const:`True`, the specified command will be executed through the
    shell.
