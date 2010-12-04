@@ -49,7 +49,7 @@
 
 This article explains the new features in Python 3.2, compared to 3.1.
 
-PEP 382: Defining a Stable ABI
+PEP 384: Defining a Stable ABI
 ==============================
 
 In the past, extension modules built for one Python version were often
