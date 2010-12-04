@@ -220,6 +220,13 @@ Miscellaneous options
    Discard docstrings in addition to the :option:`-O` optimizations.
 
 
+.. cmdoption:: -q
+
+   Don't display the copyright and version messages even in interactive mode.
+
+   .. versionadded:: 3.2
+
+
 .. cmdoption:: -s
 
    Don't add user site directory to sys.path
