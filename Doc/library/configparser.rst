@@ -836,7 +836,11 @@ SafeConfigParser Objects
 
       Add a section named *section* to the instance.  If a section by the given
       name already exists, :exc:`DuplicateSectionError` is raised.  If the
-      *default section* name is passed, :exc:`ValueError` is raised.
+      *default section* name is passed, :exc:`ValueError` is raised.  The name
+      of the section must be a string; if not, :exc:`TypeError` is raised.
+
+      .. versionchanged:: 3.2
+         Non-string section names raise :exc:`TypeError`.
 
 
    .. method:: has_section(section)
@@ -976,8 +980,8 @@ SafeConfigParser Objects
    .. method:: set(section, option, value)
 
       If the given section exists, set the given option to the specified value;
-      otherwise raise :exc:`NoSectionError`.  *value* must be a string; if not,
-      :exc:`TypeError` is raised.
+      otherwise raise :exc:`NoSectionError`.  *option* and *value* must be
+      strings; if not, :exc:`TypeError` is raised.
 
 
    .. method:: write(fileobject, space_around_delimiters=True)
@@ -1044,12 +1048,22 @@ RawConfigParser Objects
 .. class:: RawConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=_COMPATIBLE, strict=False, empty_lines_in_values=True, default_section=configaparser.DEFAULTSECT, interpolation=None)
 
    Legacy variant of the :class:`SafeConfigParser` with interpolation disabled
-   by default and an unsafe ``set`` method.
+   by default and unsafe ``add_section`` and ``set`` methods.
 
    .. note::
       Consider using :class:`SafeConfigParser` instead which checks types of
       the values to be stored internally. If you don't want interpolation, you
       can use ``SafeConfigParser(interpolation=None)``.
+
+
+   .. method:: add_section(section)
+
+      Add a section named *section* to the instance.  If a section by the given
+      name already exists, :exc:`DuplicateSectionError` is raised.  If the
+      *default section* name is passed, :exc:`ValueError` is raised.
+
+      Type of *section* is not checked which lets users create non-string named
+      sections. This behaviour is unsupported and may cause internal errors.
 
 
    .. method:: set(section, option, value)

@@ -727,11 +727,15 @@ class RawConfigParser(MutableMapping):
         that should be present in the section. If the used dictionary type
         preserves order, sections and their keys will be added in order.
 
+        All types held in the dictionary are converted to strings during
+        reading, including section names, option names and keys.
+
         Optional second argument is the `source' specifying the name of the
         dictionary being read.
         """
         elements_added = set()
         for section, keys in dictionary.items():
+            section = str(section)
             try:
                 self.add_section(section)
             except (DuplicateSectionError, ValueError):
@@ -739,7 +743,7 @@ class RawConfigParser(MutableMapping):
                     raise
                 elements_added.add(section)
             for key, value in keys.items():
-                key = self.optionxform(key)
+                key = self.optionxform(str(key))
                 if value is not None:
                     value = str(value)
                 if self._strict and (section, key) in elements_added:
@@ -1128,7 +1132,7 @@ class RawConfigParser(MutableMapping):
             raise ValueError('Not a boolean: %s' % value)
         return self.BOOLEAN_STATES[value.lower()]
 
-    def _validate_value_type(self, value):
+    def _validate_value_types(self, *, section="", option="", value=""):
         """Raises a TypeError for non-string values.
 
         The only legal non-string value if we allow valueless
@@ -1141,6 +1145,10 @@ class RawConfigParser(MutableMapping):
         for RawConfigParsers and ConfigParsers. It is invoked in every
         case for mapping protocol access and in SafeConfigParser.set().
         """
+        if not isinstance(section, str):
+            raise TypeError("section names must be strings")
+        if not isinstance(option, str):
+            raise TypeError("option keys must be strings")
         if not self._allow_no_value or value:
             if not isinstance(value, str):
                 raise TypeError("option values must be strings")
@@ -1169,8 +1177,15 @@ class SafeConfigParser(ConfigParser):
     def set(self, section, option, value=None):
         """Set an option.  Extends RawConfigParser.set by validating type and
         interpolation syntax on the value."""
-        self._validate_value_type(value)
+        self._validate_value_types(option=option, value=value)
         super().set(section, option, value)
+
+    def add_section(self, section):
+        """Create a new section in the configuration.  Extends
+        RawConfigParser.add_section by validating if the section name is
+        a string."""
+        self._validate_value_types(section=section)
+        super().add_section(section)
 
 
 class SectionProxy(MutableMapping):
@@ -1196,7 +1211,7 @@ class SectionProxy(MutableMapping):
         return self._parser.get(self._name, key)
 
     def __setitem__(self, key, value):
-        self._parser._validate_value_type(value)
+        self._parser._validate_value_types(option=key, value=value)
         return self._parser.set(self._name, key, value)
 
     def __delitem__(self, key):
