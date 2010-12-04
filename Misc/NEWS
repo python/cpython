@@ -49,6 +49,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7245: Add a SIGINT handler in pdb that allows to break a program
+  again after a "continue" command.
+
 - Add the "interact" pdb command.
 
 - Issue #7905: Actually respect the keyencoding parameter to shelve.Shelf.

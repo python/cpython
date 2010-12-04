@@ -66,14 +66,15 @@ Debugger commands
 # NOTE: the actual command documentation is collected from docstrings of the
 # commands and is appended to __doc__ after the class has been defined.
 
+import os
+import re
 import sys
 import cmd
 import bdb
 import dis
-import os
-import re
 import code
 import pprint
+import signal
 import inspect
 import traceback
 import linecache
@@ -133,7 +134,8 @@ line_prefix = '\n-> '   # Probably a better default
 
 class Pdb(bdb.Bdb, cmd.Cmd):
 
-    def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None):
+    def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None,
+                 nosigint=False):
         bdb.Bdb.__init__(self, skip=skip)
         cmd.Cmd.__init__(self, completekey, stdin, stdout)
         if stdout:
@@ -148,6 +150,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             import readline
         except ImportError:
             pass
+        self.allow_kbdint = False
+        self.nosigint = nosigint
 
         # Read $HOME/.pdbrc and ./.pdbrc
         self.rcLines = []
@@ -173,6 +177,15 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                                        # a command list
         self.commands_bnum = None # The breakpoint number for which we are
                                   # defining a list
+
+    def sigint_handler(self, signum, frame):
+        if self.allow_kbdint:
+            raise KeyboardInterrupt
+        self.message("\nProgram interrupted. (Use 'cont' to resume).")
+        self.set_step()
+        self.set_trace(frame)
+        # restore previous signal handler
+        signal.signal(signal.SIGINT, self._previous_sigint_handler)
 
     def reset(self):
         bdb.Bdb.reset(self)
@@ -261,7 +274,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             if not self.commands_silent[currentbp]:
                 self.print_stack_entry(self.stack[self.curindex])
             if self.commands_doprompt[currentbp]:
-                self.cmdloop()
+                self._cmdloop()
             self.forget()
             return
         return 1
@@ -286,6 +299,17 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.interaction(frame, exc_traceback)
 
     # General interaction function
+    def _cmdloop(self):
+        while True:
+            try:
+                # keyboard interrupts allow for an easy way to cancel
+                # the current command, so allow them during interactive input
+                self.allow_kbdint = True
+                self.cmdloop()
+                self.allow_kbdint = False
+                break
+            except KeyboardInterrupt:
+                self.message('--KeyboardInterrupt--')
 
     def interaction(self, frame, traceback):
         if self.setup(frame, traceback):
@@ -294,7 +318,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.forget()
             return
         self.print_stack_entry(self.stack[self.curindex])
-        self.cmdloop()
+        self._cmdloop()
         self.forget()
 
     def displayhook(self, obj):
@@ -909,6 +933,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """c(ont(inue))
         Continue execution, only stop when a breakpoint is encountered.
         """
+        if not self.nosigint:
+            self._previous_sigint_handler = \
+                signal.signal(signal.SIGINT, self.sigint_handler)
         self.set_continue()
         return 1
     do_c = do_cont = do_continue

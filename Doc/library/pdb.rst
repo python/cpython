@@ -135,7 +135,8 @@ The ``run_*`` functions and :func:`set_trace` are aliases for instantiating the
 :class:`Pdb` class and calling the method of the same name.  If you want to
 access further features, you have to do this yourself:
 
-.. class:: Pdb(completekey='tab', stdin=None, stdout=None, skip=None)
+.. class:: Pdb(completekey='tab', stdin=None, stdout=None, skip=None, \
+               nosigint=False)
 
    :class:`Pdb` is the debugger class.
 
@@ -146,12 +147,21 @@ access further features, you have to do this yourself:
    patterns.  The debugger will not step into frames that originate in a module
    that matches one of these patterns. [1]_
 
+   By default, Pdb sets a handler for the SIGINT signal (which is sent when the
+   user presses Ctrl-C on the console) when you give a ``continue`` command.
+   This allows you to break into the debugger again by pressing Ctrl-C.  If you
+   want Pdb not to touch the SIGINT handler, set *nosigint* tot true.
+
    Example call to enable tracing with *skip*::
 
       import pdb; pdb.Pdb(skip=['django.*']).set_trace()
 
    .. versionadded:: 3.1
       The *skip* argument.
+
+   .. versionadded:: 3.2
+      The *nosigint* argument.  Previously, a SIGINT handler was never set by
+      Pdb.
 
    .. method:: run(statement, globals=None, locals=None)
                runeval(expression, globals=None, locals=None)
