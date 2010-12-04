@@ -609,11 +609,8 @@ float_rem(PyObject *v, PyObject *w)
     else {
         /* the remainder is zero, and in the presence of signed zeroes
            fmod returns different results across platforms; ensure
-           it has the same sign as the denominator; we'd like to do
-           "mod = wx * 0.0", but that may get optimized away */
-        mod *= mod;  /* hide "mod = +0" from optimizer */
-        if (wx < 0.0)
-            mod = -mod;
+           it has the same sign as the denominator. */
+        mod = copysign(0.0, wx);
     }
     PyFPE_END_PROTECT(mod)
     return PyFloat_FromDouble(mod);
@@ -649,11 +646,8 @@ float_divmod(PyObject *v, PyObject *w)
     else {
         /* the remainder is zero, and in the presence of signed zeroes
            fmod returns different results across platforms; ensure
-           it has the same sign as the denominator; we'd like to do
-           "mod = wx * 0.0", but that may get optimized away */
-        mod *= mod;  /* hide "mod = +0" from optimizer */
-        if (wx < 0.0)
-            mod = -mod;
+           it has the same sign as the denominator. */
+        mod = copysign(0.0, wx);
     }
     /* snap quotient to nearest integral value */
     if (div) {
@@ -663,8 +657,7 @@ float_divmod(PyObject *v, PyObject *w)
     }
     else {
         /* div is zero - get the same sign as the true quotient */
-        div *= div;             /* hide "div = +0" from optimizers */
-        floordiv = div * vx / wx; /* zero w/ sign of vx/wx */
+        floordiv = copysign(0.0, vx / wx); /* zero w/ sign of vx/wx */
     }
     PyFPE_END_PROTECT(floordiv)
     return Py_BuildValue("(dd)", floordiv, mod);
