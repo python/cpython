@@ -10,6 +10,9 @@ What's New in Python 3.2 Beta 1?
 Core and Builtins
 -----------------
 
+- Fixed several corner case issues on os.stat/os.lstat related to reparse
+  points. (Windows)
+
 - PEP 384 (Defining a Stable ABI) is implemented.
 
 - Issue #2690: Range objects support negative indices and slicing
