@@ -302,13 +302,14 @@ class RefactoringTool(object):
 
         Files and subdirectories starting with '.' are skipped.
         """
+        py_ext = os.extsep + "py"
         for dirpath, dirnames, filenames in os.walk(dir_name):
             self.log_debug("Descending into %s", dirpath)
             dirnames.sort()
             filenames.sort()
             for name in filenames:
-                if not name.startswith(".") and \
-                        os.path.splitext(name)[1].endswith("py"):
+                if (not name.startswith(".") and
+                    os.path.splitext(name)[1] == py_ext):
                     fullname = os.path.join(dirpath, name)
                     self.refactor_file(fullname, write, doctests_only)
             # Modify dirnames in-place to remove subdirs with leading dots

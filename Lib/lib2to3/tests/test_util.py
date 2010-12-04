@@ -568,8 +568,8 @@ class Test_touch_import(support.TestCase):
 
     def test_from_import(self):
         node = parse('bar()')
-        fixer_util.touch_import("cgi", "escape", node)
-        self.assertEqual(str(node), 'from cgi import escape\nbar()\n\n')
+        fixer_util.touch_import("html", "escape", node)
+        self.assertEqual(str(node), 'from html import escape\nbar()\n\n')
 
     def test_name_import(self):
         node = parse('bar()')
