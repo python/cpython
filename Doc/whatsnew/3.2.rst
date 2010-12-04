@@ -405,7 +405,8 @@ New, Improved, and Deprecated Modules
 
   >>> get_phone_number.cache_clear()
 
-  (Contributed by Raymond Hettinger.)
+  (Contributed by Raymond Hettinger and incorporating design ideas from
+  Jim Baker, Miki Tebeka, and Nick Coglan.)
 
 * The :func:`functools.wraps` decorator now adds a :attr:`__wrapped__` attribute
   pointing to the original callable function.  This allows wrapped functions to
@@ -415,6 +416,22 @@ New, Improved, and Deprecated Modules
 
   (By Nick Coghlan and Terrence Cole; :issue:`9567`, :issue:`3445`, and
   :issue:`8814`.)
+
+* The :mod:`itertools` module has a new function, :func:`~itertools.accumulate`
+  modeled on APL's *scan* and on Numpy's *accumulate* function:
+
+  >>> list(accumulate(8, 2, 50))
+  [8, 10, 60]
+
+  >>> prob_dist = [0.1, 0.4, 0.2, 0.3]
+  >>> list(accumulate(prob_dist))      # cumulative probability distribution
+  [0.1, 0.5, 0.7, 1.0]
+
+  For an example using :func:`~itertools.accumulate`, see the :ref:`examples for
+  the random module <random-examples>`.
+
+  (Contributed by Raymond Hettinger and incorporating design suggestions
+  from Mark Dickinson.)
 
 * The :mod:`nntplib` module gets a revamped implementation with better
   bytes / unicode semantics as well as more practical APIs.  These improvements
