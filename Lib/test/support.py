@@ -42,7 +42,7 @@ __all__ = [
     "set_memlimit", "bigmemtest", "bigaddrspacetest", "BasicTestRunner",
     "run_unittest", "run_doctest", "threading_setup", "threading_cleanup",
     "reap_children", "cpython_only", "check_impl_detail", "get_attribute",
-    "swap_item", "swap_attr"]
+    "swap_item", "swap_attr", "requires_IEEE_754"]
 
 
 class Error(Exception):
