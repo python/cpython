@@ -716,10 +716,20 @@ float_rem(PyObject *v, PyObject *w)
 #endif
     PyFPE_START_PROTECT("modulo", return 0)
     mod = fmod(vx, wx);
-    /* note: checking mod*wx < 0 is incorrect -- underflows to
-       0 if wx < sqrt(smallest nonzero double) */
-    if (mod && ((wx < 0) != (mod < 0))) {
-        mod += wx;
+    if (mod) {
+        /* ensure the remainder has the same sign as the denominator */
+        if ((wx < 0) != (mod < 0)) {
+            mod += wx;
+        }
+    }
+    else {
+        /* the remainder is zero, and in the presence of signed zeroes
+           fmod returns different results across platforms; ensure
+           it has the same sign as the denominator; we'd like to do
+           "mod = wx * 0.0", but that may get optimized away */
+        mod *= mod;  /* hide "mod = +0" from optimizer */
+        if (wx < 0.0)
+            mod = -mod;
     }
     PyFPE_END_PROTECT(mod)
     return PyFloat_FromDouble(mod);
