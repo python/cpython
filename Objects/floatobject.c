@@ -575,13 +575,11 @@ float_div(PyObject *v, PyObject *w)
     double a,b;
     CONVERT_TO_DOUBLE(v, a);
     CONVERT_TO_DOUBLE(w, b);
-#ifdef Py_NAN
     if (b == 0.0) {
         PyErr_SetString(PyExc_ZeroDivisionError,
                         "float division by zero");
         return NULL;
     }
-#endif
     PyFPE_START_PROTECT("divide", return 0)
     a = a / b;
     PyFPE_END_PROTECT(a)
@@ -595,13 +593,11 @@ float_rem(PyObject *v, PyObject *w)
     double mod;
     CONVERT_TO_DOUBLE(v, vx);
     CONVERT_TO_DOUBLE(w, wx);
-#ifdef Py_NAN
     if (wx == 0.0) {
         PyErr_SetString(PyExc_ZeroDivisionError,
                         "float modulo");
         return NULL;
     }
-#endif
     PyFPE_START_PROTECT("modulo", return 0)
     mod = fmod(vx, wx);
     /* note: checking mod*wx < 0 is incorrect -- underflows to
@@ -1492,13 +1488,11 @@ float_as_integer_ratio(PyObject *v, PyObject *unused)
                       "Cannot pass infinity to float.as_integer_ratio.");
       return NULL;
     }
-#ifdef Py_NAN
     if (Py_IS_NAN(self)) {
       PyErr_SetString(PyExc_ValueError,
                       "Cannot pass NaN to float.as_integer_ratio.");
       return NULL;
     }
-#endif
 
     PyFPE_START_PROTECT("as_integer_ratio", goto error);
     float_part = frexp(self, &exponent);        /* self == float_part * 2**exponent exactly */
