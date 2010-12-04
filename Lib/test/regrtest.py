@@ -659,16 +659,16 @@ def runtest_inner(test, generate, verbose, quiet, test_times,
     except KeyboardInterrupt:
         raise
     except support.TestFailed as msg:
-        print("test", test, "failed --", msg)
-        sys.stdout.flush()
+        print("test", test, "failed --", msg, file=sys.stderr)
+        sys.stderr.flush()
         return 0
     except:
         type, value = sys.exc_info()[:2]
-        print("test", test, "crashed --", str(type) + ":", value)
-        sys.stdout.flush()
+        print("test", test, "crashed --", str(type) + ":", value, file=sys.stderr)
+        sys.stderr.flush()
         if verbose or debug:
-            traceback.print_exc(file=sys.stdout)
-            sys.stdout.flush()
+            traceback.print_exc(file=sys.stderr)
+            sys.stderr.flush()
         return 0
     else:
         if refleak:
