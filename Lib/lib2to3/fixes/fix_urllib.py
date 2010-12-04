@@ -12,7 +12,7 @@ from lib2to3.fixer_util import (Name, Comma, FromImport, Newline,
 
 MAPPING = {"urllib":  [
                 ("urllib.request",
-                    ["URLOpener", "FancyURLOpener", "urlretrieve",
+                    ["URLopener", "FancyURLopener", "urlretrieve",
                      "_urlopener", "urlopen", "urlcleanup",
                      "pathname2url", "url2pathname"]),
                 ("urllib.parse",

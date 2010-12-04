@@ -223,6 +223,7 @@ from __future__ import print_function"""
                 "hi.py",
                 ".dumb",
                 ".after.py",
+                "notpy.npy",
                 "sappy"]
         expected = ["hi.py"]
         check(tree, expected)
