@@ -2,8 +2,9 @@ import collections
 import configparser
 import io
 import os
-import unittest
+import sys
 import textwrap
+import unittest
 import warnings
 
 from test import support
@@ -1084,6 +1085,17 @@ def test_main():
         ConfigParserTestCaseNonStandardDefaultSection,
         )
 
+def test_coverage(coverdir):
+    trace = support.import_module('trace')
+    tracer=trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix,], trace=0,
+                       count=1)
+    tracer.run('test_main()')
+    r=tracer.results()
+    print("Writing coverage results...")
+    r.write_results(show_missing=True, summary=True, coverdir=coverdir)
 
 if __name__ == "__main__":
-    test_main()
+    if "-c" in sys.argv:
+        test_coverage('/tmp/cmd.cover')
+    else:
+        test_main()
