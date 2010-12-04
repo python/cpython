@@ -162,6 +162,26 @@ class GeneralFloatCases(unittest.TestCase):
         self.assertEqual((a, copysign(1.0, a)), (b, copysign(1.0, b)))
 
     @requires_IEEE_754
+    def test_float_mod(self):
+        # Check behaviour of % operator for IEEE 754 special cases.
+        # In particular, check signs of zeros.
+        mod = operator.mod
+
+        self.assertEqualAndEqualSign(mod(-1.0, 1.0), 0.0)
+        self.assertEqualAndEqualSign(mod(-1e-100, 1.0), 1.0)
+        self.assertEqualAndEqualSign(mod(-0.0, 1.0), 0.0)
+        self.assertEqualAndEqualSign(mod(0.0, 1.0), 0.0)
+        self.assertEqualAndEqualSign(mod(1e-100, 1.0), 1e-100)
+        self.assertEqualAndEqualSign(mod(1.0, 1.0), 0.0)
+
+        self.assertEqualAndEqualSign(mod(-1.0, -1.0), -0.0)
+        self.assertEqualAndEqualSign(mod(-1e-100, -1.0), -1e-100)
+        self.assertEqualAndEqualSign(mod(-0.0, -1.0), -0.0)
+        self.assertEqualAndEqualSign(mod(0.0, -1.0), -0.0)
+        self.assertEqualAndEqualSign(mod(1e-100, -1.0), -1.0)
+        self.assertEqualAndEqualSign(mod(1.0, -1.0), -0.0)
+
+    @requires_IEEE_754
     def test_float_pow(self):
         # test builtin pow and ** operator for IEEE 754 special cases.
         # Special cases taken from section F.9.4.4 of the C99 specification
