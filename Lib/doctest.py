@@ -318,7 +318,8 @@ class _OutputRedirectingPdb(pdb.Pdb):
     def __init__(self, out):
         self.__out = out
         self.__debugger_used = False
-        pdb.Pdb.__init__(self, stdout=out)
+        # do not play signal games in the pdb
+        pdb.Pdb.__init__(self, stdout=out, nosigint=True)
         # still use input() to get user input
         self.use_rawinput = 1
 
@@ -2528,14 +2529,16 @@ def debug_script(src, pm=False, globs=None):
                     exec(f.read(), globs, globs)
             except:
                 print(sys.exc_info()[1])
-                pdb.post_mortem(sys.exc_info()[2])
+                p = pdb.Pdb(nosigint=True)
+                p.reset()
+                p.interaction(None, sys.exc_info()[2])
         else:
             fp = open(srcfilename)
             try:
                 script = fp.read()
             finally:
                 fp.close()
-            pdb.run("exec(%r)" % script, globs, globs)
+            pdb.Pdb(nosigint=True).run("exec(%r)" % script, globs, globs)
 
     finally:
         os.remove(srcfilename)
