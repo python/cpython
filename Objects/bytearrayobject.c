@@ -589,7 +589,7 @@ bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *valu
         needed = 0;
     }
     else if (values == (PyObject *)self || !PyByteArray_Check(values)) {
-        /* Make a copy an call this function recursively */
+        /* Make a copy and call this function recursively */
         int err;
         values = PyByteArray_FromObject(values);
         if (values == NULL)
