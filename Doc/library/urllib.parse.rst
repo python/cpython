@@ -316,7 +316,7 @@ Structured Parse Results
 ------------------------
 
 The result objects from the :func:`urlparse`, :func:`urlsplit`  and
-:func:`urldefrag`functions are subclasses of the :class:`tuple` type.
+:func:`urldefrag` functions are subclasses of the :class:`tuple` type.
 These subclasses add the attributes listed in the documentation for
 those functions, the encoding and decoding support described in the
 previous section, as well as an additional method:

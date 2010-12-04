@@ -454,8 +454,8 @@ are always available.  They are listed here in alphabetical order.
       sign: "+" | "-"
       infinity: "Infinity" | "inf"
       nan: "nan"
-      numeric-value: `floatnumber` | `infinity` | `nan`
-      numeric-string: [`sign`] `numeric-value`
+      numeric_value: `floatnumber` | `infinity` | `nan`
+      numeric_string: [`sign`] `numeric_value`
 
    Here ``floatnumber`` is the form of a Python floating-point literal,
    described in :ref:`floating`.  Case is not significant, so, for example,
