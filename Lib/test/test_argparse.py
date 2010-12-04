@@ -4315,7 +4315,7 @@ class TestImportStar(TestCase):
         items = [
             name
             for name, value in vars(argparse).items()
-            if not name.startswith("_")
+            if not (name.startswith("_") or name == 'ngettext')
             if not inspect.ismodule(value)
         ]
         self.assertEqual(sorted(items), sorted(argparse.__all__))

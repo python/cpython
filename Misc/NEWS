@@ -49,6 +49,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #4391: Use proper plural forms in argparse.
+
 - Issue #10601: sys.displayhook uses 'backslashreplace' error handler on
   UnicodeEncodeError.
 
