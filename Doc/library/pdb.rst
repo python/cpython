@@ -417,6 +417,22 @@ by the local file.
 
    .. versionadded:: 3.2
 
+.. pdbcommand:: display [expression]
+
+   Display the value of the expression if it changed, each time execution stops
+   in the current frame.
+
+   Without expression, list all display expressions for the current frame.
+
+   .. versionadded:: 3.2
+
+.. pdbcommand:: undisplay [expression]
+
+   Do not display the expression any more in the current frame.  Without
+   expression, clear all display expressions for the current frame.
+
+   .. versionadded:: 3.2
+
 .. pdbcommand:: interact
 
    Start an interative interpreter (using the :mod:`code` module) whose global
