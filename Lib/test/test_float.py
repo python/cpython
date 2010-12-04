@@ -240,6 +240,31 @@ class GeneralFloatCases(unittest.TestCase):
             self.assertTrue(s == s, "{%r} not equal to itself" % f)
             self.assertTrue(d == d, "{%r : None} not equal to itself" % f)
 
+    def assertEqualAndEqualSign(self, a, b):
+        # fail unless a == b and a and b have the same sign bit;
+        # the only difference from assertEqual is that this test
+        # distingishes -0.0 and 0.0.
+        self.assertEqual((a, copysign(1.0, a)), (b, copysign(1.0, b)))
+
+    @requires_IEEE_754
+    def test_float_mod(self):
+        # Check behaviour of % operator for IEEE 754 special cases.
+        # In particular, check signs of zeros.
+        mod = operator.mod
+
+        self.assertEqualAndEqualSign(mod(-1.0, 1.0), 0.0)
+        self.assertEqualAndEqualSign(mod(-1e-100, 1.0), 1.0)
+        self.assertEqualAndEqualSign(mod(-0.0, 1.0), 0.0)
+        self.assertEqualAndEqualSign(mod(0.0, 1.0), 0.0)
+        self.assertEqualAndEqualSign(mod(1e-100, 1.0), 1e-100)
+        self.assertEqualAndEqualSign(mod(1.0, 1.0), 0.0)
+
+        self.assertEqualAndEqualSign(mod(-1.0, -1.0), -0.0)
+        self.assertEqualAndEqualSign(mod(-1e-100, -1.0), -1e-100)
+        self.assertEqualAndEqualSign(mod(-0.0, -1.0), -0.0)
+        self.assertEqualAndEqualSign(mod(0.0, -1.0), -0.0)
+        self.assertEqualAndEqualSign(mod(1e-100, -1.0), -1.0)
+        self.assertEqualAndEqualSign(mod(1.0, -1.0), -0.0)
 
 
 class FormatFunctionsTestCase(unittest.TestCase):
