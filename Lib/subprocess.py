@@ -608,7 +608,8 @@ class Popen(object):
                  preexec_fn=None, close_fds=None, shell=False,
                  cwd=None, env=None, universal_newlines=False,
                  startupinfo=None, creationflags=0,
-                 restore_signals=True, start_new_session=False):
+                 restore_signals=True, start_new_session=False,
+                 pass_fds=()):
         """Create new Popen instance."""
         _cleanup()
 
@@ -644,6 +645,9 @@ class Popen(object):
                 raise ValueError("creationflags is only supported on Windows "
                                  "platforms")
 
+        if pass_fds and not close_fds:
+            raise ValueError("pass_fds requires close_fds=True.")
+
         self.stdin = None
         self.stdout = None
         self.stderr = None
@@ -671,7 +675,7 @@ class Popen(object):
          errread, errwrite) = self._get_handles(stdin, stdout, stderr)
 
         self._execute_child(args, executable, preexec_fn, close_fds,
-                            cwd, env, universal_newlines,
+                            pass_fds, cwd, env, universal_newlines,
                             startupinfo, creationflags, shell,
                             p2cread, p2cwrite,
                             c2pread, c2pwrite,
@@ -848,13 +852,15 @@ class Popen(object):
 
 
         def _execute_child(self, args, executable, preexec_fn, close_fds,
-                           cwd, env, universal_newlines,
+                           pass_fds, cwd, env, universal_newlines,
                            startupinfo, creationflags, shell,
                            p2cread, p2cwrite,
                            c2pread, c2pwrite,
                            errread, errwrite,
                            unused_restore_signals, unused_start_new_session):
             """Execute program (MS Windows version)"""
+
+            assert not pass_fds, "pass_fds not yet supported on Windows"
 
             if not isinstance(args, str):
                 args = list2cmdline(args)
@@ -1075,8 +1081,19 @@ class Popen(object):
             os.closerange(but + 1, MAXFD)
 
 
+        def _close_all_but_a_sorted_few_fds(self, fds_to_keep):
+            # precondition: fds_to_keep must be sorted and unique
+            start_fd = 3
+            for fd in fds_to_keep:
+                if fd > start_fd:
+                    os.closerange(start_fd, fd)
+                    start_fd = fd + 1
+            if start_fd <= MAXFD:
+                os.closerange(start_fd, MAXFD)
+
+
         def _execute_child(self, args, executable, preexec_fn, close_fds,
-                           cwd, env, universal_newlines,
+                           pass_fds, cwd, env, universal_newlines,
                            startupinfo, creationflags, shell,
                            p2cread, p2cwrite,
                            c2pread, c2pwrite,
@@ -1124,9 +1141,11 @@ class Popen(object):
                             executable_list = tuple(
                                 os.path.join(os.fsencode(dir), executable)
                                 for dir in os.get_exec_path(env))
+                        fds_to_keep = set(pass_fds)
+                        fds_to_keep.add(errpipe_write)
                         self.pid = _posixsubprocess.fork_exec(
                                 args, executable_list,
-                                close_fds, cwd, env_list,
+                                close_fds, sorted(fds_to_keep), cwd, env_list,
                                 p2cread, p2cwrite, c2pread, c2pwrite,
                                 errread, errwrite,
                                 errpipe_read, errpipe_write,
@@ -1180,7 +1199,14 @@ class Popen(object):
 
                                 # Close all other fds, if asked for
                                 if close_fds:
-                                    self._close_fds(but=errpipe_write)
+                                    if pass_fds:
+                                        fds_to_keep = set(pass_fds)
+                                        fds_to_keep.add(errpipe_write)
+                                        self._close_all_but_a_sorted_few_fds(
+                                                sorted(fds_to_keep))
+                                    else:
+                                        self._close_fds(but=errpipe_write)
+
 
                                 if cwd is not None:
                                     os.chdir(cwd)

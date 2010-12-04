@@ -42,7 +42,8 @@ static void child_exec(char *const exec_array[],
                        int errread, int errwrite,
                        int errpipe_read, int errpipe_write,
                        int close_fds, int restore_signals,
-                       int call_setsid,
+                       int call_setsid, Py_ssize_t num_fds_to_keep,
+                       PyObject *py_fds_to_keep,
                        PyObject *preexec_fn,
                        PyObject *preexec_fn_args_tuple)
 {
@@ -91,11 +92,28 @@ static void child_exec(char *const exec_array[],
     /* close() is intentionally not checked for errors here as we are closing */
     /* a large range of fds, some of which may be invalid. */
     if (close_fds) {
-        for (fd_num = 3; fd_num < errpipe_write; ++fd_num) {
-            close(fd_num);
+        Py_ssize_t keep_seq_idx;
+        int start_fd = 3;
+        for (keep_seq_idx = 0; keep_seq_idx < num_fds_to_keep; ++keep_seq_idx) {
+            PyObject* py_keep_fd = PySequence_Fast_GET_ITEM(py_fds_to_keep,
+                                                            keep_seq_idx);
+            int keep_fd = PyLong_AsLong(py_keep_fd);
+            if (keep_fd < 0) {  /* Negative number, overflow or not a Long. */
+                err_msg = "bad value in fds_to_keep.";
+                errno = 0;  /* We don't want to report an OSError. */
+                goto error;
+            }
+            if (keep_fd <= start_fd)
+                continue;
+            for (fd_num = start_fd; fd_num < keep_fd; ++fd_num) {
+                close(fd_num);
+            }
+            start_fd = keep_fd + 1;
         }
-        for (fd_num = errpipe_write+1; fd_num < max_fd; ++fd_num) {
-            close(fd_num);
+        if (start_fd <= max_fd) {
+            for (fd_num = start_fd; fd_num < max_fd; ++fd_num) {
+                close(fd_num);
+            }
         }
     }
 
@@ -170,7 +188,7 @@ static PyObject *
 subprocess_fork_exec(PyObject* self, PyObject *args)
 {
     PyObject *gc_module = NULL;
-    PyObject *executable_list, *py_close_fds;
+    PyObject *executable_list, *py_close_fds, *py_fds_to_keep;
     PyObject *env_list, *preexec_fn;
     PyObject *process_args, *converted_args = NULL, *fast_args = NULL;
     PyObject *preexec_fn_args_tuple = NULL;
@@ -182,11 +200,11 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     pid_t pid;
     int need_to_reenable_gc = 0;
     char *const *exec_array, *const *argv = NULL, *const *envp = NULL;
-    Py_ssize_t arg_num;
+    Py_ssize_t arg_num, num_fds_to_keep;
 
     if (!PyArg_ParseTuple(
-            args, "OOOOOiiiiiiiiiiO:fork_exec",
-            &process_args, &executable_list, &py_close_fds,
+            args, "OOOOOOiiiiiiiiiiO:fork_exec",
+            &process_args, &executable_list, &py_close_fds, &py_fds_to_keep,
             &cwd_obj, &env_list,
             &p2cread, &p2cwrite, &c2pread, &c2pwrite,
             &errread, &errwrite, &errpipe_read, &errpipe_write,
@@ -196,6 +214,11 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     close_fds = PyObject_IsTrue(py_close_fds);
     if (close_fds && errpipe_write < 3) {  /* precondition */
         PyErr_SetString(PyExc_ValueError, "errpipe_write must be >= 3");
+        return NULL;
+    }
+    num_fds_to_keep = PySequence_Length(py_fds_to_keep);
+    if (num_fds_to_keep < 0) {
+        PyErr_SetString(PyExc_ValueError, "bad fds_to_keep");
         return NULL;
     }
 
@@ -298,6 +321,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
                    p2cread, p2cwrite, c2pread, c2pwrite,
                    errread, errwrite, errpipe_read, errpipe_write,
                    close_fds, restore_signals, call_setsid,
+                   num_fds_to_keep, py_fds_to_keep,
                    preexec_fn, preexec_fn_args_tuple);
         _exit(255);
         return NULL;  /* Dead code to avoid a potential compiler warning. */
