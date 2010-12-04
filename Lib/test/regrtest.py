@@ -894,16 +894,16 @@ def runtest_inner(test, verbose, quiet,
     except KeyboardInterrupt:
         raise
     except test_support.TestFailed, msg:
-        print "test", test, "failed --", msg
-        sys.stdout.flush()
+        print >>sys.stderr, "test", test, "failed --", msg
+        sys.stderr.flush()
         return FAILED, test_time
     except:
         type, value = sys.exc_info()[:2]
-        print "test", test, "crashed --", str(type) + ":", value
-        sys.stdout.flush()
+        print >>sys.stderr, "test", test, "crashed --", str(type) + ":", value
+        sys.stderr.flush()
         if verbose:
-            traceback.print_exc(file=sys.stdout)
-            sys.stdout.flush()
+            traceback.print_exc(file=sys.stderr)
+            sys.stderr.flush()
         return FAILED, test_time
     else:
         if refleak:

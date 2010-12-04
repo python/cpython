@@ -24,6 +24,12 @@ Library
 
 - Issue #10464: netrc now correctly handles lines with embedded '#' characters.
 
+Tests
+-----
+
+- Issue #7110: regrtest now sends test failure reports and single-failure
+  tracebacks to stderr rather than stdout.
+
 
 What's New in Python 2.7.1?
 ===========================
