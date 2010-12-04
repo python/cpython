@@ -477,7 +477,7 @@ typedef struct _REPARSE_DATA_BUFFER {
 #define MAXIMUM_REPARSE_DATA_BUFFER_SIZE  ( 16 * 1024 )
 
 static int
-_Py_ReadLink(HANDLE reparse_point_handle, ULONG *reparse_tag, wchar_t **target_path)
+win32_read_link(HANDLE reparse_point_handle, ULONG *reparse_tag, wchar_t **target_path)
 {
     char target_buffer[MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
     REPARSE_DATA_BUFFER *rdb = (REPARSE_DATA_BUFFER *)target_buffer;
@@ -493,7 +493,7 @@ _Py_ReadLink(HANDLE reparse_point_handle, ULONG *reparse_tag, wchar_t **target_p
         target_buffer, sizeof(target_buffer),
         &n_bytes_returned,
         NULL)) /* we're not using OVERLAPPED_IO */
-        return 0;
+        return -1;
 
     if (reparse_tag)
         *reparse_tag = rdb->ReparseTag;
@@ -513,12 +513,12 @@ _Py_ReadLink(HANDLE reparse_point_handle, ULONG *reparse_tag, wchar_t **target_p
             break;
         default:
             SetLastError(ERROR_REPARSE_TAG_MISMATCH); /* XXX: Proper error code? */
-            return 0;
+            return -1;
         }
         buf = (wchar_t *)malloc(sizeof(wchar_t)*(len+1));
         if (!buf) {
             SetLastError(ERROR_OUTOFMEMORY);
-            return 0;
+            return -1;
         }
         wcsncpy(buf, ptr, len);
         buf[len] = L'\0';
@@ -527,7 +527,7 @@ _Py_ReadLink(HANDLE reparse_point_handle, ULONG *reparse_tag, wchar_t **target_p
         *target_path = buf;
     }
 
-    return 1;
+    return 0;
 }
 #endif /* MS_WINDOWS */
 
@@ -1028,7 +1028,7 @@ attributes_to_mode(DWORD attr)
 }
 
 static int
-attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, struct win32_stat *result)
+attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag, struct win32_stat *result)
 {
     memset(result, 0, sizeof(*result));
     result->st_mode = attributes_to_mode(info->dwFileAttributes);
@@ -1038,12 +1038,18 @@ attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, struct win32_stat *resu
     FILE_TIME_to_time_t_nsec(&info->ftLastAccessTime, &result->st_atime, &result->st_atime_nsec);
     result->st_nlink = info->nNumberOfLinks;
     result->st_ino = (((__int64)info->nFileIndexHigh)<<32) + info->nFileIndexLow;
+    if (reparse_tag == IO_REPARSE_TAG_SYMLINK) {
+        /* first clear the S_IFMT bits */
+        result->st_mode ^= (result->st_mode & 0170000);
+        /* now set the bits that make this a symlink */
+        result->st_mode |= 0120000;
+    }
 
     return 0;
 }
 
 static BOOL
-attributes_from_dir(LPCSTR pszFile, BY_HANDLE_FILE_INFORMATION *info)
+attributes_from_dir(LPCSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *reparse_tag)
 {
     HANDLE hFindFile;
     WIN32_FIND_DATAA FileData;
@@ -1052,6 +1058,7 @@ attributes_from_dir(LPCSTR pszFile, BY_HANDLE_FILE_INFORMATION *info)
         return FALSE;
     FindClose(hFindFile);
     memset(info, 0, sizeof(*info));
+    *reparse_tag = 0;
     info->dwFileAttributes = FileData.dwFileAttributes;
     info->ftCreationTime   = FileData.ftCreationTime;
     info->ftLastAccessTime = FileData.ftLastAccessTime;
@@ -1059,11 +1066,13 @@ attributes_from_dir(LPCSTR pszFile, BY_HANDLE_FILE_INFORMATION *info)
     info->nFileSizeHigh    = FileData.nFileSizeHigh;
     info->nFileSizeLow     = FileData.nFileSizeLow;
 /*  info->nNumberOfLinks   = 1; */
+    if (FileData.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
+        *reparse_tag = FileData.dwReserved0;
     return TRUE;
 }
 
 static BOOL
-attributes_from_dir_w(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info)
+attributes_from_dir_w(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *reparse_tag)
 {
     HANDLE hFindFile;
     WIN32_FIND_DATAW FileData;
@@ -1072,6 +1081,7 @@ attributes_from_dir_w(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info)
         return FALSE;
     FindClose(hFindFile);
     memset(info, 0, sizeof(*info));
+    *reparse_tag = 0;
     info->dwFileAttributes = FileData.dwFileAttributes;
     info->ftCreationTime   = FileData.ftCreationTime;
     info->ftLastAccessTime = FileData.ftLastAccessTime;
@@ -1079,6 +1089,8 @@ attributes_from_dir_w(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info)
     info->nFileSizeHigh    = FileData.nFileSizeHigh;
     info->nFileSizeLow     = FileData.nFileSizeLow;
 /*  info->nNumberOfLinks   = 1; */
+    if (FileData.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
+        *reparse_tag = FileData.dwReserved0;
     return TRUE;
 }
 
@@ -1087,15 +1099,22 @@ attributes_from_dir_w(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info)
 #endif
 
 static int
-win32_xstat_for_handle(HANDLE hFile, struct win32_stat *result, BOOL traverse, int depth);
+win32_xstat_impl_w(const wchar_t *path, struct win32_stat *result, BOOL traverse, int depth);
 
 static int
-win32_xstat(const char *path, struct win32_stat *result, BOOL traverse, int depth)
+win32_xstat_impl(const char *path, struct win32_stat *result, BOOL traverse, int depth)
 {
     int code;
     HANDLE hFile;
     BY_HANDLE_FILE_INFORMATION info;
+    ULONG reparse_tag = 0;
+	wchar_t *target_path;
     const char *dot;
+
+    if (depth > SYMLOOP_MAX) {
+        SetLastError(ERROR_CANT_RESOLVE_FILENAME); /* XXX: ELOOP? */
+        return -1;
+    }
 
     hFile = CreateFileA(
         path,
@@ -1107,32 +1126,43 @@ win32_xstat(const char *path, struct win32_stat *result, BOOL traverse, int dept
         FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS|FILE_FLAG_OPEN_REPARSE_POINT,
         NULL);
 
-    if(hFile == INVALID_HANDLE_VALUE) {
+    if (hFile == INVALID_HANDLE_VALUE) {
         /* Either the target doesn't exist, or we don't have access to
            get a handle to it. If the former, we need to return an error.
            If the latter, we can use attributes_from_dir. */
         if (GetLastError() != ERROR_SHARING_VIOLATION)
-            goto err;
-        else {
-            /* Could not get attributes on open file. Fall back to
-               reading the directory. */
-            if (!attributes_from_dir(path, &info))
-                /* Very strange. This should not fail now */
-                goto err;
-            if (traverse && (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
-                /* Should traverse, but cannot open reparse point handle */
+            return -1;
+        /* Could not get attributes on open file. Fall back to
+           reading the directory. */
+        if (!attributes_from_dir(path, &info, &reparse_tag))
+            /* Very strange. This should not fail now */
+            return -1;
+        if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+            if (traverse) {
+                /* Should traverse, but could not open reparse point handle */
                 SetLastError(ERROR_SHARING_VIOLATION);
-                goto err;
+                return -1;
             }
-            attribute_data_to_stat(&info, result);
         }
-    }
-    else {
-        code = win32_xstat_for_handle(hFile, result, traverse, depth);
+    } else {
+        if (!GetFileInformationByHandle(hFile, &info)) {
+            CloseHandle(hFile);
+            return -1;;
+        }
+        if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+            code = win32_read_link(hFile, &reparse_tag, traverse ? &target_path : NULL);
+            CloseHandle(hFile);
+            if (code < 0)
+                return code;
+            if (traverse) {
+                code = win32_xstat_impl_w(target_path, result, traverse, depth + 1);
+                free(target_path);
+                return code;
+            }
+        }
         CloseHandle(hFile);
-        if (code != 0)
-            return code;
     }
+    attribute_data_to_stat(&info, reparse_tag, result);
 
     /* Set S_IEXEC if it is an .exe, .bat, ... */
     dot = strrchr(path, '.');
@@ -1142,21 +1172,22 @@ win32_xstat(const char *path, struct win32_stat *result, BOOL traverse, int dept
             result->st_mode |= 0111;
     }
     return 0;
-
-err:
-    /* Protocol violation: we explicitly clear errno, instead of
-       setting it to a POSIX error. Callers should use GetLastError. */
-    errno = 0;
-    return -1;
 }
 
 static int
-win32_xstat_w(const wchar_t *path, struct win32_stat *result, BOOL traverse, int depth)
+win32_xstat_impl_w(const wchar_t *path, struct win32_stat *result, BOOL traverse, int depth)
 {
     int code;
     HANDLE hFile;
     BY_HANDLE_FILE_INFORMATION info;
+    ULONG reparse_tag = 0;
+	wchar_t *target_path;
     const wchar_t *dot;
+
+    if (depth > SYMLOOP_MAX) {
+        SetLastError(ERROR_CANT_RESOLVE_FILENAME); /* XXX: ELOOP? */
+        return -1;
+    }
 
     hFile = CreateFileW(
         path,
@@ -1168,32 +1199,43 @@ win32_xstat_w(const wchar_t *path, struct win32_stat *result, BOOL traverse, int
         FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS|FILE_FLAG_OPEN_REPARSE_POINT,
         NULL);
 
-    if(hFile == INVALID_HANDLE_VALUE) {
+    if (hFile == INVALID_HANDLE_VALUE) {
         /* Either the target doesn't exist, or we don't have access to
            get a handle to it. If the former, we need to return an error.
            If the latter, we can use attributes_from_dir. */
         if (GetLastError() != ERROR_SHARING_VIOLATION)
-            goto err;
-        else {
-            /* Could not get attributes on open file. Fall back to
-               reading the directory. */
-            if (!attributes_from_dir_w(path, &info))
-                /* Very strange. This should not fail now */
-                goto err;
-            if (traverse && (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
-                /* Should traverse, but cannot open reparse point handle */
+            return -1;
+        /* Could not get attributes on open file. Fall back to
+           reading the directory. */
+        if (!attributes_from_dir_w(path, &info, &reparse_tag))
+            /* Very strange. This should not fail now */
+            return -1;
+        if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+            if (traverse) {
+                /* Should traverse, but could not open reparse point handle */
                 SetLastError(ERROR_SHARING_VIOLATION);
-                goto err;
+                return -1;
             }
-            attribute_data_to_stat(&info, result);
         }
-    }
-    else {
-        code = win32_xstat_for_handle(hFile, result, traverse, depth);
+    } else {
+        if (!GetFileInformationByHandle(hFile, &info)) {
+            CloseHandle(hFile);
+            return -1;;
+        }
+        if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+            code = win32_read_link(hFile, &reparse_tag, traverse ? &target_path : NULL);
+            CloseHandle(hFile);
+            if (code < 0)
+                return code;
+            if (traverse) {
+                code = win32_xstat_impl_w(target_path, result, traverse, depth + 1);
+                free(target_path);
+                return code;
+            }
+        }
         CloseHandle(hFile);
-        if (code != 0)
-            return code;
     }
+    attribute_data_to_stat(&info, reparse_tag, result);
 
     /* Set S_IEXEC if it is an .exe, .bat, ... */
     dot = wcsrchr(path, '.');
@@ -1203,51 +1245,26 @@ win32_xstat_w(const wchar_t *path, struct win32_stat *result, BOOL traverse, int
             result->st_mode |= 0111;
     }
     return 0;
-
-err:
-    /* Protocol violation: we explicitly clear errno, instead of
-       setting it to a POSIX error. Callers should use GetLastError. */
-    errno = 0;
-    return -1;
 }
 
 static int
-win32_xstat_for_handle(HANDLE hFile, struct win32_stat *result, BOOL traverse, int depth)
+win32_xstat(const char *path, struct win32_stat *result, BOOL traverse)
 {
-    int code;
-    BOOL reparse_tag;
-    wchar_t *target_path;
-    BY_HANDLE_FILE_INFORMATION info;
+    /* Protocol violation: we explicitly clear errno, instead of
+       setting it to a POSIX error. Callers should use GetLastError. */
+    int code = win32_xstat_impl(path, result, traverse, 0);
+    errno = 0;
+    return code;
+}
 
-    if (!GetFileInformationByHandle(hFile, &info))
-        return -1;
-
-    if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-        if (traverse) {
-            if (depth + 1 > SYMLOOP_MAX) {
-                SetLastError(ERROR_CANT_RESOLVE_FILENAME); /* XXX: ELOOP? */
-                return -1;
-            }
-            if (!_Py_ReadLink(hFile, NULL, &target_path))
-                return -1;
-            code = win32_xstat_w(target_path, result, traverse, depth + 1);
-            free(target_path);
-            return code;
-        } else {
-            if (!_Py_ReadLink(hFile, &reparse_tag, NULL))
-                return -1;
-            attribute_data_to_stat(&info, result);
-            if (reparse_tag == IO_REPARSE_TAG_SYMLINK) {
-                /* first clear the S_IFMT bits */
-                result->st_mode ^= (result->st_mode & 0170000);
-                /* now set the bits that make this a symlink */
-                result->st_mode |= 0120000;
-            }
-        }
-    } else {
-        attribute_data_to_stat(&info, result);
-    }
-    return 0;
+static int
+win32_xstat_w(const wchar_t *path, struct win32_stat *result, BOOL traverse)
+{
+    /* Protocol violation: we explicitly clear errno, instead of
+       setting it to a POSIX error. Callers should use GetLastError. */
+    int code = win32_xstat_impl_w(path, result, traverse, 0);
+    errno = 0;
+    return code;
 }
 
 /* About the following functions: win32_lstat, win32_lstat_w, win32_stat,
@@ -1267,25 +1284,25 @@ win32_xstat_for_handle(HANDLE hFile, struct win32_stat *result, BOOL traverse, i
 static int 
 win32_lstat(const char* path, struct win32_stat *result)
 {
-    return win32_xstat(path, result, FALSE, 0);
+    return win32_xstat(path, result, FALSE);
 }
 
 static int
 win32_lstat_w(const wchar_t* path, struct win32_stat *result)
 {
-    return win32_xstat_w(path, result, FALSE, 0);
+    return win32_xstat_w(path, result, FALSE);
 }
 
 static int
 win32_stat(const char* path, struct win32_stat *result)
 {
-    return win32_xstat(path, result, TRUE, 0);
+    return win32_xstat(path, result, TRUE);
 }
 
 static int 
 win32_stat_w(const wchar_t* path, struct win32_stat *result)
 {
-    return win32_xstat_w(path, result, TRUE, 0);
+    return win32_xstat_w(path, result, TRUE);
 }
 
 static int
@@ -1330,7 +1347,7 @@ win32_fstat(int file_number, struct win32_stat *result)
         return -1;
     }
 
-    attribute_data_to_stat(&info, result);
+    attribute_data_to_stat(&info, 0, result);
     /* specific to fstat() */
     result->st_ino = (((__int64)info.nFileIndexHigh)<<32) + info.nFileIndexLow;
     return 0;
