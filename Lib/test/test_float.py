@@ -16,10 +16,6 @@ requires_getformat = unittest.skipUnless(have_getformat,
                                          "requires __getformat__")
 requires_setformat = unittest.skipUnless(hasattr(float, "__setformat__"),
                                          "requires __setformat__")
-# decorator for skipping tests on non-IEEE 754 platforms
-requires_IEEE_754 = unittest.skipUnless(have_getformat and
-    float.__getformat__("double").startswith("IEEE"),
-    "test requires IEEE 754 doubles")
 
 #locate file with float format test values
 test_dir = os.path.dirname(__file__) or os.curdir
@@ -196,7 +192,7 @@ class GeneralFloatCases(unittest.TestCase):
         # distingishes -0.0 and 0.0.
         self.assertEqual((a, copysign(1.0, a)), (b, copysign(1.0, b)))
 
-    @requires_IEEE_754
+    @support.requires_IEEE_754
     def test_float_mod(self):
         # Check behaviour of % operator for IEEE 754 special cases.
         # In particular, check signs of zeros.
@@ -216,7 +212,7 @@ class GeneralFloatCases(unittest.TestCase):
         self.assertEqualAndEqualSign(mod(1e-100, -1.0), -1.0)
         self.assertEqualAndEqualSign(mod(1.0, -1.0), -0.0)
 
-    @requires_IEEE_754
+    @support.requires_IEEE_754
     def test_float_pow(self):
         # test builtin pow and ** operator for IEEE 754 special cases.
         # Special cases taken from section F.9.4.4 of the C99 specification
@@ -503,7 +499,7 @@ class UnknownFormatTestCase(unittest.TestCase):
 
 class IEEEFormatTestCase(unittest.TestCase):
 
-    @requires_IEEE_754
+    @support.requires_IEEE_754
     def test_double_specials_do_unpack(self):
         for fmt, data in [('>d', BE_DOUBLE_INF),
                           ('>d', BE_DOUBLE_NAN),
@@ -511,7 +507,7 @@ class IEEEFormatTestCase(unittest.TestCase):
                           ('<d', LE_DOUBLE_NAN)]:
             struct.unpack(fmt, data)
 
-    @requires_IEEE_754
+    @support.requires_IEEE_754
     def test_float_specials_do_unpack(self):
         for fmt, data in [('>f', BE_FLOAT_INF),
                           ('>f', BE_FLOAT_NAN),
@@ -574,7 +570,7 @@ class FormatTestCase(unittest.TestCase):
         self.assertEqual(format(INF, 'f'), 'inf')
         self.assertEqual(format(INF, 'F'), 'INF')
 
-    @requires_IEEE_754
+    @support.requires_IEEE_754
     def test_format_testfile(self):
         with open(format_testfile) as testfile:
             for line in testfile:
@@ -658,7 +654,7 @@ class ReprTestCase(unittest.TestCase):
             self.assertEqual(repr(float(s)), str(float(s)))
             self.assertEqual(repr(float(negs)), str(float(negs)))
 
-@requires_IEEE_754
+@support.requires_IEEE_754
 class RoundTestCase(unittest.TestCase):
 
     def test_inf_nan(self):

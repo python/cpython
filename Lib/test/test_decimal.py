@@ -32,7 +32,8 @@ import pickle, copy
 import unittest
 from decimal import *
 import numbers
-from test.support import run_unittest, run_doctest, is_resource_enabled
+from test.support import (run_unittest, run_doctest, is_resource_enabled,
+                          requires_IEEE_754)
 from test.support import check_warnings
 import random
 try:
@@ -60,11 +61,6 @@ def init():
         traps = dict.fromkeys(Signals, 0)
         )
     setcontext(DefaultTestContext)
-
-# decorator for skipping tests on non-IEEE 754 platforms
-requires_IEEE_754 = unittest.skipUnless(
-    float.__getformat__("double").startswith("IEEE"),
-    "test requires IEEE 754 doubles")
 
 TESTDATADIR = 'decimaltestdata'
 if __name__ == '__main__':

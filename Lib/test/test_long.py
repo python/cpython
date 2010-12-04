@@ -1,5 +1,6 @@
 import unittest
 from test import support
+
 import sys
 
 import random
@@ -14,11 +15,6 @@ class Frm(object):
 
     def __str__(self):
         return self.format % self.args
-
-# decorator for skipping tests on non-IEEE 754 platforms
-requires_IEEE_754 = unittest.skipUnless(
-    float.__getformat__("double").startswith("IEEE"),
-    "test requires IEEE 754 doubles")
 
 # SHIFT should match the value in longintrepr.h for best testing.
 SHIFT = sys.int_info.bits_per_digit
@@ -371,8 +367,7 @@ class LongTest(unittest.TestCase):
                 return 1729
         self.assertEqual(int(LongTrunc()), 1729)
 
-    @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
-                         "test requires IEEE 754 doubles")
+    @support.requires_IEEE_754
     def test_float_conversion(self):
 
         exact_values = [0, 1, 2,
@@ -703,7 +698,7 @@ class LongTest(unittest.TestCase):
         self.assertEqual(expected, got, "Incorrectly rounded division {}/{}: "
                          "expected {}, got {}".format(a, b, expected, got))
 
-    @requires_IEEE_754
+    @support.requires_IEEE_754
     def test_correctly_rounded_true_division(self):
         # more stringent tests than those above, checking that the
         # result of true division of ints is always correctly rounded.

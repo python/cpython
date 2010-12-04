@@ -1,5 +1,5 @@
-from test.support import run_unittest
-from test.test_math import parse_testfile, test_file, requires_IEEE_754
+from test.support import run_unittest, requires_IEEE_754
+from test.test_math import parse_testfile, test_file
 import unittest
 import cmath, math
 from cmath import phase, polar, rect, pi
@@ -312,10 +312,8 @@ class CMathTests(unittest.TestCase):
                 self.rAssertAlmostEqual(math.log(v, base), z.real)
                 self.assertEqual(0., z.imag)
 
+    @requires_IEEE_754
     def test_specific_values(self):
-        if not float.__getformat__("double").startswith("IEEE"):
-            return
-
         def rect_complex(z):
             """Wrapped version of rect that accepts a complex number instead of
             two float arguments."""
@@ -460,9 +458,11 @@ class CMathTests(unittest.TestCase):
         self.assertEqual(abs(complex(INF, NAN)), INF)
         self.assertTrue(math.isnan(abs(complex(NAN, NAN))))
 
+
+    @requires_IEEE_754
+    def test_abs_overflows(self):
         # result overflows
-        if float.__getformat__("double").startswith("IEEE"):
-            self.assertRaises(OverflowError, abs, complex(1.4e308, 1.4e308))
+        self.assertRaises(OverflowError, abs, complex(1.4e308, 1.4e308))
 
     def assertCEqual(self, a, b):
         eps = 1E-7

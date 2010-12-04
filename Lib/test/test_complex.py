@@ -435,15 +435,14 @@ class ComplexTest(unittest.TestCase):
         self.assertEqual(complex(0, INF).__getnewargs__(), (0.0, INF))
         self.assertEqual(complex(INF, 0).__getnewargs__(), (INF, 0.0))
 
-    if float.__getformat__("double").startswith("IEEE"):
-        def test_plus_minus_0j(self):
-            # test that -0j and 0j literals are not identified
-            z1, z2 = 0j, -0j
-            self.assertEqual(atan2(z1.imag, -1.), atan2(0., -1.))
-            self.assertEqual(atan2(z2.imag, -1.), atan2(-0., -1.))
+    @support.requires_IEEE_754
+    def test_plus_minus_0j(self):
+        # test that -0j and 0j literals are not identified
+        z1, z2 = 0j, -0j
+        self.assertEqual(atan2(z1.imag, -1.), atan2(0., -1.))
+        self.assertEqual(atan2(z2.imag, -1.), atan2(-0., -1.))
 
-    @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
-                         "test requires IEEE 754 doubles")
+    @support.requires_IEEE_754
     def test_negated_imaginary_literal(self):
         z0 = -0j
         z1 = -7j
@@ -459,15 +458,13 @@ class ComplexTest(unittest.TestCase):
         self.assertFloatsAreIdentical(z2.real, -0.0)
         self.assertFloatsAreIdentical(z2.imag, -INF)
 
-    @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
-                         "test requires IEEE 754 doubles")
+    @support.requires_IEEE_754
     def test_overflow(self):
         self.assertEqual(complex("1e500"), complex(INF, 0.0))
         self.assertEqual(complex("-1e500j"), complex(0.0, -INF))
         self.assertEqual(complex("-1e500+1.8e308j"), complex(-INF, INF))
 
-    @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
-                         "test requires IEEE 754 doubles")
+    @support.requires_IEEE_754
     def test_repr_roundtrip(self):
         vals = [0.0, 1e-500, 1e-315, 1e-200, 0.0123, 3.1415, 1e50, INF, NAN]
         vals += [-v for v in vals]

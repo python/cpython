@@ -1,7 +1,7 @@
 """Tests for Lib/fractions.py."""
 
 from decimal import Decimal
-from test.support import run_unittest
+from test.support import run_unittest, requires_IEEE_754
 import math
 import numbers
 import operator
@@ -11,11 +11,6 @@ from copy import copy, deepcopy
 from pickle import dumps, loads
 F = fractions.Fraction
 gcd = fractions.gcd
-
-# decorator for skipping tests on non-IEEE 754 platforms
-requires_IEEE_754 = unittest.skipUnless(
-    float.__getformat__("double").startswith("IEEE"),
-    "test requires IEEE 754 doubles")
 
 class DummyFloat(object):
     """Dummy float class for testing comparisons with Fractions"""
