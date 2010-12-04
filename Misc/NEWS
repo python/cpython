@@ -37,7 +37,9 @@ Core and Builtins
 Library
 -------
 
-- Issue 10620: `python -m unittest` can accept file paths instead of module
+- Issue #6045: dbm.gnu databases now support get() and setdefault() methods.
+
+- Issue #10620: `python -m unittest` can accept file paths instead of module
   names for running specific tests.
 
 - Issue #9424: Deprecate the `unittest.TestCase` methods `assertEquals`,
