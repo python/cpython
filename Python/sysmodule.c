@@ -65,6 +65,68 @@ PySys_SetObject(const char *name, PyObject *v)
         return PyDict_SetItemString(sd, name, v);
 }
 
+/* Write repr(o) to sys.stdout using sys.stdout.encoding and 'backslashreplace'
+   error handler. If sys.stdout has a buffer attribute, use
+   sys.stdout.buffer.write(encoded), otherwise redecode the string and use
+   sys.stdout.write(redecoded).
+
+   Helper function for sys_displayhook(). */
+static int
+sys_displayhook_unencodable(PyObject *outf, PyObject *o)
+{
+    PyObject *stdout_encoding = NULL;
+    PyObject *encoded, *escaped_str, *repr_str, *buffer, *result;
+    char *stdout_encoding_str;
+    int ret;
+
+    stdout_encoding = PyObject_GetAttrString(outf, "encoding");
+    if (stdout_encoding == NULL)
+        goto error;
+    stdout_encoding_str = _PyUnicode_AsString(stdout_encoding);
+    if (stdout_encoding_str == NULL)
+        goto error;
+
+    repr_str = PyObject_Repr(o);
+    if (repr_str == NULL)
+        goto error;
+    encoded = PyUnicode_AsEncodedString(repr_str,
+                                        stdout_encoding_str,
+                                        "backslashreplace");
+    Py_DECREF(repr_str);
+    if (encoded == NULL)
+        goto error;
+
+    buffer = PyObject_GetAttrString(outf, "buffer");
+    if (buffer) {
+        result = PyObject_CallMethod(buffer, "write", "(O)", encoded);
+        Py_DECREF(buffer);
+        Py_DECREF(encoded);
+        if (result == NULL)
+            goto error;
+        Py_DECREF(result);
+    }
+    else {
+        PyErr_Clear();
+        escaped_str = PyUnicode_FromEncodedObject(encoded,
+                                                  stdout_encoding_str,
+                                                  "strict");
+        Py_DECREF(encoded);
+        if (PyFile_WriteObject(escaped_str, outf, Py_PRINT_RAW) != 0) {
+            Py_DECREF(escaped_str);
+            goto error;
+        }
+        Py_DECREF(escaped_str);
+    }
+    ret = 0;
+    goto finally;
+
+error:
+    ret = -1;
+finally:
+    Py_XDECREF(stdout_encoding);
+    return ret;
+}
+
 static PyObject *
 sys_displayhook(PyObject *self, PyObject *o)
 {
@@ -72,6 +134,7 @@ sys_displayhook(PyObject *self, PyObject *o)
     PyInterpreterState *interp = PyThreadState_GET()->interp;
     PyObject *modules = interp->modules;
     PyObject *builtins = PyDict_GetItemString(modules, "builtins");
+    int err;
 
     if (builtins == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "lost builtins module");
@@ -92,8 +155,19 @@ sys_displayhook(PyObject *self, PyObject *o)
         PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
         return NULL;
     }
-    if (PyFile_WriteObject(o, outf, 0) != 0)
-        return NULL;
+    if (PyFile_WriteObject(o, outf, 0) != 0) {
+        if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError)) {
+            /* repr(o) is not encodable to sys.stdout.encoding with
+             * sys.stdout.errors error handler (which is probably 'strict') */
+            PyErr_Clear();
+            err = sys_displayhook_unencodable(outf, o);
+            if (err)
+                return NULL;
+        }
+        else {
+            return NULL;
+        }
+    }
     if (PyFile_WriteString("\n", outf) != 0)
         return NULL;
     if (PyObject_SetAttrString(builtins, "_", o) != 0)

@@ -221,6 +221,24 @@ class CmdLineTest(unittest.TestCase):
         self.assertIn(path1.encode('ascii'), out)
         self.assertIn(path2.encode('ascii'), out)
 
+    def test_displayhook_unencodable(self):
+        for encoding in ('ascii', 'latin1', 'utf8'):
+            env = os.environ.copy()
+            env['PYTHONIOENCODING'] = encoding
+            p = subprocess.Popen(
+                [sys.executable, '-i'],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                env=env)
+            # non-ascii, surrogate, non-BMP printable, non-BMP unprintable
+            text = "a=\xe9 b=\uDC80 c=\U00010000 d=\U0010FFFF"
+            p.stdin.write(ascii(text).encode('ascii') + b"\n")
+            p.stdin.write(b'exit()\n')
+            data = kill_python(p)
+            escaped = repr(text).encode(encoding, 'backslashreplace')
+            self.assertIn(escaped, data)
+
 
 def test_main():
     test.support.run_unittest(CmdLineTest)
