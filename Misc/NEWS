@@ -10,6 +10,10 @@ What's New in Python 3.1.4?
 Core and Builtins
 -----------------
 
+- Issue #10596: Fix float.__mod__ to have the same behaviour as
+  float.__divmod__ with respect to signed zeros.  -4.0 % 4.0 should be
+  0.0, not -0.0.
+
 Library
 -------
 
