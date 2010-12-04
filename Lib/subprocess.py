@@ -623,8 +623,8 @@ class Popen(object):
             # Notification for http://bugs.python.org/issue7213 & issue2320
             warnings.warn(
                     'The close_fds parameter was not specified.  Its default'
-                    ' will change from False to True in a future Python'
-                    ' version.  Most users should set it to True.  Please'
+                    ' behavior will change in a future Python version. '
+                    ' Most users should set it to True.  Please'
                     ' update your code explicitly set close_fds.',
                     DeprecationWarning)
 

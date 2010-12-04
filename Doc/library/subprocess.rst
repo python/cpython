@@ -160,7 +160,7 @@ This module defines one class called :class:`Popen`:
 
 .. versionchanged:: 3.2
    Callers should always specify a *close_fds* to avoid a DeprecationWarning.
-   The default value for this argument will be changing in Python 3.3.
+   The default behavior of this argument will be changing in Python 3.3.
 
    If *shell* is :const:`True`, the specified command will be executed through the
    shell.
