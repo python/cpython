@@ -1,7 +1,7 @@
 # Python test set -- math module
 # XXXX Should not do tests around zero only
 
-from test.support import run_unittest, verbose
+from test.support import run_unittest, verbose, requires_IEEE_754
 import unittest
 import math
 import os
@@ -14,11 +14,6 @@ eps = 1E-05
 NAN = float('nan')
 INF = float('inf')
 NINF = float('-inf')
-
-# decorator for skipping tests on non-IEEE 754 platforms
-requires_IEEE_754 = unittest.skipUnless(
-    float.__getformat__("double").startswith("IEEE"),
-    "test requires IEEE 754 doubles")
 
 # detect evidence of double-rounding: fsum is not always correctly
 # rounded on machines that suffer from double rounding.
