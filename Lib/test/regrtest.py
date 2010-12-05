@@ -815,7 +815,8 @@ class saved_test_environment:
 
     resources = ('sys.argv', 'cwd', 'sys.stdin', 'sys.stdout', 'sys.stderr',
                  'os.environ', 'sys.path', 'sys.path_hooks', '__import__',
-                 'warnings.filters', 'asyncore.socket_map', 'logging._handlers')
+                 'warnings.filters', 'asyncore.socket_map',
+                 'logging._handlers', 'logging._handlerList')
 
     def get_sys_argv(self):
         return id(sys.argv), sys.argv, sys.argv[:]
@@ -885,10 +886,15 @@ class saved_test_environment:
 
     def get_logging__handlers(self):
         # _handlers is a WeakValueDictionary
-        # _handlerList is a list of weakrefs to handlers
-        return (id(logging._handlers), logging._handlers, logging._handlers.copy(),
-                id(logging._handlerList), logging._handlerList, logging._handlerList[:])
+        return id(logging._handlers), logging._handlers, logging._handlers.copy()
     def restore_logging__handlers(self, saved_handlers):
+        # Can't easily revert the logging state
+        pass
+
+    def get_logging__handlerList(self):
+        # _handlerList is a list of weakrefs to handlers
+        return id(logging._handlerList), logging._handlerList, logging._handlerList[:]
+    def restore_logging__handlerList(self, saved_handlerList):
         # Can't easily revert the logging state
         pass
 
