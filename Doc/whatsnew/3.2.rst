@@ -315,7 +315,20 @@ Some smaller changes made to the core Python language are:
   >>> short.untransform('zlib_codec')
   b'which witch had which witches wrist watch'
 
-  (From multiple contributers in :issue:`7475`.)
+  (From multiple contributors in :issue:`7475`.)
+
+* String formatting for :func:`format` and :meth:`str.format` gained a new format
+  character **#**.  For integers in binary, octal, or hexadecimal, it causes
+  the output to be prefixed with  '0b', '0o', or '0x' respectively.  For floats,
+  complex, and Decimal, it causes the output to always have a decimal point
+  even when no digits follow it.
+
+  >>> format(20, '#o')
+  '0o24'
+  >>> format(12.34, '#5.0f')
+  '  12.'
+
+  (Suggested by Mark Dickinson and implemented by Eric Smith in :issue:`7094`.)
 
 * The interpreter can now be started with a quiet option, ``-q``, to suppress
   the copyright and version information in an interactive mode.
