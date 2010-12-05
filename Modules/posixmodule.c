@@ -1108,7 +1108,7 @@ win32_xstat_impl(const char *path, struct win32_stat *result, BOOL traverse, int
     HANDLE hFile;
     BY_HANDLE_FILE_INFORMATION info;
     ULONG reparse_tag = 0;
-	wchar_t *target_path;
+    wchar_t *target_path;
     const char *dot;
 
     if (depth > SYMLOOP_MAX) {
