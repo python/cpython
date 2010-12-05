@@ -2803,14 +2803,12 @@ posix__getfileinformation(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "i:_getfileinformation", &fd))
         return NULL;
 
-    if (!_PyVerify_fd(fd)) {
-        PyErr_SetString(PyExc_ValueError, "received invalid file descriptor");
-        return NULL;
-    }
+    if (!_PyVerify_fd(fd))
+        return posix_error();
 
     hFile = (HANDLE)_get_osfhandle(fd);
     if (hFile == INVALID_HANDLE_VALUE)
-        return win32_error("_getfileinformation", NULL);
+        return posix_error();
 
     if (!GetFileInformationByHandle(hFile, &info))
         return win32_error("_getfileinformation", NULL);

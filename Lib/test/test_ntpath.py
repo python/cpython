@@ -248,7 +248,7 @@ class TestNtpath(unittest.TestCase):
             self.assertFalse(ntpath.sameopenfile(tf1.fileno(), tf2.fileno()))
             # Make sure invalid values don't cause issues on win32
             if sys.platform == "win32":
-                with self.assertRaises(ValueError):
+                with self.assertRaises(OSError):
                     # Invalid file descriptors shouldn't display assert
                     # dialogs (#4804)
                     ntpath.sameopenfile(-1, -1)
