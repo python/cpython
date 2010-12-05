@@ -69,7 +69,7 @@ need to be recompiled for every feature release.
 
 .. seealso::
 
-   :pep:`384` - Define a Stable ABI
+   :pep:`384` - Defining a Stable ABI
       PEP written by Martin von Loewis.
 
 PEP 389: Argparse Command Line Parsing Module
