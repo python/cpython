@@ -317,11 +317,12 @@ Some smaller changes made to the core Python language are:
 
   (From multiple contributors in :issue:`7475`.)
 
-* String formatting for :func:`format` and :meth:`str.format` gained a new format
-  character **#**.  For integers in binary, octal, or hexadecimal, it causes
-  the output to be prefixed with  '0b', '0o', or '0x' respectively.  For floats,
-  complex, and Decimal, it causes the output to always have a decimal point
-  even when no digits follow it.
+* String formatting for :func:`format` and :meth:`str.format` gained new
+  capabilities for the format character **#**.  Previously, for integers in
+  binary, octal, or hexadecimal, it caused the output to be prefixed with '0b',
+  '0o', or '0x' respectively.  Now it can also handle floats, complex, and
+  Decimal, causing the output to always have a decimal point even when no digits
+  follow it.
 
   >>> format(20, '#o')
   '0o24'
@@ -429,7 +430,7 @@ Some smaller changes made to the core Python language are:
 
   (Added by Antoine Pitrou and Georg Brandl in :issue:`10093` and :issue:`477863`.)
 
-* :class:`range` objects now support and *index* and *count* methods. This is
+* :class:`range` objects now support *index* and *count* methods. This is
   part of an effort to make more objects fully implement the :class:`collections.Sequence`
   :term:`abstract base class`.  As a result, the language will have a more
   uniform API.
@@ -735,6 +736,8 @@ New, Improved, and Deprecated Modules
 
   (Contributed by Rodolpho Eckhardt and Nick Coghlan, :issue:`10220`.)
 
+.. XXX: Create a new section for all changes relating to context managers.
+.. XXX: Various ConfigParser changes
 .. XXX: Mention inspect.getattr_static (Michael Foord)
 .. XXX: Mention urllib.parse changes
           Issue 9873 (Nick Coghlan):
