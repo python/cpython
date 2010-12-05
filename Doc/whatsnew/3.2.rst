@@ -298,6 +298,25 @@ Other Language Changes
 
 Some smaller changes made to the core Python language are:
 
+* :class:`bytes` and :class:`str` now have two net methods, *tranform* and *untransform*.
+  These provided analogues to *encode* and *decode* but are used for general purpose
+  string-to-string and bytes-to-bytes transformations rather than Unicode codecs.
+
+  Along with the new methods, several non-unicode codecs been restored from Python 2.x
+  including *base64*, *bz2*, *hex*, *quopri*, *rot13*, *uu*, and *zlib*.
+
+  >>> t = b'which witch had which witches wrist watch'
+  >>> t.transform('quopri')
+  b'which=20witch=20had=20which=20witches=20wrist=20watch'
+
+  >>> short = t.transform('zlib_codec')
+  >>> len(t), len(short)
+  (41, 38)
+  >>> short.untransform('zlib_codec')
+  b'which witch had which witches wrist watch'
+
+  (From multiple contributers in :issue:`7475`.)
+
 * The interpreter can now be started with a quiet option, ``-q``, to suppress
   the copyright and version information in an interactive mode.
 
