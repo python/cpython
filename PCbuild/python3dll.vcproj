@@ -21,377 +21,117 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			ConfigurationType="2"
+			ConfigurationType="0"
 			InheritedPropertySheets=".\pyproject.vsprops;.\release.vsprops"
 			WholeProgramOptimization="1"
 			>
 			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="2"
-				EnableIntrinsicFunctions="true"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;PYTHON3DLL_EXPORTS"
-				RuntimeLibrary="2"
-				BufferSecurityCheck="false"
-				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="..\PC\python32.lib"
-				OutputFile="$(OutDir)\python3.dll"
-				LinkIncremental="1"
-				IgnoreAllDefaultLibraries="true"
-				ModuleDefinitionFile="..\PC\python3.def"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				EntryPointSymbol="DllMain"
-				TargetMachine="1"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
+				Name="VCNMakeTool"
+				BuildCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir)"
+				ReBuildCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir) rebuild"
+				CleanCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir) clean"
+				Output="$(OutDir)\python3.dll"
+				PreprocessorDefinitions=""
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
-			ConfigurationType="2"
+			ConfigurationType="0"
 			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops;.\release.vsprops"
 			>
 			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				OutputFile="$(OutDir)\python3.dll"
-				ModuleDefinitionFile="..\PC\python3.def"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
+				Name="VCNMakeTool"
+				BuildCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir)"
+				ReBuildCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) rebuild"
+				CleanCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) clean"
+				Output="$(OutDir)\python3.dll"
+				PreprocessorDefinitions=""
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
 			/>
 		</Configuration>
 		<Configuration
 			Name="PGInstrument|Win32"
-			ConfigurationType="2"
+			ConfigurationType="0"
 			InheritedPropertySheets=".\pyproject.vsprops;.\release.vsprops;.\pginstrument.vsprops"
 			>
 			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="python32.lib"
-				OutputFile="$(OutDir)\python3.dll"
-				ModuleDefinitionFile="..\PC\python3.def"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
+				Name="VCNMakeTool"
+				BuildCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir)"
+				ReBuildCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir) rebuild"
+				CleanCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir) clean"
+				Output="$(OutDir)\python3.dll"
+				PreprocessorDefinitions=""
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
 			/>
 		</Configuration>
 		<Configuration
 			Name="PGInstrument|x64"
-			ConfigurationType="2"
+			ConfigurationType="0"
 			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops;.\release.vsprops;.\pginstrument.vsprops"
 			>
 			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				OutputFile="$(OutDir)\python3.dll"
-				ModuleDefinitionFile="..\PC\python3.def"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
+				Name="VCNMakeTool"
+				BuildCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir)"
+				ReBuildCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) rebuild"
+				CleanCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) clean"
+				Output="$(OutDir)\python3.dll"
+				PreprocessorDefinitions=""
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
 			/>
 		</Configuration>
 		<Configuration
 			Name="PGUpdate|Win32"
-			ConfigurationType="2"
+			ConfigurationType="0"
 			InheritedPropertySheets=".\pyproject.vsprops;.\release.vsprops;.\pgupdate.vsprops"
 			>
 			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="python32.lib"
-				OutputFile="$(OutDir)\python3.dll"
-				ModuleDefinitionFile="..\PC\python3.def"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
+				Name="VCNMakeTool"
+				BuildCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir)"
+				ReBuildCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir) rebuild"
+				CleanCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir) clean"
+				Output="$(OutDir)\python3.dll"
+				PreprocessorDefinitions=""
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
 			/>
 		</Configuration>
 		<Configuration
 			Name="PGUpdate|x64"
-			ConfigurationType="2"
+			ConfigurationType="0"
 			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops;.\release.vsprops;.\pgupdate.vsprops"
 			>
 			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				OutputFile="$(OutDir)\python3.dll"
-				ModuleDefinitionFile="..\PC\python3.def"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
+				Name="VCNMakeTool"
+				BuildCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir)"
+				ReBuildCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) rebuild"
+				CleanCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) clean"
+				Output="$(OutDir)\python3.dll"
+				PreprocessorDefinitions=""
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
 			/>
 		</Configuration>
 	</Configurations>
@@ -406,10 +146,58 @@
 			<File
 				RelativePath="..\PC\python3.def"
 				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="PGInstrument|Win32"
+					>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="PGInstrument|x64"
+					>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="PGUpdate|Win32"
+					>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="PGUpdate|x64"
+					>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\PC\python3dll.c"
 				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="PGInstrument|Win32"
+					>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="PGInstrument|x64"
+					>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="PGUpdate|Win32"
+					>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="PGUpdate|x64"
+					>
+				</FileConfiguration>
 			</File>
 		</Filter>
 		<Filter
@@ -426,6 +214,30 @@
 			<File
 				RelativePath="..\PC\python_nt.rc"
 				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="PGInstrument|Win32"
+					>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="PGInstrument|x64"
+					>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="PGUpdate|Win32"
+					>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="PGUpdate|x64"
+					>
+				</FileConfiguration>
 			</File>
 		</Filter>
 	</Files>

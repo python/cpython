@@ -1054,6 +1054,10 @@ def add_files(db):
         if dir=="macholib":
             lib.add_file("README.ctypes")
             lib.glob("fetch_macholib*")
+        if dir=='turtledemo':
+            lib.add_file("turtle.cfg")
+        if dir=="pydoc_data":
+            lib.add_file("_pydoc.css")
         if dir=="data" and parent.physical=="test" and parent.basedir.physical=="email":
             # This should contain all non-.svn files listed in subversion
             for f in os.listdir(lib.absolute):
@@ -1082,6 +1086,7 @@ def add_files(db):
             continue
         dlls.append(f)
         lib.add_file(f)
+    lib.add_file('python3.dll')
     # Add sqlite
     if msilib.msi_type=="Intel64;1033":
         sqlite_arch = "/ia64"
@@ -1118,6 +1123,7 @@ def add_files(db):
     for f in dlls:
         lib.add_file(f.replace('pyd','lib'))
     lib.add_file('python%s%s.lib' % (major, minor))
+    lib.add_file('python3.lib')
     # Add the mingw-format library
     if have_mingw:
         lib.add_file('libpython%s%s.a' % (major, minor))
