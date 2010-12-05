@@ -69,8 +69,29 @@ need to be recompiled for every feature release.
 
 .. seealso::
 
-   :pep:`384` - PYC Repository Directories
+   :pep:`384` - Define a Stable ABI
       PEP written by Martin von Loewis.
+
+PEP 389: Argparse Command Line Parsing Module
+=============================================
+
+A new module for command line parsing, :mod:`argparse`, was introduced to
+overcome the limitations of :mod:`optparse` which did not provide support for
+positional arguments (not just option), subcommands, required options and other
+common patterns of specifying and validatig options.
+
+This module has already has wide-spread success in the community as a
+third-party module.  Being more fully featured than its predecessor,
+:mod:`argparse`, is now the preferred module for command-line processing.  The
+older module is still being kept available because of the substantial amount of
+legacy code that depends on it.
+
+.. XXX add examples that highlight the new features
+
+.. seealso::
+
+   :pep:`389` - New Command Line Parsing Module
+      PEP written by Steven Bethard.
 
 
 PEP 391:  Dictionary Based Configuration for Logging
@@ -139,7 +160,7 @@ launching and managing calls.  The goal of the executors is to make it easier to
 use existing tools for making parallel calls. They save the effort needed to
 setup a pool of resources, launch the calls, create a results queue, add
 time-out handling, and limit the total number of threads, processes, or remote
-procedure calls.
+procedure calls. adfasdf
 
 Ideally, each application should share a single executor across multiple
 components so that process and thread limits can be centrally managed.  This
@@ -154,14 +175,14 @@ see :ref:`code for computing prime numbers in parallel<processpoolexecutor-examp
 
 .. seealso::
 
-   :pep:`3148` - PYC Repository Directories
+   :pep:`3148` - Futures -- Execute Computations Asynchronously
       PEP written by Brain Quinlan.
 
 
 PEP 3147:  PYC Repository Directories
 =====================================
 
-Python's scheme for caching bytecode in *.pyc* files did not work well in
+Python's scheme for caching bytecode in *.pyc* files did not wosrk well in
 environments with multiple python interpreters.  If one interpreter encountered
 a cached file created by another interpreter, it would recompile the source and
 overwrite the cached file, thus losing the benefits of caching.
@@ -376,8 +397,6 @@ Some smaller changes made to the core Python language are:
 New, Improved, and Deprecated Modules
 =====================================
 
-* XXX mention :mod:`argparse`.
-
 * The :mod:`functools` module includes a new decorator for caching function
   calls.  :func:`functools.lru_cache` can save repeated queries to an external
   resource whenever the results are expected to be the same.
@@ -418,7 +437,7 @@ New, Improved, and Deprecated Modules
   :issue:`8814`.)
 
 * The :mod:`itertools` module has a new function, :func:`~itertools.accumulate`
-  modeled on APL's *scan* and on Numpy's *accumulate* function:
+  modeled on APL's *scan* operator and on Numpy's *accumulate* function:
 
   >>> list(accumulate(8, 2, 50))
   [8, 10, 60]
@@ -442,6 +461,10 @@ New, Improved, and Deprecated Modules
 
 * The :mod:`abc` module now supports :func:`~abc.abstractclassmethod` and
   :func:`~abc.abstractstaticmethod`.
+
+  These tools make it possible to define an :term:`Abstract Base Class` that
+  requires a particular :func:`classmethod` or :func:`staticmethod` to be
+  implemented.
 
   (Patch submitted by Daniel Urban; :issue:`5867`.)
 
