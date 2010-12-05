@@ -78,7 +78,7 @@ PEP 389: Argparse Command Line Parsing Module
 A new module for command line parsing, :mod:`argparse`, was introduced to
 overcome the limitations of :mod:`optparse` which did not provide support for
 positional arguments (not just option), subcommands, required options and other
-common patterns of specifying and validatig options.
+common patterns of specifying and validating options.
 
 This module has already has wide-spread success in the community as a
 third-party module.  Being more fully featured than its predecessor,
@@ -657,7 +657,7 @@ New, Improved, and Deprecated Modules
 * The :mod:`unittest` module has two new methods,
   :meth:`~unittest.TestCase.assertWarns` and
   :meth:`~unittest.TestCase.assertWarnsRegex` to check that a given warning type
-  was triggered by the code under test:
+  is triggered by the code under test:
 
   >>> with self.assertWarns(DeprecationWarning):
   ...     legacy_function('XYZ')
@@ -819,7 +819,7 @@ A number of small performance enhancements have been added:
   (Patch by Daniel Stuzback in :issue:`9915`.)
 
 * JSON decoding performance is improved and memory consumption is reduced
-  whenever the same string is repeated for multiple keys.  Aslo, JSON encoding
+  whenever the same string is repeated for multiple keys.  Also, JSON encoding
   now uses the C speedups when the ``sort_keys`` argument is true.
 
   (Contributed by Antoine Pitrou in :issue:`7451` and by Raymond Hettinger and
