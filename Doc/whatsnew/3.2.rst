@@ -348,6 +348,11 @@ Some smaller changes made to the core Python language are:
   the context manager protocol.  This allows timely release of any resources
   that were acquired when requesting a buffer from the original object.
 
+  >>> with memoryview(b'abcdefgh') as v:
+  ...     print(v.tolist())
+  ...
+  [97, 98, 99, 100, 101, 102, 103, 104]
+
   (Added by Antoine Pitrou; :issue:`9757`.)
 
 * Mark Dickinson crafted an elegant and efficient scheme for assuring that
@@ -389,13 +394,11 @@ Some smaller changes made to the core Python language are:
   can be enabled through the means provided by the :mod:`warnings`
   module, or on the command line.
 
-  :exc:`ResourceWarning` is issued at interpreter shutdown if the
+  A :exc:`ResourceWarning` is issued at interpreter shutdown if the
   :data:`gc.garbage` list isn't empty.  This is meant to make the programmer
   aware that their code contains object finalization issues.
 
-  (Added by Antoine Pitrou and Georg Brandl; :issue:`477863`.)
-
-  :exc:`ResourceWarning` is also issued when a :term:`file object` is destroyed
+  A :exc:`ResourceWarning` is also issued when a :term:`file object` is destroyed
   without having been explicitly closed.  While the deallocator for such
   object ensures it closes the underlying operating system resource
   (usually, a file descriptor), the delay in deallocating the object could
@@ -411,7 +414,7 @@ Some smaller changes made to the core Python language are:
       __main__:1: ResourceWarning: unclosed file <_io.BufferedWriter name='foo'>
       >>>
 
-  (Added by Antoine Pitrou, :issue:`10093`.)
+  (Added by Antoine Pitrou and Georg Brandl in :issue:`10093` and :issue:`477863`.)
 
 * :class:`range` objects now support and *index* and *count* methods. This is
   part of an effort to make more objects fully implement the :class:`collections.Sequence`
@@ -424,6 +427,11 @@ Some smaller changes made to the core Python language are:
   (Contributed by Daniel Stuzback in :issue:`9213` and by Alexander Belopolsky
   in :issue:`2690`.)
 
+* The :func:`callable` builtin function from Py2.x was resurrected.  It provides
+  a concise, readable alternative to using an :term:`abstract base class` to in
+  an expression like ``isinstance(x, collections.Callable)``.
+
+  (See :issue:`10518`.)
 
 New, Improved, and Deprecated Modules
 =====================================
@@ -801,6 +809,15 @@ A number of small performance enhancements have been added:
   :meth:`rpartition`.
 
   (Patch by Florent Xicluna in :issue:`7622` and :issue:`7462`.)
+
+There were several other minor optimizations. Set differencing now runs faster
+when one operand is much larger than the other (Patch by Andress Bennetts in
+:issue:`8685`).  The :meth:`array.repeat` method has a faster implementation
+(:issue:`1569291` by Alexander Belopolsky). The :class:`BaseHTTPRequestHandler`
+has more efficient buffering (:issue:`3709` by Andrew Schaaf).  The
+multi-argument form of :func:`operator.attrgetter` now function runs slightly
+faster (:issue:`10160` by Christos Georgiou).  And :class:`ConfigParser` loads
+multi-line arguments a bit faster (:issue:`7113` by Łukasz Langa).
 
 
 Unicode
