@@ -160,7 +160,7 @@ launching and managing calls.  The goal of the executors is to make it easier to
 use existing tools for making parallel calls. They save the effort needed to
 setup a pool of resources, launch the calls, create a results queue, add
 time-out handling, and limit the total number of threads, processes, or remote
-procedure calls. adfasdf
+procedure calls.
 
 Ideally, each application should share a single executor across multiple
 components so that process and thread limits can be centrally managed.  This
@@ -298,6 +298,11 @@ Other Language Changes
 
 Some smaller changes made to the core Python language are:
 
+* The interpreter can now be started with a quiet option, ``-q``, to suppress
+  the copyright and version information in an interactive mode.
+
+  (Contributed by Marcin Wojdyr in issue:`1772833`).
+
 * The :func:`hasattr` function used to catch and suppress any Exception.  Now,
   it only catches :exc:`AttributeError`.  Under the hood, :func:`hasattr` works
   by calling :func:`getattr` and throwing away the results.  This is necessary
@@ -360,9 +365,9 @@ Some smaller changes made to the core Python language are:
   (See :issue:`4617`.)
 
 * A new warning category, :exc:`ResourceWarning`, has been added.  It is
-  emitted when certain potential issues with resource consumption or cleanup
+  emitted when potential issues with resource consumption or cleanup
   are detected.  It is silenced by default in normal release builds, but
-  can be easily enabled through the means provided by the :mod:`warnings`
+  can be enabled through the means provided by the :mod:`warnings`
   module, or on the command line.
 
   :exc:`ResourceWarning` is issued at interpreter shutdown if the
@@ -760,6 +765,17 @@ A number of small performance enhancements have been added:
 * Serializing and unserializing data using the :mod:`pickle` module is now
   several times faster. (Contributed by Alexandre Vassalotti, Antoine Pitrou
   and the Unladen Swallow team in :issue:`9410` and :issue:`3873`.)
+
+* The `Timsort algorithm <http://en.wikipedia.org/wiki/Timsort>`_ used in
+  :meth:`list.sort` and :func:`sorted` now runs faster and used less memory
+  when called with a :term:`key function`.  Previously, every element of
+  a list was wrapped with a temporary object that remembered the key value
+  associated with each element.  Now, an array of keys and values are
+  sorted in parallel.  This save the memory consumed by the sort wrappers,
+  and it saves time lost from during comparisons which where delegated
+  by the sort wrappers.
+
+  (Patch by Daniel Stuzback in :issue:`9915`.)
 
 
 Unicode
