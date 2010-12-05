@@ -234,8 +234,8 @@ aspects that are visible to the programmer:
       PEP written by Barry Warsaw.
 
 
-PEP 3149 ABI Version Tagged .so Files
-=====================================
+PEP 3149: ABI Version Tagged .so Files
+======================================
 
 The PYC repository directory allows multiple bytecode cache files to be
 co-located.  This PEP implements a similar mechanism for shared object files by
@@ -554,6 +554,8 @@ New, Improved, and Deprecated Modules
   (Contributed by Tarek Ziadé and Giampaolo Rodolà in :issue:`4972`, and
   by Georg Brandl in :issue:`8046` and :issue:`1286`.)
 
+.. mention os.popen and subprocess.Popen auto-closing of fds
+
 * :class:`gzip.GzipFile` now implements the :class:`io.BufferedIOBase` ABC
   (except for ``truncate()``), has a :meth:`~gzip.GzipFile.peek` method,
   and supports unseekable as well as zero-padded file objects.
@@ -748,6 +750,14 @@ New, Improved, and Deprecated Modules
   window to display that server.
 
   (Contributed by Ron Adam; :issue:`2001`.)
+
+.. XXX add something about pdb additions:
+
+   * new commands interact, (un)display, longlist, source, until lineno
+   * -c option that executes commands as if given in .pdbrc
+   * SIGINT handler to break a continued program
+
+.. XXX add optimize flags for py_compile/compileall (issue10553)
 
 Multi-threading
 ===============
