@@ -394,9 +394,16 @@ Some smaller changes made to the core Python language are:
 
   (Added by Antoine Pitrou, :issue:`10093`.)
 
-.. XXX: Issues #9213 and #2690 make the objects returned by range()
-        more sequence like in accordance with their registration as
-        implementing the Sequence ABC
+* :class:`range` objects now support and *index* and *count* methods. This is
+  part of an effort to make more objects fully implement the :class:`collections.Sequence`
+  :term:`abstract base class`.  As a result, the language will have a more
+  uniform API.
+
+  In addition, :class:`range` objects now support slicing and negative indices.
+  This makes *range* more interoperable with lists.
+
+  (Contributed by Daniel Stuzback in :issue:`9213` and by Alexander Belopolsky
+  in :issue:`2690`.)
 
 
 New, Improved, and Deprecated Modules
@@ -730,16 +737,6 @@ Optimizations
 
 A number of small performance enhancements have been added:
 
-* JSON decoding performance is improved and memory consumption is reduced
-  whenever the same string is repeated for multiple keys.
-
-  (Contributed by Antoine Pitrou; :issue:`7451`.)
-
-* JSON encoding now uses the C speedups also when the ``sort_keys`` argument
-  is true.
-
-  (Contributed by Raymond Hettinger and Antoine Pitrou, :issue:`10314`.)
-
 * Python's peephole optimizer now recognizes patterns such ``x in {1, 2, 3}`` as
   being a test for membership in a set of constants.  The optimizer recasts the
   :class:`set` as a :class:`frozenset` and stores the pre-built constant.
@@ -754,16 +751,10 @@ A number of small performance enhancements have been added:
 
   (Patch and additional tests by Dave Malcolm; :issue:`6690`).
 
-* The fast-search algorithm in stringlib is now used by the :meth:`split`,
-  :meth:`rsplit`, :meth:`splitlines` and :meth:`replace` methods on
-  :class:`bytes`, :class:`bytearray` and :class:`str` objects. Likewise, the
-  algorithm is also used by :meth:`rfind`, :meth:`rindex`, :meth:`rsplit` and
-  :meth:`rpartition`.
-
-  (Patch by Florent Xicluna in :issue:`7622` and :issue:`7462`.)
-
 * Serializing and unserializing data using the :mod:`pickle` module is now
-  several times faster. (Contributed by Alexandre Vassalotti, Antoine Pitrou
+  several times faster.
+
+  (Contributed by Alexandre Vassalotti, Antoine Pitrou
   and the Unladen Swallow team in :issue:`9410` and :issue:`3873`.)
 
 * The `Timsort algorithm <http://en.wikipedia.org/wiki/Timsort>`_ used in
@@ -776,6 +767,21 @@ A number of small performance enhancements have been added:
   by the sort wrappers.
 
   (Patch by Daniel Stuzback in :issue:`9915`.)
+
+* JSON decoding performance is improved and memory consumption is reduced
+  whenever the same string is repeated for multiple keys.  Aslo, JSON encoding
+  now uses the C speedups when the ``sort_keys`` argument is true.
+
+  (Contributed by Antoine Pitrou in :issue:`7451` and by Raymond Hettinger and
+  Antoine Pitrou in :issue:`10314`.)
+
+* The fast-search algorithm in stringlib is now used by the :meth:`split`,
+  :meth:`rsplit`, :meth:`splitlines` and :meth:`replace` methods on
+  :class:`bytes`, :class:`bytearray` and :class:`str` objects. Likewise, the
+  algorithm is also used by :meth:`rfind`, :meth:`rindex`, :meth:`rsplit` and
+  :meth:`rpartition`.
+
+  (Patch by Florent Xicluna in :issue:`7622` and :issue:`7462`.)
 
 
 Unicode
@@ -824,7 +830,8 @@ systems.
 .. IDLE
    ====
 
-   * Stub
+* The format menu now has an option to clean-up source files by strip trailing
+  whitespace (:issue:`5150`).
 
 
 Build and C API Changes
