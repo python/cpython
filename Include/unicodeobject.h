@@ -1231,10 +1231,12 @@ PyAPI_FUNC(int) PyUnicode_EncodeDecimal(
    Returns a new Unicode string on success, NULL on failure.
 */
 
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject*) PyUnicode_TransformDecimalToASCII(
     Py_UNICODE *s,              /* Unicode buffer */
     Py_ssize_t length           /* Number of Py_UNICODE chars to transform */
     );
+#endif
 
 /* --- File system encoding ---------------------------------------------- */
 
