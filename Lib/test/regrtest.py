@@ -167,6 +167,7 @@ from inspect import isabstract
 import tempfile
 import platform
 import sysconfig
+import logging
 
 
 # Some times __path__ and __file__ are not absolute (e.g. while running from
@@ -814,7 +815,7 @@ class saved_test_environment:
 
     resources = ('sys.argv', 'cwd', 'sys.stdin', 'sys.stdout', 'sys.stderr',
                  'os.environ', 'sys.path', 'sys.path_hooks', '__import__',
-                 'warnings.filters', 'asyncore.socket_map')
+                 'warnings.filters', 'asyncore.socket_map', 'logging._handlers')
 
     def get_sys_argv(self):
         return id(sys.argv), sys.argv, sys.argv[:]
@@ -881,6 +882,15 @@ class saved_test_environment:
         if asyncore is not None:
             asyncore.close_all(ignore_all=True)
             asyncore.socket_map.update(saved_map)
+
+    def get_logging__handlers(self):
+        # _handlers is a WeakValueDictionary
+        # _handlerList is a list of weakrefs to handlers
+        return (id(logging._handlers), logging._handlers, logging._handlers.copy(),
+                id(logging._handlerList), logging._handlerList, logging._handlerList[:])
+    def restore_logging__handlers(self, saved_handlers):
+        # Can't easily revert the logging state
+        pass
 
     def resource_info(self):
         for name in self.resources:
