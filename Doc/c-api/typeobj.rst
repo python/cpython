@@ -705,7 +705,9 @@ type objects) *must* have the :attr:`ob_size` field.
    This field is not inherited by subtypes (computed attributes are inherited
    through a different mechanism).
 
-   Docs for PyGetSetDef (XXX belong elsewhere)::
+   .. XXX belongs elsewhere
+
+   Docs for PyGetSetDef::
 
       typedef PyObject *(*getter)(PyObject *, void *);
       typedef int (*setter)(PyObject *, PyObject *, void *);
@@ -752,7 +754,7 @@ type objects) *must* have the :attr:`ob_size` field.
 
       PyObject * tp_descr_get(PyObject *self, PyObject *obj, PyObject *type);
 
-   XXX explain.
+   .. XXX explain.
 
    This field is inherited by subtypes.
 
@@ -767,7 +769,7 @@ type objects) *must* have the :attr:`ob_size` field.
 
    This field is inherited by subtypes.
 
-   XXX explain.
+   .. XXX explain.
 
 
 .. c:member:: long PyTypeObject.tp_dictoffset
