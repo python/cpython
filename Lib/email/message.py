@@ -98,7 +98,7 @@ class Message:
     objects, otherwise it is a string.
 
     Message objects implement part of the `mapping' interface, which assumes
-    there is exactly one occurrance of the header per message.  Some headers
+    there is exactly one occurrence of the header per message.  Some headers
     do in fact appear multiple times (e.g. Received) and for those headers,
     you must use the explicit API to set or get all the headers.  Not all of
     the mapping methods are implemented.
@@ -289,7 +289,7 @@ class Message:
         Return None if the header is missing instead of raising an exception.
 
         Note that if the header appeared multiple times, exactly which
-        occurrance gets returned is undefined.  Use get_all() to get all
+        occurrence gets returned is undefined.  Use get_all() to get all
         the values matching a header field name.
         """
         return self.get(name)
@@ -320,9 +320,6 @@ class Message:
     def __iter__(self):
         for field, value in self._headers:
             yield field
-
-    def __len__(self):
-        return len(self._headers)
 
     def keys(self):
         """Return a list of all the message's header field names.
