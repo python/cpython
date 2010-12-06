@@ -991,8 +991,10 @@ support the following methods and attributes:
    The string passed to :meth:`~regex.match` or :meth:`~regex.search`.
 
 
-Examples
---------
+.. _re-examples:
+
+Regular Expression Examples
+---------------------------
 
 
 Checking For a Pair

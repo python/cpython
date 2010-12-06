@@ -899,8 +899,28 @@ By default, tarfile uses ``'utf-8'`` encoding on Windows (instead of
 systems.
 
 
-.. IDLE
-   ====
+Documentation
+=============
+
+The documentation continues to be improved.
+
+A table of quick links has been added to the top of lengthy sections such as
+:ref:`built-in-funcs`.  In the case of :mod:`itertools`, the links are
+accompanied by tables of cheatsheet-style summaries to provide an overview and
+memory jog without having to read all of the docs.
+
+In some cases, the pure python source code can be helpful adjunct to the docs,
+so now some modules feature quick links to the latest version of the source
+code.  For example, the :mod:`functools` module documentation has a quick link
+at the top labeled :source:`functools Python source code <Lib/functools.py>`.
+
+The docs now contain more examples and recipes.  In particular, :mod:`re` module
+has an extensive section, :ref:`re-examples`.  Likewise, the :mod:`itertools`
+module continues to be updated with new :ref:`itertools-recipes`.
+
+
+IDLE
+====
 
 * The format menu now has an option to clean-up source files by strip trailing
   whitespace (:issue:`5150`).
@@ -933,7 +953,10 @@ Changes to Python's build process and to the C API include:
 
 * Hash values are now values of a new type, Py_hash_t, which is defined to
   be the same size as a pointer.  Previously they were of type long, which
-  on some 64-bit operating systems is still only 32 bits long.
+  on some 64-bit operating systems is still only 32 bits long.  As a result
+  of this fix, :class:`set` and :class:`dict` can now hold more than ``2**32``
+  entries on builds with 64-bit pointers (previously, they could grow to
+  that size but their performance degraded catastrophically).
 
   (Contributed by Benjamin Peterson; :issue:`9778`.)
 
@@ -947,8 +970,8 @@ require changes to your code:
 * The :mod:`nntplib` module was reworked extensively, meaning that its APIs
   are often incompatible with the 3.1 APIs.
 
-* :class:`bytearray` objects cannot be used any more as filenames: convert them
-  to :class:`bytes`.
+* :class:`bytearray` objects can no longer be used as filenames; instead,
+  they should be converted to :class:`bytes`.
 
 * PyArg_Parse*() functions:
 
@@ -961,4 +984,4 @@ require changes to your code:
   information and a less complicated signature for calling a destructor.
 
  * The :func:`sys.setfilesystemencoding` function was removed because
-   it has a flawed design.
+   it had a flawed design.
