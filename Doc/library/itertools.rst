@@ -577,8 +577,8 @@ loops that truncate the stream.
 
 .. _itertools-recipes:
 
-Recipes
--------
+Itertools Recipes
+-----------------
 
 This section shows recipes for creating an extended toolset using the existing
 itertools as building blocks.
