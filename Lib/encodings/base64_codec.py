@@ -13,11 +13,11 @@ import base64
 
 def base64_encode(input, errors='strict'):
     assert errors == 'strict'
-    return (base64.encodestring(input), len(input))
+    return (base64.encodebytes(input), len(input))
 
 def base64_decode(input, errors='strict'):
     assert errors == 'strict'
-    return (base64.decodestring(input), len(input))
+    return (base64.decodebytes(input), len(input))
 
 class Codec(codecs.Codec):
     def encode(self, input, errors='strict'):
@@ -28,12 +28,12 @@ class Codec(codecs.Codec):
 class IncrementalEncoder(codecs.IncrementalEncoder):
     def encode(self, input, final=False):
         assert self.errors == 'strict'
-        return base64.encodestring(input)
+        return base64.encodebytes(input)
 
 class IncrementalDecoder(codecs.IncrementalDecoder):
     def decode(self, input, final=False):
         assert self.errors == 'strict'
-        return base64.decodestring(input)
+        return base64.decodebytes(input)
 
 class StreamWriter(Codec, codecs.StreamWriter):
     charbuffertype = bytes
