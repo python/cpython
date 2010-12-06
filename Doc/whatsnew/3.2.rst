@@ -442,8 +442,8 @@ Some smaller changes made to the core Python language are:
   in :issue:`2690`.)
 
 * The :func:`callable` builtin function from Py2.x was resurrected.  It provides
-  a concise, readable alternative to using an :term:`abstract base class` to in
-  an expression like ``isinstance(x, collections.Callable)``.
+  a concise, readable alternative to using an :term:`abstract base class` in an
+  expression like ``isinstance(x, collections.Callable)``.
 
   (See :issue:`10518`.)
 
@@ -478,7 +478,7 @@ New, Improved, and Deprecated Modules
   >>> get_phone_number.cache_clear()
 
   (Contributed by Raymond Hettinger and incorporating design ideas from
-  Jim Baker, Miki Tebeka, and Nick Coglan.)
+  Jim Baker, Miki Tebeka, and Nick Coghlan.)
 
 * The :func:`functools.wraps` decorator now adds a :attr:`__wrapped__` attribute
   pointing to the original callable function.  This allows wrapped functions to
