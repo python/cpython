@@ -182,7 +182,7 @@ see :ref:`code for computing prime numbers in parallel<processpoolexecutor-examp
 PEP 3147:  PYC Repository Directories
 =====================================
 
-Python's scheme for caching bytecode in *.pyc* files did not wosrk well in
+Python's scheme for caching bytecode in *.pyc* files did not work well in
 environments with multiple python interpreters.  If one interpreter encountered
 a cached file created by another interpreter, it would recompile the source and
 overwrite the cached file, thus losing the benefits of caching.
