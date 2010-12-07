@@ -1159,8 +1159,8 @@ win32_xstat_impl(const char *path, struct win32_stat *result, BOOL traverse, int
                 free(target_path);
                 return code;
             }
-        }
-        CloseHandle(hFile);
+        } else
+            CloseHandle(hFile);
     }
     attribute_data_to_stat(&info, reparse_tag, result);
 
@@ -1232,8 +1232,8 @@ win32_xstat_impl_w(const wchar_t *path, struct win32_stat *result, BOOL traverse
                 free(target_path);
                 return code;
             }
-        }
-        CloseHandle(hFile);
+        } else
+            CloseHandle(hFile);
     }
     attribute_data_to_stat(&info, reparse_tag, result);
 
