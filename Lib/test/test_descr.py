@@ -4233,20 +4233,26 @@ class DictProxyTests(unittest.TestCase):
         self.C = C
 
     def test_iter_keys(self):
-        # Testing dict-proxy iterkeys...
-        keys = [ key for key in self.C.__dict__.keys() ]
+        # Testing dict-proxy keys...
+        it = self.C.__dict__.keys()
+        self.assertNotIsInstance(it, list)
+        keys = list(it)
         keys.sort()
         self.assertEqual(keys, ['__dict__', '__doc__', '__module__',
             '__weakref__', 'meth'])
 
     def test_iter_values(self):
-        # Testing dict-proxy itervalues...
-        values = [ values for values in self.C.__dict__.values() ]
+        # Testing dict-proxy values...
+        it = self.C.__dict__.values()
+        self.assertNotIsInstance(it, list)
+        values = list(it)
         self.assertEqual(len(values), 5)
 
     def test_iter_items(self):
         # Testing dict-proxy iteritems...
-        keys = [ key for (key, value) in self.C.__dict__.items() ]
+        it = self.C.__dict__.items()
+        self.assertNotIsInstance(it, list)
+        keys = [item[0] for item in it]
         keys.sort()
         self.assertEqual(keys, ['__dict__', '__doc__', '__module__',
             '__weakref__', 'meth'])

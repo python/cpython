@@ -710,19 +710,19 @@ proxy_get(proxyobject *pp, PyObject *args)
 static PyObject *
 proxy_keys(proxyobject *pp)
 {
-    return PyMapping_Keys(pp->dict);
+    return PyObject_CallMethod(pp->dict, "keys", NULL);
 }
 
 static PyObject *
 proxy_values(proxyobject *pp)
 {
-    return PyMapping_Values(pp->dict);
+    return PyObject_CallMethod(pp->dict, "values", NULL);
 }
 
 static PyObject *
 proxy_items(proxyobject *pp)
 {
-    return PyMapping_Items(pp->dict);
+    return PyObject_CallMethod(pp->dict, "items", NULL);
 }
 
 static PyObject *
