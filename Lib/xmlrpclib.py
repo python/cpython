@@ -1446,8 +1446,13 @@ class Transport:
 
     def parse_response(self, response):
         # read response data from httpresponse, and parse it
-        if response.getheader("Content-Encoding", "") == "gzip":
-            stream = GzipDecodedResponse(response)
+
+        # Check for new http response object, else it is a file object
+        if hasattr(response,'getheader'):
+            if response.getheader("Content-Encoding", "") == "gzip":
+                stream = GzipDecodedResponse(response)
+            else:
+                stream = response
         else:
             stream = response
 
