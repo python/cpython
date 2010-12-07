@@ -418,15 +418,16 @@ def checkEnvironment():
     #       to install a newer patch level.
 
     for framework in ['Tcl', 'Tk']:
-        fw = dict(lower=framework.lower(),
-                    upper=framework.upper(),
-                    cap=framework.capitalize())
-        fwpth = "Library/Frameworks/%(cap)s.framework/%(lower)sConfig.sh" % fw
-        sysfw = os.path.join('/System', fwpth)
+        #fw = dict(lower=framework.lower(),
+        #            upper=framework.upper(),
+        #            cap=framework.capitalize())
+        #fwpth = "Library/Frameworks/%(cap)s.framework/%(lower)sConfig.sh" % fw
+        fwpth = 'Library/Frameworks/Tcl.framework/Versions/Current'
+        sysfw = os.path.join(SDKPATH, 'System', fwpth)
         libfw = os.path.join('/', fwpth)
         usrfw = os.path.join(os.getenv('HOME'), fwpth)
-        version = "%(upper)s_VERSION" % fw
-        if getTclTkVersion(libfw, version) != getTclTkVersion(sysfw, version):
+        #version = "%(upper)s_VERSION" % fw
+        if os.readlink(libfw) != os.readlink(sysfw):
             fatal("Version of %s must match %s" % (libfw, sysfw) )
         if os.path.exists(usrfw):
             fatal("Please rename %s to avoid possible dynamic load issues."
@@ -825,12 +826,29 @@ def buildPython():
             os.chmod(p, stat.S_IMODE(st.st_mode) | stat.S_IWGRP)
             os.chown(p, -1, gid)
 
+    LDVERSION=None
+    VERSION=None
+    ABIFLAGS=None
+
+    with open(os.path.join(buildDir, 'Makefile')) as fp:
+        for ln in fp:
+            if ln.startswith('VERSION='):
+                VERSION=ln.split()[1]
+            if ln.startswith('ABIFLAGS='):
+                ABIFLAGS=ln.split()[1]
+
+            if ln.startswith('LDVERSION='):
+                LDVERSION=ln.split()[1]
+
+    LDVERSION = LDVERSION.replace('$(VERSION)', VERSION)
+    LDVERSION = LDVERSION.replace('$(ABIFLAGS)', ABIFLAGS)
+
     # We added some directories to the search path during the configure
     # phase. Remove those because those directories won't be there on
     # the end-users system.
     path =os.path.join(rootDir, 'Library', 'Frameworks', 'Python.framework',
                 'Versions', version, 'lib', 'python%s'%(version,),
-                'config', 'Makefile')
+                'config-' + LDVERSION, 'Makefile')
     fp = open(path, 'r')
     data = fp.read()
     fp.close()

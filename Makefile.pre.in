@@ -498,7 +498,6 @@ $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): \
 		$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/Resources/Info.plist
 	$(LN) -fsn $(VERSION) $(PYTHONFRAMEWORKDIR)/Versions/Current
 	$(LN) -fsn Versions/Current/$(PYTHONFRAMEWORK) $(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)
-	$(LN) -fsn Versions/Current/Headers $(PYTHONFRAMEWORKDIR)/Headers
 	$(LN) -fsn Versions/Current/Resources $(PYTHONFRAMEWORKDIR)/Resources
 
 # This rule builds the Cygwin Python DLL and import library if configured
@@ -1113,7 +1112,7 @@ frameworkinstallstructure:	$(LDLIBRARY)
 		else	true; \
 		fi; \
 	done
-	$(LN) -fsn include/python$(VERSION) $(DESTDIR)$(prefix)/Headers
+	$(LN) -fsn include/python$(LDVERSION) $(DESTDIR)$(prefix)/Headers
 	sed 's/%VERSION%/'"`$(RUNSHARED) ./$(BUILDPYTHON) -c 'import platform; print(platform.python_version())'`"'/g' < $(RESSRCDIR)/Info.plist > $(DESTDIR)$(prefix)/Resources/Info.plist
 	$(LN) -fsn $(VERSION) $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Versions/Current
 	$(LN) -fsn Versions/Current/$(PYTHONFRAMEWORK) $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/$(PYTHONFRAMEWORK)
@@ -1125,8 +1124,8 @@ frameworkinstallstructure:	$(LDLIBRARY)
 # Install a number of symlinks to keep software that expects a normal unix
 # install (which includes python-config) happy.
 frameworkinstallmaclib:
-	ln -fs "../../../$(PYTHONFRAMEWORK)" "$(DESTDIR)$(prefix)/lib/python$(VERSION)/config/libpython$(VERSION).a"
-	ln -fs "../../../$(PYTHONFRAMEWORK)" "$(DESTDIR)$(prefix)/lib/python$(VERSION)/config/libpython$(VERSION).dylib"
+	ln -fs "../../../$(PYTHONFRAMEWORK)" "$(DESTDIR)$(prefix)/lib/python$(VERSION)/config-$(LDVERSION)/libpython$(VERSION).a"
+	ln -fs "../../../$(PYTHONFRAMEWORK)" "$(DESTDIR)$(prefix)/lib/python$(VERSION)/config-$(LDVERSION)/libpython$(VERSION).dylib"
 	ln -fs "../$(PYTHONFRAMEWORK)" "$(DESTDIR)$(prefix)/lib/libpython$(VERSION).dylib"
 
 # This installs the IDE, the Launcher and other apps into /Applications
