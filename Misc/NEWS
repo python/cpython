@@ -2,6 +2,18 @@
 Python News
 +++++++++++
 
+What's New in Python 3.2 Beta 2?
+================================
+
+*Release date: XXXX-XX-XX*
+
+
+Library
+-------
+
+* Issue #10107: Warn about unsaved files in IDLE on OSX.
+
+
 What's New in Python 3.2 Beta 1?
 ================================
 
