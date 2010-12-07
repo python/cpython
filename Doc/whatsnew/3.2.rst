@@ -88,7 +88,7 @@ legacy code that depends on it.
 
 Here's an annotated example parser showing features like limiting results to a
 set of choices, specifying a *metavar* in the help screen, validating that one
-or more postional arguments is present, and making a required option::
+or more positional arguments is present, and making a required option::
 
     import argparse
     parser = argparse.ArgumentParser(
@@ -351,7 +351,7 @@ Other Language Changes
 
 Some smaller changes made to the core Python language are:
 
-* :class:`bytes` and :class:`str` now have two net methods, *tranform* and *untransform*.
+* :class:`bytes` and :class:`str` now have two net methods, *transform* and *untransform*.
   These provided analogues to *encode* and *decode* but are used for general purpose
   string-to-string and bytes-to-bytes transformations rather than Unicode codecs.
 
@@ -753,7 +753,7 @@ New, Improved, and Deprecated Modules
   a new :attr:`~unittest.TestCase.maxDiff` attribute which sets maximum length of
   diffs.
 
-  In addition the naming in the module has ungone a number of clean-ups.  For
+  In addition the naming in the module has undergone a number of clean-ups.  For
   example, :meth:`~unittest.TestCase.assertRegex` is the new name for
   :meth:`~unittest.TestCase.assertRegexpMatches` which was misnamed because the
   test uses :func:`re.search`, not :func:`re.match`.
@@ -915,7 +915,7 @@ New, Improved, and Deprecated Modules
     listing source code.
   - new commands: ``display`` and ``undisplay`` for showing or hiding
     the value of an expression if it has changed.
-  - new command: ``interact`` for starting an interative interpreter containing
+  - new command: ``interact`` for starting an interactive interpreter containing
     the global and local  names found in the current scope.
   - breakpoints can be cleared by breakpoint number
 
