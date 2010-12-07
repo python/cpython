@@ -483,13 +483,12 @@ Some smaller changes made to the core Python language are:
 
   (Added by Antoine Pitrou and Georg Brandl in :issue:`10093` and :issue:`477863`.)
 
-* :class:`range` objects now support *index* and *count* methods. This is
-  part of an effort to make more objects fully implement the :class:`collections.Sequence`
-  :term:`abstract base class`.  As a result, the language will have a more
-  uniform API.
-
-  In addition, :class:`range` objects now support slicing and negative indices.
-  This makes *range* more interoperable with lists.
+* :class:`range` objects now support *index* and *count* methods. This is part
+  of an effort to make more objects fully implement the
+  :class:`collections.Sequence` :term:`abstract base class`.  As a result, the
+  language will have a more uniform API.  In addition, :class:`range` objects
+  now support slicing and negative indices.  This makes *range* more
+  interoperable with lists.
 
   (Contributed by Daniel Stuzback in :issue:`9213` and by Alexander Belopolsky
   in :issue:`2690`.)
@@ -558,10 +557,10 @@ New, Improved, and Deprecated Modules
   (Contributed by Raymond Hettinger and incorporating design suggestions
   from Mark Dickinson.)
 
-* The :mod:`nntplib` module gets a revamped implementation with better
-  bytes / unicode semantics as well as more practical APIs.  These improvements
-  break compatibility with the nntplib version in Python 3.1, which was
-  partly dysfunctional in itself.
+* The :mod:`nntplib` module gets a revamped implementation with better bytes and
+  unicode semantics as well as more practical APIs.  These improvements break
+  compatibility with the nntplib version in Python 3.1, which was partly
+  dysfunctional in itself.
 
   (Contributed by Antoine Pitrou in :issue:`9360`)
 
@@ -610,21 +609,35 @@ New, Improved, and Deprecated Modules
 
 .. mention os.popen and subprocess.Popen auto-closing of fds
 
-* :class:`gzip.GzipFile` now implements the :class:`io.BufferedIOBase` ABC
-  (except for ``truncate()``), has a :meth:`~gzip.GzipFile.peek` method,
-  and supports unseekable as well as zero-padded file objects.
-
-  (Contributed by Antoine Pitrou, Nir Aides and Brian Curtin in :issue:`9962`,
-  :issue:`1675951`, :issue:`7471` and :issue:`2846`.)
+* :class:`gzip.GzipFile` now implements the :class:`io.BufferedIOBase`
+  :term:`abstract base class` (except for ``truncate()``).  It also has a
+  :meth:`~gzip.GzipFile.peek` method and supports unseekable as well as
+  zero-padded file objects.
 
   The :mod:`gzip` module also gains the :func:`~gzip.compress` and
   :func:`~gzip.decompress` functions for easier in-memory compression and
   decompression.
 
-  (Contributed by Anand B. Pillai in :issue:`3488`.)
+  Keep in mind that text needs to be encoded in to bytes before compressing
+  and decompressing:
+
+  >>> s = 'Three shall be the number thou shalt count, '
+  >>> s += 'and the number of the counting shall be three'
+  >>> b = s.encode()                        # convert to utf-8
+  >>> len(b)
+  89
+  >>> c = gzip.compress(b)
+  >>> len(c)
+  77
+  >>> gzip.decompress(c).decode()[:43]      # decompress and convert to text
+  'Three shall be the number thou shalt count, '
+
+  (Contributed by Anand B. Pillai in :issue:`3488`; and by Antoine Pitrou, Nir
+  Aides and Brian Curtin in :issue:`9962`, :issue:`1675951`, :issue:`7471` and
+  :issue:`2846`.)
 
 * The :mod:`os` module now has the :const:`ST_RDONLY` and :const:`ST_NOSUID`
-  constants, for use with the :func:`~os.statvfs` function.
+  constants for use with the :func:`~os.statvfs` function.
 
   (Patch by Adam Jackson; :issue:`7647`.)
 
@@ -707,8 +720,16 @@ New, Improved, and Deprecated Modules
   as recommended in public uses of HTTPS.
   (Added by Antoine Pitrou, :issue:`9003`.)
 
-* The command call, ``python -m unittest`` can now accept file paths instead
-  of module names for running specific tests (:issue:`10620`).
+* The command-line call, ``python -m unittest`` can now accept file paths
+  instead of module names for running specific tests (:issue:`10620`).  The new
+  test discovery can find tests within packages, locating any test importable
+  from the top level directory.  The top level directory can be specified with
+  the `-t` option, a pattern for matching files with ``-p``, and a directory to
+  start discovery with ``-s``::
+
+    $ python -m unittest discover -s my_proj_dir -p '_test.py'
+
+  (Contributed by Michael Foord.)
 
 * The :mod:`unittest` module has two new methods,
   :meth:`~unittest.TestCase.assertWarns` and
@@ -718,9 +739,24 @@ New, Improved, and Deprecated Modules
   >>> with self.assertWarns(DeprecationWarning):
   ...     legacy_function('XYZ')
 
-  In addition, the naming in the module has ungone a number of clean-ups.
-  For example, :meth:`assertRegex` is the new name for :meth:`assertRegexpMatches`
-  which was misnamed because the test uses :func:`re.search`, not :func:`re.match`.
+  Another new method, :meth:`~unittest.TestCase.assertCountEqual` is used to compare two iterables
+  to determine if their element counts are equal (are the same elements present
+  the same number of times::
+
+     def test_anagram(self):
+         self.assertCountEqual('algorithm', 'logarithm')
+
+  A principal feature of the unittest module is an effort to produce meaningful
+  diagnostics when a test fails.  When possible the failure is recorded along
+  with a diff of the output.  This is especially helpful for analyzing log files
+  of failed test runs. However, since diffs can sometime be voluminous, there is
+  a new :attr:`~unittest.TestCase.maxDiff` attribute which sets maximum length of
+  diffs.
+
+  In addition the naming in the module has ungone a number of clean-ups.  For
+  example, :meth:`~unittest.TestCase.assertRegex` is the new name for
+  :meth:`~unittest.TestCase.assertRegexpMatches` which was misnamed because the
+  test uses :func:`re.search`, not :func:`re.match`.
 
   To improve consistency, some of long-standing method aliases are being
   deprecated in favor of the preferred names:
@@ -771,7 +807,10 @@ New, Improved, and Deprecated Modules
 
 * The :mod:`tempfile` module has a new context manager,
   :class:`~tempfile.TemporaryDirectory` which provides easy deterministic
-  cleanup of temporary directories.
+  cleanup of temporary directories:
+
+  >>> with tempfile.TemporaryDirectory() as tmpdirname:
+  ...     print 'created temporary directory', tmpdirname
 
   (Contributed by Neil Schemenauer and Nick Coghlan; :issue:`5178`.)
 
@@ -806,14 +845,6 @@ New, Improved, and Deprecated Modules
   window to display that server.
 
   (Contributed by Ron Adam; :issue:`2001`.)
-
-.. XXX add something about pdb additions:
-
-   * new commands interact, (un)display, longlist, source, until lineno
-   * -c option that executes commands as if given in .pdbrc
-   * SIGINT handler to break a continued program
-
-.. XXX add optimize flags for py_compile/compileall (issue10553)
 
 * The new :mod:`sysconfig` module makes it straight-forward to discover
   installation paths and configuration variables which vary across platforms and
