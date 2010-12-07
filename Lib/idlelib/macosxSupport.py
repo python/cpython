@@ -103,6 +103,11 @@ def overrideRootMenu(root, flist):
     if flist:
         root.bind('<<close-all-windows>>', flist.close_all_callback)
 
+        # The binding above doesn't reliably work on all versions of Tk
+        # on MacOSX. Adding command definition below does seem to do the
+        # right thing for now.
+        root.createcommand('exit', flist.close_all_callback)
+
 
     ###check if Tk version >= 8.4.14; if so, use hard-coded showprefs binding
     tkversion = root.tk.eval('info patchlevel')
