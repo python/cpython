@@ -1729,6 +1729,7 @@ Exiting methods
    This method prints a usage message including the *message* to the
    standard output and terminates the program with a status code of 2.
 
+.. _upgrading-optparse-code:
 
 Upgrading optparse code
 -----------------------
