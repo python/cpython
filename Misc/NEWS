@@ -17,6 +17,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10107: Warn about unsaved files in IDLE on OSX.
+
 - Issue #7904: Changes to urllib.parse.urlsplit to handle schemes as defined by
   RFC3986. Anything before :// is considered a scheme and is followed by an
   authority (or netloc) and by '/' led path, which is optional.

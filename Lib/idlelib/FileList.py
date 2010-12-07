@@ -48,7 +48,7 @@ class FileList:
     def new(self, filename=None):
         return self.EditorWindow(self, filename)
 
-    def close_all_callback(self, event):
+    def close_all_callback(self, *args, **kwds):
         for edit in list(self.inversedict):
             reply = edit.close()
             if reply == "cancel":
