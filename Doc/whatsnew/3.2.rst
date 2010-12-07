@@ -820,6 +820,21 @@ New, Improved, and Deprecated Modules
             srcdir = "C:\Python32"
             userbase = "C:\Documents and Settings\Raymond\Application Data\Python"
 
+* The :mod:`pdb` debugger module gained a number of usability improvements:
+
+  - :file:`pdb.py` now has a ``-c`` option that executes commands as given in a
+    :file:`.pdbrc` script file.
+  - A :file:`.pdbrc` script file can contain ``continue`` and ``next`` commands
+    that continue debugging.
+  - The :class:`Pdb` class constructor now accepts a *nosigint* argument.
+  - new commands: ``l(list)``, ``ll(long list`` and ``source`` for
+    listing source code.
+  - new commands: ``display`` and ``undisplay`` for showing or hiding
+    the value of an expression if it has changed.
+  - new command: ``interact`` for starting an interative interpreter containing
+    the global and local  names found in the current scope.
+  - breakpoints can be cleared by breakpoint number
+
 
 Multi-threading
 ===============
