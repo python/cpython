@@ -1190,7 +1190,7 @@ property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
         PyErr_SetString(PyExc_AttributeError, "unreadable attribute");
         return NULL;
     }
-    return PyObject_CallFunction(gs->prop_get, "(O)", obj);
+    return PyObject_CallFunctionObjArgs(gs->prop_get, obj, NULL);
 }
 
 static int
@@ -1211,9 +1211,9 @@ property_descr_set(PyObject *self, PyObject *obj, PyObject *value)
         return -1;
     }
     if (value == NULL)
-        res = PyObject_CallFunction(func, "(O)", obj);
+        res = PyObject_CallFunctionObjArgs(func, obj, NULL);
     else
-        res = PyObject_CallFunction(func, "(OO)", obj, value);
+        res = PyObject_CallFunctionObjArgs(func, obj, value, NULL);
     if (res == NULL)
         return -1;
     Py_DECREF(res);
