@@ -77,7 +77,7 @@ PEP 389: Argparse Command Line Parsing Module
 
 A new module for command line parsing, :mod:`argparse`, was introduced to
 overcome the limitations of :mod:`optparse` which did not provide support for
-positional arguments (not just option), subcommands, required options and other
+positional arguments (not just options), subcommands, required options and other
 common patterns of specifying and validating options.
 
 This module has already has wide-spread success in the community as a
@@ -86,12 +86,65 @@ third-party module.  Being more fully featured than its predecessor,
 older module is still being kept available because of the substantial amount of
 legacy code that depends on it.
 
-.. XXX add examples that highlight the new features
+Here's an annotated example parser showing features like limiting results to a
+set of choices, specifying a *metavar* in the help screen, validating that one
+or more postional arguments is present, and making a required option::
+
+    import argparse
+    parser = argparse.ArgumentParser(
+                description = 'Manage servers',         # main description for help
+                epilog = 'Tested on Solaris and Linux') # displayed after help
+    parser.add_argument('action',                       # argument name
+                choices = ['deploy', 'start', 'stop'],  # one of four allowed values
+                help = 'action on each target')         # help msg
+    parser.add_argument('targets',
+                metavar = 'HOSTNAME',                   # var name used in help msg
+                nargs = '+',                            # require 1 or more targets
+                help = 'url for target machines')       # help msg explanation
+    parser.add_argument('-u', '--user',                 # -u or --user option
+                required = True,                        # make this a required argument
+                help = 'login as user')
+
+Example of calling the parser on a command string::
+
+    >>> cmd  = 'deploy sneezy.example.com sleepy.example.com -u skycaptain'
+    >>> result = parser.parse_args(cmd.split())
+
+    >>> # parsed variable are stored in the attributes
+    >>> result.action
+    'deploy'
+    >>> result.targets
+    ['sneezy.example.com', 'sleepy.example.com']
+    >>> result.user
+    'skycaptain'
+
+Example of the parser's automatically generated help::
+
+    >>> parser.parse_args('-h'.split())
+
+    usage: tmp_argparse_example.py [-h] -u USER
+                                   {deploy,start,stop} HOSTNAME [HOSTNAME ...]
+
+    Manage servers
+
+    positional arguments:
+      {deploy,start,stop}   action on each target
+      HOSTNAME              url for target machines
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -u USER, --user USER  login as user
+
+    Tested on Solaris and Linux
+
 
 .. seealso::
 
    :pep:`389` - New Command Line Parsing Module
       PEP written by Steven Bethard.
+
+   :ref:`upgrading-optparse-code` for details on the differences from
+      :mod:`optparse`.
 
 
 PEP 391:  Dictionary Based Configuration for Logging
@@ -991,6 +1044,10 @@ at the top labeled :source:`functools Python source code <Lib/functools.py>`.
 The docs now contain more examples and recipes.  In particular, :mod:`re` module
 has an extensive section, :ref:`re-examples`.  Likewise, the :mod:`itertools`
 module continues to be updated with new :ref:`itertools-recipes`.
+
+The :mod:`datetime` module now has an auxiliary implementation in pure Python.
+No functionality was changed.  This just provides an easier-to-read
+alternate implementation.  (Contributed by Alexander Belopolsky.)
 
 
 IDLE
