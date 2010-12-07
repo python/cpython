@@ -19,6 +19,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #9129: smtpd.py is vulnerable to DoS attacks deriving from missing
+  error handling when accepting a new connection.
 
 What's New in Python 2.6.6?
 ===========================
@@ -206,7 +208,7 @@ Library
 - Issue #8620: when a Cmd is fed input that reaches EOF without a final
   newline, it no longer truncates the last character of the last command line.
 
-- Issue #7066: archive_util.make_archive now restores the cwd if an error is 
+- Issue #7066: archive_util.make_archive now restores the cwd if an error is
   raised. Initial patch by Ezio Melotti.
 
 - Issue #5006: Better handling of unicode byte-order marks (BOM) in the io
