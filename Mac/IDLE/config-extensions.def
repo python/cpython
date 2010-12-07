@@ -86,3 +86,8 @@ bgcolor=LightGray
 fgcolor=Black
 [CodeContext_bindings]
 toggle-code-context=
+
+[RstripExtension]
+enable=1
+enable_shell=0
+enable_editor=1
