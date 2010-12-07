@@ -48,6 +48,9 @@
    when researching a change.
 
 This article explains the new features in Python 3.2, compared to 3.1.
+It focuses on a few highlights and gives a few examples.  For full details,
+see the :file:`Misc/NEWS` file.
+
 
 PEP 384: Defining a Stable ABI
 ==============================
@@ -70,7 +73,7 @@ need to be recompiled for every feature release.
 .. seealso::
 
    :pep:`384` - Defining a Stable ABI
-      PEP written by Martin von Loewis.
+      PEP written by Martin von Löwis.
 
 PEP 389: Argparse Command Line Parsing Module
 =============================================
