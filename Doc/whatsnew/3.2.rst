@@ -472,14 +472,10 @@ Some smaller changes made to the core Python language are:
   produce various issues, especially under Windows.  Here is an example
   of enabling the warning from the command line::
 
-      $ ./python -Wdefault
-      Python 3.2a3+ (py3k, Nov  5 2010, 22:58:04)
-      [GCC 4.4.3] on linux2
-      Type "help", "copyright", "credits" or "license" for more information.
+      $ ./python -q -Wdefault
       >>> f = open("foo", "wb")
       >>> del f
       __main__:1: ResourceWarning: unclosed file <_io.BufferedWriter name='foo'>
-      >>>
 
   (Added by Antoine Pitrou and Georg Brandl in :issue:`10093` and :issue:`477863`.)
 
@@ -541,7 +537,7 @@ New, Improved, and Deprecated Modules
   (By Nick Coghlan and Terrence Cole; :issue:`9567`, :issue:`3445`, and
   :issue:`8814`.)
 
-* The :mod:`itertools` module has a new function, :func:`~itertools.accumulate`
+* The :mod:`itertools` module has a new :func:`~itertools.accumulate` function
   modeled on APL's *scan* operator and on Numpy's *accumulate* function:
 
   >>> list(accumulate(8, 2, 50))
@@ -577,7 +573,12 @@ New, Improved, and Deprecated Modules
   in favor of a plain :keyword:`with` statement which can accept multiple
   context managers.  The latter technique is faster (because it is built-in),
   and it does a better job finalizing multiple context managers when one of them
-  raises an exception.
+  raises an exception::
+
+    >>> with open('mylog.txt') as infile, open('a.out', 'w') as outfile:
+    ...     for line in infile:
+    ...         if '<critical>' in line:
+    ...             outfile.write(line)
 
   (Contributed by Georg Brandl and Mattias Brändström;
   `appspot issue 53094 <http://codereview.appspot.com/53094>`_.)
