@@ -18,6 +18,9 @@ Library
 
 - Issue #10107: Warn about unsaved files in IDLE on OSX.
 
+- Issue #10406: Enable Rstrip IDLE extension on OSX (just like on other
+  platforms).
+
 - Issue #10478: Reentrant calls inside buffered IO objects (for example by
   way of a signal handler) now raise a RuntimeError instead of freezing the
   current process.
