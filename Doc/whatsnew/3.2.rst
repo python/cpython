@@ -227,13 +227,13 @@ Both classes share a common interface with three methods:
 :meth:`~concurrent.futures.Executor.submit` for scheduling a callable and
 returning a :class:`~concurrent.futures.Future` object;
 :meth:`~concurrent.futures.Executor.map` for scheduling many asynchronous calls
-at time, and :meth:`~concurrent.futures.shutdown` for freeing resources.  The
-class is a :term:`context manager` and can be used within a :keyword:`with`
-statement to assure that resources are automatically released when currently
-pending futures are done executing.
+at a time, and :meth:`~concurrent.futures.Executor.shutdown` for freeing
+resources.  The class is a :term:`context manager` and can be used within a
+:keyword:`with` statement to assure that resources are automatically released
+when currently pending futures are done executing.
 
 A simple of example of :class:`~concurrent.futures.ThreadPoolExecutor` is a
-launch of four parallel threads for copying directories::
+launch of four parallel threads for copying files::
 
   import shutil
   with ThreadPoolExecutor(max_workers=4) as e:
@@ -242,17 +242,18 @@ launch of four parallel threads for copying directories::
       e.submit(shutil.copy, 'src3.txt', 'dest3.txt')
       e.submit(shutil.copy, 'src3.txt', 'dest4.txt')
 
-Also see :ref:`code for threaded parallel URL reads<threadpoolexecutor-example>`
-for an example using threads to fetch multiple web pages in parallel.
-
-Or, for an example of :class:`~concurrent.futures.ProcessPoolExecutor`, see
-:ref:`code for computing prime numbers in
-parallel<processpoolexecutor-example>`.
-
 .. seealso::
 
    :pep:`3148` - Futures -- Execute Computations Asynchronously
       PEP written by Brain Quinlan.
+
+   :ref:`Code for Threaded Parallel URL reads<threadpoolexecutor-example>`, an
+   example using threads to fetch multiple web pages in parallel.
+
+   :ref:`Code for computing prime numbers in
+   parallel<processpoolexecutor-example>`, an example demonstrating
+   :class:`~concurrent.futures.ProcessPoolExecutor`.
+
 
 
 PEP 3147:  PYC Repository Directories
