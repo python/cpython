@@ -667,6 +667,8 @@ class GeneralModuleTests(unittest.TestCase):
                                type=socket.SOCK_STREAM, proto=0,
                                flags=socket.AI_PASSIVE)
         self.assertEqual(a, b)
+        # Issue #6697.
+        self.assertRaises(UnicodeEncodeError, socket.getaddrinfo, 'localhost', '\uD800')
 
     def test_getnameinfo(self):
         # only IP addresses are allowed

@@ -1215,11 +1215,12 @@ xmlparse_dealloc(xmlparseobject *self)
 }
 
 static int
-handlername2int(const char *name)
+handlername2int(PyObject *name)
 {
     int i;
     for (i = 0; handler_info[i].name != NULL; i++) {
-        if (strcmp(name, handler_info[i].name) == 0) {
+        if (PyUnicode_CompareWithASCIIString(
+                name, handler_info[i].name) == 0) {
             return i;
         }
     }
@@ -1237,13 +1238,13 @@ get_pybool(int istrue)
 static PyObject *
 xmlparse_getattro(xmlparseobject *self, PyObject *nameobj)
 {
-    char *name = "";
+    Py_UNICODE *name;
     int handlernum = -1;
 
-    if (PyUnicode_Check(nameobj))
-        name = _PyUnicode_AsString(nameobj);
+    if (!PyUnicode_Check(nameobj))
+        goto generic;
 
-    handlernum = handlername2int(name);
+    handlernum = handlername2int(nameobj);
 
     if (handlernum != -1) {
         PyObject *result = self->handlers[handlernum];
@@ -1252,46 +1253,48 @@ xmlparse_getattro(xmlparseobject *self, PyObject *nameobj)
         Py_INCREF(result);
         return result;
     }
+
+    name = PyUnicode_AS_UNICODE(nameobj);
     if (name[0] == 'E') {
-        if (strcmp(name, "ErrorCode") == 0)
+        if (PyUnicode_CompareWithASCIIString(nameobj, "ErrorCode") == 0)
             return PyLong_FromLong((long)
                                   XML_GetErrorCode(self->itself));
-        if (strcmp(name, "ErrorLineNumber") == 0)
+        if (PyUnicode_CompareWithASCIIString(nameobj, "ErrorLineNumber") == 0)
             return PyLong_FromLong((long)
                                   XML_GetErrorLineNumber(self->itself));
-        if (strcmp(name, "ErrorColumnNumber") == 0)
+        if (PyUnicode_CompareWithASCIIString(nameobj, "ErrorColumnNumber") == 0)
             return PyLong_FromLong((long)
                                   XML_GetErrorColumnNumber(self->itself));
-        if (strcmp(name, "ErrorByteIndex") == 0)
+        if (PyUnicode_CompareWithASCIIString(nameobj, "ErrorByteIndex") == 0)
             return PyLong_FromLong((long)
                                   XML_GetErrorByteIndex(self->itself));
     }
     if (name[0] == 'C') {
-        if (strcmp(name, "CurrentLineNumber") == 0)
+        if (PyUnicode_CompareWithASCIIString(nameobj, "CurrentLineNumber") == 0)
             return PyLong_FromLong((long)
                                   XML_GetCurrentLineNumber(self->itself));
-        if (strcmp(name, "CurrentColumnNumber") == 0)
+        if (PyUnicode_CompareWithASCIIString(nameobj, "CurrentColumnNumber") == 0)
             return PyLong_FromLong((long)
                                   XML_GetCurrentColumnNumber(self->itself));
-        if (strcmp(name, "CurrentByteIndex") == 0)
+        if (PyUnicode_CompareWithASCIIString(nameobj, "CurrentByteIndex") == 0)
             return PyLong_FromLong((long)
                                   XML_GetCurrentByteIndex(self->itself));
     }
     if (name[0] == 'b') {
-        if (strcmp(name, "buffer_size") == 0)
+        if (PyUnicode_CompareWithASCIIString(nameobj, "buffer_size") == 0)
             return PyLong_FromLong((long) self->buffer_size);
-        if (strcmp(name, "buffer_text") == 0)
+        if (PyUnicode_CompareWithASCIIString(nameobj, "buffer_text") == 0)
             return get_pybool(self->buffer != NULL);
-        if (strcmp(name, "buffer_used") == 0)
+        if (PyUnicode_CompareWithASCIIString(nameobj, "buffer_used") == 0)
             return PyLong_FromLong((long) self->buffer_used);
     }
-    if (strcmp(name, "namespace_prefixes") == 0)
+    if (PyUnicode_CompareWithASCIIString(nameobj, "namespace_prefixes") == 0)
         return get_pybool(self->ns_prefixes);
-    if (strcmp(name, "ordered_attributes") == 0)
+    if (PyUnicode_CompareWithASCIIString(nameobj, "ordered_attributes") == 0)
         return get_pybool(self->ordered_attributes);
-    if (strcmp(name, "specified_attributes") == 0)
+    if (PyUnicode_CompareWithASCIIString(nameobj, "specified_attributes") == 0)
         return get_pybool((long) self->specified_attributes);
-    if (strcmp(name, "intern") == 0) {
+    if (PyUnicode_CompareWithASCIIString(nameobj, "intern") == 0) {
         if (self->intern == NULL) {
             Py_INCREF(Py_None);
             return Py_None;
@@ -1301,7 +1304,7 @@ xmlparse_getattro(xmlparseobject *self, PyObject *nameobj)
             return self->intern;
         }
     }
-
+  generic:
     return PyObject_GenericGetAttr((PyObject*)self, nameobj);
 }
 
@@ -1352,7 +1355,7 @@ xmlparse_dir(PyObject *self, PyObject* noargs)
 }
 
 static int
-sethandler(xmlparseobject *self, const char *name, PyObject* v)
+sethandler(xmlparseobject *self, PyObject *name, PyObject* v)
 {
     int handlernum = handlername2int(name);
     if (handlernum >= 0) {
@@ -1388,14 +1391,15 @@ sethandler(xmlparseobject *self, const char *name, PyObject* v)
 }
 
 static int
-xmlparse_setattr(xmlparseobject *self, char *name, PyObject *v)
+xmlparse_setattro(xmlparseobject *self, PyObject *name, PyObject *v)
 {
     /* Set attribute 'name' to value 'v'. v==NULL means delete */
     if (v == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "Cannot delete attribute");
         return -1;
     }
-    if (strcmp(name, "buffer_text") == 0) {
+    assert(PyUnicode_Check(name));
+    if (PyUnicode_CompareWithASCIIString(name, "buffer_text") == 0) {
         if (PyObject_IsTrue(v)) {
             if (self->buffer == NULL) {
                 self->buffer = malloc(self->buffer_size);
@@ -1414,7 +1418,7 @@ xmlparse_setattr(xmlparseobject *self, char *name, PyObject *v)
         }
         return 0;
     }
-    if (strcmp(name, "namespace_prefixes") == 0) {
+    if (PyUnicode_CompareWithASCIIString(name, "namespace_prefixes") == 0) {
         if (PyObject_IsTrue(v))
             self->ns_prefixes = 1;
         else
@@ -1422,14 +1426,14 @@ xmlparse_setattr(xmlparseobject *self, char *name, PyObject *v)
         XML_SetReturnNSTriplet(self->itself, self->ns_prefixes);
         return 0;
     }
-    if (strcmp(name, "ordered_attributes") == 0) {
+    if (PyUnicode_CompareWithASCIIString(name, "ordered_attributes") == 0) {
         if (PyObject_IsTrue(v))
             self->ordered_attributes = 1;
         else
             self->ordered_attributes = 0;
         return 0;
     }
-    if (strcmp(name, "specified_attributes") == 0) {
+    if (PyUnicode_CompareWithASCIIString(name, "specified_attributes") == 0) {
         if (PyObject_IsTrue(v))
             self->specified_attributes = 1;
         else
@@ -1437,7 +1441,7 @@ xmlparse_setattr(xmlparseobject *self, char *name, PyObject *v)
         return 0;
     }
 
-    if (strcmp(name, "buffer_size") == 0) {
+    if (PyUnicode_CompareWithASCIIString(name, "buffer_size") == 0) {
       long new_buffer_size;
       if (!PyLong_Check(v)) {
         PyErr_SetString(PyExc_TypeError, "buffer_size must be an integer");
@@ -1480,7 +1484,7 @@ xmlparse_setattr(xmlparseobject *self, char *name, PyObject *v)
       return 0;
     }
 
-    if (strcmp(name, "CharacterDataHandler") == 0) {
+    if (PyUnicode_CompareWithASCIIString(name, "CharacterDataHandler") == 0) {
         /* If we're changing the character data handler, flush all
          * cached data with the old handler.  Not sure there's a
          * "right" thing to do, though, but this probably won't
@@ -1492,7 +1496,7 @@ xmlparse_setattr(xmlparseobject *self, char *name, PyObject *v)
     if (sethandler(self, name, v)) {
         return 0;
     }
-    PyErr_SetString(PyExc_AttributeError, name);
+    PyErr_SetObject(PyExc_AttributeError, name);
     return -1;
 }
 
@@ -1524,7 +1528,7 @@ static PyTypeObject Xmlparsetype = {
         (destructor)xmlparse_dealloc,   /*tp_dealloc*/
         (printfunc)0,           /*tp_print*/
         0,                      /*tp_getattr*/
-        (setattrfunc)xmlparse_setattr,  /*tp_setattr*/
+        0,  /*tp_setattr*/
         0,                      /*tp_reserved*/
         (reprfunc)0,            /*tp_repr*/
         0,                      /*tp_as_number*/
@@ -1534,7 +1538,7 @@ static PyTypeObject Xmlparsetype = {
         (ternaryfunc)0,         /*tp_call*/
         (reprfunc)0,            /*tp_str*/
         (getattrofunc)xmlparse_getattro, /* tp_getattro */
-        0,              /* tp_setattro */
+        (setattrofunc)xmlparse_setattro,              /* tp_setattro */
         0,              /* tp_as_buffer */
         Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /*tp_flags*/
         Xmlparsetype__doc__, /* tp_doc - Documentation string */

@@ -203,6 +203,8 @@ class ParseTest(unittest.TestCase):
 
         operations = out.out
         self._verify_parse_output(operations)
+        # Issue #6697.
+        self.assertRaises(AttributeError, getattr, parser, '\uD800')
 
     def test_parse_file(self):
         # Try parsing a file

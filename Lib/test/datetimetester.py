@@ -2508,10 +2508,16 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
 
         # Check that an invalid tzname result raises an exception.
         class Badtzname(tzinfo):
-            def tzname(self, dt): return 42
+            tz = 42
+            def tzname(self, dt): return self.tz
         t = time(2, 3, 4, tzinfo=Badtzname())
         self.assertEqual(t.strftime("%H:%M:%S"), "02:03:04")
         self.assertRaises(TypeError, t.strftime, "%Z")
+
+        # Issue #6697:
+        if '_Fast' in str(type(self)):
+            Badtzname.tz = '\ud800'
+            self.assertRaises(ValueError, t.strftime, "%Z")
 
     def test_hash_edge_cases(self):
         # Offsets that overflow a basic time.

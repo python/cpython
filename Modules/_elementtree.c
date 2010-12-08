@@ -1483,6 +1483,9 @@ element_getattro(ElementObject* self, PyObject* nameobj)
 
     if (PyUnicode_Check(nameobj))
         name = _PyUnicode_AsString(nameobj);
+    
+    if (name == NULL)
+        return NULL;
 
     /* handle common attributes first */
     if (strcmp(name, "tag") == 0) {
@@ -2139,7 +2142,7 @@ expat_set_error(const char* message, int line, int column)
     PyObject *position;
     char buffer[256];
 
-    sprintf(buffer, "%s: line %d, column %d", message, line, column);
+    sprintf(buffer, "%.100s: line %d, column %d", message, line, column);
 
     error = PyObject_CallFunction(elementtree_parseerror_obj, "s", buffer);
     if (!error)
@@ -2194,8 +2197,8 @@ expat_default_handler(XMLParserObject* self, const XML_Char* data_in,
         Py_XDECREF(res);
     } else if (!PyErr_Occurred()) {
         /* Report the first error, not the last */
-        char message[128];
-        sprintf(message, "undefined entity &%.100s;", _PyUnicode_AsString(key));
+        char message[128] = "undefined entity ";
+        strncat(message, data_in, data_len < 100?data_len:100);
         expat_set_error(
             message,
             EXPAT(GetErrorLineNumber)(self->parser),
@@ -2796,29 +2799,25 @@ static PyMethodDef xmlparser_methods[] = {
 static PyObject*  
 xmlparser_getattro(XMLParserObject* self, PyObject* nameobj)
 {
-    PyObject* res;
-    char *name = "";
-
-    if (PyUnicode_Check(nameobj))
-        name = _PyUnicode_AsString(nameobj);
-
-    PyErr_Clear();
-
-    if (strcmp(name, "entity") == 0)
-        res = self->entity;
-    else if (strcmp(name, "target") == 0)
-        res = self->target;
-    else if (strcmp(name, "version") == 0) {
-        char buffer[100];
-        sprintf(buffer, "Expat %d.%d.%d", XML_MAJOR_VERSION,
+    if (PyUnicode_Check(nameobj)) {
+        PyObject* res;
+        if (PyUnicode_CompareWithASCIIString(nameobj, "entity") == 0)
+            res = self->entity;
+        else if (PyUnicode_CompareWithASCIIString(nameobj, "target") == 0)
+            res = self->target;
+        else if (PyUnicode_CompareWithASCIIString(nameobj, "version") == 0) {
+            return PyUnicode_FromFormat(
+                "Expat %d.%d.%d", XML_MAJOR_VERSION,
                 XML_MINOR_VERSION, XML_MICRO_VERSION);
-        return PyUnicode_DecodeUTF8(buffer, strlen(buffer), "strict");
-    } else {
-        return PyObject_GenericGetAttr((PyObject*) self, nameobj);
-    }
+        }
+        else
+            goto generic;
 
-    Py_INCREF(res);
-    return res;
+        Py_INCREF(res);
+        return res;
+    }
+  generic:
+    return PyObject_GenericGetAttr((PyObject*) self, nameobj);
 }
 
 static PyTypeObject XMLParser_Type = {
