@@ -544,6 +544,12 @@ class UTF16LETest(ReadTest):
         self.assertRaises(UnicodeDecodeError, codecs.utf_16_le_decode,
                           b"\xff", "strict", True)
 
+    def test_nonbmp(self):
+        self.assertEqual("\U00010203".encode(self.encoding),
+                         b'\x00\xd8\x03\xde')
+        self.assertEqual(b'\x00\xd8\x03\xde'.decode(self.encoding),
+                         "\U00010203")
+
 class UTF16BETest(ReadTest):
     encoding = "utf-16-be"
 
@@ -565,6 +571,12 @@ class UTF16BETest(ReadTest):
     def test_errors(self):
         self.assertRaises(UnicodeDecodeError, codecs.utf_16_be_decode,
                           b"\xff", "strict", True)
+
+    def test_nonbmp(self):
+        self.assertEqual("\U00010203".encode(self.encoding),
+                         b'\xd8\x00\xde\x03')
+        self.assertEqual(b'\xd8\x00\xde\x03'.decode(self.encoding),
+                         "\U00010203")
 
 class UTF8Test(ReadTest):
     encoding = "utf-8"
