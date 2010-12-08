@@ -508,7 +508,16 @@ Some smaller changes made to the core Python language are:
   :class:`collections.Sequence` :term:`abstract base class`.  As a result, the
   language will have a more uniform API.  In addition, :class:`range` objects
   now support slicing and negative indices.  This makes *range* more
-  interoperable with lists.
+  interoperable with lists::
+
+      >>> range(0, 100, 2).count(10)
+      1
+      >>> range(0, 100, 2).index(10)
+      5
+      >>> range(0, 100, 2)[5]
+      10
+      >>> range(0, 100, 2)[0:5]
+      range(0, 10, 2)
 
   (Contributed by Daniel Stuzback in :issue:`9213` and by Alexander Belopolsky
   in :issue:`2690`.)
