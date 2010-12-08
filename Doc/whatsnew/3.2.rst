@@ -223,11 +223,31 @@ components so that process and thread limits can be centrally managed.  This
 solves the design challenge that arises when each component has its own
 competing strategy for resource management.
 
-For an example of :class:`~concurrent.futures.ThreadPoolExecutor`,
-see :ref:`code for threaded parallel URL reads<threadpoolexecutor-example>`.
+Both classes share a common interface with three methods:
+:meth:`~concurrent.futures.Executor.submit` for scheduling a callable and
+returning a :class:`~concurrent.futures.Future` object;
+:meth:`~concurrent.futures.Executor.map` for scheduling many asynchronous calls
+at time, and :meth:`~concurrent.futures.shutdown` for freeing resources.  The
+class is a :term:`context manager` and can be used within a :keyword:`with`
+statement to assure that resources are automatically released when currently
+pending futures are done executing.
 
-For an example of :class:`~concurrent.futures.ProcessPoolExecutor`,
-see :ref:`code for computing prime numbers in parallel<processpoolexecutor-example>`.
+A simple of example of :class:`~concurrent.futures.ThreadPoolExecutor` is a
+launch of four parallel threads for copying directories::
+
+  import shutil
+  with ThreadPoolExecutor(max_workers=4) as e:
+      e.submit(shutil.copy, 'src1.txt', 'dest1.txt')
+      e.submit(shutil.copy, 'src2.txt', 'dest2.txt')
+      e.submit(shutil.copy, 'src3.txt', 'dest3.txt')
+      e.submit(shutil.copy, 'src3.txt', 'dest4.txt')
+
+Also see :ref:`code for threaded parallel URL reads<threadpoolexecutor-example>`
+for an example using threads to fetch multiple web pages in parallel.
+
+Or, for an example of :class:`~concurrent.futures.ProcessPoolExecutor`, see
+:ref:`code for computing prime numbers in
+parallel<processpoolexecutor-example>`.
 
 .. seealso::
 
