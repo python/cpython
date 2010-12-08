@@ -11,6 +11,8 @@ class Test(unittest.TestCase):
 
     def test_openlog(self):
         syslog.openlog('python')
+        # Issue #6697.
+        self.assertRaises(UnicodeEncodeError, syslog.openlog, '\uD800')
 
     def test_syslog(self):
         syslog.openlog('python')

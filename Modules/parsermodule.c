@@ -792,6 +792,11 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
                 }
             }
             temp_str = _PyUnicode_AsStringAndSize(temp, &len);
+            if (temp_str == NULL) {
+                Py_DECREF(temp);
+                Py_XDECREF(elem);
+                return 0;
+            }
             strn = (char *)PyObject_MALLOC(len + 1);
             if (strn != NULL)
                 (void) memcpy(strn, temp_str, len + 1);
@@ -870,6 +875,8 @@ build_node_tree(PyObject *tuple)
             encoding = PySequence_GetItem(tuple, 2);
             /* tuple isn't borrowed anymore here, need to DECREF */
             tuple = PySequence_GetSlice(tuple, 0, 2);
+            if (tuple == NULL)
+                return NULL;
         }
         res = PyNode_New(num);
         if (res != NULL) {
@@ -881,6 +888,12 @@ build_node_tree(PyObject *tuple)
                 Py_ssize_t len;
                 const char *temp;
                 temp = _PyUnicode_AsStringAndSize(encoding, &len);
+                if (temp == NULL) {
+                    Py_DECREF(res);
+                    Py_DECREF(encoding);
+                    Py_DECREF(tuple);
+                    return NULL;
+                }
                 res->n_str = (char *)PyObject_MALLOC(len + 1);
                 if (res->n_str != NULL && temp != NULL)
                     (void) memcpy(res->n_str, temp, len + 1);

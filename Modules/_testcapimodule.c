@@ -1741,15 +1741,16 @@ test_string_from_format(PyObject *self, PyObject *args)
 {
     PyObject *result;
     char *msg;
+    static const Py_UNICODE one[] = {'1', 0};
 
-#define CHECK_1_FORMAT(FORMAT, TYPE)                    \
-    result = PyUnicode_FromFormat(FORMAT, (TYPE)1);     \
-    if (result == NULL)                                 \
-        return NULL;                                    \
-    if (strcmp(_PyUnicode_AsString(result), "1")) {     \
-        msg = FORMAT " failed at 1";                    \
-        goto Fail;                                      \
-    }                                                   \
+#define CHECK_1_FORMAT(FORMAT, TYPE)                                \
+    result = PyUnicode_FromFormat(FORMAT, (TYPE)1);                 \
+    if (result == NULL)                                             \
+        return NULL;                                                \
+    if (Py_UNICODE_strcmp(PyUnicode_AS_UNICODE(result), one)) {     \
+        msg = FORMAT " failed at 1";                                \
+        goto Fail;                                                  \
+    }                                                               \
     Py_DECREF(result)
 
     CHECK_1_FORMAT("%d", int);

@@ -8,10 +8,26 @@ cET = support.import_module('xml.etree.cElementTree')
 # cElementTree specific tests
 
 def sanity():
-    """
+    r"""
     Import sanity.
 
     >>> from xml.etree import cElementTree
+
+    Issue #6697.
+
+    >>> e = cElementTree.Element('a')
+    >>> getattr(e, '\uD800')           # doctest: +ELLIPSIS
+    Traceback (most recent call last):
+      ...
+    UnicodeEncodeError: ...
+
+    >>> p = cElementTree.XMLParser()
+    >>> p.version.split()[0]
+    'Expat'
+    >>> getattr(p, '\uD800')
+    Traceback (most recent call last):
+     ...
+    AttributeError: 'XMLParser' object has no attribute '\ud800'
     """
 
 

@@ -1257,7 +1257,8 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             assert(PyUnicode_Check(Zreplacement));
             ptoappend = _PyUnicode_AsStringAndSize(Zreplacement,
                                                   &ntoappend);
-            ntoappend = Py_SIZE(Zreplacement);
+            if (ptoappend == NULL)
+                goto Done;
         }
         else if (ch == 'f') {
             /* format microseconds */

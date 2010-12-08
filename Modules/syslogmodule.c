@@ -68,9 +68,9 @@ syslog_get_argv(void)
      * is optional.
      */
 
-    Py_ssize_t argv_len;
+    Py_ssize_t argv_len, scriptlen;
     PyObject *scriptobj;
-    char *atslash;
+    Py_UNICODE *atslash, *atstart;
     PyObject *argv = PySys_GetObject("argv");
 
     if (argv == NULL) {
@@ -90,13 +90,16 @@ syslog_get_argv(void)
     if (!PyUnicode_Check(scriptobj)) {
         return(NULL);
     }
-    if (PyUnicode_GET_SIZE(scriptobj) == 0) {
+    scriptlen = PyUnicode_GET_SIZE(scriptobj);
+    if (scriptlen == 0) {
         return(NULL);
     }
 
-    atslash = strrchr(_PyUnicode_AsString(scriptobj), SEP);
+    atstart = PyUnicode_AS_UNICODE(scriptobj);
+    atslash = Py_UNICODE_strrchr(atstart, SEP);
     if (atslash) {
-        return(PyUnicode_FromString(atslash + 1));
+        return(PyUnicode_FromUnicode(atslash + 1,
+                                     scriptlen - (atslash - atstart) - 1));
     } else {
         Py_INCREF(scriptobj);
         return(scriptobj);
@@ -113,6 +116,7 @@ syslog_openlog(PyObject * self, PyObject * args, PyObject *kwds)
     long facility = LOG_USER;
     PyObject *new_S_ident_o = NULL;
     static char *keywords[] = {"ident", "logoption", "facility", 0};
+    char *ident = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                           "|Ull:openlog", keywords, &new_S_ident_o, &logopt, &facility))
@@ -120,12 +124,12 @@ syslog_openlog(PyObject * self, PyObject * args, PyObject *kwds)
 
     if (new_S_ident_o) {
         Py_INCREF(new_S_ident_o);
-        }
+    }
 
     /*  get sys.argv[0] or NULL if we can't for some reason  */
     if (!new_S_ident_o) {
         new_S_ident_o = syslog_get_argv();
-        }
+    }
 
     Py_XDECREF(S_ident_o);
     S_ident_o = new_S_ident_o;
@@ -134,8 +138,13 @@ syslog_openlog(PyObject * self, PyObject * args, PyObject *kwds)
      * make a copy, and syslog(3) later uses it.  We can't garbagecollect it
      * If NULL, just let openlog figure it out (probably using C argv[0]).
      */
+    if (S_ident_o) {
+        ident = _PyUnicode_AsString(S_ident_o);
+        if (ident == NULL)
+            return NULL;
+    }
 
-    openlog(S_ident_o ? _PyUnicode_AsString(S_ident_o) : NULL, logopt, facility);
+    openlog(ident, logopt, facility);
     S_log_open = 1;
 
     Py_INCREF(Py_None);
