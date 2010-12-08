@@ -43,6 +43,7 @@ from math import log as _log, exp as _exp, pi as _pi, e as _e, ceil as _ceil
 from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
 from os import urandom as _urandom
 import collections as _collections
+from hashlib import sha512 as _sha512
 
 __all__ = ["Random","seed","random","uniform","randint","choice","sample",
            "randrange","shuffle","normalvariate","lognormvariate",
@@ -110,10 +111,12 @@ class Random(_random.Random):
                 import time
                 a = int(time.time() * 256) # use fractional seconds
 
-        if version == 2 and isinstance(a, (str, bytes, bytearray)):
-            if isinstance(a, str):
-                a = a.encode("utf8")
-            a = int.from_bytes(a, 'big')
+        if version == 2:
+            if isinstance(a, (str, bytes, bytearray)):
+                if isinstance(a, str):
+                    a = a.encode("utf8")
+                a += _sha512(a).digest()
+                a = int.from_bytes(a, 'big')
 
         super().seed(a)
         self.gauss_next = None

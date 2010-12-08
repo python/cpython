@@ -246,8 +246,8 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
              '0x1.1ebb4352e4c4dp-1', '0x1.1a7422abf9c11p-1'])
         self.gen.seed("the quick brown fox", version=2)
         self.assertEqual([self.gen.random().hex() for i in range(4)],
-            ['0x1.1294009b9eda4p-2', '0x1.2ff96171b0010p-1',
-             '0x1.459e0989bd8e0p-5', '0x1.8b5f55892ddcbp-1'])
+            ['0x1.1239ddfb11b7cp-3', '0x1.b3cbb5c51b120p-4',
+             '0x1.8c4f55116b60fp-1', '0x1.63eb525174a27p-1'])
 
     def test_setstate_first_arg(self):
         self.assertRaises(ValueError, self.gen.setstate, (1, None, None))

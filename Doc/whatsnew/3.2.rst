@@ -125,8 +125,8 @@ Example of the parser's automatically generated help::
 
     >>> parser.parse_args('-h'.split())
 
-    usage: tmp_argparse_example.py [-h] -u USER
-                                   {deploy,start,stop} HOSTNAME [HOSTNAME ...]
+    usage: manage_cloud.py [-h] -u USER
+                           {deploy,start,stop} HOSTNAME [HOSTNAME ...]
 
     Manage servers
 
@@ -321,10 +321,10 @@ module::
       PEP written by Barry Warsaw.
 
 
-Email 5.1
-=========
+Email
+=====
 
-The email package is extended to be able to parse and generate email messages
+The email package has been extended to parse and generate email messages
 in bytes format.
 
 * New functions :func:`~email.message_from_bytes` and
@@ -832,6 +832,7 @@ New, Improved, and Deprecated Modules
 
   (Contributed by Rodolpho Eckhardt and Nick Coghlan, :issue:`10220`.)
 
+.. XXX: notes on new random.seed() version 2
 .. XXX: Create a new section for all changes relating to context managers.
 .. XXX: Various ConfigParser changes
 .. XXX: Mention inspect.getattr_static (Michael Foord)
@@ -902,7 +903,7 @@ New, Improved, and Deprecated Modules
             platbase = "C:\Python32"
             prefix = "C:\Python32"
             projectbase = "C:\Python32"
-            py_version = "3.2b1"
+            py_version = "3.2"
             py_version_nodot = "32"
             py_version_short = "3.2"
             srcdir = "C:\Python32"
@@ -1151,3 +1152,8 @@ require changes to your code:
 
  * The :func:`sys.setfilesystemencoding` function was removed because
    it had a flawed design.
+
+ * The :func:`random.seed` function and method now performing salting for
+   string seeds.  To access the previous version of *seed* in order to
+   reproduce Python 3.1 sequences, set the *version* argument to *1*,
+   ``random.seed(s, version=1)``.
