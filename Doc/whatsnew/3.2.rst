@@ -209,7 +209,7 @@ The design for :mod:`concurrent.futures` was inspired by
 are represented by a :class:`~concurrent.futures.Future` object which abstracts
 features common to threads, processes, and remote procedure calls.  That object
 supports status checks (running or done), timeouts, cancellations, adding
-callbacks, and access to results or exceptions.XS
+callbacks, and access to results or exceptions.
 
 The primary offering of the new module is a pair of executor classes for
 launching and managing calls.  The goal of the executors is to make it easier to
@@ -853,7 +853,6 @@ New, Improved, and Deprecated Modules
 
   (Contributed by Rodolpho Eckhardt and Nick Coghlan, :issue:`10220`.)
 
-.. XXX: notes on new random.seed() version 2
 .. XXX: Create a new section for all changes relating to context managers.
 .. XXX: Various ConfigParser changes
 .. XXX: Mention inspect.getattr_static (Michael Foord)
