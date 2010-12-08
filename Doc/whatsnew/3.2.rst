@@ -440,7 +440,11 @@ Some smaller changes made to the core Python language are:
   dictionaries it would miss the dynamic methods and make it difficult to
   implement proxy objects.
 
-  (Discovered by Yury Selivanov and fixed by Benjamin Peterson; :issue:`9666`.)
+  To support lookups without the possibility of activating a dynamic attribute,
+  the :mod:`inspect` module has a new function, :func:`getattr_static`.
+
+  (Discovered by Yury Selivanov and fixed by Benjamin Peterson; :issue:`9666`.
+  The inspect function added by Michael Foord.)
 
 * The :func:`str` of a float or complex number is now the same as its
   :func:`repr`. Previously, the :func:`str` form was shorter but that just
@@ -669,10 +673,8 @@ New, Improved, and Deprecated Modules
 
   The :mod:`gzip` module also gains the :func:`~gzip.compress` and
   :func:`~gzip.decompress` functions for easier in-memory compression and
-  decompression.
-
-  Keep in mind that text needs to be encoded in to bytes before compressing
-  and decompressing:
+  decompression.  Keep in mind that text needs to be encoded in to
+  :class:`bytes` before compressing and decompressing:
 
   >>> s = 'Three shall be the number thou shalt count, '
   >>> s += 'and the number of the counting shall be three'
@@ -682,8 +684,8 @@ New, Improved, and Deprecated Modules
   >>> c = gzip.compress(b)
   >>> len(c)
   77
-  >>> gzip.decompress(c).decode()[:43]      # decompress and convert to text
-  'Three shall be the number thou shalt count, '
+  >>> gzip.decompress(c).decode()[:42]      # decompress and convert to text
+  'Three shall be the number thou shalt count,'
 
   (Contributed by Anand B. Pillai in :issue:`3488`; and by Antoine Pitrou, Nir
   Aides and Brian Curtin in :issue:`9962`, :issue:`1675951`, :issue:`7471` and
@@ -883,7 +885,6 @@ New, Improved, and Deprecated Modules
 
 .. XXX: Create a new section for all changes relating to context managers.
 .. XXX: Various ConfigParser changes
-.. XXX: Mention inspect.getattr_static (Michael Foord)
 .. XXX: Mention urllib.parse changes
           Issue 9873 (Nick Coghlan):
             - ASCII byte sequence support in URL parsing
