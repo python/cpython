@@ -158,9 +158,17 @@ _ssl
     You can (theoretically) use any version of OpenSSL you like - the
     build process will automatically select the latest version.
 
-    You must also install ActivePerl from
+    You can install the NASM assembler from
+        http://www.nasm.us/
+    for x86 builds.  Put nasmw.exe anywhere in your PATH.
+    Note: recent releases of nasm only have nasm.exe. Just rename it to 
+    nasmw.exe.
+
+    You can also install ActivePerl from
         http://www.activestate.com/activeperl/
-    as this is used by the OpenSSL build process.  Complain to them <wink>.
+    if you like to use the official sources instead of the files from 
+    python's subversion repository. The svn version contains pre-build
+    makefiles and assembly files.
 
     The MSVC project simply invokes PC/VC6/build_ssl.py to perform
     the build.  This Python script locates and builds your OpenSSL
