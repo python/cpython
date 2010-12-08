@@ -3,6 +3,7 @@
 
 import sys
 import os
+import re
 import os.path
 import tempfile
 import subprocess
@@ -12,7 +13,7 @@ import shutil
 import zipfile
 
 from imp import source_from_cache
-from test.support import make_legacy_pyc
+from test.support import make_legacy_pyc, strip_python_stderr
 
 # Executing the interpreter in a subprocess
 def _assert_python(expected_success, *args, **env_vars):
@@ -34,6 +35,7 @@ def _assert_python(expected_success, *args, **env_vars):
         p.stdout.close()
         p.stderr.close()
     rc = p.returncode
+    err =  strip_python_stderr(err)
     if (rc and expected_success) or (not rc and not expected_success):
         raise AssertionError(
             "Process return code is %d, "
