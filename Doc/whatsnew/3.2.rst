@@ -84,10 +84,10 @@ positional arguments (not just options), subcommands, required options and other
 common patterns of specifying and validating options.
 
 This module has already has wide-spread success in the community as a
-third-party module.  Being more fully featured than its predecessor,
-:mod:`argparse`, is now the preferred module for command-line processing.  The
-older module is still being kept available because of the substantial amount of
-legacy code that depends on it.
+third-party module.  Being more fully featured than its predecessor, the
+:mod:`argparse` module is now the preferred module for command-line processing.
+The older module is still being kept available because of the substantial amount
+of legacy code that depends on it.
 
 Here's an annotated example parser showing features like limiting results to a
 set of choices, specifying a *metavar* in the help screen, validating that one
@@ -113,7 +113,7 @@ Example of calling the parser on a command string::
     >>> cmd  = 'deploy sneezy.example.com sleepy.example.com -u skycaptain'
     >>> result = parser.parse_args(cmd.split())
 
-    >>> # parsed variable are stored in the attributes
+    >>> # parsed variables are stored in the attributes
     >>> result.action
     'deploy'
     >>> result.targets
@@ -140,6 +140,25 @@ Example of the parser's automatically generated help::
 
     Tested on Solaris and Linux
 
+An especially nice :mod:`argparse` feature is the ability to define subparsers,
+each with their own argument patterns and help displays::
+
+    import argparse
+    parser = argparse.ArgumentParser(prog='HELM')
+    subparsers = parser.add_subparsers()
+
+    parser_l = subparsers.add_parser('launch', help='Launch Control')   # first subgroup
+    parser_l.add_argument('-m', '--missles', action='store_true')
+    parser_l.add_argument('-t', '--torpedos', action='store_true')
+
+    parser_m = subparsers.add_parser('move', help='Move Vessel')        # second subgroup
+    parser_m.add_argument('-c', '--course', type=int, required=True)
+    parser_m.add_argument('-s', '--speed', type=int, default=0)
+
+    $ ./helm.py --help                         # top level help (launch and move)
+    $ ./helm.py launch --help                  # help for launch options
+    $ ./helm.py launch --missiles              # set missiles=True and torpedos=False
+    $ ./helm.py move --course 180 --speed 5    # set movement parameters
 
 .. seealso::
 
