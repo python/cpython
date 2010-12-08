@@ -609,6 +609,27 @@ New, Improved, and Deprecated Modules
   (Contributed by Raymond Hettinger and incorporating design suggestions
   from Mark Dickinson.)
 
+.. XXX: Add a section describing new feature added to datetime module
+
+   * The :mod:`datetime` received several new features including
+
+     - A new type, :class:`timezone` that implements :class:`tzinfo`
+       interface by returning fixed UTC offset and timezone name. This
+       makes it easier to create aware :class:datetime` objects::
+
+       >>> datetime.datetime.now(datetime.timezone.utc)
+       datetime.datetime(2010, 12, 8, 21, 4, 2, 923754, tzinfo=datetime.timezone.utc)
+
+       >>> datetime.datetime.strptime("01/01/2000 12:00 +0000", "%m/%d/%Y %H:%M %z")
+       datetime.datetime(2000, 1, 1, 12, 0, tzinfo=datetime.timezone.utc)
+
+      (See :issue:`5094` and :issue:`6641`.)
+
+     - :class: timedelta objects can now be multiplied by float and
+       divided by float and int objects.
+
+       (See :issue:`1289118`.)
+
 * The :mod:`nntplib` module gets a revamped implementation with better bytes and
   unicode semantics as well as more practical APIs.  These improvements break
   compatibility with the nntplib version in Python 3.1, which was partly
