@@ -159,7 +159,7 @@ _ssl
     nasmw.exe.
 
     You can also install ActivePerl from
-        http://www.activestate.com/Products/ActivePerl/
+        http://www.activestate.com/activeperl/
     if you like to use the official sources instead of the files from 
     python's subversion repository. The svn version contains pre-build
     makefiles and assembly files.
