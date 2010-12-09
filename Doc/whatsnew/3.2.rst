@@ -547,7 +547,12 @@ Some smaller changes made to the core Python language are:
 
 * The :func:`callable` builtin function from Py2.x was resurrected.  It provides
   a concise, readable alternative to using an :term:`abstract base class` in an
-  expression like ``isinstance(x, collections.Callable)``.
+  expression like ``isinstance(x, collections.Callable)``:
+
+  >>> callable(max)
+  True
+  >>> callable(20)
+  False
 
   (See :issue:`10518`.)
 
@@ -588,7 +593,12 @@ New, Improved, and Deprecated Modules
   pointing to the original callable function.  This allows wrapped functions to
   be introspected.  It also copies :attr:`__annotations__` if defined.  And now
   it also gracefully skips over missing attributes such as :attr:`__doc__` which
-  might not be defined for the wrapped callable.
+  might not be defined for the wrapped callable:
+
+  >>> callable(max)
+  True
+  >>> callable(20)
+  False
 
   (By Nick Coghlan and Terrence Cole; :issue:`9567`, :issue:`3445`, and
   :issue:`8814`.)
@@ -609,26 +619,42 @@ New, Improved, and Deprecated Modules
   (Contributed by Raymond Hettinger and incorporating design suggestions
   from Mark Dickinson.)
 
-.. XXX: Add a section describing new feature added to datetime module
+* The :class:`collections.Counter` class now has two forms of in-place
+  subtraction, the existing *-=* operator for `saturating subtraction
+  <http://en.wikipedia.org/wiki/Saturation_arithmetic>`_ and the new
+  :meth:`~collections.Counter.subtract` method for regular subtraction.  The
+  former is suitable for `multisets <http://en.wikipedia.org/wiki/Multiset>`_
+  which only have positive counts, and the latter is more suitable for counters
+  that allow negative counts:
 
-   * The :mod:`datetime` received several new features including
+  >>> tally = Counter(dogs=5, cat=3)
+  >>> tally -= Counter(dogs=2, cats=8)    # saturating subtraction
+  >>> tally
+  Counter({'dogs': 3})
 
-     - A new type, :class:`timezone` that implements :class:`tzinfo`
-       interface by returning fixed UTC offset and timezone name. This
-       makes it easier to create aware :class:datetime` objects::
+  >>> tally = Counter(dogs=5, cats=3)
+  >>> tally.subtract(dogs=2, cats=8)      # regular subtraction
+  >>> tally
+  Counter({'dogs': 3, 'cats': -5})
 
-       >>> datetime.datetime.now(datetime.timezone.utc)
-       datetime.datetime(2010, 12, 8, 21, 4, 2, 923754, tzinfo=datetime.timezone.utc)
+  (Contributed by Raymond Hettinger.)
 
-       >>> datetime.datetime.strptime("01/01/2000 12:00 +0000", "%m/%d/%Y %H:%M %z")
-       datetime.datetime(2000, 1, 1, 12, 0, tzinfo=datetime.timezone.utc)
+* The :mod:`datetime` module has a new type :class:`~datetime.timezone` that
+  implements the :class:`~datetime.tzinfo` interface by returning a fixed UTC
+  offset and timezone name. This makes it easier to create timezone aware
+  datetime objects:
 
-      (See :issue:`5094` and :issue:`6641`.)
+  >>> datetime.now(timezone.utc)
+  datetime.datetime(2010, 12, 8, 21, 4, 2, 923754, tzinfo=datetime.timezone.utc)
 
-     - :class: timedelta objects can now be multiplied by float and
-       divided by float and int objects.
+  >>> datetime.strptime("01/01/2000 12:00 +0000", "%m/%d/%Y %H:%M %z")
+  datetime.datetime(2000, 1, 1, 12, 0, tzinfo=datetime.timezone.utc)
 
-       (See :issue:`1289118`.)
+  Also, :class:`~datetime.timedelta` objects can now be multiplied by
+  :class:`float` and divided by :class:`float` and :class:`int` objects.
+
+  (Contributed by Alexander Belopolsky in :issue:`1289118`, :issue:`5094` and
+  :issue:`6641`.)
 
 * The :mod:`nntplib` module gets a revamped implementation with better bytes and
   unicode semantics as well as more practical APIs.  These improvements break
