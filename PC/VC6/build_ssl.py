@@ -13,6 +13,11 @@
 # it should configure and build SSL, then build the ssl Python extension
 # without intervention.
 
+# Modified by Christian Heimes
+# Now this script supports pre-generated makefiles and assembly files.
+# Developers don't need an installation of Perl anymore to build Python. A svn
+# checkout from our svn repository is enough.
+
 import os, sys, re, shutil
 
 # Find all "foo.exe" files on the PATH.
@@ -36,7 +41,7 @@ def find_all_on_path(filename, extras = None):
 # is available.
 def find_working_perl(perls):
     for perl in perls:
-        fh = os.popen(perl + ' -e "use Win32;"')
+        fh = os.popen('"%s" -e "use Win32;"' % perl)
         fh.read()
         rc = fh.close()
         if rc:
@@ -120,6 +125,22 @@ def run_configure(configure, do_script):
     print(do_script)
     os.system(do_script)
 
+def cmp(f1, f2):
+    bufsize = 1024 * 8
+    with open(f1, 'rb') as fp1, open(f2, 'rb') as fp2:
+        while True:
+            b1 = fp1.read(bufsize)
+            b2 = fp2.read(bufsize)
+            if b1 != b2:
+                return False
+            if not b1:
+                return True
+
+def copy(src, dst):
+    if os.path.isfile(dst) and cmp(src, dst):
+        return
+    shutil.copy(src, dst)
+
 def main():
     debug = "-d" in sys.argv
     build_all = "-a" in sys.argv
@@ -129,6 +150,7 @@ def main():
         do_script = "ms\\do_nasm"
         makefile="ms\\nt.mak"
         m32 = makefile
+        dirsuffix = "32"
     configure += " no-idea no-rc5 no-mdc2"
     make_flags = ""
     if build_all:
@@ -137,12 +159,12 @@ def main():
     # as "well known" locations
     perls = find_all_on_path("perl.exe", ["\\perl\\bin", "C:\\perl\\bin"])
     perl = find_working_perl(perls)
-    if perl is None:
-        print("No Perl installation was found. Existing Makefiles are used.")
-    else:
+    if perl:
         print("Found a working perl at '%s'" % (perl,))
+    else:
+        print("No Perl installation was found. Existing Makefiles are used.")
     sys.stdout.flush()
-    # Look for SSL 3 levels up from pcbuild - ie, same place zlib etc all live.
+    # Look for SSL 3 levels up from PC/VC6 - ie, same place zlib etc all live.
     ssl_dir = find_best_ssl_dir(("..\\..\\..",))
     if ssl_dir is None:
         sys.exit(1)
@@ -173,12 +195,21 @@ def main():
             #    os.system("perl util\mk1mf.pl debug "+configure+" >"+makefile)
 
             fix_makefile(makefile)
-            shutil.copy(r"crypto\buildinf.h", r"crypto\buildinf_%s.h" % arch)
-            shutil.copy(r"crypto\opensslconf.h", r"crypto\opensslconf_%s.h" % arch)
+            copy(r"crypto\buildinf.h", r"crypto\buildinf_%s.h" % arch)
+            copy(r"crypto\opensslconf.h", r"crypto\opensslconf_%s.h" % arch)
+
+        # If the assembler files don't exist in tmpXX, copy them there
+        if perl is None:
+            if not os.path.exists("tmp"+dirsuffix):
+                os.mkdir("tmp"+dirsuffix)
+            for f in os.listdir("asm"+dirsuffix):
+                if not f.endswith(".asm"): continue
+                if os.path.isfile(r"tmp%s\%s" % (dirsuffix, f)): continue
+                shutil.copy(r"asm%s\%s" % (dirsuffix, f), "tmp"+dirsuffix)
 
         # Now run make.
-        shutil.copy(r"crypto\buildinf_%s.h" % arch, r"crypto\buildinf.h")
-        shutil.copy(r"crypto\opensslconf_%s.h" % arch, r"crypto\opensslconf.h")
+        copy(r"crypto\buildinf_%s.h" % arch, r"crypto\buildinf.h")
+        copy(r"crypto\opensslconf_%s.h" % arch, r"crypto\opensslconf.h")
 
         #makeCommand = "nmake /nologo PERL=\"%s\" -f \"%s\"" %(perl, makefile)
         makeCommand = "nmake /nologo -f \"%s\"" % makefile

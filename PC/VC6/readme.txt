@@ -149,21 +149,27 @@ _ssl
     Get the latest source code for OpenSSL from
         http://www.openssl.org
 
-    You (probably) don't want the "engine" code.  For example, get
-        openssl-0.9.8g.tar.gz
-    not
-        openssl-engine-0.9.8g.tar.gz
+    You (probably) don't want the "engine" code.  For example, don't get
+        openssl-engine-0.9.6g.tar.gz
 
     Unpack into the "dist" directory, retaining the folder name from
     the archive - for example, the latest stable OpenSSL will install as
-        dist/openssl-0.9.8g
+        dist/openssl-1.0.0a
 
     You can (theoretically) use any version of OpenSSL you like - the
     build process will automatically select the latest version.
 
-    You must also install ActivePerl from
-        http://www.activestate.com/Products/ActivePerl/
-    as this is used by the OpenSSL build process.  Complain to them <wink>.
+    You can install the NASM assembler from
+        http://www.nasm.us/
+    for x86 builds.  Put nasmw.exe anywhere in your PATH.
+    Note: recent releases of nasm only have nasm.exe. Just rename it to 
+    nasmw.exe.
+
+    You can also install ActivePerl from
+        http://www.activestate.com/activeperl/
+    if you like to use the official sources instead of the files from 
+    python's subversion repository. The svn version contains pre-build
+    makefiles and assembly files.
 
     The MSVC project simply invokes PC/VC6/build_ssl.py to perform
     the build.  This Python script locates and builds your OpenSSL
