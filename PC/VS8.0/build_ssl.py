@@ -8,7 +8,7 @@
 #   directory.  It is likely you will already find the zlib library and
 #   any other external packages there.
 # * Install ActivePerl and ensure it is somewhere on your path.
-# * Run this script from the PCBuild directory.
+# * Run this script from the PC/VS8.0 directory.
 #
 # it should configure and build SSL, then build the _ssl and _hashlib
 # Python extensions without intervention.
@@ -46,7 +46,7 @@ def find_all_on_path(filename, extras = None):
 # is available.
 def find_working_perl(perls):
     for perl in perls:
-        fh = os.popen(perl + ' -e "use Win32;"')
+        fh = os.popen('"%s" -e "use Win32;"' % perl)
         fh.read()
         rc = fh.close()
         if rc:
@@ -178,12 +178,12 @@ def main():
     # as "well known" locations
     perls = find_all_on_path("perl.exe", ["\\perl\\bin", "C:\\perl\\bin"])
     perl = find_working_perl(perls)
-    if perl is None:
+    if perl:
+        print("Found a working perl at '%s'" % (perl,))
+    else:
         print("No Perl installation was found. Existing Makefiles are used.")
-
-    print("Found a working perl at '%s'" % (perl,))
     sys.stdout.flush()
-    # Look for SSL 2 levels up from pcbuild - ie, same place zlib etc all live.
+    # Look for SSL 3 levels up from PC/VS8.0 - ie, same place zlib etc all live.
     ssl_dir = find_best_ssl_dir(("..\\..\\..",))
     if ssl_dir is None:
         sys.exit(1)
