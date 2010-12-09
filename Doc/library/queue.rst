@@ -27,7 +27,7 @@ lowest valued entry is retrieved first.
 .. seealso::
 
    Latest version of the `queue module Python source code
-   <http://svn.python.org/view/python/branches/release27-maint/Lib/queue.py?view=markup>`_
+   <http://svn.python.org/view/python/branches/release27-maint/Lib/Queue.py?view=markup>`_.
 
 The :mod:`Queue` module defines the following classes and exceptions:
 
