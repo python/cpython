@@ -584,6 +584,8 @@ class QName:
         self.text = text_or_uri
     def __str__(self):
         return self.text
+    def __repr__(self):
+        return '<QName %r>' % self.text
     def __hash__(self):
         return hash(self.text)
     def __le__(self, other):
