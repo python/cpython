@@ -118,7 +118,7 @@ class _CallItem(object):
 def _process_worker(call_queue, result_queue, shutdown):
     """Evaluates calls from call_queue and places the results in result_queue.
 
-    This worker is run in a seperate process.
+    This worker is run in a separate process.
 
     Args:
         call_queue: A multiprocessing.Queue of _CallItems that will be read and
