@@ -593,12 +593,7 @@ New, Improved, and Deprecated Modules
   pointing to the original callable function.  This allows wrapped functions to
   be introspected.  It also copies :attr:`__annotations__` if defined.  And now
   it also gracefully skips over missing attributes such as :attr:`__doc__` which
-  might not be defined for the wrapped callable:
-
-  >>> callable(max)
-  True
-  >>> callable(20)
-  False
+  might not be defined for the wrapped callable.
 
   (By Nick Coghlan and Terrence Cole; :issue:`9567`, :issue:`3445`, and
   :issue:`8814`.)
