@@ -390,9 +390,15 @@ format.
   build the model, including message bodies with a
   :mailheader:`Content-Transfer-Encoding` of *8bit*.
 
+* The :mod:`smtplib` :class:`~smtplib.SMTP` class now accepts a byte string
+  for the *msg* argument to the :meth:`~smtplib.SMTP.sendmail` method,
+  and a new method, :meth:`~smtplib.SMTP.send_message` accepts a
+  :class:`~email.message.Message` object and can optionally obtain the
+  *from_addr* and *to_addrs* addresses directly from the object.
+
 .. XXX Update before 3.2rc1 to reflect all of the last work and add examples.
 
-  (Proposed and implemented by R. David Murray, :issue:`4661`.)
+  (Proposed and implemented by R. David Murray, :issue:`4661` and :issue:`10321`.)
 
 
 Other Language Changes
@@ -668,20 +674,6 @@ New, Improved, and Deprecated Modules
 
   (Patch submitted by Daniel Urban; :issue:`5867`.)
 
-* The previously deprecated :func:`contextlib.nested` function has been removed
-  in favor of a plain :keyword:`with` statement which can accept multiple
-  context managers.  The latter technique is faster (because it is built-in),
-  and it does a better job finalizing multiple context managers when one of them
-  raises an exception::
-
-    >>> with open('mylog.txt') as infile, open('a.out', 'w') as outfile:
-    ...     for line in infile:
-    ...         if '<critical>' in line:
-    ...             outfile.write(line)
-
-  (Contributed by Georg Brandl and Mattias Brändström;
-  `appspot issue 53094 <http://codereview.appspot.com/53094>`_.)
-
 * The :class:`ftplib.FTP` class now supports the context manager protocol to
   unconditionally consume :exc:`socket.error` exceptions and to close the FTP
   connection when done::
@@ -733,16 +725,6 @@ New, Improved, and Deprecated Modules
   (Contributed by Anand B. Pillai in :issue:`3488`; and by Antoine Pitrou, Nir
   Aides and Brian Curtin in :issue:`9962`, :issue:`1675951`, :issue:`7471` and
   :issue:`2846`.)
-
-* The :mod:`os` module now has the :const:`ST_RDONLY` and :const:`ST_NOSUID`
-  constants for use with the :func:`~os.statvfs` function.
-
-  (Patch by Adam Jackson; :issue:`7647`.)
-
-* :func:`os.getppid` is now supported on Windows.  Note that it will continue to
-  return the same pid even after the parent process has exited.
-
-  (Patch by Jon Anglin; :issue:`6394`.)
 
 * The :func:`shutil.copytree` function has two new options:
 
@@ -875,16 +857,6 @@ New, Improved, and Deprecated Modules
 
   (Contributed by Ezio Melotti; :issue:`9424`.)
 
-* The previously deprecated :func:`string.maketrans` function has been removed
-  in favor of the static methods, :meth:`bytes.maketrans` and
-  :meth:`bytearray.maketrans`.  This change solves the confusion around which
-  types were supported by the :mod:`string` module.  Now, :class:`str`,
-  :class:`bytes`, and :class:`bytearray` each have their own **maketrans** and
-  **translate** methods with intermediate translation tables of the appropriate
-  type.
-
-  (Contributed by Georg Brandl; :issue:`5675`.)
-
 * :class:`~poplib.POP3_SSL` class now accepts a *context* parameter, which is a
   :class:`ssl.SSLContext` object allowing bundling SSL configuration options,
   certificates and private keys into a single (potentially long-lived)
@@ -915,14 +887,6 @@ New, Improved, and Deprecated Modules
   ...     print 'created temporary directory', tmpdirname
 
   (Contributed by Neil Schemenauer and Nick Coghlan; :issue:`5178`.)
-
-* The :mod:`smtplib` :class:`~smtplib.SMTP` class now accepts a byte string
-  for the *msg* argument to the :meth:`~smtplib.SMTP.sendmail` method,
-  and a new method, :meth:`~smtplib.SMTP.send_message` accepts a
-  :class:`~email.message.Message` object and can optionally obtain the
-  *from_addr* and *to_addrs* addresses directly from the object.
-
-  (Contributed by R. David Murray, :issue:`10321`.)
 
 * The :mod:`inspect` module has a new function :func:`getgenatorstate`
   to easily identify the current state of a generator as one of
@@ -1264,3 +1228,26 @@ require changes to your code:
 
   (Contributed by Antoine Pitrou in :issue:`9360`)
 
+* The previously deprecated :func:`string.maketrans` function has been removed
+  in favor of the static methods, :meth:`bytes.maketrans` and
+  :meth:`bytearray.maketrans`.  This change solves the confusion around which
+  types were supported by the :mod:`string` module.  Now, :class:`str`,
+  :class:`bytes`, and :class:`bytearray` each have their own **maketrans** and
+  **translate** methods with intermediate translation tables of the appropriate
+  type.
+
+  (Contributed by Georg Brandl; :issue:`5675`.)
+
+* The previously deprecated :func:`contextlib.nested` function has been removed
+  in favor of a plain :keyword:`with` statement which can accept multiple
+  context managers.  The latter technique is faster (because it is built-in),
+  and it does a better job finalizing multiple context managers when one of them
+  raises an exception::
+
+    >>> with open('mylog.txt') as infile, open('a.out', 'w') as outfile:
+    ...     for line in infile:
+    ...         if '<critical>' in line:
+    ...             outfile.write(line)
+
+  (Contributed by Georg Brandl and Mattias Brändström;
+  `appspot issue 53094 <http://codereview.appspot.com/53094>`_.)
