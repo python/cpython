@@ -1165,8 +1165,8 @@ alternate implementation.  (Contributed by Alexander Belopolsky.)
 IDLE
 ====
 
-* The format menu now has an option to clean-up source files by strip trailing
-  whitespace (:issue:`5150`).
+* The format menu now has an option to clean-up source files by stripping
+  trailing whitespace (:issue:`5150`).
 
 
 Build and C API Changes
