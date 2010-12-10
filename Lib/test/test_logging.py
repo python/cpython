@@ -1927,6 +1927,40 @@ class FormatterTest(unittest.TestCase):
         f = logging.Formatter('asctime', style='$')
         self.assertFalse(f.usesTime())
 
+class LastResortTest(BaseTest):
+    def test_last_resort(self):
+        "Test the last resort handler"
+        root = self.root_logger
+        root.removeHandler(self.root_hdlr)
+        old_stderr = sys.stderr
+        old_lastresort = logging.lastResort
+        old_raise_exceptions = logging.raiseExceptions
+        try:
+            sys.stderr = sio = io.StringIO()
+            root.warning('This is your final chance!')
+            self.assertEqual(sio.getvalue(), 'This is your final chance!\n')
+            #No handlers and no last resort, so 'No handlers' message
+            logging.lastResort = None
+            sys.stderr = sio = io.StringIO()
+            root.warning('This is your final chance!')
+            self.assertEqual(sio.getvalue(), 'No handlers could be found for logger "root"\n')
+            # 'No handlers' message only printed once
+            sys.stderr = sio = io.StringIO()
+            root.warning('This is your final chance!')
+            self.assertEqual(sio.getvalue(), '')
+            root.manager.emittedNoHandlerWarning = False
+            #If raiseExceptions is False, no message is printed
+            logging.raiseExceptions = False
+            sys.stderr = sio = io.StringIO()
+            root.warning('This is your final chance!')
+            self.assertEqual(sio.getvalue(), '')
+        finally:
+            sys.stderr = old_stderr
+            root.addHandler(self.root_hdlr)
+            logging.lastResort = old_lastresort
+            logging.raiseExceptions = old_raise_exceptions
+
+
 class BaseFileTest(BaseTest):
     "Base class for handler tests that write log files"
 
@@ -2017,6 +2051,7 @@ def test_main():
                  FormatterTest,
                  LogRecordFactoryTest, ChildLoggerTest, QueueHandlerTest,
                  RotatingFileHandlerTest,
+                 LastResortTest,
                  #TimedRotatingFileHandlerTest
                 )
 

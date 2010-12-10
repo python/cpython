@@ -33,7 +33,7 @@ __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'captureWarnings', 'critical', 'debug', 'disable', 'error',
            'exception', 'fatal', 'getLevelName', 'getLogger', 'getLoggerClass',
            'info', 'log', 'makeLogRecord', 'setLoggerClass', 'warn', 'warning',
-           'getLogRecordFactory', 'setLogRecordFactory']
+           'getLogRecordFactory', 'setLogRecordFactory', 'lastResort']
 
 try:
     import codecs
@@ -997,6 +997,26 @@ class FileHandler(StreamHandler):
             self.stream = self._open()
         StreamHandler.emit(self, record)
 
+class _StderrHandler(StreamHandler):
+    """
+    This class is like a StreamHandler using sys.stderr, but always uses
+    whatever sys.stderr is currently set to rather than the value of
+    sys.stderr at handler construction time.
+    """
+    def __init__(self, level=NOTSET):
+        """
+        Initialize the handler.
+        """
+        Handler.__init__(self, level)
+
+    @property
+    def stream(self):
+        return sys.stderr
+
+
+_defaultLastResort = _StderrHandler(WARNING)
+lastResort = _defaultLastResort
+
 #---------------------------------------------------------------------------
 #   Manager classes and functions
 #---------------------------------------------------------------------------
@@ -1056,7 +1076,7 @@ class Manager(object):
         """
         self.root = rootnode
         self.disable = 0
-        self.emittedNoHandlerWarning = 0
+        self.emittedNoHandlerWarning = False
         self.loggerDict = {}
         self.loggerClass = None
         self.logRecordFactory = None
@@ -1415,10 +1435,13 @@ class Logger(Filterer):
                 c = None    #break out
             else:
                 c = c.parent
-        if (found == 0) and raiseExceptions and not self.manager.emittedNoHandlerWarning:
-            sys.stderr.write("No handlers could be found for logger"
-                             " \"%s\"\n" % self.name)
-            self.manager.emittedNoHandlerWarning = 1
+        if (found == 0):
+            if lastResort:
+                lastResort.handle(record)
+            elif raiseExceptions and not self.manager.emittedNoHandlerWarning:
+                sys.stderr.write("No handlers could be found for logger"
+                                 " \"%s\"\n" % self.name)
+                self.manager.emittedNoHandlerWarning = True
 
     def getEffectiveLevel(self):
         """
@@ -1676,7 +1699,9 @@ def getLogger(name=None):
 
 def critical(msg, *args, **kwargs):
     """
-    Log a message with severity 'CRITICAL' on the root logger.
+    Log a message with severity 'CRITICAL' on the root logger. If the logger
+    has no handlers, call basicConfig() to add a console handler with a
+    pre-defined format.
     """
     if len(root.handlers) == 0:
         basicConfig()
@@ -1686,7 +1711,9 @@ fatal = critical
 
 def error(msg, *args, **kwargs):
     """
-    Log a message with severity 'ERROR' on the root logger.
+    Log a message with severity 'ERROR' on the root logger. If the logger has
+    no handlers, call basicConfig() to add a console handler with a pre-defined
+    format.
     """
     if len(root.handlers) == 0:
         basicConfig()
@@ -1694,15 +1721,18 @@ def error(msg, *args, **kwargs):
 
 def exception(msg, *args, **kwargs):
     """
-    Log a message with severity 'ERROR' on the root logger,
-    with exception information.
+    Log a message with severity 'ERROR' on the root logger, with exception
+    information. If the logger has no handlers, basicConfig() is called to add
+    a console handler with a pre-defined format.
     """
     kwargs['exc_info'] = True
     error(msg, *args, **kwargs)
 
 def warning(msg, *args, **kwargs):
     """
-    Log a message with severity 'WARNING' on the root logger.
+    Log a message with severity 'WARNING' on the root logger. If the logger has
+    no handlers, call basicConfig() to add a console handler with a pre-defined
+    format.
     """
     if len(root.handlers) == 0:
         basicConfig()
@@ -1712,7 +1742,9 @@ warn = warning
 
 def info(msg, *args, **kwargs):
     """
-    Log a message with severity 'INFO' on the root logger.
+    Log a message with severity 'INFO' on the root logger. If the logger has
+    no handlers, call basicConfig() to add a console handler with a pre-defined
+    format.
     """
     if len(root.handlers) == 0:
         basicConfig()
@@ -1720,7 +1752,9 @@ def info(msg, *args, **kwargs):
 
 def debug(msg, *args, **kwargs):
     """
-    Log a message with severity 'DEBUG' on the root logger.
+    Log a message with severity 'DEBUG' on the root logger. If the logger has
+    no handlers, call basicConfig() to add a console handler with a pre-defined
+    format.
     """
     if len(root.handlers) == 0:
         basicConfig()
@@ -1728,7 +1762,9 @@ def debug(msg, *args, **kwargs):
 
 def log(level, msg, *args, **kwargs):
     """
-    Log 'msg % args' with the integer severity 'level' on the root logger.
+    Log 'msg % args' with the integer severity 'level' on the root logger. If
+    the logger has no handlers, call basicConfig() to add a console handler
+    with a pre-defined format.
     """
     if len(root.handlers) == 0:
         basicConfig()
