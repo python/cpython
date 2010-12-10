@@ -63,6 +63,9 @@ Core and Builtins
 Library
 -------
 
+- test.support: Added TestHandler and Matcher classes for better support of
+  assertions about logging.
+
 - Issue #4391: Use proper plural forms in argparse.
 
 - Issue #10601: sys.displayhook uses 'backslashreplace' error handler on
