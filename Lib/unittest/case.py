@@ -1127,7 +1127,7 @@ class TestCase(object):
             msg = '%s: %r not found in %r' % (msg, expected_regex.pattern, text)
             raise self.failureException(msg)
 
-    def assertNotRegexMatches(self, text, unexpected_regex, msg=None):
+    def assertNotRegex(self, text, unexpected_regex, msg=None):
         """Fail the test if the text matches the regular expression."""
         if isinstance(unexpected_regex, (str, bytes)):
             unexpected_regex = re.compile(unexpected_regex)

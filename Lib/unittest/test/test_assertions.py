@@ -92,15 +92,15 @@ class Test_Assertions(unittest.TestCase):
         else:
             self.fail("assertRaises() didn't let exception pass through")
 
-    def testAssertNotRegexMatches(self):
-        self.assertNotRegexMatches('Ala ma kota', r'r+')
+    def testAssertNotRegex(self):
+        self.assertNotRegex('Ala ma kota', r'r+')
         try:
-            self.assertNotRegexMatches('Ala ma kota', r'k.t', 'Message')
+            self.assertNotRegex('Ala ma kota', r'k.t', 'Message')
         except self.failureException as e:
             self.assertIn("'kot'", e.args[0])
             self.assertIn('Message', e.args[0])
         else:
-            self.fail('assertNotRegexMatches should have failed.')
+            self.fail('assertNotRegex should have failed.')
 
 
 class TestLongMessage(unittest.TestCase):
