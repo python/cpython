@@ -43,7 +43,7 @@ __all__ = [
     "run_unittest", "run_doctest", "threading_setup", "threading_cleanup",
     "reap_children", "cpython_only", "check_impl_detail", "get_attribute",
     "swap_item", "swap_attr", "requires_IEEE_754",
-    "TestHandler", "Matr]
+    "TestHandler", "Matcher"]
 
 
 class Error(Exception):
