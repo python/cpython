@@ -41,8 +41,8 @@ can include messages from third-party modules.
 It is, of course, possible to log messages with different verbosity levels or to
 different destinations.  Support for writing log messages to files, HTTP
 GET/POST locations, email via SMTP, generic sockets, or OS-specific logging
-mechanisms are all supported by the standard module.  You can also create your
-own log destination class if you have special requirements not met by any of the
+mechanisms is included in the package.  You can also create your own log
+destination class if you have special requirements not met by any of the
 built-in classes.
 
 Simple examples
