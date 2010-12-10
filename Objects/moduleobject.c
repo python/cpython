@@ -168,8 +168,8 @@ PyModule_GetDict(PyObject *m)
     return d;
 }
 
-PyObject *
-PyModule_GetNameObject(PyObject *m)
+const char *
+PyModule_GetName(PyObject *m)
 {
     PyObject *d;
     PyObject *nameobj;
@@ -185,21 +185,7 @@ PyModule_GetNameObject(PyObject *m)
         PyErr_SetString(PyExc_SystemError, "nameless module");
         return NULL;
     }
-    Py_INCREF(nameobj);
-    return nameobj;
-}
-
-const char *
-PyModule_GetName(PyObject *m)
-{
-    PyObject *nameobj;
-    char *utf8;
-    nameobj = PyModule_GetNameObject(m);
-    if (nameobj == NULL)
-        return NULL;
-    utf8 = _PyUnicode_AsString(nameobj);
-    Py_DECREF(nameobj);
-    return utf8;
+    return _PyUnicode_AsString(nameobj);
 }
 
 PyObject*
