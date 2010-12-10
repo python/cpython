@@ -570,6 +570,12 @@ Some smaller changes made to the core Python language are:
 
   (See :issue:`10518`.)
 
+* Python's import mechanism can now load module installed in directories with
+  non-ASCII characters in the path name.
+
+  (Required extensive work by Victor Stinner in :issue:`9425`.)
+
+
 New, Improved, and Deprecated Modules
 =====================================
 
@@ -793,6 +799,13 @@ New, Improved, and Deprecated Modules
   :data:`ssl.OPENSSL_VERSION` (a string), :data:`ssl.OPENSSL_VERSION_INFO` (a
   5-tuple), and :data:`ssl.OPENSSL_VERSION_NUMBER` (an integer).  (Added by
   Antoine Pitrou; :issue:`8321`.)
+
+* The :mod:`nntplib` module has a revamped implementation with better bytes and
+  unicode semantics as well as more practical APIs.  These improvements break
+  compatibility with the nntplib version in Python 3.1, which was partly
+  dysfunctional in itself.
+
+  (Contributed by Antoine Pitrou in :issue:`9360`)
 
 * :class:`http.client.HTTPSConnection`, :class:`urllib.request.HTTPSHandler`
   and :func:`urllib.request.urlopen` now take optional arguments to allow for
@@ -1220,13 +1233,6 @@ require changes to your code:
    string seeds.  To access the previous version of *seed* in order to
    reproduce Python 3.1 sequences, set the *version* argument to *1*,
    ``random.seed(s, version=1)``.
-
-* The :mod:`nntplib` module has a revamped implementation with better bytes and
-  unicode semantics as well as more practical APIs.  These improvements break
-  compatibility with the nntplib version in Python 3.1, which was partly
-  dysfunctional in itself.
-
-  (Contributed by Antoine Pitrou in :issue:`9360`)
 
 * The previously deprecated :func:`string.maketrans` function has been removed
   in favor of the static methods, :meth:`bytes.maketrans` and
