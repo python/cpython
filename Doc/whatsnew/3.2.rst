@@ -364,8 +364,12 @@ module::
 Email
 =====
 
-The email package has been extended to parse and generate email messages
-in bytes format.
+The usability of the :mod:`email` package in Python 3 has been mostly fixed by
+the extensive efforts of R. David Murray.  The problem was that emails are
+typically read and stored in the form of :class:`bytes` rather than :class:`str`
+text, and they may contain multiple encodings within a single email.  So, the
+email package had to be extended to parse and generate email messages in bytes
+format.
 
 * New functions :func:`~email.message_from_bytes` and
   :func:`~email.message_from_binary_file`, and new classes
@@ -374,17 +378,19 @@ in bytes format.
 
 * Given bytes input to the model, :meth:`~email.message.Message.get_payload`
   will by default decode a message body that has a
-  :mailheader:`Content-Transfer-Encoding` of ``8bit`` using the charset
+  :mailheader:`Content-Transfer-Encoding` of *8bit* using the charset
   specified in the MIME headers and return the resulting string.
 
 * Given bytes input to the model, :class:`~email.generator.Generator` will
   convert message bodies that have a :mailheader:`Content-Transfer-Encoding` of
-  8bit to instead have a 7bit Content-Transfer-Encoding.
+  *8bit* to instead have a *7bit* :mailheader:`Content-Transfer-Encoding`.
 
-* New class :class:`~email.generator.BytesGenerator` produces bytes
-  as output, preserving any unchanged non-ASCII data that was
-  present in the input used to build the model, including message bodies
-  with a :mailheader:`Content-Transfer-Encoding` of 8bit.
+* A new class :class:`~email.generator.BytesGenerator` produces bytes as output,
+  preserving any unchanged non-ASCII data that was present in the input used to
+  build the model, including message bodies with a
+  :mailheader:`Content-Transfer-Encoding` of *8bit*.
+
+.. XXX Update before 3.2rc1 to reflect all of the last work and add examples.
 
   (Proposed and implemented by R. David Murray, :issue:`4661`.)
 
@@ -394,9 +400,10 @@ Other Language Changes
 
 Some smaller changes made to the core Python language are:
 
-* :class:`bytes` and :class:`str` now have two net methods, *transform* and *untransform*.
-  These provided analogues to *encode* and *decode* but are used for general purpose
-  string-to-string and bytes-to-bytes transformations rather than Unicode codecs.
+* :class:`bytes` and :class:`str` now have two net methods, *transform* and
+  *untransform*.  These provide analogues to *encode* and *decode* but are used
+  for general purpose str-to-str and bytes-to-bytes transformations rather than
+  Unicode codecs for bytes-to-str and str-to-bytes.
 
   Along with the new methods, several non-unicode codecs been restored from Python 2.x
   including *base64*, *bz2*, *hex*, *quopri*, *rot13*, *uu*, and *zlib*.
@@ -441,7 +448,7 @@ Some smaller changes made to the core Python language are:
   implement proxy objects.
 
   To support lookups without the possibility of activating a dynamic attribute,
-  the :mod:`inspect` module has a new function, :func:`getattr_static`.
+  the :mod:`inspect` module has a new function, :func:`~inspect.getattr_static`.
 
   (Discovered by Yury Selivanov and fixed by Benjamin Peterson; :issue:`9666`.
   The inspect function added by Michael Foord.)
@@ -458,9 +465,10 @@ Some smaller changes made to the core Python language are:
 
   (Proposed and implemented by Mark Dickinson; :issue:`9337`.)
 
-* :class:`memoryview` objects now have a :meth:`release()` method and support
-  the context manager protocol.  This allows timely release of any resources
-  that were acquired when requesting a buffer from the original object.
+* :class:`memoryview` objects now have a :meth:`~memoryview.release()` method
+  and they also now support the context manager protocol.  This allows timely
+  release of any resources that were acquired when requesting a buffer from the
+  original object.
 
   >>> with memoryview(b'abcdefgh') as v:
   ...     print(v.tolist())
@@ -651,13 +659,6 @@ New, Improved, and Deprecated Modules
   (Contributed by Alexander Belopolsky in :issue:`1289118`, :issue:`5094` and
   :issue:`6641`.)
 
-* The :mod:`nntplib` module gets a revamped implementation with better bytes and
-  unicode semantics as well as more practical APIs.  These improvements break
-  compatibility with the nntplib version in Python 3.1, which was partly
-  dysfunctional in itself.
-
-  (Contributed by Antoine Pitrou in :issue:`9360`)
-
 * The :mod:`abc` module now supports :func:`~abc.abstractclassmethod` and
   :func:`~abc.abstractstaticmethod`.
 
@@ -836,9 +837,9 @@ New, Improved, and Deprecated Modules
   >>> with self.assertWarns(DeprecationWarning):
   ...     legacy_function('XYZ')
 
-  Another new method, :meth:`~unittest.TestCase.assertCountEqual` is used to compare two iterables
-  to determine if their element counts are equal (are the same elements present
-  the same number of times::
+  Another new method, :meth:`~unittest.TestCase.assertCountEqual` is used to
+  compare two iterables to determine if their element counts are equal (are the
+  same elements present the same number of times::
 
      def test_anagram(self):
          self.assertCountEqual('algorithm', 'logarithm')
@@ -853,7 +854,11 @@ New, Improved, and Deprecated Modules
   In addition the naming in the module has undergone a number of clean-ups.  For
   example, :meth:`~unittest.TestCase.assertRegex` is the new name for
   :meth:`~unittest.TestCase.assertRegexpMatches` which was misnamed because the
-  test uses :func:`re.search`, not :func:`re.match`.
+  test uses :func:`re.search`, not :func:`re.match`.  Other methods using
+  regular expressions are now named using short form "Regex" in preference
+  to "Regexp" -- this matches the names used in other unittest implementations,
+  matches Python's old name for the :mod:`re` module, and it has unambiguous
+  camel-casing.
 
   To improve consistency, some of long-standing method aliases are being
   deprecated in favor of the preferred names:
@@ -1036,12 +1041,6 @@ Multi-threading
 
   (Contributed by Antoine Pitrou.)
 
-* Recursive locks (created with the :func:`threading.RLock` API) now benefit
-  from a C implementation which makes them as fast as regular locks, and between
-  10x and 15x faster than their previous pure Python implementation.
-
-  (Contributed by Antoine Pitrou; :issue:`3001`.)
-
 * Regular and recursive locks now accept an optional *timeout* argument to their
   :meth:`acquire` method.  (Contributed by Antoine Pitrou; :issue:`7316`.)
 
@@ -1091,6 +1090,12 @@ A number of small performance enhancements have been added:
 
   (Contributed by Antoine Pitrou in :issue:`7451` and by Raymond Hettinger and
   Antoine Pitrou in :issue:`10314`.)
+
+* Recursive locks (created with the :func:`threading.RLock` API) now benefit
+  from a C implementation which makes them as fast as regular locks, and between
+  10x and 15x faster than their previous pure Python implementation.
+
+  (Contributed by Antoine Pitrou; :issue:`3001`.)
 
 * The fast-search algorithm in stringlib is now used by the :meth:`split`,
   :meth:`rsplit`, :meth:`splitlines` and :meth:`replace` methods on
@@ -1251,3 +1256,11 @@ require changes to your code:
    string seeds.  To access the previous version of *seed* in order to
    reproduce Python 3.1 sequences, set the *version* argument to *1*,
    ``random.seed(s, version=1)``.
+
+* The :mod:`nntplib` module has a revamped implementation with better bytes and
+  unicode semantics as well as more practical APIs.  These improvements break
+  compatibility with the nntplib version in Python 3.1, which was partly
+  dysfunctional in itself.
+
+  (Contributed by Antoine Pitrou in :issue:`9360`)
+
