@@ -176,31 +176,21 @@ normalizeUserObj(PyObject *obj)
     if (fn->m_self == NULL) {
         /* built-in function: look up the module name */
         PyObject *mod = fn->m_module;
-        const char *modname;
-        if (mod && PyUnicode_Check(mod)) {
-            /* XXX: The following will truncate module names with embedded
-             * null-characters.  It is unlikely that this can happen in
-             * practice and the concequences are not serious enough to
-             * introduce extra checks here.
-             */
-            modname = _PyUnicode_AsString(mod);
-            if (modname == NULL) {
-                modname = "<encoding error>";
-                PyErr_Clear();
+        PyObject *modname;
+        if (mod != NULL) {
+            if (PyUnicode_Check(mod)) {
+                modname = mod;
+                Py_INCREF(modname);
+            }
+            else if (PyModule_Check(mod)) {
+                modname = PyModule_GetNameObject(mod);
+                if (modname == NULL)
+                    PyErr_Clear();
             }
         }
-        else if (mod && PyModule_Check(mod)) {
-            modname = PyModule_GetName(mod);
-            if (modname == NULL) {
-                PyErr_Clear();
-                modname = "builtins";
-            }
-        }
-        else {
-            modname = "builtins";
-        }
-        if (strcmp(modname, "builtins") != 0)
-            return PyUnicode_FromFormat("<%s.%s>",
+        if (modname != NULL && 
+            PyUnicode_CompareWithASCIIString(modname, "builtins") != 0)
+            return PyUnicode_FromFormat("<%U.%s>",
                                         modname,
                                         fn->m_ml->ml_name);
         else

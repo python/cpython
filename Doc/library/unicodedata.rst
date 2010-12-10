@@ -13,14 +13,15 @@
    single: character
    pair: Unicode; database
 
-This module provides access to the Unicode Character Database which defines
-character properties for all Unicode characters. The data in this database is
-based on the :file:`UnicodeData.txt` file version 5.2.0 which is publicly
-available from ftp://ftp.unicode.org/.
+This module provides access to the Unicode Character Database (UCD) which
+defines character properties for all Unicode characters. The data contained in
+this database is compiled from the `UCD version 6.0.0
+<http://www.unicode.org/Public/6.0.0/ucd>`_.
 
-The module uses the same names and symbols as defined by the UnicodeData File
-Format 5.2.0 (see http://www.unicode.org/reports/tr44/tr44-4.html).
-It defines the following functions:
+The module uses the same names and symbols as defined by Unicode
+Standard Annex #44, `"Unicode Character Database"
+<http://www.unicode.org/reports/tr44/tr44-6.html>`_.  It defines the
+following functions:
 
 
 .. function:: lookup(name)
