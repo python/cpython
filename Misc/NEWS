@@ -29,6 +29,11 @@ Library
 
 - Issue #10464: netrc now correctly handles lines with embedded '#' characters.
 
+Extension Modules
+-----------------
+
+- Issue #678250: Make mmap flush a noop on ACCESS_READ and ACCESS_COPY.
+
 Tests
 -----
 
