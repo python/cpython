@@ -26,7 +26,7 @@ Slice Objects
    the new object could not be allocated.
 
 
-.. c:function:: int PySlice_GetIndices(PySliceObject *slice, Py_ssize_t length, Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step)
+.. c:function:: int PySlice_GetIndices(PyObject *slice, Py_ssize_t length, Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step)
 
    Retrieve the start, stop and step indices from the slice object *slice*,
    assuming a sequence of length *length*. Treats indices greater than
@@ -39,7 +39,7 @@ Slice Objects
    You probably do not want to use this function.
 
 
-.. c:function:: int PySlice_GetIndicesEx(PySliceObject *slice, Py_ssize_t length, Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step, Py_ssize_t *slicelength)
+.. c:function:: int PySlice_GetIndicesEx(PyObject *slice, Py_ssize_t length, Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step, Py_ssize_t *slicelength)
 
    Usable replacement for :c:func:`PySlice_GetIndices`.  Retrieve the start,
    stop, and step indices from the slice object *slice* assuming a sequence of
