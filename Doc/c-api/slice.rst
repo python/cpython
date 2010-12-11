@@ -38,6 +38,9 @@ Slice Objects
 
    You probably do not want to use this function.
 
+   .. versionchanged:: 3.2
+      The parameter type for the *slice* parameter was PySliceObject* before.
+
 
 .. c:function:: int PySlice_GetIndicesEx(PyObject *slice, Py_ssize_t length, Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step, Py_ssize_t *slicelength)
 
@@ -49,3 +52,5 @@ Slice Objects
 
    Returns 0 on success and -1 on error with exception set.
 
+   .. versionchanged:: 3.2
+      The parameter type for the *slice* parameter was PySliceObject* before.
