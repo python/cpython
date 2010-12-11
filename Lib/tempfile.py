@@ -617,6 +617,8 @@ class TemporaryDirectory(object):
     """
 
     def __init__(self, suffix="", prefix=template, dir=None):
+        # cleanup() needs this and is called even when mkdtemp fails
+        self._closed = True
         self.name = mkdtemp(suffix, prefix, dir)
         self._closed = False
 
