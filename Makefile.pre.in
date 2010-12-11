@@ -836,6 +836,11 @@ altbininstall: $(BUILDPYTHON)
 		fi; \
 	done
 	$(INSTALL_PROGRAM) $(BUILDPYTHON) $(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE)
+	-if test -f $(DESTDIR)$(BINDIR)/$(PYTHON)$(VERSION)$(EXE) -o -h $(DESTDIR)$(BINDIR)/$(PYTHON)$(VERSION)$(EXE); \
+	then rm -f $(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE); \
+	else true; \
+	fi
+	(cd $(DESTDIR)$(BINDIR); $(LN) python$(LDVERSION)$(EXE) python$(VERSION)$(EXE))
 	if test -f $(LDLIBRARY); then \
 		if test -n "$(DLLLIBRARY)" ; then \
 			$(INSTALL_SHARED) $(DLLLIBRARY) $(DESTDIR)$(BINDIR); \
@@ -853,11 +858,6 @@ bininstall: altbininstall
 	then rm -f $(DESTDIR)$(BINDIR)/$(PYTHON)3$(EXE); \
 	else true; \
 	fi
-	-if test -f $(DESTDIR)$(BINDIR)/$(PYTHON)$(VERSION)$(EXE) -o -h $(DESTDIR)$(BINDIR)/$(PYTHON)$(VERSION)$(EXE); \
-	then rm -f $(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE); \
-	else true; \
-	fi
-	(cd $(DESTDIR)$(BINDIR); $(LN) python$(LDVERSION)$(EXE) python$(VERSION)$(EXE))
 	(cd $(DESTDIR)$(BINDIR); $(LN) python$(VERSION)$(EXE) $(PYTHON)3$(EXE))
 	-rm -f $(DESTDIR)$(BINDIR)/python3-config
 	-rm -f $(DESTDIR)$(BINDIR)/python$(VERSION)-config
