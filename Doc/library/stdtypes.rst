@@ -360,10 +360,10 @@ Notes:
    See :ref:`built-in-funcs` for a full description.
 
 (4)
-   Complex floor division operator, modulo operator, and :func:`divmod`.
-
    .. deprecated:: 2.3
-      Instead convert to float using :func:`abs` if appropriate.
+      The floor division operator, the modulo operator, and the :func:`divmod`
+      function are no longer defined for complex numbers.  Instead, convert to
+      a floating point number using the :func:`abs` function if appropriate.
 
 (5)
    Also referred to as integer division.  The resultant value is a whole integer,
