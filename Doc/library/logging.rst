@@ -12,7 +12,7 @@
 .. index:: pair: Errors; logging
 
 This module defines functions and classes which implement a flexible error
-logging system for applications.
+logging system for applications and libraries.
 
 The key benefit of having the logging API provided by a standard library module
 is that all Python modules can participate in logging, so your application log
@@ -224,8 +224,9 @@ will display::
 As you can see, merging of variable data into the event description message
 uses the old, %-style of string formatting. This is for backwards
 compatibility: the logging package pre-dates newer formatting options such as
-:meth:`str.format` and :class:`string.Template`. These formatting options *are*
-supported, but exploring them is outside the scope of this tutorial.
+:meth:`str.format` and :class:`string.Template`. These newer formatting
+options *are* supported, but exploring them is outside the scope of this
+tutorial.
 
 
 Changing the format of displayed messages
