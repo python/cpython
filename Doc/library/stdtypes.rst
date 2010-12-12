@@ -2433,12 +2433,9 @@ Context Manager Types
    single: protocol; context management
 
 Python's :keyword:`with` statement supports the concept of a runtime context
-defined by a context manager.  This is implemented using two separate methods
+defined by a context manager.  This is implemented using a pair of methods
 that allow user-defined classes to define a runtime context that is entered
-before the statement body is executed and exited when the statement ends.
-
-The :dfn:`context management protocol` consists of a pair of methods that need
-to be provided for a context manager object to define a runtime context:
+before the statement body is executed and exited when the statement ends:
 
 
 .. method:: contextmanager.__enter__()
@@ -2486,9 +2483,9 @@ decimal arithmetic context. The specific types are not treated specially beyond
 their implementation of the context management protocol. See the
 :mod:`contextlib` module for some examples.
 
-Python's :term:`generator`\s and the ``contextlib.contextmanager`` :term:`decorator`
+Python's :term:`generator`\s and the :class:`contextlib.contextmanager` decorator
 provide a convenient way to implement these protocols.  If a generator function is
-decorated with the ``contextlib.contextmanager`` decorator, it will return a
+decorated with the :class:`contextlib.contextmanager` decorator, it will return a
 context manager implementing the necessary :meth:`__enter__` and
 :meth:`__exit__` methods, rather than the iterator produced by an undecorated
 generator function.
