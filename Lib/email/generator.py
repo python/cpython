@@ -180,19 +180,13 @@ class Generator:
             g = self.clone(s)
             g.flatten(part, unixfrom=False)
             msgtexts.append(s.getvalue())
-        # Now make sure the boundary we've selected doesn't appear in any of
-        # the message texts.
-        alltext = NL.join(msgtexts)
         # BAW: What about boundaries that are wrapped in double-quotes?
-        boundary = msg.get_boundary(failobj=_make_boundary(alltext))
-        # If we had to calculate a new boundary because the body text
-        # contained that string, set the new boundary.  We don't do it
-        # unconditionally because, while set_boundary() preserves order, it
-        # doesn't preserve newlines/continuations in headers.  This is no big
-        # deal in practice, but turns out to be inconvenient for the unittest
-        # suite.
-        if msg.get_boundary() != boundary:
-            msg.set_boundary(boundary)
+        boundary = msg.get_boundary()
+        if not boundary:
+            # Create a boundary that doesn't appear in any of the
+            # message texts.
+            alltext = NL.join(msgtexts)
+            msg.set_boundary(self._make_boundary(alltext))
         # If there's a preamble, write it out, with a trailing CRLF
         if msg.preamble is not None:
             print(msg.preamble, file=self._fp)
