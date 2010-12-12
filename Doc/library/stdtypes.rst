@@ -2279,8 +2279,8 @@ memoryview type
 ===============
 
 :class:`memoryview` objects allow Python code to access the internal data
-of an object that supports the buffer protocol without copying.  Memory
-is generally interpreted as simple bytes.
+of an object that supports the :ref:`buffer protocol <bufferobjects>` without
+copying.  Memory is generally interpreted as simple bytes.
 
 .. class:: memoryview(obj)
 
