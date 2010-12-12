@@ -14,6 +14,304 @@
 This module defines functions and classes which implement a flexible error
 logging system for applications.
 
+The key benefit of having the logging API provided by a standard library module
+is that all Python modules can participate in logging, so your application log
+can include your own messages integrated with messages from third-party
+modules.
+
+
+Logging tutorial
+----------------
+
+Logging is a means of tracking events that happen when some software runs. The
+software's developer adds logging calls to their code to indicate that certain
+events have occurred. An event is described by a descriptive message which can
+optionally contain variable data (i.e. data that is potentially different for
+each occurrence of the event). Events also have an importance which the
+developer ascribes to the event; the importance can also be called the *level*
+or *severity*.
+
+When to use logging
+^^^^^^^^^^^^^^^^^^^
+
+Logging provides a set of convenience functions for simple logging usage. These
+are :func:`debug`, :func:`info`, :func:`warning`, :func:`error` and
+:func:`critical`. To determine when to use logging, see the table below, which
+states, for each of a set of common tasks, the best tool to use for it.
+
++-------------------------------------+--------------------------------------+
+| Task you want to perform            | The best tool for the task           |
++=====================================+======================================+
+| Display console output for ordinary | print()                              |
+| usage of a command line script or   |                                      |
+| program                             |                                      |
++-------------------------------------+--------------------------------------+
+| Report events that occur during     | logging.info() (or logging.debug()   |
+| normal operation of a program (e.g. | for very detailed output for         |
+| or status monitoring or fault       | diagnostic purposes)                 |
+| investigation)                      |                                      |
++-------------------------------------+--------------------------------------+
+| Issue a warning regarding a         | warnings.warn() in library code      |
+| particular runtime event            | if the issue is avoidable and the    |
+|                                     | client application should be         |
+|                                     | modified to eliminate the warning    |
+|                                     |                                      |
+|                                     | logging.warn() if there is nothing   |
+|                                     | the client application can do about  |
+|                                     | the situation, but the event should  |
+|                                     | still be noted                       |
++-------------------------------------+--------------------------------------+
+| Report an error regarding a         | Raise an exception                   |
+| particular runtime event            |                                      |
++-------------------------------------+--------------------------------------+
+| Report suppression of an error      | logging.error(), logging.exception(),|
+| without raising an exception (e.g.  | or logging.critical() as appropriate |
+| error handler in a long-running     | for the specific error and           |
+| server process)                     | application domain                   |
++-------------------------------------+--------------------------------------+
+
+The logging functions are named after the level or severity of the events
+they are used to track. The standard levels and their applicability are
+described below (in increasing order of severity):
+
++--------------+---------------------------------------------+
+| Level        | When it's used                              |
++==============+=============================================+
+| ``DEBUG``    | Detailed information, typically of interest |
+|              | only when diagnosing problems.              |
++--------------+---------------------------------------------+
+| ``INFO``     | Confirmation that things are working as     |
+|              | expected.                                   |
++--------------+---------------------------------------------+
+| ``WARNING``  | An indication that something unexpected     |
+|              | happened, or indicative of some problem in  |
+|              | the near future (e.g. "disk space low").    |
+|              | The software is still working as expected.  |
++--------------+---------------------------------------------+
+| ``ERROR``    | Due to a more serious problem, the software |
+|              | has not been able to perform some function. |
++--------------+---------------------------------------------+
+| ``CRITICAL`` | A serious error, indicating that the program|
+|              | itself may be unable to continue running.   |
++--------------+---------------------------------------------+
+
+The default level is ``WARNING``, which means that only events of this level
+and above will be tracked, unless the logging package is configured to do
+otherwise.
+
+Events that are tracked can be handled in different ways. The simplest way of
+handling tracked events is to print them to the console. Another common way
+is to write them to a disk file.
+
+
+.. _minimal-example:
+
+A simple example
+^^^^^^^^^^^^^^^^
+
+A very simple example is::
+
+   import logging
+   logging.warning('Watch out!') # will print a message to the console
+   logging.info('I told you so') # will not print anything
+
+If you type these lines into a script and run it, you'll see::
+
+   WARNING:root:Watch out!
+
+printed out on the console. The ``INFO`` message doesn't appear because the
+default level is ``WARNING``. The printed message includes the indication of
+the level and the description of the event provided in the logging call, i.e.
+'Watch out!'. Don't worry about the 'root' part for now: it will be explained
+later. The actual output can be formatted quite flexibly if you need that;
+formatting options will also be explained later.
+
+
+Logging to a file
+^^^^^^^^^^^^^^^^^
+
+A very common situation is that of recording logging events in a file, so let's
+look at that next::
+
+   import logging
+   logging.basicConfig(filename='example.log',level=logging.DEBUG)
+   logging.debug('This message should go to the log file')
+   logging.info('So should this')
+   logging.warning('And this, too')
+
+And now if we open the file and look at what we have, we should find the log
+messages::
+
+   DEBUG:root:This message should go to the log file
+   INFO:root:So should this
+   WARNING:root:And this, too
+
+This example also shows how you can set the logging level which acts as the
+threshold for tracking. In this case, because we set the threshold to
+``DEBUG``, all of the messages were printed.
+
+If you run the above script several times, the messages from successive runs
+are appended to the file *example.log*. If you want each run to start afresh,
+not remembering the messages from earlier runs, you can specify the *filemode*
+argument, by changing the call in the above example to::
+
+   logging.basicConfig(filename='example.log', filemode='w', level=logging.DEBUG)
+
+The output will be the same as before, but the log file is no longer appended
+to, so the messages from earlier runs are lost.
+
+
+Logging from multiple modules
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If your program consists of multiple modules, here's an example of how you
+could organize logging in it::
+
+   # myapp.py
+   import logging
+   import mylib
+
+   def main():
+       logging.basicConfig(filename='myapp.log', level=logging.INFO)
+       logging.info('Started')
+       mylib.do_something()
+       logging.info('Finished')
+
+   if __name__ == '__main__':
+       main()
+
+::
+
+   # mylib.py
+   import logging
+
+   def do_something():
+       logging.info('Doing something')
+
+If you run myapp.py, you should see this in myapp.log::
+
+   INFO:root:Started
+   INFO:root:Doing something
+   INFO:root:Finished
+
+which is hopefully what you were expecting to see. You can generalize this to
+multiple modules, using the pattern in *mylib.py*. Note that for this simple
+usage pattern, you won't know, by looking in the log file, *where* in your
+application your messages came from, apart from looking at the event
+description. If you want to track the location of your messages, you'll need
+to refer to the documentation beyond the tutorial level - see
+:ref:`more-advanced-logging`.
+
+
+Logging variable data
+^^^^^^^^^^^^^^^^^^^^^
+
+To log variable data, use a format string for the event description message and
+append the variable data as arguments. For example::
+
+   import logging
+   logging.warning('%s before you %s', 'Look', 'leap!')
+
+will display::
+
+   WARNING:root:Look before you leap!
+
+As you can see, merging of variable data into the event description message
+uses the old, %-style of string formatting. This is for backwards
+compatibility: the logging package pre-dates newer formatting options such as
+:meth:`str.format` and :class:`string.Template`. These formatting options *are*
+supported, but exploring them is outside the scope of this tutorial.
+
+
+Changing the format of displayed messages
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To change the format which is used to display messages, you need to
+specify the format you want to use::
+
+   import logging
+   logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
+   logging.debug('This message should appear on the console')
+   logging.info('So should this')
+   logging.warning('And this, too')
+
+which would print::
+
+   DEBUG:This message should appear on the console
+   INFO:So should this
+   WARNING:And this, too
+
+Notice that the 'root' which appeared in earlier examples has disappeared. For
+a full set of things that can appear in format strings, you can refer to the
+documentation for :ref:`formatter-objects`, but for simple usage, you just need
+the *levelname* (severity), *message* (event description, including variable
+data) and perhaps to display when the event occurred. This is described in the
+next section.
+
+Displaying the date/time in messages
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To display the date and time of an event, you would place "%(asctime)s" in
+your format string::
+
+   import logging
+   logging.basicConfig(format='%(asctime)s %(message)s')
+   logging.warning('is when this event was logged.')
+
+which should print something like this::
+
+   2010-12-12 11:41:42,612 is when this event was logged.
+
+The default format for date/time display (shown above) is ISO8601. If you need
+more control over the formatting of the date/time, provide a *datefmt*
+argument to ``basicConfig``, as in this example::
+
+   import logging
+   logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+   logging.warning('is when this event was logged.')
+
+which would display something like this::
+
+   12/12/2010 11:46:36 AM is when this event was logged.
+
+The format of the *datefmt* argument is the same as supported by
+:func:`time.strftime`.
+
+
+Er...that's it for the tutorial
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+That concludes the tutorial. It should be enough to get you up and running
+with logging. There's a lot more that the logging package offers, but to get
+the best out of it, you'll need to invest a little more of your time in
+reading the following sections. If you're ready for that, grab some of your
+favourite beverage and carry on.
+
+If your logging needs are simple, then use the above examples to incorporate
+logging into your own scripts, and if you run into problems or don't
+understand something, please post a question on the comp.lang.python Usenet
+group (available at http://groups.google.com/group/comp.lang.python) and you
+should receive help before too long.
+
+Still here? There's no need to read this long page in linear fashion, top to
+bottom. Take a look at the topics in the sidebar to see if there's something
+that interests you, and click on a topic to see more detail. Although some of
+the topics do follow on from each other, there are a few that can just stand
+alone.
+
+
+.. _more-advanced-logging:
+
+More advanced logging
+---------------------
+
+The logging library takes a modular approach and offers several categories
+of components: loggers, handlers, filters, and formatters.  Loggers expose the
+interface that application code directly uses.  Handlers send the log records
+(created by loggers) to the appropriate destination. Filters provide a finer
+grained facility for determining which log records to output. Formatters
+specify the layout of the resultant log record in the final output.
+
 Logging is performed by calling methods on instances of the :class:`Logger`
 class (hereafter called :dfn:`loggers`). Each instance has a name, and they are
 conceptually arranged in a namespace hierarchy using dots (periods) as
@@ -21,191 +319,38 @@ separators. For example, a logger named "scan" is the parent of loggers
 "scan.text", "scan.html" and "scan.pdf". Logger names can be anything you want,
 and indicate the area of an application in which a logged message originates.
 
-Logged messages also have levels of importance associated with them. The default
-levels provided are :const:`DEBUG`, :const:`INFO`, :const:`WARNING`,
-:const:`ERROR` and :const:`CRITICAL`. As a convenience, you indicate the
-importance of a logged message by calling an appropriate method of
-:class:`Logger`. The methods are :meth:`debug`, :meth:`info`, :meth:`warning`,
-:meth:`error` and :meth:`critical`, which mirror the default levels. You are not
-constrained to use these levels: you can specify your own and use a more general
-:class:`Logger` method, :meth:`log`, which takes an explicit level argument.
+The root of the hierarchy of loggers is called the root logger. That's the
+logger used by the functions :func:`debug`, :func:`info`, :func:`warning`,
+:func:`error` and :func:`critical`, which just call the same-named method of
+the root logger. The functions and the methods have the same signatures. The
+root logger's name is printed as 'root' in the logged output.
 
-
-Logging tutorial
-----------------
-
-The key benefit of having the logging API provided by a standard library module
-is that all Python modules can participate in logging, so your application log
-can include messages from third-party modules.
-
-It is, of course, possible to log messages with different verbosity levels or to
-different destinations.  Support for writing log messages to files, HTTP
-GET/POST locations, email via SMTP, generic sockets, or OS-specific logging
-mechanisms is included in the package.  You can also create your own log
+It is, of course, possible to log messages to different destinations. Support
+for writing log messages to files, HTTP GET/POST locations, email via SMTP,
+generic sockets, or OS-specific logging mechanisms is included in the package.
+Destinations are served by :dfn:`handler` classes. You can create your own log
 destination class if you have special requirements not met by any of the
-built-in classes.
+built-in handler classes.
 
-Simple examples
-^^^^^^^^^^^^^^^
+By default, no destination is set for any logging messages. You can specify
+a destination (such as console or file) by using :func:`basicConfig` as in the
+tutorial examples. If you call the functions  :func:`debug`, :func:`info`,
+:func:`warning`, :func:`error` and :func:`critical`, they will check to see
+if no destination is set; and if one is not set, they will set a destination
+of the console (``sys.stderr``) and a default format for the displayed
+message before delegating to the root logger to do the actual message output.
 
-.. sectionauthor:: Doug Hellmann
-.. (see <http://blog.doughellmann.com/2007/05/pymotw-logging.html>)
+The default format set by :func:`basicConfig` for messages is::
 
-Most applications are probably going to want to log to a file, so let's start
-with that case. Using the :func:`basicConfig` function, we can set up the
-default handler so that debug messages are written to a file (in the example,
-we assume that you have the appropriate permissions to create a file called
-*example.log* in the current directory)::
+   severity:logger name:message
 
-   import logging
-   LOG_FILENAME = 'example.log'
-   logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
+You can change this by passing a format string to :func:`basicConfig` with the
+*format* keyword argument. For all options regarding how a format string is
+constructed, see :ref:`formatter-objects`.
 
-   logging.debug('This message should go to the log file')
-
-And now if we open the file and look at what we have, we should find the log
-message::
-
-   DEBUG:root:This message should go to the log file
-
-If you run the script repeatedly, the additional log messages are appended to
-the file.  To create a new file each time, you can pass a *filemode* argument to
-:func:`basicConfig` with a value of ``'w'``.  Rather than managing the file size
-yourself, though, it is simpler to use a :class:`RotatingFileHandler`::
-
-   import glob
-   import logging
-   import logging.handlers
-
-   LOG_FILENAME = 'logging_rotatingfile_example.out'
-
-   # Set up a specific logger with our desired output level
-   my_logger = logging.getLogger('MyLogger')
-   my_logger.setLevel(logging.DEBUG)
-
-   # Add the log message handler to the logger
-   handler = logging.handlers.RotatingFileHandler(
-                 LOG_FILENAME, maxBytes=20, backupCount=5)
-
-   my_logger.addHandler(handler)
-
-   # Log some messages
-   for i in range(20):
-       my_logger.debug('i = %d' % i)
-
-   # See what files are created
-   logfiles = glob.glob('%s*' % LOG_FILENAME)
-
-   for filename in logfiles:
-       print(filename)
-
-The result should be 6 separate files, each with part of the log history for the
-application::
-
-   logging_rotatingfile_example.out
-   logging_rotatingfile_example.out.1
-   logging_rotatingfile_example.out.2
-   logging_rotatingfile_example.out.3
-   logging_rotatingfile_example.out.4
-   logging_rotatingfile_example.out.5
-
-The most current file is always :file:`logging_rotatingfile_example.out`,
-and each time it reaches the size limit it is renamed with the suffix
-``.1``. Each of the existing backup files is renamed to increment the suffix
-(``.1`` becomes ``.2``, etc.)  and the ``.6`` file is erased.
-
-Obviously this example sets the log length much much too small as an extreme
-example.  You would want to set *maxBytes* to an appropriate value.
-
-Another useful feature of the logging API is the ability to produce different
-messages at different log levels.  This allows you to instrument your code with
-debug messages, for example, but turning the log level down so that those debug
-messages are not written for your production system.  The default levels are
-``NOTSET``, ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR`` and ``CRITICAL``.
-
-The logger, handler, and log message call each specify a level.  The log message
-is only emitted if the handler and logger are configured to emit messages of
-that level or lower.  For example, if a message is ``CRITICAL``, and the logger
-is set to ``ERROR``, the message is emitted.  If a message is a ``WARNING``, and
-the logger is set to produce only ``ERROR``\s, the message is not emitted::
-
-   import logging
-   import sys
-
-   LEVELS = {'debug': logging.DEBUG,
-             'info': logging.INFO,
-             'warning': logging.WARNING,
-             'error': logging.ERROR,
-             'critical': logging.CRITICAL}
-
-   if len(sys.argv) > 1:
-       level_name = sys.argv[1]
-       level = LEVELS.get(level_name, logging.NOTSET)
-       logging.basicConfig(level=level)
-
-   logging.debug('This is a debug message')
-   logging.info('This is an info message')
-   logging.warning('This is a warning message')
-   logging.error('This is an error message')
-   logging.critical('This is a critical error message')
-
-Run the script with an argument like 'debug' or 'warning' to see which messages
-show up at different levels::
-
-   $ python logging_level_example.py debug
-   DEBUG:root:This is a debug message
-   INFO:root:This is an info message
-   WARNING:root:This is a warning message
-   ERROR:root:This is an error message
-   CRITICAL:root:This is a critical error message
-
-   $ python logging_level_example.py info
-   INFO:root:This is an info message
-   WARNING:root:This is a warning message
-   ERROR:root:This is an error message
-   CRITICAL:root:This is a critical error message
-
-You will notice that these log messages all have ``root`` embedded in them.  The
-logging module supports a hierarchy of loggers with different names.  An easy
-way to tell where a specific log message comes from is to use a separate logger
-object for each of your modules.  Each new logger "inherits" the configuration
-of its parent, and log messages sent to a logger include the name of that
-logger.  Optionally, each logger can be configured differently, so that messages
-from different modules are handled in different ways.  Let's look at a simple
-example of how to log from different modules so it is easy to trace the source
-of the message::
-
-   import logging
-
-   logging.basicConfig(level=logging.WARNING)
-
-   logger1 = logging.getLogger('package1.module1')
-   logger2 = logging.getLogger('package2.module2')
-
-   logger1.warning('This message comes from one module')
-   logger2.warning('And this message comes from another module')
-
-And the output::
-
-   $ python logging_modules_example.py
-   WARNING:package1.module1:This message comes from one module
-   WARNING:package2.module2:And this message comes from another module
-
-There are many more options for configuring logging, including different log
-message formatting options, having messages delivered to multiple destinations,
-and changing the configuration of a long-running application on the fly using a
-socket interface.  All of these options are covered in depth in the library
-module documentation.
 
 Loggers
 ^^^^^^^
-
-The logging library takes a modular approach and offers the several categories
-of components: loggers, handlers, filters, and formatters.  Loggers expose the
-interface that application code directly uses.  Handlers send the log records to
-the appropriate destination. Filters provide a finer grained facility for
-determining which log records to send on to a handler.  Formatters specify the
-layout of the resultant log record.
 
 :class:`Logger` objects have a threefold job.  First, they expose several
 methods to application code so that applications can log messages at runtime.
@@ -688,7 +833,7 @@ provided:
    The :class:`NullHandler` class.
 
 .. versionadded:: 3.2
-   The :class:`QueueHandler` class.
+   The :class:`~logging.handlers.QueueHandler` class.
 
 The :class:`NullHandler`, :class:`StreamHandler` and :class:`FileHandler`
 classes are defined in the core logging package. The other handlers are
@@ -1250,8 +1395,7 @@ instantiated directly, but always through the module-level function
 
    .. versionadded:: 3.2
 
-
-.. _minimal-example:
+.. _basic-example:
 
 Basic example
 -------------
@@ -1371,6 +1515,138 @@ the variable information, as in the following example::
 which would result in ::
 
    Wed, 21 Jul 2004 15:35:16 ERROR    Pack my box with 5 dozen liquor jugs
+
+
+Using file rotation
+^^^^^^^^^^^^^^^^^^^
+
+.. sectionauthor:: Doug Hellmann, Vinay Sajip (changes)
+.. (see <http://blog.doughellmann.com/2007/05/pymotw-logging.html>)
+
+Sometimes you want to let a log file grow to a certain size, then open a new
+file and log to that. You may want to keep a certain number of these files, and
+when that many files have been created, rotate the files so that the number of
+files and the size of the files both remin bounded. For this usage pattern, the
+logging package provides a :class:`RotatingFileHandler`::
+
+   import glob
+   import logging
+   import logging.handlers
+
+   LOG_FILENAME = 'logging_rotatingfile_example.out'
+
+   # Set up a specific logger with our desired output level
+   my_logger = logging.getLogger('MyLogger')
+   my_logger.setLevel(logging.DEBUG)
+
+   # Add the log message handler to the logger
+   handler = logging.handlers.RotatingFileHandler(
+                 LOG_FILENAME, maxBytes=20, backupCount=5)
+
+   my_logger.addHandler(handler)
+
+   # Log some messages
+   for i in range(20):
+       my_logger.debug('i = %d' % i)
+
+   # See what files are created
+   logfiles = glob.glob('%s*' % LOG_FILENAME)
+
+   for filename in logfiles:
+       print(filename)
+
+The result should be 6 separate files, each with part of the log history for the
+application::
+
+   logging_rotatingfile_example.out
+   logging_rotatingfile_example.out.1
+   logging_rotatingfile_example.out.2
+   logging_rotatingfile_example.out.3
+   logging_rotatingfile_example.out.4
+   logging_rotatingfile_example.out.5
+
+The most current file is always :file:`logging_rotatingfile_example.out`,
+and each time it reaches the size limit it is renamed with the suffix
+``.1``. Each of the existing backup files is renamed to increment the suffix
+(``.1`` becomes ``.2``, etc.)  and the ``.6`` file is erased.
+
+Obviously this example sets the log length much much too small as an extreme
+example.  You would want to set *maxBytes* to an appropriate value.
+
+
+The logger, handler, and log message call each specify a level.  The log message
+is only emitted if the handler and logger are configured to emit messages of
+that level or lower.  For example, if a message is ``CRITICAL``, and the logger
+is set to ``ERROR``, the message is emitted.  If a message is a ``WARNING``, and
+the logger is set to produce only ``ERROR``\s, the message is not emitted::
+
+   import logging
+   import sys
+
+   LEVELS = {'debug': logging.DEBUG,
+             'info': logging.INFO,
+             'warning': logging.WARNING,
+             'error': logging.ERROR,
+             'critical': logging.CRITICAL}
+
+   if len(sys.argv) > 1:
+       level_name = sys.argv[1]
+       level = LEVELS.get(level_name, logging.NOTSET)
+       logging.basicConfig(level=level)
+
+   logging.debug('This is a debug message')
+   logging.info('This is an info message')
+   logging.warning('This is a warning message')
+   logging.error('This is an error message')
+   logging.critical('This is a critical error message')
+
+Run the script with an argument like 'debug' or 'warning' to see which messages
+show up at different levels::
+
+   $ python logging_level_example.py debug
+   DEBUG:root:This is a debug message
+   INFO:root:This is an info message
+   WARNING:root:This is a warning message
+   ERROR:root:This is an error message
+   CRITICAL:root:This is a critical error message
+
+   $ python logging_level_example.py info
+   INFO:root:This is an info message
+   WARNING:root:This is a warning message
+   ERROR:root:This is an error message
+   CRITICAL:root:This is a critical error message
+
+You will notice that these log messages all have ``root`` embedded in them.  The
+logging module supports a hierarchy of loggers with different names.  An easy
+way to tell where a specific log message comes from is to use a separate logger
+object for each of your modules.  Each new logger "inherits" the configuration
+of its parent, and log messages sent to a logger include the name of that
+logger.  Optionally, each logger can be configured differently, so that messages
+from different modules are handled in different ways.  Let's look at a simple
+example of how to log from different modules so it is easy to trace the source
+of the message::
+
+   import logging
+
+   logging.basicConfig(level=logging.WARNING)
+
+   logger1 = logging.getLogger('package1.module1')
+   logger2 = logging.getLogger('package2.module2')
+
+   logger1.warning('This message comes from one module')
+   logger2.warning('And this message comes from another module')
+
+And the output::
+
+   $ python logging_modules_example.py
+   WARNING:package1.module1:This message comes from one module
+   WARNING:package2.module2:And this message comes from another module
+
+There are many more options for configuring logging, including different log
+message formatting options, having messages delivered to multiple destinations,
+and changing the configuration of a long-running application on the fly using a
+socket interface.  All of these options are covered in depth in the library
+module documentation.
 
 
 .. _multiple-destinations:
@@ -3216,7 +3492,7 @@ every time something is logged, and can be created manually via
 wire).
 
 
-.. class:: LogRecord(name, lvl, pathname, lineno, msg, args, exc_info, func=None, sinfo=None)
+.. class:: LogRecord(name, levelno, pathname, lineno, msg, args, exc_info, func=None, sinfo=None)
 
    Contains all the information pertinent to the event being logged.
 
@@ -3241,7 +3517,7 @@ wire).
 
       Line number in the source file of origin.
 
-   .. attribute:: lvl
+   .. attribute:: levelno
 
       Numeric logging level.
 
