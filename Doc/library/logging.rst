@@ -146,14 +146,34 @@ messages::
    INFO:root:So should this
    WARNING:root:And this, too
 
+This example also shows how you can set the logging level which acts as the
+threshold for tracking. In this case, because we set the threshold to
+``DEBUG``, all of the messages were printed.
+
+If you want to set the logging level from a command-line option such as::
+
+   --log=INFO
+
+and you have the value of the parameter passed for ``--log`` in some variable
+*loglevel*, you can use::
+
+   getattr(logging, loglevel.upper())
+
+to get the value which you'll pass to :func:`basicConfig` via the *level*
+argument. You may want to error check any user input value, perhaps as in the
+following example::
+
+   # assuming loglevel is bound to the string value obtained from the
+   # command line argument. Convert to upper case to allow the user to
+   # specify --log=DEBUG or --log=debug
+   numeric_level = getattr(logging, loglevel.upper(), None)
+   assert numeric_level is not None, 'Invalid log level: %s' % loglevel
+   logging.basicConfig(level=numeric_level, ...)
+
 The call to :func:`basicConfig` should come *before* any calls to :func:`debug`,
 :func:`info` etc. As it's intended as a one-off simple configuration facility,
 only the first call will actually do anything: subsequent calls are effectively
 no-ops.
-
-This example also shows how you can set the logging level which acts as the
-threshold for tracking. In this case, because we set the threshold to
-``DEBUG``, all of the messages were printed.
 
 If you run the above script several times, the messages from successive runs
 are appended to the file *example.log*. If you want each run to start afresh,
