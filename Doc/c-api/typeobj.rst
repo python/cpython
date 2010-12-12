@@ -1195,7 +1195,7 @@ Buffer Object Structures
 .. sectionauthor:: Benjamin Peterson
 
 
-The buffer interface exports a model where an object can expose its internal
+The :ref:`buffer interface <bufferobjects>` exports a model where an object can expose its internal
 data.
 
 If an object does not export the buffer interface, then its :attr:`tp_as_buffer`

@@ -12,16 +12,32 @@ Buffer Protocol
 .. index::
    single: buffer interface
 
-Python objects implemented in C can export a "buffer interface."  These
-functions can be used by an object to expose its data in a raw, byte-oriented
-format. Clients of the object can use the buffer interface to access the
-object data directly, without needing to copy it first.
+Certain objects available in Python wrap access to an underlying memory
+array or *buffer*.  Such objects include the built-in :class:`bytes` and
+:class:`bytearray`, and some extension types like :class:`array.array`.
+Third-party libraries may define their own types for special purposes, such
+as image processing or numeric analysis.
 
-Examples of objects that support the buffer interface are :class:`bytes`,
-:class:`bytearray` and :class:`array.array`. The bytes and bytearray objects
-exposes their bytes contents in the buffer interface's byte-oriented form.
-An :class:`array.array` can also expose its contents, but it should be noted
-that array elements may be multi-byte values.
+While each of these types have their own semantics, they share the common
+characteristic of being backed by a possibly large memory buffer.  It is
+then desireable, in some situations, to access that buffer directly and
+without intermediate copying.
+
+Python provides such a facility at the C level in the form of the *buffer
+protocol*.  This protocol has two sides:
+
+.. index:: single: PyBufferProcs
+
+- on the producer side, a type can export a "buffer interface" which allows
+  objects of that type to expose information about their underlying buffer.
+  This interface is described in the section :ref:`buffer-structs`;
+
+- on the consumer side, several means are available to obtain a pointer to
+  the raw underlying data of an object (for example a method parameter).
+
+Simple objects such as :class:`bytes` and :class:`bytearray` expose their
+underlying buffer in byte-oriented form.  Other forms are possible; for example,
+the elements exposed by a :class:`array.array` can be multi-byte values.
 
 An example consumer of the buffer interface is the :meth:`~io.BufferedIOBase.write`
 method of file objects: any object that can export a series of bytes through
@@ -42,12 +58,6 @@ over a target object:
 In both cases, :c:func:`PyBuffer_Release` must be called when the buffer
 isn't needed anymore.  Failure to do so could lead to various issues such as
 resource leaks.
-
-
-.. index:: single: PyBufferProcs
-
-How the buffer interface is exposed by a type object is described in the
-section :ref:`buffer-structs`, under the description for :c:type:`PyBufferProcs`.
 
 
 The buffer structure
