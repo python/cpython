@@ -1165,8 +1165,7 @@ particular, the following variants typically exist:
 |                    |         | operand                   |
 +--------------------+---------+---------------------------+
 
-The following codecs provide bytes-to-bytes mappings.  They can be used with
-:meth:`bytes.transform` and :meth:`bytes.untransform`.
+The following codecs provide bytes-to-bytes mappings.
 
 +--------------------+---------------------------+---------------------------+
 | Codec              | Aliases                   | Purpose                   |
@@ -1192,8 +1191,7 @@ The following codecs provide bytes-to-bytes mappings.  They can be used with
 |                    |                           | using gzip                |
 +--------------------+---------------------------+---------------------------+
 
-The following codecs provide string-to-string mappings.  They can be used with
-:meth:`str.transform` and :meth:`str.untransform`.
+The following codecs provide string-to-string mappings.
 
 +--------------------+---------------------------+---------------------------+
 | Codec              | Aliases                   | Purpose                   |

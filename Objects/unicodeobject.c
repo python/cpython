@@ -7455,44 +7455,6 @@ unicode_encode(PyUnicodeObject *self, PyObject *args, PyObject *kwargs)
     return PyUnicode_AsEncodedString((PyObject *)self, encoding, errors);
 }
 
-PyDoc_STRVAR(transform__doc__,
-             "S.transform(encoding, errors='strict') -> str\n\
-\n\
-Transform S using the codec registered for encoding. errors may be given\n\
-to set a different error handling scheme.");
-
-static PyObject *
-unicode_transform(PyUnicodeObject *self, PyObject *args, PyObject *kwargs)
-{
-    static char *kwlist[] = {"encoding", "errors", 0};
-    char *encoding = NULL;
-    char *errors = NULL;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|s:transform",
-                                     kwlist, &encoding, &errors))
-        return NULL;
-    return PyUnicode_AsEncodedUnicode((PyObject *)self, encoding, errors);
-}
-
-PyDoc_STRVAR(untransform__doc__,
-             "S.untransform(encoding, errors='strict') -> str\n\
-\n\
-Reverse-transform S using the codec registered for encoding. errors may be\n\
-given to set a different error handling scheme.");
-
-static PyObject *
-unicode_untransform(PyUnicodeObject *self, PyObject *args, PyObject *kwargs)
-{
-    static char *kwlist[] = {"encoding", "errors", 0};
-    char *encoding = NULL;
-    char *errors = NULL;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|s:untransform",
-                                     kwlist, &encoding, &errors))
-        return NULL;
-    return PyUnicode_AsDecodedUnicode((PyObject *)self, encoding, errors);
-}
-
 PyDoc_STRVAR(expandtabs__doc__,
              "S.expandtabs([tabsize]) -> str\n\
 \n\
@@ -9144,8 +9106,7 @@ static PyMethodDef unicode_methods[] = {
     /* Order is according to common usage: often used methods should
        appear first, since lookup is done sequentially. */
 
-    {"encode", (PyCFunction) unicode_encode, METH_VARARGS | METH_KEYWORDS,
-     encode__doc__},
+    {"encode", (PyCFunction) unicode_encode, METH_VARARGS | METH_KEYWORDS, encode__doc__},
     {"replace", (PyCFunction) unicode_replace, METH_VARARGS, replace__doc__},
     {"split", (PyCFunction) unicode_split, METH_VARARGS, split__doc__},
     {"rsplit", (PyCFunction) unicode_rsplit, METH_VARARGS, rsplit__doc__},
@@ -9190,10 +9151,6 @@ static PyMethodDef unicode_methods[] = {
     {"__format__", (PyCFunction) unicode__format__, METH_VARARGS, p_format__doc__},
     {"maketrans", (PyCFunction) unicode_maketrans,
      METH_VARARGS | METH_STATIC, maketrans__doc__},
-    {"transform", (PyCFunction) unicode_transform, METH_VARARGS | METH_KEYWORDS,
-     transform__doc__},
-    {"untransform", (PyCFunction) unicode_untransform, METH_VARARGS | METH_KEYWORDS,
-     untransform__doc__},
     {"__sizeof__", (PyCFunction) unicode__sizeof__, METH_NOARGS, sizeof__doc__},
 #if 0
     {"capwords", (PyCFunction) unicode_capwords, METH_NOARGS, capwords__doc__},
