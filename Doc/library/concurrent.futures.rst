@@ -1,5 +1,5 @@
-:mod:`concurrent.futures` --- Concurrent computation
-====================================================
+:mod:`concurrent.futures` --- Launching parallel tasks
+======================================================
 
 .. module:: concurrent.futures
    :synopsis: Execute computations concurrently using threads or processes.

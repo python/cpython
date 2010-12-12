@@ -1,8 +1,8 @@
-:mod:`multiprocessing` --- Process-based "threading" interface
-==============================================================
+:mod:`multiprocessing` --- Process-based parallelism
+====================================================
 
 .. module:: multiprocessing
-   :synopsis: Process-based "threading" interface.
+   :synopsis: Process-based parallelism.
 
 
 Introduction
