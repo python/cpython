@@ -48,7 +48,7 @@ states, for each of a set of common tasks, the best tool to use for it.
 +-------------------------------------+--------------------------------------+
 | Report events that occur during     | logging.info() (or logging.debug()   |
 | normal operation of a program (e.g. | for very detailed output for         |
-| or status monitoring or fault       | diagnostic purposes)                 |
+| for status monitoring or fault      | diagnostic purposes)                 |
 | investigation)                      |                                      |
 +-------------------------------------+--------------------------------------+
 | Issue a warning regarding a         | warnings.warn() in library code      |
@@ -283,12 +283,12 @@ The format of the *datefmt* argument is the same as supported by
 :func:`time.strftime`.
 
 
-Er...that's it for the tutorial
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Er...that's it for the basics
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-That concludes the tutorial. It should be enough to get you up and running
-with logging. There's a lot more that the logging package offers, but to get
-the best out of it, you'll need to invest a little more of your time in
+That concludes the basic tutorial. It should be enough to get you up and
+running with logging. There's a lot more that the logging package offers, but
+to get the best out of it, you'll need to invest a little more of your time in
 reading the following sections. If you're ready for that, grab some of your
 favourite beverage and carry on.
 
@@ -298,11 +298,14 @@ understand something, please post a question on the comp.lang.python Usenet
 group (available at http://groups.google.com/group/comp.lang.python) and you
 should receive help before too long.
 
-Still here? There's no need to read this long page in linear fashion, top to
-bottom. Take a look at the topics in the sidebar to see if there's something
-that interests you, and click on a topic to see more detail. Although some of
-the topics do follow on from each other, there are a few that can just stand
-alone.
+Still here? There's no need to read the whole of the logging documentation in
+linear fashion, top to bottom (there's quite a lot of it still to come). You
+can carry on reading the next few sections, which provide a slightly more
+advanced/in-depth tutorial than the basic one above. After that, you can
+take a look at the topics in the sidebar to see if there's something that
+especially interests you, and click on a topic to see more detail. Although
+some of the topics do follow on from each other, there are a few that can just
+stand alone.
 
 
 .. _more-advanced-logging:
@@ -374,14 +377,24 @@ objects pass along relevant log messages to all interested log handlers.
 The most widely used methods on logger objects fall into two categories:
 configuration and message sending.
 
+These are the most common configuration methods:
+
 * :meth:`Logger.setLevel` specifies the lowest-severity log message a logger
-  will handle, where debug is the lowest built-in severity level and critical is
-  the highest built-in severity.  For example, if the severity level is info,
-  the logger will handle only info, warning, error, and critical messages and
-  will ignore debug messages.
+  will handle, where debug is the lowest built-in severity level and critical
+  is the highest built-in severity.  For example, if the severity level is
+  INFO, the logger will handle only INFO, WARNING, ERROR, and CRITICAL messages
+  and will ignore DEBUG messages.
+
+* :meth:`Logger.addHandler` and :meth:`Logger.removeHandler` add and remove
+  handler objects from the logger object.  Handlers are covered in more detail
+  in :ref:`handler-basic`.
 
 * :meth:`Logger.addFilter` and :meth:`Logger.removeFilter` add and remove filter
-  objects from the logger object.  This tutorial does not address filters.
+  objects from the logger object.  Filters are covered in more detail in
+  :ref:`filter`.
+
+You don't need to always call these methods on every logger you create. See the
+last two paragraphs in this section.
 
 With the logger object configured, the following methods create log messages:
 
@@ -410,11 +423,24 @@ will return a reference to the same logger object.  Loggers that are further
 down in the hierarchical list are children of loggers higher up in the list.
 For example, given a logger with a name of ``foo``, loggers with names of
 ``foo.bar``, ``foo.bar.baz``, and ``foo.bam`` are all descendants of ``foo``.
+
+Loggers have a concept of *effective level*. If a level is not explicitly set
+on a logger, the level of its parent is used instead as its effective level.
+If the parent has no explicit level set, *its* parent is examined, and so on -
+all ancestors are searched until an explicitly set level is found. The root
+logger always has an explicit level set (``WARNING`` by default). When deciding
+whether to process an event, the effective level of the logger is used to
+determine whether the event is passed to the logger's handlers.
+
 Child loggers propagate messages up to the handlers associated with their
-ancestor loggers.  Because of this, it is unnecessary to define and configure
+ancestor loggers. Because of this, it is unnecessary to define and configure
 handlers for all the loggers an application uses. It is sufficient to
 configure handlers for a top-level logger and create child loggers as needed.
+(You can, however, turn off propagation by setting the *propagate*
+attribute of a logger to *False*.)
 
+
+.. _handler-basic:
 
 Handlers
 ^^^^^^^^
@@ -428,8 +454,9 @@ to stdout, and all messages of critical to an email address.  This scenario
 requires three individual handlers where each handler is responsible for sending
 messages of a specific severity to a specific location.
 
-The standard library includes quite a few handler types; this tutorial uses only
-:class:`StreamHandler` and :class:`FileHandler` in its examples.
+The standard library includes quite a few handler types (see
+:ref:`useful-handlers`); the tutorials use mainly :class:`StreamHandler` and
+:class:`FileHandler` in its examples.
 
 There are very few methods in a handler for application developers to concern
 themselves with.  The only handler methods that seem relevant for application
@@ -656,46 +683,70 @@ the new dictionary-based approach::
 For more information about logging using a dictionary, see
 :ref:`logging-config-api`.
 
+What happens if no configuration is provided
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If no logging configuration is provided, it is possible to have a situation
+where a logging event needs to be output, but no handlers can be found to
+output the event. The behaviour of the logging package in these
+circumstances is dependent on the Python version.
+
+For versions of Python prior to 3.2, the behaviour is as follows:
+
+* If *logging.raiseExceptions* is *False* (production mode), the event is
+  silently dropped.
+
+* If *logging.raiseExceptions* is *True* (development mode), a message
+  "No handlers could be found for logger X.Y.Z" is printed once.
+
+In Python 3.2 and later, the behaviour is as follows:
+
+* The event is output using a 'handler of last resort", stored in
+  ``logging.lastResort``. This internal handler is not associated with any
+  logger, and acts like a :class:`StreamHandler` which writes the event
+  description message to the current value of ``sys.stderr`` (therefore
+  respecting any redirections which may be in effect). No formatting is
+  done on the message - just the bare event description message is printed.
+  The handler's level is set to ``WARNING``, so all events at this and
+  greater severities will be output.
+
+To obtain the pre-3.2 behaviour, ``logging.lastResort`` can be set to *None*.
+
 .. _library-config:
 
 Configuring Logging for a Library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When developing a library which uses logging, some consideration needs to be
-given to its configuration. If the using application does not use logging, and
-library code makes logging calls, then a one-off message "No handlers could be
-found for logger X.Y.Z" is printed to the console. This message is intended
-to catch mistakes in logging configuration, but will confuse an application
-developer who is not aware of logging by the library.
+When developing a library which uses logging, you should take care to
+document how the library uses logging - for example, the names of loggers
+used. Some consideration also needs to be given to its logging configuration.
+If the using application does not use logging, and library code makes logging
+calls, then (as described in the previous section) events of severity
+``WARNING`` and greater will be printed to ``sys.stderr``. This is regarded as
+the best default behaviour.
 
-In addition to documenting how a library uses logging, a good way to configure
-library logging so that it does not cause a spurious message is to add a
-handler which does nothing. This avoids the message being printed, since a
-handler will be found: it just doesn't produce any output. If the library user
-configures logging for application use, presumably that configuration will add
-some handlers, and if levels are suitably configured then logging calls made
-in library code will send output to those handlers, as normal.
+If for some reason you *don't* want these messages printed in the absence of
+any logging configuration, you can attach a do-nothing handler to the top-level
+logger for your library. This avoids the message being printed, since a handler
+will be always be found for the library's events: it just doesn't produce any
+output. If the library user configures logging for application use, presumably
+that configuration will add some handlers, and if levels are suitably
+configured then logging calls made in library code will send output to those
+handlers, as normal.
 
-A do-nothing handler can be simply defined as follows::
-
-    import logging
-
-    class NullHandler(logging.Handler):
-        def emit(self, record):
-            pass
-
-An instance of this handler should be added to the top-level logger of the
-logging namespace used by the library. If all logging by a library *foo* is
-done using loggers with names matching "foo.x.y", then the code::
+A do-nothing handler is included in the logging package: :class:`NullHandler`
+(since Python 3.1). An instance of this handler could be added to the top-level
+logger of the logging namespace used by the library (*if* you want to prevent
+your library's logged events being output to ``sys.stderr`` in the absence of
+logging configuration). If all logging by a library *foo* is done using loggers
+with names matching 'foo.x', 'foo.x.y', etc. then the code::
 
     import logging
-
-    h = NullHandler()
-    logging.getLogger("foo").addHandler(h)
+    logging.getLogger('foo').addHandler(logging.NullHandler())
 
 should have the desired effect. If an organisation produces a number of
-libraries, then the logger name specified can be "orgname.foo" rather than
-just "foo".
+libraries, then the logger name specified can be 'orgname.foo' rather than
+just 'foo'.
 
 **PLEASE NOTE:** It is strongly advised that you *do not add any handlers other
 than* :class:`NullHandler` *to your library's loggers*. This is because the
@@ -704,9 +755,6 @@ uses your library. The application developer knows their target audience and
 what handlers are most appropriate for their application: if you add handlers
 "under the hood", you might well interfere with their ability to carry out
 unit tests and deliver logs which suit their requirements.
-
-.. versionadded:: 3.1
-   The :class:`NullHandler` class.
 
 
 Logging Levels
@@ -780,6 +828,8 @@ the logging output from such multiple libraries used together will be
 difficult for the using developer to control and/or interpret, because a
 given numeric value might mean different things for different libraries.
 
+
+.. _useful-handlers:
 
 Useful Handlers
 ---------------
