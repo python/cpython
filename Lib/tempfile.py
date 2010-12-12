@@ -29,6 +29,8 @@ __all__ = [
 
 # Imports.
 
+import warnings as _warnings
+import sys as _sys
 import io as _io
 import os as _os
 import errno as _errno
@@ -617,24 +619,40 @@ class TemporaryDirectory(object):
     """
 
     def __init__(self, suffix="", prefix=template, dir=None):
-        # cleanup() needs this and is called even when mkdtemp fails
-        self._closed = True
-        self.name = mkdtemp(suffix, prefix, dir)
         self._closed = False
+        self.name = None # Handle mkdtemp throwing an exception
+        self.name = mkdtemp(suffix, prefix, dir)
+
+    def __repr__(self):
+        return "<{} {!r}>".format(self.__class__.__name__, self.name)
 
     def __enter__(self):
         return self.name
 
-    def cleanup(self):
-        if not self._closed:
-            self._rmtree(self.name)
+    def cleanup(self, _warn=False):
+        if self.name and not self._closed:
+            try:
+                self._rmtree(self.name)
+            except (TypeError, AttributeError) as ex:
+                # Issue #10188: Emit a warning on stderr
+                # if the directory could not be cleaned
+                # up due to missing globals
+                if "None" not in str(ex):
+                    raise
+                print("ERROR: {!r} while cleaning up {!r}".format(ex, self,),
+                      file=_sys.stderr)
+                return
             self._closed = True
+            if _warn:
+                self._warn("Implicitly cleaning up {!r}".format(self),
+                           ResourceWarning)
 
     def __exit__(self, exc, value, tb):
         self.cleanup()
 
-    __del__ = cleanup
-
+    def __del__(self):
+        # Issue a ResourceWarning if implicit cleanup needed
+        self.cleanup(_warn=True)
 
     # XXX (ncoghlan): The following code attempts to make
     # this class tolerant of the module nulling out process
@@ -646,6 +664,7 @@ class TemporaryDirectory(object):
     _remove = staticmethod(_os.remove)
     _rmdir = staticmethod(_os.rmdir)
     _os_error = _os.error
+    _warn = _warnings.warn
 
     def _rmtree(self, path):
         # Essentially a stripped down version of shutil.rmtree.  We can't
