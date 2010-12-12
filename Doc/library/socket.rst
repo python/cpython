@@ -15,16 +15,6 @@ platforms.
    Some behavior may be platform dependent, since calls are made to the operating
    system socket APIs.
 
-For an introduction to socket programming (in C), see the following papers: An
-Introductory 4.3BSD Interprocess Communication Tutorial, by Stuart Sechrest and
-An Advanced 4.3BSD Interprocess Communication Tutorial, by Samuel J.  Leffler et
-al, both in the UNIX Programmer's Manual, Supplementary Documents 1 (sections
-PS1:7 and PS1:8).  The platform-specific reference material for the various
-socket-related system calls are also a valuable source of information on the
-details of socket semantics.  For Unix, refer to the manual pages; for Windows,
-see the WinSock (or Winsock 2) specification. For IPv6-ready APIs, readers may
-want to refer to :rfc:`3493` titled Basic Socket Interface Extensions for IPv6.
-
 .. index:: object: socket
 
 The Python interface is a straightforward transliteration of the Unix system
@@ -35,26 +25,63 @@ in the C interface: as with :meth:`read` and :meth:`write` operations on Python
 files, buffer allocation on receive operations is automatic, and buffer length
 is implicit on send operations.
 
-Socket addresses are represented as follows: A single string is used for the
-:const:`AF_UNIX` address family. A pair ``(host, port)`` is used for the
-:const:`AF_INET` address family, where *host* is a string representing either a
-hostname in Internet domain notation like ``'daring.cwi.nl'`` or an IPv4 address
-like ``'100.50.200.5'``, and *port* is an integral port number. For
-:const:`AF_INET6` address family, a four-tuple ``(host, port, flowinfo,
-scopeid)`` is used, where *flowinfo* and *scopeid* represents ``sin6_flowinfo``
-and ``sin6_scope_id`` member in :const:`struct sockaddr_in6` in C. For
-:mod:`socket` module methods, *flowinfo* and *scopeid* can be omitted just for
-backward compatibility. Note, however, omission of *scopeid* can cause problems
-in manipulating scoped IPv6 addresses. Other address families are currently not
-supported. The address format required by a particular socket object is
-automatically selected based on the address family specified when the socket
-object was created.
+
+Socket families
+---------------
+
+Depending on the system and the build options, various socket families
+are supported by this module.
+
+Socket addresses are represented as follows:
+
+- A single string is used for the :const:`AF_UNIX` address family.
+
+- A pair ``(host, port)`` is used for the :const:`AF_INET` address family,
+  where *host* is a string representing either a hostname in Internet domain
+  notation like ``'daring.cwi.nl'`` or an IPv4 address like ``'100.50.200.5'``,
+  and *port* is an integral port number.
+
+- For :const:`AF_INET6` address family, a four-tuple ``(host, port, flowinfo,
+  scopeid)`` is used, where *flowinfo* and *scopeid* represent the ``sin6_flowinfo``
+  and ``sin6_scope_id`` members in :const:`struct sockaddr_in6` in C.  For
+  :mod:`socket` module methods, *flowinfo* and *scopeid* can be omitted just for
+  backward compatibility.  Note, however, omission of *scopeid* can cause problems
+  in manipulating scoped IPv6 addresses.
+
+- :const:`AF_NETLINK` sockets are represented as pairs ``(pid, groups)``.
+
+- Linux-only support for TIPC is available using the :const:`AF_TIPC`
+  address family.  TIPC is an open, non-IP based networked protocol designed
+  for use in clustered computer environments.  Addresses are represented by a
+  tuple, and the fields depend on the address type. The general tuple form is
+  ``(addr_type, v1, v2, v3 [, scope])``, where:
+
+  - *addr_type* is one of TIPC_ADDR_NAMESEQ, TIPC_ADDR_NAME, or
+    TIPC_ADDR_ID.
+  - *scope* is one of TIPC_ZONE_SCOPE, TIPC_CLUSTER_SCOPE, and
+    TIPC_NODE_SCOPE.
+  - If *addr_type* is TIPC_ADDR_NAME, then *v1* is the server type, *v2* is
+    the port identifier, and *v3* should be 0.
+
+    If *addr_type* is TIPC_ADDR_NAMESEQ, then *v1* is the server type, *v2*
+    is the lower port number, and *v3* is the upper port number.
+
+    If *addr_type* is TIPC_ADDR_ID, then *v1* is the node, *v2* is the
+    reference, and *v3* should be set to 0.
+
+    If *addr_type* is TIPC_ADDR_ID, then *v1* is the node, *v2* is the
+    reference, and *v3* should be set to 0.
+
+- Certain other address families (:const:`AF_BLUETOOTH`, :const:`AF_PACKET`)
+  support specific representations.
+
+  .. XXX document them!
 
 For IPv4 addresses, two special forms are accepted instead of a host address:
 the empty string represents :const:`INADDR_ANY`, and the string
-``'<broadcast>'`` represents :const:`INADDR_BROADCAST`. The behavior is not
-available for IPv6 for backward compatibility, therefore, you may want to avoid
-these if you intend to support IPv6 with your Python programs.
+``'<broadcast>'`` represents :const:`INADDR_BROADCAST`.  This behavior is not
+compatible with IPv6, therefore, you may want to avoid these if you intend
+to support IPv6 with your Python programs.
 
 If you use a hostname in the *host* portion of IPv4/v6 socket address, the
 program may show a nondeterministic behavior, as Python uses the first address
@@ -63,39 +90,17 @@ differently into an actual IPv4/v6 address, depending on the results from DNS
 resolution and/or the host configuration.  For deterministic behavior use a
 numeric address in *host* portion.
 
-AF_NETLINK sockets are represented as  pairs ``pid, groups``.
-
-
-Linux-only support for TIPC is also available using the :const:`AF_TIPC`
-address family. TIPC is an open, non-IP based networked protocol designed
-for use in clustered computer environments.  Addresses are represented by a
-tuple, and the fields depend on the address type. The general tuple form is
-``(addr_type, v1, v2, v3 [, scope])``, where:
-
-- *addr_type* is one of TIPC_ADDR_NAMESEQ, TIPC_ADDR_NAME, or
-  TIPC_ADDR_ID.
-- *scope* is one of TIPC_ZONE_SCOPE, TIPC_CLUSTER_SCOPE, and
-  TIPC_NODE_SCOPE.
-- If *addr_type* is TIPC_ADDR_NAME, then *v1* is the server type, *v2* is
-  the port identifier, and *v3* should be 0.
-
-  If *addr_type* is TIPC_ADDR_NAMESEQ, then *v1* is the server type, *v2*
-  is the lower port number, and *v3* is the upper port number.
-
-  If *addr_type* is TIPC_ADDR_ID, then *v1* is the node, *v2* is the
-  reference, and *v3* should be set to 0.
-
-  If *addr_type* is TIPC_ADDR_ID, then *v1* is the node, *v2* is the
-  reference, and *v3* should be set to 0.
-
-
 All errors raise exceptions.  The normal exceptions for invalid argument types
 and out-of-memory conditions can be raised; errors related to socket or address
-semantics raise the error :exc:`socket.error`.
+semantics raise :exc:`socket.error` or one of its subclasses.
 
 Non-blocking mode is supported through :meth:`~socket.setblocking`.  A
 generalization of this based on timeouts is supported through
 :meth:`~socket.settimeout`.
+
+
+Module contents
+---------------
 
 The module :mod:`socket` exports the following constants and functions:
 
@@ -145,7 +150,8 @@ The module :mod:`socket` exports the following constants and functions:
 
    These constants represent the address (and protocol) families, used for the
    first argument to :func:`socket`.  If the :const:`AF_UNIX` constant is not
-   defined then this protocol is unsupported.
+   defined then this protocol is unsupported.  More constants may be available
+   depending on the system.
 
 
 .. data:: SOCK_STREAM
@@ -155,8 +161,9 @@ The module :mod:`socket` exports the following constants and functions:
           SOCK_SEQPACKET
 
    These constants represent the socket types, used for the second argument to
-   :func:`socket`. (Only :const:`SOCK_STREAM` and :const:`SOCK_DGRAM` appear to be
-   generally useful.)
+   :func:`socket`.  More constants may be available depending on the system.
+   (Only :const:`SOCK_STREAM` and :const:`SOCK_DGRAM` appear to be generally
+   useful.)
 
 
 .. data:: SO_*
@@ -911,3 +918,21 @@ the interface::
 
    # disabled promiscuous mode
    s.ioctl(socket.SIO_RCVALL, socket.RCVALL_OFF)
+
+
+.. seealso::
+
+   For an introduction to socket programming (in C), see the following papers:
+
+   - *An Introductory 4.3BSD Interprocess Communication Tutorial*, by Stuart Sechrest
+
+   - *An Advanced 4.3BSD Interprocess Communication Tutorial*, by Samuel J.  Leffler et
+     al,
+
+   both in the UNIX Programmer's Manual, Supplementary Documents 1 (sections
+   PS1:7 and PS1:8).  The platform-specific reference material for the various
+   socket-related system calls are also a valuable source of information on the
+   details of socket semantics.  For Unix, refer to the manual pages; for Windows,
+   see the WinSock (or Winsock 2) specification.  For IPv6-ready APIs, readers may
+   want to refer to :rfc:`3493` titled Basic Socket Interface Extensions for IPv6.
+
