@@ -65,10 +65,6 @@ The module defines the following type:
    passed to the :meth:`extend` method.
 
 
-.. data:: ArrayType
-
-   Obsolete alias for :class:`array`.
-
 .. data:: typecodes
 
    A string with all available type codes.
