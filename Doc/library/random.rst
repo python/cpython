@@ -259,7 +259,7 @@ Alternative Generator:
 
 
 Notes on Reproducibility
-========================
+------------------------
 
 Sometimes it is useful to be able to reproduce the sequences given by a pseudo
 random number generator.  By re-using a seed value, the same sequence should be
@@ -277,7 +277,7 @@ change across Python versions, but two aspects are guaranteed not to change:
 .. _random-examples:
 
 Examples and Recipes
-====================
+--------------------
 
 Basic usage::
 
