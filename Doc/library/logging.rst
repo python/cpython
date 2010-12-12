@@ -146,6 +146,11 @@ messages::
    INFO:root:So should this
    WARNING:root:And this, too
 
+The call to :func:`basicConfig` should come *before* any calls to :func:`debug`,
+:func:`info` etc. As it's intended as a one-off simple configuration facility,
+only the first call will actually do anything: subsequent calls are effectively
+no-ops.
+
 This example also shows how you can set the logging level which acts as the
 threshold for tracking. In this case, because we set the threshold to
 ``DEBUG``, all of the messages were printed.
