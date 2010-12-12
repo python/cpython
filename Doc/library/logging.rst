@@ -2,7 +2,7 @@
 ==============================================
 
 .. module:: logging
-   :synopsis: Flexible error logging system for applications.
+   :synopsis: Flexible event logging system for applications.
 
 
 .. moduleauthor:: Vinay Sajip <vinay_sajip@red-dove.com>
@@ -11,7 +11,7 @@
 
 .. index:: pair: Errors; logging
 
-This module defines functions and classes which implement a flexible error
+This module defines functions and classes which implement a flexible event
 logging system for applications and libraries.
 
 The key benefit of having the logging API provided by a standard library module
