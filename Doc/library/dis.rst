@@ -695,11 +695,6 @@ the more significant byte last.
    storage.
 
 
-.. opcode:: SET_LINENO (lineno)
-
-   This opcode is obsolete.
-
-
 .. opcode:: RAISE_VARARGS (argc)
 
    Raises an exception. *argc* indicates the number of parameters to the raise
