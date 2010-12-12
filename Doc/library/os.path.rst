@@ -228,7 +228,7 @@ applications should use string objects to access all files.
 
    *start* defaults to :attr:`os.curdir`.
 
-   Availability:  Windows, Unix.
+   Availability: Unix, Windows.
 
 
 .. function:: samefile(path1, path2)
@@ -241,7 +241,7 @@ applications should use string objects to access all files.
    name using the Windows API call GetFinalPathNameByHandle. This function
    raises an exception if handles cannot be obtained to either file.
 
-   Availability: Windows, Unix.
+   Availability: Unix, Windows.
 
    .. versionchanged:: 3.2
       Added Windows support.
