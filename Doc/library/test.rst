@@ -5,12 +5,12 @@
    :synopsis: Regression tests package containing the testing suite for Python.
 .. sectionauthor:: Brett Cannon <brett@python.org>
 
-.. note::
-    The :mod:`test` package is meant for internal use by Python only. It is
-    documented for the benefit of the core developers of Python. Any use of
-    this package outside of Python's standard library is discouraged as code
-    mentioned here can change or be removed without notice between releases of
-    Python.
+.. warning::
+   The :mod:`test` package is meant for internal use by Python only. It is
+   documented for the benefit of the core developers of Python. Any use of
+   this package outside of Python's standard library is discouraged as code
+   mentioned here can change or be removed without notice between releases of
+   Python.
 
 
 The :mod:`test` package contains all regression tests for Python as well as the

@@ -227,7 +227,7 @@ applications should use string objects to access all files.
 
    *start* defaults to :attr:`os.curdir`.
 
-   Availability:  Windows, Unix.
+   Availability: Unix, Windows.
 
 
 .. function:: samefile(path1, path2)
