@@ -319,6 +319,14 @@ separators. For example, a logger named "scan" is the parent of loggers
 "scan.text", "scan.html" and "scan.pdf". Logger names can be anything you want,
 and indicate the area of an application in which a logged message originates.
 
+A good convention to use when naming loggers is to use a module-level logger,
+in each module which uses logging, named as follows::
+
+   logger = logging.getLogger(__name__)
+
+This means that logger names track the package/module hierarchy, and it's
+intuitively obvious where events are logged just from the logger name.
+
 The root of the hierarchy of loggers is called the root logger. That's the
 logger used by the functions :func:`debug`, :func:`info`, :func:`warning`,
 :func:`error` and :func:`critical`, which just call the same-named method of
