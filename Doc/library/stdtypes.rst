@@ -1352,19 +1352,6 @@ functions based on regular expressions.
         "They're Bill's Friends."
 
 
-.. method:: str.transform(encoding, errors='strict')
-
-   Return an encoded version of the string.  In contrast to :meth:`encode`, this
-   method works with codecs that provide string-to-string mappings, and not
-   string-to-bytes mappings.  :meth:`transform` therefore returns a string
-   object.
-
-   The codecs that can be used with this method are listed in
-   :ref:`standard-encodings`.
-
-   .. versionadded:: 3.2
-
-
 .. method:: str.translate(map)
 
    Return a copy of the *s* where all characters have been mapped through the
@@ -1380,14 +1367,6 @@ functions based on regular expressions.
       An even more flexible approach is to create a custom character mapping
       codec using the :mod:`codecs` module (see :mod:`encodings.cp1251` for an
       example).
-
-
-.. method:: str.untransform(encoding, errors='strict')
-
-   Return a decoded version of the string.  This provides the reverse operation
-   of :meth:`transform`.
-
-   .. versionadded:: 3.2
 
 
 .. method:: str.upper()
@@ -1821,20 +1800,6 @@ The bytes and bytearray types have an additional class method:
 The maketrans and translate methods differ in semantics from the versions
 available on strings:
 
-.. method:: bytes.transform(encoding, errors='strict')
-            bytearray.transform(encoding, errors='strict')
-
-   Return an encoded version of the bytes object.  In contrast to
-   :meth:`encode`, this method works with codecs that provide bytes-to-bytes
-   mappings, and not string-to-bytes mappings.  :meth:`transform` therefore
-   returns a bytes or bytearray object.
-
-   The codecs that can be used with this method are listed in
-   :ref:`standard-encodings`.
-
-   .. versionadded:: 3.2
-
-
 .. method:: bytes.translate(table[, delete])
             bytearray.translate(table[, delete])
 
@@ -1850,15 +1815,6 @@ available on strings:
 
       >>> b'read this short text'.translate(None, b'aeiou')
       b'rd ths shrt txt'
-
-
-.. method:: bytes.untransform(encoding, errors='strict')
-            bytearray.untransform(encoding, errors='strict')
-
-   Return an decoded version of the bytes object.  This provides the reverse
-   operation of :meth:`transform`.
-
-   .. versionadded:: 3.2
 
 
 .. staticmethod:: bytes.maketrans(from, to)

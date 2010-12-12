@@ -42,10 +42,6 @@ Core and Builtins
 
 - Issue #9915: Speed up sorting with a key.
 
-- Issue #7475: Added transform() and untransform() methods to both bytes and
-  string types.  They can be used to access those codecs providing
-  bytes-to-bytes and string-to-string mappings.
-
 - Issue #8685: Speed up set difference ``a - b`` when source set ``a`` is much
   larger than operand ``b``.  Patch by Andrew Bennetts.
 

@@ -406,26 +406,6 @@ Other Language Changes
 
 Some smaller changes made to the core Python language are:
 
-* :class:`bytes` and :class:`str` now have two net methods, *transform* and
-  *untransform*.  These provide analogues to *encode* and *decode* but are used
-  for general purpose str-to-str and bytes-to-bytes transformations rather than
-  Unicode codecs for bytes-to-str and str-to-bytes.
-
-  Along with the new methods, several non-unicode codecs been restored from Python 2.x
-  including *base64*, *bz2*, *hex*, *quopri*, *rot13*, *uu*, and *zlib*.
-
-  >>> t = b'which witch had which witches wrist watch'
-  >>> t.transform('quopri')
-  b'which=20witch=20had=20which=20witches=20wrist=20watch'
-
-  >>> short = t.transform('zlib_codec')
-  >>> len(t), len(short)
-  (41, 38)
-  >>> short.untransform('zlib_codec')
-  b'which witch had which witches wrist watch'
-
-  (From multiple contributors in :issue:`7475`.)
-
 * String formatting for :func:`format` and :meth:`str.format` gained new
   capabilities for the format character **#**.  Previously, for integers in
   binary, octal, or hexadecimal, it caused the output to be prefixed with '0b',

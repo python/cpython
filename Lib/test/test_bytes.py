@@ -207,11 +207,6 @@ class BaseBytesTest(unittest.TestCase):
         self.assertEqual(b.decode(errors="ignore", encoding="utf8"),
                          "Hello world\n")
 
-    def test_transform(self):
-        b1 = self.type2test(range(256))
-        b2 = b1.transform("base64").untransform("base64")
-        self.assertEqual(b2, b1)
-
     def test_from_int(self):
         b = self.type2test(0)
         self.assertEqual(b, self.type2test())

@@ -1691,9 +1691,9 @@ else:
     bytes_transform_encodings.append("bz2_codec")
 
 class TransformCodecTest(unittest.TestCase):
+
     def test_basics(self):
         binput = bytes(range(256))
-        ainput = bytearray(binput)
         for encoding in bytes_transform_encodings:
             # generic codecs interface
             (o, size) = codecs.getencoder(encoding)(binput)
@@ -1702,22 +1702,9 @@ class TransformCodecTest(unittest.TestCase):
             self.assertEqual(size, len(o))
             self.assertEqual(i, binput)
 
-            # transform interface
-            boutput = binput.transform(encoding)
-            aoutput = ainput.transform(encoding)
-            self.assertEqual(boutput, aoutput)
-            self.assertIsInstance(boutput, bytes)
-            self.assertIsInstance(aoutput, bytearray)
-            bback = boutput.untransform(encoding)
-            aback = aoutput.untransform(encoding)
-            self.assertEqual(bback, aback)
-            self.assertEqual(bback, binput)
-            self.assertIsInstance(bback, bytes)
-            self.assertIsInstance(aback, bytearray)
-
     def test_read(self):
         for encoding in bytes_transform_encodings:
-            sin = b"\x80".transform(encoding)
+            sin = codecs.encode(b"\x80", encoding)
             reader = codecs.getreader(encoding)(io.BytesIO(sin))
             sout = reader.read()
             self.assertEqual(sout, b"\x80")
@@ -1726,7 +1713,7 @@ class TransformCodecTest(unittest.TestCase):
         for encoding in bytes_transform_encodings:
             if encoding in ['uu_codec', 'zlib_codec']:
                 continue
-            sin = b"\x80".transform(encoding)
+            sin = codecs.encode(b"\x80", encoding)
             reader = codecs.getreader(encoding)(io.BytesIO(sin))
             sout = reader.readline()
             self.assertEqual(sout, b"\x80")
