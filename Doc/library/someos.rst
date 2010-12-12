@@ -14,11 +14,11 @@ some other systems as well (e.g. Windows).  Here's an overview:
 
    select.rst
    threading.rst
-   dummy_threading.rst
-   _thread.rst
-   _dummy_thread.rst
-   concurrent.futures.rst
    multiprocessing.rst
+   concurrent.futures.rst
    mmap.rst
    readline.rst
    rlcompleter.rst
+   dummy_threading.rst
+   _thread.rst
+   _dummy_thread.rst

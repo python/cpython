@@ -1,8 +1,8 @@
-:mod:`threading` --- Higher-level threading interface
-=====================================================
+:mod:`threading` --- Thread-based parallelism
+=============================================
 
 .. module:: threading
-   :synopsis: Higher-level threading interface.
+   :synopsis: Thread-based parallelism.
 
 
 This module constructs higher-level threading interfaces on top of the lower
