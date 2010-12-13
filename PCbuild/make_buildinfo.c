@@ -91,6 +91,17 @@ int main(int argc, char*argv[])
     if (argc > 2) {
         tmpdir = argv[2];
         strcat_s(tmppath, _countof(tmppath), tmpdir);
+        /* Hack fix for bad command line:  If the command is issued like this:
+         * $(SolutionDir)make_buildinfo.exe" Debug "$(IntDir)"
+         * we will get a trailing quote because IntDir ends with a backslash that then
+         * escapes the final ".  To simplify the life for developers, catch that problem
+         * here by cutting it off.
+         * The proper command line, btw is:
+         * $(SolutionDir)make_buildinfo.exe" Debug "$(IntDir)\"
+         * Hooray for command line parsing on windows.
+         */
+        if (strlen(tmppath) > 0 && tmppath[strlen(tmppath)-1] == '"')
+            tmppath[strlen(tmppath)-1] = '\0';
         strcat_s(tmppath, _countof(tmppath), "\\");
     }
 
