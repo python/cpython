@@ -504,6 +504,29 @@ class TestMessageAPI(TestEmailBase):
         self.assertEqual(msg.get_payload(decode=True),
                          bytes(x, 'raw-unicode-escape'))
 
+    # Issue 1078919
+    def test_ascii_add_header(self):
+        msg = Message()
+        msg.add_header('Content-Disposition', 'attachment',
+                       filename='bud.gif')
+        self.assertEqual('attachment; filename="bud.gif"',
+            msg['Content-Disposition'])
+
+    def test_noascii_add_header(self):
+        msg = Message()
+        msg.add_header('Content-Disposition', 'attachment',
+            filename="Fußballer.ppt")
+        self.assertEqual(
+            'attachment; filename*="utf-8\'\'Fu%C3%9Fballer.ppt"',
+            msg['Content-Disposition'])
+
+    def test_nonascii_add_header_via_triple(self):
+        msg = Message()
+        msg.add_header('Content-Disposition', 'attachment',
+            filename=('iso-8859-1', '', 'Fußballer.ppt'))
+        self.assertEqual(
+            'attachment; filename*="iso-8859-1\'\'Fu%DFballer.ppt"',
+            msg['Content-Disposition'])
 
 
 # Test the email.encoders module
