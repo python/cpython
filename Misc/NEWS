@@ -11,6 +11,9 @@ What's New in Python 3.2 Beta 2?
 Library
 -------
 
+- Issue #1078919: add_header now automatically RFC2231 encodes parameters
+  that contain non-ascii values.
+
 - Issue #10188 (partial resolution): tempfile.TemporaryDirectory emits
   a warning on sys.stderr rather than throwing a misleading exception
   if cleanup fails due to nulling out of modules during shutdown.
