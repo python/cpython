@@ -11,13 +11,17 @@ What's New in Python 3.2 Beta 2?
 Library
 -------
 
-* Issue #10188 (partial resolution): tempfile.TemporaryDirectory emits
+- Issue #10188 (partial resolution): tempfile.TemporaryDirectory emits
   a warning on sys.stderr rather than throwing a misleading exception
   if cleanup fails due to nulling out of modules during shutdown.
   Also avoids an AttributeError when mkdtemp call fails and issues
   a ResourceWarning on implicit cleanup via __del__.
 
-* Issue #10107: Warn about unsaved files in IDLE on OSX.
+- Issue #10107: Warn about unsaved files in IDLE on OSX.
+
+- Issue #7213: subprocess.Popen's default for close_fds has been changed.
+  It is now platform specific, keeping its default of False on Windows and
+  changing the default to True on POSIX and other platforms.
 
 
 What's New in Python 3.2 Beta 1?
