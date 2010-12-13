@@ -270,10 +270,11 @@ which would print::
 
 Notice that the 'root' which appeared in earlier examples has disappeared. For
 a full set of things that can appear in format strings, you can refer to the
-documentation for :ref:`formatter-objects`, but for simple usage, you just need
-the *levelname* (severity), *message* (event description, including variable
-data) and perhaps to display when the event occurred. This is described in the
-next section.
+documentation for :ref:`logrecord-attributes`, but for simple usage, you just
+need the *levelname* (severity), *message* (event description, including
+variable data) and perhaps to display when the event occurred. This is
+described in the next section.
+
 
 Displaying the date/time in messages
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -524,10 +525,10 @@ or '$'. If one of these is not specified, then '%' will be used.
 
 If the ``style`` is '%', the message format string uses
 ``%(<dictionary key>)s`` styled string substitution; the possible keys are
-documented in :ref:`formatter-objects`. If the style is '{', the message format
-string is assumed to be compatible with :meth:`str.format` (using keyword
-arguments), while if the style is '$' then the message format string should
-conform to what is expected by :meth:`string.Template.substitute`.
+documented in :ref:`logrecord-attributes`. If the style is '{', the message
+format string is assumed to be compatible with :meth:`str.format` (using
+keyword arguments), while if the style is '$' then the message format string
+should conform to what is expected by :meth:`string.Template.substitute`.
 
 .. versionchanged:: 3.2
    Added the ``style`` parameter.
@@ -3260,7 +3261,9 @@ The :class:`QueueListener` class, located in the :mod:`logging.handlers`
 module, supports receiving logging messages from a queue, such as those
 implemented in the :mod:`queue` or :mod:`multiprocessing` modules. The
 messages are received from a queue in an internal thread and passed, on
-the same thread, to one or more handlers for processing.
+the same thread, to one or more handlers for processing. While
+:class:`QueueListener` is not itself a handler, it is documented here
+because it works hand-in-hand with :class:`QueueHandler`.
 
 Along with the :class:`QueueHandler` class, :class:`QueueListener` can be used
 to let handlers do their work on a separate thread from the one which does the
@@ -3384,7 +3387,7 @@ Formatter Objects
 
 .. currentmodule:: logging
 
-:class:`Formatter`\ s have the following attributes and methods. They are
+:class:`Formatter` objects have the following attributes and methods. They are
 responsible for converting a :class:`LogRecord` to (usually) a string which can
 be interpreted by either a human or an external system. The base
 :class:`Formatter` allows a formatting string to be specified. If none is
@@ -3397,61 +3400,8 @@ into a :class:`LogRecord`'s *message* attribute.  This format string contains
 standard Python %-style mapping keys. See section :ref:`old-string-formatting`
 for more information on string formatting.
 
-Currently, the useful mapping keys in a :class:`LogRecord` are:
-
-+-------------------------+-----------------------------------------------+
-| Format                  | Description                                   |
-+=========================+===============================================+
-| ``%(name)s``            | Name of the logger (logging channel).         |
-+-------------------------+-----------------------------------------------+
-| ``%(levelno)s``         | Numeric logging level for the message         |
-|                         | (:const:`DEBUG`, :const:`INFO`,               |
-|                         | :const:`WARNING`, :const:`ERROR`,             |
-|                         | :const:`CRITICAL`).                           |
-+-------------------------+-----------------------------------------------+
-| ``%(levelname)s``       | Text logging level for the message            |
-|                         | (``'DEBUG'``, ``'INFO'``, ``'WARNING'``,      |
-|                         | ``'ERROR'``, ``'CRITICAL'``).                 |
-+-------------------------+-----------------------------------------------+
-| ``%(pathname)s``        | Full pathname of the source file where the    |
-|                         | logging call was issued (if available).       |
-+-------------------------+-----------------------------------------------+
-| ``%(filename)s``        | Filename portion of pathname.                 |
-+-------------------------+-----------------------------------------------+
-| ``%(module)s``          | Module (name portion of filename).            |
-+-------------------------+-----------------------------------------------+
-| ``%(funcName)s``        | Name of function containing the logging call. |
-+-------------------------+-----------------------------------------------+
-| ``%(lineno)d``          | Source line number where the logging call was |
-|                         | issued (if available).                        |
-+-------------------------+-----------------------------------------------+
-| ``%(created)f``         | Time when the :class:`LogRecord` was created  |
-|                         | (as returned by :func:`time.time`).           |
-+-------------------------+-----------------------------------------------+
-| ``%(relativeCreated)d`` | Time in milliseconds when the LogRecord was   |
-|                         | created, relative to the time the logging     |
-|                         | module was loaded.                            |
-+-------------------------+-----------------------------------------------+
-| ``%(asctime)s``         | Human-readable time when the                  |
-|                         | :class:`LogRecord` was created.  By default   |
-|                         | this is of the form "2003-07-08 16:49:45,896" |
-|                         | (the numbers after the comma are millisecond  |
-|                         | portion of the time).                         |
-+-------------------------+-----------------------------------------------+
-| ``%(msecs)d``           | Millisecond portion of the time when the      |
-|                         | :class:`LogRecord` was created.               |
-+-------------------------+-----------------------------------------------+
-| ``%(thread)d``          | Thread ID (if available).                     |
-+-------------------------+-----------------------------------------------+
-| ``%(threadName)s``      | Thread name (if available).                   |
-+-------------------------+-----------------------------------------------+
-| ``%(process)d``         | Process ID (if available).                    |
-+-------------------------+-----------------------------------------------+
-| ``%(processName)s``     | Process name (if available).                  |
-+-------------------------+-----------------------------------------------+
-| ``%(message)s``         | The logged message, computed as ``msg %       |
-|                         | args``.                                       |
-+-------------------------+-----------------------------------------------+
+The useful mapping keys in a :class:`LogRecord` are given in the section on
+:ref:`logrecord-attributes`.
 
 
 .. class:: Formatter(fmt=None, datefmt=None)
@@ -3577,7 +3527,7 @@ every time something is logged, and can be created manually via
 wire).
 
 
-.. class:: LogRecord(name, levelno, pathname, lineno, msg, args, exc_info, func=None, sinfo=None)
+.. class:: LogRecord(name, level, pathname, lineno, msg, args, exc_info, func=None, sinfo=None)
 
    Contains all the information pertinent to the event being logged.
 
@@ -3585,50 +3535,23 @@ wire).
    are combined using ``msg % args`` to create the :attr:`message` field of the
    record.
 
-   .. attribute:: args
-
-      Tuple of arguments to be used in formatting :attr:`msg`.
-
-   .. attribute:: exc_info
-
-      Exception tuple (à la :func:`sys.exc_info`) or ``None`` if no exception
-      information is available.
-
-   .. attribute:: func
-
-      Name of the function of origin (i.e. in which the logging call was made).
-
-   .. attribute:: lineno
-
-      Line number in the source file of origin.
-
-   .. attribute:: levelno
-
-      Numeric logging level.
-
-   .. attribute:: message
-
-      Bound to the result of :meth:`getMessage` when
-      :meth:`Formatter.format(record)<Formatter.format>` is invoked.
-
-   .. attribute:: msg
-
-      User-supplied :ref:`format string<string-formatting>` or arbitrary object
-      (see :ref:`arbitrary-object-messages`) used in :meth:`getMessage`.
-
-   .. attribute:: name
-
-      Name of the logger that emitted the record.
-
-   .. attribute:: pathname
-
-      Absolute pathname of the source file of origin.
-
-   .. attribute:: stack_info
-
-      Stack frame information (where available) from the bottom of the stack
-      in the current thread, up to and including the stack frame of the
-      logging call which resulted in the creation of this record.
+   :param name:  The name of the logger used to log the event represented by
+                 this LogRecord.
+   :param level: The numeric level of the logging event (one of DEBUG, INFO etc.)
+   :param pathname: The full pathname of the source file where the logging call
+                    was made.
+   :param lineno: The line number in the source file where the logging call was
+                  made.
+   :param msg: The event description message, possibly a format string with
+               placeholders for variable data.
+   :param args: Variable data to merge into the *msg* argument to obtain the
+                event description.
+   :param exc_info: An exception tuple with the current exception information,
+                    or *None* if no exception information is available.
+   :param func: The name of the function or method from which the logging call
+                was invoked.
+   :param sinfo: A text string representing stack information from the base of
+                 the stack in the current thread, up to the logging call.
 
    .. method:: getMessage()
 
@@ -3661,6 +3584,101 @@ wire).
    as they don't overwrite each other's attributes or unintentionally
    overwrite the standard attributes listed above, there should be no
    surprises.
+
+
+.. _logrecord-attributes:
+
+``LogRecord`` attributes
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The LogRecord has a number of attributes, most of which are derived from the
+parameters to the constructor. (Note that the names do not always correspond
+exactly between the LogRecord constructor parameters and the LogRecord
+attributes.) These attributes can be used to merge data from the record into
+the format string. The following table lists (in alphabetical order) the
+attribute names, their meanings and the corresponding placeholder in a %-style
+format string.
+
+If you are using {}-formatting (:func:`str.format`), you can use
+``{{attrname}}`` as the placeholder in the format string. If you are using
+$-formatting (:class:`string.Template`), use the form ``${attrname}``. In
+both cases, of course, replace ``attrname`` with the actual attribute name
+you want to use.
+
+In the case of {}-formatting, you can specify formatting flags by placing them
+after the attribute name, separated from it with a colon.
+
++----------------+-------------------------+-----------------------------------------------+
+| Attribute name | Format                  | Description                                   |
++================+=========================+===============================================+
+| args           | You shouldn't need to   | The tuple of arguments merged into ``msg`` to |
+|                | format this yourself.   | produce ``message``.                          |
++----------------+-------------------------+-----------------------------------------------+
+| asctime        | ``%(asctime)s``         | Human-readable time when the                  |
+|                |                         | :class:`LogRecord` was created.  By default   |
+|                |                         | this is of the form "2003-07-08 16:49:45,896" |
+|                |                         | (the numbers after the comma are millisecond  |
+|                |                         | portion of the time).                         |
++----------------+-------------------------+-----------------------------------------------+
+| created        | ``%(created)f``         | Time when the :class:`LogRecord` was created  |
+|                |                         | (as returned by :func:`time.time`).           |
++----------------+-------------------------+-----------------------------------------------+
+| exc_info       | You shouldn't need to   | Exception tuple (à la ``sys.exc_info``) or,   |
+|                | format this yourself.   | if no exception has occurred, *None*.         |
++----------------+-------------------------+-----------------------------------------------+
+| filename       | ``%(filename)s``        | Filename portion of ``pathname``.             |
++----------------+-------------------------+-----------------------------------------------+
+| funcName       | ``%(funcName)s``        | Name of function containing the logging call. |
++----------------+-------------------------+-----------------------------------------------+
+| levelname      | ``%(levelname)s``       | Text logging level for the message            |
+|                |                         | (``'DEBUG'``, ``'INFO'``, ``'WARNING'``,      |
+|                |                         | ``'ERROR'``, ``'CRITICAL'``).                 |
++----------------+-------------------------+-----------------------------------------------+
+| levelno        | ``%(levelno)s``         | Numeric logging level for the message         |
+|                |                         | (:const:`DEBUG`, :const:`INFO`,               |
+|                |                         | :const:`WARNING`, :const:`ERROR`,             |
+|                |                         | :const:`CRITICAL`).                           |
++----------------+-------------------------+-----------------------------------------------+
+| lineno         | ``%(lineno)d``          | Source line number where the logging call was |
+|                |                         | issued (if available).                        |
++----------------+-------------------------+-----------------------------------------------+
+| module         | ``%(module)s``          | Module (name portion of ``filename``).        |
++----------------+-------------------------+-----------------------------------------------+
+| msecs          | ``%(msecs)d``           | Millisecond portion of the time when the      |
+|                |                         | :class:`LogRecord` was created.               |
++----------------+-------------------------+-----------------------------------------------+
+| message        | ``%(message)s``         | The logged message, computed as ``msg %       |
+|                |                         | args``. This is set when                      |
+|                |                         | :meth:`Formatter.format` is invoked.          |
++----------------+-------------------------+-----------------------------------------------+
+| msg            | You shouldn't need to   | The format string passed in the original      |
+|                | format this yourself.   | logging call. Merged with ``args`` to         |
+|                |                         | produce ``message``, or an arbitrary object   |
+|                |                         | (see :ref:`arbitrary-object-messages`).       |
++----------------+-------------------------+-----------------------------------------------+
+| name           | ``%(name)s``            | Name of the logger used to log the call.      |
++----------------+-------------------------+-----------------------------------------------+
+| pathname       | ``%(pathname)s``        | Full pathname of the source file where the    |
+|                |                         | logging call was issued (if available).       |
++----------------+-------------------------+-----------------------------------------------+
+| process        | ``%(process)d``         | Process ID (if available).                    |
++----------------+-------------------------+-----------------------------------------------+
+| processName    | ``%(processName)s``     | Process name (if available).                  |
++----------------+-------------------------+-----------------------------------------------+
+| relativeCreated| ``%(relativeCreated)d`` | Time in milliseconds when the LogRecord was   |
+|                |                         | created, relative to the time the logging     |
+|                |                         | module was loaded.                            |
++----------------+-------------------------+-----------------------------------------------+
+| stack_info     | You shouldn't need to   | Stack frame information (where available)     |
+|                | format this yourself.   | from the bottom of the stack in the current   |
+|                |                         | thread, up to and including the stack frame   |
+|                |                         | of the logging call which resulted in the     |
+|                |                         | creation of this record.                      |
++----------------+-------------------------+-----------------------------------------------+
+| thread         | ``%(thread)d``          | Thread ID (if available).                     |
++----------------+-------------------------+-----------------------------------------------+
+| threadName     | ``%(threadName)s``      | Thread name (if available).                   |
++----------------+-------------------------+-----------------------------------------------+
 
 
 .. _logger-adapter:
