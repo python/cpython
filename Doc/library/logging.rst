@@ -167,7 +167,8 @@ following example::
    # command line argument. Convert to upper case to allow the user to
    # specify --log=DEBUG or --log=debug
    numeric_level = getattr(logging, loglevel.upper(), None)
-   assert numeric_level is not None, 'Invalid log level: %s' % loglevel
+   if not isinstance(numeric_level, int):
+       raise ValueError('Invalid log level: %s' % loglevel)
    logging.basicConfig(level=numeric_level, ...)
 
 The call to :func:`basicConfig` should come *before* any calls to :func:`debug`,
