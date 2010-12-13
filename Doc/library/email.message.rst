@@ -257,7 +257,15 @@ Here are the methods of the :class:`Message` class:
       taken as the parameter name, with underscores converted to dashes (since
       dashes are illegal in Python identifiers).  Normally, the parameter will
       be added as ``key="value"`` unless the value is ``None``, in which case
-      only the key will be added.
+      only the key will be added.  If the value contains non-ASCII characters,
+      it can be specified as a three tuple in the format
+      ``(CHARSET, LANGUAGE, VALUE)``, where ``CHARSET`` is a string naming the
+      charset to be used to encode the value, ``LANGUAGE`` can usually be set
+      to ``None`` or the empty string (see :RFC:`2231` for other possibilities),
+      and ``VALUE`` is the string value containing non-ASCII code points.  If
+      a three tuple is not passed and the value contains non-ASCII characters,
+      it is automatically encoded in :RFC`2231` format using a ``CHARSET``
+      of ``utf-8`` and a ``LANGUAGE`` of ``None``.
 
       Here's an example::
 
@@ -266,6 +274,15 @@ Here are the methods of the :class:`Message` class:
       This will add a header that looks like ::
 
          Content-Disposition: attachment; filename="bud.gif"
+
+      An example with with non-ASCII characters::
+
+         msg.add_header('Content-Disposition', 'attachment',
+                        filename=('iso-8859-1', '', 'Fußballer.ppt'))
+
+      Which produces ::
+
+         Content-Disposition: attachment; filename*="iso-8859-1''Fu%DFballer.ppt"
 
 
    .. method:: replace_header(_name, _value)
@@ -356,7 +373,7 @@ Here are the methods of the :class:`Message` class:
       :rfc:`2231`, you can collapse the parameter value by calling
       :func:`email.utils.collapse_rfc2231_value`, passing in the return value
       from :meth:`get_param`.  This will return a suitably decoded Unicode
-      string whn the value is a tuple, or the original string unquoted if it
+      string when the value is a tuple, or the original string unquoted if it
       isn't.  For example::
 
          rawparam = msg.get_param('foo')

@@ -39,7 +39,11 @@ def _splitparam(param):
 def _formatparam(param, value=None, quote=True):
     """Convenience function to format and return a key=value pair.
 
-    This will quote the value if needed or if quote is true.
+    This will quote the value if needed or if quote is true.  If value is a
+    three tuple (charset, language, value), it will be encoded according
+    to RFC2231 rules.  If it contains non-ascii characters it will likewise
+    be encoded according to RFC2231 rules, using the utf-8 charset and
+    a null language.
     """
     if value is not None and len(value) > 0:
         # A tuple is used for RFC 2231 encoded parameter values where items
@@ -49,6 +53,12 @@ def _formatparam(param, value=None, quote=True):
             # Encode as per RFC 2231
             param += '*'
             value = utils.encode_rfc2231(value[2], value[0], value[1])
+        else:
+            try:
+                value.encode('ascii')
+            except UnicodeEncodeError:
+                param += '*'
+                value = utils.encode_rfc2231(value, 'utf-8', '')
         # BAW: Please check this.  I think that if quote is set it should
         # force quoting even if not necessary.
         if quote or tspecials.search(value):
@@ -391,11 +401,19 @@ class Message:
         name is the header field to add.  keyword arguments can be used to set
         additional parameters for the header field, with underscores converted
         to dashes.  Normally the parameter will be added as key="value" unless
-        value is None, in which case only the key will be added.
+        value is None, in which case only the key will be added.  If a
+        parameter value contains non-ASCII characters it can be specified as a
+        three-tuple of (charset, language, value), in which case it will be
+        encoded according to RFC2231 rules.  Otherwise it will be encoded using
+        the utf-8 charset and a language of ''.
 
-        Example:
+        Examples:
 
         msg.add_header('content-disposition', 'attachment', filename='bud.gif')
+        msg.add_header('content-disposition', 'attachment',
+                       filename=('utf-8', '', Fußballer.ppt'))
+        msg.add_header('content-disposition', 'attachment',
+                       filename='Fußballer.ppt'))
         """
         parts = []
         for k, v in _params.items():
