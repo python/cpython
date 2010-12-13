@@ -27,7 +27,7 @@ This module defines one class called Popen:
 
 class Popen(args, bufsize=0, executable=None,
             stdin=None, stdout=None, stderr=None,
-            preexec_fn=None, close_fds=False, shell=False,
+            preexec_fn=None, close_fds=_PLATFORM_DEFAULT, shell=False,
             cwd=None, env=None, universal_newlines=False,
             startupinfo=None, creationflags=0,
             restore_signals=True, start_new_session=False):
@@ -39,12 +39,12 @@ args should be a string, or a sequence of program arguments.  The
 program to execute is normally the first item in the args sequence or
 string, but can be explicitly set by using the executable argument.
 
-On UNIX, with shell=False (default): In this case, the Popen class
+On POSIX, with shell=False (default): In this case, the Popen class
 uses os.execvp() to execute the child program.  args should normally
 be a sequence.  A string will be treated as a sequence with the string
 as the only item (the program to execute).
 
-On UNIX, with shell=True: If args is a string, it specifies the
+On POSIX, with shell=True: If args is a string, it specifies the
 command string to execute through the shell.  If args is a sequence,
 the first item specifies the command string, and any additional items
 will be treated as additional shell arguments.
@@ -73,14 +73,16 @@ parent.  Additionally, stderr can be STDOUT, which indicates that the
 stderr data from the applications should be captured into the same
 file handle as for stdout.
 
-On UNIX, if preexec_fn is set to a callable object, this object will be
+On POSIX, if preexec_fn is set to a callable object, this object will be
 called in the child process just before the child is executed.  The use
 of preexec_fn is not thread safe, using it in the presence of threads
 could lead to a deadlock in the child process before the new executable
 is executed.
 
 If close_fds is true, all file descriptors except 0, 1 and 2 will be
-closed before the child process is executed.
+closed before the child process is executed.  The default for close_fds
+varies by platform: False on Windows and True on all other platforms
+such as POSIX.
 
 if shell is true, the specified command will be executed through the
 shell.
@@ -88,12 +90,12 @@ shell.
 If cwd is not None, the current directory will be changed to cwd
 before the child is executed.
 
-On UNIX, if restore_signals is True all signals that Python sets to
+On POSIX, if restore_signals is True all signals that Python sets to
 SIG_IGN are restored to SIG_DFL in the child process before the exec.
 Currently this includes the SIGPIPE, SIGXFZ and SIGXFSZ signals.  This
 parameter does nothing on Windows.
 
-On UNIX, if start_new_session is True, the setsid() system call will be made
+On POSIX, if start_new_session is True, the setsid() system call will be made
 in the child process prior to executing the command.
 
 If env is not None, it defines the environment variables for the new
@@ -101,7 +103,7 @@ process.
 
 If universal_newlines is true, the file objects stdout and stderr are
 opened as a text files, but lines may be terminated by any of '\n',
-the Unix end-of-line convention, '\r', the Macintosh convention or
+the Unix end-of-line convention, '\r', the old Macintosh convention or
 '\r\n', the Windows convention.  All of these external representations
 are seen as '\n' by the Python program.  Note: This feature is only
 available if Python is built with universal newline support (the
@@ -242,7 +244,7 @@ pid
 returncode
     The child return code.  A None value indicates that the process
     hasn't terminated yet.  A negative value -N indicates that the
-    child was terminated by signal N (UNIX only).
+    child was terminated by signal N (POSIX only).
 
 
 Replacing older functions with the subprocess module
@@ -562,7 +564,7 @@ def list2cmdline(seq):
 
 # Various tools for executing commands and looking at their output and status.
 #
-# NB This only works (and is only relevant) for UNIX.
+# NB This only works (and is only relevant) for POSIX.
 
 def getstatusoutput(cmd):
     """Return (status, output) of executing cmd in a shell.
@@ -602,10 +604,16 @@ def getoutput(cmd):
     return getstatusoutput(cmd)[1]
 
 
+if mswindows:
+    _PLATFORM_DEFAULT = False
+else:
+    _PLATFORM_DEFAULT = True
+
+
 class Popen(object):
     def __init__(self, args, bufsize=0, executable=None,
                  stdin=None, stdout=None, stderr=None,
-                 preexec_fn=None, close_fds=None, shell=False,
+                 preexec_fn=None, close_fds=_PLATFORM_DEFAULT, shell=False,
                  cwd=None, env=None, universal_newlines=False,
                  startupinfo=None, creationflags=0,
                  restore_signals=True, start_new_session=False,
@@ -618,15 +626,6 @@ class Popen(object):
             bufsize = 0  # Restore default
         if not isinstance(bufsize, int):
             raise TypeError("bufsize must be an integer")
-
-        if close_fds is None:
-            # Notification for http://bugs.python.org/issue7213 & issue2320
-            warnings.warn(
-                    'The close_fds parameter was not specified.  Its default'
-                    ' behavior will change in a future Python version. '
-                    ' Most users should set it to True.  Please'
-                    ' update your code explicitly set close_fds.',
-                    DeprecationWarning)
 
         if mswindows:
             if preexec_fn is not None:
