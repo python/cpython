@@ -28,7 +28,7 @@ Using the subprocess Module
 This module defines one class called :class:`Popen`:
 
 
-.. class:: Popen(args, bufsize=0, executable=None, stdin=None, stdout=None, stderr=None, preexec_fn=None, close_fds=False, shell=False, cwd=None, env=None, universal_newlines=False, startupinfo=None, creationflags=0, restore_signals=True, start_new_session=False)
+.. class:: Popen(args, bufsize=0, executable=None, stdin=None, stdout=None, stderr=None, preexec_fn=None, close_fds=_PLATFORM_DEFAULT, shell=False, cwd=None, env=None, universal_newlines=False, startupinfo=None, creationflags=0, restore_signals=True, start_new_session=False)
 
    Arguments are:
 
@@ -153,17 +153,14 @@ This module defines one class called :class:`Popen`:
 
    If *close_fds* is true, all file descriptors except :const:`0`, :const:`1` and
    :const:`2` will be closed before the child process is executed. (Unix only).
-   The recommended value for this argument is True.
+   The default varies by platform: :const:`False` on Windows and :const:`True`
+   on POSIX and other platforms.
    On Windows, if *close_fds* is true then no handles will be inherited by the
    child process.  Note that on Windows, you cannot set *close_fds* to true and
    also redirect the standard handles by setting *stdin*, *stdout* or *stderr*.
 
 .. versionchanged:: 3.2
-   Callers should always specify a *close_fds* to avoid a DeprecationWarning.
-   The default behavior of this argument will be changing in Python 3.3.
-
-   If *shell* is :const:`True`, the specified command will be executed through the
-   shell.
+   The default was changed to True on non Windows platforms.
 
    If *cwd* is not ``None``, the child's current directory will be changed to *cwd*
    before it is executed.  Note that this directory is not considered when
@@ -654,4 +651,5 @@ Replacing functions from the :mod:`popen2` module
 * ``stdin=PIPE`` and ``stdout=PIPE`` must be specified.
 
 * popen2 closes all file descriptors by default, but you have to specify
-  ``close_fds=True`` with :class:`Popen`.
+  ``close_fds=True`` with :class:`Popen` to guarantee this behavior on
+  all platforms or past Python versions.

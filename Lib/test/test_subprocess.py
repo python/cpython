@@ -58,22 +58,6 @@ class BaseTestCase(unittest.TestCase):
         self.assertEqual(actual, expected, msg)
 
 
-class DeprecationWarningTests(BaseTestCase):
-    def testCloseFdsWarning(self):
-        quick_process = [sys.executable, "-c", "import sys; sys.exit(0)"]
-        with warnings.catch_warnings(record=True) as warnlist:
-            warnings.simplefilter("always")
-            subprocess.call(quick_process, close_fds=True)
-            self.assertEqual([], warnlist)
-            subprocess.call(quick_process, close_fds=False)
-            self.assertEqual([], warnlist)
-            with self.assertWarns(DeprecationWarning) as wm:
-                subprocess.Popen(quick_process).wait()
-                self.assertEqual(1, len(wm.warnings))
-                self.assertIn('close_fds parameter was not specified',
-                              str(wm.warnings[0]))
-
-
 class ProcessTestCase(BaseTestCase):
 
     def test_call_seq(self):
@@ -1250,8 +1234,7 @@ def test_main():
                   ProcessTestCaseNoPoll,
                   HelperFunctionTests,
                   CommandsWithSpaces,
-                  ContextManagerTests,
-                  DeprecationWarningTests)
+                  ContextManagerTests)
 
     support.run_unittest(*unit_tests)
     support.reap_children()
