@@ -928,9 +928,11 @@ class test_TemporaryDirectory(TC):
     def test_mkdtemp_failure(self):
         # Check no additional exception if mkdtemp fails
         # Previously would raise AttributeError instead
-        # (noted as part of Issue #10888)
-        #with self.assertRaises(os.error):
-        tempfile.TemporaryDirectory(prefix="[]<>?*!:")
+        # (noted as part of Issue #10188)
+        with tempfile.TemporaryDirectory() as nonexistent:
+            pass
+        with self.assertRaises(os.error):
+            tempfile.TemporaryDirectory(dir=nonexistent)
 
     def test_explicit_cleanup(self):
         # A TemporaryDirectory is deleted when cleaned up
