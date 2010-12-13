@@ -3600,13 +3600,16 @@ attribute names, their meanings and the corresponding placeholder in a %-style
 format string.
 
 If you are using {}-formatting (:func:`str.format`), you can use
-``{{attrname}}`` as the placeholder in the format string. If you are using
+``{attrname}`` as the placeholder in the format string. If you are using
 $-formatting (:class:`string.Template`), use the form ``${attrname}``. In
 both cases, of course, replace ``attrname`` with the actual attribute name
 you want to use.
 
 In the case of {}-formatting, you can specify formatting flags by placing them
-after the attribute name, separated from it with a colon.
+after the attribute name, separated from it with a colon. For example: a
+placeholder of ``{msecs:03d}`` would format a millisecond value of ``4`` as
+``004``. Refer to the :meth:`str.format` documentation for full details on
+the options available to you.
 
 +----------------+-------------------------+-----------------------------------------------+
 | Attribute name | Format                  | Description                                   |
