@@ -390,6 +390,23 @@ else:
     # POSIX defines PIPE_BUF as >= 512.
     _PIPE_BUF = getattr(select, 'PIPE_BUF', 512)
 
+    if _posixsubprocess:
+        _create_pipe = _posixsubprocess.cloexec_pipe
+    else:
+        def _create_pipe():
+            try:
+                cloexec_flag = fcntl.FD_CLOEXEC
+            except AttributeError:
+                cloexec_flag = 1
+
+            fds = os.pipe()
+
+            old = fcntl.fcntl(fds[0], fcntl.F_GETFD)
+            fcntl.fcntl(fds[0], fcntl.F_SETFD, old | cloexec_flag)
+            old = fcntl.fcntl(fds[1], fcntl.F_GETFD)
+            fcntl.fcntl(fds[1], fcntl.F_SETFD, old | cloexec_flag)
+
+            return fds
 
 __all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "getstatusoutput",
            "getoutput", "check_output", "CalledProcessError"]
@@ -1031,7 +1048,7 @@ class Popen(object):
             if stdin is None:
                 pass
             elif stdin == PIPE:
-                p2cread, p2cwrite = os.pipe()
+                p2cread, p2cwrite = _create_pipe()
             elif isinstance(stdin, int):
                 p2cread = stdin
             else:
@@ -1041,7 +1058,7 @@ class Popen(object):
             if stdout is None:
                 pass
             elif stdout == PIPE:
-                c2pread, c2pwrite = os.pipe()
+                c2pread, c2pwrite = _create_pipe()
             elif isinstance(stdout, int):
                 c2pwrite = stdout
             else:
@@ -1051,7 +1068,7 @@ class Popen(object):
             if stderr is None:
                 pass
             elif stderr == PIPE:
-                errread, errwrite = os.pipe()
+                errread, errwrite = _create_pipe()
             elif stderr == STDOUT:
                 errwrite = c2pwrite
             elif isinstance(stderr, int):
@@ -1063,16 +1080,6 @@ class Popen(object):
             return (p2cread, p2cwrite,
                     c2pread, c2pwrite,
                     errread, errwrite)
-
-
-        def _set_cloexec_flag(self, fd):
-            try:
-                cloexec_flag = fcntl.FD_CLOEXEC
-            except AttributeError:
-                cloexec_flag = 1
-
-            old = fcntl.fcntl(fd, fcntl.F_GETFD)
-            fcntl.fcntl(fd, fcntl.F_SETFD, old | cloexec_flag)
 
 
         def _close_fds(self, but):
@@ -1116,10 +1123,9 @@ class Popen(object):
             # For transferring possible exec failure from child to parent.
             # Data format: "exception name:hex errno:description"
             # Pickle is not used; it is complex and involves memory allocation.
-            errpipe_read, errpipe_write = os.pipe()
+            errpipe_read, errpipe_write = _create_pipe()
             try:
                 try:
-                    self._set_cloexec_flag(errpipe_write)
 
                     if _posixsubprocess:
                         # We must avoid complex work that could involve

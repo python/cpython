@@ -1,6 +1,10 @@
 /* Authors: Gregory P. Smith & Jeffrey Yasskin */
 #include "Python.h"
+#ifdef HAVE_PIPE2
+#define _GNU_SOURCE
+#endif
 #include <unistd.h>
+#include <fcntl.h>
 
 
 #define POSIX_CALL(call)   if ((call) == -1) goto error
@@ -398,6 +402,45 @@ Returns: the child process's PID.\n\
 Raises: Only on an error in the parent process.\n\
 ");
 
+PyDoc_STRVAR(subprocess_cloexec_pipe_doc,
+"cloexec_pipe() -> (read_end, write_end)\n\n\
+Create a pipe whose ends have the cloexec flag set.");
+
+static PyObject *
+subprocess_cloexec_pipe(PyObject *self, PyObject *noargs)
+{
+    int fds[2];
+    int res;
+#ifdef HAVE_PIPE2
+    Py_BEGIN_ALLOW_THREADS
+    res = pipe2(fds, O_CLOEXEC);
+    Py_END_ALLOW_THREADS
+#else
+    /* We hold the GIL which offers some protection from other code calling
+     * fork() before the CLOEXEC flags have been set but we can't guarantee
+     * anything without pipe2(). */
+    long oldflags;
+
+    res = pipe(fds);
+
+    if (res == 0) {
+        oldflags = fcntl(fds[0], F_GETFD, 0);
+        if (oldflags < 0) res = oldflags;
+    }
+    if (res == 0)
+        res = fcntl(fds[0], F_SETFD, oldflags | FD_CLOEXEC);
+
+    if (res == 0) {
+        oldflags = fcntl(fds[1], F_GETFD, 0);
+        if (oldflags < 0) res = oldflags;
+    }
+    if (res == 0)
+        res = fcntl(fds[1], F_SETFD, oldflags | FD_CLOEXEC);
+#endif
+    if (res != 0)
+        return PyErr_SetFromErrno(PyExc_OSError);
+    return Py_BuildValue("(ii)", fds[0], fds[1]);
+}
 
 /* module level code ********************************************************/
 
@@ -407,6 +450,7 @@ PyDoc_STRVAR(module_doc,
 
 static PyMethodDef module_methods[] = {
     {"fork_exec", subprocess_fork_exec, METH_VARARGS, subprocess_fork_exec_doc},
+    {"cloexec_pipe", subprocess_cloexec_pipe, METH_NOARGS, subprocess_cloexec_pipe_doc},
     {NULL, NULL}  /* sentinel */
 };
 
