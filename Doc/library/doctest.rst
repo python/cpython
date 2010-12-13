@@ -922,7 +922,7 @@ a :func:`load_tests` function in your test module::
 
    def load_tests(loader, tests, ignore):
        tests.addTests(doctest.DocTestSuite(my_module_with_doctests))
-       return test
+       return tests
 
 There are two main functions for creating :class:`unittest.TestSuite` instances
 from text files and modules with doctests:
