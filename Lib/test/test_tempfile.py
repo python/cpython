@@ -989,7 +989,13 @@ class test_TemporaryDirectory(TC):
         #   Issue 10888: may write to stderr if modules are nulled out
         #   ResourceWarning will be triggered by __del__
         with self.do_create() as dir:
-            d = self.do_create(dir=dir)
+            if os.sep != '\\':
+                # Embed a backslash in order to make sure string escaping
+                # in the displayed error message is dealt with correctly
+                suffix = '\\check_backslash_handling'
+            else:
+                suffix = ''
+            d = self.do_create(dir=dir, suf=suffix)
 
             #Check for the Issue 10888 message
             modules = [os, os.path]
@@ -998,7 +1004,7 @@ class test_TemporaryDirectory(TC):
             with support.captured_stderr() as err:
                 with NulledModules(*modules):
                     d.cleanup()
-            message = err.getvalue()
+            message = err.getvalue().replace('\\\\', '\\')
             self.assertIn("while cleaning up",  message)
             self.assertIn(d.name,  message)
 
