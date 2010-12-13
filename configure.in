@@ -4235,7 +4235,7 @@ case $ac_sys_system in
   OSF*) AC_MSG_ERROR(OSF* systems are deprecated unless somebody volunteers. Check http://bugs.python.org/issue8606) ;;
 esac
 
-
+AC_CHECK_FUNC(pipe2, AC_DEFINE(HAVE_PIPE2, 1, [Define if the OS supports pipe2()]), )
 
 AC_SUBST(THREADHEADERS)
 

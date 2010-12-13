@@ -888,7 +888,7 @@ MACHDEPS=	$(PLATDIR) $(EXTRAPLATDIR)
 XMLLIBSUBDIRS=  xml xml/dom xml/etree xml/parsers xml/sax
 LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
                 tkinter/test/test_ttk site-packages test \
-		test/decimaltestdata test/xmltestdata \
+		test/decimaltestdata test/xmltestdata test/subprocessdata \
 		test/tracedmodules test/encoded_modules \
 		concurrent concurrent/futures encodings \
 		email email/mime email/test email/test/data \

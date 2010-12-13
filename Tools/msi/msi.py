@@ -1035,6 +1035,8 @@ def add_files(db):
         if dir=='xmltestdata':
             lib.glob("*.xml")
             lib.add_file("test.xml.out")
+        if dir=='subprocessdata':
+            lib.glob("*.py")
         if dir=='output':
             lib.glob("test_*")
         if dir=='sndhdrdata':
