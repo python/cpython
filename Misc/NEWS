@@ -34,6 +34,10 @@ Library
 
 - Issue #10464: netrc now correctly handles lines with embedded '#' characters.
 
+- Issue #1731717: Fixed the problem where subprocess.wait() could cause an
+  OSError exception when The OS had been told to ignore SIGCLD in our process
+  or otherwise not wait for exiting child processes.
+
 Extension Modules
 -----------------
 
