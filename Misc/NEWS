@@ -33,6 +33,10 @@ Library
   added in 3.2beta1) to allow specifying a specific list of file descriptors
   to keep open in the child process.
 
+- Issue #1731717: Fixed the problem where subprocess.wait() could cause an
+  OSError exception when The OS had been told to ignore SIGCLD in our process
+  or otherwise not wait for exiting child processes.
+
 
 What's New in Python 3.2 Beta 1?
 ================================
