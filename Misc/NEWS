@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10695: passing the port as a string value to telnetlib no longer
+  causes debug mode to fail.
+
 - Issue #10107: Warn about unsaved files in IDLE on OSX.
 
 - Issue #10406: Enable Rstrip IDLE extension on OSX (just like on other
