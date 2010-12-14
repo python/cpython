@@ -181,24 +181,29 @@ def main():
                               'of the file'))
     parser.add_argument('-i', metavar='FILE', dest='flist',
                         help='expand the list with the content of FILE.')
-    parser.add_argument('compile_dest', metavar='FILE|DIR', nargs='?')
+    parser.add_argument('compile_dest', metavar='FILE|DIR', nargs='*')
     args = parser.parse_args()
 
-    if (args.ddir and args.compile_dest != 1 and
-        not os.path.isdir(args.compile_dest)):
-        raise argparse.ArgumentError(
-            "-d destdir requires exactly one directory argument")
+    compile_dests = args.compile_dest
+
+    if (args.ddir and (len(compile_dests) != 1
+            or not os.path.isdir(compile_dests[0]))):
+        parser.exit('-d destdir requires exactly one directory argument')
     if args.rx:
         import re
         args.rx = re.compile(args.rx)
 
     # if flist is provided then load it
-    compile_dests = [args.compile_dest]
     if args.flist:
-        with open(args.flist) as f:
-            files = f.read().split()
-            compile_dests.extend(files)
+        try:
+            with (sys.stdin if args.flist=='-' else open(args.flist)) as f:
+                for line in f:
+                    compile_dests.append(line.strip())
+        except EnvironmentError:
+            print("Error reading file list {}".format(args.flist))
+            return False
 
+    success = True
     try:
         if compile_dests:
             for dest in compile_dests:
@@ -206,17 +211,18 @@ def main():
                     if not compile_dir(dest, args.maxlevels, args.ddir,
                                        args.force, args.rx, args.quiet,
                                        args.legacy):
-                        return 0
+                        success = False
                 else:
                     if not compile_file(dest, args.ddir, args.force, args.rx,
                                         args.quiet, args.legacy):
-                        return 0
+                        success = False
+            return success
         else:
             return compile_path(legacy=args.legacy)
     except KeyboardInterrupt:
         print("\n[interrupted]")
-        return 0
-    return 1
+        return False
+    return True
 
 
 if __name__ == '__main__':
