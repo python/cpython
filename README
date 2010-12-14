@@ -97,10 +97,7 @@ the test set twice (once with no compiled files, once with the compiled files
 left by the previous test run).  The test set produces some output.  You can
 generally ignore the messages about skipped tests due to optional features which
 can't be imported.  If a message is printed about a failed test or a traceback
-or core dump is produced, something is wrong.  On some Linux systems (those that
-are not yet using glibc 6), test_strftime fails due to a non-standard
-implementation of strftime() in the C library. Please ignore this, or upgrade to
-glibc version 6.
+or core dump is produced, something is wrong.
 
 By default, tests are prevented from overusing resources like disk space and
 memory.  To enable these tests, run "make testall".
@@ -109,7 +106,7 @@ IMPORTANT: If the tests fail and you decide to mail a bug report, *don't*
 include the output of "make test".  It is useless.  Run the failing test
 manually, as follows:
 
-        ./python Lib/test/regrtest.py -v test_whatever
+        ./python -m test -v test_whatever
 
 (substituting the top of the source tree for '.' if you built in a different
 directory).  This runs the test in verbose mode.
