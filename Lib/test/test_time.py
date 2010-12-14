@@ -125,9 +125,9 @@ class TimeTestCase(unittest.TestCase):
         time.asctime(time.gmtime(self.t))
         self.assertRaises(TypeError, time.asctime, 0)
 
+    @unittest.skipIf(not hasattr(time, "tzset"),
+        "time module has no attribute tzset")
     def test_tzset(self):
-        if not hasattr(time, "tzset"):
-            return # Can't test this; don't want the test suite to fail
 
         from os import environ
 
