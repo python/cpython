@@ -3113,6 +3113,21 @@ A very long line that must get split to something other than at the
         s = 'Subject: =?EUC-KR?B?CSixpLDtKSC/7Liuvsax4iC6uLmwMcijIKHaILzSwd/H0SC8+LCjwLsgv7W/+Mj3I ?='
         raises(Errors.HeaderParseError, decode_header, s)
 
+    # Issue 1078919
+    def test_ascii_add_header(self):
+        msg = Message()
+        msg.add_header('Content-Disposition', 'attachment',
+                       filename='bud.gif')
+        self.assertEqual('attachment; filename="bud.gif"',
+            msg['Content-Disposition'])
+
+    def test_nonascii_add_header_via_triple(self):
+        msg = Message()
+        msg.add_header('Content-Disposition', 'attachment',
+            filename=('iso-8859-1', '', 'Fu\xdfballer.ppt'))
+        self.assertEqual(
+            'attachment; filename*="iso-8859-1\'\'Fu%DFballer.ppt"',
+            msg['Content-Disposition'])
 
 
 # Test RFC 2231 header parameters (en/de)coding
