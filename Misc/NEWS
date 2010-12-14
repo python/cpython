@@ -11,6 +11,9 @@ What's New in Python 3.2 Beta 2?
 Library
 -------
 
+- Issue #10695: passing the port as a string value to telnetlib no longer
+  causes debug mode to fail.
+
 - Issue #1078919: add_header now automatically RFC2231 encodes parameters
   that contain non-ascii values.
 
