@@ -42,32 +42,33 @@ states, for each of a set of common tasks, the best tool to use for it.
 +-------------------------------------+--------------------------------------+
 | Task you want to perform            | The best tool for the task           |
 +=====================================+======================================+
-| Display console output for ordinary | print()                              |
+| Display console output for ordinary | :func:`print`                        |
 | usage of a command line script or   |                                      |
 | program                             |                                      |
 +-------------------------------------+--------------------------------------+
-| Report events that occur during     | logging.info() (or logging.debug()   |
-| normal operation of a program (e.g. | for very detailed output for         |
-| for status monitoring or fault      | diagnostic purposes)                 |
-| investigation)                      |                                      |
+| Report events that occur during     | :func:`logging.info` (or             |
+| normal operation of a program (e.g. | :func:`logging.debug` for very       |
+| for status monitoring or fault      | detailed output for diagnostic       |
+| investigation)                      | purposes)                            |
 +-------------------------------------+--------------------------------------+
-| Issue a warning regarding a         | warnings.warn() in library code      |
-| particular runtime event            | if the issue is avoidable and the    |
-|                                     | client application should be         |
+| Issue a warning regarding a         | :func:`warnings.warn` in library     |
+| particular runtime event            | code if the issue is avoidable and   |
+|                                     | the client application should be     |
 |                                     | modified to eliminate the warning    |
 |                                     |                                      |
-|                                     | logging.warn() if there is nothing   |
-|                                     | the client application can do about  |
-|                                     | the situation, but the event should  |
-|                                     | still be noted                       |
+|                                     | :func:`logging.warning` if there is  |
+|                                     | nothing the client application can do|
+|                                     | about the situation, but the event   |
+|                                     | should still be noted                |
 +-------------------------------------+--------------------------------------+
 | Report an error regarding a         | Raise an exception                   |
 | particular runtime event            |                                      |
 +-------------------------------------+--------------------------------------+
-| Report suppression of an error      | logging.error(), logging.exception(),|
-| without raising an exception (e.g.  | or logging.critical() as appropriate |
-| error handler in a long-running     | for the specific error and           |
-| server process)                     | application domain                   |
+| Report suppression of an error      | :func:`logging.error`,               |
+| without raising an exception (e.g.  | :func:`logging.exception` or         |
+| error handler in a long-running     | :func:`logging.critical` as          |
+| server process)                     | appropriate for the specific error   |
+|                                     | and application domain               |
 +-------------------------------------+--------------------------------------+
 
 The logging functions are named after the level or severity of the events
@@ -85,7 +86,7 @@ described below (in increasing order of severity):
 +--------------+---------------------------------------------+
 | ``WARNING``  | An indication that something unexpected     |
 |              | happened, or indicative of some problem in  |
-|              | the near future (e.g. "disk space low").    |
+|              | the near future (e.g. 'disk space low').    |
 |              | The software is still working as expected.  |
 +--------------+---------------------------------------------+
 | ``ERROR``    | Due to a more serious problem, the software |
@@ -214,7 +215,7 @@ could organize logging in it::
    def do_something():
        logging.info('Doing something')
 
-If you run myapp.py, you should see this in myapp.log::
+If you run *myapp.py*, you should see this in *myapp.log*::
 
    INFO:root:Started
    INFO:root:Doing something
@@ -279,7 +280,7 @@ described in the next section.
 Displaying the date/time in messages
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To display the date and time of an event, you would place "%(asctime)s" in
+To display the date and time of an event, you would place '%(asctime)s' in
 your format string::
 
    import logging
@@ -337,17 +338,20 @@ More advanced logging
 ---------------------
 
 The logging library takes a modular approach and offers several categories
-of components: loggers, handlers, filters, and formatters.  Loggers expose the
-interface that application code directly uses.  Handlers send the log records
-(created by loggers) to the appropriate destination. Filters provide a finer
-grained facility for determining which log records to output. Formatters
-specify the layout of the resultant log record in the final output.
+of components: loggers, handlers, filters, and formatters.
+
+* Loggers expose the interface that application code directly uses.
+* Handlers send the log records (created by loggers) to the appropriate
+  destination.
+* Filters provide a finer grained facility for determining which log records
+  to output.
+* Formatters specify the layout of log records in the final output.
 
 Logging is performed by calling methods on instances of the :class:`Logger`
 class (hereafter called :dfn:`loggers`). Each instance has a name, and they are
 conceptually arranged in a namespace hierarchy using dots (periods) as
-separators. For example, a logger named "scan" is the parent of loggers
-"scan.text", "scan.html" and "scan.pdf". Logger names can be anything you want,
+separators. For example, a logger named 'scan' is the parent of loggers
+'scan.text', 'scan.html' and 'scan.pdf'. Logger names can be anything you want,
 and indicate the area of an application in which a logged message originates.
 
 A good convention to use when naming loggers is to use a module-level logger,
@@ -365,11 +369,11 @@ the root logger. The functions and the methods have the same signatures. The
 root logger's name is printed as 'root' in the logged output.
 
 It is, of course, possible to log messages to different destinations. Support
-for writing log messages to files, HTTP GET/POST locations, email via SMTP,
-generic sockets, or OS-specific logging mechanisms is included in the package.
-Destinations are served by :dfn:`handler` classes. You can create your own log
-destination class if you have special requirements not met by any of the
-built-in handler classes.
+is included in the package for writing log messages to files, HTTP GET/POST
+locations, email via SMTP, generic sockets, queues, or OS-specific logging
+mechanisms such as syslog or the Windows NT event log. Destinations are served
+by :dfn:`handler` classes. You can create your own log destination class if
+you have special requirements not met by any of the built-in handler classes.
 
 By default, no destination is set for any logging messages. You can specify
 a destination (such as console or file) by using :func:`basicConfig` as in the
@@ -537,7 +541,7 @@ The following message format string will log the time in a human-readable
 format, the severity of the message, and the contents of the message, in that
 order::
 
-    "%(asctime)s - %(levelname)s - %(message)s"
+    '%(asctime)s - %(levelname)s - %(message)s'
 
 Formatters use a user-configurable function to convert the creation time of a
 record to a tuple. By default, :func:`time.localtime` is used; to change this
@@ -566,7 +570,7 @@ handler, and a simple formatter using Python code::
     import logging
 
     # create logger
-    logger = logging.getLogger("simple_example")
+    logger = logging.getLogger('simple_example')
     logger.setLevel(logging.DEBUG)
 
     # create console handler and set level to debug
@@ -574,7 +578,7 @@ handler, and a simple formatter using Python code::
     ch.setLevel(logging.DEBUG)
 
     # create formatter
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     # add formatter to ch
     ch.setFormatter(formatter)
@@ -582,12 +586,12 @@ handler, and a simple formatter using Python code::
     # add ch to logger
     logger.addHandler(ch)
 
-    # "application" code
-    logger.debug("debug message")
-    logger.info("info message")
-    logger.warn("warn message")
-    logger.error("error message")
-    logger.critical("critical message")
+    # 'application' code
+    logger.debug('debug message')
+    logger.info('info message')
+    logger.warn('warn message')
+    logger.error('error message')
+    logger.critical('critical message')
 
 Running this module from the command line produces the following output::
 
@@ -605,17 +609,17 @@ the names of the objects::
     import logging
     import logging.config
 
-    logging.config.fileConfig("logging.conf")
+    logging.config.fileConfig('logging.conf')
 
     # create logger
-    logger = logging.getLogger("simpleExample")
+    logger = logging.getLogger('simpleExample')
 
-    # "application" code
-    logger.debug("debug message")
-    logger.info("info message")
-    logger.warn("warn message")
-    logger.error("error message")
-    logger.critical("critical message")
+    # 'application' code
+    logger.debug('debug message')
+    logger.info('info message')
+    logger.warn('warn message')
+    logger.error('error message')
+    logger.critical('critical message')
 
 Here is the logging.conf file::
 
@@ -720,11 +724,11 @@ For versions of Python prior to 3.2, the behaviour is as follows:
   silently dropped.
 
 * If *logging.raiseExceptions* is *True* (development mode), a message
-  "No handlers could be found for logger X.Y.Z" is printed once.
+  'No handlers could be found for logger X.Y.Z' is printed once.
 
 In Python 3.2 and later, the behaviour is as follows:
 
-* The event is output using a 'handler of last resort", stored in
+* The event is output using a 'handler of last resort', stored in
   ``logging.lastResort``. This internal handler is not associated with any
   logger, and acts like a :class:`StreamHandler` which writes the event
   description message to the current value of ``sys.stderr`` (therefore
@@ -776,7 +780,7 @@ than* :class:`NullHandler` *to your library's loggers*. This is because the
 configuration of handlers is the prerogative of the application developer who
 uses your library. The application developer knows their target audience and
 what handlers are most appropriate for their application: if you add handlers
-"under the hood", you might well interfere with their ability to carry out
+'under the hood', you might well interfere with their ability to carry out
 unit tests and deliver logs which suit their requirements.
 
 
@@ -910,8 +914,8 @@ provided:
 .. currentmodule:: logging
 
 #. :class:`NullHandler` instances do nothing with error messages. They are used
-   by library developers who want to use logging, but want to avoid the "No
-   handlers could be found for logger XXX" message which can be displayed if
+   by library developers who want to use logging, but want to avoid the 'No
+   handlers could be found for logger XXX' message which can be displayed if
    the library user has not configured logging. See :ref:`library-config` for
    more information.
 
@@ -957,7 +961,7 @@ functions.
 
    Return a logger with the specified name or, if name is ``None``, return a
    logger which is the root logger of the hierarchy. If specified, the name is
-   typically a dot-separated hierarchical name like *"a"*, *"a.b"* or *"a.b.c.d"*.
+   typically a dot-separated hierarchical name like *'a'*, *'a.b'* or *'a.b.c.d'*.
    Choice of these names is entirely up to the developer who is using logging.
 
    All calls to this function with a given name return the same logger instance.
@@ -1025,10 +1029,10 @@ functions.
    be used as you like. For example, they could be incorporated into logged
    messages. For example::
 
-      FORMAT = "%(asctime)-15s %(clientip)s %(user)-8s %(message)s"
+      FORMAT = '%(asctime)-15s %(clientip)s %(user)-8s %(message)s'
       logging.basicConfig(format=FORMAT)
       d = {'clientip': '192.168.0.1', 'user': 'fbloggs'}
-      logging.warning("Protocol problem: %s", "connection reset", extra=d)
+      logging.warning('Protocol problem: %s', 'connection reset', extra=d)
 
    would print something like::
 
@@ -1130,7 +1134,7 @@ functions.
    have associated levels with names using :func:`addLevelName` then the name you
    have associated with *lvl* is returned. If a numeric value corresponding to one
    of the defined levels is passed in, the corresponding string representation is
-   returned. Otherwise, the string "Level %s" % lvl is returned.
+   returned. Otherwise, the string 'Level %s' % lvl is returned.
 
 
 .. function:: makeLogRecord(attrdict)
@@ -1225,7 +1229,7 @@ functions.
 
    The factory has the following signature:
 
-   ``factory(name, level, fn, lno, msg, args, exc_info, func=None, sinfo=None, \*\*kwargs)``
+   ``factory(name, level, fn, lno, msg, args, exc_info, func=None, sinfo=None, **kwargs)``
 
       :name: The logger name.
       :level: The logging level (numeric).
@@ -1279,7 +1283,7 @@ instantiated directly, but always through the module-level function
    the root logger, or delegation to the parent when the logger is a non-root
    logger). Note that the root logger is created with level :const:`WARNING`.
 
-   The term "delegation to the parent" means that if a logger has a level of
+   The term 'delegation to the parent' means that if a logger has a level of
    NOTSET, its chain of ancestor loggers is traversed until either an ancestor with
    a level other than NOTSET is found, or the root is reached.
 
@@ -1355,11 +1359,11 @@ instantiated directly, but always through the module-level function
    be used as you like. For example, they could be incorporated into logged
    messages. For example::
 
-      FORMAT = "%(asctime)-15s %(clientip)s %(user)-8s %(message)s"
+      FORMAT = '%(asctime)-15s %(clientip)s %(user)-8s %(message)s'
       logging.basicConfig(format=FORMAT)
       d = { 'clientip' : '192.168.0.1', 'user' : 'fbloggs' }
-      logger = logging.getLogger("tcpserver")
-      logger.warning("Protocol problem: %s", "connection reset", extra=d)
+      logger = logging.getLogger('tcpserver')
+      logger.warning('Protocol problem: %s', 'connection reset', extra=d)
 
    would print something like  ::
 
@@ -1475,7 +1479,7 @@ instantiated directly, but always through the module-level function
    Checks to see if this logger has any handlers configured. This is done by
    looking for handlers in this logger and its parents in the logger hierarchy.
    Returns True if a handler was found, else False. The method stops searching
-   up the hierarchy whenever a logger with the "propagate" attribute set to
+   up the hierarchy whenever a logger with the 'propagate' attribute set to
    False is found - that will be the last logger which is checked for the
    existence of handlers.
 
@@ -1549,7 +1553,7 @@ documentation.
 +-------------------+-----------------------------------------------+
 | ``%(asctime)s``   | Human-readable time when the                  |
 |                   | :class:`LogRecord` was created.  By default   |
-|                   | this is of the form "2003-07-08 16:49:45,896" |
+|                   | this is of the form '2003-07-08 16:49:45,896' |
 |                   | (the numbers after the comma are millisecond  |
 |                   | portion of the time).                         |
 +-------------------+-----------------------------------------------+
@@ -1705,7 +1709,7 @@ show up at different levels::
 You will notice that these log messages all have ``root`` embedded in them.  The
 logging module supports a hierarchy of loggers with different names.  An easy
 way to tell where a specific log message comes from is to use a separate logger
-object for each of your modules.  Each new logger "inherits" the configuration
+object for each of your modules.  Each new logger 'inherits' the configuration
 of its parent, and log messages sent to a logger include the name of that
 logger.  Optionally, each logger can be configured differently, so that messages
 from different modules are handled in different ways.  Let's look at a simple
@@ -1873,11 +1877,11 @@ information is added to the logging output. It's passed the message and
 keyword arguments of the logging call, and it passes back (potentially)
 modified versions of these to use in the call to the underlying logger. The
 default implementation of this method leaves the message alone, but inserts
-an "extra" key in the keyword argument whose value is the dict-like object
-passed to the constructor. Of course, if you had passed an "extra" keyword
+an 'extra' key in the keyword argument whose value is the dict-like object
+passed to the constructor. Of course, if you had passed an 'extra' keyword
 argument in the call to the adapter, it will be silently overwritten.
 
-The advantage of using "extra" is that the values in the dict-like object are
+The advantage of using 'extra' is that the values in the dict-like object are
 merged into the :class:`LogRecord` instance's __dict__, allowing you to use
 customized strings with your :class:`Formatter` instances which know about
 the keys of the dict-like object. If you need a different method, e.g. if you
@@ -1885,7 +1889,7 @@ want to prepend or append the contextual information to the message string,
 you just need to subclass :class:`LoggerAdapter` and override :meth:`process`
 to do what you need. Here's an example script which uses this class, which
 also illustrates what dict-like behaviour is needed from an arbitrary
-"dict-like" object for use in the constructor::
+'dict-like' object for use in the constructor::
 
    import logging
 
@@ -1900,12 +1904,12 @@ also illustrates what dict-like behaviour is needed from an arbitrary
            To allow this instance to look like a dict.
            """
            from random import choice
-           if name == "ip":
-               result = choice(["127.0.0.1", "192.168.0.1"])
-           elif name == "user":
-               result = choice(["jim", "fred", "sheila"])
+           if name == 'ip':
+               result = choice(['127.0.0.1', '192.168.0.1'])
+           elif name == 'user':
+               result = choice(['jim', 'fred', 'sheila'])
            else:
-               result = self.__dict__.get(name, "?")
+               result = self.__dict__.get(name, '?')
            return result
 
        def __iter__(self):
@@ -1913,24 +1917,24 @@ also illustrates what dict-like behaviour is needed from an arbitrary
            To allow iteration over keys, which will be merged into
            the LogRecord dict before formatting and output.
            """
-           keys = ["ip", "user"]
+           keys = ['ip', 'user']
            keys.extend(self.__dict__.keys())
            return keys.__iter__()
 
-   if __name__ == "__main__":
+   if __name__ == '__main__':
        from random import choice
        levels = (logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL)
-       a1 = logging.LoggerAdapter(logging.getLogger("a.b.c"),
-                                  { "ip" : "123.231.231.123", "user" : "sheila" })
+       a1 = logging.LoggerAdapter(logging.getLogger('a.b.c'),
+                                  { 'ip' : '123.231.231.123', 'user' : 'sheila' })
        logging.basicConfig(level=logging.DEBUG,
-                           format="%(asctime)-15s %(name)-5s %(levelname)-8s IP: %(ip)-15s User: %(user)-8s %(message)s")
-       a1.debug("A debug message")
-       a1.info("An info message with %s", "some parameters")
-       a2 = logging.LoggerAdapter(logging.getLogger("d.e.f"), ConnInfo())
+                           format='%(asctime)-15s %(name)-5s %(levelname)-8s IP: %(ip)-15s User: %(user)-8s %(message)s')
+       a1.debug('A debug message')
+       a1.info('An info message with %s', 'some parameters')
+       a2 = logging.LoggerAdapter(logging.getLogger('d.e.f'), ConnInfo())
        for x in range(10):
            lvl = choice(levels)
            lvlname = logging.getLevelName(lvl)
-           a2.log(lvl, "A message at %s level with %d %s", lvlname, 2, "parameters")
+           a2.log(lvl, 'A message at %s level with %d %s', lvlname, 2, 'parameters')
 
 When this script is run, the output should look something like this::
 
@@ -1987,24 +1991,24 @@ script::
             record.user = choice(ContextFilter.USERS)
             return True
 
-    if __name__ == "__main__":
+    if __name__ == '__main__':
        levels = (logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL)
-       a1 = logging.LoggerAdapter(logging.getLogger("a.b.c"),
-                                  { "ip" : "123.231.231.123", "user" : "sheila" })
+       a1 = logging.LoggerAdapter(logging.getLogger('a.b.c'),
+                                  { 'ip' : '123.231.231.123', 'user' : 'sheila' })
        logging.basicConfig(level=logging.DEBUG,
-                           format="%(asctime)-15s %(name)-5s %(levelname)-8s IP: %(ip)-15s User: %(user)-8s %(message)s")
-       a1 = logging.getLogger("a.b.c")
-       a2 = logging.getLogger("d.e.f")
+                           format='%(asctime)-15s %(name)-5s %(levelname)-8s IP: %(ip)-15s User: %(user)-8s %(message)s')
+       a1 = logging.getLogger('a.b.c')
+       a2 = logging.getLogger('d.e.f')
 
        f = ContextFilter()
        a1.addFilter(f)
        a2.addFilter(f)
-       a1.debug("A debug message")
-       a1.info("An info message with %s", "some parameters")
+       a1.debug('A debug message')
+       a1.info('An info message with %s', 'some parameters')
        for x in range(10):
            lvl = choice(levels)
            lvlname = logging.getLevelName(lvl)
-           a2.log(lvl, "A message at %s level with %d %s", lvlname, 2, "parameters")
+           a2.log(lvl, 'A message at %s level with %d %s', lvlname, 2, 'parameters')
 
 which, when run, produces something like::
 
@@ -2231,7 +2235,7 @@ module. Here is a basic working example::
                chunk = self.connection.recv(4)
                if len(chunk) < 4:
                    break
-               slen = struct.unpack(">L", chunk)[0]
+               slen = struct.unpack('>L', chunk)[0]
                chunk = self.connection.recv(slen)
                while len(chunk) < slen:
                    chunk = chunk + self.connection.recv(slen - len(chunk))
@@ -2257,7 +2261,8 @@ module. Here is a basic working example::
            logger.handle(record)
 
    class LogRecordSocketReceiver(socketserver.ThreadingTCPServer):
-       """simple TCP socket-based logging receiver suitable for testing.
+       """
+       Simple TCP socket-based logging receiver suitable for testing.
        """
 
        allow_reuse_address = 1
@@ -2283,12 +2288,12 @@ module. Here is a basic working example::
 
    def main():
        logging.basicConfig(
-           format="%(relativeCreated)5d %(name)-15s %(levelname)-8s %(message)s")
+           format='%(relativeCreated)5d %(name)-15s %(levelname)-8s %(message)s')
        tcpserver = LogRecordSocketReceiver()
-       print("About to start TCP server...")
+       print('About to start TCP server...')
        tcpserver.serve_until_stopped()
 
-   if __name__ == "__main__":
+   if __name__ == '__main__':
        main()
 
 First run the server, and then the client. On the client side, nothing is
@@ -2395,7 +2400,7 @@ method which takes a level argument and returns true if the event would be
 created by the Logger for that level of call. You can write code like this::
 
     if logger.isEnabledFor(logging.DEBUG):
-        logger.debug("Message with %s, %s", expensive_func1(),
+        logger.debug('Message with %s, %s', expensive_func1(),
                                             expensive_func2())
 
 so that if the logger's threshold is set above ``DEBUG``, the calls to
@@ -2563,7 +2568,7 @@ and :meth:`flush` methods).
 
 .. versionchanged:: 3.2
    The ``StreamHandler`` class now has a ``terminator`` attribute, default
-   value ``"\n"``, which is used as the terminator when writing a formatted
+   value ``'\n'``, which is used as the terminator when writing a formatted
    record to a stream. If you don't want this newline termination, you can
    set the handler instance's ``terminator`` attribute to the empty string.
 
@@ -2604,7 +2609,7 @@ NullHandler
 .. versionadded:: 3.1
 
 The :class:`NullHandler` class, located in the core :mod:`logging` package,
-does not do any formatting or output. It is essentially a "no-op" handler
+does not do any formatting or output. It is essentially a 'no-op' handler
 for use by library developers.
 
 .. class:: NullHandler()
@@ -2690,7 +2695,7 @@ module, supports rotation of disk log files.
    the file is closed and a new file is silently opened for output. Rollover occurs
    whenever the current log file is nearly *maxBytes* in length; if *maxBytes* is
    zero, rollover never occurs.  If *backupCount* is non-zero, the system will save
-   old log files by appending the extensions ".1", ".2" etc., to the filename. For
+   old log files by appending the extensions '.1', '.2' etc., to the filename. For
    example, with a *backupCount* of 5 and a base file name of :file:`app.log`, you
    would get :file:`app.log`, :file:`app.log.1`, :file:`app.log.2`, up to
    :file:`app.log.5`. The file being written to is always :file:`app.log`.  When
@@ -2887,7 +2892,7 @@ supports sending logging messages to a remote or local Unix syslog.
    the form of a ``(host, port)`` tuple.  If *address* is not specified,
    ``('localhost', 514)`` is used.  The address is used to open a socket.  An
    alternative to providing a ``(host, port)`` tuple is providing an address as a
-   string, for example "/dev/log". In this case, a Unix domain socket is used to
+   string, for example '/dev/log'. In this case, a Unix domain socket is used to
    send the message to the syslog. If *facility* is not specified,
    :const:`LOG_USER` is used. The type of socket opened depends on the
    *socktype* argument, which defaults to :const:`socket.SOCK_DGRAM` and thus
@@ -2897,8 +2902,8 @@ supports sending logging messages to a remote or local Unix syslog.
    Note that if your server is not listening on UDP port 514,
    :class:`SysLogHandler` may appear not to work. In that case, check what
    address you should be using for a domain socket - it's system dependent.
-   For example, on Linux it's usually "/dev/log" but on OS/X it's
-   "/var/run/syslog". You'll need to check your platform and use the
+   For example, on Linux it's usually '/dev/log' but on OS/X it's
+   '/var/run/syslog'. You'll need to check your platform and use the
    appropriate address (you may need to do this check at runtime if your
    application needs to run on several platforms). On Windows, you pretty
    much have to use the UDP option.
@@ -3002,7 +3007,7 @@ supports sending logging messages to a remote or local Unix syslog.
       if the default algorithm is not suitable for your needs. The
       default algorithm maps ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR`` and
       ``CRITICAL`` to the equivalent syslog names, and all other level
-      names to "warning".
+      names to 'warning'.
 
 .. _nt-eventlog-handler:
 
@@ -3326,7 +3331,7 @@ Subclassing QueueHandler
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can use a :class:`QueueHandler` subclass to send messages to other kinds
-of queues, for example a ZeroMQ "publish" socket. In the example below,the
+of queues, for example a ZeroMQ 'publish' socket. In the example below,the
 socket is created separately and passed to the handler (as its 'queue')::
 
     import zmq # using pyzmq, the Python binding for ZeroMQ
@@ -3366,7 +3371,7 @@ Subclassing QueueListener
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can also subclass :class:`QueueListener` to get messages from other kinds
-of queues, for example a ZeroMQ "subscribe" socket. Here's an example::
+of queues, for example a ZeroMQ 'subscribe' socket. Here's an example::
 
     class ZeroMQSocketListener(QueueListener):
         def __init__(self, uri, *handlers, **kwargs):
@@ -3466,8 +3471,8 @@ Filter Objects
 ``Filters`` can be used by ``Handlers`` and ``Loggers`` for more sophisticated
 filtering than is provided by levels. The base filter class only allows events
 which are below a certain point in the logger hierarchy. For example, a filter
-initialized with "A.B" will allow events logged by loggers "A.B", "A.B.C",
-"A.B.C.D", "A.B.D" etc. but not "A.BB", "B.A.B" etc. If initialized with the
+initialized with 'A.B' will allow events logged by loggers 'A.B', 'A.B.C',
+'A.B.C.D', 'A.B.D' etc. but not 'A.BB', 'B.A.B' etc. If initialized with the
 empty string, all events are passed.
 
 
@@ -3619,7 +3624,7 @@ the options available to you.
 +----------------+-------------------------+-----------------------------------------------+
 | asctime        | ``%(asctime)s``         | Human-readable time when the                  |
 |                |                         | :class:`LogRecord` was created.  By default   |
-|                |                         | this is of the form "2003-07-08 16:49:45,896" |
+|                |                         | this is of the form '2003-07-08 16:49:45,896' |
 |                |                         | (the numbers after the comma are millisecond  |
 |                |                         | portion of the time).                         |
 +----------------+-------------------------+-----------------------------------------------+
@@ -3749,7 +3754,7 @@ with the :mod:`warnings` module.
    If *capture* is ``True``, warnings issued by the :mod:`warnings` module will
    be redirected to the logging system. Specifically, a warning will be
    formatted using :func:`warnings.formatwarning` and the resulting string
-   logged to a logger named "py.warnings" with a severity of `WARNING`.
+   logged to a logger named 'py.warnings' with a severity of `WARNING`.
 
    If *capture* is ``False``, the redirection of warnings to the logging system
    will stop, and warnings will be redirected to their original destinations
@@ -3852,8 +3857,8 @@ Configuration dictionary schema
 
 Describing a logging configuration requires listing the various
 objects to create and the connections between them; for example, you
-may create a handler named "console" and then say that the logger
-named "startup" will send its messages to the "console" handler.
+may create a handler named 'console' and then say that the logger
+named 'startup' will send its messages to the 'console' handler.
 These objects aren't limited to those provided by the :mod:`logging`
 module because you might write your own formatter or handler class.
 The parameters to these classes may also need to include external
@@ -4316,7 +4321,7 @@ Sections which specify handler configuration are exemplified by the following.
 
 The ``class`` entry indicates the handler's class (as determined by :func:`eval`
 in the ``logging`` package's namespace). The ``level`` is interpreted as for
-loggers, and ``NOTSET`` is taken to mean "log everything".
+loggers, and ``NOTSET`` is taken to mean 'log everything'.
 
 The ``formatter`` entry indicates the key name of the formatter for this
 handler. If blank, a default formatter (``logging._defaultFormatter``) is used.
@@ -4387,7 +4392,7 @@ Sections which specify formatter configuration are typified by the following. ::
 The ``format`` entry is the overall format string, and the ``datefmt`` entry is
 the :func:`strftime`\ -compatible date/time format string.  If empty, the
 package substitutes ISO8601 format date/times, which is almost equivalent to
-specifying the date format string ``"%Y-%m-%d %H:%M:%S"``.  The ISO8601 format
+specifying the date format string ``'%Y-%m-%d %H:%M:%S'``.  The ISO8601 format
 also specifies milliseconds, which are appended to the result of using the above
 format string, with a comma separator.  An example time in ISO8601 format is
 ``2003-01-23 00:29:50,411``.
@@ -4409,23 +4414,23 @@ Here is an example of a module using the logging configuration server::
     import os
 
     # read initial config file
-    logging.config.fileConfig("logging.conf")
+    logging.config.fileConfig('logging.conf')
 
     # create and start listener on port 9999
     t = logging.config.listen(9999)
     t.start()
 
-    logger = logging.getLogger("simpleExample")
+    logger = logging.getLogger('simpleExample')
 
     try:
         # loop through logging calls to see the difference
         # new configurations make, until Ctrl+C is pressed
         while True:
-            logger.debug("debug message")
-            logger.info("info message")
-            logger.warn("warn message")
-            logger.error("error message")
-            logger.critical("critical message")
+            logger.debug('debug message')
+            logger.info('info message')
+            logger.warn('warn message')
+            logger.error('error message')
+            logger.critical('critical message')
             time.sleep(5)
     except KeyboardInterrupt:
         # cleanup
@@ -4439,18 +4444,18 @@ configuration::
     #!/usr/bin/env python
     import socket, sys, struct
 
-    data_to_send = open(sys.argv[1], "r").read()
+    data_to_send = open(sys.argv[1], 'r').read()
 
     HOST = 'localhost'
     PORT = 9999
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    print("connecting...")
+    print('connecting...')
     s.connect((HOST, PORT))
-    print("sending config...")
-    s.send(struct.pack(">L", len(data_to_send)))
+    print('sending config...')
+    s.send(struct.pack('>L', len(data_to_send)))
     s.send(data_to_send)
     s.close()
-    print("complete")
+    print('complete')
 
 
 More examples
@@ -4469,30 +4474,30 @@ previous simple module-based configuration example::
 
     import logging
 
-    logger = logging.getLogger("simple_example")
+    logger = logging.getLogger('simple_example')
     logger.setLevel(logging.DEBUG)
     # create file handler which logs even debug messages
-    fh = logging.FileHandler("spam.log")
+    fh = logging.FileHandler('spam.log')
     fh.setLevel(logging.DEBUG)
     # create console handler with a higher log level
     ch = logging.StreamHandler()
     ch.setLevel(logging.ERROR)
     # create formatter and add it to the handlers
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     ch.setFormatter(formatter)
     fh.setFormatter(formatter)
     # add the handlers to logger
     logger.addHandler(ch)
     logger.addHandler(fh)
 
-    # "application" code
-    logger.debug("debug message")
-    logger.info("info message")
-    logger.warn("warn message")
-    logger.error("error message")
-    logger.critical("critical message")
+    # 'application' code
+    logger.debug('debug message')
+    logger.info('info message')
+    logger.warn('warn message')
+    logger.error('error message')
+    logger.critical('critical message')
 
-Notice that the "application" code does not care about multiple handlers.  All
+Notice that the 'application' code does not care about multiple handlers.  All
 that changed was the addition and configuration of a new handler named *fh*.
 
 The ability to create new handlers with higher- or lower-severity filters can be
@@ -4519,51 +4524,51 @@ the parent.  Here is a main module::
     import logging
     import auxiliary_module
 
-    # create logger with "spam_application"
-    logger = logging.getLogger("spam_application")
+    # create logger with 'spam_application'
+    logger = logging.getLogger('spam_application')
     logger.setLevel(logging.DEBUG)
     # create file handler which logs even debug messages
-    fh = logging.FileHandler("spam.log")
+    fh = logging.FileHandler('spam.log')
     fh.setLevel(logging.DEBUG)
     # create console handler with a higher log level
     ch = logging.StreamHandler()
     ch.setLevel(logging.ERROR)
     # create formatter and add it to the handlers
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     fh.setFormatter(formatter)
     ch.setFormatter(formatter)
     # add the handlers to the logger
     logger.addHandler(fh)
     logger.addHandler(ch)
 
-    logger.info("creating an instance of auxiliary_module.Auxiliary")
+    logger.info('creating an instance of auxiliary_module.Auxiliary')
     a = auxiliary_module.Auxiliary()
-    logger.info("created an instance of auxiliary_module.Auxiliary")
-    logger.info("calling auxiliary_module.Auxiliary.do_something")
+    logger.info('created an instance of auxiliary_module.Auxiliary')
+    logger.info('calling auxiliary_module.Auxiliary.do_something')
     a.do_something()
-    logger.info("finished auxiliary_module.Auxiliary.do_something")
-    logger.info("calling auxiliary_module.some_function()")
+    logger.info('finished auxiliary_module.Auxiliary.do_something')
+    logger.info('calling auxiliary_module.some_function()')
     auxiliary_module.some_function()
-    logger.info("done with auxiliary_module.some_function()")
+    logger.info('done with auxiliary_module.some_function()')
 
 Here is the auxiliary module::
 
     import logging
 
     # create logger
-    module_logger = logging.getLogger("spam_application.auxiliary")
+    module_logger = logging.getLogger('spam_application.auxiliary')
 
     class Auxiliary:
         def __init__(self):
-            self.logger = logging.getLogger("spam_application.auxiliary.Auxiliary")
-            self.logger.info("creating an instance of Auxiliary")
+            self.logger = logging.getLogger('spam_application.auxiliary.Auxiliary')
+            self.logger.info('creating an instance of Auxiliary')
         def do_something(self):
-            self.logger.info("doing something")
+            self.logger.info('doing something')
             a = 1 + 1
-            self.logger.info("done doing something")
+            self.logger.info('done doing something')
 
     def some_function():
-        module_logger.info("received a call to \"some_function\"")
+        module_logger.info('received a call to "some_function"')
 
 The output looks like this::
 
@@ -4584,7 +4589,7 @@ The output looks like this::
     2005-03-23 23:47:11,671 - spam_application - INFO -
        calling auxiliary_module.some_function()
     2005-03-23 23:47:11,672 - spam_application.auxiliary - INFO -
-       received a call to "some_function"
+       received a call to 'some_function'
     2005-03-23 23:47:11,673 - spam_application - INFO -
        done with auxiliary_module.some_function()
 
