@@ -159,7 +159,9 @@ Return the group database entry for the given group name.  If\n\
 name is not valid, raise KeyError."},
     {"getgrall",        grp_getgrall,   METH_NOARGS,
      "getgrall() -> list of tuples\n\
-Return a list of all available group entries, in arbitrary order."},
+Return a list of all available group entries, in arbitrary order.\n\
+An entry whose name starts with '+' or '-' represents an instruction\n\
+to use YP/NIS and may not be accessible via getgrnam or getgrgid."},
     {NULL,              NULL}           /* sentinel */
 };
 
