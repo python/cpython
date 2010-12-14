@@ -793,6 +793,17 @@ class ProcessTestCase(BaseTestCase):
                 stdout = stdout.rstrip(b'\n\r')
                 self.assertEqual(stdout, value_repr)
 
+        def test_wait_when_sigchild_ignored(self):
+            # NOTE: sigchild_ignore.py may not be an effective test on all OSes.
+            sigchild_ignore = support.findfile("sigchild_ignore.py",
+                                               subdir="subprocessdata")
+            p = subprocess.Popen([sys.executable, sigchild_ignore],
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = p.communicate()
+            self.assertEqual(0, p.returncode, "sigchild_ignore.py exited"
+                             " non-zero with this error:\n%s" % stderr)
+
+
     #
     # Windows tests
     #
