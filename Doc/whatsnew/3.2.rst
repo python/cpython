@@ -47,9 +47,9 @@
    This saves the maintainer the effort of going through the SVN log
    when researching a change.
 
-This article explains the new features in Python 3.2, compared to 3.1.
-It focuses on a few highlights and gives a few examples.  For full details,
-see the :file:`Misc/NEWS` file.
+This article explains the new features in Python 3.2 as compared to 3.1.  It
+focuses on a few highlights and gives a few examples.  For full details, see the
+:source:`Misc/NEWS <Misc/NEWS>` file.
 
 
 PEP 384: Defining a Stable ABI
@@ -396,7 +396,7 @@ format.
   :class:`~email.message.Message` object and can optionally obtain the
   *from_addr* and *to_addrs* addresses directly from the object.
 
-.. XXX Update before 3.2rc1 to reflect all of the last work and add examples.
+.. XXX Update before 3.2rc1 to reflect all of the latest work and add examples.
 
   (Proposed and implemented by R. David Murray, :issue:`4661` and :issue:`10321`.)
 
@@ -619,7 +619,7 @@ New, Improved, and Deprecated Modules
   <http://en.wikipedia.org/wiki/Saturation_arithmetic>`_ and the new
   :meth:`~collections.Counter.subtract` method for regular subtraction.  The
   former is suitable for `multisets <http://en.wikipedia.org/wiki/Multiset>`_
-  which only have positive counts, and the latter is more suitable for counters
+  which only have positive counts, and the latter is more suitable for use cases
   that allow negative counts:
 
   >>> tally = Counter(dogs=5, cat=3)
@@ -813,8 +813,9 @@ New, Improved, and Deprecated Modules
   ...     legacy_function('XYZ')
 
   Another new method, :meth:`~unittest.TestCase.assertCountEqual` is used to
-  compare two iterables to determine if their element counts are equal (are the
-  same elements present the same number of times::
+  compare two iterables to determine if their element counts are equal (whether
+  the same elements are present with the same number of occurrences regardless
+  of order)::
 
      def test_anagram(self):
          self.assertCountEqual('algorithm', 'logarithm')
@@ -906,7 +907,7 @@ New, Improved, and Deprecated Modules
 
 * The new :mod:`sysconfig` module makes it straight-forward to discover
   installation paths and configuration variables which vary across platforms and
-  installs.
+  installations.
 
   The module offers access simple access functions for platform and version
   information:
@@ -1031,7 +1032,7 @@ A number of small performance enhancements have been added:
   and the Unladen Swallow team in :issue:`9410` and :issue:`3873`.)
 
 * The `Timsort algorithm <http://en.wikipedia.org/wiki/Timsort>`_ used in
-  :meth:`list.sort` and :func:`sorted` now runs faster and used less memory
+  :meth:`list.sort` and :func:`sorted` now runs faster and uses less memory
   when called with a :term:`key function`.  Previously, every element of
   a list was wrapped with a temporary object that remembered the key value
   associated with each element.  Now, an array of keys and values are
