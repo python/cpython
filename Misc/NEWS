@@ -38,6 +38,13 @@ Library
   or otherwise not wait for exiting child processes.
 
 
+Tests
+-----
+
+- Issue #775964: test_grp now skips YP/NIS entries instead of failing when
+  encountering them.
+
+
 What's New in Python 3.2 Beta 1?
 ================================
 
