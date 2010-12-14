@@ -126,9 +126,9 @@ class TimeTestCase(unittest.TestCase):
     def test_asctime_bounding_check(self):
         self._bounds_checking(time.asctime)
 
+    @unittest.skipIf(not hasattr(time, "tzset"),
+        "time module has no attribute tzset")
     def test_tzset(self):
-        if not hasattr(time, "tzset"):
-            return # Can't test this; don't want the test suite to fail
 
         from os import environ
 
