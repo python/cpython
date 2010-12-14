@@ -1295,7 +1295,11 @@ class Popen(object):
                 os.close(errpipe_read)
 
             if data:
-                _eintr_retry_call(os.waitpid, self.pid, 0)
+                try:
+                    _eintr_retry_call(os.waitpid, self.pid, 0)
+                except OSError as e:
+                    if e.errno != errno.ECHILD:
+                        raise
                 try:
                     exception_name, hex_errno, err_msg = data.split(b':', 2)
                 except ValueError:
@@ -1358,7 +1362,15 @@ class Popen(object):
             """Wait for child process to terminate.  Returns returncode
             attribute."""
             if self.returncode is None:
-                pid, sts = _eintr_retry_call(os.waitpid, self.pid, 0)
+                try:
+                    pid, sts = _eintr_retry_call(os.waitpid, self.pid, 0)
+                except OSError as e:
+                    if e.errno != errno.ECHILD:
+                        raise
+                    # This happens if SIGCLD is set to be ignored or waiting
+                    # for child processes has otherwise been disabled for our
+                    # process.  This child is dead, we can't get the status.
+                    sts = 0
                 self._handle_exitstatus(sts)
             return self.returncode
 
