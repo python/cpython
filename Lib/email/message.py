@@ -38,7 +38,9 @@ def _splitparam(param):
 def _formatparam(param, value=None, quote=True):
     """Convenience function to format and return a key=value pair.
 
-    This will quote the value if needed or if quote is true.
+    This will quote the value if needed or if quote is true.  If value is a
+    three tuple (charset, language, value), it will be encoded according
+    to RFC2231 rules.
     """
     if value is not None and len(value) > 0:
         # A tuple is used for RFC 2231 encoded parameter values where items
@@ -389,7 +391,10 @@ class Message:
         name is the header field to add.  keyword arguments can be used to set
         additional parameters for the header field, with underscores converted
         to dashes.  Normally the parameter will be added as key="value" unless
-        value is None, in which case only the key will be added.
+        value is None, in which case only the key will be added.  If a
+        parameter value contains non-ASCII characters it must be specified as a
+        three-tuple of (charset, language, value), in which case it will be
+        encoded according to RFC2231 rules.
 
         Example:
 
