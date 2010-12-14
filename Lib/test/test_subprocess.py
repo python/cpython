@@ -801,7 +801,8 @@ class ProcessTestCase(BaseTestCase):
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             stdout, stderr = p.communicate()
             self.assertEqual(0, p.returncode, "sigchild_ignore.py exited"
-                             " non-zero with this error:\n%s" % stderr)
+                             " non-zero with this error:\n%s" %
+                             stderr.decode('utf8'))
 
 
     #
