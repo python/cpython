@@ -63,8 +63,9 @@ PyModule_Create2(struct PyModuleDef* module, int module_api_version)
     PyMethodDef *ml;
     const char* name;
     PyModuleObject *m;
-    if (!Py_IsInitialized())
-        Py_FatalError("Interpreter not initialized (version mismatch?)");
+    PyInterpreterState *interp = PyThreadState_Get()->interp;
+    if (interp->modules == NULL)
+        Py_FatalError("Python import machinery not initialized");
     if (PyType_Ready(&moduledef_type) < 0)
         return NULL;
     if (module->m_base.m_index == 0) {

@@ -9,11 +9,13 @@ import random
 import stat
 import sys
 import unittest
+import textwrap
 
 from test.support import (
     EnvironmentVarGuard, TESTFN, check_warnings, forget, is_jython,
     make_legacy_pyc, rmtree, run_unittest, swap_attr, swap_item, temp_umask,
     unlink, unload)
+from test import script_helper
 
 
 def remove_files(name):
@@ -283,6 +285,17 @@ class ImportTests(unittest.TestCase):
             __import__(path)
         self.assertEqual("Import by filename is not supported.",
                          c.exception.args[0])
+
+    def test_import_in_del_does_not_crash(self):
+        # Issue 4236
+        testfn = script_helper.make_script('', TESTFN, textwrap.dedent("""\
+            import sys
+            class C:
+               def __del__(self):
+                  import imp
+            sys.argv.insert(0, C())
+            """))
+        script_helper.assert_python_ok(testfn)
 
 
 class PycRewritingTests(unittest.TestCase):
