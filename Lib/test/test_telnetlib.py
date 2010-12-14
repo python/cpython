@@ -342,6 +342,16 @@ class OptionTests(TestCase):
         expected = "send b'xxx'\n"
         self.assertTrue(expected in telnet._messages)
 
+    def test_debug_accepts_str_port(self):
+        # Issue 10695
+        with test_socket([]):
+            telnet = TelnetAlike('dummy', '0')
+            telnet._messages = ''
+        telnet.set_debuglevel(1)
+        telnet.msg('test')
+        self.assertRegexpMatches(telnet._messages, r'0.*test')
+
+
 def test_main(verbose=None):
     support.run_unittest(GeneralTests, ReadTests, WriteTests, OptionTests)
 
