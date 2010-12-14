@@ -9,10 +9,12 @@ import stat
 import sys
 import unittest
 import warnings
+import textwrap
 
 from test.support import (
     EnvironmentVarGuard, TESTFN, forget, is_jython,
     rmtree, run_unittest, unlink, unload)
+from test import script_helper
 
 
 def remove_files(name):
@@ -283,6 +285,17 @@ class ImportTests(unittest.TestCase):
                               err.args[0])
         else:
             self.fail("import by path didn't raise an exception")
+
+    def test_import_in_del_does_not_crash(self):
+        # Issue 4236
+        testfn = script_helper.make_script('', TESTFN, textwrap.dedent("""\
+            import sys
+            class C:
+               def __del__(self):
+                  import imp
+            sys.argv.insert(0, C())
+            """))
+        script_helper.assert_python_ok(testfn)
 
 
 class PycRewritingTests(unittest.TestCase):
