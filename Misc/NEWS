@@ -46,6 +46,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #775964: test_grp now skips YP/NIS entries instead of failing when
+  encountering them.
+
 - Issue #7110: regrtest now sends test failure reports and single-failure
   tracebacks to stderr rather than stdout.
 

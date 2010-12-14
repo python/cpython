@@ -31,7 +31,9 @@ correspond to the members of the ``group`` structure (Attribute field below, see
 The gid is an integer, name and password are strings, and the member list is a
 list of strings. (Note that most users are not explicitly listed as members of
 the group they are in according to the password database.  Check both databases
-to get complete membership information.)
+to get complete membership information.  Also note that a ``gr_name`` that
+starts with a ``+`` or ``-`` is likely to be a YP/NIS reference and may not be
+accessible via :func:`getgrnam` or :func:`getgrgid`.)
 
 It defines the following items:
 
