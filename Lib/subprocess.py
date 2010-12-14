@@ -27,10 +27,10 @@ This module defines one class called Popen:
 
 class Popen(args, bufsize=0, executable=None,
             stdin=None, stdout=None, stderr=None,
-            preexec_fn=None, close_fds=_PLATFORM_DEFAULT, shell=False,
+            preexec_fn=None, close_fds=True, shell=False,
             cwd=None, env=None, universal_newlines=False,
             startupinfo=None, creationflags=0,
-            restore_signals=True, start_new_session=False):
+            restore_signals=True, start_new_session=False, pass_fds=()):
 
 
 Arguments are:
@@ -81,8 +81,11 @@ is executed.
 
 If close_fds is true, all file descriptors except 0, 1 and 2 will be
 closed before the child process is executed.  The default for close_fds
-varies by platform: False on Windows and True on all other platforms
-such as POSIX.
+varies by platform:  Always true on POSIX.  True when stdin/stdout/stderr
+are None on Windows, false otherwise.
+
+pass_fds is an optional sequence of file descriptors to keep open between the
+parent and child.  Providing any pass_fds implicitly sets close_fds to true.
 
 if shell is true, the specified command will be executed through the
 shell.
@@ -621,17 +624,14 @@ def getoutput(cmd):
     return getstatusoutput(cmd)[1]
 
 
-if mswindows:
-    _PLATFORM_DEFAULT = False
-else:
-    _PLATFORM_DEFAULT = True
+_PLATFORM_DEFAULT_CLOSE_FDS = object()
 
 
 class Popen(object):
     def __init__(self, args, bufsize=0, executable=None,
                  stdin=None, stdout=None, stderr=None,
-                 preexec_fn=None, close_fds=_PLATFORM_DEFAULT, shell=False,
-                 cwd=None, env=None, universal_newlines=False,
+                 preexec_fn=None, close_fds=_PLATFORM_DEFAULT_CLOSE_FDS,
+                 shell=False, cwd=None, env=None, universal_newlines=False,
                  startupinfo=None, creationflags=0,
                  restore_signals=True, start_new_session=False,
                  pass_fds=()):
@@ -648,21 +648,30 @@ class Popen(object):
             if preexec_fn is not None:
                 raise ValueError("preexec_fn is not supported on Windows "
                                  "platforms")
-            if close_fds and (stdin is not None or stdout is not None or
-                              stderr is not None):
-                raise ValueError("close_fds is not supported on Windows "
-                                 "platforms if you redirect stdin/stdout/stderr")
+            any_stdio_set = (stdin is not None or stdout is not None or
+                             stderr is not None)
+            if close_fds is _PLATFORM_DEFAULT_CLOSE_FDS:
+                if any_stdio_set:
+                    close_fds = False
+                else:
+                    close_fds = True
+            elif close_fds and any_stdio_set:
+                raise ValueError(
+                        "close_fds is not supported on Windows platforms"
+                        " if you redirect stdin/stdout/stderr")
         else:
             # POSIX
+            if close_fds is _PLATFORM_DEFAULT_CLOSE_FDS:
+                close_fds = True
+            if pass_fds and not close_fds:
+                warnings.warn("pass_fds overriding close_fds.", RuntimeWarning)
+                close_fds = True
             if startupinfo is not None:
                 raise ValueError("startupinfo is only supported on Windows "
                                  "platforms")
             if creationflags != 0:
                 raise ValueError("creationflags is only supported on Windows "
                                  "platforms")
-
-        if pass_fds and not close_fds:
-            raise ValueError("pass_fds requires close_fds=True.")
 
         self.stdin = None
         self.stdout = None
@@ -876,7 +885,7 @@ class Popen(object):
                            unused_restore_signals, unused_start_new_session):
             """Execute program (MS Windows version)"""
 
-            assert not pass_fds, "pass_fds not yet supported on Windows"
+            assert not pass_fds, "pass_fds not supported on Windows."
 
             if not isinstance(args, str):
                 args = list2cmdline(args)
@@ -1091,7 +1100,7 @@ class Popen(object):
             # precondition: fds_to_keep must be sorted and unique
             start_fd = 3
             for fd in fds_to_keep:
-                if fd > start_fd:
+                if fd >= start_fd:
                     os.closerange(start_fd, fd)
                     start_fd = fd + 1
             if start_fd <= MAXFD:

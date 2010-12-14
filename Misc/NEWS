@@ -23,8 +23,12 @@ Library
 - Issue #10107: Warn about unsaved files in IDLE on OSX.
 
 - Issue #7213: subprocess.Popen's default for close_fds has been changed.
-  It is now platform specific, keeping its default of False on Windows and
-  changing the default to True on POSIX and other platforms.
+  It is now True in most cases other than on Windows when input, output or
+  error handles are provided.
+
+- Issue #6559: subprocess.Popen has a new pass_fds parameter (actually
+  added in 3.2beta1) to allow specifying a specific list of file descriptors
+  to keep open in the child process.
 
 
 What's New in Python 3.2 Beta 1?

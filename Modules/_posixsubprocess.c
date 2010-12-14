@@ -107,7 +107,7 @@ static void child_exec(char *const exec_array[],
                 errno = 0;  /* We don't want to report an OSError. */
                 goto error;
             }
-            if (keep_fd <= start_fd)
+            if (keep_fd < start_fd)
                 continue;
             for (fd_num = start_fd; fd_num < keep_fd; ++fd_num) {
                 close(fd_num);

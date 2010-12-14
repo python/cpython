@@ -28,7 +28,7 @@ Using the subprocess Module
 This module defines one class called :class:`Popen`:
 
 
-.. class:: Popen(args, bufsize=0, executable=None, stdin=None, stdout=None, stderr=None, preexec_fn=None, close_fds=_PLATFORM_DEFAULT, shell=False, cwd=None, env=None, universal_newlines=False, startupinfo=None, creationflags=0, restore_signals=True, start_new_session=False)
+.. class:: Popen(args, bufsize=0, executable=None, stdin=None, stdout=None, stderr=None, preexec_fn=None, close_fds=True, shell=False, cwd=None, env=None, universal_newlines=False, startupinfo=None, creationflags=0, restore_signals=True, start_new_session=False, pass_fds=())
 
    Arguments are:
 
@@ -153,14 +153,22 @@ This module defines one class called :class:`Popen`:
 
    If *close_fds* is true, all file descriptors except :const:`0`, :const:`1` and
    :const:`2` will be closed before the child process is executed. (Unix only).
-   The default varies by platform: :const:`False` on Windows and :const:`True`
-   on POSIX and other platforms.
+   The default varies by platform:  Always true on Unix.  On Windows it is
+   true when *stdin*/*stdout*/*stderr* are :const:`None`, false otherwise.
    On Windows, if *close_fds* is true then no handles will be inherited by the
    child process.  Note that on Windows, you cannot set *close_fds* to true and
    also redirect the standard handles by setting *stdin*, *stdout* or *stderr*.
 
-.. versionchanged:: 3.2
-   The default was changed to True on non Windows platforms.
+   .. versionchanged:: 3.2
+      The default for *close_fds* was changed from :const:`False` to
+      what is described above.
+
+   *pass_fds* is an optional sequence of file descriptors to keep open
+   between the parent and child.  Providing any *pass_fds* forces
+   *close_fds* to be :const:`True`.  (Unix only)
+
+   .. versionadded:: 3.2
+      The *pass_fds* parameter was added.
 
    If *cwd* is not ``None``, the child's current directory will be changed to *cwd*
    before it is executed.  Note that this directory is not considered when
