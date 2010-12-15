@@ -264,7 +264,7 @@ launch of four parallel threads for copying files::
 .. seealso::
 
    :pep:`3148` - Futures -- Execute Computations Asynchronously
-      PEP written by Brain Quinlan.
+      PEP written by Brian Quinlan.
 
    :ref:`Code for Threaded Parallel URL reads<threadpoolexecutor-example>`, an
    example using threads to fetch multiple web pages in parallel.
