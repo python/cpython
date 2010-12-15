@@ -559,6 +559,9 @@ Some smaller changes made to the core Python language are:
 New, Improved, and Deprecated Modules
 =====================================
 
+functools
+---------
+
 * The :mod:`functools` module includes a new decorator for caching function
   calls.  :func:`functools.lru_cache` can save repeated queries to an external
   resource whenever the results are expected to be the same.
@@ -598,6 +601,9 @@ New, Improved, and Deprecated Modules
   (By Nick Coghlan and Terrence Cole; :issue:`9567`, :issue:`3445`, and
   :issue:`8814`.)
 
+itertools
+---------
+
 * The :mod:`itertools` module has a new :func:`~itertools.accumulate` function
   modeled on APL's *scan* operator and on Numpy's *accumulate* function:
 
@@ -613,6 +619,9 @@ New, Improved, and Deprecated Modules
 
   (Contributed by Raymond Hettinger and incorporating design suggestions
   from Mark Dickinson.)
+
+collections
+-----------
 
 * The :class:`collections.Counter` class now has two forms of in-place
   subtraction, the existing *-=* operator for `saturating subtraction
@@ -650,6 +659,9 @@ New, Improved, and Deprecated Modules
   >>> list(d)
   ['X', 'a', 'b', 'd', 'e']
 
+datetime
+--------
+
 * The :mod:`datetime` module has a new type :class:`~datetime.timezone` that
   implements the :class:`~datetime.tzinfo` interface by returning a fixed UTC
   offset and timezone name. This makes it easier to create timezone aware
@@ -661,74 +673,86 @@ New, Improved, and Deprecated Modules
   >>> datetime.strptime("01/01/2000 12:00 +0000", "%m/%d/%Y %H:%M %z")
   datetime.datetime(2000, 1, 1, 12, 0, tzinfo=datetime.timezone.utc)
 
-  Also, :class:`~datetime.timedelta` objects can now be multiplied by
+* Also, :class:`~datetime.timedelta` objects can now be multiplied by
   :class:`float` and divided by :class:`float` and :class:`int` objects.
 
   (Contributed by Alexander Belopolsky in :issue:`1289118`, :issue:`5094` and
   :issue:`6641`.)
 
-* The :mod:`abc` module now supports :func:`~abc.abstractclassmethod` and
-  :func:`~abc.abstractstaticmethod`.
+abc
+---
 
-  These tools make it possible to define an :term:`Abstract Base Class` that
-  requires a particular :func:`classmethod` or :func:`staticmethod` to be
-  implemented.
+The :mod:`abc` module now supports :func:`~abc.abstractclassmethod` and
+:func:`~abc.abstractstaticmethod`.
 
-  (Patch submitted by Daniel Urban; :issue:`5867`.)
+These tools make it possible to define an :term:`Abstract Base Class` that
+requires a particular :func:`classmethod` or :func:`staticmethod` to be
+implemented.
 
-* The :class:`ftplib.FTP` class now supports the context manager protocol to
-  unconditionally consume :exc:`socket.error` exceptions and to close the FTP
-  connection when done::
+(Patch submitted by Daniel Urban; :issue:`5867`.)
 
-   >>> from ftplib import FTP
-   >>> with FTP("ftp1.at.proftpd.org") as ftp:
-   ...     ftp.login()
-   ...     ftp.dir()
-   ...
-   '230 Anonymous login ok, restrictions apply.'
-   dr-xr-xr-x   9 ftp      ftp           154 May  6 10:43 .
-   dr-xr-xr-x   9 ftp      ftp           154 May  6 10:43 ..
-   dr-xr-xr-x   5 ftp      ftp          4096 May  6 10:43 CentOS
-   dr-xr-xr-x   3 ftp      ftp            18 Jul 10  2008 Fedora
+ftp
+---
 
-  Other file-like objects such as :class:`mmap.mmap` and :func:`fileinput.input`
-  also grew auto-closing context managers::
+The :class:`ftplib.FTP` class now supports the context manager protocol to
+unconditionally consume :exc:`socket.error` exceptions and to close the FTP
+connection when done::
 
-      with fileinput.input(files=('log1.txt', 'log2.txt')) as f:
-          for line in f:
-              process(line)
+ >>> from ftplib import FTP
+ >>> with FTP("ftp1.at.proftpd.org") as ftp:
+ ...     ftp.login()
+ ...     ftp.dir()
+ ...
+ '230 Anonymous login ok, restrictions apply.'
+ dr-xr-xr-x   9 ftp      ftp           154 May  6 10:43 .
+ dr-xr-xr-x   9 ftp      ftp           154 May  6 10:43 ..
+ dr-xr-xr-x   5 ftp      ftp          4096 May  6 10:43 CentOS
+ dr-xr-xr-x   3 ftp      ftp            18 Jul 10  2008 Fedora
 
-  (Contributed by Tarek Ziadé and Giampaolo Rodolà in :issue:`4972`, and
-  by Georg Brandl in :issue:`8046` and :issue:`1286`.)
+Other file-like objects such as :class:`mmap.mmap` and :func:`fileinput.input`
+also grew auto-closing context managers::
+
+    with fileinput.input(files=('log1.txt', 'log2.txt')) as f:
+        for line in f:
+            process(line)
+
+(Contributed by Tarek Ziadé and Giampaolo Rodolà in :issue:`4972`, and
+by Georg Brandl in :issue:`8046` and :issue:`1286`.)
 
 .. mention os.popen and subprocess.Popen auto-closing of fds
 
-* :class:`gzip.GzipFile` now implements the :class:`io.BufferedIOBase`
-  :term:`abstract base class` (except for ``truncate()``).  It also has a
-  :meth:`~gzip.GzipFile.peek` method and supports unseekable as well as
-  zero-padded file objects.
+gzip
+----
 
-  The :mod:`gzip` module also gains the :func:`~gzip.compress` and
-  :func:`~gzip.decompress` functions for easier in-memory compression and
-  decompression.  Keep in mind that text needs to be encoded in to
-  :class:`bytes` before compressing and decompressing:
+:class:`gzip.GzipFile` now implements the :class:`io.BufferedIOBase`
+:term:`abstract base class` (except for ``truncate()``).  It also has a
+:meth:`~gzip.GzipFile.peek` method and supports unseekable as well as
+zero-padded file objects.
 
-  >>> s = 'Three shall be the number thou shalt count, '
-  >>> s += 'and the number of the counting shall be three'
-  >>> b = s.encode()                        # convert to utf-8
-  >>> len(b)
-  89
-  >>> c = gzip.compress(b)
-  >>> len(c)
-  77
-  >>> gzip.decompress(c).decode()[:42]      # decompress and convert to text
-  'Three shall be the number thou shalt count,'
+The :mod:`gzip` module also gains the :func:`~gzip.compress` and
+:func:`~gzip.decompress` functions for easier in-memory compression and
+decompression.  Keep in mind that text needs to be encoded in to :class:`bytes`
+before compressing and decompressing:
 
-  (Contributed by Anand B. Pillai in :issue:`3488`; and by Antoine Pitrou, Nir
-  Aides and Brian Curtin in :issue:`9962`, :issue:`1675951`, :issue:`7471` and
-  :issue:`2846`.)
+>>> s = 'Three shall be the number thou shalt count, '
+>>> s += 'and the number of the counting shall be three'
+>>> b = s.encode()                        # convert to utf-8
+>>> len(b)
+89
+>>> c = gzip.compress(b)
+>>> len(c)
+77
+>>> gzip.decompress(c).decode()[:42]      # decompress and convert to text
+'Three shall be the number thou shalt count,'
 
-* The :func:`shutil.copytree` function has two new options:
+(Contributed by Anand B. Pillai in :issue:`3488`; and by Antoine Pitrou, Nir
+Aides and Brian Curtin in :issue:`9962`, :issue:`1675951`, :issue:`7471` and
+:issue:`2846`.)
+
+shutil
+------
+
+The :func:`shutil.copytree` function has two new options:
 
   * *ignore_dangling_symlinks*: when ``symlinks=False`` so that the function
     copies the file pointed to by the symlink, not the symlink itself. This
@@ -737,25 +761,40 @@ New, Improved, and Deprecated Modules
   * *copy_function*: is a callable that will be used to copy files.
     :func:`shutil.copy2` is used by default.
 
-  (Contributed by Tarek Ziadé.)
+(Contributed by Tarek Ziadé.)
 
-* Socket objects now have a :meth:`~socket.socket.detach()` method which puts
-  the socket into closed state without actually closing the underlying file
-  descriptor.  The latter can then be reused for other purposes.
+sqlite3
+-------
 
-  (Added by Antoine Pitrou; :issue:`8524`.)
+The :mod:`sqlite3` module has two new capabilities.
 
-* The :mod:`sqlite3` module has two new capabilities.
-
-  The :attr:`Connection.in_transit` attribute is true if there is an active
+* The :attr:`Connection.in_transit` attribute is true if there is an active
   transaction for uncommitted changes.
 
-  The :meth:`Connection.enable_load_extension` and
+* The :meth:`Connection.enable_load_extension` and
   :meth:`Connection.load_extension` methods allows you to load SQLite extensions
   from ".so" files.  One well-known extension is the fulltext-search extension
   distributed with SQLite.
 
-  (Contributed by R. David Murray and Shashwat Anand; :issue:`8845`.)
+(Contributed by R. David Murray and Shashwat Anand; :issue:`8845`.)
+
+socket
+------
+
+The :mod:`socket` module has two new improvements.
+
+* Socket objects now have a :meth:`~socket.socket.detach()` method which puts
+  the socket into closed state without actually closing the underlying file
+  descriptor.  The latter can then be reused for other purposes.
+  (Added by Antoine Pitrou; :issue:`8524`.)
+
+* :func:`socket.create_connection` now supports the context manager protocol
+  to unconditionally consume :exc:`socket.error` exceptions and to close the
+  socket when done.
+  (Contributed by Giampaolo Rodolà; :issue:`9794`.)
+
+ssl
+---
 
 * The :mod:`ssl` module has a new class, :class:`~ssl.SSLContext` which serves
   as a container for various persistent SSL data, such as protocol settings,
@@ -763,18 +802,18 @@ New, Improved, and Deprecated Modules
   :meth:`~ssl.SSLContext.wrap_socket` method allows to create an SSL socket from
   such an SSL context.  (Added by Antoine Pitrou; :issue:`8550`.)
 
-  A new function, :func:`ssl.match_hostname`, helps implement server identity
+* A new function, :func:`ssl.match_hostname`, helps implement server identity
   verification for higher-level protocols by implementing the rules of
   HTTPS (from :rfc:`2818`), which are also suitable for other protocols.
   (Added by Antoine Pitrou, :issue:`1589`).
 
-  The :func:`ssl.wrap_socket` constructor function now takes a *ciphers*
+* The :func:`ssl.wrap_socket` constructor function now takes a *ciphers*
   argument that's a string listing the encryption algorithms to be allowed; the
   format of the string is described `in the OpenSSL documentation
   <http://www.openssl.org/docs/apps/ciphers.html#CIPHER_LIST_FORMAT>`__.  (Added
   by Antoine Pitrou; :issue:`8322`.)
 
-  When linked against a recent enough version of OpenSSL, the :mod:`ssl`
+* When linked against a recent enough version of OpenSSL, the :mod:`ssl`
   module now supports the Server Name Indication extension to the TLS
   protocol, allowing for several "virtual hosts" using different certificates
   on a single IP/port.  This extension is only supported in client mode,
@@ -782,32 +821,42 @@ New, Improved, and Deprecated Modules
   :meth:`SSLContext.wrap_socket`.
   (Added by Antoine Pitrou, :issue:`5639`.)
 
-  Various options have been added to the :mod:`ssl` module, such as
+* Various options have been added to the :mod:`ssl` module, such as
   :data:`~ssl.OP_NO_SSLv2` which allows to force disabling of the insecure and
   obsolete SSLv2 protocol.  (Added by Antoine Pitrou; :issue:`4870`.)
 
-  Another change makes the extension load all of OpenSSL's ciphers and digest
+* Another change makes the extension load all of OpenSSL's ciphers and digest
   algorithms so that they're all available.  Some SSL certificates couldn't be
   verified, reporting an "unknown algorithm" error.  (Reported by Beda Kosata,
   and fixed by Antoine Pitrou; :issue:`8484`.)
 
-  The version of OpenSSL being used is now available as the module attributes
+* The version of OpenSSL being used is now available as the module attributes
   :data:`ssl.OPENSSL_VERSION` (a string), :data:`ssl.OPENSSL_VERSION_INFO` (a
   5-tuple), and :data:`ssl.OPENSSL_VERSION_NUMBER` (an integer).  (Added by
   Antoine Pitrou; :issue:`8321`.)
 
-* The :mod:`nntplib` module has a revamped implementation with better bytes and
-  unicode semantics as well as more practical APIs.  These improvements break
-  compatibility with the nntplib version in Python 3.1, which was partly
-  dysfunctional in itself.
+nntp
+----
 
-  (Contributed by Antoine Pitrou in :issue:`9360`)
+The :mod:`nntplib` module has a revamped implementation with better bytes and
+unicode semantics as well as more practical APIs.  These improvements break
+compatibility with the nntplib version in Python 3.1, which was partly
+dysfunctional in itself.
 
-* :class:`http.client.HTTPSConnection`, :class:`urllib.request.HTTPSHandler`
-  and :func:`urllib.request.urlopen` now take optional arguments to allow for
-  server certificate checking against a set of Certificate Authorities,
-  as recommended in public uses of HTTPS.
-  (Added by Antoine Pitrou, :issue:`9003`.)
+(Contributed by Antoine Pitrou in :issue:`9360`)
+
+certificates
+------------
+
+:class:`http.client.HTTPSConnection`, :class:`urllib.request.HTTPSHandler`
+and :func:`urllib.request.urlopen` now take optional arguments to allow for
+server certificate checking against a set of Certificate Authorities,
+as recommended in public uses of HTTPS.
+
+(Added by Antoine Pitrou, :issue:`9003`.)
+
+unittest
+--------
 
 * The command-line call, ``python -m unittest`` can now accept file paths
   instead of module names for running specific tests (:issue:`10620`).  The new
@@ -867,14 +916,20 @@ New, Improved, and Deprecated Modules
 
   (Contributed by Ezio Melotti; :issue:`9424`.)
 
-* The integer methods in the :mod:`random` module now do a better job of
-  producing uniform distributions.  Previously, they used ``int(n*random())``
-  which had a slight bias whenever *n* was not a power of two.  The methods
-  affected are :meth:`~random.Random.randrange`, :meth:`~random.Random.randint`,
-  :meth:`~random.Random.choice`, :meth:`~random.Random.shuffle` and
-  :meth:`~random.Random.sample`.
+random
+------
 
-  (Contributed by Raymond Hettinger; :issue:`9025`.)
+The integer methods in the :mod:`random` module now do a better job of
+producing uniform distributions.  Previously, they used ``int(n*random())``
+which had a slight bias whenever *n* was not a power of two.  The methods
+affected are :meth:`~random.Random.randrange`, :meth:`~random.Random.randint`,
+:meth:`~random.Random.choice`, :meth:`~random.Random.shuffle` and
+:meth:`~random.Random.sample`.
+
+(Contributed by Raymond Hettinger; :issue:`9025`.)
+
+poplib
+------
 
 * :class:`~poplib.POP3_SSL` class now accepts a *context* parameter, which is a
   :class:`ssl.SSLContext` object allowing bundling SSL configuration options,
@@ -882,12 +937,6 @@ New, Improved, and Deprecated Modules
   structure.
 
   (Contributed by Giampaolo Rodolà; :issue:`8807`.)
-
-* :func:`socket.create_connection` now supports the context manager protocol
-  to unconditionally consume :exc:`socket.error` exceptions and to close the
-  socket when done.
-
-  (Contributed by Giampaolo Rodolà; :issue:`9794`.)
 
 * :class:`asyncore.dispatcher` now provides a
   :meth:`~asyncore.dispatcher.handle_accepted()` method
@@ -898,20 +947,26 @@ New, Improved, and Deprecated Modules
 
   (Contributed by Giampaolo Rodolà; :issue:`6706`.)
 
-* The :mod:`tempfile` module has a new context manager,
-  :class:`~tempfile.TemporaryDirectory` which provides easy deterministic
-  cleanup of temporary directories:
+tempfile
+--------
 
-  >>> with tempfile.TemporaryDirectory() as tmpdirname:
-  ...     print 'created temporary directory', tmpdirname
+The :mod:`tempfile` module has a new context manager,
+:class:`~tempfile.TemporaryDirectory` which provides easy deterministic
+cleanup of temporary directories:
 
-  (Contributed by Neil Schemenauer and Nick Coghlan; :issue:`5178`.)
+>>> with tempfile.TemporaryDirectory() as tmpdirname:
+...     print 'created temporary directory', tmpdirname
 
-* The :mod:`inspect` module has a new function :func:`getgenatorstate`
-  to easily identify the current state of a generator as one of
-  ``GEN_CREATED``, ``GEN_RUNNING``, ``GEN_SUSPENDED`` or ``GEN_CLOSED``.
+(Contributed by Neil Schemenauer and Nick Coghlan; :issue:`5178`.)
 
-  (Contributed by Rodolpho Eckhardt and Nick Coghlan, :issue:`10220`.)
+inspect
+-------
+
+The :mod:`inspect` module has a new function :func:`getgenatorstate` to easily
+identify the current state of a generator as one of ``GEN_CREATED``,
+``GEN_RUNNING``, ``GEN_SUSPENDED`` or ``GEN_CLOSED``.
+
+(Contributed by Rodolpho Eckhardt and Nick Coghlan, :issue:`10220`.)
 
 .. XXX: Create a new section for all changes relating to context managers.
 .. XXX: Various ConfigParser changes
@@ -924,71 +979,80 @@ New, Improved, and Deprecated Modules
             - non-UTF8 percent encoding of non-ASCII characters
           Issue 2987 for IPv6 (RFC2732) support in urlparse
 
-* The :mod:`pydoc` module now provides a much improved Web server interface,
-  as well as a new command-line option to automatically open a browser
-  window to display that server.
+pydoc
+-----
 
-  (Contributed by Ron Adam; :issue:`2001`.)
+The :mod:`pydoc` module now provides a much improved Web server interface,
+as well as a new command-line option to automatically open a browser
+window to display that server.
 
-* The new :mod:`sysconfig` module makes it straight-forward to discover
-  installation paths and configuration variables which vary across platforms and
-  installations.
+(Contributed by Ron Adam; :issue:`2001`.)
 
-  The module offers access simple access functions for platform and version
-  information:
+sysconfig
+---------
 
-  * :func:`~sysconfig.get_platform` returning values like *linux-i586* or
-    *macosx-10.6-ppc*.
-  * :func:`~sysconfig.get_python_version` returns a Python version string in
-    the form, "3.2".
+The new :mod:`sysconfig` module makes it straight-forward to discover
+installation paths and configuration variables which vary across platforms and
+installations.
 
-  It also provides access to the paths and variables corresponding to one of
-  seven named schemes used by :mod:`distutils`.  Those include *posix_prefix*,
-  *posix_home*, *posix_user*, *nt*, *nt_user*, *os2*, *os2_home*:
+The module offers access simple access functions for platform and version
+information:
 
-  * :func:`~sysconfig.get_paths` makes a dictionary containing installation paths
-    for the current installation scheme.
-  * :func:`~sysconfig.get_config_vars` returns a dictionary of platform specific
-    variables.
+* :func:`~sysconfig.get_platform` returning values like *linux-i586* or
+  *macosx-10.6-ppc*.
+* :func:`~sysconfig.get_python_version` returns a Python version string in
+  the form, "3.2".
 
-  There is also a convenient command-line interface::
+It also provides access to the paths and variables corresponding to one of
+seven named schemes used by :mod:`distutils`.  Those include *posix_prefix*,
+*posix_home*, *posix_user*, *nt*, *nt_user*, *os2*, *os2_home*:
 
-    C:\Python32>python -m sysconfig
-    Platform: "win32"
-    Python version: "3.2"
-    Current installation scheme: "nt"
+* :func:`~sysconfig.get_paths` makes a dictionary containing installation paths
+  for the current installation scheme.
+* :func:`~sysconfig.get_config_vars` returns a dictionary of platform specific
+  variables.
 
-    Paths:
-            data = "C:\Python32"
-            include = "C:\Python32\Include"
-            platinclude = "C:\Python32\Include"
-            platlib = "C:\Python32\Lib\site-packages"
-            platstdlib = "C:\Python32\Lib"
-            purelib = "C:\Python32\Lib\site-packages"
-            scripts = "C:\Python32\Scripts"
-            stdlib = "C:\Python32\Lib"
+There is also a convenient command-line interface::
 
-    Variables:
-            BINDIR = "C:\Python32"
-            BINLIBDEST = "C:\Python32\Lib"
-            EXE = ".exe"
-            INCLUDEPY = "C:\Python32\Include"
-            LIBDEST = "C:\Python32\Lib"
-            SO = ".pyd"
-            VERSION = "32"
-            abiflags = ""
-            base = "C:\Python32"
-            exec_prefix = "C:\Python32"
-            platbase = "C:\Python32"
-            prefix = "C:\Python32"
-            projectbase = "C:\Python32"
-            py_version = "3.2"
-            py_version_nodot = "32"
-            py_version_short = "3.2"
-            srcdir = "C:\Python32"
-            userbase = "C:\Documents and Settings\Raymond\Application Data\Python"
+  C:\Python32>python -m sysconfig
+  Platform: "win32"
+  Python version: "3.2"
+  Current installation scheme: "nt"
 
-* The :mod:`pdb` debugger module gained a number of usability improvements:
+  Paths:
+          data = "C:\Python32"
+          include = "C:\Python32\Include"
+          platinclude = "C:\Python32\Include"
+          platlib = "C:\Python32\Lib\site-packages"
+          platstdlib = "C:\Python32\Lib"
+          purelib = "C:\Python32\Lib\site-packages"
+          scripts = "C:\Python32\Scripts"
+          stdlib = "C:\Python32\Lib"
+
+  Variables:
+          BINDIR = "C:\Python32"
+          BINLIBDEST = "C:\Python32\Lib"
+          EXE = ".exe"
+          INCLUDEPY = "C:\Python32\Include"
+          LIBDEST = "C:\Python32\Lib"
+          SO = ".pyd"
+          VERSION = "32"
+          abiflags = ""
+          base = "C:\Python32"
+          exec_prefix = "C:\Python32"
+          platbase = "C:\Python32"
+          prefix = "C:\Python32"
+          projectbase = "C:\Python32"
+          py_version = "3.2"
+          py_version_nodot = "32"
+          py_version_short = "3.2"
+          srcdir = "C:\Python32"
+          userbase = "C:\Documents and Settings\Raymond\Application Data\Python"
+
+pdb
+---
+
+The :mod:`pdb` debugger module gained a number of usability improvements:
 
   - :file:`pdb.py` now has a ``-c`` option that executes commands as given in a
     :file:`.pdbrc` script file.
@@ -1027,7 +1091,7 @@ Multi-threading
 * Regular and recursive locks now accept an optional *timeout* argument to their
   :meth:`acquire` method.  (Contributed by Antoine Pitrou; :issue:`7316`.)
 
-  Similarly, :meth:`threading.Semaphore.acquire` also gains a *timeout*
+* Similarly, :meth:`threading.Semaphore.acquire` also gained a *timeout*
   argument.  (Contributed by Torsten Landschoff; :issue:`850728`.)
 
 
