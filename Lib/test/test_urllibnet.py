@@ -13,7 +13,7 @@ import time
 
 class URLTimeoutTest(unittest.TestCase):
 
-    TIMEOUT = 10.0
+    TIMEOUT = 30.0
 
     def setUp(self):
         socket.setdefaulttimeout(self.TIMEOUT)
