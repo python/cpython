@@ -336,7 +336,7 @@ def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
     archive that is being built. If not provided, the current owner and group
     will be used.
 
-    The output tar file will be named 'base_dir' +  ".tar", possibly plus
+    The output tar file will be named 'base_name' +  ".tar", possibly plus
     the appropriate compression extension (".gz", or ".bz2").
 
     Returns the output filename.
@@ -406,7 +406,7 @@ def _call_external_zip(base_dir, zip_filename, verbose=False, dry_run=False):
 def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0, logger=None):
     """Create a zip file from all the files under 'base_dir'.
 
-    The output zip file will be named 'base_dir' + ".zip".  Uses either the
+    The output zip file will be named 'base_name' + ".zip".  Uses either the
     "zipfile" Python module (if available) or the InfoZIP "zip" utility
     (if installed and found on the default search path).  If neither tool is
     available, raises ExecError.  Returns the name of the output zip
