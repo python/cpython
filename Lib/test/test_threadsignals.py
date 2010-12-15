@@ -142,6 +142,9 @@ class ThreadSignals(unittest.TestCase):
         # receive a signal.  Check this by repeatedly interrupting a lock
         # acquire in the main thread, and make sure that the lock acquire times
         # out after the right amount of time.
+        # NOTE: this test only behaves as expected if C signals get delivered
+        # to the main thread.  Otherwise lock.acquire() itself doesn't get
+        # interrupted and the test trivially succeeds.
         self.start = None
         self.end = None
         self.sigs_recvd = 0
@@ -159,7 +162,7 @@ class ThreadSignals(unittest.TestCase):
                 self.end = time.time()
             def send_signals():
                 for _ in range(40):
-                    time.sleep(0.05)
+                    time.sleep(0.02)
                     os.kill(process_pid, signal.SIGUSR1)
                 done.release()
 
@@ -172,7 +175,9 @@ class ThreadSignals(unittest.TestCase):
             # This allows for some timing and scheduling imprecision
             self.assertLess(self.end - self.start, 2.0)
             self.assertGreater(self.end - self.start, 0.3)
-            self.assertEqual(40, self.sigs_recvd)
+            # If the signal is received several times before PyErr_CheckSignals()
+            # is called, the handler will get called less than 40 times.
+            self.assertGreater(self.sigs_recvd, 20)
         finally:
             signal.signal(signal.SIGUSR1, old_handler)
 
