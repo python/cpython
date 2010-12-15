@@ -1518,6 +1518,68 @@ static PyTypeObject defdict_type = {
     PyObject_GC_Del,                    /* tp_free */
 };
 
+/* helper function for Counter  *********************************************/
+
+PyDoc_STRVAR(_count_elements_doc,
+"_count_elements(mapping, iterable) -> None\n\
+\n\
+Count elements in the iterable, updating the mappping");
+
+static PyObject *
+_count_elements(PyObject *self, PyObject *args)
+{
+    PyObject *it, *iterable, *mapping, *oldval;
+    PyObject *newval = NULL;
+    PyObject *key = NULL;
+    PyObject *one = NULL;
+
+    if (!PyArg_UnpackTuple(args, "_count_elements", 2, 2, &mapping, &iterable))
+        return NULL;
+
+    if (!PyDict_Check(mapping)) {
+        PyErr_SetString(PyExc_TypeError,
+            "Expected mapping argument to be a dictionary");
+        return NULL;
+    }
+
+    it = PyObject_GetIter(iterable);
+    if (it == NULL)
+        return NULL;
+    one = PyLong_FromLong(1);
+    if (one == NULL) {
+        Py_DECREF(it);
+        return NULL;
+    }
+    while (1) {
+        key = PyIter_Next(it);
+        if (key == NULL) {
+            if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_StopIteration))
+                PyErr_Clear();
+            break;
+        }
+        oldval = PyDict_GetItem(mapping, key);
+        if (oldval == NULL) {
+            if (PyDict_SetItem(mapping, key, one) == -1)
+                break;
+        } else {
+            newval = PyNumber_Add(oldval, one);
+            if (newval == NULL)
+                break;
+            if (PyDict_SetItem(mapping, key, newval) == -1)
+                break;
+            Py_CLEAR(newval);
+        }
+        Py_DECREF(key);
+    }
+    Py_DECREF(it);
+    Py_XDECREF(key);
+    Py_XDECREF(newval);
+    Py_DECREF(one);
+    if (PyErr_Occurred())
+        return NULL;
+    Py_RETURN_NONE;
+}
+
 /* module level code ********************************************************/
 
 PyDoc_STRVAR(module_doc,
@@ -1526,13 +1588,17 @@ PyDoc_STRVAR(module_doc,
 - defaultdict:  dict subclass with a default value factory\n\
 ");
 
+static struct PyMethodDef module_functions[] = {
+    {"_count_elements", _count_elements,    METH_VARARGS,   _count_elements_doc},
+    {NULL,       NULL}          /* sentinel */
+};
 
 static struct PyModuleDef _collectionsmodule = {
     PyModuleDef_HEAD_INIT,
     "_collections",
     module_doc,
     -1,
-    NULL,
+    module_functions,
     NULL,
     NULL,
     NULL,
