@@ -238,10 +238,13 @@ PyThread_free_lock(PyThread_type_lock aLock)
  * and 0 if the lock was not acquired. This means a 0 is returned
  * if the lock has already been acquired by this thread!
  */
-int
-PyThread_acquire_lock_timed(PyThread_type_lock aLock, PY_TIMEOUT_T microseconds)
+PyLockStatus
+PyThread_acquire_lock_timed(PyThread_type_lock aLock,
+                            PY_TIMEOUT_T microseconds, int intr_flag)
 {
-    int success ;
+    /* Fow now, intr_flag does nothing on Windows, and lock acquires are
+     * uninterruptible.  */
+    PyLockStatus success;
     PY_TIMEOUT_T milliseconds;
 
     if (microseconds >= 0) {
@@ -258,7 +261,13 @@ PyThread_acquire_lock_timed(PyThread_type_lock aLock, PY_TIMEOUT_T microseconds)
     dprintf(("%ld: PyThread_acquire_lock_timed(%p, %lld) called\n",
              PyThread_get_thread_ident(), aLock, microseconds));
 
-    success = aLock && EnterNonRecursiveMutex((PNRMUTEX) aLock, (DWORD) milliseconds) == WAIT_OBJECT_0 ;
+    if (aLock && EnterNonRecursiveMutex((PNRMUTEX)aLock,
+                                        (DWORD)milliseconds) == WAIT_OBJECT_0) {
+        success = PY_LOCK_ACQUIRED;
+    }
+    else {
+        success = PY_LOCK_FAILURE;
+    }
 
     dprintf(("%ld: PyThread_acquire_lock(%p, %lld) -> %d\n",
              PyThread_get_thread_ident(), aLock, microseconds, success));
@@ -268,7 +277,7 @@ PyThread_acquire_lock_timed(PyThread_type_lock aLock, PY_TIMEOUT_T microseconds)
 int
 PyThread_acquire_lock(PyThread_type_lock aLock, int waitflag)
 {
-    return PyThread_acquire_lock_timed(aLock, waitflag ? -1 : 0);
+    return PyThread_acquire_lock_timed(aLock, waitflag ? -1 : 0, 0);
 }
 
 void

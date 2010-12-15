@@ -408,6 +408,9 @@ All methods are executed atomically.
    .. versionchanged:: 3.2
       The *timeout* parameter is new.
 
+   .. versionchanged:: 3.2
+      Lock acquires can now be interrupted by signals on POSIX.
+
 
 .. method:: Lock.release()
 

@@ -1212,6 +1212,12 @@ Multi-threading
 * Similarly, :meth:`threading.Semaphore.acquire` also gained a *timeout*
   argument.  (Contributed by Torsten Landschoff; :issue:`850728`.)
 
+* Regular and recursive lock acquisitions can now be interrupted by signals on
+  platforms using pthreads.  This means that Python programs that deadlock while
+  acquiring locks can be successfully killed by repeatedly sending SIGINT to the
+  process (ie, by pressing Ctl+C in most shells).
+  (Contributed by Reid Kleckner; :issue:`8844`.)
+
 
 Optimizations
 =============

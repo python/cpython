@@ -10,6 +10,9 @@ What's New in Python 3.2 Beta 2?
 Core and Builtins
 -----------------
 
+- Issue #8844: Regular and recursive lock acquisitions can now be interrupted
+  by signals on platforms using pthreads.  Patch by Reid Kleckner.
+
 - Issue #4236: PyModule_Create2 now checks the import machinery directly
   rather than the Py_IsInitialized flag, avoiding a Fatal Python
   error in certain circumstances when an import is done in __del__.
