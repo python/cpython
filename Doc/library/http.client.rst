@@ -405,8 +405,10 @@ HTTPConnection Objects
 
 .. method:: HTTPConnection.set_debuglevel(level)
 
-   Set the debugging level (the amount of debugging output printed). The default
-   debug level is ``0``, meaning no debugging output is printed.
+   Set the debugging level.  The default debug level is ``0``, meaning no
+   debugging output is printed.  Any value greater than ``0`` will cause all
+   currently defined debug output to be printed to stdout.  The ``debuglevel``
+   is passed to any new :class:`HTTPResponse` objects that are created.
 
    .. versionadded:: 3.1
 
