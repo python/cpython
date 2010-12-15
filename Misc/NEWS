@@ -9,6 +9,10 @@ What's New in Python 2.7.2?
 Core and Builtins
 -----------------
 
+- Issue #4236: Py_InitModule4 now checks the import machinery directly
+  rather than the Py_IsInitialized flag, avoiding a Fatal Python
+  error in certain circumstances when an import is done in __del__.
+
 - Issue #10674: Remove unused 'dictmaker' rule from grammar.
 
 - Issue #10596: Fix float.__mod__ to have the same behaviour as
