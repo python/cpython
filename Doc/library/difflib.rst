@@ -359,11 +359,11 @@ The :class:`SequenceMatcher` class has this constructor:
       The *autojunk* parameter.
 
    SequenceMatcher objects get three data attributes: *bjunk* is the
-   set of elements of b for which *isjunk* is True; *bpopular* is the set of non-
-   junk elements considered popular by the heuristic (if it is not disabled);
-   *b2j* is a dict mapping the remaining elements of b to a list of positions where
-   they occur. All three are reset whenever *b* is reset with :meth:`set_seqs`
-   or :meth:`set_seq2`.
+   set of elements of *b* for which *isjunk* is True; *bpopular* is the set of
+   non-junk elements considered popular by the heuristic (if it is not
+   disabled); *b2j* is a dict mapping the remaining elements of *b* to a list
+   of positions where they occur. All three are reset whenever *b* is reset
+   with :meth:`set_seqs` or :meth:`set_seq2`.
 
    .. versionadded:: 3.2
       The *bjunk* and *bpopular* attributes.
