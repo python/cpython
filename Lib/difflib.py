@@ -320,20 +320,22 @@ class SequenceMatcher:
         self.bjunk = junk = set()
         isjunk = self.isjunk
         if isjunk:
-            for elt in list(b2j.keys()):  # using list() since b2j is modified
+            for elt in b2j.keys():
                 if isjunk(elt):
                     junk.add(elt)
-                    del b2j[elt]
+            for elt in junk: # separate loop avoids separate list of keys
+                del b2j[elt]
 
         # Purge popular elements that are not junk
         self.bpopular = popular = set()
         n = len(b)
         if self.autojunk and n >= 200:
             ntest = n // 100 + 1
-            for elt, idxs in list(b2j.items()):
+            for elt, idxs in b2j.items():
                 if len(idxs) > ntest:
                     popular.add(elt)
-                    del b2j[elt]
+            for elt in popular: # ditto; as fast for 1% deletion
+                del b2j[elt]
 
     def isbjunk(self, item):
         "Deprecated; use 'item in SequenceMatcher().bjunk'."

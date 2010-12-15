@@ -12,12 +12,14 @@ class TestWithAscii(unittest.TestCase):
         self.assertEqual(list(sm.get_opcodes()),
             [   ('insert', 0, 0, 0, 1),
                 ('equal', 0, 100, 1, 101)])
+        self.assertEqual(sm.bpopular, set())
         sm = difflib.SequenceMatcher(None, 'b' * 100, 'b' * 50 + 'a' + 'b' * 50)
         self.assertAlmostEqual(sm.ratio(), 0.995, places=3)
         self.assertEqual(list(sm.get_opcodes()),
             [   ('equal', 0, 50, 0, 50),
                 ('insert', 50, 50, 50, 51),
                 ('equal', 50, 100, 51, 101)])
+        self.assertEqual(sm.bpopular, set())
 
     def test_one_delete(self):
         sm = difflib.SequenceMatcher(None, 'a' * 40 + 'c' + 'b' * 40, 'a' * 40 + 'b' * 40)
@@ -26,6 +28,19 @@ class TestWithAscii(unittest.TestCase):
             [   ('equal', 0, 40, 0, 40),
                 ('delete', 40, 41, 40, 40),
                 ('equal', 41, 81, 40, 80)])
+
+    def test_bjunk(self):
+        sm = difflib.SequenceMatcher(isjunk=lambda x: x == ' ',
+                a='a' * 40 + 'b' * 40, b='a' * 44 + 'b' * 40)
+        self.assertEqual(sm.bjunk, set())
+
+        sm = difflib.SequenceMatcher(isjunk=lambda x: x == ' ',
+                a='a' * 40 + 'b' * 40, b='a' * 44 + 'b' * 40 + ' ' * 20)
+        self.assertEqual(sm.bjunk, {' '})
+
+        sm = difflib.SequenceMatcher(isjunk=lambda x: x in [' ', 'b'],
+                a='a' * 40 + 'b' * 40, b='a' * 44 + 'b' * 40 + ' ' * 20)
+        self.assertEqual(sm.bjunk, {' ', 'b'})
 
 
 class TestAutojunk(unittest.TestCase):
@@ -38,10 +53,12 @@ class TestAutojunk(unittest.TestCase):
 
         sm = difflib.SequenceMatcher(None, seq1, seq2)
         self.assertAlmostEqual(sm.ratio(), 0, places=3)
+        self.assertEqual(sm.bpopular, {'b'})
 
         # Now turn the heuristic off
         sm = difflib.SequenceMatcher(None, seq1, seq2, autojunk=False)
         self.assertAlmostEqual(sm.ratio(), 0.9975, places=3)
+        self.assertEqual(sm.bpopular, set())
 
 
 class TestSFbugs(unittest.TestCase):
