@@ -334,6 +334,17 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
 ###  Counter
 ########################################################################
 
+def _count_elements(mapping, iterable):
+    'Tally elements from the iterable.'
+    mapping_get = mapping.get
+    for elem in iterable:
+        mapping[elem] = mapping_get(elem, 0) + 1
+
+try:                                    # Load C helper function if available
+    from _collections import _count_elements
+except ImportError:
+    pass
+
 class Counter(dict):
     '''Dict subclass for counting hashable items.  Sometimes called a bag
     or multiset.  Elements are stored as dictionary keys and their counts
@@ -476,9 +487,7 @@ class Counter(dict):
                 else:
                     dict.update(self, iterable) # fast path when counter is empty
             else:
-                self_get = self.get
-                for elem in iterable:
-                    self[elem] = 1 + self_get(elem, 0)
+                _count_elements(self, iterable)
         if kwds:
             self.update(kwds)
 
