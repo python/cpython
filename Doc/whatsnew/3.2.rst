@@ -452,6 +452,22 @@ Some smaller changes made to the core Python language are:
 
   (See :issue:`4617`.)
 
+* The internal :c:type:`structsequence` tool now creates subclasses of tuple.
+  This means that C generated structures like those returned by :func:`os.stat`,
+  :func:`time.gmtime`, and :func:`sys.version_info` now work like a
+  :term:`named tuple` and are more interoperable with functions and methods that
+  expect a tuple as an argument.  The is a big step forward in making the C
+  structures as flexible as their pure Python counterparts.
+
+  (Suggested by Arfrever Frehtes Taifersar Arahesis and implemented
+  by Benjamin Peterson in :issue:`8413`.)
+
+* Warnings are now easier control.  An :envvar:`PYTHONWARNINGS` environment
+  variable is now available as an alternative to using ``-W`` at the command
+  line.
+
+  (Suggested by Barry Warsaw and implemented by Philip Jenvey in :issue:`7301`.)
+
 * A new warning category, :exc:`ResourceWarning`, has been added.  It is
   emitted when potential issues with resource consumption or cleanup
   are detected.  It is silenced by default in normal release builds, but
@@ -700,6 +716,62 @@ requires a particular :func:`classmethod` or :func:`staticmethod` to be
 implemented.
 
 (Patch submitted by Daniel Urban; :issue:`5867`.)
+
+contextlib
+----------
+
+There is a new and slightly mind-blowing tool
+:class:`~contextlib.ContextDecorator` that is helpful for creating a
+:term:`context manager` that does double-duty as a function decorator.
+
+As a convenience, this new functionality is used by
+:func:`~contextlib.contextmanager` so that no extra effort is needed to support
+both roles.
+
+The basic idea is that both context managers and function decorators can be used
+for pre-action and post-action wrappers.  Context managers wrap a group of
+statements using the :keyword:`with`-statement, and function decorators wrap a
+group of statements enclosed in a function.  So, occasionally there is a need to
+write a pre/post action wrapper that can be used in either role.
+
+For example, it is sometimes useful to wrap functions or groups of statements
+with a logger that can track the time of entry and time of exit.  Rather than
+writing both a function decorator and a context manager for the task, the
+:func:`~contextlib.contextmanager` provides both capabilities in a single
+definition:
+
+>>> import logging
+>>> logging.basicConfig(level=logging.INFO)
+>>> @contextmanager
+... def track_entry_and_exit():
+...     logging.info('Entry')
+...     yield
+...     logging.info('Exit')
+
+Formerly, this would have only been usable as a context manager:
+
+>>> with track_entry_and_exit():
+...     print('Some time consuming activity goes here')
+
+Now, it can be used as a decorator as well:
+
+>>> @track_entry_and_exit
+... def activity():
+...     print('Some time consuming activity goes here'
+
+Trying to fulfill two roles at once places some limitations on the technique.
+Context managers normally have the flexibility to return an argument usable by
+the :keyword:`with`-statement, and function decorators can be constructed to
+accept arguments or to know the name of the function they are enclosing.  Since
+those features of context managers and function decorators are not overlapping,
+those features are not supported.
+
+In the above example, there is not a clean way for the
+:func:`track_entry_and_exit` decorator to know the name of the enclosed
+function.  Likewise, the *track_entry_and_exit* context manager does not have a
+way to return a logging instance for use in the body of enclosed statements.
+
+(Contributed by Michael Foord in :issue:`9110`.)
 
 ftp
 ---
@@ -1169,6 +1241,12 @@ A number of small performance enhancements have been added:
 
   (Patch by Florent Xicluna in :issue:`7622` and :issue:`7462`.)
 
+
+* String to integer conversions now work two "digits" at a time, reducing the
+  number of division and modulo operations.
+
+  (:issue:`6713` by Gawain Bolton, Mark Dickinson, and Victor Stinner.)
+
 There were several other minor optimizations. Set differencing now runs faster
 when one operand is much larger than the other (Patch by Andress Bennetts in
 :issue:`8685`).  The :meth:`array.repeat` method has a faster implementation
@@ -1223,6 +1301,8 @@ variable is not set).
 By default, tarfile uses ``'utf-8'`` encoding on Windows (instead of
 ``'mbcs'``), and the ``'surrogateescape'`` error handler on all operating
 systems.
+
+* Added the *cp720* Arabic DOS encoding (:issue:`1616979`).
 
 
 Documentation
@@ -1281,14 +1361,51 @@ Changes to Python's build process and to the C API include:
 
   (Contributed by Amaury Forgeot D'Arc; :issue:`9210`.)
 
-* Hash values are now values of a new type, Py_hash_t, which is defined to
-  be the same size as a pointer.  Previously they were of type long, which
-  on some 64-bit operating systems is still only 32 bits long.  As a result
-  of this fix, :class:`set` and :class:`dict` can now hold more than ``2**32``
-  entries on builds with 64-bit pointers (previously, they could grow to
-  that size but their performance degraded catastrophically).
+* Hash values are now values of a new type, :c:type:`Py_hash_t`, which is
+  defined to be the same size as a pointer.  Previously they were of type long,
+  which on some 64-bit operating systems is still only 32 bits long.  As a
+  result of this fix, :class:`set` and :class:`dict` can now hold more than
+  ``2**32`` entries on builds with 64-bit pointers (previously, they could grow
+  to that size but their performance degraded catastrophically).
 
-  (Contributed by Benjamin Peterson; :issue:`9778`.)
+  (Suggested by Raymond Hettinger and implemented by Benjamin Peterson;
+  :issue:`9778`.)
+
+* A new macro :c:macro:`Py_VA_COPY` copies the state of the variable argument
+  list.  It is equivalent to C99 *va_copy* but available on all python platforms
+  (:issue:`2443`).
+
+* A new C API function :c:func:`PySys_SetArgvEx` allows an embeddered
+  interpreter to set sys.argv without also modifying :attr:`sys.path`
+  (:issue:`5753`).
+
+* :c:macro:`PyEval_CallObject` is now only available in macro form.  The
+  function declaration, which was kept for backwards compatibility reasons, is
+  now removed -- the macro was introduced in 1997  (:issue:`8276`).
+
+* The is a new function :c:func:`PyLong_AsLongLongAndOverflow` which
+  is analogous to :c:func:`PyLong_AsLongAndOverflow`.  The both serve to
+  convert Python :class:`int` into a native fixed-width type while providing
+  detection of cases where the conversion won't fit (:issue:`7767`).
+
+* The :c:func:`PyUnicode_CompareWithASCIIString` now returns *not equal*
+  if the Python string in *NUL* terminated.
+
+* There is a new function :c:func:`PyErr_NewExceptionWithDoc` that is
+  like :c:func:`PyErr_NewException` but allows a docstring to be specified.
+  This lets C exceptions have the same self-documenting capabilities as
+  their pure Python counterparts (:issue:`7033`).
+
+* When compiled with the ``--with-valgrind`` option, the pymalloc
+  allocator will be automatically disabled when running under Valgrind.  This
+  gives improved memory leak detection when running under Valgrind, while taking
+  advantage of pymalloc at other times (:issue:`2422`).
+
+* Removed the "O?" format from the *PyArg_Parse* functions.  The format is no
+  longer used and it had never been documented (:issue:`8837`).
+
+There were a number of other small changes to the C-API.  See the
+:file:`Misc/NEWS` file for a complete list.
 
 
 Porting to Python 3.2
