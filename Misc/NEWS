@@ -43,12 +43,17 @@ Library
   OSError exception when The OS had been told to ignore SIGCLD in our process
   or otherwise not wait for exiting child processes.
 
-
 Tests
 -----
 
 - Issue #775964: test_grp now skips YP/NIS entries instead of failing when
   encountering them.
+
+Tools/Demos
+-----------
+
+- Issue #10706: Remove outdated script runtests.sh.  Either ``make test``
+  or ``python -m test`` should be used instead.
 
 
 What's New in Python 3.2 Beta 1?
