@@ -419,14 +419,6 @@ Some smaller changes made to the core Python language are:
 
   (Added by Antoine Pitrou; :issue:`9757`.)
 
-* Mark Dickinson crafted an elegant and efficient scheme for assuring that
-  different numeric datatypes will have the same hash value whenever their
-  actual values are equal::
-
-   >>> assert hash(Fraction(3, 2)) == hash(1.5) == \
-              hash(Decimal("1.5")) == hash(complex(1.5, 0))
-
-  (See :issue:`8188`.)
 
 * Previously it was illegal to delete a name from the local namespace if it
   occurs as a free variable in a nested block::
@@ -772,6 +764,43 @@ function.  Likewise, the *track_entry_and_exit* context manager does not have a
 way to return a logging instance for use in the body of enclosed statements.
 
 (Contributed by Michael Foord in :issue:`9110`.)
+
+decimal and fractions
+---------------------
+
+Mark Dickinson crafted an elegant and efficient scheme for assuring that
+different numeric datatypes will have the same hash value whenever their actual
+values are equal (:issue:`8188`)::
+
+   >>> assert hash(Fraction(3, 2)) == hash(1.5) == \
+              hash(Decimal("1.5")) == hash(complex(1.5, 0))
+
+An early decision to limit the inter-operability of various numeric types has
+been relaxed.  It is still unsupported (and ill-advised) to to have implicit
+mixing in arithmetic expressions such as ``Decimal('1.1') + float('1.1')``
+because the latter loses information in the process of constructing the binary
+float.  However, since existing floating point value can be converted losslessly
+to either a decimal or rational representation, it makes sense to add them to
+the constructor and to support mixed-type comparisons.
+
+* The :class:`decimal.Decimal` contructor now accepts :class:`float` objects
+  directly so there in no longer a need to use the :meth:`~decimal.Decimal.from_float`
+  method.
+
+* Mixed type comparisons are now fully supported so that
+  :class:`~decimal.Decimal` objects can be directly compared with :class:`float`
+  and :class:`fractions.Fraction`.
+
+Similar changes were made to :class:`fractions.Fraction` so that the
+:meth:`~fractions.Fraction.from_float()` and :meth:`~fractions.Fraction.from_decimal`
+methods are no longer needed.
+
+Another useful change for the :mod:`decimal` module is that the
+:attr:`Context.clamp` attribute is now public.  This is useful in creating
+contexts that correspond to the decimal interchange formats specified in IEEE
+754 (see :issue:`8540`).
+
+(Contributed by Mark Dickinson.)
 
 ftp
 ---
