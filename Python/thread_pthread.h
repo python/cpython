@@ -316,16 +316,17 @@ fix_status(int status)
     return (status == -1) ? errno : status;
 }
 
-int
-PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds)
+PyLockStatus
+PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
+                            int intr_flag)
 {
-    int success;
+    PyLockStatus success;
     sem_t *thelock = (sem_t *)lock;
     int status, error = 0;
     struct timespec ts;
 
-    dprintf(("PyThread_acquire_lock_timed(%p, %lld) called\n",
-             lock, microseconds));
+    dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) called\n",
+             lock, microseconds, intr_flag));
 
     if (microseconds > 0)
         MICROSECONDS_TO_TIMESPEC(microseconds, ts);
@@ -336,31 +337,36 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds)
             status = fix_status(sem_trywait(thelock));
         else
             status = fix_status(sem_wait(thelock));
-    } while (status == EINTR); /* Retry if interrupted by a signal */
+        /* Retry if interrupted by a signal, unless the caller wants to be
+           notified.  */
+    } while (!intr_flag && status == EINTR);
 
-    if (microseconds > 0) {
-        if (status != ETIMEDOUT)
-            CHECK_STATUS("sem_timedwait");
-    }
-    else if (microseconds == 0) {
-        if (status != EAGAIN)
-            CHECK_STATUS("sem_trywait");
-    }
-    else {
-        CHECK_STATUS("sem_wait");
+    /* Don't check the status if we're stopping because of an interrupt.  */
+    if (!(intr_flag && status == EINTR)) {
+        if (microseconds > 0) {
+            if (status != ETIMEDOUT)
+                CHECK_STATUS("sem_timedwait");
+        }
+        else if (microseconds == 0) {
+            if (status != EAGAIN)
+                CHECK_STATUS("sem_trywait");
+        }
+        else {
+            CHECK_STATUS("sem_wait");
+        }
     }
 
-    success = (status == 0) ? 1 : 0;
+    if (status == 0) {
+        success = PY_LOCK_ACQUIRED;
+    } else if (intr_flag && status == EINTR) {
+        success = PY_LOCK_INTR;
+    } else {
+        success = PY_LOCK_FAILURE;
+    }
 
-    dprintf(("PyThread_acquire_lock_timed(%p, %lld) -> %d\n",
-             lock, microseconds, success));
+    dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) -> %d\n",
+             lock, microseconds, intr_flag, success));
     return success;
-}
-
-int
-PyThread_acquire_lock(PyThread_type_lock lock, int waitflag)
-{
-    return PyThread_acquire_lock_timed(lock, waitflag ? -1 : 0);
 }
 
 void
@@ -436,21 +442,25 @@ PyThread_free_lock(PyThread_type_lock lock)
     free((void *)thelock);
 }
 
-int
-PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds)
+PyLockStatus
+PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
+                            int intr_flag)
 {
-    int success;
+    PyLockStatus success;
     pthread_lock *thelock = (pthread_lock *)lock;
     int status, error = 0;
 
-    dprintf(("PyThread_acquire_lock_timed(%p, %lld) called\n",
-             lock, microseconds));
+    dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) called\n",
+             lock, microseconds, intr_flag));
 
     status = pthread_mutex_lock( &thelock->mut );
     CHECK_STATUS("pthread_mutex_lock[1]");
-    success = thelock->locked == 0;
 
-    if (!success && microseconds != 0) {
+    if (thelock->locked == 0) {
+        success = PY_LOCK_ACQUIRED;
+    } else if (microseconds == 0) {
+        success = PY_LOCK_FAILURE;
+    } else {
         struct timespec ts;
         if (microseconds > 0)
             MICROSECONDS_TO_TIMESPEC(microseconds, ts);
@@ -458,7 +468,8 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds)
 
         /* mut must be locked by me -- part of the condition
          * protocol */
-        while (thelock->locked) {
+        success = PY_LOCK_FAILURE;
+        while (success == PY_LOCK_FAILURE) {
             if (microseconds > 0) {
                 status = pthread_cond_timedwait(
                     &thelock->lock_released,
@@ -473,23 +484,28 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds)
                     &thelock->mut);
                 CHECK_STATUS("pthread_cond_wait");
             }
+
+            if (intr_flag && status == 0 && thelock->locked) {
+                /* We were woken up, but didn't get the lock.  We probably received
+                 * a signal.  Return PY_LOCK_INTR to allow the caller to handle
+                 * it and retry.  */
+                success = PY_LOCK_INTR;
+                break;
+            } else if (status == 0 && !thelock->locked) {
+                success = PY_LOCK_ACQUIRED;
+            } else {
+                success = PY_LOCK_FAILURE;
+            }
         }
-        success = (status == 0);
     }
-    if (success) thelock->locked = 1;
+    if (success == PY_LOCK_ACQUIRED) thelock->locked = 1;
     status = pthread_mutex_unlock( &thelock->mut );
     CHECK_STATUS("pthread_mutex_unlock[1]");
 
-    if (error) success = 0;
-    dprintf(("PyThread_acquire_lock_timed(%p, %lld) -> %d\n",
-             lock, microseconds, success));
+    if (error) success = PY_LOCK_FAILURE;
+    dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) -> %d\n",
+             lock, microseconds, intr_flag, success));
     return success;
-}
-
-int
-PyThread_acquire_lock(PyThread_type_lock lock, int waitflag)
-{
-    return PyThread_acquire_lock_timed(lock, waitflag ? -1 : 0);
 }
 
 void
@@ -514,6 +530,12 @@ PyThread_release_lock(PyThread_type_lock lock)
 }
 
 #endif /* USE_SEMAPHORES */
+
+int
+PyThread_acquire_lock(PyThread_type_lock lock, int waitflag)
+{
+    return PyThread_acquire_lock_timed(lock, waitflag ? -1 : 0, /*intr_flag=*/0);
+}
 
 /* set the thread stack size.
  * Return 0 if size is valid, -1 if size is invalid,

@@ -40,6 +40,58 @@ lock_dealloc(lockobject *self)
     PyObject_Del(self);
 }
 
+/* Helper to acquire an interruptible lock with a timeout.  If the lock acquire
+ * is interrupted, signal handlers are run, and if they raise an exception,
+ * PY_LOCK_INTR is returned.  Otherwise, PY_LOCK_ACQUIRED or PY_LOCK_FAILURE
+ * are returned, depending on whether the lock can be acquired withing the
+ * timeout.
+ */
+static PyLockStatus
+acquire_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds)
+{
+    PyLockStatus r;
+    _PyTime_timeval curtime;
+    _PyTime_timeval endtime;
+
+    if (microseconds > 0) {
+        _PyTime_gettimeofday(&endtime);
+        endtime.tv_sec += microseconds / (1000 * 1000);
+        endtime.tv_usec += microseconds % (1000 * 1000);
+    }
+
+
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        r = PyThread_acquire_lock_timed(lock, microseconds, 1);
+        Py_END_ALLOW_THREADS
+
+        if (r == PY_LOCK_INTR) {
+            /* Run signal handlers if we were interrupted.  Propagate
+             * exceptions from signal handlers, such as KeyboardInterrupt, by
+             * passing up PY_LOCK_INTR.  */
+            if (Py_MakePendingCalls() < 0) {
+                return PY_LOCK_INTR;
+            }
+
+            /* If we're using a timeout, recompute the timeout after processing
+             * signals, since those can take time.  */
+            if (microseconds >= 0) {
+                _PyTime_gettimeofday(&curtime);
+                microseconds = ((endtime.tv_sec - curtime.tv_sec) * 1000000 +
+                                (endtime.tv_usec - curtime.tv_usec));
+
+                /* Check for negative values, since those mean block forever.
+                 */
+                if (microseconds <= 0) {
+                    r = PY_LOCK_FAILURE;
+                }
+            }
+        }
+    } while (r == PY_LOCK_INTR);  /* Retry if we were interrupted. */
+
+    return r;
+}
+
 static PyObject *
 lock_PyThread_acquire_lock(lockobject *self, PyObject *args, PyObject *kwds)
 {
@@ -47,7 +99,7 @@ lock_PyThread_acquire_lock(lockobject *self, PyObject *args, PyObject *kwds)
     int blocking = 1;
     double timeout = -1;
     PY_TIMEOUT_T microseconds;
-    int r;
+    PyLockStatus r;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|id:acquire", kwlist,
                                      &blocking, &timeout))
@@ -77,11 +129,12 @@ lock_PyThread_acquire_lock(lockobject *self, PyObject *args, PyObject *kwds)
         microseconds = (PY_TIMEOUT_T) timeout;
     }
 
-    Py_BEGIN_ALLOW_THREADS
-    r = PyThread_acquire_lock_timed(self->lock_lock, microseconds);
-    Py_END_ALLOW_THREADS
+    r = acquire_timed(self->lock_lock, microseconds);
+    if (r == PY_LOCK_INTR) {
+        return NULL;
+    }
 
-    return PyBool_FromLong(r);
+    return PyBool_FromLong(r == PY_LOCK_ACQUIRED);
 }
 
 PyDoc_STRVAR(acquire_doc,
@@ -93,7 +146,7 @@ locked (even by the same thread), waiting for another thread to release\n\
 the lock, and return None once the lock is acquired.\n\
 With an argument, this will only block if the argument is true,\n\
 and the return value reflects whether the lock is acquired.\n\
-The blocking operation is not interruptible.");
+The blocking operation is interruptible.");
 
 static PyObject *
 lock_PyThread_release_lock(lockobject *self)
@@ -218,7 +271,7 @@ rlock_acquire(rlockobject *self, PyObject *args, PyObject *kwds)
     double timeout = -1;
     PY_TIMEOUT_T microseconds;
     long tid;
-    int r = 1;
+    PyLockStatus r = PY_LOCK_ACQUIRED;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|id:acquire", kwlist,
                                      &blocking, &timeout))
@@ -265,17 +318,18 @@ rlock_acquire(rlockobject *self, PyObject *args, PyObject *kwds)
         if (microseconds == 0) {
             Py_RETURN_FALSE;
         }
-        Py_BEGIN_ALLOW_THREADS
-        r = PyThread_acquire_lock_timed(self->rlock_lock, microseconds);
-        Py_END_ALLOW_THREADS
+        r = acquire_timed(self->rlock_lock, microseconds);
     }
-    if (r) {
+    if (r == PY_LOCK_ACQUIRED) {
         assert(self->rlock_count == 0);
         self->rlock_owner = tid;
         self->rlock_count = 1;
     }
+    else if (r == PY_LOCK_INTR) {
+        return NULL;
+    }
 
-    return PyBool_FromLong(r);
+    return PyBool_FromLong(r == PY_LOCK_ACQUIRED);
 }
 
 PyDoc_STRVAR(rlock_acquire_doc,
@@ -287,7 +341,7 @@ and another thread holds the lock, the method will return False\n\
 immediately.  If `blocking` is True and another thread holds\n\
 the lock, the method will wait for the lock to be released,\n\
 take it and then return True.\n\
-(note: the blocking operation is not interruptible.)\n\
+(note: the blocking operation is interruptible.)\n\
 \n\
 In all other cases, the method will return True immediately.\n\
 Precisely, if the current thread already holds the lock, its\n\
