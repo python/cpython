@@ -21,6 +21,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #9558: Fix distutils.command.build_ext with VS 8.0.
+
 - Issue #10695: passing the port as a string value to telnetlib no longer
   causes debug mode to fail.
 
