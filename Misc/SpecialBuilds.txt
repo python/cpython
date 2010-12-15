@@ -1,7 +1,12 @@
 This file describes some special Python build types enabled via
 compile-time preprocessor defines.
 
-It is best to define these options in the EXTRA_CFLAGS make variable;
+IMPORTANT: if you want to build a debug-enabled Python, it is recommended
+that you use ``./configure --with-pydebug``, rather than the options listed
+here.
+
+However, if you wish to define some of these options individually, it is best
+to define them in the EXTRA_CFLAGS make variable;
 ``make EXTRA_CFLAGS="-DPy_REF_DEBUG"``.
 
 ---------------------------------------------------------------------------
