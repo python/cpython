@@ -17,71 +17,119 @@ or from the command line.
 
 .. _trace-cli:
 
-Command Line Usage
+Command-Line Usage
 ------------------
 
 The :mod:`trace` module can be invoked from the command line.  It can be as
 simple as ::
 
-   python -m trace --count somefile.py ...
+   python -m trace --count -C . somefile.py ...
 
-The above will generate annotated listings of all Python modules imported during
-the execution of :file:`somefile.py`.
+The above will execute :file:`somefile.py` and generate annotated listings of all
+Python modules imported during the execution into the current directory.
 
-The following command-line arguments are supported:
+.. program:: trace
 
-:option:`--trace`, :option:`-t`
+.. cmdoption:: --help
+
+   Display usage and exit.
+
+.. cmdoption:: --version
+
+   Display the version of the module and exit.
+
+Main options
+^^^^^^^^^^^^
+
+At least one of the following options must be specified when invoking :mod:`trace`.
+The :option:`--listfuncs <-l>` option is mutually exclusive with the
+:option:`--trace <-t>` and :option:`--counts <-c>` options . When :option:`--listfuncs <-l>`
+is provided, neither :option:`--counts <-c>` nor :option:`--trace <-t>` are accepted,
+and vice versa.
+
+.. program:: trace
+
+.. cmdoption:: -c, --count
+
+   Produce a set of annotated listing files upon program completion that shows
+   how many times each statement was executed.
+   See also :option:`--coverdir <-C>`, :option:`--file <-f>`,
+   :option:`--no-report <-R>` below.
+
+.. cmdoption:: -t, --trace
+
    Display lines as they are executed.
 
-:option:`--count`, :option:`-c`
-   Produce a set of  annotated listing files upon program completion that shows how
-   many times each statement was executed.
+.. cmdoption:: -l, --listfuncs
 
-:option:`--report`, :option:`-r`
+   Display the functions executed by running the program.
+
+.. cmdoption:: -r, --report
+
    Produce an annotated list from an earlier program run that used the
-   :option:`--count` and :option:`--file` arguments.
+   :option:`--count <-c>` and :option:`--file <-f>` option. Do not execute any code.
 
-:option:`--no-report`, :option:`-R`
-   Do not generate annotated listings.  This is useful if you intend to make
-   several runs with :option:`--count` then produce a single set of annotated
-   listings at the end.
+.. cmdoption:: -T, --trackcalls
 
-:option:`--listfuncs`, :option:`-l`
-   List the functions executed by running the program.
+   Display the calling relationships exposed by running the program.
 
-:option:`--trackcalls`, :option:`-T`
-   Generate calling relationships exposed by running the program.
+Modifiers
+^^^^^^^^^
 
-:option:`--file`, :option:`-f`
-   Name a file containing (or to contain) counts.
+.. program:: trace
 
-:option:`--coverdir`, :option:`-C`
-   Name a directory in which to save annotated listing files.
+.. cmdoption:: -f, --file=<file>
 
-:option:`--missing`, :option:`-m`
+   Name of a file to accumulate counts over several tracing runs. Should be used
+   with the :option:`--count <-c>` option.
+
+.. cmdoption:: -C, --coverdir=<dir>
+
+   Directory where the report files go. The coverage report for
+   ``package.module`` is written to file :file:`{dir}/{package}/{module}.cover`.
+
+.. cmdoption:: -m, --missing
+
    When generating annotated listings, mark lines which were not executed with
-   '``>>>>>>``'.
+   ``>>>>>>``.
 
-:option:`--summary`, :option:`-s`
-   When using :option:`--count` or :option:`--report`, write a brief summary to
-   stdout for each file processed.
+.. cmdoption:: -s, --summary
 
-:option:`--ignore-module`
-   Accepts comma separated list of module names. Ignore each of the named
-   module and its submodules (if it is a package).  May be given
-   multiple times.
+   When using :option:`--count <-c>` or :option:`--report <-r>`, write a brief
+   summary to stdout for each file processed.
 
-:option:`--ignore-dir`
-   Ignore all modules and packages in the named directory and subdirectories
-   (multiple directories can be joined by os.pathsep).  May be given multiple
-   times.
+.. cmdoption:: -R, --no-report
 
+   Do not generate annotated listings.  This is useful if you intend to make
+   several runs with :option:`--count <-c>`, and then produce a single set of
+   annotated listings at the end.
+
+.. cmdoption:: -g, --timing
+
+   Prefix each line with the time since the program started. Only used while
+   tracing.
+
+Filters
+^^^^^^^
+
+These options may be repeated multiple times.
+
+.. program:: trace
+
+.. cmdoption:: --ignore-module=<mod>
+
+   Ignore each of the given module names and its submodules (if it is a package).
+   The argument can be a list of names separated by a comma.
+
+.. cmdoption:: --ignore-dir=<dir>
+
+   Ignore all modules and packages in the named directory and subdirectories.
+   The argument can be a list of directories separated by :data:`os.pathsep`.
 
 .. _trace-api:
 
-Programming Interface
----------------------
-
+Programmatic Interface
+----------------------
 
 .. class:: Trace(count=1, trace=1, countfuncs=0, countcallers=0, ignoremods=(), ignoredirs=(), infile=None, outfile=None, timing=False)
 
@@ -91,29 +139,50 @@ Programming Interface
    called during the run.  *countcallers* enables call relationship tracking.
    *ignoremods* is a list of modules or packages to ignore.  *ignoredirs* is a list
    of directories whose modules or packages should be ignored.  *infile* is the
-   file from which to read stored count information.  *outfile* is a file in which
-   to write updated count information. *timing* enables a timestamp relative
-   to when tracing was started to be displayed.
-
+   name of the file from which to read stored count information.  *outfile* is
+   the name of the file in which to write updated count information. *timing*
+   enables a timestamp relative to when tracing was started to be displayed.
 
 .. method:: Trace.run(cmd)
 
-   Run *cmd* under control of the Trace object with the current tracing parameters.
-
+   Execute the command and gather statistics from the execution with
+   the current tracing parameters.
+   *cmd* must be a string or code object, suitable for passing into :func:`exec`.
 
 .. method:: Trace.runctx(cmd, globals=None, locals=None)
 
-   Run *cmd* under control of the Trace object with the current tracing parameters
-   in the defined global and local environments.  If not defined, *globals* and
-   *locals* default to empty dictionaries.
-
+   Execute the command and gather statistics from the execution with
+   the current tracing parameters, in the defined global and local environments.
+   If not defined, *globals* and *locals* default to empty dictionaries.
 
 .. method:: Trace.runfunc(func, *args, **kwds)
 
    Call *func* with the given arguments under control of the :class:`Trace` object
    with the current tracing parameters.
 
-This is a simple example showing the use of this module::
+.. method:: Trace.results()
+
+   Return a :class:`CoverageResults` object that contains the cumulative results
+   of all previous calls to ``run``, ``runctx`` and ``runfunc`` for the given
+   :class:`Trace` instance. Does not reset the accumulated trace results.
+
+.. class:: CoverageResults
+
+   A container for coverage results, created by :meth:`Trace.results`. Should not
+   be created directly by the user.
+
+.. method:: CoverageResults.update(other)
+
+   Merge in data from another :class:`CoverageResults` object.
+
+.. method:: CoverageResults.write_results(show_missing=True, summary=False, coverdir=None)
+
+   Write coverage results. Set *show_missing* to show lines that had no hits.
+   Set *summary* to include in the output the coverage summary per module. *coverdir*
+   specifies the directory into which the coverage result files will be output.
+   If ``None``, the results for each source file are placed in its directory.
+
+A simple example demonstrating the use of the programmatic interface::
 
    import sys
    import trace
