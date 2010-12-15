@@ -634,6 +634,22 @@ New, Improved, and Deprecated Modules
 
   (Contributed by Raymond Hettinger.)
 
+* The :class:`collections.OrderedDict` class has a new method
+  :meth:`~collections.OrderedDict.move_to_end` which takes an existing key and
+  moves it to either the beginning or end of an ordered sequence.  When the
+  dictionary sequence is being used as a queue, these operations correspond to
+  "move to the front of the line" or "move to the back of the line":
+
+  >>> d = OrderedDict.fromkeys(['a', 'b', 'X', 'd', 'e'])
+  >>> list(d)
+  ['a', 'b', 'X', 'd', 'e']
+  >>> d.move_to_end('X', last=True)
+  >>> list(d)
+  ['a', 'b', 'd', 'e', 'X']
+  >>> d.move_to_end('X', last=False)
+  >>> list(d)
+  ['X', 'a', 'b', 'd', 'e']
+
 * The :mod:`datetime` module has a new type :class:`~datetime.timezone` that
   implements the :class:`~datetime.tzinfo` interface by returning a fixed UTC
   offset and timezone name. This makes it easier to create timezone aware
@@ -850,6 +866,15 @@ New, Improved, and Deprecated Modules
   the :mod:`unittest` documentation.
 
   (Contributed by Ezio Melotti; :issue:`9424`.)
+
+* The integer methods in the :mod:`random` module now do a better job of
+  producing uniform distributions.  Previously, they used ``int(n*random())``
+  which had a slight bias whenever *n* was not a power of two.  The methods
+  affected are :meth:`~random.Random.randrange`, :meth:`~random.Random.randint`,
+  :meth:`~random.Random.choice`, :meth:`~random.Random.shuffle` and
+  :meth:`~random.Random.sample`.
+
+  (Contributed by Raymond Hettinger; :issue:`9025`.)
 
 * :class:`~poplib.POP3_SSL` class now accepts a *context* parameter, which is a
   :class:`ssl.SSLContext` object allowing bundling SSL configuration options,
@@ -1207,13 +1232,13 @@ require changes to your code:
   instead; the new type has a well-defined interface for passing typing safety
   information and a less complicated signature for calling a destructor.
 
- * The :func:`sys.setfilesystemencoding` function was removed because
-   it had a flawed design.
+* The :func:`sys.setfilesystemencoding` function was removed because
+  it had a flawed design.
 
- * The :func:`random.seed` function and method now performing salting for
-   string seeds.  To access the previous version of *seed* in order to
-   reproduce Python 3.1 sequences, set the *version* argument to *1*,
-   ``random.seed(s, version=1)``.
+* The :func:`random.seed` function and method now salt string seeds with an
+  sha512 hash function.  To access the previous version of *seed* in order to
+  reproduce Python 3.1 sequences, set the *version* argument to *1*,
+  ``random.seed(s, version=1)``.
 
 * The previously deprecated :func:`string.maketrans` function has been removed
   in favor of the static methods, :meth:`bytes.maketrans` and
