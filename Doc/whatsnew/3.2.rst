@@ -515,18 +515,18 @@ Some smaller changes made to the core Python language are:
 New, Improved, and Deprecated Modules
 =====================================
 
-Python's standard library is now receiving significant maintenance efforts
-and quality improvements.
+Python's standard library has undergone significant maintenance efforts and
+quality improvements.
 
 The biggest news for Python 3.2 is that the :mod:`email` package and
-:mod:`nntplib` modules now work correctly with Python 3.2's bytes/text model.
+:mod:`nntplib` modules now work correctly with the bytes/text model in Python 3.
 For the first time, there is correct handling of inputs with mixed encodings.
 
 Another significant win is the addition of substantially better support for
 *SSL* connections and security certificates.
 
-In addition, many more functions and classes now have a :term:`context manager`
-to support convenient and reliable resource clean-up using the
+In addition, more functions and classes now have a :term:`context manager` to
+support convenient and reliable resource clean-up using the
 :keyword:`with`-statement.
 
 email
@@ -930,10 +930,13 @@ random
 ------
 
 The integer methods in the :mod:`random` module now do a better job of producing
-uniform distributions.  Previously, they used ``int(n*random())`` which had a
-slight bias whenever *n* was not a power of two.  The functions and methods
-affected are :func:`~random.randrange`, :func:`~random.randint`,
-:func:`~random.choice`, :func:`~random.shuffle` and :func:`~random.sample`.
+uniform distributions.  Previously, they computed selections with
+``int(n*random())`` which had a slight bias whenever *n* was not a power of two.
+Now, multiple selections are made from a range upto the next power of two and a
+selection is kept only when it falls within the range ``0 <= x < n``.  The
+functions and methods affected are :func:`~random.randrange`,
+:func:`~random.randint`, :func:`~random.choice`, :func:`~random.shuffle` and
+:func:`~random.sample`.
 
 (Contributed by Raymond Hettinger; :issue:`9025`.)
 
@@ -1057,21 +1060,20 @@ pdb
 
 The :mod:`pdb` debugger module gained a number of usability improvements:
 
-  - :file:`pdb.py` now has a ``-c`` option that executes commands as given in a
-    :file:`.pdbrc` script file.
-  - A :file:`.pdbrc` script file can contain ``continue`` and ``next`` commands
-    that continue debugging.
-  - The :class:`Pdb` class constructor now accepts a *nosigint* argument.
-  - new commands: ``l(list)``, ``ll(long list`` and ``source`` for
-    listing source code.
-  - new commands: ``display`` and ``undisplay`` for showing or hiding
-    the value of an expression if it has changed.
-  - new command: ``interact`` for starting an interactive interpreter containing
-    the global and local  names found in the current scope.
-  - breakpoints can be cleared by breakpoint number
+* :file:`pdb.py` now has a ``-c`` option that executes commands as given in a
+  :file:`.pdbrc` script file.
+* A :file:`.pdbrc` script file can contain ``continue`` and ``next`` commands
+  that continue debugging.
+* The :class:`Pdb` class constructor now accepts a *nosigint* argument.
+* new commands: ``l(list)``, ``ll(long list`` and ``source`` for
+  listing source code.
+* new commands: ``display`` and ``undisplay`` for showing or hiding
+  the value of an expression if it has changed.
+* new command: ``interact`` for starting an interactive interpreter containing
+  the global and local  names found in the current scope.
+* breakpoints can be cleared by breakpoint number
 
 
-.. XXX: Create a new section for all changes relating to context managers.
 .. XXX: Various ConfigParser changes
 .. XXX: Mention urllib.parse changes
           Issue 9873 (Nick Coghlan):
