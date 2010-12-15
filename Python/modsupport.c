@@ -34,8 +34,9 @@ Py_InitModule4(const char *name, PyMethodDef *methods, const char *doc,
 {
     PyObject *m, *d, *v, *n;
     PyMethodDef *ml;
-    if (!Py_IsInitialized())
-        Py_FatalError("Interpreter not initialized (version mismatch?)");
+    PyInterpreterState *interp = PyThreadState_Get()->interp;
+    if (interp->modules == NULL)
+        Py_FatalError("Python import machinery not initialized");
     if (module_api_version != PYTHON_API_VERSION) {
         char message[512];
         PyOS_snprintf(message, sizeof(message),
