@@ -515,6 +515,20 @@ Some smaller changes made to the core Python language are:
 New, Improved, and Deprecated Modules
 =====================================
 
+Python's standard library is now receiving significant maintenance efforts
+and quality improvements.
+
+The biggest news for Python 3.2 is that the :mod:`email` package and
+:mod:`nntplib` modules now work correctly with Python 3.2's bytes/text model.
+For the first time, there is correct handling of inputs with mixed encodings.
+
+Another significant win is the addition of substantially better support for
+*SSL* connections and security certificates.
+
+In addition, many more functions and classes now have a :term:`context manager`
+to support convenient and reliable resource clean-up using the
+:keyword:`with`-statement.
+
 email
 -----
 
