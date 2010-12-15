@@ -1161,7 +1161,7 @@ not bother to return a value of the same type as its argument, so e.g., ``not
 'foo'`` yields ``False``, not ``''``.)
 
 
-Conditional Expressions
+Conditional expressions
 =======================
 
 .. index::
