@@ -1,4 +1,3 @@
-
 :mod:`compileall` --- Byte-compile Python libraries
 ===================================================
 
@@ -50,14 +49,14 @@ compile Python sources.
 
    Expand list with its content (file and directory names).
 
-.. versionadded:: 2.7
-   The ``-i``  option.
+.. versionchanged:: 2.7
+   Added the ``-i``  option.
 
 
 Public functions
 ----------------
 
-.. function:: compile_dir(dir[, maxlevels[, ddir[, force[,  rx[, quiet]]]]])
+.. function:: compile_dir(dir[, maxlevels[, ddir[, force[, rx[, quiet]]]]])
 
    Recursively descend the directory tree named by *dir*, compiling all :file:`.py`
    files along the way.  The *maxlevels* parameter is used to limit the depth of
@@ -71,6 +70,23 @@ Public functions
 
    If *quiet* is true, nothing is printed to the standard output in normal
    operation.
+
+
+.. function:: compile_file(fullname[, ddir[, force[, rx[, quiet]]]])
+
+   Compile the file with path *fullname*.  If *ddir* is given, it is used as the
+   base path from  which the filename used in error messages will be generated.
+   If *force* is true, modules are re-compiled even if the timestamp is up to
+   date.
+
+   If *rx* is given, it specifies a regular expression which, if matched, will
+   prevent compilation; that expression is searched for in the full path.
+
+   If *quiet* is true, nothing is printed to the standard output in normal
+   operation.
+
+   .. versionadded:: 2.7
+
 
 .. function:: compile_path([skip_curdir[, maxlevels[, force]]])
 
