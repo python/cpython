@@ -41,25 +41,25 @@ produced for that file.
    executed on that occasion.  Use an ``if __name__ == '__main__':`` guard to
    only execute code when a file is invoked as a script and not just imported.
 
-Specifying a :option:`-w` flag before the argument will cause HTML documentation
+Specifying a ``-w`` flag before the argument will cause HTML documentation
 to be written out to a file in the current directory, instead of displaying text
 on the console.
 
-Specifying a :option:`-k` flag before the argument will search the synopsis
+Specifying a ``-k`` flag before the argument will search the synopsis
 lines of all available modules for the keyword given as the argument, again in a
 manner similar to the Unix :program:`man` command.  The synopsis line of a
 module is the first line of its documentation string.
 
 You can also use :program:`pydoc` to start an HTTP server on the local machine
-that will serve documentation to visiting Web browsers. :program:`pydoc`
-:option:`-p 1234` will start a HTTP server on port 1234, allowing you to browse
+that will serve documentation to visiting Web browsers. :program:`pydoc -p 1234`
+will start a HTTP server on port 1234, allowing you to browse
 the documentation at ``http://localhost:1234/`` in your preferred Web browser.
-:program:`pydoc` :option:`-g` will start the server and additionally bring up a
+:program:`pydoc -g` will start the server and additionally bring up a
 small :mod:`tkinter`\ -based graphical interface to help you search for
 documentation pages.
 
 When :program:`pydoc` generates documentation, it uses the current environment
-and path to locate modules.  Thus, invoking :program:`pydoc` :option:`spam`
+and path to locate modules.  Thus, invoking :program:`pydoc spam`
 documents precisely the version of the module you would get if you started the
 Python interpreter and typed ``import spam``.
 

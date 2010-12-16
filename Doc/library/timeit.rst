@@ -117,27 +117,36 @@ When called as a program from the command line, the following form is used::
 
    python -m timeit [-n N] [-r N] [-s S] [-t] [-c] [-h] [statement ...]
 
-where the following options are understood:
+Where the following options are understood:
 
--n N/:option:`--number=N`
+.. program:: timeit
+
+.. cmdoption:: -n N, --number=N
+
    how many times to execute 'statement'
 
--r N/:option:`--repeat=N`
+.. cmdoption:: -r N, --repeat=N
+
    how many times to repeat the timer (default 3)
 
--s S/:option:`--setup=S`
-   statement to be executed once initially (default ``'pass'``)
+.. cmdoption:: -s S, --setup=S
 
--t/:option:`--time`
+   statement to be executed once initially (default ``pass``)
+
+.. cmdoption:: -t, --time
+
    use :func:`time.time` (default on all platforms but Windows)
 
--c/:option:`--clock`
+.. cmdoption:: -c, --clock
+
    use :func:`time.clock` (default on Windows)
 
--v/:option:`--verbose`
+.. cmdoption:: -v, --verbose
+
    print raw timing results; repeat for more digits precision
 
--h/:option:`--help`
+.. cmdoption:: -h, --help
+
    print a short usage message and exit
 
 A multi-line statement may be given by specifying each line as a separate

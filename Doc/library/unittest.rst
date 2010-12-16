@@ -143,7 +143,7 @@ example, :meth:`~TestCase.setUp` was used to create a fresh sequence for each
 test.
 
 The final block shows a simple way to run the tests. :func:`unittest.main`
-provides a command line interface to the test script.  When run from the command
+provides a command-line interface to the test script.  When run from the command
 line, the above script produces an output that looks like this::
 
    ...
@@ -174,6 +174,30 @@ following output::
 The above examples show the most commonly used :mod:`unittest` features which
 are sufficient to meet many everyday testing needs.  The remainder of the
 documentation explores the full feature set from first principles.
+
+
+.. _unittest-command-line-interface:
+
+Command-Line Interface
+----------------------
+
+The unittest module can be used from the command line to run tests from
+modules, classes or even individual test methods::
+
+   python -m unittest test_module1 test_module2
+   python -m unittest test_module.TestClass
+   python -m unittest test_module.TestClass.test_method
+
+You can pass in a list with any combination of module names, and fully
+qualified class or method names.
+
+You can run tests with more detail (higher verbosity) by passing in the -v flag::
+
+   python -m unittest -v test_module
+
+For a list of all the command-line options::
+
+   python -m unittest -h
 
 
 .. _organizing-tests:
