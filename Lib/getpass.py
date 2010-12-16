@@ -166,12 +166,7 @@ except (ImportError, AttributeError):
     try:
         import msvcrt
     except ImportError:
-        try:
-            from EasyDialogs import AskPassword
-        except ImportError:
-            getpass = fallback_getpass
-        else:
-            getpass = AskPassword
+        getpass = fallback_getpass
     else:
         getpass = win_getpass
 else:
