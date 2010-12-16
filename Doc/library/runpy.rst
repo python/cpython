@@ -70,6 +70,9 @@ The :mod:`runpy` module provides two functions:
    .. versionchanged:: 3.1
       Added ability to execute packages by looking for a ``__main__`` submodule.
 
+   .. versionchanged:: 3.2
+      Added ``__cached__`` global variable (see :PEP:`3147`).
+
 
 .. function:: run_path(file_path, init_globals=None, run_name=None)
 
