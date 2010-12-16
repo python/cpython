@@ -32,8 +32,8 @@ browser and wait.
 
 The script :program:`webbrowser` can be used as a command-line interface for the
 module. It accepts an URL as the argument. It accepts the following optional
-parameters: :option:`-n` opens the URL in a new browser window, if possible;
-:option:`-t` opens the URL in a new browser page ("tab"). The options are,
+parameters: ``-n`` opens the URL in a new browser window, if possible;
+``-t`` opens the URL in a new browser page ("tab"). The options are,
 naturally, mutually exclusive.
 
 The following exception is defined:
@@ -67,7 +67,6 @@ The following functions are defined:
 
    Open *url* in a new window of the default browser, if possible, otherwise, open
    *url* in the only browser window.
-
 
 .. function:: open_new_tab(url)
 

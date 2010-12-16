@@ -41,14 +41,14 @@ exception:
       non-GNU Unix systems work.
 
    *long_options*, if specified, must be a list of strings with the names of the
-   long options which should be supported.  The leading ``'-``\ ``-'``
+   long options which should be supported.  The leading ``'--'``
    characters should not be included in the option name.  Long options which
    require an argument should be followed by an equal sign (``'='``).  Optional
    arguments are not supported.  To accept only long options, *options* should
    be an empty string.  Long options on the command line can be recognized so
    long as they provide a prefix of the option name that matches exactly one of
    the accepted options.  For example, if *long_options* is ``['foo', 'frob']``,
-   the option :option:`--fo` will match as :option:`--foo`, but :option:`--f`
+   the option ``--fo`` will match as ``--foo``, but ``--f``
    will not match uniquely, so :exc:`GetoptError` will be raised.
 
    The return value consists of two elements: the first is a list of ``(option,
@@ -56,7 +56,7 @@ exception:
    option list was stripped (this is a trailing slice of *args*).  Each
    option-and-value pair returned has the option as its first element, prefixed
    with a hyphen for short options (e.g., ``'-x'``) or two hyphens for long
-   options (e.g., ``'-``\ ``-long-option'``), and the option argument as its
+   options (e.g., ``'--long-option'``), and the option argument as its
    second element, or an empty string if the option has no argument.  The
    options occur in the list in the same order in which they were found, thus
    allowing multiple occurrences.  Long and short options may be mixed.
@@ -69,7 +69,7 @@ exception:
    intermixed. The :func:`getopt` function stops processing options as soon as a
    non-option argument is encountered.
 
-   If the first character of the option string is '+', or if the environment
+   If the first character of the option string is ``'+'``, or if the environment
    variable :envvar:`POSIXLY_CORRECT` is set, then option processing stops as
    soon as a non-option argument is encountered.
 
