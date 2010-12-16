@@ -154,28 +154,31 @@ guidelines to be followed:
 
 .. _regrtest:
 
-Running tests using :mod:`test.regrtest`
-----------------------------------------
+Running tests using the command-line interface
+----------------------------------------------
 
-:mod:`test.regrtest` can be used as a script to drive Python's regression test
-suite. Running the script by itself automatically starts running all regression
+The :mod:`test` package can be run as a script to drive Python's regression
+test suite, thanks to the :option:`-m` option: :program:`python -m test`. Under
+the hood, it uses :mod:`test.regrtest`; the call :program:`python -m
+test.regrtest` used in previous Python versions still works).
+Running the script by itself automatically starts running all regression
 tests in the :mod:`test` package. It does this by finding all modules in the
 package whose name starts with ``test_``, importing them, and executing the
 function :func:`test_main` if present. The names of tests to execute may also
 be passed to the script. Specifying a single regression test (:program:`python
-regrtest.py test_spam.py`) will minimize output and only print
+-m test test_spam`) will minimize output and only print
 whether the test passed or failed and thus minimize output.
 
-Running :mod:`test.regrtest` directly allows what resources are available for
+Running :mod:`test` directly allows what resources are available for
 tests to use to be set. You do this by using the ``-u`` command-line
-option. Run :program:`python -m regrtest -uall` to turn on all
+option. Run :program:`python -m test -uall` to turn on all
 resources; specifying ``all`` as an option for ``-u`` enables all
 possible resources. If all but one resource is desired (a more common case), a
 comma-separated list of resources that are not desired may be listed after
-``all``. The command :program:`python -m regrtest -uall,-audio,-largefile`
-will run :mod:`test.regrtest` with all resources except the ``audio`` and
+``all``. The command :program:`python -m test -uall,-audio,-largefile`
+will run :mod:`test` with all resources except the ``audio`` and
 ``largefile`` resources. For a list of all resources and more command-line
-options, run :program:`python -m regrtest -h`.
+options, run :program:`python -m test -h`.
 
 Some other ways to execute the regression tests depend on what platform the
 tests are being executed on. On Unix, you can run :program:`make test` at the
