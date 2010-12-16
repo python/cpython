@@ -17,10 +17,10 @@
    single: ini file
    single: Windows ini file
 
-This module provides the :class:`SafeConfigParser` class which implements
-a basic configuration language which provides a structure similar to what's
-found in Microsoft Windows INI files.  You can use this to write Python
-programs which can be customized by end users easily.
+This module provides the :class:`ConfigParser` class which implements a basic
+configuration language which provides a structure similar to what's found in
+Microsoft Windows INI files.  You can use this to write Python programs which
+can be customized by end users easily.
 
 .. note::
 
@@ -67,7 +67,7 @@ creating the above configuration file programatically.
 .. doctest::
 
    >>> import configparser
-   >>> config = configparser.SafeConfigParser()
+   >>> config = configparser.ConfigParser()
    >>> config['DEFAULT'] = {'ServerAliveInterval': '45',
    ...                      'Compression': 'yes',
    ...                      'CompressionLevel': '9'}
@@ -92,7 +92,7 @@ back and explore the data it holds.
 .. doctest::
 
    >>> import configparser
-   >>> config = configparser.SafeConfigParser()
+   >>> config = configparser.ConfigParser()
    >>> config.sections()
    []
    >>> config.read('example.ini')
@@ -283,13 +283,13 @@ For example:
 Interpolation of values
 -----------------------
 
-On top of the core functionality, :class:`SafeConfigParser` supports
+On top of the core functionality, :class:`ConfigParser` supports
 interpolation.  This means values can be preprocessed before returning them
 from ``get()`` calls.
 
 .. class:: BasicInterpolation()
 
-   The default implementation used by :class:`SafeConfigParser`.  It enables
+   The default implementation used by :class:`ConfigParser`.  It enables
    values to contain format strings which refer to other values in the same
    section, or values in the special default section [1]_.  Additional default
    values can be provided on initialization.
@@ -304,7 +304,7 @@ from ``get()`` calls.
       my_pictures: %(my_dir)s/Pictures
 
 
-   In the example above, :class:`SafeConfigParser` with *interpolation* set to
+   In the example above, :class:`ConfigParser` with *interpolation* set to
    ``BasicInterpolation()`` would resolve ``%(home_dir)s`` to the value of
    ``home_dir`` (``/Users`` in this case).  ``%(my_dir)s`` in effect would
    resolve to ``/Users/lumberjack``.  All interpolations are done on demand so
@@ -444,7 +444,7 @@ the :meth:`__init__` options:
 
   .. doctest::
 
-     >>> parser = configparser.SafeConfigParser()
+     >>> parser = configparser.ConfigParser()
      >>> parser.read_dict({'section1': {'key1': 'value1',
      ...                                'key2': 'value2',
      ...                                'key3': 'value3'},
@@ -465,7 +465,7 @@ the :meth:`__init__` options:
   .. doctest::
 
      >>> from collections import OrderedDict
-     >>> parser = configparser.SafeConfigParser()
+     >>> parser = configparser.ConfigParser()
      >>> parser.read_dict(
      ...   OrderedDict((
      ...     ('s1',
@@ -511,7 +511,7 @@ the :meth:`__init__` options:
      ...   skip-bdb
      ...   skip-innodb # we don't need ACID today
      ... """
-     >>> config = configparser.SafeConfigParser(allow_no_value=True)
+     >>> config = configparser.ConfigParser(allow_no_value=True)
      >>> config.read_string(sample_config)
 
      >>> # Settings with values are treated as before:
@@ -534,7 +534,7 @@ the :meth:`__init__` options:
   This means values (but not keys) can contain the delimiters.
 
   See also the *space_around_delimiters* argument to
-  :meth:`SafeConfigParser.write`.
+  :meth:`ConfigParser.write`.
 
 * *comment_prefixes*, default value: ``_COMPATIBLE`` (``'#'`` valid on empty
   lines, ``';'`` valid also on non-empty lines)
@@ -604,8 +604,7 @@ the :meth:`__init__` options:
   advanced variant inspired by ``zc.buildout``. More on the subject in the
   `dedicated documentation section <#interpolation-of-values>`_.
 
-  .. note:: :class:`RawConfigParser` is using ``None`` by default and
-     :class:`ConfigParser` is using ``configparser.BrokenInterpolation``.
+  .. note:: :class:`RawConfigParser` is using ``None`` by default.
 
 
 More advanced customization may be achieved by overriding default values of
@@ -622,7 +621,7 @@ may be overriden by subclasses or by attribute assignment.
 
   .. doctest::
 
-     >>> custom = configparser.SafeConfigParser()
+     >>> custom = configparser.ConfigParser()
      >>> custom['section1'] = {'funky': 'nope'}
      >>> custom['section1'].getboolean('funky')
      Traceback (most recent call last):
@@ -652,7 +651,7 @@ may be overriden by subclasses or by attribute assignment.
      ... [Section2]
      ... AnotherKey = Value
      ... """
-     >>> typical = configparser.SafeConfigParser()
+     >>> typical = configparser.ConfigParser()
      >>> typical.read_string(config)
      >>> list(typical['Section1'].keys())
      ['key']
@@ -670,11 +669,11 @@ may be overriden by subclasses or by attribute assignment.
 Legacy API Examples
 -------------------
 
-Mainly because of backwards compatibility concerns, :mod:`configparser` provides
-also a legacy API with explicit ``get``/``set`` methods.  While there are valid
-use cases for the methods outlined below, mapping protocol access is preferred
-for new projects.  The legacy API is at times more advanced, low-level and
-downright counterintuitive.
+Mainly because of backwards compatibility concerns, :mod:`configparser`
+provides also a legacy API with explicit ``get``/``set`` methods.  While there
+are valid use cases for the methods outlined below, mapping protocol access is
+preferred for new projects.  The legacy API is at times more advanced,
+low-level and downright counterintuitive.
 
 An example of writing to a configuration file::
 
@@ -682,12 +681,11 @@ An example of writing to a configuration file::
 
    config = configparser.RawConfigParser()
 
-   # Please note that using RawConfigParser's and the raw mode of
-   # ConfigParser's respective set functions, you can assign non-string values
-   # to keys internally, but will receive an error when attempting to write to
-   # a file or when you get it in non-raw mode. Setting values using the
-   # mapping protocol or SafeConfigParser's set() does not allow such
-   # assignments to take place.
+   # Please note that using RawConfigParser's set functions, you can assign
+   # non-string values to keys internally, but will receive an error when
+   # attempting to write to a file or when you get it in non-raw mode. Setting
+   # values using the mapping protocol or ConfigParser's set() does not allow
+   # such assignments to take place.
    config.add_section('Section1')
    config.set('Section1', 'int', '15')
    config.set('Section1', 'bool', 'true')
@@ -718,11 +716,11 @@ An example of reading the configuration file again::
    if config.getboolean('Section1', 'bool'):
        print(config.get('Section1', 'foo'))
 
-To get interpolation, use :class:`SafeConfigParser`::
+To get interpolation, use :class:`ConfigParser`::
 
    import configparser
 
-   cfg = configparser.SafeConfigParser()
+   cfg = configparser.ConfigParser()
    cfg.read('example.cfg')
 
    # Set the optional `raw` argument of get() to True if you wish to disable
@@ -751,13 +749,13 @@ To get interpolation, use :class:`SafeConfigParser`::
    print(cfg.get('Section1', 'monster', fallback=None))
          # -> None
 
-Default values are available in all three types of ConfigParsers.  They are
-used in interpolation if an option used is not defined elsewhere. ::
+Default values are available in both types of ConfigParsers.  They are used in
+interpolation if an option used is not defined elsewhere. ::
 
    import configparser
 
    # New instance with 'bar' and 'baz' defaulting to 'Life' and 'hard' each
-   config = configparser.SafeConfigParser({'bar': 'Life', 'baz': 'hard'})
+   config = configparser.ConfigParser({'bar': 'Life', 'baz': 'hard'})
    config.read('example.cfg')
 
    print(config.get('Section1', 'foo')) # -> "Python is fun!"
@@ -766,12 +764,12 @@ used in interpolation if an option used is not defined elsewhere. ::
    print(config.get('Section1', 'foo')) # -> "Life is hard!"
 
 
-.. _safeconfigparser-objects:
+.. _configparser-objects:
 
-SafeConfigParser Objects
-------------------------
+ConfigParser Objects
+--------------------
 
-.. class:: SafeConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=_COMPATIBLE, strict=False, empty_lines_in_values=True, default_section=configparser.DEFAULTSECT, interpolation=BasicInterpolation())
+.. class:: ConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=_COMPATIBLE, strict=False, empty_lines_in_values=True, default_section=configparser.DEFAULTSECT, interpolation=BasicInterpolation())
 
    The main configuration parser.  When *defaults* is given, it is initialized
    into the dictionary of intrinsic defaults.  When *dict_type* is given, it
@@ -877,7 +875,7 @@ SafeConfigParser Objects
 
          import configparser, os
 
-         config = configparser.SafeConfigParser()
+         config = configparser.ConfigParser()
          config.read_file(open('defaults.cfg'))
          config.read(['site.cfg', os.path.expanduser('~/.myapp.cfg')],
                      encoding='cp1250')
@@ -1047,13 +1045,13 @@ RawConfigParser Objects
 
 .. class:: RawConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=_COMPATIBLE, strict=False, empty_lines_in_values=True, default_section=configaparser.DEFAULTSECT, interpolation=None)
 
-   Legacy variant of the :class:`SafeConfigParser` with interpolation disabled
+   Legacy variant of the :class:`ConfigParser` with interpolation disabled
    by default and unsafe ``add_section`` and ``set`` methods.
 
    .. note::
-      Consider using :class:`SafeConfigParser` instead which checks types of
+      Consider using :class:`ConfigParser` instead which checks types of
       the values to be stored internally. If you don't want interpolation, you
-      can use ``SafeConfigParser(interpolation=None)``.
+      can use ``ConfigParser(interpolation=None)``.
 
 
    .. method:: add_section(section)
@@ -1079,25 +1077,6 @@ RawConfigParser Objects
       behaviour is unsupported and will cause errors when attempting to write
       to a file or get it in non-raw mode.  **Use the mapping protocol API**
       which does not allow such assignments to take place.
-
-
-.. _configparser-objects:
-
-ConfigParser Objects
---------------------
-
-.. class:: ConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=_COMPATIBLE, strict=False, empty_lines_in_values=True, default_section=configparser.DEFAULTSECT, interpolation=BrokenInterpolation())
-
-   .. deprecated:: 3.2
-      Whenever you can, consider using :class:`SafeConfigParser`. The
-      :class:`ConfigParser` provides the same functionality but its
-      implementation is less predictable. It does not validate the
-      interpolation syntax used within a configuration file. It also does not
-      enable escaping the interpolation character (when using
-      :class:`SafeConfigParser`, a key can have ``%`` as part of the value by
-      specifying ``%%`` in the file). On top of that, this class doesn't ensure
-      whether values passed to the parser object are strings which may lead to
-      inconsistent internal state.
 
 
 Exceptions

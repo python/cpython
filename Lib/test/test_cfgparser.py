@@ -5,7 +5,6 @@ import os
 import sys
 import textwrap
 import unittest
-import warnings
 
 from test import support
 
@@ -48,9 +47,7 @@ class CfgParserTestCaseClass(unittest.TestCase):
             default_section=self.default_section,
             interpolation=self.interpolation,
         )
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=DeprecationWarning)
-            instance = self.config_class(**arguments)
+        instance = self.config_class(**arguments)
         return instance
 
     def fromstring(self, string, defaults=None):
@@ -708,11 +705,6 @@ class ConfigParserTestCase(BasicTestCase):
     config_class = configparser.ConfigParser
 
     def test_interpolation(self):
-        rawval = {
-            configparser.ConfigParser: ("something %(with11)s "
-                                        "lots of interpolation (11 steps)"),
-            configparser.SafeConfigParser: "%(with1)s",
-        }
         cf = self.get_interpolation_config()
         eq = self.assertEqual
         eq(cf.get("Foo", "bar"), "something with interpolation (1 step)")
@@ -721,21 +713,25 @@ class ConfigParserTestCase(BasicTestCase):
         eq(cf.get("Foo", "bar10"),
            "something with lots of interpolation (10 steps)")
         e = self.get_error(cf, configparser.InterpolationDepthError, "Foo", "bar11")
-        self.assertEqual(e.args, ("bar11", "Foo", rawval[self.config_class]))
+        if self.interpolation == configparser._UNSET:
+            self.assertEqual(e.args, ("bar11", "Foo", "%(with1)s"))
+        elif isinstance(self.interpolation, configparser.LegacyInterpolation):
+            self.assertEqual(e.args, ("bar11", "Foo",
+                "something %(with11)s lots of interpolation (11 steps)"))
 
     def test_interpolation_missing_value(self):
-        rawval = {
-            configparser.ConfigParser: '%(reference)s',
-            configparser.SafeConfigParser: '',
-        }
         cf = self.get_interpolation_config()
         e = self.get_error(cf, configparser.InterpolationMissingOptionError,
                            "Interpolation Error", "name")
         self.assertEqual(e.reference, "reference")
         self.assertEqual(e.section, "Interpolation Error")
         self.assertEqual(e.option, "name")
-        self.assertEqual(e.args, ('name', 'Interpolation Error',
-                                  rawval[self.config_class], 'reference'))
+        if self.interpolation == configparser._UNSET:
+            self.assertEqual(e.args, ('name', 'Interpolation Error',
+                                    '', 'reference'))
+        elif isinstance(self.interpolation, configparser.LegacyInterpolation):
+            self.assertEqual(e.args, ('name', 'Interpolation Error',
+                                    '%(reference)s', 'reference'))
 
     def test_items(self):
         self.check_items_config([('default', '<default>'),
@@ -743,35 +739,75 @@ class ConfigParserTestCase(BasicTestCase):
                                  ('key', '|value|'),
                                  ('name', 'value')])
 
+    def test_safe_interpolation(self):
+        # See http://www.python.org/sf/511737
+        cf = self.fromstring("[section]\n"
+                             "option1{eq}xxx\n"
+                             "option2{eq}%(option1)s/xxx\n"
+                             "ok{eq}%(option1)s/%%s\n"
+                             "not_ok{eq}%(option2)s/%%s".format(
+                                 eq=self.delimiters[0]))
+        self.assertEqual(cf.get("section", "ok"), "xxx/%s")
+        if self.interpolation == configparser._UNSET:
+            self.assertEqual(cf.get("section", "not_ok"), "xxx/xxx/%s")
+        elif isinstance(self.interpolation, configparser.LegacyInterpolation):
+            with self.assertRaises(TypeError):
+                cf.get("section", "not_ok")
+
+    def test_set_malformatted_interpolation(self):
+        cf = self.fromstring("[sect]\n"
+                             "option1{eq}foo\n".format(eq=self.delimiters[0]))
+
+        self.assertEqual(cf.get('sect', "option1"), "foo")
+
+        self.assertRaises(ValueError, cf.set, "sect", "option1", "%foo")
+        self.assertRaises(ValueError, cf.set, "sect", "option1", "foo%")
+        self.assertRaises(ValueError, cf.set, "sect", "option1", "f%oo")
+
+        self.assertEqual(cf.get('sect', "option1"), "foo")
+
+        # bug #5741: double percents are *not* malformed
+        cf.set("sect", "option2", "foo%%bar")
+        self.assertEqual(cf.get("sect", "option2"), "foo%bar")
+
     def test_set_nonstring_types(self):
+        cf = self.fromstring("[sect]\n"
+                             "option1{eq}foo\n".format(eq=self.delimiters[0]))
+        # Check that we get a TypeError when setting non-string values
+        # in an existing section:
+        self.assertRaises(TypeError, cf.set, "sect", "option1", 1)
+        self.assertRaises(TypeError, cf.set, "sect", "option1", 1.0)
+        self.assertRaises(TypeError, cf.set, "sect", "option1", object())
+        self.assertRaises(TypeError, cf.set, "sect", "option2", 1)
+        self.assertRaises(TypeError, cf.set, "sect", "option2", 1.0)
+        self.assertRaises(TypeError, cf.set, "sect", "option2", object())
+        self.assertRaises(TypeError, cf.set, "sect", 123, "invalid opt name!")
+        self.assertRaises(TypeError, cf.add_section, 123)
+
+    def test_add_section_default(self):
         cf = self.newconfig()
-        cf.add_section('non-string')
-        cf.set('non-string', 'int', 1)
-        cf.set('non-string', 'list', [0, 1, 1, 2, 3, 5, 8, 13, '%('])
-        cf.set('non-string', 'dict', {'pi': 3.14159, '%(': 1,
-                                      '%(list)': '%(list)'})
-        cf.set('non-string', 'string_with_interpolation', '%(list)s')
-        self.assertEqual(cf.get('non-string', 'int', raw=True), 1)
-        self.assertRaises(TypeError, cf.get, 'non-string', 'int')
-        self.assertEqual(cf.get('non-string', 'list', raw=True),
-                         [0, 1, 1, 2, 3, 5, 8, 13, '%('])
-        self.assertRaises(TypeError, cf.get, 'non-string', 'list')
-        self.assertEqual(cf.get('non-string', 'dict', raw=True),
-                         {'pi': 3.14159, '%(': 1, '%(list)': '%(list)'})
-        self.assertRaises(TypeError, cf.get, 'non-string', 'dict')
-        self.assertEqual(cf.get('non-string', 'string_with_interpolation',
-                                raw=True), '%(list)s')
-        self.assertRaises(ValueError, cf.get, 'non-string',
-                          'string_with_interpolation', raw=False)
-        cf.add_section(123)
-        cf.set(123, 'this is sick', True)
-        self.assertEqual(cf.get(123, 'this is sick', raw=True), True)
-        with self.assertRaises(TypeError):
-            cf.get(123, 'this is sick')
-        cf.optionxform = lambda x: x
-        cf.set('non-string', 1, 1)
-        self.assertRaises(TypeError, cf.get, 'non-string', 1, 1)
-        self.assertEqual(cf.get('non-string', 1, raw=True), 1)
+        self.assertRaises(ValueError, cf.add_section, self.default_section)
+
+class ConfigParserTestCaseLegacyInterpolation(ConfigParserTestCase):
+    config_class = configparser.ConfigParser
+    interpolation = configparser.LegacyInterpolation()
+
+    def test_set_malformatted_interpolation(self):
+        cf = self.fromstring("[sect]\n"
+                             "option1{eq}foo\n".format(eq=self.delimiters[0]))
+
+        self.assertEqual(cf.get('sect', "option1"), "foo")
+
+        cf.set("sect", "option1", "%foo")
+        self.assertEqual(cf.get('sect', "option1"), "%foo")
+        cf.set("sect", "option1", "foo%")
+        self.assertEqual(cf.get('sect', "option1"), "foo%")
+        cf.set("sect", "option1", "f%oo")
+        self.assertEqual(cf.get('sect', "option1"), "f%oo")
+
+        # bug #5741: double percents are *not* malformed
+        cf.set("sect", "option2", "foo%%bar")
+        self.assertEqual(cf.get("sect", "option2"), "foo%%bar")
 
 class ConfigParserTestCaseNonStandardDelimiters(ConfigParserTestCase):
     delimiters = (':=', '$')
@@ -872,56 +908,8 @@ class RawConfigParserTestSambaConf(BasicTestCase):
         self.assertEqual(cf.get("global", "hosts allow"), "127.")
         self.assertEqual(cf.get("tmp", "echo command"), "cat %s; rm %s")
 
-class SafeConfigParserTestCase(ConfigParserTestCase):
-    config_class = configparser.SafeConfigParser
-
-    def test_safe_interpolation(self):
-        # See http://www.python.org/sf/511737
-        cf = self.fromstring("[section]\n"
-                             "option1{eq}xxx\n"
-                             "option2{eq}%(option1)s/xxx\n"
-                             "ok{eq}%(option1)s/%%s\n"
-                             "not_ok{eq}%(option2)s/%%s".format(
-                                 eq=self.delimiters[0]))
-        self.assertEqual(cf.get("section", "ok"), "xxx/%s")
-        self.assertEqual(cf.get("section", "not_ok"), "xxx/xxx/%s")
-
-    def test_set_malformatted_interpolation(self):
-        cf = self.fromstring("[sect]\n"
-                             "option1{eq}foo\n".format(eq=self.delimiters[0]))
-
-        self.assertEqual(cf.get('sect', "option1"), "foo")
-
-        self.assertRaises(ValueError, cf.set, "sect", "option1", "%foo")
-        self.assertRaises(ValueError, cf.set, "sect", "option1", "foo%")
-        self.assertRaises(ValueError, cf.set, "sect", "option1", "f%oo")
-
-        self.assertEqual(cf.get('sect', "option1"), "foo")
-
-        # bug #5741: double percents are *not* malformed
-        cf.set("sect", "option2", "foo%%bar")
-        self.assertEqual(cf.get("sect", "option2"), "foo%bar")
-
-    def test_set_nonstring_types(self):
-        cf = self.fromstring("[sect]\n"
-                             "option1{eq}foo\n".format(eq=self.delimiters[0]))
-        # Check that we get a TypeError when setting non-string values
-        # in an existing section:
-        self.assertRaises(TypeError, cf.set, "sect", "option1", 1)
-        self.assertRaises(TypeError, cf.set, "sect", "option1", 1.0)
-        self.assertRaises(TypeError, cf.set, "sect", "option1", object())
-        self.assertRaises(TypeError, cf.set, "sect", "option2", 1)
-        self.assertRaises(TypeError, cf.set, "sect", "option2", 1.0)
-        self.assertRaises(TypeError, cf.set, "sect", "option2", object())
-        self.assertRaises(TypeError, cf.set, "sect", 123, "invalid opt name!")
-        self.assertRaises(TypeError, cf.add_section, 123)
-
-    def test_add_section_default(self):
-        cf = self.newconfig()
-        self.assertRaises(ValueError, cf.add_section, self.default_section)
-
-class SafeConfigParserTestCaseExtendedInterpolation(BasicTestCase):
-    config_class = configparser.SafeConfigParser
+class ConfigParserTestCaseExtendedInterpolation(BasicTestCase):
+    config_class = configparser.ConfigParser
     interpolation = configparser.ExtendedInterpolation()
     default_section = 'common'
 
@@ -984,15 +972,11 @@ class SafeConfigParserTestCaseExtendedInterpolation(BasicTestCase):
 
 
 
-class SafeConfigParserTestCaseNonStandardDelimiters(SafeConfigParserTestCase):
-    delimiters = (':=', '$')
-    comment_prefixes = ('//', '"')
-
-class SafeConfigParserTestCaseNoValue(SafeConfigParserTestCase):
+class ConfigParserTestCaseNoValue(ConfigParserTestCase):
     allow_no_value = True
 
-class SafeConfigParserTestCaseTrickyFile(CfgParserTestCaseClass):
-    config_class = configparser.SafeConfigParser
+class ConfigParserTestCaseTrickyFile(CfgParserTestCaseClass):
+    config_class = configparser.ConfigParser
     delimiters = {'='}
     comment_prefixes = {'#'}
     allow_no_value = True
@@ -1047,9 +1031,7 @@ class Issue7005TestCase(unittest.TestCase):
 
     def prepare(self, config_class):
         # This is the default, but that's the point.
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=DeprecationWarning)
-            cp = config_class(allow_no_value=False)
+        cp = config_class(allow_no_value=False)
         cp.add_section("section")
         cp.set("section", "option", None)
         sio = io.StringIO()
@@ -1057,8 +1039,10 @@ class Issue7005TestCase(unittest.TestCase):
         return sio.getvalue()
 
     def test_none_as_value_stringified(self):
-        output = self.prepare(configparser.ConfigParser)
-        self.assertEqual(output, self.expected_output)
+        cp = configparser.ConfigParser(allow_no_value=False)
+        cp.add_section("section")
+        with self.assertRaises(TypeError):
+            cp.set("section", "option", None)
 
     def test_none_as_value_stringified_raw(self):
         output = self.prepare(configparser.RawConfigParser)
@@ -1112,15 +1096,14 @@ def test_main():
     support.run_unittest(
         ConfigParserTestCase,
         ConfigParserTestCaseNonStandardDelimiters,
+        ConfigParserTestCaseNoValue,
+        ConfigParserTestCaseExtendedInterpolation,
+        ConfigParserTestCaseLegacyInterpolation,
+        ConfigParserTestCaseTrickyFile,
         MultilineValuesTestCase,
         RawConfigParserTestCase,
         RawConfigParserTestCaseNonStandardDelimiters,
         RawConfigParserTestSambaConf,
-        SafeConfigParserTestCase,
-        SafeConfigParserTestCaseExtendedInterpolation,
-        SafeConfigParserTestCaseNonStandardDelimiters,
-        SafeConfigParserTestCaseNoValue,
-        SafeConfigParserTestCaseTrickyFile,
         SortedTestCase,
         Issue7005TestCase,
         StrictTestCase,
@@ -1139,6 +1122,6 @@ def test_coverage(coverdir):
 
 if __name__ == "__main__":
     if "-c" in sys.argv:
-        test_coverage('/tmp/cmd.cover')
+        test_coverage('/tmp/configparser.cover')
     else:
         test_main()

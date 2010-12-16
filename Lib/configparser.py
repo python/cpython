@@ -5,11 +5,11 @@ and followed by "name: value" entries, with continuations and such in
 the style of RFC 822.
 
 Intrinsic defaults can be specified by passing them into the
-SafeConfigParser constructor as a dictionary.
+ConfigParser constructor as a dictionary.
 
 class:
 
-SafeConfigParser -- responsible for parsing a list of
+ConfigParser -- responsible for parsing a list of
                     configuration files, and managing the parsed database.
 
     methods:
@@ -265,9 +265,8 @@ class InterpolationMissingOptionError(InterpolationError):
 class InterpolationSyntaxError(InterpolationError):
     """Raised when the source text contains invalid syntax.
 
-    Current implementation raises this exception only for SafeConfigParser
-    instances when the source text into which substitutions are made
-    does not conform to the required syntax.
+    Current implementation raises this exception when the source text into
+    which substitutions are made does not conform to the required syntax.
     """
 
 
@@ -369,7 +368,7 @@ class Interpolation:
 
 
 class BasicInterpolation(Interpolation):
-    """Interpolation as implemented in the classic SafeConfigParser.
+    """Interpolation as implemented in the classic ConfigParser.
 
     The option values can contain format strings which refer to other values in
     the same section, or values in the special default section.
@@ -512,8 +511,8 @@ class ExtendedInterpolation(Interpolation):
                     "found: %r" % (rest,))
 
 
-class BrokenInterpolation(Interpolation):
-    """Deprecated interpolation as implemented in the classic ConfigParser.
+class LegacyInterpolation(Interpolation):
+    """Deprecated interpolation used in old versions of ConfigParser.
     Use BasicInterpolation or ExtendedInterpolation instead."""
 
     _KEYCRE = re.compile(r"%\(([^)]*)\)s|.")
@@ -598,12 +597,6 @@ class RawConfigParser(MutableMapping):
                  default_section=DEFAULTSECT,
                  interpolation=_UNSET):
 
-        if self.__class__ is RawConfigParser:
-            warnings.warn(
-                "The RawConfigParser class will be removed in future versions."
-                " Use 'SafeConfigParser(interpolation=None)' instead.",
-                DeprecationWarning, stacklevel=2
-            )
         self._dict = dict_type
         self._sections = self._dict()
         self._defaults = self._dict()
@@ -1142,8 +1135,8 @@ class RawConfigParser(MutableMapping):
         - we allow valueless options but the value is not None
 
         For compatibility reasons this method is not used in classic set()
-        for RawConfigParsers and ConfigParsers. It is invoked in every
-        case for mapping protocol access and in SafeConfigParser.set().
+        for RawConfigParsers. It is invoked in every case for mapping protocol
+        access and in ConfigParser.set().
         """
         if not isinstance(section, str):
             raise TypeError("section names must be strings")
@@ -1156,21 +1149,6 @@ class RawConfigParser(MutableMapping):
 
 class ConfigParser(RawConfigParser):
     """ConfigParser implementing interpolation."""
-
-    _DEFAULT_INTERPOLATION = BrokenInterpolation()
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if self.__class__ is ConfigParser:
-            warnings.warn(
-                "The ConfigParser class will be removed in future versions."
-                " Use SafeConfigParser instead.",
-                DeprecationWarning, stacklevel=2
-            )
-
-
-class SafeConfigParser(ConfigParser):
-    """ConfigParser implementing sane interpolation."""
 
     _DEFAULT_INTERPOLATION = BasicInterpolation()
 
@@ -1186,6 +1164,19 @@ class SafeConfigParser(ConfigParser):
         a string."""
         self._validate_value_types(section=section)
         super().add_section(section)
+
+
+class SafeConfigParser(ConfigParser):
+    """ConfigParser alias for backwards compatibility purposes."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        warnings.warn(
+            "The SafeConfigParser class has been renamed to ConfigParser "
+            "in Python 3.2. This alias will be removed in future versions."
+            " Use ConfigParser directly instead.",
+            DeprecationWarning, stacklevel=2
+        )
 
 
 class SectionProxy(MutableMapping):
