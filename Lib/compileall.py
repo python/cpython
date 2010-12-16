@@ -9,7 +9,6 @@ recursing into subdirectories.  (Even though it should do so for
 packages -- for now, you'll have to deal with packages separately.)
 
 See module py_compile for details of the actual byte-compilation.
-
 """
 import os
 import sys
@@ -31,7 +30,6 @@ def compile_dir(dir, maxlevels=10, ddir=None,
                directory name that will show up in error messages)
     force:     if 1, force compilation, even if timestamps are up-to-date
     quiet:     if 1, be quiet during compilation
-
     """
     if not quiet:
         print 'Listing', dir, '...'
@@ -61,15 +59,16 @@ def compile_dir(dir, maxlevels=10, ddir=None,
     return success
 
 def compile_file(fullname, ddir=None, force=0, rx=None, quiet=0):
-    """Byte-compile file.
-    file:      the file to byte-compile
+    """Byte-compile one file.
+
+    Arguments (only fullname is required):
+
+    fullname:  the file to byte-compile
     ddir:      if given, purported directory name (this is the
                directory name that will show up in error messages)
     force:     if 1, force compilation, even if timestamps are up-to-date
     quiet:     if 1, be quiet during compilation
-
     """
-
     success = 1
     name = os.path.basename(fullname)
     if ddir is not None:
@@ -120,7 +119,6 @@ def compile_path(skip_curdir=1, maxlevels=0, force=0, quiet=0):
     maxlevels:   max recursion level (default 0)
     force: as for compile_dir() (default 0)
     quiet: as for compile_dir() (default 0)
-
     """
     success = 1
     for dir in sys.path:
