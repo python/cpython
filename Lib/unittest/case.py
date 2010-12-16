@@ -1121,6 +1121,7 @@ class TestCase(object):
     def assertRegex(self, text, expected_regex, msg=None):
         """Fail the test unless the text matches the regular expression."""
         if isinstance(expected_regex, (str, bytes)):
+            assert expected_regex, "expected_regex must not be empty."
             expected_regex = re.compile(expected_regex)
         if not expected_regex.search(text):
             msg = msg or "Regex didn't match"
