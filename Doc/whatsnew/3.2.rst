@@ -148,7 +148,7 @@ each with their own argument patterns and help displays::
     subparsers = parser.add_subparsers()
 
     parser_l = subparsers.add_parser('launch', help='Launch Control')   # first subgroup
-    parser_l.add_argument('-m', '--missles', action='store_true')
+    parser_l.add_argument('-m', '--missiles', action='store_true')
     parser_l.add_argument('-t', '--torpedos', action='store_true')
 
     parser_m = subparsers.add_parser('move', help='Move Vessel')        # second subgroup
@@ -676,7 +676,7 @@ functools
   (Contributed by Raymond Hettinger.)
 
 * To aid in porting programs from Python 2, the :func:`~functools.cmp_to_key`
-  function converts an old-style comparion function to
+  function converts an old-style comparison function to
   modern :term:`key function`:
 
   >>> # locale-aware sort order
@@ -866,7 +866,7 @@ float.  However, since existing floating point value can be converted losslessly
 to either a decimal or rational representation, it makes sense to add them to
 the constructor and to support mixed-type comparisons.
 
-* The :class:`decimal.Decimal` contructor now accepts :class:`float` objects
+* The :class:`decimal.Decimal` constructor now accepts :class:`float` objects
   directly so there in no longer a need to use the :meth:`~decimal.Decimal.from_float`
   method (:issue:`8257`).
 
@@ -1506,7 +1506,7 @@ Changes to Python's build process and to the C API include:
   list.  It is equivalent to C99 *va_copy* but available on all python platforms
   (:issue:`2443`).
 
-* A new C API function :c:func:`PySys_SetArgvEx` allows an embeddered
+* A new C API function :c:func:`PySys_SetArgvEx` allows an embedded
   interpreter to set sys.argv without also modifying :attr:`sys.path`
   (:issue:`5753`).
 
