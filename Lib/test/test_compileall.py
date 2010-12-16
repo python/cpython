@@ -124,14 +124,15 @@ class EncodingTest(unittest.TestCase):
 class CommandLineTests(unittest.TestCase):
     """Test compileall's CLI."""
 
-    def assertRunOK(self, *args):
-        rc, out, err = script_helper.assert_python_ok('-m', 'compileall', *args)
+    def assertRunOK(self, *args, **env_vars):
+        rc, out, err = script_helper.assert_python_ok(
+            '-m', 'compileall', *args, **env_vars)
         self.assertEqual(b'', err)
         return out
 
-    def assertRunNotOK(self, *args):
+    def assertRunNotOK(self, *args, **env_vars):
         rc, out, err = script_helper.assert_python_failure(
-                         '-m', 'compileall', *args)
+                         '-m', 'compileall', *args, **env_vars)
         return rc, out, err
 
     def assertCompiled(self, fn):
@@ -149,12 +150,17 @@ class CommandLineTests(unittest.TestCase):
         # Create the __init__.py and a package module.
         self.initfn = script_helper.make_script(self.pkgdir, '__init__', '')
         self.barfn = script_helper.make_script(self.pkgdir, 'bar', '')
-        sys.path.insert(0, self.directory)
 
     def _cleanup(self):
         support.rmtree(self.directory)
-        assert sys.path[0] == self.directory, 'Missing path'
-        del sys.path[0]
+
+    def test_no_args_compiles_path(self):
+        # Note that -l is implied for the no args case.
+        bazfn = script_helper.make_script(self.directory, 'baz', '')
+        self.assertRunOK(PYTHONPATH=self.directory)
+        self.assertCompiled(bazfn)
+        self.assertNotCompiled(self.initfn)
+        self.assertNotCompiled(self.barfn)
 
     # Ensure that the default behavior of compileall's CLI is to create
     # PEP 3147 pyc/pyo files.
@@ -322,11 +328,14 @@ class CommandLineTests(unittest.TestCase):
         bingfn = script_helper.make_script(self.pkgdir, 'bing', 'syntax(error')
         rc, out, err = self.assertRunNotOK('nosuchfile', self.initfn,
                                            bingfn, self.barfn)
-        self.assertRegex(b'rror', err)
+        self.assertRegex(out, b'rror')
         self.assertNotCompiled(bingfn)
         self.assertCompiled(self.initfn)
         self.assertCompiled(self.barfn)
 
+    def test_invalid_arg_produces_message(self):
+        out = self.assertRunOK('badfilename')
+        self.assertRegex(out, b"Can't list badfilename")
 
 
 def test_main():

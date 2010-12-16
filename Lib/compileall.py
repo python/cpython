@@ -207,14 +207,14 @@ def main():
     try:
         if compile_dests:
             for dest in compile_dests:
-                if os.path.isdir(dest):
+                if os.path.isfile(dest):
+                    if not compile_file(dest, args.ddir, args.force, args.rx,
+                                        args.quiet, args.legacy):
+                        success = False
+                else:
                     if not compile_dir(dest, args.maxlevels, args.ddir,
                                        args.force, args.rx, args.quiet,
                                        args.legacy):
-                        success = False
-                else:
-                    if not compile_file(dest, args.ddir, args.force, args.rx,
-                                        args.quiet, args.legacy):
                         success = False
             return success
         else:
