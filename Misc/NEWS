@@ -20,6 +20,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10714: Limit length of incoming request in http.server to 65536 bytes
+  for security reasons.  Initial patch by Ross Lagerwall.
+
 - Issue #9558: Fix distutils.command.build_ext with VS 8.0.
 
 - Issue #10667: Fast path for collections.Counter().
