@@ -286,13 +286,13 @@ Command line usage
 
 If there are arguments:
 
-#. If :option:`-e` is used, arguments are files opened for editing and
+#. If ``-e`` is used, arguments are files opened for editing and
    ``sys.argv`` reflects the arguments passed to IDLE itself.
 
-#. Otherwise, if :option:`-c` is used, all arguments are placed in
+#. Otherwise, if ``-c`` is used, all arguments are placed in
    ``sys.argv[1:...]``, with ``sys.argv[0]`` set to ``'-c'``.
 
-#. Otherwise, if neither :option:`-e` nor :option:`-c` is used, the first
+#. Otherwise, if neither ``-e`` nor ``-c`` is used, the first
    argument is a script which is executed with the remaining arguments in
    ``sys.argv[1:...]``  and ``sys.argv[0]`` set to the script name.  If the script
    name is '-', no script is executed but an interactive Python session is started;

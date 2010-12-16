@@ -107,26 +107,26 @@ option
    an argument used to supply extra information to guide or customize the
    execution of a program.  There are many different syntaxes for options; the
    traditional Unix syntax is a hyphen ("-") followed by a single letter,
-   e.g. ``"-x"`` or ``"-F"``.  Also, traditional Unix syntax allows multiple
-   options to be merged into a single argument, e.g.  ``"-x -F"`` is equivalent
-   to ``"-xF"``.  The GNU project introduced ``"--"`` followed by a series of
-   hyphen-separated words, e.g.  ``"--file"`` or ``"--dry-run"``.  These are the
+   e.g. ``-x`` or ``-F``.  Also, traditional Unix syntax allows multiple
+   options to be merged into a single argument, e.g. ``-x -F`` is equivalent
+   to ``-xF``.  The GNU project introduced ``--`` followed by a series of
+   hyphen-separated words, e.g. ``--file`` or ``--dry-run``.  These are the
    only two option syntaxes provided by :mod:`optparse`.
 
    Some other option syntaxes that the world has seen include:
 
-   * a hyphen followed by a few letters, e.g. ``"-pf"`` (this is *not* the same
+   * a hyphen followed by a few letters, e.g. ``-pf`` (this is *not* the same
      as multiple options merged into a single argument)
 
-   * a hyphen followed by a whole word, e.g. ``"-file"`` (this is technically
+   * a hyphen followed by a whole word, e.g. ``-file`` (this is technically
      equivalent to the previous syntax, but they aren't usually seen in the same
      program)
 
    * a plus sign followed by a single letter, or a few letters, or a word, e.g.
-     ``"+f"``, ``"+rgb"``
+     ``+f``, ``+rgb``
 
-   * a slash followed by a letter, or a few letters, or a word, e.g. ``"/f"``,
-     ``"/file"``
+   * a slash followed by a letter, or a few letters, or a word, e.g. ``/f``,
+     ``/file``
 
    These option syntaxes are not supported by :mod:`optparse`, and they never
    will be.  This is deliberate: the first three are non-standard on any
@@ -154,9 +154,9 @@ option argument
    Typically, a given option either takes an argument or it doesn't. Lots of
    people want an "optional option arguments" feature, meaning that some options
    will take an argument if they see it, and won't if they don't.  This is
-   somewhat controversial, because it makes parsing ambiguous: if ``"-a"`` takes
-   an optional argument and ``"-b"`` is another option entirely, how do we
-   interpret ``"-ab"``?  Because of this ambiguity, :mod:`optparse` does not
+   somewhat controversial, because it makes parsing ambiguous: if ``-a`` takes
+   an optional argument and ``-b`` is another option entirely, how do we
+   interpret ``-ab``?  Because of this ambiguity, :mod:`optparse` does not
    support this feature.
 
 positional argument
@@ -174,9 +174,9 @@ For example, consider this hypothetical command-line::
 
    prog -v --report /tmp/report.txt foo bar
 
-``"-v"`` and ``"--report"`` are both options.  Assuming that :option:`--report`
-takes one argument, ``"/tmp/report.txt"`` is an option argument.  ``"foo"`` and
-``"bar"`` are positional arguments.
+``-v`` and ``--report`` are both options.  Assuming that ``--report``
+takes one argument, ``/tmp/report.txt`` is an option argument.  ``foo`` and
+``bar`` are positional arguments.
 
 
 .. _optparse-what-options-for:
@@ -261,7 +261,7 @@ Then you can start defining options.  The basic syntax is::
    parser.add_option(opt_str, ...,
                      attr=value, ...)
 
-Each option has one or more option strings, such as ``"-f"`` or ``"--file"``,
+Each option has one or more option strings, such as ``-f`` or ``--file``,
 and several option attributes that tell :mod:`optparse` what to expect and what
 to do when it encounters that option on the command line.
 
@@ -290,7 +290,7 @@ that's rarely necessary: by default it uses ``sys.argv[1:]``.)
 :meth:`parse_args` returns two values:
 
 * ``options``, an object containing values for all of your options---e.g. if
-  ``"--file"`` takes a single string argument, then ``options.file`` will be the
+  ``--file`` takes a single string argument, then ``options.file`` will be the
   filename supplied by the user, or ``None`` if the user did not supply that
   option
 
@@ -336,8 +336,8 @@ Now let's make up a fake command line and ask :mod:`optparse` to parse it::
    args = ["-f", "foo.txt"]
    (options, args) = parser.parse_args(args)
 
-When :mod:`optparse` sees the option string ``"-f"``, it consumes the next
-argument, ``"foo.txt"``, and stores it in ``options.filename``.  So, after this
+When :mod:`optparse` sees the option string ``-f``, it consumes the next
+argument, ``foo.txt``, and stores it in ``options.filename``.  So, after this
 call to :meth:`parse_args`, ``options.filename`` is ``"foo.txt"``.
 
 Some other option types supported by :mod:`optparse` are ``int`` and ``float``.
@@ -349,13 +349,13 @@ Note that this option has no long option string, which is perfectly acceptable.
 Also, there's no explicit action, since the default is ``store``.
 
 Let's parse another fake command-line.  This time, we'll jam the option argument
-right up against the option: since ``"-n42"`` (one argument) is equivalent to
-``"-n 42"`` (two arguments), the code ::
+right up against the option: since ``-n42`` (one argument) is equivalent to
+``-n 42`` (two arguments), the code ::
 
    (options, args) = parser.parse_args(["-n42"])
    print options.num
 
-will print ``"42"``.
+will print ``42``.
 
 If you don't specify a type, :mod:`optparse` assumes ``string``.  Combined with
 the fact that the default action is ``store``, that means our first example can
@@ -365,9 +365,9 @@ be a lot shorter::
 
 If you don't supply a destination, :mod:`optparse` figures out a sensible
 default from the option strings: if the first long option string is
-``"--foo-bar"``, then the default destination is ``foo_bar``.  If there are no
+``--foo-bar``, then the default destination is ``foo_bar``.  If there are no
 long option strings, :mod:`optparse` looks at the first short option string: the
-default destination for ``"-f"`` is ``f``.
+default destination for ``-f`` is ``f``.
 
 :mod:`optparse` also includes built-in ``long`` and ``complex`` types.  Adding
 types is covered in section :ref:`optparse-extending-optparse`.
@@ -381,7 +381,7 @@ Handling boolean (flag) options
 Flag options---set a variable to true or false when a particular option is seen
 ---are quite common.  :mod:`optparse` supports them with two separate actions,
 ``store_true`` and ``store_false``.  For example, you might have a ``verbose``
-flag that is turned on with ``"-v"`` and off with ``"-q"``::
+flag that is turned on with ``-v`` and off with ``-q``::
 
    parser.add_option("-v", action="store_true", dest="verbose")
    parser.add_option("-q", action="store_false", dest="verbose")
@@ -390,8 +390,8 @@ Here we have two different options with the same destination, which is perfectly
 OK.  (It just means you have to be a bit careful when setting default values---
 see below.)
 
-When :mod:`optparse` encounters ``"-v"`` on the command line, it sets
-``options.verbose`` to ``True``; when it encounters ``"-q"``,
+When :mod:`optparse` encounters ``-v`` on the command line, it sets
+``options.verbose`` to ``True``; when it encounters ``-q``,
 ``options.verbose`` is set to ``False``.
 
 
@@ -431,7 +431,7 @@ supply a default value for each destination, which is assigned before the
 command line is parsed.
 
 First, consider the verbose/quiet example.  If we want :mod:`optparse` to set
-``verbose`` to ``True`` unless ``"-q"`` is seen, then we can do this::
+``verbose`` to ``True`` unless ``-q`` is seen, then we can do this::
 
    parser.add_option("-v", action="store_true", dest="verbose", default=True)
    parser.add_option("-q", action="store_false", dest="verbose")
@@ -489,7 +489,7 @@ user-friendly (documented) options::
                      help="interaction mode: novice, intermediate, "
                           "or expert [default: %default]")
 
-If :mod:`optparse` encounters either ``"-h"`` or ``"--help"`` on the
+If :mod:`optparse` encounters either ``-h`` or ``--help`` on the
 command-line, or if you just call :meth:`parser.print_help`, it prints the
 following to standard output:
 
@@ -516,7 +516,7 @@ help message:
 
      usage = "usage: %prog [options] arg1 arg2"
 
-  :mod:`optparse` expands ``"%prog"`` in the usage string to the name of the
+  :mod:`optparse` expands ``%prog`` in the usage string to the name of the
   current program, i.e. ``os.path.basename(sys.argv[0])``.  The expanded string
   is then printed before the detailed option help.
 
@@ -534,17 +534,17 @@ help message:
      -m MODE, --mode=MODE
 
   Here, "MODE" is called the meta-variable: it stands for the argument that the
-  user is expected to supply to :option:`-m`/:option:`--mode`.  By default,
+  user is expected to supply to ``-m``/``--mode``.  By default,
   :mod:`optparse` converts the destination variable name to uppercase and uses
   that for the meta-variable.  Sometimes, that's not what you want---for
-  example, the :option:`--filename` option explicitly sets ``metavar="FILE"``,
+  example, the ``--filename`` option explicitly sets ``metavar="FILE"``,
   resulting in this automatically-generated option description::
 
      -f FILE, --filename=FILE
 
   This is important for more than just saving space, though: the manually
-  written help text uses the meta-variable "FILE" to clue the user in that
-  there's a connection between the semi-formal syntax "-f FILE" and the informal
+  written help text uses the meta-variable ``FILE`` to clue the user in that
+  there's a connection between the semi-formal syntax ``-f FILE`` and the informal
   semantic description "write output to FILE". This is a simple but effective
   way to make your help text a lot clearer and more useful for end users.
 
@@ -597,11 +597,11 @@ argument to OptionParser::
 
    parser = OptionParser(usage="%prog [-f] [-q]", version="%prog 1.0")
 
-``"%prog"`` is expanded just like it is in ``usage``.  Apart from that,
+``%prog`` is expanded just like it is in ``usage``.  Apart from that,
 ``version`` can contain anything you like.  When you supply it, :mod:`optparse`
-automatically adds a ``"--version"`` option to your parser. If it encounters
+automatically adds a ``--version`` option to your parser. If it encounters
 this option on the command line, it expands your ``version`` string (by
-replacing ``"%prog"``), prints it to stdout, and exits.
+replacing ``%prog``), prints it to stdout, and exits.
 
 For example, if your script is called ``/usr/bin/foo``::
 
@@ -614,7 +614,7 @@ The following two methods can be used to print and get the ``version`` string:
 
    Print the version message for the current program (``self.version``) to
    *file* (default stdout).  As with :meth:`print_usage`, any occurrence
-   of ``"%prog"`` in ``self.version`` is replaced with the name of the current
+   of ``%prog`` in ``self.version`` is replaced with the name of the current
    program.  Does nothing if ``self.version`` is empty or undefined.
 
 .. method:: OptionParser.get_version()
@@ -637,9 +637,9 @@ usual way: raise an exception (either :exc:`optparse.OptionError` or
 
 Handling user errors is much more important, since they are guaranteed to happen
 no matter how stable your code is.  :mod:`optparse` can automatically detect
-some user errors, such as bad option arguments (passing ``"-n 4x"`` where
-:option:`-n` takes an integer argument), missing arguments (``"-n"`` at the end
-of the command line, where :option:`-n` takes an argument of any type).  Also,
+some user errors, such as bad option arguments (passing ``-n 4x`` where
+``-n`` takes an integer argument), missing arguments (``-n`` at the end
+of the command line, where ``-n`` takes an argument of any type).  Also,
 you can call :func:`OptionParser.error` to signal an application-defined error
 condition::
 
@@ -652,7 +652,7 @@ In either case, :mod:`optparse` handles the error the same way: it prints the
 program's usage message and an error message to standard error and exits with
 error status 2.
 
-Consider the first example above, where the user passes ``"4x"`` to an option
+Consider the first example above, where the user passes ``4x`` to an option
 that takes an integer::
 
    $ /usr/bin/foo -n 4x
@@ -745,8 +745,8 @@ The first step in using :mod:`optparse` is to create an OptionParser instance.
    ``version`` (default: ``None``)
       A version string to print when the user supplies a version option. If you
       supply a true value for ``version``, :mod:`optparse` automatically adds a
-      version option with the single option string ``"--version"``.  The
-      substring ``"%prog"`` is expanded the same as for ``usage``.
+      version option with the single option string ``--version``.  The
+      substring ``%prog`` is expanded the same as for ``usage``.
 
    ``conflict_handler`` (default: ``"error"``)
       Specifies what to do when options with conflicting option strings are
@@ -765,11 +765,11 @@ The first step in using :mod:`optparse` is to create an OptionParser instance.
       IndentedHelpFormatter and TitledHelpFormatter.
 
    ``add_help_option`` (default: ``True``)
-      If true, :mod:`optparse` will add a help option (with option strings ``"-h"``
-      and ``"--help"``) to the parser.
+      If true, :mod:`optparse` will add a help option (with option strings ``-h``
+      and ``--help``) to the parser.
 
    ``prog``
-      The string to use when expanding ``"%prog"`` in ``usage`` and ``version``
+      The string to use when expanding ``%prog`` in ``usage`` and ``version``
       instead of ``os.path.basename(sys.argv[0])``.
 
    ``epilog`` (default: ``None``)
@@ -813,7 +813,7 @@ Defining options
 ^^^^^^^^^^^^^^^^
 
 Each Option instance represents a set of synonymous command-line option strings,
-e.g. :option:`-f` and :option:`--file`.  You can specify any number of short or
+e.g. ``-f`` and ``--file``.  You can specify any number of short or
 long option strings, but you must specify at least one overall option string.
 
 The canonical way to create an :class:`Option` instance is with the
@@ -976,7 +976,7 @@ relevant to a particular option, or fail to pass a required option attribute,
 .. attribute:: Option.help
 
    Help text to print for this option when listing all available options after
-   the user supplies a :attr:`~Option.help` option (such as ``"--help"``).  If
+   the user supplies a :attr:`~Option.help` option (such as ``--help``).  If
    no help text is supplied, the option will be listed without help text.  To
    hide this option, use the special value :data:`optparse.SUPPRESS_HELP`.
 
@@ -1014,9 +1014,9 @@ must specify for any option using that action.
   If :attr:`~Option.type` is not supplied, it defaults to ``"string"``.
 
   If :attr:`~Option.dest` is not supplied, :mod:`optparse` derives a destination
-  from the first long option string (e.g., ``"--foo-bar"`` implies
+  from the first long option string (e.g., ``--foo-bar`` implies
   ``foo_bar``). If there are no long option strings, :mod:`optparse` derives a
-  destination from the first short option string (e.g., ``"-f"`` implies ``f``).
+  destination from the first short option string (e.g., ``-f`` implies ``f``).
 
   Example::
 
@@ -1047,7 +1047,7 @@ must specify for any option using that action.
      parser.add_option("--noisy",
                        action="store_const", const=2, dest="verbose")
 
-  If ``"--noisy"`` is seen, :mod:`optparse` will set  ::
+  If ``--noisy`` is seen, :mod:`optparse` will set  ::
 
      options.verbose = 2
 
@@ -1082,13 +1082,13 @@ must specify for any option using that action.
 
      parser.add_option("-t", "--tracks", action="append", type="int")
 
-  If ``"-t3"`` is seen on the command-line, :mod:`optparse` does the equivalent
+  If ``-t3`` is seen on the command-line, :mod:`optparse` does the equivalent
   of::
 
      options.tracks = []
      options.tracks.append(int("3"))
 
-  If, a little later on, ``"--tracks=4"`` is seen, it does::
+  If, a little later on, ``--tracks=4`` is seen, it does::
 
      options.tracks.append(int("4"))
 
@@ -1110,13 +1110,13 @@ must specify for any option using that action.
 
      parser.add_option("-v", action="count", dest="verbosity")
 
-  The first time ``"-v"`` is seen on the command line, :mod:`optparse` does the
+  The first time ``-v`` is seen on the command line, :mod:`optparse` does the
   equivalent of::
 
      options.verbosity = 0
      options.verbosity += 1
 
-  Every subsequent occurrence of ``"-v"`` results in  ::
+  Every subsequent occurrence of ``-v`` results in  ::
 
      options.verbosity += 1
 
@@ -1159,7 +1159,7 @@ must specify for any option using that action.
                        help="Input file to read data from")
      parser.add_option("--secret", help=SUPPRESS_HELP)
 
-  If :mod:`optparse` sees either ``"-h"`` or ``"--help"`` on the command line,
+  If :mod:`optparse` sees either ``-h`` or ``--help`` on the command line,
   it will print something like the following help message to stdout (assuming
   ``sys.argv[0]`` is ``"foo.py"``):
 
@@ -1273,8 +1273,8 @@ provides several methods to help you out:
 
 .. method:: OptionParser.disable_interspersed_args()
 
-   Set parsing to stop on the first non-option.  For example, if ``"-a"`` and
-   ``"-b"`` are both simple options that take no arguments, :mod:`optparse`
+   Set parsing to stop on the first non-option.  For example, if ``-a`` and
+   ``-b`` are both simple options that take no arguments, :mod:`optparse`
    normally accepts this syntax::
 
       prog -a arg1 -b arg2
@@ -1304,7 +1304,7 @@ provides several methods to help you out:
 .. method:: OptionParser.has_option(opt_str)
 
    Return true if the OptionParser has an option with option string *opt_str*
-   (e.g., ``"-q"`` or ``"--verbose"``).
+   (e.g., ``-q`` or ``--verbose``).
 
 .. method:: OptionParser.remove_option(opt_str)
 
@@ -1357,9 +1357,9 @@ intelligently and add conflicting options to it::
    parser.add_option("-n", "--noisy", ..., help="be noisy")
 
 At this point, :mod:`optparse` detects that a previously-added option is already
-using the ``"-n"`` option string.  Since ``conflict_handler`` is ``"resolve"``,
-it resolves the situation by removing ``"-n"`` from the earlier option's list of
-option strings.  Now ``"--dry-run"`` is the only way for the user to activate
+using the ``-n`` option string.  Since ``conflict_handler`` is ``"resolve"``,
+it resolves the situation by removing ``-n`` from the earlier option's list of
+option strings.  Now ``--dry-run`` is the only way for the user to activate
 that option.  If the user asks for help, the help message will reflect that::
 
    options:
@@ -1375,7 +1375,7 @@ existing OptionParser::
 
    parser.add_option("--dry-run", ..., help="new dry-run option")
 
-At this point, the original :option:`-n/--dry-run` option is no longer
+At this point, the original ``-n``/``--dry-run`` option is no longer
 accessible, so :mod:`optparse` removes it, leaving this help text::
 
    options:
@@ -1413,7 +1413,7 @@ OptionParser supports several other public methods:
 .. method:: OptionParser.print_usage(file=None)
 
    Print the usage message for the current program (``self.usage``) to *file*
-   (default stdout).  Any occurrence of the string ``"%prog"`` in ``self.usage``
+   (default stdout).  Any occurrence of the string ``%prog`` in ``self.usage``
    is replaced with the name of the current program.  Does nothing if
    ``self.usage`` is empty or not defined.
 
@@ -1477,9 +1477,9 @@ only option attribute you must specify is ``callback``, the function to call::
 
 ``callback`` is a function (or other callable object), so you must have already
 defined ``my_callback()`` when you create this callback option. In this simple
-case, :mod:`optparse` doesn't even know if :option:`-c` takes any arguments,
+case, :mod:`optparse` doesn't even know if ``-c`` takes any arguments,
 which usually means that the option takes no arguments---the mere presence of
-:option:`-c` on the command-line is all it needs to know.  In some
+``-c`` on the command-line is all it needs to know.  In some
 circumstances, though, you might want your callback to consume an arbitrary
 number of command-line arguments.  This is where writing callbacks gets tricky;
 it's covered later in this section.
@@ -1532,8 +1532,8 @@ where
 ``opt_str``
    is the option string seen on the command-line that's triggering the callback.
    (If an abbreviated long option was used, ``opt_str`` will be the full,
-   canonical option string---e.g. if the user puts ``"--foo"`` on the
-   command-line as an abbreviation for ``"--foobar"``, then ``opt_str`` will be
+   canonical option string---e.g. if the user puts ``--foo`` on the
+   command-line as an abbreviation for ``--foobar``, then ``opt_str`` will be
    ``"--foobar"``.)
 
 ``value``
@@ -1608,8 +1608,8 @@ Of course, you could do that with the ``"store_true"`` action.
 Callback example 2: check option order
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Here's a slightly more interesting example: record the fact that ``"-a"`` is
-seen, but blow up if it comes after ``"-b"`` in the command-line.  ::
+Here's a slightly more interesting example: record the fact that ``-a`` is
+seen, but blow up if it comes after ``-b`` in the command-line.  ::
 
    def check_order(option, opt_str, value, parser):
        if parser.values.b:
@@ -1626,7 +1626,7 @@ Callback example 3: check option order (generalized)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you want to re-use this callback for several similar options (set a flag, but
-blow up if ``"-b"`` has already been seen), it needs a bit of work: the error
+blow up if ``-b`` has already been seen), it needs a bit of work: the error
 message and the flag that it sets must be generalized.  ::
 
    def check_order(option, opt_str, value, parser):
@@ -1696,15 +1696,15 @@ For this case, you must write a callback, as :mod:`optparse` doesn't provide any
 built-in capabilities for it.  And you have to deal with certain intricacies of
 conventional Unix command-line parsing that :mod:`optparse` normally handles for
 you.  In particular, callbacks should implement the conventional rules for bare
-``"--"`` and ``"-"`` arguments:
+``--`` and ``-`` arguments:
 
-* either ``"--"`` or ``"-"`` can be option arguments
+* either ``--`` or ``-`` can be option arguments
 
-* bare ``"--"`` (if not the argument to some option): halt command-line
-  processing and discard the ``"--"``
+* bare ``--`` (if not the argument to some option): halt command-line
+  processing and discard the ``--``
 
-* bare ``"-"`` (if not the argument to some option): halt command-line
-  processing but keep the ``"-"`` (append it to ``parser.largs``)
+* bare ``-`` (if not the argument to some option): halt command-line
+  processing but keep the ``-`` (append it to ``parser.largs``)
 
 If you want an option that takes a variable number of arguments, there are
 several subtle, tricky issues to worry about.  The exact implementation you
@@ -1775,7 +1775,7 @@ To add new types, you need to define your own subclass of :mod:`optparse`'s
       def check_mytype(option, opt, value)
 
    where ``option`` is an :class:`Option` instance, ``opt`` is an option string
-   (e.g., ``"-f"``), and ``value`` is the string from the command line that must
+   (e.g., ``-f``), and ``value`` is the string from the command line that must
    be checked and converted to your desired type.  ``check_mytype()`` should
    return an object of the hypothetical type ``mytype``.  The value returned by
    a type-checking function will wind up in the OptionValues instance returned
@@ -1887,7 +1887,7 @@ For example, let's add an ``"extend"`` action.  This is similar to the standard
 ``"append"`` action, but instead of taking a single value from the command-line
 and appending it to an existing list, ``"extend"`` will take multiple values in
 a single comma-delimited string, and extend an existing list with them.  That
-is, if ``"--names"`` is an ``"extend"`` option of type ``"string"``, the command
+is, if ``--names`` is an ``"extend"`` option of type ``"string"``, the command
 line ::
 
    --names=foo,bar --names blah --names ding,dong
