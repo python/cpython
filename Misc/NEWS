@@ -5706,7 +5706,7 @@ Library
   unittest.TestCase.assertSequenceEqual are no longer included in failure
   reports.
 
-- Issue #8899: time.struct_time now has class and atribute docstrings.
+- Issue #8899: time.struct_time now has class and attribute docstrings.
 
 - Issue #4487: email now accepts as charset aliases all codec aliases
   accepted by the codecs module.
