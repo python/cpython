@@ -2195,7 +2195,7 @@ Library
 - Issue #8897: Fix sunau module, use bytes to write the header. Patch written by
   Thomas Jollans.
 
-- Issue #8899: time.struct_time now has class and atribute docstrings.
+- Issue #8899: time.struct_time now has class and attribute docstrings.
 
 - Issue #6470: Drop UNC prefix in FixTk.
 
