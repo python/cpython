@@ -190,8 +190,8 @@ This module provides an interface to the mechanisms used to implement the
    continue to use the old class definition.  The same is true for derived classes.
 
 
-The following functions and data provide conveniences for handling :pep:`3147`
-byte-compiled file paths.
+The following functions are conveniences for handling :pep:`3147` byte-compiled
+file paths.
 
 .. versionadded:: 3.2
 

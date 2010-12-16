@@ -54,8 +54,8 @@ compile Python sources.
    Write legacy ``.pyc`` file path names.  Default is to write :pep:`3147`-style
    byte-compiled path names.
 
-.. versionadded:: 3.2
-   The ``-i`` and ``-b`` options.
+.. versionchanged:: 3.2
+   Added the ``-i``, ``-b`` and ``-h`` options.
 
 
 Public functions
@@ -83,7 +83,29 @@ Public functions
    the built-in :func:`compile` function.
 
    .. versionchanged:: 3.2
-      Added the *optimize* parameter.
+      Added the *legacy* and *optimize* parameter.
+
+
+.. function:: compile_file(fullname, ddir=None, force=False, rx=None, quiet=False, legacy=False, optimize=-1)
+
+   Compile the file with path *fullname*.  If *ddir* is given, it is used as the
+   base path from  which the filename used in error messages will be generated.
+   If *force* is true, modules are re-compiled even if the timestamp is up to
+   date.
+
+   If *rx* is given, it specifies a regular expression which, if matched, will
+   prevent compilation; that expression is searched for in the full path.
+
+   If *quiet* is true, nothing is printed to the standard output in normal
+   operation.
+
+   If *legacy* is true, old-style ``.pyc`` file path names are written,
+   otherwise (the default), :pep:`3147`-style path names are written.
+
+   *optimize* specifies the optimization level for the compiler.  It is passed to
+   the built-in :func:`compile` function.
+
+   .. versionadded:: 3.2
 
 
 .. function:: compile_path(skip_curdir=True, maxlevels=0, force=False, legacy=False, optimize=-1)
@@ -94,7 +116,7 @@ Public functions
    function.
 
    .. versionchanged:: 3.2
-      Added the *optimize* parameter.
+      Added the *legacy* and *optimize* parameter.
 
 
 To force a recompile of all the :file:`.py` files in the :file:`Lib/`

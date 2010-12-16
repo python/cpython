@@ -142,6 +142,7 @@ Importing Modules
    attribute of the module object is set to *cpathname* if it is
    non-``NULL``.  Of the three functions, this is the preferred one to use.
 
+   .. versionadded:: 3.2
 
 .. c:function:: long PyImport_GetMagicNumber()
 
@@ -154,6 +155,8 @@ Importing Modules
 
    Return the magic tag string for :pep:`3147` format Python bytecode file
    names.
+
+   .. versionadded:: 3.2
 
 .. c:function:: PyObject* PyImport_GetModuleDict()
 
