@@ -583,6 +583,7 @@ def test_main(verbose=None):
     try:
         cwd = os.getcwd()
         support.run_unittest(BaseHTTPRequestHandlerTestCase,
+                             SimpleHTTPRequestHandlerTestCase,
                              BaseHTTPServerTestCase,
                              SimpleHTTPServerTestCase,
                              CGIHTTPServerTestCase
