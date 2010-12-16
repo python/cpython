@@ -54,6 +54,9 @@ compile Python sources.
    Write legacy ``.pyc`` file path names.  Default is to write :pep:`3147`-style
    byte-compiled path names.
 
+.. versionadded:: 3.2
+   The ``-i`` and ``-b`` options.
+
 
 Public functions
 ----------------
