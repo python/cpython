@@ -257,8 +257,7 @@ Command-line options
    Stop the test run on the first error or failure.
 
 .. versionadded:: 3.2
-   The command-line options :option:`-b`, :option:`-c` and :option:`-f`
-   were added.
+   The command-line options ``-b``, ``-c`` and ``-f`` were added.
 
 The command line can also be used for test discovery, for running all of the
 tests in a project or just a subset.
