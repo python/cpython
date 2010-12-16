@@ -613,7 +613,7 @@ Two methods have been deprecated:
 For details of the update, see `Introducing ElementTree
 <http://effbot.org/zone/elementtree-13-intro.htm>`_ on Fredrik Lundh's website.
 
-(Contributed by Fredrik Lundh.)
+(Contributed by Florent Xicluna and Fredrik Lundh, :issue:`6472`.)
 
 functools
 ---------
