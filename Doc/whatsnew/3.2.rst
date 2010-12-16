@@ -1278,7 +1278,7 @@ The :mod:`pdb` debugger module gained a number of usability improvements:
             - bytes input support
             - non-UTF8 percent encoding of non-ASCII characters
           Issue 2987 for IPv6 (RFC2732) support in urlparse
-
+.. XXX: Any updates to the WSGI bytes versus text problem?
 
 Multi-threading
 ===============
