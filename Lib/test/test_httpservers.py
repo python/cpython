@@ -478,6 +478,107 @@ class CGIHTTPServerTestCase(BaseTestCase):
                 (res.read(), res.getheader('Content-type'), res.status))
         self.assertEqual(os.environ['SERVER_SOFTWARE'], signature)
 
+
+class SocketlessRequestHandler(SimpleHTTPRequestHandler):
+    def __init__(self):
+        self.get_called = False
+        self.protocol_version = "HTTP/1.1"
+
+    def do_GET(self):
+        self.get_called = True
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/html')
+        self.end_headers()
+        self.wfile.write(b'<html><body>Data</body></html>\r\n')
+
+    def log_message(self, format, *args):
+        pass
+
+class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
+    """Test the functionaility of the BaseHTTPServer.
+    """
+
+    HTTPResponseMatch = re.compile(b'HTTP/1.[0-9]+ 200 OK')
+
+    def setUp (self):
+        self.handler = SocketlessRequestHandler()
+
+    def send_typical_request(self, message):
+        input = BytesIO(message)
+        output = BytesIO()
+        self.handler.rfile = input
+        self.handler.wfile = output
+        self.handler.handle_one_request()
+        output.seek(0)
+        return output.readlines()
+
+    def verify_get_called(self):
+        self.assertTrue(self.handler.get_called)
+
+    def verify_expected_headers(self, headers):
+        for fieldName in b'Server: ', b'Date: ', b'Content-Type: ':
+            self.assertEqual(sum(h.startswith(fieldName) for h in headers), 1)
+
+    def verify_http_server_response(self, response):
+        match = self.HTTPResponseMatch.search(response)
+        self.assertTrue(match is not None)
+
+    def test_http_1_1(self):
+        result = self.send_typical_request(b'GET / HTTP/1.1\r\n\r\n')
+        self.verify_http_server_response(result[0])
+        self.verify_expected_headers(result[1:-1])
+        self.verify_get_called()
+        self.assertEqual(result[-1], b'<html><body>Data</body></html>\r\n')
+
+    def test_http_1_0(self):
+        result = self.send_typical_request(b'GET / HTTP/1.0\r\n\r\n')
+        self.verify_http_server_response(result[0])
+        self.verify_expected_headers(result[1:-1])
+        self.verify_get_called()
+        self.assertEqual(result[-1], b'<html><body>Data</body></html>\r\n')
+
+    def test_http_0_9(self):
+        result = self.send_typical_request(b'GET / HTTP/0.9\r\n\r\n')
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0], b'<html><body>Data</body></html>\r\n')
+        self.verify_get_called()
+
+    def test_with_continue_1_0(self):
+        result = self.send_typical_request(b'GET / HTTP/1.0\r\nExpect: 100-continue\r\n\r\n')
+        self.verify_http_server_response(result[0])
+        self.verify_expected_headers(result[1:-1])
+        self.verify_get_called()
+        self.assertEqual(result[-1], b'<html><body>Data</body></html>\r\n')
+
+    def test_request_length(self):
+        # Issue #10714: huge request lines are discarded, to avoid Denial
+        # of Service attacks.
+        result = self.send_typical_request(b'GET ' + b'x' * 65537)
+        self.assertEqual(result[0], b'HTTP/1.1 414 Request-URI Too Long\r\n')
+        self.assertFalse(self.handler.get_called)
+
+class SimpleHTTPRequestHandlerTestCase(unittest.TestCase):
+    """ Test url parsing """
+    def setUp(self):
+        self.translated = os.getcwd()
+        self.translated = os.path.join(self.translated, 'filename')
+        self.handler = SocketlessRequestHandler()
+
+    def test_query_arguments(self):
+        path = self.handler.translate_path('/filename')
+        self.assertEqual(path, self.translated)
+        path = self.handler.translate_path('/filename?foo=bar')
+        self.assertEqual(path, self.translated)
+        path = self.handler.translate_path('/filename?a=b&spam=eggs#zot')
+        self.assertEqual(path, self.translated)
+
+    def test_start_with_double_slash(self):
+        path = self.handler.translate_path('//filename')
+        self.assertEqual(path, self.translated)
+        path = self.handler.translate_path('//filename?foo=bar')
+        self.assertEqual(path, self.translated)
+
+
 def test_main(verbose=None):
     try:
         cwd = os.getcwd()
