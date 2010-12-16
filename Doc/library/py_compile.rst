@@ -40,6 +40,11 @@ byte-code cache files in the directory containing the source code.
    line, if *args* is not specified) are compiled and the resulting bytecode is
    cached in the normal manner.  This function does not search a directory
    structure to locate source files; it only compiles files named explicitly.
+   If ``'-'`` is the only parameter in args, the list of files is taken from
+   standard input.
+
+   .. versionchanged:: 2.7
+      Added support for ``'-'``.
 
 When this module is run as a script, the :func:`main` is used to compile all the
 files named on the command line.  The exit status is nonzero if one of the files
