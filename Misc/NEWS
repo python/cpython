@@ -274,13 +274,17 @@ Library
 - Issue #10467: Fix BytesIO.readinto() after seeking into a position after the
   end of the file.
 
-- configparser: the ConfigParser class has been deprecated in favor of
-  SafeConfigParser. Usage of RawConfigParser is now discouraged for new
-  projects in favor of SafeConfigParser(interpolation=None).
-
-- Issue #10499: configparser supports pluggable interpolation handlers. New
+- Issue #10499: configparser supports pluggable interpolation handlers. The
+  default classic interpolation handler is called BasicInterpolation. Another
   interpolation handler added (ExtendedInterpolation) which supports the syntax
   used by zc.buildout (e.g. interpolation between sections).
+
+- configparser: the SafeConfigParser class has been renamed to ConfigParser.
+  The legacy ConfigParser class has been removed but its interpolation mechanism
+  is still available as LegacyInterpolation.
+  
+- configparser: Usage of RawConfigParser is now discouraged for new projects
+  in favor of ConfigParser(interpolation=None).
 
 - Issue #1682942: configparser supports alternative option/value delimiters.
 
