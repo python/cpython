@@ -15,8 +15,9 @@ ConfigParser -- responsible for parsing a list of
     methods:
 
     __init__(defaults=None, dict_type=_default_dict, allow_no_value=False,
-             delimiters=('=', ':'), comment_prefixes=_COMPATIBLE,
-             strict=False, empty_lines_in_values=True):
+             delimiters=('=', ':'), comment_prefixes=('#', ';'),
+             inline_comment_prefixes=None, strict=True,
+             empty_lines_in_values=True):
         Create the parser. When `defaults' is given, it is initialized into the
         dictionary or intrinsic defaults. The keys must be strings, the values
         must be appropriate for %()s string interpolation.
@@ -29,11 +30,15 @@ ConfigParser -- responsible for parsing a list of
         that divide keys from values.
 
         When `comment_prefixes' is given, it will be used as the set of
-        substrings that prefix comments in a line.
+        substrings that prefix comments in empty lines. Comments can be
+        indented.
+
+        When `inline_comment_prefixes' is given, it will be used as the set of
+        substrings that prefix comments in non-empty lines.
 
         When `strict` is True, the parser won't allow for any section or option
         duplicates while reading from a single source (file, string or
-        dictionary). Default is False.
+        dictionary). Default is True.
 
         When `empty_lines_in_values' is False (default: True), each empty line
         marks the end of an option. Otherwise, internal empty lines of
@@ -340,11 +345,6 @@ class MissingSectionHeaderError(ParsingError):
         self.args = (filename, lineno, line)
 
 
-# Used in parsers to denote selecting a backwards-compatible inline comment
-# character behavior (; and # are comments at the start of a line, but ; only
-# inline)
-_COMPATIBLE = object()
-
 # Used in parser getters to indicate the default behaviour when a specific
 # option is not found it to raise an exception. Created to enable `None' as
 # a valid fallback value.
@@ -592,8 +592,8 @@ class RawConfigParser(MutableMapping):
 
     def __init__(self, defaults=None, dict_type=_default_dict,
                  allow_no_value=False, *, delimiters=('=', ':'),
-                 comment_prefixes=_COMPATIBLE, strict=False,
-                 empty_lines_in_values=True,
+                 comment_prefixes=('#', ';'), inline_comment_prefixes=None,
+                 strict=True, empty_lines_in_values=True,
                  default_section=DEFAULTSECT,
                  interpolation=_UNSET):
 
@@ -616,12 +616,8 @@ class RawConfigParser(MutableMapping):
             else:
                 self._optcre = re.compile(self._OPT_TMPL.format(delim=d),
                                           re.VERBOSE)
-        if comment_prefixes is _COMPATIBLE:
-            self._startonly_comment_prefixes = ('#',)
-            self._comment_prefixes = (';',)
-        else:
-            self._startonly_comment_prefixes = ()
-            self._comment_prefixes = tuple(comment_prefixes or ())
+        self._comment_prefixes = tuple(comment_prefixes or ())
+        self._inline_comment_prefixes = tuple(inline_comment_prefixes or ())
         self._strict = strict
         self._allow_no_value = allow_no_value
         self._empty_lines_in_values = empty_lines_in_values
@@ -989,17 +985,17 @@ class RawConfigParser(MutableMapping):
         indent_level = 0
         e = None                              # None, or an exception
         for lineno, line in enumerate(fp, start=1):
-            # strip full line comments
             comment_start = None
-            for prefix in self._startonly_comment_prefixes:
-                if line.strip().startswith(prefix):
-                    comment_start = 0
-                    break
             # strip inline comments
-            for prefix in self._comment_prefixes:
+            for prefix in self._inline_comment_prefixes:
                 index = line.find(prefix)
                 if index == 0 or (index > 0 and line[index-1].isspace()):
                     comment_start = index
+                    break
+            # strip full line comments
+            for prefix in self._comment_prefixes:
+                if line.strip().startswith(prefix):
+                    comment_start = 0
                     break
             value = line[:comment_start].strip()
             if not value:

@@ -230,21 +230,18 @@ may be treated as parts of multiline values or ignored.
 
 Configuration files may include comments, prefixed by specific
 characters (``#`` and ``;`` by default [1]_).  Comments may appear on
-their own on an otherwise empty line, or may be entered on lines holding
-values or section names.  In the latter case, they need to be preceded
-by a whitespace character to be recognized as a comment.  For backwards
-compatibility, by default only ``;`` starts an inline comment, while
-``#`` does not [1]_.
+their own on an otherwise empty line, possibly indented. [1]_
 
 For example:
 
 .. code-block:: ini
 
    [Simple Values]
-   key: value
-   spaces in keys: allowed
-   spaces in values: allowed as well
-   you can also use = to delimit keys from values
+   key=value
+   spaces in keys=allowed
+   spaces in values=allowed as well
+   spaces around the delimiter = obviously
+   you can also use : to delimit keys from values
 
    [All Values Are Strings]
    values like this: 1000000
@@ -261,12 +258,14 @@ For example:
    key_without_value
    empty string value here =
 
-   [You can use comments] ; after a useful line
-   ; in an empty line
-   after: a_value ; here's another comment
-   inside: a         ;comment
-           multiline ;comment
-           value!    ;comment
+   [You can use comments]
+   # like this
+   ; or this
+
+   # By default only in an empty line.
+   # Inline comments can be harmful because they prevent users
+   # from using the delimiting characters as parts of values.
+   # That being said, this can be customized.
 
        [Sections Can Be Indented]
            can_values_be_as_well = True
@@ -509,7 +508,8 @@ the :meth:`__init__` options:
      ...   skip-external-locking
      ...   old_passwords = 1
      ...   skip-bdb
-     ...   skip-innodb # we don't need ACID today
+     ...   # we don't need ACID today
+     ...   skip-innodb
      ... """
      >>> config = configparser.ConfigParser(allow_no_value=True)
      >>> config.read_string(sample_config)
@@ -536,27 +536,77 @@ the :meth:`__init__` options:
   See also the *space_around_delimiters* argument to
   :meth:`ConfigParser.write`.
 
-* *comment_prefixes*, default value: ``_COMPATIBLE`` (``'#'`` valid on empty
-  lines, ``';'`` valid also on non-empty lines)
+* *comment_prefixes*, default value: ``('#', ';')``
 
-  Comment prefixes are strings that indicate the start of a valid comment
-  within a config file.  The peculiar default value allows for comments starting
-  with ``'#'`` or ``';'`` but only the latter can be used in a non-empty line.
-  This is obviously dictated by backwards compatibiliy.  A more predictable
-  approach would be to specify prefixes as ``('#', ';')`` which will allow for
-  both prefixes to be used in non-empty lines.
+* *inline_comment_prefixes*, default value: ``None``
+
+  Comment prefixes are strings that indicate the start of a valid comment within
+  a config file. *comment_prefixes* are used only on otherwise empty lines
+  (optionally indented) whereas *inline_comment_prefixes* can be used after
+  every valid value (e.g.  section names, options and empty lines as well). By
+  default inline comments are disabled and ``'#'`` and ``';'`` are used as
+  prefixes for whole line comments.
+
+  .. versionchanged:: 3.2
+     In previous versions of :mod:`configparser` behaviour matched
+     ``comment_prefixes=('#',';')`` and ``inline_comment_prefixes=(';',)``.
 
   Please note that config parsers don't support escaping of comment prefixes so
-  leaving characters out of *comment_prefixes* is a way of ensuring they can be
-  used as parts of keys or values.
+  using *inline_comment_prefixes* may prevent users from specifying option
+  values with characters used as comment prefixes. When in doubt, avoid setting
+  *inline_comment_prefixes*. In any circumstances, the only way of storing
+  comment prefix characters at the beginning of a line in multiline values is to
+  interpolate the prefix, for example::
 
-* *strict*, default value: ``False``
+    >>> from configparser import ConfigParser, ExtendedInterpolation
+    >>> parser = ConfigParser(interpolation=ExtendedInterpolation())
+    >>> # the default BasicInterpolation could be used as well
+    >>> parser.read_string("""
+    ... [DEFAULT]
+    ... hash = #
+    ...
+    ... [hashes]
+    ... shebang =
+    ...   ${hash}!/usr/bin/env python
+    ...   ${hash} -*- coding: utf-8 -*-
+    ...
+    ... extensions =
+    ...   enabled_extension
+    ...   another_extension
+    ...   #disabled_by_comment
+    ...   yet_another_extension
+    ...
+    ... interpolation not necessary = if # is not at line start
+    ... even in multiline values = line #1
+    ...   line #2
+    ...   line #3
+    ... """)
+    >>> print(parser['hashes']['shebang'])
 
-  If set to ``True``, the parser will not allow for any section or option
+    #!/usr/bin/env python
+    # -*- coding: utf-8 -*-
+    >>> print(parser['hashes']['extensions'])
+
+    enabled_extension
+    another_extension
+    yet_another_extension
+    >>> print(parser['hashes']['interpolation not necessary'])
+    if # is not at line start
+    >>> print(parser['hashes']['even in multiline values'])
+    line #1
+    line #2
+    line #3
+
+* *strict*, default value: ``True``
+
+  When set to ``True``, the parser will not allow for any section or option
   duplicates while reading from a single source (using :meth:`read_file`,
-  :meth:`read_string` or :meth:`read_dict`).  The default is ``False`` only
-  because of backwards compatibility reasons.  It is recommended to use strict
+  :meth:`read_string` or :meth:`read_dict`). It is recommended to use strict
   parsers in new applications.
+
+  .. versionchanged:: 3.2
+     In previous versions of :mod:`configparser` behaviour matched
+     ``strict=False``.
 
 * *empty_lines_in_values*, default value: ``True``
 
@@ -574,7 +624,6 @@ the :meth:`__init__` options:
        value with a gotcha
 
       this = is still a part of the multiline value of 'key'
-
 
   This can be especially problematic for the user to see if she's using a
   proportional font to edit the file.  That is why when your application does
@@ -603,8 +652,7 @@ the :meth:`__init__` options:
   interpolation completely, ``ExtendedInterpolation()`` provides a more
   advanced variant inspired by ``zc.buildout``. More on the subject in the
   `dedicated documentation section <#interpolation-of-values>`_.
-
-  .. note:: :class:`RawConfigParser` is using ``None`` by default.
+  :class:`RawConfigParser` has a default value of ``None``.
 
 
 More advanced customization may be achieved by overriding default values of
@@ -769,7 +817,7 @@ interpolation if an option used is not defined elsewhere. ::
 ConfigParser Objects
 --------------------
 
-.. class:: ConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=_COMPATIBLE, strict=False, empty_lines_in_values=True, default_section=configparser.DEFAULTSECT, interpolation=BasicInterpolation())
+.. class:: ConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=('#', ';'), inline_comment_prefixes=None, strict=True, empty_lines_in_values=True, default_section=configparser.DEFAULTSECT, interpolation=BasicInterpolation())
 
    The main configuration parser.  When *defaults* is given, it is initialized
    into the dictionary of intrinsic defaults.  When *dict_type* is given, it
@@ -778,12 +826,15 @@ ConfigParser Objects
 
    When *delimiters* is given, it is used as the set of substrings that
    divide keys from values.  When *comment_prefixes* is given, it will be used
-   as the set of substrings that prefix comments in a line, both for the whole
+   as the set of substrings that prefix comments in otherwise empty lines.
+   Comments can be indented. When *inline_comment_prefixes* is given, it will be
+   used as the set of substrings that prefix comments in non-empty lines.
+
    line and inline comments.  For backwards compatibility, the default value for
    *comment_prefixes* is a special value that indicates that ``;`` and ``#`` can
    start whole line comments while only ``;`` can start inline comments.
 
-   When *strict* is ``True`` (default: ``False``), the parser won't allow for
+   When *strict* is ``True`` (the default), the parser won't allow for
    any section or option duplicates while reading from a single source (file,
    string or dictionary), raising :exc:`DuplicateSectionError` or
    :exc:`DuplicateOptionError`.  When *empty_lines_in_values* is ``False``
@@ -1043,7 +1094,7 @@ ConfigParser Objects
 RawConfigParser Objects
 -----------------------
 
-.. class:: RawConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=_COMPATIBLE, strict=False, empty_lines_in_values=True, default_section=configaparser.DEFAULTSECT, interpolation=None)
+.. class:: RawConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=('#', ';'), inline_comment_prefixes=None, strict=True, empty_lines_in_values=True, default_section=configaparser.DEFAULTSECT, interpolation=None)
 
    Legacy variant of the :class:`ConfigParser` with interpolation disabled
    by default and unsafe ``add_section`` and ``set`` methods.
