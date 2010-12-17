@@ -98,8 +98,10 @@ ConfigParser -- responsible for parsing a list of
         insensitively defined as 0, false, no, off for False, and 1, true,
         yes, on for True).  Returns False or True.
 
-    items(section, raw=False, vars=None)
-        Return a list of tuples with (name, value) for each option
+    items(section=_UNSET, raw=False, vars=None)
+        If section is given, return a list of tuples with (section_name,
+        section_proxy) for each section, including DEFAULTSECT. Otherwise,
+        return a list of tuples with (name, value) for each option
         in the section.
 
     remove_section(section)
@@ -495,9 +497,9 @@ class ExtendedInterpolation(Interpolation):
                         raise InterpolationSyntaxError(
                             option, section,
                             "More than one ':' found: %r" % (rest,))
-                except KeyError:
+                except (KeyError, NoSectionError, NoOptionError):
                     raise InterpolationMissingOptionError(
-                        option, section, rest, var)
+                        option, section, rest, ":".join(path))
                 if "$" in v:
                     self._interpolate_some(parser, opt, accum, v, sect,
                                            dict(parser.items(sect, raw=True)),
@@ -730,7 +732,7 @@ class RawConfigParser(MutableMapping):
             except (DuplicateSectionError, ValueError):
                 if self._strict and section in elements_added:
                     raise
-                elements_added.add(section)
+            elements_added.add(section)
             for key, value in keys.items():
                 key = self.optionxform(str(key))
                 if value is not None:
@@ -820,7 +822,7 @@ class RawConfigParser(MutableMapping):
             else:
                 return fallback
 
-    def items(self, section, raw=False, vars=None):
+    def items(self, section=_UNSET, raw=False, vars=None):
         """Return a list of (name, value) tuples for each option in a section.
 
         All % interpolations are expanded in the return values, based on the
@@ -831,6 +833,8 @@ class RawConfigParser(MutableMapping):
 
         The section DEFAULT is special.
         """
+        if section is _UNSET:
+            return super().items()
         d = self._defaults.copy()
         try:
             d.update(self._sections[section])
@@ -851,7 +855,9 @@ class RawConfigParser(MutableMapping):
         return optionstr.lower()
 
     def has_option(self, section, option):
-        """Check for the existence of a given option in a given section."""
+        """Check for the existence of a given option in a given section.
+        If the specified `section' is None or an empty string, DEFAULT is
+        assumed. If the specified `section' does not exist, returns False."""
         if not section or section == self.default_section:
             option = self.optionxform(option)
             return option in self._defaults
@@ -1059,9 +1065,6 @@ class RawConfigParser(MutableMapping):
                         # match if it would set optval to None
                         if optval is not None:
                             optval = optval.strip()
-                            # allow empty values
-                            if optval == '""':
-                                optval = ''
                             cursect[optname] = [optval]
                         else:
                             # valueless option handling
@@ -1196,21 +1199,24 @@ class SectionProxy(MutableMapping):
         return self._parser.set(self._name, key, value)
 
     def __delitem__(self, key):
-        if not self._parser.has_option(self._name, key):
+        if not (self._parser.has_option(self._name, key) and
+                self._parser.remove_option(self._name, key)):
             raise KeyError(key)
-        return self._parser.remove_option(self._name, key)
 
     def __contains__(self, key):
         return self._parser.has_option(self._name, key)
 
     def __len__(self):
-        # XXX weak performance
-        return len(self._parser.options(self._name))
+        return len(self._options())
 
     def __iter__(self):
-        # XXX weak performance
-        # XXX does not break when underlying container state changed
-        return self._parser.options(self._name).__iter__()
+        return self._options().__iter__()
+
+    def _options(self):
+        if self._name != self._parser.default_section:
+            return self._parser.options(self._name)
+        else:
+            return self._parser.defaults()
 
     def get(self, option, fallback=None, *, raw=False, vars=None):
         return self._parser.get(self._name, option, raw=raw, vars=vars,
