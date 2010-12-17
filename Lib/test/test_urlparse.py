@@ -327,6 +327,9 @@ class UrlParseTestCase(unittest.TestCase):
         #self.checkJoin(RFC3986_BASE, 'http:g','http:g') # strict parser
         self.checkJoin(RFC3986_BASE, 'http:g','http://a/b/c/g') #relaxed parser
 
+        # Test for issue9721
+        self.checkJoin('http://a/b/c/de', ';x','http://a/b/c/;x')
+
     def test_urljoins(self):
         self.checkJoin(SIMPLE_BASE, 'g:h','g:h')
         self.checkJoin(SIMPLE_BASE, 'http:g','http://a/b/c/g')
