@@ -104,7 +104,7 @@ winsound
 
 Python-controlled subprojects that wrap external projects:
 _sqlite3
-    Wraps SQLite 3.6.21, which is currently built by sqlite3.vcproj (see below).
+    Wraps SQLite 3.7.4, which is currently built by sqlite3.vcproj (see below).
 _tkinter
     Wraps the Tk windowing system.  Unlike _sqlite3, there's no
     corresponding tcltk.vcproj-type project that builds Tcl/Tk from vcproj's
