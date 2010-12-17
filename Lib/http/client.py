@@ -252,13 +252,10 @@ def parse_headers(fp, _class=HTTPMessage):
     hstring = b''.join(headers).decode('iso-8859-1')
     return email.parser.Parser(_class=_class).parsestr(hstring)
 
-class HTTPResponse(io.RawIOBase):
 
-    # strict: If true, raise BadStatusLine if the status line can't be
-    # parsed as a valid HTTP/1.0 or 1.1 status line.  By default it is
-    # false because it prevents clients from talking to HTTP/0.9
-    # servers.  Note that a response with a sufficiently corrupted
-    # status line will look like an HTTP/0.9 response.
+_strict_sentinel = object()
+
+class HTTPResponse(io.RawIOBase):
 
     # See RFC 2616 sec 19.6 and RFC 1945 sec 6 for details.
 
@@ -267,7 +264,7 @@ class HTTPResponse(io.RawIOBase):
     # text following RFC 2047.  The basic status line parsing only
     # accepts iso-8859-1.
 
-    def __init__(self, sock, debuglevel=0, strict=0, method=None, url=None):
+    def __init__(self, sock, debuglevel=0, strict=_strict_sentinel, method=None, url=None):
         # If the response includes a content-length header, we need to
         # make sure that the client doesn't read more than the
         # specified number of bytes.  If it does, it will block until
@@ -277,7 +274,10 @@ class HTTPResponse(io.RawIOBase):
         # clients unless they know what they are doing.
         self.fp = sock.makefile("rb")
         self.debuglevel = debuglevel
-        self.strict = strict
+        if strict is not _strict_sentinel:
+            warnings.warn("the 'strict' argument isn't supported anymore; "
+                "http.client now always assumes HTTP/1.x compliant servers.",
+                DeprecationWarning, 2)
         self._method = method
 
         # The HTTPResponse object is returned via urllib.  The clients
@@ -299,7 +299,6 @@ class HTTPResponse(io.RawIOBase):
         self.will_close = _UNKNOWN      # conn will close at end of response
 
     def _read_status(self):
-        # Initialize with Simple-Response defaults.
         line = str(self.fp.readline(), "iso-8859-1")
         if self.debuglevel > 0:
             print("reply:", repr(line))
@@ -308,25 +307,17 @@ class HTTPResponse(io.RawIOBase):
             # sending a valid response.
             raise BadStatusLine(line)
         try:
-            [version, status, reason] = line.split(None, 2)
+            version, status, reason = line.split(None, 2)
         except ValueError:
             try:
-                [version, status] = line.split(None, 1)
+                version, status = line.split(None, 1)
                 reason = ""
             except ValueError:
-                # empty version will cause next test to fail and status
-                # will be treated as 0.9 response.
+                # empty version will cause next test to fail.
                 version = ""
         if not version.startswith("HTTP/"):
-            if self.strict:
-                self.close()
-                raise BadStatusLine(line)
-            else:
-                # Assume it's a Simple-Response from an 0.9 server.
-                # We have to convert the first line back to raw bytes
-                # because self.fp.readline() needs to return bytes.
-                self.fp = LineAndFileWrapper(bytes(line, "ascii"), self.fp)
-                return "HTTP/0.9", 200, ""
+            self.close()
+            raise BadStatusLine(line)
 
         # The status code is a three-digit number
         try:
@@ -357,21 +348,13 @@ class HTTPResponse(io.RawIOBase):
 
         self.code = self.status = status
         self.reason = reason.strip()
-        if version == "HTTP/1.0":
+        if version in ("HTTP/1.0", "HTTP/0.9"):
+            # Some servers might still return "0.9", treat it as 1.0 anyway
             self.version = 10
         elif version.startswith("HTTP/1."):
             self.version = 11   # use HTTP/1.1 code for HTTP/1.x where x>=1
-        elif version == "HTTP/0.9":
-            self.version = 9
         else:
             raise UnknownProtocol(version)
-
-        if self.version == 9:
-            self.length = None
-            self.chunked = False
-            self.will_close = True
-            self.headers = self.msg = email.message_from_string('')
-            return
 
         self.headers = self.msg = parse_headers(self.fp)
 
@@ -639,10 +622,13 @@ class HTTPConnection:
     default_port = HTTP_PORT
     auto_open = 1
     debuglevel = 0
-    strict = 0
 
-    def __init__(self, host, port=None, strict=None,
+    def __init__(self, host, port=None, strict=_strict_sentinel,
                  timeout=socket._GLOBAL_DEFAULT_TIMEOUT, source_address=None):
+        if strict is not _strict_sentinel:
+            warnings.warn("the 'strict' argument isn't supported anymore; "
+                "http.client now always assumes HTTP/1.x compliant servers.",
+                DeprecationWarning, 2)
         self.timeout = timeout
         self.source_address = source_address
         self.sock = None
@@ -654,8 +640,6 @@ class HTTPConnection:
         self._tunnel_port = None
 
         self._set_hostport(host, port)
-        if strict is not None:
-            self.strict = strict
 
     def set_tunnel(self, host, port=None, headers=None):
         """ Sets up the host and the port for the HTTP CONNECT Tunnelling.
@@ -700,8 +684,7 @@ class HTTPConnection:
             header_bytes = header_str.encode("ascii")
             self.send(header_bytes)
 
-        response = self.response_class(self.sock, strict = self.strict,
-                                       method = self._method)
+        response = self.response_class(self.sock, method = self._method)
         (version, code, message) = response._read_status()
 
         if code != 200:
@@ -1025,11 +1008,9 @@ class HTTPConnection:
 
         if self.debuglevel > 0:
             response = self.response_class(self.sock, self.debuglevel,
-                                           strict=self.strict,
                                            method=self._method)
         else:
-            response = self.response_class(self.sock, strict=self.strict,
-                                           method=self._method)
+            response = self.response_class(self.sock, method=self._method)
 
         response.begin()
         assert response.will_close != _UNKNOWN
@@ -1057,7 +1038,7 @@ else:
         # XXX Should key_file and cert_file be deprecated in favour of context?
 
         def __init__(self, host, port=None, key_file=None, cert_file=None,
-                     strict=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
+                     strict=_strict_sentinel, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
                      source_address=None, *, context=None, check_hostname=None):
             super(HTTPSConnection, self).__init__(host, port, strict, timeout,
                                                   source_address)
@@ -1158,71 +1139,3 @@ class BadStatusLine(HTTPException):
 
 # for backwards compatibility
 error = HTTPException
-
-class LineAndFileWrapper:
-    """A limited file-like object for HTTP/0.9 responses."""
-
-    # The status-line parsing code calls readline(), which normally
-    # get the HTTP status line.  For a 0.9 response, however, this is
-    # actually the first line of the body!  Clients need to get a
-    # readable file object that contains that line.
-
-    def __init__(self, line, file):
-        self._line = line
-        self._file = file
-        self._line_consumed = 0
-        self._line_offset = 0
-        self._line_left = len(line)
-
-    def __getattr__(self, attr):
-        return getattr(self._file, attr)
-
-    def _done(self):
-        # called when the last byte is read from the line.  After the
-        # call, all read methods are delegated to the underlying file
-        # object.
-        self._line_consumed = 1
-        self.read = self._file.read
-        self.readline = self._file.readline
-        self.readlines = self._file.readlines
-
-    def read(self, amt=None):
-        if self._line_consumed:
-            return self._file.read(amt)
-        assert self._line_left
-        if amt is None or amt > self._line_left:
-            s = self._line[self._line_offset:]
-            self._done()
-            if amt is None:
-                return s + self._file.read()
-            else:
-                return s + self._file.read(amt - len(s))
-        else:
-            assert amt <= self._line_left
-            i = self._line_offset
-            j = i + amt
-            s = self._line[i:j]
-            self._line_offset = j
-            self._line_left -= amt
-            if self._line_left == 0:
-                self._done()
-            return s
-
-    def readline(self):
-        if self._line_consumed:
-            return self._file.readline()
-        assert self._line_left
-        s = self._line[self._line_offset:]
-        self._done()
-        return s
-
-    def readlines(self, size=None):
-        if self._line_consumed:
-            return self._file.readlines(size)
-        assert self._line_left
-        L = [self._line[self._line_offset:]]
-        self._done()
-        if size is None:
-            return L + self._file.readlines()
-        else:
-            return L + self._file.readlines(size)

@@ -23,16 +23,13 @@ HTTPS protocols.  It is normally not used directly --- the module
 The module provides the following classes:
 
 
-.. class:: HTTPConnection(host, port=None, strict=None[, timeout[, source_address]])
+.. class:: HTTPConnection(host, port=None[, strict[, timeout[, source_address]]])
 
    An :class:`HTTPConnection` instance represents one transaction with an HTTP
    server.  It should be instantiated passing it a host and optional port
    number.  If no port number is passed, the port is extracted from the host
    string if it has the form ``host:port``, else the default HTTP port (80) is
-   used.  When True, the optional parameter *strict* (which defaults to a false
-   value) causes ``BadStatusLine`` to
-   be raised if the status line can't be parsed as a valid HTTP/1.0 or 1.1
-   status line.  If the optional *timeout* parameter is given, blocking
+   used.  If the optional *timeout* parameter is given, blocking
    operations (like connection attempts) will timeout after that many seconds
    (if it is not given, the global default timeout setting is used).
    The optional *source_address* parameter may be a typle of a (host, port)
@@ -49,8 +46,12 @@ The module provides the following classes:
    .. versionchanged:: 3.2
       *source_address* was added.
 
+   .. versionchanged:: 3.2
+      The *strict* parameter is deprecated.  HTTP 0.9-style "Simple Responses"
+      are not supported anymore.
 
-.. class:: HTTPSConnection(host, port=None, key_file=None, cert_file=None, strict=None[, timeout[, source_address]], *, context=None, check_hostname=None)
+
+.. class:: HTTPSConnection(host, port=None, key_file=None, cert_file=None[, strict[, timeout[, source_address]]], *, context=None, check_hostname=None)
 
    A subclass of :class:`HTTPConnection` that uses SSL for communication with
    secure servers.  Default port is ``443``.  If *context* is specified, it
@@ -80,11 +81,19 @@ The module provides the following classes:
       This class now supports HTTPS virtual hosts if possible (that is,
       if :data:`ssl.HAS_SNI` is true).
 
+   .. versionchanged:: 3.2
+      The *strict* parameter is deprecated.  HTTP 0.9-style "Simple Responses"
+      are not supported anymore.
 
-.. class:: HTTPResponse(sock, debuglevel=0, strict=0, method=None, url=None)
+
+.. class:: HTTPResponse(sock, debuglevel=0[, strict], method=None, url=None)
 
    Class whose instances are returned upon successful connection.  Not
    instantiated directly by user.
+
+   .. versionchanged:: 3.2
+      The *strict* parameter is deprecated.  HTTP 0.9-style "Simple Responses"
+      are not supported anymore.
 
 
 The following exceptions are raised as appropriate:
