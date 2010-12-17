@@ -76,6 +76,11 @@ Tools/Demos
 - Issue #10706: Remove outdated script runtests.sh.  Either ``make test``
   or ``python -m test`` should be used instead.
 
+Build
+-----
+
+- The Windows build now uses Tcl/Tk 8.5.9.
+
 
 What's New in Python 3.2 Beta 1?
 ================================

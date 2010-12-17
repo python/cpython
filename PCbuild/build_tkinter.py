@@ -11,8 +11,8 @@ import sys
 here = os.path.abspath(os.path.dirname(__file__))
 par = os.path.pardir
 
-TCL = "tcl8.5.2"
-TK = "tk8.5.2"
+TCL = "tcl8.5.9"
+TK = "tk8.5.9"
 TIX = "tix-8.4.3.x"
 
 ROOT = os.path.abspath(os.path.join(here, par, par))
