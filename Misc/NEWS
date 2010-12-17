@@ -293,6 +293,8 @@ Library
 - Issue #10467: Fix BytesIO.readinto() after seeking into a position after the
   end of the file.
 
+- configparser: 100% test coverage.
+
 - Issue #10499: configparser supports pluggable interpolation handlers. The
   default classic interpolation handler is called BasicInterpolation. Another
   interpolation handler added (ExtendedInterpolation) which supports the syntax
@@ -314,7 +316,9 @@ Library
 - Issue #9421: configparser's getint(), getfloat() and getboolean() methods
   accept vars and default arguments just like get() does.
 
-- Issue #9452: configparser supports reading from strings and dictionaries.
+- Issue #9452: configparser supports reading from strings and dictionaries
+  (thanks to the mapping protocol API, the latter can be used to copy data
+  between parsers).
 
 - configparser: accepted INI file structure is now customizable, including
   comment prefixes, name of the DEFAULT section, empty lines in multiline

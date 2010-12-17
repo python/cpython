@@ -391,17 +391,20 @@ However, there are a few differences that should be taken into account:
 
 * Trying to delete the ``DEFAULTSECT`` raises ``ValueError``.
 
-* There are two parser-level methods in the legacy API that hide the dictionary
-  interface and are incompatible:
+* ``parser.get(section, option, **kwargs)`` - the second argument is **not**
+  a fallback value. Note however that the section-level ``get()`` methods are
+  compatible both with the mapping protocol and the classic configparser API.
 
-  * ``parser.get(section, option, **kwargs)`` - the second argument is **not** a
-    fallback value
-
-  * ``parser.items(section)`` - this returns a list of *option*, *value* pairs
-    for a specified ``section``
+* ``parser.items()`` is compatible with the mapping protocol (returns a list of
+  *section_name*, *section_proxy* pairs including the DEFAULTSECT).  However,
+  this method can also be invoked with arguments: ``parser.items(section, raw,
+  vars)``. The latter call returns a list of *option*, *value* pairs for
+  a specified ``section``, with all interpolations expanded (unless
+  ``raw=True`` is provided).
 
 The mapping protocol is implemented on top of the existing legacy API so that
-subclassing the original interface makes the mappings work as expected as well.
+subclasses overriding the original interface still should have mappings working
+as expected.
 
 
 Customizing Parser Behaviour
@@ -906,7 +909,8 @@ ConfigParser Objects
    .. method:: has_option(section, option)
 
       If the given *section* exists, and contains the given *option*, return
-      :const:`True`; otherwise return :const:`False`.
+      :const:`True`; otherwise return :const:`False`. If the specified
+      *section* is :const:`None` or an empty string, DEFAULT is assumed.
 
 
    .. method:: read(filenames, encoding=None)
@@ -964,13 +968,16 @@ ConfigParser Objects
 
    .. method:: read_dict(dictionary, source='<dict>')
 
-      Load configuration from a dictionary.  Keys are section names, values are
-      dictionaries with keys and values that should be present in the section.
-      If the used dictionary type preserves order, sections and their keys will
-      be added in order.  Values are automatically converted to strings.
+      Load configuration from any object that provides a dict-like ``items()``
+      method.  Keys are section names, values are dictionaries with keys and
+      values that should be present in the section.  If the used dictionary
+      type preserves order, sections and their keys will be added in order.
+      Values are automatically converted to strings.
 
       Optional argument *source* specifies a context-specific name of the
       dictionary passed.  If not given, ``<dict>`` is used.
+
+      This method can be used to copy state between parsers.
 
       .. versionadded:: 3.2
 
@@ -1019,10 +1026,13 @@ ConfigParser Objects
       *fallback*.
 
 
-   .. method:: items(section, raw=False, vars=None)
+   .. method:: items([section], raw=False, vars=None)
 
-      Return a list of *name*, *value* pairs for the options in the given
-      *section*.  Optional arguments have the same meaning as for the
+      When *section* is not given, return a list of *section_name*,
+      *section_proxy* pairs, including DEFAULTSECT.
+
+      Otherwise, return a list of *name*, *value* pairs for the options in the
+      given *section*.  Optional arguments have the same meaning as for the
       :meth:`get` method.
 
 
