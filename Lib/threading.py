@@ -55,8 +55,14 @@ if __debug__:
         def _note(self, format, *args):
             if self._verbose:
                 format = format % args
-                format = "%s: %s\n" % (
-                    current_thread().name, format)
+                # Issue #4188: calling current_thread() can incur an infinite
+                # recursion if it has to create a DummyThread on the fly.
+                ident = _get_ident()
+                try:
+                    name = _active[ident].name
+                except KeyError:
+                    name = "<OS thread %d>" % ident
+                format = "%s: %s\n" % (name, format)
                 _sys.stderr.write(format)
 
 else:
