@@ -29,6 +29,7 @@ class CfgParserTestCaseClass(unittest.TestCase):
     allow_no_value = False
     delimiters = ('=', ':')
     comment_prefixes = (';', '#')
+    inline_comment_prefixes = (';', '#')
     empty_lines_in_values = True
     dict_type = configparser._default_dict
     strict = False
@@ -41,6 +42,7 @@ class CfgParserTestCaseClass(unittest.TestCase):
             allow_no_value=self.allow_no_value,
             delimiters=self.delimiters,
             comment_prefixes=self.comment_prefixes,
+            inline_comment_prefixes=self.inline_comment_prefixes,
             empty_lines_in_values=self.empty_lines_in_values,
             dict_type=self.dict_type,
             strict=self.strict,
@@ -812,6 +814,7 @@ class ConfigParserTestCaseLegacyInterpolation(ConfigParserTestCase):
 class ConfigParserTestCaseNonStandardDelimiters(ConfigParserTestCase):
     delimiters = (':=', '$')
     comment_prefixes = ('//', '"')
+    inline_comment_prefixes = ('//', '"')
 
 class ConfigParserTestCaseNonStandardDefaultSection(ConfigParserTestCase):
     default_section = 'general'
@@ -888,10 +891,12 @@ class RawConfigParserTestCase(BasicTestCase):
 class RawConfigParserTestCaseNonStandardDelimiters(RawConfigParserTestCase):
     delimiters = (':=', '$')
     comment_prefixes = ('//', '"')
+    inline_comment_prefixes = ('//', '"')
 
-class RawConfigParserTestSambaConf(BasicTestCase):
+class RawConfigParserTestSambaConf(CfgParserTestCaseClass):
     config_class = configparser.RawConfigParser
-    comment_prefixes = ('#', ';', '//', '----')
+    comment_prefixes = ('#', ';', '----')
+    inline_comment_prefixes = ('//',)
     empty_lines_in_values = False
 
     def test_reading(self):
@@ -1074,7 +1079,8 @@ class SortedTestCase(RawConfigParserTestCase):
 
 class CompatibleTestCase(CfgParserTestCaseClass):
     config_class = configparser.RawConfigParser
-    comment_prefixes = configparser._COMPATIBLE
+    comment_prefixes = '#;'
+    inline_comment_prefixes = ';'
 
     def test_comment_handling(self):
         config_string = textwrap.dedent("""\
