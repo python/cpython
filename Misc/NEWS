@@ -19,6 +19,10 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #10711: Remove HTTP 0.9 support from http.client.  The ``strict``
+  parameter to HTTPConnection and friends is deprecated.
+
 - Issue #9721: Fix the behavior of urljoin when the relative url starts with a
   ';' character. Patch by Wes Chow.
 
