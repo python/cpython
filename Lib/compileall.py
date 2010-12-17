@@ -27,8 +27,8 @@ def compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None,
 
     dir:       the directory to byte-compile
     maxlevels: maximum recursion level (default 10)
-    ddir:      if given, purported directory name (this is the
-               directory name that will show up in error messages)
+    ddir:      the directory that will be prepended to the path to the
+               file as it is compiled into each byte-code file.
     force:     if True, force compilation, even if timestamps are up-to-date
     quiet:     if True, be quiet during compilation
     legacy:    if True, produce legacy pyc paths instead of PEP 3147 paths
@@ -66,8 +66,8 @@ def compile_file(fullname, ddir=None, force=0, rx=None, quiet=False,
                  legacy=False, optimize=-1):
     """Byte-compile file.
     fullname:  the file to byte-compile
-    ddir:      if given, purported directory name (this is the
-               directory name that will show up in error messages)
+    ddir:      if given, the directory name compiled in to the
+               byte-code file.
     force:     if True, force compilation, even if timestamps are up-to-date
     quiet:     if True, be quiet during compilation
     legacy:    if True, produce legacy pyc paths instead of PEP 3147 paths
@@ -163,25 +163,32 @@ def main():
 
     parser = argparse.ArgumentParser(
         description='Utilities to support installing Python libraries.')
-    parser.add_argument('-l', action='store_const', default=10, const=0,
-                        dest='maxlevels', help="don't recurse down")
+    parser.add_argument('-l', action='store_const', const=0,
+                        default=10, dest='maxlevels',
+                        help="don't recurse into subdirectories")
     parser.add_argument('-f', action='store_true', dest='force',
                         help='force rebuild even if timestamps are up to date')
     parser.add_argument('-q', action='store_true', dest='quiet',
-                        help='reduce output')
+                        help='output only error messages')
     parser.add_argument('-b', action='store_true', dest='legacy',
-                        help='produce legacy byte-compiled file paths')
+                        help='use legacy (pre-PEP3147) compiled file locations')
     parser.add_argument('-d', metavar='DESTDIR',  dest='ddir', default=None,
-                        help=('purported directory name for error messages; '
-                              'if no directory arguments, -l sys.path '
-                              'is assumed.'))
+                        help=('directory to prepend to file paths for use in '
+                              'compile time tracebacks and in runtime '
+                              'tracebacks in cases where the source file is '
+                              'unavailable'))
     parser.add_argument('-x', metavar='REGEXP', dest='rx', default=None,
-                        help=('skip files matching the regular expression.\n\t'
+                        help=('skip files matching the regular expression. '
                               'The regexp is searched for in the full path '
-                              'of the file'))
+                              'to each file considered for compilation.'))
     parser.add_argument('-i', metavar='FILE', dest='flist',
-                        help='expand the list with the content of FILE.')
-    parser.add_argument('compile_dest', metavar='FILE|DIR', nargs='*')
+                        help=('add all the files and directories listed in '
+                              'FILE to the list considered for compilation. '
+                              'If "-", names are read from stdin.'))
+    parser.add_argument('compile_dest', metavar='FILE|DIR', nargs='*',
+                        help=('zero or more file and directory names '
+                              'to compile; if no arguments given, defaults '
+                              'to the equivalent of -l sys.path'))
     args = parser.parse_args()
 
     compile_dests = args.compile_dest
