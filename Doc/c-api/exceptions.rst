@@ -539,7 +539,7 @@ special recursion handling.  In addition to protecting the stack,
 following two functions facilitate this functionality.  Effectively,
 these are the C equivalent to :func:`reprlib.recursive_repr`.
 
-.. c:function:: int Py_ReprEntr(PyObject *object)
+.. c:function:: int Py_ReprEnter(PyObject *object)
 
    Called at the beginning of the :attr:`tp_repr` implementation to
    detect cycles.
@@ -559,8 +559,8 @@ these are the C equivalent to :func:`reprlib.recursive_repr`.
 
 .. c:function:: void Py_ReprLeave(PyObject *object)
 
-   Ends a :c:func:`Py_ReprEntr`.  Must be called once for each
-   invocation of :c:func:`Py_ReprEntr` that returns zero.
+   Ends a :c:func:`Py_ReprEnter`.  Must be called once for each
+   invocation of :c:func:`Py_ReprEnter` that returns zero.
 
 
 .. _standardexceptions:
