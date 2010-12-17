@@ -699,7 +699,7 @@ concatenation or repetition.
 
 Objects of type xrange are similar to buffers in that there is no specific syntax to
 create them, but they are created using the :func:`xrange` function.  They don't
-support concatenation or repetition, and using ``in``, ``not in``,
+support slicing, concatenation or repetition, and using ``in``, ``not in``,
 :func:`min` or :func:`max` on them is inefficient.
 
 Most sequence types support the following operations.  The ``in`` and ``not in``
