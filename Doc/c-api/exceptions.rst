@@ -533,6 +533,35 @@ recursion depth automatically).
    Ends a :c:func:`Py_EnterRecursiveCall`.  Must be called once for each
    *successful* invocation of :c:func:`Py_EnterRecursiveCall`.
 
+Properly implementing :attr:`tp_repr` for container types requires
+special recursion handling.  In addition to protecting the stack,
+:attr:`tp_repr` also needs to track objects to prevent cycles.  The
+following two functions facilitate this functionality.  Effectively,
+these are the C equivalent to :func:`reprlib.recursive_repr`.
+
+.. c:function:: int Py_ReprEntr(PyObject *object)
+
+   Called at the beginning of the :attr:`tp_repr` implementation to
+   detect cycles.
+
+   If the object has already been processed, the function returns a
+   positive integer.  In that case the :attr:`tp_repr` implementation
+   should return a string object indicating a cycle.  As examples,
+   :class:`dict` objects return ``{...}`` and :class:`list` objects
+   return ``[...]``.
+
+   The function will return a negative integer if the recursion limit
+   is reached.  In that case the :attr:`tp_repr` implementation should
+   typically return ``NULL``.
+
+   Otherwise, the function returns zero and the :attr:`tp_repr`
+   implementation can continue normally.
+
+.. c:function:: void Py_ReprLeave(PyObject *object)
+
+   Ends a :c:func:`Py_ReprEntr`.  Must be called once for each
+   invocation of :c:func:`Py_ReprEntr` that returns zero.
+
 
 .. _standardexceptions:
 
