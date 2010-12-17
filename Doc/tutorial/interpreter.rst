@@ -78,8 +78,9 @@ Argument Passing
 ----------------
 
 When known to the interpreter, the script name and additional arguments
-thereafter are passed to the script in the variable ``sys.argv``, which is a
-list of strings.  Its length is at least one; when no script and no arguments
+thereafter are turned into a list of strings and assigned to the ``argv``
+variable in the ``sys`` module.  You can access this list by executing ``import
+sys``.  The length of the list is at least one; when no script and no arguments
 are given, ``sys.argv[0]`` is an empty string.  When the script name is given as
 ``'-'`` (meaning  standard input), ``sys.argv[0]`` is set to ``'-'``.  When
 :option:`-c` *command* is used, ``sys.argv[0]`` is set to ``'-c'``.  When
