@@ -392,6 +392,12 @@ Glossary
       the :term:`EAFP` approach and is characterized by the presence of many
       :keyword:`if` statements.
 
+      In a multi-threaded environment, the LBYL approach can risk introducing a
+      race condition between "the looking" and "the leaping".  For example, the
+      code, ``if key in mapping: return mapping[key]`` can fail if another
+      thread removes *key* from *mapping* after the test, but before the lookup.
+      This issue can be solved with locks or by using the EAFP approach.
+
    list
       A built-in Python :term:`sequence`.  Despite its name it is more akin
       to an array in other languages than to a linked list since access to

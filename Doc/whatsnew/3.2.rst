@@ -112,8 +112,6 @@ Example of calling the parser on a command string::
 
     >>> cmd  = 'deploy sneezy.example.com sleepy.example.com -u skycaptain'
     >>> result = parser.parse_args(cmd.split())
-
-    >>> # parsed variables are stored in the attributes
     >>> result.action
     'deploy'
     >>> result.targets
