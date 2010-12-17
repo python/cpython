@@ -20,6 +20,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4188: Avoid creating dummy thread objects when logging operations
+  from the threading module (with the internal verbose flag activated).
+
 - Issue #10711: Remove HTTP 0.9 support from http.client.  The ``strict``
   parameter to HTTPConnection and friends is deprecated.
 
