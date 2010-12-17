@@ -79,7 +79,7 @@ Tools/Demos
 Build
 -----
 
-- The Windows build now uses Tcl/Tk 8.5.9.
+- The Windows build now uses Tcl/Tk 8.5.9 and sqlite3 3.7.4.
 
 
 What's New in Python 3.2 Beta 1?
