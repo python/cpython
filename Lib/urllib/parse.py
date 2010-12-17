@@ -249,14 +249,9 @@ def urljoin(base, url, allow_fragments=True):
     if path[:1] == '/':
         return urlunparse((scheme, netloc, path,
                            params, query, fragment))
-    if not path:
+    if not path and not params:
         path = bpath
-        if not params:
-            params = bparams
-        else:
-            path = path[:-1]
-            return urlunparse((scheme, netloc, path,
-                                params, query, fragment))
+        params = bparams
         if not query:
             query = bquery
         return urlunparse((scheme, netloc, path,
