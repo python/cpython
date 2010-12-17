@@ -21,6 +21,10 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #4188: Avoid creating dummy thread objects when logging operations
+  from the threading module (with the internal verbose flag activated).
+
 - Issue #9721: Fix the behavior of urljoin when the relative url starts with a
   ';' character. Patch by Wes Chow.
 
