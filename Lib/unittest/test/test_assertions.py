@@ -165,13 +165,13 @@ class TestLongMessage(unittest.TestCase):
 
     def testAssertTrue(self):
         self.assertMessages('assertTrue', (False,),
-                            ["^False is not True$", "^oops$", "^False is not True$",
-                             "^False is not True : oops$"])
+                            ["^False is not true$", "^oops$", "^False is not true$",
+                             "^False is not true : oops$"])
 
     def testAssertFalse(self):
         self.assertMessages('assertFalse', (True,),
-                            ["^True is not False$", "^oops$", "^True is not False$",
-                             "^True is not False : oops$"])
+                            ["^True is not false$", "^oops$", "^True is not false$",
+                             "^True is not false : oops$"])
 
     def testNotEqual(self):
         self.assertMessages('assertNotEqual', (1, 1),
