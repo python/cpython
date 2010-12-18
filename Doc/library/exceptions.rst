@@ -63,6 +63,12 @@ The following exceptions are used mostly as base classes for other exceptions.
    :exc:`FloatingPointError`.
 
 
+.. exception:: BufferError
+
+   Raised when a :ref:`buffer <bufferobjects>` related operation cannot be
+   performed.
+
+
 .. exception:: LookupError
 
    The base class for the exceptions that are raised when a key or index used on
@@ -255,6 +261,18 @@ The following exceptions are the exceptions that are usually raised.
    Instances of this class have attributes :attr:`filename`, :attr:`lineno`,
    :attr:`offset` and :attr:`text` for easier access to the details.  :func:`str`
    of the exception instance returns only the message.
+
+
+.. exception:: IndentationError
+
+   Base class for syntax errors related to incorrect indentation.  This is a
+   subclass of :exc:`SyntaxError`.
+
+
+.. exception:: TabError
+
+   Raised when indentation contains an inconsistent use of tabs and spaces.
+   This is a subclass of :exc:`IndentationError`.
 
 
 .. exception:: SystemError
