@@ -866,7 +866,7 @@ If a new entry overwrites an existing entry, the
 original insertion position is changed and moved to the end::
 
     class LastUpdatedOrderedDict(OrderedDict):
-        'Store items is the order the keys were last added'
+        'Store items in the order the keys were last added'
         def __setitem__(self, key, value):
             if key in self:
                 del self[key]
