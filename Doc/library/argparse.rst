@@ -1658,14 +1658,14 @@ are available:
 .. method:: ArgumentParser.print_usage(file=None)
 
    Print a brief description of how the :class:`ArgumentParser` should be
-   invoked on the command line.  If *file* is ``None``, :data:`sys.stderr` is
+   invoked on the command line.  If *file* is ``None``, :data:`sys.stdout` is
    assumed.
 
 .. method:: ArgumentParser.print_help(file=None)
 
    Print a help message, including the program usage and information about the
    arguments registered with the :class:`ArgumentParser`.  If *file* is
-   ``None``, :data:`sys.stderr` is assumed.
+   ``None``, :data:`sys.stdout` is assumed.
 
 There are also variants of these methods that simply return a string instead of
 printing it:
