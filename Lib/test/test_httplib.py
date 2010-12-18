@@ -319,6 +319,35 @@ class BasicTest(TestCase):
         self.assertTrue(hasattr(resp,'fileno'),
                 'HTTPResponse should expose a fileno attribute')
 
+    # Test lines overflowing the max line size (_MAXLINE in http.client)
+
+    def test_overflowing_status_line(self):
+        self.skipTest("disabled for HTTP 0.9 support")
+        body = "HTTP/1.1 200 Ok" + "k" * 65536 + "\r\n"
+        resp = httplib.HTTPResponse(FakeSocket(body))
+        self.assertRaises((httplib.LineTooLong, httplib.BadStatusLine), resp.begin)
+
+    def test_overflowing_header_line(self):
+        body = (
+            'HTTP/1.1 200 OK\r\n'
+            'X-Foo: bar' + 'r' * 65536 + '\r\n\r\n'
+        )
+        resp = httplib.HTTPResponse(FakeSocket(body))
+        self.assertRaises(httplib.LineTooLong, resp.begin)
+
+    def test_overflowing_chunked_line(self):
+        body = (
+            'HTTP/1.1 200 OK\r\n'
+            'Transfer-Encoding: chunked\r\n\r\n'
+            + '0' * 65536 + 'a\r\n'
+            'hello world\r\n'
+            '0\r\n'
+        )
+        resp = httplib.HTTPResponse(FakeSocket(body))
+        resp.begin()
+        self.assertRaises(httplib.LineTooLong, resp.read)
+
+
 class OfflineTest(TestCase):
     def test_responses(self):
         self.assertEqual(httplib.responses[httplib.NOT_FOUND], "Not Found")
