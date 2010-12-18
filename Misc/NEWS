@@ -84,6 +84,8 @@ Build
 
 - The Windows build now uses Tcl/Tk 8.5.9 and sqlite3 3.7.4.
 
+- Issue #9234: argparse supports alias names for subparsers.
+
 
 What's New in Python 3.2 Beta 1?
 ================================
