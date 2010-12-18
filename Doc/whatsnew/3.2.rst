@@ -1,4 +1,4 @@
-http://news.blogs.cnn.com/2010/12/17/final-lunar-eclipse-of-2010-set-for-early-morning-of-december-21/?hpt=T2http://news.blogs.cnn.com/2010/12/17/final-lunar-eclipse-of-2010-set-for-early-morning-of-december-21/?hpt=T2****************************
+****************************
   What's New In Python 3.2
 ****************************
 
@@ -1617,33 +1617,36 @@ Porting to Python 3.2
 This section lists previously described changes and other bugfixes that may
 require changes to your code:
 
-* The :mod:`configparser` class :class:`SafeConfigParser` has been updated and
-  renamed to :class:`ConfigParser` whereas the old :class:`ConfigParser` class
-  has been removed. This means a couple of minor incompatibilities:
+* The :mod:`configparser` module has a number of clean-ups.  The major change is
+  to replace the old :class:`ConfigParser` class with long-standing preferred
+  alternative :class:`SafeConfigParser`.  In addition there are a number of
+  smaller incompatibilites:
 
-  * interpolation syntax is now validated on :meth:`get` and :meth:`set`
-    operations. In the default interpolation scheme, only two tokens with
-    percent signs are valid: %(name)s and %%, the latter being an escaped
-    percent sign. If that is not welcome, consider using
-    :class:`ExtendedInterpolation` or none at all.
+  * The interpolation syntax is now validated on
+    :meth:`~configparser.ConfigParser.get` and
+    :meth:`~configparser.ConfigParser.set` operations. In the default
+    interpolation scheme, only two tokens with percent signs are valid: ``%(name)s``
+    and ``%%``, the latter being an escaped percent sign.
 
-  * :meth:`set` and :meth:`add_section` now check whether the given value type
-    is a string. :mod:`configparser` was never designed to hold non-string
-    values internally.
+  * The :meth:`~configparser.ConfigParser.set` and
+    :meth:`~configparser.ConfigParser.add_section` methods now verify that
+    values are actual strings.  Formerly, unsupported types could be introduced
+    unintentionally.
 
-  * exception is raised on any section or option duplicates that appear when
-    reading a single source. This exposes mistakes in user configuration.
+  * Duplicate sections or options now raise either
+    :exc:`~configparser.DuplicateSectionError` or
+    :exc:`~configparser.DuplicateOptionError`.  Formerly, duplicates would
+    silently overwrite a previous entry.
 
-  * inline comments are now disabled by default which means the ``;`` character
-    can be safeuly used in values (``#`` was never allowed as inline comment).
+  * Inline comments are now disabled by default so now the **;** character
+    can be safely used in values.
 
-  * comments now can be indented which means for ``;`` and ``#`` to appear at
-    the start of a line in multiline values, it has to be interpolated. This is
-    preferable because in INI files a character that is also a comment prefix
-    cannot be taken for a comment by mistake.
+  * Comments now can be indented.  Consequently, for **;** or **#** to appear at
+    the start of a line in multiline values, it has to be interpolated.  This
+    keep comment prefix characters in value from being mistaken as comments.
 
-  * ``""`` is now a valid value, no longer automatically converted to an empty
-    string. For empty strings users can use ``"option ="`` in a line.
+  * ``""`` is now a valid value and is no longer automatically converted to an
+    empty string. For empty strings, use ``"option ="`` in a line.
 
 * The :mod:`nntplib` module was reworked extensively, meaning that its APIs
   are often incompatible with the 3.1 APIs.
