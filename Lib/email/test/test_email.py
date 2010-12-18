@@ -2342,6 +2342,24 @@ class TestMiscellaneous(TestEmailBase):
         eq(utils.parseaddr('"\\\\"example\\\\" example"@example.com'),
           ('', '"\\\\"example\\\\" example"@example.com'))
 
+    def test_parseaddr_preserves_spaces_in_local_part(self):
+        # issue 9286.  A normal RFC5322 local part should not contain any
+        # folding white space, but legacy local parts can (they are a sequence
+        # of atoms, not dotatoms).  On the other hand we strip whitespace from
+        # before the @ and around dots, on the assumption that the whitespace
+        # around the punctuation is a mistake in what would otherwise be
+        # an RFC5322 local part.  Leading whitespace is, usual, stripped as well.
+        self.assertEqual(('', "merwok wok@xample.com"),
+            utils.parseaddr("merwok wok@xample.com"))
+        self.assertEqual(('', "merwok  wok@xample.com"),
+            utils.parseaddr("merwok  wok@xample.com"))
+        self.assertEqual(('', "merwok  wok@xample.com"),
+            utils.parseaddr(" merwok  wok  @xample.com"))
+        self.assertEqual(('', 'merwok"wok"  wok@xample.com'),
+            utils.parseaddr('merwok"wok"  wok@xample.com'))
+        self.assertEqual(('', 'merwok.wok.wok@xample.com'),
+            utils.parseaddr('merwok. wok .  wok@xample.com'))
+
     def test_multiline_from_comment(self):
         x = """\
 Foo
