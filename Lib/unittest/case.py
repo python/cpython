@@ -904,17 +904,17 @@ class TestCase(object):
             standardMsg = self._truncateMessage(standardMsg, diff)
             self.fail(self._formatMessage(msg, standardMsg))
 
-    def assertDictContainsSubset(self, expected, actual, msg=None):
-        """Checks whether actual is a superset of expected."""
+    def assertDictContainsSubset(self, subset, dictionary, msg=None):
+        """Checks whether dictionary is a superset of subset."""
         missing = []
         mismatched = []
-        for key, value in expected.items():
-            if key not in actual:
+        for key, value in subset.items():
+            if key not in dictionary:
                 missing.append(key)
-            elif value != actual[key]:
+            elif value != dictionary[key]:
                 mismatched.append('%s, expected: %s, actual: %s' %
                                   (safe_repr(key), safe_repr(value),
-                                   safe_repr(actual[key])))
+                                   safe_repr(dictionary[key])))
 
         if not (missing or mismatched):
             return
@@ -973,13 +973,13 @@ class TestCase(object):
             self.fail(self._formatMessage(msg, standardMsg))
 
 
-    def assertCountEqual(self, expected_seq, actual_seq, msg=None):
+    def assertCountEqual(self, actual_seq, expected_seq, msg=None):
         """An unordered sequence specific comparison. It asserts that
-        expected_seq and actual_seq have the same element counts.
+        actual_seq and expected_seq have the same element counts.
         Equivalent to::
 
-            self.assertEqual(Counter(iter(expected_seq)),
-                             Counter(iter(actual_seq)))
+            self.assertEqual(Counter(iter(actual_seq)),
+                             Counter(iter(expected_seq)))
 
         Asserts that each element has the same count in both sequences.
         Example:
@@ -987,15 +987,15 @@ class TestCase(object):
             - [0, 0, 1] and [0, 1] compare unequal.
         """
         try:
-            expected = collections.Counter(iter(expected_seq))
             actual = collections.Counter(iter(actual_seq))
+            expected = collections.Counter(iter(expected_seq))
         except TypeError:
             # Unsortable items (example: set(), complex(), ...)
-            expected = list(expected_seq)
             actual = list(actual_seq)
+            expected = list(expected_seq)
             missing, unexpected = unorderable_list_difference(expected, actual)
         else:
-            if expected == actual:
+            if actual == expected:
                 return
             missing = list(expected - actual)
             unexpected = list(actual - expected)
