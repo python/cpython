@@ -1708,7 +1708,8 @@ class TestAddSubparsers(TestCase):
     def assertArgumentParserError(self, *args, **kwargs):
         self.assertRaises(ArgumentParserError, *args, **kwargs)
 
-    def _get_parser(self, subparser_help=False, prefix_chars=None):
+    def _get_parser(self, subparser_help=False, prefix_chars=None,
+                    aliases=False):
         # create a parser with a subparsers argument
         if prefix_chars:
             parser = ErrorRaisingArgumentParser(
@@ -1724,13 +1725,21 @@ class TestAddSubparsers(TestCase):
             'bar', type=float, help='bar help')
 
         # check that only one subparsers argument can be added
-        subparsers = parser.add_subparsers(help='command help')
+        subparsers_kwargs = {}
+        if aliases:
+            subparsers_kwargs['metavar'] = 'COMMAND'
+            subparsers_kwargs['title'] = 'commands'
+        else:
+            subparsers_kwargs['help'] = 'command help'
+        subparsers = parser.add_subparsers(**subparsers_kwargs)
         self.assertArgumentParserError(parser.add_subparsers)
 
         # add first sub-parser
         parser1_kwargs = dict(description='1 description')
         if subparser_help:
             parser1_kwargs['help'] = '1 help'
+        if aliases:
+            parser1_kwargs['aliases'] = ['1alias1', '1alias2']
         parser1 = subparsers.add_parser('1', **parser1_kwargs)
         parser1.add_argument('-w', type=int, help='w help')
         parser1.add_argument('x', choices='abc', help='x help')
@@ -1946,6 +1955,44 @@ class TestAddSubparsers(TestCase):
               -h, --help  show this help message and exit
               -y {1,2,3}  y help
             '''))
+
+    def test_alias_invocation(self):
+        parser = self._get_parser(aliases=True)
+        self.assertEqual(
+            parser.parse_known_args('0.5 1alias1 b'.split()),
+            (NS(foo=False, bar=0.5, w=None, x='b'), []),
+        )
+        self.assertEqual(
+            parser.parse_known_args('0.5 1alias2 b'.split()),
+            (NS(foo=False, bar=0.5, w=None, x='b'), []),
+        )
+
+    def test_error_alias_invocation(self):
+        parser = self._get_parser(aliases=True)
+        self.assertArgumentParserError(parser.parse_args,
+                                       '0.5 1alias3 b'.split())
+
+    def test_alias_help(self):
+        parser = self._get_parser(aliases=True, subparser_help=True)
+        self.maxDiff = None
+        self.assertEqual(parser.format_help(), textwrap.dedent("""\
+            usage: PROG [-h] [--foo] bar COMMAND ...
+
+            main description
+
+            positional arguments:
+              bar                   bar help
+
+            optional arguments:
+              -h, --help            show this help message and exit
+              --foo                 foo help
+
+            commands:
+              COMMAND
+                1 (1alias1, 1alias2)
+                                    1 help
+                2                   2 help
+            """))
 
 # ============
 # Groups tests
