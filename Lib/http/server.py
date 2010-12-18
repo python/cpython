@@ -314,8 +314,12 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         self.command, self.path, self.request_version = command, path, version
 
         # Examine the headers and look for a Connection directive.
-        self.headers = http.client.parse_headers(self.rfile,
-                                                 _class=self.MessageClass)
+        try:
+            self.headers = http.client.parse_headers(self.rfile,
+                                                     _class=self.MessageClass)
+        except http.client.LineTooLong:
+            self.send_error(400, "Line too long")
+            return False
 
         conntype = self.headers.get('Connection', "")
         if conntype.lower() == 'close':

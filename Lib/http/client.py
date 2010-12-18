@@ -203,6 +203,9 @@ responses = {
 # maximal amount of data to read at one time in _safe_read
 MAXAMOUNT = 1048576
 
+# maximal line length when calling readline().
+_MAXLINE = 65536
+
 class HTTPMessage(email.message.Message):
     # XXX The only usage of this method is in
     # http.server.CGIHTTPRequestHandler.  Maybe move the code there so
@@ -245,7 +248,9 @@ def parse_headers(fp, _class=HTTPMessage):
     """
     headers = []
     while True:
-        line = fp.readline()
+        line = fp.readline(_MAXLINE + 1)
+        if len(line) > _MAXLINE:
+            raise LineTooLong("header line")
         headers.append(line)
         if line in (b'\r\n', b'\n', b''):
             break
@@ -299,7 +304,9 @@ class HTTPResponse(io.RawIOBase):
         self.will_close = _UNKNOWN      # conn will close at end of response
 
     def _read_status(self):
-        line = str(self.fp.readline(), "iso-8859-1")
+        line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+        if len(line) > _MAXLINE:
+            raise LineTooLong("status line")
         if self.debuglevel > 0:
             print("reply:", repr(line))
         if not line:
@@ -340,7 +347,10 @@ class HTTPResponse(io.RawIOBase):
                 break
             # skip the header from the 100 response
             while True:
-                skip = self.fp.readline().strip()
+                skip = self.fp.readline(_MAXLINE + 1)
+                if len(skip) > _MAXLINE:
+                    raise LineTooLong("header line")
+                skip = skip.strip()
                 if not skip:
                     break
                 if self.debuglevel > 0:
@@ -508,7 +518,9 @@ class HTTPResponse(io.RawIOBase):
         value = []
         while True:
             if chunk_left is None:
-                line = self.fp.readline()
+                line = self.fp.readline(_MAXLINE + 1)
+                if len(line) > _MAXLINE:
+                    raise LineTooLong("chunk size")
                 i = line.find(b";")
                 if i >= 0:
                     line = line[:i] # strip chunk-extensions
@@ -543,7 +555,9 @@ class HTTPResponse(io.RawIOBase):
         # read and discard trailer up to the CRLF terminator
         ### note: we shouldn't have any trailers!
         while True:
-            line = self.fp.readline()
+            line = self.fp.readline(_MAXLINE + 1)
+            if len(line) > _MAXLINE:
+                raise LineTooLong("trailer line")
             if not line:
                 # a vanishingly small number of sites EOF without
                 # sending the trailer
@@ -692,7 +706,9 @@ class HTTPConnection:
             raise socket.error("Tunnel connection failed: %d %s" % (code,
                                                                     message.strip()))
         while True:
-            line = response.fp.readline()
+            line = response.fp.readline(_MAXLINE + 1)
+            if len(line) > _MAXLINE:
+                raise LineTooLong("header line")
             if line == b'\r\n':
                 break
 
@@ -1136,6 +1152,11 @@ class BadStatusLine(HTTPException):
             line = repr(line)
         self.args = line,
         self.line = line
+
+class LineTooLong(HTTPException):
+    def __init__(self, line_type):
+        HTTPException.__init__(self, "got more than %d bytes when reading %s"
+                                     % (_MAXLINE, line_type))
 
 # for backwards compatibility
 error = HTTPException
