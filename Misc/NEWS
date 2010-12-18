@@ -23,7 +23,9 @@ Core and Builtins
 Library
 -------
 
-- Issue $9907: Fix tab handling on OSX when using editline by calling
+- Issue #10404: Use ctl-button-1 on OSX for the context menu in Idle.
+
+- Issue #9907: Fix tab handling on OSX when using editline by calling
   rl_initialize first, then setting our custom defaults, then reading .editrc.
 
 - Issue #4188: Avoid creating dummy thread objects when logging operations
