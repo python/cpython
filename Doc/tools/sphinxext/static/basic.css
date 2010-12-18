@@ -364,6 +364,7 @@ p.deprecated {
 
 pre {
     overflow: auto;
+    overflow-y: hidden;
 }
 
 td.linenos pre {
