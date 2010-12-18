@@ -23,6 +23,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6791: Limit header line length (to 65535 bytes) in http.client
+  and http.server, to avoid denial of services from the other party.
+
 - Issue #10404: Use ctl-button-1 on OSX for the context menu in Idle.
 
 - Issue #9907: Fix tab handling on OSX when using editline by calling
