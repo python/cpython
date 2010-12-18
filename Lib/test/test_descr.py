@@ -4268,6 +4268,11 @@ class DictProxyTests(unittest.TestCase):
             pass
         self.assertEqual(type(C.__dict__), type(B.__dict__))
 
+    def test_repr(self):
+        # Testing dict_proxy.__repr__
+        dict_ = {k: v for k, v in self.C.__dict__.items()}
+        self.assertEqual(repr(self.C.__dict__), 'dict_proxy({!r})'.format(dict_))
+
 
 class PTypesLongInitTest(unittest.TestCase):
     # This is in its own TestCase so that it can be run before any other tests.
