@@ -1633,7 +1633,7 @@ require changes to your code:
     values are actual strings.  Formerly, unsupported types could be introduced
     unintentionally.
 
-  * Duplicate sections or options now raise either
+  * Duplicate sections or options from a single source now raise either
     :exc:`~configparser.DuplicateSectionError` or
     :exc:`~configparser.DuplicateOptionError`.  Formerly, duplicates would
     silently overwrite a previous entry.
@@ -1643,7 +1643,7 @@ require changes to your code:
 
   * Comments now can be indented.  Consequently, for **;** or **#** to appear at
     the start of a line in multiline values, it has to be interpolated.  This
-    keep comment prefix characters in value from being mistaken as comments.
+    keeps comment prefix characters in values from being mistaken as comments.
 
   * ``""`` is now a valid value and is no longer automatically converted to an
     empty string. For empty strings, use ``"option ="`` in a line.
