@@ -212,6 +212,9 @@ responses = {
 # maximal amount of data to read at one time in _safe_read
 MAXAMOUNT = 1048576
 
+# maximal line length when calling readline().
+_MAXLINE = 65536
+
 class HTTPMessage(mimetools.Message):
 
     def addheader(self, key, value):
@@ -274,7 +277,9 @@ class HTTPMessage(mimetools.Message):
                 except IOError:
                     startofline = tell = None
                     self.seekable = 0
-            line = self.fp.readline()
+            line = self.fp.readline(_MAXLINE + 1)
+            if len(line) > _MAXLINE:
+                raise LineTooLong("header line")
             if not line:
                 self.status = 'EOF in headers'
                 break
@@ -404,7 +409,10 @@ class HTTPResponse:
                 break
             # skip the header from the 100 response
             while True:
-                skip = self.fp.readline().strip()
+                skip = self.fp.readline(_MAXLINE + 1)
+                if len(skip) > _MAXLINE:
+                    raise LineTooLong("header line")
+                skip = skip.strip()
                 if not skip:
                     break
                 if self.debuglevel > 0:
@@ -563,7 +571,9 @@ class HTTPResponse:
         value = []
         while True:
             if chunk_left is None:
-                line = self.fp.readline()
+                line = self.fp.readline(_MAXLINE + 1)
+                if len(line) > _MAXLINE:
+                    raise LineTooLong("chunk size")
                 i = line.find(';')
                 if i >= 0:
                     line = line[:i] # strip chunk-extensions
@@ -598,7 +608,9 @@ class HTTPResponse:
         # read and discard trailer up to the CRLF terminator
         ### note: we shouldn't have any trailers!
         while True:
-            line = self.fp.readline()
+            line = self.fp.readline(_MAXLINE + 1)
+            if len(line) > _MAXLINE:
+                raise LineTooLong("trailer line")
             if not line:
                 # a vanishingly small number of sites EOF without
                 # sending the trailer
@@ -730,7 +742,9 @@ class HTTPConnection:
             raise socket.error("Tunnel connection failed: %d %s" % (code,
                                                                     message.strip()))
         while True:
-            line = response.fp.readline()
+            line = response.fp.readline(_MAXLINE + 1)
+            if len(line) > _MAXLINE:
+                raise LineTooLong("header line")
             if line == '\r\n': break
 
 
@@ -1232,6 +1246,11 @@ class BadStatusLine(HTTPException):
             line = repr(line)
         self.args = line,
         self.line = line
+
+class LineTooLong(HTTPException):
+    def __init__(self, line_type):
+        HTTPException.__init__(self, "got more than %d bytes when reading %s"
+                                     % (_MAXLINE, line_type))
 
 # for backwards compatibility
 error = HTTPException
