@@ -1273,9 +1273,9 @@ configparser
 The :mod:`configparser` module was modified to improve usability and
 predictability of the default parser and its supported INI syntax.  The old
 :class:`ConfigParser` class was removed in favor of :class:`SafeConfigParser`
-which has in turn been renamed to :class:`ConfigParser`. Support for inline
-comments is now turned off by default and section or option duplicates are not
-allowed in a single configuration source.
+which has in turn been renamed to :class:`~configparser.ConfigParser`. Support
+for inline comments is now turned off by default and section or option
+duplicates are not allowed in a single configuration source.
 
 Config parsers gained a new API based on the mapping protocol::
 
@@ -1299,14 +1299,14 @@ Config parsers gained a new API based on the mapping protocol::
   >>> 'british' in section
   True
 
-The new API is implemented on top of the classical API e.g. custom parser
+The new API is implemented on top of the classical API so custom parser
 subclasses should be able to use it without modifications.
 
 The INI file structure accepted by config parsers can now be customized. Users
-are able to specify alternative option/value delimiters and comment prefixes,
-change the name of the DEFAULT section or switch the interpolation syntax.
-Along with support for pluggable interpolation, an additional buildout-like
-interpolation handler (ExtendedInterpolation) was introduced::
+can specify alternative option/value delimiters and comment prefixes, change the
+name of the *DEFAULT* section or switch the interpolation syntax.  Along with
+support for pluggable interpolation, an additional interpolation handler
+:class:`~configparser.ExtendedInterpolation` was introduced::
 
   >>> parser = ConfigParser(interpolation=ExtendedInterpolation())
   >>> parser.read_dict({'buildout': {'directory': '/home/ambv/zope9'},
@@ -1339,8 +1339,8 @@ interpolation handler (ExtendedInterpolation) was introduced::
   '/opt/zope'
 
 A number of smaller features were also introduced, like support for specifying
-encoding in read operations, specifying fallback values in getters, or reading
-directly from dictionaries and strings.
+encoding in read operations, specifying fallback values for get-functions, or
+reading directly from dictionaries and strings.
 
 (All changes contributed by Łukasz Langa.)
 
