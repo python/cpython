@@ -1385,7 +1385,7 @@ Multi-threading
 * Regular and recursive lock acquisitions can now be interrupted by signals on
   platforms using pthreads.  This means that Python programs that deadlock while
   acquiring locks can be successfully killed by repeatedly sending SIGINT to the
-  process (by pressing Ctl+C in most shells).
+  process (by pressing :kbd:`Ctrl+C` in most shells).
   (Contributed by Reid Kleckner; :issue:`8844`.)
 
 
