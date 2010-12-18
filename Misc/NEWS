@@ -18,6 +18,9 @@ Core and Builtins
   float.__divmod__ with respect to signed zeros.  -4.0 % 4.0 should be
   0.0, not -0.0.
 
+- Issue #5587: add a repr to dict_proxy objects.  Patch by David Stanek and
+  Daniel Urban.
+
 Library
 -------
 
