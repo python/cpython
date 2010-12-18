@@ -540,15 +540,15 @@ class TestCase(object):
         raise self.failureException(msg)
 
     def assertFalse(self, expr, msg=None):
-        "Fail the test if the expression is true."
+        """Check that the expression is false."""
         if expr:
-            msg = self._formatMessage(msg, "%r is not False" % expr)
+            msg = self._formatMessage(msg, "%r is not false" % expr)
             raise self.failureException(msg)
 
     def assertTrue(self, expr, msg=None):
-        """Fail the test unless the expression is true."""
+        """Check that the expression is true."""
         if not expr:
-            msg = self._formatMessage(msg, "%r is not True" % expr)
+            msg = self._formatMessage(msg, "%r is not true" % expr)
             raise self.failureException(msg)
 
     def _formatMessage(self, msg, standardMsg):
