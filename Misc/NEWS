@@ -17,6 +17,9 @@ Core and Builtins
   rather than the Py_IsInitialized flag, avoiding a Fatal Python
   error in certain circumstances when an import is done in __del__.
 
+- Issue #5587: add a repr to dict_proxy objects.  Patch by David Stanek and
+  Daniel Urban.
+
 Library
 -------
 
