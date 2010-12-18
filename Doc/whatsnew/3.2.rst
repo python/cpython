@@ -583,7 +583,7 @@ format.
 elementtree
 -----------
 
-The :mod:`xml.etree.ElementTree` package and it's :mod:`xml.etree.cElementTree`
+The :mod:`xml.etree.ElementTree` package and its :mod:`xml.etree.cElementTree`
 counterpart have been updated to version 1.3.
 
 Several new and useful functions and methods have been added:
