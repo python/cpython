@@ -1267,6 +1267,8 @@ The :mod:`pdb` debugger module gained a number of usability improvements:
   the global and local  names found in the current scope.
 * breakpoints can be cleared by breakpoint number
 
+(Contributed by Georg Brandl, Antonio Cuni and Ilya Sandler.)
+
 configparser
 ------------
 
