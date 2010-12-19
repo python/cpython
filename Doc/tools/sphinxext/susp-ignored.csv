@@ -331,3 +331,15 @@ library/configparser,,:path,python_dir: ${Frameworks:path}/Python/Versions/${Fra
 library/configparser,,:Python,python_dir: ${Frameworks:path}/Python/Versions/${Frameworks:Python}
 library/pdb,,:lineno,[filename:lineno | bpnumber [bpnumber ...]]
 library/pdb,,:lineno,filename:lineno
+library/logging,,:Watch,WARNING:root:Watch out!
+library/logging,,:So,INFO:root:So should this
+library/logging,,:Started,INFO:root:Started
+library/logging,,:Doing,INFO:root:Doing something
+library/logging,,:Finished,INFO:root:Finished
+library/logging,,:Look,WARNING:root:Look before you leap!
+library/logging,,:So,INFO:So should this
+library/logging,,:logger,severity:logger name:message
+library/logging,,:message,severity:logger name:message
+whatsnew/3.2,,:directory,...   ${buildout:directory}/downloads/dist
+whatsnew/3.2,,:location,... zope9-location = ${zope9:location}
+whatsnew/3.2,,:prefix,... zope-conf = ${custom:prefix}/etc/zope.conf

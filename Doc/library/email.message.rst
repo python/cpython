@@ -274,10 +274,10 @@ Here are the methods of the :class:`Message` class:
       it can be specified as a three tuple in the format
       ``(CHARSET, LANGUAGE, VALUE)``, where ``CHARSET`` is a string naming the
       charset to be used to encode the value, ``LANGUAGE`` can usually be set
-      to ``None`` or the empty string (see :RFC:`2231` for other possibilities),
+      to ``None`` or the empty string (see :rfc:`2231` for other possibilities),
       and ``VALUE`` is the string value containing non-ASCII code points.  If
       a three tuple is not passed and the value contains non-ASCII characters,
-      it is automatically encoded in :RFC`2231` format using a ``CHARSET``
+      it is automatically encoded in :rfc:`2231` format using a ``CHARSET``
       of ``utf-8`` and a ``LANGUAGE`` of ``None``.
 
       Here's an example::
