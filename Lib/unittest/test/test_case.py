@@ -999,6 +999,58 @@ test case
         # This shouldn't blow up
         deepcopy(test)
 
+    def testKeyboardInterrupt(self):
+        def _raise(self=None):
+            raise KeyboardInterrupt
+        def nothing(self):
+            pass
+
+        class Test1(unittest.TestCase):
+            test_something = _raise
+
+        class Test2(unittest.TestCase):
+            setUp = _raise
+            test_something = nothing
+
+        class Test3(unittest.TestCase):
+            test_something = nothing
+            tearDown = _raise
+
+        class Test4(unittest.TestCase):
+            def test_something(self):
+                self.addCleanup(_raise)
+
+        for klass in (Test1, Test2, Test3, Test4):
+            with self.assertRaises(KeyboardInterrupt):
+                klass('test_something').run()
+
+    def testSystemExit(self):
+        def _raise(self=None):
+            raise SystemExit
+        def nothing(self):
+            pass
+
+        class Test1(unittest.TestCase):
+            test_something = _raise
+
+        class Test2(unittest.TestCase):
+            setUp = _raise
+            test_something = nothing
+
+        class Test3(unittest.TestCase):
+            test_something = nothing
+            tearDown = _raise
+
+        class Test4(unittest.TestCase):
+            def test_something(self):
+                self.addCleanup(_raise)
+
+        for klass in (Test1, Test2, Test3, Test4):
+            result = unittest.TestResult()
+            klass('test_something').run(result)
+            self.assertEqual(len(result.errors), 1)
+            self.assertEqual(result.testsRun, 1)
+
 
 if __name__ == '__main__':
     unittest.main()
