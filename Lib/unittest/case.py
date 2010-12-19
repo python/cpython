@@ -1,5 +1,6 @@
 """Test case implementation"""
 
+import collections
 import sys
 import functools
 import difflib
@@ -850,14 +851,12 @@ class TestCase(object):
         self.fail(self._formatMessage(msg, standardMsg))
 
     def assertItemsEqual(self, expected_seq, actual_seq, msg=None):
-        """An unordered sequence / set specific comparison. It asserts that
-        expected_seq and actual_seq contain the same elements. It is
-        the equivalent of::
+        """An unordered sequence specific comparison. It asserts that
+        actual_seq and expected_seq have the same element counts.
+        Equivalent to::
 
-            self.assertEqual(sorted(expected_seq), sorted(actual_seq))
-
-        Raises with an error message listing which elements of expected_seq
-        are missing from actual_seq and vice versa if any.
+            self.assertEqual(Counter(iter(actual_seq)),
+                             Counter(iter(expected_seq)))
 
         Asserts that each element has the same count in both sequences.
         Example:
@@ -872,17 +871,18 @@ class TestCase(object):
                              "comparing unequal types"]:
                     warnings.filterwarnings("ignore", _msg, DeprecationWarning)
             try:
-                expected = sorted(expected_seq)
-                actual = sorted(actual_seq)
+                actual = collections.Counter(iter(actual_seq))
+                expected = collections.Counter(iter(expected_seq))
             except TypeError:
                 # Unsortable items (example: set(), complex(), ...)
-                expected = list(expected_seq)
                 actual = list(actual_seq)
-                missing, unexpected = unorderable_list_difference(
-                    expected, actual, ignore_duplicate=False
-                )
+                expected = list(expected_seq)
+                missing, unexpected = unorderable_list_difference(expected, actual)
             else:
-                return self.assertSequenceEqual(expected, actual, msg=msg)
+                if actual == expected:
+                    return
+                missing = list(expected - actual)
+                unexpected = list(actual - expected)
 
         errors = []
         if missing:

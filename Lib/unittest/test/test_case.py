@@ -711,6 +711,11 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         self.assertRaises(self.failureException, self.assertItemsEqual,
                           [1, {'b': 2}, None, True], [{'b': 2}, True, None])
 
+        # Same elements which don't reliably compare, in
+        # different order, see issue 10242
+        a = [{2,4}, {1,2}]
+        b = a[::-1]
+        self.assertItemsEqual(a, b)
 
     def testAssertSetEqual(self):
         set1 = set()
