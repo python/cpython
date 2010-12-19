@@ -93,6 +93,9 @@ Tests
 Tools/Demos
 -----------
 
+- Issue #6075: IDLE on Mac OS X now works with both Carbon AquaTk and
+  Cocoa AquaTk.
+
 - Issue #10710: ``Misc/setuid-prog.c`` is removed from the source tree.
 
 - Issue #10706: Remove outdated script runtests.sh.  Either ``make test``
