@@ -34,9 +34,7 @@ class TestCleanUp(unittest.TestCase):
                          [(cleanup1, (1, 2, 3), dict(four='hello', five='goodbye')),
                           (cleanup2, (), {})])
 
-        result = test.doCleanups()
-        self.assertTrue(result)
-
+        self.assertTrue(test.doCleanups())
         self.assertEqual(cleanups, [(2, (), {}), (1, (1, 2, 3), dict(four='hello', five='goodbye'))])
 
     def testCleanUpWithErrors(self):
@@ -44,14 +42,12 @@ class TestCleanUp(unittest.TestCase):
             def testNothing(self):
                 pass
 
-        class MockResult(object):
+        class MockOutcome(object):
+            success = True
             errors = []
-            def addError(self, test, exc_info):
-                self.errors.append((test, exc_info))
 
-        result = MockResult()
         test = TestableTest('testNothing')
-        test._resultForDoCleanups = result
+        test._outcomeForDoCleanups = MockOutcome
 
         exc1 = Exception('foo')
         exc2 = Exception('bar')
@@ -65,10 +61,11 @@ class TestCleanUp(unittest.TestCase):
         test.addCleanup(cleanup2)
 
         self.assertFalse(test.doCleanups())
+        self.assertFalse(MockOutcome.success)
 
-        (test1, (Type1, instance1, _)), (test2, (Type2, instance2, _)) = reversed(MockResult.errors)
-        self.assertEqual((test1, Type1, instance1), (test, Exception, exc1))
-        self.assertEqual((test2, Type2, instance2), (test, Exception, exc2))
+        (Type1, instance1, _), (Type2, instance2, _) = reversed(MockOutcome.errors)
+        self.assertEqual((Type1, instance1), (Exception, exc1))
+        self.assertEqual((Type2, instance2), (Exception, exc2))
 
     def testCleanupInRun(self):
         blowUp = False

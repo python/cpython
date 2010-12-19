@@ -5,8 +5,10 @@
 ##################################################################
 [project attributes]
 proj.directory-list = [{'dirloc': loc('..'),
-                        'excludes': [u'Lib/__pycache__',
+                        'excludes': [u'Lib/unittest/test/__pycache__',
+                                     u'Lib/__pycache__',
                                      u'Doc/build',
+                                     u'Lib/unittest/__pycache__',
                                      u'build'],
                         'filter': '*',
                         'include_hidden': False,
