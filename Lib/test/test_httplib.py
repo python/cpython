@@ -230,6 +230,22 @@ class BasicTest(TestCase):
         conn.send(io.BytesIO(expected))
         self.assertEqual(expected, sock.data)
 
+    def test_send_iter(self):
+        expected = b'GET /foo HTTP/1.1\r\nHost: example.com\r\n' \
+                   b'Accept-Encoding: identity\r\nContent-Length: 11\r\n' \
+                   b'\r\nonetwothree'
+
+        def body():
+            yield b"one"
+            yield b"two"
+            yield b"three"
+
+        conn = client.HTTPConnection('example.com')
+        sock = FakeSocket("")
+        conn.sock = sock
+        conn.request('GET', '/foo', body(), {'Content-Length': '11'})
+        self.assertEquals(sock.data, expected)
+
     def test_chunked(self):
         chunked_start = (
             'HTTP/1.1 200 OK\r\n'

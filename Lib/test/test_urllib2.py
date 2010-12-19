@@ -4,6 +4,7 @@ from test import support
 import os
 import io
 import socket
+import array
 
 import urllib.request
 from urllib.request import Request, OpenerDirector
@@ -765,7 +766,7 @@ class HandlerTests(unittest.TestCase):
         o = h.parent = MockOpener()
 
         url = "http://example.com/"
-        for method, data in [("GET", None), ("POST", "blah")]:
+        for method, data in [("GET", None), ("POST", b"blah")]:
             req = Request(url, data, {"Foo": "bar"})
             req.timeout = None
             req.add_unredirected_header("Spam", "eggs")
@@ -795,7 +796,7 @@ class HandlerTests(unittest.TestCase):
 
         # check adding of standard headers
         o.addheaders = [("Spam", "eggs")]
-        for data in "", None:  # POST, GET
+        for data in b"", None:  # POST, GET
             req = Request("http://example.com/", data)
             r = MockResponse(200, "OK", {}, "")
             newreq = h.do_request_(req)
@@ -821,6 +822,50 @@ class HandlerTests(unittest.TestCase):
             self.assertEqual(req.unredirected_hdrs["Host"], "baz")
             self.assertEqual(req.unredirected_hdrs["Spam"], "foo")
 
+        # Check iterable body support
+        def iterable_body():
+            yield b"one"
+            yield b"two"
+            yield b"three"
+
+        for headers in {}, {"Content-Length": 11}:
+            req = Request("http://example.com/", iterable_body(), headers)
+            if not headers:
+                # Having an iterable body without a Content-Length should
+                # raise an exception
+                self.assertRaises(ValueError, h.do_request_, req)
+            else:
+                newreq = h.do_request_(req)
+
+        # A file object
+
+        """
+        file_obj = io.StringIO()
+        file_obj.write("Something\nSomething\nSomething\n")
+
+        for headers in {}, {"Content-Length": 30}:
+            req = Request("http://example.com/", file_obj, headers)
+            if not headers:
+                # Having an iterable body without a Content-Length should
+                # raise an exception
+                self.assertRaises(ValueError, h.do_request_, req)
+            else:
+                newreq = h.do_request_(req)
+                self.assertEqual(int(newreq.get_header('Content-length')),30)
+
+        file_obj.close()
+
+        # array.array Iterable - Content Length is calculated
+
+        iterable_array = array.array("I",[1,2,3,4])
+
+        for headers in {}, {"Content-Length": 16}:
+            req = Request("http://example.com/", iterable_array, headers)
+            newreq = h.do_request_(req)
+            self.assertEqual(int(newreq.get_header('Content-length')),16)
+        """
+
+
     def test_http_doubleslash(self):
         # Checks the presence of any unnecessary double slash in url does not
         # break anything. Previously, a double slash directly after the host
@@ -828,7 +873,7 @@ class HandlerTests(unittest.TestCase):
         h = urllib.request.AbstractHTTPHandler()
         o = h.parent = MockOpener()
 
-        data = ""
+        data = b""
         ds_urls = [
             "http://example.com/foo/bar/baz.html",
             "http://example.com//foo/bar/baz.html",

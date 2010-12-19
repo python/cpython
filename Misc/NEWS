@@ -23,6 +23,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3243:  Support iterable bodies in httplib. Patch Contributions by
+  Xuanji Li and Chris AtLee.
+
 - Issue #10611: SystemExit exception will no longer kill a unittest run.
 
 - Issue #9857: It is now possible to skip a test in a setUp, tearDown or clean

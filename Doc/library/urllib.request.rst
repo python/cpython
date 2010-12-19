@@ -21,13 +21,14 @@ The :mod:`urllib.request` module defines the following functions:
    :class:`Request` object.
 
    *data* may be a string specifying additional data to send to the
-   server, or ``None`` if no such data is needed.  Currently HTTP
-   requests are the only ones that use *data*; the HTTP request will
-   be a POST instead of a GET when the *data* parameter is provided.
-   *data* should be a buffer in the standard
+   server, or ``None`` if no such data is needed. *data* may also be an
+   iterable object and in that case Content-Length value must be specified in
+   the headers. Currently HTTP requests are the only ones that use *data*; the
+   HTTP request will be a POST instead of a GET when the *data* parameter is
+   provided.  *data* should be a buffer in the standard
    :mimetype:`application/x-www-form-urlencoded` format.  The
-   :func:`urllib.parse.urlencode` function takes a mapping or sequence
-   of 2-tuples and returns a string in this format. urllib.request module uses
+   :func:`urllib.parse.urlencode` function takes a mapping or sequence of
+   2-tuples and returns a string in this format. urllib.request module uses
    HTTP/1.1 and includes ``Connection:close`` header in its HTTP requests.
 
    The optional *timeout* parameter specifies a timeout in seconds for
@@ -75,6 +76,9 @@ The :mod:`urllib.request` module defines the following functions:
    .. versionchanged:: 3.2
       HTTPS virtual hosts are now supported if possible (that is, if
       :data:`ssl.HAS_SNI` is true).
+
+   .. versionadded:: 3.2
+      *data* can be an iterable object.
 
 .. function:: install_opener(opener)
 
