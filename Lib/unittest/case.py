@@ -311,11 +311,15 @@ class TestCase(object):
                 self.setUp()
             except SkipTest as e:
                 self._addSkip(result, str(e))
-            except Exception:
+            except KeyboardInterrupt:
+                raise
+            except:
                 result.addError(self, sys.exc_info())
             else:
                 try:
                     testMethod()
+                except KeyboardInterrupt:
+                    raise
                 except self.failureException:
                     result.addFailure(self, sys.exc_info())
                 except _ExpectedFailure as e:
@@ -336,14 +340,16 @@ class TestCase(object):
                         result.addFailure(self, sys.exc_info())
                 except SkipTest as e:
                     self._addSkip(result, str(e))
-                except Exception:
+                except:
                     result.addError(self, sys.exc_info())
                 else:
                     success = True
 
                 try:
                     self.tearDown()
-                except Exception:
+                except KeyboardInterrupt:
+                    raise
+                except:
                     result.addError(self, sys.exc_info())
                     success = False
 
@@ -367,7 +373,9 @@ class TestCase(object):
             function, args, kwargs = self._cleanups.pop(-1)
             try:
                 function(*args, **kwargs)
-            except Exception:
+            except KeyboardInterrupt:
+                raise
+            except:
                 ok = False
                 result.addError(self, sys.exc_info())
         return ok
