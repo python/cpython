@@ -564,8 +564,9 @@ Programmers can configure logging in three ways:
 3. Creating a dictionary of configuration information and passing it
    to the :func:`dictConfig` function.
 
-The following example configures a very simple logger, a console
-handler, and a simple formatter using Python code::
+For the reference documentation on the last two options, see :ref:`config-ref`.
+The following example configures a very simple logger, a console handler, and
+a simple formatter using Python code::
 
     import logging
 
@@ -704,8 +705,8 @@ the new dictionary-based approach::
         handlers: [console]
         propagate: no
     root:
-        level: DEBUG
-        handlers: [console]
+      level: DEBUG
+      handlers: [console]
 
 For more information about logging using a dictionary, see
 :ref:`logging-config-api`.
@@ -3760,6 +3761,8 @@ with the :mod:`warnings` module.
    will stop, and warnings will be redirected to their original destinations
    (i.e. those in effect before `captureWarnings(True)` was called).
 
+
+.. _config-ref:
 
 Configuration
 -------------
