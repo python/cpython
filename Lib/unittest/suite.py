@@ -104,6 +104,7 @@ class TestSuite(BaseTestSuite):
         if topLevel:
             self._tearDownPreviousClass(None, result)
             self._handleModuleTearDown(result)
+            result._testRunEntered = False
         return result
 
     def debug(self):
