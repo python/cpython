@@ -1057,7 +1057,6 @@ class AbstractHTTPHandler(BaseHandler):
                 try:
                     mv = memoryview(data)
                 except TypeError:
-                    print(data)
                     if isinstance(data, collections.Iterable):
                         raise ValueError("Content-Length should be specified \
                                 for iterable data of type %r %r" % (type(data),
