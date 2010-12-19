@@ -99,6 +99,7 @@ class InitialisableProgram(unittest.TestProgram):
     defaultTest = None
     testRunner = None
     testLoader = unittest.defaultTestLoader
+    module = '__main__'
     progName = 'test'
     test = 'test'
     def __init__(self, *args):
