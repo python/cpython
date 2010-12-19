@@ -177,8 +177,8 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
                 super(Foo, self).test()
                 raise RuntimeError('raised by Foo.test')
 
-        expected = ['startTest', 'setUp', 'test', 'addError', 'tearDown',
-                    'stopTest']
+        expected = ['startTest', 'setUp', 'test', 'tearDown',
+                    'addError', 'stopTest']
         Foo(events).run(result)
         self.assertEqual(events, expected)
 
@@ -195,8 +195,8 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
                 super(Foo, self).test()
                 raise RuntimeError('raised by Foo.test')
 
-        expected = ['startTestRun', 'startTest', 'setUp', 'test', 'addError',
-                    'tearDown', 'stopTest', 'stopTestRun']
+        expected = ['startTestRun', 'startTest', 'setUp', 'test',
+                    'tearDown', 'addError', 'stopTest', 'stopTestRun']
         Foo(events).run()
         self.assertEqual(events, expected)
 
@@ -216,8 +216,8 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
                 super(Foo, self).test()
                 self.fail('raised by Foo.test')
 
-        expected = ['startTest', 'setUp', 'test', 'addFailure', 'tearDown',
-                    'stopTest']
+        expected = ['startTest', 'setUp', 'test', 'tearDown',
+                    'addFailure', 'stopTest']
         Foo(events).run(result)
         self.assertEqual(events, expected)
 
@@ -231,8 +231,8 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
                 super(Foo, self).test()
                 self.fail('raised by Foo.test')
 
-        expected = ['startTestRun', 'startTest', 'setUp', 'test', 'addFailure',
-                    'tearDown', 'stopTest', 'stopTestRun']
+        expected = ['startTestRun', 'startTest', 'setUp', 'test',
+                    'tearDown', 'addFailure', 'stopTest', 'stopTestRun']
         events = []
         Foo(events).run()
         self.assertEqual(events, expected)
@@ -1126,3 +1126,82 @@ test case
             # exercise the TestCase instance in a way that will invoke
             # the type equality lookup mechanism
             unpickled_test.assertEqual(set(), set())
+
+    def testKeyboardInterrupt(self):
+        def _raise(self=None):
+            raise KeyboardInterrupt
+        def nothing(self):
+            pass
+
+        class Test1(unittest.TestCase):
+            test_something = _raise
+
+        class Test2(unittest.TestCase):
+            setUp = _raise
+            test_something = nothing
+
+        class Test3(unittest.TestCase):
+            test_something = nothing
+            tearDown = _raise
+
+        class Test4(unittest.TestCase):
+            def test_something(self):
+                self.addCleanup(_raise)
+
+        for klass in (Test1, Test2, Test3, Test4):
+            with self.assertRaises(KeyboardInterrupt):
+                klass('test_something').run()
+
+    def testSkippingEverywhere(self):
+        def _skip(self=None):
+            raise unittest.SkipTest('some reason')
+        def nothing(self):
+            pass
+
+        class Test1(unittest.TestCase):
+            test_something = _skip
+
+        class Test2(unittest.TestCase):
+            setUp = _skip
+            test_something = nothing
+
+        class Test3(unittest.TestCase):
+            test_something = nothing
+            tearDown = _skip
+
+        class Test4(unittest.TestCase):
+            def test_something(self):
+                self.addCleanup(_skip)
+
+        for klass in (Test1, Test2, Test3, Test4):
+            result = unittest.TestResult()
+            klass('test_something').run(result)
+            self.assertEqual(len(result.skipped), 1)
+            self.assertEqual(result.testsRun, 1)
+
+    def testSystemExit(self):
+        def _raise(self=None):
+            raise SystemExit
+        def nothing(self):
+            pass
+
+        class Test1(unittest.TestCase):
+            test_something = _raise
+
+        class Test2(unittest.TestCase):
+            setUp = _raise
+            test_something = nothing
+
+        class Test3(unittest.TestCase):
+            test_something = nothing
+            tearDown = _raise
+
+        class Test4(unittest.TestCase):
+            def test_something(self):
+                self.addCleanup(_raise)
+
+        for klass in (Test1, Test2, Test3, Test4):
+            result = unittest.TestResult()
+            klass('test_something').run(result)
+            self.assertEqual(len(result.errors), 1)
+            self.assertEqual(result.testsRun, 1)

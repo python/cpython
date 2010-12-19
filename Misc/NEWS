@@ -23,6 +23,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #10611: SystemExit exception will no longer kill a unittest run.
+
+- Issue #9857: It is now possible to skip a test in a setUp, tearDown or clean
+  up function.
+
 - Issue #10573: use actual/expected consistently in unittest methods.
   The order of the args of assertCountEqual is also changed.
 
@@ -322,7 +327,7 @@ Library
 - configparser: the SafeConfigParser class has been renamed to ConfigParser.
   The legacy ConfigParser class has been removed but its interpolation mechanism
   is still available as LegacyInterpolation.
-  
+
 - configparser: Usage of RawConfigParser is now discouraged for new projects
   in favor of ConfigParser(interpolation=None).
 
