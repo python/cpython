@@ -8,6 +8,16 @@
 .. moduleauthor:: Vinay Sajip <vinay_sajip@red-dove.com>
 .. sectionauthor:: Vinay Sajip <vinay_sajip@red-dove.com>
 
+.. sidebar:: Important
+
+   This page contains only reference information. For tutorials,
+   please see
+
+   * :ref:`Basic Tutorial <logging-basic-tutorial>`
+   * :ref:`Advanced Tutorial <logging-advanced-tutorial>`
+   * :ref:`Logging Cookbook <logging-cookbook>`
+
+This section describes the API for configuring the logging module.
 
 .. _logging-config-api:
 
