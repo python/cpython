@@ -13,12 +13,12 @@
 
 .. sidebar:: Important
 
-   The tutorials have been moved to the HOWTO section:
+   This page contains the API reference information. For tutorial
+   information and discussion of more advanced topics, see
 
    * :ref:`Basic Tutorial <logging-basic-tutorial>`
    * :ref:`Advanced Tutorial <logging-advanced-tutorial>`
    * :ref:`Logging Cookbook <logging-cookbook>`
-
 
 
 This module defines functions and classes which implement a flexible event
@@ -31,8 +31,7 @@ modules.
 
 The module provides a lot of functionality and flexibility.  If you are
 unfamiliar with logging, the best way to get to grips with it is to see the
-tutorials (see the links on the right). This page contains the API reference
-information.
+tutorials (see the links on the right).
 
 The basic classes defined by the module, together with their functions, are
 listed below.

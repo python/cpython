@@ -8,9 +8,21 @@
 .. moduleauthor:: Vinay Sajip <vinay_sajip@red-dove.com>
 .. sectionauthor:: Vinay Sajip <vinay_sajip@red-dove.com>
 
-The following useful handlers are provided in the package.
+.. sidebar:: Important
+
+   This page contains only reference information. For tutorials,
+   please see
+
+   * :ref:`Basic Tutorial <logging-basic-tutorial>`
+   * :ref:`Advanced Tutorial <logging-advanced-tutorial>`
+   * :ref:`Logging Cookbook <logging-cookbook>`
 
 .. currentmodule:: logging
+
+The following useful handlers are provided in the package. Note that three of
+the handlers (:class:`StreamHandler`, :class:`FileHandler` and
+:class:`NullHandler`) are actually defined in the :mod:`logging` module itself,
+but have been documented here along with the other handlers.
 
 .. _stream-handler:
 
