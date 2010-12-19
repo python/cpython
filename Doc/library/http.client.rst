@@ -393,13 +393,17 @@ HTTPConnection Objects
    string.
 
    The *body* may also be an open :term:`file object`, in which case the
-   contents of the file is sent; this file object should support
-   ``fileno()`` and ``read()`` methods. The header Content-Length is
-   automatically set to the length of the file as reported by
-   stat.
+   contents of the file is sent; this file object should support ``fileno()``
+   and ``read()`` methods. The header Content-Length is automatically set to
+   the length of the file as reported by stat. The *body* argument may also be
+   an iterable and Contet-Length header should be explicitly provided when the
+   body is an iterable.
 
    The *headers* argument should be a mapping of extra HTTP
    headers to send with the request.
+
+   .. versionadded:: 3.2
+      *body* can be an iterable
 
 .. method:: HTTPConnection.getresponse()
 

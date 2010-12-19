@@ -71,6 +71,7 @@ import email.message
 import io
 import os
 import socket
+import collections
 from urllib.parse import urlsplit
 import warnings
 
@@ -730,7 +731,11 @@ class HTTPConnection:
         self.__state = _CS_IDLE
 
     def send(self, data):
-        """Send `data' to the server."""
+        """Send `data' to the server.
+        ``data`` can be a string object, a bytes object, an array object, a
+        file-like object that supports a .read() method, or an iterable object.
+        """
+
         if self.sock is None:
             if self.auto_open:
                 self.connect()
@@ -762,8 +767,16 @@ class HTTPConnection:
                 if encode:
                     datablock = datablock.encode("iso-8859-1")
                 self.sock.sendall(datablock)
-        else:
+
+        try:
             self.sock.sendall(data)
+        except TypeError:
+            if isinstance(data, collections.Iterable):
+                for d in data:
+                    self.sock.sendall(d)
+            else:
+                raise TypeError("data should be byte-like object\
+                        or an iterable, got %r " % type(it))
 
     def _output(self, s):
         """Add a line of output to the current request buffer.

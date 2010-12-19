@@ -94,6 +94,7 @@ import re
 import socket
 import sys
 import time
+import collections
 
 from urllib.error import URLError, HTTPError, ContentTooShortError
 from urllib.parse import (
@@ -1053,8 +1054,17 @@ class AbstractHTTPHandler(BaseHandler):
                     'Content-type',
                     'application/x-www-form-urlencoded')
             if not request.has_header('Content-length'):
-                request.add_unredirected_header(
-                    'Content-length', '%d' % len(data))
+                try:
+                    mv = memoryview(data)
+                except TypeError:
+                    print(data)
+                    if isinstance(data, collections.Iterable):
+                        raise ValueError("Content-Length should be specified \
+                                for iterable data of type %r %r" % (type(data),
+                                data))
+                else:
+                    request.add_unredirected_header(
+                            'Content-length', '%d' % len(mv) * mv.itemsize)
 
         sel_host = host
         if request.has_proxy():
