@@ -20,7 +20,7 @@ The :mod:`urllib.request` module defines the following functions:
    Open the URL *url*, which can be either a string or a
    :class:`Request` object.
 
-   *data* may be a string specifying additional data to send to the
+   *data* may be a bytes object specifying additional data to send to the
    server, or ``None`` if no such data is needed. *data* may also be an
    iterable object and in that case Content-Length value must be specified in
    the headers. Currently HTTP requests are the only ones that use *data*; the

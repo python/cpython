@@ -403,7 +403,7 @@ HTTPConnection Objects
    headers to send with the request.
 
    .. versionadded:: 3.2
-      *body* can be an iterable
+      *body* can now be an iterable.
 
 .. method:: HTTPConnection.getresponse()
 
