@@ -51,6 +51,9 @@ This article explains the new features in Python 3.2 as compared to 3.1.  It
 focuses on a few highlights and gives a few examples.  For full details, see the
 :source:`Misc/NEWS <Misc/NEWS>` file.
 
+.. seealso::
+
+   :pep:`392` - Python 3.2 Release Schedule
 
 PEP 384: Defining a Stable ABI
 ==============================
