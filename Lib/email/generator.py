@@ -186,7 +186,8 @@ class Generator:
             # Create a boundary that doesn't appear in any of the
             # message texts.
             alltext = NL.join(msgtexts)
-            msg.set_boundary(self._make_boundary(alltext))
+            boundary = _make_boundary(alltext)
+            msg.set_boundary(boundary)
         # If there's a preamble, write it out, with a trailing CRLF
         if msg.preamble is not None:
             print(msg.preamble, file=self._fp)
