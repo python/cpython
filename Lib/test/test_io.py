@@ -701,6 +701,13 @@ class CommonBufferedTests:
         b.close()
         self.assertRaises(ValueError, b.flush)
 
+    def test_readonly_attributes(self):
+        raw = self.MockRawIO()
+        buf = self.tp(raw)
+        x = self.MockRawIO()
+        with self.assertRaises((AttributeError, TypeError)):
+            buf.raw = x
+
 
 class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
     read_mode = "rb"
@@ -2210,6 +2217,12 @@ class TextIOWrapperTest(unittest.TestCase):
         txt.close()
         txt.close()
         self.assertRaises(ValueError, txt.flush)
+
+    def test_readonly_attributes(self):
+        txt = self.TextIOWrapper(self.BytesIO(self.testdata), encoding="ascii")
+        buf = self.BytesIO(self.testdata)
+        with self.assertRaises((AttributeError, TypeError)):
+            txt.buffer = buf
 
 class CTextIOWrapperTest(TextIOWrapperTest):
 
