@@ -877,8 +877,12 @@ class ZipFile:
 
     def setpassword(self, pwd):
         """Set default password for encrypted files."""
-        assert isinstance(pwd, bytes)
-        self.pwd = pwd
+        if pwd and not isinstance(pwd, bytes):
+            raise TypeError("pwd: expected bytes, got %s" % type(pwd))
+        if pwd:
+            self.pwd = pwd
+        else:
+            self.pwd = None
 
     def read(self, name, pwd=None):
         """Return file bytes (as a string) for name."""
@@ -889,6 +893,8 @@ class ZipFile:
         """Return file-like object for 'name'."""
         if mode not in ("r", "U", "rU"):
             raise RuntimeError('open() requires mode "r", "U", or "rU"')
+        if pwd and not isinstance(pwd, bytes):
+            raise TypeError("pwd: expected bytes, got %s" % type(pwd))
         if not self.fp:
             raise RuntimeError(
                   "Attempt to read ZIP archive that was already closed")
@@ -949,8 +955,8 @@ class ZipFile:
             #  completely random, while the 12th contains the MSB of the CRC,
             #  or the MSB of the file time depending on the header type
             #  and is used to check the correctness of the password.
-            bytes = zef_file.read(12)
-            h = list(map(zd, bytes[0:12]))
+            header = zef_file.read(12)
+            h = list(map(zd, header[0:12]))
             if zinfo.flag_bits & 0x8:
                 # compare against the file type from extended local headers
                 check_byte = (zinfo._raw_time >> 8) & 0xff
