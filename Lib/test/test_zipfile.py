@@ -1089,6 +1089,12 @@ class DecryptionTests(unittest.TestCase):
         self.zip2.setpassword(b"12345")
         self.assertEqual(self.zip2.read("zero"), self.plain2)
 
+    def test_unicode_password(self):
+        self.assertRaises(TypeError, self.zip.setpassword, "unicode")
+        self.assertRaises(TypeError, self.zip.read, "test.txt", "python")
+        self.assertRaises(TypeError, self.zip.open, "test.txt", pwd="python")
+        self.assertRaises(TypeError, self.zip.extract, "test.txt", pwd="python")
+
 
 class TestsWithRandomBinaryFiles(unittest.TestCase):
     def setUp(self):
