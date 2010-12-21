@@ -1078,9 +1078,6 @@ Test cases
    | :meth:`assertNotRegex(s, re)          | ``not regex.search(s)``        | 3.2          |
    | <TestCase.assertNotRegex>`            |                                |              |
    +---------------------------------------+--------------------------------+--------------+
-   | :meth:`assertDictContainsSubset(a, b) | all the key/value pairs        | 3.1          |
-   | <TestCase.assertDictContainsSubset>`  | in `a` exist in `b`            |              |
-   +---------------------------------------+--------------------------------+--------------+
    | :meth:`assertCountEqual(a, b)         | `a` and `b` have the same      | 3.2          |
    | <TestCase.assertCountEqual>`          | elements in the same number,   |              |
    |                                       | regardless of their order      |              |
@@ -1145,7 +1142,13 @@ Test cases
       those in *subset*.  If not, an error message listing the missing keys
       and mismatched values is generated.
 
+      Note, the arguments are in the opposite order of what the method name
+      dictates.  Instead, consider using the set-methods on :ref:`dictionary
+      views <dict-views>`, for example: ``d.keys() <= e.keys()`` or
+      ``d.items() <= d.items()``.
+
       .. versionadded:: 3.1
+      .. deprecated:: 3.2
 
 
    .. method:: assertCountEqual(actual, expected, msg=None)

@@ -1079,6 +1079,7 @@ test case
             (self.failUnlessRaises, (TypeError, lambda _: 3.14 + 'spam')),
             (self.failIf, (False,)),
             (self.assertSameElements, ([1, 1, 2, 3], [1, 2, 3])),
+            (self.assertDictContainsSubset, (dict(a=1, b=2), dict(a=1, b=2, c=3))),
             (self.assertRaisesRegexp, (KeyError, 'foo', lambda: {}['foo'])),
             (self.assertRegexpMatches, ('bar', 'bar')),
         )
@@ -1093,7 +1094,7 @@ test case
         deprecated_names = [
             'failIfEqual', 'failUnlessEqual', 'failUnlessAlmostEqual',
             'failIfAlmostEqual', 'failUnless', 'failUnlessRaises', 'failIf',
-            'assertSameElements'
+            'assertSameElements', 'assertDictContainsSubset',
         ]
         for deprecated_name in deprecated_names:
             with self.assertRaises(AttributeError):
