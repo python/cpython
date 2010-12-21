@@ -126,13 +126,13 @@ class CommandLineTests(unittest.TestCase):
 
     def assertRunOK(self, *args, **env_vars):
         rc, out, err = script_helper.assert_python_ok(
-            '-m', 'compileall', *args, **env_vars)
+                        '-S', '-m', 'compileall', *args, **env_vars)
         self.assertEqual(b'', err)
         return out
 
     def assertRunNotOK(self, *args, **env_vars):
         rc, out, err = script_helper.assert_python_failure(
-                         '-m', 'compileall', *args, **env_vars)
+                        '-S', '-m', 'compileall', *args, **env_vars)
         return rc, out, err
 
     def assertCompiled(self, fn):
