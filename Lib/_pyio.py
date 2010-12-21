@@ -674,7 +674,7 @@ class _BufferedIOMixin(BufferedIOBase):
     """
 
     def __init__(self, raw):
-        self.raw = raw
+        self._raw = raw
 
     ### Positioning ###
 
@@ -718,8 +718,8 @@ class _BufferedIOMixin(BufferedIOBase):
         if self.raw is None:
             raise ValueError("raw stream already detached")
         self.flush()
-        raw = self.raw
-        self.raw = None
+        raw = self._raw
+        self._raw = None
         return raw
 
     ### Inquiries ###
@@ -732,6 +732,10 @@ class _BufferedIOMixin(BufferedIOBase):
 
     def writable(self):
         return self.raw.writable()
+
+    @property
+    def raw(self):
+        return self._raw
 
     @property
     def closed(self):
@@ -1444,7 +1448,7 @@ class TextIOWrapper(TextIOBase):
             if not isinstance(errors, str):
                 raise ValueError("invalid errors: %r" % errors)
 
-        self.buffer = buffer
+        self._buffer = buffer
         self._line_buffering = line_buffering
         self._encoding = encoding
         self._errors = errors
@@ -1498,6 +1502,10 @@ class TextIOWrapper(TextIOBase):
     @property
     def line_buffering(self):
         return self._line_buffering
+
+    @property
+    def buffer(self):
+        return self._buffer
 
     def seekable(self):
         return self._seekable
@@ -1713,8 +1721,8 @@ class TextIOWrapper(TextIOBase):
         if self.buffer is None:
             raise ValueError("buffer is already detached")
         self.flush()
-        buffer = self.buffer
-        self.buffer = None
+        buffer = self._buffer
+        self._buffer = None
         return buffer
 
     def seek(self, cookie, whence=0):
