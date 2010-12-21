@@ -180,6 +180,17 @@ class TestMessageAPI(TestEmailBase):
         self.assertRaises(errors.HeaderParseError,
                           msg.set_boundary, 'BOUNDARY')
 
+    def test_make_boundary(self):
+        msg = MIMEMultipart('form-data')
+        # Note that when the boundary gets created is an implementation
+        # detail and might change.
+        self.assertEqual(msg.items()[0][1], 'multipart/form-data')
+        # Trigger creation of boundary
+        msg.as_string()
+        self.assertEqual(msg.items()[0][1][:33],
+                        'multipart/form-data; boundary="==')
+        # XXX: there ought to be tests of the uniqueness of the boundary, too.
+
     def test_message_rfc822_only(self):
         # Issue 7970: message/rfc822 not in multipart parsed by
         # HeaderParser caused an exception when flattened.
