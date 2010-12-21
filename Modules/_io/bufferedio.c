@@ -1541,7 +1541,7 @@ static PyMethodDef bufferedreader_methods[] = {
 };
 
 static PyMemberDef bufferedreader_members[] = {
-    {"raw", T_OBJECT, offsetof(buffered, raw), 0},
+    {"raw", T_OBJECT, offsetof(buffered, raw), READONLY},
     {NULL}
 };
 
@@ -1926,7 +1926,7 @@ static PyMethodDef bufferedwriter_methods[] = {
 };
 
 static PyMemberDef bufferedwriter_members[] = {
-    {"raw", T_OBJECT, offsetof(buffered, raw), 0},
+    {"raw", T_OBJECT, offsetof(buffered, raw), READONLY},
     {NULL}
 };
 
@@ -2320,7 +2320,7 @@ static PyMethodDef bufferedrandom_methods[] = {
 };
 
 static PyMemberDef bufferedrandom_members[] = {
-    {"raw", T_OBJECT, offsetof(buffered, raw), 0},
+    {"raw", T_OBJECT, offsetof(buffered, raw), READONLY},
     {NULL}
 };
 

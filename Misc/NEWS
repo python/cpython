@@ -11,6 +11,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10750: The ``raw`` attribute of buffered IO objects is now read-only.
+
 - Deprecated assertDictContainsSubclass() in the unittest module.
 
 
