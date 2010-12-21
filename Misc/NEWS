@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4871: The zipfile module now gives a more useful error message if
+  an attempt is made to use a string to specify the archive password.
+
 - Issue #10750: The ``raw`` attribute of buffered IO objects is now read-only.
 
 - Issue #6791: Limit header line length (to 65535 bytes) in http.client
