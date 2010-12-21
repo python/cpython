@@ -2,6 +2,18 @@
 Python News
 +++++++++++
 
+What's New in Python 3.2 Release Candidate 1
+============================================
+
+Core and Builtins
+-----------------
+
+Library
+-------
+
+- Deprecated assertDictContainsSubclass() in the unittest module.
+
+
 What's New in Python 3.2 Beta 2?
 ================================
 
