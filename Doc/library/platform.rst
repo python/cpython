@@ -38,6 +38,16 @@ Cross Platform
    and then only if the executable points to the Python interpreter.  Reasonable
    defaults are used when the above needs are not met.
 
+   .. note::
+
+      On Mac OS X (and perhaps other platforms), executable files may be
+      universal files containing multiple architectures.
+
+      To get at the "64-bitness" of the current interpreter, it is more
+      reliable to query the :attr:`sys.maxsize` attribute::
+
+         is_64bits = sys.maxsize > 2**32
+
 
 .. function:: machine()
 
@@ -194,7 +204,7 @@ Windows Platform
 
    .. note::
 
-      Note: this function works best with Mark Hammond's
+      This function works best with Mark Hammond's
       :mod:`win32all` package installed, but also on Python 2.3 and
       later (support for this was added in Python 2.6). It obviously
       only runs on Win32 compatible platforms.
