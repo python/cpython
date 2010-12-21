@@ -24,6 +24,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10750: The ``raw`` attribute of buffered IO objects is now read-only.
+
 - Issue #6791: Limit header line length (to 65535 bytes) in http.client
   and http.server, to avoid denial of services from the other party.
 
