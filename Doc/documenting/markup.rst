@@ -610,6 +610,8 @@ Example::
 
 The ``:ref:`` invocation is replaced with the section title.
 
+Alternatively, you can reference any label (not just section titles)
+if you provide the link text ``:ref:`link text`<reference-label>```.
 
 Paragraph-level markup
 ----------------------
