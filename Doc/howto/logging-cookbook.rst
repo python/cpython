@@ -8,8 +8,6 @@ Logging Cookbook
 
 This page contains a number of recipes related to logging, which have been found useful in the past.
 
-.. Contents::
-
 .. currentmodule:: logging
 
 Using logging in multiple modules
@@ -249,7 +247,8 @@ configuration::
     #!/usr/bin/env python
     import socket, sys, struct
 
-    data_to_send = open(sys.argv[1], 'r').read()
+    with open(sys.argv[1], 'rb') as f:
+        data_to_send = f.read()
 
     HOST = 'localhost'
     PORT = 9999

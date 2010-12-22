@@ -45,9 +45,9 @@ and :meth:`flush` methods).
    .. method:: emit(record)
 
       If a formatter is specified, it is used to format the record. The record
-      is then written to the stream with a trailing newline. If exception
-      information is present, it is formatted using
-      :func:`traceback.print_exception` and appended to the stream.
+      is then written to the stream with a terminator. If exception information
+      is present, it is formatted using :func:`traceback.print_exception` and
+      appended to the stream.
 
 
    .. method:: flush()
@@ -61,6 +61,7 @@ and :meth:`flush` methods).
    value ``'\n'``, which is used as the terminator when writing a formatted
    record to a stream. If you don't want this newline termination, you can
    set the handler instance's ``terminator`` attribute to the empty string.
+   In earlier versions, the terminator was hardcoded as ``'\n'``.
 
 .. _file-handler:
 

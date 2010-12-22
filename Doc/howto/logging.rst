@@ -4,8 +4,6 @@ Logging HOWTO
 
 :Author: Vinay Sajip <vinay_sajip at red-dove dot com>
 
-.. Contents::
-
 .. _logging-basic-tutorial:
 
 .. currentmodule:: logging
@@ -312,11 +310,9 @@ understand something, please post a question on the comp.lang.python Usenet
 group (available at http://groups.google.com/group/comp.lang.python) and you
 should receive help before too long.
 
-Still here? There's no need to read the whole of the logging documentation in
-linear fashion, top to bottom (there's quite a lot of it still to come). You
-can carry on reading the next few sections, which provide a slightly more
-advanced/in-depth tutorial than the basic one above. After that, you can
-take a look at the :ref:`logging-cookbook`.
+Still here? You can carry on reading the next few sections, which provide a
+slightly more advanced/in-depth tutorial than the basic one above. After that,
+you can take a look at the :ref:`logging-cookbook`.
 
 .. _logging-advanced-tutorial:
 
@@ -459,14 +455,14 @@ attribute of a logger to *False*.)
 Handlers
 ^^^^^^^^
 
-:class:`Handler` objects are responsible for dispatching the appropriate log
-messages (based on the log messages' severity) to the handler's specified
-destination.  Logger objects can add zero or more handler objects to themselves
-with an :func:`addHandler` method.  As an example scenario, an application may
-want to send all log messages to a log file, all log messages of error or higher
-to stdout, and all messages of critical to an email address.  This scenario
-requires three individual handlers where each handler is responsible for sending
-messages of a specific severity to a specific location.
+:class:`~logging.Handler` objects are responsible for dispatching the
+appropriate log messages (based on the log messages' severity) to the handler's
+specified destination.  Logger objects can add zero or more handler objects to
+themselves with an :func:`addHandler` method.  As an example scenario, an
+application may want to send all log messages to a log file, all log messages
+of error or higher to stdout, and all messages of critical to an email address.
+This scenario requires three individual handlers where each handler is
+responsible for sending messages of a specific severity to a specific location.
 
 The standard library includes quite a few handler types (see
 :ref:`useful-handlers`); the tutorials use mainly :class:`StreamHandler` and
@@ -541,6 +537,8 @@ Formatter class (to ``time.gmtime`` for GMT display).
 
 Configuring Logging
 ^^^^^^^^^^^^^^^^^^^
+
+.. currentmodule:: logging.config
 
 Programmers can configure logging in three ways:
 
@@ -653,10 +651,12 @@ You can see that the config file approach has a few advantages over the Python
 code approach, mainly separation of configuration and code and the ability of
 noncoders to easily modify the logging properties.
 
+.. currentmodule:: logging
+
 Note that the class names referenced in config files need to be either relative
 to the logging module, or absolute values which can be resolved using normal
 import mechanisms. Thus, you could use either
-:class:`handlers.WatchedFileHandler` (relative to the logging module) or
+:class:`~logging.handlers.WatchedFileHandler` (relative to the logging module) or
 ``mypackage.mymodule.MyHandler`` (for a class defined in package ``mypackage``
 and module ``mymodule``, where ``mypackage`` is available on the Python import
 path).
@@ -718,8 +718,8 @@ In Python 3.2 and later, the behaviour is as follows:
 
 * The event is output using a 'handler of last resort', stored in
   ``logging.lastResort``. This internal handler is not associated with any
-  logger, and acts like a :class:`StreamHandler` which writes the event
-  description message to the current value of ``sys.stderr`` (therefore
+  logger, and acts like a :class:`~logging.StreamHandler` which writes the
+  event description message to the current value of ``sys.stderr`` (therefore
   respecting any redirections which may be in effect). No formatting is
   done on the message - just the bare event description message is printed.
   The handler's level is set to ``WARNING``, so all events at this and
@@ -749,12 +749,13 @@ that configuration will add some handlers, and if levels are suitably
 configured then logging calls made in library code will send output to those
 handlers, as normal.
 
-A do-nothing handler is included in the logging package: :class:`NullHandler`
-(since Python 3.1). An instance of this handler could be added to the top-level
-logger of the logging namespace used by the library (*if* you want to prevent
-your library's logged events being output to ``sys.stderr`` in the absence of
-logging configuration). If all logging by a library *foo* is done using loggers
-with names matching 'foo.x', 'foo.x.y', etc. then the code::
+A do-nothing handler is included in the logging package:
+:class:`~logging.NullHandler` (since Python 3.1). An instance of this handler
+could be added to the top-level logger of the logging namespace used by the
+library (*if* you want to prevent your library's logged events being output to
+``sys.stderr`` in the absence of logging configuration). If all logging by a
+library *foo* is done using loggers with names matching 'foo.x', 'foo.x.y',
+etc. then the code::
 
     import logging
     logging.getLogger('foo').addHandler(logging.NullHandler())
@@ -764,12 +765,12 @@ libraries, then the logger name specified can be 'orgname.foo' rather than
 just 'foo'.
 
 **PLEASE NOTE:** It is strongly advised that you *do not add any handlers other
-than* :class:`NullHandler` *to your library's loggers*. This is because the
-configuration of handlers is the prerogative of the application developer who
-uses your library. The application developer knows their target audience and
-what handlers are most appropriate for their application: if you add handlers
-'under the hood', you might well interfere with their ability to carry out
-unit tests and deliver logs which suit their requirements.
+than* :class:`~logging.NullHandler` *to your library's loggers*. This is
+because the configuration of handlers is the prerogative of the application
+developer who uses your library. The application developer knows their target
+audience and what handlers are most appropriate for their application: if you
+add handlers 'under the hood', you might well interfere with their ability to
+carry out unit tests and deliver logs which suit their requirements.
 
 
 Logging Levels
@@ -804,9 +805,9 @@ the method call. If the logger's level is higher than the method call's, no
 logging message is actually generated. This is the basic mechanism controlling
 the verbosity of logging output.
 
-Logging messages are encoded as instances of the :class:`LogRecord` class. When
-a logger decides to actually log an event, a :class:`LogRecord` instance is
-created from the logging message.
+Logging messages are encoded as instances of the :class:`~logging.LogRecord`
+class. When a logger decides to actually log an event, a
+:class:`~logging.LogRecord` instance is created from the logging message.
 
 Logging messages are subjected to a dispatch mechanism through the use of
 :dfn:`handlers`, which are instances of subclasses of the :class:`Handler`
@@ -816,17 +817,17 @@ which is useful for the target audience for that message (such as end users,
 support desk staff, system administrators, developers). Handlers are passed
 :class:`LogRecord` instances intended for particular destinations. Each logger
 can have zero, one or more handlers associated with it (via the
-:meth:`addHandler` method of :class:`Logger`). In addition to any handlers
-directly associated with a logger, *all handlers associated with all ancestors
-of the logger* are called to dispatch the message (unless the *propagate* flag
-for a logger is set to a false value, at which point the passing to ancestor
-handlers stops).
+:meth:`~Logger.addHandler` method of :class:`Logger`). In addition to any
+handlers directly associated with a logger, *all handlers associated with all
+ancestors of the logger* are called to dispatch the message (unless the
+*propagate* flag for a logger is set to a false value, at which point the
+passing to ancestor handlers stops).
 
 Just as for loggers, handlers can have levels associated with them. A handler's
 level acts as a filter in the same way as a logger's level does. If a handler
-decides to actually dispatch an event, the :meth:`emit` method is used to send
-the message to its destination. Most user-defined subclasses of :class:`Handler`
-will need to override this :meth:`emit`.
+decides to actually dispatch an event, the :meth:`~Handler.emit` method is used
+to send the message to its destination. Most user-defined subclasses of
+:class:`Handler` will need to override this :meth:`~Handler.emit`.
 
 .. _custom-levels:
 
