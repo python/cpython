@@ -456,7 +456,7 @@ Some smaller changes made to the core Python language are:
   (Suggested by Arfrever Frehtes Taifersar Arahesis and implemented
   by Benjamin Peterson in :issue:`8413`.)
 
-* Warnings are now easier control.  An :envvar:`PYTHONWARNINGS` environment
+* Warnings are now easier to control.  A :envvar:`PYTHONWARNINGS` environment
   variable is now available as an alternative to using ``-W`` at the command
   line.
 
@@ -1425,8 +1425,8 @@ A number of small performance enhancements have been added:
   a list was wrapped with a temporary object that remembered the key value
   associated with each element.  Now, an array of keys and values are
   sorted in parallel.  This save the memory consumed by the sort wrappers,
-  and it saves time lost from during comparisons which where delegated
-  by the sort wrappers.
+  and it saves time lost during comparisons which where delegated by the
+  sort wrappers.
 
   (Patch by Daniel Stuzback in :issue:`9915`.)
 
