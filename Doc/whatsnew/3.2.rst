@@ -1425,7 +1425,7 @@ A number of small performance enhancements have been added:
   a list was wrapped with a temporary object that remembered the key value
   associated with each element.  Now, an array of keys and values are
   sorted in parallel.  This save the memory consumed by the sort wrappers,
-  and it saves time lost during comparisons which where delegated by the
+  and it saves time lost during comparisons which were delegated by the
   sort wrappers.
 
   (Patch by Daniel Stuzback in :issue:`9915`.)
