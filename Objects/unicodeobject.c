@@ -41,8 +41,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "bytes_methods.h"
-
 #include "ucnhash.h"
 
 #ifdef MS_WINDOWS
