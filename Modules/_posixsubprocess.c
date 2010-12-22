@@ -53,7 +53,7 @@ static void child_exec(char *const exec_array[],
 {
     int i, saved_errno, fd_num;
     PyObject *result;
-    const char* err_msg;
+    const char* err_msg = "";
     /* Buffer large enough to hold a hex integer.  We can't malloc. */
     char hex_errno[sizeof(saved_errno)*2+1];
 
