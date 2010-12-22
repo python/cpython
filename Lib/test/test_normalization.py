@@ -45,6 +45,7 @@ class NormalizationTest(unittest.TestCase):
                                         check=check_version)
         except (IOError, HTTPException):
             self.skipTest("Could not retrieve " + TESTDATAURL)
+        self.addCleanup(testdata.close)
         for line in testdata:
             if '#' in line:
                 line = line.split('#')[0]
