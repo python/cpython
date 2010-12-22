@@ -677,6 +677,8 @@ functools
 
   (Contributed by Raymond Hettinger.)
 
+.. XXX clarify what the example does
+
 * To aid in porting programs from Python 2, the :func:`~functools.cmp_to_key`
   function converts an old-style comparison function to
   modern :term:`key function`:
