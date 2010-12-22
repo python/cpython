@@ -309,8 +309,8 @@ The Unicode category codes mentioned above stand for:
 * *Nd* - decimal numbers
 * *Pc* - connector punctuations
 
-All identifiers are converted into the normal form NFC while parsing; comparison
-of identifiers is based on NFC.
+All identifiers are converted into the normal form NFKC while parsing; comparison
+of identifiers is based on NFKC.
 
 A non-normative HTML file listing all valid identifier characters for Unicode
 4.1 can be found at
