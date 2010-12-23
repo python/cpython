@@ -81,7 +81,7 @@ def c2py(plural):
     plural = expr.sub(' not \\1', plural)
 
     # Regular expression and replacement function used to transform
-    # "a?b:c" to "test(a,b,c)".
+    # "a?b:c" to "b if a else c".
     expr = re.compile(r'(.*?)\?(.*?):(.*)')
     def repl(x):
         return "(%s if %s else %s)" % (x.group(2), x.group(1),
