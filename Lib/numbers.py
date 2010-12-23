@@ -303,7 +303,7 @@ class Integral(Rational):
         raise NotImplementedError
 
     def __index__(self):
-        """index(self)"""
+        """someobject[self]"""
         return int(self)
 
     @abstractmethod
