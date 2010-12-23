@@ -374,6 +374,7 @@ def _default_mime_types():
     global common_types
 
     suffix_map = {
+        '.svgz': '.svg.gz',
         '.tgz': '.tar.gz',
         '.taz': '.tar.gz',
         '.tz': '.tar.gz',
@@ -387,7 +388,7 @@ def _default_mime_types():
         }
 
     # Before adding new types, make sure they are either registered with IANA,
-    # at http://www.isi.edu/in-notes/iana/assignments/media-types
+    # at http://www.iana.org/assignments/media-types
     # or extensions, i.e. using the x- prefix
 
     # If you add to these, please keep them sorted!
@@ -488,6 +489,7 @@ def _default_mime_types():
         '.src'    : 'application/x-wais-source',
         '.sv4cpio': 'application/x-sv4cpio',
         '.sv4crc' : 'application/x-sv4crc',
+        '.svg'    : 'image/svg+xml'
         '.swf'    : 'application/x-shockwave-flash',
         '.t'      : 'application/x-troff',
         '.tar'    : 'application/x-tar',
