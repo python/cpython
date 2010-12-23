@@ -299,8 +299,9 @@ class OpenerDirector:
     def __init__(self):
         client_version = "Python-urllib/%s" % __version__
         self.addheaders = [('User-agent', client_version)]
-        # manage the individual handlers
+        # self.handlers is retained only for backward compatibility
         self.handlers = []
+        # manage the individual handlers
         self.handle_open = {}
         self.handle_error = {}
         self.process_response = {}
@@ -350,8 +351,6 @@ class OpenerDirector:
             added = True
 
         if added:
-            # the handlers must work in an specific order, the order
-            # is specified in a Handler attribute
             bisect.insort(self.handlers, handler)
             handler.add_parent(self)
 
