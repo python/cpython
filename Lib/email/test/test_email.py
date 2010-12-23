@@ -2277,6 +2277,16 @@ class TestMiscellaneous(TestEmailBase):
         eq(utils.parsedate_tz('5 Feb 2003 13:47:26 -0800'),
            (2003, 2, 5, 13, 47, 26, 0, 1, -1, -28800))
 
+    def test_parsedate_no_space_before_positive_offset(self):
+        self.assertEqual(utils.parsedate_tz('Wed, 3 Apr 2002 14:58:26+0800'),
+           (2002, 4, 3, 14, 58, 26, 0, 1, -1, 28800))
+
+    def test_parsedate_no_space_before_negative_offset(self):
+        # Issue 1155362: we already handled '+' for this case.
+        self.assertEqual(utils.parsedate_tz('Wed, 3 Apr 2002 14:58:26-0800'),
+           (2002, 4, 3, 14, 58, 26, 0, 1, -1, -28800))
+
+
     def test_parsedate_acceptable_to_time_functions(self):
         eq = self.assertEqual
         timetup = utils.parsedate('5 Feb 2003 13:47:26 -0800')
