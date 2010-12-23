@@ -62,9 +62,12 @@ def compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None,
                 success = 0
     return success
 
-def compile_file(fullname, ddir=None, force=0, rx=None, quiet=False,
+def compile_file(fullname, ddir=None, force=False, rx=None, quiet=False,
                  legacy=False, optimize=-1):
-    """Byte-compile file.
+    """Byte-compile one file.
+
+    Arguments (only fullname is required):
+
     fullname:  the file to byte-compile
     ddir:      if given, the directory name compiled in to the
                byte-code file.
