@@ -64,8 +64,10 @@ def parsedate_tz(data):
     if len(data) == 4:
         s = data[3]
         i = s.find('+')
+        if i == -1:
+            i = s.find('-')
         if i > 0:
-            data[3:] = [s[:i], s[i+1:]]
+            data[3:] = [s[:i], s[i:]]
         else:
             data.append('') # Dummy tz
     if len(data) < 5:
