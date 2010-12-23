@@ -60,7 +60,7 @@ class Complex(Number):
 
     @abstractproperty
     def imag(self):
-        """Retrieve the real component of this number.
+        """Retrieve the imaginary component of this number.
 
         This should subclass Real.
         """
