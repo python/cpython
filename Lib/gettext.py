@@ -46,7 +46,7 @@ internationalized, to the local language and cultural habits.
 #   find this format documented anywhere.
 
 
-import locale, copy, os, re, struct, sys
+import locale, copy, io, os, re, struct, sys
 from errno import ENOENT
 
 
@@ -63,9 +63,8 @@ def c2py(plural):
     Python lambda function that implements an equivalent expression.
     """
     # Security check, allow only the "n" identifier
-    from io import StringIO
     import token, tokenize
-    tokens = tokenize.generate_tokens(StringIO(plural).readline)
+    tokens = tokenize.generate_tokens(io.StringIO(plural).readline)
     try:
         danger = [x for x in tokens if x[0] == token.NAME and x[1] != 'n']
     except tokenize.TokenError:
@@ -109,36 +108,35 @@ def c2py(plural):
 
 
 
-def _expand_lang(locale):
-    from locale import normalize
-    locale = normalize(locale)
+def _expand_lang(loc):
+    loc = locale.normalize(loc)
     COMPONENT_CODESET   = 1 << 0
     COMPONENT_TERRITORY = 1 << 1
     COMPONENT_MODIFIER  = 1 << 2
     # split up the locale into its base components
     mask = 0
-    pos = locale.find('@')
+    pos = loc.find('@')
     if pos >= 0:
-        modifier = locale[pos:]
-        locale = locale[:pos]
+        modifier = loc[pos:]
+        loc = loc[:pos]
         mask |= COMPONENT_MODIFIER
     else:
         modifier = ''
-    pos = locale.find('.')
+    pos = loc.find('.')
     if pos >= 0:
-        codeset = locale[pos:]
-        locale = locale[:pos]
+        codeset = loc[pos:]
+        loc = loc[:pos]
         mask |= COMPONENT_CODESET
     else:
         codeset = ''
-    pos = locale.find('_')
+    pos = loc.find('_')
     if pos >= 0:
-        territory = locale[pos:]
-        locale = locale[:pos]
+        territory = loc[pos:]
+        loc = loc[:pos]
         mask |= COMPONENT_TERRITORY
     else:
         territory = ''
-    language = locale
+    language = loc
     ret = []
     for i in range(mask+1):
         if not (i & ~mask):  # if all components for this combo exist ...
