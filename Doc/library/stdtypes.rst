@@ -1078,20 +1078,26 @@ functions based on regular expressions.
 .. method:: str.isalnum()
 
    Return true if all characters in the string are alphanumeric and there is at
-   least one character, false otherwise.
+   least one character, false otherwise.  A character ``c`` is alphanumeric if one
+   of the following returns ``True``: ``c.isalpha()``, ``c.isdecimal()``,
+   ``c.isdigit()``, or ``c.isnumeric()``.
 
 
 .. method:: str.isalpha()
 
    Return true if all characters in the string are alphabetic and there is at least
-   one character, false otherwise.
+   one character, false otherwise.  Alphabetic characters are those characters defined
+   in the Unicode character database as "Letter", i.e., those with general category
+   property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
+   from the "Alphabetic" property defined in the Unicode Standard.
 
 
 .. method:: str.isdecimal()
 
    Return true if all characters in the string are decimal
    characters and there is at least one character, false
-   otherwise. Decimal characters include digit characters, and all characters
+   otherwise. Decimal characters are those from general category "Nd". This category
+   includes digit characters, and all characters
    that that can be used to form decimal-radix numbers, e.g. U+0660,
    ARABIC-INDIC DIGIT ZERO.
 
@@ -1099,7 +1105,9 @@ functions based on regular expressions.
 .. method:: str.isdigit()
 
    Return true if all characters in the string are digits and there is at least one
-   character, false otherwise.
+   character, false otherwise.  Digits include decimal characters and digits that need
+   special handling, such as the compatibility superscript digits.  Formally, a digit
+   is a character that has the property value Numeric_Type=Digit or Numeric_Type=Decimal.
 
 
 .. method:: str.isidentifier()
@@ -1111,7 +1119,9 @@ functions based on regular expressions.
 .. method:: str.islower()
 
    Return true if all cased characters in the string are lowercase and there is at
-   least one cased character, false otherwise.
+   least one cased character, false otherwise.  Cased characters are those with
+   general category property being one of "Lu", "Ll", or "Lt" and lowercase characters
+   are those with general category property "Ll".
 
 
 .. method:: str.isnumeric()
@@ -1120,7 +1130,8 @@ functions based on regular expressions.
    characters, and there is at least one character, false
    otherwise. Numeric characters include digit characters, and all characters
    that have the Unicode numeric value property, e.g. U+2155,
-   VULGAR FRACTION ONE FIFTH.
+   VULGAR FRACTION ONE FIFTH.  Formally, numeric characters are those with the property
+   value Numeric_Type=Digit, Numeric_Type=Decimal or Numeric_Type=Numeric.
 
 
 .. method:: str.isprintable()
@@ -1137,8 +1148,9 @@ functions based on regular expressions.
 .. method:: str.isspace()
 
    Return true if there are only whitespace characters in the string and there is
-   at least one character, false otherwise.
-
+   at least one character, false otherwise.  Whitespace characters  are those
+   characters defined in the Unicode character database as "Other" or "Separator"
+   and those with bidirectional property being one of "WS", "B", or "S".
 
 .. method:: str.istitle()
 
@@ -1150,7 +1162,9 @@ functions based on regular expressions.
 .. method:: str.isupper()
 
    Return true if all cased characters in the string are uppercase and there is at
-   least one cased character, false otherwise.
+   least one cased character, false otherwise. Cased characters are those with
+   general category property being one of "Lu", "Ll", or "Lt" and uppercase characters
+   are those with general category property "Lu".
 
 
 .. method:: str.join(iterable)
