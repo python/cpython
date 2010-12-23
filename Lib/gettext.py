@@ -58,20 +58,6 @@ __all__ = ['NullTranslations', 'GNUTranslations', 'Catalog',
 _default_localedir = os.path.join(sys.prefix, 'share', 'locale')
 
 
-def test(condition, true, false):
-    """
-    Implements the C expression:
-
-      condition ? true : false
-
-    Required to correctly interpret plural forms.
-    """
-    if condition:
-        return true
-    else:
-        return false
-
-
 def c2py(plural):
     """Gets a C expression as used in PO files for plural forms and returns a
     Python lambda function that implements an equivalent expression.
@@ -99,8 +85,8 @@ def c2py(plural):
     # "a?b:c" to "test(a,b,c)".
     expr = re.compile(r'(.*?)\?(.*?):(.*)')
     def repl(x):
-        return "test(%s, %s, %s)" % (x.group(1), x.group(2),
-                                     expr.sub(repl, x.group(3)))
+        return "(%s if %s else %s)" % (x.group(2), x.group(1),
+                                       expr.sub(repl, x.group(3)))
 
     # Code to transform the plural expression, taking care of parentheses
     stack = ['']
