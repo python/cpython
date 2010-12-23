@@ -1003,27 +1003,26 @@ class TestCase(object):
             self.fail(self._formatMessage(msg, standardMsg))
 
 
-    def assertCountEqual(self, actual_seq, expected_seq, msg=None):
+    def assertCountEqual(self, actual, expected, msg=None):
         """An unordered sequence specific comparison. It asserts that
         actual_seq and expected_seq have the same element counts.
         Equivalent to::
 
-            self.assertEqual(Counter(iter(actual_seq)),
-                             Counter(iter(expected_seq)))
+            self.assertEqual(Counter(actual_seq),
+                             Counter(expected_seq))
 
         Asserts that each element has the same count in both sequences.
         Example:
             - [0, 1, 1] and [1, 0, 1] compare equal.
             - [0, 0, 1] and [0, 1] compare unequal.
         """
+        actual_seq, expected_seq = list(actual), list(expected)
         try:
-            actual = collections.Counter(iter(actual_seq))
-            expected = collections.Counter(iter(expected_seq))
+            actual = collections.Counter(actual_seq)
+            expected = collections.Counter(expected_seq)
         except TypeError:
             # Unsortable items (example: set(), complex(), ...)
-            actual = list(actual_seq)
-            expected = list(expected_seq)
-            missing, unexpected = unorderable_list_difference(expected, actual)
+            missing, unexpected = unorderable_list_difference(expected_seq, actual_seq)
         else:
             if actual == expected:
                 return
