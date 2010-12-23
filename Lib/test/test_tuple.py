@@ -6,7 +6,7 @@ class TupleTest(seq_tests.CommonTest):
     type2test = tuple
 
     def test_constructors(self):
-        super().test_len()
+        super().test_constructors()
         # calling built-in types without argument must return empty
         self.assertEqual(tuple(), ())
         t0_3 = (0, 1, 2, 3)
