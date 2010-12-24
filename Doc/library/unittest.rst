@@ -1160,7 +1160,7 @@ Test cases
       Duplicate elements are *not* ignored when comparing *actual* and
       *expected*. It verifies if each element has the same count in both
       sequences. Equivalent to:
-      ``assertEqual(Counter(iter(actual)), Counter(iter(expected)))``
+      ``assertEqual(Counter(list(actual)), Counter(list(expected)))``
       but works with sequences of unhashable objects as well.
 
       .. versionadded:: 3.2

@@ -1021,7 +1021,7 @@ class TestCase(object):
             actual = collections.Counter(actual_seq)
             expected = collections.Counter(expected_seq)
         except TypeError:
-            # Unsortable items (example: set(), complex(), ...)
+            # Handle case with unhashable elements
             missing, unexpected = unorderable_list_difference(expected_seq, actual_seq)
         else:
             if actual == expected:
