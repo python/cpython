@@ -1005,11 +1005,11 @@ class TestCase(object):
 
     def assertCountEqual(self, actual, expected, msg=None):
         """An unordered sequence specific comparison. It asserts that
-        actual_seq and expected_seq have the same element counts.
+        actual and expected have the same element counts.
         Equivalent to::
 
-            self.assertEqual(Counter(actual_seq),
-                             Counter(expected_seq))
+            self.assertEqual(Counter(list(actual)),
+                             Counter(list(expected)))
 
         Asserts that each element has the same count in both sequences.
         Example:
