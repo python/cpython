@@ -116,7 +116,7 @@ def _count_diff_all_purpose(actual, expected):
         result.append(diff)
     return result
 
-def ordered_count(iterable):
+def _ordered_count(iterable):
     'Return dict of element counts, in the order they were first seen'
     c = OrderedDict()
     for elem in iterable:
@@ -126,7 +126,7 @@ def ordered_count(iterable):
 def _count_diff_hashable(actual, expected):
     'Returns list of (cnt_act, cnt_exp, elem) triples where the counts differ'
     # elements must be hashable
-    s, t = ordered_count(actual), ordered_count(expected)
+    s, t = _ordered_count(actual), _ordered_count(expected)
     result = []
     for elem, cnt_s in s.items():
         cnt_t = t.get(elem, 0)
