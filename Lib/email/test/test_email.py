@@ -534,7 +534,7 @@ class TestMessageAPI(TestEmailBase):
         msg.add_header('Content-Disposition', 'attachment',
             filename="Fußballer.ppt")
         self.assertEqual(
-            'attachment; filename*="utf-8\'\'Fu%C3%9Fballer.ppt"',
+            'attachment; filename*=utf-8\'\'Fu%C3%9Fballer.ppt',
             msg['Content-Disposition'])
 
     def test_nonascii_add_header_via_triple(self):
@@ -542,7 +542,23 @@ class TestMessageAPI(TestEmailBase):
         msg.add_header('Content-Disposition', 'attachment',
             filename=('iso-8859-1', '', 'Fußballer.ppt'))
         self.assertEqual(
-            'attachment; filename*="iso-8859-1\'\'Fu%DFballer.ppt"',
+            'attachment; filename*=iso-8859-1\'\'Fu%DFballer.ppt',
+            msg['Content-Disposition'])
+
+    def test_ascii_add_header_with_tspecial(self):
+        msg = Message()
+        msg.add_header('Content-Disposition', 'attachment',
+            filename="windows [filename].ppt")
+        self.assertEqual(
+            'attachment; filename="windows [filename].ppt"',
+            msg['Content-Disposition'])
+
+    def test_nonascii_add_header_with_tspecial(self):
+        msg = Message()
+        msg.add_header('Content-Disposition', 'attachment',
+            filename="Fußballer [filename].ppt")
+        self.assertEqual(
+            "attachment; filename*=utf-8''Fu%C3%9Fballer%20%5Bfilename%5D.ppt",
             msg['Content-Disposition'])
 
 
@@ -3643,7 +3659,7 @@ To: bbb@zzz.org
 Subject: This is a test message
 Date: Fri, 4 May 2001 14:05:44 -0400
 Content-Type: text/plain; charset=us-ascii;
- title*="us-ascii'en'This%20is%20even%20more%20%2A%2A%2Afun%2A%2A%2A%20isn%27t%20it%21"
+ title*=us-ascii'en'This%20is%20even%20more%20%2A%2A%2Afun%2A%2A%2A%20isn%27t%20it%21
 
 
 Hi,
@@ -3673,7 +3689,7 @@ To: bbb@zzz.org
 Subject: This is a test message
 Date: Fri, 4 May 2001 14:05:44 -0400
 Content-Type: text/plain; charset="us-ascii";
- title*="us-ascii'en'This%20is%20even%20more%20%2A%2A%2Afun%2A%2A%2A%20isn%27t%20it%21"
+ title*=us-ascii'en'This%20is%20even%20more%20%2A%2A%2Afun%2A%2A%2A%20isn%27t%20it%21
 
 
 Hi,
@@ -3687,6 +3703,32 @@ Do you like this message?
         eq = self.assertEqual
         msg = self._msgobj('msg_32.txt')
         eq(msg.get_content_charset(), 'us-ascii')
+
+    def test_rfc2231_parse_rfc_quoting(self):
+        m = textwrap.dedent('''\
+            Content-Disposition: inline;
+            \tfilename*0*=''This%20is%20even%20more%20;
+            \tfilename*1*=%2A%2A%2Afun%2A%2A%2A%20;
+            \tfilename*2="is it not.pdf"
+
+            ''')
+        msg = email.message_from_string(m)
+        self.assertEqual(msg.get_filename(),
+                         'This is even more ***fun*** is it not.pdf')
+        self.assertEqual(m, msg.as_string())
+
+    def test_rfc2231_parse_extra_quoting(self):
+        m = textwrap.dedent('''\
+            Content-Disposition: inline;
+            \tfilename*0*="''This%20is%20even%20more%20";
+            \tfilename*1*="%2A%2A%2Afun%2A%2A%2A%20";
+            \tfilename*2="is it not.pdf"
+
+            ''')
+        msg = email.message_from_string(m)
+        self.assertEqual(msg.get_filename(),
+                         'This is even more ***fun*** is it not.pdf')
+        self.assertEqual(m, msg.as_string())
 
     def test_rfc2231_no_language_or_charset(self):
         m = '''\
