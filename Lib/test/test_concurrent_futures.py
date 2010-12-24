@@ -75,15 +75,27 @@ class Call(object):
 
     def _wait_on_event(self, handle):
         if sys.platform.startswith('win'):
+            # WaitForSingleObject returns 0 if handle is signaled.
             r = ctypes.windll.kernel32.WaitForSingleObject(handle, 60 * 1000)
-            assert r == 0
+            if r != 0:
+                message = (
+                    'WaitForSingleObject({}, ...) failed with {}, '
+                    'GetLastError() = {}'.format(
+                            handle, r, ctypes.GetLastError()))
+                logging.critical(message)
+                assert False, message
         else:
             self.CALL_LOCKS[handle].wait()
 
     def _signal_event(self, handle):
         if sys.platform.startswith('win'):
-            r = ctypes.windll.kernel32.SetEvent(handle)
-            assert r != 0
+            r = ctypes.windll.kernel32.SetEvent(handle)  # Returns 0 on failure.
+            if r == 0:
+                message = (
+                    'SetEvent({}) failed with {}, GetLastError() = {}'.format(
+                            handle, r, ctypes.GetLastError()))
+                logging.critical(message)
+                assert False, message
         else:
             self.CALL_LOCKS[handle].set()
 
