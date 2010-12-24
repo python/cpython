@@ -672,7 +672,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         else:
             self.fail('assertMultiLineEqual did not fail')
 
-    def testassertCountEqual(self):
+    def testAssertCountEqual(self):
         a = object()
         self.assertCountEqual([1, 2, 3], [3, 2, 1])
         self.assertCountEqual(['foo', 'bar', 'baz'], ['bar', 'baz', 'foo'])
@@ -721,6 +721,18 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         b = a[::-1]
         self.assertCountEqual(a, b)
 
+        # test utility functions supporting assertCountEqual()
+
+        diffs = set(unittest.util._count_diff_all_purpose('aaabccd', 'abbbcce'))
+        expected = {(3,1,'a'), (1,3,'b'), (1,0,'d'), (0,1,'e')}
+        self.assertEqual(diffs, expected)
+
+        diffs = unittest.util._count_diff_all_purpose([[]], [])
+        self.assertEqual(diffs, [(1, 0, [])])
+
+        diffs = set(unittest.util._count_diff_hashable('aaabccd', 'abbbcce'))
+        expected = {(3,1,'a'), (1,3,'b'), (1,0,'d'), (0,1,'e')}
+        self.assertEqual(diffs, expected)
 
     def testAssertSetEqual(self):
         set1 = set()
