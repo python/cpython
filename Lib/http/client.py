@@ -775,7 +775,7 @@ class HTTPConnection:
                 for d in data:
                     self.sock.sendall(d)
             else:
-                raise TypeError("data should be byte-like object\
+                raise TypeError("data should be a bytes-like object\
                         or an iterable, got %r " % type(it))
 
     def _output(self, s):
