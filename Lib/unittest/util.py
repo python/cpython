@@ -1,6 +1,6 @@
 """Various utility functions."""
 
-from collections import namedtuple, Counter
+from collections import namedtuple, OrderedDict
 
 __unittest = True
 
@@ -116,15 +116,20 @@ def _count_diff_all_purpose(actual, expected):
         result.append(diff)
     return result
 
+def ordered_count(iterable):
+    'Return dict of element counts, in the order they were first seen'
+    c = OrderedDict()
+    for elem in iterable:
+        c[elem] = c.get(elem, 0) + 1
+    return c
+
 def _count_diff_hashable(actual, expected):
     'Returns list of (cnt_act, cnt_exp, elem) triples where the counts differ'
     # elements must be hashable
-    s, t = Counter(actual), Counter(expected)
-    if s == t:
-        return []
+    s, t = ordered_count(actual), ordered_count(expected)
     result = []
     for elem, cnt_s in s.items():
-        cnt_t = t[elem]
+        cnt_t = t.get(elem, 0)
         if cnt_s != cnt_t:
             diff = _Mismatch(cnt_s, cnt_t, elem)
             result.append(diff)

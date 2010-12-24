@@ -1023,18 +1023,15 @@ class TestCase(object):
             expected = collections.Counter(expected_seq)
         except TypeError:
             # Handle case with unhashable elements
-            differences = _count_diff_all_purpose(expected_seq, actual_seq)
+            differences = _count_diff_all_purpose(actual_seq, expected_seq)
         else:
             if actual == expected:
                 return
-            differences = _count_diff_hashable(expected_seq, actual_seq)
+            differences = _count_diff_hashable(actual_seq, expected_seq)
 
         if differences:
             standardMsg = 'Element counts were not equal:\n'
-            lines = []
-            for act, exp, elem in differences:
-                line = 'Expected %d, got %d:  %r' % (exp, act, elem)
-                lines.append(line)
+            lines = ['Got %d, expected %d:  %r' % diff for diff in differences]
             diffMsg = '\n'.join(lines)
             standardMsg = self._truncateMessage(standardMsg, diffMsg)
             msg = self._formatMessage(msg, standardMsg)
