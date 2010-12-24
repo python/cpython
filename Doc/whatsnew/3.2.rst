@@ -781,6 +781,9 @@ datetime
 * Also, :class:`~datetime.timedelta` objects can now be multiplied by
   :class:`float` and divided by :class:`float` and :class:`int` objects.
 
+.. XXX Describe added support for dividing a timedelta by another timedelta.
+       See revision 80290 and issue #2706.
+
   (Contributed by Alexander Belopolsky in :issue:`1289118`, :issue:`5094` and
   :issue:`6641`.)
 
