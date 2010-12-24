@@ -691,6 +691,9 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
 
         # Test that sequences of unhashable objects can be tested for sameness:
         self.assertCountEqual([[1, 2], [3, 4], 0], [False, [3, 4], [1, 2]])
+        # Test that iterator of unhashable objects can be tested for sameness:
+        self.assertCountEqual(iter([1, 2, [], 3, 4]),
+                              iter([1, 2, [], 3, 4]))
 
         # hashable types, but not orderable
         self.assertRaises(self.failureException, self.assertCountEqual,
