@@ -1151,16 +1151,16 @@ Test cases
       .. deprecated:: 3.2
 
 
-   .. method:: assertCountEqual(actual, expected, msg=None)
+   .. method:: assertCountEqual(first, second, msg=None)
 
-      Test that sequence *actual* contains the same elements as *expected*,
+      Test that sequence *first* contains the same elements as *second*,
       regardless of their order. When they don't, an error message listing the
       differences between the sequences will be generated.
 
-      Duplicate elements are *not* ignored when comparing *actual* and
-      *expected*. It verifies if each element has the same count in both
+      Duplicate elements are *not* ignored when comparing *first* and
+      *second*. It verifies whether each element has the same count in both
       sequences. Equivalent to:
-      ``assertEqual(Counter(list(actual)), Counter(list(expected)))``
+      ``assertEqual(Counter(list(first)), Counter(list(second)))``
       but works with sequences of unhashable objects as well.
 
       .. versionadded:: 3.2
