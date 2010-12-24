@@ -11,6 +11,8 @@ Core and Builtins
 Library
 -------
 
+- Improved the diff message in the unittest module's assertCountEqual().
+
 - Issue #1155362: email.utils.parsedate_tz now handles a missing space before
   the '-' of a timezone field as well as before a '+'.
 
