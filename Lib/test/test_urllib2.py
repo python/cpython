@@ -839,7 +839,6 @@ class HandlerTests(unittest.TestCase):
 
         # A file object
 
-        """
         file_obj = io.StringIO()
         file_obj.write("Something\nSomething\nSomething\n")
 
@@ -863,7 +862,6 @@ class HandlerTests(unittest.TestCase):
             req = Request("http://example.com/", iterable_array, headers)
             newreq = h.do_request_(req)
             self.assertEqual(int(newreq.get_header('Content-length')),16)
-        """
 
 
     def test_http_doubleslash(self):

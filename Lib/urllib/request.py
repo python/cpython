@@ -1062,7 +1062,7 @@ class AbstractHTTPHandler(BaseHandler):
                                 data))
                 else:
                     request.add_unredirected_header(
-                            'Content-length', '%d' % len(mv) * mv.itemsize)
+                            'Content-length', '%d' % (len(mv) * mv.itemsize))
 
         sel_host = host
         if request.has_proxy():
