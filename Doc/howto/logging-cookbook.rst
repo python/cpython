@@ -13,14 +13,13 @@ This page contains a number of recipes related to logging, which have been found
 Using logging in multiple modules
 ---------------------------------
 
-It was mentioned above that multiple calls to
-``logging.getLogger('someLogger')`` return a reference to the same logger
-object.  This is true not only within the same module, but also across modules
-as long as it is in the same Python interpreter process.  It is true for
-references to the same object; additionally, application code can define and
-configure a parent logger in one module and create (but not configure) a child
-logger in a separate module, and all logger calls to the child will pass up to
-the parent.  Here is a main module::
+Multiple calls to ``logging.getLogger('someLogger')`` return a reference to the
+same logger object.  This is true not only within the same module, but also
+across modules as long as it is in the same Python interpreter process.  It is
+true for references to the same object; additionally, application code can
+define and configure a parent logger in one module and create (but not
+configure) a child logger in a separate module, and all logger calls to the
+child will pass up to the parent.  Here is a main module::
 
     import logging
     import auxiliary_module
