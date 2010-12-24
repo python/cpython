@@ -10,7 +10,8 @@ import collections
 
 from . import result
 from .util import (strclass, safe_repr, sorted_list_difference,
-                   unorderable_list_difference)
+                   unorderable_list_difference, _count_diff_all_purpose,
+                   _count_diff_hashable)
 
 __unittest = True
 
@@ -1022,23 +1023,22 @@ class TestCase(object):
             expected = collections.Counter(expected_seq)
         except TypeError:
             # Handle case with unhashable elements
-            missing, unexpected = unorderable_list_difference(expected_seq, actual_seq)
+            differences = _count_diff_all_purpose(expected_seq, actual_seq)
         else:
             if actual == expected:
                 return
-            missing = list(expected - actual)
-            unexpected = list(actual - expected)
+            differences = _count_diff_hashable(expected_seq, actual_seq)
 
-        errors = []
-        if missing:
-            errors.append('Expected, but missing:\n    %s' %
-                           safe_repr(missing))
-        if unexpected:
-            errors.append('Unexpected, but present:\n    %s' %
-                           safe_repr(unexpected))
-        if errors:
-            standardMsg = '\n'.join(errors)
-            self.fail(self._formatMessage(msg, standardMsg))
+        if differences:
+            standardMsg = 'Element counts were not equal:\n'
+            lines = []
+            for act, exp, elem in differences:
+                line = 'Expected %d, got %d:  %r' % (exp, act, elem)
+                lines.append(line)
+            diffMsg = '\n'.join(lines)
+            standardMsg = self._truncateMessage(standardMsg, diffMsg)
+            msg = self._formatMessage(msg, standardMsg)
+            self.fail(msg)
 
     def assertMultiLineEqual(self, first, second, msg=None):
         """Assert that two multi-line strings are equal."""

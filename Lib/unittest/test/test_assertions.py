@@ -229,12 +229,6 @@ class TestLongMessage(unittest.TestCase):
                              "^Missing: 'key'$",
                              "^Missing: 'key' : oops$"])
 
-    def testassertCountEqual(self):
-        self.assertMessages('assertCountEqual', ([], [None]),
-                            [r"\[None\]$", "^oops$",
-                             r"\[None\]$",
-                             r"\[None\] : oops$"])
-
     def testAssertMultiLineEqual(self):
         self.assertMessages('assertMultiLineEqual', ("", "foo"),
                             [r"\+ foo$", "^oops$",

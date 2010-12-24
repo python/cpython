@@ -1,5 +1,7 @@
 """Various utility functions."""
 
+from collections import namedtuple, Counter
+
 __unittest = True
 
 _MAX_LENGTH = 80
@@ -11,7 +13,6 @@ def safe_repr(obj, short=False):
     if not short or len(result) < _MAX_LENGTH:
         return result
     return result[:_MAX_LENGTH] + ' [truncated]...'
-
 
 def strclass(cls):
     return "%s.%s" % (cls.__module__, cls.__name__)
@@ -77,3 +78,58 @@ def unorderable_list_difference(expected, actual):
 def three_way_cmp(x, y):
     """Return -1 if x < y, 0 if x == y and 1 if x > y"""
     return (x > y) - (x < y)
+
+_Mismatch = namedtuple('Mismatch', 'actual expected value')
+
+def _count_diff_all_purpose(actual, expected):
+    'Returns list of (cnt_act, cnt_exp, elem) triples where the counts differ'
+    # elements need not be hashable
+    s, t = list(actual), list(expected)
+    m, n = len(s), len(t)
+    NULL = object()
+    result = []
+    for i, elem in enumerate(s):
+        if elem is NULL:
+            continue
+        cnt_s = cnt_t = 0
+        for j in range(i, m):
+            if s[j] == elem:
+                cnt_s += 1
+                s[j] = NULL
+        for j, other_elem in enumerate(t):
+            if other_elem == elem:
+                cnt_t += 1
+                t[j] = NULL
+        if cnt_s != cnt_t:
+            diff = _Mismatch(cnt_s, cnt_t, elem)
+            result.append(diff)
+
+    for i, elem in enumerate(t):
+        if elem is NULL:
+            continue
+        cnt_t = 0
+        for j in range(i, n):
+            if t[j] == elem:
+                cnt_t += 1
+                t[j] = NULL
+        diff = _Mismatch(0, cnt_t, elem)
+        result.append(diff)
+    return result
+
+def _count_diff_hashable(actual, expected):
+    'Returns list of (cnt_act, cnt_exp, elem) triples where the counts differ'
+    # elements must be hashable
+    s, t = Counter(actual), Counter(expected)
+    if s == t:
+        return []
+    result = []
+    for elem, cnt_s in s.items():
+        cnt_t = t[elem]
+        if cnt_s != cnt_t:
+            diff = _Mismatch(cnt_s, cnt_t, elem)
+            result.append(diff)
+    for elem, cnt_t in t.items():
+        if elem not in s:
+            diff = _Mismatch(0, cnt_t, elem)
+            result.append(diff)
+    return result
