@@ -1004,20 +1004,20 @@ class TestCase(object):
             self.fail(self._formatMessage(msg, standardMsg))
 
 
-    def assertCountEqual(self, actual, expected, msg=None):
-        """An unordered sequence specific comparison. It asserts that
-        actual and expected have the same element counts.
-        Equivalent to::
+    def assertCountEqual(self, first, second, msg=None):
+        """An unordered sequence comparison asserting that the same elements,
+        regardless of order.  If the same element occurs more than once,
+        it verifies that the elements occur the same number of times.
 
-            self.assertEqual(Counter(list(actual)),
-                             Counter(list(expected)))
+            self.assertEqual(Counter(list(first)),
+                             Counter(list(second)))
 
-        Asserts that each element has the same count in both sequences.
-        Example:
+         Example:
             - [0, 1, 1] and [1, 0, 1] compare equal.
             - [0, 0, 1] and [0, 1] compare unequal.
+
         """
-        actual_seq, expected_seq = list(actual), list(expected)
+        actual_seq, expected_seq = list(first), list(second)
         try:
             actual = collections.Counter(actual_seq)
             expected = collections.Counter(expected_seq)
@@ -1031,7 +1031,7 @@ class TestCase(object):
 
         if differences:
             standardMsg = 'Element counts were not equal:\n'
-            lines = ['Got %d, expected %d:  %r' % diff for diff in differences]
+            lines = ['First has %d, Second has %d:  %r' % diff for diff in differences]
             diffMsg = '\n'.join(lines)
             standardMsg = self._truncateMessage(standardMsg, diffMsg)
             msg = self._formatMessage(msg, standardMsg)
