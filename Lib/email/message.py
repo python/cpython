@@ -66,17 +66,19 @@ def _formatparam(param, value=None, quote=True):
     if value is not None and len(value) > 0:
         # A tuple is used for RFC 2231 encoded parameter values where items
         # are (charset, language, value).  charset is a string, not a Charset
-        # instance.
+        # instance.  RFC 2231 encoded values are never quoted, per RFC.
         if isinstance(value, tuple):
             # Encode as per RFC 2231
             param += '*'
             value = utils.encode_rfc2231(value[2], value[0], value[1])
+            return '%s=%s' % (param, value)
         else:
             try:
                 value.encode('ascii')
             except UnicodeEncodeError:
                 param += '*'
                 value = utils.encode_rfc2231(value, 'utf-8', '')
+                return '%s=%s' % (param, value)
         # BAW: Please check this.  I think that if quote is set it should
         # force quoting even if not necessary.
         if quote or tspecials.search(value):

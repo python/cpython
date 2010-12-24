@@ -11,6 +11,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1693546: fix email.message RFC 2231 parameter encoding to be in better
+  compliance (no "s around encoded values).
+
 - Improved the diff message in the unittest module's assertCountEqual().
 
 - Issue #1155362: email.utils.parsedate_tz now handles a missing space before
