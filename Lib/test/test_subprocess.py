@@ -366,22 +366,28 @@ class ProcessTestCase(BaseTestCase):
         self.assertEqual(stdout, b"banana")
         self.assertStderrEqual(stderr, b"pineapple")
 
-    # This test is Linux specific for simplicity to at least have
-    # some coverage.  It is not a platform specific bug.
-    @unittest.skipUnless(os.path.isdir('/proc/%d/fd' % os.getpid()),
-                         "Linux specific")
     # Test for the fd leak reported in http://bugs.python.org/issue2791.
     def test_communicate_pipe_fd_leak(self):
-        fd_directory = '/proc/%d/fd' % os.getpid()
-        num_fds_before_popen = len(os.listdir(fd_directory))
-        p = subprocess.Popen([sys.executable, "-c", "print()"],
-                             stdout=subprocess.PIPE)
-        p.communicate()
-        num_fds_after_communicate = len(os.listdir(fd_directory))
-        del p
-        num_fds_after_destruction = len(os.listdir(fd_directory))
-        self.assertEqual(num_fds_before_popen, num_fds_after_destruction)
-        self.assertEqual(num_fds_before_popen, num_fds_after_communicate)
+        for stdin_pipe in (False, True):
+            for stdout_pipe in (False, True):
+                for stderr_pipe in (False, True):
+                    options = {}
+                    if stdin_pipe:
+                        options['stdin'] = subprocess.PIPE
+                    if stdout_pipe:
+                        options['stdout'] = subprocess.PIPE
+                    if stderr_pipe:
+                        options['stderr'] = subprocess.PIPE
+                    if not options:
+                        continue
+                    p = subprocess.Popen((sys.executable, "-c", "pass"), **options)
+                    p.communicate()
+                    if p.stdin is not None:
+                        self.assertTrue(p.stdin.closed)
+                    if p.stdout is not None:
+                        self.assertTrue(p.stdout.closed)
+                    if p.stderr is not None:
+                        self.assertTrue(p.stderr.closed)
 
     def test_communicate_returns(self):
         # communicate() should return None if no redirection is active
