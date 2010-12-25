@@ -125,6 +125,8 @@ class Call(object):
         if sys.platform.startswith('win'):
             ctypes.windll.kernel32.CloseHandle(self._called_event)
             ctypes.windll.kernel32.CloseHandle(self._can_finish)
+            self._called_event = None
+            self._can_finish = None
         else:
             del self.CALL_LOCKS[self._called_event]
             del self.CALL_LOCKS[self._can_finish]
@@ -375,8 +377,6 @@ class WaitTests(unittest.TestCase):
 
             self.assertEqual(set([future1, future2]), finished)
             self.assertEqual(set(), pending)
-
-
         finally:
             call1.close()
             call2.close()
