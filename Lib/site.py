@@ -61,6 +61,7 @@ ImportError exception, it is silently ignored.
 import sys
 import os
 import __builtin__
+import traceback
 
 # Prefixes for site-packages; add additional prefixes like /usr/local here
 PREFIXES = [sys.prefix, sys.exec_prefix]
@@ -155,17 +156,26 @@ def addpackage(sitedir, name, known_paths):
     except IOError:
         return
     with f:
-        for line in f:
+        for n, line in enumerate(f):
             if line.startswith("#"):
                 continue
-            if line.startswith(("import ", "import\t")):
-                exec line
-                continue
-            line = line.rstrip()
-            dir, dircase = makepath(sitedir, line)
-            if not dircase in known_paths and os.path.exists(dir):
-                sys.path.append(dir)
-                known_paths.add(dircase)
+            try:
+                if line.startswith(("import ", "import\t")):
+                    exec line
+                    continue
+                line = line.rstrip()
+                dir, dircase = makepath(sitedir, line)
+                if not dircase in known_paths and os.path.exists(dir):
+                    sys.path.append(dir)
+                    known_paths.add(dircase)
+            except Exception as err:
+                print >>sys.stderr, "Error processing line {:d} of {}:\n".format(
+                    n+1, fullname)
+                for record in traceback.format_exception(*sys.exc_info()):
+                    for line in record.splitlines():
+                        print >>sys.stderr, '  '+line
+                print >>sys.stderr, "\nRemainder of file ignored"
+                break
     if reset:
         known_paths = None
     return known_paths
