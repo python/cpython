@@ -351,7 +351,7 @@ Directory Objects
 -----------------
 
 
-.. class:: Directory(database, cab, basedir, physical,  logical, default, component, [componentflags])
+.. class:: Directory(database, cab, basedir, physical,  logical, default, [componentflags])
 
    Create a new directory in the Directory table. There is a current component at
    each point in time for the directory, which is either explicitly created through
