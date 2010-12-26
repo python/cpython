@@ -275,7 +275,7 @@ ZipFile Objects
 
    .. note::
 
-      When passing a :class:`ZipInfo` instance as the *zinfo_or_acrname* parameter,
+      When passing a :class:`ZipInfo` instance as the *zinfo_or_arcname* parameter,
       the compression method used will be that specified in the *compress_type*
       member of the given :class:`ZipInfo` instance.  By default, the
       :class:`ZipInfo` constructor sets this member to :const:`ZIP_STORED`.
