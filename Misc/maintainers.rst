@@ -247,7 +247,7 @@ xml.sax.handler
 xml.sax.saxutils
 xml.sax.xmlreader
 xmlrpc              loewis
-zipfile             aimacintyre
+zipfile             alanmcintyre
 zipimport
 zlib
 ==================  ===========
