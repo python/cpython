@@ -966,8 +966,8 @@ example.  You would want to set *maxBytes* to an appropriate value.
 
 .. _zeromq-handlers:
 
-Subclassing QueueHandler
-------------------------
+Subclassing QueueHandler - a ZeroMQ example
+-------------------------------------------
 
 You can use a :class:`QueueHandler` subclass to send messages to other kinds
 of queues, for example a ZeroMQ 'publish' socket. In the example below,the
@@ -1006,8 +1006,8 @@ data needed by the handler to create the socket::
             self.queue.close()
 
 
-Subclassing QueueListener
--------------------------
+Subclassing QueueListener - a ZeroMQ example
+--------------------------------------------
 
 You can also subclass :class:`QueueListener` to get messages from other kinds
 of queues, for example a ZeroMQ 'subscribe' socket. Here's an example::
@@ -1024,4 +1024,17 @@ of queues, for example a ZeroMQ 'subscribe' socket. Here's an example::
             return logging.makeLogRecord(json.loads(msg))
 
 
+.. seealso::
 
+   Module :mod:`logging`
+      API reference for the logging module.
+
+   Module :mod:`logging.config`
+      Configuration API for the logging module.
+
+   Module :mod:`logging.handlers`
+      Useful handlers included with the logging module.
+
+   :ref:`A basic logging tutorial <logging-basic-tutorial>`
+
+   :ref:`A more advanced logging tutorial <logging-advanced-tutorial>`

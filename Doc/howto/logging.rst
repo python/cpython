@@ -1015,3 +1015,16 @@ Also note that the core logging module only includes the basic handlers. If
 you don't import :mod:`logging.handlers` and :mod:`logging.config`, they won't
 take up any memory.
 
+.. seealso::
+
+   Module :mod:`logging`
+      API reference for the logging module.
+
+   Module :mod:`logging.config`
+      Configuration API for the logging module.
+
+   Module :mod:`logging.handlers`
+      Useful handlers included with the logging module.
+
+   :ref:`A logging cookbook <logging-cookbook>`
+
