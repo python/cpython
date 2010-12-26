@@ -618,7 +618,7 @@ Callable types
       an object passed to the C function as an implicit extra argument.  An example of
       a built-in method is ``alist.append()``, assuming *alist* is a list object. In
       this case, the special read-only attribute :attr:`__self__` is set to the object
-      denoted by *list*.
+      denoted by *alist*.
 
    Classes
       Classes are callable.  These objects normally act as factories for new
