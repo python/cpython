@@ -443,7 +443,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_FromUnicode(
 
 /* Similar to PyUnicode_FromUnicode(), but u points to UTF-8 encoded bytes */
 PyAPI_FUNC(PyObject*) PyUnicode_FromStringAndSize(
-    const char *u              /* UTF-8 encoded string */
+    const char *u,             /* UTF-8 encoded string */
     Py_ssize_t size            /* size of buffer */
     );
 
