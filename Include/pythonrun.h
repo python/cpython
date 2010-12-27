@@ -38,19 +38,41 @@ PyAPI_FUNC(void) Py_EndInterpreter(PyThreadState *);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) PyRun_SimpleStringFlags(const char *, PyCompilerFlags *);
 PyAPI_FUNC(int) PyRun_AnyFileFlags(FILE *, const char *, PyCompilerFlags *);
-PyAPI_FUNC(int) PyRun_AnyFileExFlags(FILE *, const char *, int, PyCompilerFlags *);
-PyAPI_FUNC(int) PyRun_SimpleFileExFlags(FILE *, const char *, int, PyCompilerFlags *);
-PyAPI_FUNC(int) PyRun_InteractiveOneFlags(FILE *, const char *, PyCompilerFlags *);
-PyAPI_FUNC(int) PyRun_InteractiveLoopFlags(FILE *, const char *, PyCompilerFlags *);
+PyAPI_FUNC(int) PyRun_AnyFileExFlags(
+    FILE *fp,
+    const char *filename,       /* decoded from the filesystem encoding */
+    int closeit,
+    PyCompilerFlags *flags);
+PyAPI_FUNC(int) PyRun_SimpleFileExFlags(
+    FILE *fp,
+    const char *filename,       /* decoded from the filesystem encoding */
+    int closeit,
+    PyCompilerFlags *flags);
+PyAPI_FUNC(int) PyRun_InteractiveOneFlags(
+    FILE *fp,
+    const char *filename,       /* decoded from the filesystem encoding */
+    PyCompilerFlags *flags);
+PyAPI_FUNC(int) PyRun_InteractiveLoopFlags(
+    FILE *fp,
+    const char *filename,       /* decoded from the filesystem encoding */
+    PyCompilerFlags *flags);
 
-PyAPI_FUNC(struct _mod *) PyParser_ASTFromString(const char *, const char *,
-                                                 int, PyCompilerFlags *flags,
-                                                 PyArena *);
-PyAPI_FUNC(struct _mod *) PyParser_ASTFromFile(FILE *, const char *,
-                                               const char*, int,
-                                               char *, char *,
-                                               PyCompilerFlags *, int *,
-                                               PyArena *);
+PyAPI_FUNC(struct _mod *) PyParser_ASTFromString(
+    const char *s,
+    const char *filename,       /* decoded from the filesystem encoding */
+    int start,
+    PyCompilerFlags *flags,
+    PyArena *arena);
+PyAPI_FUNC(struct _mod *) PyParser_ASTFromFile(
+    FILE *fp,
+    const char *filename,       /* decoded from the filesystem encoding */
+    const char* enc,
+    int start,
+    char *ps1,
+    char *ps2,
+    PyCompilerFlags *flags,
+    int *errcode,
+    PyArena *arena);
 #endif
 
 #ifndef PyParser_SimpleParseString
@@ -68,9 +90,14 @@ PyAPI_FUNC(struct _node *) PyParser_SimpleParseFileFlags(FILE *, const char *,
 PyAPI_FUNC(PyObject *) PyRun_StringFlags(const char *, int, PyObject *,
                                          PyObject *, PyCompilerFlags *);
 
-PyAPI_FUNC(PyObject *) PyRun_FileExFlags(FILE *, const char *, int,
-                                         PyObject *, PyObject *, int,
-                                         PyCompilerFlags *);
+PyAPI_FUNC(PyObject *) PyRun_FileExFlags(
+    FILE *fp,
+    const char *filename,       /* decoded from the filesystem encoding */
+    int start,
+    PyObject *globals,
+    PyObject *locals,
+    int closeit,
+    PyCompilerFlags *flags);
 #endif
 
 #ifdef Py_LIMITED_API
@@ -78,10 +105,17 @@ PyAPI_FUNC(PyObject *) Py_CompileString(const char *, const char *, int);
 #else
 #define Py_CompileString(str, p, s) Py_CompileStringExFlags(str, p, s, NULL, -1)
 #define Py_CompileStringFlags(str, p, s, f) Py_CompileStringExFlags(str, p, s, f, -1)
-PyAPI_FUNC(PyObject *) Py_CompileStringExFlags(const char *, const char *, int,
-                                               PyCompilerFlags *, int);
+PyAPI_FUNC(PyObject *) Py_CompileStringExFlags(
+    const char *str,
+    const char *filename,       /* decoded from the filesystem encoding */
+    int start,
+    PyCompilerFlags *flags,
+    int optimize);
 #endif
-PyAPI_FUNC(struct symtable *) Py_SymtableString(const char *, const char *, int);
+PyAPI_FUNC(struct symtable *) Py_SymtableString(
+    const char *str,
+    const char *filename,       /* decoded from the filesystem encoding */
+    int start);
 
 PyAPI_FUNC(void) PyErr_Print(void);
 PyAPI_FUNC(void) PyErr_PrintEx(int);
