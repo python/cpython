@@ -527,7 +527,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         def tests_and_args():
             for test in tests:
                 args_tuple = (
-                    (test, verbose, quiet, testdir),
+                    (test, verbose, quiet),
                     dict(huntrleaks=huntrleaks, use_resources=use_resources,
                         debug=debug)
                 )
@@ -599,16 +599,15 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             if trace:
                 # If we're tracing code coverage, then we don't exit with status
                 # if on a false return value from main.
-                tracer.runctx('runtest(test, verbose, quiet, testdir)',
+                tracer.runctx('runtest(test, verbose, quiet)',
                               globals=globals(), locals=vars())
             else:
                 try:
-                    result = runtest(test, verbose, quiet,
-                                     testdir, huntrleaks, debug)
+                    result = runtest(test, verbose, quiet, huntrleaks, debug)
                     accumulate_result(test, result)
                     if verbose3 and result[0] == FAILED:
                         print("Re-running test {} in verbose mode".format(test))
-                        runtest(test, True, quiet, testdir, huntrleaks, debug)
+                        runtest(test, True, quiet, huntrleaks, debug)
                 except KeyboardInterrupt:
                     interrupted = True
                     break
@@ -678,8 +677,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             sys.stdout.flush()
             try:
                 verbose = True
-                ok = runtest(test, True, quiet, testdir,
-                             huntrleaks, debug)
+                ok = runtest(test, True, quiet, huntrleaks, debug)
             except KeyboardInterrupt:
                 # print a newline separate from the ^C
                 print()
@@ -745,14 +743,13 @@ def replace_stdout():
         errors="backslashreplace")
 
 def runtest(test, verbose, quiet,
-            testdir=None, huntrleaks=False, debug=False, use_resources=None):
+            huntrleaks=False, debug=False, use_resources=None):
     """Run a single test.
 
     test -- the name of the test
     verbose -- if true, print more messages
     quiet -- if true, don't print 'skipped' messages (probably redundant)
     test_times -- a list of (time, test_name) pairs
-    testdir -- test directory
     huntrleaks -- run multiple times to test for leaks; requires a debug
                   build; a triple corresponding to -R's three arguments
 
@@ -769,8 +766,7 @@ def runtest(test, verbose, quiet,
     if use_resources is not None:
         support.use_resources = use_resources
     try:
-        return runtest_inner(test, verbose, quiet,
-                             testdir, huntrleaks, debug)
+        return runtest_inner(test, verbose, quiet, huntrleaks, debug)
     finally:
         cleanup_test_droppings(test, verbose)
 
@@ -931,10 +927,8 @@ class saved_test_environment:
         return False
 
 
-def runtest_inner(test, verbose, quiet,
-                  testdir=None, huntrleaks=False, debug=False):
+def runtest_inner(test, verbose, quiet, huntrleaks=False, debug=False):
     support.unload(test)
-    testdir = findtestdir(testdir)
     if verbose:
         capture_stdout = None
     else:
