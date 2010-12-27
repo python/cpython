@@ -3140,6 +3140,13 @@ A very long line that must get split to something other than at the
             'attachment; filename*="iso-8859-1\'\'Fu%DFballer.ppt"',
             msg['Content-Disposition'])
 
+    def test_encode_unaliased_charset(self):
+        # Issue 1379416: when the charset has no output conversion,
+        # output was accidentally getting coerced to unicode.
+        res = Header('abc','iso-8859-2').encode()
+        self.assertEqual(res, '=?iso-8859-2?q?abc?=')
+        self.assertIsInstance(res, str)
+
 
 # Test RFC 2231 header parameters (en/de)coding
 class TestRFC2231(TestEmailBase):
