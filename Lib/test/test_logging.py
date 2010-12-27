@@ -907,7 +907,8 @@ class EncodingTest(BaseTest):
     def test_encoding_plain_file(self):
         # In Python 2.x, a plain file object is treated as having no encoding.
         log = logging.getLogger("test")
-        fn = tempfile.mktemp(".log", "test_logging-1-")
+        fd, fn = tempfile.mkstemp(".log", "test_logging-1-")
+        os.close(fd)
         # the non-ascii data we write to the log.
         data = "foo\x80"
         try:
@@ -1885,7 +1886,7 @@ class FormatterTest(unittest.TestCase):
         return logging.makeLogRecord(result)
 
     def test_percent(self):
-        "Test %-formatting"
+        # Test %-formatting
         r = self.get_record()
         f = logging.Formatter('${%(message)s}')
         self.assertEqual(f.format(r), '${Message with 2 placeholders}')
@@ -1898,7 +1899,7 @@ class FormatterTest(unittest.TestCase):
         self.assertFalse(f.usesTime())
 
     def test_braces(self):
-        "Test {}-formatting"
+        # Test {}-formatting
         r = self.get_record()
         f = logging.Formatter('$%{message}%$', style='{')
         self.assertEqual(f.format(r), '$%Message with 2 placeholders%$')
@@ -1911,7 +1912,7 @@ class FormatterTest(unittest.TestCase):
         self.assertFalse(f.usesTime())
 
     def test_dollars(self):
-        "Test $-formatting"
+        # Test $-formatting
         r = self.get_record()
         f = logging.Formatter('$message', style='$')
         self.assertEqual(f.format(r), 'Message with 2 placeholders')
@@ -1929,7 +1930,7 @@ class FormatterTest(unittest.TestCase):
 
 class LastResortTest(BaseTest):
     def test_last_resort(self):
-        "Test the last resort handler"
+        # Test the last resort handler
         root = self.root_logger
         root.removeHandler(self.root_hdlr)
         old_stderr = sys.stderr
@@ -1966,12 +1967,15 @@ class BaseFileTest(BaseTest):
 
     def setUp(self):
         BaseTest.setUp(self)
-        self.fn = tempfile.mktemp(".log", "test_logging-2-")
+        fd, self.fn = tempfile.mkstemp(".log", "test_logging-2-")
+        os.close(fd)
         self.rmfiles = []
 
     def tearDown(self):
         for fn in self.rmfiles:
             os.unlink(fn)
+        if os.path.exists(self.fn):
+            os.unlink(self.fn)
         BaseTest.tearDown(self)
 
     def assertLogFile(self, filename):
@@ -2000,7 +2004,6 @@ class RotatingFileHandlerTest(BaseFileTest):
     def test_file_created(self):
         # checks that the file is created and assumes it was created
         # by us
-        self.assertFalse(os.path.exists(self.fn))
         rh = logging.handlers.RotatingFileHandler(self.fn)
         rh.emit(self.next_rec())
         self.assertLogFile(self.fn)
