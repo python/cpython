@@ -297,8 +297,9 @@ in various ways.  There is a separate error indicator for each thread.
    is a straightforward wrapper around the Python function
    :func:`warnings.warn_explicit`, see there for more information.  The *module*
    and *registry* arguments may be set to *NULL* to get the default effect
-   described there. *message*, *filename* and *module* are UTF-8 encoded
-   strings.
+   described there. *message* and *module* are UTF-8 encoded strings,
+   *filename* is decoded from the filesystem encoding
+   (:func:`sys.getfilesystemencoding`).
 
 
 .. c:function:: int PyErr_WarnFormat(PyObject *category, Py_ssize_t stack_level, const char *format, ...)
