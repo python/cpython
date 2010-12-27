@@ -783,7 +783,7 @@ PyErr_WarnExplicit(PyObject *category, const char *text,
 {
     PyObject *res;
     PyObject *message = PyUnicode_FromString(text);
-    PyObject *filename = PyUnicode_FromString(filename_str);
+    PyObject *filename = PyUnicode_DecodeFSDefault(filename_str);
     PyObject *module = NULL;
     int ret = -1;
 
