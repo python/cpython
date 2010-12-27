@@ -443,14 +443,14 @@ PyAPI_FUNC(PyObject*) PyUnicode_FromUnicode(
 
 /* Similar to PyUnicode_FromUnicode(), but u points to UTF-8 encoded bytes */
 PyAPI_FUNC(PyObject*) PyUnicode_FromStringAndSize(
-    const char *u,        /* char buffer */
-    Py_ssize_t size       /* size of buffer */
+    const char *u              /* UTF-8 encoded string */
+    Py_ssize_t size            /* size of buffer */
     );
 
 /* Similar to PyUnicode_FromUnicode(), but u points to null-terminated
    UTF-8 encoded bytes */
 PyAPI_FUNC(PyObject*) PyUnicode_FromString(
-    const char *u        /* string */
+    const char *u              /* UTF-8 encoded string */
     );
 
 /* Return a read-only pointer to the Unicode object's internal
@@ -551,7 +551,9 @@ PyAPI_FUNC(PyObject *) _PyUnicode_FormatAdvanced(PyObject *obj,
 
 PyAPI_FUNC(void) PyUnicode_InternInPlace(PyObject **);
 PyAPI_FUNC(void) PyUnicode_InternImmortal(PyObject **);
-PyAPI_FUNC(PyObject *) PyUnicode_InternFromString(const char *);
+PyAPI_FUNC(PyObject *) PyUnicode_InternFromString(
+    const char *u              /* UTF-8 encoded string */
+    );
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(void) _Py_ReleaseInternedUnicodeStrings(void);
 #endif
@@ -1455,7 +1457,7 @@ PyAPI_FUNC(int) PyUnicode_Compare(
 
 PyAPI_FUNC(int) PyUnicode_CompareWithASCIIString(
     PyObject *left,
-    const char *right
+    const char *right           /* ASCII-encoded string */
     );
 
 /* Rich compare two strings and return one of the following:
