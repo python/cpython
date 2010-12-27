@@ -66,8 +66,9 @@ the same library that the Python runtime is using.
    If *fp* refers to a file associated with an interactive device (console or
    terminal input or Unix pseudo-terminal), return the value of
    :c:func:`PyRun_InteractiveLoop`, otherwise return the result of
-   :c:func:`PyRun_SimpleFile`.  If *filename* is *NULL*, this function uses
-   ``"???"`` as the filename.
+   :c:func:`PyRun_SimpleFile`.  *filename* is decoded from the filesystem
+   encoding (:func:`sys.getfilesystemencoding`).  If *filename* is *NULL*, this
+   function uses ``"???"`` as the filename.
 
 
 .. c:function:: int PyRun_SimpleString(const char *command)
@@ -110,9 +111,10 @@ the same library that the Python runtime is using.
 .. c:function:: int PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit, PyCompilerFlags *flags)
 
    Similar to :c:func:`PyRun_SimpleStringFlags`, but the Python source code is read
-   from *fp* instead of an in-memory string. *filename* should be the name of the
-   file.  If *closeit* is true, the file is closed before PyRun_SimpleFileExFlags
-   returns.
+   from *fp* instead of an in-memory string. *filename* should be the name of
+   the file, it is decoded from the filesystem encoding
+   (:func:`sys.getfilesystemencoding`).  If *closeit* is true, the file is
+   closed before PyRun_SimpleFileExFlags returns.
 
 
 .. c:function:: int PyRun_InteractiveOne(FILE *fp, const char *filename)
@@ -125,7 +127,10 @@ the same library that the Python runtime is using.
 
    Read and execute a single statement from a file associated with an
    interactive device according to the *flags* argument.  The user will be
-   prompted using ``sys.ps1`` and ``sys.ps2``.  Returns ``0`` when the input was
+   prompted using ``sys.ps1`` and ``sys.ps2``.  *filename* is decoded from the
+   filesystem encoding (:func:`sys.getfilesystemencoding`).
+
+   Returns ``0`` when the input was
    executed successfully, ``-1`` if there was an exception, or an error code
    from the :file:`errcode.h` include file distributed as part of Python if
    there was a parse error.  (Note that :file:`errcode.h` is not included by
@@ -142,7 +147,8 @@ the same library that the Python runtime is using.
 
    Read and execute statements from a file associated with an interactive device
    until EOF is reached.  The user will be prompted using ``sys.ps1`` and
-   ``sys.ps2``.  Returns ``0`` at EOF.
+   ``sys.ps2``.  *filename* is decoded from the filesystem encoding
+   (:func:`sys.getfilesystemencoding`).  Returns ``0`` at EOF.
 
 
 .. c:function:: struct _node* PyParser_SimpleParseString(const char *str, int start)
@@ -164,7 +170,8 @@ the same library that the Python runtime is using.
    Parse Python source code from *str* using the start token *start* according to
    the *flags* argument.  The result can be used to create a code object which can
    be evaluated efficiently. This is useful if a code fragment must be evaluated
-   many times.
+   many times. *filename* is decoded from the filesystem encoding
+   (:func:`sys.getfilesystemencoding`).
 
 
 .. c:function:: struct _node* PyParser_SimpleParseFile(FILE *fp, const char *filename, int start)
@@ -217,7 +224,8 @@ the same library that the Python runtime is using.
 .. c:function:: PyObject* PyRun_FileExFlags(FILE *fp, const char *filename, int start, PyObject *globals, PyObject *locals, int closeit, PyCompilerFlags *flags)
 
    Similar to :c:func:`PyRun_StringFlags`, but the Python source code is read from
-   *fp* instead of an in-memory string. *filename* should be the name of the file.
+   *fp* instead of an in-memory string. *filename* should be the name of the file,
+   it is decoded from the filesystem encoding (:func:`sys.getfilesystemencoding`).
    If *closeit* is true, the file is closed before :c:func:`PyRun_FileExFlags`
    returns.
 
@@ -241,8 +249,9 @@ the same library that the Python runtime is using.
    code which can be compiled and should be :const:`Py_eval_input`,
    :const:`Py_file_input`, or :const:`Py_single_input`.  The filename specified by
    *filename* is used to construct the code object and may appear in tracebacks or
-   :exc:`SyntaxError` exception messages.  This returns *NULL* if the code cannot
-   be parsed or compiled.
+   :exc:`SyntaxError` exception messages, it is decoded from the filesystem
+   encoding (:func:`sys.getfilesystemencoding`).  This returns *NULL* if the
+   code cannot be parsed or compiled.
 
    The integer *optimize* specifies the optimization level of the compiler; a
    value of ``-1`` selects the optimization level of the interpreter as given by
