@@ -8,10 +8,22 @@ extern "C" {
 PyAPI_FUNC(PyObject*) _PyWarnings_Init(void);
 #endif
 
-PyAPI_FUNC(int) PyErr_WarnEx(PyObject *, const char *, Py_ssize_t);
-PyAPI_FUNC(int) PyErr_WarnFormat(PyObject *, Py_ssize_t, const char *, ...);
-PyAPI_FUNC(int) PyErr_WarnExplicit(PyObject *, const char *, const char *, int,
-                                    const char *, PyObject *);
+PyAPI_FUNC(int) PyErr_WarnEx(
+    PyObject *category,
+    const char *message,        /* UTF-8 encoded string */
+    Py_ssize_t stack_level);
+PyAPI_FUNC(int) PyErr_WarnFormat(
+    PyObject *category,
+    Py_ssize_t stack_level,
+    const char *format,         /* ASCII-encoded string  */
+    ...);
+PyAPI_FUNC(int) PyErr_WarnExplicit(
+    PyObject *category,
+    const char *message,        /* UTF-8 encoded string */
+    const char *filename,       /* UTF-8 encoded string */
+    int lineno,
+    const char *module,         /* UTF-8 encoded string */
+    PyObject *registry);
 
 /* DEPRECATED: Use PyErr_WarnEx() instead. */
 #ifndef Py_LIMITED_API
