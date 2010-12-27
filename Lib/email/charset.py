@@ -209,7 +209,7 @@ class Charset:
                 input_charset = unicode(input_charset, 'ascii')
         except UnicodeError:
             raise errors.CharsetError(input_charset)
-        input_charset = input_charset.lower()
+        input_charset = input_charset.lower().encode('ascii')
         # Set the input charset after filtering through the aliases and/or codecs
         if not (input_charset in ALIASES or input_charset in CHARSETS):
             try:
