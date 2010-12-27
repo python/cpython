@@ -134,6 +134,8 @@ class HelperFunctionsTests(unittest.TestCase):
         self.assertRegexpMatches(err_out.getvalue(), 'Traceback')
         self.assertRegexpMatches(err_out.getvalue(), 'ImportError')
 
+    @unittest.skipIf(sys.platform == "win32", "Windows does not raise an "
+                      "error for file paths containing null characters")
     def test_addpackage_import_bad_pth_file(self):
         # Issue 5258
         pth_dir, pth_fn = self.make_pth("abc\x00def\n")
