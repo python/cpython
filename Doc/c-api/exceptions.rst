@@ -148,7 +148,8 @@ in various ways.  There is a separate error indicator for each thread.
    This function sets the error indicator and returns *NULL*.  *exception*
    should be a Python exception class.  The *format* and subsequent
    parameters help format the error message; they have the same meaning and
-   values as in :c:func:`PyUnicode_FromFormat`.
+   values as in :c:func:`PyUnicode_FromFormat`. *format* is an ASCII-encoding
+   string.
 
 
 .. c:function:: void PyErr_SetNone(PyObject *type)
@@ -218,7 +219,8 @@ in various ways.  There is a separate error indicator for each thread.
 
    Similar to :c:func:`PyErr_SetFromWindowsErr`, with the additional behavior that
    if *filename* is not *NULL*, it is passed to the constructor of
-   :exc:`WindowsError` as a third parameter. Availability: Windows.
+   :exc:`WindowsError` as a third parameter.  *filename* is decoded from UTF-8.
+   Availability: Windows.
 
 
 .. c:function:: PyObject* PyErr_SetExcFromWindowsErrWithFilename(PyObject *type, int ierr, char *filename)
@@ -232,7 +234,8 @@ in various ways.  There is a separate error indicator for each thread.
    Set file, line, and offset information for the current exception.  If the
    current exception is not a :exc:`SyntaxError`, then it sets additional
    attributes, which make the exception printing subsystem think the exception
-   is a :exc:`SyntaxError`.
+   is a :exc:`SyntaxError`. *filename* is decoded from the filesystem encoding
+   (:func:`sys.getfilesystemencoding`).
 
 .. versionadded:: 3.2
 
@@ -254,7 +257,7 @@ in various ways.  There is a separate error indicator for each thread.
 .. c:function:: int PyErr_WarnEx(PyObject *category, char *message, int stack_level)
 
    Issue a warning message.  The *category* argument is a warning category (see
-   below) or *NULL*; the *message* argument is a message string.  *stack_level* is a
+   below) or *NULL*; the *message* argument is an UTF-8 encoded string.  *stack_level* is a
    positive number giving a number of stack frames; the warning will be issued from
    the  currently executing line of code in that stack frame.  A *stack_level* of 1
    is the function calling :c:func:`PyErr_WarnEx`, 2 is  the function above that,
@@ -294,13 +297,15 @@ in various ways.  There is a separate error indicator for each thread.
    is a straightforward wrapper around the Python function
    :func:`warnings.warn_explicit`, see there for more information.  The *module*
    and *registry* arguments may be set to *NULL* to get the default effect
-   described there.
+   described there. *message*, *filename* and *module* are UTF-8 encoded
+   strings.
 
 
 .. c:function:: int PyErr_WarnFormat(PyObject *category, Py_ssize_t stack_level, const char *format, ...)
 
    Function similar to :c:func:`PyErr_WarnEx`, but use
-   :c:func:`PyUnicode_FromFormat` to format the warning message.
+   :c:func:`PyUnicode_FromFormat` to format the warning message.  *format* is
+   an ASCII-encoded string.
 
    .. versionadded:: 3.2
 
@@ -437,17 +442,19 @@ The following functions are used to create and modify Unicode exceptions from C.
 .. c:function:: PyObject* PyUnicodeDecodeError_Create(const char *encoding, const char *object, Py_ssize_t length, Py_ssize_t start, Py_ssize_t end, const char *reason)
 
    Create a :class:`UnicodeDecodeError` object with the attributes *encoding*,
-   *object*, *length*, *start*, *end* and *reason*.
+   *object*, *length*, *start*, *end* and *reason*. *encoding* and *reason* are
+   UTF-8 encoded strings.
 
 .. c:function:: PyObject* PyUnicodeEncodeError_Create(const char *encoding, const Py_UNICODE *object, Py_ssize_t length, Py_ssize_t start, Py_ssize_t end, const char *reason)
 
    Create a :class:`UnicodeEncodeError` object with the attributes *encoding*,
-   *object*, *length*, *start*, *end* and *reason*.
+   *object*, *length*, *start*, *end* and *reason*. *encoding* and *reason* are
+   UTF-8 encoded strings.
 
 .. c:function:: PyObject* PyUnicodeTranslateError_Create(const Py_UNICODE *object, Py_ssize_t length, Py_ssize_t start, Py_ssize_t end, const char *reason)
 
    Create a :class:`UnicodeTranslateError` object with the attributes *object*,
-   *length*, *start*, *end* and *reason*.
+   *length*, *start*, *end* and *reason*. *reason* is an UTF-8 encoded string.
 
 .. c:function:: PyObject* PyUnicodeDecodeError_GetEncoding(PyObject *exc)
                 PyObject* PyUnicodeEncodeError_GetEncoding(PyObject *exc)
