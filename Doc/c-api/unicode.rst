@@ -1063,7 +1063,8 @@ They all return *NULL* or ``-1`` if an exception occurs.
 .. c:function:: int PyUnicode_CompareWithASCIIString(PyObject *uni, char *string)
 
    Compare a unicode object, *uni*, with *string* and return -1, 0, 1 for less
-   than, equal, and greater than, respectively.
+   than, equal, and greater than, respectively. *string* is an ASCII-encoded
+   string (it is interpreted as ISO-8859-1).
 
 
 .. c:function:: int PyUnicode_RichCompare(PyObject *left,  PyObject *right,  int op)
