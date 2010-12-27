@@ -67,8 +67,12 @@ class BaseTest(unittest.TestCase):
         try:
             self.saved_handlers = logging._handlers.copy()
             self.saved_handler_list = logging._handlerList[:]
-            self.saved_loggers = logger_dict.copy()
+            self.saved_loggers = saved_loggers = logger_dict.copy()
             self.saved_level_names = logging._levelNames.copy()
+            self.logger_states = logger_states = {}
+            for name in saved_loggers:
+                logger_states[name] = getattr(saved_loggers[name],
+                                              'disabled', None)
         finally:
             logging._releaseLock()
 
@@ -112,6 +116,10 @@ class BaseTest(unittest.TestCase):
             loggerDict = logging.getLogger().manager.loggerDict
             loggerDict.clear()
             loggerDict.update(self.saved_loggers)
+            logger_states = self.logger_states
+            for name in self.logger_states:
+                if logger_states[name] is not None:
+                    self.saved_loggers[name].disabled = logger_states[name]
         finally:
             logging._releaseLock()
 
