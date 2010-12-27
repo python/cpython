@@ -55,6 +55,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10774: test_logging now removes temp files created during tests.
+
 - Issue #3243:  Support iterable bodies in httplib. Patch Contributions by
   Xuanji Li and Chris AtLee.
 
