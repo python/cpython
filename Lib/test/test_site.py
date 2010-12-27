@@ -10,6 +10,7 @@ from test.test_support import captured_output
 import __builtin__
 import os
 import sys
+import re
 import encodings
 import subprocess
 import sysconfig
@@ -112,7 +113,8 @@ class HelperFunctionsTests(unittest.TestCase):
         with captured_output("stderr") as err_out:
             site.addpackage(pth_dir, pth_fn, set())
         self.assertRegexpMatches(err_out.getvalue(), "line 1")
-        self.assertRegexpMatches(err_out.getvalue(), os.path.join(pth_dir, pth_fn))
+        self.assertRegexpMatches(err_out.getvalue(),
+            re.escape(os.path.join(pth_dir, pth_fn)))
         # XXX: the previous two should be independent checks so that the
         # order doesn't matter.  The next three could be a single check
         # but my regex foo isn't good enough to write it.
@@ -126,7 +128,8 @@ class HelperFunctionsTests(unittest.TestCase):
         with captured_output("stderr") as err_out:
             site.addpackage(pth_dir, pth_fn, set())
         self.assertRegexpMatches(err_out.getvalue(), "line 2")
-        self.assertRegexpMatches(err_out.getvalue(), os.path.join(pth_dir, pth_fn))
+        self.assertRegexpMatches(err_out.getvalue(),
+            re.escape(os.path.join(pth_dir, pth_fn)))
         # XXX: ditto previous XXX comment.
         self.assertRegexpMatches(err_out.getvalue(), 'Traceback')
         self.assertRegexpMatches(err_out.getvalue(), 'ImportError')
@@ -137,7 +140,8 @@ class HelperFunctionsTests(unittest.TestCase):
         with captured_output("stderr") as err_out:
             site.addpackage(pth_dir, pth_fn, set())
         self.assertRegexpMatches(err_out.getvalue(), "line 1")
-        self.assertRegexpMatches(err_out.getvalue(), os.path.join(pth_dir, pth_fn))
+        self.assertRegexpMatches(err_out.getvalue(),
+            re.escape(os.path.join(pth_dir, pth_fn)))
         # XXX: ditto previous XXX comment.
         self.assertRegexpMatches(err_out.getvalue(), 'Traceback')
         self.assertRegexpMatches(err_out.getvalue(), 'TypeError')
