@@ -122,7 +122,7 @@ module documentation.  This section lists the differences between the API and
           ... # Work with dom.
 
 
-.. method:: Node.writexml(writer, indent="", addindent="", newl="", encoding="")
+.. method:: Node.writexml(writer, indent="", addindent="", newl="")
 
    Write XML to the writer object.  The writer should have a :meth:`write` method
    which matches that of the file object interface.  The *indent* parameter is the
@@ -130,8 +130,8 @@ module documentation.  This section lists the differences between the API and
    indentation to use for subnodes of the current one.  The *newl* parameter
    specifies the string to use to terminate newlines.
 
-   For the :class:`Document` node, an additional keyword argument *encoding* can be
-   used to specify the encoding field of the XML header.
+   For the :class:`Document` node, an additional keyword argument *encoding* can
+   be used to specify the encoding field of the XML header.
 
 
 .. method:: Node.toxml(encoding=None)
