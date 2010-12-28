@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue 9824: SimpleCookie now encodes , and ; in values to cater to how
+  browsers actually parse cookies.
+
 - Issue #5258/#10642: if site.py encounters a .pth file that generates an error,
   it now prints the filename, line number, and traceback to stderr and skips
   the rest of that individual file, instead of stopping processing entirely.

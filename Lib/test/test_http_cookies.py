@@ -65,6 +65,14 @@ class CookieTests(unittest.TestCase):
         </script>
         """)
 
+    def test_extended_encode(self):
+        # Issue 9824: some browsers don't follow the standard; we now
+        # encode , and ; to keep them from tripping up.
+        C = cookies.SimpleCookie()
+        C['val'] = "some,funky;stuff"
+        self.assertEqual(C.output(['val']),
+            'Set-Cookie: val="some\\054funky\\073stuff"')
+
     def test_special_attrs(self):
         # 'expires'
         C = cookies.SimpleCookie('Customer="WILE_E_COYOTE"')
