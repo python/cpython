@@ -870,6 +870,12 @@ bininstall: altbininstall
 	(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(VERSION)-config python3-config)
 	-rm -f $(DESTDIR)$(LIBPC)/python3.pc
 	(cd $(DESTDIR)$(LIBPC); $(LN) -s python-$(VERSION).pc python3.pc)
+	-rm -f $(DESTDIR)$(BINDIR)/idle3
+	(cd $(DESTDIR)$(BINDIR); $(LN) -s idle$(VERSION) idle3)
+	-rm -f $(DESTDIR)$(BINDIR)/pydoc3
+	(cd $(DESTDIR)$(BINDIR); $(LN) -s pydoc$(VERSION) pydoc3)
+	-rm -f $(DESTDIR)$(BINDIR)/2to3
+	(cd $(DESTDIR)$(BINDIR); $(LN) -s 2to3-$(VERSION) 2to3)
 
 # Install the manual page
 maninstall:
