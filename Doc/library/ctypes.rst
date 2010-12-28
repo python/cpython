@@ -1930,22 +1930,6 @@ Utility functions
    but it is possible to enlarge the buffer.
 
 
-.. function:: set_conversion_mode(encoding, errors)
-
-   This function sets the rules that ctypes objects use when converting between
-   bytes objects and (unicode) strings. *encoding* must be a string specifying an
-   encoding, like ``'utf-8'`` or ``'mbcs'``, *errors* must be a string specifying
-   the error handling on encoding/decoding errors. Examples of possible values are
-   ``'strict'``, ``'replace'``, or ``'ignore'``.
-
-   :func:`set_conversion_mode` returns a 2-tuple containing the previous
-   conversion rules. On windows, the initial conversion rules are ``('mbcs',
-   'ignore')``, on other systems ``('ascii', 'strict')``.
-
-   You can set the *encoding* to ``'undefined'`` to completely disable automatic
-   conversions.
-
-
 .. function:: set_errno(value)
 
    Set the current value of the ctypes-private copy of the system :data:`errno`
