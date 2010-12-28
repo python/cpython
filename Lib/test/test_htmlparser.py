@@ -356,6 +356,11 @@ class HTMLParserTolerantTestCase(TestCaseBase):
                                 [('action', 'bogus|&#()value')])],
                         collector = self.collector)
 
+    def test_unescape_function(self):
+        p = html.parser.HTMLParser()
+        self.assertEqual(p.unescape('&#bad;'),'&#bad;')
+        self.assertEqual(p.unescape('&#0038;'),'&')
+
 
 def test_main():
     support.run_unittest(HTMLParserTestCase, HTMLParserTolerantTestCase)

@@ -434,13 +434,16 @@ class HTMLParser(_markupbase.ParserBase):
             return s
         def replaceEntities(s):
             s = s.groups()[0]
-            if s[0] == "#":
-                s = s[1:]
-                if s[0] in ['x','X']:
-                    c = int(s[1:], 16)
-                else:
-                    c = int(s)
-                return chr(c)
+            try:
+                if s[0] == "#":
+                    s = s[1:]
+                    if s[0] in ['x','X']:
+                        c = int(s[1:], 16)
+                    else:
+                        c = int(s)
+                    return chr(c)
+            except ValueError:
+                return '&#'+ s +';'
             else:
                 # Cannot use name2codepoint directly, because HTMLParser
                 # supports apos, which is not part of HTML 4
