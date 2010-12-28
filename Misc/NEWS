@@ -15,6 +15,8 @@ Core and Builtins
 - Issue #10779: PyErr_WarnExplicit() decodes the filename from the filesystem
   encoding instead of UTF-8.
 
+- Add sys.flags attribute for the new -q command-line option.
+
 Library
 -------
 

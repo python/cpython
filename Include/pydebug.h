@@ -7,6 +7,7 @@ extern "C" {
 
 PyAPI_DATA(int) Py_DebugFlag;
 PyAPI_DATA(int) Py_VerboseFlag;
+PyAPI_DATA(int) Py_QuietFlag;
 PyAPI_DATA(int) Py_InteractiveFlag;
 PyAPI_DATA(int) Py_InspectFlag;
 PyAPI_DATA(int) Py_OptimizeFlag;
