@@ -319,6 +319,10 @@ DOCTYPE html [
         self._run_check("<html foo='&euro;&amp;&#97;&#x61;&unsupported;'>", [
                 ("starttag", "html", [("foo", "\u20AC&aa&unsupported;")])
                 ])
+    def test_unescape_function(self):
+        p = html.parser.HTMLParser()
+        self.assertEqual(p.unescape('&#bad;'),'&#bad;')
+        self.assertEqual(p.unescape('&#0038;'),'&')
 
 
 def test_main():
