@@ -515,7 +515,7 @@ PyObject *PyErr_SetExcFromWindowsErrWithFilename(
     int ierr,
     const char *filename)
 {
-    PyObject *name = filename ? PyUnicode_FromString(filename) : NULL;
+    PyObject *name = filename ? PyUnicode_DecodeFSDefault(filename) : NULL;
     PyObject *ret = PyErr_SetExcFromWindowsErrWithFilenameObject(exc,
                                                                  ierr,
                                                                  name);
@@ -552,7 +552,7 @@ PyObject *PyErr_SetFromWindowsErrWithFilename(
     int ierr,
     const char *filename)
 {
-    PyObject *name = filename ? PyUnicode_FromString(filename) : NULL;
+    PyObject *name = filename ? PyUnicode_DecodeFSDefault(filename) : NULL;
     PyObject *result = PyErr_SetExcFromWindowsErrWithFilenameObject(
                                                   PyExc_WindowsError,
                                                   ierr, name);

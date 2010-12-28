@@ -219,8 +219,9 @@ in various ways.  There is a separate error indicator for each thread.
 
    Similar to :c:func:`PyErr_SetFromWindowsErr`, with the additional behavior that
    if *filename* is not *NULL*, it is passed to the constructor of
-   :exc:`WindowsError` as a third parameter.  *filename* is decoded from UTF-8.
-   Availability: Windows.
+   :exc:`WindowsError` as a third parameter.  *filename* is decoded from the
+   filesystem encoding (:func:`sys.getfilesystemencoding`).  Availability:
+   Windows.
 
 
 .. c:function:: PyObject* PyErr_SetExcFromWindowsErrWithFilename(PyObject *type, int ierr, char *filename)
