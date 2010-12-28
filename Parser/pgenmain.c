@@ -13,6 +13,8 @@
    - check for duplicate definitions of names (instead of fatal err)
 */
 
+#define PGEN
+
 #include "Python.h"
 #include "pgenheaders.h"
 #include "grammar.h"
