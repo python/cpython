@@ -1395,12 +1395,15 @@ Files and Directories
 
    .. note::
 
-      The *SeCreateSymbolicLinkPrivilege* is required in order to create
-      symlinks, so the function is only available when the privilege is held.
-      This privilege is not typically granted to regular users but is available
-      to accounts which can escalate privileges to the administrator level.
-      Either obtaining the privilege or running your application as an
-      administrator are ways to successfully create symlinks.
+      The *SeCreateSymbolicLinkPrivilege* is required in order to successfully
+      create symlinks. This privilege is not typically granted to regular
+      users but is available to accounts which can escalate privileges to the
+      administrator level. Either obtaining the privilege or running your
+      application as an administrator are ways to successfully create symlinks.
+
+
+      :exc:`OSError` is raised when the function is called by an unprivileged
+      user.
 
    Availability: Unix, Windows.
 
