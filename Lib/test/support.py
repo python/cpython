@@ -43,7 +43,7 @@ __all__ = [
     "run_unittest", "run_doctest", "threading_setup", "threading_cleanup",
     "reap_children", "cpython_only", "check_impl_detail", "get_attribute",
     "swap_item", "swap_attr", "requires_IEEE_754",
-    "TestHandler", "Matcher"]
+    "TestHandler", "Matcher", "can_symlink", "skip_unless_symlink"]
 
 
 class Error(Exception):
@@ -1412,3 +1412,23 @@ class Matcher(object):
         else:
             result = dv.find(v) >= 0
         return result
+
+
+_can_symlink = None
+def can_symlink():
+    global _can_symlink
+    if _can_symlink is not None:
+        return _can_symlink
+    try:
+        os.symlink(TESTFN, TESTFN + "can_symlink")
+        can = True
+    except OSError:
+        can = False
+    _can_symlink = can
+    return can
+
+def skip_unless_symlink(test):
+    """Skip decorator for tests that require functional symlink"""
+    ok = can_symlink()
+    msg = "Requires functional symlink implementation"
+    return test if ok else unittest.skip(msg)(test)

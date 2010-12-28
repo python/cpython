@@ -541,7 +541,7 @@ class WalkTests(unittest.TestCase):
             f = open(path, "w")
             f.write("I'm " + path + " and proud of it.  Blame test_os.\n")
             f.close()
-        if hasattr(os, "symlink"):
+        if support.can_symlink():
             os.symlink(os.path.abspath(t2_path), link_path)
             sub2_tree = (sub2_path, ["link"], ["tmp3"])
         else:
@@ -585,7 +585,7 @@ class WalkTests(unittest.TestCase):
         self.assertEqual(all[flipped + 1], (sub1_path, ["SUB11"], ["tmp2"]))
         self.assertEqual(all[2 - 2 * flipped], sub2_tree)
 
-        if hasattr(os, "symlink"):
+        if support.can_symlink():
             # Walk, following symlinks.
             for root, dirs, files in os.walk(walk_path, followlinks=True):
                 if root == link_path:
@@ -1149,7 +1149,7 @@ class Win32KillTests(unittest.TestCase):
 
 
 @unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
-@unittest.skipUnless(hasattr(os, "symlink"), "Requires symlink implementation")
+@support.skip_unless_symlink
 class Win32SymlinkTests(unittest.TestCase):
     filelink = 'filelinktest'
     filelink_target = os.path.abspath(__file__)

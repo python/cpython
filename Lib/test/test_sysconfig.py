@@ -12,7 +12,7 @@ import shutil
 from copy import copy, deepcopy
 
 from test.support import (run_unittest, TESTFN, unlink, get_attribute,
-                          captured_stdout)
+                          captured_stdout, skip_unless_symlink)
 
 import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
@@ -245,8 +245,7 @@ class TestSysConfig(unittest.TestCase):
                   'posix_home', 'posix_prefix', 'posix_user')
         self.assertEqual(get_scheme_names(), wanted)
 
-    @unittest.skipUnless(hasattr(os, "symlink"),
-                         "Missing symlink implementation")
+    @skip_unless_symlink
     def test_symlink(self):
         # On Windows, the EXE needs to know where pythonXY.dll is at so we have
         # to add the directory to the path.

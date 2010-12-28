@@ -291,8 +291,7 @@ class TestShutil(unittest.TestCase):
         finally:
             shutil.rmtree(TESTFN, ignore_errors=True)
 
-    @unittest.skipUnless(hasattr(os, "symlink"),
-                         "Missing symlink implementation")
+    @support.skip_unless_symlink
     def test_dont_copy_file_onto_symlink_to_itself(self):
         # bug 851123.
         os.mkdir(TESTFN)
@@ -312,8 +311,7 @@ class TestShutil(unittest.TestCase):
         finally:
             shutil.rmtree(TESTFN, ignore_errors=True)
 
-    @unittest.skipUnless(hasattr(os, "symlink"),
-                         "Missing symlink implementation")
+    @support.skip_unless_symlink
     def test_rmtree_on_symlink(self):
         # bug 1669.
         os.mkdir(TESTFN)
@@ -338,8 +336,7 @@ class TestShutil(unittest.TestCase):
             finally:
                 os.remove(TESTFN)
 
-        @unittest.skipUnless(hasattr(os, "symlink"),
-                             "Missing symlink implementation")
+        @support.skip_unless_symlink
         def test_copytree_named_pipe(self):
             os.mkdir(TESTFN)
             try:
@@ -375,8 +372,7 @@ class TestShutil(unittest.TestCase):
         shutil.copytree(src_dir, dst_dir, copy_function=_copy)
         self.assertEqual(len(copied), 2)
 
-    @unittest.skipUnless(hasattr(os, "symlink"),
-                         "Missing symlink implementation")
+    @support.skip_unless_symlink
     def test_copytree_dangling_symlinks(self):
 
         # a dangling symlink raises an error at the end

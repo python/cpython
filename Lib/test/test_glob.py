@@ -1,5 +1,5 @@
 import unittest
-from test.support import run_unittest, TESTFN
+from test.support import run_unittest, TESTFN, skip_unless_symlink, can_symlink
 import glob
 import os
 import shutil
@@ -25,7 +25,7 @@ class GlobTests(unittest.TestCase):
         self.mktemp('ZZZ')
         self.mktemp('a', 'bcd', 'EF')
         self.mktemp('a', 'bcd', 'efg', 'ha')
-        if hasattr(os, "symlink"):
+        if can_symlink():
             os.symlink(self.norm('broken'), self.norm('sym1'))
             os.symlink(self.norm('broken'), self.norm('sym2'))
 
@@ -98,8 +98,7 @@ class GlobTests(unittest.TestCase):
         # either of these results are reasonable
         self.assertIn(res[0], [self.tempdir, self.tempdir + os.sep])
 
-    @unittest.skipUnless(hasattr(os, "symlink"),
-                         "Missing symlink implementation")
+    @skip_unless_symlink
     def test_glob_broken_symlinks(self):
         eq = self.assertSequencesEqual_noorder
         eq(self.glob('sym*'), [self.norm('sym1'), self.norm('sym2')])
