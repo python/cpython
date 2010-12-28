@@ -1706,6 +1706,6 @@ require changes to your code:
   (Contributed by Georg Brandl and Mattias Brändström;
   `appspot issue 53094 <http://codereview.appspot.com/53094>`_.)
 
-* :func:`struct.pack` doesn't encode implicitly unicode to UTF-8 anymore: use
+* :func:`struct.pack` no longer encodes implicitly unicode to UTF-8: use
   explicit conversion instead and replace unicode literals by bytes literals.
 
