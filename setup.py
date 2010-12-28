@@ -14,6 +14,7 @@ from distutils.core import Extension, setup
 from distutils.command.build_ext import build_ext
 from distutils.command.install import install
 from distutils.command.install_lib import install_lib
+from distutils.command.build_scripts import build_scripts
 from distutils.spawn import find_executable
 
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
@@ -1792,6 +1793,25 @@ class PyBuildInstallLib(install_lib):
     def is_chmod_supported(self):
         return hasattr(os, 'chmod')
 
+class PyBuildScripts(build_scripts):
+    def copy_scripts(self):
+        outfiles, updated_files = build_scripts.copy_scripts(self)
+        fullversion = '-{0[0]}.{0[1]}'.format(sys.version_info)
+        minoronly = '.{0[1]}'.format(sys.version_info)
+        newoutfiles = []
+        newupdated_files = []
+        for filename in outfiles:
+            if filename.endswith('2to3'):
+                newfilename = filename + fullversion
+            else:
+                newfilename = filename + minoronly
+            log.info('renaming {} to {}'.format(filename, newfilename))
+            os.rename(filename, newfilename)
+            newoutfiles.append(newfilename)
+            if filename in updated_files:
+                newupdated_files.append(newfilename)
+        return newoutfiles, newupdated_files
+
 SUMMARY = """
 Python is an interpreted, interactive, object-oriented programming
 language. It is often compared to Tcl, Perl, Scheme or Java.
@@ -1837,12 +1857,17 @@ def main():
           platforms = ["Many"],
 
           # Build info
-          cmdclass = {'build_ext':PyBuildExt, 'install':PyBuildInstall,
-                      'install_lib':PyBuildInstallLib},
+          cmdclass = {'build_ext': PyBuildExt,
+                      'build_scripts': PyBuildScripts,
+                      'install': PyBuildInstall,
+                      'install_lib': PyBuildInstallLib},
           # The struct module is defined here, because build_ext won't be
           # called unless there's at least one extension module defined.
           ext_modules=[Extension('_struct', ['_struct.c'])],
 
+          # If you change the scripts installed here, you also need to
+          # check the PyBuildScripts command above, and change the links
+          # created by the bininstall target in Makefile.pre.in
           scripts = ["Tools/scripts/pydoc3", "Tools/scripts/idle3",
                      "Tools/scripts/2to3"]
         )

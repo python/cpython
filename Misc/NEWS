@@ -44,6 +44,12 @@ Library
 
 - Deprecated assertDictContainsSubclass() in the unittest module.
 
+Build
+-----
+
+- Issue #10679: The "idle", "pydoc" and "2to3" scripts are now installed with
+  a version-specific suffix on "make altinstall".
+
 
 What's New in Python 3.2 Beta 2?
 ================================
