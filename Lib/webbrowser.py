@@ -286,12 +286,10 @@ class Mozilla(UnixBrowser):
     """Launcher class for Mozilla/Netscape browsers."""
 
     raise_opts = ["-noraise", "-raise"]
-
     remote_args = ['-remote', 'openURL(%s%action)']
     remote_action = ""
     remote_action_newwin = ",new-window"
     remote_action_newtab = ",new-tab"
-
     background = True
 
 Netscape = Mozilla
@@ -304,15 +302,13 @@ class Galeon(UnixBrowser):
     remote_args = ['%action', '%s']
     remote_action = "-n"
     remote_action_newwin = "-w"
-
     background = True
 
 
 class Opera(UnixBrowser):
     "Launcher class for Opera browser."
 
-    raise_opts = ["", "-raise"]
-
+    raise_opts = ["-noraise", ""]
     remote_args = ['-remote', 'openURL(%s%action)']
     remote_action = ""
     remote_action_newwin = ",new-window"
