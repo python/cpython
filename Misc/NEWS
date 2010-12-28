@@ -20,6 +20,9 @@ Core and Builtins
 Library
 -------
 
+- Issue 9824: SimpleCookie now encodes , and ; in values to cater to how
+  browsers actually parse cookies.
+
 - Issue 9333: os.symlink now available regardless of user privileges.
   The function now raises OSError on Windows >=6.0 when the user is unable
   to create symbolic links. XP and 2003 still raise NotImplementedError.
