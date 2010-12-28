@@ -202,7 +202,7 @@ PyAPI_FUNC(PyObject *) PyErr_SetFromWindowsErrWithFilenameObject(
     int, const char *);
 PyAPI_FUNC(PyObject *) PyErr_SetFromWindowsErrWithFilename(
     int ierr,
-    const char *filename        /* decoded from UTF-8 */
+    const char *filename,       /* decoded from the filesystem encoding */
     );
 #ifndef Py_LIMITED_API
 /* XXX redeclare to use WSTRING */
@@ -215,7 +215,7 @@ PyAPI_FUNC(PyObject *) PyErr_SetExcFromWindowsErrWithFilenameObject(
 PyAPI_FUNC(PyObject *) PyErr_SetExcFromWindowsErrWithFilename(
     PyObject *exc,
     int ierr,
-    const char *filename        /* decoded from UTF-8 */
+    const char *filename,       /* decoded from the filesystem encoding */
     );
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) PyErr_SetExcFromWindowsErrWithUnicodeFilename(

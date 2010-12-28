@@ -8,6 +8,10 @@ What's New in Python 3.2 Release Candidate 1
 Core and Builtins
 -----------------
 
+- Issue #10780: PyErr_SetFromWindowsErrWithFilename() and
+  PyErr_SetExcFromWindowsErrWithFilename() decode the filename from the
+  filesystem encoding instead of UTF-8.
+
 - Issue #10779: PyErr_WarnExplicit() decodes the filename from the filesystem
   encoding instead of UTF-8.
 
