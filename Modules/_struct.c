@@ -462,14 +462,9 @@ np_ubyte(char *p, PyObject *v, const formatdef *f)
 static int
 np_char(char *p, PyObject *v, const formatdef *f)
 {
-    if (PyUnicode_Check(v)) {
-        v = _PyUnicode_AsDefaultEncodedString(v, NULL);
-        if (v == NULL)
-            return -1;
-    }
     if (!PyBytes_Check(v) || PyBytes_Size(v) != 1) {
         PyErr_SetString(StructError,
-                        "char format requires bytes or string of length 1");
+                        "char format requires a bytes object of length 1");
         return -1;
     }
     *p = *PyBytes_AsString(v);
@@ -1345,7 +1340,7 @@ s_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (!PyBytes_Check(o_format)) {
         Py_DECREF(o_format);
         PyErr_Format(PyExc_TypeError,
-                     "Struct() argument 1 must be bytes, not %.200s",
+                     "Struct() argument 1 must be a bytes object, not %.200s",
                      Py_TYPE(o_format)->tp_name);
         return -1;
     }
@@ -1423,7 +1418,7 @@ s_unpack(PyObject *self, PyObject *input)
         return NULL;
     if (vbuf.len != soself->s_size) {
         PyErr_Format(StructError,
-                     "unpack requires a bytes argument of length %zd",
+                     "unpack requires a bytes object of length %zd",
                      soself->s_size);
         PyBuffer_Release(&vbuf);
         return NULL;
@@ -1503,15 +1498,10 @@ s_pack_internal(PyStructObject *soself, PyObject *args, int offset, char* buf)
         if (e->format == 's') {
             int isstring;
             void *p;
-            if (PyUnicode_Check(v)) {
-                v = _PyUnicode_AsDefaultEncodedString(v, NULL);
-                if (v == NULL)
-                    return -1;
-            }
             isstring = PyBytes_Check(v);
             if (!isstring && !PyByteArray_Check(v)) {
                 PyErr_SetString(StructError,
-                                "argument for 's' must be a bytes or string");
+                                "argument for 's' must be a bytes object");
                 return -1;
             }
             if (isstring) {
@@ -1529,15 +1519,10 @@ s_pack_internal(PyStructObject *soself, PyObject *args, int offset, char* buf)
         } else if (e->format == 'p') {
             int isstring;
             void *p;
-            if (PyUnicode_Check(v)) {
-                v = _PyUnicode_AsDefaultEncodedString(v, NULL);
-                if (v == NULL)
-                    return -1;
-            }
             isstring = PyBytes_Check(v);
             if (!isstring && !PyByteArray_Check(v)) {
                 PyErr_SetString(StructError,
-                                "argument for 'p' must be a bytes or string");
+                                "argument for 'p' must be a bytes object");
                 return -1;
             }
             if (isstring) {
@@ -1691,7 +1676,7 @@ static struct PyMethodDef s_methods[] = {
     {NULL,       NULL}          /* sentinel */
 };
 
-PyDoc_STRVAR(s__doc__, 
+PyDoc_STRVAR(s__doc__,
 "Struct(fmt) --> compiled struct object\n"
 "\n"
 "Return a new Struct object which writes and reads binary data according to\n"

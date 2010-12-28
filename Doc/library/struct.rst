@@ -164,58 +164,53 @@ platform-dependent.
 +--------+--------------------------+--------------------+----------------+------------+
 | ``c``  | :c:type:`char`           | bytes of length 1  | 1              |            |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``b``  | :c:type:`signed char`    | integer            | 1              | \(1),\(4)  |
+| ``b``  | :c:type:`signed char`    | integer            | 1              | \(1),\(3)  |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``B``  | :c:type:`unsigned char`  | integer            | 1              | \(4)       |
+| ``B``  | :c:type:`unsigned char`  | integer            | 1              | \(3)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``?``  | :c:type:`_Bool`          | bool               | 1              | \(2)       |
+| ``?``  | :c:type:`_Bool`          | bool               | 1              | \(1)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``h``  | :c:type:`short`          | integer            | 2              | \(4)       |
+| ``h``  | :c:type:`short`          | integer            | 2              | \(3)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``H``  | :c:type:`unsigned short` | integer            | 2              | \(4)       |
+| ``H``  | :c:type:`unsigned short` | integer            | 2              | \(3)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``i``  | :c:type:`int`            | integer            | 4              | \(4)       |
+| ``i``  | :c:type:`int`            | integer            | 4              | \(3)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``I``  | :c:type:`unsigned int`   | integer            | 4              | \(4)       |
+| ``I``  | :c:type:`unsigned int`   | integer            | 4              | \(3)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``l``  | :c:type:`long`           | integer            | 4              | \(4)       |
+| ``l``  | :c:type:`long`           | integer            | 4              | \(3)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``L``  | :c:type:`unsigned long`  | integer            | 4              | \(4)       |
+| ``L``  | :c:type:`unsigned long`  | integer            | 4              | \(3)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``q``  | :c:type:`long long`      | integer            | 8              | \(3), \(4) |
+| ``q``  | :c:type:`long long`      | integer            | 8              | \(2), \(3) |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``Q``  | :c:type:`unsigned long   | integer            | 8              | \(3), \(4) |
+| ``Q``  | :c:type:`unsigned long   | integer            | 8              | \(2), \(3) |
 |        | long`                    |                    |                |            |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``f``  | :c:type:`float`          | float              | 4              | \(5)       |
+| ``f``  | :c:type:`float`          | float              | 4              | \(4)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``d``  | :c:type:`double`         | float              | 8              | \(5)       |
+| ``d``  | :c:type:`double`         | float              | 8              | \(4)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``s``  | :c:type:`char[]`         | bytes              |                | \(1)       |
+| ``s``  | :c:type:`char[]`         | bytes              |                |            |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``p``  | :c:type:`char[]`         | bytes              |                | \(1)       |
+| ``p``  | :c:type:`char[]`         | bytes              |                |            |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``P``  | :c:type:`void \*`        | integer            |                | \(6)       |
+| ``P``  | :c:type:`void \*`        | integer            |                | \(5)       |
 +--------+--------------------------+--------------------+----------------+------------+
 
 Notes:
 
 (1)
-   The ``c``, ``s`` and ``p`` conversion codes operate on :class:`bytes`
-   objects, but packing with such codes also supports :class:`str` objects,
-   which are encoded using UTF-8.
-
-(2)
    The ``'?'`` conversion code corresponds to the :c:type:`_Bool` type defined by
    C99. If this type is not available, it is simulated using a :c:type:`char`. In
    standard mode, it is always represented by one byte.
 
-(3)
+(2)
    The ``'q'`` and ``'Q'`` conversion codes are available in native mode only if
    the platform C compiler supports C :c:type:`long long`, or, on Windows,
    :c:type:`__int64`.  They are always available in standard modes.
 
-(4)
+(3)
    When attempting to pack a non-integer using any of the integer conversion
    codes, if the non-integer has a :meth:`__index__` method then that method is
    called to convert the argument to an integer before packing.
@@ -223,12 +218,12 @@ Notes:
    .. versionchanged:: 3.2
       Use of the :meth:`__index__` method for non-integers is new in 3.2.
 
-(5)
+(4)
    For the ``'f'`` and ``'d'`` conversion codes, the packed representation uses
    the IEEE 754 binary32 (for ``'f'``) or binary64 (for ``'d'``) format,
    regardless of the floating-point format used by the platform.
 
-(6)
+(5)
    The ``'P'`` format character is only available for the native byte ordering
    (selected as the default or with the ``'@'`` byte order character). The byte
    order character ``'='`` chooses to use little- or big-endian ordering based
@@ -310,9 +305,9 @@ the result in a named tuple::
 The ordering of format characters may have an impact on size since the padding
 needed to satisfy alignment requirements is different::
 
-    >>> pack('ci', '*', 0x12131415)
+    >>> pack('ci', b'*', 0x12131415)
     b'*\x00\x00\x00\x12\x13\x14\x15'
-    >>> pack('ic', 0x12131415, '*')
+    >>> pack('ic', 0x12131415, b'*')
     b'\x12\x13\x14\x15*'
     >>> calcsize('ci')
     8
