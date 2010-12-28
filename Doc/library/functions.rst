@@ -1049,7 +1049,7 @@ are always available.  They are listed here in alphabetical order.
       >>> r[-1]
       18
 
-   Ranges containing absolute values larger than ``sys.maxint`` are permitted
+   Ranges containing absolute values larger than :data:`sys.maxsize` are permitted
    but some features (such as :func:`len`) will raise :exc:`OverflowError`.
 
    .. versionchanged:: 3.2
