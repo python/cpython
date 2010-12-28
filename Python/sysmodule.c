@@ -1417,7 +1417,8 @@ static PyStructSequence_Field flags_fields[] = {
 #endif
     /* {"unbuffered",                   "-u"}, */
     /* {"skip_first",                   "-x"}, */
-    {"bytes_warning", "-b"},
+    {"bytes_warning",           "-b"},
+    {"quiet",                   "-q"},
     {0}
 };
 
@@ -1461,6 +1462,7 @@ make_flags(void)
     /* SetFlag(saw_unbuffered_flag); */
     /* SetFlag(skipfirstline); */
     SetFlag(Py_BytesWarningFlag);
+    SetFlag(Py_QuietFlag);
 #undef SetFlag
 
     if (PyErr_Occurred()) {

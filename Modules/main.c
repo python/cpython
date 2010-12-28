@@ -319,7 +319,6 @@ Py_Main(int argc, wchar_t **argv)
     int stdin_is_interactive = 0;
     int help = 0;
     int version = 0;
-    int quiet = 0;
     int saw_unbuffered_flag = 0;
     PyCompilerFlags cf;
 
@@ -427,7 +426,7 @@ Py_Main(int argc, wchar_t **argv)
             break;
 
         case 'q':
-            quiet++;
+            Py_QuietFlag++;
             break;
 
         /* This space reserved for other options */
@@ -594,7 +593,7 @@ Py_Main(int argc, wchar_t **argv)
 #endif
     Py_Initialize();
 
-    if (!quiet && (Py_VerboseFlag ||
+    if (!Py_QuietFlag && (Py_VerboseFlag ||
                         (command == NULL && filename == NULL &&
                          module == NULL && stdin_is_interactive))) {
         fprintf(stderr, "Python %s on %s\n",
