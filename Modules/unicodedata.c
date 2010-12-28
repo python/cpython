@@ -684,10 +684,14 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
       comb = 0;
       while (i1 < end) {
           int comb1 = _getrecord_ex(*i1)->combining;
-          if (comb && (comb1 == 0 || comb == comb1)) {
-              /* Character is blocked. */
-              i1++;
-              continue;
+          if (comb) {
+              if (comb1 == 0)
+                  break;
+              if (comb >= comb1) {
+                  /* Character is blocked. */
+                  i1++;
+                  continue;
+              }
           }
           l = find_nfc_index(self, nfc_last, *i1);
           /* *i1 cannot be combined with *i. If *i1
@@ -711,6 +715,7 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
           /* Replace the original character. */
           *i = code;
           /* Mark the second character unused. */
+          assert(cskipped < 20);
           skipped[cskipped++] = i1;
           i1++;
           f = find_nfc_index(self, nfc_first, *i);
