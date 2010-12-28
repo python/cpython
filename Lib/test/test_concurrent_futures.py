@@ -24,7 +24,7 @@ if sys.platform.startswith('win'):
 from concurrent import futures
 from concurrent.futures._base import (
     PENDING, RUNNING, CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED, Future,
-    LOGGER, STDERR_HANDLER, wait)
+    LOGGER, wait)
 import concurrent.futures.process
 
 def create_future(state=PENDING, exception=None, result=None):
@@ -632,11 +632,7 @@ class FutureTests(unittest.TestCase):
         self.assertTrue(was_cancelled)
 
     def test_done_callback_raises(self):
-        LOGGER.removeHandler(STDERR_HANDLER)
-        logging_stream = io.StringIO()
-        handler = logging.StreamHandler(logging_stream)
-        LOGGER.addHandler(handler)
-        try:
+        with test.support.captured_stderr() as stderr:
             raising_was_called = False
             fn_was_called = False
 
@@ -655,10 +651,7 @@ class FutureTests(unittest.TestCase):
             f.set_result(5)
             self.assertTrue(raising_was_called)
             self.assertTrue(fn_was_called)
-            self.assertIn('Exception: doh!', logging_stream.getvalue())
-        finally:
-            LOGGER.removeHandler(handler)
-            LOGGER.addHandler(STDERR_HANDLER)
+            self.assertIn('Exception: doh!', stderr.getvalue())
 
     def test_done_callback_already_successful(self):
         callback_result = None
