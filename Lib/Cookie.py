@@ -258,6 +258,11 @@ _Translator       = {
     '\033' : '\\033',  '\034' : '\\034',  '\035' : '\\035',
     '\036' : '\\036',  '\037' : '\\037',
 
+    # Because of the way browsers really handle cookies (as opposed
+    # to what the RFC says) we also encode , and ;
+
+    ',' : '\\054', ';' : '\\073',
+
     '"' : '\\"',       '\\' : '\\\\',
 
     '\177' : '\\177',  '\200' : '\\200',  '\201' : '\\201',
