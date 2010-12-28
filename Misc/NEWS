@@ -20,6 +20,8 @@ Core and Builtins
 Library
 -------
 
+- Issue 10738: Fix webbrowser.Opera.raise_opts
+
 - Issue 9824: SimpleCookie now encodes , and ; in values to cater to how
   browsers actually parse cookies.
 
