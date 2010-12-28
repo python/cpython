@@ -304,7 +304,7 @@ class CGIHTTPServerTestCase(BaseTestCase):
 
         # The shebang line should be pure ASCII: use symlink if possible.
         # See issue #7668.
-        if hasattr(os, "symlink"):
+        if support.can_symlink():
             self.pythonexe = os.path.join(self.parent_dir, 'python')
             os.symlink(sys.executable, self.pythonexe)
         else:

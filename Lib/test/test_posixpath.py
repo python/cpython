@@ -155,7 +155,7 @@ class PosixPathTest(unittest.TestCase):
             f.write(b"foo")
             f.close()
             self.assertIs(posixpath.islink(support.TESTFN + "1"), False)
-            if hasattr(os, "symlink"):
+            if support.can_symlink():
                 os.symlink(support.TESTFN + "1", support.TESTFN + "2")
                 self.assertIs(posixpath.islink(support.TESTFN + "2"), True)
                 os.remove(support.TESTFN + "1")

@@ -279,6 +279,7 @@ extern int lstat(const char *, struct stat *);
 #include <lmcons.h>     /* for UNLEN */
 #ifdef SE_CREATE_SYMBOLIC_LINK_NAME /* Available starting with Vista */
 #define HAVE_SYMLINK
+static int win32_can_symlink = 0;
 #endif
 #endif /* _MSC_VER */
 
@@ -5243,6 +5244,10 @@ win_symlink(PyObject *self, PyObject *args, PyObject *kwargs)
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|i:symlink",
         kwlist, &src, &dest, &target_is_directory))
         return NULL;
+
+    if (win32_can_symlink == 0)
+        return PyErr_Format(PyExc_OSError, "symbolic link privilege not held");
+
     if (!convert_to_unicode(&src)) { return NULL; }
     if (!convert_to_unicode(&dest)) {
         Py_DECREF(src);
@@ -7801,7 +7806,7 @@ static PyMethodDef posix_methods[] = {
     {"symlink",         posix_symlink, METH_VARARGS, posix_symlink__doc__},
 #endif /* HAVE_SYMLINK */
 #if defined(HAVE_SYMLINK) && defined(MS_WINDOWS)
-    {"_symlink", (PyCFunction)win_symlink, METH_VARARGS | METH_KEYWORDS,
+    {"symlink", (PyCFunction)win_symlink, METH_VARARGS | METH_KEYWORDS,
                  win_symlink__doc__},
 #endif /* defined(HAVE_SYMLINK) && defined(MS_WINDOWS) */
 #ifdef HAVE_SYSTEM
@@ -8118,7 +8123,7 @@ static int insertvalues(PyObject *module)
 #endif
 
 #if defined(HAVE_SYMLINK) && defined(MS_WINDOWS)
-void
+static int
 enable_symlink()
 {
     HANDLE tok;
@@ -8127,10 +8132,10 @@ enable_symlink()
     int meth_idx = 0;
 
     if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ALL_ACCESS, &tok))
-        return;
+        return 0;
 
     if (!LookupPrivilegeValue(NULL, SE_CREATE_SYMBOLIC_LINK_NAME, &luid))
-        return;
+        return 0;
 
     tok_priv.PrivilegeCount = 1;
     tok_priv.Privileges[0].Luid = luid;
@@ -8139,21 +8144,10 @@ enable_symlink()
     if (!AdjustTokenPrivileges(tok, FALSE, &tok_priv,
                                sizeof(TOKEN_PRIVILEGES),
                                (PTOKEN_PRIVILEGES) NULL, (PDWORD) NULL))
-        return;
+        return 0;
 
-    if(GetLastError() == ERROR_NOT_ALL_ASSIGNED) {
-        /* We couldn't acquire the necessary privilege, so leave the
-           method hidden for this user. */
-        return;
-    } else {
-        /* We've successfully acquired the symlink privilege so rename
-           the method to it's proper "os.symlink" name. */
-        while(posix_methods[meth_idx].ml_meth != (PyCFunction)win_symlink)
-            meth_idx++;
-        posix_methods[meth_idx].ml_name = "symlink";
-
-        return;
-    }
+    /* ERROR_NOT_ALL_ASSIGNED returned when the privilege can't be assigned. */
+    return GetLastError() == ERROR_NOT_ALL_ASSIGNED ? 0 : 1;
 }
 #endif /* defined(HAVE_SYMLINK) && defined(MS_WINDOWS) */
 
@@ -8419,7 +8413,7 @@ INITFUNC(void)
     PyObject *m, *v;
 
 #if defined(HAVE_SYMLINK) && defined(MS_WINDOWS)
-    enable_symlink();
+    win32_can_symlink = enable_symlink();
 #endif
 
     m = PyModule_Create(&posixmodule);

@@ -18,6 +18,10 @@ Core and Builtins
 Library
 -------
 
+- Issue 9333: os.symlink now available regardless of user privileges.
+  The function now raises OSError on Windows >=6.0 when the user is unable
+  to create symbolic links. XP and 2003 still raise NotImplementedError.
+
 - Issue #10783: struct.pack() doesn't encode implicitly unicode to UTF-8
   anymore.
 
