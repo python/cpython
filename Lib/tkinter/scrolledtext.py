@@ -30,8 +30,8 @@ class ScrolledText(Text):
         # Copy geometry methods of self.frame without overriding Text
         # methods -- hack!
         text_meths = vars(Text).keys()
-        methods = vars(Pack).keys() + vars(Grid).keys() + vars(Place).keys()
-        methods = set(methods).difference(text_meths)
+        methods = vars(Pack).keys() | vars(Grid).keys() | vars(Place).keys()
+        methods = methods.difference(text_meths)
 
         for m in methods:
             if m[0] != '_' and m != 'config' and m != 'configure':
@@ -42,11 +42,10 @@ class ScrolledText(Text):
 
 
 def example():
-    import __main__
     from tkinter.constants import END
 
     stext = ScrolledText(bg='white', height=10)
-    stext.insert(END, __main__.__doc__)
+    stext.insert(END, __doc__)
     stext.pack(fill=BOTH, side=LEFT, expand=True)
     stext.focus_set()
     stext.mainloop()
