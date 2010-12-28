@@ -200,8 +200,8 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
     def test_issue10254(self):
         # Crash reported in #10254
-        a = u'C\u0338' * 20  + 'C\u0327'
-        b = u'C\u0338' * 20  + '\xC7'
+        a = u'C\u0338' * 20  + u'C\u0327'
+        b = u'C\u0338' * 20  + u'\xC7'
         self.assertEqual(self.db.normalize('NFC', a), b)
 
     def test_east_asian_width(self):
