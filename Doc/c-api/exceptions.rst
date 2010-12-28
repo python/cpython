@@ -148,7 +148,7 @@ in various ways.  There is a separate error indicator for each thread.
    This function sets the error indicator and returns *NULL*.  *exception*
    should be a Python exception class.  The *format* and subsequent
    parameters help format the error message; they have the same meaning and
-   values as in :c:func:`PyUnicode_FromFormat`. *format* is an ASCII-encoding
+   values as in :c:func:`PyUnicode_FromFormat`. *format* is an ASCII-encoded
    string.
 
 
