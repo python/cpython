@@ -82,58 +82,52 @@ class StructTest(unittest.TestCase):
         # Test some of the new features in detail
         # (format, argument, big-endian result, little-endian result, asymmetric)
         tests = [
-            ('c', 'a', 'a', 'a', 0),
-            ('xc', 'a', '\0a', '\0a', 0),
-            ('cx', 'a', 'a\0', 'a\0', 0),
-            ('s', 'a', 'a', 'a', 0),
-            ('0s', 'helloworld', '', '', 1),
-            ('1s', 'helloworld', 'h', 'h', 1),
-            ('9s', 'helloworld', 'helloworl', 'helloworl', 1),
-            ('10s', 'helloworld', 'helloworld', 'helloworld', 0),
-            ('11s', 'helloworld', 'helloworld\0', 'helloworld\0', 1),
-            ('20s', 'helloworld', 'helloworld'+10*'\0', 'helloworld'+10*'\0', 1),
-            ('b', 7, '\7', '\7', 0),
-            ('b', -7, '\371', '\371', 0),
-            ('B', 7, '\7', '\7', 0),
-            ('B', 249, '\371', '\371', 0),
-            ('h', 700, '\002\274', '\274\002', 0),
-            ('h', -700, '\375D', 'D\375', 0),
-            ('H', 700, '\002\274', '\274\002', 0),
-            ('H', 0x10000-700, '\375D', 'D\375', 0),
-            ('i', 70000000, '\004,\035\200', '\200\035,\004', 0),
-            ('i', -70000000, '\373\323\342\200', '\200\342\323\373', 0),
-            ('I', 70000000, '\004,\035\200', '\200\035,\004', 0),
-            ('I', 0x100000000-70000000, '\373\323\342\200', '\200\342\323\373', 0),
-            ('l', 70000000, '\004,\035\200', '\200\035,\004', 0),
-            ('l', -70000000, '\373\323\342\200', '\200\342\323\373', 0),
-            ('L', 70000000, '\004,\035\200', '\200\035,\004', 0),
-            ('L', 0x100000000-70000000, '\373\323\342\200', '\200\342\323\373', 0),
-            ('f', 2.0, '@\000\000\000', '\000\000\000@', 0),
-            ('d', 2.0, '@\000\000\000\000\000\000\000',
-                       '\000\000\000\000\000\000\000@', 0),
-            ('f', -2.0, '\300\000\000\000', '\000\000\000\300', 0),
-            ('d', -2.0, '\300\000\000\000\000\000\000\000',
-                       '\000\000\000\000\000\000\000\300', 0),
-                ('?', 0, '\0', '\0', 0),
-                ('?', 3, '\1', '\1', 1),
-                ('?', True, '\1', '\1', 0),
-                ('?', [], '\0', '\0', 1),
-                ('?', (1,), '\1', '\1', 1),
+            ('c', b'a', b'a', b'a', 0),
+            ('xc', b'a', b'\0a', b'\0a', 0),
+            ('cx', b'a', b'a\0', b'a\0', 0),
+            ('s', b'a', b'a', b'a', 0),
+            ('0s', b'helloworld', b'', b'', 1),
+            ('1s', b'helloworld', b'h', b'h', 1),
+            ('9s', b'helloworld', b'helloworl', b'helloworl', 1),
+            ('10s', b'helloworld', b'helloworld', b'helloworld', 0),
+            ('11s', b'helloworld', b'helloworld\0', b'helloworld\0', 1),
+            ('20s', b'helloworld', b'helloworld'+10*b'\0', b'helloworld'+10*b'\0', 1),
+            ('b', 7, b'\7', b'\7', 0),
+            ('b', -7, b'\371', b'\371', 0),
+            ('B', 7, b'\7', b'\7', 0),
+            ('B', 249, b'\371', b'\371', 0),
+            ('h', 700, b'\002\274', b'\274\002', 0),
+            ('h', -700, b'\375D', b'D\375', 0),
+            ('H', 700, b'\002\274', b'\274\002', 0),
+            ('H', 0x10000-700, b'\375D', b'D\375', 0),
+            ('i', 70000000, b'\004,\035\200', b'\200\035,\004', 0),
+            ('i', -70000000, b'\373\323\342\200', b'\200\342\323\373', 0),
+            ('I', 70000000, b'\004,\035\200', b'\200\035,\004', 0),
+            ('I', 0x100000000-70000000, b'\373\323\342\200', b'\200\342\323\373', 0),
+            ('l', 70000000, b'\004,\035\200', b'\200\035,\004', 0),
+            ('l', -70000000, b'\373\323\342\200', b'\200\342\323\373', 0),
+            ('L', 70000000, b'\004,\035\200', b'\200\035,\004', 0),
+            ('L', 0x100000000-70000000, b'\373\323\342\200', b'\200\342\323\373', 0),
+            ('f', 2.0, b'@\000\000\000', b'\000\000\000@', 0),
+            ('d', 2.0, b'@\000\000\000\000\000\000\000',
+                       b'\000\000\000\000\000\000\000@', 0),
+            ('f', -2.0, b'\300\000\000\000', b'\000\000\000\300', 0),
+            ('d', -2.0, b'\300\000\000\000\000\000\000\000',
+                        b'\000\000\000\000\000\000\000\300', 0),
+            ('?', 0, b'\0', b'\0', 0),
+            ('?', 3, b'\1', b'\1', 1),
+            ('?', True, b'\1', b'\1', 0),
+            ('?', [], b'\0', b'\0', 1),
+            ('?', (1,), b'\1', b'\1', 1),
         ]
 
         for fmt, arg, big, lil, asy in tests:
-            big = bytes(big, "latin-1")
-            lil = bytes(lil, "latin-1")
             for (xfmt, exp) in [('>'+fmt, big), ('!'+fmt, big), ('<'+fmt, lil),
                                 ('='+fmt, ISBIGENDIAN and big or lil)]:
                 res = struct.pack(xfmt, arg)
                 self.assertEqual(res, exp)
                 self.assertEqual(struct.calcsize(xfmt), len(res))
                 rev = struct.unpack(xfmt, res)[0]
-                if isinstance(arg, str):
-                    # Strings are returned as bytes since you can't know the
-                    # encoding of the string when packed.
-                    arg = bytes(arg, 'latin1')
                 if rev != arg:
                     self.assertTrue(asy)
 
@@ -334,15 +328,14 @@ class StructTest(unittest.TestCase):
     def test_p_code(self):
         # Test p ("Pascal string") code.
         for code, input, expected, expectedback in [
-                ('p','abc', '\x00', b''),
-                ('1p', 'abc', '\x00', b''),
-                ('2p', 'abc', '\x01a', b'a'),
-                ('3p', 'abc', '\x02ab', b'ab'),
-                ('4p', 'abc', '\x03abc', b'abc'),
-                ('5p', 'abc', '\x03abc\x00', b'abc'),
-                ('6p', 'abc', '\x03abc\x00\x00', b'abc'),
-                ('1000p', 'x'*1000, '\xff' + 'x'*999, b'x'*255)]:
-            expected = bytes(expected, "latin-1")
+                ('p',  b'abc', b'\x00',            b''),
+                ('1p', b'abc', b'\x00',            b''),
+                ('2p', b'abc', b'\x01a',           b'a'),
+                ('3p', b'abc', b'\x02ab',          b'ab'),
+                ('4p', b'abc', b'\x03abc',         b'abc'),
+                ('5p', b'abc', b'\x03abc\x00',     b'abc'),
+                ('6p', b'abc', b'\x03abc\x00\x00', b'abc'),
+                ('1000p', b'x'*1000, b'\xff' + b'x'*999, b'x'*255)]:
             got = struct.pack(code, input)
             self.assertEqual(got, expected)
             (got,) = struct.unpack(code, got)
@@ -401,15 +394,11 @@ class StructTest(unittest.TestCase):
         s = struct.Struct(fmt)
         for cls in (bytes, bytearray):
             data = cls(test_string)
-            if not isinstance(data, (bytes, bytearray)):
-                bytes_data = bytes(data, 'latin1')
-            else:
-                bytes_data = data
             self.assertEqual(s.unpack_from(data), (b'abcd',))
             self.assertEqual(s.unpack_from(data, 2), (b'cd01',))
             self.assertEqual(s.unpack_from(data, 4), (b'0123',))
             for i in range(6):
-                self.assertEqual(s.unpack_from(data, i), (bytes_data[i:i+4],))
+                self.assertEqual(s.unpack_from(data, i), (data[i:i+4],))
             for i in range(6, len(test_string) + 1):
                 self.assertRaises(struct.error, s.unpack_from, data, i)
         for cls in (bytes, bytearray):
