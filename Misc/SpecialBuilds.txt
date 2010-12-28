@@ -1,22 +1,20 @@
-This file describes some special Python build types enabled via
-compile-time preprocessor defines.
+This file describes some special Python build types enabled via compile-time
+preprocessor defines.
 
-IMPORTANT: if you want to build a debug-enabled Python, it is recommended
-that you use ``./configure --with-pydebug``, rather than the options listed
-here.
+IMPORTANT: if you want to build a debug-enabled Python, it is recommended that
+you use ``./configure --with-pydebug``, rather than the options listed here.
 
 However, if you wish to define some of these options individually, it is best
 to define them in the EXTRA_CFLAGS make variable;
 ``make EXTRA_CFLAGS="-DPy_REF_DEBUG"``.
 
----------------------------------------------------------------------------
-Py_REF_DEBUG                                              introduced in 1.4
-                                                 named REF_DEBUG before 1.4
 
-Turn on aggregate reference counting.  This arranges that extern
-_Py_RefTotal hold a count of all references, the sum of ob_refcnt across
-all objects.  In a debug-mode build, this is where the "8288" comes from
-in
+Py_REF_DEBUG
+------------
+
+Turn on aggregate reference counting.  This arranges that extern _Py_RefTotal
+hold a count of all references, the sum of ob_refcnt across all objects.  In a
+debug-mode build, this is where the "8288" comes from in
 
     >>> 23
     23
@@ -24,75 +22,72 @@ in
     >>>
 
 Note that if this count increases when you're not storing away new objects,
-there's probably a leak.  Remember, though, that in interactive mode the
-special name "_" holds a reference to the last result displayed!
+there's probably a leak.  Remember, though, that in interactive mode the special
+name "_" holds a reference to the last result displayed!
 
-Py_REF_DEBUG also checks after every decref to verify that the refcount
-hasn't gone negative, and causes an immediate fatal error if it has.
+Py_REF_DEBUG also checks after every decref to verify that the refcount hasn't
+gone negative, and causes an immediate fatal error if it has.
 
 Special gimmicks:
 
 sys.gettotalrefcount()
     Return current total of all refcounts.
-    Available under Py_REF_DEBUG in Python 2.3.
-    Before 2.3, Py_TRACE_REFS was required to enable this function.
----------------------------------------------------------------------------
-Py_TRACE_REFS                                             introduced in 1.4
-                                                named TRACE_REFS before 1.4
 
-Turn on heavy reference debugging.  This is major surgery.  Every PyObject
-grows two more pointers, to maintain a doubly-linked list of all live
-heap-allocated objects.  Most built-in type objects are not in this list,
-as they're statically allocated.  Starting in Python 2.3, if COUNT_ALLOCS
-(see below) is also defined, a static type object T does appear in this
-list if at least one object of type T has been created.
+
+Py_TRACE_REFS
+-------------
+
+Turn on heavy reference debugging.  This is major surgery.  Every PyObject grows
+two more pointers, to maintain a doubly-linked list of all live heap-allocated
+objects.  Most built-in type objects are not in this list, as they're statically
+allocated.  Starting in Python 2.3, if COUNT_ALLOCS (see below) is also defined,
+a static type object T does appear in this list if at least one object of type T
+has been created.
 
 Note that because the fundamental PyObject layout changes, Python modules
-compiled with Py_TRACE_REFS are incompatible with modules compiled without
-it.
+compiled with Py_TRACE_REFS are incompatible with modules compiled without it.
 
 Py_TRACE_REFS implies Py_REF_DEBUG.
 
 Special gimmicks:
 
 sys.getobjects(max[, type])
-    Return list of the (no more than) max most-recently allocated objects,
-    most recently allocated first in the list, least-recently allocated
-    last in the list.  max=0 means no limit on list length.
-    If an optional type object is passed, the list is also restricted to
-    objects of that type.
-    The return list itself, and some temp objects created just to call
-    sys.getobjects(), are excluded from the return list.  Note that the
-    list returned is just another object, though, so may appear in the
-    return list the next time you call getobjects(); note that every
-    object in the list is kept alive too, simply by virtue of being in
-    the list.
+    Return list of the (no more than) max most-recently allocated objects, most
+    recently allocated first in the list, least-recently allocated last in the
+    list.  max=0 means no limit on list length.  If an optional type object is
+    passed, the list is also restricted to objects of that type.  The return
+    list itself, and some temp objects created just to call sys.getobjects(),
+    are excluded from the return list.  Note that the list returned is just
+    another object, though, so may appear in the return list the next time you
+    call getobjects(); note that every object in the list is kept alive too,
+    simply by virtue of being in the list.
 
-envar PYTHONDUMPREFS
-    If this envar exists, Py_Finalize() arranges to print a list of
-    all still-live heap objects.  This is printed twice, in different
-    formats, before and after Py_Finalize has cleaned up everything it
-    can clean up.  The first output block produces the repr() of each
-    object so is more informative; however, a lot of stuff destined to
-    die is still alive then.  The second output block is much harder
-    to work with (repr() can't be invoked anymore -- the interpreter
-    has been torn down too far), but doesn't list any objects that will
-    die.  The tool script combinerefs.py can be run over this to combine
-    the info from both output blocks.  The second output block, and
+envvar PYTHONDUMPREFS
+    If this envvar exists, Py_Finalize() arranges to print a list of all
+    still-live heap objects.  This is printed twice, in different formats,
+    before and after Py_Finalize has cleaned up everything it can clean up.  The
+    first output block produces the repr() of each object so is more
+    informative; however, a lot of stuff destined to die is still alive then.
+    The second output block is much harder to work with (repr() can't be invoked
+    anymore -- the interpreter has been torn down too far), but doesn't list any
+    objects that will die.  The tool script combinerefs.py can be run over this
+    to combine the info from both output blocks.  The second output block, and
     combinerefs.py, were new in Python 2.3b1.
----------------------------------------------------------------------------
-PYMALLOC_DEBUG                                            introduced in 2.3
+
+
+PYMALLOC_DEBUG
+--------------
 
 When pymalloc is enabled (WITH_PYMALLOC is defined), calls to the PyObject_
-memory routines are handled by Python's own small-object allocator, while
-calls to the PyMem_ memory routines are directed to the system malloc/
-realloc/free.  If PYMALLOC_DEBUG is also defined, calls to both PyObject_
-and PyMem_ memory routines are directed to a special debugging mode of
-Python's small-object allocator.
+memory routines are handled by Python's own small-object allocator, while calls
+to the PyMem_ memory routines are directed to the system malloc/ realloc/free.
+If PYMALLOC_DEBUG is also defined, calls to both PyObject_ and PyMem_ memory
+routines are directed to a special debugging mode of Python's small-object
+allocator.
 
-This mode fills dynamically allocated memory blocks with special,
-recognizable bit patterns, and adds debugging info on each end of
-dynamically allocated memory blocks.  The special bit patterns are:
+This mode fills dynamically allocated memory blocks with special, recognizable
+bit patterns, and adds debugging info on each end of dynamically allocated
+memory blocks.  The special bit patterns are:
 
 #define CLEANBYTE     0xCB   /* clean (newly allocated) memory */
 #define DEADBYTE      0xDB   /* dead (newly freed) memory */
@@ -101,73 +96,70 @@ dynamically allocated memory blocks.  The special bit patterns are:
 Strings of these bytes are unlikely to be valid addresses, floats, or 7-bit
 ASCII strings.
 
-Let S = sizeof(size_t). 2*S bytes are added at each end of each block of N
-bytes requested.  The memory layout is like so, where p represents the
-address returned by a malloc-like or realloc-like function (p[i:j] means
-the slice of bytes from *(p+i) inclusive up to *(p+j) exclusive; note that
-the treatment of negative indices differs from a Python slice):
+Let S = sizeof(size_t). 2*S bytes are added at each end of each block of N bytes
+requested.  The memory layout is like so, where p represents the address
+returned by a malloc-like or realloc-like function (p[i:j] means the slice of
+bytes from *(p+i) inclusive up to *(p+j) exclusive; note that the treatment of
+negative indices differs from a Python slice):
 
 p[-2*S:-S]
-    Number of bytes originally asked for.  This is a size_t, big-endian
-    (easier to read in a memory dump).
+    Number of bytes originally asked for.  This is a size_t, big-endian (easier
+    to read in a memory dump).
 p[-S:0]
     Copies of FORBIDDENBYTE.  Used to catch under- writes and reads.
 p[0:N]
     The requested memory, filled with copies of CLEANBYTE, used to catch
-    reference to uninitialized memory.
-    When a realloc-like function is called requesting a larger memory
-    block, the new excess bytes are also filled with CLEANBYTE.
-    When a free-like function is called, these are overwritten with
-    DEADBYTE, to catch reference to freed memory.  When a realloc-
-    like function is called requesting a smaller memory block, the excess
-    old bytes are also filled with DEADBYTE.
+    reference to uninitialized memory.  When a realloc-like function is called
+    requesting a larger memory block, the new excess bytes are also filled with
+    CLEANBYTE.  When a free-like function is called, these are overwritten with
+    DEADBYTE, to catch reference to freed memory.  When a realloc- like function
+    is called requesting a smaller memory block, the excess old bytes are also
+    filled with DEADBYTE.
 p[N:N+S]
     Copies of FORBIDDENBYTE.  Used to catch over- writes and reads.
 p[N+S:N+2*S]
     A serial number, incremented by 1 on each call to a malloc-like or
-    realloc-like function.
-    Big-endian size_t.
-    If "bad memory" is detected later, the serial number gives an
-    excellent way to set a breakpoint on the next run, to capture the
-    instant at which this block was passed out.  The static function
-    bumpserialno() in obmalloc.c is the only place the serial number
-    is incremented, and exists so you can set such a breakpoint easily.
+    realloc-like function.  Big-endian size_t.  If "bad memory" is detected
+    later, the serial number gives an excellent way to set a breakpoint on the
+    next run, to capture the instant at which this block was passed out.  The
+    static function bumpserialno() in obmalloc.c is the only place the serial
+    number is incremented, and exists so you can set such a breakpoint easily.
 
-A realloc-like or free-like function first checks that the FORBIDDENBYTEs
-at each end are intact.  If they've been altered, diagnostic output is
-written to stderr, and the program is aborted via Py_FatalError().  The
-other main failure mode is provoking a memory error when a program
-reads up one of the special bit patterns and tries to use it as an address.
-If you get in a debugger then and look at the object, you're likely
-to see that it's entirely filled with 0xDB (meaning freed memory is
-getting used) or 0xCB (meaning uninitialized memory is getting used).
+A realloc-like or free-like function first checks that the FORBIDDENBYTEs at
+each end are intact.  If they've been altered, diagnostic output is written to
+stderr, and the program is aborted via Py_FatalError().  The other main failure
+mode is provoking a memory error when a program reads up one of the special bit
+patterns and tries to use it as an address.  If you get in a debugger then and
+look at the object, you're likely to see that it's entirely filled with 0xDB
+(meaning freed memory is getting used) or 0xCB (meaning uninitialized memory is
+getting used).
 
 Note that PYMALLOC_DEBUG requires WITH_PYMALLOC.
 
 Special gimmicks:
 
-envar PYTHONMALLOCSTATS
-    If this envar exists, a report of pymalloc summary statistics is
-    printed to stderr whenever a new arena is allocated, and also
-    by Py_Finalize().
+envvar PYTHONMALLOCSTATS
+    If this envvar exists, a report of pymalloc summary statistics is printed to
+    stderr whenever a new arena is allocated, and also by Py_Finalize().
 
 Changed in 2.5:  The number of extra bytes allocated is 4*sizeof(size_t).
 Before it was 16 on all boxes, reflecting that Python couldn't make use of
 allocations >= 2**32 bytes even on 64-bit boxes before 2.5.
----------------------------------------------------------------------------
-Py_DEBUG                                                  introduced in 1.5
-                                                     named DEBUG before 1.5
+
+
+Py_DEBUG
+--------
 
 This is what is generally meant by "a debug build" of Python.
 
-Py_DEBUG implies LLTRACE, Py_REF_DEBUG, Py_TRACE_REFS, and
-PYMALLOC_DEBUG (if WITH_PYMALLOC is enabled).  In addition, C
-assert()s are enabled (via the C way: by not defining NDEBUG), and
-some routines do additional sanity checks inside "#ifdef Py_DEBUG"
-blocks.
----------------------------------------------------------------------------
-COUNT_ALLOCS                                            introduced in 0.9.9
-                                             partly broken in 2.2 and 2.2.1
+Py_DEBUG implies LLTRACE, Py_REF_DEBUG, Py_TRACE_REFS, and PYMALLOC_DEBUG (if
+WITH_PYMALLOC is enabled).  In addition, C assert()s are enabled (via the C way:
+by not defining NDEBUG), and some routines do additional sanity checks inside
+"#ifdef Py_DEBUG" blocks.
+
+
+COUNT_ALLOCS
+------------
 
 Each type object grows three new members:
 
@@ -183,84 +175,85 @@ Each type object grows three new members:
      */
     int tp_maxalloc;
 
-Allocation and deallocation code keeps these counts up to date.
-Py_Finalize() displays a summary of the info returned by sys.getcounts()
-(see below), along with assorted other special allocation counts (like
-the number of tuple allocations satisfied by a tuple free-list, the number
-of 1-character strings allocated, etc).
+Allocation and deallocation code keeps these counts up to date.  Py_Finalize()
+displays a summary of the info returned by sys.getcounts() (see below), along
+with assorted other special allocation counts (like the number of tuple
+allocations satisfied by a tuple free-list, the number of 1-character strings
+allocated, etc).
 
 Before Python 2.2, type objects were immortal, and the COUNT_ALLOCS
-implementation relies on that.  As of Python 2.2, heap-allocated type/
-class objects can go away.  COUNT_ALLOCS can blow up in 2.2 and 2.2.1
-because of this; this was fixed in 2.2.2.  Use of COUNT_ALLOCS makes
-all heap-allocated type objects immortal, except for those for which no
-object of that type is ever allocated.
+implementation relies on that.  As of Python 2.2, heap-allocated type/ class
+objects can go away.  COUNT_ALLOCS can blow up in 2.2 and 2.2.1 because of this;
+this was fixed in 2.2.2.  Use of COUNT_ALLOCS makes all heap-allocated type
+objects immortal, except for those for which no object of that type is ever
+allocated.
 
 Starting with Python 2.3, If Py_TRACE_REFS is also defined, COUNT_ALLOCS
-arranges to ensure that the type object for each allocated object
-appears in the doubly-linked list of all objects maintained by
-Py_TRACE_REFS.
+arranges to ensure that the type object for each allocated object appears in the
+doubly-linked list of all objects maintained by Py_TRACE_REFS.
 
 Special gimmicks:
 
 sys.getcounts()
-    Return a list of 4-tuples, one entry for each type object for which
-    at least one object of that type was allocated.  Each tuple is of
-    the form:
+    Return a list of 4-tuples, one entry for each type object for which at least
+    one object of that type was allocated.  Each tuple is of the form:
 
         (tp_name, tp_allocs, tp_frees, tp_maxalloc)
 
-    Each distinct type object gets a distinct entry in this list, even
-    if two or more type objects have the same tp_name (in which case
-    there's no way to distinguish them by looking at this list).  The
-    list is ordered by time of first object allocation:  the type object
-    for which the first allocation of an object of that type occurred
-    most recently is at the front of the list.
----------------------------------------------------------------------------
-LLTRACE                                          introduced well before 1.0
+    Each distinct type object gets a distinct entry in this list, even if two or
+    more type objects have the same tp_name (in which case there's no way to
+    distinguish them by looking at this list).  The list is ordered by time of
+    first object allocation: the type object for which the first allocation of
+    an object of that type occurred most recently is at the front of the list.
+
+
+LLTRACE
+-------
 
 Compile in support for Low Level TRACE-ing of the main interpreter loop.
 
-When this preprocessor symbol is defined, before PyEval_EvalFrame
-(eval_frame in 2.3 and 2.2, eval_code2 before that) executes a frame's code
-it checks the frame's global namespace for a variable "__lltrace__".  If
-such a variable is found, mounds of information about what the interpreter
-is doing are sprayed to stdout, such as every opcode and opcode argument
-and values pushed onto and popped off the value stack.
+When this preprocessor symbol is defined, before PyEval_EvalFrame (eval_frame in
+2.3 and 2.2, eval_code2 before that) executes a frame's code it checks the
+frame's global namespace for a variable "__lltrace__".  If such a variable is
+found, mounds of information about what the interpreter is doing are sprayed to
+stdout, such as every opcode and opcode argument and values pushed onto and
+popped off the value stack.
 
 Not useful very often, but very useful when needed.
 
----------------------------------------------------------------------------
-CALL_PROFILE                                      introduced for Python 2.3
+
+CALL_PROFILE
+------------
 
 Count the number of function calls executed.
 
-When this symbol is defined, the ceval mainloop and helper functions
-count the number of function calls made.  It keeps detailed statistics
-about what kind of object was called and whether the call hit any of
-the special fast paths in the code.
+When this symbol is defined, the ceval mainloop and helper functions count the
+number of function calls made.  It keeps detailed statistics about what kind of
+object was called and whether the call hit any of the special fast paths in the
+code.
 
----------------------------------------------------------------------------
-WITH_TSC                                          introduced for Python 2.4
 
-Super-lowlevel profiling of the interpreter.  When enabled, the sys
-module grows a new function:
+WITH_TSC
+--------
+
+Super-lowlevel profiling of the interpreter.  When enabled, the sys module grows
+a new function:
 
 settscdump(bool)
-    If true, tell the Python interpreter to dump VM measurements to
-    stderr.  If false, turn off dump.  The measurements are based on the
-    processor's time-stamp counter.
+    If true, tell the Python interpreter to dump VM measurements to stderr.  If
+    false, turn off dump.  The measurements are based on the processor's
+    time-stamp counter.
 
-This build option requires a small amount of platform specific code.
-Currently this code is present for linux/x86 and any PowerPC platform
-that uses GCC (i.e. OS X and linux/ppc).
+This build option requires a small amount of platform specific code.  Currently
+this code is present for linux/x86 and any PowerPC platform that uses GCC
+(i.e. OS X and linux/ppc).
 
-On the PowerPC the rate at which the time base register is incremented
-is not defined by the architecture specification, so you'll need to
-find the manual for your specific processor.  For the 750CX, 750CXe
-and 750FX (all sold as the G3) we find:
+On the PowerPC the rate at which the time base register is incremented is not
+defined by the architecture specification, so you'll need to find the manual for
+your specific processor.  For the 750CX, 750CXe and 750FX (all sold as the G3)
+we find:
 
-    The time base counter is clocked at a frequency that is
-    one-fourth that of the bus clock.
+    The time base counter is clocked at a frequency that is one-fourth that of
+    the bus clock.
 
 This build is enabled by the --with-tsc flag to configure.
