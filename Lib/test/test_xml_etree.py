@@ -1841,6 +1841,15 @@ def check_issue6565():
 
     """
 
+def check_issue10777():
+    """
+    Registering a namespace twice caused a "dictionary changed size during
+    iteration" bug.
+
+    >>> ET.register_namespace('test10777', 'http://myuri/')
+    >>> ET.register_namespace('test10777', 'http://myuri/')
+    """
+
 # --------------------------------------------------------------------
 
 

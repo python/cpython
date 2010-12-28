@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10777: Fix "dictionary changed size during iteration" bug in
+  ElementTree register_namespace().
+
 - Issue #10626: test_logging now preserves logger disabled states.
 
 - Issue #10774: test_logging now removes temp files created during tests.
