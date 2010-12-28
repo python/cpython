@@ -320,6 +320,11 @@ DOCTYPE html [
             ("endtag", "p"),
         ])
 
+    def test_unescape_function(self):
+        parser = HTMLParser.HTMLParser()
+        self.assertEqual(parser.unescape('&#bad;'),'&#bad;')
+        self.assertEqual(parser.unescape('&#0038;'),'&')
+
 
 def test_main():
     test_support.run_unittest(HTMLParserTestCase)
