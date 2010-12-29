@@ -249,6 +249,7 @@ def _have_soundcard():
         p = subprocess.Popen([cscript_path, check_script],
                              stdout=subprocess.PIPE)
         __have_soundcard_cache = not p.wait()
+        p.stdout.close()
     return __have_soundcard_cache
 
 
