@@ -29,7 +29,7 @@ Library
   The function now raises OSError on Windows >=6.0 when the user is unable
   to create symbolic links. XP and 2003 still raise NotImplementedError.
 
-- Issue #10783: struct.pack() no longer encodes implicitly unicode to UTF-8.
+- Issue #10783: struct.pack() no longer implicitly encodes unicode to UTF-8.
 
 - Issue #10730: Add SVG mime types to mimetypes module.
 
