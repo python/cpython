@@ -169,7 +169,7 @@ class Header:
         charset is used both as s's initial charset and as the default for
         subsequent .append() calls.
 
-        The maximum line length can be specified explicit via maxlinelen.  For
+        The maximum line length can be specified explicitly via maxlinelen. For
         splitting the first line to a shorter value (to account for the field
         header which isn't included in s, e.g. `Subject') pass in the name of
         the field in header_name.  The default maxlinelen is 78 as recommended
@@ -241,7 +241,7 @@ class Header:
         constructor is used.
 
         s may be a byte string or a Unicode string.  If it is a byte string
-        (i.e. isinstance(s, str) is true), then charset is the encoding of
+        (i.e. isinstance(s, str) is false), then charset is the encoding of
         that byte string, and a UnicodeError will be raised if the string
         cannot be decoded with that charset.  If s is a Unicode string, then
         charset is a hint specifying the character set of the characters in
