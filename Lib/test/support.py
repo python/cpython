@@ -1422,7 +1422,7 @@ def can_symlink():
     try:
         os.symlink(TESTFN, TESTFN + "can_symlink")
         can = True
-    except OSError:
+    except (OSError, NotImplementedError):
         can = False
     _can_symlink = can
     return can
