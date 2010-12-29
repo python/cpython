@@ -1601,8 +1601,8 @@ Library
 
 - Issue #8230: Fix Lib/test/sortperf.py.
 
-- Issue #8620: when a Cmd is fed input that reaches EOF without a final newline,
-  it no longer truncates the last character of the last command line.
+- Issue #8620: when a cmd.Cmd() is fed input that reaches EOF without a final
+  newline, it no longer truncates the last character of the last command line.
 
 - Issue #5146: Handle UID THREAD command correctly in imaplib.
 
