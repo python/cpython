@@ -71,7 +71,7 @@ def request_uri(environ, include_query=True):
     """Return the full request URI, optionally including the query string"""
     url = application_uri(environ)
     from urllib.parse import quote
-    path_info = quote(environ.get('PATH_INFO',''))
+    path_info = quote(environ.get('PATH_INFO',''),safe='/;=,')
     if not environ.get('SCRIPT_NAME'):
         url += path_info[1:]
     else:

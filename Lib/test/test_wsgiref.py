@@ -342,6 +342,10 @@ class UtilityTests(TestCase):
         self.checkReqURI("http://127.0.0.1/sp%C3%A4m", SCRIPT_NAME="/späm")
         self.checkReqURI("http://127.0.0.1/spammity/spam",
             SCRIPT_NAME="/spammity", PATH_INFO="/spam")
+        self.checkReqURI("http://127.0.0.1/spammity/spam;ham",
+            SCRIPT_NAME="/spammity", PATH_INFO="/spam;ham")
+        self.checkReqURI("http://127.0.0.1/spammity/spam;cookie=1234,5678",
+            SCRIPT_NAME="/spammity", PATH_INFO="/spam;cookie=1234,5678")
         self.checkReqURI("http://127.0.0.1/spammity/spam?say=ni",
             SCRIPT_NAME="/spammity", PATH_INFO="/spam",QUERY_STRING="say=ni")
         self.checkReqURI("http://127.0.0.1/spammity/spam", 0,
