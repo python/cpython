@@ -90,8 +90,12 @@ class BaseTest(unittest.TestCase):
         self.root_hdlr = logging.StreamHandler(self.stream)
         self.root_formatter = logging.Formatter(self.log_format)
         self.root_hdlr.setFormatter(self.root_formatter)
-        self.assertFalse(self.logger1.hasHandlers())
-        self.assertFalse(self.logger2.hasHandlers())
+        if self.logger1.hasHandlers():
+            hlist = self.logger1.handlers + self.root_logger.handlers
+            raise AssertionError('Unexpected handlers: %s' % hlist)
+        if self.logger2.hasHandlers():
+            hlist = self.logger2.handlers + self.root_logger.handlers
+            raise AssertionError('Unexpected handlers: %s' % hlist)
         self.root_logger.addHandler(self.root_hdlr)
         self.assertTrue(self.logger1.hasHandlers())
         self.assertTrue(self.logger2.hasHandlers())
