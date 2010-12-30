@@ -53,12 +53,7 @@
 
    (2) How to add your own demos to the demo repository
 
-   - scriptname: must begin with tdemo_ ,
-     so it must have the form tdemo_<your-script-name>.py
-
-   - place: same directory as turtleDemo.py or some
-     subdirectory, the name of which must also begin with
-     tdemo_.....
+   - place: same directory as turtledemo/__main__.py
 
    - requirements on source code:
        code must contain a main() function which will
