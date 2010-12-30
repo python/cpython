@@ -308,10 +308,3 @@ in that version, since :func:`find_module` has been extended and
            # Since we may exit via an exception, close fp explicitly.
            if fp:
                fp.close()
-
-.. index:: module: knee
-
-A more complete example that implements hierarchical module names and includes a
-:func:`reload` function can be found in the module :mod:`knee`.  The :mod:`knee`
-module can be found in :file:`Demo/imputil/` in the Python source distribution.
-

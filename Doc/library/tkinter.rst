@@ -659,9 +659,7 @@ relief
 
 scrollcommand
    This is almost always the :meth:`!set` method of some scrollbar widget, but can
-   be any widget method that takes a single argument.   Refer to the file
-   :file:`Demo/tkinter/matt/canvas-with-scrollbars.py` in the Python source
-   distribution for an example.
+   be any widget method that takes a single argument.
 
 wrap:
    Must be one of: ``"none"``, ``"char"``, or ``"word"``.
