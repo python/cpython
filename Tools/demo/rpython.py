@@ -1,7 +1,9 @@
-#! /usr/bin/env python3
+#!/usr/bin/env python3
 
-# Remote python client.
-# Execute Python commands remotely and send output back.
+"""
+Remote python client.
+Execute Python commands remotely and send output back.
+"""
 
 import sys
 from socket import socket, AF_INET, SOCK_STREAM, SHUT_WR

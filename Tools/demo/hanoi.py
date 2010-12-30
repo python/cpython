@@ -1,17 +1,18 @@
-# Animated Towers of Hanoi using Tk with optional bitmap file in
-# background.
-#
-# Usage: tkhanoi [n [bitmapfile]]
-#
-# n is the number of pieces to animate; default is 4, maximum 15.
-#
-# The bitmap file can be any X11 bitmap file (look in
-# /usr/include/X11/bitmaps for samples); it is displayed as the
-# background of the animation.  Default is no bitmap.
+#!/usr/bin/env python3
 
-# This uses Steen Lumholt's Tk interface
-from tkinter import *
+"""
+Animated Towers of Hanoi using Tk with optional bitmap file in background.
 
+Usage: hanoi.py [n [bitmapfile]]
+
+n is the number of pieces to animate; default is 4, maximum 15.
+
+The bitmap file can be any X11 bitmap file (look in /usr/include/X11/bitmaps for
+samples); it is displayed as the background of the animation.  Default is no
+bitmap.
+"""
+
+from tkinter import Tk, Canvas
 
 # Basic Towers-of-Hanoi algorithm: move n pieces from a to b, using c
 # as temporary.  For each move, call report()
@@ -123,7 +124,6 @@ class Tkhanoi:
         self.pegstate[b].append(i)
 
 
-# Main program
 def main():
     import sys
 

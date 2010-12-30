@@ -1,6 +1,7 @@
-#! /usr/bin/env python3
+#!/usr/bin/env python3
 
-"""Sorting algorithms visualizer using Tkinter.
+"""
+Sorting algorithms visualizer using Tkinter.
 
 This module is comprised of three ``components'':
 
@@ -15,12 +16,10 @@ to its annotation methods;
 
 - and a ``driver'' class which can be used as a Grail applet or as a
 stand-alone application.
-
 """
 
 from tkinter import *
 import random
-
 
 XGRID = 10
 YGRID = 10

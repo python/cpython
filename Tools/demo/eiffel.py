@@ -1,13 +1,20 @@
-"""Support Eiffel-style preconditions and postconditions."""
+#!/usr/bin/env python3
 
+"""
+Support Eiffel-style preconditions and postconditions for functions.
+
+An example for Python metaclasses.
+"""
+
+import unittest
 from types import FunctionType as function
 
 class EiffelBaseMetaClass(type):
 
     def __new__(meta, name, bases, dict):
         meta.convert_methods(dict)
-        return super(EiffelBaseMetaClass, meta).__new__(meta, name, bases,
-                                                        dict)
+        return super(EiffelBaseMetaClass, meta).__new__(
+            meta, name, bases, dict)
 
     @classmethod
     def convert_methods(cls, dict):
@@ -31,6 +38,7 @@ class EiffelBaseMetaClass(type):
             if pre or post:
                 dict[k] = cls.make_eiffel_method(dict[m], pre, post)
 
+
 class EiffelMetaClass1(EiffelBaseMetaClass):
     # an implementation of the "eiffel" meta class that uses nested functions
 
@@ -39,15 +47,16 @@ class EiffelMetaClass1(EiffelBaseMetaClass):
         def method(self, *args, **kwargs):
             if pre:
                 pre(self, *args, **kwargs)
-            x = func(self, *args, **kwargs)
+            rv = func(self, *args, **kwargs)
             if post:
-                post(self, x, *args, **kwargs)
-            return x
+                post(self, rv, *args, **kwargs)
+            return rv
 
         if func.__doc__:
             method.__doc__ = func.__doc__
 
         return method
+
 
 class EiffelMethodWrapper:
 
@@ -58,7 +67,8 @@ class EiffelMethodWrapper:
     def __call__(self, *args, **kwargs):
         return self._descr.callmethod(self._inst, args, kwargs)
 
-class EiffelDescriptor(object):
+
+class EiffelDescriptor:
 
     def __init__(self, func, pre, post):
         self._func = func
@@ -79,63 +89,58 @@ class EiffelDescriptor(object):
             self._post(inst, x, *args, **kwargs)
         return x
 
+
 class EiffelMetaClass2(EiffelBaseMetaClass):
     # an implementation of the "eiffel" meta class that uses descriptors
 
     make_eiffel_method = EiffelDescriptor
 
-def _test(metaclass):
-    class Eiffel(metaclass=metaclass):
-        pass
 
-    class Test(Eiffel):
+class Tests(unittest.TestCase):
 
-        def m(self, arg):
-            """Make it a little larger"""
-            return arg + 1
+    def testEiffelMetaClass1(self):
+        self._test(EiffelMetaClass1)
 
-        def m2(self, arg):
-            """Make it a little larger"""
-            return arg + 1
+    def testEiffelMetaClass2(self):
+        self._test(EiffelMetaClass2)
 
-        def m2_pre(self, arg):
-            assert arg > 0
+    def _test(self, metaclass):
+        class Eiffel(metaclass=metaclass):
+            pass
 
-        def m2_post(self, result, arg):
-            assert result > arg
+        class Test(Eiffel):
+            def m(self, arg):
+                """Make it a little larger"""
+                return arg + 1
 
-    class Sub(Test):
-        def m2(self, arg):
-            return arg**2
-        def m2_post(self, Result, arg):
-            super(Sub, self).m2_post(Result, arg)
-            assert Result < 100
+            def m2(self, arg):
+                """Make it a little larger"""
+                return arg + 1
 
-    t = Test()
-    t.m(1)
-    t.m2(1)
-    try:
-        t.m2(0)
-    except AssertionError:
-        pass
-    else:
-        assert False
+            def m2_pre(self, arg):
+                assert arg > 0
 
-    s = Sub()
-    try:
-        s.m2(1)
-    except AssertionError:
-        pass # result == arg
-    else:
-        assert False
-    try:
-        s.m2(10)
-    except AssertionError:
-        pass # result ==  100
-    else:
-        assert False
-    s.m2(5)
+            def m2_post(self, result, arg):
+                assert result > arg
+
+        class Sub(Test):
+            def m2(self, arg):
+                return arg**2
+
+            def m2_post(self, Result, arg):
+                super(Sub, self).m2_post(Result, arg)
+                assert Result < 100
+
+        t = Test()
+        self.assertEqual(t.m(1), 2)
+        self.assertEqual(t.m2(1), 2)
+        self.assertRaises(AssertionError, t.m2, 0)
+
+        s = Sub()
+        self.assertRaises(AssertionError, s.m2, 1)
+        self.assertRaises(AssertionError, s.m2, 10)
+        self.assertEqual(s.m2(5), 25)
+
 
 if __name__ == "__main__":
-    _test(EiffelMetaClass1)
-    _test(EiffelMetaClass2)
+    unittest.main()

@@ -2,8 +2,6 @@ This directory contains a collection of executable Python scripts that are
 useful while building, extending or managing Python.  Some (e.g., dutree or lll)
 are also generally useful UNIX tools.
 
-See also the Demo/scripts directory!
-
 2to3                    Main script for running the 2to3 conversion tool
 analyze_dxp.py          Analyzes the result of sys.getdxp()
 byext.py                Print lines/words/chars stats of files by extension
