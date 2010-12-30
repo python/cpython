@@ -608,6 +608,7 @@ AC_MSG_RESULT($LIBRARY)
 AC_SUBST(LDLIBRARY)
 AC_SUBST(DLLLIBRARY)
 AC_SUBST(BLDLIBRARY)
+AC_SUBST(PY3LIBRARY)
 AC_SUBST(LDLIBRARYDIR)
 AC_SUBST(INSTSONAME)
 AC_SUBST(RUNSHARED)
@@ -737,6 +738,10 @@ if test $enable_shared = "yes"; then
 	  BLDLIBRARY='-Wl,-R,$(LIBDIR) -L. -lpython$(LDVERSION)'
 	  RUNSHARED=LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}
 	  INSTSONAME="$LDLIBRARY".$SOVERSION
+	  if test $with_pydebug == no
+	  then
+	      PY3LIBRARY=libpython3.so
+	  fi
           ;;
     Linux*|GNU*|NetBSD*|FreeBSD*|DragonFly*)
 	  LDLIBRARY='libpython$(LDVERSION).so'
@@ -748,6 +753,11 @@ if test $enable_shared = "yes"; then
 		;;
 	  esac
 	  INSTSONAME="$LDLIBRARY".$SOVERSION
+	  PY3LIBRARY=libpython3.so
+	  if test $with_pydebug == no
+          then
+	      PY3LIBRARY=libpython3.so
+	  fi
 	  ;;
     hp*|HP*)
 	  case `uname -m` in

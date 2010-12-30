@@ -647,6 +647,7 @@ LDVERSION
 RUNSHARED
 INSTSONAME
 LDLIBRARYDIR
+PY3LIBRARY
 BLDLIBRARY
 DLLLIBRARY
 LDLIBRARY
@@ -4710,6 +4711,7 @@ $as_echo "$LIBRARY" >&6; }
 
 
 
+
 LDLIBRARY="$LIBRARY"
 BLDLIBRARY='$(LDLIBRARY)'
 INSTSONAME='$(LDLIBRARY)'
@@ -4906,6 +4908,10 @@ $as_echo "#define Py_ENABLE_SHARED 1" >>confdefs.h
 	  BLDLIBRARY='-Wl,-R,$(LIBDIR) -L. -lpython$(LDVERSION)'
 	  RUNSHARED=LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}
 	  INSTSONAME="$LDLIBRARY".$SOVERSION
+	  if test $with_pydebug == no
+	  then
+	      PY3LIBRARY=libpython3.so
+	  fi
           ;;
     Linux*|GNU*|NetBSD*|FreeBSD*|DragonFly*)
 	  LDLIBRARY='libpython$(LDVERSION).so'
@@ -4917,6 +4923,11 @@ $as_echo "#define Py_ENABLE_SHARED 1" >>confdefs.h
 		;;
 	  esac
 	  INSTSONAME="$LDLIBRARY".$SOVERSION
+	  PY3LIBRARY=libpython3.so
+	  if test $with_pydebug == no
+          then
+	      PY3LIBRARY=libpython3.so
+	  fi
 	  ;;
     hp*|HP*)
 	  case `uname -m` in
