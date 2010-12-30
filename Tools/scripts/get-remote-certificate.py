@@ -8,7 +8,6 @@
 
 import re
 import os
-import ssl
 import sys
 import tempfile
 
@@ -38,7 +37,8 @@ def fetch_server_certificate (host, port):
                 status, output = subproc(r'openssl x509 -in "%s" -out "%s"' %
                                          (tn, tn2))
                 if status != 0:
-                    raise OperationError(status, tsig, output)
+                    raise RuntimeError('OpenSSL x509 failed with status %s and '
+                                       'output: %r' % (status, output))
                 fp = open(tn2, 'rb')
                 data = fp.read()
                 fp.close()
@@ -63,7 +63,8 @@ def fetch_server_certificate (host, port):
             'openssl s_client -connect "%s:%s" -showcerts < /dev/null' %
             (host, port))
     if status != 0:
-        raise OSError(status)
+        raise RuntimeError('OpenSSL connect failed with status %s and '
+                           'output: %r' % (status, output))
     certtext = strip_to_x509_cert(output)
     if not certtext:
         raise ValueError("Invalid response received from server at %s:%s" %
