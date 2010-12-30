@@ -135,7 +135,7 @@ A hash object has the following methods:
 .. method:: hash.digest()
 
    Return the digest of the data passed to the :meth:`update` method so far.
-   This is a bytes array of size :attr:`digest_size` which may contain bytes in
+   This is a bytes object of size :attr:`digest_size` which may contain bytes in
    the whole range from 0 to 255.
 
 
