@@ -202,10 +202,6 @@ $(INSTALLED_PYTHONAPP): install_Python
 installextras: $(srcdir)/Extras.ReadMe.txt $(srcdir)/Extras.install.py
 	$(INSTALL) -d "$(DESTDIR)$(PYTHONAPPSDIR)/Extras"
 	$(INSTALL) $(srcdir)/Extras.ReadMe.txt "$(DESTDIR)$(PYTHONAPPSDIR)/Extras/ReadMe.txt"
-	$(RUNSHARED) $(BUILDPYTHON) $(srcdir)/Extras.install.py $(srcdir)/../Demo \
-		"$(DESTDIR)$(PYTHONAPPSDIR)/Extras/Demo"
-	$(RUNSHARED) $(BUILDPYTHON) $(srcdir)/Extras.install.py $(srcdir)/Demo \
-		"$(DESTDIR)$(PYTHONAPPSDIR)/Extras/Demo.Mac"
 
 
 checkapplepython: $(srcdir)/Tools/fixapplepython23.py

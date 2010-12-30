@@ -79,6 +79,13 @@ Build
 - Issue #10679: The "idle", "pydoc" and "2to3" scripts are now installed with
   a version-specific suffix on "make altinstall".
 
+Tools/Demos
+-----------
+
+- Issue #7962: The Demo directory is gone.  Most of the old and unmaintained
+  demos have been removed, others integrated in documentation or a new
+  Tools/demo subdirectory.
+
 
 What's New in Python 3.2 Beta 2?
 ================================

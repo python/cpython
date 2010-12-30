@@ -188,8 +188,8 @@ frameworkinstall is composed of a couple of sub-targets that install the
 framework itself, the Mac subtree, the applications and the unix tools.
 
 There is an extra target frameworkinstallextras that is not part of the
-normal frameworkinstall which installs the Demo and Tools directories
-into "/Applications/MacPython <VERSION>", this is useful for binary
+normal frameworkinstall which installs the Tools directory into
+"/Applications/MacPython <VERSION>", this is useful for binary
 distributions.
 
 What do all these programs do?

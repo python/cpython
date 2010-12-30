@@ -154,7 +154,7 @@ CONFIG_ARGS=	@CONFIG_ARGS@
 SRCDIRS= 	@SRCDIRS@
 
 # Other subdirectories
-SUBDIRSTOO=	Include Lib Misc Demo
+SUBDIRSTOO=	Include Lib Misc
 
 # Files and directories to be distributed
 CONFIGFILES=	configure configure.in acconfig.h pyconfig.h.in Makefile.pre.in
@@ -1155,7 +1155,7 @@ frameworkinstallunixtools:
 frameworkaltinstallunixtools:
 	cd Mac && $(MAKE) altinstallunixtools DESTDIR="$(DESTDIR)"
 
-# This installs the Demos and Tools into the applications directory.
+# This installs the Tools into the applications directory.
 # It is not part of a normal frameworkinstall
 frameworkinstallextras:
 	cd Mac && $(MAKE) installextras DESTDIR="$(DESTDIR)"

@@ -2268,7 +2268,7 @@ There can be a :file:`turtle.cfg` file in the directory where :mod:`turtle` is
 stored and an additional one in the current working directory.  The latter will
 override the settings of the first one.
 
-The :file:`Demo/turtle` directory contains a :file:`turtle.cfg` file.  You can
+The :file:`Lib/turtledemo` directory contains a :file:`turtle.cfg` file.  You can
 study it as an example and see its effects when running the demos (preferably
 not from within the demo-viewer).
 
@@ -2400,8 +2400,7 @@ Changes since Python 3.0
   strings and numbers respectively.
 
 - Two example scripts :file:`tdemo_nim.py` and :file:`tdemo_round_dance.py`
-  have been added to the Demo directory (source distribution only). As usual
-  they can be viewed and executed within the demo viewer :file:`turtleDemo.py`.
+  have been added to the :file:`Lib/turtledemo` directory.
 
 
 .. doctest::

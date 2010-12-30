@@ -84,11 +84,7 @@ Tix Widgets
 -----------
 
 `Tix <http://tix.sourceforge.net/dist/current/man/html/TixCmd/TixIntro.htm>`_
-introduces over 40 widget classes to the :mod:`tkinter` repertoire.  There is a
-demo of all the :mod:`tkinter.tix` widgets in the :file:`Demo/tix` directory of
-the standard distribution.
-
-.. The Python sample code is still being added to Python, hence commented out
+introduces over 40 widget classes to the :mod:`tkinter` repertoire.
 
 
 Basic Widgets
