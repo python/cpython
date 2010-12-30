@@ -125,8 +125,10 @@ class TextTestRunner(object):
     """
     resultclass = TextTestResult
 
-    def __init__(self, stream=sys.stderr, descriptions=True, verbosity=1,
+    def __init__(self, stream=None, descriptions=True, verbosity=1,
                  failfast=False, buffer=False, resultclass=None, warnings=None):
+        if stream is None:
+            stream = sys.stderr
         self.stream = _WritelnDecorator(stream)
         self.descriptions = descriptions
         self.verbosity = verbosity

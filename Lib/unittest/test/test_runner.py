@@ -299,3 +299,20 @@ class Test_TextTestRunner(unittest.TestCase):
             self.assertEqual(out.count(msg), 3)
         for msg in [ae_msg, at_msg]:
             self.assertEqual(out.count(msg), 1)
+
+    def testStdErrLookedUpAtInstantiationTime(self):
+        # see issue 10786
+        old_stderr = sys.stderr
+        f = io.StringIO()
+        sys.stderr = f
+        try:
+            runner = unittest.TextTestRunner()
+            self.assertTrue(runner.stream.stream is f)
+        finally:
+            sys.stderr = old_stderr
+
+    def testSpecifiedStreamUsed(self):
+        # see issue 10786
+        f = io.StringIO()
+        runner = unittest.TextTestRunner(f)
+        self.assertTrue(runner.stream.stream is f)

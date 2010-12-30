@@ -20,6 +20,10 @@ Core and Builtins
 Library
 -------
 
+- Issue 10786: unittest.TextTestRunner default stream no longer bound at
+  import time. `sys.stderr` now looked up at instantiation time. Fix contributed
+  by Mark Roddy.
+
 - Issue 10753 - Characters ';','=' and ',' in the PATH_INFO environment
   variable won't be quoted when the URI is constructed by the wsgiref.util 's
   request_uri method. According to RFC 3986, these characters can be a part of
