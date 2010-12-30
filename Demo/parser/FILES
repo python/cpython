@@ -1,6 +1,0 @@
-Demo/parser
-Doc/libparser.tex
-Lib/AST.py
-Lib/symbol.py
-Lib/token.py
-Modules/parsermodule.c
