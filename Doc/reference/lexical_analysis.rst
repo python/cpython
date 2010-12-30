@@ -292,9 +292,11 @@ Unicode Character Database as included in the :mod:`unicodedata` module.
 Identifiers are unlimited in length.  Case is significant.
 
 .. productionlist::
-   identifier: `id_start` `id_continue`*
+   identifier: `xid_start` `xid_continue`*
    id_start: <all characters in general categories Lu, Ll, Lt, Lm, Lo, Nl, the underscore, and characters with the Other_ID_Start property>
    id_continue: <all characters in `id_start`, plus characters in the categories Mn, Mc, Nd, Pc and others with the Other_ID_Continue property>
+   xid_start: <all characters in `id_start` whose NFKC normalization is in "id_start xid_continue*">
+   xid_continue: <all characters in `id_continue` whose NFKC normalization is in "id_continue*">
 
 The Unicode category codes mentioned above stand for:
 
@@ -308,6 +310,8 @@ The Unicode category codes mentioned above stand for:
 * *Mc* - spacing combining marks
 * *Nd* - decimal numbers
 * *Pc* - connector punctuations
+* *Other_ID_Start* - explicit list of characters in `PropList.txt <http://unicode.org/Public/UNIDATA/PropList.txt>`_ to support backwards compatibility
+* *Other_ID_Continue* - likewise
 
 All identifiers are converted into the normal form NFKC while parsing; comparison
 of identifiers is based on NFKC.
