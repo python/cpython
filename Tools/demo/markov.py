@@ -1,4 +1,8 @@
-#! /usr/bin/env python3
+#!/usr/bin/env python3
+
+"""
+Markov chain simulation of words or characters.
+"""
 
 class Markov:
     def __init__(self, histsize, choice):

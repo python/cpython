@@ -1,12 +1,12 @@
-#! /usr/bin/env python3
+#!/usr/bin/env python3
 
-"""N queens problem.
+"""
+N queens problem.
 
 The (well-known) problem is due to Niklaus Wirth.
 
 This solution is inspired by Dijkstra (Structured Programming).  It is
 a classic recursive backtracking approach.
-
 """
 
 N = 8                                   # Default; command line overrides

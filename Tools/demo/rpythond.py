@@ -1,9 +1,12 @@
-#! /usr/bin/env python3
+#!/usr/bin/env python3
 
-# Remote python server.
-# Execute Python commands remotely and send output back.
-# WARNING: This version has a gaping security hole -- it accepts requests
-# from any host on the Internet!
+"""
+Remote python server.
+Execute Python commands remotely and send output back.
+
+WARNING: This version has a gaping security hole -- it accepts requests
+from any host on the Internet!
+"""
 
 import sys
 from socket import socket, AF_INET, SOCK_STREAM

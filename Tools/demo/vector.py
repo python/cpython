@@ -1,7 +1,13 @@
-class Vec:
-    """ A simple vector class
+#!/usr/bin/env python3
 
-    Instances of the Vec class  can be constructed from numbers
+"""
+A demonstration of classes and their special methods in Python.
+"""
+
+class Vec:
+    """A simple vector class.
+
+    Instances of the Vec class can be constructed from numbers
 
     >>> a = Vec(1, 2, 3)
     >>> b = Vec(3, 2, 1)
