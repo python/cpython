@@ -166,6 +166,7 @@ DIST=		$(DISTFILES) $(DISTDIRS)
 LIBRARY=	@LIBRARY@
 LDLIBRARY=      @LDLIBRARY@
 BLDLIBRARY=     @BLDLIBRARY@
+PY3LIBRARY=     @PY3LIBRARY@
 DLLLIBRARY=	@DLLLIBRARY@
 LDLIBRARYDIR=   @LDLIBRARYDIR@
 INSTSONAME=	@INSTSONAME@
@@ -420,7 +421,7 @@ coverage:
 
 
 # Build the interpreter
-$(BUILDPYTHON):	Modules/python.o $(LIBRARY) $(LDLIBRARY)
+$(BUILDPYTHON):	Modules/python.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY)
 	$(LINKCC) $(PY_LDFLAGS) $(LINKFORSHARED) -o $@ Modules/python.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
 
 platform: $(BUILDPYTHON)
@@ -453,6 +454,9 @@ libpython$(LDVERSION).so: $(LIBRARY_OBJS)
 	else \
 		$(BLDSHARED) -o $@ $(LIBRARY_OBJS) $(MODLIBS) $(SHLIBS) $(LIBC) $(LIBM) $(LDLAST); \
 	fi
+
+libpython3.so:	libpython$(LDVERSION).so
+	$(BLDSHARED) -o $@ -Wl,-hl$@ $^
 
 libpython$(VERSION).dylib: $(LIBRARY_OBJS)
 	 $(CC) -dynamiclib -Wl,-single_module $(PY_LDFLAGS) -undefined dynamic_lookup -Wl,-install_name,$(prefix)/lib/libpython$(VERSION).dylib -Wl,-compatibility_version,$(VERSION) -Wl,-current_version,$(VERSION) -o $@ $(LIBRARY_OBJS) $(SHLIBS) $(LIBC) $(LIBM) $(LDLAST); \
@@ -850,6 +854,9 @@ altbininstall: $(BUILDPYTHON)
 			if test $(LDLIBRARY) != $(INSTSONAME); then \
 				(cd $(DESTDIR)$(LIBDIR); $(LN) -sf $(INSTSONAME) $(LDLIBRARY)) \
 			fi \
+		fi; \
+		if test -n "$(PY3LIBRARY)"; then \
+			$(INSTALL_SHARED) $(PY3LIBRARY) $(DESTDIR)$(LIBDIR)/$(PY3LIBRARY); \
 		fi; \
 	else	true; \
 	fi
