@@ -4,8 +4,7 @@
 # Execute Python commands remotely and send output back.
 
 import sys
-import string
-from socket import *
+from socket import socket, AF_INET, SOCK_STREAM, SHUT_WR
 
 PORT = 4127
 BUFSIZE = 1024
@@ -16,20 +15,22 @@ def main():
         sys.exit(2)
     host = sys.argv[1]
     port = PORT
-    i = string.find(host, ':')
+    i = host.find(':')
     if i >= 0:
-        port = string.atoi(port[i+1:])
+        port = int(port[i+1:])
         host = host[:i]
-    command = string.join(sys.argv[2:])
+    command = ' '.join(sys.argv[2:])
     s = socket(AF_INET, SOCK_STREAM)
     s.connect((host, port))
-    s.send(command)
-    s.shutdown(1)
-    reply = ''
-    while 1:
+    s.send(command.encode())
+    s.shutdown(SHUT_WR)
+    reply = b''
+    while True:
         data = s.recv(BUFSIZE)
-        if not data: break
-        reply = reply + data
-    print(reply, end=' ')
+        if not data:
+            break
+        reply += data
+    print(reply.decode(), end=' ')
+    s.close()
 
 main()
