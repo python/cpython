@@ -5,7 +5,7 @@ buildbot        Batchfiles for running on Windows buildslaves.
 
 ccbench         A Python concurrency benchmark.
 
-framer          Generate boilerplate code for C extension types.
+demo            Several Python programming demos.
 
 freeze          Create a stand-alone executable from a Python program.
 
@@ -21,6 +21,8 @@ iobench         Benchmark for the new Python I/O system.
 
 msi             Support for packaging Python as an MSI package on Windows.
 
+parser          Un-parsing tool to generate code from an AST.
+
 pybench         Comprehensive Python benchmarking suite.
 
 pynche          A Tkinter-based color editor.
@@ -30,7 +32,7 @@ scripts         A number of useful single-file programs, e.g. tabnanny.py
                 tabs and spaces, and 2to3, which converts Python 2 code
                 to Python 3 code.
 
-ssl             Currently, a tool to fetch server certificates.
+test2to3        A demonstration of how to use 2to3 transparently in setup.py.
 
 unicode         Tools used to generate unicode database files for
                 Python 2.0 (by Fredrik Lundh).
