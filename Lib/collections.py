@@ -171,13 +171,19 @@ class OrderedDict(dict, MutableMapping):
         size += sizeof(self.__root) * n         # proxy objects
         return size
 
-    setdefault = MutableMapping.setdefault
     update = MutableMapping.update
     pop = MutableMapping.pop
     keys = MutableMapping.keys
     values = MutableMapping.values
     items = MutableMapping.items
     __ne__ = MutableMapping.__ne__
+
+    def setdefault(self, key, default=None):
+        'OD.setdefault(k[,d]) -> OD.get(k,d), also set OD[k]=d if k not in OD'
+        if key in self:
+            return self[key]
+        self[key] = default
+        return default
 
     @_recursive_repr()
     def __repr__(self):

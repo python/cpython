@@ -976,6 +976,12 @@ class TestOrderedDict(unittest.TestCase):
         # make sure 'x' is added to the end
         self.assertEqual(list(od.items())[-1], ('x', 10))
 
+        # make sure setdefault still works when __missing__ is defined
+        class Missing(OrderedDict):
+            def __missing__(self, key):
+                return 0
+        self.assertEqual(Missing().setdefault(5, 9), 9)
+
     def test_reinsert(self):
         # Given insert a, insert b, delete a, re-insert a,
         # verify that a is now later than b.
