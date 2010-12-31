@@ -132,7 +132,7 @@ The Python source is copyrighted, but you can freely use and copy it
 as long as you don't change or remove the copyright notice:
 
 ----------------------------------------------------------------------
-Copyright (c) 2000-2010 Python Software Foundation.
+Copyright (c) 2000-2011 Python Software Foundation.
 All rights reserved.
 
 Copyright (c) 2000 BeOpen.com.
