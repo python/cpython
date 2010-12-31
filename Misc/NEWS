@@ -20,6 +20,9 @@ Core and Builtins
 Library
 -------
 
+- Fix collections.OrderedDict.setdefault() so that it works in
+  subclasses that define __missing__().
+
 - Issue 10786: unittest.TextTestRunner default stream no longer bound at
   import time. `sys.stderr` now looked up at instantiation time. Fix contributed
   by Mark Roddy.
