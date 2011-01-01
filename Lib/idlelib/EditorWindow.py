@@ -450,7 +450,11 @@ class EditorWindow(object):
 
     def python_docs(self, event=None):
         if sys.platform[:3] == 'win':
-            os.startfile(self.help_url)
+            try:
+                os.startfile(self.help_url)
+            except WindowsError as why:
+                tkMessageBox.showerror(title='Document Start Failure',
+                    message=str(why), parent=self.text)
         else:
             webbrowser.open(self.help_url)
         return "break"
@@ -753,9 +757,13 @@ class EditorWindow(object):
         "Create a callback with the helpfile value frozen at definition time"
         def display_extra_help(helpfile=helpfile):
             if not helpfile.startswith(('www', 'http')):
-                url = os.path.normpath(helpfile)
+                helpfile = os.path.normpath(helpfile)
             if sys.platform[:3] == 'win':
-                os.startfile(helpfile)
+                try:
+                    os.startfile(helpfile)
+                except WindowsError as why:
+                    tkMessageBox.showerror(title='Document Start Failure',
+                        message=str(why), parent=self.text)
             else:
                 webbrowser.open(helpfile)
         return display_extra_help
