@@ -22,7 +22,7 @@ from reprlib import recursive_repr as _recursive_repr
 class _Link(object):
     __slots__ = 'prev', 'next', 'key', '__weakref__'
 
-class OrderedDict(dict, MutableMapping):
+class OrderedDict(dict):
     'Dictionary that remembers insertion order'
     # An inherited dict maps keys to values.
     # The inherited dict provides __getitem__, __len__, __contains__, and get.
@@ -172,11 +172,21 @@ class OrderedDict(dict, MutableMapping):
         return size
 
     update = __update = MutableMapping.update
-    pop = MutableMapping.pop
     keys = MutableMapping.keys
     values = MutableMapping.values
     items = MutableMapping.items
     __ne__ = MutableMapping.__ne__
+
+    __marker = object()
+
+    def pop(self, key, default=__marker):
+        if key in self:
+            result = self[key]
+            del self[key]
+            return result
+        if default is self.__marker:
+            raise KeyError(key)
+        return default
 
     def setdefault(self, key, default=None):
         'OD.setdefault(k[,d]) -> OD.get(k,d), also set OD[k]=d if k not in OD'
