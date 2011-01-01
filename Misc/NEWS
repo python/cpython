@@ -20,27 +20,27 @@ Core and Builtins
 Library
 -------
 
-- Issue 6285: IDLE no longer crashes on missing help file; patch by Scott David
-  Daniels.
+- Issue #6285: IDLE no longer crashes on missing help file; patch by Scott
+  David Daniels.
 
 - Fix collections.OrderedDict.setdefault() so that it works in
   subclasses that define __missing__().
 
-- Issue 10786: unittest.TextTestRunner default stream no longer bound at
-  import time. `sys.stderr` now looked up at instantiation time. Fix contributed
-  by Mark Roddy.
+- Issue #10786: unittest.TextTestRunner default stream no longer bound at
+  import time. `sys.stderr` now looked up at instantiation time.  Fix
+  contributed by Mark Roddy.
 
-- Issue 10753 - Characters ';','=' and ',' in the PATH_INFO environment
+- Issue #10753: Characters ';','=' and ',' in the PATH_INFO environment
   variable won't be quoted when the URI is constructed by the wsgiref.util 's
   request_uri method. According to RFC 3986, these characters can be a part of
   params in PATH component of URI and need not be quoted.
 
-- Issue 10738: Fix webbrowser.Opera.raise_opts
+- Issue #10738: Fix webbrowser.Opera.raise_opts.
 
-- Issue 9824: SimpleCookie now encodes , and ; in values to cater to how
+- Issue #9824: SimpleCookie now encodes , and ; in values to cater to how
   browsers actually parse cookies.
 
-- Issue 9333: os.symlink now available regardless of user privileges.
+- Issue #9333: os.symlink now available regardless of user privileges.
   The function now raises OSError on Windows >=6.0 when the user is unable
   to create symbolic links. XP and 2003 still raise NotImplementedError.
 
