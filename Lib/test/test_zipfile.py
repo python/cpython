@@ -490,16 +490,11 @@ class TestsWithSourceFile(unittest.TestCase):
             self.assertTrue(zipfp2.fp is None, 'zipfp is not closed')
 
     def test_unicode_filenames(self):
-        if __name__ == '__main__':
-            myfile = sys.argv[0]
-        else:
-            myfile = __file__
-
-        mydir = os.path.dirname(myfile) or os.curdir
-        fname = os.path.join(mydir, 'zip_cp437_header.zip')
-
+        # bug #10801
+        fname = findfile('zip_cp437_header.zip')
         with zipfile.ZipFile(fname) as zipfp:
-            zipfp.extractall()
+            for name in zipfp.namelist():
+                zipfp.open(name).close()
 
     def tearDown(self):
         unlink(TESTFN)
