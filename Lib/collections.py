@@ -52,7 +52,7 @@ class OrderedDict(dict, MutableMapping):
             self.__root = root = _proxy(self.__hardroot)
             root.prev = root.next = root
             self.__map = {}
-        self.update(*args, **kwds)
+        self.__update(*args, **kwds)
 
     def __setitem__(self, key, value,
                     dict_setitem=dict.__setitem__, proxy=_proxy, Link=_Link):
@@ -171,7 +171,7 @@ class OrderedDict(dict, MutableMapping):
         size += sizeof(self.__root) * n         # proxy objects
         return size
 
-    update = MutableMapping.update
+    update = __update = MutableMapping.update
     pop = MutableMapping.pop
     keys = MutableMapping.keys
     values = MutableMapping.values
