@@ -1012,6 +1012,14 @@ class TestOrderedDict(unittest.TestCase):
         od = OrderedDict(**d)
         self.assertGreater(sys.getsizeof(od), sys.getsizeof(d))
 
+    def test_override_update(self):
+        # Verify that subclasses can override update() without breaking __init__()
+        class MyOD(OrderedDict):
+            def update(self, *args, **kwds):
+                raise Exception()
+        items = [('a', 1), ('c', 3), ('b', 2)]
+        self.assertEqual(list(MyOD(items).items()), items)
+
 class GeneralMappingTests(mapping_tests.BasicTestMappingProtocol):
     type2test = OrderedDict
 
