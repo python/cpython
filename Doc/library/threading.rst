@@ -365,7 +365,7 @@ and may vary across implementations.
 All methods are executed atomically.
 
 
-.. method:: Lock.acquire(blocking=True)
+.. method:: Lock.acquire([blocking])
 
    Acquire a lock, blocking or non-blocking.
 
