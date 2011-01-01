@@ -6,6 +6,7 @@ except ImportError:
 
 import io
 import os
+import sys
 import imp
 import time
 import shutil
@@ -23,6 +24,7 @@ from test.support import TESTFN, run_unittest, findfile, unlink
 TESTFN2 = TESTFN + "2"
 TESTFNDIR = TESTFN + "d"
 FIXEDTEST_SIZE = 1000
+DATAFILES_DIR = 'zipfile_datafiles'
 
 SMALL_TEST_DATA = [('_ziptest1', '1q2w3e4r5t'),
                    ('ziptest2dir/_ziptest2', 'qawsedrftg'),
@@ -486,6 +488,18 @@ class TestsWithSourceFile(unittest.TestCase):
                 raise zipfile.BadZipFile()
         except zipfile.BadZipFile:
             self.assertTrue(zipfp2.fp is None, 'zipfp is not closed')
+
+    def test_unicode_filenames(self):
+        if __name__ == '__main__':
+            myfile = sys.argv[0]
+        else:
+            myfile = __file__
+
+        mydir = os.path.dirname(myfile) or os.curdir
+        fname = os.path.join(mydir, 'zip_cp437_header.zip')
+
+        with zipfile.ZipFile(fname) as zipfp:
+            zipfp.extractall()
 
     def tearDown(self):
         unlink(TESTFN)
