@@ -20,6 +20,9 @@ Core and Builtins
 Library
 -------
 
+- Issue 6285: IDLE no longer crashes on missing help file; patch by Scott David
+  Daniels.
+
 - Fix collections.OrderedDict.setdefault() so that it works in
   subclasses that define __missing__().
 
