@@ -572,6 +572,10 @@ time_asctime(PyObject *self, PyObject *args)
     } else if (!gettmarg(tup, &buf))
         return NULL;
     p = asctime(&buf);
+    if (p == NULL) {
+        PyErr_SetString(PyExc_ValueError, "invalid time");
+        return NULL;
+    }
     if (p[24] == '\n')
         p[24] = '\0';
     return PyString_FromString(p);
