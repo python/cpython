@@ -25,6 +25,15 @@ files, buffer allocation on receive operations is automatic, and buffer length
 is implicit on send operations.
 
 
+.. seealso::
+
+   Module :mod:`socketserver`
+      Classes that simplify writing network servers.
+
+   Module :mod:`ssl`
+      A TLS/SSL wrapper for socket objects.
+
+
 Socket families
 ---------------
 
@@ -515,12 +524,6 @@ The module :mod:`socket` exports the following constants and functions:
 
    This is a Python type object that represents the socket object type. It is the
    same as ``type(socket(...))``.
-
-
-.. seealso::
-
-   Module :mod:`socketserver`
-      Classes that simplify writing network servers.
 
 
 .. _socket-objects:
