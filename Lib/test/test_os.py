@@ -80,16 +80,18 @@ class TemporaryFileTests(unittest.TestCase):
     def test_tempnam(self):
         if not hasattr(os, "tempnam"):
             return
-        warnings.filterwarnings("ignore", "tempnam", RuntimeWarning,
-                                r"test_os$")
-        self.check_tempfile(os.tempnam())
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "tempnam", RuntimeWarning,
+                                    r"test_os$")
+            warnings.filterwarnings("ignore", "tempnam", DeprecationWarning)
+            self.check_tempfile(os.tempnam())
 
-        name = os.tempnam(test_support.TESTFN)
-        self.check_tempfile(name)
+            name = os.tempnam(test_support.TESTFN)
+            self.check_tempfile(name)
 
-        name = os.tempnam(test_support.TESTFN, "pfx")
-        self.assertTrue(os.path.basename(name)[:3] == "pfx")
-        self.check_tempfile(name)
+            name = os.tempnam(test_support.TESTFN, "pfx")
+            self.assertTrue(os.path.basename(name)[:3] == "pfx")
+            self.check_tempfile(name)
 
     def test_tmpfile(self):
         if not hasattr(os, "tmpfile"):
@@ -108,63 +110,69 @@ class TemporaryFileTests(unittest.TestCase):
         # test that a subsequent call to os.tmpfile() raises the same error. If
         # it doesn't, assume we're on XP or below and the user running the test
         # has administrative privileges, and proceed with the test as normal.
-        if sys.platform == 'win32':
-            name = '\\python_test_os_test_tmpfile.txt'
-            if os.path.exists(name):
-                os.remove(name)
-            try:
-                fp = open(name, 'w')
-            except IOError, first:
-                # open() failed, assert tmpfile() fails in the same way.
-                # Although open() raises an IOError and os.tmpfile() raises an
-                # OSError(), 'args' will be (13, 'Permission denied') in both
-                # cases.
-                try:
-                    fp = os.tmpfile()
-                except OSError, second:
-                    self.assertEqual(first.args, second.args)
-                else:
-                    self.fail("expected os.tmpfile() to raise OSError")
-                return
-            else:
-                # open() worked, therefore, tmpfile() should work.  Close our
-                # dummy file and proceed with the test as normal.
-                fp.close()
-                os.remove(name)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "tmpfile", DeprecationWarning)
 
-        fp = os.tmpfile()
-        fp.write("foobar")
-        fp.seek(0,0)
-        s = fp.read()
-        fp.close()
-        self.assertTrue(s == "foobar")
+            if sys.platform == 'win32':
+                name = '\\python_test_os_test_tmpfile.txt'
+                if os.path.exists(name):
+                    os.remove(name)
+                try:
+                    fp = open(name, 'w')
+                except IOError, first:
+                    # open() failed, assert tmpfile() fails in the same way.
+                    # Although open() raises an IOError and os.tmpfile() raises an
+                    # OSError(), 'args' will be (13, 'Permission denied') in both
+                    # cases.
+                    try:
+                        fp = os.tmpfile()
+                    except OSError, second:
+                        self.assertEqual(first.args, second.args)
+                    else:
+                        self.fail("expected os.tmpfile() to raise OSError")
+                    return
+                else:
+                    # open() worked, therefore, tmpfile() should work.  Close our
+                    # dummy file and proceed with the test as normal.
+                    fp.close()
+                    os.remove(name)
+
+            fp = os.tmpfile()
+            fp.write("foobar")
+            fp.seek(0,0)
+            s = fp.read()
+            fp.close()
+            self.assertTrue(s == "foobar")
 
     def test_tmpnam(self):
         if not hasattr(os, "tmpnam"):
             return
-        warnings.filterwarnings("ignore", "tmpnam", RuntimeWarning,
-                                r"test_os$")
-        name = os.tmpnam()
-        if sys.platform in ("win32",):
-            # The Windows tmpnam() seems useless.  From the MS docs:
-            #
-            #     The character string that tmpnam creates consists of
-            #     the path prefix, defined by the entry P_tmpdir in the
-            #     file STDIO.H, followed by a sequence consisting of the
-            #     digit characters '0' through '9'; the numerical value
-            #     of this string is in the range 1 - 65,535.  Changing the
-            #     definitions of L_tmpnam or P_tmpdir in STDIO.H does not
-            #     change the operation of tmpnam.
-            #
-            # The really bizarre part is that, at least under MSVC6,
-            # P_tmpdir is "\\".  That is, the path returned refers to
-            # the root of the current drive.  That's a terrible place to
-            # put temp files, and, depending on privileges, the user
-            # may not even be able to open a file in the root directory.
-            self.assertFalse(os.path.exists(name),
-                        "file already exists for temporary file")
-        else:
-            self.check_tempfile(name)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "tmpnam", RuntimeWarning,
+                                    r"test_os$")
+            warnings.filterwarnings("ignore", "tmpnam", DeprecationWarning)
+
+            name = os.tmpnam()
+            if sys.platform in ("win32",):
+                # The Windows tmpnam() seems useless.  From the MS docs:
+                #
+                #     The character string that tmpnam creates consists of
+                #     the path prefix, defined by the entry P_tmpdir in the
+                #     file STDIO.H, followed by a sequence consisting of the
+                #     digit characters '0' through '9'; the numerical value
+                #     of this string is in the range 1 - 65,535.  Changing the
+                #     definitions of L_tmpnam or P_tmpdir in STDIO.H does not
+                #     change the operation of tmpnam.
+                #
+                # The really bizarre part is that, at least under MSVC6,
+                # P_tmpdir is "\\".  That is, the path returned refers to
+                # the root of the current drive.  That's a terrible place to
+                # put temp files, and, depending on privileges, the user
+                # may not even be able to open a file in the root directory.
+                self.assertFalse(os.path.exists(name),
+                            "file already exists for temporary file")
+            else:
+                self.check_tempfile(name)
 
 # Test attributes on return values from os.*stat* family.
 class StatAttributeTests(unittest.TestCase):

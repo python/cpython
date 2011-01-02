@@ -7295,6 +7295,10 @@ posix_tempnam(PyObject *self, PyObject *args)
                    "tempnam is a potential security risk to your program") < 0)
         return NULL;
 
+    if (PyErr_WarnPy3k("tempnam has been removed in 3.x; "
+                       "use the tempfile module", 1) < 0)
+        return NULL;
+
 #ifdef MS_WINDOWS
     name = _tempnam(dir, pfx);
 #else
@@ -7319,6 +7323,10 @@ posix_tmpfile(PyObject *self, PyObject *noargs)
 {
     FILE *fp;
 
+    if (PyErr_WarnPy3k("tmpfile has been removed in 3.x; "
+                       "use the tempfile module", 1) < 0)
+        return NULL;
+
     fp = tmpfile();
     if (fp == NULL)
     return posix_error();
@@ -7340,6 +7348,10 @@ posix_tmpnam(PyObject *self, PyObject *noargs)
 
     if (PyErr_Warn(PyExc_RuntimeWarning,
                    "tmpnam is a potential security risk to your program") < 0)
+        return NULL;
+
+    if (PyErr_WarnPy3k("tmpnam has been removed in 3.x; "
+                       "use the tempfile module", 1) < 0)
         return NULL;
 
 #ifdef USE_TMPNAM_R
