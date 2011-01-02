@@ -22,6 +22,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4662: os.tempnam(), os.tmpfile() and os.tmpnam() now raise a py3k
+  DeprecationWarning.
+
 - Subclasses of collections.OrderedDict now work correctly with __missing__.
 
 - Issue 10753 - Characters ';','=' and ',' in the PATH_INFO environment
