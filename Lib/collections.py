@@ -366,16 +366,16 @@ class Counter(dict):
     or multiset.  Elements are stored as dictionary keys and their counts
     are stored as dictionary values.
 
-    >>> c = Counter('abracadabra')      # count elements from a string
+    >>> c = Counter('abcdeabcdabcaba')  # count elements from a string
 
     >>> c.most_common(3)                # three most common elements
-    [('a', 5), ('r', 2), ('b', 2)]
+    [('a', 5), ('b', 4), ('c', 3)]
     >>> sorted(c)                       # list all unique elements
-    ['a', 'b', 'c', 'd', 'r']
+    ['a', 'b', 'c', 'd', 'e']
     >>> ''.join(sorted(c.elements()))   # list elements with repetitions
-    'aaaaabbcdrr'
+    'aaaaabbbbcccdde'
     >>> sum(c.values())                 # total of all counts
-    11
+    15
 
     >>> c['a']                          # count of letter 'a'
     5
@@ -383,8 +383,8 @@ class Counter(dict):
     ...     c[elem] += 1                # by adding 1 to each element's count
     >>> c['a']                          # now there are seven 'a'
     7
-    >>> del c['r']                      # remove all 'r'
-    >>> c['r']                          # now there are zero 'r'
+    >>> del c['b']                      # remove all 'b'
+    >>> c['b']                          # now there are zero 'b'
     0
 
     >>> d = Counter('simsalabim')       # make another counter
@@ -423,6 +423,7 @@ class Counter(dict):
         >>> c = Counter(a=4, b=2)                   # a new counter from keyword args
 
         '''
+        super().__init__()
         self.update(iterable, **kwds)
 
     def __missing__(self, key):
@@ -434,8 +435,8 @@ class Counter(dict):
         '''List the n most common elements and their counts from the most
         common to the least.  If n is None, then list all element counts.
 
-        >>> Counter('abracadabra').most_common(3)
-        [('a', 5), ('r', 2), ('b', 2)]
+        >>> Counter('abcdeabcdabcaba').most_common(3)
+        [('a', 5), ('b', 4), ('c', 3)]
 
         '''
         # Emulate Bag.sortedByCount from Smalltalk
@@ -501,7 +502,7 @@ class Counter(dict):
                     for elem, count in iterable.items():
                         self[elem] = count + self_get(elem, 0)
                 else:
-                    dict.update(self, iterable) # fast path when counter is empty
+                    super().update(iterable) # fast path when counter is empty
             else:
                 _count_elements(self, iterable)
         if kwds:
@@ -541,7 +542,7 @@ class Counter(dict):
     def __delitem__(self, elem):
         'Like dict.__delitem__() but does not raise KeyError for missing values.'
         if elem in self:
-            dict.__delitem__(self, elem)
+            super().__delitem__(elem)
 
     def __repr__(self):
         if not self:
