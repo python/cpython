@@ -1227,7 +1227,7 @@ Core and Builtins
   with a non-empty format string. This is an effort to future-proof user
   code. If a derived class does not currently implement __format__ but later
   adds its own __format__, it would most likely break user code that had
-  supplied a format string. This will be changed to a DeprecationWaring in
+  supplied a format string. This will be changed to a DeprecationWarning in
   Python 3.3 and it will be an error in Python 3.4.
 
 - Issue #8268: Old-style classes (not just instances) now support weak
