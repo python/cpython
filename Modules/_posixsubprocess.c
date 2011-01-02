@@ -415,27 +415,39 @@ subprocess_cloexec_pipe(PyObject *self, PyObject *noargs)
     Py_BEGIN_ALLOW_THREADS
     res = pipe2(fds, O_CLOEXEC);
     Py_END_ALLOW_THREADS
-#else
-    /* We hold the GIL which offers some protection from other code calling
-     * fork() before the CLOEXEC flags have been set but we can't guarantee
-     * anything without pipe2(). */
-    long oldflags;
+    if (res != 0 && errno == ENOSYS)
+    {
+        if (PyErr_WarnEx(
+                PyExc_RuntimeWarning,
+                "pipe2 set errno ENOSYS; falling "
+                "back to non-atomic pipe+fcntl.", 1) != 0) {
+            return NULL;
+        }
+        {
+#endif
+        /* We hold the GIL which offers some protection from other code calling
+         * fork() before the CLOEXEC flags have been set but we can't guarantee
+         * anything without pipe2(). */
+        long oldflags;
 
-    res = pipe(fds);
+        res = pipe(fds);
 
-    if (res == 0) {
-        oldflags = fcntl(fds[0], F_GETFD, 0);
-        if (oldflags < 0) res = oldflags;
+        if (res == 0) {
+            oldflags = fcntl(fds[0], F_GETFD, 0);
+            if (oldflags < 0) res = oldflags;
+        }
+        if (res == 0)
+            res = fcntl(fds[0], F_SETFD, oldflags | FD_CLOEXEC);
+
+        if (res == 0) {
+            oldflags = fcntl(fds[1], F_GETFD, 0);
+            if (oldflags < 0) res = oldflags;
+        }
+        if (res == 0)
+            res = fcntl(fds[1], F_SETFD, oldflags | FD_CLOEXEC);
+#ifdef HAVE_PIPE2
+        }
     }
-    if (res == 0)
-        res = fcntl(fds[0], F_SETFD, oldflags | FD_CLOEXEC);
-
-    if (res == 0) {
-        oldflags = fcntl(fds[1], F_GETFD, 0);
-        if (oldflags < 0) res = oldflags;
-    }
-    if (res == 0)
-        res = fcntl(fds[1], F_SETFD, oldflags | FD_CLOEXEC);
 #endif
     if (res != 0)
         return PyErr_SetFromErrno(PyExc_OSError);
