@@ -43,7 +43,7 @@ def _recursive_repr(user_function):
 ### OrderedDict
 ################################################################################
 
-class OrderedDict(dict, MutableMapping):
+class OrderedDict(dict):
     'Dictionary that remembers insertion order'
     # An inherited dict maps keys to values.
     # The inherited dict provides __getitem__, __len__, __contains__, and get.
@@ -71,7 +71,7 @@ class OrderedDict(dict, MutableMapping):
             NEXT = 1
             root[PREV] = root[NEXT] = root
             self.__map = {}
-        self.update(*args, **kwds)
+        self.__update(*args, **kwds)
 
     def __setitem__(self, key, value, PREV=0, NEXT=1, dict_setitem=dict.__setitem__):
         'od.__setitem__(i, y) <==> od[i]=y'
@@ -134,9 +134,7 @@ class OrderedDict(dict, MutableMapping):
             pass
         dict.clear(self)
 
-    setdefault = MutableMapping.setdefault
-    update = MutableMapping.update
-    pop = MutableMapping.pop
+    update = __update = MutableMapping.update
     keys = MutableMapping.keys
     values = MutableMapping.values
     items = MutableMapping.items
@@ -156,6 +154,24 @@ class OrderedDict(dict, MutableMapping):
     def viewitems(self):
         "od.viewitems() -> a set-like object providing a view on od's items"
         return ItemsView(self)
+
+    __marker = object()
+
+    def pop(self, key, default=__marker):
+        if key in self:
+            result = self[key]
+            del self[key]
+            return result
+        if default is self.__marker:
+            raise KeyError(key)
+        return default
+
+    def setdefault(self, key, default=None):
+        'od.setdefault(k[,d]) -> od.get(k,d), also set od[k]=d if k not in od'
+        if key in self:
+            return self[key]
+        self[key] = default
+        return default
 
     def popitem(self, last=True):
         '''od.popitem() -> (k, v), return and remove a (key, value) pair.
