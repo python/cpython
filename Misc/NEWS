@@ -20,6 +20,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10807: Remove base64, bz2, hex, quopri, rot13, uu and zlib codecs from
+  the codec aliases. They are still accessible via codecs.lookup().
+
 - Issue #10801: In zipfile, support different encodings for the header and
   the filenames.
 
