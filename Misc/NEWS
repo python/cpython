@@ -86,6 +86,12 @@ Extensions
 
 - Issue #678250: Make mmap flush a noop on ACCESS_READ and ACCESS_COPY.
 
+Build
+-----
+
+- Issue #10475: Don't hardcode compilers for LDSHARED/LDCXXSHARED on NetBSD
+  and DragonFly BSD.  Patch by Nicolas Joly.
+
 Tests
 -----
 
