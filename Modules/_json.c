@@ -1732,7 +1732,7 @@ scanner_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (s->object_hook == NULL)
         goto bail;
     s->pairs_hook = PyObject_GetAttrString(ctx, "object_pairs_hook");
-    if (s->object_hook == NULL)
+    if (s->pairs_hook == NULL)
         goto bail;
     s->parse_float = PyObject_GetAttrString(ctx, "parse_float");
     if (s->parse_float == NULL)
