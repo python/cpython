@@ -1,8 +1,8 @@
-:mod:`ssl` --- SSL wrapper for socket objects
-=============================================
+:mod:`ssl` --- TLS/SSL wrapper for socket objects
+=================================================
 
 .. module:: ssl
-   :synopsis: SSL wrapper for socket objects
+   :synopsis: TLS/SSL wrapper for socket objects
 
 .. moduleauthor:: Bill Janssen <bill.janssen@gmail.com>
 .. sectionauthor::  Bill Janssen <bill.janssen@gmail.com>
