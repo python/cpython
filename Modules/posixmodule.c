@@ -7305,7 +7305,7 @@ posix_tempnam(PyObject *self, PyObject *args)
     name = tempnam(dir, pfx);
 #endif
     if (name == NULL)
-    return PyErr_NoMemory();
+        return PyErr_NoMemory();
     result = PyString_FromString(name);
     free(name);
     return result;
@@ -7329,7 +7329,7 @@ posix_tmpfile(PyObject *self, PyObject *noargs)
 
     fp = tmpfile();
     if (fp == NULL)
-    return posix_error();
+        return posix_error();
     return PyFile_FromFile(fp, "<tmpfile>", "w+b", fclose);
 }
 #endif
@@ -7360,16 +7360,16 @@ posix_tmpnam(PyObject *self, PyObject *noargs)
     name = tmpnam(buffer);
 #endif
     if (name == NULL) {
-    PyObject *err = Py_BuildValue("is", 0,
+        PyObject *err = Py_BuildValue("is", 0,
 #ifdef USE_TMPNAM_R
-                                  "unexpected NULL from tmpnam_r"
+                                      "unexpected NULL from tmpnam_r"
 #else
-                                  "unexpected NULL from tmpnam"
+                                      "unexpected NULL from tmpnam"
 #endif
-                                  );
-    PyErr_SetObject(PyExc_OSError, err);
-    Py_XDECREF(err);
-    return NULL;
+                                      );
+        PyErr_SetObject(PyExc_OSError, err);
+        Py_XDECREF(err);
+        return NULL;
     }
     return PyString_FromString(buffer);
 }
