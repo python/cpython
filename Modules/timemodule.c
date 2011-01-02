@@ -611,7 +611,7 @@ time_asctime(PyObject *self, PyObject *args)
 {
     PyObject *tup = NULL;
     struct tm buf;
-    char *p;
+    char *p, *q;
     if (!PyArg_UnpackTuple(args, "asctime", 0, 1, &tup))
         return NULL;
     if (tup == NULL) {
@@ -621,11 +621,14 @@ time_asctime(PyObject *self, PyObject *args)
         return NULL;
     p = asctime(&buf);
     if (p == NULL) {
-        PyErr_SetString(PyExc_ValueError, "invalid time");
+        PyErr_SetString(PyExc_ValueError, "unconvertible time");
         return NULL;
     }
-    if (p[24] == '\n')
-        p[24] = '\0';
+    /* Replace a terminating newline by a null byte, normally at position 24.
+     * It can occur later if the year has more than four digits. */
+    for (q = p+24; *q != '\0'; q++)
+        if (*q == '\n')
+            *q = '\0';
     return PyUnicode_FromString(p);
 }
 
@@ -641,7 +644,7 @@ time_ctime(PyObject *self, PyObject *args)
 {
     PyObject *ot = NULL;
     time_t tt;
-    char *p;
+    char *p, *q;
 
     if (!PyArg_UnpackTuple(args, "ctime", 0, 1, &ot))
         return NULL;
@@ -660,8 +663,11 @@ time_ctime(PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_ValueError, "unconvertible time");
         return NULL;
     }
-    if (p[24] == '\n')
-        p[24] = '\0';
+    /* Replace a terminating newline by a null byte, normally at position 24.
+     * It can occur later if the year has more than four digits. */
+    for (q = p+24; *q != '\0'; q++)
+        if (*q == '\n')
+            *q = '\0';
     return PyUnicode_FromString(p);
 }
 
