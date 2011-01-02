@@ -888,6 +888,7 @@ method to create a server-side SSL socket for the connection::
        try:
            deal_with_client(connstream)
        finally:
+           connstream.shutdown(socket.SHUT_RDWR)
            connstream.close()
 
 Then you'll read data from the ``connstream`` and do something with it till you
