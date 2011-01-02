@@ -176,8 +176,9 @@ class ThreadSignals(unittest.TestCase):
             self.assertLess(self.end - self.start, 2.0)
             self.assertGreater(self.end - self.start, 0.3)
             # If the signal is received several times before PyErr_CheckSignals()
-            # is called, the handler will get called less than 40 times.
-            self.assertGreater(self.sigs_recvd, 20)
+            # is called, the handler will get called less than 40 times. Just
+            # check it's been called at least once.
+            self.assertGreater(self.sigs_recvd, 0)
         finally:
             signal.signal(signal.SIGUSR1, old_handler)
 
