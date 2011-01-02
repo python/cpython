@@ -1875,8 +1875,8 @@ then
 				esac
 		fi;;
 	NetBSD*|DragonFly*)
-		LDSHARED="$(CC) -shared"
-		LDCXXSHARED="$(CXX) -shared";;
+		LDSHARED='$(CC) -shared'
+		LDCXXSHARED='$(CXX) -shared';;
 	OpenUNIX*|UnixWare*)
 		if test "$GCC" = "yes" ; then
 			LDSHARED='$(CC) -shared'
