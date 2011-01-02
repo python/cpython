@@ -1,8 +1,8 @@
-:mod:`ssl` --- SSL wrapper for socket objects
-=============================================
+:mod:`ssl` --- TLS/SSL wrapper for socket objects
+=================================================
 
 .. module:: ssl
-   :synopsis: SSL wrapper for socket objects
+   :synopsis: TLS/SSL wrapper for socket objects
 
 .. moduleauthor:: Bill Janssen <bill.janssen@gmail.com>
 
@@ -582,13 +582,17 @@ the other end, and use :func:`wrap_socket` to create a server-side SSL context
 for it::
 
    while True:
-      newsocket, fromaddr = bindsocket.accept()
-      connstream = ssl.wrap_socket(newsocket,
-                                   server_side=True,
-                                   certfile="mycertfile",
-                                   keyfile="mykeyfile",
-                                   ssl_version=ssl.PROTOCOL_TLSv1)
-      deal_with_client(connstream)
+       newsocket, fromaddr = bindsocket.accept()
+       connstream = ssl.wrap_socket(newsocket,
+                                    server_side=True,
+                                    certfile="mycertfile",
+                                    keyfile="mykeyfile",
+                                    ssl_version=ssl.PROTOCOL_TLSv1)
+       try:
+           deal_with_client(connstream)
+       finally:
+           connstream.shutdown(socket.SHUT_RDWR)
+           connstream.close()
 
 Then you'd read data from the ``connstream`` and do something with it till you
 are finished with the client (or the client is finished with you)::
@@ -604,7 +608,6 @@ are finished with the client (or the client is finished with you)::
             break
          data = connstream.read()
       # finished with client
-      connstream.close()
 
 And go back to listening for new client connections.
 
