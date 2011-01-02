@@ -122,6 +122,9 @@ class TimeTestCase(unittest.TestCase):
     def test_asctime(self):
         time.asctime(time.gmtime(self.t))
         self.assertRaises(TypeError, time.asctime, 0)
+        self.assertRaises(TypeError, time.asctime, ())
+        self.assertRaises(ValueError, time.asctime,
+                          (12345, 1, 0, 0, 0, 0, 0, 0, 0))
 
     def test_asctime_bounding_check(self):
         self._bounds_checking(time.asctime)
