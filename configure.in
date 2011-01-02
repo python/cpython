@@ -1814,7 +1814,7 @@ then
 				   ;;
 				esac
 		fi;;
-	NetBSD*|DragonFly*) LDSHARED="$(CC) -shared ${LDFLAGS}";;
+	NetBSD*|DragonFly*) LDSHARED='$(CC) -shared ${LDFLAGS}';;
 	OpenUNIX*|UnixWare*)
 		if test "$GCC" = "yes"
 		then LDSHARED='$(CC) -shared'
