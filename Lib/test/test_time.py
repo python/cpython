@@ -123,18 +123,32 @@ class TimeTestCase(unittest.TestCase):
         time.asctime(time.gmtime(self.t))
         self.assertRaises(TypeError, time.asctime, 0)
         self.assertRaises(TypeError, time.asctime, ())
-        # XXX: Posix compiant asctime should refuse to convert
-        # year > 9999, but Linux implementation does not.
-        # self.assertRaises(ValueError, time.asctime,
-        #                  (12345, 1, 0, 0, 0, 0, 0, 0, 0))
-        # XXX: For now, just make sure we don't have a crash:
+        # XXX: POSIX-compliant asctime should refuse to convert year > 9999,
+        # but glibc implementation does not.  For now, just check it doesn't
+        # segfault as it did before, and the result contains no newline.
         try:
-            time.asctime((12345, 1, 0, 0, 0, 0, 0, 0, 0))
+            result = time.asctime((12345, 1, 0, 0, 0, 0, 0, 0, 0))
         except ValueError:
+            # for POSIX-compliant runtimes
             pass
+        else:
+            self.assertNotIn('\n', result)
 
     def test_asctime_bounding_check(self):
         self._bounds_checking(time.asctime)
+
+    def test_ctime(self):
+        # XXX: POSIX-compliant ctime should refuse to convert year > 9999,
+        # but glibc implementation does not.  For now, just check it doesn't
+        # segfault as it did before, and the result contains no newline.
+        try:
+            result = time.ctime(1e12)
+        except ValueError:
+            # for POSIX-compliant runtimes (or 32-bit systems, where time_t
+            # cannot hold timestamps with a five-digit year)
+            pass
+        else:
+            self.assertNotIn('\n', result)
 
     @unittest.skipIf(not hasattr(time, "tzset"),
         "time module has no attribute tzset")
