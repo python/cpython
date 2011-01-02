@@ -768,11 +768,11 @@ To test for the presence of SSL support in a Python installation, user code
 should use the following idiom::
 
    try:
-      import ssl
+       import ssl
    except ImportError:
-      pass
+       pass
    else:
-      [ do something that requires SSL support ]
+       ... # do something that requires SSL support
 
 Client-side operation
 ^^^^^^^^^^^^^^^^^^^^^
@@ -883,26 +883,26 @@ new socket from the other end, and use the context's :meth:`SSLContext.wrap_sock
 method to create a server-side SSL socket for the connection::
 
    while True:
-      newsocket, fromaddr = bindsocket.accept()
-      connstream = context.wrap_socket(newsocket, server_side=True)
-      try:
-         deal_with_client(connstream)
-      finally:
-         connstream.close()
+       newsocket, fromaddr = bindsocket.accept()
+       connstream = context.wrap_socket(newsocket, server_side=True)
+       try:
+           deal_with_client(connstream)
+       finally:
+           connstream.close()
 
 Then you'll read data from the ``connstream`` and do something with it till you
 are finished with the client (or the client is finished with you)::
 
    def deal_with_client(connstream):
-      data = connstream.recv(1024)
-      # empty data means the client is finished with us
-      while data:
-         if not do_something(connstream, data):
-            # we'll assume do_something returns False
-            # when we're finished with client
-            break
-         data = connstream.recv(1024)
-      # finished with client
+       data = connstream.recv(1024)
+       # empty data means the client is finished with us
+       while data:
+           if not do_something(connstream, data):
+               # we'll assume do_something returns False
+               # when we're finished with client
+               break
+           data = connstream.recv(1024)
+       # finished with client
 
 And go back to listening for new client connections (of course, a real server
 would probably handle each client connection in a separate thread, or put
