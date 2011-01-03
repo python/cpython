@@ -8,6 +8,9 @@ What's New in Python 3.2 Release Candidate 1
 Core and Builtins
 -----------------
 
+- Issue #8278: On Windows and with a NTFS filesystem, os.stat() and os.utime()
+  can now handle dates after 2038.
+
 - Issue #10780: PyErr_SetFromWindowsErrWithFilename() and
   PyErr_SetExcFromWindowsErrWithFilename() decode the filename from the
   filesystem encoding instead of UTF-8.
