@@ -167,6 +167,8 @@ Library
 Build
 -----
 
+- Don't run pgen twice when using make -j.
+
 - Backport r83399 to allow test_distutils to pass on installed versions.
 
 - Issue #1303434: Generate ZIP file containing all PDBs (already done for rc1).
