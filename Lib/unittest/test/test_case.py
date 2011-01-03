@@ -489,31 +489,34 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
                           animals)
 
     def testAssertDictContainsSubset(self):
-        self.assertDictContainsSubset({}, {})
-        self.assertDictContainsSubset({}, {'a': 1})
-        self.assertDictContainsSubset({'a': 1}, {'a': 1})
-        self.assertDictContainsSubset({'a': 1}, {'a': 1, 'b': 2})
-        self.assertDictContainsSubset({'a': 1, 'b': 2}, {'a': 1, 'b': 2})
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
 
-        with self.assertRaises(self.failureException):
-            self.assertDictContainsSubset({1: "one"}, {})
+            self.assertDictContainsSubset({}, {})
+            self.assertDictContainsSubset({}, {'a': 1})
+            self.assertDictContainsSubset({'a': 1}, {'a': 1})
+            self.assertDictContainsSubset({'a': 1}, {'a': 1, 'b': 2})
+            self.assertDictContainsSubset({'a': 1, 'b': 2}, {'a': 1, 'b': 2})
 
-        with self.assertRaises(self.failureException):
-            self.assertDictContainsSubset({'a': 2}, {'a': 1})
+            with self.assertRaises(self.failureException):
+                self.assertDictContainsSubset({1: "one"}, {})
 
-        with self.assertRaises(self.failureException):
-            self.assertDictContainsSubset({'c': 1}, {'a': 1})
+            with self.assertRaises(self.failureException):
+                self.assertDictContainsSubset({'a': 2}, {'a': 1})
 
-        with self.assertRaises(self.failureException):
-            self.assertDictContainsSubset({'a': 1, 'c': 1}, {'a': 1})
+            with self.assertRaises(self.failureException):
+                self.assertDictContainsSubset({'c': 1}, {'a': 1})
 
-        with self.assertRaises(self.failureException):
-            self.assertDictContainsSubset({'a': 1, 'c': 1}, {'a': 1})
+            with self.assertRaises(self.failureException):
+                self.assertDictContainsSubset({'a': 1, 'c': 1}, {'a': 1})
 
-        one = ''.join(chr(i) for i in range(255))
-        # this used to cause a UnicodeDecodeError constructing the failure msg
-        with self.assertRaises(self.failureException):
-            self.assertDictContainsSubset({'foo': one}, {'foo': '\uFFFD'})
+            with self.assertRaises(self.failureException):
+                self.assertDictContainsSubset({'a': 1, 'c': 1}, {'a': 1})
+
+            one = ''.join(chr(i) for i in range(255))
+            # this used to cause a UnicodeDecodeError constructing the failure msg
+            with self.assertRaises(self.failureException):
+                self.assertDictContainsSubset({'foo': one}, {'foo': '\uFFFD'})
 
     def testAssertEqual(self):
         equal_pairs = [
