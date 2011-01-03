@@ -1051,14 +1051,17 @@ class Popen(object):
                     errread, errwrite)
 
 
-        def _set_cloexec_flag(self, fd):
+        def _set_cloexec_flag(self, fd, cloexec=True):
             try:
                 cloexec_flag = fcntl.FD_CLOEXEC
             except AttributeError:
                 cloexec_flag = 1
 
             old = fcntl.fcntl(fd, fcntl.F_GETFD)
-            fcntl.fcntl(fd, fcntl.F_SETFD, old | cloexec_flag)
+            if cloexec:
+                fcntl.fcntl(fd, fcntl.F_SETFD, old | cloexec_flag)
+            else:
+                fcntl.fcntl(fd, fcntl.F_SETFD, old & ~cloexec_flag)
 
 
         def _close_fds(self, but):
@@ -1128,21 +1131,25 @@ class Popen(object):
                             os.close(errpipe_read)
 
                             # Dup fds for child
-                            if p2cread is not None:
-                                os.dup2(p2cread, 0)
-                            if c2pwrite is not None:
-                                os.dup2(c2pwrite, 1)
-                            if errwrite is not None:
-                                os.dup2(errwrite, 2)
+                            def _dup2(a, b):
+                                # dup2() removes the CLOEXEC flag but
+                                # we must do it ourselves if dup2()
+                                # would be a no-op (issue #10806).
+                                if a == b:
+                                    self._set_cloexec_flag(a, False)
+                                elif a is not None:
+                                    os.dup2(a, b)
+                            _dup2(p2cread, 0)
+                            _dup2(c2pwrite, 1)
+                            _dup2(errwrite, 2)
 
-                            # Close pipe fds.  Make sure we don't close the same
-                            # fd more than once, or standard fds.
-                            if p2cread is not None and p2cread not in (0,):
-                                os.close(p2cread)
-                            if c2pwrite is not None and c2pwrite not in (p2cread, 1):
-                                os.close(c2pwrite)
-                            if errwrite is not None and errwrite not in (p2cread, c2pwrite, 2):
-                                os.close(errwrite)
+                            # Close pipe fds.  Make sure we don't close the
+                            # same fd more than once, or standard fds.
+                            closed = { None }
+                            for fd in [p2cread, c2pwrite, errwrite]:
+                                if fd not in closed and fd > 2:
+                                    os.close(fd)
+                                    closed.add(fd)
 
                             # Close all other fds, if asked for
                             if close_fds:
