@@ -20,6 +20,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10798: Reject supporting concurrent.futures if the system has too
+  few POSIX semaphores.
+
 - Issue #10807: Remove base64, bz2, hex, quopri, rot13, uu and zlib codecs from
   the codec aliases. They are still accessible via codecs.lookup().
 
