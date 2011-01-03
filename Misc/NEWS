@@ -101,6 +101,9 @@ Library
 Build
 -----
 
+- Issue #7716: Under Solaris, don't assume existence of /usr/xpg4/bin/grep in
+  the configure script but use $GREP instead.  Patch by Fabian Groffen.
+
 - Issue #10475: Don't hardcode compilers for LDSHARED/LDCXXSHARED on NetBSD
   and DragonFly BSD.  Patch by Nicolas Joly.
 
