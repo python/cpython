@@ -31,7 +31,8 @@ class TkLoadTest(unittest.TestCase):
                 # doesn't actually carry through to the process level
                 # because they don't support unsetenv
                 # If that's the case, abort.
-                display = os.popen('echo $DISPLAY').read().strip()
+                with os.popen('echo $DISPLAY') as pipe:
+                    display = pipe.read().strip()
                 if display:
                     return
 
