@@ -804,6 +804,62 @@ class ProcessTestCase(BaseTestCase):
                              " non-zero with this error:\n%s" %
                              stderr.decode('utf8'))
 
+        def check_close_std_fds(self, fds):
+            # Issue #9905: test that subprocess pipes still work properly with
+            # some standard fds closed
+            stdin = 0
+            newfds = []
+            for a in fds:
+                b = os.dup(a)
+                newfds.append(b)
+                if a == 0:
+                    stdin = b
+            try:
+                for fd in fds:
+                    os.close(fd)
+                out, err = subprocess.Popen([sys.executable, "-c",
+                                  'import sys;'
+                                  'sys.stdout.write("apple");'
+                                  'sys.stdout.flush();'
+                                  'sys.stderr.write("orange")'],
+                           stdin=stdin,
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE).communicate()
+                err = support.strip_python_stderr(err)
+                self.assertEqual((out, err), (b'apple', b'orange'))
+            finally:
+                for b, a in zip(newfds, fds):
+                    os.dup2(b, a)
+                for b in newfds:
+                    os.close(b)
+
+        def test_close_fd_0(self):
+            self.check_close_std_fds([0])
+
+        def test_close_fd_1(self):
+            self.check_close_std_fds([1])
+
+        def test_close_fd_2(self):
+            self.check_close_std_fds([2])
+
+        def test_close_fds_0_1(self):
+            self.check_close_std_fds([0, 1])
+
+        def test_close_fds_0_2(self):
+            self.check_close_std_fds([0, 2])
+
+        def test_close_fds_1_2(self):
+            self.check_close_std_fds([1, 2])
+
+        def test_close_fds_0_1_2(self):
+            # Issue #10806: test that subprocess pipes still work properly with
+            # all standard fds closed.
+            self.check_close_std_fds([0, 1, 2])
+
+        def test_surrogates_error_message(self):
+            def prepare():
+                raise ValueError("surrogate:\uDCff")
+
 
     #
     # Windows tests
