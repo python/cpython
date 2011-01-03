@@ -34,6 +34,7 @@ Verbosity
 Selecting tests
 
 -r/--random     -- randomize test execution order (see below)
+   --randseed   -- pass a random seed to reproduce a previous random run
 -f/--fromfile   -- read names of tests to run from a file (see below)
 -x/--exclude    -- arguments are tests to *exclude*
 -s/--single     -- single step through a set of tests (see below)
