@@ -1156,6 +1156,9 @@ class POSIXProcessTestCase(BaseTestCase):
 
         open_fds = set()
 
+        if support.verbose:
+            print(" -- maxfd =", subprocess.MAXFD)
+
         for x in range(5):
             fds = os.pipe()
             self.addCleanup(os.close, fds[0])
