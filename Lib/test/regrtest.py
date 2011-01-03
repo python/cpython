@@ -29,6 +29,7 @@ Verbosity
 -d/--debug      -- print traceback for failed tests
 -q/--quiet      -- no output unless one or more tests fail
 -S/--slow       -- print the slowest 10 tests
+   --header     -- print header with interpreter info
 
 Selecting tests
 
@@ -228,7 +229,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
          exclude=False, single=False, randomize=False, fromfile=None,
          findleaks=False, use_resources=None, trace=False, coverdir='coverage',
          runleaks=False, huntrleaks=False, verbose2=False, print_slow=False,
-         random_seed=None, use_mp=None, verbose3=False, forever=False):
+         random_seed=None, use_mp=None, verbose3=False, forever=False,
+         header=False):
     """Execute a test suite.
 
     This also parses command-line options and modifies its behavior
@@ -262,7 +264,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
              'use=', 'threshold=', 'trace', 'coverdir=', 'nocoverdir',
              'runleaks', 'huntrleaks=', 'memlimit=', 'randseed=',
              'multiprocess=', 'slaveargs=', 'forever', 'debug', 'start=',
-             'nowindows'])
+             'nowindows', 'header'])
     except getopt.error as msg:
         usage(msg)
 
@@ -371,6 +373,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             forever = True
         elif o in ('-j', '--multiprocess'):
             use_mp = int(a)
+        elif o == '--header':
+            header = True
         elif o == '--slaveargs':
             args, kwargs = json.loads(a)
             try:
@@ -447,12 +451,13 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         args = []
 
     # For a partial run, we do not need to clutter the output.
-    if verbose or not (quiet or single or tests or args):
+    if verbose or header or not (quiet or single or tests or args):
         # Print basic platform information
         print("==", platform.python_implementation(), *sys.version.split())
         print("==  ", platform.platform(aliased=True),
                       "%s-endian" % sys.byteorder)
         print("==  ", os.getcwd())
+        print("Testing with flags:", sys.flags)
 
     alltests = findtests(testdir, stdtests, nottests)
     selected = tests or args or alltests
