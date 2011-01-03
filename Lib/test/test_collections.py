@@ -3,7 +3,7 @@
 import unittest, doctest, operator
 import inspect
 from test import support
-from collections import namedtuple, Counter, OrderedDict
+from collections import namedtuple, Counter, OrderedDict, _count_elements
 from test import mapping_tests
 import pickle, copy
 from random import randrange, shuffle
@@ -774,6 +774,19 @@ class TestCounter(unittest.TestCase):
         c = Counter('aaabbcd')
         c.subtract('aaaabbcce')
         self.assertEqual(c, Counter(a=-1, b=0, c=-1, d=1, e=-1))
+
+    def test_helper_function(self):
+        # two paths, one for real dicts and one for other mappings
+        elems = list('abracadabra')
+
+        d = dict()
+        _count_elements(d, elems)
+        self.assertEqual(d, {'a': 5, 'r': 2, 'b': 2, 'c': 1, 'd': 1})
+
+        m = OrderedDict()
+        _count_elements(m, elems)
+        self.assertEqual(m,
+             OrderedDict([('a', 5), ('b', 2), ('r', 2), ('c', 1), ('d', 1)]))
 
 class TestOrderedDict(unittest.TestCase):
 
