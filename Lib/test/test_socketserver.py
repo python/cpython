@@ -151,6 +151,7 @@ class SocketServerTest(unittest.TestCase):
         if verbose: print("waiting for server")
         server.shutdown()
         t.join()
+        server.server_close()
         if verbose: print("done")
 
     def stream_examine(self, proto, addr):
@@ -270,6 +271,7 @@ class SocketServerTest(unittest.TestCase):
             s.shutdown()
         for t, s in threads:
             t.join()
+            s.server_close()
 
 
 def test_main():
