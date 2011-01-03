@@ -2112,6 +2112,7 @@ pydoc</strong> by Ka-Ping Yee &lt;ping@lfw.org&gt;</font>'''
             while not self.quit:
                 rd, wr, ex = select.select([self.socket.fileno()], [], [], 1)
                 if rd: self.handle_request()
+            self.server_close()
 
         def server_activate(self):
             self.base.server_activate(self)
@@ -2409,6 +2410,7 @@ def _start_server(urlhandler, port):
                 rd, wr, ex = select.select([self.socket.fileno()], [], [], 1)
                 if rd:
                     self.handle_request()
+            self.server_close()
 
         def server_activate(self):
             self.base.server_activate(self)
