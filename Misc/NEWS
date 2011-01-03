@@ -23,6 +23,9 @@ Core and Builtins
 Library
 -------
 
+- `unittest.TestCase` can be instantiated without a method name; for simpler
+  exploration from the interactive interpreter.
+
 - Issue #10798: Reject supporting concurrent.futures if the system has too
   few POSIX semaphores.
 

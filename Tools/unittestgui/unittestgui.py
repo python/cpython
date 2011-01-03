@@ -276,13 +276,15 @@ class TkTestRunner(BaseGUITestRunner):
         self.test_file_glob_pattern = d.test_file_glob_pattern
 
     def notifyTestsDiscovered(self, test_suite):
+        discovered = test_suite.countTestCases()
         self.runCountVar.set(0)
         self.failCountVar.set(0)
         self.errorCountVar.set(0)
-        self.remainingCountVar.set(test_suite.countTestCases())
+        self.remainingCountVar.set(discovered)
         self.progressBar.setProgressFraction(0.0)
         self.errorListbox.delete(0, tk.END)
-        self.statusVar.set("Discovering tests from %s" % self.directory_to_read)
+        self.statusVar.set("Discovering tests from %s. Found: %s" %
+            (self.directory_to_read, discovered))
         self.stopGoButton['state'] = tk.NORMAL
 
     def createWidgets(self):

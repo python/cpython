@@ -274,12 +274,17 @@ class TestCase(object):
         """
         self._testMethodName = methodName
         self._outcomeForDoCleanups = None
+        self._testMethodDoc = 'No test'
         try:
             testMethod = getattr(self, methodName)
         except AttributeError:
-            raise ValueError("no such test method in %s: %s" %
-                  (self.__class__, methodName))
-        self._testMethodDoc = testMethod.__doc__
+            if methodName != 'runTest':
+                # we allow instantiation with no explicit method name
+                # but not an *incorrect* or missing method name
+                raise ValueError("no such test method in %s: %s" %
+                      (self.__class__, methodName))
+        else:
+            self._testMethodDoc = testMethod.__doc__
         self._cleanups = []
 
         # Map types to custom assertEqual functions that will compare
