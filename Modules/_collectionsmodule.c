@@ -1536,41 +1536,68 @@ _count_elements(PyObject *self, PyObject *args)
     if (!PyArg_UnpackTuple(args, "_count_elements", 2, 2, &mapping, &iterable))
         return NULL;
 
-    if (!PyDict_Check(mapping)) {
-        PyErr_SetString(PyExc_TypeError,
-            "Expected mapping argument to be a dictionary");
-        return NULL;
-    }
-
     it = PyObject_GetIter(iterable);
     if (it == NULL)
         return NULL;
+
     one = PyLong_FromLong(1);
     if (one == NULL) {
         Py_DECREF(it);
         return NULL;
     }
-    while (1) {
-        key = PyIter_Next(it);
-        if (key == NULL) {
-            if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_StopIteration))
-                PyErr_Clear();
-            break;
+
+    if (PyDict_CheckExact(mapping)) {
+        while (1) {
+            key = PyIter_Next(it);
+            if (key == NULL) {
+                if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_StopIteration))
+                    PyErr_Clear();
+                else
+                    break;
+            }
+            oldval = PyDict_GetItem(mapping, key);
+            if (oldval == NULL) {
+                if (PyDict_SetItem(mapping, key, one) == -1)
+                    break;
+            } else {
+                newval = PyNumber_Add(oldval, one);
+                if (newval == NULL)
+                    break;
+                if (PyDict_SetItem(mapping, key, newval) == -1)
+                    break;
+                Py_CLEAR(newval);
+            }
+            Py_DECREF(key);
         }
-        oldval = PyDict_GetItem(mapping, key);
-        if (oldval == NULL) {
-            if (PyDict_SetItem(mapping, key, one) == -1)
-                break;
-        } else {
-            newval = PyNumber_Add(oldval, one);
-            if (newval == NULL)
-                break;
-            if (PyDict_SetItem(mapping, key, newval) == -1)
+    } else {
+        while (1) {
+            key = PyIter_Next(it);
+            if (key == NULL) {
+                if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_StopIteration))
+                    PyErr_Clear();
+                else
+                    break;
+            }
+            oldval = PyObject_GetItem(mapping, key);
+            if (oldval == NULL) {
+                if (!PyErr_Occurred() || !PyErr_ExceptionMatches(PyExc_KeyError))
+                    break;
+                PyErr_Clear();
+                Py_INCREF(one);
+                newval = one;
+            } else {
+                newval = PyNumber_Add(oldval, one);
+                Py_DECREF(oldval);
+                if (newval == NULL)
+                    break;
+            }
+            if (PyObject_SetItem(mapping, key, newval) == -1)
                 break;
             Py_CLEAR(newval);
+            Py_DECREF(key);
         }
-        Py_DECREF(key);
     }
+
     Py_DECREF(it);
     Py_XDECREF(key);
     Py_XDECREF(newval);
