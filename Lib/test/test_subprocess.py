@@ -1170,6 +1170,10 @@ class POSIXProcessTestCase(BaseTestCase):
 
             remaining_fds = set(map(int, output.split(b',')))
             to_be_closed = open_fds - {fd}
+            # Temporary debug output for intermittent failures
+            if support.verbose:
+                print(" -- fds that should have been closed:", to_be_closed)
+                print(" -- fds that remained open:", remaining_fds)
 
             self.assertIn(fd, remaining_fds, "fd to be passed not passed")
             self.assertFalse(remaining_fds & to_be_closed,
