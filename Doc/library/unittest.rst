@@ -1870,9 +1870,10 @@ Loading and running tests
    instead of repeatedly creating new instances.
 
 
-.. class:: TextTestRunner(stream=sys.stderr, descriptions=True, verbosity=1, runnerclass=None, warnings=None)
+.. class:: TextTestRunner(stream=None, descriptions=True, verbosity=1, runnerclass=None, warnings=None)
 
-   A basic test runner implementation which prints results on standard error.  It
+   A basic test runner implementation that outputs results to a stream. If *stream*
+   is `None`, the default, `sys.stderr` is used as the output stream. This class
    has a few configurable parameters, but is essentially very simple.  Graphical
    applications which run test suites should provide alternate implementations.
 
@@ -1884,6 +1885,13 @@ Loading and running tests
    they will appear only once per-module, in order to avoid too many warning
    messages.  This behavior can be overridden using the :option:`-Wd` or
    :option:`-Wa` options and leaving *warnings* to ``None``.
+
+   .. versionchanged:: 3.2
+      Added the ``warnings`` argument.
+
+   .. versionchanged:: 3.2
+      The default stream is set to `sys.stderr` at instantiation time rather
+      than import time.
 
    .. method:: _makeResult()
 
@@ -1898,8 +1906,6 @@ Loading and running tests
 
         stream, descriptions, verbosity
 
-   .. versionchanged:: 3.2
-      Added the ``warnings`` argument.
 
 .. function:: main(module='__main__', defaultTest=None, argv=None, testRunner=None, \
                    testLoader=unittest.loader.defaultTestLoader, exit=True, verbosity=1, \
