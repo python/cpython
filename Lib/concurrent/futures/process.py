@@ -244,6 +244,31 @@ def _queue_manangement_worker(executor_reference,
             else:
                 work_item.future.set_result(result_item.result)
 
+_system_limits_checked = False
+_system_limited = None
+def _check_system_limits():
+    global _system_limits_checked, _system_limited
+    if _system_limits_checked:
+        if _system_limited:
+            raise NotImplementedError(_system_limited)
+    _system_limits_checked = True
+    try:
+        import os
+        nsems_max = os.sysconf("SC_SEM_NSEMS_MAX")
+    except (AttributeError, ValueError):
+        # sysconf not available or setting not available
+        return
+    if nsems_max == -1:
+        # indetermine limit, assume that limit is determined
+        # by available memory only
+        return
+    if nsems_max >= 256:
+        # minimum number of semaphores available
+        # according to POSIX
+        return
+    _system_limited = "system provides too few semaphores (%d available, 256 necessary)" % nsems_max
+    raise NotImplementedError(_system_limited)
+
 class ProcessPoolExecutor(_base.Executor):
     def __init__(self, max_workers=None):
         """Initializes a new ProcessPoolExecutor instance.
@@ -253,6 +278,7 @@ class ProcessPoolExecutor(_base.Executor):
                 execute the given calls. If None or not given then as many
                 worker processes will be created as the machine has processors.
         """
+        _check_system_limits()
         _remove_dead_thread_references()
 
         if max_workers is None:
