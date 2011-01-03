@@ -97,6 +97,13 @@ need to derive from a specific class.
       A special-interest-group for discussion of testing, and testing tools,
       in Python.
 
+   The script :file:`Tools/unittestgui/unittestgui.py` in the Python source distribution is
+   a GUI tool for test discovery and execution.  This is intended largely for ease of use
+   for those new to unit testing.  For production environments it is recommended that
+   tests be driven by a continuous integration system such as `Hudson <http://hudson-ci.org/>`_
+   or `Buildbot <http://buildbot.net/trac>`_.
+
+
 .. _unittest-minimal-example:
 
 Basic example

@@ -34,8 +34,11 @@ scripts         A number of useful single-file programs, e.g. tabnanny.py
 
 test2to3        A demonstration of how to use 2to3 transparently in setup.py.
 
-unicode         Tools used to generate unicode database files for
-                Python 2.0 (by Fredrik Lundh).
+unicode         Tools used to generate unicode database files (by Fredrik 
+                Lundh).
+
+unittestgui     A Tkinter based GUI test runner for unittest, with test
+                discovery.
 
 world           Script to take a list of Internet addresses and print
                 out where in the world those addresses originate from,
