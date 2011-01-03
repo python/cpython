@@ -88,8 +88,6 @@ class CreationTestCase(unittest.TestCase):
 
 
 class TimeoutTestCase(unittest.TestCase):
-    """Test case for socket.socket() timeout functions"""
-
     # There are a number of tests here trying to make sure that an operation
     # doesn't take too much longer than expected.  But competing machine
     # activity makes it inevitable that such tests will fail at times.
@@ -98,13 +96,21 @@ class TimeoutTestCase(unittest.TestCase):
     # solution.
     fuzz = 2.0
 
+    localhost = '127.0.0.1'
+
     def setUp(self):
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.addr_remote = ('www.python.org.', 80)
-        self.localhost = '127.0.0.1'
+        raise NotImplementedError()
 
     def tearDown(self):
         self.sock.close()
+
+
+class TCPTimeoutTestCase(TimeoutTestCase):
+    """TCP test case for socket.socket() timeout functions"""
+
+    def setUp(self):
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.addr_remote = ('www.python.org.', 80)
 
     def testConnectTimeout(self):
         # Choose a private address that is unlikely to exist to prevent
@@ -161,23 +167,6 @@ class TimeoutTestCase(unittest.TestCase):
                      "timeout (%g) is %g seconds more than expected (%g)"
                      %(_delta, self.fuzz, _timeout))
 
-    def testRecvfromTimeout(self):
-        # Test recvfrom() timeout
-        _timeout = 2
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.settimeout(_timeout)
-        # Prevent "Address already in use" socket exceptions
-        support.bind_port(self.sock, self.localhost)
-
-        _t1 = time.time()
-        self.assertRaises(socket.error, self.sock.recvfrom, 8192)
-        _t2 = time.time()
-
-        _delta = abs(_t1 - _t2)
-        self.assertTrue(_delta < _timeout + self.fuzz,
-                     "timeout (%g) is %g seconds more than expected (%g)"
-                     %(_delta, self.fuzz, _timeout))
-
     def testSend(self):
         # Test send() timeout
         # couldn't figure out how to test it
@@ -194,9 +183,36 @@ class TimeoutTestCase(unittest.TestCase):
         pass
 
 
+class UDPTimeoutTestCase(TimeoutTestCase):
+    """UDP test case for socket.socket() timeout functions"""
+
+    def setUp(self):
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    def testRecvfromTimeout(self):
+        # Test recvfrom() timeout
+        _timeout = 2
+        self.sock.settimeout(_timeout)
+        # Prevent "Address already in use" socket exceptions
+        support.bind_port(self.sock, self.localhost)
+
+        _t1 = time.time()
+        self.assertRaises(socket.error, self.sock.recvfrom, 8192)
+        _t2 = time.time()
+
+        _delta = abs(_t1 - _t2)
+        self.assertTrue(_delta < _timeout + self.fuzz,
+                     "timeout (%g) is %g seconds more than expected (%g)"
+                     %(_delta, self.fuzz, _timeout))
+
+
 def test_main():
     support.requires('network')
-    support.run_unittest(CreationTestCase, TimeoutTestCase)
+    support.run_unittest(
+        CreationTestCase,
+        TCPTimeoutTestCase,
+        UDPTimeoutTestCase,
+    )
 
 if __name__ == "__main__":
     test_main()
