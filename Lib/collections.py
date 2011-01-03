@@ -539,6 +539,9 @@ class Counter(dict):
         'Like dict.copy() but returns a Counter instance instead of a dict.'
         return Counter(self)
 
+    def __reduce__(self):
+        return self.__class__, (dict(self),)
+
     def __delitem__(self, elem):
         'Like dict.__delitem__() but does not raise KeyError for missing values.'
         if elem in self:
