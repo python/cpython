@@ -5,22 +5,17 @@ from unicodedata import normalize
 from test import test_support
 
 filenames = [
-    'abc',
-    u'ascii',
-    u'Gr\xfc\xdf-Gott',
-    u'\u0393\u03b5\u03b9\u03ac-\u03c3\u03b1\u03c2',
-    u'\u0417\u0434\u0440\u0430\u0432\u0441\u0442\u0432\u0443\u0439\u0442\u0435',
-    u'\u306b\u307d\u3093',
-    u'\u05d4\u05e9\u05e7\u05e6\u05e5\u05e1',
-    u'\u66e8\u66e9\u66eb',
-    u'\u66e8\u05e9\u3093\u0434\u0393\xdf',
+    '1_abc',
+    u'2_ascii',
+    u'3_Gr\xfc\xdf-Gott',
+    u'4_\u0393\u03b5\u03b9\u03ac-\u03c3\u03b1\u03c2',
+    u'5_\u0417\u0434\u0440\u0430\u0432\u0441\u0442\u0432\u0443\u0439\u0442\u0435',
+    u'6_\u306b\u307d\u3093',
+    u'7_\u05d4\u05e9\u05e7\u05e6\u05e5\u05e1',
+    u'8_\u66e8\u66e9\u66eb',
+    u'9_\u66e8\u05e9\u3093\u0434\u0393\xdf',
     # Specific code points: fn, NFC(fn) and NFKC(fn) all differents
-    u'\u1fee\u1ffd',
-    # Specific code points: NFC(fn), NFD(fn), NFKC(fn) and NFKD(fn) all differents
-    u'\u0385\u03d3\u03d4',
-    u'\u00a8\u0301\u03d2\u0301\u03d2\u0308',    # == NFD(u'\u0385\u03d3\u03d4')
-    u'\u0020\u0308\u0301\u038e\u03ab',          # == NFKC(u'\u0385\u03d3\u03d4')
-    u'\u1e9b\u1fc1\u1fcd\u1fce\u1fcf\u1fdd\u1fde\u1fdf\u1fed',
+    u'10_\u1fee\u1ffd',
     ]
 
 # Mac OS X decomposes Unicode names, using Normal Form D.
@@ -31,13 +26,19 @@ filenames = [
 # U+2FAFF are not decomposed."
 if sys.platform != 'darwin':
     filenames.extend([
+        # Specific code points: NFC(fn), NFD(fn), NFKC(fn) and NFKD(fn) all differents
+        u'11_\u0385\u03d3\u03d4',
+        u'12_\u00a8\u0301\u03d2\u0301\u03d2\u0308',    # == NFD(u'\u0385\u03d3\u03d4')
+        u'13_\u0020\u0308\u0301\u038e\u03ab',          # == NFKC(u'\u0385\u03d3\u03d4')
+        u'14_\u1e9b\u1fc1\u1fcd\u1fce\u1fcf\u1fdd\u1fde\u1fdf\u1fed',
+
         # Specific code points: fn, NFC(fn) and NFKC(fn) all differents
-        u'\u1fee\u1ffd\ufad1',
-        u'\u2000\u2000\u2000A',
-        u'\u2001\u2001\u2001A',
-        u'\u2003\u2003\u2003A', # == NFC(u'\u2001\u2001\u2001A')
-        u'\u0020\u0020\u0020A', # u'\u0020' == u' ' == NFKC(u'\u2000') ==
-                                #   NFKC(u'\u2001') == NFKC(u'\u2003')
+        u'15_\u1fee\u1ffd\ufad1',
+        u'16_\u2000\u2000\u2000A',
+        u'17_\u2001\u2001\u2001A',
+        u'18_\u2003\u2003\u2003A', # == NFC(u'\u2001\u2001\u2001A')
+        u'19_\u0020\u0020\u0020A', # u'\u0020' == u' ' == NFKC(u'\u2000') ==
+                                   #   NFKC(u'\u2001') == NFKC(u'\u2003')
 ])
 
 
@@ -121,19 +122,18 @@ class UnicodeFileTests(unittest.TestCase):
             f.close()
             os.stat(name)
 
+    # Skip the test on darwin, because darwin does normalize the filename to
+    # NFD (a variant of Unicode NFD form). Normalize the filename to NFC, NFKC,
+    # NFKD in Python is useless, because darwin will normalize it later and so
+    # open(), os.stat(), etc. don't raise any exception.
+    @unittest.skipIf(sys.platform == 'darwin', 'irrevelant test on Mac OS X')
     def test_normalize(self):
         files = set(f for f in self.files if isinstance(f, unicode))
         others = set()
         for nf in set(['NFC', 'NFD', 'NFKC', 'NFKD']):
             others |= set(normalize(nf, file) for file in files)
         others -= files
-        if sys.platform == 'darwin':
-            files = set(normalize('NFD', file) for file in files)
         for name in others:
-            if sys.platform == 'darwin' and normalize('NFD', name) in files:
-                # Mac OS X decomposes Unicode names.  See comment above.
-                os.stat(name)
-                continue
             self._apply_failure(open, name, IOError)
             self._apply_failure(os.stat, name, OSError)
             self._apply_failure(os.chdir, name, OSError)
@@ -142,15 +142,15 @@ class UnicodeFileTests(unittest.TestCase):
             # listdir may append a wildcard to the filename, so dont check
             self._apply_failure(os.listdir, name, OSError, False)
 
+    # Skip the test on darwin, because darwin uses a normalization different
+    # than Python NFD normalization: filenames are different even if we use
+    # Python NFD normalization.
+    @unittest.skipIf(sys.platform == 'darwin', 'irrevelant test on Mac OS X')
     def test_listdir(self):
         sf0 = set(self.files)
         f1 = os.listdir(test_support.TESTFN)
         f2 = os.listdir(unicode(test_support.TESTFN,
                                 sys.getfilesystemencoding()))
-        if sys.platform == 'darwin':
-            # Mac OS X decomposes Unicode names.  See comment above.
-            sf0 = set(normalize('NFD', unicode(f)) for f in self.files)
-            f2 = [normalize('NFD', unicode(f)) for f in f2]
         sf2 = set(os.path.join(unicode(test_support.TESTFN), f) for f in f2)
         self.assertEqual(sf0, sf2)
         self.assertEqual(len(f1), len(f2))
