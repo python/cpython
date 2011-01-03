@@ -69,27 +69,40 @@ static void child_exec(char *const exec_array[],
     }
     POSIX_CALL(close(errpipe_read));
 
-    /* Dup fds for child. */
-    if (p2cread != -1) {
+    /* Dup fds for child.
+       dup2() removes the CLOEXEC flag but we must do it ourselves if dup2()
+       would be a no-op (issue #10806). */
+    if (p2cread == 0) {
+        int old = fcntl(p2cread, F_GETFD);
+        if (old != -1)
+            fcntl(p2cread, F_SETFD, old & ~FD_CLOEXEC);
+    } else if (p2cread != -1) {
         POSIX_CALL(dup2(p2cread, 0));  /* stdin */
     }
-    if (c2pwrite != -1) {
+    if (c2pwrite == 1) {
+        int old = fcntl(c2pwrite, F_GETFD);
+        if (old != -1)
+            fcntl(c2pwrite, F_SETFD, old & ~FD_CLOEXEC);
+    } else if (c2pwrite != -1) {
         POSIX_CALL(dup2(c2pwrite, 1));  /* stdout */
     }
-    if (errwrite != -1) {
+    if (errwrite == 2) {
+        int old = fcntl(errwrite, F_GETFD);
+        if (old != -1)
+            fcntl(errwrite, F_SETFD, old & ~FD_CLOEXEC);
+    } else if (errwrite != -1) {
         POSIX_CALL(dup2(errwrite, 2));  /* stderr */
     }
 
     /* Close pipe fds.  Make sure we don't close the same fd more than */
     /* once, or standard fds. */
-    if (p2cread != -1 && p2cread != 0) {
+    if (p2cread > 2) {
         POSIX_CALL(close(p2cread));
     }
-    if (c2pwrite != -1 && c2pwrite != p2cread && c2pwrite != 1) {
+    if (c2pwrite > 2) {
         POSIX_CALL(close(c2pwrite));
     }
-    if (errwrite != -1 && errwrite != p2cread &&
-        errwrite != c2pwrite && errwrite != 2) {
+    if (errwrite != c2pwrite && errwrite > 2) {
         POSIX_CALL(close(errwrite));
     }
 
