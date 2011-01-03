@@ -107,6 +107,10 @@ Tools/Demos
   demos have been removed, others integrated in documentation or a new
   Tools/demo subdirectory.
 
+- Issue #10502: Addition of the unittestgui tool. Originally by Steve Purcell.
+  Updated for test discovery by Mark Roddy and Python 3 compatibility by
+  Brian Curtin.
+
 
 What's New in Python 3.2 Beta 2?
 ================================
