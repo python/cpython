@@ -77,6 +77,16 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
 
         self.assertEqual(Test().id()[-13:], '.Test.runTest')
 
+        # test that TestCase can be instantiated with no args
+        # primarily for use at the interactive interpreter
+        test = unittest.TestCase()
+        test.assertEqual(3, 3)
+        with test.assertRaises(test.failureException):
+            test.assertEqual(3, 2)
+
+        with self.assertRaises(AttributeError):
+            test.run()
+
     # "class TestCase([methodName])"
     # ...
     # "Each instance of TestCase will run a single test method: the
