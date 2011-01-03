@@ -105,6 +105,8 @@ Extension Modules
 Build
 -----
 
+- Don't run pgen twice when using make -j.
+
 - Issue #7716: Under Solaris, don't assume existence of /usr/xpg4/bin/grep in
   the configure script but use $GREP instead.  Patch by Fabian Groffen.
 
