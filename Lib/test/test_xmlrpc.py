@@ -629,6 +629,7 @@ class KeepaliveServerTestCase1(BaseKeepaliveServerTestCase):
         self.assertEqual(p.pow(6,8), 6**8)
         self.assertEqual(p.pow(6,8), 6**8)
         self.assertEqual(p.pow(6,8), 6**8)
+        p("close")()
 
         #they should have all been handled by a single request handler
         self.assertEqual(len(self.RequestHandler.myRequests), 1)
@@ -636,6 +637,7 @@ class KeepaliveServerTestCase1(BaseKeepaliveServerTestCase):
         #check that we did at least two (the third may be pending append
         #due to thread scheduling)
         self.assertGreaterEqual(len(self.RequestHandler.myRequests[-1]), 2)
+
 
 #test special attribute access on the serverproxy, through the __call__
 #function.
@@ -653,6 +655,7 @@ class KeepaliveServerTestCase2(BaseKeepaliveServerTestCase):
         self.assertEqual(p.pow(6,8), 6**8)
         self.assertEqual(p.pow(6,8), 6**8)
         self.assertEqual(p.pow(6,8), 6**8)
+        p("close")()
 
         #they should have all been two request handlers, each having logged at least
         #two complete requests
@@ -660,12 +663,14 @@ class KeepaliveServerTestCase2(BaseKeepaliveServerTestCase):
         self.assertGreaterEqual(len(self.RequestHandler.myRequests[-1]), 2)
         self.assertGreaterEqual(len(self.RequestHandler.myRequests[-2]), 2)
 
+
     def test_transport(self):
         p = xmlrpclib.ServerProxy(URL)
         #do some requests with close.
         self.assertEqual(p.pow(6,8), 6**8)
         p("transport").close() #same as above, really.
         self.assertEqual(p.pow(6,8), 6**8)
+        p("close")()
         self.assertEqual(len(self.RequestHandler.myRequests), 2)
 
 #A test case that verifies that gzip encoding works in both directions
@@ -709,6 +714,7 @@ class GzipServerTestCase(BaseServerTestCase):
         self.assertEqual(p.pow(6,8), 6**8)
         b = self.RequestHandler.content_length
         self.assertTrue(a>b)
+        p("close")()
 
     def test_bad_gzip_request(self):
         t = self.Transport()
@@ -719,6 +725,7 @@ class GzipServerTestCase(BaseServerTestCase):
                                     re.compile(r"\b400\b"))
         with cm:
             p.pow(6, 8)
+        p("close")()
 
     def test_gsip_response(self):
         t = self.Transport()
@@ -729,6 +736,7 @@ class GzipServerTestCase(BaseServerTestCase):
         a = t.response_length
         self.requestHandler.encode_threshold = 0 #always encode
         self.assertEqual(p.pow(6,8), 6**8)
+        p("close")()
         b = t.response_length
         self.requestHandler.encode_threshold = old
         self.assertTrue(a>b)
