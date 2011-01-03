@@ -23,6 +23,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6643: Reinitialize locks held within the threading module after fork
+  to avoid a potential rare deadlock or crash on some platforms.
+
 - Issue #10806, issue #9905: Fix subprocess pipes when some of the standard
   file descriptors (0, 1, 2) are closed in the parent process.  Initial
   patch by Ross Lagerwall.
