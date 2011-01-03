@@ -121,7 +121,7 @@ class TimeTestCase(unittest.TestCase):
         #                  (12345, 1, 0, 0, 0, 0, 0, 0, 0))
         # XXX: For now, just make sure we don't have a crash:
         try:
-            time.asctime((12345, 1, 0, 0, 0, 0, 0, 0, 0))
+            time.asctime((12345, 1, 1, 0, 0, 0, 0, 1, 0))
         except ValueError:
             pass
 
