@@ -1092,15 +1092,9 @@ class Popen(object):
                     errread, errwrite)
 
 
-        def _close_fds(self, but):
-            os.closerange(3, but)
-            os.closerange(but + 1, MAXFD)
-
-
-        def _close_all_but_a_sorted_few_fds(self, fds_to_keep):
-            # precondition: fds_to_keep must be sorted and unique
+        def _close_fds(self, fds_to_keep):
             start_fd = 3
-            for fd in fds_to_keep:
+            for fd in sorted(fds_to_keep):
                 if fd >= start_fd:
                     os.closerange(start_fd, fd)
                     start_fd = fd + 1
@@ -1216,13 +1210,9 @@ class Popen(object):
 
                                 # Close all other fds, if asked for
                                 if close_fds:
-                                    if pass_fds:
-                                        fds_to_keep = set(pass_fds)
-                                        fds_to_keep.add(errpipe_write)
-                                        self._close_all_but_a_sorted_few_fds(
-                                                sorted(fds_to_keep))
-                                    else:
-                                        self._close_fds(but=errpipe_write)
+                                    fds_to_keep = set(pass_fds)
+                                    fds_to_keep.add(errpipe_write)
+                                    self._close_fds(fds_to_keep)
 
 
                                 if cwd is not None:
