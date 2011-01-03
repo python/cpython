@@ -6,34 +6,51 @@ This will find all modules whose name is "test_*" in the test
 directory, and run them.  Various command line options provide
 additional facilities.
 
-Command line options:
-
--v: verbose    -- run tests in verbose mode with output to stdout
--w: verbose2   -- re-run failed tests in verbose mode
--d: debug      -- print traceback for failed tests
--q: quiet      -- don't print anything except if a test fails
--x: exclude    -- arguments are tests to *exclude*
--s: single     -- run only a single test (see below)
--S: slow       -- print the slowest 10 tests
--r: random     -- randomize test execution order
--f: fromfile   -- read names of tests to run from a file (see below)
--l: findleaks  -- if GC is available detect tests that leak memory
--u: use        -- specify which special resource intensive tests to run
--h: help       -- print this text and exit
--t: threshold  -- call gc.set_threshold(N)
--T: coverage   -- turn on code coverage using the trace module
--D: coverdir   -- Directory where coverage files are put
--N: nocoverdir -- Put coverage files alongside modules
--L: runleaks   -- run the leaks(1) command just before exit
--R: huntrleaks -- search for reference leaks (needs debug build, v. slow)
--M: memlimit   -- run very large memory-consuming tests
--n: nowindows  -- suppress error message boxes on Windows
-
 If non-option arguments are present, they are names for tests to run,
 unless -x is given, in which case they are names for tests not to run.
 If no test names are given, all tests are run.
 
--v is incompatible with -g and does not compare test output files.
+Options:
+
+-h/--help       -- print this text and exit
+
+Verbosity
+
+-v/--verbose    -- run tests in verbose mode with output to stdout
+-w/--verbose2   -- re-run failed tests in verbose mode
+-d/--debug      -- print traceback for failed tests
+-q/--quiet      -- no output unless one or more tests fail
+-S/--slow       -- print the slowest 10 tests
+   --header     -- print header with interpreter info
+
+Selecting tests
+
+-r/--random     -- randomize test execution order (see below)
+   --randseed   -- pass a random seed to reproduce a previous random run
+-f/--fromfile   -- read names of tests to run from a file (see below)
+-x/--exclude    -- arguments are tests to *exclude*
+-s/--single     -- single step through a set of tests (see below)
+-u/--use RES1,RES2,...
+                -- specify which special resource intensive tests to run
+-M/--memlimit LIMIT
+                -- run very large memory-consuming tests
+
+Special runs
+
+-l/--findleaks  -- if GC is available detect tests that leak memory
+-L/--runleaks   -- run the leaks(1) command just before exit
+-R/--huntrleaks RUNCOUNTS
+                -- search for reference leaks (needs debug build, v. slow)
+-T/--coverage   -- turn on code coverage tracing using the trace module
+-D/--coverdir DIRECTORY
+                -- Directory where coverage files are put
+-N/--nocoverdir -- Put coverage files alongside modules
+-t/--threshold THRESHOLD
+                -- call gc.set_threshold(THRESHOLD)
+-n/--nowindows  -- suppress error message boxes on Windows
+
+
+Additional Option Details:
 
 -r randomizes test execution order. You can use --randseed=int to provide a
 int seed value for the randomizer; this is useful for reproducing troublesome
@@ -135,6 +152,7 @@ import re
 import io
 import sys
 import time
+import platform
 import traceback
 import warnings
 import unittest
@@ -190,7 +208,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
          exclude=False, single=False, randomize=False, fromfile=None,
          findleaks=False, use_resources=None, trace=False, coverdir='coverage',
          runleaks=False, huntrleaks=False, verbose2=False, print_slow=False,
-         random_seed=None):
+         random_seed=None, header=False):
     """Execute a test suite.
 
     This also parses command-line options and modifies its behavior
@@ -225,8 +243,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
                                     'coverdir=', 'nocoverdir', 'runleaks',
                                     'huntrleaks=', 'verbose2', 'memlimit=',
                                     'debug', 'start=', 'nowindows',
-                                    'randseed=',
-                                    ])
+                                    'randseed=', 'header'])
     except getopt.error as msg:
         usage(msg)
 
@@ -329,6 +346,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
                 for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
                     msvcrt.CrtSetReportMode(m, msvcrt.CRTDBG_MODE_FILE)
                     msvcrt.CrtSetReportFile(m, msvcrt.CRTDBG_FILE_STDERR)
+        elif o == '--header':
+            header = True
         else:
             print(("No handler for option {}.  Please report this as a bug "
                   "at http://bugs.python.org.").format(o), file=sys.stderr)
@@ -342,6 +361,15 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
     bad = []
     skipped = []
     resource_denieds = []
+
+    # For a partial run, we do not need to clutter the output.
+    if verbose or header or not (quiet or single or tests or args):
+        # Print basic platform information
+        print("==", platform.python_implementation(), *sys.version.split())
+        print("==  ", platform.platform(aliased=True),
+                      "%s-endian" % sys.byteorder)
+        print("==  ", os.getcwd())
+        print("Testing with flags:", sys.flags)
 
     if findleaks:
         try:
