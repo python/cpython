@@ -352,6 +352,11 @@ class StatAttributeTests(unittest.TestCase):
                 os.utime(self.fname, (t1, t1))
                 self.assertEqual(os.stat(self.fname).st_mtime, t1)
 
+            def test_large_time(self):
+                t1 = 5000000000 # some day in 2128
+                os.utime(self.fname, (t1, t1))
+                self.assertEqual(os.stat(self.fname).st_mtime, t1)
+
         def test_1686475(self):
             # Verify that an open file can be stat'ed
             try:

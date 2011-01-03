@@ -10,6 +10,9 @@ What's New in Python 3.1.4?
 Core and Builtins
 -----------------
 
+- Issue #8278: On Windows and with a NTFS filesystem, os.stat() and os.utime()
+  can now handle dates after 2038.
+
 - Issue #4236: PyModule_Create2 now checks the import machinery directly
   rather than the Py_IsInitialized flag, avoiding a Fatal Python
   error in certain circumstances when an import is done in __del__.
