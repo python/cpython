@@ -344,7 +344,7 @@ stdprinter_new(PyTypeObject *type, PyObject *args, PyObject *kews)
 }
 
 static int
-fileio_init(PyObject *self, PyObject *args, PyObject *kwds)
+stdprinter_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyErr_SetString(PyExc_TypeError,
                     "cannot create 'stderrprinter' instances");
@@ -390,7 +390,13 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
 
     Py_BEGIN_ALLOW_THREADS
     errno = 0;
+#if defined(MS_WIN64) || defined(MS_WINDOWS)
+    if (n > INT_MAX)
+        n = INT_MAX;
+    n = write(self->fd, c, (int)n);
+#else
     n = write(self->fd, c, n);
+#endif
     Py_END_ALLOW_THREADS
 
     if (n < 0) {
@@ -509,7 +515,7 @@ PyTypeObject PyStdPrinter_Type = {
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
     0,                                          /* tp_dictoffset */
-    fileio_init,                                /* tp_init */
+    stdprinter_init,                            /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
     stdprinter_new,                             /* tp_new */
     PyObject_Del,                               /* tp_free */
