@@ -53,7 +53,7 @@ Library
 
 - Issue #10750: The ``raw`` attribute of buffered IO objects is now read-only.
 
-- Issue #10242: unittest.TestCase.assertItemsEqual makes too many assumgptions
+- Issue #10242: unittest.TestCase.assertItemsEqual makes too many assumptions
   about input.
 
 - Issue #10611: SystemExit should not cause a unittest test run to exit.
