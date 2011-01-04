@@ -456,7 +456,8 @@ class Thread(_Verbose):
     def _reset_internal_locks(self):
         # private!  Called by _after_fork() to reset our internal locks as
         # they may be in an invalid state leading to a deadlock or crash.
-        self.__block.__init__()
+        if hasattr(self, '_Thread__block'):  # DummyThread deletes self.__block
+            self.__block.__init__()
         self.__started._reset_internal_locks()
 
     @property
@@ -884,7 +885,8 @@ def _after_fork():
                 thread._Thread__ident = ident
                 # Any condition variables hanging off of the active thread may
                 # be in an invalid state, so we reinitialize them.
-                thread._reset_internal_locks()
+                if hasattr(thread, '_reset_internal_locks'):
+                    thread._reset_internal_locks()
                 new_active[ident] = thread
             else:
                 # All the others are already stopped.
