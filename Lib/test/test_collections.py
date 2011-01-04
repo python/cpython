@@ -792,6 +792,10 @@ class TestOrderedDict(unittest.TestCase):
         self.assertEqual(list(d.items()),
             [('a', 1), ('b', 2), ('c', 3), ('d', 4), ('e', 5), ('f', 6), ('g', 7)])
 
+    def test_abc(self):
+        self.assertTrue(isinstance(OrderedDict(), MutableMapping))
+        self.assertTrue(issubclass(OrderedDict, MutableMapping))
+
     def test_clear(self):
         pairs = [('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)]
         shuffle(pairs)
@@ -849,6 +853,17 @@ class TestOrderedDict(unittest.TestCase):
             od.pop('xyz')
         self.assertEqual(len(od), 0)
         self.assertEqual(od.pop(k, 12345), 12345)
+
+        # make sure pop still works when __missing__ is defined
+        class Missing(OrderedDict):
+            def __missing__(self, key):
+                return 0
+        m = Missing(a=1)
+        self.assertEqual(m.pop('b', 5), 5)
+        self.assertEqual(m.pop('a', 6), 1)
+        self.assertEqual(m.pop('a', 6), 6)
+        with self.assertRaises(KeyError):
+            m.pop('a')
 
     def test_equality(self):
         pairs = [('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)]
@@ -934,6 +949,12 @@ class TestOrderedDict(unittest.TestCase):
         # make sure 'x' is added to the end
         self.assertEqual(list(od.items())[-1], ('x', 10))
 
+        # make sure setdefault still works when __missing__ is defined
+        class Missing(OrderedDict):
+            def __missing__(self, key):
+                return 0
+        self.assertEqual(Missing().setdefault(5, 9), 9)
+
     def test_reinsert(self):
         # Given insert a, insert b, delete a, re-insert a,
         # verify that a is now later than b.
@@ -945,6 +966,13 @@ class TestOrderedDict(unittest.TestCase):
         self.assertEqual(list(od.items()), [('b', 2), ('a', 1)])
 
 
+    def test_override_update(self):
+        # Verify that subclasses can override update() without breaking __init__()
+        class MyOD(OrderedDict):
+            def update(self, *args, **kwds):
+                raise Exception()
+        items = [('a', 1), ('c', 3), ('b', 2)]
+        self.assertEqual(list(MyOD(items).items()), items)
 
 class GeneralMappingTests(mapping_tests.BasicTestMappingProtocol):
     type2test = OrderedDict

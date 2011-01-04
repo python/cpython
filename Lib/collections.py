@@ -21,7 +21,7 @@ from itertools import repeat as _repeat, chain as _chain, starmap as _starmap
 class _Link(object):
     __slots__ = 'prev', 'next', 'key', '__weakref__'
 
-class OrderedDict(dict, MutableMapping):
+class OrderedDict(dict):
     'Dictionary that remembers insertion order'
     # An inherited dict maps keys to values.
     # The inherited dict provides __getitem__, __len__, __contains__, and get.
@@ -50,7 +50,7 @@ class OrderedDict(dict, MutableMapping):
             self.__root = root = _Link()    # sentinel node for the doubly linked list
             root.prev = root.next = root
             self.__map = {}
-        self.update(*args, **kwds)
+        self.__update(*args, **kwds)
 
     def clear(self):
         'od.clear() -> None.  Remove all items from od.'
@@ -109,12 +109,28 @@ class OrderedDict(dict, MutableMapping):
             return (self.__class__, (items,), inst_dict)
         return self.__class__, (items,)
 
-    setdefault = MutableMapping.setdefault
-    update = MutableMapping.update
-    pop = MutableMapping.pop
+    update = __update = MutableMapping.update
     keys = MutableMapping.keys
     values = MutableMapping.values
     items = MutableMapping.items
+
+    __marker = object()
+
+    def pop(self, key, default=__marker):
+        if key in self:
+            result = self[key]
+            del self[key]
+            return result
+        if default is self.__marker:
+            raise KeyError(key)
+        return default
+
+    def setdefault(self, key, default=None):
+        'od.setdefault(k[,d]) -> od.get(k,d), also set od[k]=d if k not in od'
+        if key in self:
+            return self[key]
+        self[key] = default
+        return default
 
     def popitem(self, last=True):
         '''od.popitem() -> (k, v), return and remove a (key, value) pair.
