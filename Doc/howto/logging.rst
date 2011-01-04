@@ -857,49 +857,45 @@ provided:
 
 #. :class:`FileHandler` instances send messages to disk files.
 
-.. currentmodule:: logging.handlers
-
-#. :class:`BaseRotatingHandler` is the base class for handlers that
+#. :class:`~handlers.BaseRotatingHandler` is the base class for handlers that
    rotate log files at a certain point. It is not meant to be  instantiated
-   directly. Instead, use :class:`RotatingFileHandler` or
-   :class:`TimedRotatingFileHandler`.
+   directly. Instead, use :class:`~handlers.RotatingFileHandler` or
+   :class:`~handlers.TimedRotatingFileHandler`.
 
-#. :class:`RotatingFileHandler` instances send messages to disk
+#. :class:`~handlers.RotatingFileHandler` instances send messages to disk
    files, with support for maximum log file sizes and log file rotation.
 
-#. :class:`TimedRotatingFileHandler` instances send messages to
+#. :class:`~handlers.TimedRotatingFileHandler` instances send messages to
    disk files, rotating the log file at certain timed intervals.
 
-#. :class:`SocketHandler` instances send messages to TCP/IP
+#. :class:`~handlers.SocketHandler` instances send messages to TCP/IP
    sockets.
 
-#. :class:`DatagramHandler` instances send messages to UDP
+#. :class:`~handlers.DatagramHandler` instances send messages to UDP
    sockets.
 
-#. :class:`SMTPHandler` instances send messages to a designated
+#. :class:`~handlers.SMTPHandler` instances send messages to a designated
    email address.
 
-#. :class:`SysLogHandler` instances send messages to a Unix
+#. :class:`~handlers.SysLogHandler` instances send messages to a Unix
    syslog daemon, possibly on a remote machine.
 
-#. :class:`NTEventLogHandler` instances send messages to a
+#. :class:`~handlers.NTEventLogHandler` instances send messages to a
    Windows NT/2000/XP event log.
 
-#. :class:`MemoryHandler` instances send messages to a buffer
+#. :class:`~handlers.MemoryHandler` instances send messages to a buffer
    in memory, which is flushed whenever specific criteria are met.
 
-#. :class:`HTTPHandler` instances send messages to an HTTP
+#. :class:`~handlers.HTTPHandler` instances send messages to an HTTP
    server using either ``GET`` or ``POST`` semantics.
 
-#. :class:`WatchedFileHandler` instances watch the file they are
+#. :class:`~handlers.WatchedFileHandler` instances watch the file they are
    logging to. If the file changes, it is closed and reopened using the file
    name. This handler is only useful on Unix-like systems; Windows does not
    support the underlying mechanism used.
 
-#. :class:`QueueHandler` instances send messages to a queue, such as
+#. :class:`~handlers.QueueHandler` instances send messages to a queue, such as
    those implemented in the :mod:`queue` or :mod:`multiprocessing` modules.
-
-.. currentmodule:: logging
 
 #. :class:`NullHandler` instances do nothing with error messages. They are used
    by library developers who want to use logging, but want to avoid the 'No
@@ -911,7 +907,7 @@ provided:
    The :class:`NullHandler` class.
 
 .. versionadded:: 3.2
-   The :class:`~logging.handlers.QueueHandler` class.
+   The :class:`~handlers.QueueHandler` class.
 
 The :class:`NullHandler`, :class:`StreamHandler` and :class:`FileHandler`
 classes are defined in the core logging package. The other handlers are
