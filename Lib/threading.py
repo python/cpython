@@ -395,6 +395,10 @@ class _Event(_Verbose):
         self._cond = Condition(Lock())
         self._flag = False
 
+    def _reset_internal_locks(self):
+        # private!  called by Thread._reset_internal_locks by _after_fork()
+        self._cond.__init__()
+
     def is_set(self):
         return self._flag
 
@@ -641,6 +645,13 @@ class Thread(_Verbose):
         # sys.stderr is not stored in the class like
         # sys.exc_info since it can be changed between instances
         self._stderr = _sys.stderr
+
+    def _reset_internal_locks(self):
+        # private!  Called by _after_fork() to reset our internal locks as
+        # they may be in an invalid state leading to a deadlock or crash.
+        if hasattr(self, '_block'):  # DummyThread deletes _block
+            self._block.__init__()
+        self._started._reset_internal_locks()
 
     def _set_daemon(self):
         # Overridden in _MainThread and _DummyThread
@@ -984,11 +995,10 @@ class _DummyThread(Thread):
     def __init__(self):
         Thread.__init__(self, name=_newname("Dummy-%d"))
 
-        # Thread.__block consumes an OS-level locking primitive, which
+        # Thread._block consumes an OS-level locking primitive, which
         # can never be used by a _DummyThread.  Since a _DummyThread
         # instance is immortal, that's bad, so release this resource.
         del self._block
-
 
         self._started.set()
         self._set_ident()
@@ -1066,8 +1076,7 @@ def _after_fork():
                 thread._ident = ident
                 # Any condition variables hanging off of the active thread may
                 # be in an invalid state, so we reinitialize them.
-                thread._block.__init__()
-                thread._started._cond.__init__()
+                thread._reset_internal_locks()
                 new_active[ident] = thread
             else:
                 # All the others are already stopped.
