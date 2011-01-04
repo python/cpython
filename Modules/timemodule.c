@@ -1,4 +1,3 @@
-
 /* Time module */
 
 #include "Python.h"
@@ -683,7 +682,7 @@ time_ctime(PyObject *self, PyObject *args)
     timeptr = localtime(&tt);
     if (timeptr == NULL) {
         PyErr_SetString(PyExc_ValueError, "unconvertible time");
-        return NULL;        
+        return NULL;
     }
     return _asctime(timeptr);
 }
