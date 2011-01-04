@@ -699,13 +699,9 @@ class Popen(object):
          c2pread, c2pwrite,
          errread, errwrite) = self._get_handles(stdin, stdout, stderr)
 
-        self._execute_child(args, executable, preexec_fn, close_fds,
-                            pass_fds, cwd, env, universal_newlines,
-                            startupinfo, creationflags, shell,
-                            p2cread, p2cwrite,
-                            c2pread, c2pwrite,
-                            errread, errwrite,
-                            restore_signals, start_new_session)
+        # We wrap OS handles *before* launching the child, otherwise a
+        # quickly terminating child could make our fds unwrappable
+        # (see #8458).
 
         if mswindows:
             if p2cwrite != -1:
@@ -729,6 +725,24 @@ class Popen(object):
             self.stderr = io.open(errread, 'rb', bufsize)
             if universal_newlines:
                 self.stderr = io.TextIOWrapper(self.stderr)
+
+        try:
+            self._execute_child(args, executable, preexec_fn, close_fds,
+                                pass_fds, cwd, env, universal_newlines,
+                                startupinfo, creationflags, shell,
+                                p2cread, p2cwrite,
+                                c2pread, c2pwrite,
+                                errread, errwrite,
+                                restore_signals, start_new_session)
+        except:
+            # Cleanup if the child failed starting
+            for f in filter(None, [self.stdin, self.stdout, self.stderr]):
+                try:
+                    f.close()
+                except EnvironmentError:
+                    # Ignore EBADF or other errors
+                    pass
+            raise
 
 
     def _translate_newlines(self, data, encoding):
