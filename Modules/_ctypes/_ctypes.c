@@ -3925,14 +3925,14 @@ PyTypeObject PyCFuncPtr_Type = {
 
   Returns -1 on error, or the index of next argument on success.
  */
-static int
+static Py_ssize_t
 _init_pos_args(PyObject *self, PyTypeObject *type,
                PyObject *args, PyObject *kwds,
-               int index)
+               Py_ssize_t index)
 {
     StgDictObject *dict;
     PyObject *fields;
-    int i;
+    Py_ssize_t i;
 
     if (PyType_stgdict((PyObject *)type->tp_base)) {
         index = _init_pos_args(self, type->tp_base,

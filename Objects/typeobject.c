@@ -2325,7 +2325,7 @@ PyObject* PyType_FromSpec(PyType_Spec *spec)
     res->ht_type.tp_basicsize = spec->basicsize;
     res->ht_type.tp_itemsize = spec->itemsize;
     res->ht_type.tp_flags = spec->flags | Py_TPFLAGS_HEAPTYPE;
-    
+
     for (slot = spec->slots; slot->slot; slot++) {
 	if (slot->slot >= sizeof(slotoffsets)/sizeof(slotoffsets[0])) {
 	    PyErr_SetString(PyExc_RuntimeError, "invalid slot offset");
@@ -2335,7 +2335,7 @@ PyObject* PyType_FromSpec(PyType_Spec *spec)
     }
 
     return (PyObject*)res;
-    
+
  fail:
     Py_DECREF(res);
     return NULL;
@@ -6202,7 +6202,7 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
            and first local variable on the stack. */
         PyFrameObject *f = PyThreadState_GET()->frame;
         PyCodeObject *co = f->f_code;
-        int i, n;
+        Py_ssize_t i, n;
         if (co == NULL) {
             PyErr_SetString(PyExc_SystemError,
                             "super(): no code object");

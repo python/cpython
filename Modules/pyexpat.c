@@ -800,7 +800,7 @@ readinst(char *buf, int buf_size, PyObject *meth)
     PyObject *arg = NULL;
     PyObject *bytes = NULL;
     PyObject *str = NULL;
-    int len = -1;
+    Py_ssize_t len = -1;
     char *ptr;
 
     if ((bytes = PyLong_FromLong(buf_size)) == NULL)
@@ -831,7 +831,7 @@ readinst(char *buf, int buf_size, PyObject *meth)
     if (len > buf_size) {
         PyErr_Format(PyExc_ValueError,
                      "read() returned too much data: "
-                     "%i bytes requested, %i returned",
+                     "%i bytes requested, %zi returned",
                      buf_size, len);
         goto finally;
     }
@@ -839,7 +839,7 @@ readinst(char *buf, int buf_size, PyObject *meth)
 finally:
     Py_XDECREF(arg);
     Py_XDECREF(str);
-    return len;
+    return (int)len;
 }
 
 PyDoc_STRVAR(xmlparse_ParseFile__doc__,
@@ -1807,7 +1807,7 @@ MODULE_INITFUNC(void)
         Py_XDECREF(rev_codes_dict);
         return NULL;
     }
-    
+
 #define MYCONST(name) \
     if (PyModule_AddStringConstant(errors_module, #name,               \
                                    (char *)XML_ErrorString(name)) < 0) \
@@ -1873,7 +1873,7 @@ MODULE_INITFUNC(void)
         return NULL;
     if (PyModule_AddObject(errors_module, "messages", rev_codes_dict) < 0)
         return NULL;
-    
+
 #undef MYCONST
 
 #define MYCONST(c) PyModule_AddIntConstant(m, #c, c)

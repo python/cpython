@@ -228,9 +228,9 @@ void md5_init(struct md5_state *md5)
    @param inlen  The length of the data (octets)
 */
 void md5_process(struct md5_state *md5,
-                const unsigned char *in, unsigned long inlen)
+                const unsigned char *in, Py_ssize_t inlen)
 {
-    unsigned long n;
+    Py_ssize_t n;
 
     assert(md5 != NULL);
     assert(in != NULL);

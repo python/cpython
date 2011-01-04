@@ -291,9 +291,9 @@ sha384_init(SHAobject *sha_info)
 /* update the SHA digest */
 
 static void
-sha512_update(SHAobject *sha_info, SHA_BYTE *buffer, int count)
+sha512_update(SHAobject *sha_info, SHA_BYTE *buffer, Py_ssize_t count)
 {
-    int i;
+    Py_ssize_t i;
     SHA_INT32 clo;
 
     clo = sha_info->count_lo + ((SHA_INT32) count << 3);

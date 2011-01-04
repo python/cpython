@@ -203,9 +203,9 @@ void sha1_init(struct sha1_state *sha1)
    @param inlen  The length of the data (octets)
 */
 void sha1_process(struct sha1_state *sha1,
-                  const unsigned char *in, unsigned long inlen)
+                  const unsigned char *in, Py_ssize_t inlen)
 {
-    unsigned long n;
+    Py_ssize_t n;
 
     assert(sha1 != NULL);
     assert(in != NULL);

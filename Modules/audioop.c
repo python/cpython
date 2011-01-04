@@ -309,7 +309,7 @@ audioop_check_size(int size)
 }
 
 static int
-audioop_check_parameters(int len, int size)
+audioop_check_parameters(Py_ssize_t len, int size)
 {
     if (!audioop_check_size(size))
         return 0;

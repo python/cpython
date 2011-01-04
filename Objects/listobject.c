@@ -1381,7 +1381,7 @@ typedef struct s_MergeState {
 
 /* Conceptually a MergeState's constructor. */
 static void
-merge_init(MergeState *ms, int list_size, int has_keyfunc)
+merge_init(MergeState *ms, Py_ssize_t list_size, int has_keyfunc)
 {
     assert(ms != NULL);
     if (has_keyfunc) {

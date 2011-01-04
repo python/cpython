@@ -81,10 +81,9 @@ reap_obj(pylist fd2obj[FD_SETSIZE + 1])
 static int
 seq2set(PyObject *seq, fd_set *set, pylist fd2obj[FD_SETSIZE + 1])
 {
-    int i;
     int max = -1;
     int index = 0;
-    int len = -1;
+    Py_ssize_t i, len = -1;
     PyObject* fast_seq = NULL;
     PyObject* o = NULL;
 
