@@ -2188,7 +2188,7 @@ argparsing(PyObject *o, PyObject *args)
             /* argument converter not called? */
             return NULL;
         /* Should be 1 */
-        res = PyLong_FromLong(Py_REFCNT(str2));
+        res = PyLong_FromSsize_t(Py_REFCNT(str2));
         Py_DECREF(str2);
         PyErr_Clear();
         return res;

@@ -1202,7 +1202,8 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
 {
     PyObject *m, *d, *v;
     const char *ext;
-    int set_file_name = 0, ret, len;
+    int set_file_name = 0, ret;
+    size_t len;
 
     m = PyImport_AddModule("__main__");
     if (m == NULL)

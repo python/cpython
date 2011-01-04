@@ -403,7 +403,8 @@ unicodedata_decomposition(PyObject *self, PyObject *args)
 {
     PyUnicodeObject *v;
     char decomp[256];
-    int code, index, count, i;
+    int code, index, count;
+    size_t i;
     unsigned int prefix_index;
     Py_UCS4 c;
 
@@ -450,15 +451,12 @@ unicodedata_decomposition(PyObject *self, PyObject *args)
     while (count-- > 0) {
         if (i)
             decomp[i++] = ' ';
-        assert((size_t)i < sizeof(decomp));
+        assert(i < sizeof(decomp));
         PyOS_snprintf(decomp + i, sizeof(decomp) - i, "%04X",
                       decomp_data[++index]);
         i += strlen(decomp + i);
     }
-
-    decomp[i] = '\0';
-
-    return PyUnicode_FromString(decomp);
+    return PyUnicode_FromStringAndSize(decomp, i);
 }
 
 static void
