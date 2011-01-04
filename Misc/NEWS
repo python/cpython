@@ -101,6 +101,12 @@ Library
 
 - Deprecated assertDictContainsSubset() in the unittest module.
 
+C-API
+-----
+
+- Issue #10333: Remove ancient GC API, which has been deprecated since
+  Python 2.2.
+
 Build
 -----
 
