@@ -611,6 +611,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         *q=s; \
     }
 #define BUFFER_LEN      ((flags & FLAG_SIZE_T) ? *q2:*q)
+#define RETURN_ERR_OCCURRED return msgbuf
 
     const char *format = *p_format;
     char c = *format++;
@@ -622,19 +623,19 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         char *p = va_arg(*p_va, char *);
         long ival;
         if (float_argument_error(arg))
-            return converterr("integer<b>", arg, msgbuf, bufsize);
+            RETURN_ERR_OCCURRED;
         ival = PyLong_AsLong(arg);
         if (ival == -1 && PyErr_Occurred())
-            return converterr("integer<b>", arg, msgbuf, bufsize);
+            RETURN_ERR_OCCURRED;
         else if (ival < 0) {
             PyErr_SetString(PyExc_OverflowError,
-            "unsigned byte integer is less than minimum");
-            return converterr("integer<b>", arg, msgbuf, bufsize);
+                            "unsigned byte integer is less than minimum");
+            RETURN_ERR_OCCURRED;
         }
         else if (ival > UCHAR_MAX) {
             PyErr_SetString(PyExc_OverflowError,
-            "unsigned byte integer is greater than maximum");
-            return converterr("integer<b>", arg, msgbuf, bufsize);
+                            "unsigned byte integer is greater than maximum");
+            RETURN_ERR_OCCURRED;
         }
         else
             *p = (unsigned char) ival;
@@ -646,10 +647,10 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         char *p = va_arg(*p_va, char *);
         long ival;
         if (float_argument_error(arg))
-            return converterr("integer<B>", arg, msgbuf, bufsize);
+            RETURN_ERR_OCCURRED;
         ival = PyLong_AsUnsignedLongMask(arg);
         if (ival == -1 && PyErr_Occurred())
-            return converterr("integer<B>", arg, msgbuf, bufsize);
+            RETURN_ERR_OCCURRED;
         else
             *p = (unsigned char) ival;
         break;
@@ -659,19 +660,19 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         short *p = va_arg(*p_va, short *);
         long ival;
         if (float_argument_error(arg))
-            return converterr("integer<h>", arg, msgbuf, bufsize);
+            RETURN_ERR_OCCURRED;
         ival = PyLong_AsLong(arg);
         if (ival == -1 && PyErr_Occurred())
-            return converterr("integer<h>", arg, msgbuf, bufsize);
+            RETURN_ERR_OCCURRED;
         else if (ival < SHRT_MIN) {
             PyErr_SetString(PyExc_OverflowError,
-            "signed short integer is less than minimum");
-            return converterr("integer<h>", arg, msgbuf, bufsize);
+                            "signed short integer is less than minimum");
+            RETURN_ERR_OCCURRED;
         }
         else if (ival > SHRT_MAX) {
             PyErr_SetString(PyExc_OverflowError,
-            "signed short integer is greater than maximum");
-            return converterr("integer<h>", arg, msgbuf, bufsize);
+                            "signed short integer is greater than maximum");
+            RETURN_ERR_OCCURRED;
         }
         else
             *p = (short) ival;
@@ -683,10 +684,10 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         unsigned short *p = va_arg(*p_va, unsigned short *);
         long ival;
         if (float_argument_error(arg))
-            return converterr("integer<H>", arg, msgbuf, bufsize);
+            RETURN_ERR_OCCURRED;
         ival = PyLong_AsUnsignedLongMask(arg);
         if (ival == -1 && PyErr_Occurred())
-            return converterr("integer<H>", arg, msgbuf, bufsize);
+            RETURN_ERR_OCCURRED;
         else
             *p = (unsigned short) ival;
         break;
@@ -696,19 +697,19 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         int *p = va_arg(*p_va, int *);
         long ival;
         if (float_argument_error(arg))
-            return converterr("integer<i>", arg, msgbuf, bufsize);
+            RETURN_ERR_OCCURRED;
         ival = PyLong_AsLong(arg);
         if (ival == -1 && PyErr_Occurred())
-            return converterr("integer<i>", arg, msgbuf, bufsize);
+            RETURN_ERR_OCCURRED;
         else if (ival > INT_MAX) {
             PyErr_SetString(PyExc_OverflowError,
-                "signed integer is greater than maximum");
-            return converterr("integer<i>", arg, msgbuf, bufsize);
+                            "signed integer is greater than maximum");
+            RETURN_ERR_OCCURRED;
         }
         else if (ival < INT_MIN) {
             PyErr_SetString(PyExc_OverflowError,
-                "signed integer is less than minimum");
-            return converterr("integer<i>", arg, msgbuf, bufsize);
+                            "signed integer is less than minimum");
+            RETURN_ERR_OCCURRED;
         }
         else
             *p = ival;
@@ -720,10 +721,10 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         unsigned int *p = va_arg(*p_va, unsigned int *);
         unsigned int ival;
         if (float_argument_error(arg))
-            return converterr("integer<I>", arg, msgbuf, bufsize);
+            RETURN_ERR_OCCURRED;
         ival = (unsigned int)PyLong_AsUnsignedLongMask(arg);
         if (ival == (unsigned int)-1 && PyErr_Occurred())
-            return converterr("integer<I>", arg, msgbuf, bufsize);
+            RETURN_ERR_OCCURRED;
         else
             *p = ival;
         break;
@@ -735,14 +736,14 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         Py_ssize_t *p = va_arg(*p_va, Py_ssize_t *);
         Py_ssize_t ival = -1;
         if (float_argument_error(arg))
-            return converterr("integer<n>", arg, msgbuf, bufsize);
+            RETURN_ERR_OCCURRED;
         iobj = PyNumber_Index(arg);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
         }
         if (ival == -1 && PyErr_Occurred())
-            return converterr("integer<n>", arg, msgbuf, bufsize);
+            RETURN_ERR_OCCURRED;
         *p = ival;
         break;
     }
@@ -750,10 +751,10 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         long *p = va_arg(*p_va, long *);
         long ival;
         if (float_argument_error(arg))
-            return converterr("integer<l>", arg, msgbuf, bufsize);
+            RETURN_ERR_OCCURRED;
         ival = PyLong_AsLong(arg);
         if (ival == -1 && PyErr_Occurred())
-            return converterr("integer<l>", arg, msgbuf, bufsize);
+            RETURN_ERR_OCCURRED;
         else
             *p = ival;
         break;
@@ -775,10 +776,10 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         PY_LONG_LONG *p = va_arg( *p_va, PY_LONG_LONG * );
         PY_LONG_LONG ival;
         if (float_argument_error(arg))
-            return converterr("long<L>", arg, msgbuf, bufsize);
+            RETURN_ERR_OCCURRED;
         ival = PyLong_AsLongLong(arg);
         if (ival == (PY_LONG_LONG)-1 && PyErr_Occurred())
-            return converterr("long<L>", arg, msgbuf, bufsize);
+            RETURN_ERR_OCCURRED;
         else
             *p = ival;
         break;
@@ -800,7 +801,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         float *p = va_arg(*p_va, float *);
         double dval = PyFloat_AsDouble(arg);
         if (PyErr_Occurred())
-            return converterr("float<f>", arg, msgbuf, bufsize);
+            RETURN_ERR_OCCURRED;
         else
             *p = (float) dval;
         break;
@@ -810,7 +811,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         double *p = va_arg(*p_va, double *);
         double dval = PyFloat_AsDouble(arg);
         if (PyErr_Occurred())
-            return converterr("float<d>", arg, msgbuf, bufsize);
+            RETURN_ERR_OCCURRED;
         else
             *p = dval;
         break;
@@ -821,7 +822,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         Py_complex cval;
         cval = PyComplex_AsCComplex(arg);
         if (PyErr_Occurred())
-            return converterr("complex<D>", arg, msgbuf, bufsize);
+            RETURN_ERR_OCCURRED;
         else
             *p = cval;
         break;
@@ -1107,9 +1108,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 if (*buffer == NULL) {
                     Py_DECREF(s);
                     PyErr_NoMemory();
-                    return converterr(
-                        "(memory error)",
-                        arg, msgbuf, bufsize);
+                    RETURN_ERR_OCCURRED;
                 }
                 if (addcleanup(*buffer, freelist, 0)) {
                     Py_DECREF(s);
@@ -1151,8 +1150,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             if (*buffer == NULL) {
                 Py_DECREF(s);
                 PyErr_NoMemory();
-                return converterr("(memory error)",
-                                  arg, msgbuf, bufsize);
+                RETURN_ERR_OCCURRED;
             }
             if (addcleanup(*buffer, freelist, 0)) {
                 Py_DECREF(s);
@@ -1261,6 +1259,11 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 
     *p_format = format;
     return NULL;
+
+#undef FETCH_SIZE
+#undef STORE_SIZE
+#undef BUFFER_LEN
+#undef RETURN_ERR_OCCURRED
 }
 
 static Py_ssize_t
