@@ -839,6 +839,7 @@ readinst(char *buf, int buf_size, PyObject *meth)
 finally:
     Py_XDECREF(arg);
     Py_XDECREF(str);
+    /* len <= buf_size <= INT_MAX (see above) */
     return (int)len;
 }
 
