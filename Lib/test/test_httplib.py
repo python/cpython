@@ -244,7 +244,7 @@ class BasicTest(TestCase):
         sock = FakeSocket("")
         conn.sock = sock
         conn.request('GET', '/foo', body(), {'Content-Length': '11'})
-        self.assertEquals(sock.data, expected)
+        self.assertEqual(sock.data, expected)
 
     def test_chunked(self):
         chunked_start = (
