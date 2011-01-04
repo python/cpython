@@ -373,6 +373,10 @@ class _Event(_Verbose):
         self.__cond = Condition(Lock())
         self.__flag = False
 
+    def _reset_internal_locks(self):
+        # private!  called by Thread._reset_internal_locks by _after_fork()
+        self.__cond.__init__()
+
     def isSet(self):
         return self.__flag
 
@@ -448,6 +452,17 @@ class Thread(_Verbose):
         # sys.stderr is not stored in the class like
         # sys.exc_info since it can be changed between instances
         self.__stderr = _sys.stderr
+
+    def _reset_internal_locks(self):
+        # private!  Called by _after_fork() to reset our internal locks as
+        # they may be in an invalid state leading to a deadlock or crash.
+        self.__block.__init__()
+        self.__started._reset_internal_locks()
+
+    @property
+    def _block(self):
+        # used by a unittest
+        return self.__block
 
     def _set_daemon(self):
         # Overridden in _MainThread and _DummyThread
@@ -867,6 +882,9 @@ def _after_fork():
                 # its new value since it can have changed.
                 ident = _get_ident()
                 thread._Thread__ident = ident
+                # Any condition variables hanging off of the active thread may
+                # be in an invalid state, so we reinitialize them.
+                thread._reset_internal_locks()
                 new_active[ident] = thread
             else:
                 # All the others are already stopped.
