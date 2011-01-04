@@ -1522,7 +1522,7 @@ PyDoc_STRVAR(Xmlparsetype__doc__, "XML parser");
 static PyTypeObject Xmlparsetype = {
         PyVarObject_HEAD_INIT(NULL, 0)
         "pyexpat.xmlparser",            /*tp_name*/
-        sizeof(xmlparseobject) + PyGC_HEAD_SIZE,/*tp_basicsize*/
+        sizeof(xmlparseobject),         /*tp_basicsize*/
         0,                              /*tp_itemsize*/
         /* methods */
         (destructor)xmlparse_dealloc,   /*tp_dealloc*/

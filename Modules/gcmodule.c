@@ -1511,11 +1511,3 @@ PyObject_GC_Del(void *op)
     }
     PyObject_FREE(g);
 }
-
-/* for binary compatibility with 2.2 */
-#undef _PyObject_GC_Del
-void
-_PyObject_GC_Del(PyObject *op)
-{
-    PyObject_GC_Del(op);
-}

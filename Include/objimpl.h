@@ -242,9 +242,6 @@ PyAPI_FUNC(PyVarObject *) _PyObject_GC_Resize(PyVarObject *, Py_ssize_t);
 #define PyObject_GC_Resize(type, op, n) \
                 ( (type *) _PyObject_GC_Resize((PyVarObject *)(op), (n)) )
 
-/* for source compatibility with 2.2 */
-#define _PyObject_GC_Del PyObject_GC_Del
-
 /* GC information is stored BEFORE the object structure. */
 #ifndef Py_LIMITED_API
 typedef union _gc_head {
@@ -327,15 +324,6 @@ PyAPI_FUNC(void) PyObject_GC_Del(void *);
                 return vret;                                            \
         }                                                               \
     } while (0)
-
-/* This is here for the sake of backwards compatibility.  Extensions that
- * use the old GC API will still compile but the objects will not be
- * tracked by the GC. */
-#define PyGC_HEAD_SIZE 0
-#define PyObject_GC_Init(op)
-#define PyObject_GC_Fini(op)
-#define PyObject_AS_GC(op) (op)
-#define PyObject_FROM_GC(op) (op)
 
 
 /* Test if a type supports weak references */
