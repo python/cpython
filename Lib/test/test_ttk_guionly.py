@@ -29,8 +29,12 @@ def test_main(enable_gui=False):
             test_support.use_resources.append('gui')
 
     with test_support.DirsOnSysPath(lib_tk_test):
-        test_support.run_unittest(
-            *runtktests.get_tests(text=False, packages=['test_ttk']))
+        from test_ttk.support import get_tk_root
+        try:
+            test_support.run_unittest(
+                *runtktests.get_tests(text=False, packages=['test_ttk']))
+        finally:
+            get_tk_root().destroy()
 
 if __name__ == '__main__':
     test_main(enable_gui=True)
