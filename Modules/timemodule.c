@@ -599,19 +599,51 @@ time_strptime(PyObject *self, PyObject *args)
     return strptime_result;
 }
 
+
 PyDoc_STRVAR(strptime_doc,
 "strptime(string, format) -> struct_time\n\
 \n\
 Parse a string to a time tuple according to a format specification.\n\
 See the library reference manual for formatting codes (same as strftime()).");
 
+static PyObject *
+_asctime(struct tm *timeptr)
+{
+    /* Inspired by Open Group reference implementation available at
+     * http://pubs.opengroup.org/onlinepubs/009695399/functions/asctime.html */
+    static char wday_name[7][3] = {
+        "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
+    };
+    static char mon_name[12][3] = {
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    };
+    char buf[20]; /* 'Sun Sep 16 01:03:52\0' */
+    int n;
+
+    n = snprintf(buf, sizeof(buf), "%.3s %.3s%3d %.2d:%.2d:%.2d",
+                 wday_name[timeptr->tm_wday],
+                 mon_name[timeptr->tm_mon],
+                 timeptr->tm_mday, timeptr->tm_hour,
+                 timeptr->tm_min, timeptr->tm_sec);
+    /* XXX: since the fields used by snprintf above are validated in checktm,
+     * the following condition should never trigger. We keep the check because
+     * historically fixed size buffer used in asctime was the source of
+     * crashes. */
+    if (n + 1 != sizeof(buf)) {
+        PyErr_SetString(PyExc_ValueError, "unconvertible time");
+        return NULL;
+    }
+
+    return PyUnicode_FromFormat("%s %d", buf, 1900 + timeptr->tm_year);
+}
 
 static PyObject *
 time_asctime(PyObject *self, PyObject *args)
 {
     PyObject *tup = NULL;
     struct tm buf;
-    char *p, *q;
+
     if (!PyArg_UnpackTuple(args, "asctime", 0, 1, &tup))
         return NULL;
     if (tup == NULL) {
@@ -619,17 +651,7 @@ time_asctime(PyObject *self, PyObject *args)
         buf = *localtime(&tt);
     } else if (!gettmarg(tup, &buf) || !checktm(&buf))
         return NULL;
-    p = asctime(&buf);
-    if (p == NULL) {
-        PyErr_SetString(PyExc_ValueError, "unconvertible time");
-        return NULL;
-    }
-    /* Replace a terminating newline by a null byte, normally at position 24.
-     * It can occur later if the year has more than four digits. */
-    for (q = p+24; *q != '\0'; q++)
-        if (*q == '\n')
-            *q = '\0';
-    return PyUnicode_FromString(p);
+    return _asctime(&buf);
 }
 
 PyDoc_STRVAR(asctime_doc,
@@ -644,7 +666,7 @@ time_ctime(PyObject *self, PyObject *args)
 {
     PyObject *ot = NULL;
     time_t tt;
-    char *p, *q;
+    struct tm *timeptr;
 
     if (!PyArg_UnpackTuple(args, "ctime", 0, 1, &ot))
         return NULL;
@@ -658,17 +680,12 @@ time_ctime(PyObject *self, PyObject *args)
         if (tt == (time_t)-1 && PyErr_Occurred())
             return NULL;
     }
-    p = ctime(&tt);
-    if (p == NULL) {
+    timeptr = localtime(&tt);
+    if (timeptr == NULL) {
         PyErr_SetString(PyExc_ValueError, "unconvertible time");
-        return NULL;
+        return NULL;        
     }
-    /* Replace a terminating newline by a null byte, normally at position 24.
-     * It can occur later if the year has more than four digits. */
-    for (q = p+24; *q != '\0'; q++)
-        if (*q == '\n')
-            *q = '\0';
-    return PyUnicode_FromString(p);
+    return _asctime(timeptr);
 }
 
 PyDoc_STRVAR(ctime_doc,
