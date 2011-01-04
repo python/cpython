@@ -856,6 +856,10 @@ def _after_fork():
                 # its new value since it can have changed.
                 ident = _get_ident()
                 thread._ident = ident
+                # Any condition variables hanging off of the active thread may
+                # be in an invalid state, so we reinitialize them.
+                thread._block.__init__()
+                thread._started._cond.__init__()
                 new_active[ident] = thread
             else:
                 # All the others are already stopped.
