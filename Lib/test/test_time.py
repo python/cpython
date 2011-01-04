@@ -124,7 +124,7 @@ class TimeTestCase(unittest.TestCase):
         time.asctime(time.gmtime(self.t))
 
         # Max year is only limited by the size of C int.
-        sizeof_int = sysconfig.get_config_vars('SIZEOF_INT')[0]
+        sizeof_int = sysconfig.get_config_var('SIZEOF_INT') or 4
         bigyear = (1 << 8 * sizeof_int - 1) - 1
         asc = time.asctime((bigyear, 6, 1) + (0,)*6)
         self.assertEqual(asc[-len(str(bigyear)):], str(bigyear))
