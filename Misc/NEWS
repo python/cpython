@@ -1422,6 +1422,12 @@ Core and Builtins
 Extension Modules
 -----------------
 
+- Issue #8013: time.asctime and time.ctime no longer call system
+  asctime and ctime functions.  The year range for time.asctime is now
+  1900 through maxint.  The range for time.ctime is the same as for
+  time.localtime.  The string produced by these functions is longer
+  than 24 characters when year is greater than 9999.
+
 - Issue #6608: time.asctime is now checking struct tm fields its input
   before passing it to the system asctime.  Patch by MunSic Jeong.
 

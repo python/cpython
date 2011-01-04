@@ -125,7 +125,7 @@ The module defines the following functions and data items:
 .. function:: asctime([t])
 
    Convert a tuple or :class:`struct_time` representing a time as returned by
-   :func:`gmtime` or :func:`localtime` to a 24-character string of the following
+   :func:`gmtime` or :func:`localtime` to a string of the following
    form: ``'Sun Jun 20 23:21:05 1993'``.  If *t* is not provided, the current time
    as returned by :func:`localtime` is used. Locale information is not used by
    :func:`asctime`.

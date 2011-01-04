@@ -2,6 +2,7 @@ from test import support
 import time
 import unittest
 import locale
+import sysconfig
 
 class TimeTestCase(unittest.TestCase):
 
@@ -121,34 +122,32 @@ class TimeTestCase(unittest.TestCase):
 
     def test_asctime(self):
         time.asctime(time.gmtime(self.t))
+
+        # Max year is only limited by the size of C int.
+        sizeof_int = sysconfig.get_config_vars('SIZEOF_INT')[0]
+        bigyear = (1 << 8 * sizeof_int - 1) - 1
+        asc = time.asctime((bigyear, 6, 1) + (0,)*6)
+        self.assertEqual(asc[-len(str(bigyear)):], str(bigyear))
+        self.assertRaises(OverflowError, time.asctime, (bigyear + 1,) + (0,)*8)
         self.assertRaises(TypeError, time.asctime, 0)
         self.assertRaises(TypeError, time.asctime, ())
-        # XXX: POSIX-compliant asctime should refuse to convert year > 9999,
-        # but glibc implementation does not.  For now, just check it doesn't
-        # segfault as it did before, and the result contains no newline.
-        try:
-            result = time.asctime((12345, 1, 0, 0, 0, 0, 0, 0, 0))
-        except ValueError:
-            # for POSIX-compliant runtimes
-            pass
-        else:
-            self.assertNotIn('\n', result)
 
     def test_asctime_bounding_check(self):
         self._bounds_checking(time.asctime)
 
     def test_ctime(self):
-        # XXX: POSIX-compliant ctime should refuse to convert year > 9999,
-        # but glibc implementation does not.  For now, just check it doesn't
-        # segfault as it did before, and the result contains no newline.
+        t = time.mktime((1973, 9, 16, 1, 3, 52, 0, 0, -1))
+        self.assertEqual(time.ctime(t), 'Sun Sep 16 01:03:52 1973')
+        t = time.mktime((2000, 1, 1, 0, 0, 0, 0, 0, -1))
+        self.assertEqual(time.ctime(t), 'Sat Jan  1 00:00:00 2000')
         try:
-            result = time.ctime(1e12)
+            bigval = time.mktime((10000, 1, 10) + (0,)*6)
         except ValueError:
-            # for POSIX-compliant runtimes (or 32-bit systems, where time_t
-            # cannot hold timestamps with a five-digit year)
+            # If mktime fails, ctime will fail too.  This may happen
+            # on some platforms.
             pass
         else:
-            self.assertNotIn('\n', result)
+            self.assertEquals(time.ctime(bigval)[-5:], '10000')
 
     @unittest.skipIf(not hasattr(time, "tzset"),
         "time module has no attribute tzset")
