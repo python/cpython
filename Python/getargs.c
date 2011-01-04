@@ -146,10 +146,19 @@ cleanup_buffer(PyObject *self)
 }
 
 static int
-addcleanup(void *ptr, PyObject **freelist, PyCapsule_Destructor destr)
+addcleanup(void *ptr, PyObject **freelist, int is_buffer)
 {
     PyObject *cobj;
     const char *name;
+    PyCapsule_Destructor destr;
+
+    if (is_buffer) {
+        destr = cleanup_buffer;
+        name = GETARGS_CAPSULE_NAME_CLEANUP_BUFFER;
+    } else {
+        destr = cleanup_ptr;
+        name = GETARGS_CAPSULE_NAME_CLEANUP_PTR;
+    }
 
     if (!*freelist) {
         *freelist = PyList_New(0);
@@ -159,13 +168,6 @@ addcleanup(void *ptr, PyObject **freelist, PyCapsule_Destructor destr)
         }
     }
 
-    if (destr == cleanup_ptr) {
-        name = GETARGS_CAPSULE_NAME_CLEANUP_PTR;
-    } else if (destr == cleanup_buffer) {
-        name = GETARGS_CAPSULE_NAME_CLEANUP_BUFFER;
-    } else {
-        return -1;
-    }
     cobj = PyCapsule_New(ptr, name, destr);
     if (!cobj) {
         destr(ptr);
@@ -855,7 +857,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             if (getbuffer(arg, (Py_buffer*)p, &buf) < 0)
                 return converterr(buf, arg, msgbuf, bufsize);
             format++;
-            if (addcleanup(p, freelist, cleanup_buffer)) {
+            if (addcleanup(p, freelist, 1)) {
                 return converterr(
                     "(cleanup problem)",
                     arg, msgbuf, bufsize);
@@ -901,7 +903,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 if (getbuffer(arg, p, &buf) < 0)
                     return converterr(buf, arg, msgbuf, bufsize);
             }
-            if (addcleanup(p, freelist, cleanup_buffer)) {
+            if (addcleanup(p, freelist, 1)) {
                 return converterr(
                     "(cleanup problem)",
                     arg, msgbuf, bufsize);
@@ -1109,7 +1111,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                         "(memory error)",
                         arg, msgbuf, bufsize);
                 }
-                if (addcleanup(*buffer, freelist, cleanup_ptr)) {
+                if (addcleanup(*buffer, freelist, 0)) {
                     Py_DECREF(s);
                     return converterr(
                         "(cleanup problem)",
@@ -1152,7 +1154,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 return converterr("(memory error)",
                                   arg, msgbuf, bufsize);
             }
-            if (addcleanup(*buffer, freelist, cleanup_ptr)) {
+            if (addcleanup(*buffer, freelist, 0)) {
                 Py_DECREF(s);
                 return converterr("(cleanup problem)",
                                 arg, msgbuf, bufsize);
@@ -1244,7 +1246,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             PyBuffer_Release((Py_buffer*)p);
             return converterr("contiguous buffer", arg, msgbuf, bufsize);
         }
-        if (addcleanup(p, freelist, cleanup_buffer)) {
+        if (addcleanup(p, freelist, 1)) {
             return converterr(
                 "(cleanup problem)",
                 arg, msgbuf, bufsize);
