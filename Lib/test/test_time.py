@@ -142,7 +142,7 @@ class TimeTestCase(unittest.TestCase):
         self.assertEqual(time.ctime(t), 'Sat Jan  1 00:00:00 2000')
         try:
             bigval = time.mktime((10000, 1, 10) + (0,)*6)
-        except ValueError:
+        except ValueError, OverflowError:
             # If mktime fails, ctime will fail too.  This may happen
             # on some platforms.
             pass
