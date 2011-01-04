@@ -506,7 +506,7 @@ static PyObject *
 fileio_readinto(fileio *self, PyObject *args)
 {
     Py_buffer pbuf;
-    Py_ssize_t n;
+    Py_ssize_t n, len;
 
     if (self->fd < 0)
         return err_closed();
@@ -517,9 +517,16 @@ fileio_readinto(fileio *self, PyObject *args)
         return NULL;
 
     if (_PyVerify_fd(self->fd)) {
+        len = pbuf.len;
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
-        n = read(self->fd, pbuf.buf, pbuf.len);
+#if defined(MS_WIN64) || defined(MS_WINDOWS)
+        if (len > INT_MAX)
+            len = INT_MAX;
+        n = read(self->fd, pbuf.buf, (int)len);
+#else
+        n = read(self->fd, pbuf.buf, (size_t)len);
+#endif
         Py_END_ALLOW_THREADS
     } else
         n = -1;
@@ -685,7 +692,7 @@ static PyObject *
 fileio_write(fileio *self, PyObject *args)
 {
     Py_buffer pbuf;
-    Py_ssize_t n;
+    Py_ssize_t n, len;
 
     if (self->fd < 0)
         return err_closed();
@@ -698,7 +705,14 @@ fileio_write(fileio *self, PyObject *args)
     if (_PyVerify_fd(self->fd)) {
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
-        n = write(self->fd, pbuf.buf, pbuf.len);
+        len = pbuf.len;
+#if defined(MS_WIN64) || defined(MS_WINDOWS)
+        if (len > INT_MAX)
+            len = INT_MAX;
+        n = write(self->fd, pbuf.buf, (int)len);
+#else
+        n = write(self->fd, pbuf.buf, (size_t)len);
+#endif
         Py_END_ALLOW_THREADS
     } else
         n = -1;
