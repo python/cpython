@@ -831,7 +831,7 @@ readinst(char *buf, int buf_size, PyObject *meth)
     if (len > buf_size) {
         PyErr_Format(PyExc_ValueError,
                      "read() returned too much data: "
-                     "%i bytes requested, %zi returned",
+                     "%i bytes requested, %zd returned",
                      buf_size, len);
         goto finally;
     }
