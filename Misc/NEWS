@@ -30,6 +30,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #8650: zlib.compress() and zlib.decompress() raise an OverflowError if
+  the input buffer length doesn't fit into an unsigned int (length bigger than
+  2^32-1 bytes).
+
 - Issue #6643: Reinitialize locks held within the threading module after fork
   to avoid a potential rare deadlock or crash on some platforms.
 

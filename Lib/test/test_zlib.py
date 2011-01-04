@@ -2,7 +2,7 @@ import unittest
 from test import support
 import binascii
 import random
-from test.support import precisionbigmemtest, _1G
+from test.support import precisionbigmemtest, _1G, _4G
 
 zlib = support.import_module('zlib')
 
@@ -157,6 +157,16 @@ class CompressTestCase(BaseCompressTestCase, unittest.TestCase):
     @precisionbigmemtest(size=_1G + 1024 * 1024, memuse=2)
     def test_big_decompress_buffer(self, size):
         self.check_big_decompress_buffer(size, zlib.decompress)
+
+    @precisionbigmemtest(size=_4G + 100, memuse=1)
+    def test_length_overflow(self, size):
+        if size < _4G + 100:
+            self.skipTest("not enough free memory, need at least 4 GB")
+        data = b'x' * size
+        try:
+            self.assertRaises(OverflowError, zlib.compress, data, 1)
+        finally:
+            data = None
 
 
 class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
