@@ -30,6 +30,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10819: SocketIO.name property returns -1 when its closed, instead of
+  raising a ValueError, to fix repr().
+
 - Issue #8650: zlib.compress() and zlib.decompress() raise an OverflowError if
   the input buffer length doesn't fit into an unsigned int (length bigger than
   2^32-1 bytes).

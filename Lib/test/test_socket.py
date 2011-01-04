@@ -738,6 +738,12 @@ class GeneralModuleTests(unittest.TestCase):
             f = None
             support.gc_collect()
 
+    def test_name_closed_socketio(self):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            fp = sock.makefile("rb")
+            fp.close()
+            self.assertEqual(repr(fp), "<_io.BufferedReader name=-1>")
+
 
 @unittest.skipUnless(thread, 'Threading required for this test.')
 class BasicTCPTest(SocketConnectedTest):

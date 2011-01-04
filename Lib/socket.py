@@ -307,7 +307,10 @@ class SocketIO(io.RawIOBase):
 
     @property
     def name(self):
-        return self.fileno()
+        if not self.closed:
+            return self.fileno()
+        else:
+            return -1
 
     @property
     def mode(self):
