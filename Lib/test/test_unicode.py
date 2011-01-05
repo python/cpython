@@ -1423,22 +1423,36 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual("%s" % s, '__str__ overridden')
         self.assertEqual("{}".format(s), '__str__ overridden')
 
+    # Test PyUnicode_FromFormat()
     def test_from_format(self):
-        from _testcapi import format_unicode
+        support.import_module('ctypes')
+        from ctypes import pythonapi, py_object
+        if sys.maxunicode == 65535:
+            name = "PyUnicodeUCS2_FromFormat"
+        else:
+            name = "PyUnicodeUCS4_FromFormat"
+        _PyUnicode_FromFormat = getattr(pythonapi, name)
+        _PyUnicode_FromFormat.restype = py_object
+
+        def PyUnicode_FromFormat(format, *args):
+            cargs = tuple(
+                py_object(arg) if isinstance(arg, str) else arg
+                for arg in args)
+            return _PyUnicode_FromFormat(format, *cargs)
 
         # ascii format, non-ascii argument
-        text = format_unicode(b'ascii\x7f=%U', 'unicode\xe9')
+        text = PyUnicode_FromFormat(b'ascii\x7f=%U', 'unicode\xe9')
         self.assertEqual(text, 'ascii\x7f=unicode\xe9')
 
-        # non-ascii format, ascii argument: ensure that PyUnicode_FromFormat()
-        # raises an error for a non-ascii format string.
+        # non-ascii format, ascii argument: ensure that PyUnicode_FromFormatV()
+        # raises an error
         self.assertRaisesRegex(ValueError,
             '^PyUnicode_FromFormatV\(\) expects an ASCII-encoded format '
             'string, got a non-ASCII byte: 0xe9$',
-            format_unicode, b'unicode\xe9=%s', 'ascii')
+            PyUnicode_FromFormat, b'unicode\xe9=%s', 'ascii')
 
         # other tests
-        text = format_unicode(b'%%A:%A', 'abc\xe9\uabcd\U0010ffff')
+        text = PyUnicode_FromFormat(b'%%A:%A', 'abc\xe9\uabcd\U0010ffff')
         self.assertEqual(text, r"%A:'abc\xe9\uabcd\U0010ffff'")
 
     # Test PyUnicode_AsWideChar()
