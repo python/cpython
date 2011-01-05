@@ -1766,3 +1766,10 @@ require changes to your code:
   with to use bytes instead of text, ``struct.pack('<6sHHBBB', b'GIF87a', x, y)``.
 
   (Discovered by David Beazley and fixed by Victor Stinner; :issue:`10783`.
+
+* The :class:`xml.etree.ElementTree` class now raises an
+  :exc:`xml.etree.ElementTree.ParseError` when a parse fails. Previously it
+  raised a :exc:`xml.parsers.expat.ExpatError`.
+
+* The new, longer :func:`str` value on floats may break doctests which rely on
+  the old output format.
