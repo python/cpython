@@ -245,32 +245,26 @@ class Header:
         that byte string, and a UnicodeError will be raised if the string
         cannot be decoded with that charset.  If s is a Unicode string, then
         charset is a hint specifying the character set of the characters in
-        the string.  In this case, when producing an RFC 2822 compliant header
-        using RFC 2047 rules, the Unicode string will be encoded using the
-        following charsets in order: us-ascii, the charset hint, utf-8.  The
-        first character set not to provoke a UnicodeError is used.
+        the string.  In either case, when producing an RFC 2822 compliant
+        header using RFC 2047 rules, the string will be encoded using the
+        output codec of the charset.  If the string cannot be encoded to the
+        output codec, a UnicodeError will be raised.
 
-        Optional `errors' is passed as the third argument to any unicode() or
-        ustr.encode() call.
+        Optional `errors' is passed as the errors argument to the decode
+        call if s is a byte string.
         """
         if charset is None:
             charset = self._charset
         elif not isinstance(charset, Charset):
             charset = Charset(charset)
-        if isinstance(s, str):
-            # Convert the string from the input character set to the output
-            # character set and store the resulting bytes and the charset for
-            # composition later.
+        if not isinstance(s, str):
             input_charset = charset.input_codec or 'us-ascii'
-            input_bytes = s.encode(input_charset, errors)
-        else:
-            # We already have the bytes we will store internally.
-            input_bytes = s
+            s = s.decode(input_charset, errors)
         # Ensure that the bytes we're storing can be decoded to the output
         # character set, otherwise an early error is thrown.
         output_charset = charset.output_codec or 'us-ascii'
-        output_string = input_bytes.decode(output_charset, errors)
-        self._chunks.append((output_string, charset))
+        s.encode(output_charset, errors)
+        self._chunks.append((s, charset))
 
     def encode(self, splitchars=';, \t', maxlinelen=None, linesep='\n'):
         """Encode a message header into an RFC-compliant format.
