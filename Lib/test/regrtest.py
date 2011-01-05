@@ -3,7 +3,7 @@
 """
 Usage:
 
-python -m test.regrtest [options] [test_name1 [test_name2 ...]]
+python -m test [options] [test_name1 [test_name2 ...]]
 python path/to/Lib/test/regrtest.py [options] [test_name1 [test_name2 ...]]
 
 
@@ -14,7 +14,7 @@ them in alphabetical order (but see -M and -u, below, for exceptions).
 For more rigorous testing, it is useful to use the following
 command line:
 
-python -E -tt -Wd -3 -m test.regrtest [options] [test_name1 ...]
+python -E -Wd -m test [options] [test_name1 ...]
 
 
 Options:
