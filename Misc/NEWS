@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10790: email.header.Header.append's charset logic now works correctly
+  for charsets whose output codec is different from its input codec.
+
 - Issue #6643: Reinitialize locks held within the threading module after fork
   to avoid a potential rare deadlock or crash on some platforms.
 
