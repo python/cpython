@@ -130,7 +130,13 @@ class socket(_socket.socket):
         For IP sockets, the address info is a pair (hostaddr, port).
         """
         fd, addr = self._accept()
-        return socket(self.family, self.type, self.proto, fileno=fd), addr
+        sock = socket(self.family, self.type, self.proto, fileno=fd)
+        # Issue #7995: if no default timeout is set and the listening
+        # socket had a (non-zero) timeout, force the new socket in blocking
+        # mode to override platform-specific socket flags inheritance.
+        if getdefaulttimeout() is None and self.gettimeout():
+            sock.setblocking(True)
+        return sock, addr
 
     def makefile(self, mode="r", buffering=None, *,
                  encoding=None, errors=None, newline=None):
