@@ -982,6 +982,23 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         def _testInitNonBlocking(self):
             pass
 
+    def testInheritFlags(self):
+        # Issue #7995: when calling accept() on a listening socket with a
+        # timeout, the resulting socket should not be non-blocking.
+        self.serv.settimeout(10)
+        try:
+            conn, addr = self.serv.accept()
+            message = conn.recv(len(MSG))
+        finally:
+            conn.close()
+            self.serv.settimeout(None)
+
+    def _testInheritFlags(self):
+        time.sleep(0.1)
+        self.cli.connect((HOST, self.port))
+        time.sleep(0.5)
+        self.cli.send(MSG)
+
     def testAccept(self):
         # Testing non-blocking accept
         self.serv.setblocking(0)
