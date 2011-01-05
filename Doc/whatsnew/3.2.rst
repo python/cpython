@@ -383,7 +383,14 @@ Some smaller changes made to the core Python language are:
   (Suggested by Mark Dickinson and implemented by Eric Smith in :issue:`7094`.)
 
 * The interpreter can now be started with a quiet option, ``-q``, to suppress
-  the copyright and version information in an interactive mode.
+  the copyright and version information in an interactive mode.  The option can
+  be introspected using the :attr:`sys.flags` attribute::
+
+    $ python -q
+    >>> sys.flags
+    sys.flags(debug=0, division_warning=0, inspect=0, interactive=0,
+    optimize=0, dont_write_bytecode=0, no_user_site=0, no_site=0,
+    ignore_environment=0, verbose=0, bytes_warning=0, quiet=1)
 
   (Contributed by Marcin Wojdyr in issue:`1772833`).
 
