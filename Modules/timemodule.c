@@ -217,29 +217,6 @@ tmtotuple(struct tm *p)
 }
 
 static PyObject *
-structtime_totuple(PyObject *t)
-{
-    PyObject *x = NULL;
-    unsigned int i;
-    PyObject *v = PyTuple_New(9);
-    if (v == NULL)
-        return NULL;
-
-    for (i=0; i<9; i++) {
-        x = PyStructSequence_GET_ITEM(t, i);
-        Py_INCREF(x);
-        PyTuple_SET_ITEM(v, i, x);
-    }
-
-    if (PyErr_Occurred()) {
-        Py_XDECREF(v);
-        return NULL;
-    }
-
-    return v;
-}
-
-static PyObject *
 time_convert(double when, struct tm * (*function)(const time_t *))
 {
     struct tm *p;
@@ -328,9 +305,6 @@ gettmarg(PyObject *args, struct tm *p)
         t = args;
         Py_INCREF(t);
     }
-    else if (Py_TYPE(args) == &StructTimeType) {
-        t = structtime_totuple(args);
-    }
     else {
         PyErr_SetString(PyExc_TypeError,
                         "Tuple or struct_time argument required");
@@ -352,19 +326,30 @@ gettmarg(PyObject *args, struct tm *p)
     }
     Py_DECREF(t);
 
+    /* XXX: Why 1900?  If the goal is to interpret 2-digit years as those in
+     * 20th / 21st century according to the POSIX standard, we can just treat
+     * 0 <= y < 100 as special.  Year 100 is probably too ambiguous and should
+     * be rejected, but years 101 through 1899 can be passed through.
+     */
     if (y < 1900) {
         PyObject *accept = PyDict_GetItemString(moddict,
                                                 "accept2dyear");
-        if (accept == NULL || !PyLong_CheckExact(accept) ||
-            !PyObject_IsTrue(accept)) {
-            PyErr_SetString(PyExc_ValueError,
-                            "year >= 1900 required");
+        int acceptval = accept != NULL && PyObject_IsTrue(accept);
+        if (acceptval == -1)
             return 0;
+        if (acceptval) {
+            if (69 <= y && y <= 99)
+                y += 1900;
+            else if (0 <= y && y <= 68)
+                y += 2000;
+            else {
+                PyErr_SetString(PyExc_ValueError,
+                                "year out of range");
+                return 0;
+            }
         }
-        if (69 <= y && y <= 99)
-            y += 1900;
-        else if (0 <= y && y <= 68)
-            y += 2000;
+        /* XXX: When accept2dyear is false, we don't have to reject y < 1900.
+         * Consider removing the following else-clause. */
         else {
             PyErr_SetString(PyExc_ValueError,
                             "year out of range");
