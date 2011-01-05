@@ -135,6 +135,7 @@ class BaseThreadedNetworkedTests(unittest.TestCase):
     def reap_server(self, server, thread):
         if verbose: print("waiting for server")
         server.shutdown()
+        server.server_close()
         thread.join()
         if verbose: print("done")
 
