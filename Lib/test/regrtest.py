@@ -743,10 +743,19 @@ def replace_stdout():
     if os.name == "nt":
         # Replace sys.stdout breaks the stdout newlines on Windows: issue #8533
         return
+
+    import atexit
+
     stdout = sys.stdout
     sys.stdout = open(stdout.fileno(), 'w',
         encoding=stdout.encoding,
-        errors="backslashreplace")
+        errors="backslashreplace",
+        closefd=False)
+
+    def restore_stdout():
+        sys.stdout.close()
+        sys.stdout = stdout
+    atexit.register(restore_stdout)
 
 def runtest(test, verbose, quiet,
             huntrleaks=False, debug=False, use_resources=None):
