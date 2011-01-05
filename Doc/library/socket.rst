@@ -148,8 +148,8 @@ The module :mod:`socket` exports the following constants and functions:
 .. exception:: timeout
 
    This exception is raised when a timeout occurs on a socket which has had
-   timeouts enabled via a prior call to :meth:`settimeout`.  The accompanying value
-   is a string whose value is currently always "timed out".
+   timeouts enabled via a prior call to :meth:`~socket.settimeout`.  The
+   accompanying value is a string whose value is currently always "timed out".
 
 
 .. data:: AF_UNIX
@@ -515,9 +515,10 @@ The module :mod:`socket` exports the following constants and functions:
 
 .. function:: setdefaulttimeout(timeout)
 
-   Set the default timeout in floating seconds for new socket objects. A value of
-   ``None`` indicates that new socket objects have no timeout. When the socket
-   module is first imported, the default is ``None``.
+   Set the default timeout in floating seconds for new socket objects.  When
+   the socket module is first imported, the default is ``None``.  See
+   :meth:`~socket.settimeout` for possible values and their respective
+   meanings.
 
 
 .. data:: SocketType
@@ -624,6 +625,13 @@ correspond to Unix system calls applicable to sockets.
    to decode C structures encoded as byte strings).
 
 
+.. method:: socket.gettimeout()
+
+   Return the timeout in floating seconds associated with socket operations,
+   or ``None`` if no timeout is set.  This reflects the last call to
+   :meth:`setblocking` or :meth:`settimeout`.
+
+
 .. method:: socket.ioctl(control, option)
 
    :platform: Windows
@@ -653,8 +661,9 @@ correspond to Unix system calls applicable to sockets.
    interpreted the same way as by the built-in :func:`open` function.
 
    Closing the file object won't close the socket unless there are no remaining
-   references to the socket.  The socket must be in blocking mode (it can not
-   have a timeout).
+   references to the socket.  The socket must be in blocking mode; it can have
+   a timeout, but the file object's internal buffer may end up in a inconsistent
+   state if a timeout occurs.
 
    .. note::
 
@@ -734,55 +743,26 @@ correspond to Unix system calls applicable to sockets.
 
 .. method:: socket.setblocking(flag)
 
-   Set blocking or non-blocking mode of the socket: if *flag* is 0, the socket is
-   set to non-blocking, else to blocking mode.  Initially all sockets are in
-   blocking mode.  In non-blocking mode, if a :meth:`recv` call doesn't find any
-   data, or if a :meth:`send` call can't immediately dispose of the data, a
-   :exc:`error` exception is raised; in blocking mode, the calls block until they
-   can proceed. ``s.setblocking(0)`` is equivalent to ``s.settimeout(0.0)``;
-   ``s.setblocking(1)`` is equivalent to ``s.settimeout(None)``.
+   Set blocking or non-blocking mode of the socket: if *flag* is false, the
+   socket is set to non-blocking, else to blocking mode.
+
+   This method is a shorthand for certain :meth:`~socket.settimeout` calls:
+
+   * ``sock.setblocking(True)`` is equivalent to ``sock.settimeout(None)``
+
+   * ``sock.setblocking(False)`` is equivalent to ``sock.settimeout(0.0)``
 
 
 .. method:: socket.settimeout(value)
 
    Set a timeout on blocking socket operations.  The *value* argument can be a
-   nonnegative float expressing seconds, or ``None``. If a float is given,
-   subsequent socket operations will raise a :exc:`timeout` exception if the
-   timeout period *value* has elapsed before the operation has completed.  Setting
-   a timeout of ``None`` disables timeouts on socket operations.
-   ``s.settimeout(0.0)`` is equivalent to ``s.setblocking(0)``;
-   ``s.settimeout(None)`` is equivalent to ``s.setblocking(1)``.
+   nonnegative floating point number expressing seconds, or ``None``.
+   If a non-zero value is given, subsequent socket operations will raise a
+   :exc:`timeout` exception if the timeout period *value* has elapsed before
+   the operation has completed.  If zero is given, the socket is put in
+   non-blocking mode. If ``None`` is given, the socket is put in blocking mode.
 
-
-.. method:: socket.gettimeout()
-
-   Return the timeout in floating seconds associated with socket operations, or
-   ``None`` if no timeout is set.  This reflects the last call to
-   :meth:`setblocking` or :meth:`settimeout`.
-
-
-Some notes on socket blocking and timeouts: A socket object can be in one of
-three modes: blocking, non-blocking, or timeout.  Sockets are always created in
-blocking mode.  In blocking mode, operations block until complete or
-the system returns an error (such as connection timed out).  In
-non-blocking mode, operations fail (with an error that is unfortunately
-system-dependent) if they cannot be completed immediately.  In timeout mode,
-operations fail if they cannot be completed within the timeout specified for the
-socket or if the system returns an error.  The :meth:`~socket.setblocking`
-method is simply a shorthand for certain :meth:`~socket.settimeout` calls.
-
-Timeout mode internally sets the socket in non-blocking mode.  The blocking and
-timeout modes are shared between file descriptors and socket objects that refer
-to the same network endpoint.  A consequence of this is that file objects
-returned by the :meth:`~socket.makefile` method must only be used when the
-socket is in blocking mode; in timeout or non-blocking mode file operations
-that cannot be completed immediately will fail.
-
-Note that the :meth:`~socket.connect` operation is subject to the timeout
-setting, and in general it is recommended to call :meth:`~socket.settimeout`
-before calling :meth:`~socket.connect` or pass a timeout parameter to
-:meth:`create_connection`.  The system network stack may return a connection
-timeout error of its own regardless of any Python socket timeout setting.
+   For further information, please consult the :ref:`notes on socket timeouts <socket-timeouts>`.
 
 
 .. method:: socket.setsockopt(level, optname, value)
@@ -826,6 +806,61 @@ values given to the :class:`socket` constructor.
 .. attribute:: socket.proto
 
    The socket protocol.
+
+
+
+.. _socket-timeouts:
+
+Notes on socket timeouts
+------------------------
+
+A socket object can be in one of three modes: blocking, non-blocking, or
+timeout.  Sockets are by default always created in blocking mode, but this
+can be changed by calling :func:`setdefaulttimeout`.
+
+* In *blocking mode*, operations block until complete or the system returns
+  an error (such as connection timed out).
+
+* In *non-blocking mode*, operations fail (with an error that is unfortunately
+  system-dependent) if they cannot be completed immediately: functions from the
+  :mod:`select` can be used to know when and whether a socket is available for
+  reading or writing.
+
+* In *timeout mode*, operations fail if they cannot be completed within the
+  timeout specified for the socket (they raise a :exc:`timeout` exception)
+  or if the system returns an error.
+
+.. note::
+   At the operating system level, sockets in *timeout mode* are internally set
+   in non-blocking mode.  Also, the blocking and timeout modes are shared between
+   file descriptors and socket objects that refer to the same network endpoint.
+   This implementation detail can have visible consequences if e.g. you decide
+   to use the :meth:`~socket.fileno()` of a socket.
+
+Timeouts and the ``connect`` method
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :meth:`~socket.connect` operation is also subject to the timeout
+setting, and in general it is recommended to call :meth:`~socket.settimeout`
+before calling :meth:`~socket.connect` or pass a timeout parameter to
+:meth:`create_connection`.  However, the system network stack may also
+return a connection timeout error of its own regardless of any Python socket
+timeout setting.
+
+Timeouts and the ``accept`` method
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If :func:`getdefaulttimeout` is not :const:`None`, sockets returned by
+the :meth:`~socket.accept` method inherit that timeout.  Otherwise, the
+behaviour depends on settings of the listening socket:
+
+* if the listening socket is in *blocking mode* or in *timeout mode*,
+  the socket returned by :meth:`~socket.accept` is in *blocking mode*;
+
+* if the listening socket is in *non-blocking mode*, whether the socket
+  returned by :meth:`~socket.accept` is in blocking or non-blocking mode
+  is operating system-dependent.  If you want to ensure cross-platform
+  behaviour, it is recommended you manually override this setting.
 
 
 .. _socket-example:
