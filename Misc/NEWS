@@ -30,6 +30,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10756: atexit normalizes the exception before displaying it.
+
 - Issue #10790: email.header.Header.append's charset logic now works correctly
   for charsets whose output codec is different from its input codec.
 
