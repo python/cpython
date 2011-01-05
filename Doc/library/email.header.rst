@@ -94,15 +94,15 @@ Here is the :class:`Header` class description:
       decoded with that character set.
 
       If *s* is an instance of :class:`str`, then *charset* is a hint specifying
-      the character set of the characters in the string.  In this case, when
-      producing an :rfc:`2822`\ -compliant header using :rfc:`2047` rules, the
-      Unicode string will be encoded using the following charsets in order:
-      ``us-ascii``, the *charset* hint, ``utf-8``.  The first character set to
-      not provoke a :exc:`UnicodeError` is used.
+      the character set of the characters in the string.
 
-      Optional *errors* is passed through to any :func:`encode` or
-      :func:`ustr.encode` call, and defaults to "strict".
+      In either case, when producing an :rfc:`2822`\ -compliant header using
+      :rfc:`2047` rules, the string will be encoded using the output codec of
+      the charset.  If the string cannot be encoded using the output codec, a
+      UnicodeError will be raised.
 
+      Optional *errors* is passed as the errors argument to the decode call
+      if *s* is a byte string.
 
    .. method:: encode(splitchars=';, \\t', maxlinelen=None)
 
