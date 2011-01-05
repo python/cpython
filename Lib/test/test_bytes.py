@@ -497,6 +497,27 @@ class BytesTest(BaseBytesTest):
                 return None
         self.assertRaises(TypeError, bytes, A())
 
+    # Test PyBytes_FromFormat()
+    def test_from_format(self):
+        test.support.import_module('ctypes')
+        from ctypes import pythonapi, py_object, c_int, c_char_p
+        PyBytes_FromFormat = pythonapi.PyBytes_FromFormat
+        PyBytes_FromFormat.restype = py_object
+
+        self.assertEqual(PyBytes_FromFormat(b'format'),
+                         b'format')
+
+        self.assertEqual(PyBytes_FromFormat(b'%'), b'%')
+        self.assertEqual(PyBytes_FromFormat(b'%%'), b'%')
+        self.assertEqual(PyBytes_FromFormat(b'%%s'), b'%s')
+        self.assertEqual(PyBytes_FromFormat(b'[%%]'), b'[%]')
+        self.assertEqual(PyBytes_FromFormat(b'%%%c', c_int(ord('_'))), b'%_')
+
+        self.assertEqual(PyBytes_FromFormat(b'c:%c', c_int(255)),
+                         b'c:\xff')
+        self.assertEqual(PyBytes_FromFormat(b's:%s', c_char_p(b'cstr')),
+                         b's:cstr')
+
 
 class ByteArrayTest(BaseBytesTest):
     type2test = bytearray
