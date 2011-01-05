@@ -147,7 +147,7 @@ class TimeTestCase(unittest.TestCase):
             # on some platforms.
             pass
         else:
-            self.assertEquals(time.ctime(bigval)[-5:], '10000')
+            self.assertEqual(time.ctime(bigval)[-5:], '10000')
 
     @unittest.skipIf(not hasattr(time, "tzset"),
         "time module has no attribute tzset")
