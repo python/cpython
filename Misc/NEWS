@@ -153,6 +153,9 @@ Tools/Demos
 Tests
 -----
 
+- Issue #5485: Add tests for the UseForeignDTD method of expat parser objects.
+  Patch by Jean-Paul Calderone and Sandro Tosi.
+
 - Issue #6293: Have regrtest.py echo back sys.flags.  This is done by default
   in whole runs and enabled selectively using ``--header`` when running an
   explicit list of tests.  Original patch by Collin Winter.
