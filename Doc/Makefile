@@ -26,6 +26,7 @@ help:
 	@echo "  htmlhelp   to make HTML files and a HTML help project"
 	@echo "  latex      to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
 	@echo "  text       to make plain text files"
+	@echo "  epub       to make EPUB files"
 	@echo "  changes    to make an overview over all changed/added/deprecated items"
 	@echo "  linkcheck  to check all external links for integrity"
 	@echo "  coverage   to check documentation coverage for library and C API"
@@ -80,6 +81,10 @@ latex: build
 text: BUILDER = text
 text: build
 	@echo "Build finished; the text files are in build/text."
+
+epub: BUILDER = epub
+epub: build
+	@echo "Build finished; the epub files are in build/epub."
 
 changes: BUILDER = changes
 changes: build
@@ -157,6 +162,17 @@ dist:
 	(cd build/latex; make clean && make all-pdf && make FMT=pdf zip bz2)
 	cp build/latex/docs-pdf.zip dist/python-$(DISTVERSION)-docs-pdf-letter.zip
 	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-letter.tar.bz2
+
+	# archive the epub build
+	rm -rf build/epub
+	make epub
+	mkdir -p dist/python-$(DISTVERSION)-docs-epub
+	cp -pPR build/epub/*.epub dist/python-$(DISTVERSION)-docs-epub/
+	tar -C dist -cf dist/python-$(DISTVERSION)-docs-epub.tar python-$(DISTVERSION)-docs-epub
+	bzip2 -9 -k dist/python-$(DISTVERSION)-docs-epub.tar
+	(cd dist; zip -q -r -9 python-$(DISTVERSION)-docs-epub.zip python-$(DISTVERSION)-docs-epub)
+	rm -r dist/python-$(DISTVERSION)-docs-epub
+	rm dist/python-$(DISTVERSION)-docs-epub.tar
 
 check:
 	$(PYTHON) tools/rstlint.py -i tools

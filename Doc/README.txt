@@ -54,6 +54,9 @@ Available make targets are:
 
  * "text", which builds a plain text file for each source file.
 
+ * "epub", which builds an EPUB document, suitable to be viewed on e-book
+   readers.
+
  * "linkcheck", which checks all external references to see whether they are
    broken, redirected or malformed, and outputs this information to stdout as
    well as a plain-text (.txt) file.
