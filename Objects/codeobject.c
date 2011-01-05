@@ -347,11 +347,11 @@ code_repr(PyCodeObject *co)
         lineno = -1;
     if (co->co_filename && PyUnicode_Check(co->co_filename)) {
         return PyUnicode_FromFormat(
-            "<code object %.100U at %p, file \"%.300U\", line %d>",
+            "<code object %U at %p, file \"%U\", line %d>",
             co->co_name, co, co->co_filename, lineno);
     } else {
         return PyUnicode_FromFormat(
-            "<code object %.100U at %p, file ???, line %d>",
+            "<code object %U at %p, file ???, line %d>",
             co->co_name, co, lineno);
     }
 }
