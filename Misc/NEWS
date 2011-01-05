@@ -30,6 +30,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10790: email.header.Header.append's charset logic now works correctly
+  for charsets whose output codec is different from its input codec.
+
 - Issue #10819: SocketIO.name property returns -1 when its closed, instead of
   raising a ValueError, to fix repr().
 

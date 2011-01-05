@@ -3620,6 +3620,10 @@ A very long line that must get split to something other than at the
         s = 'Subject: =?EUC-KR?B?CSixpLDtKSC/7Liuvsax4iC6uLmwMcijIKHaILzSwd/H0SC8+LCjwLsgv7W/+Mj3I ?='
         raises(errors.HeaderParseError, decode_header, s)
 
+    def test_shift_jis_charset(self):
+        h = Header('文', charset='shift_jis')
+        self.assertEqual(h.encode(), '=?iso-2022-jp?b?GyRCSjgbKEI=?=')
+
 
 
 # Test RFC 2231 header parameters (en/de)coding
