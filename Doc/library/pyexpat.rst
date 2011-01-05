@@ -157,6 +157,13 @@ XMLParser Objects
    :attr:`ordered_attributes`, :attr:`returns_unicode` and
    :attr:`specified_attributes` set to the values of this parser.
 
+.. method:: xmlparser.SetParamEntityParsing(flag)
+
+   Control parsing of parameter entities (including the external DTD subset).
+   Possible *flag* values are :const:`XML_PARAM_ENTITY_PARSING_NEVER`,
+   :const:`XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE` and
+   :const:`XML_PARAM_ENTITY_PARSING_ALWAYS`.  Return true if setting the flag
+   was successful.
 
 .. method:: xmlparser.UseForeignDTD([flag])
 
