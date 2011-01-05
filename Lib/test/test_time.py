@@ -263,8 +263,48 @@ class TestLocale(unittest.TestCase):
         # This should not cause an exception
         time.strftime("%B", (2009,2,1,0,0,0,0,0,0))
 
+class TestAccept2Year(unittest.TestCase):
+    accept2dyear = 1
+    def setUp(self):
+        self.saved_accept2dyear = time.accept2dyear
+        time.accept2dyear = self.accept2dyear
+
+    def tearDown(self):
+        time.accept2dyear = self.saved_accept2dyear
+
+    def yearstr(self, y):
+        return time.strftime('%Y', (y,) + (0,) * 8)
+
+    def test_2dyear(self):
+        self.assertEqual(self.yearstr(0), '2000')
+        self.assertEqual(self.yearstr(69), '1969')
+        self.assertEqual(self.yearstr(68), '2068')
+        self.assertEqual(self.yearstr(99), '1999')
+
+    def test_invalid(self):
+        self.assertRaises(ValueError, self.yearstr, 1899)
+        self.assertRaises(ValueError, self.yearstr, 100)
+        self.assertRaises(ValueError, self.yearstr, -1)
+
+class TestAccept2YearBool(TestAccept2Year):
+    accept2dyear = True
+
+class TestDontAccept2Year(TestAccept2Year):
+    accept2dyear = 0
+    def test_2dyear(self):
+        self.assertRaises(ValueError, self.yearstr, 0)
+        self.assertRaises(ValueError, self.yearstr, 69)
+        self.assertRaises(ValueError, self.yearstr, 68)
+        self.assertRaises(ValueError, self.yearstr, 99)
+
+class TestDontAccept2YearBool(TestDontAccept2Year):
+    accept2dyear = False
+
+
 def test_main():
-    support.run_unittest(TimeTestCase, TestLocale)
+    support.run_unittest(TimeTestCase, TestLocale,
+                         TestAccept2Year, TestAccept2YearBool,
+                         TestDontAccept2Year, TestDontAccept2YearBool)
 
 if __name__ == "__main__":
     test_main()
