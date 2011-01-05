@@ -31,7 +31,7 @@ Library
 -------
 
 - Issue #7995: When calling accept() on a socket with a timeout, the returned
-  socket is now always non-blocking, regardless of the operating system.
+  socket is now always blocking, regardless of the operating system.
 
 - Issue #10756: atexit normalizes the exception before displaying it. Patch by
   Andreas Stührk.
