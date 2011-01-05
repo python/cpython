@@ -1427,9 +1427,9 @@ static PyStructSequence_Desc flags_desc = {
     flags__doc__,       /* doc */
     flags_fields,       /* fields */
 #ifdef RISCOS
-    12
+    13
 #else
-    11
+    12
 #endif
 };
 
