@@ -394,13 +394,13 @@ Some smaller changes made to the core Python language are:
 
   (Contributed by Marcin Wojdyr in issue:`1772833`).
 
-* The :func:`hasattr` function used to catch and suppress any Exception.  Now,
-  it only catches :exc:`AttributeError`.  Under the hood, :func:`hasattr` works
-  by calling :func:`getattr` and throwing away the results.  This is necessary
-  because dynamic attribute creation is possible using :meth:`__getattribute__`
-  or :meth:`__getattr__`.  If :func:`hasattr` were to just scan instance and class
-  dictionaries it would miss the dynamic methods and make it difficult to
-  implement proxy objects.
+* The :func:`hasattr` function works by calling :func:`getattr` and detecting
+  whether an exception is raised.  This technique allows it to detect methods
+  created dynamically by :meth:`__getattr__` or :meth:`__getattribute__` which
+  would be absent from the class dictionary.  Formerly, *hasattr* would catch
+  any exception, possibly masking genuine errors in those methods.  Now,
+  *hasattr* has been tightened to only catch :exc:`AttributeError` and let
+  other exceptions pass through.
 
   (Discovered by Yury Selivanov and fixed by Benjamin Peterson; :issue:`9666`.)
 
@@ -682,9 +682,10 @@ functools
             return ((self.lastname.lower(), self.firstname.lower()) <
                     (other.lastname.lower(), other.firstname.lower()))
 
-  (Contributed by Raymond Hettinger.)
+  With the *total_ordering* decorator, the remaining comparison methods
+  are filled-in automatically.
 
-.. XXX clarify what the example does
+  (Contributed by Raymond Hettinger.)
 
 * To aid in porting programs from Python 2, the :func:`~functools.cmp_to_key`
   function converts an old-style comparison function to
@@ -787,12 +788,10 @@ datetime
 
 * Also, :class:`~datetime.timedelta` objects can now be multiplied by
   :class:`float` and divided by :class:`float` and :class:`int` objects.
+  And :class:`~datetime.timedelta` objects can now divide one another.
 
-.. XXX Describe added support for dividing a timedelta by another timedelta.
-       See revision 80290 and issue #2706.
-
-  (Contributed by Alexander Belopolsky in :issue:`1289118`, :issue:`5094` and
-  :issue:`6641`.)
+  (Contributed by Alexander Belopolsky in :issue:`1289118`, :issue:`5094`,
+  :issue:`6641`, and :issue:`2706`.)
 
 abc
 ---
@@ -861,7 +860,7 @@ body of enclosed statements.
 (Contributed by Michael Foord in :issue:`9110`.)
 
 decimal and fractions
----------------------
+----------------------
 
 Mark Dickinson crafted an elegant and efficient scheme for assuring that
 different numeric datatypes will have the same hash value whenever their actual
@@ -902,6 +901,16 @@ contexts that correspond to the decimal interchange formats specified in IEEE
 
 (Contributed by Mark Dickinson and Raymond Hettinger.)
 
+codecs
+------
+
+In an effort to keep codec aliases solely focused on bytes-to-text encodings,
+the *base64*, *bz2*, *hex*, *quopri*, *rot13*, *uu* and *zlib* codecs have been
+removed from the codec aliases. These bytes-to-bytes conversion are still
+accessible via codecs.lookup().
+
+(see :issue:`10807`.)
+
 ftp
 ---
 
@@ -930,7 +939,11 @@ also grew auto-closing context managers::
 (Contributed by Tarek Ziadé and Giampaolo Rodolà in :issue:`4972`, and
 by Georg Brandl in :issue:`8046` and :issue:`1286`.)
 
-.. XXX mention os.popen and subprocess.Popen auto-closing of fds
+popen
+-----
+
+The :func:`os.popen` and :func:`subprocess.Popen` functions now support
+the :keyword:`with`-statement` for auto-closing of the file descriptors.
 
 gzip and zipfile
 ----------------
@@ -1077,6 +1090,11 @@ as recommended in public uses of HTTPS.
 unittest
 --------
 
+The unittest module has a number of improvements supporting test discovery for
+packages, easier experimentation at the interactive prompt, new testcase
+methods, improved diagnostic messages for test failures, and better method
+names.
+
 * The command-line call, ``python -m unittest`` can now accept file paths
   instead of module names for running specific tests (:issue:`10620`).  The new
   test discovery can find tests within packages, locating any test importable
@@ -1088,13 +1106,23 @@ unittest
 
   (Contributed by Michael Foord.)
 
+* Experimentation at the interactive prompt is now easier because the
+  :class:`unittest.case.TestCase` class can now be instantiated without
+  arguments:
+
+  >>> TestCase().assertEqual(pow(2, 3), 8)
+
+  (Contributed by Michael Foord.)
+
 * The :mod:`unittest` module has two new methods,
   :meth:`~unittest.TestCase.assertWarns` and
-  :meth:`~unittest.TestCase.assertWarnsRegex` to check that a given warning type
+  :meth:`~unittest.TestCase.assertWarnsRegex` to verify that a given warning type
   is triggered by the code under test:
 
   >>> with self.assertWarns(DeprecationWarning):
   ...     legacy_function('XYZ')
+
+  (Contributed by Michael Foord and Ezio Melotti.)
 
   Another new method, :meth:`~unittest.TestCase.assertCountEqual` is used to
   compare two iterables to determine if their element counts are equal (whether
@@ -1104,23 +1132,28 @@ unittest
      def test_anagram(self):
          self.assertCountEqual('algorithm', 'logarithm')
 
-  A principal feature of the unittest module is an effort to produce meaningful
+  (Contributed by Raymond Hettinger.)
+
+* A principal feature of the unittest module is an effort to produce meaningful
   diagnostics when a test fails.  When possible the failure is recorded along
   with a diff of the output.  This is especially helpful for analyzing log files
   of failed test runs. However, since diffs can sometime be voluminous, there is
   a new :attr:`~unittest.TestCase.maxDiff` attribute which sets maximum length of
   diffs.
 
-  In addition the naming in the module has undergone a number of clean-ups.  For
-  example, :meth:`~unittest.TestCase.assertRegex` is the new name for
+* In addition, the method names in the module have undergone a number of clean-ups.
+
+  For example, :meth:`~unittest.TestCase.assertRegex` is the new name for
   :meth:`~unittest.TestCase.assertRegexpMatches` which was misnamed because the
   test uses :func:`re.search`, not :func:`re.match`.  Other methods using
-  regular expressions are now named using short form "Regex" in preference
-  to "Regexp" -- this matches the names used in other unittest implementations,
+  regular expressions are now named using short form "Regex" in preference to
+  "Regexp" -- this matches the names used in other unittest implementations,
   matches Python's old name for the :mod:`re` module, and it has unambiguous
   camel-casing.
 
-  To improve consistency, some of long-standing method aliases are being
+  (Contributed by Raymond Hettinger and implemented by Ezio Melotti.)
+
+* To improve consistency, some of long-standing method aliases are being
   deprecated in favor of the preferred names:
 
    - replace :meth:`assert_` with :meth:`.assertTrue`
@@ -1134,6 +1167,13 @@ unittest
   the :mod:`unittest` documentation.
 
   (Contributed by Ezio Melotti; :issue:`9424`.)
+
+* The :meth:`~unittest.TestCase.assertDictContainsSubset` method was deprecated
+  because it was mis-implemented with the arguments in the wrong order.  This
+  created hard-to-debug optical illusions where tests like
+  ``TestCase().assertDictContainsSubset({'a':1, 'b':2}, {'a':1})`` would fail.
+
+  (Contributed by Raymond Hettinger.)
 
 random
 ------
@@ -1548,18 +1588,31 @@ The :mod:`datetime` module now has an auxiliary implementation in pure Python.
 No functionality was changed.  This just provides an easier-to-read
 alternate implementation.  (Contributed by Alexander Belopolsky.)
 
+The unmaintained *Demo* directory has been removed.  Some demos were integrated
+into the documentation, some were moved to the *Tools/demo* directory, and
+others were removed altogether.  (Contributed by Georg Brandl.)
+
 
 IDLE
 ====
 
 * The format menu now has an option to clean-up source files by stripping
-  trailing whitespace (:issue:`5150`).
+  trailing whitespace.
+
+  (Contributed by Raymond Hettinger; :issue:`5150`.)
+
+* IDLE on Mac OS X now works with both Carbon AquaTk and Cocoa AquaTk.
+
+  (Contributed by Kevin Walzer, Ned Deily, and Ronald Oussoren; :issue:`6075`.)
 
 
 Build and C API Changes
 =======================
 
 Changes to Python's build process and to the C API include:
+
+* The *idle*, *pydoc* and *2to3* scripts are now installed with a
+  version-specific suffix on ``make altinstall`` (:issue:`10679`).
 
 * The C functions that access the Unicode Database now accept and return
   characters from the full Unicode range, even on narrow unicode builds
@@ -1713,6 +1766,13 @@ require changes to your code:
   (Contributed by Georg Brandl and Mattias Brändström;
   `appspot issue 53094 <http://codereview.appspot.com/53094>`_.)
 
-* :func:`struct.pack` no longer implicitly encodes unicode to UTF-8: use
-  explicit conversion instead and replace unicode literals by bytes literals.
+* :func:`struct.pack` now only allows bytes for the ``s`` string pack code.
+  Formerly, it would accept text arguments and implicitly encode them to bytes
+  using UTF-8.  This was problematic because it made assumptions about the
+  correct encoding and because a variable length encoding can fail when writing
+  to fixed length segment of a structure.
 
+  Code such as ``struct.pack('<6sHHBBB', 'GIF87a', x, y)`` should be rewritten
+  with to use bytes instead of text, ``struct.pack('<6sHHBBB', b'GIF87a', x, y)``.
+
+  (Discovered by David Beazley and fixed by Victor Stinner; :issue:`10783`.
