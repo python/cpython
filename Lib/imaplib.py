@@ -169,6 +169,17 @@ class IMAP4:
 
         self.open(host, port)
 
+        try:
+            self._connect()
+        except Exception:
+            try:
+                self.shutdown()
+            except socket.error:
+                pass
+            raise
+
+
+    def _connect(self):
         # Create unique tag for this session,
         # and compile tagged response matcher.
 
