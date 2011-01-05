@@ -25,8 +25,9 @@ def raise2():
 
 class TestCase(unittest.TestCase):
     def setUp(self):
+        self.save_stdout = sys.stdout
+        self.save_stderr = sys.stderr
         self.stream = io.StringIO()
-        self.save_stdout, self.save_stderr = sys.stderr, sys.stdout
         sys.stdout = sys.stderr = self.stream
         atexit._clear()
 
