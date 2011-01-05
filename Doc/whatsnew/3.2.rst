@@ -901,16 +901,6 @@ contexts that correspond to the decimal interchange formats specified in IEEE
 
 (Contributed by Mark Dickinson and Raymond Hettinger.)
 
-codecs
-------
-
-In an effort to keep codec aliases solely focused on bytes-to-text encodings,
-the *base64*, *bz2*, *hex*, *quopri*, *rot13*, *uu* and *zlib* codecs have been
-removed from the codec aliases. These bytes-to-bytes conversion are still
-accessible via codecs.lookup().
-
-(see :issue:`10807`.)
-
 ftp
 ---
 
