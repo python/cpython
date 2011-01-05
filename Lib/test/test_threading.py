@@ -512,9 +512,9 @@ class ThreadJoinOnShutdown(BaseTestCase):
     def assertScriptHasOutput(self, script, expected_output):
         p = subprocess.Popen([sys.executable, "-c", script],
                              stdout=subprocess.PIPE)
-        rc = p.wait()
-        data = p.stdout.read().decode().replace('\r', '')
-        self.assertEqual(rc, 0, "Unexpected error")
+        stdout, stderr = p.communicate()
+        data = stdout.decode().replace('\r', '')
+        self.assertEqual(p.returncode, 0, "Unexpected error")
         self.assertEqual(data, expected_output)
 
     @unittest.skipUnless(hasattr(os, 'fork'), "needs os.fork()")
