@@ -116,6 +116,11 @@ Build
 - Issue #10475: Don't hardcode compilers for LDSHARED/LDCXXSHARED on NetBSD
   and DragonFly BSD.  Patch by Nicolas Joly.
 
+- Issue #10655: Fix the build on PowerPC on Linux with GCC when building with
+  timestamp profiling (--with-tsc): the preprocessor test for the PowerPC
+  support now looks for "__powerpc__" as well as "__ppc__": the latter seems to
+  only be present on OS X; the former is the correct one for Linux with GCC.
+
 Tests
 -----
 
