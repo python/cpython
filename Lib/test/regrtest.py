@@ -264,8 +264,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
              'exclude', 'single', 'slow', 'random', 'fromfile', 'findleaks',
              'use=', 'threshold=', 'trace', 'coverdir=', 'nocoverdir',
              'runleaks', 'huntrleaks=', 'memlimit=', 'randseed=',
-             'multiprocess=', 'slaveargs=', 'forever', 'debug', 'start=',
-             'nowindows', 'header'])
+             'multiprocess=', 'coverage', 'slaveargs=', 'forever', 'debug',
+             'start=', 'nowindows', 'header'])
     except getopt.error as msg:
         usage(msg)
 

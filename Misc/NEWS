@@ -172,6 +172,8 @@ Tools/Demos
 Tests
 -----
 
+- Make the --coverage flag work for test.regrtest.
+
 - Issue #1677694: Refactor and improve test_timeout.  Original patch by
   Björn Lindqvist.
 
