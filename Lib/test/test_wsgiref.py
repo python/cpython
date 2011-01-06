@@ -481,6 +481,11 @@ class HandlerTests(TestCase):
             s('200 OK',[])(e['wsgi.url_scheme'])
             return []
 
+        def trivial_app4(e,s):
+            # Simulate a response to a HEAD request
+            s('200 OK',[('Content-Length', '12345')])
+            return []
+
         h = TestHandler()
         h.run(trivial_app1)
         self.assertEqual(h.stdout.getvalue(),
@@ -497,10 +502,12 @@ class HandlerTests(TestCase):
             "http")
 
 
-
-
-
-
+        h = TestHandler()
+        h.run(trivial_app4)
+        self.assertEqual(h.stdout.getvalue(),
+            b'Status: 200 OK\r\n'
+            b'Content-Length: 12345\r\n'
+            b'\r\n')
 
     def testBasicErrorOutput(self):
 

@@ -25,6 +25,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3839: wsgiref should not override a Content-Length header set by
+  the application.  Initial patch by Clovis Fabricio.
+
 - Issue #10806, issue #9905: Fix subprocess pipes when some of the standard
   file descriptors (0, 1, 2) are closed in the parent process.  Initial
   patch by Ross Lagerwall.
