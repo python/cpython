@@ -131,6 +131,7 @@ class TimeTestCase(unittest.TestCase):
         self.assertRaises(OverflowError, time.asctime, (bigyear + 1,) + (0,)*8)
         self.assertRaises(TypeError, time.asctime, 0)
         self.assertRaises(TypeError, time.asctime, ())
+        self.assertRaises(TypeError, time.asctime, (0,) * 10)
 
     def test_asctime_bounding_check(self):
         self._bounds_checking(time.asctime)
