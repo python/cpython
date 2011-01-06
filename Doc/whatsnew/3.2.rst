@@ -884,8 +884,8 @@ Context managers normally have the flexibility to return an argument usable by
 the :keyword:`with`-statement, but there is no parallel for function decorators.
 
 In the above example, there is not a clean way for the *track_entry_and_exit*
-context manager does not have a way to return a logging instance for use in the
-body of enclosed statements.
+context manager to return a logging instance for use in the body of enclosed
+statements.
 
 (Contributed by Michael Foord in :issue:`9110`.)
 
