@@ -302,7 +302,9 @@ class BaseHandler:
     def finish_content(self):
         """Ensure headers and content have both been sent"""
         if not self.headers_sent:
-            self.headers['Content-Length'] = "0"
+            # Only zero Content-Length if not set by the application (so
+            # that HEAD requests can be satisfied properly, see #3839)
+            self.headers.setdefault('Content-Length', "0")
             self.send_headers()
         else:
             pass # XXX check if content-length was too short?
