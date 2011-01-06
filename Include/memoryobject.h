@@ -55,9 +55,11 @@ PyAPI_FUNC(PyObject *) PyMemoryView_GetContiguous(PyObject *base,
 
 PyAPI_FUNC(PyObject *) PyMemoryView_FromObject(PyObject *base);
 
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) PyMemoryView_FromBuffer(Py_buffer *info);
     /* create new if bufptr is NULL 
         will be a new bytesobject in base */
+#endif
 
 
 /* The struct is declared here so that macros can work, but it shouldn't

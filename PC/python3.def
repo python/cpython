@@ -10,13 +10,6 @@ EXPORTS
   PyBaseObject_Type=python32.PyBaseObject_Type DATA
   PyBool_FromLong=python32.PyBool_FromLong
   PyBool_Type=python32.PyBool_Type DATA
-  PyBuffer_FillContiguousStrides=python32.PyBuffer_FillContiguousStrides
-  PyBuffer_FillInfo=python32.PyBuffer_FillInfo
-  PyBuffer_FromContiguous=python32.PyBuffer_FromContiguous
-  PyBuffer_GetPointer=python32.PyBuffer_GetPointer
-  PyBuffer_IsContiguous=python32.PyBuffer_IsContiguous
-  PyBuffer_Release=python32.PyBuffer_Release
-  PyBuffer_ToContiguous=python32.PyBuffer_ToContiguous
   PyByteArrayIter_Type=python32.PyByteArrayIter_Type DATA
   PyByteArray_AsString=python32.PyByteArray_AsString
   PyByteArray_Concat=python32.PyByteArray_Concat
@@ -317,7 +310,6 @@ EXPORTS
   PyMem_Malloc=python32.PyMem_Malloc
   PyMem_Realloc=python32.PyMem_Realloc
   PyMemberDescr_Type=python32.PyMemberDescr_Type DATA
-  PyMemoryView_FromBuffer=python32.PyMemoryView_FromBuffer
   PyMemoryView_FromObject=python32.PyMemoryView_FromObject
   PyMemoryView_GetContiguous=python32.PyMemoryView_GetContiguous
   PyMemoryView_Type=python32.PyMemoryView_Type DATA
@@ -399,7 +391,6 @@ EXPORTS
   PyObject_CallObject=python32.PyObject_CallObject
   PyObject_CheckReadBuffer=python32.PyObject_CheckReadBuffer
   PyObject_ClearWeakRefs=python32.PyObject_ClearWeakRefs
-  PyObject_CopyData=python32.PyObject_CopyData
   PyObject_DelItem=python32.PyObject_DelItem
   PyObject_DelItemString=python32.PyObject_DelItemString
   PyObject_Dir=python32.PyObject_Dir
@@ -412,7 +403,6 @@ EXPORTS
   PyObject_GenericSetAttr=python32.PyObject_GenericSetAttr
   PyObject_GetAttr=python32.PyObject_GetAttr
   PyObject_GetAttrString=python32.PyObject_GetAttrString
-  PyObject_GetBuffer=python32.PyObject_GetBuffer
   PyObject_GetItem=python32.PyObject_GetItem
   PyObject_GetIter=python32.PyObject_GetIter
   PyObject_HasAttr=python32.PyObject_HasAttr
