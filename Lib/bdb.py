@@ -385,6 +385,8 @@ class Bdb:
         if locals is None:
             locals = globals
         self.reset()
+        if isinstance(cmd, str):
+            cmd = compile(cmd, "<string>", "exec")
         sys.settrace(self.trace_dispatch)
         try:
             exec(cmd, globals, locals)
