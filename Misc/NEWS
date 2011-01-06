@@ -145,6 +145,11 @@ Build
 - Issue #10679: The "idle", "pydoc" and "2to3" scripts are now installed with
   a version-specific suffix on "make altinstall".
 
+- Issue #10655: Fix the build on PowerPC on Linux with GCC when building with
+  timestamp profiling (--with-tsc): the preprocessor test for the PowerPC
+  support now looks for "__powerpc__" as well as "__ppc__": the latter seems to
+  only be present on OS X; the former is the correct one for Linux with GCC.
+
 Tools/Demos
 -----------
 
