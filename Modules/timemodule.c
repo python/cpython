@@ -297,34 +297,20 @@ static int
 gettmarg(PyObject *args, struct tm *p)
 {
     int y;
-    PyObject *t = NULL;
 
     memset((void *) p, '\0', sizeof(struct tm));
 
-    if (PyTuple_Check(args)) {
-        t = args;
-        Py_INCREF(t);
-    }
-    else {
+    if (!PyTuple_Check(args)) {
         PyErr_SetString(PyExc_TypeError,
                         "Tuple or struct_time argument required");
         return 0;
     }
 
-    if (t == NULL || !PyArg_ParseTuple(t, "iiiiiiiii",
-                                       &y,
-                                       &p->tm_mon,
-                                       &p->tm_mday,
-                                       &p->tm_hour,
-                                       &p->tm_min,
-                                       &p->tm_sec,
-                                       &p->tm_wday,
-                                       &p->tm_yday,
-                                       &p->tm_isdst)) {
-        Py_XDECREF(t);
+    if (!PyArg_ParseTuple(args, "iiiiiiiii",
+                          &y, &p->tm_mon, &p->tm_mday,
+                          &p->tm_hour, &p->tm_min, &p->tm_sec,
+                          &p->tm_wday, &p->tm_yday, &p->tm_isdst))
         return 0;
-    }
-    Py_DECREF(t);
 
     /* XXX: Why 1900?  If the goal is to interpret 2-digit years as those in
      * 20th / 21st century according to the POSIX standard, we can just treat
