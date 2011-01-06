@@ -294,7 +294,7 @@ class Charset:
         """Header-encode a string by converting it first to bytes.
 
         This is similar to `header_encode()` except that the string is fit
-        into maximum line lengths as given by the arguments.
+        into maximum line lengths as given by the argument.
 
         :param string: A unicode string for the header.  It must be possible
             to encode this string to bytes using the character set's
@@ -305,8 +305,6 @@ class Charset:
             and should never be exhausted.  The maximum line lengths should
             not count the RFC 2047 chrome.  These line lengths are only a
             hint; the splitter does the best it can.
-        :param firstmaxlen: The maximum line length of the first line.  If
-            None (the default), then `maxlen` is used for the first line.
         :return: Lines of encoded strings, each with RFC 2047 chrome.
         """
         # See which encoding we should use.
