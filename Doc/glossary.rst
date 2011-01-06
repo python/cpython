@@ -99,9 +99,10 @@ Glossary
       See :pep:`343`.
 
    CPython
-      The canonical implementation of the Python programming language.  The
-      term "CPython" is used in contexts when necessary to distinguish this
-      implementation from others such as Jython or IronPython.
+      The canonical implementation of the Python programming language, as
+      distributed on `python.org <http://python.org>`_.  The term "CPython"
+      is used when necessary to distinguish this implementation from others
+      such as Jython or IronPython.
 
    decorator
       A function returning another function, usually applied as a function
@@ -258,16 +259,25 @@ Glossary
       See :term:`global interpreter lock`.
 
    global interpreter lock
-      The lock used by Python threads to assure that only one thread
-      executes in the :term:`CPython` :term:`virtual machine` at a time.
-      This simplifies the CPython implementation by assuring that no two
-      processes can access the same memory at the same time.  Locking the
-      entire interpreter makes it easier for the interpreter to be
-      multi-threaded, at the expense of much of the parallelism afforded by
-      multi-processor machines.  Efforts have been made in the past to
-      create a "free-threaded" interpreter (one which locks shared data at a
-      much finer granularity), but so far none have been successful because
-      performance suffered in the common single-processor case.
+      The mechanism used by the :term:`CPython` interpreter to assure that
+      only one thread executes Python :term:`bytecode` at a time.
+      This simplifies the CPython implementation by making the object model
+      (including critical built-in types such as :class:`dict`) implicitly
+      safe against concurrent access.  Locking the entire interpreter
+      makes it easier for the interpreter to be multi-threaded, at the
+      expense of much of the parallelism afforded by multi-processor
+      machines.
+
+      However, some extension modules, either standard or third-party,
+      are designed so as to release the GIL when doing computationally-intensive
+      tasks such as compression or hashing.  Also, the GIL is always released
+      when doing I/O.
+
+      Past efforts to create a "free-threaded" interpreter (one which locks
+      shared data at a much finer granularity) have not been successful
+      because performance suffered in the common single-processor case. It
+      is believed that overcoming this performance issue would make the
+      implementation much more complicated and therefore costlier to maintain.
 
    hashable
       An object is *hashable* if it has a hash value which never changes during
