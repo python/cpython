@@ -362,6 +362,37 @@ module::
    :pep:`3149` - ABI Version Tagged .so Files
       PEP written by Barry Warsaw.
 
+PEP 3333: Python Web Server Gateway Interface v1.0.1
+=====================================================
+
+This informational PEP clarifies how bytes/text issues are to be handled by the
+WGSI protocol.  The challenge is that string handling in Python 3 is most
+conveniently handled with the :class:`str` type eventhough the HTTP protocol
+is itself bytes oriented.
+
+The PEP differentiates so-called *native strings* that are used for
+request/response headers and metadata versus *byte strings* which are used for
+the bodies of requests and responses.
+
+The *native strings* are always of type :class:`str` but are restricted to code
+points between *u0000* through *u00FF* which are translatable to bytes using
+*Latin-1* encoding.  These strings are used with :func:`start_response` as
+response headers or statuses and must follow :rfc:`2616` with respect to
+encoding. That is, they must either be *ISO-8859-1* characters or use
+:rfc:`2047` MIME encoding.
+
+To make the environment accessible using native strings, the :mod:`wsgiref`
+module has a new function, :func:`wsgiref.handlers.read_environ` which
+transcodes CGI variables from :attr:`os.environ` into native strings and returns
+a new dictionary.  This function provides a WSGI native string friendly
+abstraction which is especially helpful given that the environment variables are
+handled differently on various operating systems (native unicode on Windows or
+UTF-8 encoded bytes on some Unix installations).
+
+.. seealso::
+
+   :pep:`3333` - Python Web Server Gateway Interface v1.0.1
+      PEP written by Phillip Eby.
 
 Other Language Changes
 ======================
@@ -1399,7 +1430,7 @@ reading directly from dictionaries and strings.
             - bytes input support
             - non-UTF8 percent encoding of non-ASCII characters
           Issue 2987 for IPv6 (RFC2732) support in urlparse
-.. XXX: Any updates to the WSGI bytes versus text problem?
+
 
 Multi-threading
 ===============
