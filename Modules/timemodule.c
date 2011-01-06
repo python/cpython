@@ -605,11 +605,11 @@ _asctime(struct tm *timeptr)
     char buf[20]; /* 'Sun Sep 16 01:03:52\0' */
     int n;
 
-    n = snprintf(buf, sizeof(buf), "%.3s %.3s%3d %.2d:%.2d:%.2d",
-                 wday_name[timeptr->tm_wday],
-                 mon_name[timeptr->tm_mon],
-                 timeptr->tm_mday, timeptr->tm_hour,
-                 timeptr->tm_min, timeptr->tm_sec);
+    n = PyOS_snprintf(buf, sizeof(buf), "%.3s %.3s%3d %.2d:%.2d:%.2d",
+                      wday_name[timeptr->tm_wday],
+                      mon_name[timeptr->tm_mon],
+                      timeptr->tm_mday, timeptr->tm_hour,
+                      timeptr->tm_min, timeptr->tm_sec);
     /* XXX: since the fields used by snprintf above are validated in checktm,
      * the following condition should never trigger. We keep the check because
      * historically fixed size buffer used in asctime was the source of
