@@ -19,8 +19,7 @@ names are those used for special class methods; variants without leading and
 trailing ``__`` are also provided for convenience.
 
 The functions fall into categories that perform object comparisons, logical
-operations, mathematical operations, sequence operations, and abstract type
-tests.
+operations, mathematical operations and sequence operations.
 
 The object comparison functions are useful for all objects, and are named after
 the rich comparison operators they support:
