@@ -26,10 +26,21 @@ The :mod:`dummy_threading` module is provided for situations where
    Starting with Python 2.5, several Thread methods raise :exc:`RuntimeError`
    instead of :exc:`AssertionError` if called erroneously.
 
+.. impl-detail::
+
+   Due to the :term:`Global Interpreter Lock`, in CPython only one thread
+   can execute Python code at once (even though certain performance-oriented
+   libraries might overcome this limitation).
+   If you want your application to make better of use of the computational
+   resources of multi-core machines, you are advised to use
+   :mod:`multiprocessing`. However, threading is still an appropriate model
+   if you want to run multiple I/O-bound tasks simultaneously.
+
 .. seealso::
 
    Latest version of the `threading module Python source code
    <http://svn.python.org/view/python/branches/release27-maint/Lib/threading.py?view=markup>`_
+
 
 This module defines the following functions and objects:
 
