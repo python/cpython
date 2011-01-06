@@ -341,8 +341,8 @@ class Win64WinregTests(BaseWinregTests):
         with OpenKey(HKEY_LOCAL_MACHINE, "Software") as key:
             # HKLM\Software is redirected but not reflected in all OSes
             self.assertTrue(QueryReflectionKey(key))
-            self.assertEqual(None, EnableReflectionKey(key))
-            self.assertEqual(None, DisableReflectionKey(key))
+            self.assertIsNone(EnableReflectionKey(key))
+            self.assertIsNone(DisableReflectionKey(key))
             self.assertTrue(QueryReflectionKey(key))
 
     @unittest.skipUnless(HAS_REFLECTION, "OS doesn't support reflection")

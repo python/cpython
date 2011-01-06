@@ -202,7 +202,7 @@ class TestTimeZone(unittest.TestCase):
 
 
     def test_dst(self):
-        self.assertEqual(None, timezone.utc.dst(self.DT))
+        self.assertIsNone(timezone.utc.dst(self.DT))
 
         with self.assertRaises(TypeError): self.EST.dst('')
         with self.assertRaises(TypeError): self.EST.dst(5)

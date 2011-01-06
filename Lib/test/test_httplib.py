@@ -560,7 +560,7 @@ class RequestBodyTest(TestCase):
         self.conn.request("PUT", "/url", "body")
         message, f = self.get_headers_and_fp()
         self.assertEqual("text/plain", message.get_content_type())
-        self.assertEqual(None, message.get_charset())
+        self.assertIsNone(message.get_charset())
         self.assertEqual("4", message.get("content-length"))
         self.assertEqual(b'body', f.read())
 
@@ -568,7 +568,7 @@ class RequestBodyTest(TestCase):
         self.conn.request("PUT", "/url", "body\xc1")
         message, f = self.get_headers_and_fp()
         self.assertEqual("text/plain", message.get_content_type())
-        self.assertEqual(None, message.get_charset())
+        self.assertIsNone(message.get_charset())
         self.assertEqual("5", message.get("content-length"))
         self.assertEqual(b'body\xc1', f.read())
 
@@ -576,7 +576,7 @@ class RequestBodyTest(TestCase):
         self.conn.request("PUT", "/url", b"body\xc1")
         message, f = self.get_headers_and_fp()
         self.assertEqual("text/plain", message.get_content_type())
-        self.assertEqual(None, message.get_charset())
+        self.assertIsNone(message.get_charset())
         self.assertEqual("5", message.get("content-length"))
         self.assertEqual(b'body\xc1', f.read())
 
@@ -587,7 +587,7 @@ class RequestBodyTest(TestCase):
             self.conn.request("PUT", "/url", f)
             message, f = self.get_headers_and_fp()
             self.assertEqual("text/plain", message.get_content_type())
-            self.assertEqual(None, message.get_charset())
+            self.assertIsNone(message.get_charset())
             self.assertEqual("4", message.get("content-length"))
             self.assertEqual(b'body', f.read())
 
@@ -598,7 +598,7 @@ class RequestBodyTest(TestCase):
             self.conn.request("PUT", "/url", f)
             message, f = self.get_headers_and_fp()
             self.assertEqual("text/plain", message.get_content_type())
-            self.assertEqual(None, message.get_charset())
+            self.assertIsNone(message.get_charset())
             self.assertEqual("5", message.get("content-length"))
             self.assertEqual(b'body\xc1', f.read())
 
