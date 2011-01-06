@@ -7,7 +7,7 @@ Expressions
 
 .. index:: expression, BNF
 
-   This chapter explains the meaning of the elements of expressions in Python.
+This chapter explains the meaning of the elements of expressions in Python.
 
 **Syntax Notes:** In this and the following chapters, extended BNF notation will
 be used to describe syntax, not lexical analysis.  When (one alternative of) a
