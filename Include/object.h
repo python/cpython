@@ -143,7 +143,7 @@ typedef int(*ssizeobjargproc)(PyObject *, Py_ssize_t, PyObject *);
 typedef int(*ssizessizeobjargproc)(PyObject *, Py_ssize_t, Py_ssize_t, PyObject *);
 typedef int(*objobjargproc)(PyObject *, PyObject *, PyObject *);
 
-
+#ifndef Py_LIMITED_API
 /* buffer interface */
 typedef struct bufferinfo {
     void *buf;
@@ -195,6 +195,7 @@ typedef void (*releasebufferproc)(PyObject *, Py_buffer *);
 #define PyBUF_WRITE 0x200
 
 /* End buffer interface */
+#endif /* Py_LIMITED_API */
 
 typedef int (*objobjproc)(PyObject *, PyObject *);
 typedef int (*visitproc)(PyObject *, void *);

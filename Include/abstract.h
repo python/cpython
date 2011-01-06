@@ -488,6 +488,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
     /* new buffer API */
 
+#ifndef Py_LIMITED_API
 #define PyObject_CheckBuffer(obj) \
     (((obj)->ob_type->tp_as_buffer != NULL) &&  \
      ((obj)->ob_type->tp_as_buffer->bf_getbuffer != NULL))
@@ -575,6 +576,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        /* Releases a Py_buffer obtained from getbuffer ParseTuple's s*.
     */
+#endif /* Py_LIMITED_API */
 
      PyAPI_FUNC(PyObject *) PyObject_Format(PyObject* obj,
                                             PyObject *format_spec);

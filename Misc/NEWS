@@ -8,6 +8,8 @@ What's New in Python 3.2 Release Candidate 1
 Core and Builtins
 -----------------
 
+- Remove buffer API from stable ABI for now, see #10181.
+
 - Issue #8651: PyArg_Parse*() functions raise an OverflowError if the file
   doesn't have PY_SSIZE_T_CLEAN define and the size doesn't fit in an int
   (length bigger than 2^31-1 bytes).
