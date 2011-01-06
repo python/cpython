@@ -2843,6 +2843,7 @@ posix_utime(PyObject *self, PyObject *args)
            something is wrong with the file, when it also
            could be the time stamp that gives a problem. */
         win32_error("utime", NULL);
+        goto done;
     }
     Py_INCREF(Py_None);
     result = Py_None;

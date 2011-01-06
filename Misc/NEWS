@@ -25,6 +25,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7858: Raise an error properly when os.utime() fails under Windows
+  on an existing file.
+
 - Issue #3839: wsgiref should not override a Content-Length header set by
   the application.  Initial patch by Clovis Fabricio.
 
