@@ -27,10 +27,11 @@
 
 typedef unsigned long long uint64;
 
-#if defined(__ppc__) /* <- Don't know if this is the correct symbol; this
-                           section should work for GCC on any PowerPC
-                           platform, irrespective of OS.
-                           POWER?  Who knows :-) */
+/* PowerPC suppport.
+   "__ppc__" appears to be the preprocessor definition to detect on OS X, whereas
+   "__powerpc__" appears to be the correct one for Linux with GCC
+*/
+#if defined(__ppc__) || defined (__powerpc__)
 
 #define READ_TIMESTAMP(var) ppc_getcounter(&var)
 
