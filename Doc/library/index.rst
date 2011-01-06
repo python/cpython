@@ -49,6 +49,7 @@ the `Python Package Index <http://pypi.python.org/pypi>`_.
    strings.rst
    datatypes.rst
    numeric.rst
+   functional.rst
    filesys.rst
    persistence.rst
    archiving.rst
