@@ -159,6 +159,9 @@ Tools/Demos
 Tests
 -----
 
+- Issue #1677694: Refactor and improve test_timeout.  Original patch by
+  Björn Lindqvist.
+
 - Issue #5485: Add tests for the UseForeignDTD method of expat parser objects.
   Patch by Jean-Paul Calderone and Sandro Tosi.
 
