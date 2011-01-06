@@ -428,10 +428,10 @@ Some smaller changes made to the core Python language are:
 * The :func:`hasattr` function works by calling :func:`getattr` and detecting
   whether an exception is raised.  This technique allows it to detect methods
   created dynamically by :meth:`__getattr__` or :meth:`__getattribute__` which
-  would be absent from the class dictionary.  Formerly, *hasattr* would catch
-  any exception, possibly masking genuine errors in those methods.  Now,
-  *hasattr* has been tightened to only catch :exc:`AttributeError` and let
-  other exceptions pass through.
+  would otherwise be absent from the class dictionary.  Formerly, *hasattr*
+  would catch any exception, possibly masking genuine errors.  Now, *hasattr*
+  has been tightened to only catch :exc:`AttributeError` and let other
+  exceptions pass through.
 
   (Discovered by Yury Selivanov and fixed by Benjamin Peterson; :issue:`9666`.)
 
@@ -458,7 +458,6 @@ Some smaller changes made to the core Python language are:
   [97, 98, 99, 100, 101, 102, 103, 104]
 
   (Added by Antoine Pitrou; :issue:`9757`.)
-
 
 * Previously it was illegal to delete a name from the local namespace if it
   occurs as a free variable in a nested block::
