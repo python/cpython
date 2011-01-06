@@ -543,6 +543,11 @@ class HandlerTests(TestCase):
             s('200 OK',[])
             return ['\u0442\u0435\u0441\u0442'.encode("utf-8")]
 
+        def trivial_app4(e,s):
+            # Simulate a response to a HEAD request
+            s('200 OK',[('Content-Length', '12345')])
+            return []
+
         h = TestHandler()
         h.run(trivial_app1)
         self.assertEqual(h.stdout.getvalue(),
@@ -566,10 +571,12 @@ class HandlerTests(TestCase):
             b'\r\n'
             b'\xd1\x82\xd0\xb5\xd1\x81\xd1\x82')
 
-
-
-
-
+        h = TestHandler()
+        h.run(trivial_app4)
+        self.assertEqual(h.stdout.getvalue(),
+            b'Status: 200 OK\r\n'
+            b'Content-Length: 12345\r\n'
+            b'\r\n')
 
     def testBasicErrorOutput(self):
 
