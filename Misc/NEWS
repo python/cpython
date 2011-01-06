@@ -30,6 +30,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10492: bdb.Bdb.run() only traces the execution of the code, not the
+  compilation (if the input is a string).
+
 - Issue #7995: When calling accept() on a socket with a timeout, the returned
   socket is now always blocking, regardless of the operating system.
 
