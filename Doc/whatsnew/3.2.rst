@@ -618,6 +618,8 @@ format.
 * Given bytes input to the model, :class:`~email.generator.Generator` will
   convert message bodies that have a :mailheader:`Content-Transfer-Encoding` of
   *8bit* to instead have a *7bit* :mailheader:`Content-Transfer-Encoding`.
+  XXX: Headers with Un-encoded non-ASCII bytes will be :rfc:`2047`\ -encoded
+  using the charset `unknown-8bit`.
 
 * A new class :class:`~email.generator.BytesGenerator` produces bytes as output,
   preserving any unchanged non-ASCII data that was present in the input used to

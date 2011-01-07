@@ -16,7 +16,9 @@ from io import BytesIO, StringIO
 # Intrapackage imports
 from email import utils
 from email import errors
-from email.charset import Charset
+from email import header
+from email import charset as _charset
+Charset = _charset.Charset
 
 SEMISPACE = '; '
 
@@ -31,16 +33,15 @@ _has_surrogates = re.compile(
 
 
 # Helper functions
-def _sanitize_surrogates(value):
-    # If the value contains surrogates, re-decode and replace the original
-    # non-ascii bytes with '?'s.  Used to sanitize header values before letting
-    # them escape as strings.
+def _sanitize_header(name, value):
+    # If the header value contains surrogates, return a Header using
+    # the unknown-8bit charset to encode the bytes as encoded words.
     if not isinstance(value, str):
-        # Header object
+        # Assume it is already a header object
         return value
     if _has_surrogates(value):
-        original_bytes = value.encode('ascii', 'surrogateescape')
-        return original_bytes.decode('ascii', 'replace').replace('\ufffd', '?')
+        return header.Header(value, charset=_charset.UNKNOWN8BIT,
+                             header_name=name)
     else:
         return value
 
@@ -398,7 +399,7 @@ class Message:
         Any fields deleted and re-inserted are always appended to the header
         list.
         """
-        return [_sanitize_surrogates(v) for k, v in self._headers]
+        return [_sanitize_header(k, v) for k, v in self._headers]
 
     def items(self):
         """Get all the message's header fields and values.
@@ -408,7 +409,7 @@ class Message:
         Any fields deleted and re-inserted are always appended to the header
         list.
         """
-        return [(k, _sanitize_surrogates(v)) for k, v in self._headers]
+        return [(k, _sanitize_header(k, v)) for k, v in self._headers]
 
     def get(self, name, failobj=None):
         """Get a header value.
@@ -419,7 +420,7 @@ class Message:
         name = name.lower()
         for k, v in self._headers:
             if k.lower() == name:
-                return _sanitize_surrogates(v)
+                return _sanitize_header(k, v)
         return failobj
 
     #
@@ -439,7 +440,7 @@ class Message:
         name = name.lower()
         for k, v in self._headers:
             if k.lower() == name:
-                values.append(_sanitize_surrogates(v))
+                values.append(_sanitize_header(k, v))
         if not values:
             return failobj
         return values

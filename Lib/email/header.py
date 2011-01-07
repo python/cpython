@@ -17,7 +17,8 @@ import email.quoprimime
 import email.base64mime
 
 from email.errors import HeaderParseError
-from email.charset import Charset
+from email import charset as _charset
+Charset = _charset.Charset
 
 NL = '\n'
 SPACE = ' '
@@ -210,6 +211,9 @@ class Header:
             # from a charset to None/us-ascii, or from None/us-ascii to a
             # charset.  Only do this for the second and subsequent chunks.
             nextcs = charset
+            if nextcs == _charset.UNKNOWN8BIT:
+                original_bytes = string.encode('ascii', 'surrogateescape')
+                string = original_bytes.decode('ascii', 'replace')
             if uchunks:
                 if lastcs not in (None, 'us-ascii'):
                     if nextcs in (None, 'us-ascii'):
@@ -263,7 +267,8 @@ class Header:
         # Ensure that the bytes we're storing can be decoded to the output
         # character set, otherwise an early error is thrown.
         output_charset = charset.output_codec or 'us-ascii'
-        s.encode(output_charset, errors)
+        if output_charset != _charset.UNKNOWN8BIT:
+            s.encode(output_charset, errors)
         self._chunks.append((s, charset))
 
     def encode(self, splitchars=';, \t', maxlinelen=None, linesep='\n'):

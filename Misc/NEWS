@@ -40,6 +40,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #10686: the email package now :rfc:`2047`\ -encodes headers with
+  non-ASCII bytes (parsed by a Bytes Parser) when doing conversion to
+  7bit-clean presentation, instead of replacing them with ?s.
+
 - email.header.Header was incorrectly encoding folding white space when
   rfc2047-encoding header values with embedded newlines, leaving them
   without folding whitespace.  It now uses the continuation_ws, as it
