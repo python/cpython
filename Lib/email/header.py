@@ -305,10 +305,15 @@ class Header:
                                     self._continuation_ws, splitchars)
         for string, charset in self._chunks:
             lines = string.splitlines()
-            for line in lines:
+            formatter.feed(lines[0], charset)
+            for line in lines[1:]:
+                formatter.newline()
+                if charset.header_encoding is not None:
+                    formatter.feed(self._continuation_ws, USASCII)
+                    line = ' ' + line.lstrip()
                 formatter.feed(line, charset)
-                if len(lines) > 1:
-                    formatter.newline()
+            if len(lines) > 1:
+                formatter.newline()
             formatter.add_transition()
         return formatter._str(linesep)
 
