@@ -36,6 +36,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #8020: Avoid a crash where the small objects allocator would read
+  non-Python managed memory while it is being modified by another thread.
+  Patch by Matt Bandy.
+
 - Issue #10827: Changed the rules for 2-digit years.  The time.asctime
   function will now format any year when ``time.accept2dyear`` is
   false and will accept years >= 1000 otherwise.  The year range
