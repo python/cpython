@@ -15,9 +15,6 @@ matched.  This is done by using the :func:`os.listdir` and
 subshell.  (For tilde and shell variable expansion, use
 :func:`os.path.expanduser` and :func:`os.path.expandvars`.)
 
-.. seealso::
-
-   Latest version of the :source:`glob module Python source code <Lib/glob.py>`
 
 .. function:: glob(pathname)
 
@@ -52,4 +49,6 @@ preserved. ::
 
    Module :mod:`fnmatch`
       Shell-style filename (not path) expansion
+
+   Latest version of the :source:`glob module Python source code <Lib/glob.py>`
 
