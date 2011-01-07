@@ -892,6 +892,13 @@ tok_nextc(register struct tok_state *tok)
         }
         if (tok->prompt != NULL) {
             char *newtok = PyOS_Readline(stdin, stdout, tok->prompt);
+            if (newtok != NULL) {
+                char *translated = translate_newlines(newtok, 0, tok);
+                PyMem_FREE(newtok);
+                if (translated == NULL)
+                    return EOF;
+                newtok = translated;
+            }
 #ifndef PGEN
             if (tok->encoding && newtok && *newtok) {
                 /* Recode to UTF-8 */
