@@ -177,7 +177,7 @@ Example of how to wait for enqueued tasks to be completed::
       A queue class for use in a multi-processing (rather than multi-threading)
       context.
 
-  :class:`collections.deque` is an alternative implementation of unbounded
+   :class:`collections.deque` is an alternative implementation of unbounded
    queues with fast atomic :func:`append` and :func:`popleft` operations that
    do not require locking.
 
