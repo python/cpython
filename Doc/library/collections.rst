@@ -31,11 +31,6 @@ In addition to the concrete container classes, the collections module provides
 :ref:`abstract-base-classes` that can be used to test whether a class provides a
 particular interface, for example, whether it is hashable or a mapping.
 
-.. seealso::
-
-   Latest version of the :source:`collections module Python source code
-   <Lib/collections.py>`
-
 
 :class:`Counter` objects
 ------------------------
@@ -1068,6 +1063,9 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
    ``__hash__ = Set._hash``.
 
 .. seealso::
+
+   * Latest version of the :source:`collections module Python source code
+     <Lib/collections.py>`
 
    * Latest version of the :source:`Python source code for the collections
      abstract base classes <Lib/_abcoll.py>`
