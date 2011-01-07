@@ -28,6 +28,11 @@ The :mod:`dummy_threading` module is provided for situations where
    However, threading is still an appropriate model if you want to run
    multiple I/O-bound tasks simultaneously.
 
+.. seealso::
+
+   Latest version of the :source:`threading module Python source code
+   <Lib/threading.py>`
+
 
 This module defines the following functions and objects:
 
@@ -965,9 +970,3 @@ provided:
   abide by this restriction will lead to intermittent exceptions and
   crashes during interpreter shutdown (as the late imports attempt to
   access machinery which is no longer in a valid state).
-
-
-.. seealso::
-
-   Latest version of the :source:`threading module Python source code
-   <Lib/threading.py>`
