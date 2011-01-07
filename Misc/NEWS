@@ -8,6 +8,10 @@ What's New in Python 3.2 Release Candidate 1
 Core and Builtins
 -----------------
 
+- Issue #8020: Avoid a crash where the small objects allocator would read
+  non-Python managed memory while it is being modified by another thread.
+  Patch by Matt Bandy.
+
 - Issue #10841: On Windows, set the binary mode on stdin, stdout, stderr and
   all io.FileIO objects (to not translate newlines, \r\n <=> \n). The Python
   parser translates newlines (\r\n => \n).
@@ -35,10 +39,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #8020: Avoid a crash where the small objects allocator would read
-  non-Python managed memory while it is being modified by another thread.
-  Patch by Matt Bandy.
 
 - Issue #10827: Changed the rules for 2-digit years.  The time.asctime
   function will now format any year when ``time.accept2dyear`` is
