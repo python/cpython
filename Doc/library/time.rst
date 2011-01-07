@@ -24,9 +24,9 @@ An explanation of some terminology and conventions is in order.
 
 .. index:: single: Year 2038
 
-* The functions in this module do not handle dates and times before the epoch or
+* The functions in this module may not handle dates and times before the epoch or
   far in the future.  The cut-off point in the future is determined by the C
-  library; for Unix, it is typically in 2038.
+  library; for 32-bit systems, it is typically in 2038.
 
 .. index::
    single: Year 2000
@@ -34,20 +34,31 @@ An explanation of some terminology and conventions is in order.
 
 .. _time-y2kissues:
 
-* **Year 2000 (Y2K) issues**:  Python depends on the platform's C library, which
+* **Year 2000 (Y2K) issues**: Python depends on the platform's C library, which
   generally doesn't have year 2000 issues, since all dates and times are
-  represented internally as seconds since the epoch.  Functions accepting a
-  :class:`struct_time` (see below) generally require a 4-digit year.  For backward
-  compatibility, 2-digit years are supported if the module variable
-  ``accept2dyear`` is a non-zero integer; this variable is initialized to ``1``
-  unless the environment variable :envvar:`PYTHONY2K` is set to a non-empty
-  string, in which case it is initialized to ``0``.  Thus, you can set
-  :envvar:`PYTHONY2K` to a non-empty string in the environment to require 4-digit
-  years for all year input.  When 2-digit years are accepted, they are converted
-  according to the POSIX or X/Open standard: values 69-99 are mapped to 1969-1999,
-  and values 0--68 are mapped to 2000--2068. Values 100--1899 are always illegal.
-  Note that this is new as of Python 1.5.2(a2); earlier versions, up to Python
-  1.5.1 and 1.5.2a1, would add 1900 to year values below 1900.
+  represented internally as seconds since the epoch.  Function :func:`strptime`
+  can parse 2-digit years when given ``%y`` format code.  When 2-digit years are
+  parsed, they are converted according to the POSIX and ISO C standards: values
+  69--99 are mapped to 1969--1999, and values 0--68 are mapped to 2000--2068.
+
+  For backward compatibility, years with less than 4 digits are treated
+  specially by :func:`asctime`, :func:`mktime`, and :func:`strftime` functions
+  that operate on a 9-tuple or :class:`struct_time` values. If year (the first
+  value in the 9-tuple) is specified with less than 4 digits, its interpretation
+  depends on the value of ``accept2dyear`` variable.
+
+  If ``accept2dyear`` is true (default), a backward compatibility behavior is
+  invoked as follows:
+
+    - for 2-digit year, century is guessed according to POSIX rules for
+      ``%y`` strptime format.  A deprecation warning is issued when century
+      information is guessed in this way.
+
+    - for 3-digit or negative year, a :exc:`ValueError` exception is raised.
+
+  If ``accept2dyear`` is false (set by the program or as a result of a
+  non-empty value assigned to ``PYTHONY2K`` environment variable) all year
+  values are interpreted as given.
 
 .. index::
    single: UTC

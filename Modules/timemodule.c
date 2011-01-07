@@ -312,34 +312,42 @@ gettmarg(PyObject *args, struct tm *p)
                           &p->tm_wday, &p->tm_yday, &p->tm_isdst))
         return 0;
 
-    /* XXX: Why 1900?  If the goal is to interpret 2-digit years as those in
-     * 20th / 21st century according to the POSIX standard, we can just treat
-     * 0 <= y < 100 as special.  Year 100 is probably too ambiguous and should
-     * be rejected, but years 101 through 1899 can be passed through.
+    /* If year is specified with less than 4 digits, its interpretation
+     * depends on the accept2dyear value.
+     *
+     * If accept2dyear is true (default), a backward compatibility behavior is
+     * invoked as follows:
+     *
+     *   - for 2-digit year, century is guessed according to POSIX rules for
+     *      %y strptime format: 21st century for y < 69, 20th century
+     *      otherwise.  A deprecation warning is issued when century
+     *      information is guessed in this way.
+     *
+     *   - for 3-digit or negative year, a ValueError exception is raised.
+     *
+     * If accept2dyear is false (set by the program or as a result of a
+     * non-empty value assigned to PYTHONY2K environment variable) all year
+     * values are interpreted as given.
      */
-    if (y < 1900) {
+    if (y < 1000) {
         PyObject *accept = PyDict_GetItemString(moddict,
                                                 "accept2dyear");
         int acceptval = accept != NULL && PyObject_IsTrue(accept);
         if (acceptval == -1)
             return 0;
         if (acceptval) {
-            if (69 <= y && y <= 99)
-                y += 1900;
-            else if (0 <= y && y <= 68)
+            if (0 <= y && y < 69)
                 y += 2000;
+            else if (69 <= y && y < 100)
+                y += 1900;
             else {
                 PyErr_SetString(PyExc_ValueError,
                                 "year out of range");
                 return 0;
             }
-        }
-        /* XXX: When accept2dyear is false, we don't have to reject y < 1900.
-         * Consider removing the following else-clause. */
-        else {
-            PyErr_SetString(PyExc_ValueError,
-                            "year out of range");
-            return 0;
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                    "Century info guessed for a 2-digit year.", 1) != 0)
+                return 0;
         }
     }
     p->tm_year = y - 1900;
@@ -461,6 +469,15 @@ time_strftime(PyObject *self, PyObject *args)
     }
     else if (!gettmarg(tup, &buf) || !checktm(&buf))
         return NULL;
+
+    /* XXX: Reportedly, some systems have issues formating dates prior to year
+     * 1900.  These systems should be identified and this check should be
+     * moved to appropriate system specific section below. */
+    if (buf.tm_year < 0) {
+        PyErr_Format(PyExc_ValueError, "year=%d is before 1900; "
+                     "the strftime() method requires year >= 1900",
+                     buf.tm_year + 1900);
+    }
 
     /* Normalize tm_isdst just in case someone foolishly implements %Z
        based on the assumption that tm_isdst falls within the range of
