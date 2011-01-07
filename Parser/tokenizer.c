@@ -892,6 +892,7 @@ tok_nextc(register struct tok_state *tok)
         }
         if (tok->prompt != NULL) {
             char *newtok = PyOS_Readline(stdin, stdout, tok->prompt);
+#ifndef PGEN
             if (newtok != NULL) {
                 char *translated = translate_newlines(newtok, 0, tok);
                 PyMem_FREE(newtok);
@@ -899,7 +900,6 @@ tok_nextc(register struct tok_state *tok)
                     return EOF;
                 newtok = translated;
             }
-#ifndef PGEN
             if (tok->encoding && newtok && *newtok) {
                 /* Recode to UTF-8 */
                 Py_ssize_t buflen;
