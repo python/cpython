@@ -527,11 +527,14 @@ Py_Main(int argc, wchar_t **argv)
 
     stdin_is_interactive = Py_FdIsInteractive(stdin, (char *)0);
 
-    if (Py_UnbufferedStdioFlag) {
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
-        _setmode(fileno(stdin), O_BINARY);
-        _setmode(fileno(stdout), O_BINARY);
+    /* don't translate newlines (\r\n <=> \n) */
+    _setmode(fileno(stdin), O_BINARY);
+    _setmode(fileno(stdout), O_BINARY);
+    _setmode(fileno(stderr), O_BINARY);
 #endif
+
+    if (Py_UnbufferedStdioFlag) {
 #ifdef HAVE_SETVBUF
         setvbuf(stdin,  (char *)NULL, _IONBF, BUFSIZ);
         setvbuf(stdout, (char *)NULL, _IONBF, BUFSIZ);

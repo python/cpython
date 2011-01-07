@@ -388,6 +388,11 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
             goto error;
     }
 
+#if defined(MS_WINDOWS) || defined(__CYGWIN__)
+    /* don't translate newlines (\r\n <=> \n) */
+    _setmode(self->fd, O_BINARY);
+#endif
+
     if (PyObject_SetAttrString((PyObject *)self, "name", nameobj) < 0)
         goto error;
 
