@@ -667,11 +667,19 @@ that this test determines whether an arbitrary address is controlled by
 obmalloc in a small constant time, independent of the number of arenas
 obmalloc controls.  Since this test is needed at every entry point, it's
 extremely desirable that it be this fast.
+
+Since Py_ADDRESS_IN_RANGE may be reading from memory which was not allocated
+by Python, it is important that (POOL)->arenaindex is read only once, as
+another thread may be concurrently modifying the value without holding the
+GIL.  To accomplish this, the arenaindex_temp variable is used to store
+(POOL)->arenaindex for the duration of the Py_ADDRESS_IN_RANGE macro's
+execution.  The caller of the macro is responsible for declaring this
+variable.
 */
 #define Py_ADDRESS_IN_RANGE(P, POOL)                    \
-    ((POOL)->arenaindex < maxarenas &&                  \
-     (uptr)(P) - arenas[(POOL)->arenaindex].address < (uptr)ARENA_SIZE && \
-     arenas[(POOL)->arenaindex].address != 0)
+    ((arenaindex_temp = (POOL)->arenaindex) < maxarenas &&              \
+     (uptr)(P) - arenas[arenaindex_temp].address < (uptr)ARENA_SIZE && \
+     arenas[arenaindex_temp].address != 0)
 
 
 /* This is only useful when running memory debuggers such as
@@ -923,6 +931,9 @@ PyObject_Free(void *p)
     block *lastfree;
     poolp next, prev;
     uint size;
+#ifndef Py_USING_MEMORY_DEBUGGER
+    uint arenaindex_temp;
+#endif
 
     if (p == NULL)      /* free(NULL) has no effect */
         return;
@@ -1137,6 +1148,9 @@ PyObject_Realloc(void *p, size_t nbytes)
     void *bp;
     poolp pool;
     size_t size;
+#ifndef Py_USING_MEMORY_DEBUGGER
+    uint arenaindex_temp;
+#endif
 
     if (p == NULL)
         return PyObject_Malloc(nbytes);
@@ -1758,8 +1772,10 @@ _PyObject_DebugMallocStats(void)
 int
 Py_ADDRESS_IN_RANGE(void *P, poolp pool)
 {
-    return pool->arenaindex < maxarenas &&
-           (uptr)P - arenas[pool->arenaindex].address < (uptr)ARENA_SIZE &&
-           arenas[pool->arenaindex].address != 0;
+    uint arenaindex_temp = pool->arenaindex;
+
+    return arenaindex_temp < maxarenas &&
+           (uptr)P - arenas[arenaindex_temp].address < (uptr)ARENA_SIZE &&
+           arenas[arenaindex_temp].address != 0;
 }
 #endif
