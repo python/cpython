@@ -376,18 +376,32 @@ the bodies of requests and responses.
 
 The *native strings* are always of type :class:`str` but are restricted to code
 points between *u0000* through *u00FF* which are translatable to bytes using
-*Latin-1* encoding.  These strings are used with :func:`start_response` as
-response headers or statuses and must follow :rfc:`2616` with respect to
+*Latin-1* encoding.  These strings are used for the keys and values in the
+environ dictionary and for response headers and statuses in the
+:func:`start_response` function.  They must follow :rfc:`2616` with respect to
 encoding. That is, they must either be *ISO-8859-1* characters or use
 :rfc:`2047` MIME encoding.
 
-To make the environment accessible using native strings, the :mod:`wsgiref`
-module has a new function, :func:`wsgiref.handlers.read_environ` which
-transcodes CGI variables from :attr:`os.environ` into native strings and returns
-a new dictionary.  This function provides a WSGI native string friendly
-abstraction which is especially helpful given that the environment variables are
-handled differently on various operating systems (native unicode on Windows or
-UTF-8 encoded bytes on some Unix installations).
+For developers porting WSGI applications from Python 2, here are the salient
+points:
+
+* If the app already used strings for headers in Python 2, no change is needed.
+
+* If instead, the app encoded output headers or decoded input headers, then the
+  headers will need to be re-encoded to Latin-1.  For example, an output header
+  encoded in utf-8 was using ``h.encode('utf-8')`` now needs to convert from
+  bytes to native strings using ``h.encode('utf-8').decode('latin-1')``.
+
+* Values yielded by an application or sent using the :meth:`write` method
+   must be byte strings.  The :func:`start_response` function and environ
+   must use native strings.  The two cannot be mixed.
+
+For server implementers writing CGI-to-WSGI pathways or other CGI-style
+protocols, the users must to be able access the environment using native strings
+eventhough the underlying platform may have a different convention.  To bridge
+this gap, the :mod:`wsgiref` module has a new function,
+:func:`wsgiref.handlers.read_environ` for transcoding CGI variables from
+:attr:`os.environ` into native strings and returning a new dictionary.
 
 .. seealso::
 
