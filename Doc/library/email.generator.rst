@@ -79,8 +79,8 @@ Here are the public methods of the :class:`Generator` class, imported from the
 
       Messages parsed with a Bytes parser that have a
       :mailheader:`Content-Transfer-Encoding` of 8bit will be converted to a
-      use a 7bit Content-Transfer-Encoding.  Any other non-ASCII bytes in the
-      message structure will be converted to '?' characters.
+      use a 7bit Content-Transfer-Encoding.  Non-ASCII bytes in the headers
+      will be :rfc:`2047` encoded with a charset of `unknown-8bit`.
 
       .. versionchanged:: 3.2
          Added support for re-encoding 8bit message bodies, and the *linesep*
