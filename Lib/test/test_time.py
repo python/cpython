@@ -3,6 +3,7 @@ import time
 import unittest
 import locale
 import sysconfig
+import warnings
 
 class TimeTestCase(unittest.TestCase):
 
@@ -19,10 +20,10 @@ class TimeTestCase(unittest.TestCase):
         time.clock()
 
     def test_conversions(self):
-        self.assertTrue(time.ctime(self.t)
-                     == time.asctime(time.localtime(self.t)))
-        self.assertTrue(int(time.mktime(time.localtime(self.t)))
-                     == int(self.t))
+        self.assertEqual(time.ctime(self.t),
+                         time.asctime(time.localtime(self.t)))
+        self.assertEqual(int(time.mktime(time.localtime(self.t))),
+                         int(self.t))
 
     def test_sleep(self):
         time.sleep(1.2)
@@ -44,7 +45,7 @@ class TimeTestCase(unittest.TestCase):
 
         # Check year [1900, max(int)]
         self.assertRaises(ValueError, func,
-                            (1899, 1, 1, 0, 0, 0, 0, 1, -1))
+                            (999, 1, 1, 0, 0, 0, 0, 1, -1))
         if time.accept2dyear:
             self.assertRaises(ValueError, func,
                                 (-1, 1, 1, 0, 0, 0, 0, 1, -1))
@@ -97,7 +98,8 @@ class TimeTestCase(unittest.TestCase):
         # No test for daylight savings since strftime() does not change output
         # based on its value.
         expected = "2000 01 01 00 00 00 1 001"
-        result = time.strftime("%Y %m %d %H %M %S %w %j", (0,)*9)
+        with support.check_warnings():
+            result = time.strftime("%Y %m %d %H %M %S %w %j", (0,)*9)
         self.assertEqual(expected, result)
 
     def test_strptime(self):
@@ -141,14 +143,15 @@ class TimeTestCase(unittest.TestCase):
         self.assertEqual(time.ctime(t), 'Sun Sep 16 01:03:52 1973')
         t = time.mktime((2000, 1, 1, 0, 0, 0, 0, 0, -1))
         self.assertEqual(time.ctime(t), 'Sat Jan  1 00:00:00 2000')
-        try:
-            bigval = time.mktime((10000, 1, 10) + (0,)*6)
-        except (ValueError, OverflowError):
-            # If mktime fails, ctime will fail too.  This may happen
-            # on some platforms.
-            pass
-        else:
-            self.assertEqual(time.ctime(bigval)[-5:], '10000')
+        for year in [-100, 100, 1000, 2000, 10000]:
+            try:
+                testval = time.mktime((year, 1, 10) + (0,)*6)
+            except (ValueError, OverflowError):
+                # If mktime fails, ctime will fail too.  This may happen
+                # on some platforms.
+                pass
+            else:
+                self.assertEqual(time.ctime(testval)[20:], str(year))
 
     @unittest.skipIf(not hasattr(time, "tzset"),
         "time module has no attribute tzset")
@@ -239,14 +242,14 @@ class TimeTestCase(unittest.TestCase):
         gt1 = time.gmtime(None)
         t0 = time.mktime(gt0)
         t1 = time.mktime(gt1)
-        self.assertTrue(0 <= (t1-t0) < 0.2)
+        self.assertAlmostEqual(t1, t0, delta=0.2)
 
     def test_localtime_without_arg(self):
         lt0 = time.localtime()
         lt1 = time.localtime(None)
         t0 = time.mktime(lt0)
         t1 = time.mktime(lt1)
-        self.assertTrue(0 <= (t1-t0) < 0.2)
+        self.assertAlmostEqual(t1, t0, delta=0.2)
 
 class TestLocale(unittest.TestCase):
     def setUp(self):
@@ -274,16 +277,18 @@ class TestAccept2Year(unittest.TestCase):
         time.accept2dyear = self.saved_accept2dyear
 
     def yearstr(self, y):
-        return time.strftime('%Y', (y,) + (0,) * 8)
+        # return time.strftime('%Y', (y,) + (0,) * 8)
+        return time.asctime((y,) + (0,) * 8).split()[-1]
 
     def test_2dyear(self):
-        self.assertEqual(self.yearstr(0), '2000')
-        self.assertEqual(self.yearstr(69), '1969')
-        self.assertEqual(self.yearstr(68), '2068')
-        self.assertEqual(self.yearstr(99), '1999')
+        with support.check_warnings():
+            self.assertEqual(self.yearstr(0), '2000')
+            self.assertEqual(self.yearstr(69), '1969')
+            self.assertEqual(self.yearstr(68), '2068')
+            self.assertEqual(self.yearstr(99), '1999')
 
     def test_invalid(self):
-        self.assertRaises(ValueError, self.yearstr, 1899)
+        self.assertRaises(ValueError, self.yearstr, 999)
         self.assertRaises(ValueError, self.yearstr, 100)
         self.assertRaises(ValueError, self.yearstr, -1)
 
@@ -293,10 +298,15 @@ class TestAccept2YearBool(TestAccept2Year):
 class TestDontAccept2Year(TestAccept2Year):
     accept2dyear = 0
     def test_2dyear(self):
-        self.assertRaises(ValueError, self.yearstr, 0)
-        self.assertRaises(ValueError, self.yearstr, 69)
-        self.assertRaises(ValueError, self.yearstr, 68)
-        self.assertRaises(ValueError, self.yearstr, 99)
+        self.assertEqual(self.yearstr(0), '0')
+        self.assertEqual(self.yearstr(69), '69')
+        self.assertEqual(self.yearstr(68), '68')
+        self.assertEqual(self.yearstr(99), '99')
+        self.assertEqual(self.yearstr(999), '999')
+        self.assertEqual(self.yearstr(9999), '9999')
+
+    def test_invalid(self):
+        pass
 
 class TestDontAccept2YearBool(TestDontAccept2Year):
     accept2dyear = False
