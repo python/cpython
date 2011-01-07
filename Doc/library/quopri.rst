@@ -17,11 +17,6 @@ few nonprintable characters; the base64 encoding scheme available via the
 :mod:`base64` module is more compact if there are many such characters, as when
 sending a graphics file.
 
-.. seealso::
-
-   Latest version of the :source:`quopri module Python source code
-   <Lib/quopri.py>`
-
 .. function:: decode(input, output, header=False)
 
    Decode the contents of the *input* file and write the resulting decoded binary
@@ -63,3 +58,5 @@ sending a graphics file.
    Module :mod:`base64`
       Encode and decode MIME base64 data
 
+   Latest version of the :source:`quopri module Python source code
+   <Lib/quopri.py>`
