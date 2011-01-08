@@ -602,7 +602,7 @@ class NetworkedTests(unittest.TestCase):
         # https://sha2.hboeck.de/ was used until 2011-01-08 (no route to host)
         remote = ("sha256.tbs-internet.com", 443)
         sha256_cert = os.path.join(os.path.dirname(__file__), "sha256.pem")
-        with support.transient_internet("sha2.hboeck.de"):
+        with support.transient_internet("sha256.tbs-internet.com"):
             s = ssl.wrap_socket(socket.socket(socket.AF_INET),
                                 cert_reqs=ssl.CERT_REQUIRED,
                                 ca_certs=sha256_cert,)
