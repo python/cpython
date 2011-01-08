@@ -17,7 +17,7 @@ class ContextDecorator(object):
         return inner
 
 
-class GeneratorContextManager(ContextDecorator):
+class _GeneratorContextManager(ContextDecorator):
     """Helper for @contextmanager decorator."""
 
     def __init__(self, gen):
@@ -92,7 +92,7 @@ def contextmanager(func):
     """
     @wraps(func)
     def helper(*args, **kwds):
-        return GeneratorContextManager(func(*args, **kwds))
+        return _GeneratorContextManager(func(*args, **kwds))
     return helper
 
 
