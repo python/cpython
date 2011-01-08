@@ -308,13 +308,24 @@ class TestDontAccept2Year(TestAccept2Year):
     def test_invalid(self):
         pass
 
+class TestAccept2YearBad(TestAccept2Year):
+    class X:
+        def __bool__(self):
+            raise RuntimeError('boo')
+    accept2dyear = X()
+    def test_2dyear(self):
+        pass
+    def test_invalid(self):
+        self.assertRaises(RuntimeError, self.yearstr, 200)
+
+
 class TestDontAccept2YearBool(TestDontAccept2Year):
     accept2dyear = False
 
 
 def test_main():
     support.run_unittest(TimeTestCase, TestLocale,
-                         TestAccept2Year, TestAccept2YearBool,
+                         TestAccept2Year, TestAccept2YearBool, TestAccept2YearBad,
                          TestDontAccept2Year, TestDontAccept2YearBool)
 
 if __name__ == "__main__":
