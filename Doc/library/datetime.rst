@@ -1661,8 +1661,12 @@ version) requires, and these work on all platforms with a standard C
 implementation.  Note that the 1999 version of the C standard added additional
 format codes.
 
-The exact range of years for which :meth:`strftime` works also varies across
-platforms.  Regardless of platform, years before 1900 cannot be used.
+The exact range of years for which :meth:`strftime` works also varies
+across platforms.  Regardless of platform, years before 1000 cannot be
+used with ``datetime`` module ``strftime()`` methods.  The ``time``
+module ``strftime()`` function exibit different behavior depending on
+the value of ``time.accept2dyear`` variable.  See :ref:`Year 2000
+(Y2K) issues <time-y2kissues>` for details.
 
 +-----------+--------------------------------+-------+
 | Directive | Meaning                        | Notes |
