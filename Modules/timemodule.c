@@ -474,15 +474,21 @@ time_strftime(PyObject *self, PyObject *args)
     else if (!gettmarg(tup, &buf) || !checktm(&buf))
         return NULL;
 
-    /* XXX: Reportedly, some systems have issues formating dates prior to year
-     * 1000.  These systems should be identified and this check should be
-     * moved to appropriate system specific section below. */
-    if (buf.tm_year < -900) {
-        PyErr_Format(PyExc_ValueError, "year=%d is before 1900; "
-                     "the strftime() method requires year >= 1900",
+#ifdef _MSC_VER
+    if (buf.tm_year + 1900 < 1 || 9999 < buf.tm_year + 1900) {
+        PyErr_Format(PyExc_ValueError,
+                     "strftime() requires year in [1; 9999]",
                      buf.tm_year + 1900);
         return NULL;
     }
+#else
+    if (buf.tm_year + 1900 < 1) {
+        PyErr_Format(PyExc_ValueError,
+                     "strftime() requires year >= 1",
+                     buf.tm_year + 1900);
+        return NULL;
+    }
+#endif
 
     /* Normalize tm_isdst just in case someone foolishly implements %Z
        based on the assumption that tm_isdst falls within the range of
