@@ -757,6 +757,7 @@ def transient_internet(resource_name, timeout=30.0, errnos=()):
     default_errnos = [
         ('ECONNREFUSED', 111),
         ('ECONNRESET', 104),
+        ('EHOSTUNREACH', 113),
         ('ENETUNREACH', 101),
         ('ETIMEDOUT', 110),
     ]
