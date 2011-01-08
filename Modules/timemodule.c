@@ -471,9 +471,9 @@ time_strftime(PyObject *self, PyObject *args)
         return NULL;
 
     /* XXX: Reportedly, some systems have issues formating dates prior to year
-     * 1900.  These systems should be identified and this check should be
+     * 1000.  These systems should be identified and this check should be
      * moved to appropriate system specific section below. */
-    if (buf.tm_year < 0) {
+    if (buf.tm_year < -900) {
         PyErr_Format(PyExc_ValueError, "year=%d is before 1900; "
                      "the strftime() method requires year >= 1900",
                      buf.tm_year + 1900);

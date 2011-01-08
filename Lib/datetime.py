@@ -173,9 +173,9 @@ def _format_time(hh, mm, ss, us):
 # Correctly substitute for %z and %Z escapes in strftime formats.
 def _wrap_strftime(object, format, timetuple):
     year = timetuple[0]
-    if year < 1900:
-        raise ValueError("year=%d is before 1900; the datetime strftime() "
-                         "methods require year >= 1900" % year)
+    if year < 1000:
+        raise ValueError("year=%d is before 1000; the datetime strftime() "
+                         "methods require year >= 1000" % year)
     # Don't call utcoffset() or tzname() unless actually needed.
     freplace = None # the string to use for %f
     zreplace = None # the string to use for %z
@@ -1189,7 +1189,7 @@ class time:
         """Format using strftime().  The date part of the timestamp passed
         to underlying strftime should not be used.
         """
-        # The year must be >= 1900 else Python's strftime implementation
+        # The year must be >= 1000 else Python's strftime implementation
         # can raise a bogus exception.
         timetuple = (1900, 1, 1,
                      self._hour, self._minute, self._second,
