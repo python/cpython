@@ -294,21 +294,13 @@ class _TestStrftimeYear:
             text = self.yearstr(12345)
         except ValueError:
             # strftime() is limited to [1; 9999] with Visual Studio
-            pass
-        else:
-            # Issue #10864: OpenIndiana is limited to 4 digits, but Python
-            # doesn't raise a ValueError
-            #self.assertEqual(text, '12345')
-            self.assertIn(text, ('2345', '12345'))
-        try:
-            text = self.yearstr(123456789)
-        except ValueError:
-            pass
-        else:
-            # Issue #10864: OpenIndiana is limited to 4 digits, but Python
-            # doesn't raise a ValueError
-            #self.assertEqual(text, '123456789')
-            self.assertIn(text, ('123456789', '6789'))
+            return
+        # Issue #10864: OpenIndiana is limited to 4 digits,
+        # but Python doesn't raise a ValueError
+        #self.assertEqual(text, '12345')
+        #self.assertEqual(self.yearstr(123456789), '123456789')
+        self.assertIn(text, ('2345', '12345'))
+        self.assertIn(self.yearstr(123456789), ('123456789', '6789'))
 
 class _Test2dYear(_BaseYearTest):
     accept2dyear = 1
@@ -336,6 +328,17 @@ class _Test4dYear(_BaseYearTest):
         self.assertIn(self.yearstr(999), ('999', '0999'))
         self.assertEqual(self.yearstr(9999), '9999')
 
+    def test_negative(self):
+        try:
+            text = self.yearstr(-1)
+        except ValueError:
+            # strftime() is limited to [1; 9999] with Visual Studio
+            return
+        self.assertIn(text, ('-1', '-001'))
+
+        self.assertEqual(self.yearstr(-1234), '-1234')
+        self.assertEqual(self.yearstr(-123456), '-123456')
+
 class TestAsctimeAccept2dYear(_TestAsctimeYear, _Test2dYear):
     pass
 
@@ -346,8 +349,7 @@ class TestAsctime4dyear(_TestAsctimeYear, _Test4dYear):
     pass
 
 class TestStrftime4dyear(_TestStrftimeYear, _Test4dYear):
-    def test_bounds(self):
-        self.assertRaises(ValueError, self.yearstr, 0)
+    pass
 
 class Test2dyearBool(_TestAsctimeYear, _Test2dYear):
     accept2dyear = True

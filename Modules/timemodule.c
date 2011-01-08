@@ -332,7 +332,7 @@ gettmarg(PyObject *args, struct tm *p)
     if (y < 1000) {
         PyObject *accept = PyDict_GetItemString(moddict,
                                                 "accept2dyear");
-	if (accept != NULL) {
+        if (accept != NULL) {
             int acceptval =  PyObject_IsTrue(accept);
             if (acceptval == -1)
                 return 0;
@@ -478,13 +478,6 @@ time_strftime(PyObject *self, PyObject *args)
     if (buf.tm_year + 1900 < 1 || 9999 < buf.tm_year + 1900) {
         PyErr_Format(PyExc_ValueError,
                      "strftime() requires year in [1; 9999]",
-                     buf.tm_year + 1900);
-        return NULL;
-    }
-#else
-    if (buf.tm_year + 1900 < 1) {
-        PyErr_Format(PyExc_ValueError,
-                     "strftime() requires year >= 1",
                      buf.tm_year + 1900);
         return NULL;
     }
