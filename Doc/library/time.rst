@@ -120,10 +120,19 @@ The module defines the following functions and data items:
 
 .. data:: accept2dyear
 
-   Boolean value indicating whether two-digit year values will be accepted.  This
-   is true by default, but will be set to false if the environment variable
-   :envvar:`PYTHONY2K` has been set to a non-empty string.  It may also be modified
-   at run time.
+   Boolean value indicating whether two-digit year values will be
+   mapped to 1969--2068 range by :func:`asctime`, :func:`mktime`, and
+   :func:`strftime` functions.  This is true by default, but will be
+   set to false if the environment variable :envvar:`PYTHONY2K` has
+   been set to a non-empty string.  It may also be modified at run
+   time.
+
+   .. deprecated:: 3.2
+      Mapping of 2-digit year values by :func:`asctime`,
+      :func:`mktime`, and :func:`strftime` functions to 1969--2068
+      range is deprecated.  Programs that need to process 2-digit
+      years should use ``%y`` code available in :func:`strptime`
+      function or convert 2-digit year values to 4-digit themselves.
 
 
 .. data:: altzone
