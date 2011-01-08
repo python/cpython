@@ -225,91 +225,6 @@ Operations which work with sequences (some of them with mappings too) include:
 
    Set the value of *a* at index *b* to *c*.
 
-
-Many operations have an "in-place" version.  The following functions provide a
-more primitive access to in-place operators than the usual syntax does; for
-example, the :term:`statement` ``x += y`` is equivalent to
-``x = operator.iadd(x, y)``.  Another way to put it is to say that
-``z = operator.iadd(x, y)`` is equivalent to the compound statement
-``z = x; z += y``.
-
-.. function:: iadd(a, b)
-              __iadd__(a, b)
-
-   ``a = iadd(a, b)`` is equivalent to ``a += b``.
-
-
-.. function:: iand(a, b)
-              __iand__(a, b)
-
-   ``a = iand(a, b)`` is equivalent to ``a &= b``.
-
-
-.. function:: iconcat(a, b)
-              __iconcat__(a, b)
-
-   ``a = iconcat(a, b)`` is equivalent to ``a += b`` for *a* and *b* sequences.
-
-
-.. function:: ifloordiv(a, b)
-              __ifloordiv__(a, b)
-
-   ``a = ifloordiv(a, b)`` is equivalent to ``a //= b``.
-
-
-.. function:: ilshift(a, b)
-              __ilshift__(a, b)
-
-   ``a = ilshift(a, b)`` is equivalent to ``a <<= b``.
-
-
-.. function:: imod(a, b)
-              __imod__(a, b)
-
-   ``a = imod(a, b)`` is equivalent to ``a %= b``.
-
-
-.. function:: imul(a, b)
-              __imul__(a, b)
-
-   ``a = imul(a, b)`` is equivalent to ``a *= b``.
-
-
-.. function:: ior(a, b)
-              __ior__(a, b)
-
-   ``a = ior(a, b)`` is equivalent to ``a |= b``.
-
-
-.. function:: ipow(a, b)
-              __ipow__(a, b)
-
-   ``a = ipow(a, b)`` is equivalent to ``a **= b``.
-
-
-.. function:: irshift(a, b)
-              __irshift__(a, b)
-
-   ``a = irshift(a, b)`` is equivalent to ``a >>= b``.
-
-
-.. function:: isub(a, b)
-              __isub__(a, b)
-
-   ``a = isub(a, b)`` is equivalent to ``a -= b``.
-
-
-.. function:: itruediv(a, b)
-              __itruediv__(a, b)
-
-   ``a = itruediv(a, b)`` is equivalent to ``a /= b``.
-
-
-.. function:: ixor(a, b)
-              __ixor__(a, b)
-
-   ``a = ixor(a, b)`` is equivalent to ``a ^= b``.
-
 Example: Build a dictionary that maps the ordinals from ``0`` to ``255`` to
 their character equivalents.
 
@@ -490,3 +405,112 @@ Python syntax and the functions in the :mod:`operator` module.
 | Ordering              | ``a > b``               | ``gt(a, b)``                          |
 +-----------------------+-------------------------+---------------------------------------+
 
+Inplace Operators
+=================
+
+Many operations have an "in-place" version.  Listed below are functions
+providing a more primitive access to in-place operators than the usual syntax
+does; for example, the :term:`statement` ``x += y`` is equivalent to
+``x = operator.iadd(x, y)``.  Another way to put it is to say that
+``z = operator.iadd(x, y)`` is equivalent to the compound statement
+``z = x; z += y``.
+
+In those examples, note that when an in-place method is called, the computation
+and assignment are performed in two separate steps.  The in-place functions
+listed below only do the first step, calling the in-place method.  The second
+step, assignment, is not handled.
+
+For immutable targets such as strings, numbers, and tuples, the updated
+value is computed, but not assigned back to the input variable:
+
+>>> a = 'hello'
+>>> iadd(a, ' world')
+'hello world'
+>>> a
+'hello'
+
+For mutable targets such as lists and dictionaries, the inplace method
+will perform the update, so no subsequent assignment is necessary:
+
+>>> s = ['h', 'e', 'l', 'l', 'o']
+>>> iadd(s, [' ', 'w', 'o', 'r', 'l', 'd'])
+['h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd']
+>>> s
+['h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd']
+
+.. function:: iadd(a, b)
+              __iadd__(a, b)
+
+   ``a = iadd(a, b)`` is equivalent to ``a += b``.
+
+
+.. function:: iand(a, b)
+              __iand__(a, b)
+
+   ``a = iand(a, b)`` is equivalent to ``a &= b``.
+
+
+.. function:: iconcat(a, b)
+              __iconcat__(a, b)
+
+   ``a = iconcat(a, b)`` is equivalent to ``a += b`` for *a* and *b* sequences.
+
+
+.. function:: ifloordiv(a, b)
+              __ifloordiv__(a, b)
+
+   ``a = ifloordiv(a, b)`` is equivalent to ``a //= b``.
+
+
+.. function:: ilshift(a, b)
+              __ilshift__(a, b)
+
+   ``a = ilshift(a, b)`` is equivalent to ``a <<= b``.
+
+
+.. function:: imod(a, b)
+              __imod__(a, b)
+
+   ``a = imod(a, b)`` is equivalent to ``a %= b``.
+
+
+.. function:: imul(a, b)
+              __imul__(a, b)
+
+   ``a = imul(a, b)`` is equivalent to ``a *= b``.
+
+
+.. function:: ior(a, b)
+              __ior__(a, b)
+
+   ``a = ior(a, b)`` is equivalent to ``a |= b``.
+
+
+.. function:: ipow(a, b)
+              __ipow__(a, b)
+
+   ``a = ipow(a, b)`` is equivalent to ``a **= b``.
+
+
+.. function:: irshift(a, b)
+              __irshift__(a, b)
+
+   ``a = irshift(a, b)`` is equivalent to ``a >>= b``.
+
+
+.. function:: isub(a, b)
+              __isub__(a, b)
+
+   ``a = isub(a, b)`` is equivalent to ``a -= b``.
+
+
+.. function:: itruediv(a, b)
+              __itruediv__(a, b)
+
+   ``a = itruediv(a, b)`` is equivalent to ``a /= b``.
+
+
+.. function:: ixor(a, b)
+              __ixor__(a, b)
+
+   ``a = ixor(a, b)`` is equivalent to ``a ^= b``.
