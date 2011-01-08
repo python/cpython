@@ -1284,10 +1284,10 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertTrue(self.theclass.max)
 
     def test_strftime_out_of_range(self):
-        # For nasty technical reasons, we can't handle years before 1900.
+        # For nasty technical reasons, we can't handle years before 1000.
         cls = self.theclass
-        self.assertEqual(cls(1900, 1, 1).strftime("%Y"), "1900")
-        for y in 1, 49, 51, 99, 100, 1000, 1899:
+        self.assertEqual(cls(1000, 1, 1).strftime("%Y"), "1000")
+        for y in 1, 49, 51, 99, 100, 999:
             self.assertRaises(ValueError, cls(y, 1, 1).strftime, "%Y")
 
     def test_replace(self):

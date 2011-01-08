@@ -1166,10 +1166,10 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     if (!pin)
         return NULL;
 
-    /* Give up if the year is before 1900.
+    /* Give up if the year is before 1000.
      * Python strftime() plays games with the year, and different
      * games depending on whether envar PYTHON2K is set.  This makes
-     * years before 1900 a nightmare, even if the platform strftime
+     * years before 1000 a nightmare, even if the platform strftime
      * supports them (and not all do).
      * We could get a lot farther here by avoiding Python's strftime
      * wrapper and calling the C strftime() directly, but that isn't
@@ -1182,10 +1182,10 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         assert(PyLong_Check(pyyear));
         year = PyLong_AsLong(pyyear);
         Py_DECREF(pyyear);
-        if (year < 1900) {
+        if (year < 1000) {
             PyErr_Format(PyExc_ValueError, "year=%ld is before "
-                         "1900; the datetime strftime() "
-                         "methods require year >= 1900",
+                         "1000; the datetime strftime() "
+                         "methods require year >= 1000",
                          year);
             return NULL;
         }
@@ -3663,7 +3663,7 @@ time_strftime(PyDateTime_Time *self, PyObject *args, PyObject *kw)
 
     /* Python's strftime does insane things with the year part of the
      * timetuple.  The year is forced to (the otherwise nonsensical)
-     * 1900 to worm around that.
+     * 1900 to work around that.
      */
     tuple = Py_BuildValue("iiiiiiiii",
                           1900, 1, 1, /* year, month, day */
