@@ -332,23 +332,27 @@ gettmarg(PyObject *args, struct tm *p)
     if (y < 1000) {
         PyObject *accept = PyDict_GetItemString(moddict,
                                                 "accept2dyear");
-        int acceptval = accept != NULL && PyObject_IsTrue(accept);
-        if (acceptval == -1)
-            return 0;
-        if (acceptval) {
-            if (0 <= y && y < 69)
-                y += 2000;
-            else if (69 <= y && y < 100)
-                y += 1900;
-            else {
-                PyErr_SetString(PyExc_ValueError,
-                                "year out of range");
+	if (accept != NULL) {
+            int acceptval =  PyObject_IsTrue(accept);
+            if (acceptval == -1)
                 return 0;
+            if (acceptval) {
+                if (0 <= y && y < 69)
+                    y += 2000;
+                else if (69 <= y && y < 100)
+                    y += 1900;
+                else {
+                    PyErr_SetString(PyExc_ValueError,
+                                    "year out of range");
+                    return 0;
+                }
+                if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                           "Century info guessed for a 2-digit year.", 1) != 0)
+                    return 0;
             }
-            if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                    "Century info guessed for a 2-digit year.", 1) != 0)
-                return 0;
         }
+        else
+            return 0;
     }
     p->tm_year = y - 1900;
     p->tm_mon--;
@@ -477,6 +481,7 @@ time_strftime(PyObject *self, PyObject *args)
         PyErr_Format(PyExc_ValueError, "year=%d is before 1900; "
                      "the strftime() method requires year >= 1900",
                      buf.tm_year + 1900);
+        return NULL;
     }
 
     /* Normalize tm_isdst just in case someone foolishly implements %Z
