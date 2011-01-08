@@ -9,26 +9,26 @@ __email__ = "mbland at acm dot org"
 import sys
 import unittest
 from collections import deque
-from contextlib import GeneratorContextManager, contextmanager
+from contextlib import _GeneratorContextManager, contextmanager
 from test.support import run_unittest
 
 
-class MockContextManager(GeneratorContextManager):
+class MockContextManager(_GeneratorContextManager):
     def __init__(self, gen):
-        GeneratorContextManager.__init__(self, gen)
+        _GeneratorContextManager.__init__(self, gen)
         self.enter_called = False
         self.exit_called = False
         self.exit_args = None
 
     def __enter__(self):
         self.enter_called = True
-        return GeneratorContextManager.__enter__(self)
+        return _GeneratorContextManager.__enter__(self)
 
     def __exit__(self, type, value, traceback):
         self.exit_called = True
         self.exit_args = (type, value, traceback)
-        return GeneratorContextManager.__exit__(self, type,
-                                                value, traceback)
+        return _GeneratorContextManager.__exit__(self, type,
+                                                 value, traceback)
 
 
 def mock_contextmanager(func):
