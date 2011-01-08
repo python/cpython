@@ -280,7 +280,7 @@ class _TestAsctimeYear:
         return time.asctime((y,) + (0,) * 8).split()[-1]
 
     def test_large_year(self):
-        # Check that it doesn't crash with year > 9999
+        # Check that it doesn't crash for year > 9999
         self.assertEqual(self.yearstr(12345), '12345')
         self.assertEqual(self.yearstr(123456789), '123456789')
 
@@ -289,16 +289,21 @@ class _TestStrftimeYear:
         return time.strftime('%Y', (y,) + (0,) * 8).split()[-1]
 
     def test_large_year(self):
-        # Just check that it doesn't crash with year > 9999: it may or may not
-        # raise an error depending on the OS and compiler
+        # Check that it doesn't crash for year > 9999
         try:
-            self.yearstr(12345)
+            text = self.yearstr(12345)
+        except ValueError:
+            # If Python is compiled with Visual Studio,
+            # year is limited to [1; 9999]
+            pass
+        else:
+            self.assertEqual(text, '12345')
+        try:
+            text = self.yearstr(123456789)
         except ValueError:
             pass
-        try:
-            self.yearstr(123456)
-        except ValueError:
-            pass
+        else:
+            self.assertEqual(text, '123456789')
 
 class _Test2dYear(_BaseYearTest):
     accept2dyear = 1
