@@ -43,14 +43,8 @@ class TimeTestCase(unittest.TestCase):
         # Make sure that strftime() checks the bounds of the various parts
         #of the time tuple (0 is valid for *all* values).
 
-        # Check year [1900, max(int)]
-        self.assertRaises(ValueError, func,
-                            (999, 1, 1, 0, 0, 0, 0, 1, -1))
-        if time.accept2dyear:
-            self.assertRaises(ValueError, func,
-                                (-1, 1, 1, 0, 0, 0, 0, 1, -1))
-            self.assertRaises(ValueError, func,
-                                (100, 1, 1, 0, 0, 0, 0, 1, -1))
+        # The year field is tested by other test cases above
+
         # Check month [1, 12] + zero support
         self.assertRaises(ValueError, func,
                             (1900, -1, 1, 0, 0, 0, 0, 1, -1))
@@ -267,8 +261,10 @@ class TestLocale(unittest.TestCase):
         # This should not cause an exception
         time.strftime("%B", (2009,2,1,0,0,0,0,0,0))
 
-class TestAccept2Year(unittest.TestCase):
-    accept2dyear = 1
+
+class _BaseYearTest(unittest.TestCase):
+    accept2dyear = None
+
     def setUp(self):
         self.saved_accept2dyear = time.accept2dyear
         time.accept2dyear = self.accept2dyear
@@ -277,10 +273,37 @@ class TestAccept2Year(unittest.TestCase):
         time.accept2dyear = self.saved_accept2dyear
 
     def yearstr(self, y):
-        # return time.strftime('%Y', (y,) + (0,) * 8)
+        raise NotImplementedError()
+
+class _TestAsctimeYear:
+    def yearstr(self, y):
         return time.asctime((y,) + (0,) * 8).split()[-1]
 
-    def test_2dyear(self):
+    def test_large_year(self):
+        # Check that it doesn't crash with year > 9999
+        self.assertEqual(self.yearstr(12345), '12345')
+        self.assertEqual(self.yearstr(123456789), '123456789')
+
+class _TestStrftimeYear:
+    def yearstr(self, y):
+        return time.strftime('%Y', (y,) + (0,) * 8).split()[-1]
+
+    def test_large_year(self):
+        # Just check that it doesn't crash with year > 9999: it may or may not
+        # raise an error depending on the OS and compiler
+        try:
+            self.yearstr(12345)
+        except ValueError:
+            pass
+        try:
+            self.yearstr(123456)
+        except ValueError:
+            pass
+
+class _Test2dYear(_BaseYearTest):
+    accept2dyear = 1
+
+    def test_year(self):
         with support.check_warnings():
             self.assertEqual(self.yearstr(0), '2000')
             self.assertEqual(self.yearstr(69), '1969')
@@ -288,27 +311,41 @@ class TestAccept2Year(unittest.TestCase):
             self.assertEqual(self.yearstr(99), '1999')
 
     def test_invalid(self):
-        self.assertRaises(ValueError, self.yearstr, 999)
-        self.assertRaises(ValueError, self.yearstr, 100)
         self.assertRaises(ValueError, self.yearstr, -1)
+        self.assertRaises(ValueError, self.yearstr, 100)
+        self.assertRaises(ValueError, self.yearstr, 999)
 
-class TestAccept2YearBool(TestAccept2Year):
-    accept2dyear = True
-
-class TestDontAccept2Year(TestAccept2Year):
+class _Test4dYear(_BaseYearTest):
     accept2dyear = 0
-    def test_2dyear(self):
-        self.assertEqual(self.yearstr(0), '0')
+
+    def test_year(self):
+        self.assertEqual(self.yearstr(1), '1')
         self.assertEqual(self.yearstr(69), '69')
         self.assertEqual(self.yearstr(68), '68')
         self.assertEqual(self.yearstr(99), '99')
         self.assertEqual(self.yearstr(999), '999')
         self.assertEqual(self.yearstr(9999), '9999')
 
-    def test_invalid(self):
-        pass
+class TestAsctimeAccept2dYear(_TestAsctimeYear, _Test2dYear):
+    pass
 
-class TestAccept2YearBad(TestAccept2Year):
+class TestStrftimeAccept2dYear(_TestStrftimeYear, _Test2dYear):
+    pass
+
+class TestAsctime4dyear(_TestAsctimeYear, _Test4dYear):
+    pass
+
+class TestStrftime4dyear(_TestStrftimeYear, _Test4dYear):
+    def test_bounds(self):
+        self.assertRaises(ValueError, self.yearstr, 0)
+
+class Test2dyearBool(_TestAsctimeYear, _Test2dYear):
+    accept2dyear = True
+
+class Test4dyearBool(_TestAsctimeYear, _Test4dYear):
+    accept2dyear = False
+
+class TestAccept2YearBad(_TestAsctimeYear, _BaseYearTest):
     class X:
         def __bool__(self):
             raise RuntimeError('boo')
@@ -319,14 +356,17 @@ class TestAccept2YearBad(TestAccept2Year):
         self.assertRaises(RuntimeError, self.yearstr, 200)
 
 
-class TestDontAccept2YearBool(TestDontAccept2Year):
-    accept2dyear = False
-
-
 def test_main():
-    support.run_unittest(TimeTestCase, TestLocale,
-                         TestAccept2Year, TestAccept2YearBool, TestAccept2YearBad,
-                         TestDontAccept2Year, TestDontAccept2YearBool)
+    support.run_unittest(
+        TimeTestCase,
+        TestLocale,
+        TestAsctimeAccept2dYear,
+        TestStrftimeAccept2dYear,
+        TestAsctime4dyear,
+        TestStrftime4dyear,
+        Test2dyearBool,
+        Test4dyearBool,
+        TestAccept2YearBad)
 
 if __name__ == "__main__":
     test_main()
