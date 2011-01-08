@@ -474,7 +474,7 @@ time_strftime(PyObject *self, PyObject *args)
     else if (!gettmarg(tup, &buf) || !checktm(&buf))
         return NULL;
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(sun)
     if (buf.tm_year + 1900 < 1 || 9999 < buf.tm_year + 1900) {
         PyErr_Format(PyExc_ValueError,
                      "strftime() requires year in [1; 9999]",
