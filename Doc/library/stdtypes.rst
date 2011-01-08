@@ -2117,8 +2117,20 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       returned or raised by the ``__missing__(key)`` call if the key is not
       present. No other operations or methods invoke :meth:`__missing__`. If
       :meth:`__missing__` is not defined, :exc:`KeyError` is raised.
-      :meth:`__missing__` must be a method; it cannot be an instance variable. For
-      an example, see :class:`collections.defaultdict`.
+      :meth:`__missing__` must be a method; it cannot be an instance variable::
+
+          >>> class Counter(dict):
+          ...     def __missing__(self, key):
+          ...         return 0
+          >>> c = Counter()
+          >>> c['red']
+          0
+          >>> c['red'] += 1
+          >>> c['red']
+          1
+
+      See :class:`collections.Counter` for a complete implementation including
+      other methods helpful for accumulating and managing tallies.
 
    .. describe:: d[key] = value
 
