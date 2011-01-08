@@ -442,9 +442,11 @@ Glossary
       :term:`finder`. See :pep:`302` for details.
 
    mapping
-      A container object (such as :class:`dict`) which supports arbitrary key
-      lookups using the special method :meth:`__getitem__`.  Mappings also
-      support :meth:`__len__`, :meth:`__iter__`, and :meth:`__contains__`.
+      A container object that supports arbitrary key lookups and implements the
+      methods specified in the :class:`Mapping` or :class:`MutableMapping`
+      :ref:`abstract base classes <abstract-base-classes>`. Examples include
+      :class:`dict`, :class:`collections.defaultdict`,
+      :class:`collections.OrderedDict` and :class:`collections.Counter`.
 
    metaclass
       The class of a class.  Class definitions create a class name, a class
