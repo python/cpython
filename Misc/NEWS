@@ -40,11 +40,6 @@ Core and Builtins
 Library
 -------
 
-- Issue #1777412: minimum year for time.asctime(), time.ctime() and
-  time.strftime() is now: 1000 instead of 1900 by default (accept2dyear=0) and
-  not limited instead of 1900 if accept2dyear=1. With Visual Studio or on
-  Solaris, the year is limited to the range [1; 9999].
-
 - Issue #10859: Make ``contextlib.GeneratorContextManager`` officially
   private by renaming it to ``_GeneratorContextManager``.
 
@@ -60,12 +55,12 @@ Library
   without folding whitespace.  It now uses the continuation_ws, as it
   does for continuation lines that it creates itself.
 
-- Issue #10827: Changed the rules for 2-digit years.  The time.asctime
-  function will now format any year when ``time.accept2dyear`` is
-  false and will accept years >= 1000 otherwise.  The year range
-  accepted by ``time.mktime`` and ``time.strftime`` is still system
-  dependent, but ``time.mktime`` will now accept full range supported
-  by the OS.  Conversion of 2-digit years to 4-digit is deprecated.
+- Issue #1777412, #10827: Changed the rules for 2-digit years. The
+  time.asctime(), time.ctime() and time.strftime() functions will now format
+  any year when ``time.accept2dyear`` is False and will accept years >= 1000
+  otherwise. ``time.mktime`` and ``time.strftime`` now accept full range
+  supported by the OS. With Visual Studio or on Solaris, the year is limited to
+  the range [1; 9999]. Conversion of 2-digit years to 4-digit is deprecated.
 
 - Issue #7858: Raise an error properly when os.utime() fails under Windows
   on an existing file.
