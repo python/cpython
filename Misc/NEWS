@@ -40,6 +40,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #1777412: minimum year for time.asctime(), time.ctime() and
+  time.strftime() is now: 1000 instead of 1900 by default (accept2dyear=0) and
+  not limited instead of 1900 if accept2dyear=1. With Visual Studio or on
+  Solaris, the year is limited to the range [1; 9999].
+
 - Issue #10859: Make ``contextlib.GeneratorContextManager`` officially
   private by renaming it to ``_GeneratorContextManager``.
 
