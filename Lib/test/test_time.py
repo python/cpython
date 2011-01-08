@@ -293,17 +293,22 @@ class _TestStrftimeYear:
         try:
             text = self.yearstr(12345)
         except ValueError:
-            # If Python is compiled with Visual Studio,
-            # year is limited to [1; 9999]
+            # strftime() is limited to [1; 9999] with Visual Studio
             pass
         else:
-            self.assertEqual(text, '12345')
+            # Issue #10864: OpenIndiana is limited to 4 digits, but Python
+            # doesn't raise a ValueError
+            #self.assertEqual(text, '12345')
+            self.assertIn(text, ('2345', '12345'))
         try:
             text = self.yearstr(123456789)
         except ValueError:
             pass
         else:
-            self.assertEqual(text, '123456789')
+            # Issue #10864: OpenIndiana is limited to 4 digits, but Python
+            # doesn't raise a ValueError
+            #self.assertEqual(text, '123456789')
+            self.assertIn(text, ('123456789', '6789'))
 
 class _Test2dYear(_BaseYearTest):
     accept2dyear = 1
@@ -324,11 +329,11 @@ class _Test4dYear(_BaseYearTest):
     accept2dyear = 0
 
     def test_year(self):
-        self.assertEqual(self.yearstr(1), '1')
-        self.assertEqual(self.yearstr(69), '69')
-        self.assertEqual(self.yearstr(68), '68')
-        self.assertEqual(self.yearstr(99), '99')
-        self.assertEqual(self.yearstr(999), '999')
+        self.assertIn(self.yearstr(1),     ('1', '0001'))
+        self.assertIn(self.yearstr(68),   ('68', '0068'))
+        self.assertIn(self.yearstr(69),   ('69', '0069'))
+        self.assertIn(self.yearstr(99),   ('99', '0099'))
+        self.assertIn(self.yearstr(999), ('999', '0999'))
         self.assertEqual(self.yearstr(9999), '9999')
 
 class TestAsctimeAccept2dYear(_TestAsctimeYear, _Test2dYear):
