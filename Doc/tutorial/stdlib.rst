@@ -207,14 +207,14 @@ including: :mod:`zlib`, :mod:`gzip`, :mod:`bz2`, :mod:`zipfile` and
 :mod:`tarfile`. ::
 
    >>> import zlib
-   >>> s = 'witch which has which witches wrist watch'
+   >>> s = b'witch which has which witches wrist watch'
    >>> len(s)
    41
    >>> t = zlib.compress(s)
    >>> len(t)
    37
    >>> zlib.decompress(t)
-   'witch which has which witches wrist watch'
+   b'witch which has which witches wrist watch'
    >>> zlib.crc32(s)
    226805979
 
