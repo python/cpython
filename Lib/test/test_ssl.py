@@ -228,7 +228,7 @@ class NetworkedTests(unittest.TestCase):
         # NOTE: https://sha256.tbs-internet.com is another possible test host
         remote = ("sha2.hboeck.de", 443)
         sha256_cert = os.path.join(os.path.dirname(__file__), "sha256.pem")
-        with support.transient_internet("sha2.hboeck.de"):
+        with support.transient_internet("sha256.tbs-internet.com"):
             s = ssl.wrap_socket(socket.socket(socket.AF_INET),
                                 cert_reqs=ssl.CERT_REQUIRED,
                                 ca_certs=sha256_cert,)
