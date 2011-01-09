@@ -265,6 +265,7 @@ class ASTHelpers_Test(unittest.TestCase):
             'col_offset=0))'
         )
         # issue10869: do not increment lineno of root twice
+        src = ast.parse('1 + 1', mode='eval')
         self.assertEqual(ast.increment_lineno(src.body, n=3), src.body)
         self.assertEqual(ast.dump(src, include_attributes=True),
             'Expression(body=BinOp(left=Num(n=1, lineno=4, col_offset=0), '
