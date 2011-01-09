@@ -40,6 +40,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10872: The repr() of TextIOWrapper objects now includes the mode
+  if available.
+
 - Issue #10869: Fixed bug where ast.increment_lineno modified the root
   node twice.
 

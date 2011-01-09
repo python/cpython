@@ -1717,9 +1717,12 @@ class TextIOWrapperTest(unittest.TestCase):
         raw.name = "dummy"
         self.assertEqual(repr(t),
                          "<%s.TextIOWrapper name='dummy' encoding='utf-8'>" % modname)
+        t.mode = "r"
+        self.assertEqual(repr(t),
+                         "<%s.TextIOWrapper name='dummy' mode='r' encoding='utf-8'>" % modname)
         raw.name = b"dummy"
         self.assertEqual(repr(t),
-                         "<%s.TextIOWrapper name=b'dummy' encoding='utf-8'>" % modname)
+                         "<%s.TextIOWrapper name=b'dummy' mode='r' encoding='utf-8'>" % modname)
 
     def test_line_buffering(self):
         r = self.BytesIO()
