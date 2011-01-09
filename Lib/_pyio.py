@@ -1504,13 +1504,20 @@ class TextIOWrapper(TextIOBase):
     #   - "chars_..." for integer variables that count decoded characters
 
     def __repr__(self):
+        result = "<_pyio.TextIOWrapper"
         try:
             name = self.name
         except AttributeError:
-            return "<_pyio.TextIOWrapper encoding={0!r}>".format(self.encoding)
+            pass
         else:
-            return "<_pyio.TextIOWrapper name={0!r} encoding={1!r}>".format(
-                name, self.encoding)
+            result += " name={0!r}".format(name)
+        try:
+            mode = self.mode
+        except AttributeError:
+            pass
+        else:
+            result += " mode={0!r}".format(mode)
+        return result + " encoding={0!r}>".format(self.encoding)
 
     @property
     def encoding(self):
