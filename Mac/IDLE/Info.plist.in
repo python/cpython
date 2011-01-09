@@ -36,7 +36,7 @@
 	<key>CFBundleExecutable</key>
 	<string>IDLE</string>
 	<key>CFBundleGetInfoString</key>
-	<string>%VERSION%, © 001-2006 Python Software Foundation</string>
+	<string>%VERSION%, © 2001-2011 Python Software Foundation</string>
 	<key>CFBundleIconFile</key>
 	<string>IDLE.icns</string>
 	<key>CFBundleIdentifier</key>

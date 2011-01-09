@@ -20,7 +20,7 @@
 	<key>CFBundleExecutable</key>
 	<string>Python</string>
 	<key>CFBundleGetInfoString</key>
-	<string>%version%, (c) 2004-2010 Python Software Foundation.</string>
+	<string>%version%, (c) 2004-2011 Python Software Foundation.</string>
 	<key>CFBundleHelpBookFolder</key>
 	<array>
 		<string>Documentation</string>
@@ -37,7 +37,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleLongVersionString</key>
-	<string>%version%, (c) 2004-2010 Python Software Foundation.</string>
+	<string>%version%, (c) 2004-2011 Python Software Foundation.</string>
 	<key>CFBundleName</key>
 	<string>Python</string>
 	<key>CFBundlePackageType</key>
@@ -55,6 +55,6 @@
 	<key>NSAppleScriptEnabled</key>
 	<true/>
 	<key>NSHumanReadableCopyright</key>
-	<string>(c) 2004 Python Software Foundation.</string>
+	<string>(c) 2011 Python Software Foundation.</string>
 </dict>
 </plist>
