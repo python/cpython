@@ -781,11 +781,11 @@ values are:
      >>> parser.add_argument('outfile', nargs='?', type=argparse.FileType('w'),
      ...                     default=sys.stdout)
      >>> parser.parse_args(['input.txt', 'output.txt'])
-     Namespace(infile=<open file 'input.txt', mode 'r' at 0x...>,
-               outfile=<open file 'output.txt', mode 'w' at 0x...>)
+     Namespace(infile=<_io.TextIOWrapper name='input.txt' encoding='UTF-8'>,
+               outfile=<_io.TextIOWrapper name='output.txt' encoding='UTF-8'>)
      >>> parser.parse_args([])
-     Namespace(infile=<open file '<stdin>', mode 'r' at 0x...>,
-               outfile=<open file '<stdout>', mode 'w' at 0x...>)
+     Namespace(infile=<_io.TextIOWrapper name='<stdin>' encoding='UTF-8'>,
+               outfile=<_io.TextIOWrapper name='<stdout>' encoding='UTF-8'>)
 
 * ``'*'``.  All command-line args present are gathered into a list.  Note that
   it generally doesn't make much sense to have more than one positional argument
@@ -881,26 +881,26 @@ type
 
 By default, ArgumentParser objects read command-line args in as simple strings.
 However, quite often the command-line string should instead be interpreted as
-another type, like a :class:`float`, :class:`int` or :class:`file`.  The
-``type`` keyword argument of :meth:`add_argument` allows any necessary
-type-checking and type-conversions to be performed.  Many common built-in types
-can be used directly as the value of the ``type`` argument::
+another type, like a :class:`float` or :class:`int`.  The ``type`` keyword
+argument of :meth:`add_argument` allows any necessary type-checking and
+type-conversions to be performed.  Common built-in types and functions can be
+used directly as the value of the ``type`` argument::
 
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument('foo', type=int)
-   >>> parser.add_argument('bar', type=file)
+   >>> parser.add_argument('bar', type=open)
    >>> parser.parse_args('2 temp.txt'.split())
-   Namespace(bar=<open file 'temp.txt', mode 'r' at 0x...>, foo=2)
+   Namespace(bar=<_io.TextIOWrapper name='temp.txt' encoding='UTF-8'>, foo=2)
 
 To ease the use of various types of files, the argparse module provides the
 factory FileType which takes the ``mode=`` and ``bufsize=`` arguments of the
-``file`` object.  For example, ``FileType('w')`` can be used to create a
+:func:`open` function.  For example, ``FileType('w')`` can be used to create a
 writable file::
 
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument('bar', type=argparse.FileType('w'))
    >>> parser.parse_args(['out.txt'])
-   Namespace(bar=<open file 'out.txt', mode 'w' at 0x...>)
+   Namespace(bar=<_io.TextIOWrapper name='out.txt' encoding='UTF-8'>)
 
 ``type=`` can take any callable that takes a single string argument and returns
 the type-converted value::
@@ -1512,7 +1512,7 @@ FileType objects
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument('--output', type=argparse.FileType('wb', 0))
    >>> parser.parse_args(['--output', 'out'])
-   Namespace(output=<open file 'out', mode 'wb' at 0x...>)
+   Namespace(output=<_io.BufferedWriter name='out'>)
 
    FileType objects understand the pseudo-argument ``'-'`` and automatically
    convert this into ``sys.stdin`` for readable :class:`FileType` objects and
@@ -1521,7 +1521,7 @@ FileType objects
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument('infile', type=argparse.FileType('r'))
    >>> parser.parse_args(['-'])
-   Namespace(infile=<open file '<stdin>', mode 'r' at 0x...>)
+   Namespace(infile=<_io.TextIOWrapper name='<stdin>' encoding='UTF-8'>)
 
 
 Argument groups
