@@ -31,6 +31,13 @@ Core and Builtins
 Library
 -------
 
+- Issue #5871: email.header.Header.encode now raises an error if any
+  continuation line in the formatted value has no leading white space
+  and looks like a header.  Since Generator uses Header to format all
+  headers, this check is made for all headers in any serialized message
+  at serialization time.  This provides protection against header
+  injection attacks.
+
 - Issue #7858: Raise an error properly when os.utime() fails under Windows
   on an existing file.
 
