@@ -46,6 +46,10 @@ ecre = re.compile(r'''
 # For use with .match()
 fcre = re.compile(r'[\041-\176]+:$')
 
+# Find a header embeded in a putative header value.  Used to check for
+# header injection attack.
+_embeded_header = re.compile(r'\n[^ \t]+:')
+
 
 
 # Helpers
@@ -305,7 +309,11 @@ class Header:
                 if len(lines) > 1:
                     formatter.newline()
             formatter.add_transition()
-        return str(formatter)
+        value = str(formatter)
+        if _embeded_header.search(value):
+            raise HeaderParseError("header value appears to contain "
+                "an embedded header: {!r}".format(value))
+        return value
 
     def _normalize(self):
         # Step 1: Normalize the chunks so that all runs of identical charsets
