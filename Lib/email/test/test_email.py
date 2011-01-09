@@ -561,6 +561,18 @@ class TestMessageAPI(TestEmailBase):
             "attachment; filename*=utf-8''Fu%C3%9Fballer%20%5Bfilename%5D.ppt",
             msg['Content-Disposition'])
 
+    # Issue 5871: reject an attempt to embed a header inside a header value
+    # (header injection attack).
+    def test_embeded_header_via_Header_rejected(self):
+        msg = Message()
+        msg['Dummy'] = Header('dummy\nX-Injected-Header: test')
+        self.assertRaises(errors.HeaderParseError, msg.as_string)
+
+    def test_embeded_header_via_string_rejected(self):
+        msg = Message()
+        msg['Dummy'] = 'dummy\nX-Injected-Header: test'
+        self.assertRaises(errors.HeaderParseError, msg.as_string)
+
 
 # Test the email.encoders module
 class TestEncoders(unittest.TestCase):
