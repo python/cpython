@@ -187,9 +187,9 @@ and classes for traversing abstract syntax trees:
 
 .. function:: walk(node)
 
-   Recursively yield all child nodes of *node*, in no specified order.  This is
-   useful if you only want to modify nodes in place and don't care about the
-   context.
+   Recursively yield all descendant nodes in the tree starting at *node*
+   (including *node* itself), in no specified order.  This is useful if you only
+   want to modify nodes in place and don't care about the context.
 
 
 .. class:: NodeVisitor()
