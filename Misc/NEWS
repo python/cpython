@@ -31,6 +31,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10869: Fixed bug where ast.increment_lineno modified the root
+  node twice.
+
 - Issue #5871: email.header.Header.encode now raises an error if any
   continuation line in the formatted value has no leading white space
   and looks like a header.  Since Generator uses Header to format all
