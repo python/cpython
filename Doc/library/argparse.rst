@@ -120,7 +120,9 @@ command-line args from :data:`sys.argv`.
 ArgumentParser objects
 ----------------------
 
-.. class:: ArgumentParser([description], [epilog], [prog], [usage], [add_help], [argument_default], [parents], [prefix_chars], [conflict_handler], [formatter_class])
+.. class:: ArgumentParser([description], [epilog], [prog], [usage], [add_help], \
+                          [argument_default], [parents], [prefix_chars], \
+                          [conflict_handler], [formatter_class])
 
    Create a new :class:`ArgumentParser` object.  Each parameter has its own more
    detailed description below, but in short they are:
@@ -563,7 +565,9 @@ your usage messages.
 The add_argument() method
 -------------------------
 
-.. method:: ArgumentParser.add_argument(name or flags..., [action], [nargs], [const], [default], [type], [choices], [required], [help], [metavar], [dest])
+.. method:: ArgumentParser.add_argument(name or flags..., [action], [nargs], \
+                           [const], [default], [type], [choices], [required], \
+                           [help], [metavar], [dest])
 
    Define how a single command line argument should be parsed.  Each parameter
    has its own more detailed description below, but in short they are:
@@ -777,9 +781,11 @@ values are:
      >>> parser.add_argument('outfile', nargs='?', type=argparse.FileType('w'),
      ...                     default=sys.stdout)
      >>> parser.parse_args(['input.txt', 'output.txt'])
-     Namespace(infile=<open file 'input.txt', mode 'r' at 0x...>, outfile=<open file 'output.txt', mode 'w' at 0x...>)
+     Namespace(infile=<open file 'input.txt', mode 'r' at 0x...>,
+               outfile=<open file 'output.txt', mode 'w' at 0x...>)
      >>> parser.parse_args([])
-     Namespace(infile=<open file '<stdin>', mode 'r' at 0x...>, outfile=<open file '<stdout>', mode 'w' at 0x...>)
+     Namespace(infile=<open file '<stdin>', mode 'r' at 0x...>,
+               outfile=<open file '<stdout>', mode 'w' at 0x...>)
 
 * ``'*'``.  All command-line args present are gathered into a list.  Note that
   it generally doesn't make much sense to have more than one positional argument
@@ -1744,11 +1750,12 @@ backwards compatibility.
 
 A partial upgrade path from optparse to argparse:
 
-* Replace all ``add_option()`` calls with :meth:`ArgumentParser.add_argument` calls.
+* Replace all ``add_option()`` calls with :meth:`ArgumentParser.add_argument`
+  calls.
 
 * Replace ``options, args = parser.parse_args()`` with ``args =
-  parser.parse_args()`` and add additional :meth:`ArgumentParser.add_argument` calls for the
-  positional arguments.
+  parser.parse_args()`` and add additional :meth:`ArgumentParser.add_argument`
+  calls for the positional arguments.
 
 * Replace callback actions and the ``callback_*`` keyword arguments with
   ``type`` or ``action`` arguments.
