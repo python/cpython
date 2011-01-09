@@ -47,6 +47,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * L. Peter Deutsch
    * Robert Donohue
    * Fred L. Drake, Jr.
+   * Jacques Ducasse
    * Josip Dzolonga
    * Jeff Epler
    * Michael Ernst

@@ -285,12 +285,11 @@ keeping all locals in that frame alive until the next garbage collection occurs.
 
 Before an except clause's suite is executed, details about the exception are
 stored in the :mod:`sys` module and can be access via :func:`sys.exc_info`.
-:func:`sys.exc_info` returns a 3-tuple consisting of: ``exc_type``, the
-exception class; ``exc_value``, the exception instance; ``exc_traceback``, a
-traceback object (see section :ref:`types`) identifying the point in the program
-where the exception occurred. :func:`sys.exc_info` values are restored to their
-previous values (before the call) when returning from a function that handled an
-exception.
+:func:`sys.exc_info` returns a 3-tuple consisting of the exception class, the
+exception instance and a traceback object (see section :ref:`types`) identifying
+the point in the program where the exception occurred.  :func:`sys.exc_info`
+values are restored to their previous values (before the call) when returning
+from a function that handled an exception.
 
 .. index::
    keyword: else
