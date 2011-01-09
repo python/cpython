@@ -51,9 +51,9 @@ The available exception and functions in this module are:
    regardless of sign.
 
 
-.. function:: compress(string[, level])
+.. function:: compress(data[, level])
 
-   Compresses the data in *string*, returning a string contained compressed data.
+   Compresses the bytes in *data*, returning a bytes object containing compressed data.
    *level* is an integer from ``1`` to ``9`` controlling the level of compression;
    ``1`` is fastest and produces the least compression, ``9`` is slowest and
    produces the most.  The default value is ``6``.  Raises the :exc:`error`
@@ -92,9 +92,9 @@ The available exception and functions in this module are:
    regardless of sign.
 
 
-.. function:: decompress(string[, wbits[, bufsize]])
+.. function:: decompress(data[, wbits[, bufsize]])
 
-   Decompresses the data in *string*, returning a string containing the
+   Decompresses the bytes in *data*, returning a bytes object containing the
    uncompressed data.  The *wbits* parameter controls the size of the window
    buffer.  If *bufsize* is given, it is used as the initial size of the output
    buffer.  Raises the :exc:`error` exception if any error occurs.
@@ -121,21 +121,21 @@ The available exception and functions in this module are:
 Compression objects support the following methods:
 
 
-.. method:: Compress.compress(string)
+.. method:: Compress.compress(data)
 
-   Compress *string*, returning a string containing compressed data for at least
-   part of the data in *string*.  This data should be concatenated to the output
+   Compress *data*, returning a bytes object containing compressed data for at least
+   part of the data in *data*.  This data should be concatenated to the output
    produced by any preceding calls to the :meth:`compress` method.  Some input may
    be kept in internal buffers for later processing.
 
 
 .. method:: Compress.flush([mode])
 
-   All pending input is processed, and a string containing the remaining compressed
+   All pending input is processed, and a bytes object containing the remaining compressed
    output is returned.  *mode* can be selected from the constants
    :const:`Z_SYNC_FLUSH`,  :const:`Z_FULL_FLUSH`,  or  :const:`Z_FINISH`,
    defaulting to :const:`Z_FINISH`.  :const:`Z_SYNC_FLUSH` and
-   :const:`Z_FULL_FLUSH` allow compressing further strings of data, while
+   :const:`Z_FULL_FLUSH` allow compressing further bytestrings of data, while
    :const:`Z_FINISH` finishes the compressed stream and  prevents compressing any
    more data.  After calling :meth:`flush` with *mode* set to :const:`Z_FINISH`,
    the :meth:`compress` method cannot be called again; the only realistic action is
@@ -153,31 +153,31 @@ Decompression objects support the following methods, and two attributes:
 
 .. attribute:: Decompress.unused_data
 
-   A string which contains any bytes past the end of the compressed data. That is,
+   A bytes object which contains any bytes past the end of the compressed data. That is,
    this remains ``""`` until the last byte that contains compression data is
-   available.  If the whole string turned out to contain compressed data, this is
-   ``""``, the empty string.
+   available.  If the whole bytestring turned out to contain compressed data, this is
+   ``b""``, an empty bytes object.
 
-   The only way to determine where a string of compressed data ends is by actually
+   The only way to determine where a bytestring of compressed data ends is by actually
    decompressing it.  This means that when compressed data is contained part of a
    larger file, you can only find the end of it by reading data and feeding it
-   followed by some non-empty string into a decompression object's
+   followed by some non-empty bytestring into a decompression object's
    :meth:`decompress` method until the :attr:`unused_data` attribute is no longer
-   the empty string.
+   empty.
 
 
 .. attribute:: Decompress.unconsumed_tail
 
-   A string that contains any data that was not consumed by the last
+   A bytes object that contains any data that was not consumed by the last
    :meth:`decompress` call because it exceeded the limit for the uncompressed data
    buffer.  This data has not yet been seen by the zlib machinery, so you must feed
    it (possibly with further data concatenated to it) back to a subsequent
    :meth:`decompress` method call in order to get correct output.
 
 
-.. method:: Decompress.decompress(string[, max_length])
+.. method:: Decompress.decompress(data[, max_length])
 
-   Decompress *string*, returning a string containing the uncompressed data
+   Decompress *data*, returning a bytes object containing the uncompressed data
    corresponding to at least part of the data in *string*.  This data should be
    concatenated to the output produced by any preceding calls to the
    :meth:`decompress` method.  Some of the input data may be preserved in internal
@@ -186,15 +186,15 @@ Decompression objects support the following methods, and two attributes:
    If the optional parameter *max_length* is supplied then the return value will be
    no longer than *max_length*. This may mean that not all of the compressed input
    can be processed; and unconsumed data will be stored in the attribute
-   :attr:`unconsumed_tail`. This string must be passed to a subsequent call to
+   :attr:`unconsumed_tail`. This bytestring must be passed to a subsequent call to
    :meth:`decompress` if decompression is to continue.  If *max_length* is not
-   supplied then the whole input is decompressed, and :attr:`unconsumed_tail` is an
-   empty string.
+   supplied then the whole input is decompressed, and :attr:`unconsumed_tail` is
+   empty.
 
 
 .. method:: Decompress.flush([length])
 
-   All pending input is processed, and a string containing the remaining
+   All pending input is processed, and a bytes object containing the remaining
    uncompressed output is returned.  After calling :meth:`flush`, the
    :meth:`decompress` method cannot be called again; the only realistic action is
    to delete the object.
