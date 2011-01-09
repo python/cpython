@@ -152,8 +152,6 @@ def increment_lineno(node, n=1):
     Increment the line number of each node in the tree starting at *node* by *n*.
     This is useful to "move code" to a different location in a file.
     """
-    if 'lineno' in node._attributes:
-        node.lineno = getattr(node, 'lineno', 0) + n
     for child in walk(node):
         if 'lineno' in child._attributes:
             child.lineno = getattr(child, 'lineno', 0) + n
@@ -204,9 +202,9 @@ def get_docstring(node, clean=True):
 
 def walk(node):
     """
-    Recursively yield all child nodes of *node*, in no specified order.  This is
-    useful if you only want to modify nodes in place and don't care about the
-    context.
+    Recursively yield all descendant nodes in the tree starting at *node*
+    (including *node* itself), in no specified order.  This is useful if you
+    only want to modify nodes in place and don't care about the context.
     """
     from collections import deque
     todo = deque([node])
