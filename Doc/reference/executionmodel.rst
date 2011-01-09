@@ -140,9 +140,9 @@ weak form of restricted execution.
 The namespace for a module is automatically created the first time a module is
 imported.  The main module for a script is always called :mod:`__main__`.
 
-The global statement has the same scope as a name binding operation in the same
-block.  If the nearest enclosing scope for a free variable contains a global
-statement, the free variable is treated as a global.
+The :keyword:`global` statement has the same scope as a name binding operation
+in the same block.  If the nearest enclosing scope for a free variable contains
+a global statement, the free variable is treated as a global.
 
 A class definition is an executable statement that may use and define names.
 These references follow the normal rules for name resolution. The namespace of
