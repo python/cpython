@@ -121,13 +121,9 @@ Here is the :class:`Header` class description:
 
    .. method:: __str__()
 
-      A synonym for :meth:`Header.encode`.  Useful for ``str(aHeader)``.
-
-
-   .. method:: __unicode__()
-
       A helper for :class:`str`'s :func:`encode` method.  Returns the header as
       a Unicode string.
+
 
    .. method:: __eq__(other)
 

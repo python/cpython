@@ -50,7 +50,7 @@ The :mod:`csv` module defines the following functions:
 
    Return a reader object which will iterate over lines in the given *csvfile*.
    *csvfile* can be any object which supports the :term:`iterator` protocol and returns a
-   string each time its :meth:`!next` method is called --- :term:`file objects
+   string each time its :meth:`!__next__` method is called --- :term:`file objects
    <file object>` and list objects are both suitable.   If *csvfile* is a file object,
    it should be opened with ``newline=''``. [#]_  An optional
    *dialect* parameter can be given which is used to define a set of parameters

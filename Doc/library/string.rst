@@ -5,16 +5,11 @@
    :synopsis: Common string operations.
 
 
-.. index:: module: re
+.. seealso::
 
-The :mod:`string` module contains a number of useful constants and classes
-for string formatting.  In addition, Python's built-in string classes
-support the sequence type methods described in the :ref:`typesseq`
-section, and also the string-specific methods described in the
-:ref:`string-methods` section.  To output formatted strings, see the
-:ref:`string-formatting` section.  Also, see the :mod:`re` module for
-string functions based on regular expressions.
+   :ref:`typesseq`
 
+   :ref:`string-methods`
 
 String constants
 ----------------

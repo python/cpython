@@ -176,17 +176,16 @@ attributes:
 
 .. function:: getmoduleinfo(path)
 
-   Returns a :term:`named tuple` ``ModuleInfo(name, suffix, mode,
-   module_type)`` of values that describe how Python will interpret the file
-   identified by *path* if it is a module, or ``None`` if it would not be
-   identified as a module.  The return tuple is ``(name, suffix, mode, mtype)``,
-   where *name* is the name of the module without the name of any enclosing
-   package, *suffix* is the trailing part of the file name (which may not be a
-   dot-delimited extension), *mode* is the :func:`open` mode that would be used
-   (``'r'`` or ``'rb'``), and *mtype* is an integer giving the type of the
-   module.  *mtype* will have a value which can be compared to the constants
-   defined in the :mod:`imp` module; see the documentation for that module for
-   more information on module types.
+   Returns a :term:`named tuple` ``ModuleInfo(name, suffix, mode, module_type)``
+   of values that describe how Python will interpret the file identified by
+   *path* if it is a module, or ``None`` if it would not be identified as a
+   module.  In that tuple, *name* is the name of the module without the name of
+   any enclosing package, *suffix* is the trailing part of the file name (which
+   may not be a dot-delimited extension), *mode* is the :func:`open` mode that
+   would be used (``'r'`` or ``'rb'``), and *module_type* is an integer giving
+   the type of the module.  *module_type* will have a value which can be
+   compared to the constants defined in the :mod:`imp` module; see the
+   documentation for that module for more information on module types.
 
 
 .. function:: getmodulename(path)
@@ -391,12 +390,12 @@ Classes and functions
 .. function:: getargspec(func)
 
    Get the names and default values of a Python function's arguments. A
-   :term:`named tuple` ``ArgSpec(args, varargs, keywords,
-   defaults)`` is returned. *args* is a list of
-   the argument names. *varargs* and *varkw* are the names of the ``*`` and
-   ``**`` arguments or ``None``. *defaults* is a tuple of default argument
-   values or None if there are no default arguments; if this tuple has *n*
-   elements, they correspond to the last *n* elements listed in *args*.
+   :term:`named tuple` ``ArgSpec(args, varargs, keywords, defaults)`` is
+   returned. *args* is a list of the argument names. *varargs* and *keywords*
+   are the names of the ``*`` and ``**`` arguments or ``None``. *defaults* is a
+   tuple of default argument values or None if there are no default arguments;
+   if this tuple has *n* elements, they correspond to the last *n* elements
+   listed in *args*.
 
    .. deprecated:: 3.0
       Use :func:`getfullargspec` instead, which provides information about
@@ -425,8 +424,8 @@ Classes and functions
 
    Get information about arguments passed into a particular frame.  A
    :term:`named tuple` ``ArgInfo(args, varargs, keywords, locals)`` is
-   returned. *args* is a list of the argument names.  *varargs* and *varkw* are
-   the names of the ``*`` and ``**`` arguments or ``None``.  *locals* is the
+   returned. *args* is a list of the argument names.  *varargs* and *keywords*
+   are the names of the ``*`` and ``**`` arguments or ``None``.  *locals* is the
    locals dictionary of the given frame.
 
 

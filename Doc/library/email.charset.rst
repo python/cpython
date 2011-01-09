@@ -142,18 +142,22 @@ Import this class from the :mod:`email.charset` module.
       it is *input_charset*.
 
 
-   .. method:: encoded_header_len()
-
-      Return the length of the encoded header string, properly calculating for
-      quoted-printable or base64 encoding.
-
-
    .. method:: header_encode(string)
 
       Header-encode the string *string*.
 
       The type of encoding (base64 or quoted-printable) will be based on the
       *header_encoding* attribute.
+
+
+   .. method:: header_encode_lines(string, maxlengths)
+
+      Header-encode a *string* by converting it first to bytes.
+
+      This is similar to :meth:`header_encode` except that the string is fit
+      into maximum line lengths as given by the argument *maxlengths*, which
+      must be an iterator: each element returned from this iterator will provide
+      the next maximum line length.
 
 
    .. method:: body_encode(string)
