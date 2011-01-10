@@ -393,8 +393,8 @@ points:
   bytes to native strings using ``h.encode('utf-8').decode('latin-1')``.
 
 * Values yielded by an application or sent using the :meth:`write` method
-   must be byte strings.  The :func:`start_response` function and environ
-   must use native strings.  The two cannot be mixed.
+  must be byte strings.  The :func:`start_response` function and environ
+  must use native strings.  The two cannot be mixed.
 
 For server implementers writing CGI-to-WSGI pathways or other CGI-style
 protocols, the users must to be able access the environment using native strings
@@ -437,7 +437,7 @@ Some smaller changes made to the core Python language are:
     optimize=0, dont_write_bytecode=0, no_user_site=0, no_site=0,
     ignore_environment=0, verbose=0, bytes_warning=0, quiet=1)
 
-  (Contributed by Marcin Wojdyr in issue:`1772833`).
+  (Contributed by Marcin Wojdyr in :issue:`1772833`).
 
 * The :func:`hasattr` function works by calling :func:`getattr` and detecting
   whether an exception is raised.  This technique allows it to detect methods
@@ -498,7 +498,7 @@ Some smaller changes made to the core Python language are:
   (See :issue:`4617`.)
 
 * The internal :c:type:`structsequence` tool now creates subclasses of tuple.
-  This means that C generated structures like those returned by :func:`os.stat`,
+  This means that C structures like those returned by :func:`os.stat`,
   :func:`time.gmtime`, and :func:`sys.version_info` now work like a
   :term:`named tuple` and now work with functions and methods that
   expect a tuple as an argument.  The is a big step forward in making the C
@@ -591,9 +591,8 @@ mcbs encoding, locale-aware encodings, or UTF-8.
 Another significant win is the addition of substantially better support for
 *SSL* connections and security certificates.
 
-In addition, more functions and classes now have a :term:`context manager` to
-support convenient and reliable resource clean-up using the
-:keyword:`with`-statement.
+In addition, more classes now implement a :term:`context manager` to support
+convenient and reliable resource clean-up using the :keyword:`with`-statement.
 
 email
 -----
@@ -1014,7 +1013,7 @@ zero-padded file objects.
 
 The :mod:`gzip` module also gains the :func:`~gzip.compress` and
 :func:`~gzip.decompress` functions for easier in-memory compression and
-decompression.  Keep in mind that text needs to be encoded in to :class:`bytes`
+decompression.  Keep in mind that text needs to be encoded as :class:`bytes`
 before compressing and decompressing:
 
 >>> s = 'Three shall be the number thou shalt count, '
@@ -1373,7 +1372,7 @@ The :mod:`pdb` debugger module gained a number of usability improvements:
 * A :file:`.pdbrc` script file can contain ``continue`` and ``next`` commands
   that continue debugging.
 * The :class:`Pdb` class constructor now accepts a *nosigint* argument.
-* New commands: ``l(list)``, ``ll(long list`` and ``source`` for
+* New commands: ``l(list)``, ``ll(long list)`` and ``source`` for
   listing source code.
 * New commands: ``display`` and ``undisplay`` for showing or hiding
   the value of an expression if it has changed.
@@ -1634,10 +1633,10 @@ A table of quick links has been added to the top of lengthy sections such as
 accompanied by tables of cheatsheet-style summaries to provide an overview and
 memory jog without having to read all of the docs.
 
-In some cases, the pure Python source code can be helpful adjunct to the docs,
-so now some modules feature quick links to the latest version of the source
-code.  For example, the :mod:`functools` module documentation has a quick link
-at the top labeled: *Source code* :source:`Lib/functools.py`.
+In some cases, the pure Python source code can be a helpful adjunct to the
+documentation, so now many modules now feature quick links to the latest version
+of the source code.  For example, the :mod:`functools` module documentation has
+a quick link at the top labeled: **Source code** :source:`Lib/functools.py`.
 
 The docs now contain more examples and recipes.  In particular, :mod:`re` module
 has an extensive section, :ref:`re-examples`.  Likewise, the :mod:`itertools`
@@ -1783,7 +1782,7 @@ require changes to your code:
 * :class:`bytearray` objects can no longer be used as filenames; instead,
   they should be converted to :class:`bytes`.
 
-* PyArg_Parse*() functions:
+* ``PyArg_Parse*()`` functions:
 
   * "t#" format has been removed: use "s#" or "s*" instead
   * "w" and "w#" formats has been removed: use "w*" instead
@@ -1802,7 +1801,7 @@ require changes to your code:
   ``random.seed(s, version=1)``.
 
 * The previously deprecated :func:`string.maketrans` function has been removed
-  in favor of the static method :meth:`bytes.maketrans` and
+  in favor of the static methods :meth:`bytes.maketrans` and
   :meth:`bytearray.maketrans`.  This change solves the confusion around which
   types were supported by the :mod:`string` module.  Now, :class:`str`,
   :class:`bytes`, and :class:`bytearray` each have their own **maketrans** and
