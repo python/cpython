@@ -1770,11 +1770,11 @@ Notes:
 
 (5)
    For technical reasons, :meth:`strftime` method does not support
-   dates with year < 1000: ``t.strftime(format)`` will raise a
-   :exc:`ValueError` even if ``format`` does not contain ``%Y``
-   directive.  The :meth:`strptime` method can parse years in the full
-   [1, 9999] range, but years < 1000 must be zero-filled to 4-digit
-   width.
+   dates before year 1000: ``t.strftime(format)`` will raise a
+   :exc:`ValueError` when ``t.year < 1000`` even if ``format`` does
+   not contain ``%Y`` directive.  The :meth:`strptime` method can
+   parse years in the full [1, 9999] range, but years < 1000 must be
+   zero-filled to 4-digit width.
 
    .. versionchanged:: 3.2
       In previous versions, :meth:`strftime` method was restricted to
