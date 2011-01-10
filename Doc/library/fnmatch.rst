@@ -9,6 +9,8 @@
 
 .. index:: module: re
 
+**Source code:** :source:`Lib/fnmatch.py`
+
 This module provides support for Unix shell-style wildcards, which are *not* the
 same as regular expressions (which are documented in the :mod:`re` module).  The
 special characters used in shell-style wildcards are:
@@ -88,6 +90,3 @@ patterns.
 
    Module :mod:`glob`
       Unix shell-style path expansion.
-
-   Latest version of the :source:`fnmatch Python source code
-   <Lib/fnmatch.py>`

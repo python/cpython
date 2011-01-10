@@ -5,16 +5,12 @@
    :synopsis: This module provides random access to individual lines from text files.
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
+**Source code:** :source:`Lib/linecache.py`
 
 The :mod:`linecache` module allows one to get any line from any file, while
 attempting to optimize internally, using a cache, the common case where many
 lines are read from a single file.  This is used by the :mod:`traceback` module
 to retrieve source lines for inclusion in  the formatted traceback.
-
-.. seealso::
-
-   Latest version of the :source:`linecache module Python source code
-   <Lib/linecache.py>`
 
 The :mod:`linecache` module defines the following functions:
 

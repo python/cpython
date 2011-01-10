@@ -4,6 +4,7 @@
 .. module:: queue
    :synopsis: A synchronized queue class.
 
+**Source code:** :source:`Lib/queue.py`
 
 The :mod:`queue` module implements multi-producer, multi-consumer queues.
 It is especially useful in threaded programming when information must be
@@ -181,5 +182,3 @@ Example of how to wait for enqueued tasks to be completed::
    queues with fast atomic :func:`append` and :func:`popleft` operations that
    do not require locking.
 
-   Latest version of the :source:`queue module Python source code
-   <Lib/queue.py>`

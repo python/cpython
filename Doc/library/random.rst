@@ -4,14 +4,10 @@
 .. module:: random
    :synopsis: Generate pseudo-random numbers with various common distributions.
 
+**Source code:** :source:`Lib/random.py`
 
 This module implements pseudo-random number generators for various
 distributions.
-
-.. seealso::
-
-   Latest version of the :source:`random module Python source code
-   <Lib/random.py>`
 
 For integers, there is uniform selection from a range. For sequences, there is
 uniform selection of a random element, a function to generate a random
@@ -45,8 +41,8 @@ The :mod:`random` module also provides the :class:`SystemRandom` class which
 uses the system function :func:`os.urandom` to generate random numbers
 from sources provided by the operating system.
 
-Bookkeeping functions:
 
+Bookkeeping functions:
 
 .. function:: seed([x], version=2)
 

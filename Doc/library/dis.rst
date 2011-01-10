@@ -4,19 +4,16 @@
 .. module:: dis
    :synopsis: Disassembler for Python bytecode.
 
+**Source code:** :source:`Lib/dis.py`
 
 The :mod:`dis` module supports the analysis of CPython :term:`bytecode` by
 disassembling it. The CPython bytecode which this module takes as an
 input is defined in the file :file:`Include/opcode.h` and used by the compiler
 and the interpreter.
 
-.. seealso::
-
-   Latest version of the :source:`dis module Python source code <Lib/dis.py>`
-
 .. impl-detail::
 
-   Bytecode is an implementation detail of the CPython interpreter!  No
+   Bytecode is an implementation detail of the CPython interpreter.  No
    guarantees are made that bytecode will not be added, removed, or changed
    between versions of Python.  Use of this module should not be considered to
    work across Python VMs or Python releases.

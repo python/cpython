@@ -6,6 +6,7 @@
 .. moduleauthor:: Guido van Rossum <guido@python.org>
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
+**Source code:** :source:`Lib/fileinput.py`
 
 This module implements a helper class and functions to quickly write a
 loop over standard input or a list of files. If you just want to read or
@@ -43,11 +44,6 @@ You can control how files are opened by providing an opening hook via the
 hook must be a function that takes two arguments, *filename* and *mode*, and
 returns an accordingly opened file-like object. Two useful hooks are already
 provided by this module.
-
-.. seealso::
-
-   Latest version of the :source:`fileinput Python source code
-   <Lib/fileinput.py>`
 
 The following function is the primary interface of this module:
 

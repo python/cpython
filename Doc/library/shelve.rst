@@ -7,16 +7,14 @@
 
 .. index:: module: pickle
 
+**Source code:** :source:`Lib/shelve.py`
+
 A "shelf" is a persistent, dictionary-like object.  The difference with "dbm"
 databases is that the values (not the keys!) in a shelf can be essentially
 arbitrary Python objects --- anything that the :mod:`pickle` module can handle.
 This includes most class instances, recursive data types, and objects containing
 lots of shared  sub-objects.  The keys are ordinary strings.
 
-.. seealso::
-
-   Latest version of the :source:`shelve module Python source code
-   <Lib/shelve.py>`
 
 .. function:: open(filename, flag='c', protocol=None, writeback=False)
 

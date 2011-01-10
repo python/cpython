@@ -6,6 +6,7 @@
 .. moduleauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
+**Source code:** :source:`Lib/pprint.py`
 
 The :mod:`pprint` module provides a capability to "pretty-print" arbitrary
 Python data structures in a form which can be used as input to the interpreter.
@@ -20,11 +21,6 @@ Construct :class:`PrettyPrinter` objects explicitly if you need to adjust the
 width constraint.
 
 Dictionaries are sorted by key before the display is computed.
-
-.. seealso::
-
-   Latest version of the :source:`pprint module Python source code
-   <Lib/pprint.py>`
 
 The :mod:`pprint` module defines one class:
 

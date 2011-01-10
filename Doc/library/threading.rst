@@ -4,6 +4,7 @@
 .. module:: threading
    :synopsis: Thread-based parallelism.
 
+**Source code:** :source:`Lib/threading.py`
 
 This module constructs higher-level threading interfaces on top of the lower
 level :mod:`_thread` module.  See also the :mod:`queue` module.
@@ -27,11 +28,6 @@ The :mod:`dummy_threading` module is provided for situations where
    :mod:`multiprocessing` or :class:`concurrent.futures.ProcessPoolExecutor`.
    However, threading is still an appropriate model if you want to run
    multiple I/O-bound tasks simultaneously.
-
-.. seealso::
-
-   Latest version of the :source:`threading module Python source code
-   <Lib/threading.py>`
 
 
 This module defines the following functions and objects:
