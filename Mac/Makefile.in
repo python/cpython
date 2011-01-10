@@ -47,8 +47,7 @@ APPSUBDIRS=MacOS Resources
 compileall=$(srcdir)/../Lib/compileall.py
 
 installapps: install_Python install_pythonw install_PythonLauncher install_IDLE \
-	checkapplepython install_versionedtools
-
+	checkapplepython
 
 install_pythonw: pythonw
 	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw "$(DESTDIR)$(prefix)/bin/pythonw$(VERSION)"
@@ -91,27 +90,6 @@ altinstallunixtools:
 	do \
 		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
 	done
-
-# By default most tools are installed without a version in their basename, to
-# make it easier to install (and use) several python versions side-by-side move
-# the tools to a version-specific name and add the non-versioned name as an
-# alias.
-install_versionedtools:
-	for fn in idle pydoc ;\
-	do \
-		if [ -h "$(DESTDIR)$(prefix)/bin/$${fn}3" ]; then \
-			continue ;\
-		fi ;\
-		mv "$(DESTDIR)$(prefix)/bin/$${fn}3" "$(DESTDIR)$(prefix)/bin/$${fn}$(VERSION)"  ;\
-		ln -sf "$${fn}$(VERSION)" "$(DESTDIR)$(prefix)/bin/$${fn}3" ;\
-	done
-	mv "$(DESTDIR)$(prefix)/bin/2to3" "$(DESTDIR)$(prefix)/bin/2to3-$(VERSION)"
-	ln -sf "2to3-$(VERSION)" "$(DESTDIR)$(prefix)/bin/2to3"
-	if [ ! -h "$(DESTDIR)$(prefix)/bin/python3-config" ]; then \
-		mv "$(DESTDIR)$(prefix)/bin/python3-config" "$(DESTDIR)$(prefix)/bin/python$(VERSION)-config" ;\
-		ln -sf "python$(VERSION)-config" "$(DESTDIR)$(prefix)/bin/python3-config" ; \
-	fi
-
 
 pythonw: $(srcdir)/Tools/pythonw.c Makefile
 	$(CC) $(LDFLAGS) -DPYTHONFRAMEWORK='"$(PYTHONFRAMEWORK)"' -o $@ $(srcdir)/Tools/pythonw.c -I.. -I$(srcdir)/../Include ../$(PYTHONFRAMEWORK).framework/Versions/$(VERSION)/$(PYTHONFRAMEWORK)
