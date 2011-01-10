@@ -553,7 +553,7 @@ Some smaller changes made to the core Python language are:
       >>> range(0, 100, 2)[0:5]
       range(0, 10, 2)
 
-  (Contributed by Daniel Stutzback in :issue:`9213` and by Alexander Belopolsky
+  (Contributed by Daniel Stutzbach in :issue:`9213` and by Alexander Belopolsky
   in :issue:`2690`.)
 
 * The :func:`callable` builtin function from Py2.x was resurrected.  It provides
@@ -1514,7 +1514,7 @@ A number of small performance enhancements have been added:
   and it saves time lost during comparisons which were delegated by the
   sort wrappers.
 
-  (Patch by Daniel Stutzback in :issue:`9915`.)
+  (Patch by Daniel Stutzbach in :issue:`9915`.)
 
 * JSON decoding performance is improved and memory consumption is reduced
   whenever the same string is repeated for multiple keys.  Also, JSON encoding
