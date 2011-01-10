@@ -400,7 +400,7 @@ The module defines the following functions and data items:
    +-------+-------------------+---------------------------------+
    | 4     | :attr:`tm_min`    | range [0, 59]                   |
    +-------+-------------------+---------------------------------+
-   | 5     | :attr:`tm_sec`    | range [0, 61]; see **(1)** in   |
+   | 5     | :attr:`tm_sec`    | range [0, 61]; see **(2)** in   |
    |       |                   | :func:`strftime` description    |
    +-------+-------------------+---------------------------------+
    | 6     | :attr:`tm_wday`   | range [0, 6], Monday is 0       |
