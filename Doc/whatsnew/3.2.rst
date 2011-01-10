@@ -839,6 +839,29 @@ datetime
   (Contributed by Alexander Belopolsky in :issue:`1289118`, :issue:`5094`,
   :issue:`6641`, and :issue:`2706`.)
 
+.. XXX
+
+   * The ``strftime()`` method of :class:`~datetime.date` and
+     :class:`~datetime.datetime` are no longer restricted to years >=
+     1900.  The new supported year range is [1000, 9999]. (Contributed
+     by Alexander Belopolsky and Victor Stinner in :issue:`1777412`)
+
+.. XXX Add a section on time module.
+
+   * The :func:`time.asctime` and :func:`time.ctime` functions no
+     longer call C library asctime. (Contributed by Alexander
+     Belopolsky in :issue:`8013`.)
+
+   * Changed the rules for using 2-digit years in time tuples. The
+     :func:`time.asctime`, :func:`time.ctime` and
+     :func:`time.strftime` functions will now format any year when
+     ``time.accept2dyear`` is false and will accept years >= 1000
+     otherwise. :func:`time.mktime` and :func:`time.strftime` now
+     accepts full range supported by the OS.  Conversion of 2-digit
+     years to 4-digit is deprecated.  (Contributed by Alexander
+     Belopolsky and Victor Stinner in :issue:`10827`.)
+
+
 abc
 ---
 
