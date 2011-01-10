@@ -5,7 +5,6 @@
 ****************************
 
 :Author: A.M. Kuchling <amk@amk.ca>
-:Release: 0.05
 
 .. TODO:
    Document lookbehind assertions
@@ -264,7 +263,7 @@ performing string substitutions. ::
    >>> import re
    >>> p = re.compile('ab*')
    >>> print p
-   <_sre.SRE_Pattern object at 80b4150>
+   <_sre.SRE_Pattern object at 0x...>
 
 :func:`re.compile` also accepts an optional *flags* argument, used to enable
 various special features and syntax variations.  We'll go over the available
@@ -377,7 +376,7 @@ Python interpreter, import the :mod:`re` module, and compile a RE::
    >>> import re
    >>> p = re.compile('[a-z]+')
    >>> p
-   <_sre.SRE_Pattern object at 80c3c28>
+   <_sre.SRE_Pattern object at 0x...>
 
 Now, you can try matching various strings against the RE ``[a-z]+``.  An empty
 string shouldn't match at all, since ``+`` means 'one or more repetitions'.
@@ -395,7 +394,7 @@ result in a variable for later use. ::
 
    >>> m = p.match('tempo')
    >>> print m
-   <_sre.SRE_Match object at 80c4f68>
+   <_sre.SRE_Match object at 0x...>
 
 Now you can query the :class:`MatchObject` for information about the matching
 string.   :class:`MatchObject` instances also have several methods and
@@ -434,7 +433,7 @@ case. ::
    >>> print p.match('::: message')
    None
    >>> m = p.search('::: message') ; print m
-   <re.MatchObject instance at 80c9650>
+   <_sre.SRE_Match object at 0x...>
    >>> m.group()
    'message'
    >>> m.span()
@@ -485,7 +484,7 @@ the RE string added as the first argument, and still return either ``None`` or a
    >>> print re.match(r'From\s+', 'Fromage amk')
    None
    >>> re.match(r'From\s+', 'From amk Thu May 14 19:12:10 1998')
-   <re.MatchObject instance at 80c5978>
+   <_sre.SRE_Match object at 0x...>
 
 Under the hood, these functions simply create a pattern object for you
 and call the appropriate method on it.  They also store the compiled object in a
@@ -686,7 +685,7 @@ given location, they can obviously be matched an infinite number of times.
    line, the RE to use is ``^From``. ::
 
       >>> print re.search('^From', 'From Here to Eternity')
-      <re.MatchObject instance at 80c1520>
+      <_sre.SRE_Match object at 0x...>
       >>> print re.search('^From', 'Reciting From Memory')
       None
 
@@ -698,11 +697,11 @@ given location, they can obviously be matched an infinite number of times.
    or any location followed by a newline character.     ::
 
       >>> print re.search('}$', '{block}')
-      <re.MatchObject instance at 80adfa8>
+      <_sre.SRE_Match object at 0x...>
       >>> print re.search('}$', '{block} ')
       None
       >>> print re.search('}$', '{block}\n')
-      <re.MatchObject instance at 80adfa8>
+      <_sre.SRE_Match object at 0x...>
 
    To match a literal ``'$'``, use ``\$`` or enclose it inside a character class,
    as in  ``[$]``.
@@ -727,7 +726,7 @@ given location, they can obviously be matched an infinite number of times.
 
       >>> p = re.compile(r'\bclass\b')
       >>> print p.search('no class at all')
-      <re.MatchObject instance at 80c8f28>
+      <_sre.SRE_Match object at 0x...>
       >>> print p.search('the declassified algorithm')
       None
       >>> print p.search('one subclass is')
@@ -745,7 +744,7 @@ given location, they can obviously be matched an infinite number of times.
       >>> print p.search('no class at all')
       None
       >>> print p.search('\b' + 'class' + '\b')
-      <re.MatchObject instance at 80c3ee0>
+      <_sre.SRE_Match object at 0x...>
 
    Second, inside a character class, where there's no use for this assertion,
    ``\b`` represents the backspace character, for compatibility with Python's
@@ -1315,7 +1314,7 @@ a regular expression that handles all of the possible cases, the patterns will
 be *very* complicated.  Use an HTML or XML parser module for such tasks.)
 
 
-Not Using re.VERBOSE
+Using re.VERBOSE
 --------------------
 
 By now you've probably noticed that regular expressions are a very compact
