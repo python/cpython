@@ -40,6 +40,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10875: Update Regular Expression HOWTO; patch by 'SilentGhost'.
+
 - Issue #10872: The repr() of TextIOWrapper objects now includes the mode
   if available.
 
