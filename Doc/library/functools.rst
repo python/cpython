@@ -8,15 +8,13 @@
 .. moduleauthor:: Nick Coghlan <ncoghlan@gmail.com>
 .. sectionauthor:: Peter Harris <scav@blueyonder.co.uk>
 
+**Source code:** :source:`Lib/functools.py`
+
+--------------
 
 The :mod:`functools` module is for higher-order functions: functions that act on
 or return other functions. In general, any callable object can be treated as a
 function for the purposes of this module.
-
-.. seealso::
-
-   Latest version of the :source:`functools Python source code
-   <Lib/functools.py>`
 
 The :mod:`functools` module defines the following functions:
 
