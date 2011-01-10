@@ -1663,10 +1663,7 @@ format codes.
 
 The exact range of years for which :meth:`strftime` works also varies
 across platforms.  Regardless of platform, years before 1000 cannot be
-used with ``datetime`` module ``strftime()`` methods.  The ``time``
-module ``strftime()`` function exibit different behavior depending on
-the value of ``time.accept2dyear`` variable.  See :ref:`Year 2000
-(Y2K) issues <time-y2kissues>` for details.
+used with ``datetime`` module ``strftime()`` methods.
 
 +-----------+--------------------------------+-------+
 | Directive | Meaning                        | Notes |
@@ -1710,7 +1707,7 @@ the value of ``time.accept2dyear`` variable.  See :ref:`Year 2000
 |           | AM or PM.                      |       |
 +-----------+--------------------------------+-------+
 | ``%S``    | Second as a decimal number     | \(3)  |
-|           | [00,61].                       |       |
+|           | [00,59].                       |       |
 +-----------+--------------------------------+-------+
 | ``%U``    | Week number of the year        | \(4)  |
 |           | (Sunday as the first day of    |       |
@@ -1767,12 +1764,8 @@ Notes:
    the output hour field if the ``%I`` directive is used to parse the hour.
 
 (3)
-   The range really is ``0`` to ``61``; according to the Posix standard this
-   accounts for leap seconds and the (very rare) double leap seconds.
-   The :mod:`time` module may produce and does accept leap seconds since
-   it is based on the Posix standard, but the :mod:`datetime` module
-   does not accept leap seconds in :meth:`strptime` input nor will it
-   produce them in :func:`strftime` output.
+   Unlike :mod:`time` module, :mod:`datetime` module does not support
+   leap seconds.
 
 (4)
    When used with the :meth:`strptime` method, ``%U`` and ``%W`` are only used in
