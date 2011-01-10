@@ -1661,10 +1661,6 @@ version) requires, and these work on all platforms with a standard C
 implementation.  Note that the 1999 version of the C standard added additional
 format codes.
 
-The exact range of years for which :meth:`strftime` works also varies
-across platforms.  Regardless of platform, years before 1000 cannot be
-used with ``datetime`` module ``strftime()`` methods.
-
 +-----------+--------------------------------+-------+
 | Directive | Meaning                        | Notes |
 +===========+================================+=======+
@@ -1737,10 +1733,11 @@ used with ``datetime`` module ``strftime()`` methods.
 | ``%y``    | Year without century as a      |       |
 |           | decimal number [00,99].        |       |
 +-----------+--------------------------------+-------+
-| ``%Y``    | Year with century as a decimal |       |
-|           | number.                        |       |
+| ``%Y``    | Year with century as a decimal | \(5)  |
+|           | number [0001,9999] (strptime), |       |
+|           | [1000,9999] (strftime).        |       |
 +-----------+--------------------------------+-------+
-| ``%z``    | UTC offset in the form +HHMM   | \(5)  |
+| ``%z``    | UTC offset in the form +HHMM   | \(6)  |
 |           | or -HHMM (empty string if the  |       |
 |           | the object is naive).          |       |
 +-----------+--------------------------------+-------+
@@ -1772,6 +1769,18 @@ Notes:
    calculations when the day of the week and the year are specified.
 
 (5)
+   For technical reasons, :meth:`strftime` method does not support
+   dates with year < 1000: ``t.strftime(format)`` will raise a
+   :exc:`ValueError` even if ``format`` does not contain ``%Y``
+   directive.  The :meth:`strptime` method can parse years in the full
+   [1, 9999] range, but years < 1000 must be zero-filled to 4-digit
+   width.
+
+   .. versionchanged:: 3.2
+      In previous versions, :meth:`strftime` method was restricted to
+      years >= 1900.
+
+(6)
    For example, if :meth:`utcoffset` returns ``timedelta(hours=-3, minutes=-30)``,
    ``%z`` is replaced with the string ``'-0330'``.
 
