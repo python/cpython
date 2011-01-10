@@ -5,15 +5,12 @@
    :synopsis: Build line-oriented command interpreters.
 .. sectionauthor:: Eric S. Raymond <esr@snark.thyrsus.com>
 
+**Source code:** :source:`Lib/cmd.py`
 
 The :class:`Cmd` class provides a simple framework for writing line-oriented
 command interpreters.  These are often useful for test harnesses, administrative
 tools, and prototypes that will later be wrapped in a more sophisticated
 interface.
-
-.. seealso::
-
-   Latest version of the :source:`cmd module Python source code <Lib/cmd.py>`
 
 .. class:: Cmd(completekey='tab', stdin=None, stdout=None)
 

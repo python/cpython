@@ -10,20 +10,17 @@
    single: file; copying
    single: copying files
 
+**Source code:** :source:`Lib/shutil.py`
+
 The :mod:`shutil` module offers a number of high-level operations on files and
 collections of files.  In particular, functions are provided  which support file
 copying and removal. For operations on individual files, see also the
 :mod:`os` module.
 
-.. seealso::
-
-   Latest version of the :source:`shutil module Python source code
-   <Lib/shutil.py>`
-
 .. warning::
 
    Even the higher-level file copying functions (:func:`copy`, :func:`copy2`)
-   can't copy all file metadata.
+   cannot copy all file metadata.
 
    On POSIX platforms, this means that file owner and group are lost as well
    as ACLs.  On Mac OS, the resource fork and other metadata are not used.

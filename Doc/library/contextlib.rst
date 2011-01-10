@@ -4,15 +4,11 @@
 .. module:: contextlib
    :synopsis: Utilities for with-statement contexts.
 
+**Source code:** :source:`Lib/contextlib.py`
 
 This module provides utilities for common tasks involving the :keyword:`with`
 statement. For more information see also :ref:`typecontextmanager` and
 :ref:`context-managers`.
-
-.. seealso::
-
-   Latest version of the :source:`contextlib Python source code
-   <Lib/contextlib.py>`
 
 Functions provided:
 

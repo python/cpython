@@ -6,17 +6,13 @@
 .. moduleauthor:: Greg Ward <gward@python.net>
 .. sectionauthor:: Greg Ward <gward@python.net>
 
+**Source code:** :source:`Lib/textwrap.py`
 
 The :mod:`textwrap` module provides two convenience functions, :func:`wrap` and
 :func:`fill`, as well as :class:`TextWrapper`, the class that does all the work,
 and a utility function  :func:`dedent`.  If you're just wrapping or filling one
 or two  text strings, the convenience functions should be good enough;
 otherwise,  you should use an instance of :class:`TextWrapper` for efficiency.
-
-.. seealso::
-
-   Latest version of the :source:`textwrap module Python source code
-   <Lib/textwrap.py>`
 
 .. function:: wrap(text, width=70, **kwargs)
 

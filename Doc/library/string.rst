@@ -11,9 +11,7 @@
 
    :ref:`string-methods`
 
-   Latest version of the :source:`string module Python source code
-   <Lib/string.py>`
-
+**Source code:** :source:`Lib/string.py`
 
 String constants
 ----------------

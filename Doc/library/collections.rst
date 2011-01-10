@@ -12,6 +12,8 @@
    import itertools
    __name__ = '<doctest>'
 
+**Source code:** :source:`Lib/collections.py`
+
 This module implements specialized container datatypes providing alternatives to
 Python's general purpose built-in containers, :class:`dict`, :class:`list`,
 :class:`set`, and :class:`tuple`.
@@ -30,11 +32,6 @@ Python's general purpose built-in containers, :class:`dict`, :class:`list`,
 In addition to the concrete container classes, the collections module provides
 :ref:`abstract-base-classes` that can be used to test whether a class provides a
 particular interface, for example, whether it is hashable or a mapping.
-
-.. seealso::
-
-   Latest version of the :source:`collections module Python source code
-   <Lib/collections.py>`
 
 
 :class:`Counter` objects

@@ -8,13 +8,10 @@
 .. sectionauthor:: François Pinard
 .. sectionauthor:: Raymond Hettinger
 
+**Source code:** :source:`Lib/heapq.py`
+
 This module provides an implementation of the heap queue algorithm, also known
 as the priority queue algorithm.
-
-.. seealso::
-
-   Latest version of the :source:`heapq Python source code
-   <Lib/heapq.py>`
 
 Heaps are binary trees for which every parent node has a value less than or
 equal to any of its children.  This implementation uses arrays for which

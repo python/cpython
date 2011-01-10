@@ -6,6 +6,7 @@
               of the Unix cal program.
 .. sectionauthor:: Drew Csillag <drew_csillag@geocities.com>
 
+**Source code:** :source:`Lib/calendar.py`
 
 This module allows you to output calendars like the Unix :program:`cal` program,
 and provides additional useful functions related to the calendar. By default,
@@ -309,6 +310,3 @@ The :mod:`calendar` module exports the following data attributes:
 
    Module :mod:`time`
       Low-level time related functions.
-
-   Latest version of the :source:`calendar module Python source code
-   <Lib/calendar.py>`
