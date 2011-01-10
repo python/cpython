@@ -308,7 +308,7 @@ The module defines the following functions and data items:
    | ``%y``    | Year without century as a decimal number       |       |
    |           | [00,99].                                       |       |
    +-----------+------------------------------------------------+-------+
-   | ``%Y``    | Year with century as a decimal number.         |       |
+   | ``%Y``    | Year with century as a decimal number.         | \(4)  |
    |           |                                                |       |
    +-----------+------------------------------------------------+-------+
    | ``%Z``    | Time zone name (no characters if no time zone  |       |
@@ -324,12 +324,19 @@ The module defines the following functions and data items:
       the output hour field if the ``%I`` directive is used to parse the hour.
 
    (2)
-      The range really is ``0`` to ``61``; this accounts for leap seconds and the
-      (very rare) double leap seconds.
+      The range really is ``0`` to ``61``; value ``60`` is valid in
+      timestamps representing leap seconds and value ``61`` is supported
+      for historical reasons.
 
    (3)
       When used with the :func:`strptime` function, ``%U`` and ``%W`` are only used in
       calculations when the day of the week and the year are specified.
+
+   (4)
+      Produces different results depending on the value of
+      ``time.accept2dyear`` variable.  See :ref:`Year 2000 (Y2K)
+      issues <time-y2kissues>` for details.
+
 
    Here is an example, a format for dates compatible with that specified  in the
    :rfc:`2822` Internet email standard.  [#]_ ::
