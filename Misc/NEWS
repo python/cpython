@@ -189,6 +189,9 @@ C-API
 Build
 -----
 
+- Issue #10820: Fix OS X framework installs to support version-specific
+  scripts (#10679).
+
 - Issue #7716: Under Solaris, don't assume existence of /usr/xpg4/bin/grep in
   the configure script but use $GREP instead.  Patch by Fabian Groffen.
 
