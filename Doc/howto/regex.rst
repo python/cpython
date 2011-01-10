@@ -107,7 +107,10 @@ meaning: ``\[`` or ``\\``.
 Some of the special sequences beginning with ``'\'`` represent predefined sets
 of characters that are often useful, such as the set of digits, the set of
 letters, or the set of anything that isn't whitespace.  The following predefined
-special sequences are available:
+special sequences are a subset of those available. The equivalent classes are
+for bytes patterns. For a complete list of sequences and expanded class
+definitions for Unicode string patterns, see the last part of
+:ref:`Regular Expression Syntax <re-syntax>`.
 
 ``\d``
    Matches any decimal digit; this is equivalent to the class ``[0-9]``.
