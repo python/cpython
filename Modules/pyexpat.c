@@ -797,25 +797,13 @@ xmlparse_Parse(xmlparseobject *self, PyObject *args)
 static int
 readinst(char *buf, int buf_size, PyObject *meth)
 {
-    PyObject *arg = NULL;
-    PyObject *bytes = NULL;
-    PyObject *str = NULL;
-    Py_ssize_t len = -1;
+    PyObject *str;
+    Py_ssize_t len;
     char *ptr;
 
-    if ((bytes = PyLong_FromLong(buf_size)) == NULL)
-        goto finally;
-
-    if ((arg = PyTuple_New(1)) == NULL) {
-        Py_DECREF(bytes);
-        goto finally;
-    }
-
-    PyTuple_SET_ITEM(arg, 0, bytes);
-
-    str = PyObject_Call(meth, arg, NULL);
+    str = PyObject_CallFunction(meth, "n", buf_size);
     if (str == NULL)
-        goto finally;
+        goto error;
 
     if (PyBytes_Check(str))
         ptr = PyBytes_AS_STRING(str);
@@ -825,7 +813,7 @@ readinst(char *buf, int buf_size, PyObject *meth)
         PyErr_Format(PyExc_TypeError,
                      "read() did not return a bytes object (type=%.400s)",
                      Py_TYPE(str)->tp_name);
-        goto finally;
+        goto error;
     }
     len = Py_SIZE(str);
     if (len > buf_size) {
@@ -833,14 +821,16 @@ readinst(char *buf, int buf_size, PyObject *meth)
                      "read() returned too much data: "
                      "%i bytes requested, %zd returned",
                      buf_size, len);
-        goto finally;
+        goto error;
     }
     memcpy(buf, ptr, len);
-finally:
-    Py_XDECREF(arg);
-    Py_XDECREF(str);
-    /* len <= buf_size <= INT_MAX (see above) */
+    Py_DECREF(str);
+    /* len <= buf_size <= INT_MAX */
     return (int)len;
+
+error:
+    Py_XDECREF(str);
+    return -1;
 }
 
 PyDoc_STRVAR(xmlparse_ParseFile__doc__,
