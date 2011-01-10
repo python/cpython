@@ -853,7 +853,7 @@ datetime
      Belopolsky in :issue:`8013`.)
 
    * Changed the rules for using 2-digit years in time tuples. The
-     :func:`time.asctime`, :func:`time.ctime` and
+     :func:`time.asctime` and
      :func:`time.strftime` functions will now format any year when
      ``time.accept2dyear`` is false and will accept years >= 1000
      otherwise. :func:`time.mktime` and :func:`time.strftime` now
