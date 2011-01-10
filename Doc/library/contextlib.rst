@@ -6,6 +6,8 @@
 
 **Source code:** :source:`Lib/contextlib.py`
 
+--------------
+
 This module provides utilities for common tasks involving the :keyword:`with`
 statement. For more information see also :ref:`typecontextmanager` and
 :ref:`context-managers`.

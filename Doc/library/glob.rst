@@ -9,6 +9,8 @@
 
 **Source code:** :source:`Lib/glob.py`
 
+--------------
+
 The :mod:`glob` module finds all the pathnames matching a specified pattern
 according to the rules used by the Unix shell.  No tilde expansion is done, but
 ``*``, ``?``, and character ranges expressed with ``[]`` will be correctly

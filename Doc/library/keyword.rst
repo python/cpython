@@ -6,6 +6,8 @@
 
 **Source code:** :source:`Lib/keyword.py`
 
+--------------
+
 This module allows a Python program to determine if a string is a keyword.
 
 

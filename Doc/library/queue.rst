@@ -6,6 +6,8 @@
 
 **Source code:** :source:`Lib/queue.py`
 
+--------------
+
 The :mod:`queue` module implements multi-producer, multi-consumer queues.
 It is especially useful in threaded programming when information must be
 exchanged safely between multiple threads.  The :class:`Queue` class in this

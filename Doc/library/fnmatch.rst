@@ -11,6 +11,8 @@
 
 **Source code:** :source:`Lib/fnmatch.py`
 
+--------------
+
 This module provides support for Unix shell-style wildcards, which are *not* the
 same as regular expressions (which are documented in the :mod:`re` module).  The
 special characters used in shell-style wildcards are:

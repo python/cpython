@@ -1614,7 +1614,7 @@ memory jog without having to read all of the docs.
 In some cases, the pure Python source code can be helpful adjunct to the docs,
 so now some modules feature quick links to the latest version of the source
 code.  For example, the :mod:`functools` module documentation has a quick link
-at the top labeled *Source code* source:`Lib/functools.py`.
+at the top labeled: *Source code* :source:`Lib/functools.py`.
 
 The docs now contain more examples and recipes.  In particular, :mod:`re` module
 has an extensive section, :ref:`re-examples`.  Likewise, the :mod:`itertools`

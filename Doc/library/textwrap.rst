@@ -8,6 +8,8 @@
 
 **Source code:** :source:`Lib/textwrap.py`
 
+--------------
+
 The :mod:`textwrap` module provides two convenience functions, :func:`wrap` and
 :func:`fill`, as well as :class:`TextWrapper`, the class that does all the work,
 and a utility function  :func:`dedent`.  If you're just wrapping or filling one

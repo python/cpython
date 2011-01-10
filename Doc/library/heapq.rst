@@ -10,6 +10,8 @@
 
 **Source code:** :source:`Lib/heapq.py`
 
+--------------
+
 This module provides an implementation of the heap queue algorithm, also known
 as the priority queue algorithm.
 

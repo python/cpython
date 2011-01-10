@@ -7,6 +7,8 @@
 
 **Source code:** :source:`Lib/uu.py`
 
+--------------
+
 This module encodes and decodes files in uuencode format, allowing arbitrary
 binary data to be transferred over ASCII-only connections. Wherever a file
 argument is expected, the methods accept a file-like object.  For backwards

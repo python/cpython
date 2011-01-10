@@ -9,6 +9,8 @@
 
 **Source code:** :source:`Lib/shelve.py`
 
+--------------
+
 A "shelf" is a persistent, dictionary-like object.  The difference with "dbm"
 databases is that the values (not the keys!) in a shelf can be essentially
 arbitrary Python objects --- anything that the :mod:`pickle` module can handle.

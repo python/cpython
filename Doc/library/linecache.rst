@@ -7,6 +7,8 @@
 
 **Source code:** :source:`Lib/linecache.py`
 
+--------------
+
 The :mod:`linecache` module allows one to get any line from any file, while
 attempting to optimize internally, using a cache, the common case where many
 lines are read from a single file.  This is used by the :mod:`traceback` module

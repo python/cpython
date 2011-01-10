@@ -6,6 +6,8 @@
 
 **Source code:** :source:`Lib/random.py`
 
+--------------
+
 This module implements pseudo-random number generators for various
 distributions.
 

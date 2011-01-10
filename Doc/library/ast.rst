@@ -9,6 +9,8 @@
 
 **Source code:** :source:`Lib/ast.py`
 
+--------------
+
 The :mod:`ast` module helps Python applications to process trees of the Python
 abstract syntax grammar.  The abstract syntax itself might change with each
 Python release; this module helps to find out programmatically what the current

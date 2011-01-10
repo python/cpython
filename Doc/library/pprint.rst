@@ -8,6 +8,8 @@
 
 **Source code:** :source:`Lib/pprint.py`
 
+--------------
+
 The :mod:`pprint` module provides a capability to "pretty-print" arbitrary
 Python data structures in a form which can be used as input to the interpreter.
 If the formatted structures include objects which are not fundamental Python
