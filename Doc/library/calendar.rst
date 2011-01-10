@@ -8,6 +8,8 @@
 
 **Source code:** :source:`Lib/calendar.py`
 
+--------------
+
 This module allows you to output calendars like the Unix :program:`cal` program,
 and provides additional useful functions related to the calendar. By default,
 these calendars have Monday as the first day of the week, and Sunday as the last

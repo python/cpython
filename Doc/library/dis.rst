@@ -6,6 +6,8 @@
 
 **Source code:** :source:`Lib/dis.py`
 
+--------------
+
 The :mod:`dis` module supports the analysis of CPython :term:`bytecode` by
 disassembling it. The CPython bytecode which this module takes as an
 input is defined in the file :file:`Include/opcode.h` and used by the compiler

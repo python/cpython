@@ -9,6 +9,8 @@
 
 **Source code:** :source:`Lib/bisect.py`
 
+--------------
+
 This module provides support for maintaining a list in sorted order without
 having to sort the list after each insertion.  For long lists of items with
 expensive comparison operations, this can be an improvement over the more common

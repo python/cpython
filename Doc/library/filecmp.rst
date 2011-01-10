@@ -7,6 +7,8 @@
 
 **Source code:** :source:`Lib/filecmp.py`
 
+--------------
+
 The :mod:`filecmp` module defines functions to compare files and directories,
 with various optional time/correctness trade-offs. For comparing files,
 see also the :mod:`difflib` module.

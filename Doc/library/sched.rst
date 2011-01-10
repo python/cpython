@@ -9,6 +9,8 @@
 
 **Source code:** :source:`Lib/sched.py`
 
+--------------
+
 The :mod:`sched` module defines a class which implements a general purpose event
 scheduler:
 

@@ -6,6 +6,8 @@
 
 **Source code:** :source:`Lib/threading.py`
 
+--------------
+
 This module constructs higher-level threading interfaces on top of the lower
 level :mod:`_thread` module.  See also the :mod:`queue` module.
 

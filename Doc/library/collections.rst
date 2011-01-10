@@ -14,6 +14,8 @@
 
 **Source code:** :source:`Lib/collections.py`
 
+--------------
+
 This module implements specialized container datatypes providing alternatives to
 Python's general purpose built-in containers, :class:`dict`, :class:`list`,
 :class:`set`, and :class:`tuple`.

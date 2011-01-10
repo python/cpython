@@ -13,6 +13,8 @@
 
 **Source code:** :source:`Lib/string.py`
 
+--------------
+
 String constants
 ----------------
 
