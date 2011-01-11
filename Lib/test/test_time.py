@@ -347,7 +347,8 @@ class _Test4dYear(_BaseYearTest):
                 tt = time.localtime(t)
             except (OverflowError, ValueError):
                 pass
-            self.assertEqual(time.mktime(tt), t)
+            else:
+                self.assertEqual(time.mktime(tt), t)
         # It may not be possible to reliably make mktime return error
         # on all platfom.  This will make sure that no other exception
         # than OverflowError is raised for an extreme value.
