@@ -348,9 +348,13 @@ class _Test4dYear(_BaseYearTest):
             except (OverflowError, ValueError):
                 pass
             self.assertEqual(time.mktime(tt), t)
-        # Hopefully year = -1 is enough to make OS mktime fail
-        self.assertRaises(OverflowError, time.mktime,
-                          (-1, 1, 1, 0, 0, 0, -1, -1, -1))
+        # It may not be possible to reliably make mktime return error
+        # on all platfom.  This will make sure that no other exception
+        # than OverflowError is raised for an extreme value.
+        try:
+            time.mktime((-1, 1, 1, 0, 0, 0, -1, -1, -1))
+        except OverflowError:
+            pass
 
 class TestAsctimeAccept2dYear(_TestAsctimeYear, _Test2dYear):
     pass
