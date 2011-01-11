@@ -65,7 +65,7 @@ binascii
 binhex
 bisect              rhettinger
 bz2
-calendar
+calendar            rhettinger
 cgi
 CGIHTTPServer
 cgitb
@@ -75,7 +75,8 @@ cmd
 code
 codecs              lemburg, doerwalter
 codeop
-collections         rhettinger, stutzbach
+collections         rhettinger
+collections._abcoll rhettinger, stutzbach
 colorsys
 compileall
 ConfigParser        lukasz.langa
@@ -84,10 +85,10 @@ copy                alexandre.vassalotti
 copy_reg            alexandre.vassalotti
 cProfile
 crypt
-csv
+csv                 skip.montanaro
 ctypes              theller
 curses
-datetime            alexander.belopolsky
+datetime            belopolsky
 dbm
 decimal             facundobatista, rhettinger, mark.dickinson
 difflib             tim_one
@@ -107,7 +108,7 @@ formatter
 fpectl
 fractions           mark.dickinson, rhettinger
 ftplib              giampaolo.rodola
-functools
+functools           ncoghlan, rhettinger
 gc                  pitrou
 getopt
 getpass
@@ -130,7 +131,7 @@ importlib           brett.cannon
 inspect
 io                  pitrou, benjamin.peterson, stutzbach
 itertools           rhettinger
-json                bob.ippolito (inactive)
+json                bob.ippolito (inactive), rhettinger
 keyword
 lib2to3             benjamin.peterson
 linecache
@@ -218,18 +219,18 @@ termios
 test
 textwrap            georg.brandl
 threading           pitrou
-time                alexander.belopolsky
+time                belopolsky
 timeit              georg.brandl
 Tkinter             gpolo
 token               georg.brandl
 tokenize
-trace               alexander.belopolsky
+trace               belopolsky
 traceback           georg.brandl*
 tty
 turtle              gregorlingl
 types
 unicodedata         loewis, lemburg, ezio.melotti
-unittest            michael.foord
+unittest            michael.foord, ezio.melotti
 urllib              orsenthil
 uu
 uuid
@@ -305,9 +306,9 @@ py3 transition      benjamin.peterson
 release management  tarek, lemburg, benjamin.peterson, barry, loewis,
                     gvanrossum, anthonybaxter
 str.format          eric.smith
-testing             michael.foord, pitrou, giampaolo.rodola
+testing             michael.foord, pitrou, giampaolo.rodola, ezio.melotti
 threads             pitrou
-time and dates      lemburg
+time and dates      lemburg, belopolsky
 unicode             lemburg, ezio.melotti, haypo
 version control
 ==================  ===========
