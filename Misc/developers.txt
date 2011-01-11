@@ -23,6 +23,9 @@ transliteration too.
 Permissions History
 -------------------
 
+- Eli Bendersky was given commit access on Jan 11 2011 by BAC,
+  on recommendation by Terry Reedy and Nick Coghlan.
+
 - Ned Deily was given commit access on Jan 9 2011 by MvL,
   on recommendation by Antoine Pitrou.
 
