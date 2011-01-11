@@ -973,9 +973,6 @@ Library
 Extension Modules
 -----------------
 
-- Issue #5109: array.array constructor will now use fast code when
-  initial data is provided in an array object with correct type.
-
 - Issue #7384: If the system readline library is linked against ncurses,
   the curses module must be linked against ncurses as well. Otherwise it
   is not safe to load both the readline and curses modules in an application.
