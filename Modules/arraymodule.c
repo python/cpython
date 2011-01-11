@@ -1925,7 +1925,10 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     if (!(initial == NULL || PyList_Check(initial)
           || PyString_Check(initial) || PyTuple_Check(initial)
-          || (c == 'u' && PyUnicode_Check(initial)))) {
+          || PyTuple_Check(initial)
+          || ((c=='u') && PyUnicode_Check(initial))
+          || (array_Check(initial)
+              && c == ((arrayobject*)initial)->ob_descr->typecode))) {
         it = PyObject_GetIter(initial);
         if (it == NULL)
             return NULL;
@@ -1941,17 +1944,20 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             PyObject *a;
             Py_ssize_t len;
 
-            if (initial == NULL || !(PyList_Check(initial)
-                || PyTuple_Check(initial)))
+            if (initial == NULL)
                 len = 0;
+            else if (PyList_Check(initial))
+                len = PyList_GET_SIZE(initial);
+            else if (PyTuple_Check(initial) || array_Check(initial))
+                len = Py_SIZE(initial);
             else
-                len = PySequence_Size(initial);
+                len = 0;
 
             a = newarrayobject(type, len, descr);
             if (a == NULL)
                 return NULL;
 
-            if (len > 0) {
+            if (len > 0 && !array_Check(initial)) {
                 Py_ssize_t i;
                 for (i = 0; i < len; i++) {
                     PyObject *v =
@@ -2000,6 +2006,11 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                     self->allocated = Py_SIZE(self);
                 }
 #endif
+            }
+            else if (initial != NULL && array_Check(initial)) {
+                arrayobject *self = (arrayobject *)a;
+                arrayobject *other = (arrayobject *)initial;
+                memcpy(self->ob_item, other->ob_item, len * other->ob_descr->itemsize);
             }
             if (it != NULL) {
                 if (array_iter_extend((arrayobject *)a, it) == -1) {
