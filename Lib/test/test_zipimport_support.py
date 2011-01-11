@@ -13,6 +13,7 @@ import doctest
 import inspect
 import linecache
 import pdb
+import unittest
 from test.script_helper import (spawn_python, kill_python, assert_python_ok,
                                 temp_dir, make_script, make_zip_script)
 
@@ -29,7 +30,6 @@ verbose = test.support.verbose
 
 # Retrieve some helpers from other test cases
 from test import test_doctest, sample_doctest
-from test.test_importhooks import ImportHooksBaseTestCase
 
 
 def _run_object_doctest(obj, module):
@@ -59,17 +59,28 @@ def _run_object_doctest(obj, module):
 
 
 
-class ZipSupportTests(ImportHooksBaseTestCase):
-    # We use the ImportHooksBaseTestCase to restore
+class ZipSupportTests(unittest.TestCase):
+    # This used to use the ImportHooksBaseTestCase to restore
     # the state of the import related information
-    # in the sys module after each test
+    # in the sys module after each test. However, that restores
+    # *too much* information and breaks for the invocation of
+    # of test_doctest. So we do our own thing and leave
+    # sys.modules alone.
     # We also clear the linecache and zipimport cache
     # just to avoid any bogus errors due to name reuse in the tests
     def setUp(self):
         linecache.clearcache()
         zipimport._zip_directory_cache.clear()
-        ImportHooksBaseTestCase.setUp(self)
+        self.path = sys.path[:]
+        self.meta_path = sys.meta_path[:]
+        self.path_hooks = sys.path_hooks[:]
+        sys.path_importer_cache.clear()
 
+    def tearDown(self):
+        sys.path[:] = self.path
+        sys.meta_path[:] = self.meta_path
+        sys.path_hooks[:] = self.path_hooks
+        sys.path_importer_cache.clear()
 
     def test_inspect_getsource_issue4223(self):
         test_src = "def foo(): pass\n"
