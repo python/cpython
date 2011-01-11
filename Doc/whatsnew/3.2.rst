@@ -817,6 +817,8 @@ collections
 
   (Contributed by Raymond Hettinger.)
 
+.. XXX threading.py and Barrier objects
+
 datetime
 --------
 
