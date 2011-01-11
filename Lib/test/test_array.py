@@ -398,6 +398,11 @@ class BaseTest(unittest.TestCase):
         if a.itemsize>1:
             self.assertRaises(ValueError, b.frombytes, b"x")
 
+    def test_fromarray(self):
+        a = array.array(self.typecode, self.example)
+        b = array.array(self.typecode, a)
+        self.assertEqual(a, b)
+
     def test_repr(self):
         a = array.array(self.typecode, 2*self.example)
         self.assertEqual(a, eval(repr(a), {"array": array.array}))
@@ -1112,6 +1117,11 @@ class NumberTest(BaseTest):
         self.assertEntryEqual(a[0], 7)
 
         self.assertRaises(AttributeError, setattr, a, "color", "blue")
+
+    def test_frombytearray(self):
+        a = array.array('b', range(10))
+        b = array.array(self.typecode, a)
+        self.assertEqual(a, b)
 
 class SignedNumberTest(NumberTest):
     example = [-1, 0, 1, 42, 0x7f]

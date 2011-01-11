@@ -955,6 +955,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #5109: array.array constructor will now use fast code when
+  initial data is provided in an array object with correct type.
+
 - Issue #6317: Now winsound.PlaySound only accepts unicode.
 
 - Issue #6317: Now winsound.PlaySound can accept non ascii filename.
