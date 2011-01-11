@@ -868,7 +868,7 @@ As an example, here is a simple way to synchronize a client and server thread::
       constructor.
 
       The return value is an integer in the range 0 to *parties* -- 1, different
-      for each thrad.  This can be used to select a thread to do some special
+      for each thread.  This can be used to select a thread to do some special
       housekeeping, e.g.::
 
          i = barrier.wait()
