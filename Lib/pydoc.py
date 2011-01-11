@@ -1706,8 +1706,9 @@ class Helper:
             return ''
         return '<pydoc.Helper instance>'
 
-    def __call__(self, request=None):
-        if request is not None:
+    _GoInteractive = object()
+    def __call__(self, request=_GoInteractive):
+        if request is not self._GoInteractive:
             self.help(request)
         else:
             self.intro()
