@@ -618,7 +618,8 @@ format.
   convert message bodies that have a :mailheader:`Content-Transfer-Encoding` of
   *8bit* to instead have a *7bit* :mailheader:`Content-Transfer-Encoding`.
 
-..  XXX: Headers with Un-encoded non-ASCII bytes will be :rfc:`2047`\ -encoded using the charset `unknown-8bit`.
+  Headers with unencoded non-ASCII bytes are deemed to be :rfc:`2047`\ -encoded
+  using the *unknown-8bit* character set.
 
 * A new class :class:`~email.generator.BytesGenerator` produces bytes as output,
   preserving any unchanged non-ASCII data that was present in the input used to
@@ -630,8 +631,6 @@ format.
   and a new method, :meth:`~smtplib.SMTP.send_message` accepts a
   :class:`~email.message.Message` object and can optionally obtain the
   *from_addr* and *to_addrs* addresses directly from the object.
-
-.. XXX Update before 3.2rc1 to reflect all of the latest work and add examples.
 
 (Proposed and implemented by R. David Murray, :issue:`4661` and :issue:`10321`.)
 
