@@ -5712,7 +5712,7 @@ posix_write(PyObject *self, PyObject *args)
         len = INT_MAX;
     size = write(fd, pbuf.buf, (int)len);
 #else
-    size = write(fd, pbuf.buf, (size_t)len);
+    size = write(fd, pbuf.buf, len);
 #endif
     Py_END_ALLOW_THREADS
     PyBuffer_Release(&pbuf);

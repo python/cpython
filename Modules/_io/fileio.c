@@ -530,7 +530,7 @@ fileio_readinto(fileio *self, PyObject *args)
             len = INT_MAX;
         n = read(self->fd, pbuf.buf, (int)len);
 #else
-        n = read(self->fd, pbuf.buf, (size_t)len);
+        n = read(self->fd, pbuf.buf, len);
 #endif
         Py_END_ALLOW_THREADS
     } else
@@ -716,7 +716,7 @@ fileio_write(fileio *self, PyObject *args)
             len = INT_MAX;
         n = write(self->fd, pbuf.buf, (int)len);
 #else
-        n = write(self->fd, pbuf.buf, (size_t)len);
+        n = write(self->fd, pbuf.buf, len);
 #endif
         Py_END_ALLOW_THREADS
     } else
