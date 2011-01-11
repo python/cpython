@@ -4,7 +4,6 @@ Sorting HOW TO
 **************
 
 :Author: Andrew Dalke and Raymond Hettinger
-:Release: 0.1
 
 
 Python lists have a built-in :meth:`list.sort` method that modifies the list
@@ -18,7 +17,7 @@ Sorting Basics
 ==============
 
 A simple ascending sort is very easy: just call the :func:`sorted` function. It
-returns a new sorted list::
+returns a new sorted list:
 
     >>> sorted([5, 2, 3, 1, 4])
     [1, 2, 3, 4, 5]
@@ -58,28 +57,28 @@ A common pattern is to sort complex objects using some of the object's indices
 as keys. For example:
 
     >>> student_tuples = [
-        ('john', 'A', 15),
-        ('jane', 'B', 12),
-        ('dave', 'B', 10),
-    ]
+    ...     ('john', 'A', 15),
+    ...     ('jane', 'B', 12),
+    ...     ('dave', 'B', 10),
+    ... ]
     >>> sorted(student_tuples, key=lambda student: student[2])   # sort by age
     [('dave', 'B', 10), ('jane', 'B', 12), ('john', 'A', 15)]
 
 The same technique works for objects with named attributes. For example:
 
     >>> class Student:
-            def __init__(self, name, grade, age):
-                self.name = name
-                self.grade = grade
-                self.age = age
-            def __repr__(self):
-                return repr((self.name, self.grade, self.age))
+    ...     def __init__(self, name, grade, age):
+    ...         self.name = name
+    ...         self.grade = grade
+    ...         self.age = age
+    ...     def __repr__(self):
+    ...         return repr((self.name, self.grade, self.age))
 
     >>> student_objects = [
-        Student('john', 'A', 15),
-        Student('jane', 'B', 12),
-        Student('dave', 'B', 10),
-    ]
+    ...     Student('john', 'A', 15),
+    ...     Student('jane', 'B', 12),
+    ...     Student('dave', 'B', 10),
+    ... ]
     >>> sorted(student_objects, key=lambda student: student.age)   # sort by age
     [('dave', 'B', 10), ('jane', 'B', 12), ('john', 'A', 15)]
 
@@ -208,39 +207,39 @@ return a negative value for less-than, return zero if they are equal, or return
 a positive value for greater-than. For example, we can do:
 
     >>> def numeric_compare(x, y):
-            return x - y
-    >>> sorted([5, 2, 4, 1, 3], cmp=numeric_compare)
+    ...     return x - y
+    >>> sorted([5, 2, 4, 1, 3], cmp=numeric_compare) # doctest: +SKIP
     [1, 2, 3, 4, 5]
 
 Or you can reverse the order of comparison with:
 
     >>> def reverse_numeric(x, y):
-            return y - x
-    >>> sorted([5, 2, 4, 1, 3], cmp=reverse_numeric)
+    ...     return y - x
+    >>> sorted([5, 2, 4, 1, 3], cmp=reverse_numeric) # doctest: +SKIP
     [5, 4, 3, 2, 1]
 
 When porting code from Python 2.x to 3.x, the situation can arise when you have
 the user supplying a comparison function and you need to convert that to a key
-function. The following wrapper makes that easy to do::
+function. The following wrapper makes that easy to do:
 
-    def cmp_to_key(mycmp):
-        'Convert a cmp= function into a key= function'
-        class K(object):
-            def __init__(self, obj, *args):
-                self.obj = obj
-            def __lt__(self, other):
-                return mycmp(self.obj, other.obj) < 0
-            def __gt__(self, other):
-                return mycmp(self.obj, other.obj) > 0
-            def __eq__(self, other):
-                return mycmp(self.obj, other.obj) == 0
-            def __le__(self, other):
-                return mycmp(self.obj, other.obj) <= 0
-            def __ge__(self, other):
-                return mycmp(self.obj, other.obj) >= 0
-            def __ne__(self, other):
-                return mycmp(self.obj, other.obj) != 0
-        return K
+    >>> def cmp_to_key(mycmp):
+    ...     'Convert a cmp= function into a key= function'
+    ...     class K(object):
+    ...         def __init__(self, obj, *args):
+    ...             self.obj = obj
+    ...         def __lt__(self, other):
+    ...             return mycmp(self.obj, other.obj) < 0
+    ...         def __gt__(self, other):
+    ...             return mycmp(self.obj, other.obj) > 0
+    ...         def __eq__(self, other):
+    ...             return mycmp(self.obj, other.obj) == 0
+    ...         def __le__(self, other):
+    ...             return mycmp(self.obj, other.obj) <= 0
+    ...         def __ge__(self, other):
+    ...             return mycmp(self.obj, other.obj) >= 0
+    ...         def __ne__(self, other):
+    ...             return mycmp(self.obj, other.obj) != 0
+    ...     return K
 
 To convert to a key function, just wrap the old comparison function:
 
