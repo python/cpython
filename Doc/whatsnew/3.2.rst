@@ -846,7 +846,7 @@ Example of using barriers::
         summarize(ballots)
 
     all_polls_closed = Barrier(len(sites))
-    for site in sites(get_votes(site)):
+    for site in sites:
         Thread(target=get_votes, args=(site,)).start()
 
 In this example, the barrier enforces a rule that votes cannot be counted at any
@@ -856,10 +856,13 @@ and continue to do work (summarizing ballots) after the barrier point is
 crossed.
 
 See `Barrier Synchronization Patterns
-<http://parlab.eecs.berkeley.edu/wiki/_media/patterns/paraplop_g1_3.pdf>`_
-for more examples of how barriers can be used in parallel computing.
+<http://parlab.eecs.berkeley.edu/wiki/_media/patterns/paraplop_g1_3.pdf>`_ for
+more examples of how barriers can be used in parallel computing.  Also, there is
+a simple but thorough explanation of barriers in `The Little Book of Semaphores
+<http://greenteapress.com/semaphores/downey08semaphores.pdf>`_, *section 3.6*.
 
-(Contributed by Kristján Valur Jónsson in :issue:`8777`.)
+(Contributed by Kristján Valur Jónsson with an API review by Jeffrey Yasskin in
+:issue:`8777`.)
 
 datetime
 --------
