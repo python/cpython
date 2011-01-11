@@ -17,12 +17,11 @@ from collections import deque
 # with the multiprocessing module, which doesn't provide the old
 # Java inspired names.
 
-
-# Rename some stuff so "from threading import *" is safe
 __all__ = ['active_count', 'Condition', 'current_thread', 'enumerate', 'Event',
-           'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Thread',
+           'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Thread', 'Barrier',
            'Timer', 'setprofile', 'settrace', 'local', 'stack_size']
 
+# Rename some stuff so "from threading import *" is safe
 _start_new_thread = _thread.start_new_thread
 _allocate_lock = _thread.allocate_lock
 _get_ident = _thread.get_ident
