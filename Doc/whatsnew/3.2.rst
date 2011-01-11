@@ -843,7 +843,8 @@ Example of using barriers::
     def get_votes(site):
         ballots = conduct_election(site)
         all_polls_closed.wait()        # do not count until all polls are closed
-        summarize(ballots)
+        totals = summarize(ballots)
+        publish(site, totals)
 
     all_polls_closed = Barrier(len(sites))
     for site in sites:
@@ -864,8 +865,8 @@ a simple but thorough explanation of barriers in `The Little Book of Semaphores
 (Contributed by Kristján Valur Jónsson with an API review by Jeffrey Yasskin in
 :issue:`8777`.)
 
-datetime
---------
+datetime and time
+-----------------
 
 * The :mod:`datetime` module has a new type :class:`~datetime.timezone` that
   implements the :class:`~datetime.tzinfo` interface by returning a fixed UTC
@@ -882,31 +883,18 @@ datetime
   :class:`float` and divided by :class:`float` and :class:`int` objects.
   And :class:`~datetime.timedelta` objects can now divide one another.
 
-  (Contributed by Alexander Belopolsky in :issue:`1289118`, :issue:`5094`,
-  :issue:`6641`, and :issue:`2706`.)
+* The :class:`~datetime.datetime` class and the :meth:`datetime.date.strftime`
+  method are no longer restricted to years after 1900.  The new supported year
+  range is from 1000 to 9999 inclusive.
 
-.. XXX
+* The rules for two-digit years in time tuples have changed. Now, the
+  :func:`time.asctime` and :func:`time.strftime` functions will format any year
+  when :attr:`time.accept2dyear` is false and will accept four-digit years
+  otherwise.  The :func:`time.mktime` and :func:`time.strftime` functions now
+  accept full range supported by the operating system.  Conversion of two-digit
+  years to four-digit is deprecated.
 
-   * The ``strftime()`` method of :class:`~datetime.date` and
-     :class:`~datetime.datetime` are no longer restricted to years >=
-     1900.  The new supported year range is [1000, 9999]. (Contributed
-     by Alexander Belopolsky and Victor Stinner in :issue:`1777412`)
-
-.. XXX Add a section on time module.
-
-   * The :func:`time.asctime` and :func:`time.ctime` functions no
-     longer call C library asctime. (Contributed by Alexander
-     Belopolsky in :issue:`8013`.)
-
-   * Changed the rules for using 2-digit years in time tuples. The
-     :func:`time.asctime` and
-     :func:`time.strftime` functions will now format any year when
-     ``time.accept2dyear`` is false and will accept years >= 1000
-     otherwise. :func:`time.mktime` and :func:`time.strftime` now
-     accepts full range supported by the OS.  Conversion of 2-digit
-     years to 4-digit is deprecated.  (Contributed by Alexander
-     Belopolsky and Victor Stinner in :issue:`10827`.)
-
+(Contributed by Alexander Belopolsky and Victor Stinner.)
 
 abc
 ---
