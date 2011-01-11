@@ -339,6 +339,19 @@ class _Test4dYear(_BaseYearTest):
         self.assertEqual(self.yearstr(-1234), '-1234')
         self.assertEqual(self.yearstr(-123456), '-123456')
 
+
+    def test_mktime(self):
+        # Issue #1726687
+        for t in (-2, -1, 0, 1):
+            try:
+                tt = time.localtime(t)
+            except (OverflowError, ValueError):
+                pass
+            self.assertEqual(time.mktime(tt), t)
+        # Hopefully year = -1 is enough to make OS mktime fail
+        self.assertRaises(OverflowError, time.mktime,
+                          (-1, 1, 1, 0, 0, 0, -1, -1, -1))
+
 class TestAsctimeAccept2dYear(_TestAsctimeYear, _Test2dYear):
     pass
 
