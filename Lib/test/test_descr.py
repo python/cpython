@@ -4224,6 +4224,13 @@ order (MRO) for bases """
 
         self.assertRaises(AttributeError, getattr, EvilGetattribute(), "attr")
 
+    def test_type_has_no_abstractmethods(self):
+        # type pretends not to have __abstractmethods__.
+        self.assertRaises(AttributeError, getattr, type, "__abstractmethods__")
+        class meta(type):
+            pass
+        self.assertRaises(AttributeError, getattr, meta, "__abstractmethods__")
+
 
 class DictProxyTests(unittest.TestCase):
     def setUp(self):
@@ -4272,13 +4279,6 @@ class DictProxyTests(unittest.TestCase):
         # Testing dict_proxy.__repr__
         dict_ = {k: v for k, v in self.C.__dict__.items()}
         self.assertEqual(repr(self.C.__dict__), 'dict_proxy({!r})'.format(dict_))
-
-    def test_type_has_no_abstractmethods(self):
-        # type pretends not to have __abstractmethods__.
-        self.assertRaises(AttributeError, getattr, type, "__abstractmethods__")
-        class meta(type):
-            pass
-        self.assertRaises(AttributeError, getattr, meta, "__abstractmethods__")
 
 
 class PTypesLongInitTest(unittest.TestCase):
