@@ -230,18 +230,14 @@ range_length(rangeobject *r)
     return PyLong_AsSsize_t(r->length);
 }
 
-/* range(...)[x] is necessary for:  seq[:] = range(...) */
 static PyObject *
-compute_range_item(rangeobject *r, Py_ssize_t i)
+compute_item(rangeobject *r, PyObject *i)
 {
-    PyObject *rem, *incr, *result;
-
-    /* XXX(nnorwitz): optimize for short ints. */
-    rem = PyLong_FromSsize_t(i);
-    if (!rem)
-        return NULL;
-    incr = PyNumber_Multiply(rem, r->step);
-    Py_DECREF(rem);
+    PyObject *incr, *result;
+    /* PyLong equivalent to:
+     *    return r->start + (i * r->step)
+     */
+    incr = PyNumber_Multiply(i, r->step);
     if (!incr)
         return NULL;
     result = PyNumber_Add(r->start, incr);
@@ -250,22 +246,304 @@ compute_range_item(rangeobject *r, Py_ssize_t i)
 }
 
 static PyObject *
-range_item(rangeobject *r, Py_ssize_t i)
+compute_range_item(rangeobject *r, PyObject *arg)
 {
-    /* XXX(nnorwitz): should we support range[x] where x > PY_SSIZE_T_MAX? */
-    Py_ssize_t len = range_length(r);
+    int cmp_result;
+    PyObject *i, *result;
 
-    if (i < 0)
-        i += len;
+    PyObject *zero = PyLong_FromLong(0);
+    if (zero == NULL)
+        return NULL;
 
-    if (i < 0 || i >= len) {
-        /* Also handles case where len < 0 due to (e.g) OverflowError */
-        if (!PyErr_Occurred())
-            PyErr_SetString(PyExc_IndexError,
-                            "range object index out of range");
+    /* PyLong equivalent to:
+     *   if (arg < 0) {
+     *     i = r->length + arg
+     *   } else {
+     *     i = arg
+     *   }
+     */
+    cmp_result = PyObject_RichCompareBool(arg, zero, Py_LT);
+    if (cmp_result == -1) {
+        Py_DECREF(zero);
         return NULL;
     }
-    return compute_range_item(r, i);
+    if (cmp_result == 1) {
+      i = PyNumber_Add(r->length, arg);
+      if (!i) {
+        Py_DECREF(zero);
+        return NULL;
+      }
+    } else {
+      i = arg;
+      Py_INCREF(i);
+    }
+
+    /* PyLong equivalent to:
+     *   if (i < 0 || i >= r->length) {
+     *     <report index out of bounds>
+     *   }
+     */
+    cmp_result = PyObject_RichCompareBool(i, zero, Py_LT);
+    Py_DECREF(zero);
+    if (cmp_result == 0) {
+        cmp_result = PyObject_RichCompareBool(i, r->length, Py_GE);
+    }
+    if (cmp_result == -1) {
+       Py_DECREF(i);
+       return NULL;
+    }
+    if (cmp_result == 1) {
+        Py_DECREF(i);
+        PyErr_SetString(PyExc_IndexError,
+                        "range object index out of range");
+        return NULL;
+    }
+
+    result = compute_item(r, i);
+    Py_DECREF(i);
+    return result;
+}
+
+static PyObject *
+range_item(rangeobject *r, Py_ssize_t i)
+{
+    PyObject *arg = PyLong_FromLong(i);
+    if (!arg) {
+        return NULL;
+    }
+    return compute_range_item(r, arg);
+}
+
+/* Additional helpers, since the standard slice helpers
+ * all clip to PY_SSIZE_T_MAX
+ */
+
+/* Replace _PyEval_SliceIndex */
+static PyObject *
+compute_slice_element(PyObject *obj)
+{
+    PyObject *result = NULL;
+    if (obj != NULL) {
+        if (PyIndex_Check(obj)) {
+            result = PyNumber_Index(obj);
+        }
+    }
+    if (result == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "slice indices must be integers or "
+                        "None or have an __index__ method");
+    }
+    return result;
+}
+
+/* Replace PySlice_GetIndicesEx
+ *   Result indicates whether or not the slice is empty
+ *    (-1 = error, 0 = empty slice, 1 = slice contains elements)
+ */
+int
+compute_slice_indices(rangeobject *r, PySliceObject *slice,
+                      PyObject **start, PyObject **stop, PyObject **step)
+{
+    int cmp_result, has_elements;
+    Py_ssize_t clamped_step = 0;
+    PyObject *zero = NULL, *one = NULL, *neg_one = NULL, *candidate = NULL;
+    PyObject *tmp_start = NULL, *tmp_stop = NULL, *tmp_step = NULL;
+    zero = PyLong_FromLong(0);
+    if (zero == NULL) goto Fail;
+    one = PyLong_FromLong(1);
+    if (one == NULL) goto Fail;
+    neg_one = PyLong_FromLong(-1);
+    if (neg_one == NULL) goto Fail;
+
+    /* Calculate step value */
+    if (slice->step == Py_None) {
+        clamped_step = 1;
+        tmp_step = one;
+        Py_INCREF(tmp_step);
+    } else {
+        if (!_PyEval_SliceIndex(slice->step, &clamped_step)) goto Fail;
+        if (clamped_step == 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "slice step cannot be zero");
+            goto Fail;
+        }
+        tmp_step = compute_slice_element(slice->step);
+        if (tmp_step == NULL) goto Fail;
+    }
+
+    /* Calculate start value */
+    if (slice->start == Py_None) {
+        if (clamped_step < 0) {
+            tmp_start = PyNumber_Subtract(r->length, one);
+            if (tmp_start == NULL) goto Fail;
+        } else {
+            tmp_start = zero;
+            Py_INCREF(tmp_start);
+        }
+    } else {
+        candidate = compute_slice_element(slice->start);
+        if (candidate == NULL) goto Fail;
+        cmp_result = PyObject_RichCompareBool(candidate, zero, Py_LT);
+        if (cmp_result == -1) goto Fail;
+        if (cmp_result) {
+            /* candidate < 0 */
+            tmp_start = PyNumber_Add(r->length, candidate);
+            if (tmp_start == NULL) goto Fail;
+            Py_CLEAR(candidate);
+        } else {
+            /* candidate >= 0 */
+            tmp_start = candidate;
+            candidate = NULL;
+        }
+        cmp_result = PyObject_RichCompareBool(tmp_start, zero, Py_LT);
+        if (cmp_result == -1) goto Fail;
+        if (cmp_result) {
+            /* tmp_start < 0 */
+            Py_CLEAR(tmp_start);
+            if (clamped_step < 0) {
+                tmp_start = neg_one;
+            } else {
+                tmp_start = zero;
+            }
+            Py_INCREF(tmp_start);
+        } else {
+            /* tmp_start >= 0 */
+            cmp_result = PyObject_RichCompareBool(tmp_start, r->length, Py_GE);
+            if (cmp_result == -1) goto Fail;
+            if (cmp_result) {
+                /* tmp_start >= r->length */
+                Py_CLEAR(tmp_start);
+                if (clamped_step < 0) {
+                    tmp_start = PyNumber_Subtract(r->length, one);
+                    if (tmp_start == NULL) goto Fail;
+                } else {
+                    tmp_start = r->length;
+                    Py_INCREF(tmp_start);
+                }
+            }
+        }
+    }
+
+    /* Calculate stop value */
+    if (slice->stop == Py_None) {
+        if (clamped_step < 0) {
+            tmp_stop = neg_one;
+        } else {
+            tmp_stop = r->length;
+        }
+        Py_INCREF(tmp_stop);
+    } else {
+        candidate = compute_slice_element(slice->stop);
+        if (candidate == NULL) goto Fail;
+        cmp_result = PyObject_RichCompareBool(candidate, zero, Py_LT);
+        if (cmp_result == -1) goto Fail;
+        if (cmp_result) {
+            /* candidate < 0 */
+            tmp_stop = PyNumber_Add(r->length, candidate);
+            if (tmp_stop == NULL) goto Fail;
+            Py_CLEAR(candidate);
+        } else {
+            /* candidate >= 0 */
+            tmp_stop = candidate;
+            candidate = NULL;
+        }
+        cmp_result = PyObject_RichCompareBool(tmp_stop, zero, Py_LT);
+        if (cmp_result == -1) goto Fail;
+        if (cmp_result) {
+            /* tmp_stop < 0 */
+            Py_CLEAR(tmp_stop);
+            if (clamped_step < 0) {
+                tmp_stop = neg_one;
+            } else {
+                tmp_stop = zero;
+            }
+            Py_INCREF(tmp_stop);
+        } else {
+            /* tmp_stop >= 0 */
+            cmp_result = PyObject_RichCompareBool(tmp_stop, r->length, Py_GE);
+            if (cmp_result == -1) goto Fail;
+            if (cmp_result) {
+                /* tmp_stop >= r->length */
+                Py_CLEAR(tmp_stop);
+                if (clamped_step < 0) {
+                    tmp_stop = PyNumber_Subtract(r->length, one);
+                    if (tmp_stop == NULL) goto Fail;
+                } else {
+                    tmp_stop = r->length;
+                    Py_INCREF(tmp_start);
+                }
+            }
+        }
+    }
+
+    /* Check if the slice is empty or not */
+    if (clamped_step < 0) {
+        has_elements = PyObject_RichCompareBool(tmp_start, tmp_stop, Py_GT);
+    } else {
+        has_elements = PyObject_RichCompareBool(tmp_start, tmp_stop, Py_LT);
+    }
+    if (has_elements == -1) goto Fail;
+
+    *start = tmp_start;
+    *stop = tmp_stop;
+    *step = tmp_step;
+    Py_DECREF(neg_one);
+    Py_DECREF(one);
+    Py_DECREF(zero);
+    return has_elements;
+
+  Fail:
+    Py_XDECREF(tmp_start);
+    Py_XDECREF(tmp_stop);
+    Py_XDECREF(tmp_step);
+    Py_XDECREF(candidate);
+    Py_XDECREF(neg_one);
+    Py_XDECREF(one);
+    Py_XDECREF(zero);
+    return -1;
+}
+
+static PyObject *
+compute_slice(rangeobject *r, PyObject *_slice)
+{
+    PySliceObject *slice = (PySliceObject *) _slice;
+    rangeobject *result;
+    PyObject *start = NULL, *stop = NULL, *step = NULL;
+    PyObject *substart = NULL, *substop = NULL, *substep = NULL;
+    int has_elements;
+
+    has_elements = compute_slice_indices(r, slice, &start, &stop, &step);
+    if (has_elements == -1) return NULL;
+
+    substep = PyNumber_Multiply(r->step, step);
+    if (substep == NULL) goto fail;
+    Py_CLEAR(step);
+
+    substart = compute_item(r, start);
+    if (substart == NULL) goto fail;
+    Py_CLEAR(start);
+
+    if (has_elements) {
+        substop = compute_item(r, stop);
+        if (substop == NULL) goto fail;
+    } else {
+        substop = substart;
+        Py_INCREF(substop);
+    }
+    Py_CLEAR(stop);
+
+    result = make_range_object(Py_TYPE(r), substart, substop, substep);
+    if (result != NULL) {
+        return (PyObject *) result;
+    }
+fail:
+    Py_XDECREF(start);
+    Py_XDECREF(stop);
+    Py_XDECREF(step);
+    Py_XDECREF(substart);
+    Py_XDECREF(substop);
+    Py_XDECREF(substep);
+    return NULL;
 }
 
 /* Assumes (PyLong_CheckExact(ob) || PyBool_Check(ob)) */
@@ -424,55 +702,16 @@ static PyObject *
 range_subscript(rangeobject* self, PyObject* item)
 {
     if (PyIndex_Check(item)) {
-        Py_ssize_t i;
-        i = PyNumber_AsSsize_t(item, PyExc_IndexError);
-        if (i == -1 && PyErr_Occurred())
+        PyObject *i, *result;
+        i = PyNumber_Index(item);
+        if (!i)
             return NULL;
-        return range_item(self, i);
+        result = compute_range_item(self, i);
+        Py_DECREF(i);
+        return result;
     }
     if (PySlice_Check(item)) {
-        Py_ssize_t start, stop, step, len, rlen;
-        rangeobject *result;
-        PyObject *substart = NULL, *substep = NULL, *substop = NULL;
-
-        rlen = range_length(self);
-        if (rlen < 0) {
-            return NULL;
-        }
-
-        if (PySlice_GetIndicesEx(item, rlen,
-                                &start, &stop, &step, &len) < 0) {
-            return NULL;
-        }
-        if (step == 1) {
-            substep = self->step;
-            Py_INCREF(substep);
-        } else {
-            /* NB: slice step != Py_None here */
-            substep = PyNumber_Multiply(self->step, ((PySliceObject*)item)->step);
-            if (substep == NULL)
-                goto fail;
-        }
-        substart = compute_range_item(self, start);
-        if (substart == NULL)
-            goto fail;
-        if (len <= 0) {
-            substop = substart;
-            Py_INCREF(substop);
-        }
-        else {
-            substop = compute_range_item(self, stop);
-            if (substop == NULL)
-                goto fail;
-        }
-        result = make_range_object(Py_TYPE(self), substart, substop, substep);
-        if (result != NULL)
-            return (PyObject *) result;
-    fail:
-        Py_XDECREF(substart);
-        Py_XDECREF(substep);
-        Py_XDECREF(substop);
-        return NULL;
+        return compute_slice(self, item);
     }
     PyErr_Format(PyExc_TypeError,
                  "range indices must be integers or slices, not %.200s",

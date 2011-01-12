@@ -125,23 +125,102 @@ class RangeTest(unittest.TestCase):
         self.assertIn(a, seq)
         self.assertNotIn(b, seq)
         self.assertEqual(len(seq), 2)
+        self.assertEqual(seq[0], a)
+        self.assertEqual(seq[-1], a+c)
 
         seq = list(range(b, a, -c))
         self.assertIn(b, seq)
         self.assertNotIn(a, seq)
         self.assertEqual(len(seq), 2)
+        self.assertEqual(seq[0], b)
+        self.assertEqual(seq[-1], b-c)
 
         seq = list(range(-a, -b, -c))
         self.assertIn(-a, seq)
         self.assertNotIn(-b, seq)
         self.assertEqual(len(seq), 2)
+        self.assertEqual(seq[0], -a)
+        self.assertEqual(seq[-1], -a-c)
 
-        self.assertRaises(OverflowError, len,
-                          range(-sys.maxsize, sys.maxsize))
-        self.assertRaises(OverflowError, len,
-                          range(0, 2*sys.maxsize))
-        self.assertRaises(OverflowError, len,
-                          range(0, sys.maxsize**10))
+    def test_large_range(self):
+        # Check long ranges (len > sys.maxsize)
+        # len() is expected to fail due to limitations of the __len__ protocol
+        def _range_len(x):
+            try:
+                length = len(x)
+            except OverflowError:
+                step = x[1] - x[0]
+                length = 1 + ((x[-1] - x[0]) // step)
+            return length
+        a = -sys.maxsize
+        b = sys.maxsize
+        expected_len = b - a
+        x = range(a, b)
+        self.assertIn(a, x)
+        self.assertNotIn(b, x)
+        self.assertRaises(OverflowError, len, x)
+        self.assertEqual(_range_len(x), expected_len)
+        self.assertEqual(x[0], a)
+        idx = sys.maxsize+1
+        self.assertEqual(x[idx], a+idx)
+        self.assertEqual(x[idx:idx+1][0], a+idx)
+        with self.assertRaises(IndexError):
+            x[-expected_len-1]
+        with self.assertRaises(IndexError):
+            x[expected_len]
+
+        a = 0
+        b = 2 * sys.maxsize
+        expected_len = b - a
+        x = range(a, b)
+        self.assertIn(a, x)
+        self.assertNotIn(b, x)
+        self.assertRaises(OverflowError, len, x)
+        self.assertEqual(_range_len(x), expected_len)
+        self.assertEqual(x[0], a)
+        idx = sys.maxsize+1
+        self.assertEqual(x[idx], a+idx)
+        self.assertEqual(x[idx:idx+1][0], a+idx)
+        with self.assertRaises(IndexError):
+            x[-expected_len-1]
+        with self.assertRaises(IndexError):
+            x[expected_len]
+
+        a = 0
+        b = sys.maxsize**10
+        c = 2*sys.maxsize
+        expected_len = 1 + (b - a) // c
+        x = range(a, b, c)
+        self.assertIn(a, x)
+        self.assertNotIn(b, x)
+        self.assertRaises(OverflowError, len, x)
+        self.assertEqual(_range_len(x), expected_len)
+        self.assertEqual(x[0], a)
+        idx = sys.maxsize+1
+        self.assertEqual(x[idx], a+(idx*c))
+        self.assertEqual(x[idx:idx+1][0], a+(idx*c))
+        with self.assertRaises(IndexError):
+            x[-expected_len-1]
+        with self.assertRaises(IndexError):
+            x[expected_len]
+
+        a = sys.maxsize**10
+        b = 0
+        c = -2*sys.maxsize
+        expected_len = 1 + (b - a) // c
+        x = range(a, b, c)
+        self.assertIn(a, x)
+        self.assertNotIn(b, x)
+        self.assertRaises(OverflowError, len, x)
+        self.assertEqual(_range_len(x), expected_len)
+        self.assertEqual(x[0], a)
+        idx = sys.maxsize+1
+        self.assertEqual(x[idx], a+(idx*c))
+        self.assertEqual(x[idx:idx+1][0], a+(idx*c))
+        with self.assertRaises(IndexError):
+            x[-expected_len-1]
+        with self.assertRaises(IndexError):
+            x[expected_len]
 
     def test_invalid_invocation(self):
         self.assertRaises(TypeError, range)
