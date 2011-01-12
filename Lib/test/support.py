@@ -1001,7 +1001,7 @@ def bigmemtest(minsize, memuse):
                 # to make sure they work. We still want to avoid using
                 # too much memory, though, but we do that noisily.
                 maxsize = 5147
-                self.assertFalse(maxsize * memuse + overhead > 20 * _1M)
+                self.assertFalse(maxsize * memuse > 20 * _1M)
             else:
                 maxsize = int(max_memuse / memuse)
                 if maxsize < minsize:
