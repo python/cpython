@@ -1039,7 +1039,7 @@ def bigaddrspacetest(f):
     """Decorator for tests that fill the address space."""
     def wrapper(self):
         if max_memuse < MAX_Py_ssize_t:
-            if MAX_Py_ssize_t > 2**32:
+            if MAX_Py_ssize_t >= 2**63 - 1 and max_memuse >= 2**31:
                 raise unittest.SkipTest(
                     "not enough memory: try a 32-bit build instead")
             else:
