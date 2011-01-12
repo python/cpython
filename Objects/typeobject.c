@@ -326,7 +326,7 @@ type_abstractmethods(PyTypeObject *type, void *context)
     if (type != &PyType_Type)
         mod = PyDict_GetItemString(type->tp_dict, "__abstractmethods__");
     if (!mod) {
-        PyErr_Format(PyExc_AttributeError, "__abstractmethods__");
+        PyErr_SetString(PyExc_AttributeError, "__abstractmethods__");
         return NULL;
     }
     Py_XINCREF(mod);
@@ -347,7 +347,7 @@ type_set_abstractmethods(PyTypeObject *type, PyObject *value, void *context)
     else {
         res = PyDict_DelItemString(type->tp_dict, "__abstractmethods__");
         if (res && PyErr_ExceptionMatches(PyExc_KeyError)) {
-            PyErr_Format(PyExc_AttributeError, "__abstractmethods__", value);
+            PyErr_SetString(PyExc_AttributeError, "__abstractmethods__");
             return -1;
         }
     }
