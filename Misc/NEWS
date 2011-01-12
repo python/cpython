@@ -146,6 +146,9 @@ Build
 Tests
 -----
 
+- Issue #10822: Fix test_posix:test_getgroups failure under Solaris.  Patch
+  by Ross Lagerwall.
+
 - Issue #6293: Have regrtest.py echo back sys.flags.  This is done by default
   in whole runs and enabled selectively using ``--header`` when running an
   explicit list of tests.  Original patch by Collin Winter.
