@@ -223,6 +223,9 @@ Tools/Demos
 Tests
 -----
 
+- Issue #10822: Fix test_posix:test_getgroups failure under Solaris.  Patch
+  by Ross Lagerwall.
+
 - Make the --coverage flag work for test.regrtest.
 
 - Issue #1677694: Refactor and improve test_timeout.  Original patch by
