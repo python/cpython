@@ -189,7 +189,7 @@ class Real(Complex):
         raise NotImplementedError
 
     @abstractmethod
-    def __round__(self, ndigits:"Integral"=None):
+    def __round__(self, ndigits=None):
         """Rounds self to ndigits decimal places, defaulting to 0.
 
         If ndigits is omitted or None, returns an Integral, otherwise
