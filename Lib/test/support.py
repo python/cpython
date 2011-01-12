@@ -978,13 +978,12 @@ def set_memlimit(limit):
         raise ValueError('Memory limit %r too low to be useful' % (limit,))
     max_memuse = memlimit
 
-def bigmemtest(minsize, memuse, overhead=5*_1M):
+def bigmemtest(minsize, memuse):
     """Decorator for bigmem tests.
 
     'minsize' is the minimum useful size for the test (in arbitrary,
     test-interpreted units.) 'memuse' is the number of 'bytes per size' for
-    the test, or a good estimate of it. 'overhead' specifies fixed overhead,
-    independent of the testsize, and defaults to 5Mb.
+    the test, or a good estimate of it.
 
     The decorator tries to guess a good value for 'size' and passes it to
     the decorated test function. If minsize * memuse is more than the
@@ -996,7 +995,6 @@ def bigmemtest(minsize, memuse, overhead=5*_1M):
             # Retrieve values in case someone decided to adjust them
             minsize = wrapper.minsize
             memuse = wrapper.memuse
-            overhead = wrapper.overhead
             if not max_memuse:
                 # If max_memuse is 0 (the default),
                 # we still want to run the tests with size set to a few kb,
@@ -1005,43 +1003,35 @@ def bigmemtest(minsize, memuse, overhead=5*_1M):
                 maxsize = 5147
                 self.assertFalse(maxsize * memuse + overhead > 20 * _1M)
             else:
-                maxsize = int((max_memuse - overhead) / memuse)
+                maxsize = int(max_memuse / memuse)
                 if maxsize < minsize:
-                    # Really ought to print 'test skipped' or something
-                    if verbose:
-                        sys.stderr.write("Skipping %s because of memory "
-                                         "constraint\n" % (f.__name__,))
-                    return
-                # Try to keep some breathing room in memory use
-                maxsize = max(maxsize - 50 * _1M, minsize)
+                    raise unittest.SkipTest(
+                        "not enough memory: %.1fG minimum needed"
+                        % (minsize * memuse / (1024 ** 3)))
             return f(self, maxsize)
         wrapper.minsize = minsize
         wrapper.memuse = memuse
-        wrapper.overhead = overhead
         return wrapper
     return decorator
 
-def precisionbigmemtest(size, memuse, overhead=5*_1M):
+def precisionbigmemtest(size, memuse):
     def decorator(f):
         def wrapper(self):
             size = wrapper.size
             memuse = wrapper.memuse
-            overhead = wrapper.overhead
             if not real_max_memuse:
                 maxsize = 5147
             else:
                 maxsize = size
 
                 if real_max_memuse and real_max_memuse < maxsize * memuse:
-                    if verbose:
-                        sys.stderr.write("Skipping %s because of memory "
-                                         "constraint\n" % (f.__name__,))
-                    return
+                    raise unittest.SkipTest(
+                        "not enough memory: %.1fG minimum needed"
+                        % (size * memuse / (1024 ** 3)))
 
             return f(self, maxsize)
         wrapper.size = size
         wrapper.memuse = memuse
-        wrapper.overhead = overhead
         return wrapper
     return decorator
 
