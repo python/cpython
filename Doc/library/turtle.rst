@@ -1878,7 +1878,7 @@ Settings and special methods
 
       >>> cv = screen.getcanvas()
       >>> cv
-      <turtle.ScrolledCanvas instance at 0x...>
+      <turtle.ScrolledCanvas object at ...>
 
 
 .. function:: getshapes()
