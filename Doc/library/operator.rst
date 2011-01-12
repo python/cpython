@@ -9,7 +9,7 @@
 .. testsetup::
 
    import operator
-   from operator import itemgetter
+   from operator import itemgetter, iadd
 
 
 The :mod:`operator` module exports a set of functions implemented in C
