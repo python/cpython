@@ -274,6 +274,7 @@ class PosixTester(unittest.TestCase):
                 os.chdir(curdir)
                 support.rmtree(base_path)
 
+    @unittest.skipUnless(hasattr(os, 'getegid'), "test needs os.getegid()")
     def test_getgroups(self):
         with os.popen('id -G') as idg:
             groups = idg.read().strip()
@@ -283,9 +284,11 @@ class PosixTester(unittest.TestCase):
 
         # 'id -G' and 'os.getgroups()' should return the same
         # groups, ignoring order and duplicates.
+        # #10822 - it is implementation defined whether posix.getgroups()
+        # includes the effective gid so we include it anyway, since id -G does
         self.assertEqual(
                 set([int(x) for x in groups.split()]),
-                set(posix.getgroups()))
+                set(posix.getgroups() + [posix.getegid()]))
 
 class PosixGroupsTester(unittest.TestCase):
 
