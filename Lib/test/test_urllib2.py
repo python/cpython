@@ -748,7 +748,7 @@ class HandlerTests(unittest.TestCase):
             else:
                 self.assertTrue(o.req is req)
                 self.assertEqual(req.type, "ftp")
-            self.assertEqual(req.type is "ftp", ftp)
+            self.assertEqual(req.type == "ftp", ftp)
 
     def test_http(self):
 
