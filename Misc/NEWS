@@ -34,6 +34,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10899: No function type annotations in the standard library.
+  Removed function type annotations from _pyio.py.
+
 - Issue #10875: Update Regular Expression HOWTO; patch by 'SilentGhost'.
 
 - Issue #10869: Fixed bug where ast.increment_lineno modified the root
