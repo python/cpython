@@ -311,17 +311,17 @@ class MutableSet(Set):
         except KeyError:
             pass
 
-    def __ior__(self, it: Iterable):
+    def __ior__(self, it):
         for value in it:
             self.add(value)
         return self
 
-    def __iand__(self, it: Iterable):
+    def __iand__(self, it):
         for value in (self - it):
             self.discard(value)
         return self
 
-    def __ixor__(self, it: Iterable):
+    def __ixor__(self, it):
         if it is self:
             self.clear()
         else:
@@ -334,7 +334,7 @@ class MutableSet(Set):
                     self.add(value)
         return self
 
-    def __isub__(self, it: Iterable):
+    def __isub__(self, it):
         if it is self:
             self.clear()
         else:
