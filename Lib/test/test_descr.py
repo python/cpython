@@ -4224,6 +4224,17 @@ order (MRO) for bases """
 
         self.assertRaises(AttributeError, getattr, EvilGetattribute(), "attr")
 
+    def test_abstractmethods(self):
+        # type pretends not to have __abstractmethods__.
+        self.assertRaises(AttributeError, getattr, type, "__abstractmethods__")
+        class meta(type):
+            pass
+        self.assertRaises(AttributeError, getattr, meta, "__abstractmethods__")
+        class X(object):
+            pass
+        with self.assertRaises(AttributeError):
+            del X.__abstractmethods__
+
 
 class DictProxyTests(unittest.TestCase):
     def setUp(self):

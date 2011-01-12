@@ -10,6 +10,9 @@ What's New in Python 3.1.4?
 Core and Builtins
 -----------------
 
+- Issue #10892: Don't segfault when trying to delete __abstractmethods__ from a
+  class.
+
 - Issue #8020: Avoid a crash where the small objects allocator would read
   non-Python managed memory while it is being modified by another thread.
   Patch by Matt Bandy.
