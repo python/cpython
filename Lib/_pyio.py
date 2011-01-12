@@ -35,9 +35,9 @@ class BlockingIOError(IOError):
         self.characters_written = characters_written
 
 
-def open(file: (str, bytes), mode: str = "r", buffering: int = None,
-         encoding: str = None, errors: str = None,
-         newline: str = None, closefd: bool = True) -> "IOBase":
+def open(file, mode = "r", buffering = None,
+         encoding = None, errors = None,
+         newline = None, closefd = True) -> "IOBase":
 
     r"""Open file and return a stream.  Raise IOError upon failure.
 
@@ -284,14 +284,14 @@ class IOBase(metaclass=abc.ABCMeta):
 
     ### Internal ###
 
-    def _unsupported(self, name: str) -> IOError:
+    def _unsupported(self, name):
         """Internal: raise an exception for unsupported operations."""
         raise UnsupportedOperation("%s.%s() not supported" %
                                    (self.__class__.__name__, name))
 
     ### Positioning ###
 
-    def seek(self, pos: int, whence: int = 0) -> int:
+    def seek(self, pos, whence = 0):
         """Change stream position.
 
         Change the stream position to byte offset offset. offset is
@@ -306,11 +306,11 @@ class IOBase(metaclass=abc.ABCMeta):
         """
         self._unsupported("seek")
 
-    def tell(self) -> int:
+    def tell(self):
         """Return current stream position."""
         return self.seek(0, 1)
 
-    def truncate(self, pos: int = None) -> int:
+    def truncate(self, pos = None):
         """Truncate file to size bytes.
 
         Size defaults to the current IO position as reported by tell().  Return
@@ -320,7 +320,7 @@ class IOBase(metaclass=abc.ABCMeta):
 
     ### Flush and close ###
 
-    def flush(self) -> None:
+    def flush(self):
         """Flush write buffers, if applicable.
 
         This is not implemented for read-only and non-blocking streams.
@@ -330,7 +330,7 @@ class IOBase(metaclass=abc.ABCMeta):
 
     __closed = False
 
-    def close(self) -> None:
+    def close(self):
         """Flush and close the IO object.
 
         This method has no effect if the file is already closed.
@@ -339,7 +339,7 @@ class IOBase(metaclass=abc.ABCMeta):
             self.flush()
             self.__closed = True
 
-    def __del__(self) -> None:
+    def __del__(self):
         """Destructor.  Calls close()."""
         # The try/except block is in case this is called at program
         # exit time, when it's possible that globals have already been
@@ -353,7 +353,7 @@ class IOBase(metaclass=abc.ABCMeta):
 
     ### Inquiries ###
 
-    def seekable(self) -> bool:
+    def seekable(self):
         """Return whether object supports random access.
 
         If False, seek(), tell() and truncate() will raise IOError.
@@ -369,7 +369,8 @@ class IOBase(metaclass=abc.ABCMeta):
                           if msg is None else msg)
 
 
-    def readable(self) -> bool:
+    def readable(self):
+
         """Return whether object was opened for reading.
 
         If False, read() will raise IOError.
@@ -383,7 +384,7 @@ class IOBase(metaclass=abc.ABCMeta):
             raise IOError("File or stream is not readable."
                           if msg is None else msg)
 
-    def writable(self) -> bool:
+    def writable(self):
         """Return whether object was opened for writing.
 
         If False, write() and truncate() will raise IOError.
@@ -414,12 +415,12 @@ class IOBase(metaclass=abc.ABCMeta):
 
     ### Context manager ###
 
-    def __enter__(self) -> "IOBase":  # That's a forward reference
+    def __enter__(self):  # That's a forward reference
         """Context management protocol.  Returns self."""
         self._checkClosed()
         return self
 
-    def __exit__(self, *args) -> None:
+    def __exit__(self, *args):
         """Context management protocol.  Calls close()"""
         self.close()
 
@@ -427,14 +428,14 @@ class IOBase(metaclass=abc.ABCMeta):
 
     # XXX Should these be present even if unimplemented?
 
-    def fileno(self) -> int:
+    def fileno(self):
         """Returns underlying file descriptor if one exists.
 
         An IOError is raised if the IO object does not use a file descriptor.
         """
         self._unsupported("fileno")
 
-    def isatty(self) -> bool:
+    def isatty(self):
         """Return whether this is an 'interactive' stream.
 
         Return False if it can't be determined.
@@ -444,7 +445,7 @@ class IOBase(metaclass=abc.ABCMeta):
 
     ### Readline[s] and writelines ###
 
-    def readline(self, limit: int = -1) -> bytes:
+    def readline(self, limit = -1):
         r"""Read and return a line from the stream.
 
         If limit is specified, at most limit bytes will be read.
@@ -530,7 +531,7 @@ class RawIOBase(IOBase):
     # primitive operation, but that would lead to nasty recursion in case
     # a subclass doesn't implement either.)
 
-    def read(self, n: int = -1) -> bytes:
+    def read(self, n = -1):
         """Read and return up to n bytes.
 
         Returns an empty bytes object on EOF, or None if the object is
@@ -557,7 +558,7 @@ class RawIOBase(IOBase):
             res += data
         return bytes(res)
 
-    def readinto(self, b: bytearray) -> int:
+    def readinto(self, b):
         """Read up to len(b) bytes into b.
 
         Returns number of bytes read (0 for EOF), or None if the object
@@ -565,7 +566,7 @@ class RawIOBase(IOBase):
         """
         self._unsupported("readinto")
 
-    def write(self, b: bytes) -> int:
+    def write(self, b):
         """Write the given buffer to the IO stream.
 
         Returns the number of bytes written, which may be less than len(b).
@@ -594,7 +595,7 @@ class BufferedIOBase(IOBase):
     implementation, but wrap one.
     """
 
-    def read(self, n: int = None) -> bytes:
+    def read(self, n = None):
         """Read and return up to n bytes.
 
         If the argument is omitted, None, or negative, reads and
@@ -614,11 +615,11 @@ class BufferedIOBase(IOBase):
         """
         self._unsupported("read")
 
-    def read1(self, n: int=None) -> bytes:
+    def read1(self, n = None):
         """Read up to n bytes with at most one read() system call."""
         self._unsupported("read1")
 
-    def readinto(self, b: bytearray) -> int:
+    def readinto(self, b):
         """Read up to len(b) bytes into b.
 
         Like read(), this may issue multiple reads to the underlying raw
@@ -641,7 +642,7 @@ class BufferedIOBase(IOBase):
             b[:n] = array.array('b', data)
         return n
 
-    def write(self, b: bytes) -> int:
+    def write(self, b):
         """Write the given buffer to the IO stream.
 
         Return the number of bytes written, which is never less than
@@ -652,7 +653,7 @@ class BufferedIOBase(IOBase):
         """
         self._unsupported("write")
 
-    def detach(self) -> None:
+    def detach(self):
         """
         Separate the underlying raw stream from the buffer and return it.
 
@@ -1251,7 +1252,7 @@ class TextIOBase(IOBase):
     are immutable. There is no public constructor.
     """
 
-    def read(self, n: int = -1) -> str:
+    def read(self, n = -1):
         """Read at most n characters from stream.
 
         Read from underlying buffer until we have n characters or we hit EOF.
@@ -1259,22 +1260,22 @@ class TextIOBase(IOBase):
         """
         self._unsupported("read")
 
-    def write(self, s: str) -> int:
+    def write(self, s):
         """Write string s to stream."""
         self._unsupported("write")
 
-    def truncate(self, pos: int = None) -> int:
+    def truncate(self, pos = None):
         """Truncate size to pos."""
         self._unsupported("truncate")
 
-    def readline(self) -> str:
+    def readline(self):
         """Read until newline or EOF.
 
         Returns an empty string if EOF is hit immediately.
         """
         self._unsupported("readline")
 
-    def detach(self) -> None:
+    def detach(self):
         """
         Separate the underlying buffer from the TextIOBase and return it.
 
