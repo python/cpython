@@ -43,6 +43,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10899: No function type annotations in the standard library.
+  Removed function type annotations from _pyio.py.
+
 - Issue #10875: Update Regular Expression HOWTO; patch by 'SilentGhost'.
 
 - Issue #10872: The repr() of TextIOWrapper objects now includes the mode
