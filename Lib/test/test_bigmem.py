@@ -564,8 +564,11 @@ class StrTest(unittest.TestCase, BaseStrTest):
         if expectedsize is None:
             expectedsize = size
 
-        s = c * size
-        self.assertEqual(len(s.encode(enc)), expectedsize)
+        try:
+            s = c * size
+            self.assertEqual(len(s.encode(enc)), expectedsize)
+        finally:
+            s = None
 
     def setUp(self):
         # HACK: adjust memory use of tests inherited from BaseStrTest
@@ -586,7 +589,8 @@ class StrTest(unittest.TestCase, BaseStrTest):
         for name, memuse in self._adjusted.items():
             getattr(type(self), name).memuse = memuse
 
-    @bigmemtest(minsize=_2G + 2, memuse=character_size + 1)
+    # the utf8 encoder preallocates big time (4x the number of characters)
+    @bigmemtest(minsize=_2G + 2, memuse=character_size + 4)
     def test_encode(self, size):
         return self.basic_encode_test(size, 'utf-8')
 
