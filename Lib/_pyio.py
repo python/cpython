@@ -34,9 +34,8 @@ class BlockingIOError(IOError):
         self.characters_written = characters_written
 
 
-def open(file, mode = "r", buffering = -1,
-         encoding = None, errors = None,
-         newline = None, closefd = True):
+def open(file, mode="r", buffering=-1, encoding=None, errors=None,
+         newline=None, closefd=True):
 
     r"""Open file and return a stream.  Raise IOError upon failure.
 
@@ -294,7 +293,7 @@ class IOBase(metaclass=abc.ABCMeta):
 
     ### Positioning ###
 
-    def seek(self, pos, whence = 0):
+    def seek(self, pos, whence=0):
         """Change stream position.
 
         Change the stream position to byte offset offset. offset is
@@ -313,7 +312,7 @@ class IOBase(metaclass=abc.ABCMeta):
         """Return current stream position."""
         return self.seek(0, 1)
 
-    def truncate(self, pos = None):
+    def truncate(self, pos=None):
         """Truncate file to size bytes.
 
         Size defaults to the current IO position as reported by tell().  Return
@@ -446,7 +445,7 @@ class IOBase(metaclass=abc.ABCMeta):
 
     ### Readline[s] and writelines ###
 
-    def readline(self, limit = -1):
+    def readline(self, limit=-1):
         r"""Read and return a line from the stream.
 
         If limit is specified, at most limit bytes will be read.
@@ -532,7 +531,7 @@ class RawIOBase(IOBase):
     # primitive operation, but that would lead to nasty recursion in case
     # a subclass doesn't implement either.)
 
-    def read(self, n = -1):
+    def read(self, n=-1):
         """Read and return up to n bytes.
 
         Returns an empty bytes object on EOF, or None if the object is
@@ -596,7 +595,7 @@ class BufferedIOBase(IOBase):
     implementation, but wrap one.
     """
 
-    def read(self, n = None):
+    def read(self, n=None):
         """Read and return up to n bytes.
 
         If the argument is omitted, None, or negative, reads and
@@ -616,7 +615,7 @@ class BufferedIOBase(IOBase):
         """
         self._unsupported("read")
 
-    def read1(self, n = None):
+    def read1(self, n=None):
         """Read up to n bytes with at most one read() system call."""
         self._unsupported("read1")
 
@@ -1272,7 +1271,7 @@ class TextIOBase(IOBase):
     are immutable. There is no public constructor.
     """
 
-    def read(self, n = -1):
+    def read(self, n=-1):
         """Read at most n characters from stream.
 
         Read from underlying buffer until we have n characters or we hit EOF.
@@ -1284,7 +1283,7 @@ class TextIOBase(IOBase):
         """Write string s to stream."""
         self._unsupported("write")
 
-    def truncate(self, pos = None):
+    def truncate(self, pos=None):
         """Truncate size to pos."""
         self._unsupported("truncate")
 
