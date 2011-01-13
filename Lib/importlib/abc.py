@@ -18,7 +18,7 @@ class Loader(metaclass=abc.ABCMeta):
     """Abstract base class for import loaders."""
 
     @abc.abstractmethod
-    def load_module(self, fullname:str) -> types.ModuleType:
+    def load_module(self, fullname):
         """Abstract method which when implemented should load a module."""
         raise NotImplementedError
 
@@ -28,7 +28,7 @@ class Finder(metaclass=abc.ABCMeta):
     """Abstract base class for import finders."""
 
     @abc.abstractmethod
-    def find_module(self, fullname:str, path:[str]=None) -> Loader:
+    def find_module(self, fullname, path=None):
         """Abstract method which when implemented should find a module."""
         raise NotImplementedError
 
@@ -47,7 +47,7 @@ class ResourceLoader(Loader):
     """
 
     @abc.abstractmethod
-    def get_data(self, path:str) -> bytes:
+    def get_data(self, path):
         """Abstract method which when implemented should return the bytes for
         the specified path."""
         raise NotImplementedError
@@ -63,19 +63,19 @@ class InspectLoader(Loader):
     """
 
     @abc.abstractmethod
-    def is_package(self, fullname:str) -> bool:
+    def is_package(self, fullname):
         """Abstract method which when implemented should return whether the
         module is a package."""
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_code(self, fullname:str) -> types.CodeType:
+    def get_code(self, fullname):
         """Abstract method which when implemented should return the code object
         for the module"""
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_source(self, fullname:str) -> str:
+    def get_source(self, fullname):
         """Abstract method which should return the source code for the
         module."""
         raise NotImplementedError
@@ -94,7 +94,7 @@ class ExecutionLoader(InspectLoader):
     """
 
     @abc.abstractmethod
-    def get_filename(self, fullname:str) -> str:
+    def get_filename(self, fullname):
         """Abstract method which should return the value that __file__ is to be
         set to."""
         raise NotImplementedError
@@ -117,11 +117,11 @@ class SourceLoader(_bootstrap.SourceLoader, ResourceLoader, ExecutionLoader):
 
     """
 
-    def path_mtime(self, path:str) -> int:
+    def path_mtime(self, path):
         """Return the modification time for the path."""
         raise NotImplementedError
 
-    def set_data(self, path:str, data:bytes) -> None:
+    def set_data(self, path, data):
         """Write the bytes to the path (if possible).
 
         Any needed intermediary directories are to be created. If for some
@@ -170,7 +170,7 @@ class PyLoader(SourceLoader):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def source_path(self, fullname:str) -> object:
+    def source_path(self, fullname):
         """Abstract method which when implemented should return the path to the
         source code for the module."""
         raise NotImplementedError
@@ -279,19 +279,19 @@ class PyPycLoader(PyLoader):
         return code_object
 
     @abc.abstractmethod
-    def source_mtime(self, fullname:str) -> int:
+    def source_mtime(self, fullname):
         """Abstract method which when implemented should return the
         modification time for the source of the module."""
         raise NotImplementedError
 
     @abc.abstractmethod
-    def bytecode_path(self, fullname:str) -> object:
+    def bytecode_path(self, fullname):
         """Abstract method which when implemented should return the path to the
         bytecode for the module."""
         raise NotImplementedError
 
     @abc.abstractmethod
-    def write_bytecode(self, fullname:str, bytecode:bytes) -> bool:
+    def write_bytecode(self, fullname, bytecode):
         """Abstract method which when implemented should attempt to write the
         bytecode for the module, returning a boolean representing whether the
         bytecode was written or not."""
