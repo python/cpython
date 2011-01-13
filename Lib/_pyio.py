@@ -95,7 +95,7 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
       use line buffering.  Other text files use the policy described above
       for binary files.
 
-    encoding is the name of the encoding used to decode or encode the
+    encoding is the str name of the encoding used to decode or encode the
     file. This should only be used in text mode. The default encoding is
     platform dependent, but any encoding supported by Python can be
     passed.  See the codecs module for the list of supported encodings.
@@ -108,9 +108,9 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     See the documentation for codecs.register for a list of the permitted
     encoding error strings.
 
-    newline controls how universal newlines works (it only applies to text
-    mode). It can be None, '', '\n', '\r', and '\r\n'.  It works as
-    follows:
+    newline is a string controlling how universal newlines works (it only
+    applies to text mode). It can be None, '', '\n', '\r', and '\r\n'.  It works
+    as follows:
 
     * On input, if newline is None, universal newlines mode is
       enabled. Lines in the input can end in '\n', '\r', or '\r\n', and
@@ -126,9 +126,9 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
       other legal values, any '\n' characters written are translated to
       the given string.
 
-    If closefd is False, the underlying file descriptor will be kept open
-    when the file is closed. This does not work when a file name is given
-    and must be True in that case.
+    closedfd is a bool. If closefd is False, the underlying file descriptor will
+    be kept open when the file is closed. This does not work when a file name is
+    given and must be True in that case.
 
     open() returns a file object whose type depends on the mode, and
     through which the standard file operations such as reading and writing
@@ -287,7 +287,7 @@ class IOBase(metaclass=abc.ABCMeta):
     ### Internal ###
 
     def _unsupported(self, name):
-        """Internal: raise an exception for unsupported operations."""
+        """Internal: raise an IOError exception for unsupported operations."""
         raise UnsupportedOperation("%s.%s() not supported" %
                                    (self.__class__.__name__, name))
 
@@ -298,18 +298,18 @@ class IOBase(metaclass=abc.ABCMeta):
 
         Change the stream position to byte offset offset. offset is
         interpreted relative to the position indicated by whence.  Values
-        for whence are:
+        for whence are ints:
 
         * 0 -- start of stream (the default); offset should be zero or positive
         * 1 -- current stream position; offset may be negative
         * 2 -- end of stream; offset is usually negative
 
-        Return the new absolute position.
+        Return an int indicating the new absolute position.
         """
         self._unsupported("seek")
 
     def tell(self):
-        """Return current stream position."""
+        """Return an int indicating the current stream position."""
         return self.seek(0, 1)
 
     def truncate(self, pos=None):
@@ -356,7 +356,7 @@ class IOBase(metaclass=abc.ABCMeta):
     ### Inquiries ###
 
     def seekable(self):
-        """Return whether object supports random access.
+        """Return a bool indicating whether object supports random access.
 
         If False, seek(), tell() and truncate() will raise UnsupportedOperation.
         This method may need to do a test seek().
@@ -371,7 +371,7 @@ class IOBase(metaclass=abc.ABCMeta):
                                        if msg is None else msg)
 
     def readable(self):
-        """Return whether object was opened for reading.
+        """Return a bool indicating whether object was opened for reading.
 
         If False, read() will raise UnsupportedOperation.
         """
@@ -385,7 +385,7 @@ class IOBase(metaclass=abc.ABCMeta):
                                        if msg is None else msg)
 
     def writable(self):
-        """Return whether object was opened for writing.
+        """Return a bool indicating whether object was opened for writing.
 
         If False, write() and truncate() will raise UnsupportedOperation.
         """
@@ -416,7 +416,7 @@ class IOBase(metaclass=abc.ABCMeta):
     ### Context manager ###
 
     def __enter__(self):  # That's a forward reference
-        """Context management protocol.  Returns self."""
+        """Context management protocol.  Returns self (an instance of IOBase)."""
         self._checkClosed()
         return self
 
@@ -429,14 +429,14 @@ class IOBase(metaclass=abc.ABCMeta):
     # XXX Should these be present even if unimplemented?
 
     def fileno(self):
-        """Returns underlying file descriptor if one exists.
+        """Returns underlying file descriptor (an int) if one exists.
 
         An IOError is raised if the IO object does not use a file descriptor.
         """
         self._unsupported("fileno")
 
     def isatty(self):
-        """Return whether this is an 'interactive' stream.
+        """Return a bool indicating whether this is an 'interactive' stream.
 
         Return False if it can't be determined.
         """
@@ -446,9 +446,10 @@ class IOBase(metaclass=abc.ABCMeta):
     ### Readline[s] and writelines ###
 
     def readline(self, limit=-1):
-        r"""Read and return a line from the stream.
+        r"""Read and return a line of bytes from the stream.
 
         If limit is specified, at most limit bytes will be read.
+        Limit should be an int.
 
         The line terminator is always b'\n' for binary files; for text
         files, the newlines argument to open can be used to select the line
@@ -532,7 +533,7 @@ class RawIOBase(IOBase):
     # a subclass doesn't implement either.)
 
     def read(self, n=-1):
-        """Read and return up to n bytes.
+        """Read and return up to n bytes, where n is an int.
 
         Returns an empty bytes object on EOF, or None if the object is
         set not to block and has no data to read.
@@ -559,10 +560,10 @@ class RawIOBase(IOBase):
         return bytes(res)
 
     def readinto(self, b):
-        """Read up to len(b) bytes into b.
+        """Read up to len(b) bytes into bytearray b.
 
-        Returns number of bytes read (0 for EOF), or None if the object
-        is set not to block and has no data to read.
+        Returns an int representing the number of bytes read (0 for EOF), or
+        None if the object is set not to block and has no data to read.
         """
         self._unsupported("readinto")
 
@@ -596,7 +597,7 @@ class BufferedIOBase(IOBase):
     """
 
     def read(self, n=None):
-        """Read and return up to n bytes.
+        """Read and return up to n bytes, where n is an int.
 
         If the argument is omitted, None, or negative, reads and
         returns all data until EOF.
@@ -616,16 +617,18 @@ class BufferedIOBase(IOBase):
         self._unsupported("read")
 
     def read1(self, n=None):
-        """Read up to n bytes with at most one read() system call."""
+        """Read up to n bytes with at most one read() system call,
+        where n is an int.
+        """
         self._unsupported("read1")
 
     def readinto(self, b):
-        """Read up to len(b) bytes into b.
+        """Read up to len(b) bytes into bytearray b.
 
         Like read(), this may issue multiple reads to the underlying raw
         stream, unless the latter is 'interactive'.
 
-        Returns the number of bytes read (0 for EOF).
+        Returns an int representing the number of bytes read (0 for EOF).
 
         Raises BlockingIOError if the underlying raw stream has no
         data at the moment.
@@ -643,7 +646,7 @@ class BufferedIOBase(IOBase):
         return n
 
     def write(self, b):
-        """Write the given buffer to the IO stream.
+        """Write the given bytes buffer to the IO stream.
 
         Return the number of bytes written, which is never less than
         len(b).
@@ -1272,19 +1275,21 @@ class TextIOBase(IOBase):
     """
 
     def read(self, n=-1):
-        """Read at most n characters from stream.
+        """Read at most n characters from stream, where n is an int.
 
         Read from underlying buffer until we have n characters or we hit EOF.
         If n is negative or omitted, read until EOF.
+
+        Returns a string.
         """
         self._unsupported("read")
 
     def write(self, s):
-        """Write string s to stream."""
+        """Write string s to stream and returning an int."""
         self._unsupported("write")
 
     def truncate(self, pos=None):
-        """Truncate size to pos."""
+        """Truncate size to pos, where pos is an int."""
         self._unsupported("truncate")
 
     def readline(self):
@@ -1567,6 +1572,7 @@ class TextIOWrapper(TextIOBase):
         return self.buffer.isatty()
 
     def write(self, s):
+        'Write data, where s is a str'
         if self.closed:
             raise ValueError("write to closed file")
         if not isinstance(s, str):
