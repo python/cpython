@@ -342,7 +342,7 @@ p.deprecated, p.deprecated-removed {
 }
 
 .footnote:target  {
-    background-color: #ffa
+    background-color: #ffa;
 }
 
 .impl-detail {
