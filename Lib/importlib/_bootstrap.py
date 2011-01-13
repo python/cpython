@@ -345,7 +345,7 @@ class _LoaderBasics:
 
 class SourceLoader(_LoaderBasics):
 
-    def path_mtime(self, path:str) -> int:
+    def path_mtime(self, path):
         """Optional method that returns the modification time for the specified
         path.
 
@@ -354,7 +354,7 @@ class SourceLoader(_LoaderBasics):
         """
         raise NotImplementedError
 
-    def set_data(self, path:str, data:bytes) -> None:
+    def set_data(self, path, data):
         """Optional method which writes data to a file path.
 
         Implementing this method allows for the writing of bytecode files.
