@@ -307,11 +307,13 @@ compute_range_item(rangeobject *r, PyObject *arg)
 static PyObject *
 range_item(rangeobject *r, Py_ssize_t i)
 {
-    PyObject *arg = PyLong_FromLong(i);
+    PyObject *res, *arg = PyLong_FromLong(i);
     if (!arg) {
         return NULL;
     }
-    return compute_range_item(r, arg);
+    res = compute_range_item(r, arg);
+    Py_DECREF(arg);
+    return res;
 }
 
 /* Additional helpers, since the standard slice helpers
