@@ -1567,7 +1567,7 @@ class TextIOWrapper(TextIOBase):
     def isatty(self):
         return self.buffer.isatty()
 
-    def write(self, s: str):
+    def write(self, s):
         if self.closed:
             raise ValueError("write to closed file")
         if not isinstance(s, str):
