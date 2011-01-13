@@ -19,7 +19,8 @@ class Loader(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def load_module(self, fullname):
-        """Abstract method which when implemented should load a module."""
+        """Abstract method which when implemented should load a module.
+        The fullname is a str."""
         raise NotImplementedError
 
 
@@ -29,7 +30,10 @@ class Finder(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def find_module(self, fullname, path=None):
-        """Abstract method which when implemented should find a module."""
+        """Abstract method which when implemented should find a module.
+        The fullname is a str and the optional path is a str or None.
+        Returns a Loader object.
+        """
         raise NotImplementedError
 
 Finder.register(machinery.BuiltinImporter)
@@ -49,7 +53,7 @@ class ResourceLoader(Loader):
     @abc.abstractmethod
     def get_data(self, path):
         """Abstract method which when implemented should return the bytes for
-        the specified path."""
+        the specified path.  The path must be a str."""
         raise NotImplementedError
 
 
@@ -65,19 +69,19 @@ class InspectLoader(Loader):
     @abc.abstractmethod
     def is_package(self, fullname):
         """Abstract method which when implemented should return whether the
-        module is a package."""
+        module is a package.  The fullname is a str.  Returns a bool."""
         raise NotImplementedError
 
     @abc.abstractmethod
     def get_code(self, fullname):
         """Abstract method which when implemented should return the code object
-        for the module"""
+        for the module.  The fullname is a str.  Returns a types.CodeType."""
         raise NotImplementedError
 
     @abc.abstractmethod
     def get_source(self, fullname):
         """Abstract method which should return the source code for the
-        module."""
+        module.  The fullname is a str.  Returns a str."""
         raise NotImplementedError
 
 InspectLoader.register(machinery.BuiltinImporter)
@@ -118,11 +122,13 @@ class SourceLoader(_bootstrap.SourceLoader, ResourceLoader, ExecutionLoader):
     """
 
     def path_mtime(self, path):
-        """Return the modification time for the path."""
+        """Return the (int) modification time for the path (str)."""
         raise NotImplementedError
 
     def set_data(self, path, data):
         """Write the bytes to the path (if possible).
+
+        Accepts a str path and data as bytes.
 
         Any needed intermediary directories are to be created. If for some
         reason the file cannot be written because of permissions, fail
@@ -171,8 +177,8 @@ class PyLoader(SourceLoader):
 
     @abc.abstractmethod
     def source_path(self, fullname):
-        """Abstract method which when implemented should return the path to the
-        source code for the module."""
+        """Abstract method.  Accepts a str module name and returns the path to
+        the source code for the module."""
         raise NotImplementedError
 
     def get_filename(self, fullname):
@@ -280,19 +286,19 @@ class PyPycLoader(PyLoader):
 
     @abc.abstractmethod
     def source_mtime(self, fullname):
-        """Abstract method which when implemented should return the
+        """Abstract method. Accepts a str filename and returns an int
         modification time for the source of the module."""
         raise NotImplementedError
 
     @abc.abstractmethod
     def bytecode_path(self, fullname):
-        """Abstract method which when implemented should return the path to the
-        bytecode for the module."""
+        """Abstract method. Accepts a str filename and returns the str pathname
+        to the bytecode for the module."""
         raise NotImplementedError
 
     @abc.abstractmethod
     def write_bytecode(self, fullname, bytecode):
-        """Abstract method which when implemented should attempt to write the
-        bytecode for the module, returning a boolean representing whether the
-        bytecode was written or not."""
+        """Abstract method.  Accepts a str filename and bytes object
+        representing the bytecode for the module.  Returns a boolean
+        representing whether the bytecode was written or not."""
         raise NotImplementedError
