@@ -43,6 +43,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #4953: cgi.FieldStorage and cgi.parse() parse the request as bytes, not
+  as unicode, and accept binary files. Add encoding and errors attributes to
+  cgi.FieldStorage.
+
 - Add encoding and errors arguments to urllib.parse_qs() and urllib.parse_qsl()
 
 - Issue #10899: No function type annotations in the standard library.
