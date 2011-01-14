@@ -125,7 +125,7 @@ slightly different way:
    :data:`sys.last_traceback`.
 
 
-The ``run_*`` functions and :func:`set_trace` are aliases for instantiating the
+The ``run*`` functions and :func:`set_trace` are aliases for instantiating the
 :class:`Pdb` class and calling the method of the same name.  If you want to
 access further features, you have to do this yourself:
 
