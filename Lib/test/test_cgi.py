@@ -4,7 +4,7 @@ import os
 import sys
 import tempfile
 import unittest
-from io import StringIO
+from io import StringIO, BytesIO
 
 class HackedSysModule:
     # The regression test will have real values in sys.argv, which
@@ -13,7 +13,6 @@ class HackedSysModule:
     stdin = sys.stdin
 
 cgi.sys = HackedSysModule()
-
 
 class ComparableException:
     def __init__(self, err):
@@ -38,7 +37,7 @@ def do_test(buf, method):
         env['REQUEST_METHOD'] = 'GET'
         env['QUERY_STRING'] = buf
     elif method == "POST":
-        fp = StringIO(buf)
+        fp = BytesIO(buf.encode('latin-1')) # FieldStorage expects bytes
         env['REQUEST_METHOD'] = 'POST'
         env['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
         env['CONTENT_LENGTH'] = str(len(buf))
@@ -106,9 +105,10 @@ def first_second_elts(list):
     return [(p[0], p[1][0]) for p in list]
 
 def gen_result(data, environ):
-    fake_stdin = StringIO(data)
+    encoding = 'latin-1'
+    fake_stdin = BytesIO(data.encode(encoding))
     fake_stdin.seek(0)
-    form = cgi.FieldStorage(fp=fake_stdin, environ=environ)
+    form = cgi.FieldStorage(fp=fake_stdin, environ=environ, encoding=encoding)
 
     result = {}
     for k, v in dict(form).items():
@@ -122,9 +122,9 @@ class CgiTests(unittest.TestCase):
         for orig, expect in parse_strict_test_cases:
             # Test basic parsing
             d = do_test(orig, "GET")
-            self.assertEqual(d, expect, "Error parsing %s" % repr(orig))
+            self.assertEqual(d, expect, "Error parsing %s method GET" % repr(orig))
             d = do_test(orig, "POST")
-            self.assertEqual(d, expect, "Error parsing %s" % repr(orig))
+            self.assertEqual(d, expect, "Error parsing %s method POST" % repr(orig))
 
             env = {'QUERY_STRING': orig}
             fs = cgi.FieldStorage(environ=env)
@@ -181,9 +181,9 @@ class CgiTests(unittest.TestCase):
                     setattr(self, name, a)
                 return a
 
-        f = TestReadlineFile(tempfile.TemporaryFile("w+"))
+        f = TestReadlineFile(tempfile.TemporaryFile("wb+"))
         self.addCleanup(f.close)
-        f.write('x' * 256 * 1024)
+        f.write(b'x' * 256 * 1024)
         f.seek(0)
         env = {'REQUEST_METHOD':'PUT'}
         fs = cgi.FieldStorage(fp=f, environ=env)
@@ -192,6 +192,7 @@ class CgiTests(unittest.TestCase):
         # (by read_binary); if we are chunking properly, it will be called 5 times
         # as long as the chunksize is 1 << 16.
         self.assertTrue(f.numcalls > 2)
+        f.close()
 
     def test_fieldstorage_multipart(self):
         #Test basic FieldStorage multipart parsing
@@ -216,11 +217,13 @@ Content-Disposition: form-data; name="submit"
  Add\x20
 -----------------------------721837373350705526688164684--
 """
-        fs = cgi.FieldStorage(fp=StringIO(postdata), environ=env)
+        encoding = 'ascii'
+        fp = BytesIO(postdata.encode(encoding))
+        fs = cgi.FieldStorage(fp, environ=env, encoding=encoding)
         self.assertEqual(len(fs.list), 4)
         expect = [{'name':'id', 'filename':None, 'value':'1234'},
                   {'name':'title', 'filename':None, 'value':''},
-                  {'name':'file', 'filename':'test.txt', 'value':'Testing 123.'},
+                  {'name':'file', 'filename':'test.txt', 'value':b'Testing 123.\n'},
                   {'name':'submit', 'filename':None, 'value':' Add '}]
         for x in range(len(fs.list)):
             for k, exp in expect[x].items():
@@ -245,8 +248,7 @@ Content-Disposition: form-data; name="submit"
         self.assertEqual(self._qs_result, v)
 
     def testQSAndFormData(self):
-        data = """
----123
+        data = """---123
 Content-Disposition: form-data; name="key2"
 
 value2y
@@ -270,8 +272,7 @@ value4
         self.assertEqual(self._qs_result, v)
 
     def testQSAndFormDataFile(self):
-        data = """
----123
+        data = """---123
 Content-Disposition: form-data; name="key2"
 
 value2y
@@ -299,7 +300,7 @@ this is the content of the fake file
         }
         result = self._qs_result.copy()
         result.update({
-            'upload': 'this is the content of the fake file'
+            'upload': b'this is the content of the fake file\n'
         })
         v = gen_result(data, environ)
         self.assertEqual(result, v)
