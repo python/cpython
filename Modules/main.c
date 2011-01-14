@@ -720,7 +720,6 @@ Py_Main(int argc, wchar_t **argv)
      * trade off slower shutdown for less distraction in the memory
      * reports.  -baw
      */
-    _Py_ReleaseInternedStrings();
     _Py_ReleaseInternedUnicodeStrings();
 #endif /* __INSURE__ */
 
