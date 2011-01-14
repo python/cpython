@@ -43,6 +43,8 @@ Core and Builtins
 Library
 -------
 
+- Add encoding and errors arguments to urllib.parse_qs() and urllib.parse_qsl()
+
 - Issue #10899: No function type annotations in the standard library.
   Removed function type annotations from _pyio.py.
 
