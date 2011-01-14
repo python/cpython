@@ -582,7 +582,7 @@ class FieldStorage:
         """Dictionary style get() method, including 'value' lookup."""
         if key in self:
             value = self[key]
-            if type(value) is type([]):
+            if isinstance(value, list):
                 return [x.value for x in value]
             else:
                 return value.value
@@ -593,7 +593,7 @@ class FieldStorage:
         """ Return the first value received."""
         if key in self:
             value = self[key]
-            if type(value) is type([]):
+            if isinstance(value, list):
                 return value[0].value
             else:
                 return value.value
@@ -604,7 +604,7 @@ class FieldStorage:
         """ Return list of received values."""
         if key in self:
             value = self[key]
-            if type(value) is type([]):
+            if isinstance(value, list):
                 return [x.value for x in value]
             else:
                 return [value.value]
