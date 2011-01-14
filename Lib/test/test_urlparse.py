@@ -688,6 +688,33 @@ class UrlParseTestCase(unittest.TestCase):
         for result_type in result_types:
             self._check_result_type(result_type)
 
+    def test_parse_qs_encoding(self):
+        result = urllib.parse.parse_qs("key=\u0141%E9", encoding="latin-1")
+        self.assertEqual(result, {'key': ['\u0141\xE9']})
+        result = urllib.parse.parse_qs("key=\u0141%C3%A9", encoding="utf-8")
+        self.assertEqual(result, {'key': ['\u0141\xE9']})
+        result = urllib.parse.parse_qs("key=\u0141%C3%A9", encoding="ascii")
+        self.assertEqual(result, {'key': ['\u0141\ufffd\ufffd']})
+        result = urllib.parse.parse_qs("key=\u0141%E9-", encoding="ascii")
+        self.assertEqual(result, {'key': ['\u0141\ufffd-']})
+        result = urllib.parse.parse_qs("key=\u0141%E9-", encoding="ascii",
+                                                          errors="ignore")
+        self.assertEqual(result, {'key': ['\u0141-']})
+
+    def test_parse_qsl_encoding(self):
+        result = urllib.parse.parse_qsl("key=\u0141%E9", encoding="latin-1")
+        self.assertEqual(result, [('key', '\u0141\xE9')])
+        result = urllib.parse.parse_qsl("key=\u0141%C3%A9", encoding="utf-8")
+        self.assertEqual(result, [('key', '\u0141\xE9')])
+        result = urllib.parse.parse_qsl("key=\u0141%C3%A9", encoding="ascii")
+        self.assertEqual(result, [('key', '\u0141\ufffd\ufffd')])
+        result = urllib.parse.parse_qsl("key=\u0141%E9-", encoding="ascii")
+        self.assertEqual(result, [('key', '\u0141\ufffd-')])
+        result = urllib.parse.parse_qsl("key=\u0141%E9-", encoding="ascii",
+                                                          errors="ignore")
+        self.assertEqual(result, [('key', '\u0141-')])
+
+
 
 def test_main():
     support.run_unittest(UrlParseTestCase)
