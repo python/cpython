@@ -140,6 +140,9 @@ or on combining URL components into a URL string.
    Use the :func:`urllib.parse.urlencode` function to convert such
    dictionaries into query strings.
 
+   .. versionchanged:: 3.2
+      Add *encoding* and *errors* parameters.
+
 
 .. function:: parse_qsl(qs, keep_blank_values=False, strict_parsing=False, encoding='utf-8', errors='replace')
 
@@ -163,6 +166,9 @@ or on combining URL components into a URL string.
 
    Use the :func:`urllib.parse.urlencode` function to convert such lists of pairs into
    query strings.
+
+   .. versionchanged:: 3.2
+      Add *encoding* and *errors* parameters.
 
 
 .. function:: urlunparse(parts)
