@@ -116,7 +116,7 @@ or on combining URL components into a URL string.
       Added IPv6 URL parsing capabilities.
 
 
-.. function:: parse_qs(qs, keep_blank_values=False, strict_parsing=False)
+.. function:: parse_qs(qs, keep_blank_values=False, strict_parsing=False, encoding='utf-8', errors='replace')
 
    Parse a query string given as a string argument (data of type
    :mimetype:`application/x-www-form-urlencoded`).  Data are returned as a
@@ -133,11 +133,15 @@ or on combining URL components into a URL string.
    parsing errors.  If false (the default), errors are silently ignored.  If true,
    errors raise a :exc:`ValueError` exception.
 
+   The optional *encoding* and *errors* parameters specify how to decode
+   percent-encoded sequences into Unicode characters, as accepted by the
+   :meth:`bytes.decode` method.
+
    Use the :func:`urllib.parse.urlencode` function to convert such
    dictionaries into query strings.
 
 
-.. function:: parse_qsl(qs, keep_blank_values=False, strict_parsing=False)
+.. function:: parse_qsl(qs, keep_blank_values=False, strict_parsing=False, encoding='utf-8', errors='replace')
 
    Parse a query string given as a string argument (data of type
    :mimetype:`application/x-www-form-urlencoded`).  Data are returned as a list of
@@ -152,6 +156,10 @@ or on combining URL components into a URL string.
    The optional argument *strict_parsing* is a flag indicating what to do with
    parsing errors.  If false (the default), errors are silently ignored.  If true,
    errors raise a :exc:`ValueError` exception.
+
+   The optional *encoding* and *errors* parameters specify how to decode
+   percent-encoded sequences into Unicode characters, as accepted by the
+   :meth:`bytes.decode` method.
 
    Use the :func:`urllib.parse.urlencode` function to convert such lists of pairs into
    query strings.

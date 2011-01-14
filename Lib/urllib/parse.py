@@ -523,7 +523,8 @@ def unquote(string, encoding='utf-8', errors='replace'):
         string += pct_sequence.decode(encoding, errors)
     return string
 
-def parse_qs(qs, keep_blank_values=False, strict_parsing=False):
+def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
+             encoding='utf-8', errors='replace'):
     """Parse a query given as a string argument.
 
         Arguments:
@@ -540,16 +541,22 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False):
         strict_parsing: flag indicating what to do with parsing errors.
             If false (the default), errors are silently ignored.
             If true, errors raise a ValueError exception.
+
+        encoding and errors: specify how to decode percent-encoded sequences
+            into Unicode characters, as accepted by the bytes.decode() method.
     """
     dict = {}
-    for name, value in parse_qsl(qs, keep_blank_values, strict_parsing):
+    pairs = parse_qsl(qs, keep_blank_values, strict_parsing,
+                      encoding=encoding, errors=errors)
+    for name, value in pairs:
         if name in dict:
             dict[name].append(value)
         else:
             dict[name] = [value]
     return dict
 
-def parse_qsl(qs, keep_blank_values=False, strict_parsing=False):
+def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
+              encoding='utf-8', errors='replace'):
     """Parse a query given as a string argument.
 
     Arguments:
@@ -565,6 +572,9 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False):
     strict_parsing: flag indicating what to do with parsing errors. If
         false (the default), errors are silently ignored. If true,
         errors raise a ValueError exception.
+
+    encoding and errors: specify how to decode percent-encoded sequences
+        into Unicode characters, as accepted by the bytes.decode() method.
 
     Returns a list, as G-d intended.
     """
@@ -584,8 +594,12 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False):
             else:
                 continue
         if len(nv[1]) or keep_blank_values:
-            name = _coerce_result(unquote(nv[0].replace('+', ' ')))
-            value = _coerce_result(unquote(nv[1].replace('+', ' ')))
+            name = nv[0].replace('+', ' ')
+            name = unquote(name, encoding=encoding, errors=errors)
+            name = _coerce_result(name)
+            value = nv[1].replace('+', ' ')
+            value = unquote(value, encoding=encoding, errors=errors)
+            value = _coerce_result(value)
             r.append((name, value))
     return r
 
