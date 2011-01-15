@@ -896,7 +896,7 @@ Here are all of the changes that Python 2.4 makes to the core Python language.
   (Contributed by Nick Coghlan.)
 
 * The :func:`eval(expr, globals, locals)` and :func:`execfile(filename, globals,
-  locals)` functions and the :keyword:`exec` statement now accept any mapping type
+  locals)` functions and the ``exec`` statement now accept any mapping type
   for the *locals* parameter.  Previously this had to be a regular Python
   dictionary.  (Contributed by Raymond Hettinger.)
 

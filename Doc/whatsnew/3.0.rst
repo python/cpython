@@ -96,9 +96,9 @@ up if you're used to Python 2.5.
 Print Is A Function
 -------------------
 
-The :keyword:`print` statement has been replaced with a :func:`print`
+The ``print`` statement has been replaced with a :func:`print`
 function, with keyword arguments to replace most of the special syntax
-of the old :keyword:`print` statement (:pep:`3105`).  Examples::
+of the old ``print`` statement (:pep:`3105`).  Examples::
 
   Old: print "The answer is", 2*2
   New: print("The answer is", 2*2)
@@ -126,7 +126,7 @@ which produces::
 Note:
 
 * The :func:`print` function doesn't support the "softspace" feature of
-  the old :keyword:`print` statement.  For example, in Python 2.x,
+  the old ``print`` statement.  For example, in Python 2.x,
   ``print "A\n", "B"`` would write ``"A\nB\n"``; but in Python 3.0,
   ``print("A\n", "B")`` writes ``"A\n B\n"``.
 
@@ -135,7 +135,7 @@ Note:
   ``print(x)`` instead!
 
 * When using the ``2to3`` source-to-source conversion tool, all
-  :keyword:`print` statements are automatically converted to
+  ``print`` statements are automatically converted to
   :func:`print` function calls, so this is mostly a non-issue for
   larger projects.
 
@@ -178,7 +178,7 @@ Python 3.0 has simplified the rules for ordering comparisons:
   meaningful natural ordering.  Thus, expressions like ``1 < ''``, ``0
   > None`` or ``len <= len`` are no longer valid, and e.g. ``None <
   None`` raises :exc:`TypeError` instead of returning
-  :keyword:`False`.  A corollary is that sorting a heterogeneous list
+  ``False``.  A corollary is that sorting a heterogeneous list
   no longer makes sense -- all the elements must be comparable to each
   other.  Note that this does not apply to the ``==`` and ``!=``
   operators: objects of different incomparable types always compare
@@ -397,9 +397,8 @@ Changed Syntax
 * :keyword:`as` and :keyword:`with` are now reserved words.  (Since
   2.6, actually.)
 
-* :keyword:`True`, :keyword:`False`, and :keyword:`None` are reserved
-  words.  (2.6 partially enforced the restrictions on :keyword:`None`
-  already.)
+* ``True``, ``False``, and ``None`` are reserved words.  (2.6 partially enforced
+  the restrictions on ``None`` already.)
 
 * Change from :keyword:`except` *exc*, *var* to
   :keyword:`except` *exc* :keyword:`as` *var*.  See :pep:`3110`.
@@ -906,7 +905,7 @@ best strategy is the following:
 
 It is not recommended to try to write source code that runs unchanged
 under both Python 2.6 and 3.0; you'd have to use a very contorted
-coding style, e.g. avoiding :keyword:`print` statements, metaclasses,
+coding style, e.g. avoiding ``print`` statements, metaclasses,
 and much more.  If you are maintaining a library that needs to support
 both Python 2.6 and Python 3.0, the best approach is to modify step 3
 above by editing the 2.6 version of the source code and running the

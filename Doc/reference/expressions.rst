@@ -963,9 +963,9 @@ must be integers.
 
 .. _comparisons:
 .. _is:
-.. _isnot:
+.. _is not:
 .. _in:
-.. _notin:
+.. _not in:
 
 Comparisons
 ===========

@@ -214,8 +214,8 @@ multiple modules, using the pattern in *mylib.py*. Note that for this simple
 usage pattern, you won't know, by looking in the log file, *where* in your
 application your messages came from, apart from looking at the event
 description. If you want to track the location of your messages, you'll need
-to refer to the documentation beyond the tutorial level - see
-:ref:`advanced-logging-tutorial`.
+to refer to the documentation beyond the tutorial level -- see
+:ref:`logging-advanced-tutorial`.
 
 
 Logging variable data
@@ -549,9 +549,9 @@ Programmers can configure logging in three ways:
 3. Creating a dictionary of configuration information and passing it
    to the :func:`dictConfig` function.
 
-For the reference documentation on the last two options, see :ref:`config-ref`.
-The following example configures a very simple logger, a console handler, and
-a simple formatter using Python code::
+For the reference documentation on the last two options, see
+:ref:`logging-config-api`.  The following example configures a very simple
+logger, a console handler, and a simple formatter using Python code::
 
     import logging
 

@@ -32,7 +32,7 @@ Details on custom importers can be found in :pep:`302`.
 
     `Packages specification <http://www.python.org/doc/essays/packages.html>`__
         Original specification of packages. Some semantics have changed since
-        the writing of this document (e.g. redirecting based on :keyword:`None`
+        the writing of this document (e.g. redirecting based on ``None``
         in :data:`sys.modules`).
 
     The :func:`.__import__` function
@@ -109,7 +109,7 @@ are also provided to help in implementing the core ABCs.
         module. If the :term:`finder` is found on :data:`sys.meta_path` and the
         module to be searched for is a subpackage or module then *path* will
         be the value of :attr:`__path__` from the parent package. If a loader
-        cannot be found, :keyword:`None` is returned.
+        cannot be found, ``None`` is returned.
 
 
 .. class:: Loader
@@ -185,14 +185,14 @@ are also provided to help in implementing the core ABCs.
     .. method:: get_code(fullname)
 
         An abstract method to return the :class:`code` object for a module.
-        :keyword:`None` is returned if the module does not have a code object
+        ``None`` is returned if the module does not have a code object
         (e.g. built-in module).  :exc:`ImportError` is raised if loader cannot
         find the requested module.
 
     .. method:: get_source(fullname)
 
         An abstract method to return the source of a module. It is returned as
-        a text string with universal newlines. Returns :keyword:`None` if no
+        a text string with universal newlines. Returns ``None`` if no
         source is available (e.g. a built-in module). Raises :exc:`ImportError`
         if the loader cannot find the module specified.
 
@@ -320,7 +320,7 @@ are also provided to help in implementing the core ABCs.
     .. method:: source_path(fullname)
 
         An abstract method that returns the path to the source code for a
-        module. Should return :keyword:`None` if there is no source code.
+        module. Should return ``None`` if there is no source code.
         Raises :exc:`ImportError` if the loader knows it cannot handle the
         module.
 
@@ -329,7 +329,7 @@ are also provided to help in implementing the core ABCs.
         A concrete implementation of
         :meth:`importlib.abc.ExecutionLoader.get_filename` that
         relies on :meth:`source_path`. If :meth:`source_path` returns
-        :keyword:`None`, then :exc:`ImportError` is raised.
+        ``None``, then :exc:`ImportError` is raised.
 
     .. method:: load_module(fullname)
 
@@ -374,13 +374,13 @@ are also provided to help in implementing the core ABCs.
 
         An abstract method which returns the modification time for the source
         code of the specified module. The modification time should be an
-        integer. If there is no source code, return :keyword:`None`. If the
+        integer. If there is no source code, return ``None``. If the
         module cannot be found then :exc:`ImportError` is raised.
 
     .. method:: bytecode_path(fullname)
 
         An abstract method which returns the path to the bytecode for the
-        specified module, if it exists. It returns :keyword:`None`
+        specified module, if it exists. It returns ``None``
         if no bytecode exists (yet).
         Raises :exc:`ImportError` if the loader knows it cannot handle the
         module.
@@ -398,8 +398,8 @@ are also provided to help in implementing the core ABCs.
     .. method:: write_bytecode(fullname, bytecode)
 
         An abstract method which has the loader write *bytecode* for future
-        use. If the bytecode is written, return :keyword:`True`. Return
-        :keyword:`False` if the bytecode could not be written. This method
+        use. If the bytecode is written, return ``True``. Return
+        ``False`` if the bytecode could not be written. This method
         should not be called if :data:`sys.dont_write_bytecode` is true.
         The *bytecode* argument should be a bytes string or bytes array.
 
@@ -457,7 +457,7 @@ find and load modules.
         :data:`sys.path_importer_cache`, then :data:`sys.path_hooks` is
         searched for a finder for the path entry and, if found, is stored in
         :data:`sys.path_importer_cache` along with being queried about the
-        module. If no finder is ever found then :keyword:`None` is returned.
+        module. If no finder is ever found then ``None`` is returned.
 
 
 :mod:`importlib.util` -- Utility code for importers
@@ -506,7 +506,7 @@ an :term:`importer`.
 
     A :term:`decorator` for a :term:`loader` to set the :attr:`__package__`
     attribute on the module returned by the loader. If :attr:`__package__` is
-    set and has a value other than :keyword:`None` it will not be changed.
+    set and has a value other than ``None`` it will not be changed.
     Note that the module returned by the loader is what has the attribute
     set on and not the module found in :data:`sys.modules`.
 

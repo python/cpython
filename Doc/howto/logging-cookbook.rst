@@ -6,7 +6,8 @@ Logging Cookbook
 
 :Author: Vinay Sajip <vinay_sajip at red-dove dot com>
 
-This page contains a number of recipes related to logging, which have been found useful in the past.
+This page contains a number of recipes related to logging, which have been found
+useful in the past.
 
 .. currentmodule:: logging
 
@@ -283,7 +284,7 @@ One solution is to use a two-part approach. For the first part, attach only a
 performance-critical threads. They simply write to their queue, which can be
 sized to a large enough capacity or initialized with no upper bound to their
 size. The write to the queue will typically be accepted quickly, though you
-will probably need to catch the :ref:`queue.Full` exception as a precaution
+will probably need to catch the :exc:`queue.Full` exception as a precaution
 in your code. If you are a library developer who has performance-critical
 threads in their code, be sure to document this (together with a suggestion to
 attach only ``QueueHandlers`` to your loggers) for the benefit of other

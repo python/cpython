@@ -197,8 +197,8 @@ exception.
    operator: in
    operator: not in
 
-Two more operations with the same syntactic priority, ``in`` and ``not in``, are
-supported only by sequence types (below).
+Two more operations with the same syntactic priority, :keyword:`in` and
+:keyword:`not in`, are supported only by sequence types (below).
 
 
 .. _typesnumeric:
