@@ -8,6 +8,10 @@ Initialization, Finalization, and Threads
 *****************************************
 
 
+Initializing and finalizing the interpreter
+===========================================
+
+
 .. cfunction:: void Py_Initialize()
 
    .. index::
@@ -81,85 +85,8 @@ Initialization, Finalization, and Threads
    :cfunc:`Py_Finalize` more than once.
 
 
-.. cfunction:: PyThreadState* Py_NewInterpreter()
-
-   .. index::
-      module: builtins
-      module: __main__
-      module: sys
-      single: stdout (in module sys)
-      single: stderr (in module sys)
-      single: stdin (in module sys)
-
-   Create a new sub-interpreter.  This is an (almost) totally separate environment
-   for the execution of Python code.  In particular, the new interpreter has
-   separate, independent versions of all imported modules, including the
-   fundamental modules :mod:`builtins`, :mod:`__main__` and :mod:`sys`.  The
-   table of loaded modules (``sys.modules``) and the module search path
-   (``sys.path``) are also separate.  The new environment has no ``sys.argv``
-   variable.  It has new standard I/O stream file objects ``sys.stdin``,
-   ``sys.stdout`` and ``sys.stderr`` (however these refer to the same underlying
-   :ctype:`FILE` structures in the C library).
-
-   The return value points to the first thread state created in the new
-   sub-interpreter.  This thread state is made in the current thread state.
-   Note that no actual thread is created; see the discussion of thread states
-   below.  If creation of the new interpreter is unsuccessful, *NULL* is
-   returned; no exception is set since the exception state is stored in the
-   current thread state and there may not be a current thread state.  (Like all
-   other Python/C API functions, the global interpreter lock must be held before
-   calling this function and is still held when it returns; however, unlike most
-   other Python/C API functions, there needn't be a current thread state on
-   entry.)
-
-   .. index::
-      single: Py_Finalize()
-      single: Py_Initialize()
-
-   Extension modules are shared between (sub-)interpreters as follows: the first
-   time a particular extension is imported, it is initialized normally, and a
-   (shallow) copy of its module's dictionary is squirreled away.  When the same
-   extension is imported by another (sub-)interpreter, a new module is initialized
-   and filled with the contents of this copy; the extension's ``init`` function is
-   not called.  Note that this is different from what happens when an extension is
-   imported after the interpreter has been completely re-initialized by calling
-   :cfunc:`Py_Finalize` and :cfunc:`Py_Initialize`; in that case, the extension's
-   ``initmodule`` function *is* called again.
-
-   .. index:: single: close() (in module os)
-
-   **Bugs and caveats:** Because sub-interpreters (and the main interpreter) are
-   part of the same process, the insulation between them isn't perfect --- for
-   example, using low-level file operations like  :func:`os.close` they can
-   (accidentally or maliciously) affect each other's open files.  Because of the
-   way extensions are shared between (sub-)interpreters, some extensions may not
-   work properly; this is especially likely when the extension makes use of
-   (static) global variables, or when the extension manipulates its module's
-   dictionary after its initialization.  It is possible to insert objects created
-   in one sub-interpreter into a namespace of another sub-interpreter; this should
-   be done with great care to avoid sharing user-defined functions, methods,
-   instances or classes between sub-interpreters, since import operations executed
-   by such objects may affect the wrong (sub-)interpreter's dictionary of loaded
-   modules.  (XXX This is a hard-to-fix bug that will be addressed in a future
-   release.)
-
-   Also note that the use of this functionality is incompatible with extension
-   modules such as PyObjC and ctypes that use the :cfunc:`PyGILState_\*` APIs (and
-   this is inherent in the way the :cfunc:`PyGILState_\*` functions work).  Simple
-   things may work, but confusing behavior will always be near.
-
-
-.. cfunction:: void Py_EndInterpreter(PyThreadState *tstate)
-
-   .. index:: single: Py_Finalize()
-
-   Destroy the (sub-)interpreter represented by the given thread state. The given
-   thread state must be the current thread state.  See the discussion of thread
-   states below.  When the call returns, the current thread state is *NULL*.  All
-   thread states associated with this interpreter are destroyed.  (The global
-   interpreter lock must be held before calling this function and is still held
-   when it returns.)  :cfunc:`Py_Finalize` will destroy all sub-interpreters that
-   haven't been explicitly destroyed at that point.
+Process-wide parameters
+=======================
 
 
 .. cfunction:: void Py_SetProgramName(wchar_t *name)
@@ -417,8 +344,8 @@ Thread State and the Global Interpreter Lock
    single: lock, interpreter
 
 The Python interpreter is not fully thread-safe.  In order to support
-multi-threaded Python programs, there's a global lock, called the :dfn:`global
-interpreter lock` or :dfn:`GIL`, that must be held by the current thread before
+multi-threaded Python programs, there's a global lock, called the :term:`global
+interpreter lock` or :term:`GIL`, that must be held by the current thread before
 it can safely access Python objects. Without the lock, even the simplest
 operations could cause problems in a multi-threaded program: for example, when
 two threads simultaneously increment the reference count of the same object, the
@@ -426,39 +353,38 @@ reference count could end up being incremented only once instead of twice.
 
 .. index:: single: setcheckinterval() (in module sys)
 
-Therefore, the rule exists that only the thread that has acquired the global
-interpreter lock may operate on Python objects or call Python/C API functions.
-In order to support multi-threaded Python programs, the interpreter regularly
-releases and reacquires the lock --- by default, every 100 bytecode instructions
-(this can be changed with  :func:`sys.setcheckinterval`).  The lock is also
-released and reacquired around potentially blocking I/O operations like reading
-or writing a file, so that other threads can run while the thread that requests
-the I/O is waiting for the I/O operation to complete.
+Therefore, the rule exists that only the thread that has acquired the
+:term:`GIL` may operate on Python objects or call Python/C API functions.
+In order to emulate concurrency of execution, the interpreter regularly
+tries to switch threads (see :func:`sys.setcheckinterval`).  The lock is also
+released around potentially blocking I/O operations like reading or writing
+a file, so that other Python threads can run in the meantime.
 
 .. index::
    single: PyThreadState
    single: PyThreadState
 
-The Python interpreter needs to keep some bookkeeping information separate per
-thread --- for this it uses a data structure called :ctype:`PyThreadState`.
-There's one global variable, however: the pointer to the current
-:ctype:`PyThreadState` structure.  Before the addition of :dfn:`thread-local
-storage` (:dfn:`TLS`) the current thread state had to be manipulated
-explicitly.
+The Python interpreter keeps some thread-specific bookkeeping information
+inside a data structure called :ctype:`PyThreadState`.  There's also one
+global variable pointing to the current :ctype:`PyThreadState`: it can
+be retrieved using :cfunc:`PyThreadState_Get`.
 
-This is easy enough in most cases.  Most code manipulating the global
-interpreter lock has the following simple structure::
+Releasing the GIL from extension code
+-------------------------------------
+
+Most extension code manipulating the :term:`GIL` has the following simple
+structure::
 
    Save the thread state in a local variable.
    Release the global interpreter lock.
-   ...Do some blocking I/O operation...
+   ... Do some blocking I/O operation ...
    Reacquire the global interpreter lock.
    Restore the thread state from the local variable.
 
 This is so common that a pair of macros exists to simplify it::
 
    Py_BEGIN_ALLOW_THREADS
-   ...Do some blocking I/O operation...
+   ... Do some blocking I/O operation ...
    Py_END_ALLOW_THREADS
 
 .. index::
@@ -467,9 +393,8 @@ This is so common that a pair of macros exists to simplify it::
 
 The :cmacro:`Py_BEGIN_ALLOW_THREADS` macro opens a new block and declares a
 hidden local variable; the :cmacro:`Py_END_ALLOW_THREADS` macro closes the
-block.  Another advantage of using these two macros is that when Python is
-compiled without thread support, they are defined empty, thus saving the thread
-state and GIL manipulations.
+block.  These two macros are still available when Python is compiled without
+thread support (they simply have an empty expansion).
 
 When thread support is enabled, the block above expands to the following code::
 
@@ -479,65 +404,60 @@ When thread support is enabled, the block above expands to the following code::
    ...Do some blocking I/O operation...
    PyEval_RestoreThread(_save);
 
-Using even lower level primitives, we can get roughly the same effect as
-follows::
-
-   PyThreadState *_save;
-
-   _save = PyThreadState_Swap(NULL);
-   PyEval_ReleaseLock();
-   ...Do some blocking I/O operation...
-   PyEval_AcquireLock();
-   PyThreadState_Swap(_save);
-
 .. index::
    single: PyEval_RestoreThread()
-   single: errno
    single: PyEval_SaveThread()
-   single: PyEval_ReleaseLock()
-   single: PyEval_AcquireLock()
 
-There are some subtle differences; in particular, :cfunc:`PyEval_RestoreThread`
-saves and restores the value of the  global variable :cdata:`errno`, since the
-lock manipulation does not guarantee that :cdata:`errno` is left alone.  Also,
-when thread support is disabled, :cfunc:`PyEval_SaveThread` and
-:cfunc:`PyEval_RestoreThread` don't manipulate the GIL; in this case,
-:cfunc:`PyEval_ReleaseLock` and :cfunc:`PyEval_AcquireLock` are not available.
-This is done so that dynamically loaded extensions compiled with thread support
-enabled can be loaded by an interpreter that was compiled with disabled thread
-support.
+Here is how these functions work: the global interpreter lock is used to protect the pointer to the
+current thread state.  When releasing the lock and saving the thread state,
+the current thread state pointer must be retrieved before the lock is released
+(since another thread could immediately acquire the lock and store its own thread
+state in the global variable). Conversely, when acquiring the lock and restoring
+the thread state, the lock must be acquired before storing the thread state
+pointer.
 
-The global interpreter lock is used to protect the pointer to the current thread
-state.  When releasing the lock and saving the thread state, the current thread
-state pointer must be retrieved before the lock is released (since another
-thread could immediately acquire the lock and store its own thread state in the
-global variable). Conversely, when acquiring the lock and restoring the thread
-state, the lock must be acquired before storing the thread state pointer.
+.. note::
+   Calling system I/O functions is the most common use case for releasing
+   the GIL, but it can also be useful before calling long-running computations
+   which don't need access to Python objects, such as compression or
+   cryptographic functions operating over memory buffers.  For example, the
+   standard :mod:`zlib` and :mod:`hashlib` modules release the GIL when
+   compressing or hashing data.
 
-It is important to note that when threads are created from C, they don't have
-the global interpreter lock, nor is there a thread state data structure for
-them.  Such threads must bootstrap themselves into existence, by first
-creating a thread state data structure, then acquiring the lock, and finally
-storing their thread state pointer, before they can start using the Python/C
-API.  When they are done, they should reset the thread state pointer, release
-the lock, and finally free their thread state data structure.
+Non-Python created threads
+--------------------------
 
-Threads can take advantage of the :cfunc:`PyGILState_\*` functions to do all of
-the above automatically.  The typical idiom for calling into Python from a C
-thread is now::
+When threads are created using the dedicated Python APIs (such as the
+:mod:`threading` module), a thread state is automatically associated to them
+and the code showed above is therefore correct.  However, when threads are
+created from C (for example by a third-party library with its own thread
+management), they don't hold the GIL, nor is there a thread state structure
+for them.
+
+If you need to call Python code from these threads (often this will be part
+of a callback API provided by the aforementioned third-party library),
+you must first register these threads with the interpreter by
+creating a thread state data structure, then acquiring the GIL, and finally
+storing their thread state pointer, before you can start using the Python/C
+API.  When you are done, you should reset the thread state pointer, release
+the GIL, and finally free the thread state data structure.
+
+The :cfunc:`PyGILState_Ensure` and :cfunc:`PyGILState_Release` functions do
+all of the above automatically.  The typical idiom for calling into Python
+from a C thread is::
 
    PyGILState_STATE gstate;
    gstate = PyGILState_Ensure();
 
-   /* Perform Python actions here.  */
+   /* Perform Python actions here. */
    result = CallSomeFunction();
-   /* evaluate result */
+   /* evaluate result or handle exception */
 
    /* Release the thread. No Python API allowed beyond this point. */
    PyGILState_Release(gstate);
 
 Note that the :cfunc:`PyGILState_\*` functions assume there is only one global
-interpreter (created automatically by :cfunc:`Py_Initialize`).  Python still
+interpreter (created automatically by :cfunc:`Py_Initialize`).  Python
 supports the creation of additional interpreters (using
 :cfunc:`Py_NewInterpreter`), but mixing multiple interpreters and the
 :cfunc:`PyGILState_\*` API is unsupported.
@@ -558,6 +478,13 @@ into Python) may result in a deadlock by one of Python's internal locks
 being held by a thread that is defunct after the fork.
 :cfunc:`PyOS_AfterFork` tries to reset the necessary locks, but is not
 always able to.
+
+
+High-level API
+--------------
+
+These are the most commonly used types and functions when writing C extension
+code, or when embedding the Python interpreter:
 
 .. ctype:: PyInterpreterState
 
@@ -600,21 +527,22 @@ always able to.
 
    .. index:: module: _thread
 
-   When only the main thread exists, no GIL operations are needed. This is a
-   common situation (most Python programs do not use threads), and the lock
-   operations slow the interpreter down a bit. Therefore, the lock is not
-   created initially.  This situation is equivalent to having acquired the lock:
-   when there is only a single thread, all object accesses are safe.  Therefore,
-   when this function initializes the global interpreter lock, it also acquires
-   it.  Before the Python :mod:`_thread` module creates a new thread, knowing
-   that either it has the lock or the lock hasn't been created yet, it calls
-   :cfunc:`PyEval_InitThreads`.  When this call returns, it is guaranteed that
-   the lock has been created and that the calling thread has acquired it.
+   .. note::
+      When only the main thread exists, no GIL operations are needed. This is a
+      common situation (most Python programs do not use threads), and the lock
+      operations slow the interpreter down a bit. Therefore, the lock is not
+      created initially.  This situation is equivalent to having acquired the lock:
+      when there is only a single thread, all object accesses are safe.  Therefore,
+      when this function initializes the global interpreter lock, it also acquires
+      it.  Before the Python :mod:`_thread` module creates a new thread, knowing
+      that either it has the lock or the lock hasn't been created yet, it calls
+      :cfunc:`PyEval_InitThreads`.  When this call returns, it is guaranteed that
+      the lock has been created and that the calling thread has acquired it.
 
-   It is **not** safe to call this function when it is unknown which thread (if
-   any) currently has the global interpreter lock.
+      It is **not** safe to call this function when it is unknown which thread (if
+      any) currently has the global interpreter lock.
 
-   This function is not available when thread support is disabled at compile time.
+      This function is not available when thread support is disabled at compile time.
 
 
 .. cfunction:: int PyEval_ThreadsInitialized()
@@ -623,37 +551,6 @@ always able to.
    function can be called without holding the GIL, and therefore can be used to
    avoid calls to the locking API when running single-threaded.  This function is
    not available when thread support is disabled at compile time.
-
-
-.. cfunction:: void PyEval_AcquireLock()
-
-   Acquire the global interpreter lock.  The lock must have been created earlier.
-   If this thread already has the lock, a deadlock ensues.  This function is not
-   available when thread support is disabled at compile time.
-
-
-.. cfunction:: void PyEval_ReleaseLock()
-
-   Release the global interpreter lock.  The lock must have been created earlier.
-   This function is not available when thread support is disabled at compile time.
-
-
-.. cfunction:: void PyEval_AcquireThread(PyThreadState *tstate)
-
-   Acquire the global interpreter lock and set the current thread state to
-   *tstate*, which should not be *NULL*.  The lock must have been created earlier.
-   If this thread already has the lock, deadlock ensues.  This function is not
-   available when thread support is disabled at compile time.
-
-
-.. cfunction:: void PyEval_ReleaseThread(PyThreadState *tstate)
-
-   Reset the current thread state to *NULL* and release the global interpreter
-   lock.  The lock must have been created earlier and must be held by the current
-   thread.  The *tstate* argument, which must not be *NULL*, is only used to check
-   that it represents the current thread state --- if it isn't, a fatal error is
-   reported. This function is not available when thread support is disabled at
-   compile time.
 
 
 .. cfunction:: PyThreadState* PyEval_SaveThread()
@@ -674,11 +571,62 @@ always able to.
    when thread support is disabled at compile time.)
 
 
+.. cfunction:: PyThreadState* PyThreadState_Get()
+
+   Return the current thread state.  The global interpreter lock must be held.
+   When the current thread state is *NULL*, this issues a fatal error (so that
+   the caller needn't check for *NULL*).
+
+
+.. cfunction:: PyThreadState* PyThreadState_Swap(PyThreadState *tstate)
+
+   Swap the current thread state with the thread state given by the argument
+   *tstate*, which may be *NULL*.  The global interpreter lock must be held
+   and is not released.
+
+
 .. cfunction:: void PyEval_ReInitThreads()
 
    This function is called from :cfunc:`PyOS_AfterFork` to ensure that newly
    created child processes don't hold locks referring to threads which
    are not running in the child process.
+
+
+The following functions use thread-local storage, and are not compatible
+with sub-interpreters:
+
+.. cfunction:: PyGILState_STATE PyGILState_Ensure()
+
+   Ensure that the current thread is ready to call the Python C API regardless
+   of the current state of Python, or of the global interpreter lock. This may
+   be called as many times as desired by a thread as long as each call is
+   matched with a call to :cfunc:`PyGILState_Release`. In general, other
+   thread-related APIs may be used between :cfunc:`PyGILState_Ensure` and
+   :cfunc:`PyGILState_Release` calls as long as the thread state is restored to
+   its previous state before the Release().  For example, normal usage of the
+   :cmacro:`Py_BEGIN_ALLOW_THREADS` and :cmacro:`Py_END_ALLOW_THREADS` macros is
+   acceptable.
+
+   The return value is an opaque "handle" to the thread state when
+   :cfunc:`PyGILState_Ensure` was called, and must be passed to
+   :cfunc:`PyGILState_Release` to ensure Python is left in the same state. Even
+   though recursive calls are allowed, these handles *cannot* be shared - each
+   unique call to :cfunc:`PyGILState_Ensure` must save the handle for its call
+   to :cfunc:`PyGILState_Release`.
+
+   When the function returns, the current thread will hold the GIL and be able
+   to call arbitrary Python code.  Failure is a fatal error.
+
+
+.. cfunction:: void PyGILState_Release(PyGILState_STATE)
+
+   Release any resources previously acquired.  After this call, Python's state will
+   be the same as it was prior to the corresponding :cfunc:`PyGILState_Ensure` call
+   (but generally this state will be unknown to the caller, hence the use of the
+   GILState API).
+
+   Every call to :cfunc:`PyGILState_Ensure` must be matched by a call to
+   :cfunc:`PyGILState_Release` on the same thread.
 
 
 The following macros are normally used without a trailing semicolon; look for
@@ -713,6 +661,10 @@ example usage in the Python source distribution.
    This macro expands to ``_save = PyEval_SaveThread();``: it is equivalent to
    :cmacro:`Py_BEGIN_ALLOW_THREADS` without the opening brace and variable
    declaration.  It is a no-op when thread support is disabled at compile time.
+
+
+Low-level API
+-------------
 
 All of the following functions are only available when thread support is enabled
 at compile time, and must be called only when the global interpreter lock has
@@ -759,19 +711,6 @@ been created.
    :cfunc:`PyThreadState_Clear`.
 
 
-.. cfunction:: PyThreadState* PyThreadState_Get()
-
-   Return the current thread state.  The global interpreter lock must be held.
-   When the current thread state is *NULL*, this issues a fatal error (so that
-   the caller needn't check for *NULL*).
-
-
-.. cfunction:: PyThreadState* PyThreadState_Swap(PyThreadState *tstate)
-
-   Swap the current thread state with the thread state given by the argument
-   *tstate*, which may be *NULL*.  The global interpreter lock must be held.
-
-
 .. cfunction:: PyObject* PyThreadState_GetDict()
 
    Return a dictionary in which extensions can store thread-specific state
@@ -792,39 +731,148 @@ been created.
    exception (if any) for the thread is cleared. This raises no exceptions.
 
 
-.. cfunction:: PyGILState_STATE PyGILState_Ensure()
+.. cfunction:: void PyEval_AcquireThread(PyThreadState *tstate)
 
-   Ensure that the current thread is ready to call the Python C API regardless
-   of the current state of Python, or of the global interpreter lock. This may
-   be called as many times as desired by a thread as long as each call is
-   matched with a call to :cfunc:`PyGILState_Release`. In general, other
-   thread-related APIs may be used between :cfunc:`PyGILState_Ensure` and
-   :cfunc:`PyGILState_Release` calls as long as the thread state is restored to
-   its previous state before the Release().  For example, normal usage of the
-   :cmacro:`Py_BEGIN_ALLOW_THREADS` and :cmacro:`Py_END_ALLOW_THREADS` macros is
-   acceptable.
+   Acquire the global interpreter lock and set the current thread state to
+   *tstate*, which should not be *NULL*.  The lock must have been created earlier.
+   If this thread already has the lock, deadlock ensues.
 
-   The return value is an opaque "handle" to the thread state when
-   :cfunc:`PyGILState_Ensure` was called, and must be passed to
-   :cfunc:`PyGILState_Release` to ensure Python is left in the same state. Even
-   though recursive calls are allowed, these handles *cannot* be shared - each
-   unique call to :cfunc:`PyGILState_Ensure` must save the handle for its call
-   to :cfunc:`PyGILState_Release`.
-
-   When the function returns, the current thread will hold the GIL. Failure is a
-   fatal error.
+   :cfunc:`PyEval_RestoreThread` is a higher-level function which is always
+   available (even when thread support isn't enabled or when threads have
+   not been initialized).
 
 
-.. cfunction:: void PyGILState_Release(PyGILState_STATE)
+.. cfunction:: void PyEval_ReleaseThread(PyThreadState *tstate)
 
-   Release any resources previously acquired.  After this call, Python's state will
-   be the same as it was prior to the corresponding :cfunc:`PyGILState_Ensure` call
-   (but generally this state will be unknown to the caller, hence the use of the
-   GILState API.)
+   Reset the current thread state to *NULL* and release the global interpreter
+   lock.  The lock must have been created earlier and must be held by the current
+   thread.  The *tstate* argument, which must not be *NULL*, is only used to check
+   that it represents the current thread state --- if it isn't, a fatal error is
+   reported.
 
-   Every call to :cfunc:`PyGILState_Ensure` must be matched by a call to
-   :cfunc:`PyGILState_Release` on the same thread.
+   :cfunc:`PyEval_SaveThread` is a higher-level function which is always
+   available (even when thread support isn't enabled or when threads have
+   not been initialized).
 
+
+.. cfunction:: void PyEval_AcquireLock()
+
+   Acquire the global interpreter lock.  The lock must have been created earlier.
+   If this thread already has the lock, a deadlock ensues.
+
+   .. warning::
+      This function does not change the current thread state.  Please use
+      :cfunc:`PyEval_RestoreThread` or :cfunc:`PyEval_AcquireThread`
+      instead.
+
+
+.. cfunction:: void PyEval_ReleaseLock()
+
+   Release the global interpreter lock.  The lock must have been created earlier.
+
+   .. warning::
+      This function does not change the current thread state.  Please use
+      :cfunc:`PyEval_SaveThread` or :cfunc:`PyEval_ReleaseThread`
+      instead.
+
+
+Sub-interpreter support
+=======================
+
+While in most uses, you will only embed a single Python interpreter, there
+are cases where you need to create several independent interpreters in the
+same process and perhaps even in the same thread.  Sub-interpreters allow
+you to do that.  You can switch between sub-interpreters using the
+:cfunc:`PyThreadState_Swap` function.  You can create and destroy them
+using the following functions:
+
+
+.. cfunction:: PyThreadState* Py_NewInterpreter()
+
+   .. index::
+      module: builtins
+      module: __main__
+      module: sys
+      single: stdout (in module sys)
+      single: stderr (in module sys)
+      single: stdin (in module sys)
+
+   Create a new sub-interpreter.  This is an (almost) totally separate environment
+   for the execution of Python code.  In particular, the new interpreter has
+   separate, independent versions of all imported modules, including the
+   fundamental modules :mod:`builtins`, :mod:`__main__` and :mod:`sys`.  The
+   table of loaded modules (``sys.modules``) and the module search path
+   (``sys.path``) are also separate.  The new environment has no ``sys.argv``
+   variable.  It has new standard I/O stream file objects ``sys.stdin``,
+   ``sys.stdout`` and ``sys.stderr`` (however these refer to the same underlying
+   file descriptors).
+
+   The return value points to the first thread state created in the new
+   sub-interpreter.  This thread state is made in the current thread state.
+   Note that no actual thread is created; see the discussion of thread states
+   below.  If creation of the new interpreter is unsuccessful, *NULL* is
+   returned; no exception is set since the exception state is stored in the
+   current thread state and there may not be a current thread state.  (Like all
+   other Python/C API functions, the global interpreter lock must be held before
+   calling this function and is still held when it returns; however, unlike most
+   other Python/C API functions, there needn't be a current thread state on
+   entry.)
+
+   .. index::
+      single: Py_Finalize()
+      single: Py_Initialize()
+
+   Extension modules are shared between (sub-)interpreters as follows: the first
+   time a particular extension is imported, it is initialized normally, and a
+   (shallow) copy of its module's dictionary is squirreled away.  When the same
+   extension is imported by another (sub-)interpreter, a new module is initialized
+   and filled with the contents of this copy; the extension's ``init`` function is
+   not called.  Note that this is different from what happens when an extension is
+   imported after the interpreter has been completely re-initialized by calling
+   :cfunc:`Py_Finalize` and :cfunc:`Py_Initialize`; in that case, the extension's
+   ``initmodule`` function *is* called again.
+
+   .. index:: single: close() (in module os)
+
+
+.. cfunction:: void Py_EndInterpreter(PyThreadState *tstate)
+
+   .. index:: single: Py_Finalize()
+
+   Destroy the (sub-)interpreter represented by the given thread state. The given
+   thread state must be the current thread state.  See the discussion of thread
+   states below.  When the call returns, the current thread state is *NULL*.  All
+   thread states associated with this interpreter are destroyed.  (The global
+   interpreter lock must be held before calling this function and is still held
+   when it returns.)  :cfunc:`Py_Finalize` will destroy all sub-interpreters that
+   haven't been explicitly destroyed at that point.
+
+
+Bugs and caveats
+----------------
+
+Because sub-interpreters (and the main interpreter) are part of the same
+process, the insulation between them isn't perfect --- for example, using
+low-level file operations like  :func:`os.close` they can
+(accidentally or maliciously) affect each other's open files.  Because of the
+way extensions are shared between (sub-)interpreters, some extensions may not
+work properly; this is especially likely when the extension makes use of
+(static) global variables, or when the extension manipulates its module's
+dictionary after its initialization.  It is possible to insert objects created
+in one sub-interpreter into a namespace of another sub-interpreter; this should
+be done with great care to avoid sharing user-defined functions, methods,
+instances or classes between sub-interpreters, since import operations executed
+by such objects may affect the wrong (sub-)interpreter's dictionary of loaded
+modules.
+
+Also note that combining this functionality with :cfunc:`PyGILState_\*` APIs
+is delicate, become these APIs assume a bijection between Python thread states
+and OS-level threads, an assumption broken by the presence of sub-interpreters.
+It is highly recommended that you don't switch sub-interpreters between a pair
+of matching :cfunc:`PyGILState_Ensure` and :cfunc:`PyGILState_Release` calls.
+Furthermore, extensions (such as :mod:`ctypes`) using these APIs to allow calling
+of Python code from non-Python created threads will probably be broken when using
+sub-interpreters.
 
 
 Asynchronous Notifications
