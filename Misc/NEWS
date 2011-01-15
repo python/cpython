@@ -226,6 +226,10 @@ Build
 Tools/Demos
 -----------
 
+- Issue #10843: Install the Tools directory on OS X in the applications
+  Extras (/Applications/Python 3.n/Extras/) where the Demo directory
+  had previous been installed.
+
 - Issue #7962: The Demo directory is gone.  Most of the old and unmaintained
   demos have been removed, others integrated in documentation or a new
   Tools/demo subdirectory.
