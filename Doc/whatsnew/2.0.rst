@@ -189,7 +189,7 @@ support Unicode:
   ignored and ``'replace'`` uses U+FFFD, the official replacement character, in
   case of any problems.
 
-* The :keyword:`exec` statement, and various built-ins such as ``eval()``,
+* The ``exec`` statement, and various built-ins such as ``eval()``,
   ``getattr()``, and ``setattr()`` will also accept Unicode strings as well as
   regular strings.  (It's possible that the process of fixing this missed some
   built-ins; if you find a built-in function that accepts strings but doesn't
@@ -515,11 +515,11 @@ functions::
        # kw is a dictionary of keyword args
        ...
 
-The :keyword:`print` statement can now have its output directed to a file-like
-object by following the :keyword:`print` with  ``>> file``, similar to the
+The ``print`` statement can now have its output directed to a file-like
+object by following the ``print`` with  ``>> file``, similar to the
 redirection operator in Unix shells. Previously you'd either have to use the
 :meth:`write` method of the file-like object, which lacks the convenience and
-simplicity of :keyword:`print`, or you could assign a new value to
+simplicity of ``print``, or you could assign a new value to
 ``sys.stdout`` and then restore the old value.  For sending output to standard
 error, it's much easier to write this::
 
@@ -581,7 +581,7 @@ Consult the README in the Python source distribution for more instructions.
 An attempt has been made to alleviate one of Python's warts, the often-confusing
 :exc:`NameError` exception when code refers to a local variable before the
 variable has been assigned a value.  For example, the following code raises an
-exception on the :keyword:`print` statement in both 1.5.2 and 2.0; in 1.5.2 a
+exception on the ``print`` statement in both 1.5.2 and 2.0; in 1.5.2 a
 :exc:`NameError` exception is raised, while 2.0 raises a new
 :exc:`UnboundLocalError` exception. :exc:`UnboundLocalError` is a subclass of
 :exc:`NameError`, so any existing code that expects :exc:`NameError` to be

@@ -892,13 +892,13 @@ though, since such code would have been pretty confusing to read in the first
 place.
 
 One side effect of the change is that the ``from module import *`` and
-:keyword:`exec` statements have been made illegal inside a function scope under
+``exec`` statements have been made illegal inside a function scope under
 certain conditions.  The Python reference manual has said all along that ``from
 module import *`` is only legal at the top level of a module, but the CPython
 interpreter has never enforced this before.  As part of the implementation of
 nested scopes, the compiler which turns Python source into bytecodes has to
 generate different code to access variables in a containing scope.  ``from
-module import *`` and :keyword:`exec` make it impossible for the compiler to
+module import *`` and ``exec`` make it impossible for the compiler to
 figure this out, because they add names to the local namespace that are
 unknowable at compile time. Therefore, if a function contains function
 definitions or :keyword:`lambda` expressions with free variables, the compiler
@@ -913,11 +913,11 @@ To make the preceding explanation a bit clearer, here's an example::
        def g():
            return x
 
-Line 4 containing the :keyword:`exec` statement is a syntax error, since
-:keyword:`exec` would define a new local variable named ``x`` whose value should
+Line 4 containing the ``exec`` statement is a syntax error, since
+``exec`` would define a new local variable named ``x`` whose value should
 be accessed by :func:`g`.
 
-This shouldn't be much of a limitation, since :keyword:`exec` is rarely used in
+This shouldn't be much of a limitation, since ``exec`` is rarely used in
 most Python code (and when it is used, it's often a sign of a poor design
 anyway).
 

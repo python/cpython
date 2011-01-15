@@ -141,7 +141,7 @@ and off individually.  They are described here in more detail.
 
 .. 2to3fixer:: exec
 
-   Converts the :keyword:`exec` statement to the :func:`exec` function.
+   Converts the ``exec`` statement to the :func:`exec` function.
 
 .. 2to3fixer:: execfile
 
@@ -293,7 +293,7 @@ and off individually.  They are described here in more detail.
 
 .. 2to3fixer:: print
 
-   Converts the :keyword:`print` statement to the :func:`print` function.
+   Converts the ``print`` statement to the :func:`print` function.
 
 .. 2to3fixer:: raise
 
