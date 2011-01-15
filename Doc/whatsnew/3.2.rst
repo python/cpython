@@ -1035,7 +1035,7 @@ popen
 -----
 
 The :func:`os.popen` and :func:`subprocess.Popen` functions now support
-the :keyword:`with`-statement` for auto-closing of the file descriptors.
+the :keyword:`with` statement for auto-closing of the file descriptors.
 
 gzip and zipfile
 ----------------

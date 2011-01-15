@@ -343,3 +343,25 @@ library/logging,,:message,severity:logger name:message
 whatsnew/3.2,,:directory,...   ${buildout:directory}/downloads/dist
 whatsnew/3.2,,:location,... zope9-location = ${zope9:location}
 whatsnew/3.2,,:prefix,... zope-conf = ${custom:prefix}/etc/zope.conf
+howto/logging,,:root,WARNING:root:Watch out!
+howto/logging,,:Watch,WARNING:root:Watch out!
+howto/logging,,:root,DEBUG:root:This message should go to the log file
+howto/logging,,:This,DEBUG:root:This message should go to the log file
+howto/logging,,:root,INFO:root:So should this
+howto/logging,,:So,INFO:root:So should this
+howto/logging,,:root,"WARNING:root:And this, too"
+howto/logging,,:And,"WARNING:root:And this, too"
+howto/logging,,:root,INFO:root:Started
+howto/logging,,:Started,INFO:root:Started
+howto/logging,,:root,INFO:root:Doing something
+howto/logging,,:Doing,INFO:root:Doing something
+howto/logging,,:root,INFO:root:Finished
+howto/logging,,:Finished,INFO:root:Finished
+howto/logging,,:root,WARNING:root:Look before you leap!
+howto/logging,,:Look,WARNING:root:Look before you leap!
+howto/logging,,:This,DEBUG:This message should appear on the console
+howto/logging,,:So,INFO:So should this
+howto/logging,,:And,"WARNING:And this, too"
+howto/logging,,:logger,severity:logger name:message
+howto/logging,,:message,severity:logger name:message
+library/logging.handlers,,:port,host:port
