@@ -43,6 +43,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #10916: mmap should not segfault when a file is mapped using 0 as
+  length and a non-zero offset, and an attempt to read past the end of file
+  is made (IndexError is raised instead).  Patch by Ross Lagerwall.
+
 - Issue #10907: Warn OS X 10.6 IDLE users to use ActiveState Tcl/Tk 8.5,
   rather than the currently problematic Apple-supplied one, when running
   with the 64-/32-bit installer variant.
