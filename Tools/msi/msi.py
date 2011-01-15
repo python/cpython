@@ -1025,6 +1025,7 @@ def add_files(db):
             lib.glob("*.pem")
             lib.glob("*.pck")
             lib.glob("cfgparser.*")
+            lib.add_file("zip_cp437_header.zip")
             lib.add_file("zipdir.zip")
         if dir=='capath':
             lib.glob("*.0")
@@ -1035,8 +1036,6 @@ def add_files(db):
         if dir=='xmltestdata':
             lib.glob("*.xml")
             lib.add_file("test.xml.out")
-        if dir=='subprocessdata':
-            lib.glob("*.py")
         if dir=='output':
             lib.glob("test_*")
         if dir=='sndhdrdata':
