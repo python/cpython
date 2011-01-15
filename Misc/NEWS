@@ -206,6 +206,11 @@ C-API
 Build
 -----
 
+- Issue #10843: Update third-party library versions used in OS X
+  32-bit installer builds: bzip2 1.0.6, readline 6.1.2, SQLite 3.7.4
+  (with FTS3/FTS4 and RTREE enabled), and ncursesw 5.5 (wide-char
+  support enabled).
+
 - Issue #10820: Fix OS X framework installs to support version-specific
   scripts (#10679).
 

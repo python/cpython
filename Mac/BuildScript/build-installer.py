@@ -144,9 +144,9 @@ def library_recipes():
     if DEPTARGET < '10.5':
         result.extend([
           dict(
-              name="Bzip2 1.0.5",
-              url="http://www.bzip.org/1.0.5/bzip2-1.0.5.tar.gz",
-              checksum='3c15a0c8d1d3ee1c46a1634d00617b1a',
+              name="Bzip2 1.0.6",
+              url="http://bzip.org/1.0.6/bzip2-1.0.6.tar.gz",
+              checksum='00b516f4704d4a7cb50a1d97e6e8e15b',
               configure=None,
               install='make install CC=%s PREFIX=%s/usr/local/ CFLAGS="-arch %s -isysroot %s"'%(
                   CC,
@@ -169,29 +169,33 @@ def library_recipes():
           ),
           dict(
               # Note that GNU readline is GPL'd software
-              name="GNU Readline 5.1.4",
-              url="http://ftp.gnu.org/pub/gnu/readline/readline-5.1.tar.gz" ,
-              checksum='7ee5a692db88b30ca48927a13fd60e46',
+              name="GNU Readline 6.1.2",
+              url="http://ftp.gnu.org/pub/gnu/readline/readline-6.1.tar.gz" ,
+              checksum='fc2f7e714fe792db1ce6ddc4c9fb4ef3',
               patchlevel='0',
               patches=[
                   # The readline maintainers don't do actual micro releases, but
                   # just ship a set of patches.
-                  'http://ftp.gnu.org/pub/gnu/readline/readline-5.1-patches/readline51-001',
-                  'http://ftp.gnu.org/pub/gnu/readline/readline-5.1-patches/readline51-002',
-                  'http://ftp.gnu.org/pub/gnu/readline/readline-5.1-patches/readline51-003',
-                  'http://ftp.gnu.org/pub/gnu/readline/readline-5.1-patches/readline51-004',
+                  'http://ftp.gnu.org/pub/gnu/readline/readline-6.1-patches/readline61-001',
+                  'http://ftp.gnu.org/pub/gnu/readline/readline-6.1-patches/readline61-002',
               ]
           ),
           dict(
-              name="SQLite 3.6.11",
-              url="http://www.sqlite.org/sqlite-3.6.11.tar.gz",
-              checksum='7ebb099696ab76cc6ff65dd496d17858',
+              name="SQLite 3.7.4",
+              url="http://www.sqlite.org/sqlite-autoconf-3070400.tar.gz",
+              checksum='8f0c690bfb33c3cbbc2471c3d9ba0158',
+              configure_env=('CFLAGS="-Os'
+                                  ' -DSQLITE_ENABLE_FTS3'
+                                  ' -DSQLITE_ENABLE_FTS3_PARENTHESIS'
+                                  ' -DSQLITE_ENABLE_RTREE'
+                                  ' -DSQLITE_TCL=0'
+                                  '"'),
               configure_pre=[
                   '--enable-threadsafe',
-                  '--enable-tempstore',
                   '--enable-shared=no',
                   '--enable-static=yes',
-                  '--disable-tcl',
+                  '--disable-readline',
+                  '--disable-dependency-tracking',
               ]
           ),
           dict(
@@ -199,6 +203,7 @@ def library_recipes():
               url="http://ftp.gnu.org/pub/gnu/ncurses/ncurses-5.5.tar.gz",
               checksum='e73c1ac10b4bfc46db43b2ddfd6244ef',
               configure_pre=[
+                  "--enable-widec",
                   "--without-cxx",
                   "--without-ada",
                   "--without-progs",
@@ -225,18 +230,19 @@ def library_recipes():
           ),
         ])
 
-    result.extend([
-      dict(
-          name="Sleepycat DB 4.7.25",
-          url="http://download.oracle.com/berkeley-db/db-4.7.25.tar.gz",
-          checksum='ec2b87e833779681a0c3a814aa71359e',
-          buildDir="build_unix",
-          configure="../dist/configure",
-          configure_pre=[
-              '--includedir=/usr/local/include/db4',
-          ]
-      ),
-    ])
+    if not PYTHON_3:
+        result.extend([
+          dict(
+              name="Sleepycat DB 4.7.25",
+              url="http://download.oracle.com/berkeley-db/db-4.7.25.tar.gz",
+              checksum='ec2b87e833779681a0c3a814aa71359e',
+              buildDir="build_unix",
+              configure="../dist/configure",
+              configure_pre=[
+                  '--includedir=/usr/local/include/db4',
+              ]
+          ),
+        ])
 
     return result
 
@@ -697,6 +703,9 @@ def buildRecipe(recipe, basedir, archList):
         configure_args.insert(0, configure)
         configure_args = [ shellQuote(a) for a in configure_args ]
 
+        if 'configure_env' in recipe:
+            configure_args.insert(0, recipe['configure_env'])
+
         print "Running configure for %s"%(name,)
         runCommand(' '.join(configure_args) + ' 2>&1')
 
@@ -752,9 +761,9 @@ def buildPython():
         shutil.rmtree(buildDir)
     if os.path.exists(rootDir):
         shutil.rmtree(rootDir)
-    os.mkdir(buildDir)
-    os.mkdir(rootDir)
-    os.mkdir(os.path.join(rootDir, 'empty-dir'))
+    os.makedirs(buildDir)
+    os.makedirs(rootDir)
+    os.makedirs(os.path.join(rootDir, 'empty-dir'))
     curdir = os.getcwd()
     os.chdir(buildDir)
 
