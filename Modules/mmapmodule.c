@@ -1300,6 +1300,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
             else
                 m_obj->size = low;
 #endif
+            m_obj->size -= offset;
         } else {
             m_obj->size = map_size;
         }
