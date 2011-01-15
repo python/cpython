@@ -100,7 +100,7 @@ Initialization, Finalization, and Threads
    (``sys.path``) are also separate.  The new environment has no ``sys.argv``
    variable.  It has new standard I/O stream file objects ``sys.stdin``,
    ``sys.stdout`` and ``sys.stderr`` (however these refer to the same underlying
-   :c:type:`FILE` structures in the C library).
+   file descriptors).
 
    The return value points to the first thread state created in the new
    sub-interpreter.  This thread state is made in the current thread state.
