@@ -8,6 +8,10 @@ Initialization, Finalization, and Threads
 *****************************************
 
 
+Initializing and finalizing the interpreter
+===========================================
+
+
 .. c:function:: void Py_Initialize()
 
    .. index::
@@ -82,85 +86,8 @@ Initialization, Finalization, and Threads
    :c:func:`Py_Finalize` more than once.
 
 
-.. c:function:: PyThreadState* Py_NewInterpreter()
-
-   .. index::
-      module: builtins
-      module: __main__
-      module: sys
-      single: stdout (in module sys)
-      single: stderr (in module sys)
-      single: stdin (in module sys)
-
-   Create a new sub-interpreter.  This is an (almost) totally separate environment
-   for the execution of Python code.  In particular, the new interpreter has
-   separate, independent versions of all imported modules, including the
-   fundamental modules :mod:`builtins`, :mod:`__main__` and :mod:`sys`.  The
-   table of loaded modules (``sys.modules``) and the module search path
-   (``sys.path``) are also separate.  The new environment has no ``sys.argv``
-   variable.  It has new standard I/O stream file objects ``sys.stdin``,
-   ``sys.stdout`` and ``sys.stderr`` (however these refer to the same underlying
-   file descriptors).
-
-   The return value points to the first thread state created in the new
-   sub-interpreter.  This thread state is made in the current thread state.
-   Note that no actual thread is created; see the discussion of thread states
-   below.  If creation of the new interpreter is unsuccessful, *NULL* is
-   returned; no exception is set since the exception state is stored in the
-   current thread state and there may not be a current thread state.  (Like all
-   other Python/C API functions, the global interpreter lock must be held before
-   calling this function and is still held when it returns; however, unlike most
-   other Python/C API functions, there needn't be a current thread state on
-   entry.)
-
-   .. index::
-      single: Py_Finalize()
-      single: Py_Initialize()
-
-   Extension modules are shared between (sub-)interpreters as follows: the first
-   time a particular extension is imported, it is initialized normally, and a
-   (shallow) copy of its module's dictionary is squirreled away.  When the same
-   extension is imported by another (sub-)interpreter, a new module is initialized
-   and filled with the contents of this copy; the extension's ``init`` function is
-   not called.  Note that this is different from what happens when an extension is
-   imported after the interpreter has been completely re-initialized by calling
-   :c:func:`Py_Finalize` and :c:func:`Py_Initialize`; in that case, the extension's
-   ``initmodule`` function *is* called again.
-
-   .. index:: single: close() (in module os)
-
-   **Bugs and caveats:** Because sub-interpreters (and the main interpreter) are
-   part of the same process, the insulation between them isn't perfect --- for
-   example, using low-level file operations like  :func:`os.close` they can
-   (accidentally or maliciously) affect each other's open files.  Because of the
-   way extensions are shared between (sub-)interpreters, some extensions may not
-   work properly; this is especially likely when the extension makes use of
-   (static) global variables, or when the extension manipulates its module's
-   dictionary after its initialization.  It is possible to insert objects created
-   in one sub-interpreter into a namespace of another sub-interpreter; this should
-   be done with great care to avoid sharing user-defined functions, methods,
-   instances or classes between sub-interpreters, since import operations executed
-   by such objects may affect the wrong (sub-)interpreter's dictionary of loaded
-   modules.  (XXX This is a hard-to-fix bug that will be addressed in a future
-   release.)
-
-   Also note that the use of this functionality is incompatible with extension
-   modules such as PyObjC and ctypes that use the :c:func:`PyGILState_\*` APIs (and
-   this is inherent in the way the :c:func:`PyGILState_\*` functions work).  Simple
-   things may work, but confusing behavior will always be near.
-
-
-.. c:function:: void Py_EndInterpreter(PyThreadState *tstate)
-
-   .. index:: single: Py_Finalize()
-
-   Destroy the (sub-)interpreter represented by the given thread state. The given
-   thread state must be the current thread state.  See the discussion of thread
-   states below.  When the call returns, the current thread state is *NULL*.  All
-   thread states associated with this interpreter are destroyed.  (The global
-   interpreter lock must be held before calling this function and is still held
-   when it returns.)  :c:func:`Py_Finalize` will destroy all sub-interpreters that
-   haven't been explicitly destroyed at that point.
+Process-wide parameters
+=======================
 
 
 .. c:function:: void Py_SetProgramName(wchar_t *name)
@@ -581,6 +508,7 @@ being held by a thread that is defunct after the fork.
 :c:func:`PyOS_AfterFork` tries to reset the necessary locks, but is not
 always able to.
 
+
 .. c:type:: PyInterpreterState
 
    This data structure represents the state shared by a number of cooperating
@@ -847,6 +775,99 @@ been created.
    Every call to :c:func:`PyGILState_Ensure` must be matched by a call to
    :c:func:`PyGILState_Release` on the same thread.
 
+
+Sub-interpreter support
+=======================
+
+While in most uses, you will only embed a single Python interpreter, there
+are cases where you need to create several independent interpreters in the
+same process and perhaps even in the same thread.  Sub-interpreters allow
+you to do that.
+
+
+.. c:function:: PyThreadState* Py_NewInterpreter()
+
+   .. index::
+      module: builtins
+      module: __main__
+      module: sys
+      single: stdout (in module sys)
+      single: stderr (in module sys)
+      single: stdin (in module sys)
+
+   Create a new sub-interpreter.  This is an (almost) totally separate environment
+   for the execution of Python code.  In particular, the new interpreter has
+   separate, independent versions of all imported modules, including the
+   fundamental modules :mod:`builtins`, :mod:`__main__` and :mod:`sys`.  The
+   table of loaded modules (``sys.modules``) and the module search path
+   (``sys.path``) are also separate.  The new environment has no ``sys.argv``
+   variable.  It has new standard I/O stream file objects ``sys.stdin``,
+   ``sys.stdout`` and ``sys.stderr`` (however these refer to the same underlying
+   file descriptors).
+
+   The return value points to the first thread state created in the new
+   sub-interpreter.  This thread state is made in the current thread state.
+   Note that no actual thread is created; see the discussion of thread states
+   below.  If creation of the new interpreter is unsuccessful, *NULL* is
+   returned; no exception is set since the exception state is stored in the
+   current thread state and there may not be a current thread state.  (Like all
+   other Python/C API functions, the global interpreter lock must be held before
+   calling this function and is still held when it returns; however, unlike most
+   other Python/C API functions, there needn't be a current thread state on
+   entry.)
+
+   .. index::
+      single: Py_Finalize()
+      single: Py_Initialize()
+
+   Extension modules are shared between (sub-)interpreters as follows: the first
+   time a particular extension is imported, it is initialized normally, and a
+   (shallow) copy of its module's dictionary is squirreled away.  When the same
+   extension is imported by another (sub-)interpreter, a new module is initialized
+   and filled with the contents of this copy; the extension's ``init`` function is
+   not called.  Note that this is different from what happens when an extension is
+   imported after the interpreter has been completely re-initialized by calling
+   :c:func:`Py_Finalize` and :c:func:`Py_Initialize`; in that case, the extension's
+   ``initmodule`` function *is* called again.
+
+   .. index:: single: close() (in module os)
+
+
+.. c:function:: void Py_EndInterpreter(PyThreadState *tstate)
+
+   .. index:: single: Py_Finalize()
+
+   Destroy the (sub-)interpreter represented by the given thread state. The given
+   thread state must be the current thread state.  See the discussion of thread
+   states below.  When the call returns, the current thread state is *NULL*.  All
+   thread states associated with this interpreter are destroyed.  (The global
+   interpreter lock must be held before calling this function and is still held
+   when it returns.)  :c:func:`Py_Finalize` will destroy all sub-interpreters that
+   haven't been explicitly destroyed at that point.
+
+
+Bugs and caveats
+----------------
+
+Because sub-interpreters (and the main interpreter) are part of the same
+process, the insulation between them isn't perfect --- for example, using
+low-level file operations like  :func:`os.close` they can
+(accidentally or maliciously) affect each other's open files.  Because of the
+way extensions are shared between (sub-)interpreters, some extensions may not
+work properly; this is especially likely when the extension makes use of
+(static) global variables, or when the extension manipulates its module's
+dictionary after its initialization.  It is possible to insert objects created
+in one sub-interpreter into a namespace of another sub-interpreter; this should
+be done with great care to avoid sharing user-defined functions, methods,
+instances or classes between sub-interpreters, since import operations executed
+by such objects may affect the wrong (sub-)interpreter's dictionary of loaded
+modules.  (XXX This is a hard-to-fix bug that will be addressed in a future
+release.)
+
+Also note that the use of this functionality is incompatible with extension
+modules such as PyObjC and ctypes that use the :c:func:`PyGILState_\*` APIs (and
+this is inherent in the way the :c:func:`PyGILState_\*` functions work).  Simple
+things may work, but confusing behavior will always be near.
 
 
 Asynchronous Notifications
