@@ -331,13 +331,17 @@ class MmapTests(unittest.TestCase):
         # map length with an offset doesn't cause a segfault.
         if not hasattr(os, "stat"):
             self.skipTest("needs os.stat")
-        with open(TESTFN, "wb+") as f:
-            f.write(49152 * b'm') # Arbitrary character
+        # NOTE: allocation granularity is currently 65536 under Win64,
+        # and therefore the minimum offset alignment.
+        with open(TESTFN, "wb") as f:
+            f.write((65536 * 2) * b'm') # Arbitrary character
 
         with open(TESTFN, "rb") as f:
-            mf = mmap.mmap(f.fileno(), 0, offset=40960, access=mmap.ACCESS_READ)
-            self.assertRaises(IndexError, mf.__getitem__, 45000)
-            mf.close()
+            mf = mmap.mmap(f.fileno(), 0, offset=65536, access=mmap.ACCESS_READ)
+            try:
+                self.assertRaises(IndexError, mf.__getitem__, 80000)
+            finally:
+                mf.close()
 
     def test_move(self):
         # make move works everywhere (64-bit format problem earlier)
