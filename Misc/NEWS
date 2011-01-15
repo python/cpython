@@ -200,6 +200,9 @@ Library
 C-API
 -----
 
+- Issue #10913: Deprecate misleading functions PyEval_AcquireLock() and
+  PyEval_ReleaseLock().  The thread-state aware APIs should be used instead.
+
 - Issue #10333: Remove ancient GC API, which has been deprecated since
   Python 2.2.
 

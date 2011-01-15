@@ -759,6 +759,10 @@ been created.
    *tstate*, which should not be *NULL*.  The lock must have been created earlier.
    If this thread already has the lock, deadlock ensues.
 
+   :c:func:`PyEval_RestoreThread` is a higher-level function which is always
+   available (even when thread support isn't enabled or when threads have
+   not been initialized).
+
 
 .. c:function:: void PyEval_ReleaseThread(PyThreadState *tstate)
 
@@ -768,16 +772,30 @@ been created.
    that it represents the current thread state --- if it isn't, a fatal error is
    reported.
 
+   :c:func:`PyEval_SaveThread` is a higher-level function which is always
+   available (even when thread support isn't enabled or when threads have
+   not been initialized).
+
 
 .. c:function:: void PyEval_AcquireLock()
 
    Acquire the global interpreter lock.  The lock must have been created earlier.
    If this thread already has the lock, a deadlock ensues.
 
+   .. deprecated:: 3.2
+      This function does not change the current thread state.  Please use
+      :c:func:`PyEval_RestoreThread` or :c:func:`PyEval_AcquireThread`
+      instead.
+
 
 .. c:function:: void PyEval_ReleaseLock()
 
    Release the global interpreter lock.  The lock must have been created earlier.
+
+   .. deprecated:: 3.2
+      This function does not change the current thread state.  Please use
+      :c:func:`PyEval_SaveThread` or :c:func:`PyEval_ReleaseThread`
+      instead.
 
 
 Sub-interpreter support
