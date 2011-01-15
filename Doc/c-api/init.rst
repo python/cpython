@@ -782,7 +782,9 @@ Sub-interpreter support
 While in most uses, you will only embed a single Python interpreter, there
 are cases where you need to create several independent interpreters in the
 same process and perhaps even in the same thread.  Sub-interpreters allow
-you to do that.
+you to do that.  You can switch between sub-interpreters using the
+:c:func:`PyThreadState_Swap` function.  You can create and destroy them
+using the following functions:
 
 
 .. c:function:: PyThreadState* Py_NewInterpreter()
