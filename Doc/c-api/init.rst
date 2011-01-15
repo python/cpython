@@ -861,13 +861,16 @@ in one sub-interpreter into a namespace of another sub-interpreter; this should
 be done with great care to avoid sharing user-defined functions, methods,
 instances or classes between sub-interpreters, since import operations executed
 by such objects may affect the wrong (sub-)interpreter's dictionary of loaded
-modules.  (XXX This is a hard-to-fix bug that will be addressed in a future
-release.)
+modules.
 
-Also note that the use of this functionality is incompatible with extension
-modules such as PyObjC and ctypes that use the :c:func:`PyGILState_\*` APIs (and
-this is inherent in the way the :c:func:`PyGILState_\*` functions work).  Simple
-things may work, but confusing behavior will always be near.
+Also note that combining this functionality with :c:func:`PyGILState_\*` APIs
+is delicate, become these APIs assume a bijection between Python thread states
+and OS-level threads, an assumption broken by the presence of sub-interpreters.
+It is highly recommended that you don't switch sub-interpreters between a pair
+of matching :c:func:`PyGILState_Ensure` and :c:func:`PyGILState_Release` calls.
+Furthermore, extensions (such as :mod:`ctypes`) using these APIs to allow calling
+of Python code from non-Python created threads will probably be broken when using
+sub-interpreters.
 
 
 Asynchronous Notifications
