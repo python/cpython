@@ -17,8 +17,6 @@ Initializing and finalizing the interpreter
    .. index::
       single: Py_SetProgramName()
       single: PyEval_InitThreads()
-      single: PyEval_ReleaseLock()
-      single: PyEval_AcquireLock()
       single: modules (in module sys)
       single: path (in module sys)
       module: builtins
@@ -32,8 +30,7 @@ Initializing and finalizing the interpreter
    Initialize the Python interpreter.  In an application embedding  Python, this
    should be called before using any other Python/C API functions; with the
    exception of :c:func:`Py_SetProgramName`, :c:func:`Py_SetPath`,
-   :c:func:`PyEval_InitThreads`, :c:func:`PyEval_ReleaseLock`, and
-   :c:func:`PyEval_AcquireLock`. This initializes
+   and :c:func:`PyEval_InitThreads`. This initializes
    the table of loaded modules (``sys.modules``), and creates the fundamental
    modules :mod:`builtins`, :mod:`__main__` and :mod:`sys`.  It also initializes
    the module search path (``sys.path``). It does not set ``sys.argv``; use
@@ -531,16 +528,15 @@ code, or when embedding the Python interpreter:
 .. c:function:: void PyEval_InitThreads()
 
    .. index::
-      single: PyEval_ReleaseLock()
+      single: PyEval_AcquireThread()
       single: PyEval_ReleaseThread()
       single: PyEval_SaveThread()
       single: PyEval_RestoreThread()
 
    Initialize and acquire the global interpreter lock.  It should be called in the
    main thread before creating a second thread or engaging in any other thread
-   operations such as :c:func:`PyEval_ReleaseLock` or
-   ``PyEval_ReleaseThread(tstate)``. It is not needed before calling
-   :c:func:`PyEval_SaveThread` or :c:func:`PyEval_RestoreThread`.
+   operations such as ``PyEval_ReleaseThread(tstate)``. It is not needed before
+   calling :c:func:`PyEval_SaveThread` or :c:func:`PyEval_RestoreThread`.
 
    .. index:: single: Py_Initialize()
 
@@ -783,7 +779,7 @@ been created.
    If this thread already has the lock, a deadlock ensues.
 
    .. deprecated:: 3.2
-      This function does not change the current thread state.  Please use
+      This function does not update the current thread state.  Please use
       :c:func:`PyEval_RestoreThread` or :c:func:`PyEval_AcquireThread`
       instead.
 
@@ -793,7 +789,7 @@ been created.
    Release the global interpreter lock.  The lock must have been created earlier.
 
    .. deprecated:: 3.2
-      This function does not change the current thread state.  Please use
+      This function does not update the current thread state.  Please use
       :c:func:`PyEval_SaveThread` or :c:func:`PyEval_ReleaseThread`
       instead.
 
