@@ -43,6 +43,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #10907: Warn OS X 10.6 IDLE users to use ActiveState Tcl/Tk 8.5,
+  rather than the currently problematic Apple-supplied one, when running
+  with the 64-/32-bit installer variant.
+
 - Issue #4953: cgi.FieldStorage and cgi.parse() parse the request as bytes, not
   as unicode, and accept binary files. Add encoding and errors attributes to
   cgi.FieldStorage. Patch written by Pierre Quentel (with many inputs by Glenn
