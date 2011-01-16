@@ -1031,6 +1031,13 @@ also grew auto-closing context managers::
 (Contributed by Tarek Ziadé and Giampaolo Rodolà in :issue:`4972`, and
 by Georg Brandl in :issue:`8046` and :issue:`1286`.)
 
+The :class:`~ftplib.FTP_TLS` class now accepts a *context* parameter, which is a
+:class:`ssl.SSLContext` object allowing bundling SSL configuration options,
+certificates and private keys into a single (potentially long-lived)
+structure.
+
+(Contributed by Giampaolo Rodolà; :issue:`8806`.)
+
 popen
 -----
 
@@ -1883,3 +1890,11 @@ require changes to your code:
 
 * The new, longer :func:`str` value on floats may break doctests which rely on
   the old output format.
+
+* In :class:`subprocess.Popen`, the default value for *close_fds* is now
+  ``True`` under Unix; under Windows, it is ``True`` if the three standard
+  streams are set to ``None``, ``False`` otherwise.  Previously, *close_fds*
+  was always ``False`` by default, which produced difficult to solve bugs
+  or race conditions when open file descriptors would leak into the child
+  process.
+
