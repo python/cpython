@@ -326,6 +326,11 @@ aspects that are visible to the programmer:
 * The :mod:`py_compile` and :mod:`compileall` modules have been updated to
   reflect the new naming convention and target directory.
 
+* XXX The :mod:`importlib.abc` module has been updated with new ABCs that
+  abstract out bytecode file details; some other ABCs in the module are now
+  deprecated in favor for the new ABCs (instructions on how to stay
+  backwards-compatible with Python 3.1 are included with the documentation).
+
 .. seealso::
 
    :pep:`3147` - PYC Repository Directories
