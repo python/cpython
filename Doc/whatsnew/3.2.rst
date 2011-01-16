@@ -101,14 +101,14 @@ or more positional arguments is present, and making a required option::
                 description = 'Manage servers',         # main description for help
                 epilog = 'Tested on Solaris and Linux') # displayed after help
     parser.add_argument('action',                       # argument name
-                choices = ['deploy', 'start', 'stop'],  # one of four allowed values
+                choices = ['deploy', 'start', 'stop'],  # one of 3 allowed values
                 help = 'action on each target')         # help msg
     parser.add_argument('targets',
                 metavar = 'HOSTNAME',                   # var name used in help msg
                 nargs = '+',                            # require 1 or more targets
                 help = 'url for target machines')       # help msg explanation
     parser.add_argument('-u', '--user',                 # -u or --user option
-                required = True,                        # make this a required argument
+                required = True,                        # make it a required argument
                 help = 'login as user')
 
 Example of calling the parser on a command string::
@@ -375,7 +375,7 @@ request/response headers and metadata versus *byte strings* which are used for
 the bodies of requests and responses.
 
 The *native strings* are always of type :class:`str` but are restricted to code
-points between *u0000* through *u00FF* which are translatable to bytes using
+points between *U+0000* through *U+00FF* which are translatable to bytes using
 *Latin-1* encoding.  These strings are used for the keys and values in the
 environ dictionary and for response headers and statuses in the
 :func:`start_response` function.  They must follow :rfc:`2616` with respect to
