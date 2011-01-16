@@ -23,18 +23,18 @@ Core and Builtins
 -----------------
 
 - Issue #10889: range indexing and slicing now works correctly on ranges with
-  a length that exceeds sys.maxsize
+  a length that exceeds sys.maxsize.
 
 - Issue #10892: Don't segfault when trying to delete __abstractmethods__ from a
   class.
 
 - Issue #8020: Avoid a crash where the small objects allocator would read
-  non-Python managed memory while it is being modified by another thread.
-  Patch by Matt Bandy.
+  non-Python managed memory while it is being modified by another thread.  Patch
+  by Matt Bandy.
 
-- Issue #10841: On Windows, set the binary mode on stdin, stdout, stderr and
-  all io.FileIO objects (to not translate newlines, \r\n <=> \n). The Python
-  parser translates newlines (\r\n => \n).
+- Issue #10841: On Windows, set the binary mode on stdin, stdout, stderr and all
+  io.FileIO objects (to not translate newlines, \r\n <=> \n).  The Python parser
+  translates newlines (\r\n => \n).
 
 - Remove buffer API from stable ABI for now, see #10181.
 
@@ -60,38 +60,37 @@ Core and Builtins
 Library
 -------
 
-- Issue #10916: mmap should not segfault when a file is mapped using 0 as
-  length and a non-zero offset, and an attempt to read past the end of file
-  is made (IndexError is raised instead).  Patch by Ross Lagerwall.
+- Issue #10916: mmap should not segfault when a file is mapped using 0 as length
+  and a non-zero offset, and an attempt to read past the end of file is made
+  (IndexError is raised instead).  Patch by Ross Lagerwall.
 
-- Issue #10907: Warn OS X 10.6 IDLE users to use ActiveState Tcl/Tk 8.5,
-  rather than the currently problematic Apple-supplied one, when running
-  with the 64-/32-bit installer variant.
+- Issue #10907: Warn OS X 10.6 IDLE users to use ActiveState Tcl/Tk 8.5, rather
+  than the currently problematic Apple-supplied one, when running with the
+  64-/32-bit installer variant.
 
 - Issue #4953: cgi.FieldStorage and cgi.parse() parse the request as bytes, not
   as unicode, and accept binary files. Add encoding and errors attributes to
   cgi.FieldStorage. Patch written by Pierre Quentel (with many inputs by Glenn
   Linderman).
 
-- Add encoding and errors arguments to urllib.parse_qs() and urllib.parse_qsl()
+- Add encoding and errors arguments to urllib.parse_qs() and urllib.parse_qsl().
 
-- Issue #10899: No function type annotations in the standard library.
-  Removed function type annotations from _pyio.py.
+- Issue #10899: No function type annotations in the standard library.  Removed
+  function type annotations from _pyio.py.
 
 - Issue #10875: Update Regular Expression HOWTO; patch by 'SilentGhost'.
 
 - Issue #10872: The repr() of TextIOWrapper objects now includes the mode
   if available.
 
-- Issue #10869: Fixed bug where ast.increment_lineno modified the root
-  node twice.
+- Issue #10869: Fixed bug where ast.increment_lineno modified the root node
+  twice.
 
 - Issue #5871: email.header.Header.encode now raises an error if any
-  continuation line in the formatted value has no leading white space
-  and looks like a header.  Since Generator uses Header to format all
-  headers, this check is made for all headers in any serialized message
-  at serialization time.  This provides protection against header
-  injection attacks.
+  continuation line in the formatted value has no leading white space and looks
+  like a header.  Since Generator uses Header to format all headers, this check
+  is made for all headers in any serialized message at serialization time.  This
+  provides protection against header injection attacks.
 
 - Issue #10859: Make ``contextlib.GeneratorContextManager`` officially
   private by renaming it to ``_GeneratorContextManager``.
@@ -100,13 +99,13 @@ Library
   comparisons that could lead to infinite recursion.
 
 - Issue #10686: the email package now :rfc:`2047`\ -encodes headers with
-  non-ASCII bytes (parsed by a Bytes Parser) when doing conversion to
-  7bit-clean presentation, instead of replacing them with ?s.
+  non-ASCII bytes (parsed by a Bytes Parser) when doing conversion to 7bit-clean
+  presentation, instead of replacing them with ?s.
 
 - email.header.Header was incorrectly encoding folding white space when
-  rfc2047-encoding header values with embedded newlines, leaving them
-  without folding whitespace.  It now uses the continuation_ws, as it
-  does for continuation lines that it creates itself.
+  rfc2047-encoding header values with embedded newlines, leaving them without
+  folding whitespace.  It now uses the continuation_ws, as it does for
+  continuation lines that it creates itself.
 
 - Issue #1777412, #10827: Changed the rules for 2-digit years. The
   time.asctime(), time.ctime() and time.strftime() functions will now format
@@ -140,12 +139,12 @@ Library
   the input buffer length doesn't fit into an unsigned int (length bigger than
   2^32-1 bytes).
 
-- Issue #6643: Reinitialize locks held within the threading module after fork
-  to avoid a potential rare deadlock or crash on some platforms.
+- Issue #6643: Reinitialize locks held within the threading module after fork to
+  avoid a potential rare deadlock or crash on some platforms.
 
-- Issue #10806, issue #9905: Fix subprocess pipes when some of the standard
-  file descriptors (0, 1, 2) are closed in the parent process.  Initial
-  patch by Ross Lagerwall.
+- Issue #10806, issue #9905: Fix subprocess pipes when some of the standard file
+  descriptors (0, 1, 2) are closed in the parent process.  Initial patch by Ross
+  Lagerwall.
 
 - `unittest.TestCase` can be instantiated without a method name; for simpler
   exploration from the interactive interpreter.
@@ -156,32 +155,32 @@ Library
 - Issue #10807: Remove base64, bz2, hex, quopri, rot13, uu and zlib codecs from
   the codec aliases. They are still accessible via codecs.lookup().
 
-- Issue #10801: In zipfile, support different encodings for the header and
-  the filenames.
+- Issue #10801: In zipfile, support different encodings for the header and the
+  filenames.
 
 - Issue #6285: IDLE no longer crashes on missing help file; patch by Scott
   David Daniels.
 
-- Fix collections.OrderedDict.setdefault() so that it works in
-  subclasses that define __missing__().
+- Fix collections.OrderedDict.setdefault() so that it works in subclasses that
+  define __missing__().
 
-- Issue #10786: unittest.TextTestRunner default stream no longer bound at
-  import time. `sys.stderr` now looked up at instantiation time.  Fix
-  contributed by Mark Roddy.
+- Issue #10786: unittest.TextTestRunner default stream no longer bound at import
+  time. `sys.stderr` now looked up at instantiation time.  Fix contributed by
+  Mark Roddy.
 
-- Issue #10753: Characters ';','=' and ',' in the PATH_INFO environment
-  variable won't be quoted when the URI is constructed by the wsgiref.util 's
-  request_uri method. According to RFC 3986, these characters can be a part of
-  params in PATH component of URI and need not be quoted.
+- Issue #10753: Characters ';','=' and ',' in the PATH_INFO environment variable
+  won't be quoted when the URI is constructed by the wsgiref.util 's request_uri
+  method. According to RFC 3986, these characters can be a part of params in
+  PATH component of URI and need not be quoted.
 
 - Issue #10738: Fix webbrowser.Opera.raise_opts.
 
 - Issue #9824: SimpleCookie now encodes , and ; in values to cater to how
   browsers actually parse cookies.
 
-- Issue #9333: os.symlink now available regardless of user privileges.
-  The function now raises OSError on Windows >=6.0 when the user is unable
-  to create symbolic links. XP and 2003 still raise NotImplementedError.
+- Issue #9333: os.symlink now available regardless of user privileges.  The
+  function now raises OSError on Windows >=6.0 when the user is unable to create
+  symbolic links. XP and 2003 still raise NotImplementedError.
 
 - Issue #10783: struct.pack() no longer implicitly encodes unicode to UTF-8.
 
@@ -224,16 +223,15 @@ C-API
 - Issue #10913: Deprecate misleading functions PyEval_AcquireLock() and
   PyEval_ReleaseLock().  The thread-state aware APIs should be used instead.
 
-- Issue #10333: Remove ancient GC API, which has been deprecated since
-  Python 2.2.
+- Issue #10333: Remove ancient GC API, which has been deprecated since Python
+  2.2.
 
 Build
 -----
 
-- Issue #10843: Update third-party library versions used in OS X
-  32-bit installer builds: bzip2 1.0.6, readline 6.1.2, SQLite 3.7.4
-  (with FTS3/FTS4 and RTREE enabled), and ncursesw 5.5 (wide-char
-  support enabled).
+- Issue #10843: Update third-party library versions used in OS X 32-bit
+  installer builds: bzip2 1.0.6, readline 6.1.2, SQLite 3.7.4 (with FTS3/FTS4
+  and RTREE enabled), and ncursesw 5.5 (wide-char support enabled).
 
 - Issue #10820: Fix OS X framework installs to support version-specific
   scripts (#10679).
@@ -255,17 +253,17 @@ Build
 Tools/Demos
 -----------
 
-- Issue #10843: Install the Tools directory on OS X in the applications
-  Extras (/Applications/Python 3.n/Extras/) where the Demo directory
-  had previous been installed.
+- Issue #10843: Install the Tools directory on OS X in the applications Extras
+  (/Applications/Python 3.n/Extras/) where the Demo directory had previous been
+  installed.
 
 - Issue #7962: The Demo directory is gone.  Most of the old and unmaintained
   demos have been removed, others integrated in documentation or a new
   Tools/demo subdirectory.
 
 - Issue #10502: Addition of the unittestgui tool. Originally by Steve Purcell.
-  Updated for test discovery by Mark Roddy and Python 3 compatibility by
-  Brian Curtin.
+  Updated for test discovery by Mark Roddy and Python 3 compatibility by Brian
+  Curtin.
 
 Tests
 -----
@@ -281,9 +279,9 @@ Tests
 - Issue #5485: Add tests for the UseForeignDTD method of expat parser objects.
   Patch by Jean-Paul Calderone and Sandro Tosi.
 
-- Issue #6293: Have regrtest.py echo back sys.flags.  This is done by default
-  in whole runs and enabled selectively using ``--header`` when running an
-  explicit list of tests.  Original patch by Collin Winter.
+- Issue #6293: Have regrtest.py echo back sys.flags.  This is done by default in
+  whole runs and enabled selectively using ``--header`` when running an explicit
+  list of tests.  Original patch by Collin Winter.
 
 
 What's New in Python 3.2 Beta 2?
