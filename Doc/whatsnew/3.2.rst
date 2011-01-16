@@ -1916,3 +1916,8 @@ require changes to your code:
   occurs, rather than a generic :exc:`~ssl.SSLError`.
 
   (Contributed by Antoine Pitrou, :issue:`10272`.)
+
+* The misleading functions :c:func:`PyEval_AcquireLock()` and
+  :c:func:`PyEval_ReleaseLock()` have been officially deprecated.  The
+  thread-state aware APIs (such as :c:func:`PyEval_SaveThread()`
+  and :c:func:`PyEval_RestoreThread()`) should be used instead.
