@@ -1194,6 +1194,14 @@ as recommended in public uses of HTTPS.
 
 (Added by Antoine Pitrou, :issue:`9003`.)
 
+imaplib
+-------
+
+Support for explicit TLS on standard IMAP4 connections has been added through
+the new :mod:`imaplib.IMAP4.starttls` method.
+
+(Contributed by Lorenzo M. Catucci and Antoine Pitrou, :issue:`4471`.)
+
 unittest
 --------
 
@@ -1904,3 +1912,7 @@ require changes to your code:
 
   (Contributed by Antoine Pitrou, :issue:`10711`.)
 
+* SSL sockets in timeout mode now raise :exc:`socket.timeout` when a timeout
+  occurs, rather than a generic :exc:`~ssl.SSLError`.
+
+  (Contributed by Antoine Pitrou, :issue:`10272`.)
