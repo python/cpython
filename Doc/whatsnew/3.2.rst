@@ -1898,3 +1898,9 @@ require changes to your code:
   or race conditions when open file descriptors would leak into the child
   process.
 
+* Support for legacy HTTP 0.9 has been removed from :mod:`urllib.request`
+  and :mod:`http.client`.  Such support is still present on the server side
+  (in :mod:`http.server`).
+
+  (Contributed by Antoine Pitrou, :issue:`10711`.)
+
