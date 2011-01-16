@@ -101,11 +101,11 @@ or more positional arguments is present, and making a required option::
                 description = 'Manage servers',         # main description for help
                 epilog = 'Tested on Solaris and Linux') # displayed after help
     parser.add_argument('action',                       # argument name
-                choices = ['deploy', 'start', 'stop'],  # one of 3 allowed values
+                choices = ['deploy', 'start', 'stop'],  # three allowed values
                 help = 'action on each target')         # help msg
     parser.add_argument('targets',
                 metavar = 'HOSTNAME',                   # var name used in help msg
-                nargs = '+',                            # require 1 or more targets
+                nargs = '+',                            # require one or more targets
                 help = 'url for target machines')       # help msg explanation
     parser.add_argument('-u', '--user',                 # -u or --user option
                 required = True,                        # make it a required argument
