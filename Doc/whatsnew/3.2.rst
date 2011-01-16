@@ -541,8 +541,8 @@ Some smaller changes made to the core Python language are:
   of an effort to make more objects fully implement the
   :class:`collections.Sequence` :term:`abstract base class`.  As a result, the
   language will have a more uniform API.  In addition, :class:`range` objects
-  now support slicing and negative indices.  This makes *range* more
-  interoperable with lists::
+  now support slicing and negative indices, even with values larger than
+  :attr:`sys.maxsize`.  This makes *range* more interoperable with lists::
 
       >>> range(0, 100, 2).count(10)
       1
@@ -553,8 +553,8 @@ Some smaller changes made to the core Python language are:
       >>> range(0, 100, 2)[0:5]
       range(0, 10, 2)
 
-  (Contributed by Daniel Stutzbach in :issue:`9213` and by Alexander Belopolsky
-  in :issue:`2690`.)
+  (Contributed by Daniel Stutzbach in :issue:`9213`, by Alexander Belopolsky
+  in :issue:`2690`, and by Nick Coghlan in :issue:`10889`.)
 
 * The :func:`callable` builtin function from Py2.x was resurrected.  It provides
   a concise, readable alternative to using an :term:`abstract base class` in an
