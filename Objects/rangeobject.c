@@ -342,7 +342,7 @@ compute_slice_element(PyObject *obj)
  *   Result indicates whether or not the slice is empty
  *    (-1 = error, 0 = empty slice, 1 = slice contains elements)
  */
-int
+static int
 compute_slice_indices(rangeobject *r, PySliceObject *slice,
                       PyObject **start, PyObject **stop, PyObject **step)
 {
