@@ -1222,7 +1222,7 @@ names.
   >>> with self.assertWarns(DeprecationWarning):
   ...     legacy_function('XYZ')
 
-  (Contributed by Michael Foord and Ezio Melotti.)
+  (Contributed by Antoine Pitrou, :issue:`9754`.)
 
   Another new method, :meth:`~unittest.TestCase.assertCountEqual` is used to
   compare two iterables to determine if their element counts are equal (whether
