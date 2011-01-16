@@ -1120,11 +1120,15 @@ The :mod:`socket` module has two new improvements.
 ssl
 ---
 
-* The :mod:`ssl` module has a new class, :class:`~ssl.SSLContext` which serves
-  as a container for various persistent SSL data, such as protocol settings,
-  certificates, private keys, and various other options.  The
-  :meth:`~ssl.SSLContext.wrap_socket` method allows to create an SSL socket from
-  such an SSL context.  (Added by Antoine Pitrou; :issue:`8550`.)
+The :mod:`ssl` module gains an array of new functionalities which make it much easier
+to satisfy common requirements for secure (encrypted, authenticated) connections
+over the Internet:
+
+* A new class, :class:`~ssl.SSLContext`, serves as a container for various
+  persistent SSL data, such as protocol settings, certificates, private keys,
+  and various other options.  The :meth:`~ssl.SSLContext.wrap_socket` method
+  allows to create an SSL socket from such an SSL context.  (Added by Antoine
+  Pitrou; :issue:`8550`.)
 
 * A new function, :func:`ssl.match_hostname`, helps implement server identity
   verification for higher-level protocols by implementing the rules of
@@ -1142,7 +1146,7 @@ ssl
   protocol, allowing for several "virtual hosts" using different certificates
   on a single IP/port.  This extension is only supported in client mode,
   and is activated by passing the *server_hostname* argument to
-  :meth:`SSLContext.wrap_socket`.
+  :meth:`ssl.SSLContext.wrap_socket`.
   (Added by Antoine Pitrou, :issue:`5639`.)
 
 * Various options have been added to the :mod:`ssl` module, such as
@@ -1167,7 +1171,11 @@ text semantics as well as more practical APIs.  These improvements break
 compatibility with the nntplib version in Python 3.1, which was partly
 dysfunctional in itself.
 
-(Contributed by Antoine Pitrou in :issue:`9360`)
+Support for secure connections through both implicit (using
+:class:`nntplib.NNTP_SSL`) and explicit (using :meth:`nntplib.NNTP.starttls`)
+TLS has also been added.
+
+(Contributed by Antoine Pitrou in :issue:`9360` and Andrew Vant in :issue:`1926`.)
 
 certificates
 ------------
