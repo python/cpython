@@ -208,10 +208,10 @@ dictionary::
 If that dictionary is stored in a file called :file:`conf.json`, it can be
 loaded and called with code like this::
 
-   >>> import logging.config
-   >>> logging.config.dictConfig(json.load(open('conf.json', 'rb')))
-   >>> logging.info("Transaction completed normally")
-   >>> logging.critical("Abnormal termination")
+   import logging.config
+   logging.config.dictConfig(json.load(open('conf.json', 'rb')))
+   logging.info("Transaction completed normally")
+   logging.critical("Abnormal termination")
 
 .. seealso::
 
@@ -482,24 +482,24 @@ Some smaller changes made to the core Python language are:
 * Previously it was illegal to delete a name from the local namespace if it
   occurs as a free variable in a nested block::
 
-   >>> def outer(x):
-   ...     def inner():
-   ...        return x
-   ...     inner()
-   ...     del x
+       def outer(x):
+           def inner():
+              return x
+           inner()
+           del x
 
   This is now allowed.  Remember that the target of an :keyword:`except` clause
   is cleared, so this code which used to work with Python 2.6, raised a
   :exc:`SyntaxError` with Python 3.1 and now works again::
 
-   >>> def f():
-   ...     def print_error():
-   ...        print(e)
-   ...     try:
-   ...        something
-   ...     except Exception as e:
-   ...        print_error()
-   ...        # implicit "del e" here
+       def f():
+           def print_error():
+              print(e)
+           try:
+              something
+           except Exception as e:
+              print_error()
+              # implicit "del e" here
 
   (See :issue:`4617`.)
 
@@ -598,7 +598,7 @@ Another significant win is the addition of substantially better support for
 *SSL* connections and security certificates.
 
 In addition, more classes now implement a :term:`context manager` to support
-convenient and reliable resource clean-up using the :keyword:`with`-statement.
+convenient and reliable resource clean-up using the :keyword:`with` statement.
 
 email
 -----
@@ -682,16 +682,16 @@ functools
   resource whenever the results are expected to be the same.
 
   For example, adding a caching decorator to a database query function can save
-  database accesses for popular searches::
+  database accesses for popular searches:
 
-     @functools.lru_cache(maxsize=300)
-     def get_phone_number(name):
-         c = conn.cursor()
-         c.execute('SELECT phonenumber FROM phonelist WHERE name=?', (name,))
-         return c.fetchone()[0]
+  >>> @functools.lru_cache(maxsize=300)
+  >>> def get_phone_number(name):
+          c = conn.cursor()
+          c.execute('SELECT phonenumber FROM phonelist WHERE name=?', (name,))
+          return c.fetchone()[0]
 
   >>> for name in user_requests:
-  ...     get_phone_number(name)        # cached lookup
+          get_phone_number(name)        # cached lookup
 
   To help with choosing an effective cache size, the wrapped function is
   instrumented for tracking cache statistics:
@@ -928,7 +928,7 @@ both roles.
 
 The basic idea is that both context managers and function decorators can be used
 for pre-action and post-action wrappers.  Context managers wrap a group of
-statements using the :keyword:`with`-statement, and function decorators wrap a
+statements using the :keyword:`with` statement, and function decorators wrap a
 group of statements enclosed in a function.  So, occasionally there is a need to
 write a pre-action or post-action wrapper that can be used in either role.
 
@@ -936,32 +936,32 @@ For example, it is sometimes useful to wrap functions or groups of statements
 with a logger that can track the time of entry and time of exit.  Rather than
 writing both a function decorator and a context manager for the task, the
 :func:`~contextlib.contextmanager` provides both capabilities in a single
-definition:
+definition::
 
->>> import logging
->>> logging.basicConfig(level=logging.INFO)
->>> @contextmanager
-... def track_entry_and_exit(name):
-...     logging.info('Entering: {}'.format(name))
-...     yield
-...     logging.info('Exiting: {}'.format(name))
+    import logging
+    logging.basicConfig(level=logging.INFO)
+    @contextmanager
+    def track_entry_and_exit(name):
+        logging.info('Entering: {}'.format(name))
+        yield
+        logging.info('Exiting: {}'.format(name))
 
-Formerly, this would have only been usable as a context manager:
+Formerly, this would have only been usable as a context manager::
 
->>> with track_entry_and_exit('widget loader'):
-...     print('Some time consuming activity goes here')
-...     load_widget()
+    with track_entry_and_exit('widget loader'):
+        print('Some time consuming activity goes here')
+        load_widget()
 
-Now, it can be used as a decorator as well:
+Now, it can be used as a decorator as well::
 
->>> @track_entry_and_exit('widget loader')
-... def activity():
-...     print('Some time consuming activity goes here')
-...     load_widget()
+    @track_entry_and_exit('widget loader')
+    def activity():
+        print('Some time consuming activity goes here')
+        load_widget()
 
 Trying to fulfill two roles at once places some limitations on the technique.
 Context managers normally have the flexibility to return an argument usable by
-the :keyword:`with`-statement, but there is no parallel for function decorators.
+the :keyword:`with` statement, but there is no parallel for function decorators.
 
 In the above example, there is not a clean way for the *track_entry_and_exit*
 context manager to return a logging instance for use in the body of enclosed
@@ -976,8 +976,8 @@ Mark Dickinson crafted an elegant and efficient scheme for assuring that
 different numeric datatypes will have the same hash value whenever their actual
 values are equal (:issue:`8188`)::
 
-   >>> assert hash(Fraction(3, 2)) == hash(1.5) == \
-              hash(Decimal("1.5")) == hash(complex(1.5, 0))
+   assert hash(Fraction(3, 2)) == hash(1.5) == \
+          hash(Decimal("1.5")) == hash(complex(1.5, 0))
 
 An early decision to limit the inter-operability of various numeric types has
 been relaxed.  It is still unsupported (and ill-advised) to to have implicit
@@ -1235,10 +1235,10 @@ names.
 * The :mod:`unittest` module has two new methods,
   :meth:`~unittest.TestCase.assertWarns` and
   :meth:`~unittest.TestCase.assertWarnsRegex` to verify that a given warning type
-  is triggered by the code under test:
+  is triggered by the code under test::
 
-  >>> with self.assertWarns(DeprecationWarning):
-  ...     legacy_function('XYZ')
+      with self.assertWarns(DeprecationWarning):
+          legacy_function('XYZ')
 
   (Contributed by Antoine Pitrou, :issue:`9754`.)
 
@@ -1331,10 +1331,10 @@ tempfile
 
 The :mod:`tempfile` module has a new context manager,
 :class:`~tempfile.TemporaryDirectory` which provides easy deterministic
-cleanup of temporary directories:
+cleanup of temporary directories::
 
->>> with tempfile.TemporaryDirectory() as tmpdirname:
-...     print('created temporary dir:', tmpdirname)
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        print('created temporary dir:', tmpdirname)
 
 (Contributed by Neil Schemenauer and Nick Coghlan; :issue:`5178`.)
 
@@ -1456,13 +1456,13 @@ Config parsers gained a new API based on the mapping protocol::
 
   >>> parser = ConfigParser()
   >>> parser.read_string("""
-  ... [DEFAULT]
-  ... monty = python
-  ...
-  ... [phrases]
-  ... the = who
-  ... full = metal jacket
-  ... """)
+      [DEFAULT]
+      monty = python
+
+      [phrases]
+      the = who
+      full = metal jacket
+      """)
   >>> parser['phrases']['full']
   'metal jacket'
   >>> section = parser['phrases']
@@ -1485,24 +1485,24 @@ support for pluggable interpolation, an additional interpolation handler
 
   >>> parser = ConfigParser(interpolation=ExtendedInterpolation())
   >>> parser.read_dict({'buildout': {'directory': '/home/ambv/zope9'},
-  ...                   'custom': {'prefix': '/usr/local'}})
+                        'custom': {'prefix': '/usr/local'}})
   >>> parser.read_string("""
-  ... [buildout]
-  ... parts =
-  ...   zope9
-  ...   instance
-  ... find-links =
-  ...   ${buildout:directory}/downloads/dist
-  ...
-  ... [zope9]
-  ... recipe = plone.recipe.zope9install
-  ... location = /opt/zope
-  ...
-  ... [instance]
-  ... recipe = plone.recipe.zope9instance
-  ... zope9-location = ${zope9:location}
-  ... zope-conf = ${custom:prefix}/etc/zope.conf
-  ... """)
+      [buildout]
+      parts =
+        zope9
+        instance
+      find-links =
+        ${buildout:directory}/downloads/dist
+
+      [zope9]
+      recipe = plone.recipe.zope9install
+      location = /opt/zope
+
+      [instance]
+      recipe = plone.recipe.zope9instance
+      zope9-location = ${zope9:location}
+      zope-conf = ${custom:prefix}/etc/zope.conf
+      """)
   >>> parser['buildout']['find-links']
   '\n/home/ambv/zope9/downloads/dist'
   >>> parser['instance']['zope-conf']
@@ -1876,10 +1876,10 @@ require changes to your code:
   and it does a better job finalizing multiple context managers when one of them
   raises an exception::
 
-    >>> with open('mylog.txt') as infile, open('a.out', 'w') as outfile:
-    ...     for line in infile:
-    ...         if '<critical>' in line:
-    ...             outfile.write(line)
+    with open('mylog.txt') as infile, open('a.out', 'w') as outfile:
+        for line in infile:
+            if '<critical>' in line:
+                outfile.write(line)
 
   (Contributed by Georg Brandl and Mattias Brändström;
   `appspot issue 53094 <http://codereview.appspot.com/53094>`_.)
