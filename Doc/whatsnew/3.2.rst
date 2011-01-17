@@ -208,6 +208,7 @@ dictionary::
 If that dictionary is stored in a file called :file:`conf.json`, it can be
 loaded and called with code like this::
 
+   import json
    import logging.config
    logging.config.dictConfig(json.load(open('conf.json', 'rb')))
    logging.info("Transaction completed normally")
