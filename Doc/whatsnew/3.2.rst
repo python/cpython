@@ -1040,8 +1040,7 @@ by Georg Brandl in :issue:`8046` and :issue:`1286`.)
 
 The :class:`~ftplib.FTP_TLS` class now accepts a *context* parameter, which is a
 :class:`ssl.SSLContext` object allowing bundling SSL configuration options,
-certificates and private keys into a single (potentially long-lived)
-structure.
+certificates and private keys into a single (potentially long-lived) structure.
 
 (Contributed by Giampaolo Rodolà; :issue:`8806`.)
 
@@ -1134,48 +1133,44 @@ The :mod:`socket` module has two new improvements.
 ssl
 ---
 
-The :mod:`ssl` module gains an array of new functionalities which make it much easier
-to satisfy common requirements for secure (encrypted, authenticated) connections
-over the Internet:
+The :mod:`ssl` module added a number of features to satisfy common requirements
+for secure (encrypted, authenticated) internet connections:
 
-* A new class, :class:`~ssl.SSLContext`, serves as a container for various
-  persistent SSL data, such as protocol settings, certificates, private keys,
-  and various other options.  The :meth:`~ssl.SSLContext.wrap_socket` method
-  allows to create an SSL socket from such an SSL context.  (Added by Antoine
-  Pitrou; :issue:`8550`.)
+* A new class, :class:`~ssl.SSLContext`, serves as a container for persistent
+  SSL data, such as protocol settings, certificates, private keys, and various
+  other options. It includes a :meth:`~ssl.SSLContext.wrap_socket` for creating
+  an SSL socket from an SSL context.
 
-* A new function, :func:`ssl.match_hostname`, helps implement server identity
-  verification for higher-level protocols by implementing the rules of
-  HTTPS (from :rfc:`2818`), which are also suitable for other protocols.
-  (Added by Antoine Pitrou, :issue:`1589`).
+* A new function, :func:`ssl.match_hostname`, supports server identity
+  verification for higher-level protocols by implementing the rules of HTTPS
+  (from :rfc:`2818`) which are also suitable for other protocols.
 
 * The :func:`ssl.wrap_socket` constructor function now takes a *ciphers*
-  argument that's a string listing the encryption algorithms to be allowed; the
-  format of the string is described `in the OpenSSL documentation
-  <http://www.openssl.org/docs/apps/ciphers.html#CIPHER_LIST_FORMAT>`__.  (Added
-  by Antoine Pitrou; :issue:`8322`.)
+  argument.  The *ciphers* string lists the allowed encryption algorithms using
+  the format described in the `OpenSSL documentation
+  <http://www.openssl.org/docs/apps/ciphers.html#CIPHER_LIST_FORMAT>`__.
 
-* When linked against a recent enough version of OpenSSL, the :mod:`ssl`
-  module now supports the Server Name Indication extension to the TLS
-  protocol, allowing for several "virtual hosts" using different certificates
-  on a single IP/port.  This extension is only supported in client mode,
-  and is activated by passing the *server_hostname* argument to
-  :meth:`ssl.SSLContext.wrap_socket`.
-  (Added by Antoine Pitrou, :issue:`5639`.)
+* When linked against recent versions of OpenSSL, the :mod:`ssl` module now
+  supports the Server Name Indication extension to the TLS protocol, allowing
+  multiple "virtual hosts" using different certificates on a single IP port.
+  This extension is only supported in client mode, and is activated by passing
+  the *server_hostname* argument to :meth:`ssl.SSLContext.wrap_socket`.
 
 * Various options have been added to the :mod:`ssl` module, such as
-  :data:`~ssl.OP_NO_SSLv2` which allows to force disabling of the insecure and
-  obsolete SSLv2 protocol.  (Added by Antoine Pitrou; :issue:`4870`.)
+  :data:`~ssl.OP_NO_SSLv2` which disables the insecure and obsolete SSLv2
+  protocol.
 
-* Another change makes the extension load all of OpenSSL's ciphers and digest
-  algorithms so that they're all available.  Some SSL certificates couldn't be
-  verified, reporting an "unknown algorithm" error.  (Reported by Beda Kosata,
-  and fixed by Antoine Pitrou; :issue:`8484`.)
+* The extension now loads all the OpenSSL ciphers and digest algorithms.  If
+  some SSL certificates cannot be verified, they are reported as an "unknown
+  algorithm" error.
 
-* The version of OpenSSL being used is now available as the module attributes
-  :data:`ssl.OPENSSL_VERSION` (a string), :data:`ssl.OPENSSL_VERSION_INFO` (a
-  5-tuple), and :data:`ssl.OPENSSL_VERSION_NUMBER` (an integer).  (Added by
-  Antoine Pitrou; :issue:`8321`.)
+* The version of OpenSSL being used is now accessible using the module
+  attributes :data:`ssl.OPENSSL_VERSION` (a string),
+  :data:`ssl.OPENSSL_VERSION_INFO` (a 5-tuple), and
+  :data:`ssl.OPENSSL_VERSION_NUMBER` (an integer).
+
+(Contributed by Antoine Pitrou in :issue:`8850`, :issue:`1589`, :issue:`8322`,
+:issue:`5639`, :issue:`4870`, :issue:`8484`, and :issue:`8321`.)
 
 nntp
 ----
