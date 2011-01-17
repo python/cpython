@@ -1454,34 +1454,41 @@ duplicates are not allowed in a single configuration source.
 
 Config parsers gained a new API based on the mapping protocol::
 
-  >>> parser = ConfigParser()
-  >>> parser.read_string("""
-      [DEFAULT]
-      monty = python
+    >>> parser = ConfigParser()
+    >>> parser.read_string("""
+    [DEFAULT]
+    location = upper left
+    visible = yes
+    editable = no
+    color = blue
 
-      [phrases]
-      the = who
-      full = metal jacket
-      """)
-  >>> parser['phrases']['full']
-  'metal jacket'
-  >>> section = parser['phrases']
-  >>> section['the']
-  'who'
-  >>> section['british'] = '%(the)s %(full)s %(monty)s!'
-  >>> parser['phrases']['british']
-  'who metal jacket python!'
-  >>> 'british' in section
-  True
+    [main]
+    title = Main Menu
+    color = green
 
-The new API is implemented on top of the classical API so custom parser
+    [options]
+    title = Options
+    """)
+    >>> parser['main']['color']
+    'green'
+    >>> parser['main']['editable']
+    'no'
+    >>> section = parser['options']
+    >>> section['title']
+    'Options'
+    >>> section['title'] = 'Options (editable: %(editable)s)'
+    >>> section['title']
+    'Options (editable: no)'
+
+The new API is implemented on top of the classical API, so custom parser
 subclasses should be able to use it without modifications.
 
 The INI file structure accepted by config parsers can now be customized. Users
 can specify alternative option/value delimiters and comment prefixes, change the
-name of the *DEFAULT* section or switch the interpolation syntax.  Along with
-support for pluggable interpolation, an additional interpolation handler
-:class:`~configparser.ExtendedInterpolation` was introduced::
+name of the *DEFAULT* section or switch the interpolation syntax.
+
+The is support for pluggable interpolation including an additional interpolation
+handler :class:`~configparser.ExtendedInterpolation`::
 
   >>> parser = ConfigParser(interpolation=ExtendedInterpolation())
   >>> parser.read_dict({'buildout': {'directory': '/home/ambv/zope9'},
