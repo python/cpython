@@ -3012,7 +3012,6 @@ same_slots_added(PyTypeObject *a, PyTypeObject *b)
     PyObject *slots_a, *slots_b;
 
     assert(base == b->tp_base);
-    assert(!equiv_structs(a, base) && !equiv_structs(b, base));
     size = base->tp_basicsize;
     if (a->tp_dictoffset == size && b->tp_dictoffset == size)
         size += sizeof(PyObject *);
