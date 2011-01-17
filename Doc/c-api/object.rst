@@ -109,7 +109,7 @@ Object Protocol
    *opid*.
 
 .. note::
-   If *o1* and *o2* are the same object, :c:func:`PyObject_RichCompareBool`
+   If *o1* and *o2* are the same object, :cfunc:`PyObject_RichCompareBool`
    will always return ``1`` for :const:`Py_EQ` and ``0`` for :const:`Py_NE`.
 
 .. cfunction:: PyObject* PyObject_Repr(PyObject *o)
