@@ -327,11 +327,10 @@ aspects that are visible to the programmer:
   reflect the new naming convention and target directory.
 
 * The :mod:`importlib.abc` module has been updated with new :term:`abstract base
-  classes <abstract base class>` for the loading bytecode files.  The now
-  obsolete ABCS, :class:`~importlib.abc.PyLoader` and
+  classes <abstract base class>` for the loading bytecode files.  The obsolete
+  ABCs, :class:`~importlib.abc.PyLoader` and
   :class:`~importlib.abc.PyPycLoader`, have been deprecated (instructions on how
-  to stay backwards-compatible with Python 3.1 are included with the
-  documentation).
+  to stay Python 3.1 compatible are included with the documentation).
 
 .. seealso::
 
