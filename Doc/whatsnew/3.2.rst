@@ -844,8 +844,8 @@ is defined for only two threads.
 
 Implemented as a two-phase cyclic barrier, :class:`~threading.Barrier` objects
 are suitable for use in loops.  The separate *filling* and *draining* phases
-assure that all threads get released (drained) before any one them can loop back
-and re-enter the barrier.  The barrier fully resets after each cycle.
+assure that all threads get released (drained) before any one of them can loop
+back and re-enter the barrier.  The barrier fully resets after each cycle.
 
 If any of the predecessor tasks can hang or be delayed, a barrier can be created
 with an optional *timeout* parameter.  Then if the timeout period elapses before
