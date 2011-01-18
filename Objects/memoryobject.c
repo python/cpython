@@ -34,9 +34,6 @@ static int
 memory_getbuf(PyMemoryViewObject *self, Py_buffer *view, int flags)
 {
     int res = 0;
-    /* XXX for whatever reason fixing the flags seems necessary */
-    if (self->view.readonly)
-        flags &= ~PyBUF_WRITABLE;
     if (self->view.obj != NULL)
         res = PyObject_GetBuffer(self->view.obj, view, flags);
     if (view)
@@ -411,7 +408,7 @@ memory_tobytes(PyMemoryViewObject *self, PyObject *noargs)
     Py_buffer view;
     PyObject *res;
 
-    if (PyObject_GetBuffer((PyObject *)self, &view, PyBUF_FULL) < 0)
+    if (PyObject_GetBuffer((PyObject *)self, &view, PyBUF_SIMPLE) < 0)
         return NULL;
 
     res = PyBytes_FromStringAndSize(NULL, view.len);
