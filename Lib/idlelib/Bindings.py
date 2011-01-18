@@ -98,14 +98,6 @@ if macosxSupport.runningAsOSXApp():
     # menu
     del menudefs[-1][1][0:2]
 
-    menudefs.insert(0,
-            ('application', [
-                ('About IDLE', '<<about-idle>>'),
-                None,
-                ('_Preferences....', '<<open-config-dialog>>'),
-            ]))
-
-
 default_keydefs = idleConf.GetCurrentKeySet()
 
 del sys
