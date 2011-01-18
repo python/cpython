@@ -88,7 +88,7 @@ overcome the limitations of :mod:`optparse` which did not provide support for
 positional arguments (not just options), subcommands, required options and other
 common patterns of specifying and validating options.
 
-This module has already has wide-spread success in the community as a
+This module has already has widespread success in the community as a
 third-party module.  Being more fully featured than its predecessor, the
 :mod:`argparse` module is now the preferred module for command-line processing.
 The older module is still being kept available because of the substantial amount
@@ -226,9 +226,9 @@ loaded and called with code like this::
 PEP 3148:  The ``concurrent.futures`` module
 ============================================
 
-Code for creating and managing concurrency is being collected in a new toplevel
+Code for creating and managing concurrency is being collected in a new top-level
 namespace, *concurrent*.  Its first member is a *futures* package which provides
-a uniform high level interface for managing threads and processes.
+a uniform high-level interface for managing threads and processes.
 
 The design for :mod:`concurrent.futures` was inspired by
 *java.util.concurrent.package*.  In that model, a running call and its result
@@ -254,7 +254,7 @@ Both classes share a common interface with three methods:
 returning a :class:`~concurrent.futures.Future` object;
 :meth:`~concurrent.futures.Executor.map` for scheduling many asynchronous calls
 at a time, and :meth:`~concurrent.futures.Executor.shutdown` for freeing
-resources.  The class is a :term:`context manager` and can be used within a
+resources.  The class is a :term:`context manager` and can be used in a
 :keyword:`with` statement to assure that resources are automatically released
 when currently pending futures are done executing.
 
@@ -519,7 +519,7 @@ Some smaller changes made to the core Python language are:
   (Suggested by Arfrever Frehtes Taifersar Arahesis and implemented
   by Benjamin Peterson in :issue:`8413`.)
 
-* Warnings are now easier to contro b using the :envvar:`PYTHONWARNINGS`
+* Warnings are now easier to control using the :envvar:`PYTHONWARNINGS`
   environment variable as an alternative to using ``-W`` at the command line.
 
   (Suggested by Barry Warsaw and implemented by Philip Jenvey in :issue:`7301`.)
@@ -992,7 +992,7 @@ values are equal (:issue:`8188`)::
           hash(Decimal("1.5")) == hash(complex(1.5, 0))
 
 An early decision to limit the inter-operability of various numeric types has
-been relaxed.  It is still unsupported (and ill-advised) to to have implicit
+been relaxed.  It is still unsupported (and ill-advised) to have implicit
 mixing in arithmetic expressions such as ``Decimal('1.1') + float('1.1')``
 because the latter loses information in the process of constructing the binary
 float.  However, since existing floating point value can be converted losslessly
@@ -1097,7 +1097,7 @@ and can be wrapped in a :class:`io.BufferedReader` object for more speedups.  It
 also solves an issue where interleaved calls to *read* and *readline* gave the
 wrong results.
 
-(Patch submitted by by Nir Aides in :issue:`7610`.)
+(Patch submitted by Nir Aides in :issue:`7610`.)
 
 shutil
 ------
@@ -1299,7 +1299,7 @@ names.
   (Contributed by Ezio Melotti; :issue:`9424`.)
 
 * The :meth:`~unittest.TestCase.assertDictContainsSubset` method was deprecated
-  because it was mis-implemented with the arguments in the wrong order.  This
+  because it was misimplemented with the arguments in the wrong order.  This
   created hard-to-debug optical illusions where tests like
   ``TestCase().assertDictContainsSubset({'a':1, 'b':2}, {'a':1})`` would fail.
 
@@ -1361,7 +1361,7 @@ inspect
 
 * To support lookups without the possibility of activating a dynamic attribute,
   the :mod:`inspect` module has a new function, :func:`~inspect.getattr_static`.
-  Unlike, :func:`hasattr`, this is a true read-only search, guaranteed not to
+  Unlike :func:`hasattr`, this is a true read-only search, guaranteed not to
   change state while it is searching.  (Contributed by Michael Foord.)
 
 pydoc
@@ -1827,7 +1827,7 @@ require changes to your code:
 * The :mod:`configparser` module has a number of clean-ups.  The major change is
   to replace the old :class:`ConfigParser` class with long-standing preferred
   alternative :class:`SafeConfigParser`.  In addition there are a number of
-  smaller incompatibilites:
+  smaller incompatibilities:
 
   * The interpolation syntax is now validated on
     :meth:`~configparser.ConfigParser.get` and
