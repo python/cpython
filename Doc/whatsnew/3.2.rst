@@ -513,21 +513,20 @@ Some smaller changes made to the core Python language are:
   This means that C structures like those returned by :func:`os.stat`,
   :func:`time.gmtime`, and :func:`sys.version_info` now work like a
   :term:`named tuple` and now work with functions and methods that
-  expect a tuple as an argument.  The is a big step forward in making the C
+  expect a tuple as an argument.  This is a big step forward in making the C
   structures as flexible as their pure Python counterparts.
 
   (Suggested by Arfrever Frehtes Taifersar Arahesis and implemented
   by Benjamin Peterson in :issue:`8413`.)
 
-* Warnings are now easier to control.  A :envvar:`PYTHONWARNINGS` environment
-  variable is now available as an alternative to using ``-W`` at the command
-  line.
+* Warnings are now easier to contro b using the :envvar:`PYTHONWARNINGS`
+  environment variable as an alternative to using ``-W`` at the command line.
 
   (Suggested by Barry Warsaw and implemented by Philip Jenvey in :issue:`7301`.)
 
 * A new warning category, :exc:`ResourceWarning`, has been added.  It is
   emitted when potential issues with resource consumption or cleanup
-  are detected.  It is silenced by default in normal release builds, but
+  are detected.  It is silenced by default in normal release builds but
   can be enabled through the means provided by the :mod:`warnings`
   module, or on the command line.
 
@@ -579,7 +578,7 @@ Some smaller changes made to the core Python language are:
 
   (See :issue:`10518`.)
 
-* Python's import mechanism can now load module installed in directories with
+* Python's import mechanism can now load modules installed in directories with
   non-ASCII characters in the path name.
 
   (Required extensive work by Victor Stinner in :issue:`9425`.)
