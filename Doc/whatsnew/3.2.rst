@@ -232,7 +232,7 @@ a uniform high level interface for managing threads and processes.
 
 The design for :mod:`concurrent.futures` was inspired by
 *java.util.concurrent.package*.  In that model, a running call and its result
-are represented by a :class:`~concurrent.futures.Future` object which abstracts
+are represented by a :class:`~concurrent.futures.Future` object that abstracts
 features common to threads, processes, and remote procedure calls.  That object
 supports status checks (running or done), timeouts, cancellations, adding
 callbacks, and access to results or exceptions.
@@ -409,7 +409,7 @@ points:
 
 For server implementers writing CGI-to-WSGI pathways or other CGI-style
 protocols, the users must to be able access the environment using native strings
-eventhough the underlying platform may have a different convention.  To bridge
+even though the underlying platform may have a different convention.  To bridge
 this gap, the :mod:`wsgiref` module has a new function,
 :func:`wsgiref.handlers.read_environ` for transcoding CGI variables from
 :attr:`os.environ` into native strings and returning a new dictionary.
@@ -597,13 +597,13 @@ For the first time, there is correct handling of inputs with mixed encodings.
 Throughout the standard library, there has been more careful attention to
 encodings and text versus bytes issues.  In particular, interactions with the
 operating system are now better able to pass non-ASCII data using the Windows
-mcbs encoding, locale-aware encodings, or UTF-8.
+MCBS encoding, locale-aware encodings, or UTF-8.
 
 Another significant win is the addition of substantially better support for
 *SSL* connections and security certificates.
 
 In addition, more classes now implement a :term:`context manager` to support
-convenient and reliable resource clean-up using the :keyword:`with` statement.
+convenient and reliable resource clean-up using a :keyword:`with` statement.
 
 email
 -----
@@ -940,7 +940,7 @@ both roles.
 
 The basic idea is that both context managers and function decorators can be used
 for pre-action and post-action wrappers.  Context managers wrap a group of
-statements using the :keyword:`with` statement, and function decorators wrap a
+statements using a :keyword:`with` statement, and function decorators wrap a
 group of statements enclosed in a function.  So, occasionally there is a need to
 write a pre-action or post-action wrapper that can be used in either role.
 
@@ -973,7 +973,7 @@ Now, it can be used as a decorator as well::
 
 Trying to fulfill two roles at once places some limitations on the technique.
 Context managers normally have the flexibility to return an argument usable by
-the :keyword:`with` statement, but there is no parallel for function decorators.
+a :keyword:`with` statement, but there is no parallel for function decorators.
 
 In the above example, there is not a clean way for the *track_entry_and_exit*
 context manager to return a logging instance for use in the body of enclosed
@@ -1061,7 +1061,7 @@ popen
 -----
 
 The :func:`os.popen` and :func:`subprocess.Popen` functions now support
-the :keyword:`with` statement for auto-closing of the file descriptors.
+:keyword:`with` statements for auto-closing of the file descriptors.
 
 gzip and zipfile
 ----------------
@@ -1105,8 +1105,8 @@ shutil
 The :func:`shutil.copytree` function has two new options:
 
 * *ignore_dangling_symlinks*: when ``symlinks=False`` so that the function
-  copies the file pointed to by the symlink, not the symlink itself. This
-  option will silence the error raised if the file doesn't exist.
+  copies a file pointed to by a symlink, not the symlink itself. This option
+  will silence the error raised if the file doesn't exist.
 
 * *copy_function*: is a callable that will be used to copy files.
   :func:`shutil.copy2` is used by default.
@@ -1228,7 +1228,7 @@ names.
 * The command-line call ``python -m unittest`` can now accept file paths
   instead of module names for running specific tests (:issue:`10620`).  The new
   test discovery can find tests within packages, locating any test importable
-  from the top level directory.  The top level directory can be specified with
+  from the top-level directory.  The top-level directory can be specified with
   the `-t` option, a pattern for matching files with ``-p``, and a directory to
   start discovery with ``-s``::
 
@@ -1311,7 +1311,7 @@ random
 The integer methods in the :mod:`random` module now do a better job of producing
 uniform distributions.  Previously, they computed selections with
 ``int(n*random())`` which had a slight bias whenever *n* was not a power of two.
-Now, multiple selections are made from a range upto the next power of two and a
+Now, multiple selections are made from a range up to the next power of two and a
 selection is kept only when it falls within the range ``0 <= x < n``.  The
 functions and methods affected are :func:`~random.randrange`,
 :func:`~random.randint`, :func:`~random.choice`, :func:`~random.shuffle` and
@@ -1367,7 +1367,7 @@ inspect
 pydoc
 -----
 
-The :mod:`pydoc` module now provides a much improved Web server interface,
+The :mod:`pydoc` module now provides a much-improved Web server interface,
 as well as a new command-line option to automatically open a browser
 window to display that server.
 
@@ -1575,7 +1575,7 @@ Multi-threading
   argument.  (Contributed by Torsten Landschoff; :issue:`850728`.)
 
 * Regular and recursive lock acquisitions can now be interrupted by signals on
-  platforms using pthreads.  This means that Python programs that deadlock while
+  platforms using Pthreads.  This means that Python programs that deadlock while
   acquiring locks can be successfully killed by repeatedly sending SIGINT to the
   process (by pressing :kbd:`Ctrl+C` in most shells).
   (Contributed by Reid Kleckner; :issue:`8844`.)
@@ -1598,7 +1598,7 @@ A number of small performance enhancements have been added:
       if extension in {'xml', 'html', 'xhtml', 'css'}:
           handle(name)
 
-  (Patch and additional tests by Dave Malcolm; :issue:`6690`).
+  (Patch and additional tests contributed by Dave Malcolm; :issue:`6690`).
 
 * Serializing and unserializing data using the :mod:`pickle` module is now
   several times faster.
@@ -1611,9 +1611,8 @@ A number of small performance enhancements have been added:
   when called with a :term:`key function`.  Previously, every element of
   a list was wrapped with a temporary object that remembered the key value
   associated with each element.  Now, two arrays of keys and values are
-  sorted in parallel.  This save the memory consumed by the sort wrappers,
-  and it saves time lost during comparisons which were delegated by the
-  sort wrappers.
+  sorted in parallel.  This saves the memory consumed by the sort wrappers,
+  and it saves time lost to delegating comparisons.
 
   (Patch by Daniel Stutzbach in :issue:`9915`.)
 
