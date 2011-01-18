@@ -272,7 +272,7 @@ Cygwin              jlt63, stutzbach
 FreeBSD
 HP-UX
 Linux
-Mac                 ronaldoussoren
+Mac                 ronaldoussoren, ned.deily
 NetBSD1
 OS2/EMX             aimacintyre
 Solaris
