@@ -597,7 +597,7 @@ For the first time, there is correct handling of inputs with mixed encodings.
 Throughout the standard library, there has been more careful attention to
 encodings and text versus bytes issues.  In particular, interactions with the
 operating system are now better able to pass non-ASCII data using the Windows
-MCBS encoding, locale-aware encodings, or UTF-8.
+MBCS encoding, locale-aware encodings, or UTF-8.
 
 Another significant win is the addition of substantially better support for
 *SSL* connections and security certificates.
@@ -1499,7 +1499,7 @@ The INI file structure accepted by config parsers can now be customized. Users
 can specify alternative option/value delimiters and comment prefixes, change the
 name of the *DEFAULT* section or switch the interpolation syntax.
 
-The is support for pluggable interpolation including an additional interpolation
+There is support for pluggable interpolation including an additional interpolation
 handler :class:`~configparser.ExtendedInterpolation`::
 
   >>> parser = ConfigParser(interpolation=ExtendedInterpolation())
@@ -1552,13 +1552,13 @@ Multi-threading
 ===============
 
 * The mechanism for serializing execution of concurrently running Python threads
-  (generally known as the GIL or Global Interpreter Lock) has been rewritten.
-  Among the objectives were more predictable switching intervals and reduced
-  overhead due to lock contention and the number of ensuing system calls.  The
-  notion of a "check interval" to allow thread switches has been abandoned and
-  replaced by an absolute duration expressed in seconds.  This parameter is
-  tunable through :func:`sys.setswitchinterval()`.  It currently defaults to 5
-  milliseconds.
+  (generally known as the :term:`GIL` or :term:`Global Interpreter Lock`) has
+  been rewritten.  Among the objectives were more predictable switching
+  intervals and reduced overhead due to lock contention and the number of
+  ensuing system calls.  The notion of a "check interval" to allow thread
+  switches has been abandoned and replaced by an absolute duration expressed in
+  seconds.  This parameter is tunable through :func:`sys.setswitchinterval()`.
+  It currently defaults to 5 milliseconds.
 
   Additional details about the implementation can be read from a `python-dev
   mailing-list message
@@ -1569,7 +1569,8 @@ Multi-threading
   (Contributed by Antoine Pitrou.)
 
 * Regular and recursive locks now accept an optional *timeout* argument to their
-  :meth:`acquire` method.  (Contributed by Antoine Pitrou; :issue:`7316`.)
+  :meth:`~threading.Lock.acquire` method.  (Contributed by Antoine Pitrou;
+  :issue:`7316`.)
 
 * Similarly, :meth:`threading.Semaphore.acquire` also gained a *timeout*
   argument.  (Contributed by Torsten Landschoff; :issue:`850728`.)
@@ -1798,7 +1799,7 @@ Changes to Python's build process and to the C API include:
   detection of cases where the conversion won't fit (:issue:`7767`).
 
 * The :c:func:`PyUnicode_CompareWithASCIIString` now returns *not equal*
-  if the Python string in *NUL* terminated.
+  if the Python string is *NUL* terminated.
 
 * There is a new function :c:func:`PyErr_NewExceptionWithDoc` that is
   like :c:func:`PyErr_NewException` but allows a docstring to be specified.
