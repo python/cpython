@@ -798,19 +798,21 @@ collections
 
 * The :class:`collections.OrderedDict` class has a new method
   :meth:`~collections.OrderedDict.move_to_end` which takes an existing key and
-  moves it to either the beginning or end of an ordered sequence.  When the
-  dictionary sequence is being used as a queue, these operations correspond to
-  "move to the front of the line" or "move to the back of the line":
+  moves it to either the first or last position in the ordered sequence.
+
+  The default is to move an item to the last position.  This is equivalent of
+  renewing an entry with ``od[k] = od.pop(k)``.
+
+  A fast move-to-end operation is useful for resequencing entries.  For example,
+  an ordered dictionary can being used to track access order by aging entries
+  from oldest to most recently accessed.
 
   >>> d = OrderedDict.fromkeys(['a', 'b', 'X', 'd', 'e'])
   >>> list(d)
   ['a', 'b', 'X', 'd', 'e']
-  >>> d.move_to_end('X', last=True)
+  >>> d.move_to_end('X')
   >>> list(d)
   ['a', 'b', 'd', 'e', 'X']
-  >>> d.move_to_end('X', last=False)
-  >>> list(d)
-  ['X', 'a', 'b', 'd', 'e']
 
   (Contributed by Raymond Hettinger.)
 
@@ -1683,11 +1685,11 @@ The :mod:`os` module has two new functions: :func:`~os.fsencode` and
 :data:`os.environ`, :func:`os.getenvb` function and
 :data:`os.supports_bytes_environ` constant.
 
-``'mbcs'`` encoding doesn't ignore the error handler argument any more. By
+MBCS encoding doesn't ignore the error handler argument any more. By
 default (strict mode), it raises an UnicodeDecodeError on undecodable byte
-sequence and UnicodeEncodeError on unencodable character. To get the ``'mbcs'``
+sequence and UnicodeEncodeError on unencodable character. To get the MBCS
 encoding of Python 3.1, use ``'ignore'`` error handler to decode and
-``'replace'`` error handler to encode. ``'mbcs'`` supports ``'strict'`` and
+``'replace'`` error handler to encode. The MBCS codec supports ``'strict'`` and
 ``'ignore'`` error handlers for decoding, and ``'strict'`` and ``'replace'``
 for encoding.
 
