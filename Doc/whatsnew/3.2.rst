@@ -847,11 +847,6 @@ are suitable for use in loops.  The separate *filling* and *draining* phases
 assure that all threads get released (drained) before any one of them can loop
 back and re-enter the barrier.  The barrier fully resets after each cycle.
 
-If any of the predecessor tasks can hang or be delayed, a barrier can be created
-with an optional *timeout* parameter.  Then if the timeout period elapses before
-all the predecessor tasks reach the barrier point, all waiting threads are
-released and a :exc:`~threading.BrokenBarrierError` exception is raised.
-
 Example of using barriers::
 
     def get_votes(site):
@@ -869,6 +864,26 @@ polling site until all polls are closed.  Notice how a solution with a barrier
 is similar to one with :meth:`threading.Thread.join`, but the threads stay alive
 and continue to do work (summarizing ballots) after the barrier point is
 crossed.
+
+If any of the predecessor tasks can hang or be delayed, a barrier can be created
+with an optional *timeout* parameter.  Then if the timeout period elapses before
+all the predecessor tasks reach the barrier point, all waiting threads are
+released and a :exc:`~threading.BrokenBarrierError` exception is raised::
+
+    def get_votes(site):
+        ballots = conduct_election(site)
+        try:
+            all_polls_closed.wait(timeout = midnight - time.now())
+        except BrokenBarrerError:
+            lockbox = seal_ballots(ballots)
+            queue.put(lockbox)
+        else:
+            totals = summarize(ballots)
+            publish(site, totals)
+
+In this example, the barrier enforces a more robust rule.  If some election
+sites do not finish before midnight, the barrier times-out and the ballots are
+sealed and deposited in a queue for later handling.
 
 See `Barrier Synchronization Patterns
 <http://parlab.eecs.berkeley.edu/wiki/_media/patterns/paraplop_g1_3.pdf>`_ for
