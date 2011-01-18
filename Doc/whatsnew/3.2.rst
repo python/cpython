@@ -55,6 +55,7 @@ focuses on a few highlights and gives a few examples.  For full details, see the
 
    :pep:`392` - Python 3.2 Release Schedule
 
+
 PEP 384: Defining a Stable ABI
 ==============================
 
@@ -77,6 +78,7 @@ need to be recompiled for every feature release.
 
    :pep:`384` - Defining a Stable ABI
       PEP written by Martin von Löwis.
+
 
 PEP 389: Argparse Command Line Parsing Module
 =============================================
@@ -208,16 +210,18 @@ dictionary::
 If that dictionary is stored in a file called :file:`conf.json`, it can be
 loaded and called with code like this::
 
-   import json
-   import logging.config
-   logging.config.dictConfig(json.load(open('conf.json', 'rb')))
-   logging.info("Transaction completed normally")
-   logging.critical("Abnormal termination")
+   >>> import json, logging.config
+   >>> with open('conf.json', 'rb') as f:
+           conf = json.load(f)
+   >>> logging.config.dictConfig(conf)
+   >>> logging.info("Transaction completed normally")
+   >>> logging.critical("Abnormal termination")
 
 .. seealso::
 
    :pep:`391` - Dictionary Based Configuration for Logging
       PEP written by Vinay Sajip.
+
 
 PEP 3148:  The ``concurrent.futures`` module
 ============================================
@@ -275,7 +279,6 @@ launch of four parallel threads for copying files::
    :ref:`Code for computing prime numbers in
    parallel<processpoolexecutor-example>`, an example demonstrating
    :class:`~concurrent.futures.ProcessPoolExecutor`.
-
 
 
 PEP 3147:  PYC Repository Directories
@@ -369,6 +372,7 @@ module::
    :pep:`3149` - ABI Version Tagged .so Files
       PEP written by Barry Warsaw.
 
+
 PEP 3333: Python Web Server Gateway Interface v1.0.1
 =====================================================
 
@@ -414,6 +418,7 @@ this gap, the :mod:`wsgiref` module has a new function,
 
    :pep:`3333` - Python Web Server Gateway Interface v1.0.1
       PEP written by Phillip Eby.
+
 
 Other Language Changes
 ======================
@@ -891,9 +896,8 @@ datetime and time
   :class:`float` and divided by :class:`float` and :class:`int` objects.
   And :class:`~datetime.timedelta` objects can now divide one another.
 
-* The :class:`~datetime.datetime` class and the :meth:`datetime.date.strftime`
-  method are no longer restricted to years after 1900.  The new supported year
-  range is from 1000 to 9999 inclusive.
+* The :meth:`datetime.date.strftime` method is no longer restricted to years
+  after 1900.  The new supported year range is from 1000 to 9999 inclusive.
 
 * The rules for two-digit years in time tuples have changed. Now, the
   :func:`time.asctime` and :func:`time.strftime` functions will format any year
