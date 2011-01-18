@@ -52,9 +52,6 @@ memory_getbuf(PyMemoryViewObject *self, Py_buffer *view, int flags)
 {
     int res = 0;
     CHECK_RELEASED_INT(self);
-    /* XXX for whatever reason fixing the flags seems necessary */
-    if (self->view.readonly)
-        flags &= ~PyBUF_WRITABLE;
     if (self->view.obj != NULL)
         res = PyObject_GetBuffer(self->view.obj, view, flags);
     if (view)

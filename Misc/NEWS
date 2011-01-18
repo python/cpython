@@ -10,6 +10,9 @@ What's New in Python 3.2 Release Candidate 2?
 Core and Builtins
 -----------------
 
+- Issue #10451: memoryview objects could allow to mutate a readable buffer.
+  Initial patch by Ross Lagerwall.
+
 Library
 -------
 

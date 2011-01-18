@@ -381,8 +381,10 @@ class Bytes_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_w_star, 'abc\xe9')
         self.assertRaises(TypeError, getargs_w_star, b'bytes')
         self.assertRaises(TypeError, getargs_w_star, b'nul:\0')
+        self.assertRaises(TypeError, getargs_w_star, memoryview(b'bytes'))
         self.assertEqual(getargs_w_star(bytearray(b'bytearray')), b'[ytearra]')
-        self.assertEqual(getargs_w_star(memoryview(b'memoryview')), b'[emoryvie]')
+        self.assertEqual(getargs_w_star(memoryview(bytearray(b'memoryview'))),
+                         b'[emoryvie]')
         self.assertRaises(TypeError, getargs_w_star, None)
 
 
