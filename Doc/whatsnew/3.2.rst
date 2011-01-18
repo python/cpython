@@ -815,9 +815,9 @@ collections
 
   (Contributed by Raymond Hettinger.)
 
-* The :class:`collections.deque` grew two new methods :meth:`~collections.deque.count`
-  and :meth:`collections.deque.reverse` that make them more substitutable for
-  :class:`list` when needed:
+* The :class:`collections.deque` class grew two new methods
+  :meth:`~collections.deque.count` and :meth:`~collections.deque.reverse` that
+  make them more substitutable for :class:`list` objects:
 
   >>> d = deque('simsalabim')
   >>> d.count('s')
@@ -914,9 +914,17 @@ abc
 The :mod:`abc` module now supports :func:`~abc.abstractclassmethod` and
 :func:`~abc.abstractstaticmethod`.
 
-These tools make it possible to define an :term:`Abstract Base Class` that
+These tools make it possible to define an :term:`abstract base class` that
 requires a particular :func:`classmethod` or :func:`staticmethod` to be
-implemented.
+implemented::
+
+    class Temperature(metaclass=ABCMeta):
+        @abc.abstractclassmethod
+        def from_farenheit(self, t):
+            ...
+        @abc.abstractclassmethod
+        def from_celsium(self, t):
+            ...
 
 (Patch submitted by Daniel Urban; :issue:`5867`.)
 
