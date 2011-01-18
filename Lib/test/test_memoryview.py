@@ -9,6 +9,7 @@ import sys
 import gc
 import weakref
 import array
+import io
 
 
 class AbstractMemoryTests:
@@ -225,6 +226,16 @@ class AbstractMemoryTests:
             gc.collect()
             self.assertTrue(wr() is None, wr())
 
+    def test_writable_readonly(self):
+        # Issue #10451: memoryview incorrectly exposes a readonly
+        # buffer as writable causing a segfault if using mmap
+        tp = self.ro_type
+        if tp is None:
+            return
+        b = tp(self._source)
+        m = self._view(b)
+        i = io.BytesIO(b'ZZZZ')
+        self.assertRaises(TypeError, i.readinto, m)
 
 # Variations on source objects for the buffer: bytes-like objects, then arrays
 # with itemsize > 1.
