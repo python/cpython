@@ -874,7 +874,7 @@ released and a :exc:`~threading.BrokenBarrierError` exception is raised::
         ballots = conduct_election(site)
         try:
             all_polls_closed.wait(timeout = midnight - time.now())
-        except BrokenBarrerError:
+        except BrokenBarrierError:
             lockbox = seal_ballots(ballots)
             queue.put(lockbox)
         else:
