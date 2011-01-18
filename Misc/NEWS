@@ -9,6 +9,9 @@ What's New in Python 2.7.2?
 Core and Builtins
 -----------------
 
+- Issue #10451: memoryview objects could allow to mutate a readable buffer.
+  Initial patch by Ross Lagerwall.
+
 - Issue #10892: Don't segfault when trying to delete __abstractmethods__ from a
   class.
 
