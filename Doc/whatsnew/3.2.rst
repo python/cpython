@@ -1415,9 +1415,11 @@ inspect
 pydoc
 -----
 
-The :mod:`pydoc` module now provides a much-improved Web server interface,
-as well as a new command-line option to automatically open a browser
-window to display that server.
+The :mod:`pydoc` module now provides a much-improved Web server interface, as
+well as a new command-line option ``-b`` to automatically open a browser window
+to display that server::
+
+    $ pydoc3.2 -b
 
 (Contributed by Ron Adam; :issue:`2001`.)
 
