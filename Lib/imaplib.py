@@ -1312,9 +1312,10 @@ Mon2num = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
         'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12}
 
 def Internaldate2tuple(resp):
-    """Convert IMAP4 INTERNALDATE to UT.
+    """Parse an IMAP4 INTERNALDATE string.
 
-    Returns Python time module tuple.
+    Return corresponding local time.  The return value is a
+    time.struct_time tuple or None if the string has wrong format.
     """
 
     mo = InternalDate.match(resp)
@@ -1381,9 +1382,14 @@ def ParseFlags(resp):
 
 def Time2Internaldate(date_time):
 
-    """Convert 'date_time' to IMAP4 INTERNALDATE representation.
+    """Convert date_time to IMAP4 INTERNALDATE representation.
 
-    Return string in form: '"DD-Mmm-YYYY HH:MM:SS +HHMM"'
+    Return string in form: '"DD-Mmm-YYYY HH:MM:SS +HHMM"'.  The
+    date_time argument can be a number (int or float) represening
+    seconds since epoch (as returned by time.time()), a 9-tuple
+    representing local time (as returned by time.localtime()), or a
+    double-quoted string.  In the last case, it is assumed to already
+    be in the correct format.
     """
 
     if isinstance(date_time, (int, float)):
