@@ -1303,14 +1303,18 @@ names.
 * To improve consistency, some long-standing method aliases are being
   deprecated in favor of the preferred names:
 
-   - replace :meth:`assert_` with :meth:`.assertTrue`
-   - replace :meth:`assertEquals` with :meth:`.assertEqual`
-   - replace :meth:`assertNotEquals` with :meth:`.assertNotEqual`
-   - replace :meth:`assertAlmostEquals` with :meth:`.assertAlmostEqual`
-   - replace :meth:`assertNotAlmostEquals` with :meth:`.assertNotAlmostEqual`
+   ===============================   ==============================
+   Old Name                          Preferred Name
+   ===============================   ==============================
+   :meth:`assert_`                   :meth:`.assertTrue`
+   :meth:`assertEquals`              :meth:`.assertEqual`
+   :meth:`assertNotEquals`           :meth:`.assertNotEqual`
+   :meth:`assertAlmostEquals`        :meth:`.assertAlmostEqual`
+   :meth:`assertNotAlmostEquals`     :meth:`.assertNotAlmostEqual`
+   ===============================   ==============================
 
   Likewise, the ``TestCase.fail*`` methods deprecated in Python 3.1 are expected
-  to be removed in Python 3.3. See also the :ref:`deprecated-aliases` section in
+  to be removed in Python 3.3.  Also see the :ref:`deprecated-aliases` section in
   the :mod:`unittest` documentation.
 
   (Contributed by Ezio Melotti; :issue:`9424`.)
