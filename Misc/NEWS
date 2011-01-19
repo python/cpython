@@ -35,6 +35,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10898: Allow compiling the posix module when the C library defines
+  a symbol named FSTAT.
+
 - Issue #6075: IDLE on Mac OS X now works with both Carbon AquaTk and
   Cocoa AquaTk.
 
