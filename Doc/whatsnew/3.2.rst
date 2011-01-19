@@ -742,7 +742,7 @@ functools
 
   (Contributed by Raymond Hettinger.)
 
-* To aid in porting programs from Python 2, the :func:`~functools.cmp_to_key`
+* To aid in porting programs from Python 2, the :func:`functools.cmp_to_key`
   function converts an old-style comparison function to
   modern :term:`key function`:
 
@@ -758,7 +758,7 @@ itertools
 ---------
 
 * The :mod:`itertools` module has a new :func:`~itertools.accumulate` function
-  modeled on APL's *scan* operator and on Numpy's *accumulate* function:
+  modeled on APL's *scan* operator and Numpy's *accumulate* function:
 
   >>> list(accumulate(8, 2, 50))
   [8, 10, 60]
@@ -1372,14 +1372,41 @@ inspect
 
 * The :mod:`inspect` module has a new function
   :func:`~inspect.getgeneratorstate` to easily identify the current state of a
-  generator as one of ``GEN_CREATED``, ``GEN_RUNNING``, ``GEN_SUSPENDED`` or
-  ``GEN_CLOSED``. (Contributed by Rodolpho Eckhardt and Nick Coghlan,
-  :issue:`10220`.)
+  generator as one of *GEN_CREATED*, *GEN_RUNNING*, *GEN_SUSPENDED* or
+  *GEN_CLOSED*::
+
+    >>> def gen():
+            yield 'one'
+            yield 'two'
+    >>> g = gen()
+    >>> inspect.getgeneratorstate(g)
+    'GEN_CREATED'
+    >>> next(g)
+    'one'
+    >>> inspect.getgeneratorstate(g)
+    'GEN_SUSPENDED'
+
+  (Contributed by Rodolpho Eckhardt and Nick Coghlan, :issue:`10220`.)
 
 * To support lookups without the possibility of activating a dynamic attribute,
   the :mod:`inspect` module has a new function, :func:`~inspect.getattr_static`.
   Unlike :func:`hasattr`, this is a true read-only search, guaranteed not to
-  change state while it is searching.  (Contributed by Michael Foord.)
+  change state while it is searching::
+
+    >>> class A:
+            @property
+            def f(self):
+                print('Running')
+                return 10
+
+    >>> a = A()
+    >>> getattr(a, 'f')
+    Running
+    10
+    >>> inspect.getattr_static(a, 'f')
+    <property object at 0x1022bd788>
+
+ (Contributed by Michael Foord.)
 
 pydoc
 -----
