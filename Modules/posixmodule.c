@@ -328,6 +328,8 @@ extern int lstat(const char *, struct stat *);
 
 /* choose the appropriate stat and fstat functions and return structs */
 #undef STAT
+#undef FSTAT
+#undef STRUCT_STAT
 #if defined(MS_WIN64) || defined(MS_WINDOWS)
 #       define STAT win32_stat
 #       define FSTAT win32_fstat
