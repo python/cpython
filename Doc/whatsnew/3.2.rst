@@ -169,8 +169,7 @@ each with their own argument patterns and help displays::
    :pep:`389` - New Command Line Parsing Module
       PEP written by Steven Bethard.
 
-   :ref:`upgrading-optparse-code` for details on the differences from
-      :mod:`optparse`.
+   :ref:`upgrading-optparse-code` for details on the differences from :mod:`optparse`.
 
 
 PEP 391:  Dictionary Based Configuration for Logging
