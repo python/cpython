@@ -216,6 +216,8 @@ Fundamental data types
 +----------------------+------------------------------------------+----------------------------+
 | ctypes type          | C type                                   | Python type                |
 +======================+==========================================+============================+
+| :class:`c_bool`      | :c:type:`_Bool`                          | bool (1)                   |
++----------------------+------------------------------------------+----------------------------+
 | :class:`c_char`      | :c:type:`char`                           | 1-character bytes object   |
 +----------------------+------------------------------------------+----------------------------+
 | :class:`c_wchar`     | :c:type:`wchar_t`                        | 1-character string         |
@@ -253,6 +255,9 @@ Fundamental data types
 +----------------------+------------------------------------------+----------------------------+
 | :class:`c_void_p`    | :c:type:`void *`                         | int or ``None``            |
 +----------------------+------------------------------------------+----------------------------+
+
+(1)
+   The constructor accepts any object with a truth value.
 
 All these types can be created by calling them with an optional initializer of
 the correct type and value::
