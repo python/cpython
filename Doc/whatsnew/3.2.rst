@@ -456,7 +456,18 @@ Some smaller changes made to the core Python language are:
   would otherwise be absent from the class dictionary.  Formerly, *hasattr*
   would catch any exception, possibly masking genuine errors.  Now, *hasattr*
   has been tightened to only catch :exc:`AttributeError` and let other
-  exceptions pass through.
+  exceptions pass through::
+
+    >>> class A:
+        @property
+        def f(self):
+            return 1 // 0
+
+    >>> a = A()
+    >>> hasattr(a, 'f')
+    Traceback (most recent call last):
+      ...
+    ZeroDivisionError: integer division or modulo by zero
 
   (Discovered by Yury Selivanov and fixed by Benjamin Peterson; :issue:`9666`.)
 
