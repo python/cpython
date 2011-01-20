@@ -8,27 +8,18 @@ Files found here
 ----------------
 
 ACKS                    Acknowledgements
-AIX-NOTES               Notes for building Python on AIX
 build.sh                Script to build and test latest Python from the repository
-cheatsheet              Quick summary of Python by Ken Manheimer
 developers.txt          A history of who got developer permissions, and why
 gdbinit                 Handy stuff to put in your .gdbinit file, if you use gdb
 HISTORY                 News from previous releases -- oldest last
 indent.pro              GNU indent profile approximating my C style
-maintainers.rst         A list of maintainers for library modules
 NEWS                    News for this release (for some meaning of "this")
-NEWS.help               How to edit NEWS
 Porting                 Mini-FAQ on porting to new platforms
-PURIFY.README           Information for Purify users
 python-config.in        Python script template for python-config
 python.man              UNIX man page for the python interpreter
-python-mode.el          Emacs mode for editing Python programs
 python.pc.in            Package configuration info template for pkg-config
-python-wing.wpr         Wing IDE project file
+python-wing*.wpr        Wing IDE project file
 README                  The file you're reading now
-README.coverity         Information about running Coverity's Prevent on Python
-README.klocwork         Information about running Klocwork's K7 on Python
-README.OpenBSD          Help for building problems on OpenBSD
 README.valgrind         Information for Valgrind users, see valgrind-python.supp
 RPM                     (Old) tools to build RPMs
 SpecialBuilds.txt       Describes extra symbols you can set for debug builds
