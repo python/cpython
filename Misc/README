@@ -9,7 +9,6 @@ Files found here
 
 ACKS                    Acknowledgements
 build.sh                Script to build and test latest Python from the repository
-developers.txt          A history of who got developer permissions, and why
 gdbinit                 Handy stuff to put in your .gdbinit file, if you use gdb
 HISTORY                 News from previous releases -- oldest last
 indent.pro              GNU indent profile approximating my C style
