@@ -459,9 +459,9 @@ Some smaller changes made to the core Python language are:
   exceptions pass through::
 
     >>> class A:
-        @property
-        def f(self):
-            return 1 // 0
+            @property
+            def f(self):
+                return 1 // 0
 
     >>> a = A()
     >>> hasattr(a, 'f')
@@ -1135,6 +1135,28 @@ wrong results.
 
 (Patch submitted by Nir Aides in :issue:`7610`.)
 
+os
+--
+
+Different operating systems use various encodings for filenames and environment
+variables.  The :mod:`os` module provides two new functions,
+:func:`~os.fsencode` and :func:`~os.fsdecode`, for encoding and decoding
+filenames:
+
+>>> filename = 'словарь'
+>>> os.fsencode(filename)
+b'\xd1\x81\xd0\xbb\xd0\xbe\xd0\xb2\xd0\xb0\xd1\x80\xd1\x8c'
+>>> open(os.fsencode(filename))
+
+Some operating systems allow direct access to the unencoded bytes in the
+environment.  If so, the :attr:`os.supports_bytes_environ` constant will be
+true.
+
+For direct access to unencoded environment variables (if available),
+use the new :func:`os.getenvb` function or use :data:`os.environb`
+which is a bytes version of :data:`os.environ`.
+
+
 shutil
 ------
 
@@ -1728,49 +1750,39 @@ multi-line arguments a bit faster (:issue:`7113` by Łukasz Langa).
 Unicode
 =======
 
-Python has been updated to Unicode 6.0.0.  The new features of the
-Unicode Standard that will affect Python users include:
+Python has been updated to `Unicode 6.0.0
+<http://unicode.org/versions/Unicode6.0.0/>`_.  The update to the standard adds
+over 2,000 new characters including `emoji <http://en.wikipedia.org/wiki/Emoji>`_
+symbols which are important for mobile phones.
 
-* addition of 2,088 characters, including over 1,000 additional
-  symbols—chief among them the additional emoji symbols, which are
-  especially important for mobile phones;
+In addition, the updated standard has altered the character properties for two
+Kannada characters (U+0CF1, U+0CF2) and one New Tai Lue numeric character
+(U+19DA), making the former eligible for use in identifiers while disqualifying
+the latter.  For more information, see `Unicode Character Database Changes
+<http://www.unicode.org/versions/Unicode6.0.0/#Database_Changes>`_.
 
-* changes to character properties for existing characters including
 
-  - a general category change to two Kannada characters (U+0CF1,
-    U+0CF2), which has the effect of making them newly eligible for
-    inclusion in identifiers;
+Codecs
+======
 
-  - a general category change to one New Tai Lue numeric character
-    (U+19DA), which has the effect of disqualifying it from
-    inclusion in identifiers.
+Support was added for *cp720* Arabic DOS encoding (:issue:`1616979`).
 
-  For more information, see `Unicode Character Database Changes
-  <http://www.unicode.org/versions/Unicode6.0.0/#Database_Changes>`_
-  at the `Unicode Consortium <http://www.unicode.org/>`_ web site.
+MBCS encoding no longer ignores the error handler argument. In the default
+strict mode, it raises an :exc:`UnicodeDecodeError` when it encounters an
+undecodable byte sequence and an :exc:`UnicodeEncodeError` for an unencodable
+character.
 
-The :mod:`os` module has two new functions: :func:`~os.fsencode` and
-:func:`~os.fsdecode`. Add :data:`os.environb`: bytes version of
-:data:`os.environ`, :func:`os.getenvb` function and
-:data:`os.supports_bytes_environ` constant.
+The MBCS codec supports ``'strict'`` and ``'ignore'`` error handlers for
+decoding, and ``'strict'`` and ``'replace'`` for encoding.
 
-MBCS encoding doesn't ignore the error handler argument any more. By
-default (strict mode), it raises an UnicodeDecodeError on undecodable byte
-sequence and UnicodeEncodeError on unencodable character. To get the MBCS
-encoding of Python 3.1, use ``'ignore'`` error handler to decode and
-``'replace'`` error handler to encode. The MBCS codec supports ``'strict'`` and
-``'ignore'`` error handlers for decoding, and ``'strict'`` and ``'replace'``
-for encoding.
+To emulate Python3.1 MBCS encoding, select the ``'ignore'`` handler for decoding
+and the ``'replace'`` handler for encoding.
 
-On Mac OS X, Python uses ``'utf-8'`` to decode the command line arguments,
-instead of the locale encoding (which is ISO-8859-1 if the ``LANG`` environment
-variable is not set).
+On Mac OS/X, Python decodes command line arguments with ``'utf-8'`` rather than
+the locale encoding.
 
-By default, tarfile uses ``'utf-8'`` encoding on Windows (instead of
-``'mbcs'``), and the ``'surrogateescape'`` error handler on all operating
-systems.
-
-Also, support was added for *cp720* Arabic DOS encoding (:issue:`1616979`).
+By default, tarfile uses ``'utf-8'`` encoding on Windows (instead of ``'mbcs'``)
+and the ``'surrogateescape'`` error handler on all operating systems.
 
 
 Documentation
