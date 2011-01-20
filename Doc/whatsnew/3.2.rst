@@ -935,11 +935,19 @@ datetime and time
   after 1900.  The new supported year range is from 1000 to 9999 inclusive.
 
 * The rules for two-digit years in time tuples have changed. Now, the
-  :func:`time.asctime` and :func:`time.strftime` functions will format any year
-  when :attr:`time.accept2dyear` is false and will accept four-digit years
-  otherwise.  The :func:`time.mktime` and :func:`time.strftime` functions now
-  accept full range supported by the operating system.  Conversion of two-digit
-  years to four-digit is deprecated.
+  :func:`time.asctime`, :func:`time.strftime` and :func:`time.mktime`
+  functions will accept any two- or four-digit year when
+  :attr:`time.accept2dyear` is true.  Two-digit years are converted to
+  four-digits using the same heuristics as before, but a deprecation
+  warning will be issued whenever such conversion occurs.
+
+* The :func:`time.asctime`, :func:`time.mktime`, and
+  :func:`time.strftime` functions are no longer restricted to years
+  after 1900.  Now, when :attr:`time.accept2dyear` is false, the
+  :func:`time.asctime` function will accept any year that fits in
+  a C int, while :func:`time.mktime` and :func:`time.strftime`
+  functions will accept full range supported by the corresponding
+  operating system functions.
 
 (Contributed by Alexander Belopolsky and Victor Stinner.)
 
