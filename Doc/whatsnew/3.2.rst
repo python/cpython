@@ -823,8 +823,8 @@ collections
   renewing an entry with ``od[k] = od.pop(k)``.
 
   A fast move-to-end operation is useful for resequencing entries.  For example,
-  an ordered dictionary can being used to track access order by aging entries
-  from oldest to most recently accessed.
+  an ordered dictionary can be used to track order of access by aging entries
+  from the oldest to the most recently accessed.
 
   >>> d = OrderedDict.fromkeys(['a', 'b', 'X', 'd', 'e'])
   >>> list(d)
@@ -1781,8 +1781,9 @@ and the ``'replace'`` handler for encoding.
 On Mac OS/X, Python decodes command line arguments with ``'utf-8'`` rather than
 the locale encoding.
 
-By default, tarfile uses ``'utf-8'`` encoding on Windows (instead of ``'mbcs'``)
-and the ``'surrogateescape'`` error handler on all operating systems.
+By default, :mod:`tarfile` uses ``'utf-8'`` encoding on Windows (instead of
+``'mbcs'``) and the ``'surrogateescape'`` error handler on all operating
+systems.
 
 
 Documentation
@@ -1824,6 +1825,22 @@ IDLE
 * IDLE on Mac OS X now works with both Carbon AquaTk and Cocoa AquaTk.
 
   (Contributed by Kevin Walzer, Ned Deily, and Ronald Oussoren; :issue:`6075`.)
+
+Code Repository
+===============
+
+In addition to the existing Subversion code repository at http://svn.python.org
+there is now a `Mercurial <http://mercurial.selenic.com/>`_ repository at
+http://hg.python.org/ .
+
+After the 3.2 release, there are plans to switch to Mercurial as the primary
+repository.  This distributed version control system should make it easier for
+members of the community to create and share external changesets.  See
+:pep:`385` for details.
+
+To learn to use the new version control system, see the `tutorial by Joel
+Spolsky <http://hginit.com>`_ or the `guide to Mercurial workflows
+<http://mercurial.selenic.com/guide/>`_.
 
 
 Build and C API Changes
