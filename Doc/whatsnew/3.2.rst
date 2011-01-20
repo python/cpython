@@ -510,16 +510,23 @@ Some smaller changes made to the core Python language are:
 
 * The internal :c:type:`structsequence` tool now creates subclasses of tuple.
   This means that C structures like those returned by :func:`os.stat`,
-  :func:`time.gmtime`, and :func:`sys.version_info` now work like a
+  :func:`time.gmtime`, and :attr:`sys.version_info` now work like a
   :term:`named tuple` and now work with functions and methods that
   expect a tuple as an argument.  This is a big step forward in making the C
-  structures as flexible as their pure Python counterparts.
+  structures as flexible as their pure Python counterparts:
+
+  >>> isinstance(sys.version_info, tuple)
+  True
+  >>> 'Version %d.%d.%d %s(%d)' % sys.version_info
+  'Version 3.2.0 final(0)'
 
   (Suggested by Arfrever Frehtes Taifersar Arahesis and implemented
   by Benjamin Peterson in :issue:`8413`.)
 
 * Warnings are now easier to control using the :envvar:`PYTHONWARNINGS`
-  environment variable as an alternative to using ``-W`` at the command line.
+  environment variable as an alternative to using ``-W`` at the command line::
+
+    $ export PYTHONWARNINGS='ignore::RuntimeWarning::,once::UnicodeWarning::'
 
   (Suggested by Barry Warsaw and implemented by Philip Jenvey in :issue:`7301`.)
 
@@ -578,7 +585,9 @@ Some smaller changes made to the core Python language are:
   (See :issue:`10518`.)
 
 * Python's import mechanism can now load modules installed in directories with
-  non-ASCII characters in the path name.
+  non-ASCII characters in the path name:
+
+  >>> import møøse.bites
 
   (Required extensive work by Victor Stinner in :issue:`9425`.)
 
@@ -1375,19 +1384,21 @@ inspect
 
 * The :mod:`inspect` module has a new function
   :func:`~inspect.getgeneratorstate` to easily identify the current state of a
-  generator as one of *GEN_CREATED*, *GEN_RUNNING*, *GEN_SUSPENDED* or
-  *GEN_CLOSED*::
+  generator-iterator::
 
+    >>> from inspect import getgeneratorstate
     >>> def gen():
-            yield 'one'
-            yield 'two'
+            yield 'demo'
     >>> g = gen()
-    >>> inspect.getgeneratorstate(g)
+    >>> getgeneratorstate(g)
     'GEN_CREATED'
     >>> next(g)
-    'one'
-    >>> inspect.getgeneratorstate(g)
+    'demo'
+    >>> getgeneratorstate(g)
     'GEN_SUSPENDED'
+    >>> next(g, None)
+    >>> getgeneratorstate(g)
+    'GEN_CLOSED'
 
   (Contributed by Rodolpho Eckhardt and Nick Coghlan, :issue:`10220`.)
 
