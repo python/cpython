@@ -343,6 +343,19 @@ class MmapTests(unittest.TestCase):
             finally:
                 mf.close()
 
+    def test_length_0_large_offset(self):
+        # Issue #10959: test mapping of a file by passing 0 for
+        # map length with a large offset doesn't cause a segfault.
+        if not hasattr(os, "stat"):
+            self.skipTest("needs os.stat")
+
+        with open(TESTFN, "wb") as f:
+            f.write(115699 * b'm') # Arbitrary character
+
+        with open(TESTFN, "w+b") as f:
+            self.assertRaises(ValueError, mmap.mmap, f.fileno(), 0,
+                              offset=2147418112)
+
     def test_move(self):
         # make move works everywhere (64-bit format problem earlier)
         f = open(TESTFN, 'w+')
