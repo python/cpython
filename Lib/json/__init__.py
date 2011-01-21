@@ -298,6 +298,8 @@ def loads(s, encoding=None, cls=None, object_hook=None, parse_float=None,
     To use a custom ``JSONDecoder`` subclass, specify it with the ``cls``
     kwarg; otherwise ``JSONDecoder`` is used.
 
+    The ``encoding`` argument is ignored and deprecated.
+
     """
     if (cls is None and object_hook is None and
             parse_int is None and parse_float is None and
