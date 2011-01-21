@@ -489,8 +489,7 @@ Some smaller changes made to the core Python language are:
   original object.
 
   >>> with memoryview(b'abcdefgh') as v:
-  ...     print(v.tolist())
-  ...
+          print(v.tolist())
   [97, 98, 99, 100, 101, 102, 103, 104]
 
   (Added by Antoine Pitrou; :issue:`9757`.)
@@ -934,20 +933,28 @@ datetime and time
 * The :meth:`datetime.date.strftime` method is no longer restricted to years
   after 1900.  The new supported year range is from 1000 to 9999 inclusive.
 
-* The rules for two-digit years in time tuples have changed. Now, the
-  :func:`time.asctime`, :func:`time.strftime` and :func:`time.mktime`
-  functions will accept any two- or four-digit year when
-  :attr:`time.accept2dyear` is true.  Two-digit years are converted to
-  four-digits using the same heuristics as before, but a deprecation
-  warning will be issued whenever such conversion occurs.
+* Whenever a two-digit year is used in a time tuple, the interpretation has been
+  governed by :attr:`time.accept2dyear`.  The default is *True* which means that
+  for a two-digit year, the century is guessed according to the POSIX rules
+  governing the ``%y`` strptime format.
 
-* The :func:`time.asctime`, :func:`time.mktime`, and
-  :func:`time.strftime` functions are no longer restricted to years
-  after 1900.  Now, when :attr:`time.accept2dyear` is false, the
-  :func:`time.asctime` function will accept any year that fits in
-  a C int, while :func:`time.mktime` and :func:`time.strftime`
-  functions will accept full range supported by the corresponding
-  operating system functions.
+  Starting with Py3.2, use of the century guessing heuristic will emit a
+  :exc:`DeprecationWarning`.  Instead, it is recommended that
+  :attr:`time.accept2dyear` be set to *False* so that large date ranges
+  can be used without guesswork:
+
+  >>> time.accept2dyear = 1         # guess whether 11 means 11 or 2011
+  >>> time.asctime((11, 1, 1, 12, 34, 56, 4, 1, 0))
+  'Fri Jan  1 12:34:56 2011'
+  >>> time.accept2dyear = 0         # use the full range of allowable dates
+  >>> time.asctime((11, 1, 1, 12, 34, 56, 4, 1, 0))
+  'Fri Jan  1 12:34:56 11'
+
+  Several functions now have significantly expanded date ranges.  When
+  :attr:`time.accept2dyear` is false, the :func:`time.asctime` function will
+  accept any year that fits in a C int, while the :func:`time.mktime` and
+  :func:`time.strftime` functions will accept the full range supported by the
+  corresponding operating system functions.
 
 (Contributed by Alexander Belopolsky and Victor Stinner.)
 
