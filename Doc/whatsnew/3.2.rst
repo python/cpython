@@ -736,6 +736,11 @@ functools
   it also gracefully skips over missing attributes such as :attr:`__doc__` which
   might not be defined for the wrapped callable.
 
+  In the above example, the cache can be removed by recovering the original
+  function:
+
+  >>> get_phone_number = get_phone_number.__wrapped__    # uncached function
+
   (By Nick Coghlan and Terrence Cole; :issue:`9567`, :issue:`3445`, and
   :issue:`8814`.)
 
@@ -943,10 +948,14 @@ datetime and time
   :attr:`time.accept2dyear` be set to *False* so that large date ranges
   can be used without guesswork:
 
-  >>> time.accept2dyear = 1         # guess whether 11 means 11 or 2011
+  >>> warnings.resetwarnings()      # remove the default warning filters
+  >>> time.accept2dyear = True      # guess whether 11 means 11 or 2011
   >>> time.asctime((11, 1, 1, 12, 34, 56, 4, 1, 0))
+  Warning (from warnings module):
+    ...
+  DeprecationWarning: Century info guessed for a 2-digit year.
   'Fri Jan  1 12:34:56 2011'
-  >>> time.accept2dyear = 0         # use the full range of allowable dates
+  >>> time.accept2dyear = False     # use the full range of allowable dates
   >>> time.asctime((11, 1, 1, 12, 34, 56, 4, 1, 0))
   'Fri Jan  1 12:34:56 11'
 
