@@ -16,6 +16,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10949: Improved robustness of rotating file handlers.
+
 - Issue #10955: Fix a potential crash when trying to mmap() a file past its
   length.  Initial patch by Ross Lagerwall.
 
