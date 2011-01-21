@@ -1167,10 +1167,9 @@ variables.  The :mod:`os` module provides two new functions,
 :func:`~os.fsencode` and :func:`~os.fsdecode`, for encoding and decoding
 filenames:
 
->>> filename = 'словарь'
+>>> filename = 'Sehenswürdigkeiten'
 >>> os.fsencode(filename)
-b'\xd1\x81\xd0\xbb\xd0\xbe\xd0\xb2\xd0\xb0\xd1\x80\xd1\x8c'
->>> open(os.fsencode(filename))
+b'Sehensw\xc3\xbcrdigkeiten'
 
 Some operating systems allow direct access to the unencoded bytes in the
 environment.  If so, the :attr:`os.supports_bytes_environ` constant will be
@@ -1802,7 +1801,7 @@ decoding, and ``'strict'`` and ``'replace'`` for encoding.
 To emulate Python3.1 MBCS encoding, select the ``'ignore'`` handler for decoding
 and the ``'replace'`` handler for encoding.
 
-On Mac OS/X, Python decodes command line arguments with ``'utf-8'`` rather than
+On Mac OS X, Python decodes command line arguments with ``'utf-8'`` rather than
 the locale encoding.
 
 By default, :mod:`tarfile` uses ``'utf-8'`` encoding on Windows (instead of
