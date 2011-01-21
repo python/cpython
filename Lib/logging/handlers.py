@@ -114,6 +114,7 @@ class RotatingFileHandler(BaseRotatingHandler):
         """
         if self.stream:
             self.stream.close()
+            self.stream = None
         if self.backupCount > 0:
             for i in range(self.backupCount - 1, 0, -1):
                 sfn = "%s.%d" % (self.baseFilename, i)
@@ -313,6 +314,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         """
         if self.stream:
             self.stream.close()
+            self.stream = None
         # get the time that this sequence started at and make it a TimeTuple
         t = self.rolloverAt - self.interval
         if self.utc:
