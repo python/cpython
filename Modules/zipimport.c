@@ -725,6 +725,7 @@ read_directory(PyObject *archive_obj)
     long arc_offset; /* offset from beginning of file to start of zip-archive */
     PyObject *pathobj;
     const char *charset;
+    int bootstrap;
 
     if (PyUnicode_GET_SIZE(archive_obj) > MAXPATHLEN) {
         PyErr_SetString(PyExc_OverflowError,
@@ -801,13 +802,30 @@ read_directory(PyObject *archive_obj)
         *p = 0;         /* Add terminating null byte */
         header_offset += header_size;
 
+        bootstrap = 0;
         if (flags & 0x0800)
             charset = "utf-8";
+        else if (!PyThreadState_GET()->interp->codecs_initialized) {
+            /* During bootstrap, we may need to load the encodings
+               package from a ZIP file. But the cp437 encoding is implemented
+               in Python in the encodings package.
+
+               Break out of this dependency by assuming that the path to
+               the encodings module is ASCII-only. */
+            charset = "ascii";
+            bootstrap = 1;
+        }
         else
             charset = "cp437";
         nameobj = PyUnicode_Decode(name, name_size, charset, NULL);
-        if (nameobj == NULL)
+        if (nameobj == NULL) {
+            if (bootstrap)
+                PyErr_Format(PyExc_NotImplementedError,
+                    "bootstrap issue: python%i%i.zip contains non-ASCII "
+                    "filenames without the unicode flag",
+                    PY_MAJOR_VERSION, PY_MINOR_VERSION);
             goto error;
+        }
         Py_UNICODE_strncpy(path + length + 1, PyUnicode_AS_UNICODE(nameobj), MAXPATHLEN - length - 1);
 
         pathobj = PyUnicode_FromUnicode(path, Py_UNICODE_strlen(path));
