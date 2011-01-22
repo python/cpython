@@ -696,7 +696,7 @@ class HTTPConnection:
         self.send(connect_bytes)
         for header, value in self._tunnel_headers.iteritems():
             header_str = "%s: %s\r\n" % (header, value)
-            header_bytes = header_str.encode("ascii")
+            header_bytes = header_str.encode("latin1")
             self.send(header_bytes)
 
         response = self.response_class(self.sock, method = self._method)
@@ -935,7 +935,7 @@ class HTTPConnection:
         values = list(values)
         for i, one_value in enumerate(values):
             if hasattr(one_value, 'encode'):
-                values[i] = one_value.encode('ascii')
+                values[i] = one_value.encode('latin1')
             elif isinstance(one_value, int):
                 values[i] = str(one_value).encode('ascii')
         value = b'\r\n\t'.join(values)
