@@ -19,7 +19,7 @@ Library
 - Issue #10955: zipimport uses ASCII encoding instead of cp497 to decode
   filenames, at bootstrap, if the codec registry is not ready yet. It is still
   possible to have non-ASCII filenames using the Unicode flag (UTF-8 encoding)
-  for file entries in the ZIP file.
+  for all file entries in the ZIP file.
 
 - Issue #10949: Improved robustness of rotating file handlers.
 
