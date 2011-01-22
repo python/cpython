@@ -29,6 +29,10 @@ Library
 - Issue #10898: Allow compiling the posix module when the C library defines
   a symbol named FSTAT.
 
+- Issue #10980: the HTTP server now encodes headers with iso-8859-1 (latin1)
+  encoding.  This is the preferred encoding of PEP 3333 and the base encoding
+  of HTTP 1.1.
+
 
 What's New in Python 3.2 Release Candidate 1
 ============================================
