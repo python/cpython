@@ -100,7 +100,10 @@ class BaseHTTPServerTestCase(BaseTestCase):
         def do_LATINONEHEADER(self):
             self.send_response(999)
             self.send_header('X-Special', 'Dängerous Mind')
+            self.send_header('Connection', 'close')
             self.end_headers()
+            body = self.headers['x-special-incoming'].encode('utf-8')
+            self.wfile.write(body)
 
     def setUp(self):
         BaseTestCase.setUp(self)
@@ -200,9 +203,12 @@ class BaseHTTPServerTestCase(BaseTestCase):
         self.assertEqual(res.status, 999)
 
     def test_latin1_header(self):
-        self.con.request('LATINONEHEADER', '/')
+        self.con.request('LATINONEHEADER', '/', headers={
+            'X-Special-Incoming':       'Ärger mit Unicode'
+        })
         res = self.con.getresponse()
         self.assertEqual(res.getheader('X-Special'), 'Dängerous Mind')
+        self.assertEqual(res.read(), 'Ärger mit Unicode'.encode('utf-8'))
 
 
 class SimpleHTTPServerTestCase(BaseTestCase):

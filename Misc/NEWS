@@ -33,6 +33,11 @@ Library
   encoding.  This is the preferred encoding of PEP 3333 and the base encoding
   of HTTP 1.1.
 
+- To match the behaviour of HTTP server, the HTTP client library now also
+  encodes headers with iso-8859-1 (latin1) encoding.  It was already doing
+  that for incoming headers which makes this behaviour now consistent in
+  both incoming and outgoing direction.
+
 
 What's New in Python 3.2 Release Candidate 1
 ============================================
