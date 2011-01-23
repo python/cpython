@@ -234,19 +234,21 @@ Another example that uses the *ignore* argument to add a logging call::
    copytree(source, destination, ignore=_logpath)
 
 
-Archives operations
--------------------
+.. _archiving-operations:
+
+Archiving operations
+--------------------
 
 .. function:: make_archive(base_name, format, [root_dir, [base_dir, [verbose, [dry_run, [owner, [group, [logger]]]]]]])
 
-   Create an archive file (e.g. zip or tar) and returns its name.
+   Create an archive file (such as zip or tar) and return its name.
 
    *base_name* is the name of the file to create, including the path, minus
    any format-specific extension. *format* is the archive format: one of
    "zip", "tar", "bztar" (if the :mod:`bz2` module is available) or "gztar".
 
    *root_dir* is a directory that will be the root directory of the
-   archive; i.e. we typically chdir into *root_dir* before creating the
+   archive; for example, we typically chdir into *root_dir* before creating the
    archive.
 
    *base_dir* is the directory where we start archiving from;
@@ -257,6 +259,8 @@ Archives operations
 
    *owner* and *group* are used when creating a tar archive. By default,
    uses the current owner and group.
+
+   *logger* is an instance of :class:`logging.Logger`.
 
    .. versionadded:: 3.2
 
@@ -284,7 +288,7 @@ Archives operations
    Registers an archiver for the format *name*. *function* is a callable that
    will be used to invoke the archiver.
 
-   If given, *extra_args* is a sequence of ``(name, value)`` that will be
+   If given, *extra_args* is a sequence of ``(name, value)`` pairs that will be
    used as extra keywords arguments when the archiver callable is used.
 
    *description* is used by :func:`get_archive_formats` which returns the
@@ -316,7 +320,7 @@ Archives operations
    .. versionadded:: 3.2
 
 
-.. function:: register_unpack_format(name, extensions, function[, extra_args[,description]])
+.. function:: register_unpack_format(name, extensions, function[, extra_args[, description]])
 
    Registers an unpack format. *name* is the name of the format and
    *extensions* is a list of extensions corresponding to the format, like
