@@ -1292,8 +1292,6 @@ Files and Directories
       (33188, 422511, 769, 1, 1032, 100, 926, 1105022698,1105022732, 1105022732)
       >>> statinfo.st_size
       926
-      >>>
-
 
    On some Unix systems (such as Linux), the following attributes may also be
    available: :attr:`st_blocks` (number of blocks allocated for file),
