@@ -1194,6 +1194,40 @@ The :func:`shutil.copytree` function has two new options:
 
 (Contributed by Tarek Ziadé.)
 
+In addition, the :mod:`shutil` module now supports :ref:`archiving operations
+<archiving-operations>` for zipfiles, uncompressed tarfiles, gzipped tarfiles,
+and bzipped tarfiles.  And there are functions for registering additional
+archiving file formats (such as xz compressed tarfiles or custom formats).
+
+The principal functions are :func:`~shutil.make_archive` and
+:func:`~shutil.unpack_archive`.  By default, both operate on the current
+directory (which can be set by :func:`os.chdir`) and on any sub-directories.
+The archive filename needs to specified with a full pathname.  The archiving
+step is non-destructive (the original files are left unchanged).
+
+::
+
+    >>> import shutil, pprint
+    >>> os.chdir('mydata')                               # change to the source directory
+    >>> f = make_archive('/var/backup/mydata', 'zip')    # archive the current directory
+    >>> f                                                # show the name of archive
+    '/var/backup/mydata.zip'
+    >>> os.chdir('tmp')                                  # change to an unpacking
+    >>> shutil.unpack_archive('/var/backup/mydata.zip')  # recover the data
+    >>> pprint.pprint(shutil.get_archive_formats())      # display known formats
+    [('bztar', "bzip2'ed tar-file"),
+     ('gztar', "gzip'ed tar-file"),
+     ('tar', 'uncompressed tar file'),
+     ('zip', 'ZIP file')]
+    >>> shutil.register_archive_format(                  # register a new archive format
+            name = 'xz',
+            function = 'xz.compress',
+            extra_args = [('level', 8)],
+            description = 'xz compression'
+    )
+
+(Contributed by Tarek Ziadé.)
+
 sqlite3
 -------
 
@@ -1662,6 +1696,8 @@ reading directly from dictionaries and strings.
             - bytes input support
             - non-UTF8 percent encoding of non-ASCII characters
           Issue 2987 for IPv6 (RFC2732) support in urlparse
+
+.. XXX reprlib.recursive_repr
 
 
 Multi-threading
