@@ -997,7 +997,7 @@ self-reference by displaying "..." in the recursive part of the representation
 string.
 
 To help write such :meth:`__repr__` methods, the :mod:`reprlib` module has a new
-decorator, :func:`reprlib.recursive_repr`, for detecting recursive calls to
+decorator, :func:`~reprlib.recursive_repr`, for detecting recursive calls to
 :meth:`__repr__` and substituting a placeholder string instead:
 
         >>> class MyList(list):
@@ -1011,7 +1011,7 @@ decorator, :func:`reprlib.recursive_repr`, for detecting recursive calls to
         >>> print(m)
         <'a'|'b'|'c'|...|'x'>
 
-(Contributed by Raymond Hettinger.)
+(Contributed by Raymond Hettinger in :issue:`9826` and :issue:`9840`.)
 
 contextlib
 ----------
