@@ -5,6 +5,9 @@
    :synopsis: Alternate repr() implementation with size limits.
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
+**Source code:** :source:`Lib/reprlib.py`
+
+--------------
 
 The :mod:`reprlib` module provides a means for producing object representations
 with limits on the size of the resulting strings. This is used in the Python
