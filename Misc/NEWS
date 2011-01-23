@@ -16,6 +16,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10987: Fix the recursion limit handling in the _pickle module.
+
 - Issue #10983: Fix several bugs making tunnel requests in http.client.
 
 - Issue #10955: zipimport uses ASCII encoding instead of cp437 to decode

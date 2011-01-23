@@ -77,14 +77,15 @@ def test_cpickle(_cache={}):
     except ImportError:
         print("cannot import _pickle, skipped!")
         return
-    l = None
+    k, l = None, None
     for n in itertools.count():
         try:
             l = _cache[n]
             continue  # Already tried and it works, let's save some time
         except KeyError:
             for i in range(100):
-                l = [l]
+                l = [k, l]
+                k = {i: l}
         _pickle.Pickler(io.BytesIO(), protocol=-1).dump(l)
         _cache[n] = l
 
