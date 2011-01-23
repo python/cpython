@@ -987,6 +987,32 @@ implemented::
 
 (Patch submitted by Daniel Urban; :issue:`5867`.)
 
+reprlib
+-------
+
+When writing a :meth:`__repr__` method for a custom container, it is easy to
+forget to handle the case where a member refers back to the container itself.
+Python's builtin objects such as :class:`list` and :class:`set` handle
+self-reference by displaying "..." in the recursive part of the representation
+string.
+
+To help write such :meth:`__repr__` methods, the :mod:`reprlib` module has a new
+decorator, :func:`reprlib.recursive_repr`, for detecting recursive calls to
+:meth:`__repr__` and substituting a placeholder string instead:
+
+        >>> class MyList(list):
+                @recursive_repr()
+                def __repr__(self):
+                    return '<' + '|'.join(map(repr, self)) + '>'
+
+        >>> m = MyList('abc')
+        >>> m.append(m)
+        >>> m.append('x')
+        >>> print(m)
+        <'a'|'b'|'c'|...|'x'>
+
+(Contributed by Raymond Hettinger.)
+
 contextlib
 ----------
 
@@ -1696,9 +1722,6 @@ reading directly from dictionaries and strings.
             - bytes input support
             - non-UTF8 percent encoding of non-ASCII characters
           Issue 2987 for IPv6 (RFC2732) support in urlparse
-
-.. XXX reprlib.recursive_repr
-
 
 Multi-threading
 ===============
