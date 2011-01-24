@@ -992,6 +992,35 @@ implemented::
 
 (Patch submitted by Daniel Urban; :issue:`5867`.)
 
+io
+--
+
+The :class:`io.BytesIO` has a new method, :meth:`~io.BytesIO.getbuffer`, which
+provides functionality similar to :func:`memoryview`.  It creates an editable
+view of the data without making a copy.  The buffer's random access and support
+for slice notation are well-suited to in-place editing::
+
+    import io
+
+    REC_LEN, LOC_START, LOC_LEN = 34, 7, 11
+
+    def change_location(buffer, record_number, location):
+        start = record_number * REC_LEN + LOC_START
+        buffer[start: start+LOC_LEN] = location
+
+    >>> byte_stream = io.BytesIO(
+        b'G3805  storeroom  Main chassis    '
+        b'X7899  shipping   Reserve cog     '
+        b'L6988  receiving  Primary sprocket'
+    )
+    >>> buffer = byte_stream.getbuffer()
+    >>> change_location(buffer, 1, b'warehouse  ')
+    >>> change_location(buffer, 0, b'showroom   ')
+    >>> print(byte_stream.getvalue())
+    b'G3805  showroom   Main chassis    ' ->
+    b'X7899  warehouse  Reserve cog     ' ->
+    b'L6988  receiving  Primary sprocket'
+
 reprlib
 -------
 
