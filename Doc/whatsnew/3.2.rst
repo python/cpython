@@ -984,10 +984,10 @@ implemented::
 
     class Temperature(metaclass=ABCMeta):
         @abc.abstractclassmethod
-        def from_farenheit(self, t):
+        def from_fahrenheit(self, t):
             ...
         @abc.abstractclassmethod
-        def from_celsium(self, t):
+        def from_celsius(self, t):
             ...
 
 (Patch submitted by Daniel Urban; :issue:`5867`.)
