@@ -1446,6 +1446,8 @@ the new :mod:`imaplib.IMAP4.starttls` method.
 
 (Contributed by Lorenzo M. Catucci and Antoine Pitrou, :issue:`4471`.)
 
+.. XXX sys._xoptions  http://bugs.python.org/issue10089
+
 unittest
 --------
 
@@ -2218,7 +2220,7 @@ require changes to your code:
 * :class:`bytearray` objects can no longer be used as filenames; instead,
   they should be converted to :class:`bytes`.
 
-* The :meth:`array.tostring' and :meth:`array.fromstring` have been renamed to
+* The :meth:`array.tostring` and :meth:`array.fromstring` have been renamed to
   :meth:`array.tobytes` and :meth:`array.frombytes` for clarity.  The old names
   have been deprecated. (See :issue:`8990`.)
 
