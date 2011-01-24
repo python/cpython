@@ -1109,7 +1109,7 @@ class FileType(object):
             the builtin open() function.
     """
 
-    def __init__(self, mode='r', bufsize=None):
+    def __init__(self, mode='r', bufsize=-1):
         self._mode = mode
         self._bufsize = bufsize
 
@@ -1125,14 +1125,15 @@ class FileType(object):
                 raise ValueError(msg)
 
         # all other arguments are used as file names
-        if self._bufsize:
+        try:
             return open(string, self._mode, self._bufsize)
-        else:
-            return open(string, self._mode)
+        except IOError as e:
+            message = _("can't open '%s': %s")
+            raise ArgumentTypeError(message % (string, e))
 
     def __repr__(self):
-        args = [self._mode, self._bufsize]
-        args_str = ', '.join([repr(arg) for arg in args if arg is not None])
+        args = self._mode, self._bufsize
+        args_str = ', '.join(repr(arg) for arg in args if arg != -1)
         return '%s(%s)' % (type(self).__name__, args_str)
 
 # ===========================
