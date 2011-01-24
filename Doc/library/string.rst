@@ -90,7 +90,7 @@ implementation as the built-in :meth:`format` method.
 
    The :class:`Formatter` class has the following public methods:
 
-   .. method:: format(format_string, *args, *kwargs)
+   .. method:: format(format_string, *args, **kwargs)
 
       :meth:`format` is the primary API method.  It takes a format template
       string, and an arbitrary set of positional and keyword argument.
