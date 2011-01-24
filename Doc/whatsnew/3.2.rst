@@ -327,7 +327,11 @@ aspects that are visible to the programmer:
   'c:/py32/lib/__pycache__/collections.cpython-32.pyc'
 
 * The :mod:`py_compile` and :mod:`compileall` modules have been updated to
-  reflect the new naming convention and target directory.
+  reflect the new naming convention and target directory.  The command-line
+  invocation of *compileall* has new command-line options include ``-i`` for
+  specifying a list of files and directories to compile, and ``-b`` which causes
+  bytecode files to be written to their legacy location rather than
+  *__pycache__*.
 
 * The :mod:`importlib.abc` module has been updated with new :term:`abstract base
   classes <abstract base class>` for the loading bytecode files.  The obsolete
@@ -1013,6 +1017,30 @@ decorator, :func:`~reprlib.recursive_repr`, for detecting recursive calls to
 
 (Contributed by Raymond Hettinger in :issue:`9826` and :issue:`9840`.)
 
+csv
+---
+
+The :mod:`csv` module now supports a new dialect, :class:`~csv.unix_dialect`,
+which applies quoting for all fields and a traditional Unix style with ``'\n'`` as
+the line terminator.  The registered dialect name is ``unix``.
+
+The :class:`csv.DictWriter` has a new method,
+:meth:`~csv.DictWriter.writeheader` for writing-out an initial row to document
+the field names::
+
+    >>> import csv, sys
+    >>> w = csv.DictWriter(sys.stdout, ['name', 'dept'], dialect='unix')
+    >>> w.writeheader()
+    "name","dept"
+    >>> w.writerows([
+            {'name': 'tom', 'dept': 'accounting'},
+            {'name': 'susan', 'dept': 'Salesl'}])
+    "tom","accounting"
+    "susan","sales"
+
+(New dialect suggested by Jay Talbot in :issue:`5975`, and the new method
+suggested by Ed Abraham in :issue:`1537721`.)
+
 contextlib
 ----------
 
@@ -1184,6 +1212,28 @@ also solves an issue where interleaved calls to *read* and *readline* gave the
 wrong results.
 
 (Patch submitted by Nir Aides in :issue:`7610`.)
+
+ast
+---
+
+The :mod:`ast` module has a wonderful a general-purpose tool for safely
+evaluating strings containing Python expressions using the Python literal
+syntax.  The :func:`ast.literal_eval` function serves as a secure alternative to
+the builtin :func:`eval` function which is easily abused.  Python 3.2 adds
+:class:`bytes` and :class:`set` literals to the list of supported types:
+strings, bytes, numbers, tuples, lists, dicts, sets, booleans, and None.
+
+::
+
+    >>> request = "{'req': 3, 'func': 'pow', 'args': (2, 0.5)}"
+    >>> literal_eval(request)
+    {'args': (2, 0.5), 'req': 3, 'func': 'pow'}
+
+    >>> request = "os.system('do something harmful')"
+    >>> literal_eval(request)
+    Traceback (most recent call last):
+      ...
+    ValueError: malformed node or string: <_ast.Call object at 0x101739a10>
 
 os
 --
@@ -2043,6 +2093,10 @@ require changes to your code:
 * :class:`bytearray` objects can no longer be used as filenames; instead,
   they should be converted to :class:`bytes`.
 
+* The :meth:`array.tostring' and :meth:`array.fromstring` have been renamed to
+  :meth:`array.tobytes` and :meth:`array.frombytes` for clarity.  The old names
+  have been deprecated. (See :issue:`8990`.)
+
 * ``PyArg_Parse*()`` functions:
 
   * "t#" format has been removed: use "s#" or "s*" instead
@@ -2125,3 +2179,8 @@ require changes to your code:
   :c:func:`PyEval_ReleaseLock()` have been officially deprecated.  The
   thread-state aware APIs (such as :c:func:`PyEval_SaveThread()`
   and :c:func:`PyEval_RestoreThread()`) should be used instead.
+
+* Due to security risks, :func:`asyncore.handle_accept` has been deprecated, and
+  a new functions, :func:`asyncore.handle_accepted` was added to replace it.
+
+  (Contributed by Giampaolo Rodola in :issue:`6706`.)
