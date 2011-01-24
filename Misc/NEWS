@@ -37,6 +37,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10974: IDLE no longer crashes if its recent files list includes files
+  with non-ASCII characters in their path names.
+
 - Issue #10987: Fix the recursion limit handling in the _pickle module.
 
 - Issue #10949: Improved robustness of rotating file handlers.
