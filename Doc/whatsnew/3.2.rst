@@ -551,8 +551,9 @@ Some smaller changes made to the core Python language are:
   module, or on the command line.
 
   A :exc:`ResourceWarning` is issued at interpreter shutdown if the
-  :data:`gc.garbage` list isn't empty.  This is meant to make the programmer
-  aware that their code contains object finalization issues.
+  :data:`gc.garbage` list isn't empty, and if :attr:`gc.DEBUG_UNCOLLECTABLE` is
+  set, all uncollectable objects are printed.  This is meant to make the
+  programmer aware that their code contains object finalization issues.
 
   A :exc:`ResourceWarning` is also issued when a :term:`file object` is destroyed
   without having been explicitly closed.  While the deallocator for such
@@ -1212,6 +1213,24 @@ also solves an issue where interleaved calls to *read* and *readline* gave the
 wrong results.
 
 (Patch submitted by Nir Aides in :issue:`7610`.)
+
+hashlib
+-------
+
+The :mod:`hashlib` module has two new constant attributes listing the hashing
+algorithms guaranteed to be present in all implementations and those available
+on the current implementation:
+
+    >>> import hashlib
+    >>> hashlib.algorithms_guaranteed
+    {'sha1', 'sha224', 'sha384', 'sha256', 'sha512', 'md5'}
+    >>> hashlib.algorithms_available
+    {'md2', 'SHA256', 'SHA512', 'dsaWithSHA', 'mdc2', 'SHA224', 'MD4', 'sha256',
+    'sha512', 'ripemd160', 'SHA1', 'MDC2', 'SHA', 'SHA384', 'MD2',
+    'ecdsa-with-SHA1','md4', 'md5', 'sha1', 'DSA-SHA', 'sha224',
+    'dsaEncryption', 'DSA', 'RIPEMD160', 'sha', 'MD5', 'sha384'}
+
+(Suggested by Carl Chenet in :issue:`7418`.)
 
 ast
 ---
