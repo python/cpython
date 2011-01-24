@@ -1599,6 +1599,51 @@ to display that server::
 
 (Contributed by Ron Adam; :issue:`2001`.)
 
+dis
+---
+
+The :mod:`dis` module gained two new functions for inspecting code,
+:func:`~dis.code_info` and :func:`~dis.show_code`.  Both provide detailed code
+object information for the supplied function, method, source code string or code
+object.  The former returns a string and the latter prints it::
+
+    >>> import dis, random
+    >>> show_code(random.choice)
+    Name:              choice
+    Filename:          /Library/Frameworks/Python.framework/Versions/3.2/lib/python3.2/random.py
+    Argument count:    2
+    Kw-only arguments: 0
+    Number of locals:  3
+    Stack size:        11
+    Flags:             OPTIMIZED, NEWLOCALS, NOFREE
+    Constants:
+       0: 'Choose a random element from a non-empty sequence.'
+       1: 'Cannot choose from an empty sequence'
+    Names:
+       0: _randbelow
+       1: len
+       2: ValueError
+       3: IndexError
+    Variable names:
+       0: self
+       1: seq
+       2: i
+
+(Contributed by Nick Coghlan in :issue:`9147`.)
+
+dbm
+---
+
+All database modules now support :meth:`get` and :meth:`setdefault` are now
+available in all database modules
+
+(Suggested by Ray Allen in :issue:`9523`.)
+
+ctypes
+------
+
+A new type, :class:`ctypes.c_ssize_t` represents the C :c:type:`ssize_t` datatype.
+
 sysconfig
 ---------
 
