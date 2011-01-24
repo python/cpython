@@ -279,8 +279,9 @@ or on combining URL components into a URL string.
    object.
 
    .. versionchanged:: 3.2
-      Result is a structured object rather than a simple 2-tuple
+      Result is a structured object rather than a simple 2-tuple.
 
+:: _parsing-ascii-encoded-bytes:
 
 Parsing ASCII Encoded Bytes
 ---------------------------

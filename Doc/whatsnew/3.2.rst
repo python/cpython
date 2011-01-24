@@ -1839,14 +1839,56 @@ reading directly from dictionaries and strings.
 
 (All changes contributed by Łukasz Langa.)
 
-.. XXX: Mention urllib.parse changes
-          Issue 9873 (Nick Coghlan):
-            - ASCII byte sequence support in URL parsing
-            - named tuple for urldefrag return value
-          Issue 5468 (Dan Mahn) for urlencode:
-            - bytes input support
-            - non-UTF8 percent encoding of non-ASCII characters
-          Issue 2987 for IPv6 (RFC2732) support in urlparse
+urllib.parse
+------------
+
+A number of usability improvements were made for the :mod:`urllib.parse` module.
+
+The :func:`~urllib.parse.urlparse` function now supports `IPv6
+<http://en.wikipedia.org/wiki/IPv6>`_ addresses as described in :rfc:`2732`:
+
+    >>> import urllib.parse
+    >>> urllib.parse.urlparse('http://[dead:beef:cafe:5417:affe:8FA3:deaf:feed]/foo/')
+    ParseResult(scheme='http',
+                netloc='[dead:beef:cafe:5417:affe:8FA3:deaf:feed]',
+                path='/foo/',
+                params='',
+                query='',
+                fragment='')
+
+The :func:`~urllib.parse.urldefrag` function now returns a :term:`named tuple`::
+
+    >>> r = urllib.parse.urldefrag('http://python.org/about/#target')
+    >>> r
+    DefragResult(url='http://python.org/about/', fragment='target')
+    >>> r[0]
+    'http://python.org/about/
+    >>> r.fragment
+    'target'
+
+And, the :func:`~urllib.parse.urlencode` function is now much more flexible,
+accepting either a string or bytes type for the *query* argument.  If it is a
+string, then the *safe*, *encoding*, and *error* parameters are sent to
+:func:`~urllib.parse.quote_plus` for encoding::
+
+    >>> urllib.parse.urlencode([
+             ('type', 'telenovela'),
+             ('name', '¿Dónde Está Elisa?')],
+             encoding='latin-1')
+    'type=telenovela&name=%BFD%F3nde+Est%E1+Elisa%3F'
+
+As detailed in :ref:`parsing-ascii-encoded-bytes` , all the :mod:`urllib.parse`
+functions now accept ASCII-encoded byte strings as input, so long as they are
+not mixed with regular strings.  If ASCII-encoded byte strings are given as
+parameters, the return types will also be an ASCII-encoded byte strings:
+
+    >>> urllib.parse.urlparse(b'http://www.python.org:80/about/')
+    ParseResultBytes(scheme=b'http', netloc=b'www.python.org:80',
+                     path=b'/about/', params=b'', query=b'', fragment=b'')
+
+(Work by Nick Coghlan, Dan Mahn, and Senthil Kumaran in :issue:`2987`,
+:issue:`5468`, and :issue:`9873`.)
+
 
 Multi-threading
 ===============
