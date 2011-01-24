@@ -4,6 +4,7 @@ import codecs
 import inspect
 import os
 import shutil
+import stat
 import sys
 import textwrap
 import tempfile
@@ -45,14 +46,13 @@ class TempDirMixin(object):
 
     def tearDown(self):
         os.chdir(self.old_dir)
-        while True:
-            try:
-                shutil.rmtree(self.temp_dir)
-            except WindowsError:
-                continue
-            else:
-                break
+        shutil.rmtree(self.temp_dir, True)
 
+    def create_readonly_file(self, filename):
+        file_path = os.path.join(self.temp_dir, filename)
+        with open(file_path, 'w') as file:
+            file.write(filename)
+        os.chmod(file_path, stat.S_IREAD)
 
 class Sig(object):
 
@@ -1446,17 +1446,19 @@ class TestFileTypeR(TempDirMixin, ParserTestCase):
             file = open(os.path.join(self.temp_dir, file_name), 'w')
             file.write(file_name)
             file.close()
+        self.create_readonly_file('readonly')
 
     argument_signatures = [
         Sig('-x', type=argparse.FileType()),
         Sig('spam', type=argparse.FileType('r')),
     ]
-    failures = ['-x', '']
+    failures = ['-x', '', 'non-existent-file.txt']
     successes = [
         ('foo', NS(x=None, spam=RFile('foo'))),
         ('-x foo bar', NS(x=RFile('foo'), spam=RFile('bar'))),
         ('bar -x foo', NS(x=RFile('foo'), spam=RFile('bar'))),
         ('-x - -', NS(x=sys.stdin, spam=sys.stdin)),
+        ('readonly', NS(x=None, spam=RFile('readonly'))),
     ]
 
 
@@ -1503,11 +1505,15 @@ class WFile(object):
 class TestFileTypeW(TempDirMixin, ParserTestCase):
     """Test the FileType option/argument type for writing files"""
 
+    def setUp(self):
+        super(TestFileTypeW, self).setUp()
+        self.create_readonly_file('readonly')
+
     argument_signatures = [
         Sig('-x', type=argparse.FileType('w')),
         Sig('spam', type=argparse.FileType('w')),
     ]
-    failures = ['-x', '']
+    failures = ['-x', '', 'readonly']
     successes = [
         ('foo', NS(x=None, spam=WFile('foo'))),
         ('-x foo bar', NS(x=WFile('foo'), spam=WFile('bar'))),
