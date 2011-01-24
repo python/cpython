@@ -127,9 +127,9 @@ The abstract grammar is currently defined as follows:
 Apart from the node classes, :mod:`ast` module defines these utility functions
 and classes for traversing abstract syntax trees:
 
-.. function:: parse(expr, filename='<unknown>', mode='exec')
+.. function:: parse(source, filename='<unknown>', mode='exec')
 
-   Parse an expression into an AST node.  Equivalent to ``compile(expr,
+   Parse the source into an AST node.  Equivalent to ``compile(source,
    filename, mode, ast.PyCF_ONLY_AST)``.
 
 

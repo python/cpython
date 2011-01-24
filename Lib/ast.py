@@ -29,12 +29,12 @@ from _ast import *
 from _ast import __version__
 
 
-def parse(expr, filename='<unknown>', mode='exec'):
+def parse(source, filename='<unknown>', mode='exec'):
     """
-    Parse an expression into an AST node.
-    Equivalent to compile(expr, filename, mode, PyCF_ONLY_AST).
+    Parse the source into an AST node.
+    Equivalent to compile(source, filename, mode, PyCF_ONLY_AST).
     """
-    return compile(expr, filename, mode, PyCF_ONLY_AST)
+    return compile(source, filename, mode, PyCF_ONLY_AST)
 
 
 def literal_eval(node_or_string):
