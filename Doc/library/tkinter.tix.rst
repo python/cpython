@@ -503,8 +503,8 @@ Tix Commands
 
    To view the current settings, the common usage is::
 
-      import Tix
-      root = Tix.Tk()
+      from tkinter import tix
+      root = tix.Tk()
       print(root.tix_configure())
 
 
