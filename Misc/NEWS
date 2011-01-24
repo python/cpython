@@ -140,6 +140,9 @@ Library
   OSError exception when The OS had been told to ignore SIGCLD in our process
   or otherwise not wait for exiting child processes.
 
+- Issue #9509: argparse now properly handles IOErrors raised by
+  argparse.FileType.
+
 Extension Modules
 -----------------
 
