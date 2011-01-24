@@ -1887,7 +1887,7 @@ string, then the *safe*, *encoding*, and *error* parameters are sent to
              encoding='latin-1')
     'type=telenovela&name=%BFD%F3nde+Est%E1+Elisa%3F'
 
-As detailed in :ref:`parsing-ascii-encoded-bytes` , all the :mod:`urllib.parse`
+As detailed in :ref:`parsing-ascii-encoded-bytes`, all the :mod:`urllib.parse`
 functions now accept ASCII-encoded byte strings as input, so long as they are
 not mixed with regular strings.  If ASCII-encoded byte strings are given as
 parameters, the return types will also be an ASCII-encoded byte strings:
