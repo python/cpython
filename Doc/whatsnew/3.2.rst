@@ -1106,6 +1106,14 @@ values are equal (:issue:`8188`)::
    assert hash(Fraction(3, 2)) == hash(1.5) == \
           hash(Decimal("1.5")) == hash(complex(1.5, 0))
 
+Some of the hashing details are exposed through a new attribute,
+:attr:`sys.hash_info`, which describes the bit width of the hash value, the
+prime modulus, the hash values for *infinity* and *nan*, and the multiplier
+used for the imaginary part of a number:
+
+>>> sys.hash_info
+sys.hash_info(width=64, modulus=2305843009213693951, inf=314159, nan=0, imag=1000003)
+
 An early decision to limit the inter-operability of various numeric types has
 been relaxed.  It is still unsupported (and ill-advised) to have implicit
 mixing in arithmetic expressions such as ``Decimal('1.1') + float('1.1')``
