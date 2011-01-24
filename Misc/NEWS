@@ -16,6 +16,9 @@ Core and Builtins
 Library
 -------
 
+- Have hashlib.algorithms_available and hashlib.algorithms_guaranteed both
+  return sets instead of one returning a tuple and the other a frozenset.
+
 - Issue #10987: Fix the recursion limit handling in the _pickle module.
 
 - Issue #10983: Fix several bugs making tunnel requests in http.client.

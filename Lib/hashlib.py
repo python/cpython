@@ -56,8 +56,8 @@ More condensed:
 # always available algorithm is added.
 __always_supported = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512')
 
-algorithms_guaranteed = __always_supported
-algorithms_available = frozenset(__always_supported)
+algorithms_guaranteed = set(__always_supported)
+algorithms_available = set(__always_supported)
 
 __all__ = __always_supported + ('new', 'algorithms_guaranteed',
                                 'algorithms_available')
