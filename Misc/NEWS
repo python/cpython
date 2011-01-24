@@ -45,6 +45,8 @@ Library
   that for incoming headers which makes this behaviour now consistent in
   both incoming and outgoing direction.
 
+- Issue #9509: argparse now properly handles IOErrors raised by
+  argparse.FileType.
 
 What's New in Python 3.2 Release Candidate 1
 ============================================
