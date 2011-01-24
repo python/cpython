@@ -1338,6 +1338,17 @@ The :mod:`sqlite3` module was updated to version 2.6.0.  It has two new capabili
 
 (Contributed by R. David Murray and Shashwat Anand; :issue:`8845`.)
 
+html
+----
+
+A new :mod:`html` module was introduced with only a single function,
+:func:`~html.escape`, which is used for escaping reserved characters from HTML
+markup:
+
+>>> import html
+>>> html.escape('x > 2 && x < 7')
+'x &gt; 2 &amp;&amp; x &lt; 7'
+
 socket
 ------
 
