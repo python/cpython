@@ -9,6 +9,9 @@
 .. sectionauthor:: Steve Holden <sholden@holdenweb.com>
 .. heavily adapted from original documentation by Sam Rushing
 
+**Source code:** :source:`Lib/asyncore.py`
+
+--------------
 
 This module provides the basic infrastructure for writing asynchronous  socket
 service clients and servers.
