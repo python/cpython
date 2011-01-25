@@ -998,11 +998,11 @@ error function <http://en.wikipedia.org/wiki/Error_function>`_:
 >>> erf(1.0/sqrt(2.0))   # portion of normal distribution within 1 standard deviation
 0.682689492137086
 
-:func:`~math.gamma` is a continuous extension of the factorial function.  See
-http://en.wikipedia.org/wiki/Gamma_function for details.  Because the function
-is related to factorials, it grows large even for small values of *x*, so there
-is also a :func:`~math.lgamma` for computing the natural logarithm of the gamma
-function:
+The :func:`~math.gamma` function is a continuous extension of the factorial
+function.  See http://en.wikipedia.org/wiki/Gamma_function for details.  Because
+the function is related to factorials, it grows large even for small values of
+*x*, so there is also a :func:`~math.lgamma` function for computing the natural
+logarithm of the gamma function:
 
 >>> gamma(7.0)           # six factorial
 720.0
