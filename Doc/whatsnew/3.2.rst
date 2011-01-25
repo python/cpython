@@ -993,10 +993,15 @@ of nearly equal quantities:
 0.013765762467652909
 
 The :func:`~math.erf` function computes a probability integral or `Gaussian
-error function <http://en.wikipedia.org/wiki/Error_function>`_:
+error function <http://en.wikipedia.org/wiki/Error_function>`_.  The
+complementary error function, :func:`~math.erfc`, is ``1 - erf(x)``:
 
 >>> erf(1.0/sqrt(2.0))   # portion of normal distribution within 1 standard deviation
 0.682689492137086
+>>> erfc(1.0/sqrt(2.0))  # portion of normal distribution outside 1 standard deviation
+0.31731050786291404
+>>> erf(1.0/sqrt(2.0)) + erfc(1.0/sqrt(2.0))
+1.0
 
 The :func:`~math.gamma` function is a continuous extension of the factorial
 function.  See http://en.wikipedia.org/wiki/Gamma_function for details.  Because
@@ -1967,6 +1972,16 @@ parameters, the return types will also be an ASCII-encoded byte strings:
 (Work by Nick Coghlan, Dan Mahn, and Senthil Kumaran in :issue:`2987`,
 :issue:`5468`, and :issue:`9873`.)
 
+turtledemo
+----------
+
+The demonstration code for the :mod:`turtle` module was moved from the *Demo*
+directory to main library.  It includes over a dozen sample scripts with
+lively displays.  Being on :attr:`sys.path`, it can now be run directly
+from the command-line::
+
+    $ python -m turtledemo
+
 
 Multi-threading
 ===============
@@ -2166,7 +2181,7 @@ members of the community to create and share external changesets.  See
 :pep:`385` for details.
 
 To learn to use the new version control system, see the `tutorial by Joel
-Spolsky <http://hginit.com>`_ or the `guide to Mercurial workflows
+Spolsky <http://hginit.com>`_ or the `Guide to Mercurial Workflows
 <http://mercurial.selenic.com/guide/>`_.
 
 
