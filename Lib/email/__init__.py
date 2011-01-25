@@ -59,5 +59,5 @@ def message_from_binary_file(fp, *args, **kws):
 
     Optional _class and strict are passed to the Parser constructor.
     """
-    from email.parser import Parser
+    from email.parser import BytesParser
     return BytesParser(*args, **kws).parse(fp)
