@@ -96,9 +96,11 @@ The module defines the following:
 
 .. attribute:: select.PIPE_BUF
 
-   Files reported as ready for writing by :func:`select`, :func:`poll` or
-   similar interfaces in this module are guaranteed to not block on a write
-   of up to :const:`PIPE_BUF` bytes.
+   The minimum number of bytes which can be written without blocking to a pipe
+   when the pipe has been reported as ready for writing by :func:`select`,
+   :func:`poll` or another interface in this module.  This doesn't apply
+   to other kind of file-like objects such as sockets.
+
    This value is guaranteed by POSIX to be at least 512.  Availability: Unix.
 
    .. versionadded:: 3.2
