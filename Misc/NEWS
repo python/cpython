@@ -16,6 +16,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #11004: Repaired edge case in deque.count().
+
 - Issue #10974: IDLE no longer crashes if its recent files list includes files
   with non-ASCII characters in their path names.
 
