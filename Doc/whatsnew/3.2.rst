@@ -1259,6 +1259,20 @@ popen
 The :func:`os.popen` and :func:`subprocess.Popen` functions now support
 :keyword:`with` statements for auto-closing of the file descriptors.
 
+select
+------
+
+The :mod:`select` module now exposes a new, constant attribute,
+:attr:`~select.PIPE_BUF`, which gives the minimum number of files that are
+guaranteed to not block on a write by the :func:`~select.select` or
+:func:`~select.poll` functions.
+
+>>> import select
+>>> select.PIPE_BUF
+512
+
+(Available on Unix systems.)
+
 gzip and zipfile
 ----------------
 
@@ -1756,6 +1770,39 @@ ctypes
 ------
 
 A new type, :class:`ctypes.c_ssize_t` represents the C :c:type:`ssize_t` datatype.
+
+site
+----
+
+The :mod:`site` module has three new functions useful for reporting on the
+details of a given Python installation.
+
+* :func:`~site.getsitepackages` lists all global site-packages directories.
+
+* :func:`~site.getuserbase` reports on the user's base directory where data can
+  be stored.
+
+* :func:`~site.getusersitepackages` reveals the user-specific site-packages
+  directory path.
+
+::
+
+    >>> site.getsitepackages()
+    ['/Library/Frameworks/Python.framework/Versions/3.2/lib/python3.2/site-packages',
+     '/Library/Frameworks/Python.framework/Versions/3.2/lib/site-python',
+     '/Library/Python/3.2/site-packages']
+    >>> site.getuserbase()
+    '/Users/raymondhettinger/Library/Python/3.2'
+    >>> site.getusersitepackages()
+    '/Users/raymondhettinger/Library/Python/3.2/lib/python/site-packages'
+
+Conveniently, some of site's functionality is accessible directly from the
+command-line::
+
+    $ python -m site --user-base
+    /Users/raymondhettinger/.local
+    $ python -m site --user-site
+    /Users/raymondhettinger/.local/lib/python3.2/site-packages
 
 sysconfig
 ---------
