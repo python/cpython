@@ -485,7 +485,8 @@ deque_reverse(dequeobject *deque, PyObject *unused)
         /* Advance left block/index pair */
         leftindex++;
         if (leftindex == BLOCKLEN) {
-            assert (leftblock->rightlink != NULL);
+            if (leftblock->rightlink == NULL)
+                break;
             leftblock = leftblock->rightlink;
             leftindex = 0;
         }
@@ -493,7 +494,8 @@ deque_reverse(dequeobject *deque, PyObject *unused)
         /* Step backwards with the right block/index pair */
         rightindex--;
         if (rightindex == -1) {
-            assert (rightblock->leftlink != NULL);
+            if (rightblock->leftlink == NULL)
+                break;
             rightblock = rightblock->leftlink;
             rightindex = BLOCKLEN - 1;
         }
@@ -509,7 +511,7 @@ deque_count(dequeobject *deque, PyObject *v)
 {
     block *leftblock = deque->leftblock;
     Py_ssize_t leftindex = deque->leftindex;
-    Py_ssize_t n = (deque->len);
+    Py_ssize_t n = deque->len;
     Py_ssize_t i;
     Py_ssize_t count = 0;
     PyObject *item;
@@ -533,7 +535,8 @@ deque_count(dequeobject *deque, PyObject *v)
         /* Advance left block/index pair */
         leftindex++;
         if (leftindex == BLOCKLEN) {
-            assert (leftblock->rightlink != NULL);
+            if (leftblock->rightlink == NULL)  /* can occur when i==n-1 */
+                break;
             leftblock = leftblock->rightlink;
             leftindex = 0;
         }
