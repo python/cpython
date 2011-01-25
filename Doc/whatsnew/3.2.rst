@@ -1263,9 +1263,9 @@ select
 ------
 
 The :mod:`select` module now exposes a new, constant attribute,
-:attr:`~select.PIPE_BUF`, which gives the minimum number of files that are
-guaranteed to not block on a write by the :func:`~select.select` or
-:func:`~select.poll` functions.
+:attr:`~select.PIPE_BUF`, which gives the minimum number of bytes which are
+guaranteed not to block when :func:`select.select` says a pipe is ready
+for writing.
 
 >>> import select
 >>> select.PIPE_BUF

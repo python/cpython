@@ -94,7 +94,7 @@ The module defines the following:
       library, and does not handle file descriptors that don't originate from
       WinSock.
 
-.. attribute:: select.PIPE_BUF
+.. attribute:: PIPE_BUF
 
    The minimum number of bytes which can be written without blocking to a pipe
    when the pipe has been reported as ready for writing by :func:`select`,
