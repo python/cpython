@@ -137,6 +137,15 @@ class TestBasic(unittest.TestCase):
         m.d = d
         self.assertRaises(RuntimeError, d.count, 3)
 
+        # test issue11004
+        # block advance failed after rotation aligned elements on right side of block
+        d = deque([None]*16)
+        for i in range(len(d)):
+            d.rotate(-1)
+        d.rotate(1)
+        self.assertEqual(d.count(1), 0)
+        self.assertEqual(d.count(None), 16)
+
     def test_comparisons(self):
         d = deque('xabc'); d.popleft()
         for e in [d, deque('abc'), deque('ab'), deque(), list(d)]:

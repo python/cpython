@@ -19,6 +19,8 @@ Core and Builtins
   non-Python managed memory while it is being modified by another thread.
   Patch by Matt Bandy.
 
+- Issue #11004: Repaired edge case in deque.count().
+
 - Issue #8278: On Windows and with a NTFS filesystem, os.stat() and os.utime()
   can now handle dates after 2038.
 
