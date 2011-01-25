@@ -972,6 +972,45 @@ datetime and time
 
 (Contributed by Alexander Belopolsky and Victor Stinner.)
 
+math
+----
+
+The :mod:`math` module has been updated with five new functions inspired by the
+C99 standard.
+
+The :func:`~math.isfinite` function provides a reliable and fast way to detect
+special values.  It returns *True* for regular numbers and *False* for *Nan* or
+*Infinity*:
+
+>>> [isfinite(x) for x in (123, 4.56, float('Nan'), float('Inf'))]
+[True, True, False, False]
+
+The :func:`~math.expm1` function computes ``e**x-1`` for small values of *x*
+without incuring the loss of precision that usually accompanies the subtraction
+of nearly equal quantities:
+
+>>> expm1(0.013671875)   # more accurate way to compute e**x-1 for a small x
+0.013765762467652909
+
+The :func:`~math.erf` function computes a probability integral of `Gaussian
+error function <http://en.wikipedia.org/wiki/Error_function>`_:
+
+>>> erf(1.0/sqrt(2.0))   # portion of normal distribution within 1 standard deviation
+0.682689492137086
+
+:func:`~math.gamma` is a continuous extension of the factorial function.  See
+http://en.wikipedia.org/wiki/Gamma_function for details.  Because the function
+is related to factorials, it grows large even for small values of *x*, so there
+is also a :func:`~math.lgamma` for computing the natural logarithm of the gamma
+function:
+
+>>> gamma(7.0)           # six factorial
+720.0
+>>> lgamma(801.0)        # log(800 factorial)
+4551.950730698041
+
+(Contributed by Mark Dickinson.)
+
 abc
 ---
 
