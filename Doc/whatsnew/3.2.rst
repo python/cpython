@@ -992,7 +992,7 @@ of nearly equal quantities:
 >>> expm1(0.013671875)   # more accurate way to compute e**x-1 for a small x
 0.013765762467652909
 
-The :func:`~math.erf` function computes a probability integral of `Gaussian
+The :func:`~math.erf` function computes a probability integral or `Gaussian
 error function <http://en.wikipedia.org/wiki/Error_function>`_:
 
 >>> erf(1.0/sqrt(2.0))   # portion of normal distribution within 1 standard deviation
