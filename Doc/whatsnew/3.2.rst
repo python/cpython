@@ -975,7 +975,7 @@ datetime and time
 math
 ----
 
-The :mod:`math` module has been updated with five new functions inspired by the
+The :mod:`math` module has been updated with six new functions inspired by the
 C99 standard.
 
 The :func:`~math.isfinite` function provides a reliable and fast way to detect
