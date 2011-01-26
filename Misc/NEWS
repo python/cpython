@@ -16,6 +16,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11019: Fixed BytesGenerator so that it correctly handles a Message
+  with a None body.
+
 - Issue #11014: Make 'filter' argument in tarfile.Tarfile.add() into a
   keyword-only argument.  The preceding positional argument was deprecated,
   so it made no sense to add filter as a positional argument.
