@@ -919,6 +919,10 @@ class WriteTest(WriteTestBase):
             finally:
                 tar.close()
 
+            # Verify that filter is a keyword-only argument
+            with self.assertRaises(TypeError):
+                tar.add(tempdir, "empty_dir", True, None, filter)
+
             tar = tarfile.open(tmpname, "r")
             try:
                 for tarinfo in tar:
