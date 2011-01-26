@@ -2025,7 +2025,7 @@ class TarFile(object):
                     print("link to", tarinfo.linkname, end=' ')
             print()
 
-    def add(self, name, arcname=None, recursive=True, exclude=None, filter=None):
+    def add(self, name, arcname=None, recursive=True, exclude=None, *, filter=None):
         """Add the file `name' to the archive. `name' may be any type of file
            (directory, fifo, symbolic link, etc.). If given, `arcname'
            specifies an alternative name for the file in the archive.
@@ -2082,7 +2082,7 @@ class TarFile(object):
             if recursive:
                 for f in os.listdir(name):
                     self.add(os.path.join(name, f), os.path.join(arcname, f),
-                            recursive, exclude, filter)
+                            recursive, exclude, filter=filter)
 
         else:
             self.addfile(tarinfo)
