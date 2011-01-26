@@ -85,7 +85,7 @@ class BZ2FileTest(BaseTest):
                 if not str:
                     break
                 text += str
-            self.assertEqual(text, text)
+            self.assertEqual(text, self.TEXT)
 
     def testRead100(self):
         # "Test BZ2File.read(100)"
