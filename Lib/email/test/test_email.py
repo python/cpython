@@ -2989,6 +2989,13 @@ class Test8BitBytesHandling(unittest.TestCase):
         email.generator.BytesGenerator(out).flatten(msg)
         self.assertEqual(out.getvalue(), self.non_latin_bin_msg)
 
+    def test_bytes_generator_handles_None_body(self):
+        #Issue 11019
+        msg = email.message.Message()
+        out = BytesIO()
+        email.generator.BytesGenerator(out).flatten(msg)
+        self.assertEqual(out.getvalue(), b"\n")
+
     non_latin_bin_msg_as7bit_wrapped = textwrap.dedent("""\
         From: foo@bar.com
         To: =?unknown-8bit?q?b=C3=A1z?=
