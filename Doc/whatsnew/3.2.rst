@@ -260,8 +260,8 @@ when currently pending futures are done executing.
 A simple of example of :class:`~concurrent.futures.ThreadPoolExecutor` is a
 launch of four parallel threads for copying files::
 
-  import shutil
-  with ThreadPoolExecutor(max_workers=4) as e:
+  import threading, shutil
+  with threading.ThreadPoolExecutor(max_workers=4) as e:
       e.submit(shutil.copy, 'src1.txt', 'dest1.txt')
       e.submit(shutil.copy, 'src2.txt', 'dest2.txt')
       e.submit(shutil.copy, 'src3.txt', 'dest3.txt')
@@ -712,6 +712,7 @@ functools
   For example, adding a caching decorator to a database query function can save
   database accesses for popular searches:
 
+  >>> import functools
   >>> @functools.lru_cache(maxsize=300)
   >>> def get_phone_number(name):
           c = conn.cursor()
@@ -928,13 +929,15 @@ datetime and time
 * The :mod:`datetime` module has a new type :class:`~datetime.timezone` that
   implements the :class:`~datetime.tzinfo` interface by returning a fixed UTC
   offset and timezone name. This makes it easier to create timezone-aware
-  datetime objects:
+  datetime objects::
 
-  >>> datetime.now(timezone.utc)
-  datetime.datetime(2010, 12, 8, 21, 4, 2, 923754, tzinfo=datetime.timezone.utc)
+    >>> import datetime
 
-  >>> datetime.strptime("01/01/2000 12:00 +0000", "%m/%d/%Y %H:%M %z")
-  datetime.datetime(2000, 1, 1, 12, 0, tzinfo=datetime.timezone.utc)
+    >>> datetime.now(timezone.utc)
+    datetime.datetime(2010, 12, 8, 21, 4, 2, 923754, tzinfo=datetime.timezone.utc)
+
+    >>> datetime.strptime("01/01/2000 12:00 +0000", "%m/%d/%Y %H:%M %z")
+    datetime.datetime(2000, 1, 1, 12, 0, tzinfo=datetime.timezone.utc)
 
 * Also, :class:`~datetime.timedelta` objects can now be multiplied by
   :class:`float` and divided by :class:`float` and :class:`int` objects.
@@ -953,6 +956,7 @@ datetime and time
   :attr:`time.accept2dyear` be set to *False* so that large date ranges
   can be used without guesswork:
 
+  >>> import time, warnings
   >>> warnings.resetwarnings()      # remove the default warning filters
   >>> time.accept2dyear = True      # guess whether 11 means 11 or 2011
   >>> time.asctime((11, 1, 1, 12, 34, 56, 4, 1, 0))
@@ -1044,13 +1048,13 @@ provides functionality similar to :func:`memoryview`.  It creates an editable
 view of the data without making a copy.  The buffer's random access and support
 for slice notation are well-suited to in-place editing::
 
-    import io
+    >>> REC_LEN, LOC_START, LOC_LEN = 34, 7, 11
 
-    REC_LEN, LOC_START, LOC_LEN = 34, 7, 11
+    >>> def change_location(buffer, record_number, location):
+            start = record_number * REC_LEN + LOC_START
+            buffer[start: start+LOC_LEN] = location
 
-    def change_location(buffer, record_number, location):
-        start = record_number * REC_LEN + LOC_START
-        buffer[start: start+LOC_LEN] = location
+    >>> import io
 
     >>> byte_stream = io.BytesIO(
         b'G3805  storeroom  Main chassis    '
@@ -1138,8 +1142,11 @@ writing both a function decorator and a context manager for the task, the
 :func:`~contextlib.contextmanager` provides both capabilities in a single
 definition::
 
+    from contextlib import contextmanager
     import logging
+
     logging.basicConfig(level=logging.INFO)
+
     @contextmanager
     def track_entry_and_exit(name):
         logging.info('Entering: {}'.format(name))
@@ -1338,6 +1345,7 @@ the builtin :func:`eval` function which is easily abused.  Python 3.2 adds
 strings, bytes, numbers, tuples, lists, dicts, sets, booleans, and None.
 
 ::
+    >>> from ast import literal_request
 
     >>> request = "{'req': 3, 'func': 'pow', 'args': (2, 0.5)}"
     >>> literal_eval(request)
@@ -1534,6 +1542,9 @@ the new :mod:`imaplib.IMAP4.starttls` method.
 (Contributed by Lorenzo M. Catucci and Antoine Pitrou, :issue:`4471`.)
 
 .. XXX sys._xoptions  http://bugs.python.org/issue10089
+.. XXX perhaps add issue numbers back to datetime
+.. XXX more research on attributions
+.. XXX tarfile
 
 unittest
 --------
@@ -1735,7 +1746,7 @@ object information for the supplied function, method, source code string or code
 object.  The former returns a string and the latter prints it::
 
     >>> import dis, random
-    >>> show_code(random.choice)
+    >>> dis.show_code(random.choice)
     Name:              choice
     Filename:          /Library/Frameworks/Python.framework/Versions/3.2/lib/python3.2/random.py
     Argument count:    2
@@ -1787,6 +1798,7 @@ details of a given Python installation.
 
 ::
 
+    >>> import site
     >>> site.getsitepackages()
     ['/Library/Frameworks/Python.framework/Versions/3.2/lib/python3.2/site-packages',
      '/Library/Frameworks/Python.framework/Versions/3.2/lib/site-python',
