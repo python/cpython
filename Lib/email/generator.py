@@ -377,11 +377,8 @@ class BytesGenerator(Generator):
     def _handle_text(self, msg):
         # If the string has surrogates the original source was bytes, so
         # just write it back out.
-        payload = msg.get_payload()
-        if payload is None:
-            return
-        if _has_surrogates(payload):
-            self.write(payload)
+        if _has_surrogates(msg._payload):
+            self.write(msg._payload)
         else:
             super(BytesGenerator,self)._handle_text(msg)
 
