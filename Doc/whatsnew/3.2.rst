@@ -954,19 +954,21 @@ datetime and time
   Starting with Py3.2, use of the century guessing heuristic will emit a
   :exc:`DeprecationWarning`.  Instead, it is recommended that
   :attr:`time.accept2dyear` be set to *False* so that large date ranges
-  can be used without guesswork:
+  can be used without guesswork::
 
-  >>> import time, warnings
-  >>> warnings.resetwarnings()      # remove the default warning filters
-  >>> time.accept2dyear = True      # guess whether 11 means 11 or 2011
-  >>> time.asctime((11, 1, 1, 12, 34, 56, 4, 1, 0))
-  Warning (from warnings module):
-    ...
-  DeprecationWarning: Century info guessed for a 2-digit year.
-  'Fri Jan  1 12:34:56 2011'
-  >>> time.accept2dyear = False     # use the full range of allowable dates
-  >>> time.asctime((11, 1, 1, 12, 34, 56, 4, 1, 0))
-  'Fri Jan  1 12:34:56 11'
+    >>> import time, warnings
+    >>> warnings.resetwarnings()      # remove the default warning filters
+
+    >>> time.accept2dyear = True      # guess whether 11 means 11 or 2011
+    >>> time.asctime((11, 1, 1, 12, 34, 56, 4, 1, 0))
+    Warning (from warnings module):
+      ...
+    DeprecationWarning: Century info guessed for a 2-digit year.
+    'Fri Jan  1 12:34:56 2011'
+
+    >>> time.accept2dyear = False     # use the full range of allowable dates
+    >>> time.asctime((11, 1, 1, 12, 34, 56, 4, 1, 0))
+    'Fri Jan  1 12:34:56 11'
 
   Several functions now have significantly expanded date ranges.  When
   :attr:`time.accept2dyear` is false, the :func:`time.asctime` function will
@@ -1080,7 +1082,7 @@ string.
 
 To help write such :meth:`__repr__` methods, the :mod:`reprlib` module has a new
 decorator, :func:`~reprlib.recursive_repr`, for detecting recursive calls to
-:meth:`__repr__` and substituting a placeholder string instead:
+:meth:`__repr__` and substituting a placeholder string instead::
 
         >>> class MyList(list):
                 @recursive_repr()
@@ -1235,9 +1237,9 @@ connection when done::
 
  >>> from ftplib import FTP
  >>> with FTP("ftp1.at.proftpd.org") as ftp:
- ...     ftp.login()
- ...     ftp.dir()
- ...
+         ftp.login()
+         ftp.dir()
+
  '230 Anonymous login ok, restrictions apply.'
  dr-xr-xr-x   9 ftp      ftp           154 May  6 10:43 .
  dr-xr-xr-x   9 ftp      ftp           154 May  6 10:43 ..
@@ -1321,11 +1323,13 @@ hashlib
 
 The :mod:`hashlib` module has two new constant attributes listing the hashing
 algorithms guaranteed to be present in all implementations and those available
-on the current implementation:
+on the current implementation::
 
     >>> import hashlib
+
     >>> hashlib.algorithms_guaranteed
     {'sha1', 'sha224', 'sha384', 'sha256', 'sha512', 'md5'}
+
     >>> hashlib.algorithms_available
     {'md2', 'SHA256', 'SHA512', 'dsaWithSHA', 'mdc2', 'SHA224', 'MD4', 'sha256',
     'sha512', 'ripemd160', 'SHA1', 'MDC2', 'SHA', 'SHA384', 'MD2',
@@ -1345,6 +1349,7 @@ the builtin :func:`eval` function which is easily abused.  Python 3.2 adds
 strings, bytes, numbers, tuples, lists, dicts, sets, booleans, and None.
 
 ::
+
     >>> from ast import literal_request
 
     >>> request = "{'req': 3, 'func': 'pow', 'args': (2, 0.5)}"
@@ -1406,17 +1411,20 @@ step is non-destructive (the original files are left unchanged).
 ::
 
     >>> import shutil, pprint
+
     >>> os.chdir('mydata')                               # change to the source directory
     >>> f = make_archive('/var/backup/mydata', 'zip')    # archive the current directory
     >>> f                                                # show the name of archive
     '/var/backup/mydata.zip'
     >>> os.chdir('tmp')                                  # change to an unpacking
     >>> shutil.unpack_archive('/var/backup/mydata.zip')  # recover the data
+
     >>> pprint.pprint(shutil.get_archive_formats())      # display known formats
     [('bztar', "bzip2'ed tar-file"),
      ('gztar', "gzip'ed tar-file"),
      ('tar', 'uncompressed tar file'),
      ('zip', 'ZIP file')]
+
     >>> shutil.register_archive_format(                  # register a new archive format
             name = 'xz',
             function = 'xz.compress',
