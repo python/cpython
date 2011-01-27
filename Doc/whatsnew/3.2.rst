@@ -1318,6 +1318,38 @@ wrong results.
 
 (Patch submitted by Nir Aides in :issue:`7610`.)
 
+tarfile
+-------
+
+The :class:`~tarfile.TarFile` class can now be used as a content manager.  In
+addition, its :meth:`~tarfile.TarFile.add` method has a new option, *filter*,
+that controls which files are added to the archive and allows the file metadata
+to be edited.
+
+The new *filter* option replaces the older, less flexible *exclude* parameter
+which is now deprecated.  If specified, the optional *filter* parameter needs to
+be a :term:`keyword argument`.  The user-supplied filter function accepts a
+:class:`~tarfile.TarInfo` object and returns an updated
+:class:`~tarfile.TarInfo` object, or if it wants the file to be excluded, the
+function can return *None*::
+
+    >>> import tarfile, glob
+
+    >>> def myfilter(tarinfo):
+           if tarinfo.isfile():             # only save real files
+                tarinfo.uname = 'monty'     # redact the user name
+                return tarinfo
+
+    >>> with tarfile.TarFile(name='myarchive.tar', mode='w') as tf:
+            for filename in glob.glob('*.txt'):
+                tf.add(filename, filter=myfilter)
+            tf.list()
+    -rw-r--r-- monty/501        902 2011-01-26 17:59:11 annotations.txt
+    -rw-r--r-- monty/501        123 2011-01-26 17:59:11 general_questions.txt
+    -rw-r--r-- monty/501       3514 2011-01-26 17:59:11 prion.txt
+    -rw-r--r-- monty/501        124 2011-01-26 17:59:11 py_todo.txt
+    -rw-r--r-- monty/501       1399 2011-01-26 17:59:11 semaphore_notes.txt
+
 hashlib
 -------
 
