@@ -37,6 +37,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11020: Command-line pyclbr was broken because of missing 2-to-3
+  conversion.
+
 - Issue #10974: IDLE no longer crashes if its recent files list includes files
   with non-ASCII characters in their path names.
 
