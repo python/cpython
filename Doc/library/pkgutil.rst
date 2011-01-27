@@ -4,6 +4,10 @@
 .. module:: pkgutil
    :synopsis: Utilities for the import system.
 
+**Source code:** :source:`Lib/pkgutil.py`
+
+--------------
+
 This module provides utilities for the import system, in particular package
 support.
 

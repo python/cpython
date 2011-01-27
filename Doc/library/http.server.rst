@@ -11,6 +11,10 @@
    single: URL
    single: httpd
 
+**Source code:** :source:`Lib/http/server.py`
+
+--------------
+
 This module defines classes for implementing HTTP servers (Web servers).
 
 One class, :class:`HTTPServer`, is a :class:`socketserver.TCPServer` subclass.

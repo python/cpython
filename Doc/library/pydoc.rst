@@ -12,6 +12,10 @@
    single: documentation; online
    single: help; online
 
+**Source code:** :source:`Lib/pydoc.py`
+
+--------------
+
 The :mod:`pydoc` module automatically generates documentation from Python
 modules.  The documentation can be presented as pages of text on the console,
 served to a Web browser, or saved to HTML files.

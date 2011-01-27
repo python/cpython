@@ -4,6 +4,10 @@
 .. module:: gzip
    :synopsis: Interfaces for gzip compression and decompression using file objects.
 
+**Source code:** :source:`Lib/gzip.py`
+
+--------------
+
 This module provides a simple interface to compress and decompress files just
 like the GNU programs :program:`gzip` and :program:`gunzip` would.
 

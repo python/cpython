@@ -12,6 +12,10 @@
 
 .. index:: TLS, SSL, Transport Layer Security, Secure Sockets Layer
 
+**Source code:** :source:`Lib/ssl.py`
+
+--------------
+
 This module provides access to Transport Layer Security (often known as "Secure
 Sockets Layer") encryption and peer authentication facilities for network
 sockets, both client-side and server-side.  This module uses the OpenSSL

@@ -6,6 +6,10 @@
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 .. Documentations stolen from comments in file.
 
+**Source code:** :source:`Lib/wave.py`
+
+--------------
+
 The :mod:`wave` module provides a convenient interface to the WAV sound format.
 It does not support compression/decompression, but it does support mono/stereo.
 

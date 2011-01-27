@@ -11,6 +11,10 @@
    pair: plist; file
    single: property list
 
+**Source code:** :source:`Lib/plistlib.py`
+
+--------------
+
 This module provides an interface for reading and writing the "property list"
 XML files used mainly by Mac OS X.
 

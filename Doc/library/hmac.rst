@@ -7,6 +7,9 @@
 .. moduleauthor:: Gerhard Häring <ghaering@users.sourceforge.net>
 .. sectionauthor:: Gerhard Häring <ghaering@users.sourceforge.net>
 
+**Source code:** :source:`Lib/hmac.py`
+
+--------------
 
 This module implements the HMAC algorithm as described by :rfc:`2104`.
 

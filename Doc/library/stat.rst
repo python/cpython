@@ -6,6 +6,9 @@
               os.lstat() and os.fstat().
 .. sectionauthor:: Skip Montanaro <skip@automatrix.com>
 
+**Source code:** :source:`Lib/stat.py`
+
+--------------
 
 The :mod:`stat` module defines constants and functions for interpreting the
 results of :func:`os.stat`, :func:`os.fstat` and :func:`os.lstat` (if they

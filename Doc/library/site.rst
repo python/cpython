@@ -4,6 +4,9 @@
 .. module:: site
    :synopsis: A standard way to reference site-specific modules.
 
+**Source code:** :source:`Lib/site.py`
+
+--------------
 
 **This module is automatically imported during initialization.** The automatic
 import can be suppressed using the interpreter's :option:`-S` option.

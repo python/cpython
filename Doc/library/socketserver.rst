@@ -4,6 +4,10 @@
 .. module:: socketserver
    :synopsis: A framework for network servers.
 
+**Source code:** :source:`Lib/socketserver.py`
+
+--------------
+
 The :mod:`socketserver` module simplifies the task of writing network servers.
 
 There are four basic server classes: :class:`TCPServer` uses the Internet TCP

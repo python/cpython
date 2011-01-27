@@ -9,6 +9,9 @@ The Python Profilers
 .. module:: profile
    :synopsis: Python source profiler.
 
+**Source code:** :source:`Lib/profile.py` and :source:`Lib/pstats.py`
+
+--------------
 
 .. _profiler-introduction:
 
