@@ -1344,7 +1344,7 @@ function can return *None*::
                 tarinfo.uname = 'monty'     # redact the user name
                 return tarinfo
 
-    >>> with tarfile.TarFile(name='myarchive.tar', mode='w') as tf:
+    >>> with tarfile.open(name='myarchive.tar.gz', mode='w:gz') as tf:
             for filename in glob.glob('*.txt'):
                 tf.add(filename, filter=myfilter)
             tf.list()
