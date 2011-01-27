@@ -6,6 +6,9 @@
 
 .. versionadded:: 3.2
 
+**Source code:** :source:`Lib/html/__init__.py`
+
+--------------
 
 This module defines utilities to manipulate HTML.
 

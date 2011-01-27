@@ -5,6 +5,9 @@
    :synopsis: Definitions of HTML general entities.
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
+**Source code:** :source:`Lib/html/entities.py`
+
+--------------
 
 This module defines three dictionaries, ``name2codepoint``, ``codepoint2name``,
 and ``entitydefs``. ``entitydefs`` is used to provide the :attr:`entitydefs`

@@ -4,7 +4,12 @@
 .. module:: concurrent.futures
    :synopsis: Execute computations concurrently using threads or processes.
 
+**Source code:** :source:`Lib/concurrent/futures/thread.py`
+and :source:`Lib/concurrent/futures/process.py`
+
 .. versionadded:: 3.2
+
+--------------
 
 The :mod:`concurrent.futures` module provides a high-level interface for
 asynchronously executing callables.

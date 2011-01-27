@@ -5,9 +5,14 @@
    :synopsis: Python's configuration information
 .. moduleauthor:: Tarek Ziade <tarek@ziade.org>
 .. sectionauthor:: Tarek Ziade <tarek@ziade.org>
-.. versionadded:: 3.2
 .. index::
    single: configuration information
+
+**Source code:** :source:`Lib/sysconfig.py`
+
+.. versionadded:: 3.2
+
+--------------
 
 The :mod:`sysconfig` module provides access to Python's configuration
 information like the list of installation paths and the configuration variables

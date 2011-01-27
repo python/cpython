@@ -8,6 +8,9 @@
 .. sectionauthor:: Eric S. Raymond <esr@snark.thyrsus.com>
 .. sectionauthor:: Gustavo Niemeyer <niemeyer@conectiva.com>
 
+**Source code:** :source:`Lib/shlex.py`
+
+--------------
 
 The :class:`shlex` class makes it easy to write lexical analyzers for simple
 syntaxes resembling that of the Unix shell.  This will often be useful for
