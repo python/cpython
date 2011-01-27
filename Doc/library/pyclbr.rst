@@ -5,6 +5,9 @@
    :synopsis: Supports information extraction for a Python class browser.
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
+**Source code:** :source:`Lib/pyclbr.py`
+
+--------------
 
 The :mod:`pyclbr` module can be used to determine some limited information
 about the classes, methods and top-level functions defined in a module.  The

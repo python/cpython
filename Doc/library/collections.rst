@@ -12,7 +12,7 @@
    import itertools
    __name__ = '<doctest>'
 
-**Source code:** :source:`Lib/collections.py`
+**Source code:** :source:`Lib/collections.py` and :source:`Lib/_abcoll.py`
 
 --------------
 

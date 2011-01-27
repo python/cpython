@@ -9,6 +9,10 @@
    single: Benchmarking
    single: Performance
 
+**Source code:** :source:`Lib/timeit.py`
+
+--------------
+
 This module provides a simple way to time small bits of Python code. It has both
 command line as well as callable interfaces.  It avoids a number of common traps
 for measuring execution times.  See also Tim Peters' introduction to the

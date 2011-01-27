@@ -12,6 +12,10 @@
    pair: temporary; file name
    pair: temporary; file
 
+**Source code:** :source:`Lib/tempfile.py`
+
+--------------
+
 This module generates temporary files and directories.  It works on all
 supported platforms.  It provides three new functions,
 :func:`NamedTemporaryFile`, :func:`mkstemp`, and :func:`mkdtemp`, which should
