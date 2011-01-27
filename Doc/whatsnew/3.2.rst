@@ -1071,6 +1071,8 @@ for slice notation are well-suited to in-place editing::
     b'X7899  warehouse  Reserve cog     ' ->
     b'L6988  receiving  Primary sprocket'
 
+(Contributed by Antoine Pitrou in :issue:`5506`.)
+
 reprlib
 -------
 
@@ -1268,6 +1270,8 @@ popen
 The :func:`os.popen` and :func:`subprocess.Popen` functions now support
 :keyword:`with` statements for auto-closing of the file descriptors.
 
+(Contributed by Antoine Pitrou in :issue:`7461`.)
+
 select
 ------
 
@@ -1280,7 +1284,7 @@ for writing.
 >>> select.PIPE_BUF
 512
 
-(Available on Unix systems.)
+(Available on Unix systems. Patch by Sébastien Sablé in :issue:`85554`)
 
 gzip and zipfile
 ----------------
@@ -1350,6 +1354,8 @@ function can return *None*::
     -rw-r--r-- monty/501        124 2011-01-26 17:59:11 py_todo.txt
     -rw-r--r-- monty/501       1399 2011-01-26 17:59:11 semaphore_notes.txt
 
+(Proposed by Tarek Ziadé and implemented by Lars Gustäbel in :issue:`6856`.)
+
 hashlib
 -------
 
@@ -1394,6 +1400,8 @@ strings, bytes, numbers, tuples, lists, dicts, sets, booleans, and None.
       ...
     ValueError: malformed node or string: <_ast.Call object at 0x101739a10>
 
+(Implemented by Georg Brandl.)
+
 os
 --
 
@@ -1414,6 +1422,7 @@ For direct access to unencoded environment variables (if available),
 use the new :func:`os.getenvb` function or use :data:`os.environb`
 which is a bytes version of :data:`os.environ`.
 
+(Contributed by Victor Stinner.)
 
 shutil
 ------
@@ -1583,7 +1592,6 @@ the new :mod:`imaplib.IMAP4.starttls` method.
 
 .. XXX sys._xoptions  http://bugs.python.org/issue10089
 .. XXX perhaps add issue numbers back to datetime
-.. XXX more research on attributions
 .. XXX Mac OS fixes and remaining issues
 .. XXX Mailbox fixes and remaining issues
 .. XXX HTTP client now using latin-1
@@ -1858,6 +1866,8 @@ command-line::
     $ python -m site --user-site
     /Users/raymondhettinger/.local/lib/python3.2/site-packages
 
+(Contributed by Tarek Ziadé.)
+
 sysconfig
 ---------
 
@@ -1918,6 +1928,8 @@ There is also a convenient command-line interface::
           py_version_short = "3.2"
           srcdir = "C:\Python32"
           userbase = "C:\Documents and Settings\Raymond\Application Data\Python"
+
+(Moved out of Distutils by Tarek Ziadé.)
 
 pdb
 ---
@@ -2083,6 +2095,7 @@ from the command-line::
 
     $ python -m turtledemo
 
+(Moved from the Demo directory by Alexander Belopolsky in :issue:`10199`.)
 
 Multi-threading
 ===============
@@ -2243,6 +2256,7 @@ In some cases, the pure Python source code can be a helpful adjunct to the
 documentation, so now many modules now feature quick links to the latest version
 of the source code.  For example, the :mod:`functools` module documentation has
 a quick link at the top labeled: **Source code** :source:`Lib/functools.py`.
+(Contributed by Raymond Hettinger.)
 
 The docs now contain more examples and recipes.  In particular, :mod:`re` module
 has an extensive section, :ref:`re-examples`.  Likewise, the :mod:`itertools`
