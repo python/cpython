@@ -1584,7 +1584,9 @@ the new :mod:`imaplib.IMAP4.starttls` method.
 .. XXX sys._xoptions  http://bugs.python.org/issue10089
 .. XXX perhaps add issue numbers back to datetime
 .. XXX more research on attributions
-.. XXX tarfile
+.. XXX Mac OS fixes and remaining issues
+.. XXX Mailbox fixes and remaining issues
+.. XXX HTTP client now using latin-1
 
 unittest
 --------
