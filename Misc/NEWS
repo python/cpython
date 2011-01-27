@@ -16,6 +16,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11020: Command-line pyclbr was broken because of missing 2-to-3
+  conversion.
+
 - Issue #11019: Fixed BytesGenerator so that it correctly handles a Message
   with a None body.
 
