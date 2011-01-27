@@ -2924,6 +2924,8 @@ in :mod:`logging` itself) and defining handlers which are declared either in
     this new subclass, and then :func:`dictConfig` could be called exactly as
     in the default, uncustomized state.
 
+   .. versionadded:: 2.7
+
 .. function:: fileConfig(fname[, defaults])
 
    Reads the logging configuration from a :mod:`ConfigParser`\-format file named
