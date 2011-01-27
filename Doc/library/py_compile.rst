@@ -8,6 +8,10 @@
 
 .. index:: pair: file; byte-code
 
+**Source code:** :source:`Lib/py_compile.py`
+
+--------------
+
 The :mod:`py_compile` module provides a function to generate a byte-code file
 from a source file, and another function used when the module source file is
 invoked as a script.

@@ -5,6 +5,9 @@
    :synopsis: Provide an interface to the Sun AU sound format.
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
+**Source code:** :source:`Lib/sunau.py`
+
+--------------
 
 The :mod:`sunau` module provides a convenient interface to the Sun AU sound
 format.  Note that this module is interface-compatible with the modules

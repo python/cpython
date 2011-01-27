@@ -6,6 +6,9 @@
 .. module:: warnings
    :synopsis: Issue warning messages and control their disposition.
 
+**Source code:** :source:`Lib/warnings.py`
+
+--------------
 
 Warning messages are typically issued in situations where it is useful to alert
 the user of some condition in a program, where that condition (normally) doesn't

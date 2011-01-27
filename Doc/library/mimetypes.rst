@@ -8,6 +8,10 @@
 
 .. index:: pair: MIME; content type
 
+**Source code:** :source:`Lib/mimetypes.py`
+
+--------------
+
 The :mod:`mimetypes` module converts between a filename or URL and the MIME type
 associated with the filename extension.  Conversions are provided from filename
 to MIME type and from MIME type to filename extension; encodings are not

@@ -16,6 +16,10 @@
    pair: IMAP4_SSL; protocol
    pair: IMAP4_stream; protocol
 
+**Source code:** :source:`Lib/imaplib.py`
+
+--------------
+
 This module defines three classes, :class:`IMAP4`, :class:`IMAP4_SSL` and
 :class:`IMAP4_stream`, which encapsulate a connection to an IMAP4 server and
 implement a large subset of the IMAP4rev1 client protocol as defined in

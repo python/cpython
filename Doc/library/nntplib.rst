@@ -10,6 +10,10 @@
    pair: NNTP; protocol
    single: Network News Transfer Protocol
 
+**Source code:** :source:`Lib/nntplib.py`
+
+--------------
+
 This module defines the class :class:`NNTP` which implements the client side of
 the Network News Transfer Protocol.  It can be used to implement a news reader
 or poster, or automated news processors.  It is compatible with :rfc:`3977`

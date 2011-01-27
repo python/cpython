@@ -6,6 +6,9 @@
 .. moduleauthor:: Marc-Andre Lemburg <mal@egenix.com>
 .. sectionauthor:: Bjorn Pettersen <bpettersen@corp.fairisaac.com>
 
+**Source code:** :source:`Lib/platform.py`
+
+--------------
 
 .. note::
 

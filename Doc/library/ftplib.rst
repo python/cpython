@@ -9,6 +9,10 @@
    pair: FTP; protocol
    single: FTP; ftplib (standard module)
 
+**Source code:** :source:`Lib/ftp.py`
+
+--------------
+
 This module defines the class :class:`FTP` and a few related items. The
 :class:`FTP` class implements the client side of the FTP protocol.  You can use
 this to write Python programs that perform a variety of automated FTP jobs, such

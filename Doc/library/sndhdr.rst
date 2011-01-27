@@ -10,6 +10,10 @@
    single: A-LAW
    single: u-LAW
 
+**Source code:** :source:`Lib/sndhdr.py`
+
+--------------
+
 The :mod:`sndhdr` provides utility functions which attempt to determine the type
 of sound data which is in a file.  When these functions are able to determine
 what type of sound data is stored in a file, they return a tuple ``(type,

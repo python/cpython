@@ -5,6 +5,10 @@
    :synopsis: Portable parser for command line options; support both short and
               long option names.
 
+**Source code:** :source:`Lib/getopt.py`
+
+--------------
+
 .. note::
    The :mod:`getopt` module is a parser for command line options whose API is
    designed to be familiar to users of the C :c:func:`getopt` function. Users who

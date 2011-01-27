@@ -6,6 +6,9 @@
 .. moduleauthor:: John J. Lee <jjl@pobox.com>
 .. sectionauthor:: John J. Lee <jjl@pobox.com>
 
+**Source code:** :source:`Lib/http/cookiejar.py`
+
+--------------
 
 The :mod:`http.cookiejar` module defines classes for automatic handling of HTTP
 cookies.  It is useful for accessing web sites that require small pieces of data

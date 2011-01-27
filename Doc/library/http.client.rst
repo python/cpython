@@ -11,6 +11,10 @@
 
 .. index:: module: urllib.request
 
+**Source code:** :source:`Lib/http/client.py`
+
+--------------
+
 This module defines classes which implement the client side of the HTTP and
 HTTPS protocols.  It is normally not used directly --- the module
 :mod:`urllib.request` uses it to handle URLs that use HTTP and HTTPS.

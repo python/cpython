@@ -6,6 +6,9 @@
 .. moduleauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
+**Source code:** :source:`Lib/webbrowser.py`
+
+--------------
 
 The :mod:`webbrowser` module provides a high-level interface to allow displaying
 Web-based documents to users. Under most circumstances, simply calling the
