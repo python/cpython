@@ -1022,17 +1022,17 @@ class TestCase(object):
             - [0, 0, 1] and [0, 1] compare unequal.
 
         """
-        actual_seq, expected_seq = list(first), list(second)
+        first_seq, second_seq = list(first), list(second)
         try:
-            actual = collections.Counter(actual_seq)
-            expected = collections.Counter(expected_seq)
+            first = collections.Counter(first_seq)
+            second = collections.Counter(second_seq)
         except TypeError:
             # Handle case with unhashable elements
-            differences = _count_diff_all_purpose(actual_seq, expected_seq)
+            differences = _count_diff_all_purpose(first_seq, second_seq)
         else:
-            if actual == expected:
+            if first == second:
                 return
-            differences = _count_diff_hashable(actual_seq, expected_seq)
+            differences = _count_diff_hashable(first_seq, second_seq)
 
         if differences:
             standardMsg = 'Element counts were not equal:\n'

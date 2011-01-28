@@ -860,12 +860,12 @@ Test cases
    accept a *msg* argument that, if specified, is used as the error message on
    failure (see also :data:`longMessage`).
 
-   .. method:: assertEqual(actual, expected, msg=None)
+   .. method:: assertEqual(first, second, msg=None)
 
-      Test that *actual* and *expected* are equal.  If the values do not
+      Test that *first* and *second* are equal.  If the values do not
       compare equal, the test will fail.
 
-      In addition, if *actual* and *expected* are the exact same type and one of
+      In addition, if *first* and *second* are the exact same type and one of
       list, tuple, dict, set, frozenset or str or any type that a subclass
       registers with :meth:`addTypeEqualityFunc` the type specific equality
       function will be called in order to generate a more useful default
@@ -880,9 +880,9 @@ Test cases
          function for comparing strings.
 
 
-   .. method:: assertNotEqual(actual, expected, msg=None)
+   .. method:: assertNotEqual(first, second, msg=None)
 
-      Test that *actual* and *expected* are not equal.  If the values do
+      Test that *first* and *second* are not equal.  If the values do
       compare equal, the test will fail.
 
    .. method:: assertTrue(expr, msg=None)
@@ -897,10 +897,10 @@ Test cases
       provide a better error message in case of failure.
 
 
-   .. method:: assertIs(actual, expected, msg=None)
-               assertIsNot(actual, expected, msg=None)
+   .. method:: assertIs(first, second, msg=None)
+               assertIsNot(first, second, msg=None)
 
-      Test that *actual* and *expected* evaluate (or don't evaluate) to the
+      Test that *first* and *second* evaluate (or don't evaluate) to the
       same object.
 
       .. versionadded:: 3.1
@@ -1096,17 +1096,17 @@ Test cases
    +---------------------------------------+--------------------------------+--------------+
 
 
-   .. method:: assertAlmostEqual(actual, expected, places=7, msg=None, delta=None)
-               assertNotAlmostEqual(actual, expected, places=7, msg=None, delta=None)
+   .. method:: assertAlmostEqual(first, second, places=7, msg=None, delta=None)
+               assertNotAlmostEqual(first, second, places=7, msg=None, delta=None)
 
-      Test that *actual* and *expected* are approximately (or not approximately)
+      Test that *first* and *second* are approximately (or not approximately)
       equal by computing the difference, rounding to the given number of
       decimal *places* (default 7), and comparing to zero.  Note that these
       methods round the values to the given number of *decimal places* (i.e.
       like the :func:`round` function) and not *significant digits*.
 
       If *delta* is supplied instead of *places* then the difference
-      between *actual* and *expected* must be less (or more) than *delta*.
+      between *first* and *second* must be less (or more) than *delta*.
 
       Supplying both *delta* and *places* raises a ``TypeError``.
 
@@ -1116,12 +1116,12 @@ Test cases
          if the objects compare equal.  Added the *delta* keyword argument.
 
 
-   .. method:: assertGreater(actual, expected, msg=None)
-               assertGreaterEqual(actual, expected, msg=None)
-               assertLess(actual, expected, msg=None)
-               assertLessEqual(actual, expected, msg=None)
+   .. method:: assertGreater(first, second, msg=None)
+               assertGreaterEqual(first, second, msg=None)
+               assertLess(first, second, msg=None)
+               assertLessEqual(first, second, msg=None)
 
-      Test that *actual* is respectively >, >=, < or <= than *expected* depending
+      Test that *first* is respectively >, >=, < or <= than *second* depending
       on the method name.  If not, the test will fail::
 
          >>> self.assertGreaterEqual(3, 4)
@@ -1177,14 +1177,14 @@ Test cases
 
       .. versionadded:: 3.2
 
-   .. method:: assertSameElements(actual, expected, msg=None)
+   .. method:: assertSameElements(first, second, msg=None)
 
-      Test that sequence *actual* contains the same elements as *expected*,
+      Test that sequence *first* contains the same elements as *second*,
       regardless of their order. When they don't, an error message listing
       the differences between the sequences will be generated.
 
-      Duplicate elements are ignored when comparing *actual* and *expected*.
-      It is the equivalent of ``assertEqual(set(actual), set(expected))``
+      Duplicate elements are ignored when comparing *first* and *second*.
+      It is the equivalent of ``assertEqual(set(first), set(second))``
       but it works with sequences of unhashable objects as well. Because
       duplicates are ignored, this method has been deprecated in favour of
       :meth:`assertCountEqual`.
@@ -1241,9 +1241,9 @@ Test cases
 
 
 
-   .. method:: assertMultiLineEqual(actual, expected, msg=None)
+   .. method:: assertMultiLineEqual(first, second, msg=None)
 
-      Test that the multiline string *actual* is equal to the string *expected*.
+      Test that the multiline string *first* is equal to the string *second*.
       When not equal a diff of the two strings highlighting the differences
       will be included in the error message. This method is used by default
       when comparing strings with :meth:`assertEqual`.
@@ -1251,10 +1251,10 @@ Test cases
       .. versionadded:: 3.1
 
 
-   .. method:: assertSequenceEqual(actual, expected, msg=None, seq_type=None)
+   .. method:: assertSequenceEqual(first, second, msg=None, seq_type=None)
 
       Tests that two sequences are equal.  If a *seq_type* is supplied, both
-      *actual* and *expected* must be instances of *seq_type* or a failure will
+      *first* and *second* must be instances of *seq_type* or a failure will
       be raised.  If the sequences are different an error message is
       constructed that shows the difference between the two.
 
@@ -1265,8 +1265,8 @@ Test cases
       .. versionadded:: 3.1
 
 
-   .. method:: assertListEqual(actual, expected, msg=None)
-               assertTupleEqual(actual, expected, msg=None)
+   .. method:: assertListEqual(first, second, msg=None)
+               assertTupleEqual(first, second, msg=None)
 
       Tests that two lists or tuples are equal.  If not an error message is
       constructed that shows only the differences between the two.  An error
@@ -1277,19 +1277,19 @@ Test cases
       .. versionadded:: 3.1
 
 
-   .. method:: assertSetEqual(actual, expected, msg=None)
+   .. method:: assertSetEqual(first, second, msg=None)
 
       Tests that two sets are equal.  If not, an error message is constructed
       that lists the differences between the sets.  This method is used by
       default when comparing sets or frozensets with :meth:`assertEqual`.
 
-      Fails if either of *actual* or *expected* does not have a :meth:`set.difference`
+      Fails if either of *first* or *second* does not have a :meth:`set.difference`
       method.
 
       .. versionadded:: 3.1
 
 
-   .. method:: assertDictEqual(actual, expected, msg=None)
+   .. method:: assertDictEqual(first, second, msg=None)
 
       Test that two dictionaries are equal.  If not, an error message is
       constructed that shows the differences in the dictionaries. This
