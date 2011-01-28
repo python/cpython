@@ -716,6 +716,38 @@ may be overriden by subclasses or by attribute assignment.
      >>> list(custom['Section2'].keys())
      ['AnotherKey']
 
+.. attribute:: SECTCRE
+
+  A compiled regular expression used to parse section headers. The default
+  matches ``[section]`` to the name ``"section"``. Whitespace is considered part
+  of the section name, thus ``[  larch  ]`` will be read as a section of name
+  ``"  larch  "``. Override this attribute if that's unsuitable.  For example:
+
+  .. doctest::
+
+     >>> config = """
+     ... [Section 1]
+     ... option = value
+     ...
+     ... [  Section 2  ]
+     ... another = val
+     ... """
+     >>> typical = ConfigParser()
+     >>> typical.read_string(config)
+     >>> typical.sections()
+     ['Section 1', '  Section 2  ']
+     >>> custom = ConfigParser()
+     >>> custom.SECTCRE = re.compile(r"\[ *(?P<header>[^]]+?) *\]")
+     >>> custom.read_string(config)
+     >>> custom.sections()
+     ['Section 1', 'Section 2']
+
+  .. note::
+
+     While ConfigParser objects also use an ``OPTCRE`` attribute for recognizing
+     option lines, it's not recommended to override it because that would
+     interfere with constructor options *allow_no_value* and *delimiters*.
+
 
 Legacy API Examples
 -------------------
