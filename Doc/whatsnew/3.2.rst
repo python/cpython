@@ -442,6 +442,26 @@ Some smaller changes made to the core Python language are:
 
   (Suggested by Mark Dickinson and implemented by Eric Smith in :issue:`7094`.)
 
+.. XXX * :meth:`str.format_map` was added, allowing an arbitrary mapping object
+  to be passed in to :meth:`str.format`. `somestring.format_map(mapping)`
+  is similar to `somestring.format(**mapping)`, except that in the latter
+  case `mapping` is convert to a `dict` and in the former case `mapping`
+  is used without modification. For example, to use a `defaultdict` with
+  formatting::
+
+    >>> from collections import defaultdict
+    >>> mapping = defaultdict(lambda: 'Europe', name='Guido')
+    >>> '{name} was born in {country}'.format_map(mapping)
+    'Guido was born in Europe'
+
+  This is similar to %-formatting with a single mapping argument::
+
+    >>> '%(name)s was born in %(country)s' % mapping
+    'Guido was born in Europe'
+
+  (Suggested by Raymond Hettinger and implemented by Eric Smith in
+  :issue:`6081`.)
+
 * The interpreter can now be started with a quiet option, ``-q``, to suppress
   the copyright and version information from being displayed in the interactive
   mode.  The option can be introspected using the :attr:`sys.flags` attribute::
