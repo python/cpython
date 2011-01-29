@@ -1314,7 +1314,7 @@ for writing.
 >>> select.PIPE_BUF
 512
 
-(Available on Unix systems. Patch by Sébastien Sablé in :issue:`85554`)
+(Available on Unix systems. Patch by Sébastien Sablé in :issue:`9862`)
 
 gzip and zipfile
 ----------------
