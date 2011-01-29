@@ -9,6 +9,7 @@ import imaplib
 import os.path
 import socketserver
 import time
+import calendar
 
 from test.support import reap_threads, verbose, transient_internet
 import unittest
@@ -24,15 +25,16 @@ CERTFILE = None
 class TestImaplib(unittest.TestCase):
 
     def test_Internaldate2tuple(self):
+        t0 = calendar.timegm((2000, 1, 1, 0, 0, 0, -1, -1, -1))
         tt = imaplib.Internaldate2tuple(
-            b'25 (INTERNALDATE "01-Jan-1970 00:00:00 +0000")')
-        self.assertEqual(time.mktime(tt), 0)
+            b'25 (INTERNALDATE "01-Jan-2000 00:00:00 +0000")')
+        self.assertEqual(time.mktime(tt), t0)
         tt = imaplib.Internaldate2tuple(
-            b'25 (INTERNALDATE "01-Jan-1970 11:30:00 +1130")')
-        self.assertEqual(time.mktime(tt), 0)
+            b'25 (INTERNALDATE "01-Jan-2000 11:30:00 +1130")')
+        self.assertEqual(time.mktime(tt), t0)
         tt = imaplib.Internaldate2tuple(
-            b'25 (INTERNALDATE "31-Dec-1969 12:30:00 -1130")')
-        self.assertEqual(time.mktime(tt), 0)
+            b'25 (INTERNALDATE "31-Dec-1999 12:30:00 -1130")')
+        self.assertEqual(time.mktime(tt), t0)
 
     def test_that_Time2Internaldate_returns_a_result(self):
         # We can check only that it successfully produces a result,
