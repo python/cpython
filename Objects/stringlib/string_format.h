@@ -1192,6 +1192,11 @@ formatter_parser(PyObject *ignored, STRINGLIB_OBJECT *self)
 {
     formatteriterobject *it;
 
+    if (!PyUnicode_Check(self)) {
+        PyErr_Format(PyExc_TypeError, "expected str, got %s", Py_TYPE(self)->tp_name);
+        return NULL;
+    }
+
     it = PyObject_New(formatteriterobject, &PyFormatterIter_Type);
     if (it == NULL)
         return NULL;
@@ -1331,6 +1336,11 @@ formatter_field_name_split(PyObject *ignored, STRINGLIB_OBJECT *self)
 
     PyObject *first_obj = NULL;
     PyObject *result = NULL;
+
+    if (!PyUnicode_Check(self)) {
+        PyErr_Format(PyExc_TypeError, "expected str, got %s", Py_TYPE(self)->tp_name);
+        return NULL;
+    }
 
     it = PyObject_New(fieldnameiterobject, &PyFieldNameIter_Type);
     if (it == NULL)

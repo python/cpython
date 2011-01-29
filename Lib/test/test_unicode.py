@@ -11,6 +11,7 @@ import sys
 import unittest
 import warnings
 from test import support, string_tests
+import _string
 
 # Error handling (bad decoder return)
 def search_function(encoding):
@@ -1514,6 +1515,57 @@ class UnicodeTest(string_tests.CommonTest,
         wchar, size = unicode_aswidecharstring(nonbmp)
         self.assertEqual(size, nchar)
         self.assertEqual(wchar, nonbmp + '\0')
+
+
+class StringModuleTest(unittest.TestCase):
+    def test_formatter_parser(self):
+        def parse(format):
+            return list(_string.formatter_parser(format))
+
+        formatter = parse("prefix {2!s}xxx{0:^+10.3f}{obj.attr!s} {z[0]!s:10}")
+        self.assertEqual(formatter, [
+            ('prefix ', '2', '', 's'),
+            ('xxx', '0', '^+10.3f', None),
+            ('', 'obj.attr', '', 's'),
+            (' ', 'z[0]', '10', 's'),
+        ])
+
+        formatter = parse("prefix {} suffix")
+        self.assertEqual(formatter, [
+            ('prefix ', '', '', None),
+            (' suffix', None, None, None),
+        ])
+
+        formatter = parse("str")
+        self.assertEqual(formatter, [
+            ('str', None, None, None),
+        ])
+
+        formatter = parse("")
+        self.assertEqual(formatter, [])
+
+        formatter = parse("{0}")
+        self.assertEqual(formatter, [
+            ('', '0', '', None),
+        ])
+
+        self.assertRaises(TypeError, _string.formatter_parser, 1)
+
+    def test_formatter_field_name_split(self):
+        def split(name):
+            items = list(_string.formatter_field_name_split(name))
+            items[1] = list(items[1])
+            return items
+        self.assertEqual(split("obj"), ["obj", []])
+        self.assertEqual(split("obj.arg"), ["obj", [(True, 'arg')]])
+        self.assertEqual(split("obj[key]"), ["obj", [(False, 'key')]])
+        self.assertEqual(split("obj.arg[key1][key2]"), [
+            "obj",
+            [(True, 'arg'),
+             (False, 'key1'),
+             (False, 'key2'),
+            ]])
+        self.assertRaises(TypeError, _string.formatter_field_name_split, 1)
 
 
 def test_main():
