@@ -442,25 +442,35 @@ Some smaller changes made to the core Python language are:
 
   (Suggested by Mark Dickinson and implemented by Eric Smith in :issue:`7094`.)
 
-.. XXX * :meth:`str.format_map` was added, allowing an arbitrary mapping object
-  to be passed in to :meth:`str.format`. `somestring.format_map(mapping)`
-  is similar to `somestring.format(**mapping)`, except that in the latter
-  case `mapping` is convert to a `dict` and in the former case `mapping`
-  is used without modification. For example, to use a `defaultdict` with
-  formatting::
+* There is also a new :meth:`str.format_map` method that extends the
+  capabilities of the existing :meth:`str.format` method by accepting arbitrary
+  :term:`mapping` objects.  This new method makes it possible to use string
+  formatting with any of one of Python's many dictionary-like tools such as
+  :class:`~collections.defaultdict`, :class:`~shelve.Shelf`,
+  :class:`~configparser.ConfigParser`, or :mod:`dbm`.  It also useful with
+  custom :class:`dict` subclasses that normalize keys before look-up or that
+  supply a :meth:`__missing__` method for unknown keys::
 
-    >>> from collections import defaultdict
-    >>> mapping = defaultdict(lambda: 'Europe', name='Guido')
-    >>> '{name} was born in {country}'.format_map(mapping)
-    'Guido was born in Europe'
+    >>> import shelve
+    >>> d = shelve.open('tmp.shl')
+    >>> 'The {project_name} status is {status} as of {date}'.format_map(d)
+    'The testing project status is green as of February 15, 2011'
 
-  This is similar to %-formatting with a single mapping argument::
+    >>> class LowerCasedDict(dict):
+            def __getitem__(self, key):
+                return dict.__getitem__(self, key.lower())
+    >>> lcd = LowerCasedDict(part='widgets', quantity=10)
+    >>> 'There are {QUANTITY} {Part} in stock'.format_map(lcd)
+    'There are 10 widgets in stock'
 
-    >>> '%(name)s was born in %(country)s' % mapping
-    'Guido was born in Europe'
+    >>> class PlaceholderDict(dict):
+            def __missing__(self, key):
+                return '<{}>'.format(key)
+    >>> 'Hello {name}, welcome to {location}'.format_map(PlaceholderDict())
+    'Hello <name>, welcome to <location>'
 
-  (Suggested by Raymond Hettinger and implemented by Eric Smith in
-  :issue:`6081`.)
+ (Suggested by Raymond Hettinger and implemented by Eric Smith in
+ :issue:`6081`.)
 
 * The interpreter can now be started with a quiet option, ``-q``, to suppress
   the copyright and version information from being displayed in the interactive
@@ -2267,28 +2277,37 @@ Documentation
 
 The documentation continues to be improved.
 
-A table of quick links has been added to the top of lengthy sections such as
-:ref:`built-in-funcs`.  In the case of :mod:`itertools`, the links are
-accompanied by tables of cheatsheet-style summaries to provide an overview and
-memory jog without having to read all of the docs.
+* A table of quick links has been added to the top of lengthy sections such as
+  :ref:`built-in-funcs`.  In the case of :mod:`itertools`, the links are
+  accompanied by tables of cheatsheet-style summaries to provide an overview and
+  memory jog without having to read all of the docs.
 
-In some cases, the pure Python source code can be a helpful adjunct to the
-documentation, so now many modules now feature quick links to the latest version
-of the source code.  For example, the :mod:`functools` module documentation has
-a quick link at the top labeled: **Source code** :source:`Lib/functools.py`.
-(Contributed by Raymond Hettinger.)
+* In some cases, the pure Python source code can be a helpful adjunct to the
+  documentation, so now many modules now feature quick links to the latest
+  version of the source code.  For example, the :mod:`functools` module
+  documentation has a quick link at the top labeled:
 
-The docs now contain more examples and recipes.  In particular, :mod:`re` module
-has an extensive section, :ref:`re-examples`.  Likewise, the :mod:`itertools`
-module continues to be updated with new :ref:`itertools-recipes`.
+    **Source code** :source:`Lib/functools.py`.
 
-The :mod:`datetime` module now has an auxiliary implementation in pure Python.
-No functionality was changed.  This just provides an easier-to-read
-alternate implementation.  (Contributed by Alexander Belopolsky.)
+  (Contributed by Raymond Hettinger; see
+  `rationale <http://rhettinger.wordpress.com/2011/01/28/open-your-source-more/>`_.)
 
-The unmaintained :file:`Demo` directory has been removed.  Some demos were
-integrated into the documentation, some were moved to the :file:`Tools/demo`
-directory, and others were removed altogether.  (Contributed by Georg Brandl.)
+* The docs now contain more examples and recipes.  In particular, :mod:`re`
+  module has an extensive section, :ref:`re-examples`.  Likewise, the
+  :mod:`itertools` module continues to be updated with new
+  :ref:`itertools-recipes`.
+
+* The :mod:`datetime` module now has an auxiliary implementation in pure Python.
+  No functionality was changed.  This just provides an easier-to-read alternate
+  implementation.
+
+  (Contributed by Alexander Belopolsky in :issue:`9528`.)
+
+* The unmaintained :file:`Demo` directory has been removed.  Some demos were
+  integrated into the documentation, some were moved to the :file:`Tools/demo`
+  directory, and others were removed altogether.
+
+  (Contributed by Georg Brandl in :issue:`7962`.)
 
 
 IDLE
