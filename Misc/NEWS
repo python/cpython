@@ -16,6 +16,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #10940: Workaround an IDLE hang on Mac OS X 10.6 when using the
+  menu accelerators for Open Module, Go to Line, and New Indent Width.
+  The accelerators still work but no longer appear in the menu items.
+
 - Issue #10989: Fix a crash on SSLContext.load_verify_locations(None, True).
 
 - Issue #11020: Command-line pyclbr was broken because of missing 2-to-3
