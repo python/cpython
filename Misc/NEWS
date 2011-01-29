@@ -16,6 +16,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #11045: Protect logging call against None argument.
+
 - Issue #11052: Correct IDLE menu accelerators on Mac OS X for Save
   commands.
 
