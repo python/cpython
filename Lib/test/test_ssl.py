@@ -394,6 +394,9 @@ class ContextTests(unittest.TestCase):
         ctx.load_verify_locations(CERTFILE, CAPATH)
         ctx.load_verify_locations(CERTFILE, capath=BYTES_CAPATH)
 
+        # Issue #10989: crash if the second argument type is invalid
+        self.assertRaises(TypeError, ctx.load_verify_locations, None, True)
+
     @skip_if_broken_ubuntu_ssl
     def test_session_stats(self):
         for proto in PROTOCOLS:
