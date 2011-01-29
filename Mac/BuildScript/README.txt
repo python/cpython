@@ -14,7 +14,7 @@ for each release:
 1.  32-bit-only, i386 and PPC universal, capable on running on all machines
     supported by Mac OS X 10.3.9 through (at least) 10.6::
 
-        python2.6 build-installer.py \
+        python build-installer.py \
             --sdk-path=/Developer/SDKs/MacOSX10.4u.sdk \
             --universal-archs=32-bit \
             --dep-target=10.3 
@@ -38,7 +38,7 @@ for each release:
         * ``MacOSX10.4u`` SDK (later SDKs do not support PPC G3 processors)
         * ``MACOSX_DEPLOYMENT_TARGET=10.3``
         * Apple ``gcc-4.0``
-        * Python 2.6 for documentation build with Sphinx
+        * Python 2.n (n >= 4) for documentation build with Sphinx
 
     - alternate build environments:
 
@@ -48,7 +48,7 @@ for each release:
 
 2.  64-bit / 32-bit, x86_64 and i386 universal, for OS X 10.6 (and later)::
 
-        python2.6 build-installer.py \
+        python build-installer.py \
             --sdk-path=/Developer/SDKs/MacOSX10.6.sdk \
             --universal-archs=intel \
             --dep-target=10.6
@@ -67,7 +67,7 @@ for each release:
         * ``MacOSX10.6`` SDK
         * ``MACOSX_DEPLOYMENT_TARGET=10.6``
         * Apple ``gcc-4.2``
-        * Python 2.6 for documentation build with Sphinx
+        * Python 2.n (n >= 4) for documentation build with Sphinx
 
     - alternate build environments:
 

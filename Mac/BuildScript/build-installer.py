@@ -1,12 +1,14 @@
 #!/usr/bin/python
 """
-This script is used to build the "official unofficial" universal build on
-Mac OS X. It requires Mac OS X 10.4, Xcode 2.2 and the 10.4u SDK to do its
-work.  64-bit or four-way universal builds require at least OS X 10.5 and
-the 10.5 SDK.
+This script is used to build "official" universal installers on Mac OS X.
+It requires at least Mac OS X 10.4, Xcode 2.2 and the 10.4u SDK for
+32-bit builds.  64-bit or four-way universal builds require at least
+OS X 10.5 and the 10.5 SDK.
 
-Please ensure that this script keeps working with Python 2.3, to avoid
-bootstrap issues (/usr/bin/python is Python 2.3 on OSX 10.4)
+Please ensure that this script keeps working with Python 2.5, to avoid
+bootstrap issues (/usr/bin/python is Python 2.5 on OSX 10.5).  Sphinx,
+which is used to build the documentation, currently requires at least
+Python 2.4.
 
 Usage: see USAGE variable in the script.
 """
@@ -404,6 +406,9 @@ def checkEnvironment():
     """
     Check that we're running on a supported system.
     """
+
+    if sys.version_info[0:2] < (2, 4):
+        fatal("This script must be run with Python 2.4 or later")
 
     if platform.system() != 'Darwin':
         fatal("This script should be run on a Mac OS X 10.4 (or later) system")
@@ -835,29 +840,33 @@ def buildPython():
             os.chmod(p, stat.S_IMODE(st.st_mode) | stat.S_IWGRP)
             os.chown(p, -1, gid)
 
-    LDVERSION=None
-    VERSION=None
-    ABIFLAGS=None
+    if PYTHON_3:
+        LDVERSION=None
+        VERSION=None
+        ABIFLAGS=None
 
-    with open(os.path.join(buildDir, 'Makefile')) as fp:
+        fp = open(os.path.join(buildDir, 'Makefile'), 'r')
         for ln in fp:
             if ln.startswith('VERSION='):
                 VERSION=ln.split()[1]
             if ln.startswith('ABIFLAGS='):
                 ABIFLAGS=ln.split()[1]
-
             if ln.startswith('LDVERSION='):
                 LDVERSION=ln.split()[1]
+        fp.close()
 
-    LDVERSION = LDVERSION.replace('$(VERSION)', VERSION)
-    LDVERSION = LDVERSION.replace('$(ABIFLAGS)', ABIFLAGS)
+        LDVERSION = LDVERSION.replace('$(VERSION)', VERSION)
+        LDVERSION = LDVERSION.replace('$(ABIFLAGS)', ABIFLAGS)
+        config_suffix = '-' + LDVERSION
+    else:
+        config_suffix = ''      # Python 2.x
 
     # We added some directories to the search path during the configure
     # phase. Remove those because those directories won't be there on
     # the end-users system.
     path =os.path.join(rootDir, 'Library', 'Frameworks', 'Python.framework',
                 'Versions', version, 'lib', 'python%s'%(version,),
-                'config-' + LDVERSION, 'Makefile')
+                'config' + config_suffix, 'Makefile')
     fp = open(path, 'r')
     data = fp.read()
     fp.close()
