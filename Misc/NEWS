@@ -37,6 +37,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11052: Correct IDLE menu accelerators on Mac OS X for Save
+  commands.
+
 - Issue #11020: Command-line pyclbr was broken because of missing 2-to-3
   conversion.
 
