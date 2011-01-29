@@ -26,6 +26,17 @@ CERTFILE = None
 
 class TestImaplib(unittest.TestCase):
 
+    def test_Internaldate2tuple(self):
+        tt = imaplib.Internaldate2tuple(
+            b'25 (INTERNALDATE "01-Jan-1970 00:00:00 +0000")')
+        self.assertEqual(time.mktime(tt), 0)
+        tt = imaplib.Internaldate2tuple(
+            b'25 (INTERNALDATE "01-Jan-1970 11:30:00 +1130")')
+        self.assertEqual(time.mktime(tt), 0)
+        tt = imaplib.Internaldate2tuple(
+            b'25 (INTERNALDATE "31-Dec-1969 12:30:00 -1130")')
+        self.assertEqual(time.mktime(tt), 0)
+
     def test_that_Time2Internaldate_returns_a_result(self):
         # We can check only that it successfully produces a result,
         # not the correctness of the result itself, since the result
