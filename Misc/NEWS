@@ -16,6 +16,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11052: Correct IDLE menu accelerators on Mac OS X for Save
+  commands.
+
 - Issue #11053: Fix IDLE "Syntax Error" windows to behave as in 2.x,
   preventing a confusing hung appearance on OS X with the windows
   obscured.
