@@ -176,7 +176,7 @@ comment-region = <Control-Key-3>
 redo = <Shift-Command-Key-Z>
 close-window = <Command-Key-w>
 restart-shell = <Control-Key-F6>
-save-window-as-file = <Command-Key-S>
+save-window-as-file = <Shift-Command-Key-S>
 close-all-windows = <Command-Key-q>
 view-restart = <Key-F6>
 tabify-region = <Control-Key-5>
@@ -208,7 +208,7 @@ open-new-window = <Command-Key-n>
 open-module = <Command-Key-m>
 find-selection = <Shift-Command-Key-F3>
 python-context-help = <Shift-Key-F1>
-save-copy-of-window-as-file = <Shift-Command-Key-s>
+save-copy-of-window-as-file = <Option-Command-Key-s>
 open-window-from-file = <Command-Key-o>
 python-docs = <Key-F1>
 
