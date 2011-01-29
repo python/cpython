@@ -190,10 +190,10 @@ class ScriptBinding:
                                   icon=tkMessageBox.QUESTION,
                                   type=tkMessageBox.OKCANCEL,
                                   default=tkMessageBox.OK,
-                                  parent=self.editwin.text)
+                                  master=self.editwin.text)
         return mb.show()
 
     def errorbox(self, title, message):
         # XXX This should really be a function of EditorWindow...
-        tkMessageBox.showerror(title, message, parent=self.editwin.text)
+        tkMessageBox.showerror(title, message, master=self.editwin.text)
         self.editwin.text.focus_set()
