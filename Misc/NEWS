@@ -73,6 +73,13 @@ Library
 - Issue #9509: argparse now properly handles IOErrors raised by
   argparse.FileType.
 
+Build
+-----
+
+- Issue #11054: Allow Mac OS X installer builds to again work on 10.5 with
+  the system-provided Python.
+
+
 What's New in Python 3.2 Release Candidate 1
 ============================================
 
