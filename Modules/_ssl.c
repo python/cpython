@@ -1683,7 +1683,7 @@ load_verify_locations(PySSLContext *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
     if (capath && !PyUnicode_FSConverter(capath, &capath_bytes)) {
-        Py_DECREF(cafile_bytes);
+        Py_XDECREF(cafile_bytes);
         PyErr_SetString(PyExc_TypeError,
                         "capath should be a valid filesystem path");
         return NULL;

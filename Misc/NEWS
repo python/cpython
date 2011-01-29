@@ -16,6 +16,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10989: Fix a crash on SSLContext.load_verify_locations(None, True).
+
 - Issue #11020: Command-line pyclbr was broken because of missing 2-to-3
   conversion.
 
