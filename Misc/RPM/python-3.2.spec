@@ -39,7 +39,7 @@
 
 %define name python
 #--start constants--
-%define version 3.2rc1
+%define version 3.2rc2
 %define libvers 3.2
 #--end constants--
 %define release 1pydotorg
