@@ -17,8 +17,8 @@ class WrappedObjectTreeItem:
         return value
 
     def _GetSubList(self):
-        list = self.__item._GetSubList()
-        return list(map(remote_object_tree_item, list))
+        sub_list = self.__item._GetSubList()
+        return list(map(remote_object_tree_item, sub_list))
 
 class StubObjectTreeItem:
     # Lives in IDLE process
@@ -32,5 +32,5 @@ class StubObjectTreeItem:
         return value
 
     def _GetSubList(self):
-        list = self.sockio.remotecall(self.oid, "_GetSubList", (), {})
-        return [StubObjectTreeItem(self.sockio, oid) for oid in list]
+        sub_list = self.sockio.remotecall(self.oid, "_GetSubList", (), {})
+        return [StubObjectTreeItem(self.sockio, oid) for oid in sub_list]
