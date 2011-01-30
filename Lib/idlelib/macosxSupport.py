@@ -34,6 +34,23 @@ def isCarbonAquaTk(root):
                          'AppKit' not in root.tk.call('winfo', 'server', '.'))
     return _carbonaquatk
 
+def tkVersionWarning(root):
+    """
+    Returns a string warning message if the Tk version in use appears to
+    be one known to cause problems with IDLE.  The Apple Cocoa-based Tk 8.5
+    that was shipped with Mac OS X 10.6.
+    """
+
+    if (runningAsOSXApp() and
+            ('AppKit' in root.tk.call('winfo', 'server', '.')) and
+            (root.tk.call('info', 'patchlevel') == '8.5.7') ):
+        return (r"WARNING: The version of Tcl/Tk (8.5.7) in use may"
+                r" be unstable.\n"
+                r"Visit http://www.python.org/download/mac/tcltk/"
+                r" for current information.")
+    else:
+        return False
+
 def addOpenEventSupport(root, flist):
     """
     This ensures that the application will respont to open AppleEvents, which

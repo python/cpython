@@ -37,6 +37,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #10907: Warn OS X 10.6 IDLE users to use ActiveState Tcl/Tk 8.5, rather
+  than the currently problematic Apple-supplied one, when running with the
+  64-/32-bit installer variant.
+
 - Issue #11052: Correct IDLE menu accelerators on Mac OS X for Save
   commands.
 
