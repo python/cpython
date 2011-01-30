@@ -91,6 +91,9 @@ Library
 - Issue #10961: The new pydoc server now better handles exceptions raised
   during request handling.
 
+- Issue #10680: Fix mutually exclusive arguments for argument groups in
+  argparse.
+
 Build
 -----
 

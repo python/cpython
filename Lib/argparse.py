@@ -1495,6 +1495,7 @@ class _ArgumentGroup(_ActionsContainer):
         self._defaults = container._defaults
         self._has_negative_number_optionals = \
             container._has_negative_number_optionals
+        self._mutually_exclusive_groups = container._mutually_exclusive_groups
 
     def _add_action(self, action):
         action = super(_ArgumentGroup, self)._add_action(action)
