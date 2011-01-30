@@ -81,12 +81,15 @@ Maildir, mbox, MH, Babyl, and MMDF.
       it.
 
       Parameter *message* may be a :class:`Message` instance, an
-      :class:`email.Message.Message` instance, a string, or a file-like object
-      (which should be open in text mode). If *message* is an instance of the
+      :class:`email.Message.Message` instance, a string, a byte string, or a
+      file-like object (which should be open in binary mode). If *message* is
+      an instance of the
       appropriate format-specific :class:`Message` subclass (e.g., if it's an
       :class:`mboxMessage` instance and this is an :class:`mbox` instance), its
       format-specific information is used. Otherwise, reasonable defaults for
       format-specific information are used.
+
+      .. versionchanged:: 3.2 support for binary input
 
 
    .. method:: remove(key)
@@ -108,8 +111,9 @@ Maildir, mbox, MH, Babyl, and MMDF.
       :exc:`KeyError` exception if no message already corresponds to *key*.
 
       As with :meth:`add`, parameter *message* may be a :class:`Message`
-      instance, an :class:`email.Message.Message` instance, a string, or a
-      file-like object (which should be open in text mode). If *message* is an
+      instance, an :class:`email.Message.Message` instance, a string, a byte
+      string, or a file-like object (which should be open in binary mode). If
+      *message* is an
       instance of the appropriate format-specific :class:`Message` subclass
       (e.g., if it's an :class:`mboxMessage` instance and this is an
       :class:`mbox` instance), its format-specific information is
@@ -171,10 +175,20 @@ Maildir, mbox, MH, Babyl, and MMDF.
       raise a :exc:`KeyError` exception if no such message exists.
 
 
+   .. method:: get_bytes(key)
+
+      Return a byte representation of the message corresponding to *key*, or
+      raise a :exc:`KeyError` exception if no such message exists.
+
+      .. versionadded:: 3.2
+
+
    .. method:: get_string(key)
 
       Return a string representation of the message corresponding to *key*, or
-      raise a :exc:`KeyError` exception if no such message exists.
+      raise a :exc:`KeyError` exception if no such message exists.  The
+      message is processed through :class:`email.message.Message` to
+      convert it to a 7bit clean representation.
 
 
    .. method:: get_file(key)
@@ -184,9 +198,11 @@ Maildir, mbox, MH, Babyl, and MMDF.
       file-like object behaves as if open in binary mode.  This file should be
       closed once it is no longer needed.
 
-      .. versionadded:: 3.2
-         The file-like object supports the context manager protocol, so that
-         you can use a :keyword:`with` statement to automatically close it.
+      .. versionchanged:: 3.2
+         The file object really is a binary file; previously it was incorrectly
+         returned in text mode.  Also, the file-like object now supports the
+         context manager protocol: you can use a :keyword:`with` statement to
+         automatically close it.
 
       .. note::
 
@@ -746,9 +762,11 @@ Maildir, mbox, MH, Babyl, and MMDF.
    If *message* is omitted, the new instance is created in a default, empty state.
    If *message* is an :class:`email.Message.Message` instance, its contents are
    copied; furthermore, any format-specific information is converted insofar as
-   possible if *message* is a :class:`Message` instance. If *message* is a string
+   possible if *message* is a :class:`Message` instance. If *message* is a string,
+   a byte string,
    or a file, it should contain an :rfc:`2822`\ -compliant message, which is read
-   and parsed.
+   and parsed.  Files should be open in binary mode, but text mode files
+   are accepted for backward compatibility.
 
    The format-specific state and behaviors offered by subclasses vary, but in
    general it is only the properties that are not specific to a particular

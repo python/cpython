@@ -16,6 +16,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #9124: mailbox now accepts binary input and reads and writes mailbox
+  files in binary mode, using the email package's binary support to parse
+  arbitrary email messages.  StringIO and text file input is deprecated,
+  and string input fails early if non-ASCII characters are used, where
+  previously it would fail when the email was processed in a later step.
+
 - Issue #10845: Mitigate the incompatibility between the multiprocessing
   module on Windows and the use of package, zipfile or directory execution
   by special casing main modules that actually *are* called __main__.py.
