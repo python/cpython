@@ -88,6 +88,9 @@ Library
 - Issue #9509: argparse now properly handles IOErrors raised by
   argparse.FileType.
 
+- Issue #10961: The new pydoc server now better handles exceptions raised
+  during request handling.
+
 Build
 -----
 

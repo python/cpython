@@ -244,7 +244,7 @@ def get_html_title(text):
     return title
 
 
-class PyDocDocTest(unittest.TestCase):
+class PydocDocTest(unittest.TestCase):
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
@@ -392,7 +392,7 @@ class TestDescriptions(unittest.TestCase):
         self.assertIn(expected, pydoc.render_doc(c))
 
 
-class PyDocServerTest(unittest.TestCase):
+class PydocServerTest(unittest.TestCase):
     """Tests for pydoc._start_server"""
 
     def test_server(self):
@@ -415,34 +415,31 @@ class PyDocServerTest(unittest.TestCase):
         self.assertEqual(serverthread.error, None)
 
 
-class PyDocUrlHandlerTest(unittest.TestCase):
+class PydocUrlHandlerTest(unittest.TestCase):
     """Tests for pydoc._url_handler"""
 
     def test_content_type_err(self):
-        err = 'Error: unknown content type '
         f = pydoc._url_handler
-        result = f("", "")
-        self.assertEqual(result, err + "''")
-        result = f("", "foobar")
-        self.assertEqual(result, err + "'foobar'")
+        self.assertRaises(TypeError, f, 'A', '')
+        self.assertRaises(TypeError, f, 'B', 'foobar')
 
     def test_url_requests(self):
         # Test for the correct title in the html pages returned.
         # This tests the different parts of the URL handler without
         # getting too picky about the exact html.
         requests = [
-            ("", "Python: Index of Modules"),
-            ("get?key=", "Python: Index of Modules"),
-            ("index", "Python: Index of Modules"),
-            ("topics", "Python: Topics"),
-            ("keywords", "Python: Keywords"),
-            ("pydoc", "Python: module pydoc"),
-            ("get?key=pydoc", "Python: module pydoc"),
-            ("search?key=pydoc", "Python: Search Results"),
-            ("def", "Python: KEYWORD def"),
-            ("STRINGS", "Python: TOPIC STRINGS"),
-            ("foobar", "Python: Error"),
-            ("getfile?key=foobar", "Python: Read Error"),
+            ("", "Pydoc: Index of Modules"),
+            ("get?key=", "Pydoc: Index of Modules"),
+            ("index", "Pydoc: Index of Modules"),
+            ("topics", "Pydoc: Topics"),
+            ("keywords", "Pydoc: Keywords"),
+            ("pydoc", "Pydoc: module pydoc"),
+            ("get?key=pydoc", "Pydoc: module pydoc"),
+            ("search?key=pydoc", "Pydoc: Search Results"),
+            ("topic?key=def", "Pydoc: KEYWORD def"),
+            ("topic?key=STRINGS", "Pydoc: TOPIC STRINGS"),
+            ("foobar", "Pydoc: Error - foobar"),
+            ("getfile?key=foobar", "Pydoc: Error - getfile?key=foobar"),
             ]
 
         for url, title in requests:
@@ -451,7 +448,7 @@ class PyDocUrlHandlerTest(unittest.TestCase):
             self.assertEqual(result, title)
 
         path = string.__file__
-        title = "Python: getfile " + path
+        title = "Pydoc: getfile " + path
         url = "getfile?key=" + path
         text = pydoc._url_handler(url, "text/html")
         result = get_html_title(text)
@@ -459,10 +456,10 @@ class PyDocUrlHandlerTest(unittest.TestCase):
 
 
 def test_main():
-    test.support.run_unittest(PyDocDocTest,
+    test.support.run_unittest(PydocDocTest,
                               TestDescriptions,
-                              PyDocServerTest,
-                              PyDocUrlHandlerTest,
+                              PydocServerTest,
+                              PydocUrlHandlerTest,
                               )
 
 if __name__ == "__main__":

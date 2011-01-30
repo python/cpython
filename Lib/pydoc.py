@@ -70,7 +70,7 @@ import time
 import warnings
 from collections import deque
 from reprlib import Repr
-from traceback import extract_tb
+from traceback import extract_tb, format_exception_only
 
 
 # --------------------------------------------------------- common routines
@@ -1882,7 +1882,9 @@ module "pydoc_data.topics" could not be found.
     def _gettopic(self, topic, more_xrefs=''):
         """Return unbuffered tuple of (topic, xrefs).
 
-        If an error occurs, topic is the error message, and xrefs is ''.
+        If an error occurs here, the exception is caught and displayed by
+        the url handler.
+
         This function duplicates the showtopic method but returns its
         result directly so it can be formatted for display in an html page.
         """
@@ -1895,14 +1897,11 @@ module "pydoc_data.topics" could not be found.
 ''' , '')
         target = self.topics.get(topic, self.keywords.get(topic))
         if not target:
-            return 'no documentation found for %r' % topic, ''
+            raise ValueError('could not find topic')
         if isinstance(target, str):
             return self._gettopic(target, more_xrefs)
         label, xrefs = target
-        try:
-            doc = pydoc_data.topics.topics[label]
-        except KeyError:
-            return 'no documentation found for %r' % topic, ''
+        doc = pydoc_data.topics.topics[label]
         if more_xrefs:
             xrefs = (xrefs or '') + ' ' + more_xrefs
         return doc, xrefs
@@ -2387,7 +2386,7 @@ def _start_server(urlhandler, port):
             else:
                 content_type = 'text/html'
             self.send_response(200)
-            self.send_header('Content-Type', '%s;charset=UTF-8' % content_type)
+            self.send_header('Content-Type', '%s; charset=UTF-8' % content_type)
             self.end_headers()
             self.wfile.write(self.urlhandler(
                 self.path, content_type).encode('utf-8'))
@@ -2479,10 +2478,10 @@ def _url_handler(url, content_type="text/html"):
                 css_path)
             return '''\
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
-<html><head><title>Python: %s</title>
+<html><head><title>Pydoc: %s</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-%s</head><body bgcolor="#f0f0f8">%s
-</body></html>''' % (title, css_link, contents)
+%s</head><body bgcolor="#f0f0f8">%s<div style="clear:both;padding-top:.5em;">%s</div>
+</body></html>''' % (title, css_link, html_navbar(), contents)
 
         def filelink(self, url, path):
             return '<a href="getfile?key=%s">%s</a>' % (url, path)
@@ -2491,12 +2490,12 @@ def _url_handler(url, content_type="text/html"):
     html = _HTMLDoc()
 
     def html_navbar():
-        version = "%s [%s, %s]" % (platform.python_version(),
-                                   platform.python_build()[0],
-                                   platform.python_compiler())
+        version = html.escape("%s [%s, %s]" % (platform.python_version(),
+                                               platform.python_build()[0],
+                                               platform.python_compiler()))
         return """
             <div style='float:left'>
-                Python %s<br>%s<br><br>
+                Python %s<br>%s
             </div>
             <div style='float:right'>
                 <div style='text-align:center'>
@@ -2505,19 +2504,17 @@ def _url_handler(url, content_type="text/html"):
                   : <a href="keywords.html">Keywords</a>
                 </div>
                 <div>
-                    <form action="get" style='float:left'>
+                    <form action="get" style='display:inline;'>
                       <input type=text name=key size=15>
                       <input type=submit value="Get">
-                      &nbsp;&nbsp;&nbsp;
-                    </form>
-                    <form action="search" style='float:right'>
+                    </form>&nbsp;
+                    <form action="search" style='display:inline;'>
                       <input type=text name=key size=15>
                       <input type=submit value="Search">
                     </form>
                 </div>
             </div>
-            <div clear='all'>&nbsp;</div>
-            """ % (version, platform.platform(terse=True))
+            """ % (version, html.escape(platform.platform(terse=True)))
 
     def html_index():
         """Module Index page."""
@@ -2589,7 +2586,7 @@ def _url_handler(url, content_type="text/html"):
         """Index of topic texts available."""
 
         def bltinlink(name):
-            return '<a href="%s.html">%s</a>' % (name, name)
+            return '<a href="topic?key=%s">%s</a>' % (name, name)
 
         heading = html.heading(
             '<big><big><strong>INDEX</strong></big></big>',
@@ -2609,7 +2606,7 @@ def _url_handler(url, content_type="text/html"):
         names = sorted(Helper.keywords.keys())
 
         def bltinlink(name):
-            return '<a href="%s.html">%s</a>' % (name, name)
+            return '<a href="topic?key=%s">%s</a>' % (name, name)
 
         contents = html.multicolumn(names, bltinlink)
         contents = heading + html.bigsection(
@@ -2628,79 +2625,91 @@ def _url_handler(url, content_type="text/html"):
         heading = html.heading(
             '<big><big><strong>%s</strong></big></big>' % title,
             '#ffffff', '#7799ee')
-        contents = '<pre>%s</pre>' % contents
+        contents = '<pre>%s</pre>' % html.markup(contents)
         contents = html.bigsection(topic , '#ffffff','#ee77aa', contents)
-        xrefs = sorted(xrefs.split())
+        if xrefs:
+            xrefs = sorted(xrefs.split())
 
-        def bltinlink(name):
-            return '<a href="%s.html">%s</a>' % (name, name)
+            def bltinlink(name):
+                return '<a href="topic?key=%s">%s</a>' % (name, name)
 
-        xrefs = html.multicolumn(xrefs, bltinlink)
-        xrefs = html.section('Related help topics: ',
-                             '#ffffff', '#ee77aa', xrefs)
+            xrefs = html.multicolumn(xrefs, bltinlink)
+            xrefs = html.section('Related help topics: ',
+                                 '#ffffff', '#ee77aa', xrefs)
         return ('%s %s' % (title, topic),
                 ''.join((heading, contents, xrefs)))
 
-    def html_error(url):
+    def html_getobj(url):
+        obj = locate(url, forceload=1)
+        if obj is None and url != 'None':
+            raise ValueError('could not find object')
+        title = describe(obj)
+        content = html.document(obj, url)
+        return title, content
+
+    def html_error(url, exc):
         heading = html.heading(
             '<big><big><strong>Error</strong></big></big>',
-            '#ffffff', '#ee0000')
-        return heading + url
+            '#ffffff', '#7799ee')
+        contents = '<br>'.join(html.escape(line) for line in
+                               format_exception_only(type(exc), exc))
+        contents = heading + html.bigsection(url, '#ffffff', '#bb0000',
+                                             contents)
+        return "Error - %s" % url, contents
 
     def get_html_page(url):
         """Generate an HTML page for url."""
+        complete_url = url
         if url.endswith('.html'):
             url = url[:-5]
-        if url.startswith('/'):
-            url = url[1:]
-        if url.startswith("get?key="):
-            url = url[8:]
-        title = url
-        contents = ''
-        if url in ("", ".", "index"):
-            title, contents = html_index()
-        elif url == "topics":
-            title, contents = html_topics()
-        elif url == "keywords":
-            title, contents = html_keywords()
-        elif url.startswith("search?key="):
-            title, contents = html_search(url[11:])
-        elif url.startswith("getfile?key="):
-            url = url[12:]
-            try:
-                title, contents = html_getfile(url)
-            except IOError:
-                contents = html_error('could not read file %r' % url)
-                title = 'Read Error'
-        else:
-            obj = None
-            try:
-                obj = locate(url, forceload=1)
-            except ErrorDuringImport as value:
-                contents = html.escape(str(value))
-            if obj:
-                title = describe(obj)
-                contents = html.document(obj, url)
-            elif url in Helper.keywords or url in Helper.topics:
-                title, contents = html_topicpage(url)
+        try:
+            if url in ("", "index"):
+                title, content = html_index()
+            elif url == "topics":
+                title, content = html_topics()
+            elif url == "keywords":
+                title, content = html_keywords()
+            elif '=' in url:
+                op, _, url = url.partition('=')
+                if op == "search?key":
+                    title, content = html_search(url)
+                elif op == "getfile?key":
+                    title, content = html_getfile(url)
+                elif op == "topic?key":
+                    # try topics first, then objects.
+                    try:
+                        title, content = html_topicpage(url)
+                    except ValueError:
+                        title, content = html_getobj(url)
+                elif op == "get?key":
+                    # try objects first, then topics.
+                    if url in ("", "index"):
+                        title, content = html_index()
+                    else:
+                        try:
+                            title, content = html_getobj(url)
+                        except ValueError:
+                            title, content = html_topicpage(url)
+                else:
+                    raise ValueError('bad pydoc url')
             else:
-                contents = html_error(
-                    'no Python documentation found for %r' % url)
-                title = 'Error'
-        return html.page(title, html_navbar() + contents)
+                title, content = html_getobj(url)
+        except Exception as exc:
+            # Catch any errors and display them in an error page.
+            title, content = html_error(complete_url, exc)
+        return html.page(title, content)
 
     if url.startswith('/'):
         url = url[1:]
     if content_type == 'text/css':
         path_here = os.path.dirname(os.path.realpath(__file__))
-        try:
-            with open(os.path.join(path_here, url)) as fp:
-                return ''.join(fp.readlines())
-        except IOError:
-            return 'Error: can not open css file %r' % url
+        css_path = os.path.join(path_here, url)
+        with open(css_path) as fp:
+            return ''.join(fp.readlines())
     elif content_type == 'text/html':
         return get_html_page(url)
-    return 'Error: unknown content type %r' % content_type
+    # Errors outside the url handler are caught by the server.
+    raise TypeError('unknown content type %r for url %s' % (content_type, url))
 
 
 def browse(port=0, *, open_browser=True):
