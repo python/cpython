@@ -1006,7 +1006,11 @@ datetime and time
   :func:`time.strftime` functions will accept the full range supported by the
   corresponding operating system functions.
 
-(Contributed by Alexander Belopolsky and Victor Stinner.)
+(Contributed by Alexander Belopolsky and Victor Stinner in :issue:`1289118`,
+:issue:`5094`, :issue:`6641`, :issue:`2706`, :issue:`1777412`, :issue:`8013`,
+and :issue:`10827`.)
+
+.. XXX http://bugs.python.org/issue?%40search_text=datetime&%40sort=-activity
 
 math
 ----
@@ -1620,11 +1624,36 @@ the new :mod:`imaplib.IMAP4.starttls` method.
 
 (Contributed by Lorenzo M. Catucci and Antoine Pitrou, :issue:`4471`.)
 
-.. XXX sys._xoptions  http://bugs.python.org/issue10089
-.. XXX perhaps add issue numbers back to datetime
-.. XXX Mac OS fixes and remaining issues
-.. XXX Mailbox fixes and remaining issues
-.. XXX HTTP client now using latin-1
+http.client
+-----------
+
+There were a number of small API improvements in the :mod:`http.client` module.
+The old-style HTTP 0.9 simple responses are no longer supported and the *strict*
+parameter is deprecated in all classes.
+
+The :class:`~http.client.HTTPConnection` and
+:class:`~http.client.HTTPSConnection` classes now have a *source_address*
+parameter for a (host, port) tuple indicating where the HTTP connection is made
+from.
+
+Support for certificate checking and HTTPS virtual hosts were added to
+:class:`~http.client.HTTPSConnection`.
+
+The :meth:`~http.client.HTTPConnection.request` method on connection objects
+allowed an optional *body* argument so that a :term:`file object` could be used
+to supply the content of the request.  Conveniently, the *body* argument now
+also accepts an :term:`iterable` object so long as it includes an explicit
+``Content-Length`` header.  This extended interface is much more flexible than
+before.
+
+To establish an HTTPS connection through a proxy server, there is a new
+:meth:`~http.client.HTTPConnection.set_tunnel` method that sets the host and
+port for HTTP Connect tunneling.
+
+To match the behaviour of :mod:`http.server`, the HTTP client library now also
+encodes headers with ISO-8859-1 (Latin-1) encoding.  It was already doing that
+for incoming headers, so now the behaviour is consistent for both incoming and
+outgoing traffic. (See work by Armin Ronacher in :issue:`10980`.)
 
 unittest
 --------
@@ -2413,6 +2442,8 @@ Changes to Python's build process and to the C API include:
 There were a number of other small changes to the C-API.  See the
 :file:`Misc/NEWS` file for a complete list.
 
+Also, the were a number of updates to the OS X build, see
+:file:/`Mac/BuildScript/README.txt`.
 
 Porting to Python 3.2
 =====================
