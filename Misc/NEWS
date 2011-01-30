@@ -16,6 +16,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #10845: Mitigate the incompatibility between the multiprocessing
+  module on Windows and the use of package, zipfile or directory execution
+  by special casing main modules that actually *are* called __main__.py.
+
 - Issue #11045: Protect logging call against None argument.
 
 - Issue #11052: Correct IDLE menu accelerators on Mac OS X for Save
