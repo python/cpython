@@ -1432,6 +1432,13 @@ def main():
             shell.interp.prepend_syspath(script)
             shell.interp.execfile(script)
 
+    # Check for problematic OS X Tk versions and print a warning message
+    # in the IDLE shell window; this is less intrusive than always opening
+    # a separate window.
+    tkversionwarning = macosxSupport.tkVersionWarning(root)
+    if tkversionwarning:
+        shell.interp.runcommand(''.join(("print('", tkversionwarning, "')")))
+
     root.mainloop()
     root.destroy()
 
