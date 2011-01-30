@@ -2169,8 +2169,13 @@ the file to text-mode).  There is also a new :meth:`~mailbox.Mailbox.get_bytes`
 method that returns a :class:`bytes` representation of a message corresponding
 to a given *key*.
 
-(Contributed by R. David Murray with efforts from Steffen Daode Nurpmeso and
-Victor Stinner in :issue:`9124`.)
+It is still possible to get non-binary output using the old API's
+:meth:`~mailbox.Mailbox.get_string` method, but that approach
+is not very useful.  Instead, it is best to extract messages from
+a :class:`~mailbox.Message` object or to load them from binary input.
+
+(Contributed by R. David Murray, with efforts from Steffen Daode Nurpmeso and an
+initial patch by Victor Stinner in :issue:`9124`.)
 
 turtledemo
 ----------
