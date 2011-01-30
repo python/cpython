@@ -160,6 +160,14 @@ Extension Modules
 Build
 -----
 
+- Issue #11054: Allow Mac OS X installer builds to again work on 10.5 with
+  the system-provided Python.
+
+- Issue #10843: Update third-party library versions used in OS X
+  32-bit installer builds: bzip2 1.0.6, readline 6.1.2, SQLite 3.7.4
+  (with FTS3/FTS4 and RTREE enabled), and ncursesw 5.5 (wide-char
+  support enabled).
+
 - Don't run pgen twice when using make -j.
 
 - Issue #7716: Under Solaris, don't assume existence of /usr/xpg4/bin/grep in
