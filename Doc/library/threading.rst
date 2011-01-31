@@ -268,7 +268,7 @@ impossible to detect the termination of alien threads.
       It must be called at most once per thread object.  It arranges for the
       object's :meth:`run` method to be invoked in a separate thread of control.
 
-      This method will raise a :exc:`RuntimeException` if called more than once
+      This method will raise a :exc:`RuntimeError` if called more than once
       on the same thread object.
 
    .. method:: run()
