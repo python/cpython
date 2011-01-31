@@ -88,7 +88,7 @@ overcome the limitations of :mod:`optparse` which did not provide support for
 positional arguments (not just options), subcommands, required options and other
 common patterns of specifying and validating options.
 
-This module already has widespread success in the community as a
+This module has already had widespread success in the community as a
 third-party module.  Being more fully featured than its predecessor, the
 :mod:`argparse` module is now the preferred module for command-line processing.
 The older module is still being kept available because of the substantial amount
@@ -100,18 +100,18 @@ or more positional arguments is present, and making a required option::
 
     import argparse
     parser = argparse.ArgumentParser(
-                description='Manage servers',           # main description for help
-                epilog='Tested on Solaris and Linux')   # displayed after help
+                description = 'Manage servers',         # main description for help
+                epilog = 'Tested on Solaris and Linux') # displayed after help
     parser.add_argument('action',                       # argument name
-                choices=['deploy', 'start', 'stop'],    # three allowed values
-                help='action on each target')           # help msg
+                choices = ['deploy', 'start', 'stop'],  # three allowed values
+                help = 'action on each target')         # help msg
     parser.add_argument('targets',
-                metavar='HOSTNAME',                     # var name used in help msg
-                nargs='+',                              # require one or more targets
-                help='url for target machines')         # help msg explanation
+                metavar = 'HOSTNAME',                   # var name used in help msg
+                nargs = '+',                            # require one or more targets
+                help = 'url for target machines')       # help msg explanation
     parser.add_argument('-u', '--user',                 # -u or --user option
-                required=True,                          # make it a required argument
-                help='login as user')
+                required = True,                        # make it a required argument
+                help = 'login as user')
 
 Example of calling the parser on a command string::
 
@@ -329,7 +329,7 @@ aspects that are visible to the programmer:
 * The :mod:`py_compile` and :mod:`compileall` modules have been updated to
   reflect the new naming convention and target directory.  The command-line
   invocation of *compileall* has new command-line options: ``-i`` for
-  specifying a list of files and directories to compile, and ``-b`` which causes
+  specifying a list of files and directories to compile and ``-b`` which causes
   bytecode files to be written to their legacy location rather than
   *__pycache__*.
 
@@ -391,7 +391,7 @@ the bodies of requests and responses.
 The *native strings* are always of type :class:`str` but are restricted to code
 points between *U+0000* through *U+00FF* which are translatable to bytes using
 *Latin-1* encoding.  These strings are used for the keys and values in the
-``environ`` dictionary and for response headers and statuses in the
+environment dictionary and for response headers and statuses in the
 :func:`start_response` function.  They must follow :rfc:`2616` with respect to
 encoding. That is, they must either be *ISO-8859-1* characters or use
 :rfc:`2047` MIME encoding.
@@ -1414,7 +1414,7 @@ ast
 ---
 
 The :mod:`ast` module has a wonderful a general-purpose tool for safely
-evaluating strings containing Python expressions using the Python literal
+evaluating expression strings using the Python literal
 syntax.  The :func:`ast.literal_eval` function serves as a secure alternative to
 the builtin :func:`eval` function which is easily abused.  Python 3.2 adds
 :class:`bytes` and :class:`set` literals to the list of supported types:
@@ -1881,8 +1881,7 @@ object.  The former returns a string and the latter prints it::
 dbm
 ---
 
-All database modules now support :meth:`get` and :meth:`setdefault` are now
-available in all database modules
+All database modules now support the :meth:`get` and :meth:`setdefault` methods.
 
 (Suggested by Ray Allen in :issue:`9523`.)
 
@@ -2094,14 +2093,8 @@ reading directly from dictionaries and strings.
 
 (All changes contributed by Łukasz Langa.)
 
-difflib
--------
-
-:class:`difflib.SequenceMatcher` has a new parameter in its constructor,
-*autojunk*, that allows the user to turn off the automatic junk heuristic the
-class uses in its algorithm.  Additionally, two new attributes were exposed
-to users - *bjunk* and *bpopular*, allowing better understanding of the
-heuristics used by the class.
+.. XXX show a difflib example
+.. XXX add entry for logging changes other than the dict config pep
 
 urllib.parse
 ------------
@@ -2460,13 +2453,13 @@ Changes to Python's build process and to the C API include:
   function declaration, which was kept for backwards compatibility reasons, is
   now removed -- the macro was introduced in 1997 (:issue:`8276`).
 
-* The is a new function :c:func:`PyLong_AsLongLongAndOverflow` which
+* There is a new function :c:func:`PyLong_AsLongLongAndOverflow` which
   is analogous to :c:func:`PyLong_AsLongAndOverflow`.  They both serve to
   convert Python :class:`int` into a native fixed-width type while providing
   detection of cases where the conversion won't fit (:issue:`7767`).
 
-* The :c:func:`PyUnicode_CompareWithASCIIString` now returns *not equal*
-  if the Python string is *NUL* terminated.
+* The :c:func:`PyUnicode_CompareWithASCIIString` function now returns *not
+  equal* if the Python string is *NUL* terminated.
 
 * There is a new function :c:func:`PyErr_NewExceptionWithDoc` that is
   like :c:func:`PyErr_NewException` but allows a docstring to be specified.
@@ -2621,6 +2614,6 @@ require changes to your code:
   and :c:func:`PyEval_RestoreThread()`) should be used instead.
 
 * Due to security risks, :func:`asyncore.handle_accept` has been deprecated, and
-  a new function, :func:`asyncore.handle_accepted` was added to replace it.
+  a new function, :func:`asyncore.handle_accepted`, was added to replace it.
 
   (Contributed by Giampaolo Rodola in :issue:`6706`.)
