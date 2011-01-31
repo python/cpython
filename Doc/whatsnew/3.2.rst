@@ -11,7 +11,10 @@
 
    * Anyone can add text to this document.  Do not spend very much time
    on the wording of your changes, because your text will probably
-   get rewritten.
+   get rewritten.  (Note, during release candidate phase or just before
+   a beta release, please use the tracker instead -- this helps avoid
+   merge conflicts.   If you must add a suggested entry directly,
+   please put it in an XXX comment and the maintainer will take notice).
 
    * The maintainer will go through Misc/NEWS periodically and add
    changes; it's therefore more important to add your changes to
