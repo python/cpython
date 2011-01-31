@@ -380,7 +380,7 @@ ffi_prep_closure_loc (ffi_closure* closure,
   short bytes;
   char *tramp;
 #ifdef _WIN64
-  int mask;
+  int mask = 0;
 #endif
   FFI_ASSERT (cif->abi == FFI_SYSV);
   

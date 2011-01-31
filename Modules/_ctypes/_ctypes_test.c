@@ -25,6 +25,20 @@
 
 /* some functions handy for testing */
 
+EXPORT(int)
+_testfunc_cbk_reg_int(int a, int b, int c, int d, int e,
+                      int (*func)(int, int, int, int, int))
+{
+    return func(a*a, b*b, c*c, d*d, e*e);
+}
+
+EXPORT(double)
+_testfunc_cbk_reg_double(double a, double b, double c, double d, double e,
+                         double (*func)(double, double, double, double, double))
+{
+    return func(a*a, b*b, c*c, d*d, e*e);
+}
+
 EXPORT(void)testfunc_array(int values[4])
 {
     printf("testfunc_array %d %d %d %d\n",
