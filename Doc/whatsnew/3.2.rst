@@ -2094,6 +2094,15 @@ reading directly from dictionaries and strings.
 
 (All changes contributed by Łukasz Langa.)
 
+difflib
+-------
+
+:class:`difflib.SequenceMatcher` has a new parameter in its constructor,
+*autojunk*, that allows the user to turn off the automatic junk heuristic the
+class uses in its algorithm.  Additionally, two new attributes were exposed
+to users - *bjunk* and *bpopular*, allowing better understanding of the
+heuristics used by the class.
+
 urllib.parse
 ------------
 
