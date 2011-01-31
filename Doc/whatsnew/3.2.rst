@@ -88,7 +88,7 @@ overcome the limitations of :mod:`optparse` which did not provide support for
 positional arguments (not just options), subcommands, required options and other
 common patterns of specifying and validating options.
 
-This module has already has widespread success in the community as a
+This module already has widespread success in the community as a
 third-party module.  Being more fully featured than its predecessor, the
 :mod:`argparse` module is now the preferred module for command-line processing.
 The older module is still being kept available because of the substantial amount
@@ -328,13 +328,13 @@ aspects that are visible to the programmer:
 
 * The :mod:`py_compile` and :mod:`compileall` modules have been updated to
   reflect the new naming convention and target directory.  The command-line
-  invocation of *compileall* has new command-line options include ``-i`` for
+  invocation of *compileall* has new command-line options: ``-i`` for
   specifying a list of files and directories to compile, and ``-b`` which causes
   bytecode files to be written to their legacy location rather than
   *__pycache__*.
 
 * The :mod:`importlib.abc` module has been updated with new :term:`abstract base
-  classes <abstract base class>` for the loading bytecode files.  The obsolete
+  classes <abstract base class>` for loading bytecode files.  The obsolete
   ABCs, :class:`~importlib.abc.PyLoader` and
   :class:`~importlib.abc.PyPycLoader`, have been deprecated (instructions on how
   to stay Python 3.1 compatible are included with the documentation).
@@ -391,7 +391,7 @@ the bodies of requests and responses.
 The *native strings* are always of type :class:`str` but are restricted to code
 points between *U+0000* through *U+00FF* which are translatable to bytes using
 *Latin-1* encoding.  These strings are used for the keys and values in the
-environ dictionary and for response headers and statuses in the
+``environ`` dictionary and for response headers and statuses in the
 :func:`start_response` function.  They must follow :rfc:`2616` with respect to
 encoding. That is, they must either be *ISO-8859-1* characters or use
 :rfc:`2047` MIME encoding.
@@ -447,7 +447,7 @@ Some smaller changes made to the core Python language are:
   :term:`mapping` objects.  This new method makes it possible to use string
   formatting with any of one of Python's many dictionary-like tools such as
   :class:`~collections.defaultdict`, :class:`~shelve.Shelf`,
-  :class:`~configparser.ConfigParser`, or :mod:`dbm`.  It also useful with
+  :class:`~configparser.ConfigParser`, or :mod:`dbm`.  It is also useful with
   custom :class:`dict` subclasses that normalize keys before look-up or that
   supply a :meth:`__missing__` method for unknown keys::
 
@@ -2612,6 +2612,6 @@ require changes to your code:
   and :c:func:`PyEval_RestoreThread()`) should be used instead.
 
 * Due to security risks, :func:`asyncore.handle_accept` has been deprecated, and
-  a new functions, :func:`asyncore.handle_accepted` was added to replace it.
+  a new function, :func:`asyncore.handle_accepted` was added to replace it.
 
   (Contributed by Giampaolo Rodola in :issue:`6706`.)
