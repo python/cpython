@@ -6245,5 +6245,5 @@ _PyHASH_10INV = pow(10, _PyHASH_MODULUS - 2, _PyHASH_MODULUS)
 
 
 if __name__ == '__main__':
-    import doctest, sys
-    doctest.testmod(sys.modules[__name__])
+    import doctest, decimal
+    doctest.testmod(decimal)
