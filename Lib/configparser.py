@@ -88,7 +88,7 @@ ConfigParser -- responsible for parsing a list of
 """
 
 try:
-    from collections import OrderedDict as _default_dict
+    from collections import Mapping, OrderedDict as _default_dict
 except ImportError:
     # fallback for setup.py which hasn't yet built _collections
     _default_dict = dict
@@ -515,6 +515,38 @@ class RawConfigParser:
         if e:
             raise e
 
+class _Chainmap(Mapping):
+    """Combine multiple mappings for successive lookups.
+
+    For example, to emulate Python's normal lookup sequence:
+
+        import __builtin__
+        pylookup = _Chainmap(locals(), globals(), vars(__builtin__))
+    """
+
+    def __init__(self, *maps):
+        self.maps = maps
+
+    def __getitem__(self, key):
+        for mapping in self.maps:
+            try:
+                return mapping[key]
+            except KeyError:
+                pass
+        raise KeyError(key)
+
+    def __iter__(self):
+        seen = set()
+        for mapping in self.maps:
+            s = set(mapping) - seen
+            for elem in s:
+                yield elem
+            seen.update(s)
+
+    def __len__(self):
+        s = set()
+        s.update(*self.maps)
+        return len(s)
 
 class ConfigParser(RawConfigParser):
 
@@ -530,16 +562,18 @@ class ConfigParser(RawConfigParser):
 
         The section DEFAULT is special.
         """
-        d = self._defaults.copy()
+        sectiondict = {}
         try:
-            d.update(self._sections[section])
+            sectiondict = self._sections[section]
         except KeyError:
             if section != DEFAULTSECT:
                 raise NoSectionError(section)
         # Update with the entry specific variables
+        vardict = {}
         if vars:
             for key, value in vars.items():
-                d[self.optionxform(key)] = value
+                vardict[self.optionxform(key)] = value
+        d = _Chainmap(vardict, sectiondict, self._defaults)
         option = self.optionxform(option)
         try:
             value = d[option]
