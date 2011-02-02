@@ -37,6 +37,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #2236: distutils' mkpath ignored the mode parameter.
+
+- Fix typo in one sdist option (medata-check).
+
 - Issue #11089: Fix performance issue limiting the use of ConfigParser()
   with large config files.
 

@@ -6,7 +6,7 @@ import sys
 import unittest
 import site
 
-from test.support import captured_stdout
+from test.support import captured_stdout, run_unittest
 
 from distutils.command.install import install
 from distutils.command import install as install_module
@@ -203,4 +203,4 @@ def test_suite():
     return unittest.makeSuite(InstallTestCase)
 
 if __name__ == "__main__":
-    unittest.main(defaultTest="test_suite")
+    run_unittest(test_suite())

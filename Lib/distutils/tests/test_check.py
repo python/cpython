@@ -1,5 +1,6 @@
 """Tests for distutils.command.check."""
 import unittest
+from test.support import run_unittest
 
 from distutils.command.check import check, HAS_DOCUTILS
 from distutils.tests import support
@@ -95,4 +96,4 @@ def test_suite():
     return unittest.makeSuite(CheckTestCase)
 
 if __name__ == "__main__":
-    unittest.main(defaultTest="test_suite")
+    run_unittest(test_suite())

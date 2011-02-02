@@ -10,6 +10,7 @@ from distutils.dir_util import (mkpath, remove_tree, create_tree, copy_tree,
 
 from distutils import log
 from distutils.tests import support
+from test.support import run_unittest
 
 class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
 
@@ -112,4 +113,4 @@ def test_suite():
     return unittest.makeSuite(DirUtilTestCase)
 
 if __name__ == "__main__":
-    unittest.main(defaultTest="test_suite")
+    run_unittest(test_suite())
