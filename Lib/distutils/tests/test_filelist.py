@@ -2,7 +2,7 @@
 import unittest
 
 from distutils.filelist import glob_to_re, FileList
-from test.support import captured_stdout
+from test.support import captured_stdout, run_unittest
 from distutils import debug
 
 class FileListTestCase(unittest.TestCase):
@@ -39,4 +39,4 @@ def test_suite():
     return unittest.makeSuite(FileListTestCase)
 
 if __name__ == "__main__":
-    unittest.main(defaultTest="test_suite")
+    run_unittest(test_suite())

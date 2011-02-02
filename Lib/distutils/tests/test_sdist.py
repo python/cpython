@@ -8,11 +8,9 @@ import sys
 import tempfile
 import warnings
 
-from test.support import check_warnings
-from test.support import captured_stdout
+from test.support import captured_stdout, check_warnings, run_unittest
 
-from distutils.command.sdist import sdist
-from distutils.command.sdist import show_formats
+from distutils.command.sdist import sdist, show_formats
 from distutils.core import Distribution
 from distutils.tests.test_config import PyPIRCCommandTestCase
 from distutils.errors import DistutilsExecError, DistutilsOptionError
@@ -356,4 +354,4 @@ def test_suite():
     return unittest.makeSuite(SDistTestCase)
 
 if __name__ == "__main__":
-    unittest.main(defaultTest="test_suite")
+    run_unittest(test_suite())

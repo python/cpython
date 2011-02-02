@@ -10,6 +10,7 @@ from distutils.core import Distribution
 from distutils.errors import DistutilsFileError
 
 from distutils.tests import support
+from test.support import run_unittest
 
 
 class BuildPyTestCase(support.TempdirManager,
@@ -114,4 +115,4 @@ def test_suite():
     return unittest.makeSuite(BuildPyTestCase)
 
 if __name__ == "__main__":
-    unittest.main(defaultTest="test_suite")
+    run_unittest(test_suite())

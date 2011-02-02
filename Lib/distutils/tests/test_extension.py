@@ -3,7 +3,7 @@ import unittest
 import os
 import warnings
 
-from test.support import check_warnings
+from test.support import check_warnings, run_unittest
 from distutils.extension import read_setup_file, Extension
 
 class ExtensionTestCase(unittest.TestCase):
@@ -66,4 +66,4 @@ def test_suite():
     return unittest.makeSuite(ExtensionTestCase)
 
 if __name__ == "__main__":
-    unittest.main(defaultTest="test_suite")
+    run_unittest(test_suite())

@@ -10,7 +10,7 @@ import textwrap
 from distutils.dist import Distribution, fix_help_options
 from distutils.cmd import Command
 
-from test.support import TESTFN, captured_stdout
+from test.support import TESTFN, captured_stdout, run_unittest
 from distutils.tests import support
 
 
@@ -326,4 +326,4 @@ def test_suite():
     return suite
 
 if __name__ == "__main__":
-    unittest.main(defaultTest="test_suite")
+    run_unittest(test_suite())

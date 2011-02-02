@@ -4,6 +4,7 @@ import sys
 import os
 from io import BytesIO
 import subprocess
+from test.support import run_unittest
 
 from distutils import cygwinccompiler
 from distutils.cygwinccompiler import (CygwinCCompiler, check_config_h,
@@ -151,4 +152,4 @@ def test_suite():
     return unittest.makeSuite(CygwinCCompilerTestCase)
 
 if __name__ == '__main__':
-    test_support.run_unittest(test_suite())
+    run_unittest(test_suite())
