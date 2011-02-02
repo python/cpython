@@ -88,7 +88,7 @@ ConfigParser -- responsible for parsing a list of
 """
 
 try:
-    from collections import Mapping, OrderedDict as _default_dict
+    from collections import OrderedDict as _default_dict
 except ImportError:
     # fallback for setup.py which hasn't yet built _collections
     _default_dict = dict
@@ -515,7 +515,7 @@ class RawConfigParser:
         if e:
             raise e
 
-class _Chainmap(Mapping):
+class _Chainmap:
     """Combine multiple mappings for successive lookups.
 
     For example, to emulate Python's normal lookup sequence:
@@ -547,6 +547,36 @@ class _Chainmap(Mapping):
         s = set()
         s.update(*self.maps)
         return len(s)
+
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def __contains__(self, key):
+        try:
+            self[key]
+        except KeyError:
+            return False
+        else:
+            return True
+
+    def keys(self):
+        return list(self)
+
+    def items(self):
+        return [(k, self[k]) for k in self]
+
+    def values(self):
+        return [self[k] for k in self]
+
+    def __eq__(self, other):
+        return dict(self.items()) == dict(other.items())
+
+    def __ne__(self, other):
+        return not (self == other)
+
 
 class ConfigParser(RawConfigParser):
 
