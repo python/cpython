@@ -545,6 +545,38 @@ class RawConfigParser:
                 if isinstance(val, list):
                     options[name] = '\n'.join(val)
 
+import UserDict as _UserDict
+
+class _Chainmap(_UserDict.DictMixin):
+    """Combine multiple mappings for successive lookups.
+
+    For example, to emulate Python's normal lookup sequence:
+
+        import __builtin__
+        pylookup = _Chainmap(locals(), globals(), vars(__builtin__))
+    """
+
+    def __init__(self, *maps):
+        self._maps = maps
+
+    def __getitem__(self, key):
+        for mapping in self._maps:
+            try:
+                return mapping[key]
+            except KeyError:
+                pass
+        raise KeyError(key)
+
+    def keys(self):
+        result = []
+        seen = set()
+        for mapping in self_maps:
+            for key in mapping:
+                if key not in seen:
+                    result.append(key)
+                    seen.add(key)
+        return result
+
 class ConfigParser(RawConfigParser):
 
     def get(self, section, option, raw=False, vars=None):
@@ -559,16 +591,18 @@ class ConfigParser(RawConfigParser):
 
         The section DEFAULT is special.
         """
-        d = self._defaults.copy()
+        sectiondict = {}
         try:
-            d.update(self._sections[section])
+            sectiondict = self._sections[section]
         except KeyError:
             if section != DEFAULTSECT:
                 raise NoSectionError(section)
         # Update with the entry specific variables
+        vardict = {}
         if vars:
             for key, value in vars.items():
-                d[self.optionxform(key)] = value
+                vardict[self.optionxform(key)] = value
+        d = _Chainmap(vardict, sectiondict, self._defaults)
         option = self.optionxform(option)
         try:
             value = d[option]
