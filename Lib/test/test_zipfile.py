@@ -956,7 +956,7 @@ class OtherTests(unittest.TestCase):
         zipf.close()
         try:
             zipf = zipfile.ZipFile(TESTFN, mode="r")
-        except zipfile.BadZipFile:
+        except zipfile.BadZipfile:
             self.fail("Unable to create empty ZIP file in 'w' mode")
 
         zipf = zipfile.ZipFile(TESTFN, mode="a")
