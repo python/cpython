@@ -975,7 +975,7 @@ ABC                        Inherits               Abstract Methods        Mixin 
 :class:`Sized`                                    ``__len__``
 :class:`Callable`                                 ``__call__``
 
-:class:`Sequence`          :class:`Sized`,        ``__getitem__``         ``__contains__``. ``__iter__``, ``__reversed__``,
+:class:`Sequence`          :class:`Sized`,        ``__getitem__``         ``__contains__``, ``__iter__``, ``__reversed__``,
                            :class:`Iterable`,                             ``index``, and ``count``
                            :class:`Container`
 
@@ -984,7 +984,7 @@ ABC                        Inherits               Abstract Methods        Mixin 
                                                   and ``insert``          ``remove``, and ``__iadd__``
 
 :class:`Set`               :class:`Sized`,                                ``__le__``, ``__lt__``, ``__eq__``, ``__ne__``,
-                           :class:`Iterable`,                             ``__gt__``, ``__ge__``, ``__and__``, ``__or__``
+                           :class:`Iterable`,                             ``__gt__``, ``__ge__``, ``__and__``, ``__or__``,
                            :class:`Container`                             ``__sub__``, ``__xor__``, and ``isdisjoint``
 
 :class:`MutableSet`        :class:`Set`           ``add`` and             Inherited Set methods and
