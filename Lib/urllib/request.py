@@ -1057,8 +1057,8 @@ class AbstractHTTPHandler(BaseHandler):
                     mv = memoryview(data)
                 except TypeError:
                     if isinstance(data, collections.Iterable):
-                        raise ValueError("Content-Length should be specified \
-                                for iterable data of type %r %r" % (type(data),
+                        raise ValueError("Content-Length should be specified "
+                                "for iterable data of type %r %r" % (type(data),
                                 data))
                 else:
                     request.add_unredirected_header(
