@@ -1,6 +1,7 @@
 """Tests for distutils.unixccompiler."""
 import sys
 import unittest
+from test.test_support import run_unittest
 
 from distutils import sysconfig
 from distutils.unixccompiler import UnixCCompiler
@@ -126,4 +127,4 @@ def test_suite():
     return unittest.makeSuite(UnixCCompilerTestCase)
 
 if __name__ == "__main__":
-    unittest.main(defaultTest="test_suite")
+    run_unittest(test_suite())

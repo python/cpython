@@ -99,7 +99,7 @@ class CommandTestCase(unittest.TestCase):
 
     def test_ensure_dirname(self):
         cmd = self.cmd
-        cmd.option1 = os.path.dirname(__file__)
+        cmd.option1 = os.path.dirname(__file__) or os.curdir
         cmd.ensure_dirname('option1')
         cmd.option2 = 'xxx'
         self.assertRaises(DistutilsOptionError, cmd.ensure_dirname, 'option2')

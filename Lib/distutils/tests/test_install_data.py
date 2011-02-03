@@ -6,6 +6,7 @@ import getpass
 
 from distutils.command.install_data import install_data
 from distutils.tests import support
+from test.test_support import run_unittest
 
 class InstallDataTestCase(support.TempdirManager,
                           support.LoggingSilencer,
@@ -73,4 +74,4 @@ def test_suite():
     return unittest.makeSuite(InstallDataTestCase)
 
 if __name__ == "__main__":
-    unittest.main(defaultTest="test_suite")
+    run_unittest(test_suite())

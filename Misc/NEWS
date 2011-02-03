@@ -213,6 +213,10 @@ What's New in Python 2.7.1?
 Library
 -------
 
+- Issue #2236: distutils' mkpath ignored the mode parameter.
+
+- Fix typo in one sdist option (medata-check).
+
 - Issue #10323: itertools.islice() now consumes the minimum number of
   inputs before stopping.  Formerly, the final state of the underlying
   iterator was undefined.

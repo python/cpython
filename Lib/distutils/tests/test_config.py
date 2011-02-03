@@ -11,6 +11,7 @@ from distutils.log import set_threshold
 from distutils.log import WARN
 
 from distutils.tests import support
+from test.test_support import run_unittest
 
 PYPIRC = """\
 [distutils]
@@ -119,4 +120,4 @@ def test_suite():
     return unittest.makeSuite(PyPIRCCommandTestCase)
 
 if __name__ == "__main__":
-    unittest.main(defaultTest="test_suite")
+    run_unittest(test_suite())
