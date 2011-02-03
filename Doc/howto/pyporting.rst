@@ -8,14 +8,14 @@ Porting Python 2 Code to Python 3
 
 .. topic:: Abstract
 
-    With Python 3 being the future of Python while Python 2 is still in active
-    use, it is good to have your project available for both major releases of
-    Python. This guide is meant to help you choose which strategy works best
-    for your project to support both Python 2 & 3 along with how to execute
-    that strategy.
+   With Python 3 being the future of Python while Python 2 is still in active
+   use, it is good to have your project available for both major releases of
+   Python. This guide is meant to help you choose which strategy works best
+   for your project to support both Python 2 & 3 along with how to execute
+   that strategy.
 
-    If you are looking to port an extension module instead of pure Python code,
-    please see http://docs.python.org/py3k/howto/cporting.html .
+   If you are looking to port an extension module instead of pure Python code,
+   please see http://docs.python.org/py3k/howto/cporting.html .
 
 
 Choosing a Strategy
@@ -70,20 +70,20 @@ compatible it must have the
 (from
 http://techspot.zzzeek.org/2011/01/24/zzzeek-s-guide-to-python-3-porting/)::
 
-    setup(
-        name='Your Library',
-        version='1.0',
-        classifiers=[
-            # make sure to use :: Python *and* :: Python :: 3 so
-            # that pypi can list the package on the python 3 page
-            'Programming Language :: Python',
-            'Programming Language :: Python :: 3'
-        ],
-        packages=['yourlibrary'],
-        # make sure to add custom_fixers to the MANIFEST.in
-        include_package_data=True,
-        # ...
-    )
+   setup(
+     name='Your Library',
+     version='1.0',
+     classifiers=[
+         # make sure to use :: Python *and* :: Python :: 3 so
+         # that pypi can list the package on the python 3 page
+         'Programming Language :: Python',
+         'Programming Language :: Python :: 3'
+     ],
+     packages=['yourlibrary'],
+     # make sure to add custom_fixers to the MANIFEST.in
+     include_package_data=True,
+     # ...
+   )
 
 
 Doing so will cause your project to show up in the
@@ -340,25 +340,25 @@ The other option is to use a mixin class. This allows you to only define a
 ``__str__()`` for you (code from
 http://lucumr.pocoo.org/2011/1/22/forwards-compatible-python/)::
 
-    import sys
+   import sys
 
-    class UnicodeMixin(object):
+   class UnicodeMixin(object):
 
-        """Mixin class to handle defining the proper __str__/__unicode__
-        methods in Python 2 or 3."""
+     """Mixin class to handle defining the proper __str__/__unicode__
+     methods in Python 2 or 3."""
 
-        if sys.version_info[0] >= 3: # Python 3
-            def __str__(self):
-                return self.__unicode__()
-        else:  # Python 2
-            def __str__(self):
-                return self.__unicode__().encode('utf8')
+     if sys.version_info[0] >= 3: # Python 3
+         def __str__(self):
+             return self.__unicode__()
+     else:  # Python 2
+         def __str__(self):
+             return self.__unicode__().encode('utf8')
 
 
-    class Spam(UnicodeMixin):
+   class Spam(UnicodeMixin):
 
-        def __unicode__(self):
-            return u'spam-spam-bacon-spam'  # 2to3 will remove the 'u' prefix
+     def __unicode__(self):
+         return u'spam-spam-bacon-spam'  # 2to3 will remove the 'u' prefix
 
 
 Specify when opening a file as binary
@@ -380,11 +380,11 @@ Don't Index on Exceptions
 '''''''''''''''''''''''''
 In Python 2, the following worked::
 
-    >>> exc = Exception(1, 2, 3)
-    >>> exc.args[1]
-    2
-    >>> exc[1]  # Python 2 only!
-    2
+   >>> exc = Exception(1, 2, 3)
+   >>> exc.args[1]
+   2
+   >>> exc[1]  # Python 2 only!
+   2
 
 But in Python 3, indexing directly off of an exception is an error. You need to
 make sure to only index on :attr:`BaseException.args` attribute which is a
@@ -426,13 +426,13 @@ Manually
 To manually convert source code using 2to3_, you use the ``2to3`` script that
 is installed with Python 2.6 and later.::
 
-    2to3 <directory or file to convert>
+   2to3 <directory or file to convert>
 
 This will cause 2to3 to write out a diff with all of the fixers applied for the
 converted source code. If you would like 2to3 to go ahead and apply the changes
 you can pass it the ``-w`` flag::
 
-    2to3 -w <stuff to convert>
+   2to3 -w <stuff to convert>
 
 There are other flags available to control exactly which fixers are applied,
 etc.
@@ -444,20 +444,20 @@ When a user installs your project for Python 3, you can have either
 :mod:`distutils` or Distribute_ run 2to3_ on your behalf.
 For distutils, use the following idiom::
 
-    try:  # Python 3
-        from distutils.command.build_py import build_py_2to3 as build_py
-    except ImportError:  # Python 2
-        from distutils.command.build_py import build_py
+   try:  # Python 3
+     from distutils.command.build_py import build_py_2to3 as build_py
+   except ImportError:  # Python 2
+     from distutils.command.build_py import build_py
 
-    setup(cmdclass = {'build_py':build_py},
-        # ...
-    )
+   setup(cmdclass = {'build_py':build_py},
+     # ...
+   )
 
-For Distribute::
+   For Distribute::
 
-    setup(use_2to3=True,
-        # ...
-    )
+   setup(use_2to3=True,
+     # ...
+   )
 
 This will allow you to not have to distribute a separate Python 3 version of
 your project. It does require, though, that when you perform development that
@@ -526,30 +526,30 @@ One change between Python 2 and 3 that will require changing how you code is
 accessing the currently raised exception.  In Python 2 the syntax to access the
 current exception is::
 
-    try:
-        raise Exception()
-    except Exception, exc:
-        # Current exception is 'exc'
-        pass
+   try:
+     raise Exception()
+   except Exception, exc:
+     # Current exception is 'exc'
+     pass
 
 This syntax changed in Python 3 to::
 
-    try:
-        raise Exception()
-    except Exception as exc:
-        # Current exception is 'exc'
-        pass
+   try:
+     raise Exception()
+   except Exception as exc:
+     # Current exception is 'exc'
+     pass
 
 Because of this syntax change you must change to capturing the current
 exception to::
 
-    try:
-        raise Exception()
-    except Exception:
-        import sys
-        exc = sys.exc_info()[1]
-        # Current exception is 'exc'
-        pass
+   try:
+     raise Exception()
+   except Exception:
+     import sys
+     exc = sys.exc_info()[1]
+     # Current exception is 'exc'
+     pass
 
 You can get more information about the raised exception from
 :func:`sys.exc_info` than simply the current exception instance, but you most
