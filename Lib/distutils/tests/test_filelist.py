@@ -1,7 +1,7 @@
 """Tests for distutils.filelist."""
 from os.path import join
 import unittest
-from test.test_support import captured_stdout
+from test.test_support import captured_stdout, run_unittest
 
 from distutils.filelist import glob_to_re, FileList
 from distutils import debug
@@ -82,4 +82,4 @@ def test_suite():
     return unittest.makeSuite(FileListTestCase)
 
 if __name__ == "__main__":
-    unittest.main(defaultTest="test_suite")
+    run_unittest(test_suite())

@@ -12,7 +12,7 @@ from distutils.archive_util import (check_archive_formats, make_tarball,
                                     ARCHIVE_FORMATS)
 from distutils.spawn import find_executable, spawn
 from distutils.tests import support
-from test.test_support import check_warnings
+from test.test_support import check_warnings, run_unittest
 
 try:
     import grp
@@ -281,4 +281,4 @@ def test_suite():
     return unittest.makeSuite(ArchiveUtilTestCase)
 
 if __name__ == "__main__":
-    unittest.main(defaultTest="test_suite")
+    run_unittest(test_suite())

@@ -5,6 +5,7 @@ import os
 
 from distutils.errors import DistutilsPlatformError
 from distutils.tests import support
+from test.test_support import run_unittest
 
 _MANIFEST = """\
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -137,4 +138,4 @@ def test_suite():
     return unittest.makeSuite(msvc9compilerTestCase)
 
 if __name__ == "__main__":
-    unittest.main(defaultTest="test_suite")
+    run_unittest(test_suite())

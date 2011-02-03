@@ -3,6 +3,8 @@
 import os
 import unittest
 
+from test.test_support import run_unittest
+
 from distutils.command.install import install
 from distutils.core import Distribution
 
@@ -52,4 +54,4 @@ def test_suite():
     return unittest.makeSuite(InstallTestCase)
 
 if __name__ == "__main__":
-    unittest.main(defaultTest="test_suite")
+    run_unittest(test_suite())

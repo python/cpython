@@ -6,6 +6,7 @@ import shutil
 from distutils.file_util import move_file, write_file, copy_file
 from distutils import log
 from distutils.tests import support
+from test.test_support import run_unittest
 
 class FileUtilTestCase(support.TempdirManager, unittest.TestCase):
 
@@ -77,4 +78,4 @@ def test_suite():
     return unittest.makeSuite(FileUtilTestCase)
 
 if __name__ == "__main__":
-    unittest.main(defaultTest="test_suite")
+    run_unittest(test_suite())
