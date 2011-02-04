@@ -10,13 +10,6 @@ PyArg_ValidateKeywordArguments
 PyBaseObject_Type
 PyBool_FromLong
 PyBool_Type
-PyBuffer_FillContiguousStrides
-PyBuffer_FillInfo
-PyBuffer_FromContiguous
-PyBuffer_GetPointer
-PyBuffer_IsContiguous
-PyBuffer_Release
-PyBuffer_ToContiguous
 PyByteArrayIter_Type
 PyByteArray_AsString
 PyByteArray_Concat
@@ -317,7 +310,6 @@ PyMem_Free
 PyMem_Malloc
 PyMem_Realloc
 PyMemberDescr_Type
-PyMemoryView_FromBuffer
 PyMemoryView_FromObject
 PyMemoryView_GetContiguous
 PyMemoryView_Type
@@ -399,7 +391,6 @@ PyObject_CallMethodObjArgs
 PyObject_CallObject
 PyObject_CheckReadBuffer
 PyObject_ClearWeakRefs
-PyObject_CopyData
 PyObject_DelItem
 PyObject_DelItemString
 PyObject_Dir
@@ -412,7 +403,6 @@ PyObject_GenericGetAttr
 PyObject_GenericSetAttr
 PyObject_GetAttr
 PyObject_GetAttrString
-PyObject_GetBuffer
 PyObject_GetItem
 PyObject_GetIter
 PyObject_HasAttr
@@ -691,7 +681,7 @@ _Py_CheckRecursiveCall
 _Py_Dealloc
 _Py_EllipsisObject
 _Py_FalseStruct
-Py_GetCopyright
+_Py_NoneStruct
 _Py_NotImplementedStruct
 _Py_SwappedOp
 _Py_TrueStruct

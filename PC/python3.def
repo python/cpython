@@ -681,7 +681,7 @@ EXPORTS
   _Py_Dealloc=python32._Py_Dealloc
   _Py_EllipsisObject=python32._Py_EllipsisObject DATA
   _Py_FalseStruct=python32._Py_FalseStruct DATA
-  _Py_NoneStruct=python32.Py_GetCopyright
+  _Py_NoneStruct=python32._Py_NoneStruct DATA
   _Py_NotImplementedStruct=python32._Py_NotImplementedStruct DATA
   _Py_SwappedOp=python32._Py_SwappedOp DATA
   _Py_TrueStruct=python32._Py_TrueStruct DATA
