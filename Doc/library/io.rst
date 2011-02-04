@@ -812,6 +812,8 @@ Text I/O over a binary storage (such as a file) is significantly slower than
 binary I/O over the same storage, because it implies conversions from
 unicode to binary data using a character codec.  This can become noticeable
 if you handle huge amounts of text data (for example very large log files).
+Also, :meth:`TextIOWrapper.tell` and :meth:`TextIOWrapper.seek` are both
+quite slow due to the reconstruction algorithm used.
 
 :class:`StringIO`, however, is a native in-memory unicode container and will
 exhibit similar speed to :class:`BytesIO`.
