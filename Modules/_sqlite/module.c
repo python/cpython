@@ -329,7 +329,7 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
         (pysqlite_statement_setup_types() < 0) ||
         (pysqlite_prepare_protocol_setup_types() < 0)
        ) {
-        Py_DECREF(module);
+        Py_XDECREF(module);
         return NULL;
     }
 
