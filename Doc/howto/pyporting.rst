@@ -319,6 +319,37 @@ This means you need to choose what an API is going to accept and create and
 consistently stick to that API in both Python 2 and 3.
 
 
+Bytes / unicode comparison
+**************************
+
+In Python 3, mixing bytes and unicode is forbidden in most situations; it
+will raise a :class:`TypeError` where Python 2 would have attempted an implicit
+coercion between types.  However, there is one case where it doesn't and
+it can be very misleading::
+
+   >>> b"" == ""
+   False
+
+This is because comparison for equality is required by the language to always
+succeed (and return ``False`` for incompatible types).  However, this also
+means that code incorrectly ported to Python 3 can display buggy behaviour
+if such comparisons are silently executed.  To detect such situations,
+Python 3 has a ``-b`` flag that will display a warning::
+
+   $ python3 -b
+   >>> b"" == ""
+   __main__:1: BytesWarning: Comparison between bytes and string
+   False
+
+To turn the warning into an exception, use the ``-bb`` flag instead::
+
+   $ python3 -bb
+   >>> b"" == ""
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   BytesWarning: Comparison between bytes and string
+
+
 ``__str__()``/``__unicode__()``
 '''''''''''''''''''''''''''''''
 In Python 2, objects can specify both a string and unicode representation of
