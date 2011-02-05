@@ -513,6 +513,7 @@ EXPORTS
   PyType_FromSpec=python32.PyType_FromSpec
   PyType_GenericAlloc=python32.PyType_GenericAlloc
   PyType_GenericNew=python32.PyType_GenericNew
+  PyType_GetFlags=python32.PyType_GetFlags
   PyType_IsSubtype=python32.PyType_IsSubtype
   PyType_Modified=python32.PyType_Modified
   PyType_Ready=python32.PyType_Ready

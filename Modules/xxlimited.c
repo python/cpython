@@ -50,8 +50,14 @@ Xxo_dealloc(XxoObject *self)
 static PyObject *
 Xxo_demo(XxoObject *self, PyObject *args)
 {
-    if (!PyArg_ParseTuple(args, ":demo"))
+    PyObject *o = NULL;
+    if (!PyArg_ParseTuple(args, "|O:demo", &o))
         return NULL;
+    /* Test availability of fast type checks */
+    if (o != NULL && PyUnicode_Check(o)) {
+        Py_INCREF(o);
+        return o;
+    }
     Py_INCREF(Py_None);
     return Py_None;
 }

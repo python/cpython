@@ -10,6 +10,9 @@ What's New in Python 3.2?
 Core and Builtins
 -----------------
 
+- Issue #11067: Add PyType_GetFlags, to support PyUnicode_Check
+  in the limited ABI.
+
 - Issue #11118: Fix bogus export of None in python3.dll.
 
 Library
