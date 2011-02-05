@@ -121,6 +121,8 @@ and work from there.
 .. _Python 2.6: http://www.python.org/2.6.x
 .. _Python 2.5: http://www.python.org/2.5.x
 .. _Python 2.4: http://www.python.org/2.4.x
+.. _Python 2.3: http://www.python.org/2.3.x
+.. _Python 2.2: http://www.python.org/2.2.x
 
 
 .. _use_3to2:
@@ -181,8 +183,8 @@ will be used for a rather long time. It also allows for use of the ``-3`` flag
 to Python to help discover places in your code which 2to3 cannot handle but are
 known to cause issues.
 
-Try to Support Python 2.6 and Newer Only
-----------------------------------------
+Try to Support `Python 2.6`_ and Newer Only
+-------------------------------------------
 While not possible for all projects, if you can support `Python 2.6`_ and newer
 **only**, your life will be much easier. Various future statements, stdlib
 additions, etc. exist only in Python 2.6 and later which greatly assist in
@@ -194,22 +196,6 @@ newer. Some of these options are personal choice while others are
 **strongly** recommended (the ones that are more for personal choice are
 labeled as such).  If you continue to support older versions of Python then you
 at least need to watch out for situations that these solutions fix.
-
-
-``from __future__ import division``
-'''''''''''''''''''''''''''''''''''
-While the exact same outcome can be had by using the ``-Qnew`` argument to
-Python, using this future statement lifts the requirement that your users use
-the flag to get the expected behavior of division in Python 3 (e.g., ``1/2 ==
-0.5; 1//2 == 0``).
-
-
-``from __future__ import absolute_imports``
-'''''''''''''''''''''''''''''''''''''''''''
-Implicit relative imports (e.g., importing ``spam.bacon`` from within
-``spam.eggs`` with the statement ``import bacon``) does not work in Python 3.
-This future statement moves away from that and allows the use of explicit
-relative imports (e.g., ``from . import bacon``).
 
 
 ``from __future__ import print_function``
@@ -251,11 +237,43 @@ Python 2, but ``b'a' + 'b'`` in Python 3 is a :exc:`TypeError`. A similar issue
 also comes about when doing comparisons between bytes and strings.
 
 
+Supporting `Python 2.5`_ and Newer Only
+---------------------------------------
+If you are supporting `Python 2.5`_ and newer there are still some features of
+Python that you can utilize.
+
+
+``from __future__ import absolute_imports``
+'''''''''''''''''''''''''''''''''''''''''''
+Implicit relative imports (e.g., importing ``spam.bacon`` from within
+``spam.eggs`` with the statement ``import bacon``) does not work in Python 3.
+This future statement moves away from that and allows the use of explicit
+relative imports (e.g., ``from . import bacon``).
+
+In `Python 2.5`_ you must use
+the __future__ statement to get to use explicit relative imports and prevent
+implicit ones. In `Python 2.6`_ explicit relative imports are available without
+the statement, but you still want the __future__ statement to prevent implicit
+relative imports. In `Python 2.7`_ the __future__ statement is not needed. In
+other words, unless you are only supporting Python 2.7 or a version earlier
+than Python 2.5, use the __future__ statement.
+
+
+
 Handle Common "Gotchas"
 -----------------------
 There are a few things that just consistently come up as sticking points for
 people which 2to3 cannot handle automatically or can easily be done in Python 2
 to help modernize your code.
+
+
+``from __future__ import division``
+'''''''''''''''''''''''''''''''''''
+While the exact same outcome can be had by using the ``-Qnew`` argument to
+Python, using this future statement lifts the requirement that your users use
+the flag to get the expected behavior of division in Python 3
+(e.g., ``1/2 == 0.5; 1//2 == 0``).
+
 
 
 Specify when opening a file as binary
@@ -288,8 +306,8 @@ possibilities:
 
 Subclass ``object``
 '''''''''''''''''''
-New-style classes have been around since Python 2.2. You need to make sure you
-are subclassing from ``object`` to avoid odd edge cases involving method
+New-style classes have been around since `Python 2.2`_. You need to make sure
+you are subclassing from ``object`` to avoid odd edge cases involving method
 resolution order, etc. This continues to be totally valid in Python 3 (although
 unneeded as all classes implicitly inherit from ``object``).
 
@@ -336,7 +354,7 @@ This means you need to choose what an API is going to accept and create and
 consistently stick to that API in both Python 2 and 3.
 
 
-Bytes / unicode comparison
+Bytes / Unicode Comparison
 **************************
 
 In Python 3, mixing bytes and unicode is forbidden in most situations; it
@@ -587,9 +605,10 @@ might make in writing cross-version code.
 
 Capturing the Currently Raised Exception
 ----------------------------------------
-One change between Python 2 and 3 that will require changing how you code is
-accessing the currently raised exception.  In Python 2 the syntax to access the
-current exception is::
+One change between Python 2 and 3 that will require changing how you code (if
+you support `Python 2.5`_ and earlier) is
+accessing the currently raised exception.  In Python 2.5 and earlier the syntax
+to access the current exception is::
 
    try:
      raise Exception()
@@ -597,12 +616,14 @@ current exception is::
      # Current exception is 'exc'
      pass
 
-This syntax changed in Python 3 to::
+This syntax changed in Python 3 (and backported to `Python 2.6`_ and later)
+to::
 
    try:
      raise Exception()
    except Exception as exc:
      # Current exception is 'exc'
+     # In Python 3, 'exc' is restricted to the block; Python 2.6 will "leak"
      pass
 
 Because of this syntax change you must change to capturing the current
@@ -622,7 +643,7 @@ likely don't need it.
 
 .. note::
    In Python 3, the traceback is attached to the exception instance
-   through the **__traceback__** attribute.  If the instance is saved in
+   through the ``__traceback__`` attribute. If the instance is saved in
    a local variable that persists outside of the ``except`` block, the
    traceback will create a reference cycle with the current frame and its
    dictionary of local variables.  This will delay reclaiming dead
