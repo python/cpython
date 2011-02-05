@@ -587,14 +587,19 @@ exception to::
 
 You can get more information about the raised exception from
 :func:`sys.exc_info` than simply the current exception instance, but you most
-likely don't need it. One very key point to understand, though, is **do not
-save the traceback to a variable without deleting it**! Because tracebacks
-contain references to the current executing frame you will inadvertently create
-a circular reference, prevent everything in the frame from being garbage
-collected. This can be a massive memory leak if you are not careful. Simply
-index into the returned value from :func:`sys.version_info` instead of
-assigning the tuple it returns to a variable.
+likely don't need it.
 
+.. note::
+   In Python 3, the traceback is attached to the exception instance
+   through the **__traceback__** attribute.  If the instance is saved in
+   a local variable that persists outside of the ``except`` block, the
+   traceback will create a reference cycle with the current frame and its
+   dictionary of local variables.  This will delay reclaiming dead
+   resources until the next cyclic :term:`garbage collection` pass.
+
+   In Python 2, this problem only occurs if you save the traceback itself
+   (e.g. the third element of the tuple returned by :func:`sys.exc_info`)
+   in a variable.
 
 Other Resources
 ===============
