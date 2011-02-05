@@ -285,11 +285,15 @@ queue as there are threads.
 How do I parcel out work among a bunch of worker threads?
 ---------------------------------------------------------
 
-Use the :mod:`queue` module to create a queue containing a list of jobs.  The
-:class:`~queue.Queue` class maintains a list of objects with ``.put(obj)`` to
-add an item to the queue and ``.get()`` to return an item.  The class will take
-care of the locking necessary to ensure that each job is handed out exactly
-once.
+The easiest way is to use the new :mod:`concurrent.futures` module,
+especially the :mod:`~concurrent.futures.ThreadPoolExecutor` class.
+
+Or, if you want fine control over the dispatching algorithm, you can write
+your own logic manually.  Use the :mod:`queue` module to create a queue
+containing a list of jobs.  The :class:`~queue.Queue` class maintains a
+list of objects with ``.put(obj)`` to add an item to the queue and ``.get()``
+to return an item.  The class will take care of the locking necessary to
+ensure that each job is handed out exactly once.
 
 Here's a trivial example::
 
@@ -352,7 +356,7 @@ provides a featureful interface.
 What kinds of global value mutation are thread-safe?
 ----------------------------------------------------
 
-A global interpreter lock (GIL) is used internally to ensure that only one
+A :term:`global interpreter lock` (GIL) is used internally to ensure that only one
 thread runs in the Python VM at a time.  In general, Python offers to switch
 among threads only between bytecode instructions; how frequently it switches can
 be set via :func:`sys.setswitchinterval`.  Each bytecode instruction and
@@ -395,32 +399,34 @@ lists.  When in doubt, use a mutex!
 Can't we get rid of the Global Interpreter Lock?
 ------------------------------------------------
 
-.. XXX mention multiprocessing
 .. XXX link to dbeazley's talk about GIL?
 
-The Global Interpreter Lock (GIL) is often seen as a hindrance to Python's
+The :term:`global interpreter lock` (GIL) is often seen as a hindrance to Python's
 deployment on high-end multiprocessor server machines, because a multi-threaded
 Python program effectively only uses one CPU, due to the insistence that
 (almost) all Python code can only run while the GIL is held.
 
 Back in the days of Python 1.5, Greg Stein actually implemented a comprehensive
 patch set (the "free threading" patches) that removed the GIL and replaced it
-with fine-grained locking.  Unfortunately, even on Windows (where locks are very
-efficient) this ran ordinary Python code about twice as slow as the interpreter
-using the GIL.  On Linux the performance loss was even worse because pthread
-locks aren't as efficient.
-
-Since then, the idea of getting rid of the GIL has occasionally come up but
-nobody has found a way to deal with the expected slowdown, and users who don't
-use threads would not be happy if their code ran at half at the speed.  Greg's
-free threading patch set has not been kept up-to-date for later Python versions.
+with fine-grained locking.  Adam Olsen recently did a similar experiment
+in his `python-safethread <http://code.google.com/p/python-safethread/>`_
+project.  Unfortunately, both experiments exhibited a sharp drop in single-thread
+performance (at least 30% slower), due to the amount of fine-grained locking
+necessary to compensate for the removal of the GIL.
 
 This doesn't mean that you can't make good use of Python on multi-CPU machines!
 You just have to be creative with dividing the work up between multiple
-*processes* rather than multiple *threads*.  Judicious use of C extensions will
-also help; if you use a C extension to perform a time-consuming task, the
-extension can release the GIL while the thread of execution is in the C code and
-allow other threads to get some work done.
+*processes* rather than multiple *threads*.  The
+:class:`~concurrent.futures.ProcessPoolExecutor` class in the new
+:mod:`concurrent.futures` module provides an easy way of doing so; the
+:mod:`multiprocessing` module provides a lower-level API in case you want
+more control over dispatching of tasks.
+
+Judicious use of C extensions will also help; if you use a C extension to
+perform a time-consuming task, the extension can release the GIL while the
+thread of execution is in the C code and allow other threads to get some work
+done.  Some standard library modules such as :mod:`zlib` and :mod:`hashlib`
+already do this.
 
 It has been suggested that the GIL should be a per-interpreter-state lock rather
 than truly global; interpreters then wouldn't be able to share objects.
