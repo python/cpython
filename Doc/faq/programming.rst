@@ -127,9 +127,9 @@ increased speed.
 
 .. XXX seems to have overlap with other questions!
 
-`Pyrex <http://www.cosc.canterbury.ac.nz/~greg/python/Pyrex/>`_ can compile a
-slightly modified version of Python code into a C extension, and can be used on
-many different platforms.
+`Cython <http://cython.org>`_ and `Pyrex <http://www.cosc.canterbury.ac.nz/~greg/python/Pyrex/>`_
+can compile a slightly modified version of Python code into a C extension, and
+can be used on many different platforms.
 
 `Psyco <http://psyco.sourceforge.net>`_ is a just-in-time compiler that
 translates Python code into x86 assembly language.  If you can use it, Psyco can
