@@ -24,14 +24,14 @@ there are several possible ways it could have gotten there.
   it; you'll have to figure out who's been using the machine and might have
   installed it.
 * A third-party application installed on the machine might have been written in
-  Python and included a Python installation.  For a home computer, the most
-  common such application is `PySol <http://pysolfc.sourceforge.net/>`_, a
-  solitaire game that includes over 1000 different games and variations.
+  Python and included a Python installation.  There are many such applications,
+  from GUI programs to network servers and administrative scripts.
 * Some Windows machines also have Python installed.  At this writing we're aware
   of computers from Hewlett-Packard and Compaq that include Python.  Apparently
   some of HP/Compaq's administrative tools are written in Python.
-* All Apple computers running Mac OS X have Python installed; it's included in
-  the base installation.
+* Many Unix-compatible operating systems, such as Mac OS X and some Linux
+  distributions, have Python installed by default; it's included in the base
+  installation.
 
 
 Can I delete Python?
