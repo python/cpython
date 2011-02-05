@@ -437,6 +437,8 @@ PyAPI_DATA(PyTypeObject) PyType_Type; /* built-in 'type' */
 PyAPI_DATA(PyTypeObject) PyBaseObject_Type; /* built-in 'object' */
 PyAPI_DATA(PyTypeObject) PySuper_Type; /* built-in 'super' */
 
+PyAPI_FUNC(long) PyType_GetFlags(PyTypeObject*);
+
 #define PyType_Check(op) \
     PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_TYPE_SUBCLASS)
 #define PyType_CheckExact(op) (Py_TYPE(op) == &PyType_Type)
@@ -589,7 +591,11 @@ given type object has a specified feature.
                  Py_TPFLAGS_HAVE_VERSION_TAG | \
                 0)
 
+#ifdef Py_LIMITED_API
+#define PyType_HasFeature(t,f)  ((PyType_GetFlags(t) & (f)) != 0)
+#else
 #define PyType_HasFeature(t,f)  (((t)->tp_flags & (f)) != 0)
+#endif
 #define PyType_FastSubclass(t,f)  PyType_HasFeature(t,f)
 
 

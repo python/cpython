@@ -1904,6 +1904,12 @@ type_init(PyObject *cls, PyObject *args, PyObject *kwds)
     return res;
 }
 
+long
+PyType_GetFlags(PyTypeObject *type)
+{
+    return type->tp_flags;
+}
+
 static PyObject *
 type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 {

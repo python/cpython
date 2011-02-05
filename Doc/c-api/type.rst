@@ -35,6 +35,14 @@ Type Objects
 
    Clear the internal lookup cache. Return the current version tag.
 
+.. c:function:: long PyType_GetFlags(PyTypeObject* type)
+
+   Return the :attr:`tp_flags` member of *type*. This function is primarily
+   meant for use with `Py_LIMITED_API`; the individual flag bits are
+   guaranteed to be stable across Python releases, but access to
+   :attr:`tp_flags` itself is not part of the limited API.
+
+   .. versionadded:: 3.2
 
 .. c:function:: void PyType_Modified(PyTypeObject *type)
 
