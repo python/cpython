@@ -483,10 +483,14 @@ Been deprecated for a while, but Python 3 finally drops support for
 friends.
 
 
-Stop Using :mod:`doctest`
-'''''''''''''''''''''''''
-While 2to3 tries to port doctests properly, it's a rather tough thing to do. It
-is probably best to simply convert your critical doctests to :mod:`unittest`.
+Updating doctests
+'''''''''''''''''
+2to3_ will attempt to generate fixes for doctests that it comes across. It's
+not perfect, though. If you wrote a monolithic set of doctests (e.g., a single
+docstring containing all of your doctests), you should at least consider
+breaking the doctests up into smaller pieces to make it more manageable to fix.
+Otherwise it might very well be worth your time and effort to port your tests
+to :mod:`unittest`.
 
 
 Eliminate ``-3`` Warnings
