@@ -251,23 +251,40 @@ Python 2, but ``b'a' + 'b'`` in Python 3 is a :exc:`TypeError`. A similar issue
 also comes about when doing comparisons between bytes and strings.
 
 
-:mod:`io` Module
-''''''''''''''''
-The built-in ``open()`` function in Python 2 always returns a Python 2 string,
-not a unicode string. This is problematic as Python 3's :func:`open` returns a
-string if a file is not opened as binary and bytes if it is.
-
-To help with compatibility, use :func:`io.open` instead of the built-in
-``open()``. Since :func:`io.open` is essentially the same function in both
-Python 2 and Python 3 it will help iron out any issues that might arise.
-
-
 Handle Common "Gotchas"
 -----------------------
 There are a few things that just consistently come up as sticking points for
 people which 2to3 cannot handle automatically or can easily be done in Python 2
 to help modernize your code.
 
+
+Specify when opening a file as binary
+'''''''''''''''''''''''''''''''''''''
+
+Unless you have been working on Windows, there is a chance you have not always
+bothered to add the ``b`` mode when opening a binary file (e.g., ``rb`` for
+binary reading).  Under Python 3, binary files and text files are clearly
+distinct and mutually incompatible; see the :mod:`io` module for details.
+Therefore, you **must** make a decision of whether a file will be used for
+binary access (allowing to read and/or write bytes data) or text access
+(allowing to read and/or write unicode data).
+
+Text files
+''''''''''
+
+Text files created using ``open()`` under Python 2 return byte strings,
+while under Python 3 they return unicode strings.  Depending on your porting
+strategy, this can be an issue.
+
+If you want text files to return unicode strings in Python 2, you have two
+possibilities:
+
+* Under Python 2.6 and higher, use :func:`io.open`.  Since :func:`io.open`
+  is essentially the same function in both Python 2 and Python 3, it will
+  help iron out any issues that might arise.
+
+* If pre-2.6 compatibility is needed, then you should use :func:`codecs.open`
+  instead.  This will make sure that you get back unicode strings in Python 2.
 
 Subclass ``object``
 '''''''''''''''''''
@@ -392,23 +409,9 @@ http://lucumr.pocoo.org/2011/1/22/forwards-compatible-python/)::
          return u'spam-spam-bacon-spam'  # 2to3 will remove the 'u' prefix
 
 
-Specify when opening a file as binary
-'''''''''''''''''''''''''''''''''''''
-Unless you have been working on Windows, there is a chance you have not always
-bothered to add the ``b`` mode when opening a file (e.g., ``
-
-
-Use :func:``codecs.open()``
-'''''''''''''''''''''''''''
-If you are not able to limit your Python 2 compatibility to 2.6 or newer (and
-thus get to use :func:`io.open`), then you should make sure you use
-:func:`codecs.open` over the built-in ``open()`` function. This will make sure
-that you get back unicode strings in Python 2 when reading in text and an
-instance of ``str`` when dealing with bytes.
-
-
 Don't Index on Exceptions
 '''''''''''''''''''''''''
+
 In Python 2, the following worked::
 
    >>> exc = Exception(1, 2, 3)
@@ -423,9 +426,9 @@ sequence containing all arguments passed to the :meth:`__init__` method.
 
 Even better is to use documented attributes the exception provides.
 
-
 Don't use ``__getslice__`` & Friends
 ''''''''''''''''''''''''''''''''''''
+
 Been deprecated for a while, but Python 3 finally drops support for
 ``__getslice__()``, etc. Move completely over to :meth:`__getitem__` and
 friends.
