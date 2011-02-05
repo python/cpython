@@ -596,7 +596,9 @@ to creating a Python 2/3 codebase. This includes trying only support Python 2.6
 or newer (the :mod:`__future__` statements work in Python 3 without issue),
 eliminating warnings that are triggered by ``-3``, etc.
 
-Essentially you should cover all of the steps short of running 2to3 itself.
+You should even consider running 2to3_ over your code (without committing the
+changes). This will let you know where potential pain points are within your
+code so that you can fix them properly before they become an issue.
 
 
 Use six_
