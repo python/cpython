@@ -15,7 +15,9 @@ General GUI Questions
 What platform-independent GUI toolkits exist for Python?
 ========================================================
 
-Depending on what platform(s) you are aiming at, there are several.
+Depending on what platform(s) you are aiming at, there are several.  Some
+of them haven't been ported to Python 3 yet.  At least `Tkinter`_ and `Qt`_
+are known to be Python 3-compatible.
 
 .. XXX check links
 
@@ -23,10 +25,12 @@ Tkinter
 -------
 
 Standard builds of Python include an object-oriented interface to the Tcl/Tk
-widget set, called Tkinter.  This is probably the easiest to install and use.
-For more info about Tk, including pointers to the source, see the Tcl/Tk home
-page at http://www.tcl.tk.  Tcl/Tk is fully portable to the MacOS, Windows, and
-Unix platforms.
+widget set, called :ref:`tkinter <Tkinter>`.  This is probably the easiest to
+install (since it comes included with most
+`binary distributions <http://www.python.org/download/>`_ of Python) and use.
+For more info about Tk, including pointers to the source, see the
+`Tcl/Tk home page <http://www.tcl.tk>`_.  Tcl/Tk is fully portable to the
+MacOS, Windows, and Unix platforms.
 
 wxWidgets
 ---------
@@ -51,13 +55,15 @@ well as in freeware or shareware.
 Qt
 ---
 
-There are bindings available for the Qt toolkit (`PyQt
-<http://www.riverbankcomputing.co.uk/software/pyqt/>`_) and for KDE (`PyKDE <http://www.riverbankcomputing.co.uk/software/pykde/intro>`__).  If
-you're writing open source software, you don't need to pay for PyQt, but if you
-want to write proprietary applications, you must buy a PyQt license from
-`Riverbank Computing <http://www.riverbankcomputing.co.uk>`_ and (up to Qt 4.4;
-Qt 4.5 upwards is licensed under the LGPL license) a Qt license from `Trolltech
-<http://www.trolltech.com>`_.
+There are bindings available for the Qt toolkit (using either `PyQt
+<http://www.riverbankcomputing.co.uk/software/pyqt/>`_ or `PySide
+<http://www.pyside.org/>`_) and for KDE (`PyKDE <http://www.riverbankcomputing.co.uk/software/pykde/intro>`__).
+PyQt is currently more mature than PySide, but you must buy a PyQt license from
+`Riverbank Computing <http://www.riverbankcomputing.co.uk/software/pyqt/license>`_
+if you want to write proprietary applications.  PySide is free for all applications.
+
+Qt 4.5 upwards is licensed under the LGPL license; also, commercial licenses
+are available from `Nokia <http://qt.nokia.com/>`_.
 
 Gtk+
 ----
