@@ -757,7 +757,8 @@ some sample code::
 How do I avoid blocking in the connect() method of a socket?
 ------------------------------------------------------------
 
-The select module is commonly used to help with asynchronous I/O on sockets.
+The :mod:`select` module is commonly used to help with asynchronous I/O on
+sockets.
 
 To prevent the TCP connect from blocking, you can set the socket to non-blocking
 mode.  Then when you do the ``connect()``, you will either connect immediately
@@ -770,6 +771,12 @@ You can use the ``connect_ex()`` method to avoid creating an exception.  It will
 just return the errno value.  To poll, you can call ``connect_ex()`` again later
 -- ``0`` or ``errno.EISCONN`` indicate that you're connected -- or you can pass this
 socket to select to check if it's writable.
+
+.. note::
+   The :mod:`asyncore` module presents a framework-like approach to the problem
+   of writing non-blocking networking code.
+   The third-party `Twisted <http://twistedmatrix.com/>`_ library is
+   a popular and feature-rich alternative.
 
 
 Databases
