@@ -20,6 +20,11 @@ Library
 - Issue #8275: Fix passing of callback arguments with ctypes under Win64.
   Patch by Stan Mihai.
 
+Build
+-----
+
+- Issue #11121: Fix building with --enable-shared.
+
 
 What's New in Python 3.2 Release Candidate 2?
 =============================================
