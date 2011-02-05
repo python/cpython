@@ -367,6 +367,37 @@ To turn the warning into an exception, use the ``-bb`` flag instead::
    BytesWarning: Comparison between bytes and string
 
 
+Indexing bytes objects
+''''''''''''''''''''''
+
+Another potentially surprising change is the indexing behaviour of bytes
+objects in Python 3::
+
+   >>> b"xyz"[0]
+   120
+
+Indeed, Python 3 bytes objects (as well as :class:`bytearray` objects)
+are sequences of integers.  But code converted from Python 2 will often
+assume that indexing a bytestring produces another bytestring, not an
+integer.  To reconcile both behaviours, use slicing::
+
+   >>> b"xyz"[0:1]
+   b'x'
+   >>> n = 1
+   >>> b"xyz"[n:n+1]
+   b'y'
+
+The only remaining gotcha is that an out-of-bounds slice returns an empty
+bytes object instead of raising ``IndexError``:
+
+   >>> b"xyz"[3]
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   IndexError: index out of range
+   >>> b"xyz"[3:4]
+   b''
+
+
 ``__str__()``/``__unicode__()``
 '''''''''''''''''''''''''''''''
 In Python 2, objects can specify both a string and unicode representation of
