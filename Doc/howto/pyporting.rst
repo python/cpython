@@ -15,7 +15,7 @@ Porting Python 2 Code to Python 3
    that strategy.
 
    If you are looking to port an extension module instead of pure Python code,
-   please see http://docs.python.org/py3k/howto/cporting.html .
+   please see :ref:`cporting-howto`.
 
 
 Choosing a Strategy
