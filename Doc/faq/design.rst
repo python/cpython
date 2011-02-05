@@ -418,11 +418,9 @@ much speed.
 .. XXX check which of these projects are still alive
 
 There are also several programs which make it easier to intermingle Python and C
-code in various ways to increase performance.  See, for example, `Psyco
-<http://psyco.sourceforge.net/>`_, `Pyrex
-<http://www.cosc.canterbury.ac.nz/~greg/python/Pyrex/>`_, `PyInline
-<http://pyinline.sourceforge.net/>`_, `Py2Cmod
-<http://sourceforge.net/projects/py2cmod/>`_, and `Weave
+code in various ways to increase performance.  See, for example, `Cython
+<http://cython.org/>`_, `Pyrex
+<http://www.cosc.canterbury.ac.nz/~greg/python/Pyrex/>`_ and `Weave
 <http://www.scipy.org/Weave>`_.
 
 
