@@ -513,6 +513,7 @@ Some smaller changes made to the core Python language are:
   caused confusion and is no longer needed now that the shortest possible
   :func:`repr` is displayed by default:
 
+   >>> import math
    >>> repr(math.pi)
    '3.141592653589793'
    >>> str(math.pi)
@@ -633,11 +634,10 @@ Some smaller changes made to the core Python language are:
   (See :issue:`10518`.)
 
 * Python's import mechanism can now load modules installed in directories with
-  non-ASCII characters in the path name:
+  non-ASCII characters in the path name.  This solved an aggravating problem
+  with home directories for users with non-ASCII characters in their usernames.
 
-  >>> import møøse.bites
-
-  (Required extensive work by Victor Stinner in :issue:`9425`.)
+ (Required extensive work by Victor Stinner in :issue:`9425`.)
 
 
 New, Improved, and Deprecated Modules
@@ -646,14 +646,15 @@ New, Improved, and Deprecated Modules
 Python's standard library has undergone significant maintenance efforts and
 quality improvements.
 
-The biggest news for Python 3.2 is that the :mod:`email` package and
-:mod:`nntplib` modules now work correctly with the bytes/text model in Python 3.
-For the first time, there is correct handling of inputs with mixed encodings.
+The biggest news for Python 3.2 is that the :mod:`email` package, :mod:`mailbox`
+module, and :mod:`nntplib` modules now work correctly with the bytes/text model
+in Python 3.  For the first time, there is correct handling of message with
+mixed encodings.
 
 Throughout the standard library, there has been more careful attention to
 encodings and text versus bytes issues.  In particular, interactions with the
-operating system are now better able to pass non-ASCII data using the Windows
-MBCS encoding, locale-aware encodings, or UTF-8.
+operating system are now better able to exchange non-ASCII data using the
+Windows MBCS encoding, locale-aware encodings, or UTF-8.
 
 Another significant win is the addition of substantially better support for
 *SSL* connections and security certificates.
@@ -822,6 +823,7 @@ itertools
 * The :mod:`itertools` module has a new :func:`~itertools.accumulate` function
   modeled on APL's *scan* operator and Numpy's *accumulate* function:
 
+  >>> from itertools import accumulate
   >>> list(accumulate(8, 2, 50))
   [8, 10, 60]
 
@@ -911,6 +913,8 @@ back and re-enter the barrier.  The barrier fully resets after each cycle.
 
 Example of using barriers::
 
+    from threading import Barrier, Thread
+
     def get_votes(site):
         ballots = conduct_election(site)
         all_polls_closed.wait()        # do not count until all polls are closed
@@ -964,7 +968,7 @@ datetime and time
   offset and timezone name. This makes it easier to create timezone-aware
   datetime objects::
 
-    >>> import datetime
+    >>> from datetime import datetime, timezone
 
     >>> datetime.now(timezone.utc)
     datetime.datetime(2010, 12, 8, 21, 4, 2, 923754, tzinfo=datetime.timezone.utc)
@@ -1069,12 +1073,12 @@ These tools make it possible to define an :term:`abstract base class` that
 requires a particular :func:`classmethod` or :func:`staticmethod` to be
 implemented::
 
-    class Temperature(metaclass=ABCMeta):
+    class Temperature(metaclass=abc.ABCMeta):
         @abc.abstractclassmethod
-        def from_fahrenheit(self, t):
+        def from_fahrenheit(cls, t):
             ...
         @abc.abstractclassmethod
-        def from_celsius(self, t):
+        def from_celsius(cls, t):
             ...
 
 (Patch submitted by Daniel Urban; :issue:`5867`.)
@@ -1104,8 +1108,8 @@ for slice notation are well-suited to in-place editing::
     >>> change_location(buffer, 1, b'warehouse  ')
     >>> change_location(buffer, 0, b'showroom   ')
     >>> print(byte_stream.getvalue())
-    b'G3805  showroom   Main chassis    ' ->
-    b'X7899  warehouse  Reserve cog     ' ->
+    b'G3805  showroom   Main chassis    '
+    b'X7899  warehouse  Reserve cog     '
     b'L6988  receiving  Primary sprocket'
 
 (Contributed by Antoine Pitrou in :issue:`5506`.)
@@ -1425,7 +1429,7 @@ strings, bytes, numbers, tuples, lists, dicts, sets, booleans, and None.
 
 ::
 
-    >>> from ast import literal_request
+    >>> from ast import literal_eval
 
     >>> request = "{'req': 3, 'func': 'pow', 'args': (2, 0.5)}"
     >>> literal_eval(request)
@@ -1491,7 +1495,8 @@ step is non-destructive (the original files are left unchanged).
     >>> import shutil, pprint
 
     >>> os.chdir('mydata')                               # change to the source directory
-    >>> f = make_archive('/var/backup/mydata', 'zip')    # archive the current directory
+    >>> f = shutil.make_archive('/var/backup/mydata',
+                                'zip')                   # archive the current directory
     >>> f                                                # show the name of archive
     '/var/backup/mydata.zip'
     >>> os.chdir('tmp')                                  # change to an unpacking
@@ -1505,8 +1510,8 @@ step is non-destructive (the original files are left unchanged).
 
     >>> shutil.register_archive_format(                  # register a new archive format
             name = 'xz',
-            function = 'xz.compress',
-            extra_args = [('level', 8)],
+            function = xz.compress,                      # callable archiving function
+            extra_args = [('level', 8)],                 # arguments to the function
             description = 'xz compression'
     )
 
@@ -1878,6 +1883,32 @@ object.  The former returns a string and the latter prints it::
        0: self
        1: seq
        2: i
+
+In addition, the :func:`~dis.dis` function now accepts string arguments
+so that the common idiom ``dis(compile(s, '', 'eval'))`` can be shortened
+to ``dis(compile(s))``::
+
+    >>> dis('3*x+1 if x%2==1 else x//2')
+      1           0 LOAD_NAME                0 (x)
+                  3 LOAD_CONST               0 (2)
+                  6 BINARY_MODULO
+                  7 LOAD_CONST               1 (1)
+                 10 COMPARE_OP               2 (==)
+                 13 POP_JUMP_IF_FALSE       28
+                 16 LOAD_CONST               2 (3)
+                 19 LOAD_NAME                0 (x)
+                 22 BINARY_MULTIPLY
+                 23 LOAD_CONST               1 (1)
+                 26 BINARY_ADD
+                 27 RETURN_VALUE
+            >>   28 LOAD_NAME                0 (x)
+                 31 LOAD_CONST               0 (2)
+                 34 BINARY_FLOOR_DIVIDE
+                 35 RETURN_VALUE
+
+Taken together, these improvements make it easier to explore how CPython is
+implemented and to see for yourself what the language syntax does
+under-the-hood.
 
 (Contributed by Nick Coghlan in :issue:`9147`.)
 
