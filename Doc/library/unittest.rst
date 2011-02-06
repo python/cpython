@@ -352,9 +352,9 @@ Organizing test code
 
 The basic building blocks of unit testing are :dfn:`test cases` --- single
 scenarios that must be set up and checked for correctness.  In :mod:`unittest`,
-test cases are represented by instances of :mod:`unittest`'s :class:`TestCase`
-class. To make your own test cases you must write subclasses of
-:class:`TestCase`, or use :class:`FunctionTestCase`.
+test cases are represented by :class:`unittest.TestCase` instances.
+To make your own test cases you must write subclasses of
+:class:`TestCase` or use :class:`FunctionTestCase`.
 
 An instance of a :class:`TestCase`\ -derived class is an object that can
 completely run a single test method, together with optional set-up and tidy-up
