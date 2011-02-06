@@ -23,7 +23,7 @@ returns a new sorted list::
     >>> sorted([5, 2, 3, 1, 4])
     [1, 2, 3, 4, 5]
 
-You can also use the :meth:`list.sort` method of a list. It modifies the list
+You can also use the :meth:`list.sort` method. It modifies the list
 in-place (and returns *None* to avoid confusion). Usually it's less convenient
 than :func:`sorted` - but if you don't need the original list, it's slightly
 more efficient.
@@ -87,9 +87,9 @@ Operator Module Functions
 =========================
 
 The key-function patterns shown above are very common, so Python provides
-convenience functions to make accessor functions easier and faster. The operator
-module has :func:`operator.itemgetter`, :func:`operator.attrgetter`, and
-an :func:`operator.methodcaller` function.
+convenience functions to make accessor functions easier and faster. The
+:mod:`operator` module has :func:`~operator.itemgetter`,
+:func:`~operator.attrgetter`, and an :func:`~operator.methodcaller` function.
 
 Using those functions, the above examples become simpler and faster:
 
@@ -248,7 +248,7 @@ To convert to a key function, just wrap the old comparison function:
     [5, 4, 3, 2, 1]
 
 In Python 3.2, the :func:`functools.cmp_to_key` function was added to the
-functools module in the standard library.
+:mod:`functools` module in the standard library.
 
 Odd and Ends
 ============
@@ -256,7 +256,7 @@ Odd and Ends
 * For locale aware sorting, use :func:`locale.strxfrm` for a key function or
   :func:`locale.strcoll` for a comparison function.
 
-* The *reverse* parameter still maintains sort stability (i.e. records with
+* The *reverse* parameter still maintains sort stability (so that records with
   equal keys retain the original order). Interestingly, that effect can be
   simulated without the parameter by using the builtin :func:`reversed` function
   twice:
