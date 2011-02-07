@@ -595,7 +595,7 @@ Using type-specific formatting::
 Nesting arguments and more complex examples::
 
    >>> for align, text in zip('<^>', ['left', 'center', 'right']):
-   ...     '{0:{align}{fill}16}'.format(text, fill=align, align=align)
+   ...     '{0:{fill}{align}16}'.format(text, fill=align, align=align)
    ...
    'left<<<<<<<<<<<<'
    '^^^^^center^^^^^'
