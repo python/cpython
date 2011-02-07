@@ -169,8 +169,8 @@ object)::
    klist = list(d.keys()) # a list of all existing keys (slow!)
 
    # as d was opened WITHOUT writeback=True, beware:
-   d['xx'] = range(4)  # this works as expected, but...
-   d['xx'].append(5)   # *this doesn't!* -- d['xx'] is STILL range(4)!
+   d['xx'] = [0, 1, 2]    # this works as expected, but...
+   d['xx'].append(3)      # *this doesn't!* -- d['xx'] is STILL [0, 1, 2]!
 
    # having opened d without writeback=True, you need to code carefully:
    temp = d['xx']      # extracts the copy
