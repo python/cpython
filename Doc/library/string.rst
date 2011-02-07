@@ -310,10 +310,10 @@ The meaning of the various alignment options is as follows:
    | Option  | Meaning                                                  |
    +=========+==========================================================+
    | ``'<'`` | Forces the field to be left-aligned within the available |
-   |         | space (this is the default).                             |
+   |         | space (this is the default for most objects).            |
    +---------+----------------------------------------------------------+
    | ``'>'`` | Forces the field to be right-aligned within the          |
-   |         | available space.                                         |
+   |         | available space (this is the default for numbers).       |
    +---------+----------------------------------------------------------+
    | ``'='`` | Forces the padding to be placed after the sign (if any)  |
    |         | but before the digits.  This is used for printing fields |
