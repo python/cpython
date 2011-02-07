@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11132: Fix passing of "optimize" parameter when recursing
+  in compileall.compile_dir().
+
 - Issue #11110: Fix a potential decref of a NULL in sqlite3.
 
 - Issue #8275: Fix passing of callback arguments with ctypes under Win64.
