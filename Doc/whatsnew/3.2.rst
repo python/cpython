@@ -2511,11 +2511,12 @@ Changes to Python's build process and to the C API include:
 There were a number of other small changes to the C-API.  See the
 :source:`Misc/NEWS` file for a complete list.
 
-Also, there were a number of updates to the OS X build, see
+Also, there were a number of updates to the Mac OS X build, see
 :source:`Mac/BuildScript/README.txt` for details.  For users running a 32/64-bit
-build, there is a known problem with the default Tcl/Tk on OS X 10.6.
+build, there is a known problem with the default Tcl/Tk on Mac OS X 10.6.
 Accordingly, we recommend installing an updated alternative such as
-`ActiveState Tcl/Tk 8.5 <http://www.activestate.com/activetcl/downloads>`_ .
+`ActiveState Tcl/Tk 8.5.9 <http://www.activestate.com/activetcl/downloads>`_\.
+See http://www.python.org/download/mac/tcltk/ for additional details.
 
 Porting to Python 3.2
 =====================
