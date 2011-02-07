@@ -20,6 +20,7 @@ Porting Python 2 Code to Python 3
 
 Choosing a Strategy
 ===================
+
 When a project makes the decision that it's time to support both Python 2 & 3,
 a decision needs to be made as to how to go about accomplishing that goal.
 The chosen strategy will depend on how large the project's existing
@@ -54,6 +55,7 @@ current best practices in a Python 2/3 compatible way.
 
 Universal Bits of Advice
 ------------------------
+
 Regardless of what strategy you pick, there are a few things you should
 consider.
 
@@ -128,6 +130,7 @@ and work from there.
 
 Python 3 and 3to2
 =================
+
 If you are starting a new project or your codebase is small enough, you may
 want to consider writing your code for Python 3 and backporting to Python 2
 using 3to2_. Thanks to Python 3 being more strict about things than Python 2
@@ -149,6 +152,7 @@ that 3to2 is not a high-quality project.
 
 Python 2 and 2to3
 =================
+
 Included with Python since 2.6, the 2to3_ tool (and :mod:`lib2to3` module)
 helps with porting Python 2 to Python 3 by performing various source
 translations. This is a perfect solution for projects which wish to branch
@@ -176,6 +180,7 @@ to supporting Python 2 & 3.
 
 Support Python 2.7
 ------------------
+
 As a first step, make sure that your project is compatible with `Python 2.7`_.
 This is just good to do as Python 2.7 is the last release of Python 2 and thus
 will be used for a rather long time. It also allows for use of the ``-3`` flag
@@ -184,6 +189,7 @@ known to cause issues.
 
 Try to Support `Python 2.6`_ and Newer Only
 -------------------------------------------
+
 While not possible for all projects, if you can support `Python 2.6`_ and newer
 **only**, your life will be much easier. Various future statements, stdlib
 additions, etc. exist only in Python 2.6 and later which greatly assist in
@@ -199,6 +205,7 @@ at least need to watch out for situations that these solutions fix.
 
 ``from __future__ import print_function``
 '''''''''''''''''''''''''''''''''''''''''
+
 This is a personal choice. 2to3 handles the translation from the print
 statement to the print function rather well so this is an optional step. This
 future statement does help, though, with getting used to typing
@@ -207,6 +214,7 @@ future statement does help, though, with getting used to typing
 
 ``from __future__ import unicode_literals``
 '''''''''''''''''''''''''''''''''''''''''''
+
 Another personal choice. You can always mark what you want to be a (unicode)
 string with a ``u`` prefix to get the same effect. But regardless of whether
 you use this future statement or not, you **must** make sure you know exactly
@@ -217,6 +225,7 @@ strings with a ``u`` prefix if you do not use this future statement.
 
 Bytes literals
 ''''''''''''''
+
 This is a **very** important one. The ability to prefix Python 2 strings that
 are meant to contain bytes with a ``b`` prefix help to very clearly delineate
 what is and is not a Python 3 string. When you run 2to3 on code, all Python 2
@@ -238,12 +247,14 @@ also comes about when doing comparisons between bytes and strings.
 
 Supporting `Python 2.5`_ and Newer Only
 ---------------------------------------
+
 If you are supporting `Python 2.5`_ and newer there are still some features of
 Python that you can utilize.
 
 
 ``from __future__ import absolute_imports``
 '''''''''''''''''''''''''''''''''''''''''''
+
 Implicit relative imports (e.g., importing ``spam.bacon`` from within
 ``spam.eggs`` with the statement ``import bacon``) does not work in Python 3.
 This future statement moves away from that and allows the use of explicit
@@ -261,6 +272,7 @@ than Python 2.5, use the __future__ statement.
 
 Handle Common "Gotchas"
 -----------------------
+
 There are a few things that just consistently come up as sticking points for
 people which 2to3 cannot handle automatically or can easily be done in Python 2
 to help modernize your code.
@@ -268,6 +280,7 @@ to help modernize your code.
 
 ``from __future__ import division``
 '''''''''''''''''''''''''''''''''''
+
 While the exact same outcome can be had by using the ``-Qnew`` argument to
 Python, using this future statement lifts the requirement that your users use
 the flag to get the expected behavior of division in Python 3
@@ -305,6 +318,7 @@ possibilities:
 
 Subclass ``object``
 '''''''''''''''''''
+
 New-style classes have been around since `Python 2.2`_. You need to make sure
 you are subclassing from ``object`` to avoid odd edge cases involving method
 resolution order, etc. This continues to be totally valid in Python 3 (although
@@ -313,6 +327,7 @@ unneeded as all classes implicitly inherit from ``object``).
 
 Deal With the Bytes/String Dichotomy
 ''''''''''''''''''''''''''''''''''''
+
 One of the biggest issues people have when porting code to Python 3 is handling
 the bytes/string dichotomy. Because Python 2 allowed the ``str`` type to hold
 textual data, people have over the years been rather loose in their delineation
@@ -340,6 +355,7 @@ literals you can either use six's ``u()`` function or use a ``u`` prefix.
 
 Decide what APIs Will Accept
 ****************************
+
 In Python 2 it was very easy to accidentally create an API that accepted both
 bytes and textual data. But in Python 3, thanks to the more strict handling of
 disparate types, this loose usage of bytes and text together tends to fail.
@@ -417,9 +433,10 @@ bytes object instead of raising ``IndexError``:
 
 ``__str__()``/``__unicode__()``
 '''''''''''''''''''''''''''''''
+
 In Python 2, objects can specify both a string and unicode representation of
 themselves. In Python 3, though, there is only a string representation. This
-becomes an issue as people can inadvertantly do things in their ``__str__()``
+becomes an issue as people can inadvertently do things in their ``__str__()``
 methods which have unpredictable results (e.g., infinite recursion if you
 happen to use the ``unicode(self).encode('utf8')`` idiom as the body of your
 ``__str__()`` method).
@@ -484,6 +501,7 @@ friends.
 
 Updating doctests
 '''''''''''''''''
+
 2to3_ will attempt to generate fixes for doctests that it comes across. It's
 not perfect, though. If you wrote a monolithic set of doctests (e.g., a single
 docstring containing all of your doctests), you should at least consider
@@ -494,6 +512,7 @@ to :mod:`unittest`.
 
 Eliminate ``-3`` Warnings
 -------------------------
+
 When you run your application's test suite, run it using the ``-3`` flag passed
 to Python. This will cause various warnings to be raised during execution about
 things that 2to3 cannot handle automatically (e.g., modules that have been
@@ -503,12 +522,14 @@ to Python 3.
 
 Run 2to3
 --------
+
 Once you have made your Python 2 code future-compatible with Python 3, it's
 time to use 2to3_ to actually port your code.
 
 
 Manually
 ''''''''
+
 To manually convert source code using 2to3_, you use the ``2to3`` script that
 is installed with Python 2.6 and later.::
 
@@ -526,6 +547,7 @@ etc.
 
 During Installation
 '''''''''''''''''''
+
 When a user installs your project for Python 3, you can have either
 :mod:`distutils` or Distribute_ run 2to3_ on your behalf.
 For distutils, use the following idiom::
@@ -552,6 +574,7 @@ you at least build your project and use the built Python 3 source for testing.
 
 Verify & Test
 -------------
+
 At this point you should (hopefully) have your project converted in such a way
 that it works in Python 3. Verify it by running your unit tests and making sure
 nothing has gone awry. If you miss something then figure out how to fix it in
@@ -567,6 +590,7 @@ to verify the fix transforms properly.
 
 Python 2/3 Compatible Source
 ============================
+
 While it may seem counter-intuitive, you can write Python code which is
 source-compatible between Python 2 & 3. It does lead to code that is not
 entirely idiomatic Python (e.g., having to extract the currently raised
@@ -589,6 +613,7 @@ the same source code.
 
 Follow The Steps for Using 2to3_ (sans 2to3)
 --------------------------------------------
+
 All of the steps outlined in how to
 :ref:`port Python 2 code with 2to3 <use_2to3>` apply
 to creating a Python 2/3 codebase. This includes trying only support Python 2.6
@@ -602,6 +627,7 @@ code so that you can fix them properly before they become an issue.
 
 Use six_
 --------
+
 The six_ project contains many things to help you write portable Python code.
 You should make sure to read its documentation from beginning to end and use
 any and all features it provides. That way you will minimize any mistakes you
@@ -610,6 +636,7 @@ might make in writing cross-version code.
 
 Capturing the Currently Raised Exception
 ----------------------------------------
+
 One change between Python 2 and 3 that will require changing how you code (if
 you support `Python 2.5`_ and earlier) is
 accessing the currently raised exception.  In Python 2.5 and earlier the syntax
@@ -658,9 +685,11 @@ likely don't need it.
    (e.g. the third element of the tuple returned by :func:`sys.exc_info`)
    in a variable.
 
+
 Other Resources
 ===============
-The authors of the following blogs posts and wiki pages deserve special thanks
+
+The authors of the following blog posts and wiki pages deserve special thanks
 for making public their tips for porting Python 2 code to Python 3 (and thus
 helping provide information for this document):
 
