@@ -149,14 +149,14 @@ that 3to2 is not a high-quality project.
 
 Python 2 and 2to3
 =================
-Included with Python since 2.6, 2to3_ tool (and :mod:`lib2to3` module) helps
-with porting Python 2 to Python 3 by performing various source translations.
-This is a perfect solution for projects which wish to branch their Python 3
-code from their Python 2 codebase and maintain them as independent codebases.
-You can even begin preparing to use this approach today by writing
-future-compatible Python code which works cleanly in Python 2 in conjunction
-with 2to3; all steps outlined below will work with Python 2 code up to the
-point when the actual use of 2to3 occurs.
+Included with Python since 2.6, the 2to3_ tool (and :mod:`lib2to3` module)
+helps with porting Python 2 to Python 3 by performing various source
+translations. This is a perfect solution for projects which wish to branch
+their Python 3 code from their Python 2 codebase and maintain them as
+independent codebases. You can even begin preparing to use this approach
+today by writing future-compatible Python code which works cleanly in
+Python 2 in conjunction with 2to3; all steps outlined below will work
+with Python 2 code up to the point when the actual use of 2to3 occurs.
 
 Use of 2to3 as an on-demand translation step at install time is also possible,
 preventing the need to maintain a separate Python 3 codebase, but this approach
@@ -468,11 +468,11 @@ In Python 2, the following worked::
    >>> exc[1]  # Python 2 only!
    2
 
-But in Python 3, indexing directly off of an exception is an error. You need to
-make sure to only index on :attr:`BaseException.args` attribute which is a
+But in Python 3, indexing directly on an exception is an error. You need to
+make sure to only index on the :attr:`BaseException.args` attribute which is a
 sequence containing all arguments passed to the :meth:`__init__` method.
 
-Even better is to use documented attributes the exception provides.
+Even better is to use the documented attributes the exception provides.
 
 Don't use ``__getslice__`` & Friends
 ''''''''''''''''''''''''''''''''''''
