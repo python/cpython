@@ -167,6 +167,9 @@ Extension Modules
 Build
 -----
 
+- Issue #11079: The /Applications/Python x.x folder created by the Mac
+  OS X installers now includes a link to the installed documentation.
+
 - Issue #11054: Allow Mac OS X installer builds to again work on 10.5 with
   the system-provided Python.
 
