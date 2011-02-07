@@ -29,6 +29,11 @@ Library
 Build
 -----
 
+- Issue #11079: The /Applications/Python x.x folder created by the Mac
+  OS X installers now includes a link to the installed documentation
+  and no longer includes an Extras directory.  The Tools directory is
+  now installed in the framework under share/doc.
+
 - Issue #11121: Fix building with --enable-shared.
 
 Tests
