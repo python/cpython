@@ -93,7 +93,10 @@ class ZipSupportTests(unittest.TestCase):
             os.remove(init_name)
             sys.path.insert(0, zip_name)
             import zip_pkg
-            self.assertEqual(inspect.getsource(zip_pkg.foo), test_src)
+            try:
+                self.assertEqual(inspect.getsource(zip_pkg.foo), test_src)
+            finally:
+                del sys.modules["zip_pkg"]
 
     def test_doctest_issue4197(self):
         # To avoid having to keep two copies of the doctest module's
@@ -128,53 +131,56 @@ class ZipSupportTests(unittest.TestCase):
             os.remove(script_name)
             sys.path.insert(0, zip_name)
             import test_zipped_doctest
-            # Some of the doc tests depend on the colocated text files
-            # which aren't available to the zipped version (the doctest
-            # module currently requires real filenames for non-embedded
-            # tests). So we're forced to be selective about which tests
-            # to run.
-            # doctest could really use some APIs which take a text
-            # string or a file object instead of a filename...
-            known_good_tests = [
-                test_zipped_doctest.SampleClass,
-                test_zipped_doctest.SampleClass.NestedClass,
-                test_zipped_doctest.SampleClass.NestedClass.__init__,
-                test_zipped_doctest.SampleClass.__init__,
-                test_zipped_doctest.SampleClass.a_classmethod,
-                test_zipped_doctest.SampleClass.a_property,
-                test_zipped_doctest.SampleClass.a_staticmethod,
-                test_zipped_doctest.SampleClass.double,
-                test_zipped_doctest.SampleClass.get,
-                test_zipped_doctest.SampleNewStyleClass,
-                test_zipped_doctest.SampleNewStyleClass.__init__,
-                test_zipped_doctest.SampleNewStyleClass.double,
-                test_zipped_doctest.SampleNewStyleClass.get,
-                test_zipped_doctest.sample_func,
-                test_zipped_doctest.test_DocTest,
-                test_zipped_doctest.test_DocTestParser,
-                test_zipped_doctest.test_DocTestRunner.basics,
-                test_zipped_doctest.test_DocTestRunner.exceptions,
-                test_zipped_doctest.test_DocTestRunner.option_directives,
-                test_zipped_doctest.test_DocTestRunner.optionflags,
-                test_zipped_doctest.test_DocTestRunner.verbose_flag,
-                test_zipped_doctest.test_Example,
-                test_zipped_doctest.test_debug,
-                test_zipped_doctest.test_pdb_set_trace,
-                test_zipped_doctest.test_pdb_set_trace_nested,
-                test_zipped_doctest.test_testsource,
-                test_zipped_doctest.test_trailing_space_in_test,
-                test_zipped_doctest.test_DocTestSuite,
-                test_zipped_doctest.test_DocTestFinder,
-            ]
-            # These remaining tests are the ones which need access
-            # to the data files, so we don't run them
-            fail_due_to_missing_data_files = [
-                test_zipped_doctest.test_DocFileSuite,
-                test_zipped_doctest.test_testfile,
-                test_zipped_doctest.test_unittest_reportflags,
-            ]
-            for obj in known_good_tests:
-                _run_object_doctest(obj, test_zipped_doctest)
+            try:
+                # Some of the doc tests depend on the colocated text files
+                # which aren't available to the zipped version (the doctest
+                # module currently requires real filenames for non-embedded
+                # tests). So we're forced to be selective about which tests
+                # to run.
+                # doctest could really use some APIs which take a text
+                # string or a file object instead of a filename...
+                known_good_tests = [
+                    test_zipped_doctest.SampleClass,
+                    test_zipped_doctest.SampleClass.NestedClass,
+                    test_zipped_doctest.SampleClass.NestedClass.__init__,
+                    test_zipped_doctest.SampleClass.__init__,
+                    test_zipped_doctest.SampleClass.a_classmethod,
+                    test_zipped_doctest.SampleClass.a_property,
+                    test_zipped_doctest.SampleClass.a_staticmethod,
+                    test_zipped_doctest.SampleClass.double,
+                    test_zipped_doctest.SampleClass.get,
+                    test_zipped_doctest.SampleNewStyleClass,
+                    test_zipped_doctest.SampleNewStyleClass.__init__,
+                    test_zipped_doctest.SampleNewStyleClass.double,
+                    test_zipped_doctest.SampleNewStyleClass.get,
+                    test_zipped_doctest.sample_func,
+                    test_zipped_doctest.test_DocTest,
+                    test_zipped_doctest.test_DocTestParser,
+                    test_zipped_doctest.test_DocTestRunner.basics,
+                    test_zipped_doctest.test_DocTestRunner.exceptions,
+                    test_zipped_doctest.test_DocTestRunner.option_directives,
+                    test_zipped_doctest.test_DocTestRunner.optionflags,
+                    test_zipped_doctest.test_DocTestRunner.verbose_flag,
+                    test_zipped_doctest.test_Example,
+                    test_zipped_doctest.test_debug,
+                    test_zipped_doctest.test_pdb_set_trace,
+                    test_zipped_doctest.test_pdb_set_trace_nested,
+                    test_zipped_doctest.test_testsource,
+                    test_zipped_doctest.test_trailing_space_in_test,
+                    test_zipped_doctest.test_DocTestSuite,
+                    test_zipped_doctest.test_DocTestFinder,
+                ]
+                # These remaining tests are the ones which need access
+                # to the data files, so we don't run them
+                fail_due_to_missing_data_files = [
+                    test_zipped_doctest.test_DocFileSuite,
+                    test_zipped_doctest.test_testfile,
+                    test_zipped_doctest.test_unittest_reportflags,
+                ]
+                for obj in known_good_tests:
+                    _run_object_doctest(obj, test_zipped_doctest)
+            finally:
+                del sys.modules["test_zipped_doctest"]
 
     def test_doctest_main_issue4197(self):
         test_src = textwrap.dedent("""\

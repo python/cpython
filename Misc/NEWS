@@ -31,6 +31,12 @@ Build
 
 - Issue #11121: Fix building with --enable-shared.
 
+Tests
+-----
+
+- Issue #10971:test_zipimport_support is once again compatible with the
+  refleak hunter feature of test.regrtest.
+
 
 What's New in Python 3.2 Release Candidate 2?
 =============================================
