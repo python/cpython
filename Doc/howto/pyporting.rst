@@ -22,7 +22,7 @@ Choosing a Strategy
 ===================
 When a project makes the decision that it's time to support both Python 2 & 3,
 a decision needs to be made as to how to go about accomplishing that goal.
-Which strategy goes with will depend on how large the project's existing
+The chosen strategy will depend on how large the project's existing
 codebase is and how much divergence you want from your Python 2 codebase from
 your Python 3 one (e.g., starting a new version with Python 3).
 
@@ -32,8 +32,8 @@ and use 3to2 <use_3to2>` to port your code for Python 2.
 
 If your project has a pre-existing Python 2 codebase and you would like Python
 3 support to start off a new branch or version of your project, then you will
-most likely want to :ref:`port using 2to3 <use_2to3>`. This will allow you port
-your Python 2 code to Python 3 in a semi-automated fashion and begin to
+most likely want to :ref:`port using 2to3 <use_2to3>`. This will allow you to
+port your Python 2 code to Python 3 in a semi-automated fashion and begin to
 maintain it separately from your Python 2 code. This approach can also work if
 your codebase is small and/or simple enough for the translation to occur
 quickly.
@@ -103,13 +103,12 @@ Four, read all the approaches. Just because some bit of advice applies to one
 approach more than another doesn't mean that some advice doesn't apply to other
 strategies.
 
-Five, drop support for older Python versions if possible. While not a
-requirement, `Python 2.5`_) introduced a lot of useful syntax and libraries
-which have become idiomatic in Python 3. `Python 2.6`_ introduced future
-statements which makes compatibility much easier if you are going from Python 2
-to 3.
+Five, drop support for older Python versions if possible. `Python 2.5`_
+introduced a lot of useful syntax and libraries which have become idiomatic
+in Python 3. `Python 2.6`_ introduced future statements which makes
+compatibility much easier if you are going from Python 2 to 3.
 `Python 2.7`_ continues the trend in the stdlib. So choose the newest version
-of Python for which you believe you believe can be your minimum support version
+of Python which you believe can be your minimum support version
 and work from there.
 
 
