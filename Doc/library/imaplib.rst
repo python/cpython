@@ -288,9 +288,10 @@ An :class:`IMAP4` instance has the following methods:
 
 .. method:: IMAP4.open(host, port)
 
-   Opens socket to *port* at *host*. The connection objects established by this
+   Opens socket to *port* at *host*.  This method is implicitly called by
+   the :class:`IMAP4` constructor.  The connection objects established by this
    method will be used in the ``read``, ``readline``, ``send``, and ``shutdown``
-   methods. You may override this method.
+   methods.  You may override this method.
 
 
 .. method:: IMAP4.partial(message_num, message_part, start, length)
@@ -380,7 +381,8 @@ An :class:`IMAP4` instance has the following methods:
 
 .. method:: IMAP4.shutdown()
 
-   Close connection established in ``open``. You may override this method.
+   Close connection established in ``open``.  This method is implicitly
+   called by :meth:`IMAP4.logout`.  You may override this method.
 
 
 .. method:: IMAP4.socket()
