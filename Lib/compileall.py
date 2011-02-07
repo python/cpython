@@ -58,7 +58,7 @@ def compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None,
         elif (maxlevels > 0 and name != os.curdir and name != os.pardir and
               os.path.isdir(fullname) and not os.path.islink(fullname)):
             if not compile_dir(fullname, maxlevels - 1, dfile, force, rx,
-                               quiet, legacy):
+                               quiet, legacy, optimize):
                 success = 0
     return success
 
