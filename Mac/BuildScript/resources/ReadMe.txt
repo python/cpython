@@ -24,7 +24,7 @@ of Tcl/Tk for this version of Python and Mac OS X.
                     *******************
 
 The installer puts applications, an "Update Shell Profile" command,
-and an Extras folder containing demo programs and tools into the
+and a link to the optionally installed Python Documentation into the
 "Python $VERSION" subfolder of the system Applications folder,
 and puts the underlying machinery into the folder
 $PYTHONFRAMEWORKINSTALLDIR. It can
