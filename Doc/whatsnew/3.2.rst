@@ -1886,7 +1886,7 @@ object.  The former returns a string and the latter prints it::
 
 In addition, the :func:`~dis.dis` function now accepts string arguments
 so that the common idiom ``dis(compile(s, '', 'eval'))`` can be shortened
-to ``dis(compile(s))``::
+to ``dis(s)``::
 
     >>> dis('3*x+1 if x%2==1 else x//2')
       1           0 LOAD_NAME                0 (x)
