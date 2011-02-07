@@ -697,7 +697,7 @@ The following example script demonstrates how you can do this; in the example
 a separate listener process listens for events sent by other processes and logs
 them according to its own logging configuration. Although the example only
 demonstrates one way of doing it (for example, you may want to use a listener
-thread rather than a separate listener process - the implementation would be
+thread rather than a separate listener process -- the implementation would be
 analogous) it does allow for completely different logging configurations for
 the listener and the other processes in your application, and can be used as
 the basis for code meeting your own specific requirements::
@@ -719,7 +719,7 @@ the basis for code meeting your own specific requirements::
     #
     # In practice, you can configure the listener however you want, but note that in this
     # simple example, the listener does not apply level or filter logic to received records.
-    # In practice, you would probably want to do ths logic in the worker processes, to avoid
+    # In practice, you would probably want to do this logic in the worker processes, to avoid
     # sending events which would be filtered out between processes.
     #
     # The size of the rotated files is made small so you can see the results easily.
@@ -918,7 +918,7 @@ Using file rotation
 Sometimes you want to let a log file grow to a certain size, then open a new
 file and log to that. You may want to keep a certain number of these files, and
 when that many files have been created, rotate the files so that the number of
-files and the size of the files both remin bounded. For this usage pattern, the
+files and the size of the files both remain bounded. For this usage pattern, the
 logging package provides a :class:`RotatingFileHandler`::
 
    import glob
