@@ -380,7 +380,7 @@ it can be very misleading::
    >>> b"" == ""
    False
 
-This is because comparison for equality is required by the language to always
+This is because an equality comparison is required by the language to always
 succeed (and return ``False`` for incompatible types).  However, this also
 means that code incorrectly ported to Python 3 can display buggy behaviour
 if such comparisons are silently executed.  To detect such situations,
