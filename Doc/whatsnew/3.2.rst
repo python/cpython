@@ -648,7 +648,7 @@ quality improvements.
 
 The biggest news for Python 3.2 is that the :mod:`email` package, :mod:`mailbox`
 module, and :mod:`nntplib` modules now work correctly with the bytes/text model
-in Python 3.  For the first time, there is correct handling of message with
+in Python 3.  For the first time, there is correct handling of messages with
 mixed encodings.
 
 Throughout the standard library, there has been more careful attention to
