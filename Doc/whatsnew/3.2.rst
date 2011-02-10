@@ -1140,6 +1140,44 @@ decorator, :func:`~reprlib.recursive_repr`, for detecting recursive calls to
 
 (Contributed by Raymond Hettinger in :issue:`9826` and :issue:`9840`.)
 
+logging
+-------
+
+In addition to dictionary based configuration described above, the
+:mod:`logging` package has many other improvements.
+
+The logging documentation has been augmented by a :ref:`basic tutorial
+<logging-basic-tutorial>`\, an :ref:`advanced tutorial
+<logging-advanced-tutorial>`\, and a :ref:`cookbook <logging-cookbook>` of
+logging recipes.  These documents are the fastest way to learn about logging.
+
+The :func:`logging.basicConfig` set-up function gained a *style* argument to
+support three different types of string formatting.  It defaults to "%" for
+traditional %-formatting, can be set to "{" for the new :meth:`str.format` style, or
+can be set to "$" for the shell-style formatting provided by
+:class:`string.Template`.  The following three configurations are equivalent::
+
+    >>> from logging import basicConfig
+    >>> basicConfig(style='%', format="%(name)s -> %(levelname)s: %(message)s")
+    >>> basicConfig(style='{', format="{name} -> {levelname} {message}")
+    >>> basicConfig(style='$', format="$name -> $levelname: $message")
+
+If no configuration is set-up before a logging event occurs, there is now a
+default configuration using a :class:`~logging.StreamHandler` directed to
+:attr:`sys.stderr` for events of ``WARNING`` level or higher.  Formerly, an
+event occurring before a configuration was set-up would either raise an
+exception or silently drop the event depending on the value of
+:attr:`logging.raiseExceptions`.  The new default handler is stored in
+:attr:`logging.lastResort`.
+
+The use of filters has been simplified.  Instead of creating a
+:class:`~logging.Filter` object, the predicate can be any Python callable that
+returns *True* or *False*.
+
+There were a number of other improvements that add flexibility and simplify
+configuration.  See the module documentation for a full listing of changes in
+Python 3.2.
+
 csv
 ---
 
@@ -2127,8 +2165,7 @@ reading directly from dictionaries and strings.
 
 (All changes contributed by Łukasz Langa.)
 
-.. XXX show a difflib example
-.. XXX add entry for logging changes other than the dict config pep
+.. XXX consider showing a difflib example
 
 urllib.parse
 ------------
