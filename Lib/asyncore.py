@@ -218,7 +218,6 @@ def loop(timeout=30.0, use_poll=False, map=None, count=None):
 
 class dispatcher:
 
-    debug = False
     connected = False
     accepting = False
     closing = False
@@ -544,8 +543,6 @@ class dispatcher_with_send(dispatcher):
         return (not self.connected) or len(self.out_buffer)
 
     def send(self, data):
-        if self.debug:
-            self.log_info('sending %s' % repr(data))
         self.out_buffer = self.out_buffer + data
         self.initiate_send()
 
