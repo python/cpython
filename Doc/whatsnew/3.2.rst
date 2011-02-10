@@ -1033,7 +1033,7 @@ special values.  It returns *True* for regular numbers and *False* for *Nan* or
 [True, True, False, False]
 
 The :func:`~math.expm1` function computes ``e**x-1`` for small values of *x*
-without incuring the loss of precision that usually accompanies the subtraction
+without incurring the loss of precision that usually accompanies the subtraction
 of nearly equal quantities:
 
 >>> expm1(0.013671875)   # more accurate way to compute e**x-1 for a small x
@@ -1143,7 +1143,7 @@ decorator, :func:`~reprlib.recursive_repr`, for detecting recursive calls to
 logging
 -------
 
-In addition to dictionary based configuration described above, the
+In addition to dictionary-based configuration described above, the
 :mod:`logging` package has many other improvements.
 
 The logging documentation has been augmented by a :ref:`basic tutorial
@@ -1525,7 +1525,7 @@ archiving file formats (such as xz compressed tarfiles or custom formats).
 The principal functions are :func:`~shutil.make_archive` and
 :func:`~shutil.unpack_archive`.  By default, both operate on the current
 directory (which can be set by :func:`os.chdir`) and on any sub-directories.
-The archive filename needs to specified with a full pathname.  The archiving
+The archive filename needs to be specified with a full pathname.  The archiving
 step is non-destructive (the original files are left unchanged).
 
 ::
@@ -1696,9 +1696,9 @@ To establish an HTTPS connection through a proxy server, there is a new
 :meth:`~http.client.HTTPConnection.set_tunnel` method that sets the host and
 port for HTTP Connect tunneling.
 
-To match the behaviour of :mod:`http.server`, the HTTP client library now also
+To match the behavior of :mod:`http.server`, the HTTP client library now also
 encodes headers with ISO-8859-1 (Latin-1) encoding.  It was already doing that
-for incoming headers, so now the behaviour is consistent for both incoming and
+for incoming headers, so now the behavior is consistent for both incoming and
 outgoing traffic. (See work by Armin Ronacher in :issue:`10980`.)
 
 unittest
@@ -1752,8 +1752,8 @@ names.
   diagnostics when a test fails.  When possible, the failure is recorded along
   with a diff of the output.  This is especially helpful for analyzing log files
   of failed test runs. However, since diffs can sometime be voluminous, there is
-  a new :attr:`~unittest.TestCase.maxDiff` attribute which sets maximum length of
-  diffs.
+  a new :attr:`~unittest.TestCase.maxDiff` attribute that sets maximum length of
+  diffs displayed.
 
 * In addition, the method names in the module have undergone a number of clean-ups.
 
@@ -2002,7 +2002,7 @@ sysconfig
 ---------
 
 The new :mod:`sysconfig` module makes it straightforward to discover
-installation paths and configuration variables which vary across platforms and
+installation paths and configuration variables that vary across platforms and
 installations.
 
 The module offers access simple access functions for platform and version
