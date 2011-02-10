@@ -5,6 +5,9 @@
    :synopsis: Implementation of the ElementTree API.
 .. moduleauthor:: Fredrik Lundh <fredrik@pythonware.com>
 
+**Source code:** :source:`Lib/xml/etree/ElementTree.py`
+
+--------------
 
 The :class:`Element` type is a flexible container object, designed to store
 hierarchical data structures in memory.  The type can be described as a cross

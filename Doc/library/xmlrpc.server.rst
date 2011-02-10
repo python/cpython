@@ -6,6 +6,9 @@
 .. moduleauthor:: Brian Quinlan <brianq@activestate.com>
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
+**Source code:** :source:`Lib/xmlrpc/server.py`
+
+--------------
 
 The :mod:`xmlrpc.server` module provides a basic server framework for XML-RPC
 servers written in Python.  Servers can either be free standing, using
