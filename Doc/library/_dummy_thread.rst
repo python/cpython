@@ -4,6 +4,9 @@
 .. module:: _dummy_thread
    :synopsis: Drop-in replacement for the _thread module.
 
+**Source code:** :source:`Lib/_dummy_thread.py`
+
+--------------
 
 This module provides a duplicate interface to the :mod:`_thread` module.  It is
 meant to be imported when the :mod:`_thread` module is not provided on a

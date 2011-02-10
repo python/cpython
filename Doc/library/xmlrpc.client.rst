@@ -10,6 +10,10 @@
 .. XXX Not everything is documented yet.  It might be good to describe
    Marshaller, Unmarshaller, getparser, dumps, loads, and Transport.
 
+**Source code:** :source:`Lib/xmlrpc/client.py`
+
+--------------
+
 XML-RPC is a Remote Procedure Call method that uses XML passed via HTTP as a
 transport.  With it, a client can call methods with parameters on a remote
 server (the server is named by a URI) and get back structured data.  This module
