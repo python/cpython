@@ -71,3 +71,6 @@
 #define Py_tp_setattro 69
 #define Py_tp_str 70
 #define Py_tp_traverse 71
+#define Py_tp_members 72
+#define Py_tp_getset 73
+#define Py_tp_free 74
