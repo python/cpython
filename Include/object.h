@@ -396,7 +396,6 @@ typedef struct{
 
 typedef struct{
     const char* name;
-    const char* doc;
     int basicsize;
     int itemsize;
     int flags;

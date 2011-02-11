@@ -10,6 +10,8 @@ What's New in Python 3.2?
 Core and Builtins
 -----------------
 
+- Issue #11135: Remove redundant doc field from PyType_Spec.
+
 - Issue #11067: Add PyType_GetFlags, to support PyUnicode_Check
   in the limited ABI.
 

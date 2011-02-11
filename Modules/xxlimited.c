@@ -101,6 +101,7 @@ Xxo_setattr(XxoObject *self, char *name, PyObject *v)
 }
 
 static PyType_Slot Xxo_Type_slots[] = {
+    {Py_tp_doc, "The Xxo type"},
     {Py_tp_dealloc, Xxo_dealloc},
     {Py_tp_getattro, Xxo_getattro},
     {Py_tp_setattr, Xxo_setattr},
@@ -109,8 +110,7 @@ static PyType_Slot Xxo_Type_slots[] = {
 };
 
 static PyType_Spec Xxo_Type_spec = {
-    "xxmodule.Xxo",
-    NULL,
+    "xxlimited.Xxo",
     sizeof(XxoObject),
     0,
     Py_TPFLAGS_DEFAULT,
@@ -178,7 +178,6 @@ static PyType_Spec Str_Type_spec = {
     "xxlimited.Str",
     0,
     0,
-    0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     Str_Type_slots
 };
@@ -201,7 +200,6 @@ static PyType_Slot Null_Type_slots[] = {
 
 static PyType_Spec Null_Type_spec = {
     "xxlimited.Null",
-    NULL,            /* doc */
     0,               /* basicsize */
     0,               /* itemsize */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
@@ -230,7 +228,7 @@ PyDoc_STRVAR(module_doc,
 
 static struct PyModuleDef xxmodule = {
     PyModuleDef_HEAD_INIT,
-    "xx",
+    "xxlimited",
     module_doc,
     -1,
     xx_methods,
@@ -264,7 +262,7 @@ PyInit_xxlimited(void)
 
     /* Add some symbolic constants to the module */
     if (ErrorObject == NULL) {
-        ErrorObject = PyErr_NewException("xx.error", NULL, NULL);
+        ErrorObject = PyErr_NewException("xxlimited.error", NULL, NULL);
         if (ErrorObject == NULL)
             goto fail;
     }

@@ -162,7 +162,7 @@ def make_slots(name, fields):
     res = []
     res.append('static PyType_Slot %s_slots[] = {' % name)
     # defaults for spec
-    spec = { 'tp_doc':'NULL', 'tp_itemsize':'0' }
+    spec = { 'tp_itemsize':'0' }
     for i, val in enumerate(fields):
         if val.endswith('0'):
             continue
@@ -174,7 +174,6 @@ def make_slots(name, fields):
     res.append('};')
     res.append('static PyType_Spec %s_spec = {' % name)
     res.append('    %s,' % spec['tp_name'])
-    res.append('    %s,' % spec['tp_doc'])
     res.append('    %s,' % spec['tp_basicsize'])
     res.append('    %s,' % spec['tp_itemsize'])
     res.append('    %s,' % spec['tp_flags'])
