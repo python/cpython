@@ -9,6 +9,7 @@ import base64
 import difflib
 import unittest
 import warnings
+import textwrap
 
 from io import StringIO
 from itertools import chain
@@ -958,6 +959,19 @@ List: List-Unsubscribe: <http://lists.sourceforge.net/lists/listinfo/spamassassi
         <mailto:spamassassin-talk-request@lists.sourceforge.net?subject=unsubscribe>
 
 """)
+
+    def test_long_rfc2047_header_with_embedded_fws(self):
+        h = Header(textwrap.dedent("""\
+            We're going to pretend this header is in a non-ascii character set
+            \tto see if line wrapping with encoded words and embedded
+               folding white space works"""),
+                   charset='utf-8',
+                   header_name='Test')
+        self.assertEqual(h.encode()+'\n', textwrap.dedent("""\
+            =?utf-8?q?We=27re_going_to_pretend_this_header_is_in_a_non-ascii_chara?=
+             =?utf-8?q?cter_set?=
+             =?utf-8?q?_to_see_if_line_wrapping_with_encoded_words_and_embedded?=
+             =?utf-8?q?_folding_white_space_works?=""")+'\n')
 
 
 
