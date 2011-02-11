@@ -37,6 +37,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11116: any error during addition of a message to a mailbox now causes
+  a rollback, instead of leaving the mailbox partially modified.
+
 - Issue #8275: Fix passing of callback arguments with ctypes under Win64.
   Patch by Stan Mihai.
 
