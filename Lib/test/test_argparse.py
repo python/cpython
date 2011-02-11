@@ -4317,7 +4317,7 @@ class TestArgumentError(TestCase):
 # ArgumentTypeError tests
 # =======================
 
-class TestArgumentError(TestCase):
+class TestArgumentTypeError(TestCase):
 
     def test_argument_type_error(self):
 

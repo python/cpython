@@ -490,7 +490,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         def tests_and_args():
             for test in tests:
                 args_tuple = (
-                    (test, verbose, quiet, testdir),
+                    (test, verbose, quiet),
                     dict(huntrleaks=huntrleaks, use_resources=use_resources)
                 )
                 yield (test, args_tuple)
@@ -557,16 +557,15 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             if trace:
                 # If we're tracing code coverage, then we don't exit with status
                 # if on a false return value from main.
-                tracer.runctx('runtest(test, verbose, quiet, testdir)',
+                tracer.runctx('runtest(test, verbose, quiet)',
                               globals=globals(), locals=vars())
             else:
                 try:
-                    result = runtest(test, verbose, quiet,
-                                     testdir, huntrleaks)
+                    result = runtest(test, verbose, quiet, huntrleaks)
                     accumulate_result(test, result)
                     if verbose3 and result[0] == FAILED:
                         print "Re-running test %r in verbose mode" % test
-                        runtest(test, True, quiet, testdir, huntrleaks)
+                        runtest(test, True, quiet, huntrleaks)
                 except KeyboardInterrupt:
                     interrupted = True
                     break
@@ -636,8 +635,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             sys.stdout.flush()
             try:
                 test_support.verbose = True
-                ok = runtest(test, True, quiet, testdir,
-                             huntrleaks)
+                ok = runtest(test, True, quiet, huntrleaks)
             except KeyboardInterrupt:
                 # print a newline separate from the ^C
                 print
@@ -693,14 +691,13 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     return stdtests + sorted(tests)
 
 def runtest(test, verbose, quiet,
-            testdir=None, huntrleaks=False, use_resources=None):
+            huntrleaks=False, use_resources=None):
     """Run a single test.
 
     test -- the name of the test
     verbose -- if true, print more messages
     quiet -- if true, don't print 'skipped' messages (probably redundant)
     test_times -- a list of (time, test_name) pairs
-    testdir -- test directory
     huntrleaks -- run multiple times to test for leaks; requires a debug
                   build; a triple corresponding to -R's three arguments
     Returns one of the test result constants:
@@ -716,8 +713,7 @@ def runtest(test, verbose, quiet,
     if use_resources is not None:
         test_support.use_resources = use_resources
     try:
-        return runtest_inner(test, verbose, quiet,
-                             testdir, huntrleaks)
+        return runtest_inner(test, verbose, quiet, huntrleaks)
     finally:
         cleanup_test_droppings(test, verbose)
 
@@ -850,10 +846,8 @@ class saved_test_environment:
         return False
 
 
-def runtest_inner(test, verbose, quiet,
-                  testdir=None, huntrleaks=False):
+def runtest_inner(test, verbose, quiet, huntrleaks=False):
     test_support.unload(test)
-    testdir = findtestdir(testdir)
     if verbose:
         capture_stdout = None
     else:

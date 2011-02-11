@@ -674,7 +674,7 @@ as internal buffering of data.
 
 .. function:: fstat(fd)
 
-   Return status for file descriptor *fd*, like :func:`stat`.
+   Return status for file descriptor *fd*, like :func:`~os.stat`.
 
    Availability: Unix, Windows.
 
@@ -1114,9 +1114,10 @@ Files and Directories
 
 .. function:: lstat(path)
 
-   Like :func:`stat`, but do not follow symbolic links.  This is an alias for
-   :func:`stat` on platforms that do not support symbolic links, such as
-   Windows.
+   Perform the equivalent of an :c:func:`lstat` system call on the given path.
+   Similar to :func:`~os.stat`, but does not follow symbolic links.  On
+   platforms that do not support symbolic links, this is an alias for
+   :func:`~os.stat`.
 
 
 .. function:: mkfifo(path[, mode])
@@ -1314,23 +1315,23 @@ Files and Directories
 
 .. function:: stat(path)
 
-   Perform a :cfunc:`stat` system call on the given path.  The return value is an
-   object whose attributes correspond to the members of the :ctype:`stat`
-   structure, namely: :attr:`st_mode` (protection bits), :attr:`st_ino` (inode
-   number), :attr:`st_dev` (device), :attr:`st_nlink` (number of hard links),
-   :attr:`st_uid` (user id of owner), :attr:`st_gid` (group id of owner),
-   :attr:`st_size` (size of file, in bytes), :attr:`st_atime` (time of most recent
-   access), :attr:`st_mtime` (time of most recent content modification),
-   :attr:`st_ctime` (platform dependent; time of most recent metadata change on
-   Unix, or the time of creation on Windows)::
+   Perform the equivalent of a :c:func:`stat` system call on the given path.
+   (This function follows symlinks; to stat a symlink use :func:`lstat`.)
 
-      >>> import os
-      >>> statinfo = os.stat('somefile.txt')
-      >>> statinfo
-      (33188, 422511L, 769L, 1, 1032, 100, 926L, 1105022698,1105022732, 1105022732)
-      >>> statinfo.st_size
-      926L
-      >>>
+   The return value is an object whose attributes correspond to the members
+   of the :c:type:`stat` structure, namely:
+
+   * :attr:`st_mode` - protection bits,
+   * :attr:`st_ino` - inode number,
+   * :attr:`st_dev` - device,
+   * :attr:`st_nlink` - number of hard links,
+   * :attr:`st_uid` - user id of owner,
+   * :attr:`st_gid` - group id of owner,
+   * :attr:`st_size` - size of file, in bytes,
+   * :attr:`st_atime` - time of most recent access,
+   * :attr:`st_mtime` - time of most recent content modification,
+   * :attr:`st_ctime` - platform dependent; time of most recent metadata change on
+     Unix, or the time of creation on Windows)
 
    .. versionchanged:: 2.3
       If :func:`stat_float_times` returns ``True``, the time values are floats, measuring
@@ -1339,31 +1340,30 @@ Files and Directories
       discussion.
 
    On some Unix systems (such as Linux), the following attributes may also be
-   available: :attr:`st_blocks` (number of blocks allocated for file),
-   :attr:`st_blksize` (filesystem blocksize), :attr:`st_rdev` (type of device if an
-   inode device). :attr:`st_flags` (user defined flags for file).
+   available:
+
+   * :attr:`st_blocks` - number of blocks allocated for file
+   * :attr:`st_blksize` - filesystem blocksize
+   * :attr:`st_rdev` - type of device if an inode device
+   * :attr:`st_flags` - user defined flags for file
 
    On other Unix systems (such as FreeBSD), the following attributes may be
-   available (but may be only filled out if root tries to use them): :attr:`st_gen`
-   (file generation number), :attr:`st_birthtime` (time of file creation).
+   available (but may be only filled out if root tries to use them):
+
+   * :attr:`st_gen` - file generation number
+   * :attr:`st_birthtime` - time of file creation
 
    On Mac OS systems, the following attributes may also be available:
-   :attr:`st_rsize`, :attr:`st_creator`, :attr:`st_type`.
 
-   On RISCOS systems, the following attributes are also available: :attr:`st_ftype`
-   (file type), :attr:`st_attrs` (attributes), :attr:`st_obtype` (object type).
+   * :attr:`st_rsize`
+   * :attr:`st_creator`
+   * :attr:`st_type`
 
-   .. index:: module: stat
+   On RISCOS systems, the following attributes are also available:
 
-   For backward compatibility, the return value of :func:`stat` is also accessible
-   as a tuple of at least 10 integers giving the most important (and portable)
-   members of the :ctype:`stat` structure, in the order :attr:`st_mode`,
-   :attr:`st_ino`, :attr:`st_dev`, :attr:`st_nlink`, :attr:`st_uid`,
-   :attr:`st_gid`, :attr:`st_size`, :attr:`st_atime`, :attr:`st_mtime`,
-   :attr:`st_ctime`. More items may be added at the end by some implementations.
-   The standard module :mod:`stat` defines functions and constants that are useful
-   for extracting information from a :ctype:`stat` structure. (On Windows, some
-   items are filled with dummy values.)
+   * :attr:`st_ftype` (file type)
+   * :attr:`st_attrs` (attributes)
+   * :attr:`st_obtype` (object type).
 
    .. note::
 
@@ -1372,6 +1372,28 @@ Files and Directories
       For example, on Windows systems using the FAT or FAT32 file systems,
       :attr:`st_mtime` has 2-second resolution, and :attr:`st_atime` has only 1-day
       resolution.  See your operating system documentation for details.
+
+   For backward compatibility, the return value of :func:`~os.stat` is also accessible
+   as a tuple of at least 10 integers giving the most important (and portable)
+   members of the :ctype:`stat` structure, in the order :attr:`st_mode`,
+   :attr:`st_ino`, :attr:`st_dev`, :attr:`st_nlink`, :attr:`st_uid`,
+   :attr:`st_gid`, :attr:`st_size`, :attr:`st_atime`, :attr:`st_mtime`,
+   :attr:`st_ctime`. More items may be added at the end by some implementations.
+
+   .. index:: module: stat
+
+   The standard module :mod:`stat` defines functions and constants that are useful
+   for extracting information from a :ctype:`stat` structure. (On Windows, some
+   items are filled with dummy values.)
+
+   Example::
+
+      >>> import os
+      >>> statinfo = os.stat('somefile.txt')
+      >>> statinfo
+      (33188, 422511, 769, 1, 1032, 100, 926, 1105022698,1105022732, 1105022732)
+      >>> statinfo.st_size
+      926
 
    Availability: Unix, Windows.
 
@@ -1385,7 +1407,7 @@ Files and Directories
 .. function:: stat_float_times([newvalue])
 
    Determine whether :class:`stat_result` represents time stamps as float objects.
-   If *newvalue* is ``True``, future calls to :func:`stat` return floats, if it is
+   If *newvalue* is ``True``, future calls to :func:`~os.stat` return floats, if it is
    ``False``, future calls return ints. If *newvalue* is omitted, return the
    current setting.
 
@@ -1505,8 +1527,8 @@ Files and Directories
    respectively. Whether a directory can be given for *path* depends on whether
    the operating system implements directories as files (for example, Windows
    does not).  Note that the exact times you set here may not be returned by a
-   subsequent :func:`stat` call, depending on the resolution with which your
-   operating system records access and modification times; see :func:`stat`.
+   subsequent :func:`~os.stat` call, depending on the resolution with which your
+   operating system records access and modification times; see :func:`~os.stat`.
 
    .. versionchanged:: 2.0
       Added support for ``None`` for *times*.
