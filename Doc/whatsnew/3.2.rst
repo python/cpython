@@ -1827,7 +1827,7 @@ been established with a new remote endpoint. This is supposed to be used as a
 replacement for old :meth:`~asyncore.dispatcher.handle_accept()` and avoids
 the user  to call :meth:`~asyncore.dispatcher.accept()` directly.
 
-Contributed by Giampaolo Rodolà; :issue:`6706`.)
+(Contributed by Giampaolo Rodolà; :issue:`6706`.)
 
 tempfile
 --------
