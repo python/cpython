@@ -139,6 +139,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * Ross Moore
    * Sjoerd Mullender
    * Dale Nagata
+   * Michal Nowikowski 
    * Ng Pheng Siong
    * Koray Oner
    * Tomas Oppelstrup

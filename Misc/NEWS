@@ -37,6 +37,11 @@ Core and Builtins
 Library
 -------
 
+- email.header.Header was incorrectly encoding folding white space when
+  rfc2047-encoding header values with embedded newlines, leaving them
+  without folding whitespace.  It now uses the continuation_ws, as it
+  does for continuation lines that it creates itself.
+
 - Issue #11110: Fix _sqlite to not deref a NULL when module creation fails.
 
 - Issue #11089: Fix performance issue limiting the use of ConfigParser()
