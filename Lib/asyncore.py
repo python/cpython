@@ -220,7 +220,7 @@ class dispatcher:
 
     connected = False
     accepting = False
-    closing = False
+    closed = False
     addr = None
     ignore_log_types = frozenset(['warning'])
 
@@ -393,14 +393,16 @@ class dispatcher:
                 raise
 
     def close(self):
-        self.connected = False
-        self.accepting = False
-        self.del_channel()
-        try:
-            self.socket.close()
-        except socket.error as why:
-            if why.args[0] not in (ENOTCONN, EBADF):
-                raise
+        if not self.closed:
+            self.closed = True
+            self.connected = False
+            self.accepting = False
+            self.del_channel()
+            try:
+                self.socket.close()
+            except socket.error as why:
+                if why.args[0] not in (ENOTCONN, EBADF):
+                    raise
 
     # cheap inheritance, used to pass all other attribute
     # references to the underlying socket object.
