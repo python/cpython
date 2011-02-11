@@ -967,7 +967,7 @@ when the Python installation supports SSL. ::
 
    >>> import urllib.request
    >>> req = urllib.request.Request(url='https://localhost/cgi-bin/test.cgi',
-   ...                       data='This data is passed to stdin of the CGI')
+   ...                       data=b'This data is passed to stdin of the CGI')
    >>> f = urllib.request.urlopen(req)
    >>> print(f.read().decode('utf-8'))
    Got Data: "This data is passed to stdin of the CGI"
@@ -1043,11 +1043,13 @@ containing parameters::
    >>> f = urllib.request.urlopen("http://www.musi-cal.com/cgi-bin/query?%s" % params)
    >>> print(f.read().decode('utf-8'))
 
-The following example uses the ``POST`` method instead::
+The following example uses the ``POST`` method instead. Note that params output
+from urlencode is encoded to bytes before it is sent to urlopen as data::
 
    >>> import urllib.request
    >>> import urllib.parse
    >>> params = urllib.parse.urlencode({'spam': 1, 'eggs': 2, 'bacon': 0})
+   >>> params = params.encode('utf-8')
    >>> f = urllib.request.urlopen("http://www.musi-cal.com/cgi-bin/query", params)
    >>> print(f.read().decode('utf-8'))
 

@@ -140,6 +140,7 @@ or on combining URL components into a URL string.
    Use the :func:`urllib.parse.urlencode` function to convert such
    dictionaries into query strings.
 
+
    .. versionchanged:: 3.2
       Add *encoding* and *errors* parameters.
 
@@ -506,9 +507,10 @@ task isn't already covered by the URL parsing functions above.
 .. function:: urlencode(query, doseq=False, safe='', encoding=None, errors=None)
 
    Convert a mapping object or a sequence of two-element tuples, which may
-   either be a :class:`str` or a :class:`bytes`,  to a "percent-encoded" string,
-   suitable to pass to :func:`urlopen` above as the optional *data* argument.
-   This is useful to pass a dictionary of form fields to a ``POST`` request.
+   either be a :class:`str` or a :class:`bytes`,  to a "percent-encoded"
+   string.  The resultant string must be converted to bytes using the
+   user-specified encoding before it is sent to :func:`urlopen` as the optional
+   *data* argument.
    The resulting string is a series of ``key=value`` pairs separated by ``'&'``
    characters, where both *key* and *value* are quoted using :func:`quote_plus`
    above. When a sequence of two-element tuples is used as the *query*
@@ -524,6 +526,9 @@ task isn't already covered by the URL parsing functions above.
 
    To reverse this encoding process, :func:`parse_qs` and :func:`parse_qsl` are
    provided in this module to parse query strings into Python data structures.
+
+   Refer to :ref:`urllib examples <urllib-examples>` to find out how urlencode
+   method can be used for generating query string for a URL or data for POST.
 
    .. versionchanged:: 3.2
       Query parameter supports bytes and string objects.
