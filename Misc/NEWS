@@ -22,6 +22,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11116: any error during addition of a message to a mailbox now causes
+  a rollback, instead of leaving the mailbox partially modified.
+
 - Issue #11132: Fix passing of "optimize" parameter when recursing
   in compileall.compile_dir().
 

@@ -107,9 +107,22 @@ class TestMailbox(TestBase):
             'Subject: =?unknown-8bit?b?RmFsaW5hcHThciBo4Xpob3pzeuFsbO104XNz'
             'YWwuIE3hciByZW5kZWx06Ww/?=\n\n')
 
-    def test_add_nonascii_header_raises(self):
+    def test_add_nonascii_string_header_raises(self):
         with self.assertRaisesRegex(ValueError, "ASCII-only"):
             self._box.add(self._nonascii_msg)
+        self._box.flush()
+        self.assertEqual(len(self._box), 0)
+        self.assertMailboxEmpty()
+
+    def test_add_that_raises_leaves_mailbox_empty(self):
+        # XXX This test will start failing when Message learns to handle
+        # non-ASCII string headers, and a different internal failure will
+        # need to be found or manufactured.
+        with self.assertRaises(ValueError):
+            self._box.add(email.message_from_string("From: Alphöso"))
+        self.assertEqual(len(self._box), 0)
+        self._box.close()
+        self.assertMailboxEmpty()
 
     _non_latin_bin_msg = textwrap.dedent("""\
         From: foo@bar.com
@@ -174,6 +187,9 @@ class TestMailbox(TestBase):
         with self.assertWarns(DeprecationWarning):
             with self.assertRaisesRegex(ValueError, "ASCII-only"):
                 self._box.add(io.StringIO(self._nonascii_msg))
+        self.assertEqual(len(self._box), 0)
+        self._box.close()
+        self.assertMailboxEmpty()
 
     def test_remove(self):
         # Remove messages using remove()
@@ -571,6 +587,9 @@ class TestMaildir(TestMailbox):
         if os.name in ('nt', 'os2') or sys.platform == 'cygwin':
             self._box.colon = '!'
 
+    def assertMailboxEmpty(self):
+        self.assertEqual(os.listdir(os.path.join(self._path, 'tmp')), [])
+
     def test_add_MM(self):
         # Add a MaildirMessage instance
         msg = mailbox.MaildirMessage(self._template % 0)
@@ -890,6 +909,10 @@ class _TestMboxMMDF(TestMailbox):
         for lock_remnant in glob.glob(self._path + '.*'):
             support.unlink(lock_remnant)
 
+    def assertMailboxEmpty(self):
+        with open(self._path) as f:
+            self.assertEqual(f.readlines(), [])
+
     def test_add_from_string(self):
         # Add a string starting with 'From ' to the mailbox
         key = self._box.add('From foo@bar blah\nFrom: foo\n\n0')
@@ -1011,6 +1034,9 @@ class TestMMDF(_TestMboxMMDF):
 class TestMH(TestMailbox):
 
     _factory = lambda self, path, factory=None: mailbox.MH(path, factory)
+
+    def assertMailboxEmpty(self):
+        self.assertEqual(os.listdir(self._path), ['.mh_sequences'])
 
     def test_list_folders(self):
         # List folders
@@ -1143,6 +1169,10 @@ class TestMH(TestMailbox):
 class TestBabyl(TestMailbox):
 
     _factory = lambda self, path, factory=None: mailbox.Babyl(path, factory)
+
+    def assertMailboxEmpty(self):
+        with open(self._path) as f:
+            self.assertEqual(f.readlines(), [])
 
     def tearDown(self):
         super().tearDown()
