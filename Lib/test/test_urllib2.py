@@ -794,6 +794,10 @@ class HandlerTests(unittest.TestCase):
         http.raise_on_endheaders = True
         self.assertRaises(urllib.error.URLError, h.do_open, http, req)
 
+        # Check for TypeError on POST data which is str.
+        req = Request("http://example.com/","badpost")
+        self.assertRaises(TypeError, h.do_request_, req)
+
         # check adding of standard headers
         o.addheaders = [("Spam", "eggs")]
         for data in b"", None:  # POST, GET
@@ -837,10 +841,11 @@ class HandlerTests(unittest.TestCase):
             else:
                 newreq = h.do_request_(req)
 
-        # A file object
+        # A file object.
+        # Test only Content-Length attribute of request.
 
-        file_obj = io.StringIO()
-        file_obj.write("Something\nSomething\nSomething\n")
+        file_obj = io.BytesIO()
+        file_obj.write(b"Something\nSomething\nSomething\n")
 
         for headers in {}, {"Content-Length": 30}:
             req = Request("http://example.com/", file_obj, headers)
@@ -862,7 +867,6 @@ class HandlerTests(unittest.TestCase):
             req = Request("http://example.com/", iterable_array, headers)
             newreq = h.do_request_(req)
             self.assertEqual(int(newreq.get_header('Content-length')),16)
-
 
     def test_http_doubleslash(self):
         # Checks the presence of any unnecessary double slash in url does not
