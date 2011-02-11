@@ -65,7 +65,7 @@ Here is the :class:`Header` class description:
    character set is used both as *s*'s initial charset and as the default for
    subsequent :meth:`append` calls.
 
-   The maximum line length can be specified explicit via *maxlinelen*.  For
+   The maximum line length can be specified explicitly via *maxlinelen*.  For
    splitting the first line to a shorter value (to account for the field header
    which isn't included in *s*, e.g. :mailheader:`Subject`) pass in the name of the
    field in *header_name*.  The default *maxlinelen* is 76, and the default value
