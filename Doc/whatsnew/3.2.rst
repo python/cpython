@@ -1810,21 +1810,24 @@ functions and methods affected are :func:`~random.randrange`,
 poplib
 ------
 
-* :class:`~poplib.POP3_SSL` class now accepts a *context* parameter, which is a
-  :class:`ssl.SSLContext` object allowing bundling SSL configuration options,
-  certificates and private keys into a single (potentially long-lived)
-  structure.
+:class:`~poplib.POP3_SSL` class now accepts a *context* parameter, which is a
+:class:`ssl.SSLContext` object allowing bundling SSL configuration options,
+certificates and private keys into a single (potentially long-lived)
+structure.
 
-  (Contributed by Giampaolo Rodolà; :issue:`8807`.)
+(Contributed by Giampaolo Rodolà; :issue:`8807`.)
 
-* :class:`asyncore.dispatcher` now provides a
-  :meth:`~asyncore.dispatcher.handle_accepted()` method
-  returning a `(sock, addr)` pair which is called when a connection has actually
-  been established with a new remote endpoint. This is supposed to be used as a
-  replacement for old :meth:`~asyncore.dispatcher.handle_accept()` and avoids
-  the user  to call :meth:`~asyncore.dispatcher.accept()` directly.
+asyncore
+--------
 
-  (Contributed by Giampaolo Rodolà; :issue:`6706`.)
+:class:`asyncore.dispatcher` now provides a
+:meth:`~asyncore.dispatcher.handle_accepted()` method
+returning a `(sock, addr)` pair which is called when a connection has actually
+been established with a new remote endpoint. This is supposed to be used as a
+replacement for old :meth:`~asyncore.dispatcher.handle_accept()` and avoids
+the user  to call :meth:`~asyncore.dispatcher.accept()` directly.
+
+Contributed by Giampaolo Rodolà; :issue:`6706`.)
 
 tempfile
 --------
