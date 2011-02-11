@@ -218,9 +218,10 @@ def loop(timeout=30.0, use_poll=False, map=None, count=None):
 
 class dispatcher:
 
+    debug = False
     connected = False
     accepting = False
-    closed = False
+    closing = False
     addr = None
     ignore_log_types = frozenset(['warning'])
 
@@ -393,16 +394,14 @@ class dispatcher:
                 raise
 
     def close(self):
-        if not self.closed:
-            self.closed = True
-            self.connected = False
-            self.accepting = False
-            self.del_channel()
-            try:
-                self.socket.close()
-            except socket.error as why:
-                if why.args[0] not in (ENOTCONN, EBADF):
-                    raise
+        self.connected = False
+        self.accepting = False
+        self.del_channel()
+        try:
+            self.socket.close()
+        except socket.error as why:
+            if why.args[0] not in (ENOTCONN, EBADF):
+                raise
 
     # cheap inheritance, used to pass all other attribute
     # references to the underlying socket object.
@@ -545,6 +544,8 @@ class dispatcher_with_send(dispatcher):
         return (not self.connected) or len(self.out_buffer)
 
     def send(self, data):
+        if self.debug:
+            self.log_info('sending %s' % repr(data))
         self.out_buffer = self.out_buffer + data
         self.initiate_send()
 
