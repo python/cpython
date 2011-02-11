@@ -100,7 +100,7 @@ Public functions
    cases where the source file does not exist at the time the byte-code file is
    executed.
 
-   If *ra* is given, its search method is passed the full path name to the
+   If *rx* is given, its search method is passed the full path name to the
    file being compiled, and if it returns a true value, the file is not
    compiled and ``True`` is returned.
 
