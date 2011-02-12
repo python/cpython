@@ -876,6 +876,7 @@ class MH(Mailbox):
             new_key = max(keys) + 1
         new_path = os.path.join(self._path, str(new_key))
         f = _create_carefully(new_path)
+        closed = False
         try:
             if self._locked:
                 _lock_file(f)
@@ -883,6 +884,11 @@ class MH(Mailbox):
                 try:
                     self._dump_message(message, f)
                 except BaseException:
+                    # Unlock and close so it can be deleted on Windows
+                    if self._locked:
+                        _unlock_file(f)
+                    _sync_close(f)
+                    closed = True
                     os.remove(new_path)
                     raise
                 if isinstance(message, MHMessage):
@@ -891,7 +897,8 @@ class MH(Mailbox):
                 if self._locked:
                     _unlock_file(f)
         finally:
-            _sync_close(f)
+            if not closed:
+                _sync_close(f)
         return new_key
 
     def remove(self, key):
