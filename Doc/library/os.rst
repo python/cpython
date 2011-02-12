@@ -952,7 +952,7 @@ Files and Directories
 
 .. function:: lstat(path)
 
-   Perform the equivalent of an :c:func:`lstat` system call on the given path.
+   Perform the equivalent of an :cfunc:`lstat` system call on the given path.
    Similar to :func:`~os.stat`, but does not follow symbolic links.  On
    platforms that do not support symbolic links, this is an alias for
    :func:`~os.stat`.
@@ -1139,11 +1139,11 @@ Files and Directories
 
 .. function:: stat(path)
 
-   Perform the equivalent of a :c:func:`stat` system call on the given path.
+   Perform the equivalent of a :cfunc:`stat` system call on the given path.
    (This function follows symlinks; to stat a symlink use :func:`lstat`.)
 
    The return value is an object whose attributes correspond to the members
-   of the :c:type:`stat` structure, namely:
+   of the :ctype:`stat` structure, namely:
 
    * :attr:`st_mode` - protection bits,
    * :attr:`st_ino` - inode number,
