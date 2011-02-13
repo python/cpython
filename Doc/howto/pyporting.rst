@@ -557,11 +557,11 @@ For distutils, use the following idiom::
    except ImportError:  # Python 2
      from distutils.command.build_py import build_py
 
-   setup(cmdclass = {'build_py':build_py},
+   setup(cmdclass = {'build_py': build_py},
      # ...
    )
 
-   For Distribute::
+For Distribute::
 
    setup(use_2to3=True,
      # ...
