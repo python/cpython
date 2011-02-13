@@ -2,10 +2,10 @@
 Python News
 +++++++++++
 
-What's New in Python 3.2?
-=========================
+What's New in Python 3.2 Release Candidate 3?
+=============================================
 
-*Release date: XX-Feb-2011*
+*Release date: 13-Feb-2011*
 
 Core and Builtins
 -----------------
@@ -46,7 +46,7 @@ Build
 Tests
 -----
 
-- Issue #10971:test_zipimport_support is once again compatible with the
+- Issue #10971: test_zipimport_support is once again compatible with the
   refleak hunter feature of test.regrtest.
 
 
