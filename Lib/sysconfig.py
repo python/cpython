@@ -271,7 +271,7 @@ def _parse_makefile(filename, vars=None):
 def _get_makefile_filename():
     if _PYTHON_BUILD:
         return os.path.join(_PROJECT_BASE, "Makefile")
-    return os.path.join(get_path('stdlib'), "config", "Makefile")
+    return os.path.join(get_path('platstdlib'), "config", "Makefile")
 
 
 def _init_posix(vars):
