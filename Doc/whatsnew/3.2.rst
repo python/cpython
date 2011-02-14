@@ -824,7 +824,7 @@ itertools
   modeled on APL's *scan* operator and Numpy's *accumulate* function:
 
   >>> from itertools import accumulate
-  >>> list(accumulate(8, 2, 50))
+  >>> list(accumulate([8, 2, 50]))
   [8, 10, 60]
 
   >>> prob_dist = [0.1, 0.4, 0.2, 0.3]
