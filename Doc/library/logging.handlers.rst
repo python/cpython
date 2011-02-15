@@ -326,10 +326,12 @@ sends logging output to a network socket. The base class uses a TCP socket.
       them on the receiving end, or alternatively you can disable unpickling of
       global objects on the receiving end.
 
+
    .. method:: send(packet)
 
       Send a pickled string *packet* to the socket. This function allows for
       partial sends which can happen when the network is busy.
+
 
    .. method:: createSocket()
 
@@ -351,7 +353,7 @@ sends logging output to a network socket. The base class uses a TCP socket.
       been used, you could lose messages (since the handler won't even attempt
       a connection until the delay has elapsed, but just silently drop messages
       during the delay period).
-^
+
 
 .. _datagram-handler:
 
