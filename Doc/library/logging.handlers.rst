@@ -331,6 +331,27 @@ sends logging output to a network socket. The base class uses a TCP socket.
       Send a pickled string *packet* to the socket. This function allows for
       partial sends which can happen when the network is busy.
 
+   .. method:: createSocket()
+
+      Tries to create a socket; on failure, uses an exponential back-off
+      algorithm.  On intial failure, the handler will drop the message it was
+      trying to send.  When subsequent messages are handled by the same
+      instance, it will not try connecting until some time has passed.  The
+      default parameters are such that the initial delay is one second, and if
+      after that delay the connection still can't be made, the handler will
+      double the delay each time up to a maximum of 30 seconds.
+
+      This behaviour is controlled by the following handler attributes:
+
+      * ``retryStart`` (initial delay, defaulting to 1.0 seconds).
+      * ``retryFactor`` (multiplier, defaulting to 2.0).
+      * ``retryMax`` (maximum delay, defaulting to 30.0 seconds).
+
+      This means that if the remote listener starts up *after* the handler has
+      been used, you could lose messages (since the handler won't even attempt
+      a connection until the delay has elapsed, but just silently drop messages
+      during the delay period).
+^
 
 .. _datagram-handler:
 
