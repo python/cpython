@@ -240,7 +240,8 @@ class TimeTestCase(unittest.TestCase):
                 tt = time.localtime(t)
             except (OverflowError, ValueError):
                 pass
-            self.assertEqual(time.mktime(tt), t)
+            else:
+                self.assertEqual(time.mktime(tt), t)
 
 class TestLocale(unittest.TestCase):
     def setUp(self):
