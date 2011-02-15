@@ -223,6 +223,16 @@ class TimeTestCase(unittest.TestCase):
         t1 = time.mktime(lt1)
         self.assertTrue(0 <= (t1-t0) < 0.2)
 
+    def test_mktime(self):
+        # Issue #1726687
+        for t in (-2, -1, 0, 1):
+            try:
+                tt = time.localtime(t)
+            except (OverflowError, ValueError):
+                pass
+            self.assertEqual(time.mktime(tt), t)
+
+
 def test_main():
     test_support.run_unittest(TimeTestCase)
 

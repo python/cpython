@@ -632,8 +632,11 @@ time_mktime(PyObject *self, PyObject *tup)
     time_t tt;
     if (!gettmarg(tup, &buf))
         return NULL;
+    buf.tm_wday = -1;  /* sentinel; original value ignored */
     tt = mktime(&buf);
-    if (tt == (time_t)(-1)) {
+    /* Return value of -1 does not necessarily mean an error, but tm_wday
+     * cannot remain set to -1 if mktime succedded. */
+    if (tt == (time_t)(-1) && buf.tm_wday == -1) {
         PyErr_SetString(PyExc_OverflowError,
                         "mktime argument out of range");
         return NULL;
