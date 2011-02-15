@@ -13,6 +13,11 @@ Core and Builtins
 Library
 -------
 
+Build
+-----
+
+- Issue #941346: Fix broken shared library build on AIX.
+
 
 What's New in Python 3.2 Release Candidate 3?
 =============================================
