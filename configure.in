@@ -1912,7 +1912,7 @@ AC_CHECK_LIB(intl, textdomain,
 case "$ac_sys_system" in
 	AIX*)	AC_MSG_CHECKING(for genuine AIX C++ extensions support)
 		AC_LINK_IFELSE([
-		  AC_LANG_PROGRAM([[#include "/usr/lpp/xlC/include/load.h"]],
+		  AC_LANG_PROGRAM([[#include <load.h>]],
 				  [[loadAndInit("", 0, "")]])
 		],[
 		  AC_DEFINE(AIX_GENUINE_CPLUSPLUS, 1,
