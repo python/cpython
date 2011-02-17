@@ -263,8 +263,8 @@ when currently pending futures are done executing.
 A simple of example of :class:`~concurrent.futures.ThreadPoolExecutor` is a
 launch of four parallel threads for copying files::
 
-  import threading, shutil
-  with threading.ThreadPoolExecutor(max_workers=4) as e:
+  import concurrent.futures, shutil
+  with concurrent.futures.ThreadPoolExecutor(max_workers=4) as e:
       e.submit(shutil.copy, 'src1.txt', 'dest1.txt')
       e.submit(shutil.copy, 'src2.txt', 'dest2.txt')
       e.submit(shutil.copy, 'src3.txt', 'dest3.txt')
@@ -767,8 +767,11 @@ functools
 
   >>> get_phone_number.cache_clear()
 
-  (Contributed by Raymond Hettinger and incorporating design ideas from
-  Jim Baker, Miki Tebeka, and Nick Coghlan.)
+  (Contributed by Raymond Hettinger and incorporating design ideas from Jim
+  Baker, Miki Tebeka, and Nick Coghlan; see `recipe 498245
+  <http://code.activestate.com/recipes/498245>`_\, `recipe 577479
+  <http://code.activestate.com/recipes/577479>`_\, :issue:`10586`, and
+  :issue:`10593`.)
 
 * The :func:`functools.wraps` decorator now adds a :attr:`__wrapped__` attribute
   pointing to the original callable function.  This allows wrapped functions to
