@@ -193,7 +193,7 @@ dictionary::
 
    {"version": 1,
     "formatters": {"brief": {"format": "%(levelname)-8s: %(name)-15s: %(message)s"},
-                   "full": {"format": "%(asctime)s %(name)-15s %(levelname)-8s %(message)s"},
+                   "full": {"format": "%(asctime)s %(name)-15s %(levelname)-8s %(message)s"}
                    },
     "handlers": {"console": {
                       "class": "logging.StreamHandler",
@@ -204,7 +204,7 @@ dictionary::
                       "class": "logging.StreamHandler",
                       "formatter": "full",
                       "level": "ERROR",
-                      "stream": "ext://sys.stderr"},
+                      "stream": "ext://sys.stderr"}
                  },
     "root": {"level": "DEBUG", "handlers": ["console", "console_priority"]}}
 
@@ -213,11 +213,13 @@ If that dictionary is stored in a file called :file:`conf.json`, it can be
 loaded and called with code like this::
 
    >>> import json, logging.config
-   >>> with open('conf.json', 'rb') as f:
+   >>> with open('conf.json') as f:
            conf = json.load(f)
    >>> logging.config.dictConfig(conf)
    >>> logging.info("Transaction completed normally")
+   INFO    : root           : Transaction completed normally
    >>> logging.critical("Abnormal termination")
+   2011-02-17 11:14:36,694 root            CRITICAL Abnormal termination
 
 .. seealso::
 
