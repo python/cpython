@@ -14,7 +14,7 @@
 .. versionadded:: 2.3
 
 .. deprecated:: 2.6
-   The built-in ``set``/``frozenset`` types replace this module.
+   The built-in :class:`set`/:class:`frozenset` types replace this module.
 
 The :mod:`sets` module provides classes for constructing and manipulating
 unordered collections of unique elements.  Common uses include membership
