@@ -1342,9 +1342,11 @@ Files and Directories
       >>> import os
       >>> statinfo = os.stat('somefile.txt')
       >>> statinfo
-      (33188, 422511, 769, 1, 1032, 100, 926, 1105022698,1105022732, 1105022732)
+      posix.stat_result(st_mode=33188, st_ino=7876932, st_dev=234881026,
+      st_nlink=1, st_uid=501, st_gid=501, st_size=264, st_atime=1297230295,
+      st_mtime=1297230027, st_ctime=1297230027)
       >>> statinfo.st_size
-      926
+      264
 
    Availability: Unix, Windows.
 
