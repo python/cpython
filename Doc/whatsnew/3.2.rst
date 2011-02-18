@@ -1354,7 +1354,8 @@ popen
 The :func:`os.popen` and :func:`subprocess.Popen` functions now support
 :keyword:`with` statements for auto-closing of the file descriptors.
 
-(Contributed by Antoine Pitrou in :issue:`7461`.)
+(Contributed by Antoine Pitrou and Brian Curtin in :issue:`7461` and
+:issue:`10554`.)
 
 select
 ------
