@@ -31,23 +31,18 @@ If your project is brand-new or does not have a large codebase, then you may
 want to consider writing/porting :ref:`all of your code for Python 3
 and use 3to2 <use_3to2>` to port your code for Python 2.
 
-If your project has a pre-existing Python 2 codebase and you would like Python
-3 support to start off a new branch or version of your project, then you will
-most likely want to :ref:`port using 2to3 <use_2to3>`. This will allow you to
-port your Python 2 code to Python 3 in a semi-automated fashion and begin to
-maintain it separately from your Python 2 code. This approach can also work if
-your codebase is small and/or simple enough for the translation to occur
-quickly.
+If you would prefer to maintain a codebase which is semantically **and**
+syntactically compatible with Python 2 & 3 simultaneously, you can write
+:ref:`use_same_source`. While this tends to lead to somewhat non-idiomatic
+code, it does mean you keep a rapid development process for you, the developer.
 
-Finally, if you want to maintain Python 2 and Python 3 versions of your project
-simultaneously and with no differences, then you can write :ref:`Python 2/3
-source-compatible code <use_same_source>`. While the code is not quite as
-idiomatic as it would be written just for Python 3 or automating the port from
-Python 2, it does makes it easier to continue to do rapid development
-regardless of what major version of Python you are developing against at the
-time.
+Finally, you do have the option of :ref:`using 2to3 <use_2to3>` to translate
+Python 2 code into Python 3 code (with some manual help). This can take the
+form of branching your code and using 2to3 to start a Python 3 branch. You can
+also have users perform the translation as installation time automatically so
+that you only have to maintain a Python 2 codebase.
 
-Regardless of which approach you choose, porting is probably not as hard or
+Regardless of which approach you choose, porting is not as hard or
 time-consuming as you might initially think. You can also tackle the problem
 piece-meal as a good portion of porting is simply updating your code to follow
 current best practices in a Python 2/3 compatible way.
@@ -595,7 +590,8 @@ While it may seem counter-intuitive, you can write Python code which is
 source-compatible between Python 2 & 3. It does lead to code that is not
 entirely idiomatic Python (e.g., having to extract the currently raised
 exception from ``sys.exc_info()[1]``), but it can be run under Python 2
-**and** Python 3 without using 2to3_ as a translation step. This allows you to
+**and** Python 3 without using 2to3_ as a translation step (although the tool
+should be used to help find potential portability problems). This allows you to
 continue to have a rapid development process regardless of whether you are
 developing under Python 2 or Python 3. Whether this approach or using
 :ref:`use_2to3` works best for you will be a per-project decision.
@@ -611,8 +607,8 @@ the same source code.
 .. _What's New in Python 3.0: http://docs.python.org/release/3.0/whatsnew/3.0.html
 
 
-Follow The Steps for Using 2to3_ (sans 2to3)
---------------------------------------------
+Follow The Steps for Using 2to3_
+--------------------------------
 
 All of the steps outlined in how to
 :ref:`port Python 2 code with 2to3 <use_2to3>` apply
@@ -689,10 +685,11 @@ likely don't need it.
 Other Resources
 ===============
 
-The authors of the following blog posts and wiki pages deserve special thanks
-for making public their tips for porting Python 2 code to Python 3 (and thus
-helping provide information for this document):
+The authors of the following blog posts, wiki pages, and books deserve special
+thanks for making public their tips for porting Python 2 code to Python 3 (and
+thus helping provide information for this document):
 
+* http://python3porting.com/
 * http://docs.pythonsprints.com/python3_porting/py-porting.html
 * http://techspot.zzzeek.org/2011/01/24/zzzeek-s-guide-to-python-3-porting/
 * http://dabeaz.blogspot.com/2011/01/porting-py65-and-my-superboard-to.html
