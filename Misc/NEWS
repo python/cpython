@@ -18,6 +18,11 @@ Build
 
 - Issue #941346: Fix broken shared library build on AIX.
 
+Documentation
+-------------
+
+- Issue #10709: Add updated AIX notes in Misc/README.AIX.
+
 
 What's New in Python 3.2 Release Candidate 3?
 =============================================
