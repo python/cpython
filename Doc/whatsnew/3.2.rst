@@ -373,7 +373,7 @@ module::
    >>> sysconfig.get_config_var('SOABI')    # find the version tag
    'cpython-32mu'
    >>> sysconfig.get_config_var('SO')       # find the full filename extension
-   'cpython-32mu.so'
+   '.cpython-32mu.so'
 
 .. seealso::
 
@@ -2199,7 +2199,7 @@ The :func:`~urllib.parse.urldefrag` function now returns a :term:`named tuple`::
     >>> r
     DefragResult(url='http://python.org/about/', fragment='target')
     >>> r[0]
-    'http://python.org/about/
+    'http://python.org/about/'
     >>> r.fragment
     'target'
 
