@@ -333,7 +333,7 @@ aspects that are visible to the programmer:
 
 * The :mod:`py_compile` and :mod:`compileall` modules have been updated to
   reflect the new naming convention and target directory.  The command-line
-  invocation of *compileall* has new command-line options: ``-i`` for
+  invocation of *compileall* has new options: ``-i`` for
   specifying a list of files and directories to compile and ``-b`` which causes
   bytecode files to be written to their legacy location rather than
   *__pycache__*.
@@ -450,7 +450,7 @@ Some smaller changes made to the core Python language are:
 * There is also a new :meth:`str.format_map` method that extends the
   capabilities of the existing :meth:`str.format` method by accepting arbitrary
   :term:`mapping` objects.  This new method makes it possible to use string
-  formatting with any of one of Python's many dictionary-like tools such as
+  formatting with any of Python's many dictionary-like objects such as
   :class:`~collections.defaultdict`, :class:`~shelve.Shelf`,
   :class:`~configparser.ConfigParser`, or :mod:`dbm`.  It is also useful with
   custom :class:`dict` subclasses that normalize keys before look-up or that
@@ -477,7 +477,7 @@ Some smaller changes made to the core Python language are:
  (Suggested by Raymond Hettinger and implemented by Eric Smith in
  :issue:`6081`.)
 
-* The interpreter can now be started with a quiet option, ``-q``, to suppress
+* The interpreter can now be started with a quiet option, ``-q``, to prevent
   the copyright and version information from being displayed in the interactive
   mode.  The option can be introspected using the :attr:`sys.flags` attribute::
 
@@ -1410,7 +1410,7 @@ wrong results.
 tarfile
 -------
 
-The :class:`~tarfile.TarFile` class can now be used as a content manager.  In
+The :class:`~tarfile.TarFile` class can now be used as a context manager.  In
 addition, its :meth:`~tarfile.TarFile.add` method has a new option, *filter*,
 that controls which files are added to the archive and allows the file metadata
 to be edited.
@@ -1485,7 +1485,7 @@ strings, bytes, numbers, tuples, lists, dicts, sets, booleans, and None.
       ...
     ValueError: malformed node or string: <_ast.Call object at 0x101739a10>
 
-(Implemented by Georg Brandl.)
+(Implemented by Benjamin Peterson and Georg Brandl.)
 
 os
 --
@@ -2005,7 +2005,7 @@ command-line::
     $ python -m site --user-site
     /Users/raymondhettinger/.local/lib/python3.2/site-packages
 
-(Contributed by Tarek Ziadé.)
+(Contributed by Tarek Ziadé in :issue:`6693`.)
 
 sysconfig
 ---------
