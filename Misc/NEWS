@@ -10,6 +10,8 @@ What's New in Python 3.2?
 Core and Builtins
 -----------------
 
+- Issue #11249: Fix potential crashes when using the limited API.
+
 Library
 -------
 
