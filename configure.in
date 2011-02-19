@@ -1376,6 +1376,12 @@ fi
 if test "$use_lfs" = "yes"; then
 # Two defines needed to enable largefile support on various platforms
 # These may affect some typedefs
+case $ac_sys_system/$ac_sys_release in
+AIX*)
+    AC_DEFINE(_LARGE_FILES, 1, 
+    [This must be defined on AIX systems to enable large file support.])
+    ;;
+esac
 AC_DEFINE(_LARGEFILE_SOURCE, 1, 
 [This must be defined on some systems to enable large file support.])
 AC_DEFINE(_FILE_OFFSET_BITS, 64,
