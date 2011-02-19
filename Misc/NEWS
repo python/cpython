@@ -16,6 +16,8 @@ Library
 Build
 -----
 
+- Issue #11222: Fix non-framework shared library build on Mac OS X.
+
 - Issue #941346: Fix broken shared library build on AIX.
 
 Documentation
