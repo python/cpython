@@ -39,8 +39,8 @@
 
 %define name python
 #--start constants--
-%define version 3.2
-%define libvers 3.2
+%define version 3.3a0
+%define libvers 3.3
 #--end constants--
 %define release 1pydotorg
 %define __prefix /usr

@@ -10,11 +10,11 @@ Using the Python Interpreter
 Invoking the Interpreter
 ========================
 
-The Python interpreter is usually installed as :file:`/usr/local/bin/python3.2`
+The Python interpreter is usually installed as :file:`/usr/local/bin/python3.3`
 on those machines where it is available; putting :file:`/usr/local/bin` in your
 Unix shell's search path makes it possible to start it by typing the command ::
 
-   python3.2
+   python3.3
 
 to the shell. [#]_ Since the choice of the directory where the interpreter lives
 is an installation option, other places are possible; check with your local
@@ -22,11 +22,11 @@ Python guru or system administrator.  (E.g., :file:`/usr/local/python` is a
 popular alternative location.)
 
 On Windows machines, the Python installation is usually placed in
-:file:`C:\\Python32`, though you can change this when you're running the
+:file:`C:\\Python33`, though you can change this when you're running the
 installer.  To add this directory to your path,  you can type the following
 command into the command prompt in a DOS box::
 
-   set path=%path%;C:\python32
+   set path=%path%;C:\python33
 
 Typing an end-of-file character (:kbd:`Control-D` on Unix, :kbd:`Control-Z` on
 Windows) at the primary prompt causes the interpreter to exit with a zero exit
@@ -94,8 +94,8 @@ with the *secondary prompt*, by default three dots (``...``). The interpreter
 prints a welcome message stating its version number and a copyright notice
 before printing the first prompt::
 
-   $ python3.2
-   Python 3.2 (py3k, Sep 12 2007, 12:21:02)
+   $ python3.3
+   Python 3.3 (py3k, Sep 12 2007, 12:21:02)
    [GCC 3.4.6 20060404 (Red Hat 3.4.6-8)] on linux2
    Type "help", "copyright", "credits" or "license" for more information.
    >>>
@@ -148,7 +148,7 @@ Executable Python Scripts
 On BSD'ish Unix systems, Python scripts can be made directly executable, like
 shell scripts, by putting the line ::
 
-   #! /usr/bin/env python3.2
+   #! /usr/bin/env python3.3
 
 (assuming that the interpreter is on the user's :envvar:`PATH`) at the beginning
 of the script and giving the file an executable mode.  The ``#!`` must be the
