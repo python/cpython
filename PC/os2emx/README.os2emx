@@ -305,7 +305,7 @@ Procedure
    to be installed in a directory other than the PYTHONHOME directory, set 
    the value of the Makefile variable EXE_DIR to the appropriate directory.
 
-3. If you wish the Python core DLL (python26.dll) to be installed in a 
+3. If you wish the Python core DLL (python33.dll) to be installed in a 
    directory other than the directory in which the Python executables are 
    installed (by default, the PYTHONHOME directory), set the value of the 
    Makefile variable DLL_DIR to the appropriate directory.  This DLL must 

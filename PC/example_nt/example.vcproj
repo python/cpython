@@ -39,7 +39,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/export:initexample"
-				AdditionalDependencies="odbc32.lib odbccp32.lib python26.lib"
+				AdditionalDependencies="odbc32.lib odbccp32.lib python33.lib"
 				OutputFile=".\Release/example.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -105,7 +105,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/export:initexample"
-				AdditionalDependencies="odbc32.lib odbccp32.lib python26_d.lib"
+				AdditionalDependencies="odbc32.lib odbccp32.lib python33_d.lib"
 				OutputFile=".\Debug/example_d.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
