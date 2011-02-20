@@ -12,7 +12,7 @@ and build the projects.
 The proper order to build subprojects:
 
 1) pythoncore (this builds the main Python DLL and library files,
-               python32.{dll, lib} in Release mode)
+               python33.{dll, lib} in Release mode)
 
 2) python (this builds the main Python executable,
            python.exe in Release mode)
@@ -23,7 +23,7 @@ The proper order to build subprojects:
    to the subsystems they implement; see SUBPROJECTS below)
 
 When using the Debug setting, the output files have a _d added to
-their name:  python32_d.dll, python_d.exe, pyexpat_d.pyd, and so on.
+their name:  python33_d.dll, python_d.exe, pyexpat_d.pyd, and so on.
 
 SUBPROJECTS
 -----------

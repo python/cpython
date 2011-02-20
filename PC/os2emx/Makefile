@@ -237,7 +237,7 @@ $(OUT)%$O: %.c
 
 # Output file names
 PYTHON_VER=	2.6
-PYTHON_LIB=	python26
+PYTHON_LIB=	python33
 PYTHON.LIB=	$(PYTHON_LIB)_s$A
 PYTHON.IMPLIB=	$(PYTHON_LIB)$A
 ifeq ($(EXEOMF),yes)

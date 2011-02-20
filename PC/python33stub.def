@@ -1,4 +1,4 @@
-LIBRARY "python32"
+LIBRARY "python33"
 EXPORTS
 PyArg_Parse
 PyArg_ParseTuple

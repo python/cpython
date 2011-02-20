@@ -12,7 +12,7 @@ the "Standard" toolbar"), and build the projects.
 The proper order to build subprojects:
 
 1) pythoncore (this builds the main Python DLL and library files,
-               python26.{dll, lib} in Release mode)
+               python33.{dll, lib} in Release mode)
               NOTE:  in previous releases, this subproject was
               named after the release number, e.g. python20.
 
@@ -26,7 +26,7 @@ The proper order to build subprojects:
    test slave; see SUBPROJECTS below)
 
 When using the Debug setting, the output files have a _d added to
-their name:  python26_d.dll, python_d.exe, parser_d.pyd, and so on.
+their name:  python33_d.dll, python_d.exe, parser_d.pyd, and so on.
 
 SUBPROJECTS
 -----------

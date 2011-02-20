@@ -37,7 +37,7 @@ NOTE:
    running a Python core buildbot test slave; see SUBPROJECTS below)
 
 When using the Debug setting, the output files have a _d added to
-their name:  python32_d.dll, python_d.exe, parser_d.pyd, and so on. Both
+their name:  python33_d.dll, python_d.exe, parser_d.pyd, and so on. Both
 the build and rt batch files accept a -d option for debug builds.
 
 The 32bit builds end up in the solution folder PCbuild while the x64 builds

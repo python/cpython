@@ -39,15 +39,15 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="getbuildinfo.o"
-				OutputFile="./python32.dll"
+				OutputFile="./python33.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				IgnoreDefaultLibraryNames="libc"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./python32.pdb"
+				ProgramDatabaseFile=".\./python33.pdb"
 				SubSystem="2"
 				BaseAddress="0x1e000000"
-				ImportLibrary=".\./python32.lib"
+				ImportLibrary=".\./python33.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -99,15 +99,15 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="getbuildinfo.o"
-				OutputFile="./python32_d.dll"
+				OutputFile="./python33_d.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				IgnoreDefaultLibraryNames="libc"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./python32_d.pdb"
+				ProgramDatabaseFile=".\./python33_d.pdb"
 				SubSystem="2"
 				BaseAddress="0x1e000000"
-				ImportLibrary=".\./python32_d.lib"
+				ImportLibrary=".\./python33_d.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -166,15 +166,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:IA64 /USELINK:MS_SDK"
 				AdditionalDependencies="getbuildinfo.o"
-				OutputFile="./python32.dll"
+				OutputFile="./python33.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="FALSE"
 				IgnoreDefaultLibraryNames="libc"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./python32.pdb"
+				ProgramDatabaseFile=".\./python33.pdb"
 				SubSystem="2"
 				BaseAddress="0x1e000000"
-				ImportLibrary=".\./python32.lib"
+				ImportLibrary=".\./python33.lib"
 				TargetMachine="0"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -233,15 +233,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:AMD64 /USELINK:MS_SDK"
 				AdditionalDependencies="getbuildinfo.o"
-				OutputFile="./python32.dll"
+				OutputFile="./python33.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				IgnoreDefaultLibraryNames="libc"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./python32.pdb"
+				ProgramDatabaseFile=".\./python33.pdb"
 				SubSystem="2"
 				BaseAddress="0x1e000000"
-				ImportLibrary=".\./python32.lib"
+				ImportLibrary=".\./python33.lib"
 				TargetMachine="0"/>
 			<Tool
 				Name="VCMIDLTool"/>
