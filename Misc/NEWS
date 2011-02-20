@@ -12,9 +12,6 @@ Core and Builtins
 
 - Issue #11249: Fix potential crashes when using the limited API.
 
-Library
--------
-
 Build
 -----
 
@@ -42,40 +39,40 @@ Core and Builtins
 
 - Issue #11135: Remove redundant doc field from PyType_Spec.
 
-- Issue #11067: Add PyType_GetFlags, to support PyUnicode_Check
-  in the limited ABI.
+- Issue #11067: Add PyType_GetFlags, to support PyUnicode_Check in the limited
+  ABI.
 
 - Issue #11118: Fix bogus export of None in python3.dll.
 
 Library
 -------
 
-- Issue #11116: any error during addition of a message to a mailbox now causes
-  a rollback, instead of leaving the mailbox partially modified.
+- Issue #11116: any error during addition of a message to a mailbox now causes a
+  rollback, instead of leaving the mailbox partially modified.
 
-- Issue #11132: Fix passing of "optimize" parameter when recursing
-  in compileall.compile_dir().
+- Issue #11132: Fix passing of "optimize" parameter when recursing in
+  compileall.compile_dir().
 
 - Issue #11110: Fix a potential decref of a NULL in sqlite3.
 
-- Issue #8275: Fix passing of callback arguments with ctypes under Win64.
-  Patch by Stan Mihai.
+- Issue #8275: Fix passing of callback arguments with ctypes under Win64.  Patch
+  by Stan Mihai.
 
 Build
 -----
 
-- Issue #11079: The /Applications/Python x.x folder created by the Mac
-  OS X installers now includes a link to the installed documentation
-  and no longer includes an Extras directory.  The Tools directory is
-  now installed in the framework under share/doc.
+- Issue #11079: The /Applications/Python x.x folder created by the Mac OS X
+  installers now includes a link to the installed documentation and no longer
+  includes an Extras directory.  The Tools directory is now installed in the
+  framework under share/doc.
 
 - Issue #11121: Fix building with --enable-shared.
 
 Tests
 -----
 
-- Issue #10971: test_zipimport_support is once again compatible with the
-  refleak hunter feature of test.regrtest.
+- Issue #10971: test_zipimport_support is once again compatible with the refleak
+  hunter feature of test.regrtest.
 
 
 What's New in Python 3.2 Release Candidate 2?
