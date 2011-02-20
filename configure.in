@@ -3,7 +3,7 @@ dnl * Please run autoreconf to test your changes! *
 dnl ***********************************************
 
 # Set VERSION so we only need to edit in one place (i.e., here)
-m4_define(PYTHON_VERSION, 3.2)
+m4_define(PYTHON_VERSION, 3.3)
 
 dnl Some m4 magic to ensure that the configure script is generated
 dnl by the correct autoconf version.
