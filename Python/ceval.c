@@ -811,10 +811,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
     unsigned char *first_instr;
     PyObject *names;
     PyObject *consts;
-#if defined(Py_DEBUG) || defined(LLTRACE)
-    /* Make it easier to find out where we are with a debugger */
-    char *filename;
-#endif
 
 /* Computed GOTOs, or
        the-optimization-commonly-but-improperly-known-as-"threaded code"
@@ -1226,18 +1222,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
 #ifdef LLTRACE
     lltrace = PyDict_GetItemString(f->f_globals, "__lltrace__") != NULL;
-#endif
-#if defined(Py_DEBUG) || defined(LLTRACE)
-    {
-        PyObject *error_type, *error_value, *error_traceback;
-        PyErr_Fetch(&error_type, &error_value, &error_traceback);
-        filename = _PyUnicode_AsString(co->co_filename);
-        if (filename == NULL && tstate->overflowed) {
-            /* maximum recursion depth exceeded */
-            goto exit_eval_frame;
-        }
-        PyErr_Restore(error_type, error_value, error_traceback);
-    }
 #endif
 
     why = WHY_NOT;
