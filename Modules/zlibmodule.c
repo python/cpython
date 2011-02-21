@@ -945,8 +945,18 @@ PyZlib_adler32(PyObject *self, PyObject *args)
     /* Releasing the GIL for very small buffers is inefficient
        and may lower performance */
     if (pbuf.len > 1024*5) {
+        void *buf = pbuf.buf;
+        Py_ssize_t len = pbuf.len;
+
         Py_BEGIN_ALLOW_THREADS
-        adler32val = adler32(adler32val, pbuf.buf, pbuf.len);
+        /* Avoid truncation of length for very large buffers. adler32() takes
+           length as an unsigned int, which may be narrower than Py_ssize_t. */
+        while (len > (Py_ssize_t)UINT_MAX) {
+            adler32val = adler32(adler32val, buf, UINT_MAX);
+            buf += UINT_MAX;
+            len -= UINT_MAX;
+        }
+        adler32val = adler32(adler32val, buf, len);
         Py_END_ALLOW_THREADS
     } else {
         adler32val = adler32(adler32val, pbuf.buf, pbuf.len);
@@ -973,8 +983,18 @@ PyZlib_crc32(PyObject *self, PyObject *args)
     /* Releasing the GIL for very small buffers is inefficient
        and may lower performance */
     if (pbuf.len > 1024*5) {
+        void *buf = pbuf.buf;
+        Py_ssize_t len = pbuf.len;
+
         Py_BEGIN_ALLOW_THREADS
-        signed_val = crc32(crc32val, pbuf.buf, pbuf.len);
+        /* Avoid truncation of length for very large buffers. crc32() takes
+           length as an unsigned int, which may be narrower than Py_ssize_t. */
+        while (len > (Py_ssize_t)UINT_MAX) {
+            crc32val = crc32(crc32val, buf, UINT_MAX);
+            buf += UINT_MAX;
+            len -= UINT_MAX;
+        }
+        signed_val = crc32(crc32val, buf, len);
         Py_END_ALLOW_THREADS
     } else {
         signed_val = crc32(crc32val, pbuf.buf, pbuf.len);

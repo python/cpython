@@ -12,6 +12,12 @@ Core and Builtins
 
 - Check for NULL result in PyType_FromSpec.
 
+Library
+-------
+
+- Issue #10276: Fix the results of zlib.crc32() and zlib.adler32() on buffers
+  larger than 4GB.  Patch by Nadeem Vawda.
+
 
 What's New in Python 3.2?
 =========================
