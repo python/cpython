@@ -345,7 +345,7 @@ class CommandLineTests(unittest.TestCase):
 
     def test_invalid_arg_produces_message(self):
         out = self.assertRunOK('badfilename')
-        self.assertRegex(out, b"Can't list badfilename")
+        self.assertRegex(out, b"Can't list 'badfilename'")
 
 
 def test_main():
