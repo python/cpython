@@ -21,6 +21,12 @@ Library
 - Issue #10276: Fix the results of zlib.crc32() and zlib.adler32() on buffers
   larger than 4GB.  Patch by Nadeem Vawda.
 
+Build
+-----
+
+- Issue #11268: Prevent Mac OS X Installer failure if Documentation
+  package had previously been installed.
+
 
 What's New in Python 3.2?
 =========================
