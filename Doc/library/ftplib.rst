@@ -9,7 +9,7 @@
    pair: FTP; protocol
    single: FTP; ftplib (standard module)
 
-**Source code:** :source:`Lib/ftp.py`
+**Source code:** :source:`Lib/ftplib.py`
 
 --------------
 
