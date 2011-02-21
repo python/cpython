@@ -5,6 +5,7 @@ Test script for doctest.
 from test import support
 import doctest
 import os
+import sys
 
 
 # NOTE: There are some additional tests relating to interaction with
@@ -373,7 +374,7 @@ We'll simulate a __file__ attr that ends in pyc:
     >>> tests = finder.find(sample_func)
 
     >>> print(tests)  # doctest: +ELLIPSIS
-    [<DocTest sample_func from ...:17 (1 example)>]
+    [<DocTest sample_func from ...:18 (1 example)>]
 
 The exact name depends on how test_doctest was invoked, so allow for
 leading path components.
@@ -1686,226 +1687,227 @@ Run the debugger on the docstring, and then restore sys.stdin.
 
 """
 
-def test_pdb_set_trace():
-    """Using pdb.set_trace from a doctest.
+if not hasattr(sys, 'gettrace') or not sys.gettrace():
+    def test_pdb_set_trace():
+        """Using pdb.set_trace from a doctest.
 
-    You can use pdb.set_trace from a doctest.  To do so, you must
-    retrieve the set_trace function from the pdb module at the time
-    you use it.  The doctest module changes sys.stdout so that it can
-    capture program output.  It also temporarily replaces pdb.set_trace
-    with a version that restores stdout.  This is necessary for you to
-    see debugger output.
+        You can use pdb.set_trace from a doctest.  To do so, you must
+        retrieve the set_trace function from the pdb module at the time
+        you use it.  The doctest module changes sys.stdout so that it can
+        capture program output.  It also temporarily replaces pdb.set_trace
+        with a version that restores stdout.  This is necessary for you to
+        see debugger output.
 
-      >>> doc = '''
-      ... >>> x = 42
-      ... >>> raise Exception('clé')
-      ... Traceback (most recent call last):
-      ... Exception: clé
-      ... >>> import pdb; pdb.set_trace()
-      ... '''
-      >>> parser = doctest.DocTestParser()
-      >>> test = parser.get_doctest(doc, {}, "foo-bar@baz", "foo-bar@baz.py", 0)
-      >>> runner = doctest.DocTestRunner(verbose=False)
+          >>> doc = '''
+          ... >>> x = 42
+          ... >>> raise Exception('clé')
+          ... Traceback (most recent call last):
+          ... Exception: clé
+          ... >>> import pdb; pdb.set_trace()
+          ... '''
+          >>> parser = doctest.DocTestParser()
+          >>> test = parser.get_doctest(doc, {}, "foo-bar@baz", "foo-bar@baz.py", 0)
+          >>> runner = doctest.DocTestRunner(verbose=False)
 
-    To demonstrate this, we'll create a fake standard input that
-    captures our debugger input:
+        To demonstrate this, we'll create a fake standard input that
+        captures our debugger input:
 
-      >>> import tempfile
-      >>> real_stdin = sys.stdin
-      >>> sys.stdin = _FakeInput([
-      ...    'print(x)',  # print data defined by the example
-      ...    'continue', # stop debugging
-      ...    ''])
+          >>> import tempfile
+          >>> real_stdin = sys.stdin
+          >>> sys.stdin = _FakeInput([
+          ...    'print(x)',  # print data defined by the example
+          ...    'continue', # stop debugging
+          ...    ''])
 
-      >>> try: runner.run(test)
-      ... finally: sys.stdin = real_stdin
-      --Return--
-      > <doctest foo-bar@baz[2]>(1)<module>()->None
-      -> import pdb; pdb.set_trace()
-      (Pdb) print(x)
-      42
-      (Pdb) continue
-      TestResults(failed=0, attempted=3)
+          >>> try: runner.run(test)
+          ... finally: sys.stdin = real_stdin
+          --Return--
+          > <doctest foo-bar@baz[2]>(1)<module>()->None
+          -> import pdb; pdb.set_trace()
+          (Pdb) print(x)
+          42
+          (Pdb) continue
+          TestResults(failed=0, attempted=3)
 
-      You can also put pdb.set_trace in a function called from a test:
+          You can also put pdb.set_trace in a function called from a test:
 
-      >>> def calls_set_trace():
-      ...    y=2
-      ...    import pdb; pdb.set_trace()
+          >>> def calls_set_trace():
+          ...    y=2
+          ...    import pdb; pdb.set_trace()
 
-      >>> doc = '''
-      ... >>> x=1
-      ... >>> calls_set_trace()
-      ... '''
-      >>> test = parser.get_doctest(doc, globals(), "foo-bar@baz", "foo-bar@baz.py", 0)
-      >>> real_stdin = sys.stdin
-      >>> sys.stdin = _FakeInput([
-      ...    'print(y)',  # print data defined in the function
-      ...    'up',       # out of function
-      ...    'print(x)',  # print data defined by the example
-      ...    'continue', # stop debugging
-      ...    ''])
+          >>> doc = '''
+          ... >>> x=1
+          ... >>> calls_set_trace()
+          ... '''
+          >>> test = parser.get_doctest(doc, globals(), "foo-bar@baz", "foo-bar@baz.py", 0)
+          >>> real_stdin = sys.stdin
+          >>> sys.stdin = _FakeInput([
+          ...    'print(y)',  # print data defined in the function
+          ...    'up',       # out of function
+          ...    'print(x)',  # print data defined by the example
+          ...    'continue', # stop debugging
+          ...    ''])
 
-      >>> try:
-      ...     runner.run(test)
-      ... finally:
-      ...     sys.stdin = real_stdin
-      --Return--
-      > <doctest test.test_doctest.test_pdb_set_trace[8]>(3)calls_set_trace()->None
-      -> import pdb; pdb.set_trace()
-      (Pdb) print(y)
-      2
-      (Pdb) up
-      > <doctest foo-bar@baz[1]>(1)<module>()
-      -> calls_set_trace()
-      (Pdb) print(x)
-      1
-      (Pdb) continue
-      TestResults(failed=0, attempted=2)
+          >>> try:
+          ...     runner.run(test)
+          ... finally:
+          ...     sys.stdin = real_stdin
+          --Return--
+          > <doctest test.test_doctest.test_pdb_set_trace[8]>(3)calls_set_trace()->None
+          -> import pdb; pdb.set_trace()
+          (Pdb) print(y)
+          2
+          (Pdb) up
+          > <doctest foo-bar@baz[1]>(1)<module>()
+          -> calls_set_trace()
+          (Pdb) print(x)
+          1
+          (Pdb) continue
+          TestResults(failed=0, attempted=2)
 
-    During interactive debugging, source code is shown, even for
-    doctest examples:
+        During interactive debugging, source code is shown, even for
+        doctest examples:
 
-      >>> doc = '''
-      ... >>> def f(x):
-      ... ...     g(x*2)
-      ... >>> def g(x):
-      ... ...     print(x+3)
-      ... ...     import pdb; pdb.set_trace()
-      ... >>> f(3)
-      ... '''
-      >>> test = parser.get_doctest(doc, globals(), "foo-bar@baz", "foo-bar@baz.py", 0)
-      >>> real_stdin = sys.stdin
-      >>> sys.stdin = _FakeInput([
-      ...    'list',     # list source from example 2
-      ...    'next',     # return from g()
-      ...    'list',     # list source from example 1
-      ...    'next',     # return from f()
-      ...    'list',     # list source from example 3
-      ...    'continue', # stop debugging
-      ...    ''])
-      >>> try: runner.run(test)
-      ... finally: sys.stdin = real_stdin
-      ... # doctest: +NORMALIZE_WHITESPACE
-      --Return--
-      > <doctest foo-bar@baz[1]>(3)g()->None
-      -> import pdb; pdb.set_trace()
-      (Pdb) list
-        1     def g(x):
-        2         print(x+3)
-        3  ->     import pdb; pdb.set_trace()
-      [EOF]
-      (Pdb) next
-      --Return--
-      > <doctest foo-bar@baz[0]>(2)f()->None
-      -> g(x*2)
-      (Pdb) list
-        1     def f(x):
-        2  ->     g(x*2)
-      [EOF]
-      (Pdb) next
-      --Return--
-      > <doctest foo-bar@baz[2]>(1)<module>()->None
-      -> f(3)
-      (Pdb) list
-        1  -> f(3)
-      [EOF]
-      (Pdb) continue
-      **********************************************************************
-      File "foo-bar@baz.py", line 7, in foo-bar@baz
-      Failed example:
-          f(3)
-      Expected nothing
-      Got:
-          9
-      TestResults(failed=1, attempted=3)
-      """
+          >>> doc = '''
+          ... >>> def f(x):
+          ... ...     g(x*2)
+          ... >>> def g(x):
+          ... ...     print(x+3)
+          ... ...     import pdb; pdb.set_trace()
+          ... >>> f(3)
+          ... '''
+          >>> test = parser.get_doctest(doc, globals(), "foo-bar@baz", "foo-bar@baz.py", 0)
+          >>> real_stdin = sys.stdin
+          >>> sys.stdin = _FakeInput([
+          ...    'list',     # list source from example 2
+          ...    'next',     # return from g()
+          ...    'list',     # list source from example 1
+          ...    'next',     # return from f()
+          ...    'list',     # list source from example 3
+          ...    'continue', # stop debugging
+          ...    ''])
+          >>> try: runner.run(test)
+          ... finally: sys.stdin = real_stdin
+          ... # doctest: +NORMALIZE_WHITESPACE
+          --Return--
+          > <doctest foo-bar@baz[1]>(3)g()->None
+          -> import pdb; pdb.set_trace()
+          (Pdb) list
+            1     def g(x):
+            2         print(x+3)
+            3  ->     import pdb; pdb.set_trace()
+          [EOF]
+          (Pdb) next
+          --Return--
+          > <doctest foo-bar@baz[0]>(2)f()->None
+          -> g(x*2)
+          (Pdb) list
+            1     def f(x):
+            2  ->     g(x*2)
+          [EOF]
+          (Pdb) next
+          --Return--
+          > <doctest foo-bar@baz[2]>(1)<module>()->None
+          -> f(3)
+          (Pdb) list
+            1  -> f(3)
+          [EOF]
+          (Pdb) continue
+          **********************************************************************
+          File "foo-bar@baz.py", line 7, in foo-bar@baz
+          Failed example:
+              f(3)
+          Expected nothing
+          Got:
+              9
+          TestResults(failed=1, attempted=3)
+          """
 
-def test_pdb_set_trace_nested():
-    """This illustrates more-demanding use of set_trace with nested functions.
+    def test_pdb_set_trace_nested():
+        """This illustrates more-demanding use of set_trace with nested functions.
 
-    >>> class C(object):
-    ...     def calls_set_trace(self):
-    ...         y = 1
-    ...         import pdb; pdb.set_trace()
-    ...         self.f1()
-    ...         y = 2
-    ...     def f1(self):
-    ...         x = 1
-    ...         self.f2()
-    ...         x = 2
-    ...     def f2(self):
-    ...         z = 1
-    ...         z = 2
+        >>> class C(object):
+        ...     def calls_set_trace(self):
+        ...         y = 1
+        ...         import pdb; pdb.set_trace()
+        ...         self.f1()
+        ...         y = 2
+        ...     def f1(self):
+        ...         x = 1
+        ...         self.f2()
+        ...         x = 2
+        ...     def f2(self):
+        ...         z = 1
+        ...         z = 2
 
-    >>> calls_set_trace = C().calls_set_trace
+        >>> calls_set_trace = C().calls_set_trace
 
-    >>> doc = '''
-    ... >>> a = 1
-    ... >>> calls_set_trace()
-    ... '''
-    >>> parser = doctest.DocTestParser()
-    >>> runner = doctest.DocTestRunner(verbose=False)
-    >>> test = parser.get_doctest(doc, globals(), "foo-bar@baz", "foo-bar@baz.py", 0)
-    >>> real_stdin = sys.stdin
-    >>> sys.stdin = _FakeInput([
-    ...    'print(y)',  # print data defined in the function
-    ...    'step', 'step', 'step', 'step', 'step', 'step', 'print(z)',
-    ...    'up', 'print(x)',
-    ...    'up', 'print(y)',
-    ...    'up', 'print(foo)',
-    ...    'continue', # stop debugging
-    ...    ''])
+        >>> doc = '''
+        ... >>> a = 1
+        ... >>> calls_set_trace()
+        ... '''
+        >>> parser = doctest.DocTestParser()
+        >>> runner = doctest.DocTestRunner(verbose=False)
+        >>> test = parser.get_doctest(doc, globals(), "foo-bar@baz", "foo-bar@baz.py", 0)
+        >>> real_stdin = sys.stdin
+        >>> sys.stdin = _FakeInput([
+        ...    'print(y)',  # print data defined in the function
+        ...    'step', 'step', 'step', 'step', 'step', 'step', 'print(z)',
+        ...    'up', 'print(x)',
+        ...    'up', 'print(y)',
+        ...    'up', 'print(foo)',
+        ...    'continue', # stop debugging
+        ...    ''])
 
-    >>> try:
-    ...     runner.run(test)
-    ... finally:
-    ...     sys.stdin = real_stdin
-    ... # doctest: +REPORT_NDIFF
-    > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(5)calls_set_trace()
-    -> self.f1()
-    (Pdb) print(y)
-    1
-    (Pdb) step
-    --Call--
-    > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(7)f1()
-    -> def f1(self):
-    (Pdb) step
-    > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(8)f1()
-    -> x = 1
-    (Pdb) step
-    > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(9)f1()
-    -> self.f2()
-    (Pdb) step
-    --Call--
-    > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(11)f2()
-    -> def f2(self):
-    (Pdb) step
-    > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(12)f2()
-    -> z = 1
-    (Pdb) step
-    > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(13)f2()
-    -> z = 2
-    (Pdb) print(z)
-    1
-    (Pdb) up
-    > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(9)f1()
-    -> self.f2()
-    (Pdb) print(x)
-    1
-    (Pdb) up
-    > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(5)calls_set_trace()
-    -> self.f1()
-    (Pdb) print(y)
-    1
-    (Pdb) up
-    > <doctest foo-bar@baz[1]>(1)<module>()
-    -> calls_set_trace()
-    (Pdb) print(foo)
-    *** NameError: name 'foo' is not defined
-    (Pdb) continue
-    TestResults(failed=0, attempted=2)
-"""
+        >>> try:
+        ...     runner.run(test)
+        ... finally:
+        ...     sys.stdin = real_stdin
+        ... # doctest: +REPORT_NDIFF
+        > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(5)calls_set_trace()
+        -> self.f1()
+        (Pdb) print(y)
+        1
+        (Pdb) step
+        --Call--
+        > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(7)f1()
+        -> def f1(self):
+        (Pdb) step
+        > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(8)f1()
+        -> x = 1
+        (Pdb) step
+        > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(9)f1()
+        -> self.f2()
+        (Pdb) step
+        --Call--
+        > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(11)f2()
+        -> def f2(self):
+        (Pdb) step
+        > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(12)f2()
+        -> z = 1
+        (Pdb) step
+        > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(13)f2()
+        -> z = 2
+        (Pdb) print(z)
+        1
+        (Pdb) up
+        > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(9)f1()
+        -> self.f2()
+        (Pdb) print(x)
+        1
+        (Pdb) up
+        > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(5)calls_set_trace()
+        -> self.f1()
+        (Pdb) print(y)
+        1
+        (Pdb) up
+        > <doctest foo-bar@baz[1]>(1)<module>()
+        -> calls_set_trace()
+        (Pdb) print(foo)
+        *** NameError: name 'foo' is not defined
+        (Pdb) continue
+        TestResults(failed=0, attempted=2)
+    """
 
 def test_DocTestSuite():
     """DocTestSuite creates a unittest test suite from a doctest.

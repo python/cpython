@@ -1108,6 +1108,21 @@ def check_impl_detail(**guards):
     return guards.get(platform.python_implementation().lower(), default)
 
 
+def no_tracing(func):
+    """Decorator to temporarily turn off tracing for the duration of a test."""
+    if not hasattr(sys, 'gettrace'):
+        return func
+    else:
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            original_trace = sys.gettrace()
+            try:
+                sys.settrace(None)
+                return func(*args, **kwargs)
+            finally:
+                sys.settrace(original_trace)
+        return wrapper
+
 
 def _run_suite(suite):
     """Run tests from a unittest.TestSuite-derived class."""

@@ -20,9 +20,12 @@ class PdbTestInput(object):
     def __enter__(self):
         self.real_stdin = sys.stdin
         sys.stdin = _FakeInput(self.input)
+        self.orig_trace = sys.gettrace() if hasattr(sys, 'gettrace') else None
 
     def __exit__(self, *exc):
         sys.stdin = self.real_stdin
+        if self.orig_trace:
+            sys.settrace(self.orig_trace)
 
 
 def test_pdb_displayhook():

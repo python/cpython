@@ -827,7 +827,7 @@ class saved_test_environment:
     resources = ('sys.argv', 'cwd', 'sys.stdin', 'sys.stdout', 'sys.stderr',
                  'os.environ', 'sys.path', 'sys.path_hooks', '__import__',
                  'warnings.filters', 'asyncore.socket_map',
-                 'logging._handlers', 'logging._handlerList')
+                 'logging._handlers', 'logging._handlerList', 'sys.gettrace')
 
     def get_sys_argv(self):
         return id(sys.argv), sys.argv, sys.argv[:]
@@ -873,6 +873,11 @@ class saved_test_environment:
     def restore_sys_path_hooks(self, saved_hooks):
         sys.path_hooks = saved_hooks[1]
         sys.path_hooks[:] = saved_hooks[2]
+
+    def get_sys_gettrace(self):
+        return sys.gettrace()
+    def restore_sys_gettrace(self, trace_fxn):
+        sys.settrace(trace_fxn)
 
     def get___import__(self):
         return builtins.__import__

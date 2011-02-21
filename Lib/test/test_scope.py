@@ -1,5 +1,5 @@
 import unittest
-from test.support import check_syntax_error, run_unittest
+from test.support import check_syntax_error, cpython_only, run_unittest
 
 
 class ScopeTests(unittest.TestCase):
@@ -496,23 +496,22 @@ class ScopeTests(unittest.TestCase):
         self.assertNotIn("x", varnames)
         self.assertIn("y", varnames)
 
+    @cpython_only
     def testLocalsClass_WithTrace(self):
         # Issue23728: after the trace function returns, the locals()
         # dictionary is used to update all variables, this used to
         # include free variables. But in class statements, free
         # variables are not inserted...
         import sys
+        self.addCleanup(sys.settrace, sys.gettrace())
         sys.settrace(lambda a,b,c:None)
-        try:
-            x = 12
+        x = 12
 
-            class C:
-                def f(self):
-                    return x
+        class C:
+            def f(self):
+                return x
 
-            self.assertEqual(x, 12) # Used to raise UnboundLocalError
-        finally:
-            sys.settrace(None)
+        self.assertEqual(x, 12) # Used to raise UnboundLocalError
 
     def testBoundAndFree(self):
         # var is bound and free in class
@@ -527,6 +526,7 @@ class ScopeTests(unittest.TestCase):
         inst = f(3)()
         self.assertEqual(inst.a, inst.m())
 
+    @cpython_only
     def testInteractionWithTraceFunc(self):
 
         import sys
@@ -543,6 +543,7 @@ class ScopeTests(unittest.TestCase):
         class TestClass:
             pass
 
+        self.addCleanup(sys.settrace, sys.gettrace())
         sys.settrace(tracer)
         adaptgetter("foo", TestClass, (1, ""))
         sys.settrace(None)

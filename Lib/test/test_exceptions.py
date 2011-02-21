@@ -7,7 +7,7 @@ import pickle
 import weakref
 
 from test.support import (TESTFN, unlink, run_unittest, captured_output,
-                          gc_collect, cpython_only)
+                          gc_collect, cpython_only, no_tracing)
 
 # XXX This is not really enough, each *operation* should be tested!
 
@@ -388,6 +388,7 @@ class ExceptionTests(unittest.TestCase):
         x = DerivedException(fancy_arg=42)
         self.assertEqual(x.fancy_arg, 42)
 
+    @no_tracing
     def testInfiniteRecursion(self):
         def f():
             return f()
@@ -631,6 +632,7 @@ class ExceptionTests(unittest.TestCase):
         u.start = 1000
         self.assertEqual(str(u), "can't translate characters in position 1000-4: 965230951443685724997")
 
+    @no_tracing
     def test_badisinstance(self):
         # Bug #2542: if issubclass(e, MyException) raises an exception,
         # it should be ignored
@@ -741,6 +743,7 @@ class ExceptionTests(unittest.TestCase):
             self.fail("MemoryError not raised")
         self.assertEqual(wr(), None)
 
+    @no_tracing
     def test_recursion_error_cleanup(self):
         # Same test as above, but with "recursion exceeded" errors
         class C:

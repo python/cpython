@@ -102,6 +102,7 @@ class TracedClass(object):
 class TestLineCounts(unittest.TestCase):
     """White-box testing of line-counting, via runfunc"""
     def setUp(self):
+        self.addCleanup(sys.settrace, sys.gettrace())
         self.tracer = Trace(count=1, trace=0, countfuncs=0, countcallers=0)
         self.my_py_filename = fix_ext_py(__file__)
 
@@ -192,6 +193,7 @@ class TestRunExecCounts(unittest.TestCase):
     """A simple sanity test of line-counting, via runctx (exec)"""
     def setUp(self):
         self.my_py_filename = fix_ext_py(__file__)
+        self.addCleanup(sys.settrace, sys.gettrace())
 
     def test_exec_counts(self):
         self.tracer = Trace(count=1, trace=0, countfuncs=0, countcallers=0)
@@ -218,6 +220,7 @@ class TestRunExecCounts(unittest.TestCase):
 class TestFuncs(unittest.TestCase):
     """White-box testing of funcs tracing"""
     def setUp(self):
+        self.addCleanup(sys.settrace, sys.gettrace())
         self.tracer = Trace(count=0, trace=0, countfuncs=1)
         self.filemod = my_file_and_modname()
 
@@ -257,6 +260,7 @@ class TestFuncs(unittest.TestCase):
 class TestCallers(unittest.TestCase):
     """White-box testing of callers tracing"""
     def setUp(self):
+        self.addCleanup(sys.settrace, sys.gettrace())
         self.tracer = Trace(count=0, trace=0, countcallers=1)
         self.filemod = my_file_and_modname()
 
@@ -280,6 +284,9 @@ class TestCallers(unittest.TestCase):
 
 # Created separately for issue #3821
 class TestCoverage(unittest.TestCase):
+    def setUp(self):
+        self.addCleanup(sys.settrace, sys.gettrace())
+
     def tearDown(self):
         rmtree(TESTFN)
         unlink(TESTFN)
