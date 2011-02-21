@@ -1673,21 +1673,6 @@ PyObject *PyUnicode_AsEncodedString(PyObject *unicode,
                                          PyUnicode_GET_SIZE(unicode),
                                          errors);
     }
-    /* During bootstrap, we may need to find the encodings
-       package, to load the file system encoding, and require the
-       file system encoding in order to load the encodings
-       package.
-
-       Break out of this dependency by assuming that the path to
-       the encodings module is ASCII-only.  XXX could try wcstombs
-       instead, if the file system encoding is the locale's
-       encoding. */
-    if (Py_FileSystemDefaultEncoding &&
-             strcmp(encoding, Py_FileSystemDefaultEncoding) == 0 &&
-             !PyThreadState_GET()->interp->codecs_initialized)
-        return PyUnicode_EncodeASCII(PyUnicode_AS_UNICODE(unicode),
-                                     PyUnicode_GET_SIZE(unicode),
-                                     errors);
 
     /* Encode via the codec registry */
     v = PyCodec_Encode(unicode, encoding, errors);
