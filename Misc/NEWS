@@ -12,11 +12,15 @@ Core and Builtins
 
 - Check for NULL result in PyType_FromSpec.
 
+- Issue #11187: Remove bootstrap code (use ASCII) of
+  PyUnicode_AsEncodedString(), it was replaced by a better fallback (use the
+  locale encoding) in PyUnicode_EncodeFSDefault().
+
 Library
 -------
 
 - Issue #11089: Fix performance issue limiting the use of ConfigParser()
-  with large config files. 
+  with large config files.
 
 - Issue #10276: Fix the results of zlib.crc32() and zlib.adler32() on buffers
   larger than 4GB.  Patch by Nadeem Vawda.
