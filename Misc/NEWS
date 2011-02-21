@@ -173,6 +173,9 @@ Extension Modules
 Build
 -----
 
+- Issue #11268: Prevent Mac OS X Installer failure if Documentation
+  package had previously been installed.
+
 - Issue #11079: The /Applications/Python x.x folder created by the Mac
   OS X installers now includes a link to the installed documentation.
 
