@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #10830: Fix PyUnicode_FromFormatV("%c") for non-BMP characters on
+  narrow build.
+
 - Issue #11168: Remove filename debug variable from PyEval_EvalFrameEx().
   It encoded the Unicode filename to UTF-8, but the encoding fails on
   undecodable filename (on surrogate characters) which raises an unexpected

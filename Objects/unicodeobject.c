@@ -813,8 +813,19 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 
             switch (*f) {
             case 'c':
+            {
+#ifndef Py_UNICODE_WIDE
+                int ordinal = va_arg(count, int);
+                if (ordinal > 0xffff)
+                    n += 2;
+                else
+                    n++;
+#else
                 (void)va_arg(count, int);
-                /* fall through... */
+                n++;
+#endif
+                break;
+            }
             case '%':
                 n++;
                 break;
@@ -992,8 +1003,18 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 
             switch (*f) {
             case 'c':
-                *s++ = va_arg(vargs, int);
+            {
+                int ordinal = va_arg(vargs, int);
+#ifndef Py_UNICODE_WIDE
+                if (ordinal > 0xffff) {
+                    ordinal -= 0x10000;
+                    *s++ = 0xD800 | (ordinal >> 10);
+                    *s++ = 0xDC00 | (ordinal & 0x3FF);
+                } else
+#endif
+                *s++ = ordinal;
                 break;
+            }
             case 'd':
                 makefmt(fmt, longflag, longlongflag, size_tflag, zeropad,
                         width, precision, 'd');
