@@ -27,6 +27,12 @@ Build
 - Issue #11268: Prevent Mac OS X Installer failure if Documentation
   package had previously been installed.
 
+Tests
+-----
+
+- Issue #10826: Prevent sporadic failure in test_subprocess on Solaris due
+  to open door files.
+
 
 What's New in Python 3.2?
 =========================
