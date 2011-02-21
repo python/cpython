@@ -2372,9 +2372,9 @@ when one operand is much larger than the other (patch by Andress Bennetts in
 :issue:`8685`).  The :meth:`array.repeat` method has a faster implementation
 (:issue:`1569291` by Alexander Belopolsky). The :class:`BaseHTTPRequestHandler`
 has more efficient buffering (:issue:`3709` by Andrew Schaaf).  The
-multi-argument form of :func:`operator.attrgetter` function now runs slightly
-faster (:issue:`10160` by Christos Georgiou).  And :class:`ConfigParser` loads
-multi-line arguments a bit faster (:issue:`7113` by Łukasz Langa).
+:func:`operator.attrgetter` function has been sped-up (:issue:`10160` by
+Christos Georgiou).  And :class:`ConfigParser` loads multi-line arguments a bit
+faster (:issue:`7113` by Łukasz Langa).
 
 
 Unicode
