@@ -27,6 +27,6 @@ fi
 if [ -d "${SHARE_DIR}" ]; then
     mkdir -p "${SHARE_DOCDIR}"
     # make relative link to html doc directory
-    ln -s "${SHARE_DOCDIR_TO_FWK}/${FWK_DOCDIR_SUBPATH}" "${SHARE_DOCDIR}/html"
+    ln -fhs "${SHARE_DOCDIR_TO_FWK}/${FWK_DOCDIR_SUBPATH}" "${SHARE_DOCDIR}/html"
 fi
 
