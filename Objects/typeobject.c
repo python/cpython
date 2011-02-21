@@ -2330,6 +2330,8 @@ PyObject* PyType_FromSpec(PyType_Spec *spec)
     char *res_start = (char*)res;
     PyType_Slot *slot;
 
+    if (res == NULL)
+      return NULL;
     res->ht_name = PyUnicode_FromString(spec->name);
     if (!res->ht_name)
 	goto fail;

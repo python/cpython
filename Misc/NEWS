@@ -2,6 +2,17 @@
 Python News
 +++++++++++
 
+What's New in Python 3.2.1?
+===========================
+
+*Release date: XX-XXX-20XX*
+
+Core and Builtins
+-----------------
+
+- Check for NULL result in PyType_FromSpec.
+
+
 What's New in Python 3.2?
 =========================
 
