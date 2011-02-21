@@ -2,9 +2,15 @@ import unittest
 from test import support
 import binascii
 import random
+import sys
 from test.support import precisionbigmemtest, _1G, _4G
 
 zlib = support.import_module('zlib')
+
+try:
+    import mmap
+except ImportError:
+    mmap = None
 
 
 class ChecksumTestCase(unittest.TestCase):
@@ -56,6 +62,28 @@ class ChecksumTestCase(unittest.TestCase):
         self.assertEqual(zlib.crc32(foo), crc)
         self.assertEqual(binascii.crc32(b'spam'), zlib.crc32(b'spam'))
 
+
+# Issue #10276 - check that inputs >=4GB are handled correctly.
+class ChecksumBigBufferTestCase(unittest.TestCase):
+
+    def setUp(self):
+        with open(support.TESTFN, "wb+") as f:
+            f.seek(_4G)
+            f.write(b"asdf")
+            f.flush()
+            self.mapping = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
+
+    def tearDown(self):
+        self.mapping.close()
+        support.unlink(support.TESTFN)
+
+    @unittest.skipUnless(mmap, "mmap() is not available.")
+    @unittest.skipUnless(sys.maxsize > _4G, "Can't run on a 32-bit system.")
+    @unittest.skipUnless(support.is_resource_enabled("largefile"),
+                         "May use lots of disk space.")
+    def test_big_buffer(self):
+        self.assertEqual(zlib.crc32(self.mapping), 3058686908)
+        self.assertEqual(zlib.adler32(self.mapping), 82837919)
 
 
 class ExceptionTestCase(unittest.TestCase):
@@ -577,6 +605,7 @@ LAERTES
 def test_main():
     support.run_unittest(
         ChecksumTestCase,
+        ChecksumBigBufferTestCase,
         ExceptionTestCase,
         CompressTestCase,
         CompressObjectTestCase
