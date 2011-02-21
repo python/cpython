@@ -45,6 +45,9 @@ Build
 Tests
 -----
 
+- Issue #10826: Prevent sporadic failure in test_subprocess on Solaris due
+  to open door files.
+
 - Issue #10990: Prevent tests from clobbering a set trace function.
 
 
