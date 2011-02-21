@@ -1,4 +1,4 @@
-from test.support import TESTFN, run_unittest, import_module
+from test.support import TESTFN, run_unittest, import_module, unlink, requires
 import unittest
 import os
 import re
@@ -646,9 +646,56 @@ class MmapTests(unittest.TestCase):
                               "wrong exception raised in context manager")
         self.assertTrue(m.closed, "context manager failed")
 
+class LargeMmapTests(unittest.TestCase):
+
+    def setUp(self):
+        unlink(TESTFN)
+
+    def tearDown(self):
+        unlink(TESTFN)
+
+    def _working_largefile(self):
+        # Only run if the current filesystem supports large files.
+        f = open(TESTFN, 'wb', buffering=0)
+        try:
+            f.seek(0x80000001)
+            f.write(b'x')
+            f.flush()
+        except (IOError, OverflowError):
+            raise unittest.SkipTest("filesystem does not have largefile support")
+        finally:
+            f.close()
+            unlink(TESTFN)
+
+    def test_large_offset(self):
+        if sys.platform[:3] == 'win' or sys.platform == 'darwin':
+            requires('largefile',
+                'test requires %s bytes and a long time to run' % str(0x180000000))
+        self._working_largefile()
+        with open(TESTFN, 'wb') as f:
+            f.seek(0x14FFFFFFF)
+            f.write(b" ")
+
+        with open(TESTFN, 'rb') as f:
+            with mmap.mmap(f.fileno(), 0, offset=0x140000000, access=mmap.ACCESS_READ) as m:
+                self.assertEqual(m[0xFFFFFFF], 32)
+
+    def test_large_filesize(self):
+        if sys.platform[:3] == 'win' or sys.platform == 'darwin':
+            requires('largefile',
+                'test requires %s bytes and a long time to run' % str(0x180000000))
+        self._working_largefile()
+        with open(TESTFN, 'wb') as f:
+            f.seek(0x17FFFFFFF)
+            f.write(b" ")
+
+        with open(TESTFN, 'rb') as f:
+            with mmap.mmap(f.fileno(), 0x10000, access=mmap.ACCESS_READ) as m:
+                self.assertEqual(m.size(), 0x180000000)
+
 
 def test_main():
-    run_unittest(MmapTests)
+    run_unittest(MmapTests, LargeMmapTests)
 
 if __name__ == '__main__':
     test_main()
