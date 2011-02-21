@@ -945,7 +945,7 @@ PyZlib_adler32(PyObject *self, PyObject *args)
     /* Releasing the GIL for very small buffers is inefficient
        and may lower performance */
     if (pbuf.len > 1024*5) {
-        void *buf = pbuf.buf;
+        unsigned char *buf = pbuf.buf;
         Py_ssize_t len = pbuf.len;
 
         Py_BEGIN_ALLOW_THREADS
@@ -983,7 +983,7 @@ PyZlib_crc32(PyObject *self, PyObject *args)
     /* Releasing the GIL for very small buffers is inefficient
        and may lower performance */
     if (pbuf.len > 1024*5) {
-        void *buf = pbuf.buf;
+        unsigned char *buf = pbuf.buf;
         Py_ssize_t len = pbuf.len;
 
         Py_BEGIN_ALLOW_THREADS
