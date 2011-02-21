@@ -1373,6 +1373,7 @@ class DocTestRunner:
         # Note that the interactive output will go to *our*
         # save_stdout, even if that's not the real sys.stdout; this
         # allows us to write test cases for the set_trace behavior.
+        save_trace = sys.gettrace()
         save_set_trace = pdb.set_trace
         self.debugger = _OutputRedirectingPdb(save_stdout)
         self.debugger.reset()
@@ -1392,6 +1393,7 @@ class DocTestRunner:
         finally:
             sys.stdout = save_stdout
             pdb.set_trace = save_set_trace
+            sys.settrace(save_trace)
             linecache.getlines = self.save_linecache_getlines
             sys.displayhook = save_displayhook
             if clear_globs:

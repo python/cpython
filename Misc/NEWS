@@ -18,6 +18,10 @@ Library
 - Issue #10276: Fix the results of zlib.crc32() and zlib.adler32() on buffers
   larger than 4GB.  Patch by Nadeem Vawda.
 
+Tests
+
+- Issue #10990: Prevent tests from clobbering a set trace function.
+
 
 What's New in Python 3.2?
 =========================

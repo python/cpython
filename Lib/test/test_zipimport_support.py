@@ -163,20 +163,24 @@ class ZipSupportTests(unittest.TestCase):
                     test_zipped_doctest.test_DocTestRunner.verbose_flag,
                     test_zipped_doctest.test_Example,
                     test_zipped_doctest.test_debug,
-                    test_zipped_doctest.test_pdb_set_trace,
-                    test_zipped_doctest.test_pdb_set_trace_nested,
                     test_zipped_doctest.test_testsource,
                     test_zipped_doctest.test_trailing_space_in_test,
                     test_zipped_doctest.test_DocTestSuite,
                     test_zipped_doctest.test_DocTestFinder,
                 ]
-                # These remaining tests are the ones which need access
+                # These tests are the ones which need access
                 # to the data files, so we don't run them
                 fail_due_to_missing_data_files = [
                     test_zipped_doctest.test_DocFileSuite,
                     test_zipped_doctest.test_testfile,
                     test_zipped_doctest.test_unittest_reportflags,
                 ]
+                # These tests are skipped when a trace funciton is set
+                can_fail_due_to_tracing = [
+                    test_zipped_doctest.test_pdb_set_trace,
+                    test_zipped_doctest.test_pdb_set_trace_nested,
+                ]
+
                 for obj in known_good_tests:
                     _run_object_doctest(obj, test_zipped_doctest)
             finally:

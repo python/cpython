@@ -2214,6 +2214,7 @@ class TextIOWrapperTest(unittest.TestCase):
         with self.open(support.TESTFN, "w", errors="replace") as f:
             self.assertEqual(f.errors, "replace")
 
+    @support.no_tracing
     @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_threads_write(self):
         # Issue6750: concurrent writes could duplicate data
@@ -2669,6 +2670,7 @@ class SignalsTest(unittest.TestCase):
     def test_interrupted_write_text(self):
         self.check_interrupted_write("xy", b"xy", mode="w", encoding="ascii")
 
+    @support.no_tracing
     def check_reentrant_write(self, data, **fdopen_kwargs):
         def on_alarm(*args):
             # Will be called reentrantly from the same thread

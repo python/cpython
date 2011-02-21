@@ -5,7 +5,7 @@ import pickletools
 import copyreg
 from http.cookies import SimpleCookie
 
-from test.support import TestFailed, TESTFN, run_with_locale
+from test.support import TestFailed, TESTFN, run_with_locale, no_tracing
 
 from pickle import bytes_types
 
@@ -1002,6 +1002,7 @@ class AbstractPickleTests(unittest.TestCase):
             y = self.loads(s)
             self.assertEqual(y._reduce_called, 1)
 
+    @no_tracing
     def test_bad_getattr(self):
         x = BadGetattr()
         for proto in 0, 1:

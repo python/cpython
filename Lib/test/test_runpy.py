@@ -6,7 +6,8 @@ import sys
 import re
 import tempfile
 import py_compile
-from test.support import forget, make_legacy_pyc, run_unittest, unload, verbose
+from test.support import (
+    forget, make_legacy_pyc, run_unittest, unload, verbose, no_tracing)
 from test.script_helper import (
     make_pkg, make_script, make_zip_pkg, make_zip_script, temp_dir)
 
@@ -395,6 +396,7 @@ argv0 = sys.argv[0]
             msg = "can't find '__main__' module in %r" % zip_name
             self._check_import_error(zip_name, msg)
 
+    @no_tracing
     def test_main_recursion_error(self):
         with temp_dir() as script_dir, temp_dir() as dummy_dir:
             mod_name = '__main__'
