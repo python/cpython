@@ -119,7 +119,7 @@ ConfigParser -- responsible for parsing a list of
         between keys and values are surrounded by spaces.
 """
 
-from collections import MutableMapping, OrderedDict as _default_dict
+from collections import MutableMapping, OrderedDict as _default_dict, _ChainMap
 import functools
 import io
 import itertools
@@ -1099,23 +1099,24 @@ class RawConfigParser(MutableMapping):
         return exc
 
     def _unify_values(self, section, vars):
-        """Create a copy of the DEFAULTSECT with values from a specific
-        `section' and the `vars' dictionary. If provided, values in `vars'
-        take precendence.
+        """Create a sequence of lookups with 'vars' taking priority over
+        the 'section' which takes priority over the DEFAULTSECT.
+
         """
-        d = self._defaults.copy()
+        sectiondict = {}
         try:
-            d.update(self._sections[section])
+            sectiondict = self._sections[section]
         except KeyError:
             if section != self.default_section:
                 raise NoSectionError(section)
         # Update with the entry specific variables
+        vardict = {}
         if vars:
             for key, value in vars.items():
                 if value is not None:
                     value = str(value)
-                d[self.optionxform(key)] = value
-        return d
+                vardict[self.optionxform(key)] = value
+        return _ChainMap(vardict, sectiondict, self._defaults)
 
     def _convert_to_boolean(self, value):
         """Return a boolean value translating from other types if necessary.

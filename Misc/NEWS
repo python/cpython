@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11089: Fix performance issue limiting the use of ConfigParser()
+  with large config files. 
+
 - Issue #10276: Fix the results of zlib.crc32() and zlib.adler32() on buffers
   larger than 4GB.  Patch by Nadeem Vawda.
 
