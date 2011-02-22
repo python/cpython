@@ -1124,6 +1124,17 @@ def no_tracing(func):
         return wrapper
 
 
+def refcount_test(test):
+    """Decorator for tests which involve reference counting.
+
+    To start, the decorator does not run the test if is not run by CPython.
+    After that, any trace function is unset during the test to prevent
+    unexpected refcounts caused by the trace function.
+
+    """
+    return no_tracing(cpython_only(test))
+
+
 def _run_suite(suite):
     """Run tests from a unittest.TestSuite-derived class."""
     if verbose:

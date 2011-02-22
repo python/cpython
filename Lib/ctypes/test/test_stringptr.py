@@ -1,4 +1,5 @@
 import unittest
+from test import support
 from ctypes import *
 
 import _ctypes_test
@@ -7,6 +8,7 @@ lib = CDLL(_ctypes_test.__file__)
 
 class StringPtrTestCase(unittest.TestCase):
 
+    @support.refcount_test
     def test__POINTER_c_char(self):
         class X(Structure):
             _fields_ = [("str", POINTER(c_char))]

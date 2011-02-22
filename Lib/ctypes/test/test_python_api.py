@@ -1,5 +1,6 @@
 from ctypes import *
 import unittest, sys
+from test import support
 from ctypes.test import is_resource_enabled
 
 ################################################################
@@ -25,6 +26,7 @@ class PythonAPITestCase(unittest.TestCase):
 
         self.assertEqual(PyBytes_FromStringAndSize(b"abcdefghi", 3), b"abc")
 
+    @support.refcount_test
     def test_PyString_FromString(self):
         pythonapi.PyBytes_FromString.restype = py_object
         pythonapi.PyBytes_FromString.argtypes = (c_char_p,)
@@ -56,6 +58,7 @@ class PythonAPITestCase(unittest.TestCase):
             del res
             self.assertEqual(grc(42), ref42)
 
+    @support.refcount_test
     def test_PyObj_FromPtr(self):
         s = "abc def ghi jkl"
         ref = grc(s)

@@ -257,11 +257,15 @@ Verify that genexps are weakly referencable
 
 """
 
+import sys
 
-__test__ = {'doctests' : doctests}
+# Trace function can throw off the tuple reuse test.
+if hasattr(sys, 'gettrace') and sys.gettrace():
+    __test__ = {}
+else:
+    __test__ = {'doctests' : doctests}
 
 def test_main(verbose=None):
-    import sys
     from test import support
     from test import test_genexps
     support.run_doctest(test_genexps, verbose)

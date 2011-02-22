@@ -246,7 +246,13 @@ Test failures in looking up the __prepare__ method work.
 
 """
 
-__test__ = {'doctests' : doctests}
+import sys
+
+# Trace function introduces __locals__ which causes various tests to fail.
+if hasattr(sys, 'gettrace') and sys.gettrace():
+    __test__ = {}
+else:
+    __test__ = {'doctests' : doctests}
 
 def test_main(verbose=False):
     from test import support
