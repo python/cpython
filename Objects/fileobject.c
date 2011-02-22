@@ -297,8 +297,8 @@ Py_UniversalNewlineFgets(char *buf, int n, FILE *stream, PyObject *fobj)
         *p++ = c;
         if (c == '\n') break;
     }
-    if ( c == EOF && skipnextlf )
-        newlinetypes |= NEWLINE_CR;
+    /* if ( c == EOF && skipnextlf )
+        newlinetypes |= NEWLINE_CR; */
     FUNLOCKFILE(stream);
     *p = '\0';
     if ( skipnextlf ) {

@@ -126,11 +126,9 @@ static int pysqlite_cursor_init(pysqlite_Cursor* self, PyObject* args, PyObject*
 
 static void pysqlite_cursor_dealloc(pysqlite_Cursor* self)
 {
-    int rc;
-
     /* Reset the statement if the user has not closed the cursor */
     if (self->statement) {
-        rc = pysqlite_statement_reset(self->statement);
+        pysqlite_statement_reset(self->statement);
         Py_DECREF(self->statement);
     }
 
@@ -529,7 +527,7 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
 
     if (self->statement != NULL) {
         /* There is an active statement */
-        rc = pysqlite_statement_reset(self->statement);
+        pysqlite_statement_reset(self->statement);
     }
 
     operation_cstr = _PyUnicode_AsStringAndSize(operation, &operation_len);
@@ -734,7 +732,7 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
         }
 
         if (multiple) {
-            rc = pysqlite_statement_reset(self->statement);
+            pysqlite_statement_reset(self->statement);
         }
         Py_XDECREF(parameters);
     }

@@ -86,7 +86,7 @@ PyTuple_New(register Py_ssize_t size)
         {
             return PyErr_NoMemory();
         }
-        nbytes += sizeof(PyTupleObject) - sizeof(PyObject *);
+        /* nbytes += sizeof(PyTupleObject) - sizeof(PyObject *); */
 
         op = PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, size);
         if (op == NULL)

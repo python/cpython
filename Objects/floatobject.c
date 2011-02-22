@@ -197,7 +197,6 @@ PyFloat_FromString(PyObject *v)
             Py_DECREF(s_buffer);
             return NULL;
         }
-        last = s + len;
     }
     else if (PyObject_AsCharBuffer(v, &s, &len)) {
         PyErr_SetString(PyExc_TypeError,
@@ -2246,7 +2245,7 @@ _PyFloat_Pack8(double x, unsigned char *p, int le)
 
         /* Eighth byte */
         *p = flo & 0xFF;
-        p += incr;
+        /* p += incr; */
 
         /* Done */
         return 0;

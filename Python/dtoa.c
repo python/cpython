@@ -2055,7 +2055,7 @@ _Py_dg_strtod(const char *s00, char **se)
                         + Exp_msk1
                         ;
                     word1(&rv) = 0;
-                    dsign = 0;
+                    /* dsign = 0; */
                     break;
                 }
             }
@@ -2092,7 +2092,7 @@ _Py_dg_strtod(const char *s00, char **se)
                     goto undfl;
                 }
             }
-            dsign = 1 - dsign;
+            /* dsign = 1 - dsign; */
             break;
         }
         if ((aadj = ratio(delta, bs)) <= 2.) {

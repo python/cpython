@@ -513,7 +513,6 @@ audioop_findfit(PyObject *self, PyObject *args)
 
     best_result = result;
     best_j = 0;
-    j = 0;
 
     for ( j=1; j<=len1-len2; j++) {
         aj_m1 = (double)cp1[j-1];
@@ -599,7 +598,6 @@ audioop_findmax(PyObject *self, PyObject *args)
 
     best_result = result;
     best_j = 0;
-    j = 0;
 
     for ( j=1; j<=len1-len2; j++) {
         aj_m1 = (double)cp1[j-1];
@@ -1433,7 +1431,6 @@ audioop_lin2adpcm(PyObject *self, PyObject *args)
     if ( state == Py_None ) {
         /* First time, it seems. Set defaults */
         valpred = 0;
-        step = 7;
         index = 0;
     } else if ( !PyArg_ParseTuple(state, "ii", &valpred, &index) )
         return 0;
@@ -1534,7 +1531,6 @@ audioop_adpcm2lin(PyObject *self, PyObject *args)
     if ( state == Py_None ) {
         /* First time, it seems. Set defaults */
         valpred = 0;
-        step = 7;
         index = 0;
     } else if ( !PyArg_ParseTuple(state, "ii", &valpred, &index) )
         return 0;

@@ -53,8 +53,9 @@ acquire_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds)
     _PyTime_timeval curtime;
     _PyTime_timeval endtime;
 
+
+    _PyTime_gettimeofday(&endtime);
     if (microseconds > 0) {
-        _PyTime_gettimeofday(&endtime);
         endtime.tv_sec += microseconds / (1000 * 1000);
         endtime.tv_usec += microseconds % (1000 * 1000);
     }

@@ -902,7 +902,7 @@ subtype_dealloc(PyObject *self)
 
     /* Find the nearest base with a different tp_dealloc */
     base = type;
-    while ((basedealloc = base->tp_dealloc) == subtype_dealloc) {
+    while ((/*basedealloc =*/ base->tp_dealloc) == subtype_dealloc) {
         base = base->tp_base;
         assert(base);
     }

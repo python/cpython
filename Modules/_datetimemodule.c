@@ -1461,7 +1461,7 @@ delta_to_microseconds(PyDateTime_Delta *self)
         goto Done;
     Py_DECREF(x1);
     Py_DECREF(x2);
-    x1 = x2 = NULL;
+    /* x1 = */ x2 = NULL;
 
     /* x3 has days+seconds in seconds */
     x1 = PyNumber_Multiply(x3, us_per_second);          /* us */

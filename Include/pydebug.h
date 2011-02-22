@@ -26,8 +26,6 @@ PyAPI_DATA(int) Py_UnbufferedStdioFlag;
    PYTHONPATH and PYTHONHOME from the environment */
 #define Py_GETENV(s) (Py_IgnoreEnvironmentFlag ? NULL : getenv(s))
 
-PyAPI_FUNC(void) Py_FatalError(const char *message);
-
 #ifdef __cplusplus
 }
 #endif

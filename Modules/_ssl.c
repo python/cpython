@@ -354,7 +354,6 @@ static PyObject *PySSL_SSLdo_handshake(PySSLSocket *self)
 
     /* Actually negotiate SSL connection */
     /* XXX If SSL_do_handshake() returns 0, it's also a failure. */
-    sockstate = 0;
     do {
         PySSL_BEGIN_ALLOW_THREADS
         ret = SSL_do_handshake(self->ssl);
@@ -1090,7 +1089,6 @@ static PyObject *PySSL_SSLwrite(PySSLSocket *self, PyObject *args)
         goto error;
     }
     do {
-        err = 0;
         PySSL_BEGIN_ALLOW_THREADS
         len = SSL_write(self->ssl, buf.buf, buf.len);
         err = SSL_get_error(self->ssl, len);
@@ -1226,7 +1224,6 @@ static PyObject *PySSL_SSLread(PySSLSocket *self, PyObject *args)
         }
     }
     do {
-        err = 0;
         PySSL_BEGIN_ALLOW_THREADS
         count = SSL_read(self->ssl, mem, len);
         err = SSL_get_error(self->ssl, count);

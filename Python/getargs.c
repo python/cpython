@@ -966,9 +966,10 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     case 'u': /* raw unicode buffer (Py_UNICODE *) */
     case 'Z': /* raw unicode buffer or None */
     {
+        Py_UNICODE **p = va_arg(*p_va, Py_UNICODE **);
+
         if (*format == '#') { /* any buffer-like object */
             /* "s#" or "Z#" */
-            Py_UNICODE **p = va_arg(*p_va, Py_UNICODE **);
             FETCH_SIZE;
 
             if (c == 'Z' && arg == Py_None) {
@@ -984,8 +985,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             format++;
         } else {
             /* "s" or "Z" */
-            Py_UNICODE **p = va_arg(*p_va, Py_UNICODE **);
-
             if (c == 'Z' && arg == Py_None)
                 *p = NULL;
             else if (PyUnicode_Check(arg)) {

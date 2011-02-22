@@ -938,13 +938,11 @@ static int
 bytesiobuf_getbuffer(bytesiobuf *obj, Py_buffer *view, int flags)
 {
     int ret;
-    void *ptr;
     bytesio *b = (bytesio *) obj->source;
     if (view == NULL) {
         b->exports++;
         return 0;
     }
-    ptr = (void *) obj;
     ret = PyBuffer_FillInfo(view, (PyObject*)obj, b->buf, b->string_size,
                             0, flags);
     if (ret >= 0) {

@@ -2439,7 +2439,7 @@ If the argument is omitted, strip trailing ASCII whitespace.");
 static PyObject *
 bytearray_rstrip(PyByteArrayObject *self, PyObject *args)
 {
-    Py_ssize_t left, right, mysize, argsize;
+    Py_ssize_t right, mysize, argsize;
     void *myptr, *argptr;
     PyObject *arg = Py_None;
     Py_buffer varg;
@@ -2457,11 +2457,10 @@ bytearray_rstrip(PyByteArrayObject *self, PyObject *args)
     }
     myptr = self->ob_bytes;
     mysize = Py_SIZE(self);
-    left = 0;
     right = rstrip_helper(myptr, mysize, argptr, argsize);
     if (arg != Py_None)
         PyBuffer_Release(&varg);
-    return PyByteArray_FromStringAndSize(self->ob_bytes + left, right - left);
+    return PyByteArray_FromStringAndSize(self->ob_bytes, right);
 }
 
 PyDoc_STRVAR(decode_doc,
