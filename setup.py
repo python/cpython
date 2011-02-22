@@ -636,7 +636,7 @@ class PyBuildExt(build_ext):
             libs = ['crypt']
         else:
             libs = []
-        exts.append( Extension('crypt', ['cryptmodule.c'], libraries=libs) )
+        exts.append( Extension('_crypt', ['_cryptmodule.c'], libraries=libs) )
 
         # CSV files
         exts.append( Extension('_csv', ['_csv.c']) )

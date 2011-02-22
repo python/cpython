@@ -207,7 +207,7 @@ _symtable symtablemodule.c
 #
 # First, look at Setup.config; configure may have set this for you.
 
-#crypt cryptmodule.c # -lcrypt	# crypt(3); needs -lcrypt on some systems
+#_crypt _cryptmodule.c # -lcrypt	# crypt(3); needs -lcrypt on some systems
 
 
 # Some more UNIX dependent modules -- off by default, since these
