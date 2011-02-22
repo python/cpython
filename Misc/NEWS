@@ -27,6 +27,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #11074: Make 'tokenize' so it can be reloaded.
+
 - Issue #11085: Moved collections abstract base classes into a separate
   module called collections.abc, following the pattern used by importlib.abc.
   For backwards compatibility, the names are imported into the collections
