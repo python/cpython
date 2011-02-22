@@ -1,4 +1,5 @@
 import unittest
+from test import support
 import ctypes
 import gc
 
@@ -10,6 +11,7 @@ dll = ctypes.CDLL(_ctypes_test.__file__)
 
 class RefcountTestCase(unittest.TestCase):
 
+    @support.refcount_test
     def test_1(self):
         from sys import getrefcount as grc
 
@@ -34,6 +36,7 @@ class RefcountTestCase(unittest.TestCase):
         self.assertEqual(grc(callback), 2)
 
 
+    @support.refcount_test
     def test_refcount(self):
         from sys import getrefcount as grc
         def func(*args):

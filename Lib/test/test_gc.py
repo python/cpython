@@ -1,5 +1,6 @@
 import unittest
-from test.support import verbose, run_unittest, strip_python_stderr
+from test.support import (verbose, refcount_test, run_unittest,
+                            strip_python_stderr)
 import sys
 import gc
 import weakref
@@ -175,6 +176,7 @@ class GCTests(unittest.TestCase):
         del d
         self.assertEqual(gc.collect(), 2)
 
+    @refcount_test
     def test_frame(self):
         def f():
             frame = sys._getframe()
@@ -242,6 +244,7 @@ class GCTests(unittest.TestCase):
     # For example:
     # - disposed tuples are not freed, but reused
     # - the call to assertEqual somehow avoids building its args tuple
+    @refcount_test
     def test_get_count(self):
         # Avoid future allocation of method object
         assertEqual = self._baseAssertEqual
@@ -252,6 +255,7 @@ class GCTests(unittest.TestCase):
         # the dict, and the tuple returned by get_count()
         assertEqual(gc.get_count(), (2, 0, 0))
 
+    @refcount_test
     def test_collect_generations(self):
         # Avoid future allocation of method object
         assertEqual = self.assertEqual

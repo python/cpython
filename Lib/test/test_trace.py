@@ -245,6 +245,8 @@ class TestFuncs(unittest.TestCase):
         }
         self.assertEqual(self.tracer.results().calledfuncs, expected)
 
+    @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
+                     'pre-existing trace function throws off measurements')
     def test_inst_method_calling(self):
         obj = TracedClass(20)
         self.tracer.runfunc(obj.inst_method_calling, 1)
@@ -264,6 +266,8 @@ class TestCallers(unittest.TestCase):
         self.tracer = Trace(count=0, trace=0, countcallers=1)
         self.filemod = my_file_and_modname()
 
+    @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
+                     'pre-existing trace function throws off measurements')
     def test_loop_caller_importing(self):
         self.tracer.runfunc(traced_func_importing_caller, 1)
 
