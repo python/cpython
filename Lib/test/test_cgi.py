@@ -155,6 +155,7 @@ class CgiTests(unittest.TestCase):
             cgi.logfp = None
             cgi.logfile = "/dev/null"
             cgi.initlog("%s", "Testing log 3")
+            self.addCleanup(cgi.logfp.close)
             cgi.log("Testing log 4")
 
     def test_fieldstorage_readline(self):
