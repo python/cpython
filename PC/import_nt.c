@@ -15,10 +15,10 @@
 /* a string loaded from the DLL at startup */
 extern const char *PyWin_DLLVersionString;
 
-FILE *PyWin_FindRegisteredModule(const char *moduleName,
-                                 struct filedescr **ppFileDesc,
-                                 char *pathBuf,
-                                 Py_ssize_t pathLen)
+FILE *_PyWin_FindRegisteredModule(const char *moduleName,
+                                  struct filedescr **ppFileDesc,
+                                  char *pathBuf,
+                                  Py_ssize_t pathLen)
 {
     char *moduleKey;
     const char keyPrefix[] = "Software\\Python\\PythonCore\\";

@@ -1547,8 +1547,8 @@ PyImport_GetImporter(PyObject *path) {
    pathname and an open file.  Return NULL if the module is not found. */
 
 #ifdef MS_COREDLL
-extern FILE *PyWin_FindRegisteredModule(const char *, struct filedescr **,
-                                        char *, Py_ssize_t);
+extern FILE *_PyWin_FindRegisteredModule(const char *, struct filedescr **,
+                                         char *, Py_ssize_t);
 #endif
 
 static int case_ok(char *, Py_ssize_t, Py_ssize_t, char *);
@@ -1631,7 +1631,7 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
             return &fd_builtin;
         }
 #ifdef MS_COREDLL
-        fp = PyWin_FindRegisteredModule(name, &fdp, buf, buflen);
+        fp = _PyWin_FindRegisteredModule(name, &fdp, buf, buflen);
         if (fp != NULL) {
             *p_fp = fp;
             return fdp;
