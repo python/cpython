@@ -633,7 +633,7 @@ class Counter(dict):
 
 
 ########################################################################
-###  ChainMap (helper for configparser)
+###  ChainMap (helper for configparser and string.Template)
 ########################################################################
 
 class _ChainMap(MutableMapping):
