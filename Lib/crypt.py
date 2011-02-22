@@ -53,5 +53,10 @@ METHOD_MD5 = _Method('MD5', '1', 8, 34)
 METHOD_SHA256 = _Method('SHA256', '5', 16, 63)
 METHOD_SHA512 = _Method('SHA512', '6', 16, 106)
 
-methods = [METHOD_SHA512, METHOD_SHA256, METHOD_MD5, METHOD_CRYPT]
-methods[:-1] = [m for m in methods[:-1] if len(crypt('', m)) == m.total_size]
+methods = []
+for _method in (METHOD_SHA512, METHOD_SHA256, METHOD_MD5):
+    _result = crypt('', _method)
+    if _result and len(_result) == _method.total_size:
+        methods.append(_method)
+methods.append(METHOD_CRYPT)
+del _result, _method
