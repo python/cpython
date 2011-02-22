@@ -60,6 +60,20 @@ are available on all platforms):
 
 .. versionadded:: 3.3
 
+
+Module Attributes
+-----------------
+
+
+.. attribute:: methods
+
+   A list of available password hashing algorithms, as
+   ``crypt.METHOD_*`` objects.  This list is sorted from strongest to
+   weakest, and is guaranteed to have at least ``crypt.METHOD_CRYPT``.
+
+.. versionadded:: 3.3
+
+
 Module Functions
 ----------------
 
@@ -98,13 +112,6 @@ The :mod:`crypt` module defines the following functions:
    Before version 3.3, *salt*  must be specified as a string and cannot
    accept ``crypt.METHOD_*`` values (which don't exist anyway).
 
-.. function:: methods()
-
-   Return a list of available password hashing algorithms, as
-   ``crypt.METHOD_*`` objects.  This list is sorted from strongest to
-   weakest, and is guaranteed to have at least ``crypt.METHOD_CRYPT``.
-
-.. versionadded:: 3.3
 
 .. function:: mksalt(method=None)
 
