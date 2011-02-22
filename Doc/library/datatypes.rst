@@ -21,6 +21,7 @@ The following modules are documented in this chapter:
    datetime.rst
    calendar.rst
    collections.rst
+   collections.abc.rst
    heapq.rst
    bisect.rst
    array.rst

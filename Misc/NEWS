@@ -27,6 +27,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #11085: Moved collections abstract base classes into a separate
+  module called collections.abc, following the pattern used by importlib.abc.
+  For backwards compatibility, the names are imported into the collections
+  module.
+
 - Issue #4681: Allow mmap() to work on file sizes and offsets larger than
   4GB, even on 32-bit builds.  Initial patch by Ross Lagerwall, adapted for
   32-bit Windows.

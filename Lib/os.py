@@ -434,7 +434,7 @@ def get_exec_path(env=None):
 
 
 # Change environ to automatically call putenv(), unsetenv if they exist.
-from _abcoll import MutableMapping  # Can't use collections (bootstrap)
+from collections.abc import MutableMapping
 
 class _Environ(MutableMapping):
     def __init__(self, data, encodekey, decodekey, encodevalue, decodevalue, putenv, unsetenv):
