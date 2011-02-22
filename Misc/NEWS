@@ -15,6 +15,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #11074: Make 'tokenize' so it can be reloaded.
+
 - Issue #4681: Allow mmap() to work on file sizes and offsets larger than
   4GB, even on 32-bit builds.  Initial patch by Ross Lagerwall, adapted for
   32-bit Windows.
