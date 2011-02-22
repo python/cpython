@@ -589,11 +589,11 @@ class FTP:
 
     def close(self):
         '''Close the connection without assuming anything about it.'''
-        if self.file:
+        if self.file is not None:
             self.file.close()
+        if self.sock is not None:
             self.sock.close()
-            self.file = self.sock = None
-
+        self.file = self.sock = None
 
 try:
     import ssl
