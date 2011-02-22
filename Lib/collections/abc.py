@@ -3,9 +3,7 @@
 
 """Abstract Base Classes (ABCs) for collections, according to PEP 3119.
 
-DON'T USE THIS MODULE DIRECTLY!  The classes here should be imported
-via collections; they are defined here only to alleviate certain
-bootstrapping issues.  Unit tests are in test_collections.
+Unit tests are in test_collections.
 """
 
 from abc import ABCMeta, abstractmethod

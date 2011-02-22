@@ -1,10 +1,11 @@
 __all__ = ['deque', 'defaultdict', 'namedtuple', 'UserDict', 'UserList',
             'UserString', 'Counter', 'OrderedDict']
-# For bootstrapping reasons, the collection ABCs are defined in _abcoll.py.
-# They should however be considered an integral part of collections.py.
-from _abcoll import *
-import _abcoll
-__all__ += _abcoll.__all__
+
+# For backwards compatability, continue to make the collections ABCs
+# available through the collections module.
+from collections.abc import *
+import collections.abc
+__all__ += collections.abc.__all__
 
 from _collections import deque, defaultdict
 from operator import itemgetter as _itemgetter

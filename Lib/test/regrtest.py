@@ -1056,7 +1056,8 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
         False if the test didn't leak references; True if we detected refleaks.
     """
     # This code is hackish and inelegant, but it seems to do the job.
-    import copyreg, _abcoll
+    import copyreg
+    import collections.abc
 
     if not hasattr(sys, 'gettotalrefcount'):
         raise Exception("Tracking reference leaks requires a debug build "
@@ -1073,7 +1074,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     else:
         zdc = zipimport._zip_directory_cache.copy()
     abcs = {}
-    for abc in [getattr(_abcoll, a) for a in _abcoll.__all__]:
+    for abc in [getattr(collections.abc, a) for a in collections.abc.__all__]:
         if not isabstract(abc):
             continue
         for obj in abc.__subclasses__() + [abc]:
@@ -1119,7 +1120,7 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     import gc, copyreg
     import _strptime, linecache
     import urllib.parse, urllib.request, mimetypes, doctest
-    import struct, filecmp, _abcoll
+    import struct, filecmp, collections.abc
     from distutils.dir_util import _path_created
     from weakref import WeakSet
 
@@ -1146,7 +1147,7 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     sys._clear_type_cache()
 
     # Clear ABC registries, restoring previously saved ABC registries.
-    for abc in [getattr(_abcoll, a) for a in _abcoll.__all__]:
+    for abc in [getattr(collections.abc, a) for a in collections.abc.__all__]:
         if not isabstract(abc):
             continue
         for obj in abc.__subclasses__() + [abc]:
