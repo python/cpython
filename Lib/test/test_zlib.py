@@ -70,7 +70,7 @@ class ChecksumBigBufferTestCase(unittest.TestCase):
         with open(support.TESTFN, "wb+") as f:
             f.seek(_4G)
             f.write(b"asdf")
-            f.flush()
+        with open(support.TESTFN, "rb") as f:
             self.mapping = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
 
     def tearDown(self):
