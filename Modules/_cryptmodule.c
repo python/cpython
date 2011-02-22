@@ -45,7 +45,7 @@ static PyMethodDef crypt_methods[] = {
 
 static struct PyModuleDef cryptmodule = {
     PyModuleDef_HEAD_INIT,
-    "crypt",
+    "_crypt",
     NULL,
     -1,
     crypt_methods,
@@ -56,7 +56,7 @@ static struct PyModuleDef cryptmodule = {
 };
 
 PyMODINIT_FUNC
-PyInit_crypt(void)
+PyInit__crypt(void)
 {
     return PyModule_Create(&cryptmodule);
 }
