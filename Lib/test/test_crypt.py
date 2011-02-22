@@ -25,7 +25,10 @@ class CryptTestCase(unittest.TestCase):
             self.assertEqual(len(pw), method.total_size)
 
     def test_methods(self):
-        self.assertTrue(len(crypt.methods()) > 1)
+        # Gurantee that METHOD_CRYPT is the last method in crypt.methods().
+        methods = crypt.methods()
+        self.assertTrue(len(methods) >= 1)
+        self.assertEqual(crypt.METHOD_CRYPT, methods[-1])
 
 def test_main():
     support.run_unittest(CryptTestCase)
