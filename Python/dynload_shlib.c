@@ -75,7 +75,7 @@ static struct {
 static int nhandles = 0;
 
 
-dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
+dl_funcptr _PyImport_GetDynLoadFunc(const char *shortname,
                                     const char *pathname, FILE *fp)
 {
     dl_funcptr p;

@@ -12,8 +12,7 @@
 
 #include "importdl.h"
 
-extern dl_funcptr _PyImport_GetDynLoadFunc(const char *name,
-                                           const char *shortname,
+extern dl_funcptr _PyImport_GetDynLoadFunc(const char *shortname,
                                            const char *pathname, FILE *fp);
 
 
@@ -48,7 +47,7 @@ _PyImport_LoadDynamicModule(char *name, char *pathname, FILE *fp)
         shortname = lastdot+1;
     }
 
-    p0 = _PyImport_GetDynLoadFunc(name, shortname, pathname, fp);
+    p0 = _PyImport_GetDynLoadFunc(shortname, pathname, fp);
     p = (PyObject*(*)(void))p0;
     if (PyErr_Occurred())
         goto error;
