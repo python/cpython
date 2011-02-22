@@ -123,7 +123,7 @@ struct iso2022_config {
 
 CODEC_INIT(iso2022)
 {
-    const struct iso2022_designation *desig = CONFIG_DESIGNATIONS;
+    const struct iso2022_designation *desig;
     for (desig = CONFIG_DESIGNATIONS; desig->mark; desig++)
         if (desig->initializer != NULL && desig->initializer() != 0)
             return -1;

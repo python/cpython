@@ -2690,7 +2690,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                 Py_DECREF(*pfunc);
                 *pfunc = self;
                 na++;
-                n++;
+                /* n++; */
             } else
                 Py_INCREF(func);
             sp = stack_pointer;
@@ -3026,7 +3026,7 @@ fast_yield:
                                 PyTrace_RETURN, retval)) {
                 Py_XDECREF(retval);
                 retval = NULL;
-                why = WHY_EXCEPTION;
+                /* why = WHY_EXCEPTION; */
             }
         }
     }

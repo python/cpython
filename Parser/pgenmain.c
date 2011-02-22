@@ -29,6 +29,8 @@ int Py_IgnoreEnvironmentFlag;
 /* Forward */
 grammar *getgrammar(char *filename);
 
+void Py_Exit(int) _Py_NO_RETURN;
+
 void
 Py_Exit(int sts)
 {

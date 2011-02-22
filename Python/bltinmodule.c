@@ -37,7 +37,7 @@ builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *func, *name, *bases, *mkw, *meta, *prep, *ns, *cell;
     PyObject *cls = NULL;
-    Py_ssize_t nargs, nbases;
+    Py_ssize_t nargs;
 
     assert(args != NULL);
     if (!PyTuple_Check(args)) {
@@ -61,7 +61,6 @@ builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
     bases = PyTuple_GetSlice(args, 2, nargs);
     if (bases == NULL)
         return NULL;
-    nbases = nargs - 2;
 
     if (kwds == NULL) {
         meta = NULL;
@@ -766,7 +765,6 @@ builtin_exec(PyObject *self, PyObject *args)
 {
     PyObject *v;
     PyObject *prog, *globals = Py_None, *locals = Py_None;
-    int plain = 0;
 
     if (!PyArg_UnpackTuple(args, "exec", 1, 3, &prog, &globals, &locals))
         return NULL;
@@ -775,7 +773,6 @@ builtin_exec(PyObject *self, PyObject *args)
         globals = PyEval_GetGlobals();
         if (locals == Py_None) {
             locals = PyEval_GetLocals();
-            plain = 1;
         }
         if (!globals || !locals) {
             PyErr_SetString(PyExc_SystemError,

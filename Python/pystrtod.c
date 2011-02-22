@@ -954,7 +954,7 @@ format_float_short(double d, char format_code,
             /* shouldn't get here: Gay's code should always return
                something starting with a digit, an 'I',  or 'N' */
             strncpy(p, "ERR", 3);
-            p += 3;
+            /* p += 3; */
             assert(0);
         }
         goto exit;

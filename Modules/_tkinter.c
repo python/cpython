@@ -2005,7 +2005,7 @@ static int
 PythonCmd(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 {
     PythonCmd_ClientData *data = (PythonCmd_ClientData *)clientData;
-    PyObject *self, *func, *arg, *res;
+    PyObject *func, *arg, *res;
     int i, rv;
     Tcl_Obj *obj_res;
 
@@ -2014,7 +2014,6 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
     /* TBD: no error checking here since we know, via the
      * Tkapp_CreateCommand() that the client data is a two-tuple
      */
-    self = data->self;
     func = data->func;
 
     /* Create argument list (argv1, ..., argvN) */

@@ -1176,7 +1176,6 @@ PySys_AddXOption(const wchar_t *s)
     PyObject *opts;
     PyObject *name = NULL, *value = NULL;
     const wchar_t *name_end;
-    int r;
 
     opts = get_xoptions();
     if (opts == NULL)
@@ -1194,7 +1193,7 @@ PySys_AddXOption(const wchar_t *s)
     }
     if (name == NULL || value == NULL)
         goto error;
-    r = PyDict_SetItem(opts, name, value);
+    PyDict_SetItem(opts, name, value);
     Py_DECREF(name);
     Py_DECREF(value);
     return;

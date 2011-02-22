@@ -52,7 +52,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
 {
     CFieldObject *self;
     PyObject *proto;
-    Py_ssize_t size, align, length;
+    Py_ssize_t size, align;
     SETFUNC setfunc = NULL;
     GETFUNC getfunc = NULL;
     StgDictObject *dict;
@@ -106,7 +106,6 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
     }
 
     size = dict->size;
-    length = dict->length;
     proto = desc;
 
     /*  Field descriptors for 'c_char * n' are be scpecial cased to

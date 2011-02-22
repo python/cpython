@@ -369,11 +369,9 @@ void pysqlite_statement_mark_dirty(pysqlite_Statement* self)
 
 void pysqlite_statement_dealloc(pysqlite_Statement* self)
 {
-    int rc;
-
     if (self->st) {
         Py_BEGIN_ALLOW_THREADS
-        rc = sqlite3_finalize(self->st);
+        sqlite3_finalize(self->st);
         Py_END_ALLOW_THREADS
     }
 

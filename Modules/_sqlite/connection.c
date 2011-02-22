@@ -673,15 +673,12 @@ void _pysqlite_final_callback(sqlite3_context* context)
 {
     PyObject* function_result = NULL;
     PyObject** aggregate_instance;
-    PyObject* aggregate_class;
 
 #ifdef WITH_THREAD
     PyGILState_STATE threadstate;
 
     threadstate = PyGILState_Ensure();
 #endif
-
-    aggregate_class = (PyObject*)sqlite3_user_data(context);
 
     aggregate_instance = (PyObject**)sqlite3_aggregate_context(context, sizeof(PyObject*));
     if (!*aggregate_instance) {
