@@ -15,7 +15,7 @@ import shutil
 import warnings
 import unittest
 import importlib
-import collections
+import collections.abc
 import re
 import subprocess
 import imp
@@ -682,7 +682,7 @@ class CleanImport(object):
         sys.modules.update(self.original_modules)
 
 
-class EnvironmentVarGuard(collections.MutableMapping):
+class EnvironmentVarGuard(collections.abc.MutableMapping):
 
     """Class to help protect the environment variable properly.  Can be used as
     a context manager."""

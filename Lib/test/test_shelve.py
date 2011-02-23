@@ -2,7 +2,7 @@ import unittest
 import shelve
 import glob
 from test import support
-from collections import MutableMapping
+from collections.abc import MutableMapping
 from test.test_dbm import dbm_iterator
 
 def L1(s):
