@@ -419,6 +419,22 @@ class StreamReadTest(CommonReadTest):
 
     mode="r|"
 
+    def test_read_through(self):
+        # Issue #11224: A poorly designed _FileInFile.read() method
+        # caused seeking errors with stream tar files.
+        for tarinfo in self.tar:
+            if not tarinfo.isreg():
+                continue
+            fobj = self.tar.extractfile(tarinfo)
+            while True:
+                try:
+                    buf = fobj.read(512)
+                except tarfile.StreamError:
+                    self.fail("simple read-through using TarFile.extractfile() failed")
+                if not buf:
+                    break
+            fobj.close()
+
     def test_fileobj_regular_file(self):
         tarinfo = self.tar.next() # get "regtype" (can't use getmember)
         fobj = self.tar.extractfile(tarinfo)
