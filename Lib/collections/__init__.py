@@ -695,6 +695,15 @@ class _ChainMap(MutableMapping):
 
     __copy__ = copy
 
+    def new_child(self):                        # like Django's Context.push()
+        'New ChainMap with a new dict followed by all previous maps.'
+        return self.__class__({}, *self.maps)
+
+    @property
+    def parents(self):                          # like Django's Context.pop()
+        'New ChainMap from maps[1:].'
+        return self.__class__(*self.maps[1:])
+
     def __setitem__(self, key, value):
         self.maps[0][key] = value
 
