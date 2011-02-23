@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import collections
+import collections.abc
 import errno
 import socket
 import sys
@@ -48,7 +48,7 @@ class CurrentTimeTest(unittest.TestCase):
 
         # Perform a minimal sanity check on the result, just to be sure
         # the request means what we think it means.
-        self.assertIsInstance(builders, collections.Sequence)
+        self.assertIsInstance(builders, collections.abc.Sequence)
         self.assertTrue([x for x in builders if "3.x" in x], builders)
 
 
