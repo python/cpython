@@ -37,28 +37,28 @@ are available on all platforms):
    A Modular Crypt Format method with 16 character salt and 86 character
    hash.  This is the strongest method.
 
-.. versionadded:: 3.3
+   .. versionadded:: 3.3
 
 .. data:: METHOD_SHA256
 
    Another Modular Crypt Format method with 16 character salt and 43
    character hash.
 
-.. versionadded:: 3.3
+   .. versionadded:: 3.3
 
 .. data:: METHOD_MD5
 
    Another Modular Crypt Format method with 8 character salt and 22
    character hash.
 
-.. versionadded:: 3.3
+   .. versionadded:: 3.3
 
 .. data:: METHOD_CRYPT
 
    The traditional method with a 2 character salt and 13 characters of
    hash.  This is the weakest method.
 
-.. versionadded:: 3.3
+   .. versionadded:: 3.3
 
 
 Module Attributes
@@ -71,7 +71,7 @@ Module Attributes
    ``crypt.METHOD_*`` objects.  This list is sorted from strongest to
    weakest, and is guaranteed to have at least ``crypt.METHOD_CRYPT``.
 
-.. versionadded:: 3.3
+   .. versionadded:: 3.3
 
 
 Module Functions
