@@ -13,6 +13,9 @@ Core and Builtins
 - Issue #11272: On Windows, input() strips '\r' (and not only '\n'), and
   sys.stdin uses universal newline (replace '\r\n' by '\n').
 
+- Issue #10830: Fix PyUnicode_FromFormatV("%c") for non-BMP characters on
+  narrow build.
+
 - Check for NULL result in PyType_FromSpec.
 
 Library

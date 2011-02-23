@@ -1427,7 +1427,7 @@ class UnicodeTest(string_tests.CommonTest,
     # Test PyUnicode_FromFormat()
     def test_from_format(self):
         support.import_module('ctypes')
-        from ctypes import pythonapi, py_object
+        from ctypes import pythonapi, py_object, c_int
         if sys.maxunicode == 65535:
             name = "PyUnicodeUCS2_FromFormat"
         else:
@@ -1451,6 +1451,9 @@ class UnicodeTest(string_tests.CommonTest,
             '^PyUnicode_FromFormatV\(\) expects an ASCII-encoded format '
             'string, got a non-ASCII byte: 0xe9$',
             PyUnicode_FromFormat, b'unicode\xe9=%s', 'ascii')
+
+        self.assertEqual(PyUnicode_FromFormat(b'%c', c_int(0xabcd)), '\uabcd')
+        self.assertEqual(PyUnicode_FromFormat(b'%c', c_int(0x10ffff)), '\U0010ffff')
 
         # other tests
         text = PyUnicode_FromFormat(b'%%A:%A', 'abc\xe9\uabcd\U0010ffff')
