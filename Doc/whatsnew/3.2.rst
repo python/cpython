@@ -2471,14 +2471,14 @@ Code Repository
 
 In addition to the existing Subversion code repository at http://svn.python.org
 there is now a `Mercurial <http://mercurial.selenic.com/>`_ repository at
-http://hg.python.org/ .
+http://hg.python.org/\.
 
 After the 3.2 release, there are plans to switch to Mercurial as the primary
 repository.  This distributed version control system should make it easier for
 members of the community to create and share external changesets.  See
 :pep:`385` for details.
 
-To learn to use the new version control system, see the `tutorial by Joel
+To learn the new version control system, see the `tutorial by Joel
 Spolsky <http://hginit.com>`_ or the `Guide to Mercurial Workflows
 <http://mercurial.selenic.com/guide/>`_.
 
