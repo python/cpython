@@ -234,7 +234,7 @@ class LongReprTest(unittest.TestCase):
         touch(os.path.join(self.subpkgname, self.pkgname + '.py'))
         from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import areallylongpackageandmodulenametotestreprtruncation
         eq(repr(areallylongpackageandmodulenametotestreprtruncation),
-           "<module '%s' from '%s'>" % (areallylongpackageandmodulenametotestreprtruncation.__name__, areallylongpackageandmodulenametotestreprtruncation.__file__))
+           "<module %r from %r>" % (areallylongpackageandmodulenametotestreprtruncation.__name__, areallylongpackageandmodulenametotestreprtruncation.__file__))
         eq(repr(sys), "<module 'sys' (built-in)>")
 
     def test_type(self):
