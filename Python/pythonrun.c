@@ -778,6 +778,7 @@ create_stdio(PyObject* io,
 {
     PyObject *buf = NULL, *stream = NULL, *text = NULL, *raw = NULL, *res;
     const char* mode;
+    const char* newline;
     PyObject *line_buffering;
     int buffering, isatty;
 
@@ -828,9 +829,17 @@ create_stdio(PyObject* io,
     Py_CLEAR(raw);
     Py_CLEAR(text);
 
+    newline = "\n";
+#ifdef MS_WINDOWS
+    if (!write_mode) {
+        /* translate \r\n to \n for sys.stdin on Windows */
+        newline = NULL;
+    }
+#endif
+
     stream = PyObject_CallMethod(io, "TextIOWrapper", "OsssO",
                                  buf, encoding, errors,
-                                 "\n", line_buffering);
+                                 newline, line_buffering);
     Py_CLEAR(buf);
     if (stream == NULL)
         goto error;
