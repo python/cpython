@@ -1,4 +1,5 @@
 #!/usr/bin/env python
-import runpy
+import sys
+from lib2to3.main import main
 
-runpy.run_module('lib2to3', run_name='__main__', alter_sys=True)
+sys.exit(main("lib2to3.fixes"))
