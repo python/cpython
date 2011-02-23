@@ -6,6 +6,7 @@ import test.support, unittest
 import os
 import sys
 import subprocess
+import tempfile
 from test.script_helper import spawn_python, kill_python, assert_python_ok, assert_python_failure
 
 
@@ -238,6 +239,31 @@ class CmdLineTest(unittest.TestCase):
             data = kill_python(p)
             escaped = repr(text).encode(encoding, 'backslashreplace')
             self.assertIn(escaped, data)
+
+    def check_input(self, code, expected):
+        with tempfile.NamedTemporaryFile("wb+") as stdin:
+            sep = os.linesep.encode('ASCII')
+            stdin.write(sep.join((b'abc', b'def')))
+            stdin.flush()
+            stdin.seek(0)
+            with subprocess.Popen(
+                (sys.executable, "-c", code),
+                stdin=stdin, stdout=subprocess.PIPE) as proc:
+                stdout, stderr = proc.communicate()
+        self.assertEqual(stdout.rstrip(), expected)
+
+    def test_stdin_readline(self):
+        # Issue #11272: check that sys.stdin.readline() replaces '\r\n' by '\n'
+        # on Windows (sys.stdin is opened in binary mode)
+        self.check_input(
+            "import sys; print(repr(sys.stdin.readline()))",
+            b"'abc\\n'")
+
+    def test_builtin_input(self):
+        # Issue #11272: check that input() strips newlines ('\n' or '\r\n')
+        self.check_input(
+            "print(repr(input()))",
+            b"'abc'")
 
 
 def test_main():
