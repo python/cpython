@@ -636,7 +636,7 @@ _PyImport_FixupBuiltin(PyObject *mod, char *name)
 }
 
 PyObject *
-_PyImport_FindExtensionUnicode(char *name, PyObject *filename)
+_PyImport_FindExtensionUnicode(const char *name, PyObject *filename)
 {
     PyObject *mod, *mdict;
     PyModuleDef* def;
@@ -680,7 +680,7 @@ _PyImport_FindExtensionUnicode(char *name, PyObject *filename)
 }
 
 PyObject *
-_PyImport_FindBuiltin(char *name)
+_PyImport_FindBuiltin(const char *name)
 {
     PyObject *res, *filename;
     filename = PyUnicode_FromString(name);

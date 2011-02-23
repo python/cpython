@@ -65,9 +65,9 @@ PyAPI_FUNC(int) _PyImport_ReleaseLock(void);
 PyAPI_FUNC(void) _PyImport_ReInitLock(void);
 
 PyAPI_FUNC(PyObject *)_PyImport_FindBuiltin(
-    char *name                  /* UTF-8 encoded string */
+    const char *name            /* UTF-8 encoded string */
     );
-PyAPI_FUNC(PyObject *)_PyImport_FindExtensionUnicode(char *, PyObject *);
+PyAPI_FUNC(PyObject *)_PyImport_FindExtensionUnicode(const char *, PyObject *);
 PyAPI_FUNC(int)_PyImport_FixupBuiltin(
     PyObject *mod,
     char *name                  /* UTF-8 encoded string */
