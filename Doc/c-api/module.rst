@@ -52,7 +52,7 @@ There are only a few functions special to module objects.
    manipulate a module's :attr:`__dict__`.
 
 
-.. c:function:: char* PyModule_GetName(PyObject *module)
+.. c:function:: PyObject* PyModule_GetNameObject(PyObject *module)
 
    .. index::
       single: __name__ (module attribute)
@@ -61,15 +61,13 @@ There are only a few functions special to module objects.
    Return *module*'s :attr:`__name__` value.  If the module does not provide one,
    or if it is not a string, :exc:`SystemError` is raised and *NULL* is returned.
 
+   .. versionadded:: 3.3
 
-.. c:function:: char* PyModule_GetFilename(PyObject *module)
 
-   Similar to :c:func:`PyModule_GetFilenameObject` but return the filename
-   encoded to 'utf-8'.
+.. c:function:: char* PyModule_GetName(PyObject *module)
 
-   .. deprecated:: 3.2
-      :c:func:`PyModule_GetFilename` raises :c:type:`UnicodeEncodeError` on
-      unencodable filenames, use :c:func:`PyModule_GetFilenameObject` instead.
+   Similar to :c:func:`PyModule_GetNameObject` but return the name encoded to
+   ``'utf-8'``.
 
 
 .. c:function:: PyObject* PyModule_GetFilenameObject(PyObject *module)
@@ -84,6 +82,16 @@ There are only a few functions special to module objects.
    a reference to a :c:type:`PyUnicodeObject`.
 
    .. versionadded:: 3.2
+
+
+.. c:function:: char* PyModule_GetFilename(PyObject *module)
+
+   Similar to :c:func:`PyModule_GetFilenameObject` but return the filename
+   encoded to 'utf-8'.
+
+   .. deprecated:: 3.2
+      :c:func:`PyModule_GetFilename` raises :c:type:`UnicodeEncodeError` on
+      unencodable filenames, use :c:func:`PyModule_GetFilenameObject` instead.
 
 
 .. c:function:: void* PyModule_GetState(PyObject *module)
