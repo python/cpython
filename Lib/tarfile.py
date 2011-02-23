@@ -760,9 +760,8 @@ class _FileInFile(object):
                         self.map_index = 0
             length = min(size, stop - self.position)
             if data:
-                self.fileobj.seek(offset)
-                block = self.fileobj.read(stop - start)
-                buf += block[self.position - start:self.position + length]
+                self.fileobj.seek(offset + (self.position - start))
+                buf += self.fileobj.read(length)
             else:
                 buf += NUL * length
             size -= length

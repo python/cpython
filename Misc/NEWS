@@ -27,6 +27,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #11224: Fixed a regression in tarfile that affected the file-like
+  objects returned by TarFile.extractfile() regarding performance, memory
+  consumption and failures with the stream interface.
+
 - Issue #10924: Adding salt and Modular Crypt Format to crypt library.
   Moved old C wrapper to _crypt, and added a Python wrapper with
   enhanced salt generation and simpler API for password generation.
