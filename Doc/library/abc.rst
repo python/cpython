@@ -55,6 +55,9 @@ This module provides the following class:
         assert issubclass(tuple, MyABC)
         assert isinstance((), MyABC)
 
+      .. versionchanged:: 3.3
+         Returns the registered subclass, to allow usage as a class decorator.
+
    You can also override this method in an abstract base class:
 
    .. method:: __subclasshook__(subclass)

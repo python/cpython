@@ -121,11 +121,12 @@ class TestABC(unittest.TestCase):
         self.assertFalse(issubclass(B, (A,)))
         self.assertNotIsInstance(b, A)
         self.assertNotIsInstance(b, (A,))
-        A.register(B)
+        B1 = A.register(B)
         self.assertTrue(issubclass(B, A))
         self.assertTrue(issubclass(B, (A,)))
         self.assertIsInstance(b, A)
         self.assertIsInstance(b, (A,))
+        self.assertIs(B1, B)
         class C(B):
             pass
         c = C()
@@ -133,6 +134,27 @@ class TestABC(unittest.TestCase):
         self.assertTrue(issubclass(C, (A,)))
         self.assertIsInstance(c, A)
         self.assertIsInstance(c, (A,))
+
+    def test_register_as_class_deco(self):
+        class A(metaclass=abc.ABCMeta):
+            pass
+        @A.register
+        class B(object):
+            pass
+        b = B()
+        self.assertTrue(issubclass(B, A))
+        self.assertTrue(issubclass(B, (A,)))
+        self.assertIsInstance(b, A)
+        self.assertIsInstance(b, (A,))
+        @A.register
+        class C(B):
+            pass
+        c = C()
+        self.assertTrue(issubclass(C, A))
+        self.assertTrue(issubclass(C, (A,)))
+        self.assertIsInstance(c, A)
+        self.assertIsInstance(c, (A,))
+        self.assertIs(C, A.register(C))
 
     def test_isinstance_invalidation(self):
         class A(metaclass=abc.ABCMeta):

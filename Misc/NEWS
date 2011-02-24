@@ -30,6 +30,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10868: Allow usage of the register method of an ABC as a class
+  decorator.
+
 - Issue #11224: Fixed a regression in tarfile that affected the file-like
   objects returned by TarFile.extractfile() regarding performance, memory
   consumption and failures with the stream interface.

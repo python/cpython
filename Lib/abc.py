@@ -133,11 +133,14 @@ class ABCMeta(type):
         return cls
 
     def register(cls, subclass):
-        """Register a virtual subclass of an ABC."""
+        """Register a virtual subclass of an ABC.
+
+        Returns the subclass, to allow usage as a class decorator.
+        """
         if not isinstance(subclass, type):
             raise TypeError("Can only register classes")
         if issubclass(subclass, cls):
-            return  # Already a subclass
+            return subclass  # Already a subclass
         # Subtle: test for cycles *after* testing for "already a subclass";
         # this means we allow X.register(X) and interpret it as a no-op.
         if issubclass(cls, subclass):
@@ -145,6 +148,7 @@ class ABCMeta(type):
             raise RuntimeError("Refusing to create an inheritance cycle")
         cls._abc_registry.add(subclass)
         ABCMeta._abc_invalidation_counter += 1  # Invalidate negative cache
+        return subclass
 
     def _dump_registry(cls, file=None):
         """Debug helper to print the ABC registry."""
