@@ -1,0 +1,95 @@
+****************************
+  What's New In Python 3.3
+****************************
+
+:Author: Raymond Hettinger
+:Release: |release|
+:Date: |today|
+
+.. $Id$
+   Rules for maintenance:
+
+   * Anyone can add text to this document.  Do not spend very much time
+   on the wording of your changes, because your text will probably
+   get rewritten to some degree.
+
+   * The maintainer will go through Misc/NEWS periodically and add
+   changes; it's therefore more important to add your changes to
+   Misc/NEWS than to this file.
+
+   * This is not a complete list of every single change; completeness
+   is the purpose of Misc/NEWS.  Some changes I consider too small
+   or esoteric to include.  If such a change is added to the text,
+   I'll just remove it.  (This is another reason you shouldn't spend
+   too much time on writing your addition.)
+
+   * If you want to draw your new text to the attention of the
+   maintainer, add 'XXX' to the beginning of the paragraph or
+   section.
+
+   * It's OK to just add a fragmentary note about a change.  For
+   example: "XXX Describe the transmogrify() function added to the
+   socket module."  The maintainer will research the change and
+   write the necessary text.
+
+   * You can comment out your additions if you like, but it's not
+   necessary (especially when a final release is some months away).
+
+   * Credit the author of a patch or bugfix.   Just the name is
+   sufficient; the e-mail address isn't necessary.
+
+   * It's helpful to add the bug/patch number as a comment:
+
+   % Patch 12345
+   XXX Describe the transmogrify() function added to the socket
+   module.
+   (Contributed by P.Y. Developer.)
+
+   This saves the maintainer the effort of going through the SVN log
+   when researching a change.
+
+This article explains the new features in Python 3.3, compared to 3.2.
+
+
+PEP XXX: Stub
+=============
+
+
+Other Language Changes
+======================
+
+Some smaller changes made to the core Python language are:
+
+* Stub
+
+
+New, Improved, and Deprecated Modules
+=====================================
+
+* Stub
+
+
+Optimizations
+=============
+
+Major performance enhancements have been added:
+
+* Stub
+
+
+Build and C API Changes
+=======================
+
+Changes to Python's build process and to the C API include:
+
+* Stub
+
+
+Porting to Python 3.3
+=====================
+
+This section lists previously described changes and other bugfixes
+that may require changes to your code:
+
+* Stub
+
