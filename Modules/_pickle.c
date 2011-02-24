@@ -977,11 +977,6 @@ _Unpickler_Read(UnpicklerObject *self, char **s, Py_ssize_t n)
 {
     Py_ssize_t num_read;
 
-    if (n == 0) {
-        *s = NULL;
-        return 0;
-    }
-
     if (self->next_read_idx + n <= self->input_len) {
         *s = self->input_buffer + self->next_read_idx;
         self->next_read_idx += n;
