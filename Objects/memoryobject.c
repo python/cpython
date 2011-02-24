@@ -75,6 +75,11 @@ PyMemoryView_FromBuffer(Py_buffer *info)
 {
     PyMemoryViewObject *mview;
 
+    if (info->buf == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+            "cannot make memory view from a buffer with a NULL data pointer");
+        return NULL;
+    }
     mview = (PyMemoryViewObject *)
         PyObject_GC_New(PyMemoryViewObject, &PyMemoryView_Type);
     if (mview == NULL)
