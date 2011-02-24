@@ -785,17 +785,14 @@ Text I/O
    inherits :class:`codecs.IncrementalDecoder`.
 
 
-Advanced topics
----------------
-
-Here we will discuss several advanced topics pertaining to the concrete
-I/O implementations described above.
-
 Performance
-^^^^^^^^^^^
+-----------
+
+This section discusses the performance of the provided concrete IO
+implementations.
 
 Binary I/O
-""""""""""
+^^^^^^^^^^
 
 By reading and writing only large chunks of data even when the user asks
 for a single byte, buffered I/O is designed to hide any inefficiency in
@@ -808,7 +805,7 @@ platform and the backing device.  Therefore, it is most always preferable to
 use buffered I/O rather than unbuffered I/O.
 
 Text I/O
-""""""""
+^^^^^^^^
 
 Text I/O over a binary storage (such as a file) is significantly slower than
 binary I/O over the same storage, because it implies conversions from
