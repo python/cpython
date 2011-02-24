@@ -163,7 +163,7 @@ Positional and keyword arguments can be arbitrarily combined::
 
 An optional ``':'`` and format specifier can follow the field name. This allows
 greater control over how the value is formatted.  The following example
-truncates Pi to three places after the decimal.
+rounds Pi to three places after the decimal.
 
    >>> import math
    >>> print('The value of PI is approximately {0:.3f}.'.format(math.pi))
