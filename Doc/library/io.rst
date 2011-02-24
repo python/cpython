@@ -788,31 +788,30 @@ Text I/O
 Performance
 -----------
 
-This section discusses the performance of the provided concrete IO
+This section discusses the performance of the provided concrete I/O
 implementations.
 
 Binary I/O
 ^^^^^^^^^^
 
-By reading and writing only large chunks of data even when the user asks
-for a single byte, buffered I/O is designed to hide any inefficiency in
-calling and executing the operating system's unbuffered I/O routines.  The
-gain will vary very much depending on the OS and the kind of I/O which is
-performed (for example, on some contemporary OSes such as Linux, unbuffered
-disk I/O can be as fast as buffered I/O).  The bottom line, however, is
-that buffered I/O will offer you predictable performance regardless of the
-platform and the backing device.  Therefore, it is most always preferable to
-use buffered I/O rather than unbuffered I/O.
+By reading and writing only large chunks of data even when the user asks for a
+single byte, buffered I/O hides any inefficiency in calling and executing the
+operating system's unbuffered I/O routines.  The gain depends on the OS and the
+kind of I/O which is performed.  For example, on some modern OSes such as Linux,
+unbuffered disk I/O can be as fast as buffered I/O.  The bottom line, however,
+is that buffered I/O offers predictable performance regardless of the platform
+and the backing device.  Therefore, it is most always preferable to use buffered
+I/O rather than unbuffered I/O for binary datal
 
 Text I/O
 ^^^^^^^^
 
 Text I/O over a binary storage (such as a file) is significantly slower than
-binary I/O over the same storage, because it implies conversions from
-unicode to binary data using a character codec.  This can become noticeable
-if you handle huge amounts of text data (for example very large log files).
-Also, :meth:`TextIOWrapper.tell` and :meth:`TextIOWrapper.seek` are both
-quite slow due to the reconstruction algorithm used.
+binary I/O over the same storage, because it requires conversions between
+unicode and binary data using a character codec.  This can become noticeable
+handling huge amounts of text data like large log files.  Also,
+:meth:`TextIOWrapper.tell` and :meth:`TextIOWrapper.seek` are both quite slow
+due to the reconstruction algorithm used.
 
 :class:`StringIO`, however, is a native in-memory unicode container and will
 exhibit similar speed to :class:`BytesIO`.
@@ -820,9 +819,8 @@ exhibit similar speed to :class:`BytesIO`.
 Multi-threading
 ^^^^^^^^^^^^^^^
 
-:class:`FileIO` objects are thread-safe to the extent that the operating
-system calls (such as ``read(2)`` under Unix) they are wrapping are thread-safe
-too.
+:class:`FileIO` objects are thread-safe to the extent that the operating system
+calls (such as ``read(2)`` under Unix) they wrap are thread-safe too.
 
 Binary buffered objects (instances of :class:`BufferedReader`,
 :class:`BufferedWriter`, :class:`BufferedRandom` and :class:`BufferedRWPair`)
@@ -837,12 +835,13 @@ Reentrancy
 Binary buffered objects (instances of :class:`BufferedReader`,
 :class:`BufferedWriter`, :class:`BufferedRandom` and :class:`BufferedRWPair`)
 are not reentrant.  While reentrant calls will not happen in normal situations,
-they can arise if you are doing I/O in a :mod:`signal` handler.  If it is
-attempted to enter a buffered object again while already being accessed
-*from the same thread*, then a :exc:`RuntimeError` is raised.
+they can arise from doing I/O in a :mod:`signal` handler.  If a thread tries to
+renter a buffered object which it is already accessing, a :exc:`RuntimeError` is
+raised.  Note this doesn't prohibit a different thread from entering the
+buffered object.
 
-The above implicitly extends to text files, since the :func:`open()`
-function will wrap a buffered object inside a :class:`TextIOWrapper`.  This
-includes standard streams and therefore affects the built-in function
-:func:`print()` as well.
+The above implicitly extends to text files, since the :func:`open()` function
+will wrap a buffered object inside a :class:`TextIOWrapper`.  This includes
+standard streams and therefore affects the built-in function :func:`print()` as
+well.
 
