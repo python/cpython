@@ -10,6 +10,9 @@ What's New in Python 3.2.1?
 Core and Builtins
 -----------------
 
+- Issue #11286: Raise a ValueError from calling PyMemoryView_FromBuffer with
+  a buffer struct having a NULL data pointer.
+
 - Issue #11272: On Windows, input() strips '\r' (and not only '\n'), and
   sys.stdin uses universal newline (replace '\r\n' by '\n').
 

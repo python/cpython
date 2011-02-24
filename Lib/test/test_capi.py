@@ -50,6 +50,8 @@ class CAPITest(unittest.TestCase):
                          b'Fatal Python error:'
                          b' PyThreadState_Get: no current thread')
 
+    def test_memoryview_from_NULL_pointer(self):
+        self.assertRaises(ValueError, _testcapi.make_memoryview_from_NULL_pointer)
 
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class TestPendingCalls(unittest.TestCase):

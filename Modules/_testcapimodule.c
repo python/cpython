@@ -2231,6 +2231,15 @@ make_exception_with_doc(PyObject *self, PyObject *args, PyObject *kwargs)
     return PyErr_NewExceptionWithDoc(name, doc, base, dict);
 }
 
+static PyObject *
+make_memoryview_from_NULL_pointer(PyObject *self)
+{
+    Py_buffer info;
+    if (PyBuffer_FillInfo(&info, NULL, NULL, 1, 1, PyBUF_FULL_RO) < 0)
+        return NULL;
+    return PyMemoryView_FromBuffer(&info);
+}
+
 /* Test that the fatal error from not having a current thread doesn't
    cause an infinite loop.  Run via Lib/test/test_capi.py */
 static PyObject *
@@ -2326,6 +2335,8 @@ static PyMethodDef TestMethods[] = {
     {"code_newempty",           code_newempty,                   METH_VARARGS},
     {"make_exception_with_doc", (PyCFunction)make_exception_with_doc,
      METH_VARARGS | METH_KEYWORDS},
+    {"make_memoryview_from_NULL_pointer", (PyCFunction)make_memoryview_from_NULL_pointer,
+     METH_NOARGS},
     {"crash_no_current_thread", (PyCFunction)crash_no_current_thread, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
