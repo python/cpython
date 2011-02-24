@@ -2354,7 +2354,7 @@ A number of small performance enhancements have been added:
   (Contributed by Antoine Pitrou; :issue:`3001`.)
 
 * The fast-search algorithm in stringlib is now used by the :meth:`split`,
-  :meth:`rsplit`, :meth:`splitlines` and :meth:`replace` methods on
+  :meth:`splitlines` and :meth:`replace` methods on
   :class:`bytes`, :class:`bytearray` and :class:`str` objects. Likewise, the
   algorithm is also used by :meth:`rfind`, :meth:`rindex`, :meth:`rsplit` and
   :meth:`rpartition`.
