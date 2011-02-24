@@ -9,8 +9,8 @@ class OptimizedPickleTests(AbstractPickleTests, AbstractPickleModuleTests):
     def dumps(self, arg, proto=None):
         return pickletools.optimize(pickle.dumps(arg, proto))
 
-    def loads(self, buf):
-        return pickle.loads(buf)
+    def loads(self, buf, **kwds):
+        return pickle.loads(buf, **kwds)
 
     # Test relies on precise output of dumps()
     test_pickle_to_2x = None

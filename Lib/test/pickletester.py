@@ -1094,6 +1094,10 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertEqual(len(loaded), len(data))
             self.assertEqual(loaded, data)
 
+    def test_empty_bytestring(self):
+        # issue 11286
+        empty = self.loads(b'\x80\x03U\x00q\x00.', encoding='koi8-r')
+        self.assertEqual(empty, '')
 
 # Test classes for reduce_ex
 
