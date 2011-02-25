@@ -1015,7 +1015,7 @@ Files and Directories
    Availability: Unix, Windows.
 
 
-.. function:: makedirs(path[, mode])
+.. function:: makedirs(path, mode=0o777)
 
    .. index::
       single: directory; creating
@@ -1029,8 +1029,8 @@ Files and Directories
 
    .. note::
 
-      :func:`makedirs` will become confused if the path elements to create include
-      :data:`os.pardir`.
+      :func:`makedirs` will become confused if the path elements to create
+      include :data:`pardir`.
 
    This function handles UNC paths correctly.
 

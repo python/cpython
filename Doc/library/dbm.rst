@@ -20,7 +20,7 @@ the Oracle Berkeley DB.
 
 .. function:: whichdb(filename)
 
-   This functionattempts to guess which of the several simple database modules
+   This function attempts to guess which of the several simple database modules
    available --- :mod:`dbm.gnu`, :mod:`dbm.ndbm` or :mod:`dbm.dumb` --- should
    be used to open a given file.
 

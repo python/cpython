@@ -1110,7 +1110,7 @@ doubt, consult the module reference at the location listed above.
         result = result + self.section('FILE', file)
         return result
 
-    def docclass(self, object, name=None, mod=None):
+    def docclass(self, object, name=None, mod=None, *ignored):
         """Produce text documentation for a given class object."""
         realname = object.__name__
         name = name or realname
