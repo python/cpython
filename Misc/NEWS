@@ -35,6 +35,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4761: Add the *at() family of functions (openat(), etc.) to the posix
+  module.  Patch by Ross Lagerwall.
+
 - Issue #7322: Trying to read from a socket's file-like object after a timeout
   occurred now raises an error instead of silently losing data.
 

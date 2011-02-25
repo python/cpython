@@ -8009,6 +8009,552 @@ posix_getresgid (PyObject *self, PyObject *noargs)
 }
 #endif
 
+/* Posix *at family of functions:
+    faccessat, fchmodat, fchownat, fstatat, futimesat,
+    linkat, mkdirat, mknodat, openat, readlinkat, renameat, symlinkat,
+    unlinkat, utimensat, mkfifoat */
+
+#ifdef HAVE_FACCESSAT
+PyDoc_STRVAR(posix_faccessat__doc__,
+"faccessat(dirfd, path, mode, flags=0) -> True if granted, False otherwise\n\n\
+Like access() but if path is relative, it is taken as relative to dirfd.\n\
+flags is optional and can be constructed by ORing together zero or more\n\
+of these values: AT_SYMLINK_NOFOLLOW, AT_EACCESS.\n\
+If path is relative and dirfd is the special value AT_FDCWD, then path\n\
+is interpreted relative to the current working directory.");
+
+static PyObject *
+posix_faccessat(PyObject *self, PyObject *args)
+{
+    PyObject *opath;
+    char *path;
+    int mode;
+    int res;
+    int dirfd, flags = 0;
+    if (!PyArg_ParseTuple(args, "iO&i|i:faccessat",
+            &dirfd, PyUnicode_FSConverter, &opath, &mode, &flags))
+        return NULL;
+    path = PyBytes_AsString(opath);
+    Py_BEGIN_ALLOW_THREADS
+    res = faccessat(dirfd, path, mode, flags);
+    Py_END_ALLOW_THREADS
+    Py_DECREF(opath);
+    return PyBool_FromLong(res == 0);
+}
+#endif
+
+#ifdef HAVE_FCHMODAT
+PyDoc_STRVAR(posix_fchmodat__doc__,
+"fchmodat(dirfd, path, mode, flags=0)\n\n\
+Like chmod() but if path is relative, it is taken as relative to dirfd.\n\
+flags is optional and may be 0 or AT_SYMLINK_NOFOLLOW.\n\
+If path is relative and dirfd is the special value AT_FDCWD, then path\n\
+is interpreted relative to the current working directory.");
+
+static PyObject *
+posix_fchmodat(PyObject *self, PyObject *args)
+{
+    int dirfd, mode, res;
+    int flags = 0;
+    PyObject *opath;
+    char *path;
+
+    if (!PyArg_ParseTuple(args, "iO&i|i:fchmodat",
+            &dirfd, PyUnicode_FSConverter, &opath, &mode, &flags))
+        return NULL;
+
+    path = PyBytes_AsString(opath);
+
+    Py_BEGIN_ALLOW_THREADS
+    res = fchmodat(dirfd, path, mode, flags);
+    Py_END_ALLOW_THREADS
+    Py_DECREF(opath);
+    if (res < 0)
+        return posix_error();
+    Py_RETURN_NONE;
+}
+#endif /* HAVE_FCHMODAT */
+
+#ifdef HAVE_FCHOWNAT
+PyDoc_STRVAR(posix_fchownat__doc__,
+"fchownat(dirfd, path, uid, gid, flags=0)\n\n\
+Like chown() but if path is relative, it is taken as relative to dirfd.\n\
+flags is optional and may be 0 or AT_SYMLINK_NOFOLLOW.\n\
+If path is relative and dirfd is the special value AT_FDCWD, then path\n\
+is interpreted relative to the current working directory.");
+
+static PyObject *
+posix_fchownat(PyObject *self, PyObject *args)
+{
+    PyObject *opath;
+    int dirfd, res;
+    long uid, gid;
+    int flags = 0;
+    char *path;
+    
+    if (!PyArg_ParseTuple(args, "iO&ll|i:fchownat",
+            &dirfd, PyUnicode_FSConverter, &opath, &uid, &gid, &flags))
+        return NULL;
+
+    path = PyBytes_AsString(opath);
+
+    Py_BEGIN_ALLOW_THREADS
+    res = fchownat(dirfd, path, (uid_t) uid, (gid_t) gid, flags);
+    Py_END_ALLOW_THREADS
+    Py_DECREF(opath);
+    if (res < 0)
+        return posix_error();
+    Py_RETURN_NONE;
+}
+#endif /* HAVE_FCHOWNAT */
+
+#ifdef HAVE_FSTATAT
+PyDoc_STRVAR(posix_fstatat__doc__,
+"fstatat(dirfd, path, flags=0) -> stat result\n\n\
+Like stat() but if path is relative, it is taken as relative to dirfd.\n\
+flags is optional and may be 0 or AT_SYMLINK_NOFOLLOW.\n\
+If path is relative and dirfd is the special value AT_FDCWD, then path\n\
+is interpreted relative to the current working directory.");
+
+static PyObject *
+posix_fstatat(PyObject *self, PyObject *args)
+{
+    PyObject *opath;
+    char *path;
+    STRUCT_STAT st;
+    int dirfd, res, flags = 0;
+
+    if (!PyArg_ParseTuple(args, "iO&|i:fstatat",
+            &dirfd, PyUnicode_FSConverter, &opath, &flags))
+        return NULL;
+    path = PyBytes_AsString(opath);
+
+    Py_BEGIN_ALLOW_THREADS
+    res = fstatat(dirfd, path, &st, flags);
+    Py_END_ALLOW_THREADS
+    Py_DECREF(opath);
+    if (res != 0)
+        return posix_error();
+
+    return _pystat_fromstructstat(&st);
+}
+#endif
+
+#ifdef HAVE_FUTIMESAT
+PyDoc_STRVAR(posix_futimesat__doc__,
+"futimesat(dirfd, path, (atime, mtime))\n\
+futimesat(dirfd, path, None)\n\n\
+Like utime() but if path is relative, it is taken as relative to dirfd.\n\
+If path is relative and dirfd is the special value AT_FDCWD, then path\n\
+is interpreted relative to the current working directory.");
+
+static PyObject *
+posix_futimesat(PyObject *self, PyObject *args)
+{
+    PyObject *opath;
+    char *path;
+    int res, dirfd;
+    PyObject* arg;
+
+    struct timeval buf[2];
+
+    if (!PyArg_ParseTuple(args, "iO&O:futimesat",
+            &dirfd, PyUnicode_FSConverter, &opath, &arg))
+        return NULL;
+    path = PyBytes_AsString(opath);
+    if (arg == Py_None) {
+        /* optional time values not given */
+        Py_BEGIN_ALLOW_THREADS
+        res = futimesat(dirfd, path, NULL);
+        Py_END_ALLOW_THREADS
+    }
+    else if (!PyTuple_Check(arg) || PyTuple_Size(arg) != 2) {
+        PyErr_SetString(PyExc_TypeError,
+                "futimesat() arg 3 must be a tuple (atime, mtime)");
+        Py_DECREF(opath);
+        return NULL;
+    }
+    else {
+        if (extract_time(PyTuple_GET_ITEM(arg, 0),
+				&(buf[0].tv_sec), &(buf[0].tv_usec)) == -1) {
+            Py_DECREF(opath);
+            return NULL;
+        }
+        if (extract_time(PyTuple_GET_ITEM(arg, 1),
+				&(buf[1].tv_sec), &(buf[1].tv_usec)) == -1) {
+            Py_DECREF(opath);
+            return NULL;
+        }
+        Py_BEGIN_ALLOW_THREADS
+        res = futimesat(dirfd, path, buf);
+        Py_END_ALLOW_THREADS
+    }
+    Py_DECREF(opath);
+    if (res < 0) {
+        return posix_error();
+    }
+    Py_RETURN_NONE;
+}
+#endif
+
+#ifdef HAVE_LINKAT
+PyDoc_STRVAR(posix_linkat__doc__,
+"linkat(srcfd, srcpath, dstfd, dstpath, flags=0)\n\n\
+Like link() but if srcpath is relative, it is taken as relative to srcfd\n\
+and if dstpath is relative, it is taken as relative to dstfd.\n\
+flags is optional and may be 0 or AT_SYMLINK_FOLLOW.\n\
+If srcpath is relative and srcfd is the special value AT_FDCWD, then\n\
+srcpath is interpreted relative to the current working directory. This\n\
+also applies for dstpath.");
+
+static PyObject *
+posix_linkat(PyObject *self, PyObject *args)
+{
+    PyObject *osrc, *odst;
+    char *src, *dst;
+    int res, srcfd, dstfd;
+    int flags = 0;
+
+    if (!PyArg_ParseTuple(args, "iO&iO&|i:linkat",
+            &srcfd, PyUnicode_FSConverter, &osrc, &dstfd, PyUnicode_FSConverter, &odst, &flags))
+        return NULL;
+    src = PyBytes_AsString(osrc);
+    dst = PyBytes_AsString(odst);
+    Py_BEGIN_ALLOW_THREADS
+    res = linkat(srcfd, src, dstfd, dst, flags);
+    Py_END_ALLOW_THREADS
+    Py_DECREF(osrc);
+    Py_DECREF(odst);
+    if (res < 0)
+        return posix_error();
+    Py_RETURN_NONE;
+}
+#endif /* HAVE_LINKAT */
+
+#ifdef HAVE_MKDIRAT
+PyDoc_STRVAR(posix_mkdirat__doc__,
+"mkdirat(dirfd, path, mode=0o777)\n\n\
+Like mkdir() but if path is relative, it is taken as relative to dirfd.\n\
+If path is relative and dirfd is the special value AT_FDCWD, then path\n\
+is interpreted relative to the current working directory.");
+
+static PyObject *
+posix_mkdirat(PyObject *self, PyObject *args)
+{
+    int res, dirfd;
+    PyObject *opath;
+    char *path;
+    int mode = 0777;
+
+    if (!PyArg_ParseTuple(args, "iO&|i:mkdirat",
+            &dirfd, PyUnicode_FSConverter, &opath, &mode))
+        return NULL;
+    path = PyBytes_AsString(opath);
+    Py_BEGIN_ALLOW_THREADS
+    res = mkdirat(dirfd, path, mode);
+    Py_END_ALLOW_THREADS
+    Py_DECREF(opath);
+    if (res < 0)
+        return posix_error();
+    Py_RETURN_NONE;
+}
+#endif
+
+#if defined(HAVE_MKNODAT) && defined(HAVE_MAKEDEV)
+PyDoc_STRVAR(posix_mknodat__doc__,
+"mknodat(dirfd, path, mode=0o600, device=0)\n\n\
+Like mknod() but if path is relative, it is taken as relative to dirfd.\n\
+If path is relative and dirfd is the special value AT_FDCWD, then path\n\
+is interpreted relative to the current working directory.");
+
+static PyObject *
+posix_mknodat(PyObject *self, PyObject *args)
+{
+    PyObject *opath;
+    char *filename;
+    int mode = 0600;
+    int device = 0;
+    int res, dirfd;
+    if (!PyArg_ParseTuple(args, "iO&|ii:mknodat", &dirfd,
+            PyUnicode_FSConverter, &opath, &mode, &device))
+        return NULL;
+    filename = PyBytes_AS_STRING(opath);
+    Py_BEGIN_ALLOW_THREADS
+    res = mknodat(dirfd, filename, mode, device);
+    Py_END_ALLOW_THREADS
+    Py_DECREF(opath);
+    if (res < 0)
+        return posix_error();
+    Py_RETURN_NONE;
+}
+#endif
+
+#ifdef HAVE_OPENAT
+PyDoc_STRVAR(posix_openat__doc__,
+"openat(dirfd, path, flag, mode=0o777) -> fd\n\n\
+Like open() but if path is relative, it is taken as relative to dirfd.\n\
+If path is relative and dirfd is the special value AT_FDCWD, then path\n\
+is interpreted relative to the current working directory.");
+
+static PyObject *
+posix_openat(PyObject *self, PyObject *args)
+{
+    PyObject *ofile;
+    char *file;
+    int flag, dirfd, fd;
+    int mode = 0777;
+
+    if (!PyArg_ParseTuple(args, "iO&i|i:openat",
+            &dirfd, PyUnicode_FSConverter, &ofile,
+            &flag, &mode))
+        return NULL;
+    file = PyBytes_AsString(ofile);
+    Py_BEGIN_ALLOW_THREADS
+    fd = openat(dirfd, file, flag, mode);
+    Py_END_ALLOW_THREADS
+    Py_DECREF(ofile);
+    if (fd < 0)
+        return posix_error();
+    return PyLong_FromLong((long)fd);
+}
+#endif
+
+#ifdef HAVE_READLINKAT
+PyDoc_STRVAR(posix_readlinkat__doc__,
+"readlinkat(dirfd, path) -> path\n\n\
+Like readlink() but if path is relative, it is taken as relative to dirfd.\n\
+If path is relative and dirfd is the special value AT_FDCWD, then path\n\
+is interpreted relative to the current working directory.");
+
+static PyObject *
+posix_readlinkat(PyObject *self, PyObject *args)
+{
+    PyObject *v, *opath;
+    char buf[MAXPATHLEN];
+    char *path;
+    int n, dirfd;
+    int arg_is_unicode = 0;
+
+    if (!PyArg_ParseTuple(args, "iO&:readlinkat",
+            &dirfd, PyUnicode_FSConverter, &opath))
+        return NULL;
+    path = PyBytes_AsString(opath);
+    v = PySequence_GetItem(args, 1);
+    if (v == NULL) {
+        Py_DECREF(opath);
+        return NULL;
+    }
+
+    if (PyUnicode_Check(v)) {
+        arg_is_unicode = 1;
+    }
+    Py_DECREF(v);
+
+    Py_BEGIN_ALLOW_THREADS
+    n = readlinkat(dirfd, path, buf, (int) sizeof buf);
+    Py_END_ALLOW_THREADS
+    Py_DECREF(opath);
+    if (n < 0)
+        return posix_error();
+
+    if (arg_is_unicode)
+        return PyUnicode_DecodeFSDefaultAndSize(buf, n);
+    else
+        return PyBytes_FromStringAndSize(buf, n);
+}
+#endif /* HAVE_READLINKAT */
+
+#ifdef HAVE_RENAMEAT
+PyDoc_STRVAR(posix_renameat__doc__,
+"renameat(olddirfd, oldpath, newdirfd, newpath)\n\n\
+Like rename() but if oldpath is relative, it is taken as relative to\n\
+olddirfd and if newpath is relative, it is taken as relative to newdirfd.\n\
+If oldpath is relative and olddirfd is the special value AT_FDCWD, then\n\
+oldpath is interpreted relative to the current working directory. This\n\
+also applies for newpath.");
+
+static PyObject *
+posix_renameat(PyObject *self, PyObject *args)
+{
+    int res;
+    PyObject *opathold, *opathnew;
+    char *opath, *npath;
+    int oldfd, newfd;
+
+    if (!PyArg_ParseTuple(args, "iO&iO&:renameat",
+            &oldfd, PyUnicode_FSConverter, &opathold, &newfd, PyUnicode_FSConverter, &opathnew))
+        return NULL;
+    opath = PyBytes_AsString(opathold);
+    npath = PyBytes_AsString(opathnew);
+    Py_BEGIN_ALLOW_THREADS
+    res = renameat(oldfd, opath, newfd, npath);
+    Py_END_ALLOW_THREADS
+    Py_DECREF(opathold);
+    Py_DECREF(opathnew);
+    if (res < 0)
+        return posix_error();
+    Py_RETURN_NONE;
+}
+#endif
+
+#if HAVE_SYMLINKAT
+PyDoc_STRVAR(posix_symlinkat__doc__,
+"symlinkat(src, dstfd, dst)\n\n\
+Like symlink() but if dst is relative, it is taken as relative to dstfd.\n\
+If dst is relative and dstfd is the special value AT_FDCWD, then dst\n\
+is interpreted relative to the current working directory.");
+
+static PyObject *
+posix_symlinkat(PyObject *self, PyObject *args)
+{
+    int res, dstfd;
+    PyObject *osrc, *odst;
+    char *src, *dst;
+
+    if (!PyArg_ParseTuple(args, "O&iO&:symlinkat",
+            PyUnicode_FSConverter, &osrc, &dstfd, PyUnicode_FSConverter, &odst))
+        return NULL;
+    src = PyBytes_AsString(osrc);
+    dst = PyBytes_AsString(odst);
+    Py_BEGIN_ALLOW_THREADS
+    res = symlinkat(src, dstfd, dst);
+    Py_END_ALLOW_THREADS
+    Py_DECREF(osrc);
+    Py_DECREF(odst);
+    if (res < 0)
+        return posix_error();
+    Py_RETURN_NONE;
+}
+#endif /* HAVE_SYMLINKAT */
+
+#ifdef HAVE_UNLINKAT
+PyDoc_STRVAR(posix_unlinkat__doc__,
+"unlinkat(dirfd, path, flags=0)\n\n\
+Like unlink() but if path is relative, it is taken as relative to dirfd.\n\
+flags is optional and may be 0 or AT_REMOVEDIR. If AT_REMOVEDIR is\n\
+specified, unlinkat() behaves like rmdir().\n\
+If path is relative and dirfd is the special value AT_FDCWD, then path\n\
+is interpreted relative to the current working directory.");
+
+static PyObject *
+posix_unlinkat(PyObject *self, PyObject *args)
+{
+    int dirfd, res, flags = 0;
+    PyObject *opath;
+    char *path;
+
+    if (!PyArg_ParseTuple(args, "iO&|i:unlinkat",
+            &dirfd, PyUnicode_FSConverter, &opath, &flags))
+        return NULL;
+    path = PyBytes_AsString(opath);
+    Py_BEGIN_ALLOW_THREADS
+    res = unlinkat(dirfd, path, flags);
+    Py_END_ALLOW_THREADS
+    Py_DECREF(opath);
+    if (res < 0)
+        return posix_error();
+    Py_RETURN_NONE;
+}
+#endif
+
+#ifdef HAVE_UTIMENSAT
+PyDoc_STRVAR(posix_utimensat__doc__,
+"utimensat(dirfd, path, (atime_sec, atime_nsec),\n\
+    (mtime_sec, mtime_nsec), flags)\n\
+utimensat(dirfd, path, None, None, flags)\n\n\
+Updates the timestamps of a file with nanosecond precision. If path is\n\
+relative, it is taken as relative to dirfd.\n\
+The second form sets atime and mtime to the current time.\n\
+flags is optional and may be 0 or AT_SYMLINK_NOFOLLOW.\n\
+If path is relative and dirfd is the special value AT_FDCWD, then path\n\
+is interpreted relative to the current working directory.\n\
+If *_nsec is specified as UTIME_NOW, the timestamp is updated to the\n\
+current time.\n\
+If *_nsec is specified as UTIME_OMIT, the timestamp is not updated.");
+
+static PyObject *
+posix_utimensat(PyObject *self, PyObject *args)
+{
+    PyObject *opath;
+    char *path;
+    int res, dirfd, flags = 0;
+    PyObject *atime, *mtime;
+
+    struct timespec buf[2];
+
+    if (!PyArg_ParseTuple(args, "iO&OO|i:utimensat",
+            &dirfd, PyUnicode_FSConverter, &opath, &atime, &mtime, &flags))
+        return NULL;
+    path = PyBytes_AsString(opath);
+    if (atime == Py_None && mtime == Py_None) {
+        /* optional time values not given */
+        Py_BEGIN_ALLOW_THREADS
+        res = utimensat(dirfd, path, NULL, flags);
+        Py_END_ALLOW_THREADS
+    }
+    else if (!PyTuple_Check(atime) || PyTuple_Size(atime) != 2) {
+        PyErr_SetString(PyExc_TypeError,
+            "utimensat() arg 3 must be a tuple (atime_sec, atime_nsec)");
+        Py_DECREF(opath);
+        return NULL;
+    }
+    else if (!PyTuple_Check(mtime) || PyTuple_Size(mtime) != 2) {
+        PyErr_SetString(PyExc_TypeError,
+            "utimensat() arg 4 must be a tuple (mtime_sec, mtime_nsec)");
+        Py_DECREF(opath);
+        return NULL;
+    }
+    else {
+        if (!PyArg_ParseTuple(atime, "ll:utimensat",
+                &(buf[0].tv_sec), &(buf[0].tv_nsec))) {
+            Py_DECREF(opath);
+            return NULL;
+        }
+        if (!PyArg_ParseTuple(mtime, "ll:utimensat",
+                &(buf[1].tv_sec), &(buf[1].tv_nsec))) {
+            Py_DECREF(opath);
+            return NULL;
+        }
+        Py_BEGIN_ALLOW_THREADS
+        res = utimensat(dirfd, path, buf, flags);
+        Py_END_ALLOW_THREADS
+    }
+    Py_DECREF(opath);
+    if (res < 0) {
+        return posix_error();
+    }
+    Py_RETURN_NONE;
+}
+#endif
+
+#ifdef HAVE_MKFIFOAT
+PyDoc_STRVAR(posix_mkfifoat__doc__,
+"mkfifoat(dirfd, path, mode=0o666)\n\n\
+Like mkfifo() but if path is relative, it is taken as relative to dirfd.\n\
+If path is relative and dirfd is the special value AT_FDCWD, then path\n\
+is interpreted relative to the current working directory.");
+
+static PyObject *
+posix_mkfifoat(PyObject *self, PyObject *args)
+{
+    PyObject *opath;
+    char *filename;
+    int mode = 0666;
+    int res, dirfd;
+    if (!PyArg_ParseTuple(args, "iO&|i:mkfifoat",
+            &dirfd, PyUnicode_FSConverter, &opath, &mode))
+        return NULL;
+    filename = PyBytes_AS_STRING(opath);
+    Py_BEGIN_ALLOW_THREADS
+    res = mkfifoat(dirfd, filename, mode);
+    Py_END_ALLOW_THREADS
+    Py_DECREF(opath);
+    if (res < 0)
+        return posix_error();
+    Py_RETURN_NONE;
+}
+#endif
+
 static PyMethodDef posix_methods[] = {
     {"access",          posix_access, METH_VARARGS, posix_access__doc__},
 #ifdef HAVE_TTYNAME
@@ -8335,6 +8881,52 @@ static PyMethodDef posix_methods[] = {
     {"getresgid",       posix_getresgid, METH_NOARGS, posix_getresgid__doc__},
 #endif
 
+/* posix *at family of functions */
+#ifdef HAVE_FACCESSAT
+    {"faccessat",       posix_faccessat, METH_VARARGS, posix_faccessat__doc__},
+#endif
+#ifdef HAVE_FCHMODAT
+    {"fchmodat",        posix_fchmodat, METH_VARARGS, posix_fchmodat__doc__},
+#endif /* HAVE_FCHMODAT */
+#ifdef HAVE_FCHOWNAT
+    {"fchownat",        posix_fchownat, METH_VARARGS, posix_fchownat__doc__},
+#endif /* HAVE_FCHOWNAT */
+#ifdef HAVE_FSTATAT
+    {"fstatat",         posix_fstatat, METH_VARARGS, posix_fstatat__doc__},
+#endif
+#ifdef HAVE_FUTIMESAT
+    {"futimesat",       posix_futimesat, METH_VARARGS, posix_futimesat__doc__},
+#endif
+#ifdef HAVE_LINKAT
+    {"linkat",          posix_linkat, METH_VARARGS, posix_linkat__doc__},
+#endif /* HAVE_LINKAT */
+#ifdef HAVE_MKDIRAT
+    {"mkdirat",         posix_mkdirat, METH_VARARGS, posix_mkdirat__doc__},
+#endif
+#if defined(HAVE_MKNODAT) && defined(HAVE_MAKEDEV)
+    {"mknodat",         posix_mknodat, METH_VARARGS, posix_mknodat__doc__},
+#endif
+#ifdef HAVE_OPENAT
+    {"openat",      posix_openat, METH_VARARGS, posix_openat__doc__},
+#endif
+#ifdef HAVE_READLINKAT
+    {"readlinkat",      posix_readlinkat, METH_VARARGS, posix_readlinkat__doc__},
+#endif /* HAVE_READLINKAT */
+#ifdef HAVE_RENAMEAT
+    {"renameat",        posix_renameat, METH_VARARGS, posix_renameat__doc__},
+#endif
+#if HAVE_SYMLINKAT
+    {"symlinkat",       posix_symlinkat, METH_VARARGS, posix_symlinkat__doc__},
+#endif /* HAVE_SYMLINKAT */
+#ifdef HAVE_UNLINKAT
+    {"unlinkat",        posix_unlinkat, METH_VARARGS, posix_unlinkat__doc__},
+#endif
+#ifdef HAVE_UTIMENSAT
+    {"utimensat",       posix_utimensat, METH_VARARGS, posix_utimensat__doc__},
+#endif
+#ifdef HAVE_MKFIFOAT
+    {"mkfifoat",        posix_mkfifoat, METH_VARARGS, posix_mkfifoat__doc__},
+#endif
     {NULL,              NULL}            /* Sentinel */
 };
 
@@ -8519,6 +9111,28 @@ all_ins(PyObject *d)
 #endif
 #ifdef PRIO_USER
     if (ins(d, "PRIO_USER", (long)PRIO_USER)) return -1;
+#endif
+/* posix - constants for *at functions */
+#ifdef AT_SYMLINK_NOFOLLOW
+        if (ins(d, "AT_SYMLINK_NOFOLLOW", (long)AT_SYMLINK_NOFOLLOW)) return -1;
+#endif
+#ifdef AT_EACCESS
+        if (ins(d, "AT_EACCESS", (long)AT_EACCESS)) return -1;
+#endif
+#ifdef AT_FDCWD
+        if (ins(d, "AT_FDCWD", (long)AT_FDCWD)) return -1;
+#endif
+#ifdef AT_REMOVEDIR
+        if (ins(d, "AT_REMOVEDIR", (long)AT_REMOVEDIR)) return -1;
+#endif
+#ifdef AT_SYMLINK_FOLLOW
+        if (ins(d, "AT_SYMLINK_FOLLOW", (long)AT_SYMLINK_FOLLOW)) return -1;
+#endif
+#ifdef UTIME_NOW
+        if (ins(d, "UTIME_NOW", (long)UTIME_NOW)) return -1;
+#endif
+#ifdef UTIME_OMIT
+        if (ins(d, "UTIME_OMIT", (long)UTIME_OMIT)) return -1;
 #endif
 
 
