@@ -35,6 +35,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10956: Buffered I/O classes retry reading or writing after a signal
+  has arrived and the handler returned successfully.
+
 - Issue #10784: New os.getpriority() and os.setpriority() functions.
 
 - Issue #11114: Fix catastrophic performance of tell() on text files (up

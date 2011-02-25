@@ -2623,7 +2623,8 @@ class SignalsTest(unittest.TestCase):
     @unittest.skipUnless(threading, 'Threading required for this test.')
     def check_interrupted_write(self, item, bytes, **fdopen_kwargs):
         """Check that a partial write, when it gets interrupted, properly
-        invokes the signal handler."""
+        invokes the signal handler, and bubbles up the exception raised
+        in the latter."""
         read_results = []
         def _read():
             s = os.read(r, 1)
@@ -2702,6 +2703,98 @@ class SignalsTest(unittest.TestCase):
 
     def test_reentrant_write_text(self):
         self.check_reentrant_write("xy", mode="w", encoding="ascii")
+
+    def check_interrupted_read_retry(self, decode, **fdopen_kwargs):
+        """Check that a buffered read, when it gets interrupted (either
+        returning a partial result or EINTR), properly invokes the signal
+        handler and retries if the latter returned successfully."""
+        r, w = os.pipe()
+        fdopen_kwargs["closefd"] = False
+        def alarm_handler(sig, frame):
+            os.write(w, b"bar")
+        signal.signal(signal.SIGALRM, alarm_handler)
+        try:
+            rio = self.io.open(r, **fdopen_kwargs)
+            os.write(w, b"foo")
+            signal.alarm(1)
+            # Expected behaviour:
+            # - first raw read() returns partial b"foo"
+            # - second raw read() returns EINTR
+            # - third raw read() returns b"bar"
+            self.assertEqual(decode(rio.read(6)), "foobar")
+        finally:
+            rio.close()
+            os.close(w)
+            os.close(r)
+
+    def test_interrupterd_read_retry_buffered(self):
+        self.check_interrupted_read_retry(lambda x: x.decode('latin1'),
+                                          mode="rb")
+
+    def test_interrupterd_read_retry_text(self):
+        self.check_interrupted_read_retry(lambda x: x,
+                                          mode="r")
+
+    @unittest.skipUnless(threading, 'Threading required for this test.')
+    def check_interrupted_write_retry(self, item, **fdopen_kwargs):
+        """Check that a buffered write, when it gets interrupted (either
+        returning a partial result or EINTR), properly invokes the signal
+        handler and retries if the latter returned successfully."""
+        select = support.import_module("select")
+        # A quantity that exceeds the buffer size of an anonymous pipe's
+        # write end.
+        N = 1024 * 1024
+        r, w = os.pipe()
+        fdopen_kwargs["closefd"] = False
+        # We need a separate thread to read from the pipe and allow the
+        # write() to finish.  This thread is started after the SIGALRM is
+        # received (forcing a first EINTR in write()).
+        read_results = []
+        write_finished = False
+        def _read():
+            while not write_finished:
+                while r in select.select([r], [], [], 1.0)[0]:
+                    s = os.read(r, 1024)
+                    read_results.append(s)
+        t = threading.Thread(target=_read)
+        t.daemon = True
+        def alarm1(sig, frame):
+            signal.signal(signal.SIGALRM, alarm2)
+            signal.alarm(1)
+        def alarm2(sig, frame):
+            t.start()
+        signal.signal(signal.SIGALRM, alarm1)
+        try:
+            wio = self.io.open(w, **fdopen_kwargs)
+            signal.alarm(1)
+            # Expected behaviour:
+            # - first raw write() is partial (because of the limited pipe buffer
+            #   and the first alarm)
+            # - second raw write() returns EINTR (because of the second alarm)
+            # - subsequent write()s are successful (either partial or complete)
+            self.assertEqual(N, wio.write(item * N))
+            wio.flush()
+            write_finished = True
+            t.join()
+            self.assertEqual(N, sum(len(x) for x in read_results))
+        finally:
+            write_finished = True
+            os.close(w)
+            os.close(r)
+            # This is deliberate. If we didn't close the file descriptor
+            # before closing wio, wio would try to flush its internal
+            # buffer, and could block (in case of failure).
+            try:
+                wio.close()
+            except IOError as e:
+                if e.errno != errno.EBADF:
+                    raise
+
+    def test_interrupterd_write_retry_buffered(self):
+        self.check_interrupted_write_retry(b"x", mode="wb")
+
+    def test_interrupterd_write_retry_text(self):
+        self.check_interrupted_write_retry("x", mode="w", encoding="latin1")
 
 
 class CSignalsTest(SignalsTest):
