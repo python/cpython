@@ -257,6 +257,10 @@ table.docutils td, table.docutils th {
     background-color: #eef;    
 }
 
+table.docutils td p.last, table.docutils th p.last {
+    margin-bottom: 0;
+}
+
 table.field-list td, table.field-list th {
     border: 0 !important;
 }
@@ -342,7 +346,7 @@ p.deprecated {
 }
 
 .footnote:target  {
-    background-color: #ffa
+    background-color: #ffa;
 }
 
 .impl-detail {

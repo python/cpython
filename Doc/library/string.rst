@@ -86,7 +86,7 @@ implementation as the built-in :meth:`format` method.
 
    The :class:`Formatter` class has the following public methods:
 
-   .. method:: format(format_string, *args, *kwargs)
+   .. method:: format(format_string, *args, **kwargs)
 
       :meth:`format` is the primary API method.  It takes a format template
       string, and an arbitrary set of positional and keyword argument.
@@ -306,10 +306,10 @@ The meaning of the various alignment options is as follows:
    | Option  | Meaning                                                  |
    +=========+==========================================================+
    | ``'<'`` | Forces the field to be left-aligned within the available |
-   |         | space (this is the default).                             |
+   |         | space (this is the default for most objects).            |
    +---------+----------------------------------------------------------+
    | ``'>'`` | Forces the field to be right-aligned within the          |
-   |         | available space.                                         |
+   |         | available space (this is the default for numbers).       |
    +---------+----------------------------------------------------------+
    | ``'='`` | Forces the padding to be placed after the sign (if any)  |
    |         | but before the digits.  This is used for printing fields |
@@ -582,7 +582,7 @@ Using type-specific formatting::
 Nesting arguments and more complex examples::
 
    >>> for align, text in zip('<^>', ['left', 'center', 'right']):
-   ...     '{0:{align}{fill}16}'.format(text, fill=align, align=align)
+   ...     '{0:{fill}{align}16}'.format(text, fill=align, align=align)
    ...
    'left<<<<<<<<<<<<'
    '^^^^^center^^^^^'

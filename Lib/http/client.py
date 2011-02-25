@@ -663,6 +663,7 @@ class HTTPConnection:
         self._method = None
         self._tunnel_host = None
         self._tunnel_port = None
+        self._tunnel_headers = {}
 
         self._set_hostport(host, port)
         if strict is not None:
@@ -698,13 +699,14 @@ class HTTPConnection:
 
     def _tunnel(self):
         self._set_hostport(self._tunnel_host, self._tunnel_port)
-        connect_str = "CONNECT %s:%d HTTP/1.0\r\n" %(self.host, self.port)
+        connect_str = "CONNECT %s:%d HTTP/1.0\r\n" % (self.host, self.port)
         connect_bytes = connect_str.encode("ascii")
         self.send(connect_bytes)
-        for header, value in self._tunnel_headers.iteritems():
+        for header, value in self._tunnel_headers.items():
             header_str = "%s: %s\r\n" % (header, value)
             header_bytes = header_str.encode("ascii")
             self.send(header_bytes)
+        self.send(b'\r\n')
 
         response = self.response_class(self.sock, strict = self.strict,
                                        method = self._method)
