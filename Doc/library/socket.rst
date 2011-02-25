@@ -616,15 +616,20 @@ correspond to Unix system calls applicable to sockets.
 
    .. index:: single: I/O control; buffering
 
-   Return a :term:`file object` associated with the socket.  The exact
-   returned type depends on the arguments given to :meth:`makefile`.  These
-   arguments are interpreted the same way as by the built-in :func:`open`
-   function.
+   Return a :term:`file object` associated with the socket.  The exact returned
+   type depends on the arguments given to :meth:`makefile`.  These arguments are
+   interpreted the same way as by the built-in :func:`open` function.
 
    Closing the file object won't close the socket unless there are no remaining
    references to the socket.  The socket must be in blocking mode; it can have
    a timeout, but the file object's internal buffer may end up in a inconsistent
    state if a timeout occurs.
+
+   .. note::
+
+      On Windows, the file-like object created by :meth:`makefile` cannot be
+      used where a file object with a file descriptor is expected, such as the
+      stream arguments of :meth:`subprocess.Popen`.
 
 
 .. method:: socket.recv(bufsize[, flags])
