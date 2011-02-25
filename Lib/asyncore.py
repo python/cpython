@@ -287,7 +287,7 @@ class dispatcher:
             del map[fd]
         self._fileno = None
 
-    def create_socket(self, family, type):
+    def create_socket(self, family=socket.AF_INET, type=socket.SOCK_STREAM):
         self.family_and_type = family, type
         sock = socket.socket(family, type)
         sock.setblocking(0)

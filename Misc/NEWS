@@ -35,6 +35,8 @@ Core and Builtins
 Library
 -------
 
+- Issue 11177: asyncore's create_socket() arguments can now be omitted.
+
 - Issue #6064: Add a ``daemon`` keyword argument to the threading.Thread
   and multiprocessing.Process constructors in order to override the
   default behaviour of inheriting the daemonic property from the current
