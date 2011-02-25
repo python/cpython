@@ -187,6 +187,8 @@ Extension Modules
 Build
 -----
 
+- Issue #941346: Fix broken shared library build on AIX.
+
 - Issue #11268: Prevent Mac OS X Installer failure if Documentation
   package had previously been installed.
 

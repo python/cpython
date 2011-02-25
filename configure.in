@@ -5,14 +5,7 @@ dnl ***********************************************
 # Set VERSION so we only need to edit in one place (i.e., here)
 m4_define(PYTHON_VERSION, 2.7)
 
-dnl Some m4 magic to ensure that the configure script is generated
-dnl by the correct autoconf version.
-m4_define([version_required],
-[m4_if(m4_version_compare(m4_defn([m4_PACKAGE_VERSION]), [$1]), 0,
-       [],
-       [m4_fatal([Autoconf version $1 is required for Python], 63)])
-])
-version_required(2.65)
+AC_PREREQ(2.65)
 
 AC_REVISION($Revision$)
 AC_INIT(python, PYTHON_VERSION, http://bugs.python.org/)
@@ -1764,7 +1757,7 @@ if test -z "$LDSHARED"
 then
 	case $ac_sys_system/$ac_sys_release in
 	AIX*)
-		BLDSHARED="\$(srcdir)/Modules/ld_so_aix \$(CC) -bI:Modules/python.exp -L\$(srcdir)"
+		BLDSHARED="\$(srcdir)/Modules/ld_so_aix \$(CC) -bI:\$(srcdir)/Modules/python.exp"
 		LDSHARED="\$(BINLIBDEST)/config/ld_so_aix \$(CC) -bI:\$(BINLIBDEST)/config/python.exp"
 		;;
 	BeOS*)
