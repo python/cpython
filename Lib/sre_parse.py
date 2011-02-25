@@ -791,7 +791,7 @@ def parse_template(source, pattern):
     else:
         # The tokenizer implicitly decodes bytes objects as latin-1, we must
         # therefore re-encode the final representation.
-        encode = lambda x: x.encode('latin1')
+        encode = lambda x: x.encode('latin-1')
     for c, s in p:
         if c is MARK:
             groupsappend((i, s))

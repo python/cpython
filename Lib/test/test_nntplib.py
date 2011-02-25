@@ -813,7 +813,7 @@ class NNTPv1v2TestsMixin:
 
     def _check_article_body(self, lines):
         self.assertEqual(len(lines), 4)
-        self.assertEqual(lines[-1].decode('utf8'), "-- Signed by André.")
+        self.assertEqual(lines[-1].decode('utf-8'), "-- Signed by André.")
         self.assertEqual(lines[-2], b"")
         self.assertEqual(lines[-3], b".Here is a dot-starting line.")
         self.assertEqual(lines[-4], b"This is just a test article.")

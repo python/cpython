@@ -22,7 +22,7 @@ from xml.etree import ElementTree as ET
 
 SIMPLE_XMLFILE = findfile("simple.xml", subdir="xmltestdata")
 try:
-    SIMPLE_XMLFILE.encode("utf8")
+    SIMPLE_XMLFILE.encode("utf-8")
 except UnicodeEncodeError:
     raise unittest.SkipTest("filename is not encodable to utf8")
 SIMPLE_NS_XMLFILE = findfile("simple-ns.xml", subdir="xmltestdata")
@@ -1255,8 +1255,8 @@ def processinginstruction():
 
     >>> ET.tostring(ET.PI('test', '<testing&>'))
     b'<?test <testing&>?>'
-    >>> ET.tostring(ET.PI('test', '<testing&>\xe3'), 'latin1')
-    b"<?xml version='1.0' encoding='latin1'?>\\n<?test <testing&>\\xe3?>"
+    >>> ET.tostring(ET.PI('test', '<testing&>\xe3'), 'latin-1')
+    b"<?xml version='1.0' encoding='latin-1'?>\\n<?test <testing&>\\xe3?>"
     """
 
 #

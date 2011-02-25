@@ -44,7 +44,7 @@ def linux_version():
         return 0, 0, 0
 
 HOST = support.HOST
-MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf8') ## test unicode string and carriage return
+MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8') ## test unicode string and carriage return
 SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1', family=socket.AF_INET6)
 
 try:
@@ -1065,7 +1065,7 @@ class FileObjectClassTestCase(SocketConnectedTest):
     """
 
     bufsize = -1 # Use default buffer size
-    encoding = 'utf8'
+    encoding = 'utf-8'
     errors = 'strict'
     newline = None
 
@@ -1269,7 +1269,7 @@ class FileObjectInterruptedTestCase(unittest.TestCase):
             data = b''
         else:
             data = ''
-            expecting = expecting.decode('utf8')
+            expecting = expecting.decode('utf-8')
         while len(data) != len(expecting):
             part = fo.read(size)
             if not part:
@@ -1427,7 +1427,7 @@ class UnicodeReadFileObjectClassTestCase(FileObjectClassTestCase):
     """Tests for socket.makefile() in text mode (rather than binary)"""
 
     read_mode = 'r'
-    read_msg = MSG.decode('utf8')
+    read_msg = MSG.decode('utf-8')
     write_mode = 'wb'
     write_msg = MSG
     newline = ''
@@ -1439,7 +1439,7 @@ class UnicodeWriteFileObjectClassTestCase(FileObjectClassTestCase):
     read_mode = 'rb'
     read_msg = MSG
     write_mode = 'w'
-    write_msg = MSG.decode('utf8')
+    write_msg = MSG.decode('utf-8')
     newline = ''
 
 
@@ -1447,9 +1447,9 @@ class UnicodeReadWriteFileObjectClassTestCase(FileObjectClassTestCase):
     """Tests for socket.makefile() in text mode (rather than binary)"""
 
     read_mode = 'r'
-    read_msg = MSG.decode('utf8')
+    read_msg = MSG.decode('utf-8')
     write_mode = 'w'
-    write_msg = MSG.decode('utf8')
+    write_msg = MSG.decode('utf-8')
     newline = ''
 
 

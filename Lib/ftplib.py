@@ -100,7 +100,7 @@ class FTP:
     file = None
     welcome = None
     passiveserver = 1
-    encoding = "latin1"
+    encoding = "latin-1"
 
     # Initialization method (called by class instantiation).
     # Initialize host to localhost, port to standard ftp port

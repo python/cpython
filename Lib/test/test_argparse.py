@@ -4328,7 +4328,7 @@ class TestEncoding(TestCase):
     def _test_module_encoding(self, path):
         path, _ = os.path.splitext(path)
         path += ".py"
-        with codecs.open(path, 'r', 'utf8') as f:
+        with codecs.open(path, 'r', 'utf-8') as f:
             f.read()
 
     def test_argparse_module_encoding(self):

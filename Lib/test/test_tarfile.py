@@ -1289,7 +1289,7 @@ class UstarUnicodeTest(unittest.TestCase):
         self._test_unicode_filename("utf7")
 
     def test_utf8_filename(self):
-        self._test_unicode_filename("utf8")
+        self._test_unicode_filename("utf-8")
 
     def _test_unicode_filename(self, encoding):
         tar = tarfile.open(tmpname, "w", format=self.format, encoding=encoding, errors="strict")
@@ -1368,7 +1368,7 @@ class GNUUnicodeTest(UstarUnicodeTest):
     def test_bad_pax_header(self):
         # Test for issue #8633. GNU tar <= 1.23 creates raw binary fields
         # without a hdrcharset=BINARY header.
-        for encoding, name in (("utf8", "pax/bad-pax-\udce4\udcf6\udcfc"),
+        for encoding, name in (("utf-8", "pax/bad-pax-\udce4\udcf6\udcfc"),
                 ("iso8859-1", "pax/bad-pax-\xe4\xf6\xfc"),):
             with tarfile.open(tarname, encoding=encoding, errors="surrogateescape") as tar:
                 try:
@@ -1383,7 +1383,7 @@ class PAXUnicodeTest(UstarUnicodeTest):
 
     def test_binary_header(self):
         # Test a POSIX.1-2008 compatible header with a hdrcharset=BINARY field.
-        for encoding, name in (("utf8", "pax/hdrcharset-\udce4\udcf6\udcfc"),
+        for encoding, name in (("utf-8", "pax/hdrcharset-\udce4\udcf6\udcfc"),
                 ("iso8859-1", "pax/hdrcharset-\xe4\xf6\xfc"),):
             with tarfile.open(tarname, encoding=encoding, errors="surrogateescape") as tar:
                 try:

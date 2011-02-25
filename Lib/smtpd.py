@@ -275,7 +275,7 @@ class SMTPChannel(asynchat.async_chat):
             return
         elif limit:
             self.num_bytes += len(data)
-        self.received_lines.append(str(data, "utf8"))
+        self.received_lines.append(str(data, "utf-8"))
 
     # Implementation of base class abstract method
     def found_terminator(self):

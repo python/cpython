@@ -130,7 +130,7 @@ class TestLiterals(unittest.TestCase):
         self.assertRaises(SyntaxError, self.check_encoding, "utf-8", extra)
 
     def test_file_utf8(self):
-        self.check_encoding("utf8")
+        self.check_encoding("utf-8")
 
     def test_file_iso_8859_1(self):
         self.check_encoding("iso-8859-1")

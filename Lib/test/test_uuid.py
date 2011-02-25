@@ -471,14 +471,14 @@ class TestUUID(TestCase):
         if pid == 0:
             os.close(fds[0])
             value = uuid.uuid4()
-            os.write(fds[1], value.hex.encode('latin1'))
+            os.write(fds[1], value.hex.encode('latin-1'))
             os._exit(0)
 
         else:
             os.close(fds[1])
             parent_value = uuid.uuid4().hex
             os.waitpid(pid, 0)
-            child_value = os.read(fds[0], 100).decode('latin1')
+            child_value = os.read(fds[0], 100).decode('latin-1')
 
             self.assertNotEqual(parent_value, child_value)
 
