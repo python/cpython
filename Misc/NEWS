@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10956: Buffered I/O classes retry reading or writing after a signal
+  has arrived and the handler returned successfully.
+
 - Issue #11224: Fixed a regression in tarfile that affected the file-like
   objects returned by TarFile.extractfile() regarding performance, memory
   consumption and failures with the stream interface.
