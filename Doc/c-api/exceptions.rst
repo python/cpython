@@ -610,14 +610,10 @@ Notes:
    .. versionadded:: 2.5
 
 
-Deprecation of String Exceptions
-================================
+String Exceptions
+=================
 
-.. index:: single: BaseException (built-in exception)
-
-All exceptions built into Python or provided in the standard library are derived
-from :exc:`BaseException`.
-
-String exceptions are still supported in the interpreter to allow existing code
-to run unmodified, but this will also change in a future release.
+.. versionchanged:: 2.6
+   All exceptions to be raised or caught must be derived from :exc:`BaseException`.
+   Trying to raise a string exception now raises :exc:`TypeError`.
 
