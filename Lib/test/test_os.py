@@ -1282,7 +1282,7 @@ class ProgramPriorityTests(unittest.TestCase):
             try:
                 os.setpriority(os.PRIO_PROCESS, os.getpid(), base)
             except OSError as err:
-                if err.errno != EACCESS:
+                if err.errno != errno.EACCESS:
                     raise
 
 
@@ -1376,7 +1376,8 @@ class TestSendfile(unittest.TestCase):
 
     DATA = b"12345abcde" * 1024 * 1024  # 10 Mb
     SUPPORT_HEADERS_TRAILERS = not sys.platform.startswith("linux") and \
-                               not sys.platform.startswith("solaris")
+                               not sys.platform.startswith("solaris") and \
+                               not sys.platform.startswith("sunos")
 
     @classmethod
     def setUpClass(cls):
