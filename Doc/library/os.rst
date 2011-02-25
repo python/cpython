@@ -286,6 +286,22 @@ process and user.
    .. versionchanged:: 3.2
       Added support for Windows.
 
+.. function:: getpriority(which, who)
+
+   .. index:: single: process; scheduling priority
+
+   Get program scheduling priority. The value *which* is one of
+   :const:`PRIO_PROCESS`, :const:`PRIO_PGRP`, or :const:`PRIO_USER`, and *who*
+   is interpreted relative to *which* (a process identifier for
+   :const:`PRIO_PROCESS`, process group identifier for :const:`PRIO_PGRP`, and a
+   user ID for :const:`PRIO_USER`). A zero value for *who* denotes
+   (respectively) the calling process, the process group of the calling process,
+   or the real user ID of the calling process.
+
+   Availability: Unix
+
+   .. versionadded:: 3.3
+
 .. function:: getresuid()
 
    Return a tuple (ruid, euid, suid) denoting the current process's
@@ -336,6 +352,15 @@ process and user.
 
    .. versionadded:: 3.2
 
+.. data:: PRIO_PROCESS
+          PRIO_PGRP
+          PRIO_USER
+
+   Parameters for :func:`getpriority` and :func:`setpriority` functions.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
 
 .. function:: putenv(key, value)
 
@@ -403,6 +428,25 @@ process and user.
    for the semantics.
 
    Availability: Unix.
+
+
+.. function:: setpriority(which, who, priority)
+
+   .. index:: single: process; scheduling priority
+
+   Set program scheduling priority. The value *which* is one of
+   :const:`PRIO_PROCESS`, :const:`PRIO_PGRP`, or :const:`PRIO_USER`, and *who*
+   is interpreted relative to *which* (a process identifier for
+   :const:`PRIO_PROCESS`, process group identifier for :const:`PRIO_PGRP`, and a
+   user ID for :const:`PRIO_USER`). A zero value for *who* denotes
+   (respectively) the calling process, the process group of the calling process,
+   or the real user ID of the calling process.
+   *priority* is a value in the range -20 to 19. The default priority is 0;
+   lower priorities cause more favorable scheduling.
+
+   Availability: Unix
+
+   .. versionadded:: 3.3
 
 
 .. function:: setregid(rgid, egid)
