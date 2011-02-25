@@ -62,7 +62,8 @@ class TestWeakSet(unittest.TestCase):
     def test_contains(self):
         for c in self.letters:
             self.assertEqual(c in self.s, c in self.d)
-        self.assertRaises(TypeError, self.s.__contains__, [[]])
+        # 1 is not weakref'able, but that TypeError is caught by __contains__
+        self.assertNotIn(1, self.s)
         self.assertIn(self.obj, self.fs)
         del self.obj
         self.assertNotIn(SomeClass('F'), self.fs)

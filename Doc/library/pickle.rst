@@ -53,7 +53,7 @@ general :mod:`pickle` should always be the preferred way to serialize Python
 objects.  :mod:`marshal` exists primarily to support Python's :file:`.pyc`
 files.
 
-The :mod:`pickle` module differs from :mod:`marshal` several significant ways:
+The :mod:`pickle` module differs from :mod:`marshal` in several significant ways:
 
 * The :mod:`pickle` module keeps track of the objects it has already serialized,
   so that later references to the same object won't be serialized again.

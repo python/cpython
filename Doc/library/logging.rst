@@ -539,10 +539,7 @@ what handlers are most appropriate for their application: if you add handlers
 unit tests and deliver logs which suit their requirements.
 
 .. versionadded:: 2.7
-
-The :class:`NullHandler` class was not present in previous versions, but is now
-included, so that it need not be defined in library code.
-
+   The :class:`NullHandler` class.
 
 
 Logging Levels
@@ -672,8 +669,7 @@ provided:
    more information.
 
 .. versionadded:: 2.7
-
-The :class:`NullHandler` class was not present in previous versions.
+   The :class:`NullHandler` class.
 
 The :class:`NullHandler`, :class:`StreamHandler` and :class:`FileHandler`
 classes are defined in the core logging package. The other handlers are
@@ -930,6 +926,7 @@ functions.
    required, and the :meth:`__init__` should call :meth:`Logger.__init__`. This
    function is typically called before any loggers are instantiated by applications
    which need to use custom logger behavior.
+
 
 
 .. seealso::
@@ -1944,6 +1941,7 @@ sends logging output to a disk file.  It inherits the output functionality from
 
       Outputs the record to the file.
 
+
 .. _null-handler:
 
 NullHandler
@@ -1955,11 +1953,9 @@ The :class:`NullHandler` class, located in the core :mod:`logging` package,
 does not do any formatting or output. It is essentially a "no-op" handler
 for use by library developers.
 
-
 .. class:: NullHandler()
 
    Returns a new instance of the :class:`NullHandler` class.
-
 
    .. method:: emit(record)
 
@@ -2794,6 +2790,7 @@ wire).
    .. versionchanged:: 2.5
       *func* was added.
 
+
 .. _logger-adapter:
 
 LoggerAdapter Objects
@@ -2803,22 +2800,21 @@ LoggerAdapter Objects
 
 :class:`LoggerAdapter` instances are used to conveniently pass contextual
 information into logging calls. For a usage example , see the section on
-`adding contextual information to your logging output`__.
+:ref:`adding contextual information to your logging output <context-info>`.
 
-__ context-info_
 
 .. class:: LoggerAdapter(logger, extra)
 
-  Returns an instance of :class:`LoggerAdapter` initialized with an
-  underlying :class:`Logger` instance and a dict-like object.
+   Returns an instance of :class:`LoggerAdapter` initialized with an
+   underlying :class:`Logger` instance and a dict-like object.
 
-  .. method:: process(msg, kwargs)
+   .. method:: process(msg, kwargs)
 
-    Modifies the message and/or keyword arguments passed to a logging call in
-    order to insert contextual information. This implementation takes the object
-    passed as *extra* to the constructor and adds it to *kwargs* using key
-    'extra'. The return value is a (*msg*, *kwargs*) tuple which has the
-    (possibly modified) versions of the arguments passed in.
+      Modifies the message and/or keyword arguments passed to a logging call in
+      order to insert contextual information. This implementation takes the object
+      passed as *extra* to the constructor and adds it to *kwargs* using key
+      'extra'. The return value is a (*msg*, *kwargs*) tuple which has the
+      (possibly modified) versions of the arguments passed in.
 
 In addition to the above, :class:`LoggerAdapter` supports all the logging
 methods of :class:`Logger`, i.e. :meth:`debug`, :meth:`info`, :meth:`warning`,
