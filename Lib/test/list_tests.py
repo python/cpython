@@ -461,9 +461,8 @@ class CommonTest(seq_tests.CommonTest):
         # test that it's a shallow, not a deep copy
         u = self.type2test([1, 2, [3, 4], 5])
         v = u.copy()
-        v[2].append(666)
-        self.assertEqual(u, [1, 2, [3, 4, 666], 5])
         self.assertEqual(u, v)
+        self.assertIs(v[3], u[3])
 
         self.assertRaises(TypeError, u.copy, None)
 
