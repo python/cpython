@@ -2678,6 +2678,76 @@ posix_listdir(PyObject *self, PyObject *args)
 #endif /* which OS */
 }  /* end of posix_listdir */
 
+#ifdef HAVE_FDOPENDIR
+PyDoc_STRVAR(posix_fdlistdir__doc__,
+"fdlistdir(fd) -> list_of_strings\n\n\
+Like listdir(), but uses a file descriptor instead.\n\
+After succesful execution of this function, fd will be closed.");
+
+static PyObject *
+posix_fdlistdir(PyObject *self, PyObject *args)
+{
+    PyObject *d, *v;
+    DIR *dirp;
+    struct dirent *ep;
+    int fd;
+
+    errno = 0;
+    if (!PyArg_ParseTuple(args, "i:fdlistdir", &fd))
+        return NULL;
+    Py_BEGIN_ALLOW_THREADS
+    dirp = fdopendir(fd);
+    Py_END_ALLOW_THREADS
+    if (dirp == NULL) {
+        close(fd);
+        return posix_error();
+    }
+    if ((d = PyList_New(0)) == NULL) {
+        Py_BEGIN_ALLOW_THREADS
+        closedir(dirp);
+        Py_END_ALLOW_THREADS
+        return NULL;
+    }
+    for (;;) {
+        errno = 0;
+        Py_BEGIN_ALLOW_THREADS
+        ep = readdir(dirp);
+        Py_END_ALLOW_THREADS
+        if (ep == NULL) {
+            if (errno == 0) {
+                break;
+            } else {
+                Py_BEGIN_ALLOW_THREADS
+                closedir(dirp);
+                Py_END_ALLOW_THREADS
+                Py_DECREF(d);
+                return posix_error();
+            }
+        }
+        if (ep->d_name[0] == '.' &&
+            (NAMLEN(ep) == 1 ||
+             (ep->d_name[1] == '.' && NAMLEN(ep) == 2)))
+            continue;
+        v = PyUnicode_DecodeFSDefaultAndSize(ep->d_name, NAMLEN(ep));
+        if (v == NULL) {
+            Py_CLEAR(d);
+            break;
+        }
+        if (PyList_Append(d, v) != 0) {
+            Py_DECREF(v);
+            Py_CLEAR(d);
+            break;
+        }
+        Py_DECREF(v);
+    }
+    Py_BEGIN_ALLOW_THREADS
+    closedir(dirp);
+    Py_END_ALLOW_THREADS
+
+    return d;
+}
+#endif
+
 #ifdef MS_WINDOWS
 /* A helper function for abspath on win32 */
 static PyObject *
@@ -8599,6 +8669,9 @@ static PyMethodDef posix_methods[] = {
     {"link",            posix_link, METH_VARARGS, posix_link__doc__},
 #endif /* HAVE_LINK */
     {"listdir",         posix_listdir, METH_VARARGS, posix_listdir__doc__},
+#ifdef HAVE_FDOPENDIR
+    {"fdlistdir",       posix_fdlistdir, METH_VARARGS, posix_fdlistdir__doc__},
+#endif
     {"lstat",           posix_lstat, METH_VARARGS, posix_lstat__doc__},
     {"mkdir",           posix_mkdir, METH_VARARGS, posix_mkdir__doc__},
 #ifdef HAVE_NICE

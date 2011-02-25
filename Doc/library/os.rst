@@ -733,6 +733,16 @@ as internal buffering of data.
       This function is not available on MacOS.
 
 
+.. function:: fdlistdir(fd)
+
+   Like :func:`listdir`, but uses a file descriptor instead and always returns
+   strings.  After execution of this function, *fd* will be closed.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+
 .. function:: fpathconf(fd, name)
 
    Return system configuration information relevant to an open file. *name*

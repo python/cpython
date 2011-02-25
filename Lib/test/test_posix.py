@@ -285,6 +285,18 @@ class PosixTester(unittest.TestCase):
         if hasattr(posix, 'listdir'):
             self.assertTrue(support.TESTFN in posix.listdir())
 
+    @unittest.skipUnless(hasattr(posix, 'fdlistdir'), "test needs posix.fdlistdir()")
+    def test_fdlistdir(self):
+        f = posix.open(posix.getcwd(), posix.O_RDONLY)
+        self.assertEqual(
+            sorted(posix.listdir('.')),
+            sorted(posix.fdlistdir(f))
+            )
+        # Check the fd was closed by fdlistdir
+        with self.assertRaises(OSError) as ctx:
+            posix.close(f)
+        self.assertEqual(ctx.exception.errno, errno.EBADF)
+
     def test_access(self):
         if hasattr(posix, 'access'):
             self.assertTrue(posix.access(support.TESTFN, os.R_OK))

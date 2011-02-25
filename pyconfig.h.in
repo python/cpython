@@ -229,6 +229,9 @@
 /* Define if you have the 'fdatasync' function. */
 #undef HAVE_FDATASYNC
 
+/* Define to 1 if you have the `fdopendir' function. */
+#undef HAVE_FDOPENDIR
+
 /* Define to 1 if you have the `finite' function. */
 #undef HAVE_FINITE
 
@@ -526,6 +529,9 @@
 
 /* Define to 1 if you have the `pause' function. */
 #undef HAVE_PAUSE
+
+/* Define if the OS supports pipe2() */
+#undef HAVE_PIPE2
 
 /* Define if the OS supports pipe2() */
 #undef HAVE_PIPE2
