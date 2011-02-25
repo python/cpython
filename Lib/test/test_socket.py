@@ -1109,6 +1109,23 @@ class FileObjectClassTestCase(SocketConnectedTest):
         self.write_file = None
         SocketConnectedTest.clientTearDown(self)
 
+    def testReadAfterTimeout(self):
+        # Issue #7322: A file object must disallow further reads
+        # after a timeout has occurred.
+        self.cli_conn.settimeout(1)
+        self.read_file.read(3)
+        # First read raises a timeout
+        self.assertRaises(socket.timeout, self.read_file.read, 1)
+        # Second read is disallowed
+        with self.assertRaises(IOError) as ctx:
+            self.read_file.read(1)
+        self.assertIn("cannot read from timed out object", str(ctx.exception))
+
+    def _testReadAfterTimeout(self):
+        self.write_file.write(self.write_msg[0:3])
+        self.write_file.flush()
+        self.serv_finished.wait()
+
     def testSmallRead(self):
         # Performing small file read test
         first_seg = self.read_file.read(len(self.read_msg)-3)
