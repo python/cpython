@@ -844,6 +844,8 @@ class UserList(MutableSequence):
     def insert(self, i, item): self.data.insert(i, item)
     def pop(self, i=-1): return self.data.pop(i)
     def remove(self, item): self.data.remove(item)
+    def clear(self): self.data.clear()
+    def copy(self): return self.data.copy()
     def count(self, item): return self.data.count(item)
     def index(self, item, *args): return self.data.index(item, *args)
     def reverse(self): self.data.reverse()
