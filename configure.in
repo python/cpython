@@ -2534,8 +2534,8 @@ AC_MSG_RESULT(MACHDEP_OBJS)
 
 # checks for library functions
 AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
- clock confstr ctermid execv faccessat fchmod fchmodat fchown fchownat fork \
- fpathconf fstatat ftime ftruncate futimesat \
+ clock confstr ctermid execv faccessat fchmod fchmodat fchown fchownat \
+ fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
  gai_strerror getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getspnam getspent getsid getwd \
  initgroups kill killpg lchmod lchown linkat lstat mbrtowc mkdirat mkfifo \
