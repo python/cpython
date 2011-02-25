@@ -108,6 +108,10 @@ class DummyPOP3Handler(asynchat.async_chat):
     def cmd_apop(self, arg):
         self.push('+OK done nothing.')
 
+    def cmd_quit(self, arg):
+        self.push('+OK closing.')
+        self.close_when_done()
+
 
 class DummyPOP3Server(asyncore.dispatcher, threading.Thread):
 
@@ -165,10 +169,10 @@ class TestPOP3Class(TestCase):
     def setUp(self):
         self.server = DummyPOP3Server((HOST, PORT))
         self.server.start()
-        self.client = poplib.POP3(self.server.host, self.server.port)
+        self.client = poplib.POP3(self.server.host, self.server.port, timeout=3)
 
     def tearDown(self):
-        self.client.quit()
+        self.client.close()
         self.server.stop()
 
     def test_getwelcome(self):
@@ -228,6 +232,12 @@ class TestPOP3Class(TestCase):
         self.client.uidl()
         self.client.uidl('foo')
 
+    def test_quit(self):
+        resp = self.client.quit()
+        self.assertTrue(resp)
+        self.assertIsNone(self.client.sock)
+        self.assertIsNone(self.client.file)
+
 
 SUPPORTS_SSL = False
 if hasattr(poplib, 'POP3_SSL'):
@@ -273,6 +283,7 @@ if hasattr(poplib, 'POP3_SSL'):
                 self._do_ssl_handshake()
             else:
                 DummyPOP3Handler.handle_read(self)
+
 
     class TestPOP3_SSLClass(TestPOP3Class):
         # repeat previous tests by using poplib.POP3_SSL

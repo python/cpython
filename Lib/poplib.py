@@ -250,14 +250,17 @@ class POP3:
 
     def quit(self):
         """Signoff: commit changes on server, unlock mailbox, close connection."""
-        try:
-            resp = self._shortcmd('QUIT')
-        except error_proto as val:
-            resp = val
-        self.file.close()
-        self.sock.close()
-        del self.file, self.sock
+        resp = self._shortcmd('QUIT')
+        self.close()
         return resp
+
+    def close(self):
+        """Close the connection without assuming anything about it."""
+        if self.file is not None:
+            self.file.close()
+        if self.sock is not None:
+            self.sock.close()
+        self.file = self.sock = None
 
     #__del__ = quit
 
