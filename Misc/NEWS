@@ -42,6 +42,11 @@ Library
   without folding whitespace.  It now uses the continuation_ws, as it
   does for continuation lines that it creates itself.
 
+- Issue #10360: In WeakSet, do not raise TypeErrors when testing for
+  membership of non-weakrefable objects.
+
+- Issue #10549: Fix pydoc traceback when text-documenting certain classes.
+
 - Issue #11110: Fix _sqlite to not deref a NULL when module creation fails.
 
 - Issue #11089: Fix performance issue limiting the use of ConfigParser()

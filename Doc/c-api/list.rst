@@ -37,7 +37,7 @@ List Objects
 
    .. note::
 
-      If *length* is greater than zero, the returned list object's items are
+      If *len* is greater than zero, the returned list object's items are
       set to ``NULL``.  Thus you cannot use abstract API functions such as
       :cfunc:`PySequence_SetItem`  or expose the object to Python code before
       setting all items to a real object with :cfunc:`PyList_SetItem`.
@@ -58,9 +58,9 @@ List Objects
 
 .. cfunction:: PyObject* PyList_GetItem(PyObject *list, Py_ssize_t index)
 
-   Return the object at position *pos* in the list pointed to by *p*.  The
+   Return the object at position *index* in the list pointed to by *list*.  The
    position must be positive, indexing from the end of the list is not
-   supported.  If *pos* is out of bounds, return *NULL* and set an
+   supported.  If *index* is out of bounds, return *NULL* and set an
    :exc:`IndexError` exception.
 
 

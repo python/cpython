@@ -1,4 +1,4 @@
-:mod:`urllib.request` --- extensible library for opening URLs
+:mod:`urllib.request` --- Extensible library for opening URLs
 =============================================================
 
 .. module:: urllib.request
@@ -299,18 +299,19 @@ The following classes are provided:
       users for the required information on the controlling terminal.  A subclass may
       override this method to support more appropriate behavior if needed.
 
-    The :class:`FancyURLopener` class offers one additional method that should be
-    overloaded to provide the appropriate behavior:
+   The :class:`FancyURLopener` class offers one additional method that should be
+   overloaded to provide the appropriate behavior:
 
-    .. method:: prompt_user_passwd(host, realm)
+   .. method:: prompt_user_passwd(host, realm)
 
-       Return information needed to authenticate the user at the given host in the
-       specified security realm.  The return value should be a tuple, ``(user,
-       password)``, which can be used for basic authentication.
+      Return information needed to authenticate the user at the given host in the
+      specified security realm.  The return value should be a tuple, ``(user,
+      password)``, which can be used for basic authentication.
 
-       The implementation prompts for this information on the terminal; an application
-       should override this method to use an appropriate interaction model in the local
-       environment.
+      The implementation prompts for this information on the terminal; an application
+      should override this method to use an appropriate interaction model in the local
+      environment.
+
 
 .. class:: OpenerDirector()
 
@@ -1249,8 +1250,8 @@ The following example uses no proxies at all, overriding environment settings::
 
 
 
-:mod:`urllib.response` --- Response classes used by urllib.
-===========================================================
+:mod:`urllib.response` --- Response classes used by urllib
+==========================================================
 
 .. module:: urllib.response
    :synopsis: Response classes used by urllib.
