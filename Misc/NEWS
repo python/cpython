@@ -35,6 +35,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7322: Trying to read from a socket's file-like object after a timeout
+  occurred now raises an error instead of silently losing data.
+
 - Issue 11291: poplib.POP no longer suppresses errors on quit().
 
 - Issue 11177: asyncore's create_socket() arguments can now be omitted.
