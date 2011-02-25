@@ -37,6 +37,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10680: Fix mutually exclusive arguments for argument groups in
+  argparse.
+
 - Issue #4681: Allow mmap() to work on file sizes and offsets larger than
   4GB, even on 32-bit builds.  Initial patch by Ross Lagerwall, adapted for
   32-bit Windows.

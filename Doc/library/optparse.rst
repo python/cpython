@@ -64,9 +64,9 @@ and :mod:`optparse` will print out a brief summary of your script's options:
 
 .. code-block:: text
 
-   usage: <yourscript> [options]
+   Usage: <yourscript> [options]
 
-   options:
+   Options:
      -h, --help            show this help message and exit
      -f FILE, --file=FILE  write report to FILE
      -q, --quiet           don't print status messages to stdout
@@ -495,9 +495,9 @@ following to standard output:
 
 .. code-block:: text
 
-   usage: <yourscript> [options] arg1 arg2
+   Usage: <yourscript> [options] arg1 arg2
 
-   options:
+   Options:
      -h, --help            show this help message and exit
      -v, --verbose         make lots of noise [default]
      -q, --quiet           be vewwy quiet (I'm hunting wabbits)
@@ -521,7 +521,7 @@ help message:
   is then printed before the detailed option help.
 
   If you don't supply a usage string, :mod:`optparse` uses a bland but sensible
-  default: ``"usage: %prog [options]"``, which is fine if your script doesn't
+  default: ``"Usage: %prog [options]"``, which is fine if your script doesn't
   take any positional arguments.
 
 * every option defines a help string, and doesn't worry about line-wrapping---
@@ -554,12 +554,33 @@ help message:
    default value.  If an option has no default value (or the default value is
    ``None``), ``%default`` expands to ``none``.
 
+Grouping Options
+++++++++++++++++
+
 When dealing with many options, it is convenient to group these options for
 better help output.  An :class:`OptionParser` can contain several option groups,
 each of which can contain several options.
 
-Continuing with the parser defined above, adding an :class:`OptionGroup` to a
-parser is easy::
+An option group is obtained using the class :class:`OptionGroup`:
+
+.. class:: OptionGroup(parser, title, description=None)
+
+   where
+
+   * parser is the :class:`OptionParser` instance the group will be insterted in
+     to
+   * title is the group title
+   * description, optional, is a long description of the group
+
+:class:`OptionGroup` inherits from :class:`OptionContainer` (like
+:class:`OptionParser`) and so the :meth:`add_option` method can be used to add
+an option to the group.
+
+Once all the options are declared, using the :class:`OptionParser` method
+:meth:`add_option_group` the group is added to the previously defined parser.
+
+Continuing with the parser defined in the previous section, adding an
+:class:`OptionGroup` to a parser is easy::
 
     group = OptionGroup(parser, "Dangerous Options",
                         "Caution: use these options at your own risk.  "
@@ -571,20 +592,73 @@ This would result in the following help output:
 
 .. code-block:: text
 
-    usage:  [options] arg1 arg2
+   Usage: <yourscript> [options] arg1 arg2
 
-    options:
-      -h, --help           show this help message and exit
-      -v, --verbose        make lots of noise [default]
-      -q, --quiet          be vewwy quiet (I'm hunting wabbits)
-      -fFILE, --file=FILE  write output to FILE
-      -mMODE, --mode=MODE  interaction mode: one of 'novice', 'intermediate'
-                           [default], 'expert'
+   Options:
+     -h, --help            show this help message and exit
+     -v, --verbose         make lots of noise [default]
+     -q, --quiet           be vewwy quiet (I'm hunting wabbits)
+     -f FILE, --filename=FILE
+                           write output to FILE
+     -m MODE, --mode=MODE  interaction mode: novice, intermediate, or
+                           expert [default: intermediate]
 
-      Dangerous Options:
-      Caution: use of these options is at your own risk.  It is believed that
-      some of them bite.
-      -g                 Group option.
+     Dangerous Options:
+       Caution: use these options at your own risk.  It is believed that some
+       of them bite.
+
+       -g                  Group option.
+
+A bit more complete example might invole using more than one group: still
+extendind the previous example::
+
+    group = OptionGroup(parser, "Dangerous Options",
+                        "Caution: use these options at your own risk.  "
+                        "It is believed that some of them bite.")
+    group.add_option("-g", action="store_true", help="Group option.")
+    parser.add_option_group(group)
+
+    group = OptionGroup(parser, "Debug Options")
+    group.add_option("-d", "--debug", action="store_true",
+                     help="Print debug information")
+    group.add_option("-s", "--sql", action="store_true",
+                     help="Print all SQL statements executed")
+    group.add_option("-e", action="store_true", help="Print every action done")
+    parser.add_option_group(group)
+
+that results in the following output:
+
+.. code-block:: text
+
+   Usage: <yourscript> [options] arg1 arg2
+
+   Options:
+     -h, --help            show this help message and exit
+     -v, --verbose         make lots of noise [default]
+     -q, --quiet           be vewwy quiet (I'm hunting wabbits)
+     -f FILE, --filename=FILE
+                           write output to FILE
+     -m MODE, --mode=MODE  interaction mode: novice, intermediate, or expert
+                           [default: intermediate]
+
+     Dangerous Options:
+       Caution: use these options at your own risk.  It is believed that some
+       of them bite.
+
+       -g                  Group option.
+
+     Debug Options:
+       -d, --debug         Print debug information
+       -s, --sql           Print all SQL statements executed
+       -e                  Print every action done
+
+Another interesting method, in particular when working programmatically with
+option groups is:
+
+.. method:: OptionParser.get_option_group(opt_str)
+
+   Return, if defined, the :class:`OptionGroup` that has the title or the long
+   description equals to *opt_str*
 
 .. _optparse-printing-version-string:
 
@@ -656,14 +730,14 @@ Consider the first example above, where the user passes ``4x`` to an option
 that takes an integer::
 
    $ /usr/bin/foo -n 4x
-   usage: foo [options]
+   Usage: foo [options]
 
    foo: error: option -n: invalid integer value: '4x'
 
 Or, where the user fails to pass a value at all::
 
    $ /usr/bin/foo -n
-   usage: foo [options]
+   Usage: foo [options]
 
    foo: error: -n option requires an argument
 
@@ -1165,9 +1239,9 @@ must specify for any option using that action.
 
   .. code-block:: text
 
-     usage: foo.py [options]
+     Usage: foo.py [options]
 
-     options:
+     Options:
        -h, --help        Show this help message and exit
        -v                Be moderately verbose
        --file=FILENAME   Input file to read data from
@@ -1362,7 +1436,7 @@ it resolves the situation by removing ``-n`` from the earlier option's list of
 option strings.  Now ``--dry-run`` is the only way for the user to activate
 that option.  If the user asks for help, the help message will reflect that::
 
-   options:
+   Options:
      --dry-run     do no harm
      [...]
      -n, --noisy   be noisy
@@ -1378,7 +1452,7 @@ existing OptionParser::
 At this point, the original ``-n``/``--dry-run`` option is no longer
 accessible, so :mod:`optparse` removes it, leaving this help text::
 
-   options:
+   Options:
      [...]
      -n, --noisy   be noisy
      --dry-run     new dry-run option
