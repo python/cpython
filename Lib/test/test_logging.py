@@ -2067,7 +2067,7 @@ def test_main():
                  LogRecordFactoryTest, ChildLoggerTest, QueueHandlerTest,
                  RotatingFileHandlerTest,
                  LastResortTest,
-                 #TimedRotatingFileHandlerTest
+                 TimedRotatingFileHandlerTest
                 )
 
 if __name__ == "__main__":
