@@ -114,7 +114,7 @@ described here are distributed with the Python sources in the
    Now your options are:
 
 #. Copy :file:`example.sln` and :file:`example.vcproj`, rename them to
-      :file:`spam.\*`, and edit them by hand, or
+   :file:`spam.\*`, and edit them by hand, or
 
 #. Create a brand new project; instructions are below.
 
@@ -183,8 +183,8 @@ constant".  This shows up when building DLL under MSVC.  Change it to::
 
 and add the following to the module initialization function::
 
-   MyObject_Type.ob_type = &PyType_Type;
-
+   if (PyType_Ready(&MyObject_Type) < 0)
+        return NULL;
 
 
 .. _dynamic-linking:

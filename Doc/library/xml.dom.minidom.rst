@@ -118,13 +118,16 @@ module documentation.  This section lists the differences between the API and
    to discard children of that node.
 
 
-.. method:: Node.writexml(writer[, indent=""[, addindent=""[, newl=""[, encoding=""]]]])
+.. method:: Node.writexml(writer[, indent=""[, addindent=""[, newl=""]]])
 
    Write XML to the writer object.  The writer should have a :meth:`write` method
    which matches that of the file object interface.  The *indent* parameter is the
    indentation of the current node.  The *addindent* parameter is the incremental
    indentation to use for subnodes of the current one.  The *newl* parameter
    specifies the string to use to terminate newlines.
+
+   For the :class:`Document` node, an additional keyword argument *encoding* can
+   be used to specify the encoding field of the XML header.
 
    .. versionchanged:: 2.1
       The optional keyword parameters *indent*, *addindent*, and *newl* were added to
