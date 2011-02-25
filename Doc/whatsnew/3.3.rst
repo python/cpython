@@ -68,6 +68,19 @@ New, Improved, and Deprecated Modules
 
 * Stub
 
+os
+--
+
+The :mod:`os` module has a new :func:`~os.sendfile` function which provides an
+efficent "zero-copy" way for copying data from one file (or socket) descriptor
+to another.
+The phrase "zero-copy" refers to the fact that all of the copying of data
+between the two descriptors is done entirely by the kernel, with no copying of
+data into userspace buffers.
+:func:`~os.sendfile` can be used to efficiently copy data from a file on disk to
+a network socket, e.g. for downloading a file.
+
+(Patch submitted by Ross Lagerwall and Giampaolo Rodolà in :issue:`10882`.)
 
 Optimizations
 =============

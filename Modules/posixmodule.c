@@ -95,6 +95,20 @@ corresponding Unix manual entries for more information on calls.");
 #include <langinfo.h>
 #endif
 
+#ifdef HAVE_SYS_SENDFILE_H
+#include <sys/sendfile.h>
+#endif
+
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__APPLE__)
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+
+#ifdef HAVE_SYS_UIO_H
+#include <sys/uio.h>
+#endif
+#endif
+
 /* Various compilers have only certain posix functions */
 /* XXX Gosh I wish these were all moved into pyconfig.h */
 #if defined(PYCC_VACPP) && defined(PYOS_OS2)
@@ -121,7 +135,7 @@ corresponding Unix manual entries for more information on calls.");
 #ifdef _MSC_VER         /* Microsoft compiler */
 #define HAVE_GETCWD     1
 #define HAVE_GETPPID    1
-#define HAVE_GETLOGIN   1 
+#define HAVE_GETLOGIN   1
 #define HAVE_SPAWNV     1
 #define HAVE_EXECV      1
 #define HAVE_PIPE       1
@@ -348,6 +362,20 @@ static int win32_can_symlink = 0;
 #include <sys/mkdev.h>
 #endif
 #endif
+
+int
+PyParse_off_t(PyObject* arg, void* addr)
+{
+#if !defined(HAVE_LARGEFILE_SUPPORT)
+    *((off_t*)addr) = PyLong_AsLong(arg);
+#else
+    *((off_t*)addr) = PyLong_Check(arg) ? PyLong_AsLongLong(arg)
+            : PyLong_AsLong(arg);
+#endif
+    if (PyErr_Occurred())
+        return 0;
+    return 1;
+}
 
 #if defined _MSC_VER && _MSC_VER >= 1400
 /* Microsoft CRT in VS2005 and higher will verify that a filehandle is
@@ -1283,7 +1311,7 @@ win32_xstat_w(const wchar_t *path, struct win32_stat *result, BOOL traverse)
 
    The _w represent Unicode equivalents of the aformentioned ANSI functions. */
 
-static int 
+static int
 win32_lstat(const char* path, struct win32_stat *result)
 {
     return win32_xstat(path, result, FALSE);
@@ -1301,7 +1329,7 @@ win32_stat(const char* path, struct win32_stat *result)
     return win32_xstat(path, result, TRUE);
 }
 
-static int 
+static int
 win32_stat_w(const wchar_t* path, struct win32_stat *result)
 {
     return win32_xstat_w(path, result, TRUE);
@@ -2339,7 +2367,7 @@ posix_listdir(PyObject *self, PyObject *args)
     if (PyArg_ParseTuple(args, "|U:listdir", &po)) {
         WIN32_FIND_DATAW wFileData;
         Py_UNICODE *wnamebuf, *po_wchars;
-        
+
         if (po == NULL) { /* Default arg: "." */
             po_wchars = L".";
             len = 1;
@@ -2741,7 +2769,7 @@ posix__getfinalpathname(PyObject *self, PyObject *args)
     int result_length;
     PyObject *result;
     wchar_t *path;
-    
+
     if (!PyArg_ParseTuple(args, "u|:_getfinalpathname", &path)) {
         return NULL;
     }
@@ -2762,7 +2790,7 @@ posix__getfinalpathname(PyObject *self, PyObject *args)
         /* FILE_FLAG_BACKUP_SEMANTICS is required to open a directory */
         FILE_FLAG_BACKUP_SEMANTICS,
         NULL);
-    
+
     if(hFile == INVALID_HANDLE_VALUE) {
         return win32_error_unicode("GetFinalPathNamyByHandle", path);
         return PyErr_Format(PyExc_RuntimeError,
@@ -3072,7 +3100,7 @@ BOOL WINAPI Py_DeleteFileW(LPCWSTR lpFileName)
 
     if (GetFileAttributesExW(lpFileName, GetFileExInfoStandard, &info)) {
         is_directory = info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
-        
+
         /* Get WIN32_FIND_DATA structure for the path to determine if
            it is a symlink */
         if(is_directory &&
@@ -4262,7 +4290,7 @@ posix_getgroups(PyObject *self, PyObject *noargs)
 #endif
     gid_t grouplist[MAX_GROUPS];
 
-    /* On MacOSX getgroups(2) can return more than MAX_GROUPS results 
+    /* On MacOSX getgroups(2) can return more than MAX_GROUPS results
      * This is a helper variable to store the intermediate result when
      * that happens.
      *
@@ -4478,15 +4506,15 @@ static PyObject *
 posix_getlogin(PyObject *self, PyObject *noargs)
 {
     PyObject *result = NULL;
-#ifdef MS_WINDOWS    
+#ifdef MS_WINDOWS
     wchar_t user_name[UNLEN + 1];
     DWORD num_chars = sizeof(user_name)/sizeof(user_name[0]);
 
     if (GetUserNameW(user_name, &num_chars)) {
         /* num_chars is the number of unicode chars plus null terminator */
         result = PyUnicode_FromWideChar(user_name, num_chars - 1);
-    } 
-    else 
+    }
+    else
         result = PyErr_SetFromWindowsErr(GetLastError());
 #else
     char *name;
@@ -5170,12 +5198,12 @@ win_readlink(PyObject *self, PyObject *args)
         FILE_FLAG_OPEN_REPARSE_POINT|FILE_FLAG_BACKUP_SEMANTICS,
         0);
     Py_END_ALLOW_THREADS
-    
+
     if (reparse_point_handle==INVALID_HANDLE_VALUE)
     {
         return win32_error_unicode("readlink", path);
     }
-    
+
     Py_BEGIN_ALLOW_THREADS
     /* New call DeviceIoControl to read the reparse point */
     io_result = DeviceIoControl(
@@ -5246,7 +5274,7 @@ win_symlink(PyObject *self, PyObject *args, PyObject *kwargs)
     int target_is_directory = 0;
     DWORD res;
     WIN32_FILE_ATTRIBUTE_DATA src_info;
-    
+
     if (!check_CreateSymbolicLinkW())
     {
         /* raise NotImplementedError */
@@ -5265,7 +5293,7 @@ win_symlink(PyObject *self, PyObject *args, PyObject *kwargs)
         Py_DECREF(src);
         return NULL;
     }
-    
+
     /* if src is a directory, ensure target_is_directory==1 */
     if(
         GetFileAttributesExW(
@@ -5288,7 +5316,7 @@ win_symlink(PyObject *self, PyObject *args, PyObject *kwargs)
     {
         return win32_error_unicode("symlink", PyUnicode_AsUnicode(src));
     }
-    
+
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -5723,6 +5751,179 @@ posix_write(PyObject *self, PyObject *args)
     return PyLong_FromSsize_t(size);
 }
 
+#ifdef HAVE_SENDFILE
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__APPLE__)
+static int
+iov_setup(struct iovec **iov, Py_buffer **buf, PyObject *seq, int cnt, int type)
+{
+    int i, j;
+    *iov = PyMem_New(struct iovec, cnt);
+    if (*iov == NULL) {
+        PyErr_NoMemory();
+        return 0;
+    }
+    *buf = PyMem_New(Py_buffer, cnt);
+    if (*buf == NULL) {
+        PyMem_Del(*iov);
+        PyErr_NoMemory();
+        return 0;
+    }
+
+    for (i = 0; i < cnt; i++) {
+        if (PyObject_GetBuffer(PySequence_GetItem(seq, i), &(*buf)[i],
+                type) == -1) {
+            PyMem_Del(*iov);
+            for (j = 0; j < i; j++) {
+                PyBuffer_Release(&(*buf)[j]);
+           }
+            PyMem_Del(*buf);
+            return 0;
+        }
+        (*iov)[i].iov_base = (*buf)[i].buf;
+        (*iov)[i].iov_len = (*buf)[i].len;
+    }
+    return 1;
+}
+
+static void
+iov_cleanup(struct iovec *iov, Py_buffer *buf, int cnt)
+{
+    int i;
+    PyMem_Del(iov);
+    for (i = 0; i < cnt; i++) {
+        PyBuffer_Release(&buf[i]);
+    }
+    PyMem_Del(buf);
+}
+#endif
+
+PyDoc_STRVAR(posix_sendfile__doc__,
+"sendfile(out, in, offset, nbytes) -> byteswritten\n\
+sendfile(out, in, offset, nbytes, headers=None, trailers=None, flags=0)\n\
+            -> byteswritten\n\
+Copy nbytes bytes from file descriptor in to file descriptor out.");
+
+static PyObject *
+posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
+{
+    int in, out;
+    Py_ssize_t ret;
+    off_t offset;
+
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__APPLE__)
+#ifndef __APPLE__
+    Py_ssize_t len;
+#endif
+    PyObject *headers = NULL, *trailers = NULL;
+    Py_buffer *hbuf, *tbuf;
+    off_t sbytes;
+    struct sf_hdtr sf;
+    int flags = 0;
+    sf.headers = NULL;
+    sf.trailers = NULL;
+    static char *keywords[] = {"out", "in",
+                                "offset", "count",
+                                "headers", "trailers", "flags", NULL};
+
+#ifdef __APPLE__
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiO&O&|OOi:sendfile",
+        keywords, &out, &in, PyParse_off_t, &offset, PyParse_off_t, &sbytes,
+#else
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiO&n|OOi:sendfile",
+        keywords, &out, &in, PyParse_off_t, &offset, &len,
+#endif
+                &headers, &trailers, &flags))
+            return NULL;
+    if (headers != NULL) {
+        if (!PySequence_Check(headers)) {
+            PyErr_SetString(PyExc_TypeError,
+                "sendfile() headers must be a sequence or None");
+            return NULL;
+        } else {
+            sf.hdr_cnt = PySequence_Size(headers);
+            if (sf.hdr_cnt > 0 && !iov_setup(&(sf.headers), &hbuf,
+                    headers, sf.hdr_cnt, PyBUF_SIMPLE))
+                return NULL;
+        }
+    }
+    if (trailers != NULL) {
+        if (!PySequence_Check(trailers)) {
+            PyErr_SetString(PyExc_TypeError,
+                "sendfile() trailers must be a sequence or None");
+            return NULL;
+        } else {
+            sf.trl_cnt = PySequence_Size(trailers);
+            if (sf.trl_cnt > 0 && !iov_setup(&(sf.trailers), &tbuf,
+                    trailers, sf.trl_cnt, PyBUF_SIMPLE))
+                return NULL;
+        }
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+#ifdef __APPLE__
+    ret = sendfile(in, out, offset, &sbytes, &sf, flags);
+#else
+    ret = sendfile(in, out, offset, len, &sf, &sbytes, flags);
+#endif
+    Py_END_ALLOW_THREADS
+
+    if (sf.headers != NULL)
+        iov_cleanup(sf.headers, hbuf, sf.hdr_cnt);
+    if (sf.trailers != NULL)
+        iov_cleanup(sf.trailers, tbuf, sf.trl_cnt);
+
+    if (ret < 0) {
+        if ((errno == EAGAIN) || (errno == EBUSY)) {
+            if (sbytes != 0) {
+                // some data has been sent
+                goto done;
+            }
+            else {
+                // no data has been sent; upper application is supposed
+                // to retry on EAGAIN or EBUSY
+                return posix_error();
+            }
+        }
+        return posix_error();
+    }
+    goto done;
+
+done:
+    #if !defined(HAVE_LARGEFILE_SUPPORT)
+        return Py_BuildValue("l", sbytes);
+    #else
+        return Py_BuildValue("L", sbytes);
+    #endif
+
+#else
+    Py_ssize_t count;
+    PyObject *offobj;
+    static char *keywords[] = {"out", "in",
+                                "offset", "count", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiOn:sendfile",
+            keywords, &out, &in, &offobj, &count))
+        return NULL;
+#ifdef linux
+    if (offobj == Py_None) {
+        Py_BEGIN_ALLOW_THREADS
+        ret = sendfile(out, in, NULL, count);
+        Py_END_ALLOW_THREADS
+        if (ret < 0)
+            return posix_error();
+        Py_INCREF(Py_None);
+        return Py_BuildValue("nO", ret, Py_None);
+    }
+#endif
+    PyParse_off_t(offobj, &offset);
+    Py_BEGIN_ALLOW_THREADS
+    ret = sendfile(out, in, &offset, count);
+    Py_END_ALLOW_THREADS
+    if (ret < 0)
+        return posix_error();
+    return Py_BuildValue("n", ret);
+#endif
+}
+#endif
 
 PyDoc_STRVAR(posix_fstat__doc__,
 "fstat(fd) -> stat result\n\n\
@@ -7971,6 +8172,10 @@ static PyMethodDef posix_methods[] = {
     {"lseek",           posix_lseek, METH_VARARGS, posix_lseek__doc__},
     {"read",            posix_read, METH_VARARGS, posix_read__doc__},
     {"write",           posix_write, METH_VARARGS, posix_write__doc__},
+#ifdef HAVE_SENDFILE
+    {"sendfile",        (PyCFunction)posix_sendfile, METH_VARARGS | METH_KEYWORDS,
+                            posix_sendfile__doc__},
+#endif
     {"fstat",           posix_fstat, METH_VARARGS, posix_fstat__doc__},
     {"isatty",          posix_isatty, METH_VARARGS, posix_isatty__doc__},
 #ifdef HAVE_PIPE
@@ -8361,6 +8566,17 @@ all_ins(PyObject *d)
 #ifdef ST_NOSUID
     if (ins(d, "ST_NOSUID", (long)ST_NOSUID)) return -1;
 #endif /* ST_NOSUID */
+
+    /* FreeBSD sendfile() constants */
+#ifdef SF_NODISKIO
+    if (ins(d, "SF_NODISKIO", (long)SF_NODISKIO)) return -1;
+#endif
+#ifdef SF_MNOWAIT
+    if (ins(d, "SF_MNOWAIT", (long)SF_MNOWAIT)) return -1;
+#endif
+#ifdef SF_SYNC
+    if (ins(d, "SF_SYNC", (long)SF_SYNC)) return -1;
+#endif
 
 #ifdef HAVE_SPAWNV
 #if defined(PYOS_OS2) && defined(PYCC_GCC)

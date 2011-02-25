@@ -35,6 +35,8 @@ Core and Builtins
 Library
 -------
 
+- Issue 10882: Add os.sendfile function.
+
 - Issue #10868: Allow usage of the register method of an ABC as a class
   decorator.
 
