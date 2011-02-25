@@ -37,6 +37,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10956: Buffered I/O classes retry reading or writing after a signal
+  has arrived and the handler returned successfully.
+
 - Issue #10680: Fix mutually exclusive arguments for argument groups in
   argparse.
 
