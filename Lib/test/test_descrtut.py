@@ -199,6 +199,8 @@ You can get the information from the list type:
      '__str__',
      '__subclasshook__',
      'append',
+     'clear',
+     'copy',
      'count',
      'extend',
      'index',
