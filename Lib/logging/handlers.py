@@ -1307,6 +1307,16 @@ class QueueListener(object):
             except queue.Empty:
                 break
 
+    def enqueue_sentinel(self):
+        """
+        This is used to enqueue the sentinel record.
+
+        The base implementation uses put_nowait. You may want to override this
+        method if you want to use timeouts or work with custom queue
+        implementations.
+        """
+        self.queue.put_nowait(self._sentinel)
+
     def stop(self):
         """
         Stop the listener.
@@ -1316,6 +1326,6 @@ class QueueListener(object):
         may be some records still left on the queue, which won't be processed.
         """
         self._stop.set()
-        self.queue.put_nowait(self._sentinel)
+        self.enqueue_sentinel()
         self._thread.join()
         self._thread = None
