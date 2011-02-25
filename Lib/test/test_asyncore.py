@@ -352,7 +352,7 @@ class DispatcherWithSendTests(unittest.TestCase):
     @support.reap_threads
     def test_send(self):
         evt = threading.Event()
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock = socket.socket()
         sock.settimeout(3)
         port = support.bind_port(sock)
 
@@ -367,7 +367,7 @@ class DispatcherWithSendTests(unittest.TestCase):
 
             data = b"Suppose there isn't a 16-ton weight?"
             d = dispatcherwithsend_noread()
-            d.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+            d.create_socket()
             d.connect((HOST, port))
 
             # give time for socket to connect
@@ -474,7 +474,7 @@ class TCPServer(asyncore.dispatcher):
 
     def __init__(self, handler=BaseTestHandler, host=HOST, port=0):
         asyncore.dispatcher.__init__(self)
-        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.create_socket()
         self.set_reuse_addr()
         self.bind((host, port))
         self.listen(5)
@@ -495,7 +495,7 @@ class BaseClient(BaseTestHandler):
 
     def __init__(self, address):
         BaseTestHandler.__init__(self)
-        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.create_socket()
         self.connect(address)
 
     def handle_connect(self):
@@ -536,7 +536,7 @@ class BaseTestAPI(unittest.TestCase):
 
             def __init__(self):
                 BaseTestHandler.__init__(self)
-                self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.create_socket()
                 self.bind((HOST, 0))
                 self.listen(5)
                 self.address = self.socket.getsockname()[:2]
@@ -555,7 +555,7 @@ class BaseTestAPI(unittest.TestCase):
 
             def __init__(self):
                 BaseTestHandler.__init__(self)
-                self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.create_socket()
                 self.bind((HOST, 0))
                 self.listen(5)
                 self.address = self.socket.getsockname()[:2]
@@ -693,20 +693,20 @@ class BaseTestAPI(unittest.TestCase):
 
     def test_create_socket(self):
         s = asyncore.dispatcher()
-        s.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.create_socket()
         self.assertEqual(s.socket.family, socket.AF_INET)
         SOCK_NONBLOCK = getattr(socket, 'SOCK_NONBLOCK', 0)
         self.assertEqual(s.socket.type, socket.SOCK_STREAM | SOCK_NONBLOCK)
 
     def test_bind(self):
         s1 = asyncore.dispatcher()
-        s1.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        s1.create_socket()
         s1.bind((HOST, 0))
         s1.listen(5)
         port = s1.socket.getsockname()[1]
 
         s2 = asyncore.dispatcher()
-        s2.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        s2.create_socket()
         # EADDRINUSE indicates the socket was correctly bound
         self.assertRaises(socket.error, s2.bind, (HOST, port))
 
@@ -723,7 +723,7 @@ class BaseTestAPI(unittest.TestCase):
             self.assertFalse(s.socket.getsockopt(socket.SOL_SOCKET,
                                                  socket.SO_REUSEADDR))
             s.socket.close()
-            s.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.create_socket()
             s.set_reuse_addr()
             self.assertTrue(s.socket.getsockopt(socket.SOL_SOCKET,
                                                  socket.SO_REUSEADDR))

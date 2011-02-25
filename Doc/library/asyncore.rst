@@ -184,11 +184,13 @@ any that have been added to the map during asynchronous service) is closed.
    Most of these are nearly identical to their socket partners.
 
 
-   .. method:: create_socket(family, type)
+   .. method:: create_socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
 
       This is identical to the creation of a normal socket, and will use the
       same options for creation.  Refer to the :mod:`socket` documentation for
       information on creating sockets.
+
+  .. versionchanged:: 3.3 family and type arguments can be omitted.
 
 
    .. method:: connect(address)
@@ -280,7 +282,7 @@ implement its socket handling::
 
        def __init__(self, host, path):
            asyncore.dispatcher.__init__(self)
-           self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+           self.create_socket()
            self.connect( (host, 80) )
            self.buffer = bytes('GET %s HTTP/1.0\r\n\r\n' % path, 'ascii')
 
@@ -326,7 +328,7 @@ connections and dispatches the incoming connections to a handler::
 
         def __init__(self, host, port):
             asyncore.dispatcher.__init__(self)
-            self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.create_socket()
             self.set_reuse_addr()
             self.bind((host, port))
             self.listen(5)
