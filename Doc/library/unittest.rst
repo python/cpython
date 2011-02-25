@@ -1752,9 +1752,7 @@ Loading and running tests
 load_tests Protocol
 ###################
 
-
 .. versionadded:: 2.7
-
 
 Modules or packages can customize how tests are loaded from them during normal
 test runs or test discovery by implementing a function called ``load_tests``.

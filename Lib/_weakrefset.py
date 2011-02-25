@@ -66,7 +66,11 @@ class WeakSet(object):
         return sum(x() is not None for x in self.data)
 
     def __contains__(self, item):
-        return ref(item) in self.data
+        try:
+            wr = ref(item)
+        except TypeError:
+            return False
+        return wr in self.data
 
     def __reduce__(self):
         return (self.__class__, (list(self),),

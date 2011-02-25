@@ -368,7 +368,6 @@ The :class:`SequenceMatcher` class has this constructor:
 
    :class:`SequenceMatcher` objects have the following methods:
 
-
    .. method:: set_seqs(a, b)
 
       Set the two sequences to be compared.

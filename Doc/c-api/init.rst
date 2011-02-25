@@ -319,8 +319,9 @@ Process-wide parameters
 .. cfunction:: void Py_SetPythonHome(char *home)
 
    Set the default "home" directory, that is, the location of the standard
-   Python libraries.  The libraries are searched in
-   :file:`{home}/lib/python{version}` and :file:`{home}/lib/python{version}`.
+   Python libraries.  See :envvar:`PYTHONHOME` for the meaning of the
+   argument string.
+
    The argument should point to a zero-terminated character string in static
    storage whose contents will not change for the duration of the program's
    execution.  No code in the Python interpreter will change the contents of
