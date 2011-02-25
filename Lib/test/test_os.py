@@ -1268,6 +1268,24 @@ class LoginTests(unittest.TestCase):
         self.assertNotEqual(len(user_name), 0)
 
 
+@unittest.skipUnless(hasattr(os, 'getpriority') and hasattr(os, 'setpriority'),
+                     "needs os.getpriority and os.setpriority")
+class ProgramPriorityTests(unittest.TestCase):
+    """Tests for os.getpriority() and os.setpriority()."""
+
+    def test_set_get_priority(self):
+        base = os.getpriority(os.PRIO_PROCESS, os.getpid())
+        os.setpriority(os.PRIO_PROCESS, os.getpid(), base + 1)
+        try:
+            self.assertEqual(os.getpriority(os.PRIO_PROCESS, os.getpid()), base + 1)
+        finally:
+            try:
+                os.setpriority(os.PRIO_PROCESS, os.getpid(), base)
+            except OSError as err:
+                if err.errno != EACCESS:
+                    raise
+
+
 class SendfileTestServer(asyncore.dispatcher, threading.Thread):
 
     class Handler(asynchat.async_chat):
@@ -1535,6 +1553,7 @@ def test_main():
         LoginTests,
         LinkTests,
         TestSendfile,
+        ProgramPriorityTests,
     )
 
 if __name__ == "__main__":

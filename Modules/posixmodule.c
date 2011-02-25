@@ -2958,6 +2958,52 @@ posix_nice(PyObject *self, PyObject *args)
 }
 #endif /* HAVE_NICE */
 
+
+#ifdef HAVE_GETPRIORITY
+PyDoc_STRVAR(posix_getpriority__doc__,
+"getpriority(which, who) -> current_priority\n\n\
+Get program scheduling priority.");
+
+static PyObject *
+posix_getpriority(PyObject *self, PyObject *args)
+{
+    int which, who, retval;
+
+    if (!PyArg_ParseTuple(args, "ii", &which, &who))
+        return NULL;
+    errno = 0;
+    Py_BEGIN_ALLOW_THREADS
+    retval = getpriority(which, who);
+    Py_END_ALLOW_THREADS
+    if (errno != 0)
+        return posix_error();
+    return PyLong_FromLong((long)retval);
+}
+#endif /* HAVE_GETPRIORITY */
+
+
+#ifdef HAVE_SETPRIORITY
+PyDoc_STRVAR(posix_setpriority__doc__,
+"setpriority(which, who, prio) -> None\n\n\
+Set program scheduling priority.");
+
+static PyObject *
+posix_setpriority(PyObject *self, PyObject *args)
+{
+    int which, who, prio, retval;
+
+    if (!PyArg_ParseTuple(args, "iii", &which, &who, &prio))
+        return NULL;
+    Py_BEGIN_ALLOW_THREADS
+    retval = setpriority(which, who, prio);
+    Py_END_ALLOW_THREADS
+    if (retval == -1)
+        return posix_error();
+    Py_RETURN_NONE;
+}
+#endif /* HAVE_SETPRIORITY */
+
+
 PyDoc_STRVAR(posix_rename__doc__,
 "rename(old, new)\n\n\
 Rename a file or directory.");
@@ -8012,6 +8058,12 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_NICE
     {"nice",            posix_nice, METH_VARARGS, posix_nice__doc__},
 #endif /* HAVE_NICE */
+#ifdef HAVE_GETPRIORITY
+    {"getpriority",     posix_getpriority, METH_VARARGS, posix_getpriority__doc__},
+#endif /* HAVE_GETPRIORITY */
+#ifdef HAVE_SETPRIORITY
+    {"setpriority",     posix_setpriority, METH_VARARGS, posix_setpriority__doc__},
+#endif /* HAVE_SETPRIORITY */
 #ifdef HAVE_READLINK
     {"readlink",        posix_readlink, METH_VARARGS, posix_readlink__doc__},
 #endif /* HAVE_READLINK */
@@ -8459,6 +8511,16 @@ all_ins(PyObject *d)
 #ifdef O_EXLOCK
     if (ins(d, "O_EXLOCK", (long)O_EXLOCK)) return -1;
 #endif
+#ifdef PRIO_PROCESS
+    if (ins(d, "PRIO_PROCESS", (long)PRIO_PROCESS)) return -1;
+#endif
+#ifdef PRIO_PGRP
+    if (ins(d, "PRIO_PGRP", (long)PRIO_PGRP)) return -1;
+#endif
+#ifdef PRIO_USER
+    if (ins(d, "PRIO_USER", (long)PRIO_USER)) return -1;
+#endif
+
 
 /* MS Windows */
 #ifdef O_NOINHERIT
