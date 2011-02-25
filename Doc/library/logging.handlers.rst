@@ -838,6 +838,15 @@ possible, while any potentially slow operations (such as sending an email via
       Note that if you don't call this before your application exits, there
       may be some records still left on the queue, which won't be processed.
 
+   .. method:: enqueue_sentinel()
+
+      Writes a sentinel to the queue to tell the listener to quit. This
+      implementation uses ``put_nowait()``.  You may want to override this
+      method if you want to use timeouts or work with custom queue
+      implementations.
+
+      .. versionadded:: 3.3
+
 
 .. seealso::
 
