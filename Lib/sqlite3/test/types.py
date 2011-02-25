@@ -85,7 +85,7 @@ class DeclTypesTests(unittest.TestCase):
             if isinstance(_val, bytes):
                 # sqlite3 always calls __init__ with a bytes created from a
                 # UTF-8 string when __conform__ was used to store the object.
-                _val = _val.decode('utf8')
+                _val = _val.decode('utf-8')
             self.val = _val
 
         def __cmp__(self, other):

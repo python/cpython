@@ -1191,7 +1191,7 @@ class POSIXProcessTestCase(BaseTestCase):
         stdout, stderr = p.communicate()
         self.assertEqual(0, p.returncode, "sigchild_ignore.py exited"
                          " non-zero with this error:\n%s" %
-                         stderr.decode('utf8'))
+                         stderr.decode('utf-8'))
 
 
 @unittest.skipUnless(mswindows, "Windows specific tests")

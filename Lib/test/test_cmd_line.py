@@ -151,7 +151,7 @@ class CmdLineTest(unittest.TestCase):
     @unittest.skipUnless(sys.platform == 'darwin', 'test specific to Mac OS X')
     def test_osx_utf8(self):
         def check_output(text):
-            decoded = text.decode('utf8', 'surrogateescape')
+            decoded = text.decode('utf-8', 'surrogateescape')
             expected = ascii(decoded).encode('ascii') + b'\n'
 
             env = os.environ.copy()
@@ -223,7 +223,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertIn(path2.encode('ascii'), out)
 
     def test_displayhook_unencodable(self):
-        for encoding in ('ascii', 'latin1', 'utf8'):
+        for encoding in ('ascii', 'latin-1', 'utf-8'):
             env = os.environ.copy()
             env['PYTHONIOENCODING'] = encoding
             p = subprocess.Popen(

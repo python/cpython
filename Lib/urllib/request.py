@@ -1846,7 +1846,7 @@ class URLopener:
         if encoding == 'base64':
             import base64
             # XXX is this encoding/decoding ok?
-            data = base64.decodebytes(data.encode('ascii')).decode('latin1')
+            data = base64.decodebytes(data.encode('ascii')).decode('latin-1')
         else:
             data = unquote(data)
         msg.append('Content-Length: %d' % len(data))

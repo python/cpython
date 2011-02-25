@@ -251,7 +251,7 @@ class urlretrieve_FileTests(unittest.TestCase):
     def constructLocalFileUrl(self, filePath):
         filePath = os.path.abspath(filePath)
         try:
-            filePath.encode("utf8")
+            filePath.encode("utf-8")
         except UnicodeEncodeError:
             raise unittest.SkipTest("filePath is not encodable to utf8")
         return "file://%s" % urllib.request.pathname2url(filePath)

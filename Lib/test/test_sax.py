@@ -20,8 +20,8 @@ import unittest
 TEST_XMLFILE = findfile("test.xml", subdir="xmltestdata")
 TEST_XMLFILE_OUT = findfile("test.xml.out", subdir="xmltestdata")
 try:
-    TEST_XMLFILE.encode("utf8")
-    TEST_XMLFILE_OUT.encode("utf8")
+    TEST_XMLFILE.encode("utf-8")
+    TEST_XMLFILE_OUT.encode("utf-8")
 except UnicodeEncodeError:
     raise unittest.SkipTest("filename is not encodable to utf8")
 

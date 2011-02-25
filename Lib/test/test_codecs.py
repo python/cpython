@@ -1250,7 +1250,7 @@ class EncodedFileTest(unittest.TestCase):
         self.assertEqual(ef.read(), b'\\\xd5\n\x00\x00\xae')
 
         f = io.BytesIO()
-        ef = codecs.EncodedFile(f, 'utf-8', 'latin1')
+        ef = codecs.EncodedFile(f, 'utf-8', 'latin-1')
         ef.write(b'\xc3\xbc')
         self.assertEqual(f.getvalue(), b'\xfc')
 
@@ -1611,7 +1611,7 @@ class SurrogateEscapeTest(unittest.TestCase):
 
     def test_latin1(self):
         # Issue6373
-        self.assertEqual("\udce4\udceb\udcef\udcf6\udcfc".encode("latin1", "surrogateescape"),
+        self.assertEqual("\udce4\udceb\udcef\udcf6\udcfc".encode("latin-1", "surrogateescape"),
                          b"\xe4\xeb\xef\xf6\xfc")
 
 

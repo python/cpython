@@ -707,7 +707,7 @@ class StrTest(unittest.TestCase, BaseStrTest):
 class BytesTest(unittest.TestCase, BaseStrTest):
 
     def from_latin1(self, s):
-        return s.encode("latin1")
+        return s.encode("latin-1")
 
     @bigmemtest(minsize=_2G + 2, memuse=1 + character_size)
     def test_decode(self, size):
@@ -718,7 +718,7 @@ class BytesTest(unittest.TestCase, BaseStrTest):
 class BytearrayTest(unittest.TestCase, BaseStrTest):
 
     def from_latin1(self, s):
-        return bytearray(s.encode("latin1"))
+        return bytearray(s.encode("latin-1"))
 
     @bigmemtest(minsize=_2G + 2, memuse=1 + character_size)
     def test_decode(self, size):

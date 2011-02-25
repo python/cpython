@@ -46,7 +46,7 @@ except ImportError:
 
 def _default_chunk_size():
     """Get the default TextIOWrapper chunk size"""
-    with open(__file__, "r", encoding="latin1") as f:
+    with open(__file__, "r", encoding="latin-1") as f:
         return f._CHUNK_SIZE
 
 
@@ -1684,11 +1684,11 @@ class TextIOWrapperTest(unittest.TestCase):
         r = self.BytesIO(b"\xc3\xa9\n\n")
         b = self.BufferedReader(r, 1000)
         t = self.TextIOWrapper(b)
-        t.__init__(b, encoding="latin1", newline="\r\n")
-        self.assertEqual(t.encoding, "latin1")
+        t.__init__(b, encoding="latin-1", newline="\r\n")
+        self.assertEqual(t.encoding, "latin-1")
         self.assertEqual(t.line_buffering, False)
-        t.__init__(b, encoding="utf8", line_buffering=True)
-        self.assertEqual(t.encoding, "utf8")
+        t.__init__(b, encoding="utf-8", line_buffering=True)
+        self.assertEqual(t.encoding, "utf-8")
         self.assertEqual(t.line_buffering, True)
         self.assertEqual("\xe9\n", t.readline())
         self.assertRaises(TypeError, t.__init__, b, newline=42)
@@ -1738,8 +1738,8 @@ class TextIOWrapperTest(unittest.TestCase):
     def test_encoding(self):
         # Check the encoding attribute is always set, and valid
         b = self.BytesIO()
-        t = self.TextIOWrapper(b, encoding="utf8")
-        self.assertEqual(t.encoding, "utf8")
+        t = self.TextIOWrapper(b, encoding="utf-8")
+        self.assertEqual(t.encoding, "utf-8")
         t = self.TextIOWrapper(b)
         self.assertTrue(t.encoding is not None)
         codecs.lookup(t.encoding)
@@ -1918,7 +1918,7 @@ class TextIOWrapperTest(unittest.TestCase):
 
     def test_basic_io(self):
         for chunksize in (1, 2, 3, 4, 5, 15, 16, 17, 31, 32, 33, 63, 64, 65):
-            for enc in "ascii", "latin1", "utf8" :# , "utf-16-be", "utf-16-le":
+            for enc in "ascii", "latin-1", "utf-8" :# , "utf-16-be", "utf-16-le":
                 f = self.open(support.TESTFN, "w+", encoding=enc)
                 f._CHUNK_SIZE = chunksize
                 self.assertEqual(f.write("abc"), 3)
@@ -1968,7 +1968,7 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertEqual(rlines, wlines)
 
     def test_telling(self):
-        f = self.open(support.TESTFN, "w+", encoding="utf8")
+        f = self.open(support.TESTFN, "w+", encoding="utf-8")
         p0 = f.tell()
         f.write("\xff\n")
         p1 = f.tell()

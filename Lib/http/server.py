@@ -448,7 +448,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                 message = ''
         if self.request_version != 'HTTP/0.9':
             self.wfile.write(("%s %d %s\r\n" %
-                              (self.protocol_version, code, message)).encode('latin1', 'strict'))
+                              (self.protocol_version, code, message)).encode('latin-1', 'strict'))
 
     def send_header(self, keyword, value):
         """Send a MIME header."""
@@ -456,7 +456,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
             if not hasattr(self, '_headers_buffer'):
                 self._headers_buffer = []
             self._headers_buffer.append(
-                ("%s: %s\r\n" % (keyword, value)).encode('latin1', 'strict'))
+                ("%s: %s\r\n" % (keyword, value)).encode('latin-1', 'strict'))
 
         if keyword.lower() == 'connection':
             if value.lower() == 'close':

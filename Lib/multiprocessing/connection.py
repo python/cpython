@@ -434,10 +434,10 @@ class ConnectionWrapper(object):
         return self._loads(s)
 
 def _xml_dumps(obj):
-    return xmlrpclib.dumps((obj,), None, None, None, 1).encode('utf8')
+    return xmlrpclib.dumps((obj,), None, None, None, 1).encode('utf-8')
 
 def _xml_loads(s):
-    (obj,), method = xmlrpclib.loads(s.decode('utf8'))
+    (obj,), method = xmlrpclib.loads(s.decode('utf-8'))
     return obj
 
 class XmlListener(Listener):

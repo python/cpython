@@ -95,14 +95,14 @@ class TestMailbox(TestBase):
             """)
 
     def test_add_invalid_8bit_bytes_header(self):
-        key = self._box.add(self._nonascii_msg.encode('latin1'))
+        key = self._box.add(self._nonascii_msg.encode('latin-1'))
         self.assertEqual(len(self._box), 1)
         self.assertEqual(self._box.get_bytes(key),
-            self._nonascii_msg.encode('latin1'))
+            self._nonascii_msg.encode('latin-1'))
 
     def test_invalid_nonascii_header_as_string(self):
         subj = self._nonascii_msg.splitlines()[1]
-        key = self._box.add(subj.encode('latin1'))
+        key = self._box.add(subj.encode('latin-1'))
         self.assertEqual(self._box.get_string(key),
             'Subject: =?unknown-8bit?b?RmFsaW5hcHThciBo4Xpob3pzeuFsbO104XNz'
             'YWwuIE3hciByZW5kZWx06Ww/?=\n\n')
