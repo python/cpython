@@ -309,7 +309,7 @@ implement its socket handling::
 asyncore Example basic echo server
 ----------------------------------
 
-Here is abasic echo server that uses the :class:`dispatcher` class to accept
+Here is a basic echo server that uses the :class:`dispatcher` class to accept
 connections and dispatches the incoming connections to a handler::
 
     import asyncore
@@ -319,7 +319,8 @@ connections and dispatches the incoming connections to a handler::
 
         def handle_read(self):
             data = self.recv(8192)
-            self.send(data)
+            if data:
+                self.send(data)
 
     class EchoServer(asyncore.dispatcher):
 
