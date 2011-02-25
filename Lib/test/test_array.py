@@ -15,7 +15,7 @@ class ArraySubclass(array.array):
 
 class ArraySubclassWithKwargs(array.array):
     def __init__(self, typecode, newarg=None):
-        array.array.__init__(typecode)
+        array.array.__init__(self, typecode)
 
 tests = [] # list to accumulate all tests
 typecodes = "ubBhHiIlLfd"

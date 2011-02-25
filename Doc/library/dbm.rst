@@ -86,10 +86,8 @@ then prints out the contents of the database::
    # Notice how the value is now in bytes.
    assert db['www.cnn.com'] == b'Cable News Network'
 
-   # Loop through contents.  Other dictionary methods
-   # such as .keys(), .values() also work.
-   for k, v in db.iteritems():
-       print(k, '\t', v)
+   # Often-used methods of the dict interface work too.
+   print(db.get('python.org', b'not present'))
 
    # Storing a non-string key or value will raise an exception (most
    # likely a TypeError).

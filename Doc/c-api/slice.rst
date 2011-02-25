@@ -48,4 +48,3 @@ Slice Objects
    normal slices.
 
    Returns 0 on success and -1 on error with exception set.
-
