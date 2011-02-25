@@ -257,6 +257,7 @@ class SocketIO(io.RawIOBase):
         self._mode = mode
         self._reading = "r" in mode
         self._writing = "w" in mode
+        self._timeout_occurred = False
 
     def readinto(self, b):
         """Read up to len(b) bytes into the writable buffer *b* and return
@@ -268,9 +269,14 @@ class SocketIO(io.RawIOBase):
         """
         self._checkClosed()
         self._checkReadable()
+        if self._timeout_occurred:
+            raise IOError("cannot read from timed out object")
         while True:
             try:
                 return self._sock.recv_into(b)
+            except timeout:
+                self._timeout_occurred = True
+                raise
             except error as e:
                 n = e.args[0]
                 if n == EINTR:
