@@ -505,11 +505,11 @@ To test for the presence of SSL support in a Python installation, user code
 should use the following idiom::
 
    try:
-      import ssl
+       import ssl
    except ImportError:
-      pass
+       pass
    else:
-      [ do something that requires SSL support ]
+       ... # do something that requires SSL support
 
 Client-side operation
 ^^^^^^^^^^^^^^^^^^^^^
@@ -598,16 +598,15 @@ Then you'd read data from the ``connstream`` and do something with it till you
 are finished with the client (or the client is finished with you)::
 
    def deal_with_client(connstream):
-
-      data = connstream.read()
-      # null data means the client is finished with us
-      while data:
-         if not do_something(connstream, data):
-            # we'll assume do_something returns False
-            # when we're finished with client
-            break
-         data = connstream.read()
-      # finished with client
+       data = connstream.read()
+       # null data means the client is finished with us
+       while data:
+           if not do_something(connstream, data):
+               # we'll assume do_something returns False
+               # when we're finished with client
+               break
+           data = connstream.read()
+       # finished with client
 
 And go back to listening for new client connections.
 
