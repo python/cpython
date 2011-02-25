@@ -2665,6 +2665,10 @@ is generally interpreted as simple bytes.
       A tuple of integers the length of :attr:`ndim` giving the size in bytes to
       access each element for each dimension of the array.
 
+   .. attribute:: readonly
+
+      A bool indicating whether the memory is read only.
+
    .. memoryview.suboffsets isn't documented because it only seems useful for C
 
 

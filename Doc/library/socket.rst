@@ -660,6 +660,12 @@ correspond to Unix system calls applicable to sockets.
    *mode* and *bufsize* arguments are interpreted the same way as by the built-in
    :func:`file` function.
 
+   .. note::
+
+      On Windows, the file-like object created by :meth:`makefile` cannot be
+      used where a file object with a file descriptor is expected, such as the
+      stream arguments of :meth:`subprocess.Popen`.
+
 
 .. method:: socket.recv(bufsize[, flags])
 

@@ -820,7 +820,9 @@ The next fields, up to and including :attr:`tp_weaklist`, only exist if the
    This field is not inherited by subtypes (computed attributes are inherited
    through a different mechanism).
 
-   Docs for PyGetSetDef (XXX belong elsewhere)::
+   .. XXX belongs elsewhere
+
+   Docs for PyGetSetDef::
 
       typedef PyObject *(*getter)(PyObject *, void *);
       typedef int (*setter)(PyObject *, PyObject *, void *);
@@ -867,7 +869,7 @@ The next fields, up to and including :attr:`tp_weaklist`, only exist if the
 
       PyObject * tp_descr_get(PyObject *self, PyObject *obj, PyObject *type);
 
-   XXX explain.
+   .. XXX explain.
 
    This field is inherited by subtypes.
 
@@ -882,7 +884,7 @@ The next fields, up to and including :attr:`tp_weaklist`, only exist if the
 
    This field is inherited by subtypes.
 
-   XXX explain.
+   .. XXX explain.
 
 
 .. cmember:: long PyTypeObject.tp_dictoffset
