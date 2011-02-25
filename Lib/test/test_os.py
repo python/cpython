@@ -1352,6 +1352,7 @@ class SendfileTestServer(asyncore.dispatcher, threading.Thread):
         raise
 
 
+@unittest.skipUnless(threading is not None, "test needs threading module")
 @unittest.skipUnless(hasattr(os, 'sendfile'), "test needs os.sendfile()")
 class TestSendfile(unittest.TestCase):
 
