@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7322: Trying to read from a socket's file-like object after a timeout
+  occurred now raises an error instead of silently losing data.
+
 - Issue #10956: Buffered I/O classes retry reading or writing after a signal
   has arrived and the handler returned successfully.
 
