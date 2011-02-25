@@ -363,8 +363,8 @@ static int win32_can_symlink = 0;
 #endif
 #endif
 
-int
-PyParse_off_t(PyObject* arg, void* addr)
+static int
+_parse_off_t(PyObject* arg, void* addr)
 {
 #if !defined(HAVE_LARGEFILE_SUPPORT)
     *((off_t*)addr) = PyLong_AsLong(arg);
@@ -5827,10 +5827,10 @@ posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
 
 #ifdef __APPLE__
     if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiO&O&|OOi:sendfile",
-        keywords, &out, &in, PyParse_off_t, &offset, PyParse_off_t, &sbytes,
+        keywords, &out, &in, _parse_off_t, &offset, _parse_off_t, &sbytes,
 #else
     if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiO&n|OOi:sendfile",
-        keywords, &out, &in, PyParse_off_t, &offset, &len,
+        keywords, &out, &in, _parse_off_t, &offset, &len,
 #endif
                 &headers, &trailers, &flags))
             return NULL;
@@ -5914,7 +5914,7 @@ done:
         return Py_BuildValue("nO", ret, Py_None);
     }
 #endif
-    PyParse_off_t(offobj, &offset);
+    _parse_off_t(offobj, &offset);
     Py_BEGIN_ALLOW_THREADS
     ret = sendfile(out, in, &offset, count);
     Py_END_ALLOW_THREADS
