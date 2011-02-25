@@ -714,6 +714,39 @@ _buffered_init(buffered *self)
     return 0;
 }
 
+/* Return 1 if an EnvironmentError with errno == EINTR is set (and then
+   clears the error indicator), 0 otherwise.
+   Should only be called when PyErr_Occurred() is true.
+*/
+static int
+_trap_eintr(void)
+{
+    static PyObject *eintr_int = NULL;
+    PyObject *typ, *val, *tb;
+    PyEnvironmentErrorObject *env_err;
+
+    if (eintr_int == NULL) {
+        eintr_int = PyLong_FromLong(EINTR);
+        assert(eintr_int != NULL);
+    }
+    if (!PyErr_ExceptionMatches(PyExc_EnvironmentError))
+        return 0;
+    PyErr_Fetch(&typ, &val, &tb);
+    PyErr_NormalizeException(&typ, &val, &tb);
+    env_err = (PyEnvironmentErrorObject *) val;
+    assert(env_err != NULL);
+    if (env_err->myerrno != NULL &&
+        PyObject_RichCompareBool(env_err->myerrno, eintr_int, Py_EQ) > 0) {
+        Py_DECREF(typ);
+        Py_DECREF(val);
+        Py_XDECREF(tb);
+        return 1;
+    }
+    /* This silences any error set by PyObject_RichCompareBool() */
+    PyErr_Restore(typ, val, tb);
+    return 0;
+}
+
 /*
  * Shared methods and wrappers
  */
@@ -1269,7 +1302,14 @@ _bufferedreader_raw_read(buffered *self, char *start, Py_ssize_t len)
     memobj = PyMemoryView_FromBuffer(&buf);
     if (memobj == NULL)
         return -1;
-    res = PyObject_CallMethodObjArgs(self->raw, _PyIO_str_readinto, memobj, NULL);
+    /* NOTE: PyErr_SetFromErrno() calls PyErr_CheckSignals() when EINTR
+       occurs so we needn't do it ourselves.
+       We then retry reading, ignoring the signal if no handler has
+       raised (see issue #10956).
+    */
+    do {
+        res = PyObject_CallMethodObjArgs(self->raw, _PyIO_str_readinto, memobj, NULL);
+    } while (res == NULL && _trap_eintr());
     Py_DECREF(memobj);
     if (res == NULL)
         return -1;
@@ -1678,7 +1718,14 @@ _bufferedwriter_raw_write(buffered *self, char *start, Py_ssize_t len)
     memobj = PyMemoryView_FromBuffer(&buf);
     if (memobj == NULL)
         return -1;
-    res = PyObject_CallMethodObjArgs(self->raw, _PyIO_str_write, memobj, NULL);
+    /* NOTE: PyErr_SetFromErrno() calls PyErr_CheckSignals() when EINTR
+       occurs so we needn't do it ourselves.
+       We then retry writing, ignoring the signal if no handler has
+       raised (see issue #10956).
+    */
+    do {
+        res = PyObject_CallMethodObjArgs(self->raw, _PyIO_str_write, memobj, NULL);
+    } while (res == NULL && _trap_eintr());
     Py_DECREF(memobj);
     if (res == NULL)
         return -1;
