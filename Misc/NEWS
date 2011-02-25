@@ -178,6 +178,8 @@ Extensions
 Build
 -----
 
+- Issue #941346: Fix broken shared library build on AIX.
+
 - Issue #7716: Under Solaris, don't assume existence of /usr/xpg4/bin/grep in
   the configure script but use $GREP instead.  Patch by Fabian Groffen.
 
