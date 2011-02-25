@@ -163,6 +163,18 @@ class _TestProcess(BaseTestCase):
         self.assertEqual(current.ident, os.getpid())
         self.assertEqual(current.exitcode, None)
 
+    def test_daemon_argument(self):
+        if self.TYPE == "threads":
+            return
+
+        # By default uses the current process's daemon flag.
+        proc0 = self.Process(target=self._test)
+        self.assertEquals(proc0.daemon, self.current_process().daemon)
+        proc1 = self.Process(target=self._test, daemon=True)
+        self.assertTrue(proc1.daemon)
+        proc2 = self.Process(target=self._test, daemon=False)
+        self.assertFalse(proc2.daemon)
+
     @classmethod
     def _test(cls, q, *args, **kwds):
         current = cls.current_process()

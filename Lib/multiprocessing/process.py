@@ -91,12 +91,16 @@ class Process(object):
     '''
     _Popen = None
 
-    def __init__(self, group=None, target=None, name=None, args=(), kwargs={}):
+    def __init__(self, group=None, target=None, name=None, args=(), kwargs={},
+                 *, daemon=None):
         assert group is None, 'group argument must be None for now'
         count = next(_current_process._counter)
         self._identity = _current_process._identity + (count,)
         self._authkey = _current_process._authkey
-        self._daemonic = _current_process._daemonic
+        if daemon is not None:
+            self._daemonic = daemon
+        else:
+            self._daemonic = _current_process._daemonic
         self._tempdir = _current_process._tempdir
         self._parent_pid = os.getpid()
         self._popen = None

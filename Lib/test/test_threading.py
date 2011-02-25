@@ -427,6 +427,14 @@ class ThreadTests(BaseTestCase):
         t.daemon = True
         self.assertTrue('daemon' in repr(t))
 
+    def test_deamon_param(self):
+        t = threading.Thread()
+        self.assertFalse(t.daemon)
+        t = threading.Thread(daemon=False)
+        self.assertFalse(t.daemon)
+        t = threading.Thread(daemon=True)
+        self.assertTrue(t.daemon)
+
 
 class ThreadJoinOnShutdown(BaseTestCase):
 

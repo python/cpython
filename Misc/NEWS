@@ -35,6 +35,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #6064: Add a ``daemon`` keyword argument to the threading.Thread
+  and multiprocessing.Process constructors in order to override the
+  default behaviour of inheriting the daemonic property from the current
+  thread/process.
+
 - Issue #10956: Buffered I/O classes retry reading or writing after a signal
   has arrived and the handler returned successfully.
 
