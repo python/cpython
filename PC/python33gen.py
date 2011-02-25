@@ -22,4 +22,3 @@ for line in inp:
 
 inp.close()
 out.close()
-
