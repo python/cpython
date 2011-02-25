@@ -10,7 +10,7 @@ import ast
 import types
 import builtins
 import random
-from test.support import fcmp, TESTFN, unlink,  run_unittest, check_warnings
+from test.support import TESTFN, unlink,  run_unittest, check_warnings
 from operator import neg
 
 
@@ -394,10 +394,13 @@ class BuiltinTest(unittest.TestCase):
 
         self.assertEqual(divmod(-sys.maxsize-1, -1), (sys.maxsize+1, 0))
 
-        self.assertTrue(not fcmp(divmod(3.25, 1.0), (3.0, 0.25)))
-        self.assertTrue(not fcmp(divmod(-3.25, 1.0), (-4.0, 0.75)))
-        self.assertTrue(not fcmp(divmod(3.25, -1.0), (-4.0, -0.75)))
-        self.assertTrue(not fcmp(divmod(-3.25, -1.0), (3.0, -0.25)))
+        for num, denom, exp_result in [ (3.25, 1.0, (3.0, 0.25)),
+                                        (-3.25, 1.0, (-4.0, 0.75)),
+                                        (3.25, -1.0, (-4.0, -0.75)),
+                                        (-3.25, -1.0, (3.0, -0.25))]:
+            result = divmod(num, denom)
+            self.assertAlmostEqual(result[0], exp_result[0])
+            self.assertAlmostEqual(result[1], exp_result[1])
 
         self.assertRaises(TypeError, divmod)
 
