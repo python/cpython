@@ -59,8 +59,11 @@ in the package::
 
     from distutils.core import setup
 
+    with open('README.txt') as file:
+        long_description = file.read()
+
     setup(name='Distutils',
-          long_description=open('README.txt'))
+          long_description=long_description)
 
 In that case, :file:`README.txt` is a regular reStructuredText text file located
 in the root of the package besides :file:`setup.py`.
