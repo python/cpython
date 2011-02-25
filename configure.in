@@ -1283,10 +1283,10 @@ shadow.h signal.h stdint.h stropts.h termios.h thread.h \
 unistd.h utime.h \
 sys/audioio.h sys/bsdtty.h sys/epoll.h sys/event.h sys/file.h sys/loadavg.h \
 sys/lock.h sys/mkdev.h sys/modem.h \
-sys/param.h sys/poll.h sys/select.h sys/socket.h sys/statvfs.h sys/stat.h \
-sys/termio.h sys/time.h \
-sys/times.h sys/types.h sys/un.h sys/utsname.h sys/wait.h pty.h libutil.h \
-sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
+sys/param.h sys/poll.h sys/select.h sys/sendfile.h sys/socket.h sys/statvfs.h \
+sys/stat.h sys/termio.h sys/time.h \
+sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
+libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 bluetooth/bluetooth.h linux/tipc.h spawn.h util.h)
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
@@ -1891,6 +1891,7 @@ AC_MSG_RESULT($SHLIBS)
 
 
 # checks for libraries
+AC_CHECK_LIB(sendfile, sendfile)
 AC_CHECK_LIB(dl, dlopen)	# Dynamic linking for SunOS/Solaris and SYSV
 AC_CHECK_LIB(dld, shl_load)	# Dynamic linking for HP-UX
 
@@ -2539,7 +2540,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  initgroups kill killpg lchmod lchown lstat mbrtowc mkfifo mknod mktime \
  mremap nice pathconf pause plock poll pthread_init \
  putenv readlink realpath \
- select sem_open sem_timedwait sem_getvalue sem_unlink setegid seteuid \
+ select sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
  setgid \
  setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setuid setvbuf \
  sigaction siginterrupt sigrelse snprintf strftime strlcpy \

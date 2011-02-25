@@ -775,6 +775,47 @@ as internal buffering of data.
       :meth:`~file.readline` methods.
 
 
+.. function:: sendfile(out, in, offset, nbytes)
+              sendfile(out, in, offset, nbytes, headers=None, trailers=None, flags=0)
+
+   Copy *nbytes* bytes from file descriptor *in* to file descriptor *out*
+   starting at *offset*.
+   Return the number of bytes sent. When EOF is reached return 0.
+
+   The first function notation is supported by all platforms that define
+   :func:`sendfile`.
+
+   On Linux, if *offset* is given as ``None``, the bytes are read from the
+   current position of *in* and the position of *in* is updated.
+
+   The second case may be used on Mac OS X and FreeBSD where *headers* and
+   *trailers* are arbitrary sequences of buffers that are written before and
+   after the data from *in* is written. It returns the same as the first case.
+
+   On Mac OS X and FreeBSD, a value of 0 for *nbytes* specifies to send until
+   the end of *in* is reached.
+
+   On Solaris, *out* may be the file descriptor of a regular file or the file
+   descriptor of a socket. On all other platforms, *out* must be the file
+   descriptor of an open socket.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+
+.. data:: SF_NODISKIO
+          SF_MNOWAIT
+          SF_SYNC
+
+   Parameters to the :func:`sendfile` function, if the implementation supports
+   them.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+
 .. function:: tcgetpgrp(fd)
 
    Return the process group associated with the terminal given by *fd* (an open

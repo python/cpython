@@ -1024,6 +1024,9 @@
 /* The size of `size_t', as computed by sizeof. */
 #undef SIZEOF_SIZE_T
 
+/* Define to 1 if you have the `sendfile' function. */
+#undef HAVE_SENDFILE
+
 /* The size of `time_t', as computed by sizeof. */
 #undef SIZEOF_TIME_T
 
