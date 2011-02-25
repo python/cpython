@@ -205,14 +205,23 @@
 /* Define to 1 if you have the `expm1' function. */
 #undef HAVE_EXPM1
 
+/* Define to 1 if you have the `faccessat' function. */
+#undef HAVE_FACCESSAT
+
 /* Define if you have the 'fchdir' function. */
 #undef HAVE_FCHDIR
 
 /* Define to 1 if you have the `fchmod' function. */
 #undef HAVE_FCHMOD
 
+/* Define to 1 if you have the `fchmodat' function. */
+#undef HAVE_FCHMODAT
+
 /* Define to 1 if you have the `fchown' function. */
 #undef HAVE_FCHOWN
+
+/* Define to 1 if you have the `fchownat' function. */
+#undef HAVE_FCHOWNAT
 
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
@@ -241,6 +250,9 @@
 /* Define to 1 if you have the `fseeko' function. */
 #undef HAVE_FSEEKO
 
+/* Define to 1 if you have the `fstatat' function. */
+#undef HAVE_FSTATAT
+
 /* Define to 1 if you have the `fstatvfs' function. */
 #undef HAVE_FSTATVFS
 
@@ -258,6 +270,9 @@
 
 /* Define to 1 if you have the `ftruncate' function. */
 #undef HAVE_FTRUNCATE
+
+/* Define to 1 if you have the `futimesat' function. */
+#undef HAVE_FUTIMESAT
 
 /* Define to 1 if you have the `gai_strerror' function. */
 #undef HAVE_GAI_STRERROR
@@ -431,6 +446,9 @@
 /* Define if you have the 'link' function. */
 #undef HAVE_LINK
 
+/* Define to 1 if you have the `linkat' function. */
+#undef HAVE_LINKAT
+
 /* Define to 1 if you have the <linux/netlink.h> header file. */
 #undef HAVE_LINUX_NETLINK_H
 
@@ -461,11 +479,20 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
+/* Define to 1 if you have the `mkdirat' function. */
+#undef HAVE_MKDIRAT
+
 /* Define to 1 if you have the `mkfifo' function. */
 #undef HAVE_MKFIFO
 
+/* Define to 1 if you have the `mkfifoat' function. */
+#undef HAVE_MKFIFOAT
+
 /* Define to 1 if you have the `mknod' function. */
 #undef HAVE_MKNOD
+
+/* Define to 1 if you have the `mknodat' function. */
+#undef HAVE_MKNODAT
 
 /* Define to 1 if you have the `mktime' function. */
 #undef HAVE_MKTIME
@@ -485,6 +512,9 @@
 /* Define to 1 if you have the `nice' function. */
 #undef HAVE_NICE
 
+/* Define to 1 if you have the `openat' function. */
+#undef HAVE_OPENAT
+
 /* Define to 1 if you have the `openpty' function. */
 #undef HAVE_OPENPTY
 
@@ -496,6 +526,9 @@
 
 /* Define to 1 if you have the `pause' function. */
 #undef HAVE_PAUSE
+
+/* Define if the OS supports pipe2() */
+#undef HAVE_PIPE2
 
 /* Define if the OS supports pipe2() */
 #undef HAVE_PIPE2
@@ -536,8 +569,14 @@
 /* Define to 1 if you have the `readlink' function. */
 #undef HAVE_READLINK
 
+/* Define to 1 if you have the `readlinkat' function. */
+#undef HAVE_READLINKAT
+
 /* Define to 1 if you have the `realpath' function. */
 #undef HAVE_REALPATH
+
+/* Define to 1 if you have the `renameat' function. */
+#undef HAVE_RENAMEAT
 
 /* Define if you have readline 2.1 */
 #undef HAVE_RL_CALLBACK
@@ -724,6 +763,9 @@
 /* Define if you have the 'symlink' function. */
 #undef HAVE_SYMLINK
 
+/* Define to 1 if you have the `symlinkat' function. */
+#undef HAVE_SYMLINKAT
+
 /* Define to 1 if you have the `sysconf' function. */
 #undef HAVE_SYSCONF
 
@@ -866,6 +908,9 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Define to 1 if you have the `unlinkat' function. */
+#undef HAVE_UNLINKAT
+
 /* Define to 1 if you have the `unsetenv' function. */
 #undef HAVE_UNSETENV
 
@@ -876,6 +921,9 @@
 
 /* Define to 1 if you have the <util.h> header file. */
 #undef HAVE_UTIL_H
+
+/* Define to 1 if you have the `utimensat' function. */
+#undef HAVE_UTIMENSAT
 
 /* Define to 1 if you have the `utimes' function. */
 #undef HAVE_UTIMES

@@ -389,6 +389,198 @@ class PosixTester(unittest.TestCase):
                 set([int(x) for x in groups.split()]),
                 set(posix.getgroups() + [posix.getegid()]))
 
+    # tests for the posix *at functions follow
+
+    @unittest.skipUnless(hasattr(posix, 'faccessat'), "test needs posix.faccessat()")
+    def test_faccessat(self):
+        f = posix.open(posix.getcwd(), posix.O_RDONLY)
+        try:
+            self.assertTrue(posix.faccessat(f, support.TESTFN, os.R_OK))
+        finally:
+            posix.close(f)
+
+    @unittest.skipUnless(hasattr(posix, 'fchmodat'), "test needs posix.fchmodat()")
+    def test_fchmodat(self):
+        os.chmod(support.TESTFN, stat.S_IRUSR)
+
+        f = posix.open(posix.getcwd(), posix.O_RDONLY)
+        try:
+            posix.fchmodat(f, support.TESTFN, stat.S_IRUSR | stat.S_IWUSR)
+
+            s = posix.stat(support.TESTFN)
+            self.assertEqual(s[0] & stat.S_IRWXU, stat.S_IRUSR | stat.S_IWUSR)
+        finally:
+            posix.close(f)
+
+    @unittest.skipUnless(hasattr(posix, 'fchownat'), "test needs posix.fchownat()")
+    def test_fchownat(self):
+        support.unlink(support.TESTFN)
+        open(support.TESTFN, 'w').close()
+
+        f = posix.open(posix.getcwd(), posix.O_RDONLY)
+        try:
+            posix.fchownat(f, support.TESTFN, os.getuid(), os.getgid())
+        finally:
+            posix.close(f)
+
+    @unittest.skipUnless(hasattr(posix, 'fstatat'), "test needs posix.fstatat()")
+    def test_fstatat(self):
+        support.unlink(support.TESTFN)
+        with open(support.TESTFN, 'w') as outfile:
+            outfile.write("testline\n")
+
+        f = posix.open(posix.getcwd(), posix.O_RDONLY)
+        try:
+            s1 = posix.stat(support.TESTFN)
+            s2 = posix.fstatat(f, support.TESTFN)
+            self.assertEqual(s1, s2)
+        finally:
+            posix.close(f)
+
+    @unittest.skipUnless(hasattr(posix, 'futimesat'), "test needs posix.futimesat()")
+    def test_futimesat(self):
+        f = posix.open(posix.getcwd(), posix.O_RDONLY)
+        try:
+            now = time.time()
+            posix.futimesat(f, support.TESTFN, None)
+            self.assertRaises(TypeError, posix.futimesat, f, support.TESTFN, (None, None))
+            self.assertRaises(TypeError, posix.futimesat, f, support.TESTFN, (now, None))
+            self.assertRaises(TypeError, posix.futimesat, f, support.TESTFN, (None, now))
+            posix.futimesat(f, support.TESTFN, (int(now), int(now)))
+            posix.futimesat(f, support.TESTFN, (now, now))
+        finally:
+            posix.close(f)
+
+    @unittest.skipUnless(hasattr(posix, 'linkat'), "test needs posix.linkat()")
+    def test_linkat(self):
+        f = posix.open(posix.getcwd(), posix.O_RDONLY)
+        try:
+            posix.linkat(f, support.TESTFN, f, support.TESTFN + 'link')
+            # should have same inodes
+            self.assertEqual(posix.stat(support.TESTFN)[1],
+                posix.stat(support.TESTFN + 'link')[1])
+        finally:
+            posix.close(f)
+            support.unlink(support.TESTFN + 'link')
+
+    @unittest.skipUnless(hasattr(posix, 'mkdirat'), "test needs posix.mkdirat()")
+    def test_mkdirat(self):
+        f = posix.open(posix.getcwd(), posix.O_RDONLY)
+        try:
+            posix.mkdirat(f, support.TESTFN + 'dir')
+            posix.stat(support.TESTFN + 'dir') # should not raise exception
+        finally:
+            posix.close(f)
+            support.rmtree(support.TESTFN + 'dir')
+
+    @unittest.skipUnless(hasattr(posix, 'mknodat') and hasattr(stat, 'S_IFIFO'),
+                         "don't have mknodat()/S_IFIFO")
+    def test_mknodat(self):
+        # Test using mknodat() to create a FIFO (the only use specified
+        # by POSIX).
+        support.unlink(support.TESTFN)
+        mode = stat.S_IFIFO | stat.S_IRUSR | stat.S_IWUSR
+        f = posix.open(posix.getcwd(), posix.O_RDONLY)
+        try:
+            posix.mknodat(f, support.TESTFN, mode, 0)
+        except OSError as e:
+            # Some old systems don't allow unprivileged users to use
+            # mknod(), or only support creating device nodes.
+            self.assertIn(e.errno, (errno.EPERM, errno.EINVAL))
+        else:
+            self.assertTrue(stat.S_ISFIFO(posix.stat(support.TESTFN).st_mode))
+        finally:
+            posix.close(f)
+
+    @unittest.skipUnless(hasattr(posix, 'openat'), "test needs posix.openat()")
+    def test_openat(self):
+        support.unlink(support.TESTFN)
+        with open(support.TESTFN, 'w') as outfile:
+            outfile.write("testline\n")
+        a = posix.open(posix.getcwd(), posix.O_RDONLY)
+        b = posix.openat(a, support.TESTFN, posix.O_RDONLY)
+        try:
+            res = posix.read(b, 9).decode(encoding="utf-8")
+            self.assertEqual("testline\n", res)
+        finally:
+            posix.close(a)
+            posix.close(b)
+
+    @unittest.skipUnless(hasattr(posix, 'readlinkat'), "test needs posix.readlinkat()")
+    def test_readlinkat(self):
+        os.symlink(support.TESTFN, support.TESTFN + 'link')
+        f = posix.open(posix.getcwd(), posix.O_RDONLY)
+        try:
+            self.assertEqual(posix.readlink(support.TESTFN + 'link'),
+                posix.readlinkat(f, support.TESTFN + 'link'))
+        finally:
+            support.unlink(support.TESTFN + 'link')
+            posix.close(f)
+
+    @unittest.skipUnless(hasattr(posix, 'renameat'), "test needs posix.renameat()")
+    def test_renameat(self):
+        support.unlink(support.TESTFN)
+        open(support.TESTFN + 'ren', 'w').close()
+        f = posix.open(posix.getcwd(), posix.O_RDONLY)
+        try:
+            posix.renameat(f, support.TESTFN + 'ren', f, support.TESTFN)
+        except:
+            posix.rename(support.TESTFN + 'ren', support.TESTFN)
+            raise
+        else:
+            posix.stat(support.TESTFN) # should not throw exception
+        finally:
+            posix.close(f)
+
+    @unittest.skipUnless(hasattr(posix, 'symlinkat'), "test needs posix.symlinkat()")
+    def test_symlinkat(self):
+        f = posix.open(posix.getcwd(), posix.O_RDONLY)
+        try:
+            posix.symlinkat(support.TESTFN, f, support.TESTFN + 'link')
+            self.assertEqual(posix.readlink(support.TESTFN + 'link'), support.TESTFN)
+        finally:
+            posix.close(f)
+            support.unlink(support.TESTFN + 'link')
+
+    @unittest.skipUnless(hasattr(posix, 'unlinkat'), "test needs posix.unlinkat()")
+    def test_unlinkat(self):
+        f = posix.open(posix.getcwd(), posix.O_RDONLY)
+        open(support.TESTFN + 'del', 'w').close()
+        posix.stat(support.TESTFN + 'del') # should not throw exception
+        try:
+            posix.unlinkat(f, support.TESTFN + 'del')
+        except:
+            support.unlink(support.TESTFN + 'del')
+            raise
+        else:
+            self.assertRaises(OSError, posix.stat, support.TESTFN + 'link')
+        finally:
+            posix.close(f)
+
+    @unittest.skipUnless(hasattr(posix, 'utimensat'), "test needs posix.utimensat()")
+    def test_utimensat(self):
+        f = posix.open(posix.getcwd(), posix.O_RDONLY)
+        try:
+            now = time.time()
+            posix.utimensat(f, support.TESTFN, None, None)
+            self.assertRaises(TypeError, posix.utimensat, f, support.TESTFN, (None, None), (None, None))
+            self.assertRaises(TypeError, posix.utimensat, f, support.TESTFN, (now, 0), None)
+            self.assertRaises(TypeError, posix.utimensat, f, support.TESTFN, None, (now, 0))
+            posix.utimensat(f, support.TESTFN, (int(now), int((now - int(now)) * 1e9)),
+                    (int(now), int((now - int(now)) * 1e9)))
+        finally:
+            posix.close(f)
+
+    @unittest.skipUnless(hasattr(posix, 'mkfifoat'), "don't have mkfifoat()")
+    def test_mkfifoat(self):
+        support.unlink(support.TESTFN)
+        f = posix.open(posix.getcwd(), posix.O_RDONLY)
+        try:
+            posix.mkfifoat(f, support.TESTFN, stat.S_IRUSR | stat.S_IWUSR)
+            self.assertTrue(stat.S_ISFIFO(posix.stat(support.TESTFN).st_mode))
+        finally:
+            posix.close(f)
+
 class PosixGroupsTester(unittest.TestCase):
 
     def setUp(self):
