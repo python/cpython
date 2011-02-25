@@ -1969,7 +1969,7 @@ AC_CHECK_LIB(intl, textdomain,
 # checks for system dependent C++ extensions support
 case "$ac_sys_system" in
 	AIX*)	AC_MSG_CHECKING(for genuine AIX C++ extensions support)
-		AC_TRY_LINK([#include "/usr/lpp/xlC/include/load.h"],
+		AC_TRY_LINK([#include <load.h>],
 			    [loadAndInit("", 0, "")],
 			    [AC_DEFINE(AIX_GENUINE_CPLUSPLUS, 1,
                       [Define for AIX if your compiler is a genuine IBM xlC/xlC_r
