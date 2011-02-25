@@ -187,6 +187,10 @@ Extension Modules
 Build
 -----
 
+- Issue #10709: Add updated AIX notes in Misc/README.AIX.
+
+- Issue #11184: Fix large-file support on AIX.
+
 - Issue #941346: Fix broken shared library build on AIX.
 
 - Issue #11268: Prevent Mac OS X Installer failure if Documentation
