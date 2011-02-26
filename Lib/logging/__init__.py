@@ -360,12 +360,13 @@ class PercentStyle(object):
 
     default_format = '%(message)s'
     asctime_format = '%(asctime)s'
+    asctime_search = '%(asctime)'
 
     def __init__(self, fmt):
         self._fmt = fmt or self.default_format
 
     def usesTime(self):
-        return self._fmt.find(self.asctime_format) >= 0
+        return self._fmt.find(self.asctime_search) >= 0
 
     def format(self, record):
         return self._fmt % record.__dict__
@@ -373,6 +374,7 @@ class PercentStyle(object):
 class StrFormatStyle(PercentStyle):
     default_format = '{message}'
     asctime_format = '{asctime}'
+    asctime_search = '{asctime'
 
     def format(self, record):
         return self._fmt.format(**record.__dict__)
@@ -381,6 +383,7 @@ class StrFormatStyle(PercentStyle):
 class StringTemplateStyle(PercentStyle):
     default_format = '${message}'
     asctime_format = '${asctime}'
+    asctime_search = '{asctime'
 
     def __init__(self, fmt):
         self._fmt = fmt or self.default_format
