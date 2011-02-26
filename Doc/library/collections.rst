@@ -95,8 +95,8 @@ The class can be used to simulate nested scopes and is useful in templating.
 
   Example of simulating Python's internal lookup chain::
 
-     import __builtin__
-     pylookup = ChainMap(locals(), globals(), vars(__builtin__))
+     import builtins
+     pylookup = ChainMap(locals(), globals(), vars(builtins))
 
   Example of letting user specified values take precedence over environment
   variables which in turn take precedence over default values::
