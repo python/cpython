@@ -1,6 +1,11 @@
 Maintainers Index
 =================
 
+.. warning::
+
+   This document is out of date and replaced by another version in the
+   developpers' guide at http://docs.python.org/devguide/experts.
+
 This document has tables that list Python Modules, Tools, Platforms and
 Interest Areas and names for each item that indicate a maintainer or an
 expert in the field.  This list is intended to be used by issue submitters,
@@ -13,7 +18,7 @@ any other issues can and should be decided by any committer.
 
 Unless a name is followed by a '*', you should never assign an issue to
 that person, only make them nosy.  Names followed by a '*' may be assigned
-issues involving the module or topic for which the name has a '*'.
+issues involving the module or topic.
 
 The Platform and Interest Area tables list broader fields in which various
 people have expertise.  These people can also be contacted for help,
@@ -77,18 +82,18 @@ collections._abcoll rhettinger, stutzbach
 colorsys
 compileall
 configparser        lukasz.langa
-contextlib
+contextlib          ncoghlan
 copy                alexandre.vassalotti
 copyreg             alexandre.vassalotti
 cProfile
-crypt
+crypt               jafo*
 csv                 skip.montanaro
 ctypes              theller
 curses
 datetime            belopolsky
 dbm
 decimal             facundobatista, rhettinger, mark.dickinson
-difflib             tim_one
+difflib             tim_one (inactive)
 dis
 distutils           tarek*, eric.araujo*
 doctest             tim_one (inactive)
@@ -145,7 +150,7 @@ msvcrt
 multiprocessing     jnoller
 netrc
 nis
-nntplib
+nntplib             pitrou
 numbers
 operator
 optparse            aronacher
@@ -204,8 +209,8 @@ symbol
 symtable            benjamin.peterson
 sys
 sysconfig           tarek
-syslog              jafo
-tabnanny            tim_one
+syslog              jafo*
+tabnanny            tim_one (inactive)
 tarfile             lars.gustaebel
 telnetlib
 tempfile            georg.brandl
