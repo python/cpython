@@ -203,14 +203,18 @@ elif os.name == "posix":
             abi_type = mach_map.get(machine, 'libc6')
 
             # XXX assuming GLIBC's ldconfig (with option -p)
-            expr = r'(\S+)\s+\((%s(?:, OS ABI:[^\)]*)?)\)[^/]*(/[^\(\)\s]*lib%s\.[^\(\)\s]*)' \
-                   % (abi_type, re.escape(name))
+            name = 'lib%s' % name
+            pat = re.compile('\s*(/[^\(\)\s]*%s\.[^\(\)\s]*)' % re.escape(name))
             with contextlib.closing(os.popen('LC_ALL=C LANG=C /sbin/ldconfig -p 2>/dev/null')) as f:
-                data = f.read()
-            res = re.search(expr, data)
-            if not res:
-                return None
-            return res.group(1)
+                for line in f:
+                    if not '=>' in line:
+                        continue
+                    path = line.rsplit('=>', 1)[1]
+                    if not name+'.' in path:
+                        continue
+                    res = pat.search(path)
+                    if res:
+                        return res.group(1)
 
         def find_library(name):
             return _findSoname_ldconfig(name) or _get_soname(_findLib_gcc(name))
