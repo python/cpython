@@ -72,16 +72,22 @@ class TestChainMap(unittest.TestCase):
             for m1, m2 in zip(d.maps, e.maps):
                 self.assertIsNot(m1, m2, e)
 
-        d.new_child()
-        d['b'] = 5
-        self.assertEqual(d.maps, [{'b': 5}, {'c':30}, {'a':1, 'b':2}])
-        self.assertEqual(d.parents.maps, [{'c':30}, {'a':1, 'b':2}])   # check parents
-        self.assertEqual(d['b'], 5)                                    # find first in chain
-        self.assertEqual(d.parents['b'], 2)                            # look beyond maps[0]
+        f = d.new_child()
+        f['b'] = 5
+        self.assertEqual(f.maps, [{'b': 5}, {'c':30}, {'a':1, 'b':2}])
+        self.assertEqual(f.parents.maps, [{'c':30}, {'a':1, 'b':2}])   # check parents
+        self.assertEqual(f['b'], 5)                                    # find first in chain
+        self.assertEqual(f.parents['b'], 2)                            # look beyond maps[0]
 
     def test_contructor(self):
-        self.assertEqual(ChainedContext().maps, [{}])                  # no-args --> one new dict
+        self.assertEqual(ChainMap().maps, [{}])                        # no-args --> one new dict
         self.assertEqual(ChainMap({1:2}).maps, [{1:2}])                # 1 arg --> list
+
+    def test_bool(self):
+        self.assertFalse(ChainMap())
+        self.assertFalse(ChainMap({}, {}))
+        self.assertTrue(ChainMap({1:2}, {}))
+        self.assertTrue(ChainMap({}, {1:2}))
 
     def test_missing(self):
         class DefaultChainMap(ChainMap):
@@ -1182,7 +1188,7 @@ import doctest, collections
 def test_main(verbose=None):
     NamedTupleDocs = doctest.DocTestSuite(module=collections)
     test_classes = [TestNamedTuple, NamedTupleDocs, TestOneTrickPonyABCs,
-                    TestCollectionABCs, TestCounter,
+                    TestCollectionABCs, TestCounter, TestChainMap,
                     TestOrderedDict, GeneralMappingTests, SubclassMappingTests]
     support.run_unittest(*test_classes)
     support.run_doctest(collections, verbose)
