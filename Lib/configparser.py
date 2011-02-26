@@ -120,7 +120,7 @@ ConfigParser -- responsible for parsing a list of
 """
 
 from collections.abc import MutableMapping
-from collections import OrderedDict as _default_dict, _ChainMap
+from collections import OrderedDict as _default_dict, ChainMap as _ChainMap
 import functools
 import io
 import itertools

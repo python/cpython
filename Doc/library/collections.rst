@@ -23,6 +23,7 @@ Python's general purpose built-in containers, :class:`dict`, :class:`list`,
 =====================   ====================================================================
 :func:`namedtuple`      factory function for creating tuple subclasses with named fields
 :class:`deque`          list-like container with fast appends and pops on either end
+:class:`ChainMap`       dict-like class for creating a single view of multiple mappings
 :class:`Counter`        dict subclass for counting hashable objects
 :class:`OrderedDict`    dict subclass that remembers the order entries were added
 :class:`defaultdict`    dict subclass that calls a factory function to supply missing values
@@ -36,6 +37,119 @@ Python's general purpose built-in containers, :class:`dict`, :class:`list`,
    For backwards compatibility, they continue to be visible in this module
    as well.
 
+
+:class:`ChainMap` objects
+-------------------------
+
+A :class:`ChainMap` class is provided for quickly linking a number of mappings
+so they can be treated as a single unit.  It is often much faster than creating
+a new dictionary and running multiple :meth:`~dict.update` calls.
+
+The class can be used to simulate nested scopes and is useful in templating.
+
+.. class:: ChainMap(*maps)
+
+   A :class:`ChainMap` groups multiple dicts or other mappings together to
+   create a single, updateable view.  If no *maps* are specified, a single empty
+   dictionary is provided so that a new chain always has at least one mapping.
+
+   The underlying mappings are stored in a list.  That list is public and can
+   accessed or updated using the *maps* attribute.  There is no other state.
+
+   Lookups search the underlying mappings successively until a key is found.  In
+   contrast, writes, updates, and deletions only operate on the first mapping.
+
+   A class:`ChainMap` incorporates the underlying mappings by reference.  So, if
+   one of the underlying mappings gets updated, those changes will be reflected
+   in class:`ChainMap`.
+
+   All of the usual dictionary methods are supported.  In addition, there is a
+   *maps* attribute, a method for creating new subcontexts, and a property for
+   accessing all but the first mapping:
+
+   .. attribute:: maps
+
+      A user updateable list of mappings.  The list is ordered from
+      first-searched to last-searched.  It is the only stored state and can
+      modified to change which mappings are searched.  The list should
+      always contain at least one mapping.
+
+   .. method:: new_child()
+
+      Returns a new :class:`ChainMap` containing a new :class:`dict` followed by
+      all of the maps in the current instance.  A call to ``d.new_child()`` is
+      equivalent to: ``ChainMap({}, *d.maps)``.  This method is used for
+      creating subcontexts that can be updated without altering values in any
+      of the parent mappings.
+
+   .. attribute:: parents()
+
+      Returns a new :class:`ChainMap` containing all of the maps in the current
+      instance except the first one.  This is useful for skipping the first map
+      in the search.  The use-cases are similar to those for the
+      :keyword:`nonlocal` keyword used in :term:`nested scopes <nested scope>`.
+      The use-cases also parallel those for the builtin :func:`super` function.
+      A reference to  ``d.parents`` is equivalent to: ``ChainMap(*d.maps[1:])``.
+
+  .. versionadded:: 3.3
+
+  Example of simulating Python's internal lookup chain::
+
+     import __builtin__
+     pylookup = ChainMap(locals(), globals(), vars(__builtin__))
+
+  Example of letting user specified values take precedence over environment
+  variables which in turn take precedence over default values::
+
+     import os, argparse
+     defaults = {'color': 'red', 'user': guest}
+     parser = argparse.ArgumentParser()
+     parser.add_argument('-u', '--user')
+     parser.add_argument('-c', '--color')
+     user_specified = vars(parser.parse_args())
+     combined = ChainMap(user_specified, os.environ, defaults)
+
+  Example patterns for using the :class:`ChainMap` class to simulate nested
+  contexts::
+
+    c = ChainMap()          Create root context
+    d = c.new_child()       Create nested child context
+    e = c.new_child()       Child of c, independent from d
+    e.maps[0]               Current context dictionary -- like Python's locals()
+    e.maps[-1]              Root context -- like Python's globals()
+    e.parents               Enclosing context chain -- like Python's nonlocals
+
+    d['x']                  Get first key in the chain of contexts
+    d['x'] = 1              Set value in current context
+    del['x']                Delete from current context
+    list(d)                 All nested values
+    k in d                  Check all nested values
+    len(d)                  Number of nested values
+    d.items()               All nested items
+    dict(d)                 Flatten into a regular dictionary
+
+  .. seealso::
+
+     * The `MultiContext class
+       <http://svn.enthought.com/svn/enthought/CodeTools/trunk/enthought/contexts/multi_context.py>`_
+       in the Enthought `CodeTools package
+       <https://github.com/enthought/codetools>`_\ has options to support
+       writing to any mapping in the chain.
+
+     * Django's `Context class
+       <http://code.djangoproject.com/browser/django/trunk/django/template/context.py>`_
+       for templating is a read-only chain of mappings.  It also features
+       pushing and popping of contexts similar to the
+       :meth:`~collections.ChainMap.new_child` method and the
+       :meth:`~collections.ChainMap.parents` property.
+
+     * The `Nested Contexts recipe
+       <http://code.activestate.com/recipes/577434/>`_ has options to control
+       whether writes and other mutations apply only to the first mapping or to
+       any mapping in the chain.
+
+     * A `greatly simplified read-only version of Chainmap
+       <http://code.activestate.com/recipes/305268/>`_\.
 
 :class:`Counter` objects
 ------------------------

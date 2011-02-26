@@ -11,7 +11,7 @@ import keyword
 import re
 import sys
 from collections import UserDict
-from collections import _ChainMap as ChainMap
+from collections import ChainMap
 from collections.abc import Hashable, Iterable, Iterator
 from collections.abc import Sized, Container, Callable
 from collections.abc import Set, MutableSet
@@ -21,7 +21,7 @@ from collections.abc import ByteString
 
 
 ################################################################################
-### _ChainMap (helper class for configparser and the string module)
+### ChainMap (helper class for configparser and the string module)
 ################################################################################
 
 class TestChainMap(unittest.TestCase):

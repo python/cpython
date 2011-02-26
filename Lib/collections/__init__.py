@@ -636,7 +636,7 @@ class Counter(dict):
 ###  ChainMap (helper for configparser and string.Template)
 ########################################################################
 
-class _ChainMap(MutableMapping):
+class ChainMap(MutableMapping):
     ''' A ChainMap groups multiple dicts (or other mappings) together
     to create a single, updateable view.
 
