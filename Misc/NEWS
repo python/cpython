@@ -35,6 +35,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11326: Add the missing connect_ex() implementation for SSL sockets,
+  and make it work for non-blocking connects.
+
 - Issue #11297: Add collections.ChainMap().
 
 - Issue #10755: Add the posix.fdlistdir() function.  Patch by Ross Lagerwall.
