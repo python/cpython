@@ -1282,7 +1282,7 @@ class ProgramPriorityTests(unittest.TestCase):
             try:
                 os.setpriority(os.PRIO_PROCESS, os.getpid(), base)
             except OSError as err:
-                if err.errno != errno.EACCESS:
+                if err.errno != errno.EACCES:
                     raise
 
 
