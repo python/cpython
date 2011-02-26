@@ -11,6 +11,7 @@ The compiler compiles a pattern to a pytree.*Pattern instance.
 __author__ = "Guido van Rossum <guido@python.org>"
 
 # Python imports
+import io
 import os
 
 # Fairly local imports
@@ -32,7 +33,7 @@ class PatternSyntaxError(Exception):
 def tokenize_wrapper(input):
     """Tokenizes a string suppressing significant whitespace."""
     skip = set((token.NEWLINE, token.INDENT, token.DEDENT))
-    tokens = tokenize.generate_tokens(driver.generate_lines(input).__next__)
+    tokens = tokenize.generate_tokens(io.StringIO(input).readline)
     for quintuple in tokens:
         type, value, start, end, line_text = quintuple
         if type not in skip:
