@@ -237,6 +237,7 @@ class SSLSocket(socket):
 
         self._closed = False
         self._sslobj = None
+        self._connected = connected
         if connected:
             # create the SSL object
             try:
@@ -430,23 +431,36 @@ class SSLSocket(socket):
         finally:
             self.settimeout(timeout)
 
-    def connect(self, addr):
-        """Connects to remote ADDR, and then wraps the connection in
-        an SSL channel."""
+    def _real_connect(self, addr, return_errno):
         if self.server_side:
             raise ValueError("can't connect in server-side mode")
         # Here we assume that the socket is client-side, and not
         # connected at the time of the call.  We connect it, then wrap it.
-        if self._sslobj:
+        if self._connected:
             raise ValueError("attempt to connect already-connected SSLSocket!")
-        socket.connect(self, addr)
         self._sslobj = self.context._wrap_socket(self, False, self.server_hostname)
         try:
+            socket.connect(self, addr)
             if self.do_handshake_on_connect:
                 self.do_handshake()
-        except:
-            self._sslobj = None
-            raise
+        except socket_error as e:
+            if return_errno:
+                return e.errno
+            else:
+                self._sslobj = None
+                raise e
+        self._connected = True
+        return 0
+
+    def connect(self, addr):
+        """Connects to remote ADDR, and then wraps the connection in
+        an SSL channel."""
+        self._real_connect(addr, False)
+
+    def connect_ex(self, addr):
+        """Connects to remote ADDR, and then wraps the connection in
+        an SSL channel."""
+        return self._real_connect(addr, True)
 
     def accept(self):
         """Accepts a new connection from a remote client, and returns
