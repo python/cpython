@@ -1340,7 +1340,7 @@ class SendfileTestServer(asyncore.dispatcher, threading.Thread):
 
     def wait(self):
         # wait for handler connection to be closed, then stop the server
-        while not getattr(self.handler_instance, "closed", True):
+        while not getattr(self.handler_instance, "closed", False):
             time.sleep(0.001)
         self.stop()
 
@@ -1442,9 +1442,11 @@ class TestSendfile(unittest.TestCase):
             self.assertEqual(offset, total_sent)
 
         self.assertEqual(total_sent, len(self.DATA))
+        self.client.shutdown(socket.SHUT_RDWR)
         self.client.close()
         self.server.wait()
         data = self.server.handler_instance.get_data()
+        self.assertEqual(len(data), len(self.DATA))
         self.assertEqual(data, self.DATA)
 
     def test_send_at_certain_offset(self):
@@ -1461,11 +1463,13 @@ class TestSendfile(unittest.TestCase):
             total_sent += sent
             self.assertTrue(sent <= nbytes)
 
+        self.client.shutdown(socket.SHUT_RDWR)
         self.client.close()
         self.server.wait()
         data = self.server.handler_instance.get_data()
         expected = self.DATA[len(self.DATA) // 2:]
         self.assertEqual(total_sent, len(expected))
+        self.assertEqual(len(data), len(expected))
         self.assertEqual(data, expected)
 
     def test_offset_overflow(self):
@@ -1479,6 +1483,7 @@ class TestSendfile(unittest.TestCase):
                 raise
         else:
             self.assertEqual(sent, 0)
+        self.client.shutdown(socket.SHUT_RDWR)
         self.client.close()
         self.server.wait()
         data = self.server.handler_instance.get_data()
