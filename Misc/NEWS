@@ -105,6 +105,9 @@ Build
 Tests
 -----
 
+- Issue #9931: Fix hangs in GUI tests under Windows in certain conditions.
+  Patch by Hirokazu Yamamoto.
+
 - Issue #10512: Properly close sockets under test.test_cgi.
 
 - Issue #10992: Make tests pass under coverage.
