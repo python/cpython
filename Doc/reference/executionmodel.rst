@@ -94,9 +94,7 @@ module, except those beginning with an underscore.  This form may only be used
 at the module level.
 
 A target occurring in a :keyword:`del` statement is also considered bound for
-this purpose (though the actual semantics are to unbind the name).  It is
-illegal to unbind a name that is referenced by an enclosing scope; the compiler
-will report a :exc:`SyntaxError`.
+this purpose (though the actual semantics are to unbind the name).
 
 Each assignment or import statement occurs within a block defined by a class or
 function definition or at the module level (the top-level code block).
