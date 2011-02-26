@@ -233,6 +233,36 @@ def forget(modname):
         unlink(imp.cache_from_source(source, debug_override=True))
         unlink(imp.cache_from_source(source, debug_override=False))
 
+# On some platforms, should not run gui test even if it is allowed
+# in `use_resources'.
+if sys.platform.startswith('win'):
+    import ctypes
+    import ctypes.wintypes
+    def _is_gui_available():
+        UOI_FLAGS = 1
+        WSF_VISIBLE = 0x0001
+        class USEROBJECTFLAGS(ctypes.Structure):
+            _fields_ = [("fInherit", ctypes.wintypes.BOOL),
+                        ("fReserved", ctypes.wintypes.BOOL),
+                        ("dwFlags", ctypes.wintypes.DWORD)]
+        dll = ctypes.windll.user32
+        h = dll.GetProcessWindowStation()
+        if not h:
+            raise ctypes.WinError()
+        uof = USEROBJECTFLAGS()
+        needed = ctypes.wintypes.DWORD()
+        res = dll.GetUserObjectInformationW(h,
+            UOI_FLAGS,
+            ctypes.byref(uof),
+            ctypes.sizeof(uof),
+            ctypes.byref(needed))
+        if not res:
+            raise ctypes.WinError()
+        return bool(uof.dwFlags & WSF_VISIBLE)
+else:
+    def _is_gui_available():
+        return True
+
 def is_resource_enabled(resource):
     """Test whether a resource is enabled.  Known resources are set by
     regrtest.py."""
@@ -245,6 +275,8 @@ def requires(resource, msg=None):
     possibility of False being returned occurs when regrtest.py is
     executing.
     """
+    if resource == 'gui' and not _is_gui_available():
+        raise unittest.SkipTest("Cannot use the 'gui' resource")
     # see if the caller's module is __main__ - if so, treat as if
     # the resource was set
     if sys._getframe(1).f_globals.get("__name__") == "__main__":
@@ -1045,6 +1077,8 @@ def _id(obj):
     return obj
 
 def requires_resource(resource):
+    if resource == 'gui' and not _is_gui_available():
+        return unittest.skip("resource 'gui' is not available")
     if is_resource_enabled(resource):
         return _id
     else:
