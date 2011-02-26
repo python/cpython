@@ -5935,8 +5935,9 @@ posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
     int flags = 0;
     sf.headers = NULL;
     sf.trailers = NULL;
-    static char *keywords[] = {"out", "in", "offset", "count", "headers",
-                               "trailers", "flags", NULL};
+    static char *keywords[] = {"out", "in",
+                                "offset", "count",
+                                "headers", "trailers", "flags", NULL};
 
 #ifdef __APPLE__
     if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiO&O&|OOi:sendfile",
