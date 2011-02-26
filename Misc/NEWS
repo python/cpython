@@ -55,6 +55,9 @@ Build
 Tests
 -----
 
+- Issue #9931: Fix hangs in GUI tests under Windows in certain conditions.
+  Patch by Hirokazu Yamamoto.
+
 - Issue #10826: Prevent sporadic failure in test_subprocess on Solaris due
   to open door files.
 
