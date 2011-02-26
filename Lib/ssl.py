@@ -110,9 +110,11 @@ class SSLSocket(socket):
             if e.errno != errno.ENOTCONN:
                 raise
             # no, no connection yet
+            self._connected = False
             self._sslobj = None
         else:
             # yes, create the SSL object
+            self._connected = True
             self._sslobj = _ssl.sslwrap(self._sock, server_side,
                                         keyfile, certfile,
                                         cert_reqs, ssl_version, ca_certs,
@@ -282,21 +284,36 @@ class SSLSocket(socket):
 
         self._sslobj.do_handshake()
 
-    def connect(self, addr):
-
-        """Connects to remote ADDR, and then wraps the connection in
-        an SSL channel."""
-
+    def _real_connect(self, addr, return_errno):
         # Here we assume that the socket is client-side, and not
         # connected at the time of the call.  We connect it, then wrap it.
-        if self._sslobj:
+        if self._connected:
             raise ValueError("attempt to connect already-connected SSLSocket!")
-        socket.connect(self, addr)
         self._sslobj = _ssl.sslwrap(self._sock, False, self.keyfile, self.certfile,
                                     self.cert_reqs, self.ssl_version,
                                     self.ca_certs, self.ciphers)
-        if self.do_handshake_on_connect:
-            self.do_handshake()
+        try:
+            socket.connect(self, addr)
+            if self.do_handshake_on_connect:
+                self.do_handshake()
+        except socket_error as e:
+            if return_errno:
+                return e.errno
+            else:
+                self._sslobj = None
+                raise e
+        self._connected = True
+        return 0
+
+    def connect(self, addr):
+        """Connects to remote ADDR, and then wraps the connection in
+        an SSL channel."""
+        self._real_connect(addr, False)
+
+    def connect_ex(self, addr):
+        """Connects to remote ADDR, and then wraps the connection in
+        an SSL channel."""
+        return self._real_connect(addr, True)
 
     def accept(self):
 
