@@ -102,12 +102,5 @@ class LoaderTest(unittest.TestCase):
             # This is the real test: call the function via 'call_function'
             self.assertEqual(0, call_function(proc, (None,)))
 
-    if os.name != "nt":
-        def test_libc_exists(self):
-            # A basic test that the libc is found by find_library()
-            # XXX Can this fail on some non-Windows systems?
-            self.assertTrue(libc_name)
-            self.assertTrue(os.path.exists(libc_name))
-
 if __name__ == "__main__":
     unittest.main()
