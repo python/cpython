@@ -35,6 +35,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11258: Speed up ctypes.util.find_library() under Linux a lot.  Patch
+  by Jonas H.
+
 - Issue #11297: Add collections.ChainMap().
 
 - Issue #10755: Add the posix.fdlistdir() function.  Patch by Ross Lagerwall.
