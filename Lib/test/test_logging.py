@@ -2057,6 +2057,7 @@ for when, exp in (('S', 1),
             # Failures occur on some systems for MIDNIGHT and W0.
             # Print detailed calculation for MIDNIGHT so we can try to see
             # what's going on
+            import time
             if when == 'MIDNIGHT':
                 try:
                     if rh.utc:
