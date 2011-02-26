@@ -19,6 +19,16 @@ import sys
 # Local imports
 from lib2to3.pgen2 import tokenize
 from ..pgen2.parse import ParseError
+from lib2to3.pygram import python_symbols as syms
+
+
+class TestDriver(support.TestCase):
+
+    def test_formfeed(self):
+        s = """print 1\n\x0Cprint 2\n"""
+        t = driver.parse_string(s)
+        self.assertEqual(t.children[0].children[0].type, syms.print_stmt)
+        self.assertEqual(t.children[1].children[0].type, syms.print_stmt)
 
 
 class GrammarTest(support.TestCase):
