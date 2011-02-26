@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2001-2010 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2011 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -18,7 +18,7 @@
 
 """Test harness for the logging module. Run all tests.
 
-Copyright (C) 2001-2010 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2011 Vinay Sajip. All Rights Reserved.
 """
 
 import logging
@@ -2044,13 +2044,43 @@ for when, exp in (('S', 1),
                   ('M', 60),
                   ('H', 60 * 60),
                   ('D', 60 * 60 * 24),
-                  ('MIDNIGHT', 60 * 60 * 23),
+                  ('MIDNIGHT', 60 * 60 * 24),
                   # current time (epoch start) is a Thursday, W0 means Monday
-                  ('W0', secs(days=4, hours=23)),):
+                  ('W0', secs(days=4, hours=24)),
+                 ):
     def test_compute_rollover(self, when=when, exp=exp):
         rh = logging.handlers.TimedRotatingFileHandler(
-            self.fn, when=when, interval=1, backupCount=0)
-        self.assertEqual(exp, rh.computeRollover(0.0))
+            self.fn, when=when, interval=1, backupCount=0, utc=True)
+        currentTime = 0.0
+        actual = rh.computeRollover(currentTime)
+        if exp != actual:
+            # Failures occur on some systems for MIDNIGHT and W0.
+            # Print detailed calculation for MIDNIGHT so we can try to see
+            # what's going on
+            import time
+            if when == 'MIDNIGHT':
+                try:
+                    if rh.utc:
+                        t = time.gmtime(currentTime)
+                    else:
+                        t = time.localtime(currentTime)
+                    currentHour = t[3]
+                    currentMinute = t[4]
+                    currentSecond = t[5]
+                    # r is the number of seconds left between now and midnight
+                    r = logging.handlers._MIDNIGHT - ((currentHour * 60 +
+                                                       currentMinute) * 60 +
+                            currentSecond)
+                    result = currentTime + r
+                    print('t: %s (%s)' % (t, rh.utc), file=sys.stderr)
+                    print('currentHour: %s' % currentHour, file=sys.stderr)
+                    print('currentMinute: %s' % currentMinute, file=sys.stderr)
+                    print('currentSecond: %s' % currentSecond, file=sys.stderr)
+                    print('r: %s' % r, file=sys.stderr)
+                    print('result: %s' % result, file=sys.stderr)
+                except Exception:
+                    print('exception in diagnostic code: %s' % sys.exc_info()[1], file=sys.stderr)
+        self.assertEqual(exp, actual)
         rh.close()
     setattr(TimedRotatingFileHandlerTest, "test_compute_rollover_%s" % when, test_compute_rollover)
 
