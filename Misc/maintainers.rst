@@ -4,7 +4,7 @@ Maintainers Index
 .. warning::
 
    This document is out of date and replaced by another version in the
-   developpers' guide at http://docs.python.org/devguide/experts.
+   developer's guide at http://docs.python.org/devguide/experts
 
 This document has tables that list Python Modules, Tools, Platforms and
 Interest Areas and names for each item that indicate a maintainer or an
