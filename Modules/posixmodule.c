@@ -369,8 +369,7 @@ _parse_off_t(PyObject* arg, void* addr)
 #if !defined(HAVE_LARGEFILE_SUPPORT)
     *((off_t*)addr) = PyLong_AsLong(arg);
 #else
-    *((off_t*)addr) = PyLong_Check(arg) ? PyLong_AsLongLong(arg)
-            : PyLong_AsLong(arg);
+    *((off_t*)addr) = PyLong_AsLongLong(arg);
 #endif
     if (PyErr_Occurred())
         return 0;
@@ -5772,8 +5771,7 @@ posix_lseek(PyObject *self, PyObject *args)
 #if !defined(HAVE_LARGEFILE_SUPPORT)
     pos = PyLong_AsLong(posobj);
 #else
-    pos = PyLong_Check(posobj) ?
-        PyLong_AsLongLong(posobj) : PyLong_AsLong(posobj);
+    pos = PyLong_AsLongLong(posobj);
 #endif
     if (PyErr_Occurred())
         return NULL;
@@ -6030,7 +6028,8 @@ done:
         return Py_BuildValue("nO", ret, Py_None);
     }
 #endif
-    _parse_off_t(offobj, &offset);
+    if (!_parse_off_t(offobj, &offset))
+        return NULL;
     Py_BEGIN_ALLOW_THREADS
     ret = sendfile(out, in, &offset, count);
     Py_END_ALLOW_THREADS
