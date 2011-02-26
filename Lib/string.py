@@ -46,7 +46,7 @@ def capwords(s, sep=None):
 
 ####################################################################
 import re as _re
-from collections import _ChainMap
+from collections import ChainMap
 
 class _TemplateMetaclass(type):
     pattern = r"""
@@ -100,7 +100,7 @@ class Template(metaclass=_TemplateMetaclass):
         if not args:
             mapping = kws
         elif kws:
-            mapping = _ChainMap(kws, args[0])
+            mapping = ChainMap(kws, args[0])
         else:
             mapping = args[0]
         # Helper function for .sub()
@@ -126,7 +126,7 @@ class Template(metaclass=_TemplateMetaclass):
         if not args:
             mapping = kws
         elif kws:
-            mapping = _ChainMap(kws, args[0])
+            mapping = ChainMap(kws, args[0])
         else:
             mapping = args[0]
         # Helper function for .sub()
