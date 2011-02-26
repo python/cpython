@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11326: Add the missing connect_ex() implementation for SSL sockets,
+  and make it work for non-blocking connects.
+
 - Issue #7322: Trying to read from a socket's file-like object after a timeout
   occurred now raises an error instead of silently losing data.
 
