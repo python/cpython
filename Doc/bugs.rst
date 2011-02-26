@@ -57,11 +57,13 @@ were using (including version information as appropriate).
 
 Each bug report will be assigned to a developer who will determine what needs to
 be done to correct the problem.  You will receive an update each time action is
-taken on the bug.  See http://www.python.org/dev/workflow/ for a detailed
-description of the issue workflow.
+taken on the bug.
 
 
 .. seealso::
+
+   `Python Developer's Guide <http://docs.python.org/devguide/>`_
+      Detailed description of the issue workflow and developers tools.
 
    `How to Report Bugs Effectively <http://www.chiark.greenend.org.uk/~sgtatham/bugs.html>`_
       Article which goes into some detail about how to create a useful bug report.

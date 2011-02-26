@@ -166,7 +166,7 @@ and run out of the box on most UNIX platforms.
 
 .. XXX update link once the dev faq is relocated
 
-Consult the `Developer FAQ <http://www.python.org/dev/faq/>`__ for more
+Consult the `Developer FAQ <http://docs.python.org/devguide/faq>`__ for more
 information on getting the source code and compiling it.
 
 
@@ -224,7 +224,7 @@ news is available.
 .. XXX update link once the dev faq is relocated
 
 You can also access the development version of Python through Subversion.  See
-http://www.python.org/dev/faq/ for details.
+http://docs.python.org/devguide/faq for details.
 
 
 How do I submit bug reports and patches for Python?
@@ -242,7 +242,7 @@ report bugs to Python, you can obtain your Roundup password through Roundup's
 .. XXX adapt link to dev guide
 
 For more information on how Python is developed, consult `the Python Developer's
-Guide <http://python.org/dev/>`_.
+Guide <http://docs.python.org/devguide/>`_.
 
 
 Are there any published articles about Python that I can reference?
