@@ -123,7 +123,7 @@ class WhichDBTestCase(unittest.TestCase):
             name = module.__name__
             if name == 'dbm.dumb':
                 continue   # whichdb can't support dbm.dumb
-            test.support.unlink(_fname)
+            delete_files()
             f = module.open(_fname, 'c')
             f.close()
             self.assertEqual(name, dbm.whichdb(_fname))
