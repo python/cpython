@@ -383,7 +383,7 @@ class StrFormatStyle(PercentStyle):
 class StringTemplateStyle(PercentStyle):
     default_format = '${message}'
     asctime_format = '${asctime}'
-    asctime_search = '${asctime'
+    asctime_search = '${asctime}'
 
     def __init__(self, fmt):
         self._fmt = fmt or self.default_format
