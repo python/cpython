@@ -679,6 +679,9 @@ class ChainMap(MutableMapping):
     def __contains__(self, key):
         return any(key in m for m in self.maps)
 
+    def __bool__(self):
+        return any(self.maps)
+
     @_recursive_repr()
     def __repr__(self):
         return '{0.__class__.__name__}({1})'.format(
