@@ -248,7 +248,8 @@ class NetworkedTests(unittest.TestCase):
             try:
                 s.setblocking(False)
                 rc = s.connect_ex(('svn.python.org', 443))
-                self.assertIn(rc, (0, errno.EINPROGRESS))
+                # EWOULDBLOCK under Windows, EINPROGRESS elsewhere
+                self.assertIn(rc, (0, errno.EINPROGRESS, errno.EWOULDBLOCK))
                 # Wait for connect to finish
                 select.select([], [s], [], 5.0)
                 # Non-blocking handshake
