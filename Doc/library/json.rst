@@ -7,7 +7,7 @@
 .. sectionauthor:: Bob Ippolito <bob@redivi.com>
 .. versionadded:: 2.6
 
-JSON (JavaScript Object Notation) <http://json.org> is a subset of JavaScript
+`JSON (JavaScript Object Notation) <http://json.org>`_ is a subset of JavaScript
 syntax (ECMA-262 3rd edition) used as a lightweight data interchange format.
 
 :mod:`json` exposes an API familiar to users of the standard library
