@@ -443,6 +443,9 @@
 /* Define to 1 if you have the `resolv' library (-lresolv). */
 #undef HAVE_LIBRESOLV
 
+/* Define to 1 if you have the `sendfile' library (-lsendfile). */
+#undef HAVE_LIBSENDFILE
+
 /* Define to 1 if you have the <libutil.h> header file. */
 #undef HAVE_LIBUTIL_H
 
@@ -533,12 +536,6 @@
 /* Define if the OS supports pipe2() */
 #undef HAVE_PIPE2
 
-/* Define if the OS supports pipe2() */
-#undef HAVE_PIPE2
-
-/* Define if the OS supports pipe2() */
-#undef HAVE_PIPE2
-
 /* Define to 1 if you have the `plock' function. */
 #undef HAVE_PLOCK
 
@@ -623,6 +620,9 @@
 /* Define to 1 if you have the `sem_unlink' function. */
 #undef HAVE_SEM_UNLINK
 
+/* Define to 1 if you have the `sendfile' function. */
+#undef HAVE_SENDFILE
+
 /* Define to 1 if you have the `setegid' function. */
 #undef HAVE_SETEGID
 
@@ -634,6 +634,9 @@
 
 /* Define if you have the 'setgroups' function. */
 #undef HAVE_SETGROUPS
+
+/* Define to 1 if you have the `sethostname' function. */
+#undef HAVE_SETHOSTNAME
 
 /* Define to 1 if you have the `setitimer' function. */
 #undef HAVE_SETITIMER
@@ -848,6 +851,9 @@
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <sys/uio.h> header file. */
+#undef HAVE_SYS_UIO_H
 
 /* Define to 1 if you have the <sys/un.h> header file. */
 #undef HAVE_SYS_UN_H
@@ -1083,9 +1089,6 @@
 
 /* The size of `size_t', as computed by sizeof. */
 #undef SIZEOF_SIZE_T
-
-/* Define to 1 if you have the `sendfile' function. */
-#undef HAVE_SENDFILE
 
 /* The size of `time_t', as computed by sizeof. */
 #undef SIZEOF_TIME_T

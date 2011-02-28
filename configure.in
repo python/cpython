@@ -2542,7 +2542,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  mkfifoat mknod mknodat mktime mremap nice openat pathconf pause plock poll \
  pthread_init putenv readlink readlinkat realpath renameat \
  select sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
- setgid \
+ setgid sethostname \
  setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setpriority setuid setvbuf \
  sigaction siginterrupt sigrelse snprintf strftime strlcpy symlinkat \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
