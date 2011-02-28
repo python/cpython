@@ -37,6 +37,13 @@ Core and Builtins
 Library
 -------
 
+- Issue #10276: Fix the results of zlib.crc32() and zlib.adler32() on buffers
+  larger than 4GB.  Patch by Nadeem Vawda.
+
+- Issue #4681: Allow mmap() to work on file sizes and offsets larger than
+  4GB, even on 32-bit builds.  Initial patch by Ross Lagerwall, adapted for
+  32-bit Windows.
+
 - email.header.Header was incorrectly encoding folding white space when
   rfc2047-encoding header values with embedded newlines, leaving them
   without folding whitespace.  It now uses the continuation_ws, as it
