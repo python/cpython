@@ -1274,10 +1274,16 @@ class ProgramPriorityTests(unittest.TestCase):
     """Tests for os.getpriority() and os.setpriority()."""
 
     def test_set_get_priority(self):
+
         base = os.getpriority(os.PRIO_PROCESS, os.getpid())
         os.setpriority(os.PRIO_PROCESS, os.getpid(), base + 1)
         try:
-            self.assertEqual(os.getpriority(os.PRIO_PROCESS, os.getpid()), base + 1)
+            new_prio = os.getpriority(os.PRIO_PROCESS, os.getpid())
+            if base >= 19 and new_prio <= 19:
+                raise unittest.SkipTest(
+      "unable to reliably test setpriority at current nice level of %s" % base)
+            else:
+                self.assertEqual(new_prio, base + 1)
         finally:
             try:
                 os.setpriority(os.PRIO_PROCESS, os.getpid(), base)
