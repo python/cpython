@@ -685,6 +685,10 @@ class ThreadingExceptionTests(BaseTestCase):
         thread.start()
         self.assertRaises(RuntimeError, setattr, thread, "daemon", True)
 
+    def test_releasing_unacquired_lock(self):
+        lock = threading.Lock()
+        self.assertRaises(RuntimeError, lock.release)
+
 
 class LockTests(lock_tests.LockTests):
     locktype = staticmethod(threading.Lock)

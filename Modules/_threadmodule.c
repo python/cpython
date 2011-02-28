@@ -1308,7 +1308,9 @@ PyInit__thread(void)
 
     /* Add a symbolic constant */
     d = PyModule_GetDict(m);
-    ThreadError = PyErr_NewException("_thread.error", NULL, NULL);
+    ThreadError = PyExc_RuntimeError;
+    Py_INCREF(ThreadError);
+    
     PyDict_SetItemString(d, "error", ThreadError);
     Locktype.tp_doc = lock_doc;
     Py_INCREF(&Locktype);

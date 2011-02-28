@@ -35,6 +35,9 @@ It defines the following constants and functions:
 
    Raised on thread-specific errors.
 
+   .. versionchanged:: 3.3
+      This is now a synonym of the built-in :exc:`RuntimeError`.
+
 
 .. data:: LockType
 
