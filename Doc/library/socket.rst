@@ -117,39 +117,44 @@ The module :mod:`socket` exports the following constants and functions:
 
    .. index:: module: errno
 
-   This exception is raised for socket-related errors. The accompanying value is
-   either a string telling what went wrong or a pair ``(errno, string)``
-   representing an error returned by a system call, similar to the value
-   accompanying :exc:`os.error`. See the module :mod:`errno`, which contains names
-   for the error codes defined by the underlying operating system.
+   A subclass of :exc:`IOError`, this exception is raised for socket-related
+   errors.  It is recommended that you inspect its ``errno`` attribute to
+   discriminate between different kinds of errors.
+
+   .. seealso::
+      The :mod:`errno` module contains symbolic names for the error codes
+      defined by the underlying operating system.
 
 
 .. exception:: herror
 
-   This exception is raised for address-related errors, i.e. for functions that use
-   *h_errno* in the C API, including :func:`gethostbyname_ex` and
-   :func:`gethostbyaddr`.
-
-   The accompanying value is a pair ``(h_errno, string)`` representing an error
-   returned by a library call. *string* represents the description of *h_errno*, as
-   returned by the :c:func:`hstrerror` C function.
+   A subclass of :exc:`socket.error`, this exception is raised for
+   address-related errors, i.e. for functions that use *h_errno* in the POSIX
+   C API, including :func:`gethostbyname_ex` and :func:`gethostbyaddr`.
+   The accompanying value is a pair ``(h_errno, string)`` representing an
+   error returned by a library call.  *h_errno* is a numeric value, while
+   *string* represents the description of *h_errno*, as returned by the
+   :c:func:`hstrerror` C function.
 
 
 .. exception:: gaierror
 
-   This exception is raised for address-related errors, for :func:`getaddrinfo` and
-   :func:`getnameinfo`. The accompanying value is a pair ``(error, string)``
-   representing an error returned by a library call. *string* represents the
-   description of *error*, as returned by the :c:func:`gai_strerror` C function. The
-   *error* value will match one of the :const:`EAI_\*` constants defined in this
-   module.
+   A subclass of :exc:`socket.error`, this exception is raised for
+   address-related errors by :func:`getaddrinfo` and :func:`getnameinfo`.
+   The accompanying value is a pair ``(error, string)`` representing an error
+   returned by a library call.  *string* represents the description of
+   *error*, as returned by the :c:func:`gai_strerror` C function.  The
+   numeric *error* value will match one of the :const:`EAI_\*` constants
+   defined in this module.
 
 
 .. exception:: timeout
 
-   This exception is raised when a timeout occurs on a socket which has had
-   timeouts enabled via a prior call to :meth:`~socket.settimeout`.  The
-   accompanying value is a string whose value is currently always "timed out".
+   A subclass of :exc:`socket.error`, this exception is raised when a timeout
+   occurs on a socket which has had timeouts enabled via a prior call to
+   :meth:`~socket.settimeout` (or implicitly through
+   :func:`~socket.setdefaulttimeout`).  The accompanying value is a string
+   whose value is currently always "timed out".
 
 
 .. data:: AF_UNIX
