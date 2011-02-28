@@ -325,6 +325,26 @@ class GeneralModuleTests(unittest.TestCase):
         if not fqhn in all_host_names:
             self.fail("Error testing host resolution mechanisms. (fqdn: %s, all: %s)" % (fqhn, repr(all_host_names)))
 
+    @unittest.skipUnless(hasattr(socket, 'sethostname'), "test needs socket.sethostname()")
+    @unittest.skipUnless(hasattr(socket, 'gethostname'), "test needs socket.gethostname()")
+    def test_sethostname(self):
+        oldhn = socket.gethostname()
+        try:
+            socket.sethostname('new')
+        except socket.error as e:
+            if e.errno == errno.EPERM:
+                self.skipTest("test should be run as root")
+            else:
+                raise
+        try:
+            # running test as root!
+            self.assertEqual(socket.gethostname(), 'new')
+            # Should work with bytes objects too
+            socket.sethostname(b'bar')
+            self.assertEqual(socket.gethostname(), 'bar')
+        finally:
+            socket.sethostname(oldhn)
+
     def testRefCountGetNameInfo(self):
         # Testing reference count for getnameinfo
         if hasattr(sys, "getrefcount"):

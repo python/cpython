@@ -521,6 +521,16 @@ The module :mod:`socket` exports the following constants and functions:
    meanings.
 
 
+.. function:: sethostname(name)
+
+   Set the machine's hostname to *name*.  This will raise a
+   :exc:`socket.error` if you don't have enough rights.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+
 .. data:: SocketType
 
    This is a Python type object that represents the socket object type. It is the

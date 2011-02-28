@@ -35,6 +35,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10866: Add socket.sethostname().  Initial patch by Ross Lagerwall.
+
 - Issue #11140: Lock.release() now raises a RuntimeError when attempting
   to release an unacquired lock, as claimed in the threading documentation.
   The _thread.error exception is now an alias of RuntimeError.  Patch by

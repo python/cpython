@@ -3135,6 +3135,37 @@ PyDoc_STRVAR(gethostname_doc,
 \n\
 Return the current host name.");
 
+#ifdef HAVE_SETHOSTNAME
+PyDoc_STRVAR(sethostname_doc,
+"sethostname(name)\n\n\
+Sets the hostname to name.");
+
+static PyObject *
+socket_sethostname(PyObject *self, PyObject *args)
+{
+    PyObject *hnobj;
+    Py_buffer buf;
+    int res, flag = 0;
+
+    if (!PyArg_ParseTuple(args, "S:sethostname", &hnobj)) {
+        PyErr_Clear();
+        if (!PyArg_ParseTuple(args, "O&:sethostname",
+                PyUnicode_FSConverter, &hnobj))
+            return NULL;
+        flag = 1;
+    }
+    res = PyObject_GetBuffer(hnobj, &buf, PyBUF_SIMPLE);
+    if (!res) {
+        res = sethostname(buf.buf, buf.len);
+        PyBuffer_Release(&buf);
+    }
+    if (flag)
+        Py_DECREF(hnobj);
+    if (res)
+        return set_error();
+    Py_RETURN_NONE;
+}
+#endif
 
 /* Python interface to gethostbyname(name). */
 
@@ -4233,6 +4264,10 @@ static PyMethodDef socket_methods[] = {
      METH_VARARGS, gethostbyaddr_doc},
     {"gethostname",             socket_gethostname,
      METH_NOARGS,  gethostname_doc},
+#ifdef HAVE_SETHOSTNAME
+    {"sethostname",             socket_sethostname,
+     METH_VARARGS,  sethostname_doc},
+#endif
     {"getservbyname",           socket_getservbyname,
      METH_VARARGS, getservbyname_doc},
     {"getservbyport",           socket_getservbyport,
