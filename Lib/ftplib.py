@@ -107,7 +107,8 @@ class FTP:
     # Optional arguments are host (for connect()),
     # and user, passwd, acct (for login())
     def __init__(self, host='', user='', passwd='', acct='',
-                 timeout=_GLOBAL_DEFAULT_TIMEOUT):
+                 timeout=_GLOBAL_DEFAULT_TIMEOUT, source_address=None):
+        self.source_address = source_address
         self.timeout = timeout
         if host:
             self.connect(host)
@@ -128,10 +129,12 @@ class FTP:
                 if self.sock is not None:
                     self.close()
 
-    def connect(self, host='', port=0, timeout=-999):
+    def connect(self, host='', port=0, timeout=-999, source_address=None):
         '''Connect to host.  Arguments are:
          - host: hostname to connect to (string, default previous host)
          - port: port to connect to (integer, default previous port)
+         - source_address: a 2-tuple (host, port) for the socket to bind
+           to as its source address before connecting.
         '''
         if host != '':
             self.host = host
@@ -139,7 +142,10 @@ class FTP:
             self.port = port
         if timeout != -999:
             self.timeout = timeout
-        self.sock = socket.create_connection((self.host, self.port), self.timeout)
+        if source_address is not None:
+            self.source_address = source_address
+        self.sock = socket.create_connection((self.host, self.port), self.timeout,
+                                             source_address=self.source_address)
         self.af = self.sock.family
         self.file = self.sock.makefile('r', encoding=self.encoding)
         self.welcome = self.getresp()
@@ -334,7 +340,8 @@ class FTP:
         size = None
         if self.passiveserver:
             host, port = self.makepasv()
-            conn = socket.create_connection((host, port), self.timeout)
+            conn = socket.create_connection((host, port), self.timeout,
+                                            source_address=self.source_address)
             if rest is not None:
                 self.sendcmd("REST %s" % rest)
             resp = self.sendcmd(cmd)
@@ -637,7 +644,7 @@ else:
 
         def __init__(self, host='', user='', passwd='', acct='', keyfile=None,
                      certfile=None, context=None,
-                     timeout=_GLOBAL_DEFAULT_TIMEOUT):
+                     timeout=_GLOBAL_DEFAULT_TIMEOUT, source_address=None):
             if context is not None and keyfile is not None:
                 raise ValueError("context and keyfile arguments are mutually "
                                  "exclusive")
@@ -648,7 +655,7 @@ else:
             self.certfile = certfile
             self.context = context
             self._prot_p = False
-            FTP.__init__(self, host, user, passwd, acct, timeout)
+            FTP.__init__(self, host, user, passwd, acct, timeout, source_address)
 
         def login(self, user='', passwd='', acct='', secure=True):
             if secure and not isinstance(self.sock, ssl.SSLSocket):

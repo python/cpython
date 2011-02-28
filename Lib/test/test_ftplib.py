@@ -608,6 +608,20 @@ class TestFTPClass(TestCase):
         self.assertEqual(self.server.handler_instance.last_received_cmd, 'quit')
         self.assertFalse(is_client_connected())
 
+    def test_source_address(self):
+        self.client.quit()
+        port = support.find_unused_port()
+        self.client.connect(self.server.host, self.server.port,
+                            source_address=(HOST, port))
+        self.assertEqual(self.client.sock.getsockname()[1], port)
+        self.client.quit()
+
+    def test_source_address_passive_connection(self):
+        port = support.find_unused_port()
+        self.client.source_address = (HOST, port)
+        sock = self.client.transfercmd('list')
+        self.assertEqual(sock.getsockname()[1], port)
+
     def test_parse257(self):
         self.assertEqual(ftplib.parse257('257 "/foo/bar"'), '/foo/bar')
         self.assertEqual(ftplib.parse257('257 "/foo/bar" created'), '/foo/bar')
