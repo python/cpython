@@ -40,7 +40,7 @@ Here's a sample session using the :mod:`ftplib` module::
 
 The module defines the following items:
 
-.. class:: FTP(host='', user='', passwd='', acct=''[, timeout])
+.. class:: FTP(host='', user='', passwd='', acct='', timeout=None, source_address=None)
 
    Return a new instance of the :class:`FTP` class.  When *host* is given, the
    method call ``connect(host)`` is made.  When *user* is given, additionally
@@ -48,7 +48,8 @@ The module defines the following items:
    *acct* default to the empty string when not given).  The optional *timeout*
    parameter specifies a timeout in seconds for blocking operations like the
    connection attempt (if is not specified, the global default timeout setting
-   will be used).
+   will be used). *source_address* is a 2-tuple ``(host, port)`` for the socket
+   to bind to as its source address before connecting.
 
    :class:`FTP` class supports the :keyword:`with` statement. Here is a sample
    on how using it:
@@ -68,8 +69,11 @@ The module defines the following items:
    .. versionchanged:: 3.2
       Support for the :keyword:`with` statement was added.
 
+   .. versionchanged:: 3.3
+      *source_address* parameter was added.
 
-.. class:: FTP_TLS(host='', user='', passwd='', acct='', [keyfile[, certfile[, context[, timeout]]]])
+
+.. class:: FTP_TLS(host='', user='', passwd='', acct='', keyfile=None, certfile=None, context=None, timeout=None, source_address=None)
 
    A :class:`FTP` subclass which adds TLS support to FTP as described in
    :rfc:`4217`.
@@ -80,9 +84,14 @@ The module defines the following items:
    private key and certificate chain file name for the SSL connection.
    *context* parameter is a :class:`ssl.SSLContext` object which allows
    bundling SSL configuration options, certificates and private keys into a
-   single (potentially long-lived) structure.
+   single (potentially long-lived) structure. *source_address* is a 2-tuple
+   ``(host, port)`` for the socket to bind to as its source address before
+   connecting.
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.3
+      *source_address* parameter was added.
 
    Here's a sample session using the :class:`FTP_TLS` class:
 
@@ -174,7 +183,7 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    debugging output, logging each line sent and received on the control connection.
 
 
-.. method:: FTP.connect(host='', port=0[, timeout])
+.. method:: FTP.connect(host='', port=0, timeout=None, source_address=None)
 
    Connect to the given host and port.  The default port number is ``21``, as
    specified by the FTP protocol specification.  It is rarely needed to specify a
@@ -182,10 +191,14 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    instance; it should not be called at all if a host was given when the instance
    was created.  All other methods can only be used after a connection has been
    made.
-
    The optional *timeout* parameter specifies a timeout in seconds for the
    connection attempt. If no *timeout* is passed, the global default timeout
    setting will be used.
+   *source_address* is a 2-tuple ``(host, port)`` for the socket to bind to as
+   its source address before connecting.
+
+   .. versionchanged:: 3.3
+      *source_address* parameter was added.
 
 
 .. method:: FTP.getwelcome()
