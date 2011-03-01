@@ -36,9 +36,10 @@ def server(evt, serv, dataq=None):
                 data = data[written:]
     except socket.timeout:
         pass
+    else:
+        conn.close()
     finally:
         serv.close()
-        conn.close()
         evt.set()
 
 class GeneralTests(TestCase):
