@@ -17,9 +17,10 @@ def server(evt, serv):
         conn, addr = serv.accept()
     except socket.timeout:
         pass
+    else:
+        conn.close()
     finally:
         serv.close()
-        conn.close()
         evt.set()
 
 class GeneralTests(TestCase):
