@@ -62,6 +62,9 @@ Build
 Tests
 -----
 
+- Issue #10911: Add tests on CGI with non-ASCII characters. Patch written by
+  Pierre Quentel.
+
 - Issue #9931: Fix hangs in GUI tests under Windows in certain conditions.
   Patch by Hirokazu Yamamoto.
 

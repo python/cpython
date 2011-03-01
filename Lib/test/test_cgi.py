@@ -197,30 +197,12 @@ class CgiTests(unittest.TestCase):
 
     def test_fieldstorage_multipart(self):
         #Test basic FieldStorage multipart parsing
-        env = {'REQUEST_METHOD':'POST', 'CONTENT_TYPE':'multipart/form-data; boundary=---------------------------721837373350705526688164684', 'CONTENT_LENGTH':'558'}
-        postdata = """-----------------------------721837373350705526688164684
-Content-Disposition: form-data; name="id"
-
-1234
------------------------------721837373350705526688164684
-Content-Disposition: form-data; name="title"
-
-
------------------------------721837373350705526688164684
-Content-Disposition: form-data; name="file"; filename="test.txt"
-Content-Type: text/plain
-
-Testing 123.
-
------------------------------721837373350705526688164684
-Content-Disposition: form-data; name="submit"
-
- Add\x20
------------------------------721837373350705526688164684--
-"""
-        encoding = 'ascii'
-        fp = BytesIO(postdata.encode(encoding))
-        fs = cgi.FieldStorage(fp, environ=env, encoding=encoding)
+        env = {
+            'REQUEST_METHOD': 'POST',
+            'CONTENT_TYPE': 'multipart/form-data; boundary={}'.format(BOUNDARY),
+            'CONTENT_LENGTH': '558'}
+        fp = BytesIO(POSTDATA.encode('latin-1'))
+        fs = cgi.FieldStorage(fp, environ=env, encoding="latin-1")
         self.assertEqual(len(fs.list), 4)
         expect = [{'name':'id', 'filename':None, 'value':'1234'},
                   {'name':'title', 'filename':None, 'value':''},
@@ -230,6 +212,21 @@ Content-Disposition: form-data; name="submit"
             for k, exp in expect[x].items():
                 got = getattr(fs.list[x], k)
                 self.assertEqual(got, exp)
+
+    def test_fieldstorage_multipart_non_ascii(self):
+        #Test basic FieldStorage multipart parsing
+        env = {'REQUEST_METHOD':'POST',
+            'CONTENT_TYPE': 'multipart/form-data; boundary={}'.format(BOUNDARY),
+            'CONTENT_LENGTH':'558'}
+        for encoding in ['iso-8859-1','utf-8']:
+            fp = BytesIO(POSTDATA_NON_ASCII.encode(encoding))
+            fs = cgi.FieldStorage(fp, environ=env,encoding=encoding)
+            self.assertEqual(len(fs.list), 1)
+            expect = [{'name':'id', 'filename':None, 'value':'\xe7\xf1\x80'}]
+            for x in range(len(fs.list)):
+                for k, exp in expect[x].items():
+                    got = getattr(fs.list[x], k)
+                    self.assertEqual(got, exp)
 
     _qs_result = {
         'key1': 'value1',
@@ -345,6 +342,36 @@ this is the content of the fake file
         self.assertEqual(
             cgi.parse_header('attachment; filename="strange;name";size=123;'),
             ("attachment", {"filename": "strange;name", "size": "123"}))
+
+BOUNDARY = "---------------------------721837373350705526688164684"
+
+POSTDATA = """-----------------------------721837373350705526688164684
+Content-Disposition: form-data; name="id"
+
+1234
+-----------------------------721837373350705526688164684
+Content-Disposition: form-data; name="title"
+
+
+-----------------------------721837373350705526688164684
+Content-Disposition: form-data; name="file"; filename="test.txt"
+Content-Type: text/plain
+
+Testing 123.
+
+-----------------------------721837373350705526688164684
+Content-Disposition: form-data; name="submit"
+
+ Add\x20
+-----------------------------721837373350705526688164684--
+"""
+
+POSTDATA_NON_ASCII = """-----------------------------721837373350705526688164684
+Content-Disposition: form-data; name="id"
+
+\xe7\xf1\x80
+-----------------------------721837373350705526688164684
+"""
 
 
 def test_main():
