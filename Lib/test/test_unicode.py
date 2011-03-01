@@ -1459,6 +1459,19 @@ class UnicodeTest(string_tests.CommonTest,
         text = PyUnicode_FromFormat(b'%%A:%A', 'abc\xe9\uabcd\U0010ffff')
         self.assertEqual(text, r"%A:'abc\xe9\uabcd\U0010ffff'")
 
+        text = PyUnicode_FromFormat(b'repr=%V', 'abc', b'xyz')
+        self.assertEqual(text, 'repr=abc')
+
+        # Test string decode from parameter of %s using utf-8.
+        # b'\xe4\xba\xba\xe6\xb0\x91' is utf-8 encoded byte sequence of
+        # '\u4eba\u6c11'
+        text = PyUnicode_FromFormat(b'repr=%V', None, b'\xe4\xba\xba\xe6\xb0\x91')
+        self.assertEqual(text, 'repr=\u4eba\u6c11')
+
+        #Test replace error handler.
+        text = PyUnicode_FromFormat(b'repr=%V', None, b'abc\xff')
+        self.assertEqual(text, 'repr=abc\ufffd')
+
     # Test PyUnicode_AsWideChar()
     def test_aswidechar(self):
         from _testcapi import unicode_aswidechar
