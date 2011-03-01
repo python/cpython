@@ -10,6 +10,10 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #11246: Fix PyUnicode_FromFormat("%V") to decode the byte string from
+  UTF-8 (with replace error handler) instead of ISO-8859-1 (in strict mode).
+  Patch written by Ray Allen.
+
 - Issue #11286: Raise a ValueError from calling PyMemoryView_FromBuffer with
   a buffer struct having a NULL data pointer.
 

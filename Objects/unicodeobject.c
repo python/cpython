@@ -759,7 +759,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
          if (*f == '%') {
              if (*(f+1)=='%')
                  continue;
-             if (*(f+1)=='S' || *(f+1)=='R' || *(f+1)=='A')
+             if (*(f+1)=='S' || *(f+1)=='R' || *(f+1)=='A' || *(f+1) == 'V')
                  ++callcount;
              while (Py_ISDIGIT((unsigned)*f))
                  width = (width*10) + *f++ - '0';
@@ -879,12 +879,20 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
             {
                 PyObject *obj = va_arg(count, PyObject *);
                 const char *str = va_arg(count, const char *);
+                PyObject *str_obj;
                 assert(obj || str);
                 assert(!obj || PyUnicode_Check(obj));
-                if (obj)
+                if (obj) {
                     n += PyUnicode_GET_SIZE(obj);
-                else
-                    n += strlen(str);
+                    *callresult++ = NULL;
+                }
+                else {
+                    str_obj = PyUnicode_DecodeUTF8(str, strlen(str), "replace");
+                    if (!str_obj)
+                        goto fail;
+                    n += PyUnicode_GET_SIZE(str_obj);
+                    *callresult++ = str_obj;
+                }
                 break;
             }
             case 'S':
@@ -1087,14 +1095,18 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
             case 'V':
             {
                 PyObject *obj = va_arg(vargs, PyObject *);
-                const char *str = va_arg(vargs, const char *);
+                va_arg(vargs, const char *);
                 if (obj) {
                     Py_ssize_t size = PyUnicode_GET_SIZE(obj);
                     Py_UNICODE_COPY(s, PyUnicode_AS_UNICODE(obj), size);
                     s += size;
                 } else {
-                    appendstring(str);
+                    Py_UNICODE_COPY(s, PyUnicode_AS_UNICODE(*callresult),
+                                    PyUnicode_GET_SIZE(*callresult));
+                    s += PyUnicode_GET_SIZE(*callresult);
+                    Py_DECREF(*callresult);
                 }
+                ++callresult;
                 break;
             }
             case 'S':
@@ -1151,7 +1163,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
     if (callresults) {
         PyObject **callresult2 = callresults;
         while (callresult2 < callresult) {
-            Py_DECREF(*callresult2);
+            Py_XDECREF(*callresult2);
             ++callresult2;
         }
         PyObject_Free(callresults);
