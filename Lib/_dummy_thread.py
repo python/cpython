@@ -24,11 +24,7 @@ TIMEOUT_MAX = 2**31
 # imports are done when needed on a function-by-function basis.  Since threads
 # are disabled, the import lock should not be an issue anyway (??).
 
-class error(Exception):
-    """Dummy implementation of _thread.error."""
-
-    def __init__(self, *args):
-        self.args = args
+error = RuntimeError
 
 def start_new_thread(function, args, kwargs={}):
     """Dummy implementation of _thread.start_new_thread().
