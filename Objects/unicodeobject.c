@@ -714,6 +714,70 @@ makefmt(char *fmt, int longflag, int longlongflag, int size_tflag,
     *fmt = '\0';
 }
 
+/* helper for PyUnicode_FromFormatV() */
+
+static const char*
+parse_format_flags(const char *f,
+                   int *p_width, int *p_precision,
+                   int *p_longflag, int *p_longlongflag, int *p_size_tflag)
+{
+    int width, precision, longflag, longlongflag, size_tflag;
+
+    /* parse the width.precision part, e.g. "%2.5s" => width=2, precision=5 */
+    f++;
+    width = 0;
+    while (Py_ISDIGIT((unsigned)*f))
+        width = (width*10) + *f++ - '0';
+    precision = 0;
+    if (*f == '.') {
+        f++;
+        while (Py_ISDIGIT((unsigned)*f))
+            precision = (precision*10) + *f++ - '0';
+        if (*f == '%') {
+            /* "%.3%s" => f points to "3" */
+            f--;
+        }
+    }
+    if (*f == '\0') {
+        /* bogus format "%.1" => go backward, f points to "1" */
+        f--;
+    }
+    if (p_width != NULL)
+        *p_width = width;
+    if (p_precision != NULL)
+        *p_precision = precision;
+
+    /* Handle %ld, %lu, %lld and %llu. */
+    longflag = 0;
+    longlongflag = 0;
+
+    if (*f == 'l') {
+        if (f[1] == 'd' || f[1] == 'u') {
+            longflag = 1;
+            ++f;
+        }
+#ifdef HAVE_LONG_LONG
+        else if (f[1] == 'l' &&
+                 (f[2] == 'd' || f[2] == 'u')) {
+            longlongflag = 1;
+            f += 2;
+        }
+#endif
+    }
+    /* handle the size_t flag. */
+    else if (*f == 'z' && (f[1] == 'd' || f[1] == 'u')) {
+        size_tflag = 1;
+        ++f;
+    }
+    if (p_longflag != NULL)
+        *p_longflag = longflag;
+    if (p_longlongflag != NULL)
+        *p_longlongflag = longlongflag;
+    if (p_size_tflag != NULL)
+        *p_size_tflag = size_tflag;
+    return f;
+}
+
 #define appendstring(string) {for (copy = string;*copy;) *s++ = *copy++;}
 
 /* size of fixed-size buffer for formatting single arguments */
@@ -757,15 +821,9 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
      * result in an array) */
     for (f = format; *f; f++) {
          if (*f == '%') {
-             if (*(f+1)=='%')
-                 continue;
-             if (*(f+1)=='S' || *(f+1)=='R' || *(f+1)=='A' || *(f+1) == 'V')
-                 ++callcount;
-             while (Py_ISDIGIT((unsigned)*f))
-                 width = (width*10) + *f++ - '0';
-             while (*++f && *f != '%' && !Py_ISALPHA((unsigned)*f))
-                 ;
-             if (*f == 's')
+             /* skip width or width.precision (eg. "1.2" of "%1.2f") */
+             f = parse_format_flags(f, NULL, NULL, NULL, NULL, NULL);
+             if (*f == 's' || *f=='S' || *f=='R' || *f=='A' || *f=='V')
                  ++callcount;
          }
          else if (128 <= (unsigned char)*f) {
@@ -790,33 +848,13 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
     for (f = format; *f; f++) {
         if (*f == '%') {
 #ifdef HAVE_LONG_LONG
-            int longlongflag = 0;
+            int longlongflag;
 #endif
-            const char* p = f;
-            width = 0;
-            while (Py_ISDIGIT((unsigned)*f))
-                width = (width*10) + *f++ - '0';
-            while (*++f && *f != '%' && !Py_ISALPHA((unsigned)*f))
-                ;
+            const char* p;
 
-            /* skip the 'l' or 'z' in {%ld, %zd, %lu, %zu} since
-             * they don't affect the amount of space we reserve.
-             */
-            if (*f == 'l') {
-                if (f[1] == 'd' || f[1] == 'u') {
-                    ++f;
-                }
-#ifdef HAVE_LONG_LONG
-                else if (f[1] == 'l' &&
-                         (f[2] == 'd' || f[2] == 'u')) {
-                    longlongflag = 1;
-                    f += 2;
-                }
-#endif
-            }
-            else if (*f == 'z' && (f[1] == 'd' || f[1] == 'u')) {
-                ++f;
-            }
+            p = f;
+            f = parse_format_flags(f, &width, NULL,
+                                   NULL, &longlongflag, NULL);
 
             switch (*f) {
             case 'c':
@@ -981,40 +1019,15 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 
     for (f = format; *f; f++) {
         if (*f == '%') {
-            const char* p = f++;
-            int longflag = 0;
-            int longlongflag = 0;
-            int size_tflag = 0;
-            zeropad = (*f == '0');
-            /* parse the width.precision part */
-            width = 0;
-            while (Py_ISDIGIT((unsigned)*f))
-                width = (width*10) + *f++ - '0';
-            precision = 0;
-            if (*f == '.') {
-                f++;
-                while (Py_ISDIGIT((unsigned)*f))
-                    precision = (precision*10) + *f++ - '0';
-            }
-            /* Handle %ld, %lu, %lld and %llu. */
-            if (*f == 'l') {
-                if (f[1] == 'd' || f[1] == 'u') {
-                    longflag = 1;
-                    ++f;
-                }
-#ifdef HAVE_LONG_LONG
-                else if (f[1] == 'l' &&
-                         (f[2] == 'd' || f[2] == 'u')) {
-                    longlongflag = 1;
-                    f += 2;
-                }
-#endif
-            }
-            /* handle the size_t flag. */
-            if (*f == 'z' && (f[1] == 'd' || f[1] == 'u')) {
-                size_tflag = 1;
-                ++f;
-            }
+            const char* p;
+            int longflag;
+            int longlongflag;
+            int size_tflag;
+
+            p = f;
+            zeropad = (f[1] == '0');
+            f = parse_format_flags(f, &width, &precision,
+                                   &longflag, &longlongflag, &size_tflag);
 
             switch (*f) {
             case 'c':

@@ -1455,8 +1455,27 @@ class UnicodeTest(string_tests.CommonTest,
             'string, got a non-ASCII byte: 0xe9$',
             PyUnicode_FromFormat, b'unicode\xe9=%s', 'ascii')
 
+        # test "%c"
         self.assertEqual(PyUnicode_FromFormat(b'%c', c_int(0xabcd)), '\uabcd')
         self.assertEqual(PyUnicode_FromFormat(b'%c', c_int(0x10ffff)), '\U0010ffff')
+
+        # test "%"
+        self.assertEqual(PyUnicode_FromFormat(b'%'), '%')
+        self.assertEqual(PyUnicode_FromFormat(b'%%'), '%')
+        self.assertEqual(PyUnicode_FromFormat(b'%%s'), '%s')
+        self.assertEqual(PyUnicode_FromFormat(b'[%%]'), '[%]')
+        self.assertEqual(PyUnicode_FromFormat(b'%%%s', b'abc'), '%abc')
+
+        # test "%i"
+        self.assertEqual(PyUnicode_FromFormat(b'%03i', c_int(10)), '010')
+        self.assertEqual(PyUnicode_FromFormat(b'%0.4i', c_int(10)), '0010')
+
+        # not supported: copy the raw format string. these tests are just here
+        # to check for crashs and should not be considered as specifications
+        self.assertEqual(PyUnicode_FromFormat(b'%1%s', b'abc'), '%s')
+        self.assertEqual(PyUnicode_FromFormat(b'%1abc'), '%1abc')
+        self.assertEqual(PyUnicode_FromFormat(b'%+i', c_int(10)), '%+i')
+        self.assertEqual(PyUnicode_FromFormat(b'%.%s', b'abc'), '%.%s')
 
         # other tests
         text = PyUnicode_FromFormat(b'%%A:%A', 'abc\xe9\uabcd\U0010ffff')
