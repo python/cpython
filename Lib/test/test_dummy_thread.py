@@ -35,8 +35,8 @@ class LockTests(unittest.TestCase):
                         "Lock object did not release properly.")
 
     def test_improper_release(self):
-        #Make sure release of an unlocked thread raises _thread.error
-        self.assertRaises(_thread.error, self.lock.release)
+        #Make sure release of an unlocked thread raises RuntimeError
+        self.assertRaises(RuntimeError, self.lock.release)
 
     def test_cond_acquire_success(self):
         #Make sure the conditional acquiring of the lock works.
