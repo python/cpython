@@ -260,17 +260,26 @@ APIs:
    | :attr:`%ld`       | long                | Exactly equivalent to          |
    |                   |                     | ``printf("%ld")``.             |
    +-------------------+---------------------+--------------------------------+
+   | :attr:`%li`       | long                | Exactly equivalent to          |
+   |                   |                     | ``printf("%li")``.             |
+   +-------------------+---------------------+--------------------------------+
    | :attr:`%lu`       | unsigned long       | Exactly equivalent to          |
    |                   |                     | ``printf("%lu")``.             |
    +-------------------+---------------------+--------------------------------+
    | :attr:`%lld`      | long long           | Exactly equivalent to          |
    |                   |                     | ``printf("%lld")``.            |
    +-------------------+---------------------+--------------------------------+
+   | :attr:`%lli`      | long long           | Exactly equivalent to          |
+   |                   |                     | ``printf("%lli")``.            |
+   +-------------------+---------------------+--------------------------------+
    | :attr:`%llu`      | unsigned long long  | Exactly equivalent to          |
    |                   |                     | ``printf("%llu")``.            |
    +-------------------+---------------------+--------------------------------+
    | :attr:`%zd`       | Py_ssize_t          | Exactly equivalent to          |
    |                   |                     | ``printf("%zd")``.             |
+   +-------------------+---------------------+--------------------------------+
+   | :attr:`%zi`       | Py_ssize_t          | Exactly equivalent to          |
+   |                   |                     | ``printf("%zi")``.             |
    +-------------------+---------------------+--------------------------------+
    | :attr:`%zu`       | size_t              | Exactly equivalent to          |
    |                   |                     | ``printf("%zu")``.             |
@@ -321,6 +330,9 @@ APIs:
 
    .. versionchanged:: 3.2
       Support for ``"%lld"`` and ``"%llu"`` added.
+
+   .. versionchanged:: 3.3
+      Support for ``"%li"``, ``"%lli"`` and ``"%zi"`` added.
 
 
 .. c:function:: PyObject* PyUnicode_FromFormatV(const char *format, va_list vargs)
