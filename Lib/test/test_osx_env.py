@@ -5,6 +5,7 @@ Test suite for OS X interpreter environment variables.
 from test.support import EnvironmentVarGuard, run_unittest
 import subprocess
 import sys
+import sysconfig
 import unittest
 
 class OSXEnvironmentVariableTestCase(unittest.TestCase):
@@ -27,8 +28,6 @@ class OSXEnvironmentVariableTestCase(unittest.TestCase):
         self._check_sys('PYTHONEXECUTABLE', '==', 'sys.executable')
 
 def test_main():
-    from distutils import sysconfig
-
     if sys.platform == 'darwin' and sysconfig.get_config_var('WITH_NEXT_FRAMEWORK'):
         run_unittest(OSXEnvironmentVariableTestCase)
 
