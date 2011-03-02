@@ -4975,7 +4975,7 @@ slot_tp_str(PyObject *self)
         res = slot_tp_repr(self);
         if (!res)
             return NULL;
-        ress = _PyUnicode_AsDefaultEncodedString(res, NULL);
+        ress = _PyUnicode_AsDefaultEncodedString(res);
         Py_DECREF(res);
         return ress;
     }

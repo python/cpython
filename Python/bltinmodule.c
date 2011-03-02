@@ -511,7 +511,7 @@ source_as_string(PyObject *cmd, char *funcname, char *what, PyCompilerFlags *cf)
 
     if (PyUnicode_Check(cmd)) {
         cf->cf_flags |= PyCF_IGNORE_COOKIE;
-        cmd = _PyUnicode_AsDefaultEncodedString(cmd, NULL);
+        cmd = _PyUnicode_AsDefaultEncodedString(cmd);
         if (cmd == NULL)
             return NULL;
     }

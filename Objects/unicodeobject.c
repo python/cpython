@@ -1806,14 +1806,11 @@ PyUnicode_AsEncodedUnicode(PyObject *unicode,
 }
 
 PyObject *
-_PyUnicode_AsDefaultEncodedString(PyObject *unicode,
-				  const char *errors)
+_PyUnicode_AsDefaultEncodedString(PyObject *unicode)
 {
     PyObject *v = ((PyUnicodeObject *)unicode)->defenc;
     if (v)
         return v;
-    if (errors != NULL)
-        Py_FatalError("non-NULL encoding in _PyUnicode_AsDefaultEncodedString");
     v = PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(unicode),
                              PyUnicode_GET_SIZE(unicode),
                              NULL);
@@ -1959,7 +1956,7 @@ _PyUnicode_AsStringAndSize(PyObject *unicode, Py_ssize_t *psize)
         PyErr_BadArgument();
         return NULL;
     }
-    bytes = _PyUnicode_AsDefaultEncodedString(unicode, NULL);
+    bytes = _PyUnicode_AsDefaultEncodedString(unicode);
     if (bytes == NULL)
         return NULL;
     if (psize != NULL)
