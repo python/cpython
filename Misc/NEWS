@@ -10,6 +10,8 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #10831: PyUnicode_FromFormat() supports %li, %lli and %zi formats.
+
 - Issue #10829: Refactor PyUnicode_FromFormat(), use the same function to parse
   the format string in the 3 steps, fix crashs on invalid format strings.
 
