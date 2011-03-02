@@ -169,7 +169,7 @@ class _TestProcess(BaseTestCase):
 
         # By default uses the current process's daemon flag.
         proc0 = self.Process(target=self._test)
-        self.assertEquals(proc0.daemon, self.current_process().daemon)
+        self.assertEqual(proc0.daemon, self.current_process().daemon)
         proc1 = self.Process(target=self._test, daemon=True)
         self.assertTrue(proc1.daemon)
         proc2 = self.Process(target=self._test, daemon=False)
