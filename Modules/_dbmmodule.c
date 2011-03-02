@@ -219,7 +219,7 @@ dbm_contains(PyObject *self, PyObject *arg)
          return -1;
     }
     if (PyUnicode_Check(arg)) {
-        arg = _PyUnicode_AsDefaultEncodedString(arg, NULL);
+        arg = _PyUnicode_AsDefaultEncodedString(arg);
         if (arg == NULL)
             return -1;
     }

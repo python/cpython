@@ -1826,7 +1826,7 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     if (PyUnicode_Check(proto)) {
-        PyObject *v = _PyUnicode_AsDefaultEncodedString(proto, NULL);
+        PyObject *v = _PyUnicode_AsDefaultEncodedString(proto);
         if (!v)
             goto error;
         proto_str = PyBytes_AS_STRING(v);

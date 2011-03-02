@@ -3026,7 +3026,7 @@ expr_constant(struct compiler *c, expr_ty e)
     case Name_kind:
         /* optimize away names that can't be reassigned */
         id = PyBytes_AS_STRING(
-            _PyUnicode_AsDefaultEncodedString(e->v.Name.id, NULL));
+            _PyUnicode_AsDefaultEncodedString(e->v.Name.id));
         if (strcmp(id, "True") == 0) return 1;
         if (strcmp(id, "False") == 0) return 0;
         if (strcmp(id, "None") == 0) return 0;

@@ -668,8 +668,7 @@ PyAPI_FUNC(int) PyUnicode_ClearFreeList(void);
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _PyUnicode_AsDefaultEncodedString(
-    PyObject *unicode,
-    const char *errors);
+    PyObject *unicode);
 #endif
 
 /* Returns a pointer to the default encoding (UTF-8) of the
