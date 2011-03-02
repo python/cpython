@@ -750,6 +750,7 @@ parse_format_flags(const char *f,
     /* Handle %ld, %lu, %lld and %llu. */
     longflag = 0;
     longlongflag = 0;
+    size_tflag = 0;
 
     if (*f == 'l') {
         if (f[1] == 'd' || f[1] == 'u') {
