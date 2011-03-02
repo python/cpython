@@ -10,6 +10,11 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #8923: When a string is encoded to UTF-8 in strict mode, the result is
+  cached into the object. Examples: str.encode(), str.encode('utf-8'),
+  PyUnicode_AsUTF8String() and PyUnicode_AsEncodedString(unicode, "utf-8",
+  NULL).
+
 - Issue #10831: PyUnicode_FromFormat() supports %li, %lli and %zi formats.
 
 - Issue #10829: Refactor PyUnicode_FromFormat(), use the same function to parse

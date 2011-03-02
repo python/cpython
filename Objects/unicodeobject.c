@@ -1710,17 +1710,21 @@ PyUnicode_AsEncodedString(PyObject *unicode,
     }
 
     if (encoding == NULL)
-        return PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(unicode),
-                                    PyUnicode_GET_SIZE(unicode),
-                                    errors);
+        return PyUnicode_AsUTF8String(unicode);
 
     /* Shortcuts for common default encodings */
     if (normalize_encoding(encoding, lower, sizeof(lower))) {
         if ((strcmp(lower, "utf-8") == 0) ||
             (strcmp(lower, "utf8") == 0))
-            return PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(unicode),
-                                        PyUnicode_GET_SIZE(unicode),
-                                        errors);
+        {
+            if (errors == NULL || strcmp(errors, "strict") == 0) {
+                return PyUnicode_AsUTF8String(unicode);
+            } else {
+                return PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(unicode),
+                                            PyUnicode_GET_SIZE(unicode),
+                                            errors);
+            }
+        }
         else if ((strcmp(lower, "latin-1") == 0) ||
                  (strcmp(lower, "latin1") == 0) ||
                  (strcmp(lower, "iso-8859-1") == 0))
@@ -3077,13 +3081,16 @@ PyUnicode_EncodeUTF8(const Py_UNICODE *s,
 PyObject *
 PyUnicode_AsUTF8String(PyObject *unicode)
 {
+    PyObject *utf8;
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
         return NULL;
     }
-    return PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(unicode),
-                                PyUnicode_GET_SIZE(unicode),
-                                NULL);
+    utf8 = _PyUnicode_AsDefaultEncodedString(unicode);
+    if (utf8 == NULL)
+        return NULL;
+    Py_INCREF(utf8);
+    return utf8;
 }
 
 /* --- UTF-32 Codec ------------------------------------------------------- */
