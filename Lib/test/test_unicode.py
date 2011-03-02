@@ -1430,7 +1430,9 @@ class UnicodeTest(string_tests.CommonTest,
     # Test PyUnicode_FromFormat()
     def test_from_format(self):
         support.import_module('ctypes')
-        from ctypes import pythonapi, py_object, c_int
+        from ctypes import (pythonapi, py_object,
+            c_int, c_long, c_longlong, c_ssize_t,
+            c_uint, c_ulong, c_ulonglong, c_size_t)
         if sys.maxunicode == 65535:
             name = "PyUnicodeUCS2_FromFormat"
         else:
@@ -1466,21 +1468,29 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual(PyUnicode_FromFormat(b'[%%]'), '[%]')
         self.assertEqual(PyUnicode_FromFormat(b'%%%s', b'abc'), '%abc')
 
-        # test "%i"
+        # test integer formats (%i, %d, %u)
         self.assertEqual(PyUnicode_FromFormat(b'%03i', c_int(10)), '010')
         self.assertEqual(PyUnicode_FromFormat(b'%0.4i', c_int(10)), '0010')
+        self.assertEqual(PyUnicode_FromFormat(b'%i', c_int(-123)), '-123')
+        self.assertEqual(PyUnicode_FromFormat(b'%li', c_long(-123)), '-123')
+        self.assertEqual(PyUnicode_FromFormat(b'%lli', c_longlong(-123)), '-123')
+        self.assertEqual(PyUnicode_FromFormat(b'%zi', c_ssize_t(-123)), '-123')
 
-        # not supported: copy the raw format string. these tests are just here
-        # to check for crashs and should not be considered as specifications
-        self.assertEqual(PyUnicode_FromFormat(b'%1%s', b'abc'), '%s')
-        self.assertEqual(PyUnicode_FromFormat(b'%1abc'), '%1abc')
-        self.assertEqual(PyUnicode_FromFormat(b'%+i', c_int(10)), '%+i')
-        self.assertEqual(PyUnicode_FromFormat(b'%.%s', b'abc'), '%.%s')
+        self.assertEqual(PyUnicode_FromFormat(b'%d', c_int(-123)), '-123')
+        self.assertEqual(PyUnicode_FromFormat(b'%ld', c_long(-123)), '-123')
+        self.assertEqual(PyUnicode_FromFormat(b'%lld', c_longlong(-123)), '-123')
+        self.assertEqual(PyUnicode_FromFormat(b'%zd', c_ssize_t(-123)), '-123')
 
-        # other tests
+        self.assertEqual(PyUnicode_FromFormat(b'%u', c_uint(123)), '123')
+        self.assertEqual(PyUnicode_FromFormat(b'%lu', c_ulong(123)), '123')
+        self.assertEqual(PyUnicode_FromFormat(b'%llu', c_ulonglong(123)), '123')
+        self.assertEqual(PyUnicode_FromFormat(b'%zu', c_size_t(123)), '123')
+
+        # test %A
         text = PyUnicode_FromFormat(b'%%A:%A', 'abc\xe9\uabcd\U0010ffff')
         self.assertEqual(text, r"%A:'abc\xe9\uabcd\U0010ffff'")
 
+        # test %V
         text = PyUnicode_FromFormat(b'repr=%V', 'abc', b'xyz')
         self.assertEqual(text, 'repr=abc')
 
@@ -1493,6 +1503,13 @@ class UnicodeTest(string_tests.CommonTest,
         #Test replace error handler.
         text = PyUnicode_FromFormat(b'repr=%V', None, b'abc\xff')
         self.assertEqual(text, 'repr=abc\ufffd')
+
+        # not supported: copy the raw format string. these tests are just here
+        # to check for crashs and should not be considered as specifications
+        self.assertEqual(PyUnicode_FromFormat(b'%1%s', b'abc'), '%s')
+        self.assertEqual(PyUnicode_FromFormat(b'%1abc'), '%1abc')
+        self.assertEqual(PyUnicode_FromFormat(b'%+i', c_int(10)), '%+i')
+        self.assertEqual(PyUnicode_FromFormat(b'%.%s', b'abc'), '%.%s')
 
     # Test PyUnicode_AsWideChar()
     def test_aswidechar(self):

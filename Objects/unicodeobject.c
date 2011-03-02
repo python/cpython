@@ -753,20 +753,20 @@ parse_format_flags(const char *f,
     size_tflag = 0;
 
     if (*f == 'l') {
-        if (f[1] == 'd' || f[1] == 'u') {
+        if (f[1] == 'd' || f[1] == 'u' || f[1] == 'i') {
             longflag = 1;
             ++f;
         }
 #ifdef HAVE_LONG_LONG
         else if (f[1] == 'l' &&
-                 (f[2] == 'd' || f[2] == 'u')) {
+                 (f[2] == 'd' || f[2] == 'u' || f[2] == 'i')) {
             longlongflag = 1;
             f += 2;
         }
 #endif
     }
     /* handle the size_t flag. */
-    else if (*f == 'z' && (f[1] == 'd' || f[1] == 'u')) {
+    else if (*f == 'z' && (f[1] == 'd' || f[1] == 'u' || f[1] == 'i')) {
         size_tflag = 1;
         ++f;
     }
@@ -1044,9 +1044,10 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                 *s++ = ordinal;
                 break;
             }
+            case 'i':
             case 'd':
                 makefmt(fmt, longflag, longlongflag, size_tflag, zeropad,
-                        width, precision, 'd');
+                        width, precision, *f);
                 if (longflag)
                     sprintf(realbuffer, fmt, va_arg(vargs, long));
 #ifdef HAVE_LONG_LONG
@@ -1073,11 +1074,6 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                     sprintf(realbuffer, fmt, va_arg(vargs, size_t));
                 else
                     sprintf(realbuffer, fmt, va_arg(vargs, unsigned int));
-                appendstring(realbuffer);
-                break;
-            case 'i':
-                makefmt(fmt, 0, 0, 0, zeropad, width, precision, 'i');
-                sprintf(realbuffer, fmt, va_arg(vargs, int));
                 appendstring(realbuffer);
                 break;
             case 'x':
