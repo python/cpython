@@ -1709,21 +1709,26 @@ PyUnicode_AsEncodedString(PyObject *unicode,
         return NULL;
     }
 
-    if (encoding == NULL)
-        return PyUnicode_AsUTF8String(unicode);
+    if (encoding == NULL) {
+        if (errors == NULL || strcmp(errors, "strict") == 0)
+            return PyUnicode_AsUTF8String(unicode);
+        else
+            return PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(unicode),
+                                        PyUnicode_GET_SIZE(unicode),
+                                        errors);
+    }
 
     /* Shortcuts for common default encodings */
     if (normalize_encoding(encoding, lower, sizeof(lower))) {
         if ((strcmp(lower, "utf-8") == 0) ||
             (strcmp(lower, "utf8") == 0))
         {
-            if (errors == NULL || strcmp(errors, "strict") == 0) {
+            if (errors == NULL || strcmp(errors, "strict") == 0)
                 return PyUnicode_AsUTF8String(unicode);
-            } else {
+            else
                 return PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(unicode),
                                             PyUnicode_GET_SIZE(unicode),
                                             errors);
-            }
         }
         else if ((strcmp(lower, "latin-1") == 0) ||
                  (strcmp(lower, "latin1") == 0) ||
