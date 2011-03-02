@@ -4,16 +4,13 @@ import pickle
 from test.support import verbose, run_unittest, findfile
 import unittest
 
-import xml.dom
 import xml.dom.minidom
-import xml.parsers.expat
 
 from xml.dom.minidom import parse, Node, Document, parseString
 from xml.dom.minidom import getDOMImplementation
 
 
 tstfile = findfile("test.xml", subdir="xmltestdata")
-
 
 # The tests of DocumentType importing use these helpers to construct
 # the documents to work with, since not all DOM builders actually
@@ -1009,41 +1006,6 @@ class MinidomTest(unittest.TestCase):
                 "test NodeList.item()")
         doc.unlink()
 
-    def testSAX2DOM(self):
-        from xml.dom import pulldom
-
-        sax2dom = pulldom.SAX2DOM()
-        sax2dom.startDocument()
-        sax2dom.startElement("doc", {})
-        sax2dom.characters("text")
-        sax2dom.startElement("subelm", {})
-        sax2dom.characters("text")
-        sax2dom.endElement("subelm")
-        sax2dom.characters("text")
-        sax2dom.endElement("doc")
-        sax2dom.endDocument()
-
-        doc = sax2dom.document
-        root = doc.documentElement
-        (text1, elm1, text2) = root.childNodes
-        text3 = elm1.childNodes[0]
-
-        self.confirm(text1.previousSibling is None and
-                text1.nextSibling is elm1 and
-                elm1.previousSibling is text1 and
-                elm1.nextSibling is text2 and
-                text2.previousSibling is elm1 and
-                text2.nextSibling is None and
-                text3.previousSibling is None and
-                text3.nextSibling is None, "testSAX2DOM - siblings")
-
-        self.confirm(root.parentNode is doc and
-                text1.parentNode is root and
-                elm1.parentNode is root and
-                text2.parentNode is root and
-                text3.parentNode is elm1, "testSAX2DOM - parents")
-        doc.unlink()
-
     def testEncodings(self):
         doc = parseString('<foo>&#x20ac;</foo>')
         self.assertEqual(doc.toxml(),
@@ -1489,6 +1451,7 @@ class MinidomTest(unittest.TestCase):
         doc = create_doc_without_doctype()
         doc.appendChild(doc.createComment("foo--bar"))
         self.assertRaises(ValueError, doc.toxml)
+
 
     def testEmptyXMLNSValue(self):
         doc = parseString("<element xmlns=''>\n"
