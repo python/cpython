@@ -243,6 +243,25 @@ class PlatformTest(unittest.TestCase):
             ):
             self.assertEqual(platform._parse_release_file(input), output)
 
+    def test_popen(self):
+        command = "'{}' -c  'print(\"Hello\")'".format(sys.executable)
+        with platform.popen(command) as stdout:
+            hello = stdout.read().strip()
+            stdout.close()
+            self.assertEqual(hello, "Hello")
+
+        command = "'{}' -c  'import sys; data=sys.stdin.read(); exit(len(data))'".format(sys.executable)
+        data = 'plop'
+        with platform.popen(command, 'w') as stdin:
+            stdout = stdin.write(data)
+            ret = stdin.close()
+            self.assertIsNotNone(ret)
+            if os.name == 'nt':
+                returncode = ret
+            else:
+                returncode = ret >> 8
+            self.assertEqual(returncode, len(data))
+
 
 def test_main():
     support.run_unittest(
