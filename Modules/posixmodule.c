@@ -5867,36 +5867,42 @@ posix_write(PyObject *self, PyObject *args)
 
 #ifdef HAVE_SENDFILE
 #if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__APPLE__)
-static int
+static Py_ssize_t
 iov_setup(struct iovec **iov, Py_buffer **buf, PyObject *seq, int cnt, int type)
 {
     int i, j;
+    Py_ssize_t blen, total = 0;
+
     *iov = PyMem_New(struct iovec, cnt);
     if (*iov == NULL) {
         PyErr_NoMemory();
-        return 0;
+        return total;
     }
+
     *buf = PyMem_New(Py_buffer, cnt);
     if (*buf == NULL) {
         PyMem_Del(*iov);
         PyErr_NoMemory();
-        return 0;
+        return total;
     }
 
     for (i = 0; i < cnt; i++) {
-        if (PyObject_GetBuffer(PySequence_GetItem(seq, i), &(*buf)[i],
-                type) == -1) {
+        if (PyObject_GetBuffer(PySequence_GetItem(seq, i),
+                               &(*buf)[i], type) == -1) {
             PyMem_Del(*iov);
             for (j = 0; j < i; j++) {
                 PyBuffer_Release(&(*buf)[j]);
-           }
+            }
             PyMem_Del(*buf);
-            return 0;
+            total = 0;
+            return total;
         }
         (*iov)[i].iov_base = (*buf)[i].buf;
-        (*iov)[i].iov_len = (*buf)[i].len;
+        blen = (*buf)[i].len;
+        (*iov)[i].iov_len = blen;
+        total += blen;
     }
-    return 1;
+    return total;
 }
 
 static void
@@ -5954,10 +5960,15 @@ posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
                 "sendfile() headers must be a sequence or None");
             return NULL;
         } else {
+            Py_ssize_t i = 0; /* Avoid uninitialized warning */
             sf.hdr_cnt = PySequence_Size(headers);
-            if (sf.hdr_cnt > 0 && !iov_setup(&(sf.headers), &hbuf,
-                    headers, sf.hdr_cnt, PyBUF_SIMPLE))
+            if (sf.hdr_cnt > 0 &&
+                !(i = iov_setup(&(sf.headers), &hbuf,
+                                headers, sf.hdr_cnt, PyBUF_SIMPLE)))
                 return NULL;
+#ifdef __APPLE__
+            sbytes += i;
+#endif
         }
     }
     if (trailers != NULL) {
@@ -5966,10 +5977,15 @@ posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
                 "sendfile() trailers must be a sequence or None");
             return NULL;
         } else {
+            Py_ssize_t i = 0; /* Avoid uninitialized warning */
             sf.trl_cnt = PySequence_Size(trailers);
-            if (sf.trl_cnt > 0 && !iov_setup(&(sf.trailers), &tbuf,
-                    trailers, sf.trl_cnt, PyBUF_SIMPLE))
+            if (sf.trl_cnt > 0 &&
+                !(i = iov_setup(&(sf.trailers), &tbuf,
+                                trailers, sf.trl_cnt, PyBUF_SIMPLE)))
                 return NULL;
+#ifdef __APPLE__
+            sbytes += i;
+#endif
         }
     }
 
