@@ -54,7 +54,11 @@ import warnings
 
 import os
 from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, EINVAL, \
-     ENOTCONN, ESHUTDOWN, EINTR, EISCONN, EBADF, ECONNABORTED, errorcode
+     ENOTCONN, ESHUTDOWN, EINTR, EISCONN, EBADF, ECONNABORTED, EPIPE, EAGAIN, \
+     errorcode
+
+_DISCONNECTED = frozenset((ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED, EPIPE,
+                           EBADF))
 
 try:
     socket_map
@@ -109,7 +113,7 @@ def readwrite(obj, flags):
         if flags & (select.POLLHUP | select.POLLERR | select.POLLNVAL):
             obj.handle_close()
     except socket.error, e:
-        if e.args[0] not in (EBADF, ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED):
+        if e.args[0] not in _DISCONNECTED:
             obj.handle_error()
         else:
             obj.handle_close()
@@ -353,7 +357,7 @@ class dispatcher:
         except TypeError:
             return None
         except socket.error as why:
-            if why.args[0] in (EWOULDBLOCK, ECONNABORTED):
+            if why.args[0] in (EWOULDBLOCK, ECONNABORTED, EAGAIN):
                 return None
             else:
                 raise
@@ -367,7 +371,7 @@ class dispatcher:
         except socket.error, why:
             if why.args[0] == EWOULDBLOCK:
                 return 0
-            elif why.args[0] in (ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED):
+            elif why.args[0] in _DISCONNECTED:
                 self.handle_close()
                 return 0
             else:
@@ -385,7 +389,7 @@ class dispatcher:
                 return data
         except socket.error, why:
             # winsock sometimes throws ENOTCONN
-            if why.args[0] in [ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED]:
+            if why.args[0] in _DISCONNECTED:
                 self.handle_close()
                 return ''
             else:

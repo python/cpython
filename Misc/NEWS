@@ -37,6 +37,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11265: asyncore now correctly handles EPIPE, EBADF and EAGAIN errors
+  on accept(), send() and recv().
+
 - Issue #11326: Add the missing connect_ex() implementation for SSL sockets,
   and make it work for non-blocking connects.
 
