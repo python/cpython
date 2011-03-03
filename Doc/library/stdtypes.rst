@@ -1675,10 +1675,10 @@ Note that while lists allow their items to be of any type, bytearray object
 | ``s.extend(x)``              | same as ``s[len(s):len(s)] =   | \(2)                |
 |                              | x``                            |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.clear()``                | remove all items from ``s``    | \(8)                |
+| ``s.clear()``                | remove all items from ``s``    |                     |
 |                              |                                |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.copy()``                 | return a shallow copy of ``s`` | \(8)                |
+| ``s.copy()``                 | return a shallow copy of ``s`` |                     |
 |                              |                                |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s.count(x)``               | return number of *i*'s for     |                     |
@@ -1757,8 +1757,7 @@ Notes:
       detect that the list has been mutated during a sort.
 
 (8)
-   :meth:`clear`, :meth:`!copy` and :meth:`sort` are not supported by
-   :class:`bytearray` objects.
+   :meth:`sort` is not supported by :class:`bytearray` objects.
 
     .. versionadded:: 3.3
        :meth:`clear` and :meth:`!copy` methods.

@@ -564,6 +564,39 @@ class ByteArrayTest(BaseBytesTest):
         b.reverse()
         self.assertFalse(b)
 
+    def test_clear(self):
+        b = bytearray(b'python')
+        b.clear()
+        self.assertEqual(b, b'')
+
+        b = bytearray(b'')
+        b.clear()
+        self.assertEqual(b, b'')
+
+        b = bytearray(b'')
+        b.append(ord('r'))
+        b.clear()
+        b.append(ord('p'))
+        self.assertEqual(b, b'p')
+
+    def test_copy(self):
+        b = bytearray(b'abc')
+        bb = b.copy()
+        self.assertEqual(bb, b'abc')
+
+        b = bytearray(b'')
+        bb = b.copy()
+        self.assertEqual(bb, b'')
+
+        # test that it's indeed a copy and not a reference
+        b = bytearray(b'abc')
+        bb = b.copy()
+        self.assertEqual(b, bb)
+        self.assertIsNot(b, bb)
+        bb.append(ord('d'))
+        self.assertEqual(bb, b'abcd')
+        self.assertEqual(b, b'abc')
+
     def test_regexps(self):
         def by(s):
             return bytearray(map(ord, s))
