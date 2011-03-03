@@ -52,6 +52,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11265: asyncore now correctly handles EPIPE, EBADF and EAGAIN errors
+  on accept(), send() and recv().
+
 - Issue #11377: Deprecate platform.popen() and reimplement it with os.popen().
 
 - Issue #8513: On UNIX, subprocess supports bytes command string.
