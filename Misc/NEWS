@@ -47,7 +47,7 @@ Core and Builtins
 
 - Check for NULL result in PyType_FromSpec.
 
-- Issue #10516: New copy() and clear() methods for lists.
+- Issue #10516: New copy() and clear() methods for lists and bytearrays.
 
 Library
 -------

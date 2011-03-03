@@ -1148,6 +1148,30 @@ bytearray_count(PyByteArrayObject *self, PyObject *args)
     return count_obj;
 }
 
+PyDoc_STRVAR(clear__doc__,
+"B.clear() -> None\n\
+\n\
+Remove all items from B.");
+
+static PyObject * 
+bytearray_clear(PyByteArrayObject *self)
+{
+    if (PyByteArray_Resize((PyObject *)self, 0) < 0)
+        return NULL;
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(copy__doc__,
+"B.copy() -> bytearray\n\
+\n\
+Return a copy of B.");
+
+static PyObject *
+bytearray_copy(PyByteArrayObject *self)
+{
+    return PyByteArray_FromStringAndSize(PyByteArray_AS_STRING((PyObject *)self),
+                                         PyByteArray_GET_SIZE(self));
+}
 
 PyDoc_STRVAR(index__doc__,
 "B.index(sub[, start[, end]]) -> int\n\
@@ -2730,6 +2754,8 @@ bytearray_methods[] = {
     {"capitalize", (PyCFunction)stringlib_capitalize, METH_NOARGS,
      _Py_capitalize__doc__},
     {"center", (PyCFunction)stringlib_center, METH_VARARGS, center__doc__},
+    {"clear", (PyCFunction)bytearray_clear, METH_NOARGS, clear__doc__},
+    {"copy", (PyCFunction)bytearray_copy, METH_NOARGS, copy__doc__},
     {"count", (PyCFunction)bytearray_count, METH_VARARGS, count__doc__},
     {"decode", (PyCFunction)bytearray_decode, METH_VARARGS | METH_KEYWORDS, decode_doc},
     {"endswith", (PyCFunction)bytearray_endswith, METH_VARARGS, endswith__doc__},
