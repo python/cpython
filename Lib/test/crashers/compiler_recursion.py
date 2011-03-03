@@ -1,5 +1,13 @@
 """
-The compiler (>= 2.5) recurses happily.
+The compiler (>= 2.5) recurses happily until it blows the stack.
+
+Recorded on the tracker as http://bugs.python.org/issue11383
 """
 
-compile('()'*9**5, '?', 'exec')
+# The variant below blows up in compiler_call, but there are assorted
+# other variations that blow up in other functions
+# e.g. '1*'*10**5+'1' will die in compiler_visit_expr
+
+# The exact limit to destroy the stack will vary by platform
+# but 100k should do the trick most places
+compile('()'*10**5, '?', 'exec')
