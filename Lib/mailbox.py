@@ -578,7 +578,7 @@ class _singlefileMailbox(Mailbox):
                     f = open(self._path, 'wb+')
                 else:
                     raise NoSuchMailboxError(self._path)
-            elif e.errno == errno.EACCES:
+            elif e.errno in (errno.EACCES, errno.EROFS):
                 f = open(self._path, 'rb')
             else:
                 raise
@@ -2002,7 +2002,7 @@ def _lock_file(f, dotlock=True):
             try:
                 fcntl.lockf(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
             except IOError as e:
-                if e.errno in (errno.EAGAIN, errno.EACCES):
+                if e.errno in (errno.EAGAIN, errno.EACCES, errno.EROFS):
                     raise ExternalClashError('lockf: lock unavailable: %s' %
                                              f.name)
                 else:
@@ -2012,7 +2012,7 @@ def _lock_file(f, dotlock=True):
                 pre_lock = _create_temporary(f.name + '.lock')
                 pre_lock.close()
             except IOError as e:
-                if e.errno == errno.EACCES:
+                if e.errno in (errno.EACCES, errno.EROFS):
                     return  # Without write access, just skip dotlocking.
                 else:
                     raise
