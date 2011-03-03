@@ -52,6 +52,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #8513: On UNIX, subprocess supports bytes command string.
+
 - Issue #10866: Add socket.sethostname().  Initial patch by Ross Lagerwall.
 
 - Issue #11140: Lock.release() now raises a RuntimeError when attempting
