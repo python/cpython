@@ -88,6 +88,22 @@ os
 
   (Patch submitted by Giampaolo Rodolà in :issue:`10784`.)
 
+nntplib
+-------
+
+The :class:`nntplib.NNTP` class now supports the context manager protocol to
+unconditionally consume :exc:`socket.error` exceptions and to close the NNTP
+connection when done::
+
+  >>> from nntplib import NNTP
+  >>> with nntplib.NNTP('news.gmane.org') as n:
+  ...     n.group('gmane.comp.python.committers')
+  ...
+  ('211 1454 1 1454 gmane.comp.python.committers', '1454', '1', '1454', 'gmane.comp.python.committers')
+  >>>
+
+(Contributed by Giampaolo Rodolà in :issue:`9795`)
+
 Optimizations
 =============
 

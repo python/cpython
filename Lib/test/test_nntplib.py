@@ -1,4 +1,5 @@
 import io
+import socket
 import datetime
 import textwrap
 import unittest
@@ -251,6 +252,26 @@ class NetworkedNNTPTestsMixin:
             # Need to use a closure so that meth remains bound to its current
             # value
             setattr(cls, name, wrap_meth(meth))
+
+    def test_with_statement(self):
+        def is_connected():
+            if not hasattr(server, 'file'):
+                return False
+            try:
+                server.help()
+            except (socket.error, EOFError):
+                return False
+            return True
+
+        with self.NNTP_CLASS(self.NNTP_HOST, timeout=TIMEOUT, usenetrc=False) as server:
+            self.assertTrue(is_connected())
+            self.assertTrue(server.help())
+        self.assertFalse(is_connected())
+
+        with self.NNTP_CLASS(self.NNTP_HOST, timeout=TIMEOUT, usenetrc=False) as server:
+            server.quit()
+        self.assertFalse(is_connected())
+
 
 NetworkedNNTPTestsMixin.wrap_methods()
 

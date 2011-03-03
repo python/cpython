@@ -346,6 +346,20 @@ class _NNTPBase:
         # Log in and encryption setup order is left to subclasses.
         self.authenticated = False
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        is_connected = lambda: hasattr(self, "file")
+        if is_connected():
+            try:
+                self.quit()
+            except (socket.error, EOFError):
+                pass
+            finally:
+                if is_connected():
+                    self._close()
+
     def getwelcome(self):
         """Get the welcome message from the server
         (this is read and squirreled away by __init__()).
