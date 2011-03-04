@@ -596,6 +596,13 @@ class MutableSequence(Sequence):
     def append(self, value):
         self.insert(len(self), value)
 
+    def clear(self):
+        try:
+            while True:
+                self.pop()
+        except IndexError:
+            pass
+
     def reverse(self):
         n = len(self)
         for i in range(n//2):
