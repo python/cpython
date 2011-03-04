@@ -728,6 +728,44 @@ class TestCollectionABCs(ABCTestCase):
         self.validate_abstract_methods(MutableSequence, '__contains__', '__iter__',
             '__len__', '__getitem__', '__setitem__', '__delitem__', 'insert')
 
+    def test_MutableSequence_mixins(self):
+        # Test the mixins of MutableSequence by creating a miminal concrete
+        # class inherited from it.
+        class MutableSequenceSubclass(MutableSequence):
+            def __init__(self):
+                self.lst = []
+
+            def __setitem__(self, index, value):
+                self.lst[index] = value
+
+            def __getitem__(self, index):
+                return self.lst[index]
+
+            def __len__(self):
+                return len(self.lst)
+
+            def __delitem__(self, index):
+                del self.lst[index]
+
+            def insert(self, index, value):
+                self.lst.insert(index, value)
+
+        mss = MutableSequenceSubclass()
+        mss.append(0)
+        mss.extend((1, 2, 3, 4))
+        self.assertEqual(len(mss), 5)
+        self.assertEqual(mss[3], 3)
+        mss.reverse()
+        self.assertEqual(mss[3], 1)
+        mss.pop()
+        self.assertEqual(len(mss), 4)
+        mss.remove(3)
+        self.assertEqual(len(mss), 3)
+        mss += (10, 20, 30)
+        self.assertEqual(len(mss), 6)
+        self.assertEqual(mss[-1], 30)
+        mss.clear()
+        self.assertEqual(len(mss), 0)
 
 ################################################################################
 ### Counter

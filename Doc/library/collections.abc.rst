@@ -46,7 +46,7 @@ ABC                        Inherits               Abstract Methods        Mixin 
 
 :class:`MutableSequence`   :class:`Sequence`      ``__setitem__``         Inherited Sequence methods and
                                                   ``__delitem__``,        ``append``, ``reverse``, ``extend``, ``pop``,
-                                                  and ``insert``          ``remove``, and ``__iadd__``
+                                                  and ``insert``          ``remove``, ``clear``, and ``__iadd__``
 
 :class:`Set`               :class:`Sized`,                                ``__le__``, ``__lt__``, ``__eq__``, ``__ne__``,
                            :class:`Iterable`,                             ``__gt__``, ``__ge__``, ``__and__``, ``__or__``,
