@@ -755,7 +755,7 @@ class ByteArrayTest(BaseBytesTest):
         self.assertEqual(b.pop(0), ord('w'))
         self.assertEqual(b.pop(-2), ord('r'))
         self.assertRaises(IndexError, lambda: b.pop(10))
-        self.assertRaises(OverflowError, lambda: bytearray().pop())
+        self.assertRaises(IndexError, lambda: bytearray().pop())
         # test for issue #6846
         self.assertEqual(bytearray(b'\xff').pop(), 0xff)
 
