@@ -12,6 +12,9 @@ PyAPI_DATA(PyTypeObject) PyModule_Type;
 #define PyModule_Check(op) PyObject_TypeCheck(op, &PyModule_Type)
 #define PyModule_CheckExact(op) (Py_TYPE(op) == &PyModule_Type)
 
+PyAPI_FUNC(PyObject *) PyModule_NewObject(
+    PyObject *name
+    );
 PyAPI_FUNC(PyObject *) PyModule_New(
     const char *name            /* UTF-8 encoded string */
     );

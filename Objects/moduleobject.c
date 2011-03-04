@@ -27,34 +27,43 @@ static PyTypeObject moduledef_type = {
 
 
 PyObject *
-PyModule_New(const char *name)
+PyModule_NewObject(PyObject *name)
 {
     PyModuleObject *m;
-    PyObject *nameobj;
     m = PyObject_GC_New(PyModuleObject, &PyModule_Type);
     if (m == NULL)
         return NULL;
     m->md_def = NULL;
     m->md_state = NULL;
-    nameobj = PyUnicode_FromString(name);
     m->md_dict = PyDict_New();
-    if (m->md_dict == NULL || nameobj == NULL)
+    if (m->md_dict == NULL)
         goto fail;
-    if (PyDict_SetItemString(m->md_dict, "__name__", nameobj) != 0)
+    if (PyDict_SetItemString(m->md_dict, "__name__", name) != 0)
         goto fail;
     if (PyDict_SetItemString(m->md_dict, "__doc__", Py_None) != 0)
         goto fail;
     if (PyDict_SetItemString(m->md_dict, "__package__", Py_None) != 0)
         goto fail;
-    Py_DECREF(nameobj);
     PyObject_GC_Track(m);
     return (PyObject *)m;
 
  fail:
-    Py_XDECREF(nameobj);
     Py_DECREF(m);
     return NULL;
 }
+
+PyObject *
+PyModule_New(const char *name)
+{
+    PyObject *nameobj, *module;
+    nameobj = PyUnicode_FromString(name);
+    if (nameobj == NULL)
+        return NULL;
+    module = PyModule_NewObject(nameobj);
+    Py_DECREF(nameobj);
+    return module;
+}
+
 
 PyObject *
 PyModule_Create2(struct PyModuleDef* module, int module_api_version)
