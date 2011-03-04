@@ -29,7 +29,7 @@ There are only a few functions special to module objects.
    :c:data:`PyModule_Type`.
 
 
-.. c:function:: PyObject* PyModule_New(const char *name)
+.. c:function:: PyObject* PyModule_NewObject(PyObject *name)
 
    .. index::
       single: __name__ (module attribute)
@@ -39,6 +39,14 @@ There are only a few functions special to module objects.
    Return a new module object with the :attr:`__name__` attribute set to *name*.
    Only the module's :attr:`__doc__` and :attr:`__name__` attributes are filled in;
    the caller is responsible for providing a :attr:`__file__` attribute.
+
+   .. versionadded:: 3.3
+
+
+.. c:function:: PyObject* PyModule_New(const char *name)
+
+   Similar to :c:func:`PyImport_NewObject`, but the name is an UTF-8 encoded
+   string instead of a Unicode object.
 
 
 .. c:function:: PyObject* PyModule_GetDict(PyObject *module)
