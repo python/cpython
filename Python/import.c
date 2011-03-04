@@ -698,18 +698,18 @@ _PyImport_FindBuiltin(const char *name)
    'NEW' REFERENCE! */
 
 PyObject *
-PyImport_AddModule(const char *name)
+PyImport_AddModuleObject(PyObject *name)
 {
     PyObject *modules = PyImport_GetModuleDict();
     PyObject *m;
 
-    if ((m = PyDict_GetItemString(modules, name)) != NULL &&
+    if ((m = PyDict_GetItem(modules, name)) != NULL &&
         PyModule_Check(m))
         return m;
-    m = PyModule_New(name);
+    m = PyModule_NewObject(name);
     if (m == NULL)
         return NULL;
-    if (PyDict_SetItemString(modules, name, m) != 0) {
+    if (PyDict_SetItem(modules, name, m) != 0) {
         Py_DECREF(m);
         return NULL;
     }
@@ -718,14 +718,27 @@ PyImport_AddModule(const char *name)
     return m;
 }
 
+PyObject *
+PyImport_AddModule(const char *name)
+{
+    PyObject *nameobj, *module;
+    nameobj = PyUnicode_FromString(name);
+    if (nameobj == NULL)
+        return NULL;
+    module = PyImport_AddModuleObject(nameobj);
+    Py_DECREF(nameobj);
+    return module;
+}
+
+
 /* Remove name from sys.modules, if it's there. */
 static void
-remove_module(const char *name)
+remove_module(PyObject *name)
 {
     PyObject *modules = PyImport_GetModuleDict();
-    if (PyDict_GetItemString(modules, name) == NULL)
+    if (PyDict_GetItem(modules, name) == NULL)
         return;
-    if (PyDict_DelItemString(modules, name) < 0)
+    if (PyDict_DelItem(modules, name) < 0)
         Py_FatalError("import:  deleting existing key in"
                       "sys.modules failed");
 }
@@ -763,10 +776,42 @@ PyObject *
 PyImport_ExecCodeModuleWithPathnames(char *name, PyObject *co, char *pathname,
                                      char *cpathname)
 {
+    PyObject *m = NULL;
+    PyObject *nameobj, *pathobj = NULL, *cpathobj = NULL;
+
+    nameobj = PyUnicode_FromString(name);
+    if (nameobj == NULL)
+        return NULL;
+
+    if (pathname != NULL) {
+        pathobj = PyUnicode_DecodeFSDefault(pathname);
+        if (pathobj == NULL)
+            goto error;
+    } else
+        pathobj = NULL;
+    if (cpathname != NULL) {
+        cpathobj = PyUnicode_DecodeFSDefault(cpathname);
+        if (cpathobj == NULL)
+            goto error;
+    } else
+        cpathobj = NULL;
+    m = PyImport_ExecCodeModuleObject(nameobj, co, pathobj, cpathobj);
+error:
+    Py_DECREF(nameobj);
+    Py_XDECREF(pathobj);
+    Py_XDECREF(cpathobj);
+    return m;
+}
+
+PyObject*
+PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname,
+                              PyObject *cpathname)
+{
     PyObject *modules = PyImport_GetModuleDict();
     PyObject *m, *d, *v;
+    PyObject *pathbytes;
 
-    m = PyImport_AddModule(name);
+    m = PyImport_AddModuleObject(name);
     if (m == NULL)
         return NULL;
     /* If the module is being reloaded, we get the old module back
@@ -778,12 +823,18 @@ PyImport_ExecCodeModuleWithPathnames(char *name, PyObject *co, char *pathname,
             goto error;
     }
     /* Remember the filename as the __file__ attribute */
-    v = NULL;
     if (pathname != NULL) {
-        v = get_sourcefile(pathname);
+        pathbytes = PyUnicode_EncodeFSDefault(pathname);
+        if (pathbytes != NULL) {
+            v = get_sourcefile(PyBytes_AS_STRING(pathbytes));
+            Py_DECREF(pathbytes);
+        } else
+            v = NULL;
         if (v == NULL)
             PyErr_Clear();
     }
+    else
+        v = NULL;
     if (v == NULL) {
         v = ((PyCodeObject *)co)->co_filename;
         Py_INCREF(v);
@@ -793,27 +844,21 @@ PyImport_ExecCodeModuleWithPathnames(char *name, PyObject *co, char *pathname,
     Py_DECREF(v);
 
     /* Remember the pyc path name as the __cached__ attribute. */
-    if (cpathname == NULL) {
+    if (cpathname != NULL)
+        v = cpathname;
+    else
         v = Py_None;
-        Py_INCREF(v);
-    }
-    else if ((v = PyUnicode_FromString(cpathname)) == NULL) {
-        PyErr_Clear(); /* Not important enough to report */
-        v = Py_None;
-        Py_INCREF(v);
-    }
     if (PyDict_SetItemString(d, "__cached__", v) != 0)
         PyErr_Clear(); /* Not important enough to report */
-    Py_DECREF(v);
 
     v = PyEval_EvalCode(co, d, d);
     if (v == NULL)
         goto error;
     Py_DECREF(v);
 
-    if ((m = PyDict_GetItemString(modules, name)) == NULL) {
+    if ((m = PyDict_GetItem(modules, name)) == NULL) {
         PyErr_Format(PyExc_ImportError,
-                     "Loaded module %.200s not found in sys.modules",
+                     "Loaded module %R not found in sys.modules",
                      name);
         return NULL;
     }

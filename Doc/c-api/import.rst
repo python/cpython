@@ -86,7 +86,7 @@ Importing Modules
    an exception set on failure (the module still exists in this case).
 
 
-.. c:function:: PyObject* PyImport_AddModule(const char *name)
+.. c:function:: PyObject* PyImport_AddModuleObject(PyObject *name)
 
    Return the module object corresponding to a module name.  The *name* argument
    may be of the form ``package.module``. First check the modules dictionary if
@@ -99,6 +99,14 @@ Importing Modules
       loaded, you will get an empty module object. Use :c:func:`PyImport_ImportModule`
       or one of its variants to import a module.  Package structures implied by a
       dotted name for *name* are not created if not already present.
+
+   .. versionadded:: 3.3
+
+
+.. c:function:: PyObject* PyImport_AddModule(const char *name)
+
+   Similar to :c:func:`PyImport_AddModuleObject`, but the name is an UTF-8
+   encoded string instead of a Unicode object.
 
 
 .. c:function:: PyObject* PyImport_ExecCodeModule(char *name, PyObject *co)
@@ -136,13 +144,22 @@ Importing Modules
    See also :c:func:`PyImport_ExecCodeModuleWithPathnames`.
 
 
-.. c:function:: PyObject* PyImport_ExecCodeModuleWithPathnames(char *name, PyObject *co, char *pathname, char *cpathname)
+.. c:function:: PyObject* PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname, PyObject *cpathname)
 
    Like :c:func:`PyImport_ExecCodeModuleEx`, but the :attr:`__cached__`
    attribute of the module object is set to *cpathname* if it is
    non-``NULL``.  Of the three functions, this is the preferred one to use.
 
+   .. versionadded:: 3.3
+
+
+.. c:function:: PyObject* PyImport_ExecCodeModuleWithPathnames(char *name, PyObject *co, char *pathname, char *cpathname)
+
+   Like :c:func:`PyImport_ExecCodeModuleObject`, but *name*, *pathname* and
+   *cpathname* are UTF-8 encoded strings.
+
    .. versionadded:: 3.2
+
 
 .. c:function:: long PyImport_GetMagicNumber()
 

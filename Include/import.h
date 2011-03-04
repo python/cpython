@@ -24,7 +24,16 @@ PyAPI_FUNC(PyObject *) PyImport_ExecCodeModuleWithPathnames(
     char *pathname,             /* decoded from the filesystem encoding */
     char *cpathname             /* decoded from the filesystem encoding */
     );
+PyAPI_FUNC(PyObject *) PyImport_ExecCodeModuleObject(
+    PyObject *name,
+    PyObject *co,
+    PyObject *pathname,
+    PyObject *cpathname
+    );
 PyAPI_FUNC(PyObject *) PyImport_GetModuleDict(void);
+PyAPI_FUNC(PyObject *) PyImport_AddModuleObject(
+    PyObject *name
+    );
 PyAPI_FUNC(PyObject *) PyImport_AddModule(
     const char *name            /* UTF-8 encoded string */
     );
