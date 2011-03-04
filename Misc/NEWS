@@ -25,6 +25,9 @@ Core and Builtins
 
 - Check for NULL result in PyType_FromSpec.
 
+- Issue #11386: bytearray.pop() now throws IndexError when the bytearray is
+  empty, instead of OverflowError.
+
 Library
 -------
 
