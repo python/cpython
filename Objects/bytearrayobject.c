@@ -2309,8 +2309,8 @@ bytearray_pop(PyByteArrayObject *self, PyObject *args)
         return NULL;
 
     if (n == 0) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "cannot pop an empty bytearray");
+        PyErr_SetString(PyExc_IndexError,
+                        "pop from empty bytearray");
         return NULL;
     }
     if (where < 0)
