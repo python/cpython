@@ -1,0 +1,39 @@
+[patterns]
+
+# Non human-editable files are binary
+
+**.dsp  = BIN
+**.dsw  = BIN
+**.mk   = BIN
+**.sln  = BIN
+**.vcproj  = BIN
+**.vsprops = BIN
+
+**.aif  = BIN
+**.au   = BIN
+**.bmp  = BIN
+**.db   = BIN
+**.exe  = BIN
+**.icns = BIN
+**.gif  = BIN
+**.ico  = BIN
+**.info = BIN
+**.jpg  = BIN
+**.pck  = BIN
+**.png  = BIN
+**.psd  = BIN
+**.tar  = BIN
+**.xar  = BIN
+**.zip  = BIN
+
+Lib/email/test/data/msg_26.txt = BIN
+Lib/test/sndhdrdata/sndhdr.* = BIN
+Lib/test/decimaltestdata/*.decTest = BIN
+
+# All other files (which presumably are human-editable) are "native".
+# This must be the last rule!
+
+** = native
+
+[repository]
+native = LF
