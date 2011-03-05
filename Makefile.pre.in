@@ -35,6 +35,9 @@ LINKCC=		@LINKCC@
 AR=		@AR@
 RANLIB=		@RANLIB@
 SVNVERSION=	@SVNVERSION@
+HGVERSION=	@HGVERSION@
+HGTAG=		@HGTAG@
+HGBRANCH=	@HGBRANCH@
 
 GNULD=		@GNULD@
 
@@ -525,7 +528,12 @@ Modules/getbuildinfo.o: $(PARSER_OBJS) \
 		$(SIGNAL_OBJS) \
 		$(MODOBJS) \
 		$(srcdir)/Modules/getbuildinfo.c
-	$(CC) -c $(PY_CFLAGS) -DSVNVERSION="\"`LC_ALL=C $(SVNVERSION)`\"" -o $@ $(srcdir)/Modules/getbuildinfo.c
+	$(CC) -c $(PY_CFLAGS) \
+	      -DSVNVERSION="\"`LC_ALL=C $(SVNVERSION)`\"" \
+	      -DHGVERSION="\"`LC_ALL=C $(HGVERSION)`\"" \
+	      -DHGTAG="\"`LC_ALL=C $(HGTAG)`\"" \
+	      -DHGBRANCH="\"`LC_ALL=C $(HGBRANCH)`\"" \
+	      -o $@ $(srcdir)/Modules/getbuildinfo.c
 
 Modules/getpath.o: $(srcdir)/Modules/getpath.c Makefile
 	$(CC) -c $(PY_CFLAGS) -DPYTHONPATH='"$(PYTHONPATH)"' \
