@@ -2306,9 +2306,11 @@ The demo scripts are:
 | bytedesign     | complex classical            | :func:`tracer`, delay,|
 |                | turtle graphics pattern      | :func:`update`        |
 +----------------+------------------------------+-----------------------+
-| chaos          | graphs verhust dynamics,     | world coordinates     |
-|                | proves that you must not     |                       |
-|                | trust computers' computations|                       |
+| chaos          | graphs Verhulst dynamics,    | world coordinates     |
+|                | shows that computer's        |                       |
+|                | computations can generate    |                       |
+|                | results sometimes against the|                       |
+|                | common sense expectations    |                       |
 +----------------+------------------------------+-----------------------+
 | clock          | analog clock showing time    | turtles as clock's    |
 |                | of your computer             | hands, ontimer        |
