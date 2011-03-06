@@ -56,13 +56,11 @@ class PlatformTest(unittest.TestCase):
 
     def setUp(self):
         self.save_version = sys.version
-        self.save_subversion = sys.subversion
         self.save_mercurial = sys._mercurial
         self.save_platform = sys.platform
 
     def tearDown(self):
         sys.version = self.save_version
-        sys.subversion = self.save_subversion
         sys._mercurial = self.save_mercurial
         sys.platform = self.save_platform
 
@@ -77,7 +75,7 @@ class PlatformTest(unittest.TestCase):
              ('IronPython', '1.0.0', '', '', '', '', '.NET 2.0.50727.42')),
             ):
             # branch and revision are not "parsed", but fetched
-            # from sys.subversion.  Ignore them
+            # from sys._mercurial.  Ignore them
             (name, version, branch, revision, buildno, builddate, compiler) \
                    = platform._sys_version(input)
             self.assertEqual(
@@ -113,8 +111,6 @@ class PlatformTest(unittest.TestCase):
             if subversion is None:
                 if hasattr(sys, "_mercurial"):
                     del sys._mercurial
-                if hasattr(sys, "subversion"):
-                    del sys.subversion
             else:
                 sys._mercurial = subversion
             if sys_platform is not None:
