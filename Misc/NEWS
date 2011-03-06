@@ -55,6 +55,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11408: In threading.Lock.acquire(), only call gettimeofday() when
+  really necessary.  Patch by Charles-François Natali.
+
 - Issue #11391: Writing to a mmap object created with
   ``mmap.PROT_READ|mmap.PROT_EXEC`` would segfault instead of raising a
   TypeError.  Patch by Charles-François Natali.
