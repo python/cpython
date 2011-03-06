@@ -29,12 +29,15 @@ Modules/Setup$
 Modules/Setup.config
 Modules/Setup.local
 Modules/config.c
+Modules/ld_so_aix$
 Parser/pgen$
+Parser/pgen.stamp$
 ^core
 ^python-gdb.py
 
 syntax: glob
 libpython*.a
+*.swp
 *.o
 *.pyc
 *.pyo
