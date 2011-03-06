@@ -1176,6 +1176,9 @@ Several constants are available to specify character cell attributes:
 +------------------+-------------------------------+
 | ``A_NORMAL``     | Normal attribute.             |
 +------------------+-------------------------------+
+| ``A_REVERSE``    | Reverse background and        |
+|                  | foreground colors.            |
++------------------+-------------------------------+
 | ``A_STANDOUT``   | Standout mode.                |
 +------------------+-------------------------------+
 | ``A_UNDERLINE``  | Underline mode.               |
