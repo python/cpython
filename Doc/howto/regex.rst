@@ -81,7 +81,7 @@ devoted to discussing various metacharacters and what they do.
 Here's a complete list of the metacharacters; their meanings will be discussed
 in the rest of this HOWTO. ::
 
-   . ^ $ * + ? { [ ] \ | ( )
+   . ^ $ * + ? { } [ ] \ | ( )
 
 The first metacharacters we'll look at are ``[`` and ``]``. They're used for
 specifying a character class, which is a set of characters that you wish to
