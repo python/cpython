@@ -1311,7 +1311,9 @@ def _sys_version(sys_version=None):
         name = 'CPython'
         builddate = builddate + ' ' + buildtime
 
-    if hasattr(sys, 'subversion'):
+    if hasattr(sys, '_mercurial'):
+        _, branch, revision = sys._mercurial
+    elif hasattr(sys, 'subversion'):
         # sys.subversion was added in Python 2.5
         _, branch, revision = sys.subversion
     else:

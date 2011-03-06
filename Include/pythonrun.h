@@ -182,6 +182,8 @@ PyAPI_FUNC(const char *) Py_GetBuildInfo(void);
 PyAPI_FUNC(const char *) _Py_svnversion(void);
 PyAPI_FUNC(const char *) Py_SubversionRevision(void);
 PyAPI_FUNC(const char *) Py_SubversionShortBranch(void);
+PyAPI_FUNC(const char *) _Py_hgidentifier(void);
+PyAPI_FUNC(const char *) _Py_hgversion(void);
 #endif
 
 /* Internal -- various one-time initializations */
