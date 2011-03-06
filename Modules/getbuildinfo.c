@@ -28,15 +28,28 @@
 #define SVNVERSION "$WCRANGE$$WCMODS?M:$"
 #endif
 
+/* XXX Only unix build process has been tested */
+#ifndef HGVERSION
+#define HGVERSION ""
+#endif
+#ifndef HGTAG
+#define HGTAG ""
+#endif
+#ifndef HGBRANCH
+#define HGBRANCH ""
+#endif
+
 const char *
 Py_GetBuildInfo(void)
 {
     static char buildinfo[50];
-    const char *revision = Py_SubversionRevision();
+    const char *revision = _Py_hgversion();
     const char *sep = *revision ? ":" : "";
-    const char *branch = Py_SubversionShortBranch();
+    const char *hgid = _Py_hgidentifier();
+    if (!(*hgid))
+        hgid = "default";
     PyOS_snprintf(buildinfo, sizeof(buildinfo),
-                  "%s%s%s, %.20s, %.9s", branch, sep, revision,
+                  "%s%s%s, %.20s, %.9s", hgid, sep, revision,
                   DATE, TIME);
     return buildinfo;
 }
@@ -49,4 +62,22 @@ _Py_svnversion(void)
     if (svnversion[0] != '$')
         return svnversion; /* it was interpolated, or passed on command line */
     return "Unversioned directory";
+}
+
+const char *
+_Py_hgversion(void)
+{
+    return HGVERSION;
+}
+
+const char *
+_Py_hgidentifier(void)
+{
+    const char *hgtag, *hgid;
+    hgtag = HGTAG;
+    if ((*hgtag) && strcmp(hgtag, "tip") != 0)
+        hgid = hgtag;
+    else
+        hgid = HGBRANCH;
+    return hgid;
 }
