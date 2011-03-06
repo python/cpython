@@ -986,10 +986,3 @@ pre-existing bindings in the local scope.
 
    :pep:`3104` - Access to Names in Outer Scopes
       The specification for the :keyword:`nonlocal` statement.
-
-
-.. rubric:: Footnotes
-
-.. [#] It may occur within an :keyword:`except` or :keyword:`else` clause.  The
-   restriction on occurring in the :keyword:`try` clause is implementor's
-   laziness and will eventually be lifted.
