@@ -70,6 +70,8 @@ Library
 Build
 -----
 
+- Issue #11411: Fix 'make DESTDIR=' with a relative destination.
+
 - Issue #11268: Prevent Mac OS X Installer failure if Documentation
   package had previously been installed.
 
