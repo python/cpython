@@ -743,9 +743,11 @@ class WildcardPattern(BasePattern):
         else:
             # The reason for this is that hitting the recursion limit usually
             # results in some ugly messages about how RuntimeErrors are being
-            # ignored.
-            save_stderr = sys.stderr
-            sys.stderr = StringIO()
+            # ignored. We only have to do this on CPython, though, because other
+            # implementations don't have this nasty bug in the first place.
+            if hasattr(sys, "getrefcount"):
+                save_stderr = sys.stderr
+                sys.stderr = StringIO()
             try:
                 for count, r in self._recursive_matches(nodes, 0):
                     if self.name:
@@ -759,7 +761,8 @@ class WildcardPattern(BasePattern):
                         r[self.name] = nodes[:count]
                     yield count, r
             finally:
-                sys.stderr = save_stderr
+                if hasattr(sys, "getrefcount"):
+                    sys.stderr = save_stderr
 
     def _iterative_matches(self, nodes):
         """Helper to iteratively yield the matches."""
