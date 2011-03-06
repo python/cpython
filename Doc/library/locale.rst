@@ -165,7 +165,7 @@ The :mod:`locale` module defines the following exception and functions:
    .. data:: D_T_FMT
 
       Get a string that can be used as a format string for :func:`strftime` to
-      represent time and date in a locale-specific way.
+      represent date and time in a locale-specific way.
 
    .. data:: D_FMT
 
@@ -250,12 +250,17 @@ The :mod:`locale` module defines the following exception and functions:
 
    .. data:: ERA_D_T_FMT
 
-      Get a format string for :func:`strftime` to represent dates and times in a
+      Get a format string for :func:`strftime` to represent date and time in a
       locale-specific era-based way.
 
    .. data:: ERA_D_FMT
 
-      Get a format string for :func:`strftime` to represent time in a
+      Get a format string for :func:`strftime` to represent a date in a
+      locale-specific era-based way.
+
+   .. data:: ERA_T_FMT
+
+      Get a format string for :func:`strftime` to represent a time in a
       locale-specific era-based way.
 
    .. data:: ALT_DIGITS
