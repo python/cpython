@@ -207,6 +207,8 @@ Extension Modules
 Build
 -----
 
+- Issue #11411: Fix 'make DESTDIR=' with a relative destination.
+
 - Issue #10709: Add updated AIX notes in Misc/README.AIX.
 
 - Issue #11184: Fix large-file support on AIX.
