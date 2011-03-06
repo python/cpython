@@ -34,7 +34,6 @@ MAINCC=		@MAINCC@
 LINKCC=		@LINKCC@
 AR=		@AR@
 RANLIB=		@RANLIB@
-SVNVERSION=	@SVNVERSION@
 SOABI=		@SOABI@
 LDVERSION=	@LDVERSION@
 HGVERSION=	@HGVERSION@
@@ -556,7 +555,6 @@ Modules/getbuildinfo.o: $(PARSER_OBJS) \
 		$(MODOBJS) \
 		$(srcdir)/Modules/getbuildinfo.c
 	$(CC) -c $(PY_CORE_CFLAGS) \
-	      -DSVNVERSION="\"`LC_ALL=C $(SVNVERSION)`\"" \
 	      -DHGVERSION="\"`LC_ALL=C $(HGVERSION)`\"" \
 	      -DHGTAG="\"`LC_ALL=C $(HGTAG)`\"" \
 	      -DHGBRANCH="\"`LC_ALL=C $(HGBRANCH)`\"" \
@@ -1281,7 +1279,6 @@ smelly: all
 # Find files with funny names
 funny:
 	find $(DISTDIRS) \
-		-name .svn -prune \
 		-o -type d \
 		-o -name '*.[chs]' \
 		-o -name '*.py' \

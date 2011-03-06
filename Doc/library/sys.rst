@@ -36,18 +36,6 @@ always available.
    little-endian (least-significant byte first) platforms.
 
 
-.. data:: subversion
-
-   A triple (repo, branch, version) representing the Subversion information of the
-   Python interpreter. *repo* is the name of the repository, ``'CPython'``.
-   *branch* is a string of one of the forms ``'trunk'``, ``'branches/name'`` or
-   ``'tags/name'``. *version* is the output of ``svnversion``, if the interpreter
-   was built from a Subversion checkout; it contains the revision number (range)
-   and possibly a trailing 'M' if there were local modifications. If the tree was
-   exported (or svnversion was not available), it is the revision of
-   ``Include/patchlevel.h`` if the branch is a tag. Otherwise, it is ``None``.
-
-
 .. data:: builtin_module_names
 
    A tuple of strings giving the names of all modules that are compiled into this

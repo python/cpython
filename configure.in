@@ -801,15 +801,6 @@ then
         ARFLAGS="rc"
 fi
 
-AC_SUBST(SVNVERSION)
-AC_CHECK_PROG(SVNVERSION, svnversion, found, not-found)
-if test $SVNVERSION = found
-then
-	SVNVERSION="svnversion \$(srcdir)"
-else
-	SVNVERSION="echo Unversioned directory"
-fi
-
 AC_SUBST(HGVERSION)
 AC_SUBST(HGTAG)
 AC_SUBST(HGBRANCH)
