@@ -282,7 +282,8 @@ implement its socket handling::
            asyncore.dispatcher.__init__(self)
            self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
            self.connect( (host, 80) )
-           self.buffer = bytes('GET %s HTTP/1.0\r\n\r\n' % path, 'ascii')
+           self.buffer = bytes('GET %s HTTP/1.0\r\nHost: %s\r\n\r\n' %
+                               (path, host), 'ascii')
 
        def handle_connect(self):
            pass
