@@ -1101,7 +1101,7 @@ sharedinstall: sharedmods
 	   	--prefix=$(prefix) \
 		--install-scripts=$(BINDIR) \
 		--install-platlib=$(DESTSHARED) \
-		--root=/$(DESTDIR)
+		--root=$(DESTDIR)/
 
 # Here are a couple of targets for MacOSX again, to install a full
 # framework-based Python. frameworkinstall installs everything, the
@@ -1172,7 +1172,7 @@ scriptsinstall:
 	./$(BUILDPYTHON) $(srcdir)/Tools/scripts/setup.py install \
 	--prefix=$(prefix) \
 	--install-scripts=$(BINDIR) \
-	--root=/$(DESTDIR)
+	--root=$(DESTDIR)/
 
 # Build the toplevel Makefile
 Makefile.pre: Makefile.pre.in config.status
