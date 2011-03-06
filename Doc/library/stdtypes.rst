@@ -2575,7 +2575,7 @@ is generally interpreted as simple bytes.
 .. class:: memoryview(obj)
 
    Create a :class:`memoryview` that references *obj*.  *obj* must support the
-   buffer protocol.  Builtin objects that support the buffer protocol include
+   buffer protocol.  Built-in objects that support the buffer protocol include
    :class:`str` and :class:`bytearray` (but not :class:`unicode`).
 
    A :class:`memoryview` has the notion of an *element*, which is the
