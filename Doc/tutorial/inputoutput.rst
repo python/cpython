@@ -19,18 +19,16 @@ the :func:`print` function.  (A third way is using the :meth:`write` method
 of file objects; the standard output file can be referenced as ``sys.stdout``.
 See the Library Reference for more information on this.)
 
-.. index:: module: string
-
 Often you'll want more control over the formatting of your output than simply
 printing space-separated values.  There are two ways to format your output; the
 first way is to do all the string handling yourself; using string slicing and
 concatenation operations you can create any layout you can imagine.  The
-standard module :mod:`string` contains some useful operations for padding
+string type has some methods that perform useful operations for padding
 strings to a given column width; these will be discussed shortly.  The second
 way is to use the :meth:`str.format` method.
 
-The :mod:`string` module contains a class Template which offers yet another way
-to substitute values into strings.
+The :mod:`string` module contains a :class:`~string.Template` class which offers
+yet another way to substitute values into strings.
 
 One question remains, of course: how do you convert values to strings? Luckily,
 Python has ways to convert any value to a string: pass it to the :func:`repr`
