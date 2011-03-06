@@ -40,6 +40,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #11391: Writing to a mmap object created with
+  ``mmap.PROT_READ|mmap.PROT_EXEC`` would segfault instead of raising a
+  TypeError.  Patch by Charles-François Natali.
+
 - Issue #11306: mailbox in certain cases adapts to an inability to open
   certain files in read-write mode.  Previously it detected this by
   checking for EACCES, now it also checks for EROFS.
