@@ -1154,15 +1154,20 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
         prot = PROT_READ | PROT_WRITE;
         break;
     case ACCESS_DEFAULT:
-        /* use the specified or default values of flags and prot */
+        /* map prot to access type */
+        if ((prot & PROT_READ) && (prot & PROT_WRITE)) {
+            /* ACCESS_DEFAULT */
+        }
+        else if (prot & PROT_WRITE) {
+            access = ACCESS_WRITE;
+        }
+        else {
+            access = ACCESS_READ;
+        }
         break;
     default:
         return PyErr_Format(PyExc_ValueError,
                             "mmap invalid access parameter.");
-    }
-
-    if (prot == PROT_READ) {
-    access = ACCESS_READ;
     }
 
 #ifdef HAVE_FSTAT
