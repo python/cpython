@@ -237,6 +237,14 @@ class MmapTests(unittest.TestCase):
                               prot=mmap.PROT_READ, access=mmap.ACCESS_WRITE)
             f.close()
 
+            # Try writting without PROT_WRITE
+            with open(TESTFN, "r+b") as f:
+                m = mmap.mmap(f.fileno(), mapsize, prot=~mmap.PROT_WRITE)
+                self.assertRaises(TypeError, m.write, b"abcdef")
+                self.assertRaises(TypeError, m.write_byte, 0)
+                m.close()
+
+
     def test_bad_file_desc(self):
         # Try opening a bad file descriptor...
         self.assertRaises(mmap.error, mmap.mmap, -2, 4096)
