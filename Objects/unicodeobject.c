@@ -7358,8 +7358,7 @@ PyUnicode_RichCompare(PyObject *left, PyObject *right, int op)
 
     if (PyUnicode_Check(left) && PyUnicode_Check(right)) {
         PyObject *v;
-        if (((PyUnicodeObject *) left)->length !=
-            ((PyUnicodeObject *) right)->length) {
+        if (PyUnicode_GET_SIZE(left) != PyUnicode_GET_SIZE(right)) {
             if (op == Py_EQ) {
                 Py_INCREF(Py_False);
                 return Py_False;
