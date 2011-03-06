@@ -119,9 +119,6 @@ square brackets, is recursively defined as follows.
 * If the target list is a comma-separated list of targets: The object must be an
   iterable with the same number of items as there are targets in the target list,
   and the items are assigned, from left to right, to the corresponding targets.
-  (This rule is relaxed as of Python 1.5; in earlier versions, the object had to
-  be a tuple.  Since strings are sequences, an assignment like ``a, b = "xy"`` is
-  now legal as long as the string has the right length.)
 
   * If the target list contains one target prefixed with an asterisk, called a
     "starred" target: The object must be a sequence with at least as many items
@@ -991,10 +988,3 @@ pre-existing bindings in the local scope.
 
    :pep:`3104` - Access to Names in Outer Scopes
       The specification for the :keyword:`nonlocal` statement.
-
-
-.. rubric:: Footnotes
-
-.. [#] It may occur within an :keyword:`except` or :keyword:`else` clause.  The
-   restriction on occurring in the :keyword:`try` clause is implementor's
-   laziness and will eventually be lifted.
