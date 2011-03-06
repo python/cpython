@@ -853,6 +853,21 @@ else
 	SVNVERSION="echo Unversioned directory"
 fi
 
+AC_SUBST(HGVERSION)
+AC_SUBST(HGTAG)
+AC_SUBST(HGBRANCH)
+AC_CHECK_PROG(HAS_HG, hg, found, not-found)
+if test $HAS_HG = found
+then
+    HGVERSION="hg id -i \$(srcdir)"
+    HGTAG="hg id -t \$(srcdir)"
+    HGBRANCH="hg id -b \$(srcdir)"
+else
+    HGVERSION=""
+    HGTAG=""
+    HGBRANCH=""
+fi
+
 case $MACHDEP in
 bsdos*|hp*|HP*)
 	# install -d does not work on BSDI or HP-UX
