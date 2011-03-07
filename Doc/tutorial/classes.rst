@@ -673,9 +673,9 @@ example, the following code will print B, C, D in that order::
    class D(C):
        pass
 
-   for c in [B, C, D]:
+   for cls in [B, C, D]:
        try:
-           raise c()
+           raise cls()
        except D:
            print("D")
        except C:
