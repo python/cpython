@@ -625,7 +625,7 @@ _PyImport_FixupBuiltin(PyObject *mod, char *name)
 {
     int res;
     PyObject *nameobj;
-    nameobj = PyUnicode_FromString(name);
+    nameobj = PyUnicode_InternFromString(name);
     if (nameobj == NULL)
         return -1;
     res = _PyImport_FixupExtensionObject(mod, nameobj, nameobj);
@@ -681,7 +681,7 @@ PyObject *
 _PyImport_FindBuiltin(const char *name)
 {
     PyObject *res, *nameobj;
-    nameobj = PyUnicode_FromString(name);
+    nameobj = PyUnicode_InternFromString(name);
     if (nameobj == NULL)
         return NULL;
     res = _PyImport_FindExtensionObject(nameobj, nameobj);
