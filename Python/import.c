@@ -117,7 +117,7 @@ typedef unsigned short mode_t;
 static long pyc_magic = MAGIC;
 static const char *pyc_tag = TAG;
 
-/* See _PyImport_FixupExtensionUnicode() below */
+/* See _PyImport_FixupExtensionObject() below */
 static PyObject *extensions = NULL;
 
 /* This table is defined in config.c: */
@@ -563,10 +563,10 @@ PyImport_GetMagicTag(void)
    once, we keep a static dictionary 'extensions' keyed by module name
    (for built-in modules) or by filename (for dynamically loaded
    modules), containing these modules.  A copy of the module's
-   dictionary is stored by calling _PyImport_FixupExtensionUnicode()
+   dictionary is stored by calling _PyImport_FixupExtensionObject()
    immediately after the module initialization function succeeds.  A
    copy can be retrieved from there by calling
-   _PyImport_FindExtensionUnicode().
+   _PyImport_FindExtensionObject().
 
    Modules which do support multiple initialization set their m_size
    field to a non-negative number (indicating the size of the
@@ -575,7 +575,8 @@ PyImport_GetMagicTag(void)
 */
 
 int
-_PyImport_FixupExtensionUnicode(PyObject *mod, char *name, PyObject *filename)
+_PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
+                               PyObject *filename)
 {
     PyObject *modules, *dict;
     struct PyModuleDef *def;
@@ -594,10 +595,10 @@ _PyImport_FixupExtensionUnicode(PyObject *mod, char *name, PyObject *filename)
         return -1;
     }
     modules = PyImport_GetModuleDict();
-    if (PyDict_SetItemString(modules, name, mod) < 0)
+    if (PyDict_SetItem(modules, name, mod) < 0)
         return -1;
     if (_PyState_AddModule(mod, def) < 0) {
-        PyDict_DelItemString(modules, name);
+        PyDict_DelItem(modules, name);
         return -1;
     }
     if (def->m_size == -1) {
@@ -623,17 +624,17 @@ int
 _PyImport_FixupBuiltin(PyObject *mod, char *name)
 {
     int res;
-    PyObject *filename;
-    filename = PyUnicode_FromString(name);
-    if (filename == NULL)
+    PyObject *nameobj;
+    nameobj = PyUnicode_FromString(name);
+    if (nameobj == NULL)
         return -1;
-    res = _PyImport_FixupExtensionUnicode(mod, name, filename);
-    Py_DECREF(filename);
+    res = _PyImport_FixupExtensionObject(mod, nameobj, nameobj);
+    Py_DECREF(nameobj);
     return res;
 }
 
 PyObject *
-_PyImport_FindExtensionUnicode(const char *name, PyObject *filename)
+_PyImport_FindExtensionObject(PyObject *name, PyObject *filename)
 {
     PyObject *mod, *mdict;
     PyModuleDef* def;
@@ -646,7 +647,7 @@ _PyImport_FindExtensionUnicode(const char *name, PyObject *filename)
         /* Module does not support repeated initialization */
         if (def->m_base.m_copy == NULL)
             return NULL;
-        mod = PyImport_AddModule(name);
+        mod = PyImport_AddModuleObject(name);
         if (mod == NULL)
             return NULL;
         mdict = PyModule_GetDict(mod);
@@ -661,16 +662,16 @@ _PyImport_FindExtensionUnicode(const char *name, PyObject *filename)
         mod = def->m_base.m_init();
         if (mod == NULL)
             return NULL;
-        PyDict_SetItemString(PyImport_GetModuleDict(), name, mod);
+        PyDict_SetItem(PyImport_GetModuleDict(), name, mod);
         Py_DECREF(mod);
     }
     if (_PyState_AddModule(mod, def) < 0) {
-        PyDict_DelItemString(PyImport_GetModuleDict(), name);
+        PyDict_DelItem(PyImport_GetModuleDict(), name);
         Py_DECREF(mod);
         return NULL;
     }
     if (Py_VerboseFlag)
-        PySys_FormatStderr("import %s # previously loaded (%U)\n",
+        PySys_FormatStderr("import %U # previously loaded (%R)\n",
                           name, filename);
     return mod;
 
@@ -679,12 +680,12 @@ _PyImport_FindExtensionUnicode(const char *name, PyObject *filename)
 PyObject *
 _PyImport_FindBuiltin(const char *name)
 {
-    PyObject *res, *filename;
-    filename = PyUnicode_FromString(name);
-    if (filename == NULL)
+    PyObject *res, *nameobj;
+    nameobj = PyUnicode_FromString(name);
+    if (nameobj == NULL)
         return NULL;
-    res = _PyImport_FindExtensionUnicode(name, filename);
-    Py_DECREF(filename);
+    res = _PyImport_FindExtensionObject(nameobj, nameobj);
+    Py_DECREF(nameobj);
     return res;
 }
 
@@ -1491,11 +1492,12 @@ load_package(char *name, char *pathname)
 /* Helper to test for built-in module */
 
 static int
-is_builtin(char *name)
+is_builtin(PyObject *name)
 {
-    int i;
+    int i, cmp;
     for (i = 0; PyImport_Inittab[i].name != NULL; i++) {
-        if (strcmp(name, PyImport_Inittab[i].name) == 0) {
+        cmp = PyUnicode_CompareWithASCIIString(name, PyImport_Inittab[i].name);
+        if (cmp == 0) {
             if (PyImport_Inittab[i].initfunc == NULL)
                 return -1;
             else
@@ -1617,7 +1619,7 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
     size_t saved_namelen;
     char *saved_buf = NULL;
 #endif
-    PyObject *fullname_obj;
+    PyObject *fullname_obj, *nameobj;
 
     if (p_loader != NULL)
         *p_loader = NULL;
@@ -1677,10 +1679,15 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
     }
 
     if (path == NULL) {
-        if (is_builtin(name)) {
+        nameobj = PyUnicode_FromString(name);
+        if (nameobj == NULL)
+            return NULL;
+        if (is_builtin(nameobj)) {
+            Py_DECREF(nameobj);
             strcpy(buf, name);
             return &fd_builtin;
         }
+        Py_DECREF(nameobj);
 #ifdef MS_COREDLL
         fp = _PyWin_FindRegisteredModule(name, &fdp, buf, buflen);
         if (fp != NULL) {
@@ -2086,40 +2093,35 @@ find_init_module(char *buf)
 #endif /* HAVE_STAT */
 
 
-static int init_builtin(char *); /* Forward */
+static int init_builtin(PyObject *); /* Forward */
 
 static PyObject*
-load_builtin(char *name, char *pathname, int type)
+load_builtin(PyObject *name, int type)
 {
     PyObject *m, *modules;
     int err;
 
-    if (pathname != NULL && pathname[0] != '\0')
-        name = pathname;
-
     if (type == C_BUILTIN)
         err = init_builtin(name);
     else
-        err = PyImport_ImportFrozenModule(name);
+        err = PyImport_ImportFrozenModuleObject(name);
     if (err < 0)
         return NULL;
     if (err == 0) {
         PyErr_Format(PyExc_ImportError,
-                "Purported %s module %.200s not found",
-                type == C_BUILTIN ?
-                "builtin" : "frozen",
+                "Purported %s module %R not found",
+                type == C_BUILTIN ? "builtin" : "frozen",
                 name);
         return NULL;
     }
 
     modules = PyImport_GetModuleDict();
-    m = PyDict_GetItemString(modules, name);
+    m = PyDict_GetItem(modules, name);
     if (m == NULL) {
         PyErr_Format(
                 PyExc_ImportError,
-                "%s module %.200s not properly initialized",
-                type == C_BUILTIN ?
-                "builtin" : "frozen",
+                "%s module %R not properly initialized",
+                type == C_BUILTIN ? "builtin" : "frozen",
                 name);
         return NULL;
     }
@@ -2168,9 +2170,15 @@ load_module(char *name, FILE *fp, char *pathname, int type, PyObject *loader)
         break;
 
     case C_BUILTIN:
-    case PY_FROZEN:
-        m = load_builtin(name, pathname, type);
+    case PY_FROZEN: {
+        PyObject *nameobj = PyUnicode_FromString(name);
+        if (nameobj != NULL) {
+            m = load_builtin(nameobj, type);
+            Py_DECREF(nameobj);
+        } else
+            m = NULL;
         break;
+    }
 
     case IMP_HOOK: {
         if (loader == NULL) {
@@ -2199,28 +2207,28 @@ load_module(char *name, FILE *fp, char *pathname, int type, PyObject *loader)
    an exception set if the initialization failed. */
 
 static int
-init_builtin(char *name)
+init_builtin(PyObject *name)
 {
     struct _inittab *p;
 
-    if (_PyImport_FindBuiltin(name) != NULL)
+    if (_PyImport_FindExtensionObject(name, name) != NULL)
         return 1;
 
     for (p = PyImport_Inittab; p->name != NULL; p++) {
         PyObject *mod;
-        if (strcmp(name, p->name) == 0) {
+        if (PyUnicode_CompareWithASCIIString(name, p->name) == 0) {
             if (p->initfunc == NULL) {
                 PyErr_Format(PyExc_ImportError,
-                    "Cannot re-init internal module %.200s",
+                    "Cannot re-init internal module %R",
                     name);
                 return -1;
             }
             if (Py_VerboseFlag)
-                PySys_WriteStderr("import %s # builtin\n", name);
+                PySys_FormatStderr("import %U # builtin\n", name);
             mod = (*p->initfunc)();
             if (mod == 0)
                 return -1;
-            if (_PyImport_FixupBuiltin(mod, name) < 0)
+            if (_PyImport_FixupExtensionObject(mod, name, name) < 0)
                 return -1;
             /* FixupExtension has put the module into sys.modules,
                so we can release our own reference. */
@@ -3286,10 +3294,10 @@ imp_find_module(PyObject *self, PyObject *args)
 static PyObject *
 imp_init_builtin(PyObject *self, PyObject *args)
 {
-    char *name;
+    PyObject *name;
     int ret;
     PyObject *m;
-    if (!PyArg_ParseTuple(args, "s:init_builtin", &name))
+    if (!PyArg_ParseTuple(args, "U:init_builtin", &name))
         return NULL;
     ret = init_builtin(name);
     if (ret < 0)
@@ -3298,7 +3306,7 @@ imp_init_builtin(PyObject *self, PyObject *args)
         Py_INCREF(Py_None);
         return Py_None;
     }
-    m = PyImport_AddModule(name);
+    m = PyImport_AddModuleObject(name);
     Py_XINCREF(m);
     return m;
 }
@@ -3346,8 +3354,8 @@ imp_is_frozen_package(PyObject *self, PyObject *args)
 static PyObject *
 imp_is_builtin(PyObject *self, PyObject *args)
 {
-    char *name;
-    if (!PyArg_ParseTuple(args, "s:is_builtin", &name))
+    PyObject *name;
+    if (!PyArg_ParseTuple(args, "U:is_builtin", &name))
         return NULL;
     return PyLong_FromLong(is_builtin(name));
 }

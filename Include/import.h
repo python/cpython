@@ -79,12 +79,12 @@ PyAPI_FUNC(void) _PyImport_ReInitLock(void);
 PyAPI_FUNC(PyObject *)_PyImport_FindBuiltin(
     const char *name            /* UTF-8 encoded string */
     );
-PyAPI_FUNC(PyObject *)_PyImport_FindExtensionUnicode(const char *, PyObject *);
+PyAPI_FUNC(PyObject *)_PyImport_FindExtensionObject(PyObject *, PyObject *);
 PyAPI_FUNC(int)_PyImport_FixupBuiltin(
     PyObject *mod,
     char *name                  /* UTF-8 encoded string */
     );
-PyAPI_FUNC(int)_PyImport_FixupExtensionUnicode(PyObject*, char *, PyObject *);
+PyAPI_FUNC(int)_PyImport_FixupExtensionObject(PyObject*, PyObject *, PyObject *);
 
 struct _inittab {
     char *name;
