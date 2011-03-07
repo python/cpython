@@ -1170,6 +1170,33 @@ class ConfigDictTest(BaseTest):
         },
     }
 
+    # config1a moves the handler to the root. Used with config8a
+    config1a = {
+        'version': 1,
+        'formatters': {
+            'form1' : {
+                'format' : '%(levelname)s ++ %(message)s',
+            },
+        },
+        'handlers' : {
+            'hand1' : {
+                'class' : 'logging.StreamHandler',
+                'formatter' : 'form1',
+                'level' : 'NOTSET',
+                'stream'  : 'ext://sys.stdout',
+            },
+        },
+        'loggers' : {
+            'compiler.parser' : {
+                'level' : 'DEBUG',
+            },
+        },
+        'root' : {
+            'level' : 'WARNING',
+            'handlers' : ['hand1'],
+        },
+    }
+
     # config2 has a subtle configuration error that should be reported
     config2 = {
         'version': 1,
@@ -1420,9 +1447,42 @@ class ConfigDictTest(BaseTest):
         },
     }
 
+    # config8 defines both compiler and compiler.lexer
+    # so compiler.parser should not be disabled (since
+    # compiler is defined)
     config8 = {
         'version': 1,
         'disable_existing_loggers' : False,
+        'formatters': {
+            'form1' : {
+                'format' : '%(levelname)s ++ %(message)s',
+            },
+        },
+        'handlers' : {
+            'hand1' : {
+                'class' : 'logging.StreamHandler',
+                'formatter' : 'form1',
+                'level' : 'NOTSET',
+                'stream'  : 'ext://sys.stdout',
+            },
+        },
+        'loggers' : {
+            'compiler' : {
+                'level' : 'DEBUG',
+                'handlers' : ['hand1'],
+            },
+            'compiler.lexer' : {
+            },
+        },
+        'root' : {
+            'level' : 'WARNING',
+        },
+    }
+
+    # config8a disables existing loggers
+    config8a = {
+        'version': 1,
+        'disable_existing_loggers' : True,
         'formatters': {
             'form1' : {
                 'format' : '%(levelname)s ++ %(message)s',
@@ -1749,7 +1809,7 @@ class ConfigDictTest(BaseTest):
         with captured_stdout() as output:
             self.apply_config(self.config1)
             logger = logging.getLogger("compiler.parser")
-            # Both will output a message
+            # All will output a message
             logger.info(self.next_message())
             logger.error(self.next_message())
             self.assert_log_lines([
@@ -1774,6 +1834,49 @@ class ConfigDictTest(BaseTest):
                 ('ERROR', '4'),
                 ('INFO', '5'),
                 ('ERROR', '6'),
+            ], stream=output)
+            # Original logger output is empty.
+            self.assert_log_lines([])
+
+    def test_config_8a_ok(self):
+        with captured_stdout() as output:
+            self.apply_config(self.config1a)
+            logger = logging.getLogger("compiler.parser")
+            # See issue #11424. compiler-hyphenated sorts
+            # between compiler and compiler.xyz and this
+            # was preventing compiler.xyz from being included
+            # in the child loggers of compiler because of an
+            # overzealous loop termination condition.
+            hyphenated = logging.getLogger('compiler-hyphenated')
+            # All will output a message
+            logger.info(self.next_message())
+            logger.error(self.next_message())
+            hyphenated.critical(self.next_message())
+            self.assert_log_lines([
+                ('INFO', '1'),
+                ('ERROR', '2'),
+                ('CRITICAL', '3'),
+            ], stream=output)
+            # Original logger output is empty.
+            self.assert_log_lines([])
+        with captured_stdout() as output:
+            self.apply_config(self.config8a)
+            logger = logging.getLogger("compiler.parser")
+            self.assertFalse(logger.disabled)
+            # Both will output a message
+            logger.info(self.next_message())
+            logger.error(self.next_message())
+            logger = logging.getLogger("compiler.lexer")
+            # Both will output a message
+            logger.info(self.next_message())
+            logger.error(self.next_message())
+            # Will not appear
+            hyphenated.critical(self.next_message())
+            self.assert_log_lines([
+                ('INFO', '4'),
+                ('ERROR', '5'),
+                ('INFO', '6'),
+                ('ERROR', '7'),
             ], stream=output)
             # Original logger output is empty.
             self.assert_log_lines([])
