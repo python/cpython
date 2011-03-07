@@ -418,7 +418,6 @@ void
 PyImport_Cleanup(void)
 {
     Py_ssize_t pos, ndone;
-    char *name;
     PyObject *key, *value, *dict;
     PyInterpreterState *interp = PyThreadState_GET()->interp;
     PyObject *modules = interp->modules;
@@ -491,14 +490,13 @@ PyImport_Cleanup(void)
             if (value->ob_refcnt != 1)
                 continue;
             if (PyUnicode_Check(key) && PyModule_Check(value)) {
-                name = _PyUnicode_AsString(key);
-                if (strcmp(name, "builtins") == 0)
+                if (PyUnicode_CompareWithASCIIString(key, "builtins") == 0)
                     continue;
-                if (strcmp(name, "sys") == 0)
+                if (PyUnicode_CompareWithASCIIString(key, "sys") == 0)
                     continue;
                 if (Py_VerboseFlag)
-                    PySys_WriteStderr(
-                        "# cleanup[1] %s\n", name);
+                    PySys_FormatStderr(
+                        "# cleanup[1] %U\n", key);
                 _PyModule_Clear(value);
                 PyDict_SetItem(modules, key, Py_None);
                 ndone++;
@@ -510,13 +508,12 @@ PyImport_Cleanup(void)
     pos = 0;
     while (PyDict_Next(modules, &pos, &key, &value)) {
         if (PyUnicode_Check(key) && PyModule_Check(value)) {
-            name = _PyUnicode_AsString(key);
-            if (strcmp(name, "builtins") == 0)
+            if (PyUnicode_CompareWithASCIIString(key, "builtins") == 0)
                 continue;
-            if (strcmp(name, "sys") == 0)
+            if (PyUnicode_CompareWithASCIIString(key, "sys") == 0)
                 continue;
             if (Py_VerboseFlag)
-                PySys_WriteStderr("# cleanup[2] %s\n", name);
+                PySys_FormatStderr("# cleanup[2] %U\n", key);
             _PyModule_Clear(value);
             PyDict_SetItem(modules, key, Py_None);
         }
