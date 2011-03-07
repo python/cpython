@@ -815,7 +815,7 @@ class ConfigFileTest(BaseTest):
             ], stream=output)
             # Original logger output is empty.
             self.assert_log_lines([])
-    
+
 class LogRecordStreamHandler(StreamRequestHandler):
 
     """Handler for a streaming logging request. It saves the log message in the
