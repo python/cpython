@@ -329,7 +329,7 @@ _PyImport_ReInitLock(void)
         /* Forked as a side effect of import */
         long me = PyThread_get_thread_ident();
         PyThread_acquire_lock(import_lock, 0);
-	/* XXX: can the previous line fail? */
+        /* XXX: can the previous line fail? */
         import_lock_thread = me;
         import_lock_level--;
     } else {
