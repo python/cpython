@@ -272,13 +272,13 @@ Importing Modules
 
    Structure describing a single entry in the list of built-in modules.  Each of
    these structures gives the name and initialization function for a module built
-   into the interpreter.  Programs which embed Python may use an array of these
-   structures in conjunction with :c:func:`PyImport_ExtendInittab` to provide
-   additional built-in modules.  The structure is defined in
-   :file:`Include/import.h` as::
+   into the interpreter.  The name is an ASCII encoded string.  Programs which
+   embed Python may use an array of these structures in conjunction with
+   :c:func:`PyImport_ExtendInittab` to provide additional built-in modules.
+   The structure is defined in :file:`Include/import.h` as::
 
       struct _inittab {
-          char *name;
+          char *name;                 /* ASCII encoded string */
           PyObject* (*initfunc)(void);
       };
 
