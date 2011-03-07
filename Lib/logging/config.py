@@ -226,14 +226,14 @@ def _install_loggers(cp, handlers, disable_existing_loggers):
             propagate = 1
         logger = logging.getLogger(qn)
         if qn in existing:
-            i = existing.index(qn)
+            i = existing.index(qn) + 1 # start with the entry after qn
             prefixed = qn + "."
             pflen = len(prefixed)
             num_existing = len(existing)
-            i = i + 1 # look at the entry after qn
-            while (i < num_existing) and (existing[i][:pflen] == prefixed):
-                child_loggers.append(existing[i])
-                i = i + 1
+            while i < num_existing:
+                if existing[i][:pflen] == prefixed:
+                    child_loggers.append(existing[i])
+                i += 1
             existing.remove(qn)
         if "level" in opts:
             level = cp.get(sectname, "level")
