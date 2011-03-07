@@ -87,7 +87,7 @@ PyAPI_FUNC(int)_PyImport_FixupBuiltin(
 PyAPI_FUNC(int)_PyImport_FixupExtensionObject(PyObject*, PyObject *, PyObject *);
 
 struct _inittab {
-    char *name;
+    char *name;                 /* ASCII encoded string */
     PyObject* (*initfunc)(void);
 };
 PyAPI_DATA(struct _inittab *) PyImport_Inittab;
