@@ -26,17 +26,23 @@ _PyImport_LoadDynamicModule(char *name, char *pathname, FILE *fp)
     dl_funcptr p0;
     PyObject* (*p)(void);
     struct PyModuleDef *def;
-    PyObject *result;
+    PyObject *nameobj, *result;
 
     path = PyUnicode_DecodeFSDefault(pathname);
     if (path == NULL)
         return NULL;
 
-    if ((m = _PyImport_FindExtensionUnicode(name, path)) != NULL) {
+    nameobj = PyUnicode_FromString(name);
+    if (nameobj == NULL)
+        return NULL;
+    m = _PyImport_FindExtensionObject(nameobj, path);
+    if (m != NULL) {
+        Py_DECREF(nameobj);
         Py_INCREF(m);
         result = m;
         goto finally;
     }
+    Py_DECREF(nameobj);
     lastdot = strrchr(name, '.');
     if (lastdot == NULL) {
         packagecontext = NULL;
@@ -82,12 +88,18 @@ _PyImport_LoadDynamicModule(char *name, char *pathname, FILE *fp)
     else
         Py_INCREF(path);
 
-    if (_PyImport_FixupExtensionUnicode(m, name, path) < 0)
+    nameobj = PyUnicode_FromString(name);
+    if (nameobj == NULL)
+        return NULL;
+    if (_PyImport_FixupExtensionObject(m, nameobj, path) < 0) {
+        Py_DECREF(nameobj);
         goto error;
+    }
     if (Py_VerboseFlag)
-        PySys_WriteStderr(
-            "import %s # dynamically loaded from %s\n",
-            name, pathname);
+        PySys_FormatStderr(
+            "import %U # dynamically loaded from %s\n",
+            nameobj, pathname);
+    Py_DECREF(nameobj);
     result = m;
     goto finally;
 
