@@ -1513,12 +1513,15 @@ def shutdown(handlerList=_handlerList):
         #errors might occur, for example, if files are locked
         #we just ignore them if raiseExceptions is not set
         try:
+            h.acquire()
             h.flush()
             h.close()
         except:
             if raiseExceptions:
                 raise
             #else, swallow
+        finally:
+            h.release()
 
 #Let's try and shutdown automatically on application exit...
 try:
