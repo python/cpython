@@ -1793,6 +1793,7 @@ def shutdown(handlerList=_handlerList):
             h = wr()
             if h:
                 try:
+                    h.acquire()
                     h.flush()
                     h.close()
                 except (IOError, ValueError):
@@ -1801,6 +1802,8 @@ def shutdown(handlerList=_handlerList):
                     # references to them are still around at
                     # application exit.
                     pass
+                finally:
+                    h.release()
         except:
             if raiseExceptions:
                 raise
