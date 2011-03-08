@@ -257,9 +257,11 @@ Test Discovery
 
 .. versionadded:: 2.7
 
-Unittest supports simple test discovery. For a project's tests to be
-compatible with test discovery they must all be importable from the top level
-directory of the project (in other words, they must all be in Python packages).
+Unittest supports simple test discovery. In order to be compatible with test
+discovery, all of the test files must be :ref:`modules <tut-modules>` or
+:ref:`packages <tut-packages>` importable from the top-level directory of
+the project (this means that their filenames must be valid
+:ref:`identifiers <identifiers>`).
 
 Test discovery is implemented in :meth:`TestLoader.discover`, but can also be
 used from the command line. The basic command-line usage is::
