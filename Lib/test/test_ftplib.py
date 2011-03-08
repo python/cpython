@@ -619,8 +619,8 @@ class TestFTPClass(TestCase):
     def test_source_address_passive_connection(self):
         port = support.find_unused_port()
         self.client.source_address = (HOST, port)
-        sock = self.client.transfercmd('list')
-        self.assertEqual(sock.getsockname()[1], port)
+        with self.client.transfercmd('list') as sock:
+            self.assertEqual(sock.getsockname()[1], port)
 
     def test_parse257(self):
         self.assertEqual(ftplib.parse257('257 "/foo/bar"'), '/foo/bar')
