@@ -3623,14 +3623,22 @@ class Test_itertools(FixerTestCase):
         a = """%s(f, a)"""
         self.checkall(b, a)
 
-    def test_2(self):
+    def test_qualified(self):
         b = """itertools.ifilterfalse(a, b)"""
         a = """itertools.filterfalse(a, b)"""
         self.check(b, a)
 
-    def test_4(self):
+        b = """itertools.izip_longest(a, b)"""
+        a = """itertools.zip_longest(a, b)"""
+        self.check(b, a)
+
+    def test_2(self):
         b = """ifilterfalse(a, b)"""
         a = """filterfalse(a, b)"""
+        self.check(b, a)
+
+        b = """izip_longest(a, b)"""
+        a = """zip_longest(a, b)"""
         self.check(b, a)
 
     def test_space_1(self):
@@ -3643,8 +3651,13 @@ class Test_itertools(FixerTestCase):
         a = """    itertools.filterfalse(a, b)"""
         self.check(b, a)
 
+        b = """    itertools.izip_longest(a, b)"""
+        a = """    itertools.zip_longest(a, b)"""
+        self.check(b, a)
+
     def test_run_order(self):
         self.assert_runs_after('map', 'zip', 'filter')
+
 
 class Test_itertools_imports(FixerTestCase):
     fixer = 'itertools_imports'
@@ -3696,18 +3709,19 @@ class Test_itertools_imports(FixerTestCase):
         s = "from itertools import bar as bang"
         self.unchanged(s)
 
-    def test_ifilter(self):
-        b = "from itertools import ifilterfalse"
-        a = "from itertools import filterfalse"
-        self.check(b, a)
+    def test_ifilter_and_zip_longest(self):
+        for name in "filterfalse", "zip_longest":
+            b = "from itertools import i%s" % (name,)
+            a = "from itertools import %s" % (name,)
+            self.check(b, a)
 
-        b = "from itertools import imap, ifilterfalse, foo"
-        a = "from itertools import filterfalse, foo"
-        self.check(b, a)
+            b = "from itertools import imap, i%s, foo" % (name,)
+            a = "from itertools import %s, foo" % (name,)
+            self.check(b, a)
 
-        b = "from itertools import bar, ifilterfalse, foo"
-        a = "from itertools import bar, filterfalse, foo"
-        self.check(b, a)
+            b = "from itertools import bar, i%s, foo" % (name,)
+            a = "from itertools import bar, %s, foo" % (name,)
+            self.check(b, a)
 
     def test_import_star(self):
         s = "from itertools import *"
