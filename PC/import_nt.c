@@ -15,72 +15,93 @@
 /* a string loaded from the DLL at startup */
 extern const char *PyWin_DLLVersionString;
 
-FILE *_PyWin_FindRegisteredModule(const char *moduleName,
-                                  struct filedescr **ppFileDesc,
-                                  char *pathBuf,
-                                  Py_ssize_t pathLen)
+/* Find a module on Windows.
+
+   Read the registry Software\Python\PythonCore\<version>\Modules\<name> (or
+   Software\Python\PythonCore\<version>\Modules\<name>\Debug in debug mode)
+   from HKEY_CURRENT_USER, or HKEY_LOCAL_MACHINE. Find the file descriptor using
+   the file extension. Open the file.
+
+   On success, write the file descriptor into *ppFileDesc, the module path
+   (Unicode object) into *pPath, and return the opened file object. If the
+   module cannot be found (e.g. no registry key or the file doesn't exist),
+   return NULL. On error, raise a Python exception and return NULL.
+ */
+FILE *
+_PyWin_FindRegisteredModule(PyObject *moduleName,
+                            struct filedescr **ppFileDesc,
+                            PyObject **pPath)
 {
-    char *moduleKey;
-    const char keyPrefix[] = "Software\\Python\\PythonCore\\";
-    const char keySuffix[] = "\\Modules\\";
-#ifdef _DEBUG
-    /* In debugging builds, we _must_ have the debug version
-     * registered.
-     */
-    const char debugString[] = "\\Debug";
-#else
-    const char debugString[] = "";
-#endif
-    struct filedescr *fdp = NULL;
-    FILE *fp;
-    HKEY keyBase = HKEY_CURRENT_USER;
+    wchar_t pathBuf[MAXPATHLEN+1];
+    int pathLen = MAXPATHLEN+1;
+    PyObject *path, *moduleKey, *suffix;
+    struct filedescr *fdp;
+    HKEY keyBase;
     int modNameSize;
     long regStat;
+    Py_ssize_t extLen;
+    FILE *fp;
 
-    /* Calculate the size for the sprintf buffer.
-     * Get the size of the chars only, plus 1 NULL.
-     */
-    size_t bufSize = sizeof(keyPrefix)-1 +
-                     strlen(PyWin_DLLVersionString) +
-                     sizeof(keySuffix) +
-                     strlen(moduleName) +
-                     sizeof(debugString) - 1;
-    /* alloca == no free required, but memory only local to fn,
-     * also no heap fragmentation!
-     */
-    moduleKey = alloca(bufSize);
-    PyOS_snprintf(moduleKey, bufSize,
-                  "Software\\Python\\PythonCore\\%s\\Modules\\%s%s",
-                  PyWin_DLLVersionString, moduleName, debugString);
+    moduleKey = PyUnicode_FromFormat(
+#ifdef _DEBUG
+        /* In debugging builds, we _must_ have the debug version registered */
+        "Software\\Python\\PythonCore\\%s\\Modules\\%U\\Debug",
+#else
+        "Software\\Python\\PythonCore\\%s\\Modules\\%U",
+#endif
+        PyWin_DLLVersionString, moduleName);
+    if (moduleKey == NULL)
+        return NULL;
 
-    assert(pathLen < INT_MAX);
-    modNameSize = (int)pathLen;
-    regStat = RegQueryValue(keyBase, moduleKey, pathBuf, &modNameSize);
+    keyBase = HKEY_CURRENT_USER;
+    modNameSize = pathLen;
+    regStat = RegQueryValueW(keyBase, PyUnicode_AS_UNICODE(moduleKey),
+                             pathBuf, &modNameSize);
     if (regStat != ERROR_SUCCESS) {
         /* No user setting - lookup in machine settings */
         keyBase = HKEY_LOCAL_MACHINE;
         /* be anal - failure may have reset size param */
-        modNameSize = (int)pathLen;
-        regStat = RegQueryValue(keyBase, moduleKey,
-                                pathBuf, &modNameSize);
-
-        if (regStat != ERROR_SUCCESS)
+        modNameSize = pathLen;
+        regStat = RegQueryValueW(keyBase, PyUnicode_AS_UNICODE(moduleKey),
+                                 pathBuf, &modNameSize);
+        if (regStat != ERROR_SUCCESS) {
+            Py_DECREF(moduleKey);
             return NULL;
+        }
+    }
+    Py_DECREF(moduleKey);
+    if (modNameSize < 3) {
+        /* path shorter than "a.o" or negative length (cast to
+           size_t is wrong) */
+        return NULL;
     }
     /* use the file extension to locate the type entry. */
     for (fdp = _PyImport_Filetab; fdp->suffix != NULL; fdp++) {
-        size_t extLen = strlen(fdp->suffix);
-        assert(modNameSize >= 0); /* else cast to size_t is wrong */
-        if ((size_t)modNameSize > extLen &&
-            strnicmp(pathBuf + ((size_t)modNameSize-extLen-1),
-                     fdp->suffix,
-                     extLen) == 0)
+        suffix = PyUnicode_FromString(fdp->suffix);
+        if (suffix == NULL)
+            return NULL;
+        extLen = PyUnicode_GET_SIZE(suffix);
+        if ((Py_ssize_t)modNameSize > extLen &&
+            _wcsnicmp(pathBuf + ((Py_ssize_t)modNameSize-extLen-1),
+                      PyUnicode_AS_UNICODE(suffix),
+                      extLen) == 0)
+        {
+            Py_DECREF(suffix);
             break;
+        }
+        Py_DECREF(suffix);
     }
     if (fdp->suffix == NULL)
         return NULL;
-    fp = fopen(pathBuf, fdp->mode);
-    if (fp != NULL)
-        *ppFileDesc = fdp;
+    path = PyUnicode_FromUnicode(pathBuf, wcslen(pathBuf));
+    if (path == NULL)
+        return NULL;
+    fp = _Py_fopen(path, fdp->mode);
+    if (fp == NULL) {
+        Py_DECREF(path);
+        return NULL;
+    }
+    *pPath = path;
+    *ppFileDesc = fdp;
     return fp;
 }

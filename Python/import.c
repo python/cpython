@@ -1591,8 +1591,8 @@ PyImport_GetImporter(PyObject *path) {
    pathname and an open file.  Return NULL if the module is not found. */
 
 #ifdef MS_COREDLL
-extern FILE *_PyWin_FindRegisteredModule(const char *, struct filedescr **,
-                                         char *, Py_ssize_t);
+extern FILE *_PyWin_FindRegisteredModule(PyObject *, struct filedescr **,
+                                         PyObject **p_path);
 #endif
 
 static int case_ok(char *, Py_ssize_t, Py_ssize_t, char *);
@@ -1679,6 +1679,9 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
     }
 
     if (path == NULL) {
+#ifdef MS_COREDLL
+        PyObject *filename, *filename_bytes;
+#endif
         nameobj = PyUnicode_FromString(name);
         if (nameobj == NULL)
             return NULL;
@@ -1687,14 +1690,24 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
             strcpy(buf, name);
             return &fd_builtin;
         }
-        Py_DECREF(nameobj);
 #ifdef MS_COREDLL
-        fp = _PyWin_FindRegisteredModule(name, &fdp, buf, buflen);
+        fp = _PyWin_FindRegisteredModule(nameobj, &fdp, &filename);
         if (fp != NULL) {
+            Py_DECREF(nameobj);
+            filename_bytes = PyUnicode_EncodeFSDefault(filename);
+            Py_DECREF(filename);
+            if (filename_bytes == NULL)
+                return NULL;
+            strncpy(buf, PyBytes_AS_STRING(filename_bytes), buflen);
+            buf[buflen-1] = '\0';
+            Py_DECREF(filename_bytes);
             *p_fp = fp;
             return fdp;
         }
+        else if (PyErr_Occurred())
+            return NULL;
 #endif
+        Py_DECREF(nameobj);
         path = PySys_GetObject("path");
     }
 
