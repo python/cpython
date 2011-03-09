@@ -43,7 +43,8 @@ def wrapper(func, *args, **kwds):
         return func(stdscr, *args, **kwds)
     finally:
         # Set everything back to normal
-        stdscr.keypad(0)
-        curses.echo()
-        curses.nocbreak()
-        curses.endwin()
+        if 'stdscr' in locals():
+            stdscr.keypad(0)
+            curses.echo()
+            curses.nocbreak()
+            curses.endwin()
