@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #11450: Don't truncate hg version info in Py_GetBuildInfo() when
+  there are many tags (e.g. when using mq).  Patch by Nadeem Vawda.
+
 - Issue #11335: Fixed a memory leak in list.sort when the key function
   throws an exception.
 
