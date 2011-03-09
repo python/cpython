@@ -55,6 +55,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5622: Fix curses.wrapper to raise correct exception if curses
+  initialization fails.
+
 - Issue #11408: In threading.Lock.acquire(), only call gettimeofday() when
   really necessary.  Patch by Charles-François Natali.
 
