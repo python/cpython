@@ -66,6 +66,8 @@ are still reachable.
    containing circular references.  See the documentation of the :mod:`gc`
    module for information on controlling the collection of cyclic garbage.
    Other implementations act differently and CPython may change.
+   Do not depend on immediate finalization of objects when they become
+   unreachable (ex: always close files).
 
 Note that the use of the implementation's tracing or debugging facilities may
 keep objects alive that would normally be collectable. Also note that catching
