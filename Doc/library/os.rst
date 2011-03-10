@@ -1260,16 +1260,16 @@ Files and Directories
    Set the flags of *path* to the numeric *flags*. *flags* may take a combination
    (bitwise OR) of the following values (as defined in the :mod:`stat` module):
 
-   * ``UF_NODUMP``
-   * ``UF_IMMUTABLE``
-   * ``UF_APPEND``
-   * ``UF_OPAQUE``
-   * ``UF_NOUNLINK``
-   * ``SF_ARCHIVED``
-   * ``SF_IMMUTABLE``
-   * ``SF_APPEND``
-   * ``SF_NOUNLINK``
-   * ``SF_SNAPSHOT``
+   * :data:`stat.UF_NODUMP`
+   * :data:`stat.UF_IMMUTABLE`
+   * :data:`stat.UF_APPEND`
+   * :data:`stat.UF_OPAQUE`
+   * :data:`stat.UF_NOUNLINK`
+   * :data:`stat.SF_ARCHIVED`
+   * :data:`stat.SF_IMMUTABLE`
+   * :data:`stat.SF_APPEND`
+   * :data:`stat.SF_NOUNLINK`
+   * :data:`stat.SF_SNAPSHOT`
 
    Availability: Unix.
 
