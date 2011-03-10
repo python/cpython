@@ -1408,7 +1408,7 @@ Test cases
       If :meth:`setUp` fails, meaning that :meth:`tearDown` is not called,
       then any cleanup functions added will still be called.
 
-      .. versionadded:: 3.2
+      .. versionadded:: 3.1
 
 
    .. method:: doCleanups()
@@ -1424,7 +1424,7 @@ Test cases
       :meth:`doCleanups` pops methods off the stack of cleanup
       functions one at a time, so it can be called at any time.
 
-      .. versionadded:: 3.2
+      .. versionadded:: 3.1
 
 
 .. class:: FunctionTestCase(testFunc, setUp=None, tearDown=None, description=None)
@@ -1801,14 +1801,14 @@ Loading and running tests
 
       Called once before any tests are executed.
 
-      .. versionadded:: 3.2
+      .. versionadded:: 3.1
 
 
    .. method:: stopTestRun(test)
 
       Called once after all tests are executed.
 
-      .. versionadded:: 3.2
+      .. versionadded:: 3.1
 
 
    .. method:: addError(test, err)
@@ -1922,7 +1922,7 @@ Loading and running tests
 
 
 .. function:: main(module='__main__', defaultTest=None, argv=None, testRunner=None, \
-                   testLoader=unittest.loader.defaultTestLoader, exit=True, verbosity=1, \
+                   testLoader=unittest.defaultTestLoader, exit=True, verbosity=1, \
                    failfast=None, catchbreak=None, buffer=None, warnings=None)
 
    A command-line program that runs a set of tests; this is primarily for making
