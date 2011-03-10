@@ -76,6 +76,34 @@ for each test.  These are also useful when checking for information about a file
 that isn't handled by :mod:`os.path`, like the tests for block and character
 devices.
 
+Example::
+
+   import os, sys
+   from stat import *
+
+   def walktree(top, callback):
+       '''recursively descend the directory tree rooted at top,
+          calling the callback function for each regular file'''
+
+       for f in os.listdir(top):
+           pathname = os.path.join(top, f)
+           mode = os.stat(pathname)[ST_MODE]
+           if S_ISDIR(mode):
+               # It's a directory, recurse into it
+               walktree(pathname, callback)
+           elif S_ISREG(mode):
+               # It's a file, call the callback function
+               callback(pathname)
+           else:
+               # Unknown file type, print a message
+               print('Skipping %s' % pathname)
+
+   def visitfile(file):
+       print('visiting', file)
+
+   if __name__ == '__main__':
+       walktree(sys.argv[1], visitfile)
+
 All the variables below are simply symbolic indexes into the 10-tuple returned
 by :func:`os.stat`, :func:`os.fstat` or :func:`os.lstat`.
 
@@ -265,31 +293,47 @@ The following flags can also be used in the *mode* argument of :func:`os.chmod`:
 
    Unix V7 synonym for :data:`S_IXUSR`.
 
-Example::
+The following flags can be used in the *flags* argument of :func:`os.chflags`:
 
-   import os, sys
-   from stat import *
+.. data:: UF_NODUMP
 
-   def walktree(top, callback):
-       '''recursively descend the directory tree rooted at top,
-          calling the callback function for each regular file'''
+   Do not dump the file.
 
-       for f in os.listdir(top):
-           pathname = os.path.join(top, f)
-           mode = os.stat(pathname)[ST_MODE]
-           if S_ISDIR(mode):
-               # It's a directory, recurse into it
-               walktree(pathname, callback)
-           elif S_ISREG(mode):
-               # It's a file, call the callback function
-               callback(pathname)
-           else:
-               # Unknown file type, print a message
-               print('Skipping %s' % pathname)
+.. data:: UF_IMMUTABLE
 
-   def visitfile(file):
-       print('visiting', file)
+   The file may not be changed.
 
-   if __name__ == '__main__':
-       walktree(sys.argv[1], visitfile)
+.. data:: UF_APPEND
+
+   The file may only be appended to.
+
+.. data:: UF_OPAQUE
+
+   The file may not be renamed or deleted.
+
+.. data:: UF_NOUNLINK
+
+   The directory is opaque when viewed through a union stack.
+
+.. data:: SF_ARCHIVED
+
+   The file may be archived.
+
+.. data:: SF_IMMUTABLE
+
+   The file may not be changed.
+
+.. data:: SF_APPEND
+
+   The file may only be appended to.
+
+.. data:: SF_NOUNLINK
+
+   The file may not be renamed or deleted.
+
+.. data:: SF_SNAPSHOT
+
+   The file is a snapshot file.
+
+See the \*BSD or Mac OS systems man page :manpage:`chflags(2)` for more information.
 
