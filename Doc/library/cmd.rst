@@ -282,8 +282,8 @@ immediate playback::
         def do_playback(self, arg):
             'Playback commands from a file:  PLAYBACK rose.cmd'
             self.close()
-            cmds = open(arg).read().splitlines()
-            self.cmdqueue.extend(cmds)
+            with open(arg) as f:
+                self.cmdqueue.extend(f.read().splitlines())
         def precmd(self, line):
             line = line.lower()
             if self.file and 'playback' not in line:

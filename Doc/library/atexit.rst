@@ -61,17 +61,22 @@ from a file when it is imported and save the counter's updated value
 automatically when the program terminates without relying on the application
 making an explicit call into this module at termination. ::
 
+   infile = open("/tmp/counter")
    try:
-       _count = int(open("/tmp/counter").read())
+       _count = int(infile.read())
    except IOError:
        _count = 0
+   finally:
+       infile.close()
+
 
    def incrcounter(n):
        global _count
        _count = _count + n
 
    def savecounter():
-       open("/tmp/counter", "w").write("%d" % _count)
+       with open("/tmp/counter", "w") as outfile:
+           outfile.write("%d" % _count)
 
    import atexit
    atexit.register(savecounter)

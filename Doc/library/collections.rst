@@ -512,7 +512,8 @@ in Unix::
 
    def tail(filename, n=10):
        'Return the last n lines of a file'
-       return deque(open(filename), n)
+       with open(filename) as f:
+           return deque(f, n)
 
 Another approach to using deques is to maintain a sequence of recently
 added elements by appending to the right and popping to the left::
