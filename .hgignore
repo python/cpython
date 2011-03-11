@@ -50,6 +50,9 @@ libpython*.a
 *~
 Lib/lib2to3/*.pickle
 Lib/test/data/*
+PC/python_nt*.h
+PC/pythonnt_rc*.h
+PC/*.obj
 PCbuild/*.exe
 PCbuild/*.dll
 PCbuild/*.pdb
