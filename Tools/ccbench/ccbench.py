@@ -276,7 +276,8 @@ def _recv(sock, n):
     return sock.recv(n).decode('ascii')
 
 def latency_client(addr, nb_pings, interval):
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
         _time = time.time
         _sleep = time.sleep
         def _ping():
@@ -289,6 +290,8 @@ def latency_client(addr, nb_pings, interval):
             _sleep(interval)
             _ping()
         _sendto(sock, LAT_END + "\n", addr)
+    finally:
+        sock.close()
 
 def run_latency_client(**kwargs):
     cmd_line = [sys.executable, '-E', os.path.abspath(__file__)]
