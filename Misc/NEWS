@@ -81,6 +81,11 @@ Build
 - Issue #11268: Prevent Mac OS X Installer failure if Documentation
   package had previously been installed.
 
+Tools/Demos
+-----------
+
+- Issue #11179: Make ccbench work under Python 3.1 and 2.7 again.
+
 Tests
 -----
 
