@@ -60,6 +60,9 @@ libpython*.a
 *.rej
 *~
 Lib/lib2to3/*.pickle
+PC/python_nt*.h
+PC/pythonnt_rc*.h
+PC/*.obj
 PCbuild/*.exe
 PCbuild/*.dll
 PCbuild/*.pdb
