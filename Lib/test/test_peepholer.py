@@ -8,8 +8,10 @@ def disassemble(func):
     f = StringIO()
     tmp = sys.stdout
     sys.stdout = f
-    dis.dis(func)
-    sys.stdout = tmp
+    try:
+        dis.dis(func)
+    finally:
+        sys.stdout = tmp
     result = f.getvalue()
     f.close()
     return result
@@ -98,6 +100,12 @@ class TestTranforms(unittest.TestCase):
             asm = dis_single(line)
             self.assertIn(elem, asm)
             self.assertNotIn('BUILD_TUPLE', asm)
+
+        # Long tuples should be folded too.
+        asm = dis_single(repr(tuple(range(10000))))
+        # One LOAD_CONST for the tuple, one for the None return value
+        self.assertEqual(asm.count('LOAD_CONST'), 2)
+        self.assertNotIn('BUILD_TUPLE', asm)
 
         # Bug 1053819:  Tuple of constants misidentified when presented with:
         # . . . opcode_with_arg 100   unary_opcode   BUILD_TUPLE 1  . . .
@@ -266,6 +274,25 @@ class TestTranforms(unittest.TestCase):
             return g
         asm = disassemble(f)
         self.assertNotIn('BINARY_ADD', asm)
+
+    def test_constant_folding(self):
+        # Issue #11244: aggressive constant folding.
+        exprs = [
+            "3 * -5",
+            "-3 * 5",
+            "2 * (3 * 4)",
+            "(2 * 3) * 4",
+            "(-1, 2, 3)",
+            "(1, -2, 3)",
+            "(1, 2, -3)",
+            "(1, 2, -3) * 6",
+            "lambda x: x in {(3 * -5) + (-1 - 6), (1, -2, 3) * 2, None}",
+        ]
+        for e in exprs:
+            asm = dis_single(e)
+            self.assertNotIn('UNARY_', asm, e)
+            self.assertNotIn('BINARY_', asm, e)
+            self.assertNotIn('BUILD_', asm, e)
 
 
 def test_main(verbose=None):

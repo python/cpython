@@ -10,6 +10,10 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #11244: The peephole optimizer is now able to constant-fold
+  arbitrarily complex expressions.  This also fixes a 3.2 regression where
+  operations involving negative numbers were not constant-folded.
+
 - Issue #11450: Don't truncate hg version info in Py_GetBuildInfo() when
   there are many tags (e.g. when using mq).  Patch by Nadeem Vawda.
 
