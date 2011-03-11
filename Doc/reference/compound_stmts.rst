@@ -607,7 +607,7 @@ can be used to create instance variables with different implementation details.
 
 .. seealso::
 
-   :pep:`3116` - Metaclasses in Python 3
+   :pep:`3115` - Metaclasses in Python 3
    :pep:`3129` - Class Decorators
 
 
