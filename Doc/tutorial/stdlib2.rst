@@ -141,7 +141,9 @@ standard size and in little-endian byte order::
 
    import struct
 
-   data = open('myfile.zip', 'rb').read()
+   with open('myfile.zip', 'rb') as f:
+       data = f.read()
+
    start = 0
    for i in range(3):                      # show the first 3 file headers
        start += 14
