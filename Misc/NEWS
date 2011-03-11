@@ -62,6 +62,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #9935: Speed up pickling of instances of user-defined classes.
+
 - Issue #5622: Fix curses.wrapper to raise correct exception if curses
   initialization fails.
 
