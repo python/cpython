@@ -175,11 +175,6 @@ class ZipSupportTests(unittest.TestCase):
                     test_zipped_doctest.test_testfile,
                     test_zipped_doctest.test_unittest_reportflags,
                 ]
-                # These tests are skipped when a trace funciton is set
-                can_fail_due_to_tracing = [
-                    test_zipped_doctest.test_pdb_set_trace,
-                    test_zipped_doctest.test_pdb_set_trace_nested,
-                ]
 
                 for obj in known_good_tests:
                     _run_object_doctest(obj, test_zipped_doctest)
