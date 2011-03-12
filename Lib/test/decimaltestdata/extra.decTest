@@ -2745,3 +2745,73 @@ pwmx437 power 17 1728 1729 -> 1
 pwmx438 power 18 1728 1729 -> 1
 pwmx439 power 19 1728 1729 -> 456
 pwmx440 power 20 1728 1729 -> 1
+
+-- plus and minus zero in various rounding modes (see issue 11131)
+extended: 1
+precision: 9
+maxexponent: 384
+minexponent: -383
+
+rounding: half_even
+plux1000 plus 0.0 -> 0.0
+plux1001 plus -0.0 -> 0.0
+minx1000 minus 0.0 -> 0.0
+minx1001 minus -0.0 -> 0.0
+absx1000 abs 0.0 -> 0.0
+absx1001 abs -0.0 -> 0.0
+
+rounding: half_up
+plux1010 plus 0.0 -> 0.0
+minx1010 minus 0.0 -> 0.0
+plux1011 plus -0.0 -> 0.0
+minx1011 minus -0.0 -> 0.0
+absx1010 abs 0.0 -> 0.0
+absx1011 abs -0.0 -> 0.0
+
+rounding: ceiling
+plux1020 plus 0.0 -> 0.0
+minx1020 minus 0.0 -> 0.0
+plux1021 plus -0.0 -> 0.0
+minx1021 minus -0.0 -> 0.0
+absx1020 abs 0.0 -> 0.0
+absx1021 abs -0.0 -> 0.0
+
+rounding: floor
+plux1030 plus 0.0 -> 0.0
+minx1030 minus 0.0 -> -0.0
+plux1031 plus -0.0 -> -0.0
+minx1031 minus -0.0 -> 0.0
+absx1030 abs 0.0 -> 0.0
+absx1031 abs -0.0 -> 0.0
+
+rounding: down
+plux1040 plus 0.0 -> 0.0
+minx1040 minus 0.0 -> 0.0
+plux1041 plus -0.0 -> 0.0
+minx1041 minus -0.0 -> 0.0
+absx1040 abs 0.0 -> 0.0
+absx1041 abs -0.0 -> 0.0
+
+rounding: up
+plux1050 plus 0.0 -> 0.0
+minx1050 minus 0.0 -> 0.0
+plux1051 plus -0.0 -> 0.0
+minx1051 minus -0.0 -> 0.0
+absx1050 abs 0.0 -> 0.0
+absx1051 abs -0.0 -> 0.0
+
+rounding: half_down
+plux1060 plus 0.0 -> 0.0
+minx1060 minus 0.0 -> 0.0
+plux1061 plus -0.0 -> 0.0
+minx1061 minus -0.0 -> 0.0
+absx1060 abs 0.0 -> 0.0
+absx1061 abs -0.0 -> 0.0
+
+rounding: 05up
+plux1070 plus 0.0 -> 0.0
+minx1070 minus 0.0 -> 0.0
+plux1071 plus -0.0 -> 0.0
+minx1071 minus -0.0 -> 0.0
+absx1070 abs 0.0 -> 0.0
+absx1071 abs -0.0 -> 0.0
