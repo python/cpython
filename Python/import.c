@@ -1598,6 +1598,129 @@ static int case_ok(char *, Py_ssize_t, Py_ssize_t, const char *);
 static int find_init_module(char *); /* Forward */
 static struct filedescr importhookdescr = {"", "", IMP_HOOK};
 
+/* Get the path of a module: get its importer and call importer.find_module()
+   hook, or check if the module if a package (if path/__init__.py exists).
+
+    -1: error: a Python error occurred
+     0: ignore: an error occurred because of invalid data, but the error is not
+        important enough to be reported.
+     1: get path: module not found, but *buf contains its path
+     2: found: *p_fd is the file descriptor (IMP_HOOK or PKG_DIRECTORY)
+        and *buf is the path */
+
+static int
+find_module_path(char *fullname, const char *name, PyObject *path,
+                 PyObject *path_hooks, PyObject *path_importer_cache,
+                 char *buf, size_t buflen,
+                 PyObject **p_loader, struct filedescr **p_fd)
+{
+    PyObject *path_bytes;
+    const char *base;
+    Py_ssize_t len;
+    size_t namelen;
+    struct stat statbuf;
+    static struct filedescr fd_package = {"", "", PKG_DIRECTORY};
+
+    if (PyUnicode_Check(path)) {
+        path_bytes = PyUnicode_EncodeFSDefault(path);
+        if (path_bytes == NULL)
+            return -1;
+    }
+    else if (PyBytes_Check(path)) {
+        Py_INCREF(path);
+        path_bytes = path;
+    }
+    else
+        return 0;
+
+    namelen = strlen(name);
+    base = PyBytes_AS_STRING(path_bytes);
+    len = PyBytes_GET_SIZE(path_bytes);
+    if (len + 2 + namelen + MAXSUFFIXSIZE >= buflen) {
+        Py_DECREF(path_bytes);
+        return 0; /* Too long */
+    }
+    strcpy(buf, base);
+    Py_DECREF(path_bytes);
+
+    if (strlen(buf) != len) {
+        return 0; /* path_bytes contains '\0' */
+    }
+
+    /* sys.path_hooks import hook */
+    if (p_loader != NULL) {
+        PyObject *importer;
+
+        importer = get_path_importer(path_importer_cache,
+                                     path_hooks, path);
+        if (importer == NULL) {
+            return -1;
+        }
+        /* Note: importer is a borrowed reference */
+        if (importer != Py_None) {
+            PyObject *loader;
+            loader = PyObject_CallMethod(importer,
+                                         "find_module",
+                                         "s", fullname);
+            if (loader == NULL)
+                return -1;  /* error */
+            if (loader != Py_None) {
+                /* a loader was found */
+                *p_loader = loader;
+                *p_fd = &importhookdescr;
+                return 2;
+            }
+            Py_DECREF(loader);
+            return 0;
+        }
+    }
+    /* no hook was found, use builtin import */
+
+    if (len > 0 && buf[len-1] != SEP
+#ifdef ALTSEP
+        && buf[len-1] != ALTSEP
+#endif
+        )
+        buf[len++] = SEP;
+    strcpy(buf+len, name);
+    len += namelen;
+
+    /* Check for package import (buf holds a directory name,
+       and there's an __init__ module in that directory */
+#ifdef HAVE_STAT
+    if (stat(buf, &statbuf) == 0 &&         /* it exists */
+        S_ISDIR(statbuf.st_mode) &&         /* it's a directory */
+        case_ok(buf, len, namelen, name)) { /* case matches */
+        if (find_init_module(buf)) { /* and has __init__.py */
+            *p_fd = &fd_package;
+            return 2;
+        }
+        else {
+            int err;
+            PyObject *unicode = PyUnicode_DecodeFSDefault(buf);
+            if (unicode == NULL)
+                return -1;
+            err = PyErr_WarnFormat(PyExc_ImportWarning, 1,
+                "Not importing directory '%U': missing __init__.py",
+                unicode);
+            Py_DECREF(unicode);
+            if (err)
+                return -1;
+        }
+    }
+#endif
+    return 1;
+}
+
+/* Find a module in search_path_list. For each path, try
+   find_module_filename() or try each _PyImport_Filetab suffix.
+
+   If the module is found, return a file descriptor, write the path in
+   *p_filename, write the pointer to the file object into *p_fp, and (if
+   p_loader is not NULL) the loader into *p_loader.
+
+   Otherwise, raise an exception and return NULL. */
+
 static struct filedescr*
 find_module_path_list(char *fullname, const char *name,
                       PyObject *search_path_list, PyObject *path_hooks,
@@ -1610,8 +1733,6 @@ find_module_path_list(char *fullname, const char *name,
     struct filedescr *fdp = NULL;
     char *filemode;
     FILE *fp = NULL;
-    struct stat statbuf;
-    static struct filedescr fd_package = {"", "", PKG_DIRECTORY};
 #if defined(PYOS_OS2)
     size_t saved_len;
     size_t saved_namelen;
@@ -1621,96 +1742,25 @@ find_module_path_list(char *fullname, const char *name,
     npath = PyList_Size(search_path_list);
     namelen = strlen(name);
     for (i = 0; i < npath; i++) {
-        PyObject *v = PyList_GetItem(search_path_list, i);
-        PyObject *origv = v;
-        const char *base;
-        Py_ssize_t size;
-        if (!v)
+        PyObject *path;
+        int ok;
+
+        path = PyList_GetItem(search_path_list, i);
+        if (path == NULL)
             return NULL;
-        if (PyUnicode_Check(v)) {
-            v = PyUnicode_EncodeFSDefault(v);
-            if (v == NULL)
-                return NULL;
-        }
-        else if (!PyBytes_Check(v))
+
+        ok = find_module_path(fullname, name, path,
+                              path_hooks, path_importer_cache,
+                              buf, buflen,
+                              p_loader, &fdp);
+        if (ok < 0)
+            return NULL;
+        if (ok == 0)
             continue;
-        else
-            Py_INCREF(v);
+        if (ok == 2)
+            return fdp;
 
-        base = PyBytes_AS_STRING(v);
-        size = PyBytes_GET_SIZE(v);
-        len = size;
-        if (len + 2 + namelen + MAXSUFFIXSIZE >= buflen) {
-            Py_DECREF(v);
-            continue; /* Too long */
-        }
-        strcpy(buf, base);
-        Py_DECREF(v);
-
-        if (strlen(buf) != len) {
-            continue; /* v contains '\0' */
-        }
-
-        /* sys.path_hooks import hook */
-        if (p_loader != NULL) {
-            PyObject *importer;
-
-            importer = get_path_importer(path_importer_cache,
-                                         path_hooks, origv);
-            if (importer == NULL) {
-                return NULL;
-            }
-            /* Note: importer is a borrowed reference */
-            if (importer != Py_None) {
-                PyObject *loader;
-                loader = PyObject_CallMethod(importer,
-                                             "find_module",
-                                             "s", fullname);
-                if (loader == NULL)
-                    return NULL;  /* error */
-                if (loader != Py_None) {
-                    /* a loader was found */
-                    *p_loader = loader;
-                    return &importhookdescr;
-                }
-                Py_DECREF(loader);
-                continue;
-            }
-        }
-        /* no hook was found, use builtin import */
-
-        if (len > 0 && buf[len-1] != SEP
-#ifdef ALTSEP
-            && buf[len-1] != ALTSEP
-#endif
-            )
-            buf[len++] = SEP;
-        strcpy(buf+len, name);
-        len += namelen;
-
-        /* Check for package import (buf holds a directory name,
-           and there's an __init__ module in that directory */
-#ifdef HAVE_STAT
-        if (stat(buf, &statbuf) == 0 &&         /* it exists */
-            S_ISDIR(statbuf.st_mode) &&         /* it's a directory */
-            case_ok(buf, len, namelen, name)) { /* case matches */
-            if (find_init_module(buf)) { /* and has __init__.py */
-                return &fd_package;
-            }
-            else {
-                int err;
-                PyObject *unicode = PyUnicode_DecodeFSDefault(buf);
-                if (unicode == NULL)
-                    return NULL;
-                err = PyErr_WarnFormat(PyExc_ImportWarning, 1,
-                    "Not importing directory '%U': missing __init__.py",
-                    unicode);
-                Py_DECREF(unicode);
-                if (err)
-                    return NULL;
-            }
-        }
-#endif
+        len = strlen(buf);
 #if defined(PYOS_OS2)
         /* take a snapshot of the module spec for restoration
          * after the 8 character DLL hackery
