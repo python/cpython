@@ -2388,11 +2388,12 @@ Files have the following methods:
 
 .. method:: file.readline([size])
 
-   Read one entire line from the file.  A trailing newline character is kept in the
-   string (but may be absent when a file ends with an incomplete line). [#]_  If
-   the *size* argument is present and non-negative, it is a maximum byte count
-   (including the trailing newline) and an incomplete line may be returned. An
-   empty string is returned *only* when EOF is encountered immediately.
+   Read one entire line from the file.  A trailing newline character is kept in
+   the string (but may be absent when a file ends with an incomplete line). [#]_
+   If the *size* argument is present and non-negative, it is a maximum byte
+   count (including the trailing newline) and an incomplete line may be
+   returned. When *size* is not 0, an empty string is returned *only* when EOF
+   is encountered immediately.
 
    .. note::
 
