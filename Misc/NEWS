@@ -34,6 +34,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11131: Fix sign of zero in decimal.Decimal plus and minus
+  operations when the rounding mode is ROUND_FLOOR.
+
 - Issue #5622: Fix curses.wrapper to raise correct exception if curses
   initialization fails.
 

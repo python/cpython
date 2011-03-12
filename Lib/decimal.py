@@ -1045,14 +1045,16 @@ class Decimal(object):
             if ans:
                 return ans
 
-        if not self:
-            # -Decimal('0') is Decimal('0'), not Decimal('-0')
+        if context is None:
+            context = getcontext()
+
+        if not self and context.rounding != ROUND_FLOOR:
+            # -Decimal('0') is Decimal('0'), not Decimal('-0'), except
+            # in ROUND_FLOOR rounding mode.
             ans = self.copy_abs()
         else:
             ans = self.copy_negate()
 
-        if context is None:
-            context = getcontext()
         return ans._fix(context)
 
     def __pos__(self, context=None):
@@ -1065,14 +1067,15 @@ class Decimal(object):
             if ans:
                 return ans
 
-        if not self:
-            # + (-0) = 0
+        if context is None:
+            context = getcontext()
+
+        if not self and context.rounding != ROUND_FLOOR:
+            # + (-0) = 0, except in ROUND_FLOOR rounding mode.
             ans = self.copy_abs()
         else:
             ans = Decimal(self)
 
-        if context is None:
-            context = getcontext()
         return ans._fix(context)
 
     def __abs__(self, round=True, context=None):
