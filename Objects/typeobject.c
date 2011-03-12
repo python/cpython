@@ -3401,21 +3401,21 @@ object_format(PyObject *self, PyObject *args)
     self_as_str = PyObject_Str(self);
     if (self_as_str != NULL) {
         /* Issue 7994: If we're converting to a string, we
-	   should reject format specifications */
+           should reject format specifications */
         if (PyUnicode_GET_SIZE(format_spec) > 0) {
-	    if (PyErr_WarnEx(PyExc_PendingDeprecationWarning,
-			     "object.__format__ with a non-empty format "
-			     "string is deprecated", 1) < 0) {
-	      goto done;
-	    }
-	    /* Eventually this will become an error:
-	       PyErr_Format(PyExc_TypeError,
-	       "non-empty format string passed to object.__format__");
-	       goto done;
-	    */
-	}
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                             "object.__format__ with a non-empty format "
+                             "string is deprecated", 1) < 0) {
+              goto done;
+            }
+            /* Eventually this will become an error:
+               PyErr_Format(PyExc_TypeError,
+               "non-empty format string passed to object.__format__");
+               goto done;
+            */
+        }
 
-	result = PyObject_Format(self_as_str, format_spec);
+        result = PyObject_Format(self_as_str, format_spec);
     }
 
 done:

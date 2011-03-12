@@ -614,7 +614,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('{0!s}'.format(G('data')), 'string is data')
 
         msg = 'object.__format__ with a non-empty format string is deprecated'
-        with support.check_warnings((msg, PendingDeprecationWarning)):
+        with support.check_warnings((msg, DeprecationWarning)):
             self.assertEqual('{0:^10}'.format(E('data')), ' E(data)  ')
             self.assertEqual('{0:^10s}'.format(E('data')), ' E(data)  ')
             self.assertEqual('{0:>15s}'.format(G('data')), ' string is data')

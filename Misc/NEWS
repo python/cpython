@@ -10,6 +10,10 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #9856: Change object.__format__ with a non-empty format string
+  to be a DeprecationWarning. In 3.2 it was a PendingDeprecationWarning.
+  In 3.4 it will be a TypeError.
+
 - Issue #11244: The peephole optimizer is now able to constant-fold
   arbitrarily complex expressions.  This also fixes a 3.2 regression where
   operations involving negative numbers were not constant-folded.
