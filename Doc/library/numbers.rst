@@ -45,7 +45,7 @@ The numeric tower
    To :class:`Complex`, :class:`Real` adds the operations that work on real
    numbers.
 
-   In short, those are: a conversion to :class:`float`, :func:`trunc`,
+   In short, those are: a conversion to :class:`float`, :func:`math.trunc`,
    :func:`round`, :func:`math.floor`, :func:`math.ceil`, :func:`divmod`, ``//``,
    ``%``, ``<``, ``<=``, ``>``, and ``>=``.
 
