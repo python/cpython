@@ -1443,7 +1443,7 @@ load_package(char *name, char *pathname)
     PyObject *path = NULL;
     int err;
     char buf[MAXPATHLEN+1];
-    FILE *fp = NULL;
+    FILE *fp;
     struct filedescr *fdp;
 
     m = PyImport_AddModule(name);
@@ -1464,7 +1464,6 @@ load_package(char *name, char *pathname)
         err = PyDict_SetItemString(d, "__path__", path);
     if (err != 0)
         goto error;
-    buf[0] = '\0';
     fdp = find_module(name, "__init__", path, buf, sizeof(buf), &fp, NULL);
     if (fdp == NULL) {
         if (PyErr_ExceptionMatches(PyExc_ImportError)) {
@@ -1599,6 +1598,31 @@ static int case_ok(char *, Py_ssize_t, Py_ssize_t, char *);
 static int find_init_module(char *); /* Forward */
 static struct filedescr importhookdescr = {"", "", IMP_HOOK};
 
+/* Find a module:
+
+   - try find_module() of each sys.meta_path hook
+   - try find_frozen()
+   - try is_builtin()
+   - try _PyWin_FindRegisteredModule() (Windows only)
+   - otherwise, call find_module_path_list() with search_path_list (if not
+     NULL) or sys.path
+
+   Return:
+
+   - &fd_builtin (C_BUILTIN) if it is a builtin
+   - &fd_frozen (PY_FROZEN) if it is frozen
+   - &fd_package (PKG_DIRECTORY) and write the filename into *buf
+     if it is a package
+   - &importhookdescr (IMP_HOOK) and write the loader into *p_loader if a
+     importer loader was found
+   - a file descriptor (PY_SOURCE, PY_COMPILED, C_EXTENSION, PY_RESOURCE or
+     PY_CODERESOURCE: see _PyImport_Filetab), write the filename into
+     *buf and the pointer to the open file into *p_fp
+   - NULL on error
+
+   By default, write an empty string into *buf, and *p_fp and *p_loader (if
+   set) are set to NULL. Eg. *buf is an empty string for a builtin package. */
+
 static struct filedescr *
 find_module(char *fullname, char *subname, PyObject *path, char *buf,
             size_t buflen, FILE **p_fp, PyObject **p_loader)
@@ -1621,6 +1645,8 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 #endif
     PyObject *fullname_obj, *nameobj;
 
+    *buf = '\0';
+    *p_fp = NULL;
     if (p_loader != NULL)
         *p_loader = NULL;
 
@@ -2962,10 +2988,10 @@ import_submodule(PyObject *mod, char *subname, char *fullname)
         Py_INCREF(m);
     }
     else {
-        PyObject *path, *loader = NULL;
+        PyObject *path, *loader;
         char buf[MAXPATHLEN+1];
         struct filedescr *fdp;
-        FILE *fp = NULL;
+        FILE *fp;
 
         if (mod == Py_None)
             path = NULL;
@@ -2978,7 +3004,6 @@ import_submodule(PyObject *mod, char *subname, char *fullname)
             }
         }
 
-        buf[0] = '\0';
         fdp = find_module(fullname, subname, path, buf, MAXPATHLEN+1,
                           &fp, &loader);
         Py_XDECREF(path);
@@ -3012,11 +3037,11 @@ PyImport_ReloadModule(PyObject *m)
     PyInterpreterState *interp = PyThreadState_Get()->interp;
     PyObject *modules_reloading = interp->modules_reloading;
     PyObject *modules = PyImport_GetModuleDict();
-    PyObject *path = NULL, *loader = NULL, *existing_m = NULL;
+    PyObject *path = NULL, *loader, *existing_m = NULL;
     char *name, *subname;
     char buf[MAXPATHLEN+1];
     struct filedescr *fdp;
-    FILE *fp = NULL;
+    FILE *fp;
     PyObject *newm;
 
     if (modules_reloading == NULL) {
@@ -3074,7 +3099,6 @@ PyImport_ReloadModule(PyObject *m)
         if (path == NULL)
             PyErr_Clear();
     }
-    buf[0] = '\0';
     fdp = find_module(name, subname, path, buf, MAXPATHLEN+1, &fp, &loader);
     Py_XDECREF(path);
 
@@ -3252,7 +3276,7 @@ call_find_module(char *name, PyObject *path)
     PyObject *pathobj;
     struct filedescr *fdp;
     char pathname[MAXPATHLEN+1];
-    FILE *fp = NULL;
+    FILE *fp;
     int fd = -1;
     char *found_encoding = NULL;
     char *encoding = NULL;
