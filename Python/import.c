@@ -1428,7 +1428,7 @@ get_sourcefile(char *file)
 
 /* Forward */
 static PyObject *load_module(char *, FILE *, char *, int, PyObject *);
-static struct filedescr *find_module(char *, char *, PyObject *,
+static struct filedescr *find_module(char *, const char *, PyObject *,
                                      char *, size_t, FILE **, PyObject **);
 static struct _frozen * find_frozen(PyObject *);
 
@@ -1594,7 +1594,7 @@ extern FILE *_PyWin_FindRegisteredModule(PyObject *, struct filedescr **,
                                          PyObject **p_path);
 #endif
 
-static int case_ok(char *, Py_ssize_t, Py_ssize_t, char *);
+static int case_ok(char *, Py_ssize_t, Py_ssize_t, const char *);
 static int find_init_module(char *); /* Forward */
 static struct filedescr importhookdescr = {"", "", IMP_HOOK};
 
@@ -1624,7 +1624,7 @@ static struct filedescr importhookdescr = {"", "", IMP_HOOK};
    set) are set to NULL. Eg. *buf is an empty string for a builtin package. */
 
 static struct filedescr *
-find_module(char *fullname, char *subname, PyObject *path, char *buf,
+find_module(char *fullname, const char *name, PyObject *path, char *buf,
             size_t buflen, FILE **p_fp, PyObject **p_loader)
 {
     Py_ssize_t i, npath;
@@ -1637,7 +1637,6 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
     static struct filedescr fd_frozen = {"", "", PY_FROZEN};
     static struct filedescr fd_builtin = {"", "", C_BUILTIN};
     static struct filedescr fd_package = {"", "", PKG_DIRECTORY};
-    char name[MAXPATHLEN+1];
 #if defined(PYOS_OS2)
     size_t saved_len;
     size_t saved_namelen;
@@ -1650,12 +1649,11 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
     if (p_loader != NULL)
         *p_loader = NULL;
 
-    if (strlen(subname) > MAXPATHLEN) {
+    if (strlen(name) > MAXPATHLEN) {
         PyErr_SetString(PyExc_OverflowError,
                         "module name is too long");
         return NULL;
     }
-    strcpy(name, subname);
 
     /* sys.meta_path import hook */
     if (p_loader != NULL) {
@@ -1867,7 +1865,7 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
              * dynamically loaded module we're going to try,
              * truncate the name before trying
              */
-            if (strlen(subname) > 8) {
+            if (strlen(name) > 8) {
                 /* is this an attempt to load a C extension? */
                 const struct filedescr *scan;
                 scan = _PyImport_DynLoadFiletab;
@@ -1880,7 +1878,7 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
                 if (scan->suffix != NULL) {
                     /* yes, so truncate the name */
                     namelen = 8;
-                    len -= strlen(subname) - namelen;
+                    len -= strlen(name) - namelen;
                     buf[len] = '\0';
                 }
             }
@@ -1972,7 +1970,7 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 #endif
 
 static int
-case_ok(char *buf, Py_ssize_t len, Py_ssize_t namelen, char *name)
+case_ok(char *buf, Py_ssize_t len, Py_ssize_t namelen, const char *name)
 {
 /* Pick a platform-specific implementation; the sequence of #if's here should
  * match the sequence just above.
