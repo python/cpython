@@ -1895,6 +1895,8 @@ and :meth:`flush` methods).
    specified, the instance will use it for logging output; otherwise, *sys.stderr*
    will be used.
 
+   .. versionchanged:: 2.7
+      The ``stream`` parameter was called ``strm`` in earlier versions.
 
    .. method:: emit(record)
 
