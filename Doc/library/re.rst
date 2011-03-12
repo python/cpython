@@ -295,11 +295,12 @@ The special characters are:
    match at the beginning of the string being searched.
 
 ``(?(id/name)yes-pattern|no-pattern)``
-   Will try to match with ``yes-pattern`` if the group with given *id* or *name*
-   exists, and with ``no-pattern`` if it doesn't. ``no-pattern`` is optional and
-   can be omitted. For example,  ``(<)?(\w+@\w+(?:\.\w+)+)(?(1)>)`` is a poor email
-   matching pattern, which will match with ``'<user@host.com>'`` as well as
-   ``'user@host.com'``, but not with ``'<user@host.com'``.
+   Will try to match with ``yes-pattern`` if the group with given *id* or
+   *name* exists, and with ``no-pattern`` if it doesn't. ``no-pattern`` is
+   optional and can be omitted. For example,
+   ``(<)?(\w+@\w+(?:\.\w+)+)(?(1)>|$)`` is a poor email matching pattern, which
+   will match with ``'<user@host.com>'`` as well as ``'user@host.com'``, but
+   not with ``'<user@host.com'`` nor ``'user@host.com>'`` .
 
 
 The special sequences consist of ``'\'`` and a character from the list below.
