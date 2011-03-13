@@ -1138,7 +1138,7 @@ c_file_msg = """
 
 def get_file_revision(f):
     """Fish out the last change to a file in hg."""
-    args = ["hg", "log", "--template", "{rev}:{node|short}", "--limit", "1"]
+    args = ["hg", "log", "--template", "{rev}:{node|short}", "--limit", "1", f]
     p = subprocess.Popen(args, stdout=subprocess.PIPE)
     out = p.communicate()[0]
     if p.returncode:
