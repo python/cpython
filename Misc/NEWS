@@ -10,6 +10,8 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- _ast.__version__ is now a Mercurial integer and hex revision.
+
 - Issue #9856: Change object.__format__ with a non-empty format string
   to be a DeprecationWarning. In 3.2 it was a PendingDeprecationWarning.
   In 3.4 it will be a TypeError.

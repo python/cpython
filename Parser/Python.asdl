@@ -1,6 +1,6 @@
 -- ASDL's four builtin types are identifier, int, string, object
 
-module Python version "$Revision$"
+module Python
 {
 	mod = Module(stmt* body)
 	    | Interactive(stmt* body)
