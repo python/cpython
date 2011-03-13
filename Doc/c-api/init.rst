@@ -29,8 +29,7 @@ Initializing and finalizing the interpreter
 
    Initialize the Python interpreter.  In an application embedding  Python, this
    should be called before using any other Python/C API functions; with the
-   exception of :c:func:`Py_SetProgramName`, :c:func:`Py_SetPath`,
-   and :c:func:`PyEval_InitThreads`. This initializes
+   exception of :c:func:`Py_SetProgramName` and :c:func:`Py_SetPath`.  This initializes
    the table of loaded modules (``sys.modules``), and creates the fundamental
    modules :mod:`builtins`, :mod:`__main__` and :mod:`sys`.  It also initializes
    the module search path (``sys.path``). It does not set ``sys.argv``; use
@@ -540,8 +539,7 @@ code, or when embedding the Python interpreter:
 
    .. index:: single: Py_Initialize()
 
-   This is a no-op when called for a second time.  It is safe to call this function
-   before calling :c:func:`Py_Initialize`.
+   This is a no-op when called for a second time.
 
    .. index:: module: _thread
 
