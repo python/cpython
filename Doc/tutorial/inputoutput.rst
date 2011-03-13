@@ -103,17 +103,18 @@ Here are two ways to write a table of squares and cubes::
 (Note that in the first example, one space between each column was added by the
 way :func:`print` works: it always adds spaces between its arguments.)
 
-This example demonstrates the :meth:`rjust` method of string objects, which
-right-justifies a string in a field of a given width by padding it with spaces
-on the left.  There are similar methods :meth:`ljust` and :meth:`center`.  These
-methods do not write anything, they just return a new string.  If the input
-string is too long, they don't truncate it, but return it unchanged; this will
-mess up your column lay-out but that's usually better than the alternative,
-which would be lying about a value.  (If you really want truncation you can
-always add a slice operation, as in ``x.ljust(n)[:n]``.)
+This example demonstrates the :meth:`str.rjust` method of string
+objects, which right-justifies a string in a field of a given width by padding
+it with spaces on the left.  There are similar methods :meth:`str.ljust` and
+:meth:`str.center`.  These methods do not write anything, they just return a
+new string.  If the input string is too long, they don't truncate it, but
+return it unchanged; this will mess up your column lay-out but that's usually
+better than the alternative, which would be lying about a value.  (If you
+really want truncation you can always add a slice operation, as in
+``x.ljust(n)[:n]``.)
 
-There is another method, :meth:`zfill`, which pads a numeric string on the left
-with zeros.  It understands about plus and minus signs::
+There is another method, :meth:`str.zfill`, which pads a numeric string on the
+left with zeros.  It understands about plus and minus signs::
 
    >>> '12'.zfill(5)
    '00012'
@@ -128,16 +129,16 @@ Basic usage of the :meth:`str.format` method looks like this::
    We are the knights who say "Ni!"
 
 The brackets and characters within them (called format fields) are replaced with
-the objects passed into the :meth:`~str.format` method.  A number in the
+the objects passed into the :meth:`str.format` method.  A number in the
 brackets can be used to refer to the position of the object passed into the
-:meth:`~str.format` method. ::
+:meth:`str.format` method. ::
 
    >>> print('{0} and {1}'.format('spam', 'eggs'))
    spam and eggs
    >>> print('{1} and {0}'.format('spam', 'eggs'))
    eggs and spam
 
-If keyword arguments are used in the :meth:`~str.format` method, their values
+If keyword arguments are used in the :meth:`str.format` method, their values
 are referred to by using the name of the argument. ::
 
    >>> print('This {food} is {adjective}.'.format(
@@ -195,8 +196,8 @@ notation. ::
    >>> print('Jack: {Jack:d}; Sjoerd: {Sjoerd:d}; Dcab: {Dcab:d}'.format(**table))
    Jack: 4098; Sjoerd: 4127; Dcab: 8637678
 
-This is particularly useful in combination with the new built-in :func:`vars`
-function, which returns a dictionary containing all local variables.
+This is particularly useful in combination with the built-in function
+:func:`vars`, which returns a dictionary containing all local variables.
 
 For a complete overview of string formatting with :meth:`str.format`, see
 :ref:`formatstrings`.
