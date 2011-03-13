@@ -73,18 +73,29 @@ class ThreadSignals(unittest.TestCase):
     def test_lock_acquire_interruption(self):
         # Mimic receiving a SIGINT (KeyboardInterrupt) with SIGALRM while stuck
         # in a deadlock.
+        # XXX this test can fail when the legacy (non-semaphore) implementation
+        # of locks is used in thread_pthread.h, see issue #11223.
         oldalrm = signal.signal(signal.SIGALRM, self.alarm_interrupt)
         try:
             lock = thread.allocate_lock()
             lock.acquire()
             signal.alarm(1)
-            self.assertRaises(KeyboardInterrupt, lock.acquire)
+            t1 = time.time()
+            self.assertRaises(KeyboardInterrupt, lock.acquire, timeout=5)
+            dt = time.time() - t1
+            # Checking that KeyboardInterrupt was raised is not sufficient.
+            # We want to assert that lock.acquire() was interrupted because
+            # of the signal, not that the signal handler was called immediately
+            # after timeout return of lock.acquire() (which can fool assertRaises).
+            self.assertLess(dt, 3.0)
         finally:
             signal.signal(signal.SIGALRM, oldalrm)
 
     def test_rlock_acquire_interruption(self):
         # Mimic receiving a SIGINT (KeyboardInterrupt) with SIGALRM while stuck
         # in a deadlock.
+        # XXX this test can fail when the legacy (non-semaphore) implementation
+        # of locks is used in thread_pthread.h, see issue #11223.
         oldalrm = signal.signal(signal.SIGALRM, self.alarm_interrupt)
         try:
             rlock = thread.RLock()
@@ -98,7 +109,11 @@ class ThreadSignals(unittest.TestCase):
                 rlock.release()
                 time.sleep(0.01)
             signal.alarm(1)
-            self.assertRaises(KeyboardInterrupt, rlock.acquire)
+            t1 = time.time()
+            self.assertRaises(KeyboardInterrupt, rlock.acquire, timeout=5)
+            dt = time.time() - t1
+            # See rationale above in test_lock_acquire_interruption
+            self.assertLess(dt, 3.0)
         finally:
             signal.signal(signal.SIGALRM, oldalrm)
 

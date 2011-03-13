@@ -92,6 +92,9 @@ Tools/Demos
 Tests
 -----
 
+- Issue #11223: Fix test_threadsignals to fail, not hang, when the
+  non-semaphore implementation of locks is used under POSIX.
+
 - Issue #10911: Add tests on CGI with non-ASCII characters. Patch written by
   Pierre Quentel.
 
