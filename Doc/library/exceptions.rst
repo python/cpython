@@ -63,18 +63,6 @@ The following exceptions are only used as base classes for other exceptions.
       assign a special meaning to the elements of this tuple, while others are
       usually called only with a single string giving an error message.
 
-   .. method:: with_traceback(tb)
-
-      This method sets *tb* as the new traceback for the exception and returns
-      the exception object.  It is usually used in exception handling code like
-      this::
-
-         try:
-             ...
-         except SomeException:
-             tb = sys.exc_info()[2]
-             raise OtherException(...).with_traceback(tb)
-
 
 .. exception:: Exception
 
