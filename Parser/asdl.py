@@ -114,28 +114,20 @@ class ASDLParser(spark.GenericParser, object):
         raise ASDLSyntaxError(tok.lineno, tok)
 
     def p_module_0(self, info):
-        " module ::= Id Id version { } "
-        module, name, version, _0, _1 = info
+        " module ::= Id Id { } "
+        module, name, _0, _1 = info
         if module.value != "module":
             raise ASDLSyntaxError(module.lineno,
                                   msg="expected 'module', found %s" % module)
-        return Module(name, None, version)
+        return Module(name, None)
 
     def p_module(self, info):
-        " module ::= Id Id version { definitions } "
-        module, name, version, _0, definitions, _1 = info
+        " module ::= Id Id { definitions } "
+        module, name, _0, definitions, _1 = info
         if module.value != "module":
             raise ASDLSyntaxError(module.lineno,
                                   msg="expected 'module', found %s" % module)
-        return Module(name, definitions, version)
-
-    def p_version(self, info):
-        "version ::= Id String"
-        version, V = info
-        if version.value != "version":
-            raise ASDLSyntaxError(version.lineno,
-                                  msg="expected 'version', found %" % version)
-        return V
+        return Module(name, definitions)
 
     def p_definition_0(self, definition):
         " definitions ::= definition "
@@ -246,10 +238,9 @@ class AST(object):
     pass # a marker class
 
 class Module(AST):
-    def __init__(self, name, dfns, version):
+    def __init__(self, name, dfns):
         self.name = name
         self.dfns = dfns
-        self.version = version
         self.types = {} # maps type name to value (from dfns)
         for type in dfns:
             self.types[type.name.value] = type.value

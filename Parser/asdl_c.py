@@ -5,6 +5,7 @@
 # handle fields that have a type but no name
 
 import os, sys
+import subprocess
 
 import asdl
 
@@ -882,9 +883,6 @@ static int add_ast_fields(void)
             self.emit("if (!%s_singleton) return 0;" % cons.name, 1)
 
 
-def parse_version(mod):
-    return mod.version.value[12:-3]
-
 class ASTModuleVisitor(PickleVisitor):
 
     def visitModule(self, mod):
@@ -904,7 +902,7 @@ class ASTModuleVisitor(PickleVisitor):
         self.emit("return NULL;", 2)
         # Value of version: "$Revision$"
         self.emit('if (PyModule_AddStringConstant(m, "__version__", "%s") < 0)'
-                % parse_version(mod), 1)
+                % (mod.version,), 1)
         self.emit("return NULL;", 2)
         for dfn in mod.dfns:
             self.visit(dfn)
@@ -1137,6 +1135,18 @@ c_file_msg = """
 
 """
 
+
+def get_file_revision(f):
+    """Fish out the last change to a file in hg."""
+    args = ["hg", "log", "--template", "{rev}:{node|short}", "--limit", "1"]
+    p = subprocess.Popen(args, stdout=subprocess.PIPE)
+    out = p.communicate()[0]
+    if p.returncode:
+        print >> sys.stderr, "error return code from hg"
+        sys.exit(1)
+    return out
+
+
 def main(srcfile):
     argv0 = sys.argv[0]
     components = argv0.split(os.sep)
@@ -1145,6 +1155,7 @@ def main(srcfile):
     mod = asdl.parse(srcfile)
     if not asdl.check(mod):
         sys.exit(1)
+    mod.version = get_file_revision(srcfile)
     if INC_DIR:
         p = "%s/%s-ast.h" % (INC_DIR, mod.name)
         f = open(p, "w")
@@ -1164,7 +1175,7 @@ def main(srcfile):
         p = os.path.join(SRC_DIR, str(mod.name) + "-ast.c")
         f = open(p, "w")
         f.write(auto_gen_msg)
-        f.write(c_file_msg % parse_version(mod))
+        f.write(c_file_msg % (mod.version,))
         f.write('#include "Python.h"\n')
         f.write('#include "%s-ast.h"\n' % mod.name)
         f.write('\n')
