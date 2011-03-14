@@ -68,6 +68,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1162477: Postel Principal adjustment to email date parsing: handle the
+  fact that some non-compliant MUAs use '.' instead of ':' in time specs.
+
 - Issue #11131: Fix sign of zero in decimal.Decimal plus and minus
   operations when the rounding mode is ROUND_FLOOR.
 

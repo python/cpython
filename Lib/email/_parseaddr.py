@@ -99,6 +99,14 @@ def parsedate_tz(data):
         tss = '0'
     elif len(tm) == 3:
         [thh, tmm, tss] = tm
+    elif len(tm) == 1 and '.' in tm[0]:
+        # Some non-compliant MUAs use '.' to separate time elements.
+        tm = tm[0].split('.')
+        if len(tm) == 2:
+            [thh, tmm] = tm
+            tss = 0
+        elif len(tm) == 3:
+            [thh, tmm, tss] = tm
     else:
         return None
     try:
