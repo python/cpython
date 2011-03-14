@@ -469,7 +469,7 @@ class TestCase(object):
                         warnings.warn("TestResult has no addExpectedFailure method, reporting as passes",
                                       RuntimeWarning)
                         result.addSuccess(self)
-
+            return result
         finally:
             result.stopTest(self)
             if orig_result is None:

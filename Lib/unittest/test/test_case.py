@@ -386,26 +386,61 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         self.assertIsInstance(Foo().id(), str)
 
 
-    # "If result is omitted or None, a temporary result object is created
-    # and used, but is not made available to the caller. As TestCase owns the
+    # "If result is omitted or None, a temporary result object is created,
+    # used, and is made available to the caller. As TestCase owns the
     # temporary result startTestRun and stopTestRun are called.
 
     def test_run__uses_defaultTestResult(self):
         events = []
+        defaultResult = LoggingResult(events)
 
         class Foo(unittest.TestCase):
             def test(self):
                 events.append('test')
 
             def defaultTestResult(self):
-                return LoggingResult(events)
+                return defaultResult
 
         # Make run() find a result object on its own
-        Foo('test').run()
+        result = Foo('test').run()
 
+        self.assertIs(result, defaultResult)
         expected = ['startTestRun', 'startTest', 'test', 'addSuccess',
             'stopTest', 'stopTestRun']
         self.assertEqual(events, expected)
+
+
+    # "The result object is returned to run's caller"
+    def test_run__returns_given_result(self):
+
+        class Foo(unittest.TestCase):
+            def test(self):
+                pass
+
+        result = unittest.TestResult()
+
+        retval = Foo('test').run(result)
+        self.assertIs(retval, result)
+
+
+    # "The same effect [as method run] may be had by simply calling the
+    # TestCase instance."
+    def test_call__invoking_an_instance_delegates_to_run(self):
+        resultIn = unittest.TestResult()
+        resultOut = unittest.TestResult()
+
+        class Foo(unittest.TestCase):
+            def test(self):
+                pass
+
+            def run(self, result):
+                self.assertIs(result, resultIn)
+                return resultOut
+
+        retval = Foo('test')(resultIn)
+
+        self.assertIs(retval, resultOut)
+
 
     def testShortDescriptionWithoutDocstring(self):
         self.assertIsNone(self.shortDescription())
