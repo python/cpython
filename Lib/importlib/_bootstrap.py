@@ -765,7 +765,7 @@ def _gcd_import(name, package=None, level=0):
     being made from, and the level adjustment.
 
     This function represents the greatest common denominator of functionality
-    between import_module and __import__. This includes settting __package__ if
+    between import_module and __import__. This includes setting __package__ if
     the loader did not.
 
     """
@@ -855,7 +855,7 @@ def __import__(name, globals={}, locals={}, fromlist=[], level=0):
         module = _gcd_import(name)
     else:
         # __package__ is not guaranteed to be defined or could be set to None
-        # to represent that it's proper value is unknown
+        # to represent that its proper value is unknown
         package = globals.get('__package__')
         if package is None:
             package = globals['__name__']
