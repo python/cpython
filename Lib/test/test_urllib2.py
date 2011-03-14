@@ -7,7 +7,9 @@ import socket
 import array
 
 import urllib.request
-from urllib.request import Request, OpenerDirector
+# The proxy bypass method imported below has logic specific to the OSX
+# proxy config data structure but is testable on all platforms.
+from urllib.request import Request, OpenerDirector, _proxy_bypass_macosx_sysconf
 
 # XXX
 # Request
@@ -1076,6 +1078,17 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual(req.get_host(), "www.python.org")
         del os.environ['no_proxy']
 
+    def test_proxy_no_proxy_all(self):
+        os.environ['no_proxy'] = '*'
+        o = OpenerDirector()
+        ph = urllib.request.ProxyHandler(dict(http="proxy.example.com"))
+        o.add_handler(ph)
+        req = Request("http://www.python.org")
+        self.assertEqual(req.get_host(), "www.python.org")
+        r = o.open(req)
+        self.assertEqual(req.get_host(), "www.python.org")
+        del os.environ['no_proxy']
+
 
     def test_proxy_https(self):
         o = OpenerDirector()
@@ -1115,6 +1128,26 @@ class HandlerTests(unittest.TestCase):
         self.assertIsNotNone(req._tunnel_host)
         self.assertEqual(req.get_host(), "proxy.example.com:3128")
         self.assertEqual(req.get_header("Proxy-authorization"),"FooBar")
+
+    def test_osx_proxy_bypass(self):
+        bypass = {
+            'exclude_simple': False,
+            'exceptions': ['foo.bar', '*.bar.com', '127.0.0.1', '10.10',
+                           '10.0/16']
+        }
+        # Check hosts that should trigger the proxy bypass
+        for host in ('foo.bar', 'www.bar.com', '127.0.0.1', '10.10.0.1',
+                     '10.0.0.1'):
+            self.assertTrue(_proxy_bypass_macosx_sysconf(host, bypass),
+                            'expected bypass of %s to be True' % host)
+        # Check hosts that should not trigger the proxy bypass
+        for host in ('abc.foo.bar', 'bar.com', '127.0.0.2', '10.11.0.1', 'test'):
+            self.assertFalse(_proxy_bypass_macosx_sysconf(host, bypass),
+                             'expected bypass of %s to be False' % host)
+
+        # Check the exclude_simple flag
+        bypass = {'exclude_simple': True, 'exceptions': []}
+        self.assertTrue(_proxy_bypass_macosx_sysconf('test', bypass))
 
     def test_basic_auth(self, quote_char='"'):
         opener = OpenerDirector()
