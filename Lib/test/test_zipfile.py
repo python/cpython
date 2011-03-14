@@ -489,6 +489,7 @@ class TestsWithSourceFile(unittest.TestCase):
         except zipfile.BadZipFile:
             self.assertTrue(zipfp2.fp is None, 'zipfp is not closed')
 
+    @skipUnless(zlib, "requires zlib")
     def test_unicode_filenames(self):
         # bug #10801
         fname = findfile('zip_cp437_header.zip')
