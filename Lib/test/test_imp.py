@@ -210,6 +210,10 @@ class PEP3147Tests(unittest.TestCase):
         self.assertEqual(
             imp.cache_from_source('/foo/bar/baz/qux.py', True),
             '/foo/bar/baz/__pycache__/qux.{}.pyc'.format(self.tag))
+        # Directory with a dot, filename without dot
+        self.assertEqual(
+            imp.cache_from_source('/foo.bar/file', True),
+            '/foo.bar/__pycache__/file{}.pyc'.format(self.tag))
 
     def test_cache_from_source_optimized(self):
         # Given the path to a .py file, return the path to its PEP 3147
