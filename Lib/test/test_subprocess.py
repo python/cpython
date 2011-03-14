@@ -588,7 +588,7 @@ class ProcessTestCase(BaseTestCase):
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
             # ignore errors that indicate the command was not found
-            if c.exception.errno not in (errno.ENOENT, errno.EACCES): 
+            if c.exception.errno not in (errno.ENOENT, errno.EACCES):
                 raise c.exception
 
     def test_issue8780(self):
