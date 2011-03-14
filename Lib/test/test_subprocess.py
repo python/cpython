@@ -56,6 +56,8 @@ class BaseTestCase(unittest.TestCase):
         # shutdown time.  That frustrates tests trying to check stderr produced
         # from a spawned Python process.
         actual = support.strip_python_stderr(stderr)
+        # strip_python_stderr also strips whitespace, so we do too.
+        expected = expected.strip()
         self.assertEqual(actual, expected, msg)
 
 
@@ -66,6 +68,15 @@ class ProcessTestCase(BaseTestCase):
         rc = subprocess.call([sys.executable, "-c",
                               "import sys; sys.exit(47)"])
         self.assertEqual(rc, 47)
+
+    def test_call_timeout(self):
+        # call() function with timeout argument; we want to test that the child
+        # process gets killed when the timeout expires.  If the child isn't
+        # killed, this call will deadlock since subprocess.call waits for the
+        # child.
+        self.assertRaises(subprocess.TimeoutExpired, subprocess.call,
+                          [sys.executable, "-c", "while True: pass"],
+                          timeout=0.1)
 
     def test_check_call_zero(self):
         # check_call() function with zero return code
@@ -108,6 +119,18 @@ class ProcessTestCase(BaseTestCase):
                     stdout=sys.stdout)
             self.fail("Expected ValueError when stdout arg supplied.")
         self.assertIn('stdout', c.exception.args[0])
+
+    def test_check_output_timeout(self):
+        # check_output() function with timeout arg
+        with self.assertRaises(subprocess.TimeoutExpired) as c:
+            output = subprocess.check_output(
+                    [sys.executable, "-c",
+                     "import sys; sys.stdout.write('BDFL')\n"
+                     "sys.stdout.flush()\n"
+                     "while True: pass"],
+                    timeout=0.5)
+            self.fail("Expected TimeoutExpired.")
+        self.assertEqual(c.exception.output, b'BDFL')
 
     def test_call_kwargs(self):
         # call() function with keyword args
@@ -366,6 +389,41 @@ class ProcessTestCase(BaseTestCase):
         self.assertEqual(stdout, b"banana")
         self.assertStderrEqual(stderr, b"pineapple")
 
+    def test_communicate_timeout(self):
+        p = subprocess.Popen([sys.executable, "-c",
+                              'import sys,os,time;'
+                              'sys.stderr.write("pineapple\\n");'
+                              'time.sleep(1);'
+                              'sys.stderr.write("pear\\n");'
+                              'sys.stdout.write(sys.stdin.read())'],
+                             universal_newlines=True,
+                             stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        self.assertRaises(subprocess.TimeoutExpired, p.communicate, "banana",
+                          timeout=0.3)
+        # Make sure we can keep waiting for it, and that we get the whole output
+        # after it completes.
+        (stdout, stderr) = p.communicate()
+        self.assertEqual(stdout, "banana")
+        self.assertStderrEqual(stderr.encode(), b"pineapple\npear\n")
+
+    def test_communicate_timeout_large_ouput(self):
+        # Test a expring timeout while the child is outputting lots of data.
+        p = subprocess.Popen([sys.executable, "-c",
+                              'import sys,os,time;'
+                              'sys.stdout.write("a" * (64 * 1024));'
+                              'time.sleep(0.2);'
+                              'sys.stdout.write("a" * (64 * 1024));'
+                              'time.sleep(0.2);'
+                              'sys.stdout.write("a" * (64 * 1024));'
+                              'time.sleep(0.2);'
+                              'sys.stdout.write("a" * (64 * 1024));'],
+                             stdout=subprocess.PIPE)
+        self.assertRaises(subprocess.TimeoutExpired, p.communicate, timeout=0.4)
+        (stdout, _) = p.communicate()
+        self.assertEqual(len(stdout), 4 * 64 * 1024)
+
     # Test for the fd leak reported in http://bugs.python.org/issue2791.
     def test_communicate_pipe_fd_leak(self):
         for stdin_pipe in (False, True):
@@ -559,6 +617,13 @@ class ProcessTestCase(BaseTestCase):
         self.assertEqual(p.wait(), 0)
         # Subsequent invocations should just return the returncode
         self.assertEqual(p.wait(), 0)
+
+
+    def test_wait_timeout(self):
+        p = subprocess.Popen([sys.executable,
+                              "-c", "import time; time.sleep(1)"])
+        self.assertRaises(subprocess.TimeoutExpired, p.wait, timeout=0.1)
+        self.assertEqual(p.wait(timeout=2), 0)
 
 
     def test_invalid_bufsize(self):
