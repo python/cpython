@@ -190,7 +190,7 @@ war</tt></dd></dl>
 missing_pattern = "no Python documentation found for '%s'"
 
 # output pattern for module with bad imports
-badimport_pattern = "problem in %s - ImportError: No module named %s"
+badimport_pattern = "problem in %s - ImportError: No module named %r"
 
 def run_pydoc(module_name, *args):
     """
