@@ -50,6 +50,13 @@ PyAPI_FUNC(PyObject *) PyImport_ImportModuleLevel(
     PyObject *fromlist,
     int level
     );
+PyAPI_FUNC(PyObject *) PyImport_ImportModuleLevelObject(
+    PyObject *name,
+    PyObject *globals,
+    PyObject *locals,
+    PyObject *fromlist,
+    int level
+    );
 
 #define PyImport_ImportModuleEx(n, g, l, f) \
     PyImport_ImportModuleLevel(n, g, l, f, -1)

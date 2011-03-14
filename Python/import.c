@@ -2753,24 +2753,36 @@ import_module_level(PyObject *name, PyObject *globals, PyObject *locals,
 }
 
 PyObject *
-PyImport_ImportModuleLevel(char *name, PyObject *globals, PyObject *locals,
-                           PyObject *fromlist, int level)
+PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
+                                 PyObject *locals, PyObject *fromlist,
+                                 int level)
 {
-    PyObject *nameobj, *result;
-    nameobj = PyUnicode_FromString(name);
-    if (nameobj == NULL)
-        return NULL;
+    PyObject *mod;
     _PyImport_AcquireLock();
-    result = import_module_level(nameobj, globals, locals, fromlist, level);
-    Py_DECREF(nameobj);
+    mod = import_module_level(name, globals, locals, fromlist, level);
     if (_PyImport_ReleaseLock() < 0) {
-        Py_XDECREF(result);
+        Py_XDECREF(mod);
         PyErr_SetString(PyExc_RuntimeError,
                         "not holding the import lock");
         return NULL;
     }
-    return result;
+    return mod;
 }
+
+PyObject *
+PyImport_ImportModuleLevel(char *name, PyObject *globals, PyObject *locals,
+                           PyObject *fromlist, int level)
+{
+    PyObject *nameobj, *mod;
+    nameobj = PyUnicode_FromString(name);
+    if (nameobj == NULL)
+        return NULL;
+    mod = PyImport_ImportModuleLevelObject(nameobj, globals, locals,
+                                           fromlist, level);
+    Py_DECREF(nameobj);
+    return mod;
+}
+
 
 /* Return the package that an import is being performed in.  If globals comes
    from the module foo.bar.bat (not itself a package), this returns the
