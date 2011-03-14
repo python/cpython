@@ -69,9 +69,8 @@ long PyThread_get_thread_ident(void)
     volatile pth_t threadid;
     if (!initialized)
         PyThread_init_thread();
-    /* Jump through some hoops for Alpha OSF/1 */
     threadid = pth_self();
-    return (long) *(long *) &threadid;
+    return (long) threadid;
 }
 
 void PyThread_exit_thread(void)

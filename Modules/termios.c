@@ -9,11 +9,6 @@
 #endif
 
 #include <termios.h>
-#ifdef __osf__
-/* On OSF, sys/ioctl.h requires that struct termio already be defined,
- * so this needs to be included first on that platform. */
-#include <termio.h>
-#endif
 #include <sys/ioctl.h>
 
 /* HP-UX requires that this be included to pick up MDCD, MCTS, MDSR,
