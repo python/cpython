@@ -486,18 +486,12 @@ $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): \
 		$(LIBRARY) \
 		$(RESSRCDIR)/Info.plist
 	$(INSTALL) -d -m $(DIRMODE) $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)
-	if test "${UNIVERSALSDK}"; then \
-		$(CC) -o $(LDLIBRARY) @UNIVERSAL_ARCH_FLAGS@ -dynamiclib \
-			-isysroot "${UNIVERSALSDK}" \
-			-all_load $(LIBRARY) -Wl,-single_module \
-			-install_name $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK) \
-			-compatibility_version $(VERSION) \
-			-current_version $(VERSION) \
-			-framework CoreFoundation $(LIBS); \
-        else \
-		/usr/bin/libtool -o $(LDLIBRARY) -dynamic $(OTHER_LIBTOOL_OPT) $(LIBRARY) \
-			@LIBTOOL_CRUFT@ -framework CoreFoundation $(LIBS);\
-	fi
+	$(CC) -o $(LDLIBRARY) $(PY_LDFLAGS) -dynamiclib \
+		-all_load $(LIBRARY) -Wl,-single_module \
+		-install_name $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK) \
+		-compatibility_version $(VERSION) \
+		-current_version $(VERSION) \
+		-framework CoreFoundation $(LIBS); 
 	$(INSTALL) -d -m $(DIRMODE)  \
 		$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/Resources/English.lproj
 	$(INSTALL_DATA) $(RESSRCDIR)/Info.plist \
