@@ -1498,7 +1498,7 @@ unchanged:
 /* Forward */
 static PyObject *load_module(PyObject *, FILE *, PyObject *, int, PyObject *);
 static struct filedescr *find_module(PyObject *, PyObject *, PyObject *,
-                                     char *, size_t, FILE **, PyObject **);
+                                     PyObject **, FILE **, PyObject **);
 static struct _frozen * find_frozen(PyObject *);
 
 /* Load a package and return its module object WITH INCREMENTED
@@ -1510,7 +1510,6 @@ load_package(PyObject *name, PyObject *pathname)
     PyObject *m, *d, *bufobj;
     PyObject *file = NULL, *path_list = NULL;
     int err;
-    char buf[MAXPATHLEN+1];
     FILE *fp = NULL;
     struct filedescr *fdp;
 
@@ -1538,7 +1537,7 @@ load_package(PyObject *name, PyObject *pathname)
         return NULL;
     }
     fdp = find_module(name, initstr, path_list,
-                      buf, sizeof(buf), &fp, NULL);
+                      &bufobj, &fp, NULL);
     Py_DECREF(path_list);
     if (fdp == NULL) {
         if (PyErr_ExceptionMatches(PyExc_ImportError)) {
@@ -1549,13 +1548,8 @@ load_package(PyObject *name, PyObject *pathname)
         else
             return NULL;
     }
-    bufobj = PyUnicode_DecodeFSDefault(buf);
-    if (bufobj != NULL) {
-        m = load_module(name, fp, bufobj, fdp->type, NULL);
-        Py_DECREF(bufobj);
-    }
-    else
-        m = NULL;
+    m = load_module(name, fp, bufobj, fdp->type, NULL);
+    Py_XDECREF(bufobj);
     if (fp != NULL)
         fclose(fp);
     return m;
@@ -1686,43 +1680,40 @@ static struct filedescr importhookdescr = {"", "", IMP_HOOK};
 static int
 find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
                  PyObject *path_hooks, PyObject *path_importer_cache,
-                 char *buf, size_t buflen,
-                 PyObject **p_loader, struct filedescr **p_fd)
+                 PyObject **p_path, PyObject **p_loader, struct filedescr **p_fd)
 {
-    PyObject *path_bytes;
-    const char *base;
+    Py_UNICODE buf[MAXPATHLEN+1];
+    Py_ssize_t buflen = MAXPATHLEN+1;
+    PyObject *path_unicode, *filename;
+    const Py_UNICODE *base;
     Py_ssize_t len;
-    size_t namelen;
     struct stat statbuf;
     static struct filedescr fd_package = {"", "", PKG_DIRECTORY};
-    char *namestr;
 
     if (PyUnicode_Check(path)) {
-        path_bytes = PyUnicode_EncodeFSDefault(path);
-        if (path_bytes == NULL)
-            return -1;
+        Py_INCREF(path);
+        path_unicode = path;
     }
     else if (PyBytes_Check(path)) {
-        Py_INCREF(path);
-        path_bytes = path;
+        path_unicode = PyUnicode_DecodeFSDefaultAndSize(
+            PyBytes_AS_STRING(path), PyBytes_GET_SIZE(path));
+        if (path_unicode == NULL)
+            return -1;
     }
     else
         return 0;
 
-    namestr = _PyUnicode_AsString(name);
-    namelen = strlen(namestr);
-    base = PyBytes_AS_STRING(path_bytes);
-    len = PyBytes_GET_SIZE(path_bytes);
-    if (len + 2 + namelen + MAXSUFFIXSIZE >= buflen) {
-        Py_DECREF(path_bytes);
+    base = PyUnicode_AS_UNICODE(path_unicode);
+    len = PyUnicode_GET_SIZE(path_unicode);
+    if (len + 2 + PyUnicode_GET_SIZE(name) + MAXSUFFIXSIZE >= buflen) {
+        Py_DECREF(path_unicode);
         return 0; /* Too long */
     }
-    strcpy(buf, base);
-    Py_DECREF(path_bytes);
+    Py_UNICODE_strcpy(buf, PyUnicode_AS_UNICODE(path_unicode));
+    Py_DECREF(path_unicode);
 
-    if (strlen(buf) != len) {
-        return 0; /* path_bytes contains '\0' */
-    }
+    if (Py_UNICODE_strlen(buf) != len)
+        return 0; /* path contains '\0' */
 
     /* sys.path_hooks import hook */
     if (p_loader != NULL) {
@@ -1758,21 +1749,21 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
 #endif
         )
         buf[len++] = SEP;
-    strcpy(buf+len, namestr);
-    len += namelen;
+    Py_UNICODE_strcpy(buf+len, PyUnicode_AS_UNICODE(name));
+    len += PyUnicode_GET_SIZE(name);
+
+    filename = PyUnicode_FromUnicode(buf, len);
+    if (filename == NULL)
+        return -1;
 
     /* Check for package import (buf holds a directory name,
        and there's an __init__ module in that directory */
 #ifdef HAVE_STAT
-    if (stat(buf, &statbuf) == 0 &&         /* it exists */
+    if (_Py_stat(filename, &statbuf) == 0 &&         /* it exists */
         S_ISDIR(statbuf.st_mode))           /* it's a directory */
     {
         int match;
-        PyObject *filename;
 
-        filename = PyUnicode_DecodeFSDefault(buf);
-        if (filename == NULL)
-            return -1;
         match = case_ok(filename, 0, name);
         if (match < 0) {
             Py_DECREF(filename);
@@ -1780,7 +1771,7 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
         }
         if (match) { /* case matches */
             if (find_init_module(filename)) { /* and has __init__.py */
-                Py_DECREF(filename);
+                *p_path = filename;
                 *p_fd = &fd_package;
                 return 2;
             }
@@ -1795,9 +1786,9 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
                 }
             }
         }
-        Py_DECREF(filename);
     }
 #endif
+    *p_path = filename;
     return 1;
 }
 
@@ -1814,21 +1805,16 @@ static struct filedescr*
 find_module_path_list(PyObject *fullname, PyObject *name,
                       PyObject *search_path_list, PyObject *path_hooks,
                       PyObject *path_importer_cache,
-                      char *buf, size_t buflen,
-                      FILE **p_fp, PyObject **p_loader)
+                      PyObject **p_path, FILE **p_fp, PyObject **p_loader)
 {
     Py_ssize_t i, npath;
-    size_t len, namelen;
     struct filedescr *fdp = NULL;
     char *filemode;
     FILE *fp = NULL;
-    char *namestr;
-    PyObject *filename;
+    PyObject *prefix, *filename;
     int match;
 
     npath = PyList_Size(search_path_list);
-    namestr = _PyUnicode_AsString(name);
-    namelen = strlen(namestr);
     for (i = 0; i < npath; i++) {
         PyObject *path;
         int ok;
@@ -1837,27 +1823,29 @@ find_module_path_list(PyObject *fullname, PyObject *name,
         if (path == NULL)
             return NULL;
 
+        prefix = NULL;
         ok = find_module_path(fullname, name, path,
                               path_hooks, path_importer_cache,
-                              buf, buflen,
-                              p_loader, &fdp);
+                              &prefix, p_loader, &fdp);
         if (ok < 0)
             return NULL;
         if (ok == 0)
             continue;
-        if (ok == 2)
+        if (ok == 2) {
+            *p_path = prefix;
             return fdp;
+        }
 
-        len = strlen(buf);
         for (fdp = _PyImport_Filetab; fdp->suffix != NULL; fdp++) {
             filemode = fdp->mode;
             if (filemode[0] == 'U')
                 filemode = "r" PY_STDIOTEXTMODE;
 
-            strcpy(buf+len, fdp->suffix);
-            filename = PyUnicode_DecodeFSDefault(buf);
-            if (filename == NULL)
+            filename = PyUnicode_FromFormat("%U%s", prefix, fdp->suffix);
+            if (filename == NULL) {
+                Py_DECREF(prefix);
                 return NULL;
+            }
 
             if (Py_VerboseFlag > 1)
                 PySys_FormatStderr("# trying %R\n", filename);
@@ -1869,11 +1857,13 @@ find_module_path_list(PyObject *fullname, PyObject *name,
             }
             match = case_ok(filename, -(Py_ssize_t)strlen(fdp->suffix), name);
             if (match < 0) {
+                Py_DECREF(prefix);
                 Py_DECREF(filename);
                 return NULL;
             }
             if (match) {
-                Py_DECREF(filename);
+                Py_DECREF(prefix);
+                *p_path = filename;
                 *p_fp = fp;
                 return fdp;
             }
@@ -1882,6 +1872,7 @@ find_module_path_list(PyObject *fullname, PyObject *name,
             fclose(fp);
             fp = NULL;
         }
+        Py_DECREF(prefix);
     }
     PyErr_Format(PyExc_ImportError,
                  "No module named %U", name);
@@ -1897,32 +1888,35 @@ find_module_path_list(PyObject *fullname, PyObject *name,
    - otherwise, call find_module_path_list() with search_path_list (if not
      NULL) or sys.path
 
+   fullname can be NULL, but only if p_loader is NULL.
+
    Return:
 
    - &fd_builtin (C_BUILTIN) if it is a builtin
    - &fd_frozen (PY_FROZEN) if it is frozen
-   - &fd_package (PKG_DIRECTORY) and write the filename into *buf
+   - &fd_package (PKG_DIRECTORY) and write the filename into *p_path
      if it is a package
    - &importhookdescr (IMP_HOOK) and write the loader into *p_loader if a
      importer loader was found
    - a file descriptor (PY_SOURCE, PY_COMPILED, C_EXTENSION, PY_RESOURCE or
      PY_CODERESOURCE: see _PyImport_Filetab), write the filename into
-     *buf and the pointer to the open file into *p_fp
+     *p_path and the pointer to the open file into *p_fp
    - NULL on error
 
-   By default, write an empty string into *buf, and *p_fp and *p_loader (if
-   set) are set to NULL. Eg. *buf is an empty string for a builtin package. */
+   By default, *p_path, *p_fp and *p_loader (if set) are set to NULL.
+   Eg. *p_path is set to NULL for a builtin package.
+*/
 
 static struct filedescr *
 find_module(PyObject *fullname, PyObject *name, PyObject *search_path_list,
-            char *buf, size_t buflen, FILE **p_fp, PyObject **p_loader)
+            PyObject **p_path, FILE **p_fp, PyObject **p_loader)
 {
     Py_ssize_t i, npath;
     static struct filedescr fd_frozen = {"", "", PY_FROZEN};
     static struct filedescr fd_builtin = {"", "", C_BUILTIN};
     PyObject *path_hooks, *path_importer_cache;
 
-    *buf = '\0';
+    *p_path = NULL;
     *p_fp = NULL;
     if (p_loader != NULL)
         *p_loader = NULL;
@@ -1975,20 +1969,12 @@ find_module(PyObject *fullname, PyObject *name, PyObject *search_path_list,
 #ifdef MS_COREDLL
         FILE *fp;
         struct filedescr *fdp;
-        PyObject *filename, *filename_bytes;
 #endif
         if (is_builtin(name))
             return &fd_builtin;
 #ifdef MS_COREDLL
-        fp = _PyWin_FindRegisteredModule(name, &fdp, &filename);
+        fp = _PyWin_FindRegisteredModule(name, &fdp, p_path);
         if (fp != NULL) {
-            filename_bytes = PyUnicode_EncodeFSDefault(filename);
-            Py_DECREF(filename);
-            if (filename_bytes == NULL)
-                return NULL;
-            strncpy(buf, PyBytes_AS_STRING(filename_bytes), buflen);
-            buf[buflen-1] = '\0';
-            Py_DECREF(filename_bytes);
             *p_fp = fp;
             return fdp;
         }
@@ -2022,8 +2008,7 @@ find_module(PyObject *fullname, PyObject *name, PyObject *search_path_list,
     return find_module_path_list(fullname, name,
                                  search_path_list, path_hooks,
                                  path_importer_cache,
-                                 buf, buflen,
-                                 p_fp, p_loader);
+                                 p_path, p_fp, p_loader);
 }
 
 /* case_bytes(char* buf, Py_ssize_t len, Py_ssize_t namelen, char* name)
@@ -3185,7 +3170,6 @@ import_submodule(PyObject *mod, PyObject *subname, PyObject *fullname)
 {
     PyObject *modules = PyImport_GetModuleDict();
     PyObject *m = NULL, *bufobj, *path_list, *loader;
-    char buf[MAXPATHLEN+1];
     struct filedescr *fdp;
     FILE *fp;
 
@@ -3211,7 +3195,7 @@ import_submodule(PyObject *mod, PyObject *subname, PyObject *fullname)
     }
 
     fdp = find_module(fullname, subname, path_list,
-                      buf, MAXPATHLEN+1, &fp, &loader);
+                      &bufobj, &fp, &loader);
     Py_XDECREF(path_list);
     if (fdp == NULL) {
         if (!PyErr_ExceptionMatches(PyExc_ImportError))
@@ -3220,13 +3204,8 @@ import_submodule(PyObject *mod, PyObject *subname, PyObject *fullname)
         Py_INCREF(Py_None);
         return Py_None;
     }
-    bufobj = PyUnicode_DecodeFSDefault(buf);
-    if (bufobj != NULL) {
-        m = load_module(fullname, fp, bufobj, fdp->type, loader);
-        Py_DECREF(bufobj);
-    }
-    else
-        m = NULL;
+    m = load_module(fullname, fp, bufobj, fdp->type, loader);
+    Py_XDECREF(bufobj);
     Py_XDECREF(loader);
     if (fp)
         fclose(fp);
@@ -3249,7 +3228,6 @@ PyImport_ReloadModule(PyObject *m)
     PyInterpreterState *interp = PyThreadState_Get()->interp;
     PyObject *modules_reloading = interp->modules_reloading;
     PyObject *modules = PyImport_GetModuleDict();
-    char buf[MAXPATHLEN+1];
     PyObject *path_list = NULL, *loader = NULL, *existing_m = NULL;
     PyObject *nameobj, *bufobj, *subnameobj;
     Py_UNICODE *name, *subname;
@@ -3324,7 +3302,7 @@ PyImport_ReloadModule(PyObject *m)
     if (subnameobj == NULL)
         goto error;
     fdp = find_module(nameobj, subnameobj, path_list,
-                      buf, MAXPATHLEN+1, &fp, &loader);
+                      &bufobj, &fp, &loader);
     Py_DECREF(subnameobj);
     Py_XDECREF(path_list);
 
@@ -3333,13 +3311,8 @@ PyImport_ReloadModule(PyObject *m)
         goto error;
     }
 
-    bufobj = PyUnicode_DecodeFSDefault(buf);
-    if (bufobj != NULL) {
-        newm = load_module(nameobj, fp, bufobj, fdp->type, loader);
-        Py_DECREF(bufobj);
-    }
-    else
-        newm = NULL;
+    newm = load_module(nameobj, fp, bufobj, fdp->type, loader);
+    Py_XDECREF(bufobj);
     Py_XDECREF(loader);
 
     if (fp)
@@ -3509,17 +3482,15 @@ call_find_module(PyObject *name, PyObject *path_list)
     PyObject *fob, *ret;
     PyObject *pathobj;
     struct filedescr *fdp;
-    char pathname[MAXPATHLEN+1];
     FILE *fp;
     int fd = -1;
     char *found_encoding = NULL;
     char *encoding = NULL;
 
-    pathname[0] = '\0';
     if (path_list == Py_None)
         path_list = NULL;
     fdp = find_module(NULL, name, path_list,
-                      pathname, MAXPATHLEN+1, &fp, NULL);
+                      &pathobj, &fp, NULL);
     if (fdp == NULL)
         return NULL;
     if (fp != NULL) {
@@ -3535,14 +3506,17 @@ call_find_module(PyObject *name, PyObject *path_list)
                memory. */
             found_encoding = PyTokenizer_FindEncoding(fd);
             lseek(fd, 0, 0); /* Reset position */
-            if (found_encoding == NULL && PyErr_Occurred())
+            if (found_encoding == NULL && PyErr_Occurred()) {
+                Py_XDECREF(pathobj);
                 return NULL;
+            }
             encoding = (found_encoding != NULL) ? found_encoding :
                    (char*)PyUnicode_GetDefaultEncoding();
         }
-        fob = PyFile_FromFd(fd, pathname, fdp->mode, -1,
+        fob = PyFile_FromFd(fd, NULL, fdp->mode, -1,
                             (char*)encoding, NULL, NULL, 1);
         if (fob == NULL) {
+            Py_XDECREF(pathobj);
             close(fd);
             PyMem_FREE(found_encoding);
             return NULL;
@@ -3552,7 +3526,10 @@ call_find_module(PyObject *name, PyObject *path_list)
         fob = Py_None;
         Py_INCREF(fob);
     }
-    pathobj = PyUnicode_DecodeFSDefault(pathname);
+    if (pathobj == NULL) {
+        Py_INCREF(Py_None);
+        pathobj = Py_None;
+    }
     ret = Py_BuildValue("NN(ssi)",
                   fob, pathobj, fdp->suffix, fdp->mode, fdp->type);
     PyMem_FREE(found_encoding);
