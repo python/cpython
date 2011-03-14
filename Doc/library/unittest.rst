@@ -723,7 +723,7 @@ Test cases
    Here, we create two instances of :class:`WidgetTestCase`, each of which runs a
    single test.
 
-   .. versionchanged::
+   .. versionchanged:: 3.2
       `TestCase` can be instantiated successfully without providing a method
       name. This makes it easier to experiment with `TestCase` from the
       interactive interpreter.
@@ -792,11 +792,14 @@ Test cases
       Run the test, collecting the result into the test result object passed as
       *result*.  If *result* is omitted or ``None``, a temporary result
       object is created (by calling the :meth:`defaultTestResult` method) and
-      used. The result object is not returned to :meth:`run`'s caller.
+      used. The result object is returned to :meth:`run`'s caller.
 
       The same effect may be had by simply calling the :class:`TestCase`
       instance.
 
+      .. versionchanged:: 3.3
+         Previous versions of ``run`` did not return the result. Neither did
+         calling an instance.
 
    .. method:: skipTest(reason)
 
