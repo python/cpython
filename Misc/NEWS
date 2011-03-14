@@ -34,6 +34,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11500: Fixed a bug in the os x proxy bypass code for fully qualified 
+  IP addresses in the proxy exception list. 
+
 - Issue #11491: dbm.error is no longer raised when dbm.open is called with
   the "n" as the flag argument and the file exists. The behavior matches
   the documentation and general logic.
