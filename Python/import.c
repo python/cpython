@@ -1804,11 +1804,6 @@ find_module_path_list(char *fullname, const char *name,
     struct filedescr *fdp = NULL;
     char *filemode;
     FILE *fp = NULL;
-#if defined(PYOS_OS2)
-    size_t saved_len;
-    size_t saved_namelen;
-    char *saved_buf = NULL;
-#endif
 
     npath = PyList_Size(search_path_list);
     namelen = strlen(name);
@@ -1832,40 +1827,7 @@ find_module_path_list(char *fullname, const char *name,
             return fdp;
 
         len = strlen(buf);
-#if defined(PYOS_OS2)
-        /* take a snapshot of the module spec for restoration
-         * after the 8 character DLL hackery
-         */
-        saved_buf = strdup(buf);
-        saved_len = len;
-        saved_namelen = namelen;
-#endif /* PYOS_OS2 */
         for (fdp = _PyImport_Filetab; fdp->suffix != NULL; fdp++) {
-#if defined(PYOS_OS2) && defined(HAVE_DYNAMIC_LOADING)
-            /* OS/2 limits DLLs to 8 character names (w/o
-               extension)
-             * so if the name is longer than that and its a
-             * dynamically loaded module we're going to try,
-             * truncate the name before trying
-             */
-            if (strlen(name) > 8) {
-                /* is this an attempt to load a C extension? */
-                const struct filedescr *scan;
-                scan = _PyImport_DynLoadFiletab;
-                while (scan->suffix != NULL) {
-                    if (!strcmp(scan->suffix, fdp->suffix))
-                        break;
-                    else
-                        scan++;
-                }
-                if (scan->suffix != NULL) {
-                    /* yes, so truncate the name */
-                    namelen = 8;
-                    len -= strlen(name) - namelen;
-                    buf[len] = '\0';
-                }
-            }
-#endif /* PYOS_OS2 */
             strcpy(buf+len, fdp->suffix);
             if (Py_VerboseFlag > 1)
                 PySys_WriteStderr("# trying %s\n", buf);
@@ -1881,21 +1843,7 @@ find_module_path_list(char *fullname, const char *name,
                     fp = NULL;
                 }
             }
-#if defined(PYOS_OS2)
-            /* restore the saved snapshot */
-            strcpy(buf, saved_buf);
-            len = saved_len;
-            namelen = saved_namelen;
-#endif
         }
-#if defined(PYOS_OS2)
-        /* don't need/want the module name snapshot anymore */
-        if (saved_buf)
-        {
-            free(saved_buf);
-            saved_buf = NULL;
-        }
-#endif
         if (fp != NULL)
             break;
     }
