@@ -754,7 +754,6 @@ with_system_ffi
 enable_loadable_sqlite_extensions
 with_dbmliborder
 with_signal_module
-with_dec_threads
 with_threads
 with_thread
 enable_ipv6
@@ -777,7 +776,8 @@ CFLAGS
 LDFLAGS
 LIBS
 CPPFLAGS
-CPP'
+CPP
+CPPFLAGS'
 
 
 # Initialize some variables set by options.
@@ -1426,7 +1426,6 @@ Optional Packages:
                           colon separated string with the backend names
                           `ndbm', `gdbm' and `bdb'.
   --with-signal-module    disable/enable signal module
-  --with-dec-threads      use DEC Alpha/OSF1 thread-safe libraries
   --with(out)-threads[=DIRECTORY]
                           disable/enable thread support
   --with(out)-thread[=DIRECTORY]
@@ -4951,11 +4950,6 @@ $as_echo "#define Py_ENABLE_SHARED 1" >>confdefs.h
 	  BLDLIBRARY='-Wl,+b,$(LIBDIR) -L. -lpython$(LDVERSION)'
 	  RUNSHARED=SHLIB_PATH=`pwd`:${SHLIB_PATH}
 	  ;;
-    OSF*)
-	  LDLIBRARY='libpython$(LDVERSION).so'
-	  BLDLIBRARY='-rpath $(LIBDIR) -L. -lpython$(LDVERSION)'
-	  RUNSHARED=LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}
-	  ;;
     Darwin*)
     	LDLIBRARY='libpython$(LDVERSION).dylib'
 	BLDLIBRARY='-L. -lpython$(LDVERSION)'
@@ -5594,9 +5588,6 @@ $as_echo "$CC" >&6; }
 	    EXPORT_MACOSX_DEPLOYMENT_TARGET=''
 
 	    ;;
-	OSF*)
-	    BASECFLAGS="$BASECFLAGS -mieee"
-	    ;;
     esac
     ;;
 
@@ -5605,9 +5596,6 @@ $as_echo "$CC" >&6; }
     OpenUNIX*|UnixWare*)
 	BASECFLAGS="$BASECFLAGS -K pentium,host,inline,loop_unroll,alloca "
 	;;
-    OSF*)
-	BASECFLAGS="$BASECFLAGS -ieee -std"
-    	;;
     SCO_SV*)
 	BASECFLAGS="$BASECFLAGS -belf -Ki486 -DSCO5"
 	;;
@@ -6315,7 +6303,6 @@ rm -f conftest*
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $was_it_defined" >&5
 $as_echo "$was_it_defined" >&6; }
 
-# Check whether using makedev requires defining _OSF_SOURCE
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for makedev" >&5
 $as_echo_n "checking for makedev... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -6346,35 +6333,6 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-if test "$ac_cv_has_makedev" = "no"; then
-    # we didn't link, try if _OSF_SOURCE will allow us to link
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#define _OSF_SOURCE 1
-#include <sys/types.h>
-
-int
-main ()
-{
- makedev(0, 0)
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_has_makedev=yes
-else
-  ac_cv_has_makedev=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-    if test "$ac_cv_has_makedev" = "yes"; then
-
-$as_echo "#define _OSF_SOURCE 1" >>confdefs.h
-
-    fi
-fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_has_makedev" >&5
 $as_echo "$ac_cv_has_makedev" >&6; }
 if test "$ac_cv_has_makedev" = "yes"; then
@@ -7462,7 +7420,6 @@ then
 		else
 			LDSHARED='ld -b'
 		fi ;;
-	OSF*) LDSHARED="ld -shared -expect_unresolved \"*\"";;
 	Darwin/1.3*)
 		LDSHARED='$(CC) -bundle'
 		LDCXXSHARED='$(CXX) -bundle'
@@ -8281,23 +8238,6 @@ fi
 
 USE_THREAD_MODULE=""
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-dec-threads" >&5
-$as_echo_n "checking for --with-dec-threads... " >&6; }
-
-
-# Check whether --with-dec-threads was given.
-if test "${with_dec_threads+set}" = set; then :
-  withval=$with_dec_threads;
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
-$as_echo "$withval" >&6; }
-LDLAST=-threads
-if test "${with_thread+set}" != set; then
-   with_thread="$withval";
-fi
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
 
 
 # Templates for things AC_DEFINEd more than once.
@@ -8760,15 +8700,6 @@ if test "x$ac_cv_lib_thread_thr_create" = xyes; then :
       USE_THREAD_MODULE=""
 fi
 
-    fi
-
-    if test "$USE_THREAD_MODULE" != "#"
-    then
-        # If the above checks didn't disable threads, (at least) OSF1
-        # needs this '-threads' argument during linking.
-        case $ac_sys_system in
-        OSF1) LDLAST=-threads;;
-        esac
     fi
 fi
 
@@ -13810,10 +13741,6 @@ $as_echo "#define HAVE_BROKEN_PIPE_BUF 1" >>confdefs.h
  ;;
 esac
 
-
-case $ac_sys_system in
-  OSF*) as_fn_error $? "OSF* systems are deprecated unless somebody volunteers. Check http://bugs.python.org/issue8606" "$LINENO" 5 ;;
-esac
 
 ac_fn_c_check_func "$LINENO" "pipe2" "ac_cv_func_pipe2"
 if test "x$ac_cv_func_pipe2" = xyes; then :

@@ -55,11 +55,6 @@ raised for division by zero and mod by zero.
 #include "Python.h"
 #include "_math.h"
 
-#ifdef _OSF_SOURCE
-/* OSF1 5.1 doesn't make this available with XOPEN_SOURCE_EXTENDED defined */
-extern double copysign(double, double);
-#endif
-
 /*
    sin(pi*x), giving accurate results for all finite x (especially x
    integral or close to an integer).  This is here for use in the

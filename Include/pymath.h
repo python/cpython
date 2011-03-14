@@ -37,12 +37,6 @@ extern double pow(double, double);
 #endif /* __STDC__ */
 #endif /* _MSC_VER */
 
-#ifdef _OSF_SOURCE
-/* OSF1 5.1 doesn't make these available with XOPEN_SOURCE_EXTENDED defined */
-extern int finite(double);
-extern double copysign(double, double);
-#endif
-
 /* High precision defintion of pi and e (Euler)
  * The values are taken from libc6's math.h.
  */

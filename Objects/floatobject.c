@@ -15,11 +15,6 @@
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 
 
-#ifdef _OSF_SOURCE
-/* OSF1 5.1 doesn't make this available with XOPEN_SOURCE_EXTENDED defined */
-extern int finite(double);
-#endif
-
 /* Special free list
 
    Since some Python programs can spend much of their time allocating
