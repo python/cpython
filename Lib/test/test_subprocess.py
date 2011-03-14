@@ -128,7 +128,7 @@ class ProcessTestCase(BaseTestCase):
                      "import sys; sys.stdout.write('BDFL')\n"
                      "sys.stdout.flush()\n"
                      "while True: pass"],
-                    timeout=0.5)
+                    timeout=1.5)
             self.fail("Expected TimeoutExpired.")
         self.assertEqual(c.exception.output, b'BDFL')
 
