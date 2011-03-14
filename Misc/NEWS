@@ -40,6 +40,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #11491: dbm.error is no longer raised when dbm.open is called with
+  the "n" as the flag argument and the file exists. The behavior matches
+  the documentation and general logic.
+   
 - Issue #11131: Fix sign of zero in decimal.Decimal plus and minus
   operations when the rounding mode is ROUND_FLOOR.
 
