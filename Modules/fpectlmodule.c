@@ -174,17 +174,6 @@ static void fpe_reset(Sigfunc *handler)
     fp_enable(TRP_INVALID | TRP_DIV_BY_ZERO | TRP_OVERFLOW);
     PyOS_setsig(SIGFPE, handler);
 
-/*-- DEC ALPHA OSF --------------------------------------------------------*/
-#elif defined(__alpha) && defined(__osf__)
-    /* References:   exception_intro, ieee man pages */
-    /* cc -c -I/usr/local/python/include fpectlmodule.c */
-    /* ld -shared -o fpectlmodule.so fpectlmodule.o */
-#include <machine/fpu.h>
-    unsigned long fp_control =
-    IEEE_TRAP_ENABLE_INV | IEEE_TRAP_ENABLE_DZE | IEEE_TRAP_ENABLE_OVF;
-    ieee_set_fp_control(fp_control);
-    PyOS_setsig(SIGFPE, handler);
-
 /*-- DEC ALPHA LINUX ------------------------------------------------------*/
 #elif defined(__alpha) && defined(linux)
 #include <asm/fpu.h>

@@ -105,10 +105,6 @@ char *PyCursesVersion = "2.2";
 #include "Python.h"
 
 
-#ifdef __osf__
-#define STRICT_SYSV_CURSES      /* Don't use ncurses extensions */
-#endif
-
 #ifdef __hpux
 #define STRICT_SYSV_CURSES
 #endif
