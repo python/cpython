@@ -1396,7 +1396,7 @@ if sys.platform == 'darwin':
 
                 else:
                     mask = int(mask[1:])
-                    mask = 32 - mask
+                mask = 32 - mask
 
                 if (hostIP >> mask) == (base >> mask):
                     return True
