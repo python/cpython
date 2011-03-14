@@ -1669,7 +1669,7 @@ extern FILE *_PyWin_FindRegisteredModule(PyObject *, struct filedescr **,
 #endif
 
 /* Forward */
-static int case_ok(char *, Py_ssize_t, Py_ssize_t, const char *);
+static int case_ok(PyObject *, Py_ssize_t, PyObject *);
 static int find_init_module(PyObject *);
 static struct filedescr importhookdescr = {"", "", IMP_HOOK};
 
@@ -1767,12 +1767,20 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
     if (stat(buf, &statbuf) == 0 &&         /* it exists */
         S_ISDIR(statbuf.st_mode))           /* it's a directory */
     {
-        PyObject *bufobj = PyUnicode_DecodeFSDefault(buf);
-        if (bufobj == NULL)
+        int match;
+        PyObject *filename;
+
+        filename = PyUnicode_DecodeFSDefault(buf);
+        if (filename == NULL)
             return -1;
-        if (case_ok(buf, len, namelen, namestr)) { /* case matches */
-            if (find_init_module(bufobj)) { /* and has __init__.py */
-                Py_DECREF(bufobj);
+        match = case_ok(filename, 0, name);
+        if (match < 0) {
+            Py_DECREF(filename);
+            return -1;
+        }
+        if (match) { /* case matches */
+            if (find_init_module(filename)) { /* and has __init__.py */
+                Py_DECREF(filename);
                 *p_fd = &fd_package;
                 return 2;
             }
@@ -1780,14 +1788,14 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
                 int err;
                 err = PyErr_WarnFormat(PyExc_ImportWarning, 1,
                     "Not importing directory %R: missing __init__.py",
-                    bufobj);
+                    filename);
                 if (err) {
-                    Py_DECREF(bufobj);
+                    Py_DECREF(filename);
                     return -1;
                 }
             }
         }
-        Py_DECREF(bufobj);
+        Py_DECREF(filename);
     }
 #endif
     return 1;
@@ -1815,6 +1823,8 @@ find_module_path_list(PyObject *fullname, PyObject *name,
     char *filemode;
     FILE *fp = NULL;
     char *namestr;
+    PyObject *filename;
+    int match;
 
     npath = PyList_Size(search_path_list);
     namestr = _PyUnicode_AsString(name);
@@ -1840,20 +1850,34 @@ find_module_path_list(PyObject *fullname, PyObject *name,
 
         len = strlen(buf);
         for (fdp = _PyImport_Filetab; fdp->suffix != NULL; fdp++) {
-            strcpy(buf+len, fdp->suffix);
-            if (Py_VerboseFlag > 1)
-                PySys_WriteStderr("# trying %s\n", buf);
             filemode = fdp->mode;
             if (filemode[0] == 'U')
                 filemode = "r" PY_STDIOTEXTMODE;
-            fp = fopen(buf, filemode);
-            if (fp == NULL)
-                continue;
 
-            if (case_ok(buf, len, namelen, namestr)) {
+            strcpy(buf+len, fdp->suffix);
+            filename = PyUnicode_DecodeFSDefault(buf);
+            if (filename == NULL)
+                return NULL;
+
+            if (Py_VerboseFlag > 1)
+                PySys_FormatStderr("# trying %R\n", filename);
+
+            fp = _Py_fopen(filename, filemode);
+            if (fp == NULL) {
+                Py_DECREF(filename);
+                continue;
+            }
+            match = case_ok(filename, -(Py_ssize_t)strlen(fdp->suffix), name);
+            if (match < 0) {
+                Py_DECREF(filename);
+                return NULL;
+            }
+            if (match) {
+                Py_DECREF(filename);
                 *p_fp = fp;
                 return fdp;
             }
+            Py_DECREF(filename);
 
             fclose(fp);
             fp = NULL;
@@ -2002,7 +2026,7 @@ find_module(PyObject *fullname, PyObject *name, PyObject *search_path_list,
                                  p_fp, p_loader);
 }
 
-/* case_ok(char* buf, Py_ssize_t len, Py_ssize_t namelen, char* name)
+/* case_bytes(char* buf, Py_ssize_t len, Py_ssize_t namelen, char* name)
  * The arguments here are tricky, best shown by example:
  *    /a/b/c/d/e/f/g/h/i/j/k/some_long_module_name.py\0
  *    ^                      ^                   ^    ^
@@ -2016,18 +2040,18 @@ find_module(PyObject *fullname, PyObject *name, PyObject *search_path_list,
  * We've already done a successful stat() or fopen() on buf, so know that
  * there's some match, possibly case-insensitive.
  *
- * case_ok() is to return 1 if there's a case-sensitive match for
- * name, else 0.  case_ok() is also to return 1 if envar PYTHONCASEOK
+ * case_bytes() is to return 1 if there's a case-sensitive match for
+ * name, else 0.  case_bytes() is also to return 1 if envar PYTHONCASEOK
  * exists.
  *
- * case_ok() is used to implement case-sensitive import semantics even
+ * case_bytes() is used to implement case-sensitive import semantics even
  * on platforms with case-insensitive filesystems.  It's trivial to implement
  * for case-sensitive filesystems.  It's pretty much a cross-platform
  * nightmare for systems with case-insensitive filesystems.
  */
 
 /* First we may need a pile of platform-specific header files; the sequence
- * of #if's here should match the sequence in the body of case_ok().
+ * of #if's here should match the sequence in the body of case_bytes().
  */
 #if defined(MS_WINDOWS)
 #include <windows.h>
@@ -2046,33 +2070,24 @@ find_module(PyObject *fullname, PyObject *name, PyObject *search_path_list,
 #include <os2.h>
 #endif
 
+#if defined(DJGPP) \
+    || ((defined(__MACH__) && defined(__APPLE__) || defined(__CYGWIN__)) \
+        && defined(HAVE_DIRENT_H)) \
+    || defined(PYOS_OS2)
+#  define USE_CASE_OK_BYTES
+#endif
+
+
+#ifdef USE_CASE_OK_BYTES
 static int
-case_ok(char *buf, Py_ssize_t len, Py_ssize_t namelen, const char *name)
+case_bytes(char *buf, Py_ssize_t len, Py_ssize_t namelen, const char *name)
 {
 /* Pick a platform-specific implementation; the sequence of #if's here should
  * match the sequence just above.
  */
 
-/* MS_WINDOWS */
-#if defined(MS_WINDOWS)
-    WIN32_FIND_DATA data;
-    HANDLE h;
-
-    if (Py_GETENV("PYTHONCASEOK") != NULL)
-        return 1;
-
-    h = FindFirstFile(buf, &data);
-    if (h == INVALID_HANDLE_VALUE) {
-        PyErr_Format(PyExc_NameError,
-          "Can't find file for module %.100s\n(filename %.300s)",
-          name, buf);
-        return 0;
-    }
-    FindClose(h);
-    return strncmp(data.cFileName, name, namelen) == 0;
-
 /* DJGPP */
-#elif defined(DJGPP)
+#if defined(DJGPP)
     struct ffblk ffblk;
     int done;
 
@@ -2151,6 +2166,70 @@ case_ok(char *buf, Py_ssize_t len, Py_ssize_t namelen, const char *name)
 
 /* assuming it's a case-sensitive filesystem, so there's nothing to do! */
 #else
+#   error "USE_CASE_OK_BYTES is not correctly defined"
+#endif
+}
+#endif
+
+/*
+ * Check if a filename case matchs the name case. We've already done a
+ * successful stat() or fopen() on buf, so know that there's some match,
+ * possibly case-insensitive.
+ *
+ * case_ok() is to return 1 if there's a case-sensitive match for name, 0 if it
+ * the filename doesn't match, or -1 on error.  case_ok() is also to return 1
+ * if envar PYTHONCASEOK exists.
+ *
+ * case_ok() is used to implement case-sensitive import semantics even
+ * on platforms with case-insensitive filesystems.  It's trivial to implement
+ * for case-sensitive filesystems.  It's pretty much a cross-platform
+ * nightmare for systems with case-insensitive filesystems.
+ */
+
+static int
+case_ok(PyObject *filename, Py_ssize_t prefix_delta, PyObject *name)
+{
+#ifdef MS_WINDOWS
+    WIN32_FIND_DATAW data;
+    HANDLE h;
+    int cmp;
+
+    if (Py_GETENV("PYTHONCASEOK") != NULL)
+        return 1;
+
+    h = FindFirstFileW(PyUnicode_AS_UNICODE(filename), &data);
+    if (h == INVALID_HANDLE_VALUE) {
+        PyErr_Format(PyExc_NameError,
+          "Can't find file for module %R\n(filename %R)",
+          name, filename);
+        return 0;
+    }
+    FindClose(h);
+    cmp = wcsncmp(data.cFileName,
+                  PyUnicode_AS_UNICODE(name),
+                  PyUnicode_GET_SIZE(name));
+    return cmp == 0;
+#elif defined(USE_CASE_OK_BYTES)
+    int match;
+    PyObject *filebytes, *namebytes;
+    filebytes = PyUnicode_EncodeFSDefault(filename);
+    if (filebytes == NULL)
+        return -1;
+    namebytes = PyUnicode_EncodeFSDefault(name);
+    if (namebytes == NULL) {
+        Py_DECREF(filebytes);
+        return -1;
+    }
+    match = case_bytes(
+        PyBytes_AS_STRING(filebytes),
+        PyBytes_GET_SIZE(filebytes) + prefix_delta,
+        PyBytes_AS_STRING(namebytes),
+        PyBytes_GET_SIZE(namebytes));
+    Py_DECREF(filebytes);
+    Py_DECREF(namebytes);
+    return match;
+#else
+    /* assuming it's a case-sensitive filesystem, so there's nothing to do! */
     return 1;
 
 #endif
@@ -2167,8 +2246,6 @@ find_init_module(PyObject *directory)
     struct stat statbuf;
     PyObject *filename;
     int match;
-    char *filestr;
-    size_t filelen;
 
     len = PyUnicode_GET_SIZE(directory);
     filename = PyUnicode_FromFormat("%U%c__init__.py", directory, SEP);
@@ -2176,9 +2253,12 @@ find_init_module(PyObject *directory)
         return -1;
     if (_Py_stat(filename, &statbuf) == 0) {
         /* 9=len("/__init__") */
-        filestr = _PyUnicode_AsString(filename);
-        filelen = strlen(filestr);
-        if (case_ok(filestr, filelen-9, 8, "__init__")) {
+        match = case_ok(filename, 9, initstr);
+        if (match < 0) {
+            Py_DECREF(filename);
+            return -1;
+        }
+        if (match) {
             Py_DECREF(filename);
             return 1;
         }
@@ -2191,9 +2271,12 @@ find_init_module(PyObject *directory)
         return -1;
     if (_Py_stat(filename, &statbuf) == 0) {
         /* 9=len("/__init__") */
-        filestr = _PyUnicode_AsString(filename);
-        filelen = strlen(filestr);
-        if (case_ok(filestr, filelen-9, 8, "__init__")) {
+        match = case_ok(filename, 9, initstr);
+        if (match < 0) {
+            Py_DECREF(filename);
+            return -1;
+        }
+        if (match) {
             Py_DECREF(filename);
             return 1;
         }
