@@ -943,12 +943,12 @@ make_compiled_pathname(Py_UNICODE *pathname, int debug)
     Py_UNICODE_strcat(buf, CACHEDIR_UNICODE);
     i += Py_UNICODE_strlen(CACHEDIR_UNICODE) - 1;
     buf[i++] = sep;
-    buf[i++] = '\0';
+    buf[i] = '\0';
     /* Add the base filename, but remove the .py or .pyw extension, since
        the tag name must go before the extension.
     */
     Py_UNICODE_strcat(buf, pathname + save);
-    pos = Py_UNICODE_strrchr(buf, '.');
+    pos = Py_UNICODE_strrchr(buf + i, '.');
     if (pos != NULL)
         *++pos = '\0';
     Py_UNICODE_strcat(buf, PYC_TAG_UNICODE);
