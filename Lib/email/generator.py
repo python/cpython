@@ -59,7 +59,7 @@ class Generator:
         self._fp.write(s)
 
     def flatten(self, msg, unixfrom=False, linesep='\n'):
-        """Print the message object tree rooted at msg to the output file
+        r"""Print the message object tree rooted at msg to the output file
         specified when the Generator instance was created.
 
         unixfrom is a flag that forces the printing of a Unix From_ delimiter
@@ -70,7 +70,10 @@ class Generator:
         Note that for subobjects, no From_ line is printed.
 
         linesep specifies the characters used to indicate a new line in
-        the output.
+        the output.  The default value is the most useful for typical
+        Python applications, but it can be set to \r\n to produce RFC-compliant
+        line separators when needed.
+
         """
         # We use the _XXX constants for operating on data that comes directly
         # from the msg, and _encoded_XXX constants for operating on data that

@@ -276,7 +276,7 @@ class Header:
         self._chunks.append((s, charset))
 
     def encode(self, splitchars=';, \t', maxlinelen=None, linesep='\n'):
-        """Encode a message header into an RFC-compliant format.
+        r"""Encode a message header into an RFC-compliant format.
 
         There are many issues involved in converting a given string for use in
         an email header.  Only certain character sets are readable in most
