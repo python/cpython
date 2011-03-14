@@ -271,7 +271,7 @@ This module also defines four shortcut functions:
       generates enough output to a pipe such that it blocks waiting
       for the OS pipe buffer to accept more data.
 
-   .. versionchanged:: 3.2
+   .. versionchanged:: 3.3
       *timeout* was added.
 
 
@@ -295,7 +295,7 @@ This module also defines four shortcut functions:
 
       See the warning for :func:`call`.
 
-   .. versionchanged:: 3.2
+   .. versionchanged:: 3.3
       *timeout* was added.
 
 
@@ -328,7 +328,7 @@ This module also defines four shortcut functions:
 
    .. versionadded:: 3.1
 
-   .. versionchanged:: 3.2
+   .. versionchanged:: 3.3
       *timeout* was added.
 
 
@@ -424,7 +424,7 @@ Instances of the :class:`Popen` class have the following methods:
       a pipe such that it blocks waiting for the OS pipe buffer to
       accept more data.  Use :meth:`communicate` to avoid that.
 
-   .. versionchanged:: 3.2
+   .. versionchanged:: 3.3
       *timeout* was added.
 
 
@@ -462,7 +462,7 @@ Instances of the :class:`Popen` class have the following methods:
       The data read is buffered in memory, so do not use this method if the data
       size is large or unlimited.
 
-   .. versionchanged:: 3.2
+   .. versionchanged:: 3.3
       *timeout* was added.
 
 
