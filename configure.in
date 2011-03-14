@@ -763,11 +763,6 @@ if test $enable_shared = "yes"; then
 	  BLDLIBRARY='-Wl,+b,$(LIBDIR) -L. -lpython$(LDVERSION)'
 	  RUNSHARED=SHLIB_PATH=`pwd`:${SHLIB_PATH}
 	  ;;
-    OSF*)
-	  LDLIBRARY='libpython$(LDVERSION).so'
-	  BLDLIBRARY='-rpath $(LIBDIR) -L. -lpython$(LDVERSION)'
-	  RUNSHARED=LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}
-	  ;;
     Darwin*)
     	LDLIBRARY='libpython$(LDVERSION).dylib'
 	BLDLIBRARY='-L. -lpython$(LDVERSION)'
@@ -1068,9 +1063,6 @@ yes)
 	    EXPORT_MACOSX_DEPLOYMENT_TARGET=''
 
 	    ;;
-	OSF*)
-	    BASECFLAGS="$BASECFLAGS -mieee"
-	    ;;
     esac
     ;;
 
@@ -1079,9 +1071,6 @@ yes)
     OpenUNIX*|UnixWare*)
 	BASECFLAGS="$BASECFLAGS -K pentium,host,inline,loop_unroll,alloca "
 	;;
-    OSF*)
-	BASECFLAGS="$BASECFLAGS -ieee -std"
-    	;;
     SCO_SV*)
 	BASECFLAGS="$BASECFLAGS -belf -Ki486 -DSCO5"
 	;;
@@ -1322,7 +1311,6 @@ AC_EGREP_HEADER(clock_t, time.h, was_it_defined=yes, [
 ])
 AC_MSG_RESULT($was_it_defined)
 
-# Check whether using makedev requires defining _OSF_SOURCE
 AC_MSG_CHECKING(for makedev)
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #if defined(MAJOR_IN_MKDEV)
@@ -1335,19 +1323,6 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 ]], [[
   makedev(0, 0) ]])
 ],[ac_cv_has_makedev=yes],[ac_cv_has_makedev=no])
-if test "$ac_cv_has_makedev" = "no"; then
-    # we didn't link, try if _OSF_SOURCE will allow us to link
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-#define _OSF_SOURCE 1
-#include <sys/types.h>
-    ]],
-    [[ makedev(0, 0) ]])],
-    [ac_cv_has_makedev=yes],
-    [ac_cv_has_makedev=no])
-    if test "$ac_cv_has_makedev" = "yes"; then
-        AC_DEFINE(_OSF_SOURCE, 1, [Define _OSF_SOURCE to get the makedev macro.])
-    fi
-fi
 AC_MSG_RESULT($ac_cv_has_makedev)
 if test "$ac_cv_has_makedev" = "yes"; then
     AC_DEFINE(HAVE_MAKEDEV, 1, [Define this if you have the makedev macro.])
@@ -1667,7 +1642,6 @@ then
 		else
 			LDSHARED='ld -b'
 		fi ;;
-	OSF*) LDSHARED="ld -shared -expect_unresolved \"*\"";;
 	Darwin/1.3*)
 		LDSHARED='$(CC) -bundle'
 		LDCXXSHARED='$(CXX) -bundle'
@@ -2022,17 +1996,7 @@ fi
 AC_SUBST(USE_THREAD_MODULE)
 USE_THREAD_MODULE=""
 
-AC_MSG_CHECKING(for --with-dec-threads)
 AC_SUBST(LDLAST)
-AC_ARG_WITH(dec-threads,
-            AS_HELP_STRING([--with-dec-threads], [use DEC Alpha/OSF1 thread-safe libraries]),
-[
-AC_MSG_RESULT($withval)
-LDLAST=-threads
-if test "${with_thread+set}" != set; then
-   with_thread="$withval";
-fi],
-[AC_MSG_RESULT(no)])
 
 # Templates for things AC_DEFINEd more than once.
 # For a single AC_DEFINE, no template is needed.
@@ -2176,15 +2140,6 @@ pthread_create (NULL, NULL, start_routine, NULL)]])],[
       LIBS="$LIBS -lthread"
       THREADOBJ="Python/thread.o"
       USE_THREAD_MODULE=""])
-    fi
-
-    if test "$USE_THREAD_MODULE" != "#"
-    then
-        # If the above checks didn't disable threads, (at least) OSF1
-        # needs this '-threads' argument during linking.
-        case $ac_sys_system in
-        OSF1) LDLAST=-threads;;
-        esac
     fi
 fi
 
@@ -4246,10 +4201,6 @@ AIX*)
   AC_DEFINE(HAVE_BROKEN_PIPE_BUF, 1, [Define if the system reports an invalid PIPE_BUF value.]) ;;
 esac
 
-
-case $ac_sys_system in
-  OSF*) AC_MSG_ERROR(OSF* systems are deprecated unless somebody volunteers. Check http://bugs.python.org/issue8606) ;;
-esac
 
 AC_CHECK_FUNC(pipe2, AC_DEFINE(HAVE_PIPE2, 1, [Define if the OS supports pipe2()]), )
 
