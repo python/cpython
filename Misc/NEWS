@@ -218,6 +218,9 @@ Build
   support now looks for "__powerpc__" as well as "__ppc__": the latter seems to
   only be present on OS X; the former is the correct one for Linux with GCC.
 
+- Issue #1099: Fix the build on MacOSX when building a framework with pydebug
+  using GCC 4.0.
+
 Tests
 -----
 
