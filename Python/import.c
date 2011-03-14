@@ -2620,7 +2620,7 @@ PyImport_ImportModuleNoBlock(const char *name)
     }
     else {
         PyErr_Format(PyExc_ImportError,
-                     "Failed to import %U because the import lock"
+                     "Failed to import %R because the import lock"
                      "is held by another thread.",
                      nameobj);
         result = NULL;
@@ -3285,7 +3285,7 @@ PyImport_ReloadModule(PyObject *m)
         parent = PyDict_GetItem(modules, parentname);
         if (parent == NULL) {
             PyErr_Format(PyExc_ImportError,
-                "reload(): parent %U not in sys.modules",
+                "reload(): parent %R not in sys.modules",
                  parentname);
             Py_DECREF(parentname);
             imp_modules_reloading_clear();
