@@ -251,6 +251,9 @@ Build
 Tests
 -----
 
+- Issue #11490: test_subprocess:test_leaking_fds_on_error no longer gives a
+  false positive if the last directory in the path is inaccessible.
+
 - Issue #10822: Fix test_posix:test_getgroups failure under Solaris.  Patch
   by Ross Lagerwall.
 

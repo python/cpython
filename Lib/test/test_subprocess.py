@@ -573,7 +573,8 @@ class ProcessTestCase(BaseTestCase):
                 subprocess.Popen(['nonexisting_i_hope'],
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
-            if c.exception.errno != errno.ENOENT:  # ignore "no such file"
+            # ignore errors that indicate the command was not found
+            if c.exception.errno not in (errno.ENOENT, errno.EACCES):
                 raise c.exception
 
     def test_handles_closed_on_exception(self):
