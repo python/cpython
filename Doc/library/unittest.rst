@@ -194,7 +194,7 @@ documentation explores the full feature set from first principles.
 
 .. _unittest-command-line-interface:
 
-Command Line Interface
+Command-Line Interface
 ----------------------
 
 The unittest module can be used from the command line to run tests from
