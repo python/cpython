@@ -68,6 +68,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11407: `TestCase.run` returns the result object used or created.
+  Contributed by Janathan Hartley.
+
 - Issue #11500: Fixed a bug in the os x proxy bypass code for fully qualified 
   IP addresses in the proxy exception list. 
 
