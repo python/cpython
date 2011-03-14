@@ -67,10 +67,10 @@ def open(file, flag = 'r', mode = 0o666):
         if not _defaultmod:
             raise ImportError("no dbm clone found; tried %s" % _names)
 
-    # guess the type of an existing database
-    result = whichdb(file)
+    # guess the type of an existing database, if not creating a new one
+    result = whichdb(file) if 'n' not in flag else None
     if result is None:
-        # db doesn't exist
+        # db doesn't exist or 'n' flag was specified to create a new db
         if 'c' in flag or 'n' in flag:
             # file doesn't exist and the new flag was used so use default type
             mod = _defaultmod
