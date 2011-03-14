@@ -203,6 +203,8 @@ Tools/Demos
 Tests
 -----
 
+- Issue #11505: improves test coverage of string.py
+
 - Issue #11490: test_subprocess:test_leaking_fds_on_error no longer gives a
   false positive if the last directory in the path is inaccessible.
 
