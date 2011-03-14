@@ -197,6 +197,9 @@ Library
   OSError exception when The OS had been told to ignore SIGCLD in our process
   or otherwise not wait for exiting child processes.
 
+- Issue #11500: Fixed a bug in the os x proxy bypass code for fully qualified 
+  IP addresses in the proxy exception list. 
+
 Extensions
 ----------
 
