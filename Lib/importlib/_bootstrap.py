@@ -240,7 +240,7 @@ class BuiltinImporter:
     @classmethod
     @_requires_builtin
     def is_package(cls, fullname):
-        """Return None as built-in module are never packages."""
+        """Return None as built-in modules are never packages."""
         return False
 
 
