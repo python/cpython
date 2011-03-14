@@ -113,6 +113,8 @@ typedef unsigned short mode_t;
 #define MAGIC (3180 | ((long)'\r'<<16) | ((long)'\n'<<24))
 #define TAG "cpython-32"
 #define CACHEDIR "__pycache__"
+static const Py_UNICODE CACHEDIR_UNICODE[] = {
+    '_', '_', 'p', 'y', 'c', 'a', 'c', 'h', 'e', '_', '_', '\0'};
 /* Current magic word and string tag as globals. */
 static long pyc_magic = MAGIC;
 static const char *pyc_tag = TAG;
@@ -741,8 +743,8 @@ remove_module(PyObject *name)
                       "sys.modules failed");
 }
 
-static PyObject * get_sourcefile(char *file);
-static char *make_source_pathname(char *pathname, char *buf);
+static PyObject * get_sourcefile(PyObject *filename);
+static PyObject *make_source_pathname(PyObject *pathname);
 static char *make_compiled_pathname(char *pathname, char *buf, size_t buflen,
                                     int debug);
 
@@ -807,7 +809,6 @@ PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname,
 {
     PyObject *modules = PyImport_GetModuleDict();
     PyObject *m, *d, *v;
-    PyObject *pathbytes;
 
     m = PyImport_AddModuleObject(name);
     if (m == NULL)
@@ -822,12 +823,7 @@ PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname,
     }
     /* Remember the filename as the __file__ attribute */
     if (pathname != NULL) {
-        pathbytes = PyUnicode_EncodeFSDefault(pathname);
-        if (pathbytes != NULL) {
-            v = get_sourcefile(PyBytes_AS_STRING(pathbytes));
-            Py_DECREF(pathbytes);
-        } else
-            v = NULL;
+        v = get_sourcefile(pathname);
         if (v == NULL)
             PyErr_Clear();
     }
@@ -878,6 +874,27 @@ static char *
 rightmost_sep(char *s)
 {
     char *found, c;
+    for (found = NULL; (c = *s); s++) {
+        if (c == SEP
+#ifdef ALTSEP
+            || c == ALTSEP
+#endif
+            )
+        {
+            found = s;
+        }
+    }
+    return found;
+}
+
+
+/* Like strrchr(string, '/') but searches for the rightmost of either SEP
+   or ALTSEP, if the latter is defined.
+*/
+static Py_UNICODE*
+rightmost_sep_unicode(Py_UNICODE *s)
+{
+    Py_UNICODE *found, c;
     for (found = NULL; (c = *s); s++) {
         if (c == SEP
 #ifdef ALTSEP
@@ -1005,42 +1022,50 @@ make_compiled_pathname(char *pathname, char *buf, size_t buflen, int debug)
    source file, if the path matches the PEP 3147 format.  This does not check
    for any file existence, however, if the pyc file name does not match PEP
    3147 style, NULL is returned.  buf must be at least as big as pathname;
-   the resulting path will always be shorter. */
+   the resulting path will always be shorter.
 
-static char *
-make_source_pathname(char *pathname, char *buf)
+   (...)/__pycache__/foo.<tag>.pyc -> (...)/foo.py */
+
+static PyObject*
+make_source_pathname(PyObject *pathobj)
 {
-    /* __pycache__/foo.<tag>.pyc -> foo.py */
+    Py_UNICODE buf[MAXPATHLEN];
+    Py_UNICODE *pathname;
+    Py_UNICODE *left, *right, *dot0, *dot1, sep;
     size_t i, j;
-    char *left, *right, *dot0, *dot1, sep;
+
+    if (PyUnicode_GET_SIZE(pathobj) > MAXPATHLEN)
+        return NULL;
+    pathname = PyUnicode_AS_UNICODE(pathobj);
 
     /* Look back two slashes from the end.  In between these two slashes
        must be the string __pycache__ or this is not a PEP 3147 style
        path.  It's possible for there to be only one slash.
     */
-    if ((right = rightmost_sep(pathname)) == NULL)
+    right = rightmost_sep_unicode(pathname);
+    if (right == NULL)
         return NULL;
     sep = *right;
     *right = '\0';
-    left = rightmost_sep(pathname);
+    left = rightmost_sep_unicode(pathname);
     *right = sep;
     if (left == NULL)
         left = pathname;
     else
         left++;
-    if (right-left != strlen(CACHEDIR) ||
-        strncmp(left, CACHEDIR, right-left) != 0)
+    if (right-left != Py_UNICODE_strlen(CACHEDIR_UNICODE) ||
+        Py_UNICODE_strncmp(left, CACHEDIR_UNICODE, right-left) != 0)
         return NULL;
 
     /* Now verify that the path component to the right of the last slash
        has two dots in it.
     */
-    if ((dot0 = strchr(right + 1, '.')) == NULL)
+    if ((dot0 = Py_UNICODE_strchr(right + 1, '.')) == NULL)
         return NULL;
-    if ((dot1 = strchr(dot0 + 1, '.')) == NULL)
+    if ((dot1 = Py_UNICODE_strchr(dot0 + 1, '.')) == NULL)
         return NULL;
     /* Too many dots? */
-    if (strchr(dot1 + 1, '.') != NULL)
+    if (Py_UNICODE_strchr(dot1 + 1, '.') != NULL)
         return NULL;
 
     /* This is a PEP 3147 path.  Start by copying everything from the
@@ -1048,10 +1073,11 @@ make_source_pathname(char *pathname, char *buf)
        copy the file's basename, removing the magic tag and adding a .py
        suffix.
     */
-    strncpy(buf, pathname, (i=left-pathname));
-    strncpy(buf+i, right+1, (j=dot0-right));
-    strcpy(buf+i+j, "py");
-    return buf;
+    Py_UNICODE_strncpy(buf, pathname, (i=left-pathname));
+    Py_UNICODE_strncpy(buf+i, right+1, (j=dot0-right));
+    buf[i+j] = 'p';
+    buf[i+j+1] = 'y';
+    return PyUnicode_FromUnicode(buf, i+j+2);
 }
 
 /* Given a pathname for a Python source file, its time of last
@@ -1390,40 +1416,47 @@ load_source_module(char *name, char *pathname, FILE *fp)
  * Returns the path to the py file if available, else the given path
  */
 static PyObject *
-get_sourcefile(char *file)
+get_sourcefile(PyObject *filename)
 {
-    char py[MAXPATHLEN + 1];
     Py_ssize_t len;
-    PyObject *u;
+    Py_UNICODE *fileuni;
+    PyObject *py;
     struct stat statbuf;
 
-    if (!file || !*file) {
+    len = PyUnicode_GET_SIZE(filename);
+    if (len == 0)
         Py_RETURN_NONE;
-    }
 
-    len = strlen(file);
-    /* match '*.py?' */
-    if (len > MAXPATHLEN || PyOS_strnicmp(&file[len-4], ".py", 3) != 0) {
-        return PyUnicode_DecodeFSDefault(file);
-    }
+    /* don't match *.pyc or *.pyo? */
+    fileuni = PyUnicode_AS_UNICODE(filename);
+    if (len < 5
+        || fileuni[len-4] != '.'
+        || (fileuni[len-3] != 'p' && fileuni[len-3] != 'P')
+        || (fileuni[len-2] != 'y' && fileuni[len-2] != 'Y'))
+        goto unchanged;
 
     /* Start by trying to turn PEP 3147 path into source path.  If that
      * fails, just chop off the trailing character, i.e. legacy pyc path
      * to py.
      */
-    if (make_source_pathname(file, py) == NULL) {
-        strncpy(py, file, len-1);
-        py[len-1] = '\0';
+    py = make_source_pathname(filename);
+    if (py == NULL) {
+        PyErr_Clear();
+        py = PyUnicode_FromUnicode(fileuni, len - 1);
     }
+    if (py == NULL)
+        goto error;
 
-    if (stat(py, &statbuf) == 0 &&
-        S_ISREG(statbuf.st_mode)) {
-        u = PyUnicode_DecodeFSDefault(py);
-    }
-    else {
-        u = PyUnicode_DecodeFSDefault(file);
-    }
-    return u;
+    if (_Py_stat(py, &statbuf) == 0 && S_ISREG(statbuf.st_mode))
+        return py;
+    Py_DECREF(py);
+    goto unchanged;
+
+error:
+    PyErr_Clear();
+unchanged:
+    Py_INCREF(filename);
+    return filename;
 }
 
 /* Forward */
@@ -1436,54 +1469,56 @@ static struct _frozen * find_frozen(PyObject *);
    REFERENCE COUNT */
 
 static PyObject *
-load_package(char *name, char *pathname)
+load_package(PyObject *name, PyObject *pathname)
 {
     PyObject *m, *d;
-    PyObject *file = NULL;
-    PyObject *path = NULL;
+    PyObject *file = NULL, *path_list = NULL;
     int err;
     char buf[MAXPATHLEN+1];
-    FILE *fp;
+    FILE *fp = NULL;
     struct filedescr *fdp;
+    char *namestr;
 
-    m = PyImport_AddModule(name);
+    m = PyImport_AddModuleObject(name);
     if (m == NULL)
         return NULL;
     if (Py_VerboseFlag)
-        PySys_WriteStderr("import %s # directory %s\n",
+        PySys_FormatStderr("import %U # directory %U\n",
             name, pathname);
-    d = PyModule_GetDict(m);
     file = get_sourcefile(pathname);
     if (file == NULL)
-        goto error;
-    path = Py_BuildValue("[O]", file);
-    if (path == NULL)
-        goto error;
+        return NULL;
+    path_list = Py_BuildValue("[O]", file);
+    if (path_list == NULL) {
+        Py_DECREF(file);
+        return NULL;
+    }
+    d = PyModule_GetDict(m);
     err = PyDict_SetItemString(d, "__file__", file);
+    Py_DECREF(file);
     if (err == 0)
-        err = PyDict_SetItemString(d, "__path__", path);
-    if (err != 0)
+        err = PyDict_SetItemString(d, "__path__", path_list);
+    if (err != 0) {
+        Py_DECREF(path_list);
+        return NULL;
+    }
+    namestr = _PyUnicode_AsString(name);
+    if (namestr == NULL)
         goto error;
-    fdp = find_module(name, "__init__", path, buf, sizeof(buf), &fp, NULL);
+    fdp = find_module(namestr, "__init__", path_list, buf, sizeof(buf), &fp, NULL);
+    Py_DECREF(path_list);
     if (fdp == NULL) {
         if (PyErr_ExceptionMatches(PyExc_ImportError)) {
             PyErr_Clear();
             Py_INCREF(m);
+            return m;
         }
         else
-            m = NULL;
-        goto cleanup;
+            return NULL;
     }
-    m = load_module(name, fp, buf, fdp->type, NULL);
+    m = load_module(namestr, fp, buf, fdp->type, NULL);
     if (fp != NULL)
         fclose(fp);
-    goto cleanup;
-
-  error:
-    m = NULL;
-  cleanup:
-    Py_XDECREF(path);
-    Py_XDECREF(file);
     return m;
 }
 
@@ -2282,9 +2317,21 @@ load_module(char *name, FILE *fp, char *pathname, int type, PyObject *loader)
     }
 #endif
 
-    case PKG_DIRECTORY:
-        m = load_package(name, pathname);
+    case PKG_DIRECTORY: {
+        PyObject *nameobj, *pathobj;
+        nameobj = PyUnicode_FromString(name);
+        if (nameobj == NULL)
+            return NULL;
+        pathobj = PyUnicode_DecodeFSDefault(pathname);
+        if (pathobj == NULL) {
+            Py_DECREF(nameobj);
+            return NULL;
+        }
+        m = load_package(nameobj, pathobj);
+        Py_DECREF(nameobj);
+        Py_DECREF(pathobj);
         break;
+    }
 
     case C_BUILTIN:
     case PY_FROZEN: {
@@ -3637,13 +3684,12 @@ imp_load_module(PyObject *self, PyObject *args)
 static PyObject *
 imp_load_package(PyObject *self, PyObject *args)
 {
-    char *name;
-    PyObject *pathname;
+    PyObject *name, *pathname;
     PyObject * ret;
-    if (!PyArg_ParseTuple(args, "sO&:load_package",
-                          &name, PyUnicode_FSConverter, &pathname))
+    if (!PyArg_ParseTuple(args, "UO&:load_package",
+                          &name, PyUnicode_FSDecoder, &pathname))
         return NULL;
-    ret = load_package(name, PyBytes_AS_STRING(pathname));
+    ret = load_package(name, pathname);
     Py_DECREF(pathname);
     return ret;
 }
@@ -3716,25 +3762,22 @@ static PyObject *
 imp_source_from_cache(PyObject *self, PyObject *args, PyObject *kws)
 {
     static char *kwlist[] = {"path", NULL};
-
-    PyObject *pathname_obj;
-    char *pathname;
-    char buf[MAXPATHLEN+1];
+    PyObject *pathname, *source;
 
     if (!PyArg_ParseTupleAndKeywords(
                 args, kws, "O&", kwlist,
-                PyUnicode_FSConverter, &pathname_obj))
+                PyUnicode_FSDecoder, &pathname))
         return NULL;
 
-    pathname = PyBytes_AS_STRING(pathname_obj);
-    if (make_source_pathname(pathname, buf) == NULL) {
-        PyErr_Format(PyExc_ValueError, "Not a PEP 3147 pyc path: %s",
+    source = make_source_pathname(pathname);
+    if (source == NULL) {
+        PyErr_Format(PyExc_ValueError, "Not a PEP 3147 pyc path: %R",
                      pathname);
-        Py_DECREF(pathname_obj);
+        Py_DECREF(pathname);
         return NULL;
     }
-    Py_DECREF(pathname_obj);
-    return PyUnicode_FromString(buf);
+    Py_DECREF(pathname);
+    return source;
 }
 
 PyDoc_STRVAR(doc_source_from_cache,
