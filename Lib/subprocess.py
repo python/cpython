@@ -193,7 +193,7 @@ A ValueError will be raised if Popen is called with invalid arguments.
 
 Exceptions defined within this module inherit from SubprocessError.
 check_call() and check_output() will raise CalledProcessError if the
-called process returns a non-zero return code.  TimeoutExpired 
+called process returns a non-zero return code.  TimeoutExpired
 be raised if a timeout was specified and expired.
 
 
