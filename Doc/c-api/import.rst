@@ -57,7 +57,7 @@ Importing Modules
    :c:func:`PyImport_ImportModule`.
 
 
-.. c:function:: PyObject* PyImport_ImportModuleLevel(char *name, PyObject *globals, PyObject *locals, PyObject *fromlist, int level)
+.. c:function:: PyObject* PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals, PyObject *locals, PyObject *fromlist, int level)
 
    Import a module.  This is best described by referring to the built-in Python
    function :func:`__import__`, as the standard :func:`__import__` function calls
@@ -68,6 +68,13 @@ Importing Modules
    the return value when a submodule of a package was requested is normally the
    top-level package, unless a non-empty *fromlist* was given.
 
+   .. versionadded:: 3.3
+
+
+.. c:function:: PyObject* PyImport_ImportModuleLevel(char *name, PyObject *globals, PyObject *locals, PyObject *fromlist, int level)
+
+   Similar to :c:func:`PyImport_ImportModuleLevelObject`, but the name is an
+   UTF-8 encoded string instead of a Unicode object.
 
 .. c:function:: PyObject* PyImport_Import(PyObject *name)
 
