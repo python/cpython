@@ -554,7 +554,8 @@ class ProcessTestCase(BaseTestCase):
                                  stderr=subprocess.PIPE)
             # Windows raises IOError
             except (IOError, OSError) as err:
-                if err.errno != errno.ENOENT:  # ignore "no such file"
+                # ignore errors that indicate the command was not found
+                if err.errno not in (errno.ENOENT, errno.EACCES): 
                     raise
 
     def test_issue8780(self):
