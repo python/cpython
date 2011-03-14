@@ -2173,9 +2173,21 @@ load_module(char *name, FILE *fp, char *pathname, int type, PyObject *loader)
         break;
 
 #ifdef HAVE_DYNAMIC_LOADING
-    case C_EXTENSION:
-        m = _PyImport_LoadDynamicModule(name, pathname, fp);
+    case C_EXTENSION: {
+        PyObject *nameobj, *pathobj;
+        nameobj = PyUnicode_FromString(name);
+        if (nameobj == NULL)
+            return NULL;
+        pathobj = PyUnicode_DecodeFSDefault(pathname);
+        if (pathobj == NULL) {
+            Py_DECREF(nameobj);
+            return NULL;
+        }
+        m = _PyImport_LoadDynamicModule(nameobj, pathobj, fp);
+        Py_DECREF(nameobj);
+        Py_DECREF(pathobj);
         break;
+    }
 #endif
 
     case PKG_DIRECTORY:
@@ -2185,11 +2197,10 @@ load_module(char *name, FILE *fp, char *pathname, int type, PyObject *loader)
     case C_BUILTIN:
     case PY_FROZEN: {
         PyObject *nameobj = PyUnicode_FromString(name);
-        if (nameobj != NULL) {
-            m = load_builtin(nameobj, type);
-            Py_DECREF(nameobj);
-        } else
-            m = NULL;
+        if (nameobj == NULL)
+            return NULL;
+        m = load_builtin(nameobj, type);
+        Py_DECREF(nameobj);
         break;
     }
 
@@ -3443,28 +3454,23 @@ imp_load_compiled(PyObject *self, PyObject *args)
 static PyObject *
 imp_load_dynamic(PyObject *self, PyObject *args)
 {
-    char *name;
-    PyObject *pathbytes;
-    char *pathname;
-    PyObject *fob = NULL;
-    PyObject *m;
-    FILE *fp = NULL;
-    if (!PyArg_ParseTuple(args, "sO&|O:load_dynamic",
-                          &name, PyUnicode_FSConverter, &pathbytes, &fob))
+    PyObject *name, *pathname, *fob = NULL, *mod;
+    FILE *fp;
+
+    if (!PyArg_ParseTuple(args, "UO&|O:load_dynamic",
+                          &name, PyUnicode_FSDecoder, &pathname, &fob))
         return NULL;
-    pathname = PyBytes_AS_STRING(pathbytes);
-    if (fob) {
-        fp = get_file(pathname, fob, "r");
-        if (fp == NULL) {
-            Py_DECREF(pathbytes);
+    if (fob != NULL) {
+        fp = get_file(NULL, fob, "r");
+        if (fp == NULL)
             return NULL;
-        }
     }
-    m = _PyImport_LoadDynamicModule(name, pathname, fp);
-    Py_DECREF(pathbytes);
+    else
+        fp = NULL;
+    mod = _PyImport_LoadDynamicModule(name, pathname, fp);
     if (fp)
         fclose(fp);
-    return m;
+    return mod;
 }
 
 #endif /* HAVE_DYNAMIC_LOADING */

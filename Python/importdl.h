@@ -28,7 +28,7 @@ struct filedescr {
 extern struct filedescr * _PyImport_Filetab;
 extern const struct filedescr _PyImport_DynLoadFiletab[];
 
-extern PyObject *_PyImport_LoadDynamicModule(char *name, char *pathname,
+extern PyObject *_PyImport_LoadDynamicModule(PyObject *name, PyObject *pathname,
                                              FILE *);
 
 /* Max length of module suffix searched for -- accommodates "module.slb" */
