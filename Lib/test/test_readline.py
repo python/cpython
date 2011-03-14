@@ -12,6 +12,10 @@ from test.support import run_unittest, import_module
 readline = import_module('readline')
 
 class TestHistoryManipulation (unittest.TestCase):
+
+    @unittest.skipIf(not hasattr(readline, 'clear_history'),
+                     "The history update test cannot be run because the "
+                     "clear_history method is not available.")
     def testHistoryUpdates(self):
         readline.clear_history()
 
