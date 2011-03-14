@@ -43,6 +43,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11500: Fixed a bug in the os x proxy bypass code for fully qualified 
+  IP addresses in the proxy exception list. 
+
 - Issue #11131: Fix sign of zero in plus and minus operations when
   the context rounding mode is ROUND_FLOOR.
 
