@@ -2779,9 +2779,7 @@ PyImport_ImportModuleLevel(char *name, PyObject *globals, PyObject *locals,
    corresponding entry is not found in sys.modules, Py_None is returned.
 */
 static PyObject *
-get_parent(PyObject *globals,
-           PyObject **p_name,
-           int level)
+get_parent(PyObject *globals, PyObject **p_name, int level)
 {
     Py_UNICODE name[MAXPATHLEN+1];
     const Py_ssize_t bufsize = MAXPATHLEN+1;
@@ -3167,7 +3165,10 @@ static PyObject *
 import_submodule(PyObject *mod, PyObject *subname, PyObject *fullname)
 {
     PyObject *modules = PyImport_GetModuleDict();
-    PyObject *m = NULL, *bufobj;
+    PyObject *m = NULL, *bufobj, *path, *loader;
+    char buf[MAXPATHLEN+1];
+    struct filedescr *fdp;
+    FILE *fp;
 
     /* Require:
        if mod == None: subname == fullname
@@ -3176,52 +3177,48 @@ import_submodule(PyObject *mod, PyObject *subname, PyObject *fullname)
 
     if ((m = PyDict_GetItem(modules, fullname)) != NULL) {
         Py_INCREF(m);
+        return m;
     }
+
+    if (mod == Py_None)
+        path = NULL;
     else {
-        PyObject *path, *loader;
-        char buf[MAXPATHLEN+1];
-        struct filedescr *fdp;
-        FILE *fp;
-
-        if (mod == Py_None)
-            path = NULL;
-        else {
-            path = PyObject_GetAttrString(mod, "__path__");
-            if (path == NULL) {
-                PyErr_Clear();
-                Py_INCREF(Py_None);
-                return Py_None;
-            }
-        }
-
-        fdp = find_module(_PyUnicode_AsString(fullname),
-                          _PyUnicode_AsString(subname),
-                          path, buf, MAXPATHLEN+1,
-                          &fp, &loader);
-        Py_XDECREF(path);
-        if (fdp == NULL) {
-            if (!PyErr_ExceptionMatches(PyExc_ImportError))
-                return NULL;
+        path = PyObject_GetAttrString(mod, "__path__");
+        if (path == NULL) {
             PyErr_Clear();
             Py_INCREF(Py_None);
             return Py_None;
         }
-        bufobj = PyUnicode_DecodeFSDefault(buf);
-        if (bufobj != NULL) {
-            m = load_module(fullname, fp, bufobj, fdp->type, loader);
-            Py_DECREF(bufobj);
-        }
-        else
-            m = NULL;
-        Py_XDECREF(loader);
-        if (fp)
-            fclose(fp);
-        if (m != NULL && !add_submodule(mod, m, fullname, subname, modules)) {
-            Py_XDECREF(m);
-            m = NULL;
-        }
     }
 
+    fdp = find_module(_PyUnicode_AsString(fullname),
+                      _PyUnicode_AsString(subname),
+                      path, buf, MAXPATHLEN+1,
+                      &fp, &loader);
+    Py_XDECREF(path);
+    if (fdp == NULL) {
+        if (!PyErr_ExceptionMatches(PyExc_ImportError))
+            return NULL;
+        PyErr_Clear();
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    bufobj = PyUnicode_DecodeFSDefault(buf);
+    if (bufobj != NULL) {
+        m = load_module(fullname, fp, bufobj, fdp->type, loader);
+        Py_DECREF(bufobj);
+    }
+    else
+        m = NULL;
+    Py_XDECREF(loader);
+    if (fp)
+        fclose(fp);
+    if (m == NULL)
+        return NULL;
+    if (!add_submodule(mod, m, fullname, subname, modules)) {
+        Py_XDECREF(m);
+        return NULL;
+    }
     return m;
 }
 
