@@ -144,6 +144,8 @@ static const struct filedescr _PyImport_StandardFiletab[] = {
     {0, 0}
 };
 
+static PyObject *initstr = NULL;
+
 
 /* Initialize things */
 
@@ -154,6 +156,10 @@ _PyImport_Init(void)
     struct filedescr *filetab;
     int countD = 0;
     int countS = 0;
+
+    initstr = PyUnicode_InternFromString("__init__");
+    if (initstr == NULL)
+        Py_FatalError("Can't initialize import variables");
 
     /* prepare _PyImport_Filetab: copy entries from
        _PyImport_DynLoadFiletab and _PyImport_StandardFiletab.
@@ -1507,13 +1513,6 @@ load_package(PyObject *name, PyObject *pathname)
     char buf[MAXPATHLEN+1];
     FILE *fp = NULL;
     struct filedescr *fdp;
-    static PyObject *initstr = NULL;
-
-    if (initstr == NULL) {
-        initstr = PyUnicode_InternFromString("__init__");
-        if (initstr == NULL)
-            return NULL;
-    }
 
     m = PyImport_AddModuleObject(name);
     if (m == NULL)
@@ -1765,23 +1764,25 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
        and there's an __init__ module in that directory */
 #ifdef HAVE_STAT
     if (stat(buf, &statbuf) == 0 &&         /* it exists */
-        S_ISDIR(statbuf.st_mode) &&         /* it's a directory */
-        case_ok(buf, len, namelen, namestr)) { /* case matches */
-        if (find_init_module(buf)) { /* and has __init__.py */
-            *p_fd = &fd_package;
-            return 2;
-        }
-        else {
-            int err;
-            PyObject *unicode = PyUnicode_DecodeFSDefault(buf);
-            if (unicode == NULL)
-                return -1;
-            err = PyErr_WarnFormat(PyExc_ImportWarning, 1,
-                "Not importing directory '%U': missing __init__.py",
-                unicode);
-            Py_DECREF(unicode);
-            if (err)
-                return -1;
+        S_ISDIR(statbuf.st_mode))           /* it's a directory */
+    {
+        if (case_ok(buf, len, namelen, namestr)) { /* case matches */
+            if (find_init_module(buf)) { /* and has __init__.py */
+                *p_fd = &fd_package;
+                return 2;
+            }
+            else {
+                int err;
+                PyObject *unicode = PyUnicode_DecodeFSDefault(buf);
+                if (unicode == NULL)
+                    return -1;
+                err = PyErr_WarnFormat(PyExc_ImportWarning, 1,
+                    "Not importing directory '%U': missing __init__.py",
+                    unicode);
+                Py_DECREF(unicode);
+                if (err)
+                    return -1;
+            }
         }
     }
 #endif
@@ -1842,25 +1843,21 @@ find_module_path_list(PyObject *fullname, PyObject *name,
             if (filemode[0] == 'U')
                 filemode = "r" PY_STDIOTEXTMODE;
             fp = fopen(buf, filemode);
-            if (fp != NULL) {
-                if (case_ok(buf, len, namelen, namestr))
-                    break;
-                else {                   /* continue search */
-                    fclose(fp);
-                    fp = NULL;
-                }
+            if (fp == NULL)
+                continue;
+
+            if (case_ok(buf, len, namelen, namestr)) {
+                *p_fp = fp;
+                return fdp;
             }
+
+            fclose(fp);
+            fp = NULL;
         }
-        if (fp != NULL)
-            break;
     }
-    if (fp == NULL) {
-        PyErr_Format(PyExc_ImportError,
-                     "No module named %U", name);
-        return NULL;
-    }
-    *p_fp = fp;
-    return fdp;
+    PyErr_Format(PyExc_ImportError,
+                 "No module named %U", name);
+    return NULL;
 }
 
 /* Find a module:
