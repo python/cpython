@@ -1490,7 +1490,7 @@ unchanged:
 }
 
 /* Forward */
-static PyObject *load_module(char *, FILE *, char *, int, PyObject *);
+static PyObject *load_module(PyObject *, FILE *, PyObject *, int, PyObject *);
 static struct filedescr *find_module(char *, const char *, PyObject *,
                                      char *, size_t, FILE **, PyObject **);
 static struct _frozen * find_frozen(PyObject *);
@@ -1501,7 +1501,7 @@ static struct _frozen * find_frozen(PyObject *);
 static PyObject *
 load_package(PyObject *name, PyObject *pathname)
 {
-    PyObject *m, *d;
+    PyObject *m, *d, *bufobj;
     PyObject *file = NULL, *path_list = NULL;
     int err;
     char buf[MAXPATHLEN+1];
@@ -1546,7 +1546,13 @@ load_package(PyObject *name, PyObject *pathname)
         else
             return NULL;
     }
-    m = load_module(namestr, fp, buf, fdp->type, NULL);
+    bufobj = PyUnicode_DecodeFSDefault(buf);
+    if (bufobj != NULL) {
+        m = load_module(name, fp, bufobj, fdp->type, NULL);
+        Py_DECREF(bufobj);
+    }
+    else
+        m = NULL;
     if (fp != NULL)
         fclose(fp);
     return m;
@@ -2303,7 +2309,7 @@ load_builtin(PyObject *name, int type)
    its module object WITH INCREMENTED REFERENCE COUNT */
 
 static PyObject *
-load_module(char *name, FILE *fp, char *pathname, int type, PyObject *loader)
+load_module(PyObject *name, FILE *fp, PyObject *pathname, int type, PyObject *loader)
 {
     PyObject *m;
 
@@ -2313,7 +2319,7 @@ load_module(char *name, FILE *fp, char *pathname, int type, PyObject *loader)
     case PY_COMPILED:
         if (fp == NULL) {
             PyErr_Format(PyExc_ValueError,
-               "file object required for import (type code %d)",
+                         "file object required for import (type code %d)",
                          type);
             return NULL;
         }
@@ -2321,81 +2327,28 @@ load_module(char *name, FILE *fp, char *pathname, int type, PyObject *loader)
 
     switch (type) {
 
-    case PY_SOURCE: {
-        PyObject *nameobj, *pathobj;
-        nameobj = PyUnicode_FromString(name);
-        if (nameobj == NULL)
-            return NULL;
-        pathobj = PyUnicode_DecodeFSDefault(pathname);
-        if (pathobj == NULL) {
-            Py_DECREF(nameobj);
-            return NULL;
-        }
-        m = load_source_module(nameobj, pathobj, fp);
-        Py_DECREF(nameobj);
-        Py_DECREF(pathobj);
+    case PY_SOURCE:
+        m = load_source_module(name, pathname, fp);
         break;
-    }
 
-    case PY_COMPILED: {
-        PyObject *nameobj, *pathobj;
-        nameobj = PyUnicode_FromString(name);
-        if (nameobj == NULL)
-            return NULL;
-        pathobj = PyUnicode_DecodeFSDefault(pathname);
-        if (pathobj == NULL) {
-            Py_DECREF(nameobj);
-            return NULL;
-        }
-        m = load_compiled_module(nameobj, pathobj, fp);
-        Py_DECREF(nameobj);
-        Py_DECREF(pathobj);
+    case PY_COMPILED:
+        m = load_compiled_module(name, pathname, fp);
         break;
-    }
 
 #ifdef HAVE_DYNAMIC_LOADING
-    case C_EXTENSION: {
-        PyObject *nameobj, *pathobj;
-        nameobj = PyUnicode_FromString(name);
-        if (nameobj == NULL)
-            return NULL;
-        pathobj = PyUnicode_DecodeFSDefault(pathname);
-        if (pathobj == NULL) {
-            Py_DECREF(nameobj);
-            return NULL;
-        }
-        m = _PyImport_LoadDynamicModule(nameobj, pathobj, fp);
-        Py_DECREF(nameobj);
-        Py_DECREF(pathobj);
+    case C_EXTENSION:
+        m = _PyImport_LoadDynamicModule(name, pathname, fp);
         break;
-    }
 #endif
 
-    case PKG_DIRECTORY: {
-        PyObject *nameobj, *pathobj;
-        nameobj = PyUnicode_FromString(name);
-        if (nameobj == NULL)
-            return NULL;
-        pathobj = PyUnicode_DecodeFSDefault(pathname);
-        if (pathobj == NULL) {
-            Py_DECREF(nameobj);
-            return NULL;
-        }
-        m = load_package(nameobj, pathobj);
-        Py_DECREF(nameobj);
-        Py_DECREF(pathobj);
+    case PKG_DIRECTORY:
+        m = load_package(name, pathname);
         break;
-    }
 
     case C_BUILTIN:
-    case PY_FROZEN: {
-        PyObject *nameobj = PyUnicode_FromString(name);
-        if (nameobj == NULL)
-            return NULL;
-        m = load_builtin(nameobj, type);
-        Py_DECREF(nameobj);
+    case PY_FROZEN:
+        m = load_builtin(name, type);
         break;
-    }
 
     case IMP_HOOK: {
         if (loader == NULL) {
@@ -2403,13 +2356,13 @@ load_module(char *name, FILE *fp, char *pathname, int type, PyObject *loader)
                             "import hook without loader");
             return NULL;
         }
-        m = PyObject_CallMethod(loader, "load_module", "s", name);
+        m = PyObject_CallMethod(loader, "load_module", "O", name);
         break;
     }
 
     default:
         PyErr_Format(PyExc_ImportError,
-                     "Don't know how to import %.200s (type code %d)",
+                     "Don't know how to import %U (type code %d)",
                       name, type);
         m = NULL;
 
@@ -3144,7 +3097,7 @@ static PyObject *
 import_submodule(PyObject *mod, char *subname, char *fullname)
 {
     PyObject *modules = PyImport_GetModuleDict();
-    PyObject *m = NULL;
+    PyObject *m = NULL, *fullnameobj, *bufobj;
 
     /* Require:
        if mod == None: subname == fullname
@@ -3181,7 +3134,19 @@ import_submodule(PyObject *mod, char *subname, char *fullname)
             Py_INCREF(Py_None);
             return Py_None;
         }
-        m = load_module(fullname, fp, buf, fdp->type, loader);
+        fullnameobj = PyUnicode_FromString(fullname);
+        if (fullnameobj != NULL) {
+            bufobj = PyUnicode_DecodeFSDefault(buf);
+            if (bufobj != NULL) {
+                m = load_module(fullnameobj, fp, bufobj, fdp->type, loader);
+                Py_DECREF(bufobj);
+            }
+            else
+                m = NULL;
+            Py_DECREF(fullnameobj);
+        }
+        else
+            m = NULL;
         Py_XDECREF(loader);
         if (fp)
             fclose(fp);
@@ -3209,7 +3174,7 @@ PyImport_ReloadModule(PyObject *m)
     char buf[MAXPATHLEN+1];
     struct filedescr *fdp;
     FILE *fp;
-    PyObject *newm;
+    PyObject *newm, *nameobj, *bufobj;
 
     if (modules_reloading == NULL) {
         Py_FatalError("PyImport_ReloadModule: "
@@ -3275,7 +3240,19 @@ PyImport_ReloadModule(PyObject *m)
         return NULL;
     }
 
-    newm = load_module(name, fp, buf, fdp->type, loader);
+    nameobj = PyUnicode_FromString(name);
+    if (nameobj != NULL) {
+        bufobj = PyUnicode_DecodeFSDefault(buf);
+        if (bufobj != NULL) {
+            newm = load_module(nameobj, fp, bufobj, fdp->type, loader);
+            Py_DECREF(bufobj);
+        }
+        else
+            newm = NULL;
+        Py_DECREF(nameobj);
+    }
+    else
+        newm = NULL;
     Py_XDECREF(loader);
 
     if (fp)
@@ -3691,18 +3668,15 @@ imp_load_source(PyObject *self, PyObject *args)
 static PyObject *
 imp_load_module(PyObject *self, PyObject *args)
 {
-    char *name;
-    PyObject *fob;
-    PyObject *pathname;
-    PyObject * ret;
+    PyObject *name, *fob, *pathname, *ret;
     char *suffix; /* Unused */
     char *mode;
     int type;
     FILE *fp;
 
-    if (!PyArg_ParseTuple(args, "sOO&(ssi):load_module",
+    if (!PyArg_ParseTuple(args, "UOO&(ssi):load_module",
                           &name, &fob,
-                          PyUnicode_FSConverter, &pathname,
+                          PyUnicode_FSDecoder, &pathname,
                           &suffix, &mode, &type))
         return NULL;
     if (*mode) {
@@ -3726,7 +3700,7 @@ imp_load_module(PyObject *self, PyObject *args)
             return NULL;
         }
     }
-    ret = load_module(name, fp, PyBytes_AS_STRING(pathname), type, NULL);
+    ret = load_module(name, fp, pathname, type, NULL);
     Py_DECREF(pathname);
     if (fp)
         fclose(fp);
