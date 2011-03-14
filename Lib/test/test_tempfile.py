@@ -689,6 +689,23 @@ class test_SpooledTemporaryFile(TC):
         f.write('x')
         self.assertTrue(f._rolled)
 
+    def test_writelines(self):
+        # Verify writelines with a SpooledTemporaryFile
+        f = self.do_create()
+        f.writelines((b'x', b'y', b'z'))
+        f.seek(0)
+        buf = f.read()
+        self.assertEqual(buf, b'xyz')
+
+    def test_writelines_sequential(self):
+        # A SpooledTemporaryFile should hold exactly max_size bytes, and roll
+        # over afterward
+        f = self.do_create(max_size=35)
+        f.writelines((b'x' * 20, b'x' * 10, b'x' * 5))
+        self.assertFalse(f._rolled)
+        f.write(b'x')
+        self.assertTrue(f._rolled)
+
     def test_sparse(self):
         # A SpooledTemporaryFile that is written late in the file will extend
         # when that occurs
