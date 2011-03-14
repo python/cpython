@@ -2591,8 +2591,7 @@ PyImport_ImportModule(const char *name)
 PyObject *
 PyImport_ImportModuleNoBlock(const char *name)
 {
-    PyObject *result;
-    PyObject *modules;
+    PyObject *nameobj, *modules, *result;
     long me;
 
     /* Try to get the module from sys.modules[name] */
@@ -2600,14 +2599,16 @@ PyImport_ImportModuleNoBlock(const char *name)
     if (modules == NULL)
         return NULL;
 
-    result = PyDict_GetItemString(modules, name);
+    nameobj = PyUnicode_FromString(name);
+    if (nameobj == NULL)
+        return NULL;
+    result = PyDict_GetItem(modules, nameobj);
     if (result != NULL) {
+        Py_DECREF(nameobj);
         Py_INCREF(result);
         return result;
     }
-    else {
-        PyErr_Clear();
-    }
+    PyErr_Clear();
 #ifdef WITH_THREAD
     /* check the import lock
      * me might be -1 but I ignore the error here, the lock function
@@ -2615,18 +2616,20 @@ PyImport_ImportModuleNoBlock(const char *name)
     me = PyThread_get_thread_ident();
     if (import_lock_thread == -1 || import_lock_thread == me) {
         /* no thread or me is holding the lock */
-        return PyImport_ImportModule(name);
+        result = PyImport_Import(nameobj);
     }
     else {
         PyErr_Format(PyExc_ImportError,
-                     "Failed to import %.200s because the import lock"
+                     "Failed to import %U because the import lock"
                      "is held by another thread.",
-                     name);
-        return NULL;
+                     nameobj);
+        result = NULL;
     }
 #else
-    return PyImport_ImportModule(name);
+    result = PyImport_Import(nameobj);
 #endif
+    Py_DECREF(nameobj);
+    return result;
 }
 
 /* Forward declarations for helper routines */
