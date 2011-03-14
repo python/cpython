@@ -112,6 +112,30 @@ class ModuleTest(unittest.TestCase):
         self.assertRaises(ValueError, fmt.format, "{0}", 10, 20, i=100)
         self.assertRaises(ValueError, fmt.format, "{i}", 10, 20, i=100)
 
+    def test_vformat_assert(self):
+        cls = string.Formatter()
+        kwargs = {
+            "i": 100
+        }
+        self.assertRaises(ValueError, cls._vformat,
+                cls.format, "{0}", kwargs, set(), -2)
+
+    def test_convert_field(self):
+        cls = string.Formatter()
+        self.assertEqual(cls.format("{0!s}", 'foo'), 'foo')
+        self.assertRaises(ValueError, cls.format, "{0!h}", 'foo')
+
+    def test_get_field(self):
+        cls = string.Formatter()
+        class MyClass:
+            name = 'lumberjack'
+        x = MyClass()
+        self.assertEqual(cls.format("{0.name}", x), 'lumberjack')
+
+        lookup = ["eggs", "and", "spam"]
+        self.assertEqual(cls.format("{0[2]}", lookup), 'spam')
+
+
 def test_main():
     support.run_unittest(ModuleTest)
 

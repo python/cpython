@@ -68,6 +68,16 @@ Core and Builtins
 Library
 -------
 
+- Issue #11407: `TestCase.run` returns the result object used or created.
+  Contributed by Janathan Hartley.
+
+- Issue #11500: Fixed a bug in the os x proxy bypass code for fully qualified 
+  IP addresses in the proxy exception list. 
+
+- Issue #11491: dbm.error is no longer raised when dbm.open is called with
+  the "n" as the flag argument and the file exists. The behavior matches
+  the documentation and general logic.
+
 - Issue #1162477: Postel Principal adjustment to email date parsing: handle the
   fact that some non-compliant MUAs use '.' instead of ':' in time specs.
 
@@ -192,6 +202,8 @@ Tools/Demos
 
 Tests
 -----
+
+- Issue #11505: improves test coverage of string.py
 
 - Issue #11490: test_subprocess:test_leaking_fds_on_error no longer gives a
   false positive if the last directory in the path is inaccessible.

@@ -191,8 +191,10 @@ should prepare for OSErrors.
 
 A ValueError will be raised if Popen is called with invalid arguments.
 
-check_call() and check_output() will raise CalledProcessError, if the
-called process returns a non-zero return code.
+Exceptions defined within this module inherit from SubprocessError.
+check_call() and check_output() will raise CalledProcessError if the
+called process returns a non-zero return code.  TimeoutExpired
+be raised if a timeout was specified and expired.
 
 
 Security
@@ -348,7 +350,10 @@ import builtins
 import warnings
 
 # Exception classes used by this module.
-class CalledProcessError(Exception):
+class SubprocessError(Exception): pass
+
+
+class CalledProcessError(SubprocessError):
     """This exception is raised when a process run by check_call() or
     check_output() returns a non-zero exit status.
     The exit status will be stored in the returncode attribute;
@@ -362,7 +367,7 @@ class CalledProcessError(Exception):
         return "Command '%s' returned non-zero exit status %d" % (self.cmd, self.returncode)
 
 
-class TimeoutExpired(Exception):
+class TimeoutExpired(SubprocessError):
     """This exception is raised when the timeout expires while waiting for a
     child process.
     """
