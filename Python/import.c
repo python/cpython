@@ -1431,7 +1431,7 @@ load_source_module(PyObject *name, PyObject *pathname, FILE *fp)
             goto error;
         if (Py_VerboseFlag)
             PySys_FormatStderr("import %U # from %R\n",
-                name, pathname);
+                               name, pathname);
         if (cpathname != NULL) {
             PyObject *ro = PySys_GetObject("dont_write_bytecode");
             if (ro == NULL || !PyObject_IsTrue(ro))
@@ -1517,8 +1517,8 @@ load_package(PyObject *name, PyObject *pathname)
     if (m == NULL)
         return NULL;
     if (Py_VerboseFlag)
-        PySys_FormatStderr("import %U # directory %U\n",
-            name, pathname);
+        PySys_FormatStderr("import %U # directory %R\n",
+                           name, pathname);
     file = get_sourcefile(pathname);
     if (file == NULL)
         return NULL;
@@ -1875,7 +1875,7 @@ find_module_path_list(PyObject *fullname, PyObject *name,
         Py_DECREF(prefix);
     }
     PyErr_Format(PyExc_ImportError,
-                 "No module named %U", name);
+                 "No module named %R", name);
     return NULL;
 }
 
@@ -2366,7 +2366,7 @@ load_module(PyObject *name, FILE *fp, PyObject *pathname, int type, PyObject *lo
 
     default:
         PyErr_Format(PyExc_ImportError,
-                     "Don't know how to import %U (type code %d)",
+                     "Don't know how to import %R (type code %d)",
                       name, type);
         m = NULL;
 
@@ -3251,7 +3251,7 @@ PyImport_ReloadModule(PyObject *m)
         return NULL;
     if (m != PyDict_GetItem(modules, nameobj)) {
         PyErr_Format(PyExc_ImportError,
-                     "reload(): module %U not in sys.modules",
+                     "reload(): module %R not in sys.modules",
                      nameobj);
         Py_DECREF(nameobj);
         return NULL;
@@ -3286,7 +3286,7 @@ PyImport_ReloadModule(PyObject *m)
         parent = PyDict_GetItem(modules, parentname);
         if (parent == NULL) {
             PyErr_Format(PyExc_ImportError,
-                "reload(): parent %U not in sys.modules",
+                "reload(): parent %R not in sys.modules",
                  parentname);
             Py_DECREF(parentname);
             goto error;

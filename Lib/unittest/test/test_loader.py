@@ -239,7 +239,7 @@ class Test_TestLoader(unittest.TestCase):
         try:
             loader.loadTestsFromName('sdasfasfasdf')
         except ImportError as e:
-            self.assertEqual(str(e), "No module named sdasfasfasdf")
+            self.assertEqual(str(e), "No module named 'sdasfasfasdf'")
         else:
             self.fail("TestLoader.loadTestsFromName failed to raise ImportError")
 
@@ -619,7 +619,7 @@ class Test_TestLoader(unittest.TestCase):
         try:
             loader.loadTestsFromNames(['sdasfasfasdf'])
         except ImportError as e:
-            self.assertEqual(str(e), "No module named sdasfasfasdf")
+            self.assertEqual(str(e), "No module named 'sdasfasfasdf'")
         else:
             self.fail("TestLoader.loadTestsFromNames failed to raise ImportError")
 
