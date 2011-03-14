@@ -1943,10 +1943,8 @@ find_module(PyObject *fullname, PyObject *name, PyObject *search_path_list,
         Py_DECREF(meta_path);
     }
 
-    if (find_frozen(fullname) != NULL) {
-        strcpy(buf, _PyUnicode_AsString(fullname));
+    if (find_frozen(fullname) != NULL)
         return &fd_frozen;
-    }
 
     if (search_path_list == NULL) {
 #ifdef MS_COREDLL
@@ -1954,10 +1952,8 @@ find_module(PyObject *fullname, PyObject *name, PyObject *search_path_list,
         struct filedescr *fdp;
         PyObject *filename, *filename_bytes;
 #endif
-        if (is_builtin(name)) {
-            strcpy(buf, _PyUnicode_AsString(name));
+        if (is_builtin(name))
             return &fd_builtin;
-        }
 #ifdef MS_COREDLL
         fp = _PyWin_FindRegisteredModule(name, &fdp, &filename);
         if (fp != NULL) {
