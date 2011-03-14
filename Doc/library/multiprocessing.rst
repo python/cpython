@@ -869,7 +869,7 @@ object -- see :ref:`multiprocessing-managers`.
 
 .. class:: Semaphore([value])
 
-   A bounded semaphore object: a clone of :class:`threading.Semaphore`.
+   A semaphore object: a clone of :class:`threading.Semaphore`.
 
 .. note::
 
