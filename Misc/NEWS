@@ -191,6 +191,9 @@ Tools/Demos
 Tests
 -----
 
+- Issue #11490: test_subprocess:test_leaking_fds_on_error no longer gives a
+  false positive if the last directory in the path is inaccessible.
+
 - Issue #11223: Fix test_threadsignals to fail, not hang, when the
   non-semaphore implementation of locks is used under POSIX.
 
