@@ -3787,10 +3787,10 @@ imp_load_package(PyObject *self, PyObject *args)
 static PyObject *
 imp_new_module(PyObject *self, PyObject *args)
 {
-    char *name;
-    if (!PyArg_ParseTuple(args, "s:new_module", &name))
+    PyObject *name;
+    if (!PyArg_ParseTuple(args, "U:new_module", &name))
         return NULL;
-    return PyModule_New(name);
+    return PyModule_NewObject(name);
 }
 
 static PyObject *
