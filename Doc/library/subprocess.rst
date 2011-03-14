@@ -249,14 +249,20 @@ Convenience Functions
 This module also defines four shortcut functions:
 
 
-.. function:: call(*popenargs, **kwargs)
+.. function:: call(*popenargs, timeout=None, **kwargs)
 
    Run command with arguments.  Wait for command to complete, then return the
    :attr:`returncode` attribute.
 
-   The arguments are the same as for the :class:`Popen` constructor.  Example::
+   The arguments are the same as for the :class:`Popen` constructor, with the
+   exception of the *timeout* argument, which is given to :meth:`Popen.wait`.
+   Example::
 
       >>> retcode = subprocess.call(["ls", "-l"])
+
+   If the timeout expires, the child process will be killed and then waited for
+   again.  The :exc:`TimeoutExpired` exception will be re-raised after the child
+   process has terminated.
 
    .. warning::
 
@@ -265,34 +271,43 @@ This module also defines four shortcut functions:
       generates enough output to a pipe such that it blocks waiting
       for the OS pipe buffer to accept more data.
 
+   .. versionchanged:: 3.2
+      *timeout* was added.
 
-.. function:: check_call(*popenargs, **kwargs)
+
+.. function:: check_call(*popenargs, timeout=None, **kwargs)
 
    Run command with arguments.  Wait for command to complete. If the exit code was
    zero then return, otherwise raise :exc:`CalledProcessError`. The
    :exc:`CalledProcessError` object will have the return code in the
    :attr:`returncode` attribute.
 
-   The arguments are the same as for the :class:`Popen` constructor.  Example::
+   The arguments are the same as for the :func:`call` function.  Example::
 
       >>> subprocess.check_call(["ls", "-l"])
       0
+
+   As in the :func:`call` function, if the timeout expires, the child process
+   will be killed and the wait retried.  The :exc:`TimeoutExpired` exception
+   will be re-raised after the child process has terminated.
 
    .. warning::
 
       See the warning for :func:`call`.
 
+   .. versionchanged:: 3.2
+      *timeout* was added.
 
-.. function:: check_output(*popenargs, **kwargs)
+
+.. function:: check_output(*popenargs, timeout=None, **kwargs)
 
    Run command with arguments and return its output as a byte string.
 
    If the exit code was non-zero it raises a :exc:`CalledProcessError`.  The
    :exc:`CalledProcessError` object will have the return code in the
-   :attr:`returncode`
-   attribute and output in the :attr:`output` attribute.
+   :attr:`returncode` attribute and output in the :attr:`output` attribute.
 
-   The arguments are the same as for the :class:`Popen` constructor.  Example::
+   The arguments are the same as for the :func:`call` function.  Example::
 
       >>> subprocess.check_output(["ls", "-l", "/dev/null"])
       b'crw-rw-rw- 1 root root 1, 3 Oct 18  2007 /dev/null\n'
@@ -305,7 +320,16 @@ This module also defines four shortcut functions:
       ...     stderr=subprocess.STDOUT)
       b'ls: non_existent_file: No such file or directory\n'
 
+   As in the :func:`call` function, if the timeout expires, the child process
+   will be killed and the wait retried.  The :exc:`TimeoutExpired` exception
+   will be re-raised after the child process has terminated.  The output from
+   the child process so far will be in the :attr:`output` attribute of the
+   exception.
+
    .. versionadded:: 3.1
+
+   .. versionchanged:: 3.2
+      *timeout* was added.
 
 
 .. function:: getstatusoutput(cmd)
@@ -359,6 +383,10 @@ arguments.
 check_call() will raise :exc:`CalledProcessError`, if the called process returns
 a non-zero return code.
 
+All of the functions and methods that accept a *timeout* parameter, such as
+:func:`call` and :meth:`Popen.communicate` will raise :exc:`TimeoutExpired` if
+the timeout expires before the process exits.
+
 
 Security
 ^^^^^^^^
@@ -380,10 +408,14 @@ Instances of the :class:`Popen` class have the following methods:
    attribute.
 
 
-.. method:: Popen.wait()
+.. method:: Popen.wait(timeout=None)
 
    Wait for child process to terminate.  Set and return :attr:`returncode`
    attribute.
+
+   If the process does not terminate after *timeout* seconds, raise a
+   :exc:`TimeoutExpired` exception.  It is safe to catch this exception and
+   retry the wait.
 
    .. warning::
 
@@ -392,11 +424,14 @@ Instances of the :class:`Popen` class have the following methods:
       a pipe such that it blocks waiting for the OS pipe buffer to
       accept more data.  Use :meth:`communicate` to avoid that.
 
+   .. versionchanged:: 3.2
+      *timeout* was added.
 
-.. method:: Popen.communicate(input=None)
+
+.. method:: Popen.communicate(input=None, timeout=None)
 
    Interact with process: Send data to stdin.  Read data from stdout and stderr,
-   until end-of-file is reached.  Wait for process to terminate. The optional
+   until end-of-file is reached.  Wait for process to terminate.  The optional
    *input* argument should be a byte string to be sent to the child process, or
    ``None``, if no data should be sent to the child.
 
@@ -407,10 +442,28 @@ Instances of the :class:`Popen` class have the following methods:
    ``None`` in the result tuple, you need to give ``stdout=PIPE`` and/or
    ``stderr=PIPE`` too.
 
+   If the process does not terminate after *timeout* seconds, a
+   :exc:`TimeoutExpired` exception will be raised.  Catching this exception and
+   retrying communication will not lose any output.
+
+   The child process is not killed if the timeout expires, so in order to
+   cleanup properly a well-behaved application should kill the child process and
+   finish communication::
+
+      proc = subprocess.Popen(...)
+      try:
+          outs, errs = proc.communicate(timeout=15)
+      except TimeoutExpired:
+          proc.kill()
+          outs, errs = proc.communicate()
+
    .. note::
 
       The data read is buffered in memory, so do not use this method if the data
       size is large or unlimited.
+
+   .. versionchanged:: 3.2
+      *timeout* was added.
 
 
 .. method:: Popen.send_signal(signal)
