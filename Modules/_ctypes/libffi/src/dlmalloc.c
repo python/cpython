@@ -1326,7 +1326,7 @@ static void* win32direct_mmap(size_t size) {
   return (ptr != 0)? ptr: MFAIL;
 }
 
-/* This function supports releasing coalesced segments */
+/* This function supports releasing coalesed segments */
 static int win32munmap(void* ptr, size_t size) {
   MEMORY_BASIC_INFORMATION minfo;
   char* cptr = ptr;
@@ -1362,7 +1362,7 @@ static int win32munmap(void* ptr, size_t size) {
 #define CALL_MORECORE(S)     MFAIL
 #endif /* HAVE_MORECORE */
 
-/* mstate bit set if contiguous morecore disabled or failed */
+/* mstate bit set if continguous morecore disabled or failed */
 #define USE_NONCONTIGUOUS_BIT (4U)
 
 /* segment bit set in create_mspace_with_base */
