@@ -5,11 +5,12 @@
 ##################################################################
 [project attributes]
 proj.directory-list = [{'dirloc': loc('..'),
-                        'excludes': [u'Lib/unittest/test/__pycache__',
-                                     u'Lib/__pycache__',
-                                     u'Doc/build',
+                        'excludes': [u'.hg',
                                      u'Lib/unittest/__pycache__',
-                                     u'build'],
+                                     u'Lib/unittest/test/__pycache__',
+                                     u'Lib/__pycache__',
+                                     u'build',
+                                     u'Doc/build'],
                         'filter': '*',
                         'include_hidden': False,
                         'recursive': True,
