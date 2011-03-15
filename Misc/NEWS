@@ -10,6 +10,8 @@ What's New in Python 3.2.1?
 Core and Builtins
 -----------------
 
+- Issue #11510: Fixed optimizer bug which turned "a,b={1,1}" into "a,b=(1,1)".
+
 - Issue #11432: A bug was introduced in subprocess.Popen on posix systems with
   3.2.0 where the stdout or stderr file descriptor being the same as the stdin
   file descriptor would raise an exception. webbrowser.open would fail. fixed.
