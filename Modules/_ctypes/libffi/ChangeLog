@@ -3084,7 +3084,7 @@
 
 2003-09-18  Kaz Kojima  <kkojima@gcc.gnu.org>
 
-	* src/sh/ffi.c (ffi_prep_args): Take account into the alignment
+	* src/sh/ffi.c (ffi_prep_args): Take account into the alignement
 	for the register size.
 	(ffi_closure_helper_SYSV): Handle the structure return value
 	address correctly.
@@ -3344,7 +3344,7 @@
 2003-02-06  Andreas Tobler <a.tobler@schweiz.ch>
 
 	* libffi/src/powerpc/darwin_closure.S:
-	Fix alignment bug, allocate 8 bytes for the result.
+	Fix alignement bug, allocate 8 bytes for the result.
 	* libffi/src/powerpc/aix_closure.S:
 	Likewise.
 	* libffi/src/powerpc/ffi_darwin.c:
