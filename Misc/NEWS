@@ -68,6 +68,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11509: Significantly increase test coverage of fileinput.
+  Patch by Denver Coneybeare at PyCon 2011 Sprints.
+
 - Issue #11407: `TestCase.run` returns the result object used or created.
   Contributed by Janathan Hartley.
 
