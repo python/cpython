@@ -40,6 +40,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #11501: disutils.archive_utils.make_zipfile no longer fails if zlib is
+  not installed. Instead, the zipfile.ZIP_STORED compression is used to create
+  the ZipFile. Patch by Natalia B. Bidart.
+
 - Issue #11491: dbm.error is no longer raised when dbm.open is called with
   the "n" as the flag argument and the file exists. The behavior matches
   the documentation and general logic.

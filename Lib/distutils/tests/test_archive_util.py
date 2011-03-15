@@ -7,12 +7,13 @@ import tarfile
 from os.path import splitdrive
 import warnings
 
+from distutils import archive_util
 from distutils.archive_util import (check_archive_formats, make_tarball,
                                     make_zipfile, make_archive,
                                     ARCHIVE_FORMATS)
 from distutils.spawn import find_executable, spawn
 from distutils.tests import support
-from test.support import check_warnings, run_unittest
+from test.support import check_warnings, run_unittest, patch
 
 try:
     import zipfile
@@ -20,10 +21,18 @@ try:
 except ImportError:
     ZIP_SUPPORT = find_executable('zip')
 
+try:
+    import zlib
+    ZLIB_SUPPORT = True
+except ImportError:
+    ZLIB_SUPPORT = False
+
+
 class ArchiveUtilTestCase(support.TempdirManager,
                           support.LoggingSilencer,
                           unittest.TestCase):
 
+    @unittest.skipUnless(ZLIB_SUPPORT, 'Need zlib support to run')
     def test_make_tarball(self):
         # creating something to tar
         tmpdir = self.mkdtemp()
@@ -84,8 +93,9 @@ class ArchiveUtilTestCase(support.TempdirManager,
         base_name = os.path.join(tmpdir2, 'archive')
         return tmpdir, tmpdir2, base_name
 
-    @unittest.skipUnless(find_executable('tar') and find_executable('gzip'),
-                         'Need the tar command to run')
+    @unittest.skipUnless(find_executable('tar') and find_executable('gzip')
+                         and ZLIB_SUPPORT,
+                         'Need the tar, gzip and zlib command to run')
     def test_tarfile_vs_tar(self):
         tmpdir, tmpdir2, base_name =  self._create_files()
         old_dir = os.getcwd()
@@ -169,7 +179,8 @@ class ArchiveUtilTestCase(support.TempdirManager,
         self.assertTrue(not os.path.exists(tarball))
         self.assertEqual(len(w.warnings), 1)
 
-    @unittest.skipUnless(ZIP_SUPPORT, 'Need zip support to run')
+    @unittest.skipUnless(ZIP_SUPPORT and ZLIB_SUPPORT,
+                         'Need zip and zlib support to run')
     def test_make_zipfile(self):
         # creating something to tar
         tmpdir = self.mkdtemp()
@@ -182,6 +193,29 @@ class ArchiveUtilTestCase(support.TempdirManager,
 
         # check if the compressed tarball was created
         tarball = base_name + '.zip'
+        self.assertTrue(os.path.exists(tarball))
+
+    @unittest.skipUnless(ZIP_SUPPORT, 'Need zip support to run')
+    def test_make_zipfile_no_zlib(self):
+        patch(self, archive_util.zipfile, 'zlib', None)  # force zlib ImportError
+
+        called = []
+        zipfile_class = zipfile.ZipFile
+        def fake_zipfile(*a, **kw):
+            if kw.get('compression', None) == zipfile.ZIP_STORED:
+                called.append((a, kw))
+            return zipfile_class(*a, **kw)
+
+        patch(self, archive_util.zipfile, 'ZipFile', fake_zipfile)
+
+        # create something to tar and compress
+        tmpdir, tmpdir2, base_name = self._create_files()
+        make_zipfile(base_name, tmpdir)
+
+        tarball = base_name + '.zip'
+        self.assertEqual(called,
+                         [((tarball, "w"), {'compression': zipfile.ZIP_STORED})])
+        self.assertTrue(os.path.exists(tarball))
 
     def test_check_archive_formats(self):
         self.assertEqual(check_archive_formats(['gztar', 'xxx', 'zip']),

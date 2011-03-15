@@ -18,6 +18,13 @@ setup(name='foo', version='0.1', py_modules=['foo'],
 
 """
 
+try:
+    import zlib
+    ZLIB_SUPPORT = True
+except ImportError:
+    ZLIB_SUPPORT = False
+
+
 class BuildDumbTestCase(support.TempdirManager,
                         support.LoggingSilencer,
                         support.EnvironGuard,
@@ -34,6 +41,7 @@ class BuildDumbTestCase(support.TempdirManager,
         sys.argv[:] = self.old_sys_argv[1]
         super(BuildDumbTestCase, self).tearDown()
 
+    @unittest.skipUnless(ZLIB_SUPPORT, 'Need zlib support to run')
     def test_simple_built(self):
 
         # let's create a simple package
