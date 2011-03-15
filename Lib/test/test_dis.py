@@ -276,7 +276,7 @@ class DisTests(unittest.TestCase):
         old = getattr(sys, 'last_traceback', not_defined)
 
         def cleanup():
-            if old != not_defined:
+            if old is not not_defined:
                 sys.last_traceback = old
             else:
                 del sys.last_traceback
