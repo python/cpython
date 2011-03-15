@@ -8,6 +8,7 @@ import errno
 import tempfile
 import time
 import re
+import shutil
 
 mswindows = (sys.platform == "win32")
 
@@ -450,11 +451,12 @@ class ProcessTestCase(BaseTestCase):
         else:
             max_handles = 2050 # too much for (at least some) Windows setups
         handles = []
+        tmpdir = tempfile.mkdtemp()
         try:
             for i in range(max_handles):
                 try:
-                    handles.append(os.open(support.TESTFN,
-                                           os.O_WRONLY | os.O_CREAT))
+                    tmpfile = os.path.join(tmpdir, support.TESTFN)
+                    handles.append(os.open(tmpfile, os.O_WRONLY|os.O_CREAT))
                 except OSError as e:
                     if e.errno != errno.EMFILE:
                         raise
@@ -479,6 +481,7 @@ class ProcessTestCase(BaseTestCase):
         finally:
             for h in handles:
                 os.close(h)
+            shutil.rmtree(tmpdir)
 
     def test_list2cmdline(self):
         self.assertEqual(subprocess.list2cmdline(['a b c', 'd', 'e']),
