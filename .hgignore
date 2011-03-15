@@ -50,6 +50,7 @@ libpython*.a
 *~
 Lib/lib2to3/*.pickle
 Lib/test/data/*
+Misc/*.wpu
 PC/python_nt*.h
 PC/pythonnt_rc*.h
 PC/*.obj
