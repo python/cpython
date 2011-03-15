@@ -222,12 +222,6 @@ Here are the methods of the :class:`Message` class:
       headers.
 
 
-   .. method:: Message.__contains__(name)
-
-      Return true if the message contains a header field named *name*, otherwise
-      return false.
-
-
    .. method:: keys()
 
       Return a list of all the message's header field names.
