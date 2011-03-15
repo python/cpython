@@ -744,7 +744,7 @@ PyObject *PyString_DecodeEscape(const char *s,
         default:
             *p++ = '\\';
             s--;
-            goto non_esc; /* an arbitry number of unescaped
+            goto non_esc; /* an arbitrary number of unescaped
                              UTF-8 bytes may follow. */
         }
     }

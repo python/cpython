@@ -17,7 +17,7 @@ class MIMEApplication(MIMENonMultipart):
                  _encoder=encoders.encode_base64, **_params):
         """Create an application/* type MIME document.
 
-        _data is a string containing the raw applicatoin data.
+        _data is a string containing the raw application data.
 
         _subtype is the MIME content type subtype, defaulting to
         'octet-stream'.

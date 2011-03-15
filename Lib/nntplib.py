@@ -103,7 +103,7 @@ class NNTP:
 
         readermode is sometimes necessary if you are connecting to an
         NNTP server on the local machine and intend to call
-        reader-specific comamnds, such as `group'.  If you get
+        reader-specific commands, such as `group'.  If you get
         unexpected NNTPPermanentErrors, you might need to set
         readermode.
         """

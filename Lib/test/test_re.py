@@ -7,7 +7,7 @@ from weakref import proxy
 # Misc tests from Tim Peters' re.doc
 
 # WARNING: Don't change details in these tests if you don't know
-# what you're doing. Some of these tests were carefuly modeled to
+# what you're doing. Some of these tests were carefully modeled to
 # cover most of the code.
 
 import unittest
