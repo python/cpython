@@ -758,7 +758,7 @@ class PyEnvironmentVariableTests(EnvironmentVariableTests):
 class BootstrapTest(unittest.TestCase):
     def test_issue_8766(self):
         # "import encodings" emits a warning whereas the warnings is not loaded
-        # or not completly loaded (warnings imports indirectly encodings by
+        # or not completely loaded (warnings imports indirectly encodings by
         # importing linecache) yet
         with support.temp_cwd() as cwd, support.temp_cwd('encodings'):
             env = os.environ.copy()

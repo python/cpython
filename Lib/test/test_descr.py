@@ -772,7 +772,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
     # see "A Monotonic Superclass Linearization for Dylan",
     # by Kim Barrett et al. (OOPSLA 1996)
     def test_consistency_with_epg(self):
-        # Testing consistentcy with EPG...
+        # Testing consistency with EPG...
         class Pane(object): pass
         class ScrollingMixin(object): pass
         class EditingMixin(object): pass

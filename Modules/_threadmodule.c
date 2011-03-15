@@ -824,7 +824,7 @@ _ldict(localobject *self)
                                    self->args, self->kw) < 0) {
             /* we need to get rid of ldict from thread so
                we create a new one the next time we do an attr
-               acces */
+               access */
             PyDict_DelItem(tdict, self->key);
             return NULL;
         }

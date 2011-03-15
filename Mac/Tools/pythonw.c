@@ -105,8 +105,8 @@ setup_spawnattr(posix_spawnattr_t* spawnattr)
 
     count = 1;
 
-    /* Run the real python executable using the same architure as this
-     * executable, this allows users to controle the architecture using
+    /* Run the real python executable using the same architecture as this
+     * executable, this allows users to control the architecture using
      * "arch -ppc python"
      */
 

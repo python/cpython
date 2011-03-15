@@ -163,7 +163,7 @@ class tixCommand:
         extensions) exist, then the image type is chosen according to the
         depth of the X display: xbm images are chosen on monochrome
         displays and color images are chosen on color displays. By using
-        tix_ getimage, you can advoid hard coding the pathnames of the
+        tix_ getimage, you can avoid hard coding the pathnames of the
         image files in your application. When successful, this command
         returns the name of the newly created image, which can be used to
         configure the -image option of the Tk and Tix widgets.
