@@ -157,8 +157,7 @@ class Message:
         header.
 
         This is a convenience method and may not generate the message exactly
-        as you intend because by default it mangles lines that begin with
-        "From ".  For more flexibility, use the flatten() method of a
+        as you intend.  For more flexibility, use the flatten() method of a
         Generator instance.
         """
         from email.generator import Generator
@@ -242,7 +241,7 @@ class Message:
             raise TypeError('Expected list, got %s' % type(self._payload))
         payload = self._payload
         cte = self.get('content-transfer-encoding', '').lower()
-        # payload can be bytes here, (I wonder if that is actually a bug?)
+        # payload may be bytes here.
         if isinstance(payload, str):
             if _has_surrogates(payload):
                 bpayload = payload.encode('ascii', 'surrogateescape')
