@@ -34,6 +34,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11554: Fixed support for Japanese codecs; previously the body output
+  encoding was not done if euc-jp or shift-jis was specified as the charset.
+
 - Issue #11500: Fixed a bug in the os x proxy bypass code for fully qualified 
   IP addresses in the proxy exception list. 
 
@@ -98,6 +101,8 @@ Tools/Demos
 
 Tests
 -----
+
+- Issue #11554: Reactivated test_email_codecs.
 
 - Issue #11490: test_subprocess:test_leaking_fds_on_error no longer gives a
   false positive if the last directory in the path is inaccessible.

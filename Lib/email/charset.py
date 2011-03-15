@@ -263,7 +263,7 @@ class Charset:
 
         Returns "quoted-printable" if self.body_encoding is QP.
         Returns "base64" if self.body_encoding is BASE64.
-        Returns "7bit" otherwise.
+        Returns conversion function otherwise.
         """
         assert self.body_encoding != SHORTEST
         if self.body_encoding == QP:
@@ -381,7 +381,10 @@ class Charset:
         """Body-encode a string by converting it first to bytes.
 
         The type of encoding (base64 or quoted-printable) will be based on
-        self.body_encoding.
+        self.body_encoding.  If body_encoding is None, we assume the
+        output charset is a 7bit encoding, so re-encoding the decoded
+        string using the ascii codec produces the correct string version
+        of the content.
         """
         # 7bit/8bit encodings return the string unchanged (module conversions)
         if self.body_encoding is BASE64:
@@ -391,4 +394,6 @@ class Charset:
         elif self.body_encoding is QP:
             return email.quoprimime.body_encode(string)
         else:
+            if isinstance(string, str):
+                string = string.encode(self.output_charset).decode('ascii')
             return string

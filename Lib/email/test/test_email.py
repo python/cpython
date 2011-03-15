@@ -3365,9 +3365,9 @@ class TestCharset(unittest.TestCase):
         # built-in encodings where the header encoding is QP but the body
         # encoding is not.
         from email import charset as CharsetModule
-        CharsetModule.add_charset('fake', CharsetModule.QP, None)
+        CharsetModule.add_charset('fake', CharsetModule.QP, None, 'utf-8')
         c = Charset('fake')
-        eq('hello w\xf6rld', c.body_encode('hello w\xf6rld'))
+        eq('hello world', c.body_encode('hello world'))
 
     def test_unicode_charset_name(self):
         charset = Charset('us-ascii')
