@@ -321,7 +321,7 @@ class Charset:
         codec = self.output_codec or 'us-ascii'
         header_bytes = _encode(string, codec)
         encoder_module = self._get_encoder(header_bytes)
-        encoder = partial(encoder_module.header_encode, charset=str(self))
+        encoder = partial(encoder_module.header_encode, charset=codec)
         # Calculate the number of characters that the RFC 2047 chrome will
         # contribute to each line.
         charset = self.get_output_charset()
