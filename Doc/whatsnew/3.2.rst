@@ -2698,3 +2698,7 @@ require changes to your code:
   a new function, :func:`asyncore.handle_accepted`, was added to replace it.
 
   (Contributed by Giampaolo Rodola in :issue:`6706`.)
+
+* Due to the new :term:`GIL` implementation, :c:func:`PyEval_InitThreads()`
+  cannot be called before :c:func:`Py_Initialize()` anymore.
+
