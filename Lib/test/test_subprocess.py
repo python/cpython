@@ -558,7 +558,7 @@ class ProcessTestCase(BaseTestCase):
             # Windows raises IOError
             except (IOError, OSError) as err:
                 # ignore errors that indicate the command was not found
-                if err.errno not in (errno.ENOENT, errno.EACCES): 
+                if err.errno not in (errno.ENOENT, errno.EACCES):
                     raise
 
     def test_issue8780(self):
