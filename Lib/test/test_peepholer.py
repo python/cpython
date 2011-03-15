@@ -267,11 +267,23 @@ class TestTranforms(unittest.TestCase):
         asm = disassemble(f)
         self.assertNotIn('BINARY_ADD', asm)
 
+class TestBuglets(unittest.TestCase):
+
+    def test_bug_11510(self):
+        # folded constant set optimization was commingled with the tuple
+        # unpacking optimization which would fail if the set had duplicate
+        # elements so that the set length was unexpected
+        def f():
+            x, y = {1, 1}
+            return x, y
+        with self.assertRaises(ValueError):
+            f()
+
 
 def test_main(verbose=None):
     import sys
     from test import support
-    test_classes = (TestTranforms,)
+    test_classes = (TestTranforms, TestBuglets)
     support.run_unittest(*test_classes)
 
     # verify reference counting
