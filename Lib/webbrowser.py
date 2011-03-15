@@ -228,15 +228,9 @@ class UnixBrowser(BaseBrowser):
         else:
             # for TTY browsers, we need stdin/out
             inout = None
-        # if possible, put browser in separate process group, so
-        # keyboard interrupts don't affect browser as well as Python
-        setsid = getattr(os, 'setsid', None)
-        if not setsid:
-            setsid = getattr(os, 'setpgrp', None)
-
         p = subprocess.Popen(cmdline, close_fds=True, stdin=inout,
                              stdout=(self.redirect_stdout and inout or None),
-                             stderr=inout, preexec_fn=setsid)
+                             stderr=inout, start_new_session=True)
         if remote:
             # wait five secons. If the subprocess is not finished, the
             # remote invocation has (hopefully) started a new instance.
