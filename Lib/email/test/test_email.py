@@ -725,6 +725,20 @@ wasnipoop; giraffes="very-long-necked-animals";
 wasnipoop; giraffes="very-long-necked-animals";
 \tspooge="yummy"; hippos="gargantuan"; marshmallows="gooey"''')
 
+    def test_header_encode_with_different_output_charset(self):
+        h = Header('文', 'euc-jp')
+        self.assertEqual(h.encode(), "=?iso-2022-jp?b?GyRCSjgbKEI=?=")
+
+    def test_long_header_encode_with_different_output_charset(self):
+        h = Header(b'test-ja \xa4\xd8\xc5\xea\xb9\xc6\xa4\xb5\xa4\xec\xa4'
+            b'\xbf\xa5\xe1\xa1\xbc\xa5\xeb\xa4\xcf\xbb\xca\xb2\xf1\xbc\xd4'
+            b'\xa4\xce\xbe\xb5\xc7\xa7\xa4\xf2\xc2\xd4\xa4\xc3\xa4\xc6\xa4'
+            b'\xa4\xa4\xde\xa4\xb9'.decode('euc-jp'), 'euc-jp')
+        res = """\
+=?iso-2022-jp?b?dGVzdC1qYSAbJEIkWEVqOUYkNSRsJD8lYSE8JWskTztKMnE8VCROPjUbKEI=?=
+ =?iso-2022-jp?b?GyRCRyckckJUJEMkRiQkJF4kORsoQg==?="""
+        self.assertEqual(h.encode(), res)
+
     def test_header_splitter(self):
         eq = self.ndiffAssertEqual
         msg = MIMEText('')
