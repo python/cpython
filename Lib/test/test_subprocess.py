@@ -1547,6 +1547,19 @@ class ContextManagerTests(ProcessTestCase):
                 raise c.exception
 
 
+def test_main():
+    unit_tests = (ProcessTestCase,
+                  POSIXProcessTestCase,
+                  Win32ProcessTestCase,
+                  ProcessTestCasePOSIXPurePython,
+                  CommandTests,
+                  ProcessTestCaseNoPoll,
+                  HelperFunctionTests,
+                  CommandsWithSpaces,
+                  ContextManagerTests)
+
+    support.run_unittest(*unit_tests)
+    support.reap_children()
+
 if __name__ == "__main__":
     unittest.main()
-    support.reap_children()
