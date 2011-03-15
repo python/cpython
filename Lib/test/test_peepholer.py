@@ -19,6 +19,7 @@ def disassemble(func):
 def dis_single(line):
     return disassemble(compile(line, '', 'single'))
 
+
 class TestTranforms(unittest.TestCase):
 
     def test_unot(self):
