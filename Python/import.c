@@ -2633,28 +2633,37 @@ PyImport_ImportModuleNoBlock(const char *name)
 }
 
 /* Forward declarations for helper routines */
-static PyObject *get_parent(PyObject *globals, char *buf,
-                            Py_ssize_t *p_buflen, int level);
+static PyObject *get_parent(PyObject *globals,
+                            PyObject **p_name,
+                            int level);
 static PyObject *load_next(PyObject *mod, PyObject *altmod,
-                           char **p_name, char *buf, Py_ssize_t *p_buflen);
-static int mark_miss(char *name);
+                           PyObject *inputname, PyObject **p_outputname,
+                           Py_UNICODE *buf, Py_ssize_t *p_buflen,
+                           Py_ssize_t bufsize);
+static int mark_miss(PyObject *name);
 static int ensure_fromlist(PyObject *mod, PyObject *fromlist,
-                           char *buf, Py_ssize_t buflen, int recursive);
-static PyObject * import_submodule(PyObject *mod, char *name, char *fullname);
+                           PyObject *buf, int recursive);
+static PyObject * import_submodule(PyObject *mod, PyObject *name,
+                                   PyObject *fullname);
 
 /* The Magnum Opus of dotted-name import :-) */
 
 static PyObject *
-import_module_level(char *name, PyObject *globals, PyObject *locals,
+import_module_level(PyObject *name, PyObject *globals, PyObject *locals,
                     PyObject *fromlist, int level)
 {
-    char buf[MAXPATHLEN+1];
-    Py_ssize_t buflen = 0;
-    PyObject *parent, *head, *next, *tail;
+    Py_UNICODE buf[MAXPATHLEN+1];
+    Py_ssize_t buflen;
+    Py_ssize_t bufsize = MAXPATHLEN+1;
+    PyObject *parent, *head, *next, *tail, *inputname, *outputname;
+    PyObject *parent_name, *ensure_name;
+    const Py_UNICODE *nameunicode;
 
-    if (strchr(name, '/') != NULL
-#ifdef MS_WINDOWS
-        || strchr(name, '\\') != NULL
+    nameunicode = PyUnicode_AS_UNICODE(name);
+
+    if (Py_UNICODE_strchr(nameunicode, SEP) != NULL
+#ifdef ALTSEP
+        || Py_UNICODE_strchr(nameunicode, ALTSEP) != NULL
 #endif
         ) {
         PyErr_SetString(PyExc_ImportError,
@@ -2662,25 +2671,45 @@ import_module_level(char *name, PyObject *globals, PyObject *locals,
         return NULL;
     }
 
-    parent = get_parent(globals, buf, &buflen, level);
+    parent = get_parent(globals, &parent_name, level);
     if (parent == NULL)
         return NULL;
 
-    head = load_next(parent, level < 0 ? Py_None : parent, &name, buf,
-                        &buflen);
+    buflen = PyUnicode_GET_SIZE(parent_name);
+    if (buflen+1 > bufsize) {
+        Py_DECREF(parent_name);
+        PyErr_SetString(PyExc_ValueError,
+                        "Module name too long");
+        return NULL;
+    }
+    Py_UNICODE_strcpy(buf, PyUnicode_AS_UNICODE(parent_name));
+    Py_DECREF(parent_name);
+
+    head = load_next(parent, level < 0 ? Py_None : parent, name, &outputname,
+                     buf, &buflen, bufsize);
     if (head == NULL)
         return NULL;
 
     tail = head;
     Py_INCREF(tail);
-    while (name) {
-        next = load_next(tail, tail, &name, buf, &buflen);
-        Py_DECREF(tail);
-        if (next == NULL) {
-            Py_DECREF(head);
-            return NULL;
+
+    if (outputname != NULL) {
+        while (1) {
+            inputname = outputname;
+            next = load_next(tail, tail, inputname, &outputname,
+                             buf, &buflen, bufsize);
+            Py_DECREF(tail);
+            Py_DECREF(inputname);
+            if (next == NULL) {
+                Py_DECREF(head);
+                return NULL;
+            }
+            tail = next;
+
+            if (outputname == NULL) {
+                break;
+            }
         }
-        tail = next;
     }
     if (tail == Py_None) {
         /* If tail is Py_None, both get_parent and load_next found
@@ -2688,8 +2717,7 @@ import_module_level(char *name, PyObject *globals, PyObject *locals,
            doctored faulty bytecode */
         Py_DECREF(tail);
         Py_DECREF(head);
-        PyErr_SetString(PyExc_ValueError,
-                        "Empty module name");
+        PyErr_SetString(PyExc_ValueError, "Empty module name");
         return NULL;
     }
 
@@ -2704,21 +2732,33 @@ import_module_level(char *name, PyObject *globals, PyObject *locals,
     }
 
     Py_DECREF(head);
-    if (!ensure_fromlist(tail, fromlist, buf, buflen, 0)) {
+
+    ensure_name = PyUnicode_FromUnicode(buf, Py_UNICODE_strlen(buf));
+    if (ensure_name == NULL) {
         Py_DECREF(tail);
         return NULL;
     }
+    if (!ensure_fromlist(tail, fromlist, ensure_name, 0)) {
+        Py_DECREF(tail);
+        Py_DECREF(ensure_name);
+        return NULL;
+    }
+    Py_DECREF(ensure_name);
 
     return tail;
 }
 
 PyObject *
 PyImport_ImportModuleLevel(char *name, PyObject *globals, PyObject *locals,
-                         PyObject *fromlist, int level)
+                           PyObject *fromlist, int level)
 {
-    PyObject *result;
+    PyObject *nameobj, *result;
+    nameobj = PyUnicode_FromString(name);
+    if (nameobj == NULL)
+        return NULL;
     _PyImport_AcquireLock();
-    result = import_module_level(name, globals, locals, fromlist, level);
+    result = import_module_level(nameobj, globals, locals, fromlist, level);
+    Py_DECREF(nameobj);
     if (_PyImport_ReleaseLock() < 0) {
         Py_XDECREF(result);
         PyErr_SetString(PyExc_RuntimeError,
@@ -2733,15 +2773,20 @@ PyImport_ImportModuleLevel(char *name, PyObject *globals, PyObject *locals,
    sys.modules entry for foo.bar.  If globals is from a package's __init__.py,
    the package's entry in sys.modules is returned, as a borrowed reference.
 
-   The *name* of the returned package is returned in buf, with the length of
-   the name in *p_buflen.
+   The name of the returned package is returned in *p_name.
 
    If globals doesn't come from a package or a module in a package, or a
    corresponding entry is not found in sys.modules, Py_None is returned.
 */
 static PyObject *
-get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
+get_parent(PyObject *globals,
+           PyObject **p_name,
+           int level)
 {
+    Py_UNICODE name[MAXPATHLEN+1];
+    const Py_ssize_t bufsize = MAXPATHLEN+1;
+    PyObject *nameobj;
+
     static PyObject *namestr = NULL;
     static PyObject *pathstr = NULL;
     static PyObject *pkgstr = NULL;
@@ -2749,7 +2794,7 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
     int orig_level = level;
 
     if (globals == NULL || !PyDict_Check(globals) || !level)
-        return Py_None;
+        goto return_none;
 
     if (namestr == NULL) {
         namestr = PyUnicode_InternFromString("__name__");
@@ -2767,55 +2812,46 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
             return NULL;
     }
 
-    *buf = '\0';
-    *p_buflen = 0;
     pkgname = PyDict_GetItem(globals, pkgstr);
 
     if ((pkgname != NULL) && (pkgname != Py_None)) {
         /* __package__ is set, so use it */
-        char *pkgname_str;
-        Py_ssize_t len;
-
         if (!PyUnicode_Check(pkgname)) {
             PyErr_SetString(PyExc_ValueError,
                             "__package__ set to non-string");
             return NULL;
         }
-        pkgname_str = _PyUnicode_AsStringAndSize(pkgname, &len);
-        if (len == 0) {
+        if (PyUnicode_GET_SIZE(pkgname) == 0) {
             if (level > 0) {
                 PyErr_SetString(PyExc_ValueError,
                     "Attempted relative import in non-package");
                 return NULL;
             }
-            return Py_None;
+            goto return_none;
         }
-        if (len > MAXPATHLEN) {
+        if (PyUnicode_GET_SIZE(pkgname)+1 > bufsize) {
             PyErr_SetString(PyExc_ValueError,
                             "Package name too long");
             return NULL;
         }
-        strcpy(buf, pkgname_str);
+        Py_UNICODE_strcpy(name, PyUnicode_AS_UNICODE(pkgname));
     } else {
         /* __package__ not set, so figure it out and set it */
         modname = PyDict_GetItem(globals, namestr);
         if (modname == NULL || !PyUnicode_Check(modname))
-            return Py_None;
+            goto return_none;
 
         modpath = PyDict_GetItem(globals, pathstr);
         if (modpath != NULL) {
             /* __path__ is set, so modname is already the package name */
-            char *modname_str;
-            Py_ssize_t len;
             int error;
 
-            modname_str = _PyUnicode_AsStringAndSize(modname, &len);
-            if (len > MAXPATHLEN) {
+            if (PyUnicode_GET_SIZE(modname)+1 > bufsize) {
                 PyErr_SetString(PyExc_ValueError,
                                 "Module name too long");
                 return NULL;
             }
-            strcpy(buf, modname_str);
+            Py_UNICODE_strcpy(name, PyUnicode_AS_UNICODE(modname));
             error = PyDict_SetItem(globals, pkgstr, modname);
             if (error) {
                 PyErr_SetString(PyExc_ValueError,
@@ -2824,9 +2860,9 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
             }
         } else {
             /* Normal module, so work out the package name if any */
-            char *start = _PyUnicode_AsString(modname);
-            char *lastdot = strrchr(start, '.');
-            size_t len;
+            Py_UNICODE *start = PyUnicode_AS_UNICODE(modname);
+            Py_UNICODE *lastdot = Py_UNICODE_strrchr(start, '.');
+            Py_ssize_t len;
             int error;
             if (lastdot == NULL && level > 0) {
                 PyErr_SetString(PyExc_ValueError,
@@ -2840,17 +2876,17 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
                         "Could not set __package__");
                     return NULL;
                 }
-                return Py_None;
+                goto return_none;
             }
             len = lastdot - start;
-            if (len >= MAXPATHLEN) {
+            if (len+1 > bufsize) {
                 PyErr_SetString(PyExc_ValueError,
                                 "Module name too long");
                 return NULL;
             }
-            strncpy(buf, start, len);
-            buf[len] = '\0';
-            pkgname = PyUnicode_FromString(buf);
+            Py_UNICODE_strncpy(name, start, len);
+            name[len] = '\0';
+            pkgname = PyUnicode_FromUnicode(name, len);
             if (pkgname == NULL) {
                 return NULL;
             }
@@ -2864,7 +2900,7 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
         }
     }
     while (--level > 0) {
-        char *dot = strrchr(buf, '.');
+        Py_UNICODE *dot = Py_UNICODE_strrchr(name, '.');
         if (dot == NULL) {
             PyErr_SetString(PyExc_ValueError,
                 "Attempted relative import beyond "
@@ -2873,137 +2909,181 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
         }
         *dot = '\0';
     }
-    *p_buflen = strlen(buf);
+
+    nameobj = PyUnicode_FromUnicode(name, Py_UNICODE_strlen(name));
+    if (nameobj == NULL)
+        return NULL;
 
     modules = PyImport_GetModuleDict();
-    parent = PyDict_GetItemString(modules, buf);
+    parent = PyDict_GetItem(modules, nameobj);
     if (parent == NULL) {
-        if (orig_level < 1) {
-            PyObject *err_msg = PyBytes_FromFormat(
-                "Parent module '%.200s' not found "
-                "while handling absolute import", buf);
-            if (err_msg == NULL) {
-                return NULL;
-            }
-            if (!PyErr_WarnEx(PyExc_RuntimeWarning,
-                              PyBytes_AsString(err_msg), 1)) {
-                *buf = '\0';
-                *p_buflen = 0;
-                parent = Py_None;
-            }
-            Py_DECREF(err_msg);
-        } else {
+        int err;
+
+        if (orig_level >= 1) {
             PyErr_Format(PyExc_SystemError,
-                "Parent module '%.200s' not loaded, "
-                "cannot perform relative import", buf);
+                "Parent module %R not loaded, "
+                "cannot perform relative import", nameobj);
+            Py_DECREF(nameobj);
+            return NULL;
         }
+
+        err = PyErr_WarnFormat(
+            PyExc_RuntimeWarning, 1,
+            "Parent module %R not found while handling absolute import",
+            nameobj);
+        Py_DECREF(nameobj);
+        if (err)
+            return NULL;
+
+        goto return_none;
     }
+    *p_name = nameobj;
     return parent;
     /* We expect, but can't guarantee, if parent != None, that:
-       - parent.__name__ == buf
+       - parent.__name__ == name
        - parent.__dict__ is globals
        If this is violated...  Who cares? */
+
+return_none:
+    nameobj = PyUnicode_FromUnicode(NULL, 0);
+    if (nameobj == NULL)
+        return NULL;
+    *p_name = nameobj;
+    return Py_None;
 }
 
 /* altmod is either None or same as mod */
 static PyObject *
-load_next(PyObject *mod, PyObject *altmod, char **p_name, char *buf,
-          Py_ssize_t *p_buflen)
+load_next(PyObject *mod, PyObject *altmod,
+          PyObject *inputname, PyObject **p_outputname,
+          Py_UNICODE *buf, Py_ssize_t *p_buflen, Py_ssize_t bufsize)
 {
-    char *name = *p_name;
-    char *dot = strchr(name, '.');
-    size_t len;
-    char *p;
-    PyObject *result;
+    const Py_UNICODE *dot;
+    Py_ssize_t len;
+    Py_UNICODE *p;
+    PyObject *fullname, *name, *result, *mark_name;
+    const Py_UNICODE *nameuni;
 
-    if (strlen(name) == 0) {
+    *p_outputname = NULL;
+
+    if (PyUnicode_GET_SIZE(inputname) == 0) {
         /* completely empty module name should only happen in
            'from . import' (or '__import__("")')*/
         Py_INCREF(mod);
-        *p_name = NULL;
         return mod;
     }
 
-    if (dot == NULL) {
-        *p_name = NULL;
-        len = strlen(name);
-    }
-    else {
-        *p_name = dot+1;
-        len = dot-name;
-    }
-    if (len == 0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "Empty module name");
+    nameuni = PyUnicode_AS_UNICODE(inputname);
+    if (nameuni == NULL)
         return NULL;
-    }
 
-    p = buf + *p_buflen;
-    if (p != buf)
-        *p++ = '.';
-    if (p+len-buf >= MAXPATHLEN) {
+    dot = Py_UNICODE_strchr(nameuni, '.');
+    if (dot != NULL) {
+        len = dot - nameuni;
+        if (len == 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "Empty module name");
+            return NULL;
+        }
+    }
+    else
+        len = PyUnicode_GET_SIZE(inputname);
+
+    if (*p_buflen+len+1 >= bufsize) {
         PyErr_SetString(PyExc_ValueError,
                         "Module name too long");
         return NULL;
     }
-    strncpy(p, name, len);
-    p[len] = '\0';
-    *p_buflen = p+len-buf;
 
-    result = import_submodule(mod, p, buf);
+    p = buf + *p_buflen;
+    if (p != buf) {
+        *p++ = '.';
+        *p_buflen += 1;
+    }
+    Py_UNICODE_strncpy(p, nameuni, len);
+    p[len] = '\0';
+    *p_buflen += len;
+
+    fullname = PyUnicode_FromUnicode(buf, *p_buflen);
+    if (fullname == NULL)
+        return NULL;
+    name = PyUnicode_FromUnicode(p, len);
+    if (name == NULL) {
+        Py_DECREF(fullname);
+        return NULL;
+    }
+    result = import_submodule(mod, name, fullname);
+    Py_DECREF(fullname);
     if (result == Py_None && altmod != mod) {
         Py_DECREF(result);
         /* Here, altmod must be None and mod must not be None */
-        result = import_submodule(altmod, p, p);
+        result = import_submodule(altmod, name, name);
+        Py_DECREF(name);
         if (result != NULL && result != Py_None) {
-            if (mark_miss(buf) != 0) {
+            mark_name = PyUnicode_FromUnicode(buf, *p_buflen);
+            if (mark_name == NULL) {
                 Py_DECREF(result);
                 return NULL;
             }
-            strncpy(buf, name, len);
+            if (mark_miss(mark_name) != 0) {
+                Py_DECREF(result);
+                Py_DECREF(mark_name);
+                return NULL;
+            }
+            Py_DECREF(mark_name);
+            Py_UNICODE_strncpy(buf, nameuni, len);
             buf[len] = '\0';
             *p_buflen = len;
         }
     }
+    else
+        Py_DECREF(name);
     if (result == NULL)
         return NULL;
 
     if (result == Py_None) {
         Py_DECREF(result);
         PyErr_Format(PyExc_ImportError,
-                     "No module named %.200s", name);
+                     "No module named %R", inputname);
         return NULL;
+    }
+
+    if (dot != NULL) {
+        *p_outputname = PyUnicode_FromUnicode(dot+1, Py_UNICODE_strlen(dot+1));
+        if (*p_outputname == NULL) {
+            Py_DECREF(result);
+            return NULL;
+        }
     }
 
     return result;
 }
 
 static int
-mark_miss(char *name)
+mark_miss(PyObject *name)
 {
     PyObject *modules = PyImport_GetModuleDict();
-    return PyDict_SetItemString(modules, name, Py_None);
+    return PyDict_SetItem(modules, name, Py_None);
 }
 
 static int
-ensure_fromlist(PyObject *mod, PyObject *fromlist, char *buf, Py_ssize_t buflen,
+ensure_fromlist(PyObject *mod, PyObject *fromlist, PyObject *name,
                 int recursive)
 {
     int i;
+    PyObject *fullname;
+    Py_ssize_t fromlist_len;
 
     if (!PyObject_HasAttrString(mod, "__path__"))
         return 1;
 
-    for (i = 0; ; i++) {
+    fromlist_len = PySequence_Size(fromlist);
+
+    for (i = 0; i < fromlist_len; i++) {
         PyObject *item = PySequence_GetItem(fromlist, i);
         int hasit;
-        if (item == NULL) {
-            if (PyErr_ExceptionMatches(PyExc_IndexError)) {
-                PyErr_Clear();
-                return 1;
-            }
+        if (item == NULL)
             return 0;
-        }
         if (!PyUnicode_Check(item)) {
             PyErr_SetString(PyExc_TypeError,
                             "Item in ``from list'' not a string");
@@ -3020,7 +3100,7 @@ ensure_fromlist(PyObject *mod, PyObject *fromlist, char *buf, Py_ssize_t buflen,
             if (all == NULL)
                 PyErr_Clear();
             else {
-                int ret = ensure_fromlist(mod, all, buf, buflen, 1);
+                int ret = ensure_fromlist(mod, all, name, 1);
                 Py_DECREF(all);
                 if (!ret)
                     return 0;
@@ -3029,27 +3109,14 @@ ensure_fromlist(PyObject *mod, PyObject *fromlist, char *buf, Py_ssize_t buflen,
         }
         hasit = PyObject_HasAttr(mod, item);
         if (!hasit) {
-            PyObject *item8;
-            char *subname;
             PyObject *submod;
-            char *p;
-            item8 = PyUnicode_EncodeFSDefault(item);
-            if (!item8) {
-                PyErr_SetString(PyExc_ValueError, "Cannot encode path item");
-                return 0;
+            fullname = PyUnicode_FromFormat("%U.%U", name, item);
+            if (fullname != NULL) {
+                submod = import_submodule(mod, item, fullname);
+                Py_DECREF(fullname);
             }
-            subname = PyBytes_AS_STRING(item8);
-            if (buflen + strlen(subname) >= MAXPATHLEN) {
-                PyErr_SetString(PyExc_ValueError,
-                                "Module name too long");
-                Py_DECREF(item);
-                return 0;
-            }
-            p = buf + buflen;
-            *p++ = '.';
-            strcpy(p, subname);
-            submod = import_submodule(mod, subname, buf);
-            Py_DECREF(item8);
+            else
+                submod = NULL;
             Py_XDECREF(submod);
             if (submod == NULL) {
                 Py_DECREF(item);
@@ -3059,12 +3126,12 @@ ensure_fromlist(PyObject *mod, PyObject *fromlist, char *buf, Py_ssize_t buflen,
         Py_DECREF(item);
     }
 
-    /* NOTREACHED */
+    return 1;
 }
 
 static int
-add_submodule(PyObject *mod, PyObject *submod, char *fullname, char *subname,
-              PyObject *modules)
+add_submodule(PyObject *mod, PyObject *submod, PyObject *fullname,
+              PyObject *subname, PyObject *modules)
 {
     if (mod == Py_None)
         return 1;
@@ -3075,7 +3142,7 @@ add_submodule(PyObject *mod, PyObject *submod, char *fullname, char *subname,
        load failed with a SyntaxError -- then there's no trace in
        sys.modules.  In that case, of course, do nothing extra.) */
     if (submod == NULL) {
-        submod = PyDict_GetItemString(modules, fullname);
+        submod = PyDict_GetItem(modules, fullname);
         if (submod == NULL)
             return 1;
     }
@@ -3086,28 +3153,28 @@ add_submodule(PyObject *mod, PyObject *submod, char *fullname, char *subname,
         PyObject *dict = PyModule_GetDict(mod);
         if (!dict)
             return 0;
-        if (PyDict_SetItemString(dict, subname, submod) < 0)
+        if (PyDict_SetItem(dict, subname, submod) < 0)
             return 0;
     }
     else {
-        if (PyObject_SetAttrString(mod, subname, submod) < 0)
+        if (PyObject_SetAttr(mod, subname, submod) < 0)
             return 0;
     }
     return 1;
 }
 
 static PyObject *
-import_submodule(PyObject *mod, char *subname, char *fullname)
+import_submodule(PyObject *mod, PyObject *subname, PyObject *fullname)
 {
     PyObject *modules = PyImport_GetModuleDict();
-    PyObject *m = NULL, *fullnameobj, *bufobj;
+    PyObject *m = NULL, *bufobj;
 
     /* Require:
        if mod == None: subname == fullname
        else: mod.__name__ + "." + subname == fullname
     */
 
-    if ((m = PyDict_GetItemString(modules, fullname)) != NULL) {
+    if ((m = PyDict_GetItem(modules, fullname)) != NULL) {
         Py_INCREF(m);
     }
     else {
@@ -3127,7 +3194,9 @@ import_submodule(PyObject *mod, char *subname, char *fullname)
             }
         }
 
-        fdp = find_module(fullname, subname, path, buf, MAXPATHLEN+1,
+        fdp = find_module(_PyUnicode_AsString(fullname),
+                          _PyUnicode_AsString(subname),
+                          path, buf, MAXPATHLEN+1,
                           &fp, &loader);
         Py_XDECREF(path);
         if (fdp == NULL) {
@@ -3137,23 +3206,17 @@ import_submodule(PyObject *mod, char *subname, char *fullname)
             Py_INCREF(Py_None);
             return Py_None;
         }
-        fullnameobj = PyUnicode_FromString(fullname);
-        if (fullnameobj != NULL) {
-            bufobj = PyUnicode_DecodeFSDefault(buf);
-            if (bufobj != NULL) {
-                m = load_module(fullnameobj, fp, bufobj, fdp->type, loader);
-                Py_DECREF(bufobj);
-            }
-            else
-                m = NULL;
-            Py_DECREF(fullnameobj);
+        bufobj = PyUnicode_DecodeFSDefault(buf);
+        if (bufobj != NULL) {
+            m = load_module(fullname, fp, bufobj, fdp->type, loader);
+            Py_DECREF(bufobj);
         }
         else
             m = NULL;
         Py_XDECREF(loader);
         if (fp)
             fclose(fp);
-        if (!add_submodule(mod, m, fullname, subname, modules)) {
+        if (m != NULL && !add_submodule(mod, m, fullname, subname, modules)) {
             Py_XDECREF(m);
             m = NULL;
         }
