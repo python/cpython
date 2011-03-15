@@ -1465,9 +1465,11 @@ def can_symlink():
     global _can_symlink
     if _can_symlink is not None:
         return _can_symlink
+    symlink_path = TESTFN + "can_symlink"
     try:
-        os.symlink(TESTFN, TESTFN + "can_symlink")
+        os.symlink(TESTFN, symlink_path)
         can = True
+        os.remove(symlink_path)
     except (OSError, NotImplementedError):
         can = False
     _can_symlink = can
