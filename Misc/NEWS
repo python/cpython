@@ -237,6 +237,11 @@ Tests
 
 - Issue #10990: Prevent tests from clobbering a set trace function.
 
+C-API
+-----
+
+- PY_PATCHLEVEL_REVISION has been removed, since it's meaningless with Mercurial.
+
 
 What's New in Python 3.2?
 =========================
