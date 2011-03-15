@@ -34,6 +34,20 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    For normal use, you should only require the initialization/connect,
    :meth:`sendmail`, and :meth:`quit` methods.  An example is included below.
 
+   The :class:`SMTP` class supports the :keyword:`with` statement.  When used
+   like this, the SMTP ``QUIT`` command is issued automatically when the
+   :keyword:`with` statement exits.  E.g.::
+
+    >>> from smtplib import SMTP
+    >>> with SMTP("domain.org") as smtp:
+    ...     smtp.noop()
+    ...
+    (250, b'Ok')
+    >>>
+
+   .. versionadded:: 3.3
+      Support for the :keyword:`with` statement was added.
+
 
 .. class:: SMTP_SSL(host='', port=0, local_hostname=None, keyfile=None, certfile=None[, timeout])
 
