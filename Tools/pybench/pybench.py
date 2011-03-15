@@ -682,7 +682,7 @@ class Benchmark:
                 other_total_avg_time = other_total_avg_time + other_avg_time
                 if (benchmarks_compatible and
                     test.compatible(other)):
-                    # Both benchmark and tests are comparible
+                    # Both benchmark and tests are comparable
                     min_diff = ((min_time * self.warp) /
                                 (other_min_time * other.warp) - 1.0)
                     avg_diff = ((avg_time * self.warp) /
@@ -696,7 +696,7 @@ class Benchmark:
                     else:
                         avg_diff = '%+5.1f%%' % (avg_diff * PERCENT)
                 else:
-                    # Benchmark or tests are not comparible
+                    # Benchmark or tests are not comparable
                     min_diff, avg_diff = 'n/a', 'n/a'
                     tests_compatible = 0
             print('%30s: %5.0fms %5.0fms %7s %5.0fms %5.0fms %7s' % \

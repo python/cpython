@@ -23,7 +23,7 @@ __version__ = 'SPARK-0.7 (pre-alpha-5)'
 
 import re
 
-# Compatability with older pythons.
+# Compatibility with older pythons.
 def output(string='', end='\n'):
     sys.stdout.write(string + end)
 

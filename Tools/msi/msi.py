@@ -174,7 +174,7 @@ mingw_lib = os.path.join(srcdir, PCBUILD, "libpython%s%s.a" % (major, minor))
 
 have_mingw = build_mingw_lib(lib_file, def_file, dll_file, mingw_lib)
 
-# Determine the target architechture
+# Determine the target architecture
 dll_path = os.path.join(srcdir, PCBUILD, dll_file)
 msilib.set_arch_from_file(dll_path)
 if msilib.pe_type(dll_path) != msilib.pe_type("msisupport.dll"):

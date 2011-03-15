@@ -105,8 +105,8 @@ class EditorWindow(object):
         self.top = top = WindowList.ListedToplevel(root, menu=self.menubar)
         if flist:
             self.tkinter_vars = flist.vars
-            #self.top.instance_dict makes flist.inversedict avalable to
-            #configDialog.py so it can access all EditorWindow instaces
+            #self.top.instance_dict makes flist.inversedict available to
+            #configDialog.py so it can access all EditorWindow instances
             self.top.instance_dict = flist.inversedict
         else:
             self.tkinter_vars = {}  # keys: Tkinter event names

@@ -177,7 +177,7 @@ if 1:
             self.assertEqual(eval("-" + all_one_bits), -18446744073709551615)
         else:
             self.fail("How many bits *does* this machine have???")
-        # Verify treatment of contant folding on -(sys.maxsize+1)
+        # Verify treatment of constant folding on -(sys.maxsize+1)
         # i.e. -2147483648 on 32 bit platforms.  Should return int, not long.
         self.assertTrue(isinstance(eval("%s" % (-sys.maxsize - 1)), int))
         self.assertTrue(isinstance(eval("%s" % (-sys.maxsize - 2)), int))

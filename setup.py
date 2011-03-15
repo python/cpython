@@ -882,7 +882,7 @@ class PyBuildExt(build_ext):
 
                     db_dirs_to_check = tmp
 
-                # Look for a version specific db-X.Y before an ambiguoius dbX
+                # Look for a version specific db-X.Y before an ambiguous dbX
                 # XXX should we -ever- look for a dbX name?  Do any
                 # systems really not name their library by version and
                 # symlink to more general names?
