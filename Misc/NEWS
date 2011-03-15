@@ -68,6 +68,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #11501: disutils.archive_utils.make_zipfile no longer fails if zlib is
+  not installed. Instead, the zipfile.ZIP_STORED compression is used to create
+  the ZipFile. Patch by Natalia B. Bidart.
+
 - Issue #11289: `smtp.SMTP` class becomes a context manager so it can be used
   in a `with` statement.  Contributed by Giampaolo Rodola.
 
@@ -80,8 +84,8 @@ Library
 - Issue #11407: `TestCase.run` returns the result object used or created.
   Contributed by Janathan Hartley.
 
-- Issue #11500: Fixed a bug in the os x proxy bypass code for fully qualified 
-  IP addresses in the proxy exception list. 
+- Issue #11500: Fixed a bug in the os x proxy bypass code for fully qualified
+  IP addresses in the proxy exception list.
 
 - Issue #11491: dbm.error is no longer raised when dbm.open is called with
   the "n" as the flag argument and the file exists. The behavior matches
