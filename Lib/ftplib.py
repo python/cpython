@@ -599,7 +599,7 @@ else:
         Usage example:
         >>> from ftplib import FTP_TLS
         >>> ftps = FTP_TLS('ftp.python.org')
-        >>> ftps.login()  # login anonimously previously securing control channel
+        >>> ftps.login()  # login anonymously previously securing control channel
         '230 Guest login ok, access restrictions apply.'
         >>> ftps.prot_p()  # switch to secure data connection
         '200 Protection level set to P'

@@ -993,7 +993,7 @@ class Panedwindow(Widget, Tkinter.PanedWindow):
         pane is either an integer index or the name of a managed subwindow.
         If kw is not given, returns a dict of the pane option values. If
         option is specified then the value for that option is returned.
-        Otherwise, sets the options to the correspoding values."""
+        Otherwise, sets the options to the corresponding values."""
         if option is not None:
             kw[option] = None
         return _val_or_dict(kw, self.tk.call, self._w, "pane", pane)

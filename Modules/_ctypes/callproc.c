@@ -54,7 +54,7 @@
   So, there are 4 data structures holding processed arguments:
   - the inargs tuple (in PyCFuncPtr_call)
   - the callargs tuple (in PyCFuncPtr_call)
-  - the 'struct argguments' array
+  - the 'struct arguments' array
   - the 'void *' array
 
  */

@@ -1385,7 +1385,7 @@ class TurtleScreen(TurtleScreenBase):
         Optional argument:
         picname -- a string, name of a gif-file or "nopic".
 
-        If picname is a filename, set the corresponing image as background.
+        If picname is a filename, set the corresponding image as background.
         If picname is "nopic", delete backgroundimage, if present.
         If picname is None, return the filename of the current backgroundimage.
 
@@ -3221,7 +3221,7 @@ class RawTurtle(TPen, TNavigator):
     def dot(self, size=None, *color):
         """Draw a dot with diameter size, using color.
 
-        Optional argumentS:
+        Optional arguments:
         size -- an integer >= 1 (if given)
         color -- a colorstring or a numeric color tuple
 

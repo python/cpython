@@ -592,7 +592,7 @@ typedef struct aix_fd_struct {
 		  +---------------------------------------+ 160
 		  | result area 8                         |
 		  +---------------------------------------+ 168
-		  | alignement to the next multiple of 16 |
+		  | alignment to the next multiple of 16  |
 SP current -->    +---------------------------------------+ 176 <- parent frame
 		  | back chain to caller 4                |
 		  +---------------------------------------+ 180

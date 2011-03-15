@@ -1106,7 +1106,7 @@ get_code_from_data(ZipImporter *self, int ispackage, int isbytecode,
     return code;
 }
 
-/* Get the code object assoiciated with the module specified by
+/* Get the code object associated with the module specified by
    'fullname'. */
 static PyObject *
 get_module_code(ZipImporter *self, char *fullname,

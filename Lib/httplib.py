@@ -804,7 +804,7 @@ class HTTPConnection:
         del self._buffer[:]
         # If msg and message_body are sent in a single send() call,
         # it will avoid performance problems caused by the interaction
-        # between delayed ack and the Nagle algorithim.
+        # between delayed ack and the Nagle algorithm.
         if isinstance(message_body, str):
             msg += message_body
             message_body = None
