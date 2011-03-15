@@ -51,7 +51,7 @@ class TestImporter:
 
     def __init__(self, path=test_path):
         if path != test_path:
-            # if out class is on sys.path_hooks, we must raise
+            # if our class is on sys.path_hooks, we must raise
             # ImportError for any path item that we can't handle.
             raise ImportError
         self.path = path
