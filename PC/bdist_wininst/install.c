@@ -62,7 +62,7 @@
  * instead showing the user an empty listbox to select something from.
  *
  * Finish the code so that we can use other python installations
- * additionaly to those found in the registry,
+ * additionally to those found in the registry,
  * and then #define USE_OTHER_PYTHON_VERSIONS
  *
  *  - install a help-button, which will display something meaningful

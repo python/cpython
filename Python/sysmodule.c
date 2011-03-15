@@ -686,7 +686,7 @@ PyDoc_STRVAR(getwindowsversion_doc,
 Return information about the running version of Windows as a named tuple.\n\
 The members are named: major, minor, build, platform, service_pack,\n\
 service_pack_major, service_pack_minor, suite_mask, and product_type. For\n\
-backward compatibiliy, only the first 5 items are available by indexing.\n\
+backward compatibility, only the first 5 items are available by indexing.\n\
 All elements are numbers, except service_pack which is a string. Platform\n\
 may be 0 for win32s, 1 for Windows 9x/ME, 2 for Windows NT/2000/XP/Vista/7,\n\
 3 for Windows CE. Product_type may be 1 for a workstation, 2 for a domain\n\

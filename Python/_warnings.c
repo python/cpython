@@ -764,7 +764,7 @@ PyErr_WarnEx(PyObject *category, const char *text, Py_ssize_t stack_level)
     return ret;
 }
 
-/* PyErr_Warn is only for backwards compatability and will be removed.
+/* PyErr_Warn is only for backwards compatibility and will be removed.
    Use PyErr_WarnEx instead. */
 
 #undef PyErr_Warn

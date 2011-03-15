@@ -13,7 +13,7 @@ What's New in IDLEfork 0.8.1?
 - New tarball released as a result of the 'revitalisation' of the IDLEfork
   project. 
 
-- This release requires python 2.1 or better. Compatability with earlier
+- This release requires python 2.1 or better. Compatibility with earlier
   versions of python (especially ancient ones like 1.5x) is no longer a
   priority in IDLEfork development.
 
