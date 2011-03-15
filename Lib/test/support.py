@@ -1374,7 +1374,7 @@ def strip_python_stderr(stderr):
 
 def args_from_interpreter_flags():
     """Return a list of command-line arguments reproducing the current
-    settings in sys.flags."""
+    settings in sys.flags and sys.warnoptions."""
     flag_opt_map = {
         'bytes_warning': 'b',
         'dont_write_bytecode': 'B',
@@ -1389,6 +1389,9 @@ def args_from_interpreter_flags():
         v = getattr(sys.flags, flag)
         if v > 0:
             args.append('-' + opt * v)
+        if sys.warnoptions:
+            args.append('-W')
+            args.extend(sys.warnoptions)
     return args
 
 #============================================================
