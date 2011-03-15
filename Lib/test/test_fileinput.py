@@ -754,7 +754,7 @@ class Test_hook_compressed(unittest.TestCase):
     def test_no_ext(self):
         self.do_test_use_builtin_open("abcd", 2)
 
-    def test_gz_ext(self):
+    def test_gz_ext_fake(self):
         original_open = gzip.open
         gzip.open = self.fake_open
         try:
@@ -765,7 +765,7 @@ class Test_hook_compressed(unittest.TestCase):
         self.assertEqual(self.fake_open.invocation_count, 1)
         self.assertEqual(self.fake_open.last_invocation, (("test.gz", 3), {}))
 
-    def test_bz2_ext(self):
+    def test_bz2_ext_fake(self):
         original_open = bz2.BZ2File
         bz2.BZ2File = self.fake_open
         try:
@@ -779,10 +779,10 @@ class Test_hook_compressed(unittest.TestCase):
     def test_blah_ext(self):
         self.do_test_use_builtin_open("abcd.blah", 5)
 
-    def test_Gz_ext(self):
+    def test_gz_ext_builtin(self):
         self.do_test_use_builtin_open("abcd.Gz", 6)
 
-    def test_Bz2_ext(self):
+    def test_bz2_ext_builtin(self):
         self.do_test_use_builtin_open("abcd.Bz2", 7)
 
     def do_test_use_builtin_open(self, filename, mode):
