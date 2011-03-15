@@ -68,6 +68,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11289: `smtp.SMTP` class becomes a context manager so it can be used
+  in a `with` statement.  Contributed by Giampaolo Rodola.
+
 - Issue #11554: Fixed support for Japanese codecs; previously the body output
   encoding was not done if euc-jp or shift-jis was specified as the charset.
 

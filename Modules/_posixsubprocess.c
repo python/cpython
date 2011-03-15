@@ -99,10 +99,10 @@ static void child_exec(char *const exec_array[],
     if (p2cread > 2) {
         POSIX_CALL(close(p2cread));
     }
-    if (c2pwrite > 2) {
+    if (c2pwrite > 2 && c2pwrite != p2cread) {
         POSIX_CALL(close(c2pwrite));
     }
-    if (errwrite != c2pwrite && errwrite > 2) {
+    if (errwrite != c2pwrite && errwrite != p2cread && errwrite > 2) {
         POSIX_CALL(close(errwrite));
     }
 
