@@ -3,6 +3,7 @@ from test import support
 import subprocess
 import sys
 import signal
+import io
 import os
 import errno
 import tempfile
@@ -1186,6 +1187,24 @@ class POSIXProcessTestCase(BaseTestCase):
                         close_fds=False, pass_fds=(fd, )))
             self.assertIn('overriding close_fds', str(context.warning))
 
+    def test_stdout_stdin_are_single_inout_fd(self):
+        with io.open(os.devnull, "r+") as inout:
+            p = subprocess.Popen([sys.executable, "-c", "import sys; sys.exit(0)"],
+                                 stdout=inout, stdin=inout)
+            p.wait()
+
+    def test_stdout_stderr_are_single_inout_fd(self):
+        with io.open(os.devnull, "r+") as inout:
+            p = subprocess.Popen([sys.executable, "-c", "import sys; sys.exit(0)"],
+                                 stdout=inout, stderr=inout)
+            p.wait()
+
+    def test_stderr_stdin_are_single_inout_fd(self):
+        with io.open(os.devnull, "r+") as inout:
+            p = subprocess.Popen([sys.executable, "-c", "import sys; sys.exit(0)"],
+                                 stderr=inout, stdin=inout)
+            p.wait()
+
     def test_wait_when_sigchild_ignored(self):
         # NOTE: sigchild_ignore.py may not be an effective test on all OSes.
         sigchild_ignore = support.findfile("sigchild_ignore.py",
@@ -1458,19 +1477,6 @@ class ContextManagerTests(ProcessTestCase):
                 raise c.exception
 
 
-def test_main():
-    unit_tests = (ProcessTestCase,
-                  POSIXProcessTestCase,
-                  Win32ProcessTestCase,
-                  ProcessTestCasePOSIXPurePython,
-                  CommandTests,
-                  ProcessTestCaseNoPoll,
-                  HelperFunctionTests,
-                  CommandsWithSpaces,
-                  ContextManagerTests)
-
-    support.run_unittest(*unit_tests)
-    support.reap_children()
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
+    support.reap_children()
