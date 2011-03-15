@@ -269,6 +269,19 @@ class SMTP:
                     pass
                 self.local_hostname = '[%s]' % addr
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        try:
+            code, message = self.docmd("QUIT")
+            if code != 221:
+                raise SMTPResponseException(code, message)
+        except SMTPServerDisconnected:
+            pass
+        finally:
+            self.close()
+
     def set_debuglevel(self, debuglevel):
         """Set the debug output level.
 

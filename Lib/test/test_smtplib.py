@@ -424,6 +424,9 @@ sim_lists = {'list-1':['Mr.A@somewhere.com','Mrs.C@somewhereesle.com'],
 # Simulated SMTP channel & server
 class SimSMTPChannel(smtpd.SMTPChannel):
 
+    # For testing failures in QUIT when using the context manager API.
+    quit_response = None
+
     def __init__(self, extra_features, *args, **kw):
         self._extrafeatures = ''.join(
             [ "250-{0}\r\n".format(x) for x in extra_features ])
@@ -475,19 +478,31 @@ class SimSMTPChannel(smtpd.SMTPChannel):
         else:
             self.push('550 No access for you!')
 
+    def smtp_QUIT(self, arg):
+        # args is ignored
+        if self.quit_response is None:
+            super(SimSMTPChannel, self).smtp_QUIT(arg)
+        else:
+            self.push(self.quit_response)
+            self.close_when_done()
+
     def handle_error(self):
         raise
 
 
 class SimSMTPServer(smtpd.SMTPServer):
 
+    # For testing failures in QUIT when using the context manager API.
+    quit_response = None
+
     def __init__(self, *args, **kw):
         self._extra_features = []
         smtpd.SMTPServer.__init__(self, *args, **kw)
 
     def handle_accepted(self, conn, addr):
-        self._SMTPchannel = SimSMTPChannel(self._extra_features,
-                                           self, conn, addr)
+        self._SMTPchannel = SimSMTPChannel(
+            self._extra_features, self, conn, addr)
+        self._SMTPchannel.quit_response = self.quit_response
 
     def process_message(self, peer, mailfrom, rcpttos, data):
         pass
@@ -619,6 +634,25 @@ class SMTPSimTests(unittest.TestCase):
         except smtplib.SMTPAuthenticationError as err:
             self.assertIn(sim_auth_credentials['cram-md5'], str(err))
         smtp.close()
+
+    def test_with_statement(self):
+        with smtplib.SMTP(HOST, self.port) as smtp:
+            code, message = smtp.noop()
+            self.assertEqual(code, 250)
+        self.assertRaises(smtplib.SMTPServerDisconnected, smtp.send, b'foo')
+        with smtplib.SMTP(HOST, self.port) as smtp:
+            smtp.close()
+        self.assertRaises(smtplib.SMTPServerDisconnected, smtp.send, b'foo')
+
+    def test_with_statement_QUIT_failure(self):
+        self.serv.quit_response = '421 QUIT FAILED'
+        with self.assertRaises(smtplib.SMTPResponseException) as error:
+            with smtplib.SMTP(HOST, self.port) as smtp:
+                smtp.noop()
+        self.assertEqual(error.exception.smtp_code, 421)
+        self.assertEqual(error.exception.smtp_error, b'QUIT FAILED')
+        # We don't need to clean up self.serv.quit_response because a new
+        # server is always instantiated in the setUp().
 
     #TODO: add tests for correct AUTH method fallback now that the
     #test infrastructure can support it.
