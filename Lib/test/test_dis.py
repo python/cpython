@@ -1,11 +1,35 @@
 # Minimal tests for dis module
 
 from test.support import run_unittest, captured_stdout
+import difflib
 import unittest
 import sys
 import dis
 import io
 
+class _C:
+    def __init__(self, x):
+        self.x = x == 1
+
+dis_c_instance_method = """\
+ %-4d         0 LOAD_FAST                1 (x)
+              3 LOAD_CONST               1 (1)
+              6 COMPARE_OP               2 (==)
+              9 LOAD_FAST                0 (self)
+             12 STORE_ATTR               0 (x)
+             15 LOAD_CONST               0 (None)
+             18 RETURN_VALUE
+""" % (_C.__init__.__code__.co_firstlineno + 1,)
+
+dis_c_instance_method_bytes = """\
+          0 LOAD_FAST           1 (1)
+          3 LOAD_CONST          1 (1)
+          6 COMPARE_OP          2 (==)
+          9 LOAD_FAST           0 (0)
+         12 STORE_ATTR          0 (0)
+         15 LOAD_CONST          0 (0)
+         18 RETURN_VALUE
+"""
 
 def _f(a):
     print(a)
@@ -21,6 +45,16 @@ dis_f = """\
              13 RETURN_VALUE
 """ % (_f.__code__.co_firstlineno + 1,
        _f.__code__.co_firstlineno + 2)
+
+
+dis_f_co_code = """\
+          0 LOAD_GLOBAL         0 (0)
+          3 LOAD_FAST           0 (0)
+          6 CALL_FUNCTION       1
+          9 POP_TOP
+         10 LOAD_CONST          1 (1)
+         13 RETURN_VALUE
+"""
 
 
 def bug708901():
@@ -138,18 +172,27 @@ dis_compound_stmt_str = """\
 """
 
 class DisTests(unittest.TestCase):
-    def do_disassembly_test(self, func, expected):
+
+    def get_disassembly(self, func, lasti=-1, wrapper=True):
         s = io.StringIO()
         save_stdout = sys.stdout
         sys.stdout = s
-        dis.dis(func)
-        sys.stdout = save_stdout
-        got = s.getvalue()
+        try:
+            if wrapper:
+                dis.dis(func)
+            else:
+                dis.disassemble(func, lasti)
+        finally:
+            sys.stdout = save_stdout
         # Trim trailing blanks (if any).
-        lines = got.split('\n')
-        lines = [line.rstrip() for line in lines]
-        expected = expected.split("\n")
-        import difflib
+        return [line.rstrip() for line in s.getvalue().splitlines()]
+
+    def get_disassemble_as_string(self, func, lasti=-1):
+        return '\n'.join(self.get_disassembly(func, lasti, False))
+
+    def do_disassembly_test(self, func, expected):
+        lines = self.get_disassembly(func)
+        expected = expected.splitlines()
         if expected != lines:
             self.fail(
                 "events did not match expectation:\n" +
@@ -210,6 +253,46 @@ class DisTests(unittest.TestCase):
         self.do_disassembly_test(expr_str, dis_expr_str)
         self.do_disassembly_test(simple_stmt_str, dis_simple_stmt_str)
         self.do_disassembly_test(compound_stmt_str, dis_compound_stmt_str)
+
+    def test_disassemble_bytes(self):
+        self.do_disassembly_test(_f.__code__.co_code, dis_f_co_code)
+
+    def test_disassemble_method(self):
+        self.do_disassembly_test(_C(1).__init__, dis_c_instance_method)
+
+    def test_disassemble_method_bytes(self):
+        method_bytecode = _C(1).__init__.__code__.co_code
+        self.do_disassembly_test(method_bytecode, dis_c_instance_method_bytes)
+
+    def test_dis_none(self):
+        self.assertRaises(RuntimeError, dis.dis, None)
+
+    def test_dis_object(self):
+        self.assertRaises(TypeError, dis.dis, object())
+
+    def test_dis_traceback(self):
+        not_defined = object()
+        tb = None
+        old = getattr(sys, 'last_traceback', not_defined)
+
+        def cleanup():
+            if old != not_defined:
+                sys.last_traceback = old
+            else:
+                del sys.last_traceback
+
+        try:
+            1/0
+        except Exception as e:
+            tb = e.__traceback__
+            sys.last_traceback = tb
+            self.addCleanup(cleanup)
+
+        tb_dis = self.get_disassemble_as_string(tb.tb_frame.f_code, tb.tb_lasti)
+        self.do_disassembly_test(None, tb_dis)
+
+    def test_dis_object(self):
+        self.assertRaises(TypeError, dis.dis, object())
 
 code_info_code_info = """\
 Name:              code_info
@@ -362,6 +445,13 @@ class CodeInfoTests(unittest.TestCase):
             with captured_stdout() as output:
                 dis.show_code(x)
             self.assertRegex(output.getvalue(), expected+"\n")
+
+    def test_code_info_object(self):
+        self.assertRaises(TypeError, dis.code_info, object())
+
+    def test_pretty_flags_no_flags(self):
+        self.assertEqual(dis.pretty_flags(0), '0x0')
+
 
 def test_main():
     run_unittest(DisTests, CodeInfoTests)
