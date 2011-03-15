@@ -38,10 +38,14 @@ Core and Builtins
 Library
 -------
 
+- Issue #11501: disutils.archive_utils.make_zipfile no longer fails if zlib is
+  not installed. Instead, the zipfile.ZIP_STORED compression is used to create
+  the ZipFile. Patch by Natalia B. Bidart.
+
 - Issue #11554: Fixed support for Japanese codecs; previously the body output
   encoding was not done if euc-jp or shift-jis was specified as the charset.
 
-- Issue #11500: Fixed a bug in the os x proxy bypass code for fully qualified 
+- Issue #11500: Fixed a bug in the os x proxy bypass code for fully qualified
   IP addresses in the proxy exception list. 
 
 - Issue #11491: dbm.error is no longer raised when dbm.open is called with
