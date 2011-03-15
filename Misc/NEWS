@@ -68,6 +68,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11289: `smtp.SMTP` class becomes a context manager so it can be used
+  in a `with` statement.  Contributed by Giampaolo Rodola.
+
 - Issue #11407: `TestCase.run` returns the result object used or created.
   Contributed by Janathan Hartley.
 
