@@ -72,6 +72,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11133: fix two cases where inspect.getattr_static can trigger code
+  execution. Patch by Daniel Urban.
+
 - Issue #11501: disutils.archive_utils.make_zipfile no longer fails if zlib is
   not installed. Instead, the zipfile.ZIP_STORED compression is used to create
   the ZipFile. Patch by Natalia B. Bidart.
