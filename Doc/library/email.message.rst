@@ -46,15 +46,16 @@ Here are the methods of the :class:`Message` class:
       be generated or modified).
 
       Note that this method is provided as a convenience and may not always
-      format the message the way you want.  For example, by default it mangles
-      lines that begin with ``From``.  For more flexibility, instantiate a
+      format the message the way you want.  For example, by default it does
+      not do the mangling of lines that begin with ``From`` that is
+      required by the unix mbox format.  For more flexibility, instantiate a
       :class:`~email.generator.Generator` instance and use its :meth:`flatten`
       method directly.  For example::
 
          from io import StringIO
          from email.generator import Generator
          fp = StringIO()
-         g = Generator(fp, mangle_from_=False, maxheaderlen=60)
+         g = Generator(fp, mangle_from_=True, maxheaderlen=60)
          g.flatten(msg)
          text = fp.getvalue()
 
