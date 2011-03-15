@@ -40,6 +40,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11133: fix two cases where inspect.getattr_static can trigger code
+  execution. Patch by Daniel Urban.
+
 - Issue #11501: disutils.archive_utils.make_zipfile no longer fails if zlib is
   not installed. Instead, the zipfile.ZIP_STORED compression is used to create
   the ZipFile. Patch by Natalia B. Bidart.
@@ -48,7 +51,7 @@ Library
   encoding was not done if euc-jp or shift-jis was specified as the charset.
 
 - Issue #11500: Fixed a bug in the os x proxy bypass code for fully qualified
-  IP addresses in the proxy exception list. 
+  IP addresses in the proxy exception list.
 
 - Issue #11491: dbm.error is no longer raised when dbm.open is called with
   the "n" as the flag argument and the file exists. The behavior matches
