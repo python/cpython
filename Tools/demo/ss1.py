@@ -586,7 +586,7 @@ class SheetGUI:
         cell = Tk.Label(self.cellgrid, relief='raised')
         cell.grid_configure(column=0, row=0, sticky='NSWE')
         cell.bind("<ButtonPress-1>", self.selectall)
-        # Create the top row of labels, and confiure the grid columns
+        # Create the top row of labels, and configure the grid columns
         for x in range(1, columns+1):
             self.cellgrid.grid_columnconfigure(x, minsize=64)
             cell = Tk.Label(self.cellgrid, text=colnum2name(x), relief='raised')

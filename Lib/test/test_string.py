@@ -93,7 +93,7 @@ class ModuleTest(unittest.TestCase):
         # test all parameters used
         class CheckAllUsedFormatter(string.Formatter):
             def check_unused_args(self, used_args, args, kwargs):
-                # Track which arguments actuallly got used
+                # Track which arguments actually got used
                 unused_args = set(kwargs.keys())
                 unused_args.update(range(0, len(args)))
 

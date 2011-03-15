@@ -1,4 +1,4 @@
-# test interactions betwen int, float, Decimal and Fraction
+# test interactions between int, float, Decimal and Fraction
 
 import unittest
 import random

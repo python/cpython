@@ -1308,7 +1308,7 @@ win32_xstat_w(const wchar_t *path, struct win32_stat *result, BOOL traverse)
    win32_stat will first explicitly resolve the symlink target and then will
    call win32_lstat on that result.
 
-   The _w represent Unicode equivalents of the aformentioned ANSI functions. */
+   The _w represent Unicode equivalents of the aforementioned ANSI functions. */
 
 static int
 win32_lstat(const char* path, struct win32_stat *result)

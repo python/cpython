@@ -1476,7 +1476,7 @@ class ElementInfo(object):
         return False
 
     def isId(self, aname):
-        """Returns true iff the named attribte is a DTD-style ID."""
+        """Returns true iff the named attribute is a DTD-style ID."""
         return False
 
     def isIdNS(self, namespaceURI, localName):

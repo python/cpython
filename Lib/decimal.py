@@ -6088,7 +6088,7 @@ def _parse_format_specifier(format_spec, _localeconv=None):
 
 def _format_align(sign, body, spec):
     """Given an unpadded, non-aligned numeric string 'body' and sign
-    string 'sign', add padding and aligment conforming to the given
+    string 'sign', add padding and alignment conforming to the given
     format specifier dictionary 'spec' (as produced by
     parse_format_specifier).
 

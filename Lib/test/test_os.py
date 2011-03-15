@@ -284,7 +284,7 @@ class StatAttributeTests(unittest.TestCase):
         except TypeError:
             pass
 
-        # Use the constructr with a too-long tuple.
+        # Use the constructor with a too-long tuple.
         try:
             result2 = os.stat_result((0,1,2,3,4,5,6,7,8,9,10,11,12,13,14))
         except TypeError:
@@ -340,7 +340,7 @@ class StatAttributeTests(unittest.TestCase):
         except TypeError:
             pass
 
-        # Use the constructr with a too-long tuple.
+        # Use the constructor with a too-long tuple.
         try:
             result2 = os.statvfs_result((0,1,2,3,4,5,6,7,8,9,10,11,12,13,14))
         except TypeError:
