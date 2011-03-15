@@ -133,8 +133,22 @@ Here are the methods of the :class:`Message` class:
       string naming a character set, or ``None``.  If it is a string, it will
       be converted to a :class:`~email.charset.Charset` instance.  If *charset*
       is ``None``, the ``charset`` parameter will be removed from the
-      :mailheader:`Content-Type` header. Anything else will generate a
-      :exc:`TypeError`.
+      :mailheader:`Content-Type` header (the message will not be otherwise
+      modified).  Anything else will generate a :exc:`TypeError`.
+
+      If there is no existing :mailheader:`MIME-Version` header one will be
+      added.  If there is no existing :mailheader:`Content-Type` header, one
+      will be added with a value of :mimetype:`text/plain`.  Whether the
+      :mailheader:`Content-Type` header already exists or not, its ``charset``
+      parameter will be set to *charset.output_charset*.   If
+      *charset.input_charset* and *charset.output_charset* differ, the payload
+      will be re-encoded to the *output_charset*.  If there is no existing
+      :mailheader:`Content-Transfer-Encoding` header, then the payload will be
+      transfer-encoded, if needed, using the specified
+      :class:`~email.charset.Charset`, and a header with the appropriate value
+      will be added.  If a :mailheader:`Content-Transfer-Encoding` header
+      already exists, the payload is assumed to already be correctly encoded
+      using that :mailheader:`Content-Transfer-Encoding` and is not modified.
 
       The message will be assumed to be of type :mimetype:`text/\*`, with the
       payload either in unicode or encoded with *charset.input_charset*.
