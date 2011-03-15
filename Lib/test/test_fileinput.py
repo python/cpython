@@ -277,7 +277,7 @@ class FileInputTests(unittest.TestCase):
 
     def test_empty_files_list_specified_to_constructor(self):
         with FileInput(files=[]) as fi:
-            self.assertEquals(fi._files, ('-',))
+            self.assertEqual(fi._files, ('-',))
 
     def test__getitem__(self):
         """Tests invoking FileInput.__getitem__() with the current
@@ -298,7 +298,7 @@ class FileInputTests(unittest.TestCase):
         with FileInput(files=[t]) as fi:
             with self.assertRaises(RuntimeError) as cm:
                 fi[1]
-        self.assertEquals(cm.exception.args, ("accessing lines out of order",))
+        self.assertEqual(cm.exception.args, ("accessing lines out of order",))
 
     def test__getitem__eof(self):
         """Tests invoking FileInput.__getitem__() with the line number but at
@@ -308,7 +308,7 @@ class FileInputTests(unittest.TestCase):
         with FileInput(files=[t]) as fi:
             with self.assertRaises(IndexError) as cm:
                 fi[0]
-        self.assertEquals(cm.exception.args, ("end of input reached",))
+        self.assertEqual(cm.exception.args, ("end of input reached",))
 
     def test_nextfile_oserror_deleting_backup(self):
         """Tests invoking FileInput.nextfile() when the attempt to delete
