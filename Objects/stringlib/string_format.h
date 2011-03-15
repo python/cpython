@@ -6,7 +6,7 @@
 */
 
 
-/* Defines for Python 2.6 compatability */
+/* Defines for Python 2.6 compatibility */
 #if PY_VERSION_HEX < 0x03000000
 #define PyLong_FromSsize_t _PyLong_FromSsize_t
 #endif

@@ -936,12 +936,12 @@ bytearray_repr(PyByteArrayObject *self)
 static PyObject *
 bytearray_str(PyObject *op)
 {
-	if (Py_BytesWarningFlag) {
-		if (PyErr_WarnEx(PyExc_BytesWarning,
-				 "str() on a bytearray instance", 1))
-			return NULL;
-	}
-	return bytearray_repr((PyByteArrayObject*)op);
+        if (Py_BytesWarningFlag) {
+                if (PyErr_WarnEx(PyExc_BytesWarning,
+                                 "str() on a bytearray instance", 1))
+                        return NULL;
+        }
+        return bytearray_repr((PyByteArrayObject*)op);
 }
 
 static PyObject *
@@ -1459,7 +1459,7 @@ done:
 static PyObject *
 bytearray_maketrans(PyObject *null, PyObject *args)
 {
-	return _Py_bytes_maketrans(args);
+        return _Py_bytes_maketrans(args);
 }
 
 
@@ -2626,7 +2626,7 @@ bytearray_extend(PyByteArrayObject *self, PyObject *arg)
     if (it == NULL)
         return NULL;
 
-    /* Try to determine the length of the argument. 32 is abitrary. */
+    /* Try to determine the length of the argument. 32 is arbitrary. */
     buf_size = _PyObject_LengthHint(arg, 32);
     if (buf_size == -1) {
         Py_DECREF(it);

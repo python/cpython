@@ -162,7 +162,7 @@ def _check_name(method):
     loader can handle.
 
     The first argument (self) must define _name which the second argument is
-    comapred against. If the comparison fails then ImportError is raised.
+    compared against. If the comparison fails then ImportError is raised.
 
     """
     def inner(self, name, *args, **kwargs):

@@ -584,7 +584,7 @@ class TestSet(TestJointOps):
                 self.le_called = True
                 return False
 
-        # This first tries the bulitin rich set comparison, which doesn't know
+        # This first tries the builtin rich set comparison, which doesn't know
         # how to handle the custom object. Upon returning NotImplemented, the
         # corresponding comparison on the right object is invoked.
         myset = {1, 2, 3}

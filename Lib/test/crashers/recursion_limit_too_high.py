@@ -5,7 +5,7 @@
 # file handles.
 
 # The point of this example is to show that sys.setrecursionlimit() is a
-# hack, and not a robust solution.  This example simply exercices a path
+# hack, and not a robust solution.  This example simply exercises a path
 # where it takes many C-level recursions, consuming a lot of stack
 # space, for each Python-level recursion.  So 1000 times this amount of
 # stack space may be too much for standard platforms already.
