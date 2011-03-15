@@ -26,8 +26,9 @@
 #define PY_VERSION      	"3.2.1a0"
 /*--end constants--*/
 
-/* Subversion Revision number of this file (not of the repository) */
-#define PY_PATCHLEVEL_REVISION  "$Revision$"
+/* Subversion Revision number of this file (not of the repository). Empty
+   since Mercurial migration. */
+#define PY_PATCHLEVEL_REVISION  ""
 
 /* Version as a single 4-byte hex number, e.g. 0x010502B2 == 1.5.2b2.
    Use this for numeric comparisons, e.g. #if PY_VERSION_HEX >= ... */
