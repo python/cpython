@@ -1528,18 +1528,16 @@ class TestSendfile(unittest.TestCase):
 
         def test_trailers(self):
             TESTFN2 = support.TESTFN + "2"
-            f = open(TESTFN2, 'wb')
-            f.write(b"abcde")
-            f.close()
-            f = open(TESTFN2, 'rb')
-            try:
-                os.sendfile(self.sockno, f.fileno(), 0, 4096, trailers=[b"12345"])
+            with open(TESTFN2, 'wb') as f:
+                f.write(b"abcde")
+            with open(TESTFN2, 'rb')as f:
+                self.addCleanup(os.remove, TESTFN2)
+                os.sendfile(self.sockno, f.fileno(), 0, 4096,
+                            trailers=[b"12345"])
                 self.client.close()
                 self.server.wait()
                 data = self.server.handler_instance.get_data()
                 self.assertEqual(data, b"abcde12345")
-            finally:
-                os.remove(TESTFN2)
 
         if hasattr(os, "SF_NODISKIO"):
             def test_flags(self):
