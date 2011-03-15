@@ -537,9 +537,10 @@ code, or when embedding the Python interpreter:
    operations such as ``PyEval_ReleaseThread(tstate)``. It is not needed before
    calling :c:func:`PyEval_SaveThread` or :c:func:`PyEval_RestoreThread`.
 
-   .. index:: single: Py_Initialize()
-
    This is a no-op when called for a second time.
+
+   .. versionchanged:: 3.2
+      This function cannot be called before :c:func:`Py_Initialize()` anymore.
 
    .. index:: module: _thread
 
