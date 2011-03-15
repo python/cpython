@@ -589,13 +589,10 @@ but avoids executing code when it fetches attributes.
    that raise AttributeError). It can also return descriptors objects
    instead of instance members.
 
-   .. versionadded:: 3.2
+   If the instance `__dict__` is shadowed by another member (for example a
+   property) then this function will be unable to find instance members.
 
-The only known case that can cause `getattr_static` to trigger code execution,
-and cause it to return incorrect results (or even break), is where a class uses
-:data:`~object.__slots__` and provides a `__dict__` member using a property or
-descriptor. If you find other cases please report them so they can be fixed
-or documented.
+   .. versionadded:: 3.2
 
 `getattr_static` does not resolve descriptors, for example slot descriptors or
 getset descriptors on objects implemented in C. The descriptor object
