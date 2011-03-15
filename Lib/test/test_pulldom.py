@@ -32,7 +32,9 @@ class PullDOMTestCase(unittest.TestCase):
         # fragment.
 
         # Test with a filename:
-        list(pulldom.parse(tstfile))
+        handler = pulldom.parse(tstfile)
+        self.addCleanup(handler.stream.close)
+        list(handler)
 
         # Test with a file object:
         with open(tstfile, "rb") as fin:
