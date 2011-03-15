@@ -26,10 +26,6 @@
 #define PY_VERSION      	"3.3a0"
 /*--end constants--*/
 
-/* Subversion Revision number of this file (not of the repository). Empty
-   since Mercurial migration. */
-#define PY_PATCHLEVEL_REVISION  ""
-
 /* Version as a single 4-byte hex number, e.g. 0x010502B2 == 1.5.2b2.
    Use this for numeric comparisons, e.g. #if PY_VERSION_HEX >= ... */
 #define PY_VERSION_HEX ((PY_MAJOR_VERSION << 24) | \
