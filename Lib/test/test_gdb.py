@@ -125,6 +125,9 @@ class DebuggerTests(unittest.TestCase):
                           " inferior's thread library, thread debugging will"
                           " not be available.\n",
                           '')
+        err = err.replace("warning: Cannot initialize thread debugging"
+                          " library: Debugger service failed\n",
+                          '')
 
         # Ensure no unexpected error messages:
         self.assertEqual(err, '')
