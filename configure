@@ -769,7 +769,8 @@ CFLAGS
 LDFLAGS
 LIBS
 CPPFLAGS
-CPP'
+CPP
+CPPFLAGS'
 
 
 # Initialize some variables set by options.
@@ -7551,8 +7552,8 @@ then
 	IRIX*/6*) LDSHARED="ld ${SGI_ABI} -shared -all";;
 	SunOS/5*)
 		if test "$GCC" = "yes"
-		then LDSHARED='$(CC) -shared'
-		else LDSHARED='$(CC) -G';
+		then LDSHARED='$(CC) -shared $(LDFLAGS)'
+		else LDSHARED='$(CC) -G $(LDFLAGS)';
 		fi ;;
 	hp*|HP*)
 		if test "$GCC" = "yes"
