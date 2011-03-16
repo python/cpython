@@ -43,6 +43,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #11569: use absolute path to the sysctl command in multiprocessing to
+  ensure that it will be found regardless of the shell PATH. This ensures
+  that multiprocessing.cpu_count works on default installs of MacOSX.
+
 - Issue #11500: Fixed a bug in the os x proxy bypass code for fully qualified 
   IP addresses in the proxy exception list. 
 
