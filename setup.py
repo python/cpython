@@ -993,8 +993,8 @@ class PyBuildExt(build_ext):
             if sys.platform == 'darwin':
                 # In every directory on the search path search for a dynamic
                 # library and then a static library, instead of first looking
-                # for dynamic libraries on the entiry path.
-                # This way a staticly linked custom sqlite gets picked up
+                # for dynamic libraries on the entire path.
+                # This way a statically linked custom sqlite gets picked up
                 # before the dynamic library in /usr/lib.
                 sqlite_extra_link_args = ('-Wl,-search_paths_first',)
             else:

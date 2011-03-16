@@ -157,7 +157,7 @@ write_str(stringio *self, PyObject *obj)
           0   lo      string_size                           hi
           |   |<---used--->|<----------available----------->|
           |   |            <--to pad-->|<---to write--->    |
-          0   buf                   positon
+          0   buf                   position
 
         */
         memset(self->buf + self->string_size, '\0',

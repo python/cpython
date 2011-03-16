@@ -22,7 +22,7 @@
 /*
    CM_LARGE_DOUBLE is used to avoid spurious overflow in the sqrt, log,
    inverse trig and inverse hyperbolic trig functions.  Its log is used in the
-   evaluation of exp, cos, cosh, sin, sinh, tan, and tanh to avoid unecessary
+   evaluation of exp, cos, cosh, sin, sinh, tan, and tanh to avoid unnecessary
    overflow.
  */
 

@@ -148,7 +148,7 @@ BOOL pyc_compile, pyo_compile;
    the permissions of the current user. */
 HKEY hkey_root = (HKEY)-1;
 
-BOOL success;                   /* Installation successfull? */
+BOOL success;                   /* Installation successful? */
 char *failure_reason = NULL;
 
 HANDLE hBitmap;
@@ -797,7 +797,7 @@ run_installscript(char *pathname, int argc, char **argv, char **pOutput)
 
     tempname = tempnam(NULL, NULL);
     // We use a static CRT while the Python version we load uses
-    // the CRT from one of various possibile DLLs.  As a result we
+    // the CRT from one of various possible DLLs.  As a result we
     // need to redirect the standard handles using the API rather
     // than the CRT.
     redirected = CreateFile(

@@ -185,7 +185,7 @@ class TestRunExecCounts(unittest.TestCase):
             (self.my_py_filename, firstlineno + 4): 1,
         }
 
-        # When used through 'run', some other spurios counts are produced, like
+        # When used through 'run', some other spurious counts are produced, like
         # the settrace of threading, which we ignore, just making sure that the
         # counts fo traced_func_loop were right.
         #

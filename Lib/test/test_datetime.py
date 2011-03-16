@@ -3120,7 +3120,7 @@ class TestTimezoneConversions(unittest.TestCase):
             self.assertEqual(dt, there_and_back)
 
         # Because we have a redundant spelling when DST begins, there is
-        # (unforunately) an hour when DST ends that can't be spelled at all in
+        # (unfortunately) an hour when DST ends that can't be spelled at all in
         # local time.  When DST ends, the clock jumps from 1:59 back to 1:00
         # again.  The hour 1:MM DST has no spelling then:  1:MM is taken to be
         # standard time.  1:MM DST == 0:MM EST, but 0:MM is taken to be

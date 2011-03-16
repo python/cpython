@@ -55,7 +55,7 @@ class TestPkg(unittest.TestCase):
         support.modules_cleanup(*self.modules_before)
         cleanout(self.root)
 
-        # delete all modules concerning the tested hiearchy
+        # delete all modules concerning the tested hierarchy
         if self.pkgname:
             modules = [name for name in sys.modules
                        if self.pkgname in name.split('.')]

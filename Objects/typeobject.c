@@ -1008,7 +1008,7 @@ subtype_dealloc(PyObject *self)
           self has a refcount of 0, and if gc ever gets its hands on it
           (which can happen if any weakref callback gets invoked), it
           looks like trash to gc too, and gc also tries to delete self
-          then.  But we're already deleting self.  Double dealloction is
+          then.  But we're already deleting self.  Double deallocation is
           a subtle disaster.
 
        Q. Why the bizarre (net-zero) manipulation of
@@ -5872,7 +5872,7 @@ recurse_down_subclasses(PyTypeObject *type, PyObject *name,
    slots compete for the same descriptor (for example both sq_item and
    mp_subscript generate a __getitem__ descriptor).
 
-   In the latter case, the first slotdef entry encoutered wins.  Since
+   In the latter case, the first slotdef entry encountered wins.  Since
    slotdef entries are sorted by the offset of the slot in the
    PyHeapTypeObject, this gives us some control over disambiguating
    between competing slots: the members of PyHeapTypeObject are listed

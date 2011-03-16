@@ -866,7 +866,7 @@ class Hash:
                 poly = size + poly
                 break
         else:
-            raise AssertionError("ran out of polynominals")
+            raise AssertionError("ran out of polynomials")
 
         print(size, "slots in hash table")
 

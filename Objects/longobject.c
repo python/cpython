@@ -712,7 +712,7 @@ _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
         is_signed = *pendbyte >= 0x80;
 
     /* Compute numsignificantbytes.  This consists of finding the most
-       significant byte.  Leading 0 bytes are insignficant if the number
+       significant byte.  Leading 0 bytes are insignificant if the number
        is positive, and leading 0xff bytes if negative. */
     {
         size_t i;
@@ -3196,7 +3196,7 @@ long_true_divide(PyObject *a, PyObject *b)
     if (failed)
         return NULL;
     /* 'aexp' and 'bexp' were initialized to -1 to silence gcc-4.0.x,
-       but should really be set correctly after sucessful calls to
+       but should really be set correctly after successful calls to
        _PyLong_AsScaledDouble() */
     assert(aexp >= 0 && bexp >= 0);
 

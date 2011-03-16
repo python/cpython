@@ -658,8 +658,8 @@ class WildcardPattern(BasePattern):
             content: optional sequence of subsequences of patterns;
                      if absent, matches one node;
                      if present, each subsequence is an alternative [*]
-            min: optinal minumum number of times to match, default 0
-            max: optional maximum number of times tro match, default HUGE
+            min: optional minimum number of times to match, default 0
+            max: optional maximum number of times to match, default HUGE
             name: optional name assigned to this match
 
         [*] Thus, if content is [[a, b, c], [d, e], [f, g, h]] this is

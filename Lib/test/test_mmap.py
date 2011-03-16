@@ -599,7 +599,7 @@ class MmapTests(unittest.TestCase):
             m2.close()
             m1.close()
 
-            # Test differnt tag
+            # Test different tag
             m1 = mmap.mmap(-1, len(data1), tagname="foo")
             m1[:] = data1
             m2 = mmap.mmap(-1, len(data2), tagname="boo")

@@ -42,7 +42,7 @@ void *dlopen(char *filename, int flags);
 /* return a pointer to the `symbol' in DLL */
 void *dlsym(void *handle, char *symbol);
 
-/* free dynamicaly-linked library */
+/* free dynamically-linked library */
 int dlclose(void *handle);
 
 /* return a string describing last occurred dl error */

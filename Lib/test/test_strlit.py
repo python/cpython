@@ -22,7 +22,7 @@ We have to test this with various file encodings.  We also test it with
 exec()/eval(), which uses a different code path.
 
 This file is really about correct treatment of encodings and
-backslashes.  It doens't concern itself with issues like single
+backslashes.  It doesn't concern itself with issues like single
 vs. double quotes or singly- vs. triply-quoted strings: that's dealt
 with elsewhere (I assume).
 """

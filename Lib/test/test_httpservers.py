@@ -83,7 +83,7 @@ class BaseTestCase(unittest.TestCase):
         return self.connection.getresponse()
 
 class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
-    """Test the functionaility of the BaseHTTPServer."""
+    """Test the functionality of the BaseHTTPServer."""
 
     HTTPResponseMatch = re.compile(b'HTTP/1.[0-9]+ 200 OK')
 
