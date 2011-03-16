@@ -387,7 +387,7 @@ All of the functions and methods that accept a *timeout* parameter, such as
 :func:`call` and :meth:`Popen.communicate` will raise :exc:`TimeoutExpired` if
 the timeout expires before the process exits.
 
-Exceptions defined in this module all inherit from :ext:`SubprocessError`.
+Exceptions defined in this module all inherit from :exc:`SubprocessError`.
 
    .. versionadded:: 3.3
       The :exc:`SubprocessError` base class was added.
