@@ -780,7 +780,7 @@ class MathTests(unittest.TestCase):
 
         # the following tests have been commented out since they don't
         # really belong here:  the implementation of ** for floats is
-        # independent of the implemention of math.pow
+        # independent of the implementation of math.pow
         #self.assertEqual(1**NAN, 1)
         #self.assertEqual(1**INF, 1)
         #self.assertEqual(1**NINF, 1)

@@ -281,7 +281,7 @@ class Sniffer:
         an all or nothing approach, so we allow for small variations in this
         number.
           1) build a table of the frequency of each character on every line.
-          2) build a table of freqencies of this frequency (meta-frequency?),
+          2) build a table of frequencies of this frequency (meta-frequency?),
              e.g.  'x occurred 5 times in 10 rows, 6 times in 1000 rows,
              7 times in 2 rows'
           3) use the mode of the meta-frequency to determine the /expected/

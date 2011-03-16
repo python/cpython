@@ -54,7 +54,7 @@ class Test(unittest.TestCase):
         if self.root: # Only clean if the test was actually run
             cleanout(self.root)
 
-        # delete all modules concerning the tested hiearchy
+        # delete all modules concerning the tested hierarchy
         if self.pkgname:
             modules = [name for name in sys.modules
                        if self.pkgname in name.split('.')]

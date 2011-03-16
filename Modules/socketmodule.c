@@ -2329,7 +2329,7 @@ The mode and buffersize arguments are as for the built-in open() function.");
  * This is the guts of the recv() and recv_into() methods, which reads into a
  * char buffer.  If you have any inc/dec ref to do to the objects that contain
  * the buffer, do it in the caller.  This function returns the number of bytes
- * succesfully read.  If there was an error, it returns -1.  Note that it is
+ * successfully read.  If there was an error, it returns -1.  Note that it is
  * also possible that we return a number of bytes smaller than the request
  * bytes.
  */
@@ -2442,9 +2442,9 @@ sock_recv(PySocketSockObject *s, PyObject *args)
     }
     if (outlen != recvlen) {
         /* We did not read as many bytes as we anticipated, resize the
-           string if possible and be succesful. */
+           string if possible and be successful. */
         if (_PyString_Resize(&buf, outlen) < 0)
-            /* Oopsy, not so succesful after all. */
+            /* Oopsy, not so successful after all. */
             return NULL;
     }
 
@@ -2527,7 +2527,7 @@ See recv() for documentation about the flags.");
  * This is the guts of the recvfrom() and recvfrom_into() methods, which reads
  * into a char buffer.  If you have any inc/def ref to do to the objects that
  * contain the buffer, do it in the caller.  This function returns the number
- * of bytes succesfully read.  If there was an error, it returns -1.  Note
+ * of bytes successfully read.  If there was an error, it returns -1.  Note
  * that it is also possible that we return a number of bytes smaller than the
  * request bytes.
  *
@@ -2620,9 +2620,9 @@ sock_recvfrom(PySocketSockObject *s, PyObject *args)
 
     if (outlen != recvlen) {
         /* We did not read as many bytes as we anticipated, resize the
-           string if possible and be succesful. */
+           string if possible and be successful. */
         if (_PyString_Resize(&buf, outlen) < 0)
-            /* Oopsy, not so succesful after all. */
+            /* Oopsy, not so successful after all. */
             goto finally;
     }
 
@@ -4413,7 +4413,7 @@ os_init(void)
 
     return 0;  /* Failure */
 #else
-    /* No need to initialise sockets with GCC/EMX */
+    /* No need to initialize sockets with GCC/EMX */
     return 1; /* Success */
 #endif
 }
@@ -4449,7 +4449,7 @@ PySocketModule_APIObject PySocketModuleAPI =
    as makefile(), dup() and fromfd().  The import of "_socket" may fail
    with an ImportError exception if os-specific initialization fails.
    On Windows, this does WINSOCK initialization.  When WINSOCK is
-   initialized succesfully, a call to WSACleanup() is scheduled to be
+   initialized successfully, a call to WSACleanup() is scheduled to be
    made at exit time.
 */
 

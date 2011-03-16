@@ -320,7 +320,7 @@ class WarnTests(unittest.TestCase):
             sys.argv = argv
 
     def test_warn_explicit_type_errors(self):
-        # warn_explicit() shoud error out gracefully if it is given objects
+        # warn_explicit() should error out gracefully if it is given objects
         # of the wrong types.
         # lineno is expected to be an integer.
         self.assertRaises(TypeError, self.module.warn_explicit,

@@ -377,7 +377,7 @@ class Command:
             dry_run=self.dry_run)
 
     def move_file (self, src, dst, level=1):
-        """Move a file respectin dry-run flag."""
+        """Move a file respecting dry-run flag."""
         return file_util.move_file(src, dst, dry_run = self.dry_run)
 
     def spawn (self, cmd, search_path=1, level=1):

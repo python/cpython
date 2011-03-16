@@ -252,7 +252,7 @@ class BugsTestCase(unittest.TestCase):
         #   >>> type(loads(dumps(Int())))
         #   <type 'int'>
         for typ in (int, long, float, complex, tuple, list, dict, set, frozenset):
-            # Note: str and unicode sublclasses are not tested because they get handled
+            # Note: str and unicode subclasses are not tested because they get handled
             # by marshal's routines for objects supporting the buffer API.
             subtyp = type('subtyp', (typ,), {})
             self.assertRaises(ValueError, marshal.dumps, subtyp())

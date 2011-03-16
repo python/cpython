@@ -509,7 +509,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
       arbitrary data.
 
       0 is returned on success.  buffer and buffer_len are only
-      set in case no error occurrs.  Otherwise, -1 is returned and
+      set in case no error occurs.  Otherwise, -1 is returned and
       an exception set.
 
        */
@@ -524,7 +524,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
       writeable memory location in buffer of size buffer_len.
 
       0 is returned on success.  buffer and buffer_len are only
-      set in case no error occurrs. Otherwise, -1 is returned and
+      set in case no error occurs. Otherwise, -1 is returned and
       an exception set.
 
        */

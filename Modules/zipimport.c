@@ -1053,7 +1053,7 @@ parse_dostime(int dostime, int dosdate)
 }
 
 /* Given a path to a .pyc or .pyo file in the archive, return the
-   modifictaion time of the matching .py file, or 0 if no source
+   modification time of the matching .py file, or 0 if no source
    is available. */
 static time_t
 get_mtime_of_source(ZipImporter *self, char *path)

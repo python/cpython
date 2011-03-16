@@ -55,7 +55,7 @@ typedef struct
     /* None for autocommit, otherwise a PyString with the isolation level */
     PyObject* isolation_level;
 
-    /* NULL for autocommit, otherwise a string with the BEGIN statment; will be
+    /* NULL for autocommit, otherwise a string with the BEGIN statement; will be
      * freed in connection destructor */
     char* begin_statement;
 

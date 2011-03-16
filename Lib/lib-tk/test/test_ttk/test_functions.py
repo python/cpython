@@ -136,7 +136,7 @@ class InternalFunctionsTest(unittest.TestCase):
         # minimum acceptable for image type
         self.assertEqual(ttk._format_elemcreate('image', False, 'test'),
             ("test ", ()))
-        # specifiyng a state spec
+        # specifying a state spec
         self.assertEqual(ttk._format_elemcreate('image', False, 'test',
             ('', 'a')), ("test {} a", ()))
         # state spec with multiple states

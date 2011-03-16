@@ -372,7 +372,7 @@ class MemoryTestMixin:
 
         # Pickle expects the class to be on the module level. Here we use a
         # little hack to allow the PickleTestMemIO class to derive from
-        # self.ioclass without having to define all combinations explictly on
+        # self.ioclass without having to define all combinations explicitly on
         # the module-level.
         import __main__
         PickleTestMemIO.__module__ = '__main__'
