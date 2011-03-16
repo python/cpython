@@ -6,6 +6,11 @@ import os
 import sys
 from posixpath import realpath, abspath, dirname, basename
 
+try:
+    import posix
+except ImportError:
+    posix = None
+
 # An absolute path to a temporary filename for testing. We can't rely on TESTFN
 # being an absolute path, so we need this.
 
@@ -150,6 +155,7 @@ class PosixPathTest(unittest.TestCase):
 
     def test_islink(self):
         self.assertIs(posixpath.islink(support.TESTFN + "1"), False)
+        self.assertIs(posixpath.lexists(support.TESTFN + "2"), False)
         f = open(support.TESTFN + "1", "wb")
         try:
             f.write(b"foo")
@@ -225,6 +231,44 @@ class PosixPathTest(unittest.TestCase):
 
     def test_ismount(self):
         self.assertIs(posixpath.ismount("/"), True)
+        self.assertIs(posixpath.ismount(b"/"), True)
+
+    def test_ismount_non_existent(self):
+        # Non-existent mountpoint.
+        self.assertIs(posixpath.ismount(ABSTFN), False)
+        try:
+            os.mkdir(ABSTFN)
+            self.assertIs(posixpath.ismount(ABSTFN), False)
+        finally:
+            safe_rmdir(ABSTFN)
+
+    @unittest.skipUnless(support.can_symlink(),
+                         "Test requires symlink support")
+    def test_ismount_symlinks(self):
+        # Symlinks are never mountpoints.
+        try:
+            os.symlink("/", ABSTFN)
+            self.assertIs(posixpath.ismount(ABSTFN), False)
+        finally:
+            os.unlink(ABSTFN)
+
+    @unittest.skipIf(posix is None, "Test requires posix module")
+    def test_ismount_different_device(self):
+        # Simulate the path being on a different device from its parent by
+        # mocking out st_dev.
+        save_lstat = os.lstat
+        def fake_lstat(path):
+            st_ino = 0
+            st_dev = 0
+            if path == ABSTFN:
+                st_dev = 1
+                st_ino = 1
+            return posix.stat_result((0, st_ino, st_dev, 0, 0, 0, 0, 0, 0, 0))
+        try:
+            os.lstat = fake_lstat
+            self.assertIs(posixpath.ismount(ABSTFN), True)
+        finally:
+            os.lstat = save_lstat
 
     def test_expanduser(self):
         self.assertEqual(posixpath.expanduser("foo"), "foo")
@@ -254,6 +298,10 @@ class PosixPathTest(unittest.TestCase):
             with support.EnvironmentVarGuard() as env:
                 env['HOME'] = '/'
                 self.assertEqual(posixpath.expanduser("~"), "/")
+                # expanduser should fall back to using the password database
+                del env['HOME']
+                home = pwd.getpwuid(os.getuid()).pw_dir
+                self.assertEqual(posixpath.expanduser("~"), home)
 
     def test_normpath(self):
         self.assertEqual(posixpath.normpath(""), ".")
@@ -282,6 +330,16 @@ class PosixPathTest(unittest.TestCase):
         # Basic operation.
         try:
             os.symlink(ABSTFN+"1", ABSTFN)
+            self.assertEqual(realpath(ABSTFN), ABSTFN+"1")
+        finally:
+            support.unlink(ABSTFN)
+
+    @unittest.skipUnless(hasattr(os, "symlink"),
+                         "Missing symlink implementation")
+    @skip_if_ABSTFN_contains_backslash
+    def test_realpath_relative(self):
+        try:
+            os.symlink(posixpath.relpath(ABSTFN+"1"), ABSTFN)
             self.assertEqual(realpath(ABSTFN), ABSTFN+"1")
         finally:
             support.unlink(ABSTFN)
@@ -442,6 +500,11 @@ class PosixPathTest(unittest.TestCase):
             self.assertRaises(TypeError, posixpath.relpath, "str", b"bytes")
         finally:
             os.getcwdb = real_getcwdb
+
+    def test_sameopenfile(self):
+        fname = support.TESTFN + "1"
+        with open(fname, "wb") as a, open(fname, "wb") as b:
+            self.assertTrue(posixpath.sameopenfile(a.fileno(), b.fileno()))
 
 
 class PosixCommonTest(test_genericpath.CommonTest):
