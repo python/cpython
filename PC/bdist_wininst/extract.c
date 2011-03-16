@@ -54,7 +54,7 @@ BOOL ensure_directory(char *pathname, char *new_part, NOTIFYPROC notify)
     return TRUE;
 }
 
-/* XXX Should better explicitely specify
+/* XXX Should better explicitly specify
  * uncomp_size and file_times instead of pfhdr!
  */
 char *map_new_file(DWORD flags, char *filename,
@@ -164,7 +164,7 @@ extract_file(char *dst, char *src, int method, int comp_size,
         zstream.avail_out = uncomp_size;
 
 /* Apparently an undocumented feature of zlib: Set windowsize
-   to negative values to supress the gzip header and be compatible with
+   to negative values to suppress the gzip header and be compatible with
    zip! */
         result = TRUE;
         if (Z_OK != (x = inflateInit2(&zstream, -15))) {

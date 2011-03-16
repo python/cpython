@@ -311,7 +311,7 @@ class SDistTestCase(PyPIRCCommandTestCase):
         # adding a file
         self.write_file((self.tmp_dir, 'somecode', 'doc2.txt'), '#')
 
-        # make sure build_py is reinitinialized, like a fresh run
+        # make sure build_py is reinitialized, like a fresh run
         build_py = dist.get_command_obj('build_py')
         build_py.finalized = False
         build_py.ensure_finalized()

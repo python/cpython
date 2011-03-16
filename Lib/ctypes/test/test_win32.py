@@ -17,7 +17,7 @@ if sys.platform == "win32" and sizeof(c_void_p) == sizeof(c_int):
             # ValueError: Procedure probably called with not enough arguments (4 bytes missing)
             self.assertRaises(ValueError, IsWindow)
 
-            # This one should succeeed...
+            # This one should succeed...
             self.assertEqual(0, IsWindow(0))
 
             # ValueError: Procedure probably called with too many arguments (8 bytes in excess)
