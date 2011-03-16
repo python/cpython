@@ -323,6 +323,31 @@ class ProcessTestCase(BaseTestCase):
         rc = subprocess.call([sys.executable, "-c", cmd], stdout=1)
         self.assertEqual(rc, 2)
 
+    def test_stdout_devnull(self):
+        p = subprocess.Popen([sys.executable, "-c",
+                              'for i in range(10240):'
+                              'print("x" * 1024)'],
+                              stdout=subprocess.DEVNULL)
+        p.wait()
+        self.assertEqual(p.stdout, None)
+
+    def test_stderr_devnull(self):
+        p = subprocess.Popen([sys.executable, "-c",
+                              'import sys\n'
+                              'for i in range(10240):'
+                              'sys.stderr.write("x" * 1024)'],
+                              stderr=subprocess.DEVNULL)
+        p.wait()
+        self.assertEqual(p.stderr, None)
+
+    def test_stdin_devnull(self):
+        p = subprocess.Popen([sys.executable, "-c",
+                              'import sys;'
+                              'sys.stdin.read(1)'],
+                              stdin=subprocess.DEVNULL)
+        p.wait()
+        self.assertEqual(p.stdin, None)
+
     def test_cwd(self):
         tmpdir = tempfile.gettempdir()
         # We cannot use os.path.realpath to canonicalize the path,
