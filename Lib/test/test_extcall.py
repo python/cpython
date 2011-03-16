@@ -227,7 +227,7 @@ Another helper function
     >>> Foo.method(1, *[2, 3])
     5
 
-A PyCFunction that takes only positional parameters shoud allow an
+A PyCFunction that takes only positional parameters should allow an
 empty keyword dictionary to pass without a complaint, but raise a
 TypeError if te dictionary is not empty
 

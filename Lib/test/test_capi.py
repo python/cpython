@@ -106,7 +106,7 @@ class TestPendingCalls(unittest.TestCase):
                 context.event.set()
 
     def test_pendingcalls_non_threaded(self):
-        #again, just using the main thread, likely they will all be dispathced at
+        #again, just using the main thread, likely they will all be dispatched at
         #once.  It is ok to ask for too many, because we loop until we find a slot.
         #the loop can be interrupted to dispatch.
         #there are only 32 dispatch slots, so we go for twice that!

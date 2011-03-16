@@ -503,7 +503,7 @@ _PyThread_CurrentFrames(void)
     /* for i in all interpreters:
      *     for t in all of i's thread states:
      *          if t's frame isn't NULL, map t's id to its frame
-     * Because these lists can mutute even when the GIL is held, we
+     * Because these lists can mutate even when the GIL is held, we
      * need to grab head_mutex for the duration.
      */
     HEAD_LOCK();

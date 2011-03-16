@@ -1712,7 +1712,7 @@ class HtmlDiff(object):
             line = line.replace(' ','\0')
             # expand tabs into spaces
             line = line.expandtabs(self._tabsize)
-            # relace spaces from expanded tabs back into tab characters
+            # replace spaces from expanded tabs back into tab characters
             # (we'll replace them with markup after we do differencing)
             line = line.replace(' ','\t')
             return line.replace('\0',' ').rstrip('\n')

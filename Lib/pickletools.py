@@ -1406,7 +1406,7 @@ opcodes = [
       proto=0,
       doc="""Read an object from the memo and push it on the stack.
 
-      The index of the memo object to push is given by the newline-teriminated
+      The index of the memo object to push is given by the newline-terminated
       decimal string following.  BINGET and LONG_BINGET are space-optimized
       versions.
       """),

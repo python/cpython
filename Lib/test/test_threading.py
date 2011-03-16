@@ -543,7 +543,7 @@ class ThreadJoinOnShutdown(unittest.TestCase):
             # This acquires the lock and then waits until the child has forked
             # before returning, which will release the lock soon after.  If
             # someone else tries to fix this test case by acquiring this lock
-            # before forking instead of reseting it, the test case will
+            # before forking instead of resetting it, the test case will
             # deadlock when it shouldn't.
             condition = w._block
             orig_acquire = condition.acquire

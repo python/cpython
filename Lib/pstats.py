@@ -71,7 +71,7 @@ class Stats:
     """
 
     def __init__(self, *args, **kwds):
-        # I can't figure out how to explictly specify a stream keyword arg
+        # I can't figure out how to explicitly specify a stream keyword arg
         # with *args:
         #   def __init__(self, *args, stream=sys.stdout): ...
         # so I use **kwds and sqauwk if something unexpected is passed in.

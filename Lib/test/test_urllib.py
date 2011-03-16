@@ -1003,7 +1003,7 @@ class URLopener_Tests(unittest.TestCase):
 
 # Just commented them out.
 # Can't really tell why keep failing in windows and sparc.
-# Everywhere else they work ok, but on those machines, someteimes
+# Everywhere else they work ok, but on those machines, sometimes
 # fail in one of the tests, sometimes in other. I have a linux, and
 # the tests go ok.
 # If anybody has one of the problematic enviroments, please help!

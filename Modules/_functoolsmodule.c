@@ -200,7 +200,7 @@ static PyGetSetDef partial_getsetlist[] = {
    __reduce__ by itself doesn't support getting kwargs in the unpickle
    operation so we define a __setstate__ that replaces all the information
    about the partial.  If we only replaced part of it someone would use
-   it as a hook to do stange things.
+   it as a hook to do strange things.
  */
 
 static PyObject *

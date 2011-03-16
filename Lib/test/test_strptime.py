@@ -541,7 +541,7 @@ class CacheTests(unittest.TestCase):
                 self.assertIsNot(first_time_re, second_time_re)
             # Possible test locale is not supported while initial locale is.
             # If this is the case just suppress the exception and fall-through
-            # to the reseting to the original locale.
+            # to the resetting to the original locale.
             except locale.Error:
                 pass
         # Make sure we don't trample on the locale setting once we leave the

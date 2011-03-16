@@ -237,7 +237,7 @@ SyntaxError: can't assign to function call
 
 Test continue in finally in weird combinations.
 
-continue in for loop under finally shouuld be ok.
+continue in for loop under finally should be ok.
 
     >>> def test():
     ...     try:
