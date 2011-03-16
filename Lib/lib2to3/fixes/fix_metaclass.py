@@ -48,7 +48,7 @@ def fixup_parse_tree(cls_node):
     """
     for node in cls_node.children:
         if node.type == syms.suite:
-            # already in the prefered format, do nothing
+            # already in the preferred format, do nothing
             return
 
     # !%@#! oneliners have no suite node, we have to fake one up

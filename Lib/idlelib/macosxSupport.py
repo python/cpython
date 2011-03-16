@@ -53,8 +53,8 @@ def tkVersionWarning(root):
 
 def addOpenEventSupport(root, flist):
     """
-    This ensures that the application will respont to open AppleEvents, which
-    makes is feaseable to use IDLE as the default application for python files.
+    This ensures that the application will respond to open AppleEvents, which
+    makes is feasible to use IDLE as the default application for python files.
     """
     def doOpenFile(*args):
         for fn in args:

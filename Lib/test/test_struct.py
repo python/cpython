@@ -463,7 +463,7 @@ class StructTest(unittest.TestCase):
                           test_string)
 
     def test_unpack_with_buffer(self):
-        # SF bug 1563759: struct.unpack doens't support buffer protocol objects
+        # SF bug 1563759: struct.unpack doesn't support buffer protocol objects
         data1 = array.array('B', b'\x12\x34\x56\x78')
         data2 = memoryview(b'\x12\x34\x56\x78') # XXX b'......XXXX......', 6, 4
         for data in [data1, data2]:

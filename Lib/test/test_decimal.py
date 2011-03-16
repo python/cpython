@@ -228,7 +228,7 @@ class DecimalTest(unittest.TestCase):
                 try:
                     t = self.eval_line(line)
                 except DecimalException as exception:
-                    #Exception raised where there shoudn't have been one.
+                    #Exception raised where there shouldn't have been one.
                     self.fail('Exception "'+exception.__class__.__name__ + '" raised on line '+line)
 
         return

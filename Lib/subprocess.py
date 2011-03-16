@@ -947,7 +947,7 @@ class Popen(object):
             except pywintypes.error as e:
                 # Translate pywintypes.error to WindowsError, which is
                 # a subclass of OSError.  FIXME: We should really
-                # translate errno using _sys_errlist (or simliar), but
+                # translate errno using _sys_errlist (or similar), but
                 # how can this be done from Python?
                 raise WindowsError(*e.args)
             finally:

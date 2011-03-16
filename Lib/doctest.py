@@ -1211,7 +1211,7 @@ class DocTestRunner:
         # Process each example.
         for examplenum, example in enumerate(test.examples):
 
-            # If REPORT_ONLY_FIRST_FAILURE is set, then supress
+            # If REPORT_ONLY_FIRST_FAILURE is set, then suppress
             # reporting after the first failure.
             quiet = (self.optionflags & REPORT_ONLY_FIRST_FAILURE and
                      failures > 0)
@@ -2133,7 +2133,7 @@ class DocTestCase(unittest.TestCase):
            caller can catch the errors and initiate post-mortem debugging.
 
            The DocTestCase provides a debug method that raises
-           UnexpectedException errors if there is an unexepcted
+           UnexpectedException errors if there is an unexpected
            exception:
 
              >>> test = DocTestParser().get_doctest('>>> raise KeyError\n42',

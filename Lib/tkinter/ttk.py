@@ -707,7 +707,7 @@ class Combobox(Entry):
             textvariable, values, width
         """
         # The "values" option may need special formatting, so leave to
-        # _format_optdict the responsability to format it
+        # _format_optdict the responsibility to format it
         if "values" in kw:
             kw["values"] = _format_optdict({'v': kw["values"]})[1]
 

@@ -155,7 +155,7 @@ class CygwinCCompiler(UnixCCompiler):
             self.dll_libraries = get_msvcr()
 
     def _compile(self, obj, src, ext, cc_args, extra_postargs, pp_opts):
-        """Compiles the source by spawing GCC and windres if needed."""
+        """Compiles the source by spawning GCC and windres if needed."""
         if ext == '.rc' or ext == '.res':
             # gcc needs '.res' and '.rc' compiled to object files !!!
             try:
