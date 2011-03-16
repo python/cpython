@@ -19,7 +19,7 @@ class C (B):
 
     # XXX: This causes test_pyclbr.py to fail, but only because the
     #      introspection-based is_method() code in the test can't
-    #      distinguish between this and a geniune method function like m().
+    #      distinguish between this and a genuine method function like m().
     #      The pyclbr.py module gets this right as it parses the text.
     #
     #f = f

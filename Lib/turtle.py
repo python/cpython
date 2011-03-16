@@ -1488,7 +1488,7 @@ class TurtleScreen(TurtleScreenBase):
         Optional arguments:
         canvwidth -- positive integer, new width of canvas in pixels
         canvheight --  positive integer, new height of canvas in pixels
-        bg -- colorstring or color-tupel, new backgroundcolor
+        bg -- colorstring or color-tuple, new backgroundcolor
         If no arguments are given, return current (canvaswidth, canvasheight)
 
         Do not alter the drawing window. To observe hidden parts of
@@ -3242,9 +3242,9 @@ class RawTurtle(TPen, TNavigator):
                                                fill="", width=ps)
         # Turtle now at position old,
         self._position = old
-        ##  if undo is done during crating a polygon, the last vertex
-        ##  will be deleted. if the polygon is entirel deleted,
-        ##  creatigPoly will be set to False.
+        ##  if undo is done during creating a polygon, the last vertex
+        ##  will be deleted. if the polygon is entirely deleted,
+        ##  creatingPoly will be set to False.
         ##  Polygons created before the last one will not be affected by undo()
         if self._creatingPoly:
             if len(self._poly) > 0:
@@ -3796,7 +3796,7 @@ class _Screen(TurtleScreen):
 
 
 class Turtle(RawTurtle):
-    """RawTurtle auto-crating (scrolled) canvas.
+    """RawTurtle auto-creating (scrolled) canvas.
 
     When a Turtle object is created or a function derived from some
     Turtle method is called a TurtleScreen object is automatically created.
@@ -3836,7 +3836,7 @@ def write_docstringdict(filename="turtle_docstringdict"):
     filename -- a string, used as filename
                 default value is turtle_docstringdict
 
-    Has to be called explicitely, (not used by the turtle-graphics classes)
+    Has to be called explicitly, (not used by the turtle-graphics classes)
     The docstring dictionary will be written to the Python script <filname>.py
     It is intended to serve as a template for translation of the docstrings
     into different languages.

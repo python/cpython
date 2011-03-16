@@ -20,7 +20,7 @@ NotDefined = object()
 # A dispatch table all 8 combinations of providing
 #  sep, end, and file
 # I use this machinery so that I'm not just passing default
-#  values to print, I'm eiher passing or not passing in the
+#  values to print, I'm either passing or not passing in the
 #  arguments
 dispatch = {
     (False, False, False):

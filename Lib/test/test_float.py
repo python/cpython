@@ -67,7 +67,7 @@ class GeneralFloatCases(unittest.TestCase):
     def test_float_with_comma(self):
         # set locale to something that doesn't use '.' for the decimal point
         # float must not accept the locale specific decimal point but
-        # it still has to accept the normal python syntac
+        # it still has to accept the normal python syntax
         import locale
         if not locale.localeconv()['decimal_point'] == ',':
             return
@@ -189,7 +189,7 @@ class GeneralFloatCases(unittest.TestCase):
     def assertEqualAndEqualSign(self, a, b):
         # fail unless a == b and a and b have the same sign bit;
         # the only difference from assertEqual is that this test
-        # distingishes -0.0 and 0.0.
+        # distinguishes -0.0 and 0.0.
         self.assertEqual((a, copysign(1.0, a)), (b, copysign(1.0, b)))
 
     @support.requires_IEEE_754

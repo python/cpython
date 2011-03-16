@@ -62,7 +62,7 @@ class InstallTestCase(support.TempdirManager,
         if sys.version < '2.6':
             return
 
-        # preparing the environement for the test
+        # preparing the environment for the test
         self.old_user_base = site.USER_BASE
         self.old_user_site = site.USER_SITE
         self.tmpdir = self.mkdtemp()

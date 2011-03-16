@@ -37,7 +37,7 @@ class ArrayTestCase(unittest.TestCase):
             values = [ia[i] for i in range(len(init))]
             self.assertEqual(values, [0] * len(init))
 
-            # Too many in itializers should be caught
+            # Too many initializers should be caught
             self.assertRaises(IndexError, int_array, *range(alen*2))
 
         CharArray = ARRAY(c_char, 3)
