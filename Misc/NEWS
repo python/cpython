@@ -122,6 +122,9 @@ Tools/Demos
 Tests
 -----
 
+- Issue #11505: improves test coverage of string.py. Patch by Alicia
+  Arlen.
+
 - Issue #11548: Improve test coverage of the shutil module. Patch by
   Evan Dandrea.
 
