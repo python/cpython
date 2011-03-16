@@ -3705,6 +3705,13 @@ A very long line that must get split to something other than at the
         h = Header('文', charset='shift_jis')
         self.assertEqual(h.encode(), '=?iso-2022-jp?b?GyRCSjgbKEI=?=')
 
+    def test_flatten_header_with_no_value(self):
+        # Issue 11401 (regression from email 4.x)  Note that the space after
+        # the header doesn't reflect the input, but this is also the way
+        # email 4.x behaved.  At some point it would be nice to fix that.
+        msg = email.message_from_string("EmptyHeader:")
+        self.assertEqual(str(msg), "EmptyHeader: \n\n")
+
 
 
 # Test RFC 2231 header parameters (en/de)coding
