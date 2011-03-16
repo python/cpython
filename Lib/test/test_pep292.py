@@ -42,6 +42,19 @@ class TestTemplate(unittest.TestCase):
         s = Template('$who likes $$')
         eq(s.substitute(dict(who='tim', what='ham')), 'tim likes $')
 
+    def test_invalid(self):
+        class MyPattern(Template):
+            pattern = r"""
+            (?:
+            (?P<invalid>)            |
+            (?P<escaped>%(delim)s)   |
+            @(?P<named>%(id)s)       |
+            @{(?P<braced>%(id)s)}    
+            )
+            """
+        s = MyPattern('$')
+        self.assertRaises(ValueError, s.substitute, dict()) 
+
     def test_percents(self):
         eq = self.assertEqual
         s = Template('%(foo)s $foo ${foo}')
