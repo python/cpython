@@ -236,6 +236,8 @@ Tools/Demos
 Tests
 -----
 
+- Issue #11578: added test for the timeit module.  Patch Michael Henry.
+
 - Issue #11503: improve test coverage of posixpath.py. Patch by Evan Dandrea.
 
 - Issue #11505: improves test coverage of string.py. Patch by Alicia
