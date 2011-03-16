@@ -405,7 +405,7 @@ def expanduser(path):
 #       - $varname is accepted.
 #       - %varname% is accepted.
 #       - varnames can be made out of letters, digits and the characters '_-'
-#         (though is not verifed in the ${varname} and %varname% cases)
+#         (though is not verified in the ${varname} and %varname% cases)
 # XXX With COMMAND.COM you can use any characters in a variable name,
 # XXX except '^|<>='.
 

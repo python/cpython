@@ -6,7 +6,7 @@
 #
 #   NodeList      -- lightest possible NodeList implementation
 #
-#   EmptyNodeList -- lightest possible NodeList that is guarateed to
+#   EmptyNodeList -- lightest possible NodeList that is guaranteed to
 #                    remain empty (immutable)
 #
 #   StringTypes   -- tuple of defined string types
