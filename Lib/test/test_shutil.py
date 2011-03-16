@@ -645,6 +645,14 @@ class TestShutil(unittest.TestCase):
             diff = self._compare_dirs(tmpdir, tmpdir2)
             self.assertEqual(diff, [])
 
+            # and again, this time with the format specified
+            tmpdir3 = self.mkdtemp()
+            unpack_archive(filename, tmpdir3, format=format)
+            diff = self._compare_dirs(tmpdir, tmpdir3)
+            self.assertEqual(diff, [])
+        self.assertRaises(shutil.ReadError, unpack_archive, TESTFN)
+        self.assertRaises(ValueError, unpack_archive, TESTFN, format='xxx')
+
     def test_unpack_registery(self):
 
         formats = get_unpack_formats()
