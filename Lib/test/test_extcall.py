@@ -236,7 +236,7 @@ first argument (got int instance instead)
     TypeError: unbound method method() must be called with Foo instance as \
 first argument (got int instance instead)
 
-A PyCFunction that takes only positional parameters shoud allow an
+A PyCFunction that takes only positional parameters should allow an
 empty keyword dictionary to pass without a complaint, but raise a
 TypeError if te dictionary is not empty
 

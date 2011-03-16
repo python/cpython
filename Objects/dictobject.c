@@ -2297,7 +2297,7 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         assert(d->ma_table == NULL && d->ma_fill == 0 && d->ma_used == 0);
         INIT_NONZERO_DICT_SLOTS(d);
         d->ma_lookup = lookdict_string;
-        /* The object has been implicitely tracked by tp_alloc */
+        /* The object has been implicitly tracked by tp_alloc */
         if (type == &PyDict_Type)
             _PyObject_GC_UNTRACK(d);
 #ifdef SHOW_CONVERSION_COUNTS

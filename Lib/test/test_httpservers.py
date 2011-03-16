@@ -87,7 +87,7 @@ class BaseTestCase(unittest.TestCase):
         return self.connection.getresponse()
 
 class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
-    """Test the functionaility of the BaseHTTPServer focussing on
+    """Test the functionality of the BaseHTTPServer focussing on
     BaseHTTPRequestHandler.
     """
 

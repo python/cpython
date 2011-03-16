@@ -34,7 +34,7 @@
 
   4. _ctypes_callproc is then called with the 'callargs' tuple.  _ctypes_callproc first
   allocates two arrays.  The first is an array of 'struct argument' items, the
-  second array has 'void *' entried.
+  second array has 'void *' entries.
 
   5. If 'converters' are present (converters is a sequence of argtypes'
   from_param methods), for each item in 'callargs' converter is called and the

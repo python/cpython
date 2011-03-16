@@ -224,7 +224,7 @@ class TestCommandLineArgs(unittest.TestCase):
 
         program.runTests()
 
-        # If initialising raises a type error it should be retried
+        # If initializing raises a type error it should be retried
         # without the new keyword arguments
         self.assertEqual(FakeRunner.initArgs, {})
         self.assertEqual(FakeRunner.test, 'test')

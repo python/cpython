@@ -18,7 +18,7 @@ import logging
 from test import test_support
 from StringIO import StringIO
 _multiprocessing = test_support.import_module('_multiprocessing')
-# import threading after _multiprocessing to raise a more revelant error
+# import threading after _multiprocessing to raise a more relevant error
 # message: "No module named _multiprocessing". _multiprocessing is not compiled
 # without thread support.
 import threading
@@ -780,7 +780,7 @@ class _TestEvent(BaseTestCase):
         event = self.Event()
         wait = TimingWrapper(event.wait)
 
-        # Removed temporaily, due to API shear, this does not
+        # Removed temporarily, due to API shear, this does not
         # work with threading._Event objects. is_set == isSet
         self.assertEqual(event.is_set(), False)
 
@@ -1705,7 +1705,7 @@ class _TestFinalize(BaseTestCase):
 
         util.Finalize(None, conn.send, args=('STOP',), exitpriority=-100)
 
-        # call mutliprocessing's cleanup function then exit process without
+        # call multiprocessing's cleanup function then exit process without
         # garbage collecting locals
         util._exit_function()
         conn.close()

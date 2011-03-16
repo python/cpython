@@ -7,7 +7,7 @@ I dont consider it worth parsing the MSVC makefiles for compiler options.  Even 
 we get it just right, a specific freeze application may have specific compiler
 options anyway (eg, to enable or disable specific functionality)
 
-So my basic stragtegy is:
+So my basic strategy is:
 
 * Have some Windows INI files which "describe" one or more extension modules.
   (Freeze comes with a default one for all known modules - but you can specify

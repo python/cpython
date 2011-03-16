@@ -532,7 +532,7 @@ _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
         is_signed = *pendbyte >= 0x80;
 
     /* Compute numsignificantbytes.  This consists of finding the most
-       significant byte.  Leading 0 bytes are insignficant if the number
+       significant byte.  Leading 0 bytes are insignificant if the number
        is positive, and leading 0xff bytes if negative. */
     {
         size_t i;

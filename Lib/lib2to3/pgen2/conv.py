@@ -51,7 +51,7 @@ class Converter(grammar.Grammar):
         self.finish_off()
 
     def parse_graminit_h(self, filename):
-        """Parse the .h file writen by pgen.  (Internal)
+        """Parse the .h file written by pgen.  (Internal)
 
         This file is a sequence of #define statements defining the
         nonterminals of the grammar as numbers.  We build two tables
@@ -82,7 +82,7 @@ class Converter(grammar.Grammar):
         return True
 
     def parse_graminit_c(self, filename):
-        """Parse the .c file writen by pgen.  (Internal)
+        """Parse the .c file written by pgen.  (Internal)
 
         The file looks as follows.  The first two lines are always this:
 

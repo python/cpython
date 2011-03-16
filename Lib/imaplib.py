@@ -1394,7 +1394,7 @@ def Time2Internaldate(date_time):
     """Convert date_time to IMAP4 INTERNALDATE representation.
 
     Return string in form: '"DD-Mmm-YYYY HH:MM:SS +HHMM"'.  The
-    date_time argument can be a number (int or float) represening
+    date_time argument can be a number (int or float) representing
     seconds since epoch (as returned by time.time()), a 9-tuple
     representing local time (as returned by time.localtime()), or a
     double-quoted string.  In the last case, it is assumed to already

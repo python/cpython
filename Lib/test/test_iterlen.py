@@ -20,11 +20,11 @@ This is the case for tuples, xrange objects, and itertools.repeat().
 
 Some containers become temporarily immutable during iteration.  This includes
 dicts, sets, and collections.deque.  Their implementation is equally simple
-though they need to permantently set their length to zero whenever there is
+though they need to permanently set their length to zero whenever there is
 an attempt to iterate after a length mutation.
 
 The situation slightly more involved whenever an object allows length mutation
-during iteration.  Lists and sequence iterators are dynanamically updatable.
+during iteration.  Lists and sequence iterators are dynamically updatable.
 So, if a list is extended during iteration, the iterator will continue through
 the new items.  If it shrinks to a point before the most recent iteration,
 then no further items are available and the length is reported at zero.

@@ -693,7 +693,7 @@ class BuiltinTest(unittest.TestCase):
         # provide too much opportunity for insane things to happen.
         # We don't want them in the interned dict and if they aren't
         # actually interned, we don't want to create the appearance
-        # that they are by allowing intern() to succeeed.
+        # that they are by allowing intern() to succeed.
         class S(str):
             def __hash__(self):
                 return 123
