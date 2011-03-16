@@ -115,8 +115,11 @@ def cpu_count():
         except (ValueError, KeyError):
             num = 0
     elif 'bsd' in sys.platform or sys.platform == 'darwin':
+        comm = '/sbin/sysctl -n hw.ncpu'
+        if sys.platform == 'darwin':
+            comm = '/usr' + comm
         try:
-            with os.popen('sysctl -n hw.ncpu') as p:
+            with os.popen(comm) as p:
                 num = int(p.read())
         except ValueError:
             num = 0
