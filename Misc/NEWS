@@ -40,6 +40,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #11569: use absolute path to the sysctl command in multiprocessing to
+  ensure that it will be found regardless of the shell PATH. This ensures
+  that multiprocessing.cpu_count works on default installs of MacOSX.
+
 - Issue #11501: disutils.archive_utils.make_zipfile no longer fails if zlib is
   not installed. Instead, the zipfile.ZIP_STORED compression is used to create
   the ZipFile. Patch by Natalia B. Bidart.
