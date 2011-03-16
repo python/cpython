@@ -553,9 +553,18 @@ class TestMessageAPI(TestEmailBase):
         msg['Dummy'] = 'dummy\nX-Injected-Header: test'
         self.assertRaises(errors.HeaderParseError, msg.as_string)
 
-
 # Test the email.encoders module
 class TestEncoders(unittest.TestCase):
+
+    def test_EncodersEncode_base64(self):
+        with openfile('PyBanner048.gif', 'rb') as fp:
+            bindata = fp.read()
+        mimed = email.mime.image.MIMEImage(bindata)
+        base64ed = mimed.get_payload()
+        # the transfer-encoded body lines should all be <=76 characters
+        lines = base64ed.split('\n')
+        self.assertLessEqual(max([ len(x) for x in lines ]), 76)
+
     def test_encode_empty_payload(self):
         eq = self.assertEqual
         msg = Message()
@@ -1107,10 +1116,11 @@ class TestMIMEApplication(unittest.TestCase):
 
     def test_body(self):
         eq = self.assertEqual
-        bytes = b'\xfa\xfb\xfc\xfd\xfe\xff'
-        msg = MIMEApplication(bytes)
-        eq(msg.get_payload(), '+vv8/f7/')
-        eq(msg.get_payload(decode=True), bytes)
+        bytesdata = b'\xfa\xfb\xfc\xfd\xfe\xff'
+        msg = MIMEApplication(bytesdata)
+        # whitespace in the cte encoded block is RFC-irrelevant.
+        eq(msg.get_payload().strip(), '+vv8/f7/')
+        eq(msg.get_payload(decode=True), bytesdata)
 
 
 
