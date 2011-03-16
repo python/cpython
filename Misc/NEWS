@@ -72,6 +72,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5870: Add `subprocess.DEVNULL` constant.
+
 - Issue #11133: fix two cases where inspect.getattr_static can trigger code
   execution. Patch by Andreas Stührk.
 
