@@ -40,6 +40,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11401: fix handling of headers with no value; this fixes a regression
+  relative to Python2 and the result is now the same as it was in Python2.
+
 - Issue #9298: base64 bodies weren't being folded to line lengths less than 78,
   which was a regression relative to Python2.  Unlike Python2, the last line
   of the folded body now ends with a carriage return.
