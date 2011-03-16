@@ -41,7 +41,7 @@ Library
 -------
 
 - Issue #11133: fix two cases where inspect.getattr_static can trigger code
-  execution. Patch by Daniel Urban.
+  execution. Patch by Andreas Stührk.
 
 - Issue #11569: use absolute path to the sysctl command in multiprocessing to
   ensure that it will be found regardless of the shell PATH. This ensures
