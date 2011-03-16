@@ -431,7 +431,7 @@ else:
             return fds
 
 __all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "getstatusoutput",
-           "getoutput", "check_output", "CalledProcessError"]
+           "getoutput", "check_output", "CalledProcessError", "DEVNULL"]
 
 if mswindows:
     from _subprocess import CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP
@@ -456,6 +456,7 @@ def _cleanup():
 
 PIPE = -1
 STDOUT = -2
+DEVNULL = -3
 
 
 def _eintr_retry_call(func, *args):
@@ -800,6 +801,10 @@ class Popen(object):
             # Child is still running, keep us alive until we can wait on it.
             _active.append(self)
 
+    def _get_devnull(self):
+        if not hasattr(self, '_devnull'):
+            self._devnull = os.open(os.devnull, os.O_RDWR)
+        return self._devnull
 
     def communicate(self, input=None, timeout=None):
         """Interact with process: Send data to stdin.  Read data from
@@ -889,6 +894,8 @@ class Popen(object):
                     p2cread, _ = _subprocess.CreatePipe(None, 0)
             elif stdin == PIPE:
                 p2cread, p2cwrite = _subprocess.CreatePipe(None, 0)
+            elif stdin == DEVNULL:
+                p2cread = msvcrt.get_osfhandle(self._get_devnull())
             elif isinstance(stdin, int):
                 p2cread = msvcrt.get_osfhandle(stdin)
             else:
@@ -902,6 +909,8 @@ class Popen(object):
                     _, c2pwrite = _subprocess.CreatePipe(None, 0)
             elif stdout == PIPE:
                 c2pread, c2pwrite = _subprocess.CreatePipe(None, 0)
+            elif stdout == DEVNULL:
+                c2pwrite = msvcrt.get_osfhandle(self._get_devnull())
             elif isinstance(stdout, int):
                 c2pwrite = msvcrt.get_osfhandle(stdout)
             else:
@@ -917,6 +926,8 @@ class Popen(object):
                 errread, errwrite = _subprocess.CreatePipe(None, 0)
             elif stderr == STDOUT:
                 errwrite = c2pwrite
+            elif stderr == DEVNULL:
+                errwrite = msvcrt.get_osfhandle(self._get_devnull())
             elif isinstance(stderr, int):
                 errwrite = msvcrt.get_osfhandle(stderr)
             else:
@@ -1026,6 +1037,8 @@ class Popen(object):
                     c2pwrite.Close()
                 if errwrite != -1:
                     errwrite.Close()
+                if hasattr(self, '_devnull'):
+                    os.close(self._devnull)
 
             # Retain the process handle, but close the thread handle
             self._child_created = True
@@ -1159,6 +1172,8 @@ class Popen(object):
                 pass
             elif stdin == PIPE:
                 p2cread, p2cwrite = _create_pipe()
+            elif stdin == DEVNULL:
+                p2cread = self._get_devnull()
             elif isinstance(stdin, int):
                 p2cread = stdin
             else:
@@ -1169,6 +1184,8 @@ class Popen(object):
                 pass
             elif stdout == PIPE:
                 c2pread, c2pwrite = _create_pipe()
+            elif stdout == DEVNULL:
+                c2pwrite = self._get_devnull()
             elif isinstance(stdout, int):
                 c2pwrite = stdout
             else:
@@ -1181,6 +1198,8 @@ class Popen(object):
                 errread, errwrite = _create_pipe()
             elif stderr == STDOUT:
                 errwrite = c2pwrite
+            elif stderr == DEVNULL:
+                errwrite = self._get_devnull()
             elif isinstance(stderr, int):
                 errwrite = stderr
             else:
@@ -1374,6 +1393,8 @@ class Popen(object):
                     os.close(c2pwrite)
                 if errwrite != -1 and errread != -1:
                     os.close(errwrite)
+                if hasattr(self, '_devnull'):
+                    os.close(self._devnull)
 
                 # Wait for exec to fail or succeed; possibly raising an
                 # exception (limited in size)
