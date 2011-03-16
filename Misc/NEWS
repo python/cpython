@@ -72,6 +72,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11560: shutil.unpack_archive now correctly handles the format
+  parameter. Patch by Evan Dandrea.
+
 - Issue #5870: Add `subprocess.DEVNULL` constant.
 
 - Issue #11133: fix two cases where inspect.getattr_static can trigger code
@@ -228,6 +231,9 @@ Tools/Demos
 
 Tests
 -----
+
+- Issue #11548: Improve test coverage of the shutil module. Patch by
+  Evan Dandrea.
 
 - Issue #11554: Reactivated test_email_codecs.
 
