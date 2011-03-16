@@ -130,7 +130,9 @@ class ProcessTestCase(BaseTestCase):
                      "import sys; sys.stdout.write('BDFL')\n"
                      "sys.stdout.flush()\n"
                      "while True: pass"],
-                    timeout=1.5)
+                    # Some heavily loaded buildbots (sparc Debian 3.x) require
+                    # this much time to start and print.
+                    timeout=3)
             self.fail("Expected TimeoutExpired.")
         self.assertEqual(c.exception.output, b'BDFL')
 
@@ -647,15 +649,15 @@ class ProcessTestCase(BaseTestCase):
         # Subsequent invocations should just return the returncode
         self.assertEqual(p.wait(), 0)
 
-
     def test_wait_timeout(self):
         p = subprocess.Popen([sys.executable,
                               "-c", "import time; time.sleep(0.1)"])
         with self.assertRaises(subprocess.TimeoutExpired) as c:
             p.wait(timeout=0.01)
         self.assertIn("0.01", str(c.exception))  # For coverage of __str__.
-        self.assertEqual(p.wait(timeout=2), 0)
-
+        # Some heavily loaded buildbots (sparc Debian 3.x) require this much
+        # time to start.
+        self.assertEqual(p.wait(timeout=3), 0)
 
     def test_invalid_bufsize(self):
         # an invalid type of the bufsize argument should raise
