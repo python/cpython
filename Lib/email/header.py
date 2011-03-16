@@ -304,7 +304,7 @@ class Header:
                                     self._continuation_ws, splitchars)
         for string, charset in self._chunks:
             lines = string.splitlines()
-            formatter.feed(lines[0], charset)
+            formatter.feed(lines[0] if lines else '', charset)
             for line in lines[1:]:
                 formatter.newline()
                 if charset.header_encoding is not None:
