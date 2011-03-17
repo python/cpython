@@ -40,6 +40,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11243: fix the parameter querying methods of Message to work if
+  the headers contain un-encoded non-ASCII data.
+
 - Issue #11401: fix handling of headers with no value; this fixes a regression
   relative to Python2 and the result is now the same as it was in Python2.
 
