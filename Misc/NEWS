@@ -72,6 +72,10 @@ Core and Builtins
 Library
 -------
 
+
+- Issue #10979: unittest stdout buffering now works with class and module
+  setup and teardown.
+
 - Issue #11577: fix ResourceWarning triggered by improved binhex test coverage
 
 - Issue #11243: fix the parameter querying methods of Message to work if
