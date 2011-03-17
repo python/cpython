@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #10914: fix bogus memory management in Modules/getpath.c, leading to
+  a possible crash when calling Py_SetPath().
+
 - _ast.__version__ is now a Mercurial integer and hex revision.
 
 - Issue #11432: A bug was introduced in subprocess.Popen on posix systems with

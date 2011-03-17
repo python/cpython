@@ -134,6 +134,7 @@ static wchar_t prefix[MAXPATHLEN+1];
 static wchar_t exec_prefix[MAXPATHLEN+1];
 static wchar_t progpath[MAXPATHLEN+1];
 static wchar_t *module_search_path = NULL;
+static int module_search_path_malloced = 0;
 static wchar_t *lib_python = L"lib/python" VERSION;
 
 static void
@@ -634,7 +635,6 @@ calculate_path(void)
     bufsz += wcslen(zip_path) + 1;
     bufsz += wcslen(exec_prefix) + 1;
 
-    /* This is the only malloc call in this file */
     buf = (wchar_t *)PyMem_Malloc(bufsz*sizeof(wchar_t));
 
     if (buf == NULL) {
@@ -687,6 +687,7 @@ calculate_path(void)
 
         /* And publish the results */
         module_search_path = buf;
+        module_search_path_malloced = 1;
     }
 
     /* Reduce prefix and exec_prefix to their essence,
@@ -726,15 +727,18 @@ void
 Py_SetPath(const wchar_t *path)
 {
     if (module_search_path != NULL) {
-        free(module_search_path);
+        if (module_search_path_malloced)
+            PyMem_Free(module_search_path);
         module_search_path = NULL;
+        module_search_path_malloced = 0;
     }
     if (path != NULL) {
         extern wchar_t *Py_GetProgramName(void);
         wchar_t *prog = Py_GetProgramName();
         wcsncpy(progpath, prog, MAXPATHLEN);
         exec_prefix[0] = prefix[0] = L'\0';
-        module_search_path = malloc((wcslen(path) + 1) * sizeof(wchar_t));
+        module_search_path = PyMem_Malloc((wcslen(path) + 1) * sizeof(wchar_t));
+        module_search_path_malloced = 1;
         if (module_search_path != NULL)
             wcscpy(module_search_path, path);
     }
