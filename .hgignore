@@ -36,6 +36,7 @@ Parser/pgen.stamp$
 ^python-gdb.py
 
 syntax: glob
+python.exe-gdb.py
 libpython*.a
 *.swp
 *.o
@@ -48,6 +49,7 @@ libpython*.a
 *~
 Lib/lib2to3/*.pickle
 Lib/test/data/*
+Misc/*.wpu
 PC/python_nt*.h
 PC/pythonnt_rc*.h
 PC/*.obj
