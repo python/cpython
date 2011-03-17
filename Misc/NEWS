@@ -10,9 +10,6 @@ What's New in Python 3.2.1?
 Core and Builtins
 -----------------
 
-- Issue #10979: unittest stdout buffering now works with class and module
-  setup and teardown.
-
 - Issue #11510: Fixed optimizer bug which turned "a,b={1,1}" into "a,b=(1,1)".
 
 - Issue #11432: A bug was introduced in subprocess.Popen on posix systems with
@@ -42,6 +39,10 @@ Core and Builtins
 
 Library
 -------
+
+
+- Issue #10979: unittest stdout buffering now works with class and module
+  setup and teardown.
 
 - Issue #11577: fix ResourceWarning triggered by improved binhex test coverage
 
