@@ -3967,7 +3967,7 @@ order (MRO) for bases """
         except TypeError:
             pass
         else:
-            self.fail("Carlo Verre __setattr__ suceeded!")
+            self.fail("Carlo Verre __setattr__ succeeded!")
         try:
             object.__delattr__(str, "lower")
         except TypeError:

@@ -7,6 +7,7 @@ import sys
 import stat
 import os
 import os.path
+import functools
 from test import support
 from test.support import TESTFN
 from os.path import splitdrive
@@ -47,6 +48,21 @@ try:
     ZIP_SUPPORT = True
 except ImportError:
     ZIP_SUPPORT = find_executable('zip')
+
+def _fake_rename(*args, **kwargs):
+    # Pretend the destination path is on a different filesystem.
+    raise OSError()
+
+def mock_rename(func):
+    @functools.wraps(func)
+    def wrap(*args, **kwargs):
+        try:
+            builtin_rename = os.rename
+            os.rename = _fake_rename
+            return func(*args, **kwargs)
+        finally:
+            os.rename = builtin_rename
+    return wrap
 
 class TestShutil(unittest.TestCase):
 
@@ -393,6 +409,41 @@ class TestShutil(unittest.TestCase):
         shutil.copytree(src_dir, dst_dir, symlinks=True)
         self.assertIn('test.txt', os.listdir(dst_dir))
 
+    def _copy_file(self, method):
+        fname = 'test.txt'
+        tmpdir = self.mkdtemp()
+        self.write_file([tmpdir, fname])
+        file1 = os.path.join(tmpdir, fname)
+        tmpdir2 = self.mkdtemp()
+        method(file1, tmpdir2)
+        file2 = os.path.join(tmpdir2, fname)
+        return (file1, file2)
+
+    @unittest.skipUnless(hasattr(os, 'chmod'), 'requires os.chmod')
+    def test_copy(self):
+        # Ensure that the copied file exists and has the same mode bits.
+        file1, file2 = self._copy_file(shutil.copy)
+        self.assertTrue(os.path.exists(file2))
+        self.assertEqual(os.stat(file1).st_mode, os.stat(file2).st_mode)
+
+    @unittest.skipUnless(hasattr(os, 'chmod'), 'requires os.chmod')
+    @unittest.skipUnless(hasattr(os, 'chmod'), 'requires os.utime')
+    def test_copy2(self):
+        # Ensure that the copied file exists and has the same mode and
+        # modification time bits.
+        file1, file2 = self._copy_file(shutil.copy2)
+        self.assertTrue(os.path.exists(file2))
+        file1_stat = os.stat(file1)
+        file2_stat = os.stat(file2)
+        self.assertEqual(file1_stat.st_mode, file2_stat.st_mode)
+        for attr in 'st_atime', 'st_mtime':
+            # The modification times may be truncated in the new file.
+            self.assertLessEqual(getattr(file1_stat, attr),
+                                 getattr(file2_stat, attr) + 1)
+        if hasattr(os, 'chflags') and hasattr(file1_stat, 'st_flags'):
+            self.assertEqual(getattr(file1_stat, 'st_flags'),
+                             getattr(file2_stat, 'st_flags'))
+
     @unittest.skipUnless(zlib, "requires zlib")
     def test_make_tarball(self):
         # creating something to tar
@@ -403,6 +454,8 @@ class TestShutil(unittest.TestCase):
         self.write_file([tmpdir, 'sub', 'file3'], 'xxx')
 
         tmpdir2 = self.mkdtemp()
+        # force shutil to create the directory
+        os.rmdir(tmpdir2)
         unittest.skipUnless(splitdrive(tmpdir)[0] == splitdrive(tmpdir2)[0],
                             "source and target should be on same drive")
 
@@ -518,6 +571,8 @@ class TestShutil(unittest.TestCase):
         self.write_file([tmpdir, 'file2'], 'xxx')
 
         tmpdir2 = self.mkdtemp()
+        # force shutil to create the directory
+        os.rmdir(tmpdir2)
         base_name = os.path.join(tmpdir2, 'archive')
         _make_zipfile(base_name, tmpdir)
 
@@ -645,6 +700,14 @@ class TestShutil(unittest.TestCase):
             diff = self._compare_dirs(tmpdir, tmpdir2)
             self.assertEqual(diff, [])
 
+            # and again, this time with the format specified
+            tmpdir3 = self.mkdtemp()
+            unpack_archive(filename, tmpdir3, format=format)
+            diff = self._compare_dirs(tmpdir, tmpdir3)
+            self.assertEqual(diff, [])
+        self.assertRaises(shutil.ReadError, unpack_archive, TESTFN)
+        self.assertRaises(ValueError, unpack_archive, TESTFN, format='xxx')
+
     def test_unpack_registery(self):
 
         formats = get_unpack_formats()
@@ -680,20 +743,11 @@ class TestMove(unittest.TestCase):
         self.dst_dir = tempfile.mkdtemp()
         self.src_file = os.path.join(self.src_dir, filename)
         self.dst_file = os.path.join(self.dst_dir, filename)
-        # Try to create a dir in the current directory, hoping that it is
-        # not located on the same filesystem as the system tmp dir.
-        try:
-            self.dir_other_fs = tempfile.mkdtemp(
-                dir=os.path.dirname(__file__))
-            self.file_other_fs = os.path.join(self.dir_other_fs,
-                filename)
-        except OSError:
-            self.dir_other_fs = None
         with open(self.src_file, "wb") as f:
             f.write(b"spam")
 
     def tearDown(self):
-        for d in (self.src_dir, self.dst_dir, self.dir_other_fs):
+        for d in (self.src_dir, self.dst_dir):
             try:
                 if d:
                     shutil.rmtree(d)
@@ -722,21 +776,15 @@ class TestMove(unittest.TestCase):
         # Move a file inside an existing dir on the same filesystem.
         self._check_move_file(self.src_file, self.dst_dir, self.dst_file)
 
+    @mock_rename
     def test_move_file_other_fs(self):
         # Move a file to an existing dir on another filesystem.
-        if not self.dir_other_fs:
-            # skip
-            return
-        self._check_move_file(self.src_file, self.file_other_fs,
-            self.file_other_fs)
+        self.test_move_file()
 
+    @mock_rename
     def test_move_file_to_dir_other_fs(self):
         # Move a file to another location on another filesystem.
-        if not self.dir_other_fs:
-            # skip
-            return
-        self._check_move_file(self.src_file, self.dir_other_fs,
-            self.file_other_fs)
+        self.test_move_file_to_dir()
 
     def test_move_dir(self):
         # Move a dir to another location on the same filesystem.
@@ -749,32 +797,20 @@ class TestMove(unittest.TestCase):
             except:
                 pass
 
+    @mock_rename
     def test_move_dir_other_fs(self):
         # Move a dir to another location on another filesystem.
-        if not self.dir_other_fs:
-            # skip
-            return
-        dst_dir = tempfile.mktemp(dir=self.dir_other_fs)
-        try:
-            self._check_move_dir(self.src_dir, dst_dir, dst_dir)
-        finally:
-            try:
-                shutil.rmtree(dst_dir)
-            except:
-                pass
+        self.test_move_dir()
 
     def test_move_dir_to_dir(self):
         # Move a dir inside an existing dir on the same filesystem.
         self._check_move_dir(self.src_dir, self.dst_dir,
             os.path.join(self.dst_dir, os.path.basename(self.src_dir)))
 
+    @mock_rename
     def test_move_dir_to_dir_other_fs(self):
         # Move a dir inside an existing dir on another filesystem.
-        if not self.dir_other_fs:
-            # skip
-            return
-        self._check_move_dir(self.src_dir, self.dir_other_fs,
-            os.path.join(self.dir_other_fs, os.path.basename(self.src_dir)))
+        self.test_move_dir_to_dir()
 
     def test_existing_file_inside_dest_dir(self):
         # A file with the same name inside the destination dir already exists.

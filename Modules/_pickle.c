@@ -6259,7 +6259,7 @@ initmodule(void)
         goto error;
     if (!PyDict_CheckExact(name_mapping_3to2)) {
         PyErr_Format(PyExc_RuntimeError,
-                     "_compat_pickle.REVERSE_NAME_MAPPING shouldbe a dict, "
+                     "_compat_pickle.REVERSE_NAME_MAPPING should be a dict, "
                      "not %.200s", Py_TYPE(name_mapping_3to2)->tp_name);
         goto error;
     }

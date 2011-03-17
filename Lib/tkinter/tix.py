@@ -171,7 +171,7 @@ class tixCommand:
         return self.tk.call('tix', 'getimage', name)
 
     def tix_option_get(self, name):
-        """Gets  the options  manitained  by  the  Tix
+        """Gets  the options  maintained  by  the  Tix
         scheme mechanism. Available options include:
 
             active_bg       active_fg      bg
@@ -576,7 +576,7 @@ class ButtonBox(TixWidget):
 
 class ComboBox(TixWidget):
     """ComboBox - an Entry field with a dropdown menu. The user can select a
-    choice by either typing in the entry subwdget or selecting from the
+    choice by either typing in the entry subwidget or selecting from the
     listbox subwidget.
 
     Subwidget       Class
@@ -869,7 +869,7 @@ class HList(TixWidget, XView, YView):
     """HList - Hierarchy display  widget can be used to display any data
     that have a hierarchical structure, for example, file system directory
     trees. The list entries are indented and connected by branch lines
-    according to their places in the hierachy.
+    according to their places in the hierarchy.
 
     Subwidgets - None"""
 
@@ -1519,7 +1519,7 @@ class TList(TixWidget, XView, YView):
         self.tk.call(self._w, 'selection', 'set', first, last)
 
 class Tree(TixWidget):
-    """Tree - The tixTree widget can be used to display hierachical
+    """Tree - The tixTree widget can be used to display hierarchical
     data in a tree form. The user can adjust
     the view of the tree by opening or closing parts of the tree."""
 

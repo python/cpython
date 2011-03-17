@@ -1297,7 +1297,7 @@ marking, as well as interline differences.
         ?     +              ++    ^
     TestResults(failed=1, attempted=1)
 
-The REPORT_ONLY_FIRST_FAILURE supresses result output after the first
+The REPORT_ONLY_FIRST_FAILURE suppresses result output after the first
 failing example:
 
     >>> def f(x):
@@ -1327,7 +1327,7 @@ failing example:
         2
     TestResults(failed=3, attempted=5)
 
-However, output from `report_start` is not supressed:
+However, output from `report_start` is not suppressed:
 
     >>> doctest.DocTestRunner(verbose=True, optionflags=flags).run(test)
     ... # doctest: +ELLIPSIS
@@ -2278,7 +2278,7 @@ We don't want `-v` in sys.argv for these tests.
     >>> doctest.master = None  # Reset master.
 
 (Note: we'll be clearing doctest.master after each call to
-`doctest.testfile`, to supress warnings about multiple tests with the
+`doctest.testfile`, to suppress warnings about multiple tests with the
 same name.)
 
 Globals may be specified with the `globs` and `extraglobs` parameters:
@@ -2314,7 +2314,7 @@ optional `module_relative` parameter:
     TestResults(failed=0, attempted=2)
     >>> doctest.master = None  # Reset master.
 
-Verbosity can be increased with the optional `verbose` paremter:
+Verbosity can be increased with the optional `verbose` parameter:
 
     >>> doctest.testfile('test_doctest.txt', globs=globs, verbose=True)
     Trying:
@@ -2351,7 +2351,7 @@ parameter:
     TestResults(failed=1, attempted=2)
     >>> doctest.master = None  # Reset master.
 
-The summary report may be supressed with the optional `report`
+The summary report may be suppressed with the optional `report`
 parameter:
 
     >>> doctest.testfile('test_doctest.txt', report=False)

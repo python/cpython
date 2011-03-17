@@ -462,7 +462,7 @@ class RejectingSocketlessRequestHandler(SocketlessRequestHandler):
         return False
 
 class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
-    """Test the functionaility of the BaseHTTPServer.
+    """Test the functionality of the BaseHTTPServer.
 
        Test the support for the Expect 100-continue header.
        """

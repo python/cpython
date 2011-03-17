@@ -906,6 +906,53 @@ class TestGetattrStatic(unittest.TestCase):
         self.assertEqual(inspect.getattr_static(Something(), 'foo'), 3)
         self.assertEqual(inspect.getattr_static(Something, 'foo'), 3)
 
+    def test_dict_as_property(self):
+        test = self
+        test.called = False
+
+        class Foo(dict):
+            a = 3
+            @property
+            def __dict__(self):
+                test.called = True
+                return {}
+
+        foo = Foo()
+        foo.a = 4
+        self.assertEqual(inspect.getattr_static(foo, 'a'), 3)
+        self.assertFalse(test.called)
+
+    def test_custom_object_dict(self):
+        test = self
+        test.called = False
+
+        class Custom(dict):
+            def get(self, key, default=None):
+                test.called = True
+                super().get(key, default)
+
+        class Foo(object):
+            a = 3
+        foo = Foo()
+        foo.__dict__ = Custom()
+        self.assertEqual(inspect.getattr_static(foo, 'a'), 3)
+        self.assertFalse(test.called)
+
+    def test_metaclass_dict_as_property(self):
+        class Meta(type):
+            @property
+            def __dict__(self):
+                self.executed = True
+
+        class Thing(metaclass=Meta):
+            executed = False
+
+            def __init__(self):
+                self.spam = 42
+
+        instance = Thing()
+        self.assertEqual(inspect.getattr_static(instance, "spam"), 42)
+        self.assertFalse(Thing.executed)
 
 class TestGetGeneratorState(unittest.TestCase):
 

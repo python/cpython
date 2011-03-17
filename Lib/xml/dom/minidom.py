@@ -1905,7 +1905,7 @@ def _clone_node(node, deep, newOwnerDocument):
                     e._call_user_data_handler(operation, n, entity)
     else:
         # Note the cloning of Document and DocumentType nodes is
-        # implemenetation specific.  minidom handles those cases
+        # implementation specific.  minidom handles those cases
         # directly in the cloneNode() methods.
         raise xml.dom.NotSupportedErr("Cannot clone node %s" % repr(node))
 
