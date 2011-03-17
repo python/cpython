@@ -6080,7 +6080,8 @@ posix_lseek(PyObject *self, PyObject *args)
 #else
     off_t pos, res;
 #endif
-    if (!PyArg_ParseTuple(args, "iO&i:lseek", &fd, _parse_off_t, &pos, &how))
+    PyObject *posobj;
+    if (!PyArg_ParseTuple(args, "iOi:lseek", &fd, &posobj, &how))
         return NULL;
 #ifdef SEEK_SET
     /* Turn 0, 1, 2 into SEEK_{SET,CUR,END} */
@@ -6091,6 +6092,11 @@ posix_lseek(PyObject *self, PyObject *args)
     }
 #endif /* SEEK_END */
 
+#if !defined(HAVE_LARGEFILE_SUPPORT)
+    pos = PyLong_AsLong(posobj);
+#else
+    pos = PyLong_AsLongLong(posobj);
+#endif
     if (PyErr_Occurred())
         return NULL;
 
