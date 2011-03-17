@@ -157,7 +157,7 @@ class NumberTestCase(unittest.TestCase):
     def test_int_from_address(self):
         from array import array
         for t in signed_types + unsigned_types:
-            # the array module doesn't suppport all format codes
+            # the array module doesn't support all format codes
             # (no 'q' or 'Q')
             try:
                 array(t._type_)

@@ -362,7 +362,7 @@ def fileContents(fn):
 
 def runCommand(commandline):
     """
-    Run a command and raise RuntimeError if it fails. Output is surpressed
+    Run a command and raise RuntimeError if it fails. Output is suppressed
     unless the command fails.
     """
     fd = os.popen(commandline, 'r')

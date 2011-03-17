@@ -125,12 +125,14 @@ This module defines one class called :class:`Popen`:
 
    *stdin*, *stdout* and *stderr* specify the executed programs' standard input,
    standard output and standard error file handles, respectively.  Valid values
-   are :data:`PIPE`, an existing file descriptor (a positive integer), an
-   existing :term:`file object`, and ``None``.  :data:`PIPE` indicates that a
-   new pipe to the child should be created.  With ``None``, no redirection will
-   occur; the child's file handles will be inherited from the parent.  Additionally,
-   *stderr* can be :data:`STDOUT`, which indicates that the stderr data from the
-   applications should be captured into the same file handle as for stdout.
+   are :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a positive
+   integer), an existing :term:`file object`, and ``None``.  :data:`PIPE`
+   indicates that a new pipe to the child should be created.  :data:`DEVNULL`
+   indicates that the special file :data:`os.devnull` will be used. With ``None``,
+   no redirection will occur; the child's file handles will be inherited from
+   the parent.  Additionally, *stderr* can be :data:`STDOUT`, which indicates
+   that the stderr data from the applications should be captured into the same
+   file handle as for stdout.
 
    If *preexec_fn* is set to a callable object, this object will be called in the
    child process just before the child is executed.
@@ -227,6 +229,15 @@ This module defines one class called :class:`Popen`:
 
    .. versionchanged:: 3.2
       Added context manager support.
+
+
+.. data:: DEVNULL
+
+   Special value that can be used as the *stdin*, *stdout* or *stderr* argument
+   to :class:`Popen` and indicates that the special file :data:`os.devnull`
+   will be used.
+
+   .. versionadded:: 3.3
 
 
 .. data:: PIPE
@@ -387,7 +398,7 @@ All of the functions and methods that accept a *timeout* parameter, such as
 :func:`call` and :meth:`Popen.communicate` will raise :exc:`TimeoutExpired` if
 the timeout expires before the process exits.
 
-Exceptions defined in this module all inherit from :ext:`SubprocessError`.
+Exceptions defined in this module all inherit from :exc:`SubprocessError`.
 
    .. versionadded:: 3.3
       The :exc:`SubprocessError` base class was added.

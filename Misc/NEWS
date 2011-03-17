@@ -72,6 +72,34 @@ Core and Builtins
 Library
 -------
 
+
+- Issue #10979: unittest stdout buffering now works with class and module
+  setup and teardown.
+
+- Issue #11577: fix ResourceWarning triggered by improved binhex test coverage
+
+- Issue #11243: fix the parameter querying methods of Message to work if
+  the headers contain un-encoded non-ASCII data.
+
+- Issue #11401: fix handling of headers with no value; this fixes a regression
+  relative to Python2 and the result is now the same as it was in Python2.
+
+- Issue #9298: base64 bodies weren't being folded to line lengths less than 78,
+  which was a regression relative to Python2.  Unlike Python2, the last line
+  of the folded body now ends with a carriage return.
+
+- Issue #11560: shutil.unpack_archive now correctly handles the format
+  parameter. Patch by Evan Dandrea.
+
+- Issue #5870: Add `subprocess.DEVNULL` constant.
+
+- Issue #11133: fix two cases where inspect.getattr_static can trigger code
+  execution. Patch by Andreas Stührk.
+
+- Issue #11569: use absolute path to the sysctl command in multiprocessing to
+  ensure that it will be found regardless of the shell PATH. This ensures
+  that multiprocessing.cpu_count works on default installs of MacOSX.
+
 - Issue #11501: disutils.archive_utils.make_zipfile no longer fails if zlib is
   not installed. Instead, the zipfile.ZIP_STORED compression is used to create
   the ZipFile. Patch by Natalia B. Bidart.
@@ -220,9 +248,25 @@ Tools/Demos
 Tests
 -----
 
+- Issue #11577: improve test coverage of binhex.py. Patch by Arkady Koplyarov.
+
+- New test_crashers added to exercise the scripts in the Lib/test/crashers
+  directory and confirm they fail as expected
+
+- Issue #11578: added test for the timeit module.  Patch Michael Henry.
+
+- Issue #11503: improve test coverage of posixpath.py. Patch by Evan Dandrea.
+
+- Issue #11505: improves test coverage of string.py. Patch by Alicia
+  Arlen.
+
+- Issue #11548: Improve test coverage of the shutil module. Patch by
+  Evan Dandrea.
+
 - Issue #11554: Reactivated test_email_codecs.
 
-- Issue #11505: improves test coverage of string.py
+- Issue #11505: improves test coverage of string.py. Patch by Alicia
+  Arlen
 
 - Issue #11490: test_subprocess:test_leaking_fds_on_error no longer gives a
   false positive if the last directory in the path is inaccessible.

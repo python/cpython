@@ -573,9 +573,18 @@ class TestMessageAPI(TestEmailBase):
         msg['Dummy'] = 'dummy\nX-Injected-Header: test'
         self.assertRaises(errors.HeaderParseError, msg.as_string)
 
-
 # Test the email.encoders module
 class TestEncoders(unittest.TestCase):
+
+    def test_EncodersEncode_base64(self):
+        with openfile('PyBanner048.gif', 'rb') as fp:
+            bindata = fp.read()
+        mimed = email.mime.image.MIMEImage(bindata)
+        base64ed = mimed.get_payload()
+        # the transfer-encoded body lines should all be <=76 characters
+        lines = base64ed.split('\n')
+        self.assertLessEqual(max([ len(x) for x in lines ]), 76)
+
     def test_encode_empty_payload(self):
         eq = self.assertEqual
         msg = Message()
@@ -1141,10 +1150,11 @@ class TestMIMEApplication(unittest.TestCase):
 
     def test_body(self):
         eq = self.assertEqual
-        bytes = b'\xfa\xfb\xfc\xfd\xfe\xff'
-        msg = MIMEApplication(bytes)
-        eq(msg.get_payload(), '+vv8/f7/')
-        eq(msg.get_payload(decode=True), bytes)
+        bytesdata = b'\xfa\xfb\xfc\xfd\xfe\xff'
+        msg = MIMEApplication(bytesdata)
+        # whitespace in the cte encoded block is RFC-irrelevant.
+        eq(msg.get_payload().strip(), '+vv8/f7/')
+        eq(msg.get_payload(decode=True), bytesdata)
 
 
 
@@ -2992,6 +3002,58 @@ class Test8BitBytesHandling(unittest.TestCase):
                               ['foo@bar.com',
                                'g\uFFFD\uFFFDst'])
 
+    def test_get_content_type_with_8bit(self):
+        msg = email.message_from_bytes(textwrap.dedent("""\
+            Content-Type: text/pl\xA7in; charset=utf-8
+            """).encode('latin-1'))
+        self.assertEqual(msg.get_content_type(), "text/pl\uFFFDin")
+        self.assertEqual(msg.get_content_maintype(), "text")
+        self.assertEqual(msg.get_content_subtype(), "pl\uFFFDin")
+
+    def test_get_params_with_8bit(self):
+        msg = email.message_from_bytes(
+            'X-Header: foo=\xa7ne; b\xa7r=two; baz=three\n'.encode('latin-1'))
+        self.assertEqual(msg.get_params(header='x-header'),
+           [('foo', '\uFFFDne'), ('b\uFFFDr', 'two'), ('baz', 'three')])
+        self.assertEqual(msg.get_param('Foo', header='x-header'), '\uFFFdne')
+        # XXX: someday you might be able to get 'b\xa7r', for now you can't.
+        self.assertEqual(msg.get_param('b\xa7r', header='x-header'), None)
+
+    def test_get_rfc2231_params_with_8bit(self):
+        msg = email.message_from_bytes(textwrap.dedent("""\
+            Content-Type: text/plain; charset=us-ascii;
+             title*=us-ascii'en'This%20is%20not%20f\xa7n"""
+             ).encode('latin-1'))
+        self.assertEqual(msg.get_param('title'),
+            ('us-ascii', 'en', 'This is not f\uFFFDn'))
+
+    def test_set_rfc2231_params_with_8bit(self):
+        msg = email.message_from_bytes(textwrap.dedent("""\
+            Content-Type: text/plain; charset=us-ascii;
+             title*=us-ascii'en'This%20is%20not%20f\xa7n"""
+             ).encode('latin-1'))
+        msg.set_param('title', 'test')
+        self.assertEqual(msg.get_param('title'), 'test')
+
+    def test_del_rfc2231_params_with_8bit(self):
+        msg = email.message_from_bytes(textwrap.dedent("""\
+            Content-Type: text/plain; charset=us-ascii;
+             title*=us-ascii'en'This%20is%20not%20f\xa7n"""
+             ).encode('latin-1'))
+        msg.del_param('title')
+        self.assertEqual(msg.get_param('title'), None)
+        self.assertEqual(msg.get_content_maintype(), 'text')
+
+    def test_get_payload_with_8bit_cte_header(self):
+        msg = email.message_from_bytes(textwrap.dedent("""\
+            Content-Transfer-Encoding: b\xa7se64
+            Content-Type: text/plain; charset=latin-1
+
+            payload
+            """).encode('latin-1'))
+        self.assertEqual(msg.get_payload(), 'payload\n')
+        self.assertEqual(msg.get_payload(decode=True), b'payload\n')
+
     non_latin_bin_msg = textwrap.dedent("""\
         From: foo@bar.com
         To: báz
@@ -3694,6 +3756,13 @@ A very long line that must get split to something other than at the
     def test_shift_jis_charset(self):
         h = Header('文', charset='shift_jis')
         self.assertEqual(h.encode(), '=?iso-2022-jp?b?GyRCSjgbKEI=?=')
+
+    def test_flatten_header_with_no_value(self):
+        # Issue 11401 (regression from email 4.x)  Note that the space after
+        # the header doesn't reflect the input, but this is also the way
+        # email 4.x behaved.  At some point it would be nice to fix that.
+        msg = email.message_from_string("EmptyHeader:")
+        self.assertEqual(str(msg), "EmptyHeader: \n\n")
 
 
 

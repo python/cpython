@@ -240,7 +240,7 @@ class SimpleXMLRPCDispatcher:
         marshalled data. For backwards compatibility, a dispatch
         function can be provided as an argument (see comment in
         SimpleXMLRPCRequestHandler.do_POST) but overriding the
-        existing method through subclassing is the prefered means
+        existing method through subclassing is the preferred means
         of changing method dispatch behavior.
         """
 
