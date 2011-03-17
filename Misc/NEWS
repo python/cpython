@@ -43,12 +43,15 @@ Core and Builtins
 Library
 -------
 
+- Issue #10979: unittest stdout buffering now works with class and module
+  setup and teardown.
+
 - Issue #11569: use absolute path to the sysctl command in multiprocessing to
   ensure that it will be found regardless of the shell PATH. This ensures
   that multiprocessing.cpu_count works on default installs of MacOSX.
 
-- Issue #11500: Fixed a bug in the os x proxy bypass code for fully qualified 
-  IP addresses in the proxy exception list. 
+- Issue #11500: Fixed a bug in the os x proxy bypass code for fully qualified
+  IP addresses in the proxy exception list.
 
 - Issue #11131: Fix sign of zero in plus and minus operations when
   the context rounding mode is ROUND_FLOOR.
