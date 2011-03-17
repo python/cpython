@@ -2995,6 +2995,58 @@ class Test8BitBytesHandling(unittest.TestCase):
                               ['foo@bar.com',
                                'g\uFFFD\uFFFDst'])
 
+    def test_get_content_type_with_8bit(self):
+        msg = email.message_from_bytes(textwrap.dedent("""\
+            Content-Type: text/pl\xA7in; charset=utf-8
+            """).encode('latin-1'))
+        self.assertEqual(msg.get_content_type(), "text/pl\uFFFDin")
+        self.assertEqual(msg.get_content_maintype(), "text")
+        self.assertEqual(msg.get_content_subtype(), "pl\uFFFDin")
+
+    def test_get_params_with_8bit(self):
+        msg = email.message_from_bytes(
+            'X-Header: foo=\xa7ne; b\xa7r=two; baz=three\n'.encode('latin-1'))
+        self.assertEqual(msg.get_params(header='x-header'),
+           [('foo', '\uFFFDne'), ('b\uFFFDr', 'two'), ('baz', 'three')])
+        self.assertEqual(msg.get_param('Foo', header='x-header'), '\uFFFdne')
+        # XXX: someday you might be able to get 'b\xa7r', for now you can't.
+        self.assertEqual(msg.get_param('b\xa7r', header='x-header'), None)
+
+    def test_get_rfc2231_params_with_8bit(self):
+        msg = email.message_from_bytes(textwrap.dedent("""\
+            Content-Type: text/plain; charset=us-ascii;
+             title*=us-ascii'en'This%20is%20not%20f\xa7n"""
+             ).encode('latin-1'))
+        self.assertEqual(msg.get_param('title'),
+            ('us-ascii', 'en', 'This is not f\uFFFDn'))
+
+    def test_set_rfc2231_params_with_8bit(self):
+        msg = email.message_from_bytes(textwrap.dedent("""\
+            Content-Type: text/plain; charset=us-ascii;
+             title*=us-ascii'en'This%20is%20not%20f\xa7n"""
+             ).encode('latin-1'))
+        msg.set_param('title', 'test')
+        self.assertEqual(msg.get_param('title'), 'test')
+
+    def test_del_rfc2231_params_with_8bit(self):
+        msg = email.message_from_bytes(textwrap.dedent("""\
+            Content-Type: text/plain; charset=us-ascii;
+             title*=us-ascii'en'This%20is%20not%20f\xa7n"""
+             ).encode('latin-1'))
+        msg.del_param('title')
+        self.assertEqual(msg.get_param('title'), None)
+        self.assertEqual(msg.get_content_maintype(), 'text')
+
+    def test_get_payload_with_8bit_cte_header(self):
+        msg = email.message_from_bytes(textwrap.dedent("""\
+            Content-Transfer-Encoding: b\xa7se64
+            Content-Type: text/plain; charset=latin-1
+
+            payload
+            """).encode('latin-1'))
+        self.assertEqual(msg.get_payload(), 'payload\n')
+        self.assertEqual(msg.get_payload(decode=True), b'payload\n')
+
     non_latin_bin_msg = textwrap.dedent("""\
         From: foo@bar.com
         To: báz
