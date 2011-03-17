@@ -496,5 +496,72 @@ class TestOutputBuffering(unittest.TestCase):
             self.assertEqual(result._original_stderr.getvalue(), expectedErrMessage)
             self.assertMultiLineEqual(message, expectedFullMessage)
 
+    def testBufferSetupClass(self):
+        result = unittest.TestResult()
+        result.buffer = True
+
+        class Foo(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                1/0
+            def test_foo(self):
+                pass
+        suite = unittest.TestSuite([Foo('test_foo')])
+        suite(result)
+        self.assertEqual(len(result.errors), 1)
+
+    def testBufferTearDownClass(self):
+        result = unittest.TestResult()
+        result.buffer = True
+
+        class Foo(unittest.TestCase):
+            @classmethod
+            def tearDownClass(cls):
+                1/0
+            def test_foo(self):
+                pass
+        suite = unittest.TestSuite([Foo('test_foo')])
+        suite(result)
+        self.assertEqual(len(result.errors), 1)
+
+    def testBufferSetUpModule(self):
+        result = unittest.TestResult()
+        result.buffer = True
+
+        class Foo(unittest.TestCase):
+            def test_foo(self):
+                pass
+        class Module(object):
+            @staticmethod
+            def setUpModule():
+                1/0
+
+        Foo.__module__ = 'Module'
+        sys.modules['Module'] = Module
+        self.addCleanup(sys.modules.pop, 'Module')
+        suite = unittest.TestSuite([Foo('test_foo')])
+        suite(result)
+        self.assertEqual(len(result.errors), 1)
+
+    def testBufferTearDownModule(self):
+        result = unittest.TestResult()
+        result.buffer = True
+
+        class Foo(unittest.TestCase):
+            def test_foo(self):
+                pass
+        class Module(object):
+            @staticmethod
+            def tearDownModule():
+                1/0
+
+        Foo.__module__ = 'Module'
+        sys.modules['Module'] = Module
+        self.addCleanup(sys.modules.pop, 'Module')
+        suite = unittest.TestSuite([Foo('test_foo')])
+        suite(result)
+        self.assertEqual(len(result.errors), 1)
+
+
 if __name__ == '__main__':
     unittest.main()
