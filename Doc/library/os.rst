@@ -743,6 +743,17 @@ as internal buffering of data.
    .. versionadded:: 3.3
 
 
+.. function:: fexecve(fd, args, env)
+
+   Execute the program specified by a file descriptor *fd* with arguments given
+   by *args* and environment given by *env*, replacing the current process.
+   *args* and *env* are given as in :func:`execve`.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+
 .. function:: fpathconf(fd, name)
 
    Return system configuration information relevant to an open file. *name*
@@ -819,6 +830,45 @@ as internal buffering of data.
    .. versionadded:: 3.3
 
 
+.. function:: futimens(fd, (atime_sec, atime_nsec), (mtime_sec, mtime_nsec))
+              futimens(fd, None, None)
+
+   Updates the timestamps of a file specified by the file descriptor *fd*, with
+   nanosecond precision.
+   The second form sets *atime* and *mtime* to the current time.
+   If *atime_nsec* or *mtime_nsec* is specified as :data:`UTIME_NOW`, the corresponding
+   timestamp is updated to the current time.
+   If *atime_nsec* or *mtime_nsec* is specified as :data:`UTIME_OMIT`, the corresponding
+   timestamp is not updated.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+
+.. data:: UTIME_NOW
+          UTIME_OMIT
+
+   Flags used with :func:`futimens` to specify that the timestamp must be
+   updated either to the current time or not updated at all.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+
+.. function:: futimes(fd, (atime, mtime))
+              futimes(fd, None)
+
+   Set the access and modified time of the file specified by the file
+   descriptor *fd* to the given values. If the second form is used, set the
+   access and modified times to the current time.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+
 .. function:: isatty(fd)
 
    Return ``True`` if the file descriptor *fd* is open and connected to a
@@ -840,6 +890,30 @@ as internal buffering of data.
 
    .. versionadded:: 3.3
 
+
+.. function:: lockf(fd, cmd, len)
+
+   Apply, test or remove a POSIX lock on an open file descriptor.
+   *fd* is an open file descriptor.
+   *cmd* specifies the command to use - one of :data:`F_LOCK`, :data:`F_TLOCK`,
+   :data:`F_ULOCK` or :data:`F_TEST`.
+   *len* specifies the section of the file to lock.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+
+.. data:: F_LOCK
+          F_TLOCK
+          F_ULOCK
+          F_TEST
+
+   Flags that specify what action :func:`lockf` will take.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
 
 .. function:: lseek(fd, pos, how)
 
@@ -945,6 +1019,66 @@ as internal buffering of data.
    Availability: Unix, Windows.
 
 
+.. function:: posix_fallocate(fd, offset, len)
+
+   Ensures that enough disk space is allocated for the file specified by *fd*
+   starting from *offset* and continuing for *len* bytes.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+
+.. function:: posix_fadvise(fd, offset, len, advice)
+
+   Announces an intention to access data in a specific pattern thus allowing
+   the kernel to make optimizations.
+   The advice applies to the region of the file specified by *fd* starting at
+   *offset* and continuing for *len* bytes.
+   *advice* is one of :data:`POSIX_FADV_NORMAL`, :data:`POSIX_FADV_SEQUENTIAL`,
+   :data:`POSIX_FADV_RANDOM`, :data:`POSIX_FADV_NOREUSE`,
+   :data:`POSIX_FADV_WILLNEED` or :data:`POSIX_FADV_DONTNEED`.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+
+.. data:: POSIX_FADV_NORMAL
+          POSIX_FADV_SEQUENTIAL
+          POSIX_FADV_RANDOM
+          POSIX_FADV_NOREUSE
+          POSIX_FADV_WILLNEED
+          POSIX_FADV_DONTNEED
+
+   Flags that can be used in *advice* in :func:`posix_fadvise` that specify
+   the access pattern that is likely to be used.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+
+.. function:: pread(fd, buffersize, offset)
+
+   Read from a file descriptor, *fd*, at a position of *offset*. It will read up
+   to *buffersize* number of bytes. The file offset remains unchanged.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+
+.. function:: pwrite(fd, string, offset)
+
+   Write *string* to a file descriptor, *fd*, from *offset*, leaving the file
+   offset unchanged.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+
 .. function:: read(fd, n)
 
    Read at most *n* bytes from file descriptor *fd*. Return a bytestring containing the
@@ -1038,6 +1172,17 @@ as internal buffering of data.
    .. versionadded:: 3.3
 
 
+.. function:: readv(fd, buffers)
+
+   Read from a file descriptor into a number of writable buffers. *buffers* is
+   an arbitrary sequence of writable buffers. Returns the total number of bytes
+   read.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+
 .. function:: tcgetpgrp(fd)
 
    Return the process group associated with the terminal given by *fd* (an open
@@ -1109,6 +1254,17 @@ as internal buffering of data.
       object" returned by the built-in function :func:`open` or by :func:`popen` or
       :func:`fdopen`, or :data:`sys.stdout` or :data:`sys.stderr`, use its
       :meth:`~file.write` method.
+
+
+.. function:: writev(fd, buffers)
+
+   Write the the contents of *buffers* to file descriptor *fd*, where *buffers*
+   is an arbitrary sequence of buffers.
+   Returns the total number of bytes written.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
 
 
 .. _open-constants:
@@ -1382,6 +1538,17 @@ Files and Directories
 
    .. versionchanged:: 3.2
       Added support for Windows 6.0 (Vista) symbolic links.
+
+
+.. function:: lutimes(path, (atime, mtime))
+              lutimes(path, None)
+
+   Like :func:`utime`, but if *path* is a symbolic link, it is not
+   dereferenced.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
 
 
 .. function:: mkfifo(path[, mode])
@@ -1725,6 +1892,25 @@ Files and Directories
 
    .. versionchanged:: 3.2
       Added support for Windows 6.0 (Vista) symbolic links.
+
+
+.. function:: sync()
+
+   Force write of everything to disk.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+
+.. function:: truncate(path, length)
+
+   Truncate the file corresponding to *path*, so that it is at most
+   *length* bytes in size.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
 
 
 .. function:: unlink(path)
@@ -2305,6 +2491,58 @@ written in Python, such as a mail server's external command delivery program.
    produced.
 
    Availability: Unix.
+
+.. function:: waitid(idtype, id, options)
+
+   Wait for the completion of one or more child processes.
+   *idtype* can be :data:`P_PID`, :data:`P_PGID` or :data:`P_ALL`.
+   *id* specifies the pid to wait on.
+   *options* is constructed from the ORing of one or more of :data:`WEXITED`,
+   :data:`WSTOPPED` or :data:`WCONTINUED` and additionally may be ORed with
+   :data:`WNOHANG` or :data:`WNOWAIT`. The return value is an object
+   representing the data contained in the :c:type:`siginfo_t` structure, namely:
+   :attr:`si_pid`, :attr:`si_uid`, :attr:`si_signo`, :attr:`si_status`,
+   :attr:`si_code` or ``None`` if :data:`WNOHANG` is specified and there are no
+   children in a waitable state.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+.. data:: P_PID
+          P_PGID
+          P_ALL
+
+   These are the possible values for *idtype* in :func:`waitid`. They affect
+   how *id* is interpreted.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+.. data:: WEXITED
+          WSTOPPED
+          WNOWAIT
+
+   Flags that can be used in *options* in :func:`waitid` that specify what
+   child signal to wait for.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+
+.. data:: CLD_EXITED
+          CLD_DUMPED
+          CLD_TRAPPED
+          CLD_CONTINUED
+
+   These are the possible values for :attr:`si_code` in the result returned by
+   :func:`waitid`.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
 
 
 .. function:: waitpid(pid, options)

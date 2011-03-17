@@ -37,7 +37,7 @@ class PosixTester(unittest.TestCase):
         NO_ARG_FUNCTIONS = [ "ctermid", "getcwd", "getcwdb", "uname",
                              "times", "getloadavg",
                              "getegid", "geteuid", "getgid", "getgroups",
-                             "getpid", "getpgrp", "getppid", "getuid",
+                             "getpid", "getpgrp", "getppid", "getuid", "sync",
                            ]
 
         for name in NO_ARG_FUNCTIONS:
@@ -131,6 +131,156 @@ class PosixTester(unittest.TestCase):
                 posix.ftruncate(fp.fileno(), 0)
             finally:
                 fp.close()
+
+    @unittest.skipUnless(hasattr(posix, 'truncate'), "test needs posix.truncate()")
+    def test_truncate(self):
+        with open(support.TESTFN, 'w') as fp:
+            fp.write('test')
+            fp.flush()
+        posix.truncate(support.TESTFN, 0)
+
+    @unittest.skipUnless(hasattr(posix, 'fexecve'), "test needs posix.fexecve()")
+    @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
+    @unittest.skipUnless(hasattr(os, 'wait'), "test needs os.wait()")
+    def test_fexecve(self):
+        fp = os.open(sys.executable, os.O_RDONLY)
+        try:
+            pid = os.fork()
+            if pid == 0:
+                os.chdir(os.path.split(sys.executable)[0])
+                posix.fexecve(fp, [sys.executable, '-c', 'pass'], os.environ)
+            else:
+                self.assertEqual(os.wait(), (pid, 0))
+        finally:
+            os.close(fp)
+
+    @unittest.skipUnless(hasattr(posix, 'waitid'), "test needs posix.waitid()")
+    @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
+    def test_waitid(self):
+        pid = os.fork()
+        if pid == 0:
+            os.chdir(os.path.split(sys.executable)[0])
+            posix.execve(sys.executable, [sys.executable, '-c', 'pass'], os.environ)
+        else:
+            res = posix.waitid(posix.P_PID, pid, posix.WEXITED)
+            self.assertEqual(pid, res.si_pid)
+
+    @unittest.skipUnless(hasattr(posix, 'lockf'), "test needs posix.lockf()")
+    def test_lockf(self):
+        fd = os.open(support.TESTFN, os.O_WRONLY | os.O_CREAT)
+        try:
+            os.write(fd, b'test')
+            os.lseek(fd, 0, os.SEEK_SET)
+            posix.lockf(fd, posix.F_LOCK, 4)
+            # section is locked
+            posix.lockf(fd, posix.F_ULOCK, 4)
+        finally:
+            os.close(fd)
+
+    @unittest.skipUnless(hasattr(posix, 'pread'), "test needs posix.pread()")
+    def test_pread(self):
+        fd = os.open(support.TESTFN, os.O_RDWR | os.O_CREAT)
+        try:
+            os.write(fd, b'test')
+            os.lseek(fd, 0, os.SEEK_SET)
+            self.assertEqual(b'es', posix.pread(fd, 2, 1))
+            # the first pread() shoudn't disturb the file offset
+            self.assertEqual(b'te', posix.read(fd, 2))
+        finally:
+            os.close(fd)
+
+    @unittest.skipUnless(hasattr(posix, 'pwrite'), "test needs posix.pwrite()")
+    def test_pwrite(self):
+        fd = os.open(support.TESTFN, os.O_RDWR | os.O_CREAT)
+        try:
+            os.write(fd, b'test')
+            os.lseek(fd, 0, os.SEEK_SET)
+            posix.pwrite(fd, b'xx', 1)
+            self.assertEqual(b'txxt', posix.read(fd, 4))
+        finally:
+            os.close(fd)
+
+    @unittest.skipUnless(hasattr(posix, 'posix_fallocate'),
+        "test needs posix.posix_fallocate()")
+    def test_posix_fallocate(self):
+        fd = os.open(support.TESTFN, os.O_WRONLY | os.O_CREAT)
+        try:
+            posix.posix_fallocate(fd, 0, 10)
+        except OSError as inst:
+            # issue10812, ZFS doesn't appear to support posix_fallocate,
+            # so skip Solaris-based since they are likely to have ZFS.
+            if inst.errno != errno.EINVAL or not sys.platform.startswith("sunos"):
+                raise
+        finally:
+            os.close(fd)
+
+    @unittest.skipUnless(hasattr(posix, 'posix_fadvise'),
+        "test needs posix.posix_fadvise()")
+    def test_posix_fadvise(self):
+        fd = os.open(support.TESTFN, os.O_RDONLY)
+        try:
+            posix.posix_fadvise(fd, 0, 0, posix.POSIX_FADV_WILLNEED)
+        finally:
+            os.close(fd)
+
+    @unittest.skipUnless(hasattr(posix, 'futimes'), "test needs posix.futimes()")
+    def test_futimes(self):
+        now = time.time()
+        fd = os.open(support.TESTFN, os.O_RDONLY)
+        try:
+            posix.futimes(fd, None)
+            self.assertRaises(TypeError, posix.futimes, fd, (None, None))
+            self.assertRaises(TypeError, posix.futimes, fd, (now, None))
+            self.assertRaises(TypeError, posix.futimes, fd, (None, now))
+            posix.futimes(fd, (int(now), int(now)))
+            posix.futimes(fd, (now, now))
+        finally:
+            os.close(fd)
+
+    @unittest.skipUnless(hasattr(posix, 'lutimes'), "test needs posix.lutimes()")
+    def test_lutimes(self):
+        now = time.time()
+        posix.lutimes(support.TESTFN, None)
+        self.assertRaises(TypeError, posix.lutimes, support.TESTFN, (None, None))
+        self.assertRaises(TypeError, posix.lutimes, support.TESTFN, (now, None))
+        self.assertRaises(TypeError, posix.lutimes, support.TESTFN, (None, now))
+        posix.lutimes(support.TESTFN, (int(now), int(now)))
+        posix.lutimes(support.TESTFN, (now, now))
+
+    @unittest.skipUnless(hasattr(posix, 'futimens'), "test needs posix.futimens()")
+    def test_futimens(self):
+        now = time.time()
+        fd = os.open(support.TESTFN, os.O_RDONLY)
+        try:
+            self.assertRaises(TypeError, posix.futimens, fd, (None, None), (None, None))
+            self.assertRaises(TypeError, posix.futimens, fd, (now, 0), None)
+            self.assertRaises(TypeError, posix.futimens, fd, None, (now, 0))
+            posix.futimens(fd, (int(now), int((now - int(now)) * 1e9)),
+                    (int(now), int((now - int(now)) * 1e9)))
+        finally:
+            os.close(fd)
+
+    @unittest.skipUnless(hasattr(posix, 'writev'), "test needs posix.writev()")
+    def test_writev(self):
+        fd = os.open(support.TESTFN, os.O_RDWR | os.O_CREAT)
+        try:
+            os.writev(fd, (b'test1', b'tt2', b't3'))
+            os.lseek(fd, 0, os.SEEK_SET)
+            self.assertEqual(b'test1tt2t3', posix.read(fd, 10))
+        finally:
+            os.close(fd)
+
+    @unittest.skipUnless(hasattr(posix, 'readv'), "test needs posix.readv()")
+    def test_readv(self):
+        fd = os.open(support.TESTFN, os.O_RDWR | os.O_CREAT)
+        try:
+            os.write(fd, b'test1tt2t3')
+            os.lseek(fd, 0, os.SEEK_SET)
+            buf = [bytearray(i) for i in [5, 3, 2]]
+            self.assertEqual(posix.readv(fd, buf), 10)
+            self.assertEqual([b'test1', b'tt2', b't3'], [bytes(i) for i in buf])
+        finally:
+            os.close(fd)
 
     def test_dup(self):
         if hasattr(posix, 'dup'):
