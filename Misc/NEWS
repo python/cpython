@@ -72,6 +72,7 @@ Core and Builtins
 Library
 -------
 
+- Issue #10812: Add some extra posix functions to the os module.
 
 - Issue #10979: unittest stdout buffering now works with class and module
   setup and teardown.
