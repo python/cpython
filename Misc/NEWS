@@ -72,6 +72,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #11577: fix ResourceWarning triggered by improved binhex test coverage
+
 - Issue #11243: fix the parameter querying methods of Message to work if
   the headers contain un-encoded non-ASCII data.
 
@@ -241,6 +243,8 @@ Tools/Demos
 
 Tests
 -----
+
+- Issue #11577: improve test coverage of binhex.py. Patch by Arkady Koplyarov.
 
 - New test_crashers added to exercise the scripts in the Lib/test/crashers
   directory and confirm they fail as expected
