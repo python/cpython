@@ -686,20 +686,19 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
 
         # Test that sequences of unhashable objects can be tested for sameness:
         self.assertItemsEqual([[1, 2], [3, 4], 0], [False, [3, 4], [1, 2]])
-        with test_support.check_warnings(quiet=True) as w:
-            # hashable types, but not orderable
-            self.assertRaises(self.failureException, self.assertItemsEqual,
-                              [], [divmod, 'x', 1, 5j, 2j, frozenset()])
-            # comparing dicts raises a py3k warning
-            self.assertItemsEqual([{'a': 1}, {'b': 2}], [{'b': 2}, {'a': 1}])
-            # comparing heterogenous non-hashable sequences raises a py3k warning
-            self.assertItemsEqual([1, 'x', divmod, []], [divmod, [], 'x', 1])
-            self.assertRaises(self.failureException, self.assertItemsEqual,
-                              [], [divmod, [], 'x', 1, 5j, 2j, set()])
-            # fail the test if warnings are not silenced
-            if w.warnings:
-                self.fail('assertItemsEqual raised a warning: ' +
-                          str(w.warnings[0]))
+        # Test that iterator of unhashable objects can be tested for sameness:
+        self.assertItemsEqual(iter([1, 2, [], 3, 4]),
+                              iter([1, 2, [], 3, 4]))
+
+        # hashable types, but not orderable
+        self.assertRaises(self.failureException, self.assertItemsEqual,
+                          [], [divmod, 'x', 1, 5j, 2j, frozenset()])
+        # comparing dicts
+        self.assertItemsEqual([{'a': 1}, {'b': 2}], [{'b': 2}, {'a': 1}])
+        # comparing heterogenous non-hashable sequences
+        self.assertItemsEqual([1, 'x', divmod, []], [divmod, [], 'x', 1])
+        self.assertRaises(self.failureException, self.assertItemsEqual,
+                          [], [divmod, [], 'x', 1, 5j, 2j, set()])
         self.assertRaises(self.failureException, self.assertItemsEqual,
                           [[1]], [[2]])
 
@@ -716,6 +715,19 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         a = [{2,4}, {1,2}]
         b = a[::-1]
         self.assertItemsEqual(a, b)
+
+        # test utility functions supporting assertItemsEqual()
+
+        diffs = set(unittest.util._count_diff_all_purpose('aaabccd', 'abbbcce'))
+        expected = {(3,1,'a'), (1,3,'b'), (1,0,'d'), (0,1,'e')}
+        self.assertEqual(diffs, expected)
+
+        diffs = unittest.util._count_diff_all_purpose([[]], [])
+        self.assertEqual(diffs, [(1, 0, [])])
+
+        diffs = set(unittest.util._count_diff_hashable('aaabccd', 'abbbcce'))
+        expected = {(3,1,'a'), (1,3,'b'), (1,0,'d'), (0,1,'e')}
+        self.assertEqual(diffs, expected)
 
     def testAssertSetEqual(self):
         set1 = set()

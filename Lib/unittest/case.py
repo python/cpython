@@ -10,8 +10,10 @@ import warnings
 
 from . import result
 from .util import (
-    strclass, safe_repr, sorted_list_difference, unorderable_list_difference
+    strclass, safe_repr, unorderable_list_difference,
+    _count_diff_all_purpose, _count_diff_hashable
 )
+
 
 __unittest = True
 
@@ -863,6 +865,7 @@ class TestCase(object):
             - [0, 1, 1] and [1, 0, 1] compare equal.
             - [0, 0, 1] and [0, 1] compare unequal.
         """
+        first_seq, second_seq = list(actual_seq), list(expected_seq)
         with warnings.catch_warnings():
             if sys.py3kwarning:
                 # Silence Py3k warning raised during the sorting
@@ -871,29 +874,23 @@ class TestCase(object):
                              "comparing unequal types"]:
                     warnings.filterwarnings("ignore", _msg, DeprecationWarning)
             try:
-                actual = collections.Counter(iter(actual_seq))
-                expected = collections.Counter(iter(expected_seq))
+                first = collections.Counter(first_seq)
+                second = collections.Counter(second_seq)
             except TypeError:
-                # Unsortable items (example: set(), complex(), ...)
-                actual = list(actual_seq)
-                expected = list(expected_seq)
-                missing, unexpected = unorderable_list_difference(expected, actual)
+                # Handle case with unhashable elements
+                differences = _count_diff_all_purpose(first_seq, second_seq)
             else:
-                if actual == expected:
+                if first == second:
                     return
-                missing = list(expected - actual)
-                unexpected = list(actual - expected)
+                differences = _count_diff_hashable(first_seq, second_seq)
 
-        errors = []
-        if missing:
-            errors.append('Expected, but missing:\n    %s' %
-                           safe_repr(missing))
-        if unexpected:
-            errors.append('Unexpected, but present:\n    %s' %
-                           safe_repr(unexpected))
-        if errors:
-            standardMsg = '\n'.join(errors)
-            self.fail(self._formatMessage(msg, standardMsg))
+        if differences:
+            standardMsg = 'Element counts were not equal:\n'
+            lines = ['First has %d, Second has %d:  %r' % diff for diff in differences]
+            diffMsg = '\n'.join(lines)
+            standardMsg = self._truncateMessage(standardMsg, diffMsg)
+            msg = self._formatMessage(msg, standardMsg)
+            self.fail(msg)
 
     def assertMultiLineEqual(self, first, second, msg=None):
         """Assert that two multi-line strings are equal."""
