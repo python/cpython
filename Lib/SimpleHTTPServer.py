@@ -15,6 +15,7 @@ import posixpath
 import BaseHTTPServer
 import urllib
 import cgi
+import sys
 import shutil
 import mimetypes
 try:
@@ -131,7 +132,8 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         length = f.tell()
         f.seek(0)
         self.send_response(200)
-        self.send_header("Content-type", "text/html")
+        encoding = sys.getfilesystemencoding()
+        self.send_header("Content-type", "text/html; charset=%s" % encoding)
         self.send_header("Content-Length", str(length))
         self.end_headers()
         return f
