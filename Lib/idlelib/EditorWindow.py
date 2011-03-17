@@ -307,9 +307,9 @@ class EditorWindow(object):
         return "break"
 
     def home_callback(self, event):
-        if (event.state & 12) != 0 and event.keysym == "Home":
-            # state&1==shift, state&4==control, state&8==alt
-            return # <Modifier-Home>; fall back to class binding
+        if (event.state & 4) != 0 and event.keysym == "Home":
+            # state&4==Control. If <Control-Home>, use the Tk binding.
+            return
 
         if self.text.index("iomark") and \
            self.text.compare("iomark", "<=", "insert lineend") and \
