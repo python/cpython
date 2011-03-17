@@ -10,7 +10,7 @@ What's New in Python 3.2.1?
 Core and Builtins
 -----------------
 
-- Issue #10914: fix bogus memory management in Modules/getpath.c, leading to
+- Issue #11320: fix bogus memory management in Modules/getpath.c, leading to
   a possible crash when calling Py_SetPath().
 
 - Issue #11510: Fixed optimizer bug which turned "a,b={1,1}" into "a,b=(1,1)".
