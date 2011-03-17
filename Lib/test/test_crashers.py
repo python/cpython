@@ -24,6 +24,8 @@ class CrasherTest(unittest.TestCase):
                 continue
             # Some "crashers" only trigger an exception rather than a
             # segfault. Consider that an acceptable outcome.
+            if test.support.verbose:
+                print("Checking crasher:", fname)
             assert_python_failure(fname)
 
 
