@@ -1,3 +1,10 @@
+What's New in IDLE 2.7.2?
+=======================
+
+*Release date: XX-XX-XXXX*
+
+- <Home> toggle non-functional when NumLock set on Windows.  Issue3851.
+
 What's New in IDLE 2.7?
 =======================
 
