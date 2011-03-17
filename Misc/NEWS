@@ -239,6 +239,9 @@ Tools/Demos
 Tests
 -----
 
+- New test_crashers added to exercise the scripts in the Lib/test/crashers
+  directory and confirm they fail as expected
+
 - Issue #11578: added test for the timeit module.  Patch Michael Henry.
 
 - Issue #11503: improve test coverage of posixpath.py. Patch by Evan Dandrea.
