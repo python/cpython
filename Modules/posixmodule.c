@@ -59,6 +59,10 @@ corresponding Unix manual entries for more information on calls.");
 #include "osdefs.h"
 #endif
 
+#ifdef HAVE_SYS_UIO_H
+#include <sys/uio.h>
+#endif
+
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif /* HAVE_SYS_TYPES_H */
@@ -102,10 +106,6 @@ corresponding Unix manual entries for more information on calls.");
 #if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__APPLE__)
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
-#endif
-
-#ifdef HAVE_SYS_UIO_H
-#include <sys/uio.h>
 #endif
 #endif
 
