@@ -8,10 +8,14 @@ import re
 import fileinput
 import collections
 import gzip
-import bz2
 import types
 import codecs
 import unittest
+
+try:
+    import bz2
+except ImportError:
+    bz2 = None
 
 from io import StringIO
 from fileinput import FileInput, hook_encoded
@@ -765,6 +769,7 @@ class Test_hook_compressed(unittest.TestCase):
         self.assertEqual(self.fake_open.invocation_count, 1)
         self.assertEqual(self.fake_open.last_invocation, (("test.gz", 3), {}))
 
+    @unittest.skipUnless(bz2, "Requires bz2")
     def test_bz2_ext_fake(self):
         original_open = bz2.BZ2File
         bz2.BZ2File = self.fake_open
