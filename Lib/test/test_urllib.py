@@ -91,7 +91,7 @@ class urlopen_FileTests(unittest.TestCase):
                          "did not return the expected text")
 
     def test_close(self):
-        # Test close() by calling it hear and then having it be called again
+        # Test close() by calling it here and then having it be called again
         # by the tearDown() method for the test
         self.returned_obj.close()
 
@@ -173,6 +173,11 @@ class urlopen_HttpTests(unittest.TestCase):
             self.assertEqual(fp.getcode(), 200)
         finally:
             self.unfakehttp()
+
+    def test_willclose(self):
+        self.fakehttp(b"HTTP/1.1 200 OK\r\n\r\nHello!")
+        resp = urlopen("http://www.python.org")
+        self.assertTrue(resp.fp.will_close)
 
     def test_read_0_9(self):
         # "0.9" response accepted (but not "simple responses" without
