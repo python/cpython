@@ -176,8 +176,11 @@ class urlopen_HttpTests(unittest.TestCase):
 
     def test_willclose(self):
         self.fakehttp(b"HTTP/1.1 200 OK\r\n\r\nHello!")
-        resp = urlopen("http://www.python.org")
-        self.assertTrue(resp.fp.will_close)
+        try:
+            resp = urlopen("http://www.python.org")
+            self.assertTrue(resp.fp.will_close)
+        finally:
+            self.unfakehttp()
 
     def test_read_0_9(self):
         # "0.9" response accepted (but not "simple responses" without
