@@ -4,7 +4,7 @@
         tdemo_bytedesign.py
 
 An example adapted from the example-suite
-of PythonCard's turtle graphcis.
+of PythonCard's turtle graphics.
 
 It's based on an article in BYTE magazine
 Problem Solving with Logo: Using Turtle

@@ -54,7 +54,6 @@ class TestUntestedModules(unittest.TestCase):
             import py_compile
             import sndhdr
             import tabnanny
-            import timeit
             try:
                 import tty     # not available on Windows
             except ImportError:

@@ -47,7 +47,7 @@ ecre = re.compile(r'''
 # For use with .match()
 fcre = re.compile(r'[\041-\176]+:$')
 
-# Find a header embeded in a putative header value.  Used to check for
+# Find a header embedded in a putative header value.  Used to check for
 # header injection attack.
 _embeded_header = re.compile(r'\n[^ \t]+:')
 
@@ -314,7 +314,7 @@ class Header:
                                     self._continuation_ws, splitchars)
         for string, charset in self._chunks:
             lines = string.splitlines()
-            formatter.feed(lines[0], charset)
+            formatter.feed(lines[0] if lines else '', charset)
             for line in lines[1:]:
                 formatter.newline()
                 if charset.header_encoding is not None:

@@ -232,6 +232,9 @@
 /* Define to 1 if you have the `fdopendir' function. */
 #undef HAVE_FDOPENDIR
 
+/* Define to 1 if you have the `fexecve' function. */
+#undef HAVE_FEXECVE
+
 /* Define to 1 if you have the `finite' function. */
 #undef HAVE_FINITE
 
@@ -273,6 +276,12 @@
 
 /* Define to 1 if you have the `ftruncate' function. */
 #undef HAVE_FTRUNCATE
+
+/* Define to 1 if you have the `futimens' function. */
+#undef HAVE_FUTIMENS
+
+/* Define to 1 if you have the `futimes' function. */
+#undef HAVE_FUTIMES
 
 /* Define to 1 if you have the `futimesat' function. */
 #undef HAVE_FUTIMESAT
@@ -461,6 +470,9 @@
 /* Define to 1 if you have the <linux/tipc.h> header file. */
 #undef HAVE_LINUX_TIPC_H
 
+/* Define to 1 if you have the `lockf' function. */
+#undef HAVE_LOCKF
+
 /* Define to 1 if you have the `log1p' function. */
 #undef HAVE_LOG1P
 
@@ -472,6 +484,9 @@
 
 /* Define to 1 if you have the `lstat' function. */
 #undef HAVE_LSTAT
+
+/* Define to 1 if you have the `lutimes' function. */
+#undef HAVE_LUTIMES
 
 /* Define this if you have the makedev macro. */
 #undef HAVE_MAKEDEV
@@ -545,6 +560,15 @@
 /* Define to 1 if you have the <poll.h> header file. */
 #undef HAVE_POLL_H
 
+/* Define to 1 if you have the `posix_fadvise' function. */
+#undef HAVE_POSIX_FADVISE
+
+/* Define to 1 if you have the `posix_fallocate' function. */
+#undef HAVE_POSIX_FALLOCATE
+
+/* Define to 1 if you have the `pread' function. */
+#undef HAVE_PREAD
+
 /* Define to 1 if you have the <process.h> header file. */
 #undef HAVE_PROCESS_H
 
@@ -569,11 +593,17 @@
 /* Define to 1 if you have the `putenv' function. */
 #undef HAVE_PUTENV
 
+/* Define to 1 if you have the `pwrite' function. */
+#undef HAVE_PWRITE
+
 /* Define to 1 if you have the `readlink' function. */
 #undef HAVE_READLINK
 
 /* Define to 1 if you have the `readlinkat' function. */
 #undef HAVE_READLINKAT
+
+/* Define to 1 if you have the `readv' function. */
+#undef HAVE_READV
 
 /* Define to 1 if you have the `realpath' function. */
 #undef HAVE_REALPATH
@@ -775,6 +805,9 @@
 /* Define to 1 if you have the `symlinkat' function. */
 #undef HAVE_SYMLINKAT
 
+/* Define to 1 if you have the `sync' function. */
+#undef HAVE_SYNC
+
 /* Define to 1 if you have the `sysconf' function. */
 #undef HAVE_SYSCONF
 
@@ -952,6 +985,9 @@
 /* Define to 1 if you have the `wait4' function. */
 #undef HAVE_WAIT4
 
+/* Define to 1 if you have the `waitid' function. */
+#undef HAVE_WAITID
+
 /* Define to 1 if you have the `waitpid' function. */
 #undef HAVE_WAITPID
 
@@ -970,6 +1006,9 @@
 /* Define if tzset() actually switches the local timezone in a meaningful way.
    */
 #undef HAVE_WORKING_TZSET
+
+/* Define to 1 if you have the `writev' function. */
+#undef HAVE_WRITEV
 
 /* Define if the zlib library has inflateCopy */
 #undef HAVE_ZLIB_COPY

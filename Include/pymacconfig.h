@@ -61,7 +61,7 @@
 #    endif
 
 #    if defined(__LP64__)
-     /* MacOSX 10.4 (the first release to suppport 64-bit code
+     /* MacOSX 10.4 (the first release to support 64-bit code
       * at all) only supports 64-bit in the UNIX layer.
       * Therefore surpress the toolbox-glue in 64-bit mode.
       */

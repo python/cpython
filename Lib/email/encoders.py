@@ -12,7 +12,7 @@ __all__ = [
     ]
 
 
-from base64 import b64encode as _bencode
+from base64 import encodebytes as _bencode
 from quopri import encodestring as _encodestring
 
 
