@@ -11,15 +11,15 @@
    pair: data; tabular
 
 The so-called CSV (Comma Separated Values) format is the most common import and
-export format for spreadsheets and databases.  There is no "CSV standard", so
-the format is operationally defined by the many applications which read and
-write it.  The lack of a standard means that subtle differences often exist in
-the data produced and consumed by different applications.  These differences can
-make it annoying to process CSV files from multiple sources.  Still, while the
-delimiters and quoting characters vary, the overall format is similar enough
-that it is possible to write a single module which can efficiently manipulate
-such data, hiding the details of reading and writing the data from the
-programmer.
+export format for spreadsheets and databases.  CSV format was used for many
+years prior to attempts to describe the format in a standardized way in
+:rfc:`4180`.  The lack of a well-defined standard means that subtle differences
+often exist in the data produced and consumed by different applications.  These
+differences can make it annoying to process CSV files from multiple sources.
+Still, while the delimiters and quoting characters vary, the overall format is
+similar enough that it is possible to write a single module which can
+efficiently manipulate such data, hiding the details of reading and writing the
+data from the programmer.
 
 The :mod:`csv` module implements classes to read and write tabular data in CSV
 format.  It allows programmers to say, "write this data in the format preferred
@@ -418,50 +418,101 @@ Examples
 
 The simplest example of reading a CSV file::
 
+<<<<<<< local
+    import csv
+    with f = open("some.csv", newline=''):
+	reader = csv.reader(f)
+	for row in reader:
+	    print(row)
+=======
    import csv
    with open('some.csv', newline='') as f:
        reader = csv.reader(f)
        for row in reader:
            print(row)
+>>>>>>> other
 
 Reading a file with an alternate format::
 
+<<<<<<< local
+    import csv
+    with f = open("passwd"):
+	reader = csv.reader(f, delimiter=':', quoting=csv.QUOTE_NONE)
+	for row in reader:
+	    print(row)
+=======
    import csv
    with open('passwd') as f:
        reader = csv.reader(f, delimiter=':', quoting=csv.QUOTE_NONE)
        for row in reader:
            print(row)
+>>>>>>> other
 
 The corresponding simplest possible writing example is::
 
+<<<<<<< local
+    import csv
+    with f = open("some.csv", "w"):
+	writer = csv.writer(f)
+	writer.writerows(someiterable)
+=======
    import csv
    with open('some.csv', 'w') as f:
        writer = csv.writer(f)
        writer.writerows(someiterable)
+>>>>>>> other
 
 Since :func:`open` is used to open a CSV file for reading, the file
 will by default be decoded into unicode using the system default
 encoding (see :func:`locale.getpreferredencoding`).  To decode a file
 using a different encoding, use the ``encoding`` argument of open::
 
+<<<<<<< local
+    import csv
+    f = open("some.csv", newline='', encoding='utf-8'):
+	reader = csv.reader(f)
+	for row in reader:
+	    print(row)
+=======
    import csv
    with open('some.csv', newline='', encoding='utf-8') as f:
        reader = csv.reader(f)
        for row in reader:
            print(row)
+>>>>>>> other
 
 The same applies to writing in something other than the system default
 encoding: specify the encoding argument when opening the output file.
 
 Registering a new dialect::
 
+<<<<<<< local
+    import csv
+    csv.register_dialect('unixpwd', delimiter=':', quoting=csv.QUOTE_NONE)
+    with f = open("passwd"):
+        reader = csv.reader(f, 'unixpwd')
+	for row in reader:
+	    pass
+=======
    import csv
    csv.register_dialect('unixpwd', delimiter=':', quoting=csv.QUOTE_NONE)
    with open('passwd') as f:
        reader = csv.reader(f, 'unixpwd')
+>>>>>>> other
 
 A slightly more advanced use of the reader --- catching and reporting errors::
 
+<<<<<<< local
+    import csv, sys
+    filename = "some.csv"
+    with f = open(filename, newline=''):
+	reader = csv.reader(f)
+	try:
+	    for row in reader:
+		print(row)
+	except csv.Error as e:
+	    sys.exit('file {}, line {}: {}'.format(filename, reader.line_num, e))
+=======
    import csv, sys
    filename = 'some.csv'
    with open(filename, newline='') as f:
@@ -471,13 +522,14 @@ A slightly more advanced use of the reader --- catching and reporting errors::
                print(row)
        except csv.Error as e:
            sys.exit('file {}, line {}: {}'.format(filename, reader.line_num, e))
+>>>>>>> other
 
 And while the module doesn't directly support parsing strings, it can easily be
 done::
 
-   import csv
-   for row in csv.reader(['one,two,three']):
-       print(row)
+    import csv
+    for row in csv.reader(['one,two,three']):
+	print(row)
 
 
 .. rubric:: Footnotes
