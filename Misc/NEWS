@@ -43,6 +43,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11459: A ``bufsize`` value of 0 in subprocess.Popen() really creates
+  unbuffered pipes, such that select() works properly on them.
+
 - Issue #5421: Fix misleading error message when one of socket.sendto()'s
   arguments has the wrong type.  Patch by Nikita Vetoshkin.
 
