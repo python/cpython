@@ -59,6 +59,10 @@ corresponding Unix manual entries for more information on calls.");
 #include "osdefs.h"
 #endif
 
+#ifdef HAVE_SYS_UIO_H
+#include <sys/uio.h>
+#endif
+
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif /* HAVE_SYS_TYPES_H */
@@ -102,10 +106,6 @@ corresponding Unix manual entries for more information on calls.");
 #if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__APPLE__)
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
-#endif
-
-#ifdef HAVE_SYS_UIO_H
-#include <sys/uio.h>
 #endif
 #endif
 
@@ -1503,6 +1503,33 @@ static PyStructSequence_Desc statvfs_result_desc = {
     10
 };
 
+#if defined(HAVE_WAITID) && !defined(__APPLE__)
+PyDoc_STRVAR(waitid_result__doc__,
+"waitid_result: Result from waitid.\n\n\
+This object may be accessed either as a tuple of\n\
+  (si_pid, si_uid, si_signo, si_status, si_code),\n\
+or via the attributes si_pid, si_uid, and so on.\n\
+\n\
+See os.waitid for more information.");
+
+static PyStructSequence_Field waitid_result_fields[] = {
+    {"si_pid",  },
+    {"si_uid", },
+    {"si_signo", },
+    {"si_status",  },
+    {"si_code", },
+    {0}
+};
+
+static PyStructSequence_Desc waitid_result_desc = {
+    "waitid_result", /* name */
+    waitid_result__doc__, /* doc */
+    waitid_result_fields,
+    5
+};
+static PyTypeObject WaitidResultType;
+#endif
+
 static int initialized;
 static PyTypeObject StatResultType;
 static PyTypeObject StatVFSResultType;
@@ -2101,6 +2128,21 @@ posix_fsync(PyObject *self, PyObject *fdobj)
     return posix_fildes(fdobj, fsync);
 }
 #endif /* HAVE_FSYNC */
+
+#ifdef HAVE_SYNC
+PyDoc_STRVAR(posix_sync__doc__,
+"sync()\n\n\
+Force write of everything to disk.");
+
+static PyObject *
+posix_sync(PyObject *self, PyObject *noargs)
+{
+    Py_BEGIN_ALLOW_THREADS
+    sync();
+    Py_END_ALLOW_THREADS
+    Py_RETURN_NONE;
+}
+#endif
 
 #ifdef HAVE_FDATASYNC
 
@@ -3488,6 +3530,167 @@ done:
 #endif /* MS_WINDOWS */
 }
 
+#ifdef HAVE_FUTIMES
+PyDoc_STRVAR(posix_futimes__doc__,
+"futimes(fd, (atime, mtime))\n\
+futimes(fd, None)\n\n\
+Set the access and modified time of the file specified by the file\n\
+descriptor fd to the given values. If the second form is used, set the\n\
+access and modified times to the current time.");
+
+static PyObject *
+posix_futimes(PyObject *self, PyObject *args)
+{
+    int res, fd;
+    PyObject* arg;
+    struct timeval buf[2];
+    long ausec, musec;
+
+    if (!PyArg_ParseTuple(args, "iO:futimes", &fd, &arg))
+        return NULL;
+
+    if (arg == Py_None) {
+        /* optional time values not given */
+        Py_BEGIN_ALLOW_THREADS
+        res = futimes(fd, NULL);
+        Py_END_ALLOW_THREADS
+    }
+    else if (!PyTuple_Check(arg) || PyTuple_Size(arg) != 2) {
+        PyErr_SetString(PyExc_TypeError,
+                "futimes() arg 2 must be a tuple (atime, mtime)");
+        return NULL;
+    }
+    else {
+        if (extract_time(PyTuple_GET_ITEM(arg, 0),
+                &(buf[0].tv_sec), &ausec) == -1) {
+            return NULL;
+        }
+        if (extract_time(PyTuple_GET_ITEM(arg, 1),
+                &(buf[1].tv_sec), &musec) == -1) {
+            return NULL;
+        }
+        buf[0].tv_usec = ausec;
+        buf[1].tv_usec = musec;
+        Py_BEGIN_ALLOW_THREADS
+        res = futimes(fd, buf);
+        Py_END_ALLOW_THREADS
+    }
+    if (res < 0)
+        return posix_error();
+    Py_RETURN_NONE;
+}
+#endif
+
+#ifdef HAVE_LUTIMES
+PyDoc_STRVAR(posix_lutimes__doc__,
+"lutimes(path, (atime, mtime))\n\
+lutimes(path, None)\n\n\
+Like utime(), but if path is a symbolic link, it is not dereferenced.");
+
+static PyObject *
+posix_lutimes(PyObject *self, PyObject *args)
+{
+    PyObject *opath, *arg;
+    const char *path;
+    int res;
+    struct timeval buf[2];
+    long ausec, musec;
+
+    if (!PyArg_ParseTuple(args, "O&O:lutimes",
+            PyUnicode_FSConverter, &opath, &arg))
+        return NULL;
+    path = PyBytes_AsString(opath);
+    if (arg == Py_None) {
+        /* optional time values not given */
+        Py_BEGIN_ALLOW_THREADS
+        res = lutimes(path, NULL);
+        Py_END_ALLOW_THREADS
+    }
+    else if (!PyTuple_Check(arg) || PyTuple_Size(arg) != 2) {
+        PyErr_SetString(PyExc_TypeError,
+            "lutimes() arg 2 must be a tuple (atime, mtime)");
+        Py_DECREF(opath);
+        return NULL;
+    }
+    else {
+        if (extract_time(PyTuple_GET_ITEM(arg, 0),
+                &(buf[0].tv_sec), &ausec) == -1) {
+            Py_DECREF(opath);
+            return NULL;
+        }
+        if (extract_time(PyTuple_GET_ITEM(arg, 1),
+                &(buf[1].tv_sec), &musec) == -1) {
+            Py_DECREF(opath);
+            return NULL;
+        }
+        buf[0].tv_usec = ausec;
+        buf[1].tv_usec = musec;
+        Py_BEGIN_ALLOW_THREADS
+        res = lutimes(path, buf);
+        Py_END_ALLOW_THREADS
+    }
+    Py_DECREF(opath);
+    if (res < 0)
+        return posix_error();
+    Py_RETURN_NONE;
+}
+#endif
+
+#ifdef HAVE_FUTIMENS
+PyDoc_STRVAR(posix_futimens__doc__,
+"futimens(fd, (atime_sec, atime_nsec), (mtime_sec, mtime_nsec))\n\
+futimens(fd, None, None)\n\n\
+Updates the timestamps of a file specified by the file descriptor fd, with\n\
+nanosecond precision.\n\
+The second form sets atime and mtime to the current time.\n\
+If *_nsec is specified as UTIME_NOW, the timestamp is updated to the\n\
+current time.\n\
+If *_nsec is specified as UTIME_OMIT, the timestamp is not updated.");
+
+static PyObject *
+posix_futimens(PyObject *self, PyObject *args)
+{
+    int res, fd;
+    PyObject *atime, *mtime;
+    struct timespec buf[2];
+
+    if (!PyArg_ParseTuple(args, "iOO:futimens",
+            &fd, &atime, &mtime))
+        return NULL;
+    if (atime == Py_None && mtime == Py_None) {
+        /* optional time values not given */
+        Py_BEGIN_ALLOW_THREADS
+        res = futimens(fd, NULL);
+        Py_END_ALLOW_THREADS
+    }
+    else if (!PyTuple_Check(atime) || PyTuple_Size(atime) != 2) {
+        PyErr_SetString(PyExc_TypeError,
+            "futimens() arg 2 must be a tuple (atime_sec, atime_nsec)");
+        return NULL;
+    }
+    else if (!PyTuple_Check(mtime) || PyTuple_Size(mtime) != 2) {
+        PyErr_SetString(PyExc_TypeError,
+            "futimens() arg 3 must be a tuple (mtime_sec, mtime_nsec)");
+        return NULL;
+    }
+    else {
+        if (!PyArg_ParseTuple(atime, "ll:futimens",
+                &(buf[0].tv_sec), &(buf[0].tv_nsec))) {
+            return NULL;
+        }
+        if (!PyArg_ParseTuple(mtime, "ll:futimens",
+                &(buf[1].tv_sec), &(buf[1].tv_nsec))) {
+            return NULL;
+        }
+        Py_BEGIN_ALLOW_THREADS
+        res = futimens(fd, buf);
+        Py_END_ALLOW_THREADS
+    }
+    if (res < 0)
+        return posix_error();
+    Py_RETURN_NONE;
+}
+#endif
 
 /* Process operations */
 
@@ -3532,79 +3735,7 @@ int fsconvert_strdup(PyObject *o, char**out)
 }
 #endif
 
-
-#ifdef HAVE_EXECV
-PyDoc_STRVAR(posix_execv__doc__,
-"execv(path, args)\n\n\
-Execute an executable path with arguments, replacing current process.\n\
-\n\
-    path: path of executable file\n\
-    args: tuple or list of strings");
-
-static PyObject *
-posix_execv(PyObject *self, PyObject *args)
-{
-    PyObject *opath;
-    char *path;
-    PyObject *argv;
-    char **argvlist;
-    Py_ssize_t i, argc;
-    PyObject *(*getitem)(PyObject *, Py_ssize_t);
-
-    /* execv has two arguments: (path, argv), where
-       argv is a list or tuple of strings. */
-
-    if (!PyArg_ParseTuple(args, "O&O:execv",
-                          PyUnicode_FSConverter,
-                          &opath, &argv))
-        return NULL;
-    path = PyBytes_AsString(opath);
-    if (PyList_Check(argv)) {
-        argc = PyList_Size(argv);
-        getitem = PyList_GetItem;
-    }
-    else if (PyTuple_Check(argv)) {
-        argc = PyTuple_Size(argv);
-        getitem = PyTuple_GetItem;
-    }
-    else {
-        PyErr_SetString(PyExc_TypeError, "execv() arg 2 must be a tuple or list");
-        Py_DECREF(opath);
-        return NULL;
-    }
-    if (argc < 1) {
-        PyErr_SetString(PyExc_ValueError, "execv() arg 2 must not be empty");
-        Py_DECREF(opath);
-        return NULL;
-    }
-
-    argvlist = PyMem_NEW(char *, argc+1);
-    if (argvlist == NULL) {
-        Py_DECREF(opath);
-        return PyErr_NoMemory();
-    }
-    for (i = 0; i < argc; i++) {
-        if (!fsconvert_strdup((*getitem)(argv, i),
-                              &argvlist[i])) {
-            free_string_array(argvlist, i);
-            PyErr_SetString(PyExc_TypeError,
-                            "execv() arg 2 must contain only strings");
-            Py_DECREF(opath);
-            return NULL;
-
-        }
-    }
-    argvlist[argc] = NULL;
-
-    execv(path, argvlist);
-
-    /* If we get here it's definitely an error */
-
-    free_string_array(argvlist, argc);
-    Py_DECREF(opath);
-    return posix_error();
-}
-
+#if defined(HAVE_EXECV) || defined (HAVE_FEXECVE)
 static char**
 parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
 {
@@ -3686,6 +3817,87 @@ error:
     return NULL;
 }
 
+static char**
+parse_arglist(PyObject* argv, Py_ssize_t *argc)
+{
+    int i;
+    char **argvlist = PyMem_NEW(char *, *argc+1);
+    if (argvlist == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    for (i = 0; i < *argc; i++) {
+        PyObject* item = PySequence_ITEM(argv, i);
+        if (item == NULL)
+            goto fail;
+        if (!fsconvert_strdup(item, &argvlist[i])) {
+            Py_DECREF(item);
+            goto fail;
+        }
+        Py_DECREF(item);
+    }
+    argvlist[*argc] = NULL;
+    return argvlist;
+fail:
+    *argc = i;
+    free_string_array(argvlist, *argc);
+    return NULL;
+}
+#endif
+
+#ifdef HAVE_EXECV
+PyDoc_STRVAR(posix_execv__doc__,
+"execv(path, args)\n\n\
+Execute an executable path with arguments, replacing current process.\n\
+\n\
+    path: path of executable file\n\
+    args: tuple or list of strings");
+
+static PyObject *
+posix_execv(PyObject *self, PyObject *args)
+{
+    PyObject *opath;
+    char *path;
+    PyObject *argv;
+    char **argvlist;
+    Py_ssize_t argc;
+
+    /* execv has two arguments: (path, argv), where
+       argv is a list or tuple of strings. */
+
+    if (!PyArg_ParseTuple(args, "O&O:execv",
+                          PyUnicode_FSConverter,
+                          &opath, &argv))
+        return NULL;
+    path = PyBytes_AsString(opath);
+    if (!PyList_Check(argv) && !PyTuple_Check(argv)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "execv() arg 2 must be a tuple or list");
+        Py_DECREF(opath);
+        return NULL;
+    }
+    argc = PySequence_Size(argv);
+    if (argc < 1) {
+        PyErr_SetString(PyExc_ValueError, "execv() arg 2 must not be empty");
+        Py_DECREF(opath);
+        return NULL;
+    }
+
+    argvlist = parse_arglist(argv, &argc);
+    if (argvlist == NULL) {
+        Py_DECREF(opath);
+        return NULL;
+    }
+
+    execv(path, argvlist);
+
+    /* If we get here it's definitely an error */
+
+    free_string_array(argvlist, argc);
+    Py_DECREF(opath);
+    return posix_error();
+}
+
 PyDoc_STRVAR(posix_execve__doc__,
 "execve(path, args, env)\n\n\
 Execute a path with arguments and environment, replacing current process.\n\
@@ -3702,9 +3914,7 @@ posix_execve(PyObject *self, PyObject *args)
     PyObject *argv, *env;
     char **argvlist;
     char **envlist;
-    Py_ssize_t i, argc, envc;
-    PyObject *(*getitem)(PyObject *, Py_ssize_t);
-    Py_ssize_t lastarg = 0;
+    Py_ssize_t argc, envc;
 
     /* execve has three arguments: (path, argv, env), where
        argv is a list or tuple of strings and env is a dictionary
@@ -3715,40 +3925,22 @@ posix_execve(PyObject *self, PyObject *args)
                           &opath, &argv, &env))
         return NULL;
     path = PyBytes_AsString(opath);
-    if (PyList_Check(argv)) {
-        argc = PyList_Size(argv);
-        getitem = PyList_GetItem;
-    }
-    else if (PyTuple_Check(argv)) {
-        argc = PyTuple_Size(argv);
-        getitem = PyTuple_GetItem;
-    }
-    else {
+    if (!PyList_Check(argv) && !PyTuple_Check(argv)) {
         PyErr_SetString(PyExc_TypeError,
                         "execve() arg 2 must be a tuple or list");
         goto fail_0;
     }
+    argc = PySequence_Size(argv);
     if (!PyMapping_Check(env)) {
         PyErr_SetString(PyExc_TypeError,
                         "execve() arg 3 must be a mapping object");
         goto fail_0;
     }
 
-    argvlist = PyMem_NEW(char *, argc+1);
+    argvlist = parse_arglist(argv, &argc);
     if (argvlist == NULL) {
-        PyErr_NoMemory();
         goto fail_0;
     }
-    for (i = 0; i < argc; i++) {
-        if (!fsconvert_strdup((*getitem)(argv, i),
-                              &argvlist[i]))
-        {
-            lastarg = i;
-            goto fail_1;
-        }
-    }
-    lastarg = argc;
-    argvlist[argc] = NULL;
 
     envlist = parse_envlist(env, &envc);
     if (envlist == NULL)
@@ -3764,13 +3956,69 @@ posix_execve(PyObject *self, PyObject *args)
         PyMem_DEL(envlist[envc]);
     PyMem_DEL(envlist);
   fail_1:
-    free_string_array(argvlist, lastarg);
+    free_string_array(argvlist, argc);
   fail_0:
     Py_DECREF(opath);
     return NULL;
 }
 #endif /* HAVE_EXECV */
 
+#ifdef HAVE_FEXECVE
+PyDoc_STRVAR(posix_fexecve__doc__,
+"fexecve(fd, args, env)\n\n\
+Execute the program specified by a file descriptor with arguments and\n\
+environment, replacing the current process.\n\
+\n\
+    fd: file descriptor of executable\n\
+    args: tuple or list of arguments\n\
+    env: dictionary of strings mapping to strings");
+
+static PyObject *
+posix_fexecve(PyObject *self, PyObject *args)
+{
+    int fd;
+    PyObject *argv, *env;
+    char **argvlist;
+    char **envlist;
+    Py_ssize_t argc, envc;
+
+    if (!PyArg_ParseTuple(args, "iOO:fexecve",
+                          &fd, &argv, &env))
+        return NULL;
+    if (!PyList_Check(argv) && !PyTuple_Check(argv)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "fexecve() arg 2 must be a tuple or list");
+        return NULL;
+    }
+    argc = PySequence_Size(argv);
+    if (!PyMapping_Check(env)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "fexecve() arg 3 must be a mapping object");
+        return NULL;
+    }
+
+    argvlist = parse_arglist(argv, &argc);
+    if (argvlist == NULL)
+        return NULL;
+
+    envlist = parse_envlist(env, &envc);
+    if (envlist == NULL)
+        goto fail;
+
+    fexecve(fd, argvlist, envlist);
+
+    /* If we get here it's definitely an error */
+
+    (void) posix_error();
+
+    while (--envc >= 0)
+        PyMem_DEL(envlist[envc]);
+    PyMem_DEL(envlist);
+  fail:
+    free_string_array(argvlist, argc);
+    return NULL;
+}
+#endif /* HAVE_FEXECVE */
 
 #ifdef HAVE_SPAWNV
 PyDoc_STRVAR(posix_spawnv__doc__,
@@ -4336,6 +4584,7 @@ posix_forkpty(PyObject *self, PyObject *noargs)
     return Py_BuildValue("(Ni)", PyLong_FromPid(pid), master_fd);
 }
 #endif
+
 
 #ifdef HAVE_GETEGID
 PyDoc_STRVAR(posix_getegid__doc__,
@@ -5127,6 +5376,55 @@ posix_wait4(PyObject *self, PyObject *args)
 }
 #endif /* HAVE_WAIT4 */
 
+#if defined(HAVE_WAITID) && !defined(__APPLE__)
+PyDoc_STRVAR(posix_waitid__doc__,
+"waitid(idtype, id, options) -> waitid_result\n\n\
+Wait for the completion of one or more child processes.\n\n\
+idtype can be P_PID, P_PGID or P_ALL.\n\
+id specifies the pid to wait on.\n\
+options is constructed from the ORing of one or more of WEXITED, WSTOPPED\n\
+or WCONTINUED and additionally may be ORed with WNOHANG or WNOWAIT.\n\
+Returns either waitid_result or None if WNOHANG is specified and there are\n\
+no children in a waitable state.");
+
+static PyObject *
+posix_waitid(PyObject *self, PyObject *args)
+{
+    PyObject *result;
+    idtype_t idtype;
+    id_t id;
+    int options, res;
+    siginfo_t si;
+    si.si_pid = 0;
+    if (!PyArg_ParseTuple(args, "i" _Py_PARSE_PID "i:waitid", &idtype, &id, &options))
+        return NULL;
+    Py_BEGIN_ALLOW_THREADS
+    res = waitid(idtype, id, &si, options);
+    Py_END_ALLOW_THREADS
+    if (res == -1)
+        return posix_error();
+
+    if (si.si_pid == 0)
+        Py_RETURN_NONE;
+
+    result = PyStructSequence_New(&WaitidResultType);
+    if (!result)
+        return NULL;
+
+    PyStructSequence_SET_ITEM(result, 0, PyLong_FromPid(si.si_pid));
+    PyStructSequence_SET_ITEM(result, 1, PyLong_FromPid(si.si_uid));
+    PyStructSequence_SET_ITEM(result, 2, PyLong_FromLong((long)(si.si_signo)));
+    PyStructSequence_SET_ITEM(result, 3, PyLong_FromLong((long)(si.si_status)));
+    PyStructSequence_SET_ITEM(result, 4, PyLong_FromLong((long)(si.si_code)));
+    if (PyErr_Occurred()) {
+        Py_DECREF(result);
+        return NULL;
+    }
+
+    return result;
+}
+#endif
+
 #ifdef HAVE_WAITPID
 PyDoc_STRVAR(posix_waitpid__doc__,
 "waitpid(pid, options) -> (pid, status)\n\n\
@@ -5742,6 +6040,35 @@ posix_dup2(PyObject *self, PyObject *args)
     return Py_None;
 }
 
+#ifdef HAVE_LOCKF
+PyDoc_STRVAR(posix_lockf__doc__,
+"lockf(fd, cmd, len)\n\n\
+Apply, test or remove a POSIX lock on an open file descriptor.\n\n\
+fd is an open file descriptor.\n\
+cmd specifies the command to use - one of F_LOCK, F_TLOCK, F_ULOCK or\n\
+F_TEST.\n\
+len specifies the section of the file to lock.");
+
+static PyObject *
+posix_lockf(PyObject *self, PyObject *args)
+{
+    int fd, cmd, res;
+    off_t len;
+    if (!PyArg_ParseTuple(args, "iiO&:lockf",
+            &fd, &cmd, _parse_off_t, &len))
+        return NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+    res = lockf(fd, cmd, len);
+    Py_END_ALLOW_THREADS
+
+    if (res < 0)
+        return posix_error();
+
+    Py_RETURN_NONE;
+}
+#endif
+
 
 PyDoc_STRVAR(posix_lseek__doc__,
 "lseek(fd, pos, how) -> newpos\n\n\
@@ -5831,6 +6158,140 @@ posix_read(PyObject *self, PyObject *args)
     return buffer;
 }
 
+#if (defined(HAVE_SENDFILE) && (defined(__FreeBSD__) || defined(__DragonFly__) \
+    || defined(__APPLE__))) || defined(HAVE_READV) || defined(HAVE_WRITEV)
+static Py_ssize_t
+iov_setup(struct iovec **iov, Py_buffer **buf, PyObject *seq, int cnt, int type)
+{
+    int i, j;
+    Py_ssize_t blen, total = 0;
+
+    *iov = PyMem_New(struct iovec, cnt);
+    if (*iov == NULL) {
+        PyErr_NoMemory();
+        return total;
+    }
+
+    *buf = PyMem_New(Py_buffer, cnt);
+    if (*buf == NULL) {
+        PyMem_Del(*iov);
+        PyErr_NoMemory();
+        return total;
+    }
+
+    for (i = 0; i < cnt; i++) {
+        PyObject *item = PySequence_GetItem(seq, i);
+        if (item == NULL)
+            goto fail;
+        if (PyObject_GetBuffer(item, &(*buf)[i], type) == -1) {
+            Py_DECREF(item);
+            goto fail;
+        }
+        Py_DECREF(item);
+        (*iov)[i].iov_base = (*buf)[i].buf;
+        blen = (*buf)[i].len;
+        (*iov)[i].iov_len = blen;
+        total += blen;
+    }
+    return total;
+
+fail:
+    PyMem_Del(*iov);
+    for (j = 0; j < i; j++) {
+        PyBuffer_Release(&(*buf)[j]);
+    }
+    PyMem_Del(*buf);
+    return 0;
+}
+
+static void
+iov_cleanup(struct iovec *iov, Py_buffer *buf, int cnt)
+{
+    int i;
+    PyMem_Del(iov);
+    for (i = 0; i < cnt; i++) {
+        PyBuffer_Release(&buf[i]);
+    }
+    PyMem_Del(buf);
+}
+#endif
+
+#ifdef HAVE_READV
+PyDoc_STRVAR(posix_readv__doc__,
+"readv(fd, buffers) -> bytesread\n\n\
+Read from a file descriptor into a number of writable buffers. buffers\n\
+is an arbitrary sequence of writable buffers.\n\
+Returns the total number of bytes read.");
+
+static PyObject *
+posix_readv(PyObject *self, PyObject *args)
+{
+    int fd, cnt;
+    Py_ssize_t n;
+    PyObject *seq;
+    struct iovec *iov;
+    Py_buffer *buf;
+
+    if (!PyArg_ParseTuple(args, "iO:readv", &fd, &seq))
+        return NULL;
+    if (!PySequence_Check(seq)) {
+        PyErr_SetString(PyExc_TypeError,
+            "readv() arg 2 must be a sequence");
+        return NULL;
+    }
+    cnt = PySequence_Size(seq);
+
+    if (!iov_setup(&iov, &buf, seq, cnt, PyBUF_WRITABLE))
+        return NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+    n = readv(fd, iov, cnt);
+    Py_END_ALLOW_THREADS
+
+    iov_cleanup(iov, buf, cnt);
+    return PyLong_FromSsize_t(n);
+}
+#endif
+
+#ifdef HAVE_PREAD
+PyDoc_STRVAR(posix_pread__doc__,
+"pread(fd, buffersize, offset) -> string\n\n\
+Read from a file descriptor, fd, at a position of offset. It will read up\n\
+to buffersize number of bytes. The file offset remains unchanged.");
+
+static PyObject *
+posix_pread(PyObject *self, PyObject *args)
+{
+    int fd, size;
+    off_t offset;
+    Py_ssize_t n;
+    PyObject *buffer;
+    if (!PyArg_ParseTuple(args, "iiO&:pread", &fd, &size, _parse_off_t, &offset))
+        return NULL;
+
+    if (size < 0) {
+        errno = EINVAL;
+        return posix_error();
+    }
+    buffer = PyBytes_FromStringAndSize((char *)NULL, size);
+    if (buffer == NULL)
+        return NULL;
+    if (!_PyVerify_fd(fd)) {
+        Py_DECREF(buffer);
+        return posix_error();
+    }
+    Py_BEGIN_ALLOW_THREADS
+    n = pread(fd, PyBytes_AS_STRING(buffer), size, offset);
+    Py_END_ALLOW_THREADS
+    if (n < 0) {
+        Py_DECREF(buffer);
+        return posix_error();
+    }
+    if (n != size)
+        _PyBytes_Resize(&buffer, n);
+    return buffer;
+}
+#endif
 
 PyDoc_STRVAR(posix_write__doc__,
 "write(fd, string) -> byteswritten\n\n\
@@ -5866,57 +6327,6 @@ posix_write(PyObject *self, PyObject *args)
 }
 
 #ifdef HAVE_SENDFILE
-#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__APPLE__)
-static Py_ssize_t
-iov_setup(struct iovec **iov, Py_buffer **buf, PyObject *seq, int cnt, int type)
-{
-    int i, j;
-    Py_ssize_t blen, total = 0;
-
-    *iov = PyMem_New(struct iovec, cnt);
-    if (*iov == NULL) {
-        PyErr_NoMemory();
-        return total;
-    }
-
-    *buf = PyMem_New(Py_buffer, cnt);
-    if (*buf == NULL) {
-        PyMem_Del(*iov);
-        PyErr_NoMemory();
-        return total;
-    }
-
-    for (i = 0; i < cnt; i++) {
-        if (PyObject_GetBuffer(PySequence_GetItem(seq, i),
-                               &(*buf)[i], type) == -1) {
-            PyMem_Del(*iov);
-            for (j = 0; j < i; j++) {
-                PyBuffer_Release(&(*buf)[j]);
-            }
-            PyMem_Del(*buf);
-            total = 0;
-            return total;
-        }
-        (*iov)[i].iov_base = (*buf)[i].buf;
-        blen = (*buf)[i].len;
-        (*iov)[i].iov_len = blen;
-        total += blen;
-    }
-    return total;
-}
-
-static void
-iov_cleanup(struct iovec *iov, Py_buffer *buf, int cnt)
-{
-    int i;
-    PyMem_Del(iov);
-    for (i = 0; i < cnt; i++) {
-        PyBuffer_Release(&buf[i]);
-    }
-    PyMem_Del(buf);
-}
-#endif
-
 PyDoc_STRVAR(posix_sendfile__doc__,
 "sendfile(out, in, offset, nbytes) -> byteswritten\n\
 sendfile(out, in, offset, nbytes, headers=None, trailers=None, flags=0)\n\
@@ -6150,6 +6560,73 @@ posix_pipe(PyObject *self, PyObject *noargs)
 }
 #endif  /* HAVE_PIPE */
 
+#ifdef HAVE_WRITEV
+PyDoc_STRVAR(posix_writev__doc__,
+"writev(fd, buffers) -> byteswritten\n\n\
+Write the contents of buffers to a file descriptor, where buffers is an\n\
+arbitrary sequence of buffers.\n\
+Returns the total bytes written.");
+
+static PyObject *
+posix_writev(PyObject *self, PyObject *args)
+{
+    int fd, cnt;
+    Py_ssize_t res;
+    PyObject *seq;
+    struct iovec *iov;
+    Py_buffer *buf;
+    if (!PyArg_ParseTuple(args, "iO:writev", &fd, &seq))
+        return NULL;
+    if (!PySequence_Check(seq)) {
+        PyErr_SetString(PyExc_TypeError,
+            "writev() arg 2 must be a sequence");
+        return NULL;
+    }
+    cnt = PySequence_Size(seq);
+
+    if (!iov_setup(&iov, &buf, seq, cnt, PyBUF_SIMPLE)) {
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    res = writev(fd, iov, cnt);
+    Py_END_ALLOW_THREADS
+
+    iov_cleanup(iov, buf, cnt);
+    return PyLong_FromSsize_t(res);
+}
+#endif
+
+#ifdef HAVE_PWRITE
+PyDoc_STRVAR(posix_pwrite__doc__,
+"pwrite(fd, string, offset) -> byteswritten\n\n\
+Write string to a file descriptor, fd, from offset, leaving the file\n\
+offset unchanged.");
+
+static PyObject *
+posix_pwrite(PyObject *self, PyObject *args)
+{
+    Py_buffer pbuf;
+    int fd;
+    off_t offset;
+    Py_ssize_t size;
+
+    if (!PyArg_ParseTuple(args, "iy*O&:pwrite", &fd, &pbuf, _parse_off_t, &offset))
+        return NULL;
+
+    if (!_PyVerify_fd(fd)) {
+        PyBuffer_Release(&pbuf);
+        return posix_error();
+    }
+    Py_BEGIN_ALLOW_THREADS
+    size = pwrite(fd, pbuf.buf, (size_t)pbuf.len, offset);
+    Py_END_ALLOW_THREADS
+    PyBuffer_Release(&pbuf);
+    if (size < 0)
+        return posix_error();
+    return PyLong_FromSsize_t(size);
+}
+#endif
 
 #ifdef HAVE_MKFIFO
 PyDoc_STRVAR(posix_mkfifo__doc__,
@@ -6266,18 +6743,8 @@ posix_ftruncate(PyObject *self, PyObject *args)
     int fd;
     off_t length;
     int res;
-    PyObject *lenobj;
 
-    if (!PyArg_ParseTuple(args, "iO:ftruncate", &fd, &lenobj))
-        return NULL;
-
-#if !defined(HAVE_LARGEFILE_SUPPORT)
-    length = PyLong_AsLong(lenobj);
-#else
-    length = PyLong_Check(lenobj) ?
-        PyLong_AsLongLong(lenobj) : PyLong_AsLong(lenobj);
-#endif
-    if (PyErr_Occurred())
+    if (!PyArg_ParseTuple(args, "iO&:ftruncate", &fd, _parse_off_t, &length))
         return NULL;
 
     Py_BEGIN_ALLOW_THREADS
@@ -6287,6 +6754,93 @@ posix_ftruncate(PyObject *self, PyObject *args)
         return posix_error();
     Py_INCREF(Py_None);
     return Py_None;
+}
+#endif
+
+#ifdef HAVE_TRUNCATE
+PyDoc_STRVAR(posix_truncate__doc__,
+"truncate(path, length)\n\n\
+Truncate the file given by path to length bytes.");
+
+static PyObject *
+posix_truncate(PyObject *self, PyObject *args)
+{
+    PyObject *opath;
+    const char *path;
+    off_t length;
+    int res;
+
+    if (!PyArg_ParseTuple(args, "O&O&:truncate",
+            PyUnicode_FSConverter, &opath, _parse_off_t, &length))
+        return NULL;
+    path = PyBytes_AsString(opath);
+
+    Py_BEGIN_ALLOW_THREADS
+    res = truncate(path, length);
+    Py_END_ALLOW_THREADS
+    Py_DECREF(opath);
+    if (res < 0)
+        return posix_error();
+    Py_RETURN_NONE;
+}
+#endif
+
+#ifdef HAVE_POSIX_FALLOCATE
+PyDoc_STRVAR(posix_posix_fallocate__doc__,
+"posix_fallocate(fd, offset, len)\n\n\
+Ensures that enough disk space is allocated for the file specified by fd\n\
+starting from offset and continuing for len bytes.");
+
+static PyObject *
+posix_posix_fallocate(PyObject *self, PyObject *args)
+{
+    off_t len, offset;
+    int res, fd;
+
+    if (!PyArg_ParseTuple(args, "iO&O&:posix_fallocate",
+            &fd, _parse_off_t, &offset, _parse_off_t, &len))
+        return NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+    res = posix_fallocate(fd, offset, len);
+    Py_END_ALLOW_THREADS
+    if (res != 0) {
+        errno = res;
+        return posix_error();
+    }
+    Py_RETURN_NONE;
+}
+#endif
+
+#ifdef HAVE_POSIX_FADVISE
+PyDoc_STRVAR(posix_posix_fadvise__doc__,
+"posix_fadvise(fd, offset, len, advice)\n\n\
+Announces an intention to access data in a specific pattern thus allowing\n\
+the kernel to make optimizations.\n\
+The advice applies to the region of the file specified by fd starting at\n\
+offset and continuing for len bytes.\n\
+advice is one of POSIX_FADV_NORMAL, POSIX_FADV_SEQUENTIAL,\n\
+POSIX_FADV_RANDOM, POSIX_FADV_NOREUSE, POSIX_FADV_WILLNEED or\n\
+POSIX_FADV_DONTNEED.");
+
+static PyObject *
+posix_posix_fadvise(PyObject *self, PyObject *args)
+{
+    off_t len, offset;
+    int res, fd, advice;
+
+    if (!PyArg_ParseTuple(args, "iO&O&i:posix_fadvise",
+            &fd, _parse_off_t, &offset, _parse_off_t, &len, &advice))
+        return NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+    res = posix_fadvise(fd, offset, len, advice);
+    Py_END_ALLOW_THREADS
+    if (res != 0) {
+        errno = res;
+        return posix_error();
+    }
+    Py_RETURN_NONE;
 }
 #endif
 
@@ -8725,6 +9279,15 @@ static PyMethodDef posix_methods[] = {
     {"unlink",          posix_unlink, METH_VARARGS, posix_unlink__doc__},
     {"remove",          posix_unlink, METH_VARARGS, posix_remove__doc__},
     {"utime",           posix_utime, METH_VARARGS, posix_utime__doc__},
+#ifdef HAVE_FUTIMES
+    {"futimes",         posix_futimes, METH_VARARGS, posix_futimes__doc__},
+#endif
+#ifdef HAVE_LUTIMES
+    {"lutimes",         posix_lutimes, METH_VARARGS, posix_lutimes__doc__},
+#endif
+#ifdef HAVE_FUTIMENS
+    {"futimens",        posix_futimens, METH_VARARGS, posix_futimens__doc__},
+#endif
 #ifdef HAVE_TIMES
     {"times",           posix_times, METH_NOARGS, posix_times__doc__},
 #endif /* HAVE_TIMES */
@@ -8733,6 +9296,9 @@ static PyMethodDef posix_methods[] = {
     {"execv",           posix_execv, METH_VARARGS, posix_execv__doc__},
     {"execve",          posix_execve, METH_VARARGS, posix_execve__doc__},
 #endif /* HAVE_EXECV */
+#ifdef HAVE_FEXECVE
+    {"fexecve",          posix_fexecve, METH_VARARGS, posix_fexecve__doc__},
+#endif
 #ifdef HAVE_SPAWNV
     {"spawnv",          posix_spawnv, METH_VARARGS, posix_spawnv__doc__},
     {"spawnve",         posix_spawnve, METH_VARARGS, posix_spawnve__doc__},
@@ -8831,6 +9397,9 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_WAIT4
     {"wait4",           posix_wait4, METH_VARARGS, posix_wait4__doc__},
 #endif /* HAVE_WAIT4 */
+#if defined(HAVE_WAITID) && !defined(__APPLE__)
+    {"waitid",          posix_waitid, METH_VARARGS, posix_waitid__doc__},
+#endif
 #if defined(HAVE_WAITPID) || defined(HAVE_CWAIT)
     {"waitpid",         posix_waitpid, METH_VARARGS, posix_waitpid__doc__},
 #endif /* HAVE_WAITPID */
@@ -8855,9 +9424,24 @@ static PyMethodDef posix_methods[] = {
     {"device_encoding", device_encoding, METH_VARARGS, device_encoding__doc__},
     {"dup",             posix_dup, METH_VARARGS, posix_dup__doc__},
     {"dup2",            posix_dup2, METH_VARARGS, posix_dup2__doc__},
+#ifdef HAVE_LOCKF
+    {"lockf",           posix_lockf, METH_VARARGS, posix_lockf__doc__},
+#endif
     {"lseek",           posix_lseek, METH_VARARGS, posix_lseek__doc__},
     {"read",            posix_read, METH_VARARGS, posix_read__doc__},
+#ifdef HAVE_READV
+    {"readv",           posix_readv, METH_VARARGS, posix_readv__doc__},
+#endif
+#ifdef HAVE_PREAD
+    {"pread",           posix_pread, METH_VARARGS, posix_pread__doc__},
+#endif
     {"write",           posix_write, METH_VARARGS, posix_write__doc__},
+#ifdef HAVE_WRITEV
+    {"writev",          posix_writev, METH_VARARGS, posix_writev__doc__},
+#endif
+#ifdef HAVE_PWRITE
+    {"pwrite",          posix_pwrite, METH_VARARGS, posix_pwrite__doc__},
+#endif
 #ifdef HAVE_SENDFILE
     {"sendfile",        (PyCFunction)posix_sendfile, METH_VARARGS | METH_KEYWORDS,
                             posix_sendfile__doc__},
@@ -8881,6 +9465,15 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_FTRUNCATE
     {"ftruncate",       posix_ftruncate, METH_VARARGS, posix_ftruncate__doc__},
 #endif
+#ifdef HAVE_TRUNCATE
+    {"truncate",        posix_truncate, METH_VARARGS, posix_truncate__doc__},
+#endif
+#ifdef HAVE_POSIX_FALLOCATE
+    {"posix_fallocate", posix_posix_fallocate, METH_VARARGS, posix_posix_fallocate__doc__},
+#endif
+#ifdef HAVE_POSIX_FADVISE
+    {"posix_fadvise",   posix_posix_fadvise, METH_VARARGS, posix_posix_fadvise__doc__},
+#endif
 #ifdef HAVE_PUTENV
     {"putenv",          posix_putenv, METH_VARARGS, posix_putenv__doc__},
 #endif
@@ -8893,6 +9486,9 @@ static PyMethodDef posix_methods[] = {
 #endif
 #ifdef HAVE_FSYNC
     {"fsync",       posix_fsync, METH_O, posix_fsync__doc__},
+#endif
+#ifdef HAVE_SYNC
+    {"sync",        posix_sync, METH_NOARGS, posix_sync__doc__},
 #endif
 #ifdef HAVE_FDATASYNC
     {"fdatasync",   posix_fdatasync,  METH_O, posix_fdatasync__doc__},
@@ -9342,6 +9938,76 @@ all_ins(PyObject *d)
     if (ins(d, "SF_SYNC", (long)SF_SYNC)) return -1;
 #endif
 
+    /* constants for posix_fadvise */
+#ifdef POSIX_FADV_NORMAL
+    if (ins(d, "POSIX_FADV_NORMAL", (long)POSIX_FADV_NORMAL)) return -1;
+#endif
+#ifdef POSIX_FADV_SEQUENTIAL
+    if (ins(d, "POSIX_FADV_SEQUENTIAL", (long)POSIX_FADV_SEQUENTIAL)) return -1;
+#endif
+#ifdef POSIX_FADV_RANDOM
+    if (ins(d, "POSIX_FADV_RANDOM", (long)POSIX_FADV_RANDOM)) return -1;
+#endif
+#ifdef POSIX_FADV_NOREUSE
+    if (ins(d, "POSIX_FADV_NOREUSE", (long)POSIX_FADV_NOREUSE)) return -1;
+#endif
+#ifdef POSIX_FADV_WILLNEED
+    if (ins(d, "POSIX_FADV_WILLNEED", (long)POSIX_FADV_WILLNEED)) return -1;
+#endif
+#ifdef POSIX_FADV_DONTNEED
+    if (ins(d, "POSIX_FADV_DONTNEED", (long)POSIX_FADV_DONTNEED)) return -1;
+#endif
+
+    /* constants for waitid */
+#if defined(HAVE_SYS_WAIT_H) && defined(HAVE_WAITID)
+    if (ins(d, "P_PID", (long)P_PID)) return -1;
+    if (ins(d, "P_PGID", (long)P_PGID)) return -1;
+    if (ins(d, "P_ALL", (long)P_ALL)) return -1;
+#endif
+#ifdef WEXITED
+    if (ins(d, "WEXITED", (long)WEXITED)) return -1;
+#endif
+#ifdef WNOWAIT
+    if (ins(d, "WNOWAIT", (long)WNOWAIT)) return -1;
+#endif
+#ifdef WSTOPPED
+    if (ins(d, "WSTOPPED", (long)WSTOPPED)) return -1;
+#endif
+#ifdef CLD_EXITED
+    if (ins(d, "CLD_EXITED", (long)CLD_EXITED)) return -1;
+#endif
+#ifdef CLD_DUMPED
+    if (ins(d, "CLD_DUMPED", (long)CLD_DUMPED)) return -1;
+#endif
+#ifdef CLD_TRAPPED
+    if (ins(d, "CLD_TRAPPED", (long)CLD_TRAPPED)) return -1;
+#endif
+#ifdef CLD_CONTINUED
+    if (ins(d, "CLD_CONTINUED", (long)CLD_CONTINUED)) return -1;
+#endif
+
+    /* constants for lockf */
+#ifdef F_LOCK
+    if (ins(d, "F_LOCK", (long)F_LOCK)) return -1;
+#endif
+#ifdef F_TLOCK
+    if (ins(d, "F_TLOCK", (long)F_TLOCK)) return -1;
+#endif
+#ifdef F_ULOCK
+    if (ins(d, "F_ULOCK", (long)F_ULOCK)) return -1;
+#endif
+#ifdef F_TEST
+    if (ins(d, "F_TEST", (long)F_TEST)) return -1;
+#endif
+
+    /* constants for futimens */
+#ifdef UTIME_NOW
+    if (ins(d, "UTIME_NOW", (long)UTIME_NOW)) return -1;
+#endif
+#ifdef UTIME_OMIT
+    if (ins(d, "UTIME_OMIT", (long)UTIME_OMIT)) return -1;
+#endif
+
 #ifdef HAVE_SPAWNV
 #if defined(PYOS_OS2) && defined(PYCC_GCC)
     if (ins(d, "P_WAIT", (long)P_WAIT)) return -1;
@@ -9441,6 +10107,11 @@ INITFUNC(void)
 #endif
 
     if (!initialized) {
+#if defined(HAVE_WAITID) && !defined(__APPLE__)
+        waitid_result_desc.name = MODNAME ".waitid_result";
+        PyStructSequence_InitType(&WaitidResultType, &waitid_result_desc);
+#endif
+
         stat_result_desc.name = MODNAME ".stat_result";
         stat_result_desc.fields[7].name = PyStructSequence_UnnamedField;
         stat_result_desc.fields[8].name = PyStructSequence_UnnamedField;
@@ -9461,6 +10132,10 @@ INITFUNC(void)
 #  endif
 #endif
     }
+#if defined(HAVE_WAITID) && !defined(__APPLE__)
+    Py_INCREF((PyObject*) &WaitidResultType);
+    PyModule_AddObject(m, "waitid_result", (PyObject*) &WaitidResultType);
+#endif
     Py_INCREF((PyObject*) &StatResultType);
     PyModule_AddObject(m, "stat_result", (PyObject*) &StatResultType);
     Py_INCREF((PyObject*) &StatVFSResultType);

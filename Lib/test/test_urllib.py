@@ -91,7 +91,7 @@ class urlopen_FileTests(unittest.TestCase):
                          "did not return the expected text")
 
     def test_close(self):
-        # Test close() by calling it hear and then having it be called again
+        # Test close() by calling it here and then having it be called again
         # by the tearDown() method for the test
         self.returned_obj.close()
 
@@ -173,6 +173,11 @@ class urlopen_HttpTests(unittest.TestCase):
             self.assertEqual(fp.getcode(), 200)
         finally:
             self.unfakehttp()
+
+    def test_willclose(self):
+        self.fakehttp(b"HTTP/1.1 200 OK\r\n\r\nHello!")
+        resp = urlopen("http://www.python.org")
+        self.assertTrue(resp.fp.will_close)
 
     def test_read_0_9(self):
         # "0.9" response accepted (but not "simple responses" without
@@ -1021,7 +1026,7 @@ class URLopener_Tests(unittest.TestCase):
 
 # Just commented them out.
 # Can't really tell why keep failing in windows and sparc.
-# Everywhere else they work ok, but on those machines, someteimes
+# Everywhere else they work ok, but on those machines, sometimes
 # fail in one of the tests, sometimes in other. I have a linux, and
 # the tests go ok.
 # If anybody has one of the problematic enviroments, please help!

@@ -52,14 +52,13 @@ class FInfo:
 
 def getfileinfo(name):
     finfo = FInfo()
-    fp = io.open(name, 'rb')
-    # Quick check for textfile
-    data = fp.read(512)
-    if 0 not in data:
-        finfo.Type = 'TEXT'
-    fp.seek(0, 2)
-    dsize = fp.tell()
-    fp.close()
+    with io.open(name, 'rb') as fp:
+        # Quick check for textfile
+        data = fp.read(512)
+        if 0 not in data:
+            finfo.Type = 'TEXT'
+        fp.seek(0, 2)
+        dsize = fp.tell()
     dir, file = os.path.split(name)
     file = file.replace(':', '-', 1)
     return file, finfo, dsize, 0
@@ -140,19 +139,26 @@ class _Rlecoderengine:
 class BinHex:
     def __init__(self, name_finfo_dlen_rlen, ofp):
         name, finfo, dlen, rlen = name_finfo_dlen_rlen
+        close_on_error = False
         if isinstance(ofp, str):
             ofname = ofp
             ofp = io.open(ofname, 'wb')
-        ofp.write(b'(This file must be converted with BinHex 4.0)\r\r:')
-        hqxer = _Hqxcoderengine(ofp)
-        self.ofp = _Rlecoderengine(hqxer)
-        self.crc = 0
-        if finfo is None:
-            finfo = FInfo()
-        self.dlen = dlen
-        self.rlen = rlen
-        self._writeinfo(name, finfo)
-        self.state = _DID_HEADER
+            close_on_error = True
+        try:
+            ofp.write(b'(This file must be converted with BinHex 4.0)\r\r:')
+            hqxer = _Hqxcoderengine(ofp)
+            self.ofp = _Rlecoderengine(hqxer)
+            self.crc = 0
+            if finfo is None:
+                finfo = FInfo()
+            self.dlen = dlen
+            self.rlen = rlen
+            self._writeinfo(name, finfo)
+            self.state = _DID_HEADER
+        except:
+            if close_on_error:
+                ofp.close()
+            raise
 
     def _writeinfo(self, name, finfo):
         nl = len(name)

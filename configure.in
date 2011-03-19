@@ -2496,19 +2496,21 @@ AC_MSG_RESULT(MACHDEP_OBJS)
 # checks for library functions
 AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  clock confstr ctermid execv faccessat fchmod fchmodat fchown fchownat \
- fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
+ fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
+ futimens futimes \
  gai_strerror getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getspnam getspent getsid getwd \
- initgroups kill killpg lchmod lchown linkat lstat mbrtowc mkdirat mkfifo \
+ initgroups kill killpg lchmod lchown lockf linkat lstat lutimes mbrtowc mkdirat mkfifo \
  mkfifoat mknod mknodat mktime mremap nice openat pathconf pause plock poll \
- pthread_init putenv readlink readlinkat realpath renameat \
+ posix_fallocate posix_fadvise pread \
+ pthread_init putenv pwrite readlink readlinkat readv realpath renameat \
  select sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
  setgid sethostname \
  setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setpriority setuid setvbuf \
- sigaction siginterrupt sigrelse snprintf strftime strlcpy symlinkat \
+ sigaction siginterrupt sigrelse snprintf strftime strlcpy symlinkat sync \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
- truncate uname unlinkat unsetenv utimensat utimes waitpid wait3 wait4 \
- wcscoll wcsftime wcsxfrm _getpty)
+ truncate uname unlinkat unsetenv utimensat utimes waitid waitpid wait3 wait4 \
+ wcscoll wcsftime wcsxfrm writev _getpty)
 
 # For some functions, having a definition is not sufficient, since
 # we want to take their address.

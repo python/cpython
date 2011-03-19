@@ -14,3 +14,7 @@ note if the cause is system or environment dependent and what the variables are.
 Once the crash is fixed, the test case should be moved into an appropriate test
 (even if it was originally from the test suite).  This ensures the regression
 doesn't happen again.  And if it does, it should be easier to track down.
+
+Also see Lib/test_crashers.py which exercises the crashers in this directory.
+In particular, make sure to add any new infinite loop crashers to the black
+list so it doesn't try to run them.

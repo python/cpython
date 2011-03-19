@@ -776,8 +776,7 @@ CFLAGS
 LDFLAGS
 LIBS
 CPPFLAGS
-CPP
-CPPFLAGS'
+CPP'
 
 
 # Initialize some variables set by options.
@@ -9251,19 +9250,21 @@ $as_echo "MACHDEP_OBJS" >&6; }
 # checks for library functions
 for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  clock confstr ctermid execv faccessat fchmod fchmodat fchown fchownat \
- fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
+ fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
+ futimens futimes \
  gai_strerror getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getspnam getspent getsid getwd \
- initgroups kill killpg lchmod lchown linkat lstat mbrtowc mkdirat mkfifo \
+ initgroups kill killpg lchmod lchown lockf linkat lstat lutimes mbrtowc mkdirat mkfifo \
  mkfifoat mknod mknodat mktime mremap nice openat pathconf pause plock poll \
- pthread_init putenv readlink readlinkat realpath renameat \
+ posix_fallocate posix_fadvise pread \
+ pthread_init putenv pwrite readlink readlinkat readv realpath renameat \
  select sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
  setgid sethostname \
  setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setpriority setuid setvbuf \
- sigaction siginterrupt sigrelse snprintf strftime strlcpy symlinkat \
+ sigaction siginterrupt sigrelse snprintf strftime strlcpy symlinkat sync \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
- truncate uname unlinkat unsetenv utimensat utimes waitpid wait3 wait4 \
- wcscoll wcsftime wcsxfrm _getpty
+ truncate uname unlinkat unsetenv utimensat utimes waitid waitpid wait3 wait4 \
+ wcscoll wcsftime wcsxfrm writev _getpty
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"

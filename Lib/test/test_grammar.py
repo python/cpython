@@ -350,7 +350,7 @@ class GrammarTests(unittest.TestCase):
         ### simple_stmt: small_stmt (';' small_stmt)* [';']
         x = 1; pass; del x
         def foo():
-            # verify statments that end with semi-colons
+            # verify statements that end with semi-colons
             x = 1; pass; del x;
         foo()
 

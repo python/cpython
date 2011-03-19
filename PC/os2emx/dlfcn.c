@@ -188,7 +188,7 @@ inv_handle:
     return NULL;
 }
 
-/* free dynamicaly-linked library */
+/* free dynamically-linked library */
 int dlclose(void *handle)
 {
     int rc;

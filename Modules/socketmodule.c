@@ -2242,7 +2242,7 @@ will allow before refusing new connections.");
  * This is the guts of the recv() and recv_into() methods, which reads into a
  * char buffer.  If you have any inc/dec ref to do to the objects that contain
  * the buffer, do it in the caller.  This function returns the number of bytes
- * succesfully read.  If there was an error, it returns -1.  Note that it is
+ * successfully read.  If there was an error, it returns -1.  Note that it is
  * also possible that we return a number of bytes smaller than the request
  * bytes.
  */
@@ -2446,7 +2446,7 @@ See recv() for documentation about the flags.");
  * This is the guts of the recvfrom() and recvfrom_into() methods, which reads
  * into a char buffer.  If you have any inc/def ref to do to the objects that
  * contain the buffer, do it in the caller.  This function returns the number
- * of bytes succesfully read.  If there was an error, it returns -1.  Note
+ * of bytes successfully read.  If there was an error, it returns -1.  Note
  * that it is also possible that we return a number of bytes smaller than the
  * request bytes.
  *
@@ -2541,9 +2541,9 @@ sock_recvfrom(PySocketSockObject *s, PyObject *args)
 
     if (outlen != recvlen) {
         /* We did not read as many bytes as we anticipated, resize the
-           string if possible and be succesful. */
+           string if possible and be successful. */
         if (_PyBytes_Resize(&buf, outlen) < 0)
-            /* Oopsy, not so succesful after all. */
+            /* Oopsy, not so successful after all. */
             goto finally;
     }
 
@@ -2747,17 +2747,28 @@ sock_sendto(PySocketSockObject *s, PyObject *args)
     Py_buffer pbuf;
     PyObject *addro;
     char *buf;
-    Py_ssize_t len;
+    Py_ssize_t len, arglen;
     sock_addr_t addrbuf;
     int addrlen, n = -1, flags, timeout;
 
     flags = 0;
-    if (!PyArg_ParseTuple(args, "y*O:sendto", &pbuf, &addro)) {
-        PyErr_Clear();
-        if (!PyArg_ParseTuple(args, "y*iO:sendto",
-                              &pbuf, &flags, &addro))
-            return NULL;
+    arglen = PyTuple_Size(args);
+    switch (arglen) {
+        case 2:
+            PyArg_ParseTuple(args, "y*O:sendto", &pbuf, &addro);
+            break;
+        case 3:
+            PyArg_ParseTuple(args, "y*iO:sendto",
+                             &pbuf, &flags, &addro);
+            break;
+        default:
+            PyErr_Format(PyExc_TypeError,
+                         "sendto() takes 2 or 3 arguments (%d given)",
+                         arglen);
     }
+    if (PyErr_Occurred())
+        return NULL;
+
     buf = pbuf.buf;
     len = pbuf.len;
 
@@ -4372,7 +4383,7 @@ os_init(void)
 
     return 0;  /* Failure */
 #else
-    /* No need to initialise sockets with GCC/EMX */
+    /* No need to initialize sockets with GCC/EMX */
     return 1; /* Success */
 #endif
 }
@@ -4406,7 +4417,7 @@ PySocketModule_APIObject PySocketModuleAPI =
    "socket.py" which implements some additional functionality.
    The import of "_socket" may fail with an ImportError exception if
    os-specific initialization fails.  On Windows, this does WINSOCK
-   initialization.  When WINSOCK is initialized succesfully, a call to
+   initialization.  When WINSOCK is initialized successfully, a call to
    WSACleanup() is scheduled to be made at exit time.
 */
 
