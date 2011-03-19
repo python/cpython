@@ -18,7 +18,6 @@ Currently, the HOWTOs are:
    cporting.rst
    curses.rst
    descriptor.rst
-   doanddont.rst
    functional.rst
    logging.rst
    logging-cookbook.rst
