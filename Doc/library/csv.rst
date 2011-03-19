@@ -477,7 +477,7 @@ done::
 
     import csv
     for row in csv.reader(['one,two,three']):
-	print(row)
+        print(row)
 
 
 .. rubric:: Footnotes
