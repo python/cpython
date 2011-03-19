@@ -43,6 +43,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10042: Fixed the total_ordering decorator to handle cross-type
+  comparisons that could lead to infinite recursion.
+
 - Issue #10979: unittest stdout buffering now works with class and module
   setup and teardown.
 
