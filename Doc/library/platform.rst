@@ -205,7 +205,7 @@ Windows Platform
 Win95/98 specific
 ^^^^^^^^^^^^^^^^^
 
-.. function:: popen(cmd, mode='r', bufsize=None)
+.. function:: popen(cmd, mode='r', bufsize=-1)
 
    Portable :func:`popen` interface.  Find a working popen implementation
    preferring :func:`win32pipe.popen`.  On Windows NT, :func:`win32pipe.popen`

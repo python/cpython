@@ -653,8 +653,6 @@ class Popen(object):
             if errread is not None:
                 errread = msvcrt.open_osfhandle(errread.Detach(), 0)
 
-        if bufsize == 0:
-            bufsize = 1  # Nearly unbuffered (XXX for now)
         if p2cwrite is not None:
             self.stdin = io.open(p2cwrite, 'wb', bufsize)
             if self.universal_newlines:
