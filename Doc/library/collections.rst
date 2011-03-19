@@ -565,9 +565,9 @@ they add the ability to access fields by name instead of position index.
    helpful docstring (with typename and field_names) and a helpful :meth:`__repr__`
    method which lists the tuple contents in a ``name=value`` format.
 
-   The *field_names* are a single string with each fieldname separated by whitespace
-   and/or commas, for example ``'x y'`` or ``'x, y'``.  Alternatively, *field_names*
-   can be a sequence of strings such as ``['x', 'y']``.
+   The *field_names* are a sequence of strings such as ``['x', 'y']``.
+   Alternatively, *field_names* can be a single string with each fieldname
+   separated by whitespace and/or commas, for example ``'x y'`` or ``'x, y'``.
 
    Any valid Python identifier may be used for a fieldname except for names
    starting with an underscore.  Valid identifiers consist of letters, digits,
@@ -595,7 +595,7 @@ Example:
 .. doctest::
    :options: +NORMALIZE_WHITESPACE
 
-   >>> Point = namedtuple('Point', 'x y', verbose=True)
+   >>> Point = namedtuple('Point', ['x', 'y'], verbose=True)
    class Point(tuple):
            'Point(x, y)'
    <BLANKLINE>
@@ -699,7 +699,7 @@ field names, the method and attribute names start with an underscore.
       Point(x=33, y=22)
 
       >>> for partnum, record in inventory.items():
-      ...     inventory[partnum] = record._replace(price=newprices[partnum], timestamp=time.now())
+              inventory[partnum] = record._replace(price=newprices[partnum], timestamp=time.now())
 
 .. attribute:: somenamedtuple._fields
 
@@ -734,15 +734,15 @@ functionality with a subclass.  Here is how to add a calculated field and
 a fixed-width print format:
 
     >>> class Point(namedtuple('Point', 'x y')):
-    ...     __slots__ = ()
-    ...     @property
-    ...     def hypot(self):
-    ...         return (self.x ** 2 + self.y ** 2) ** 0.5
-    ...     def __str__(self):
-    ...         return 'Point: x=%6.3f  y=%6.3f  hypot=%6.3f' % (self.x, self.y, self.hypot)
+            __slots__ = ()
+            @property
+            def hypot(self):
+                return (self.x ** 2 + self.y ** 2) ** 0.5
+            def __str__(self):
+                return 'Point: x=%6.3f  y=%6.3f  hypot=%6.3f' % (self.x, self.y, self.hypot)
 
     >>> for p in Point(3, 4), Point(14, 5/7.):
-    ...     print p
+            print p
     Point: x= 3.000  y= 4.000  hypot= 5.000
     Point: x=14.000  y= 0.714  hypot=14.018
 
@@ -768,7 +768,7 @@ and more efficient to use a simple class declaration:
     >>> Status.open, Status.pending, Status.closed
     (0, 1, 2)
     >>> class Status:
-    ...     open, pending, closed = range(3)
+            open, pending, closed = range(3)
 
 .. seealso::
 
