@@ -357,7 +357,7 @@ def dist(distname='',version='',id='',
                               supported_dists=supported_dists,
                               full_distribution_name=0)
 
-def popen(cmd, mode='r', bufsize=None):
+def popen(cmd, mode='r', bufsize=-1):
 
     """ Portable popen() interface.
     """
