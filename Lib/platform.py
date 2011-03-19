@@ -411,7 +411,7 @@ class _popen:
     # Alias
     __del__ = close
 
-def popen(cmd, mode='r', bufsize=None):
+def popen(cmd, mode='r', bufsize=-1):
 
     """ Portable popen() interface.
     """
