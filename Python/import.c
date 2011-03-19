@@ -107,8 +107,8 @@ typedef unsigned short mode_t;
 /* MAGIC must change whenever the bytecode emitted by the compiler may no
    longer be understood by older implementations of the eval loop (usually
    due to the addition of new opcodes)
-   TAG must change for each major Python release. The magic number will take
-   care of any bytecode changes that occur during development.
+   TAG and PYC_TAG_UNICODE must change for each major Python release. The magic
+   number will take care of any bytecode changes that occur during development.
 */
 #define MAGIC (3180 | ((long)'\r'<<16) | ((long)'\n'<<24))
 #define TAG "cpython-32"
@@ -118,6 +118,8 @@ static const Py_UNICODE CACHEDIR_UNICODE[] = {
 /* Current magic word and string tag as globals. */
 static long pyc_magic = MAGIC;
 static const char *pyc_tag = TAG;
+static const Py_UNICODE PYC_TAG_UNICODE[] = {
+    'c', 'p', 'y', 't', 'h', 'o', 'n', '-', '3', '2', '\0'};
 
 /* See _PyImport_FixupExtensionObject() below */
 static PyObject *extensions = NULL;
@@ -745,8 +747,7 @@ remove_module(PyObject *name)
 
 static PyObject * get_sourcefile(PyObject *filename);
 static PyObject *make_source_pathname(PyObject *pathname);
-static char *make_compiled_pathname(char *pathname, char *buf, size_t buflen,
-                                    int debug);
+static PyObject* make_compiled_pathname(Py_UNICODE *pathname, int debug);
 
 /* Execute a code object in a module and return the module object
  * WITH INCREMENTED REFERENCE COUNT.  If an error occurs, name is
@@ -870,29 +871,8 @@ PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname,
 /* Like strrchr(string, '/') but searches for the rightmost of either SEP
    or ALTSEP, if the latter is defined.
 */
-static char *
-rightmost_sep(char *s)
-{
-    char *found, c;
-    for (found = NULL; (c = *s); s++) {
-        if (c == SEP
-#ifdef ALTSEP
-            || c == ALTSEP
-#endif
-            )
-        {
-            found = s;
-        }
-    }
-    return found;
-}
-
-
-/* Like strrchr(string, '/') but searches for the rightmost of either SEP
-   or ALTSEP, if the latter is defined.
-*/
 static Py_UNICODE*
-rightmost_sep_unicode(Py_UNICODE *s)
+rightmost_sep(Py_UNICODE *s)
 {
     Py_UNICODE *found, c;
     for (found = NULL; (c = *s); s++) {
@@ -912,15 +892,18 @@ rightmost_sep_unicode(Py_UNICODE *s)
 /* Given a pathname for a Python source file, fill a buffer with the
    pathname for the corresponding compiled file.  Return the pathname
    for the compiled file, or NULL if there's no space in the buffer.
-   Doesn't set an exception. */
+   Doesn't set an exception.
 
-static char *
-make_compiled_pathname(char *pathname, char *buf, size_t buflen, int debug)
+   foo.py -> __pycache__/foo.<tag>.pyc */
+
+static PyObject*
+make_compiled_pathname(Py_UNICODE *pathname, int debug)
 {
-    /* foo.py -> __pycache__/foo.<tag>.pyc */
-    size_t len = strlen(pathname);
+    Py_UNICODE buf[MAXPATHLEN];
+    size_t buflen = (size_t)MAXPATHLEN;
+    size_t len = Py_UNICODE_strlen(pathname);
     size_t i, save;
-    char *pos;
+    Py_UNICODE *pos;
     int sep = SEP;
 
     /* Sanity check that the buffer has roughly enough space to hold what
@@ -932,35 +915,37 @@ make_compiled_pathname(char *pathname, char *buf, size_t buflen, int debug)
        sanity check before writing the extension to ensure we do not
        overflow the buffer.
     */
-    if (len + strlen(CACHEDIR) + strlen(pyc_tag) + 5 > buflen)
+    if (len + Py_UNICODE_strlen(CACHEDIR_UNICODE) + Py_UNICODE_strlen(PYC_TAG_UNICODE) + 5 > buflen)
         return NULL;
 
     /* Find the last path separator and copy everything from the start of
        the source string up to and including the separator.
     */
-    if ((pos = rightmost_sep(pathname)) == NULL) {
+    pos = rightmost_sep(pathname);
+    if (pos == NULL) {
         i = 0;
     }
     else {
         sep = *pos;
         i = pos - pathname + 1;
-        strncpy(buf, pathname, i);
+        Py_UNICODE_strncpy(buf, pathname, i);
     }
 
     save = i;
     buf[i++] = '\0';
     /* Add __pycache__/ */
-    strcat(buf, CACHEDIR);
-    i += strlen(CACHEDIR) - 1;
+    Py_UNICODE_strcat(buf, CACHEDIR_UNICODE);
+    i += Py_UNICODE_strlen(CACHEDIR_UNICODE) - 1;
     buf[i++] = sep;
     buf[i++] = '\0';
     /* Add the base filename, but remove the .py or .pyw extension, since
        the tag name must go before the extension.
     */
-    strcat(buf, pathname + save);
-    if ((pos = strrchr(buf, '.')) != NULL)
+    Py_UNICODE_strcat(buf, pathname + save);
+    pos = Py_UNICODE_strrchr(buf, '.');
+    if (pos != NULL)
         *++pos = '\0';
-    strcat(buf, pyc_tag);
+    Py_UNICODE_strcat(buf, PYC_TAG_UNICODE);
     /* The length test above assumes that we're only adding one character
        to the end of what would normally be the extension.  What if there
        is no extension, or the string ends in '.' or '.p', and otherwise
@@ -1010,11 +995,15 @@ make_compiled_pathname(char *pathname, char *buf, size_t buflen, int debug)
 #if 0
     printf("strlen(buf): %d; buflen: %d\n", (int)strlen(buf), (int)buflen);
 #endif
-    if (strlen(buf) + 5 > buflen)
+    len = Py_UNICODE_strlen(buf);
+    if (len + 5 > buflen)
         return NULL;
-    strcat(buf, debug ? ".pyc" : ".pyo");
-    assert(strlen(buf) < buflen);
-    return buf;
+    buf[len] = '.'; len++;
+    buf[len] = 'p'; len++;
+    buf[len] = 'y'; len++;
+    buf[len] = debug ? 'c' : 'o'; len++;
+    assert(len <= buflen);
+    return PyUnicode_FromUnicode(buf, len);
 }
 
 
@@ -1042,12 +1031,12 @@ make_source_pathname(PyObject *pathobj)
        must be the string __pycache__ or this is not a PEP 3147 style
        path.  It's possible for there to be only one slash.
     */
-    right = rightmost_sep_unicode(pathname);
+    right = rightmost_sep(pathname);
     if (right == NULL)
         return NULL;
     sep = *right;
     *right = '\0';
-    left = rightmost_sep_unicode(pathname);
+    left = rightmost_sep(pathname);
     *right = sep;
     if (left == NULL)
         left = pathname;
@@ -1088,31 +1077,31 @@ make_source_pathname(PyObject *pathobj)
    Doesn't set an exception. */
 
 static FILE *
-check_compiled_module(char *pathname, time_t mtime, char *cpathname)
+check_compiled_module(PyObject *pathname, time_t mtime, PyObject *cpathname)
 {
     FILE *fp;
     long magic;
     long pyc_mtime;
 
-    fp = fopen(cpathname, "rb");
+    fp = _Py_fopen(cpathname, "rb");
     if (fp == NULL)
         return NULL;
     magic = PyMarshal_ReadLongFromFile(fp);
     if (magic != pyc_magic) {
         if (Py_VerboseFlag)
-            PySys_WriteStderr("# %s has bad magic\n", cpathname);
+            PySys_FormatStderr("# %R has bad magic\n", cpathname);
         fclose(fp);
         return NULL;
     }
     pyc_mtime = PyMarshal_ReadLongFromFile(fp);
     if (pyc_mtime != mtime) {
         if (Py_VerboseFlag)
-            PySys_WriteStderr("# %s has bad mtime\n", cpathname);
+            PySys_FormatStderr("# %R has bad mtime\n", cpathname);
         fclose(fp);
         return NULL;
     }
     if (Py_VerboseFlag)
-        PySys_WriteStderr("# %s matches %s\n", cpathname, pathname);
+        PySys_FormatStderr("# %R matches %R\n", cpathname, pathname);
     return fp;
 }
 
@@ -1120,7 +1109,7 @@ check_compiled_module(char *pathname, time_t mtime, char *cpathname)
 /* Read a code object from a file and check it for validity */
 
 static PyCodeObject *
-read_compiled_module(char *cpathname, FILE *fp)
+read_compiled_module(PyObject *cpathname, FILE *fp)
 {
     PyObject *co;
 
@@ -1129,7 +1118,7 @@ read_compiled_module(char *cpathname, FILE *fp)
         return NULL;
     if (!PyCode_Check(co)) {
         PyErr_Format(PyExc_ImportError,
-                     "Non-code object in %.200s", cpathname);
+                     "Non-code object in %R", cpathname);
         Py_DECREF(co);
         return NULL;
     }
@@ -1141,7 +1130,7 @@ read_compiled_module(char *cpathname, FILE *fp)
    module object WITH INCREMENTED REFERENCE COUNT */
 
 static PyObject *
-load_compiled_module(char *name, char *cpathname, FILE *fp)
+load_compiled_module(PyObject *name, PyObject *cpathname, FILE *fp)
 {
     long magic;
     PyCodeObject *co;
@@ -1150,7 +1139,7 @@ load_compiled_module(char *name, char *cpathname, FILE *fp)
     magic = PyMarshal_ReadLongFromFile(fp);
     if (magic != pyc_magic) {
         PyErr_Format(PyExc_ImportError,
-                     "Bad magic number in %.200s", cpathname);
+                     "Bad magic number in %R", cpathname);
         return NULL;
     }
     (void) PyMarshal_ReadLongFromFile(fp);
@@ -1158,10 +1147,10 @@ load_compiled_module(char *name, char *cpathname, FILE *fp)
     if (co == NULL)
         return NULL;
     if (Py_VerboseFlag)
-        PySys_WriteStderr("import %s # precompiled from %s\n",
-            name, cpathname);
-    m = PyImport_ExecCodeModuleWithPathnames(
-        name, (PyObject *)co, cpathname, cpathname);
+        PySys_FormatStderr("import %U # precompiled from %R\n",
+                           name, cpathname);
+    m = PyImport_ExecCodeModuleObject(name, (PyObject *)co,
+                                      cpathname, cpathname);
     Py_DECREF(co);
 
     return m;
@@ -1170,26 +1159,36 @@ load_compiled_module(char *name, char *cpathname, FILE *fp)
 /* Parse a source file and return the corresponding code object */
 
 static PyCodeObject *
-parse_source_module(const char *pathname, FILE *fp)
+parse_source_module(PyObject *pathname, FILE *fp)
 {
-    PyCodeObject *co = NULL;
+    PyCodeObject *co;
+    PyObject *pathbytes;
     mod_ty mod;
     PyCompilerFlags flags;
-    PyArena *arena = PyArena_New();
-    if (arena == NULL)
+    PyArena *arena;
+
+    pathbytes = PyUnicode_EncodeFSDefault(pathname);
+    if (pathbytes == NULL)
         return NULL;
 
+    arena = PyArena_New();
+    if (arena == NULL) {
+        Py_DECREF(pathbytes);
+        return NULL;
+    }
+
     flags.cf_flags = 0;
-    mod = PyParser_ASTFromFile(fp, pathname, NULL,
+    mod = PyParser_ASTFromFile(fp, PyBytes_AS_STRING(pathbytes), NULL,
                                Py_file_input, 0, 0, &flags,
                                NULL, arena);
-    if (mod) {
-        co = PyAST_Compile(mod, pathname, NULL, arena);
-    }
+    if (mod != NULL)
+        co = PyAST_Compile(mod, PyBytes_AS_STRING(pathbytes), NULL, arena);
+    else
+        co = NULL;
+    Py_DECREF(pathbytes);
     PyArena_Free(arena);
     return co;
 }
-
 
 /* Helper to open a bytecode file for writing in exclusive mode */
 
@@ -1231,10 +1230,10 @@ open_exclusive(char *filename, mode_t mode)
    remove the file. */
 
 static void
-write_compiled_module(PyCodeObject *co, char *cpathname, struct stat *srcstat)
+write_compiled_module(PyCodeObject *co, PyObject *cpathname,
+                      struct stat *srcstat)
 {
     FILE *fp;
-    char *dirpath;
     time_t mtime = srcstat->st_mtime;
 #ifdef MS_WINDOWS   /* since Windows uses different permissions  */
     mode_t mode = srcstat->st_mode & ~S_IEXEC;
@@ -1243,39 +1242,64 @@ write_compiled_module(PyCodeObject *co, char *cpathname, struct stat *srcstat)
     mode_t dirmode = (srcstat->st_mode |
                       S_IXUSR | S_IXGRP | S_IXOTH |
                       S_IWUSR | S_IWGRP | S_IWOTH);
+    PyObject *dirbytes;
 #endif
-    int saved;
+    PyObject *cpathbytes, *dirname;
+    Py_UNICODE *dirsep;
+    int res, ok;
 
     /* Ensure that the __pycache__ directory exists. */
-    dirpath = rightmost_sep(cpathname);
-    if (dirpath == NULL) {
+    dirsep = rightmost_sep(PyUnicode_AS_UNICODE(cpathname));
+    if (dirsep == NULL) {
         if (Py_VerboseFlag)
-            PySys_WriteStderr(
-                "# no %s path found %s\n",
-                CACHEDIR, cpathname);
+            PySys_FormatStderr("# no %s path found %R\n", CACHEDIR, cpathname);
         return;
     }
-    saved = *dirpath;
-    *dirpath = '\0';
+    dirname = PyUnicode_FromUnicode(PyUnicode_AS_UNICODE(cpathname),
+                                    dirsep - PyUnicode_AS_UNICODE(cpathname));
+    if (dirname == NULL) {
+        PyErr_Clear();
+        return;
+    }
 
 #ifdef MS_WINDOWS
-    if (_mkdir(cpathname) < 0 && errno != EEXIST) {
+    res = CreateDirectoryW(PyUnicode_AS_UNICODE(dirname), NULL);
+    ok = (res != 0);
+    if (!ok && GetLastError() == ERROR_ALREADY_EXISTS)
+        ok = 1;
 #else
-    if (mkdir(cpathname, dirmode) < 0 && errno != EEXIST) {
-#endif
-        *dirpath = saved;
-        if (Py_VerboseFlag)
-            PySys_WriteStderr(
-                "# cannot create cache dir %s\n", cpathname);
+    dirbytes = PyUnicode_EncodeFSDefault(dirname);
+    if (dirbytes == NULL) {
+        PyErr_Clear();
         return;
     }
-    *dirpath = saved;
+    res = mkdir(PyBytes_AS_STRING(dirbytes), dirmode);
+    Py_DECREF(dirbytes);
+    if (0 <= res)
+        ok = 1;
+    else
+        ok = (errno == EEXIST);
+#endif
+    if (!ok) {
+        if (Py_VerboseFlag)
+            PySys_FormatStderr("# cannot create cache dir %R\n", dirname);
+        Py_DECREF(dirname);
+        return;
+    }
+    Py_DECREF(dirname);
 
-    fp = open_exclusive(cpathname, mode);
+    cpathbytes = PyUnicode_EncodeFSDefault(cpathname);
+    if (cpathbytes == NULL) {
+        PyErr_Clear();
+        return;
+    }
+
+    fp = open_exclusive(PyBytes_AS_STRING(cpathbytes), mode);
     if (fp == NULL) {
         if (Py_VerboseFlag)
-            PySys_WriteStderr(
-                "# can't create %s\n", cpathname);
+            PySys_FormatStderr(
+                "# can't create %R\n", cpathname);
+        Py_DECREF(cpathbytes);
         return;
     }
     PyMarshal_WriteLongToFile(pyc_magic, fp, Py_MARSHAL_VERSION);
@@ -1284,12 +1308,18 @@ write_compiled_module(PyCodeObject *co, char *cpathname, struct stat *srcstat)
     PyMarshal_WriteObjectToFile((PyObject *)co, fp, Py_MARSHAL_VERSION);
     if (fflush(fp) != 0 || ferror(fp)) {
         if (Py_VerboseFlag)
-            PySys_WriteStderr("# can't write %s\n", cpathname);
+            PySys_FormatStderr("# can't write %R\n", cpathname);
         /* Don't keep partial file */
         fclose(fp);
-        (void) unlink(cpathname);
+#ifdef MS_WINDOWS
+        (void)DeleteFileW(PyUnicode_AS_UNICODE(cpathname));
+#else
+        (void) unlink(PyBytes_AS_STRING(cpathbytes));
+#endif
+        Py_DECREF(cpathbytes);
         return;
     }
+    Py_DECREF(cpathbytes);
     /* Now write the true mtime */
     fseek(fp, 4L, 0);
     assert(mtime < LONG_MAX);
@@ -1297,7 +1327,7 @@ write_compiled_module(PyCodeObject *co, char *cpathname, struct stat *srcstat)
     fflush(fp);
     fclose(fp);
     if (Py_VerboseFlag)
-        PySys_WriteStderr("# wrote %s\n", cpathname);
+        PySys_FormatStderr("# wrote %R\n", cpathname);
 }
 
 static void
@@ -1324,26 +1354,18 @@ update_code_filenames(PyCodeObject *co, PyObject *oldname, PyObject *newname)
     }
 }
 
-static int
-update_compiled_module(PyCodeObject *co, char *pathname)
+static void
+update_compiled_module(PyCodeObject *co, PyObject *newname)
 {
-    PyObject *oldname, *newname;
+    PyObject *oldname;
 
-    newname = PyUnicode_DecodeFSDefault(pathname);
-    if (newname == NULL)
-        return -1;
-
-    if (!PyUnicode_Compare(co->co_filename, newname)) {
-        Py_DECREF(newname);
-        return 0;
-    }
+    if (PyUnicode_Compare(co->co_filename, newname) == 0)
+        return;
 
     oldname = co->co_filename;
     Py_INCREF(oldname);
     update_code_filenames(co, oldname, newname);
     Py_DECREF(oldname);
-    Py_DECREF(newname);
-    return 1;
 }
 
 /* Load a source module from a given file and return its module
@@ -1351,20 +1373,19 @@ update_compiled_module(PyCodeObject *co, char *pathname)
    byte-compiled file, use that instead. */
 
 static PyObject *
-load_source_module(char *name, char *pathname, FILE *fp)
+load_source_module(PyObject *name, PyObject *pathname, FILE *fp)
 {
     struct stat st;
     FILE *fpc;
-    char buf[MAXPATHLEN+1];
-    char *cpathname;
+    PyObject *cpathname = NULL, *cpathbytes = NULL;
     PyCodeObject *co;
-    PyObject *m;
+    PyObject *m = NULL;
 
     if (fstat(fileno(fp), &st) != 0) {
         PyErr_Format(PyExc_RuntimeError,
-                     "unable to get file status from '%s'",
+                     "unable to get file status from %R",
                      pathname);
-        return NULL;
+        goto error;
     }
 #if SIZEOF_TIME_T > 4
     /* Python's .pyc timestamp handling presumes that the timestamp fits
@@ -1374,41 +1395,50 @@ load_source_module(char *name, char *pathname, FILE *fp)
     if (st.st_mtime >> 32) {
         PyErr_SetString(PyExc_OverflowError,
             "modification time overflows a 4 byte field");
-        return NULL;
+        goto error;
     }
 #endif
     cpathname = make_compiled_pathname(
-        pathname, buf, (size_t)MAXPATHLEN + 1, !Py_OptimizeFlag);
-    if (cpathname != NULL &&
-        (fpc = check_compiled_module(pathname, st.st_mtime, cpathname))) {
+        PyUnicode_AS_UNICODE(pathname),
+        !Py_OptimizeFlag);
+
+    if (cpathname != NULL)
+        fpc = check_compiled_module(pathname, st.st_mtime, cpathname);
+    else
+        fpc = NULL;
+
+    if (fpc) {
         co = read_compiled_module(cpathname, fpc);
         fclose(fpc);
         if (co == NULL)
-            return NULL;
-        if (update_compiled_module(co, pathname) < 0)
-            return NULL;
+            goto error;
+        update_compiled_module(co, pathname);
         if (Py_VerboseFlag)
-            PySys_WriteStderr("import %s # precompiled from %s\n",
-                name, cpathname);
-        pathname = cpathname;
+            PySys_FormatStderr("import %U # precompiled from %R\n",
+                               name, cpathname);
+        m = PyImport_ExecCodeModuleObject(name, (PyObject *)co,
+                                          cpathname, cpathname);
     }
     else {
         co = parse_source_module(pathname, fp);
         if (co == NULL)
-            return NULL;
+            goto error;
         if (Py_VerboseFlag)
-            PySys_WriteStderr("import %s # from %s\n",
+            PySys_FormatStderr("import %U # from %R\n",
                 name, pathname);
-        if (cpathname) {
+        if (cpathname != NULL) {
             PyObject *ro = PySys_GetObject("dont_write_bytecode");
             if (ro == NULL || !PyObject_IsTrue(ro))
                 write_compiled_module(co, cpathname, &st);
         }
+        m = PyImport_ExecCodeModuleObject(name, (PyObject *)co,
+                                          pathname, cpathname);
     }
-    m = PyImport_ExecCodeModuleWithPathnames(
-        name, (PyObject *)co, pathname, cpathname);
     Py_DECREF(co);
 
+error:
+    Py_XDECREF(cpathbytes);
+    Py_XDECREF(cpathname);
     return m;
 }
 
@@ -2291,13 +2321,37 @@ load_module(char *name, FILE *fp, char *pathname, int type, PyObject *loader)
 
     switch (type) {
 
-    case PY_SOURCE:
-        m = load_source_module(name, pathname, fp);
+    case PY_SOURCE: {
+        PyObject *nameobj, *pathobj;
+        nameobj = PyUnicode_FromString(name);
+        if (nameobj == NULL)
+            return NULL;
+        pathobj = PyUnicode_DecodeFSDefault(pathname);
+        if (pathobj == NULL) {
+            Py_DECREF(nameobj);
+            return NULL;
+        }
+        m = load_source_module(nameobj, pathobj, fp);
+        Py_DECREF(nameobj);
+        Py_DECREF(pathobj);
         break;
+    }
 
-    case PY_COMPILED:
-        m = load_compiled_module(name, pathname, fp);
+    case PY_COMPILED: {
+        PyObject *nameobj, *pathobj;
+        nameobj = PyUnicode_FromString(name);
+        if (nameobj == NULL)
+            return NULL;
+        pathobj = PyUnicode_DecodeFSDefault(pathname);
+        if (pathobj == NULL) {
+            Py_DECREF(nameobj);
+            return NULL;
+        }
+        m = load_compiled_module(nameobj, pathobj, fp);
+        Py_DECREF(nameobj);
+        Py_DECREF(pathobj);
         break;
+    }
 
 #ifdef HAVE_DYNAMIC_LOADING
     case C_EXTENSION: {
@@ -3533,13 +3587,13 @@ imp_is_frozen(PyObject *self, PyObject *args)
 }
 
 static FILE *
-get_file(char *pathname, PyObject *fob, char *mode)
+get_file(PyObject *pathname, PyObject *fob, char *mode)
 {
     FILE *fp;
     if (mode[0] == 'U')
         mode = "r" PY_STDIOTEXTMODE;
     if (fob == NULL) {
-        fp = fopen(pathname, mode);
+        fp = _Py_fopen(pathname, mode);
     }
     else {
         int fd = PyObject_AsFileDescriptor(fob);
@@ -3565,22 +3619,21 @@ error:
 static PyObject *
 imp_load_compiled(PyObject *self, PyObject *args)
 {
-    char *name;
-    PyObject *pathname;
+    PyObject *name, *pathname;
     PyObject *fob = NULL;
     PyObject *m;
     FILE *fp;
-    if (!PyArg_ParseTuple(args, "sO&|O:load_compiled",
+    if (!PyArg_ParseTuple(args, "UO&|O:load_compiled",
                           &name,
-                          PyUnicode_FSConverter, &pathname,
+                          PyUnicode_FSDecoder, &pathname,
                           &fob))
         return NULL;
-    fp = get_file(PyBytes_AS_STRING(pathname), fob, "rb");
+    fp = get_file(pathname, fob, "rb");
     if (fp == NULL) {
         Py_DECREF(pathname);
         return NULL;
     }
-    m = load_compiled_module(name, PyBytes_AS_STRING(pathname), fp);
+    m = load_compiled_module(name, pathname, fp);
     fclose(fp);
     Py_DECREF(pathname);
     return m;
@@ -3615,22 +3668,21 @@ imp_load_dynamic(PyObject *self, PyObject *args)
 static PyObject *
 imp_load_source(PyObject *self, PyObject *args)
 {
-    char *name;
-    PyObject *pathname;
+    PyObject *name, *pathname;
     PyObject *fob = NULL;
     PyObject *m;
     FILE *fp;
-    if (!PyArg_ParseTuple(args, "sO&|O:load_source",
+    if (!PyArg_ParseTuple(args, "UO&|O:load_source",
                           &name,
-                          PyUnicode_FSConverter, &pathname,
+                          PyUnicode_FSDecoder, &pathname,
                           &fob))
         return NULL;
-    fp = get_file(PyBytes_AS_STRING(pathname), fob, "r");
+    fp = get_file(pathname, fob, "r");
     if (fp == NULL) {
         Py_DECREF(pathname);
         return NULL;
     }
-    m = load_source_module(name, PyBytes_AS_STRING(pathname), fp);
+    m = load_source_module(name, pathname, fp);
     Py_DECREF(pathname);
     fclose(fp);
     return m;
@@ -3719,33 +3771,31 @@ imp_cache_from_source(PyObject *self, PyObject *args, PyObject *kws)
 {
     static char *kwlist[] = {"path", "debug_override", NULL};
 
-    char buf[MAXPATHLEN+1];
-    PyObject *pathbytes;
-    char *cpathname;
+    PyObject *pathname, *cpathname;
     PyObject *debug_override = NULL;
     int debug = !Py_OptimizeFlag;
 
     if (!PyArg_ParseTupleAndKeywords(
                 args, kws, "O&|O", kwlist,
-                PyUnicode_FSConverter, &pathbytes, &debug_override))
+                PyUnicode_FSDecoder, &pathname, &debug_override))
         return NULL;
 
     if (debug_override != NULL &&
         (debug = PyObject_IsTrue(debug_override)) < 0) {
-        Py_DECREF(pathbytes);
+        Py_DECREF(pathname);
         return NULL;
     }
 
     cpathname = make_compiled_pathname(
-        PyBytes_AS_STRING(pathbytes),
-        buf, MAXPATHLEN+1, debug);
-    Py_DECREF(pathbytes);
+        PyUnicode_AS_UNICODE(pathname),
+        debug);
+    Py_DECREF(pathname);
 
     if (cpathname == NULL) {
         PyErr_Format(PyExc_SystemError, "path buffer too short");
         return NULL;
     }
-    return PyUnicode_DecodeFSDefault(buf);
+    return cpathname;
 }
 
 PyDoc_STRVAR(doc_cache_from_source,
