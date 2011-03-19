@@ -17,6 +17,7 @@ infinite_loops = ["infinite_loop_re.py", "nasty_eq_vs_dict.py"]
 
 class CrasherTest(unittest.TestCase):
 
+    @unittest.skip("these tests are too fragile")
     @test.support.cpython_only
     def test_crashers_crash(self):
         for fname in glob.glob(CRASHER_FILES):
