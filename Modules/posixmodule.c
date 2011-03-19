@@ -3827,16 +3827,19 @@ parse_arglist(PyObject* argv, Py_ssize_t *argc)
         return NULL;
     }
     for (i = 0; i < *argc; i++) {
-        if (!fsconvert_strdup(PySequence_ITEM(argv, i),
-                              &argvlist[i]))
-        {
-            *argc = i;
+        PyObject* item = PySequence_ITEM(argv, i);
+        if (item == NULL)
+            goto fail;
+        if (!fsconvert_strdup(item, &argvlist[i])) {
+            Py_DECREF(item);
             goto fail;
         }
+        Py_DECREF(item);
     }
     argvlist[*argc] = NULL;
     return argvlist;
 fail:
+    *argc = i;
     free_string_array(argvlist, *argc);
     return NULL;
 }
@@ -6177,22 +6180,28 @@ iov_setup(struct iovec **iov, Py_buffer **buf, PyObject *seq, int cnt, int type)
     }
 
     for (i = 0; i < cnt; i++) {
-        if (PyObject_GetBuffer(PySequence_GetItem(seq, i),
-                               &(*buf)[i], type) == -1) {
-            PyMem_Del(*iov);
-            for (j = 0; j < i; j++) {
-                PyBuffer_Release(&(*buf)[j]);
-            }
-            PyMem_Del(*buf);
-            total = 0;
-            return total;
+        PyObject *item = PySequence_GetItem(seq, i);
+        if (item == NULL)
+            goto fail;
+        if (PyObject_GetBuffer(item, &(*buf)[i], type) == -1) {
+            Py_DECREF(item);
+            goto fail;
         }
+        Py_DECREF(item);
         (*iov)[i].iov_base = (*buf)[i].buf;
         blen = (*buf)[i].len;
         (*iov)[i].iov_len = blen;
         total += blen;
     }
     return total;
+
+fail:
+    PyMem_Del(*iov);
+    for (j = 0; j < i; j++) {
+        PyBuffer_Release(&(*buf)[j]);
+    }
+    PyMem_Del(*buf);
+    return 0;
 }
 
 static void
