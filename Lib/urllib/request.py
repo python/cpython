@@ -1657,6 +1657,12 @@ class URLopener:
             headers["Authorization"] =  "Basic %s" % auth
         if realhost:
             headers["Host"] = realhost
+
+        # Add Connection:close as we don't support persistent connections yet.
+        # This helps in closing the socket and avoiding ResourceWarning
+
+        headers["Connection"] = "close"
+
         for header, value in self.addheaders:
             headers[header] = value
 
