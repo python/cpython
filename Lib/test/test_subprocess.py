@@ -1315,6 +1315,22 @@ class POSIXProcessTestCase(BaseTestCase):
                          " non-zero with this error:\n%s" %
                          stderr.decode('utf-8'))
 
+    def test_select_unbuffered(self):
+        # Issue #11459: bufsize=0 should really set the pipes as
+        # unbuffered (and therefore let select() work properly).
+        select = support.import_module("select")
+        p = subprocess.Popen([sys.executable, "-c",
+                              'import sys;'
+                              'sys.stdout.write("apple")'],
+                             stdout=subprocess.PIPE,
+                             bufsize=0)
+        f = p.stdout
+        try:
+            self.assertEqual(f.read(4), b"appl")
+            self.assertIn(f, select.select([f], [], [], 0.0)[0])
+        finally:
+            p.wait()
+
 
 @unittest.skipUnless(mswindows, "Windows specific tests")
 class Win32ProcessTestCase(BaseTestCase):
