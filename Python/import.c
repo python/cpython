@@ -2237,8 +2237,8 @@ find_init_module(PyObject *directory)
     if (filename == NULL)
         return -1;
     if (_Py_stat(filename, &statbuf) == 0) {
-        /* 9=len("/__init__") */
-        match = case_ok(filename, 9, initstr);
+        /* 3=len(".py") */
+        match = case_ok(filename, -3, initstr);
         if (match < 0) {
             Py_DECREF(filename);
             return -1;
@@ -2255,8 +2255,8 @@ find_init_module(PyObject *directory)
     if (filename == NULL)
         return -1;
     if (_Py_stat(filename, &statbuf) == 0) {
-        /* 9=len("/__init__") */
-        match = case_ok(filename, 9, initstr);
+        /* 4=len(".pyc") */
+        match = case_ok(filename, -4, initstr);
         if (match < 0) {
             Py_DECREF(filename);
             return -1;
