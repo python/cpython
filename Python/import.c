@@ -1668,8 +1668,9 @@ extern FILE *_PyWin_FindRegisteredModule(PyObject *, struct filedescr **,
                                          PyObject **p_path);
 #endif
 
+/* Forward */
 static int case_ok(char *, Py_ssize_t, Py_ssize_t, const char *);
-static int find_init_module(char *); /* Forward */
+static int find_init_module(PyObject *);
 static struct filedescr importhookdescr = {"", "", IMP_HOOK};
 
 /* Get the path of a module: get its importer and call importer.find_module()
@@ -1766,24 +1767,27 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
     if (stat(buf, &statbuf) == 0 &&         /* it exists */
         S_ISDIR(statbuf.st_mode))           /* it's a directory */
     {
+        PyObject *bufobj = PyUnicode_DecodeFSDefault(buf);
+        if (bufobj == NULL)
+            return -1;
         if (case_ok(buf, len, namelen, namestr)) { /* case matches */
-            if (find_init_module(buf)) { /* and has __init__.py */
+            if (find_init_module(bufobj)) { /* and has __init__.py */
+                Py_DECREF(bufobj);
                 *p_fd = &fd_package;
                 return 2;
             }
             else {
                 int err;
-                PyObject *unicode = PyUnicode_DecodeFSDefault(buf);
-                if (unicode == NULL)
-                    return -1;
                 err = PyErr_WarnFormat(PyExc_ImportWarning, 1,
-                    "Not importing directory '%U': missing __init__.py",
-                    unicode);
-                Py_DECREF(unicode);
-                if (err)
+                    "Not importing directory %R: missing __init__.py",
+                    bufobj);
+                if (err) {
+                    Py_DECREF(bufobj);
                     return -1;
+                }
             }
         }
+        Py_DECREF(bufobj);
     }
 #endif
     return 1;
@@ -2154,49 +2158,47 @@ case_ok(char *buf, Py_ssize_t len, Py_ssize_t namelen, const char *name)
 
 #ifdef HAVE_STAT
 
-/* Helper to look for __init__.py or __init__.py[co] in potential package */
+/* Helper to look for __init__.py or __init__.py[co] in potential package.
+   Return 1 if __init__ was found, 0 if not, or -1 on error. */
 static int
-find_init_module(char *buf)
+find_init_module(PyObject *directory)
 {
-    const size_t save_len = strlen(buf);
-    size_t i = save_len;
-    char *pname;  /* pointer to start of __init__ */
+    size_t len;
     struct stat statbuf;
+    PyObject *filename;
+    int match;
+    char *filestr;
+    size_t filelen;
 
-/*      For calling case_ok(buf, len, namelen, name):
- *      /a/b/c/d/e/f/g/h/i/j/k/some_long_module_name.py\0
- *      ^                      ^                   ^    ^
- *      |--------------------- buf ---------------------|
- *      |------------------- len ------------------|
- *                             |------ name -------|
- *                             |----- namelen -----|
- */
-    if (save_len + 13 >= MAXPATHLEN)
-        return 0;
-    buf[i++] = SEP;
-    pname = buf + i;
-    strcpy(pname, "__init__.py");
-    if (stat(buf, &statbuf) == 0) {
-        if (case_ok(buf,
-                    save_len + 9,               /* len("/__init__") */
-                8,                              /* len("__init__") */
-                pname)) {
-            buf[save_len] = '\0';
+    len = PyUnicode_GET_SIZE(directory);
+    filename = PyUnicode_FromFormat("%U%c__init__.py", directory, SEP);
+    if (filename == NULL)
+        return -1;
+    if (_Py_stat(filename, &statbuf) == 0) {
+        /* 9=len("/__init__") */
+        filestr = _PyUnicode_AsString(filename);
+        filelen = strlen(filestr);
+        if (case_ok(filestr, filelen-9, 8, "__init__")) {
+            Py_DECREF(filename);
             return 1;
         }
     }
-    i += strlen(pname);
-    strcpy(buf+i, Py_OptimizeFlag ? "o" : "c");
-    if (stat(buf, &statbuf) == 0) {
-        if (case_ok(buf,
-                    save_len + 9,               /* len("/__init__") */
-                8,                              /* len("__init__") */
-                pname)) {
-            buf[save_len] = '\0';
+    Py_DECREF(filename);
+
+    filename = PyUnicode_FromFormat("%U%c__init__.py%c",
+        directory, SEP, Py_OptimizeFlag ? 'o' : 'c');
+    if (filename == NULL)
+        return -1;
+    if (_Py_stat(filename, &statbuf) == 0) {
+        /* 9=len("/__init__") */
+        filestr = _PyUnicode_AsString(filename);
+        filelen = strlen(filestr);
+        if (case_ok(filestr, filelen-9, 8, "__init__")) {
+            Py_DECREF(filename);
             return 1;
         }
     }
-    buf[save_len] = '\0';
+    Py_DECREF(filename);
     return 0;
 }
 
