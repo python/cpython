@@ -25,29 +25,14 @@ import weakref
 # workers to exit when their work queues are empty and then waits until the
 # threads finish.
 
-_thread_references = set()
+_live_threads = weakref.WeakSet()
 _shutdown = False
 
 def _python_exit():
     global _shutdown
     _shutdown = True
-    for thread_reference in _thread_references:
-        thread = thread_reference()
-        if thread is not None:
-            thread.join()
-
-def _remove_dead_thread_references():
-    """Remove inactive threads from _thread_references.
-
-    Should be called periodically to prevent memory leaks in scenarios such as:
-    >>> while True:
-    ...    t = ThreadPoolExecutor(max_workers=5)
-    ...    t.map(int, ['1', '2', '3', '4', '5'])
-    """
-    for thread_reference in set(_thread_references):
-        if thread_reference() is None:
-            _thread_references.discard(thread_reference)
-
+    for thread in _live_threads:
+        thread.join()
 atexit.register(_python_exit)
 
 class _WorkItem(object):
@@ -95,8 +80,6 @@ class ThreadPoolExecutor(_base.Executor):
             max_workers: The maximum number of threads that can be used to
                 execute the given calls.
         """
-        _remove_dead_thread_references()
-
         self._max_workers = max_workers
         self._work_queue = queue.Queue()
         self._threads = set()
@@ -125,7 +108,7 @@ class ThreadPoolExecutor(_base.Executor):
             t.daemon = True
             t.start()
             self._threads.add(t)
-            _thread_references.add(weakref.ref(t))
+            _live_threads.add(t)
 
     def shutdown(self, wait=True):
         with self._shutdown_lock:
