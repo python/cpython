@@ -3744,17 +3744,22 @@ imp_load_source(PyObject *self, PyObject *args)
 static PyObject *
 imp_load_module(PyObject *self, PyObject *args)
 {
-    PyObject *name, *fob, *pathname, *ret;
+    PyObject *name, *fob, *pathname, *pathname_obj, *ret;
     char *suffix; /* Unused */
     char *mode;
     int type;
     FILE *fp;
 
-    if (!PyArg_ParseTuple(args, "UOO&(ssi):load_module",
-                          &name, &fob,
-                          PyUnicode_FSDecoder, &pathname,
-                          &suffix, &mode, &type))
+    if (!PyArg_ParseTuple(args, "UOO(ssi):load_module",
+                          &name, &fob, &pathname_obj, &suffix, &mode, &type))
         return NULL;
+    if (pathname_obj != Py_None) {
+        if (!PyUnicode_FSDecoder(pathname_obj, &pathname))
+            return NULL;
+    }
+    else
+        pathname = NULL;
+
     if (*mode) {
         /* Mode must start with 'r' or 'U' and must not contain '+'.
            Implicit in this test is the assumption that the mode
@@ -3763,7 +3768,7 @@ imp_load_module(PyObject *self, PyObject *args)
         if (!(*mode == 'r' || *mode == 'U') || strchr(mode, '+')) {
             PyErr_Format(PyExc_ValueError,
                          "invalid file open mode %.200s", mode);
-            Py_DECREF(pathname);
+            Py_XDECREF(pathname);
             return NULL;
         }
     }
@@ -3772,12 +3777,12 @@ imp_load_module(PyObject *self, PyObject *args)
     else {
         fp = get_file(NULL, fob, mode);
         if (fp == NULL) {
-            Py_DECREF(pathname);
+            Py_XDECREF(pathname);
             return NULL;
         }
     }
     ret = load_module(name, fp, pathname, type, NULL);
-    Py_DECREF(pathname);
+    Py_XDECREF(pathname);
     if (fp)
         fclose(fp);
     return ret;

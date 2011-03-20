@@ -229,7 +229,9 @@ class ImportHooksTestCase(ImportHooksBaseTestCase):
         i = ImpWrapper()
         sys.meta_path.append(i)
         sys.path_hooks.append(ImpWrapper)
-        mnames = ("colorsys", "urllib.parse", "distutils.core")
+        mnames = (
+            "colorsys", "urllib.parse", "distutils.core", "sys",
+        )
         for mname in mnames:
             parent = mname.split(".")[0]
             for n in list(sys.modules):
@@ -237,7 +239,8 @@ class ImportHooksTestCase(ImportHooksBaseTestCase):
                     del sys.modules[n]
         for mname in mnames:
             m = __import__(mname, globals(), locals(), ["__dummy__"])
-            m.__loader__  # to make sure we actually handled the import
+            # to make sure we actually handled the import
+            self.assertTrue(hasattr(m, "__loader__"))
 
 
 def test_main():
