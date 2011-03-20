@@ -66,28 +66,14 @@ import weakref
 # workers to exit when their work queues are empty and then waits until the
 # threads/processes finish.
 
-_thread_references = set()
+_live_threads = weakref.WeakSet()
 _shutdown = False
 
 def _python_exit():
     global _shutdown
     _shutdown = True
-    for thread_reference in _thread_references:
-        thread = thread_reference()
-        if thread is not None:
-            thread.join()
-
-def _remove_dead_thread_references():
-    """Remove inactive threads from _thread_references.
-
-    Should be called periodically to prevent memory leaks in scenarios such as:
-    >>> while True:
-    >>> ...    t = ThreadPoolExecutor(max_workers=5)
-    >>> ...    t.map(int, ['1', '2', '3', '4', '5'])
-    """
-    for thread_reference in set(_thread_references):
-        if thread_reference() is None:
-            _thread_references.discard(thread_reference)
+    for thread in _live_threads:
+        thread.join()
 
 # Controls how many more calls than processes will be queued in the call queue.
 # A smaller number will mean that processes spend more time idle waiting for
@@ -279,7 +265,6 @@ class ProcessPoolExecutor(_base.Executor):
                 worker processes will be created as the machine has processors.
         """
         _check_system_limits()
-        _remove_dead_thread_references()
 
         if max_workers is None:
             self._max_workers = multiprocessing.cpu_count()
@@ -316,7 +301,7 @@ class ProcessPoolExecutor(_base.Executor):
                           self._shutdown_process_event))
             self._queue_management_thread.daemon = True
             self._queue_management_thread.start()
-            _thread_references.add(weakref.ref(self._queue_management_thread))
+            _live_threads.add(self._queue_management_thread)
 
     def _adjust_process_count(self):
         for _ in range(len(self._processes), self._max_workers):
