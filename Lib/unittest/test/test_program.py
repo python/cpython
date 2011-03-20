@@ -189,7 +189,7 @@ class TestCommandLineArgs(unittest.TestCase):
         class FakeTP(unittest.TestProgram):
             def parseArgs(self, *args, **kw): pass
             def runTests(self, *args, **kw): pass
-        warnoptions = sys.warnoptions
+        warnoptions = sys.warnoptions[:]
         try:
             sys.warnoptions[:] = []
             # no warn options, no arg -> default
