@@ -141,7 +141,7 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(posix, 'fexecve'), "test needs posix.fexecve()")
     @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
-    @unittest.skipUnless(hasattr(os, 'wait'), "test needs os.wait()")
+    @unittest.skipUnless(hasattr(os, 'waitpid'), "test needs os.waitpid()")
     def test_fexecve(self):
         fp = os.open(sys.executable, os.O_RDONLY)
         try:
@@ -150,7 +150,7 @@ class PosixTester(unittest.TestCase):
                 os.chdir(os.path.split(sys.executable)[0])
                 posix.fexecve(fp, [sys.executable, '-c', 'pass'], os.environ)
             else:
-                self.assertEqual(os.wait(), (pid, 0))
+                self.assertEqual(os.waitpid(pid, 0), (pid, 0))
         finally:
             os.close(fp)
 
