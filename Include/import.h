@@ -58,6 +58,9 @@ PyAPI_FUNC(PyObject *) PyImport_GetImporter(PyObject *path);
 PyAPI_FUNC(PyObject *) PyImport_Import(PyObject *name);
 PyAPI_FUNC(PyObject *) PyImport_ReloadModule(PyObject *m);
 PyAPI_FUNC(void) PyImport_Cleanup(void);
+PyAPI_FUNC(int) PyImport_ImportFrozenModuleObject(
+    PyObject *name
+    );
 PyAPI_FUNC(int) PyImport_ImportFrozenModule(
     char *name                  /* UTF-8 encoded string */
     );

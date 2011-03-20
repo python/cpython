@@ -217,13 +217,21 @@ Importing Modules
    For internal use only.
 
 
-.. c:function:: int PyImport_ImportFrozenModule(char *name)
+.. c:function:: int PyImport_ImportFrozenModuleObject(PyObject *name)
 
    Load a frozen module named *name*.  Return ``1`` for success, ``0`` if the
    module is not found, and ``-1`` with an exception set if the initialization
    failed.  To access the imported module on a successful load, use
    :c:func:`PyImport_ImportModule`.  (Note the misnomer --- this function would
    reload the module if it was already imported.)
+
+   .. versionadded:: 3.3
+
+
+.. c:function:: int PyImport_ImportFrozenModule(char *name)
+
+   Similar to :c:func:`PyImport_ImportFrozenModuleObject`, but the name is an
+   UTF-8 encoded string instead of a Unicode object.
 
 
 .. c:type:: struct _frozen
