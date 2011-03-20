@@ -1,4 +1,4 @@
-from test.support import verbose, run_unittest, import_module
+from test.support import verbose, run_unittest, import_module, reap_children
 
 #Skip these tests if either fcntl or termios is not available
 fcntl = import_module('fcntl')
@@ -195,7 +195,10 @@ class PtyTest(unittest.TestCase):
         # pty.fork() passed.
 
 def test_main(verbose=None):
-    run_unittest(PtyTest)
+    try:
+        run_unittest(PtyTest)
+    finally:
+        reap_children()
 
 if __name__ == "__main__":
     test_main()
