@@ -83,6 +83,8 @@ Library
 
 - Issue #4391: Use proper gettext plural forms in optparse.
 
+- Issue #11127: Raise a TypeError when trying to pickle a socket object.
+
 - Issue #11563: Connection:close header is sent by requests using URLOpener
   class which helps in closing of sockets after connection is over. Patch
   contributions by Jeff McNeil and Nadeem Vawda.

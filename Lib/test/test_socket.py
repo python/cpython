@@ -18,6 +18,7 @@ import contextlib
 from weakref import proxy
 import signal
 import math
+import pickle
 try:
     import fcntl
 except ImportError:
@@ -763,6 +764,12 @@ class GeneralModuleTests(unittest.TestCase):
             fp = sock.makefile("rb")
             fp.close()
             self.assertEqual(repr(fp), "<_io.BufferedReader name=-1>")
+
+    def test_pickle(self):
+        sock = socket.socket()
+        with sock:
+            for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+                self.assertRaises(TypeError, pickle.dumps, sock, protocol)
 
 
 @unittest.skipUnless(thread, 'Threading required for this test.')
