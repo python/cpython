@@ -2208,8 +2208,8 @@ case_ok(PyObject *filename, Py_ssize_t prefix_delta, PyObject *name)
     match = case_bytes(
         PyBytes_AS_STRING(filebytes),
         PyBytes_GET_SIZE(filebytes) + prefix_delta,
-        PyBytes_AS_STRING(namebytes),
-        PyBytes_GET_SIZE(namebytes));
+        PyBytes_GET_SIZE(namebytes),
+        PyBytes_AS_STRING(namebytes));
     Py_DECREF(filebytes);
     Py_DECREF(namebytes);
     return match;
