@@ -712,7 +712,14 @@ fileio_write(fileio *self, PyObject *args)
         errno = 0;
         len = pbuf.len;
 #if defined(MS_WIN64) || defined(MS_WINDOWS)
-        if (len > INT_MAX)
+        if (len > 32767 && isatty(self->fd)) {
+            /* Issue #11395: the Windows console returns an error (12: not
+               enough space error) on writing into stdout if stdout mode is
+               binary and the length is greater than 66,000 bytes (or less,
+               depending on heap usage). */
+            len = 32767;
+        }
+        else if (len > INT_MAX)
             len = INT_MAX;
         n = write(self->fd, pbuf.buf, (int)len);
 #else

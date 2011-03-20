@@ -97,6 +97,25 @@ class FileTests(unittest.TestCase):
             self.assertEqual(fobj.read().splitlines(),
                 [b"bacon", b"eggs", b"spam"])
 
+    def write_windows_console(self, *args):
+        retcode = subprocess.call(args,
+            # use a new console to not flood the test output
+            creationflags=subprocess.CREATE_NEW_CONSOLE,
+            # use a shell to hide the console window (SW_HIDE)
+            shell=True)
+        self.assertEqual(retcode, 0)
+
+    @unittest.skipUnless(sys.platform == 'win32',
+                         'test specific to the Windows console')
+    def test_write_windows_console(self):
+        # Issue #11395: the Windows console returns an error (12: not enough
+        # space error) on writing into stdout if stdout mode is binary and the
+        # length is greater than 66,000 bytes (or less, depending on heap
+        # usage).
+        code = "print('x' * 100000)"
+        self.write_windows_console(sys.executable, "-c", code)
+        self.write_windows_console(sys.executable, "-u", "-c", code)
+
 
 class TemporaryFileTests(unittest.TestCase):
     def setUp(self):
