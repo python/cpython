@@ -147,7 +147,7 @@ get_codec_name(const char *encoding)
         goto error;
 
     name_utf8 = _PyUnicode_AsString(name);
-    if (name == NULL)
+    if (name_utf8 == NULL)
         goto error;
     name_str = strdup(name_utf8);
     Py_DECREF(name);
