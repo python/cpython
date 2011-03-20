@@ -75,6 +75,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11371: Mark getopt error messages as localizable.  Patch by Filip
+  Gruszczyński.
+
 - Issue #4391: Use proper gettext plural forms in optparse.
 
 - Issue #11563: Connection:close header is sent by requests using URLOpener
