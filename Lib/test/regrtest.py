@@ -827,7 +827,8 @@ class saved_test_environment:
     resources = ('sys.argv', 'cwd', 'sys.stdin', 'sys.stdout', 'sys.stderr',
                  'os.environ', 'sys.path', 'sys.path_hooks', '__import__',
                  'warnings.filters', 'asyncore.socket_map',
-                 'logging._handlers', 'logging._handlerList')
+                 'logging._handlers', 'logging._handlerList',
+                 'sys.warnoptions')
 
     def get_sys_argv(self):
         return id(sys.argv), sys.argv, sys.argv[:]
@@ -908,6 +909,12 @@ class saved_test_environment:
     def restore_logging__handlerList(self, saved_handlerList):
         # Can't easily revert the logging state
         pass
+
+    def get_sys_warnoptions(self):
+        return id(sys.warnoptions), sys.warnoptions, sys.warnoptions[:]
+    def restore_sys_warnoptions(self, saved_options):
+        sys.warnoptions = saved_options[1]
+        sys.warnoptions[:] = saved_options[2]
 
     def resource_info(self):
         for name in self.resources:
