@@ -1598,168 +1598,30 @@ static int case_ok(char *, Py_ssize_t, Py_ssize_t, const char *);
 static int find_init_module(char *); /* Forward */
 static struct filedescr importhookdescr = {"", "", IMP_HOOK};
 
-/* Find a module:
-
-   - try find_module() of each sys.meta_path hook
-   - try find_frozen()
-   - try is_builtin()
-   - try _PyWin_FindRegisteredModule() (Windows only)
-   - otherwise, call find_module_path_list() with search_path_list (if not
-     NULL) or sys.path
-
-   Return:
-
-   - &fd_builtin (C_BUILTIN) if it is a builtin
-   - &fd_frozen (PY_FROZEN) if it is frozen
-   - &fd_package (PKG_DIRECTORY) and write the filename into *buf
-     if it is a package
-   - &importhookdescr (IMP_HOOK) and write the loader into *p_loader if a
-     importer loader was found
-   - a file descriptor (PY_SOURCE, PY_COMPILED, C_EXTENSION, PY_RESOURCE or
-     PY_CODERESOURCE: see _PyImport_Filetab), write the filename into
-     *buf and the pointer to the open file into *p_fp
-   - NULL on error
-
-   By default, write an empty string into *buf, and *p_fp and *p_loader (if
-   set) are set to NULL. Eg. *buf is an empty string for a builtin package. */
-
-static struct filedescr *
-find_module(char *fullname, const char *name, PyObject *path, char *buf,
-            size_t buflen, FILE **p_fp, PyObject **p_loader)
+static struct filedescr*
+find_module_path_list(char *fullname, const char *name,
+                      PyObject *search_path_list, PyObject *path_hooks,
+                      PyObject *path_importer_cache,
+                      char *buf, size_t buflen,
+                      FILE **p_fp, PyObject **p_loader)
 {
     Py_ssize_t i, npath;
     size_t len, namelen;
     struct filedescr *fdp = NULL;
     char *filemode;
     FILE *fp = NULL;
-    PyObject *path_hooks, *path_importer_cache;
     struct stat statbuf;
-    static struct filedescr fd_frozen = {"", "", PY_FROZEN};
-    static struct filedescr fd_builtin = {"", "", C_BUILTIN};
     static struct filedescr fd_package = {"", "", PKG_DIRECTORY};
 #if defined(PYOS_OS2)
     size_t saved_len;
     size_t saved_namelen;
     char *saved_buf = NULL;
 #endif
-    PyObject *fullname_obj, *nameobj;
 
-    *buf = '\0';
-    *p_fp = NULL;
-    if (p_loader != NULL)
-        *p_loader = NULL;
-
-    if (strlen(name) > MAXPATHLEN) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "module name is too long");
-        return NULL;
-    }
-
-    /* sys.meta_path import hook */
-    if (p_loader != NULL) {
-        PyObject *meta_path;
-
-        meta_path = PySys_GetObject("meta_path");
-        if (meta_path == NULL || !PyList_Check(meta_path)) {
-            PyErr_SetString(PyExc_ImportError,
-                            "sys.meta_path must be a list of "
-                            "import hooks");
-            return NULL;
-        }
-        Py_INCREF(meta_path);  /* zap guard */
-        npath = PyList_Size(meta_path);
-        for (i = 0; i < npath; i++) {
-            PyObject *loader;
-            PyObject *hook = PyList_GetItem(meta_path, i);
-            loader = PyObject_CallMethod(hook, "find_module",
-                                         "sO", fullname,
-                                         path != NULL ?
-                                         path : Py_None);
-            if (loader == NULL) {
-                Py_DECREF(meta_path);
-                return NULL;  /* true error */
-            }
-            if (loader != Py_None) {
-                /* a loader was found */
-                *p_loader = loader;
-                Py_DECREF(meta_path);
-                return &importhookdescr;
-            }
-            Py_DECREF(loader);
-        }
-        Py_DECREF(meta_path);
-    }
-
-    if (fullname != NULL) {
-        fullname_obj = PyUnicode_FromString(fullname);
-        if (fullname == NULL)
-            return NULL;
-        if (find_frozen(fullname_obj) != NULL) {
-            Py_DECREF(fullname_obj);
-            strcpy(buf, fullname);
-            return &fd_frozen;
-        }
-        Py_DECREF(fullname_obj);
-    }
-
-    if (path == NULL) {
-#ifdef MS_COREDLL
-        PyObject *filename, *filename_bytes;
-#endif
-        nameobj = PyUnicode_FromString(name);
-        if (nameobj == NULL)
-            return NULL;
-        if (is_builtin(nameobj)) {
-            Py_DECREF(nameobj);
-            strcpy(buf, name);
-            return &fd_builtin;
-        }
-#ifdef MS_COREDLL
-        fp = _PyWin_FindRegisteredModule(nameobj, &fdp, &filename);
-        if (fp != NULL) {
-            Py_DECREF(nameobj);
-            filename_bytes = PyUnicode_EncodeFSDefault(filename);
-            Py_DECREF(filename);
-            if (filename_bytes == NULL)
-                return NULL;
-            strncpy(buf, PyBytes_AS_STRING(filename_bytes), buflen);
-            buf[buflen-1] = '\0';
-            Py_DECREF(filename_bytes);
-            *p_fp = fp;
-            return fdp;
-        }
-        else if (PyErr_Occurred())
-            return NULL;
-#endif
-        Py_DECREF(nameobj);
-        path = PySys_GetObject("path");
-    }
-
-    if (path == NULL || !PyList_Check(path)) {
-        PyErr_SetString(PyExc_ImportError,
-                        "sys.path must be a list of directory names");
-        return NULL;
-    }
-
-    path_hooks = PySys_GetObject("path_hooks");
-    if (path_hooks == NULL || !PyList_Check(path_hooks)) {
-        PyErr_SetString(PyExc_ImportError,
-                        "sys.path_hooks must be a list of "
-                        "import hooks");
-        return NULL;
-    }
-    path_importer_cache = PySys_GetObject("path_importer_cache");
-    if (path_importer_cache == NULL ||
-        !PyDict_Check(path_importer_cache)) {
-        PyErr_SetString(PyExc_ImportError,
-                        "sys.path_importer_cache must be a dict");
-        return NULL;
-    }
-
-    npath = PyList_Size(path);
+    npath = PyList_Size(search_path_list);
     namelen = strlen(name);
     for (i = 0; i < npath; i++) {
-        PyObject *v = PyList_GetItem(path, i);
+        PyObject *v = PyList_GetItem(search_path_list, i);
         PyObject *origv = v;
         const char *base;
         Py_ssize_t size;
@@ -1923,6 +1785,162 @@ find_module(char *fullname, const char *name, PyObject *path, char *buf,
     }
     *p_fp = fp;
     return fdp;
+}
+
+/* Find a module:
+
+   - try find_module() of each sys.meta_path hook
+   - try find_frozen()
+   - try is_builtin()
+   - try _PyWin_FindRegisteredModule() (Windows only)
+   - otherwise, call find_module_path_list() with search_path_list (if not
+     NULL) or sys.path
+
+   Return:
+
+   - &fd_builtin (C_BUILTIN) if it is a builtin
+   - &fd_frozen (PY_FROZEN) if it is frozen
+   - &fd_package (PKG_DIRECTORY) and write the filename into *buf
+     if it is a package
+   - &importhookdescr (IMP_HOOK) and write the loader into *p_loader if a
+     importer loader was found
+   - a file descriptor (PY_SOURCE, PY_COMPILED, C_EXTENSION, PY_RESOURCE or
+     PY_CODERESOURCE: see _PyImport_Filetab), write the filename into
+     *buf and the pointer to the open file into *p_fp
+   - NULL on error
+
+   By default, write an empty string into *buf, and *p_fp and *p_loader (if
+   set) are set to NULL. Eg. *buf is an empty string for a builtin package. */
+
+static struct filedescr *
+find_module(char *fullname, const char *name, PyObject *search_path_list,
+            char *buf, size_t buflen, FILE **p_fp, PyObject **p_loader)
+{
+    Py_ssize_t i, npath;
+    static struct filedescr fd_frozen = {"", "", PY_FROZEN};
+    static struct filedescr fd_builtin = {"", "", C_BUILTIN};
+    PyObject *path_hooks, *path_importer_cache;
+    PyObject *fullname_obj, *nameobj;
+
+    *buf = '\0';
+    *p_fp = NULL;
+    if (p_loader != NULL)
+        *p_loader = NULL;
+
+    if (strlen(name) > MAXPATHLEN) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "module name is too long");
+        return NULL;
+    }
+
+    /* sys.meta_path import hook */
+    if (p_loader != NULL) {
+        PyObject *meta_path;
+
+        meta_path = PySys_GetObject("meta_path");
+        if (meta_path == NULL || !PyList_Check(meta_path)) {
+            PyErr_SetString(PyExc_ImportError,
+                            "sys.meta_path must be a list of "
+                            "import hooks");
+            return NULL;
+        }
+        Py_INCREF(meta_path);  /* zap guard */
+        npath = PyList_Size(meta_path);
+        for (i = 0; i < npath; i++) {
+            PyObject *loader;
+            PyObject *hook = PyList_GetItem(meta_path, i);
+            loader = PyObject_CallMethod(hook, "find_module",
+                                         "sO", fullname,
+                                         search_path_list != NULL ?
+                                         search_path_list : Py_None);
+            if (loader == NULL) {
+                Py_DECREF(meta_path);
+                return NULL;  /* true error */
+            }
+            if (loader != Py_None) {
+                /* a loader was found */
+                *p_loader = loader;
+                Py_DECREF(meta_path);
+                return &importhookdescr;
+            }
+            Py_DECREF(loader);
+        }
+        Py_DECREF(meta_path);
+    }
+
+    if (fullname != NULL) {
+        fullname_obj = PyUnicode_FromString(fullname);
+        if (fullname == NULL)
+            return NULL;
+        if (find_frozen(fullname_obj) != NULL) {
+            Py_DECREF(fullname_obj);
+            strcpy(buf, fullname);
+            return &fd_frozen;
+        }
+        Py_DECREF(fullname_obj);
+    }
+
+    if (search_path_list == NULL) {
+#ifdef MS_COREDLL
+        FILE *fp;
+        struct filedescr *fdp;
+        PyObject *filename, *filename_bytes;
+#endif
+        nameobj = PyUnicode_FromString(name);
+        if (nameobj == NULL)
+            return NULL;
+        if (is_builtin(nameobj)) {
+            Py_DECREF(nameobj);
+            strcpy(buf, name);
+            return &fd_builtin;
+        }
+#ifdef MS_COREDLL
+        fp = _PyWin_FindRegisteredModule(nameobj, &fdp, &filename);
+        if (fp != NULL) {
+            Py_DECREF(nameobj);
+            filename_bytes = PyUnicode_EncodeFSDefault(filename);
+            Py_DECREF(filename);
+            if (filename_bytes == NULL)
+                return NULL;
+            strncpy(buf, PyBytes_AS_STRING(filename_bytes), buflen);
+            buf[buflen-1] = '\0';
+            Py_DECREF(filename_bytes);
+            *p_fp = fp;
+            return fdp;
+        }
+        else if (PyErr_Occurred())
+            return NULL;
+#endif
+        Py_DECREF(nameobj);
+        search_path_list = PySys_GetObject("path");
+    }
+
+    if (search_path_list == NULL || !PyList_Check(search_path_list)) {
+        PyErr_SetString(PyExc_ImportError,
+                        "sys.path must be a list of directory names");
+        return NULL;
+    }
+
+    path_hooks = PySys_GetObject("path_hooks");
+    if (path_hooks == NULL || !PyList_Check(path_hooks)) {
+        PyErr_SetString(PyExc_ImportError,
+                        "sys.path_hooks must be a list of "
+                        "import hooks");
+        return NULL;
+    }
+    path_importer_cache = PySys_GetObject("path_importer_cache");
+    if (path_importer_cache == NULL ||
+        !PyDict_Check(path_importer_cache)) {
+        PyErr_SetString(PyExc_ImportError,
+                        "sys.path_importer_cache must be a dict");
+        return NULL;
+    }
+
+    return find_module_path_list(fullname, name,
+                                 search_path_list, path_hooks,
+                                 path_importer_cache,
+                                 buf, buflen,
+                                 p_fp, p_loader);
 }
 
 /* case_ok(char* buf, Py_ssize_t len, Py_ssize_t namelen, char* name)
