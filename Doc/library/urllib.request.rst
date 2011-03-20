@@ -1245,7 +1245,7 @@ The following example uses no proxies at all, overriding environment settings::
   you try to fetch a file whose read permissions make it inaccessible; the FTP
   code will try to read it, fail with a 550 error, and then perform a directory
   listing for the unreadable file. If fine-grained control is needed, consider
-  using the :mod:`ftplib` module, subclassing :class:`FancyURLOpener`, or changing
+  using the :mod:`ftplib` module, subclassing :class:`FancyURLopener`, or changing
   *_urlopener* to meet your needs.
 
 
