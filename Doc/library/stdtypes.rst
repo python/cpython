@@ -2535,14 +2535,14 @@ the particular object.
 
 .. attribute:: file.newlines
 
-   If Python was built with the :option:`--with-universal-newlines` option to
-   :program:`configure` (the default) this read-only attribute exists, and for
-   files opened in universal newline read mode it keeps track of the types of
-   newlines encountered while reading the file. The values it can take are
-   ``'\r'``, ``'\n'``, ``'\r\n'``, ``None`` (unknown, no newlines read yet) or a
-   tuple containing all the newline types seen, to indicate that multiple newline
-   conventions were encountered. For files not opened in universal newline read
-   mode the value of this attribute will be ``None``.
+   If Python was built with universal newlines enabled (the default) this
+   read-only attribute exists, and for files opened in universal newline read
+   mode it keeps track of the types of newlines encountered while reading the
+   file. The values it can take are ``'\r'``, ``'\n'``, ``'\r\n'``, ``None``
+   (unknown, no newlines read yet) or a tuple containing all the newline types
+   seen, to indicate that multiple newline conventions were encountered. For
+   files not opened in universal newline read mode the value of this attribute
+   will be ``None``.
 
 
 .. attribute:: file.softspace
