@@ -86,10 +86,16 @@ def _repr(self):
 #   Id: errors.py 509 2006-04-20 00:58:24Z gward
 
 try:
-    from gettext import gettext
+    from gettext import gettext, ngettext
 except ImportError:
     def gettext(message):
         return message
+
+    def ngettext(singular, plural, n):
+        if n == 1:
+            return singular
+        return plural
+
 _ = gettext
 
 
@@ -1478,11 +1484,10 @@ class OptionParser (OptionContainer):
         if option.takes_value():
             nargs = option.nargs
             if len(rargs) < nargs:
-                if nargs == 1:
-                    self.error(_("%s option requires an argument") % opt)
-                else:
-                    self.error(_("%s option requires %d arguments")
-                               % (opt, nargs))
+                self.error(ngettext(
+                    "%(option)s option requires %(number)d argument",
+                    "%(option)s option requires %(number)d arguments",
+                    nargs) % {"option": opt, "number": nargs})
             elif nargs == 1:
                 value = rargs.pop(0)
             else:
@@ -1517,11 +1522,10 @@ class OptionParser (OptionContainer):
 
                 nargs = option.nargs
                 if len(rargs) < nargs:
-                    if nargs == 1:
-                        self.error(_("%s option requires an argument") % opt)
-                    else:
-                        self.error(_("%s option requires %d arguments")
-                                   % (opt, nargs))
+                    self.error(ngettext(
+                        "%(option)s option requires %(number)d argument",
+                        "%(option)s option requires %(number)d arguments",
+                        nargs) % {"option": opt, "number": nargs})
                 elif nargs == 1:
                     value = rargs.pop(0)
                 else:
