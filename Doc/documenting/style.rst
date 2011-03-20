@@ -14,9 +14,10 @@ document.
 Use of whitespace
 -----------------
 
-All reST files use an indentation of 3 spaces.  The maximum line length is 80
-characters for normal text, but tables, deeply indented code samples and long
-links may extend beyond that.
+All reST files use an indentation of 3 spaces; no tabs are allowed.  The
+maximum line length is 80 characters for normal text, but tables, deeply
+indented code samples and long links may extend beyond that.  Code example
+bodies should use normal Python 4-space indentation.
 
 Make generous use of blank lines where applicable; they help grouping things
 together.
