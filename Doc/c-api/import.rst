@@ -112,7 +112,7 @@ Importing Modules
 
 .. c:function:: PyObject* PyImport_AddModule(const char *name)
 
-   Similar to :c:func:`PyImport_AddModuleObject`, but the name is an UTF-8
+   Similar to :c:func:`PyImport_AddModuleObject`, but the name is a UTF-8
    encoded string instead of a Unicode object.
 
 
@@ -237,7 +237,7 @@ Importing Modules
 
 .. c:function:: int PyImport_ImportFrozenModule(char *name)
 
-   Similar to :c:func:`PyImport_ImportFrozenModuleObject`, but the name is an
+   Similar to :c:func:`PyImport_ImportFrozenModuleObject`, but the name is a
    UTF-8 encoded string instead of a Unicode object.
 
 
