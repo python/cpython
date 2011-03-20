@@ -780,7 +780,10 @@ class PosixGroupsTester(unittest.TestCase):
 
 
 def test_main():
-    support.run_unittest(PosixTester, PosixGroupsTester)
+    try:
+        support.run_unittest(PosixTester, PosixGroupsTester)
+    finally:
+        support.reap_children()
 
 if __name__ == '__main__':
     test_main()
