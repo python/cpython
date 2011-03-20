@@ -1429,7 +1429,7 @@ get_sourcefile(char *file)
 static PyObject *load_module(char *, FILE *, char *, int, PyObject *);
 static struct filedescr *find_module(char *, char *, PyObject *,
                                      char *, size_t, FILE **, PyObject **);
-static struct _frozen * find_frozen(char *);
+static struct _frozen * find_frozen(PyObject *);
 
 /* Load a package and return its module object WITH INCREMENTED
    REFERENCE COUNT */
@@ -1617,6 +1617,8 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
     size_t saved_namelen;
     char *saved_buf = NULL;
 #endif
+    PyObject *fullname_obj;
+
     if (p_loader != NULL)
         *p_loader = NULL;
 
@@ -1662,9 +1664,16 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
         Py_DECREF(meta_path);
     }
 
-    if (find_frozen(fullname) != NULL) {
-        strcpy(buf, fullname);
-        return &fd_frozen;
+    if (fullname != NULL) {
+        fullname_obj = PyUnicode_FromString(fullname);
+        if (fullname == NULL)
+            return NULL;
+        if (find_frozen(fullname_obj) != NULL) {
+            Py_DECREF(fullname_obj);
+            strcpy(buf, fullname);
+            return &fd_frozen;
+        }
+        Py_DECREF(fullname_obj);
     }
 
     if (path == NULL) {
@@ -2226,37 +2235,37 @@ init_builtin(char *name)
 /* Frozen modules */
 
 static struct _frozen *
-find_frozen(char *name)
+find_frozen(PyObject *name)
 {
     struct _frozen *p;
 
-    if (!name)
+    if (name == NULL)
         return NULL;
 
     for (p = PyImport_FrozenModules; ; p++) {
         if (p->name == NULL)
             return NULL;
-        if (strcmp(p->name, name) == 0)
+        if (PyUnicode_CompareWithASCIIString(name, p->name) == 0)
             break;
     }
     return p;
 }
 
 static PyObject *
-get_frozen_object(char *name)
+get_frozen_object(PyObject *name)
 {
     struct _frozen *p = find_frozen(name);
     int size;
 
     if (p == NULL) {
         PyErr_Format(PyExc_ImportError,
-                     "No such frozen object named %.200s",
+                     "No such frozen object named %R",
                      name);
         return NULL;
     }
     if (p->code == NULL) {
         PyErr_Format(PyExc_ImportError,
-                     "Excluded frozen object named %.200s",
+                     "Excluded frozen object named %R",
                      name);
         return NULL;
     }
@@ -2267,14 +2276,14 @@ get_frozen_object(char *name)
 }
 
 static PyObject *
-is_frozen_package(char *name)
+is_frozen_package(PyObject *name)
 {
     struct _frozen *p = find_frozen(name);
     int size;
 
     if (p == NULL) {
         PyErr_Format(PyExc_ImportError,
-                     "No such frozen object named %.200s",
+                     "No such frozen object named %R",
                      name);
         return NULL;
     }
@@ -2294,19 +2303,20 @@ is_frozen_package(char *name)
    This function is also used from frozenmain.c */
 
 int
-PyImport_ImportFrozenModule(char *name)
+PyImport_ImportFrozenModuleObject(PyObject *name)
 {
-    struct _frozen *p = find_frozen(name);
-    PyObject *co;
-    PyObject *m;
+    struct _frozen *p;
+    PyObject *co, *m, *path;
     int ispackage;
     int size;
+
+    p = find_frozen(name);
 
     if (p == NULL)
         return 0;
     if (p->code == NULL) {
         PyErr_Format(PyExc_ImportError,
-                     "Excluded frozen object named %.200s",
+                     "Excluded frozen object named %R",
                      name);
         return -1;
     }
@@ -2315,40 +2325,41 @@ PyImport_ImportFrozenModule(char *name)
     if (ispackage)
         size = -size;
     if (Py_VerboseFlag)
-        PySys_WriteStderr("import %s # frozen%s\n",
+        PySys_FormatStderr("import %U # frozen%s\n",
             name, ispackage ? " package" : "");
     co = PyMarshal_ReadObjectFromString((char *)p->code, size);
     if (co == NULL)
         return -1;
     if (!PyCode_Check(co)) {
         PyErr_Format(PyExc_TypeError,
-                     "frozen object %.200s is not a code object",
+                     "frozen object %R is not a code object",
                      name);
         goto err_return;
     }
     if (ispackage) {
         /* Set __path__ to the package name */
-        PyObject *d, *s, *l;
+        PyObject *d, *l;
         int err;
-        m = PyImport_AddModule(name);
+        m = PyImport_AddModuleObject(name);
         if (m == NULL)
             goto err_return;
         d = PyModule_GetDict(m);
-        s = PyUnicode_InternFromString(name);
-        if (s == NULL)
-            goto err_return;
         l = PyList_New(1);
         if (l == NULL) {
-            Py_DECREF(s);
             goto err_return;
         }
-        PyList_SET_ITEM(l, 0, s);
+        Py_INCREF(name);
+        PyList_SET_ITEM(l, 0, name);
         err = PyDict_SetItemString(d, "__path__", l);
         Py_DECREF(l);
         if (err != 0)
             goto err_return;
     }
-    m = PyImport_ExecCodeModuleEx(name, co, "<frozen>");
+    path = PyUnicode_FromString("<frozen>");
+    if (path == NULL)
+        goto err_return;
+    m = PyImport_ExecCodeModuleObject(name, co, path, NULL);
+    Py_DECREF(path);
     if (m == NULL)
         goto err_return;
     Py_DECREF(co);
@@ -2357,6 +2368,19 @@ PyImport_ImportFrozenModule(char *name)
 err_return:
     Py_DECREF(co);
     return -1;
+}
+
+int
+PyImport_ImportFrozenModule(char *name)
+{
+    PyObject *nameobj;
+    int ret;
+    nameobj = PyUnicode_InternFromString(name);
+    if (nameobj == NULL)
+        return -1;
+    ret = PyImport_ImportFrozenModuleObject(nameobj);
+    Py_DECREF(nameobj);
+    return ret;
 }
 
 
@@ -3282,19 +3306,19 @@ imp_init_builtin(PyObject *self, PyObject *args)
 static PyObject *
 imp_init_frozen(PyObject *self, PyObject *args)
 {
-    char *name;
+    PyObject *name;
     int ret;
     PyObject *m;
-    if (!PyArg_ParseTuple(args, "s:init_frozen", &name))
+    if (!PyArg_ParseTuple(args, "U:init_frozen", &name))
         return NULL;
-    ret = PyImport_ImportFrozenModule(name);
+    ret = PyImport_ImportFrozenModuleObject(name);
     if (ret < 0)
         return NULL;
     if (ret == 0) {
         Py_INCREF(Py_None);
         return Py_None;
     }
-    m = PyImport_AddModule(name);
+    m = PyImport_AddModuleObject(name);
     Py_XINCREF(m);
     return m;
 }
@@ -3302,9 +3326,9 @@ imp_init_frozen(PyObject *self, PyObject *args)
 static PyObject *
 imp_get_frozen_object(PyObject *self, PyObject *args)
 {
-    char *name;
+    PyObject *name;
 
-    if (!PyArg_ParseTuple(args, "s:get_frozen_object", &name))
+    if (!PyArg_ParseTuple(args, "U:get_frozen_object", &name))
         return NULL;
     return get_frozen_object(name);
 }
@@ -3312,9 +3336,9 @@ imp_get_frozen_object(PyObject *self, PyObject *args)
 static PyObject *
 imp_is_frozen_package(PyObject *self, PyObject *args)
 {
-    char *name;
+    PyObject *name;
 
-    if (!PyArg_ParseTuple(args, "s:is_frozen_package", &name))
+    if (!PyArg_ParseTuple(args, "U:is_frozen_package", &name))
         return NULL;
     return is_frozen_package(name);
 }
@@ -3331,9 +3355,9 @@ imp_is_builtin(PyObject *self, PyObject *args)
 static PyObject *
 imp_is_frozen(PyObject *self, PyObject *args)
 {
-    char *name;
+    PyObject *name;
     struct _frozen *p;
-    if (!PyArg_ParseTuple(args, "s:is_frozen", &name))
+    if (!PyArg_ParseTuple(args, "U:is_frozen", &name))
         return NULL;
     p = find_frozen(name);
     return PyBool_FromLong((long) (p == NULL ? 0 : p->size));
