@@ -164,14 +164,14 @@ Library
   file descriptors (0, 1, 2) are closed in the parent process.  Initial
   patch by Ross Lagerwall.
 
-- Issue 10753 - Characters ';','=' and ',' in the PATH_INFO environment
-  variable won't be quoted when the URI is constructed by the wsgiref.util 's
+- Issue #10753 - Characters ';', '=' and ',' in the PATH_INFO environment
+  variable won't be quoted when the URI is constructed by the wsgiref.util's
   request_uri method. According to RFC 3986, these characters can be a part of
   params in PATH component of URI and need not be quoted.
 
-- Issue 10738: Fix webbrowser.Opera.raise_opts
+- Issue #10738: Fix webbrowser.Opera.raise_opts
 
-- Issue 9824: SimpleCookie now encodes , and ; in values to cater to how
+- Issue #9824: SimpleCookie now encodes , and ; in values to cater to how
   browsers actually parse cookies.
 
 - Issue #5258/#10642: if site.py encounters a .pth file that generates an error,
@@ -524,7 +524,7 @@ Library
 - The keyword only restriction for the places argument in
   unittest.TestCase.assert[Not]AlmostEqual methods has been removed.
 
-- Issue 6706: asyncore accept() method no longer raises EWOULDBLOCK/ECONNABORTED
+- Issue #6706: asyncore accept() method no longer raises EWOULDBLOCK/ECONNABORTED
   on incomplete connection attempt but returns None instead.
 
 - Issue #10266: uu.decode didn't close in_file explicitly when it was given
@@ -540,7 +540,7 @@ Library
   xml.sax.saxutils.XMLGenerator as being bound to
   http://www.w3.org/XML/1998/namespace.  Patch by Troy J. Farrell.
 
-- #7761: telnetlib.interact failures on Windows fixed.
+- Issue #7761: telnetlib.interact failures on Windows fixed.
 
 - Issue #5117: Case normalization was needed on ntpath.relpath(). And
   fixed root directory issue on posixpath.relpath(). (Ported working fixes
