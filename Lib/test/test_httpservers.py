@@ -38,8 +38,8 @@ class TestServerThread(threading.Thread):
         self.test_object = test_object
 
     def run(self):
-        self.server = HTTPServer(('', 0), self.request_handler)
-        self.test_object.PORT = self.server.socket.getsockname()[1]
+        self.server = HTTPServer(('localhost', 0), self.request_handler)
+        self.test_object.HOST, self.test_object.PORT = self.server.socket.getsockname()
         self.test_object.server_started.set()
         self.test_object = None
         try:
@@ -66,7 +66,7 @@ class BaseTestCase(unittest.TestCase):
         support.threading_cleanup(*self._threads)
 
     def request(self, uri, method='GET', body=None, headers={}):
-        self.connection = http.client.HTTPConnection('localhost', self.PORT)
+        self.connection = http.client.HTTPConnection(self.HOST, self.PORT)
         self.connection.request(method, uri, body, headers)
         return self.connection.getresponse()
 
@@ -107,7 +107,7 @@ class BaseHTTPServerTestCase(BaseTestCase):
 
     def setUp(self):
         BaseTestCase.setUp(self)
-        self.con = http.client.HTTPConnection('localhost', self.PORT)
+        self.con = http.client.HTTPConnection(self.HOST, self.PORT)
         self.con.connect()
 
     def test_command(self):
