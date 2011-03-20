@@ -484,9 +484,12 @@ class ItimerTest(unittest.TestCase):
         self.assertEqual(self.hndl_called, True)
 
 def test_main():
-    support.run_unittest(BasicSignalTests, InterProcessSignalTests,
-                         WakeupSignalTests, SiginterruptTest,
-                         ItimerTest, WindowsSignalTests)
+    try:
+        support.run_unittest(BasicSignalTests, InterProcessSignalTests,
+                             WakeupSignalTests, SiginterruptTest,
+                             ItimerTest, WindowsSignalTests)
+    finally:
+        support.reap_children()
 
 
 if __name__ == "__main__":
