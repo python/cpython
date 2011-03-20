@@ -79,8 +79,8 @@ The :mod:`csv` module defines the following functions:
 
    Return a writer object responsible for converting the user's data into delimited
    strings on the given file-like object.  *csvfile* can be any object with a
-   :func:`write` method.  If csvfile is a file object, it should be opened with
-   newline='' [1]_.  An optional *dialect*
+   :func:`write` method.  If *csvfile* is a file object, it should be opened with
+   ``newline=''`` [1]_.  An optional *dialect*
    parameter can be given which is used to define a set of parameters specific to a
    particular CSV dialect.  It may be an instance of a subclass of the
    :class:`Dialect` class or one of the strings returned by the
@@ -485,5 +485,5 @@ done::
 
 .. [1] If ``newline=''`` is not specified, newlines embedded inside quoted fields
    will not be interpreted correctly, and on platforms that use ``\r\n`` linendings
-   on write an extra `\\r` will be added.  It should always be safe to specify
+   on write an extra ``\r`` will be added.  It should always be safe to specify
    ``newline=''``, since the csv module does its own (universal) newline handling.
