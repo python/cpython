@@ -10,6 +10,12 @@ What's New in Python 3.2.1?
 Core and Builtins
 -----------------
 
+- Issue #11395: io.FileIO().write() clamps the data length to 32,767 bytes on
+  Windows if the file is a TTY to workaround a Windows bug. The Windows console
+  returns an error (12: not enough space error) on writing into stdout if
+  stdout mode is binary and the length is greater than 66,000 bytes (or less,
+  depending on heap usage).
+
 - Issue #11320: fix bogus memory management in Modules/getpath.c, leading to
   a possible crash when calling Py_SetPath().
 
