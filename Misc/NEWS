@@ -155,14 +155,14 @@ Library
 
 - Subclasses of collections.OrderedDict now work correctly with __missing__.
 
-- Issue 10753 - Characters ';','=' and ',' in the PATH_INFO environment
+- Issue #10753 - Characters ';', '=' and ',' in the PATH_INFO environment
   variable won't be quoted when the URI is constructed by the wsgiref.util 's
   request_uri method. According to RFC 3986, these characters can be a part of
   params in PATH component of URI and need not be quoted.
 
-- Issue 10738: Fix webbrowser.Opera.raise_opts
+- Issue #10738: Fix webbrowser.Opera.raise_opts
 
-- Issue 9824: SimpleCookie now encodes , and ; in values to cater to how
+- Issue #9824: SimpleCookie now encodes , and ; in values to cater to how
   browsers actually parse cookies.
 
 - Issue #1379416: eliminated a source of accidental unicode promotion in
@@ -422,7 +422,7 @@ Core and Builtins
 Library
 -------
 
-- Issue 9926: Wrapped TestSuite subclass does not get __call__ executed
+- Issue #9926: Wrapped TestSuite subclass does not get __call__ executed
 
 - Issue #4471: Properly shutdown socket in IMAP.shutdown().  Patch by
   Lorenzo M. Catucci.
@@ -481,7 +481,7 @@ Library
 - Issue #5117: Fixed root directory related issue on posixpath.relpath() and
   ntpath.relpath().
 
-- Issue 9409: Fix the regex to match all kind of filenames, for interactive
+- Issue #9409: Fix the regex to match all kind of filenames, for interactive
   debugging in doctests.
 
 - Issue #6612: Fix site and sysconfig to catch os.getcwd() error, eg. if the
