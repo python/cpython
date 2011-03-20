@@ -631,7 +631,7 @@ class TestStandard(BaseTest):
                                                option_list=options)
 
     def test_required_value(self):
-        self.assertParseFail(["-a"], "-a option requires an argument")
+        self.assertParseFail(["-a"], "-a option requires 1 argument")
 
     def test_invalid_integer(self):
         self.assertParseFail(["-b", "5x"],
