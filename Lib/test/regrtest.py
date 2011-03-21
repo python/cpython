@@ -1000,12 +1000,9 @@ def runtest_inner(test, verbose, quiet, huntrleaks=False, debug=False):
         sys.stderr.flush()
         return FAILED, test_time
     except:
-        type, value = sys.exc_info()[:2]
-        print("test", test, "crashed --", str(type) + ":", value, file=sys.stderr)
+        msg = traceback.format_exc()
+        print("test", test, "crashed --", msg, file=sys.stderr)
         sys.stderr.flush()
-        if verbose or debug:
-            traceback.print_exc(file=sys.stderr)
-            sys.stderr.flush()
         return FAILED, test_time
     else:
         if refleak:
