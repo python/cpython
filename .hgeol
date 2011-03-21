@@ -27,6 +27,7 @@
 **.zip  = BIN
 
 Lib/email/test/data/msg_26.txt = BIN
+Lib/test/test_email/data/msg_26.txt = BIN
 Lib/test/sndhdrdata/sndhdr.* = BIN
 Lib/test/decimaltestdata/*.decTest = BIN
 
