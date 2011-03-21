@@ -49,6 +49,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5537: Fix time2isoz() and time2netscape() functions of
+  httplib.cookiejar for expiration year greater than 2038 on 32-bit systems.
+
 - Issue #11563: Connection:close header is sent by requests using URLOpener
   class which helps in closing of sockets after connection is over. Patch
   contributions by Jeff McNeil and Nadeem Vawda.
