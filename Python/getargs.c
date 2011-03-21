@@ -310,20 +310,18 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
         if (max == 0) {
             if (args == NULL)
                 return 1;
-            PyOS_snprintf(msgbuf, sizeof(msgbuf),
-                          "%.200s%s takes no arguments",
-                          fname==NULL ? "function" : fname,
-                          fname==NULL ? "" : "()");
-            PyErr_SetString(PyExc_TypeError, msgbuf);
+            PyErr_Format(PyExc_TypeError,
+                         "%.200s%s takes no arguments",
+                         fname==NULL ? "function" : fname,
+                         fname==NULL ? "" : "()");
             return 0;
         }
         else if (min == 1 && max == 1) {
             if (args == NULL) {
-                PyOS_snprintf(msgbuf, sizeof(msgbuf),
-                      "%.200s%s takes at least one argument",
-                          fname==NULL ? "function" : fname,
-                          fname==NULL ? "" : "()");
-                PyErr_SetString(PyExc_TypeError, msgbuf);
+                PyErr_Format(PyExc_TypeError,
+                             "%.200s%s takes at least one argument",
+                             fname==NULL ? "function" : fname,
+                             fname==NULL ? "" : "()");
                 return 0;
             }
             msg = convertitem(args, &format, p_va, flags, levels,
@@ -349,20 +347,18 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
     len = PyTuple_GET_SIZE(args);
 
     if (len < min || max < len) {
-        if (message == NULL) {
-            PyOS_snprintf(msgbuf, sizeof(msgbuf),
-                          "%.150s%s takes %s %d argument%s "
-                          "(%ld given)",
-                          fname==NULL ? "function" : fname,
-                          fname==NULL ? "" : "()",
-                          min==max ? "exactly"
-                          : len < min ? "at least" : "at most",
-                          len < min ? min : max,
-                          (len < min ? min : max) == 1 ? "" : "s",
-                          Py_SAFE_DOWNCAST(len, Py_ssize_t, long));
-            message = msgbuf;
-        }
-        PyErr_SetString(PyExc_TypeError, message);
+        if (message == NULL)
+            PyErr_Format(PyExc_TypeError,
+                         "%.150s%s takes %s %d argument%s (%ld given)",
+                         fname==NULL ? "function" : fname,
+                         fname==NULL ? "" : "()",
+                         min==max ? "exactly"
+                         : len < min ? "at least" : "at most",
+                         len < min ? min : max,
+                         (len < min ? min : max) == 1 ? "" : "s",
+                         Py_SAFE_DOWNCAST(len, Py_ssize_t, long));
+        else
+            PyErr_SetString(PyExc_TypeError, message);
         return 0;
     }
 
@@ -1458,8 +1454,8 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
     nargs = PyTuple_GET_SIZE(args);
     nkeywords = (keywords == NULL) ? 0 : PyDict_Size(keywords);
     if (nargs + nkeywords > len) {
-        PyErr_Format(PyExc_TypeError, "%s%s takes at most %d "
-                     "argument%s (%d given)",
+        PyErr_Format(PyExc_TypeError,
+                     "%s%s takes at most %d argument%s (%d given)",
                      (fname == NULL) ? "function" : fname,
                      (fname == NULL) ? "" : "()",
                      len,

@@ -766,7 +766,7 @@ typedef struct
     PyObject *name;
 } PyDateTime_TimeZone;
 
-/* The interned UTC timezone instance */ 
+/* The interned UTC timezone instance */
 static PyObject *PyDateTime_TimeZone_UTC;
 
 /* Create new timezone instance checking offset range.  This
@@ -3287,7 +3287,6 @@ timezone_repr(PyDateTime_TimeZone *self)
 static PyObject *
 timezone_str(PyDateTime_TimeZone *self)
 {
-    char buf[10];
     int hours, minutes, seconds;
     PyObject *offset;
     char sign;
@@ -3313,11 +3312,9 @@ timezone_str(PyDateTime_TimeZone *self)
     Py_DECREF(offset);
     minutes = divmod(seconds, 60, &seconds);
     hours = divmod(minutes, 60, &minutes);
-    assert(seconds == 0);
     /* XXX ignore sub-minute data, curently not allowed. */
-    PyOS_snprintf(buf, sizeof(buf), "UTC%c%02d:%02d", sign, hours, minutes);
-
-    return PyUnicode_FromString(buf);
+    assert(seconds == 0);
+    return PyUnicode_FromFormat("UTC%c%02d:%02d", sign, hours, minutes);
 }
 
 static PyObject *

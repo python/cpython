@@ -22,14 +22,7 @@ static PyObject *TestError;     /* set to exception object in init */
 static PyObject *
 raiseTestError(const char* test_name, const char* msg)
 {
-    char buf[2048];
-
-    if (strlen(test_name) + strlen(msg) > sizeof(buf) - 50)
-        PyErr_SetString(TestError, "internal error msg too large");
-    else {
-        PyOS_snprintf(buf, sizeof(buf), "%s: %s", test_name, msg);
-        PyErr_SetString(TestError, buf);
-    }
+    PyErr_Format(TestError, "%s: %s", test_name, msg);
     return NULL;
 }
 
