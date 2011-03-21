@@ -295,12 +295,8 @@ class _TestStrftimeYear:
         except ValueError:
             # strftime() is limited to [1; 9999] with Visual Studio
             return
-        # Issue #10864: OpenIndiana is limited to 4 digits,
-        # but Python doesn't raise a ValueError
-        #self.assertEqual(text, '12345')
-        #self.assertEqual(self.yearstr(123456789), '123456789')
-        self.assertIn(text, ('2345', '12345'))
-        self.assertIn(self.yearstr(123456789), ('123456789', '6789'))
+        self.assertEqual(text, '12345')
+        self.assertEqual(self.yearstr(123456789), '123456789')
 
 class _Test2dYear(_BaseYearTest):
     accept2dyear = 1
