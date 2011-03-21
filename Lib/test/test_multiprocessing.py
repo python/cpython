@@ -1100,7 +1100,7 @@ class _TestPool(BaseTestCase):
         self.pool.terminate()
         join = TimingWrapper(self.pool.join)
         join()
-        self.assertTrue(join.elapsed < 0.2)
+        self.assertTrue(join.elapsed < 0.5)
 
 def raising():
     raise KeyError("key")
