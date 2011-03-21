@@ -476,9 +476,8 @@ time_strftime(PyObject *self, PyObject *args)
 
 #if defined(_MSC_VER) || defined(sun)
     if (buf.tm_year + 1900 < 1 || 9999 < buf.tm_year + 1900) {
-        PyErr_Format(PyExc_ValueError,
-                     "strftime() requires year in [1; 9999]",
-                     buf.tm_year + 1900);
+        PyErr_SetString(PyExc_ValueError,
+                        "strftime() requires year in [1; 9999]");
         return NULL;
     }
 #endif
