@@ -278,6 +278,11 @@ Tools/Demos
 Tests
 -----
 
+- The email test suite now lives in the Lib/test/test_email package.  The test
+  harness code has also been modernized to allow use of new unittest features.
+
+- regrtest now discovers test packages as well as test modules.
+
 - Issue #11577: improve test coverage of binhex.py. Patch by Arkady Koplyarov.
 
 - New test_crashers added to exercise the scripts in the Lib/test/crashers

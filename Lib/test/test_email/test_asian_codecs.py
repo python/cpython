@@ -5,7 +5,7 @@
 import unittest
 from test.support import run_unittest
 
-from email.test.test_email import TestEmailBase
+from test.test_email.test_email import TestEmailBase
 from email.charset import Charset
 from email.header import Header, decode_header
 from email.message import Message
@@ -78,16 +78,5 @@ Hello World! =?iso-2022-jp?b?GyRCJU8lbSE8JW8hPCVrJUkhKhsoQg==?=
 
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestEmailAsianCodecs))
-    return suite
-
-
-def test_main():
-    run_unittest(TestEmailAsianCodecs)
-
-
-
 if __name__ == '__main__':
-    unittest.main(defaultTest='suite')
+    unittest.main()

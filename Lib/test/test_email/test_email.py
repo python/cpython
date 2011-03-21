@@ -37,7 +37,7 @@ from email import base64mime
 from email import quoprimime
 
 from test.support import findfile, run_unittest, unlink
-from email.test import __file__ as landmark
+from test.test_email import __file__ as landmark
 
 
 NL = '\n'
@@ -4142,23 +4142,5 @@ class TestSigned(TestEmailBase):
 
 
 
-def _testclasses():
-    mod = sys.modules[__name__]
-    return [getattr(mod, name) for name in dir(mod) if name.startswith('Test')]
-
-
-def suite():
-    suite = unittest.TestSuite()
-    for testclass in _testclasses():
-        suite.addTest(unittest.makeSuite(testclass))
-    return suite
-
-
-def test_main():
-    for testclass in _testclasses():
-        run_unittest(testclass)
-
-
-
 if __name__ == '__main__':
-    unittest.main(defaultTest='suite')
+    unittest.main()
