@@ -29,6 +29,7 @@ __all__ = ['Cookie', 'CookieJar', 'CookiePolicy', 'DefaultCookiePolicy',
            'FileCookieJar', 'LWPCookieJar', 'LoadError', 'MozillaCookieJar']
 
 import copy
+import datetime
 import re
 import time
 import urllib.parse, urllib.request
@@ -97,10 +98,12 @@ def time2isoz(t=None):
     1994-11-24 08:49:37Z
 
     """
-    if t is None: t = time.time()
-    year, mon, mday, hour, min, sec = time.gmtime(t)[:6]
+    if t is None:
+        dt = datetime.datetime.utcnow()
+    else:
+        dt = datetime.datetime.utcfromtimestamp(t)
     return "%04d-%02d-%02d %02d:%02d:%02dZ" % (
-        year, mon, mday, hour, min, sec)
+        dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second)
 
 def time2netscape(t=None):
     """Return a string representing time in seconds since epoch, t.
@@ -113,10 +116,13 @@ def time2netscape(t=None):
     Wed, DD-Mon-YYYY HH:MM:SS GMT
 
     """
-    if t is None: t = time.time()
-    year, mon, mday, hour, min, sec, wday = time.gmtime(t)[:7]
+    if t is None:
+        dt = datetime.datetime.utcnow()
+    else:
+        dt = datetime.datetime.utcfromtimestamp(t)
     return "%s %02d-%s-%04d %02d:%02d:%02d GMT" % (
-        DAYS[wday], mday, MONTHS[mon-1], year, hour, min, sec)
+        DAYS[dt.weekday()], dt.day, MONTHS[dt.month-1],
+        dt.year, dt.hour, dt.minute, dt.second)
 
 
 UTC_ZONES = {"GMT": None, "UTC": None, "UT": None, "Z": None}
