@@ -30,6 +30,9 @@ def remove_files(name):
 
 class ImportTests(unittest.TestCase):
 
+    def setUp(self):
+        remove_files(TESTFN)
+
     def tearDown(self):
         unload(TESTFN)
 
