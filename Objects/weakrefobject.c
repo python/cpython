@@ -156,7 +156,6 @@ weakref_hash(PyWeakReference *self)
 static PyObject *
 weakref_repr(PyWeakReference *self)
 {
-    char buffer[256];
     PyObject *name, *repr;
 
     if (PyWeakref_GET_OBJECT(self) == Py_None)
