@@ -191,7 +191,7 @@ Library
   The _thread.error exception is now an alias of RuntimeError.  Patch by
   Filip Gruszczyński.  Patch for _dummy_thread by Aymeric Augustin.
 
-- Issue 8594: ftplib now provides a source_address parameter to specify which
+- Issue #8594: ftplib now provides a source_address parameter to specify which
   (address, port) to bind to before connecting.
 
 - Issue #11326: Add the missing connect_ex() implementation for SSL sockets,
@@ -207,9 +207,9 @@ Library
 - Issue #7322: Trying to read from a socket's file-like object after a timeout
   occurred now raises an error instead of silently losing data.
 
-- Issue 11291: poplib.POP no longer suppresses errors on quit().
+- Issue #11291: poplib.POP no longer suppresses errors on quit().
 
-- Issue 11177: asyncore's create_socket() arguments can now be omitted.
+- Issue #11177: asyncore's create_socket() arguments can now be omitted.
 
 - Issue #6064: Add a ``daemon`` keyword argument to the threading.Thread
   and multiprocessing.Process constructors in order to override the
@@ -225,7 +225,7 @@ Library
   to 1000x faster in some cases).  It is still one to two order of magnitudes
   slower than binary tell().
 
-- Issue 10882: Add os.sendfile function.
+- Issue #10882: Add os.sendfile function.
 
 - Issue #10868: Allow usage of the register method of an ABC as a class
   decorator.
@@ -651,8 +651,8 @@ Library
   time. `sys.stderr` now looked up at instantiation time.  Fix contributed by
   Mark Roddy.
 
-- Issue #10753: Characters ';','=' and ',' in the PATH_INFO environment variable
-  won't be quoted when the URI is constructed by the wsgiref.util 's request_uri
+- Issue #10753: Characters ';', '=' and ',' in the PATH_INFO environment variable
+  won't be quoted when the URI is constructed by the wsgiref.util's request_uri
   method. According to RFC 3986, these characters can be a part of params in
   PATH component of URI and need not be quoted.
 
@@ -1122,9 +1122,9 @@ Library
   comment prefixes, name of the DEFAULT section, empty lines in multiline
   values, and indentation.
 
-- Issue 10326: unittest.TestCase instances can be pickled.
+- Issue #10326: unittest.TestCase instances can be pickled.
 
-- Issue 9926: Wrapped TestSuite subclass does not get __call__ executed.
+- Issue #9926: Wrapped TestSuite subclass does not get __call__ executed.
 
 - Issue #9920: Skip tests for cmath.atan and cmath.atanh applied to complex
   zeros on systems where the log1p function fails to respect the sign of zero.
@@ -1775,7 +1775,7 @@ Library
 - Issue #9853: Fix the signature of SSLSocket.recvfrom() and SSLSocket.sendto()
   to match the corresponding socket methods.
 
-- Issue 9840: Added a decorator to reprlib for wrapping __repr__ methods to make
+- Issue #9840: Added a decorator to reprlib for wrapping __repr__ methods to make
   them handle recursive calls within the same thread.
 
 - logging: Enhanced HTTPHandler with secure and credentials initializers.
