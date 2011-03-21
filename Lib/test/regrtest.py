@@ -732,9 +732,9 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     tests = []
     others = set(stdtests) | nottests
     for name in names:
-        modname, ext = os.path.splitext(name)
-        if modname[:5] == "test_" and ext == ".py" and modname not in others:
-            tests.append(modname)
+        mod, ext = os.path.splitext(name)
+        if mod[:5] == "test_" and ext in (".py", "") and mod not in others:
+            tests.append(mod)
     return stdtests + sorted(tests)
 
 def replace_stdout():
