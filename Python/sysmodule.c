@@ -978,8 +978,13 @@ svnversion_init(void)
 		return;
 
 	python = strstr(headurl, "/python/");
-	if (!python)
-		Py_FatalError("subversion keywords missing");
+	if (!python) {
+		*patchlevel_revision = '\0';
+		strcpy(branch, "");
+		strcpy(shortbranch, "unknown");
+		svn_revision = "";
+		return;
+	}
 
 	br_start = python + 8;
 	br_end = strchr(br_start, '/');
