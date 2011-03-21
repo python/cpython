@@ -19,7 +19,7 @@ option involved with the exception.
 # Gerrit Holl <gerrit@nl.linux.org> moved the string-based exceptions
 # to class-based exceptions.
 #
-# Peter Ãstrand <astrand@lysator.liu.se> added gnu_getopt().
+# Peter Åstrand <astrand@lysator.liu.se> added gnu_getopt().
 #
 # TODO for gnu_getopt():
 #
@@ -34,6 +34,7 @@ option involved with the exception.
 __all__ = ["GetoptError","error","getopt","gnu_getopt"]
 
 import os
+from gettext import gettext as _
 
 class GetoptError(Exception):
     opt = ''
@@ -153,10 +154,10 @@ def do_longs(opts, opt, longopts, args):
     if has_arg:
         if optarg is None:
             if not args:
-                raise GetoptError('option --%s requires argument' % opt, opt)
+                raise GetoptError(_('option --%s requires argument') % opt, opt)
             optarg, args = args[0], args[1:]
     elif optarg is not None:
-        raise GetoptError('option --%s must not have an argument' % opt, opt)
+        raise GetoptError(_('option --%s must not have an argument') % opt, opt)
     opts.append(('--' + opt, optarg or ''))
     return opts, args
 
@@ -166,7 +167,7 @@ def do_longs(opts, opt, longopts, args):
 def long_has_args(opt, longopts):
     possibilities = [o for o in longopts if o.startswith(opt)]
     if not possibilities:
-        raise GetoptError('option --%s not recognized' % opt, opt)
+        raise GetoptError(_('option --%s not recognized') % opt, opt)
     # Is there an exact match?
     if opt in possibilities:
         return False, opt
@@ -176,7 +177,7 @@ def long_has_args(opt, longopts):
     if len(possibilities) > 1:
         # XXX since possibilities contains all valid continuations, might be
         # nice to work them into the error msg
-        raise GetoptError('option --%s not a unique prefix' % opt, opt)
+        raise GetoptError(_('option --%s not a unique prefix') % opt, opt)
     assert len(possibilities) == 1
     unique_match = possibilities[0]
     has_arg = unique_match.endswith('=')
@@ -190,7 +191,7 @@ def do_shorts(opts, optstring, shortopts, args):
         if short_has_arg(opt, shortopts):
             if optstring == '':
                 if not args:
-                    raise GetoptError('option -%s requires argument' % opt,
+                    raise GetoptError(_('option -%s requires argument') % opt,
                                       opt)
                 optstring, args = args[0], args[1:]
             optarg, optstring = optstring, ''
@@ -203,7 +204,7 @@ def short_has_arg(opt, shortopts):
     for i in range(len(shortopts)):
         if opt == shortopts[i] != ':':
             return shortopts.startswith(':', i+1)
-    raise GetoptError('option -%s not recognized' % opt, opt)
+    raise GetoptError(_('option -%s not recognized') % opt, opt)
 
 if __name__ == '__main__':
     import sys
