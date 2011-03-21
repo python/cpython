@@ -515,8 +515,8 @@ Library
   time. `sys.stderr` now looked up at instantiation time.  Fix contributed by
   Mark Roddy.
 
-- Issue #10753: Characters ';','=' and ',' in the PATH_INFO environment variable
-  won't be quoted when the URI is constructed by the wsgiref.util 's request_uri
+- Issue #10753: Characters ';', '=' and ',' in the PATH_INFO environment variable
+  won't be quoted when the URI is constructed by the wsgiref.util's request_uri
   method. According to RFC 3986, these characters can be a part of params in
   PATH component of URI and need not be quoted.
 
@@ -986,9 +986,9 @@ Library
   comment prefixes, name of the DEFAULT section, empty lines in multiline
   values, and indentation.
 
-- Issue 10326: unittest.TestCase instances can be pickled.
+- Issue #10326: unittest.TestCase instances can be pickled.
 
-- Issue 9926: Wrapped TestSuite subclass does not get __call__ executed.
+- Issue #9926: Wrapped TestSuite subclass does not get __call__ executed.
 
 - Issue #9920: Skip tests for cmath.atan and cmath.atanh applied to complex
   zeros on systems where the log1p function fails to respect the sign of zero.
@@ -1639,7 +1639,7 @@ Library
 - Issue #9853: Fix the signature of SSLSocket.recvfrom() and SSLSocket.sendto()
   to match the corresponding socket methods.
 
-- Issue 9840: Added a decorator to reprlib for wrapping __repr__ methods to make
+- Issue #9840: Added a decorator to reprlib for wrapping __repr__ methods to make
   them handle recursive calls within the same thread.
 
 - logging: Enhanced HTTPHandler with secure and credentials initializers.
