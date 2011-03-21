@@ -208,8 +208,6 @@ PyAPI_FUNC(PyObject *) PyErr_Format(
     );
 
 #ifdef MS_WINDOWS
-PyAPI_FUNC(PyObject *) PyErr_SetFromWindowsErrWithFilenameObject(
-    int, const char *);
 PyAPI_FUNC(PyObject *) PyErr_SetFromWindowsErrWithFilename(
     int ierr,
     const char *filename        /* decoded from the filesystem encoding */
