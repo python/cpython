@@ -158,7 +158,7 @@ An exception is defined as well:
 
    Method called when an unrecognized SGML declaration is read by the parser.
    The *data* parameter will be the entire contents of the declaration inside
-   the ``<!...>`` markup.  It is sometimes useful to be be overridden by a
+   the ``<!...>`` markup.  It is sometimes useful to be overridden by a
    derived class; the base class implementation throws an :exc:`HTMLParseError`.
 
 
