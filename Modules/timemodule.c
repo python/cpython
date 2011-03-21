@@ -601,31 +601,20 @@ _asctime(struct tm *timeptr)
 {
     /* Inspired by Open Group reference implementation available at
      * http://pubs.opengroup.org/onlinepubs/009695399/functions/asctime.html */
-    static char wday_name[7][3] = {
+    static char wday_name[7][4] = {
         "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
     };
-    static char mon_name[12][3] = {
+    static char mon_name[12][4] = {
         "Jan", "Feb", "Mar", "Apr", "May", "Jun",
         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
     };
-    char buf[20]; /* 'Sun Sep 16 01:03:52\0' */
-    int n;
-
-    n = PyOS_snprintf(buf, sizeof(buf), "%.3s %.3s%3d %.2d:%.2d:%.2d",
-                      wday_name[timeptr->tm_wday],
-                      mon_name[timeptr->tm_mon],
-                      timeptr->tm_mday, timeptr->tm_hour,
-                      timeptr->tm_min, timeptr->tm_sec);
-    /* XXX: since the fields used by snprintf above are validated in checktm,
-     * the following condition should never trigger. We keep the check because
-     * historically fixed size buffer used in asctime was the source of
-     * crashes. */
-    if (n + 1 != sizeof(buf)) {
-        PyErr_SetString(PyExc_ValueError, "unconvertible time");
-        return NULL;
-    }
-
-    return PyUnicode_FromFormat("%s %d", buf, 1900 + timeptr->tm_year);
+    return PyUnicode_FromFormat(
+        "%s %s%3d %.2d:%.2d:%.2d %d",
+        wday_name[timeptr->tm_wday],
+        mon_name[timeptr->tm_mon],
+        timeptr->tm_mday, timeptr->tm_hour,
+        timeptr->tm_min, timeptr->tm_sec,
+        1900 + timeptr->tm_year);
 }
 
 static PyObject *

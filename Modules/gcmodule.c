@@ -680,8 +680,8 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
 static void
 debug_cycle(char *msg, PyObject *op)
 {
-    PySys_WriteStderr("gc: %.100s <%.100s %p>\n",
-                      msg, Py_TYPE(op)->tp_name, op);
+    PySys_FormatStderr("gc: %s <%s %p>\n",
+                       msg, Py_TYPE(op)->tp_name, op);
 }
 
 /* Handle uncollectable garbage (cycles with finalizers, and stuff reachable

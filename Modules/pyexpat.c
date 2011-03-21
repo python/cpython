@@ -100,16 +100,17 @@ static PyObject *
 set_error(xmlparseobject *self, enum XML_Error code)
 {
     PyObject *err;
-    char buffer[256];
+    PyObject *buffer;
     XML_Parser parser = self->itself;
     int lineno = XML_GetErrorLineNumber(parser);
     int column = XML_GetErrorColumnNumber(parser);
 
-    /* There is no risk of overflowing this buffer, since
-       even for 64-bit integers, there is sufficient space. */
-    sprintf(buffer, "%.200s: line %i, column %i",
-            XML_ErrorString(code), lineno, column);
-    err = PyObject_CallFunction(ErrorObject, "s", buffer);
+    buffer = PyUnicode_FromFormat("%s: line %i, column %i",
+                                  XML_ErrorString(code), lineno, column);
+    if (buffer == NULL)
+        return NULL;
+    err = PyObject_CallFunction(ErrorObject, "O", buffer);
+    Py_DECREF(buffer);
     if (  err != NULL
           && set_error_attr(err, "code", code)
           && set_error_attr(err, "offset", column)

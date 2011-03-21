@@ -157,34 +157,31 @@ static PyObject *
 weakref_repr(PyWeakReference *self)
 {
     char buffer[256];
-    if (PyWeakref_GET_OBJECT(self) == Py_None) {
-        PyOS_snprintf(buffer, sizeof(buffer), "<weakref at %p; dead>", self);
+    PyObject *name, *repr;
+
+    if (PyWeakref_GET_OBJECT(self) == Py_None)
+        return PyUnicode_FromFormat("<weakref at %p; dead>", self);
+
+    name = PyObject_GetAttrString(PyWeakref_GET_OBJECT(self), "__name__");
+    if (name == NULL || !PyUnicode_Check(name)) {
+        if (name == NULL)
+            PyErr_Clear();
+        repr = PyUnicode_FromFormat(
+            "<weakref at %p; to '%s' at %p>",
+            self,
+            Py_TYPE(PyWeakref_GET_OBJECT(self))->tp_name,
+            PyWeakref_GET_OBJECT(self));
     }
     else {
-        char *name = NULL;
-        PyObject *nameobj = PyObject_GetAttrString(PyWeakref_GET_OBJECT(self),
-                                                   "__name__");
-        if (nameobj == NULL)
-                PyErr_Clear();
-        else if (PyUnicode_Check(nameobj))
-                name = _PyUnicode_AsString(nameobj);
-        if (name)
-            PyOS_snprintf(buffer, sizeof(buffer),
-                          "<weakref at %p; to '%.50s' at %p (%s)>",
-                          self,
-                          Py_TYPE(PyWeakref_GET_OBJECT(self))->tp_name,
-                          PyWeakref_GET_OBJECT(self),
-                          name);
-        else
-            PyOS_snprintf(buffer, sizeof(buffer),
-                          "<weakref at %p; to '%.50s' at %p>",
-                          self,
-                          Py_TYPE(PyWeakref_GET_OBJECT(self))->tp_name,
-                          PyWeakref_GET_OBJECT(self));
-
-        Py_XDECREF(nameobj);
+        repr = PyUnicode_FromFormat(
+            "<weakref at %p; to '%s' at %p (%U)>",
+            self,
+            Py_TYPE(PyWeakref_GET_OBJECT(self))->tp_name,
+            PyWeakref_GET_OBJECT(self),
+            name);
     }
-    return PyUnicode_FromString(buffer);
+    Py_XDECREF(name);
+    return repr;
 }
 
 /* Weak references only support equality, not ordering. Two weak references
@@ -459,12 +456,11 @@ WRAP_TERNARY(proxy_call, PyEval_CallObjectWithKeywords)
 static PyObject *
 proxy_repr(PyWeakReference *proxy)
 {
-    char buf[160];
-    PyOS_snprintf(buf, sizeof(buf),
-                  "<weakproxy at %p to %.100s at %p>", proxy,
-                  Py_TYPE(PyWeakref_GET_OBJECT(proxy))->tp_name,
-                  PyWeakref_GET_OBJECT(proxy));
-    return PyUnicode_FromString(buf);
+    return PyUnicode_FromFormat(
+        "<weakproxy at %p to %s at %p>",
+        proxy,
+        Py_TYPE(PyWeakref_GET_OBJECT(proxy))->tp_name,
+        PyWeakref_GET_OBJECT(proxy));
 }
 
 

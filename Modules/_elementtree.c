@@ -2138,13 +2138,15 @@ makeuniversal(XMLParserObject* self, const char* string)
 static void
 expat_set_error(const char* message, int line, int column)
 {
-    PyObject *error;
-    PyObject *position;
-    char buffer[256];
+    PyObject *errmsg, *error, *position;
 
-    sprintf(buffer, "%.100s: line %d, column %d", message, line, column);
+    errmsg = PyUnicode_FromFormat("%s: line %d, column %d",
+                                  message, line, column);
+    if (errmsg == NULL)
+        return;
 
-    error = PyObject_CallFunction(elementtree_parseerror_obj, "s", buffer);
+    error = PyObject_CallFunction(elementtree_parseerror_obj, "O", errmsg);
+    Py_DECREF(errmsg);
     if (!error)
         return;
 
