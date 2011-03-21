@@ -233,10 +233,9 @@ set_hook(const char *funcname, PyObject **hook_var, PyObject *args)
         Py_XDECREF(tmp);
     }
     else {
-        PyOS_snprintf(buf, sizeof(buf),
-                      "set_%.50s(func): argument not callable",
-                      funcname);
-        PyErr_SetString(PyExc_TypeError, buf);
+        PyErr_Format(PyExc_TypeError,
+                     "set_%.50s(func): argument not callable",
+                     funcname);
         return NULL;
     }
     Py_RETURN_NONE;
@@ -890,7 +889,7 @@ setup_readline(void)
 #endif
 
 #ifdef __APPLE__
-    /* the libedit readline emulation resets key bindings etc 
+    /* the libedit readline emulation resets key bindings etc
      * when calling rl_initialize.  So call it upfront
      */
     if (using_libedit_emulation)
@@ -930,11 +929,11 @@ setup_readline(void)
      */
 #ifdef __APPLE__
     if (using_libedit_emulation)
-	rl_read_init_file(NULL);
+        rl_read_init_file(NULL);
     else
 #endif /* __APPLE__ */
         rl_initialize();
-    
+
     RESTORE_LOCALE(saved_locale)
 }
 

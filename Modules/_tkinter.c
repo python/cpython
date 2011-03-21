@@ -2400,11 +2400,9 @@ static PyObject *
 Tktt_Repr(PyObject *self)
 {
     TkttObject *v = (TkttObject *)self;
-    char buf[100];
-
-    PyOS_snprintf(buf, sizeof(buf), "<tktimertoken at %p%s>", v,
-                    v->func == NULL ? ", handler deleted" : "");
-    return PyUnicode_FromString(buf);
+    return PyUnicode_FromFormat("<tktimertoken at %p%s>",
+                                v,
+                                v->func == NULL ? ", handler deleted" : "");
 }
 
 static PyTypeObject Tktt_Type =

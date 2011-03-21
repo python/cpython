@@ -330,12 +330,10 @@ complex_repr(PyComplexObject *v)
     int precision = 0;
     char format_code = 'r';
     PyObject *result = NULL;
-    Py_ssize_t len;
 
     /* If these are non-NULL, they'll need to be freed. */
     char *pre = NULL;
     char *im = NULL;
-    char *buf = NULL;
 
     /* These do not need to be freed. re is either an alias
        for pre or a pointer to a constant.  lead and tail
@@ -374,20 +372,10 @@ complex_repr(PyComplexObject *v)
         lead = "(";
         tail = ")";
     }
-    /* Alloc the final buffer. Add one for the "j" in the format string,
-       and one for the trailing zero byte. */
-    len = strlen(lead) + strlen(re) + strlen(im) + strlen(tail) + 2;
-    buf = PyMem_Malloc(len);
-    if (!buf) {
-        PyErr_NoMemory();
-        goto done;
-    }
-    PyOS_snprintf(buf, len, "%s%s%sj%s", lead, re, im, tail);
-    result = PyUnicode_FromString(buf);
+    result = PyUnicode_FromFormat("%s%s%sj%s", lead, re, im, tail);
   done:
     PyMem_Free(im);
     PyMem_Free(pre);
-    PyMem_Free(buf);
 
     return result;
 }
