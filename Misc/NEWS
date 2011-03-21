@@ -81,6 +81,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11371: Mark getopt error messages as localizable.  Patch by Filip
+  Gruszczyński.
+
 - Issue #5537: Fix time2isoz() and time2netscape() functions of
   httplib.cookiejar for expiration year greater than 2038 on 32-bit systems.
 
