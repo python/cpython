@@ -40,6 +40,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5537: Fix time2isoz() and time2netscape() functions of
+  httplib.cookiejar for expiration year greater than 2038 on 32-bit systems.
+
 - Issue #11459: A ``bufsize`` value of 0 in subprocess.Popen() really creates
   unbuffered pipes, such that select() works properly on them.
 
@@ -64,7 +67,7 @@ Library
 - Issue #11491: dbm.error is no longer raised when dbm.open is called with
   the "n" as the flag argument and the file exists. The behavior matches
   the documentation and general logic.
-   
+
 - Issue #11131: Fix sign of zero in decimal.Decimal plus and minus
   operations when the rounding mode is ROUND_FLOOR.
 
@@ -218,8 +221,8 @@ Library
   OSError exception when The OS had been told to ignore SIGCLD in our process
   or otherwise not wait for exiting child processes.
 
-- Issue #11500: Fixed a bug in the os x proxy bypass code for fully qualified 
-  IP addresses in the proxy exception list. 
+- Issue #11500: Fixed a bug in the os x proxy bypass code for fully qualified
+  IP addresses in the proxy exception list.
 
 Extensions
 ----------
