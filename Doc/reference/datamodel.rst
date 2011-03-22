@@ -1540,10 +1540,10 @@ Implementing Descriptors
 
 The following methods only apply when an instance of the class containing the
 method (a so-called *descriptor* class) appears in the class dictionary of
-another new-style class, known as the *owner* class. In the examples below, "the
-attribute" refers to the attribute whose name is the key of the property in the
-owner class' ``__dict__``.  Descriptors can only be implemented as new-style
-classes themselves.
+another new-style class (known as the *owner* class) or one of its
+descendants.  In the examples below, "the attribute" refers to the attribute
+whose name is the key of the property in the owner class' ``__dict__``.
+Descriptors can only be implemented as new-style classes themselves.
 
 
 .. method:: object.__get__(self, instance, owner)
