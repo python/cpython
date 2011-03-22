@@ -292,34 +292,44 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
     argtxt = repr(field_names).replace("'", "")[1:-1]   # tuple repr without parens or quotes
     reprtxt = ', '.join('%s=%%r' % name for name in field_names)
     template = '''class %(typename)s(tuple):
-        '%(typename)s(%(argtxt)s)' \n
-        __slots__ = () \n
-        _fields = %(field_names)r \n
+        '%(typename)s(%(argtxt)s)'
+
+        __slots__ = ()
+        
+        _fields = %(field_names)r
+        
         def __new__(_cls, %(argtxt)s):
             'Create new instance of %(typename)s(%(argtxt)s)'
-            return _tuple.__new__(_cls, (%(argtxt)s)) \n
+            return _tuple.__new__(_cls, (%(argtxt)s))
+        
         @classmethod
         def _make(cls, iterable, new=tuple.__new__, len=len):
             'Make a new %(typename)s object from a sequence or iterable'
             result = new(cls, iterable)
             if len(result) != %(numfields)d:
                 raise TypeError('Expected %(numfields)d arguments, got %%d' %% len(result))
-            return result \n
+            return result
+        
         def __repr__(self):
             'Return a nicely formatted representation string'
-            return self.__class__.__name__ + '(%(reprtxt)s)' %% self \n
+            return self.__class__.__name__ + '(%(reprtxt)s)' %% self
+        
         def _asdict(self):
             'Return a new OrderedDict which maps field names to their values'
-            return OrderedDict(zip(self._fields, self)) \n
+            return OrderedDict(zip(self._fields, self))
+        
         def _replace(_self, **kwds):
             'Return a new %(typename)s object replacing specified fields with new values'
             result = _self._make(map(kwds.pop, %(field_names)r, _self))
             if kwds:
                 raise ValueError('Got unexpected field names: %%r' %% kwds.keys())
-            return result \n
+            return result
+        
         def __getnewargs__(self):
             'Return self as a plain tuple.  Used by copy and pickle.'
-            return tuple(self) \n\n''' % locals()
+            return tuple(self)
+
+        ''' % locals()
     for i, name in enumerate(field_names):
         template += "        %s = _property(_itemgetter(%d), doc='Alias for field number %d')\n" % (name, i, i)
     if verbose:
