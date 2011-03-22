@@ -3705,12 +3705,15 @@ imp_load_dynamic(PyObject *self, PyObject *args)
         return NULL;
     if (fob != NULL) {
         fp = get_file(NULL, fob, "r");
-        if (fp == NULL)
+        if (fp == NULL) {
+            Py_DECREF(pathname);
             return NULL;
+        }
     }
     else
         fp = NULL;
     mod = _PyImport_LoadDynamicModule(name, pathname, fp);
+    Py_DECREF(pathname);
     if (fp)
         fclose(fp);
     return mod;
