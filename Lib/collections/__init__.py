@@ -292,13 +292,13 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
         '{typename}({argtxt})'
 
         __slots__ = ()
-        
+
         _fields = {field_names!r}
-        
+
         def __new__(_cls, {argtxt}):
             'Create new instance of {typename}({argtxt})'
             return _tuple.__new__(_cls, ({argtxt}))
-        
+
         @classmethod
         def _make(cls, iterable, new=tuple.__new__, len=len):
             'Make a new {typename} object from a sequence or iterable'
@@ -306,22 +306,22 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
             if len(result) != {numfields:d}:
                 raise TypeError('Expected {numfields:d} arguments, got %d' % len(result))
             return result
-        
+
         def __repr__(self):
             'Return a nicely formatted representation string'
             return self.__class__.__name__ + '({reprtxt})' % self
-        
+
         def _asdict(self):
             'Return a new OrderedDict which maps field names to their values'
             return OrderedDict(zip(self._fields, self))
-        
+
         def _replace(_self, **kwds):
             'Return a new {typename} object replacing specified fields with new values'
             result = _self._make(map(kwds.pop, {field_names!r}, _self))
             if kwds:
                 raise ValueError('Got unexpected field names: %r' % kwds.keys())
             return result
-        
+
         def __getnewargs__(self):
             'Return self as a plain tuple.  Used by copy and pickle.'
             return tuple(self)
