@@ -1588,6 +1588,39 @@ class TestVariousIteratorArgs(unittest.TestCase):
                 self.assertRaises(TypeError, getattr(set('january'), methname), N(data))
                 self.assertRaises(ZeroDivisionError, getattr(set('january'), methname), E(data))
 
+class bad_eq:
+    def __eq__(self, other):
+        if be_bad:
+            set2.clear()
+            raise ZeroDivisionError
+        return self is other
+    def __hash__(self):
+        return 0
+
+class bad_dict_clear:
+    def __eq__(self, other):
+        if be_bad:
+            dict2.clear()
+        return self is other
+    def __hash__(self):
+        return 0
+
+class TestWeirdBugs(unittest.TestCase):
+    def test_8420_set_merge(self):
+        # This used to segfault
+        global be_bad, set2, dict2
+        be_bad = False
+        set1 = {bad_eq()}
+        set2 = {bad_eq() for i in range(75)}
+        be_bad = True
+        self.assertRaises(ZeroDivisionError, set1.update, set2)
+
+        be_bad = False
+        set1 = {bad_dict_clear()}
+        dict2 = {bad_dict_clear(): None}
+        be_bad = True
+        set1.symmetric_difference_update(dict2)
+
 # Application tests (based on David Eppstein's graph recipes ====================================
 
 def powerset(U):
@@ -1729,6 +1762,7 @@ def test_main(verbose=None):
         TestIdentities,
         TestVariousIteratorArgs,
         TestGraphs,
+        TestWeirdBugs,
         )
 
     test_support.run_unittest(*test_classes)
