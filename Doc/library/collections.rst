@@ -1,3 +1,4 @@
+
 :mod:`collections` --- Container datatypes
 ==========================================
 
@@ -993,7 +994,7 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
    That assumption is factored-out to an internal classmethod called
    :meth:`_from_iterable` which calls ``cls(iterable)`` to produce a new set.
    If the :class:`Set` mixin is being used in a class with a different
-   constructor signature, you will need to override :meth:`from_iterable`
+   constructor signature, you will need to override :meth:`_from_iterable`
    with a classmethod that can construct new instances from
    an iterable argument.
 
