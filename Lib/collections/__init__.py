@@ -288,9 +288,6 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
         seen_names.add(name)
 
     # Create and fill-in the class template
-    numfields = len(field_names)
-    argtxt = repr(field_names).replace("'", "")[1:-1]   # tuple repr without parens or quotes
-    reprtxt = ', '.join('{}=%r'.format(name) for name in field_names)
     template = '''class {typename}(tuple):
         '{typename}({argtxt})'
 
@@ -329,7 +326,14 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
             'Return self as a plain tuple.  Used by copy and pickle.'
             return tuple(self)
 
-'''.format(**locals())
+'''
+    template = template.format(
+        typename = typename,
+        field_names = field_names,
+        argtxt = repr(field_names).replace("'", "")[1:-1],
+        numfields = len(field_names),
+        reprtxt = ', '.join('{}=%r'.format(name) for name in field_names),
+    )
     for i, name in enumerate(field_names):
         template += "        %s = _property(_itemgetter(%d), doc='Alias for field number %d')\n" % (name, i, i)
     if verbose:
