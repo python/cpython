@@ -46,6 +46,8 @@ dict_proxy = type(type.__dict__)
 
 class Hashable(metaclass=ABCMeta):
 
+    __slots__ = ()
+
     @abstractmethod
     def __hash__(self):
         return 0
@@ -63,6 +65,8 @@ class Hashable(metaclass=ABCMeta):
 
 class Iterable(metaclass=ABCMeta):
 
+    __slots__ = ()
+
     @abstractmethod
     def __iter__(self):
         while False:
@@ -77,6 +81,8 @@ class Iterable(metaclass=ABCMeta):
 
 
 class Iterator(Iterable):
+
+    __slots__ = ()
 
     @abstractmethod
     def __next__(self):
@@ -109,6 +115,8 @@ Iterator.register(zip_iterator)
 
 class Sized(metaclass=ABCMeta):
 
+    __slots__ = ()
+
     @abstractmethod
     def __len__(self):
         return 0
@@ -123,6 +131,8 @@ class Sized(metaclass=ABCMeta):
 
 class Container(metaclass=ABCMeta):
 
+    __slots__ = ()
+
     @abstractmethod
     def __contains__(self, x):
         return False
@@ -136,6 +146,8 @@ class Container(metaclass=ABCMeta):
 
 
 class Callable(metaclass=ABCMeta):
+
+    __slots__ = ()
 
     @abstractmethod
     def __call__(self, *args, **kwds):
@@ -163,6 +175,8 @@ class Set(Sized, Iterable, Container):
     semantics are fixed), all you have to do is redefine __le__ and
     then the other operations will automatically follow suit.
     """
+
+    __slots__ = ()
 
     def __le__(self, other):
         if not isinstance(other, Set):
@@ -275,6 +289,8 @@ Set.register(frozenset)
 
 class MutableSet(Set):
 
+    __slots__ = ()
+
     @abstractmethod
     def add(self, value):
         """Add an element."""
@@ -347,6 +363,8 @@ MutableSet.register(set)
 
 
 class Mapping(Sized, Iterable, Container):
+
+    __slots__ = ()
 
     @abstractmethod
     def __getitem__(self, key):
@@ -451,6 +469,8 @@ ValuesView.register(dict_values)
 
 class MutableMapping(Mapping):
 
+    __slots__ = ()
+
     @abstractmethod
     def __setitem__(self, key, value):
         raise KeyError
@@ -530,6 +550,8 @@ class Sequence(Sized, Iterable, Container):
     __getitem__, and __len__.
     """
 
+    __slots__ = ()
+
     @abstractmethod
     def __getitem__(self, index):
         raise IndexError
@@ -575,11 +597,15 @@ class ByteString(Sequence):
     XXX Should add all their methods.
     """
 
+    __slots__ = ()
+
 ByteString.register(bytes)
 ByteString.register(bytearray)
 
 
 class MutableSequence(Sequence):
+
+    __slots__ = ()
 
     @abstractmethod
     def __setitem__(self, index, value):

@@ -84,6 +84,8 @@ Library
 - Issue #11371: Mark getopt error messages as localizable.  Patch by Filip
   Gruszczyński.
 
+- Issue #11333: Add __slots__ to collections ABCs.
+
 - Issue #11628: cmp_to_key generated class should use __slots__
 
 - Issue #5537: Fix time2isoz() and time2netscape() functions of
