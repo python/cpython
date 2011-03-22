@@ -80,6 +80,7 @@ def total_ordering(cls):
 def cmp_to_key(mycmp):
     """Convert a cmp= function into a key= function"""
     class K(object):
+        __slots__ = ['obj']
         def __init__(self, obj, *args):
             self.obj = obj
         def __lt__(self, other):
