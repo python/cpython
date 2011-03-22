@@ -1608,7 +1608,7 @@ Super Binding
    If ``a`` is an instance of :class:`super`, then the binding ``super(B,
    obj).m()`` searches ``obj.__class__.__mro__`` for the base class ``A``
    immediately preceding ``B`` and then invokes the descriptor with the call:
-   ``A.__dict__['m'].__get__(obj, A)``.
+   ``A.__dict__['m'].__get__(obj, obj.__class__)``.
 
 For instance bindings, the precedence of descriptor invocation depends on the
 which descriptor methods are defined.  A descriptor can define any combination
