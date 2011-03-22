@@ -490,6 +490,12 @@ class Random(_random.Random):
 
         Conditions on the parameters are alpha > 0 and beta > 0.
 
+        The probability distribution function is:
+
+                    x ** (alpha - 1) * math.exp(-x / beta)
+          pdf(x) =  --------------------------------------
+                      math.gamma(alpha) * beta ** alpha
+
         """
 
         # alpha > 0, beta > 0, mean is alpha*beta, variance is alpha*beta**2
