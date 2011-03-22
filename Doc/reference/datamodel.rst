@@ -1352,10 +1352,11 @@ Implementing Descriptors
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 The following methods only apply when an instance of the class containing the
-method (a so-called *descriptor* class) appears in the class dictionary of
-another class, known as the *owner* class.  In the examples below, "the
-attribute" refers to the attribute whose name is the key of the property in the
-owner class' :attr:`__dict__`.
+method (a so-called *descriptor* class) appears in an *owner* class (the
+descriptor must be in either the owner's class dictionary or in the class
+dictionary for one of its parents).  In the examples below, "the attribute"
+refers to the attribute whose name is the key of the property in the owner
+class' :attr:`__dict__`.
 
 
 .. method:: object.__get__(self, instance, owner)
