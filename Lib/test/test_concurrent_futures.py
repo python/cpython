@@ -155,7 +155,7 @@ class ProcessPoolShutdownTest(ProcessPoolMixin, ExecutorShutdownTest):
 class WaitTests(unittest.TestCase):
     def test_first_completed(self):
         future1 = self.executor.submit(mul, 21, 2)
-        future2 = self.executor.submit(time.sleep, 5)
+        future2 = self.executor.submit(time.sleep, 1.5)
 
         done, not_done = futures.wait(
                 [CANCELLED_FUTURE, future1, future2],
@@ -165,7 +165,7 @@ class WaitTests(unittest.TestCase):
         self.assertEqual(set([CANCELLED_FUTURE, future2]), not_done)
 
     def test_first_completed_some_already_completed(self):
-        future1 = self.executor.submit(time.sleep, 2)
+        future1 = self.executor.submit(time.sleep, 1.5)
 
         finished, pending = futures.wait(
                  [CANCELLED_AND_NOTIFIED_FUTURE, SUCCESSFUL_FUTURE, future1],
@@ -178,8 +178,8 @@ class WaitTests(unittest.TestCase):
 
     def test_first_exception(self):
         future1 = self.executor.submit(mul, 2, 21)
-        future2 = self.executor.submit(sleep_and_raise, 5)
-        future3 = self.executor.submit(time.sleep, 10)
+        future2 = self.executor.submit(sleep_and_raise, 1.5)
+        future3 = self.executor.submit(time.sleep, 3)
 
         finished, pending = futures.wait(
                 [future1, future2, future3],
@@ -190,7 +190,7 @@ class WaitTests(unittest.TestCase):
 
     def test_first_exception_some_already_complete(self):
         future1 = self.executor.submit(divmod, 21, 0)
-        future2 = self.executor.submit(time.sleep, 5)
+        future2 = self.executor.submit(time.sleep, 1.5)
 
         finished, pending = futures.wait(
                 [SUCCESSFUL_FUTURE,
@@ -235,14 +235,14 @@ class WaitTests(unittest.TestCase):
 
     def test_timeout(self):
         future1 = self.executor.submit(mul, 6, 7)
-        future2 = self.executor.submit(time.sleep, 10)
+        future2 = self.executor.submit(time.sleep, 3)
 
         finished, pending = futures.wait(
                 [CANCELLED_AND_NOTIFIED_FUTURE,
                  EXCEPTION_FUTURE,
                  SUCCESSFUL_FUTURE,
                  future1, future2],
-                timeout=5,
+                timeout=1.5,
                 return_when=futures.ALL_COMPLETED)
 
         self.assertEqual(set([CANCELLED_AND_NOTIFIED_FUTURE,
@@ -332,8 +332,8 @@ class ExecutorTest(unittest.TestCase):
         results = []
         try:
             for i in self.executor.map(time.sleep,
-                                       [0, 0, 10],
-                                       timeout=5):
+                                       [0, 0, 3],
+                                       timeout=1.5):
                 results.append(i)
         except futures.TimeoutError:
             pass
