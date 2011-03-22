@@ -4130,7 +4130,7 @@ ext_do_call(PyObject *func, PyObject ***pp_stack, int flags, int na, int nk)
                 if (PyErr_ExceptionMatches(PyExc_TypeError)) {
                     PyErr_Format(PyExc_TypeError,
                                  "%.200s%.200s argument after * "
-                                 "must be a sequence, not %200s",
+                                 "must be a sequence, not %.200s",
                                  PyEval_GetFuncName(func),
                                  PyEval_GetFuncDesc(func),
                                  stararg->ob_type->tp_name);
