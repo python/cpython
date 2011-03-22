@@ -2084,7 +2084,7 @@ case_bytes(char *buf, Py_ssize_t len, Py_ssize_t namelen, const char *name)
         PyErr_Format(PyExc_NameError,
           "Can't find file for module %.100s\n(filename %.300s)",
           name, buf);
-        return 0;
+        return -1;
     }
     return strncmp(ffblk.ff_name, name, namelen) == 0;
 
