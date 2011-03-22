@@ -518,7 +518,7 @@ other multiple-inheritance languages as call-next-method and is more powerful
 than the super call found in single-inheritance languages.
 
 With new-style classes, dynamic ordering is necessary because all  cases of
-multiple inheritance exhibit one or more diamond relationships (where one at
+multiple inheritance exhibit one or more diamond relationships (where at
 least one of the parent classes can be accessed through multiple paths from the
 bottommost class).  For example, all new-style classes inherit from
 :class:`object`, so any case of multiple inheritance provides more than one path
