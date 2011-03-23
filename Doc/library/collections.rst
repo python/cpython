@@ -661,7 +661,7 @@ Setting the :attr:`default_factory` to :class:`set` makes the
    ...     d[k].add(v)
    ...
    >>> list(d.items())
-   [('blue', set([2, 4])), ('red', set([1, 3]))]
+   [('blue', {2, 4}), ('red', {1, 3})]
 
 
 :func:`namedtuple` Factory Function for Tuples with Named Fields
