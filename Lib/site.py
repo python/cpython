@@ -508,6 +508,11 @@ def execusercustomize():
 
 
 def main():
+    """Add standard site-specific directories to the module search path.
+
+    This function is called automatically when this module is imported,
+    unless the python interpreter was started with the -S flag.
+    """
     global ENABLE_USER_SITE
 
     abs_paths()
@@ -526,7 +531,10 @@ def main():
     if ENABLE_USER_SITE:
         execusercustomize()
 
-main()
+# Prevent edition of sys.path when python was started with -S and
+# site is imported later.
+if not sys.flags.no_site:
+    main()
 
 def _script():
     help = """\
