@@ -758,7 +758,7 @@ class _ImportLockContext:
 
 _IMPLICIT_META_PATH = [BuiltinImporter, FrozenImporter, _DefaultPathFinder]
 
-_ERR_MSG = 'No module named {}'
+_ERR_MSG = 'No module named {!r}'
 
 def _gcd_import(name, package=None, level=0):
     """Import and return the module based on its name, the package the call is
