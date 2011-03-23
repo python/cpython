@@ -321,7 +321,9 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
         for index, name in enumerate(field_names):
             if (not all(c.isalnum() or c=='_' for c in name)
                 or _iskeyword(name)
-                or not name or name[0].isdigit() or name.startswith('_')
+                or not name
+                or name[0].isdigit()
+                or name.startswith('_')
                 or name in seen):
                 field_names[index] = '_%d' % index
             seen.add(name)
@@ -351,8 +353,7 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
                                for index, name in enumerate(field_names))
     )
 
-    # Execute the class definition string in a temporary namespace and
-    # support tracing utilities by setting a value for frame.f_globals['__name__']
+    # Execute the class definition string in a temporary namespace
     namespace = {}
     try:
         exec(class_definition, namespace)
