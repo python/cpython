@@ -1374,6 +1374,32 @@ update_compiled_module(PyCodeObject *co, PyObject *newname)
     Py_DECREF(oldname);
 }
 
+static PyObject *
+imp_fix_co_filename(PyObject *self, PyObject *args)
+{
+    PyObject *co;
+    PyObject *file_path;
+
+    if (!PyArg_ParseTuple(args, "OO:_fix_co_filename", &co, &file_path))
+        return NULL;
+
+    if (!PyCode_Check(co)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "first argument must be a code object");
+        return NULL;
+    }
+
+    if (!PyUnicode_Check(file_path)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "second argument must be a string");
+        return NULL;
+    }
+
+    update_compiled_module((PyCodeObject*)co, file_path);
+
+    Py_RETURN_NONE;
+}
+
 /* Load a source module from a given file and return its module
    object WITH INCREMENTED REFERENCE COUNT.  If there's a matching
    byte-compiled file, use that instead. */
@@ -3976,6 +4002,7 @@ static PyMethodDef imp_methods[] = {
 #endif
     {"load_package",            imp_load_package,       METH_VARARGS},
     {"load_source",             imp_load_source,        METH_VARARGS},
+    {"_fix_co_filename",        imp_fix_co_filename,    METH_VARARGS},
     {NULL,                      NULL}           /* sentinel */
 };
 

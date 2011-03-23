@@ -404,6 +404,7 @@ class SourceLoader(_LoaderBasics):
                     else:
                         found = marshal.loads(bytes_data)
                         if isinstance(found, code_type):
+                            imp._fix_co_filename(found, source_path)
                             return found
                         else:
                             msg = "Non-code object in {}"
