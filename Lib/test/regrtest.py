@@ -535,7 +535,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 args_tuple = (
                     (test, verbose, quiet),
                     dict(huntrleaks=huntrleaks, use_resources=use_resources,
-                        debug=debug)
+                         debug=debug, rerun_failed=verbose3)
                 )
                 yield (test, args_tuple)
         pending = tests_and_args()
@@ -609,11 +609,9 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                               globals=globals(), locals=vars())
             else:
                 try:
-                    result = runtest(test, verbose, quiet, huntrleaks, debug)
+                    result = runtest(test, verbose, quiet, huntrleaks, debug,
+                                     rerun_failed=verbose3)
                     accumulate_result(test, result)
-                    if verbose3 and result[0] == FAILED:
-                        print("Re-running test {} in verbose mode".format(test))
-                        runtest(test, True, quiet, huntrleaks, debug)
                 except KeyboardInterrupt:
                     interrupted = True
                     break
@@ -758,7 +756,8 @@ def replace_stdout():
     atexit.register(restore_stdout)
 
 def runtest(test, verbose, quiet,
-            huntrleaks=False, debug=False, use_resources=None):
+            huntrleaks=False, debug=False, use_resources=None,
+            rerun_failed=False):
     """Run a single test.
 
     test -- the name of the test
@@ -767,6 +766,7 @@ def runtest(test, verbose, quiet,
     test_times -- a list of (time, test_name) pairs
     huntrleaks -- run multiple times to test for leaks; requires a debug
                   build; a triple corresponding to -R's three arguments
+    rerun_failed -- if true, re-run in verbose mode when failed
 
     Returns one of the test result constants:
         INTERRUPTED      KeyboardInterrupt when run under -j
@@ -781,7 +781,14 @@ def runtest(test, verbose, quiet,
     if use_resources is not None:
         support.use_resources = use_resources
     try:
-        return runtest_inner(test, verbose, quiet, huntrleaks, debug)
+        result = runtest_inner(test, verbose, quiet, huntrleaks, debug)
+        if result[0] == FAILED and rerun_failed:
+            cleanup_test_droppings(test, verbose)
+            sys.stdout.flush()
+            sys.stderr.flush()
+            print("Re-running test {} in verbose mode".format(test))
+            runtest(test, True, quiet, huntrleaks, debug)
+        return result
     finally:
         cleanup_test_droppings(test, verbose)
 
