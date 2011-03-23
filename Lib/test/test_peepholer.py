@@ -3,6 +3,7 @@ import re
 import sys
 from io import StringIO
 import unittest
+from math import copysign
 
 def disassemble(func):
     f = StringIO()
@@ -207,12 +208,22 @@ class TestTranforms(unittest.TestCase):
     def test_folding_of_unaryops_on_constants(self):
         for line, elem in (
             ('-0.5', '(-0.5)'),                     # unary negative
+            ('-0.0', '(-0.0)'),                     # -0.0
+            ('-(1.0-1.0)','(-0.0)'),                # -0.0 after folding
+            ('-0', '(0)'),                          # -0
             ('~-2', '(1)'),                         # unary invert
             ('+1', '(1)'),                          # unary positive
         ):
             asm = dis_single(line)
             self.assertIn(elem, asm, asm)
             self.assertNotIn('UNARY_', asm)
+
+        # Check that -0.0 works after marshaling
+        def negzero():
+            return -(1.0-1.0)
+
+        self.assertNotIn('UNARY_', disassemble(negzero))
+        self.assertTrue(copysign(1.0, negzero()) < 0)
 
         # Verify that unfoldables are skipped
         for line, elem in (
