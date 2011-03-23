@@ -84,6 +84,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #8754: Have importlib use the repr of a module name in error messages.
+
 - Issue #11591: Prevent "import site" from modifying sys.path when python
   was started with -S.
 
