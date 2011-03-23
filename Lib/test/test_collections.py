@@ -127,6 +127,7 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(Point.__module__, __name__)
         self.assertEqual(Point.__getitem__, tuple.__getitem__)
         self.assertEqual(Point._fields, ('x', 'y'))
+        self.assertIn('class Point(tuple)', Point._source)
 
         self.assertRaises(ValueError, namedtuple, 'abc%', 'efg ghi')       # type has non-alpha char
         self.assertRaises(ValueError, namedtuple, 'class', 'efg ghi')      # type has keyword

@@ -694,7 +694,9 @@ they add the ability to access fields by name instead of position index.
    converted to ``['abc', '_1', 'ghi', '_3']``, eliminating the keyword
    ``def`` and the duplicate fieldname ``abc``.
 
-   If *verbose* is true, the class definition is printed just before being built.
+   If *verbose* is true, the class definition is printed after it is
+   built.  This option is outdated; instead, it is simpler to print the
+   :attr:`_source` attribute.
 
    Named tuple instances do not have per-instance dictionaries, so they are
    lightweight and require no more memory than regular tuples.
@@ -708,52 +710,6 @@ they add the ability to access fields by name instead of position index.
 
    >>> # Basic example
    >>> Point = namedtuple('Point', ['x', 'y'])
-   >>> p = Point(x=10, y=11)
-
-   >>> # Example using the verbose option to print the class definition
-   >>> Point = namedtuple('Point', ['x', 'y'], verbose=True)
-   class Point(tuple):
-       'Point(x, y)'
-   <BLANKLINE>
-       __slots__ = ()
-   <BLANKLINE>
-       _fields = ('x', 'y')
-   <BLANKLINE>
-       def __new__(_cls, x, y):
-           'Create a new instance of Point(x, y)'
-           return _tuple.__new__(_cls, (x, y))
-   <BLANKLINE>
-       @classmethod
-       def _make(cls, iterable, new=tuple.__new__, len=len):
-           'Make a new Point object from a sequence or iterable'
-           result = new(cls, iterable)
-           if len(result) != 2:
-               raise TypeError('Expected 2 arguments, got %d' % len(result))
-           return result
-   <BLANKLINE>
-       def __repr__(self):
-           'Return a nicely formatted representation string'
-           return self.__class__.__name__ + '(x=%r, y=%r)' % self
-   <BLANKLINE>
-       def _asdict(self):
-           'Return a new OrderedDict which maps field names to their values'
-           return OrderedDict(zip(self._fields, self))
-   <BLANKLINE>
-       def _replace(_self, **kwds):
-           'Return a new Point object replacing specified fields with new values'
-           result = _self._make(map(kwds.pop, ('x', 'y'), _self))
-           if kwds:
-               raise ValueError('Got unexpected field names: %r' % list(kwds))
-           return result
-   <BLANKLINE>
-       def __getnewargs__(self):
-           'Return self as a plain tuple.   Used by copy and pickle.'
-           return tuple(self)
-   <BLANKLINE>
-       x = _property(_itemgetter(0), doc='Alias for field number 0')
-   <BLANKLINE>
-       y = _property(_itemgetter(1), doc='Alias for field number 1')
-
    >>> p = Point(11, y=22)     # instantiate with positional or keyword arguments
    >>> p[0] + p[1]             # indexable like the plain tuple (11, 22)
    33
@@ -782,7 +738,7 @@ by the :mod:`csv` or :mod:`sqlite3` modules::
        print(emp.name, emp.title)
 
 In addition to the methods inherited from tuples, named tuples support
-three additional methods and one attribute.  To prevent conflicts with
+three additional methods and two attributes.  To prevent conflicts with
 field names, the method and attribute names start with an underscore.
 
 .. classmethod:: somenamedtuple._make(iterable)
@@ -819,6 +775,15 @@ field names, the method and attribute names start with an underscore.
 
       >>> for partnum, record in inventory.items():
       ...     inventory[partnum] = record._replace(price=newprices[partnum], timestamp=time.now())
+
+.. attribute:: somenamedtuple._source
+
+   A string with the pure Python source code used to create the named
+   tuple class.  The source makes the named tuple self-documenting.
+   It can be printed, executed using :func:`exec`, or saved to a file
+   and imported.
+
+   .. versionadded:: 3.3
 
 .. attribute:: somenamedtuple._fields
 

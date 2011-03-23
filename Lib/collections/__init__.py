@@ -332,13 +332,13 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
             raise ValueError('Type names and field names cannot be a keyword: %r' % name)
         if name[0].isdigit():
             raise ValueError('Type names and field names cannot start with a number: %r' % name)
-    seen_names = set()
+    seen = set()
     for name in field_names:
         if name.startswith('_') and not rename:
             raise ValueError('Field names cannot start with an underscore: %r' % name)
-        if name in seen_names:
+        if name in seen:
             raise ValueError('Encountered duplicate field name: %r' % name)
-        seen_names.add(name)
+        seen.add(name)
 
     # Fill-in the class template
     class_definition = _class_template.format(
@@ -350,8 +350,6 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
         field_defs = '\n'.join(_field_template.format(index=index, name=name)
                                for index, name in enumerate(field_names))
     )
-    if verbose:
-        print(class_definition)
 
     # Execute the class definition string in a temporary namespace and
     # support tracing utilities by setting a value for frame.f_globals['__name__']
@@ -361,6 +359,9 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
     except SyntaxError as e:
         raise SyntaxError(e.msg + ':\n\n' + class_definition)
     result = namespace[typename]
+    result._source = class_definition
+    if verbose:
+        print(result._source)
 
     # For pickling to work, the __module__ variable needs to be set to the frame
     # where the named tuple is created.  Bypass this step in enviroments where
