@@ -3337,21 +3337,185 @@ class TestQuopri(unittest.TestCase):
             c = chr(x)
             self.assertEqual(quoprimime.unquote(quoprimime.quote(c)), c)
 
-    def test_header_encode(self):
-        eq = self.assertEqual
-        he = quoprimime.header_encode
-        eq(he(b'hello'), '=?iso-8859-1?q?hello?=')
-        eq(he(b'hello', charset='iso-8859-2'), '=?iso-8859-2?q?hello?=')
-        eq(he(b'hello\nworld'), '=?iso-8859-1?q?hello=0Aworld?=')
-        # Test a non-ASCII character
-        eq(he(b'hello\xc7there'), '=?iso-8859-1?q?hello=C7there?=')
+    def _test_header_encode(self, header, expected_encoded_header, charset=None):
+        if charset is None:
+            encoded_header = quoprimime.header_encode(header)
+        else:
+            encoded_header = quoprimime.header_encode(header, charset)
+        self.assertEqual(encoded_header, expected_encoded_header)
 
-    def test_decode(self):
-        eq = self.assertEqual
-        eq(quoprimime.decode(''), '')
-        eq(quoprimime.decode('hello'), 'hello')
-        eq(quoprimime.decode('hello', 'X'), 'hello')
-        eq(quoprimime.decode('hello\nworld', 'X'), 'helloXworld')
+    def test_header_encode_one_word(self):
+        self._test_header_encode(b'hello', '=?iso-8859-1?q?hello?=')
+
+    def test_header_encode_two_lines(self):
+        self._test_header_encode(b'hello\nworld',
+                                '=?iso-8859-1?q?hello=0Aworld?=')
+
+    def test_header_encode_non_ascii(self):
+        self._test_header_encode(b'hello\xc7there',
+                                '=?iso-8859-1?q?hello=C7there?=')
+
+    def test_header_encode_alt_charset(self):
+        self._test_header_encode(b'hello', '=?iso-8859-2?q?hello?=',
+                charset='iso-8859-2')
+
+    def _test_header_decode(self, encoded_header, expected_decoded_header):
+        decoded_header = quoprimime.header_decode(encoded_header)
+        self.assertEqual(decoded_header, expected_decoded_header)
+
+    def test_header_decode_null(self):
+        self._test_header_decode('', '')
+
+    def test_header_decode_one_word(self):
+        self._test_header_decode('hello', 'hello')
+
+    def test_header_decode_two_lines(self):
+        self._test_header_decode('hello=0Aworld', 'hello\nworld')
+
+    def test_header_decode_non_ascii(self):
+        self._test_header_decode('hello=C7there', 'hello\xc7there')
+
+    def _test_decode(self, encoded, expected_decoded, eol=None):
+        if eol is None:
+            decoded = quoprimime.decode(encoded)
+        else:
+            decoded = quoprimime.decode(encoded, eol=eol)
+        self.assertEqual(decoded, expected_decoded)
+
+    def test_decode_null_word(self):
+        self._test_decode('', '')
+
+    def test_decode_null_line_null_word(self):
+        self._test_decode('\r\n', '\n')
+
+    def test_decode_one_word(self):
+        self._test_decode('hello', 'hello')
+
+    def test_decode_one_word_eol(self):
+        self._test_decode('hello', 'hello', eol='X')
+
+    def test_decode_one_line(self):
+        self._test_decode('hello\r\n', 'hello\n')
+
+    def test_decode_one_line_lf(self):
+        self._test_decode('hello\n', 'hello\n')
+
+    def test_decode_one_line_one_word(self):
+        self._test_decode('hello\r\nworld', 'hello\nworld')
+
+    def test_decode_one_line_one_word_eol(self):
+        self._test_decode('hello\r\nworld', 'helloXworld', eol='X')
+
+    def test_decode_two_lines(self):
+        self._test_decode('hello\r\nworld\r\n', 'hello\nworld\n')
+
+    def test_decode_one_long_line(self):
+        self._test_decode('Spam' * 250, 'Spam' * 250)
+
+    def test_decode_one_space(self):
+        self._test_decode(' ', '')
+
+    def test_decode_multiple_spaces(self):
+        self._test_decode(' ' * 5, '')
+
+    def test_decode_one_line_trailing_spaces(self):
+        self._test_decode('hello    \r\n', 'hello\n')
+
+    def test_decode_two_lines_trailing_spaces(self):
+        self._test_decode('hello    \r\nworld   \r\n', 'hello\nworld\n')
+
+    def test_decode_quoted_word(self):
+        self._test_decode('=22quoted=20words=22', '"quoted words"')
+
+    def test_decode_uppercase_quoting(self):
+        self._test_decode('ab=CD=EF', 'ab\xcd\xef')
+
+    def test_decode_lowercase_quoting(self):
+        self._test_decode('ab=cd=ef', 'ab\xcd\xef')
+
+    def test_decode_soft_line_break(self):
+        self._test_decode('soft line=\r\nbreak', 'soft linebreak')
+
+    def test_decode_false_quoting(self):
+        self._test_decode('A=1,B=A ==> A+B==2', 'A=1,B=A ==> A+B==2')
+
+    def _test_encode(self, body, expected_encoded_body, maxlinelen=None, eol=None):
+        kwargs = {}
+        if maxlinelen is None:
+            # Use body_encode's default.
+            maxlinelen = 76
+        else:
+            kwargs['maxlinelen'] = maxlinelen
+        if eol is None:
+            # Use body_encode's default.
+            eol = '\n'
+        else:
+            kwargs['eol'] = eol
+        encoded_body = quoprimime.body_encode(body, **kwargs)
+        self.assertEqual(encoded_body, expected_encoded_body)
+        if eol == '\n' or eol == '\r\n':
+            # We know how to split the result back into lines, so maxlinelen
+            # can be checked.
+            for line in encoded_body.splitlines():
+                self.assertLessEqual(len(line), maxlinelen)
+
+    def test_encode_null(self):
+        self._test_encode('', '')
+
+    def test_encode_null_lines(self):
+        self._test_encode('\n\n', '\n\n')
+
+    def test_encode_one_line(self):
+        self._test_encode('hello\n', 'hello\n')
+
+    def test_encode_one_line_crlf(self):
+        self._test_encode('hello\r\n', 'hello\n')
+
+    def test_encode_one_line_eol(self):
+        self._test_encode('hello\n', 'hello\r\n', eol='\r\n')
+
+    def test_encode_one_space(self):
+        self._test_encode(' ', '=20')
+
+    def test_encode_one_line_one_space(self):
+        self._test_encode(' \n', '=20\n')
+
+    def test_encode_one_word_trailing_spaces(self):
+        self._test_encode('hello   ', 'hello  =20')
+
+    def test_encode_one_line_trailing_spaces(self):
+        self._test_encode('hello   \n', 'hello  =20\n')
+
+    def test_encode_one_word_trailing_tab(self):
+        self._test_encode('hello  \t', 'hello  =09')
+
+    def test_encode_one_line_trailing_tab(self):
+        self._test_encode('hello  \t\n', 'hello  =09\n')
+
+    def test_encode_trailing_space_before_maxlinelen(self):
+        self._test_encode('abcd \n1234', 'abcd =\n\n1234', maxlinelen=6)
+
+    def test_encode_trailing_space_beyond_maxlinelen(self):
+        self._test_encode('abcd \n1234', 'abc=\nd =\n\n1234', maxlinelen=4)
+
+    def test_encode_quoted_equals(self):
+        self._test_encode('a = b', 'a =3D b')
+
+    def test_encode_one_long_string(self):
+        self._test_encode('x' * 100, 'x' * 75 + '=\n' + 'x' * 25)
+
+    def test_encode_one_long_line(self):
+        self._test_encode('x' * 100 + '\n', 'x' * 75 + '=\n' + 'x' * 25 + '\n')
+
+    def test_encode_one_very_long_line(self):
+        self._test_encode('x' * 200 + '\n',
+                2 * ('x' * 75 + '=\n') + 'x' * 50 + '\n')
+
+    def test_encode_one_long_line(self):
+        self._test_encode('x' * 100 + '\n', 'x' * 75 + '=\n' + 'x' * 25 + '\n')
+
+    def test_encode_shortest_maxlinelen(self):
+        self._test_encode('=' * 5, '=3D=\n' * 4 + '=3D', maxlinelen=4)
 
     def test_encode(self):
         eq = self.assertEqual
