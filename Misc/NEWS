@@ -293,6 +293,8 @@ Tools/Demos
 Tests
 -----
 
+- Issue #11653: fix -W with -j in regrtest.
+
 - The email test suite now lives in the Lib/test/test_email package.  The test
   harness code has also been modernized to allow use of new unittest features.
 
