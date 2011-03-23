@@ -161,6 +161,8 @@ Tools/Demos
 Tests
 -----
 
+- Issue #11653: fix -W with -j in regrtest.
+
 - Issue #11577: improve test coverage of binhex.py. Patch by Arkady Koplyarov.
 
 - Issue #11578: added test for the timeit module.  Patch Michael Henry.
