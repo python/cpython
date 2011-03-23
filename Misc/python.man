@@ -169,7 +169,9 @@ Disable the import of the module
 .I site
 and the site-dependent manipulations of
 .I sys.path
-that it entails.
+that it entails.  Also disable these manipulations if
+.I site
+is explicitly imported later.
 .TP
 .B \-u
 Force the binary I/O layers of stdin, stdout and stderr to be unbuffered.

@@ -239,7 +239,9 @@ Miscellaneous options
 .. cmdoption:: -S
 
    Disable the import of the module :mod:`site` and the site-dependent
-   manipulations of :data:`sys.path` that it entails.
+   manipulations of :data:`sys.path` that it entails.  Also disable these
+   manipulations if :mod:`site` is explicitly imported later (call
+   :func:`site.main` if you want them to be triggered).
 
 
 .. cmdoption:: -u
