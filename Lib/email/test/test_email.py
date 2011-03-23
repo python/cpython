@@ -2890,6 +2890,9 @@ class TestQuopri(unittest.TestCase):
             encoded_header = quoprimime.header_encode(header, charset)
         self.assertEqual(encoded_header, expected_encoded_header)
 
+    def test_header_encode_null(self):
+        self._test_header_encode(b'', '')
+
     def test_header_encode_one_word(self):
         self._test_header_encode(b'hello', '=?iso-8859-1?q?hello?=')
 
@@ -2946,6 +2949,15 @@ class TestQuopri(unittest.TestCase):
     def test_decode_one_line_lf(self):
         self._test_decode('hello\n', 'hello\n')
 
+    def test_decode_one_line_cr(self):
+        self._test_decode('hello\r', 'hello\n')
+
+    def test_decode_one_line_nl(self):
+        self._test_decode('hello\n', 'helloX', eol='X')
+
+    def test_decode_one_line_crnl(self):
+        self._test_decode('hello\r\n', 'helloX', eol='X')
+
     def test_decode_one_line_one_word(self):
         self._test_decode('hello\r\nworld', 'hello\nworld')
 
@@ -2954,6 +2966,9 @@ class TestQuopri(unittest.TestCase):
 
     def test_decode_two_lines(self):
         self._test_decode('hello\r\nworld\r\n', 'hello\nworld\n')
+
+    def test_decode_two_lines_eol(self):
+        self._test_decode('hello\r\nworld\r\n', 'helloXworldX', eol='X')
 
     def test_decode_one_long_line(self):
         self._test_decode('Spam' * 250, 'Spam' * 250)

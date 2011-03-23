@@ -135,9 +135,9 @@ def header_encode(header_bytes, charset='iso-8859-1'):
     charset names the character set to use in the RFC 2046 header.  It
     defaults to iso-8859-1.
     """
-    # Return empty headers unchanged
+    # Return empty headers as an empty string.
     if not header_bytes:
-        return str(header_bytes)
+        return ''
     # Iterate over every byte, encoding if necessary.
     encoded = []
     for octet in header_bytes:
@@ -268,7 +268,7 @@ def decode(encoded, eol=NL):
             if i == n:
                 decoded += eol
     # Special case if original string did not end with eol
-    if not encoded.endswith(eol) and decoded.endswith(eol):
+    if encoded[-1] not in '\r\n' and decoded.endswith(eol):
         decoded = decoded[:-1]
     return decoded
 
