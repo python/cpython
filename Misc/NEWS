@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #11244: Remove an unnecessary peepholer check that was preventing
+  negative zeros from being constant-folded properly.
+
 - Issue #11395: io.FileIO().write() clamps the data length to 32,767 bytes on
   Windows if the file is a TTY to workaround a Windows bug. The Windows console
   returns an error (12: not enough space error) on writing into stdout if
