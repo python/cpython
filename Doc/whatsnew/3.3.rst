@@ -128,3 +128,8 @@ that may require changes to your code:
 
 * Stub
 
+
+.. Issue #11591: When :program:`python` was started with :option:`-S`,
+   ``import site`` will not add site-specific paths to the module search
+   paths.  In previous versions, it did.  See changeset for doc changes in
+   various files.  Contributed by Carl Meyer with editions by Éric Araujo.
