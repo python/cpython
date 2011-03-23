@@ -84,6 +84,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #6811: Allow importlib to change a code object's co_filename attribute
+  to match the path to where the source code currently is, not where the code
+  object originally came from.
+
 - Issue #8754: Have importlib use the repr of a module name in error messages.
 
 - Issue #11591: Prevent "import site" from modifying sys.path when python
