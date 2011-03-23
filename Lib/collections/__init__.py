@@ -265,7 +265,7 @@ class {typename}(tuple):
         'Return a new {typename} object replacing specified fields with new values'
         result = _self._make(map(kwds.pop, {field_names!r}, _self))
         if kwds:
-            raise ValueError('Got unexpected field names: %r' % kwds.keys())
+            raise ValueError('Got unexpected field names: %r' % list(kwds))
         return result
 
     def __getnewargs__(self):
@@ -309,18 +309,17 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
     # generating informative error messages and preventing template injection attacks.
     if isinstance(field_names, str):
         field_names = field_names.replace(',', ' ').split() # names separated by whitespace and/or commas
-    field_names = tuple(map(str, field_names))
+    field_names = list(map(str, field_names))
     if rename:
-        names = list(field_names)
         seen = set()
-        for i, name in enumerate(names):
-            if (not all(c.isalnum() or c=='_' for c in name) or _iskeyword(name)
+        for index, name in enumerate(field_names):
+            if (not all(c.isalnum() or c=='_' for c in name)
+                or _iskeyword(name)
                 or not name or name[0].isdigit() or name.startswith('_')
                 or name in seen):
-                names[i] = '_%d' % i
+                field_names[index] = '_%d' % index
             seen.add(name)
-        field_names = tuple(names)
-    for name in (typename,) + field_names:
+    for name in [typename] + field_names:
         if not all(c.isalnum() or c=='_' for c in name):
             raise ValueError('Type names and field names can only contain alphanumeric characters and underscores: %r' % name)
         if _iskeyword(name):
@@ -338,9 +337,9 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
     # Fill-in the class template
     class_definition = _class_template.format(
         typename = typename,
-        field_names = field_names,
+        field_names = tuple(field_names),
         num_fields = len(field_names),
-        arg_list = repr(field_names).replace("'", "")[1:-1],
+        arg_list = repr(tuple(field_names)).replace("'", "")[1:-1],
         repr_fmt = ', '.join(_repr_template.format(name=name) for name in field_names),
         field_defs = '\n'.join(_field_template.format(index=index, name=name)
                                for index, name in enumerate(field_names))
