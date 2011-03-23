@@ -87,6 +87,11 @@ Library
 - Issue #11591: Prevent "import site" from modifying sys.path when python
   was started with -S.
 
+- collections.namedtuple() now adds a _source attribute to the generated
+  class.  This make the source more accessible than the outdated
+  "verbose" option which prints to stdout but doesn't make the source
+  string available.
+
 - Issue #11371: Mark getopt error messages as localizable.  Patch by Filip
   Gruszczyński.
 
