@@ -40,6 +40,7 @@ __all__ = [
     ]
 
 import re
+import io
 
 from string import ascii_letters, digits, hexdigits
 
@@ -147,6 +148,59 @@ def header_encode(header_bytes, charset='iso-8859-1'):
     return '=?%s?q?%s?=' % (charset, EMPTYSTRING.join(encoded))
 
 
+class _body_accumulator(io.StringIO):
+
+    def __init__(self, maxlinelen, eol, *args, **kw):
+        super().__init__(*args, **kw)
+        self.eol = eol
+        self.maxlinelen = self.room = maxlinelen
+
+    def write_str(self, s):
+        """Add string s to the accumulated body."""
+        self.write(s)
+        self.room -= len(s)
+
+    def newline(self):
+        """Write eol, then start new line."""
+        self.write_str(self.eol)
+        self.room = self.maxlinelen
+
+    def write_soft_break(self):
+        """Write a soft break, then start a new line."""
+        self.write_str('=')
+        self.newline()
+
+    def write_wrapped(self, s, extra_room=0):
+        """Add a soft line break if needed, then write s."""
+        if self.room < len(s) + extra_room:
+            self.write_soft_break()
+        self.write_str(s)
+
+    def write_char(self, c, is_last_char):
+        if not is_last_char:
+            # Another character follows on this line, so we must leave
+            # extra room, either for it or a soft break, and whitespace
+            # need not be quoted.
+            self.write_wrapped(c, extra_room=1)
+        elif c not in ' \t':
+            # For this and remaining cases, no more characters follow,
+            # so there is no need to reserve extra room (since a hard
+            # break will immediately follow).
+            self.write_wrapped(c)
+        elif self.room >= 3:
+            # It's a whitespace character at end-of-line, and we have room
+            # for the three-character quoted encoding.
+            self.write(quote(c))
+        elif self.room == 2:
+            # There's room for the whitespace character and a soft break.
+            self.write(c)
+            self.write_soft_break()
+        else:
+            # There's room only for a soft break.  The quoted whitespace
+            # will be the only content on the subsequent line.
+            self.write_soft_break()
+            self.write(quote(c))
+
 
 def body_encode(body, maxlinelen=76, eol=NL):
     """Encode with quoted-printable, wrapping at maxlinelen characters.
@@ -155,72 +209,43 @@ def body_encode(body, maxlinelen=76, eol=NL):
     this to "\\r\\n" if you will be using the result of this function directly
     in an email.
 
-    Each line will be wrapped at, at most, maxlinelen characters (defaults to
-    76 characters).  Long lines will have the `soft linefeed' quoted-printable
-    character "=" appended to them, so the decoded text will be identical to
-    the original text.
+    Each line will be wrapped at, at most, maxlinelen characters before the
+    eol string (maxlinelen defaults to 76 characters, the maximum value
+    permitted by RFC 2045).  Long lines will have the 'soft line break'
+    quoted-printable character "=" appended to them, so the decoded text will
+    be identical to the original text.
+
+    The minimum maxlinelen is 4 to have room for a quoted character ("=XX")
+    followed by a soft line break.  Smaller values will generate a
+    ValueError.
+
     """
+
+    if maxlinelen < 4:
+        raise ValueError("maxlinelen must be at least 4")
     if not body:
         return body
 
-    # BAW: We're accumulating the body text by string concatenation.  That
-    # can't be very efficient, but I don't have time now to rewrite it.  It
-    # just feels like this algorithm could be more efficient.
-    encoded_body = ''
-    lineno = -1
-    # Preserve line endings here so we can check later to see an eol needs to
-    # be added to the output later.
-    lines = body.splitlines(1)
-    for line in lines:
-        # But strip off line-endings for processing this line.
-        if line.endswith(CRLF):
-            line = line[:-2]
-        elif line[-1] in CRLF:
-            line = line[:-1]
+    # The last line may or may not end in eol, but all other lines do.
+    last_has_eol = (body[-1] in '\r\n')
 
-        lineno += 1
-        encoded_line = ''
-        prev = None
-        linelen = len(line)
-        # Now we need to examine every character to see if it needs to be
-        # quopri encoded.  BAW: again, string concatenation is inefficient.
-        for j in range(linelen):
-            c = line[j]
-            prev = c
+    # This accumulator will make it easier to build the encoded body.
+    encoded_body = _body_accumulator(maxlinelen, eol)
+
+    lines = body.splitlines()
+    last_line_no = len(lines) - 1
+    for line_no, line in enumerate(lines):
+        last_char_index = len(line) - 1
+        for i, c in enumerate(line):
             if body_check(ord(c)):
                 c = quote(c)
-            elif j+1 == linelen:
-                # Check for whitespace at end of line; special case
-                if c not in ' \t':
-                    encoded_line += c
-                prev = c
-                continue
-            # Check to see to see if the line has reached its maximum length
-            if len(encoded_line) + len(c) >= maxlinelen:
-                encoded_body += encoded_line + '=' + eol
-                encoded_line = ''
-            encoded_line += c
-        # Now at end of line..
-        if prev and prev in ' \t':
-            # Special case for whitespace at end of file
-            if lineno + 1 == len(lines):
-                prev = quote(prev)
-                if len(encoded_line) + len(prev) > maxlinelen:
-                    encoded_body += encoded_line + '=' + eol + prev
-                else:
-                    encoded_body += encoded_line + prev
-            # Just normal whitespace at end of line
-            else:
-                encoded_body += encoded_line + prev + '=' + eol
-            encoded_line = ''
-        # Now look at the line we just finished and it has a line ending, we
-        # need to add eol to the end of the line.
-        if lines[lineno].endswith(CRLF) or lines[lineno][-1] in CRLF:
-            encoded_body += encoded_line + eol
-        else:
-            encoded_body += encoded_line
-        encoded_line = ''
-    return encoded_body
+            encoded_body.write_char(c, i==last_char_index)
+        # Add an eol if input line had eol.  All input lines have eol except
+        # possibly the last one.
+        if line_no < last_line_no or last_has_eol:
+            encoded_body.newline()
+
+    return encoded_body.getvalue()
 
 
 
