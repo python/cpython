@@ -330,13 +330,16 @@ class TestNamedTuple(unittest.TestCase):
 
     def test_source(self):
         # verify that _source can be run through exec()
-        tmp = namedtuple('Color', 'red green blue')
-        self.assertNotIn('Color', globals())
+        tmp = namedtuple('NTColor', 'red green blue')
+        globals().pop('NTColor', None)          # remove artifacts from other tests
+        self.assertNotIn('NTColor', globals())
         exec(tmp._source, globals())
-        self.assertIn('Color', globals())
-        c = Color(10, 20, 30)
+        self.assertIn('NTColor', globals())
+        c = NTColor(10, 20, 30)
         self.assertEqual((c.red, c.green, c.blue), (10, 20, 30))
-        self.assertEqual(Color._fields, ('red', 'green', 'blue'))
+        self.assertEqual(NTColor._fields, ('red', 'green', 'blue'))
+        globals().pop('NTColor', None)          # clean-up after this test
+        self.assertNotIn('NTColor', globals())
 
     def test_source_importable(self):
         tmp = namedtuple('Color', 'hue sat val')
