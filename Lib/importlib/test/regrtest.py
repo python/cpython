@@ -5,13 +5,6 @@ invalidates are automatically skipped if the entire test suite is run.
 Otherwise all command-line options valid for test.regrtest are also valid for
 this script.
 
-XXX FAILING
-  * test_import
-    - test_incorrect_code_name
-        file name differing between __file__ and co_filename (r68360 on trunk)
-    - test_import_by_filename
-        exception for trying to import by file name does not match
-
 """
 import importlib
 import sys
