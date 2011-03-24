@@ -234,8 +234,6 @@ class OrderedDict(dict):
 ################################################################################
 
 _class_template = '''\
-__name__ = 'namedtuple_{typename}'
-
 from builtins import property as _property, tuple as _tuple
 from operator import itemgetter as _itemgetter
 from collections import OrderedDict
@@ -353,8 +351,9 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
                                for index, name in enumerate(field_names))
     )
 
-    # Execute the class definition string in a temporary namespace
-    namespace = {}
+    # Execute the template string in a temporary namespace and
+    # support tracing utilities by setting a value for frame.f_globals['__name__']
+    namespace = dict(__name__='namedtuple_%s' % typename)
     try:
         exec(class_definition, namespace)
     except SyntaxError as e:

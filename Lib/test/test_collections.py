@@ -1,6 +1,7 @@
 """Unit tests for collections.py."""
 
 import unittest, doctest, operator
+from test.support import TESTFN, forget, unlink
 import inspect
 from test import support
 from collections import namedtuple, Counter, OrderedDict, _count_elements
@@ -326,6 +327,39 @@ class TestNamedTuple(unittest.TestCase):
         class B(A):
             pass
         self.assertEqual(repr(B(1)), 'B(x=1)')
+
+    def test_source(self):
+        # verify that _source can be run through exec()
+        tmp = namedtuple('Color', 'red green blue')
+        self.assertNotIn('Color', globals())
+        exec(tmp._source, globals())
+        self.assertIn('Color', globals())
+        c = Color(10, 20, 30)
+        self.assertEqual((c.red, c.green, c.blue), (10, 20, 30))
+        self.assertEqual(Color._fields, ('red', 'green', 'blue'))
+
+    def test_source_importable(self):
+        tmp = namedtuple('Color', 'hue sat val')
+
+        compiled = None
+        source = TESTFN + '.py'
+        with open(source, 'w') as f:
+            print(tmp._source, file=f)
+
+        if TESTFN in sys.modules:
+            del sys.modules[TESTFN]
+        try:
+            mod = __import__(TESTFN)
+            compiled = mod.__file__
+            Color = mod.Color
+            c = Color(10, 20, 30)
+            self.assertEqual((c.hue, c.sat, c.val), (10, 20, 30))
+            self.assertEqual(Color._fields, ('hue', 'sat', 'val'))
+        finally:
+            forget(TESTFN)
+            if compiled:
+                unlink(compiled)
+            unlink(source)
 
 
 ################################################################################
