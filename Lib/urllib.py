@@ -643,10 +643,11 @@ class FancyURLopener(URLopener):
         newurl = basejoin(self.type + ":" + url, newurl)
 
         # For security reasons we do not allow redirects to protocols
-        # other than HTTP or HTTPS.
+        # other than HTTP, HTTPS or FTP.
         newurl_lower = newurl.lower()
         if not (newurl_lower.startswith('http://') or
-                newurl_lower.startswith('https://')):
+                newurl_lower.startswith('https://') or
+                newurl_lower.startswith('ftp://')):
             return
 
         void = fp.read()
