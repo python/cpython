@@ -1084,7 +1084,7 @@ class _TestPool(BaseTestCase):
         self.pool.terminate()
         join = TimingWrapper(self.pool.join)
         join()
-        self.assertTrue(join.elapsed < 0.2)
+        self.assertLess(join.elapsed, 0.2)
 #
 # Test that manager has expected number of shared objects left
 #
