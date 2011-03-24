@@ -743,10 +743,7 @@ STDTESTS = [
 ]
 
 # set of tests that we don't want to be executed when using regrtest
-NOTTESTS = {
-    'test_future1',
-    'test_future2',
-}
+NOTTESTS = set()
 
 def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     """Return a list of all applicable test modules."""
