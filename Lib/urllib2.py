@@ -555,6 +555,13 @@ class HTTPRedirectHandler(BaseHandler):
             return
         newurl = urlparse.urljoin(req.get_full_url(), newurl)
 
+        # For security reasons we do not allow redirects to protocols
+        # other than HTTP or HTTPS.
+        newurl_lower = newurl.lower()
+        if not (newurl_lower.startswith('http://') or
+                newurl_lower.startswith('https://')):
+            return
+
         # XXX Probably want to forget about the state of the current
         # request, although that might interact poorly with other
         # handlers that also use handler-specific request attributes
