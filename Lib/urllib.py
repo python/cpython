@@ -638,10 +638,19 @@ class FancyURLopener(URLopener):
             newurl = headers['uri']
         else:
             return
-        void = fp.read()
-        fp.close()
+
         # In case the server sent a relative URL, join with original:
         newurl = basejoin(self.type + ":" + url, newurl)
+
+        # For security reasons we do not allow redirects to protocols
+        # other than HTTP or HTTPS.
+        newurl_lower = newurl.lower()
+        if not (newurl_lower.startswith('http://') or
+                newurl_lower.startswith('https://')):
+            return
+
+        void = fp.read()
+        fp.close()
         return self.open(newurl)
 
     def http_error_301(self, url, fp, errcode, errmsg, headers, data=None):
