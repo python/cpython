@@ -42,6 +42,9 @@ Selecting tests
                 -- specify which special resource intensive tests to run
 -M/--memlimit LIMIT
                 -- run very large memory-consuming tests
+   --testdir DIR
+                -- execute test files in the specified directory (instead
+                   of the Python stdlib test suite)
 
 Special runs
 
@@ -265,7 +268,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
              'use=', 'threshold=', 'trace', 'coverdir=', 'nocoverdir',
              'runleaks', 'huntrleaks=', 'memlimit=', 'randseed=',
              'multiprocess=', 'coverage', 'slaveargs=', 'forever', 'debug',
-             'start=', 'nowindows', 'header'])
+             'start=', 'nowindows', 'header', 'testdir='])
     except getopt.error as msg:
         usage(msg)
 
@@ -395,6 +398,10 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             print()   # Force a newline (just in case)
             print(json.dumps(result))
             sys.exit(0)
+        elif o == '--testdir':
+            # CWD is replaced with a temporary dir before calling main(), so we
+            # join it with the saved CWD so it ends up where the user expects.
+            testdir = os.path.join(support.SAVEDCWD, a)
         else:
             print(("No handler for option {}.  Please report this as a bug "
                    "at http://bugs.python.org.").format(o), file=sys.stderr)
@@ -469,7 +476,13 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         print("==  ", os.getcwd())
         print("Testing with flags:", sys.flags)
 
-    alltests = findtests(testdir, stdtests, nottests)
+    # if testdir is set, then we are not running the python tests suite, so
+    # don't add default tests to be executed or skipped (pass empty values)
+    if testdir:
+        alltests = findtests(testdir, list(), set())
+    else:
+        alltests = findtests(testdir, stdtests, nottests)
+
     selected = tests or args or alltests
     if single:
         selected = selected[:1]
@@ -715,6 +728,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     sys.exit(len(bad) > 0 or interrupted)
 
 
+# small set of tests to determine if we have a basically functioning interpreter
+# (i.e. if any of these fail, then anything else is likely to follow)
 STDTESTS = [
     'test_grammar',
     'test_opcodes',
@@ -727,6 +742,7 @@ STDTESTS = [
     'test_doctest2',
 ]
 
+# set of tests that we don't want to be executed when using regrtest
 NOTTESTS = {
     'test_future1',
     'test_future2',
