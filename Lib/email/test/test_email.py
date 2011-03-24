@@ -3495,6 +3495,14 @@ class TestQuopri(unittest.TestCase):
     def test_encode_one_line_one_space(self):
         self._test_encode(' \n', '=20\n')
 
+# XXX: body_encode() expect strings, but uses ord(char) from these strings
+# to index into a 256-entry list.  For code points above 255, this will fail.
+# Should there be a check for 8-bit only ord() values in body, or at least
+# a comment about the expected input?
+
+    def test_encode_two_lines_one_space(self):
+        self._test_encode(' \n \n', '=20\n=20\n')
+
     def test_encode_one_word_trailing_spaces(self):
         self._test_encode('hello   ', 'hello  =20')
 
@@ -3510,8 +3518,14 @@ class TestQuopri(unittest.TestCase):
     def test_encode_trailing_space_before_maxlinelen(self):
         self._test_encode('abcd \n1234', 'abcd =\n\n1234', maxlinelen=6)
 
+    def test_encode_trailing_space_at_maxlinelen(self):
+        self._test_encode('abcd \n1234', 'abcd=\n=20\n1234', maxlinelen=5)
+
     def test_encode_trailing_space_beyond_maxlinelen(self):
-        self._test_encode('abcd \n1234', 'abc=\nd =\n\n1234', maxlinelen=4)
+        self._test_encode('abcd \n1234', 'abc=\nd=20\n1234', maxlinelen=4)
+
+    def test_encode_whitespace_lines(self):
+        self._test_encode(' \n' * 5, '=20\n' * 5)
 
     def test_encode_quoted_equals(self):
         self._test_encode('a = b', 'a =3D b')
@@ -3531,6 +3545,9 @@ class TestQuopri(unittest.TestCase):
 
     def test_encode_shortest_maxlinelen(self):
         self._test_encode('=' * 5, '=3D=\n' * 4 + '=3D', maxlinelen=4)
+
+    def test_encode_maxlinelen_too_small(self):
+        self.assertRaises(ValueError, self._test_encode, '', '', maxlinelen=3)
 
     def test_encode(self):
         eq = self.assertEqual
