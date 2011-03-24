@@ -315,7 +315,9 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         elif o in ('-T', '--coverage'):
             trace = True
         elif o in ('-D', '--coverdir'):
-            coverdir = os.path.join(os.getcwd(), a)
+            # CWD is replaced with a temporary dir before calling main(), so we
+            # need  join it with the saved CWD so it goes where the user expects.
+            coverdir = os.path.join(support.SAVEDCWD, a)
         elif o in ('-N', '--nocoverdir'):
             coverdir = None
         elif o in ('-R', '--huntrleaks'):
