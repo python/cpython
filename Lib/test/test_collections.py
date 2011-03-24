@@ -332,37 +332,12 @@ class TestNamedTuple(unittest.TestCase):
         # verify that _source can be run through exec()
         tmp = namedtuple('NTColor', 'red green blue')
         globals().pop('NTColor', None)          # remove artifacts from other tests
-        self.assertNotIn('NTColor', globals())
         exec(tmp._source, globals())
         self.assertIn('NTColor', globals())
         c = NTColor(10, 20, 30)
         self.assertEqual((c.red, c.green, c.blue), (10, 20, 30))
         self.assertEqual(NTColor._fields, ('red', 'green', 'blue'))
         globals().pop('NTColor', None)          # clean-up after this test
-        self.assertNotIn('NTColor', globals())
-
-    def test_source_importable(self):
-        tmp = namedtuple('Color', 'hue sat val')
-
-        compiled = None
-        source = TESTFN + '.py'
-        with open(source, 'w') as f:
-            print(tmp._source, file=f)
-
-        if TESTFN in sys.modules:
-            del sys.modules[TESTFN]
-        try:
-            mod = __import__(TESTFN)
-            compiled = mod.__file__
-            Color = mod.Color
-            c = Color(10, 20, 30)
-            self.assertEqual((c.hue, c.sat, c.val), (10, 20, 30))
-            self.assertEqual(Color._fields, ('hue', 'sat', 'val'))
-        finally:
-            forget(TESTFN)
-            if compiled:
-                unlink(compiled)
-            unlink(source)
 
 
 ################################################################################
