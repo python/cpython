@@ -13,14 +13,14 @@ def get_error_location(msg):
 class FutureTest(unittest.TestCase):
 
     def test_future1(self):
-        support.unload('test_future1')
-        from test import test_future1
-        self.assertEqual(test_future1.result, 6)
+        support.unload('future_test1')
+        from test import future_test1
+        self.assertEqual(future_test1.result, 6)
 
     def test_future2(self):
-        support.unload('test_future2')
-        from test import test_future2
-        self.assertEqual(test_future2.result, 6)
+        support.unload('future_test2')
+        from test import future_test2
+        self.assertEqual(future_test2.result, 6)
 
     def test_future3(self):
         support.unload('test_future3')
