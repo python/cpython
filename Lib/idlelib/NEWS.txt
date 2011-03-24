@@ -1,4 +1,12 @@
-What's New in IDLE 3.1?
+What's New in IDLE 3.1.4?
+=========================
+
+*Release date: XX-XXX-XX*
+
+- <Home> toggle non-functional when NumLock set on Windows.  Issue3851.
+
+
+What's New in IDLE 3.1b1?
 =========================
 
 *Release date: 27-Jun-09*
