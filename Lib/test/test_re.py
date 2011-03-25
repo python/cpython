@@ -455,6 +455,22 @@ class ReTests(unittest.TestCase):
             self.assertMatch(re.escape(b), b)
         self.assertMatch(re.escape(p), p)
 
+    def test_re_escape_non_ascii(self):
+        s = 'xxx\u2620\u2620\u2620xxx'
+        s_escaped = re.escape(s)
+        self.assertEqual(s_escaped, 'xxx\\\u2620\\\u2620\\\u2620xxx')
+        self.assertMatch(s_escaped, s)
+        self.assertMatch('.%s+.' % re.escape('\u2620'), s,
+                         'x\u2620\u2620\u2620x', (2, 7), re.search)
+
+    def test_re_escape_non_ascii_bytes(self):
+        b = 'y\u2620y\u2620y'.encode('utf-8')
+        b_escaped = re.escape(b)
+        self.assertEqual(b_escaped, b'y\\\xe2\\\x98\\\xa0y\\\xe2\\\x98\\\xa0y')
+        self.assertMatch(b_escaped, b)
+        res = re.findall(re.escape('\u2620'.encode('utf-8')), b)
+        self.assertEqual(len(res), 2)
+
     def pickle_test(self, pickle):
         oldpat = re.compile('a(?:b|(c|e){1,2}?|d)+?(.)')
         s = pickle.dumps(oldpat)
