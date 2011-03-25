@@ -10,8 +10,9 @@ import unittest
 import xml.etree
 import test.test_support
 from contextlib import contextmanager
+from collections import namedtuple
 from test.test_support import (
-    TESTFN, forget, rmtree, EnvironmentVarGuard, reap_children)
+    TESTFN, forget, rmtree, EnvironmentVarGuard, reap_children, captured_stdout)
 
 from test import pydoc_mod
 
@@ -339,6 +340,15 @@ class TestDescriptions(unittest.TestCase):
         self.assertEqual(pydoc.describe(c), 'C')
         expected = 'C in module %s object' % __name__
         self.assertIn(expected, pydoc.render_doc(c))
+
+    def test_namedtuple_public_underscore(self):
+        NT = namedtuple('NT', ['abc', 'def'], rename=True)
+        with captured_stdout() as help_io:
+            help(NT)
+        helptext = help_io.getvalue()
+        self.assertIn('_1', helptext)
+        self.assertIn('_replace', helptext)
+        self.assertIn('_asdict', helptext)
 
 
 def test_main():
