@@ -869,8 +869,6 @@ class TestMaildir(TestMailbox):
         self.assertFalse((perms & 0o111)) # Execute bits should all be off.
 
     def test_reread(self):
-        # Wait for 2 seconds
-        time.sleep(2)
 
         # Initially, the mailbox has not been read and the time is null.
         assert getattr(self._box, '_last_read', None) is None
@@ -879,15 +877,21 @@ class TestMaildir(TestMailbox):
         self._box._refresh()
         assert getattr(self._box, '_last_read', None) is not None
 
-        # Try calling _refresh() again; the modification times shouldn't have
-        # changed, so the mailbox should not be re-reading.  Re-reading causes
-        # the ._toc attribute to be assigned a new dictionary object, so
-        # we'll check that the ._toc attribute isn't a different object.
+        # Put the last modified times more than one second into the past
+        # (because mtime has a one second granularity, a refresh is done
+        # unconditionally if called for within the same second, just in case
+        # the mbox has changed).
+        for subdir in ('cur', 'new'):
+            os.utime(os.path.join(self._box._path, subdir),
+                     (time.time()-5,)*2)
+
+        # Re-reading causes the ._toc attribute to be assigned a new dictionary
+        # object, so we'll check that the ._toc attribute isn't a different
+        # object.
         orig_toc = self._box._toc
         def refreshed():
             return self._box._toc is not orig_toc
 
-        time.sleep(1)         # Wait 1sec to ensure time.time()'s value changes
         self._box._refresh()
         assert not refreshed()
 
