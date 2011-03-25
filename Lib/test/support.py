@@ -1029,6 +1029,11 @@ def bigmemtest(minsize, memuse):
     return decorator
 
 def precisionbigmemtest(size, memuse):
+    """Decorator for bigmem tests that need exact sizes.
+
+    Like bigmemtest, but without the size scaling upward to fill available
+    memory.
+    """
     def decorator(f):
         def wrapper(self):
             size = wrapper.size
