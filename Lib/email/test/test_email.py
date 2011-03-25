@@ -3918,6 +3918,20 @@ A very long line that must get split to something other than at the
         h.append(x, errors='replace')
         eq(str(h), e)
 
+    def test_escaped_8bit_header(self):
+        x = b'Ynwp4dUEbay Auction Semiar- No Charge \x96 Earn Big'
+        x = x.decode('ascii', 'surrogateescape')
+        h = Header(x, charset=email.charset.UNKNOWN8BIT)
+        self.assertEqual(str(h),
+                        'Ynwp4dUEbay Auction Semiar- No Charge \uFFFD Earn Big')
+        self.assertEqual(email.header.decode_header(h), [(x, 'unknown-8bit')])
+
+    def test_modify_returned_list_does_not_change_header(self):
+        h = Header('test')
+        chunks = email.header.decode_header(h)
+        chunks.append(('ascii', 'test2'))
+        self.assertEqual(str(h), 'test')
+
     def test_encoded_adjacent_nonencoded(self):
         eq = self.assertEqual
         h = Header()
