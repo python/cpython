@@ -78,7 +78,7 @@ def RawArray(typecode_or_type, size_or_initializer):
     Returns a ctypes array allocated from shared memory
     '''
     type_ = typecode_to_type.get(typecode_or_type, typecode_or_type)
-    if isinstance(size_or_initializer, int):
+    if isinstance(size_or_initializer, (int, long)):
         type_ = type_ * size_or_initializer
         return _new_value(type_)
     else:
