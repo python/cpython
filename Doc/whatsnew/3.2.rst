@@ -1499,11 +1499,11 @@ filenames:
 >>> os.fsencode(filename)
 b'Sehensw\xc3\xbcrdigkeiten'
 
-Some operating systems allow direct access to the unencoded bytes in the
+Some operating systems allow direct access to encoded bytes in the
 environment.  If so, the :attr:`os.supports_bytes_environ` constant will be
 true.
 
-For direct access to unencoded environment variables (if available),
+For direct access to encoded environment variables (if available),
 use the new :func:`os.getenvb` function or use :data:`os.environb`
 which is a bytes version of :data:`os.environ`.
 
