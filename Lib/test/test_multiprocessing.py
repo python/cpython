@@ -918,6 +918,13 @@ class _TestArray(BaseTestCase):
         self.test_array(raw=True)
 
     @unittest.skipIf(c_int is None, "requires _ctypes")
+    def test_array_accepts_long(self):
+        arr = self.Array('i', 10L)
+        self.assertEqual(len(arr), 10)
+        raw_arr = self.RawArray('i', 10L)
+        self.assertEqual(len(raw_arr), 10)
+
+    @unittest.skipIf(c_int is None, "requires _ctypes")
     def test_getobj_getlock_obj(self):
         arr1 = self.Array('i', range(10))
         lock1 = arr1.get_lock()
