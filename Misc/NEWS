@@ -53,6 +53,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11659: Fix ResourceWarning in test_subprocess introduced by #11459.
+  Patch by Ben Hayden.
+
 - Issue #11635: Don't use polling in worker threads and processes launched by
   concurrent.futures.
 
