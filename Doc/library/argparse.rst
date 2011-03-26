@@ -1310,13 +1310,24 @@ of :data:`sys.argv`.  This can be accomplished by passing a list of strings to
    Namespace(accumulate=<built-in function sum>, integers=[1, 2, 3, 4])
 
 
-Custom namespaces
-^^^^^^^^^^^^^^^^^
+The Namespace object
+^^^^^^^^^^^^^^^^^^^^
+
+By default, :meth:`parse_args` will return a new object of type :class:`Namespace`
+where the necessary attributes have been set. This class is deliberately simple,
+just an :class:`object` subclass with a readable string representation. If you
+prefer to have dict-like view of the attributes, you can use the standard Python
+idiom via :func:`vars`::
+
+   >>> parser = argparse.ArgumentParser()
+   >>> parser.add_argument('--foo')
+   >>> args = parser.parse_args(['--foo', 'BAR'])
+   >>> vars(args)
+   {'foo': 'BAR'}
 
 It may also be useful to have an :class:`ArgumentParser` assign attributes to an
-already existing object, rather than the newly-created :class:`Namespace` object
-that is normally used.  This can be achieved by specifying the ``namespace=``
-keyword argument::
+already existing object, rather than a new :class:`Namespace` object.  This can
+be achieved by specifying the ``namespace=`` keyword argument::
 
    >>> class C(object):
    ...     pass
