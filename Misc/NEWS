@@ -1530,6 +1530,8 @@ Library
 
 - Issue #9948: Fixed problem of losing filename case information.
 
+- Issue #9348: Raise an early error if argparse nargs and metavar don't match.
+
 Extension Modules
 -----------------
 
