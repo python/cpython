@@ -43,8 +43,10 @@ class urlopenNetworkTests(unittest.TestCase):
 
     def urlopen(self, *args, **kwargs):
         resource = args[0]
-        with support.transient_internet(resource):
-            return urllib.request.urlopen(*args, **kwargs)
+        cm = support.transient_internet(resource)
+        cm.__enter__()
+        self.addCleanup(cm.__exit__, None, None, None)
+        return urllib.request.urlopen(*args, **kwargs)
 
     def test_basic(self):
         # Simple test expected to pass.
@@ -135,8 +137,10 @@ class urlretrieveNetworkTests(unittest.TestCase):
 
     def urlretrieve(self, *args):
         resource = args[0]
-        with support.transient_internet(resource):
-            return urllib.request.urlretrieve(*args)
+        cm = support.transient_internet(resource)
+        cm.__enter__()
+        self.addCleanup(cm.__exit__, None, None, None)
+        return urllib.request.urlretrieve(*args)
 
     def test_basic(self):
         # Test basic functionality.
