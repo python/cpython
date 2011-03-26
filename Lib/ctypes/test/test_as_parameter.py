@@ -187,6 +187,18 @@ class BasicWrapTestCase(unittest.TestCase):
         self.assertEqual((s8i.a, s8i.b, s8i.c, s8i.d, s8i.e, s8i.f, s8i.g, s8i.h),
                              (9*2, 8*3, 7*4, 6*5, 5*6, 4*7, 3*8, 2*9))
 
+    def test_recursive_as_param(self):
+        from ctypes import c_int
+
+        class A(object):
+            pass
+
+        a = A()
+        a._as_parameter_ = a
+        with self.assertRaises(RuntimeError):
+            c_int.from_param(a)
+
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 class AsParamWrapper(object):
