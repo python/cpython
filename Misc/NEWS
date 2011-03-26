@@ -10,6 +10,10 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #11675: multiprocessing.[Raw]Array objects created from an integer size
+  are now zeroed on creation.  This matches the behaviour specified by the
+  documentation.
+
 - Issue #10998: Remove mentions of -Q, sys.flags.division_warning and
   Py_DivisionWarningFlag left over from Python 2.
 
