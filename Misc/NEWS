@@ -294,6 +294,8 @@ Library
 - Issue #11174: Add argparse.MetavarTypeHelpFormatter, which uses type names
   for the names of optional and positional arguments in help messages.
 
+- Issue #9348: Raise an early error if argparse nargs and metavar don't match.
+
 Build
 -----
 
@@ -1529,8 +1531,6 @@ Library
 - Issue #10075: Add a session_stats() method to SSLContext objects.
 
 - Issue #9948: Fixed problem of losing filename case information.
-
-- Issue #9348: Raise an early error if argparse nargs and metavar don't match.
 
 Extension Modules
 -----------------
