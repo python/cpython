@@ -750,7 +750,7 @@ cookies (assumes Unix/Netscape convention for location of the cookies file)::
 
    import os, cookielib, urllib2
    cj = cookielib.MozillaCookieJar()
-   cj.load(os.path.join(os.environ["HOME"], ".netscape/cookies.txt"))
+   cj.load(os.path.join(os.path.expanduser("~"), ".netscape", "cookies.txt"))
    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
    r = opener.open("http://example.com/")
 
