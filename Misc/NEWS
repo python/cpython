@@ -53,6 +53,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11635: Don't use polling in worker threads and processes launched by
+  concurrent.futures.
+
 - Issue #11628: cmp_to_key generated class should use __slots__
 
 - Issue #11666: let help() display named tuple attributes and methods
