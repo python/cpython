@@ -356,13 +356,10 @@ formatter_class
 ^^^^^^^^^^^^^^^
 
 :class:`ArgumentParser` objects allow the help formatting to be customized by
-specifying an alternate formatting class.  Currently, there are three such
-classes: :class:`argparse.RawDescriptionHelpFormatter`,
-:class:`argparse.RawTextHelpFormatter` and
-:class:`argparse.ArgumentDefaultsHelpFormatter`.  The first two allow more
-control over how textual descriptions are displayed, while the last
-automatically adds information about argument default values.
+specifying an alternate formatting class.
 
+:class:`RawDescriptionHelpFormatter` and :class:`RawTextHelpFormatter` give
+more control over how textual descriptions are displayed.
 By default, :class:`ArgumentParser` objects line-wrap the description_ and
 epilog_ texts in command-line help messages::
 
@@ -386,7 +383,7 @@ epilog_ texts in command-line help messages::
    likewise for this epilog whose whitespace will be cleaned up and whose words
    will be wrapped across a couple lines
 
-Passing :class:`argparse.RawDescriptionHelpFormatter` as ``formatter_class=``
+Passing :class:`RawDescriptionHelpFormatter` as ``formatter_class=``
 indicates that description_ and epilog_ are already correctly formatted and
 should not be line-wrapped::
 
@@ -412,11 +409,11 @@ should not be line-wrapped::
    optional arguments:
     -h, --help  show this help message and exit
 
-:class:`RawTextHelpFormatter` maintains whitespace for all sorts of help text
+:class:`RawTextHelpFormatter` maintains whitespace for all sorts of help text,
 including argument descriptions.
 
-The other formatter class available, :class:`ArgumentDefaultsHelpFormatter`,
-will add information about the default value of each of the arguments::
+:class:`ArgumentDefaultsHelpFormatter` automatically adds information about
+default values to each of the argument help messages::
 
    >>> parser = argparse.ArgumentParser(
    ...     prog='PROG',
@@ -432,6 +429,25 @@ will add information about the default value of each of the arguments::
    optional arguments:
     -h, --help  show this help message and exit
     --foo FOO   FOO! (default: 42)
+
+:class:`MetavarTypeHelpFormatter` uses the name of the type_ argument for each
+argument as as the display name for its values (rather than using the dest_
+as the regular formatter does)::
+
+   >>> parser = argparse.ArgumentParser(
+   ...     prog='PROG',
+   ...     formatter_class=argparse.MetavarTypeHelpFormatter)
+   >>> parser.add_argument('--foo', type=int)
+   >>> parser.add_argument('bar', type=float)
+   >>> parser.print_help()
+   usage: PROG [-h] [--foo int] float
+
+   positional arguments:
+     float
+
+   optional arguments:
+     -h, --help  show this help message and exit
+     --foo int
 
 
 conflict_handler
