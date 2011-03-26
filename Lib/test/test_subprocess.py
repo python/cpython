@@ -874,6 +874,7 @@ class ProcessTestCase(BaseTestCase):
                                  stdout=subprocess.PIPE,
                                  bufsize=0)
             f = p.stdout
+            self.addCleanup(f.close)
             try:
                 self.assertEqual(f.read(4), b"appl")
                 self.assertIn(f, select.select([f], [], [], 0.0)[0])
