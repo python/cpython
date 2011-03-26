@@ -152,6 +152,8 @@ Library
 - Issue #10276: Fix the results of zlib.crc32() and zlib.adler32() on buffers
   larger than 4GB.  Patch by Nadeem Vawda.
 
+- Issue #9348: Raise an early error if argparse nargs and metavar don't match.
+
 Build
 -----
 
@@ -1363,8 +1365,6 @@ Library
 - Issue #10075: Add a session_stats() method to SSLContext objects.
 
 - Issue #9948: Fixed problem of losing filename case information.
-
-- Issue #9348: Raise an early error if argparse nargs and metavar don't match.
 
 Extension Modules
 -----------------
