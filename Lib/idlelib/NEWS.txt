@@ -3,7 +3,10 @@ What's New in IDLE 3.1.4?
 
 *Release date: XX-XXX-XX*
 
-- <Home> toggle non-functional when NumLock set on Windows.  Issue3851.
+- <Home> toggle failing on Tk 8.5, causing IDLE exits and strange selection
+  behavior. Issue 4676.  Improve selection extension behaviour.
+- <Home> toggle non-functional when NumLock set on Windows.  Issue 3851.
+
 
 
 What's New in IDLE 3.1b1?
