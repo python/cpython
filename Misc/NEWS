@@ -157,6 +157,8 @@ Library
 
 - Issue #9348: Raise an early error if argparse nargs and metavar don't match.
 
+- Issue #8982: Improve the documentation for the argparse Namespace object.
+
 Build
 -----
 
