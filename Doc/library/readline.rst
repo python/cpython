@@ -197,7 +197,7 @@ normally be executed automatically during interactive sessions from the user's
 
    import os
    import readline
-   histfile = os.path.join(os.environ["HOME"], ".pyhist")
+   histfile = os.path.join(os.path.expanduser("~"), ".pyhist")
    try:
        readline.read_history_file(histfile)
    except IOError:
