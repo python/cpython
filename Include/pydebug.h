@@ -16,7 +16,6 @@ PyAPI_DATA(int) Py_BytesWarningFlag;
 PyAPI_DATA(int) Py_UseClassExceptionsFlag;
 PyAPI_DATA(int) Py_FrozenFlag;
 PyAPI_DATA(int) Py_IgnoreEnvironmentFlag;
-PyAPI_DATA(int) Py_DivisionWarningFlag;
 PyAPI_DATA(int) Py_DontWriteBytecodeFlag;
 PyAPI_DATA(int) Py_NoUserSiteDirectory;
 PyAPI_DATA(int) Py_UnbufferedStdioFlag;

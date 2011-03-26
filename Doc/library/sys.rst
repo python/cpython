@@ -231,7 +231,6 @@ always available.
    attribute                     flag
    ============================= =============================
    :const:`debug`                :option:`-d`
-   :const:`division_warning`     :option:`-Q`
    :const:`inspect`              :option:`-i`
    :const:`interactive`          :option:`-i`
    :const:`optimize`             :option:`-O` or :option:`-OO`

@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #10998: Remove mentions of -Q, sys.flags.division_warning and
+  Py_DivisionWarningFlag left over from Python 2.
+
 - Issue #11244: Remove an unnecessary peepholer check that was preventing
   negative zeros from being constant-folded properly.
 
