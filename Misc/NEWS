@@ -9,6 +9,10 @@ What's New in Python 2.7.2?
 Core and Builtins
 -----------------
 
+- Issue #11675: multiprocessing.[Raw]Array objects created from an integer size
+  are now zeroed on creation.  This matches the behaviour specified by the
+  documentation.
+
 - Issue #11450: Don't truncate hg version info in Py_GetBuildInfo() when
   there are many tags (e.g. when using mq).  Patch by Nadeem Vawda.
 

@@ -80,7 +80,9 @@ def RawArray(typecode_or_type, size_or_initializer):
     type_ = typecode_to_type.get(typecode_or_type, typecode_or_type)
     if isinstance(size_or_initializer, (int, long)):
         type_ = type_ * size_or_initializer
-        return _new_value(type_)
+        obj = _new_value(type_)
+        ctypes.memset(ctypes.addressof(obj), 0, ctypes.sizeof(obj))
+        return obj
     else:
         type_ = type_ * len(size_or_initializer)
         result = _new_value(type_)
