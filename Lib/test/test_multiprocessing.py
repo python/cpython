@@ -914,6 +914,21 @@ class _TestArray(BaseTestCase):
         self.assertEqual(list(arr[:]), seq)
 
     @unittest.skipIf(c_int is None, "requires _ctypes")
+    def test_array_from_size(self):
+        size = 10
+        # Test for zeroing (see issue #11675).
+        # The repetition below strengthens the test by increasing the chances
+        # of previously allocated non-zero memory being used for the new array
+        # on the 2nd and 3rd loops.
+        for _ in range(3):
+            arr = self.Array('i', size)
+            self.assertEqual(len(arr), size)
+            self.assertEqual(list(arr), [0] * size)
+            arr[:] = range(10)
+            self.assertEqual(list(arr), list(range(10)))
+            del arr
+
+    @unittest.skipIf(c_int is None, "requires _ctypes")
     def test_rawarray(self):
         self.test_array(raw=True)
 
