@@ -500,7 +500,7 @@ class RefactoringTool(object):
                         node = new
 
     def processed_file(self, new_text, filename, old_text=None, write=False,
-                       encoding=None):
+                       encoding=None, newlines=None):
         """
         Called when a file has been refactored, and there are changes.
         """
