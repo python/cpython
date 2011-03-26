@@ -3940,6 +3940,37 @@ class TestHelpVersionAction(HelpTestCase):
         '''
     version = ''
 
+
+class TestHelpMetavarTypeFormatter(HelpTestCase):
+    """"""
+
+    def custom_type(string):
+        return string
+
+    parser_signature = Sig(prog='PROG', description='description',
+                           formatter_class=argparse.MetavarTypeHelpFormatter)
+    argument_signatures = [Sig('a', type=int),
+                           Sig('-b', type=custom_type),
+                           Sig('-c', type=float, metavar='SOME FLOAT')]
+    argument_group_signatures = []
+    usage = '''\
+        usage: PROG [-h] [-b custom_type] [-c SOME FLOAT] int
+        '''
+    help = usage + '''\
+
+        description
+
+        positional arguments:
+          int
+
+        optional arguments:
+          -h, --help      show this help message and exit
+          -b custom_type
+          -c SOME FLOAT
+        '''
+    version = ''
+
+
 # =====================================
 # Optional/Positional constructor tests
 # =====================================

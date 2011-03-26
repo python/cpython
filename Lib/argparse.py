@@ -71,6 +71,7 @@ __all__ = [
     'ArgumentDefaultsHelpFormatter',
     'RawDescriptionHelpFormatter',
     'RawTextHelpFormatter',
+    'MetavarTypeHelpFormatter',
     'Namespace',
     'Action',
     'ONE_OR_MORE',
@@ -422,7 +423,8 @@ class HelpFormatter(object):
 
             # produce all arg strings
             elif not action.option_strings:
-                part = self._format_args(action, action.dest)
+                default = self._get_default_metavar_for_positional(action)
+                part = self._format_args(action, default)
 
                 # if it's in a group, strip the outer []
                 if action in group_actions:
@@ -444,7 +446,7 @@ class HelpFormatter(object):
                 # if the Optional takes a value, format is:
                 #    -s ARGS or --long ARGS
                 else:
-                    default = action.dest.upper()
+                    default = self._get_default_metavar_for_optional(action)
                     args_string = self._format_args(action, default)
                     part = '%s %s' % (option_string, args_string)
 
@@ -530,7 +532,8 @@ class HelpFormatter(object):
 
     def _format_action_invocation(self, action):
         if not action.option_strings:
-            metavar, = self._metavar_formatter(action, action.dest)(1)
+            default = self._get_default_metavar_for_positional(action)
+            metavar, = self._metavar_formatter(action, default)(1)
             return metavar
 
         else:
@@ -544,7 +547,7 @@ class HelpFormatter(object):
             # if the Optional takes a value, format is:
             #    -s ARGS, --long ARGS
             else:
-                default = action.dest.upper()
+                default = self._get_default_metavar_for_optional(action)
                 args_string = self._format_args(action, default)
                 for option_string in action.option_strings:
                     parts.append('%s %s' % (option_string, args_string))
@@ -622,6 +625,12 @@ class HelpFormatter(object):
     def _get_help_string(self, action):
         return action.help
 
+    def _get_default_metavar_for_optional(self, action):
+        return action.dest.upper()
+
+    def _get_default_metavar_for_positional(self, action):
+        return action.dest
+
 
 class RawDescriptionHelpFormatter(HelpFormatter):
     """Help message formatter which retains any formatting in descriptions.
@@ -660,6 +669,22 @@ class ArgumentDefaultsHelpFormatter(HelpFormatter):
                 if action.option_strings or action.nargs in defaulting_nargs:
                     help += ' (default: %(default)s)'
         return help
+
+
+class MetavarTypeHelpFormatter(HelpFormatter):
+    """Help message formatter which uses the argument 'type' as the default
+    metavar value (instead of the argument 'dest')
+
+    Only the name of this class is considered a public API. All the methods
+    provided by the class are considered an implementation detail.
+    """
+
+    def _get_default_metavar_for_optional(self, action):
+        return action.type.__name__
+
+    def _get_default_metavar_for_positional(self, action):
+        return action.type.__name__
+
 
 
 # =====================

@@ -291,6 +291,9 @@ Library
 
 - Issue #11388: Added a clear() method to MutableSequence
 
+- Issue #11174: Add argparse.MetavarTypeHelpFormatter, which uses type names
+  for the names of optional and positional arguments in help messages.
+
 Build
 -----
 
