@@ -2004,10 +2004,14 @@ PyCSimpleType_from_param(PyObject *type, PyObject *value)
     PyCArgObject *parg;
     struct fielddesc *fd;
     PyObject *as_parameter;
+    int res;
 
     /* If the value is already an instance of the requested type,
        we can use it as is */
-    if (1 == PyObject_IsInstance(value, type)) {
+    res = PyObject_IsInstance(value, type);
+    if (res == -1)
+        return NULL;
+    if (res) {
         Py_INCREF(value);
         return value;
     }
@@ -2036,7 +2040,12 @@ PyCSimpleType_from_param(PyObject *type, PyObject *value)
 
     as_parameter = PyObject_GetAttrString(value, "_as_parameter_");
     if (as_parameter) {
+        if (Py_EnterRecursiveCall("while processing _as_parameter_")) {
+            Py_DECREF(as_parameter);
+            return NULL;
+        }
         value = PyCSimpleType_from_param(type, as_parameter);
+        Py_LeaveRecursiveCall();
         Py_DECREF(as_parameter);
         return value;
     }
