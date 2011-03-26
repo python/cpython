@@ -12,6 +12,7 @@ import time
 
 
 class URLTimeoutTest(unittest.TestCase):
+    # XXX this test doesn't seem to test anything useful.
 
     TIMEOUT = 30.0
 
@@ -24,7 +25,7 @@ class URLTimeoutTest(unittest.TestCase):
     def testURLread(self):
         with support.transient_internet("www.python.org"):
             f = urllib.request.urlopen("http://www.python.org/")
-        x = f.read()
+            x = f.read()
 
 class urlopenNetworkTests(unittest.TestCase):
     """Tests urllib.reqest.urlopen using the network.
@@ -43,8 +44,10 @@ class urlopenNetworkTests(unittest.TestCase):
 
     def urlopen(self, *args, **kwargs):
         resource = args[0]
-        with support.transient_internet(resource):
-            return urllib.request.urlopen(*args, **kwargs)
+        cm = support.transient_internet(resource)
+        cm.__enter__()
+        self.addCleanup(cm.__exit__, None, None, None)
+        return urllib.request.urlopen(*args, **kwargs)
 
     def test_basic(self):
         # Simple test expected to pass.
@@ -135,8 +138,10 @@ class urlretrieveNetworkTests(unittest.TestCase):
 
     def urlretrieve(self, *args):
         resource = args[0]
-        with support.transient_internet(resource):
-            return urllib.request.urlretrieve(*args)
+        cm = support.transient_internet(resource)
+        cm.__enter__()
+        self.addCleanup(cm.__exit__, None, None, None)
+        return urllib.request.urlretrieve(*args)
 
     def test_basic(self):
         # Test basic functionality.
