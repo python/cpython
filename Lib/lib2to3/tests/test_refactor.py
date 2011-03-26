@@ -231,23 +231,6 @@ from __future__ import print_function"""
                 os.path.join("a_dir", "stuff.py")]
         check(tree, tree)
 
-    def test_preserve_file_newlines(self):
-        rt = self.rt(fixers=_2TO3_FIXERS)
-        for nl in ("\r\n", "\n"):
-            data = "print y%s%syes%sok%s" % ((nl,) * 4)
-            handle, tmp = tempfile.mkstemp()
-            os.close(handle)
-            try:
-                with open(tmp, "w") as fp:
-                    fp.write(data)
-                rt.refactor_file(tmp)
-                with open(tmp, "r") as fp:
-                    contents = fp.read()
-            finally:
-                os.unlink(tmp)
-            for line in contents.splitlines(True):
-                self.assertTrue(line.endswith(nl))
-
     def test_file_encoding(self):
         fn = os.path.join(TEST_DATA_DIR, "different_encoding.py")
         self.check_file_refactoring(fn)
