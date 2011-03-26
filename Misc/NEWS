@@ -235,6 +235,10 @@ Library
 - Issue #9509: argparse now properly handles IOErrors raised by
   argparse.FileType.
 
+- Issue #9348: Raise an early error if argparse nargs and metavar don't match.
+
+- Issue #8982: Improve the documentation for the argparse Namespace object.
+
 Extension Modules
 -----------------
 
@@ -1342,8 +1346,6 @@ Library
 
 - Issue #8374: Update the internal alias table in the :mod:`locale` module to
   cover recent locale changes and additions.
-
-- Issue #9348: Raise an early error if argparse nargs and metavar don't match.
 
 Extension Modules
 -----------------
