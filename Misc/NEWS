@@ -178,6 +178,12 @@ Tools/Demos
 
 - Issue #11179: Make ccbench work under Python 3.1 and 2.7 again.
 
+Extensions
+----------
+
+- Issue #1838: Prevent segfault in ctypes, when _as_parameter_ on a class is set
+  to an instance of the class.
+
 Tests
 -----
 
