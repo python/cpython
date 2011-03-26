@@ -52,6 +52,48 @@ class GeneralFloatCases(unittest.TestCase):
         float('.' + '1'*1000)
         float(unicode('.' + '1'*1000))
 
+    def check_conversion_to_int(self, x):
+        """Check that int(x) has the correct value and type, for a float x."""
+        n = int(x)
+        if x >= 0.0:
+            # x >= 0 and n = int(x)  ==>  n <= x < n + 1
+            self.assertLessEqual(n, x)
+            self.assertLess(x, n + 1)
+        else:
+            # x < 0 and n = int(x)  ==>  n >= x > n - 1
+            self.assertGreaterEqual(n, x)
+            self.assertGreater(x, n - 1)
+
+        # Result should be an int if within range, else a long.
+        if -sys.maxint-1 <= n <= sys.maxint:
+            self.assertEqual(type(n), int)
+        else:
+            self.assertEqual(type(n), long)
+
+        # Double check.
+        self.assertEqual(type(int(n)), type(n))
+
+    def test_conversion_to_int(self):
+        # Check that floats within the range of an int convert to type
+        # int, not long.  (issue #11144.)
+        boundary = float(sys.maxint + 1)
+        epsilon = 2**-sys.float_info.mant_dig * boundary
+
+        # These 2 floats are either side of the positive int/long boundary on
+        # both 32-bit and 64-bit systems.
+        self.check_conversion_to_int(boundary - epsilon)
+        self.check_conversion_to_int(boundary)
+
+        # These floats are either side of the negative long/int boundary on
+        # 64-bit systems...
+        self.check_conversion_to_int(-boundary - 2*epsilon)
+        self.check_conversion_to_int(-boundary)
+
+        # ... and these ones are either side of the negative long/int
+        # boundary on 32-bit systems.
+        self.check_conversion_to_int(-boundary - 1.0)
+        self.check_conversion_to_int(-boundary - 1.0 + 2*epsilon)
+
     @test_support.run_with_locale('LC_NUMERIC', 'fr_FR', 'de_DE')
     def test_float_with_comma(self):
         # set locale to something that doesn't use '.' for the decimal point
