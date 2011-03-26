@@ -1499,6 +1499,7 @@ static PyObject *
 c_wchar_p_from_param(PyObject *type, PyObject *value)
 {
     PyObject *as_parameter;
+    int res;
 #if (PYTHON_API_VERSION < 1012)
 # error not supported
 #endif
@@ -1566,6 +1567,7 @@ static PyObject *
 c_char_p_from_param(PyObject *type, PyObject *value)
 {
     PyObject *as_parameter;
+    int res;
 #if (PYTHON_API_VERSION < 1012)
 # error not supported
 #endif
@@ -1634,6 +1636,7 @@ c_void_p_from_param(PyObject *type, PyObject *value)
 {
     StgDictObject *stgd;
     PyObject *as_parameter;
+    int res;
 #if (PYTHON_API_VERSION < 1012)
 # error not supported
 #endif
