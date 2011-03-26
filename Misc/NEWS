@@ -162,6 +162,9 @@ Library
 
 - Issue #8982: Improve the documentation for the argparse Namespace object.
 
+- Issue #9343: Document that argparse parent parsers must be configured before
+  their children.
+
 Build
 -----
 
