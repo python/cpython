@@ -1312,7 +1312,6 @@ static PyTypeObject FlagsType;
 
 static PyStructSequence_Field flags_fields[] = {
     {"debug",                   "-d"},
-    {"division_warning",        "-Q"},
     {"inspect",                 "-i"},
     {"interactive",             "-i"},
     {"optimize",                "-O or -OO"},
@@ -1336,9 +1335,9 @@ static PyStructSequence_Desc flags_desc = {
     flags__doc__,       /* doc */
     flags_fields,       /* fields */
 #ifdef RISCOS
-    13
-#else
     12
+#else
+    11
 #endif
 };
 
@@ -1356,7 +1355,6 @@ make_flags(void)
     PyStructSequence_SET_ITEM(seq, pos++, PyLong_FromLong(flag))
 
     SetFlag(Py_DebugFlag);
-    SetFlag(Py_DivisionWarningFlag);
     SetFlag(Py_InspectFlag);
     SetFlag(Py_InteractiveFlag);
     SetFlag(Py_OptimizeFlag);
