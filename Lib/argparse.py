@@ -1319,6 +1319,13 @@ class _ActionsContainer(object):
         if not _callable(type_func):
             raise ValueError('%r is not callable' % type_func)
 
+        # raise an error if the metavar does not match the type
+        if hasattr(self, "_get_formatter"):
+            try:
+                self._get_formatter()._format_args(action, None)
+            except TypeError:
+                raise ValueError("length of metavar tuple does not match nargs")
+
         return self._add_action(action)
 
     def add_argument_group(self, *args, **kwargs):

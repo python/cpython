@@ -4425,6 +4425,177 @@ class TestParseKnownArgs(TestCase):
         self.assertEqual(NS(v=3, spam=True, badger="B"), args)
         self.assertEqual(["C", "--foo", "4"], extras)
 
+# ==========================
+# add_argument metavar tests
+# ==========================
+
+class TestAddArgumentMetavar(TestCase):
+
+    EXPECTED_MESSAGE = "length of metavar tuple does not match nargs"
+
+    def do_test_no_exception(self, nargs, metavar):
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--foo", nargs=nargs, metavar=metavar)
+
+    def do_test_exception(self, nargs, metavar):
+        parser = argparse.ArgumentParser()
+        with self.assertRaises(ValueError) as cm:
+            parser.add_argument("--foo", nargs=nargs, metavar=metavar)
+        self.assertEqual(cm.exception.args[0], self.EXPECTED_MESSAGE)
+
+    # Unit tests for different values of metavar when nargs=None
+
+    def test_nargs_None_metavar_string(self):
+        self.do_test_no_exception(nargs=None, metavar="1")
+
+    def test_nargs_None_metavar_length0(self):
+        self.do_test_exception(nargs=None, metavar=tuple())
+
+    def test_nargs_None_metavar_length1(self):
+        self.do_test_no_exception(nargs=None, metavar=("1"))
+
+    def test_nargs_None_metavar_length2(self):
+        self.do_test_exception(nargs=None, metavar=("1", "2"))
+
+    def test_nargs_None_metavar_length3(self):
+        self.do_test_exception(nargs=None, metavar=("1", "2", "3"))
+
+    # Unit tests for different values of metavar when nargs=?
+
+    def test_nargs_optional_metavar_string(self):
+        self.do_test_no_exception(nargs="?", metavar="1")
+
+    def test_nargs_optional_metavar_length0(self):
+        self.do_test_exception(nargs="?", metavar=tuple())
+
+    def test_nargs_optional_metavar_length1(self):
+        self.do_test_no_exception(nargs="?", metavar=("1"))
+
+    def test_nargs_optional_metavar_length2(self):
+        self.do_test_exception(nargs="?", metavar=("1", "2"))
+
+    def test_nargs_optional_metavar_length3(self):
+        self.do_test_exception(nargs="?", metavar=("1", "2", "3"))
+
+    # Unit tests for different values of metavar when nargs=*
+
+    def test_nargs_zeroormore_metavar_string(self):
+        self.do_test_no_exception(nargs="*", metavar="1")
+
+    def test_nargs_zeroormore_metavar_length0(self):
+        self.do_test_exception(nargs="*", metavar=tuple())
+
+    def test_nargs_zeroormore_metavar_length1(self):
+        self.do_test_no_exception(nargs="*", metavar=("1"))
+
+    def test_nargs_zeroormore_metavar_length2(self):
+        self.do_test_no_exception(nargs="*", metavar=("1", "2"))
+
+    def test_nargs_zeroormore_metavar_length3(self):
+        self.do_test_exception(nargs="*", metavar=("1", "2", "3"))
+
+    # Unit tests for different values of metavar when nargs=+
+
+    def test_nargs_oneormore_metavar_string(self):
+        self.do_test_no_exception(nargs="+", metavar="1")
+
+    def test_nargs_oneormore_metavar_length0(self):
+        self.do_test_exception(nargs="+", metavar=tuple())
+
+    def test_nargs_oneormore_metavar_length1(self):
+        self.do_test_no_exception(nargs="+", metavar=("1"))
+
+    def test_nargs_oneormore_metavar_length2(self):
+        self.do_test_no_exception(nargs="+", metavar=("1", "2"))
+
+    def test_nargs_oneormore_metavar_length3(self):
+        self.do_test_exception(nargs="+", metavar=("1", "2", "3"))
+
+    # Unit tests for different values of metavar when nargs=...
+
+    def test_nargs_remainder_metavar_string(self):
+        self.do_test_no_exception(nargs="...", metavar="1")
+
+    def test_nargs_remainder_metavar_length0(self):
+        self.do_test_no_exception(nargs="...", metavar=tuple())
+
+    def test_nargs_remainder_metavar_length1(self):
+        self.do_test_no_exception(nargs="...", metavar=("1"))
+
+    def test_nargs_remainder_metavar_length2(self):
+        self.do_test_no_exception(nargs="...", metavar=("1", "2"))
+
+    def test_nargs_remainder_metavar_length3(self):
+        self.do_test_no_exception(nargs="...", metavar=("1", "2", "3"))
+
+    # Unit tests for different values of metavar when nargs=A...
+
+    def test_nargs_parser_metavar_string(self):
+        self.do_test_no_exception(nargs="A...", metavar="1")
+
+    def test_nargs_parser_metavar_length0(self):
+        self.do_test_exception(nargs="A...", metavar=tuple())
+
+    def test_nargs_parser_metavar_length1(self):
+        self.do_test_no_exception(nargs="A...", metavar=("1"))
+
+    def test_nargs_parser_metavar_length2(self):
+        self.do_test_exception(nargs="A...", metavar=("1", "2"))
+
+    def test_nargs_parser_metavar_length3(self):
+        self.do_test_exception(nargs="A...", metavar=("1", "2", "3"))
+
+    # Unit tests for different values of metavar when nargs=1
+
+    def test_nargs_1_metavar_string(self):
+        self.do_test_no_exception(nargs=1, metavar="1")
+
+    def test_nargs_1_metavar_length0(self):
+        self.do_test_exception(nargs=1, metavar=tuple())
+
+    def test_nargs_1_metavar_length1(self):
+        self.do_test_no_exception(nargs=1, metavar=("1"))
+
+    def test_nargs_1_metavar_length2(self):
+        self.do_test_exception(nargs=1, metavar=("1", "2"))
+
+    def test_nargs_1_metavar_length3(self):
+        self.do_test_exception(nargs=1, metavar=("1", "2", "3"))
+
+    # Unit tests for different values of metavar when nargs=2
+
+    def test_nargs_2_metavar_string(self):
+        self.do_test_no_exception(nargs=2, metavar="1")
+
+    def test_nargs_2_metavar_length0(self):
+        self.do_test_exception(nargs=2, metavar=tuple())
+
+    def test_nargs_2_metavar_length1(self):
+        self.do_test_no_exception(nargs=2, metavar=("1"))
+
+    def test_nargs_2_metavar_length2(self):
+        self.do_test_no_exception(nargs=2, metavar=("1", "2"))
+
+    def test_nargs_2_metavar_length3(self):
+        self.do_test_exception(nargs=2, metavar=("1", "2", "3"))
+
+    # Unit tests for different values of metavar when nargs=3
+
+    def test_nargs_3_metavar_string(self):
+        self.do_test_no_exception(nargs=3, metavar="1")
+
+    def test_nargs_3_metavar_length0(self):
+        self.do_test_exception(nargs=3, metavar=tuple())
+
+    def test_nargs_3_metavar_length1(self):
+        self.do_test_no_exception(nargs=3, metavar=("1"))
+
+    def test_nargs_3_metavar_length2(self):
+        self.do_test_exception(nargs=3, metavar=("1", "2"))
+
+    def test_nargs_3_metavar_length3(self):
+        self.do_test_no_exception(nargs=3, metavar=("1", "2", "3"))
+
 # ============================
 # from argparse import * tests
 # ============================
