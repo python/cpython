@@ -9,6 +9,10 @@ What's New in Python 2.7.2?
 Core and Builtins
 -----------------
 
+- Issue #11144: Ensure that int(a_float) returns an int whenever possible.
+  Previously, there were some corner cases where a long was returned even
+  though the result was within the range of an int.
+
 - Issue #11675: multiprocessing.[Raw]Array objects created from an integer size
   are now zeroed on creation.  This matches the behaviour specified by the
   documentation.

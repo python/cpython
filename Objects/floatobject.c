@@ -1035,14 +1035,17 @@ float_trunc(PyObject *v)
      * happens if the double is too big to fit in a long.  Some rare
      * systems raise an exception then (RISCOS was mentioned as one,
      * and someone using a non-default option on Sun also bumped into
-     * that).  Note that checking for >= and <= LONG_{MIN,MAX} would
-     * still be vulnerable:  if a long has more bits of precision than
-     * a double, casting MIN/MAX to double may yield an approximation,
-     * and if that's rounded up, then, e.g., wholepart=LONG_MAX+1 would
-     * yield true from the C expression wholepart<=LONG_MAX, despite
-     * that wholepart is actually greater than LONG_MAX.
+     * that).  Note that checking for <= LONG_MAX is unsafe: if a long
+     * has more bits of precision than a double, casting LONG_MAX to
+     * double may yield an approximation, and if that's rounded up,
+     * then, e.g., wholepart=LONG_MAX+1 would yield true from the C
+     * expression wholepart<=LONG_MAX, despite that wholepart is
+     * actually greater than LONG_MAX.  However, assuming a two's complement
+     * machine with no trap representation, LONG_MIN will be a power of 2 (and
+     * hence exactly representable as a double), and LONG_MAX = -1-LONG_MIN, so
+     * the comparisons with (double)LONG_MIN below should be safe.
      */
-    if (LONG_MIN < wholepart && wholepart < LONG_MAX) {
+    if ((double)LONG_MIN <= wholepart && wholepart < -(double)LONG_MIN) {
         const long aslong = (long)wholepart;
         return PyInt_FromLong(aslong);
     }
