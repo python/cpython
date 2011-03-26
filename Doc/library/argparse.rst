@@ -351,6 +351,11 @@ Note that most parent parsers will specify ``add_help=False``.  Otherwise, the
 :class:`ArgumentParser` will see two ``-h/--help`` options (one in the parent
 and one in the child) and raise an error.
 
+.. note::
+   You must fully initialize the parsers before passing them via ``parents=``.
+   If you change the parent parsers after the child parser, those changes will
+   not be reflected in the child.
+
 
 formatter_class
 ^^^^^^^^^^^^^^^
