@@ -173,10 +173,10 @@ def add_tables(db, module):
 
 def make_id(str):
     #str = str.replace(".", "_") # colons are allowed
-    str = str.replace(" ", "_")
-    str = str.replace("-", "_")
-    if str[0] in string.digits:
-        str = "_"+str
+    for c in " -+~;":
+        str = str.replace(c, "_")
+    if str[0] in (string.digits + "."):
+        str = "_" + str
     assert re.match("^[A-Za-z_][A-Za-z0-9_.]*$", str), "FILE"+str
     return str
 
@@ -284,19 +284,28 @@ class Directory:
                         [(feature.id, component)])
 
     def make_short(self, file):
+        oldfile = file
+        file = file.replace('+', '_')
+        file = ''.join(c for c in file if not c in ' "/\[]:;=,')
         parts = file.split(".")
-        if len(parts)>1:
+        if len(parts) > 1:
+            prefix = "".join(parts[:-1]).upper()
             suffix = parts[-1].upper()
+            if not prefix:
+                prefix = suffix
+                suffix = None
         else:
+            prefix = file.upper()
             suffix = None
-        prefix = parts[0].upper()
-        if len(prefix) <= 8 and (not suffix or len(suffix)<=3):
+        if len(parts) < 3 and len(prefix) <= 8 and file == oldfile and (
+                                                not suffix or len(suffix) <= 3):
             if suffix:
                 file = prefix+"."+suffix
             else:
                 file = prefix
-            assert file not in self.short_names
         else:
+            file = None
+        if file is None or file in self.short_names:
             prefix = prefix[:6]
             if suffix:
                 suffix = suffix[:3]
