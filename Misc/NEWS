@@ -244,6 +244,8 @@ Library
 - Issue #9343: Document that argparse parent parsers must be configured before
   their children.
 
+- Issue #9026: Fix order of argparse sub-commands in help messages.
+
 Extension Modules
 -----------------
 
