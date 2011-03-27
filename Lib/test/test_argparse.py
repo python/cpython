@@ -2802,16 +2802,22 @@ class TestHelpFormattingMetaclass(type):
                 parser = argparse.ArgumentParser(
                     *tester.parser_signature.args,
                     **tester.parser_signature.kwargs)
-                for argument_sig in tester.argument_signatures:
+                for argument_sig in getattr(tester, 'argument_signatures', []):
                     parser.add_argument(*argument_sig.args,
                                         **argument_sig.kwargs)
-                group_signatures = tester.argument_group_signatures
-                for group_sig, argument_sigs in group_signatures:
+                group_sigs = getattr(tester, 'argument_group_signatures', [])
+                for group_sig, argument_sigs in group_sigs:
                     group = parser.add_argument_group(*group_sig.args,
                                                       **group_sig.kwargs)
                     for argument_sig in argument_sigs:
                         group.add_argument(*argument_sig.args,
                                            **argument_sig.kwargs)
+                subparsers_sigs = getattr(tester, 'subparsers_signatures', [])
+                if subparsers_sigs:
+                    subparsers = parser.add_subparsers()
+                    for subparser_sig in subparsers_sigs:
+                        subparsers.add_parser(*subparser_sig.args,
+                                               **subparser_sig.kwargs)
                 return parser
 
             def _test(self, tester, parser_text):
@@ -3904,6 +3910,77 @@ class TestHelpVersionAction(HelpTestCase):
           -V, --version  show program's version number and exit
         '''
     version = ''
+
+class TestHelpSubparsersOrdering(HelpTestCase):
+    """Test ordering of subcommands in help matches the code"""
+    parser_signature = Sig(prog='PROG',
+                           description='display some subcommands',
+                           version='0.1')
+
+    subparsers_signatures = [Sig(name=name)
+                             for name in ('a', 'b', 'c', 'd', 'e')]
+
+    usage = '''\
+        usage: PROG [-h] [-v] {a,b,c,d,e} ...
+        '''
+
+    help = usage + '''\
+
+        display some subcommands
+
+        positional arguments:
+          {a,b,c,d,e}
+
+        optional arguments:
+          -h, --help     show this help message and exit
+          -v, --version  show program's version number and exit
+        '''
+
+    version = '''\
+        0.1
+        '''
+
+class TestHelpSubparsersWithHelpOrdering(HelpTestCase):
+    """Test ordering of subcommands in help matches the code"""
+    parser_signature = Sig(prog='PROG',
+                           description='display some subcommands',
+                           version='0.1')
+
+    subcommand_data = (('a', 'a subcommand help'),
+                       ('b', 'b subcommand help'),
+                       ('c', 'c subcommand help'),
+                       ('d', 'd subcommand help'),
+                       ('e', 'e subcommand help'),
+                       )
+
+    subparsers_signatures = [Sig(name=name, help=help)
+                             for name, help in subcommand_data]
+
+    usage = '''\
+        usage: PROG [-h] [-v] {a,b,c,d,e} ...
+        '''
+
+    help = usage + '''\
+
+        display some subcommands
+
+        positional arguments:
+          {a,b,c,d,e}
+            a            a subcommand help
+            b            b subcommand help
+            c            c subcommand help
+            d            d subcommand help
+            e            e subcommand help
+
+        optional arguments:
+          -h, --help     show this help message and exit
+          -v, --version  show program's version number and exit
+        '''
+
+    version = '''\
+        0.1
+        '''
+
 
 # =====================================
 # Optional/Positional constructor tests

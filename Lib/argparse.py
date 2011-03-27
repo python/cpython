@@ -82,6 +82,7 @@ __all__ = [
 ]
 
 
+import collections as _collections
 import copy as _copy
 import os as _os
 import re as _re
@@ -1037,7 +1038,7 @@ class _SubParsersAction(Action):
 
         self._prog_prefix = prog
         self._parser_class = parser_class
-        self._name_parser_map = {}
+        self._name_parser_map = _collections.OrderedDict()
         self._choices_actions = []
 
         super(_SubParsersAction, self).__init__(
