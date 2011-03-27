@@ -13,10 +13,6 @@ Core and Builtins
   Previously, there were some corner cases where a long was returned even
   though the result was within the range of an int.
 
-- Issue #11675: multiprocessing.[Raw]Array objects created from an integer size
-  are now zeroed on creation.  This matches the behaviour specified by the
-  documentation.
-
 - Issue #11450: Don't truncate hg version info in Py_GetBuildInfo() when
   there are many tags (e.g. when using mq).  Patch by Nadeem Vawda.
 
@@ -50,6 +46,10 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #11675: multiprocessing.[Raw]Array objects created from an integer size
+  are now zeroed on creation.  This matches the behaviour specified by the
+  documentation.
 
 - Issue #7639: Fix short file name generation in bdist_msi.
 
