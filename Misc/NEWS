@@ -48,6 +48,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #7639: Fix short file name generation in bdist_msi.
+
 - Issue #11659: Fix ResourceWarning in test_subprocess introduced by #11459.
   Patch by Ben Hayden.
 
