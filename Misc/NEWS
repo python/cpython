@@ -87,6 +87,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #11692: Remove unnecessary demo functions in subprocess module.
+
 - Issue #11675: multiprocessing.[Raw]Array objects created from an integer size
   are now zeroed on creation.  This matches the behaviour specified by the
   documentation.
