@@ -87,6 +87,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #11696: Fix ID generation in msilib.
+
 - Issue #11692: Remove unnecessary demo functions in subprocess module.
 
 - Issue #9696: Fix exception incorrectly raised by xdrlib.Packer.pack_int when
