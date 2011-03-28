@@ -858,10 +858,10 @@ original insertion position is changed and moved to the end::
 ABCs - abstract base classes
 ----------------------------
 
-The collections module offers the following ABCs:
+The collections module offers the following :term:`ABCs <abstract base class>`:
 
 =========================  =====================  ======================  ====================================================
-ABC                        Inherits               Abstract Methods        Mixin Methods
+ABC                        Inherits from          Abstract Methods        Mixin Methods
 =========================  =====================  ======================  ====================================================
 :class:`Container`                                ``__contains__``
 :class:`Hashable`                                 ``__hash__``
@@ -874,15 +874,15 @@ ABC                        Inherits               Abstract Methods        Mixin 
                            :class:`Iterable`,                             ``index``, and ``count``
                            :class:`Container`
 
-:class:`MutableSequence`   :class:`Sequence`      ``__setitem__``         Inherited Sequence methods and
+:class:`MutableSequence`   :class:`Sequence`      ``__setitem__``,        Inherited :class:`Sequence` methods and
                                                   ``__delitem__``,        ``append``, ``reverse``, ``extend``, ``pop``,
-                                                  and ``insert``          ``remove``, and ``__iadd__``
+                                                  ``insert``              ``remove``, and ``__iadd__``
 
 :class:`Set`               :class:`Sized`,                                ``__le__``, ``__lt__``, ``__eq__``, ``__ne__``,
                            :class:`Iterable`,                             ``__gt__``, ``__ge__``, ``__and__``, ``__or__``,
                            :class:`Container`                             ``__sub__``, ``__xor__``, and ``isdisjoint``
 
-:class:`MutableSet`        :class:`Set`           ``add`` and             Inherited Set methods and
+:class:`MutableSet`        :class:`Set`           ``add``,                Inherited :class:`Set` methods and
                                                   ``discard``             ``clear``, ``pop``, ``remove``, ``__ior__``,
                                                                           ``__iand__``, ``__ixor__``, and ``__isub__``
 
@@ -890,18 +890,60 @@ ABC                        Inherits               Abstract Methods        Mixin 
                            :class:`Iterable`,                             ``get``, ``__eq__``, and ``__ne__``
                            :class:`Container`
 
-:class:`MutableMapping`    :class:`Mapping`       ``__setitem__`` and     Inherited Mapping methods and
+:class:`MutableMapping`    :class:`Mapping`       ``__setitem__``,        Inherited :class:`Mapping` methods and
                                                   ``__delitem__``         ``pop``, ``popitem``, ``clear``, ``update``,
                                                                           and ``setdefault``
 
 
 :class:`MappingView`       :class:`Sized`                                 ``__len__``
-:class:`KeysView`          :class:`MappingView`,                          ``__contains__``,
-                           :class:`Set`                                   ``__iter__``
 :class:`ItemsView`         :class:`MappingView`,                          ``__contains__``,
+                           :class:`Set`                                   ``__iter__``
+:class:`KeysView`          :class:`MappingView`,                          ``__contains__``,
                            :class:`Set`                                   ``__iter__``
 :class:`ValuesView`        :class:`MappingView`                           ``__contains__``, ``__iter__``
 =========================  =====================  ======================  ====================================================
+
+
+.. class:: Container
+           Hashable
+           Sized
+           Callable
+
+   ABCs for classes that provide respectively the methods :meth:`__contains__`,
+   :meth:`__hash__`, :meth:`__len__`, and :meth:`__call__`.
+
+.. class:: Iterable
+
+   ABC for classes that provide the :meth:`__iter__` method.
+   See also the definition of :term:`iterable`.
+
+.. class:: Iterator
+
+   ABC for classes that provide the :meth:`__iter__` and :meth:`next` methods.
+   See also the definition of :term:`iterator`.
+
+.. class:: Sequence
+           MutableSequence
+
+   ABCs for read-only and mutable :term:`sequences <sequence>`.
+
+.. class:: Set
+           MutableSet
+
+   ABCs for read-only and mutable sets.
+
+.. class:: Mapping
+           MutableMapping
+
+   ABCs for read-only and mutable :term:`mappings <mapping>`.
+
+.. class:: MappingView
+           ItemsView
+           KeysView
+           ValuesView
+
+   ABCs for mapping, items, keys, and values :term:`views <view>`.
+
 
 These ABCs allow us to ask classes or instances if they provide
 particular functionality, for example::
