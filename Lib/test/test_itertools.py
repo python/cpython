@@ -69,10 +69,20 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(list(accumulate('abc')), ['a', 'ab', 'abc'])   # works with non-numeric
         self.assertEqual(list(accumulate([])), [])                  # empty iterable
         self.assertEqual(list(accumulate([7])), [7])                # iterable of length one
-        self.assertRaises(TypeError, accumulate, range(10), 5)      # too many args
+        self.assertRaises(TypeError, accumulate, range(10), 5, 6)   # too many args
         self.assertRaises(TypeError, accumulate)                    # too few args
         self.assertRaises(TypeError, accumulate, x=range(10))       # unexpected kwd arg
         self.assertRaises(TypeError, list, accumulate([1, []]))     # args that don't add
+
+        s = [2, 8, 9, 5, 7, 0, 3, 4, 1, 6]
+        self.assertEqual(list(accumulate(s, min)),
+                         [2, 2, 2, 2, 2, 0, 0, 0, 0, 0])
+        self.assertEqual(list(accumulate(s, max)),
+                         [2, 8, 9, 9, 9, 9, 9, 9, 9, 9])
+        self.assertEqual(list(accumulate(s, operator.mul)),
+                         [2, 16, 144, 720, 5040, 0, 0, 0, 0, 0])
+        with self.assertRaises(TypeError):
+            list(accumulate(s, chr))                                # unary-operation
 
     def test_chain(self):
 
