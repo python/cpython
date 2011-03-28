@@ -2678,9 +2678,9 @@ accumulate_next(accumulateobject *lz)
 }
 
 PyDoc_STRVAR(accumulate_doc,
-"accumulate(iterable) --> accumulate object\n\
+"accumulate(iterable[, func]) --> accumulate object\n\
 \n\
-Return series of accumulated sums.");
+Return series of accumulated sums (or other binary function results).");
 
 static PyTypeObject accumulate_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
@@ -3638,7 +3638,7 @@ cycle(p) --> p0, p1, ... plast, p0, p1, ...\n\
 repeat(elem [,n]) --> elem, elem, elem, ... endlessly or up to n times\n\
 \n\
 Iterators terminating on the shortest input sequence:\n\
-accumulate(p, start=0) --> p0, p0+p1, p0+p1+p2\n\
+accumulate(p[, func]) --> p0, p0+p1, p0+p1+p2\n\
 chain(p, q, ...) --> p0, p1, ... plast, q0, q1, ... \n\
 compress(data, selectors) --> (d[0] if s[0]), (d[1] if s[1]), ...\n\
 dropwhile(pred, seq) --> seq[n], seq[n+1], starting when pred fails\n\
