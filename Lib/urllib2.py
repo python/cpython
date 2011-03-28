@@ -561,7 +561,10 @@ class HTTPRedirectHandler(BaseHandler):
         if not (newurl_lower.startswith('http://') or
                 newurl_lower.startswith('https://') or
                 newurl_lower.startswith('ftp://')):
-            return
+            raise HTTPError(newurl, code,
+                            msg + " - Redirection to url '%s' is not allowed" %
+                            newurl,
+                            headers, fp)
 
         # XXX Probably want to forget about the state of the current
         # request, although that might interact poorly with other
