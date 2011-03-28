@@ -13,7 +13,7 @@ Library
 -------
 
 - Issue #11662: Make urllib and urllib2 ignore redirections if the
-  scheme is not HTTP, HTTPS or FTP.  This fixes a security hole.
+  scheme is not HTTP, HTTPS or FTP (CVE-2011-1521).
 
 - Issue #8674: Fixed a number of incorrect or undefined-behaviour-inducing
   overflow checks in the audioop module (CVE-2010-1634).
