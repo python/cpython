@@ -944,8 +944,14 @@ def getcallargs(func, *positional, **named):
             f_name, 'at most' if defaults else 'exactly', num_args,
             'arguments' if num_args > 1 else 'argument', num_total))
     elif num_args == 0 and num_total:
-        raise TypeError('%s() takes no arguments (%d given)' %
-                        (f_name, num_total))
+        if varkw or kwonlyargs:
+            if num_pos:
+                # XXX: We should use num_pos, but Python also uses num_total:
+                raise TypeError('%s() takes exactly 0 positional arguments '
+                                '(%d given)' % (f_name, num_total))
+        else:
+            raise TypeError('%s() takes no arguments (%d given)' %
+                            (f_name, num_total))
 
     for arg in itertools.chain(args, kwonlyargs):
         if arg in named:

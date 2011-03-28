@@ -632,6 +632,16 @@ class TestGetcallargsFunctions(unittest.TestCase):
         self.assertEqualCallArgs(f, '2, c=4, **collections.UserDict(b=3)')
         self.assertEqualCallArgs(f, 'b=2, **collections.UserDict(a=3, c=4)')
 
+    def test_varkw_only(self):
+        # issue11256:
+        f = self.makeCallable('**c')
+        self.assertEqualCallArgs(f, '')
+        self.assertEqualCallArgs(f, 'a=1')
+        self.assertEqualCallArgs(f, 'a=1, b=2')
+        self.assertEqualCallArgs(f, 'c=3, **{"a": 1, "b": 2}')
+        self.assertEqualCallArgs(f, '**collections.UserDict(a=1, b=2)')
+        self.assertEqualCallArgs(f, 'c=3, **collections.UserDict(a=1, b=2)')
+
     def test_keyword_only(self):
         f = self.makeCallable('a=3, *, c, d=2')
         self.assertEqualCallArgs(f, 'c=3')
@@ -642,6 +652,11 @@ class TestGetcallargsFunctions(unittest.TestCase):
         self.assertEqualException(f, '3')
         self.assertEqualException(f, 'a=3')
         self.assertEqualException(f, 'd=4')
+
+        f = self.makeCallable('*, c, d=2')
+        self.assertEqualCallArgs(f, 'c=3')
+        self.assertEqualCallArgs(f, 'c=3, d=4')
+        self.assertEqualCallArgs(f, 'd=4, c=3')
 
     def test_multiple_features(self):
         f = self.makeCallable('a, b=2, *f, **g')
@@ -654,6 +669,17 @@ class TestGetcallargsFunctions(unittest.TestCase):
                                  '[2, 3, (4,[5,6])]), **{"y":9, "z":10}')
         self.assertEqualCallArgs(f, '2, x=8, *collections.UserList([3, '
                                  '(4,[5,6])]), **collections.UserDict('
+                                 'y=9, z=10)')
+
+        f = self.makeCallable('a, b=2, *f, x, y=99, **g')
+        self.assertEqualCallArgs(f, '2, 3, x=8')
+        self.assertEqualCallArgs(f, '2, 3, x=8, *[(4,[5,6]), 7]')
+        self.assertEqualCallArgs(f, '2, x=8, *[3, (4,[5,6]), 7], y=9, z=10')
+        self.assertEqualCallArgs(f, 'x=8, *[2, 3, (4,[5,6])], y=9, z=10')
+        self.assertEqualCallArgs(f, 'x=8, *collections.UserList('
+                                 '[2, 3, (4,[5,6])]), q=0, **{"y":9, "z":10}')
+        self.assertEqualCallArgs(f, '2, x=8, *collections.UserList([3, '
+                                 '(4,[5,6])]), q=0, **collections.UserDict('
                                  'y=9, z=10)')
 
     def test_errors(self):
@@ -692,6 +718,13 @@ class TestGetcallargsFunctions(unittest.TestCase):
             # - for functions and bound methods: unexpected keyword 'c'
             # - for unbound methods: multiple values for keyword 'a'
             #self.assertEqualException(f, '1, c=3, a=2')
+        # issue11256:
+        f3 = self.makeCallable('**c')
+        self.assertEqualException(f3, '1, 2')
+        self.assertEqualException(f3, '1, 2, a=1, b=2')
+        f4 = self.makeCallable('*, a, b=0')
+        self.assertEqualException(f3, '1, 2')
+        self.assertEqualException(f3, '1, 2, a=1, b=2')
 
 class TestGetcallargsMethods(TestGetcallargsFunctions):
 
