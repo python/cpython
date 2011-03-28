@@ -638,7 +638,8 @@ class FancyURLopener(URLopener):
             newurl = headers['uri']
         else:
             return
-
+        void = fp.read()
+        fp.close()
         # In case the server sent a relative URL, join with original:
         newurl = basejoin(self.type + ":" + url, newurl)
 
@@ -648,10 +649,11 @@ class FancyURLopener(URLopener):
         if not (newurl_lower.startswith('http://') or
                 newurl_lower.startswith('https://') or
                 newurl_lower.startswith('ftp://')):
-            return
+            raise IOError('redirect error', errcode,
+                          errmsg + " - Redirection to url '%s' is not allowed" %
+                          newurl,
+                          headers)
 
-        void = fp.read()
-        fp.close()
         return self.open(newurl)
 
     def http_error_301(self, url, fp, errcode, errmsg, headers, data=None):
