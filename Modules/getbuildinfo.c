@@ -42,9 +42,9 @@
 const char *
 Py_GetBuildInfo(void)
 {
-    static char buildinfo[50 + sizeof HGVERSION +
-                          ((sizeof HGTAG > sizeof HGBRANCH) ?
-                           sizeof HGTAG : sizeof HGBRANCH)];
+    static char buildinfo[50 + sizeof(HGVERSION) +
+                          ((sizeof(HGTAG) > sizeof(HGBRANCH)) ?
+                           sizeof(HGTAG) : sizeof(HGBRANCH))];
     const char *revision = _Py_hgversion();
     const char *sep = *revision ? ":" : "";
     const char *hgid = _Py_hgidentifier();
