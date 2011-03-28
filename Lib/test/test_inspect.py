@@ -632,6 +632,16 @@ class TestGetcallargsFunctions(unittest.TestCase):
         self.assertEqualCallArgs(f, '2, c=4, **{u"b":3}')
         self.assertEqualCallArgs(f, 'b=2, **{u"a":3, u"c":4}')
 
+    def test_varkw_only(self):
+        # issue11256:
+        f = self.makeCallable('**c')
+        self.assertEqualCallArgs(f, '')
+        self.assertEqualCallArgs(f, 'a=1')
+        self.assertEqualCallArgs(f, 'a=1, b=2')
+        self.assertEqualCallArgs(f, 'c=3, **{"a": 1, "b": 2}')
+        self.assertEqualCallArgs(f, '**UserDict(a=1, b=2)')
+        self.assertEqualCallArgs(f, 'c=3, **UserDict(a=1, b=2)')
+
     def test_tupleargs(self):
         f = self.makeCallable('(b,c), (d,(e,f))=(0,[1,2])')
         self.assertEqualCallArgs(f, '(2,3)')
@@ -693,6 +703,10 @@ class TestGetcallargsFunctions(unittest.TestCase):
         self.assertEqualException(f, '1')
         self.assertEqualException(f, '[1]')
         self.assertEqualException(f, '(1,2,3)')
+        # issue11256:
+        f3 = self.makeCallable('**c')
+        self.assertEqualException(f3, '1, 2')
+        self.assertEqualException(f3, '1, 2, a=1, b=2')
 
 class TestGetcallargsMethods(TestGetcallargsFunctions):
 
