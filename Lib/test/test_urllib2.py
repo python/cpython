@@ -942,6 +942,28 @@ class HandlerTests(unittest.TestCase):
             self.assertEqual(count,
                              urllib2.HTTPRedirectHandler.max_redirections)
 
+    def test_invalid_redirect(self):
+        from_url = "http://example.com/a.html"
+        valid_schemes = ['http', 'https', 'ftp']
+        invalid_schemes = ['file', 'imap', 'ldap']
+        schemeless_url = "example.com/b.html"
+        h = urllib2.HTTPRedirectHandler()
+        o = h.parent = MockOpener()
+        req = Request(from_url)
+        req.timeout = socket._GLOBAL_DEFAULT_TIMEOUT
+
+        for scheme in invalid_schemes:
+            invalid_url = scheme + '://' + schemeless_url
+            self.assertRaises(urllib2.HTTPError, h.http_error_302,
+                              req, MockFile(), 302, "Security Loophole",
+                              MockHeaders({"location": invalid_url}))
+
+        for scheme in valid_schemes:
+            valid_url = scheme + '://' + schemeless_url
+            h.http_error_302(req, MockFile(), 302, "That's fine",
+                MockHeaders({"location": valid_url}))
+            self.assertEqual(o.req.get_full_url(), valid_url)
+
     def test_cookie_redirect(self):
         # cookies shouldn't leak into redirected requests
         from cookielib import CookieJar
