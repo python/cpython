@@ -2,6 +2,7 @@
 
 import urllib.parse
 import urllib.request
+import urllib.error
 import http.client
 import email.message
 import io
@@ -180,6 +181,21 @@ Content-Type: text/html; charset=iso-8859-1
 ''')
         try:
             self.assertRaises(IOError, urlopen, "http://python.org/")
+        finally:
+            self.unfakehttp()
+
+    def test_invalid_redirect(self):
+        # urlopen() should raise IOError for many error codes.
+        self.fakehttp(b'''HTTP/1.1 302 Found
+Date: Wed, 02 Jan 2008 03:03:54 GMT
+Server: Apache/1.3.33 (Debian GNU/Linux) mod_ssl/2.8.22 OpenSSL/0.9.7e
+Location: file://guidocomputer.athome.com:/python/license
+Connection: close
+Content-Type: text/html; charset=iso-8859-1
+''')
+        try:
+            self.assertRaises(urllib.error.HTTPError, urlopen,
+                              "http://python.org/")
         finally:
             self.unfakehttp()
 
