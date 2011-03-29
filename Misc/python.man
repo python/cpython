@@ -37,10 +37,6 @@ python \- an interpreted, interactive, object-oriented programming language
 .B \-O0
 ]
 [
-.B -Q
-.I argument
-]
-[
 .B \-s
 ]
 [
@@ -151,15 +147,6 @@ Discard docstrings in addition to the \fB-O\fP optimizations.
 .B \-q
 Do not print the version and copyright messages. These messages are 
 also suppressed in non-interactive mode.
-.TP
-.BI "\-Q " argument
-Division control; see PEP 238.  The argument must be one of "old" (the
-default, int/int and long/long return an int or long), "new" (new
-division semantics, i.e. int/int and long/long returns a float),
-"warn" (old division semantics with a warning for int/int and
-long/long), or "warnall" (old division semantics with a warning for
-all use of the division operator).  For a use of "warnall", see the
-Tools/scripts/fixdiv.py script.
 .TP
 .B \-s
 Don't add user site directory to sys.path.

@@ -351,18 +351,20 @@ Note that most parent parsers will specify ``add_help=False``.  Otherwise, the
 :class:`ArgumentParser` will see two ``-h/--help`` options (one in the parent
 and one in the child) and raise an error.
 
+.. note::
+   You must fully initialize the parsers before passing them via ``parents=``.
+   If you change the parent parsers after the child parser, those changes will
+   not be reflected in the child.
+
 
 formatter_class
 ^^^^^^^^^^^^^^^
 
 :class:`ArgumentParser` objects allow the help formatting to be customized by
-specifying an alternate formatting class.  Currently, there are three such
-classes: :class:`argparse.RawDescriptionHelpFormatter`,
-:class:`argparse.RawTextHelpFormatter` and
-:class:`argparse.ArgumentDefaultsHelpFormatter`.  The first two allow more
-control over how textual descriptions are displayed, while the last
-automatically adds information about argument default values.
+specifying an alternate formatting class.
 
+:class:`RawDescriptionHelpFormatter` and :class:`RawTextHelpFormatter` give
+more control over how textual descriptions are displayed.
 By default, :class:`ArgumentParser` objects line-wrap the description_ and
 epilog_ texts in command-line help messages::
 
@@ -386,7 +388,7 @@ epilog_ texts in command-line help messages::
    likewise for this epilog whose whitespace will be cleaned up and whose words
    will be wrapped across a couple lines
 
-Passing :class:`argparse.RawDescriptionHelpFormatter` as ``formatter_class=``
+Passing :class:`RawDescriptionHelpFormatter` as ``formatter_class=``
 indicates that description_ and epilog_ are already correctly formatted and
 should not be line-wrapped::
 
@@ -412,11 +414,11 @@ should not be line-wrapped::
    optional arguments:
     -h, --help  show this help message and exit
 
-:class:`RawTextHelpFormatter` maintains whitespace for all sorts of help text
+:class:`RawTextHelpFormatter` maintains whitespace for all sorts of help text,
 including argument descriptions.
 
-The other formatter class available, :class:`ArgumentDefaultsHelpFormatter`,
-will add information about the default value of each of the arguments::
+:class:`ArgumentDefaultsHelpFormatter` automatically adds information about
+default values to each of the argument help messages::
 
    >>> parser = argparse.ArgumentParser(
    ...     prog='PROG',
@@ -432,6 +434,25 @@ will add information about the default value of each of the arguments::
    optional arguments:
     -h, --help  show this help message and exit
     --foo FOO   FOO! (default: 42)
+
+:class:`MetavarTypeHelpFormatter` uses the name of the type_ argument for each
+argument as as the display name for its values (rather than using the dest_
+as the regular formatter does)::
+
+   >>> parser = argparse.ArgumentParser(
+   ...     prog='PROG',
+   ...     formatter_class=argparse.MetavarTypeHelpFormatter)
+   >>> parser.add_argument('--foo', type=int)
+   >>> parser.add_argument('bar', type=float)
+   >>> parser.print_help()
+   usage: PROG [-h] [--foo int] float
+
+   positional arguments:
+     float
+
+   optional arguments:
+     -h, --help  show this help message and exit
+     --foo int
 
 
 conflict_handler
@@ -1314,13 +1335,24 @@ of :data:`sys.argv`.  This can be accomplished by passing a list of strings to
    Namespace(accumulate=<built-in function sum>, integers=[1, 2, 3, 4])
 
 
-Custom namespaces
-^^^^^^^^^^^^^^^^^
+The Namespace object
+^^^^^^^^^^^^^^^^^^^^
+
+By default, :meth:`parse_args` will return a new object of type :class:`Namespace`
+where the necessary attributes have been set. This class is deliberately simple,
+just an :class:`object` subclass with a readable string representation. If you
+prefer to have dict-like view of the attributes, you can use the standard Python
+idiom via :func:`vars`::
+
+   >>> parser = argparse.ArgumentParser()
+   >>> parser.add_argument('--foo')
+   >>> args = parser.parse_args(['--foo', 'BAR'])
+   >>> vars(args)
+   {'foo': 'BAR'}
 
 It may also be useful to have an :class:`ArgumentParser` assign attributes to an
-already existing object, rather than the newly-created :class:`Namespace` object
-that is normally used.  This can be achieved by specifying the ``namespace=``
-keyword argument::
+already existing object, rather than a new :class:`Namespace` object.  This can
+be achieved by specifying the ``namespace=`` keyword argument::
 
    >>> class C:
    ...     pass

@@ -31,12 +31,6 @@ class CmdLineTest(unittest.TestCase):
         self.verify_valid_flag('-O')
         self.verify_valid_flag('-OO')
 
-    def test_q(self):
-        self.verify_valid_flag('-Qold')
-        self.verify_valid_flag('-Qnew')
-        self.verify_valid_flag('-Qwarn')
-        self.verify_valid_flag('-Qwarnall')
-
     def test_site_flag(self):
         self.verify_valid_flag('-S')
 

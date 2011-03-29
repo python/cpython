@@ -66,9 +66,15 @@ def decode_header(header):
     otherwise a lower-case string containing the name of the character set
     specified in the encoded string.
 
+    header may be a string that may or may not contain RFC2047 encoded words,
+    or it may be a Header object.
+
     An email.errors.HeaderParseError may be raised when certain decoding error
     occurs (e.g. a base64 decoding exception).
     """
+    # If it is a Header object, we can just return the chunks.
+    if hasattr(header, '_chunks'):
+        return list(header._chunks)
     # If no encoding, just return the header with no charset.
     if not ecre.search(header):
         return [(header, None)]

@@ -68,6 +68,9 @@ compile Python sources.
 .. versionchanged:: 3.2
    Added the ``-i``, ``-b`` and ``-h`` options.
 
+There is no command-line option to control the optimization level used by the
+:func:`compile` function, because the Python interpreter itself already
+provides the option: :program:`python -O -m compileall`.
 
 Public functions
 ----------------

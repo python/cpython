@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #10998: Remove mentions of -Q, sys.flags.division_warning and
+  Py_DivisionWarningFlag left over from Python 2.
+
 - Issue #11244: Remove an unnecessary peepholer check that was preventing
   negative zeros from being constant-folded properly.
 
@@ -84,8 +87,33 @@ Core and Builtins
 Library
 -------
 
-- Issue #11662: Make urllib and urllib2 ignore redirections if the
-  scheme is not HTTP, HTTPS or FTP (CVE-2011-1521).
+- Removed the 'strict' argument to email.parser.Parser, which has been
+  deprecated since Python 2.4.
+
+- Issue #11256: Fix inspect.getcallargs on functions that take only keyword
+  arguments.
+
+- Issue #11696: Fix ID generation in msilib.
+
+- itertools.accumulate now supports an optional *func* argument for
+  a user-supplied binary function.
+
+- Issue #11692: Remove unnecessary demo functions in subprocess module.
+
+- Issue #9696: Fix exception incorrectly raised by xdrlib.Packer.pack_int when
+  trying to pack a negative (in-range) integer.
+
+- Issue #11675: multiprocessing.[Raw]Array objects created from an integer size
+  are now zeroed on creation.  This matches the behaviour specified by the
+  documentation.
+
+- Issue #7639: Fix short file name generation in bdist_msi
+
+- Issue #11659: Fix ResourceWarning in test_subprocess introduced by #11459.
+  Patch by Ben Hayden.
+
+- Issue #11635: Don't use polling in worker threads and processes launched by
+  concurrent.futures.
 
 - Issue #6811: Allow importlib to change a code object's co_filename attribute
   to match the path to where the source code currently is, not where the code
@@ -107,6 +135,9 @@ Library
 - Issue #11333: Add __slots__ to collections ABCs.
 
 - Issue #11628: cmp_to_key generated class should use __slots__.
+
+- Issue #11666: let help() display named tuple attributes and methods
+  that start with a leading underscore.
 
 - Issue #5537: Fix time2isoz() and time2netscape() functions of
   httplib.cookiejar for expiration year greater than 2038 on 32-bit systems.
@@ -284,6 +315,18 @@ Library
 
 - Issue #11388: Added a clear() method to MutableSequence
 
+- Issue #11174: Add argparse.MetavarTypeHelpFormatter, which uses type names
+  for the names of optional and positional arguments in help messages.
+
+- Issue #9348: Raise an early error if argparse nargs and metavar don't match.
+
+- Issue #8982: Improve the documentation for the argparse Namespace object.
+
+- Issue #9343: Document that argparse parent parsers must be configured before
+  their children.
+
+- Issue #9026: Fix order of argparse sub-commands in help messages.
+
 Build
 -----
 
@@ -298,6 +341,12 @@ Tools/Demos
 -----------
 
 - Issue #11179: Make ccbench work under Python 3.1 and 2.7 again.
+
+Extensions
+----------
+
+- Issue #1838: Prevent segfault in ctypes, when _as_parameter_ on a class is set
+  to an instance of the class.
 
 Tests
 -----
