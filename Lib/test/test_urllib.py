@@ -161,6 +161,20 @@ Content-Type: text/html; charset=iso-8859-1
         finally:
             self.unfakehttp()
 
+    def test_invalid_redirect(self):
+        # urlopen() should raise IOError for many error codes.
+        self.fakehttp("""HTTP/1.1 302 Found
+Date: Wed, 02 Jan 2008 03:03:54 GMT
+Server: Apache/1.3.33 (Debian GNU/Linux) mod_ssl/2.8.22 OpenSSL/0.9.7e
+Location: file:README
+Connection: close
+Content-Type: text/html; charset=iso-8859-1
+""")
+        try:
+            self.assertRaises(IOError, urllib.urlopen, "http://python.org/")
+        finally:
+            self.unfakehttp()
+
     def test_empty_socket(self):
         # urlopen() raises IOError if the underlying socket does not send any
         # data. (#1680230)
