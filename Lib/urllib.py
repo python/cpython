@@ -644,6 +644,18 @@ class FancyURLopener(URLopener):
         fp.close()
         # In case the server sent a relative URL, join with original:
         newurl = basejoin(self.type + ":" + url, newurl)
+
+        # For security reasons we do not allow redirects to protocols
+        # other than HTTP, HTTPS or FTP.
+        newurl_lower = newurl.lower()
+        if not (newurl_lower.startswith('http://') or
+                newurl_lower.startswith('https://') or
+                newurl_lower.startswith('ftp://')):
+            raise IOError('redirect error', errcode,
+                          errmsg + " - Redirection to url '%s' is not allowed" %
+                          newurl,
+                          headers)
+
         return self.open(newurl)
 
     def http_error_301(self, url, fp, errcode, errmsg, headers, data=None):

@@ -16,6 +16,9 @@ Core and Builtins
 - Issue #11450: Don't truncate hg version info in Py_GetBuildInfo() when
   there are many tags (e.g. when using mq).  Patch by Nadeem Vawda.
 
+- Issue #11662: Make urllib and urllib2 ignore redirections if the
+  scheme is not HTTP, HTTPS or FTP (CVE-2011-1521).
+
 - Issue #10451: memoryview objects could allow to mutate a readable buffer.
   Initial patch by Ross Lagerwall.
 
