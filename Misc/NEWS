@@ -19,19 +19,8 @@ Core and Builtins
 Library
 -------
 
-- Issue #9129: smtpd.py is vulnerable to DoS attacks deriving from missing
-  error handling when accepting a new connection.
-
-What's New in Python 2.6.6?
-===========================
-
-*Release date: 2010-08-24*
-
-Core and Builtins
------------------
-
-Library
--------
+- Issue #11662: Make urllib and urllib2 ignore redirections if the
+  scheme is not HTTP, HTTPS or FTP (CVE-2011-1521).
 
 
 What's New in Python 2.6.6 rc 2?
