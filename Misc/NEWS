@@ -49,6 +49,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11662: Make urllib and urllib2 ignore redirections if the
+  scheme is not HTTP, HTTPS or FTP (CVE-2011-1521).
+
 - Issue #11628: cmp_to_key generated class should use __slots__
 
 - Issue #5537: Fix time2isoz() and time2netscape() functions of
