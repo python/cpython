@@ -977,6 +977,7 @@ class HandlerTests(unittest.TestCase):
         h = urllib2.HTTPRedirectHandler()
         o = h.parent = MockOpener()
         req = Request(from_url)
+        req.timeout = socket._GLOBAL_DEFAULT_TIMEOUT
 
         for scheme in invalid_schemes:
             invalid_url = scheme + '://' + schemeless_url
