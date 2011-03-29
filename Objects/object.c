@@ -29,8 +29,6 @@ _Py_GetRefTotal(void)
 }
 #endif /* Py_REF_DEBUG */
 
-int Py_DivisionWarningFlag;
-
 /* Object allocation routines used by NEWOBJ and NEWVAROBJ macros.
    These are used by the individual routines for object creation.
    Do not call them otherwise, they do not initialize the object! */

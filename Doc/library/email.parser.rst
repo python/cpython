@@ -102,7 +102,7 @@ as a string. :class:`HeaderParser` has the same API as the :class:`Parser`
 class.
 
 
-.. class:: Parser(_class=email.message.Message, strict=None)
+.. class:: Parser(_class=email.message.Message)
 
    The constructor for the :class:`Parser` class takes an optional argument
    *_class*.  This must be a callable factory (such as a function or a class), and
@@ -110,13 +110,8 @@ class.
    :class:`~email.message.Message` (see :mod:`email.message`).  The factory will
    be called without arguments.
 
-   The optional *strict* flag is ignored.
-
-   .. deprecated:: 2.4
-      Because the :class:`Parser` class is a backward compatible API wrapper
-      around the new-in-Python 2.4 :class:`FeedParser`, *all* parsing is
-      effectively non-strict.  You should simply stop passing a *strict* flag to
-      the :class:`Parser` constructor.
+   .. versionchanged:: 3.2
+      Removed the *strict* argument that was deprecated in 2.4.
 
    The other public :class:`Parser` methods are:
 

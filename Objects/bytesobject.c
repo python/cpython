@@ -41,10 +41,6 @@ static PyBytesObject *nullstring;
 #define PyBytesObject_SIZE (offsetof(PyBytesObject, ob_sval) + 1)
 
 /*
-   For both PyBytes_FromString() and PyBytes_FromStringAndSize(), the
-   parameter `size' denotes number of characters to allocate, not counting any
-   null terminating character.
-
    For PyBytes_FromString(), the parameter `str' points to a null-terminated
    string containing exactly `size' bytes.
 
@@ -61,8 +57,8 @@ static PyBytesObject *nullstring;
 
    The PyObject member `op->ob_size', which denotes the number of "extra
    items" in a variable-size object, will contain the number of bytes
-   allocated for string data, not counting the null terminating character.  It
-   is therefore equal to the equal to the `size' parameter (for
+   allocated for string data, not counting the null terminating character.
+   It is therefore equal to the `size' parameter (for
    PyBytes_FromStringAndSize()) or the length of the string in the `str'
    parameter (for PyBytes_FromString()).
 */

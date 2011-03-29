@@ -585,7 +585,10 @@ static PyObject *
 CDataType_from_param(PyObject *type, PyObject *value)
 {
     PyObject *as_parameter;
-    if (1 == PyObject_IsInstance(value, type)) {
+    int res = PyObject_IsInstance(value, type);
+    if (res == -1)
+        return NULL;
+    if (res) {
         Py_INCREF(value);
         return value;
     }
@@ -598,10 +601,14 @@ CDataType_from_param(PyObject *type, PyObject *value)
 
         /* If we got a PyCArgObject, we must check if the object packed in it
            is an instance of the type's dict->proto */
-        if(dict && ob
-           && PyObject_IsInstance(ob, dict->proto)) {
-            Py_INCREF(value);
-            return value;
+        if(dict && ob) {
+            res = PyObject_IsInstance(ob, dict->proto);
+            if (res == -1)
+                return NULL;
+            if (res) {
+                Py_INCREF(value);
+                return value;
+            }
         }
         ob_name = (ob) ? Py_TYPE(ob)->tp_name : "???";
         PyErr_Format(PyExc_TypeError,
@@ -951,8 +958,7 @@ PyCPointerType_from_param(PyObject *type, PyObject *value)
         Py_INCREF(value); /* _byref steals a refcount */
         return _byref(value);
     case -1:
-        PyErr_Clear();
-        break;
+        return NULL;
     default:
         break;
     }
@@ -1431,6 +1437,7 @@ static PyObject *
 c_wchar_p_from_param(PyObject *type, PyObject *value)
 {
     PyObject *as_parameter;
+    int res;
     if (value == Py_None) {
         Py_INCREF(Py_None);
         return Py_None;
@@ -1451,7 +1458,10 @@ c_wchar_p_from_param(PyObject *type, PyObject *value)
         }
         return (PyObject *)parg;
     }
-    if (PyObject_IsInstance(value, type)) {
+    res = PyObject_IsInstance(value, type);
+    if (res == -1)
+        return NULL;
+    if (res) {
         Py_INCREF(value);
         return value;
     }
@@ -1492,6 +1502,7 @@ static PyObject *
 c_char_p_from_param(PyObject *type, PyObject *value)
 {
     PyObject *as_parameter;
+    int res;
     if (value == Py_None) {
         Py_INCREF(Py_None);
         return Py_None;
@@ -1512,7 +1523,10 @@ c_char_p_from_param(PyObject *type, PyObject *value)
         }
         return (PyObject *)parg;
     }
-    if (PyObject_IsInstance(value, type)) {
+    res = PyObject_IsInstance(value, type);
+    if (res == -1)
+        return NULL;
+    if (res) {
         Py_INCREF(value);
         return value;
     }
@@ -1554,6 +1568,7 @@ c_void_p_from_param(PyObject *type, PyObject *value)
 {
     StgDictObject *stgd;
     PyObject *as_parameter;
+    int res;
 
 /* None */
     if (value == Py_None) {
@@ -1631,7 +1646,10 @@ c_void_p_from_param(PyObject *type, PyObject *value)
         return (PyObject *)parg;
     }
 /* c_void_p instance (or subclass) */
-    if (PyObject_IsInstance(value, type)) {
+    res = PyObject_IsInstance(value, type);
+    if (res == -1)
+        return NULL;
+    if (res) {
         /* c_void_p instances */
         Py_INCREF(value);
         return value;
@@ -1990,10 +2008,14 @@ PyCSimpleType_from_param(PyObject *type, PyObject *value)
     PyCArgObject *parg;
     struct fielddesc *fd;
     PyObject *as_parameter;
+    int res;
 
     /* If the value is already an instance of the requested type,
        we can use it as is */
-    if (1 == PyObject_IsInstance(value, type)) {
+    res = PyObject_IsInstance(value, type);
+    if (res == -1)
+        return NULL;
+    if (res) {
         Py_INCREF(value);
         return value;
     }
@@ -2022,7 +2044,12 @@ PyCSimpleType_from_param(PyObject *type, PyObject *value)
 
     as_parameter = PyObject_GetAttrString(value, "_as_parameter_");
     if (as_parameter) {
+        if (Py_EnterRecursiveCall("while processing _as_parameter_")) {
+            Py_DECREF(as_parameter);
+            return NULL;
+        }
         value = PyCSimpleType_from_param(type, as_parameter);
+        Py_LeaveRecursiveCall();
         Py_DECREF(as_parameter);
         return value;
     }
@@ -2714,6 +2741,7 @@ _PyCData_set(CDataObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
            Py_ssize_t size, char *ptr)
 {
     CDataObject *src;
+    int err;
 
     if (setfunc)
         return setfunc(ptr, value, size);
@@ -2754,7 +2782,10 @@ _PyCData_set(CDataObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
     }
     src = (CDataObject *)value;
 
-    if (PyObject_IsInstance(value, type)) {
+    err = PyObject_IsInstance(value, type);
+    if (err == -1)
+        return NULL;
+    if (err) {
         memcpy(ptr,
                src->b_ptr,
                size);
@@ -4749,14 +4780,17 @@ Pointer_set_contents(CDataObject *self, PyObject *value, void *closure)
     stgdict = PyObject_stgdict((PyObject *)self);
     assert(stgdict); /* Cannot be NULL fr pointer instances */
     assert(stgdict->proto);
-    if (!CDataObject_Check(value)
-        || 0 == PyObject_IsInstance(value, stgdict->proto)) {
-        /* XXX PyObject_IsInstance could return -1! */
-        PyErr_Format(PyExc_TypeError,
-                     "expected %s instead of %s",
-                     ((PyTypeObject *)(stgdict->proto))->tp_name,
-                     Py_TYPE(value)->tp_name);
-        return -1;
+    if (!CDataObject_Check(value)) {
+        int res = PyObject_IsInstance(value, stgdict->proto);
+        if (res == -1)
+            return -1;
+        if (!res) {
+            PyErr_Format(PyExc_TypeError,
+                         "expected %s instead of %s",
+                         ((PyTypeObject *)(stgdict->proto))->tp_name,
+                         Py_TYPE(value)->tp_name);
+            return -1;
+        }
     }
 
     dst = (CDataObject *)value;

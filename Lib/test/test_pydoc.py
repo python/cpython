@@ -12,9 +12,10 @@ import unittest
 import xml.etree
 import textwrap
 from io import StringIO
+from collections import namedtuple
 from contextlib import contextmanager
 from test.support import TESTFN, forget, rmtree, EnvironmentVarGuard, \
-     reap_children, captured_output
+     reap_children, captured_output, captured_stdout
 
 from test import pydoc_mod
 
@@ -378,6 +379,15 @@ class PydocDocTest(unittest.TestCase):
                 self.assertEqual(expected_text, result)
         finally:
             pydoc.getpager = getpager_old
+
+    def test_namedtuple_public_underscore(self):
+        NT = namedtuple('NT', ['abc', 'def'], rename=True)
+        with captured_stdout() as help_io:
+            help(NT)
+        helptext = help_io.getvalue()
+        self.assertIn('_1', helptext)
+        self.assertIn('_replace', helptext)
+        self.assertIn('_asdict', helptext)
 
 
 class TestDescriptions(unittest.TestCase):
