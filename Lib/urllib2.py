@@ -578,6 +578,17 @@ class HTTPRedirectHandler(BaseHandler):
 
         newurl = urlparse.urljoin(req.get_full_url(), newurl)
 
+        # For security reasons we do not allow redirects to protocols
+        # other than HTTP, HTTPS or FTP.
+        newurl_lower = newurl.lower()
+        if not (newurl_lower.startswith('http://') or
+                newurl_lower.startswith('https://') or
+                newurl_lower.startswith('ftp://')):
+            raise HTTPError(newurl, code,
+                            msg + " - Redirection to url '%s' is not allowed" %
+                            newurl,
+                            headers, fp)
+
         # XXX Probably want to forget about the state of the current
         # request, although that might interact poorly with other
         # handlers that also use handler-specific request attributes
