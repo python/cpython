@@ -545,6 +545,17 @@ class HTTPRedirectHandler(BaseHandler):
 
         # fix a possible malformed URL
         urlparts = urlparse(newurl)
+
+        # For security reasons we don't allow redirection to anything other
+        # than http, https or ftp.
+
+        if not urlparts.scheme in ('http', 'https', 'ftp'):
+            raise HTTPError(newurl, code,
+                            msg +
+                            " - Redirection to url '%s' is not allowed" %
+                            newurl,
+                            headers, fp)
+
         if not urlparts.path:
             urlparts = list(urlparts)
             urlparts[2] = "/"
@@ -1903,8 +1914,24 @@ class FancyURLopener(URLopener):
             return
         void = fp.read()
         fp.close()
+
         # In case the server sent a relative URL, join with original:
         newurl = urljoin(self.type + ":" + url, newurl)
+
+        urlparts = urlparse(newurl)
+
+        # For security reasons, we don't allow redirection to anything other
+        # than http, https and ftp.
+
+        # We are using newer HTTPError with older redirect_internal method
+        # This older method will get deprecated in 3.3
+
+        if not urlparts.scheme in ('http', 'https', 'ftp'):
+            raise HTTPError(newurl, errcode,
+                            errmsg +
+                            " Redirection to url '%s' is not allowed." % newurl,
+                            headers, fp)
+
         return self.open(newurl)
 
     def http_error_301(self, url, fp, errcode, errmsg, headers, data=None):

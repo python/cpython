@@ -84,6 +84,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11662: Make urllib and urllib2 ignore redirections if the
+  scheme is not HTTP, HTTPS or FTP (CVE-2011-1521).
+
 - Issue #6811: Allow importlib to change a code object's co_filename attribute
   to match the path to where the source code currently is, not where the code
   object originally came from.
