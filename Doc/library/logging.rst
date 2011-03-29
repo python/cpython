@@ -2880,8 +2880,13 @@ logging module using these functions or by making calls to the main API (defined
 in :mod:`logging` itself) and defining handlers which are declared either in
 :mod:`logging` or :mod:`logging.handlers`.
 
+<<<<<<< local
 .. function:: dictConfig(config)
+=======
+.. currentmodule:: logging.config
+>>>>>>> other
 
+<<<<<<< local
     Takes the logging configuration from a dictionary.  The contents of
     this dictionary are described in :ref:`logging-config-dictschema`
     below.
@@ -2923,6 +2928,8 @@ in :mod:`logging` itself) and defining handlers which are declared either in
     in the default, uncustomized state.
 
    .. versionadded:: 2.7
+=======
+>>>>>>> other
 
 .. function:: fileConfig(fname[, defaults])
 
@@ -2955,8 +2962,13 @@ in :mod:`logging` itself) and defining handlers which are declared either in
    :func:`listen`.
 
 
+<<<<<<< local
 .. _logging-config-dictschema:
+=======
+.. currentmodule:: logging
+>>>>>>> other
 
+<<<<<<< local
 Configuration dictionary schema
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -3351,6 +3363,8 @@ the system will attempt to retrieve the value from
 to ``config_dict['handlers']['myhandler']['mykey']['123']`` if that
 fails.
 
+=======
+>>>>>>> other
 .. _logging-config-fileformat:
 
 Configuration file format
