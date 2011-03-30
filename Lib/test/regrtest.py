@@ -491,7 +491,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             next_single_test = alltests[alltests.index(selected[0])+1]
         except IndexError:
             next_single_test = None
-    selected = ['test_faulthandler']
     # Remove all the tests that precede start if it's set.
     if start:
         try:
