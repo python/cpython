@@ -498,6 +498,13 @@ These environment variables influence Python's behavior.
    separated string, it is equivalent to specifying :option:`-W` multiple
    times.
 
+.. envvar:: PYTHONFAULTHANDLER
+
+   If this environment variable is set, :func:`faulthandler.enable` is called
+   at startup: install a handler for :const:`SIGSEGV`, :const:`SIGFPE`,
+   :const:`SIGBUS` and :const:`SIGILL` signals to dump the Python traceback.
+   This is equivalent to :option:`-X` ``faulthandler`` option.
+
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~

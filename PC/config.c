@@ -12,6 +12,7 @@ extern PyObject* PyInit_audioop(void);
 extern PyObject* PyInit_binascii(void);
 extern PyObject* PyInit_cmath(void);
 extern PyObject* PyInit_errno(void);
+extern PyObject* PyInit_faulthandler(void);
 extern PyObject* PyInit_gc(void);
 extern PyObject* PyInit_math(void);
 extern PyObject* PyInit__md5(void);
@@ -82,6 +83,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"binascii", PyInit_binascii},
     {"cmath", PyInit_cmath},
     {"errno", PyInit_errno},
+    {"faulthandler", PyInit_faulthandler},
     {"gc", PyInit_gc},
     {"math", PyInit_math},
     {"nt", PyInit_nt}, /* Use the NT os functions, not posix */

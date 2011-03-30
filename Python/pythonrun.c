@@ -70,6 +70,8 @@ extern void _PyUnicode_Init(void);
 extern void _PyUnicode_Fini(void);
 extern int _PyLong_Init(void);
 extern void PyLong_Fini(void);
+extern int _PyFaulthandler_Init(void);
+extern void _PyFaulthandler_Fini(void);
 
 #ifdef WITH_THREAD
 extern void _PyGILState_Init(PyInterpreterState *, PyThreadState *);
@@ -286,6 +288,10 @@ Py_InitializeEx(int install_sigs)
 
     _PyImportHooks_Init();
 
+    /* initialize the faulthandler module */
+    if (_PyFaulthandler_Init())
+        Py_FatalError("Py_Initialize: can't initialize faulthandler");
+
     /* Initialize _warnings. */
     _PyWarnings_Init();
 
@@ -453,6 +459,9 @@ Py_Finalize(void)
 
     /* Destroy the database used by _PyImport_{Fixup,Find}Extension */
     _PyImport_Fini();
+
+    /* unload faulthandler module */
+    _PyFaulthandler_Fini();
 
     /* Debugging stuff */
 #ifdef COUNT_ALLOCS
@@ -2100,11 +2109,23 @@ cleanup:
 void
 Py_FatalError(const char *msg)
 {
+    const int fd = fileno(stderr);
+    PyThreadState *tstate;
+
     fprintf(stderr, "Fatal Python error: %s\n", msg);
     fflush(stderr); /* it helps in Windows debug build */
     if (PyErr_Occurred()) {
         PyErr_PrintEx(0);
     }
+    else {
+        tstate = _Py_atomic_load_relaxed(&_PyThreadState_Current);
+        if (tstate != NULL) {
+            fputc('\n', stderr);
+            fflush(stderr);
+            _Py_DumpTraceback(fd, tstate);
+        }
+    }
+
 #ifdef MS_WINDOWS
     {
         size_t len = strlen(msg);

@@ -157,6 +157,7 @@ option '-uall,-gui'.
 """
 
 import builtins
+import faulthandler
 import getopt
 import json
 import os
@@ -490,6 +491,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             next_single_test = alltests[alltests.index(selected[0])+1]
         except IndexError:
             next_single_test = None
+    selected = ['test_faulthandler']
     # Remove all the tests that precede start if it's set.
     if start:
         try:
@@ -1551,6 +1553,9 @@ def _make_temp_dir_for_build(TEMPDIR):
     return TEMPDIR, TESTCWD
 
 if __name__ == '__main__':
+    # Display the Python traceback on segfault and division by zero
+    faulthandler.enable()
+
     # Remove regrtest.py's own directory from the module search path. Despite
     # the elimination of implicit relative imports, this is still needed to
     # ensure that submodules of the test package do not inappropriately appear

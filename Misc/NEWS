@@ -87,6 +87,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #11393: Add the new faulthandler module.
+
 - Issue #11618: Fix the timeout logic in threading.Lock.acquire() under Windows.
 
 - Removed the 'strict' argument to email.parser.Parser, which has been
