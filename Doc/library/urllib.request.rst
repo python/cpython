@@ -783,6 +783,10 @@ HTTPRedirectHandler Objects
    is the case, :exc:`HTTPError` is raised.  See :rfc:`2616` for details of the
    precise meanings of the various redirection codes.
 
+   An :class:`HTTPError` exception raised as a security consideration if the
+   HTTPRedirectHandler is presented with a redirected url which is not an HTTP,
+   HTTPS or FTP url.
+
 
 .. method:: HTTPRedirectHandler.redirect_request(req, fp, code, msg, hdrs, newurl)
 
