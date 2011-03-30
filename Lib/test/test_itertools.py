@@ -357,6 +357,8 @@ class TestBasicOps(unittest.TestCase):
                          list(range(maxsize-5, maxsize+5)))
         self.assertEqual(list(islice(count(-maxsize-5), 10)),
                          list(range(-maxsize-5, -maxsize+5)))
+        self.assertEqual(list(islice(count(10, maxsize+5), 3)),
+                         list(range(10, 10+3*(maxsize+5), maxsize+5)))
         c = count(3)
         self.assertEqual(repr(c), 'count(3)')
         next(c)
@@ -378,6 +380,9 @@ class TestBasicOps(unittest.TestCase):
             self.assertEqual(next(copy.copy(c)), value)
             self.assertEqual(next(copy.deepcopy(c)), value)
             self.assertEqual(next(pickle.loads(pickle.dumps(c))), value)
+
+        #check proper internal error handling for large "step' sizes
+        count(1, maxsize+5); sys.exc_info()
 
     def test_count_with_stride(self):
         self.assertEqual(lzip('abc',count(2,3)), [('a', 2), ('b', 5), ('c', 8)])
