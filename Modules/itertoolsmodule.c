@@ -3060,6 +3060,7 @@ count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_ssize_t cnt = 0;
     PyObject *long_cnt = NULL;
     PyObject *long_step = NULL;
+    long step;
     static char *kwlist[] = {"start", "step", 0};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OO:count",
@@ -3097,9 +3098,11 @@ count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     assert(long_cnt != NULL && long_step != NULL);
 
     /* Fast mode only works when the step is 1 */
-    if (!PyLong_Check(long_step) ||
-        PyLong_AS_LONG(long_step) != 1) {
-            slow_mode = 1;
+    step = PyLong_AsLong(long_step);
+    if (step != 1) {
+        slow_mode = 1;
+        if (step == -1 && PyErr_Occurred())
+            PyErr_Clear();
     }
 
     if (slow_mode)
