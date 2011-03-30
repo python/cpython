@@ -87,6 +87,9 @@ Core and Builtins
 Library
 -------
 
+- Removed the 'strict' argument to email.parser.Parser, which has been
+  deprecated since Python 2.4.
+
 - Issue #11256: Fix inspect.getcallargs on functions that take only keyword
   arguments.
 
@@ -135,6 +138,9 @@ Library
 
 - Issue #11666: let help() display named tuple attributes and methods
   that start with a leading underscore.
+
+- Issue #11662: Make urllib and urllib2 ignore redirections if the
+  scheme is not HTTP, HTTPS or FTP (CVE-2011-1521).
 
 - Issue #5537: Fix time2isoz() and time2netscape() functions of
   httplib.cookiejar for expiration year greater than 2038 on 32-bit systems.
