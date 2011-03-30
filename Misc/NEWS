@@ -49,6 +49,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #11618: Fix the timeout logic in threading.Lock.acquire() under Windows.
+
 - Issue #11256: Fix inspect.getcallargs on functions that take only keyword
   arguments.
 
