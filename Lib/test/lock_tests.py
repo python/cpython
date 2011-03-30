@@ -213,6 +213,16 @@ class LockTests(BaseLockTests):
         lock.acquire()
         lock.release()
 
+    def test_state_after_timeout(self):
+        # Issue #11618: check that lock is in a proper state after a
+        # (non-zero) timeout.
+        lock = self.locktype()
+        lock.acquire()
+        self.assertFalse(lock.acquire(timeout=0.01))
+        lock.release()
+        self.assertFalse(lock.locked())
+        self.assertTrue(lock.acquire(blocking=False))
+
 
 class RLockTests(BaseLockTests):
     """
