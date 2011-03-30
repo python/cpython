@@ -10,6 +10,7 @@ allowing you to identify bottlenecks in your programs.
 .. toctree::
 
    bdb.rst
+   faulthandler.rst
    pdb.rst
    profile.rst
    timeit.rst

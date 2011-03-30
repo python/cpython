@@ -100,6 +100,7 @@ static char *usage_5 =
 "               The default module search path uses %s.\n"
 "PYTHONCASEOK : ignore case in 'import' statements (Windows).\n"
 "PYTHONIOENCODING: Encoding[:errors] used for stdin/stdout/stderr.\n"
+"PYTHONFAULTHANDLER: dump the Python traceback on fatal errors.\n"
 ;
 
 static int

@@ -56,11 +56,12 @@ def assert_python_failure(*args, **env_vars):
     """
     return _assert_python(False, *args, **env_vars)
 
-def spawn_python(*args):
+def spawn_python(*args, **kw):
     cmd_line = [sys.executable, '-E']
     cmd_line.extend(args)
     return subprocess.Popen(cmd_line, stdin=subprocess.PIPE,
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            **kw)
 
 def kill_python(p):
     p.stdin.close()

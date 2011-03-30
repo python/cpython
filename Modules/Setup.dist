@@ -127,6 +127,9 @@ _io -I$(srcdir)/Modules/_io _io/_iomodule.c _io/iobase.c _io/fileio.c _io/bytesi
 # builtin module avoids some bootstrapping problems and reduces overhead.
 zipimport zipimport.c
 
+# faulthandler module
+faulthandler faulthandler.c
+
 # The rest of the modules listed in this file are all commented out by
 # default.  Usually they can be detected and built as dynamically
 # loaded modules by the new setup.py script added in Python 2.1.  If

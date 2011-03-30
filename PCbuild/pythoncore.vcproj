@@ -1087,6 +1087,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Modules\faulthandler.c"
+				>
+			</File>
+			<File
 				RelativePath="..\Modules\gcmodule.c"
 				>
 			</File>

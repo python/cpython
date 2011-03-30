@@ -68,6 +68,14 @@ New, Improved, and Deprecated Modules
 
 * Stub
 
+faulthandler
+------------
+
+New module: :mod:`faulthandler`.
+
+ * :envvar:`PYTHONFAULTHANDLER`
+ * :option:`-X` ``faulthandler``
+
 os
 --
 
