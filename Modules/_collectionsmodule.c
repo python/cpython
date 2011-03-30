@@ -1002,7 +1002,7 @@ static PyMethodDef deque_methods[] = {
 PyDoc_STRVAR(deque_doc,
 "deque(iterable[, maxlen]) --> deque object\n\
 \n\
-Build an ordered collection accessible from endpoints only.");
+Build an ordered collection with optimized access from its endpoints.");
 
 static PyTypeObject deque_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
