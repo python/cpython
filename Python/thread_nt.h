@@ -9,82 +9,31 @@
 #include <process.h>
 #endif
 
-typedef struct NRMUTEX {
-    LONG   owned ;
-    DWORD  thread_id ;
-    HANDLE hevent ;
-} NRMUTEX, *PNRMUTEX ;
+#define PNRMUTEX HANDLE
 
-
-BOOL
-InitializeNonRecursiveMutex(PNRMUTEX mutex)
+PNRMUTEX
+AllocNonRecursiveMutex()
 {
-    mutex->owned = -1 ;  /* No threads have entered NonRecursiveMutex */
-    mutex->thread_id = 0 ;
-    mutex->hevent = CreateEvent(NULL, FALSE, FALSE, NULL) ;
-    return mutex->hevent != NULL ;      /* TRUE if the mutex is created */
+    return CreateSemaphore(NULL, 1, 1, NULL);
 }
 
 VOID
-DeleteNonRecursiveMutex(PNRMUTEX mutex)
+FreeNonRecursiveMutex(PNRMUTEX mutex)
 {
     /* No in-use check */
-    CloseHandle(mutex->hevent) ;
-    mutex->hevent = NULL ; /* Just in case */
+    CloseHandle(mutex);
 }
 
 DWORD
 EnterNonRecursiveMutex(PNRMUTEX mutex, DWORD milliseconds)
 {
-    /* Assume that the thread waits successfully */
-    DWORD ret ;
-
-    /* InterlockedIncrement(&mutex->owned) == 0 means that no thread currently owns the mutex */
-    if (milliseconds == 0)
-    {
-        if (InterlockedCompareExchange(&mutex->owned, 0, -1) != -1)
-            return WAIT_TIMEOUT ;
-        ret = WAIT_OBJECT_0 ;
-    }
-    else
-        ret = InterlockedIncrement(&mutex->owned) ?
-            /* Some thread owns the mutex, let's wait... */
-            WaitForSingleObject(mutex->hevent, milliseconds) : WAIT_OBJECT_0 ;
-
-    mutex->thread_id = GetCurrentThreadId() ; /* We own it */
-    return ret ;
+    return WaitForSingleObject(mutex, milliseconds);
 }
 
 BOOL
 LeaveNonRecursiveMutex(PNRMUTEX mutex)
 {
-    /* We don't own the mutex */
-    mutex->thread_id = 0 ;
-    return
-        InterlockedDecrement(&mutex->owned) < 0 ||
-        SetEvent(mutex->hevent) ; /* Other threads are waiting, wake one on them up */
-}
-
-PNRMUTEX
-AllocNonRecursiveMutex(void)
-{
-    PNRMUTEX mutex = (PNRMUTEX)malloc(sizeof(NRMUTEX)) ;
-    if (mutex && !InitializeNonRecursiveMutex(mutex))
-    {
-        free(mutex) ;
-        mutex = NULL ;
-    }
-    return mutex ;
-}
-
-void
-FreeNonRecursiveMutex(PNRMUTEX mutex)
-{
-    if (mutex)
-    {
-        DeleteNonRecursiveMutex(mutex) ;
-        free(mutex) ;
-    }
+    return ReleaseSemaphore(mutex, 1, NULL);
 }
 
 long PyThread_get_thread_ident(void);
