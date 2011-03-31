@@ -49,6 +49,9 @@ Core and Builtins
 Library
 -------
 
+- sys.getfilesystemencoding() raises a RuntimeError if initfsencoding() was not
+  called yet: detect bootstrap (startup) issues earlier.
+
 - Issue #11618: Fix the timeout logic in threading.Lock.acquire() under Windows.
 
 - Issue #11256: Fix inspect.getcallargs on functions that take only keyword
