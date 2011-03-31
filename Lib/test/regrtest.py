@@ -818,7 +818,8 @@ def runtest(test, verbose, quiet,
     support.verbose = verbose  # Tell tests to be moderately quiet
     if use_resources is not None:
         support.use_resources = use_resources
-    if timeout is not None and timeout > 0:
+    use_timeout = (timeout is not None and timeout > 0)
+    if use_timeout:
         faulthandler.dump_tracebacks_later(timeout, exit=True)
     try:
         result = runtest_inner(test, verbose, quiet, huntrleaks, debug)
@@ -830,7 +831,7 @@ def runtest(test, verbose, quiet,
             runtest(test, True, quiet, huntrleaks, debug, timeout=timeout)
         return result
     finally:
-        if timeout and 0 < timeout:
+        if use_timeout:
             faulthandler.cancel_dump_tracebacks_later()
         cleanup_test_droppings(test, verbose)
 
