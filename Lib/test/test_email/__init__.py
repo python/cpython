@@ -25,6 +25,10 @@ def openfile(filename, *args, **kws):
 # Base test class
 class TestEmailBase(unittest.TestCase):
 
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        self.addTypeEqualityFunc(bytes, self.assertBytesEqual)
+
     def ndiffAssertEqual(self, first, second):
         """Like assertEqual except use ndiff for readable output."""
         if first != second:
@@ -38,3 +42,10 @@ class TestEmailBase(unittest.TestCase):
     def _msgobj(self, filename):
         with openfile(filename) as fp:
             return email.message_from_file(fp)
+
+    def _bytes_repr(self, b):
+        return [repr(x) for x in b.splitlines(True)]
+
+    def assertBytesEqual(self, first, second, msg):
+        """Our byte strings are really encoded strings; improve diff output"""
+        self.assertEqual(self._bytes_repr(first), self._bytes_repr(second))
