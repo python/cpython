@@ -37,7 +37,7 @@ def temporary_filename():
         support.unlink(filename)
 
 class FaultHandlerTests(unittest.TestCase):
-    def get_output(self, code, expect_success, filename=None):
+    def get_output(self, code, filename=None):
         """
         Run the specified code in Python (in a new child process) and read the
         output from the standard error or from a file (if filename is set).
@@ -53,10 +53,6 @@ class FaultHandlerTests(unittest.TestCase):
         process = script_helper.spawn_python('-c', code, **options)
         stdout, stderr = process.communicate()
         exitcode = process.wait()
-        if expect_success:
-            self.assertEqual(exitcode, 0)
-        else:
-            self.assertNotEqual(exitcode, 0)
         if filename:
             with open(filename, "rb") as fp:
                 output = fp.read()
@@ -66,7 +62,7 @@ class FaultHandlerTests(unittest.TestCase):
         output = re.sub('Current thread 0x[0-9a-f]+',
                         'Current thread XXX',
                         output)
-        return output.splitlines()
+        return output.splitlines(), exitcode
 
     def check_fatal_error(self, code, line_number, name_regex,
                           filename=None, all_threads=False, other_regex=None):
@@ -92,9 +88,10 @@ class FaultHandlerTests(unittest.TestCase):
             header=re.escape(header))
         if other_regex:
             regex += '|' + other_regex
-        output = self.get_output(code, False, filename)
+        output, exitcode = self.get_output(code, filename)
         output = '\n'.join(output)
         self.assertRegex(output, regex)
+        self.assertNotEqual(exitcode, 0)
 
     def test_read_null(self):
         self.check_fatal_error("""
@@ -206,10 +203,11 @@ faulthandler.disable()
 faulthandler._read_null()
 """.strip()
         not_expected = 'Fatal Python error'
-        stderr = self.get_output(code, False)
+        stderr, exitcode = self.get_output(code)
         stder = '\n'.join(stderr)
         self.assertTrue(not_expected not in stderr,
                      "%r is present in %r" % (not_expected, stderr))
+        self.assertNotEqual(exitcode, 0)
 
     def test_is_enabled(self):
         was_enabled = faulthandler.is_enabled()
@@ -258,8 +256,9 @@ funcA()
             '  File "<string>", line 11 in funcA',
             '  File "<string>", line 13 in <module>'
         ]
-        trace = self.get_output(code, True, filename)
+        trace, exitcode = self.get_output(code, filename)
         self.assertEqual(trace, expected)
+        self.assertEqual(exitcode, 0)
 
     def test_dump_traceback(self):
         self.check_dump_traceback(None)
@@ -304,7 +303,7 @@ waiter.stop.set()
 waiter.join()
 """.strip()
         code = code.format(filename=repr(filename))
-        output = self.get_output(code, True, filename)
+        output, exitcode = self.get_output(code, filename)
         output = '\n'.join(output)
         if filename:
             lineno = 8
@@ -324,6 +323,7 @@ Current thread XXX:
 """.strip()
         regex = regex.format(lineno=lineno)
         self.assertRegex(output, regex)
+        self.assertEqual(exitcode, 0)
 
     def test_dump_traceback_threads(self):
         self.check_dump_traceback_threads(None)
@@ -378,7 +378,7 @@ if file is not None:
             repeat=repeat,
             cancel=cancel,
         )
-        trace = self.get_output(code, True, filename)
+        trace, exitcode = self.get_output(code, filename)
         trace = '\n'.join(trace)
 
         if repeat:
@@ -388,6 +388,7 @@ if file is not None:
         header = 'Thread 0x[0-9a-f]+:\n'
         regex = expected_traceback(7, 30, header, count=count)
         self.assertRegex(trace, '^%s$' % regex)
+        self.assertEqual(exitcode, 0)
 
     @unittest.skipIf(not hasattr(faulthandler, 'dump_tracebacks_later'),
                      'need faulthandler.dump_tracebacks_later()')
@@ -443,16 +444,15 @@ if file is not None:
             has_filename=bool(filename),
             all_threads=all_threads,
         )
-        trace = self.get_output(code, True, filename)
+        trace, exitcode = self.get_output(code, filename)
         trace = '\n'.join(trace)
         if all_threads:
             regex = 'Current thread XXX:\n'
         else:
             regex = 'Traceback \(most recent call first\):\n'
         regex = expected_traceback(6, 14, regex)
-        self.assertTrue(re.match(regex, trace),
-                         "[%s] doesn't match [%s]: use_filename=%s, all_threads=%s"
-                         % (regex, trace, bool(filename), all_threads))
+        self.assertRegex(trace, '^%s$' % regex)
+        self.assertEqual(exitcode, 0)
 
     def test_register(self):
         self.check_register()
