@@ -20,6 +20,9 @@ python -E -Wd -m test [options] [test_name1 ...]
 Options:
 
 -h/--help       -- print this text and exit
+--timeout TIMEOUT
+                -- dump the traceback and exit if a test takes more
+                   than TIMEOUT seconds
 
 Verbosity
 
@@ -236,7 +239,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
          findleaks=False, use_resources=None, trace=False, coverdir='coverage',
          runleaks=False, huntrleaks=False, verbose2=False, print_slow=False,
          random_seed=None, use_mp=None, verbose3=False, forever=False,
-         header=False):
+         header=False, timeout=None):
     """Execute a test suite.
 
     This also parses command-line options and modifies its behavior
@@ -270,7 +273,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
              'use=', 'threshold=', 'trace', 'coverdir=', 'nocoverdir',
              'runleaks', 'huntrleaks=', 'memlimit=', 'randseed=',
              'multiprocess=', 'coverage', 'slaveargs=', 'forever', 'debug',
-             'start=', 'nowindows', 'header', 'testdir='])
+             'start=', 'nowindows', 'header', 'testdir=', 'timeout='])
     except getopt.error as msg:
         usage(msg)
 
@@ -404,6 +407,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             # CWD is replaced with a temporary dir before calling main(), so we
             # join it with the saved CWD so it ends up where the user expects.
             testdir = os.path.join(support.SAVEDCWD, a)
+        elif o == '--timeout':
+            timeout = float(a)
         else:
             print(("No handler for option {}.  Please report this as a bug "
                    "at http://bugs.python.org.").format(o), file=sys.stderr)
@@ -559,7 +564,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 args_tuple = (
                     (test, verbose, quiet),
                     dict(huntrleaks=huntrleaks, use_resources=use_resources,
-                         debug=debug, rerun_failed=verbose3)
+                         debug=debug, rerun_failed=verbose3, timeout=timeout)
                 )
                 yield (test, args_tuple)
         pending = tests_and_args()
@@ -619,7 +624,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     assert result[1] == 'KeyboardInterrupt'
                     raise KeyboardInterrupt   # What else?
                 if result[0] == CHILD_ERROR:
-                    raise Exception(result[1])
+                    raise Exception("Child error: {}".format(result[1]))
                 accumulate_result(test, result)
                 test_index += 1
         except KeyboardInterrupt:
@@ -636,12 +641,12 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             if trace:
                 # If we're tracing code coverage, then we don't exit with status
                 # if on a false return value from main.
-                tracer.runctx('runtest(test, verbose, quiet)',
+                tracer.runctx('runtest(test, verbose, quiet, timeout=timeout)',
                               globals=globals(), locals=vars())
             else:
                 try:
                     result = runtest(test, verbose, quiet, huntrleaks, debug,
-                                     rerun_failed=verbose3)
+                                     rerun_failed=verbose3, timeout=timeout)
                     accumulate_result(test, result)
                 except KeyboardInterrupt:
                     interrupted = True
@@ -712,7 +717,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             sys.stdout.flush()
             try:
                 verbose = True
-                ok = runtest(test, True, quiet, huntrleaks, debug)
+                ok = runtest(test, True, quiet, huntrleaks, debug, timeout=timeout)
             except KeyboardInterrupt:
                 # print a newline separate from the ^C
                 print()
@@ -788,7 +793,7 @@ def replace_stdout():
 
 def runtest(test, verbose, quiet,
             huntrleaks=False, debug=False, use_resources=None,
-            rerun_failed=False):
+            rerun_failed=False, timeout=None):
     """Run a single test.
 
     test -- the name of the test
@@ -798,6 +803,8 @@ def runtest(test, verbose, quiet,
     huntrleaks -- run multiple times to test for leaks; requires a debug
                   build; a triple corresponding to -R's three arguments
     rerun_failed -- if true, re-run in verbose mode when failed
+    timeout -- dump the traceback and exit if a test takes more than
+               timeout seconds
 
     Returns one of the test result constants:
         INTERRUPTED      KeyboardInterrupt when run under -j
@@ -811,6 +818,8 @@ def runtest(test, verbose, quiet,
     support.verbose = verbose  # Tell tests to be moderately quiet
     if use_resources is not None:
         support.use_resources = use_resources
+    if timeout is not None and timeout > 0:
+        faulthandler.dump_tracebacks_later(timeout, exit=True)
     try:
         result = runtest_inner(test, verbose, quiet, huntrleaks, debug)
         if result[0] == FAILED and rerun_failed:
@@ -818,9 +827,11 @@ def runtest(test, verbose, quiet,
             sys.stdout.flush()
             sys.stderr.flush()
             print("Re-running test {} in verbose mode".format(test))
-            runtest(test, True, quiet, huntrleaks, debug)
+            runtest(test, True, quiet, huntrleaks, debug, timeout=timeout)
         return result
     finally:
+        if timeout and 0 < timeout:
+            faulthandler.cancel_dump_tracebacks_later()
         cleanup_test_droppings(test, verbose)
 
 # Unit tests are supposed to leave the execution environment unchanged
