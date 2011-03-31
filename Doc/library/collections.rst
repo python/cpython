@@ -857,8 +857,15 @@ and more efficient to use a simple class declaration:
 
 .. seealso::
 
-   `Named tuple recipe <http://code.activestate.com/recipes/500261/>`_
-   adapted for Python 2.4.
+   * `Named tuple recipe <http://code.activestate.com/recipes/500261/>`_
+     adapted for Python 2.4.
+
+   * `Recipe for named tuple abstract base class with a metaclass mix-in
+     <http://code.activestate.com/recipes/577629-namedtupleabc-abstract-base-class-mix-in-for-named/>`_
+     by Jan Kaliszewski.  Besides providing an :term:`abstract base class` for
+     named tuples, it also supports an alternate :term:`metaclass`-based
+     constructor that is convenient for use cases where named tuples are being
+     subclassed.
 
 
 :class:`OrderedDict` objects
