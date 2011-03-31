@@ -354,7 +354,7 @@ def func(repeat, cancel, timeout):
     faulthandler.cancel_dump_tracebacks_later()
     b = time.time()
     # Check that sleep() was not interrupted
-    assert (b -a) >= pause
+    assert (b - a) >= pause, "{{}} < {{}}".format(b - a, pause)
 
     if cancel:
         pause = timeout * 1.5
@@ -362,7 +362,7 @@ def func(repeat, cancel, timeout):
         time.sleep(pause)
         b = time.time()
         # Check that sleep() was not interrupted
-        assert (b -a) >= pause
+        assert (b - a) >= pause, "{{}} < {{}}".format(b - a, pause)
 
 timeout = 0.5
 repeat = {repeat}
