@@ -69,7 +69,7 @@ class FaultHandlerTests(unittest.TestCase):
         return output.splitlines()
 
     def check_fatal_error(self, code, line_number, name_regex,
-                               filename=None, all_threads=False):
+                          filename=None, all_threads=False, other_regex=None):
         """
         Check that the fault handler for fatal errors is enabled and check the
         traceback from the child process output.
@@ -90,6 +90,8 @@ class FaultHandlerTests(unittest.TestCase):
             lineno=line_number,
             name=name_regex,
             header=re.escape(header))
+        if other_regex:
+            regex += '|' + other_regex
         output = self.get_output(code, False, filename)
         output = '\n'.join(output)
         self.assertRegex(output, regex)
@@ -153,7 +155,6 @@ faulthandler._fatal_error(b'xyz')
             2,
             'xyz')
 
-    @unittest.skipIf(True, 'test disabled, see #11393')
     @unittest.skipIf(not hasattr(faulthandler, '_stack_overflow'),
                      'need faulthandler._stack_overflow()')
     def test_stack_overflow(self):
@@ -163,7 +164,8 @@ faulthandler.enable()
 faulthandler._stack_overflow()
 """.strip(),
             3,
-            '(?:Segmentation fault|Bus error)')
+            '(?:Segmentation fault|Bus error)',
+            other_regex='unable to raise a stack overflow')
 
     def test_gil_released(self):
         self.check_fatal_error("""
