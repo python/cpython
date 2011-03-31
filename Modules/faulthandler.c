@@ -16,6 +16,9 @@
 #  define FAULTHANDLER_USER
 #endif
 
+/* Allocate at maximum 100 MB of the stack to raise the stack overflow */
+#define STACK_OVERFLOW_MAX_SIZE (100*1024*1024)
+
 #define PUTS(fd, str) write(fd, str, strlen(str))
 
 #ifdef HAVE_SIGACTION
@@ -742,15 +745,39 @@ faulthandler_fatal_error_py(PyObject *self, PyObject *args)
 }
 
 #if defined(HAVE_SIGALTSTACK) && defined(HAVE_SIGACTION)
-static PyObject *
-faulthandler_stack_overflow(PyObject *self)
+void*
+stack_overflow(void *min_sp, void *max_sp, size_t *depth)
 {
     /* allocate 4096 bytes on the stack at each call */
     unsigned char buffer[4096];
+    void *sp = &buffer;
+    *depth += 1;
+    if (sp < min_sp || max_sp < sp)
+        return sp;
     buffer[0] = 1;
-    buffer[4095] = 2;
-    faulthandler_stack_overflow(self);
-    return PyLong_FromLong(buffer[0] + buffer[4095]);
+    buffer[4095] = 0;
+    return stack_overflow(min_sp, max_sp, depth);
+}
+
+static PyObject *
+faulthandler_stack_overflow(PyObject *self)
+{
+    size_t depth, size;
+    void *sp = &depth, *stop;
+
+    depth = 0;
+    stop = stack_overflow(sp - STACK_OVERFLOW_MAX_SIZE,
+                          sp + STACK_OVERFLOW_MAX_SIZE,
+                          &depth);
+    if (sp < stop)
+        size = stop - sp;
+    else
+        size = sp - stop;
+    PyErr_Format(PyExc_RuntimeError,
+        "unable to raise a stack overflow (allocated %zu bytes "
+        "on the stack, %zu recursive calls)",
+        size, depth);
+    return NULL;
 }
 #endif
 
