@@ -326,8 +326,8 @@ Special functions
 
    Return the complementary error function at *x*.  The `complementary error
    function <http://en.wikipedia.org/wiki/Error_function>`_ is defined as
-   ``1.0 - erf(x)``.  It is used for large values of *x* where a straight
-   substraction from *1* would cause a `loss of significance
+   ``1.0 - erf(x)``.  It is used for large values of *x* where a subtraction
+   from one would cause a `loss of significance
    <http://en.wikipedia.org/wiki/Loss_of_significance>`_\.
 
    .. versionadded:: 3.2
@@ -335,7 +335,8 @@ Special functions
 
 .. function:: gamma(x)
 
-   Return the `Gamma function<http://en.wikipedia.org/wiki/Gamma_function>` at *x*.
+   Return the `Gamma function <http://en.wikipedia.org/wiki/Gamma_function>`_ at
+   *x*.
 
    .. versionadded:: 3.2
 
