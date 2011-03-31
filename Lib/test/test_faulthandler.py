@@ -53,12 +53,13 @@ class FaultHandlerTests(unittest.TestCase):
         process = script_helper.spawn_python('-c', code, **options)
         stdout, stderr = process.communicate()
         exitcode = process.wait()
+        output = support.strip_python_stderr(stdout)
+        output = output.decode('ascii', 'backslashreplace')
         if filename:
+            self.assertEqual(output, '')
             with open(filename, "rb") as fp:
                 output = fp.read()
-        else:
-            output = support.strip_python_stderr(stdout)
-        output = output.decode('ascii', 'backslashreplace')
+            output = output.decode('ascii', 'backslashreplace')
         output = re.sub('Current thread 0x[0-9a-f]+',
                         'Current thread XXX',
                         output)
@@ -262,6 +263,8 @@ funcA()
 
     def test_dump_traceback(self):
         self.check_dump_traceback(None)
+
+    def test_dump_traceback_file(self):
         with temporary_filename() as filename:
             self.check_dump_traceback(filename)
 
@@ -327,6 +330,8 @@ Current thread XXX:
 
     def test_dump_traceback_threads(self):
         self.check_dump_traceback_threads(None)
+
+    def test_dump_traceback_threads_file(self):
         with temporary_filename() as filename:
             self.check_dump_traceback_threads(filename)
 
