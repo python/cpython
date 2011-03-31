@@ -37,37 +37,11 @@ from email import base64mime
 from email import quoprimime
 
 from test.support import run_unittest, unlink
-from test.test_email import __file__ as landmark
-
+from test.test_email import openfile, TestEmailBase
 
 NL = '\n'
 EMPTYSTRING = ''
 SPACE = ' '
-
-
-
-def openfile(filename, *args, **kws):
-    path = os.path.join(os.path.dirname(landmark), 'data', filename)
-    return open(path, *args, **kws)
-
-
-
-# Base test class
-class TestEmailBase(unittest.TestCase):
-    def ndiffAssertEqual(self, first, second):
-        """Like assertEqual except use ndiff for readable output."""
-        if first != second:
-            sfirst = str(first)
-            ssecond = str(second)
-            rfirst = [repr(line) for line in sfirst.splitlines()]
-            rsecond = [repr(line) for line in ssecond.splitlines()]
-            diff = difflib.ndiff(rfirst, rsecond)
-            raise self.failureException(NL + NL.join(diff))
-
-    def _msgobj(self, filename):
-        with openfile(filename) as fp:
-            return email.message_from_file(fp)
-
 
 
 # Test various aspects of the Message class's API
