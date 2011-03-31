@@ -22,8 +22,8 @@ else:
 
 def expected_traceback(lineno1, lineno2, header, count=1):
     regex = header
-    regex += r'  File "\<string\>", line %s in func\n' % lineno1
-    regex += r'  File "\<string\>", line %s in \<module\>' % lineno2
+    regex += '  File "<string>", line %s in func\n' % lineno1
+    regex += '  File "<string>", line %s in <module>' % lineno2
     if count != 1:
         regex = (regex + '\n') * (count - 1) + regex
     return '^' + regex + '$'
@@ -349,20 +349,23 @@ import time
 
 def func(repeat, cancel, timeout):
     pause = timeout * 2.5
+    # on Windows XP, b-a gives 1.249931 after sleep(1.25)
+    min_pause = pause * 0.9
     a = time.time()
     time.sleep(pause)
     faulthandler.cancel_dump_tracebacks_later()
     b = time.time()
     # Check that sleep() was not interrupted
-    assert (b - a) >= pause, "{{}} < {{}}".format(b - a, pause)
+    assert (b - a) >= min_pause, "{{}} < {{}}".format(b - a, min_pause)
 
     if cancel:
         pause = timeout * 1.5
+        min_pause = pause * 0.9
         a = time.time()
         time.sleep(pause)
         b = time.time()
         # Check that sleep() was not interrupted
-        assert (b - a) >= pause, "{{}} < {{}}".format(b - a, pause)
+        assert (b - a) >= min_pause, "{{}} < {{}}".format(b - a, min_pause)
 
 timeout = 0.5
 repeat = {repeat}
@@ -391,8 +394,8 @@ if file is not None:
         else:
             count = 1
         header = 'Thread 0x[0-9a-f]+:\n'
-        regex = expected_traceback(7, 30, header, count=count)
-        self.assertRegex(trace, '^%s$' % regex)
+        regex = expected_traceback(9, 33, header, count=count)
+        self.assertRegex(trace, regex)
         self.assertEqual(exitcode, 0)
 
     @unittest.skipIf(not hasattr(faulthandler, 'dump_tracebacks_later'),
@@ -456,7 +459,7 @@ if file is not None:
         else:
             regex = 'Traceback \(most recent call first\):\n'
         regex = expected_traceback(6, 14, regex)
-        self.assertRegex(trace, '^%s$' % regex)
+        self.assertRegex(trace, regex)
         self.assertEqual(exitcode, 0)
 
     def test_register(self):
