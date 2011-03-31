@@ -36,7 +36,7 @@ from email import iterators
 from email import base64mime
 from email import quoprimime
 
-from test.support import findfile, run_unittest, unlink
+from test.support import run_unittest, unlink
 from test.test_email import __file__ as landmark
 
 
@@ -65,7 +65,7 @@ class TestEmailBase(unittest.TestCase):
             raise self.failureException(NL + NL.join(diff))
 
     def _msgobj(self, filename):
-        with openfile(findfile(filename)) as fp:
+        with openfile(filename) as fp:
             return email.message_from_file(fp)
 
 
@@ -194,7 +194,7 @@ class TestMessageAPI(TestEmailBase):
     def test_message_rfc822_only(self):
         # Issue 7970: message/rfc822 not in multipart parsed by
         # HeaderParser caused an exception when flattened.
-        with openfile(findfile('msg_46.txt')) as fp:
+        with openfile('msg_46.txt') as fp:
             msgdata = fp.read()
         parser = HeaderParser()
         msg = parser.parsestr(msgdata)
@@ -1055,13 +1055,7 @@ Blah blah blah
 # Test the basic MIMEAudio class
 class TestMIMEAudio(unittest.TestCase):
     def setUp(self):
-        # Make sure we pick up the audiotest.au that lives in email/test/data.
-        # In Python, there's an audiotest.au living in Lib/test but that isn't
-        # included in some binary distros that don't include the test
-        # package.  The trailing empty string on the .join() is significant
-        # since findfile() will do a dirname().
-        datadir = os.path.join(os.path.dirname(landmark), 'data', '')
-        with open(findfile('audiotest.au', datadir), 'rb') as fp:
+        with openfile('audiotest.au', 'rb') as fp:
             self._audiodata = fp.read()
         self._au = MIMEAudio(self._audiodata)
 
@@ -4320,7 +4314,7 @@ Content-Type: application/x-foo;
 class TestSigned(TestEmailBase):
 
     def _msg_and_obj(self, filename):
-        with openfile(findfile(filename)) as fp:
+        with openfile(filename) as fp:
             original = fp.read()
             msg = email.message_from_string(original)
         return original, msg
