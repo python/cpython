@@ -259,8 +259,9 @@ sys_getfilesystemencoding(PyObject *self)
 {
     if (Py_FileSystemDefaultEncoding)
         return PyUnicode_FromString(Py_FileSystemDefaultEncoding);
-    Py_INCREF(Py_None);
-    return Py_None;
+    PyErr_SetString(PyExc_RuntimeError,
+                    "filesystem encoding is not initialized");
+    return NULL;
 }
 
 PyDoc_STRVAR(getfilesystemencoding_doc,
