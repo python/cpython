@@ -3161,12 +3161,7 @@ class BaseTestBytesGeneratorIdempotent:
         b = BytesIO()
         g = email.generator.BytesGenerator(b, maxheaderlen=0)
         g.flatten(msg, unixfrom=unixfrom, linesep=self.linesep)
-        self.assertByteStringsEqual(data, b.getvalue())
-
-    def assertByteStringsEqual(self, str1, str2):
-        # Not using self.blinesep here is intentional.  This way the output
-        # is more useful when the failure results in mixed line endings.
-        self.assertListEqual(str1.split(b'\n'), str2.split(b'\n'))
+        self.assertEqual(data, b.getvalue())
 
 
 class TestBytesGeneratorIdempotentNL(BaseTestBytesGeneratorIdempotent,
