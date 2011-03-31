@@ -420,7 +420,7 @@ faulthandler_thread(void *unused)
 }
 
 static void
-faulthandler_cancel_dump_traceback_later(void)
+faulthandler_cancel_dump_tracebacks_later(void)
 {
     if (thread.running) {
         /* Notify cancellation */
@@ -465,7 +465,7 @@ faulthandler_dump_traceback_later(PyObject *self,
         return NULL;
 
     /* Cancel previous thread, if running */
-    faulthandler_cancel_dump_traceback_later();
+    faulthandler_cancel_dump_tracebacks_later();
 
     Py_XDECREF(thread.file);
     Py_INCREF(file);
@@ -493,9 +493,9 @@ faulthandler_dump_traceback_later(PyObject *self,
 }
 
 static PyObject*
-faulthandler_cancel_dump_traceback_later_py(PyObject *self)
+faulthandler_cancel_dump_tracebacks_later_py(PyObject *self)
 {
-    faulthandler_cancel_dump_traceback_later();
+    faulthandler_cancel_dump_tracebacks_later();
     Py_RETURN_NONE;
 }
 #endif /* FAULTHANDLER_LATER */
@@ -799,7 +799,7 @@ static PyMethodDef module_methods[] = {
                "dump the traceback of all threads in timeout seconds,\n"
                "or each timeout seconds if repeat is True.")},
     {"cancel_dump_tracebacks_later",
-     (PyCFunction)faulthandler_cancel_dump_traceback_later_py, METH_NOARGS,
+     (PyCFunction)faulthandler_cancel_dump_tracebacks_later_py, METH_NOARGS,
      PyDoc_STR("cancel_dump_tracebacks_later():\ncancel the previous call "
                "to dump_tracebacks_later().")},
 #endif
@@ -939,7 +939,7 @@ void _PyFaulthandler_Fini(void)
 
 #ifdef FAULTHANDLER_LATER
     /* later */
-    faulthandler_cancel_dump_traceback_later();
+    faulthandler_cancel_dump_tracebacks_later();
     if (thread.cancel_event) {
         PyThread_free_lock(thread.cancel_event);
         thread.cancel_event = NULL;
