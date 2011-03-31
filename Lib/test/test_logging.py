@@ -2406,6 +2406,7 @@ class BasicConfigTest(unittest.TestCase):
         logging.shutdown()
         super(BasicConfigTest, self).tearDown()
 
+    @unittest.skipIf(True, "test disabled, issue #11557")
     def test_no_kwargs(self):
         logging.basicConfig()
 
