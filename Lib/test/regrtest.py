@@ -216,6 +216,7 @@ ENV_CHANGED = -1
 SKIPPED = -2
 RESOURCE_DENIED = -3
 INTERRUPTED = -4
+CHILD_ERROR = -5   # error in a child process
 
 from test import support
 
@@ -579,10 +580,15 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                                    universal_newlines=True,
                                    close_fds=(os.name != 'nt'))
                     stdout, stderr = popen.communicate()
+                    retcode = popen.wait()
                     # Strip last refcount output line if it exists, since it
                     # comes from the shutdown of the interpreter in the subcommand.
                     stderr = debug_output_pat.sub("", stderr)
                     stdout, _, result = stdout.strip().rpartition("\n")
+                    if retcode != 0:
+                        result = (CHILD_ERROR, "Exit code %s" % retcode)
+                        output.put((test, stdout.rstrip(), stderr.rstrip(), result))
+                        return
                     if not result:
                         output.put((None, None, None, None))
                         return
@@ -612,6 +618,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 if result[0] == INTERRUPTED:
                     assert result[1] == 'KeyboardInterrupt'
                     raise KeyboardInterrupt   # What else?
+                if result[0] == CHILD_ERROR:
+                    raise Exception(result[1])
                 accumulate_result(test, result)
                 test_index += 1
         except KeyboardInterrupt:
