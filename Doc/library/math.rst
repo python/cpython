@@ -156,10 +156,10 @@ Power and logarithmic functions
 
 .. function:: expm1(x)
 
-   Return ``e**x - 1``.  For small floats *x*, the subtraction in
-   ``exp(x) - 1`` can result in a significant loss of precision; the
-   :func:`expm1` function provides a way to compute this quantity to
-   full precision::
+   Return ``e**x - 1``.  For small floats *x*, the subtraction in ``exp(x) - 1``
+   can result in a `significant loss of precision
+   <http://en.wikipedia.org/wiki/Loss_of_significance>`_\; the :func:`expm1`
+   function provides a way to compute this quantity to full precision::
 
       >>> from math import exp, expm1
       >>> exp(1e-5) - 1  # gives result accurate to 11 places
@@ -269,6 +269,9 @@ Angular conversion
 Hyperbolic functions
 --------------------
 
+`Hyperbolic functions <http://en.wikipedia.org/wiki/Hyperbolic_function>`_
+are analogs of trigonometric functions that are based on hyperbolas
+instead of circles.
 
 .. function:: acosh(x)
 
@@ -305,21 +308,34 @@ Special functions
 
 .. function:: erf(x)
 
-   Return the error function at *x*.
+   Return the `error function <http://en.wikipedia.org/wiki/Error_function>`_ at
+   *x*.
+
+   The :func:`erf` function can be used to compute traditional statistical
+   functions such as the `cumulative standard normal distribution
+   <http://en.wikipedia.org/wiki/Normal_distribution#Cumulative_distribution_function>`_::
+
+     def phi(x):
+         'Cumulative distribution function for the standard normal distribution'
+         return (1.0 + erf(x / sqrt(2.0))) / 2.0
 
    .. versionadded:: 3.2
 
 
 .. function:: erfc(x)
 
-   Return the complementary error function at *x*.
+   Return the complementary error function at *x*.  The `complementary error
+   function <http://en.wikipedia.org/wiki/Error_function>`_ is defined as
+   ``1.0 - erf(x)``.  It is used for large values of *x* where a straight
+   substraction from *1* would cause a `loss of significance
+   <http://en.wikipedia.org/wiki/Loss_of_significance>`_\.
 
    .. versionadded:: 3.2
 
 
 .. function:: gamma(x)
 
-   Return the Gamma function at *x*.
+   Return the `Gamma function<http://en.wikipedia.org/wiki/Gamma_function>` at *x*.
 
    .. versionadded:: 3.2
 
