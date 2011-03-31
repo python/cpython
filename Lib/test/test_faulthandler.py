@@ -153,6 +153,7 @@ faulthandler._fatal_error(b'xyz')
             2,
             'xyz')
 
+    @unittest.skipIf(True, 'test disabled, see #11393')
     @unittest.skipIf(not hasattr(faulthandler, '_stack_overflow'),
                      'need faulthandler._stack_overflow()')
     def test_stack_overflow(self):
