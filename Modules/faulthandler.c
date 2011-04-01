@@ -401,6 +401,7 @@ faulthandler_thread(void *unused)
                                          thread.timeout_ms, 0);
         if (st == PY_LOCK_ACQUIRED) {
             /* Cancelled by user */
+            PyThread_release_lock(thread.cancel_event);
             break;
         }
         /* Timeout => dump traceback */
@@ -419,7 +420,6 @@ faulthandler_thread(void *unused)
     /* The only way out */
     thread.running = 0;
     PyThread_release_lock(thread.join_event);
-    PyThread_release_lock(thread.cancel_event);
 }
 
 static void
