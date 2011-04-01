@@ -48,7 +48,7 @@ static struct {
     int fd;
     PY_TIMEOUT_T timeout_ms;   /* timeout in microseconds */
     int repeat;
-    volatile int running;
+    int running;
     PyInterpreterState *interp;
     int exit;
     /* released by parent thread when cancel request */
@@ -419,7 +419,6 @@ faulthandler_thread(void *unused)
     /* The only way out */
     PyThread_release_lock(thread.cancel_event);
     PyThread_release_lock(thread.join_event);
-    thread.running = 0;
 }
 
 static void
@@ -431,8 +430,8 @@ faulthandler_cancel_dump_tracebacks_later(void)
     }
     /* Wait for thread to join */
     PyThread_acquire_lock(thread.join_event, 1);
-    assert(thread.running == 0);
     PyThread_release_lock(thread.join_event);
+    thread.running = 0;
     Py_CLEAR(thread.file);
 }
 
@@ -486,6 +485,8 @@ faulthandler_dump_traceback_later(PyObject *self,
     thread.running = 1;
     if (PyThread_start_new_thread(faulthandler_thread, NULL) == -1) {
         thread.running = 0;
+        PyThread_release_lock(thread.join_event);
+        PyThread_release_lock(thread.cancel_event);
         Py_CLEAR(thread.file);
         PyErr_SetString(PyExc_RuntimeError,
                         "unable to start watchdog thread");
