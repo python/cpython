@@ -38,8 +38,6 @@ PyAPI_DATA(PyTypeObject) PyTraceBack_Type;
          ...
          File "xxx", line xxx in <xxx>
 
-   Return 0 on success, -1 on error.
-
    This function is written for debug purpose only, to dump the traceback in
    the worst case: after a segmentation fault, at fatal error, etc. That's why,
    it is very limited. Strings are truncated to 100 characters and encoded to
@@ -49,7 +47,7 @@ PyAPI_DATA(PyTypeObject) PyTraceBack_Type;
 
    This function is signal safe. */
 
-PyAPI_DATA(int) _Py_DumpTraceback(
+PyAPI_DATA(void) _Py_DumpTraceback(
     int fd,
     PyThreadState *tstate);
 

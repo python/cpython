@@ -556,18 +556,19 @@ dump_frame(int fd, PyFrameObject *frame)
     write(fd, "\n", 1);
 }
 
-static int
+static void
 dump_traceback(int fd, PyThreadState *tstate, int write_header)
 {
     PyFrameObject *frame;
     unsigned int depth;
 
-    frame = _PyThreadState_GetFrame(tstate);
-    if (frame == NULL)
-        return -1;
-
     if (write_header)
         PUTS(fd, "Traceback (most recent call first):\n");
+
+    frame = _PyThreadState_GetFrame(tstate);
+    if (frame == NULL)
+        return;
+
     depth = 0;
     while (frame != NULL) {
         if (MAX_FRAME_DEPTH <= depth) {
@@ -580,13 +581,12 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
         frame = frame->f_back;
         depth++;
     }
-    return 0;
 }
 
-int
+void
 _Py_DumpTraceback(int fd, PyThreadState *tstate)
 {
-    return dump_traceback(fd, tstate, 1);
+    dump_traceback(fd, tstate, 1);
 }
 
 /* Write the thread identifier into the file 'fd': "Current thread 0xHHHH:\" if
