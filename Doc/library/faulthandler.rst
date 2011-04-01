@@ -6,10 +6,10 @@
 
 This module contains functions to dump the Python traceback explicitly, on a
 fault, after a timeout or on a user signal. Call :func:`faulthandler.enable` to
-install fault handlers for :const:`SIGSEGV`, :const:`SIGFPE`, :const:`SIGBUS`
-and :const:`SIGILL` signals. You can also enable them at startup by setting the
-:envvar:`PYTHONFAULTHANDLER` environment variable or by using :option:`-X`
-``faulthandler`` command line option.
+install fault handlers for :const:`SIGSEGV`, :const:`SIGFPE`, :const:`SIGABRT`,
+:const:`SIGBUS` and :const:`SIGILL` signals. You can also enable them at
+startup by setting the :envvar:`PYTHONFAULTHANDLER` environment variable or by
+using :option:`-X` ``faulthandler`` command line option.
 
 The fault handler is compatible with system fault handlers like Apport or
 the Windows fault handler. The module uses an alternative stack for signal
@@ -48,9 +48,9 @@ Fault handler state
 .. function:: enable(file=sys.stderr, all_threads=False)
 
    Enable the fault handler: install handlers for :const:`SIGSEGV`,
-   :const:`SIGFPE`, :const:`SIGBUS` and :const:`SIGILL` signals to dump the
-   Python traceback. It dumps the traceback of the current thread, or all
-   threads if *all_threads* is ``True``, into *file*.
+   :const:`SIGFPE`, :const:`SIGABRT`, :const:`SIGBUS` and :const:`SIGILL`
+   signals to dump the Python traceback. It dumps the traceback of the current
+   thread, or all threads if *all_threads* is ``True``, into *file*.
 
 .. function:: disable()
 
