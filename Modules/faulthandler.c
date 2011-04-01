@@ -65,6 +65,7 @@ typedef struct {
     int fd;
     int all_threads;
     _Py_sighandler_t previous;
+    PyInterpreterState *interp;
 } user_signal_t;
 
 static user_signal_t *user_signals;
@@ -529,15 +530,35 @@ faulthandler_user(int signum)
        the thread doesn't hold the GIL. Read the thread local storage (TLS)
        instead: call PyGILState_GetThisThreadState(). */
     tstate = PyGILState_GetThisThreadState();
-    if (tstate == NULL) {
-        /* unable to get the current thread, do nothing */
-        return;
-    }
 
     if (user->all_threads)
-        _Py_DumpTracebackThreads(user->fd, tstate->interp, tstate);
-    else
+        _Py_DumpTracebackThreads(user->fd, user->interp, tstate);
+    else {
+        if (tstate == NULL)
+            return;
         _Py_DumpTraceback(user->fd, tstate);
+    }
+}
+
+static int
+check_signum(int signum)
+{
+    unsigned int i;
+
+    for (i=0; i < faulthandler_nsignals; i++) {
+        if (faulthandler_handlers[i].signum == signum) {
+            PyErr_Format(PyExc_RuntimeError,
+                         "signal %i cannot be registered, "
+                         "use enable() instead",
+                         signum);
+            return 0;
+        }
+    }
+    if (signum < 1 || NSIG <= signum) {
+        PyErr_SetString(PyExc_ValueError, "signal number out of range");
+        return 0;
+    }
+    return 1;
 }
 
 static PyObject*
@@ -549,12 +570,12 @@ faulthandler_register(PyObject *self,
     PyObject *file = NULL;
     int all_threads = 0;
     int fd;
-    unsigned int i;
     user_signal_t *user;
     _Py_sighandler_t previous;
 #ifdef HAVE_SIGACTION
     struct sigaction action;
 #endif
+    PyThreadState *tstate;
     int err;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
@@ -562,19 +583,15 @@ faulthandler_register(PyObject *self,
         &signum, &file, &all_threads))
         return NULL;
 
-    if (signum < 1 || NSIG <= signum) {
-        PyErr_SetString(PyExc_ValueError, "signal number out of range");
+    if (!check_signum(signum))
         return NULL;
-    }
 
-    for (i=0; i < faulthandler_nsignals; i++) {
-        if (faulthandler_handlers[i].signum == signum) {
-            PyErr_Format(PyExc_RuntimeError,
-                         "signal %i cannot be registered by register(), "
-                         "use enable() instead",
-                         signum);
-            return NULL;
-        }
+    /* The caller holds the GIL and so PyThreadState_Get() can be used */
+    tstate = PyThreadState_Get();
+    if (tstate == NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "unable to get the current thread state");
+        return NULL;
     }
 
     file = faulthandler_get_fileno(file, &fd);
@@ -620,6 +637,7 @@ faulthandler_register(PyObject *self,
     user->fd = fd;
     user->all_threads = all_threads;
     user->previous = previous;
+    user->interp = tstate->interp;
     user->enabled = 1;
 
     Py_RETURN_NONE;
@@ -651,10 +669,8 @@ faulthandler_unregister_py(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "i:unregister", &signum))
         return NULL;
 
-    if (signum < 1 || NSIG <= signum) {
-        PyErr_SetString(PyExc_ValueError, "signal number out of range");
+    if (!check_signum(signum))
         return NULL;
-    }
 
     user = &user_signals[signum];
     change = faulthandler_unregister(user, signum);
