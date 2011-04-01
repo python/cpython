@@ -361,7 +361,9 @@ Extensions
 Tests
 -----
 
-- Issue #11727: add --timeout option to regrtest (disabled by default).
+- Issue #11727: If a test takes more than 15 minutes, regrtest dumps the
+  traceback of all threads and exits. Use --timeout option to change the
+  default timeout or to disable it.
 
 - Issue #11653: fix -W with -j in regrtest.
 
