@@ -270,14 +270,16 @@ faulthandler_fatal_error(
     else
         _Py_DumpTraceback(fd, tstate);
 
-#ifndef MS_WINDOWS
-    /* call the previous signal handler: it is called if we use sigaction()
-       thanks to SA_NODEFER flag, otherwise it is deferred */
-    raise(signum);
-#else
-    /* on Windows, don't call explictly the previous handler, because Windows
-       signal handler would not be called */
+#ifdef MS_WINDOWS
+    if (signum == SIGSEGV) {
+        /* don't call explictly the previous handler for SIGSEGV in this signal
+           handler, because the Windows signal handler would not be called */
+        return;
+    }
 #endif
+    /* call the previous signal handler: it is called immediatly if we use
+       sigaction() thanks to SA_NODEFER flag, otherwise it is deferred */
+    raise(signum);
 }
 
 /* Install handler for fatal signals (SIGSEGV, SIGFPE, ...). */
@@ -681,8 +683,9 @@ static PyObject *
 faulthandler_sigsegv(PyObject *self, PyObject *args)
 {
 #if defined(MS_WINDOWS)
-    /* faulthandler_fatal_error() restores the previous signal handler and then
-       gives back the execution flow to the program. In a normal case, the
+    /* For SIGSEGV, faulthandler_fatal_error() restores the previous signal
+       handler and then gives back the execution flow to the program (without
+       calling explicitly the previous error handler). In a normal case, the
        SIGSEGV was raised by the kernel because of a fault, and so if the
        program retries to execute the same instruction, the fault will be
        raised again.
@@ -724,13 +727,7 @@ faulthandler_sigbus(PyObject *self, PyObject *args)
 static PyObject *
 faulthandler_sigill(PyObject *self, PyObject *args)
 {
-#if defined(MS_WINDOWS)
-    /* see faulthandler_sigsegv() for the explanation about while(1) */
-    while(1)
-        raise(SIGILL);
-#else
     raise(SIGILL);
-#endif
     Py_RETURN_NONE;
 }
 #endif
