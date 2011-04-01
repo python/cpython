@@ -112,6 +112,15 @@ faulthandler._sigsegv()
             3,
             'Segmentation fault')
 
+    def test_sigabrt(self):
+        self.check_fatal_error("""
+import faulthandler
+faulthandler.enable()
+faulthandler._sigabrt()
+""".strip(),
+            3,
+            'Aborted')
+
     @unittest.skipIf(sys.platform == 'win32',
                      "SIGFPE cannot be caught on Windows")
     def test_sigfpe(self):

@@ -2124,6 +2124,7 @@ Py_FatalError(const char *msg)
             fflush(stderr);
             _Py_DumpTraceback(fd, tstate);
         }
+        _PyFaulthandler_Fini();
     }
 
 #ifdef MS_WINDOWS

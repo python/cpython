@@ -502,8 +502,9 @@ These environment variables influence Python's behavior.
 
    If this environment variable is set, :func:`faulthandler.enable` is called
    at startup: install a handler for :const:`SIGSEGV`, :const:`SIGFPE`,
-   :const:`SIGBUS` and :const:`SIGILL` signals to dump the Python traceback.
-   This is equivalent to :option:`-X` ``faulthandler`` option.
+   :const:`SIGABRT`, :const:`SIGBUS` and :const:`SIGILL` signals to dump the
+   Python traceback.  This is equivalent to :option:`-X` ``faulthandler``
+   option.
 
 
 Debug-mode variables

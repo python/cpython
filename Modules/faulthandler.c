@@ -10,9 +10,9 @@
 #endif
 
 #ifndef MS_WINDOWS
-   /* register() is useless on Windows, because only SIGSEGV and SIGILL can be
-      handled by the process, and these signals can only be used with enable(),
-      not using register() */
+   /* register() is useless on Windows, because only SIGSEGV, SIGABRT and
+      SIGILL can be handled by the process, and these signals can only be used
+      with enable(), not using register() */
 #  define FAULTHANDLER_USER
 #endif
 
@@ -96,6 +96,7 @@ static fault_handler_t faulthandler_handlers[] = {
     {SIGILL, 0, "Illegal instruction", },
 #endif
     {SIGFPE, 0, "Floating point exception", },
+    {SIGABRT, 0, "Aborted", },
     /* define SIGSEGV at the end to make it the default choice if searching the
        handler fails in faulthandler_fatal_error() */
     {SIGSEGV, 0, "Segmentation fault", }
@@ -202,7 +203,7 @@ faulthandler_dump_traceback_py(PyObject *self,
 }
 
 
-/* Handler of SIGSEGV, SIGFPE, SIGBUS and SIGILL signals.
+/* Handler of SIGSEGV, SIGFPE, SIGABRT, SIGBUS and SIGILL signals.
 
    Display the current Python traceback, restore the previous handler and call
    the previous handler.
@@ -253,9 +254,9 @@ faulthandler_fatal_error(
     PUTS(fd, handler->name);
     PUTS(fd, "\n\n");
 
-    /* SIGSEGV, SIGFPE, SIGBUS and SIGILL are synchronous signals and so are
-       delivered to the thread that caused the fault. Get the Python thread
-       state of the current thread.
+    /* SIGSEGV, SIGFPE, SIGABRT, SIGBUS and SIGILL are synchronous signals and
+       so are delivered to the thread that caused the fault. Get the Python
+       thread state of the current thread.
 
        PyThreadState_Get() doesn't give the state of the thread that caused the
        fault if the thread released the GIL, and so this function cannot be
@@ -282,7 +283,7 @@ faulthandler_fatal_error(
     raise(signum);
 }
 
-/* Install handler for fatal signals (SIGSEGV, SIGFPE, ...). */
+/* Install the handler for fatal signals, faulthandler_fatal_error(). */
 
 static PyObject*
 faulthandler_enable(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -714,6 +715,20 @@ faulthandler_sigfpe(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+faulthandler_sigabrt(PyObject *self, PyObject *args)
+{
+#if _MSC_VER
+    /* If Python is compiled in debug mode with Visual Studio, abort() opens
+       a popup asking the user how to handle the assertion. Use raise(SIGABRT)
+       instead. */
+    raise(SIGABRT);
+#else
+    abort();
+#endif
+    Py_RETURN_NONE;
+}
+
 #ifdef SIGBUS
 static PyObject *
 faulthandler_sigbus(PyObject *self, PyObject *args)
@@ -847,6 +862,8 @@ static PyMethodDef module_methods[] = {
                "a SIGSEGV or SIGBUS signal depending on the platform")},
     {"_sigsegv", faulthandler_sigsegv, METH_VARARGS,
      PyDoc_STR("_sigsegv(): raise a SIGSEGV signal")},
+    {"_sigabrt", faulthandler_sigabrt, METH_VARARGS,
+     PyDoc_STR("_sigabrt(): raise a SIGABRT signal")},
     {"_sigfpe", (PyCFunction)faulthandler_sigfpe, METH_NOARGS,
      PyDoc_STR("_sigfpe(): raise a SIGFPE signal")},
 #ifdef SIGBUS
