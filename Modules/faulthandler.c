@@ -628,7 +628,7 @@ faulthandler_register(PyObject *self,
 static int
 faulthandler_unregister(user_signal_t *user, int signum)
 {
-    if (user->enabled)
+    if (!user->enabled)
         return 0;
     user->enabled = 0;
 #ifdef HAVE_SIGACTION
@@ -976,7 +976,7 @@ int _PyFaulthandler_Init(void)
 void _PyFaulthandler_Fini(void)
 {
 #ifdef FAULTHANDLER_USER
-    unsigned int i;
+    unsigned int signum;
 #endif
 
 #ifdef FAULTHANDLER_LATER
@@ -995,8 +995,8 @@ void _PyFaulthandler_Fini(void)
 #ifdef FAULTHANDLER_USER
     /* user */
     if (user_signals != NULL) {
-        for (i=0; i < NSIG; i++)
-            faulthandler_unregister(&user_signals[i], i+1);
+        for (signum=0; signum < NSIG; signum++)
+            faulthandler_unregister(&user_signals[signum], signum);
         free(user_signals);
         user_signals = NULL;
     }
