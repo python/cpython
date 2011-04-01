@@ -8,6 +8,8 @@ from test import support, script_helper
 import tempfile
 import unittest
 
+TIMEOUT = 0.5
+
 try:
     from resource import setrlimit, RLIMIT_CORE, error as resource_error
 except ImportError:
@@ -189,7 +191,7 @@ faulthandler._read_null(True)
 import faulthandler
 output = open({filename}, 'wb')
 faulthandler.enable(output)
-faulthandler._read_null(True)
+faulthandler._read_null()
 """.strip().format(filename=repr(filename)),
                 4,
                 '(?:Segmentation fault|Bus error)',
@@ -199,7 +201,7 @@ faulthandler._read_null(True)
         self.check_fatal_error("""
 import faulthandler
 faulthandler.enable(all_threads=True)
-faulthandler._read_null(True)
+faulthandler._read_null()
 """.strip(),
             3,
             '(?:Segmentation fault|Bus error)',
@@ -376,7 +378,7 @@ def func(repeat, cancel, timeout):
         # Check that sleep() was not interrupted
         assert (b - a) >= min_pause, "{{}} < {{}}".format(b - a, min_pause)
 
-timeout = 0.5
+timeout = {timeout}
 repeat = {repeat}
 cancel = {cancel}
 if {has_filename}:
@@ -394,6 +396,7 @@ if file is not None:
             has_filename=bool(filename),
             repeat=repeat,
             cancel=cancel,
+            timeout=TIMEOUT,
         )
         trace, exitcode = self.get_output(code, filename)
         trace = '\n'.join(trace)
