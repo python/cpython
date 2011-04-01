@@ -431,13 +431,15 @@ if file is not None:
 
     @unittest.skipIf(not hasattr(faulthandler, "register"),
                      "need faulthandler.register")
-    def check_register(self, filename=False, all_threads=False):
+    def check_register(self, filename=False, all_threads=False,
+                       unregister=False):
         """
         Register a handler displaying the traceback on a user signal. Raise the
         signal and check the written traceback.
 
         Raise an error if the output doesn't match the expected format.
         """
+        signum = signal.SIGUSR1
         code = """
 import faulthandler
 import os
@@ -446,12 +448,15 @@ import signal
 def func(signum):
     os.kill(os.getpid(), signum)
 
-signum = signal.SIGUSR1
+signum = {signum}
+unregister = {unregister}
 if {has_filename}:
     file = open({filename}, "wb")
 else:
     file = None
 faulthandler.register(signum, file=file, all_threads={all_threads})
+if unregister:
+    faulthandler.unregister(signum)
 func(signum)
 if file is not None:
     file.close()
@@ -460,19 +465,30 @@ if file is not None:
             filename=repr(filename),
             has_filename=bool(filename),
             all_threads=all_threads,
+            signum=signum,
+            unregister=unregister,
         )
         trace, exitcode = self.get_output(code, filename)
         trace = '\n'.join(trace)
-        if all_threads:
-            regex = 'Current thread XXX:\n'
+        if not unregister:
+            if all_threads:
+                regex = 'Current thread XXX:\n'
+            else:
+                regex = 'Traceback \(most recent call first\):\n'
+            regex = expected_traceback(6, 17, regex)
+            self.assertRegex(trace, regex)
         else:
-            regex = 'Traceback \(most recent call first\):\n'
-        regex = expected_traceback(6, 14, regex)
-        self.assertRegex(trace, regex)
-        self.assertEqual(exitcode, 0)
+            self.assertEqual(trace, '')
+        if unregister:
+            self.assertNotEqual(exitcode, 0)
+        else:
+            self.assertEqual(exitcode, 0)
 
     def test_register(self):
         self.check_register()
+
+    def test_unregister(self):
+        self.check_register(unregister=True)
 
     def test_register_file(self):
         with temporary_filename() as filename:
