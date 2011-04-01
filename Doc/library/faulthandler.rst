@@ -69,8 +69,8 @@ Dump the tracebacks after a timeout
 
    Dump the tracebacks of all threads, after a timeout of *timeout* seconds, or
    each *timeout* seconds if *repeat* is ``True``.  If *exit* is True, call
-   :cfunc:`_exit` with status=1 after dumping the tracebacks to terminate
-   immediatly the process, which is not safe.  For example, :cfunc:`_exit`
+   :c:func:`_exit` with status=1 after dumping the tracebacks to terminate
+   immediatly the process, which is not safe.  For example, :c:func:`_exit`
    doesn't flush file buffers.  If the function is called twice, the new call
    replaces previous parameters (resets the timeout). The timer has a
    sub-second resolution.
