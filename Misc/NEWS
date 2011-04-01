@@ -361,7 +361,7 @@ Extensions
 Tests
 -----
 
-- Issue #11727: If a test takes more than 15 minutes, regrtest dumps the
+- Issue #11727: If a test takes more than 30 minutes, regrtest dumps the
   traceback of all threads and exits. Use --timeout option to change the
   default timeout or to disable it.
 
