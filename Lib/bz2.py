@@ -105,7 +105,7 @@ class BZ2File(io.BufferedIOBase):
                     self._fp.write(self._compressor.flush())
                     self._compressor = None
             finally:
-                try: 
+                try:
                     if self._closefp:
                         self._fp.close()
                 finally:
@@ -251,7 +251,7 @@ class BZ2File(io.BufferedIOBase):
 
     def readinto(self, b):
         """Read up to len(b) bytes into b.
-        
+
         Returns the number of bytes read (0 for EOF).
         """
         with self._lock:
