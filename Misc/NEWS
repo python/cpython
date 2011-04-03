@@ -87,6 +87,8 @@ Core and Builtins
 Library
 -------
 
+- unittest.TestCase.assertSameElements has been removed.
+
 - sys.getfilesystemencoding() raises a RuntimeError if initfsencoding() was not
   called yet: detect bootstrap (startup) issues earlier.
 
