@@ -1620,7 +1620,7 @@ load_cert_chain(PySSLContext *self, PyObject *args, PyObject *kwds)
         goto error;
     }
     PySSL_BEGIN_ALLOW_THREADS
-    r = SSL_CTX_use_RSAPrivateKey_file(self->ctx,
+    r = SSL_CTX_use_PrivateKey_file(self->ctx,
         PyBytes_AS_STRING(keyfile ? keyfile_bytes : certfile_bytes),
         SSL_FILETYPE_PEM);
     PySSL_END_ALLOW_THREADS
