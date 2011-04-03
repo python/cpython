@@ -87,6 +87,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #5863: Rewrite BZ2File in pure Python, and allow it to accept
+  file-like objects using a new ``fileobj`` constructor argument.  Patch by
+  Nadeem Vawda.
+
 - unittest.TestCase.assertSameElements has been removed.
 
 - sys.getfilesystemencoding() raises a RuntimeError if initfsencoding() was not
