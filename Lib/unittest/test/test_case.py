@@ -1088,10 +1088,8 @@ test case
                     _runtime_warn("barz")
 
     def testDeprecatedMethodNames(self):
-        """Test that the deprecated methods raise a DeprecationWarning.
-
-        The fail* methods will be removed in 3.3. The assert* methods will
-        have to stay around for a few more versions.  See #9424.
+        """
+        Test that the deprecated methods raise a DeprecationWarning. See #9424.
         """
         old = (
             (self.failIfEqual, (3, 5)),
