@@ -1411,6 +1411,10 @@ class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):
         self.evt1.set()
         self.evt2.wait(1.0)
         first_seg = self.read_file.read(len(self.read_msg) - 3)
+        if first_seg is None:
+            # Data not arrived (can happen under Windows), wait a bit
+            time.sleep(0.5)
+            first_seg = self.read_file.read(len(self.read_msg) - 3)
         buf = bytearray(10)
         n = self.read_file.readinto(buf)
         self.assertEqual(n, 3)
