@@ -49,6 +49,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11746: Fix SSLContext.load_cert_chain() to accept elliptic curve
+  private keys.
+
 - sys.getfilesystemencoding() raises a RuntimeError if initfsencoding() was not
   called yet: detect bootstrap (startup) issues earlier.
 
