@@ -1277,13 +1277,13 @@ class _ActionsContainer(object):
         # create the action object, and add it to the parser
         action_class = self._pop_action_class(kwargs)
         if not _callable(action_class):
-            raise ValueError('unknown action "%s"' % action_class)
+            raise ValueError('unknown action "%s"' % (action_class,))
         action = action_class(**kwargs)
 
         # raise an error if the action type is not callable
         type_func = self._registry_get('type', action.type, action.type)
         if not _callable(type_func):
-            raise ValueError('%r is not callable' % type_func)
+            raise ValueError('%r is not callable' % (type_func,))
 
         # raise an error if the metavar does not match the type
         if hasattr(self, "_get_formatter"):

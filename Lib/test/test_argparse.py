@@ -4016,10 +4016,12 @@ class TestInvalidArgumentConstructors(TestCase):
 
     def test_invalid_type(self):
         self.assertValueError('--foo', type='int')
+        self.assertValueError('--foo', type=(int, float))
 
     def test_invalid_action(self):
         self.assertValueError('-x', action='foo')
         self.assertValueError('foo', action='baz')
+        self.assertValueError('--foo', action=('store', 'append'))
         parser = argparse.ArgumentParser()
         try:
             parser.add_argument("--foo", action="store-true")
