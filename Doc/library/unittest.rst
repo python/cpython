@@ -1462,7 +1462,7 @@ along with their deprecated aliases:
     :meth:`.assertRaisesRegex`                             assertRaisesRegexp
    ==============================  ====================== ======================
 
-   .. deprecated-removed:: 3.1 3.3
+   .. deprecated:: 3.1
          the fail* aliases listed in the second column.
    .. deprecated:: 3.2
          the assert* aliases listed in the third column.
