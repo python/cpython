@@ -216,7 +216,8 @@ class TraceCallbackTests(unittest.TestCase):
         con.execute("insert into foo(x) values (?)", (unicode_value,))
         con.commit()
         self.assertTrue(any(unicode_value in stmt for stmt in traced_statements),
-                "Unicode data garbled in trace callback")
+                        "Unicode data %s garbled in trace callback: %s"
+                        % (ascii(unicode_value), ', '.join(map(ascii, traced_statements))))
 
 
 
