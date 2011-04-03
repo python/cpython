@@ -938,6 +938,35 @@ class TestCase(object):
             standardMsg = self._truncateMessage(standardMsg, diff)
             self.fail(self._formatMessage(msg, standardMsg))
 
+    def assertDictContainsSubset(self, subset, dictionary, msg=None):
+        """Checks whether dictionary is a superset of subset."""
+        warnings.warn('assertDictContainsSubset is deprecated',
+                      DeprecationWarning)
+        missing = []
+        mismatched = []
+        for key, value in subset.items():
+            if key not in dictionary:
+                missing.append(key)
+            elif value != dictionary[key]:
+                mismatched.append('%s, expected: %s, actual: %s' %
+                                  (safe_repr(key), safe_repr(value),
+                                   safe_repr(dictionary[key])))
+
+        if not (missing or mismatched):
+            return
+
+        standardMsg = ''
+        if missing:
+            standardMsg = 'Missing: %s' % ','.join(safe_repr(m) for m in
+                                                    missing)
+        if mismatched:
+            if standardMsg:
+                standardMsg += '; '
+            standardMsg += 'Mismatched values: %s' % ','.join(mismatched)
+
+        self.fail(self._formatMessage(msg, standardMsg))
+
+
     def assertCountEqual(self, first, second, msg=None):
         """An unordered sequence comparison asserting that the same elements,
         regardless of order.  If the same element occurs more than once,
@@ -1111,11 +1140,13 @@ class TestCase(object):
         return deprecated_func
 
     # see #9424
-    assertEquals = _deprecate(assertEqual)
-    assertNotEquals = _deprecate(assertNotEqual)
-    assertAlmostEquals = _deprecate(assertAlmostEqual)
-    assertNotAlmostEquals = _deprecate(assertNotAlmostEqual)
-    assert_ = _deprecate(assertTrue)
+    failUnlessEqual = assertEquals = _deprecate(assertEqual)
+    failIfEqual = assertNotEquals = _deprecate(assertNotEqual)
+    failUnlessAlmostEqual = assertAlmostEquals = _deprecate(assertAlmostEqual)
+    failIfAlmostEqual = assertNotAlmostEquals = _deprecate(assertNotAlmostEqual)
+    failUnless = assert_ = _deprecate(assertTrue)
+    failUnlessRaises = _deprecate(assertRaises)
+    failIf = _deprecate(assertFalse)
     assertRaisesRegexp = _deprecate(assertRaisesRegex)
     assertRegexpMatches = _deprecate(assertRegex)
 
