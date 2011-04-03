@@ -213,7 +213,10 @@ class TraceCallbackTests(unittest.TestCase):
             traced_statements.append(statement)
         con.set_trace_callback(trace)
         con.execute("create table foo(x)")
-        con.execute("insert into foo(x) values (?)", (unicode_value,))
+        # Can't execute bound parameters as their values don't appear
+        # in traced statements before SQLite 3.6.21
+        # (cf. http://www.sqlite.org/draft/releaselog/3_6_21.html)
+        con.execute('insert into foo(x) values ("%s")' % unicode_value)
         con.commit()
         self.assertTrue(any(unicode_value in stmt for stmt in traced_statements),
                         "Unicode data %s garbled in trace callback: %s"
