@@ -904,6 +904,38 @@ static int _progress_handler(void* user_arg)
     return rc;
 }
 
+static void _trace_callback(void* user_arg, const char* statement_string)
+{
+    PyObject *py_statement = NULL;
+    PyObject *ret = NULL;
+
+#ifdef WITH_THREAD
+    PyGILState_STATE gilstate;
+
+    gilstate = PyGILState_Ensure();
+#endif
+    py_statement = PyUnicode_DecodeUTF8(statement_string,
+            strlen(statement_string), "replace");
+    if (py_statement) {
+        ret = PyObject_CallFunctionObjArgs((PyObject*)user_arg, py_statement, NULL);
+        Py_DECREF(py_statement);
+    }
+
+    if (ret) {
+        Py_DECREF(ret);
+    } else {
+        if (_enable_callback_tracebacks) {
+            PyErr_Print();
+        } else {
+            PyErr_Clear();
+        }
+    }
+
+#ifdef WITH_THREAD
+    PyGILState_Release(gilstate);
+#endif
+}
+
 static PyObject* pysqlite_connection_set_authorizer(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
 {
     PyObject* authorizer_cb;
@@ -957,6 +989,34 @@ static PyObject* pysqlite_connection_set_progress_handler(pysqlite_Connection* s
         sqlite3_progress_handler(self->db, n, _progress_handler, progress_handler);
         if (PyDict_SetItem(self->function_pinboard, progress_handler, Py_None) == -1)
             return NULL;
+    }
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject* pysqlite_connection_set_trace_callback(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
+{
+    PyObject* trace_callback;
+
+    static char *kwlist[] = { "trace_callback", NULL };
+
+    if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
+        return NULL;
+    }
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O:set_trace_callback",
+                                      kwlist, &trace_callback)) {
+        return NULL;
+    }
+
+    if (trace_callback == Py_None) {
+        /* None clears the trace callback previously set */
+        sqlite3_trace(self->db, 0, (void*)0);
+    } else {
+        if (PyDict_SetItem(self->function_pinboard, trace_callback, Py_None) == -1)
+            return NULL;
+        sqlite3_trace(self->db, _trace_callback, trace_callback);
     }
 
     Py_INCREF(Py_None);
@@ -1516,6 +1576,8 @@ static PyMethodDef connection_methods[] = {
     #endif
     {"set_progress_handler", (PyCFunction)pysqlite_connection_set_progress_handler, METH_VARARGS|METH_KEYWORDS,
         PyDoc_STR("Sets progress handler callback. Non-standard.")},
+    {"set_trace_callback", (PyCFunction)pysqlite_connection_set_trace_callback, METH_VARARGS|METH_KEYWORDS,
+        PyDoc_STR("Sets a trace callback called for each SQL statement (passed as unicode). Non-standard.")},
     {"execute", (PyCFunction)pysqlite_connection_execute, METH_VARARGS,
         PyDoc_STR("Executes a SQL statement. Non-standard.")},
     {"executemany", (PyCFunction)pysqlite_connection_executemany, METH_VARARGS,
