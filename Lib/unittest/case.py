@@ -1110,8 +1110,7 @@ class TestCase(object):
             return original_func(*args, **kwargs)
         return deprecated_func
 
-    # The fail* methods can be removed in 3.3, the 5 assert* methods will
-    # have to stay around for a few more versions.  See #9424.
+    # see #9424
     assertEquals = _deprecate(assertEqual)
     assertNotEquals = _deprecate(assertNotEqual)
     assertAlmostEquals = _deprecate(assertAlmostEqual)
