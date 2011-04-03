@@ -87,6 +87,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11688: Add sqlite3.Connection.set_trace_callback().  Patch by
+  Torsten Landschoff.
+
 - Issue #11746: Fix SSLContext.load_cert_chain() to accept elliptic curve
   private keys.
 
