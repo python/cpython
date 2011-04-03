@@ -358,24 +358,18 @@ import faulthandler
 import time
 
 def func(repeat, cancel, timeout):
+    if cancel:
+        faulthandler.cancel_dump_tracebacks_later()
+
     pause = timeout * 2.5
     # on Windows XP, b-a gives 1.249931 after sleep(1.25)
     min_pause = pause * 0.9
     a = time.time()
     time.sleep(pause)
-    faulthandler.cancel_dump_tracebacks_later()
     b = time.time()
+    faulthandler.cancel_dump_tracebacks_later()
     # Check that sleep() was not interrupted
     assert (b - a) >= min_pause, "{{}} < {{}}".format(b - a, min_pause)
-
-    if cancel:
-        pause = timeout * 1.5
-        min_pause = pause * 0.9
-        a = time.time()
-        time.sleep(pause)
-        b = time.time()
-        # Check that sleep() was not interrupted
-        assert (b - a) >= min_pause, "{{}} < {{}}".format(b - a, min_pause)
 
 timeout = {timeout}
 repeat = {repeat}
@@ -400,13 +394,16 @@ if file is not None:
         trace, exitcode = self.get_output(code, filename)
         trace = '\n'.join(trace)
 
-        if repeat:
-            count = 2
+        if not cancel:
+            if repeat:
+                count = 2
+            else:
+                count = 1
+            header = 'Thread 0x[0-9a-f]+:\n'
+            regex = expected_traceback(12, 27, header, count=count)
+            self.assertRegex(trace, regex)
         else:
-            count = 1
-        header = 'Thread 0x[0-9a-f]+:\n'
-        regex = expected_traceback(9, 33, header, count=count)
-        self.assertRegex(trace, regex)
+            self.assertEqual(trace, '')
         self.assertEqual(exitcode, 0)
 
     @unittest.skipIf(not hasattr(faulthandler, 'dump_tracebacks_later'),
@@ -425,8 +422,8 @@ if file is not None:
     def test_dump_tracebacks_later_repeat(self):
         self.check_dump_tracebacks_later(repeat=True)
 
-    def test_dump_tracebacks_later_repeat_cancel(self):
-        self.check_dump_tracebacks_later(repeat=True, cancel=True)
+    def test_dump_tracebacks_later_cancel(self):
+        self.check_dump_tracebacks_later(cancel=True)
 
     def test_dump_tracebacks_later_file(self):
         self.check_dump_tracebacks_later(file=True)
