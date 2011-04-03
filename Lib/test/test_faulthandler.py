@@ -325,9 +325,8 @@ waiter.join()
             lineno = 10
         regex = """
 ^Thread 0x[0-9a-f]+:
-(?:  File ".*threading.py", line [0-9]+ in wait
-)?  File ".*threading.py", line [0-9]+ in wait
-  File "<string>", line 23 in run
+(?:  File ".*threading.py", line [0-9]+ in [_a-z]+
+){{1,3}}  File "<string>", line 23 in run
   File ".*threading.py", line [0-9]+ in _bootstrap_inner
   File ".*threading.py", line [0-9]+ in _bootstrap
 
