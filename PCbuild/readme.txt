@@ -112,9 +112,9 @@ _tkinter
     pre-built Tcl/Tk in either ..\..\tcltk for 32-bit or ..\..\tcltk64 for
     64-bit (relative to this directory).  See below for instructions to build
     Tcl/Tk. 
-bz2
-    Python wrapper for the libbz2 compression library.  Homepage
-        http://sources.redhat.com/bzip2/
+_bz2
+    Python wrapper for the libbzip2 compression library.  Homepage
+        http://www.bzip.org/
     Download the source from the python.org copy into the dist
     directory:
 
