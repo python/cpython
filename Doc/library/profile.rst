@@ -48,7 +48,7 @@ compatibility layer on top of the internal :mod:`_lsprof` module.
 
    The profiler modules are designed to provide an execution profile for a given
    program, not for benchmarking purposes (for that, there is :mod:`timeit` for
-   resonably accurate results).  This particularly applies to benchmarking
+   reasonably accurate results).  This particularly applies to benchmarking
    Python code against C code: the profilers introduce overhead for Python code,
    but not for C-level functions, and so the C code would seem faster than any
    Python one.
