@@ -240,7 +240,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
          findleaks=False, use_resources=None, trace=False, coverdir='coverage',
          runleaks=False, huntrleaks=False, verbose2=False, print_slow=False,
          random_seed=None, use_mp=None, verbose3=False, forever=False,
-         header=False, timeout=30*60):
+         header=False, timeout=None):
     """Execute a test suite.
 
     This also parses command-line options and modifies its behavior
