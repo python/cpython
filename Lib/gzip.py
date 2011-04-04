@@ -348,6 +348,28 @@ class GzipFile(io.BufferedIOBase):
         self.offset += size
         return chunk
 
+    def read1(self, size=-1):
+        self._check_closed()
+        if self.mode != READ:
+            import errno
+            raise IOError(errno.EBADF, "read1() on write-only GzipFile object")
+
+        if self.extrasize <= 0 and self.fileobj is None:
+            return b''
+
+        try:
+            self._read()
+        except EOFError:
+            pass
+        if size < 0 or size > self.extrasize:
+            size = self.extrasize
+
+        offset = self.offset - self.extrastart
+        chunk = self.extrabuf[offset: offset + size]
+        self.extrasize -= size
+        self.offset += size
+        return chunk
+
     def peek(self, n):
         if self.mode != READ:
             import errno
