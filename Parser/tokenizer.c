@@ -1690,17 +1690,18 @@ PyTokenizer_Get(struct tok_state *tok, char **p_start, char **p_end)
     return result;
 }
 
-/* Get -*- encoding -*- from a Python file.
+/* Get the encoding of a Python file. Check for the coding cookie and check if
+   the file starts with a BOM.
 
-   PyTokenizer_FindEncoding returns NULL when it can't find the encoding in
-   the first or second line of the file (in which case the encoding
-   should be assumed to be PyUnicode_GetDefaultEncoding()).
+   PyTokenizer_FindEncodingFilename() returns NULL when it can't find the
+   encoding in the first or second line of the file (in which case the encoding
+   should be assumed to be UTF-8).
 
-   The char * returned is malloc'ed via PyMem_MALLOC() and thus must be freed
-   by the caller.
-*/
+   The char* returned is malloc'ed via PyMem_MALLOC() and thus must be freed
+   by the caller. */
+
 char *
-PyTokenizer_FindEncoding(int fd)
+PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
 {
     struct tok_state *tok;
     FILE *fp;
@@ -1720,9 +1721,18 @@ PyTokenizer_FindEncoding(int fd)
         return NULL;
     }
 #ifndef PGEN
-    tok->filename = PyUnicode_FromString("<string>");
-    if (tok->filename == NULL)
-        goto error;
+    if (filename != NULL) {
+        Py_INCREF(filename);
+        tok->filename = filename;
+    }
+    else {
+        tok->filename = PyUnicode_FromString("<string>");
+        if (tok->filename == NULL) {
+            fclose(fp);
+            PyTokenizer_Free(tok);
+            return encoding;
+        }
+    }
 #endif
     while (tok->lineno < 2 && tok->done == E_OK) {
         PyTokenizer_Get(tok, &p_start, &p_end);
@@ -1733,11 +1743,14 @@ PyTokenizer_FindEncoding(int fd)
         if (encoding)
         strcpy(encoding, tok->encoding);
     }
-#ifndef PGEN
-error:
-#endif
     PyTokenizer_Free(tok);
     return encoding;
+}
+
+char *
+PyTokenizer_FindEncoding(int fd)
+{
+    return PyTokenizer_FindEncodingFilename(fd, NULL);
 }
 
 #ifdef Py_DEBUG

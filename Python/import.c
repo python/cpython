@@ -124,11 +124,11 @@ static const Py_UNICODE PYC_TAG_UNICODE[] = {
 /* See _PyImport_FixupExtensionObject() below */
 static PyObject *extensions = NULL;
 
+/* Function from Parser/tokenizer.c */
+extern char * PyTokenizer_FindEncodingFilename(int, PyObject *);
+
 /* This table is defined in config.c: */
 extern struct _inittab _PyImport_Inittab[];
-
-/* Method from Parser/tokenizer.c */
-extern char * PyTokenizer_FindEncoding(int);
 
 struct _inittab *PyImport_Inittab = _PyImport_Inittab;
 
@@ -3540,9 +3540,9 @@ call_find_module(PyObject *name, PyObject *path_list)
     }
     if (fd != -1) {
         if (strchr(fdp->mode, 'b') == NULL) {
-            /* PyTokenizer_FindEncoding() returns PyMem_MALLOC'ed
+            /* PyTokenizer_FindEncodingFilename() returns PyMem_MALLOC'ed
                memory. */
-            found_encoding = PyTokenizer_FindEncoding(fd);
+            found_encoding = PyTokenizer_FindEncodingFilename(fd, pathobj);
             lseek(fd, 0, 0); /* Reset position */
             if (found_encoding == NULL && PyErr_Occurred()) {
                 Py_XDECREF(pathobj);
