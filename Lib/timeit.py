@@ -79,10 +79,10 @@ else:
 # being indented 8 spaces.
 template = """
 def inner(_it, _timer):
-    %(setup)s
+    {setup}
     _t0 = _timer()
     for _i in _it:
-        %(stmt)s
+        {stmt}
     _t1 = _timer()
     return _t1 - _t0
 """
@@ -126,9 +126,9 @@ class Timer:
             stmt = reindent(stmt, 8)
             if isinstance(setup, str):
                 setup = reindent(setup, 4)
-                src = template % {'stmt': stmt, 'setup': setup}
+                src = template.format(stmt=stmt, setup=setup)
             elif hasattr(setup, '__call__'):
-                src = template % {'stmt': stmt, 'setup': '_setup()'}
+                src = template.format(stmt=stmt, setup='_setup()')
                 ns['_setup'] = setup
             else:
                 raise ValueError("setup is neither a string nor callable")
