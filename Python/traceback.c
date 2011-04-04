@@ -18,8 +18,8 @@
 #define MAX_FRAME_DEPTH 100
 #define MAX_NTHREADS 100
 
-/* Method from Parser/tokenizer.c */
-extern char * PyTokenizer_FindEncoding(int);
+/* Function from Parser/tokenizer.c */
+extern char * PyTokenizer_FindEncodingFilename(int, PyObject *);
 
 static PyObject *
 tb_dir(PyTracebackObject *self)
@@ -251,7 +251,7 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
 
     /* use the right encoding to decode the file as unicode */
     fd = PyObject_AsFileDescriptor(binary);
-    found_encoding = PyTokenizer_FindEncoding(fd);
+    found_encoding = PyTokenizer_FindEncodingFilename(fd, filename);
     encoding = (found_encoding != NULL) ? found_encoding : "utf-8";
     lseek(fd, 0, 0); /* Reset position */
     fob = PyObject_CallMethod(io, "TextIOWrapper", "Os", binary, encoding);
