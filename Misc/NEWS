@@ -349,6 +349,8 @@ Library
 
 - Issue #9026: Fix order of argparse sub-commands in help messages.
 
+- Issue #9347: Fix formatting for tuples in argparse type= error messages.
+
 Build
 -----
 
