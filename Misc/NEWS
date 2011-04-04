@@ -87,6 +87,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10791: Implement missing method GzipFile.read1(), allowing GzipFile
+  to be wrapped in a TextIOWrapper.  Patch by Nadeem Vawda.
+
 - Issue #11688: Add sqlite3.Connection.set_trace_callback().  Patch by
   Torsten Landschoff.
 
