@@ -72,7 +72,7 @@ The module defines the following items:
 
    :class:`GzipFile` supports the :class:`io.BufferedIOBase` interface,
    including iteration and the :keyword:`with` statement.  Only the
-   :meth:`truncate` method isn't implemented.
+   :meth:`read1` and :meth:`truncate` methods aren't implemented.
 
    :class:`GzipFile` also provides the following method:
 
