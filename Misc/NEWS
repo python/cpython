@@ -10,6 +10,8 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #10785: Store the filename as Unicode in the Python parser.
+
 - Issue #11619: _PyImport_LoadDynamicModule() doesn't encode the path to bytes
   on Windows.
 

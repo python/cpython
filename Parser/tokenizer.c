@@ -128,7 +128,6 @@ tok_new(void)
     tok->prompt = tok->nextprompt = NULL;
     tok->lineno = 0;
     tok->level = 0;
-    tok->filename = NULL;
     tok->altwarning = 1;
     tok->alterror = 1;
     tok->alttabsize = 1;
@@ -140,6 +139,7 @@ tok_new(void)
     tok->encoding = NULL;
     tok->cont_line = 0;
 #ifndef PGEN
+    tok->filename = NULL;
     tok->decoding_readline = NULL;
     tok->decoding_buffer = NULL;
 #endif
@@ -545,7 +545,6 @@ decoding_fgets(char *s, int size, struct tok_state *tok)
 {
     char *line = NULL;
     int badchar = 0;
-    PyObject *filename;
     for (;;) {
         if (tok->decoding_state == STATE_NORMAL) {
             /* We already have a codec associated with
@@ -586,16 +585,12 @@ decoding_fgets(char *s, int size, struct tok_state *tok)
     if (badchar) {
         /* Need to add 1 to the line number, since this line
            has not been counted, yet.  */
-        filename = PyUnicode_DecodeFSDefault(tok->filename);
-        if (filename != NULL) {
-            PyErr_Format(PyExc_SyntaxError,
-                    "Non-UTF-8 code starting with '\\x%.2x' "
-                    "in file %U on line %i, "
-                    "but no encoding declared; "
-                    "see http://python.org/dev/peps/pep-0263/ for details",
-                    badchar, filename, tok->lineno + 1);
-            Py_DECREF(filename);
-        }
+        PyErr_Format(PyExc_SyntaxError,
+                "Non-UTF-8 code starting with '\\x%.2x' "
+                "in file %U on line %i, "
+                "but no encoding declared; "
+                "see http://python.org/dev/peps/pep-0263/ for details",
+                badchar, tok->filename, tok->lineno + 1);
         return error_ret(tok);
     }
 #endif
@@ -853,6 +848,7 @@ PyTokenizer_Free(struct tok_state *tok)
 #ifndef PGEN
     Py_XDECREF(tok->decoding_readline);
     Py_XDECREF(tok->decoding_buffer);
+    Py_XDECREF(tok->filename);
 #endif
     if (tok->fp != NULL && tok->buf != NULL)
         PyMem_FREE(tok->buf);
@@ -1247,8 +1243,13 @@ indenterror(struct tok_state *tok)
         return 1;
     }
     if (tok->altwarning) {
-        PySys_WriteStderr("%s: inconsistent use of tabs and spaces "
+#ifdef PGEN
+        PySys_WriteStderr("inconsistent use of tabs and spaces "
+                          "in indentation\n");
+#else
+        PySys_FormatStderr("%U: inconsistent use of tabs and spaces "
                           "in indentation\n", tok->filename);
+#endif
         tok->altwarning = 0;
     }
     return 0;
@@ -1718,6 +1719,11 @@ PyTokenizer_FindEncoding(int fd)
         fclose(fp);
         return NULL;
     }
+#ifndef PGEN
+    tok->filename = PyUnicode_FromString("<string>");
+    if (tok->filename == NULL)
+        goto error;
+#endif
     while (tok->lineno < 2 && tok->done == E_OK) {
         PyTokenizer_Get(tok, &p_start, &p_end);
     }
@@ -1727,6 +1733,9 @@ PyTokenizer_FindEncoding(int fd)
         if (encoding)
         strcpy(encoding, tok->encoding);
     }
+#ifndef PGEN
+error:
+#endif
     PyTokenizer_Free(tok);
     return encoding;
 }

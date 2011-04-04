@@ -584,6 +584,7 @@ parser_do_parse(PyObject *args, PyObject *kw, char *argspec, int type)
         else
             PyParser_SetError(&err);
     }
+    PyParser_ClearError(&err);
     return (res);
 }
 
