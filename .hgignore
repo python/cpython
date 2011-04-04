@@ -5,7 +5,7 @@ Makefile$
 Makefile.pre$
 TAGS$
 autom4te.cache$
-build/
+/build/
 buildno$
 config.cache
 config.log
@@ -63,4 +63,5 @@ PCbuild/*.o
 PCbuild/*.ncb
 PCbuild/*.bsc
 PCbuild/Win32-temp-*
+PCbuild/x64-temp-*
 __pycache__
