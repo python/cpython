@@ -94,6 +94,9 @@ The module defines the following items:
    .. versionchanged:: 3.2
       Support for unseekable files was added.
 
+   .. versionchanged:: 3.3
+      The :meth:`io.BufferedIOBase.read1` method is now implemented.
+
 
 .. function:: open(filename, mode='rb', compresslevel=9)
 
