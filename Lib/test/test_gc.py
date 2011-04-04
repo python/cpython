@@ -241,32 +241,43 @@ class GCTests(unittest.TestCase):
     # The following two tests are fragile:
     # They precisely count the number of allocations,
     # which is highly implementation-dependent.
-    # For example:
-    # - disposed tuples are not freed, but reused
-    # - the call to assertEqual somehow avoids building its args tuple
+    # For example, disposed tuples are not freed, but reused.
+    # To minimize variations, though, we first store the get_count() results
+    # and check them at the end.
     @refcount_test
     def test_get_count(self):
-        # Avoid future allocation of method object
-        assertEqual = self._baseAssertEqual
         gc.collect()
-        assertEqual(gc.get_count(), (0, 0, 0))
-        a = dict()
-        # since gc.collect(), we created two objects:
-        # the dict, and the tuple returned by get_count()
-        assertEqual(gc.get_count(), (2, 0, 0))
+        a, b, c = gc.get_count()
+        x = []
+        d, e, f = gc.get_count()
+        self.assertEqual((b, c), (0, 0))
+        self.assertEqual((e, f), (0, 0))
+        # This is less fragile than asserting that a equals 0.
+        self.assertLess(a, 5)
+        # Between the two calls to get_count(), at least one object was
+        # created (the list).
+        self.assertGreater(d, a)
 
     @refcount_test
     def test_collect_generations(self):
-        # Avoid future allocation of method object
-        assertEqual = self.assertEqual
         gc.collect()
-        a = dict()
+        # This object will "trickle" into generation N + 1 after
+        # each call to collect(N)
+        x = []
         gc.collect(0)
-        assertEqual(gc.get_count(), (0, 1, 0))
+        # x is now in gen 1
+        a, b, c = gc.get_count()
         gc.collect(1)
-        assertEqual(gc.get_count(), (0, 0, 1))
+        # x is now in gen 2
+        d, e, f = gc.get_count()
         gc.collect(2)
-        assertEqual(gc.get_count(), (0, 0, 0))
+        # x is now in gen 3
+        g, h, i = gc.get_count()
+        # We don't check a, d, g since their exact values depends on
+        # internal implementation details of the interpreter.
+        self.assertEqual((b, c), (1, 0))
+        self.assertEqual((e, f), (0, 1))
+        self.assertEqual((h, i), (0, 0))
 
     def test_trashcan(self):
         class Ouch:
