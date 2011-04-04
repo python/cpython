@@ -171,8 +171,8 @@ static char *GetPythonImport (HINSTANCE hModule)
     return NULL;
 }
 
-dl_funcptr _PyImport_GetDynLoadFunc(const char *shortname,
-                                    const char *pathname, FILE *fp)
+dl_funcptr _PyImport_GetDynLoadWindows(const char *shortname,
+                                       PyObject *pathname, FILE *fp)
 {
     dl_funcptr p;
     char funcname[258], *import_python;
@@ -185,8 +185,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *shortname,
 
     {
         HINSTANCE hDLL = NULL;
-        char pathbuf[260];
-        LPTSTR dummy;
+        wchar_t pathbuf[260];
         unsigned int old_mode;
         ULONG_PTR cookie = 0;
         /* We use LoadLibraryEx so Windows looks for dependent DLLs
@@ -198,14 +197,14 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *shortname,
         /* Don't display a message box when Python can't load a DLL */
         old_mode = SetErrorMode(SEM_FAILCRITICALERRORS);
 
-        if (GetFullPathName(pathname,
-                            sizeof(pathbuf),
-                            pathbuf,
-                            &dummy)) {
+        if (GetFullPathNameW(PyUnicode_AS_UNICODE(pathname),
+                             sizeof(pathbuf) / sizeof(pathbuf[0]),
+                             pathbuf,
+                             NULL)) {
             ULONG_PTR cookie = _Py_ActivateActCtx();
             /* XXX This call doesn't exist in Windows CE */
-            hDLL = LoadLibraryEx(pathname, NULL,
-                                 LOAD_WITH_ALTERED_SEARCH_PATH);
+            hDLL = LoadLibraryExW(PyUnicode_AS_UNICODE(pathname), NULL,
+                                  LOAD_WITH_ALTERED_SEARCH_PATH);
             _Py_DeactivateActCtx(cookie);
         }
 
@@ -264,21 +263,21 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *shortname,
         } else {
             char buffer[256];
 
+            PyOS_snprintf(buffer, sizeof(buffer),
 #ifdef _DEBUG
-            PyOS_snprintf(buffer, sizeof(buffer), "python%d%d_d.dll",
+                          "python%d%d_d.dll",
 #else
-            PyOS_snprintf(buffer, sizeof(buffer), "python%d%d.dll",
+                          "python%d%d.dll",
 #endif
                           PY_MAJOR_VERSION,PY_MINOR_VERSION);
             import_python = GetPythonImport(hDLL);
 
             if (import_python &&
                 strcasecmp(buffer,import_python)) {
-                PyOS_snprintf(buffer, sizeof(buffer),
-                              "Module use of %.150s conflicts "
-                              "with this version of Python.",
-                              import_python);
-                PyErr_SetString(PyExc_ImportError,buffer);
+                PyErr_Format(PyExc_ImportError,
+                             "Module use of %.150s conflicts "
+                             "with this version of Python.",
+                             import_python);
                 FreeLibrary(hDLL);
                 return NULL;
             }
