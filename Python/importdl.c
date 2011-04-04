@@ -12,8 +12,13 @@
 
 #include "importdl.h"
 
+#ifdef MS_WINDOWS
+extern dl_funcptr _PyImport_GetDynLoadWindows(const char *shortname,
+                                              PyObject *pathname, FILE *fp);
+#else
 extern dl_funcptr _PyImport_GetDynLoadFunc(const char *shortname,
                                            const char *pathname, FILE *fp);
+#endif
 
 /* name should be ASCII only because the C language doesn't accept non-ASCII
    identifiers, and dynamic modules are written in C. */
@@ -22,7 +27,9 @@ PyObject *
 _PyImport_LoadDynamicModule(PyObject *name, PyObject *path, FILE *fp)
 {
     PyObject *m;
+#ifndef MS_WINDOWS
     PyObject *pathbytes;
+#endif
     char *namestr, *lastdot, *shortname, *packagecontext, *oldcontext;
     dl_funcptr p0;
     PyObject* (*p)(void);
@@ -48,12 +55,16 @@ _PyImport_LoadDynamicModule(PyObject *name, PyObject *path, FILE *fp)
         shortname = lastdot+1;
     }
 
+#ifdef MS_WINDOWS
+    p0 = _PyImport_GetDynLoadWindows(shortname, path, fp);
+#else
     pathbytes = PyUnicode_EncodeFSDefault(path);
     if (pathbytes == NULL)
         return NULL;
     p0 = _PyImport_GetDynLoadFunc(shortname,
                                   PyBytes_AS_STRING(pathbytes), fp);
     Py_DECREF(pathbytes);
+#endif
     p = (PyObject*(*)(void))p0;
     if (PyErr_Occurred())
         return NULL;
