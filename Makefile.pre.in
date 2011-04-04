@@ -238,14 +238,13 @@ POBJS=		\
 		Parser/listnode.o \
 		Parser/node.o \
 		Parser/parser.o \
-		Parser/parsetok.o \
 		Parser/bitset.o \
 		Parser/metagrammar.o \
 		Parser/firstsets.o \
 		Parser/grammar.o \
 		Parser/pgen.o
 
-PARSER_OBJS=	$(POBJS) Parser/myreadline.o Parser/tokenizer.o
+PARSER_OBJS=	$(POBJS) Parser/myreadline.o Parser/parsetok.o Parser/tokenizer.o
 
 PGOBJS=		\
 		Objects/obmalloc.o \
@@ -254,10 +253,12 @@ PGOBJS=		\
 		Python/pyctype.o \
 		Parser/tokenizer_pgen.o \
 		Parser/printgrammar.o \
+		Parser/parsetok_pgen.o \
 		Parser/pgenmain.o
 
 PARSER_HEADERS= \
 		Parser/parser.h \
+		Include/parsetok.h \
 		Parser/tokenizer.h
 
 PGENOBJS=	$(PGENMAIN) $(POBJS) $(PGOBJS)
@@ -593,6 +594,7 @@ Parser/grammar.o:	$(srcdir)/Parser/grammar.c \
 Parser/metagrammar.o:	$(srcdir)/Parser/metagrammar.c
 
 Parser/tokenizer_pgen.o:	$(srcdir)/Parser/tokenizer.c
+Parser/parsetok_pgen.o:	$(srcdir)/Parser/parsetok.c
 
 Parser/pgenmain.o:	$(srcdir)/Include/parsetok.h
 
@@ -700,7 +702,6 @@ PYTHON_HEADERS= \
 		Include/objimpl.h \
 		Include/opcode.h \
 		Include/osdefs.h \
-		Include/parsetok.h \
 		Include/patchlevel.h \
 		Include/pgen.h \
 		Include/pgenheaders.h \

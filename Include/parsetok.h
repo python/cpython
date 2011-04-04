@@ -9,7 +9,10 @@ extern "C" {
 
 typedef struct {
     int error;
-    const char *filename;       /* decoded from the filesystem encoding */
+#ifndef PGEN
+    /* The filename is useless for pgen, see comment in tok_state structure */
+    PyObject *filename;
+#endif
     int lineno;
     int offset;
     char *text;                 /* UTF-8-encoded string */
@@ -66,8 +69,10 @@ PyAPI_FUNC(node *) PyParser_ParseStringFlagsFilenameEx(
     perrdetail *err_ret,
     int *flags);
 
-/* Note that he following function is defined in pythonrun.c not parsetok.c. */
+/* Note that the following functions are defined in pythonrun.c,
+   not in parsetok.c */
 PyAPI_FUNC(void) PyParser_SetError(perrdetail *);
+PyAPI_FUNC(void) PyParser_ClearError(perrdetail *);
 
 #ifdef __cplusplus
 }
