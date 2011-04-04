@@ -149,7 +149,13 @@ class BaseLockTests(BaseTestCase):
         # We run many threads in the hope that existing threads ids won't
         # be recycled.
         Bunch(f, 15).wait_for_finished()
-        self.assertEqual(n, len(threading.enumerate()))
+        if len(threading.enumerate()) != n:
+            # There is a small window during which a Thread instance's
+            # target function has finished running, but the Thread is still
+            # alive and registered.  Avoid spurious failures by waiting a
+            # bit more (seen on a buildbot).
+            time.sleep(0.4)
+            self.assertEqual(n, len(threading.enumerate()))
 
     def test_timeout(self):
         lock = self.locktype()
