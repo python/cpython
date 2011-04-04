@@ -360,16 +360,8 @@ import time
 def func(repeat, cancel, timeout):
     if cancel:
         faulthandler.cancel_dump_tracebacks_later()
-
-    pause = timeout * 2.5
-    # on Windows XP, b-a gives 1.249931 after sleep(1.25)
-    min_pause = pause * 0.9
-    a = time.time()
-    time.sleep(pause)
-    b = time.time()
+    time.sleep(timeout * 2.5)
     faulthandler.cancel_dump_tracebacks_later()
-    # Check that sleep() was not interrupted
-    assert (b - a) >= min_pause, "{{}} < {{}}".format(b - a, min_pause)
 
 timeout = {timeout}
 repeat = {repeat}
@@ -400,7 +392,7 @@ if file is not None:
             else:
                 count = 1
             header = 'Thread 0x[0-9a-f]+:\n'
-            regex = expected_traceback(12, 27, header, count=count)
+            regex = expected_traceback(7, 19, header, count=count)
             self.assertRegex(trace, regex)
         else:
             self.assertEqual(trace, '')
