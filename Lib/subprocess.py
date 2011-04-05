@@ -348,6 +348,7 @@ import gc
 import signal
 import builtins
 import warnings
+import errno
 
 # Exception classes used by this module.
 class SubprocessError(Exception): pass
@@ -396,7 +397,6 @@ if mswindows:
 else:
     import select
     _has_poll = hasattr(select, 'poll')
-    import errno
     import fcntl
     import pickle
 
@@ -826,7 +826,11 @@ class Popen(object):
             stderr = None
             if self.stdin:
                 if input:
-                    self.stdin.write(input)
+                    try:
+                        self.stdin.write(input)
+                    except IOError as e:
+                        if e.errno != errno.EPIPE and e.errno != errno.EINVAL:
+                            raise
                 self.stdin.close()
             elif self.stdout:
                 stdout = self.stdout.read()
@@ -1104,7 +1108,11 @@ class Popen(object):
 
             if self.stdin:
                 if input is not None:
-                    self.stdin.write(input)
+                    try:
+                        self.stdin.write(input)
+                    except IOError as e:
+                        if e.errno != errno.EPIPE:
+                            raise
                 self.stdin.close()
 
             # Wait for the reader threads, or time out.  If we time out, the
@@ -1621,9 +1629,16 @@ class Popen(object):
                     if mode & select.POLLOUT:
                         chunk = self._input[self._input_offset :
                                             self._input_offset + _PIPE_BUF]
-                        self._input_offset += os.write(fd, chunk)
-                        if self._input_offset >= len(self._input):
-                            close_unregister_and_remove(fd)
+                        try:
+                            self._input_offset += os.write(fd, chunk)
+                        except OSError as e:
+                            if e.errno == errno.EPIPE:
+                                close_unregister_and_remove(fd)
+                            else:
+                                raise
+                        else:
+                            if self._input_offset >= len(self._input):
+                                close_unregister_and_remove(fd)
                     elif mode & select_POLLIN_POLLPRI:
                         data = os.read(fd, 4096)
                         if not data:
@@ -1691,11 +1706,19 @@ class Popen(object):
                 if self.stdin in wlist:
                     chunk = self._input[self._input_offset :
                                         self._input_offset + _PIPE_BUF]
-                    bytes_written = os.write(self.stdin.fileno(), chunk)
-                    self._input_offset += bytes_written
-                    if self._input_offset >= len(self._input):
-                        self.stdin.close()
-                        self._write_set.remove(self.stdin)
+                    try:
+                        bytes_written = os.write(self.stdin.fileno(), chunk)
+                    except OSError as e:
+                        if e.errno == errno.EPIPE:
+                            self.stdin.close()
+                            self._write_set.remove(self.stdin)
+                        else:
+                            raise
+                    else:
+                        self._input_offset += bytes_written
+                        if self._input_offset >= len(self._input):
+                            self.stdin.close()
+                            self._write_set.remove(self.stdin)
 
                 if self.stdout in rlist:
                     data = os.read(self.stdout.fileno(), 1024)
