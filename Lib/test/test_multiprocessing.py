@@ -11,6 +11,7 @@ import io
 import sys
 import os
 import gc
+import errno
 import signal
 import array
 import socket
@@ -1359,7 +1360,16 @@ class _TestManagerRestart(BaseTestCase):
         manager.shutdown()
         manager = QueueManager(
             address=addr, authkey=authkey, serializer=SERIALIZER)
-        manager.start()
+        try:
+            manager.start()
+        except IOError as e:
+            if e.errno != errno.EADDRINUSE:
+                raise
+            # Retry after some time, in case the old socket was lingering
+            # (sporadic failure on buildbots)
+            time.sleep(1.0)
+            manager = QueueManager(
+                address=addr, authkey=authkey, serializer=SERIALIZER)
         manager.shutdown()
 
 #
