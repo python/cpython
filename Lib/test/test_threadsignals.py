@@ -30,9 +30,14 @@ def handle_signals(sig,frame):
 
 # a function that will be spawned as a separate thread.
 def send_signals():
+    print("send_signals: enter (thread %s)" % thread.get_ident(), file=sys.stderr)
+    print("send_signals: raise SIGUSR1", file=sys.stderr)
     os.kill(process_pid, signal.SIGUSR1)
+    print("send_signals: raise SIGUSR2", file=sys.stderr)
     os.kill(process_pid, signal.SIGUSR2)
+    print("send_signals: release signalled_all", file=sys.stderr)
     signalled_all.release()
+    print("send_signals: exit (thread %s)" % thread.get_ident(), file=sys.stderr)
 
 class ThreadSignals(unittest.TestCase):
 
@@ -41,9 +46,12 @@ class ThreadSignals(unittest.TestCase):
         # We spawn a thread, have the thread send two signals, and
         # wait for it to finish. Check that we got both signals
         # and that they were run by the main thread.
+        print("test_signals: acquire lock (thread %s)" % thread.get_ident(), file=sys.stderr)
         signalled_all.acquire()
         self.spawnSignallingThread()
+        print("test_signals: wait lock (thread %s)" % thread.get_ident(), file=sys.stderr)
         signalled_all.acquire()
+        print("test_signals: lock acquired", file=sys.stderr)
         # the signals that we asked the kernel to send
         # will come back, but we don't know when.
         # (it might even be after the thread exits
