@@ -817,15 +817,10 @@ class Popen(object):
         if self._communication_started and input:
             raise ValueError("Cannot send input after starting communication")
 
-        if timeout is not None:
-            endtime = time.time() + timeout
-        else:
-            endtime = None
-
         # Optimization: If we are not worried about timeouts, we haven't
         # started communicating, and we have one or zero pipes, using select()
         # or threads is unnecessary.
-        if (endtime is None and not self._communication_started and
+        if (timeout is None and not self._communication_started and
             [self.stdin, self.stdout, self.stderr].count(None) >= 2):
             stdout = None
             stderr = None
@@ -840,14 +835,18 @@ class Popen(object):
                 stderr = self.stderr.read()
                 self.stderr.close()
             self.wait()
-            return (stdout, stderr)
+        else:
+            if timeout is not None:
+                endtime = time.time() + timeout
+            else:
+                endtime = None
 
-        try:
-            stdout, stderr = self._communicate(input, endtime, timeout)
-        finally:
-            self._communication_started = True
+            try:
+                stdout, stderr = self._communicate(input, endtime, timeout)
+            finally:
+                self._communication_started = True
 
-        sts = self.wait(timeout=self._remaining_time(endtime))
+            sts = self.wait(timeout=self._remaining_time(endtime))
 
         return (stdout, stderr)
 
@@ -1604,8 +1603,11 @@ class Popen(object):
                     self._input = self._input.encode(self.stdin.encoding)
 
             while self._fd2file:
+                timeout = self._remaining_time(endtime)
+                if timeout is not None and timeout < 0:
+                    raise TimeoutExpired(self.args, orig_timeout)
                 try:
-                    ready = poller.poll(self._remaining_time(endtime))
+                    ready = poller.poll(timeout)
                 except select.error as e:
                     if e.args[0] == errno.EINTR:
                         continue
@@ -1664,10 +1666,13 @@ class Popen(object):
                 stderr = self._stderr_buff
 
             while self._read_set or self._write_set:
+                timeout = self._remaining_time(endtime)
+                if timeout is not None and timeout < 0:
+                    raise TimeoutExpired(self.args, orig_timeout)
                 try:
                     (rlist, wlist, xlist) = \
                         select.select(self._read_set, self._write_set, [],
-                                      self._remaining_time(endtime))
+                                      timeout)
                 except select.error as e:
                     if e.args[0] == errno.EINTR:
                         continue
