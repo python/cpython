@@ -94,6 +94,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10963: Ensure that subprocess.communicate() never raises EPIPE.
+
 - Issue #10791: Implement missing method GzipFile.read1(), allowing GzipFile
   to be wrapped in a TextIOWrapper.  Patch by Nadeem Vawda.
 
