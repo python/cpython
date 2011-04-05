@@ -49,6 +49,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10963: Ensure that subprocess.communicate() never raises EPIPE.
+
 - Issue #11746: Fix SSLContext.load_cert_chain() to accept elliptic curve
   private keys.
 
