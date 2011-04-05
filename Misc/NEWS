@@ -47,6 +47,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #7311: fix HTMLParser to accept non-ASCII attribute values.
+
 - Issue #10963: Ensure that subprocess.communicate() never raises EPIPE.
 
 - Issue #11662: Make urllib and urllib2 ignore redirections if the
