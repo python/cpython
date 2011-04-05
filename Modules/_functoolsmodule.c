@@ -330,6 +330,165 @@ static PyTypeObject partial_type = {
 };
 
 
+/* cmp_to_key ***************************************************************/
+
+typedef struct {
+    PyObject_HEAD;
+    PyObject *cmp;
+    PyObject *object;
+} keyobject;
+
+static void
+keyobject_dealloc(keyobject *ko)
+{
+    Py_DECREF(ko->cmp);
+    Py_XDECREF(ko->object);
+    PyObject_FREE(ko);
+}
+
+static int
+keyobject_traverse(keyobject *ko, visitproc visit, void *arg)
+{
+    Py_VISIT(ko->cmp);
+    if (ko->object)
+        Py_VISIT(ko->object);
+    return 0;
+}
+
+static PyMemberDef keyobject_members[] = {
+    {"obj", T_OBJECT,
+     offsetof(keyobject, object), 0,
+     PyDoc_STR("Value wrapped by a key function.")},
+    {NULL}
+};
+
+static PyObject *
+keyobject_call(keyobject *ko, PyObject *args, PyObject *kw);
+
+static PyObject *
+keyobject_richcompare(PyObject *ko, PyObject *other, int op);
+
+static PyTypeObject keyobject_type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "functools.KeyWrapper",             /* tp_name */
+    sizeof(keyobject),                  /* tp_basicsize */
+    0,                                  /* tp_itemsize */
+    /* methods */
+    (destructor)keyobject_dealloc,      /* tp_dealloc */
+    0,                                  /* tp_print */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_reserved */
+    0,                                  /* tp_repr */
+    0,                                  /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    0,                                  /* tp_hash */
+    (ternaryfunc)keyobject_call,        /* tp_call */
+    0,                                  /* tp_str */
+    PyObject_GenericGetAttr,            /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,                 /* tp_flags */
+    0,                                  /* tp_doc */
+    (traverseproc)keyobject_traverse,   /* tp_traverse */
+    0,                                  /* tp_clear */
+    keyobject_richcompare,              /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    0,                                  /* tp_iter */
+    0,                                  /* tp_iternext */
+    0,                                  /* tp_methods */
+    keyobject_members,                  /* tp_members */
+    0,                                  /* tp_getset */
+};
+
+static PyObject *
+keyobject_call(keyobject *ko, PyObject *args, PyObject *kwds)
+{
+    PyObject *object;
+    keyobject *result;
+    static char *kwargs[] = {"obj", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:K", kwargs, &object))
+        return NULL;
+    result = PyObject_New(keyobject, &keyobject_type);
+    if (!result)
+        return NULL;
+    Py_INCREF(ko->cmp);
+    result->cmp = ko->cmp;
+    Py_INCREF(object);
+    result->object = object;
+    return (PyObject *)result;
+}
+
+static PyObject *
+keyobject_richcompare(PyObject *ko, PyObject *other, int op)
+{
+    PyObject *res;
+    PyObject *args;
+    PyObject *x;
+    PyObject *y;
+    PyObject *compare;
+    PyObject *answer;
+    static PyObject *zero;
+
+    if (zero == NULL) {
+        zero = PyLong_FromLong(0);
+        if (!zero)
+            return NULL;
+    }
+
+    if (Py_TYPE(other) != &keyobject_type){
+        PyErr_Format(PyExc_TypeError, "other argument must be K instance");
+        return NULL;
+    }
+    compare = ((keyobject *) ko)->cmp;
+    assert(compare != NULL);
+    x = ((keyobject *) ko)->object;
+    y = ((keyobject *) other)->object;
+    if (!x || !y){
+        PyErr_Format(PyExc_AttributeError, "object");
+        return NULL;
+    }
+
+    /* Call the user's comparison function and translate the 3-way
+     * result into true or false (or error).
+     */
+    args = PyTuple_New(2);
+    if (args == NULL)
+        return NULL;
+    Py_INCREF(x);
+    Py_INCREF(y);
+    PyTuple_SET_ITEM(args, 0, x);
+    PyTuple_SET_ITEM(args, 1, y);
+    res = PyObject_Call(compare, args, NULL);
+    Py_DECREF(args);
+    if (res == NULL)
+        return NULL;
+    answer = PyObject_RichCompare(res, zero, op);
+    Py_DECREF(res);
+    return answer;
+}
+
+static PyObject *
+functools_cmp_to_key(PyObject *self, PyObject *args, PyObject *kwds){
+  PyObject *cmp;
+    static char *kwargs[] = {"mycmp", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:cmp_to_key", kwargs, &cmp))
+        return NULL;
+    keyobject *object = PyObject_New(keyobject, &keyobject_type);
+    if (!object)
+        return NULL;
+    Py_INCREF(cmp);
+    object->cmp = cmp;
+    object->object = NULL;
+    return (PyObject *)object;
+}
+
+PyDoc_STRVAR(functools_cmp_to_key_doc,
+"Convert a cmp= function into a key= function.");
+
 /* reduce (used to be a builtin) ********************************************/
 
 static PyObject *
@@ -413,6 +572,8 @@ PyDoc_STRVAR(module_doc,
 
 static PyMethodDef module_methods[] = {
     {"reduce",          functools_reduce,     METH_VARARGS, functools_reduce_doc},
+    {"cmp_to_key",      functools_cmp_to_key, METH_VARARGS | METH_KEYWORDS,
+     functools_cmp_to_key_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
