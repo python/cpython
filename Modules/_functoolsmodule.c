@@ -355,6 +355,15 @@ keyobject_traverse(keyobject *ko, visitproc visit, void *arg)
     return 0;
 }
 
+static int
+keyobject_clear(keyobject *ko)
+{
+    Py_CLEAR(ko->cmp);
+    if (ko->object)
+        Py_CLEAR(ko->object);
+    return 0;
+}
+
 static PyMemberDef keyobject_members[] = {
     {"obj", T_OBJECT,
      offsetof(keyobject, object), 0,
@@ -392,7 +401,7 @@ static PyTypeObject keyobject_type = {
     Py_TPFLAGS_DEFAULT,                 /* tp_flags */
     0,                                  /* tp_doc */
     (traverseproc)keyobject_traverse,   /* tp_traverse */
-    0,                                  /* tp_clear */
+    (inquiry)keyobject_clear,           /* tp_clear */
     keyobject_richcompare,              /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
     0,                                  /* tp_iter */
