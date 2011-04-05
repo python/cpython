@@ -333,7 +333,7 @@ static PyTypeObject partial_type = {
 /* cmp_to_key ***************************************************************/
 
 typedef struct {
-    PyObject_HEAD;
+    PyObject_HEAD
     PyObject *cmp;
     PyObject *object;
 } keyobject;
@@ -471,13 +471,15 @@ keyobject_richcompare(PyObject *ko, PyObject *other, int op)
 }
 
 static PyObject *
-functools_cmp_to_key(PyObject *self, PyObject *args, PyObject *kwds){
-  PyObject *cmp;
+functools_cmp_to_key(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    PyObject *cmp;
     static char *kwargs[] = {"mycmp", NULL};
+    keyobject *object;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:cmp_to_key", kwargs, &cmp))
         return NULL;
-    keyobject *object = PyObject_New(keyobject, &keyobject_type);
+    object = PyObject_New(keyobject, &keyobject_type);
     if (!object)
         return NULL;
     Py_INCREF(cmp);
@@ -572,8 +574,8 @@ PyDoc_STRVAR(module_doc,
 
 static PyMethodDef module_methods[] = {
     {"reduce",          functools_reduce,     METH_VARARGS, functools_reduce_doc},
-    {"cmp_to_key",      functools_cmp_to_key, METH_VARARGS | METH_KEYWORDS,
-     functools_cmp_to_key_doc},
+    {"cmp_to_key",      (PyCFunction)functools_cmp_to_key,
+     METH_VARARGS | METH_KEYWORDS, functools_cmp_to_key_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
