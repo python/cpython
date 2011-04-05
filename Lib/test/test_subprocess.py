@@ -592,6 +592,25 @@ class ProcessTestCase(BaseTestCase):
         self.assertFalse(os.path.exists(ofname))
         self.assertFalse(os.path.exists(efname))
 
+    def test_communicate_epipe(self):
+        # Issue 10963: communicate() should hide EPIPE
+        p = subprocess.Popen([sys.executable, "-c", 'pass'],
+                             stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        self.addCleanup(p.stdout.close)
+        self.addCleanup(p.stderr.close)
+        self.addCleanup(p.stdin.close)
+        p.communicate(b"x" * 2**20)
+
+    def test_communicate_epipe_only_stdin(self):
+        # Issue 10963: communicate() should hide EPIPE
+        p = subprocess.Popen([sys.executable, "-c", 'pass'],
+                             stdin=subprocess.PIPE)
+        self.addCleanup(p.stdin.close)
+        time.sleep(2)
+        p.communicate(b"x" * 2**20)
+
     #
     # POSIX tests
     #
