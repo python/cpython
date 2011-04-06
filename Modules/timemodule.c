@@ -549,7 +549,7 @@ time_strftime(PyObject *self, PyObject *args)
         if (outbuf[1]=='#')
             ++outbuf; /* not documented by python, */
         if (outbuf[1]=='\0' ||
-            !wcschr(L"aAbBcdfHIjmMpSUwWxXyYzZ%", outbuf[1]))
+            !wcschr(L"aAbBcdHIjmMpSUwWxXyYzZ%", outbuf[1]))
         {
             PyErr_SetString(PyExc_ValueError, "Invalid format string");
             return 0;
