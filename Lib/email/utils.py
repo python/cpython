@@ -42,6 +42,7 @@ from quopri import decodestring as _qdecode
 
 # Intrapackage imports
 from email.encoders import _bencode, _qencode
+from email.charset import Charset
 
 COMMASPACE = ', '
 EMPTYSTRING = ''
@@ -56,21 +57,36 @@ escapesre = re.compile(r'[][\\()"]')
 
 # Helpers
 
-def formataddr(pair):
+def formataddr(pair, charset='utf-8'):
     """The inverse of parseaddr(), this takes a 2-tuple of the form
     (realname, email_address) and returns the string value suitable
     for an RFC 2822 From, To or Cc header.
 
     If the first element of pair is false, then the second element is
     returned unmodified.
+
+    Optional charset if given is the character set that is used to encode
+    realname in case realname is not ASCII safe.  Can be an instance of str or
+    a Charset-like object which has a header_encode method.  Default is
+    'utf-8'.
     """
     name, address = pair
+    # The address MUST (per RFC) be ascii, so throw a UnicodeError if it isn't.
+    address.encode('ascii')
     if name:
-        quotes = ''
-        if specialsre.search(name):
-            quotes = '"'
-        name = escapesre.sub(r'\\\g<0>', name)
-        return '%s%s%s <%s>' % (quotes, name, quotes, address)
+        try:
+            name.encode('ascii')
+        except UnicodeEncodeError:
+            if isinstance(charset, str):
+                charset = Charset(charset)
+            encoded_name = charset.header_encode(name)
+            return "%s <%s>" % (encoded_name, address)
+        else:
+            quotes = ''
+            if specialsre.search(name):
+                quotes = '"'
+            name = escapesre.sub(r'\\\g<0>', name)
+            return '%s%s%s <%s>' % (quotes, name, quotes, address)
     return address
 
 

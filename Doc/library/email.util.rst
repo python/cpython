@@ -29,12 +29,19 @@ There are several useful utilities provided in the :mod:`email.utils` module:
    fails, in which case a 2-tuple of ``('', '')`` is returned.
 
 
-.. function:: formataddr(pair)
+.. function:: formataddr(pair, charset='utf-8')
 
    The inverse of :meth:`parseaddr`, this takes a 2-tuple of the form ``(realname,
    email_address)`` and returns the string value suitable for a :mailheader:`To` or
    :mailheader:`Cc` header.  If the first element of *pair* is false, then the
    second element is returned unmodified.
+
+   Optional *charset* is the character set that will be used in the :rfc:`2047`
+   encoding of the ``realname`` if the ``realname`` contains non-ASCII
+   characters.  Can be an instance of :class:`str` or a
+   :class:`~email.charset.Charset`.  Defaults to ``utf-8``.
+
+   .. versionchanged: 3.3 added the *charset* option
 
 
 .. function:: getaddresses(fieldvalues)
