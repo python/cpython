@@ -370,12 +370,33 @@ class PyBuildExt(build_ext):
                 return platform
         return sys.platform
 
+    def add_multiarch_paths(self):
+        # Debian/Ubuntu multiarch support.
+        # https://wiki.ubuntu.com/MultiarchSpec
+        tmpfile = os.path.join(self.build_temp, 'multiarch')
+        if not os.path.exists(self.build_temp):
+            os.makedirs(self.build_temp)
+        ret = os.system(
+            'dpkg-architecture -qDEB_HOST_MULTIARCH > %s 2> /dev/null' %
+            tmpfile)
+        try:
+            if ret >> 8 == 0:
+                with open(tmpfile) as fp:
+                    multiarch_path_component = fp.readline().strip()
+                add_dir_to_list(self.compiler.library_dirs,
+                                '/usr/lib/' + multiarch_path_component)
+                add_dir_to_list(self.compiler.include_dirs,
+                                '/usr/include/' + multiarch_path_component)
+        finally:
+            os.unlink(tmpfile)
+
     def detect_modules(self):
         # Ensure that /usr/local is always used, but the local build
         # directories (i.e. '.' and 'Include') must be first.  See issue
         # 10520.
         add_dir_to_list(self.compiler.library_dirs, '/usr/local/lib')
         add_dir_to_list(self.compiler.include_dirs, '/usr/local/include')
+        self.add_multiarch_paths()
 
         # Add paths specified in the environment variables LDFLAGS and
         # CPPFLAGS for header and library files.
