@@ -368,12 +368,12 @@ class FeedParser:
                                 end = len(mo.group(0))
                                 self._last.epilogue = epilogue[:-end]
                     else:
-                        payload = self._last.get_payload()
+                        payload = self._last._payload
                         if isinstance(payload, str):
                             mo = NLCRE_eol.search(payload)
                             if mo:
                                 payload = payload[:-len(mo.group(0))]
-                                self._last.set_payload(payload)
+                                self._last._payload = payload
                     self._input.pop_eof_matcher()
                     self._pop_message()
                     # Set the multipart up for newline cleansing, which will
