@@ -3143,6 +3143,53 @@ class Test8BitBytesHandling(unittest.TestCase):
         g = email.generator.BytesGenerator(s)
         g.flatten(msg, linesep='\r\n')
         self.assertEqual(s.getvalue(), text)
+
+    def test_8bit_multipart(self):
+        # Issue 11605
+        source = textwrap.dedent("""\
+            Date: Fri, 18 Mar 2011 17:15:43 +0100
+            To: foo@example.com
+            From: foodwatch-Newsletter <bar@example.com>
+            Subject: Aktuelles zu Japan, Klonfleisch und Smiley-System
+            Message-ID: <76a486bee62b0d200f33dc2ca08220ad@localhost.localdomain>
+            MIME-Version: 1.0
+            Content-Type: multipart/alternative;
+                    boundary="b1_76a486bee62b0d200f33dc2ca08220ad"
+
+            --b1_76a486bee62b0d200f33dc2ca08220ad
+            Content-Type: text/plain; charset="utf-8"
+            Content-Transfer-Encoding: 8bit
+
+            Guten Tag, ,
+
+            mit großer Betroffenheit verfolgen auch wir im foodwatch-Team die
+            Nachrichten aus Japan.
+
+
+            --b1_76a486bee62b0d200f33dc2ca08220ad
+            Content-Type: text/html; charset="utf-8"
+            Content-Transfer-Encoding: 8bit
+
+            <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/html4/loose.dtd">
+            <html lang="de">
+            <head>
+                    <title>foodwatch - Newsletter</title>
+            </head>
+            <body>
+              <p>mit gro&szlig;er Betroffenheit verfolgen auch wir im foodwatch-Team
+                 die Nachrichten aus Japan.</p>
+            </body>
+            </html>
+            --b1_76a486bee62b0d200f33dc2ca08220ad--
+
+            """).encode('utf-8')
+        msg = email.message_from_bytes(source)
+        s = BytesIO()
+        g = email.generator.BytesGenerator(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), source)
+
     maxDiff = None
 
 
