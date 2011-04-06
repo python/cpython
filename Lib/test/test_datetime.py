@@ -231,6 +231,13 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         eq(a//10, td(0, 7*24*360))
         eq(a//3600000, td(0, 0, 7*24*1000))
 
+        # Issue #11576
+        eq(td(999999999, 86399, 999999) - td(999999999, 86399, 999998),
+           td(0, 0, 1))
+        eq(td(999999999, 1, 1) - td(999999999, 1, 0),
+           td(0, 0, 1))
+
+
     def test_disallowed_computations(self):
         a = timedelta(42)
 
