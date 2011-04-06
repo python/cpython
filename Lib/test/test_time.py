@@ -1,6 +1,7 @@
 from test import test_support
 import time
 import unittest
+import sys
 
 
 class TimeTestCase(unittest.TestCase):
@@ -36,6 +37,13 @@ class TimeTestCase(unittest.TestCase):
                 time.strftime(format, tt)
             except ValueError:
                 self.fail('conversion specifier: %r failed.' % format)
+
+        # Issue #10762: Guard against invalid/non-supported format string
+        # so that Python don't crash (Windows crashes when the format string
+        # input to [w]strftime is not kosher.
+        if sys.platform.startswith('win'):
+            with self.assertRaises(ValueError):
+                time.strftime('%f')
 
     def test_strftime_bounds_checking(self):
         # Make sure that strftime() checks the bounds of the various parts
