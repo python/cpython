@@ -3,6 +3,7 @@ import time
 import unittest
 import locale
 import sysconfig
+import sys
 import warnings
 
 class TimeTestCase(unittest.TestCase):
@@ -38,6 +39,13 @@ class TimeTestCase(unittest.TestCase):
                 time.strftime(format, tt)
             except ValueError:
                 self.fail('conversion specifier: %r failed.' % format)
+
+        # Issue #10762: Guard against invalid/non-supported format string
+        # so that Python don't crash (Windows crashes when the format string
+        # input to [w]strftime is not kosher.
+        if sys.platform.startswith('win'):
+            with self.assertRaises(ValueError):
+                time.strftime('%f')
 
     def _bounds_checking(self, func=time.strftime):
         # Make sure that strftime() checks the bounds of the various parts
