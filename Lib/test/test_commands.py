@@ -49,8 +49,12 @@ class CommandTests(unittest.TestCase):
         #     drwxr-xr-x   15 Joe User My Group     4096 Aug 12 12:50 /
         # Note that the first case above has a space in the group name
         # while the second one has a space in both names.
+        # Special attributes supported:
+        #   + = has ACLs
+        #   @ = has Mac OS X extended attributes
+        #   . = has a SELinux security context
         pat = r'''d.........   # It is a directory.
-                  \+?          # It may have ACLs.
+                  [.+@]?       # It may have special attributes.
                   \s+\d+       # It has some number of links.
                   [^/]*        # Skip user, group, size, and date.
                   /\.          # and end with the name of the file.
