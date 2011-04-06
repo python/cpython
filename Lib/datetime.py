@@ -485,7 +485,11 @@ class timedelta:
 
     def __sub__(self, other):
         if isinstance(other, timedelta):
-            return self + -other
+            # for CPython compatibility, we cannot use
+            # our __class__ here, but need a real timedelta
+            return timedelta(self._days - other._days,
+                             self._seconds - other._seconds,
+                             self._microseconds - other._microseconds)
         return NotImplemented
 
     def __rsub__(self, other):

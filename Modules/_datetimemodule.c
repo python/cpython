@@ -1801,13 +1801,14 @@ delta_subtract(PyObject *left, PyObject *right)
 
     if (PyDelta_Check(left) && PyDelta_Check(right)) {
         /* delta - delta */
-        PyObject *minus_right = PyNumber_Negative(right);
-        if (minus_right) {
-            result = delta_add(left, minus_right);
-            Py_DECREF(minus_right);
-        }
-        else
-            result = NULL;
+        /* The C-level additions can't overflow because of the
+         * invariant bounds.
+         */
+        int days = GET_TD_DAYS(left) - GET_TD_DAYS(right);
+        int seconds = GET_TD_SECONDS(left) - GET_TD_SECONDS(right);
+        int microseconds = GET_TD_MICROSECONDS(left) -
+                           GET_TD_MICROSECONDS(right);
+        result = new_delta(days, seconds, microseconds, 1);
     }
 
     if (result == Py_NotImplemented)
