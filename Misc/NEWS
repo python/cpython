@@ -97,6 +97,10 @@ Library
 - Issue #11605: email.parser.BytesFeedParser was incorrectly converting multipart
   subpararts with an 8bit CTE into unicode instead of preserving the bytes.
 
+- Issue #1690608: email.util.formataddr is now RFC2047 aware:  it now has a
+  charset parameter that defaults utf-8 which is used as the charset for RFC
+  2047 encoding when the realname contains non-ASCII characters.
+
 - Issue #10963: Ensure that subprocess.communicate() never raises EPIPE.
 
 - Issue #10791: Implement missing method GzipFile.read1(), allowing GzipFile

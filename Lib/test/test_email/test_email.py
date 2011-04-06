@@ -2376,6 +2376,46 @@ class TestMiscellaneous(TestEmailBase):
         b = 'person@dom.ain'
         self.assertEqual(utils.parseaddr(utils.formataddr((a, b))), (a, b))
 
+    def test_quotes_unicode_names(self):
+        # issue 1690608.  email.utils.formataddr() should be rfc2047 aware.
+        name = "H\u00e4ns W\u00fcrst"
+        addr = 'person@dom.ain'
+        utf8_base64 = "=?utf-8?b?SMOkbnMgV8O8cnN0?= <person@dom.ain>"
+        latin1_quopri = "=?iso-8859-1?q?H=E4ns_W=FCrst?= <person@dom.ain>"
+        self.assertEqual(utils.formataddr((name, addr)), utf8_base64)
+        self.assertEqual(utils.formataddr((name, addr), 'iso-8859-1'),
+            latin1_quopri)
+
+    def test_accepts_any_charset_like_object(self):
+        # issue 1690608.  email.utils.formataddr() should be rfc2047 aware.
+        name = "H\u00e4ns W\u00fcrst"
+        addr = 'person@dom.ain'
+        utf8_base64 = "=?utf-8?b?SMOkbnMgV8O8cnN0?= <person@dom.ain>"
+        foobar = "FOOBAR"
+        class CharsetMock:
+            def header_encode(self, string):
+                return foobar
+        mock = CharsetMock()
+        mock_expected = "%s <%s>" % (foobar, addr)
+        self.assertEqual(utils.formataddr((name, addr), mock), mock_expected)
+        self.assertEqual(utils.formataddr((name, addr), Charset('utf-8')),
+            utf8_base64)
+
+    def test_invalid_charset_like_object_raises_error(self):
+        # issue 1690608.  email.utils.formataddr() should be rfc2047 aware.
+        name = "H\u00e4ns W\u00fcrst"
+        addr = 'person@dom.ain'
+        # A object without a header_encode method:
+        bad_charset = object()
+        self.assertRaises(AttributeError, utils.formataddr, (name, addr),
+            bad_charset)
+
+    def test_unicode_address_raises_error(self):
+        # issue 1690608.  email.utils.formataddr() should be rfc2047 aware.
+        addr = 'pers\u00f6n@dom.in'
+        self.assertRaises(UnicodeError, utils.formataddr, (None, addr))
+        self.assertRaises(UnicodeError, utils.formataddr, ("Name", addr))
+
     def test_name_with_dot(self):
         x = 'John X. Doe <jxd@example.com>'
         y = '"John X. Doe" <jxd@example.com>'
