@@ -383,6 +383,12 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         for i in range(-10, 10):
             eq((i*us/-3)//us, round(i/-3))
 
+        # Issue #11576
+        eq(td(999999999, 86399, 999999) - td(999999999, 86399, 999998),
+           td(0, 0, 1))
+        eq(td(999999999, 1, 1) - td(999999999, 1, 0),
+           td(0, 0, 1))
+
     def test_disallowed_computations(self):
         a = timedelta(42)
 
