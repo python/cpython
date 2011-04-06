@@ -1170,7 +1170,8 @@ class _TestPoolWorkerLifetime(BaseTestCase):
         # Refill the pool
         p._repopulate_pool()
         # Wait until all workers are alive
-        countdown = 5
+        # (countdown * DELTA = 5 seconds max startup process time)
+        countdown = 50
         while countdown and not all(w.is_alive() for w in p._pool):
             countdown -= 1
             time.sleep(DELTA)
