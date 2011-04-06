@@ -315,6 +315,9 @@ Build
 Tests
 -----
 
+- Issue #7108: Fix test_commands to not fail when special attributes ('@'
+  or '.') appear in 'ls -l' output.
+
 - Issue #11490: test_subprocess:test_leaking_fds_on_error no longer gives a
   false positive if the last directory in the path is inaccessible.
 
