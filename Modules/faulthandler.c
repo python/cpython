@@ -5,6 +5,9 @@
 #include <frameobject.h>
 #include <signal.h>
 
+/* Allocate at maximum 100 MB of the stack to raise the stack overflow */
+#define STACK_OVERFLOW_MAX_SIZE (100*1024*1024)
+
 #ifdef WITH_THREAD
 #  define FAULTHANDLER_LATER
 #endif
@@ -15,9 +18,6 @@
       with enable(), not using register() */
 #  define FAULTHANDLER_USER
 #endif
-
-/* Allocate at maximum 100 MB of the stack to raise the stack overflow */
-#define STACK_OVERFLOW_MAX_SIZE (100*1024*1024)
 
 #define PUTS(fd, str) write(fd, str, strlen(str))
 
@@ -451,8 +451,8 @@ faulthandler_cancel_dump_tracebacks_later(void)
 }
 
 static PyObject*
-faulthandler_dump_traceback_later(PyObject *self,
-                                  PyObject *args, PyObject *kwargs)
+faulthandler_dump_tracebacks_later(PyObject *self,
+                                   PyObject *args, PyObject *kwargs)
 {
     static char *kwlist[] = {"timeout", "repeat", "file", "exit", NULL};
     double timeout;
@@ -461,6 +461,7 @@ faulthandler_dump_traceback_later(PyObject *self,
     PyObject *file = NULL;
     int fd;
     int exit = 0;
+    PyThreadState *tstate;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
         "d|iOi:dump_tracebacks_later", kwlist,
@@ -477,6 +478,13 @@ faulthandler_dump_traceback_later(PyObject *self,
         return NULL;
     }
 
+    tstate = PyThreadState_Get();
+    if (tstate == NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "unable to get the current thread state");
+        return NULL;
+    }
+
     file = faulthandler_get_fileno(file, &fd);
     if (file == NULL)
         return NULL;
@@ -490,7 +498,7 @@ faulthandler_dump_traceback_later(PyObject *self,
     thread.fd = fd;
     thread.timeout_ms = timeout_ms;
     thread.repeat = repeat;
-    thread.interp = PyThreadState_Get()->interp;
+    thread.interp = tstate->interp;
     thread.exit = exit;
 
     /* Arm these locks to serve as events when released */
@@ -826,7 +834,7 @@ static int
 faulthandler_traverse(PyObject *module, visitproc visit, void *arg)
 {
 #ifdef FAULTHANDLER_USER
-    unsigned int index;
+    unsigned int signum;
 #endif
 
 #ifdef FAULTHANDLER_LATER
@@ -834,8 +842,8 @@ faulthandler_traverse(PyObject *module, visitproc visit, void *arg)
 #endif
 #ifdef FAULTHANDLER_USER
     if (user_signals != NULL) {
-        for (index=0; index < NSIG; index++)
-            Py_VISIT(user_signals[index].file);
+        for (signum=0; signum < NSIG; signum++)
+            Py_VISIT(user_signals[signum].file);
     }
 #endif
     Py_VISIT(fatal_error.file);
@@ -861,10 +869,11 @@ static PyMethodDef module_methods[] = {
                "if all_threads is True, into file")},
 #ifdef FAULTHANDLER_LATER
     {"dump_tracebacks_later",
-     (PyCFunction)faulthandler_dump_traceback_later, METH_VARARGS|METH_KEYWORDS,
-     PyDoc_STR("dump_tracebacks_later(timeout, repeat=False, file=sys.stderr):\n"
+     (PyCFunction)faulthandler_dump_tracebacks_later, METH_VARARGS|METH_KEYWORDS,
+     PyDoc_STR("dump_tracebacks_later(timeout, repeat=False, file=sys.stderrn, exit=False):\n"
                "dump the traceback of all threads in timeout seconds,\n"
-               "or each timeout seconds if repeat is True.")},
+               "or each timeout seconds if repeat is True. If exit is True, "
+               "call _exit(1) which is not safe.")},
     {"cancel_dump_tracebacks_later",
      (PyCFunction)faulthandler_cancel_dump_tracebacks_later_py, METH_NOARGS,
      PyDoc_STR("cancel_dump_tracebacks_later():\ncancel the previous call "
