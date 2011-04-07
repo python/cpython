@@ -5,6 +5,9 @@
 #include <frameobject.h>
 #include <signal.h>
 
+/* Allocate at maximum 100 MB of the stack to raise the stack overflow */
+#define STACK_OVERFLOW_MAX_SIZE (100*1024*1024)
+
 #ifdef WITH_THREAD
 #  define FAULTHANDLER_LATER
 #endif
@@ -15,9 +18,6 @@
       with enable(), not using register() */
 #  define FAULTHANDLER_USER
 #endif
-
-/* Allocate at maximum 100 MB of the stack to raise the stack overflow */
-#define STACK_OVERFLOW_MAX_SIZE (100*1024*1024)
 
 #define PUTS(fd, str) write(fd, str, strlen(str))
 
@@ -218,12 +218,7 @@ faulthandler_dump_traceback_py(PyObject *self,
    This function is signal safe and should only call signal safe functions. */
 
 static void
-faulthandler_fatal_error(
-    int signum
-#ifdef HAVE_SIGACTION
-    , siginfo_t *siginfo, void *ucontext
-#endif
-)
+faulthandler_fatal_error(int signum)
 {
     const int fd = fatal_error.fd;
     unsigned int i;
@@ -255,6 +250,7 @@ faulthandler_fatal_error(
     PUTS(fd, handler->name);
     PUTS(fd, "\n\n");
 
+#ifdef WITH_THREAD
     /* SIGSEGV, SIGFPE, SIGABRT, SIGBUS and SIGILL are synchronous signals and
        so are delivered to the thread that caused the fault. Get the Python
        thread state of the current thread.
@@ -264,6 +260,9 @@ faulthandler_fatal_error(
        used. Read the thread local storage (TLS) instead: call
        PyGILState_GetThisThreadState(). */
     tstate = PyGILState_GetThisThreadState();
+#else
+    tstate = PyThreadState_Get();
+#endif
     if (tstate == NULL)
         return;
 
@@ -320,7 +319,7 @@ faulthandler_enable(PyObject *self, PyObject *args, PyObject *kwargs)
         for (i=0; i < faulthandler_nsignals; i++) {
             handler = &faulthandler_handlers[i];
 #ifdef HAVE_SIGACTION
-            action.sa_sigaction = faulthandler_fatal_error;
+            action.sa_handler = faulthandler_fatal_error;
             sigemptyset(&action.sa_mask);
             /* Do not prevent the signal from being received from within
                its own signal handler */
@@ -451,8 +450,8 @@ faulthandler_cancel_dump_tracebacks_later(void)
 }
 
 static PyObject*
-faulthandler_dump_traceback_later(PyObject *self,
-                                  PyObject *args, PyObject *kwargs)
+faulthandler_dump_tracebacks_later(PyObject *self,
+                                   PyObject *args, PyObject *kwargs)
 {
     static char *kwlist[] = {"timeout", "repeat", "file", "exit", NULL};
     double timeout;
@@ -461,6 +460,7 @@ faulthandler_dump_traceback_later(PyObject *self,
     PyObject *file = NULL;
     int fd;
     int exit = 0;
+    PyThreadState *tstate;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
         "d|iOi:dump_tracebacks_later", kwlist,
@@ -477,6 +477,13 @@ faulthandler_dump_traceback_later(PyObject *self,
         return NULL;
     }
 
+    tstate = PyThreadState_Get();
+    if (tstate == NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "unable to get the current thread state");
+        return NULL;
+    }
+
     file = faulthandler_get_fileno(file, &fd);
     if (file == NULL)
         return NULL;
@@ -490,7 +497,7 @@ faulthandler_dump_traceback_later(PyObject *self,
     thread.fd = fd;
     thread.timeout_ms = timeout_ms;
     thread.repeat = repeat;
-    thread.interp = PyThreadState_Get()->interp;
+    thread.interp = tstate->interp;
     thread.exit = exit;
 
     /* Arm these locks to serve as events when released */
@@ -537,10 +544,14 @@ faulthandler_user(int signum)
     if (!user->enabled)
         return;
 
+#ifdef WITH_THREAD
     /* PyThreadState_Get() doesn't give the state of the current thread if
        the thread doesn't hold the GIL. Read the thread local storage (TLS)
        instead: call PyGILState_GetThisThreadState(). */
     tstate = PyGILState_GetThisThreadState();
+#else
+    tstate = PyThreadState_Get();
+#endif
 
     if (user->all_threads)
         _Py_DumpTracebackThreads(user->fd, user->interp, tstate);
@@ -826,7 +837,7 @@ static int
 faulthandler_traverse(PyObject *module, visitproc visit, void *arg)
 {
 #ifdef FAULTHANDLER_USER
-    unsigned int index;
+    unsigned int signum;
 #endif
 
 #ifdef FAULTHANDLER_LATER
@@ -834,8 +845,8 @@ faulthandler_traverse(PyObject *module, visitproc visit, void *arg)
 #endif
 #ifdef FAULTHANDLER_USER
     if (user_signals != NULL) {
-        for (index=0; index < NSIG; index++)
-            Py_VISIT(user_signals[index].file);
+        for (signum=0; signum < NSIG; signum++)
+            Py_VISIT(user_signals[signum].file);
     }
 #endif
     Py_VISIT(fatal_error.file);
@@ -861,10 +872,11 @@ static PyMethodDef module_methods[] = {
                "if all_threads is True, into file")},
 #ifdef FAULTHANDLER_LATER
     {"dump_tracebacks_later",
-     (PyCFunction)faulthandler_dump_traceback_later, METH_VARARGS|METH_KEYWORDS,
-     PyDoc_STR("dump_tracebacks_later(timeout, repeat=False, file=sys.stderr):\n"
+     (PyCFunction)faulthandler_dump_tracebacks_later, METH_VARARGS|METH_KEYWORDS,
+     PyDoc_STR("dump_tracebacks_later(timeout, repeat=False, file=sys.stderrn, exit=False):\n"
                "dump the traceback of all threads in timeout seconds,\n"
-               "or each timeout seconds if repeat is True.")},
+               "or each timeout seconds if repeat is True. If exit is True, "
+               "call _exit(1) which is not safe.")},
     {"cancel_dump_tracebacks_later",
      (PyCFunction)faulthandler_cancel_dump_tracebacks_later_py, METH_NOARGS,
      PyDoc_STR("cancel_dump_tracebacks_later():\ncancel the previous call "
