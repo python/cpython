@@ -250,6 +250,7 @@ faulthandler_fatal_error(int signum)
     PUTS(fd, handler->name);
     PUTS(fd, "\n\n");
 
+#ifdef WITH_THREAD
     /* SIGSEGV, SIGFPE, SIGABRT, SIGBUS and SIGILL are synchronous signals and
        so are delivered to the thread that caused the fault. Get the Python
        thread state of the current thread.
@@ -259,6 +260,9 @@ faulthandler_fatal_error(int signum)
        used. Read the thread local storage (TLS) instead: call
        PyGILState_GetThisThreadState(). */
     tstate = PyGILState_GetThisThreadState();
+#else
+    tstate = PyThreadState_Get();
+#endif
     if (tstate == NULL)
         return;
 
@@ -540,10 +544,14 @@ faulthandler_user(int signum)
     if (!user->enabled)
         return;
 
+#ifdef WITH_THREAD
     /* PyThreadState_Get() doesn't give the state of the current thread if
        the thread doesn't hold the GIL. Read the thread local storage (TLS)
        instead: call PyGILState_GetThisThreadState(). */
     tstate = PyGILState_GetThisThreadState();
+#else
+    tstate = PyThreadState_Get();
+#endif
 
     if (user->all_threads)
         _Py_DumpTracebackThreads(user->fd, user->interp, tstate);
