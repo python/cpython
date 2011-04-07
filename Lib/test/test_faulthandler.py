@@ -8,6 +8,12 @@ from test import support, script_helper
 import tempfile
 import unittest
 
+try:
+    import threading
+    HAVE_THREADS = True
+except ImportError:
+    HAVE_THREADS = False
+
 TIMEOUT = 0.5
 
 try:
@@ -279,6 +285,7 @@ funcA()
         with temporary_filename() as filename:
             self.check_dump_traceback(filename)
 
+    @unittest.skipIf(not HAVE_THREADS, 'need threads')
     def check_dump_traceback_threads(self, filename):
         """
         Call explicitly dump_traceback(all_threads=True) and check the output.
