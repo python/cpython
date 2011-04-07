@@ -217,6 +217,23 @@ DOCTYPE html [
             ("starttag", "a", [("href", "mailto:xyz@example.com")]),
             ])
 
+    def test_attr_nonascii(self):
+        # see issue 7311
+        self._run_check("<img src=/foo/bar.png alt=\u4e2d\u6587>", [
+            ("starttag", "img", [("src", "/foo/bar.png"),
+                                 ("alt", "\u4e2d\u6587")]),
+            ])
+        self._run_check("<a title='\u30c6\u30b9\u30c8' "
+                        "href='\u30c6\u30b9\u30c8.html'>", [
+            ("starttag", "a", [("title", "\u30c6\u30b9\u30c8"),
+                               ("href", "\u30c6\u30b9\u30c8.html")]),
+            ])
+        self._run_check('<a title="\u30c6\u30b9\u30c8" '
+                        'href="\u30c6\u30b9\u30c8.html">', [
+            ("starttag", "a", [("title", "\u30c6\u30b9\u30c8"),
+                               ("href", "\u30c6\u30b9\u30c8.html")]),
+            ])
+
     def test_attr_entity_replacement(self):
         self._run_check("""<a b='&amp;&gt;&lt;&quot;&apos;'>""", [
             ("starttag", "a", [("b", "&><\"'")]),
