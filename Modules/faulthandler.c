@@ -218,12 +218,7 @@ faulthandler_dump_traceback_py(PyObject *self,
    This function is signal safe and should only call signal safe functions. */
 
 static void
-faulthandler_fatal_error(
-    int signum
-#ifdef HAVE_SIGACTION
-    , siginfo_t *siginfo, void *ucontext
-#endif
-)
+faulthandler_fatal_error(int signum)
 {
     const int fd = fatal_error.fd;
     unsigned int i;
@@ -320,7 +315,7 @@ faulthandler_enable(PyObject *self, PyObject *args, PyObject *kwargs)
         for (i=0; i < faulthandler_nsignals; i++) {
             handler = &faulthandler_handlers[i];
 #ifdef HAVE_SIGACTION
-            action.sa_sigaction = faulthandler_fatal_error;
+            action.sa_handler = faulthandler_fatal_error;
             sigemptyset(&action.sa_mask);
             /* Do not prevent the signal from being received from within
                its own signal handler */
