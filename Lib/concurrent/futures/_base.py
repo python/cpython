@@ -536,15 +536,19 @@ class Executor(object):
 
         fs = [self.submit(fn, *args) for args in zip(*iterables)]
 
-        try:
-            for future in fs:
-                if timeout is None:
-                    yield future.result()
-                else:
-                    yield future.result(end_time - time.time())
-        finally:
-            for future in fs:
-                future.cancel()
+        # Yield must be hidden in closure so that the futures are submitted
+        # before the first iterator value is required.
+        def result_iterator():
+            try:
+                for future in fs:
+                    if timeout is None:
+                        yield future.result()
+                    else:
+                        yield future.result(end_time - time.time())
+            finally:
+                for future in fs:
+                    future.cancel()
+        return result_iterator()
 
     def shutdown(self, wait=True):
         """Clean-up the resources associated with the Executor.
