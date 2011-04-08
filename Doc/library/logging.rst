@@ -405,13 +405,21 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
 :ref:`logrecord-attributes`.
 
 
-.. class:: Formatter(fmt=None, datefmt=None)
+.. class:: Formatter(fmt=None, datefmt=None, style='%')
 
    Returns a new instance of the :class:`Formatter` class.  The instance is
    initialized with a format string for the message as a whole, as well as a
    format string for the date/time portion of a message.  If no *fmt* is
    specified, ``'%(message)s'`` is used.  If no *datefmt* is specified, the
    ISO8601 date format is used.
+
+   The *style* parameter can be one of '%', '{' or '$' and determines how
+   the format string will be merged with its data: using one of %-formatting,
+   :meth:`str.format` or :class:`string.Template`. 
+
+   .. versionchanged:: 3.2
+      The *style* parameter was added.
+
 
    .. method:: format(record)
 
@@ -690,7 +698,6 @@ LoggerAdapter Objects
 :class:`LoggerAdapter` instances are used to conveniently pass contextual
 information into logging calls. For a usage example , see the section on
 :ref:`adding contextual information to your logging output <context-info>`.
-
 
 .. class:: LoggerAdapter(logger, extra)
 
