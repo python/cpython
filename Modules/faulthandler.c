@@ -48,13 +48,14 @@ static struct {
     int fd;
     PY_TIMEOUT_T timeout_ms;   /* timeout in microseconds */
     int repeat;
-    int running;
     PyInterpreterState *interp;
     int exit;
-    /* released by parent thread when cancel request */
+    /* The main thread always hold this lock. It is only released when
+       faulthandler_thread() is interrupted until this thread exits, or at
+       Python exit. */
     PyThread_type_lock cancel_event;
     /* released by child thread when joined */
-    PyThread_type_lock join_event;
+    PyThread_type_lock running;
 } thread;
 #endif
 
@@ -414,7 +415,7 @@ faulthandler_thread(void *unused)
         st = PyThread_acquire_lock_timed(thread.cancel_event,
                                          thread.timeout_ms, 0);
         if (st == PY_LOCK_ACQUIRED) {
-            /* Cancelled by user */
+            PyThread_release_lock(thread.cancel_event);
             break;
         }
         /* Timeout => dump traceback */
@@ -431,21 +432,22 @@ faulthandler_thread(void *unused)
     } while (ok && thread.repeat);
 
     /* The only way out */
-    PyThread_release_lock(thread.cancel_event);
-    PyThread_release_lock(thread.join_event);
+    PyThread_release_lock(thread.running);
 }
 
 static void
-faulthandler_cancel_dump_tracebacks_later(void)
+cancel_dump_tracebacks_later(void)
 {
-    if (thread.running) {
-        /* Notify cancellation */
-        PyThread_release_lock(thread.cancel_event);
-    }
+    /* notify cancellation */
+    PyThread_release_lock(thread.cancel_event);
+
     /* Wait for thread to join */
-    PyThread_acquire_lock(thread.join_event, 1);
-    PyThread_release_lock(thread.join_event);
-    thread.running = 0;
+    PyThread_acquire_lock(thread.running, 1);
+    PyThread_release_lock(thread.running);
+
+    /* The main thread should always hold the cancel_event lock */
+    PyThread_acquire_lock(thread.cancel_event, 1);
+
     Py_CLEAR(thread.file);
 }
 
@@ -489,7 +491,7 @@ faulthandler_dump_tracebacks_later(PyObject *self,
         return NULL;
 
     /* Cancel previous thread, if running */
-    faulthandler_cancel_dump_tracebacks_later();
+    cancel_dump_tracebacks_later();
 
     Py_XDECREF(thread.file);
     Py_INCREF(file);
@@ -501,14 +503,10 @@ faulthandler_dump_tracebacks_later(PyObject *self,
     thread.exit = exit;
 
     /* Arm these locks to serve as events when released */
-    PyThread_acquire_lock(thread.join_event, 1);
-    PyThread_acquire_lock(thread.cancel_event, 1);
+    PyThread_acquire_lock(thread.running, 1);
 
-    thread.running = 1;
     if (PyThread_start_new_thread(faulthandler_thread, NULL) == -1) {
-        thread.running = 0;
-        PyThread_release_lock(thread.join_event);
-        PyThread_release_lock(thread.cancel_event);
+        PyThread_release_lock(thread.running);
         Py_CLEAR(thread.file);
         PyErr_SetString(PyExc_RuntimeError,
                         "unable to start watchdog thread");
@@ -521,7 +519,7 @@ faulthandler_dump_tracebacks_later(PyObject *self,
 static PyObject*
 faulthandler_cancel_dump_tracebacks_later_py(PyObject *self)
 {
-    faulthandler_cancel_dump_tracebacks_later();
+    cancel_dump_tracebacks_later();
     Py_RETURN_NONE;
 }
 #endif /* FAULTHANDLER_LATER */
@@ -1001,15 +999,15 @@ int _PyFaulthandler_Init(void)
     }
 #endif
 #ifdef FAULTHANDLER_LATER
-    thread.running = 0;
     thread.file = NULL;
     thread.cancel_event = PyThread_allocate_lock();
-    thread.join_event = PyThread_allocate_lock();
-    if (!thread.cancel_event || !thread.join_event) {
+    thread.running = PyThread_allocate_lock();
+    if (!thread.cancel_event || !thread.running) {
         PyErr_SetString(PyExc_RuntimeError,
                         "could not allocate locks for faulthandler");
         return -1;
     }
+    PyThread_acquire_lock(thread.cancel_event, 1);
 #endif
 
     return faulthandler_env_options();
@@ -1023,14 +1021,15 @@ void _PyFaulthandler_Fini(void)
 
 #ifdef FAULTHANDLER_LATER
     /* later */
-    faulthandler_cancel_dump_tracebacks_later();
+    cancel_dump_tracebacks_later();
     if (thread.cancel_event) {
+        PyThread_release_lock(thread.cancel_event);
         PyThread_free_lock(thread.cancel_event);
         thread.cancel_event = NULL;
     }
-    if (thread.join_event) {
-        PyThread_free_lock(thread.join_event);
-        thread.join_event = NULL;
+    if (thread.running) {
+        PyThread_free_lock(thread.running);
+        thread.running = NULL;
     }
 #endif
 
