@@ -46,7 +46,7 @@ static struct {
 static struct {
     PyObject *file;
     int fd;
-    PY_TIMEOUT_T timeout_ms;   /* timeout in microseconds */
+    PY_TIMEOUT_T timeout_us;   /* timeout in microseconds */
     int repeat;
     PyInterpreterState *interp;
     int exit;
@@ -413,7 +413,7 @@ faulthandler_thread(void *unused)
 
     do {
         st = PyThread_acquire_lock_timed(thread.cancel_event,
-                                         thread.timeout_ms, 0);
+                                         thread.timeout_us, 0);
         if (st == PY_LOCK_ACQUIRED) {
             PyThread_release_lock(thread.cancel_event);
             break;
@@ -457,7 +457,7 @@ faulthandler_dump_tracebacks_later(PyObject *self,
 {
     static char *kwlist[] = {"timeout", "repeat", "file", "exit", NULL};
     double timeout;
-    PY_TIMEOUT_T timeout_ms;
+    PY_TIMEOUT_T timeout_us;
     int repeat = 0;
     PyObject *file = NULL;
     int fd;
@@ -473,8 +473,8 @@ faulthandler_dump_tracebacks_later(PyObject *self,
         PyErr_SetString(PyExc_OverflowError,  "timeout value is too large");
         return NULL;
     }
-    timeout_ms = (PY_TIMEOUT_T)timeout;
-    if (timeout_ms <= 0) {
+    timeout_us = (PY_TIMEOUT_T)timeout;
+    if (timeout_us <= 0) {
         PyErr_SetString(PyExc_ValueError, "timeout must be greater than 0");
         return NULL;
     }
@@ -497,7 +497,7 @@ faulthandler_dump_tracebacks_later(PyObject *self,
     Py_INCREF(file);
     thread.file = file;
     thread.fd = fd;
-    thread.timeout_ms = timeout_ms;
+    thread.timeout_us = timeout_us;
     thread.repeat = repeat;
     thread.interp = tstate->interp;
     thread.exit = exit;
