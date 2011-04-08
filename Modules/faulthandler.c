@@ -50,6 +50,8 @@ static struct {
     int repeat;
     PyInterpreterState *interp;
     int exit;
+    char *header;
+    size_t header_len;
     /* The main thread always hold this lock. It is only released when
        faulthandler_thread() is interrupted until this thread exits, or at
        Python exit. */
@@ -424,6 +426,8 @@ faulthandler_thread(void *unused)
         /* get the thread holding the GIL, NULL if no thread hold the GIL */
         current = _Py_atomic_load_relaxed(&_PyThreadState_Current);
 
+        write(thread.fd, thread.header, thread.header_len);
+
         errmsg = _Py_DumpTracebackThreads(thread.fd, thread.interp, current);
         ok = (errmsg == NULL);
 
@@ -449,6 +453,37 @@ cancel_dump_tracebacks_later(void)
     PyThread_acquire_lock(thread.cancel_event, 1);
 
     Py_CLEAR(thread.file);
+    if (thread.header) {
+        free(thread.header);
+        thread.header = NULL;
+    }
+}
+
+static char*
+format_timeout(double timeout)
+{
+    unsigned long us, sec, min, hour;
+    double intpart, fracpart;
+    char buffer[100];
+
+    fracpart = modf(timeout, &intpart);
+    sec = (unsigned long)intpart;
+    us = (unsigned long)(fracpart * 1e6);
+    min = sec / 60;
+    sec %= 60;
+    hour = min / 60;
+    min %= 60;
+
+    if (us != 0)
+        PyOS_snprintf(buffer, sizeof(buffer),
+                      "Timeout (%lu:%02lu:%02lu.%06lu)!\n",
+                      hour, min, sec, us);
+    else
+        PyOS_snprintf(buffer, sizeof(buffer),
+                      "Timeout (%lu:%02lu:%02lu)!\n",
+                      hour, min, sec);
+
+    return strdup(buffer);
 }
 
 static PyObject*
@@ -463,17 +498,18 @@ faulthandler_dump_tracebacks_later(PyObject *self,
     int fd;
     int exit = 0;
     PyThreadState *tstate;
+    char *header;
+    size_t header_len;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
         "d|iOi:dump_tracebacks_later", kwlist,
         &timeout, &repeat, &file, &exit))
         return NULL;
-    timeout *= 1e6;
-    if (timeout >= (double) PY_TIMEOUT_MAX) {
+    if ((timeout * 1e6) >= (double) PY_TIMEOUT_MAX) {
         PyErr_SetString(PyExc_OverflowError,  "timeout value is too large");
         return NULL;
     }
-    timeout_us = (PY_TIMEOUT_T)timeout;
+    timeout_us = (PY_TIMEOUT_T)(timeout * 1e6);
     if (timeout_us <= 0) {
         PyErr_SetString(PyExc_ValueError, "timeout must be greater than 0");
         return NULL;
@@ -490,6 +526,12 @@ faulthandler_dump_tracebacks_later(PyObject *self,
     if (file == NULL)
         return NULL;
 
+    /* format the timeout */
+    header = format_timeout(timeout);
+    if (header == NULL)
+        return PyErr_NoMemory();
+    header_len = strlen(header);
+
     /* Cancel previous thread, if running */
     cancel_dump_tracebacks_later();
 
@@ -501,6 +543,8 @@ faulthandler_dump_tracebacks_later(PyObject *self,
     thread.repeat = repeat;
     thread.interp = tstate->interp;
     thread.exit = exit;
+    thread.header = header;
+    thread.header_len = header_len;
 
     /* Arm these locks to serve as events when released */
     PyThread_acquire_lock(thread.running, 1);
@@ -508,6 +552,8 @@ faulthandler_dump_tracebacks_later(PyObject *self,
     if (PyThread_start_new_thread(faulthandler_thread, NULL) == -1) {
         PyThread_release_lock(thread.running);
         Py_CLEAR(thread.file);
+        free(header);
+        thread.header = NULL;
         PyErr_SetString(PyExc_RuntimeError,
                         "unable to start watchdog thread");
         return NULL;

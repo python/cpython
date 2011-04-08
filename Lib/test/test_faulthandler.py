@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+import datetime
 import faulthandler
 import re
 import signal
@@ -360,6 +361,7 @@ Current thread XXX:
 
         Raise an error if the output doesn't match the expect format.
         """
+        timeout_str = str(datetime.timedelta(seconds=TIMEOUT))
         code = """
 import faulthandler
 import time
@@ -399,7 +401,7 @@ if file is not None:
             count = loops
             if repeat:
                 count *= 2
-            header = 'Thread 0x[0-9a-f]+:\n'
+            header = r'Timeout \(%s\)!\nThread 0x[0-9a-f]+:\n' % timeout_str
             regex = expected_traceback(9, 20, header, count=count)
             self.assertRegex(trace, regex)
         else:
