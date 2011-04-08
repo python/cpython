@@ -827,6 +827,16 @@ Subject: the first part of this is short,
 ;
  this_part_does_not_fit_within_maxlinelen_and_thus_should_be_on_a_line_all_by_itself;""")
 
+    def test_long_header_with_multiple_sequential_split_chars(self):
+        # Issue 11492
+
+        eq = self.ndiffAssertEqual
+        h = Header('This is a long line that has two whitespaces  in a row.  '
+            'This used to cause truncation of the header when folded')
+        eq(h.encode(), """\
+This is a long line that has two whitespaces  in a row.  This used to cause
+ truncation of the header when folded""")
+
     def test_no_split_long_header(self):
         eq = self.ndiffAssertEqual
         hstr = 'References: ' + 'x' * 80

@@ -483,12 +483,13 @@ class _ValueFormatter:
                         self._current_line.reset(str(holding))
                 return
             elif not nextpart:
-                # There must be some trailing split characters because we
+                # There must be some trailing or duplicated split characters
+                # because we
                 # found a split character but no next part.  In this case we
                 # must treat the thing to fit as the part + splitpart because
                 # if splitpart is whitespace it's not allowed to be the only
                 # thing on the line, and if it's not whitespace we must split
-                # after the syntactic break.  In either case, we're done.
+                # after the syntactic break.
                 holding_prelen = len(holding)
                 holding.push(part + splitpart)
                 if len(holding) + len(self._current_line) <= self._maxlen:
@@ -503,7 +504,7 @@ class _ValueFormatter:
                     self._lines.append(str(self._current_line))
                     holding.reset(save_part)
                     self._current_line.reset(str(holding))
-                return
+                holding.reset()
             elif not part:
                 # We're leading with a split character.  See if the splitpart
                 # and nextpart fits on the current line.
