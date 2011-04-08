@@ -40,6 +40,7 @@ static struct {
     PyObject *file;
     int fd;
     int all_threads;
+    PyInterpreterState *interp;
 } fatal_error = {0, NULL, -1, 0};
 
 #ifdef FAULTHANDLER_LATER
@@ -165,6 +166,20 @@ faulthandler_get_fileno(PyObject *file, int *p_fd)
     return file;
 }
 
+/* Get the state of the current thread: only call this function if the current
+   thread holds the GIL. Raise an exception on error. */
+static PyThreadState*
+get_thread_state(void)
+{
+    PyThreadState *tstate = PyThreadState_Get();
+    if (tstate == NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "unable to get the current thread state");
+        return NULL;
+    }
+    return tstate;
+}
+
 static PyObject*
 faulthandler_dump_traceback_py(PyObject *self,
                                PyObject *args, PyObject *kwargs)
@@ -185,13 +200,9 @@ faulthandler_dump_traceback_py(PyObject *self,
     if (file == NULL)
         return NULL;
 
-    /* The caller holds the GIL and so PyThreadState_Get() can be used */
-    tstate = PyThreadState_Get();
-    if (tstate == NULL) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "unable to get the current thread state");
+    tstate = get_thread_state();
+    if (tstate == NULL)
         return NULL;
-    }
 
     if (all_threads) {
         errmsg = _Py_DumpTracebackThreads(fd, tstate->interp, tstate);
@@ -266,13 +277,13 @@ faulthandler_fatal_error(int signum)
 #else
     tstate = PyThreadState_Get();
 #endif
-    if (tstate == NULL)
-        return;
 
     if (fatal_error.all_threads)
-        _Py_DumpTracebackThreads(fd, tstate->interp, tstate);
-    else
-        _Py_DumpTraceback(fd, tstate);
+        _Py_DumpTracebackThreads(fd, fatal_error.interp, tstate);
+    else {
+        if (tstate != NULL)
+            _Py_DumpTraceback(fd, tstate);
+    }
 
 #ifdef MS_WINDOWS
     if (signum == SIGSEGV) {
@@ -301,6 +312,7 @@ faulthandler_enable(PyObject *self, PyObject *args, PyObject *kwargs)
 #endif
     int err;
     int fd;
+    PyThreadState *tstate;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
         "|Oi:enable", kwlist, &file, &all_threads))
@@ -310,11 +322,16 @@ faulthandler_enable(PyObject *self, PyObject *args, PyObject *kwargs)
     if (file == NULL)
         return NULL;
 
+    tstate = get_thread_state();
+    if (tstate == NULL)
+        return NULL;
+
     Py_XDECREF(fatal_error.file);
     Py_INCREF(file);
     fatal_error.file = file;
     fatal_error.fd = fd;
     fatal_error.all_threads = all_threads;
+    fatal_error.interp = tstate->interp;
 
     if (!fatal_error.enabled) {
         fatal_error.enabled = 1;
@@ -515,12 +532,9 @@ faulthandler_dump_tracebacks_later(PyObject *self,
         return NULL;
     }
 
-    tstate = PyThreadState_Get();
-    if (tstate == NULL) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "unable to get the current thread state");
+    tstate = get_thread_state();
+    if (tstate == NULL)
         return NULL;
-    }
 
     file = faulthandler_get_fileno(file, &fd);
     if (file == NULL)
@@ -652,13 +666,9 @@ faulthandler_register(PyObject *self,
     if (!check_signum(signum))
         return NULL;
 
-    /* The caller holds the GIL and so PyThreadState_Get() can be used */
-    tstate = PyThreadState_Get();
-    if (tstate == NULL) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "unable to get the current thread state");
+    tstate = get_thread_state();
+    if (tstate == NULL)
         return NULL;
-    }
 
     file = faulthandler_get_fileno(file, &fd);
     if (file == NULL)
