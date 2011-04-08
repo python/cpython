@@ -758,6 +758,49 @@ References: <0@dom.ain> <1@dom.ain> <2@dom.ain> <3@dom.ain> <4@dom.ain>
 
 Test""")
 
+    def test_last_split_chunk_does_not_fit(self):
+        eq = self.ndiffAssertEqual
+        h = Header('Subject: the first part of this is short, but_the_second'
+            '_part_does_not_fit_within_maxlinelen_and_thus_should_be_on_a_line'
+            '_all_by_itself')
+        eq(h.encode(), """\
+Subject: the first part of this is short,
+ but_the_second_part_does_not_fit_within_maxlinelen_and_thus_should_be_on_a_line_all_by_itself""")
+
+    def test_splittable_leading_char_followed_by_overlong_unsplitable(self):
+        eq = self.ndiffAssertEqual
+        h = Header(', but_the_second'
+            '_part_does_not_fit_within_maxlinelen_and_thus_should_be_on_a_line'
+            '_all_by_itself')
+        eq(h.encode(), """\
+,
+ but_the_second_part_does_not_fit_within_maxlinelen_and_thus_should_be_on_a_line_all_by_itself""")
+
+    def test_multiple_splittable_leading_char_followed_by_overlong_unsplitable(self):
+        eq = self.ndiffAssertEqual
+        h = Header(', , but_the_second'
+            '_part_does_not_fit_within_maxlinelen_and_thus_should_be_on_a_line'
+            '_all_by_itself')
+        eq(h.encode(), """\
+, ,
+ but_the_second_part_does_not_fit_within_maxlinelen_and_thus_should_be_on_a_line_all_by_itself""")
+
+    def test_trailing_splitable_on_overlong_unsplitable(self):
+        eq = self.ndiffAssertEqual
+        h = Header('this_part_does_not_fit_within_maxlinelen_and_thus_should_'
+            'be_on_a_line_all_by_itself;')
+        eq(h.encode(), "this_part_does_not_fit_within_maxlinelen_and_thus_should_"
+            "be_on_a_line_all_by_itself;")
+
+    def test_trailing_splitable_on_overlong_unsplitable_with_leading_splitable(self):
+        eq = self.ndiffAssertEqual
+        h = Header('; '
+            'this_part_does_not_fit_within_maxlinelen_and_thus_should_'
+            'be_on_a_line_all_by_itself;')
+        eq(h.encode(), """\
+;
+ this_part_does_not_fit_within_maxlinelen_and_thus_should_be_on_a_line_all_by_itself;""")
+
     def test_no_split_long_header(self):
         eq = self.ndiffAssertEqual
         hstr = 'References: ' + 'x' * 80
