@@ -694,6 +694,9 @@ faulthandler_unregister_py(PyObject *self, PyObject *args)
     if (!check_signum(signum))
         return NULL;
 
+    if (user_signals == NULL)
+        Py_RETURN_FALSE;
+
     user = &user_signals[signum];
     change = faulthandler_unregister(user, signum);
     return PyBool_FromLong(change);

@@ -97,7 +97,8 @@ Dump the traceback on a user signal
 .. function:: unregister(signum)
 
    Unregister a user signal: uninstall the handler of the *signum* signal
-   installed by :func:`register`.
+   installed by :func:`register`. Return ``True`` if the signal was registered,
+   ``False`` otherwise.
 
    Not available on Windows.
 
