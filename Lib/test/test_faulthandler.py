@@ -352,7 +352,7 @@ Current thread XXX:
         with temporary_filename() as filename:
             self.check_dump_traceback_threads(filename)
 
-    def _check_dump_tracebacks_later(self, repeat, cancel, filename):
+    def _check_dump_tracebacks_later(self, repeat, cancel, filename, loops):
         """
         Check how many times the traceback is written in timeout x 2.5 seconds,
         or timeout x 3.5 seconds if cancel is True: 1, 2 or 3 times depending
@@ -364,42 +364,43 @@ Current thread XXX:
 import faulthandler
 import time
 
-def func(repeat, cancel, timeout):
-    if cancel:
+def func(timeout, repeat, cancel, file, loops):
+    for loop in range(loops):
+        faulthandler.dump_tracebacks_later(timeout, repeat=repeat, file=file)
+        if cancel:
+            faulthandler.cancel_dump_tracebacks_later()
+        time.sleep(timeout * 2.5)
         faulthandler.cancel_dump_tracebacks_later()
-    time.sleep(timeout * 2.5)
-    faulthandler.cancel_dump_tracebacks_later()
 
 timeout = {timeout}
 repeat = {repeat}
 cancel = {cancel}
+loops = {loops}
 if {has_filename}:
     file = open({filename}, "wb")
 else:
     file = None
-faulthandler.dump_tracebacks_later(timeout,
-    repeat=repeat, file=file)
-func(repeat, cancel, timeout)
+func(timeout, repeat, cancel, file, loops)
 if file is not None:
     file.close()
 """.strip()
         code = code.format(
-            filename=repr(filename),
-            has_filename=bool(filename),
+            timeout=TIMEOUT,
             repeat=repeat,
             cancel=cancel,
-            timeout=TIMEOUT,
+            loops=loops,
+            has_filename=bool(filename),
+            filename=repr(filename),
         )
         trace, exitcode = self.get_output(code, filename)
         trace = '\n'.join(trace)
 
         if not cancel:
+            count = loops
             if repeat:
-                count = 2
-            else:
-                count = 1
+                count *= 2
             header = 'Thread 0x[0-9a-f]+:\n'
-            regex = expected_traceback(7, 19, header, count=count)
+            regex = expected_traceback(9, 20, header, count=count)
             self.assertRegex(trace, regex)
         else:
             self.assertEqual(trace, '')
@@ -408,12 +409,17 @@ if file is not None:
     @unittest.skipIf(not hasattr(faulthandler, 'dump_tracebacks_later'),
                      'need faulthandler.dump_tracebacks_later()')
     def check_dump_tracebacks_later(self, repeat=False, cancel=False,
-                                  file=False):
+                                    file=False, twice=False):
+        if twice:
+            loops = 2
+        else:
+            loops = 1
         if file:
             with temporary_filename() as filename:
-                self._check_dump_tracebacks_later(repeat, cancel, filename)
+                self._check_dump_tracebacks_later(repeat, cancel,
+                                                  filename, loops)
         else:
-            self._check_dump_tracebacks_later(repeat, cancel, None)
+            self._check_dump_tracebacks_later(repeat, cancel, None, loops)
 
     def test_dump_tracebacks_later(self):
         self.check_dump_tracebacks_later()
@@ -426,6 +432,9 @@ if file is not None:
 
     def test_dump_tracebacks_later_file(self):
         self.check_dump_tracebacks_later(file=True)
+
+    def test_dump_tracebacks_later_twice(self):
+        self.check_dump_tracebacks_later(twice=True)
 
     @unittest.skipIf(not hasattr(faulthandler, "register"),
                      "need faulthandler.register")
