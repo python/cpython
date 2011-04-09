@@ -36,7 +36,7 @@ static int
 my_fgets(char *buf, int len, FILE *fp)
 {
     char *p;
-    for (;;) {
+    while (1) {
         if (PyOS_InputHook != NULL)
             (void)(PyOS_InputHook)();
         errno = 0;
@@ -85,9 +85,10 @@ my_fgets(char *buf, int len, FILE *fp)
 #ifdef WITH_THREAD
             PyEval_SaveThread();
 #endif
-            if (s < 0) {
-                return 1;
-            }
+            if (s < 0)
+                    return 1;
+            /* try again */
+            continue;
         }
 #endif
         if (PyOS_InterruptOccurred()) {
