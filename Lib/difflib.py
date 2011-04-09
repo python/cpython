@@ -1267,7 +1267,7 @@ def context_diff(a, b, fromfile='', tofile='',
             yield '*** %d,%d ****%s' % (group[0][1]+1, group[-1][2], lineterm)
         else:
             yield '*** %d ****%s' % (group[-1][2], lineterm)
-        visiblechanges = [e for e in group if e[0] in ('replace', 'delete')]
+        visiblechanges = [e for e in group if e[0] in {'replace', 'delete'}]
         if visiblechanges:
             for tag, i1, i2, _, _ in group:
                 if tag != 'insert':
@@ -1278,7 +1278,7 @@ def context_diff(a, b, fromfile='', tofile='',
             yield '--- %d,%d ----%s' % (group[0][3]+1, group[-1][4], lineterm)
         else:
             yield '--- %d ----%s' % (group[-1][4], lineterm)
-        visiblechanges = [e for e in group if e[0] in ('replace', 'insert')]
+        visiblechanges = [e for e in group if e[0] in {'replace', 'insert'}]
         if visiblechanges:
             for tag, _, _, j1, j2 in group:
                 if tag != 'delete':
