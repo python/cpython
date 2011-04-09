@@ -10,6 +10,10 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #11650: PyOS_StdioReadline() retries fgets() if it was interrupted
+  (EINTR), for example if the program is stopped with CTRL+z on Mac OS X. Patch
+  written by Charles-Francois Natali.
+
 - Issue #9319: Include the filename in "Non-UTF8 code ..." syntax error.
 
 - Issue #10785: Store the filename as Unicode in the Python parser.
