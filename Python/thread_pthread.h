@@ -18,18 +18,6 @@
 #ifndef THREAD_STACK_SIZE
 #define THREAD_STACK_SIZE       0       /* use default stack size */
 #endif
-
-#if (defined(__APPLE__) || defined(__FreeBSD__)) && defined(THREAD_STACK_SIZE) && THREAD_STACK_SIZE == 0
-   /* The default stack size for new threads on OSX is small enough that
-    * we'll get hard crashes instead of 'maximum recursion depth exceeded'
-    * exceptions.
-    *
-    * The default stack size below is the minimal stack size where a
-    * simple recursive function doesn't cause a hard crash.
-    */
-#undef  THREAD_STACK_SIZE
-#define THREAD_STACK_SIZE       0x100000
-#endif
 /* for safety, ensure a viable minimum stacksize */
 #define THREAD_STACK_MIN        0x8000  /* 32kB */
 #else  /* !_POSIX_THREAD_ATTR_STACKSIZE */
