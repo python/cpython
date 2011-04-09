@@ -20,6 +20,7 @@ class SelectTestCase(unittest.TestCase):
         self.assertRaises(TypeError, select.select, [self.Nope()], [], [])
         self.assertRaises(TypeError, select.select, [self.Almost()], [], [])
         self.assertRaises(TypeError, select.select, [], [], [], "not a number")
+        self.assertRaises(ValueError, select.select, [], [], [], -1)
 
     def test_returned_list_identity(self):
         # See issue #8329
