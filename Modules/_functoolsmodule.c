@@ -372,7 +372,7 @@ static PyMemberDef keyobject_members[] = {
 };
 
 static PyObject *
-keyobject_call(keyobject *ko, PyObject *args, PyObject *kw);
+keyobject_call(keyobject *ko, PyObject *args, PyObject *kwds);
 
 static PyObject *
 keyobject_richcompare(PyObject *ko, PyObject *other, int op);
