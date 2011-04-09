@@ -403,6 +403,9 @@ Extensions
 Tests
 -----
 
+- Issue #11719: Fix message about unexpected test_msilib skip on non-Windows
+  platforms. Patch by Nadeem Vawda.
+
 - Issue #11727: Add a --timeout option to regrtest: if a test takes more than
   TIMEOUT seconds, dumps the traceback of all threads and exits.
 

@@ -1530,7 +1530,7 @@ class _ExpectedSkips:
                 # is distributed with Python
                 WIN_ONLY = {"test_unicode_file", "test_winreg",
                             "test_winsound", "test_startfile",
-                            "test_sqlite"}
+                            "test_sqlite", "test_msilib"}
                 self.expected |= WIN_ONLY
 
             if sys.platform != 'sunos5':
