@@ -223,6 +223,9 @@ Extensions
 Tests
 -----
 
+- Issue #11719: Fix message about unexpected test_msilib skip on non-Windows
+  platforms. Patch by Nadeem Vawda.
+
 - Issue #11653: fix -W with -j in regrtest.
 
 - Issue #11577: improve test coverage of binhex.py. Patch by Arkady Koplyarov.
