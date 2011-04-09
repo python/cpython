@@ -9,6 +9,10 @@ What's New in Python 2.7.2?
 Core and Builtins
 -----------------
 
+- Issue #11650: PyOS_StdioReadline() retries fgets() if it was interrupted
+  (EINTR), for example if the program is stopped with CTRL+z on Mac OS X. Patch
+  written by Charles-Francois Natali.
+
 - Issue #11144: Ensure that int(a_float) returns an int whenever possible.
   Previously, there were some corner cases where a long was returned even
   though the result was within the range of an int.
