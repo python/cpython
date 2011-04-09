@@ -666,36 +666,6 @@ class ThreadingExceptionTests(BaseTestCase):
         thread.start()
         self.assertRaises(RuntimeError, setattr, thread, "daemon", True)
 
-    def test_recursion_limit(self):
-        # Issue 9670
-        # test that excessive recursion within a non-main thread causes
-        # an exception rather than crashing the interpreter on platforms
-        # like Mac OS X or FreeBSD which have small default stack sizes
-        # for threads
-        script = """if True:
-            import threading
-
-            def recurse():
-                return recurse()
-
-            def outer():
-                try:
-                    recurse()
-                except RuntimeError:
-                    pass
-
-            w = threading.Thread(target=outer)
-            w.start()
-            w.join()
-            print('end of main thread')
-            """
-        expected_output = "end of main thread\n"
-        p = subprocess.Popen([sys.executable, "-c", script],
-                             stdout=subprocess.PIPE)
-        stdout, stderr = p.communicate()
-        data = stdout.decode().replace('\r', '')
-        self.assertEqual(p.returncode, 0, "Unexpected error")
-        self.assertEqual(data, expected_output)
 
 class LockTests(lock_tests.LockTests):
     locktype = staticmethod(threading.Lock)
