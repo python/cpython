@@ -1239,7 +1239,7 @@ class _ExpectedSkips:
                 # is distributed with Python
                 WIN_ONLY = ["test_unicode_file", "test_winreg",
                             "test_winsound", "test_startfile",
-                            "test_sqlite"]
+                            "test_sqlite", "test_msilib"]
                 for skip in WIN_ONLY:
                     self.expected.add(skip)
 
