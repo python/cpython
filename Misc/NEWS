@@ -319,6 +319,9 @@ Build
 Tests
 -----
 
+- Issue #11719: Fix message about unexpected test_msilib skip on non-Windows
+  platforms. Patch by Nadeem Vawda.
+
 - Issue #7108: Fix test_commands to not fail when special attributes ('@'
   or '.') appear in 'ls -l' output.
 
