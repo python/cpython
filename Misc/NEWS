@@ -466,6 +466,11 @@ C-API
 
 - PY_PATCHLEVEL_REVISION has been removed, since it's meaningless with Mercurial.
 
+Documentation
+-------------
+
+- Issue #11818: Fix tempfile examples for Python 3.
+
 
 What's New in Python 3.2?
 =========================
