@@ -257,6 +257,11 @@ Tests
 - Issue #10826: Prevent sporadic failure in test_subprocess on Solaris due
   to open door files.
 
+Documentation
+-------------
+
+- Issue #11818: Fix tempfile examples for Python 3.
+
 
 What's New in Python 3.2?
 =========================
