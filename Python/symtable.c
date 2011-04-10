@@ -750,7 +750,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
             goto error;
     }
 
-    /* Recursively call analyze_block() on each child block.
+    /* Recursively call analyze_child_block() on each child block.
 
        newbound, newglobal now contain the names visible in
        nested blocks.  The free variables in the children will
@@ -1205,9 +1205,9 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
     case Raise_kind:
         if (s->v.Raise.exc) {
             VISIT(st, expr, s->v.Raise.exc);
-        if (s->v.Raise.cause) {
-        VISIT(st, expr, s->v.Raise.cause);
-        }
+            if (s->v.Raise.cause) {
+                VISIT(st, expr, s->v.Raise.cause);
+            }
         }
         break;
     case TryExcept_kind:
