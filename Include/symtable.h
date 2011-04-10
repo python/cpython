@@ -23,10 +23,13 @@ struct symtable {
     PyObject *st_blocks;            /* dict: map AST node addresses
                                      *       to symbol table entries */
     PyObject *st_stack;             /* list: stack of namespace info */
-    PyObject *st_global;            /* borrowed ref to st_top->st_symbols */
-    int st_nblocks;                 /* number of blocks used */
+    PyObject *st_global;            /* borrowed ref to st_top->ste_symbols */
+    int st_nblocks;                 /* number of blocks used. kept for
+                                       consistency with the corresponding
+                                       compiler structure */
     PyObject *st_private;           /* name of current class or NULL */
-    PyFutureFeatures *st_future;    /* module's future features */
+    PyFutureFeatures *st_future;    /* module's future features that affect
+                                       the symbol table */
 };
 
 typedef struct _symtable_entry {
@@ -34,7 +37,7 @@ typedef struct _symtable_entry {
     PyObject *ste_id;        /* int: key in ste_table->st_blocks */
     PyObject *ste_symbols;   /* dict: variable names to flags */
     PyObject *ste_name;      /* string: name of current block */
-    PyObject *ste_varnames;  /* list of variable names */
+    PyObject *ste_varnames;  /* list of function parameters */
     PyObject *ste_children;  /* list of child blocks */
     _Py_block_ty ste_type;   /* module, class, or function */
     int ste_unoptimized;     /* false if namespace is optimized */
