@@ -98,6 +98,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #11814: Fix likely typo in multiprocessing.Pool._terminate().
+
+- Issue #8428: Fix a race condition in multiprocessing.Pool when terminating
+  worker processes: new processes would be spawned while the pool is being
+  shut down.  Patch by Charles-François Natali.
+
 - Issue #2650: re.escape() no longer escapes the '_'.
 
 - Issue #11757: select.select() now raises ValueError when a negative timeout
