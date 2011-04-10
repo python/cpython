@@ -428,7 +428,7 @@ class ReTests(unittest.TestCase):
         self.assertEqual(m.span(), span)
 
     def test_re_escape(self):
-        alnum_chars = string.ascii_letters + string.digits
+        alnum_chars = string.ascii_letters + string.digits + '_'
         p = ''.join(chr(i) for i in range(256))
         for c in p:
             if c in alnum_chars:
@@ -441,7 +441,7 @@ class ReTests(unittest.TestCase):
         self.assertMatch(re.escape(p), p)
 
     def test_re_escape_byte(self):
-        alnum_chars = (string.ascii_letters + string.digits).encode('ascii')
+        alnum_chars = (string.ascii_letters + string.digits + '_').encode('ascii')
         p = bytes(range(256))
         for i in p:
             b = bytes([i])
