@@ -483,13 +483,15 @@ The :class:`SequenceMatcher` class has this constructor:
         >>> b = "abycdf"
         >>> s = SequenceMatcher(None, a, b)
         >>> for tag, i1, i2, j1, j2 in s.get_opcodes():
-        ...    print(("%7s a[%d:%d] (%s) b[%d:%d] (%s)" %
-        ...           (tag, i1, i2, a[i1:i2], j1, j2, b[j1:j2])))
-         delete a[0:1] (q) b[0:0] ()
-          equal a[1:3] (ab) b[0:2] (ab)
-        replace a[3:4] (x) b[2:3] (y)
-          equal a[4:6] (cd) b[3:5] (cd)
-         insert a[6:6] () b[5:6] (f)
+            print('{:7}   a[{}:{}] --> b[{}:{}] {!r:>8} --> {!r}'.format(
+                tag, i1, i2, j1, j2, a[i1:i2], b[j1:j2]))
+
+
+        delete    a[0:1] --> b[0:0]      'q' --> ''
+        equal     a[1:3] --> b[0:2]     'ab' --> 'ab'
+        replace   a[3:4] --> b[2:3]      'x' --> 'y'
+        equal     a[4:6] --> b[3:5]     'cd' --> 'cd'
+        insert    a[6:6] --> b[5:6]       '' --> 'f'
 
 
    .. method:: get_grouped_opcodes(n=3)
