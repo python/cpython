@@ -500,7 +500,7 @@ class Pool(object):
         task_handler.join()
 
         debug('joining result handler')
-        task_handler.join()
+        result_handler.join()
 
         if pool and hasattr(pool[0], 'terminate'):
             debug('joining pool workers')
