@@ -689,9 +689,12 @@ form.
 
 .. function:: escape(string)
 
-   Return *string* with all non-alphanumerics backslashed; this is useful if you
-   want to match an arbitrary literal string that may have regular expression
-   metacharacters in it.
+   Escape all the characters in pattern except ASCII letters, numbers and ``'_'``.
+   This is useful if you want to match an arbitrary literal string that may
+   have regular expression metacharacters in it.
+
+   .. versionchanged:: 3.3
+      The ``'_'`` character is no longer escaped.
 
 
 .. function:: purge()
