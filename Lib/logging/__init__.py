@@ -1663,7 +1663,7 @@ def basicConfig(**kwargs):
 
     .. versionchanged:: 3.2
        Added the ``style`` parameter.
-       
+
     .. versionchanged:: 3.3
        Added the ``handlers`` parameter. A ``ValueError`` is now thrown for
        incompatible arguments (e.g. ``handlers`` specified together with
