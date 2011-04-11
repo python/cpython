@@ -51,6 +51,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5162: Treat services like frozen executables to allow child spawning
+  from multiprocessing.forking on Windows.
+
 - Issue #4877: Fix a segfault in xml.parsers.expat while attempting to parse
   a closed file.
 
