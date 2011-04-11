@@ -48,8 +48,8 @@ Core and Builtins
 Library
 -------
 
- - Issue #5162: Treat services like frozen executables to allow child spawning
-   from multiprocessing.forking on Windows.
+- Issue #5162: Treat services like frozen executables to allow child spawning
+  from multiprocessing.forking on Windows.
 
 - Issue #10963: Ensure that subprocess.communicate() never raises EPIPE.
 
