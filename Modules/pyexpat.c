@@ -847,7 +847,6 @@ xmlparse_ParseFile(xmlparseobject *self, PyObject *f)
 
     readmethod = PyObject_GetAttrString(f, "read");
     if (readmethod == NULL) {
-        PyErr_Clear();
         PyErr_SetString(PyExc_TypeError,
                         "argument must have 'read' attribute");
         return NULL;
