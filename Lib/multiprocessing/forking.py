@@ -198,6 +198,7 @@ else:
 
     TERMINATE = 0x10000
     WINEXE = (sys.platform == 'win32' and getattr(sys, 'frozen', False))
+    WINSERVICE = sys.executable.lower().endswith("pythonservice.exe")
 
     exit = win32.ExitProcess
     close = win32.CloseHandle
@@ -207,7 +208,7 @@ else:
     # People embedding Python want to modify it.
     #
 
-    if sys.executable.lower().endswith('pythonservice.exe'):
+    if WINSERVICE:
         _python_exe = os.path.join(sys.exec_prefix, 'python.exe')
     else:
         _python_exe = sys.executable
@@ -397,7 +398,7 @@ else:
         if _logger is not None:
             d['log_level'] = _logger.getEffectiveLevel()
 
-        if not WINEXE:
+        if not WINEXE and not WINSERVICE:
             main_path = getattr(sys.modules['__main__'], '__file__', None)
             if not main_path and sys.argv[0] not in ('', '-c'):
                 main_path = sys.argv[0]
