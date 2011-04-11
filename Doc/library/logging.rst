@@ -983,11 +983,26 @@ functions.
    | ``stream``   | Use the specified stream to initialize the  |
    |              | StreamHandler. Note that this argument is   |
    |              | incompatible with 'filename' - if both are  |
-   |              | present, 'stream' is ignored.               |
+   |              | present, a ``ValueError`` is raised.        |
+   +--------------+---------------------------------------------+
+   | ``handlers`` | If specified, this should be an iterable of |
+   |              | already created handlers to add to the root |
+   |              | logger. Any handlers which don't already    |
+   |              | have a formatter set will be assigned the   |
+   |              | default formatter created in this function. |
+   |              | Note that this argument is incompatible     |
+   |              | with 'filename' or 'stream' - if both are   |
+   |              | present, a ``ValueError`` is raised.        |
    +--------------+---------------------------------------------+
 
    .. versionchanged:: 3.2
       The ``style`` argument was added.
+
+   .. versionchanged:: 3.3
+      The ``handlers`` argument was added. Additional checks were added to
+      catch situations where incompatible arguments are specified (e.g.
+      ``handlers`` together with ``stream`` or ``filename``, or ``stream``
+      together with ``filename``).
 
 
 .. function:: shutdown()
