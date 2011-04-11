@@ -103,6 +103,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5162: Treat services like frozen executables to allow child spawning
+  from multiprocessing.forking on Windows.
+
 - logging.basicConfig now supports an optional 'handlers' argument taking an
   iterable of handlers to be added to the root logger. Additional parameter
   checks were also added to basicConfig.
