@@ -10,6 +10,11 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #5673: Added a `timeout` keyword argument to subprocess.Popen.wait,
+  subprocess.Popen.communicated, subprocess.call, subprocess.check_call, and
+  subprocess.check_output.  If the blocking operation takes more than `timeout`
+  seconds, the `subprocess.TimeoutExpired` exception is raised.
+
 - Issue #11650: PyOS_StdioReadline() retries fgets() if it was interrupted
   (EINTR), for example if the program is stopped with CTRL+z on Mac OS X. Patch
   written by Charles-Francois Natali.
