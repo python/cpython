@@ -53,6 +53,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5162: Treat services like frozen executables to allow child spawning
+  from multiprocessing.forking on Windows.
+
 - Issue #11814: Fix likely typo in multiprocessing.Pool._terminate().
 
 - Issue #11747: Fix range formatting in difflib.context_diff() and
