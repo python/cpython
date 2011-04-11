@@ -1144,6 +1144,17 @@ def IS_CHARACTER_JUNK(ch, ws=" \t"):
     return ch in ws
 
 
+def _format_range(start, stop):
+    'Convert range to the "ed" format'
+    # Per the diff spec at http://www.unix.org/single_unix_specification/
+    beginning = start + 1     # lines start numbering with one
+    length = stop - start
+    if length == 1:
+        return '{}'.format(beginning)
+    if not length:
+        beginning -= 1        # empty ranges begin at line just before the range
+    return '{},{}'.format(beginning, length)
+
 def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
                  tofiledate='', n=3, lineterm='\n'):
     r"""
@@ -1193,9 +1204,12 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
             todate = '\t{}'.format(tofiledate) if tofiledate else ''
             yield '--- {}{}{}'.format(fromfile, fromdate, lineterm)
             yield '+++ {}{}{}'.format(tofile, todate, lineterm)
+
         first, last = group[0], group[-1]
-        i1, i2, j1, j2 = first[1], last[2], first[3], last[4]
-        yield '@@ -{},{} +{},{} @@{}'.format(i1+1, i2-i1, j1+1, j2-j1, lineterm)
+        file1_range = _format_range(first[1], last[2])
+        file2_range = _format_range(first[3], last[4])
+        yield '@@ -{} +{} @@{}'.format(file1_range, file2_range, lineterm)
+
         for tag, i1, i2, j1, j2 in group:
             if tag == 'equal':
                 for line in a[i1:i2]:
@@ -1264,22 +1278,20 @@ def context_diff(a, b, fromfile='', tofile='',
             yield '--- {}{}{}'.format(tofile, todate, lineterm)
 
         first, last = group[0], group[-1]
-        yield '***************{}'.format(lineterm)
+        yield '***************' + lineterm
 
-        if last[2] - first[1] > 1:
-            yield '*** {},{} ****{}'.format(first[1]+1, last[2], lineterm)
-        else:
-            yield '*** {} ****{}'.format(last[2], lineterm)
+        file1_range = _format_range(first[1], last[2])
+        yield '*** {} ****{}'.format(file1_range, lineterm)
+
         if any(tag in {'replace', 'delete'} for tag, _, _, _, _ in group):
             for tag, i1, i2, _, _ in group:
                 if tag != 'insert':
                     for line in a[i1:i2]:
                         yield prefix[tag] + line
 
-        if last[4] - first[3] > 1:
-            yield '--- {},{} ----{}'.format(first[3]+1, last[4], lineterm)
-        else:
-            yield '--- {} ----{}'.format(last[4], lineterm)
+        file2_range = _format_range(first[3], last[4])
+        yield '--- {} ----{}'.format(file2_range, lineterm)
+
         if any(tag in {'replace', 'insert'} for tag, _, _, _, _ in group):
             for tag, _, _, j1, j2 in group:
                 if tag != 'delete':
