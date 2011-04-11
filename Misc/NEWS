@@ -103,6 +103,10 @@ Core and Builtins
 Library
 -------
 
+- logging.basicConfig now supports an optional 'handlers' argument taking an
+  iterable of handlers to be added to the root logger. Additional parameter
+  checks were also added to basicConfig.
+
 - Issue #11814: Fix likely typo in multiprocessing.Pool._terminate().
 
 - Issue #8428: Fix a race condition in multiprocessing.Pool when terminating

@@ -2482,6 +2482,26 @@ class BasicConfigTest(unittest.TestCase):
         logging.basicConfig(level=57)
         self.assertEqual(logging.root.level, 57)
 
+    def test_incompatible(self):
+        assertRaises = self.assertRaises
+        handlers = [logging.StreamHandler()]
+        stream = sys.stderr
+        assertRaises(ValueError, logging.basicConfig, filename='test.log',
+                                                     stream=stream)
+        assertRaises(ValueError, logging.basicConfig, filename='test.log',
+                                                     handlers=handlers)
+        assertRaises(ValueError, logging.basicConfig, stream=stream,
+                                                     handlers=handlers)
+
+    def test_handlers(self):
+        handlers = [logging.StreamHandler(), logging.StreamHandler(sys.stdout)]
+        logging.basicConfig(handlers=handlers)
+        self.assertIs(handlers[0], logging.root.handlers[0])
+        self.assertIs(handlers[1], logging.root.handlers[1])
+        self.assertIsNotNone(handlers[0].formatter)
+        self.assertIsNotNone(handlers[1].formatter)
+        self.assertIs(handlers[0].formatter, handlers[1].formatter)
+
     def _test_log(self, method, level=None):
         # logging.root has no handlers so basicConfig should be called
         called = []
