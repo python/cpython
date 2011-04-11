@@ -6,6 +6,7 @@ import unittest
 
 from xml.parsers import expat
 
+from test import test_support
 from test.test_support import sortdict, run_unittest
 
 
@@ -216,6 +217,16 @@ class ParseTest(unittest.TestCase):
         self.assertEqual(op[14], "End element: u'sub2'")
         self.assertEqual(op[15], "External entity ref: (None, u'entity.file', None)")
         self.assertEqual(op[16], "End element: u'root'")
+
+        # Issue 4877: expat.ParseFile causes segfault on a closed file.
+        fp = open(test_support.TESTFN, 'wb')
+        try:
+            fp.close()
+            parser = expat.ParserCreate()
+            with self.assertRaises(ValueError):
+                parser.ParseFile(fp)
+        finally:
+            test_support.unlink(test_support.TESTFN)
 
 
 class NamespaceSeparatorTest(unittest.TestCase):

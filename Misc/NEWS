@@ -51,11 +51,14 @@ Core and Builtins
 Library
 -------
 
+- Issue #4877: Fix a segfault in xml.parsers.expat while attempting to parse
+  a closed file.
+
 - Issue #8428: Fix a race condition in multiprocessing.Pool when terminating
   worker processes: new processes would be spawned while the pool is being
   shut down.  Patch by Charles-François Natali.
 
-- Issue #7311: fix HTMLParser to accept non-ASCII attribute values.
+- Issue #7311: Fix HTMLParser to accept non-ASCII attribute values.
 
 - Issue #10963: Ensure that subprocess.communicate() never raises EPIPE.
 

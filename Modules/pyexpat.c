@@ -962,21 +962,15 @@ static PyObject *
 xmlparse_ParseFile(xmlparseobject *self, PyObject *f)
 {
     int rv = 1;
-    FILE *fp;
     PyObject *readmethod = NULL;
 
-    if (PyFile_Check(f)) {
-        fp = PyFile_AsFile(f);
-    }
-    else {
-        fp = NULL;
-        readmethod = PyObject_GetAttrString(f, "read");
-        if (readmethod == NULL) {
-            PyErr_Clear();
-            PyErr_SetString(PyExc_TypeError,
-                            "argument must have 'read' attribute");
-            return NULL;
-        }
+    readmethod = PyObject_GetAttrString(f, "read");
+    if (readmethod == NULL) {
+        PyErr_Clear();
+        PyErr_SetString(PyExc_TypeError,
+                        "argument must have 'read' attribute");
+        return NULL;
+
     }
     for (;;) {
         int bytes_read;
@@ -986,20 +980,12 @@ xmlparse_ParseFile(xmlparseobject *self, PyObject *f)
             return PyErr_NoMemory();
         }
 
-        if (fp) {
-            bytes_read = fread(buf, sizeof(char), BUF_SIZE, fp);
-            if (bytes_read < 0) {
-                PyErr_SetFromErrno(PyExc_IOError);
-                return NULL;
-            }
+        bytes_read = readinst(buf, BUF_SIZE, readmethod);
+        if (bytes_read < 0) {
+            Py_XDECREF(readmethod);
+            return NULL;
         }
-        else {
-            bytes_read = readinst(buf, BUF_SIZE, readmethod);
-            if (bytes_read < 0) {
-                Py_XDECREF(readmethod);
-                return NULL;
-            }
-        }
+
         rv = XML_ParseBuffer(self->itself, bytes_read, bytes_read == 0);
         if (PyErr_Occurred()) {
             Py_XDECREF(readmethod);
