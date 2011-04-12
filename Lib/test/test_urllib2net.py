@@ -160,7 +160,7 @@ class OtherNetworkTests(unittest.TestCase):
             req = urllib2.Request(urlwith_frag)
             res = urllib2.urlopen(req)
             self.assertEqual(res.geturl(),
-                    "http://docs.python.org/glossary.html")
+                    "http://docs.python.org/glossary.html#glossary")
 
     def test_fileno(self):
         req = urllib2.Request("http://www.python.org")

@@ -190,7 +190,7 @@ class Request:
                  origin_req_host=None, unverifiable=False):
         # unwrap('<URL:type://host/path>') --> 'type://host/path'
         self.__original = unwrap(url)
-        self.__original, fragment = splittag(self.__original)
+        self.__original, self.__fragment = splittag(self.__original)
         self.type = None
         # self.__r_type is what's left after doing the splittype
         self.host = None
@@ -236,7 +236,10 @@ class Request:
         return self.data
 
     def get_full_url(self):
-        return self.__original
+        if self.__fragment:
+            return '%s#%s' % (self.__original, self.__fragment)
+        else:
+            return self.__original
 
     def get_type(self):
         if self.type is None:
