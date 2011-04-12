@@ -49,6 +49,7 @@ import atexit
 from concurrent.futures import _base
 import queue
 import multiprocessing
+from multiprocessing.queues import SimpleQueue
 import threading
 import weakref
 
@@ -204,7 +205,7 @@ def _queue_manangement_worker(executor_reference,
                                 work_ids_queue,
                                 call_queue)
 
-        result_item = result_queue.get(block=True)
+        result_item = result_queue.get()
         if result_item is not None:
             work_item = pending_work_items[result_item.work_id]
             del pending_work_items[result_item.work_id]
@@ -284,7 +285,7 @@ class ProcessPoolExecutor(_base.Executor):
         # because futures in the call queue cannot be cancelled.
         self._call_queue = multiprocessing.Queue(self._max_workers +
                                                  EXTRA_QUEUED_CALLS)
-        self._result_queue = multiprocessing.Queue()
+        self._result_queue = SimpleQueue()
         self._work_ids = queue.Queue()
         self._queue_management_thread = None
         self._processes = set()

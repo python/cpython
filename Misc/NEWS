@@ -103,6 +103,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11815: Use a light-weight SimpleQueue for the result queue in
+  concurrent.futures.ProcessPoolExecutor.
+
 - Issue #5162: Treat services like frozen executables to allow child spawning
   from multiprocessing.forking on Windows.
 
