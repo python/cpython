@@ -483,6 +483,7 @@ set_context(struct compiling *c, expr_ty e, expr_context_ty ctx, const node *n)
         case Set_kind:
         case Num_kind:
         case Str_kind:
+        case Bytes_kind:
             expr_name = "literal";
             break;
         case Ellipsis_kind:
