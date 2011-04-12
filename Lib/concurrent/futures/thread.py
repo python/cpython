@@ -60,14 +60,10 @@ class _WorkItem(object):
 def _worker(executor_reference, work_queue):
     try:
         while True:
-            try:
-                work_item = work_queue.get(block=True)
-            except queue.Empty:
-                pass
-            else:
-                if work_item is not None:
-                    work_item.run()
-                    continue
+            work_item = work_queue.get(block=True)
+            if work_item is not None:
+                work_item.run()
+                continue
             executor = executor_reference()
             # Exit if:
             #   - The interpreter is shutting down OR
