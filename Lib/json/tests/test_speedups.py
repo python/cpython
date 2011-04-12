@@ -1,8 +1,14 @@
 import decimal
-from unittest import TestCase
+from unittest import TestCase, skipUnless
 
 from json import decoder, encoder, scanner
 
+try:
+    import _json
+except ImportError:
+    _json = None
+
+@skipUnless(_json, 'test requires the _json module')
 class TestSpeedups(TestCase):
     def test_scanstring(self):
         self.assertEqual(decoder.scanstring.__module__, "_json")
