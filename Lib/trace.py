@@ -335,7 +335,7 @@ class CoverageResults:
                                                       lnotab, count)
 
             if summary and n_lines:
-                percent = int(100 * n_hits / n_lines)
+                percent = 100 * n_hits // n_lines
                 sums[modulename] = n_lines, percent, modulename, filename
 
         if summary and sums:
