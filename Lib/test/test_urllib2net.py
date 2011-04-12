@@ -159,7 +159,7 @@ class OtherNetworkTests(unittest.TestCase):
             req = urllib.request.Request(urlwith_frag)
             res = urllib.request.urlopen(req)
             self.assertEqual(res.geturl(),
-                    "http://docs.python.org/glossary.html")
+                    "http://docs.python.org/glossary.html#glossary")
 
     def test_custom_headers(self):
         url = "http://www.example.com"
