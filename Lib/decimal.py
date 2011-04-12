@@ -1683,7 +1683,7 @@ class Decimal(object):
                 self = _dec_from_triple(self._sign, '1', exp_min-1)
                 digits = 0
             rounding_method = self._pick_rounding_function[context.rounding]
-            changed = getattr(self, rounding_method)(digits)
+            changed = rounding_method(self, digits)
             coeff = self._int[:digits] or '0'
             if changed > 0:
                 coeff = str(int(coeff)+1)
@@ -1790,14 +1790,14 @@ class Decimal(object):
             return -self._round_down(prec)
 
     _pick_rounding_function = dict(
-        ROUND_DOWN = '_round_down',
-        ROUND_UP = '_round_up',
-        ROUND_HALF_UP = '_round_half_up',
-        ROUND_HALF_DOWN = '_round_half_down',
-        ROUND_HALF_EVEN = '_round_half_even',
-        ROUND_CEILING = '_round_ceiling',
-        ROUND_FLOOR = '_round_floor',
-        ROUND_05UP = '_round_05up',
+        ROUND_DOWN = _round_down,
+        ROUND_UP = _round_up,
+        ROUND_HALF_UP = _round_half_up,
+        ROUND_HALF_DOWN = _round_half_down,
+        ROUND_HALF_EVEN = _round_half_even,
+        ROUND_CEILING = _round_ceiling,
+        ROUND_FLOOR = _round_floor,
+        ROUND_05UP = _round_05up,
     )
 
     def fma(self, other, third, context=None):
@@ -2504,8 +2504,8 @@ class Decimal(object):
         if digits < 0:
             self = _dec_from_triple(self._sign, '1', exp-1)
             digits = 0
-        this_function = getattr(self, self._pick_rounding_function[rounding])
-        changed = this_function(digits)
+        this_function = self._pick_rounding_function[rounding]
+        changed = this_function(self, digits)
         coeff = self._int[:digits] or '0'
         if changed == 1:
             coeff = str(int(coeff)+1)
