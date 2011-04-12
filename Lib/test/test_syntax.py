@@ -67,6 +67,10 @@ SyntaxError: can't assign to literal
 Traceback (most recent call last):
 SyntaxError: can't assign to literal
 
+>>> b"" = 1
+Traceback (most recent call last):
+SyntaxError: can't assign to literal
+
 >>> `1` = 1
 Traceback (most recent call last):
 SyntaxError: invalid syntax
