@@ -45,6 +45,9 @@ Core and Builtins
 - Issue #5587: add a repr to dict_proxy objects.  Patch by David Stanek and
   Daniel Urban.
 
+- Issue #11506: Trying to assign to a bytes literal should result in a
+  SyntaxError.
+
 Library
 -------
 
