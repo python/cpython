@@ -1007,6 +1007,15 @@ class HandlerTests(unittest.TestCase):
         o.open("http://www.example.com/")
         self.assertTrue(not hh.req.has_header("Cookie"))
 
+    def test_redirect_fragment(self):
+        redirected_url = 'http://www.example.com/index.html#OK\r\n\r\n'
+        hh = MockHTTPHandler(302, 'Location: ' + redirected_url)
+        hdeh = urllib2.HTTPDefaultErrorHandler()
+        hrh = urllib2.HTTPRedirectHandler()
+        o = build_test_opener(hh, hdeh, hrh)
+        fp = o.open('http://www.example.com')
+        self.assertEqual(fp.geturl(), redirected_url.strip())
+
     def test_proxy(self):
         o = OpenerDirector()
         ph = urllib2.ProxyHandler(dict(http="proxy.example.com:3128"))
@@ -1292,12 +1301,16 @@ class RequestTests(unittest.TestCase):
         req = Request("<URL:http://www.python.org>")
         self.assertEqual("www.python.org", req.get_host())
 
-    def test_urlwith_fragment(self):
+    def test_url_fragment(self):
         req = Request("http://www.python.org/?qs=query#fragment=true")
         self.assertEqual("/?qs=query", req.get_selector())
         req = Request("http://www.python.org/#fun=true")
         self.assertEqual("/", req.get_selector())
 
+        # Issue 11703: geturl() omits fragment in the original URL.
+        url = 'http://docs.python.org/library/urllib2.html#OK'
+        req = Request(url)
+        self.assertEqual(req.get_full_url(), url)
 
 def test_main(verbose=None):
     from test import test_urllib2
