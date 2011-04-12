@@ -1140,6 +1140,21 @@ def IS_CHARACTER_JUNK(ch, ws=" \t"):
     return ch in ws
 
 
+########################################################################
+###  Unified Diff
+########################################################################
+
+def _format_range_unified(start, stop):
+    'Convert range to the "ed" format'
+    # Per the diff spec at http://www.unix.org/single_unix_specification/
+    beginning = start + 1     # lines start numbering with one
+    length = stop - start
+    if length == 1:
+        return '{}'.format(beginning)
+    if not length:
+        beginning -= 1        # empty ranges begin at line just before the range
+    return '{},{}'.format(beginning, length)
+
 def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
                  tofiledate='', n=3, lineterm='\n'):
     r"""
@@ -1184,24 +1199,44 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
     started = False
     for group in SequenceMatcher(None,a,b).get_grouped_opcodes(n):
         if not started:
-            fromdate = '\t%s' % fromfiledate if fromfiledate else ''
-            todate = '\t%s' % tofiledate if tofiledate else ''
-            yield '--- %s%s%s' % (fromfile, fromdate, lineterm)
-            yield '+++ %s%s%s' % (tofile, todate, lineterm)
             started = True
-        i1, i2, j1, j2 = group[0][1], group[-1][2], group[0][3], group[-1][4]
-        yield "@@ -%d,%d +%d,%d @@%s" % (i1+1, i2-i1, j1+1, j2-j1, lineterm)
+            fromdate = '\t{}'.format(fromfiledate) if fromfiledate else ''
+            todate = '\t{}'.format(tofiledate) if tofiledate else ''
+            yield '--- {}{}{}'.format(fromfile, fromdate, lineterm)
+            yield '+++ {}{}{}'.format(tofile, todate, lineterm)
+
+        first, last = group[0], group[-1]
+        file1_range = _format_range_unified(first[1], last[2])
+        file2_range = _format_range_unified(first[3], last[4])
+        yield '@@ -{} +{} @@{}'.format(file1_range, file2_range, lineterm)
+
         for tag, i1, i2, j1, j2 in group:
             if tag == 'equal':
                 for line in a[i1:i2]:
                     yield ' ' + line
                 continue
-            if tag == 'replace' or tag == 'delete':
+            if tag in ('replace', 'delete'):
                 for line in a[i1:i2]:
                     yield '-' + line
-            if tag == 'replace' or tag == 'insert':
+            if tag in ('replace', 'insert'):
                 for line in b[j1:j2]:
                     yield '+' + line
+
+
+########################################################################
+###  Context Diff
+########################################################################
+
+def _format_range_context(start, stop):
+    'Convert range to the "ed" format'
+    # Per the diff spec at http://www.unix.org/single_unix_specification/
+    beginning = start + 1     # lines start numbering with one
+    length = stop - start
+    if not length:
+        beginning -= 1        # empty ranges begin at line just before the range
+    if length <= 1:
+        return '{}'.format(beginning)
+    return '{},{}'.format(beginning, beginning + length - 1)
 
 # See http://www.unix.org/single_unix_specification/
 def context_diff(a, b, fromfile='', tofile='',
@@ -1247,38 +1282,36 @@ def context_diff(a, b, fromfile='', tofile='',
       four
     """
 
+    prefix = dict(insert='+ ', delete='- ', replace='! ', equal='  ')
     started = False
-    prefixmap = {'insert':'+ ', 'delete':'- ', 'replace':'! ', 'equal':'  '}
     for group in SequenceMatcher(None,a,b).get_grouped_opcodes(n):
         if not started:
-            fromdate = '\t%s' % fromfiledate if fromfiledate else ''
-            todate = '\t%s' % tofiledate if tofiledate else ''
-            yield '*** %s%s%s' % (fromfile, fromdate, lineterm)
-            yield '--- %s%s%s' % (tofile, todate, lineterm)
             started = True
+            fromdate = '\t{}'.format(fromfiledate) if fromfiledate else ''
+            todate = '\t{}'.format(tofiledate) if tofiledate else ''
+            yield '*** {}{}{}'.format(fromfile, fromdate, lineterm)
+            yield '--- {}{}{}'.format(tofile, todate, lineterm)
 
-        yield '***************%s' % (lineterm,)
-        if group[-1][2] - group[0][1] >= 2:
-            yield '*** %d,%d ****%s' % (group[0][1]+1, group[-1][2], lineterm)
-        else:
-            yield '*** %d ****%s' % (group[-1][2], lineterm)
-        visiblechanges = [e for e in group if e[0] in ('replace', 'delete')]
-        if visiblechanges:
+        first, last = group[0], group[-1]
+        yield '***************' + lineterm
+
+        file1_range = _format_range_context(first[1], last[2])
+        yield '*** {} ****{}'.format(file1_range, lineterm)
+
+        if any(tag in ('replace', 'delete') for tag, _, _, _, _ in group):
             for tag, i1, i2, _, _ in group:
                 if tag != 'insert':
                     for line in a[i1:i2]:
-                        yield prefixmap[tag] + line
+                        yield prefix[tag] + line
 
-        if group[-1][4] - group[0][3] >= 2:
-            yield '--- %d,%d ----%s' % (group[0][3]+1, group[-1][4], lineterm)
-        else:
-            yield '--- %d ----%s' % (group[-1][4], lineterm)
-        visiblechanges = [e for e in group if e[0] in ('replace', 'insert')]
-        if visiblechanges:
+        file2_range = _format_range_context(first[3], last[4])
+        yield '--- {} ----{}'.format(file2_range, lineterm)
+
+        if any(tag in ('replace', 'insert') for tag, _, _, _, _ in group):
             for tag, _, _, j1, j2 in group:
                 if tag != 'delete':
                     for line in b[j1:j2]:
-                        yield prefixmap[tag] + line
+                        yield prefix[tag] + line
 
 def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK):
     r"""
