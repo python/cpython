@@ -103,6 +103,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11186: pydoc ignores a module if its name contains a surrogate
+  character in the index of modules.
+
 - Issue #11815: Use a light-weight SimpleQueue for the result queue in
   concurrent.futures.ProcessPoolExecutor.
 

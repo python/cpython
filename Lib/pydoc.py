@@ -952,6 +952,9 @@ class HTMLDoc(Doc):
         modpkgs = []
         if shadowed is None: shadowed = {}
         for importer, name, ispkg in pkgutil.iter_modules([dir]):
+            if any((0xD800 <= ord(ch) <= 0xDFFF) for ch in name):
+                # ignore a module if its name contains a surrogate character
+                continue
             modpkgs.append((name, '', ispkg, name in shadowed))
             shadowed[name] = 1
 
