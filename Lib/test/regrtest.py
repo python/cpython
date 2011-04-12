@@ -240,7 +240,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
          findleaks=False, use_resources=None, trace=False, coverdir='coverage',
          runleaks=False, huntrleaks=False, verbose2=False, print_slow=False,
          random_seed=None, use_mp=None, verbose3=False, forever=False,
-         header=False, timeout=60*60):
+         header=False):
     """Execute a test suite.
 
     This also parses command-line options and modifies its behavior
@@ -263,6 +263,10 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     directly to set the values that would normally be set by flags
     on the command line.
     """
+    if hasattr(faulthandler, 'dump_tracebacks_later'):
+        timeout = 60*60
+    else:
+        timeout = None
 
     replace_stdout()
 
@@ -409,6 +413,10 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             # join it with the saved CWD so it ends up where the user expects.
             testdir = os.path.join(support.SAVEDCWD, a)
         elif o == '--timeout':
+            if not hasattr(faulthandler, 'dump_tracebacks_later'):
+                print("--timeout option requires "
+                      "faulthandler.dump_tracebacks_later", file=sys.stderr)
+                sys.exit(1)
             timeout = float(a)
         else:
             print(("No handler for option {}.  Please report this as a bug "
