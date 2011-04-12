@@ -60,9 +60,9 @@ The class can be used to simulate nested scopes and is useful in templating.
    Lookups search the underlying mappings successively until a key is found.  In
    contrast, writes, updates, and deletions only operate on the first mapping.
 
-   A class:`ChainMap` incorporates the underlying mappings by reference.  So, if
+   A :class:`ChainMap` incorporates the underlying mappings by reference.  So, if
    one of the underlying mappings gets updated, those changes will be reflected
-   in class:`ChainMap`.
+   in :class:`ChainMap`.
 
    All of the usual dictionary methods are supported.  In addition, there is a
    *maps* attribute, a method for creating new subcontexts, and a property for
