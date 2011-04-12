@@ -57,6 +57,10 @@ Library
 - Issue #4877: Fix a segfault in xml.parsers.expat while attempting to parse
   a closed file.
 
+- Issue #11830: Remove unnecessary introspection code in the decimal module.
+  It was causing a failed import in the Turkish locale where the locale
+  sensitive str.upper() method caused a name mismatch.
+
 - Issue #8428: Fix a race condition in multiprocessing.Pool when terminating
   worker processes: new processes would be spawned while the pool is being
   shut down.  Patch by Charles-François Natali.
