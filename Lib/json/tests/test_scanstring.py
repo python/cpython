@@ -1,14 +1,20 @@
 import sys
 import decimal
-from unittest import TestCase
+from unittest import TestCase, skipUnless
 
 import json
 import json.decoder
+
+try:
+    import _json
+except ImportError:
+    _json = None
 
 class TestScanString(TestCase):
     def test_py_scanstring(self):
         self._test_scanstring(json.decoder.py_scanstring)
 
+    @skipUnless(_json, 'test requires the _json module')
     def test_c_scanstring(self):
         self._test_scanstring(json.decoder.c_scanstring)
 
