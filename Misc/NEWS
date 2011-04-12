@@ -716,6 +716,9 @@ Core and Builtins
 
 - Add sys.flags attribute for the new -q command-line option.
 
+- Issue #11506: Trying to assign to a bytes literal should result in a
+  SyntaxError.
+
 Library
 -------
 
