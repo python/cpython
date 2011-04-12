@@ -219,6 +219,47 @@ class TestOutputFormat(unittest.TestCase):
         cd = difflib.context_diff(*args, lineterm='')
         self.assertEqual(list(cd)[0:2], ["*** Original", "--- Current"])
 
+    def test_range_format_unified(self):
+        # Per the diff spec at http://www.unix.org/single_unix_specification/
+        spec = '''\
+           Each <range> field shall be of the form:
+             %1d", <beginning line number>  if the range contains exactly one line,
+           and:
+            "%1d,%1d", <beginning line number>, <number of lines> otherwise.
+           If a range is empty, its beginning line number shall be the number of
+           the line just before the range, or 0 if the empty range starts the file.
+        '''
+        fmt = difflib._format_range_unified
+        self.assertEqual(fmt(3,3), '3,0')
+        self.assertEqual(fmt(3,4), '4')
+        self.assertEqual(fmt(3,5), '4,2')
+        self.assertEqual(fmt(3,6), '4,3')
+        self.assertEqual(fmt(0,0), '0,0')
+
+    def test_range_format_context(self):
+        # Per the diff spec at http://www.unix.org/single_unix_specification/
+        spec = '''\
+           The range of lines in file1 shall be written in the following format
+           if the range contains two or more lines:
+               "*** %d,%d ****\n", <beginning line number>, <ending line number>
+           and the following format otherwise:
+               "*** %d ****\n", <ending line number>
+           The ending line number of an empty range shall be the number of the preceding line,
+           or 0 if the range is at the start of the file.
+
+           Next, the range of lines in file2 shall be written in the following format
+           if the range contains two or more lines:
+               "--- %d,%d ----\n", <beginning line number>, <ending line number>
+           and the following format otherwise:
+               "--- %d ----\n", <ending line number>
+        '''
+        fmt = difflib._format_range_context
+        self.assertEqual(fmt(3,3), '3')
+        self.assertEqual(fmt(3,4), '4')
+        self.assertEqual(fmt(3,5), '4,5')
+        self.assertEqual(fmt(3,6), '4,6')
+        self.assertEqual(fmt(0,0), '0')
+
 
 def test_main():
     difflib.HtmlDiff._default_prefix = 0
