@@ -180,7 +180,7 @@ class Request:
                  origin_req_host=None, unverifiable=False):
         # unwrap('<URL:type://host/path>') --> 'type://host/path'
         self.full_url = unwrap(url)
-        self.full_url, fragment = splittag(self.full_url)
+        self.full_url, self.fragment = splittag(self.full_url)
         self.data = data
         self.headers = {}
         self._tunnel_host = None
@@ -219,7 +219,10 @@ class Request:
         return self.data
 
     def get_full_url(self):
-        return self.full_url
+        if self.fragment:
+            return '%s#%s' % (self.full_url, self.fragment)
+        else:
+            return self.full_url
 
     def get_type(self):
         return self.type
@@ -1135,7 +1138,7 @@ class AbstractHTTPHandler(BaseHandler):
         except socket.error as err:
             raise URLError(err)
 
-        r.url = req.full_url
+        r.url = req.get_full_url()
         # This line replaces the .msg attribute of the HTTPResponse
         # with .headers, because urllib clients expect the response to
         # have the reason in .msg.  It would be good to mark this
