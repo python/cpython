@@ -292,12 +292,12 @@ class Header:
         75-character length limit on any given encoded header field, so
         line-wrapping must be performed, even with double-byte character sets.
 
-        This method will do its best to convert the string to the correct
-        character set used in email, and encode and line wrap it safely with
-        the appropriate scheme for that character set.
-
-        If the given charset is not known or an error occurs during
-        conversion, this function will return the header untouched.
+        Optional maxlinelen specifies the maxiumum length of each generated
+        line, exclusive of the linesep string.  Individual lines may be longer
+        than maxlinelen if a folding point cannot be found.  The first line
+        will be shorter by the length of the header name plus ": " if a header
+        name was specified at Header construction time.  The default value for
+        maxlinelen is determined at header construction time.
 
         Optional splitchars is a string containing characters to split long
         ASCII lines on, in rough support of RFC 2822's `highest level
