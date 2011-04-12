@@ -1144,7 +1144,11 @@ def IS_CHARACTER_JUNK(ch, ws=" \t"):
     return ch in ws
 
 
-def _format_range(start, stop):
+########################################################################
+###  Unified Diff
+########################################################################
+
+def _format_range_unified(start, stop):
     'Convert range to the "ed" format'
     # Per the diff spec at http://www.unix.org/single_unix_specification/
     beginning = start + 1     # lines start numbering with one
@@ -1206,8 +1210,8 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
             yield '+++ {}{}{}'.format(tofile, todate, lineterm)
 
         first, last = group[0], group[-1]
-        file1_range = _format_range(first[1], last[2])
-        file2_range = _format_range(first[3], last[4])
+        file1_range = _format_range_unified(first[1], last[2])
+        file2_range = _format_range_unified(first[3], last[4])
         yield '@@ -{} +{} @@{}'.format(file1_range, file2_range, lineterm)
 
         for tag, i1, i2, j1, j2 in group:
@@ -1221,6 +1225,22 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
             if tag in {'replace', 'insert'}:
                 for line in b[j1:j2]:
                     yield '+' + line
+
+
+########################################################################
+###  Context Diff
+########################################################################
+
+def _format_range_context(start, stop):
+    'Convert range to the "ed" format'
+    # Per the diff spec at http://www.unix.org/single_unix_specification/
+    beginning = start + 1     # lines start numbering with one
+    length = stop - start
+    if not length:
+        beginning -= 1        # empty ranges begin at line just before the range
+    if length <= 1:
+        return '{}'.format(beginning)
+    return '{},{}'.format(beginning, beginning + length - 1)
 
 # See http://www.unix.org/single_unix_specification/
 def context_diff(a, b, fromfile='', tofile='',
@@ -1280,7 +1300,7 @@ def context_diff(a, b, fromfile='', tofile='',
         first, last = group[0], group[-1]
         yield '***************' + lineterm
 
-        file1_range = _format_range(first[1], last[2])
+        file1_range = _format_range_context(first[1], last[2])
         yield '*** {} ****{}'.format(file1_range, lineterm)
 
         if any(tag in {'replace', 'delete'} for tag, _, _, _, _ in group):
@@ -1289,7 +1309,7 @@ def context_diff(a, b, fromfile='', tofile='',
                     for line in a[i1:i2]:
                         yield prefix[tag] + line
 
-        file2_range = _format_range(first[3], last[4])
+        file2_range = _format_range_context(first[3], last[4])
         yield '--- {} ----{}'.format(file2_range, lineterm)
 
         if any(tag in {'replace', 'insert'} for tag, _, _, _, _ in group):
