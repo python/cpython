@@ -36,6 +36,8 @@
 #define RELEASE_LOCK(obj)
 #endif
 
+#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
+
 
 typedef struct {
     PyObject_HEAD
@@ -145,8 +147,10 @@ compress(BZ2Compressor *c, char *data, size_t len, int action)
     if (result == NULL)
         return NULL;
     c->bzs.next_in = data;
-    /* FIXME This is not 64-bit clean - avail_in is an int. */
-    c->bzs.avail_in = len;
+    /* On a 64-bit system, len might not fit in avail_in (an unsigned int).
+       Do compression in chunks of no more than UINT_MAX bytes each. */
+    c->bzs.avail_in = MIN(len, UINT_MAX);
+    len -= c->bzs.avail_in;
     c->bzs.next_out = PyBytes_AS_STRING(result);
     c->bzs.avail_out = PyBytes_GET_SIZE(result);
     for (;;) {
@@ -160,6 +164,11 @@ compress(BZ2Compressor *c, char *data, size_t len, int action)
         Py_END_ALLOW_THREADS
         if (catch_bz2_error(bzerror))
             goto error;
+
+        if (c->bzs.avail_in == 0 && len > 0) {
+            c->bzs.avail_in = MIN(len, UINT_MAX);
+            len -= c->bzs.avail_in;
+        }
 
         /* In regular compression mode, stop when input data is exhausted.
            In flushing mode, stop when all buffered data has been flushed. */
@@ -354,8 +363,10 @@ decompress(BZ2Decompressor *d, char *data, size_t len)
     if (result == NULL)
         return result;
     d->bzs.next_in = data;
-    /* FIXME This is not 64-bit clean - avail_in is an int. */
-    d->bzs.avail_in = len;
+    /* On a 64-bit system, len might not fit in avail_in (an unsigned int).
+       Do decompression in chunks of no more than UINT_MAX bytes each. */
+    d->bzs.avail_in = MIN(len, UINT_MAX);
+    len -= d->bzs.avail_in;
     d->bzs.next_out = PyBytes_AS_STRING(result);
     d->bzs.avail_out = PyBytes_GET_SIZE(result);
     for (;;) {
@@ -371,17 +382,21 @@ decompress(BZ2Decompressor *d, char *data, size_t len)
             goto error;
         if (bzerror == BZ_STREAM_END) {
             d->eof = 1;
-            if (d->bzs.avail_in > 0) { /* Save leftover input to unused_data */
+            len += d->bzs.avail_in;
+            if (len > 0) { /* Save leftover input to unused_data */
                 Py_CLEAR(d->unused_data);
-                d->unused_data = PyBytes_FromStringAndSize(d->bzs.next_in,
-                                                           d->bzs.avail_in);
+                d->unused_data = PyBytes_FromStringAndSize(d->bzs.next_in, len);
                 if (d->unused_data == NULL)
                     goto error;
             }
             break;
         }
-        if (d->bzs.avail_in == 0)
-            break;
+        if (d->bzs.avail_in == 0) {
+            if (len == 0)
+                break;
+            d->bzs.avail_in = MIN(len, UINT_MAX);
+            len -= d->bzs.avail_in;
+        }
         if (d->bzs.avail_out == 0) {
             if (grow_buffer(&result) < 0)
                 goto error;
