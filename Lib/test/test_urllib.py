@@ -171,6 +171,16 @@ class urlopen_HttpTests(unittest.TestCase):
         finally:
             self.unfakehttp()
 
+    def test_url_fragment(self):
+        # Issue #11703: geturl() omits fragments in the original URL.
+        url = 'http://docs.python.org/library/urllib.html#OK'
+        self.fakehttp(b'Hello!')
+        try:
+            fp = urllib.request.urlopen(url)
+            self.assertEqual(fp.geturl(), url)
+        finally:
+            self.unfakehttp()
+
     def test_read_bogus(self):
         # urlopen() should raise IOError for many error codes.
         self.fakehttp(b'''HTTP/1.1 401 Authentication Required
