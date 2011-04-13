@@ -103,6 +103,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #11684: complete email.parser bytes API by adding BytesHeaderParser.
+
 - The bz2 module now handles 4GiB+ input buffers correctly.
 
 - Issue #9233: Fix json.loads('{}') to return a dict (instead of a list), when

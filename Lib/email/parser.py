@@ -4,7 +4,7 @@
 
 """A parser of RFC 2822 and MIME email messages."""
 
-__all__ = ['Parser', 'HeaderParser']
+__all__ = ['Parser', 'HeaderParser', 'BytesParser', 'BytesHeaderParser']
 
 import warnings
 from io import StringIO, TextIOWrapper
@@ -114,3 +114,11 @@ class BytesParser:
         """
         text = text.decode('ASCII', errors='surrogateescape')
         return self.parser.parsestr(text, headersonly)
+
+
+class BytesHeaderParser(BytesParser):
+    def parse(self, fp, headersonly=True):
+        return BytesParser.parse(self, fp, headersonly=True)
+
+    def parsebytes(self, text, headersonly=True):
+        return BytesParser.parsebytes(self, text, headersonly=True)
