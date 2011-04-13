@@ -40,8 +40,3 @@ unicode         Tools for generating unicodedata and codecs from unicode.org
 
 unittestgui     A Tkinter based GUI test runner for unittest, with test
                 discovery.
-
-world           Script to take a list of Internet addresses and print
-                out where in the world those addresses originate from,
-                based on the top-level domain country code found in
-                the address.
