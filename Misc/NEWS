@@ -53,6 +53,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11703 - urllib2.geturl() does not return correct url when the original
+  url contains #fragment.
+
 - Issue #5162: Treat services like frozen executables to allow child spawning
   from multiprocessing.forking on Windows.
 
