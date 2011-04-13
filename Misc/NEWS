@@ -336,6 +336,12 @@ Build
 - Issue #1099: Fix the build on MacOSX when building a framework with pydebug
   using GCC 4.0.
 
+IDLE
+----
+
+- Issue #11718: IDLE's open module dialog couldn't find the __init__.py
+  file in a package.
+
 Tests
 -----
 
