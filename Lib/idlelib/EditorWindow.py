@@ -48,6 +48,21 @@ def _find_module(fullname, path=None):
             path = module.__path__
         except AttributeError:
             raise ImportError, 'No source for module ' + module.__name__
+    if descr[2] != imp.PY_SOURCE:
+        # If all of the above fails and didn't raise an exception,fallback
+        # to a straight import which can find __init__.py in a package.
+        m = __import__(fullname)
+        try:
+            filename = m.__file__
+        except AttributeError:
+            pass
+        else:
+            file = None
+            base, ext = os.path.splitext(filename)
+            if ext == '.pyc':
+                ext = '.py'
+            filename = base + ext
+            descr = filename, None, imp.PY_SOURCE
     return file, filename, descr
 
 class EditorWindow(object):
