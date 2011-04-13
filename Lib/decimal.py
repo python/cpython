@@ -1650,7 +1650,7 @@ class Decimal(object):
                 self = _dec_from_triple(self._sign, '1', exp_min-1)
                 digits = 0
             rounding_method = self._pick_rounding_function[context.rounding]
-            changed = getattr(self, rounding_method)(digits)
+            changed = rounding_method(self, digits)
             coeff = self._int[:digits] or '0'
             if changed > 0:
                 coeff = str(int(coeff)+1)
@@ -1689,8 +1689,6 @@ class Decimal(object):
 
         # here self was representable to begin with; return unchanged
         return Decimal(self)
-
-    _pick_rounding_function = {}
 
     # for each of the rounding functions below:
     #   self is a finite, nonzero Decimal
@@ -1757,6 +1755,17 @@ class Decimal(object):
             return self._round_down(prec)
         else:
             return -self._round_down(prec)
+
+    _pick_rounding_function = dict(
+        ROUND_DOWN = _round_down,
+        ROUND_UP = _round_up,
+        ROUND_HALF_UP = _round_half_up,
+        ROUND_HALF_DOWN = _round_half_down,
+        ROUND_HALF_EVEN = _round_half_even,
+        ROUND_CEILING = _round_ceiling,
+        ROUND_FLOOR = _round_floor,
+        ROUND_05UP = _round_05up,
+    )
 
     def __round__(self, n=None):
         """Round self to the nearest integer, or to a given precision.
@@ -2554,8 +2563,8 @@ class Decimal(object):
         if digits < 0:
             self = _dec_from_triple(self._sign, '1', exp-1)
             digits = 0
-        this_function = getattr(self, self._pick_rounding_function[rounding])
-        changed = this_function(digits)
+        this_function = self._pick_rounding_function[rounding]
+        changed = this_function(self, digits)
         coeff = self._int[:digits] or '0'
         if changed == 1:
             coeff = str(int(coeff)+1)
@@ -3766,18 +3775,6 @@ _numbers.Number.register(Decimal)
 
 
 ##### Context class #######################################################
-
-
-# get rounding method function:
-rounding_functions = [name for name in Decimal.__dict__.keys()
-                                    if name.startswith('_round_')]
-for name in rounding_functions:
-    # name is like _round_half_even, goes to the global ROUND_HALF_EVEN value.
-    globalname = name[1:].upper()
-    val = globals()[globalname]
-    Decimal._pick_rounding_function[val] = name
-
-del name, val, globalname, rounding_functions
 
 class _ContextManager(object):
     """Context manager class to support localcontext().
