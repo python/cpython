@@ -16,18 +16,6 @@ FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT = 1, 2, 4, 8, 16
 
 READ, WRITE = 1, 2
 
-def U32(i):
-    """Return i as an unsigned integer, assuming it fits in 32 bits.
-    If it's >= 2GB when viewed as a 32-bit unsigned int, return a long.
-    """
-    if i < 0:
-        i += 1 << 32
-    return i
-
-def LOWU32(i):
-    """Return the low-order 32 bits, as a non-negative int"""
-    return i & 0xFFFFFFFF
-
 def write32u(output, value):
     # The L format writes the bit pattern correctly whether signed
     # or unsigned.
