@@ -103,6 +103,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10019: Fixed regression in json module where an indent of 0 stopped
+  adding newlines and acted instead like 'None'.
+
 - Issue #11186: pydoc ignores a module if its name contains a surrogate
   character in the index of modules.
 
