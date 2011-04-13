@@ -1,4 +1,3 @@
-import decimal
 from unittest import TestCase, skipUnless
 
 from json import decoder, encoder, scanner
@@ -12,12 +11,12 @@ except ImportError:
 class TestSpeedups(TestCase):
     def test_scanstring(self):
         self.assertEqual(decoder.scanstring.__module__, "_json")
-        self.assertTrue(decoder.scanstring is decoder.c_scanstring)
+        self.assertIs(decoder.scanstring, decoder.c_scanstring)
 
     def test_encode_basestring_ascii(self):
         self.assertEqual(encoder.encode_basestring_ascii.__module__, "_json")
-        self.assertTrue(encoder.encode_basestring_ascii is
-                          encoder.c_encode_basestring_ascii)
+        self.assertIs(encoder.encode_basestring_ascii,
+                      encoder.c_encode_basestring_ascii)
 
 class TestDecode(TestCase):
     def test_make_scanner(self):
