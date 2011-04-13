@@ -1,15 +1,6 @@
 This directory contains a number of Python programs that are useful
 while building or extending Python.
 
-audiopy		Audiopy is a program to control the Solaris audio
-		device, allowing you to choose both the input and
-		output devices, and to set the output volume, that can
-		be run either as a command-line script, or as a
-		Tkinter application.
-
-compiler	Tools used to maintain the compiler package in the
-		standard library.
-
 faqwiz		FAQ Wizard.
 		See http://www.python.org/cgi-bin/faqw.py
 		for a live example.
@@ -33,9 +24,6 @@ scripts         A number of useful single-file programs, e.g. tabnanny.py
 
 unicode		Tools used to generate unicode database files for
 		Python 2.0 (by Fredrik Lundh).
-
-versioncheck	A tool to automate checking whether you have the latest
-		version of a package (by Jack Jansen).
 
 webchecker	A link checker for web sites.
 
