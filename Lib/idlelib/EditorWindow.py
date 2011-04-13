@@ -60,7 +60,7 @@ def _find_module(fullname, path=None):
             pass
         else:
             file = None
-            descr = os.path.splitext(filename), None, imp.PY_SOURCE
+            descr = os.path.splitext(filename)[1], None, imp.PY_SOURCE
     return file, filename, descr
 
 class EditorWindow(object):
