@@ -139,9 +139,9 @@ Basic Usage
    using the JavaScript equivalents (``NaN``, ``Infinity``, ``-Infinity``).
 
    If *indent* is a non-negative integer, then JSON array elements and object
-   members will be pretty-printed with that indent level.  An indent level of 0
-   will only insert newlines.  ``None`` (the default) selects the most compact
-   representation.
+   members will be pretty-printed with that indent level.  An indent level of 0,
+   or negative, will only insert newlines.  ``None`` (the default) selects the
+   most compact representation.
 
    If *separators* is an ``(item_separator, dict_separator)`` tuple, then it
    will be used instead of the default ``(', ', ': ')`` separators.  ``(',',
