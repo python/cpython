@@ -2,6 +2,7 @@ from unittest import TestCase
 
 import json
 import textwrap
+from StringIO import StringIO
 
 class TestIndent(TestCase):
     def test_indent(self):
@@ -39,3 +40,18 @@ class TestIndent(TestCase):
         self.assertEqual(h1, h)
         self.assertEqual(h2, h)
         self.assertEqual(d2, expect)
+
+    def test_indent0(self):
+        h = {3: 1}
+        def check(indent, expected):
+            d1 = json.dumps(h, indent=indent)
+            self.assertEqual(d1, expected)
+
+            sio = StringIO()
+            json.dump(h, sio, indent=indent)
+            self.assertEqual(sio.getvalue(), expected)
+
+        # indent=0 should emit newlines
+        check(0, '{\n"3": 1\n}')
+        # indent=None is more compact
+        check(None, '{"3": 1}')
