@@ -177,6 +177,17 @@ class TestMessageAPI(TestEmailBase):
         gen.flatten(msg, False)
         self.assertEqual(out.getvalue(), msgdata)
 
+    def test_byte_message_rfc822_only(self):
+        # Make sure new bytes header parser also passes this.
+        with openfile('msg_46.txt', 'rb') as fp:
+            msgdata = fp.read()
+        parser = email.parser.BytesHeaderParser()
+        msg = parser.parsebytes(msgdata)
+        out = BytesIO()
+        gen = email.generator.BytesGenerator(out)
+        gen.flatten(msg)
+        self.assertEqual(out.getvalue(), msgdata)
+
     def test_get_decoded_payload(self):
         eq = self.assertEqual
         msg = self._msgobj('msg_10.txt')
@@ -2749,6 +2760,7 @@ Do you like this message?
 
 
 class TestParsers(TestEmailBase):
+
     def test_header_parser(self):
         eq = self.assertEqual
         # Parse only the headers of a complex multipart MIME document
@@ -2759,6 +2771,18 @@ class TestParsers(TestEmailBase):
         eq(msg.get_content_type(), 'multipart/mixed')
         self.assertFalse(msg.is_multipart())
         self.assertTrue(isinstance(msg.get_payload(), str))
+
+    def test_bytes_header_parser(self):
+        eq = self.assertEqual
+        # Parse only the headers of a complex multipart MIME document
+        with openfile('msg_02.txt', 'rb') as fp:
+            msg = email.parser.BytesHeaderParser().parse(fp)
+        eq(msg['from'], 'ppp-request@zzz.org')
+        eq(msg['to'], 'ppp@zzz.org')
+        eq(msg.get_content_type(), 'multipart/mixed')
+        self.assertFalse(msg.is_multipart())
+        self.assertTrue(isinstance(msg.get_payload(), str))
+        self.assertTrue(isinstance(msg.get_payload(decode=True), bytes))
 
     def test_whitespace_continuation(self):
         eq = self.assertEqual
