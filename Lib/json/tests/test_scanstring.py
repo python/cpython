@@ -1,5 +1,4 @@
 import sys
-import decimal
 from unittest import TestCase, skipUnless
 
 import json
