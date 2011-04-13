@@ -281,7 +281,7 @@ class Header:
         75-character length limit on any given encoded header field, so
         line-wrapping must be performed, even with double-byte character sets.
 
-        Optional maxlinelen specifies the maxiumum length of each generated
+        Optional maxlinelen specifies the maximum length of each generated
         line, exclusive of the linesep string.  Individual lines may be longer
         than maxlinelen if a folding point cannot be found.  The first line
         will be shorter by the length of the header name plus ": " if a header
