@@ -209,12 +209,6 @@ class TestHeapC(TestHeap):
         self.assertEqual(hsort(data, LT), target)
         self.assertEqual(hsort(data, LE), target)
 
-    # As an early adopter, we sanity check the
-    # test_support.import_fresh_module utility function
-    def test_accelerated(self):
-        self.assertTrue(sys.modules['heapq'] is self.module)
-        self.assertFalse(hasattr(self.module.heapify, 'func_code'))
-
 
 #==============================================================================
 
@@ -316,16 +310,16 @@ class TestErrorHandling(unittest.TestCase):
 
     def test_non_sequence(self):
         for f in (self.module.heapify, self.module.heappop):
-            self.assertRaises(TypeError, f, 10)
+            self.assertRaises((TypeError, AttributeError), f, 10)
         for f in (self.module.heappush, self.module.heapreplace,
                   self.module.nlargest, self.module.nsmallest):
-            self.assertRaises(TypeError, f, 10, 10)
+            self.assertRaises((TypeError, AttributeError), f, 10, 10)
 
     def test_len_only(self):
         for f in (self.module.heapify, self.module.heappop):
-            self.assertRaises(TypeError, f, LenOnly())
+            self.assertRaises((TypeError, AttributeError), f, LenOnly())
         for f in (self.module.heappush, self.module.heapreplace):
-            self.assertRaises(TypeError, f, LenOnly(), 10)
+            self.assertRaises((TypeError, AttributeError), f, LenOnly(), 10)
         for f in (self.module.nlargest, self.module.nsmallest):
             self.assertRaises(TypeError, f, 2, LenOnly())
 
@@ -342,7 +336,7 @@ class TestErrorHandling(unittest.TestCase):
         for f in (self.module.heapify, self.module.heappop,
                   self.module.heappush, self.module.heapreplace,
                   self.module.nlargest, self.module.nsmallest):
-            self.assertRaises(TypeError, f, 10)
+            self.assertRaises((TypeError, AttributeError), f, 10)
 
     def test_iterable_args(self):
         for f in (self.module.nlargest, self.module.nsmallest):
