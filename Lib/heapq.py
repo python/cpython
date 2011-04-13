@@ -212,11 +212,10 @@ def nsmallest(n, iterable):
         pop = result.pop
         los = result[-1]    # los --> Largest of the nsmallest
         for elem in it:
-            if los <= elem:
-                continue
-            insort(result, elem)
-            pop()
-            los = result[-1]
+            if elem < los:
+                insort(result, elem)
+                pop()
+                los = result[-1]
         return result
     # An alternative approach manifests the whole iterable in memory but
     # saves comparisons by heapifying all at once.  Also, saves time
