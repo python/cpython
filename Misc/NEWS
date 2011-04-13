@@ -51,6 +51,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11703 - urllib2.geturl() does not return correct url when the original
+  url contains #fragment.
+
 - Issue #10019: Fixed regression in json module where an indent of 0 stopped
   adding newlines and acted instead like 'None'.
 
