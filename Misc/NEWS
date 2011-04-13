@@ -227,6 +227,12 @@ Build
 - Issue #11268: Prevent Mac OS X Installer failure if Documentation
   package had previously been installed.
 
+IDLE
+----
+
+- Issue #11718: IDLE's open module dialog couldn't find the __init__.py
+  file in a package.
+
 Tools/Demos
 -----------
 
