@@ -22,6 +22,7 @@ def py_make_scanner(context):
     parse_int = context.parse_int
     parse_constant = context.parse_constant
     object_hook = context.object_hook
+    object_pairs_hook = context.object_pairs_hook
 
     def _scan_once(string, idx):
         try:
