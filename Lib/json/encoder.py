@@ -233,7 +233,7 @@ class JSONEncoder(object):
 
 
         if (_one_shot and c_make_encoder is not None
-                and not self.indent):
+                and self.indent is None):
             _iterencode = c_make_encoder(
                 markers, self.default, _encoder, self.indent,
                 self.key_separator, self.item_separator, self.sort_keys,
