@@ -27,9 +27,12 @@ def url2pathname(url):
     drive = comp[0][-1].upper()
     components = comp[1].split('/')
     path = drive + ':'
-    for  comp in components:
+    for comp in components:
         if comp:
             path = path + '\\' + urllib.parse.unquote(comp)
+    # Issue #11474 - handing url such as |c/|
+    if path.endswith(':') and url.endswith('/'):
+        path += '\\'
     return path
 
 def pathname2url(p):

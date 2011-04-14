@@ -51,6 +51,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11474: Fix the bug with url2pathname() handling of '/C|/' on Windows.
+  Patch by Santoso Wijaya.
+
 - Issue #9233: Fix json to work properly even when _json is not available.
 
 - Issue #11703: urllib2.geturl() does not return correct url when the original
