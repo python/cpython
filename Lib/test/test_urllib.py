@@ -9,6 +9,7 @@ import io
 import unittest
 from test import support
 import os
+import sys
 import tempfile
 
 def hexescape(char):
@@ -1019,6 +1020,23 @@ class Pathname_Tests(unittest.TestCase):
         result = urllib.request.url2pathname(given)
         self.assertEqual(expect, result,
                          "url2pathname() failed; %s != %s" %
+                         (expect, result))
+
+    @unittest.skipUnless(sys.platform == 'win32',
+                         'test specific to the urllib.url2path function.')
+    def test_ntpath(self):
+        given = ('/C:/', '///C:/', '/C|//')
+        expect = 'C:\\'
+        for url in given:
+            result = urllib.request.url2pathname(url)
+            self.assertEqual(expect, result,
+                             'urllib.request..url2pathname() failed; %s != %s' %
+                             (expect, result))
+        given = '///C|/path'
+        expect = 'C:\\path'
+        result = urllib.request.url2pathname(given)
+        self.assertEqual(expect, result,
+                         'urllib.request.url2pathname() failed; %s != %s' %
                          (expect, result))
 
 class Utility_Tests(unittest.TestCase):
