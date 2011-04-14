@@ -5,6 +5,7 @@ import httplib
 import unittest
 from test import test_support
 import os
+import sys
 import mimetools
 import tempfile
 import StringIO
@@ -628,6 +629,23 @@ class Pathname_Tests(unittest.TestCase):
         result = urllib.url2pathname(given)
         self.assertEqual(expect, result,
                          "url2pathname() failed; %s != %s" %
+                         (expect, result))
+
+    @unittest.skipUnless(sys.platform == 'win32',
+                         'test specific to the nturl2path library')
+    def test_ntpath(self):
+        given = ('/C:/', '///C:/', '/C|//')
+        expect = 'C:\\'
+        for url in given:
+            result = urllib.url2pathname(url)
+            self.assertEqual(expect, result,
+                             'nturl2path.url2pathname() failed; %s != %s' %
+                             (expect, result))
+        given = '///C|/path'
+        expect = 'C:\\path'
+        result = urllib.url2pathname(given)
+        self.assertEqual(expect, result,
+                         'nturl2path.url2pathname() failed; %s != %s' %
                          (expect, result))
 
 class Utility_Tests(unittest.TestCase):

@@ -51,6 +51,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11474: Fix the bug with url2pathname() handling of '/C|/' on Windows.
+  Patch by Santoso Wijaya.
+
 - Issue #9233: Fix json.loads('{}') to return a dict (instead of a list), when
   _json is not available.
 
