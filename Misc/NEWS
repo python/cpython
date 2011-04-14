@@ -103,6 +103,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11474: Fix the bug with url2pathname() handling of '/C|/' on Windows.
+  Patch by Santoso Wijaya.
+
 - Issue #11684: complete email.parser bytes API by adding BytesHeaderParser.
 
 - The bz2 module now handles 4GiB+ input buffers correctly.
