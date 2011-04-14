@@ -26,6 +26,16 @@ easily.
    This library does *not* interpret or write the value-type prefixes used in
    the Windows Registry extended version of INI syntax.
 
+.. seealso::
+
+   Module :mod:`shlex`
+      Support for a creating Unix shell-like mini-languages which can be used
+      as an alternate format for application configuration files.
+
+   Module :mod:`json`
+      The json module implements a subset of JavaScript syntax which can also
+      be used for this purpose.
+
 The configuration file consists of sections, led by a ``[section]`` header and
 followed by ``name: value`` entries, with continuations in the style of
 :rfc:`822` (see section 3.1.1, "LONG HEADER FIELDS"); ``name=value`` is also
