@@ -183,6 +183,24 @@ fold_binops_on_constants(unsigned char *codestr, PyObject *consts, PyObject **ob
             break;
         case BINARY_SUBSCR:
             newconst = PyObject_GetItem(v, w);
+            /* #5057: if v is unicode, there might be differences between
+               wide and narrow builds in cases like '\U00012345'[0].
+               Wide builds will return a non-BMP char, whereas narrow builds
+               will return a surrogate.  In both the cases skip the
+               optimization in order to produce compatible pycs.
+             */
+            if (newconst != NULL &&
+                PyUnicode_Check(v) && PyUnicode_Check(newconst)) {
+                Py_UNICODE ch = PyUnicode_AS_UNICODE(newconst)[0];
+#ifdef Py_UNICODE_WIDE
+                if (ch > 0xFFFF) {
+#else
+                if (ch >= 0xD800 && ch <= 0xDFFF) {
+#endif
+                    Py_DECREF(newconst);
+                    return 0;
+                }
+            }
             break;
         case BINARY_LSHIFT:
             newconst = PyNumber_Lshift(v, w);
