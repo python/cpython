@@ -94,12 +94,10 @@ This module defines one class called :class:`Popen`:
       *shell=False* does not suffer from this vulnerability; the above Note may be
       helpful in getting code using *shell=False* to work.
 
-   On Windows: the :class:`Popen` class uses CreateProcess() to execute the child
-   program, which operates on strings.  If *args* is a sequence, it will be
-   converted to a string using the :meth:`list2cmdline` method.  Please note that
-   not all MS Windows applications interpret the command line the same way:
-   :meth:`list2cmdline` is designed for applications using the same rules as the MS
-   C runtime.
+   On Windows: the :class:`Popen` class uses CreateProcess() to execute the
+   child program, which operates on strings.  If *args* is a sequence, it will
+   be converted to a string in a manner described in
+   :ref:`converting-argument-sequence`.
 
    *bufsize*, if given, has the same meaning as the corresponding argument to the
    built-in open() function: :const:`0` means unbuffered, :const:`1` means line
@@ -733,3 +731,37 @@ Replacing functions from the :mod:`popen2` module
 * popen2 closes all file descriptors by default, but you have to specify
   ``close_fds=True`` with :class:`Popen` to guarantee this behavior on
   all platforms or past Python versions.
+
+Notes
+-----
+
+.. _converting-argument-sequence:
+
+Converting an argument sequence to a string on Windows
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+On Windows, an *args* sequence is converted to a string that can be parsed
+using the following rules (which correspond to the rules used by the MS C
+runtime):
+
+1. Arguments are delimited by white space, which is either a
+   space or a tab.
+
+2. A string surrounded by double quotation marks is
+   interpreted as a single argument, regardless of white space
+   contained within.  A quoted string can be embedded in an
+   argument.
+
+3. A double quotation mark preceded by a backslash is
+   interpreted as a literal double quotation mark.
+
+4. Backslashes are interpreted literally, unless they
+   immediately precede a double quotation mark.
+
+5. If backslashes immediately precede a double quotation mark,
+   every pair of backslashes is interpreted as a literal
+   backslash.  If the number of backslashes is odd, the last
+   backslash escapes the next double quotation mark as
+   described in rule 3.
+
+
