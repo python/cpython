@@ -113,6 +113,8 @@ Library
 - Issue #11467: Fix urlparse behavior when handling urls which contains scheme
   specific part only digits. Patch by Santoso Wijaya.
 
+- collections.Counter().copy() now works correctly for subclasses.
+
 - Issue #11474: Fix the bug with url2pathname() handling of '/C|/' on Windows.
   Patch by Santoso Wijaya.
 
