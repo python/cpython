@@ -26,6 +26,8 @@ To use, simply 'import logging.handlers' and log away!
 
 import logging, socket, os, pickle, struct, time, re
 from stat import ST_DEV, ST_INO, ST_MTIME
+import queue
+import threading
 
 try:
     import codecs

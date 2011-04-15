@@ -41,6 +41,7 @@ import struct
 import sys
 import tempfile
 from test.support import captured_stdout, run_with_locale, run_unittest, patch
+from test.support import TestHandler, Matcher
 import textwrap
 import unittest
 import warnings
@@ -2107,6 +2108,21 @@ class QueueHandlerTest(BaseTest):
         self.assertTrue(isinstance(data, logging.LogRecord))
         self.assertEqual(data.name, self.que_logger.name)
         self.assertEqual((data.msg, data.args), (msg, None))
+
+    def test_queue_listener(self):
+        handler = TestHandler(Matcher())
+        listener = logging.handlers.QueueListener(self.queue, handler)
+        listener.start()
+        try:
+            self.que_logger.warning(self.next_message())
+            self.que_logger.error(self.next_message())
+            self.que_logger.critical(self.next_message())
+        finally:
+            listener.stop()
+        self.assertTrue(handler.matches(levelno=logging.WARNING, message='1'))
+        self.assertTrue(handler.matches(levelno=logging.ERROR, message='2'))
+        self.assertTrue(handler.matches(levelno=logging.CRITICAL, message='3'))
+
 
 class FormatterTest(unittest.TestCase):
     def setUp(self):
