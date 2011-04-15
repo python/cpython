@@ -228,6 +228,11 @@ class UrlParseTestCase(unittest.TestCase):
         #self.checkJoin(RFC1808_BASE, 'http:g', 'http:g')
         #self.checkJoin(RFC1808_BASE, 'http:', 'http:')
 
+    def test_RFC2368(self):
+        # Issue 11467: path that starts with a number is not parsed correctly
+        self.assertEqual(urllib.parse.urlparse('mailto:1337@example.org'),
+                ('mailto', '', '1337@example.org', '', '', ''))
+
     def test_RFC2396(self):
         # cases from RFC 2396
 

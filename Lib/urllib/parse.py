@@ -340,12 +340,17 @@ def urlsplit(url, scheme='', allow_fragments=True):
             v = SplitResult(scheme, netloc, url, query, fragment)
             _parse_cache[key] = v
             return _coerce_result(v)
-        if url.endswith(':') or not url[i+1].isdigit():
-            for c in url[:i]:
-                if c not in scheme_chars:
-                    break
-            else:
+        for c in url[:i]:
+            if c not in scheme_chars:
+                break
+        else:
+            try:
+                # make sure "url" is not actually a port number (in which case
+                # "scheme" is really part of the path
+                _testportnum = int(url[i+1:])
+            except ValueError:
                 scheme, url = url[:i].lower(), url[i+1:]
+
     if url[:2] == '//':
         netloc, url = _splitnetloc(url, 2)
         if (('[' in netloc and ']' not in netloc) or
