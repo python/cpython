@@ -156,6 +156,11 @@ Basic Usage
    Serialize *obj* to a JSON formatted :class:`str`.  The arguments have the
    same meaning as in :func:`dump`.
 
+   .. note::
+
+      Unlike :mod:`pickle` and :mod:`marshal`, JSON is not a framed protocol so
+      trying to serialize more objects with repeated calls to :func:`dump` and
+      the same *fp* will result in an invalid JSON file.
 
 .. function:: load(fp, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
 
