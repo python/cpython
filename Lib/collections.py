@@ -516,8 +516,8 @@ class Counter(dict):
             self.subtract(kwds)
 
     def copy(self):
-        'Like dict.copy() but returns a Counter instance instead of a dict.'
-        return Counter(self)
+        'Return a shallow copy.'
+        return self.__class__(self)
 
     def __reduce__(self):
         return self.__class__, (dict(self),)
