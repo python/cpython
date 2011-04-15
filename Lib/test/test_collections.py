@@ -680,6 +680,15 @@ class TestCounter(unittest.TestCase):
             self.assertEqual(len(dup), len(words))
             self.assertEqual(type(dup), type(words))
 
+    def test_copy_subclass(self):
+        class MyCounter(Counter):
+            pass
+        c = MyCounter('slartibartfast')
+        d = c.copy()
+        self.assertEqual(d, c)
+        self.assertEqual(len(d), len(c))
+        self.assertEqual(type(d), type(c))
+
     def test_conversions(self):
         # Convert to: set, list, dict
         s = 'she sells sea shells by the sea shore'
