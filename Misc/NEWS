@@ -10,6 +10,9 @@ What's New in Python 3.2.1?
 Core and Builtins
 -----------------
 
+- Issue #11845: Fix typo in rangeobject.c that caused a crash in
+  compute_slice_indices.  Patch by Daniel Urban.
+
 - Issue #11650: PyOS_StdioReadline() retries fgets() if it was interrupted
   (EINTR), for example if the program is stopped with CTRL+z on Mac OS X. Patch
   written by Charles-Francois Natali.
