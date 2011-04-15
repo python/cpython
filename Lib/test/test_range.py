@@ -498,6 +498,15 @@ class RangeTest(unittest.TestCase):
                   ]:
             self.assertEqual(list(reversed(r)), list(r)[::-1])
 
+    def test_issue11845(self):
+        r = range(*slice(1, 18, 2).indices(20))
+        values = {None, 0, 1, -1, 2, -2, 5, -5, 19, -19,
+                  20, -20, 21, -21, 30, -30, 99, -99}
+        for i in values:
+            for j in values:
+                for k in values - {0}:
+                    r[i:j:k]
+
 
 def test_main():
     test.support.run_unittest(RangeTest)

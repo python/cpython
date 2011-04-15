@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #11845: Fix typo in rangeobject.c that caused a crash in
+  compute_slice_indices.  Patch by Daniel Urban.
+
 - Issue #5673: Added a `timeout` keyword argument to subprocess.Popen.wait,
   subprocess.Popen.communicated, subprocess.call, subprocess.check_call, and
   subprocess.check_output.  If the blocking operation takes more than `timeout`
