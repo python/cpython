@@ -9,6 +9,10 @@ What's New in Python 2.7.2?
 Core and Builtins
 -----------------
 
+- Issue #5057: fix a bug in the peepholer that led to non-portable pyc files
+  between narrow and wide builds while optimizing BINARY_SUBSCR on non-BMP
+  chars (e.g. u"\U00012345"[0]).
+
 - Issue #11650: PyOS_StdioReadline() retries fgets() if it was interrupted
   (EINTR), for example if the program is stopped with CTRL+z on Mac OS X. Patch
   written by Charles-Francois Natali.
