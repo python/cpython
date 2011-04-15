@@ -472,7 +472,7 @@ compute_slice_indices(rangeobject *r, PySliceObject *slice,
                     if (tmp_stop == NULL) goto Fail;
                 } else {
                     tmp_stop = r->length;
-                    Py_INCREF(tmp_start);
+                    Py_INCREF(tmp_stop);
                 }
             }
         }
