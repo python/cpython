@@ -120,9 +120,6 @@ class BufferedSubFile(object):
         # Reverse and insert at the front of the lines.
         self._lines[:0] = lines[::-1]
 
-    def is_closed(self):
-        return self._closed
-
     def __iter__(self):
         return self
 
