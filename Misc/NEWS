@@ -10,6 +10,10 @@ What's New in Python 3.1.4?
 Core and Builtins
 -----------------
 
+- Issue #5057: fix a bug in the peepholer that led to non-portable pyc files
+  between narrow and wide builds while optimizing BINARY_SUBSCR on non-BMP
+  chars (e.g. "\U00012345"[0]).
+
 - Issue #11650: PyOS_StdioReadline() retries fgets() if it was interrupted
   (EINTR), for example if the program is stopped with CTRL+z on Mac OS X. Patch
   written by Charles-Francois Natali.
@@ -51,7 +55,7 @@ Core and Builtins
 Library
 -------
 
-- Issue #11467: Fix urlparse behavior when handling urls which contains scheme 
+- Issue #11467: Fix urlparse behavior when handling urls which contains scheme
   specific part only digits. Patch by Santoso Wijaya.
 
 - Issue #11474: Fix the bug with url2pathname() handling of '/C|/' on Windows.
