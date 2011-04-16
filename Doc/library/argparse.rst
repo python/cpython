@@ -221,7 +221,7 @@ the parser's help message. For example, consider a file named
    parser.add_argument('--foo', help='foo help')
    args = parser.parse_args()
 
-If ``-h`` or ``--help`` is supplied is at the command-line, the ArgumentParser
+If ``-h`` or ``--help`` is supplied at the command-line, the ArgumentParser
 help will be printed::
 
    $ python myprogram.py --help
