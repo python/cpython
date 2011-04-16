@@ -783,6 +783,9 @@ semantics pass-in keyword arguments using a regular unordered dictionary.
    `Equivalent OrderedDict recipe <http://code.activestate.com/recipes/576693/>`_
    that runs on Python 2.4 or later.
 
+:class:`OrderedDict` Examples and Recipes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Since an ordered dictionary remembers its insertion order, it can be used
 in conjuction with sorting to make a sorted dictionary::
 
@@ -812,10 +815,27 @@ original insertion position is changed and moved to the end::
 
     class LastUpdatedOrderedDict(OrderedDict):
         'Store items in the order the keys were last added'
+
         def __setitem__(self, key, value):
             if key in self:
                 del self[key]
             OrderedDict.__setitem__(self, key, value)
+
+An ordered dictionary can combined with the :class:`Counter` class
+so that the counter remembers the order elements are first encountered::
+
+   class OrderedCounter(Counter, OrderedDict):
+        'Counter that remembers the order elements are first encountered'
+
+        def __init__(self, iterable=None, **kwds):
+            OrderedDict.__init__(self)
+            Counter.__init__(self, iterable, **kwds)
+
+        def __repr__(self):
+            return '%s(%r)' % (self.__class__.__name__, OrderedDict(self))
+
+        def __reduce__(self):
+            return self.__class__, (OrderedDict(self),)
 
 
 :class:`UserDict` objects
