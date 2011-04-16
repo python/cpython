@@ -162,6 +162,7 @@ import re
 import io
 import sys
 import time
+import errno
 import traceback
 import warnings
 import unittest
@@ -1511,8 +1512,11 @@ def _make_temp_dir_for_build(TEMPDIR):
     if sysconfig.is_python_build():
         TEMPDIR = os.path.join(sysconfig.get_config_var('srcdir'), 'build')
         TEMPDIR = os.path.abspath(TEMPDIR)
-        if not os.path.exists(TEMPDIR):
+        try:
             os.mkdir(TEMPDIR)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
 
     # Define a writable temp dir that will be used as cwd while running
     # the tests. The name of the dir includes the pid to allow parallel
