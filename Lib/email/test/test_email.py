@@ -236,6 +236,10 @@ class TestMessageAPI(TestEmailBase):
         msg.set_payload('foo')
         eq(msg.get_payload(decode=True), b'foo')
 
+    def test_get_payload_n_raises_on_non_multipart(self):
+        msg = Message()
+        self.assertRaises(TypeError, msg.get_payload, 1)
+
     def test_decoded_generator(self):
         eq = self.assertEqual
         msg = self._msgobj('msg_07.txt')
@@ -391,6 +395,17 @@ class TestMessageAPI(TestEmailBase):
         msg.del_param('filename', 'content-disposition')
         self.assertEqual(msg['content-disposition'], 'attachment')
 
+    def test_del_param_on_nonexistent_header(self):
+        msg = Message()
+        msg.del_param('filename', 'content-disposition')
+
+    def test_del_nonexistent_param(self):
+        msg = Message()
+        msg.add_header('Content-Type', 'text/plain', charset='utf-8')
+        existing_header = msg['Content-Type']
+        msg.del_param('foobar', header='Content-Type')
+        self.assertEqual(msg['Content-Type'], 'text/plain; charset="utf-8"')
+
     def test_set_type(self):
         eq = self.assertEqual
         msg = Message()
@@ -521,6 +536,27 @@ class TestMessageAPI(TestEmailBase):
         self.assertEqual(msg.get_payload(decode=True),
                          bytes(x, 'raw-unicode-escape'))
 
+    def test_broken_unicode_payload(self):
+        # This test improves coverage but is not a compliance test.
+        # The behavior in this situation is currently undefined by the API.
+        x = 'this is a br\xf6ken thing to do'
+        msg = Message()
+        msg['content-type'] = 'text/plain'
+        msg['content-transfer-encoding'] = '8bit'
+        msg.set_payload(x)
+        self.assertEqual(msg.get_payload(decode=True),
+                         bytes(x, 'raw-unicode-escape'))
+
+    def test_questionable_bytes_payload(self):
+        # This test improves coverage but is not a compliance test,
+        # since it involves poking inside the black box.
+        x = 'this is a quéstionable thing to do'.encode('utf-8')
+        msg = Message()
+        msg['content-type'] = 'text/plain; charset="utf-8"'
+        msg['content-transfer-encoding'] = '8bit'
+        msg._payload = x
+        self.assertEqual(msg.get_payload(decode=True), x)
+
     # Issue 1078919
     def test_ascii_add_header(self):
         msg = Message()
@@ -560,6 +596,16 @@ class TestMessageAPI(TestEmailBase):
         self.assertEqual(
             "attachment; filename*=utf-8''Fu%C3%9Fballer%20%5Bfilename%5D.ppt",
             msg['Content-Disposition'])
+
+    def test_add_header_with_name_only_param(self):
+        msg = Message()
+        msg.add_header('Content-Disposition', 'inline', foo_bar=None)
+        self.assertEqual("inline; foo-bar", msg['Content-Disposition'])
+
+    def test_add_header_with_no_value(self):
+        msg = Message()
+        msg.add_header('X-Status', None)
+        self.assertEqual('', msg['X-Status'])
 
     # Issue 5871: reject an attempt to embed a header inside a header value
     # (header injection attack).
@@ -4115,6 +4161,16 @@ Do you like this message?
 
 -Me
 """)
+
+    def test_set_param_requote(self):
+        msg = Message()
+        msg.set_param('title', 'foo')
+        self.assertEqual(msg['content-type'], 'text/plain; title="foo"')
+        msg.set_param('title', 'bar', requote=False)
+        self.assertEqual(msg['content-type'], 'text/plain; title=bar')
+        # tspecial is still quoted.
+        msg.set_param('title', "(bar)bell", requote=False)
+        self.assertEqual(msg['content-type'], 'text/plain; title="(bar)bell"')
 
     def test_del_param(self):
         eq = self.ndiffAssertEqual
