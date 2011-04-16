@@ -475,6 +475,8 @@ Extensions
 Tests
 -----
 
+- Issue #11790: Fix sporadic failures in test_multiprocessing.WithProcessesTestCondition.
+
 - Fix possible "file already exists" error when running the tests in parallel.
 
 - Issue #11719: Fix message about unexpected test_msilib skip on non-Windows
