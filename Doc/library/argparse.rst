@@ -2,7 +2,7 @@
 ===============================================================================
 
 .. module:: argparse
-   :synopsis: Command-line option and argument parsing library.
+   :synopsis: Command-line option and argument-parsing library.
 .. moduleauthor:: Steven Bethard <steven.bethard@gmail.com>
 .. sectionauthor:: Steven Bethard <steven.bethard@gmail.com>
 
@@ -12,7 +12,7 @@
 
 --------------
 
-The :mod:`argparse` module makes it easy to write user friendly command line
+The :mod:`argparse` module makes it easy to write user-friendly command-line
 interfaces. The program defines what arguments it requires, and :mod:`argparse`
 will figure out how to parse those out of :data:`sys.argv`.  The :mod:`argparse`
 module also automatically generates help and usage messages and issues errors
@@ -594,7 +594,7 @@ The add_argument() method
    * default_ - The value produced if the argument is absent from the
      command line.
 
-   * type_ - The type to which the command-line arg should be converted.
+   * type_ - The type to which the command-line argument should be converted.
 
    * choices_ - A container of the allowable values for the argument.
 
