@@ -19,6 +19,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11442: Add a charset parameter to the Content-type in SimpleHTTPServer
+  to avoid XSS attacks.
+
 - Issue #11662: Make urllib and urllib2 ignore redirections if the
   scheme is not HTTP, HTTPS or FTP (CVE-2011-1521).
 
