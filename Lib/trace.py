@@ -688,7 +688,7 @@ def main(argv=None):
 
     for opt, val in opts:
         if opt == "--help":
-            usage(sys.stdout)
+            _usage(sys.stdout)
             sys.exit(0)
 
         if opt == "--version":
