@@ -4,6 +4,8 @@
 .. module:: email.policy
    :synopsis: Controlling the parsing and generating of messages
 
+.. versionadded: 3.3
+
 
 The :mod:`email` package's prime focus is the handling of email messages as
 described by the various email and MIME RFCs.  However, the general format of
@@ -14,8 +16,8 @@ email.  Some of these uses conform fairly closely to the main RFCs, some do
 not.  And even when working with email, there are times when it is desirable to
 break strict compliance with the RFCs.
 
-Policy objects are the mechanism used to provide the email package with the
-flexibility to handle all these disparate use cases,
+Policy objects give the email package the flexibility to handle all these
+disparate use cases.
 
 A :class:`Policy` object encapsulates a set of attributes and methods that
 control the behavior of various components of the email package during use.
@@ -39,24 +41,23 @@ program will use the same :class:`Policy` for both input and output, the two
 can be different.
 
 As an example, the following code could be used to read an email message from a
-file on disk and pass it to the system ``sendmail`` program on a ``unix``
-system::
+file on disk and pass it to the system ``sendmail`` program on a Unix system::
 
    >>> from email import msg_from_binary_file
    >>> from email.generator import BytesGenerator
    >>> import email.policy
    >>> from subprocess import Popen, PIPE
    >>> with open('mymsg.txt', 'b') as f:
-   >>>     msg = msg_from_binary_file(f, policy=email.policy.mbox)
+   ...     Msg = msg_from_binary_file(f, policy=email.policy.mbox)
    >>> p = Popen(['sendmail', msg['To'][0].address], stdin=PIPE)
-   >>> g = BytesGenerator(p.stdin, email.policy.policy=SMTP)
+   >>> g = BytesGenerator(p.stdin, policy=email.policy.SMTP)
    >>> g.flatten(msg)
    >>> p.stdin.close()
    >>> rc = p.wait()
 
 Some email package methods accept a *policy* keyword argument, allowing the
-policy to be overridden for that method.  For example, the following code use
-the :meth:`email.message.Message.as_string` method to the *msg* object from the
+policy to be overridden for that method.  For example, the following code uses
+the :meth:`email.message.Message.as_string` method of the *msg* object from the
 previous example and re-write it to a file using the native line separators for
 the platform on which it is running::
 
@@ -106,25 +107,27 @@ added matters.  To illustrate::
    .. attribute:: linesep
 
       The string to be used to terminate lines in serialized output.  The
-      default is '\\n' because that's the internal end-of-line discipline used
-      by Python, though '\\r\\n' is required by the RFCs.  See `Policy
+      default is ``\n`` because that's the internal end-of-line discipline used
+      by Python, though ``\r\n`` is required by the RFCs.  See `Policy
       Instances`_ for policies that use an RFC conformant linesep.  Setting it
       to :attr:`os.linesep` may also be useful.
 
    .. attribute:: must_be_7bit
 
-      If :const:`True`, data output by a bytes generator is limited to ASCII
+      If ``True``, data output by a bytes generator is limited to ASCII
       characters.  If :const:`False` (the default), then bytes with the high
       bit set are preserved and/or allowed in certain contexts (for example,
       where possible a content transfer encoding of ``8bit`` will be used).
-      String generators act as if ``must_be_7bit`` is `True` regardless of the
-      policy in effect, since a string cannot represent non-ASCII bytes.
+      String generators act as if ``must_be_7bit`` is ``True`` regardless of
+      the policy in effect, since a string cannot represent non-ASCII bytes.
 
    .. attribute:: raise_on_defect
 
       If :const:`True`, any defects encountered will be raised as errors.  If
       :const:`False` (the default), defects will be passed to the
       :meth:`register_defect` method.
+
+   :mod:`Policy` object also have the following methods:
 
    .. method:: handle_defect(obj, defect)
 
@@ -145,7 +148,7 @@ added matters.  To illustrate::
       handling of defects.  The default implementation calls the ``append``
       method of the ``defects`` attribute of *obj*.
 
-   .. method:: clone(obj, *kw):
+   .. method:: clone(obj, *kw)
 
       Return a new :class:`Policy` instance whose attributes have the same
       values as the current instance, except where those attributes are
@@ -153,27 +156,27 @@ added matters.  To illustrate::
 
 
 Policy Instances
-................
+^^^^^^^^^^^^^^^^
 
 The following instances of :class:`Policy` provide defaults suitable for
 specific common application domains.
 
 .. data:: default
 
-    An instance of :class:`Policy` with all defaults unchanged.
+   An instance of :class:`Policy` with all defaults unchanged.
 
 .. data:: SMTP
 
-    Output serialized from a message will conform to the email and SMTP
-    RFCs.  The only changed attribute is :attr:`linesep`, which is set to
-    ``\r\n``.
+   Output serialized from a message will conform to the email and SMTP
+   RFCs.  The only changed attribute is :attr:`linesep`, which is set to
+   ``\r\n``.
 
 .. data:: HTTP
 
-    Suitable for use when serializing headers for use in HTTP traffic.
-    :attr:`linesep` is set to ``\r\n``, and :attr:`max_line_length` is set to
-    :const:`None` (unlimited).
+   Suitable for use when serializing headers for use in HTTP traffic.
+   :attr:`linesep` is set to ``\r\n``, and :attr:`max_line_length` is set to
+   :const:`None` (unlimited).
 
 .. data:: strict
 
-    :attr:`raise_on_defect` is set to :const:`True`.
+   :attr:`raise_on_defect` is set to :const:`True`.
