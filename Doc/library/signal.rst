@@ -204,6 +204,8 @@ The :mod:`signal` module defines the following functions:
    attempting to call it from other threads will cause a :exc:`ValueError`
    exception to be raised.
 
+   .. versionadded:: 2.6
+
 
 .. function:: siginterrupt(signalnum, flag)
 
