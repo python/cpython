@@ -315,6 +315,8 @@ Build
 Tests
 -----
 
+- Fix test_startfile to wait for child process to terminate before finishing.
+
 - Issue #11719: Fix message about unexpected test_msilib skip on non-Windows
   platforms. Patch by Nadeem Vawda.
 
