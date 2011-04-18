@@ -119,7 +119,7 @@ Here is the :class:`Header` class description:
       which they appear in the string.  Space and tab may be included in the
       string to indicate whether preference should be given to one over the
       other as a split point when other split chars do not appear in the line
-      being split.  Splitchars does not affect RFC 2047 encoded lines.
+      being split.  Splitchars does not affect :RFC:`2047` encoded lines.
 
       *maxlinelen*, if given, overrides the instance's value for the maximum
       line length.
