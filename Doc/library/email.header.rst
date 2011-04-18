@@ -109,9 +109,17 @@ Here is the :class:`Header` class description:
 
       Encode a message header into an RFC-compliant format, possibly wrapping
       long lines and encapsulating non-ASCII parts in base64 or quoted-printable
-      encodings.  Optional *splitchars* is a string containing characters to
-      split long ASCII lines on, in rough support of :rfc:`2822`'s *highest
-      level syntactic breaks*.  This doesn't affect :rfc:`2047` encoded lines.
+      encodings.
+
+      Optional *splitchars* is a string containing characters which should be
+      given extra weight by the splitting algorithm during normal header
+      wrapping.  This is in very rough support of :RFC:`2822`\'s 'higher level
+      syntactic breaks':  split points preceded by a splitchar are preferred
+      during line splitting, with the characters preferred in the order in
+      which they appear in the string.  Space and tab may be included in the
+      string to indicate whether preference should be given to one over the
+      other as a split point when other split chars do not appear in the line
+      being split.  Splitchars does not affect RFC 2047 encoded lines.
 
       *maxlinelen*, if given, overrides the instance's value for the maximum
       line length.

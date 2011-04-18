@@ -60,6 +60,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #11492: fix several issues with header folding in the email package.
+
 - Issue #11852: Add missing imports and update tests.
 
 - Issue #11467: Fix urlparse behavior when handling urls which contains scheme
