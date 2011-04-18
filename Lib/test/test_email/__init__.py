@@ -25,6 +25,8 @@ def openfile(filename, *args, **kws):
 # Base test class
 class TestEmailBase(unittest.TestCase):
 
+    maxDiff = None
+
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         self.addTypeEqualityFunc(bytes, self.assertBytesEqual)
