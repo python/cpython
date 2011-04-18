@@ -211,16 +211,19 @@ in the top-level :mod:`email` package namespace.
    ``Parser().parsestr(s)``.  *_class* and *policy* are interpreted as
    with the :class:`Parser` class constructor.
 
-   .. versionchanged:: removed *strict*, added *policy*
+   .. versionchanged:: 3.3
+      Removed the *strict* argument.  Added the *policy* keyword.
 
-.. function:: message_from_bytes(s, _class=email.message.Message, strict=None)
+.. function:: message_from_bytes(s, _class=email.message.Message, *, \
+                                 policy=policy.default)
 
    Return a message object structure from a byte string.  This is exactly
    equivalent to ``BytesParser().parsebytes(s)``.  Optional *_class* and
    *strict* are interpreted as with the :class:`Parser` class constructor.
 
    .. versionadded:: 3.2
-   .. versionchanged:: 3.3 removed *strict*, added *policy*
+   .. versionchanged:: 3.3
+      Removed the *strict* argument.  Added the *policy* keyword.
 
 .. function:: message_from_file(fp, _class=email.message.Message, *, \
                                 policy=policy.default)
@@ -229,7 +232,8 @@ in the top-level :mod:`email` package namespace.
    This is exactly equivalent to ``Parser().parse(fp)``.  *_class*
    and *policy* are interpreted as with the :class:`Parser` class constructor.
 
-   .. versionchanged:: 3.3 removed *strict*, added *policy*
+   .. versionchanged::
+      Removed the *strict* argument.  Added the *policy* keyword.
 
 .. function:: message_from_binary_file(fp, _class=email.message.Message, *, \
                                        policy=policy.default)
@@ -240,7 +244,8 @@ in the top-level :mod:`email` package namespace.
    class constructor.
 
    .. versionadded:: 3.2
-   .. versionchanged:: 3.3 removed *strict*, added *policy*
+   .. versionchanged:: 3.3
+      Removed the *strict* argument.  Added the *policy* keyword.
 
 Here's an example of how you might use this at an interactive Python prompt::
 
