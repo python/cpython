@@ -347,6 +347,8 @@ is a separate error indicator for each thread.
    error checking.  *fd* should be a valid file descriptor.  The function should
    only be called from the main thread.
 
+   .. versionadded:: 2.6
+
 
 .. cfunction:: PyObject* PyErr_NewException(char *name, PyObject *base, PyObject *dict)
 
