@@ -645,6 +645,9 @@ class TestEncoders(unittest.TestCase):
 
 # Test long header wrapping
 class TestLongHeaders(TestEmailBase):
+
+    maxDiff = None
+
     def test_split_long_continuation(self):
         eq = self.ndiffAssertEqual
         msg = email.message_from_string("""\
@@ -853,20 +856,117 @@ Subject: the first part of this is short,
         eq = self.ndiffAssertEqual
         h = Header('; '
             'this_part_does_not_fit_within_maxlinelen_and_thus_should_'
-            'be_on_a_line_all_by_itself;')
+            'be_on_a_line_all_by_itself; ')
         eq(h.encode(), """\
 ;
- this_part_does_not_fit_within_maxlinelen_and_thus_should_be_on_a_line_all_by_itself;""")
+ this_part_does_not_fit_within_maxlinelen_and_thus_should_be_on_a_line_all_by_itself; """)
 
     def test_long_header_with_multiple_sequential_split_chars(self):
-        # Issue 11492
-
         eq = self.ndiffAssertEqual
         h = Header('This is a long line that has two whitespaces  in a row.  '
             'This used to cause truncation of the header when folded')
         eq(h.encode(), """\
 This is a long line that has two whitespaces  in a row.  This used to cause
  truncation of the header when folded""")
+
+    def test_splitter_split_on_punctuation_only_if_fws(self):
+        eq = self.ndiffAssertEqual
+        h = Header('thisverylongheaderhas;semicolons;and,commas,but'
+            'they;arenotlegal;fold,points')
+        eq(h.encode(), "thisverylongheaderhas;semicolons;and,commas,butthey;"
+                        "arenotlegal;fold,points")
+
+    def test_leading_splittable_in_the_middle_just_before_overlong_last_part(self):
+        eq = self.ndiffAssertEqual
+        h = Header('this is a  test where we need to have more than one line '
+            'before; our final line that is just too big to fit;; '
+            'this_part_does_not_fit_within_maxlinelen_and_thus_should_'
+            'be_on_a_line_all_by_itself;')
+        eq(h.encode(), """\
+this is a  test where we need to have more than one line before;
+ our final line that is just too big to fit;;
+ this_part_does_not_fit_within_maxlinelen_and_thus_should_be_on_a_line_all_by_itself;""")
+
+    def test_overlong_last_part_followed_by_split_point(self):
+        eq = self.ndiffAssertEqual
+        h = Header('this_part_does_not_fit_within_maxlinelen_and_thus_should_'
+            'be_on_a_line_all_by_itself ')
+        eq(h.encode(), "this_part_does_not_fit_within_maxlinelen_and_thus_"
+                        "should_be_on_a_line_all_by_itself ")
+
+    def test_multiline_with_overlong_parts_separated_by_two_split_points(self):
+        eq = self.ndiffAssertEqual
+        h = Header('this_is_a__test_where_we_need_to_have_more_than_one_line_'
+            'before_our_final_line_; ; '
+            'this_part_does_not_fit_within_maxlinelen_and_thus_should_'
+            'be_on_a_line_all_by_itself; ')
+        eq(h.encode(), """\
+this_is_a__test_where_we_need_to_have_more_than_one_line_before_our_final_line_;
+ ;
+ this_part_does_not_fit_within_maxlinelen_and_thus_should_be_on_a_line_all_by_itself; """)
+
+    def test_multiline_with_overlong_last_part_followed_by_split_point(self):
+        eq = self.ndiffAssertEqual
+        h = Header('this is a test where we need to have more than one line '
+            'before our final line; ; '
+            'this_part_does_not_fit_within_maxlinelen_and_thus_should_'
+            'be_on_a_line_all_by_itself; ')
+        eq(h.encode(), """\
+this is a test where we need to have more than one line before our final line;
+ ;
+ this_part_does_not_fit_within_maxlinelen_and_thus_should_be_on_a_line_all_by_itself; """)
+
+    def test_long_header_with_whitespace_runs(self):
+        eq = self.ndiffAssertEqual
+        msg = Message()
+        msg['From'] = 'test@dom.ain'
+        msg['References'] = SPACE.join(['<foo@dom.ain>  '] * 10)
+        msg.set_payload('Test')
+        sfp = StringIO()
+        g = Generator(sfp)
+        g.flatten(msg)
+        eq(sfp.getvalue(), """\
+From: test@dom.ain
+References: <foo@dom.ain>   <foo@dom.ain>   <foo@dom.ain>   <foo@dom.ain>
+   <foo@dom.ain>   <foo@dom.ain>   <foo@dom.ain>   <foo@dom.ain>
+   <foo@dom.ain>   <foo@dom.ain>\x20\x20
+
+Test""")
+
+    def test_long_run_with_semi_header_splitter(self):
+        eq = self.ndiffAssertEqual
+        msg = Message()
+        msg['From'] = 'test@dom.ain'
+        msg['References'] = SPACE.join(['<foo@dom.ain>'] * 10) + '; abc'
+        msg.set_payload('Test')
+        sfp = StringIO()
+        g = Generator(sfp)
+        g.flatten(msg)
+        eq(sfp.getvalue(), """\
+From: test@dom.ain
+References: <foo@dom.ain> <foo@dom.ain> <foo@dom.ain> <foo@dom.ain>
+ <foo@dom.ain> <foo@dom.ain> <foo@dom.ain> <foo@dom.ain> <foo@dom.ain>
+ <foo@dom.ain>; abc
+
+Test""")
+
+    def test_splitter_split_on_punctuation_only_if_fws(self):
+        eq = self.ndiffAssertEqual
+        msg = Message()
+        msg['From'] = 'test@dom.ain'
+        msg['References'] = ('thisverylongheaderhas;semicolons;and,commas,but'
+            'they;arenotlegal;fold,points')
+        msg.set_payload('Test')
+        sfp = StringIO()
+        g = Generator(sfp)
+        g.flatten(msg)
+        # XXX the space after the header should not be there.
+        eq(sfp.getvalue(), """\
+From: test@dom.ain
+References:\x20
+ thisverylongheaderhas;semicolons;and,commas,butthey;arenotlegal;fold,points
+
+Test""")
 
     def test_no_split_long_header(self):
         eq = self.ndiffAssertEqual
@@ -958,7 +1058,7 @@ Reply-To: =?utf-8?q?Britische_Regierung_gibt_gr=C3=BCnes_Licht_f=C3=BCr_Offs?=
     def test_long_to_header(self):
         eq = self.ndiffAssertEqual
         to = ('"Someone Test #A" <someone@eecs.umich.edu>,'
-              '<someone@eecs.umich.edu>,'
+              '<someone@eecs.umich.edu>, '
               '"Someone Test #B" <someone@umich.edu>, '
               '"Someone Test #C" <someone@eecs.umich.edu>, '
               '"Someone Test #D" <someone@eecs.umich.edu>')
@@ -1013,9 +1113,11 @@ This is an example of string which has almost the limit of header length.
         msg['Received-2'] = h
         # This should be splitting on spaces not semicolons.
         self.ndiffAssertEqual(msg.as_string(maxheaderlen=78), """\
-Received-1: from FOO.TLD (vizworld.acl.foo.tld [123.452.678.9]) by hrothgar.la.mastaler.com (tmda-ofmipd) with ESMTP;
+Received-1: from FOO.TLD (vizworld.acl.foo.tld [123.452.678.9]) by
+ hrothgar.la.mastaler.com (tmda-ofmipd) with ESMTP;
  Wed, 05 Mar 2003 18:10:18 -0700
-Received-2: from FOO.TLD (vizworld.acl.foo.tld [123.452.678.9]) by hrothgar.la.mastaler.com (tmda-ofmipd) with ESMTP;
+Received-2: from FOO.TLD (vizworld.acl.foo.tld [123.452.678.9]) by
+ hrothgar.la.mastaler.com (tmda-ofmipd) with ESMTP;
  Wed, 05 Mar 2003 18:10:18 -0700
 
 """)
@@ -1028,12 +1130,14 @@ Received-2: from FOO.TLD (vizworld.acl.foo.tld [123.452.678.9]) by hrothgar.la.m
         msg['Received-1'] = Header(h, header_name='Received-1',
                                    continuation_ws='\t')
         msg['Received-2'] = h
-        # XXX This should be splitting on spaces not commas.
+        # XXX The space after the ':' should not be there.
         self.ndiffAssertEqual(msg.as_string(maxheaderlen=78), """\
-Received-1: <15975.17901.207240.414604@sgigritzmann1.mathematik.tu-muenchen.de> (David Bremner's message of \"Thu,
- 6 Mar 2003 13:58:21 +0100\")
-Received-2: <15975.17901.207240.414604@sgigritzmann1.mathematik.tu-muenchen.de> (David Bremner's message of \"Thu,
- 6 Mar 2003 13:58:21 +0100\")
+Received-1:\x20
+ <15975.17901.207240.414604@sgigritzmann1.mathematik.tu-muenchen.de> (David
+ Bremner's message of \"Thu, 6 Mar 2003 13:58:21 +0100\")
+Received-2:\x20
+ <15975.17901.207240.414604@sgigritzmann1.mathematik.tu-muenchen.de> (David
+ Bremner's message of \"Thu, 6 Mar 2003 13:58:21 +0100\")
 
 """)
 
@@ -1045,13 +1149,17 @@ iVBORw0KGgoAAAANSUhEUgAAADAAAAAwBAMAAAClLOS0AAAAGFBMVEUAAAAkHiJeRUIcGBi9
  locQDQ4zJykFBAXJfWDjAAACYUlEQVR4nF2TQY/jIAyFc6lydlG5x8Nyp1Y69wj1PN2I5gzp"""
         msg['Face-1'] = t
         msg['Face-2'] = Header(t, header_name='Face-2')
+        msg['Face-3'] = ' ' + t
         # XXX This splitting is all wrong.  It the first value line should be
-        # snug against the field name.
+        # snug against the field name or the space after the header not there.
         eq(msg.as_string(maxheaderlen=78), """\
 Face-1:\x20
  iVBORw0KGgoAAAANSUhEUgAAADAAAAAwBAMAAAClLOS0AAAAGFBMVEUAAAAkHiJeRUIcGBi9
  locQDQ4zJykFBAXJfWDjAAACYUlEQVR4nF2TQY/jIAyFc6lydlG5x8Nyp1Y69wj1PN2I5gzp
 Face-2:\x20
+ iVBORw0KGgoAAAANSUhEUgAAADAAAAAwBAMAAAClLOS0AAAAGFBMVEUAAAAkHiJeRUIcGBi9
+ locQDQ4zJykFBAXJfWDjAAACYUlEQVR4nF2TQY/jIAyFc6lydlG5x8Nyp1Y69wj1PN2I5gzp
+Face-3:\x20
  iVBORw0KGgoAAAANSUhEUgAAADAAAAAwBAMAAAClLOS0AAAAGFBMVEUAAAAkHiJeRUIcGBi9
  locQDQ4zJykFBAXJfWDjAAACYUlEQVR4nF2TQY/jIAyFc6lydlG5x8Nyp1Y69wj1PN2I5gzp
 
@@ -1065,8 +1173,8 @@ Face-2:\x20
              'Wed, 16 Oct 2002 07:41:11 -0700')
         msg = email.message_from_string(m)
         eq(msg.as_string(maxheaderlen=78), '''\
-Received: from siimage.com ([172.25.1.3]) by zima.siliconimage.com with Microsoft SMTPSVC(5.0.2195.4905);
- Wed, 16 Oct 2002 07:41:11 -0700
+Received: from siimage.com ([172.25.1.3]) by zima.siliconimage.com with
+ Microsoft SMTPSVC(5.0.2195.4905); Wed, 16 Oct 2002 07:41:11 -0700
 
 ''')
 
@@ -1080,9 +1188,11 @@ Received: from siimage.com ([172.25.1.3]) by zima.siliconimage.com with Microsof
         msg['List'] = h
         msg['List'] = Header(h, header_name='List')
         eq(msg.as_string(maxheaderlen=78), """\
-List: List-Unsubscribe: <http://lists.sourceforge.net/lists/listinfo/spamassassin-talk>,
+List: List-Unsubscribe:
+ <http://lists.sourceforge.net/lists/listinfo/spamassassin-talk>,
         <mailto:spamassassin-talk-request@lists.sourceforge.net?subject=unsubscribe>
-List: List-Unsubscribe: <http://lists.sourceforge.net/lists/listinfo/spamassassin-talk>,
+List: List-Unsubscribe:
+ <http://lists.sourceforge.net/lists/listinfo/spamassassin-talk>,
         <mailto:spamassassin-talk-request@lists.sourceforge.net?subject=unsubscribe>
 
 """)
@@ -4146,6 +4256,11 @@ A very long line that must get split to something other than at the
         # email 4.x behaved.  At some point it would be nice to fix that.
         msg = email.message_from_string("EmptyHeader:")
         self.assertEqual(str(msg), "EmptyHeader: \n\n")
+
+    def test_encode_preserves_leading_ws_on_value(self):
+        msg = Message()
+        msg['SomeHeader'] = '   value with leading ws'
+        self.assertEqual(str(msg), "SomeHeader:    value with leading ws\n\n")
 
 
 
