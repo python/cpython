@@ -13,8 +13,10 @@ import random
 import warnings
 
 from io import StringIO, BytesIO
+from email import policy
 from email.header import Header
 from email.message import _has_surrogates
+import email.charset as _charset
 
 UNDERSCORE = '_'
 NL = '\n'  # XXX: no longer used by the code below.
@@ -33,7 +35,8 @@ class Generator:
     # Public interface
     #
 
-    def __init__(self, outfp, mangle_from_=True, maxheaderlen=78):
+    def __init__(self, outfp, mangle_from_=True, maxheaderlen=None, *,
+                 policy=policy.default):
         """Create the generator for message flattening.
 
         outfp is the output file-like object for writing the message to.  It
@@ -49,16 +52,23 @@ class Generator:
         defined in the Header class.  Set maxheaderlen to zero to disable
         header wrapping.  The default is 78, as recommended (but not required)
         by RFC 2822.
+
+        The policy keyword specifies a policy object that controls a number of
+        aspects of the generator's operation.  The default policy maintains
+        backward compatibility.
+
         """
         self._fp = outfp
         self._mangle_from_ = mangle_from_
-        self._maxheaderlen = maxheaderlen
+        self._maxheaderlen = (maxheaderlen if maxheaderlen is not None else
+                                 policy.max_line_length)
+        self.policy = policy
 
     def write(self, s):
         # Just delegate to the file object
         self._fp.write(s)
 
-    def flatten(self, msg, unixfrom=False, linesep='\n'):
+    def flatten(self, msg, unixfrom=False, linesep=None):
         r"""Print the message object tree rooted at msg to the output file
         specified when the Generator instance was created.
 
@@ -70,17 +80,15 @@ class Generator:
         Note that for subobjects, no From_ line is printed.
 
         linesep specifies the characters used to indicate a new line in
-        the output.  The default value is the most useful for typical
-        Python applications, but it can be set to \r\n to produce RFC-compliant
-        line separators when needed.
+        the output.  The default value is determined by the policy.
 
         """
         # We use the _XXX constants for operating on data that comes directly
         # from the msg, and _encoded_XXX constants for operating on data that
         # has already been converted (to bytes in the BytesGenerator) and
         # inserted into a temporary buffer.
-        self._NL = linesep
-        self._encoded_NL = self._encode(linesep)
+        self._NL = linesep if linesep is not None else self.policy.linesep
+        self._encoded_NL = self._encode(self._NL)
         self._EMPTY = ''
         self._encoded_EMTPY = self._encode('')
         if unixfrom:
@@ -338,7 +346,10 @@ class BytesGenerator(Generator):
 
     Functionally identical to the base Generator except that the output is
     bytes and not string.  When surrogates were used in the input to encode
-    bytes, these are decoded back to bytes for output.
+    bytes, these are decoded back to bytes for output.  If the policy has
+    must_be_7bit set true, then the message is transformed such that the
+    non-ASCII bytes are properly content transfer encoded, using the
+    charset unknown-8bit.
 
     The outfp object must accept bytes in its write method.
     """
@@ -361,21 +372,22 @@ class BytesGenerator(Generator):
         # strings with 8bit bytes.
         for h, v in msg._headers:
             self.write('%s: ' % h)
-            if isinstance(v, Header):
-                self.write(v.encode(maxlinelen=self._maxheaderlen)+NL)
-            elif _has_surrogates(v):
-                # If we have raw 8bit data in a byte string, we have no idea
-                # what the encoding is.  There is no safe way to split this
-                # string.  If it's ascii-subset, then we could do a normal
-                # ascii split, but if it's multibyte then we could break the
-                # string.  There's no way to know so the least harm seems to
-                # be to not split the string and risk it being too long.
-                self.write(v+NL)
-            else:
-                # Header's got lots of smarts and this string is safe...
-                header = Header(v, maxlinelen=self._maxheaderlen,
-                                header_name=h)
-                self.write(header.encode(linesep=self._NL)+self._NL)
+            if isinstance(v, str):
+                if _has_surrogates(v):
+                    if not self.policy.must_be_7bit:
+                        # If we have raw 8bit data in a byte string, we have no idea
+                        # what the encoding is.  There is no safe way to split this
+                        # string.  If it's ascii-subset, then we could do a normal
+                        # ascii split, but if it's multibyte then we could break the
+                        # string.  There's no way to know so the least harm seems to
+                        # be to not split the string and risk it being too long.
+                        self.write(v+NL)
+                        continue
+                    h = Header(v, charset=_charset.UNKNOWN8BIT, header_name=h)
+                else:
+                    h = Header(v, header_name=h)
+            self.write(h.encode(linesep=self._NL,
+                                maxlinelen=self._maxheaderlen)+self._NL)
         # A blank line always separates headers from body
         self.write(self._NL)
 
@@ -384,7 +396,7 @@ class BytesGenerator(Generator):
         # just write it back out.
         if msg._payload is None:
             return
-        if _has_surrogates(msg._payload):
+        if _has_surrogates(msg._payload) and not self.policy.must_be_7bit:
             self.write(msg._payload)
         else:
             super(BytesGenerator,self)._handle_text(msg)

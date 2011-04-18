@@ -11,11 +11,12 @@ from io import StringIO, TextIOWrapper
 
 from email.feedparser import FeedParser
 from email.message import Message
+from email import policy
 
 
 
 class Parser:
-    def __init__(self, _class=Message):
+    def __init__(self, _class=Message, *, policy=policy.default):
         """Parser of RFC 2822 and MIME email messages.
 
         Creates an in-memory object tree representing the email message, which
@@ -30,8 +31,14 @@ class Parser:
         _class is the class to instantiate for new message objects when they
         must be created.  This class must have a constructor that can take
         zero arguments.  Default is Message.Message.
+
+        The policy keyword specifies a policy object that controls a number of
+        aspects of the parser's operation.  The default policy maintains
+        backward compatibility.
+
         """
         self._class = _class
+        self.policy = policy
 
     def parse(self, fp, headersonly=False):
         """Create a message structure from the data in a file.
@@ -41,7 +48,7 @@ class Parser:
         parsing after reading the headers or not.  The default is False,
         meaning it parses the entire contents of the file.
         """
-        feedparser = FeedParser(self._class)
+        feedparser = FeedParser(self._class, policy=self.policy)
         if headersonly:
             feedparser._set_headersonly()
         while True:

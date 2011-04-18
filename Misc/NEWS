@@ -110,6 +110,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11731: simplify/enhance email parser/generator API by introducing
+  policy objects.
+
 - Issue #11768: The signal handler of the signal module only calls
   Py_AddPendingCall() for the first signal to fix a deadlock on reentrant or
   parallel calls. PyErr_SetInterrupt() writes also into the wake up file.

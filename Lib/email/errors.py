@@ -32,7 +32,7 @@ class CharsetError(MessageError):
 
 
 # These are parsing defects which the parser was able to work around.
-class MessageDefect:
+class MessageDefect(Exception):
     """Base class for a message defect."""
 
     def __init__(self, line=None):
