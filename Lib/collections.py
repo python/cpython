@@ -495,10 +495,13 @@ class Counter(dict):
         if not isinstance(other, Counter):
             return NotImplemented
         result = Counter()
-        for elem in set(self) | set(other):
-            newcount = self[elem] + other[elem]
+        for elem, count in self.items():
+            newcount = count + other[elem]
             if newcount > 0:
                 result[elem] = newcount
+        for elem, count in other.items():
+            if elem not in self and count > 0:
+                result[elem] = count
         return result
 
     def __sub__(self, other):
@@ -511,10 +514,13 @@ class Counter(dict):
         if not isinstance(other, Counter):
             return NotImplemented
         result = Counter()
-        for elem in set(self) | set(other):
-            newcount = self[elem] - other[elem]
+        for elem, count in self.items():
+            newcount = count - other[elem]
             if newcount > 0:
                 result[elem] = newcount
+        for elem, count in other.items():
+            if elem not in self and count < 0:
+                result[elem] = 0 - count
         return result
 
     def __or__(self, other):
@@ -527,11 +533,14 @@ class Counter(dict):
         if not isinstance(other, Counter):
             return NotImplemented
         result = Counter()
-        for elem in set(self) | set(other):
-            p, q = self[elem], other[elem]
-            newcount = q if p < q else p
+        for elem, count in self.items():
+            other_count = other[elem]
+            newcount = other_count if count < other_count else count
             if newcount > 0:
                 result[elem] = newcount
+        for elem, count in other.items():
+            if elem not in self and count > 0:
+                result[elem] = count
         return result
 
     def __and__(self, other):
@@ -544,11 +553,9 @@ class Counter(dict):
         if not isinstance(other, Counter):
             return NotImplemented
         result = Counter()
-        if len(self) < len(other):
-            self, other = other, self
-        for elem in filter(self.__contains__, other):
-            p, q = self[elem], other[elem]
-            newcount = p if p < q else q
+        for elem, count in self.items():
+            other_count = other[elem]
+            newcount = count if count < other_count else other_count
             if newcount > 0:
                 result[elem] = newcount
         return result
