@@ -751,6 +751,8 @@ Tools/Demos
 Tests
 -----
 
+- Fix test_startfile to wait for child process to terminate before finishing.
+
 - Issue #10822: Fix test_posix:test_getgroups failure under Solaris.  Patch
   by Ross Lagerwall.
 
