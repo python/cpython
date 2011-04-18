@@ -55,6 +55,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #11768: The signal handler of the signal module only calls
+  Py_AddPendingCall() for the first signal to fix a deadlock on reentrant or
+  parallel calls. PyErr_SetInterrupt() writes also into the wake up file.
+
 - Issue #11442: Add a charset parameter to the Content-type in SimpleHTTPServer
   to avoid XSS attacks.
 
