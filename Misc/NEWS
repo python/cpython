@@ -58,6 +58,9 @@ Library
 - Issue #11467: Fix urlparse behavior when handling urls which contains scheme
   specific part only digits. Patch by Santoso Wijaya.
 
+- Issue #11875: collections.OrderedDict's __reduce__ was temporarily
+  mutating the object instead of just working on a copy.
+
 - collections.Counter().copy() now works correctly for subclasses.
 
 - Issue #11474: Fix the bug with url2pathname() handling of '/C|/' on Windows.
