@@ -14,6 +14,9 @@ if sys.platform[:3] in ('win', 'os2') or sys.platform=='riscos':
 process_pid = os.getpid()
 signalled_all=thread.allocate_lock()
 
+info = thread.info()
+USING_PTHREAD_COND = (info['name'] == 'pthread'
+                      and info['lock_implementation'] == 'mutex+cond')
 
 def registerSignals(for_usr1, for_usr2, for_alrm):
     usr1 = signal.signal(signal.SIGUSR1, for_usr1)
@@ -70,6 +73,8 @@ class ThreadSignals(unittest.TestCase):
     def alarm_interrupt(self, sig, frame):
         raise KeyboardInterrupt
 
+    @unittest.skipIf(USING_PTHREAD_COND,
+                     'POSIX condition variables cannot be interrupted')
     def test_lock_acquire_interruption(self):
         # Mimic receiving a SIGINT (KeyboardInterrupt) with SIGALRM while stuck
         # in a deadlock.
@@ -91,6 +96,8 @@ class ThreadSignals(unittest.TestCase):
         finally:
             signal.signal(signal.SIGALRM, oldalrm)
 
+    @unittest.skipIf(USING_PTHREAD_COND,
+                     'POSIX condition variables cannot be interrupted')
     def test_rlock_acquire_interruption(self):
         # Mimic receiving a SIGINT (KeyboardInterrupt) with SIGALRM while stuck
         # in a deadlock.

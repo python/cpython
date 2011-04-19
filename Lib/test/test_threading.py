@@ -718,6 +718,17 @@ class BoundedSemaphoreTests(lock_tests.BoundedSemaphoreTests):
 class BarrierTests(lock_tests.BarrierTests):
     barriertype = staticmethod(threading.Barrier)
 
+
+class MiscTests(unittest.TestCase):
+    def test_info(self):
+        info = threading._info()
+        self.assertIn(info['name'],
+                      'nt os2 pthread solaris'.split())
+        if info['name'] == 'pthread':
+            self.assertIn(info['lock_implementation'],
+                          ('semaphore', 'mutex+cond'))
+
+
 def test_main():
     test.support.run_unittest(LockTests, PyRLockTests, CRLockTests, EventTests,
                               ConditionAsRLockTests, ConditionTests,
@@ -725,7 +736,7 @@ def test_main():
                               ThreadTests,
                               ThreadJoinOnShutdown,
                               ThreadingExceptionTests,
-                              BarrierTests
+                              BarrierTests, MiscTests,
                               )
 
 if __name__ == "__main__":
