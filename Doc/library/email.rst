@@ -51,6 +51,7 @@ Contents of the :mod:`email` package documentation:
    email.message.rst
    email.parser.rst
    email.generator.rst
+   email.policy.rst
    email.mime.rst
    email.header.rst
    email.charset.rst

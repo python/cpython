@@ -27,7 +27,7 @@ defaults are described below.  The :mod:`policy` module also provides some
 pre-created :class:`Policy` instances.  In addition to a :const:`default`
 instance, there are instances tailored for certain applications.  For example
 there is an :const:`SMTP` :class:`Policy` with defaults appropriate for
-generating output to be sent to an SMTP server.  These are listed :ref:`below
+generating output to be sent to an SMTP server.  These are listed `below
 <Policy Instances>`.
 
 In general an application will only need to deal with setting the policy at the
