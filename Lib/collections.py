@@ -112,6 +112,7 @@ class OrderedDict(dict):
     keys = MutableMapping.keys
     values = MutableMapping.values
     items = MutableMapping.items
+    __ne__ = MutableMapping.__ne__
 
     __marker = object()
 
