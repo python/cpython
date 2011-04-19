@@ -244,7 +244,7 @@ This module defines one class called :class:`Popen`:
 Convenience Functions
 ^^^^^^^^^^^^^^^^^^^^^
 
-This module also defines four shortcut functions:
+This module also defines the following shortcut functions:
 
 
 .. function:: call(*popenargs, **kwargs)
