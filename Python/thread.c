@@ -100,6 +100,7 @@ static size_t _pythread_stacksize = 0;
 #endif
 
 #ifdef SOLARIS_THREADS
+#define PYTHREAD_NAME "solaris"
 #include "thread_solaris.h"
 #endif
 
@@ -115,6 +116,7 @@ static size_t _pythread_stacksize = 0;
 #endif
 
 #ifdef _POSIX_THREADS
+#define PYTHREAD_NAME "pthread"
 #include "thread_pthread.h"
 #endif
 
@@ -124,14 +126,17 @@ static size_t _pythread_stacksize = 0;
 #endif
 
 #ifdef NT_THREADS
+#define PYTHREAD_NAME "nt"
 #include "thread_nt.h"
 #endif
 
 #ifdef OS2_THREADS
+#define PYTHREAD_NAME "os2"
 #include "thread_os2.h"
 #endif
 
 #ifdef PLAN9_THREADS
+#define PYTHREAD_NAME "plan9"
 #include "thread_plan9.h"
 #endif
 
@@ -409,3 +414,55 @@ PyThread_ReInitTLS(void)
 }
 
 #endif /* Py_HAVE_NATIVE_TLS */
+
+PyObject*
+_PyThread_Info(void)
+{
+    PyObject *info, *value;
+    int ret;
+    char buffer[255];
+    int len;
+
+    info = PyDict_New();
+    if (info == NULL)
+        return NULL;
+
+    value = PyUnicode_FromString(PYTHREAD_NAME);
+    ret = PyDict_SetItemString(info, "name", value);
+    Py_DECREF(value);
+    if (ret)
+        goto error;
+
+#ifdef _POSIX_THREADS
+#ifdef USE_SEMAPHORES
+    value = PyUnicode_FromString("semaphore");
+#else
+    value = PyUnicode_FromString("mutex+cond");
+#endif
+    if (value == NULL)
+        return NULL;
+    ret = PyDict_SetItemString(info, "lock_implementation", value);
+    Py_DECREF(value);
+    if (ret)
+        goto error;
+
+#if defined(HAVE_CONFSTR) && defined(_CS_GNU_LIBPTHREAD_VERSION)
+    len = confstr(_CS_GNU_LIBPTHREAD_VERSION, buffer, sizeof(buffer));
+    if (0 < len && len < sizeof(buffer)) {
+        value = PyUnicode_DecodeFSDefaultAndSize(buffer, len-1);
+        if (value == NULL)
+            goto error;
+        ret = PyDict_SetItemString(info, "pthread_version", value);
+        Py_DECREF(value);
+        if (ret)
+            goto error;
+    }
+#endif
+#endif
+
+    return info;
+
+error:
+    Py_DECREF(info);
+    return NULL;
+}
