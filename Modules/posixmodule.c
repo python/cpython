@@ -6450,8 +6450,7 @@ done:
         Py_END_ALLOW_THREADS
         if (ret < 0)
             return posix_error();
-        Py_INCREF(Py_None);
-        return Py_BuildValue("nO", ret, Py_None);
+        return Py_BuildValue("n", ret);
     }
 #endif
     if (!_parse_off_t(offobj, &offset))
@@ -8730,7 +8729,7 @@ posix_fchownat(PyObject *self, PyObject *args)
     long uid, gid;
     int flags = 0;
     char *path;
-    
+
     if (!PyArg_ParseTuple(args, "iO&ll|i:fchownat",
             &dirfd, PyUnicode_FSConverter, &opath, &uid, &gid, &flags))
         return NULL;
