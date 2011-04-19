@@ -74,14 +74,25 @@ in :mod:`logging` itself) and defining handlers which are declared either in
 
    .. versionadded:: 3.2
 
-.. function:: fileConfig(fname[, defaults])
+.. function:: fileConfig(fname, defaults=None, disable_existing_loggers=True)
 
-   Reads the logging configuration from a :mod:`configparser`\-format file named
-   *fname*. This function can be called several times from an application,
-   allowing an end user to select from various pre-canned
+   Reads the logging configuration from a :mod:`configparser`\-format file
+   named *fname*. This function can be called several times from an
+   application, allowing an end user to select from various pre-canned
    configurations (if the developer provides a mechanism to present the choices
-   and load the chosen configuration). Defaults to be passed to the ConfigParser
-   can be specified in the *defaults* argument.
+   and load the chosen configuration).
+
+   :param defaults: Defaults to be passed to the ConfigParser can be specified
+                    in this argument.
+
+   :param disable_existing_loggers: If specified as ``False``, loggers which
+                                    exist when this call is made are left
+                                    alone. The default is ``True`` because this
+                                    enables old behaviour in a backward-
+                                    compatible way. This behaviour is to
+                                    disable any existing loggers unless they or
+                                    their ancestors are explicitly named in the
+                                    logging configuration.
 
 
 .. function:: listen(port=DEFAULT_LOGGING_CONFIG_PORT)
