@@ -59,6 +59,9 @@ Library
   Py_AddPendingCall() for the first signal to fix a deadlock on reentrant or
   parallel calls. PyErr_SetInterrupt() writes also into the wake up file.
 
+- Issue #11875: collections.OrderedDict's __reduce__ was temporarily
+  mutating the object instead of just working on a copy.
+
 - Issue #11442: Add a charset parameter to the Content-type in SimpleHTTPServer
   to avoid XSS attacks.
 
