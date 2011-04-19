@@ -62,6 +62,9 @@ Library
 
 - Issue #11852: Add missing imports and update tests.
 
+- Issue #11875: collections.OrderedDict's __reduce__ was temporarily
+  mutating the object instead of just working on a copy.
+
 - Issue #11467: Fix urlparse behavior when handling urls which contains scheme
   specific part only digits. Patch by Santoso Wijaya.
 
