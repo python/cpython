@@ -112,6 +112,14 @@ connection when done::
 
 (Contributed by Giampaolo Rodolà in :issue:`9795`)
 
+threading
+---------
+
+* The :mod:`threading` module has a new :func:`~threading._info` function which
+  provides informations about the thread implementation.
+
+  (:issue:`11223`)
+
 Optimizations
 =============
 

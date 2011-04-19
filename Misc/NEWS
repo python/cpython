@@ -110,6 +110,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11223: Add threading._info() function providing informations about
+  the thread implementation.
+
 - Issue #11731: simplify/enhance email parser/generator API by introducing
   policy objects.
 
@@ -463,9 +466,9 @@ Build
 
 - Issue #11268: Prevent Mac OS X Installer failure if Documentation
   package had previously been installed.
-  
+
 - Issue #11495: OSF support is eliminated. It was deprecated in Python 3.2.
-  
+
 
 IDLE
 ----
@@ -486,6 +489,12 @@ Extensions
 
 Tests
 -----
+
+- Issue #11223: Skip test_lock_acquire_interruption() and
+  test_rlock_acquire_interruption() of test_threadsignals if a thread lock is
+  implemented using a POSIX mutex and a POSIX condition variable. A POSIX
+  condition variable cannot be interrupted by a signal (e.g. on Linux, the
+  futex system call is restarted).
 
 - Issue #11790: Fix sporadic failures in test_multiprocessing.WithProcessesTestCondition.
 
