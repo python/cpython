@@ -154,10 +154,9 @@ class OrderedDict(dict):
     def __reduce__(self):
         'Return state information for pickling'
         items = [[k, self[k]] for k in self]
-        tmp = self.__map, self.__root, self.__hardroot
-        del self.__map, self.__root, self.__hardroot
         inst_dict = vars(self).copy()
-        self.__map, self.__root, self.__hardroot = tmp
+        for k in vars(self.__class__()):
+            inst_dict.pop(k, None)
         if inst_dict:
             return (self.__class__, (items,), inst_dict)
         return self.__class__, (items,)
