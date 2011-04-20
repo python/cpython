@@ -1693,19 +1693,9 @@ string_find_internal(PyStringObject *self, PyObject *args, int dir)
     const char *sub;
     Py_ssize_t sub_len;
     Py_ssize_t start=0, end=PY_SSIZE_T_MAX;
-    PyObject *obj_start=Py_None, *obj_end=Py_None;
 
-    if (!PyArg_ParseTuple(args, "O|OO:find/rfind/index/rindex", &subobj,
-        &obj_start, &obj_end))
-        return -2;
-    /* To support None in "start" and "end" arguments, meaning
-       the same as if they were not passed.
-    */
-    if (obj_start != Py_None)
-        if (!_PyEval_SliceIndex(obj_start, &start))
-        return -2;
-    if (obj_end != Py_None)
-        if (!_PyEval_SliceIndex(obj_end, &end))
+    if (!stringlib_parse_args_finds("find/rfind/index/rindex",
+                                    args, &subobj, &start, &end))
         return -2;
 
     if (PyString_Check(subobj)) {
@@ -2117,8 +2107,7 @@ string_count(PyStringObject *self, PyObject *args)
     Py_ssize_t sub_len;
     Py_ssize_t start = 0, end = PY_SSIZE_T_MAX;
 
-    if (!PyArg_ParseTuple(args, "O|O&O&:count", &sub_obj,
-        _PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
+    if (!stringlib_parse_args_finds("count", args, &sub_obj, &start, &end))
         return NULL;
 
     if (PyString_Check(sub_obj)) {
@@ -2912,8 +2901,7 @@ string_startswith(PyStringObject *self, PyObject *args)
     PyObject *subobj;
     int result;
 
-    if (!PyArg_ParseTuple(args, "O|O&O&:startswith", &subobj,
-        _PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
+    if (!stringlib_parse_args_finds("startswith", args, &subobj, &start, &end))
         return NULL;
     if (PyTuple_Check(subobj)) {
         Py_ssize_t i;
@@ -2953,8 +2941,7 @@ string_endswith(PyStringObject *self, PyObject *args)
     PyObject *subobj;
     int result;
 
-    if (!PyArg_ParseTuple(args, "O|O&O&:endswith", &subobj,
-        _PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
+    if (!stringlib_parse_args_finds("endswith", args, &subobj, &start, &end))
         return NULL;
     if (PyTuple_Check(subobj)) {
         Py_ssize_t i;
