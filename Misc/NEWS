@@ -49,6 +49,9 @@ Core and Builtins
 - Issue #11272: On Windows, input() strips '\r' (and not only '\n'), and
   sys.stdin uses universal newline (replace '\r\n' by '\n').
 
+- issue #11828: startswith and endswith don't accept None as slice index.
+  Patch by Torsten Becker.
+
 - Issue #10830: Fix PyUnicode_FromFormatV("%c") for non-BMP characters on
   narrow build.
 
