@@ -2410,11 +2410,13 @@ class ModuleLevelMiscTest(BaseTest):
 
 class BasicConfigTest(unittest.TestCase):
 
-    """Tets suite for logging.basicConfig."""
+    """Test suite for logging.basicConfig."""
 
     def setUp(self):
         super(BasicConfigTest, self).setUp()
         self.handlers = logging.root.handlers
+        self.saved_handlers = logging._handlers.copy()
+        self.saved_handler_list = logging._handlerList[:]
         self.addCleanup(self.cleanup)
         logging.root.handlers = []
 
@@ -2426,6 +2428,9 @@ class BasicConfigTest(unittest.TestCase):
 
     def cleanup(self):
         setattr(logging.root, 'handlers', self.handlers)
+        logging._handlers.clear()
+        logging._handlers.update(self.saved_handlers)
+        logging._handlerList[:] = self.saved_handler_list
 
     #@unittest.skipIf(True, "test disabled, issue #11557")
     def test_no_kwargs(self):
