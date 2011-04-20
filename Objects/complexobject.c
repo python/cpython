@@ -8,10 +8,6 @@
 #include "Python.h"
 #include "structmember.h"
 
-#ifdef HAVE_IEEEFP_H
-#include <ieeefp.h>
-#endif
-
 #ifndef WITHOUT_COMPLEX
 
 /* elementary operations on complex numbers */
