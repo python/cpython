@@ -98,16 +98,6 @@ class OrderedDict(dict):
             yield curr.key
             curr = curr.prev
 
-    def __reduce__(self):
-        'Return state information for pickling'
-        items = [[k, self[k]] for k in self]
-        inst_dict = vars(self).copy()
-        for k in vars(OrderedDict()):
-            inst_dict.pop(k, None)
-        if inst_dict:
-            return (self.__class__, (items,), inst_dict)
-        return self.__class__, (items,)
-
     update = __update = MutableMapping.update
     keys = MutableMapping.keys
     values = MutableMapping.values
@@ -155,6 +145,16 @@ class OrderedDict(dict):
         finally:
             self.__in_repr = False
         return result
+
+    def __reduce__(self):
+        'Return state information for pickling'
+        items = [[k, self[k]] for k in self]
+        inst_dict = vars(self).copy()
+        for k in vars(OrderedDict()):
+            inst_dict.pop(k, None)
+        if inst_dict:
+            return (self.__class__, (items,), inst_dict)
+        return self.__class__, (items,)
 
     def copy(self):
         'od.copy() -> a shallow copy of od'
