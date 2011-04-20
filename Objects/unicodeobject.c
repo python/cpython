@@ -6308,13 +6308,8 @@ unicode_count(PyUnicodeObject *self, PyObject *args)
     Py_ssize_t end = PY_SSIZE_T_MAX;
     PyObject *result;
 
-    if (!PyArg_ParseTuple(args, "O|O&O&:count", &substring,
-                          _PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
-        return NULL;
-
-    substring = (PyUnicodeObject *)PyUnicode_FromObject(
-        (PyObject *)substring);
-    if (substring == NULL)
+    if (!stringlib_parse_args_finds_unicode("count", args, &substring,
+                                            &start, &end))
         return NULL;
 
     ADJUST_INDICES(start, end, self->length);
@@ -6504,12 +6499,13 @@ Return -1 on failure.");
 static PyObject *
 unicode_find(PyUnicodeObject *self, PyObject *args)
 {
-    PyObject *substring;
+    PyUnicodeObject *substring;
     Py_ssize_t start;
     Py_ssize_t end;
     Py_ssize_t result;
 
-    if (!_ParseTupleFinds(args, &substring, &start, &end))
+    if (!stringlib_parse_args_finds_unicode("find", args, &substring,
+                                            &start, &end))
         return NULL;
 
     result = stringlib_find_slice(
@@ -6570,11 +6566,12 @@ static PyObject *
 unicode_index(PyUnicodeObject *self, PyObject *args)
 {
     Py_ssize_t result;
-    PyObject *substring;
+    PyUnicodeObject *substring;
     Py_ssize_t start;
     Py_ssize_t end;
 
-    if (!_ParseTupleFinds(args, &substring, &start, &end))
+    if (!stringlib_parse_args_finds_unicode("index", args, &substring,
+                                            &start, &end))
         return NULL;
 
     result = stringlib_find_slice(
@@ -7237,12 +7234,13 @@ Return -1 on failure.");
 static PyObject *
 unicode_rfind(PyUnicodeObject *self, PyObject *args)
 {
-    PyObject *substring;
+    PyUnicodeObject *substring;
     Py_ssize_t start;
     Py_ssize_t end;
     Py_ssize_t result;
 
-    if (!_ParseTupleFinds(args, &substring, &start, &end))
+    if (!stringlib_parse_args_finds_unicode("rfind", args, &substring,
+                                            &start, &end))
         return NULL;
 
     result = stringlib_rfind_slice(
@@ -7264,12 +7262,13 @@ Like S.rfind() but raise ValueError when the substring is not found.");
 static PyObject *
 unicode_rindex(PyUnicodeObject *self, PyObject *args)
 {
-    PyObject *substring;
+    PyUnicodeObject *substring;
     Py_ssize_t start;
     Py_ssize_t end;
     Py_ssize_t result;
 
-    if (!_ParseTupleFinds(args, &substring, &start, &end))
+    if (!stringlib_parse_args_finds_unicode("rindex", args, &substring,
+                                            &start, &end))
         return NULL;
 
     result = stringlib_rfind_slice(
@@ -7648,8 +7647,7 @@ unicode_startswith(PyUnicodeObject *self,
     Py_ssize_t end = PY_SSIZE_T_MAX;
     int result;
 
-    if (!PyArg_ParseTuple(args, "O|O&O&:startswith", &subobj,
-                          _PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
+    if (!stringlib_parse_args_finds("startswith", args, &subobj, &start, &end))
         return NULL;
     if (PyTuple_Check(subobj)) {
         Py_ssize_t i;
@@ -7694,8 +7692,7 @@ unicode_endswith(PyUnicodeObject *self,
     Py_ssize_t end = PY_SSIZE_T_MAX;
     int result;
 
-    if (!PyArg_ParseTuple(args, "O|O&O&:endswith", &subobj,
-                          _PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
+    if (!stringlib_parse_args_finds("endswith", args, &subobj, &start, &end))
         return NULL;
     if (PyTuple_Check(subobj)) {
         Py_ssize_t i;

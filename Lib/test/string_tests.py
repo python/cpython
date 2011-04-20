@@ -1177,6 +1177,63 @@ class MixinStrUnicodeUserStringTest:
         # mixed use of str and unicode
         self.assertEqual('a/b/c'.rpartition(u'/'), ('a/b', '/', 'c'))
 
+    def test_none_arguments(self):
+        # issue 11828
+        s = 'hello'
+        self.checkequal(2, s, 'find', 'l', None)
+        self.checkequal(3, s, 'find', 'l', -2, None)
+        self.checkequal(2, s, 'find', 'l', None, -2)
+        self.checkequal(0, s, 'find', 'h', None, None)
+
+        self.checkequal(3, s, 'rfind', 'l', None)
+        self.checkequal(3, s, 'rfind', 'l', -2, None)
+        self.checkequal(2, s, 'rfind', 'l', None, -2)
+        self.checkequal(0, s, 'rfind', 'h', None, None)
+
+        self.checkequal(2, s, 'index', 'l', None)
+        self.checkequal(3, s, 'index', 'l', -2, None)
+        self.checkequal(2, s, 'index', 'l', None, -2)
+        self.checkequal(0, s, 'index', 'h', None, None)
+
+        self.checkequal(3, s, 'rindex', 'l', None)
+        self.checkequal(3, s, 'rindex', 'l', -2, None)
+        self.checkequal(2, s, 'rindex', 'l', None, -2)
+        self.checkequal(0, s, 'rindex', 'h', None, None)
+
+        self.checkequal(2, s, 'count', 'l', None)
+        self.checkequal(1, s, 'count', 'l', -2, None)
+        self.checkequal(1, s, 'count', 'l', None, -2)
+        self.checkequal(0, s, 'count', 'x', None, None)
+
+        self.checkequal(True, s, 'endswith', 'o', None)
+        self.checkequal(True, s, 'endswith', 'lo', -2, None)
+        self.checkequal(True, s, 'endswith', 'l', None, -2)
+        self.checkequal(False, s, 'endswith', 'x', None, None)
+
+        self.checkequal(True, s, 'startswith', 'h', None)
+        self.checkequal(True, s, 'startswith', 'l', -2, None)
+        self.checkequal(True, s, 'startswith', 'h', None, -2)
+        self.checkequal(False, s, 'startswith', 'x', None, None)
+
+    def test_find_etc_raise_correct_error_messages(self):
+        # issue 11828
+        s = 'hello'
+        x = 'x'
+        self.assertRaisesRegexp(TypeError, r'\bfind\b', s.find,
+                                x, None, None, None)
+        self.assertRaisesRegexp(TypeError, r'\brfind\b', s.rfind,
+                                x, None, None, None)
+        self.assertRaisesRegexp(TypeError, r'\bindex\b', s.index,
+                                x, None, None, None)
+        self.assertRaisesRegexp(TypeError, r'\brindex\b', s.rindex,
+                                x, None, None, None)
+        self.assertRaisesRegexp(TypeError, r'^count\(', s.count,
+                                x, None, None, None)
+        self.assertRaisesRegexp(TypeError, r'^startswith\(', s.startswith,
+                                x, None, None, None)
+        self.assertRaisesRegexp(TypeError, r'^endswith\(', s.endswith,
+                                x, None, None, None)
+
 class MixinStrStringUserStringTest:
     # Additional tests for 8bit strings, i.e. str, UserString and
     # the string module

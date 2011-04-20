@@ -43,6 +43,9 @@ Core and Builtins
   rather than the Py_IsInitialized flag, avoiding a Fatal Python
   error in certain circumstances when an import is done in __del__.
 
+- issue #11828: startswith and endswith don't accept None as slice index.
+  Patch by Torsten Becker.
+
 - Issue #10674: Remove unused 'dictmaker' rule from grammar.
 
 - Issue #10596: Fix float.__mod__ to have the same behaviour as
