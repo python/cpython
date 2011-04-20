@@ -2255,7 +2255,7 @@ class RecordingHandler(logging.NullHandler):
 
 class ShutdownTest(BaseTest):
 
-    """Tets suite for the shutdown method."""
+    """Test suite for the shutdown method."""
 
     def setUp(self):
         super(ShutdownTest, self).setUp()
@@ -2342,7 +2342,7 @@ class ShutdownTest(BaseTest):
 
 class ModuleLevelMiscTest(BaseTest):
 
-    """Tets suite for some module level methods."""
+    """Test suite for some module level methods."""
 
     def test_disable(self):
         old_disable = logging.root.manager.disable
@@ -2434,7 +2434,6 @@ class BasicConfigTest(unittest.TestCase):
         logging._handlerList[:] = self.saved_handler_list
         logging.root.level = self.original_logging_level
 
-    #@unittest.skipIf(True, "test disabled, issue #11557")
     def test_no_kwargs(self):
         logging.basicConfig()
 
