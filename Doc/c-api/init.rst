@@ -489,7 +489,7 @@ the fork, and releasing them afterwards. In addition, it resets any
 :ref:`lock-objects` in the child. When extending or embedding Python, there
 is no way to inform Python of additional (non-Python) locks that need to be
 acquired before or reset after a fork. OS facilities such as
-:c:func:`posix_atfork` would need to be used to accomplish the same thing.
+:c:func:`pthread_atfork` would need to be used to accomplish the same thing.
 Additionally, when extending or embedding Python, calling :c:func:`fork`
 directly rather than through :func:`os.fork` (and returning to or calling
 into Python) may result in a deadlock by one of Python's internal locks
