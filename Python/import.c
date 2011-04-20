@@ -1198,6 +1198,7 @@ parse_source_module(PyObject *pathname, FILE *fp)
 
 /* Helper to open a bytecode file for writing in exclusive mode */
 
+#ifndef MS_WINDOWS
 static FILE *
 open_exclusive(char *filename, mode_t mode)
 {
@@ -1228,6 +1229,7 @@ open_exclusive(char *filename, mode_t mode)
     return fopen(filename, "wb");
 #endif
 }
+#endif
 
 
 /* Write a compiled module to a file, placing the time of last
@@ -1250,7 +1252,12 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
                       S_IWUSR | S_IWGRP | S_IWOTH);
     PyObject *dirbytes;
 #endif
-    PyObject *cpathbytes, *dirname;
+#ifdef MS_WINDOWS
+    int fd;
+#else
+    PyObject *cpathbytes;
+#endif
+    PyObject *dirname;
     Py_UNICODE *dirsep;
     int res, ok;
 
@@ -1294,6 +1301,16 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
     }
     Py_DECREF(dirname);
 
+#ifdef MS_WINDOWS
+    (void)DeleteFileW(PyUnicode_AS_UNICODE(cpathname));
+    fd = _wopen(PyUnicode_AS_UNICODE(cpathname),
+                 O_EXCL | O_CREAT | O_WRONLY | O_TRUNC | O_BINARY,
+                 mode);
+    if (0 <= fd)
+        fp = fdopen(fd, "wb");
+    else
+        fp = NULL;
+#else
     cpathbytes = PyUnicode_EncodeFSDefault(cpathname);
     if (cpathbytes == NULL) {
         PyErr_Clear();
@@ -1301,11 +1318,14 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
     }
 
     fp = open_exclusive(PyBytes_AS_STRING(cpathbytes), mode);
+#endif
     if (fp == NULL) {
         if (Py_VerboseFlag)
             PySys_FormatStderr(
                 "# can't create %R\n", cpathname);
+#ifndef MS_WINDOWS
         Py_DECREF(cpathbytes);
+#endif
         return;
     }
     PyMarshal_WriteLongToFile(pyc_magic, fp, Py_MARSHAL_VERSION);
@@ -1321,11 +1341,13 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
         (void)DeleteFileW(PyUnicode_AS_UNICODE(cpathname));
 #else
         (void) unlink(PyBytes_AS_STRING(cpathbytes));
-#endif
         Py_DECREF(cpathbytes);
+#endif
         return;
     }
+#ifndef MS_WINDOWS
     Py_DECREF(cpathbytes);
+#endif
     /* Now write the true mtime */
     fseek(fp, 4L, 0);
     assert(mtime < LONG_MAX);
