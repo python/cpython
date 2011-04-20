@@ -2453,7 +2453,7 @@ class BasicConfigTest(unittest.TestCase):
         self.assertIsInstance(formatter._style, logging.PercentStyle)
 
         # level is not explicitely set
-        self.assertEqual(logging.root.level, logging.WARNING)
+        self.assertEqual(logging.root.level, self.original_logging_level)
 
     def test_filename(self):
         logging.basicConfig(filename='test.log')
