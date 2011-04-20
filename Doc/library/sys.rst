@@ -224,8 +224,8 @@ always available.
 
 .. data:: flags
 
-   The struct sequence *flags* exposes the status of command line flags. The
-   attributes are read only.
+   The :term:`struct sequence` *flags* exposes the status of command line
+   flags. The attributes are read only.
 
    ============================= =============================
    attribute                     flag
@@ -249,12 +249,12 @@ always available.
 
 .. data:: float_info
 
-   A structseq holding information about the float type. It contains low level
-   information about the precision and internal representation.  The values
-   correspond to the various floating-point constants defined in the standard
-   header file :file:`float.h` for the 'C' programming language; see section
-   5.2.4.2.2 of the 1999 ISO/IEC C standard [C99]_, 'Characteristics of
-   floating types', for details.
+   A :term:`struct sequence` holding information about the float type. It
+   contains low level information about the precision and internal
+   representation.  The values correspond to the various floating-point
+   constants defined in the standard header file :file:`float.h` for the 'C'
+   programming language; see section 5.2.4.2.2 of the 1999 ISO/IEC C standard
+   [C99]_, 'Characteristics of floating types', for details.
 
    +---------------------+----------------+--------------------------------------------------+
    | attribute           | float.h macro  | explanation                                      |
@@ -500,8 +500,9 @@ always available.
 
 .. data:: hash_info
 
-   A structseq giving parameters of the numeric hash implementation.  For
-   more details about hashing of numeric types, see :ref:`numeric-hash`.
+   A :term:`struct sequence` giving parameters of the numeric hash
+   implementation.  For more details about hashing of numeric types, see
+   :ref:`numeric-hash`.
 
    +---------------------+--------------------------------------------------+
    | attribute           | explanation                                      |
@@ -542,8 +543,8 @@ always available.
 
 .. data:: int_info
 
-   A struct sequence that holds information about Python's
-   internal representation of integers.  The attributes are read only.
+   A :term:`struct sequence` that holds information about Python's internal
+   representation of integers.  The attributes are read only.
 
    +-------------------------+----------------------------------------------+
    | attribute               | explanation                                  |
