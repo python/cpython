@@ -523,19 +523,19 @@ class BaseBytesTest(unittest.TestCase):
         # issue 11828
         b = self.type2test(b'hello')
         x = self.type2test(b'x')
-        self.assertRaisesRegexp(TypeError, r'\bfind\b', b.find,
+        self.assertRaisesRegex(TypeError, r'\bfind\b', b.find,
                                 x, None, None, None)
-        self.assertRaisesRegexp(TypeError, r'\brfind\b', b.rfind,
+        self.assertRaisesRegex(TypeError, r'\brfind\b', b.rfind,
                                 x, None, None, None)
-        self.assertRaisesRegexp(TypeError, r'\bindex\b', b.index,
+        self.assertRaisesRegex(TypeError, r'\bindex\b', b.index,
                                 x, None, None, None)
-        self.assertRaisesRegexp(TypeError, r'\brindex\b', b.rindex,
+        self.assertRaisesRegex(TypeError, r'\brindex\b', b.rindex,
                                 x, None, None, None)
-        self.assertRaisesRegexp(TypeError, r'\bcount\b', b.count,
+        self.assertRaisesRegex(TypeError, r'\bcount\b', b.count,
                                 x, None, None, None)
-        self.assertRaisesRegexp(TypeError, r'\bstartswith\b', b.startswith,
+        self.assertRaisesRegex(TypeError, r'\bstartswith\b', b.startswith,
                                 x, None, None, None)
-        self.assertRaisesRegexp(TypeError, r'\bendswith\b', b.endswith,
+        self.assertRaisesRegex(TypeError, r'\bendswith\b', b.endswith,
                                 x, None, None, None)
 
 
