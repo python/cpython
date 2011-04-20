@@ -580,6 +580,14 @@ Glossary
       an :term:`expression` or a one of several constructs with a keyword, such
       as :keyword:`if`, :keyword:`while` or :keyword:`for`.
 
+   struct sequence
+      A tuple with named elements. Struct sequences expose an interface similiar
+      to :term:`named tuple` in that elements can either be accessed either by
+      index or as an attribute. However, they do not have any of the named tuple
+      methods like :meth:`~collections.somenamedtuple._make` or
+      :meth:`~collections.somenamedtuple._asdict`. Examples of struct sequences
+      include :data:`sys.float_info` and the return value of :func:`os.stat`.
+
    triple-quoted string
       A string which is bound by three instances of either a quotation mark
       (") or an apostrophe (').  While they don't provide any functionality
