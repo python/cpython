@@ -420,8 +420,11 @@ _PyThread_Info(void)
 {
     PyObject *info, *value;
     int ret;
+#if (defined(_POSIX_THREADS) && defined(HAVE_CONFSTR) \
+     && defined(_CS_GNU_LIBPTHREAD_VERSION))
     char buffer[255];
     int len;
+#endif
 
     info = PyDict_New();
     if (info == NULL)
