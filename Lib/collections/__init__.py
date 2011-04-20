@@ -156,7 +156,7 @@ class OrderedDict(dict):
         'Return state information for pickling'
         items = [[k, self[k]] for k in self]
         inst_dict = vars(self).copy()
-        for k in vars(self.__class__()):
+        for k in vars(OrderedDict()):
             inst_dict.pop(k, None)
         if inst_dict:
             return (self.__class__, (items,), inst_dict)
