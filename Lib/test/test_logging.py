@@ -2414,15 +2414,20 @@ class BasicConfigTest(unittest.TestCase):
 
     def setUp(self):
         super(BasicConfigTest, self).setUp()
-        handlers = logging.root.handlers
-        self.addCleanup(lambda: setattr(logging.root, 'handlers', handlers))
+        self.handlers = logging.root.handlers
+        self.addCleanup(self.cleanup)
         logging.root.handlers = []
 
     def tearDown(self):
-        logging.shutdown()
+        for h in logging.root.handlers[:]:
+            logging.root.removeHandler(h)
+            h.close()
         super(BasicConfigTest, self).tearDown()
 
-    @unittest.skipIf(True, "test disabled, issue #11557")
+    def cleanup(self):
+        setattr(logging.root, 'handlers', self.handlers)
+
+    #@unittest.skipIf(True, "test disabled, issue #11557")
     def test_no_kwargs(self):
         logging.basicConfig()
 
