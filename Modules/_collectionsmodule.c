@@ -1552,12 +1552,8 @@ _count_elements(PyObject *self, PyObject *args)
     if (PyDict_CheckExact(mapping)) {
         while (1) {
             key = PyIter_Next(it);
-            if (key == NULL) {
-                if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_StopIteration))
-                    PyErr_Clear();
-                else
-                    break;
-            }
+            if (key == NULL)
+                break;
             oldval = PyDict_GetItem(mapping, key);
             if (oldval == NULL) {
                 if (PyDict_SetItem(mapping, key, one) == -1)
@@ -1575,12 +1571,8 @@ _count_elements(PyObject *self, PyObject *args)
     } else {
         while (1) {
             key = PyIter_Next(it);
-            if (key == NULL) {
-                if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_StopIteration))
-                    PyErr_Clear();
-                else
-                    break;
-            }
+            if (key == NULL)
+                break;
             oldval = PyObject_GetItem(mapping, key);
             if (oldval == NULL) {
                 if (!PyErr_Occurred() || !PyErr_ExceptionMatches(PyExc_KeyError))
