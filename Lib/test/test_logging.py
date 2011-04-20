@@ -2417,6 +2417,7 @@ class BasicConfigTest(unittest.TestCase):
         self.handlers = logging.root.handlers
         self.saved_handlers = logging._handlers.copy()
         self.saved_handler_list = logging._handlerList[:]
+        self.original_logging_level = logging.root.level
         self.addCleanup(self.cleanup)
         logging.root.handlers = []
 
@@ -2431,6 +2432,7 @@ class BasicConfigTest(unittest.TestCase):
         logging._handlers.clear()
         logging._handlers.update(self.saved_handlers)
         logging._handlerList[:] = self.saved_handler_list
+        logging.root.level = self.original_logging_level
 
     #@unittest.skipIf(True, "test disabled, issue #11557")
     def test_no_kwargs(self):
