@@ -651,7 +651,7 @@ them, though most actions simply add an attribute to the object returned by
 command-line args should be handled. The supported actions are:
 
 * ``'store'`` - This just stores the argument's value.  This is the default
-   action. For example::
+  action. For example::
 
     >>> parser = argparse.ArgumentParser()
     >>> parser.add_argument('--foo')
@@ -659,9 +659,9 @@ command-line args should be handled. The supported actions are:
     Namespace(foo='1')
 
 * ``'store_const'`` - This stores the value specified by the const_ keyword
-   argument.  (Note that the const_ keyword argument defaults to the rather
-   unhelpful ``None``.)  The ``'store_const'`` action is most commonly used with
-   optional arguments that specify some sort of flag.  For example::
+  argument.  (Note that the const_ keyword argument defaults to the rather
+  unhelpful ``None``.)  The ``'store_const'`` action is most commonly used with
+  optional arguments that specify some sort of flag.  For example::
 
     >>> parser = argparse.ArgumentParser()
     >>> parser.add_argument('--foo', action='store_const', const=42)
