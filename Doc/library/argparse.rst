@@ -578,7 +578,7 @@ The add_argument() method
    has its own more detailed description below, but in short they are:
 
    * `name or flags`_ - Either a name or a list of option strings, e.g. ``foo``
-     or ``-f, --foo``
+     or ``-f, --foo``.
 
    * action_ - The basic type of action to be taken when this argument is
      encountered at the command line.
