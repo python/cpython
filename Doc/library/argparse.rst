@@ -977,7 +977,7 @@ etc. are all supported.
 required
 ^^^^^^^^
 
-In general, the argparse module assumes that flags like ``-f`` and ``--bar``
+In general, the :mod:`argparse` module assumes that flags like ``-f`` and ``--bar``
 indicate *optional* arguments, which can always be omitted at the command line.
 To make an option *required*, ``True`` can be specified for the ``required=``
 keyword argument to :meth:`add_argument`::
@@ -1587,9 +1587,9 @@ Mutual exclusion
 
 .. method:: add_mutually_exclusive_group(required=False)
 
-   Create a mutually exclusive group. argparse will make sure that only one of
-   the arguments in the mutually exclusive group was present on the command
-   line::
+   Create a mutually exclusive group. :mod:`argparse` will make sure that only
+   one of the arguments in the mutually exclusive group was present on the
+   command line::
 
      >>> parser = argparse.ArgumentParser(prog='PROG')
      >>> group = parser.add_mutually_exclusive_group()
@@ -1757,14 +1757,14 @@ Exiting methods
 Upgrading optparse code
 -----------------------
 
-Originally, the argparse module had attempted to maintain compatibility with
-optparse.  However, optparse was difficult to extend transparently, particularly
-with the changes required to support the new ``nargs=`` specifiers and better
-usage messages.  When most everything in optparse had either been copy-pasted
-over or monkey-patched, it no longer seemed practical to try to maintain the
-backwards compatibility.
+Originally, the mod:`argparse` module had attempted to maintain compatibility
+with :mod:`optparse`.  However, :mod:`optparse` was difficult to extend
+transparently, particularly with the changes required to support the new
+``nargs=`` specifiers and better usage messages.  When most everything in
+:mod:`optparse` had either been copy-pasted over or monkey-patched, it no
+longer seemed practical to try to maintain the backwards compatibility.
 
-A partial upgrade path from optparse to argparse:
+A partial upgrade path from :mod:`optparse` to :mod:`argparse`:
 
 * Replace all ``add_option()`` calls with :meth:`ArgumentParser.add_argument`
   calls.
