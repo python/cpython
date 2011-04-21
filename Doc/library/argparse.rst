@@ -765,7 +765,7 @@ nargs
 
 ArgumentParser objects usually associate a single command-line argument with a
 single action to be taken.  The ``nargs`` keyword argument associates a
-different number of command-line arguments with a single action..  The supported
+different number of command-line arguments with a single action.  The supported
 values are:
 
 * N (an integer).  N args from the command line will be gathered together into a
