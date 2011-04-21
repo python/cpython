@@ -120,9 +120,7 @@ command-line args from :data:`sys.argv`.
 ArgumentParser objects
 ----------------------
 
-.. class:: ArgumentParser([description], [epilog], [prog], [usage], [add_help], \
-                          [argument_default], [parents], [prefix_chars], \
-                          [conflict_handler], [formatter_class])
+.. class:: ArgumentParser([description], [epilog], [prog], [usage], [add_help], [argument_default], [parents], [prefix_chars], [conflict_handler], [formatter_class])
 
    Create a new :class:`ArgumentParser` object.  Each parameter has its own more
    detailed description below, but in short they are:
@@ -570,9 +568,7 @@ your usage messages.
 The add_argument() method
 -------------------------
 
-.. method:: ArgumentParser.add_argument(name or flags..., [action], [nargs], \
-                           [const], [default], [type], [choices], [required], \
-                           [help], [metavar], [dest])
+.. method:: ArgumentParser.add_argument(name or flags..., [action], [nargs], [const], [default], [type], [choices], [required], [help], [metavar], [dest])
 
    Define how a single command-line argument should be parsed.  Each parameter
    has its own more detailed description below, but in short they are:
