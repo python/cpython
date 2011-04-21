@@ -104,9 +104,13 @@ loops that truncate the stream.
                 total = func(total, element)
                 yield total
 
-    Uses for the *func* argument include :func:`min` for a running minimum,
-    :func:`max` for a running maximum, and :func:`operator.mul` for a running
-    product::
+    There are a number of uses for the *func* argument.  It can be set to
+    :func:`min` for a running minimum, :func:`max` for a running maximum, or
+    :func:`operator.mul` for a running product.  Amortization tables can be
+    built by accumulating interest and applying payments.  First-order
+    `recurrence relations <http://en.wikipedia.org/wiki/Recurrence_relation>`_
+    can be modeled by supplying the initial value in the iterable and using only
+    the accumulated total in *func* argument::
 
       >>> data = [3, 4, 6, 2, 1, 9, 0, 7, 5, 8]
       >>> list(accumulate(data, operator.mul))     # running product
@@ -118,6 +122,17 @@ loops that truncate the stream.
       >>> cashflows = [1000, -90, -90, -90, -90]
       >>> list(accumulate(cashflows, lambda bal, pmt: bal*1.05 + pmt))
       [1000, 960.0, 918.0, 873.9000000000001, 827.5950000000001]
+
+      # Chaotic recurrence relation http://en.wikipedia.org/wiki/Logistic_map
+      >>> logistic_map = lambda x, _:  r * x * (1 - x)
+      >>> r = 3.8
+      >>> x0 = 0.4
+      >>> inputs = repeat(x0, 36)     # only the initial value is used
+      >>> [format(x, '.2f') for x in accumulate(inputs, logistic_map)]
+      ['0.40', '0.91', '0.30', '0.81', '0.60', '0.92', '0.29', '0.79', '0.63',
+       '0.88' ,'0.39', '0.90', '0.33', '0.84', '0.52', '0.95', '0.18', '0.57',
+       '0.93', '0.25', '0.71', '0.79', '0.63', '0.88', '0.39', '0.91', '0.32',
+       '0.83', '0.54', '0.95', '0.20', '0.60', '0.91', '0.30', '0.80', '0.60']
 
     .. versionadded:: 3.2
 
