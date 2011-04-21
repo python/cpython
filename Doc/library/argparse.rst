@@ -79,7 +79,7 @@ The first step in using the :mod:`argparse` is creating an
    >>> parser = argparse.ArgumentParser(description='Process some integers.')
 
 The :class:`ArgumentParser` object will hold all the information necessary to
-parse the command line into python data types.
+parse the command line into Python data types.
 
 
 Adding arguments
@@ -1797,7 +1797,7 @@ A partial upgrade path from optparse to argparse:
   :exc:`ArgumentError`.
 
 * Replace strings with implicit arguments such as ``%default`` or ``%prog`` with
-  the standard python syntax to use dictionaries to format strings, that is,
+  the standard Python syntax to use dictionaries to format strings, that is,
   ``%(default)s`` and ``%(prog)s``.
 
 * Replace the OptionParser constructor ``version`` argument with a call to
