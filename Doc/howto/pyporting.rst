@@ -247,8 +247,8 @@ If you are supporting `Python 2.5`_ and newer there are still some features of
 Python that you can utilize.
 
 
-``from __future__ import absolute_imports``
-'''''''''''''''''''''''''''''''''''''''''''
+``from __future__ import absolute_import``
+''''''''''''''''''''''''''''''''''''''''''
 
 Implicit relative imports (e.g., importing ``spam.bacon`` from within
 ``spam.eggs`` with the statement ``import bacon``) does not work in Python 3.
