@@ -93,7 +93,7 @@ used when :meth:`~ArgumentParser.parse_args` is called. For example::
    ...                     const=sum, default=max,
    ...                     help='sum the integers (default: find the max)')
 
-Later, calling :meth:`parse_args` will return an object with
+Later, calling :meth:`~ArgumentParser.parse_args` will return an object with
 two attributes, ``integers`` and ``accumulate``.  The ``integers`` attribute
 will be a list of one or more ints, and the ``accumulate`` attribute will be
 either the :func:`sum` function, if ``--sum`` was specified at the command line,
@@ -289,10 +289,10 @@ arguments they contain.  For example::
    Namespace(f='bar')
 
 Arguments read from a file must by default be one per line (but see also
-:meth:`convert_arg_line_to_args`) and are treated as if they were in the same
-place as the original file referencing argument on the command line.  So in the
-example above, the expression ``['-f', 'foo', '@args.txt']`` is considered
-equivalent to the expression ``['-f', 'foo', '-f', 'bar']``.
+:meth:`~ArgumentParser.convert_arg_line_to_args`) and are treated as if they
+were in the same place as the original file referencing argument on the command
+line.  So in the example above, the expression ``['-f', 'foo', '@args.txt']``
+is considered equivalent to the expression ``['-f', 'foo', '-f', 'bar']``.
 
 The ``fromfile_prefix_chars=`` argument defaults to ``None``, meaning that
 arguments will never be treated as file references.
@@ -302,11 +302,12 @@ argument_default
 ^^^^^^^^^^^^^^^^
 
 Generally, argument defaults are specified either by passing a default to
-:meth:`add_argument` or by calling the :meth:`set_defaults` methods with a
-specific set of name-value pairs.  Sometimes however, it may be useful to
-specify a single parser-wide default for arguments.  This can be accomplished by
-passing the ``argument_default=`` keyword argument to :class:`ArgumentParser`.
-For example, to globally suppress attribute creation on :meth:`parse_args`
+:meth:`~ArgumentParser.add_argument` or by calling the
+:meth:`~ArgumentParser.set_defaults` methods with a specific set of name-value
+pairs.  Sometimes however, it may be useful to specify a single parser-wide
+default for arguments.  This can be accomplished by passing the
+``argument_default=`` keyword argument to :class:`ArgumentParser`.  For example,
+to globally suppress attribute creation on :meth:`~ArgumentParser.parse_args`
 calls, we supply ``argument_default=SUPPRESS``::
 
    >>> parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
@@ -356,11 +357,14 @@ formatter_class
 
 :class:`ArgumentParser` objects allow the help formatting to be customized by
 specifying an alternate formatting class.  Currently, there are three such
-classes: :class:`argparse.RawDescriptionHelpFormatter`,
-:class:`argparse.RawTextHelpFormatter` and
-:class:`argparse.ArgumentDefaultsHelpFormatter`.  The first two allow more
-control over how textual descriptions are displayed, while the last
-automatically adds information about argument default values.
+classes:
+
+.. class:: RawDescriptionHelpFormatter
+           RawTextHelpFormatter
+           ArgumentDefaultsHelpFormatter
+
+The first two allow more control over how textual descriptions are displayed,
+while the last automatically adds information about argument default values.
 
 By default, :class:`ArgumentParser` objects line-wrap the description_ and
 epilog_ texts in command-line help messages::
@@ -385,7 +389,7 @@ epilog_ texts in command-line help messages::
    likewise for this epilog whose whitespace will be cleaned up and whose words
    will be wrapped across a couple lines
 
-Passing :class:`argparse.RawDescriptionHelpFormatter` as ``formatter_class=``
+Passing :class:`~argparse.RawDescriptionHelpFormatter` as ``formatter_class=``
 indicates that description_ and epilog_ are already correctly formatted and
 should not be line-wrapped::
 
@@ -606,11 +610,12 @@ The following sections describe how each of these are used.
 name or flags
 ^^^^^^^^^^^^^
 
-The :meth:`add_argument` method must know whether an optional argument, like
-``-f`` or ``--foo``, or a positional argument, like a list of filenames, is
-expected.  The first arguments passed to :meth:`add_argument` must therefore be
-either a series of flags, or a simple argument name.  For example, an optional
-argument could be created like::
+The :meth:`~ArgumentParser.add_argument` method must know whether an optional
+argument, like ``-f`` or ``--foo``, or a positional argument, like a list of
+filenames, is expected.  The first arguments passed to
+:meth:`~ArgumentParser.add_argument` must therefore be either a series of
+flags, or a simple argument name.  For example, an optional argument could
+be created like::
 
    >>> parser.add_argument('-f', '--foo')
 
@@ -618,8 +623,9 @@ while a positional argument could be created like::
 
    >>> parser.add_argument('bar')
 
-When :meth:`parse_args` is called, optional arguments will be identified by the
-``-`` prefix, and the remaining arguments will be assumed to be positional::
+When :meth:`~ArgumentParser.parse_args` is called, optional arguments will be
+identified by the ``-`` prefix, and the remaining arguments will be assumed to
+be positional::
 
    >>> parser = argparse.ArgumentParser(prog='PROG')
    >>> parser.add_argument('-f', '--foo')
@@ -639,8 +645,8 @@ action
 :class:`ArgumentParser` objects associate command-line args with actions.  These
 actions can do just about anything with the command-line args associated with
 them, though most actions simply add an attribute to the object returned by
-:meth:`parse_args`.  The ``action`` keyword argument specifies how the
-command-line args should be handled. The supported actions are:
+:meth:`~ArgumentParser.parse_args`.  The ``action`` keyword argument specifies
+how the command-line args should be handled. The supported actions are:
 
 * ``'store'`` - This just stores the argument's value.  This is the default
   action. For example::
@@ -692,8 +698,8 @@ command-line args should be handled. The supported actions are:
     Namespace(types=[<type 'str'>, <type 'int'>])
 
 * ``'version'`` - This expects a ``version=`` keyword argument in the
-  :meth:`add_argument` call, and prints version information and exits when
-  invoked.
+  :meth:`~ArgumentParser.add_argument` call, and prints version information
+  and exits when invoked.
 
     >>> import argparse
     >>> parser = argparse.ArgumentParser(prog='PROG')
@@ -709,11 +715,12 @@ the Action API.  The easiest way to do this is to extend
 * ``parser`` - The ArgumentParser object which contains this action.
 
 * ``namespace`` - The namespace object that will be returned by
-  :meth:`parse_args`.  Most actions add an attribute to this object.
+  :meth:`~ArgumentParser.parse_args`.  Most actions add an attribute to this
+  object.
 
 * ``values`` - The associated command-line args, with any type-conversions
   applied.  (Type-conversions are specified with the type_ keyword argument to
-  :meth:`add_argument`.
+  :meth:`~ArgumentParser.add_argument`.
 
 * ``option_string`` - The option string that was used to invoke this action.
   The ``option_string`` argument is optional, and will be absent if the action
@@ -820,21 +827,20 @@ will be consumed and a single item (not a list) will be produced.
 const
 ^^^^^
 
-The ``const`` argument of :meth:`add_argument` is used to hold constant values
-that are not read from the command line but are required for the various
-ArgumentParser actions.  The two most common uses of it are:
+The ``const`` argument of :meth:`~ArgumentParser.add_argument` is used to hold
+constant values that are not read from the command line but are required for
+the various :class:`ArgumentParser` actions.  The two most common uses of it are:
 
-* When :meth:`add_argument` is called with ``action='store_const'`` or
-  ``action='append_const'``.  These actions add the ``const`` value to one of
-  the attributes of the object returned by :meth:`parse_args`.  See the action_
-  description for examples.
+* When :meth:`~ArgumentParser.add_argument` is called with
+  ``action='store_const'`` or ``action='append_const'``.  These actions add the
+  ``const`` value to one of the attributes of the object returned by :meth:`~ArgumentParser.parse_args`. See the action_ description for examples.
 
-* When :meth:`add_argument` is called with option strings (like ``-f`` or
-  ``--foo``) and ``nargs='?'``.  This creates an optional argument that can be
-  followed by zero or one command-line args.  When parsing the command line, if
-  the option string is encountered with no command-line arg following it, the
-  value of ``const`` will be assumed instead. See the nargs_ description for
-  examples.
+* When :meth:`~ArgumentParser.add_argument` is called with option strings
+  (like ``-f`` or ``--foo``) and ``nargs='?'``.  This creates an optional
+  argument that can be followed by zero or one command-line args.
+  When parsing the command line, if the option string is encountered with no
+  command-line arg following it, the value of ``const`` will be assumed instead.
+  See the nargs_ description for examples.
 
 The ``const`` keyword argument defaults to ``None``.
 
@@ -843,10 +849,11 @@ default
 ^^^^^^^
 
 All optional arguments and some positional arguments may be omitted at the
-command line.  The ``default`` keyword argument of :meth:`add_argument`, whose
-value defaults to ``None``, specifies what value should be used if the
-command-line arg is not present.  For optional arguments, the ``default`` value
-is used when the option string was not present at the command line::
+command line.  The ``default`` keyword argument of
+:meth:`~ArgumentParser.add_argument`, whose value defaults to ``None``,
+specifies what value should be used if the command-line arg is not present.
+For optional arguments, the ``default`` value is used when the option string
+was not present at the command line::
 
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument('--foo', default=42)
@@ -883,9 +890,9 @@ type
 By default, ArgumentParser objects read command-line args in as simple strings.
 However, quite often the command-line string should instead be interpreted as
 another type, like a :class:`float`, :class:`int` or :class:`file`.  The
-``type`` keyword argument of :meth:`add_argument` allows any necessary
-type-checking and type-conversions to be performed.  Many common built-in types
-can be used directly as the value of the ``type`` argument::
+``type`` keyword argument of :meth:`~ArgumentParser.add_argument` allows any
+necessary type-checking and type-conversions to be performed.  Many common
+built-in types can be used directly as the value of the ``type`` argument::
 
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument('foo', type=int)
@@ -941,9 +948,9 @@ choices
 
 Some command-line args should be selected from a restricted set of values.
 These can be handled by passing a container object as the ``choices`` keyword
-argument to :meth:`add_argument`.  When the command line is parsed, arg values
-will be checked, and an error message will be displayed if the arg was not one
-of the acceptable values::
+argument to :meth:`~ArgumentParser.add_argument`.  When the command line is
+parsed, arg values will be checked, and an error message will be displayed if
+the arg was not one of the acceptable values::
 
    >>> parser = argparse.ArgumentParser(prog='PROG')
    >>> parser.add_argument('foo', choices='abc')
@@ -976,7 +983,7 @@ required
 In general, the :mod:`argparse` module assumes that flags like ``-f`` and ``--bar``
 indicate *optional* arguments, which can always be omitted at the command line.
 To make an option *required*, ``True`` can be specified for the ``required=``
-keyword argument to :meth:`add_argument`::
+keyword argument to :meth:`~ArgumentParser.add_argument`::
 
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument('--foo', required=True)
@@ -986,8 +993,9 @@ keyword argument to :meth:`add_argument`::
    usage: argparse.py [-h] [--foo FOO]
    argparse.py: error: option --foo is required
 
-As the example shows, if an option is marked as ``required``, :meth:`parse_args`
-will report an error if that option is not present at the command line.
+As the example shows, if an option is marked as ``required``,
+:meth:`~ArgumentParser.parse_args` will report an error if that option is not
+present at the command line.
 
 .. note::
 
@@ -1021,7 +1029,7 @@ argument::
 The ``help`` strings can include various format specifiers to avoid repetition
 of things like the program name or the argument default_.  The available
 specifiers include the program name, ``%(prog)s`` and most keyword arguments to
-:meth:`add_argument`, e.g. ``%(default)s``, ``%(type)s``, etc.::
+:meth:`~ArgumentParser.add_argument`, e.g. ``%(default)s``, ``%(type)s``, etc.::
 
    >>> parser = argparse.ArgumentParser(prog='frobble')
    >>> parser.add_argument('bar', nargs='?', type=int, default=42,
@@ -1081,8 +1089,8 @@ An alternative name can be specified with ``metavar``::
     --foo YYY
 
 Note that ``metavar`` only changes the *displayed* name - the name of the
-attribute on the :meth:`parse_args` object is still determined by the dest_
-value.
+attribute on the :meth:`~ArgumentParser.parse_args` object is still determined
+by the dest_ value.
 
 Different values of ``nargs`` may cause the metavar to be used multiple times.
 Providing a tuple to ``metavar`` specifies a different display for each of the
@@ -1104,10 +1112,11 @@ dest
 ^^^^
 
 Most :class:`ArgumentParser` actions add some value as an attribute of the
-object returned by :meth:`parse_args`.  The name of this attribute is determined
-by the ``dest`` keyword argument of :meth:`add_argument`.  For positional
-argument actions, ``dest`` is normally supplied as the first argument to
-:meth:`add_argument`::
+object returned by :meth:`~ArgumentParser.parse_args`.  The name of this
+attribute is determined by the ``dest`` keyword argument of
+:meth:`~ArgumentParser.add_argument`.  For positional argument actions,
+``dest`` is normally supplied as the first argument to
+:meth:`~ArgumentParser.add_argument`::
 
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument('bar')
@@ -1158,9 +1167,9 @@ The parse_args() method
 Option value syntax
 ^^^^^^^^^^^^^^^^^^^
 
-The :meth:`parse_args` method supports several ways of specifying the value of
-an option (if it takes one).  In the simplest case, the option and its value are
-passed as two separate arguments::
+The :meth:`~ArgumentParser.parse_args` method supports several ways of
+specifying the value of an option (if it takes one).  In the simplest case, the
+option and its value are passed as two separate arguments::
 
    >>> parser = argparse.ArgumentParser(prog='PROG')
    >>> parser.add_argument('-x')
@@ -1197,10 +1206,10 @@ as long as only the last option (or none of them) requires a value::
 Invalid arguments
 ^^^^^^^^^^^^^^^^^
 
-While parsing the command line, ``parse_args`` checks for a variety of errors,
-including ambiguous options, invalid types, invalid options, wrong number of
-positional arguments, etc.  When it encounters such an error, it exits and
-prints the error along with a usage message::
+While parsing the command line, :meth:`~ArgumentParser.parse_args` checks for a
+variety of errors, including ambiguous options, invalid types, invalid options,
+wrong number of positional arguments, etc.  When it encounters such an error,
+it exits and prints the error along with a usage message::
 
    >>> parser = argparse.ArgumentParser(prog='PROG')
    >>> parser.add_argument('--foo', type=int)
@@ -1225,13 +1234,13 @@ prints the error along with a usage message::
 Arguments containing ``"-"``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The ``parse_args`` method attempts to give errors whenever the user has clearly
-made a mistake, but some situations are inherently ambiguous.  For example, the
-command-line arg ``'-1'`` could either be an attempt to specify an option or an
-attempt to provide a positional argument.  The ``parse_args`` method is cautious
-here: positional arguments may only begin with ``'-'`` if they look like
-negative numbers and there are no options in the parser that look like negative
-numbers::
+The :meth:`~ArgumentParser.parse_args` method attempts to give errors whenever
+the user has clearly made a mistake, but some situations are inherently
+ambiguous.  For example, the command-line arg ``'-1'`` could either be an
+attempt to specify an option or an attempt to provide a positional argument.
+The :meth:`~ArgumentParser.parse_args` method is cautious here: positional
+arguments may only begin with ``'-'`` if they look like negative numbers and
+there are no options in the parser that look like negative numbers::
 
    >>> parser = argparse.ArgumentParser(prog='PROG')
    >>> parser.add_argument('-x')
@@ -1265,7 +1274,8 @@ numbers::
 
 If you have positional arguments that must begin with ``'-'`` and don't look
 like negative numbers, you can insert the pseudo-argument ``'--'`` which tells
-``parse_args`` that everything after that is a positional argument::
+:meth:`~ArgumentParser.parse_args` that everything after that is a positional
+argument::
 
    >>> parser.parse_args(['--', '-f'])
    Namespace(foo='-f', one=None)
@@ -1274,8 +1284,8 @@ like negative numbers, you can insert the pseudo-argument ``'--'`` which tells
 Argument abbreviations
 ^^^^^^^^^^^^^^^^^^^^^^
 
-The :meth:`parse_args` method allows long options to be abbreviated if the
-abbreviation is unambiguous::
+The :meth:`~ArgumentParser.parse_args` method allows long options to be
+abbreviated if the abbreviation is unambiguous::
 
    >>> parser = argparse.ArgumentParser(prog='PROG')
    >>> parser.add_argument('-bacon')
@@ -1296,7 +1306,8 @@ Beyond ``sys.argv``
 
 Sometimes it may be useful to have an ArgumentParser parse args other than those
 of :data:`sys.argv`.  This can be accomplished by passing a list of strings to
-``parse_args``.  This is useful for testing at the interactive prompt::
+:meth:`~ArgumentParser.parse_args`.  This is useful for testing at the
+interactive prompt::
 
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument(
@@ -1314,11 +1325,11 @@ of :data:`sys.argv`.  This can be accomplished by passing a list of strings to
 The Namespace object
 ^^^^^^^^^^^^^^^^^^^^
 
-By default, :meth:`parse_args` will return a new object of type :class:`Namespace`
-where the necessary attributes have been set. This class is deliberately simple,
-just an :class:`object` subclass with a readable string representation. If you
-prefer to have dict-like view of the attributes, you can use the standard Python
-idiom via :func:`vars`::
+By default, :meth:`~ArgumentParser.parse_args` will return a new object of type
+:class:`Namespace` where the necessary attributes have been set. This class is
+deliberately simple, just an :class:`object` subclass with a readable string
+representation. If you prefer to have dict-like view of the attributes, you
+can use the standard Python idiom via :func:`vars`::
 
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument('--foo')
@@ -1357,9 +1368,9 @@ Sub-commands
    :class:`ArgumentParser` supports the creation of such sub-commands with the
    :meth:`add_subparsers` method.  The :meth:`add_subparsers` method is normally
    called with no arguments and returns an special action object.  This object
-   has a single method, ``add_parser``, which takes a command name and any
-   :class:`ArgumentParser` constructor arguments, and returns an
-   :class:`ArgumentParser` object that can be modified as usual.
+   has a single method, :meth:`~ArgumentParser.add_parser`, which takes a
+   command name and any :class:`ArgumentParser` constructor arguments, and
+   returns an :class:`ArgumentParser` object that can be modified as usual.
 
    Some example usage::
 
@@ -1393,7 +1404,7 @@ Sub-commands
    for that particular parser will be printed.  The help message will not
    include parent parser or sibling parser messages.  (A help message for each
    subparser command, however, can be given by supplying the ``help=`` argument
-   to ``add_parser`` as above.)
+   to :meth:`add_parser` as above.)
 
    ::
 
@@ -1612,7 +1623,8 @@ Mutual exclusion
      PROG: error: one of the arguments --foo --bar is required
 
    Note that currently mutually exclusive argument groups do not support the
-   *title* and *description* arguments of :meth:`add_argument_group`.
+   *title* and *description* arguments of
+   :meth:`~ArgumentParser.add_argument_group`.
 
 
 Parser defaults
@@ -1622,7 +1634,7 @@ Parser defaults
 
    Most of the time, the attributes of the object returned by :meth:`parse_args`
    will be fully determined by inspecting the command-line args and the argument
-   actions.  :meth:`ArgumentParser.set_defaults` allows some additional
+   actions.  :meth:`set_defaults` allows some additional
    attributes that are determined without any inspection of the command line to
    be added::
 
@@ -1659,9 +1671,9 @@ Parser defaults
 Printing help
 ^^^^^^^^^^^^^
 
-In most typical applications, :meth:`parse_args` will take care of formatting
-and printing any usage or error messages.  However, several formatting methods
-are available:
+In most typical applications, :meth:`~ArgumentParser.parse_args` will take
+care of formatting and printing any usage or error messages.  However, several
+formatting methods are available:
 
 .. method:: ArgumentParser.print_usage(file=None)
 
@@ -1696,7 +1708,7 @@ Partial parsing
 
 Sometimes a script may only parse a few of the command-line arguments, passing
 the remaining arguments on to another script or program. In these cases, the
-:meth:`parse_known_args` method can be useful.  It works much like
+:meth:`~ArgumentParser.parse_known_args` method can be useful.  It works much like
 :meth:`~ArgumentParser.parse_args` except that it does not produce an error when
 extra arguments are present.  Instead, it returns a two item tuple containing
 the populated namespace and the list of remaining argument strings.
@@ -1753,7 +1765,7 @@ Exiting methods
 Upgrading optparse code
 -----------------------
 
-Originally, the mod:`argparse` module had attempted to maintain compatibility
+Originally, the :mod:`argparse` module had attempted to maintain compatibility
 with :mod:`optparse`.  However, :mod:`optparse` was difficult to extend
 transparently, particularly with the changes required to support the new
 ``nargs=`` specifiers and better usage messages.  When most everything in
@@ -1762,8 +1774,8 @@ longer seemed practical to try to maintain the backwards compatibility.
 
 A partial upgrade path from :mod:`optparse` to :mod:`argparse`:
 
-* Replace all ``add_option()`` calls with :meth:`ArgumentParser.add_argument`
-  calls.
+* Replace all :meth:`optparse.OptionParser.add_option` calls with
+  :meth:`ArgumentParser.add_argument` calls.
 
 * Replace ``options, args = parser.parse_args()`` with ``args =
   parser.parse_args()`` and add additional :meth:`ArgumentParser.add_argument`
