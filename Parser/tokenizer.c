@@ -586,7 +586,10 @@ decoding_fgets(char *s, int size, struct tok_state *tok)
     if (badchar) {
         /* Need to add 1 to the line number, since this line
            has not been counted, yet.  */
-        filename = PyUnicode_DecodeFSDefault(tok->filename);
+        if (tok->filename != NULL)
+            filename = PyUnicode_DecodeFSDefault(tok->filename);
+        else
+            filename = PyUnicode_FromString("<file>");
         if (filename != NULL) {
             PyErr_Format(PyExc_SyntaxError,
                     "Non-UTF-8 code starting with '\\x%.2x' "
