@@ -1,5 +1,6 @@
 import sys, os
 import contextlib
+import subprocess
 
 # find_library(name) returns the pathname of a library, or None.
 if os.name == "nt":
@@ -203,14 +204,19 @@ elif os.name == "posix":
             abi_type = mach_map.get(machine, 'libc6')
 
             # XXX assuming GLIBC's ldconfig (with option -p)
-            expr = r'(\S+)\s+\((%s(?:, OS ABI:[^\)]*)?)\)[^/]*(/[^\(\)\s]*lib%s\.[^\(\)\s]*)' \
-                   % (abi_type, re.escape(name))
-            with contextlib.closing(os.popen('LC_ALL=C LANG=C /sbin/ldconfig -p 2>/dev/null')) as f:
-                data = f.read()
-            res = re.search(expr, data)
-            if not res:
-                return None
-            return res.group(1)
+            regex = os.fsencode(
+                '\s+(lib%s\.[^\s]+)\s+\(%s' % (re.escape(name), abi_type))
+            try:
+                with subprocess.Popen(['/sbin/ldconfig', '-p'],
+                                      stdin=subprocess.DEVNULL,
+                                      stderr=subprocess.DEVNULL,
+                                      stdout=subprocess.PIPE,
+                                      env={'LC_ALL': 'C', 'LANG': 'C'}) as p:
+                    res = re.search(regex, p.stdout.read())
+                    if res:
+                        return os.fsdecode(res.group(1))
+            except OSError:
+                pass
 
         def find_library(name):
             return _findSoname_ldconfig(name) or _get_soname(_findLib_gcc(name))
