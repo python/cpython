@@ -45,10 +45,8 @@ class OrderedDict(dict):
         try:
             self.__root
         except AttributeError:
-            self.__root = root = [None, None, None]     # sentinel node
-            PREV = 0
-            NEXT = 1
-            root[PREV] = root[NEXT] = root
+            self.__root = root = []                     # sentinel node
+            root[:] = [root, root, None]
             self.__map = {}
         self.__update(*args, **kwds)
 
