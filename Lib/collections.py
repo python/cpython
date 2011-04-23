@@ -13,30 +13,9 @@ import heapq as _heapq
 from itertools import repeat as _repeat, chain as _chain, starmap as _starmap, \
                       ifilter as _ifilter, imap as _imap
 try:
-    from thread import get_ident
+    from thread import get_ident as _get_ident
 except ImportError:
-    from dummy_thread import get_ident
-
-def _recursive_repr(user_function):
-    'Decorator to make a repr function return "..." for a recursive call'
-    repr_running = set()
-
-    def wrapper(self):
-        key = id(self), get_ident()
-        if key in repr_running:
-            return '...'
-        repr_running.add(key)
-        try:
-            result = user_function(self)
-        finally:
-            repr_running.discard(key)
-        return result
-
-    # Can't use functools.wraps() here because of bootstrap issues
-    wrapper.__module__ = getattr(user_function, '__module__')
-    wrapper.__doc__ = getattr(user_function, '__doc__')
-    wrapper.__name__ = getattr(user_function, '__name__')
-    return wrapper
+    from dummy_thread import get_ident as _get_ident
 
 
 ################################################################################
@@ -123,14 +102,37 @@ class OrderedDict(dict):
             pass
         dict.clear(self)
 
-    update = __update = MutableMapping.update
-    keys = MutableMapping.keys
-    values = MutableMapping.values
-    items = MutableMapping.items
-    iterkeys = MutableMapping.iterkeys
-    itervalues = MutableMapping.itervalues
-    iteritems = MutableMapping.iteritems
-    __ne__ = MutableMapping.__ne__
+    # -- the following methods do not depend on the internal structure --
+
+    def keys(self):
+        'od.keys() -> list of keys in od'
+        return list(self)
+
+    def values(self):
+        'od.values() -> list of values in od'
+        return [self[key] for key in self]
+
+    def items(self):
+        'od.items() -> list of (key, value) pairs in od'
+        return [(key, self[key]) for key in self]
+
+    def iterkeys(self):
+        'od.iterkeys() -> an iterator over the keys in od'
+        return iter(self)
+
+    def itervalues(self):
+        'od.itervalues -> an iterator over the values in od'
+        for k in self:
+            yield self[k]
+
+    def iteritems(self):
+        'od.iteritems -> an iterator over the (key, value) items in od'
+        for k in self:
+            yield (k, self[k])
+
+    update = MutableMapping.update
+
+    __update = update  # let subclasses override update without breaking __init__
 
     def viewkeys(self):
         "od.viewkeys() -> a set-like object providing a view on od's keys"
@@ -173,12 +175,18 @@ class OrderedDict(dict):
         value = self.pop(key)
         return key, value
 
-    @_recursive_repr
-    def __repr__(self):
+    def __repr__(self, _repr_running={}):
         'od.__repr__() <==> repr(od)'
-        if not self:
-            return '%s()' % (self.__class__.__name__,)
-        return '%s(%r)' % (self.__class__.__name__, self.items())
+        call_key = id(self), _get_ident()
+        if call_key in _repr_running:
+            return '...'
+        _repr_running[call_key] = 1
+        try:
+            if not self:
+                return '%s()' % (self.__class__.__name__,)
+            return '%s(%r)' % (self.__class__.__name__, self.items())
+        finally:
+            del _repr_running[call_key]
 
     def __reduce__(self):
         'Return state information for pickling'
@@ -211,9 +219,12 @@ class OrderedDict(dict):
 
         '''
         if isinstance(other, OrderedDict):
-            return len(self)==len(other) and \
-                   all(_imap(_eq, self.iteritems(), other.iteritems()))
+            return len(self)==len(other) and self.items() == other.items()
         return dict.__eq__(self, other)
+
+    def __ne__(self, other):
+        'od.__ne__(y) <==> od!=y'
+        return not self == other
 
 
 ################################################################################
