@@ -65,9 +65,7 @@ class OrderedDict(dict):
         # Deleting an existing item uses self.__map to find the link which is
         # then removed by updating the links in the predecessor and successor nodes.
         dict_delitem(self, key)
-        link = self.__map.pop(key)
-        link_prev = link[PREV]
-        link_next = link[NEXT]
+        link_prev, link_next, key = self.__map.pop(key)
         link_prev[NEXT] = link_next
         link_next[PREV] = link_prev
 
@@ -131,18 +129,6 @@ class OrderedDict(dict):
     update = MutableMapping.update
 
     __update = update  # let subclasses override update without breaking __init__
-
-    def viewkeys(self):
-        "od.viewkeys() -> a set-like object providing a view on od's keys"
-        return KeysView(self)
-
-    def viewvalues(self):
-        "od.viewvalues() -> an object providing a view on od's values"
-        return ValuesView(self)
-
-    def viewitems(self):
-        "od.viewitems() -> a set-like object providing a view on od's items"
-        return ItemsView(self)
 
     __marker = object()
 
@@ -223,6 +209,20 @@ class OrderedDict(dict):
     def __ne__(self, other):
         'od.__ne__(y) <==> od!=y'
         return not self == other
+
+    # -- the following methods support python 3.x style dictionary views --
+
+    def viewkeys(self):
+        "od.viewkeys() -> a set-like object providing a view on od's keys"
+        return KeysView(self)
+
+    def viewvalues(self):
+        "od.viewvalues() -> an object providing a view on od's values"
+        return ValuesView(self)
+
+    def viewitems(self):
+        "od.viewitems() -> a set-like object providing a view on od's items"
+        return ItemsView(self)
 
 
 ################################################################################
