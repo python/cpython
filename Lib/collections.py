@@ -35,9 +35,9 @@ class OrderedDict(dict):
     # Each link is stored as a list of length three:  [PREV, NEXT, KEY].
 
     def __init__(self, *args, **kwds):
-        '''Initialize an ordered dictionary.  Signature is the same as for
-        regular dictionaries, but keyword arguments are not recommended
-        because their insertion order is arbitrary.
+        '''Initialize an ordered dictionary.  The signature is the same as
+        regular dictionaries, but keyword arguments are not recommended because
+        their insertion order is arbitrary.
 
         '''
         if len(args) > 1:
@@ -69,18 +69,20 @@ class OrderedDict(dict):
         link_prev[NEXT] = link_next
         link_next[PREV] = link_prev
 
-    def __iter__(self, NEXT=1, KEY=2):
+    def __iter__(self):
         'od.__iter__() <==> iter(od)'
         # Traverse the linked list in order.
+        NEXT, KEY = 1, 2
         root = self.__root
         curr = root[NEXT]
         while curr is not root:
             yield curr[KEY]
             curr = curr[NEXT]
 
-    def __reversed__(self, PREV=0, KEY=2):
+    def __reversed__(self):
         'od.__reversed__() <==> reversed(od)'
         # Traverse the linked list in reverse order.
+        PREV, KEY = 0, 2
         root = self.__root
         curr = root[PREV]
         while curr is not root:
@@ -120,7 +122,7 @@ class OrderedDict(dict):
             yield self[k]
 
     def iteritems(self):
-        'od.iteritems -> an iterator over the (key, value) items in od'
+        'od.iteritems -> an iterator over the (key, value) pairs in od'
         for k in self:
             yield (k, self[k])
 
@@ -131,6 +133,11 @@ class OrderedDict(dict):
     __marker = object()
 
     def pop(self, key, default=__marker):
+        '''od.pop(k[,d]) -> v, remove specified key and return the corresponding
+        value.  If key is not found, d is returned if given, otherwise KeyError
+        is raised.
+
+        '''
         if key in self:
             result = self[key]
             del self[key]
@@ -186,8 +193,8 @@ class OrderedDict(dict):
 
     @classmethod
     def fromkeys(cls, iterable, value=None):
-        '''OD.fromkeys(S[, v]) -> New ordered dictionary with keys from S
-        and values equal to v (which defaults to None).
+        '''OD.fromkeys(S[, v]) -> New ordered dictionary with keys from S.
+        If not specified, the value defaults to None.
 
         '''
         self = cls()
