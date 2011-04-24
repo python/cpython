@@ -19,6 +19,10 @@ imported with no automatic modifications to the module search path.  To
 explicitly trigger the usual site-specific additions, call the
 :func:`site.main` function.
 
+.. versionchanged:: 3.3
+   Importing the module used to trigger paths manipulation even when using
+   :option:`-S`.
+
 .. index::
    pair: site-python; directory
    pair: site-packages; directory
