@@ -414,6 +414,12 @@ rlock_release_save(rlockobject *self)
     long owner;
     unsigned long count;
 
+    if (self->rlock_count == 0) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "cannot release un-acquired lock");
+        return NULL;
+    }
+
     owner = self->rlock_owner;
     count = self->rlock_count;
     self->rlock_count = 0;

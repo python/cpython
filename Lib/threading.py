@@ -157,6 +157,8 @@ class _RLock(_Verbose):
     def _release_save(self):
         if __debug__:
             self._note("%s._release_save()", self)
+        if self._count == 0:
+            raise RuntimeError("cannot release un-acquired lock")
         count = self._count
         self._count = 0
         owner = self._owner

@@ -247,6 +247,7 @@ class RLockTests(BaseLockTests):
         # Cannot release an unacquired lock
         lock = self.locktype()
         self.assertRaises(RuntimeError, lock.release)
+        self.assertRaises(RuntimeError, lock._release_save)
         lock.acquire()
         lock.acquire()
         lock.release()
@@ -254,6 +255,7 @@ class RLockTests(BaseLockTests):
         lock.release()
         lock.release()
         self.assertRaises(RuntimeError, lock.release)
+        self.assertRaises(RuntimeError, lock._release_save)
 
     def test_different_thread(self):
         # Cannot release from a different thread
