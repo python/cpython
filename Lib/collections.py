@@ -27,20 +27,20 @@ class OrderedDict(dict):
     # An inherited dict maps keys to values.
     # The inherited dict provides __getitem__, __len__, __contains__, and get.
     # The remaining methods are order-aware.
-    # Big-O running times for all methods are the same as for regular dictionaries.
+    # Big-O running times for all methods are the same as regular dictionaries.
 
-    # The internal self.__map dictionary maps keys to links in a doubly linked list.
+    # The internal self.__map dict maps keys to links in a doubly linked list.
     # The circular doubly linked list starts and ends with a sentinel element.
     # The sentinel element never gets deleted (this simplifies the algorithm).
-    # The sentinel is stored in self.__hardroot with a weakref proxy in self.__root.
+    # The sentinel is in self.__hardroot with a weakref proxy in self.__root.
     # The prev/next links are weakref proxies (to prevent circular references).
     # Individual links are kept alive by the hard reference in self.__map.
     # Those hard references disappear when a key is deleted from an OrderedDict.
 
     def __init__(self, *args, **kwds):
-        '''Initialize an ordered dictionary.  Signature is the same as for
-        regular dictionaries, but keyword arguments are not recommended
-        because their insertion order is arbitrary.
+        '''Initialize an ordered dictionary.  The signature is the same as
+        regular dictionaries, but keyword arguments are not recommended because
+        their insertion order is arbitrary.
 
         '''
         if len(args) > 1:
@@ -57,8 +57,8 @@ class OrderedDict(dict):
     def __setitem__(self, key, value,
                     dict_setitem=dict.__setitem__, proxy=_proxy, Link=_Link):
         'od.__setitem__(i, y) <==> od[i]=y'
-        # Setting a new item creates a new link which goes at the end of the linked
-        # list, and the inherited dictionary is updated with the new key/value pair.
+        # Setting a new item creates a new link at the end of the linked list,
+        # and the inherited dictionary is updated with the new key/value pair.
         if key not in self:
             self.__map[key] = link = Link()
             root = self.__root
@@ -70,8 +70,8 @@ class OrderedDict(dict):
 
     def __delitem__(self, key, dict_delitem=dict.__delitem__):
         'od.__delitem__(y) <==> del od[y]'
-        # Deleting an existing item uses self.__map to find the link which is
-        # then removed by updating the links in the predecessor and successor nodes.
+        # Deleting an existing item uses self.__map to find the link which gets
+        # removed by updating the links in the predecessor and successor nodes.
         dict_delitem(self, key)
         link = self.__map.pop(key)
         link_prev = link.prev
@@ -169,6 +169,11 @@ class OrderedDict(dict):
     __marker = object()
 
     def pop(self, key, default=__marker):
+        '''od.pop(k[,d]) -> v, remove specified key and return the corresponding
+        value.  If key is not found, d is returned if given, otherwise KeyError
+        is raised.
+
+        '''
         if key in self:
             result = self[key]
             del self[key]
@@ -178,7 +183,7 @@ class OrderedDict(dict):
         return default
 
     def setdefault(self, key, default=None):
-        'OD.setdefault(k[,d]) -> OD.get(k,d), also set OD[k]=d if k not in OD'
+        'od.setdefault(k[,d]) -> od.get(k,d), also set od[k]=d if k not in od'
         if key in self:
             return self[key]
         self[key] = default
@@ -207,14 +212,14 @@ class OrderedDict(dict):
 
     @classmethod
     def fromkeys(cls, iterable, value=None):
-        '''OD.fromkeys(S[, v]) -> New ordered dictionary with keys from S
-        and values equal to v (which defaults to None).
+        '''OD.fromkeys(S[, v]) -> New ordered dictionary with keys from S.
+        If not specified, the value defaults to None.
 
         '''
-        d = cls()
+        self = cls()
         for key in iterable:
-            d[key] = value
-        return d
+            self[key] = value
+        return self
 
     def __eq__(self, other):
         '''od.__eq__(y) <==> od==y.  Comparison to another OD is order-sensitive
