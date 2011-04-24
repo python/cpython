@@ -511,13 +511,12 @@ interpreter can only be used after the interpreter has been initialized.
    module: builtins
    module: __main__
    module: sys
-   module: exceptions
    triple: module; search; path
    single: path (in module sys)
 
 The basic initialization function is :cfunc:`Py_Initialize`. This initializes
 the table of loaded modules, and creates the fundamental modules
-:mod:`builtins`, :mod:`__main__`, :mod:`sys`, and :mod:`exceptions`.  It also
+:mod:`builtins`, :mod:`__main__`, and :mod:`sys`.  It also
 initializes the module search path (``sys.path``).
 
 .. index:: single: PySys_SetArgv()

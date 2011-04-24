@@ -30,9 +30,9 @@ the Oracle Berkeley DB.
    name, such as ``'dbm.ndbm'`` or ``'dbm.gnu'``.
 
 
-.. function:: open(filename, flag='r', mode=0o666)
+.. function:: open(file, flag='r', mode=0o666)
 
-   Open the database file *filename* and return a corresponding object.
+   Open the database file *file* and return a corresponding object.
 
    If the database file already exists, the :func:`whichdb` function is used to
    determine its type and the appropriate module is used; if it does not exist,
