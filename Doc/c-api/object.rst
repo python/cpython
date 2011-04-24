@@ -258,7 +258,6 @@ is considered sufficient for this determination.
    This is the equivalent of the Python expression ``hash(o)``.
 
    .. versionchanged:: 3.2
-
       The return type is now Py_hash_t.  This is a signed integer the same size
       as Py_ssize_t.
 
