@@ -27,9 +27,9 @@ class OrderedDict(dict):
     # An inherited dict maps keys to values.
     # The inherited dict provides __getitem__, __len__, __contains__, and get.
     # The remaining methods are order-aware.
-    # Big-O running times for all methods are the same as for regular dictionaries.
+    # Big-O running times for all methods are the same as regular dictionaries.
 
-    # The internal self.__map dictionary maps keys to links in a doubly linked list.
+    # The internal self.__map dict maps keys to links in a doubly linked list.
     # The circular doubly linked list starts and ends with a sentinel element.
     # The sentinel element never gets deleted (this simplifies the algorithm).
     # Each link is stored as a list of length three:  [PREV, NEXT, KEY].
@@ -52,8 +52,8 @@ class OrderedDict(dict):
 
     def __setitem__(self, key, value, PREV=0, NEXT=1, dict_setitem=dict.__setitem__):
         'od.__setitem__(i, y) <==> od[i]=y'
-        # Setting a new item creates a new link which goes at the end of the linked
-        # list, and the inherited dictionary is updated with the new key/value pair.
+        # Setting a new item creates a new link at the end of the linked list,
+        # and the inherited dictionary is updated with the new key/value pair.
         if key not in self:
             root = self.__root
             last = root[PREV]
@@ -62,8 +62,8 @@ class OrderedDict(dict):
 
     def __delitem__(self, key, PREV=0, NEXT=1, dict_delitem=dict.__delitem__):
         'od.__delitem__(y) <==> del od[y]'
-        # Deleting an existing item uses self.__map to find the link which is
-        # then removed by updating the links in the predecessor and successor nodes.
+        # Deleting an existing item uses self.__map to find the link which gets
+        # removed by updating the links in the predecessor and successor nodes.
         dict_delitem(self, key)
         link_prev, link_next, key = self.__map.pop(key)
         link_prev[NEXT] = link_next
@@ -89,14 +89,11 @@ class OrderedDict(dict):
 
     def clear(self):
         'od.clear() -> None.  Remove all items from od.'
-        try:
-            for node in self.__map.itervalues():
-                del node[:]
-            root = self.__root
-            root[:] = [root, root, None]
-            self.__map.clear()
-        except AttributeError:
-            pass
+        for node in self.__map.itervalues():
+            del node[:]
+        root = self.__root
+        root[:] = [root, root, None]
+        self.__map.clear()
         dict.clear(self)
 
     # -- the following methods do not depend on the internal structure --
@@ -129,7 +126,7 @@ class OrderedDict(dict):
 
     update = MutableMapping.update
 
-    __update = update  # let subclasses override update without breaking __init__
+    __update = update # let subclasses override update without breaking __init__
 
     __marker = object()
 
@@ -193,10 +190,10 @@ class OrderedDict(dict):
         and values equal to v (which defaults to None).
 
         '''
-        d = cls()
+        self = cls()
         for key in iterable:
-            d[key] = value
-        return d
+            self[key] = value
+        return self
 
     def __eq__(self, other):
         '''od.__eq__(y) <==> od==y.  Comparison to another OD is order-sensitive
