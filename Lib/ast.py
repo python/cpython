@@ -40,8 +40,8 @@ def literal_eval(node_or_string):
     """
     Safely evaluate an expression node or a string containing a Python
     expression.  The string or node provided may only consist of the following
-    Python literal structures: strings, numbers, tuples, lists, dicts, booleans,
-    and None.
+    Python literal structures: strings, bytes, numbers, tuples, lists, dicts,
+    sets, booleans, and None.
     """
     _safe_names = {'None': None, 'True': True, 'False': False}
     if isinstance(node_or_string, str):
