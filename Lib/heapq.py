@@ -172,7 +172,7 @@ def heappushpop(heap, item):
     return item
 
 def heapify(x):
-    """Transform list into a heap, in-place, in O(len(heap)) time."""
+    """Transform list into a heap, in-place, in O(len(x)) time."""
     n = len(x)
     # Transform bottom-up.  The largest index there's any point to looking at
     # is the largest with a child index in-range, so must have 2*i + 1 < n,
@@ -363,7 +363,7 @@ def nsmallest(n, iterable, key=None):
             return [min(chain(head, it))]
         return [min(chain(head, it), key=key)]
 
-    # When n>=size, it's faster to use sort()
+    # When n>=size, it's faster to use sorted()
     try:
         size = len(iterable)
     except (TypeError, AttributeError):
@@ -401,7 +401,7 @@ def nlargest(n, iterable, key=None):
             return [max(chain(head, it))]
         return [max(chain(head, it), key=key)]
 
-    # When n>=size, it's faster to use sort()
+    # When n>=size, it's faster to use sorted()
     try:
         size = len(iterable)
     except (TypeError, AttributeError):
