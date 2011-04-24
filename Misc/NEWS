@@ -113,6 +113,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11915: threading.RLock()._release_save() raises a RuntimeError if the
+  lock was not acquired.
+
 - Issue #11258: Speed up ctypes.util.find_library() under Linux by a factor
   of 5 to 10.  Initial patch by Jonas H.
 
