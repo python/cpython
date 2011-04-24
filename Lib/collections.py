@@ -92,7 +92,8 @@ class OrderedDict(dict):
         try:
             for node in self.__map.itervalues():
                 del node[:]
-            self.__root[:] = [self.__root, self.__root, None]
+            root = self.__root
+            root[:] = [root, root, None]
             self.__map.clear()
         except AttributeError:
             pass
