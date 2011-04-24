@@ -6,12 +6,12 @@ import _abcoll
 __all__ += _abcoll.__all__
 
 from _collections import deque, defaultdict
-from operator import itemgetter as _itemgetter, eq as _eq
+from operator import itemgetter as _itemgetter
 from keyword import iskeyword as _iskeyword
 import sys as _sys
 import heapq as _heapq
-from itertools import repeat as _repeat, chain as _chain, starmap as _starmap, \
-                      ifilter as _ifilter, imap as _imap
+from itertools import repeat as _repeat, chain as _chain, starmap as _starmap
+
 try:
     from thread import get_ident as _get_ident
 except ImportError:
