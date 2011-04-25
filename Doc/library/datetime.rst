@@ -721,6 +721,22 @@ Other constructors, all class methods:
    It's common for this to be restricted to years in 1970 through 2038. See also
    :meth:`fromtimestamp`.
 
+   On the POSIX compliant platforms, ``utcfromtimestamp(timestamp)``
+   is equivalent to the following expression::
+
+     datetime(1970, 1, 1) + timedelta(seconds=timestamp)
+
+   There is no method to obtain the timestamp from a :class:`datetime`
+   instance, but POSIX timestamp corresponding to a :class:`datetime`
+   instance ``dt`` can be easily calculated as follows.  For a naive
+   ``dt``::
+
+      timestamp = (dt - datetime(1970, 1, 1)) / timedelta(seconds=1)
+
+   And for an aware ``dt``::
+
+      timestamp = (dt - datetime(1970, 1, 1, tzinfo=timezone.utc)) / timedelta(seconds=1)
+
 
 .. classmethod:: datetime.fromordinal(ordinal)
 
