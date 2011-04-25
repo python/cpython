@@ -278,7 +278,7 @@ class Test:
             for i in calibration_loops:
                 pass
             t = timer() - t
-            prep_times.append(t)
+            prep_times.append(t / CALIBRATION_LOOPS)
         min_prep_time = min(prep_times)
         if _debug:
             print
