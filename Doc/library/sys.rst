@@ -562,6 +562,30 @@ always available.
    ``version_info`` value may be used for a more human-friendly encoding of the
    same information.
 
+   The ``hexversion`` is a 32-bit number with the following layout
+
+   +-------------------------+------------------------------------------------+
+   | bits (big endian order) | meaning                                        |
+   +=========================+================================================+
+   | :const:`1-8`            |  ``PY_MAJOR_VERSION``  (the ``2`` in           |
+   |                         |  ``2.1.0a3``)                                  |
+   +-------------------------+------------------------------------------------+
+   | :const:`9-16`           |  ``PY_MINOR_VERSION``  (the ``1`` in           |
+   |                         |  ``2.1.0a3``)                                  |
+   +-------------------------+------------------------------------------------+
+   | :const:`17-24`          |  ``PY_MICRO_VERSION``  (the ``0`` in           |
+   |                         |  ``2.1.0a3``)                                  |
+   +-------------------------+------------------------------------------------+
+   | :const:`25-28`          |  ``PY_RELEASE_LEVEL``  (``0xA`` for alpha,     |
+   |                         |  ``0xB`` for beta, ``0xC`` for gamma and       |
+   |                         |  ``0xF`` for final)                            |
+   +-------------------------+------------------------------------------------+
+   | :const:`29-32`          |  ``PY_RELEASE_SERIAL``  (the ``3`` in          |
+   |                         |  ``2.1.0a3``)                                  |
+   +-------------------------+------------------------------------------------+
+
+   thus ``2.1.0a3`` is hexversion ``0x020100a3``
+
    .. versionadded:: 1.5.2
 
 
