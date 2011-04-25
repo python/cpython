@@ -113,6 +113,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #11856: Speed up parsing of JSON numbers.
+
 - Issue #11005: threading.RLock()._release_save() raises a RuntimeError if the
   lock was not acquired.
 
