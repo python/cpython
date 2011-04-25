@@ -64,3 +64,4 @@ PCbuild/*.ncb
 PCbuild/*.bsc
 PCbuild/Win32-temp-*
 __pycache__
+Modules/_testembed
