@@ -585,19 +585,12 @@ decoding_fgets(char *s, int size, struct tok_state *tok)
     if (badchar) {
         /* Need to add 1 to the line number, since this line
            has not been counted, yet.  */
-        if (tok->filename != NULL)
-            filename = PyUnicode_DecodeFSDefault(tok->filename);
-        else
-            filename = PyUnicode_FromString("<file>");
-        if (filename != NULL) {
-            PyErr_Format(PyExc_SyntaxError,
-                    "Non-UTF-8 code starting with '\\x%.2x' "
-                    "in file %U on line %i, "
-                    "but no encoding declared; "
-                    "see http://python.org/dev/peps/pep-0263/ for details",
-                    badchar, filename, tok->lineno + 1);
-            Py_DECREF(filename);
-        }
+        PyErr_Format(PyExc_SyntaxError,
+                "Non-UTF-8 code starting with '\\x%.2x' "
+                "in file %U on line %i, "
+                "but no encoding declared; "
+                "see http://python.org/dev/peps/pep-0263/ for details",
+                badchar, tok->filename, tok->lineno + 1);
         return error_ret(tok);
     }
 #endif
