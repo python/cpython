@@ -281,6 +281,8 @@ Extensions
 Tests
 -----
 
+- Issue #10914: Add a minimal embedding test to test_capi.
+
 - Issue #11790: Fix sporadic failures in test_multiprocessing.WithProcessesTestCondition.
 
 - Fix possible "file already exists" error when running the tests in parallel.
