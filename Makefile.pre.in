@@ -394,7 +394,7 @@ LIBRARY_OBJS=	\
 
 # Default target
 all:		build_all
-build_all:	$(BUILDPYTHON) oldsharedmods sharedmods gdbhooks
+build_all:	$(BUILDPYTHON) oldsharedmods sharedmods gdbhooks Modules/_testembed
 
 # Compile a binary with gcc profile guided optimization.
 profile-opt:
@@ -538,6 +538,9 @@ Modules/Setup: $(srcdir)/Modules/Setup.dist
 		echo "Usually, copying Modules/Setup.dist to Modules/Setup will work."; \
 		echo "-----------------------------------------------"; \
 	fi
+
+Modules/_testembed: Modules/_testembed.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY)
+	$(LINKCC) $(PY_LDFLAGS) $(LINKFORSHARED) -o $@ Modules/_testembed.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
 
 ############################################################################
 # Special rules for object files
