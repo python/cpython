@@ -176,6 +176,10 @@ class ImportTests(unittest.TestCase):
                 support.unlink(init_file_name + ext)
             support.rmtree(test_package_name)
 
+    def test_issue9319(self):
+        self.assertRaises(SyntaxError,
+                          imp.find_module, "test/badsyntax_pep3120")
+
 
 class ReloadTests(unittest.TestCase):
 
