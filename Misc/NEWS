@@ -504,6 +504,8 @@ Extensions
 Tests
 -----
 
+- Issue #10914: Add a minimal embedding test to test_capi.
+
 - Issue #11223: Skip test_lock_acquire_interruption() and
   test_rlock_acquire_interruption() of test_threadsignals if a thread lock is
   implemented using a POSIX mutex and a POSIX condition variable. A POSIX
