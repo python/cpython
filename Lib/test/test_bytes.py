@@ -290,6 +290,14 @@ class BaseBytesTest(unittest.TestCase):
         self.assertTrue(b.startswith(b"h"))
         self.assertFalse(b.startswith(b"hellow"))
         self.assertFalse(b.startswith(b"ha"))
+        try:
+            b.startswith([b'h'])
+        except TypeError as err:
+            exc = str(err)
+        else:
+            self.fail('startswith unexpectedly succeeded')
+        self.assertIn('bytes', exc)
+        self.assertIn('tuple', exc)
 
     def test_endswith(self):
         b = self.type2test(b'hello')
@@ -299,6 +307,14 @@ class BaseBytesTest(unittest.TestCase):
         self.assertTrue(b.endswith(b"o"))
         self.assertFalse(b.endswith(b"whello"))
         self.assertFalse(b.endswith(b"no"))
+        try:
+            b.endswith([b'o'])
+        except TypeError as err:
+            exc = str(err)
+        else:
+            self.fail('endswith unexpectedly succeeded')
+        self.assertIn('bytes', exc)
+        self.assertIn('tuple', exc)
 
     def test_find(self):
         b = self.type2test(b'mississippi')

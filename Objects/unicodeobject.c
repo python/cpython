@@ -1554,7 +1554,7 @@ PyUnicode_FSConverter(PyObject* arg, void* addr)
         arg = PyUnicode_FromObject(arg);
         if (!arg)
             return 0;
-        output = PyUnicode_AsEncodedObject(arg, 
+        output = PyUnicode_AsEncodedObject(arg,
                                            Py_FileSystemDefaultEncoding,
                                            "surrogateescape");
         Py_DECREF(arg);
@@ -1569,7 +1569,7 @@ PyUnicode_FSConverter(PyObject* arg, void* addr)
     if (PyBytes_Check(output)) {
          size = PyBytes_GET_SIZE(output);
          data = PyBytes_AS_STRING(output);
-    } 
+    }
     else {
          size = PyByteArray_GET_SIZE(output);
          data = PyByteArray_AS_STRING(output);
@@ -2148,7 +2148,7 @@ char utf8_code_length[256] = {
        illegal prefix.  See RFC 3629 for details */
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /* 00-0F */
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -2631,7 +2631,7 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
 #endif
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
-    
+
     q = (unsigned char *)s;
     e = q + size;
 
@@ -8743,8 +8743,12 @@ unicode_startswith(PyUnicodeObject *self,
         Py_RETURN_FALSE;
     }
     substring = (PyUnicodeObject *)PyUnicode_FromObject(subobj);
-    if (substring == NULL)
+    if (substring == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_TypeError))
+            PyErr_Format(PyExc_TypeError, "startswith first arg must be str or "
+                         "a tuple of str, not %s", Py_TYPE(subobj)->tp_name);
         return NULL;
+    }
     result = tailmatch(self, substring, start, end, -1);
     Py_DECREF(substring);
     return PyBool_FromLong(result);
@@ -8787,9 +8791,12 @@ unicode_endswith(PyUnicodeObject *self,
         Py_RETURN_FALSE;
     }
     substring = (PyUnicodeObject *)PyUnicode_FromObject(subobj);
-    if (substring == NULL)
+    if (substring == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_TypeError))
+            PyErr_Format(PyExc_TypeError, "endswith first arg must be str or "
+                         "a tuple of str, not %s", Py_TYPE(subobj)->tp_name);
         return NULL;
-
+    }
     result = tailmatch(self, substring, start, end, +1);
     Py_DECREF(substring);
     return PyBool_FromLong(result);
