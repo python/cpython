@@ -1304,7 +1304,7 @@ PyDoc_STRVAR(startswith__doc__,
 Return True if B starts with the specified prefix, False otherwise.\n\
 With optional start, test B beginning at that position.\n\
 With optional end, stop comparing B at that position.\n\
-prefix can also be a tuple of strings to try.");
+prefix can also be a tuple of bytes to try.");
 
 static PyObject *
 bytearray_startswith(PyByteArrayObject *self, PyObject *args)
@@ -1331,8 +1331,12 @@ bytearray_startswith(PyByteArrayObject *self, PyObject *args)
         Py_RETURN_FALSE;
     }
     result = _bytearray_tailmatch(self, subobj, start, end, -1);
-    if (result == -1)
+    if (result == -1) {
+        if (PyErr_ExceptionMatches(PyExc_TypeError))
+            PyErr_Format(PyExc_TypeError, "startswith first arg must be bytes "
+                         "or a tuple of bytes, not %s", Py_TYPE(subobj)->tp_name);
         return NULL;
+    }
     else
         return PyBool_FromLong(result);
 }
@@ -1343,7 +1347,7 @@ PyDoc_STRVAR(endswith__doc__,
 Return True if B ends with the specified suffix, False otherwise.\n\
 With optional start, test B beginning at that position.\n\
 With optional end, stop comparing B at that position.\n\
-suffix can also be a tuple of strings to try.");
+suffix can also be a tuple of bytes to try.");
 
 static PyObject *
 bytearray_endswith(PyByteArrayObject *self, PyObject *args)
@@ -1370,8 +1374,12 @@ bytearray_endswith(PyByteArrayObject *self, PyObject *args)
         Py_RETURN_FALSE;
     }
     result = _bytearray_tailmatch(self, subobj, start, end, +1);
-    if (result == -1)
+    if (result == -1) {
+        if (PyErr_ExceptionMatches(PyExc_TypeError))
+            PyErr_Format(PyExc_TypeError, "endswith first arg must be bytes or "
+                         "a tuple of bytes, not %s", Py_TYPE(subobj)->tp_name);
         return NULL;
+    }
     else
         return PyBool_FromLong(result);
 }
