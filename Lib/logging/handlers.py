@@ -31,7 +31,7 @@ import threading
 
 try:
     import codecs
-except ImportError:
+except ImportError: #pragma: no cover
     codecs = None
 
 #
@@ -57,7 +57,7 @@ class BaseRotatingHandler(logging.FileHandler):
         """
         Use the specified filename for streamed logging
         """
-        if codecs is None:
+        if codecs is None: #pragma: no cover
             encoding = None
         logging.FileHandler.__init__(self, filename, mode, encoding, delay)
         self.mode = mode
@@ -74,7 +74,7 @@ class BaseRotatingHandler(logging.FileHandler):
             if self.shouldRollover(record):
                 self.doRollover()
             logging.FileHandler.emit(self, record)
-        except (KeyboardInterrupt, SystemExit):
+        except (KeyboardInterrupt, SystemExit): #pragma: no cover
             raise
         except:
             self.handleError(record)
@@ -542,7 +542,7 @@ class SocketHandler(logging.Handler):
         try:
             s = self.makePickle(record)
             self.send(s)
-        except (KeyboardInterrupt, SystemExit):
+        except (KeyboardInterrupt, SystemExit): #pragma: no cover
             raise
         except:
             self.handleError(record)
@@ -794,7 +794,7 @@ class SysLogHandler(logging.Handler):
                 self.socket.sendto(msg, self.address)
             else:
                 self.socket.sendall(msg)
-        except (KeyboardInterrupt, SystemExit):
+        except (KeyboardInterrupt, SystemExit): #pragma: no cover
             raise
         except:
             self.handleError(record)
@@ -871,7 +871,7 @@ class SMTPHandler(logging.Handler):
                 smtp.login(self.username, self.password)
             smtp.sendmail(self.fromaddr, self.toaddrs, msg)
             smtp.quit()
-        except (KeyboardInterrupt, SystemExit):
+        except (KeyboardInterrupt, SystemExit): #pragma: no cover
             raise
         except:
             self.handleError(record)
@@ -958,7 +958,7 @@ class NTEventLogHandler(logging.Handler):
                 type = self.getEventType(record)
                 msg = self.format(record)
                 self._welu.ReportEvent(self.appname, id, cat, type, [msg])
-            except (KeyboardInterrupt, SystemExit):
+            except (KeyboardInterrupt, SystemExit): #pragma: no cover
                 raise
             except:
                 self.handleError(record)
@@ -1043,7 +1043,7 @@ class HTTPHandler(logging.Handler):
                 h.putheader('Authorization', s)
             h.endheaders(data if self.method == "POST" else None)
             h.getresponse()    #can't do anything with the result
-        except (KeyboardInterrupt, SystemExit):
+        except (KeyboardInterrupt, SystemExit): #pragma: no cover
             raise
         except:
             self.handleError(record)
@@ -1213,7 +1213,7 @@ class QueueHandler(logging.Handler):
         """
         try:
             self.enqueue(self.prepare(record))
-        except (KeyboardInterrupt, SystemExit):
+        except (KeyboardInterrupt, SystemExit): #pragma: no cover
             raise
         except:
             self.handleError(record)

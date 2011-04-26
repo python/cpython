@@ -351,6 +351,10 @@ class BasicFilterTest(BaseTest):
         finally:
             handler.removeFilter(filterfunc)
 
+    def test_empty_filter(self):
+        f = logging.Filter()
+        r = logging.makeLogRecord({'name': 'spam.eggs'})
+        self.assertTrue(f.filter(r))
 
 #
 #   First, we define our levels. There can be as many as you want - the only
@@ -519,11 +523,22 @@ class StreamHandlerTest(BaseTest):
         h = TestStreamHandler(BadStream())
         r = logging.makeLogRecord({})
         old_raise = logging.raiseExceptions
+        old_stderr = sys.stderr
         try:
             h.handle(r)
             self.assertIs(h.error_record, r)
+            h = logging.StreamHandler(BadStream())
+            sys.stderr = sio = io.StringIO()
+            h.handle(r)
+            self.assertTrue('\nRuntimeError: '
+                            'deliberate mistake\n' in sio.getvalue())
+            logging.raiseExceptions = False
+            sys.stderr = sio = io.StringIO()
+            h.handle(r)
+            self.assertEqual('', sio.getvalue())
         finally:
             logging.raiseExceptions = old_raise
+            sys.stderr = old_stderr
 
 class MemoryHandlerTest(BaseTest):
 
@@ -2237,6 +2252,34 @@ class FormatterTest(unittest.TestCase):
         f = logging.Formatter('%(asctime)s %(message)s')
         self.assertEqual(f.formatTime(r), '1993-04-21 08:03:00,123')
         self.assertEqual(f.formatTime(r, '%Y:%d'), '1993:21')
+        f.format(r)
+        self.assertEqual(r.asctime, '1993-04-21 08:03:00,123')
+
+class TestBufferingFormatter(logging.BufferingFormatter):
+    def formatHeader(self, records):
+        return '[(%d)' % len(records)
+
+    def formatFooter(self, records):
+        return '(%d)]' % len(records)
+
+class BufferingFormatterTest(unittest.TestCase):
+    def setUp(self):
+        self.records = [
+            logging.makeLogRecord({'msg': 'one'}),
+            logging.makeLogRecord({'msg': 'two'}),
+        ]
+
+    def test_default(self):
+        f = logging.BufferingFormatter()
+        self.assertEqual('', f.format([]))
+        self.assertEqual('onetwo', f.format(self.records))
+
+    def test_custom(self):
+        f = TestBufferingFormatter()
+        self.assertEqual('[(2)onetwo(2)]', f.format(self.records))
+        lf = logging.Formatter('<%(message)s>')
+        f = TestBufferingFormatter(lf)
+        self.assertEqual('[(2)<one><two>(2)]', f.format(self.records))
 
 class ExceptionTest(BaseTest):
     def test_formatting(self):
@@ -2957,7 +3000,7 @@ def test_main():
                  CustomLevelsAndFiltersTest, HandlerTest, MemoryHandlerTest,
                  ConfigFileTest, SocketHandlerTest, MemoryTest,
                  EncodingTest, WarningsTest, ConfigDictTest, ManagerTest,
-                 FormatterTest, StreamHandlerTest,
+                 FormatterTest, BufferingFormatterTest, StreamHandlerTest,
                  LogRecordFactoryTest, ChildLoggerTest, QueueHandlerTest,
                  ShutdownTest, ModuleLevelMiscTest, BasicConfigTest,
                  LoggerAdapterTest, LoggerTest,
