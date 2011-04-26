@@ -10,6 +10,9 @@ What's New in Python 3.2.1?
 Core and Builtins
 -----------------
 
+- Issue #6780: fix starts/endswith error message to mention that tuples are
+  accepted too.
+
 - Issue #5057: fix a bug in the peepholer that led to non-portable pyc files
   between narrow and wide builds while optimizing BINARY_SUBSCR on non-BMP
   chars (e.g. "\U00012345"[0]).
