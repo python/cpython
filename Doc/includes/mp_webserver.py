@@ -24,7 +24,7 @@ if sys.platform == 'win32':
 
 
 def note(format, *args):
-    sys.stderr.write('[%s]\t%s\n' % (current_process().name, format%args))
+    sys.stderr.write('[%s]\t%s\n' % (current_process().name, format % args))
 
 
 class RequestHandler(SimpleHTTPRequestHandler):
@@ -45,7 +45,7 @@ def runpool(address, number_of_processes):
     server = HTTPServer(address, RequestHandler)
 
     # create child processes to act as workers
-    for i in range(number_of_processes-1):
+    for i in range(number_of_processes - 1):
         Process(target=serve_forever, args=(server,)).start()
 
     # main process also acts as a worker

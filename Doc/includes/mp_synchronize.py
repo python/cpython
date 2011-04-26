@@ -5,7 +5,9 @@
 # All rights reserved.
 #
 
-import time, sys, random
+import time
+import sys
+import random
 from queue import Empty
 
 import multiprocessing               # may get overwritten
@@ -237,9 +239,9 @@ def test(namespace=multiprocessing):
 
     multiprocessing = namespace
 
-    for func in [ test_value, test_queue, test_condition,
-                  test_semaphore, test_join_timeout, test_event,
-                  test_sharedvalues ]:
+    for func in [test_value, test_queue, test_condition,
+                 test_semaphore, test_join_timeout, test_event,
+                 test_sharedvalues]:
 
         print('\n\t######## %s\n' % func.__name__)
         func()

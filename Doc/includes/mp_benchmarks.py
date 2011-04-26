@@ -5,7 +5,12 @@
 # All rights reserved.
 #
 
-import time, sys, multiprocessing, threading, queue, gc
+import time
+import sys
+import multiprocessing
+import threading
+import queue
+import gc
 
 if sys.platform == 'win32':
     _timer = time.clock
@@ -111,7 +116,7 @@ def test_seqspeed(seq):
         for i in range(iterations):
             a = seq[5]
 
-        elapsed = _timer()-t
+        elapsed = _timer() - t
 
     print(iterations, 'iterations in', elapsed, 'seconds')
     print('average number/sec:', iterations/elapsed)
@@ -132,7 +137,7 @@ def test_lockspeed(l):
             l.acquire()
             l.release()
 
-        elapsed = _timer()-t
+        elapsed = _timer() - t
 
     print(iterations, 'iterations in', elapsed, 'seconds')
     print('average number/sec:', iterations/elapsed)
@@ -169,7 +174,7 @@ def test_conditionspeed(Process, c):
             c.notify()
             c.wait()
 
-        elapsed = _timer()-t
+        elapsed = _timer() - t
 
         c.release()
         p.join()
