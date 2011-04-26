@@ -494,6 +494,37 @@ class CustomLevelsAndFiltersTest(BaseTest):
             handler.removeFilter(garr)
 
 
+class HandlerTest(BaseTest):
+    def test_name(self):
+        h = logging.Handler()
+        h.name = 'generic'
+        self.assertEqual(h.name, 'generic')
+        h.name = 'anothergeneric'
+        self.assertEqual(h.name, 'anothergeneric')
+        self.assertRaises(NotImplementedError, h.emit, None)
+
+    def test_abc(self):
+        pass
+
+class BadStream(object):
+    def write(self, data):
+        raise RuntimeError('deliberate mistake')
+
+class TestStreamHandler(logging.StreamHandler):
+    def handleError(self, record):
+        self.error_record = record
+
+class StreamHandlerTest(BaseTest):
+    def test_error_handling(self):
+        h = TestStreamHandler(BadStream())
+        r = logging.makeLogRecord({})
+        old_raise = logging.raiseExceptions
+        try:
+            h.handle(r)
+            self.assertIs(h.error_record, r)
+        finally:
+            logging.raiseExceptions = old_raise
+
 class MemoryHandlerTest(BaseTest):
 
     """Tests for the MemoryHandler."""
@@ -2196,6 +2227,39 @@ class FormatterTest(unittest.TestCase):
         f = logging.Formatter('asctime', style='$')
         self.assertFalse(f.usesTime())
 
+    def test_invalid_style(self):
+        self.assertRaises(ValueError, logging.Formatter, None, None, 'x')
+
+    def test_time(self):
+        r = self.get_record()
+        r.created = 735375780.0 # 21 April 1993 08:03:00
+        r.msecs = 123
+        f = logging.Formatter('%(asctime)s %(message)s')
+        self.assertEqual(f.formatTime(r), '1993-04-21 08:03:00,123')
+        self.assertEqual(f.formatTime(r, '%Y:%d'), '1993:21')
+
+class ExceptionTest(BaseTest):
+    def test_formatting(self):
+        r = self.root_logger
+        h = RecordingHandler()
+        r.addHandler(h)
+        try:
+            raise RuntimeError('deliberate mistake')
+        except:
+            logging.exception('failed', stack_info=True)
+        r.removeHandler(h)
+        h.close()
+        r = h.records[0]
+        self.assertTrue(r.exc_text.startswith('Traceback (most recent '
+                                              'call last):\n'))
+        self.assertTrue(r.exc_text.endswith('\nRuntimeError: '
+                                            'deliberate mistake'))
+        self.assertTrue(r.stack_info.startswith('Stack (most recent '
+                                              'call last):\n'))
+        self.assertTrue(r.stack_info.endswith('logging.exception(\'failed\', '
+                                            'stack_info=True)'))
+
+
 class LastResortTest(BaseTest):
     def test_last_resort(self):
         # Test the last resort handler
@@ -2407,6 +2471,23 @@ class ModuleLevelMiscTest(BaseTest):
         logging.setLoggerClass(logging.Logger)
         self.assertEqual(logging.getLoggerClass(), logging.Logger)
 
+class LogRecordTest(BaseTest):
+    def test_str_rep(self):
+        r = logging.makeLogRecord({})
+        s = str(r)
+        self.assertTrue(s.startswith('<LogRecord: '))
+        self.assertTrue(s.endswith('>'))
+
+    def test_dict_arg(self):
+        h = RecordingHandler()
+        r = logging.getLogger()
+        r.addHandler(h)
+        d = {'less' : 'more' }
+        logging.warning('less is %(less)s', d)
+        self.assertIs(h.records[0].args, d)
+        self.assertEqual(h.records[0].message, 'less is more')
+        r.removeHandler(h)
+        h.close()
 
 class BasicConfigTest(unittest.TestCase):
 
@@ -2508,6 +2589,9 @@ class BasicConfigTest(unittest.TestCase):
 
         logging.basicConfig(level=57)
         self.assertEqual(logging.root.level, 57)
+        # Test that second call has no effect
+        logging.basicConfig(level=58)
+        self.assertEqual(logging.root.level, 57)
 
     def test_incompatible(self):
         assertRaises = self.assertRaises
@@ -2521,12 +2605,20 @@ class BasicConfigTest(unittest.TestCase):
                                                      handlers=handlers)
 
     def test_handlers(self):
-        handlers = [logging.StreamHandler(), logging.StreamHandler(sys.stdout)]
+        handlers = [
+            logging.StreamHandler(),
+            logging.StreamHandler(sys.stdout),
+            logging.StreamHandler(),
+        ]
+        f = logging.Formatter()
+        handlers[2].setFormatter(f)
         logging.basicConfig(handlers=handlers)
         self.assertIs(handlers[0], logging.root.handlers[0])
         self.assertIs(handlers[1], logging.root.handlers[1])
+        self.assertIs(handlers[2], logging.root.handlers[2])
         self.assertIsNotNone(handlers[0].formatter)
         self.assertIsNotNone(handlers[1].formatter)
+        self.assertIs(handlers[2].formatter, f)
         self.assertIs(handlers[0].formatter, handlers[1].formatter)
 
     def _test_log(self, method, level=None):
@@ -2758,6 +2850,17 @@ class BaseFileTest(BaseTest):
         self.rmfiles.append(filename)
 
 
+class FileHandlerTest(BaseFileTest):
+    def test_delay(self):
+        os.unlink(self.fn)
+        fh = logging.FileHandler(self.fn, delay=True)
+        self.assertIsNone(fh.stream)
+        self.assertFalse(os.path.exists(self.fn))
+        fh.handle(logging.makeLogRecord({}))
+        self.assertIsNotNone(fh.stream)
+        self.assertTrue(os.path.exists(self.fn))
+        fh.close()
+
 class RotatingFileHandlerTest(BaseFileTest):
     def next_rec(self):
         return logging.LogRecord('n', logging.DEBUG, 'p', 1,
@@ -2851,15 +2954,15 @@ for when, exp in (('S', 1),
 @run_with_locale('LC_ALL', '')
 def test_main():
     run_unittest(BuiltinLevelsTest, BasicFilterTest,
-                 CustomLevelsAndFiltersTest, MemoryHandlerTest,
+                 CustomLevelsAndFiltersTest, HandlerTest, MemoryHandlerTest,
                  ConfigFileTest, SocketHandlerTest, MemoryTest,
                  EncodingTest, WarningsTest, ConfigDictTest, ManagerTest,
-                 FormatterTest,
+                 FormatterTest, StreamHandlerTest,
                  LogRecordFactoryTest, ChildLoggerTest, QueueHandlerTest,
                  ShutdownTest, ModuleLevelMiscTest, BasicConfigTest,
                  LoggerAdapterTest, LoggerTest,
-                 RotatingFileHandlerTest,
-                 LastResortTest,
+                 FileHandlerTest, RotatingFileHandlerTest,
+                 LastResortTest, LogRecordTest, ExceptionTest,
                  TimedRotatingFileHandlerTest
                 )
 
