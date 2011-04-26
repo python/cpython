@@ -47,7 +47,8 @@ class DBUnpickler(pickle.Unpickler):
 
 
 def main():
-    import io, pprint
+    import io
+    import pprint
 
     # Initialize and populate our database.
     conn = sqlite3.connect(":memory:")
