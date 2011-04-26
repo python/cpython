@@ -79,6 +79,7 @@ PyInterpreterState_New(void)
         interp->codec_search_cache = NULL;
         interp->codec_error_registry = NULL;
         interp->codecs_initialized = 0;
+        interp->fscodec_initialized = 0;
 #ifdef HAVE_DLOPEN
 #ifdef RTLD_NOW
         interp->dlopenflags = RTLD_NOW;
