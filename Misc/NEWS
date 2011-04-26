@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #11918: OS/2 and VMS are no more supported because of the lack of
+  maintainer.
+
 - Issue #6780: fix starts/endswith error message to mention that tuples are
   accepted too.
 

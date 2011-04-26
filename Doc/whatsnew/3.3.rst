@@ -136,6 +136,12 @@ Changes to Python's build process and to the C API include:
 * Stub
 
 
+Unsupported operating systems
+=============================
+
+OS/2 and VMS are no more supported because of the lack of maintainer.
+
+
 Porting to Python 3.3
 =====================
 

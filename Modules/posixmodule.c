@@ -30,6 +30,7 @@
 #include "Python.h"
 
 #if defined(__VMS)
+#    error "PEP 11: VMS is now unsupported, code will be removed in Python 3.4"
 #    include <unixio.h>
 #endif /* defined(__VMS) */
 
@@ -45,6 +46,7 @@ corresponding Unix manual entries for more information on calls.");
 
 
 #if defined(PYOS_OS2)
+#error "PEP 11: OS/2 is now unsupported, code will be removed in Python 3.4"
 #define  INCL_DOS
 #define  INCL_DOSERRORS
 #define  INCL_DOSPROCESS
