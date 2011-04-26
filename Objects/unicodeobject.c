@@ -1626,7 +1626,17 @@ PyUnicode_EncodeFSDefault(PyObject *unicode)
                                 PyUnicode_GET_SIZE(unicode),
                                 "surrogateescape");
 #else
-    if (Py_FileSystemDefaultEncoding) {
+    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    /* Bootstrap check: if the filesystem codec is implemented in Python, we
+       cannot use it to encode and decode filenames before it is loaded. Load
+       the Python codec requires to encode at least its own filename. Use the C
+       version of the locale codec until the codec registry is initialized and
+       the Python codec is loaded.
+
+       Py_FileSystemDefaultEncoding is shared between all interpreters, we
+       cannot only rely on it: check also interp->fscodec_initialized for
+       subinterpreters. */
+    if (Py_FileSystemDefaultEncoding && interp->fscodec_initialized) {
         return PyUnicode_AsEncodedString(unicode,
                                          Py_FileSystemDefaultEncoding,
                                          "surrogateescape");
@@ -1818,12 +1828,17 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 #elif defined(__APPLE__)
     return PyUnicode_DecodeUTF8(s, size, "surrogateescape");
 #else
-    /* During the early bootstrapping process, Py_FileSystemDefaultEncoding
-       can be undefined. If it is case, decode using UTF-8. The following assumes
-       that Py_FileSystemDefaultEncoding is set to a built-in encoding during the
-       bootstrapping process where the codecs aren't ready yet.
-    */
-    if (Py_FileSystemDefaultEncoding) {
+    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    /* Bootstrap check: if the filesystem codec is implemented in Python, we
+       cannot use it to encode and decode filenames before it is loaded. Load
+       the Python codec requires to encode at least its own filename. Use the C
+       version of the locale codec until the codec registry is initialized and
+       the Python codec is loaded.
+
+       Py_FileSystemDefaultEncoding is shared between all interpreters, we
+       cannot only rely on it: check also interp->fscodec_initialized for
+       subinterpreters. */
+    if (Py_FileSystemDefaultEncoding && interp->fscodec_initialized) {
         return PyUnicode_Decode(s, size,
                                 Py_FileSystemDefaultEncoding,
                                 "surrogateescape");

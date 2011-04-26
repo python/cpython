@@ -31,6 +31,7 @@ typedef struct _is {
     PyObject *codec_search_cache;
     PyObject *codec_error_registry;
     int codecs_initialized;
+    int fscodec_initialized;
 
 #ifdef HAVE_DLOPEN
     int dlopenflags;
