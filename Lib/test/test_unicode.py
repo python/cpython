@@ -442,6 +442,17 @@ class UnicodeTest(
                 return u'\u1234'
         self.assertEqual('%s' % Wrapper(), u'\u1234')
 
+    def test_startswith_endswith_errors(self):
+        for meth in (u'foo'.startswith, u'foo'.endswith):
+            with self.assertRaises(UnicodeDecodeError):
+                meth('\xff')
+            with self.assertRaises(TypeError) as cm:
+                meth(['f'])
+            exc = str(cm.exception)
+            self.assertIn('unicode', exc)
+            self.assertIn('str', exc)
+            self.assertIn('tuple', exc)
+
     @test_support.run_with_locale('LC_ALL', 'de_DE', 'fr_FR')
     def test_format_float(self):
         # should not format with a comma, but always with C locale
