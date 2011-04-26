@@ -819,6 +819,14 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('%f' % INF, 'inf')
         self.assertEqual('%F' % INF, 'INF')
 
+    def test_startswith_endswith_errors(self):
+        for meth in ('foo'.startswith, 'foo'.endswith):
+            with self.assertRaises(TypeError) as cm:
+                meth(['f'])
+            exc = str(cm.exception)
+            self.assertIn('str', exc)
+            self.assertIn('tuple', exc)
+
     @support.run_with_locale('LC_ALL', 'de_DE', 'fr_FR')
     def test_format_float(self):
         # should not format with a comma, but always with C locale
