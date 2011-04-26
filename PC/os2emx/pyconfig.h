@@ -1,6 +1,8 @@
 #ifndef Py_CONFIG_H
 #define Py_CONFIG_H
 
+#error "PEP 11: OS/2 is now unsupported, code will be removed in Python 3.4"
+
 /* config.h.
  * At some time in the past, generated automatically by/from configure.
  * now maintained manually.
