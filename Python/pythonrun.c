@@ -622,7 +622,7 @@ Py_NewInterpreter(void)
 handle_error:
     /* Oops, it didn't work.  Undo it all. */
 
-    PyErr_Print();
+    PyErr_PrintEx(0);
     PyThreadState_Clear(tstate);
     PyThreadState_Swap(save_tstate);
     PyThreadState_Delete(tstate);
