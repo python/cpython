@@ -890,7 +890,7 @@ class Handler(Filterer):
                                           None, sys.stderr)
                 sys.stderr.write('Logged from file %s, line %s\n' % (
                                  record.filename, record.lineno))
-            except IOError:
+            except IOError: #pragma: no cover
                 pass    # see issue 5971
             finally:
                 del ei
