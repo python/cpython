@@ -43,6 +43,7 @@ import tempfile
 from test.support import captured_stdout, run_with_locale, run_unittest, patch
 from test.support import TestHandler, Matcher
 import textwrap
+import time
 import unittest
 import warnings
 import weakref
@@ -2190,6 +2191,18 @@ class QueueHandlerTest(BaseTest):
         self.assertTrue(handler.matches(levelno=logging.ERROR, message='2'))
         self.assertTrue(handler.matches(levelno=logging.CRITICAL, message='3'))
 
+ZERO = datetime.timedelta(0)
+
+class UTC(datetime.tzinfo):
+    def utcoffset(self, dt):
+        return ZERO
+
+    dst = utcoffset
+
+    def tzname(self, dt):
+        return 'UTC'
+
+utc = UTC()
 
 class FormatterTest(unittest.TestCase):
     def setUp(self):
@@ -2268,9 +2281,11 @@ class FormatterTest(unittest.TestCase):
 
     def test_time(self):
         r = self.get_record()
-        r.created = 735375780.0 # 21 April 1993 08:03:00
+        dt = datetime.datetime(1993,4,21,8,3,0,0,utc)
+        r.created = time.mktime(dt.utctimetuple())
         r.msecs = 123
         f = logging.Formatter('%(asctime)s %(message)s')
+        f.converter = time.gmtime
         self.assertEqual(f.formatTime(r), '1993-04-21 08:03:00,123')
         self.assertEqual(f.formatTime(r, '%Y:%d'), '1993:21')
         f.format(r)
