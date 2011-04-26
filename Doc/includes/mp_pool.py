@@ -25,18 +25,18 @@ def calculatestar(args):
     return calculate(*args)
 
 def mul(a, b):
-    time.sleep(0.5*random.random())
+    time.sleep(0.5 * random.random())
     return a * b
 
 def plus(a, b):
-    time.sleep(0.5*random.random())
+    time.sleep(0.5 * random.random())
     return a + b
 
 def f(x):
-    return 1.0 / (x-5.0)
+    return 1.0 / (x - 5.0)
 
 def pow3(x):
-    return x**3
+    return x ** 3
 
 def noop(x):
     pass
