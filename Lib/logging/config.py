@@ -30,7 +30,7 @@ import types, io
 try:
     import _thread as thread
     import threading
-except ImportError:
+except ImportError: #pragma: no cover
     thread = None
 
 from socketserver import ThreadingTCPServer, StreamRequestHandler
@@ -786,7 +786,7 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT):
     and which you can join() when appropriate. To stop the server, call
     stopListening().
     """
-    if not thread:
+    if not thread: #pragma: no cover
         raise NotImplementedError("listen() needs threading to work")
 
     class ConfigStreamHandler(StreamRequestHandler):
@@ -825,7 +825,7 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT):
                         file = io.StringIO(chunk)
                         try:
                             fileConfig(file)
-                        except (KeyboardInterrupt, SystemExit):
+                        except (KeyboardInterrupt, SystemExit): #pragma: no cover
                             raise
                         except:
                             traceback.print_exc()
