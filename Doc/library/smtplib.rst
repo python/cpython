@@ -45,7 +45,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
     (250, b'Ok')
     >>>
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       Support for the :keyword:`with` statement was added.
 
 
