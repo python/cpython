@@ -10,6 +10,10 @@ What's New in Python 3.2.1?
 Core and Builtins
 -----------------
 
+- Issue #10914: Initialize correctly the filesystem codec when creating a new
+  subinterpreter to fix a bootstrap issue with codecs implemented in Python, as
+  the ISO-8859-15 codec.
+
 - Issue #10517: After fork(), reinitialize the TLS used by the PyGILState_*
   APIs, to avoid a crash with the pthread implementation in RHEL 5.  Patch
   by Charles-François Natali.
