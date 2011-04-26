@@ -6,6 +6,7 @@
 #include <locale.h>
 
 #ifdef __VMS
+#error "PEP 11: VMS is now unsupported, code will be removed in Python 3.4"
 #include <unixlib.h>
 #endif
 
