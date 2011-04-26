@@ -2918,8 +2918,12 @@ string_startswith(PyStringObject *self, PyObject *args)
         Py_RETURN_FALSE;
     }
     result = _string_tailmatch(self, subobj, start, end, -1);
-    if (result == -1)
+    if (result == -1) {
+        if (PyErr_ExceptionMatches(PyExc_TypeError))
+            PyErr_Format(PyExc_TypeError, "startswith first arg must be str, "
+                         "unicode, or tuple, not %s", Py_TYPE(subobj)->tp_name);
         return NULL;
+    }
     else
         return PyBool_FromLong(result);
 }
@@ -2958,8 +2962,12 @@ string_endswith(PyStringObject *self, PyObject *args)
         Py_RETURN_FALSE;
     }
     result = _string_tailmatch(self, subobj, start, end, +1);
-    if (result == -1)
+    if (result == -1) {
+        if (PyErr_ExceptionMatches(PyExc_TypeError))
+            PyErr_Format(PyExc_TypeError, "endswith first arg must be str, "
+                         "unicode, or tuple, not %s", Py_TYPE(subobj)->tp_name);
         return NULL;
+    }
     else
         return PyBool_FromLong(result);
 }
