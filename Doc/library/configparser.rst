@@ -982,10 +982,10 @@ ConfigParser Objects
       *source*; the default is ``'<???>'``.
 
       .. versionadded:: 3.2
-         Replaces :meth:`readfp`. 
-         
+         Replaces :meth:`readfp`.
+
       .. note::
-      
+
          Prior to Python 3.2, :meth:`readfp` consumed lines from the file-like
          argument by calling its :meth:`~file.readline` method. For existing code
          calling :meth:`readfp` with arguments which don't support iteration,
