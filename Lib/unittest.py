@@ -346,6 +346,9 @@ class TestCase(object):
 
     longMessage = False
 
+    # If a string is longer than _diffThreshold, use normal comparison instead
+    # of difflib.  See #11763.
+    _diffThreshold = 2**16
 
     def __init__(self, methodName='runTest'):
         """Create an instance of the class that will use the named test
@@ -955,6 +958,10 @@ class TestCase(object):
                 'Second argument is not a string'))
 
         if first != second:
+            # don't use difflib if the strings are too long
+            if (len(first) > self._diffThreshold or
+                len(second) > self._diffThreshold):
+                self._baseAssertEqual(first, second, msg)
             standardMsg = '\n' + ''.join(difflib.ndiff(first.splitlines(True), second.splitlines(True)))
             self.fail(self._formatMessage(msg, standardMsg))
 
