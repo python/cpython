@@ -685,6 +685,42 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         else:
             self.fail('assertMultiLineEqual did not fail')
 
+    def testAssertEqual_diffThreshold(self):
+        # check threshold value
+        self.assertEqual(self._diffThreshold, 2**16)
+        # disable madDiff to get diff markers
+        self.maxDiff = None
+
+        # set a lower threshold value and add a cleanup to restore it
+        old_threshold = self._diffThreshold
+        self._diffThreshold = 2**8
+        self.addCleanup(lambda: setattr(self, '_diffThreshold', old_threshold))
+
+        # under the threshold: diff marker (^) in error message
+        s = 'x' * (2**7)
+        with self.assertRaises(self.failureException) as cm:
+            self.assertEqual(s + 'a', s + 'b')
+        self.assertIn('^', str(cm.exception))
+        self.assertEqual(s + 'a', s + 'a')
+
+        # over the threshold: diff not used and marker (^) not in error message
+        s = 'x' * (2**9)
+        # if the path that uses difflib is taken, _truncateMessage will be
+        # called -- replace it with explodingTruncation to verify that this
+        # doesn't happen
+        def explodingTruncation(message, diff):
+            raise SystemError('this should not be raised')
+        old_truncate = self._truncateMessage
+        self._truncateMessage = explodingTruncation
+        self.addCleanup(lambda: setattr(self, '_truncateMessage', old_truncate))
+
+        s1, s2 = s + 'a', s + 'b'
+        with self.assertRaises(self.failureException) as cm:
+            self.assertEqual(s1, s2)
+        self.assertNotIn('^', str(cm.exception))
+        self.assertEqual(str(cm.exception), '%r != %r' % (s1, s2))
+        self.assertEqual(s + 'a', s + 'a')
+
     def testAssertCountEqual(self):
         a = object()
         self.assertCountEqual([1, 2, 3], [3, 2, 1])
