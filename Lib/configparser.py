@@ -694,10 +694,10 @@ class RawConfigParser(MutableMapping):
     def read_file(self, f, source=None):
         """Like read() but the argument must be a file-like object.
 
-        The `f' argument must have a `readline' method.  Optional second
-        argument is the `source' specifying the name of the file being read. If
-        not given, it is taken from f.name. If `f' has no `name' attribute,
-        `<???>' is used.
+        The `f' argument must be iterable, returning one line at a time.
+        Optional second argument is the `source' specifying the name of the
+        file being read. If not given, it is taken from f.name. If `f' has no
+        `name' attribute, `<???>' is used.
         """
         if source is None:
             try:
