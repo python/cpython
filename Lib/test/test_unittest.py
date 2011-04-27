@@ -2719,6 +2719,41 @@ test case
             # no fair testing ourself with ourself, use assertEqual..
             self.assertEqual(sample_text_error, str(e))
 
+    def testAssertEqual_diffThreshold(self):
+        # check threshold value
+        self.assertEqual(self._diffThreshold, 2**16)
+        # disable madDiff to get diff markers
+        self.maxDiff = None
+
+        # set a lower threshold value and add a cleanup to restore it
+        old_threshold = self._diffThreshold
+        self._diffThreshold = 2**8
+        self.addCleanup(lambda: setattr(self, '_diffThreshold', old_threshold))
+
+        # under the threshold: diff marker (^) in error message
+        s = 'x' * (2**7)
+        try:
+            self.assertMultiLineEqual(s + 'a', s + 'b')
+        except self.failureException as exc:
+            err_msg = str(exc)
+        else:
+            self.fail('assertEqual unexpectedly succeeded')
+        self.assertIn('^', err_msg)
+        self.assertMultiLineEqual(s + 'a', s + 'a')
+
+        # over the threshold: diff not used and marker (^) not in error message
+        s = 'x' * (2**9)
+        s1, s2 = s + 'a', s + 'b'
+        try:
+            self.assertMultiLineEqual(s1, s2)
+        except self.failureException as exc:
+            err_msg = str(exc)
+        else:
+            self.fail('assertEqual unexpectedly succeeded')
+        self.assertNotIn('^', err_msg)
+        self.assertEqual(err_msg, '%r != %r' % (s1, s2))
+        self.assertMultiLineEqual(s + 'a', s + 'a')
+
     def testAssertIsNone(self):
         self.assertIsNone(None)
         self.assertRaises(self.failureException, self.assertIsNone, False)
