@@ -801,7 +801,7 @@ class TestGetattrStatic(unittest.TestCase):
         thing = Thing()
         self.assertEqual(inspect.getattr_static(thing, 'x'), Thing.x)
 
-    def test_descriptor(self):
+    def test_descriptor_raises_AttributeError(self):
         class descriptor(object):
             def __get__(*_):
                 raise AttributeError("I'm pretending not to exist")
