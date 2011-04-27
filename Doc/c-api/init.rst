@@ -908,7 +908,7 @@ a worker thread and the actual call than made at the earliest convenience by the
 main thread where it has possession of the global interpreter lock and can
 perform any Python API calls.
 
-.. c:function:: void Py_AddPendingCall(int (*func)(void *), void *arg)
+.. c:function:: int Py_AddPendingCall(int (*func)(void *), void *arg)
 
    .. index:: single: Py_AddPendingCall()
 
