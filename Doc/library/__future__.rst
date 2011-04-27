@@ -29,7 +29,7 @@ Each statement in :file:`__future__.py` is of the form::
 
 
 where, normally, *OptionalRelease* is less than *MandatoryRelease*, and both are
-5-tuples of the same form as ``sys.version_info``::
+5-tuples of the same form as :data:`sys.version_info`::
 
    (PY_MAJOR_VERSION, # the 2 in 2.1.0a3; an int
     PY_MINOR_VERSION, # the 1; an int
