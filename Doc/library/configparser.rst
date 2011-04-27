@@ -974,18 +974,37 @@ ConfigParser Objects
 
    .. method:: read_file(f, source=None)
 
-      Read and parse configuration data from the file or file-like object in
-      *f* (only the :meth:`readline` method is used).  The file-like object
-      must operate in text mode.  Specifically, it must return strings from
-      :meth:`readline`.
+      Read and parse configuration data from *f* which must be an iterable
+      yielding Unicode strings (for example any file object).
 
       Optional argument *source* specifies the name of the file being read.  If
       not given and *f* has a :attr:`name` attribute, that is used for
       *source*; the default is ``'<???>'``.
 
       .. versionadded:: 3.2
-         Replaces :meth:`readfp`.
+         Replaces :meth:`readfp`. 
+         
+      .. note::
+      
+         Prior to Python 3.2, :meth:`readfp` consumed lines from the file-like
+         argument by calling its :meth:`~file.readline` method. For existing code
+         calling :meth:`readfp` with arguments which don't support iteration,
+         the following generator may be used as a wrapper around the file-like
+         object::
 
+             def readline_generator(f):
+                 line = f.readline()
+                 while line != '':
+                     yield line
+                     line = f.readline()
+
+         Before::
+
+             parser.readfp(f)
+
+         After::
+
+             parser.read_file(readline_generator(f))
 
    .. method:: read_string(string, source='<string>')
 
