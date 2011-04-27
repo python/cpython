@@ -690,7 +690,7 @@ input, output, and error streams.
    .. attribute:: BaseHandler.wsgi_file_wrapper
 
       A ``wsgi.file_wrapper`` factory, or ``None``.  The default value of this
-      attribute is the :class:`FileWrapper` class from :mod:`wsgiref.util`.
+      attribute is the :class:`wsgiref.util.FileWrapper` class.
 
 
    .. method:: BaseHandler.sendfile()
