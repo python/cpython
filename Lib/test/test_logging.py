@@ -531,10 +531,13 @@ class HandlerTest(BaseTest):
                 sockname = '/var/run/log'
             else:
                 sockname = '/dev/log'
-            h = logging.handlers.SysLogHandler(sockname)
-            self.assertEqual(h.facility, h.LOG_USER)
-            self.assertTrue(h.unixsocket)
-            h.close()
+            try:
+                h = logging.handlers.SysLogHandler(sockname)
+                self.assertEqual(h.facility, h.LOG_USER)
+                self.assertTrue(h.unixsocket)
+                h.close()
+            except socket.error: # syslogd might not be available
+                pass
         h = logging.handlers.SMTPHandler('localhost', 'me', 'you', 'Log')
         self.assertEqual(h.toaddrs, ['you'])
         h.close()
