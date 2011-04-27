@@ -308,7 +308,7 @@ http://www.pythonology.com/success
    buying, but the publishers have made the first chapter available on
    the Web.
 
-http://home.pacbell.net/ouster/scripting.html
+http://www.tcl.tk/doc/scripting.html
    John Ousterhout's white paper on scripting is a good argument for the utility of
    scripting languages, though naturally enough, he emphasizes Tcl, the language he
    developed.  Most of the arguments would apply to any scripting language.
