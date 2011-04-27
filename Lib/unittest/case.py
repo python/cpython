@@ -169,6 +169,10 @@ class TestCase(object):
 
     maxDiff = 80*8
 
+    # If a string is longer than _diffThreshold, use normal comparison instead
+    # of difflib.  See #11763.
+    _diffThreshold = 2**16
+
     # Attribute used by TestSuite for classSetUp
 
     _classSetupFailed = False
@@ -900,6 +904,10 @@ class TestCase(object):
                 'Second argument is not a string')
 
         if first != second:
+            # don't use difflib if the strings are too long
+            if (len(first) > self._diffThreshold or
+                len(second) > self._diffThreshold):
+                self._baseAssertEqual(first, second, msg)
             firstlines = first.splitlines(True)
             secondlines = second.splitlines(True)
             if len(firstlines) == 1 and first.strip('\r\n') == first:
