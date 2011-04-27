@@ -134,7 +134,7 @@ The class can be used to simulate nested scopes and is useful in templating.
      * The `MultiContext class
        <http://svn.enthought.com/svn/enthought/CodeTools/trunk/enthought/contexts/multi_context.py>`_
        in the Enthought `CodeTools package
-       <https://github.com/enthought/codetools>`_\ has options to support
+       <https://github.com/enthought/codetools>`_ has options to support
        writing to any mapping in the chain.
 
      * Django's `Context class
@@ -150,7 +150,7 @@ The class can be used to simulate nested scopes and is useful in templating.
        any mapping in the chain.
 
      * A `greatly simplified read-only version of Chainmap
-       <http://code.activestate.com/recipes/305268/>`_\.
+       <http://code.activestate.com/recipes/305268/>`_.
 
 :class:`Counter` objects
 ------------------------
@@ -320,14 +320,14 @@ counts, but the output will exclude results with counts of zero or less.
     * `Bag class <http://www.gnu.org/software/smalltalk/manual-base/html_node/Bag.html>`_
       in Smalltalk.
 
-    * Wikipedia entry for `Multisets <http://en.wikipedia.org/wiki/Multiset>`_\.
+    * Wikipedia entry for `Multisets <http://en.wikipedia.org/wiki/Multiset>`_.
 
     * `C++ multisets <http://www.demo2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm>`_
       tutorial with examples.
 
     * For mathematical operations on multisets and their use cases, see
       *Knuth, Donald. The Art of Computer Programming Volume II,
-      Section 4.6.3, Exercise 19*\.
+      Section 4.6.3, Exercise 19*.
 
     * To enumerate all distinct multisets of a given size over a given set of
       elements, see :func:`itertools.combinations_with_replacement`.
