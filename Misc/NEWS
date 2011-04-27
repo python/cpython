@@ -61,6 +61,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #10517: After fork(), reinitialize the TLS used by the PyGILState_*
+  APIs, to avoid a crash with the pthread implementation in RHEL 5.  Patch
+  by Charles-François Natali.
+
 - Issue #11763: don't use difflib in TestCase.assertMultiLineEqual if the
   strings are too long.
 
