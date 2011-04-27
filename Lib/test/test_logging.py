@@ -2279,10 +2279,10 @@ class FormatterTest(unittest.TestCase):
     def test_invalid_style(self):
         self.assertRaises(ValueError, logging.Formatter, None, None, 'x')
 
-    def disabled_test_time(self):
+    def test_time(self):
         r = self.get_record()
         dt = datetime.datetime(1993,4,21,8,3,0,0,utc)
-        r.created = time.mktime(dt.utctimetuple())
+        r.created = time.mktime(dt.timetuple()) - time.timezone
         r.msecs = 123
         f = logging.Formatter('%(asctime)s %(message)s')
         f.converter = time.gmtime
