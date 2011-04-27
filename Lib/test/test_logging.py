@@ -528,7 +528,7 @@ class HandlerTest(BaseTest):
                 if existing:
                     os.unlink(fn)
             if sys.platform == 'darwin':
-                sockname = '/var/run/log'
+                sockname = '/var/run/syslog'
             else:
                 sockname = '/dev/log'
             try:
