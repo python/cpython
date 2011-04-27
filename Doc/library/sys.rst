@@ -447,8 +447,8 @@ always available.
 
    This is called ``hexversion`` since it only really looks meaningful when viewed
    as the result of passing it to the built-in :func:`hex` function.  The
-   ``version_info`` value may be used for a more human-friendly encoding of the
-   same information.
+   struct sequence  :data:`sys.version_info` may be used for a more human-friendly
+   encoding of the same information.
 
 
 .. data:: int_info
