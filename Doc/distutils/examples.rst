@@ -279,7 +279,7 @@ For example, if the :file:`setup.py` script is changed like this::
 Where the long description is broken, ``check`` will be able to detect it
 by using the :mod:`docutils` parser::
 
-    $ pythontrunk setup.py check --restructuredtext
+    $ python setup.py check --restructuredtext
     running check
     warning: check: Title underline too short. (line 2)
     warning: check: Could not finish the parsing.

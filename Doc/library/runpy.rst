@@ -49,7 +49,7 @@ The :mod:`runpy` module provides two functions:
    loader does not make filename information available, this variable is set
    to :const:`None`.
 
-    ``__cached__`` will be set to ``None``.
+   ``__cached__`` will be set to ``None``.
 
    ``__loader__`` is set to the :pep:`302` module loader used to retrieve the
    code for the module (This loader may be a wrapper around the standard
