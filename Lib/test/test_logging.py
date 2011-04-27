@@ -508,8 +508,50 @@ class HandlerTest(BaseTest):
         self.assertEqual(h.name, 'anothergeneric')
         self.assertRaises(NotImplementedError, h.emit, None)
 
-    def test_abc(self):
-        pass
+    def test_builtin_handlers(self):
+        # We can't actually *use* too many handlers in the tests,
+        # but we can try instantiating them with various options
+        if sys.platform in ('linux2', 'darwin'):
+            for existing in (True, False):
+                fd, fn = tempfile.mkstemp()
+                os.close(fd)
+                if not existing:
+                    os.unlink(fn)
+                h = logging.handlers.WatchedFileHandler(fn, delay=True)
+                if existing:
+                    self.assertNotEqual(h.dev, -1)
+                    self.assertNotEqual(h.ino, -1)
+                else:
+                    self.assertEqual(h.dev, -1)
+                    self.assertEqual(h.ino, -1)
+                h.close()
+                if existing:
+                    os.unlink(fn)
+            if sys.platform == 'darwin':
+                sockname = '/var/run/log'
+            else:
+                sockname = '/dev/log'
+            h = logging.handlers.SysLogHandler(sockname)
+            self.assertEqual(h.facility, h.LOG_USER)
+            self.assertTrue(h.unixsocket)
+            h.close()
+        h = logging.handlers.SMTPHandler('localhost', 'me', 'you', 'Log')
+        self.assertEqual(h.toaddrs, ['you'])
+        h.close()
+        for method in ('GET', 'POST', 'PUT'):
+            if method == 'PUT':
+                self.assertRaises(ValueError, logging.handlers.HTTPHandler,
+                                  'localhost', '/log', method)
+            else:
+                h = logging.handlers.HTTPHandler('localhost', '/log', method)
+                h.close()
+        h = logging.handlers.BufferingHandler(0)
+        r = logging.makeLogRecord({})
+        self.assertTrue(h.shouldFlush(r))
+        h.close()
+        h = logging.handlers.BufferingHandler(1)
+        self.assertFalse(h.shouldFlush(r))
+        h.close()
 
 class BadStream(object):
     def write(self, data):
