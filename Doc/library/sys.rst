@@ -246,6 +246,9 @@ always available.
    .. versionchanged:: 3.2
       Added ``quiet`` attribute for the new :option:`-q` flag.
 
+   .. versionchanged:: 3.3
+      Removed obsolete ``division_warning`` attribute.
+
 
 .. data:: float_info
 
