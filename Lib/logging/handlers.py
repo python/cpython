@@ -713,10 +713,10 @@ class SysLogHandler(logging.Handler):
         self.socktype = socktype
 
         if isinstance(address, str):
-            self.unixsocket = 1
+            self.unixsocket = True
             self._connect_unixsocket(address)
         else:
-            self.unixsocket = 0
+            self.unixsocket = False
             self.socket = socket.socket(socket.AF_INET, socktype)
             if socktype == socket.SOCK_STREAM:
                 self.socket.connect(address)
