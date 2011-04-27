@@ -66,6 +66,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11763: don't use difflib in TestCase.assertMultiLineEqual if the
+  strings are too long.
+
 - Issue #11236: getpass.getpass responds to ctrl-c or ctrl-z on terminal.
 
 - Issue #11768: The signal handler of the signal module only calls
