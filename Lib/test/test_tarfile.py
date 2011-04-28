@@ -351,6 +351,7 @@ class MiscReadTest(CommonReadTest):
         finally:
             tar.close()
 
+    @support.skip_unless_symlink
     def test_extractall(self):
         # Test if extractall() correctly restores directory permissions
         # and times (see issue1735).
