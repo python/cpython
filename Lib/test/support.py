@@ -33,16 +33,15 @@ __all__ = [
     "verbose", "use_resources", "max_memuse", "record_original_stdout",
     "get_original_stdout", "unload", "unlink", "rmtree", "forget",
     "is_resource_enabled", "requires", "find_unused_port", "bind_port",
-    "is_jython", "TESTFN", "HOST", "SAVEDCWD", "temp_cwd",
+    "IPV6_ENABLED", "is_jython", "TESTFN", "HOST", "SAVEDCWD", "temp_cwd",
     "findfile", "sortdict", "check_syntax_error", "open_urlresource",
     "check_warnings", "CleanImport", "EnvironmentVarGuard",
-    "TransientResource", "captured_output", "captured_stdout",
-    "time_out", "socket_peer_reset", "ioerror_peer_reset",
-    "run_with_locale", 'temp_umask', "transient_internet",
-    "set_memlimit", "bigmemtest", "bigaddrspacetest", "BasicTestRunner",
-    "run_unittest", "run_doctest", "threading_setup", "threading_cleanup",
-    "reap_children", "cpython_only", "check_impl_detail", "get_attribute",
-    "swap_item", "swap_attr", "requires_IEEE_754",
+    "TransientResource", "captured_output", "captured_stdout", "time_out",
+    "socket_peer_reset", "ioerror_peer_reset", "run_with_locale", 'temp_umask',
+    "transient_internet", "set_memlimit", "bigmemtest", "bigaddrspacetest",
+    "BasicTestRunner", "run_unittest", "run_doctest", "threading_setup",
+    "threading_cleanup", "reap_children", "cpython_only", "check_impl_detail",
+    "get_attribute", "swap_item", "swap_attr", "requires_IEEE_754",
     "TestHandler", "Matcher", "can_symlink", "skip_unless_symlink"]
 
 
@@ -380,6 +379,21 @@ def bind_port(sock, host=HOST):
     sock.bind((host, 0))
     port = sock.getsockname()[1]
     return port
+
+def _is_ipv6_enabled():
+    """Check whether IPv6 is enabled on this host."""
+    if socket.has_ipv6:
+        try:
+            sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+            sock.bind(('::1', 0))
+        except (socket.error, socket.gaierror):
+            pass
+        else:
+            sock.close()
+            return True
+    return False
+
+IPV6_ENABLED = _is_ipv6_enabled()
 
 # decorator for skipping tests on non-IEEE 754 platforms
 requires_IEEE_754 = unittest.skipUnless(

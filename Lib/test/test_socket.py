@@ -24,18 +24,6 @@ try:
 except ImportError:
     fcntl = False
 
-def try_address(host, port=0, family=socket.AF_INET):
-    """Try to bind a socket on the given host:port and return True
-    if that has been possible."""
-    try:
-        sock = socket.socket(family, socket.SOCK_STREAM)
-        sock.bind((host, port))
-    except (socket.error, socket.gaierror):
-        return False
-    else:
-        sock.close()
-        return True
-
 def linux_version():
     try:
         # platform.release() is something like '2.6.33.7-desktop-2mnb'
@@ -46,7 +34,6 @@ def linux_version():
 
 HOST = support.HOST
 MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8') ## test unicode string and carriage return
-SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1', family=socket.AF_INET6)
 
 try:
     import _thread as thread
@@ -645,7 +632,7 @@ class GeneralModuleTests(unittest.TestCase):
         socket.getaddrinfo('localhost', 80)
         socket.getaddrinfo('127.0.0.1', 80)
         socket.getaddrinfo(None, 80)
-        if SUPPORTS_IPV6:
+        if support.IPV6_ENABLED:
             socket.getaddrinfo('::1', 80)
         # port can be a string service name such as "http", a numeric
         # port number or None
