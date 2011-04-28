@@ -839,6 +839,8 @@ def transient_internet(resource_name, *, timeout=30.0, errnos=()):
     default_gai_errnos = [
         ('EAI_NONAME', -2),
         ('EAI_NODATA', -5),
+        # Encountered when trying to resolve IPv6-only hostnames
+        ('WSANO_DATA', 11004),
     ]
 
     denied = ResourceDenied("Resource '%s' is not available" % resource_name)
