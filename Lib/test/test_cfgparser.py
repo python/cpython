@@ -1316,7 +1316,7 @@ class FakeFile:
 def readline_generator(f):
     """As advised in Doc/library/configparser.rst."""
     line = f.readline()
-    while line != '':
+    while line:
         yield line
         line = f.readline()
 
@@ -1327,8 +1327,8 @@ class ReadFileTestCase(unittest.TestCase):
         parser = configparser.ConfigParser()
         with open(file_path) as f:
             parser.read_file(f)
-        self.assertTrue("Foo Bar" in parser)
-        self.assertTrue("foo" in parser["Foo Bar"])
+        self.assertIn("Foo Bar", parser)
+        self.assertIn("foo", parser["Foo Bar"])
         self.assertEqual(parser["Foo Bar"]["foo"], "newbar")
 
     def test_iterable(self):
@@ -1337,8 +1337,8 @@ class ReadFileTestCase(unittest.TestCase):
         foo=newbar""").strip().split('\n')
         parser = configparser.ConfigParser()
         parser.read_file(lines)
-        self.assertTrue("Foo Bar" in parser)
-        self.assertTrue("foo" in parser["Foo Bar"])
+        self.assertIn("Foo Bar", parser)
+        self.assertIn("foo", parser["Foo Bar"])
         self.assertEqual(parser["Foo Bar"]["foo"], "newbar")
 
     def test_readline_generator(self):
@@ -1347,8 +1347,8 @@ class ReadFileTestCase(unittest.TestCase):
         with self.assertRaises(TypeError):
             parser.read_file(FakeFile())
         parser.read_file(readline_generator(FakeFile()))
-        self.assertTrue("Foo Bar" in parser)
-        self.assertTrue("foo" in parser["Foo Bar"])
+        self.assertIn("Foo Bar", parser)
+        self.assertIn("foo", parser["Foo Bar"])
         self.assertEqual(parser["Foo Bar"]["foo"], "newbar")
 
 
