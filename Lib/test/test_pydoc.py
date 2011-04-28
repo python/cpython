@@ -6,6 +6,7 @@ import subprocess
 import re
 import pydoc
 import inspect
+import keyword
 import unittest
 import test.support
 import xml.etree
@@ -344,8 +345,13 @@ class TestDescriptions(unittest.TestCase):
         self.assertTrue(expected in pydoc.render_doc(c))
 
 
+class TestHelper(unittest.TestCase):
+    def test_keywords(self):
+        self.assertEqual(sorted(pydoc.Helper.keywords),
+                         sorted(keyword.kwlist))
+
 def test_main():
-    test.support.run_unittest(PyDocDocTest, TestDescriptions)
+    test.support.run_unittest(PyDocDocTest, TestDescriptions, TestHelper)
 
 if __name__ == "__main__":
     test_main()
