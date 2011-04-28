@@ -2239,6 +2239,8 @@ class TarFile(object):
         if hasattr(os, "symlink") and hasattr(os, "link"):
             # For systems that support symbolic and hard links.
             if tarinfo.issym():
+                if os.path.exists(targetpath):
+                    os.unlink(targetpath)
                 os.symlink(tarinfo.linkname, targetpath)
             else:
                 # See extract().

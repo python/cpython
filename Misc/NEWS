@@ -65,6 +65,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10761: Fix tarfile.extractall failure  when symlinked files are
+  present. Initial patch by Scott Leerssen.
+
 - Issue #11763: don't use difflib in TestCase.assertMultiLineEqual if the
   strings are too long.
 
