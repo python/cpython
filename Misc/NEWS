@@ -127,6 +127,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11811: ssl.get_server_certificate() is now IPv6-compatible.  Patch
+  by Charles-François Natali.
+
 - Issue #11763: don't use difflib in TestCase.assertMultiLineEqual if the
   strings are too long.
 

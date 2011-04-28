@@ -239,6 +239,9 @@ Certificate handling
    will attempt to validate the server certificate against that set of root
    certificates, and will fail if the validation attempt fails.
 
+   .. versionchanged:: 3.3
+      This function is now IPv6-compatible.
+
 .. function:: DER_cert_to_PEM_cert(DER_cert_bytes)
 
    Given a certificate as a DER-encoded blob of bytes, returns a PEM-encoded

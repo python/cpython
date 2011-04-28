@@ -604,25 +604,30 @@ class NetworkedTests(unittest.TestCase):
                 sys.stdout.write("\nNeeded %d calls to do_handshake() to establish session.\n" % count)
 
     def test_get_server_certificate(self):
-        with support.transient_internet("svn.python.org"):
-            pem = ssl.get_server_certificate(("svn.python.org", 443))
-            if not pem:
-                self.fail("No server certificate on svn.python.org:443!")
-
-            try:
-                pem = ssl.get_server_certificate(("svn.python.org", 443), ca_certs=CERTFILE)
-            except ssl.SSLError as x:
-                #should fail
+        def _test_get_server_certificate(host, port, cert=None):
+            with support.transient_internet(host):
+                pem = ssl.get_server_certificate((host, port))
+                if not pem:
+                    self.fail("No server certificate on %s:%s!" % (host, port))
+    
+                try:
+                    pem = ssl.get_server_certificate((host, port), ca_certs=CERTFILE)
+                except ssl.SSLError as x:
+                    #should fail
+                    if support.verbose:
+                        sys.stdout.write("%s\n" % x)
+                else:
+                        self.fail("Got server certificate %s for %s:%s!" % (pem, host, port))
+    
+                pem = ssl.get_server_certificate((host, port), ca_certs=cert)
+                if not pem:
+                        self.fail("No server certificate on %s:%s!" % (host, port))
                 if support.verbose:
-                    sys.stdout.write("%s\n" % x)
-            else:
-                self.fail("Got server certificate %s for svn.python.org!" % pem)
+                        sys.stdout.write("\nVerified certificate for %s:%s is\n%s\n" % (host, port ,pem))
 
-            pem = ssl.get_server_certificate(("svn.python.org", 443), ca_certs=SVN_PYTHON_ORG_ROOT_CERT)
-            if not pem:
-                self.fail("No server certificate on svn.python.org:443!")
-            if support.verbose:
-                sys.stdout.write("\nVerified certificate for svn.python.org:443 is\n%s\n" % pem)
+        _test_get_server_certificate('svn.python.org', 443, SVN_PYTHON_ORG_ROOT_CERT)
+        if support.IPV6_ENABLED:
+            _test_get_server_certificate('ipv6.google.com', 443)
 
     def test_ciphers(self):
         remote = ("svn.python.org", 443)
