@@ -609,7 +609,7 @@ class NetworkedTests(unittest.TestCase):
                 pem = ssl.get_server_certificate((host, port))
                 if not pem:
                     self.fail("No server certificate on %s:%s!" % (host, port))
-    
+
                 try:
                     pem = ssl.get_server_certificate((host, port), ca_certs=CERTFILE)
                 except ssl.SSLError as x:
@@ -617,13 +617,13 @@ class NetworkedTests(unittest.TestCase):
                     if support.verbose:
                         sys.stdout.write("%s\n" % x)
                 else:
-                        self.fail("Got server certificate %s for %s:%s!" % (pem, host, port))
-    
+                    self.fail("Got server certificate %s for %s:%s!" % (pem, host, port))
+
                 pem = ssl.get_server_certificate((host, port), ca_certs=cert)
                 if not pem:
-                        self.fail("No server certificate on %s:%s!" % (host, port))
+                    self.fail("No server certificate on %s:%s!" % (host, port))
                 if support.verbose:
-                        sys.stdout.write("\nVerified certificate for %s:%s is\n%s\n" % (host, port ,pem))
+                    sys.stdout.write("\nVerified certificate for %s:%s is\n%s\n" % (host, port ,pem))
 
         _test_get_server_certificate('svn.python.org', 443, SVN_PYTHON_ORG_ROOT_CERT)
         if support.IPV6_ENABLED:
