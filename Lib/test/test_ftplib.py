@@ -873,7 +873,7 @@ class TestTimeouts(TestCase):
 
 def test_main():
     tests = [TestFTPClass, TestTimeouts]
-    if socket.has_ipv6:
+    if support.IPV6_ENABLED:
         try:
             DummyFTPServer((HOST, 0), af=socket.AF_INET6)
         except socket.error:
