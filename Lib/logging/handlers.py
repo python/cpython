@@ -490,14 +490,14 @@ class SocketHandler(logging.Handler):
             try:
                 if hasattr(self.sock, "sendall"):
                     self.sock.sendall(s)
-                else:
+                else: #pragma: no cover
                     sentsofar = 0
                     left = len(s)
                     while left > 0:
                         sent = self.sock.send(s[sentsofar:])
                         sentsofar = sentsofar + sent
                         left = left - sent
-            except socket.error:
+            except socket.error: #pragma: no cover
                 self.sock.close()
                 self.sock = None  # so we can call createSocket next time
 
