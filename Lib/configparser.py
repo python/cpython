@@ -624,11 +624,12 @@ class RawConfigParser(MutableMapping):
         self._strict = strict
         self._allow_no_value = allow_no_value
         self._empty_lines_in_values = empty_lines_in_values
-        if interpolation is _UNSET:
-            self._interpolation = self._DEFAULT_INTERPOLATION
-        else:
-            self._interpolation = interpolation
         self.default_section=default_section
+        self._interpolation = interpolation
+        if self._interpolation is _UNSET:
+            self._interpolation = self._DEFAULT_INTERPOLATION
+        if self._interpolation is None:
+            self._interpolation = Interpolation()
 
     def defaults(self):
         return self._defaults

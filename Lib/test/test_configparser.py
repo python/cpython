@@ -864,6 +864,43 @@ class ConfigParserTestCase(BasicTestCase):
         cf = self.newconfig()
         self.assertRaises(ValueError, cf.add_section, self.default_section)
 
+
+class ConfigParserTestCaseNoInterpolation(BasicTestCase):
+    config_class = configparser.ConfigParser
+    interpolation = None
+    ini = textwrap.dedent("""
+        [numbers]
+        one = 1
+        two = %(one)s * 2
+        three = ${common:one} * 3
+
+        [hexen]
+        sixteen = ${numbers:two} * 8
+    """).strip()
+
+    def assertMatchesIni(self, cf):
+        self.assertEqual(cf['numbers']['one'], '1')
+        self.assertEqual(cf['numbers']['two'], '%(one)s * 2')
+        self.assertEqual(cf['numbers']['three'], '${common:one} * 3')
+        self.assertEqual(cf['hexen']['sixteen'], '${numbers:two} * 8')
+
+    def test_no_interpolation(self):
+        cf = self.fromstring(self.ini)
+        self.assertMatchesIni(cf)
+
+    def test_empty_case(self):
+        cf = self.newconfig()
+        self.assertIsNone(cf.read_string(""))
+
+    def test_none_as_default_interpolation(self):
+        class CustomConfigParser(configparser.ConfigParser):
+            _DEFAULT_INTERPOLATION = None
+
+        cf = CustomConfigParser()
+        cf.read_string(self.ini)
+        self.assertMatchesIni(cf)
+
+
 class ConfigParserTestCaseLegacyInterpolation(ConfigParserTestCase):
     config_class = configparser.ConfigParser
     interpolation = configparser.LegacyInterpolation()
@@ -1444,6 +1481,7 @@ def test_main():
         ConfigParserTestCaseNoValue,
         ConfigParserTestCaseExtendedInterpolation,
         ConfigParserTestCaseLegacyInterpolation,
+        ConfigParserTestCaseNoInterpolation,
         ConfigParserTestCaseTrickyFile,
         MultilineValuesTestCase,
         RawConfigParserTestCase,
