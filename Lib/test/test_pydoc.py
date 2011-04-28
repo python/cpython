@@ -3,6 +3,7 @@ import sys
 import difflib
 import inspect
 import pydoc
+import keyword
 import re
 import string
 import subprocess
@@ -465,11 +466,17 @@ class PydocUrlHandlerTest(unittest.TestCase):
         self.assertEqual(result, title)
 
 
+class TestHelper(unittest.TestCase):
+    def test_keywords(self):
+        self.assertEqual(sorted(pydoc.Helper.keywords),
+                         sorted(keyword.kwlist))
+
 def test_main():
     test.support.run_unittest(PydocDocTest,
                               TestDescriptions,
                               PydocServerTest,
                               PydocUrlHandlerTest,
+                              TestHelper,
                               )
 
 if __name__ == "__main__":
