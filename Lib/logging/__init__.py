@@ -296,7 +296,7 @@ class LogRecord(object):
                 # for an example
                 try:
                     self.processName = mp.current_process().name
-                except StandardError:
+                except StandardError: #pragma: no cover
                     pass
         if logProcesses and hasattr(os, 'getpid'):
             self.process = os.getpid()
