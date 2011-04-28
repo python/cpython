@@ -481,17 +481,17 @@ class ExtendedInterpolation(Interpolation):
                 if m is None:
                     raise InterpolationSyntaxError(option, section,
                         "bad interpolation variable reference %r" % rest)
-                path = parser.optionxform(m.group(1)).split(':')
+                path = m.group(1).split(':')
                 rest = rest[m.end():]
                 sect = section
                 opt = option
                 try:
                     if len(path) == 1:
-                        opt = path[0]
+                        opt = parser.optionxform(path[0])
                         v = map[opt]
                     elif len(path) == 2:
                         sect = path[0]
-                        opt = path[1]
+                        opt = parser.optionxform(path[1])
                         v = parser.get(sect, opt, raw=True)
                     else:
                         raise InterpolationSyntaxError(
@@ -1056,6 +1056,8 @@ class RawConfigParser(MutableMapping):
                         if not optname:
                             e = self._handle_error(e, fpname, lineno, line)
                         optname = self.optionxform(optname.rstrip())
+                        if hasattr(self, '__ping__'):
+                            import pdb; pdb.set_trace()
                         if (self._strict and
                             (sectname, optname) in elements_added):
                             raise DuplicateOptionError(sectname, optname,

@@ -20,10 +20,16 @@ class SortedDict(collections.UserDict):
     def values(self):
         return [i[1] for i in self.items()]
 
-    def iteritems(self): return iter(self.items())
-    def iterkeys(self): return iter(self.keys())
+    def iteritems(self):
+        return iter(self.items())
+
+    def iterkeys(self):
+        return iter(self.keys())
+
+    def itervalues(self):
+        return iter(self.values())
+
     __iter__ = iterkeys
-    def itervalues(self): return iter(self.values())
 
 
 class CfgParserTestCaseClass(unittest.TestCase):
@@ -986,6 +992,14 @@ class ConfigParserTestCaseExtendedInterpolation(BasicTestCase):
     config_class = configparser.ConfigParser
     interpolation = configparser.ExtendedInterpolation()
     default_section = 'common'
+    strict = True
+
+    def fromstring(self, string, defaults=None, optionxform=None):
+        cf = self.newconfig(defaults)
+        if optionxform:
+            cf.optionxform = optionxform
+        cf.read_string(string)
+        return cf
 
     def test_extended_interpolation(self):
         cf = self.fromstring(textwrap.dedent("""
@@ -1070,6 +1084,56 @@ class ConfigParserTestCaseExtendedInterpolation(BasicTestCase):
         self.assertEqual(cm.exception.reference, 'dollars:${sick')
         self.assertEqual(cm.exception.args[2], '}') #rawval
 
+    def test_case_sensitivity_basic(self):
+        ini = textwrap.dedent("""
+            [common]
+            optionlower = value
+            OptionUpper = Value
+
+            [Common]
+            optionlower = a better ${common:optionlower}
+            OptionUpper = A Better ${common:OptionUpper}
+
+            [random]
+            foolower = ${common:optionlower} redefined
+            FooUpper = ${Common:OptionUpper} Redefined
+        """).strip()
+
+        cf = self.fromstring(ini)
+        eq = self.assertEqual
+        eq(cf['common']['optionlower'], 'value')
+        eq(cf['common']['OptionUpper'], 'Value')
+        eq(cf['Common']['optionlower'], 'a better value')
+        eq(cf['Common']['OptionUpper'], 'A Better Value')
+        eq(cf['random']['foolower'], 'value redefined')
+        eq(cf['random']['FooUpper'], 'A Better Value Redefined')
+
+    def test_case_sensitivity_conflicts(self):
+        ini = textwrap.dedent("""
+            [common]
+            option = value
+            Option = Value
+
+            [Common]
+            option = a better ${common:option}
+            Option = A Better ${common:Option}
+
+            [random]
+            foo = ${common:option} redefined
+            Foo = ${Common:Option} Redefined
+        """).strip()
+        with self.assertRaises(configparser.DuplicateOptionError):
+            cf = self.fromstring(ini)
+
+        # raw options
+        cf = self.fromstring(ini, optionxform=lambda opt: opt)
+        eq = self.assertEqual
+        eq(cf['common']['option'], 'value')
+        eq(cf['common']['Option'], 'Value')
+        eq(cf['Common']['option'], 'a better value')
+        eq(cf['Common']['Option'], 'A Better Value')
+        eq(cf['random']['foo'], 'value redefined')
+        eq(cf['random']['Foo'], 'A Better Value Redefined')
 
     def test_other_errors(self):
         cf = self.fromstring("""
