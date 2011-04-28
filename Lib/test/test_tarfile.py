@@ -843,6 +843,7 @@ class WriteTest(WriteTestBase):
         finally:
             os.chdir(cwd)
 
+    @unittest.skipUnless(hasattr(os, 'symlink'), "needs os.symlink")
     def test_extractall_symlinks(self):
         # Test if extractall works properly when tarfile contains symlinks
         tempdir = os.path.join(TEMPDIR, "testsymlinks")
