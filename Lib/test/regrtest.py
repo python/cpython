@@ -24,6 +24,7 @@ Options:
                 -- dump the traceback and exit if a test takes more
                    than TIMEOUT seconds (default: 30 minutes); disable
                    the timeout if TIMEOUT is zero
+--wait          -- wait for user input, e.g., allow a debugger to be attached
 
 Verbosity
 
@@ -279,7 +280,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
              'use=', 'threshold=', 'trace', 'coverdir=', 'nocoverdir',
              'runleaks', 'huntrleaks=', 'memlimit=', 'randseed=',
              'multiprocess=', 'coverage', 'slaveargs=', 'forever', 'debug',
-             'start=', 'nowindows', 'header', 'testdir=', 'timeout='])
+             'start=', 'nowindows', 'header', 'testdir=', 'timeout=', 'wait'])
     except getopt.error as msg:
         usage(msg)
 
@@ -419,6 +420,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                       "faulthandler.dump_tracebacks_later", file=sys.stderr)
                 sys.exit(1)
             timeout = float(a)
+        elif o == '--wait':
+            input("Press any key to continue...")
         else:
             print(("No handler for option {}.  Please report this as a bug "
                    "at http://bugs.python.org.").format(o), file=sys.stderr)
