@@ -1579,6 +1579,9 @@ class Helper:
     #          in Doc/ and copying the output file into the Lib/ directory.
 
     keywords = {
+        'False': '',
+        'None': '',
+        'True': '',
         'and': 'BOOLEAN',
         'as': 'with',
         'assert': ('assert', ''),
@@ -1794,6 +1797,9 @@ has the same effect as typing a particular string at the help> prompt.
             elif request[:8] == 'modules ':
                 self.listmodules(request.split()[1])
             elif request in self.symbols: self.showsymbol(request)
+            elif request in ['True', 'False', 'None']:
+                # special case these keywords since they are objects too
+                doc(eval(request), 'Help on %s:')
             elif request in self.keywords: self.showtopic(request)
             elif request in self.topics: self.showtopic(request)
             elif request: doc(request, 'Help on %s:', output=self._output)
