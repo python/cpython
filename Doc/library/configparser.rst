@@ -975,7 +975,7 @@ ConfigParser Objects
    .. method:: read_file(f, source=None)
 
       Read and parse configuration data from *f* which must be an iterable
-      yielding Unicode strings (for example any file object).
+      yielding Unicode strings (for example files opened in text mode).
 
       Optional argument *source* specifies the name of the file being read.  If
       not given and *f* has a :attr:`name` attribute, that is used for
@@ -983,28 +983,6 @@ ConfigParser Objects
 
       .. versionadded:: 3.2
          Replaces :meth:`readfp`.
-
-      .. note::
-
-         Prior to Python 3.2, :meth:`readfp` consumed lines from the file-like
-         argument by calling its :meth:`~file.readline` method. For existing code
-         calling :meth:`readfp` with arguments which don't support iteration,
-         the following generator may be used as a wrapper around the file-like
-         object::
-
-             def readline_generator(f):
-                 line = f.readline()
-                 while line != '':
-                     yield line
-                     line = f.readline()
-
-         Before::
-
-             parser.readfp(f)
-
-         After::
-
-             parser.read_file(readline_generator(f))
 
    .. method:: read_string(string, source='<string>')
 
@@ -1141,6 +1119,22 @@ ConfigParser Objects
 
       .. deprecated:: 3.2
          Use :meth:`read_file` instead.
+
+      .. versionchanged:: 3.2
+         :meth:`readfp` now iterates on *f* instead of calling ``f.readline()``.
+
+      For existing code calling :meth:`readfp` with arguments which don't
+      support iteration, the following generator may be used as a wrapper
+      around the file-like object::
+
+         def readline_generator(f):
+             line = f.readline()
+             while line:
+                 yield line
+                 line = f.readline()
+
+      Instead of ``parser.readfp(f)`` use
+      ``parser.read_file(readline_generator(f))``.
 
 
 .. data:: MAX_INTERPOLATION_DEPTH
