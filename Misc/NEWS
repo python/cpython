@@ -523,6 +523,10 @@ Extensions
 Tests
 -----
 
+- Issue #11811: Factor out detection of IPv6 support on the current host
+  and make it available as ``test.support.IPV6_ENABLED``.  Patch by
+  Charles-François Natali.
+
 - Issue #10914: Add a minimal embedding test to test_capi.
 
 - Issue #11223: Skip test_lock_acquire_interruption() and
