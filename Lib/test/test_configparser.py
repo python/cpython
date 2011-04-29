@@ -993,7 +993,7 @@ class RawConfigParserTestCase(BasicTestCase):
         cf.add_section(123)
         cf.set(123, 'this is sick', True)
         self.assertEqual(cf.get(123, 'this is sick'), True)
-        if cf._dict.__class__ is configparser._default_dict:
+        if cf._dict is configparser._default_dict:
             # would not work for SortedDict; only checking for the most common
             # default dictionary (OrderedDict)
             cf.optionxform = lambda x: x
