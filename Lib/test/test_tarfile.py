@@ -351,7 +351,6 @@ class MiscReadTest(CommonReadTest):
         finally:
             tar.close()
 
-    @support.skip_unless_symlink
     def test_extractall(self):
         # Test if extractall() correctly restores directory permissions
         # and times (see issue1735).
@@ -983,6 +982,8 @@ class WriteTest(WriteTestBase):
 
         self.assertEqual(t.name, cmp_path or path.replace(os.sep, "/"))
 
+
+    @support.skip_unless_symlink
     def test_extractall_symlinks(self):
         # Test if extractall works properly when tarfile contains symlinks
         tempdir = os.path.join(TEMPDIR, "testsymlinks")
