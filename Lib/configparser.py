@@ -1057,8 +1057,6 @@ class RawConfigParser(MutableMapping):
                         if not optname:
                             e = self._handle_error(e, fpname, lineno, line)
                         optname = self.optionxform(optname.rstrip())
-                        if hasattr(self, '__ping__'):
-                            import pdb; pdb.set_trace()
                         if (self._strict and
                             (sectname, optname) in elements_added):
                             raise DuplicateOptionError(sectname, optname,
