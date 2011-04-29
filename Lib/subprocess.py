@@ -415,8 +415,15 @@ __all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "getstatusoutput",
            "getoutput", "check_output", "CalledProcessError"]
 
 if mswindows:
-    from _subprocess import CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP
-    __all__.extend(["CREATE_NEW_CONSOLE", "CREATE_NEW_PROCESS_GROUP"])
+    from _subprocess import (CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP,
+                             STD_INPUT_HANDLE, STD_OUTPUT_HANDLE,
+                             STD_ERROR_HANDLE, SW_HIDE,
+                             STARTF_USESTDHANDLES, STARTF_USESHOWWINDOW)
+                
+    __all__.extend(["CREATE_NEW_CONSOLE", "CREATE_NEW_PROCESS_GROUP",
+                    "STD_INPUT_HANDLE", "STD_OUTPUT_HANDLE",
+                    "STD_ERROR_HANDLE", "SW_HIDE",
+                    "STARTF_USESTDHANDLES", "STARTF_USESHOWWINDOW"])
 try:
     MAXFD = os.sysconf("SC_OPEN_MAX")
 except:
