@@ -10,7 +10,7 @@ from random import randrange, shuffle
 import keyword
 import re
 import sys
-from collections import _ChainMap as ChainMap
+from collections import _ChainMap
 from collections import Hashable, Iterable, Iterator
 from collections import Sized, Container, Callable
 from collections import Set, MutableSet
@@ -26,7 +26,7 @@ from collections import ByteString
 class TestChainMap(unittest.TestCase):
 
     def test_basics(self):
-        c = ChainMap()
+        c = _ChainMap()
         c['a'] = 1
         c['b'] = 2
         d = c.new_child()
@@ -71,7 +71,7 @@ class TestChainMap(unittest.TestCase):
             for m1, m2 in zip(d.maps, e.maps):
                 self.assertIsNot(m1, m2, e)
 
-        d.new_child()
+        d = d.new_child()
         d['b'] = 5
         self.assertEqual(d.maps, [{'b': 5}, {'c':30}, {'a':1, 'b':2}])
         self.assertEqual(d.parents.maps, [{'c':30}, {'a':1, 'b':2}])   # check parents
@@ -79,11 +79,11 @@ class TestChainMap(unittest.TestCase):
         self.assertEqual(d.parents['b'], 2)                            # look beyond maps[0]
 
     def test_contructor(self):
-        self.assertEqual(ChainedContext().maps, [{}])                  # no-args --> one new dict
-        self.assertEqual(ChainMap({1:2}).maps, [{1:2}])                # 1 arg --> list
+        self.assertEqual(_ChainMap().maps, [{}])                  # no-args --> one new dict
+        self.assertEqual(_ChainMap({1:2}).maps, [{1:2}])                # 1 arg --> list
 
     def test_missing(self):
-        class DefaultChainMap(ChainMap):
+        class DefaultChainMap(_ChainMap):
             def __missing__(self, key):
                 return 999
         d = DefaultChainMap(dict(a=1, b=2), dict(b=20, c=30))
@@ -100,7 +100,7 @@ class TestChainMap(unittest.TestCase):
             d.popitem()
 
     def test_dict_coercion(self):
-        d = ChainMap(dict(a=1, b=2), dict(b=20, c=30))
+        d = _ChainMap(dict(a=1, b=2), dict(b=20, c=30))
         self.assertEqual(dict(d), dict(a=1, b=2, c=30))
         self.assertEqual(dict(d.items()), dict(a=1, b=2, c=30))
 
@@ -1190,7 +1190,7 @@ import doctest, collections
 def test_main(verbose=None):
     NamedTupleDocs = doctest.DocTestSuite(module=collections)
     test_classes = [TestNamedTuple, NamedTupleDocs, TestOneTrickPonyABCs,
-                    TestCollectionABCs, TestCounter,
+                    TestCollectionABCs, TestCounter, TestChainMap,
                     TestOrderedDict, GeneralMappingTests, SubclassMappingTests]
     support.run_unittest(*test_classes)
     support.run_doctest(collections, verbose)
