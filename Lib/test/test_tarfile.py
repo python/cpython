@@ -249,7 +249,6 @@ class MiscReadTest(ReadTest):
         data = open(os.path.join(TEMPDIR, "ustar/symtype"), "rb").read()
         self.assertEqual(md5sum(data), md5_regtype)
 
-    @unittest.skipUnless(hasattr(os,'symlink'), "needs os.symlink")
     def test_extractall(self):
         # Test if extractall() correctly restores directory permissions
         # and times (see issue1735).
@@ -679,6 +678,7 @@ class WriteTest(WriteTestBase):
         finally:
             shutil.rmtree(tempdir)
 
+    @unittest.skipUnless(hasattr(os,'symlink'), "needs os.symlink")
     def test_extractall_symlinks(self):
         # Test if extractall works properly when tarfile contains symlinks
         tempdir = os.path.join(TEMPDIR, "testsymlinks")
