@@ -18,6 +18,6 @@ msg['From'] = me
 msg['To'] = you
 
 # Send the message via our own SMTP server.
-s = smtplib.SMTP()
+s = smtplib.SMTP('localhost')
 s.send_message(msg)
 s.quit()
