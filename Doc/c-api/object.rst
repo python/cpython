@@ -108,6 +108,9 @@ Object Protocol
    Python expression ``o1 op o2``, where ``op`` is the operator corresponding to
    *opid*.
 
+.. note::
+   If *o1* and *o2* are the same object, :c:func:`PyObject_RichCompareBool`
+   will always return ``1`` for :const:`Py_EQ` and ``0`` for :const:`Py_NE`.
 
 .. cfunction:: int PyObject_Cmp(PyObject *o1, PyObject *o2, int *result)
 
