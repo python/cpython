@@ -171,9 +171,9 @@ This module defines one class called :class:`Popen`:
       :attr:`stdout`, :attr:`stdin` and :attr:`stderr` are not updated by the
       :meth:`communicate` method.
 
-   The *startupinfo* and *creationflags*, if given, will be passed to the
-   underlying CreateProcess() function.  They can specify things such as appearance
-   of the main window and priority for the new process.  (Windows only)
+   If given, *startupinfo* will be a :class:`STARTUPINFO` object, which is
+   passed to the underlying ``CreateProcess`` function.
+   *creationflags*, if given, can be :data:`CREATE_NEW_CONSOLE`. (Windows only)
 
 
 .. data:: PIPE
@@ -426,6 +426,101 @@ The following attributes are also available:
 
    A negative value ``-N`` indicates that the child was terminated by signal
    ``N`` (Unix only).
+
+
+Windows Popen Helpers
+---------------------
+
+The :class:`STARTUPINFO` class and following constants are only available
+on Windows.
+
+.. class:: STARTUPINFO()
+   
+   Partial support of the Windows
+   `STARTUPINFO <http://msdn.microsoft.com/en-us/library/ms686331(v=vs.85).aspx>`__
+   structure is used for :class:`Popen` creation.
+
+   .. attribute:: dwFlags
+
+      A bit field that determines whether certain :class:`STARTUPINFO` members
+      are used when the process creates a window. ::
+
+         si = subprocess.STARTUPINFO()
+         si.dwFlags = subprocess.STARTF_USESTDHANDLES | subprocess.STARTF_USESHOWWINDOW
+
+   .. attribute:: hStdInput
+
+      If :attr:`dwFlags` specifies :data:`STARTF_USESTDHANDLES`, this member is
+      the standard input handle for the process. If :data:`STARTF_USESTDHANDLES`
+      is not specified, the default for standard input is the keyboard buffer.
+
+   .. attribute:: hStdOutput
+
+      If :attr:`dwFlags` specifies :data:`STARTF_USESTDHANDLES`, this member is
+      the standard output handle for the process. Otherwise, this member is
+      ignored and the default for standard output is the console window's
+      buffer.
+
+   .. attribute:: hStdError
+
+      If :attr:`dwFlags` specifies :data:`STARTF_USESTDHANDLES`, this member is
+      the standard error handle for the process. Otherwise, this member is
+      ignored and the default for standard error is the console window's buffer.
+
+   .. attribute:: wShowWindow
+
+      If :attr:`dwFlags` specifies :data:`STARTF_USESHOWWINDOW`, this member
+      can be any of the values that can be specified in the ``nCmdShow``
+      parameter for the
+      `ShowWindow <http://msdn.microsoft.com/en-us/library/ms633548(v=vs.85).aspx>`__
+      function, except for ``SW_SHOWDEFAULT``. Otherwise, this member is
+      ignored.
+   
+      :data:`SW_HIDE` is provided for this attribute. It is used when
+      :class:`Popen` is called with ``shell=True``.
+
+
+Constants
+^^^^^^^^^
+
+The :mod:`subprocess` module exposes the following constants.
+
+.. data:: STD_INPUT_HANDLE
+
+   The standard input device. Initially, this is the console input buffer,
+   ``CONIN$``.
+
+.. data:: STD_OUTPUT_HANDLE
+
+   The standard output device. Initially, this is the active console screen
+   buffer, ``CONOUT$``.
+
+.. data:: STD_ERROR_HANDLE
+
+   The standard error device. Initially, this is the active console screen
+   buffer, ``CONOUT$``.
+
+.. data:: SW_HIDE
+
+   Hides the window. Another window will be activated.
+
+.. data:: STARTF_USESTDHANDLES
+
+   Specifies that the :attr:`STARTUPINFO.hStdInput`,
+   :attr:`STARTUPINFO.hStdOutput`, and :attr:`STARTUPINFO.hStdError` members
+   contain additional information.
+
+.. data:: STARTF_USESHOWWINDOW
+
+   Specifies that the :attr:`STARTUPINFO.wShowWindow` member contains
+   additional information.
+
+.. data:: CREATE_NEW_CONSOLE
+
+   The new process has a new console, instead of inheriting its parent's
+   console (the default).
+   
+   This flag is always set when :class:`Popen` is created with ``shell=True``.
 
 
 .. _subprocess-replacements:
