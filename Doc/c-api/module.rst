@@ -107,7 +107,7 @@ There are only a few functions special to module objects.
 .. cfunction:: int PyModule_AddIntMacro(PyObject *module, macro)
 
    Add an int constant to *module*. The name and the value are taken from
-   *macro*. For example ``PyModule_AddConstant(module, AF_INET)`` adds the int
+   *macro*. For example ``PyModule_AddIntMacro(module, AF_INET)`` adds the int
    constant *AF_INET* with the value of *AF_INET* to *module*.
    Return ``-1`` on error, ``0`` on success.
 
