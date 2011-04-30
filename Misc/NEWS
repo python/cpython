@@ -534,6 +534,9 @@ Extensions
 Tests
 -----
 
+- Issue #11958: Fix FTP tests for IPv6, bind to "::1" instead of "localhost".
+  Patch written by Charles-Francois Natali.
+
 - Issue #8407, #11859: Fix tests of test_io using threads and an alarm: use
   pthread_sigmask() to ensure that the SIGALRM signal is received by the main
   thread.

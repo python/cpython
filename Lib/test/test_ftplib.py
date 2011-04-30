@@ -648,7 +648,7 @@ class TestFTPClass(TestCase):
 class TestIPv6Environment(TestCase):
 
     def setUp(self):
-        self.server = DummyFTPServer((HOST, 0), af=socket.AF_INET6)
+        self.server = DummyFTPServer(('::1', 0), af=socket.AF_INET6)
         self.server.start()
         self.client = ftplib.FTP()
         self.client.connect(self.server.host, self.server.port)
@@ -874,12 +874,7 @@ class TestTimeouts(TestCase):
 def test_main():
     tests = [TestFTPClass, TestTimeouts]
     if support.IPV6_ENABLED:
-        try:
-            DummyFTPServer((HOST, 0), af=socket.AF_INET6)
-        except socket.error:
-            pass
-        else:
-            tests.append(TestIPv6Environment)
+        tests.append(TestIPv6Environment)
 
     if ssl is not None:
         tests.extend([TestTLS_FTPClassMixin, TestTLS_FTPClass])
