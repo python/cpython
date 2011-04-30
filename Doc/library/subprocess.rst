@@ -435,7 +435,7 @@ The :class:`STARTUPINFO` class and following constants are only available
 on Windows.
 
 .. class:: STARTUPINFO()
-   
+
    Partial support of the Windows
    `STARTUPINFO <http://msdn.microsoft.com/en-us/library/ms686331(v=vs.85).aspx>`__
    structure is used for :class:`Popen` creation.
@@ -475,7 +475,7 @@ on Windows.
       `ShowWindow <http://msdn.microsoft.com/en-us/library/ms633548(v=vs.85).aspx>`__
       function, except for ``SW_SHOWDEFAULT``. Otherwise, this member is
       ignored.
-   
+
       :data:`SW_HIDE` is provided for this attribute. It is used when
       :class:`Popen` is called with ``shell=True``.
 
@@ -519,7 +519,7 @@ The :mod:`subprocess` module exposes the following constants.
 
    The new process has a new console, instead of inheriting its parent's
    console (the default).
-   
+
    This flag is always set when :class:`Popen` is created with ``shell=True``.
 
 
