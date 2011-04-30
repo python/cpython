@@ -483,11 +483,65 @@ class ItimerTest(unittest.TestCase):
         # and the handler should have been called
         self.assertEqual(self.hndl_called, True)
 
+
+@unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
+                     'need signal.pthread_sigmask()')
+class PthreadSigmaskTests(unittest.TestCase):
+    def test_arguments(self):
+        self.assertRaises(TypeError, signal.pthread_sigmask)
+        self.assertRaises(TypeError, signal.pthread_sigmask, 1)
+        self.assertRaises(TypeError, signal.pthread_sigmask, 1, 2, 3)
+        self.assertRaises(RuntimeError, signal.pthread_sigmask, 1700, [])
+
+    def test_block_unlock(self):
+        pid = os.getpid()
+        signum = signal.SIGUSR1
+
+        def handler(signum, frame):
+            handler.tripped = True
+        handler.tripped = False
+
+        def read_sigmask():
+            return signal.pthread_sigmask(signal.SIG_BLOCK, [])
+
+        old_handler = signal.signal(signum, handler)
+        self.addCleanup(signal.signal, signum, old_handler)
+
+        # unblock SIGUSR1, copy the old mask and test our signal handler
+        old_mask = signal.pthread_sigmask(signal.SIG_UNBLOCK, [signum])
+        self.addCleanup(signal.pthread_sigmask, signal.SIG_SETMASK, old_mask)
+        os.kill(pid, signum)
+        self.assertTrue(handler.tripped)
+
+        # block SIGUSR1
+        handler.tripped = False
+        signal.pthread_sigmask(signal.SIG_BLOCK, [signum])
+        os.kill(pid, signum)
+        self.assertFalse(handler.tripped)
+
+        # check the mask
+        blocked = read_sigmask()
+        self.assertIn(signum, blocked)
+        self.assertEqual(set(old_mask) ^ set(blocked), {signum})
+
+        # unblock SIGUSR1
+        signal.pthread_sigmask(signal.SIG_UNBLOCK, [signum])
+        os.kill(pid, signum)
+        self.assertTrue(handler.tripped)
+
+        # check the mask
+        unblocked = read_sigmask()
+        self.assertNotIn(signum, unblocked)
+        self.assertEqual(set(blocked) ^ set(unblocked), {signum})
+        self.assertSequenceEqual(old_mask, unblocked)
+
+
 def test_main():
     try:
         support.run_unittest(BasicSignalTests, InterProcessSignalTests,
                              WakeupSignalTests, SiginterruptTest,
-                             ItimerTest, WindowsSignalTests)
+                             ItimerTest, WindowsSignalTests,
+                             PthreadSigmaskTests)
     finally:
         support.reap_children()
 

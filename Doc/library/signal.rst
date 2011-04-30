@@ -13,9 +13,6 @@ rules for working with signals and their handlers:
   underlying implementation), with the exception of the handler for
   :const:`SIGCHLD`, which follows the underlying implementation.
 
-* There is no way to "block" signals temporarily from critical sections (since
-  this is not supported by all Unix flavors).
-
 * Although Python signal handlers are called asynchronously as far as the Python
   user is concerned, they can only occur between the "atomic" instructions of the
   Python interpreter.  This means that signals arriving during long calculations
@@ -119,6 +116,28 @@ The variables defined in the :mod:`signal` module are:
    in user and kernel space. SIGPROF is delivered upon expiration.
 
 
+.. data:: SIG_BLOCK
+
+   A possible value for the *how* parameter to :func:`pthread_sigmask`
+   indicating that signals are to be blocked.
+
+   .. versionadded:: 3.3
+
+.. data:: SIG_UNBLOCK
+
+   A possible value for the *how* parameter to :func:`pthread_sigmask`
+   indicating that signals are to be unblocked.
+
+   .. versionadded:: 3.3
+
+.. data:: SIG_SETMASK
+
+   A possible value for the *how* parameter to :func:`pthread_sigmask`
+   indicating that the signal mask is to be replaced.
+
+   .. versionadded:: 3.3
+
+
 The :mod:`signal` module defines one exception:
 
 .. exception:: ItimerError
@@ -159,6 +178,34 @@ The :mod:`signal` module defines the following functions:
    Cause the process to sleep until a signal is received; the appropriate handler
    will then be called.  Returns nothing.  Not on Windows. (See the Unix man page
    :manpage:`signal(2)`.)
+
+
+.. function:: pthread_sigmask(how, mask)
+
+   Fetch and/or change the signal mask of the calling thread.  The signal mask
+   is the set of signals whose delivery is currently blocked for the caller.
+   The old signal mask is returned.
+
+   The behavior of the call is dependent on the value of *how*, as follows.
+
+    * :data:`SIG_BLOCK`: The set of blocked signals is the union of the current
+      set and the *mask* argument.
+    * :data:`SIG_UNBLOCK`: The signals in *mask* are removed from the current
+      set of blocked signals.  It is permissible to attempt to unblock a
+      signal which is not blocked.
+    * :data:`SIG_SETMASK`: The set of blocked signals is set to the *mask*
+      argument.
+
+   *mask* is a list of signal numbers (e.g. [:const:`signal.SIGINT`,
+   :const:`signal.SIGTERM`]).
+
+   For example, ``signal.pthread_sigmask(signal.SIG_BLOCK, [])`` reads the
+   signal mask of the calling thread.
+
+   Availability: Unix. See the man page :manpage:`sigprocmask(3)` and
+   :manpage:`pthread_sigmask(3)` for further information.
+
+   .. versionadded:: 3.3
 
 
 .. function:: setitimer(which, seconds[, interval])
