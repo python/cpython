@@ -105,7 +105,7 @@ must be running an SMTP server.
         fp.write(composed)
         fp.close()
     else:
-        s = smtplib.SMTP()
+        s = smtplib.SMTP('localhost')
         s.sendmail(opts.sender, opts.recipients, composed)
         s.quit()
 
