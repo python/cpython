@@ -175,30 +175,6 @@ This module defines the following functions and objects:
    Availability: Windows, systems with POSIX threads.
 
 
-.. function:: _info()
-
-   Return a dictionary with informations about the thread implementation.
-   The ``'name'`` key gives the name of the thread implementation (string):
-
-    * ``'nt'``: Windows threads
-    * ``'os2'``: OS/2 threads
-    * ``'pthread'``: POSIX threads
-    * ``'solaris'``: Solaris threads
-
-   POSIX threads have two more keys:
-
-    * ``'lock_implementation'`` (string): name of the lock
-      implementation
-
-      * ``'semaphore'``: a lock uses a semaphore
-      * ``'mutex+cond'``: a lock uses a mutex and a condition variable
-
-    * ``'pthread_version'`` (string, optional): name and version of the pthread
-      library
-
-   .. versionadded:: 3.3
-
-
 This module also defines the following constant:
 
 .. data:: TIMEOUT_MAX

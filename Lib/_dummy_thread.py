@@ -149,6 +149,3 @@ def interrupt_main():
     else:
         global _interrupt
         _interrupt = True
-
-def info():
-    return {'name': 'dummy'}

@@ -7,7 +7,6 @@
 
 #include "Python.h"
 
-
 #ifndef _POSIX_THREADS
 /* This means pthreads are not implemented in libc headers, hence the macro
    not present in unistd.h. But they still can be implemented as an external
@@ -415,26 +414,51 @@ PyThread_ReInitTLS(void)
 
 #endif /* Py_HAVE_NATIVE_TLS */
 
+PyDoc_STRVAR(threadinfo__doc__,
+"sys.thread_info\n\
+\n\
+A struct sequence holding information about the thread implementation.");
+
+static PyStructSequence_Field threadinfo_fields[] = {
+    {"name",    "name of the thread implementation"},
+    {"lock",    "name of the lock implementation"},
+    {"version", "name and version of the thread library"},
+    {0}
+};
+
+static PyStructSequence_Desc threadinfo_desc = {
+    "sys.thread_info",           /* name */
+    threadinfo__doc__,           /* doc */
+    threadinfo_fields,           /* fields */
+    3
+};
+
+static PyTypeObject ThreadInfoType;
+
 PyObject*
-_PyThread_Info(void)
+PyThread_GetInfo(void)
 {
-    PyObject *info, *value;
-    int ret;
+    PyObject *threadinfo, *value;
+    int pos = 0;
 #if (defined(_POSIX_THREADS) && defined(HAVE_CONFSTR) \
      && defined(_CS_GNU_LIBPTHREAD_VERSION))
     char buffer[255];
     int len;
 #endif
 
-    info = PyDict_New();
-    if (info == NULL)
+    if (ThreadInfoType.tp_name == 0)
+        PyStructSequence_InitType(&ThreadInfoType, &threadinfo_desc);
+
+    threadinfo = PyStructSequence_New(&ThreadInfoType);
+    if (threadinfo == NULL)
         return NULL;
 
     value = PyUnicode_FromString(PYTHREAD_NAME);
-    ret = PyDict_SetItemString(info, "name", value);
-    Py_DECREF(value);
-    if (ret)
-        goto error;
+    if (value == NULL) {
+        Py_DECREF(threadinfo);
+        return NULL;
+    }
+    PyStructSequence_SET_ITEM(threadinfo, pos++, value);
 
 #ifdef _POSIX_THREADS
 #ifdef USE_SEMAPHORES
@@ -442,30 +466,31 @@ _PyThread_Info(void)
 #else
     value = PyUnicode_FromString("mutex+cond");
 #endif
-    if (value == NULL)
+    if (value == NULL) {
+        Py_DECREF(threadinfo);
         return NULL;
-    ret = PyDict_SetItemString(info, "lock_implementation", value);
-    Py_DECREF(value);
-    if (ret)
-        goto error;
+    }
+#else
+    Py_INCREF(Py_None);
+    value = Py_None;
+#endif
+    PyStructSequence_SET_ITEM(threadinfo, pos++, value);
 
-#if defined(HAVE_CONFSTR) && defined(_CS_GNU_LIBPTHREAD_VERSION)
+#if (defined(_POSIX_THREADS) && defined(HAVE_CONFSTR) \
+     && defined(_CS_GNU_LIBPTHREAD_VERSION))
+    value = NULL;
     len = confstr(_CS_GNU_LIBPTHREAD_VERSION, buffer, sizeof(buffer));
-    if (0 < len && len < sizeof(buffer)) {
+    if (1 < len && len < sizeof(buffer)) {
         value = PyUnicode_DecodeFSDefaultAndSize(buffer, len-1);
         if (value == NULL)
-            goto error;
-        ret = PyDict_SetItemString(info, "pthread_version", value);
-        Py_DECREF(value);
-        if (ret)
-            goto error;
+            PyErr_Clear();
     }
+    if (value == NULL)
 #endif
-#endif
-
-    return info;
-
-error:
-    Py_DECREF(info);
-    return NULL;
+    {
+        Py_INCREF(Py_None);
+        value = Py_None;
+    }
+    PyStructSequence_SET_ITEM(threadinfo, pos++, value);
+    return threadinfo;
 }

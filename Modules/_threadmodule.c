@@ -1227,17 +1227,6 @@ requiring allocation in multiples of the system memory page size\n\
 (4kB pages are common; using multiples of 4096 for the stack size is\n\
 the suggested approach in the absence of more specific information).");
 
-static PyObject *
-thread_info(PyObject *self)
-{
-    return _PyThread_Info();
-}
-
-PyDoc_STRVAR(thread_info_doc,
-"info() -> dict\n\
-\n\
-Informations about the thread implementation.");
-
 static PyMethodDef thread_methods[] = {
     {"start_new_thread",        (PyCFunction)thread_PyThread_start_new_thread,
      METH_VARARGS, start_new_doc},
@@ -1259,8 +1248,6 @@ static PyMethodDef thread_methods[] = {
      METH_NOARGS, _count_doc},
     {"stack_size",              (PyCFunction)thread_stack_size,
      METH_VARARGS, stack_size_doc},
-    {"info",                    (PyCFunction)thread_info,
-     METH_NOARGS, thread_info_doc},
     {NULL,                      NULL}           /* sentinel */
 };
 

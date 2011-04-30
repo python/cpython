@@ -14,9 +14,8 @@ if sys.platform[:3] in ('win', 'os2') or sys.platform=='riscos':
 process_pid = os.getpid()
 signalled_all=thread.allocate_lock()
 
-info = thread.info()
-USING_PTHREAD_COND = (info['name'] == 'pthread'
-                      and info['lock_implementation'] == 'mutex+cond')
+USING_PTHREAD_COND = (sys.thread_info.name == 'pthread'
+                      and sys.thread_info.lock == 'mutex+cond')
 
 def registerSignals(for_usr1, for_usr2, for_alrm):
     usr1 = signal.signal(signal.SIGUSR1, for_usr1)

@@ -27,15 +27,10 @@ except ImportError:
 # and unmaintained) linuxthreads threading library.  There's an issue
 # when combining linuxthreads with a failed execv call: see
 # http://bugs.python.org/issue4970.
-USING_LINUXTHREADS = False
-if threading:
-    info = threading._info()
-    try:
-        pthread_version = info['pthread_version']
-    except KeyError:
-        pass
-    else:
-        USING_LINUXTHREADS = pthread_version.startswith("linuxthreads")
+if hasattr(sys, 'thread_info') and sys.thread_info.version:
+    USING_LINUXTHREADS = sys.thread_info.version.startswith("linuxthreads")
+else:
+    USING_LINUXTHREADS = False
 
 # Tests creating TESTFN
 class FileTests(unittest.TestCase):
