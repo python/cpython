@@ -17,6 +17,7 @@ Data members:
 #include "Python.h"
 #include "code.h"
 #include "frameobject.h"
+#include "pythread.h"
 
 #include "osdefs.h"
 
@@ -1251,20 +1252,21 @@ PyDoc_STR(
 "\n\
 Static objects:\n\
 \n\
-float_info -- a dict with information about the float implementation.\n\
+builtin_module_names -- tuple of module names built into this interpreter\n\
+copyright -- copyright notice pertaining to this interpreter\n\
+exec_prefix -- prefix used to find the machine-specific Python library\n\
+executable -- pathname of this Python interpreter\n\
+float_info -- a struct sequence with information about the float implementation.\n\
+float_repr_style -- string indicating the style of repr() output for floats\n\
+hexversion -- version information encoded as a single integer\n\
 int_info -- a struct sequence with information about the int implementation.\n\
 maxsize -- the largest supported length of containers.\n\
 maxunicode -- the largest supported character\n\
-builtin_module_names -- tuple of module names built into this interpreter\n\
+platform -- platform identifier\n\
+prefix -- prefix used to find the Python library\n\
+thread_info -- a struct sequence with information about the thread implementation.\n\
 version -- the version of this interpreter as a string\n\
 version_info -- version information as a named tuple\n\
-hexversion -- version information encoded as a single integer\n\
-copyright -- copyright notice pertaining to this interpreter\n\
-platform -- platform identifier\n\
-executable -- pathname of this Python interpreter\n\
-prefix -- prefix used to find the Python library\n\
-exec_prefix -- prefix used to find the machine-specific Python library\n\
-float_repr_style -- string indicating the style of repr() output for floats\n\
 "
 )
 #ifdef MS_WINDOWS
@@ -1609,6 +1611,10 @@ _PySys_Init(void)
 #else
     SET_SYS_FROM_STRING("float_repr_style",
                         PyUnicode_FromString("legacy"));
+#endif
+
+#ifdef WITH_THREAD
+    SET_SYS_FROM_STRING("thread_info", PyThread_GetInfo());
 #endif
 
 #undef SET_SYS_FROM_STRING

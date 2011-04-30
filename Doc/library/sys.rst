@@ -961,6 +961,35 @@ always available.
        to a console and Python apps started with :program:`pythonw`.
 
 
+.. data:: thread_info
+
+   A :term:`struct sequence` holding information about the thread
+   implementation.
+
+   +------------------+---------------------------------------------------------+
+   | Attribute        | Explanation                                             |
+   +==================+=========================================================+
+   | :const:`name`    | Name of the thread implementation:                      |
+   |                  |                                                         |
+   |                  |  * ``'nt'``: Windows threads                            |
+   |                  |  * ``'os2'``: OS/2 threads                              |
+   |                  |  * ``'pthread'``: POSIX threads                         |
+   |                  |  * ``'solaris'``: Solaris threads                       |
+   +------------------+---------------------------------------------------------+
+   | :const:`lock`    | Name of the lock implementation:                        |
+   |                  |                                                         |
+   |                  |  * ``'semaphore'``: a lock uses a semaphore             |
+   |                  |  * ``'mutex+cond'``: a lock uses a mutex                |
+   |                  |    and a condition variable                             |
+   |                  |  * ``None`` if this information is unknown              |
+   +------------------+---------------------------------------------------------+
+   | :const:`version` | Name and version of the thread library. It is a string, |
+   |                  | or ``None`` if these informations are unknown.          |
+   +------------------+---------------------------------------------------------+
+
+   .. versionadded:: 3.3
+
+
 .. data:: tracebacklimit
 
    When this variable is set to an integer value, it determines the maximum number
