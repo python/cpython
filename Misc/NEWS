@@ -70,6 +70,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #11858: configparser.ExtendedInterpolation expected lower-case section
+  names.
+
+- Issue #11324: ConfigParser(interpolation=None) now works correctly.
+
 - Issue #11763: don't use difflib in TestCase.assertMultiLineEqual if the
   strings are too long.
 
