@@ -118,7 +118,7 @@ sys
 * The :mod:`sys` module has a new :func:`~sys.thread_info` :term:`struct
   sequence` holding informations about the thread implementation.
 
-(:issue:`11223`)
+  (:issue:`11223`)
 
 signal
 ------
@@ -126,7 +126,7 @@ signal
 * The :mod:`signal` module has a new :func:`~signal.pthread_sigmask` function
   to fetch and/or change the signal mask of the calling thread.
 
-(Contributed by Jean-Paul Calderone in :issue:`8407`)
+  (Contributed by Jean-Paul Calderone in :issue:`8407`)
 
 
 Optimizations
