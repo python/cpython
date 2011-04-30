@@ -474,6 +474,14 @@ class SysModuleTest(unittest.TestCase):
         if not sys.platform.startswith('win'):
             self.assertIsInstance(sys.abiflags, str)
 
+    @unittest.skipUnless(hasattr(sys, 'thread_info'),
+                         'Threading required for this test.')
+    def test_thread_info(self):
+        info = sys.thread_info
+        self.assertTrue(len(info), 3)
+        self.assertIn(info.name, ('nt', 'os2', 'pthread', 'solaris', None))
+        self.assertIn(info.lock, ('semaphore', 'mutex+cond', None))
+
     def test_43581(self):
         # Can't use sys.stdout, as this is a StringIO object when
         # the test runs under regrtest.

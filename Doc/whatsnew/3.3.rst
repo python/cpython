@@ -112,11 +112,11 @@ connection when done::
 
 (Contributed by Giampaolo Rodolà in :issue:`9795`)
 
-threading
----------
+sys
+---
 
-* The :mod:`threading` module has a new :func:`~threading._info` function which
-  provides informations about the thread implementation.
+* The :mod:`sys` module has a new :func:`~sys.thread_info` :term:`struct
+  sequence` holding informations about the thread implementation.
 
   (:issue:`11223`)
 

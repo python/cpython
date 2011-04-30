@@ -74,7 +74,7 @@ PyAPI_FUNC(void) PyThread_release_lock(PyThread_type_lock);
 PyAPI_FUNC(size_t) PyThread_get_stacksize(void);
 PyAPI_FUNC(int) PyThread_set_stacksize(size_t);
 
-PyAPI_FUNC(PyObject*) _PyThread_Info(void);
+PyAPI_FUNC(PyObject*) PyThread_GetInfo(void);
 
 /* Thread Local Storage (TLS) API */
 PyAPI_FUNC(int) PyThread_create_key(void);
