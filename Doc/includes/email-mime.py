@@ -26,6 +26,6 @@ for file in pngfiles:
     msg.attach(img)
 
 # Send the email via our own SMTP server.
-s = smtplib.SMTP()
+s = smtplib.SMTP('localhost')
 s.send_message(msg)
 s.quit()
