@@ -450,10 +450,10 @@ always available.
    struct sequence  :data:`sys.version_info` may be used for a more human-friendly
    encoding of the same information.
 
-   The ``hexversion`` is a 32-bit number with the following layout
+   The ``hexversion`` is a 32-bit number with the following layout:
 
    +-------------------------+------------------------------------------------+
-   | bits (big endian order) | meaning                                        |
+   | Bits (big endian order) | Meaning                                        |
    +=========================+================================================+
    | :const:`1-8`            |  ``PY_MAJOR_VERSION``  (the ``2`` in           |
    |                         |  ``2.1.0a3``)                                  |
@@ -465,14 +465,14 @@ always available.
    |                         |  ``2.1.0a3``)                                  |
    +-------------------------+------------------------------------------------+
    | :const:`25-28`          |  ``PY_RELEASE_LEVEL``  (``0xA`` for alpha,     |
-   |                         |  ``0xB`` for beta, ``0xC`` for gamma and       |
-   |                         |  ``0xF`` for final)                            |
+   |                         |  ``0xB`` for beta, ``0xC`` for release         |
+   |                         |  candidate and ``0xF`` for final)              |
    +-------------------------+------------------------------------------------+
    | :const:`29-32`          |  ``PY_RELEASE_SERIAL``  (the ``3`` in          |
-   |                         |  ``2.1.0a3``)                                  |
+   |                         |  ``2.1.0a3``, zero for final releases)         |
    +-------------------------+------------------------------------------------+
 
-   thus ``2.1.0a3`` is hexversion ``0x020100a3``
+   Thus ``2.1.0a3`` is hexversion ``0x020100a3``.
 
 .. data:: int_info
 
@@ -480,7 +480,7 @@ always available.
    internal representation of integers.  The attributes are read only.
 
    +-------------------------+----------------------------------------------+
-   | attribute               | explanation                                  |
+   | Attribute               | Explanation                                  |
    +=========================+==============================================+
    | :const:`bits_per_digit` | number of bits held in each digit.  Python   |
    |                         | integers are stored internally in base       |
