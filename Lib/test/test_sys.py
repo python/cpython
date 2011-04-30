@@ -478,7 +478,7 @@ class SysModuleTest(unittest.TestCase):
                          'Threading required for this test.')
     def test_thread_info(self):
         info = sys.thread_info
-        self.assertTrue(len(info), 3)
+        self.assertEqual(len(info), 3)
         self.assertIn(info.name, ('nt', 'os2', 'pthread', 'solaris', None))
         self.assertIn(info.lock, ('semaphore', 'mutex+cond', None))
 
