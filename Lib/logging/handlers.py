@@ -388,7 +388,7 @@ class WatchedFileHandler(logging.FileHandler):
         """
         if not os.path.exists(self.baseFilename):
             stat = None
-            changed = 1
+            changed = True
         else:
             stat = os.stat(self.baseFilename)
             changed = (stat[ST_DEV] != self.dev) or (stat[ST_INO] != self.ino)
@@ -418,15 +418,15 @@ class SocketHandler(logging.Handler):
         """
         Initializes the handler with a specific host address and port.
 
-        The attribute 'closeOnError' is set to 1 - which means that if
-        a socket error occurs, the socket is silently closed and then
-        reopened on the next logging call.
+        When the attribute *closeOnError* is set to True - if a socket error
+        occurs, the socket is silently closed and then reopened on the next
+        logging call.
         """
         logging.Handler.__init__(self)
         self.host = host
         self.port = port
         self.sock = None
-        self.closeOnError = 0
+        self.closeOnError = False
         self.retryTime = None
         #
         # Exponential backoff parameters.
@@ -457,7 +457,7 @@ class SocketHandler(logging.Handler):
         # is the first time back after a disconnect, or
         # we've waited long enough.
         if self.retryTime is None:
-            attempt = 1
+            attempt = True
         else:
             attempt = (now >= self.retryTime)
         if attempt:
@@ -572,7 +572,7 @@ class DatagramHandler(SocketHandler):
         Initializes the handler with a specific host address and port.
         """
         SocketHandler.__init__(self, host, port)
-        self.closeOnError = 0
+        self.closeOnError = False
 
     def makeSocket(self):
         """
