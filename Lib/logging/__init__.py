@@ -688,14 +688,14 @@ class Filterer(object):
 
            Allow filters to be just callables.
         """
-        rv = 1
+        rv = True
         for f in self.filters:
             if hasattr(f, 'filter'):
                 result = f.filter(record)
             else:
                 result = f(record) # assume callable - will raise if not
             if not result:
-                rv = 0
+                rv = False
                 break
         return rv
 
@@ -1197,9 +1197,9 @@ class Logger(Filterer):
         self.name = name
         self.level = _checkLevel(level)
         self.parent = None
-        self.propagate = 1
+        self.propagate = True
         self.handlers = []
-        self.disabled = 0
+        self.disabled = False
 
     def setLevel(self, level):
         """
@@ -1567,7 +1567,7 @@ class LoggerAdapter(object):
         """
         Delegate an exception call to the underlying logger.
         """
-        kwargs["exc_info"] = 1
+        kwargs["exc_info"] = True
         self.log(ERROR, msg, *args, **kwargs)
 
     def critical(self, msg, *args, **kwargs):
