@@ -19,6 +19,6 @@ msg['To'] = you
 
 # Send the message via our own SMTP server, but don't include the
 # envelope header.
-s = smtplib.SMTP()
+s = smtplib.SMTP('localhost')
 s.sendmail(me, [you], msg.as_string())
 s.quit()
