@@ -127,6 +127,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8407: Add signal.pthread_sigmask() function to fetch and/or change the
+  signal mask of the calling thread.
+
 - Issue #11858: configparser.ExtendedInterpolation expected lower-case section
   names.
 
@@ -530,6 +533,10 @@ Extensions
 
 Tests
 -----
+
+- Issue #8407, #11859: Fix tests of test_io using threads and an alarm: use
+  pthread_sigmask() to ensure that the SIGALRM signal is received by the main
+  thread.
 
 - Issue #11811: Factor out detection of IPv6 support on the current host
   and make it available as ``test.support.IPV6_ENABLED``.  Patch by

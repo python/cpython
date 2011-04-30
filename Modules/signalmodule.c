@@ -22,6 +22,14 @@
 #include <sys/time.h>
 #endif
 
+#if defined(HAVE_PTHREAD_SIGMASK) && !defined(HAVE_BROKEN_PTHREAD_SIGMASK)
+#  define PYPTHREAD_SIGMASK
+#endif
+
+#if defined(PYPTHREAD_SIGMASK) && defined(HAVE_PTHREAD_H)
+#  include <pthread.h>
+#endif
+
 #ifndef SIG_ERR
 #define SIG_ERR ((PyOS_sighandler_t)(-1))
 #endif
@@ -495,6 +503,110 @@ PyDoc_STRVAR(getitimer_doc,
 Returns current value of given itimer.");
 #endif
 
+#ifdef PYPTHREAD_SIGMASK
+/* Convert an iterable to a sigset.
+   Return 0 on success, return -1 and raise an exception on error. */
+
+static int
+iterable_to_sigset(PyObject *iterable, sigset_t *mask)
+{
+    int result = -1;
+    PyObject *iterator, *item;
+    long signum;
+    int err;
+
+    sigemptyset(mask);
+
+    iterator = PyObject_GetIter(iterable);
+    if (iterator == NULL)
+        goto error;
+
+    while (1)
+    {
+        item = PyIter_Next(iterator);
+        if (item == NULL) {
+            if (PyErr_Occurred())
+                goto error;
+            else
+                break;
+        }
+
+        signum = PyLong_AsLong(item);
+        Py_DECREF(item);
+        if (signum == -1 && PyErr_Occurred())
+            goto error;
+        if (0 < signum && signum < NSIG)
+            err = sigaddset(mask, (int)signum);
+        else
+            err = 1;
+        if (err) {
+            PyErr_Format(PyExc_ValueError,
+                         "signal number %ld out of range", signum);
+            goto error;
+        }
+    }
+    result = 0;
+
+error:
+    Py_XDECREF(iterator);
+    return result;
+}
+
+static PyObject *
+signal_pthread_sigmask(PyObject *self, PyObject *args)
+{
+    int how, sig;
+    PyObject *signals, *result, *signum;
+    sigset_t mask, previous;
+    int err;
+
+    if (!PyArg_ParseTuple(args, "iO:pthread_sigmask", &how, &signals))
+        return NULL;
+
+    if (iterable_to_sigset(signals, &mask))
+        return NULL;
+
+    err = pthread_sigmask(how, &mask, &previous);
+    if (err != 0) {
+        errno = err;
+        PyErr_SetFromErrno(PyExc_RuntimeError);
+        return NULL;
+    }
+
+    result = PyList_New(0);
+    if (result == NULL)
+        return NULL;
+
+    for (sig = 1; sig < NSIG; sig++) {
+        if (sigismember(&previous, sig) != 1)
+            continue;
+
+        /* Handle the case where it is a member by adding the signal to
+           the result list.  Ignore the other cases because they mean the
+           signal isn't a member of the mask or the signal was invalid,
+           and an invalid signal must have been our fault in constructing
+           the loop boundaries. */
+        signum = PyLong_FromLong(sig);
+        if (signum == NULL) {
+            Py_DECREF(result);
+            return NULL;
+        }
+        if (PyList_Append(result, signum) == -1) {
+            Py_DECREF(signum);
+            Py_DECREF(result);
+            return NULL;
+        }
+        Py_DECREF(signum);
+    }
+    return result;
+}
+
+PyDoc_STRVAR(signal_pthread_sigmask_doc,
+"pthread_sigmask(how, mask) -> old mask\n\
+\n\
+Fetch and/or change the signal mask of the calling thread.");
+#endif   /* #ifdef PYPTHREAD_SIGMASK */
+
 
 /* List of functions defined in the module */
 static PyMethodDef signal_methods[] = {
@@ -515,10 +627,14 @@ static PyMethodDef signal_methods[] = {
 #endif
 #ifdef HAVE_PAUSE
     {"pause",                   (PyCFunction)signal_pause,
-     METH_NOARGS,pause_doc},
+     METH_NOARGS, pause_doc},
 #endif
     {"default_int_handler", signal_default_int_handler,
      METH_VARARGS, default_int_handler_doc},
+#ifdef PYPTHREAD_SIGMASK
+    {"pthread_sigmask",         (PyCFunction)signal_pthread_sigmask,
+     METH_VARARGS, signal_pthread_sigmask_doc},
+#endif
     {NULL,                      NULL}           /* sentinel */
 };
 
@@ -602,6 +718,27 @@ PyInit_signal(void)
     if (!x || PyDict_SetItemString(d, "NSIG", x) < 0)
         goto finally;
     Py_DECREF(x);
+
+#ifdef SIG_BLOCK
+    x = PyLong_FromLong(SIG_BLOCK);
+    if (!x || PyDict_SetItemString(d, "SIG_BLOCK", x) < 0)
+        goto finally;
+    Py_DECREF(x);
+#endif
+
+#ifdef SIG_UNBLOCK
+    x = PyLong_FromLong(SIG_UNBLOCK);
+    if (!x || PyDict_SetItemString(d, "SIG_UNBLOCK", x) < 0)
+        goto finally;
+    Py_DECREF(x);
+#endif
+
+#ifdef SIG_SETMASK
+    x = PyLong_FromLong(SIG_SETMASK);
+    if (!x || PyDict_SetItemString(d, "SIG_SETMASK", x) < 0)
+        goto finally;
+    Py_DECREF(x);
+#endif
 
     x = IntHandler = PyDict_GetItemString(d, "default_int_handler");
     if (!x)
