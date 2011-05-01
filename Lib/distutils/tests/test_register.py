@@ -138,7 +138,7 @@ class RegisterTestCase(PyPIRCCommandTestCase):
 
         # let's see what the server received : we should
         # have 2 similar requests
-        self.assertTrue(self.conn.reqs, 2)
+        self.assertEqual(len(self.conn.reqs), 2)
         req1 = dict(self.conn.reqs[0].headers)
         req2 = dict(self.conn.reqs[1].headers)
         self.assertEqual(req2['Content-length'], req1['Content-length'])
@@ -168,7 +168,7 @@ class RegisterTestCase(PyPIRCCommandTestCase):
             del register_module.raw_input
 
         # we should have send a request
-        self.assertTrue(self.conn.reqs, 1)
+        self.assertEqual(len(self.conn.reqs), 1)
         req = self.conn.reqs[0]
         headers = dict(req.headers)
         self.assertEqual(headers['Content-length'], '608')
@@ -186,7 +186,7 @@ class RegisterTestCase(PyPIRCCommandTestCase):
             del register_module.raw_input
 
         # we should have send a request
-        self.assertTrue(self.conn.reqs, 1)
+        self.assertEqual(len(self.conn.reqs), 1)
         req = self.conn.reqs[0]
         headers = dict(req.headers)
         self.assertEqual(headers['Content-length'], '290')
