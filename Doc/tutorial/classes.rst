@@ -754,6 +754,8 @@ returns an object with a :meth:`__next__` method.  If the class defines
            self.index = self.index - 1
            return self.data[self.index]
 
+::
+
    >>> rev = Reverse('spam')
    >>> iter(rev)
    <__main__.Reverse object at 0x00A1DB50>
@@ -781,6 +783,8 @@ easy to create::
    def reverse(data):
        for index in range(len(data)-1, -1, -1):
            yield data[index]
+
+::
 
    >>> for char in reverse('golf'):
    ...     print(char)
