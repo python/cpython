@@ -79,6 +79,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11277: mmap.mmap() calls fcntl(fd, F_FULLFSYNC) on Mac OS X to get
+  around a mmap bug with sparse files. Patch written by Steffen Daode Nurpmeso.
+
 - Issue #11858: configparser.ExtendedInterpolation expected lower-case section
   names.
 
