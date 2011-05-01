@@ -31,7 +31,7 @@ python \- an interpreted, interactive, object-oriented programming language
 .B \-O
 ]
 [
-.B \-O0
+.B \-OO
 ]
 [
 .B -Q
@@ -142,7 +142,7 @@ compiled (bytecode) files from
 .I .pyc
 to \fI.pyo\fP.  Given twice, causes docstrings to be discarded.
 .TP
-.B \-O0
+.B \-OO
 Discard docstrings in addition to the \fB-O\fP optimizations.
 .TP
 .BI "\-Q " argument
