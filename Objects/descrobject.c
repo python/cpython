@@ -224,7 +224,8 @@ methoddescr_call(PyMethodDescrObject *descr, PyObject *args, PyObject *kwds)
         return NULL;
     }
     self = PyTuple_GET_ITEM(args, 0);
-    if (!PyObject_IsInstance(self, (PyObject *)(descr->d_type))) {
+    if (!_PyObject_RealIsSubclass((PyObject *)Py_TYPE(self),
+                                  (PyObject *)(descr->d_type))) {
         PyErr_Format(PyExc_TypeError,
                      "descriptor '%.200s' "
                      "requires a '%.100s' object "
@@ -282,7 +283,8 @@ wrapperdescr_call(PyWrapperDescrObject *descr, PyObject *args, PyObject *kwds)
         return NULL;
     }
     self = PyTuple_GET_ITEM(args, 0);
-    if (!PyObject_IsInstance(self, (PyObject *)(descr->d_type))) {
+    if (!_PyObject_RealIsSubclass((PyObject *)Py_TYPE(self),
+                                  (PyObject *)(descr->d_type))) {
         PyErr_Format(PyExc_TypeError,
                      "descriptor '%.200s' "
                      "requires a '%.100s' object "
@@ -1046,7 +1048,8 @@ PyWrapper_New(PyObject *d, PyObject *self)
 
     assert(PyObject_TypeCheck(d, &PyWrapperDescr_Type));
     descr = (PyWrapperDescrObject *)d;
-    assert(PyObject_IsInstance(self, (PyObject *)(descr->d_type)));
+    assert(_PyObject_RealIsSubclass((PyObject *)Py_TYPE(self),
+                                    (PyObject *)(descr->d_type)));
 
     wp = PyObject_GC_New(wrapperobject, &wrappertype);
     if (wp != NULL) {
