@@ -23,6 +23,9 @@
 
 #ifndef MS_WINDOWS
 #define UNIX
+# ifdef __APPLE__
+#  include <fcntl.h>
+# endif
 #endif
 
 #ifdef MS_WINDOWS
@@ -1091,6 +1094,12 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
                             "mmap invalid access parameter.");
     }
 
+#ifdef __APPLE__
+    /* Issue #11277: fsync(2) is not enough on OS X - a special, OS X specific
+       fcntl(2) is necessary to force DISKSYNC and get around mmap(2) bug */
+    if (fd != -1)
+        (void)fcntl(fd, F_FULLFSYNC);
+#endif
 #ifdef HAVE_FSTAT
 #  ifdef __VMS
     /* on OpenVMS we must ensure that all bytes are written to the file */
