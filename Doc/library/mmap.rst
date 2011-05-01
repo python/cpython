@@ -86,6 +86,10 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    defaults to 0.  *offset* must be a multiple of the PAGESIZE or
    ALLOCATIONGRANULARITY.
 
+   To ensure validity of the created memory mapping the file specified
+   by the descriptor *fileno* is internally automatically synchronized
+   with physical backing store on Mac OS X and OpenVMS.
+
    This example shows a simple way of using :class:`mmap`::
 
       import mmap
