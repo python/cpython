@@ -10,6 +10,11 @@ What's New in Python 3.2.1?
 Core and Builtins
 -----------------
 
+- Issue #9756: When calling a method descriptor or a slot wrapper descriptor,
+  the check of the object type doesn't read the __class__ attribute anymore.
+  Fix a crash if a class override its __class__ attribute (e.g. a proxy of the
+  str type).
+
 - Issue #10914: Initialize correctly the filesystem codec when creating a new
   subinterpreter to fix a bootstrap issue with codecs implemented in Python, as
   the ISO-8859-15 codec.

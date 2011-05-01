@@ -4235,6 +4235,22 @@ order (MRO) for bases """
         with self.assertRaises(AttributeError):
             del X.__abstractmethods__
 
+    def test_proxy_call(self):
+        class FakeStr:
+            __class__ = str
+
+        fake_str = FakeStr()
+        # isinstance() reads __class__
+        self.assertTrue(isinstance(fake_str, str))
+
+        # call a method descriptor
+        with self.assertRaises(TypeError):
+            str.split(fake_str)
+
+        # call a slot wrapper descriptor
+        with self.assertRaises(TypeError):
+            str.__add__(fake_str, "abc")
+
 
 class DictProxyTests(unittest.TestCase):
     def setUp(self):
