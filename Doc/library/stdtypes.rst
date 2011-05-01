@@ -354,8 +354,8 @@ Notes:
    for a complete list of code points with the ``Nd`` property.
 
 
-All :class:`numbers.Real` types (:class:`int` and
-:class:`float`) also include the following operations:
+All :class:`numbers.Real` types (:class:`int` and :class:`float`) also include
+the following operations:
 
 +--------------------+------------------------------------+--------+
 | Operation          | Result                             | Notes  |
@@ -438,6 +438,9 @@ Notes:
 
 Additional Methods on Integer Types
 -----------------------------------
+
+The int type implements the :class:`numbers.Integral` :term:`abstact base
+class`. In addition, it provides one more method
 
 .. method:: int.bit_length()
 
@@ -532,7 +535,8 @@ Additional Methods on Integer Types
 Additional Methods on Float
 ---------------------------
 
-The float type has some additional methods.
+The float type implements the :class:`numbers.Real` :term:`abstract base
+class`. float also has the following additional methods.
 
 .. method:: float.as_integer_ratio()
 
