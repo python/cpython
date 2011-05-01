@@ -730,7 +730,6 @@ built-in function; this example shows how it all works::
    >>> next(it)
    'c'
    >>> next(it)
-
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
        next(it)
@@ -742,7 +741,7 @@ returns an object with a :meth:`__next__` method.  If the class defines
 :meth:`__next__`, then :meth:`__iter__` can just return ``self``::
 
    class Reverse:
-       "Iterator for looping over a sequence backwards"
+       """Iterator for looping over a sequence backwards."""
        def __init__(self, data):
            self.data = data
            self.index = len(data)
@@ -753,6 +752,8 @@ returns an object with a :meth:`__next__` method.  If the class defines
                raise StopIteration
            self.index = self.index - 1
            return self.data[self.index]
+
+::
 
    >>> rev = Reverse('spam')
    >>> iter(rev)
@@ -781,6 +782,8 @@ easy to create::
    def reverse(data):
        for index in range(len(data)-1, -1, -1):
            yield data[index]
+
+::
 
    >>> for char in reverse('golf'):
    ...     print(char)
