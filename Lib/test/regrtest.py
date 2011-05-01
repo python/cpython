@@ -637,7 +637,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     assert result[1] == 'KeyboardInterrupt'
                     raise KeyboardInterrupt   # What else?
                 if result[0] == CHILD_ERROR:
-                    raise Exception("Child error: {}".format(result[1]))
+                    raise Exception("Child error on {}: {}".format(test, result[1]))
                 accumulate_result(test, result)
                 test_index += 1
         except KeyboardInterrupt:
