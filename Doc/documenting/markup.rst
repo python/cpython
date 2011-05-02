@@ -239,8 +239,8 @@ The directives are:
 
    Describes an object method.  The parameters should not include the ``self``
    parameter.  The description should include similar information to that
-   described for ``function``.  This method should be nested in a class
-   method, like in the example above.
+   described for ``function``.  This directive should be nested in a class
+   directive, like in the example above.
 
 .. describe:: decoratormethod
 
