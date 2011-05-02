@@ -23,10 +23,12 @@ from collections import ByteString
 ### _ChainMap (helper class for configparser)
 ################################################################################
 
+ChainMap = _ChainMap  # rename to keep test code in sync with 3.3 version
+
 class TestChainMap(unittest.TestCase):
 
     def test_basics(self):
-        c = _ChainMap()
+        c = ChainMap()
         c['a'] = 1
         c['b'] = 2
         d = c.new_child()
@@ -71,19 +73,25 @@ class TestChainMap(unittest.TestCase):
             for m1, m2 in zip(d.maps, e.maps):
                 self.assertIsNot(m1, m2, e)
 
-        d = d.new_child()
-        d['b'] = 5
-        self.assertEqual(d.maps, [{'b': 5}, {'c':30}, {'a':1, 'b':2}])
-        self.assertEqual(d.parents.maps, [{'c':30}, {'a':1, 'b':2}])   # check parents
-        self.assertEqual(d['b'], 5)                                    # find first in chain
-        self.assertEqual(d.parents['b'], 2)                            # look beyond maps[0]
+        f = d.new_child()
+        f['b'] = 5
+        self.assertEqual(f.maps, [{'b': 5}, {'c':30}, {'a':1, 'b':2}])
+        self.assertEqual(f.parents.maps, [{'c':30}, {'a':1, 'b':2}])   # check parents
+        self.assertEqual(f['b'], 5)                                    # find first in chain
+        self.assertEqual(f.parents['b'], 2)                            # look beyond maps[0]
 
     def test_contructor(self):
-        self.assertEqual(_ChainMap().maps, [{}])                  # no-args --> one new dict
-        self.assertEqual(_ChainMap({1:2}).maps, [{1:2}])                # 1 arg --> list
+        self.assertEqual(ChainMap().maps, [{}])                        # no-args --> one new dict
+        self.assertEqual(ChainMap({1:2}).maps, [{1:2}])                # 1 arg --> list
+
+    def test_bool(self):
+        self.assertFalse(ChainMap())
+        self.assertFalse(ChainMap({}, {}))
+        self.assertTrue(ChainMap({1:2}, {}))
+        self.assertTrue(ChainMap({}, {1:2}))
 
     def test_missing(self):
-        class DefaultChainMap(_ChainMap):
+        class DefaultChainMap(ChainMap):
             def __missing__(self, key):
                 return 999
         d = DefaultChainMap(dict(a=1, b=2), dict(b=20, c=30))
@@ -100,7 +108,7 @@ class TestChainMap(unittest.TestCase):
             d.popitem()
 
     def test_dict_coercion(self):
-        d = _ChainMap(dict(a=1, b=2), dict(b=20, c=30))
+        d = ChainMap(dict(a=1, b=2), dict(b=20, c=30))
         self.assertEqual(dict(d), dict(a=1, b=2, c=30))
         self.assertEqual(dict(d.items()), dict(a=1, b=2, c=30))
 
