@@ -1291,8 +1291,8 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
 
     def test_strftime_y2k(self):
         for y in (1, 49, 70, 99, 100, 999, 1000, 1970):
-            self.assertEqual(self.theclass(y, 1, 1).strftime("%Y"),
-                             '%04d' % y)
+            self.assertIn(self.theclass(y, 1, 1).strftime("%Y"),
+                          [str(y),'%04d' % y])
 
     def test_replace(self):
         cls = self.theclass
