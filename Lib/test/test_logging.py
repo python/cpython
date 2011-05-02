@@ -603,6 +603,12 @@ class StreamHandlerTest(BaseTest):
 # -- if it proves to be of wider utility than just test_logging
 
 class TestSMTPChannel(smtpd.SMTPChannel):
+    """
+    This derived class has had to be created because smtpd does not
+    support use of custom channel maps, although they are allowed by
+    asyncore's design. Issue #11959 has been raised to address this,
+    and if resolved satisfactorily, some of this code can be removed.
+    """
     def __init__(self, server, conn, addr, sockmap):
         asynchat.async_chat.__init__(self, conn, sockmap)
         self.smtp_server = server
@@ -630,6 +636,25 @@ class TestSMTPChannel(smtpd.SMTPChannel):
 
 
 class TestSMTPServer(smtpd.SMTPServer):
+    """
+    This class implements a test SMTP server.
+
+    :param addr: A (host, port) tuple which the server listens on.
+                 You can specify a port value of zero: the server's
+                 *port* attribute will hold the actual port number
+                 used, which can be used in client connections.
+    :param handler: A callable which will be called to process
+                    incoming messages. The handler will be passed
+                    the client address tuple, who the message is from,
+                    a list of recipients and the message data.
+    :param poll_interval: The interval, in seconds, used in the underlying
+                          :func:`select` or :func:`poll` call by
+                          :func:`asyncore.loop`.
+    :param sockmap: A dictionary which will be used to hold
+                    :class:`asyncore.dispatcher` instances used by
+                    :func:`asyncore.loop`. This avoids changing the
+                    :mod:`asyncore` module's global state.
+    """
     channel_class = TestSMTPChannel
 
     def __init__(self, addr, handler, poll_interval, sockmap):
@@ -654,22 +679,51 @@ class TestSMTPServer(smtpd.SMTPServer):
         self.poll_interval = poll_interval
 
     def handle_accepted(self, conn, addr):
-        print('Incoming connection from %s' % repr(addr), file=smtpd.DEBUGSTREAM)
+        """
+        Redefined only because the base class does not pass in a
+        map, forcing use of a global in :mod:`asyncore`.
+        """
         channel = self.channel_class(self, conn, addr, self.sockmap)
 
     def process_message(self, peer, mailfrom, rcpttos, data):
+        """
+        Delegates to the handler passed in to the server's constructor.
+
+        Typically, this will be a test case method.
+        :param peer: The client (host, port) tuple.
+        :param mailfrom: The address of the sender.
+        :param rcpttos: The addresses of the recipients.
+        :param data: The message.
+        """
         self._handler(peer, mailfrom, rcpttos, data)
 
     def start(self):
+        """
+        Start the server running on a separate daemon thread.
+        """
         self._thread = t = threading.Thread(target=self.serve_forever,
                                             args=(self.poll_interval,))
         t.setDaemon(True)
         t.start()
 
     def serve_forever(self, poll_interval):
+        """
+        Run the :mod:`asyncore` loop until normal termination
+        conditions arise.
+        :param poll_interval: The interval, in seconds, used in the underlying
+                              :func:`select` or :func:`poll` call by
+                              :func:`asyncore.loop`.
+        """
         asyncore.loop(poll_interval, map=self.sockmap)
 
     def stop(self, timeout=None):
+        """
+        Stop the thread by closing the server instance.
+        Wait for the server thread to terminate.
+
+        :param timeout: How long to wait for the server thread
+                        to terminate.
+        """
         self.close()
         self._thread.join(timeout)
         self._thread = None
@@ -706,12 +760,19 @@ class ControlMixin(object):
         t.start()
 
     def serve_forever(self, poll_interval):
+        """
+        Run the server. Set the ready flag before entering the
+        service loop.
+        """
         self.ready.set()
         super(ControlMixin, self).serve_forever(poll_interval)
 
     def stop(self, timeout=None):
         """
         Tell the server thread to stop, and wait for it to do so.
+
+        :param timeout: How long to wait for the server thread
+                        to terminate.
         """
         self.shutdown()
         if self._thread is not None:
@@ -729,6 +790,7 @@ class TestHTTPServer(ControlMixin, HTTPServer):
                     single parameter - the request - in order to
                     process the request.
     :param poll_interval: The polling interval in seconds.
+    :param log: Pass ``True`` to enable log messages.
     """
     def __init__(self, addr, handler, poll_interval=0.5, log=False):
         class DelegatingHTTPRequestHandler(BaseHTTPRequestHandler):
