@@ -1792,6 +1792,10 @@ Notes:
       In previous versions, :meth:`strftime` method was restricted to
       years >= 1900.
 
+   .. versionchanged:: 3.3
+      In version 3.2, :meth:`strftime` method was restricted to
+      years >= 1000.
+
 (6)
    For example, if :meth:`utcoffset` returns ``timedelta(hours=-3, minutes=-30)``,
    ``%z`` is replaced with the string ``'-0330'``.
