@@ -1750,8 +1750,7 @@ format codes.
 |           | decimal number [00,99].        |       |
 +-----------+--------------------------------+-------+
 | ``%Y``    | Year with century as a decimal | \(5)  |
-|           | number [0001,9999] (strptime), |       |
-|           | [1000,9999] (strftime).        |       |
+|           | number [0001,9999].            |       |
 +-----------+--------------------------------+-------+
 | ``%z``    | UTC offset in the form +HHMM   | \(6)  |
 |           | or -HHMM (empty string if the  |       |
@@ -1785,10 +1784,7 @@ Notes:
    calculations when the day of the week and the year are specified.
 
 (5)
-   For technical reasons, :meth:`strftime` method does not support
-   dates before year 1000: ``t.strftime(format)`` will raise a
-   :exc:`ValueError` when ``t.year < 1000`` even if ``format`` does
-   not contain ``%Y`` directive.  The :meth:`strptime` method can
+   The :meth:`strptime` method can
    parse years in the full [1, 9999] range, but years < 1000 must be
    zero-filled to 4-digit width.
 

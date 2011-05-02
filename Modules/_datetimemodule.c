@@ -1166,31 +1166,6 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     if (!pin)
         return NULL;
 
-    /* Give up if the year is before 1000.
-     * Python strftime() plays games with the year, and different
-     * games depending on whether envar PYTHON2K is set.  This makes
-     * years before 1000 a nightmare, even if the platform strftime
-     * supports them (and not all do).
-     * We could get a lot farther here by avoiding Python's strftime
-     * wrapper and calling the C strftime() directly, but that isn't
-     * an option in the Python implementation of this module.
-     */
-    {
-        long year;
-        PyObject *pyyear = PySequence_GetItem(timetuple, 0);
-        if (pyyear == NULL) return NULL;
-        assert(PyLong_Check(pyyear));
-        year = PyLong_AsLong(pyyear);
-        Py_DECREF(pyyear);
-        if (year < 1000) {
-            PyErr_Format(PyExc_ValueError, "year=%ld is before "
-                         "1000; the datetime strftime() "
-                         "methods require year >= 1000",
-                         year);
-            return NULL;
-        }
-    }
-
     /* Scan the input format, looking for %z/%Z/%f escapes, building
      * a new format.  Since computing the replacements for those codes
      * is expensive, don't unless they're actually used.
