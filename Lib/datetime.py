@@ -172,10 +172,6 @@ def _format_time(hh, mm, ss, us):
 
 # Correctly substitute for %z and %Z escapes in strftime formats.
 def _wrap_strftime(object, format, timetuple):
-    year = timetuple[0]
-    if year < 1000:
-        raise ValueError("year=%d is before 1000; the datetime strftime() "
-                         "methods require year >= 1000" % year)
     # Don't call utcoffset() or tzname() unless actually needed.
     freplace = None # the string to use for %f
     zreplace = None # the string to use for %z
