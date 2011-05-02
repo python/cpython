@@ -720,24 +720,16 @@ PyInit_signal(void)
     Py_DECREF(x);
 
 #ifdef SIG_BLOCK
-    x = PyLong_FromLong(SIG_BLOCK);
-    if (!x || PyDict_SetItemString(d, "SIG_BLOCK", x) < 0)
-        goto finally;
-    Py_DECREF(x);
+    if (PyModule_AddIntMacro(m, SIG_BLOCK))
+         goto finally;
 #endif
-
 #ifdef SIG_UNBLOCK
-    x = PyLong_FromLong(SIG_UNBLOCK);
-    if (!x || PyDict_SetItemString(d, "SIG_UNBLOCK", x) < 0)
-        goto finally;
-    Py_DECREF(x);
+    if (PyModule_AddIntMacro(m, SIG_UNBLOCK))
+         goto finally;
 #endif
-
 #ifdef SIG_SETMASK
-    x = PyLong_FromLong(SIG_SETMASK);
-    if (!x || PyDict_SetItemString(d, "SIG_SETMASK", x) < 0)
-        goto finally;
-    Py_DECREF(x);
+    if (PyModule_AddIntMacro(m, SIG_SETMASK))
+         goto finally;
 #endif
 
     x = IntHandler = PyDict_GetItemString(d, "default_int_handler");
