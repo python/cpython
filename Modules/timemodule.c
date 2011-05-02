@@ -869,7 +869,6 @@ PyMODINIT_FUNC
 PyInit_time(void)
 {
     PyObject *m;
-    char *p;
     m = PyModule_Create(&timemodule);
     if (m == NULL)
         return NULL;
