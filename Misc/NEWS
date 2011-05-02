@@ -132,6 +132,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11930: Removed deprecated time.accept2dyear variable.
+  Removed year >= 1000 restriction from datetime.strftime.
+
 - logging: don't define QueueListener if Python has no thread support.
 
 - Issue #11277: mmap.mmap() calls fcntl(fd, F_FULLFSYNC) on Mac OS X to get
