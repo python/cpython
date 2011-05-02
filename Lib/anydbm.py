@@ -29,17 +29,8 @@ It has the following interface (key and data are strings):
         list = d.keys() # return a list of all existing keys (slow!)
 
 Future versions may change the order in which implementations are
-tested for existence, add interfaces to other dbm-like
+tested for existence, and add interfaces to other dbm-like
 implementations.
-
-The open function has an optional second argument.  This can be 'r',
-for read-only access, 'w', for read-write access of an existing
-database, 'c' for read-write access to a new or existing database, and
-'n' for read-write access to a new database.  The default is 'r'.
-
-Note: 'r' and 'w' fail if the database doesn't exist; 'c' creates it
-only if it doesn't exist; and 'n' always creates a new database.
-
 """
 
 class error(Exception):
@@ -63,7 +54,18 @@ if not _defaultmod:
 
 error = tuple(_errors)
 
-def open(file, flag = 'r', mode = 0666):
+def open(file, flag='r', mode=0666):
+    """Open or create database at path given by *file*.
+
+    Optional argument *flag* can be 'r' (default) for read-only access, 'w'
+    for read-write access of an existing database, 'c' for read-write access
+    to a new or existing database, and 'n' for read-write access to a new
+    database.
+
+    Note: 'r' and 'w' fail if the database doesn't exist; 'c' creates it
+    only if it doesn't exist; and 'n' always creates a new database.
+    """
+
     # guess the type of an existing database
     from whichdb import whichdb
     result=whichdb(file)
