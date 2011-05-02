@@ -1385,7 +1385,10 @@ class DatagramHandlerTest(BaseTest):
         logger = logging.getLogger("udp")
         logger.error("spam")
         self.handled.wait()
-        self.assertEqual(self.log_output, "spam\n")
+        self.handled.clear()
+        logger.error("eggs")
+        self.handled.wait()
+        self.assertEqual(self.log_output, "spam\neggs\n")
 
 
 @unittest.skipUnless(threading, 'Threading required for this test.')
@@ -2631,6 +2634,8 @@ class QueueHandlerTest(BaseTest):
         self.assertEqual(data.name, self.que_logger.name)
         self.assertEqual((data.msg, data.args), (msg, None))
 
+    @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
+                         'logging.handlers.QueueListener required for this test')
     def test_queue_listener(self):
         handler = TestHandler(Matcher())
         listener = logging.handlers.QueueListener(self.queue, handler)
