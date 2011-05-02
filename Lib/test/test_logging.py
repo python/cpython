@@ -2634,6 +2634,8 @@ class QueueHandlerTest(BaseTest):
         self.assertEqual(data.name, self.que_logger.name)
         self.assertEqual((data.msg, data.args), (msg, None))
 
+    @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
+                         'logging.handlers.QueueListener required for this test')
     def test_queue_listener(self):
         handler = TestHandler(Matcher())
         listener = logging.handlers.QueueListener(self.queue, handler)
