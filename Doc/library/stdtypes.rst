@@ -460,8 +460,8 @@ Notes:
 Additional Methods on Integer Types
 -----------------------------------
 
-The int type implements the :class:`numbers.Integral` :term:`abstract base
-class`. In addition, it provides one more method
+The integer types implement the :class:`numbers.Integral` :term:`abstract base
+class`. In addition, they provide one more method:
 
 .. method:: int.bit_length()
 .. method:: long.bit_length()
