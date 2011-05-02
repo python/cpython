@@ -1385,7 +1385,10 @@ class DatagramHandlerTest(BaseTest):
         logger = logging.getLogger("udp")
         logger.error("spam")
         self.handled.wait()
-        self.assertEqual(self.log_output, "spam\n")
+        self.handled.clear()
+        logger.error("eggs")
+        self.handled.wait()
+        self.assertEqual(self.log_output, "spam\neggs\n")
 
 
 @unittest.skipUnless(threading, 'Threading required for this test.')
