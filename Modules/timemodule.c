@@ -66,9 +66,6 @@ static long main_thread;
 static int floatsleep(double);
 static double floattime(void);
 
-/* For Y2K check */
-static PyObject *moddict;
-
 static PyObject *
 time_time(PyObject *self, PyObject *unused)
 {
@@ -311,49 +308,6 @@ gettmarg(PyObject *args, struct tm *p)
                           &p->tm_hour, &p->tm_min, &p->tm_sec,
                           &p->tm_wday, &p->tm_yday, &p->tm_isdst))
         return 0;
-
-    /* If year is specified with less than 4 digits, its interpretation
-     * depends on the accept2dyear value.
-     *
-     * If accept2dyear is true (default), a backward compatibility behavior is
-     * invoked as follows:
-     *
-     *   - for 2-digit year, century is guessed according to POSIX rules for
-     *      %y strptime format: 21st century for y < 69, 20th century
-     *      otherwise.  A deprecation warning is issued when century
-     *      information is guessed in this way.
-     *
-     *   - for 3-digit or negative year, a ValueError exception is raised.
-     *
-     * If accept2dyear is false (set by the program or as a result of a
-     * non-empty value assigned to PYTHONY2K environment variable) all year
-     * values are interpreted as given.
-     */
-    if (y < 1000) {
-        PyObject *accept = PyDict_GetItemString(moddict,
-                                                "accept2dyear");
-        if (accept != NULL) {
-            int acceptval =  PyObject_IsTrue(accept);
-            if (acceptval == -1)
-                return 0;
-            if (acceptval) {
-                if (0 <= y && y < 69)
-                    y += 2000;
-                else if (69 <= y && y < 100)
-                    y += 1900;
-                else {
-                    PyErr_SetString(PyExc_ValueError,
-                                    "year out of range");
-                    return 0;
-                }
-                if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                           "Century info guessed for a 2-digit year.", 1) != 0)
-                    return 0;
-            }
-        }
-        else
-            return 0;
-    }
     p->tm_year = y - 1900;
     p->tm_mon--;
     p->tm_wday = (p->tm_wday + 1) % 7;
@@ -863,7 +817,7 @@ The actual value can be retrieved by calling gmtime(0).\n\
 \n\
 The other representation is a tuple of 9 integers giving local time.\n\
 The tuple items are:\n\
-  year (four digits, e.g. 1998)\n\
+  year (including century, e.g. 1998)\n\
   month (1-12)\n\
   day (1-31)\n\
   hours (0-23)\n\
@@ -919,13 +873,6 @@ PyInit_time(void)
     m = PyModule_Create(&timemodule);
     if (m == NULL)
         return NULL;
-
-    /* Accept 2-digit dates unless PYTHONY2K is set and non-empty */
-    p = Py_GETENV("PYTHONY2K");
-    PyModule_AddIntConstant(m, "accept2dyear", (long) (!p || !*p));
-    /* Squirrel away the module's dictionary for the y2k check */
-    moddict = PyModule_GetDict(m);
-    Py_INCREF(moddict);
 
     /* Set, or reset, module variables like time.timezone */
     PyInit_timezone(m);

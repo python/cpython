@@ -96,12 +96,13 @@ class TimeTestCase(unittest.TestCase):
         self._bounds_checking(lambda tup: time.strftime('', tup))
 
     def test_default_values_for_zero(self):
-        # Make sure that using all zeros uses the proper default values.
-        # No test for daylight savings since strftime() does not change output
-        # based on its value.
+        # Make sure that using all zeros uses the proper default
+        # values.  No test for daylight savings since strftime() does
+        # not change output based on its value and no test for year
+        # because systems vary in their support for year 0.
         expected = "2000 01 01 00 00 00 1 001"
         with support.check_warnings():
-            result = time.strftime("%Y %m %d %H %M %S %w %j", (0,)*9)
+            result = time.strftime("%Y %m %d %H %M %S %w %j", (2000,)+(0,)*8)
         self.assertEqual(expected, result)
 
     def test_strptime(self):
@@ -271,15 +272,6 @@ class TestLocale(unittest.TestCase):
 
 
 class _BaseYearTest(unittest.TestCase):
-    accept2dyear = None
-
-    def setUp(self):
-        self.saved_accept2dyear = time.accept2dyear
-        time.accept2dyear = self.accept2dyear
-
-    def tearDown(self):
-        time.accept2dyear = self.saved_accept2dyear
-
     def yearstr(self, y):
         raise NotImplementedError()
 
@@ -306,23 +298,7 @@ class _TestStrftimeYear:
         self.assertEqual(text, '12345')
         self.assertEqual(self.yearstr(123456789), '123456789')
 
-class _Test2dYear(_BaseYearTest):
-    accept2dyear = 1
-
-    def test_year(self):
-        with support.check_warnings():
-            self.assertEqual(self.yearstr(0), '2000')
-            self.assertEqual(self.yearstr(69), '1969')
-            self.assertEqual(self.yearstr(68), '2068')
-            self.assertEqual(self.yearstr(99), '1999')
-
-    def test_invalid(self):
-        self.assertRaises(ValueError, self.yearstr, -1)
-        self.assertRaises(ValueError, self.yearstr, 100)
-        self.assertRaises(ValueError, self.yearstr, 999)
-
 class _Test4dYear(_BaseYearTest):
-    accept2dyear = 0
 
     def test_year(self):
         self.assertIn(self.yearstr(1),     ('1', '0001'))
@@ -361,46 +337,19 @@ class _Test4dYear(_BaseYearTest):
         except OverflowError:
             pass
 
-class TestAsctimeAccept2dYear(_TestAsctimeYear, _Test2dYear):
-    pass
-
-class TestStrftimeAccept2dYear(_TestStrftimeYear, _Test2dYear):
-    pass
-
 class TestAsctime4dyear(_TestAsctimeYear, _Test4dYear):
     pass
 
 class TestStrftime4dyear(_TestStrftimeYear, _Test4dYear):
     pass
 
-class Test2dyearBool(_TestAsctimeYear, _Test2dYear):
-    accept2dyear = True
-
-class Test4dyearBool(_TestAsctimeYear, _Test4dYear):
-    accept2dyear = False
-
-class TestAccept2YearBad(_TestAsctimeYear, _BaseYearTest):
-    class X:
-        def __bool__(self):
-            raise RuntimeError('boo')
-    accept2dyear = X()
-    def test_2dyear(self):
-        pass
-    def test_invalid(self):
-        self.assertRaises(RuntimeError, self.yearstr, 200)
-
 
 def test_main():
     support.run_unittest(
         TimeTestCase,
         TestLocale,
-        TestAsctimeAccept2dYear,
-        TestStrftimeAccept2dYear,
         TestAsctime4dyear,
-        TestStrftime4dyear,
-        Test2dyearBool,
-        Test4dyearBool,
-        TestAccept2YearBad)
+        TestStrftime4dyear)
 
 if __name__ == "__main__":
     test_main()
