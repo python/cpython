@@ -290,8 +290,7 @@ class DebuggingServerTests(unittest.TestCase):
         self.serv_evt.wait()
         self.output.flush()
         # Add the X-Peer header that DebuggingServer adds
-        # XXX: I'm not sure hardcoding this IP will work on linux-vserver.
-        m['X-Peer'] = '127.0.0.1'
+        m['X-Peer'] = socket.gethostbyname('localhost')
         mexpect = '%s%s\n%s' % (MSG_BEGIN, m.as_string(), MSG_END)
         self.assertEqual(self.output.getvalue(), mexpect)
 
@@ -311,8 +310,7 @@ class DebuggingServerTests(unittest.TestCase):
         self.serv_evt.wait()
         self.output.flush()
         # Add the X-Peer header that DebuggingServer adds
-        # XXX: I'm not sure hardcoding this IP will work on linux-vserver.
-        m['X-Peer'] = '127.0.0.1'
+        m['X-Peer'] = socket.gethostbyname('localhost')
         # The Bcc header is deleted before serialization.
         del m['Bcc']
         mexpect = '%s%s\n%s' % (MSG_BEGIN, m.as_string(), MSG_END)
@@ -341,8 +339,7 @@ class DebuggingServerTests(unittest.TestCase):
         self.serv_evt.wait()
         self.output.flush()
         # Add the X-Peer header that DebuggingServer adds
-        # XXX: I'm not sure hardcoding this IP will work on linux-vserver.
-        m['X-Peer'] = '127.0.0.1'
+        m['X-Peer'] = socket.gethostbyname('localhost')
         mexpect = '%s%s\n%s' % (MSG_BEGIN, m.as_string(), MSG_END)
         self.assertEqual(self.output.getvalue(), mexpect)
         debugout = smtpd.DEBUGSTREAM.getvalue()
