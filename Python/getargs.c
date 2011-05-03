@@ -585,7 +585,17 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 #define FETCH_SIZE      int *q=NULL;Py_ssize_t *q2=NULL;\
     if (flags & FLAG_SIZE_T) q2=va_arg(*p_va, Py_ssize_t*); \
     else q=va_arg(*p_va, int*);
-#define STORE_SIZE(s)   if (flags & FLAG_SIZE_T) *q2=s; else *q=s;
+#define STORE_SIZE(s)   \
+    if (flags & FLAG_SIZE_T) \
+        *q2=s; \
+    else { \
+        if (INT_MAX < s) { \
+            PyErr_SetString(PyExc_OverflowError, \
+                "size does not fit in an int"); \
+            return converterr("", arg, msgbuf, bufsize); \
+        } \
+        *q=s; \
+    }
 #define BUFFER_LEN      ((flags & FLAG_SIZE_T) ? *q2:*q)
 
     const char *format = *p_format;

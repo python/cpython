@@ -9,6 +9,10 @@ What's New in Python 2.7.2?
 Core and Builtins
 -----------------
 
+- Issue #8651: PyArg_Parse*() functions raise an OverflowError if the file
+  doesn't have PY_SSIZE_T_CLEAN define and the size doesn't fit in an int
+  (length bigger than 2^31-1 bytes).
+
 - Issue #8651: Fix "z#" format of PyArg_Parse*() function: the size was not
   written if PY_SSIZE_T_CLEAN is defined.
 
