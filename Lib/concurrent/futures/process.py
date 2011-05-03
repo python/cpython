@@ -169,12 +169,12 @@ def _add_call_item_to_queue(pending_work_items,
                 del pending_work_items[work_id]
                 continue
 
-def _queue_manangement_worker(executor_reference,
-                              processes,
-                              pending_work_items,
-                              work_ids_queue,
-                              call_queue,
-                              result_queue):
+def _queue_management_worker(executor_reference,
+                             processes,
+                             pending_work_items,
+                             work_ids_queue,
+                             call_queue,
+                             result_queue):
     """Manages the communication between this process and the worker processes.
 
     This function is run in a local thread.
@@ -302,7 +302,7 @@ class ProcessPoolExecutor(_base.Executor):
             q.put(None)
         if self._queue_management_thread is None:
             self._queue_management_thread = threading.Thread(
-                    target=_queue_manangement_worker,
+                    target=_queue_management_worker,
                     args=(weakref.ref(self, weakref_cb),
                           self._processes,
                           self._pending_work_items,
