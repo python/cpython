@@ -88,8 +88,8 @@ class ChecksumBigBufferTestCase(unittest.TestCase):
                 f.seek(self.int_max-4)
                 f.write("asdf")
                 f.flush()
+                m = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
                 try:
-                    m = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
                     self.assertEqual(zlib.crc32(m), 0x709418e7)
                     self.assertEqual(zlib.adler32(m), -2072837729)
                 finally:
