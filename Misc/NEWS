@@ -81,6 +81,8 @@ Library
 
 - logging: don't define QueueListener if Python has no thread support.
 
+- functools.cmp_to_key() now works with collections.Hashable().
+
 - Issue #11277: mmap.mmap() calls fcntl(fd, F_FULLFSYNC) on Mac OS X to get
   around a mmap bug with sparse files. Patch written by Steffen Daode Nurpmeso.
 
