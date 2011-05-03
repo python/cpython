@@ -1,10 +1,16 @@
 import unittest
-from test import test_support
+from test.test_support import TESTFN, run_unittest, import_module, unlink, requires
 import binascii
 import random
 from test.test_support import precisionbigmemtest, _1G
+import sys
 
-zlib = test_support.import_module('zlib')
+try:
+    import mmap
+except ImportError:
+    mmap = None
+
+zlib = import_module('zlib')
 
 
 class ChecksumTestCase(unittest.TestCase):
@@ -64,6 +70,34 @@ class ChecksumTestCase(unittest.TestCase):
                          zlib.crc32('spam',  0xffd01027L))
         self.assertEqual(zlib.crc32('spam', -(2**31)),
                          zlib.crc32('spam',  (2**31)))
+
+
+# Issue #10276 - check that inputs of 2 GB are handled correctly.
+# Be aware of issues #1202, #8650, #8651 and #10276
+class ChecksumBigBufferTestCase(unittest.TestCase):
+    int_max = 0x7FFFFFFF
+
+    @unittest.skipUnless(mmap, "mmap() is not available.")
+    def test_big_buffer(self):
+        if sys.platform[:3] == 'win' or sys.platform == 'darwin':
+            requires('largefile',
+                     'test requires %s bytes and a long time to run' %
+                     str(self.int_max))
+        try:
+            with open(TESTFN, "wb+") as f:
+                f.seek(self.int_max-4)
+                f.write("asdf")
+                f.flush()
+                try:
+                    m = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
+                    self.assertEqual(zlib.crc32(m), 0x709418e7)
+                    self.assertEqual(zlib.adler32(m), -2072837729)
+                finally:
+                    m.close()
+        except (IOError, OverflowError):
+            raise unittest.SkipTest("filesystem doesn't have largefile support")
+        finally:
+            unlink(TESTFN)
 
 
 class ExceptionTestCase(unittest.TestCase):
@@ -546,8 +580,9 @@ LAERTES
 
 
 def test_main():
-    test_support.run_unittest(
+    run_unittest(
         ChecksumTestCase,
+        ChecksumBigBufferTestCase,
         ExceptionTestCase,
         CompressTestCase,
         CompressObjectTestCase
