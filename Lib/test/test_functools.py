@@ -1,4 +1,5 @@
 import functools
+import collections
 import sys
 import unittest
 from test import support
@@ -510,6 +511,7 @@ class TestCmpToKey(unittest.TestCase):
         key = functools.cmp_to_key(mycmp)
         k = key(10)
         self.assertRaises(TypeError, hash, k)
+        self.assertNotIsInstance(k, collections.Hashable)
 
 class TestTotalOrdering(unittest.TestCase):
 
@@ -718,12 +720,12 @@ class TestLRU(unittest.TestCase):
 
 def test_main(verbose=None):
     test_classes = (
-        TestCmpToKey,
         TestPartial,
         TestPartialSubclass,
         TestPythonPartial,
         TestUpdateWrapper,
         TestTotalOrdering,
+        TestCmpToKey,
         TestWraps,
         TestReduce,
         TestLRU,
