@@ -456,12 +456,12 @@ class MathTests(unittest.TestCase):
 
     def testFmod(self):
         self.assertRaises(TypeError, math.fmod)
-        self.ftest('fmod(10,1)', math.fmod(10,1), 0)
-        self.ftest('fmod(10,0.5)', math.fmod(10,0.5), 0)
-        self.ftest('fmod(10,1.5)', math.fmod(10,1.5), 1)
-        self.ftest('fmod(-10,1)', math.fmod(-10,1), 0)
-        self.ftest('fmod(-10,0.5)', math.fmod(-10,0.5), 0)
-        self.ftest('fmod(-10,1.5)', math.fmod(-10,1.5), -1)
+        self.ftest('fmod(10, 1)', math.fmod(10, 1), 0.0)
+        self.ftest('fmod(10, 0.5)', math.fmod(10, 0.5), 0.0)
+        self.ftest('fmod(10, 1.5)', math.fmod(10, 1.5), 1.0)
+        self.ftest('fmod(-10, 1)', math.fmod(-10, 1), -0.0)
+        self.ftest('fmod(-10, 0.5)', math.fmod(-10, 0.5), -0.0)
+        self.ftest('fmod(-10, 1.5)', math.fmod(-10, 1.5), -1.0)
         self.assertTrue(math.isnan(math.fmod(NAN, 1.)))
         self.assertTrue(math.isnan(math.fmod(1., NAN)))
         self.assertTrue(math.isnan(math.fmod(NAN, NAN)))
