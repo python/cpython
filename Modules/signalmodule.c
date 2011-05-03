@@ -573,6 +573,10 @@ signal_pthread_sigmask(PyObject *self, PyObject *args)
         return NULL;
     }
 
+    /* if signals was unblocked, signal handlers have been called */
+    if (PyErr_CheckSignals())
+        return NULL;
+
     result = PyList_New(0);
     if (result == NULL)
         return NULL;

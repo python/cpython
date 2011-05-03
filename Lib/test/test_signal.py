@@ -498,8 +498,7 @@ class PthreadSigmaskTests(unittest.TestCase):
         signum = signal.SIGUSR1
 
         def handler(signum, frame):
-            handler.tripped = True
-        handler.tripped = False
+            1/0
 
         def read_sigmask():
             return signal.pthread_sigmask(signal.SIG_BLOCK, [])
@@ -519,36 +518,39 @@ class PthreadSigmaskTests(unittest.TestCase):
             # function.
             faulthandler.cancel_dump_tracebacks_later()
 
+        # Install our signal handler
         old_handler = signal.signal(signum, handler)
         self.addCleanup(signal.signal, signum, old_handler)
 
-        # unblock SIGUSR1, copy the old mask and test our signal handler
+        # Unblock SIGUSR1 (and copy the old mask) to test our signal handler
         old_mask = signal.pthread_sigmask(signal.SIG_UNBLOCK, [signum])
         self.addCleanup(signal.pthread_sigmask, signal.SIG_SETMASK, old_mask)
-        os.kill(pid, signum)
-        self.assertTrue(handler.tripped)
+        with self.assertRaises(ZeroDivisionError):
+            os.kill(pid, signum)
 
-        # block SIGUSR1
-        handler.tripped = False
+        # Block and then raise SIGUSR1. The signal is blocked: the signal
+        # handler is not called, and the signal is now pending
         signal.pthread_sigmask(signal.SIG_BLOCK, [signum])
         os.kill(pid, signum)
-        self.assertFalse(handler.tripped)
 
-        # check the mask
+        # Check the new mask
         blocked = read_sigmask()
         self.assertIn(signum, blocked)
         self.assertEqual(set(old_mask) ^ set(blocked), {signum})
 
-        # unblock SIGUSR1
-        signal.pthread_sigmask(signal.SIG_UNBLOCK, [signum])
-        os.kill(pid, signum)
-        self.assertTrue(handler.tripped)
+        # Unblock SIGUSR1
+        with self.assertRaises(ZeroDivisionError):
+            # unblock the pending signal calls immediatly the signal handler
+            signal.pthread_sigmask(signal.SIG_UNBLOCK, [signum])
+        with self.assertRaises(ZeroDivisionError):
+            os.kill(pid, signum)
 
-        # check the mask
+        # Check the new mask
         unblocked = read_sigmask()
         self.assertNotIn(signum, unblocked)
         self.assertEqual(set(blocked) ^ set(unblocked), {signum})
         self.assertSequenceEqual(old_mask, unblocked)
+        # Finally, restore the previous signal handler and the signal mask
 
 
 def test_main():
