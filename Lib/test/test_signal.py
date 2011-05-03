@@ -494,6 +494,7 @@ class PthreadSigmaskTests(unittest.TestCase):
         self.assertRaises(RuntimeError, signal.pthread_sigmask, 1700, [])
 
     def test_block_unlock(self):
+        import faulthandler
         pid = os.getpid()
         signum = signal.SIGUSR1
 
@@ -503,20 +504,18 @@ class PthreadSigmaskTests(unittest.TestCase):
         def read_sigmask():
             return signal.pthread_sigmask(signal.SIG_BLOCK, [])
 
-        if sys.platform == "darwin":
-            import faulthandler
-            # The fault handler timeout thread masks all signals. If the main
-            # thread masks also SIGUSR1, all threads mask this signal. In this
-            # case, on Mac OS X, if we send SIGUSR1 to the process, the signal
-            # is pending in the main or the faulthandler timeout thread.
-            # Unblock SIGUSR1 in the main thread calls the signal handler only
-            # if the signal is pending for the main thread.
-            #
-            # Stop the faulthandler timeout thread to workaround this problem.
-            # Another solution would be to send the signal directly to the main
-            # thread using pthread_kill(), but Python doesn't expose this
-            # function.
-            faulthandler.cancel_dump_tracebacks_later()
+        # The fault handler timeout thread masks all signals. If the main
+        # thread masks also SIGUSR1, all threads mask this signal. In this
+        # case, if we send SIGUSR1 to the process, the signal is pending in the
+        # main or the faulthandler timeout thread.  Unblock SIGUSR1 in the main
+        # thread calls the signal handler only if the signal is pending for the
+        # main thread.
+        #
+        # Stop the faulthandler timeout thread to workaround this problem.
+        # Another solution would be to send the signal directly to the main
+        # thread using pthread_kill(), but Python doesn't expose this
+        # function.
+        faulthandler.cancel_dump_tracebacks_later()
 
         # Install our signal handler
         old_handler = signal.signal(signum, handler)
