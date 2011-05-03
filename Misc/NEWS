@@ -9,6 +9,9 @@ What's New in Python 2.7.2?
 Core and Builtins
 -----------------
 
+- Issue #8651: Fix "z#" format of PyArg_Parse*() function: the size was not
+  written if PY_SSIZE_T_CLEAN is defined.
+
 - Issue #9756: When calling a method descriptor or a slot wrapper descriptor,
   the check of the object type doesn't read the __class__ attribute anymore.
   Fix a crash if a class override its __class__ attribute (e.g. a proxy of the
