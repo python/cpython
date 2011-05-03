@@ -505,7 +505,7 @@ def add_ui(db):
       "    would still be Python for DOS.")
 
     c = exit_dialog.text("warning", 135, 200, 220, 40, 0x30003,
-            "{\\VerdanaRed9}Warning: Python 2.7.x is the last "
+            "{\\VerdanaRed9}Warning: Python 3.3.0 is the last "
             "Python release for Windows 2000.")
     c.condition("Hide", "VersionNT > 500")
 
