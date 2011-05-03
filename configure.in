@@ -2608,6 +2608,15 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
   [AC_MSG_RESULT(no)
 ])
 
+AC_MSG_CHECKING(whether mallopt can set malloc mmap threshold)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <malloc.h>
+]], [[mallopt(M_MMAP_THRESHOLD, 256 * 1024)]])],
+  [AC_DEFINE(HAVE_MALLOPT_MMAP_THRESHOLD, 1, Define if mallopt can set malloc mmap threshold.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)
+])
+
 dnl check for true
 AC_CHECK_PROGS(TRUE, true, /bin/true)
 

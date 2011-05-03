@@ -491,6 +491,9 @@
 /* Define this if you have the makedev macro. */
 #undef HAVE_MAKEDEV
 
+/* Define this if mallopt can set malloc mmap threshold. */
+#undef HAVE_MALLOPT_MMAP_THRESHOLD
+
 /* Define to 1 if you have the `mbrtowc' function. */
 #undef HAVE_MBRTOWC
 
