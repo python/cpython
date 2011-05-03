@@ -2,6 +2,10 @@
 
 #ifdef WITH_PYMALLOC
 
+#ifdef HAVE_MALLOPT_MMAP_THRESHOLD
+  #include <malloc.h>
+#endif
+
 #ifdef WITH_VALGRIND
 #include <valgrind/valgrind.h>
 
@@ -75,7 +79,8 @@ static int running_on_valgrind = -1;
  * Allocation strategy abstract:
  *
  * For small requests, the allocator sub-allocates <Big> blocks of memory.
- * Requests greater than 256 bytes are routed to the system's allocator.
+ * Requests greater than SMALL_REQUEST_THRESHOLD bytes are routed to the
+ * system's allocator.
  *
  * Small requests are grouped in size classes spaced 8 bytes apart, due
  * to the required valid alignment of the returned address. Requests of
@@ -107,10 +112,11 @@ static int running_on_valgrind = -1;
  *       57-64                   64                       7
  *       65-72                   72                       8
  *        ...                   ...                     ...
- *      241-248                 248                      30
- *      249-256                 256                      31
+ *      497-504                 504                      62
+ *      505-512                 512                      63
  *
- *      0, 257 and up: routed to the underlying allocator.
+ *      0, SMALL_REQUEST_THRESHOLD + 1 and up: routed to the underlying
+ *      allocator.
  */
 
 /*==========================================================================*/
@@ -139,14 +145,17 @@ static int running_on_valgrind = -1;
  * small enough in order to use preallocated memory pools. You can tune
  * this value according to your application behaviour and memory needs.
  *
+ * Note: a size threshold of 512 guarantees that newly created dictionaries
+ * will be allocated from preallocated memory pools on 64-bit.
+ *
  * The following invariants must hold:
- *      1) ALIGNMENT <= SMALL_REQUEST_THRESHOLD <= 256
+ *      1) ALIGNMENT <= SMALL_REQUEST_THRESHOLD <= 512
  *      2) SMALL_REQUEST_THRESHOLD is evenly divisible by ALIGNMENT
  *
  * Although not required, for better performance and space efficiency,
  * it is recommended that SMALL_REQUEST_THRESHOLD is set to a power of 2.
  */
-#define SMALL_REQUEST_THRESHOLD 256
+#define SMALL_REQUEST_THRESHOLD 512
 #define NB_SMALL_SIZE_CLASSES   (SMALL_REQUEST_THRESHOLD / ALIGNMENT)
 
 /*
@@ -440,6 +449,9 @@ static poolp usedpools[2 * ((NB_SMALL_SIZE_CLASSES + 7) / 8) * 8] = {
     , PT(48), PT(49), PT(50), PT(51), PT(52), PT(53), PT(54), PT(55)
 #if NB_SMALL_SIZE_CLASSES > 56
     , PT(56), PT(57), PT(58), PT(59), PT(60), PT(61), PT(62), PT(63)
+#if NB_SMALL_SIZE_CLASSES > 64
+#error "NB_SMALL_SIZE_CLASSES should be less than 64"
+#endif /* NB_SMALL_SIZE_CLASSES > 64 */
 #endif /* NB_SMALL_SIZE_CLASSES > 56 */
 #endif /* NB_SMALL_SIZE_CLASSES > 48 */
 #endif /* NB_SMALL_SIZE_CLASSES > 40 */
@@ -544,6 +556,11 @@ new_arena(void)
 #if SIZEOF_SIZE_T <= SIZEOF_INT
         if (numarenas > PY_SIZE_MAX / sizeof(*arenas))
             return NULL;                /* overflow */
+#endif
+#ifdef HAVE_MALLOPT_MMAP_THRESHOLD
+        /* Ensure arenas are allocated by mmap to avoid heap fragmentation. */
+        if (numarenas == INITIAL_ARENA_OBJECTS)
+            mallopt(M_MMAP_THRESHOLD, ARENA_SIZE);
 #endif
         nbytes = numarenas * sizeof(*arenas);
         arenaobj = (struct arena_object *)realloc(arenas, nbytes);
