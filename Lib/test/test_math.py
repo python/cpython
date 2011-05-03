@@ -6,7 +6,6 @@ import unittest
 import math
 import os
 import sys
-import random
 import struct
 import sysconfig
 
@@ -1010,7 +1009,6 @@ class MathTests(unittest.TestCase):
 
     @requires_IEEE_754
     def test_mtestfile(self):
-        ALLOWED_ERROR = 20  # permitted error, in ulps
         fail_fmt = "{}:{}({!r}): expected {!r}, got {!r}"
 
         failures = []
