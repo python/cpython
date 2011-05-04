@@ -380,24 +380,6 @@ join_list_unicode(PyObject *lst)
 }
 
 static PyObject *
-join_list_string(PyObject *lst)
-{
-    /* return ''.join(lst) */
-    static PyObject *joinfn = NULL;
-    if (joinfn == NULL) {
-        PyObject *ustr = PyString_FromStringAndSize(NULL, 0);
-        if (ustr == NULL)
-            return NULL;
-
-        joinfn = PyObject_GetAttrString(ustr, "join");
-        Py_DECREF(ustr);
-        if (joinfn == NULL)
-            return NULL;
-    }
-    return PyObject_CallFunctionObjArgs(joinfn, lst, NULL);
-}
-
-static PyObject *
 _build_rval_index_tuple(PyObject *rval, Py_ssize_t idx) {
     /* return (rval, idx) tuple, stealing reference to rval */
     PyObject *tpl;
