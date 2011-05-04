@@ -72,7 +72,7 @@ class ChecksumTestCase(unittest.TestCase):
                          zlib.crc32('spam',  (2**31)))
 
 
-# Issue #10276 - check that inputs of 2 GB are handled correctly.
+# Issue #11277 - check that inputs of 2 GB are handled correctly.
 # Be aware of issues #1202, #8650, #8651 and #10276
 class ChecksumBigBufferTestCase(unittest.TestCase):
     int_max = 0x7FFFFFFF
