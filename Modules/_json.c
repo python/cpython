@@ -595,7 +595,7 @@ scanstring_str(PyObject *pystr, Py_ssize_t end, char *encoding, int strict, Py_s
         Py_DECREF(chunk);
     }
 
-    rval = join_list_string(chunks);
+    rval = join_list_unicode(chunks);
     if (rval == NULL) {
         goto bail;
     }
