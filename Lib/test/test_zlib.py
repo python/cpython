@@ -99,8 +99,12 @@ class ChecksumBigBufferTestCase(unittest.TestCase):
                 f.flush()
                 m = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
                 try:
-                    self.assertEqual(zlib.crc32(m), 0x709418e7)
-                    self.assertEqual(zlib.adler32(m), -2072837729)
+                    if sys.maxsize > _4G:
+                        self.assertEqual(zlib.crc32(m), 0x709418e7)
+                        self.assertEqual(zlib.adler32(m), -2072837729)
+                    else:
+                        self.assertEqual(zlib.crc32(m), 722071057)
+                        self.assertEqual(zlib.adler32(m), -1002962529)
                 finally:
                     m.close()
         except (IOError, OverflowError):
