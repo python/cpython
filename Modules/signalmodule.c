@@ -552,11 +552,45 @@ error:
     return result;
 }
 
+static PyObject*
+sigset_to_set(sigset_t mask)
+{
+    PyObject *signum, *result;
+    int sig;
+
+    result = PySet_New(0);
+    if (result == NULL)
+        return NULL;
+
+    for (sig = 1; sig < NSIG; sig++) {
+        if (sigismember(&mask, sig) != 1)
+            continue;
+
+        /* Handle the case where it is a member by adding the signal to
+           the result list.  Ignore the other cases because they mean the
+           signal isn't a member of the mask or the signal was invalid,
+           and an invalid signal must have been our fault in constructing
+           the loop boundaries. */
+        signum = PyLong_FromLong(sig);
+        if (signum == NULL) {
+            Py_DECREF(result);
+            return NULL;
+        }
+        if (PySet_Add(result, signum) == -1) {
+            Py_DECREF(signum);
+            Py_DECREF(result);
+            return NULL;
+        }
+        Py_DECREF(signum);
+    }
+    return result;
+}
+
 static PyObject *
 signal_pthread_sigmask(PyObject *self, PyObject *args)
 {
-    int how, sig;
-    PyObject *signals, *result, *signum;
+    int how;
+    PyObject *signals;
     sigset_t mask, previous;
     int err;
 
@@ -577,32 +611,7 @@ signal_pthread_sigmask(PyObject *self, PyObject *args)
     if (PyErr_CheckSignals())
         return NULL;
 
-    result = PyList_New(0);
-    if (result == NULL)
-        return NULL;
-
-    for (sig = 1; sig < NSIG; sig++) {
-        if (sigismember(&previous, sig) != 1)
-            continue;
-
-        /* Handle the case where it is a member by adding the signal to
-           the result list.  Ignore the other cases because they mean the
-           signal isn't a member of the mask or the signal was invalid,
-           and an invalid signal must have been our fault in constructing
-           the loop boundaries. */
-        signum = PyLong_FromLong(sig);
-        if (signum == NULL) {
-            Py_DECREF(result);
-            return NULL;
-        }
-        if (PyList_Append(result, signum) == -1) {
-            Py_DECREF(signum);
-            Py_DECREF(result);
-            return NULL;
-        }
-        Py_DECREF(signum);
-    }
-    return result;
+    return sigset_to_set(previous);
 }
 
 PyDoc_STRVAR(signal_pthread_sigmask_doc,

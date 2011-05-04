@@ -184,7 +184,7 @@ The :mod:`signal` module defines the following functions:
 
    Fetch and/or change the signal mask of the calling thread.  The signal mask
    is the set of signals whose delivery is currently blocked for the caller.
-   The old signal mask is returned.
+   Return the old signal mask as a set of signals.
 
    The behavior of the call is dependent on the value of *how*, as follows.
 
@@ -196,8 +196,9 @@ The :mod:`signal` module defines the following functions:
     * :data:`SIG_SETMASK`: The set of blocked signals is set to the *mask*
       argument.
 
-   *mask* is a list of signal numbers (e.g. [:const:`signal.SIGINT`,
-   :const:`signal.SIGTERM`]).
+   *mask* is a set of signal numbers (e.g. {:const:`signal.SIGINT`,
+   :const:`signal.SIGTERM`}). Use ``range(1, signal.NSIG)`` for a full mask
+   including all signals.
 
    For example, ``signal.pthread_sigmask(signal.SIG_BLOCK, [])`` reads the
    signal mask of the calling thread.
