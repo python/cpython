@@ -138,7 +138,7 @@ def addpackage(sitedir, name, known_paths):
         reset = 0
     fullname = os.path.join(sitedir, name)
     try:
-        f = open(fullname, "rU")
+        f = open(fullname, "r")
     except IOError:
         return
     with f:
@@ -385,7 +385,7 @@ class _Printer(object):
             for filename in self.__files:
                 filename = os.path.join(dir, filename)
                 try:
-                    fp = open(filename, "rU")
+                    fp = open(filename, "r")
                     data = fp.read()
                     fp.close()
                     break

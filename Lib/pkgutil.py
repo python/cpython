@@ -248,7 +248,7 @@ class ImpLoader:
         if self.file and self.file.closed:
             mod_type = self.etc[2]
             if mod_type==imp.PY_SOURCE:
-                self.file = open(self.filename, 'rU')
+                self.file = open(self.filename, 'r')
             elif mod_type in (imp.PY_COMPILED, imp.C_EXTENSION):
                 self.file = open(self.filename, 'rb')
 
@@ -293,7 +293,7 @@ class ImpLoader:
                     self.file.close()
             elif mod_type==imp.PY_COMPILED:
                 if os.path.exists(self.filename[:-1]):
-                    f = open(self.filename[:-1], 'rU')
+                    f = open(self.filename[:-1], 'r')
                     self.source = f.read()
                     f.close()
             elif mod_type==imp.PKG_DIRECTORY:
