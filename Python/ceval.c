@@ -440,6 +440,12 @@ PyEval_RestoreThread(PyThreadState *tstate)
     if (gil_created()) {
         int err = errno;
         take_gil(tstate);
+        /* _Py_Finalizing is protected by the GIL */
+        if (_Py_Finalizing && tstate != _Py_Finalizing) {
+            drop_gil(tstate);
+            PyThread_exit_thread();
+            assert(0);  /* unreachable */
+        }
         errno = err;
     }
 #endif

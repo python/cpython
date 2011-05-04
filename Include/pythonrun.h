@@ -214,6 +214,8 @@ PyAPI_FUNC(void) PyByteArray_Fini(void);
 PyAPI_FUNC(void) PyFloat_Fini(void);
 PyAPI_FUNC(void) PyOS_FiniInterrupts(void);
 PyAPI_FUNC(void) _PyGC_Fini(void);
+
+PyAPI_DATA(PyThreadState *) _Py_Finalizing;
 #endif
 
 /* Stuff with no proper home (yet) */
