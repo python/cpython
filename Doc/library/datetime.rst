@@ -1577,11 +1577,12 @@ only EST (fixed offset -5 hours), or only EDT (fixed offset -4 hours)).
 :class:`timezone` Objects
 --------------------------
 
-A :class:`timezone` object represents a timezone that is defined by a
-fixed offset from UTC.  Note that objects of this class cannot be used
-to represent timezone information in the locations where different
-offsets are used in different days of the year or where historical
-changes have been made to civil time.
+The :class:`timezone` class is a subclass of :class:`tzinfo`, each
+instance of which represents a timezone defined by a fixed offset from
+UTC.  Note that objects of this class cannot be used to represent
+timezone information in the locations where different offsets are used
+in different days of the year or where historical changes have been
+made to civil time.
 
 
 .. class:: timezone(offset[, name])
