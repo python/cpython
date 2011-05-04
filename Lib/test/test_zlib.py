@@ -2,7 +2,7 @@ import unittest
 from test.test_support import TESTFN, run_unittest, import_module, unlink, requires
 import binascii
 import random
-from test.test_support import precisionbigmemtest, _1G
+from test.test_support import precisionbigmemtest, _1G, _4G
 import sys
 
 try:
@@ -72,20 +72,29 @@ class ChecksumTestCase(unittest.TestCase):
                          zlib.crc32('spam',  (2**31)))
 
 
-# Issue #11277 - check that inputs of 2 GB are handled correctly.
-# Be aware of issues #1202, #8650, #8651 and #10276
+# Issue #11277 - check that inputs of 2 GB (or 1 GB on 32 bits system) are
+# handled correctly. Be aware of issues #1202. We cannot test a buffer of 4 GB
+# or more (#8650, #8651 and #10276), because the zlib stores the buffer size
+# into an int.
 class ChecksumBigBufferTestCase(unittest.TestCase):
-    int_max = 0x7FFFFFFF
+    if sys.maxsize > _4G:
+        # (64 bits system) crc32() and adler32() stores the buffer size into an
+        # int, the maximum filesize is INT_MAX (0x7FFFFFFF)
+        filesize = 0x7FFFFFFF
+    else:
+        # (32 bits system) On a 32 bits OS, a process cannot usually address
+        # more than 2 GB, so test only 1 GB
+        filesize = _1G
 
     @unittest.skipUnless(mmap, "mmap() is not available.")
     def test_big_buffer(self):
         if sys.platform[:3] == 'win' or sys.platform == 'darwin':
             requires('largefile',
                      'test requires %s bytes and a long time to run' %
-                     str(self.int_max))
+                     str(self.filesize))
         try:
             with open(TESTFN, "wb+") as f:
-                f.seek(self.int_max-4)
+                f.seek(self.filesize-4)
                 f.write("asdf")
                 f.flush()
                 m = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
