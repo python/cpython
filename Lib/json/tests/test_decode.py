@@ -26,7 +26,8 @@ class TestDecode(TestCase):
     def test_empty_objects(self):
         self.assertEqual(json.loads('{}'), {})
         self.assertEqual(json.loads('[]'), [])
-        self.assertEqual(json.loads('""'), "")
+        self.assertEqual(json.loads('""'), u"")
+        self.assertIsInstance(json.loads('""'), unicode)
 
     def test_object_pairs_hook(self):
         s = '{"xkd":1, "kcw":2, "art":3, "hxm":4, "qrt":5, "pad":6, "hoy":7}'
