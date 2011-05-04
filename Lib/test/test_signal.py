@@ -517,6 +517,15 @@ class PthreadSigmaskTests(unittest.TestCase):
         # function.
         faulthandler.cancel_dump_tracebacks_later()
 
+        # Issue #11998: The _tkinter module loads the Tcl library which creates
+        # a thread waiting events in select(). This thread receives signals
+        # blocked by all other threads. We cannot test blocked signals if the
+        # _tkinter module is loaded.
+        can_test_blocked_signals = ('_tkinter' not in sys.modules)
+        if not can_test_blocked_signals:
+            print("WARNING: _tkinter is loaded, cannot test signals "
+                  "blocked by pthread_sigmask() (issue #11998)")
+
         # Install our signal handler
         old_handler = signal.signal(signum, handler)
         self.addCleanup(signal.signal, signum, old_handler)
@@ -530,7 +539,8 @@ class PthreadSigmaskTests(unittest.TestCase):
         # Block and then raise SIGUSR1. The signal is blocked: the signal
         # handler is not called, and the signal is now pending
         signal.pthread_sigmask(signal.SIG_BLOCK, [signum])
-        os.kill(pid, signum)
+        if can_test_blocked_signals:
+            os.kill(pid, signum)
 
         # Check the new mask
         blocked = read_sigmask()
@@ -538,8 +548,11 @@ class PthreadSigmaskTests(unittest.TestCase):
         self.assertEqual(set(old_mask) ^ set(blocked), {signum})
 
         # Unblock SIGUSR1
-        with self.assertRaises(ZeroDivisionError):
-            # unblock the pending signal calls immediatly the signal handler
+        if can_test_blocked_signals:
+            with self.assertRaises(ZeroDivisionError):
+                # unblock the pending signal calls immediatly the signal handler
+                signal.pthread_sigmask(signal.SIG_UNBLOCK, [signum])
+        else:
             signal.pthread_sigmask(signal.SIG_UNBLOCK, [signum])
         with self.assertRaises(ZeroDivisionError):
             os.kill(pid, signum)
