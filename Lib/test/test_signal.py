@@ -486,23 +486,26 @@ class ItimerTest(unittest.TestCase):
 
 @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
                      'need signal.pthread_sigmask()')
-class PthreadSigmaskTests(unittest.TestCase):
-    def test_arguments(self):
+class PendingSignalsTests(unittest.TestCase):
+    """
+    Tests for the pthread_sigmask() function.
+    """
+    def handler(self, signum, frame):
+        1/0
+
+    def read_sigmask(self):
+        return signal.pthread_sigmask(signal.SIG_BLOCK, [])
+
+    def test_pthread_sigmask_arguments(self):
         self.assertRaises(TypeError, signal.pthread_sigmask)
         self.assertRaises(TypeError, signal.pthread_sigmask, 1)
         self.assertRaises(TypeError, signal.pthread_sigmask, 1, 2, 3)
         self.assertRaises(RuntimeError, signal.pthread_sigmask, 1700, [])
 
-    def test_block_unlock(self):
+    def test_pthread_sigmask(self):
         import faulthandler
         pid = os.getpid()
         signum = signal.SIGUSR1
-
-        def handler(signum, frame):
-            1/0
-
-        def read_sigmask():
-            return signal.pthread_sigmask(signal.SIG_BLOCK, [])
 
         # The fault handler timeout thread masks all signals. If the main
         # thread masks also SIGUSR1, all threads mask this signal. In this
@@ -527,7 +530,7 @@ class PthreadSigmaskTests(unittest.TestCase):
                   "blocked by pthread_sigmask() (issue #11998)")
 
         # Install our signal handler
-        old_handler = signal.signal(signum, handler)
+        old_handler = signal.signal(signum, self.handler)
         self.addCleanup(signal.signal, signum, old_handler)
 
         # Unblock SIGUSR1 (and copy the old mask) to test our signal handler
@@ -543,9 +546,9 @@ class PthreadSigmaskTests(unittest.TestCase):
             os.kill(pid, signum)
 
         # Check the new mask
-        blocked = read_sigmask()
+        blocked = self.read_sigmask()
         self.assertIn(signum, blocked)
-        self.assertEqual(set(old_mask) ^ set(blocked), {signum})
+        self.assertEqual(old_mask ^ blocked, {signum})
 
         # Unblock SIGUSR1
         if can_test_blocked_signals:
@@ -558,9 +561,9 @@ class PthreadSigmaskTests(unittest.TestCase):
             os.kill(pid, signum)
 
         # Check the new mask
-        unblocked = read_sigmask()
+        unblocked = self.read_sigmask()
         self.assertNotIn(signum, unblocked)
-        self.assertEqual(set(blocked) ^ set(unblocked), {signum})
+        self.assertEqual(blocked ^ unblocked, {signum})
         self.assertSequenceEqual(old_mask, unblocked)
         # Finally, restore the previous signal handler and the signal mask
 
@@ -570,7 +573,7 @@ def test_main():
         support.run_unittest(BasicSignalTests, InterProcessSignalTests,
                              WakeupSignalTests, SiginterruptTest,
                              ItimerTest, WindowsSignalTests,
-                             PthreadSigmaskTests)
+                             PendingSignalsTests)
     finally:
         support.reap_children()
 
