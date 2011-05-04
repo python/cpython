@@ -10,6 +10,10 @@ What's New in Python 3.2.1?
 Core and Builtins
 -----------------
 
+- Issue #1856: Avoid crashes and lockups when daemon threads run while the
+  interpreter is shutting down; instead, these threads are now killed when
+  they try to take the GIL.
+
 - Issue #9756: When calling a method descriptor or a slot wrapper descriptor,
   the check of the object type doesn't read the __class__ attribute anymore.
   Fix a crash if a class override its __class__ attribute (e.g. a proxy of the

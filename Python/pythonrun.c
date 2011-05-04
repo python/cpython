@@ -90,6 +90,8 @@ int Py_IgnoreEnvironmentFlag; /* e.g. PYTHONPATH, PYTHONHOME */
 int Py_NoUserSiteDirectory = 0; /* for -s and site.py */
 int Py_UnbufferedStdioFlag = 0; /* Unbuffered binary std{in,out,err} */
 
+PyThreadState *_Py_Finalizing = NULL;
+
 /* PyModule_GetWarningsModule is no longer necessary as of 2.6
 since _warnings is builtin.  This API should not be used. */
 PyObject *
@@ -188,6 +190,7 @@ Py_InitializeEx(int install_sigs)
     if (initialized)
         return;
     initialized = 1;
+    _Py_Finalizing = NULL;
 
 #if defined(HAVE_LANGINFO_H) && defined(HAVE_SETLOCALE)
     /* Set up the LC_CTYPE locale, so we can obtain
@@ -388,14 +391,18 @@ Py_Finalize(void)
      * the threads created via Threading.
      */
     call_py_exitfuncs();
-    initialized = 0;
-
-    /* Flush stdout+stderr */
-    flush_std_files();
 
     /* Get current thread state and interpreter pointer */
     tstate = PyThreadState_GET();
     interp = tstate->interp;
+
+    /* Remaining threads (e.g. daemon threads) will automatically exit
+       after taking the GIL (in PyEval_RestoreThread()). */
+    _Py_Finalizing = tstate;
+    initialized = 0;
+
+    /* Flush stdout+stderr */
+    flush_std_files();
 
     /* Disable signal handling */
     PyOS_FiniInterrupts();

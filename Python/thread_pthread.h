@@ -250,9 +250,9 @@ void
 PyThread_exit_thread(void)
 {
     dprintf(("PyThread_exit_thread called\n"));
-    if (!initialized) {
+    if (!initialized)
         exit(0);
-    }
+    pthread_exit(0);
 }
 
 #ifdef USE_SEMAPHORES
