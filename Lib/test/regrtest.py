@@ -1589,7 +1589,7 @@ def _make_temp_dir_for_build(TEMPDIR):
 
 if __name__ == '__main__':
     # Display the Python traceback on segfault and division by zero
-    faulthandler.enable()
+    faulthandler.enable(all_threads=True)
 
     # Remove regrtest.py's own directory from the module search path. Despite
     # the elimination of implicit relative imports, this is still needed to
