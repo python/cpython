@@ -111,6 +111,12 @@ class TestBase(unittest.TestCase):
             s.sort(key=CmpToKey(lambda a, b:  int(random.random() * 3) - 1))
             check("an insane function left some permutation", x, s)
 
+            if len(x) >= 2:
+                def bad_key(x):
+                    raise RuntimeError
+                s = x[:]
+                self.assertRaises(RuntimeError, s.sort, key=bad_key)
+
             x = [Complains(i) for i in x]
             s = x[:]
             random.shuffle(s)
