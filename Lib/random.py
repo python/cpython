@@ -114,7 +114,7 @@ class Random(_random.Random):
         if version == 2:
             if isinstance(a, (str, bytes, bytearray)):
                 if isinstance(a, str):
-                    a = a.encode("utf8")
+                    a = a.encode()
                 a += _sha512(a).digest()
                 a = int.from_bytes(a, 'big')
 
