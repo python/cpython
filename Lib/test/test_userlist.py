@@ -52,6 +52,12 @@ class UserListTest(list_tests.CommonTest):
                 return str(key) + '!!!'
         self.assertEqual(next(iter(T((1,2)))), "0!!!")
 
+    def test_userlist_copy(self):
+        u = self.type2test([6, 8, 1, 9, 1])
+        v = u.copy()
+        self.assertEqual(u, v)
+        self.assertEqual(type(u), type(v))
+
 def test_main():
     support.run_unittest(UserListTest)
 
