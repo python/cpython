@@ -9,10 +9,23 @@ __all__ = ["contextmanager", "closing", "ContextDecorator"]
 
 class ContextDecorator(object):
     "A base class or mixin that enables context managers to work as decorators."
+
+    def _recreate_cm(self):
+        """Return a recreated instance of self.
+        
+        Allows otherwise one-shot context managers like
+        _GeneratorContextManager to support use as
+        decorators via implicit recreation.
+        
+        Note: this is a private interface just for _GCM in 3.2 but will be
+        renamed and documented for third party use in 3.3
+        """
+        return self
+
     def __call__(self, func):
         @wraps(func)
         def inner(*args, **kwds):
-            with self:
+            with self._recreate_cm():
                 return func(*args, **kwds)
         return inner
 
@@ -20,8 +33,15 @@ class ContextDecorator(object):
 class _GeneratorContextManager(ContextDecorator):
     """Helper for @contextmanager decorator."""
 
-    def __init__(self, gen):
-        self.gen = gen
+    def __init__(self, func, *args, **kwds):
+        self.gen = func(*args, **kwds)
+        self.func, self.args, self.kwds = func, args, kwds
+
+    def _recreate_cm(self):
+        # _GCM instances are one-shot context managers, so the
+        # CM must be recreated each time a decorated function is
+        # called
+        return self.__class__(self.func, *self.args, **self.kwds)
 
     def __enter__(self):
         try:
@@ -92,7 +112,7 @@ def contextmanager(func):
     """
     @wraps(func)
     def helper(*args, **kwds):
-        return _GeneratorContextManager(func(*args, **kwds))
+        return _GeneratorContextManager(func, *args, **kwds)
     return helper
 
 

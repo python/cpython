@@ -350,19 +350,24 @@ class TestContextDecorator(unittest.TestCase):
 
 
     def test_contextmanager_as_decorator(self):
-        state = []
         @contextmanager
         def woohoo(y):
             state.append(y)
             yield
             state.append(999)
 
+        state = []
         @woohoo(1)
         def test(x):
             self.assertEqual(state, [1])
             state.append(x)
         test('something')
         self.assertEqual(state, [1, 'something', 999])
+
+        # Issue #11647: Ensure the decorated function is 'reusable'
+        state = []
+        test('something else')
+        self.assertEqual(state, [1, 'something else', 999])
 
 
 # This is needed to make the test actually run under regrtest.py!
