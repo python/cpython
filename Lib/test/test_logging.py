@@ -1464,22 +1464,34 @@ class HTTPHandlerTest(BaseTest):
             BaseTest.tearDown(self)
 
     def handle_request(self, request):
+        self.command = request.command
         self.log_data = urlparse(request.path)
+        if self.command == 'POST':
+            try:
+                rlen = int(request.headers['Content-Length'])
+                self.post_data = request.rfile.read(rlen)
+            except:
+                self.post_data = None
         request.send_response(200)
         self.handled.set()
 
     def test_output(self):
         # The log message sent to the SysLogHandler is properly received.
         logger = logging.getLogger("http")
-        msg = "sp\xe4m"
-        logger.error(msg)
-        self.handled.wait()
-        self.assertEqual(self.log_data.path, '/frob')
-        d = parse_qs(self.log_data.query)
-        self.assertEqual(d['name'], ['http'])
-        self.assertEqual(d['funcName'], ['test_output'])
-        self.assertEqual(d['msg'], [msg])
-
+        for method in ('GET', 'POST'):
+            self.h_hdlr.method = method
+            msg = "sp\xe4m"
+            logger.error(msg)
+            self.handled.wait()
+            self.assertEqual(self.log_data.path, '/frob')
+            self.assertEqual(self.command, method)
+            if method == 'GET':
+                d = parse_qs(self.log_data.query)
+            else:
+                d = parse_qs(self.post_data.decode('utf-8'))
+            self.assertEqual(d['name'], ['http'])
+            self.assertEqual(d['funcName'], ['test_output'])
+            self.assertEqual(d['msg'], [msg])
 
 class MemoryTest(BaseTest):
 
@@ -3470,7 +3482,8 @@ class RotatingFileHandlerTest(BaseFileTest):
 class TimedRotatingFileHandlerTest(BaseFileTest):
     # other test methods added below
     def test_rollover(self):
-        fh = logging.handlers.TimedRotatingFileHandler(self.fn, 'S')
+        fh = logging.handlers.TimedRotatingFileHandler(self.fn, 'S',
+                                                       backupCount=1)
         r = logging.makeLogRecord({'msg': 'testing'})
         fh.emit(r)
         self.assertLogFile(self.fn)
@@ -3480,6 +3493,15 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         prevsec = now - datetime.timedelta(seconds=1)
         suffix = prevsec.strftime(".%Y-%m-%d_%H-%M-%S")
         self.assertLogFile(self.fn + suffix)
+
+    def test_invalid(self):
+        assertRaises = self.assertRaises
+        assertRaises(ValueError, logging.handlers.TimedRotatingFileHandler,
+                     self.fn, 'X')
+        assertRaises(ValueError, logging.handlers.TimedRotatingFileHandler,
+                     self.fn, 'W')
+        assertRaises(ValueError, logging.handlers.TimedRotatingFileHandler,
+                     self.fn, 'W7')
 
 def secs(**kw):
     return datetime.timedelta(**kw) // datetime.timedelta(seconds=1)

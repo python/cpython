@@ -29,7 +29,7 @@ from stat import ST_DEV, ST_INO, ST_MTIME
 import queue
 try:
     import threading
-except ImportError:
+except ImportError: #pragma: no cover
     threading = None
 
 try:
@@ -1044,7 +1044,9 @@ class HTTPHandler(logging.Handler):
                 s = ('u%s:%s' % self.credentials).encode('utf-8')
                 s = 'Basic ' + base64.b64encode(s).strip()
                 h.putheader('Authorization', s)
-            h.endheaders(data if self.method == "POST" else None)
+            h.endheaders()
+            if self.method == "POST":
+                h.send(data.encode('utf-8'))
             h.getresponse()    #can't do anything with the result
         except (KeyboardInterrupt, SystemExit): #pragma: no cover
             raise
