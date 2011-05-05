@@ -12,11 +12,11 @@ class ContextDecorator(object):
 
     def _recreate_cm(self):
         """Return a recreated instance of self.
-        
+
         Allows otherwise one-shot context managers like
         _GeneratorContextManager to support use as
         decorators via implicit recreation.
-        
+
         Note: this is a private interface just for _GCM in 3.2 but will be
         renamed and documented for third party use in 3.3
         """
