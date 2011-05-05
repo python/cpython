@@ -248,7 +248,7 @@ class CommandLineTests(unittest.TestCase):
         self.assertEqual(b'', quiet)
 
     def test_regexp(self):
-        self.assertRunOK('-q', '-x', 'ba.*', self.pkgdir)
+        self.assertRunOK('-q', '-x', 'ba[^\/]*$', self.pkgdir)
         self.assertNotCompiled(self.barfn)
         self.assertCompiled(self.initfn)
 

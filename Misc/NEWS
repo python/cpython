@@ -322,6 +322,9 @@ Extensions
 Tests
 -----
 
+- Issue #11873: Change regex in test_compileall to fix occasional failures when
+  when the randomly generated temporary path happened to match the regex.
+
 - Issue #10914: Add a minimal embedding test to test_capi.
 
 - Issue #11790: Fix sporadic failures in test_multiprocessing.WithProcessesTestCondition.
