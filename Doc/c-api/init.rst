@@ -881,7 +881,7 @@ by such objects may affect the wrong (sub-)interpreter's dictionary of loaded
 modules.
 
 Also note that combining this functionality with :cfunc:`PyGILState_\*` APIs
-is delicate, become these APIs assume a bijection between Python thread states
+is delicate, because these APIs assume a bijection between Python thread states
 and OS-level threads, an assumption broken by the presence of sub-interpreters.
 It is highly recommended that you don't switch sub-interpreters between a pair
 of matching :cfunc:`PyGILState_Ensure` and :cfunc:`PyGILState_Release` calls.
