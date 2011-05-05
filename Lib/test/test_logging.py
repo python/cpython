@@ -3494,9 +3494,19 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         earlier = now - datetime.timedelta(seconds=2)
         fn1 = self.fn + prevsec.strftime(".%Y-%m-%d_%H-%M-%S")
         fn2 = self.fn + earlier.strftime(".%Y-%m-%d_%H-%M-%S")
-        self.assertTrue(os.path.exists(fn1) or
-                        os.path.exists(fn2),
-                        msg="Neither exists: %s nor %s" % (fn1, fn2))
+        success = os.path.exists(fn1) or os.path.exists(fn2)
+        if not success:
+            # print additional diagnostic information
+            print('Neither %s nor %s exists' % (fn1, fn2), file=sys.stderr)
+            dirname = os.path.dirname(fn1)
+            files = os.listdir(dirname)
+            files = [f for f in files if f.startswith('test_logging-2-')]
+            print('matching files: %s' % files, file=sys.stderr)
+        self.assertTrue(success)
+        for fn in (fn1, fn2):
+            if os.path.exists(fn):
+                self.rmfiles.append(fn)
+
 
     def test_invalid(self):
         assertRaises = self.assertRaises
