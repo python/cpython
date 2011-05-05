@@ -54,8 +54,12 @@ Functions provided:
    the exception has been handled, and execution will resume with the statement
    immediately following the :keyword:`with` statement.
 
-   contextmanager uses :class:`ContextDecorator` so the context managers it
-   creates can be used as decorators as well as in :keyword:`with` statements.
+   :func:`contextmanager` uses :class:`ContextDecorator` so the context managers
+   it creates can be used as decorators as well as in :keyword:`with` statements.
+   When used as a decorator, a new generator instance is implicitly created on
+   each function call (this allows the otherwise "one-shot" context managers
+   created by :func:`contextmanager` to meet the requirement that context
+   managers support multiple invocations in order to be used as decorators).
 
    .. versionchanged:: 3.2
       Use of :class:`ContextDecorator`.
@@ -154,6 +158,12 @@ Functions provided:
 
           def __exit__(self, *exc):
               return False
+
+   .. note::
+      As the decorated function must be able to be called multiple times, the
+      underlying context manager must support use in multiple :keyword:`with`
+      statements. If this is not the case, then the original construct with the
+      explicit :keyword:`with` statement inside the function should be used.
 
    .. versionadded:: 3.2
 
