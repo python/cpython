@@ -561,6 +561,9 @@ Extensions
 Tests
 -----
 
+- Issue #11873: Change regex in test_compileall to fix occasional failures when
+  when the randomly generated temporary path happened to match the regex.
+
 - Issue #11958: Fix FTP tests for IPv6, bind to "::1" instead of "localhost".
   Patch written by Charles-Francois Natali.
 
