@@ -3491,8 +3491,12 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         fh.emit(r)
         now = datetime.datetime.now()
         prevsec = now - datetime.timedelta(seconds=1)
-        suffix = prevsec.strftime(".%Y-%m-%d_%H-%M-%S")
-        self.assertLogFile(self.fn + suffix)
+        earlier = now - datetime.timedelta(seconds=2)
+        fn1 = self.fn + prevsec.strftime(".%Y-%m-%d_%H-%M-%S")
+        fn2 = self.fn + earlier.strftime(".%Y-%m-%d_%H-%M-%S")
+        self.assertTrue(os.path.exists(fn1) or
+                        os.path.exists(fn2),
+                        msg="Neither exists: %s nor %s" % (fn1, fn2))
 
     def test_invalid(self):
         assertRaises = self.assertRaises
