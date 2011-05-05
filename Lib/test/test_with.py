@@ -14,8 +14,8 @@ from test.support import run_unittest
 
 
 class MockContextManager(_GeneratorContextManager):
-    def __init__(self, gen):
-        _GeneratorContextManager.__init__(self, gen)
+    def __init__(self, func, *args, **kwds):
+        super().__init__(func, *args, **kwds)
         self.enter_called = False
         self.exit_called = False
         self.exit_args = None
@@ -33,7 +33,7 @@ class MockContextManager(_GeneratorContextManager):
 
 def mock_contextmanager(func):
     def helper(*args, **kwds):
-        return MockContextManager(func(*args, **kwds))
+        return MockContextManager(func, *args, **kwds)
     return helper
 
 
