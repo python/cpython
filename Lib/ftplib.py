@@ -426,7 +426,7 @@ class FTP:
         """Retrieve data in line mode.  A new port is created for you.
 
         Args:
-          cmd: A RETR, LIST, NLST, or MLSD command.
+          cmd: A RETR, LIST, or NLST command.
           callback: An optional single parameter callable that is called
                     for each line with the trailing CRLF stripped.
                     [default: print_line()]
@@ -526,6 +526,34 @@ class FTP:
             if arg:
                 cmd = cmd + (' ' + arg)
         self.retrlines(cmd, func)
+
+    def mlsd(self, path="", facts=[]):
+        '''List a directory in a standardized format by using MLSD
+        command (RFC-3659). If path is omitted the current directory
+        is assumed. "facts" is a list of strings representing the type
+        of information desired (e.g. ["type", "size", "perm"]).
+
+        Return a generator object yielding a tuple of two elements
+        for every file found in path.
+        First element is the file name, the second one is a dictionary
+        including a variable number of "facts" depending on the server
+        and whether "facts" argument has been provided.
+        '''
+        if facts:
+            self.sendcmd("OPTS MLST " + ";".join(facts) + ";")
+        if path:
+            cmd = "MLSD %s" % path
+        else:
+            cmd = "MLSD"
+        lines = []
+        self.retrlines(cmd, lines.append)
+        for line in lines:
+            facts_found, _, name = line.rstrip(CRLF).partition(' ')
+            entry = {}
+            for fact in facts_found[:-1].split(";"):
+                key, _, value = fact.partition("=")
+                entry[key.lower()] = value
+            yield (name, entry)
 
     def rename(self, fromname, toname):
         '''Rename a file.'''

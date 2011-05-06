@@ -254,13 +254,12 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
 
    Retrieve a file or directory listing in ASCII transfer mode.  *cmd* should be
    an appropriate ``RETR`` command (see :meth:`retrbinary`) or a command such as
-   ``LIST``, ``NLST`` or ``MLSD`` (usually just the string ``'LIST'``).
+   ``LIST`` or ``NLST`` (usually just the string ``'LIST'``).
    ``LIST`` retrieves a list of files and information about those files.
-   ``NLST`` retrieves a list of file names.  On some servers, ``MLSD`` retrieves
-   a machine readable list of files and information about those files.  The
-   *callback* function is called for each line with a string argument containing
-   the line with the trailing CRLF stripped.  The default *callback* prints the
-   line to ``sys.stdout``.
+   ``NLST`` retrieves a list of file names.
+   The *callback* function is called for each line with a string argument
+   containing the line with the trailing CRLF stripped.  The default *callback*
+   prints the line to ``sys.stdout``.
 
 
 .. method:: FTP.set_pasv(boolean)
@@ -320,12 +319,28 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    in :meth:`transfercmd`.
 
 
+.. method:: FTP.mlsd(path="", facts=[])
+
+   List a directory in a standardized format by using MLSD command
+   (:rfc:`3659`). If *path* is omitted the current directory is assumed.
+   *facts* is a list of strings representing the type of information desired
+   (e.g. *["type", "size", "perm"]*).  Return a generator object yielding a
+   tuple of two elements for every file found in path. First element is the
+   file name, the second one is a dictionary including a variable number of
+   "facts" depending on the server and whether *facts* argument has been
+   provided.
+
+   .. versionadded:: 3.3
+
+
 .. method:: FTP.nlst(argument[, ...])
 
    Return a list of file names as returned by the ``NLST`` command.  The
    optional *argument* is a directory to list (default is the current server
    directory).  Multiple arguments can be used to pass non-standard options to
    the ``NLST`` command.
+
+   .. deprecated:: 3.3 use :meth:`mlsd` instead
 
 
 .. method:: FTP.dir(argument[, ...])
@@ -336,6 +351,8 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    options to the ``LIST`` command.  If the last argument is a function, it is used
    as a *callback* function as for :meth:`retrlines`; the default prints to
    ``sys.stdout``.  This method returns ``None``.
+
+   .. deprecated:: 3.3 use :meth:`mlsd` instead
 
 
 .. method:: FTP.rename(fromname, toname)

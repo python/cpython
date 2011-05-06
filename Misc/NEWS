@@ -140,6 +140,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #11072: added MLSD command (RFC-3659) support to ftplib.
+
 - Issue #8808: The IMAP4_SSL constructor now allows passing an SSLContext
   parameter to control parameters of the secure channel.  Patch by Sijin
   Joseph.
