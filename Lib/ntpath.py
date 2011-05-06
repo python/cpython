@@ -654,7 +654,7 @@ except (AttributeError, ImportError):
     # Non-Windows operating systems fake this method with an XP
     # approximation.
     def _getfinalpathname(f):
-        return abspath(f)
+        return normcase(abspath(f))
 
 def samefile(f1, f2):
     "Test whether two pathnames reference the same actual file"
