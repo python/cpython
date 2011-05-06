@@ -3484,29 +3484,31 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
     def test_rollover(self):
         fh = logging.handlers.TimedRotatingFileHandler(self.fn, 'S',
                                                        backupCount=1)
-        r = logging.makeLogRecord({'msg': 'testing'})
-        fh.emit(r)
-        self.assertLogFile(self.fn)
-        time.sleep(1.0)
-        fh.emit(r)
-        now = datetime.datetime.now()
-        prevsec = now - datetime.timedelta(seconds=1)
-        earlier = now - datetime.timedelta(seconds=2)
-        fn1 = self.fn + prevsec.strftime(".%Y-%m-%d_%H-%M-%S")
-        fn2 = self.fn + earlier.strftime(".%Y-%m-%d_%H-%M-%S")
-        success = os.path.exists(fn1) or os.path.exists(fn2)
-        if not success:
-            # print additional diagnostic information
-            print('Neither %s nor %s exists' % (fn1, fn2), file=sys.stderr)
-            dirname = os.path.dirname(fn1)
-            files = os.listdir(dirname)
-            files = [f for f in files if f.startswith('test_logging-2-')]
-            print('matching files: %s' % files, file=sys.stderr)
-        self.assertTrue(success)
-        for fn in (fn1, fn2):
-            if os.path.exists(fn):
-                self.rmfiles.append(fn)
-
+        try:
+            r = logging.makeLogRecord({'msg': 'testing'})
+            fh.emit(r)
+            self.assertLogFile(self.fn)
+            time.sleep(1.0)
+            fh.emit(r)
+            now = datetime.datetime.now()
+            prevsec = now - datetime.timedelta(seconds=1)
+            earlier = now - datetime.timedelta(seconds=2)
+            fn1 = self.fn + prevsec.strftime(".%Y-%m-%d_%H-%M-%S")
+            fn2 = self.fn + earlier.strftime(".%Y-%m-%d_%H-%M-%S")
+            success = os.path.exists(fn1) or os.path.exists(fn2)
+            if not success:
+                # print additional diagnostic information
+                print('Neither %s nor %s exists' % (fn1, fn2), file=sys.stderr)
+                dirname = os.path.dirname(fn1)
+                files = os.listdir(dirname)
+                files = [f for f in files if f.startswith('test_logging-2-')]
+                print('matching files: %s' % files, file=sys.stderr)
+            self.assertTrue(success)
+            for fn in (fn1, fn2):
+                if os.path.exists(fn):
+                    self.rmfiles.append(fn)
+        finally:
+            fh.close()
 
     def test_invalid(self):
         assertRaises = self.assertRaises
