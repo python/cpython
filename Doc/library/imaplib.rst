@@ -64,14 +64,21 @@ Three exceptions are defined as attributes of the :class:`IMAP4` class:
 There's also a subclass for secure connections:
 
 
-.. class:: IMAP4_SSL(host='', port=IMAP4_SSL_PORT, keyfile=None, certfile=None)
+.. class:: IMAP4_SSL(host='', port=IMAP4_SSL_PORT, keyfile=None, certfile=None, ssl_context=None)
 
    This is a subclass derived from :class:`IMAP4` that connects over an SSL
    encrypted socket (to use this class you need a socket module that was compiled
    with SSL support).  If *host* is not specified, ``''`` (the local host) is used.
    If *port* is omitted, the standard IMAP4-over-SSL port (993) is used.  *keyfile*
    and *certfile* are also optional - they can contain a PEM formatted private key
-   and certificate chain file for the SSL connection.
+   and certificate chain file for the SSL connection. *ssl_context* parameter is a
+   :class:`ssl.SSLContext` object which allows bundling SSL configuration
+   options, certificates and private keys into a single (potentially long-lived)
+   structure. Note that the *keyfile*/*certfile* parameters are mutually exclusive with *ssl_context*,
+   a :class:`ValueError` is thrown if *keyfile*/*certfile* is provided along with *ssl_context*.
+
+   .. versionchanged:: 3.3
+      *ssl_context* parameter added.
 
 
 The second subclass allows for connections created by a child process:
