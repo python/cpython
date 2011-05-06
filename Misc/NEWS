@@ -83,6 +83,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #12000: When a SSL certificate has a subjectAltName without any
+  dNSName entry, ssl.match_hostname() should use the subject's commonName.
+  Patch by Nicolas Bareil.
+
 - Issue #11647: objects created using contextlib.contextmanager now support
   more than one call to the function when used as a decorator. Initial patch
   by Ysj Ray.
