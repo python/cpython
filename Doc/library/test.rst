@@ -218,20 +218,21 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: verbose
 
-   :const:`True` when verbose output is enabled. Should be checked when more
+   ``True`` when verbose output is enabled. Should be checked when more
    detailed information is desired about a running test. *verbose* is set by
    :mod:`test.regrtest`.
 
 
 .. data:: is_jython
 
-   :const:`True` if the running interpreter is Jython.
+   ``True`` if the running interpreter is Jython.
 
 
 .. data:: TESTFN
 
    Set to a name that is safe to use as the name of a temporary file.  Any
    temporary file that is created should be closed and unlinked (removed).
+
 
 The :mod:`test.support` module defines the following functions:
 
@@ -244,7 +245,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: is_resource_enabled(resource)
 
-   Return :const:`True` if *resource* is enabled and available. The list of
+   Return ``True`` if *resource* is enabled and available. The list of
    available resources is only set when :mod:`test.regrtest` is executing the
    tests.
 
@@ -253,7 +254,7 @@ The :mod:`test.support` module defines the following functions:
 
    Raise :exc:`ResourceDenied` if *resource* is not available. *msg* is the
    argument to :exc:`ResourceDenied` if it is raised. Always returns
-   :const:`True` if called by a function whose ``__name__`` is ``'__main__'``.
+   ``True`` if called by a function whose ``__name__`` is ``'__main__'``.
    Used when tests are executed by :mod:`test.regrtest`.
 
 
@@ -281,6 +282,15 @@ The :mod:`test.support` module defines the following functions:
    This will run all tests defined in the named module.
 
 
+.. function:: run_doctest(module, verbosity=None)
+
+   Run :func:`doctest.testmod` on the given *module*.  Return
+   ``(failure_count, test_count)``.
+
+   If *verbosity* is ``None``, :func:`doctest.testmod` is run with verbosity
+   set to :data:`verbose`.  Otherwise, it is run with verbosity set to
+   ``None``.
+
 .. function:: check_warnings(\*filters, quiet=True)
 
    A convenience wrapper for :func:`warnings.catch_warnings()` that makes it
@@ -291,12 +301,12 @@ The :mod:`test.support` module defines the following functions:
 
    ``check_warnings`` accepts 2-tuples of the form ``("message regexp",
    WarningCategory)`` as positional arguments. If one or more *filters* are
-   provided, or if the optional keyword argument *quiet* is :const:`False`,
+   provided, or if the optional keyword argument *quiet* is ``False``,
    it checks to make sure the warnings are as expected:  each specified filter
    must match at least one of the warnings raised by the enclosed code or the
    test fails, and if any warnings are raised that do not match any of the
    specified filters the test fails.  To disable the first of these checks,
-   set *quiet* to :const:`True`.
+   set *quiet* to ``True``.
 
    If no arguments are specified, it defaults to::
 
@@ -311,7 +321,7 @@ The :mod:`test.support` module defines the following functions:
    representing the most recent warning can also be accessed directly through
    the recorder object (see example below).  If no warning has been raised,
    then any of the attributes that would otherwise be expected on an object
-   representing a warning will return :const:`None`.
+   representing a warning will return ``None``.
 
    The recorder object also has a :meth:`reset` method, which clears the
    warnings list.
@@ -349,7 +359,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: captured_stdout()
 
-   This is a context manager that runs the :keyword:`with` statement body using
+   A context manager that runs the :keyword:`with` statement body using
    a :class:`StringIO.StringIO` object as sys.stdout.  That object can be
    retrieved using the ``as`` clause of the :keyword:`with` statement.
 
@@ -360,6 +370,50 @@ The :mod:`test.support` module defines the following functions:
       assert s.getvalue() == "hello"
 
 
+.. function:: temp_cwd(name='tempcwd', quiet=False, path=None)
+
+   A context manager that temporarily changes the current working
+   directory (CWD).
+
+   An existing path may be provided as *path*, in which case this function
+   makes no changes to the file system.
+
+   Otherwise, the new CWD is created in the current directory and it's named
+   *name*.  If *quiet* is ``False`` and it's not possible to create or
+   change the CWD, an error is raised.  If it's ``True``, only a warning
+   is raised and the original CWD is used.
+
+
+.. function:: temp_umask(umask)
+
+   A context manager that temporarily sets the process umask.
+
+
+.. function:: can_symlink()
+
+   Return ``True`` if the OS supports symbolic links, ``False``
+   otherwise.
+
+
+.. function:: skip_unless_symlink()
+
+   A decorator for running tests that require support for symbolic links.
+
+
+.. function:: run_with_locale(catstr, *locales)
+
+   A decorator for running a function in a different locale, correctly
+   resetting it after it has finished.  *catstr* is the locale category as
+   a string (for example ``"LC_ALL"``).  The *locales* passed will be tried
+   sequentially, and the first valid locale will be used.
+
+
+.. function:: make_bad_fd()
+
+   Create an invalid file descriptor by opening and closing a temporary file,
+   and returning its descripor.
+
+
 .. function:: import_module(name, deprecated=False)
 
    This function imports and returns the named module. Unlike a normal
@@ -367,7 +421,7 @@ The :mod:`test.support` module defines the following functions:
    cannot be imported.
 
    Module and package deprecation messages are suppressed during this import
-   if *deprecated* is :const:`True`.
+   if *deprecated* is ``True``.
 
    .. versionadded:: 3.1
 
@@ -391,7 +445,7 @@ The :mod:`test.support` module defines the following functions:
    ``sys.modules`` when the fresh import is complete.
 
    Module and package deprecation messages are suppressed during this import
-   if *deprecated* is :const:`True`.
+   if *deprecated* is ``True``.
 
    This function will raise :exc:`unittest.SkipTest` is the named module
    cannot be imported.
@@ -406,6 +460,48 @@ The :mod:`test.support` module defines the following functions:
       c_warnings = import_fresh_module('warnings', fresh=['_warnings'])
 
    .. versionadded:: 3.1
+
+
+.. function:: bind_port(sock, host=HOST)
+
+   Bind the socket to a free port and return the port number.  Relies on
+   ephemeral ports in order to ensure we are using an unbound port.  This is
+   important as many tests may be running simultaneously, especially in a
+   buildbot environment.  This method raises an exception if the
+   ``sock.family`` is :const:`~socket.AF_INET` and ``sock.type`` is
+   :const:`~socket.SOCK_STREAM`, and the socket has
+   :const:`~socket.SO_REUSEADDR` or :const:`~socket.SO_REUSEPORT` set on it.
+   Tests should never set these socket options for TCP/IP sockets.
+   The only case for setting these options is testing multicasting via
+   multiple UDP sockets.
+
+   Additionally, if the :const:`~socket.SO_EXCLUSIVEADDRUSE` socket option is
+   available (i.e. on Windows), it will be set on the socket.  This will
+   prevent anyone else from binding to our host/port for the duration of the
+   test.
+
+
+.. function:: find_unused_port(family=socket.AF_INET, socktype=socket.SOCK_STREAM)
+
+   Returns an unused port that should be suitable for binding.  This is
+   achieved by creating a temporary socket with the same family and type as
+   the ``sock`` parameter (default is :const:`~socket.AF_INET`,
+   :const:`~socket.SOCK_STREAM`),
+   and binding it to the specified host address (defaults to ``0.0.0.0``)
+   with the port set to 0, eliciting an unused ephemeral port from the OS.
+   The temporary socket is then closed and deleted, and the ephemeral port is
+   returned.
+
+   Either this method or :func:`bind_port` should be used for any tests
+   where a server socket needs to be bound to a particular port for the
+   duration of the test.
+   Which one to use depends on whether the calling code is creating a python
+   socket, or if an unused port needs to be provided in a constructor
+   or passed to an external program (i.e. the ``-accept`` argument to
+   openssl's s_server mode).  Always prefer :func:`bind_port` over
+   :func:`find_unused_port` where possible.  Using a hard coded port is
+   discouraged since it can makes multiple instances of the test impossible to
+   run simultaneously, which is a problem for buildbots.
 
 
 The :mod:`test.support` module defines the following classes:
