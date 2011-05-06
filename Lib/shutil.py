@@ -311,12 +311,18 @@ def move(src, dst):
     """
     real_dst = dst
     if os.path.isdir(dst):
+        if _samefile(src, dst):
+            # We might be on a case insensitive filesystem,
+            # perform the rename anyway.
+            os.rename(src, dst)
+            return
+
         real_dst = os.path.join(dst, _basename(src))
         if os.path.exists(real_dst):
             raise Error("Destination path '%s' already exists" % real_dst)
     try:
         os.rename(src, real_dst)
-    except OSError:
+    except OSError as exc:
         if os.path.isdir(src):
             if _destinsrc(src, dst):
                 raise Error("Cannot move a directory '%s' into itself '%s'." % (src, dst))
