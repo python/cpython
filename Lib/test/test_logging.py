@@ -3490,23 +3490,24 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
             self.assertLogFile(self.fn)
             time.sleep(1.0)
             fh.emit(r)
+            # At this point, we should have a recent rotated file which we
+            # can test for the existence of. However, in practice, on some
+            # machines which run really slowly, we don't know how far back
+            # in time to go to look for the log file. So, we go back a fair
+            # bit, and stop as soon as we see a rotated file. In theory this
+            # could of course still fail, but the chances are lower.
+            found = False
             now = datetime.datetime.now()
-            prevsec = now - datetime.timedelta(seconds=1)
-            earlier = now - datetime.timedelta(seconds=2)
-            fn1 = self.fn + prevsec.strftime(".%Y-%m-%d_%H-%M-%S")
-            fn2 = self.fn + earlier.strftime(".%Y-%m-%d_%H-%M-%S")
-            success = os.path.exists(fn1) or os.path.exists(fn2)
-            if not success:
-                # print additional diagnostic information
-                print('Neither %s nor %s exists' % (fn1, fn2), file=sys.stderr)
-                dirname = os.path.dirname(fn1)
-                files = os.listdir(dirname)
-                files = [f for f in files if f.startswith('test_logging-2-')]
-                print('matching files: %s' % files, file=sys.stderr)
-            self.assertTrue(success)
-            for fn in (fn1, fn2):
-                if os.path.exists(fn):
+            GO_BACK = 2 * 60 # seconds
+            for secs in range(1, GO_BACK):
+                prev = now - datetime.timedelta(seconds=secs)
+                fn = self.fn + prev.strftime(".%Y-%m-%d_%H-%M-%S")
+                found = os.path.exists(fn)
+                if found:
                     self.rmfiles.append(fn)
+                    break
+            msg = 'No rotated files found, went back %d seconds' % GO_BACK
+            self.assertTrue(found, msg=msg)
         finally:
             fh.close()
 
