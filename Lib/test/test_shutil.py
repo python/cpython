@@ -522,6 +522,24 @@ class TestCopyFile(unittest.TestCase):
         self.assertTrue(srcfile._exited_with[0] is None)
         self.assertTrue(srcfile._raised)
 
+    def test_move_dir_caseinsensitive(self):
+        # Renames a folder to the same name
+        # but a different case.
+
+        self.src_dir = tempfile.mkdtemp()
+        dst_dir = os.path.join(
+                os.path.dirname(self.src_dir),
+                os.path.basename(self.src_dir).upper())
+        self.assertNotEqual(self.src_dir, dst_dir)
+
+        try:
+            shutil.move(self.src_dir, dst_dir)
+            self.assertTrue(os.path.isdir(dst_dir))
+        finally:
+            if os.path.exists(dst_dir):
+                os.rmdir(dst_dir)
+
+
 
 def test_main():
     support.run_unittest(TestShutil, TestMove, TestCopyFile)
