@@ -122,8 +122,9 @@ def match_hostname(cert, hostname):
             if _dnsname_to_pat(value).match(hostname):
                 return
             dnsnames.append(value)
-    if not san:
-        # The subject is only checked when subjectAltName is empty
+    if not dnsnames:
+        # The subject is only checked when there is no dNSName entry
+        # in subjectAltName
         for sub in cert.get('subject', ()):
             for key, value in sub:
                 # XXX according to RFC 2818, the most specific Common Name
