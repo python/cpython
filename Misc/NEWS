@@ -83,6 +83,9 @@ Core and Builtins
 Library
 -------
 
+- ntpath.samefile failed to notice that "a.txt" and "A.TXT" refer to the same
+  file on Windows XP. As noticed in issue #10684.
+
 - Issue #12000: When a SSL certificate has a subjectAltName without any
   dNSName entry, ssl.match_hostname() should use the subject's commonName.
   Patch by Nicolas Bareil.
