@@ -1177,25 +1177,40 @@ if HAVE_SSL:
 
         """IMAP4 client class over SSL connection
 
-        Instantiate with: IMAP4_SSL([host[, port[, keyfile[, certfile]]]])
+        Instantiate with: IMAP4_SSL([host[, port[, keyfile[, certfile[, ssl_context]]]]])
 
                 host - host's name (default: localhost);
-                port - port number (default: standard IMAP4 SSL port).
+                port - port number (default: standard IMAP4 SSL port);
                 keyfile - PEM formatted file that contains your private key (default: None);
                 certfile - PEM formatted certificate chain file (default: None);
+                ssl_context - a SSLContext object that contains your certificate chain
+                              and private key (default: None)
+                Note: if ssl_context is provided, then parameters keyfile or
+                certfile should not be set otherwise ValueError is thrown.
 
         for more documentation see the docstring of the parent class IMAP4.
         """
 
 
-        def __init__(self, host = '', port = IMAP4_SSL_PORT, keyfile = None, certfile = None):
+        def __init__(self, host='', port=IMAP4_SSL_PORT, keyfile=None, certfile=None, ssl_context=None):
+            if ssl_context is not None and keyfile is not None:
+                raise ValueError("ssl_context and keyfile arguments are mutually "
+                                 "exclusive")
+            if ssl_context is not None and certfile is not None:
+                raise ValueError("ssl_context and certfile arguments are mutually "
+                                 "exclusive")
+
             self.keyfile = keyfile
             self.certfile = certfile
+            self.ssl_context = ssl_context
             IMAP4.__init__(self, host, port)
 
         def _create_socket(self):
             sock = IMAP4._create_socket(self)
-            return ssl.wrap_socket(sock, self.keyfile, self.certfile)
+            if self.ssl_context:
+                return self.ssl_context.wrap_socket(sock)
+            else:
+                return ssl.wrap_socket(sock, self.keyfile, self.certfile)
 
         def open(self, host='', port=IMAP4_SSL_PORT):
             """Setup connection to remote server on "host:port".

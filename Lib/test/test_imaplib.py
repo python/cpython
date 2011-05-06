@@ -258,11 +258,58 @@ class RemoteIMAP_SSLTest(RemoteIMAPTest):
     port = 993
     imap_class = IMAP4_SSL
 
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def create_ssl_context(self):
+        ssl_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+        ssl_context.load_cert_chain(CERTFILE)
+        return ssl_context
+
+    def check_logincapa(self, server):
+        try:
+            for cap in server.capabilities:
+                self.assertIsInstance(cap, str)
+            self.assertFalse('LOGINDISABLED' in server.capabilities)
+            self.assertTrue('AUTH=PLAIN' in server.capabilities)
+            rs = server.login(self.username, self.password)
+            self.assertEqual(rs[0], 'OK')
+        finally:
+            server.logout()
+
     def test_logincapa(self):
-        for cap in self.server.capabilities:
-            self.assertIsInstance(cap, str)
-        self.assertFalse('LOGINDISABLED' in self.server.capabilities)
-        self.assertTrue('AUTH=PLAIN' in self.server.capabilities)
+        with transient_internet(self.host):
+            _server = self.imap_class(self.host, self.port)
+            self.check_logincapa(_server)
+
+    def test_logincapa_with_client_certfile(self):
+        with transient_internet(self.host):
+            _server = self.imap_class(self.host, self.port, certfile=CERTFILE)
+            self.check_logincapa(_server)
+
+    def test_logincapa_with_client_ssl_context(self):
+        with transient_internet(self.host):
+            _server = self.imap_class(self.host, self.port, ssl_context=self.create_ssl_context())
+            self.check_logincapa(_server)
+
+    def test_logout(self):
+        with transient_internet(self.host):
+            _server = self.imap_class(self.host, self.port)
+            rs = _server.logout()
+            self.assertEqual(rs[0], 'BYE')
+
+    def test_ssl_context_certfile_exclusive(self):
+        with transient_internet(self.host):
+            self.assertRaises(ValueError, self.imap_class, self.host, self.port,
+                              certfile=CERTFILE, ssl_context=self.create_ssl_context())
+
+    def test_ssl_context_keyfile_exclusive(self):
+        with transient_internet(self.host):
+            self.assertRaises(ValueError, self.imap_class, self.host, self.port,
+                              keyfile=CERTFILE, ssl_context=self.create_ssl_context())
 
 
 def test_main():
