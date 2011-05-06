@@ -22,10 +22,25 @@ from test.support import HOST
 threading = support.import_module('threading')
 
 # the dummy data returned by server over the data channel when
-# RETR, LIST and NLST commands are issued
+# RETR, LIST, NLST, MLSD commands are issued
 RETR_DATA = 'abcde12345\r\n' * 1000
 LIST_DATA = 'foo\r\nbar\r\n'
 NLST_DATA = 'foo\r\nbar\r\n'
+MLSD_DATA = ("type=cdir;perm=el;unique==keVO1+ZF4; test\r\n"
+             "type=pdir;perm=e;unique==keVO1+d?3; ..\r\n"
+             "type=OS.unix=slink:/foobar;perm=;unique==keVO1+4G4; foobar\r\n"
+             "type=OS.unix=chr-13/29;perm=;unique==keVO1+5G4; device\r\n"
+             "type=OS.unix=blk-11/108;perm=;unique==keVO1+6G4; block\r\n"
+             "type=file;perm=awr;unique==keVO1+8G4; writable\r\n"
+             "type=dir;perm=cpmel;unique==keVO1+7G4; promiscuous\r\n"
+             "type=dir;perm=;unique==keVO1+1t2; no-exec\r\n"
+             "type=file;perm=r;unique==keVO1+EG4; two words\r\n"
+             "type=file;perm=r;unique==keVO1+IH4;  leading space\r\n"
+             "type=file;perm=r;unique==keVO1+1G4; file1\r\n"
+             "type=dir;perm=cpmel;unique==keVO1+7G4; incoming\r\n"
+             "type=file;perm=r;unique==keVO1+1G4; file2\r\n"
+             "type=file;perm=r;unique==keVO1+1G4; file3\r\n"
+             "type=file;perm=r;unique==keVO1+1G4; file4\r\n")
 
 
 class DummyDTPHandler(asynchat.async_chat):
@@ -49,6 +64,11 @@ class DummyDTPHandler(asynchat.async_chat):
             self.dtp_conn_closed = True
 
     def push(self, what):
+        if self.baseclass.next_data is not None:
+            what = self.baseclass.next_data
+            self.baseclass.next_data = None
+        if not what:
+            return self.close_when_done()
         super(DummyDTPHandler, self).push(what.encode('ascii'))
 
     def handle_error(self):
@@ -67,6 +87,7 @@ class DummyFTPHandler(asynchat.async_chat):
         self.last_received_cmd = None
         self.last_received_data = ''
         self.next_response = ''
+        self.next_data = None
         self.rest = None
         self.push('220 welcome')
 
@@ -206,6 +227,14 @@ class DummyFTPHandler(asynchat.async_chat):
     def cmd_nlst(self, arg):
         self.push('125 nlst ok')
         self.dtp.push(NLST_DATA)
+        self.dtp.close_when_done()
+
+    def cmd_opts(self, arg):
+        self.push('200 opts ok')
+
+    def cmd_mlsd(self, arg):
+        self.push('125 mlsd ok')
+        self.dtp.push(MLSD_DATA)
         self.dtp.close_when_done()
 
 
@@ -549,6 +578,61 @@ class TestFTPClass(TestCase):
         l = []
         self.client.dir(lambda x: l.append(x))
         self.assertEqual(''.join(l), LIST_DATA.replace('\r\n', ''))
+
+    def test_mlsd(self):
+        list(self.client.mlsd())
+        list(self.client.mlsd(path='/'))
+        list(self.client.mlsd(path='/', facts=['size', 'type']))
+
+        ls = list(self.client.mlsd())
+        for name, facts in ls:
+            self.assertTrue(name)
+            self.assertTrue('type' in facts)
+            self.assertTrue('perm' in facts)
+            self.assertTrue('unique' in facts)
+
+        def set_data(data):
+            self.server.handler_instance.next_data = data
+
+        def test_entry(line, type=None, perm=None, unique=None, name=None):
+            type = 'type' if type is None else type
+            perm = 'perm' if perm is None else perm
+            unique = 'unique' if unique is None else unique
+            name = 'name' if name is None else name
+            set_data(line)
+            _name, facts = next(self.client.mlsd())
+            self.assertEqual(_name, name)
+            self.assertEqual(facts['type'], type)
+            self.assertEqual(facts['perm'], perm)
+            self.assertEqual(facts['unique'], unique)
+
+        # plain
+        test_entry('type=type;perm=perm;unique=unique; name\r\n')
+        # "=" in fact value
+        test_entry('type=ty=pe;perm=perm;unique=unique; name\r\n', type="ty=pe")
+        test_entry('type==type;perm=perm;unique=unique; name\r\n', type="=type")
+        test_entry('type=t=y=pe;perm=perm;unique=unique; name\r\n', type="t=y=pe")
+        test_entry('type=====;perm=perm;unique=unique; name\r\n', type="====")
+        # spaces in name
+        test_entry('type=type;perm=perm;unique=unique; na me\r\n', name="na me")
+        test_entry('type=type;perm=perm;unique=unique; name \r\n', name="name ")
+        test_entry('type=type;perm=perm;unique=unique;  name\r\n', name=" name")
+        test_entry('type=type;perm=perm;unique=unique; n am  e\r\n', name="n am  e")
+        # ";" in name
+        test_entry('type=type;perm=perm;unique=unique; na;me\r\n', name="na;me")
+        test_entry('type=type;perm=perm;unique=unique; ;name\r\n', name=";name")
+        test_entry('type=type;perm=perm;unique=unique; ;name;\r\n', name=";name;")
+        test_entry('type=type;perm=perm;unique=unique; ;;;;\r\n', name=";;;;")
+        # case sensitiveness
+        set_data('Type=type;TyPe=perm;UNIQUE=unique; name\r\n')
+        _name, facts = next(self.client.mlsd())
+        [self.assertTrue(x.islower()) for x in facts.keys()]
+        # no data (directory empty)
+        set_data('')
+        self.assertRaises(StopIteration, next, self.client.mlsd())
+        set_data('')
+        for x in self.client.mlsd():
+            self.fail("unexpected data %s" % data)
 
     def test_makeport(self):
         with self.client.makeport():
