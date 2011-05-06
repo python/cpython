@@ -140,6 +140,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #12000: When a SSL certificate has a subjectAltName without any
+  dNSName entry, ssl.match_hostname() should use the subject's commonName.
+  Patch by Nicolas Bareil.
+
 - Issue #10775: assertRaises, assertRaisesRegex, assertWarns, and
   assertWarnsRegex now accept a keyword argument 'msg' when used as context
   managers.  Initial patch by Winston Ewert.
