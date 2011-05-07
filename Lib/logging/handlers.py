@@ -756,8 +756,7 @@ class SysLogHandler(logging.Handler):
         """
         Closes the socket.
         """
-        if self.unixsocket:
-            self.socket.close()
+        self.socket.close()
         logging.Handler.close(self)
 
     def mapPriority(self, levelName):

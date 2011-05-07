@@ -3484,41 +3484,39 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
     def test_rollover(self):
         fh = logging.handlers.TimedRotatingFileHandler(self.fn, 'S',
                                                        backupCount=1)
-        try:
-            r = logging.makeLogRecord({'msg': 'testing'})
-            fh.emit(r)
-            self.assertLogFile(self.fn)
-            time.sleep(1.0)
-            fh.emit(r)
-            # At this point, we should have a recent rotated file which we
-            # can test for the existence of. However, in practice, on some
-            # machines which run really slowly, we don't know how far back
-            # in time to go to look for the log file. So, we go back a fair
-            # bit, and stop as soon as we see a rotated file. In theory this
-            # could of course still fail, but the chances are lower.
-            found = False
-            now = datetime.datetime.now()
-            GO_BACK = 2 * 60 # seconds
-            for secs in range(1, GO_BACK):
-                prev = now - datetime.timedelta(seconds=secs)
-                fn = self.fn + prev.strftime(".%Y-%m-%d_%H-%M-%S")
-                found = os.path.exists(fn)
-                if found:
-                    self.rmfiles.append(fn)
-                    break
-            msg = 'No rotated files found, went back %d seconds' % GO_BACK
-            self.assertTrue(found, msg=msg)
-        finally:
-            fh.close()
+        r = logging.makeLogRecord({'msg': 'testing'})
+        fh.emit(r)
+        self.assertLogFile(self.fn)
+        time.sleep(1.0)
+        fh.emit(r)
+        fh.close()
+        # At this point, we should have a recent rotated file which we
+        # can test for the existence of. However, in practice, on some
+        # machines which run really slowly, we don't know how far back
+        # in time to go to look for the log file. So, we go back a fair
+        # bit, and stop as soon as we see a rotated file. In theory this
+        # could of course still fail, but the chances are lower.
+        found = False
+        now = datetime.datetime.now()
+        GO_BACK = 2 * 60 # seconds
+        for secs in range(1, GO_BACK):
+            prev = now - datetime.timedelta(seconds=secs)
+            fn = self.fn + prev.strftime(".%Y-%m-%d_%H-%M-%S")
+            found = os.path.exists(fn)
+            if found:
+                self.rmfiles.append(fn)
+                break
+        msg = 'No rotated files found, went back %d seconds' % GO_BACK
+        self.assertTrue(found, msg=msg)
 
     def test_invalid(self):
         assertRaises = self.assertRaises
         assertRaises(ValueError, logging.handlers.TimedRotatingFileHandler,
-                     self.fn, 'X')
+                     self.fn, 'X', delay=True)
         assertRaises(ValueError, logging.handlers.TimedRotatingFileHandler,
-                     self.fn, 'W')
+                     self.fn, 'W', delay=True)
         assertRaises(ValueError, logging.handlers.TimedRotatingFileHandler,
-                     self.fn, 'W7')
+                     self.fn, 'W7', delay=True)
 
 def secs(**kw):
     return datetime.timedelta(**kw) // datetime.timedelta(seconds=1)
