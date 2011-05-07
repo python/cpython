@@ -469,6 +469,9 @@ class SocketHandler(logging.Handler):
                 self.retryTime = None # next time, no delay before trying
             except socket.error:
                 #Creation failed, so set the retry time and return.
+                if self.sock is not None:
+                    self.sock.close()
+                    self.sock = None
                 if self.retryTime is None:
                     self.retryPeriod = self.retryStart
                 else:
