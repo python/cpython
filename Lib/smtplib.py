@@ -222,6 +222,7 @@ class SMTP:
     ehlo_msg = "ehlo"
     ehlo_resp = None
     does_esmtp = 0
+    default_port = SMTP_PORT
 
     def __init__(self, host='', port=0, local_hostname=None,
                  timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
@@ -237,7 +238,6 @@ class SMTP:
         """
         self.timeout = timeout
         self.esmtp_features = {}
-        self.default_port = SMTP_PORT
         if host:
             (code, msg) = self.connect(host, port)
             if code != 220:
@@ -756,13 +756,15 @@ if _have_ssl:
         are also optional - they can contain a PEM formatted private key and
         certificate chain file for the SSL connection.
         """
+
+        default_port = SMTP_SSL_PORT
+
         def __init__(self, host='', port=0, local_hostname=None,
                      keyfile=None, certfile=None,
                      timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
             self.keyfile = keyfile
             self.certfile = certfile
             SMTP.__init__(self, host, port, local_hostname, timeout)
-            self.default_port = SMTP_SSL_PORT
 
         def _get_socket(self, host, port, timeout):
             if self.debuglevel > 0:
