@@ -83,6 +83,10 @@ Core and Builtins
 Library
 -------
 
+- Issue 11999: fixed sporadic sync failure mailbox.Maildir due to its trying to
+  detect mtime changes by comparing to the system clock instead of to the
+  previous value of the mtime.
+
 - ntpath.samefile failed to notice that "a.txt" and "A.TXT" refer to the same
   file on Windows XP. As noticed in issue #10684.
 
