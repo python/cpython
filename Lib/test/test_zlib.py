@@ -72,47 +72,6 @@ class ChecksumTestCase(unittest.TestCase):
                          zlib.crc32('spam',  (2**31)))
 
 
-# Issue #11277 - check that inputs of 2 GB (or 1 GB on 32 bits system) are
-# handled correctly. Be aware of issues #1202. We cannot test a buffer of 4 GB
-# or more (#8650, #8651 and #10276), because the zlib stores the buffer size
-# into an int.
-class ChecksumBigBufferTestCase(unittest.TestCase):
-    if sys.maxsize > _4G:
-        # (64 bits system) crc32() and adler32() stores the buffer size into an
-        # int, the maximum filesize is INT_MAX (0x7FFFFFFF)
-        filesize = 0x7FFFFFFF
-    else:
-        # (32 bits system) On a 32 bits OS, a process cannot usually address
-        # more than 2 GB, so test only 1 GB
-        filesize = _1G
-
-    @unittest.skipUnless(mmap, "mmap() is not available.")
-    def test_big_buffer(self):
-        if sys.platform[:3] == 'win' or sys.platform == 'darwin':
-            requires('largefile',
-                     'test requires %s bytes and a long time to run' %
-                     str(self.filesize))
-        try:
-            with open(TESTFN, "wb+") as f:
-                f.seek(self.filesize-4)
-                f.write("asdf")
-                f.flush()
-                m = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
-                try:
-                    if sys.maxsize > _4G:
-                        self.assertEqual(zlib.crc32(m), 0x709418e7)
-                        self.assertEqual(zlib.adler32(m), -2072837729)
-                    else:
-                        self.assertEqual(zlib.crc32(m), 722071057)
-                        self.assertEqual(zlib.adler32(m), -1002962529)
-                finally:
-                    m.close()
-        except (IOError, OverflowError):
-            raise unittest.SkipTest("filesystem doesn't have largefile support")
-        finally:
-            unlink(TESTFN)
-
-
 class ExceptionTestCase(unittest.TestCase):
     # make sure we generate some expected errors
     def test_badlevel(self):
@@ -595,7 +554,6 @@ LAERTES
 def test_main():
     run_unittest(
         ChecksumTestCase,
-        ChecksumBigBufferTestCase,
         ExceptionTestCase,
         CompressTestCase,
         CompressObjectTestCase
