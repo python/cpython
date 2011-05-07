@@ -66,6 +66,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11927: SMTP_SSL now uses port 465 by default as documented.  Patch
+  by Kasun Herath.
+
 - Issue 11999: fixed sporadic sync failure mailbox.Maildir due to its trying to
   detect mtime changes by comparing to the system clock instead of to the
   previous value of the mtime.
