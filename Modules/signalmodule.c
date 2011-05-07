@@ -503,7 +503,7 @@ PyDoc_STRVAR(getitimer_doc,
 Returns current value of given itimer.");
 #endif
 
-#ifdef PYPTHREAD_SIGMASK
+#if defined(PYPTHREAD_SIGMASK) || defined(HAVE_SIGWAIT)
 /* Convert an iterable to a sigset.
    Return 0 on success, return -1 and raise an exception on error. */
 
@@ -551,7 +551,9 @@ error:
     Py_XDECREF(iterator);
     return result;
 }
+#endif
 
+#if defined(PYPTHREAD_SIGMASK) || defined(HAVE_SIGPENDING)
 static PyObject*
 sigset_to_set(sigset_t mask)
 {
@@ -585,7 +587,9 @@ sigset_to_set(sigset_t mask)
     }
     return result;
 }
+#endif
 
+#ifdef PYPTHREAD_SIGMASK
 static PyObject *
 signal_pthread_sigmask(PyObject *self, PyObject *args)
 {
@@ -603,7 +607,7 @@ signal_pthread_sigmask(PyObject *self, PyObject *args)
     err = pthread_sigmask(how, &mask, &previous);
     if (err != 0) {
         errno = err;
-        PyErr_SetFromErrno(PyExc_RuntimeError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
@@ -619,6 +623,88 @@ PyDoc_STRVAR(signal_pthread_sigmask_doc,
 \n\
 Fetch and/or change the signal mask of the calling thread.");
 #endif   /* #ifdef PYPTHREAD_SIGMASK */
+
+
+#ifdef HAVE_SIGPENDING
+static PyObject *
+signal_sigpending(PyObject *self)
+{
+    int err;
+    sigset_t mask;
+    err = sigpending(&mask);
+    if (err)
+        return PyErr_SetFromErrno(PyExc_OSError);
+    return sigset_to_set(mask);
+}
+
+PyDoc_STRVAR(signal_sigpending_doc,
+"sigpending() -> list\n\
+\n\
+Examine pending signals.");
+#endif   /* #ifdef HAVE_SIGPENDING */
+
+
+#ifdef HAVE_SIGWAIT
+static PyObject *
+signal_sigwait(PyObject *self, PyObject *args)
+{
+    PyObject *signals;
+    sigset_t set;
+    int err, signum;
+
+    if (!PyArg_ParseTuple(args, "O:sigwait", &signals))
+        return NULL;
+
+    if (iterable_to_sigset(signals, &set))
+        return NULL;
+
+    err = sigwait(&set, &signum);
+    if (err) {
+        errno = err;
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+
+    return PyLong_FromLong(signum);
+}
+
+PyDoc_STRVAR(signal_sigwait_doc,
+"sigwait(sigset) -> signum\n\
+\n\
+Wait a signal.");
+#endif   /* #ifdef HAVE_SIGPENDING */
+
+
+#if defined(HAVE_PTHREAD_KILL) && defined(WITH_THREAD)
+static PyObject *
+signal_pthread_kill(PyObject *self, PyObject *args)
+{
+    long tid;
+    int signum;
+    int err;
+
+    if (!PyArg_ParseTuple(args, "li:pthread_kill", &tid, &signum))
+        return NULL;
+
+    err = pthread_kill(tid, signum);
+    if (err != 0) {
+        errno = err;
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+
+    /* the signal may have been send to the current thread */
+    if (PyErr_CheckSignals())
+        return NULL;
+
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(signal_pthread_kill_doc,
+"pthread_kill(thread_id, signum)\n\
+\n\
+Send a signal to a thread.");
+#endif   /* #if defined(HAVE_PTHREAD_KILL) && defined(WITH_THREAD) */
+
 
 
 /* List of functions defined in the module */
@@ -644,9 +730,21 @@ static PyMethodDef signal_methods[] = {
 #endif
     {"default_int_handler", signal_default_int_handler,
      METH_VARARGS, default_int_handler_doc},
+#if defined(HAVE_PTHREAD_KILL) && defined(WITH_THREAD)
+    {"pthread_kill",            (PyCFunction)signal_pthread_kill,
+     METH_VARARGS, signal_pthread_kill_doc},
+#endif
 #ifdef PYPTHREAD_SIGMASK
     {"pthread_sigmask",         (PyCFunction)signal_pthread_sigmask,
      METH_VARARGS, signal_pthread_sigmask_doc},
+#endif
+#ifdef HAVE_SIGPENDING
+    {"sigpending",              (PyCFunction)signal_sigpending,
+     METH_NOARGS, signal_sigpending_doc},
+#endif
+#ifdef HAVE_SIGWAIT
+    {"sigwait",                 (PyCFunction)signal_sigwait,
+     METH_VARARGS, signal_sigwait_doc},
 #endif
     {NULL,                      NULL}           /* sentinel */
 };

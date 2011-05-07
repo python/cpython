@@ -590,6 +590,9 @@
 /* Define to 1 if you have the `pthread_sigmask' function. */
 #undef HAVE_PTHREAD_SIGMASK
 
+/* Define to 1 if you have the `pthread_kill' function. */
+#undef HAVE_PTHREAD_KILL
+
 /* Define to 1 if you have the <pty.h> header file. */
 #undef HAVE_PTY_H
 
@@ -719,11 +722,17 @@
 /* Define to 1 if you have the `siginterrupt' function. */
 #undef HAVE_SIGINTERRUPT
 
+/* Define to 1 if you have the `sigpending' function. */
+#undef HAVE_SIGPENDING
+
 /* Define to 1 if you have the <signal.h> header file. */
 #undef HAVE_SIGNAL_H
 
 /* Define to 1 if you have the `sigrelse' function. */
 #undef HAVE_SIGRELSE
+
+/* Define to 1 if you have the `sigwait' function. */
+#undef HAVE_SIGWAIT
 
 /* Define to 1 if you have the `snprintf' function. */
 #undef HAVE_SNPRINTF

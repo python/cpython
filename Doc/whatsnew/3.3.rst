@@ -123,10 +123,13 @@ sys
 signal
 ------
 
-* The :mod:`signal` module has a new :func:`~signal.pthread_sigmask` function
-  to fetch and/or change the signal mask of the calling thread.
+* The :mod:`signal` module has a new functions:
 
-  (Contributed by Jean-Paul Calderone in :issue:`8407`)
+  * :func:`~signal.pthread_sigmask`: fetch and/or change the signal mask of the
+    calling thread (Contributed by Jean-Paul Calderone in :issue:`8407`) ;
+  * :func:`~signal.pthread_kill`: send a signal to a thread ;
+  * :func:`~signal.sigpending`: examine pending functions ;
+  * :func:`~signal.sigwait`: wait a signal.
 
 
 Optimizations
