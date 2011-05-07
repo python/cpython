@@ -179,6 +179,29 @@ The :mod:`signal` module defines the following functions:
    will then be called.  Returns nothing.  Not on Windows. (See the Unix man page
    :manpage:`signal(2)`.)
 
+   See also :func:`sigwait` and :func:`sigpending`.
+
+
+.. function:: pthread_kill(thread_id, signum)
+
+   Send the signal *signum* to the thread *thread_id*, another thread in the same
+   process as the caller.  The signal is asynchronously directed to thread.
+
+   *thread_id* can be read from the :attr:`~threading.Thread.ident` attribute
+   of :attr:`threading.Thread`.  For example,
+   ``threading.current_thread().ident`` gives the identifier of the current
+   thread.
+
+   If *signum* is 0, then no signal is sent, but error checking is still
+   performed; this can be used to check if a thread is still running.
+
+   Availability: Unix (see the man page :manpage:`pthread_kill(3)` for further
+   information).
+
+   See also :func:`os.kill`.
+
+   .. versionadded:: 3.3
+
 
 .. function:: pthread_sigmask(how, mask)
 
@@ -205,6 +228,8 @@ The :mod:`signal` module defines the following functions:
 
    Availability: Unix. See the man page :manpage:`sigprocmask(3)` and
    :manpage:`pthread_sigmask(3)` for further information.
+
+   See also :func:`pause`, :func:`sigpending` and :func:`sigwait`.
 
    .. versionadded:: 3.3
 
@@ -281,6 +306,34 @@ The :mod:`signal` module defines the following functions:
    On Windows, :func:`signal` can only be called with :const:`SIGABRT`,
    :const:`SIGFPE`, :const:`SIGILL`, :const:`SIGINT`, :const:`SIGSEGV`, or
    :const:`SIGTERM`. A :exc:`ValueError` will be raised in any other case.
+
+
+.. function:: sigpending()
+
+   Examine the set of signals that are pending for delivery to the calling
+   thread (i.e., the signals which have been raised while blocked).  Return the
+   set of the pending signals.
+
+   Availability: Unix (see the man page :manpage:`sigpending(2)` for further
+   information).
+
+   See also :func:`pause`, :func:`pthread_sigmask` and :func:`sigwait`.
+
+   .. versionadded:: 3.3
+
+
+.. function:: sigwait(sigset)
+
+   Suspend execution of the calling thread until the delivery of one of the
+   signals specified in the signal set *sigset*.  The function accepts the signal
+   (removes it from the pending list of signals), and returns the signal number.
+
+   Availability: Unix (see the man page :manpage:`sigwait(3)` for further
+   information).
+
+   See also :func:`pause`, :func:`pthread_sigmask` and :func:`sigpending`.
+
+   .. versionadded:: 3.3
 
 
 .. _signal-example:

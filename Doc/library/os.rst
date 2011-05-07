@@ -2284,6 +2284,8 @@ written in Python, such as a mail server's external command delivery program.
    will be set to *sig*. The Windows version of :func:`kill` additionally takes
    process handles to be killed.
 
+   See also :func:`signal.pthread_kill`.
+
    .. versionadded:: 3.2
       Windows support.
 
