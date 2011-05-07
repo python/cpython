@@ -446,8 +446,12 @@ class SocketHandler(logging.Handler):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if hasattr(s, 'settimeout'):
             s.settimeout(timeout)
-        s.connect((self.host, self.port))
-        return s
+        try:
+            s.connect((self.host, self.port))
+            return s
+        except socket.error:
+            s.close()
+            raise
 
     def createSocket(self):
         """
@@ -469,9 +473,6 @@ class SocketHandler(logging.Handler):
                 self.retryTime = None # next time, no delay before trying
             except socket.error:
                 #Creation failed, so set the retry time and return.
-                if self.sock is not None:
-                    self.sock.close()
-                    self.sock = None
                 if self.retryTime is None:
                     self.retryPeriod = self.retryStart
                 else:
