@@ -84,6 +84,8 @@ PyInit_errno(void)
      * The names and comments are borrowed from linux/include/errno.h,
      * which should be pretty all-inclusive.  However, the Solaris specific
      * names and comments are borrowed from sys/errno.h in Solaris.
+     * MacOSX specific names and comments are borrowed from sys/errno.h in
+     * MacOSX.
      */
 
 #ifdef ENODEV
@@ -846,6 +848,59 @@ PyInit_errno(void)
 #endif
 #ifdef ENOTACTIVE
     inscode(d, ds, de, "ENOTACTIVE", ENOTACTIVE, "Facility is not active");
+#endif
+
+    /* MacOSX specific errnos */
+#ifdef EAUTH
+    inscode(d, ds, de, "EAUTH", EAUTH, "Authentication error");
+#endif
+#ifdef EBADARCH
+    inscode(d, ds, de, "EBADARCH", EBADARCH, "Bad CPU type in executable");
+#endif
+#ifdef EBADEXEC
+    inscode(d, ds, de, "EBADEXEC", EBADEXEC, "Bad executable (or shared library)");
+#endif
+#ifdef EBADMACHO
+    inscode(d, ds, de, "EBADMACHO", EBADMACHO, "Malformed Mach-o file");
+#endif
+#ifdef EBADRPC
+    inscode(d, ds, de, "EBADRPC", EBADRPC, "RPC struct is bad");
+#endif
+#ifdef EDEVERR
+    inscode(d, ds, de, "EDEVERR", EDEVERR, "Device error");
+#endif
+#ifdef EFTYPE
+    inscode(d, ds, de, "EFTYPE", EFTYPE, "Inappropriate file type or format");
+#endif
+#ifdef ENEEDAUTH
+    inscode(d, ds, de, "ENEEDAUTH", ENEEDAUTH, "Need authenticator");
+#endif
+#ifdef ENOATTR
+    inscode(d, ds, de, "ENOATTR", ENOATTR, "Attribute not found");
+#endif
+#ifdef ENOPOLICY
+    inscode(d, ds, de, "ENOPOLICY", ENOPOLICY, "Policy not found");
+#endif
+#ifdef EPROCLIM
+    inscode(d, ds, de, "EPROCLIM", EPROCLIM, "Too many processes");
+#endif
+#ifdef EPROCUNAVAIL
+    inscode(d, ds, de, "EPROCUNAVAIL", EPROCUNAVAIL, "Bad procedure for program");
+#endif
+#ifdef EPROGMISMATCH
+    inscode(d, ds, de, "EPROGMISMATCH", EPROGMISMATCH, "Program version wrong");
+#endif
+#ifdef EPROGUNAVAIL
+    inscode(d, ds, de, "EPROGUNAVAIL", EPROGUNAVAIL, "RPC prog. not avail");
+#endif
+#ifdef EPWROFF
+    inscode(d, ds, de, "EPWROFF", EPWROFF, "Device power is off");
+#endif
+#ifdef ERPCMISMATCH
+    inscode(d, ds, de, "ERPCMISMATCH", ERPCMISMATCH, "RPC version wrong");
+#endif
+#ifdef ESHLIBVERS
+    inscode(d, ds, de, "ESHLIBVERS", ESHLIBVERS, "Shared library version mismatch");
 #endif
 
     Py_DECREF(de);
