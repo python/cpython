@@ -232,12 +232,13 @@ class FTP:
         This does not follow the procedure from the RFC to send Telnet
         IP and Synch; that doesn't seem to work with the servers I've
         tried.  Instead, just send the ABOR command as OOB data.'''
-        line = 'ABOR' + CRLF
+        line = b'ABOR' + B_CRLF
         if self.debugging > 1: print('*put urgent*', self.sanitize(line))
         self.sock.sendall(line, MSG_OOB)
         resp = self.getmultiline()
         if resp[:3] not in ('426', '225', '226'):
             raise error_proto(resp)
+        return resp
 
     def sendcmd(self, cmd):
         '''Send a command and return the response.'''
