@@ -580,8 +580,11 @@ Tools/Demos
 
 - Issue #11179: Make ccbench work under Python 3.1 and 2.7 again.
 
-Extensions
-----------
+Extension Modules
+-----------------
+
+- Issue #12017: Fix segfault in json.loads() while decoding highly-nested
+  objects using the C accelerations.
 
 - Issue #1838: Prevent segfault in ctypes, when _as_parameter_ on a class is set
   to an instance of the class.
