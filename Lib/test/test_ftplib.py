@@ -586,10 +586,12 @@ class TestFTPClass(TestCase):
 
         ls = list(self.client.mlsd())
         for name, facts in ls:
+            self.assertIsInstance(name, str)
+            self.assertIsInstance(facts, dict)
             self.assertTrue(name)
-            self.assertTrue('type' in facts)
-            self.assertTrue('perm' in facts)
-            self.assertTrue('unique' in facts)
+            self.assertIn('type', facts)
+            self.assertIn('perm', facts)
+            self.assertIn('unique', facts)
 
         def set_data(data):
             self.server.handler_instance.next_data = data
@@ -626,7 +628,8 @@ class TestFTPClass(TestCase):
         # case sensitiveness
         set_data('Type=type;TyPe=perm;UNIQUE=unique; name\r\n')
         _name, facts = next(self.client.mlsd())
-        [self.assertTrue(x.islower()) for x in facts.keys()]
+        for x in facts:
+            self.assertTrue(x.islower())
         # no data (directory empty)
         set_data('')
         self.assertRaises(StopIteration, next, self.client.mlsd())

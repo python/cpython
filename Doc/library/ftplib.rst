@@ -322,13 +322,13 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
 .. method:: FTP.mlsd(path="", facts=[])
 
    List a directory in a standardized format by using MLSD command
-   (:rfc:`3659`). If *path* is omitted the current directory is assumed.
+   (:rfc:`3659`).  If *path* is omitted the current directory is assumed.
    *facts* is a list of strings representing the type of information desired
-   (e.g. *["type", "size", "perm"]*).  Return a generator object yielding a
-   tuple of two elements for every file found in path. First element is the
-   file name, the second one is a dictionary including a variable number of
-   "facts" depending on the server and whether *facts* argument has been
-   provided.
+   (e.g. ``["type", "size", "perm"]``).  Return a generator object yielding a
+   tuple of two elements for every file found in path.  First element is the
+   file name, the second one is a dictionary containing facts about the file
+   name.  Content of this dictionary might be limited by the *facts* argument
+   but server is not guaranteed to return all requested facts.
 
    .. versionadded:: 3.3
 
@@ -340,7 +340,7 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    directory).  Multiple arguments can be used to pass non-standard options to
    the ``NLST`` command.
 
-   .. deprecated:: 3.3 use :meth:`mlsd` instead
+   .. deprecated:: 3.3 use :meth:`mlsd` instead.
 
 
 .. method:: FTP.dir(argument[, ...])
@@ -352,7 +352,7 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    as a *callback* function as for :meth:`retrlines`; the default prints to
    ``sys.stdout``.  This method returns ``None``.
 
-   .. deprecated:: 3.3 use :meth:`mlsd` instead
+   .. deprecated:: 3.3 use :meth:`mlsd` instead.
 
 
 .. method:: FTP.rename(fromname, toname)
