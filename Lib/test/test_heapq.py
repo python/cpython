@@ -349,7 +349,7 @@ class TestErrorHandling(unittest.TestCase):
                 self.assertRaises(TypeError, f, 2, N(s))
                 self.assertRaises(ZeroDivisionError, f, 2, E(s))
 
-class TestErrorHandling_Python(unittest.TestCase):
+class TestErrorHandling_Python(TestErrorHandling):
     module = py_heapq
 
 class TestErrorHandling_C(TestErrorHandling):
