@@ -17,6 +17,13 @@ class SmtpSSLTest(unittest.TestCase):
         server.ehlo()
         server.quit()
 
+    def test_connect_default_port(self):
+        test_support.get_attribute(smtplib, 'SMTP_SSL')
+        with test_support.transient_internet(self.testServer):
+            server = smtplib.SMTP_SSL(self.testServer)
+        server.ehlo()
+        server.quit()
+
 def test_main():
     test_support.run_unittest(SmtpSSLTest)
 
