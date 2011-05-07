@@ -186,7 +186,7 @@ faulthandler_dump_traceback_py(PyObject *self,
 {
     static char *kwlist[] = {"file", "all_threads", NULL};
     PyObject *file = NULL;
-    int all_threads = 0;
+    int all_threads = 1;
     PyThreadState *tstate;
     const char *errmsg;
     int fd;
@@ -306,7 +306,7 @@ faulthandler_enable(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     static char *kwlist[] = {"file", "all_threads", NULL};
     PyObject *file = NULL;
-    int all_threads = 0;
+    int all_threads = 1;
     unsigned int i;
     fault_handler_t *handler;
 #ifdef HAVE_SIGACTION
@@ -648,7 +648,7 @@ faulthandler_register(PyObject *self,
     static char *kwlist[] = {"signum", "file", "all_threads", NULL};
     int signum;
     PyObject *file = NULL;
-    int all_threads = 0;
+    int all_threads = 1;
     int fd;
     user_signal_t *user;
     _Py_sighandler_t previous;
@@ -916,7 +916,7 @@ PyDoc_STRVAR(module_doc,
 static PyMethodDef module_methods[] = {
     {"enable",
      (PyCFunction)faulthandler_enable, METH_VARARGS|METH_KEYWORDS,
-     PyDoc_STR("enable(file=sys.stderr, all_threads=False): "
+     PyDoc_STR("enable(file=sys.stderr, all_threads=True): "
                "enable the fault handler")},
     {"disable", (PyCFunction)faulthandler_disable_py, METH_NOARGS,
      PyDoc_STR("disable(): disable the fault handler")},
@@ -924,7 +924,7 @@ static PyMethodDef module_methods[] = {
      PyDoc_STR("is_enabled()->bool: check if the handler is enabled")},
     {"dump_traceback",
      (PyCFunction)faulthandler_dump_traceback_py, METH_VARARGS|METH_KEYWORDS,
-     PyDoc_STR("dump_traceback(file=sys.stderr, all_threads=False): "
+     PyDoc_STR("dump_traceback(file=sys.stderr, all_threads=True): "
                "dump the traceback of the current thread, or of all threads "
                "if all_threads is True, into file")},
 #ifdef FAULTHANDLER_LATER
@@ -943,7 +943,7 @@ static PyMethodDef module_methods[] = {
 #ifdef FAULTHANDLER_USER
     {"register",
      (PyCFunction)faulthandler_register, METH_VARARGS|METH_KEYWORDS,
-     PyDoc_STR("register(signum, file=sys.stderr, all_threads=False): "
+     PyDoc_STR("register(signum, file=sys.stderr, all_threads=True): "
                "register an handler for the signal 'signum': dump the "
                "traceback of the current thread, or of all threads if "
                "all_threads is True, into file")},

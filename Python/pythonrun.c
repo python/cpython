@@ -2144,7 +2144,7 @@ Py_FatalError(const char *msg)
         if (tstate != NULL) {
             fputc('\n', stderr);
             fflush(stderr);
-            _Py_DumpTraceback(fd, tstate);
+            _Py_DumpTracebackThreads(fd, tstate->interp, tstate);
         }
         _PyFaulthandler_Fini();
     }
