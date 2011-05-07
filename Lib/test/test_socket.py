@@ -274,6 +274,45 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertRaises(socket.error, raise_gaierror,
                               "Error raising socket exception.")
 
+    def testSendtoErrors(self):
+        # Testing that sendto doens't masks failures. See #10169.
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.addCleanup(s.close)
+        s.bind(('', 0))
+        sockname = s.getsockname()
+        # 2 args
+        with self.assertRaises(UnicodeEncodeError):
+            s.sendto(u'\u2620', sockname)
+        with self.assertRaises(TypeError) as cm:
+            s.sendto(5j, sockname)
+        self.assertIn('not complex', str(cm.exception))
+        with self.assertRaises(TypeError) as cm:
+            s.sendto('foo', None)
+        self.assertIn('not NoneType', str(cm.exception))
+        # 3 args
+        with self.assertRaises(UnicodeEncodeError):
+            s.sendto(u'\u2620', 0, sockname)
+        with self.assertRaises(TypeError) as cm:
+            s.sendto(5j, 0, sockname)
+        self.assertIn('not complex', str(cm.exception))
+        with self.assertRaises(TypeError) as cm:
+            s.sendto('foo', 0, None)
+        self.assertIn('not NoneType', str(cm.exception))
+        with self.assertRaises(TypeError) as cm:
+            s.sendto('foo', 'bar', sockname)
+        self.assertIn('an integer is required', str(cm.exception))
+        with self.assertRaises(TypeError) as cm:
+            s.sendto('foo', None, None)
+        self.assertIn('an integer is required', str(cm.exception))
+        # wrong number of args
+        with self.assertRaises(TypeError) as cm:
+            s.sendto('foo')
+        self.assertIn('(1 given)', str(cm.exception))
+        with self.assertRaises(TypeError) as cm:
+            s.sendto('foo', 0, sockname, 4)
+        self.assertIn('(4 given)', str(cm.exception))
+
+
     def testCrucialConstants(self):
         # Testing for mission critical constants
         socket.AF_INET

@@ -2826,14 +2826,24 @@ sock_sendto(PySocketSockObject *s, PyObject *args)
     Py_ssize_t len;
     sock_addr_t addrbuf;
     int addrlen, n = -1, flags, timeout;
+    int arglen;
 
     flags = 0;
-    if (!PyArg_ParseTuple(args, "s*O:sendto", &pbuf, &addro)) {
-        PyErr_Clear();
-        if (!PyArg_ParseTuple(args, "s*iO:sendto",
-                              &pbuf, &flags, &addro))
-            return NULL;
+    arglen = PyTuple_Size(args);
+    switch(arglen) {
+        case 2:
+            PyArg_ParseTuple(args, "s*O:sendto", &pbuf, &addro);
+            break;
+        case 3:
+            PyArg_ParseTuple(args, "s*iO:sendto", &pbuf, &flags, &addro);
+            break;
+        default:
+            PyErr_Format(PyExc_TypeError, "sendto() takes 2 or 3"
+                         " arguments (%d given)", arglen);
     }
+    if (PyErr_Occurred())
+        return NULL;
+
     buf = pbuf.buf;
     len = pbuf.len;
 
