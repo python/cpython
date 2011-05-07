@@ -274,6 +274,36 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertRaises(socket.error, raise_gaierror,
                               "Error raising socket exception.")
 
+    def testSendtoErrors(self):
+        # Testing that sendto doens't masks failures. See #10169.
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.addCleanup(s.close)
+        s.bind(('', 0))
+        sockname = s.getsockname()
+        # 2 args
+        with self.assertRaises(TypeError):
+            s.sendto('\u2620', sockname)
+        with self.assertRaises(TypeError):
+            s.sendto(5j, sockname)
+        with self.assertRaises(TypeError):
+            s.sendto(b'foo', None)
+        # 3 args
+        with self.assertRaises(TypeError):
+            s.sendto('\u2620', 0, sockname)
+        with self.assertRaises(TypeError):
+            s.sendto(5j, 0, sockname)
+        with self.assertRaises(TypeError):
+            s.sendto(b'foo', 0, None)
+        with self.assertRaises(TypeError):
+            s.sendto(b'foo', 'bar', sockname)
+        with self.assertRaises(TypeError):
+            s.sendto(b'foo', None, None)
+        # wrong number of args
+        with self.assertRaises(TypeError):
+            s.sendto(b'foo')
+        with self.assertRaises(TypeError):
+            s.sendto(b'foo', 0, sockname, 4)
+
     def testCrucialConstants(self):
         # Testing for mission critical constants
         socket.AF_INET
