@@ -224,19 +224,24 @@ class Maildir(Mailbox):
     def __init__(self, dirname, factory=None, create=True):
         """Initialize a Maildir instance."""
         Mailbox.__init__(self, dirname, factory, create)
+        self._paths = {
+            'tmp': os.path.join(self._path, 'tmp'),
+            'new': os.path.join(self._path, 'new'),
+            'cur': os.path.join(self._path, 'cur'),
+            }
         if not os.path.exists(self._path):
             if create:
                 os.mkdir(self._path, 0o700)
-                os.mkdir(os.path.join(self._path, 'tmp'), 0o700)
-                os.mkdir(os.path.join(self._path, 'new'), 0o700)
-                os.mkdir(os.path.join(self._path, 'cur'), 0o700)
+                for path in self._paths.values():
+                    os.mkdir(path, 0o700)
             else:
                 raise NoSuchMailboxError(self._path)
         self._toc = {}
-        self._last_read = None          # Records last time we read cur/new
-        # NOTE: we manually invalidate _last_read each time we do any
-        # modifications ourselves, otherwise we might get tripped up by
-        # bogus mtime behaviour on some systems (see issue #6896).
+        self._toc_mtimes = {}
+        for subdir in ('cur', 'new'):
+            self._toc_mtimes[subdir] = os.path.getmtime(self._paths[subdir])
+        self._last_read = time.time()  # Records last time we read cur/new
+        self._skewfactor = 0.1         # Adjust if os/fs clocks are skewing
 
     def add(self, message):
         """Add message and return assigned key."""
@@ -270,15 +275,11 @@ class Maildir(Mailbox):
                 raise
         if isinstance(message, MaildirMessage):
             os.utime(dest, (os.path.getatime(dest), message.get_date()))
-        # Invalidate cached toc
-        self._last_read = None
         return uniq
 
     def remove(self, key):
         """Remove the keyed message; raise KeyError if it doesn't exist."""
         os.remove(os.path.join(self._path, self._lookup(key)))
-        # Invalidate cached toc (only on success)
-        self._last_read = None
 
     def discard(self, key):
         """If the keyed message exists, remove it."""
@@ -313,8 +314,6 @@ class Maildir(Mailbox):
         if isinstance(message, MaildirMessage):
             os.utime(new_path, (os.path.getatime(new_path),
                                 message.get_date()))
-        # Invalidate cached toc
-        self._last_read = None
 
     def get_message(self, key):
         """Return a Message representation or raise a KeyError."""
@@ -370,8 +369,8 @@ class Maildir(Mailbox):
     def flush(self):
         """Write any pending changes to disk."""
         # Maildir changes are always written immediately, so there's nothing
-        # to do except invalidate our cached toc.
-        self._last_read = None
+        # to do.
+        pass
 
     def lock(self):
         """Lock the mailbox."""
@@ -469,34 +468,39 @@ class Maildir(Mailbox):
 
     def _refresh(self):
         """Update table of contents mapping."""
-        new_mtime = os.path.getmtime(os.path.join(self._path, 'new'))
-        cur_mtime = os.path.getmtime(os.path.join(self._path, 'cur'))
-
-        if (self._last_read is not None and
-            new_mtime <= self._last_read and cur_mtime <= self._last_read):
-            return
-
+        # If it has been less than two seconds since the last _refresh() call,
+        # we have to unconditionally re-read the mailbox just in case it has
+        # been modified, because os.path.mtime() has a 2 sec resolution in the
+        # most common worst case (FAT) and a 1 sec resolution typically.  This
+        # results in a few unnecessary re-reads when _refresh() is called
+        # multiple times in that interval, but once the clock ticks over, we
+        # will only re-read as needed.  Because the filesystem might be being
+        # served by an independent system with its own clock, we record and
+        # compare with the mtimes from the filesystem.  Because the other
+        # system's clock might be skewing relative to our clock, we add an
+        # extra delta to our wait.  The default is one tenth second, but is an
+        # instance variable and so can be adjusted if dealing with a
+        # particularly skewed or irregular system.
+        if time.time() - self._last_read > 2 + self._skewfactor:
+            refresh = False
+            for subdir in self._toc_mtimes:
+                mtime = os.path.getmtime(self._paths[subdir])
+                if mtime > self._toc_mtimes[subdir]:
+                    refresh = True
+                self._toc_mtimes[subdir] = mtime
+            if not refresh:
+                return
+        # Refresh toc
         self._toc = {}
-        def update_dir (subdir):
-            path = os.path.join(self._path, subdir)
+        for subdir in self._toc_mtimes:
+            path = self._paths[subdir]
             for entry in os.listdir(path):
                 p = os.path.join(path, entry)
                 if os.path.isdir(p):
                     continue
                 uniq = entry.split(self.colon)[0]
                 self._toc[uniq] = os.path.join(subdir, entry)
-
-        update_dir('new')
-        update_dir('cur')
-
-        # We record the current time - 1sec so that, if _refresh() is called
-        # again in the same second, we will always re-read the mailbox
-        # just in case it's been modified.  (os.path.mtime() only has
-        # 1sec resolution.)  This results in a few unnecessary re-reads
-        # when _refresh() is called multiple times in the same second,
-        # but once the clock ticks over, we will only re-read as needed.
-        now = int(time.time() - 1)
-        self._last_read = time.time() - 1
+        self._last_read = time.time()
 
     def _lookup(self, key):
         """Use TOC to return subpath for given key, or raise a KeyError."""

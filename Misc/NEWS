@@ -66,6 +66,10 @@ Core and Builtins
 Library
 -------
 
+- Issue 11999: fixed sporadic sync failure mailbox.Maildir due to its trying to
+  detect mtime changes by comparing to the system clock instead of to the
+  previous value of the mtime.
+
 - Issue #10684: shutil.move used to delete a folder on case insensitive
   filesystems when the source and destination name where the same except
   for the case.

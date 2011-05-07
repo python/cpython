@@ -742,20 +742,17 @@ class TestMaildir(TestMailbox):
 
     def test_reread(self):
 
-        # Initially, the mailbox has not been read and the time is null.
-        assert getattr(self._box, '_last_read', None) is None
-
-        # Refresh mailbox; the times should now be set to something.
-        self._box._refresh()
-        assert getattr(self._box, '_last_read', None) is not None
-
-        # Put the last modified times more than one second into the past
-        # (because mtime has a one second granularity, a refresh is done
-        # unconditionally if called for within the same second, just in case
-        # the mbox has changed).
+        # Put the last modified times more than two seconds into the past
+        # (because mtime may have a two second granularity)
         for subdir in ('cur', 'new'):
             os.utime(os.path.join(self._box._path, subdir),
                      (time.time()-5,)*2)
+
+        # Because mtime has a two second granularity in worst case (FAT), a
+        # refresh is done unconditionally if called for within
+        # two-second-plus-a-bit of the last one, just in case the mbox has
+        # changed; so now we have to wait for that interval to expire.
+        time.sleep(2.01 + self._box._skewfactor)
 
         # Re-reading causes the ._toc attribute to be assigned a new dictionary
         # object, so we'll check that the ._toc attribute isn't a different
@@ -765,7 +762,7 @@ class TestMaildir(TestMailbox):
             return self._box._toc is not orig_toc
 
         self._box._refresh()
-        assert not refreshed()
+        self.assertFalse(refreshed())
 
         # Now, write something into cur and remove it.  This changes
         # the mtime and should cause a re-read.
@@ -774,7 +771,7 @@ class TestMaildir(TestMailbox):
         f.close()
         os.unlink(filename)
         self._box._refresh()
-        assert refreshed()
+        self.assertTrue(refreshed())
 
 class _TestMboxMMDF(TestMailbox):
 
