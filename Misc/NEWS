@@ -140,6 +140,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11927: SMTP_SSL now uses port 465 by default as documented.  Patch
+  by Kasun Herath.
+
 - Issue 11916: Add a number of MacOSX specific definitions to the errno module.
   Patch by Pierre Carrier.
 
