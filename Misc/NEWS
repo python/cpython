@@ -37,6 +37,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #12002: ftplib's abort() method raises TypeError.
+
 - Issue #11391: Writing to a mmap object created with
   ``mmap.PROT_READ|mmap.PROT_EXEC`` would segfault instead of raising a
   TypeError.  Patch by Charles-François Natali.
