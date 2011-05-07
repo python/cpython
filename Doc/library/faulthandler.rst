@@ -36,21 +36,22 @@ when Python is blocked (e.g. deadlock).
 Dump the traceback
 ------------------
 
-.. function:: dump_traceback(file=sys.stderr, all_threads=False)
+.. function:: dump_traceback(file=sys.stderr, all_threads=True)
 
-   Dump the traceback of the current thread, or of all threads if *all_threads*
-   is ``True``, into *file*.
+   Dump the traceback of all threads, or of the current thread if *all_threads*
+   is ``False``, into *file*.
 
 
 Fault handler state
 -------------------
 
-.. function:: enable(file=sys.stderr, all_threads=False)
+.. function:: enable(file=sys.stderr, all_threads=True)
 
    Enable the fault handler: install handlers for :const:`SIGSEGV`,
    :const:`SIGFPE`, :const:`SIGABRT`, :const:`SIGBUS` and :const:`SIGILL`
-   signals to dump the Python traceback. It dumps the traceback of the current
-   thread, or all threads if *all_threads* is ``True``, into *file*.
+   signals to dump the Python traceback. It dumps the traceback of the all
+   threads, or of the current thread if *all_threads* is ``False``, into
+   *file*.
 
 .. function:: disable()
 
@@ -86,11 +87,11 @@ Dump the tracebacks after a timeout
 Dump the traceback on a user signal
 -----------------------------------
 
-.. function:: register(signum, file=sys.stderr, all_threads=False)
+.. function:: register(signum, file=sys.stderr, all_threads=True)
 
    Register a user signal: install a handler for the *signum* signal to dump
-   the traceback of the current thread, or of all threads if *all_threads* is
-   ``True``, into *file*.
+   the traceback of all threads, or of the current thread if *all_threads* is
+   ``False``, into *file*.
 
    Not available on Windows.
 
@@ -123,7 +124,7 @@ Example of a segmentation fault on Linux: ::
     >>> ctypes.string_at(0)
     Fatal Python error: Segmentation fault
 
-    Traceback (most recent call first):
+    Current thread 0x00007fb899f39700:
       File "/home/python/cpython/Lib/ctypes/__init__.py", line 486 in string_at
       File "<stdin>", line 1 in <module>
     Segmentation fault

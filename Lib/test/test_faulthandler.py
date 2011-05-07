@@ -75,7 +75,7 @@ class FaultHandlerTests(unittest.TestCase):
         return output.splitlines(), exitcode
 
     def check_fatal_error(self, code, line_number, name_regex,
-                          filename=None, all_threads=False, other_regex=None):
+                          filename=None, all_threads=True, other_regex=None):
         """
         Check that the fault handler for fatal errors is enabled and check the
         traceback from the child process output.
@@ -204,15 +204,15 @@ faulthandler._read_null()
                 '(?:Segmentation fault|Bus error)',
                 filename=filename)
 
-    def test_enable_threads(self):
+    def test_enable_single_thread(self):
         self.check_fatal_error("""
 import faulthandler
-faulthandler.enable(all_threads=True)
+faulthandler.enable(all_threads=False)
 faulthandler._read_null()
 """.strip(),
             3,
             '(?:Segmentation fault|Bus error)',
-            all_threads=True)
+            all_threads=False)
 
     def test_disable(self):
         code = """
@@ -252,9 +252,9 @@ import faulthandler
 def funcB():
     if {has_filename}:
         with open({filename}, "wb") as fp:
-            faulthandler.dump_traceback(fp)
+            faulthandler.dump_traceback(fp, all_threads=False)
     else:
-        faulthandler.dump_traceback()
+        faulthandler.dump_traceback(all_threads=False)
 
 def funcA():
     funcB()
