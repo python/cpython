@@ -65,3 +65,15 @@ class TestRecursion(TestCase):
             pass
         else:
             self.fail("didn't raise ValueError on default recursion")
+
+
+    def test_highly_nested_objects(self):
+        # test that loading highly-nested objects doesn't segfault when C
+        # accelerations are used. See #12017
+        with self.assertRaises(RuntimeError):
+            json.loads('{"a":' * 100000 + '1' + '}' * 100000)
+        with self.assertRaises(RuntimeError):
+            json.loads('{"a":' * 100000 + '[1]' + '}' * 100000)
+        with self.assertRaises(RuntimeError):
+            json.loads('[' * 100000 + '1' + ']' * 100000)
+
