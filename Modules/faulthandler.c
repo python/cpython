@@ -238,6 +238,7 @@ faulthandler_fatal_error(int signum)
     unsigned int i;
     fault_handler_t *handler = NULL;
     PyThreadState *tstate;
+    int save_errno = errno;
 
     if (!fatal_error.enabled)
         return;
@@ -285,6 +286,7 @@ faulthandler_fatal_error(int signum)
             _Py_DumpTraceback(fd, tstate);
     }
 
+    errno = save_errno;
 #ifdef MS_WINDOWS
     if (signum == SIGSEGV) {
         /* don't call explictly the previous handler for SIGSEGV in this signal
@@ -593,6 +595,7 @@ faulthandler_user(int signum)
 {
     user_signal_t *user;
     PyThreadState *tstate;
+    int save_errno = errno;
 
     user = &user_signals[signum];
     if (!user->enabled)
@@ -614,6 +617,7 @@ faulthandler_user(int signum)
             return;
         _Py_DumpTraceback(user->fd, tstate);
     }
+    errno = save_errno;
 }
 
 static int
