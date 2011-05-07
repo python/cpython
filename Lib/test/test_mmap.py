@@ -1,4 +1,5 @@
-from test.support import TESTFN, run_unittest, import_module, unlink, requires
+from test.support import (TESTFN, run_unittest, import_module, unlink,
+                          requires, _2G, _4G)
 import unittest
 import os
 import re
@@ -662,44 +663,48 @@ class LargeMmapTests(unittest.TestCase):
     def tearDown(self):
         unlink(TESTFN)
 
-    def _working_largefile(self):
-        # Only run if the current filesystem supports large files.
-        f = open(TESTFN, 'wb', buffering=0)
-        try:
-            f.seek(0x80000001)
-            f.write(b'x')
-            f.flush()
-        except (IOError, OverflowError):
-            raise unittest.SkipTest("filesystem does not have largefile support")
-        finally:
-            f.close()
-            unlink(TESTFN)
-
-    def test_large_offset(self):
+    def _create_test_file(self, num_zeroes, tail):
         if sys.platform[:3] == 'win' or sys.platform == 'darwin':
             requires('largefile',
                 'test requires %s bytes and a long time to run' % str(0x180000000))
-        self._working_largefile()
         with open(TESTFN, 'wb') as f:
-            f.seek(0x14FFFFFFF)
-            f.write(b" ")
+            try:
+                f.seek(num_zeroes)
+                f.write(tail)
+                f.flush()
+            except (IOError, OverflowError):
+                raise unittest.SkipTest("filesystem does not have largefile support")
 
+    def test_large_offset(self):
+        self._create_test_file(0x14FFFFFFF, b" ")
         with open(TESTFN, 'rb') as f:
             with mmap.mmap(f.fileno(), 0, offset=0x140000000, access=mmap.ACCESS_READ) as m:
                 self.assertEqual(m[0xFFFFFFF], 32)
 
     def test_large_filesize(self):
-        if sys.platform[:3] == 'win' or sys.platform == 'darwin':
-            requires('largefile',
-                'test requires %s bytes and a long time to run' % str(0x180000000))
-        self._working_largefile()
-        with open(TESTFN, 'wb') as f:
-            f.seek(0x17FFFFFFF)
-            f.write(b" ")
-
+        self._create_test_file(0x17FFFFFFF, b" ")
         with open(TESTFN, 'rb') as f:
             with mmap.mmap(f.fileno(), 0x10000, access=mmap.ACCESS_READ) as m:
                 self.assertEqual(m.size(), 0x180000000)
+
+    # Issue 11277: mmap() with large (~4GB) sparse files crashes on OS X.
+
+    def _test_around_boundary(self, boundary):
+        tail = b'  DEARdear  '
+        start = boundary - len(tail) // 2
+        end = start + len(tail)
+        self._create_test_file(start, tail)
+        with open(TESTFN, 'rb') as f:
+            with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as m:
+                self.assertEqual(m[start:end], tail)
+
+    @unittest.skipUnless(sys.maxsize > _4G, "test cannot run on 32-bit systems")
+    def test_around_2GB(self):
+        self._test_around_boundary(_2G)
+
+    @unittest.skipUnless(sys.maxsize > _4G, "test cannot run on 32-bit systems")
+    def test_around_4GB(self):
+        self._test_around_boundary(_4G)
 
 
 def test_main():
