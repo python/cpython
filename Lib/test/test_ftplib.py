@@ -42,6 +42,8 @@ class DummyFTPHandler(asynchat.async_chat):
 
     def __init__(self, conn):
         asynchat.async_chat.__init__(self, conn)
+        # tells the socket to handle urgent data inline (ABOR command)
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_OOBINLINE, 1)
         self.set_terminator(b"\r\n")
         self.in_buffer = []
         self.dtp = None
@@ -157,6 +159,9 @@ class DummyFTPHandler(asynchat.async_chat):
     def cmd_quit(self, arg):
         self.push('221 quit ok')
         self.close()
+
+    def cmd_abor(self, arg):
+        self.push('226 abor ok')
 
     def cmd_stor(self, arg):
         self.push('125 stor ok')
@@ -311,6 +316,9 @@ class TestFTPClass(TestCase):
         self.assertEqual(self.client.quit(), '221 quit ok')
         # Ensure the connection gets closed; sock attribute should be None
         self.assertEqual(self.client.sock, None)
+
+    def test_abort(self):
+        self.client.abort()
 
     def test_retrbinary(self):
         def callback(data):
