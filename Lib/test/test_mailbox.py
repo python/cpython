@@ -751,27 +751,28 @@ class TestMaildir(TestMailbox):
         self.assertFalse((perms & 0111)) # Execute bits should all be off.
 
     def test_reread(self):
-        # Wait for 2 seconds
-        time.sleep(2)
 
-        # Initially, the mailbox has not been read and the time is null.
-        assert getattr(self._box, '_last_read', None) is None
+        # Put the last modified times more than two seconds into the past
+        # (because mtime may have only a two second granularity).
+        for subdir in ('cur', 'new'):
+            os.utime(os.path.join(self._box._path, subdir),
+                     (time.time()-5,)*2)
 
-        # Refresh mailbox; the times should now be set to something.
-        self._box._refresh()
-        assert getattr(self._box, '_last_read', None) is not None
+        # Because mtime has a two second granularity in worst case (FAT), a
+        # refresh is done unconditionally if called for within
+        # two-second-plus-a-bit of the last one, just in case the mbox has
+        # changed; so now we have to wait for that interval to expire.
+        time.sleep(2.01 + self._box._skewfactor)
 
-        # Try calling _refresh() again; the modification times shouldn't have
-        # changed, so the mailbox should not be re-reading.  Re-reading causes
-        # the ._toc attribute to be assigned a new dictionary object, so
-        # we'll check that the ._toc attribute isn't a different object.
+        # Re-reading causes the ._toc attribute to be assigned a new dictionary
+        # object, so we'll check that the ._toc attribute isn't a different
+        # object.
         orig_toc = self._box._toc
         def refreshed():
             return self._box._toc is not orig_toc
 
-        time.sleep(1)         # Wait 1sec to ensure time.time()'s value changes
         self._box._refresh()
-        assert not refreshed()
+        self.assertFalse(refreshed())
 
         # Now, write something into cur and remove it.  This changes
         # the mtime and should cause a re-read.
@@ -780,7 +781,7 @@ class TestMaildir(TestMailbox):
         f.close()
         os.unlink(filename)
         self._box._refresh()
-        assert refreshed()
+        self.assertTrue(refreshed())
 
 class _TestMboxMMDF(TestMailbox):
 
