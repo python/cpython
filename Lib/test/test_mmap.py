@@ -654,21 +654,21 @@ class LargeMmapTests(unittest.TestCase):
     def tearDown(self):
         unlink(TESTFN)
 
-    def _create_test_file(self, num_zeroes, tail):
+    def _make_test_file(self, num_zeroes, tail):
         if sys.platform[:3] == 'win' or sys.platform == 'darwin':
             requires('largefile',
                 'test requires %s bytes and a long time to run' % str(0x180000000))
-        with open(TESTFN, 'wb') as f:
-            try:
-                f.seek(num_zeroes)
-                f.write(tail)
-                f.flush()
-            except (IOError, OverflowError):
-                raise unittest.SkipTest("filesystem does not have largefile support")
+        f = open(TESTFN, 'w+b')
+        try:
+            f.seek(num_zeroes)
+            f.write(tail)
+            f.flush()
+        except (IOError, OverflowError):
+            raise unittest.SkipTest("filesystem does not have largefile support")
+        return f
 
     def test_large_offset(self):
-        self._create_test_file(0x14FFFFFFF, b" ")
-        with open(TESTFN, 'rb') as f:
+        with self._make_test_file(0x14FFFFFFF, b" ") as f:
             m = mmap.mmap(f.fileno(), 0, offset=0x140000000, access=mmap.ACCESS_READ)
             try:
                 self.assertEqual(m[0xFFFFFFF], 32)
@@ -676,8 +676,7 @@ class LargeMmapTests(unittest.TestCase):
                 m.close()
 
     def test_large_filesize(self):
-        self._create_test_file(0x17FFFFFFF, b" ")
-        with open(TESTFN, 'rb') as f:
+        with self._make_test_file(0x17FFFFFFF, b" ") as f:
             m = mmap.mmap(f.fileno(), 0x10000, access=mmap.ACCESS_READ)
             try:
                 self.assertEqual(m.size(), 0x180000000)
@@ -690,8 +689,7 @@ class LargeMmapTests(unittest.TestCase):
         tail = b'  DEARdear  '
         start = boundary - len(tail) // 2
         end = start + len(tail)
-        self._create_test_file(start, tail)
-        with open(TESTFN, 'rb') as f:
+        with self._make_test_file(start, tail) as f:
             m = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
             try:
                 self.assertEqual(m[start:end], tail)
