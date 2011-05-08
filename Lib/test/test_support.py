@@ -35,7 +35,8 @@ __all__ = ["Error", "TestFailed", "ResourceDenied", "import_module",
            "run_with_locale", "set_memlimit", "bigmemtest", "bigaddrspacetest",
            "BasicTestRunner", "run_unittest", "run_doctest", "threading_setup",
            "threading_cleanup", "reap_children", "cpython_only",
-           "check_impl_detail", "get_attribute", "py3k_bytes"]
+           "check_impl_detail", "get_attribute", "py3k_bytes",
+           "import_fresh_module"]
 
 
 class Error(Exception):
