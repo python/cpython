@@ -5,6 +5,7 @@ import gc
 import pickle
 import select
 import signal
+import struct
 import subprocess
 import traceback
 import sys, os, time, errno
@@ -236,6 +237,11 @@ class WakeupSignalTests(unittest.TestCase):
     TIMEOUT_FULL = 10
     TIMEOUT_HALF = 5
 
+    def check_signum(self, *signals):
+        data = os.read(self.read, len(signals)+1)
+        raised = struct.unpack('%uB' % len(data), data)
+        self.assertSequenceEqual(raised, signals)
+
     def test_wakeup_fd_early(self):
         import select
 
@@ -249,6 +255,7 @@ class WakeupSignalTests(unittest.TestCase):
         select.select([self.read], [], [], self.TIMEOUT_FULL)
         after_time = time.time()
         self.assertTrue(after_time - mid_time < self.TIMEOUT_HALF)
+        self.check_signum(signal.SIGALRM)
 
     def test_wakeup_fd_during(self):
         import select
@@ -260,6 +267,14 @@ class WakeupSignalTests(unittest.TestCase):
             [self.read], [], [], self.TIMEOUT_FULL)
         after_time = time.time()
         self.assertTrue(after_time - before_time < self.TIMEOUT_HALF)
+        self.check_signum(signal.SIGALRM)
+
+    def test_signum(self):
+        old_handler = signal.signal(signal.SIGUSR1, lambda x,y:None)
+        self.addCleanup(signal.signal, signal.SIGUSR1, old_handler)
+        os.kill(os.getpid(), signal.SIGUSR1)
+        os.kill(os.getpid(), signal.SIGALRM)
+        self.check_signum(signal.SIGUSR1, signal.SIGALRM)
 
     def setUp(self):
         import fcntl

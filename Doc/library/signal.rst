@@ -262,12 +262,16 @@ The :mod:`signal` module defines the following functions:
 
 .. function:: set_wakeup_fd(fd)
 
-   Set the wakeup fd to *fd*.  When a signal is received, a ``'\0'`` byte is
-   written to the fd.  This can be used by a library to wakeup a poll or select
-   call, allowing the signal to be fully processed.
+   Set the wakeup file descriptor to *fd*.  When a signal is received, the
+   signal number is written as a single byte into the fd.  This can be used by
+   a library to wakeup a poll or select call, allowing the signal to be fully
+   processed.
 
    The old wakeup fd is returned.  *fd* must be non-blocking.  It is up to the
    library to remove any bytes before calling poll or select again.
+
+   Use for example ``struct.unpack('%uB' % len(data), data)`` to decode the
+   signal numbers list.
 
    When threads are enabled, this function can only be called from the main thread;
    attempting to call it from other threads will cause a :exc:`ValueError`
