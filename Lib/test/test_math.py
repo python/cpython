@@ -649,6 +649,28 @@ class MathTests(unittest.TestCase):
         n= 2**90
         self.assertAlmostEqual(math.log1p(n), math.log1p(float(n)))
 
+    @requires_IEEE_754
+    def testLog2(self):
+        self.assertRaises(TypeError, math.log2)
+        # Check that we get exact equality for log2 of powers of 2.
+        actual = [math.log2(2.0**n) for n in range(-324, 1024)]
+        expected = [float(n) for n in range(-324, 1024)]
+        self.assertEqual(actual, expected)
+
+        # Check some integer values
+        self.assertEqual(math.log2(1), 0.0)
+        self.assertEqual(math.log2(2), 1.0)
+        self.assertEqual(math.log2(4), 2.0)
+
+        # Large integer values
+        self.assertEqual(math.log2(2**1023), 1023.0)
+        self.assertEqual(math.log2(2**1024), 1024.0)
+        self.assertEqual(math.log2(2**2000), 2000.0)
+
+        self.assertRaises(ValueError, math.log2, -1.5)
+        self.assertRaises(ValueError, math.log2, NINF)
+        self.assertTrue(math.isnan(math.log2(NAN)))
+
     def testLog10(self):
         self.assertRaises(TypeError, math.log10)
         self.ftest('log10(0.1)', math.log10(0.1), -1)
