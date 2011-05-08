@@ -2,17 +2,17 @@
 Python News
 +++++++++++
 
-What's New in Python 3.2.1?
-===========================
+What's New in Python 3.2.1 beta 1?
+==================================
 
-*Release date: XX-XXX-20XX*
+*Release date: 08-May-2011*
 
 Core and Builtins
 -----------------
 
 - Issue #1856: Avoid crashes and lockups when daemon threads run while the
-  interpreter is shutting down; instead, these threads are now killed when
-  they try to take the GIL.
+  interpreter is shutting down; instead, these threads are now killed when they
+  try to take the GIL.
 
 - Issue #9756: When calling a method descriptor or a slot wrapper descriptor,
   the check of the object type doesn't read the __class__ attribute anymore.
@@ -24,15 +24,15 @@ Core and Builtins
   the ISO-8859-15 codec.
 
 - Issue #10517: After fork(), reinitialize the TLS used by the PyGILState_*
-  APIs, to avoid a crash with the pthread implementation in RHEL 5.  Patch
-  by Charles-François Natali.
+  APIs, to avoid a crash with the pthread implementation in RHEL 5.  Patch by
+  Charles-François Natali.
 
 - Issue #6780: fix starts/endswith error message to mention that tuples are
   accepted too.
 
 - Issue #5057: fix a bug in the peepholer that led to non-portable pyc files
-  between narrow and wide builds while optimizing BINARY_SUBSCR on non-BMP
-  chars (e.g. "\U00012345"[0]).
+  between narrow and wide builds while optimizing BINARY_SUBSCR on non-BMP chars
+  (e.g. "\U00012345"[0]).
 
 - Issue #11845: Fix typo in rangeobject.c that caused a crash in
   compute_slice_indices.  Patch by Daniel Urban.
@@ -43,12 +43,12 @@ Core and Builtins
 
 - Issue #11395: io.FileIO().write() clamps the data length to 32,767 bytes on
   Windows if the file is a TTY to workaround a Windows bug. The Windows console
-  returns an error (12: not enough space error) on writing into stdout if
-  stdout mode is binary and the length is greater than 66,000 bytes (or less,
-  depending on heap usage).
+  returns an error (12: not enough space error) on writing into stdout if stdout
+  mode is binary and the length is greater than 66,000 bytes (or less, depending
+  on heap usage).
 
-- Issue #11320: fix bogus memory management in Modules/getpath.c, leading to
-  a possible crash when calling Py_SetPath().
+- Issue #11320: fix bogus memory management in Modules/getpath.c, leading to a
+  possible crash when calling Py_SetPath().
 
 - Issue #11510: Fixed optimizer bug which turned "a,b={1,1}" into "a,b=(1,1)".
 
@@ -56,21 +56,21 @@ Core and Builtins
   3.2.0 where the stdout or stderr file descriptor being the same as the stdin
   file descriptor would raise an exception. webbrowser.open would fail. fixed.
 
-- Issue #11450: Don't truncate hg version info in Py_GetBuildInfo() when
-  there are many tags (e.g. when using mq).  Patch by Nadeem Vawda.
+- Issue #11450: Don't truncate hg version info in Py_GetBuildInfo() when there
+  are many tags (e.g. when using mq).  Patch by Nadeem Vawda.
 
 - Issue #11246: Fix PyUnicode_FromFormat("%V") to decode the byte string from
   UTF-8 (with replace error handler) instead of ISO-8859-1 (in strict mode).
   Patch written by Ray Allen.
 
-- Issue #11286: Raise a ValueError from calling PyMemoryView_FromBuffer with
-  a buffer struct having a NULL data pointer.
+- Issue #11286: Raise a ValueError from calling PyMemoryView_FromBuffer with a
+  buffer struct having a NULL data pointer.
 
 - Issue #11272: On Windows, input() strips '\r' (and not only '\n'), and
   sys.stdin uses universal newline (replace '\r\n' by '\n').
 
-- issue #11828: startswith and endswith don't accept None as slice index.
-  Patch by Torsten Becker.
+- issue #11828: startswith and endswith don't accept None as slice index.  Patch
+  by Torsten Becker.
 
 - Issue #10830: Fix PyUnicode_FromFormatV("%c") for non-BMP characters on
   narrow build.
@@ -83,25 +83,25 @@ Core and Builtins
 Library
 -------
 
-- Issue #11927: SMTP_SSL now uses port 465 by default as documented.  Patch
-  by Kasun Herath.
+- Issue #11927: SMTP_SSL now uses port 465 by default as documented.  Patch by
+  Kasun Herath.
 
 - Issue #12002: ftplib's abort() method raises TypeError.
 
-- Issue 11999: fixed sporadic sync failure mailbox.Maildir due to its trying to
+- Issue #11999: fixed sporadic sync failure mailbox.Maildir due to its trying to
   detect mtime changes by comparing to the system clock instead of to the
   previous value of the mtime.
 
 - ntpath.samefile failed to notice that "a.txt" and "A.TXT" refer to the same
   file on Windows XP. As noticed in issue #10684.
 
-- Issue #12000: When a SSL certificate has a subjectAltName without any
-  dNSName entry, ssl.match_hostname() should use the subject's commonName.
-  Patch by Nicolas Bareil.
+- Issue #12000: When a SSL certificate has a subjectAltName without any dNSName
+  entry, ssl.match_hostname() should use the subject's commonName.  Patch by
+  Nicolas Bareil.
 
-- Issue #11647: objects created using contextlib.contextmanager now support
-  more than one call to the function when used as a decorator. Initial patch
-  by Ysj Ray.
+- Issue #11647: objects created using contextlib.contextmanager now support more
+  than one call to the function when used as a decorator. Initial patch by Ysj
+  Ray.
 
 - logging: don't define QueueListener if Python has no thread support.
 
@@ -159,13 +159,14 @@ Library
   difflib.unified_diff().
 
 - Issue #8428: Fix a race condition in multiprocessing.Pool when terminating
-  worker processes: new processes would be spawned while the pool is being
-  shut down.  Patch by Charles-François Natali.
+  worker processes: new processes would be spawned while the pool is being shut
+  down.  Patch by Charles-François Natali.
 
 - Issue #7311: fix html.parser to accept non-ASCII attribute values.
 
-- Issue #11605: email.parser.BytesFeedParser was incorrectly converting multipart
-  subpararts with an 8bit CTE into unicode instead of preserving the bytes.
+- Issue #11605: email.parser.BytesFeedParser was incorrectly converting
+  multipart subpararts with an 8bit CTE into unicode instead of preserving the
+  bytes.
 
 - Issue #10963: Ensure that subprocess.communicate() never raises EPIPE.
 
@@ -230,8 +231,8 @@ Library
   relative to Python2 and the result is now the same as it was in Python2.
 
 - Issue #9298: base64 bodies weren't being folded to line lengths less than 78,
-  which was a regression relative to Python2.  Unlike Python2, the last line
-  of the folded body now ends with a carriage return.
+  which was a regression relative to Python2.  Unlike Python2, the last line of
+  the folded body now ends with a carriage return.
 
 - Issue #11560: shutil.unpack_archive now correctly handles the format
   parameter. Patch by Evan Dandrea.
@@ -240,8 +241,8 @@ Library
   execution. Patch by Andreas Stührk.
 
 - Issue #11569: use absolute path to the sysctl command in multiprocessing to
-  ensure that it will be found regardless of the shell PATH. This ensures
-  that multiprocessing.cpu_count works on default installs of MacOSX.
+  ensure that it will be found regardless of the shell PATH. This ensures that
+  multiprocessing.cpu_count works on default installs of MacOSX.
 
 - Issue #11501: disutils.archive_utils.make_zipfile no longer fails if zlib is
   not installed. Instead, the zipfile.ZIP_STORED compression is used to create
@@ -250,15 +251,15 @@ Library
 - Issue #11554: Fixed support for Japanese codecs; previously the body output
   encoding was not done if euc-jp or shift-jis was specified as the charset.
 
-- Issue #11500: Fixed a bug in the os x proxy bypass code for fully qualified
-  IP addresses in the proxy exception list.
+- Issue #11500: Fixed a bug in the os x proxy bypass code for fully qualified IP
+  addresses in the proxy exception list.
 
-- Issue #11491: dbm.error is no longer raised when dbm.open is called with
-  the "n" as the flag argument and the file exists. The behavior matches
-  the documentation and general logic.
+- Issue #11491: dbm.error is no longer raised when dbm.open is called with the
+  "n" as the flag argument and the file exists. The behavior matches the
+  documentation and general logic.
 
-- Issue #11131: Fix sign of zero in decimal.Decimal plus and minus
-  operations when the rounding mode is ROUND_FLOOR.
+- Issue #11131: Fix sign of zero in decimal.Decimal plus and minus operations
+  when the rounding mode is ROUND_FLOOR.
 
 - Issue #5622: Fix curses.wrapper to raise correct exception if curses
   initialization fails.
@@ -267,12 +268,12 @@ Library
   ``mmap.PROT_READ|mmap.PROT_EXEC`` would segfault instead of raising a
   TypeError.  Patch by Charles-François Natali.
 
-- Issue #11306: mailbox in certain cases adapts to an inability to open
-  certain files in read-write mode.  Previously it detected this by
-  checking for EACCES, now it also checks for EROFS.
+- Issue #11306: mailbox in certain cases adapts to an inability to open certain
+  files in read-write mode.  Previously it detected this by checking for EACCES,
+  now it also checks for EROFS.
 
-- Issue #11265: asyncore now correctly handles EPIPE, EBADF and EAGAIN errors
-  on accept(), send() and recv().
+- Issue #11265: asyncore now correctly handles EPIPE, EBADF and EAGAIN errors on
+  accept(), send() and recv().
 
 - Issue #11326: Add the missing connect_ex() implementation for SSL sockets,
   and make it work for non-blocking connects.
@@ -315,14 +316,14 @@ Build
 
 - Issue #11411: Fix 'make DESTDIR=' with a relative destination.
 
-- Issue #11268: Prevent Mac OS X Installer failure if Documentation
-  package had previously been installed.
+- Issue #11268: Prevent Mac OS X Installer failure if Documentation package had
+  previously been installed.
 
 IDLE
 ----
 
-- Issue #11718: IDLE's open module dialog couldn't find the __init__.py
-  file in a package.
+- Issue #11718: IDLE's open module dialog couldn't find the __init__.py file in
+  a package.
 
 Tools/Demos
 -----------
@@ -346,7 +347,8 @@ Tests
 
 - Issue #10914: Add a minimal embedding test to test_capi.
 
-- Issue #11790: Fix sporadic failures in test_multiprocessing.WithProcessesTestCondition.
+- Issue #11790: Fix sporadic failures in
+  test_multiprocessing.WithProcessesTestCondition.
 
 - Fix possible "file already exists" error when running the tests in parallel.
 
