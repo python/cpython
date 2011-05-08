@@ -270,18 +270,13 @@ class GeneralModuleTests(unittest.TestCase):
 
     def testSocketError(self):
         # Testing socket module exceptions
-        def raise_error(*args, **kwargs):
+        msg = "Error raising socket exception (%s)."
+        with self.assertRaises(socket.error, msg=msg % 'socket.error'):
             raise socket.error
-        def raise_herror(*args, **kwargs):
+        with self.assertRaises(socket.error, msg=msg % 'socket.herror'):
             raise socket.herror
-        def raise_gaierror(*args, **kwargs):
+        with self.assertRaises(socket.error, msg=msg % 'socket.gaierror'):
             raise socket.gaierror
-        self.assertRaises(socket.error, raise_error,
-                              "Error raising socket exception.")
-        self.assertRaises(socket.error, raise_herror,
-                              "Error raising socket exception.")
-        self.assertRaises(socket.error, raise_gaierror,
-                              "Error raising socket exception.")
 
     def testSendtoErrors(self):
         # Testing that sendto doens't masks failures. See #10169.
