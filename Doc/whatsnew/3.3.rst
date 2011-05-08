@@ -76,6 +76,33 @@ New module: :mod:`faulthandler`.
  * :envvar:`PYTHONFAULTHANDLER`
  * :option:`-X` ``faulthandler``
 
+
+math
+----
+
+The :mod:`math` module has a new function:
+
+  * :func:`~math.log2`: return the base-2 logarithm of *x*
+    (Written by Mark Dickinson in :issue:`11888`).
+
+
+nntplib
+-------
+
+The :class:`nntplib.NNTP` class now supports the context manager protocol to
+unconditionally consume :exc:`socket.error` exceptions and to close the NNTP
+connection when done::
+
+  >>> from nntplib import NNTP
+  >>> with nntplib.NNTP('news.gmane.org') as n:
+  ...     n.group('gmane.comp.python.committers')
+  ...
+  ('211 1454 1 1454 gmane.comp.python.committers', '1454', '1', '1454', 'gmane.comp.python.committers')
+  >>>
+
+(Contributed by Giampaolo Rodolà in :issue:`9795`)
+
+
 os
 --
 
@@ -96,21 +123,6 @@ os
 
   (Patch submitted by Giampaolo Rodolà in :issue:`10784`.)
 
-nntplib
--------
-
-The :class:`nntplib.NNTP` class now supports the context manager protocol to
-unconditionally consume :exc:`socket.error` exceptions and to close the NNTP
-connection when done::
-
-  >>> from nntplib import NNTP
-  >>> with nntplib.NNTP('news.gmane.org') as n:
-  ...     n.group('gmane.comp.python.committers')
-  ...
-  ('211 1454 1 1454 gmane.comp.python.committers', '1454', '1', '1454', 'gmane.comp.python.committers')
-  >>>
-
-(Contributed by Giampaolo Rodolà in :issue:`9795`)
 
 sys
 ---
@@ -120,10 +132,11 @@ sys
 
   (:issue:`11223`)
 
+
 signal
 ------
 
-* The :mod:`signal` module has a new functions:
+* The :mod:`signal` module has new functions:
 
   * :func:`~signal.pthread_sigmask`: fetch and/or change the signal mask of the
     calling thread (Contributed by Jean-Paul Calderone in :issue:`8407`) ;
