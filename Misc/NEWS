@@ -140,6 +140,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11888: Add log2 function to math module. Patch written by Mark
+  Dickinson.
+
 - Issue #12012: ssl.PROTOCOL_SSLv2 becomes optional.
 
 - Issue #8407: The signal handler writes the signal number as a single byte

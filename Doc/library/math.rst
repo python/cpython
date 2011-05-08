@@ -184,6 +184,13 @@ Power and logarithmic functions
    result is calculated in a way which is accurate for *x* near zero.
 
 
+.. function:: log2(x)
+
+   Return the base-2 logarithm of *x*.
+
+   .. versionadded:: 3.3
+
+
 .. function:: log10(x)
 
    Return the base-10 logarithm of *x*.  This is usually more accurate
