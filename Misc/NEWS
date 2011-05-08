@@ -69,7 +69,9 @@ Library
 - Issue #11927: SMTP_SSL now uses port 465 by default as documented.  Patch
   by Kasun Herath.
 
-- Issue 11999: fixed sporadic sync failure mailbox.Maildir due to its trying to
+- Issue #12002: ftplib's abort() method raises TypeError.
+
+- Issue #11999: fixed sporadic sync failure mailbox.Maildir due to its trying to
   detect mtime changes by comparing to the system clock instead of to the
   previous value of the mtime.
 
@@ -314,8 +316,8 @@ Library
 - Issue #11500: Fixed a bug in the os x proxy bypass code for fully qualified
   IP addresses in the proxy exception list.
 
-Extensions
-----------
+Extension Modules
+-----------------
 
 - Issue #12017: Fix segfault in json.loads() while decoding highly-nested
   objects using the C accelerations.
