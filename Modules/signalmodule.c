@@ -176,6 +176,7 @@ checksignals_witharg(void * unused)
 static void
 trip_signal(int sig_num)
 {
+    unsigned char byte;
     Handlers[sig_num].tripped = 1;
     if (is_tripped)
         return;
@@ -183,8 +184,10 @@ trip_signal(int sig_num)
        cleared in PyErr_CheckSignals() before .tripped. */
     is_tripped = 1;
     Py_AddPendingCall(checksignals_witharg, NULL);
-    if (wakeup_fd != -1)
-        write(wakeup_fd, "\0", 1);
+    if (wakeup_fd != -1) {
+        byte = (unsigned char)sig_num;
+        write(wakeup_fd, &byte, 1);
+    }
 }
 
 static void
