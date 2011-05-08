@@ -88,7 +88,7 @@ Library
 
 - Issue #12002: ftplib's abort() method raises TypeError.
 
-- Issue 11999: fixed sporadic sync failure mailbox.Maildir due to its trying to
+- Issue #11999: fixed sporadic sync failure mailbox.Maildir due to its trying to
   detect mtime changes by comparing to the system clock instead of to the
   previous value of the mtime.
 
