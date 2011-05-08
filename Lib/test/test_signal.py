@@ -58,15 +58,9 @@ class InterProcessSignalTests(unittest.TestCase):
 
     def handlerA(self, signum, frame):
         self.a_called = True
-        if support.verbose:
-            print("handlerA invoked from signal %s at:\n%s" % (
-                signum, self.format_frame(frame, limit=1)))
 
     def handlerB(self, signum, frame):
         self.b_called = True
-        if support.verbose:
-            print ("handlerB invoked from signal %s at:\n%s" % (
-                signum, self.format_frame(frame, limit=1)))
         raise HandlerBCalled(signum, self.format_frame(frame))
 
     def wait(self, child):
@@ -93,8 +87,6 @@ class InterProcessSignalTests(unittest.TestCase):
 
         # Let the sub-processes know who to send signals to.
         pid = os.getpid()
-        if support.verbose:
-            print("test runner's pid is", pid)
 
         child = ignoring_eintr(subprocess.Popen, ['kill', '-HUP', str(pid)])
         if child:
@@ -118,8 +110,6 @@ class InterProcessSignalTests(unittest.TestCase):
         except HandlerBCalled:
             self.assertTrue(self.b_called)
             self.assertFalse(self.a_called)
-            if support.verbose:
-                print("HandlerBCalled exception caught")
 
         child = ignoring_eintr(subprocess.Popen, ['kill', '-USR2', str(pid)])
         if child:
@@ -135,8 +125,7 @@ class InterProcessSignalTests(unittest.TestCase):
             # may return early.
             time.sleep(1)
         except KeyboardInterrupt:
-            if support.verbose:
-                print("KeyboardInterrupt (the alarm() went off)")
+            pass
         except:
             self.fail("Some other exception woke us from pause: %s" %
                       traceback.format_exc())
@@ -359,10 +348,9 @@ class SiginterruptTest(unittest.TestCase):
                 return True
 
     def test_without_siginterrupt(self):
-        """If a signal handler is installed and siginterrupt is not called
-        at all, when that signal arrives, it interrupts a syscall that's in
-        progress.
-        """
+        # If a signal handler is installed and siginterrupt is not called
+        # at all, when that signal arrives, it interrupts a syscall that's in
+        # progress.
         i = self.readpipe_interrupted()
         self.assertTrue(i)
         # Arrival of the signal shouldn't have changed anything.
@@ -370,10 +358,9 @@ class SiginterruptTest(unittest.TestCase):
         self.assertTrue(i)
 
     def test_siginterrupt_on(self):
-        """If a signal handler is installed and siginterrupt is called with
-        a true value for the second argument, when that signal arrives, it
-        interrupts a syscall that's in progress.
-        """
+        # If a signal handler is installed and siginterrupt is called with
+        # a true value for the second argument, when that signal arrives, it
+        # interrupts a syscall that's in progress.
         signal.siginterrupt(self.signum, 1)
         i = self.readpipe_interrupted()
         self.assertTrue(i)
@@ -382,10 +369,9 @@ class SiginterruptTest(unittest.TestCase):
         self.assertTrue(i)
 
     def test_siginterrupt_off(self):
-        """If a signal handler is installed and siginterrupt is called with
-        a false value for the second argument, when that signal arrives, it
-        does not interrupt a syscall that's in progress.
-        """
+        # If a signal handler is installed and siginterrupt is called with
+        # a false value for the second argument, when that signal arrives, it
+        # does not interrupt a syscall that's in progress.
         signal.siginterrupt(self.signum, 0)
         i = self.readpipe_interrupted()
         self.assertFalse(i)
@@ -410,8 +396,6 @@ class ItimerTest(unittest.TestCase):
 
     def sig_alrm(self, *args):
         self.hndl_called = True
-        if support.verbose:
-            print("SIGALRM handler invoked", args)
 
     def sig_vtalrm(self, *args):
         self.hndl_called = True
@@ -423,20 +407,12 @@ class ItimerTest(unittest.TestCase):
         elif self.hndl_count == 3:
             # disable ITIMER_VIRTUAL, this function shouldn't be called anymore
             signal.setitimer(signal.ITIMER_VIRTUAL, 0)
-            if support.verbose:
-                print("last SIGVTALRM handler call")
 
         self.hndl_count += 1
-
-        if support.verbose:
-            print("SIGVTALRM handler invoked", args)
 
     def sig_prof(self, *args):
         self.hndl_called = True
         signal.setitimer(signal.ITIMER_PROF, 0)
-
-        if support.verbose:
-            print("SIGPROF handler invoked", args)
 
     def test_itimer_exc(self):
         # XXX I'm assuming -1 is an invalid itimer, but maybe some platform
@@ -450,10 +426,7 @@ class ItimerTest(unittest.TestCase):
     def test_itimer_real(self):
         self.itimer = signal.ITIMER_REAL
         signal.setitimer(self.itimer, 1.0)
-        if support.verbose:
-            print("\ncall pause()...")
         signal.pause()
-
         self.assertEqual(self.hndl_called, True)
 
     # Issue 3864, unknown if this affects earlier versions of freebsd also
