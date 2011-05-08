@@ -140,6 +140,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #12012: ssl.PROTOCOL_SSLv2 becomes optional.
+
 - Issue #8407: The signal handler writes the signal number as a single byte
   instead of a nul byte into the wakeup file descriptor. So it is possible to
   wait more than one signal and know which signals were raised.
