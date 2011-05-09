@@ -191,17 +191,8 @@ class TestHeap(TestCase):
                 self.assertEqual(list(self.module.nlargest(n, data, key=f)),
                                  sorted(data, key=f, reverse=True)[:n])
 
-
-class TestHeapPython(TestHeap):
-    module = py_heapq
-
-
-@skipUnless(c_heapq, 'requires _heapq')
-class TestHeapC(TestHeap):
-    module = c_heapq
-
     def test_comparison_operator(self):
-        # Issue 3501: Make sure heapq works with both __lt__
+        # Issue 3051: Make sure heapq works with both __lt__
         # For python 3.0, __le__ alone is not enough
         def hsort(data, comp):
             data = [comp(x) for x in data]
@@ -221,6 +212,15 @@ class TestHeapC(TestHeap):
         target = sorted(data, reverse=True)
         self.assertEqual(hsort(data, LT), target)
         self.assertRaises(TypeError, data, LE)
+
+
+class TestHeapPython(TestHeap):
+    module = py_heapq
+
+
+@skipUnless(c_heapq, 'requires _heapq')
+class TestHeapC(TestHeap):
+    module = c_heapq
 
 
 #==============================================================================
