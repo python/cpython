@@ -16,7 +16,6 @@
 
 PyObject *create_win32_namespace(void);
 
-PyObject *pickle_dumps, *pickle_loads, *pickle_protocol;
 PyObject *ProcessError, *BufferTooShort;
 
 /*
@@ -177,7 +176,7 @@ multiprocessing_address_of_buffer(PyObject *self, PyObject *obj)
     if (PyObject_AsWriteBuffer(obj, &buffer, &buffer_len) < 0)
         return NULL;
 
-    return Py_BuildValue("N" F_PY_SSIZE_T,
+    return Py_BuildValue("Nn",
                          PyLong_FromVoidPtr(buffer), buffer_len);
 }
 
@@ -230,15 +229,6 @@ PyInit__multiprocessing(void)
     module = PyModule_Create(&multiprocessing_module);
     if (!module)
         return NULL;
-
-    /* Get copy of objects from pickle */
-    temp = PyImport_ImportModule(PICKLE_MODULE);
-    if (!temp)
-        return NULL;
-    pickle_dumps = PyObject_GetAttrString(temp, "dumps");
-    pickle_loads = PyObject_GetAttrString(temp, "loads");
-    pickle_protocol = PyObject_GetAttrString(temp, "HIGHEST_PROTOCOL");
-    Py_XDECREF(temp);
 
     /* Get copy of BufferTooShort */
     temp = PyImport_ImportModule("multiprocessing");

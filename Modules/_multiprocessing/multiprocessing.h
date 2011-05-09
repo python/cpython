@@ -64,20 +64,6 @@
 
 
 /*
- * Make sure Py_ssize_t available
- */
-
-#if PY_VERSION_HEX < 0x02050000 && !defined(PY_SSIZE_T_MIN)
-   typedef int Py_ssize_t;
-#  define PY_SSIZE_T_MAX INT_MAX
-#  define PY_SSIZE_T_MIN INT_MIN
-#  define F_PY_SSIZE_T "i"
-#  define PyInt_FromSsize_t(n) PyInt_FromLong((long)n)
-#else
-#  define F_PY_SSIZE_T "n"
-#endif
-
-/*
  * Format codes
  */
 
@@ -105,12 +91,6 @@
 #  define T_SEM_HANDLE T_POINTER
 #endif
 
-#if PY_VERSION_HEX >= 0x03000000
-#  define F_RBUFFER "y"
-#else
-#  define F_RBUFFER "s"
-#endif
-
 /*
  * Error codes which can be returned by functions called without GIL
  */
@@ -127,35 +107,10 @@ PyObject *mp_SetError(PyObject *Type, int num);
  * Externs - not all will really exist on all platforms
  */
 
-extern PyObject *pickle_dumps;
-extern PyObject *pickle_loads;
-extern PyObject *pickle_protocol;
 extern PyObject *BufferTooShort;
 extern PyTypeObject SemLockType;
 extern PyTypeObject PipeConnectionType;
 extern HANDLE sigint_event;
-
-/*
- * Py3k compatibility
- */
-
-#if PY_VERSION_HEX >= 0x03000000
-#  define PICKLE_MODULE "pickle"
-#  define FROM_FORMAT PyUnicode_FromFormat
-#  define PyInt_FromLong PyLong_FromLong
-#  define PyInt_FromSsize_t PyLong_FromSsize_t
-#else
-#  define PICKLE_MODULE "cPickle"
-#  define FROM_FORMAT PyString_FromFormat
-#endif
-
-#ifndef PyVarObject_HEAD_INIT
-#  define PyVarObject_HEAD_INIT(type, size) PyObject_HEAD_INIT(type) size,
-#endif
-
-#ifndef Py_TPFLAGS_HAVE_WEAKREFS
-#  define Py_TPFLAGS_HAVE_WEAKREFS 0
-#endif
 
 /*
  * Miscellaneous
