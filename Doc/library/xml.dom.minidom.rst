@@ -60,12 +60,8 @@ functions do not provide a parser implementation themselves.
 You can also create a :class:`Document` by calling a method on a "DOM
 Implementation" object.  You can get this object either by calling the
 :func:`getDOMImplementation` function in the :mod:`xml.dom` package or the
-:mod:`xml.dom.minidom` module. Using the implementation from the
-:mod:`xml.dom.minidom` module will always return a :class:`Document` instance
-from the minidom implementation, while the version from :mod:`xml.dom` may
-provide an alternate implementation (this is likely if you have the `PyXML
-package <http://pyxml.sourceforge.net/>`_ installed).  Once you have a
-:class:`Document`, you can add child nodes to it to populate the DOM::
+:mod:`xml.dom.minidom` module.  Once you have a :class:`Document`, you
+can add child nodes to it to populate the DOM::
 
    from xml.dom.minidom import getDOMImplementation
 
