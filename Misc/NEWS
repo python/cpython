@@ -578,7 +578,7 @@ Library
 Build
 -----
 
-- Issue #11347: Use --as-needed when linking libpython3.so.
+- Issue #11347: Use --no-as-needed when linking libpython3.so.
 
 - Issue #11411: Fix 'make DESTDIR=' with a relative destination.
 
