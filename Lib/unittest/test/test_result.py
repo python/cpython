@@ -503,7 +503,7 @@ class TestOutputBuffering(unittest.TestCase):
         class Foo(unittest.TestCase):
             @classmethod
             def setUpClass(cls):
-                1/0
+                1//0
             def test_foo(self):
                 pass
         suite = unittest.TestSuite([Foo('test_foo')])
@@ -517,7 +517,7 @@ class TestOutputBuffering(unittest.TestCase):
         class Foo(unittest.TestCase):
             @classmethod
             def tearDownClass(cls):
-                1/0
+                1//0
             def test_foo(self):
                 pass
         suite = unittest.TestSuite([Foo('test_foo')])
@@ -534,7 +534,7 @@ class TestOutputBuffering(unittest.TestCase):
         class Module(object):
             @staticmethod
             def setUpModule():
-                1/0
+                1//0
 
         Foo.__module__ = 'Module'
         sys.modules['Module'] = Module
@@ -553,7 +553,7 @@ class TestOutputBuffering(unittest.TestCase):
         class Module(object):
             @staticmethod
             def tearDownModule():
-                1/0
+                1//0
 
         Foo.__module__ = 'Module'
         sys.modules['Module'] = Module
