@@ -308,8 +308,7 @@ def L(seqn):
     return chain(map(lambda x:x, R(Ig(G(seqn)))))
 
 class TestErrorHandling(unittest.TestCase):
-    # only for C implementation
-    module = c_heapq
+    module = None
 
     def test_non_sequence(self):
         for f in (self.module.heapify, self.module.heappop):
@@ -359,12 +358,19 @@ class TestErrorHandling(unittest.TestCase):
                 self.assertRaises(TypeError, f, 2, N(s))
                 self.assertRaises(ZeroDivisionError, f, 2, E(s))
 
+class TestErrorHandlingPython(TestErrorHandling):
+    module = py_heapq
+
+class TestErrorHandlingC(TestErrorHandling):
+    module = c_heapq
+
 
 #==============================================================================
 
 
 def test_main(verbose=None):
-    test_classes = [TestHeapPython, TestHeapC, TestErrorHandling]
+    test_classes = [TestHeapPython, TestHeapC, TestErrorHandlingPython,
+                    TestErrorHandlingC]
     support.run_unittest(*test_classes)
 
     # verify reference counting
