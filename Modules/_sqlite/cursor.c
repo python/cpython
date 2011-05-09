@@ -433,9 +433,14 @@ static int check_cursor(pysqlite_Cursor* cur)
     if (cur->closed) {
         PyErr_SetString(pysqlite_ProgrammingError, "Cannot operate on a closed cursor.");
         return 0;
-    } else {
-        return pysqlite_check_thread(cur->connection) && pysqlite_check_connection(cur->connection);
     }
+
+    if (cur->locked) {
+        PyErr_SetString(pysqlite_ProgrammingError, "Recursive use of cursors not allowed.");
+        return 0;
+    }
+
+    return pysqlite_check_thread(cur->connection) && pysqlite_check_connection(cur->connection);
 }
 
 PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* args)
@@ -458,9 +463,10 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
     int allow_8bit_chars;
 
     if (!check_cursor(self)) {
-        return NULL;
+        goto error;
     }
 
+    self->locked = 1;
     self->reset = 0;
 
     /* Make shooting yourself in the foot with not utf-8 decodable 8-bit-strings harder */
@@ -473,12 +479,12 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
     if (multiple) {
         /* executemany() */
         if (!PyArg_ParseTuple(args, "OO", &operation, &second_argument)) {
-            return NULL;
+            goto error;
         }
 
         if (!PyUnicode_Check(operation)) {
             PyErr_SetString(PyExc_ValueError, "operation parameter must be str");
-            return NULL;
+            goto error;
         }
 
         if (PyIter_Check(second_argument)) {
@@ -489,23 +495,23 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
             /* sequence */
             parameters_iter = PyObject_GetIter(second_argument);
             if (!parameters_iter) {
-                return NULL;
+                goto error;
             }
         }
     } else {
         /* execute() */
         if (!PyArg_ParseTuple(args, "O|O", &operation, &second_argument)) {
-            return NULL;
+            goto error;
         }
 
         if (!PyUnicode_Check(operation)) {
             PyErr_SetString(PyExc_ValueError, "operation parameter must be str");
-            return NULL;
+            goto error;
         }
 
         parameters_list = PyList_New(0);
         if (!parameters_list) {
-            return NULL;
+            goto error;
         }
 
         if (second_argument == NULL) {
@@ -745,13 +751,16 @@ error:
      * ROLLBACK could have happened */
     #ifdef SQLITE_VERSION_NUMBER
     #if SQLITE_VERSION_NUMBER >= 3002002
-    self->connection->inTransaction = !sqlite3_get_autocommit(self->connection->db);
+    if (self->connection && self->connection->db)
+        self->connection->inTransaction = !sqlite3_get_autocommit(self->connection->db);
     #endif
     #endif
 
     Py_XDECREF(parameters);
     Py_XDECREF(parameters_iter);
     Py_XDECREF(parameters_list);
+
+    self->locked = 0;
 
     if (PyErr_Occurred()) {
         self->rowcount = -1L;
