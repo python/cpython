@@ -219,6 +219,9 @@ Functions, Constants, and Exceptions
 
    Selects SSL version 2 as the channel encryption protocol.
 
+   This protocol is not available if OpenSSL is compiled with OPENSSL_NO_SSL2
+   flag.
+
    .. warning::
 
       SSL version 2 is insecure.  Its use is highly discouraged.
