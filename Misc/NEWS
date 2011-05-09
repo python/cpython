@@ -90,6 +90,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10811: Fix recursive usage of cursors. Instead of crashing,
+  raise a ProgrammingError now.
+
 - Issue #10881: Fix test_site failures with OS X framework builds.
 
 - Issue #964437 Make IDLE help window non-modal.
