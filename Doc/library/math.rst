@@ -186,7 +186,8 @@ Power and logarithmic functions
 
 .. function:: log2(x)
 
-   Return the base-2 logarithm of *x*.
+   Return the base-2 logarithm of *x*. This is usually more accurate than
+   ``log(x, 2)``.
 
    .. versionadded:: 3.3
 
