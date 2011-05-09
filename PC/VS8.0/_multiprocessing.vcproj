@@ -522,10 +522,6 @@
 				RelativePath="..\..\Modules\_multiprocessing\multiprocessing.h"
 				>
 			</File>
-			<File
-				RelativePath="..\..\Modules\_multiprocessing\connection.h"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Source Files"
@@ -535,15 +531,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Modules\_multiprocessing\pipe_connection.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Modules\_multiprocessing\semaphore.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Modules\_multiprocessing\socket_connection.c"
 				>
 			</File>
 			<File

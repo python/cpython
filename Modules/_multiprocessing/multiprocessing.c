@@ -49,16 +49,6 @@ mp_SetError(PyObject *Type, int num)
     case MP_MEMORY_ERROR:
         PyErr_NoMemory();
         break;
-    case MP_END_OF_FILE:
-        PyErr_SetNone(PyExc_EOFError);
-        break;
-    case MP_EARLY_END_OF_FILE:
-        PyErr_SetString(PyExc_IOError,
-                        "got end of file during message");
-        break;
-    case MP_BAD_MESSAGE_LENGTH:
-        PyErr_SetString(PyExc_IOError, "bad message length");
-        break;
     case MP_EXCEPTION_HAS_BEEN_SET:
         break;
     default:
@@ -257,12 +247,6 @@ PyInit__multiprocessing(void)
     BufferTooShort = PyObject_GetAttrString(temp, "BufferTooShort");
     Py_XDECREF(temp);
 
-    /* Add connection type to module */
-    if (PyType_Ready(&ConnectionType) < 0)
-        return NULL;
-    Py_INCREF(&ConnectionType);
-    PyModule_AddObject(module, "Connection", (PyObject*)&ConnectionType);
-
 #if defined(MS_WINDOWS) ||                                              \
   (defined(HAVE_SEM_OPEN) && !defined(POSIX_SEMAPHORES_NOT_ENABLED))
     /* Add SemLock type to module */
@@ -286,13 +270,6 @@ PyInit__multiprocessing(void)
 #endif
 
 #ifdef MS_WINDOWS
-    /* Add PipeConnection to module */
-    if (PyType_Ready(&PipeConnectionType) < 0)
-        return NULL;
-    Py_INCREF(&PipeConnectionType);
-    PyModule_AddObject(module, "PipeConnection",
-                       (PyObject*)&PipeConnectionType);
-
     /* Initialize win32 class and add to multiprocessing */
     temp = create_win32_namespace();
     if (!temp)

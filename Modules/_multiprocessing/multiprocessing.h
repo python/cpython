@@ -118,11 +118,8 @@
 #define MP_SUCCESS (0)
 #define MP_STANDARD_ERROR (-1)
 #define MP_MEMORY_ERROR (-1001)
-#define MP_END_OF_FILE (-1002)
-#define MP_EARLY_END_OF_FILE (-1003)
-#define MP_BAD_MESSAGE_LENGTH (-1004)
-#define MP_SOCKET_ERROR (-1005)
-#define MP_EXCEPTION_HAS_BEEN_SET (-1006)
+#define MP_SOCKET_ERROR (-1002)
+#define MP_EXCEPTION_HAS_BEEN_SET (-1003)
 
 PyObject *mp_SetError(PyObject *Type, int num);
 
@@ -135,7 +132,6 @@ extern PyObject *pickle_loads;
 extern PyObject *pickle_protocol;
 extern PyObject *BufferTooShort;
 extern PyTypeObject SemLockType;
-extern PyTypeObject ConnectionType;
 extern PyTypeObject PipeConnectionType;
 extern HANDLE sigint_event;
 
@@ -162,24 +158,8 @@ extern HANDLE sigint_event;
 #endif
 
 /*
- * Connection definition
- */
-
-#define CONNECTION_BUFFER_SIZE 1024
-
-typedef struct {
-    PyObject_HEAD
-    HANDLE handle;
-    int flags;
-    PyObject *weakreflist;
-    char buffer[CONNECTION_BUFFER_SIZE];
-} ConnectionObject;
-
-/*
  * Miscellaneous
  */
-
-#define MAX_MESSAGE_LENGTH 0x7fffffff
 
 #ifndef MIN
 #  define MIN(x, y) ((x) < (y) ? x : y)

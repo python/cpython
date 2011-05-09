@@ -1915,9 +1915,15 @@ class TestInvalidHandle(unittest.TestCase):
 
     @unittest.skipIf(WIN32, "skipped on Windows")
     def test_invalid_handles(self):
-        conn = _multiprocessing.Connection(44977608)
-        self.assertRaises(IOError, conn.poll)
-        self.assertRaises(IOError, _multiprocessing.Connection, -1)
+        conn = multiprocessing.connection.Connection(44977608)
+        try:
+            self.assertRaises((ValueError, IOError), conn.poll)
+        finally:
+            # Hack private attribute _handle to avoid printing an error
+            # in conn.__del__
+            conn._handle = None
+        self.assertRaises((ValueError, IOError),
+                          multiprocessing.connection.Connection, -1)
 
 #
 # Functions used to create test cases from the base ones in this module
