@@ -481,7 +481,7 @@ semlock_dealloc(SemLockObject* self)
 static PyObject *
 semlock_count(SemLockObject *self)
 {
-    return PyInt_FromLong((long)self->count);
+    return PyLong_FromLong((long)self->count);
 }
 
 static PyObject *
@@ -505,7 +505,7 @@ semlock_getvalue(SemLockObject *self)
        the number of waiting threads */
     if (sval < 0)
         sval = 0;
-    return PyInt_FromLong((long)sval);
+    return PyLong_FromLong((long)sval);
 #endif
 }
 
