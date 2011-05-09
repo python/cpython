@@ -73,6 +73,7 @@ my_fgets(char *buf, int len, FILE *fp)
         }
 #endif /* MS_WINDOWS */
         if (feof(fp)) {
+            clearerr(fp);
             return -1; /* EOF */
         }
 #ifdef EINTR
