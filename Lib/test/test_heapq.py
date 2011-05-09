@@ -190,17 +190,8 @@ class TestHeap(TestCase):
                 self.assertEqual(self.module.nlargest(n, data, key=f),
                                  sorted(data, key=f, reverse=True)[:n])
 
-
-class TestHeapPython(TestHeap):
-    module = py_heapq
-
-
-@skipUnless(c_heapq, 'requires _heapq')
-class TestHeapC(TestHeap):
-    module = c_heapq
-
     def test_comparison_operator(self):
-        # Issue 3501: Make sure heapq works with both __lt__ and __le__
+        # Issue 3051: Make sure heapq works with both __lt__ and __le__
         def hsort(data, comp):
             data = map(comp, data)
             self.module.heapify(data)
@@ -219,6 +210,15 @@ class TestHeapC(TestHeap):
         target = sorted(data, reverse=True)
         self.assertEqual(hsort(data, LT), target)
         self.assertEqual(hsort(data, LE), target)
+
+
+class TestHeapPython(TestHeap):
+    module = py_heapq
+
+
+@skipUnless(c_heapq, 'requires _heapq')
+class TestHeapC(TestHeap):
+    module = c_heapq
 
 
 #==============================================================================
@@ -316,6 +316,7 @@ def L(seqn):
     return chain(imap(lambda x:x, R(Ig(G(seqn)))))
 
 class TestErrorHandling(TestCase):
+    module = None
 
     def test_non_sequence(self):
         for f in (self.module.heapify, self.module.heappop):
@@ -361,12 +362,12 @@ class TestErrorHandling(TestCase):
                 self.assertRaises(ZeroDivisionError, f, 2, E(s))
 
 
-class TestErrorHandling_Python(TestErrorHandling):
+class TestErrorHandlingPython(TestErrorHandling):
     module = py_heapq
 
 
 @skipUnless(c_heapq, 'requires _heapq')
-class TestErrorHandling_C(TestErrorHandling):
+class TestErrorHandlingC(TestErrorHandling):
     module = c_heapq
 
 
@@ -375,7 +376,7 @@ class TestErrorHandling_C(TestErrorHandling):
 
 def test_main(verbose=None):
     test_classes = [TestModules, TestHeapPython, TestHeapC,
-                    TestErrorHandling_Python, TestErrorHandling_C]
+                    TestErrorHandlingPython, TestErrorHandlingC]
     test_support.run_unittest(*test_classes)
 
     # verify reference counting
