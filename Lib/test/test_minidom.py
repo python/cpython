@@ -51,26 +51,6 @@ def create_doc_with_doctype():
     return doc
 
 class MinidomTest(unittest.TestCase):
-    def tearDown(self):
-        try:
-            Node.allnodes
-        except AttributeError:
-            # We don't actually have the minidom from the standard library,
-            # but are picking up the PyXML version from site-packages.
-            pass
-        else:
-            self.confirm(len(Node.allnodes) == 0,
-                    "assertion: len(Node.allnodes) == 0")
-            if len(Node.allnodes):
-                print("Garbage left over:")
-                if verbose:
-                    print(list(Node.allnodes.items())[0:10])
-                else:
-                    # Don't print specific nodes if repeatable results
-                    # are needed
-                    print(len(Node.allnodes))
-            Node.allnodes = {}
-
     def confirm(self, test, testname = "Test"):
         self.assertTrue(test, testname)
 
