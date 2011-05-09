@@ -40,7 +40,7 @@ def handle_error(prefix):
 class BasicTests(unittest.TestCase):
 
     def test_constants(self):
-        ssl.PROTOCOL_SSLv2
+        #ssl.PROTOCOL_SSLv2
         ssl.PROTOCOL_SSLv23
         ssl.PROTOCOL_SSLv3
         ssl.PROTOCOL_TLSv1
@@ -838,6 +838,7 @@ else:
             finally:
                 t.join()
 
+        @unittest.skipUnless(hasattr(ssl, 'PROTOCOL_SSLv2'), "need SSLv2")
         def test_protocol_sslv2(self):
             """Connecting to an SSLv2 server with various client options"""
             if support.verbose:
@@ -857,14 +858,15 @@ else:
                 sys.stdout.write("\ntest_protocol_sslv23 disabled, "
                                  "as it fails on OpenSSL 1.0.0+")
             return
-            try:
-                try_protocol_combo(ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_SSLv2, True)
-            except (ssl.SSLError, socket.error) as x:
-                # this fails on some older versions of OpenSSL (0.9.7l, for instance)
-                if support.verbose:
-                    sys.stdout.write(
-                        " SSL2 client to SSL23 server test unexpectedly failed:\n %s\n"
-                        % str(x))
+            if hasattr(ssl, 'PROTOCOL_SSLv2'):
+                try:
+                    try_protocol_combo(ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_SSLv2, True)
+                except (ssl.SSLError, socket.error) as x:
+                    # this fails on some older versions of OpenSSL (0.9.7l, for instance)
+                    if support.verbose:
+                        sys.stdout.write(
+                            " SSL2 client to SSL23 server test unexpectedly failed:\n %s\n"
+                            % str(x))
             try_protocol_combo(ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_SSLv3, True)
             try_protocol_combo(ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_SSLv23, True)
             try_protocol_combo(ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_TLSv1, True)
@@ -886,7 +888,8 @@ else:
             try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv3, True)
             try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv3, True, ssl.CERT_OPTIONAL)
             try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv3, True, ssl.CERT_REQUIRED)
-            try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv2, False)
+            if hasattr(ssl, 'PROTOCOL_SSLv2'):
+                try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv2, False)
             try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv23, False)
             try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_TLSv1, False)
 
@@ -899,7 +902,8 @@ else:
             try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLSv1, True)
             try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLSv1, True, ssl.CERT_OPTIONAL)
             try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLSv1, True, ssl.CERT_REQUIRED)
-            try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_SSLv2, False)
+            if hasattr(ssl, 'PROTOCOL_SSLv2'):
+                try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_SSLv2, False)
             try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_SSLv3, False)
             try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_SSLv23, False)
 
