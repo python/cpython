@@ -581,8 +581,10 @@ m_log(double x)
    log2: log to base 2.
 
    Uses an algorithm that should:
+
      (a) produce exact results for powers of 2, and
-     (b) be monotonic, assuming that the system log is monotonic.
+     (b) give a monotonic log2 (for positive finite floats),
+         assuming that the system log is monotonic.
 */
 
 static double
