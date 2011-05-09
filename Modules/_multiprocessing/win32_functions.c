@@ -215,6 +215,164 @@ win32_WaitNamedPipe(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+win32_closesocket(PyObject *self, PyObject *args)
+{
+    HANDLE handle;
+    int ret;
+
+    if (!PyArg_ParseTuple(args, F_HANDLE ":closesocket" , &handle))
+        return NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = closesocket((SOCKET) handle);
+    Py_END_ALLOW_THREADS
+
+    if (ret)
+        return PyErr_SetExcFromWindowsErr(PyExc_IOError, WSAGetLastError());
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+win32_recv(PyObject *self, PyObject *args)
+{
+    HANDLE handle;
+    int size, nread;
+    PyObject *buf;
+
+    if (!PyArg_ParseTuple(args, F_HANDLE "i:recv" , &handle, &size))
+        return NULL;
+
+    buf = PyBytes_FromStringAndSize(NULL, size);
+    if (!buf)
+        return NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+    nread = recv((SOCKET) handle, PyBytes_AS_STRING(buf), size, 0);
+    Py_END_ALLOW_THREADS
+
+    if (nread < 0) {
+        Py_DECREF(buf);
+        return PyErr_SetExcFromWindowsErr(PyExc_IOError, WSAGetLastError());
+    }
+    _PyBytes_Resize(&buf, nread);
+    return buf;
+}
+
+static PyObject *
+win32_send(PyObject *self, PyObject *args)
+{
+    HANDLE handle;
+    Py_buffer buf;
+    int ret;
+
+    if (!PyArg_ParseTuple(args, F_HANDLE "y*:send" , &handle, &buf))
+        return NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = send((SOCKET) handle, buf.buf, buf.len, 0);
+    Py_END_ALLOW_THREADS
+
+    PyBuffer_Release(&buf);
+    if (ret < 0)
+        return PyErr_SetExcFromWindowsErr(PyExc_IOError, WSAGetLastError());
+    return PyLong_FromLong(ret);
+}
+
+static PyObject *
+win32_WriteFile(PyObject *self, PyObject *args)
+{
+    HANDLE handle;
+    Py_buffer buf;
+    int written;
+    BOOL ret;
+
+    if (!PyArg_ParseTuple(args, F_HANDLE "y*:WriteFile" , &handle, &buf))
+        return NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = WriteFile(handle, buf.buf, buf.len, &written, NULL);
+    Py_END_ALLOW_THREADS
+
+    PyBuffer_Release(&buf);
+    if (!ret)
+        return PyErr_SetExcFromWindowsErr(PyExc_IOError, 0);
+    return PyLong_FromLong(written);
+}
+
+static PyObject *
+win32_ReadFile(PyObject *self, PyObject *args)
+{
+    HANDLE handle;
+    int size;
+    DWORD nread;
+    PyObject *buf;
+    BOOL ret;
+
+    if (!PyArg_ParseTuple(args, F_HANDLE "i:ReadFile" , &handle, &size))
+        return NULL;
+
+    buf = PyBytes_FromStringAndSize(NULL, size);
+    if (!buf)
+        return NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = ReadFile(handle, PyBytes_AS_STRING(buf), size, &nread, NULL);
+    Py_END_ALLOW_THREADS
+
+    if (!ret && GetLastError() != ERROR_MORE_DATA) {
+        Py_DECREF(buf);
+        return PyErr_SetExcFromWindowsErr(PyExc_IOError, 0);
+    }
+    if (_PyBytes_Resize(&buf, nread))
+        return NULL;
+    return Py_BuildValue("NN", buf, PyBool_FromLong(ret));
+}
+
+static PyObject *
+win32_PeekNamedPipe(PyObject *self, PyObject *args)
+{
+    HANDLE handle;
+    int size = 0;
+    PyObject *buf = NULL;
+    DWORD nread, navail, nleft;
+    BOOL ret;
+
+    if (!PyArg_ParseTuple(args, F_HANDLE "|i:PeekNamedPipe" , &handle, &size))
+        return NULL;
+
+    if (size < 0) {
+        PyErr_SetString(PyExc_ValueError, "negative size");
+        return NULL;
+    }
+
+    if (size) {
+        buf = PyBytes_FromStringAndSize(NULL, size);
+        if (!buf)
+            return NULL;
+        Py_BEGIN_ALLOW_THREADS
+        ret = PeekNamedPipe(handle, PyBytes_AS_STRING(buf), size, &nread,
+                            &navail, &nleft);
+        Py_END_ALLOW_THREADS
+        if (!ret) {
+            Py_DECREF(buf);
+            return PyErr_SetExcFromWindowsErr(PyExc_IOError, 0);
+        }
+        if (_PyBytes_Resize(&buf, nread))
+            return NULL;
+        return Py_BuildValue("Nii", buf, navail, nleft);
+    }
+    else {
+        Py_BEGIN_ALLOW_THREADS
+        ret = PeekNamedPipe(handle, NULL, 0, NULL, &navail, &nleft);
+        Py_END_ALLOW_THREADS
+        if (!ret) {
+            return PyErr_SetExcFromWindowsErr(PyExc_IOError, 0);
+        }
+        return Py_BuildValue("ii", navail, nleft);
+    }
+}
+
 static PyMethodDef win32_methods[] = {
     WIN32_FUNCTION(CloseHandle),
     WIN32_FUNCTION(GetLastError),
@@ -223,8 +381,14 @@ static PyMethodDef win32_methods[] = {
     WIN32_FUNCTION(ConnectNamedPipe),
     WIN32_FUNCTION(CreateFile),
     WIN32_FUNCTION(CreateNamedPipe),
+    WIN32_FUNCTION(ReadFile),
+    WIN32_FUNCTION(PeekNamedPipe),
     WIN32_FUNCTION(SetNamedPipeHandleState),
     WIN32_FUNCTION(WaitNamedPipe),
+    WIN32_FUNCTION(WriteFile),
+    WIN32_FUNCTION(closesocket),
+    WIN32_FUNCTION(recv),
+    WIN32_FUNCTION(send),
     {NULL}
 };
 
@@ -244,6 +408,8 @@ create_win32_namespace(void)
     Py_INCREF(&Win32Type);
 
     WIN32_CONSTANT(F_DWORD, ERROR_ALREADY_EXISTS);
+    WIN32_CONSTANT(F_DWORD, ERROR_BROKEN_PIPE);
+    WIN32_CONSTANT(F_DWORD, ERROR_NO_SYSTEM_RESOURCES);
     WIN32_CONSTANT(F_DWORD, ERROR_PIPE_BUSY);
     WIN32_CONSTANT(F_DWORD, ERROR_PIPE_CONNECTED);
     WIN32_CONSTANT(F_DWORD, ERROR_SEM_TIMEOUT);

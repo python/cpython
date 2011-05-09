@@ -97,15 +97,7 @@ SOURCE=..\..\Modules\_multiprocessing\multiprocessing.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Modules\_multiprocessing\pipe_connection.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Modules\_multiprocessing\semaphore.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Modules\_multiprocessing\socket_connection.c
 # End Source File
 # Begin Source File
 
