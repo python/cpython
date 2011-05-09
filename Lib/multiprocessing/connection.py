@@ -469,10 +469,8 @@ if sys.platform != 'win32':
         '''
         if duplex:
             s1, s2 = socket.socketpair()
-            c1 = Connection(os.dup(s1.fileno()))
-            c2 = Connection(os.dup(s2.fileno()))
-            s1.close()
-            s2.close()
+            c1 = Connection(s1.detach())
+            c2 = Connection(s2.detach())
         else:
             fd1, fd2 = os.pipe()
             c1 = Connection(fd1, writable=False)
