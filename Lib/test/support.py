@@ -91,12 +91,14 @@ def import_module(name, deprecated=False):
 def _save_and_remove_module(name, orig_modules):
     """Helper function to save and remove a module from sys.modules
 
-       Return value is True if the module was in sys.modules and
-       False otherwise."""
+       Return True if the module was in sys.modules, False otherwise.
+       Raise ImportError if the module can't be imported."""
     saved = True
     try:
         orig_modules[name] = sys.modules[name]
     except KeyError:
+        # try to import the module and raise an error if it can't be imported
+        __import__(name)
         saved = False
     else:
         del sys.modules[name]
@@ -106,8 +108,7 @@ def _save_and_remove_module(name, orig_modules):
 def _save_and_block_module(name, orig_modules):
     """Helper function to save and block a module in sys.modules
 
-       Return value is True if the module was in sys.modules and
-       False otherwise."""
+       Return True if the module was in sys.modules, False otherwise."""
     saved = True
     try:
         orig_modules[name] = sys.modules[name]
@@ -123,6 +124,7 @@ def import_fresh_module(name, fresh=(), blocked=(), deprecated=False):
     the sys.modules cache is restored to its original state.
 
     Modules named in fresh are also imported anew if needed by the import.
+    If one of these modules can't be imported, None is returned.
 
     Importing of modules named in blocked is prevented while the fresh import
     takes place.
@@ -144,6 +146,8 @@ def import_fresh_module(name, fresh=(), blocked=(), deprecated=False):
                 if not _save_and_block_module(blocked_name, orig_modules):
                     names_to_remove.append(blocked_name)
             fresh_module = importlib.import_module(name)
+        except ImportError:
+            fresh_module = None
         finally:
             for orig_name, module in orig_modules.items():
                 sys.modules[orig_name] = module
