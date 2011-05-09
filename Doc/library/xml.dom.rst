@@ -30,13 +30,6 @@ The Document Object Model is being defined by the W3C in stages, or "levels" in
 their terminology.  The Python mapping of the API is substantially based on the
 DOM Level 2 recommendation.
 
-.. XXX PyXML is dead...
-.. The mapping of the Level 3 specification, currently
-   only available in draft form, is being developed by the `Python XML Special
-   Interest Group <http://www.python.org/sigs/xml-sig/>`_ as part of the `PyXML
-   package <http://pyxml.sourceforge.net/>`_.  Refer to the documentation bundled
-   with that package for information on the current state of DOM Level 3 support.
-
 .. What if your needs are somewhere between SAX and the DOM?  Perhaps
    you cannot afford to load the entire tree in memory but you find the
    SAX model somewhat cumbersome and low-level.  There is also a module

@@ -25,8 +25,7 @@ report of the imported modules will be printed.
 .. function:: ReplacePackage(oldname, newname)
 
    Allows specifying that the module named *oldname* is in fact the package named
-   *newname*.  The most common usage would be  to handle how the :mod:`_xmlplus`
-   package replaces the :mod:`xml` package.
+   *newname*.
 
 
 .. class:: ModuleFinder(path=None, debug=0, excludes=[], replace_paths=[])

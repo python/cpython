@@ -83,6 +83,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #11164: Stop trying to use _xmlplus in the xml module.
+
 - Issue #11927: SMTP_SSL now uses port 465 by default as documented.  Patch
   by Kasun Herath.
 
