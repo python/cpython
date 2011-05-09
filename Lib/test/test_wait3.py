@@ -19,13 +19,16 @@ except AttributeError:
 
 class Wait3Test(ForkWait):
     def wait_impl(self, cpid):
-        for i in range(10):
+        # This many iterations can be required, since some previously run
+        # tests (e.g. test_ctypes) could have spawned a lot of children
+        # very quickly.
+        for i in range(30):
             # wait3() shouldn't hang, but some of the buildbots seem to hang
             # in the forking tests.  This is an attempt to fix the problem.
             spid, status, rusage = os.wait3(os.WNOHANG)
             if spid == cpid:
                 break
-            time.sleep(1.0)
+            time.sleep(0.1)
 
         self.assertEqual(spid, cpid)
         self.assertEqual(status, 0, "cause = %d, exit = %d" % (status&0xff, status>>8))
