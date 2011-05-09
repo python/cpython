@@ -179,16 +179,17 @@ of which this module provides three different variants:
 
    .. method:: send_response(code, message=None)
 
-      Sends a response header and logs the accepted request. The HTTP response
-      line is sent, followed by *Server* and *Date* headers. The values for
-      these two headers are picked up from the :meth:`version_string` and
-      :meth:`date_time_string` methods, respectively.
+      Adds a response header to the headers buffer and logs the accepted
+      request. The HTTP response line is sent, followed by *Server* and
+      *Date* headers. The values for these two headers are picked up from
+      the :meth:`version_string` and :meth:`date_time_string` methods,
+      respectively.
 
    .. method:: send_header(keyword, value)
 
-      Stores the HTTP header to an internal buffer which will be written to the
-      output stream when :meth:`end_headers` method is invoked.
-      *keyword* should specify the header keyword, with *value*
+      Adds the HTTP header to an internal buffer which will be written to the
+      output stream when either :meth:`end_headers` or :meth:`flush_headers`
+      is invoked. *keyword* should specify the header keyword, with *value*
       specifying its value.
 
       .. versionchanged:: 3.2 Storing the headers in an internal buffer
@@ -205,10 +206,18 @@ of which this module provides three different variants:
 
    .. method:: end_headers()
 
-      Write the buffered HTTP headers to the output stream and send a blank
-      line, indicating the end of the HTTP headers in the response.
+      Adds a blank line
+      (indicating the end of the HTTP headers in the response)
+      to the headers buffer and calls :meth:`flush_headers()`
 
       .. versionchanged:: 3.2 Writing the buffered headers to the output stream.
+
+   .. method:: flush_headers()
+
+      Finally send the headers to the output stream and flush the internal
+      headers buffer.
+
+      .. versionadded:: 3.3
 
    .. method:: log_request(code='-', size='-')
 
