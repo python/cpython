@@ -140,6 +140,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #3709: a flush_headers method to BaseHTTPRequestHandler which manages
+  the sending of headers to output stream and flushing the internal headers
+  buffer. Patch contribution by Andrew Schaaf
+
 - Issue #11743: Rewrite multiprocessing connection classes in pure Python.
 
 - Issue #11164: Stop trying to use _xmlplus in the xml module.
