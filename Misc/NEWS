@@ -619,6 +619,8 @@ Extension Modules
 Tests
 -----
 
+- Issue #12041: Make test_wait3 more robust.
+
 - Issue #11873: Change regex in test_compileall to fix occasional failures when
   when the randomly generated temporary path happened to match the regex.
 
