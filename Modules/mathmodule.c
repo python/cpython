@@ -622,7 +622,7 @@ m_log2(double x)
     }
     else {
         errno = EDOM;
-        return Py_NAN; /* log10(-inf) = nan, invalid-operation */
+        return Py_NAN; /* log2(-inf) = nan, invalid-operation */
     }
 }
 
