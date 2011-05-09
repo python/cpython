@@ -2512,7 +2512,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  futimens futimes \
  gai_strerror getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getspnam getspent getsid getwd \
- initgroups kill killpg lchmod lchown lockf linkat lstat lutimes mbrtowc mkdirat mkfifo \
+ initgroups kill killpg lchmod lchown lockf log2 linkat lstat lutimes mbrtowc mkdirat mkfifo \
  mkfifoat mknod mknodat mktime mremap nice openat pathconf pause plock poll \
  posix_fallocate posix_fadvise pread \
  pthread_init pthread_kill putenv pwrite readlink readlinkat readv realpath renameat \
@@ -3368,7 +3368,7 @@ LIBS_SAVE=$LIBS
 LIBS="$LIBS $LIBM"
 
 AC_CHECK_FUNCS([acosh asinh atanh copysign erf erfc expm1 finite gamma])
-AC_CHECK_FUNCS([hypot lgamma log1p round tgamma])
+AC_CHECK_FUNCS([hypot lgamma log1p log2 round tgamma])
 AC_CHECK_DECLS([isinf, isnan, isfinite], [], [], [[#include <math.h>]])
 
 # On FreeBSD 6.2, it appears that tanh(-0.) returns 0. instead of

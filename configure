@@ -11864,7 +11864,7 @@ _ACEOF
 fi
 done
 
-for ac_func in hypot lgamma log1p round tgamma
+for ac_func in hypot lgamma log1p log2 round tgamma
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
