@@ -10,6 +10,9 @@ What's New in Python 3.2.1?
 Core and Builtins
 -----------------
 
+- Issue #1195: Fix input() if it is interrupted by CTRL+d and then CTRL+c,
+  clear the end-of-file indicator after CTRL+d.
+
 - Issue #1856: Avoid crashes and lockups when daemon threads run while the
   interpreter is shutting down; instead, these threads are now killed when
   they try to take the GIL.
