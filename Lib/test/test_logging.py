@@ -1485,7 +1485,7 @@ class HTTPHandlerTest(BaseTest):
         self.handled.set()
 
     def test_output(self):
-        # The log message sent to the SysLogHandler is properly received.
+        # The log message sent to the HTTPHandler is properly received.
         logger = logging.getLogger("http")
         for method in ('GET', 'POST'):
             self.h_hdlr.method = method
