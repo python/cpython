@@ -883,6 +883,15 @@ functions based on regular expressions.
    *start* and *end* are interpreted as in slice notation.  Return ``-1`` if
    *sub* is not found.
 
+   .. note::
+
+      The :meth:`~str.find` method should be used only if you need to know the
+      position of *sub*.  To check if *sub* is a substring or not, use the
+      :keyword:`in` operator::
+
+         >>> 'Py' in 'Python'
+         True
+
 
 .. method:: str.format(*args, **kwargs)
 
