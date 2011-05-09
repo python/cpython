@@ -602,6 +602,9 @@ m_log2(double x)
     }
 
     if (x > 0.0) {
+#ifdef HAVE_LOG2
+        return log2(x);
+#else
         double m;
         int e;
         m = frexp(x, &e);
@@ -617,6 +620,7 @@ m_log2(double x)
         else {
             return log(m) / log(2.0) + e;
         }
+#endif
     }
     else if (x == 0.0) {
         errno = EDOM;
