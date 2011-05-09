@@ -653,8 +653,8 @@ class MathTests(unittest.TestCase):
     def testLog2(self):
         self.assertRaises(TypeError, math.log2)
         # Check that we get exact equality for log2 of powers of 2.
-        actual = [math.log2(2.0**n) for n in range(-324, 1024)]
-        expected = [float(n) for n in range(-324, 1024)]
+        actual = [math.log2(math.ldexp(1.0, n)) for n in range(-1074, 1024)]
+        expected = [float(n) for n in range(-1074, 1024)]
         self.assertEqual(actual, expected)
 
         # Check some integer values
