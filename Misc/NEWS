@@ -140,6 +140,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #11164: Stop trying to use _xmlplus in the xml module.
+
 - Issue #11888: Add log2 function to math module. Patch written by Mark
   Dickinson.
 
