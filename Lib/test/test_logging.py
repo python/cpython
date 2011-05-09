@@ -58,6 +58,15 @@ try:
     import threading
 except ImportError:
     threading = None
+try:
+    import win32evtlog
+except ImportError:
+    win32evtlog = None
+try:
+    import win32evtlogutil
+except ImportError:
+    win32evtlogutil = None
+    win32evtlog = None
 
 
 class BaseTest(unittest.TestCase):
@@ -3565,6 +3574,35 @@ for when, exp in (('S', 1),
         rh.close()
     setattr(TimedRotatingFileHandlerTest, "test_compute_rollover_%s" % when, test_compute_rollover)
 
+
+@unittest.skipUnless(win32evtlog, 'win32evtlog/win32evtlogutil required for this test.')
+class NTEventLogHandlerTest(BaseTest):
+    def test_basic(self):
+        logtype = 'Application'
+        elh = win32evtlog.OpenEventLog(None, logtype)
+        num_recs = win32evtlog.GetNumberOfEventLogRecords(elh)
+        h = logging.handlers.NTEventLogHandler('test_logging')
+        r = logging.makeLogRecord({'msg': 'Test Log Message'})
+        h.handle(r)
+        h.close()
+        # Now see if the event is recorded
+        self.assertTrue(num_recs < win32evtlog.GetNumberOfEventLogRecords(elh))
+        flags = win32evtlog.EVENTLOG_BACKWARDS_READ | \
+                win32evtlog.EVENTLOG_SEQUENTIAL_READ
+        found = False
+        GO_BACK = 100
+        events = win32evtlog.ReadEventLog(elh, flags, GO_BACK)
+        for e in events:
+            if e.SourceName != 'test_logging':
+                continue
+            msg = win32evtlogutil.SafeFormatMessage(e, logtype)
+            if msg != 'Test Log Message\r\n':
+                continue
+            found = True
+            break
+        msg = 'Record not found in event log, went back %d records' % GO_BACK
+        self.assertTrue(found, msg=msg)
+
 # Set the locale to the platform-dependent default.  I have no idea
 # why the test does this, but in any case we save the current locale
 # first and restore it at the end.
@@ -3580,7 +3618,7 @@ def test_main():
                  BasicConfigTest, LoggerAdapterTest, LoggerTest,
                  SMTPHandlerTest, FileHandlerTest, RotatingFileHandlerTest,
                  LastResortTest, LogRecordTest, ExceptionTest,
-                 SysLogHandlerTest, HTTPHandlerTest,
+                 SysLogHandlerTest, HTTPHandlerTest, NTEventLogHandlerTest,
                  TimedRotatingFileHandlerTest
                 )
 
