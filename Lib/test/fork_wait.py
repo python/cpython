@@ -43,6 +43,7 @@ class ForkWait(unittest.TestCase):
         self.assertEqual(spid, cpid)
         self.assertEqual(status, 0, "cause = %d, exit = %d" % (status&0xff, status>>8))
 
+    @support.reap_threads
     def test_wait(self):
         for i in range(NUM_THREADS):
             _thread.start_new(self.f, (i,))
@@ -69,7 +70,8 @@ class ForkWait(unittest.TestCase):
             os._exit(n)
         else:
             # Parent
-            self.wait_impl(cpid)
-            # Tell threads to die
-            self.stop = 1
-            time.sleep(2*SHORTSLEEP) # Wait for threads to die
+            try:
+                self.wait_impl(cpid)
+            finally:
+                # Tell threads to die
+                self.stop = 1
