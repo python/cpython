@@ -688,7 +688,7 @@ signal_pthread_kill(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "li:pthread_kill", &tid, &signum))
         return NULL;
 
-    err = pthread_kill(tid, signum);
+    err = pthread_kill((pthread_t)tid, signum);
     if (err != 0) {
         errno = err;
         PyErr_SetFromErrno(PyExc_OSError);
