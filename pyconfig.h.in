@@ -476,6 +476,9 @@
 /* Define to 1 if you have the `log1p' function. */
 #undef HAVE_LOG1P
 
+/* Define to 1 if you have the `log2' function. */
+#undef HAVE_LOG2
+
 /* Define this if you have the type long double. */
 #undef HAVE_LONG_DOUBLE
 
