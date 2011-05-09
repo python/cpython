@@ -518,6 +518,18 @@ then
 fi
 
 
+AC_MSG_CHECKING([for -Wl,--no-as-needed])
+save_LDFLAGS="$LDFLAGS"
+LDFLAGS="$LDFLAGS -Wl,--no-as-needed"
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+  [NO_AS_NEEDED="-Wl,--no-as-needed"
+   AC_MSG_RESULT([yes])],
+  [NO_AS_NEEDED=""
+   AC_MSG_RESULT([no])])
+LDFLAGS="$save_LDFLAGS"
+AC_SUBST(NO_AS_NEEDED)
+
+
 # checks for UNIX variants that set C preprocessor variables
 AC_USE_SYSTEM_EXTENSIONS
 
