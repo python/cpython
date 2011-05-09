@@ -794,51 +794,6 @@ class XmlReaderTest(XmlTestBase):
         self.assertEqual(attrs.getQNameByName((ns_uri, "attr")), "ns:attr")
 
 
-    # During the development of Python 2.5, an attempt to move the "xml"
-    # package implementation to a new package ("xmlcore") proved painful.
-    # The goal of this change was to allow applications to be able to
-    # obtain and rely on behavior in the standard library implementation
-    # of the XML support without needing to be concerned about the
-    # availability of the PyXML implementation.
-    #
-    # While the existing import hackery in Lib/xml/__init__.py can cause
-    # PyXML's _xmlpus package to supplant the "xml" package, that only
-    # works because either implementation uses the "xml" package name for
-    # imports.
-    #
-    # The move resulted in a number of problems related to the fact that
-    # the import machinery's "package context" is based on the name that's
-    # being imported rather than the __name__ of the actual package
-    # containment; it wasn't possible for the "xml" package to be replaced
-    # by a simple module that indirected imports to the "xmlcore" package.
-    #
-    # The following two tests exercised bugs that were introduced in that
-    # attempt.  Keeping these tests around will help detect problems with
-    # other attempts to provide reliable access to the standard library's
-    # implementation of the XML support.
-
-    def test_sf_1511497(self):
-        # Bug report: http://www.python.org/sf/1511497
-        import sys
-        old_modules = sys.modules.copy()
-        for modname in list(sys.modules.keys()):
-            if modname.startswith("xml."):
-                del sys.modules[modname]
-        try:
-            import xml.sax.expatreader
-            module = xml.sax.expatreader
-            self.assertEqual(module.__name__, "xml.sax.expatreader")
-        finally:
-            sys.modules.update(old_modules)
-
-    def test_sf_1513611(self):
-        # Bug report: http://www.python.org/sf/1513611
-        sio = StringIO("invalid")
-        parser = make_parser()
-        from xml.sax import SAXParseException
-        self.assertRaises(SAXParseException, parser.parse, sio)
-
-
 def test_main():
     run_unittest(MakeParserTest,
                  SaxutilsTest,
