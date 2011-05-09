@@ -63,8 +63,10 @@ enum py_ssl_cert_requirements {
 };
 
 enum py_ssl_version {
+#ifndef OPENSSL_NO_SSL2
     PY_SSL_VERSION_SSL2,
-    PY_SSL_VERSION_SSL3,
+#endif
+    PY_SSL_VERSION_SSL3=1,
     PY_SSL_VERSION_SSL23,
     PY_SSL_VERSION_TLS1
 };
@@ -1450,8 +1452,10 @@ context_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         ctx = SSL_CTX_new(TLSv1_method());
     else if (proto_version == PY_SSL_VERSION_SSL3)
         ctx = SSL_CTX_new(SSLv3_method());
+#ifndef OPENSSL_NO_SSL2
     else if (proto_version == PY_SSL_VERSION_SSL2)
         ctx = SSL_CTX_new(SSLv2_method());
+#endif
     else if (proto_version == PY_SSL_VERSION_SSL23)
         ctx = SSL_CTX_new(SSLv23_method());
     else
@@ -2110,8 +2114,10 @@ PyInit__ssl(void)
                             PY_SSL_CERT_REQUIRED);
 
     /* protocol versions */
+#ifndef OPENSSL_NO_SSL2
     PyModule_AddIntConstant(m, "PROTOCOL_SSLv2",
                             PY_SSL_VERSION_SSL2);
+#endif
     PyModule_AddIntConstant(m, "PROTOCOL_SSLv3",
                             PY_SSL_VERSION_SSL3);
     PyModule_AddIntConstant(m, "PROTOCOL_SSLv23",
