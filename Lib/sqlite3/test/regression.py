@@ -298,11 +298,10 @@ class RegressionTests(unittest.TestCase):
             cur.execute("insert into a (bar) values (?)", (1,))
             yield 1
 
-        try:
-            cur.executemany("insert into b (baz) values (?)", ((i,) for i in foo()))
-            self.fail("should have raised ProgrammingError")
-        except sqlite.ProgrammingError:
-            pass
+        with self.assertRaises(sqlite.ProgrammingError):
+            cur.executemany("insert into b (baz) values (?)",
+                            ((i,) for i in foo()))
+
 
 def suite():
     regression_suite = unittest.makeSuite(RegressionTests, "Check")
