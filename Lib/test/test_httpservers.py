@@ -461,6 +461,23 @@ class RejectingSocketlessRequestHandler(SocketlessRequestHandler):
         self.send_error(417)
         return False
 
+
+class AuditableBytesIO:
+
+    def __init__(self):
+        self.datas = []
+
+    def write(self, data):
+        self.datas.append(data)
+
+    def getData(self):
+        return b''.join(self.datas)
+
+    @property
+    def numWrites(self):
+        return len(self.datas)
+
+
 class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
     """Test the functionality of the BaseHTTPServer.
 
@@ -527,27 +544,49 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         self.verify_get_called()
         self.assertEqual(result[-1], b'<html><body>Data</body></html>\r\n')
 
-    def test_header_buffering(self):
-
-        def _readAndReseek(f):
-            pos = f.tell()
-            f.seek(0)
-            data = f.read()
-            f.seek(pos)
-            return data
+    def test_header_buffering_of_send_error(self):
 
         input = BytesIO(b'GET / HTTP/1.1\r\n\r\n')
-        output = BytesIO()
-        self.handler.rfile = input
-        self.handler.wfile = output
-        self.handler.request_version = 'HTTP/1.1'
+        output = AuditableBytesIO()
+        handler = SocketlessRequestHandler()
+        handler.rfile = input
+        handler.wfile = output
+        handler.request_version = 'HTTP/1.1'
+        handler.requestline = ''
+        handler.command = None
 
-        self.handler.send_header('Foo', 'foo')
-        self.handler.send_header('bar', 'bar')
-        self.assertEqual(_readAndReseek(output), b'')
-        self.handler.end_headers()
-        self.assertEqual(_readAndReseek(output),
-                         b'Foo: foo\r\nbar: bar\r\n\r\n')
+        handler.send_error(418)
+        self.assertEqual(output.numWrites, 2)
+
+    def test_header_buffering_of_send_response_only(self):
+
+        input = BytesIO(b'GET / HTTP/1.1\r\n\r\n')
+        output = AuditableBytesIO()
+        handler = SocketlessRequestHandler()
+        handler.rfile = input
+        handler.wfile = output
+        handler.request_version = 'HTTP/1.1'
+
+        handler.send_response_only(418)
+        self.assertEqual(output.numWrites, 0)
+        handler.end_headers()
+        self.assertEqual(output.numWrites, 1)
+
+    def test_header_buffering_of_send_header(self):
+
+        input = BytesIO(b'GET / HTTP/1.1\r\n\r\n')
+        output = AuditableBytesIO()
+        handler = SocketlessRequestHandler()
+        handler.rfile = input
+        handler.wfile = output
+        handler.request_version = 'HTTP/1.1'
+
+        handler.send_header('Foo', 'foo')
+        handler.send_header('bar', 'bar')
+        self.assertEqual(output.numWrites, 0)
+        handler.end_headers()
+        self.assertEqual(output.getData(), b'Foo: foo\r\nbar: bar\r\n\r\n')
+        self.assertEqual(output.numWrites, 1)
 
     def test_header_unbuffered_when_continue(self):
 

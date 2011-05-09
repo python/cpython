@@ -355,6 +355,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
 
         """
         self.send_response_only(100)
+        self.flush_headers()
         return True
 
     def handle_one_request(self):
@@ -432,7 +433,8 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
             self.wfile.write(content.encode('UTF-8', 'replace'))
 
     def send_response(self, code, message=None):
-        """Send the response header and log the response code.
+        """Add the response header to the headers buffer and log the
+        response code.
 
         Also send two standard headers with the server software
         version and the current date.
@@ -451,11 +453,14 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
             else:
                 message = ''
         if self.request_version != 'HTTP/0.9':
-            self.wfile.write(("%s %d %s\r\n" %
-                              (self.protocol_version, code, message)).encode('latin-1', 'strict'))
+            if not hasattr(self, '_headers_buffer'):
+                self._headers_buffer = []
+            self._headers_buffer.append(("%s %d %s\r\n" %
+                    (self.protocol_version, code, message)).encode(
+                        'latin-1', 'strict'))
 
     def send_header(self, keyword, value):
-        """Send a MIME header."""
+        """Send a MIME header to the headers buffer."""
         if self.request_version != 'HTTP/0.9':
             if not hasattr(self, '_headers_buffer'):
                 self._headers_buffer = []
@@ -472,6 +477,10 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         """Send the blank line ending the MIME headers."""
         if self.request_version != 'HTTP/0.9':
             self._headers_buffer.append(b"\r\n")
+            self.flush_headers()
+
+    def flush_headers(self):
+        if hasattr(self, '_headers_buffer'):
             self.wfile.write(b"".join(self._headers_buffer))
             self._headers_buffer = []
 
@@ -1081,6 +1090,7 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
             env.setdefault(k, "")
 
         self.send_response(200, "Script output follows")
+        self.flush_headers()
 
         decoded_query = query.replace('+', ' ')
 
