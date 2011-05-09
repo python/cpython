@@ -58,32 +58,35 @@ class BasicTests(unittest.TestCase):
 
 # Issue #9415: Ubuntu hijacks their OpenSSL and forcefully disables SSLv2
 def skip_if_broken_ubuntu_ssl(func):
-    # We need to access the lower-level wrapper in order to create an
-    # implicit SSL context without trying to connect or listen.
-    try:
-        import _ssl
-    except ImportError:
-        # The returned function won't get executed, just ignore the error
-        pass
-    @functools.wraps(func)
-    def f(*args, **kwargs):
+    if hasattr(ssl, 'PROTOCOL_SSLv2'):
+        # We need to access the lower-level wrapper in order to create an
+        # implicit SSL context without trying to connect or listen.
         try:
-            s = socket.socket(socket.AF_INET)
-            _ssl.sslwrap(s._sock, 0, None, None,
-                         ssl.CERT_NONE, ssl.PROTOCOL_SSLv2, None, None)
-        except ssl.SSLError as e:
-            if (ssl.OPENSSL_VERSION_INFO == (0, 9, 8, 15, 15) and
-                platform.linux_distribution() == ('debian', 'squeeze/sid', '')
-                and 'Invalid SSL protocol variant specified' in str(e)):
-                raise unittest.SkipTest("Patched Ubuntu OpenSSL breaks behaviour")
-        return func(*args, **kwargs)
-    return f
+            import _ssl
+        except ImportError:
+            # The returned function won't get executed, just ignore the error
+            pass
+        @functools.wraps(func)
+        def f(*args, **kwargs):
+            try:
+                s = socket.socket(socket.AF_INET)
+                _ssl.sslwrap(s._sock, 0, None, None,
+                             ssl.CERT_NONE, ssl.PROTOCOL_SSLv2, None, None)
+            except ssl.SSLError as e:
+                if (ssl.OPENSSL_VERSION_INFO == (0, 9, 8, 15, 15) and
+                    platform.linux_distribution() == ('debian', 'squeeze/sid', '')
+                    and 'Invalid SSL protocol variant specified' in str(e)):
+                    raise unittest.SkipTest("Patched Ubuntu OpenSSL breaks behaviour")
+            return func(*args, **kwargs)
+        return f
+    else:
+        return func
 
 
 class BasicSocketTests(unittest.TestCase):
 
     def test_constants(self):
-        ssl.PROTOCOL_SSLv2
+        #ssl.PROTOCOL_SSLv2
         ssl.PROTOCOL_SSLv23
         ssl.PROTOCOL_SSLv3
         ssl.PROTOCOL_TLSv1
@@ -1008,7 +1011,8 @@ else:
             try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv3, True)
             try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv3, True, ssl.CERT_OPTIONAL)
             try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv3, True, ssl.CERT_REQUIRED)
-            try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv2, False)
+            if hasattr(ssl, 'PROTOCOL_SSLv2'):
+                try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv2, False)
             try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv23, False)
             try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_TLSv1, False)
 
@@ -1020,7 +1024,8 @@ else:
             try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLSv1, True)
             try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLSv1, True, ssl.CERT_OPTIONAL)
             try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLSv1, True, ssl.CERT_REQUIRED)
-            try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_SSLv2, False)
+            if hasattr(ssl, 'PROTOCOL_SSLv2'):
+                try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_SSLv2, False)
             try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_SSLv3, False)
             try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_SSLv23, False)
 
