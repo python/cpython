@@ -805,9 +805,12 @@ faulthandler_sigfpe(PyObject *self, PyObject *args)
        PowerPC. Use volatile to disable compile-time optimizations. */
     volatile int x = 1, y = 0, z;
     z = x / y;
-    /* if the division by zero didn't raise a SIGFPE, raise it manually */
+    /* if the division by zero didn't raise a SIGFPE (e.g. on PowerPC),
+       raise it manually */
     raise(SIGFPE);
-    Py_RETURN_NONE;
+    /* use z to make quiet a compiler warning, but this line
+       is never reached */
+    return PyLong_FromLong(z);
 }
 
 static PyObject *
