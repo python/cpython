@@ -35,9 +35,10 @@ def AddPackagePath(packagename, path):
 
 replacePackageMap = {}
 
-# This ReplacePackage mechanism allows modulefinder to work around the
-# way the _xmlplus package injects itself under the name "xml" into
-# sys.modules at runtime by calling ReplacePackage("_xmlplus", "xml")
+# This ReplacePackage mechanism allows modulefinder to work around
+# situations in which a package injects itself under the name
+# of another package into sys.modules at runtime by calling
+# ReplacePackage("real_package_name", "faked_package_name")
 # before running ModuleFinder.
 
 def ReplacePackage(oldname, newname):
