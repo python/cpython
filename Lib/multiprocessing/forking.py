@@ -183,7 +183,7 @@ else:
     import time
 
     from pickle import dump, load, HIGHEST_PROTOCOL
-    from _multiprocessing import win32, Connection, PipeConnection
+    from _multiprocessing import win32
     from .util import Finalize
 
     def dump(obj, file, protocol=None):
@@ -410,6 +410,9 @@ else:
     #
     # Make (Pipe)Connection picklable
     #
+
+    # Late import because of circular import
+    from .connection import Connection, PipeConnection
 
     def reduce_connection(conn):
         if not Popen.thread_is_spawning():
