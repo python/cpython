@@ -62,7 +62,6 @@ import _ssl             # if we can't import it, let the error propagate
 from _ssl import OPENSSL_VERSION_NUMBER, OPENSSL_VERSION_INFO, OPENSSL_VERSION
 from _ssl import SSLError
 from _ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
-from _ssl import PROTOCOL_SSLv2, PROTOCOL_SSLv3, PROTOCOL_SSLv23, PROTOCOL_TLSv1
 from _ssl import RAND_status, RAND_egd, RAND_add
 from _ssl import \
      SSL_ERROR_ZERO_RETURN, \
@@ -74,6 +73,18 @@ from _ssl import \
      SSL_ERROR_WANT_CONNECT, \
      SSL_ERROR_EOF, \
      SSL_ERROR_INVALID_ERROR_CODE
+from _ssl import PROTOCOL_SSLv3, PROTOCOL_SSLv23, PROTOCOL_TLSv1
+_PROTOCOL_NAMES = {
+    PROTOCOL_TLSv1: "TLSv1",
+    PROTOCOL_SSLv23: "SSLv23",
+    PROTOCOL_SSLv3: "SSLv3",
+}
+try:
+    from _ssl import PROTOCOL_SSLv2
+except ImportError:
+    pass
+else:
+    _PROTOCOL_NAMES[PROTOCOL_SSLv2] = "SSLv2"
 
 from socket import socket, _fileobject, _delegate_methods, error as socket_error
 from socket import getnameinfo as _getnameinfo
@@ -425,16 +436,7 @@ def get_server_certificate(addr, ssl_version=PROTOCOL_SSLv3, ca_certs=None):
     return DER_cert_to_PEM_cert(dercert)
 
 def get_protocol_name(protocol_code):
-    if protocol_code == PROTOCOL_TLSv1:
-        return "TLSv1"
-    elif protocol_code == PROTOCOL_SSLv23:
-        return "SSLv23"
-    elif protocol_code == PROTOCOL_SSLv2:
-        return "SSLv2"
-    elif protocol_code == PROTOCOL_SSLv3:
-        return "SSLv3"
-    else:
-        return "<unknown>"
+    return _PROTOCOL_NAMES.get(protocol_code, '<unknown>')
 
 
 # a replacement for the old socket.ssl function
