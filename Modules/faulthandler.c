@@ -816,14 +816,12 @@ faulthandler_sigfpe(PyObject *self, PyObject *args)
 static PyObject *
 faulthandler_sigabrt(PyObject *self, PyObject *args)
 {
-#if _MSC_VER
-    /* If Python is compiled in debug mode with Visual Studio, abort() opens
-       a popup asking the user how to handle the assertion. Use raise(SIGABRT)
-       instead. */
-    raise(SIGABRT);
-#else
-    abort();
+#ifdef _MSC_VER
+    /* Visual Studio: configure abort() to not display an error message nor
+       open a popup asking to report the fault. */
+    _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
 #endif
+    abort();
     Py_RETURN_NONE;
 }
 
