@@ -421,6 +421,8 @@ IDLE
 Tests
 -----
 
+- Issue #11910: Fix test_heapq to skip the C tests when _heapq is missing.
+
 - Fix test_startfile to wait for child process to terminate before finishing.
 
 - Issue #11719: Fix message about unexpected test_msilib skip on non-Windows
