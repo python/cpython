@@ -77,6 +77,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #11164: Remove obsolete allnodes test from minidom test.
+
 - Issue #11927: SMTP_SSL now uses port 465 by default as documented.  Patch
   by Kasun Herath.
 
