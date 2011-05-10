@@ -564,23 +564,9 @@ class GeneralModuleTests(unittest.TestCase):
 
     # XXX The following don't test module-level functionality...
 
-    def _get_unused_port(self, bind_address='0.0.0.0'):
-        """Use a temporary socket to elicit an unused ephemeral port.
-
-        Args:
-            bind_address: Hostname or IP address to search for a port on.
-
-        Returns: A most likely to be unused port.
-        """
-        tempsock = socket.socket()
-        tempsock.bind((bind_address, 0))
-        host, port = tempsock.getsockname()
-        tempsock.close()
-        return port
-
     def testSockName(self):
         # Testing getsockname()
-        port = self._get_unused_port()
+        port = support.find_unused_port()
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.addCleanup(sock.close)
         sock.bind(("0.0.0.0", port))
@@ -629,7 +615,7 @@ class GeneralModuleTests(unittest.TestCase):
 
     def test_getsockaddrarg(self):
         host = '0.0.0.0'
-        port = self._get_unused_port(bind_address=host)
+        port = support.find_unused_port()
         big_port = port + 65536
         neg_port = port - 65536
         sock = socket.socket()
