@@ -797,6 +797,13 @@ class GeneralModuleTests(unittest.TestCase):
             for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
                 self.assertRaises(TypeError, pickle.dumps, sock, protocol)
 
+    def test_listen_backlog0(self):
+        srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        srv.bind((HOST, 0))
+        # backlog = 0
+        srv.listen(0)
+        srv.close()
+
 
 @unittest.skipUnless(thread, 'Threading required for this test.')
 class BasicTCPTest(SocketConnectedTest):
