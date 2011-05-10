@@ -324,7 +324,7 @@ signal_signal(PyObject *self, PyObject *args)
     else
         func = signal_handler;
     if (PyOS_setsig(sig_num, func) == SIG_ERR) {
-        PyErr_SetFromErrno(PyExc_RuntimeError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
     old_handler = Handlers[sig_num].func;
@@ -393,7 +393,7 @@ signal_siginterrupt(PyObject *self, PyObject *args)
         return NULL;
     }
     if (siginterrupt(sig_num, flag)<0) {
-        PyErr_SetFromErrno(PyExc_RuntimeError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
