@@ -1065,7 +1065,6 @@ ConfigParser Objects
       :meth:`get` method.
 
       .. versionchanged:: 3.2
-
          Items present in *vars* no longer appear in the result. The previous
          behaviour mixed actual parser options with variables provided for
          interpolation.
