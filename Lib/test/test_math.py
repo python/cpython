@@ -5,6 +5,7 @@ from test.support import run_unittest, verbose, requires_IEEE_754
 import unittest
 import math
 import os
+import platform
 import sys
 import struct
 import sysconfig
@@ -652,10 +653,6 @@ class MathTests(unittest.TestCase):
     @requires_IEEE_754
     def testLog2(self):
         self.assertRaises(TypeError, math.log2)
-        # Check that we get exact equality for log2 of powers of 2.
-        actual = [math.log2(math.ldexp(1.0, n)) for n in range(-1074, 1024)]
-        expected = [float(n) for n in range(-1074, 1024)]
-        self.assertEqual(actual, expected)
 
         # Check some integer values
         self.assertEqual(math.log2(1), 0.0)
@@ -670,6 +667,16 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.log2, -1.5)
         self.assertRaises(ValueError, math.log2, NINF)
         self.assertTrue(math.isnan(math.log2(NAN)))
+
+    @requires_IEEE_754
+    @unittest.skipIf(sys.platform == 'darwin'
+                     and platform.mac_ver()[0].startswith('10.4.'),
+                     'Mac OS X Tiger log2() is not accurate enough')
+    def testLog2Exact(self):
+        # Check that we get exact equality for log2 of powers of 2.
+        actual = [math.log2(math.ldexp(1.0, n)) for n in range(-1074, 1024)]
+        expected = [float(n) for n in range(-1074, 1024)]
+        self.assertEqual(actual, expected)
 
     def testLog10(self):
         self.assertRaises(TypeError, math.log10)
