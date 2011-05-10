@@ -143,6 +143,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12011: signal.signal() and signal.siginterrupt() raise an OSError,
+  instead of a RuntimeError: OSError has an errno attribute.
+
 - Issue #3709: a flush_headers method to BaseHTTPRequestHandler which manages
   the sending of headers to output stream and flushing the internal headers
   buffer. Patch contribution by Andrew Schaaf

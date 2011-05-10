@@ -148,6 +148,9 @@ signal
   a nul byte into the wakeup file descriptor. So it is possible to wait more
   than one signal and know which signals were raised.
 
+* :func:`signal.signal` and :func:`signal.siginterrupt` raise an OSError,
+  instead of a RuntimeError: OSError has an errno attribute.
+
 
 Optimizations
 =============
