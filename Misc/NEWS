@@ -373,6 +373,9 @@ Extension Modules
 
 - Issue #10169: Fix argument parsing in socket.sendto() to avoid error masking.
 
+- Issue #12051: Fix segfault in json.dumps() while encoding highly-nested
+  objects using the C accelerations.
+
 - Issue #12017: Fix segfault in json.loads() while decoding highly-nested
   objects using the C accelerations.
 
