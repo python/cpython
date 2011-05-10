@@ -69,6 +69,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #10419: Fix build_scripts command of distutils to handle correctly
+  non-ASCII scripts. Open and write the script in binary mode, but ensure that
+  the shebang is decodable from UTF-8 and from the encoding of the script.
+
 - Issue #12012: ssl.PROTOCOL_SSLv2 becomes optional.
 
 - Issue #11164: Stop trying to use _xmlplus in the xml module.
