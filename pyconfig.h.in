@@ -494,7 +494,7 @@
 /* Define this if you have the makedev macro. */
 #undef HAVE_MAKEDEV
 
-/* Define this if mallopt can set malloc mmap threshold. */
+/* Define if mallopt can set malloc mmap threshold. */
 #undef HAVE_MALLOPT_MMAP_THRESHOLD
 
 /* Define to 1 if you have the `mbrtowc' function. */
@@ -590,11 +590,11 @@
 /* Define to 1 if you have the `pthread_init' function. */
 #undef HAVE_PTHREAD_INIT
 
-/* Define to 1 if you have the `pthread_sigmask' function. */
-#undef HAVE_PTHREAD_SIGMASK
-
 /* Define to 1 if you have the `pthread_kill' function. */
 #undef HAVE_PTHREAD_KILL
+
+/* Define to 1 if you have the `pthread_sigmask' function. */
+#undef HAVE_PTHREAD_SIGMASK
 
 /* Define to 1 if you have the <pty.h> header file. */
 #undef HAVE_PTY_H
@@ -725,11 +725,11 @@
 /* Define to 1 if you have the `siginterrupt' function. */
 #undef HAVE_SIGINTERRUPT
 
-/* Define to 1 if you have the `sigpending' function. */
-#undef HAVE_SIGPENDING
-
 /* Define to 1 if you have the <signal.h> header file. */
 #undef HAVE_SIGNAL_H
+
+/* Define to 1 if you have the `sigpending' function. */
+#undef HAVE_SIGPENDING
 
 /* Define to 1 if you have the `sigrelse' function. */
 #undef HAVE_SIGRELSE
