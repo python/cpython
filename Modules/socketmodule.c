@@ -2244,8 +2244,10 @@ sock_listen(PySocketSockObject *s, PyObject *arg)
     if (backlog == -1 && PyErr_Occurred())
         return NULL;
     Py_BEGIN_ALLOW_THREADS
-    if (backlog < 1)
-        backlog = 1;
+    /* To avoid problems on systems that don't allow a negative backlog
+     * (which doesn't make sense anyway) we force a minimum value of 0. */
+    if (backlog < 0)
+        backlog = 0;
     res = listen(s->sock_fd, backlog);
     Py_END_ALLOW_THREADS
     if (res < 0)
@@ -2258,8 +2260,9 @@ PyDoc_STRVAR(listen_doc,
 "listen(backlog)\n\
 \n\
 Enable a server to accept connections.  The backlog argument must be at\n\
-least 1; it specifies the number of unaccepted connection that the system\n\
-will allow before refusing new connections.");
+least 0 (if it is lower, it is set to 0); it specifies the number of\n\
+unaccepted connections that the system will allow before refusing new\n\
+connections.");
 
 
 #ifndef NO_DUP

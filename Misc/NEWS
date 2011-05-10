@@ -80,6 +80,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8498: In socket.accept(), allow to specify 0 as a backlog value in
+  order to accept exactly one connection.  Patch by Daniel Evers.
+
 - Issue #12012: ssl.PROTOCOL_SSLv2 becomes optional.
 
 - Issue #11164: Remove obsolete allnodes test from minidom test.
