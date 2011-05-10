@@ -788,6 +788,13 @@ class GeneralModuleTests(unittest.TestCase):
             fp.close()
             self.assertEqual(repr(fp), "<_io.BufferedReader name=-1>")
 
+    def testListenBacklog0(self):
+        srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        srv.bind((HOST, 0))
+        # backlog = 0
+        srv.listen(0)
+        srv.close()
+
 
 @unittest.skipUnless(thread, 'Threading required for this test.')
 class BasicTCPTest(SocketConnectedTest):

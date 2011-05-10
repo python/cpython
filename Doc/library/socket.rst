@@ -652,8 +652,8 @@ correspond to Unix system calls applicable to sockets.
 .. method:: socket.listen(backlog)
 
    Listen for connections made to the socket.  The *backlog* argument specifies the
-   maximum number of queued connections and should be at least 1; the maximum value
-   is system-dependent (usually 5).
+   maximum number of queued connections and should be at least 0; the maximum value
+   is system-dependent (usually 5), the minimum value is forced to 0.
 
 
 .. method:: socket.makefile(mode='r', buffering=None, *, encoding=None, \
