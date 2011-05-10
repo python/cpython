@@ -143,6 +143,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #10419, #6011: build_scripts command of distutils handles correctly
+  non-ASCII path (path to the Python executable). Open and write the script in
+  binary mode, but ensure that the shebang is decodable from UTF-8 and from the
+  encoding of the script.
+
 - Issue #8498: In socket.accept(), allow to specify 0 as a backlog value in
   order to accept exactly one connection.  Patch by Daniel Evers.
 
