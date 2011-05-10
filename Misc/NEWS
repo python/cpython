@@ -86,6 +86,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8498: In socket.accept(), allow to specify 0 as a backlog value in
+  order to accept exactly one connection.  Patch by Daniel Evers.
+
 - Issue #11164: Stop trying to use _xmlplus in the xml module.
 
 - Issue #11927: SMTP_SSL now uses port 465 by default as documented.  Patch
