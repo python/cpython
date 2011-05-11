@@ -180,10 +180,17 @@ of which this module provides three different variants:
    .. method:: send_response(code, message=None)
 
       Adds a response header to the headers buffer and logs the accepted
-      request. The HTTP response line is sent, followed by *Server* and
-      *Date* headers. The values for these two headers are picked up from
-      the :meth:`version_string` and :meth:`date_time_string` methods,
-      respectively.
+      request. The HTTP response line is written to the internal buffer,
+      followed by *Server* and *Date* headers. The values for these two headers
+      are picked up from the :meth:`version_string` and
+      :meth:`date_time_string` methods, respectively. If the server does not
+      intend to send any other headers using the :meth:`send_header` method,
+      then send_response should be followed by a :meth:`end_headers` call.
+
+      ..versionchanged:: 3.3
+      Writing of headers to internal buffer and need to call
+      :meth:`end_headers` explicitly.
+
 
    .. method:: send_header(keyword, value)
 
