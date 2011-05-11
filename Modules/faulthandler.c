@@ -53,8 +53,8 @@ static struct {
     int exit;
     char *header;
     size_t header_len;
-    /* The main thread always hold this lock. It is only released when
-       faulthandler_thread() is interrupted until this thread exits, or at
+    /* The main thread always holds this lock. It is only released when
+       faulthandler_thread() is interrupted before this thread exits, or at
        Python exit. */
     PyThread_type_lock cancel_event;
     /* released by child thread when joined */
@@ -218,18 +218,18 @@ faulthandler_dump_traceback_py(PyObject *self,
 }
 
 
-/* Handler of SIGSEGV, SIGFPE, SIGABRT, SIGBUS and SIGILL signals.
+/* Handler for SIGSEGV, SIGFPE, SIGABRT, SIGBUS and SIGILL signals.
 
    Display the current Python traceback, restore the previous handler and call
    the previous handler.
 
-   On Windows, don't call explictly the previous handler, because Windows
+   On Windows, don't explicitly call the previous handler, because the Windows
    signal handler would not be called (for an unknown reason). The execution of
    the program continues at faulthandler_fatal_error() exit, but the same
    instruction will raise the same fault (signal), and so the previous handler
    will be called.
 
-   This function is signal safe and should only call signal safe functions. */
+   This function is signal-safe and should only call signal-safe functions. */
 
 static void
 faulthandler_fatal_error(int signum)
@@ -267,7 +267,7 @@ faulthandler_fatal_error(int signum)
 
 #ifdef WITH_THREAD
     /* SIGSEGV, SIGFPE, SIGABRT, SIGBUS and SIGILL are synchronous signals and
-       so are delivered to the thread that caused the fault. Get the Python
+       are thus delivered to the thread that caused the fault. Get the Python
        thread state of the current thread.
 
        PyThreadState_Get() doesn't give the state of the thread that caused the
@@ -289,7 +289,7 @@ faulthandler_fatal_error(int signum)
     errno = save_errno;
 #ifdef MS_WINDOWS
     if (signum == SIGSEGV) {
-        /* don't call explictly the previous handler for SIGSEGV in this signal
+        /* don't explicitly call the previous handler for SIGSEGV in this signal
            handler, because the Windows signal handler would not be called */
         return;
     }
@@ -457,7 +457,7 @@ faulthandler_thread(void *unused)
 static void
 cancel_dump_tracebacks_later(void)
 {
-    /* notify cancellation */
+    /* Notify cancellation */
     PyThread_release_lock(thread.cancel_event);
 
     /* Wait for thread to join */
@@ -580,7 +580,7 @@ faulthandler_cancel_dump_tracebacks_later_py(PyObject *self)
     cancel_dump_tracebacks_later();
     Py_RETURN_NONE;
 }
-#endif /* FAULTHANDLER_LATER */
+#endif  /* FAULTHANDLER_LATER */
 
 #ifdef FAULTHANDLER_USER
 /* Handler of user signals (e.g. SIGUSR1).
@@ -781,7 +781,7 @@ faulthandler_sigsegv(PyObject *self, PyObject *args)
 #if defined(MS_WINDOWS)
     /* For SIGSEGV, faulthandler_fatal_error() restores the previous signal
        handler and then gives back the execution flow to the program (without
-       calling explicitly the previous error handler). In a normal case, the
+       explicitly calling the previous error handler). In a normal case, the
        SIGSEGV was raised by the kernel because of a fault, and so if the
        program retries to execute the same instruction, the fault will be
        raised again.
@@ -805,11 +805,11 @@ faulthandler_sigfpe(PyObject *self, PyObject *args)
        PowerPC. Use volatile to disable compile-time optimizations. */
     volatile int x = 1, y = 0, z;
     z = x / y;
-    /* if the division by zero didn't raise a SIGFPE (e.g. on PowerPC),
-       raise it manually */
+    /* If the division by zero didn't raise a SIGFPE (e.g. on PowerPC),
+       raise it manually. */
     raise(SIGFPE);
-    /* use z to make quiet a compiler warning, but this line
-       is never reached */
+    /* This line is never reached, but we pretend to make something with z
+       to silence a compiler warning. */
     return PyLong_FromLong(z);
 }
 
@@ -977,14 +977,14 @@ static PyMethodDef module_methods[] = {
     {"_stack_overflow", (PyCFunction)faulthandler_stack_overflow, METH_NOARGS,
      PyDoc_STR("_stack_overflow(): recursive call to raise a stack overflow")},
 #endif
-    {NULL, NULL} /* terminator */
+    {NULL, NULL}  /* sentinel */
 };
 
 static struct PyModuleDef module_def = {
     PyModuleDef_HEAD_INIT,
     "faulthandler",
     module_doc,
-    0, /* non negative size to be able to unload the module */
+    0, /* non-negative size to be able to unload the module */
     module_methods,
     NULL,
     faulthandler_traverse,
@@ -998,8 +998,8 @@ PyInit_faulthandler(void)
     return PyModule_Create(&module_def);
 }
 
-/* Call faulthandler.enable() if PYTHONFAULTHANDLER environment variable is
-   defined, or if sys._xoptions has a 'faulthandler' key. */
+/* Call faulthandler.enable() if the PYTHONFAULTHANDLER environment variable
+   is defined, or if sys._xoptions has a 'faulthandler' key. */
 
 static int
 faulthandler_env_options(void)
