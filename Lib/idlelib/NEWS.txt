@@ -1,4 +1,4 @@
-What's New in IDLE 3.1.4?
+What's New in IDLE 3.2.1?
 =========================
 
 *Release date: 15-May-11*
