@@ -794,6 +794,12 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
         self.assertEqual(b, b"gf")
         self.assertEqual(bufio.readinto(b), 0)
         self.assertEqual(b, b"gf")
+        rawio = self.MockRawIO((b"abc", None))
+        bufio = self.tp(rawio)
+        self.assertEqual(bufio.readinto(b), 2)
+        self.assertEqual(b, b"ab")
+        self.assertEqual(bufio.readinto(b), 1)
+        self.assertEqual(b, b"cb")
 
     def test_readlines(self):
         def bufio():
