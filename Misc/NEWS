@@ -142,6 +142,10 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #9971: Write an optimized implementation of BufferedReader.readinto().
+  Patch by John O'Connor.
+
 - Issue #1028: Tk returns invalid Unicode null in %A: UnicodeDecodeError.
   With Tk < 8.5 _tkinter.c:PythonCmd() raised UnicodeDecodeError, caused
   IDLE to exit.  Converted to valid Unicode null in PythonCmd().
