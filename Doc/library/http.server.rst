@@ -188,9 +188,10 @@ of which this module provides three different variants:
    .. method:: send_header(keyword, value)
 
       Adds the HTTP header to an internal buffer which will be written to the
-      output stream when either :meth:`end_headers` or :meth:`flush_headers`
-      is invoked. *keyword* should specify the header keyword, with *value*
-      specifying its value.
+      output stream when either :meth:`end_headers` or :meth:`flush_headers` is
+      invoked. *keyword* should specify the header keyword, with *value*
+      specifying its value. Note that, after the send_header calls are done,
+      :meth:`end_headers` MUST BE called in order to complete the operation.
 
       .. versionchanged:: 3.2 Storing the headers in an internal buffer
 
