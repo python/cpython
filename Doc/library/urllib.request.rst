@@ -240,10 +240,11 @@ The following classes are provided:
 
 .. class:: HTTPBasicAuthHandler(password_mgr=None)
 
-   Handle authentication with the remote host. *password_mgr*, if given, should be
-   something that is compatible with :class:`HTTPPasswordMgr`; refer to section
-   :ref:`http-password-mgr` for information on the interface that must be
-   supported.
+   Handle authentication with the remote host. *password_mgr*, if given, should
+   be something that is compatible with :class:`HTTPPasswordMgr`; refer to
+   section :ref:`http-password-mgr` for information on the interface that must
+   be supported. HTTPBasicAuthHandler will raise a :exc:`ValueError` when
+   presented with a wrong Authentication scheme.
 
 
 .. class:: ProxyBasicAuthHandler(password_mgr=None)
@@ -265,10 +266,19 @@ The following classes are provided:
 
 .. class:: HTTPDigestAuthHandler(password_mgr=None)
 
-   Handle authentication with the remote host. *password_mgr*, if given, should be
-   something that is compatible with :class:`HTTPPasswordMgr`; refer to section
-   :ref:`http-password-mgr` for information on the interface that must be
-   supported.
+   Handle authentication with the remote host. *password_mgr*, if given, should
+   be something that is compatible with :class:`HTTPPasswordMgr`; refer to
+   section :ref:`http-password-mgr` for information on the interface that must
+   be supported. When both Digest Authentication Handler and Basic
+   Authentication Handler are both added, Digest Authentication is always tried
+   first. If the Digest Authentication returns a 40x response again, it is sent
+   to Basic Authentication handler to Handle.  This Handler method will raise a
+   :exc:`ValueError` when presented with an authentication scheme other than
+   Digest or Basic.
+
+   ..versionchanged:: 3.3
+   Raise ValueError on unsupported Authentication Scheme.
+
 
 
 .. class:: ProxyDigestAuthHandler(password_mgr=None)

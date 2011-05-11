@@ -825,14 +825,20 @@ class AbstractBasicAuthHandler:
             self.retried += 1
 
         if authreq:
-            mo = AbstractBasicAuthHandler.rx.search(authreq)
-            if mo:
-                scheme, quote, realm = mo.groups()
-                if scheme.lower() == 'basic':
-                    response = self.retry_http_basic_auth(host, req, realm)
-                    if response and response.code != 401:
-                        self.retried = 0
-                    return response
+            scheme = authreq.split()[0]
+            if not scheme.lower() == 'basic':
+                raise ValueError("AbstractBasicAuthHandler does not"
+                                 " support the following scheme: '%s'" %
+                                 scheme)
+            else:
+                mo = AbstractBasicAuthHandler.rx.search(authreq)
+                if mo:
+                    scheme, quote, realm = mo.groups()
+                    if scheme.lower() == 'basic':
+                        response = self.retry_http_basic_auth(host, req, realm)
+                        if response and response.code != 401:
+                            self.retried = 0
+                        return response
 
     def retry_http_basic_auth(self, host, req, realm):
         user, pw = self.passwd.find_user_password(realm, host)
@@ -918,6 +924,9 @@ class AbstractDigestAuthHandler:
             scheme = authreq.split()[0]
             if scheme.lower() == 'digest':
                 return self.retry_http_digest_auth(req, authreq)
+            elif not scheme.lower() == 'basic':
+                raise ValueError("AbstractDigestAuthHandler does not support"
+                                 " the following scheme: '%s'" % scheme)
 
     def retry_http_digest_auth(self, req, auth):
         token, challenge = auth.split(' ', 1)

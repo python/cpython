@@ -143,6 +143,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #11799: urllib.request Authentication Handlers will raise a ValueError
+  when presented with an unsupported Authentication Scheme. Patch contributed
+  by Yuval Greenfield.
+
 - Issue #10419, #6011: build_scripts command of distutils handles correctly
   non-ASCII path (path to the Python executable). Open and write the script in
   binary mode, but ensure that the shebang is decodable from UTF-8 and from the
