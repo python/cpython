@@ -69,6 +69,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #1028: Tk returns invalid Unicode null in %A: UnicodeDecodeError.
+  With Tk < 8.5 _tkinter.c:PythonCmd() raised UnicodeDecodeError, caused
+  IDLE to exit.  Converted to valid Unicode null in PythonCmd().
+
 - Issue #10419: Fix build_scripts command of distutils to handle correctly
   non-ASCII scripts. Open and write the script in binary mode, but ensure that
   the shebang is decodable from UTF-8 and from the encoding of the script.
