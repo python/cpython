@@ -122,8 +122,8 @@ parameter expect a WSGI-compliant dictionary to be supplied; please see
       def simple_app(environ, start_response):
           setup_testing_defaults(environ)
 
-          status = b'200 OK'
-          headers = [(b'Content-type', b'text/plain; charset=utf-8')]
+          status = '200 OK'
+          headers = [('Content-type', 'text/plain; charset=utf-8')]
 
           start_response(status, headers)
 
@@ -414,8 +414,8 @@ Paste" library.
       # Our callable object which is intentionally not compliant to the
       # standard, so the validator is going to break
       def simple_app(environ, start_response):
-          status = b'200 OK' # HTTP Status
-          headers = [(b'Content-type', b'text/plain')] # HTTP Headers
+          status = '200 OK' # HTTP Status
+          headers = [('Content-type', 'text/plain')] # HTTP Headers
           start_response(status, headers)
 
           # This is going to break because we need to return a list, and
@@ -754,8 +754,8 @@ This is a working "Hello World" WSGI application::
    # is a dictionary containing CGI-style envrironment variables and the
    # second variable is the callable object (see PEP 333).
    def hello_world_app(environ, start_response):
-       status = b'200 OK' # HTTP Status
-       headers = [(b'Content-type', b'text/plain; charset=utf-8')] # HTTP Headers
+       status = '200 OK' # HTTP Status
+       headers = [('Content-type', 'text/plain; charset=utf-8')] # HTTP Headers
        start_response(status, headers)
 
        # The returned object is going to be printed
