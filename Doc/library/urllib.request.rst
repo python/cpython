@@ -276,8 +276,8 @@ The following classes are provided:
    :exc:`ValueError` when presented with an authentication scheme other than
    Digest or Basic.
 
-   ..versionchanged:: 3.3
-   Raise ValueError on unsupported Authentication Scheme.
+   .. versionchanged:: 3.3
+      Raise :exc:`ValueError` on unsupported Authentication Scheme.
 
 
 
