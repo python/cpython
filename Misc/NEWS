@@ -142,6 +142,9 @@ Core and Builtins
 
 Library
 -------
+- Issue #1028: Tk returns invalid Unicode null in %A: UnicodeDecodeError.
+  With Tk < 8.5 _tkinter.c:PythonCmd() raised UnicodeDecodeError, caused
+  IDLE to exit.  Converted to valid Unicode null in PythonCmd().
 
 - Issue #11799: urllib.request Authentication Handlers will raise a ValueError
   when presented with an unsupported Authentication Scheme. Patch contributed

@@ -2022,7 +2022,19 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 
     for (i = 0; i < (argc - 1); i++) {
         PyObject *s = PyUnicode_FromString(argv[i + 1]);
-        if (!s || PyTuple_SetItem(arg, i, s)) {
+        if (!s) {
+            /* Is Tk leaking 0xC080 in %A - a "modified" utf-8 null? */
+            if (PyErr_ExceptionMatches(PyExc_UnicodeDecodeError) &&
+                !strcmp(argv[i + 1], "\xC0\x80")) {
+                PyErr_Clear();
+                /* Convert to "strict" utf-8 null */
+                s = PyUnicode_FromString("\0");
+            } else {
+                Py_DECREF(arg);
+                return PythonCmd_Error(interp);
+            }
+        }
+        if (PyTuple_SetItem(arg, i, s)) {
             Py_DECREF(arg);
             return PythonCmd_Error(interp);
         }

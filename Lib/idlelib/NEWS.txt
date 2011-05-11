@@ -1,18 +1,21 @@
-What's New in IDLE 3.1.4?
+What's New in IDLE 3.2.1?
 =========================
 
-*Release date: XX-XXX-XX*
+*Release date: 15-May-11*
+
+- Issue #1028: Ctrl-space binding to show completions was causing IDLE to exit.
+  Tk < 8.5 was sending invalid Unicode null; replaced with valid null.
 
 - <Home> toggle failing on Tk 8.5, causing IDLE exits and strange selection
   behavior. Issue 4676.  Improve selection extension behaviour.
-- <Home> toggle non-functional when NumLock set on Windows.  Issue 3851.
 
+- <Home> toggle non-functional when NumLock set on Windows.  Issue 3851.
 
 
 What's New in IDLE 3.1b1?
 =========================
 
-*Release date: 27-Jun-09*
+*Release date: 06-May-09*
 
 - Use of 'filter' in keybindingDialog.py was causing custom key assignment to
   fail.  Patch 5707 amaury.forgeotdarc.
