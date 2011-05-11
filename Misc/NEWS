@@ -85,6 +85,9 @@ Core and Builtins
 
 Library
 -------
+- Issue #1028: Tk returns invalid Unicode null in %A: UnicodeDecodeError.
+  With Tk < 8.5 _tkinter.c:PythonCmd() raised UnicodeDecodeError, caused
+  IDLE to exit.  Converted to valid Unicode null in PythonCmd().
 
 - Issue #11169: compileall module uses repr() to format filenames and paths to
   escape surrogate characters and show spaces.
