@@ -185,11 +185,12 @@ of which this module provides three different variants:
       are picked up from the :meth:`version_string` and
       :meth:`date_time_string` methods, respectively. If the server does not
       intend to send any other headers using the :meth:`send_header` method,
-      then send_response should be followed by a :meth:`end_headers` call.
+      then :meth:`send_response` should be followed by a :meth:`end_headers`
+      call.
 
-      ..versionchanged:: 3.3
-      Writing of headers to internal buffer and need to call
-      :meth:`end_headers` explicitly.
+      .. versionchanged:: 3.3
+         Headers are stored to an internal buffer and :meth:`end_headers`
+         needs to be called explicitly.
 
 
    .. method:: send_header(keyword, value)
@@ -200,7 +201,7 @@ of which this module provides three different variants:
       specifying its value. Note that, after the send_header calls are done,
       :meth:`end_headers` MUST BE called in order to complete the operation.
 
-      .. versionchanged:: 3.2 Storing the headers in an internal buffer
+      .. versionchanged:: 3.2 Headers are stored in an internal buffer.
 
 
    .. method:: send_response_only(code, message=None)
@@ -216,9 +217,10 @@ of which this module provides three different variants:
 
       Adds a blank line
       (indicating the end of the HTTP headers in the response)
-      to the headers buffer and calls :meth:`flush_headers()`
+      to the headers buffer and calls :meth:`flush_headers()`.
 
-      .. versionchanged:: 3.2 Writing the buffered headers to the output stream.
+      .. versionchanged:: 3.2
+         The buffered headers are written to the output stream.
 
    .. method:: flush_headers()
 
