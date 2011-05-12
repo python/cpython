@@ -174,9 +174,9 @@ class ScriptBinding:
             if autosave and filename:
                 self.editwin.io.save(None)
             else:
-                reply = self.ask_save_dialog()
+                confirm = self.ask_save_dialog()
                 self.editwin.text.focus_set()
-                if reply == "ok":
+                if confirm:
                     self.editwin.io.save(None)
                     filename = self.editwin.io.filename
                 else:
@@ -185,13 +185,11 @@ class ScriptBinding:
 
     def ask_save_dialog(self):
         msg = "Source Must Be Saved\n" + 5*' ' + "OK to Save?"
-        mb = tkMessageBox.Message(title="Save Before Run or Check",
-                                  message=msg,
-                                  icon=tkMessageBox.QUESTION,
-                                  type=tkMessageBox.OKCANCEL,
-                                  default=tkMessageBox.OK,
-                                  master=self.editwin.text)
-        return mb.show()
+        confirm = tkMessageBox.askokcancel(title="Save Before Run or Check",
+                                           message=msg,
+                                           default=tkMessageBox.OK,
+                                           master=self.editwin.text)
+        return confirm
 
     def errorbox(self, title, message):
         # XXX This should really be a function of EditorWindow...
