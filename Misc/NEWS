@@ -147,6 +147,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #12062: Fix a flushing bug when doing a certain type of I/O sequence
+  on a file opened in read+write mode (namely: reading, seeking a bit forward,
+  writing, then seeking before the previous write but still within buffered
+  data, and writing again).
+
 - Issue #9971: Write an optimized implementation of BufferedReader.readinto().
   Patch by John O'Connor.
 
