@@ -309,17 +309,20 @@ class IOBinding:
             return "yes"
         message = "Do you want to save %s before closing?" % (
             self.filename or "this untitled document")
-        m = tkMessageBox.Message(
-            title="Save On Close",
-            message=message,
-            icon=tkMessageBox.QUESTION,
-            type=tkMessageBox.YESNOCANCEL,
-            master=self.text)
-        reply = m.show()
-        if reply == "yes":
+        confirm = tkMessageBox.askyesnocancel(
+                  title="Save On Close",
+                  message=message,
+                  default=tkMessageBox.YES,
+                  master=self.text)
+        if confirm:
+            reply = "yes"
             self.save(None)
             if not self.get_saved():
                 reply = "cancel"
+        elif confirm is None:
+            reply = "cancel"
+        else:
+            reply = "no"
         self.text.focus_set()
         return reply
 
@@ -328,7 +331,7 @@ class IOBinding:
             self.save_as(event)
         else:
             if self.writefile(self.filename):
-                self.set_saved(1)
+                self.set_saved(True)
                 try:
                     self.editwin.store_file_breaks()
                 except AttributeError:  # may be a PyShell
@@ -420,15 +423,12 @@ class IOBinding:
             self.text.insert("end-1c", "\n")
 
     def print_window(self, event):
-        m = tkMessageBox.Message(
-            title="Print",
-            message="Print to Default Printer",
-            icon=tkMessageBox.QUESTION,
-            type=tkMessageBox.OKCANCEL,
-            default=tkMessageBox.OK,
-            master=self.text)
-        reply = m.show()
-        if reply != tkMessageBox.OK:
+        confirm = tkMessageBox.askokcancel(
+                  title="Print",
+                  message="Print to Default Printer",
+                  default=tkMessageBox.OK,
+                  master=self.text)
+        if not confirm:
             self.text.focus_set()
             return "break"
         tempfilename = None
@@ -443,8 +443,8 @@ class IOBinding:
             if not self.writefile(tempfilename):
                 os.unlink(tempfilename)
                 return "break"
-        platform=os.name
-        printPlatform=1
+        platform = os.name
+        printPlatform = True
         if platform == 'posix': #posix platform
             command = idleConf.GetOption('main','General',
                                          'print-command-posix')
@@ -452,7 +452,7 @@ class IOBinding:
         elif platform == 'nt': #win32 platform
             command = idleConf.GetOption('main','General','print-command-win')
         else: #no printing for this platform
-            printPlatform=0
+            printPlatform = False
         if printPlatform:  #we can try to print for this platform
             command = command % filename
             pipe = os.popen(command, "r")
@@ -466,7 +466,7 @@ class IOBinding:
                 output = "Printing command: %s\n" % repr(command) + output
                 tkMessageBox.showerror("Print status", output, master=self.text)
         else:  #no printing for this platform
-            message="Printing is not enabled for this platform: %s" % platform
+            message = "Printing is not enabled for this platform: %s" % platform
             tkMessageBox.showinfo("Print status", message, master=self.text)
         if tempfilename:
             os.unlink(tempfilename)
