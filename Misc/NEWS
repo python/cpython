@@ -10,6 +10,10 @@ What's New in Python 3.2.1?
 Core and Builtins
 -----------------
 
+- Issue #12044: Fixed subprocess.Popen when used as a context manager to
+  wait for the process to end when exiting the context to avoid unintentionally
+  leaving zombie processes around.
+
 - Issue #1195: Fix input() if it is interrupted by CTRL+d and then CTRL+c,
   clear the end-of-file indicator after CTRL+d.
 

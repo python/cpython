@@ -1491,7 +1491,8 @@ class ContextManagerTests(ProcessTestCase):
     def test_returncode(self):
         with subprocess.Popen([sys.executable, "-c",
                                "import sys; sys.exit(100)"]) as proc:
-            proc.wait()
+            pass
+        # __exit__ calls wait(), so the returncode should be set
         self.assertEqual(proc.returncode, 100)
 
     def test_communicate_stdin(self):
