@@ -217,8 +217,8 @@ This module defines one class called :class:`Popen`:
    *creationflags*, if given, can be :data:`CREATE_NEW_CONSOLE` or
    :data:`CREATE_NEW_PROCESS_GROUP`. (Windows only)
 
-   Popen objects are supported as context managers via the :keyword:`with` statement,
-   closing any open file descriptors on exit.
+   Popen objects are supported as context managers via the :keyword:`with` statement:
+   on exit, standard file descriptors are closed, and the process is waited for.
    ::
 
       with Popen(["ifconfig"], stdout=PIPE) as proc:

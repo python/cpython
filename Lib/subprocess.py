@@ -764,6 +764,8 @@ class Popen(object):
             self.stderr.close()
         if self.stdin:
             self.stdin.close()
+        # Wait for the process to terminate, to avoid zombies.
+        self.wait()
 
     def __del__(self, _maxsize=sys.maxsize, _active=_active):
         if not self._child_created:
