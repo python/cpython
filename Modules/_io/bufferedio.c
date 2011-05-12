@@ -954,14 +954,16 @@ buffered_readinto(buffered *self, PyObject *args)
         /* If remaining bytes is larger than internal buffer size, copy
          * directly into caller's buffer. */
         if (remaining > self->buffer_size) {
-            n = _bufferedreader_raw_read(self, buf.buf + written, remaining);
+            n = _bufferedreader_raw_read(self, (char *) buf.buf + written,
+                                         remaining);
         }
         else {
             n = _bufferedreader_fill_buffer(self);
             if (n > 0) {
                 if (n > remaining)
                     n = remaining;
-                memcpy(buf.buf + written, self->buffer + self->pos, n);
+                memcpy((char *) buf.buf + written,
+                       self->buffer + self->pos, n);
                 self->pos += n;
                 continue; /* short circuit */
             }
