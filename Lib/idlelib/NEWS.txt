@@ -3,6 +3,8 @@ What's New in IDLE 3.2.1?
 
 *Release date: 15-May-11*
 
+- Issue #11896: Save on Close failed despite selecting "Yes" in dialog.
+
 - Issue #1028: Ctrl-space binding to show completions was causing IDLE to exit.
   Tk < 8.5 was sending invalid Unicode null; replaced with valid null.
 
