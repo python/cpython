@@ -89,6 +89,12 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #12062: Fix a flushing bug when doing a certain type of I/O sequence
+  on a file opened in read+write mode (namely: reading, seeking a bit forward,
+  writing, then seeking before the previous write but still within buffered
+  data, and writing again).
+
 - Issue #1028: Tk returns invalid Unicode null in %A: UnicodeDecodeError.
   With Tk < 8.5 _tkinter.c:PythonCmd() raised UnicodeDecodeError, caused
   IDLE to exit.  Converted to valid Unicode null in PythonCmd().
