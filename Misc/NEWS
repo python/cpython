@@ -80,6 +80,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #12062: In the `io` module, fix a flushing bug when doing a certain
+  type of I/O sequence on a file opened in read+write mode (namely: reading,
+  seeking a bit forward, writing, then seeking before the previous write but
+  still within buffered data, and writing again).
+
 - Issue #8498: In socket.accept(), allow to specify 0 as a backlog value in
   order to accept exactly one connection.  Patch by Daniel Evers.
 
