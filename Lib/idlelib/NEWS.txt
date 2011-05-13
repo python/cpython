@@ -3,8 +3,12 @@ What's New in IDLE 2.7.2?
 
 *Release date: XX-XX-XXXX*
 
+
+- Issue #11896: Save on Close failed despite selecting "Yes" in dialog.
+
 - <Home> toggle failing on Tk 8.5, causing IDLE exits and strange selection
   behavior. Issue 4676.  Improve selection extension behaviour.
+
 - <Home> toggle non-functional when NumLock set on Windows.  Issue 3851.
 
 
@@ -31,7 +35,7 @@ What's New in IDLE 2.7?
 
 - Tk 8.5 Text widget requires 'wordprocessor' tabstyle attr to handle
   mixed space/tab properly. Issue 5129, patch by Guilherme Polo.
-  
+
 - Issue #3549: On MacOS the preferences menu was not present
 
 
