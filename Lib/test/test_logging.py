@@ -3515,7 +3515,7 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         # could of course still fail, but the chances are lower.
         found = False
         now = datetime.datetime.now()
-        GO_BACK = 2 * 60 # seconds
+        GO_BACK = 5 * 60 # seconds
         for secs in range(GO_BACK):
             prev = now - datetime.timedelta(seconds=secs)
             fn = self.fn + prev.strftime(".%Y-%m-%d_%H-%M-%S")
