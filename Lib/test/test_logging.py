@@ -3526,8 +3526,8 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         msg = 'No rotated files found, went back %d seconds' % GO_BACK
         if not found:
             #print additional diagnostics
-            dn = os.path.dirname(self.fn)
-            files = [f for f in os.listdir(dn) if f.startswith(self.fn)]
+            dn, fn = os.path.split(self.fn)
+            files = [f for f in os.listdir(dn) if f.startswith(fn)]
             print('Test time: %s' % now.strftime("%Y-%m-%d %H-%M-%S"))
             print('The only matching files are: %s' % files)
         self.assertTrue(found, msg=msg)
