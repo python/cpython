@@ -1334,12 +1334,15 @@ successive matches::
         if pos != len(s):
             raise RuntimeError('Unexpected character %r on line %d' %(s[pos], line))
 
-    >>> statements = '''\
+    statements = '''\
         total := total + price * quantity;
         tax := price * 0.05;
     '''
-    >>> for token in tokenize(statements):
-            print(token)
+
+    for token in tokenize(statements):
+        print(token)
+
+The tokenizer produces the following output::
 
     Token(typ='ID', value='total', line=1, column=8)
     Token(typ='ASSIGN', value=':=', line=1, column=14)
