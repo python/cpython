@@ -1336,8 +1336,8 @@ successive matches::
         tax := price * 0.05;
     '''
     >>> for token in tokenize(statements):
-    ...     print(token)
-    ...
+            print(token)
+
     Token(typ='ID', value='total', line=1, column=8)
     Token(typ='ASSIGN', value=':=', line=1, column=14)
     Token(typ='ID', value='total', line=1, column=17)
