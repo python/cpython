@@ -931,6 +931,15 @@ class PyFrameObjectPtr(PyObjectPtr):
 
         out.write(')')
 
+    def print_traceback(self):
+        if self.is_optimized_out():
+            sys.stdout.write('  (frame information optimized out)\n')
+        visited = set()
+        sys.stdout.write('  File "%s", line %i, in %s\n'
+                  % (self.co_filename.proxyval(visited),
+                     self.current_line_num(),
+                     self.co_name.proxyval(visited)))
+
 class PySetObjectPtr(PyObjectPtr):
     _typename = 'PySetObject'
 
@@ -1427,6 +1436,17 @@ class Frame(object):
         else:
             sys.stdout.write('#%i\n' % self.get_index())
 
+    def print_traceback(self):
+        if self.is_evalframeex():
+            pyop = self.get_pyop()
+            if pyop:
+                pyop.print_traceback()
+                sys.stdout.write('    %s\n' % pyop.current_line().strip())
+            else:
+                sys.stdout.write('  (unable to read python frame information)\n')
+        else:
+            sys.stdout.write('  (not a python frame)\n')
+
 class PyList(gdb.Command):
     '''List the current Python source code, if any
 
@@ -1551,6 +1571,24 @@ if hasattr(gdb.Frame, 'select'):
     PyUp()
     PyDown()
 
+class PyBacktraceFull(gdb.Command):
+    'Display the current python frame and all the frames within its call stack (if any)'
+    def __init__(self):
+        gdb.Command.__init__ (self,
+                              "py-bt-full",
+                              gdb.COMMAND_STACK,
+                              gdb.COMPLETE_NONE)
+
+
+    def invoke(self, args, from_tty):
+        frame = Frame.get_selected_python_frame()
+        while frame:
+            if frame.is_evalframeex():
+                frame.print_summary()
+            frame = frame.older()
+
+PyBacktraceFull()
+
 class PyBacktrace(gdb.Command):
     'Display the current python frame and all the frames within its call stack (if any)'
     def __init__(self):
@@ -1561,10 +1599,11 @@ class PyBacktrace(gdb.Command):
 
 
     def invoke(self, args, from_tty):
+        sys.stdout.write('Traceback (most recent call first):\n')
         frame = Frame.get_selected_python_frame()
         while frame:
             if frame.is_evalframeex():
-                frame.print_summary()
+                frame.print_traceback()
             frame = frame.older()
 
 PyBacktrace()
