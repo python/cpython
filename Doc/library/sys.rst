@@ -805,7 +805,7 @@ always available.
    Python.
 
    The highest possible limit is platform-dependent.  A user may need to set the
-   limit higher when she has a program that requires deep recursion and a platform
+   limit higher when they have a program that requires deep recursion and a platform
    that supports a higher limit.  This should be done with care, because a too-high
    limit can lead to a crash.
 
