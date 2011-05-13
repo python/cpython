@@ -1325,9 +1325,10 @@ successive matches::
                 line_start = pos
                 line += 1
             elif typ != 'SKIP':
+                val = mo.group(typ)
                 if typ == 'ID' and val in keywords:
                     typ = val
-                yield Token(typ, mo.group(typ), line, mo.start()-line_start)
+                yield Token(typ, val, line, mo.start()-line_start)
             pos = mo.end()
             mo = gettok(s, pos)
         if pos != len(s):
