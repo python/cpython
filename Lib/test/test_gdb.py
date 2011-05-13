@@ -611,10 +611,27 @@ $''')
 $''')
 
 class PyBtTests(DebuggerTests):
-    def test_basic_command(self):
+    def test_bt(self):
         'Verify that the "py-bt" command works'
         bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-bt'])
+        self.assertMultilineMatches(bt,
+                                    r'''^.*
+Traceback \(most recent call first\):
+  File ".*gdb_sample.py", line 10, in baz
+    id\(42\)
+  File ".*gdb_sample.py", line 7, in bar
+    baz\(a, b, c\)
+  File ".*gdb_sample.py", line 4, in foo
+    bar\(a, b, c\)
+  File ".*gdb_sample.py", line 12, in <module>
+    foo\(1, 2, 3\)
+''')
+
+    def test_bt_full(self):
+        'Verify that the "py-bt-full" command works'
+        bt = self.get_stack_trace(script=self.get_sample_script(),
+                                  cmds_after_breakpoint=['py-bt-full'])
         self.assertMultilineMatches(bt,
                                     r'''^.*
 #[0-9]+ Frame 0x[0-9a-f]+, for file .*gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)

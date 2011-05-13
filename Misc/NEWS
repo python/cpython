@@ -359,6 +359,9 @@ IDLE
 Tools/Demos
 -----------
 
+- Issue #11996: libpython (gdb), replace "py-bt" command by "py-bt-full" and
+  add a smarter "py-bt" command printing a classic Python traceback.
+
 - Issue #11179: Make ccbench work under Python 3.1 and 2.7 again.
 
 Extension Modules
