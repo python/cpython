@@ -43,10 +43,10 @@ web server it's talking to uses both "server" sockets and "client" sockets.
 History
 -------
 
-Of the various forms of IPC (*Inter Process Communication*), sockets are by far
-the most popular.  On any given platform, there are likely to be other forms of
-IPC that are faster, but for cross-platform communication, sockets are about the
-only game in town.
+Of the various forms of :abbr:`IPC (Inter Process Communication)`,
+sockets are by far the most popular.  On any given platform, there are
+likely to be other forms of IPC that are faster, but for
+cross-platform communication, sockets are about the only game in town.
 
 They were invented in Berkeley as part of the BSD flavor of Unix. They spread
 like wildfire with the Internet. With good reason --- the combination of sockets
@@ -66,13 +66,14 @@ your browser did something like the following::
    # - the normal http port
    s.connect(("www.mcmillan-inc.com", 80))
 
-When the ``connect`` completes, the socket ``s`` can now be used to send in a
-request for the text of this page. The same socket will read the reply, and then
-be destroyed. That's right - destroyed. Client sockets are normally only used
-for one exchange (or a small set of sequential exchanges).
+When the ``connect`` completes, the socket ``s`` can be used to send
+in a request for the text of the page. The same socket will read the
+reply, and then be destroyed. That's right, destroyed. Client sockets
+are normally only used for one exchange (or a small set of sequential
+exchanges).
 
 What happens in the web server is a bit more complex. First, the web server
-creates a "server socket". ::
+creates a "server socket"::
 
    #create an INET, STREAMing socket
    serversocket = socket.socket(
@@ -96,7 +97,7 @@ Finally, the argument to ``listen`` tells the socket library that we want it to
 queue up as many as 5 connect requests (the normal max) before refusing outside
 connections. If the rest of the code is written properly, that should be plenty.
 
-OK, now we have a "server" socket, listening on port 80. Now we enter the
+Now that we have a "server" socket, listening on port 80, we can enter the
 mainloop of the web server::
 
    while True:
@@ -145,7 +146,7 @@ perhaps a signon. But that's a design decision - it's not a rule of sockets.
 
 Now there are two sets of verbs to use for communication. You can use ``send``
 and ``recv``, or you can transform your client socket into a file-like beast and
-use ``read`` and ``write``. The latter is the way Java presents their sockets.
+use ``read`` and ``write``. The latter is the way Java presents its sockets.
 I'm not going to talk about it here, except to warn you that you need to use
 ``flush`` on sockets. These are buffered "files", and a common mistake is to
 ``write`` something, and then ``read`` for a reply. Without a ``flush`` in
@@ -166,11 +167,11 @@ this connection. Ever.  You may be able to send data successfully; I'll talk
 about that some on the next page.
 
 A protocol like HTTP uses a socket for only one transfer. The client sends a
-request, the reads a reply.  That's it. The socket is discarded. This means that
+request, then reads a reply.  That's it. The socket is discarded. This means that
 a client can detect the end of the reply by receiving 0 bytes.
 
 But if you plan to reuse your socket for further transfers, you need to realize
-that *there is no "EOT" (End of Transfer) on a socket.* I repeat: if a socket
+that *there is no* :abbr:`EOT (End of Transfer)` *on a socket.* I repeat: if a socket
 ``send`` or ``recv`` returns after handling 0 bytes, the connection has been
 broken.  If the connection has *not* been broken, you may wait on a ``recv``
 forever, because the socket will *not* tell you that there's nothing more to
@@ -336,7 +337,7 @@ Use ``select``.
 
 In C, coding ``select`` is fairly complex. In Python, it's a piece of cake, but
 it's close enough to the C version that if you understand ``select`` in Python,
-you'll have little trouble with it in C. ::
+you'll have little trouble with it in C::
 
    ready_to_read, ready_to_write, in_error = \
                   select.select(
@@ -353,9 +354,9 @@ call is blocking, but you can give it a timeout. This is generally a sensible
 thing to do - give it a nice long timeout (say a minute) unless you have good
 reason to do otherwise.
 
-In return, you will get three lists. They have the sockets that are actually
+In return, you will get three lists. They contain the sockets that are actually
 readable, writable and in error. Each of these lists is a subset (possibly
-empty) of the corresponding list you passed in. And if you put a socket in more
+empty) of the corresponding list you passed in. If you put a socket in more
 than one input list, it will only be (at most) in one output list.
 
 If a socket is in the output readable list, you can be
