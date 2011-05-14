@@ -523,6 +523,17 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         decompress = lambda s: d.decompress(s) + d.flush()
         self.check_big_decompress_buffer(size, decompress)
 
+    @precisionbigmemtest(size=_4G + 100, memuse=1)
+    def test_length_overflow(self, size):
+        if size < _4G + 100:
+            self.skipTest("not enough free memory, need at least 4 GB")
+        data = b'x' * size
+        try:
+            self.assertRaises(OverflowError, zlib.compress, data, 1)
+            self.assertRaises(OverflowError, zlib.decompress, data)
+        finally:
+            data = None
+
 
 def genblock(seed, length, step=1024, generator=random):
     """length-byte stream of random data from a seed (in step-byte blocks)."""
