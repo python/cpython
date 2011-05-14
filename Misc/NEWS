@@ -80,6 +80,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12050: zlib.decompressobj().decompress() now clears the unconsumed_tail
+  attribute when called without a max_length argument.
+
 - Issue #12062: In the `io` module, fix a flushing bug when doing a certain
   type of I/O sequence on a file opened in read+write mode (namely: reading,
   seeking a bit forward, writing, then seeking before the previous write but
