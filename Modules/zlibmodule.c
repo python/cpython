@@ -116,7 +116,7 @@ PyZlib_compress(PyObject *self, PyObject *args)
 {
     PyObject *ReturnVal = NULL;
     Py_buffer pinput;
-    Byte *input, *output;
+    Byte *input, *output = NULL;
     unsigned int length;
     int level=Z_DEFAULT_COMPRESSION, err;
     z_stream zst;
@@ -127,20 +127,19 @@ PyZlib_compress(PyObject *self, PyObject *args)
 
     if (pinput.len > UINT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
-            "size does not fit in an unsigned int");
-        return NULL;
+                        "Size does not fit in an unsigned int");
+        goto error;
     }
-    length = pinput.len;
     input = pinput.buf;
+    length = pinput.len;
 
     zst.avail_out = length + length/1000 + 12 + 1;
 
     output = (Byte*)malloc(zst.avail_out);
     if (output == NULL) {
-        PyBuffer_Release(&pinput);
         PyErr_SetString(PyExc_MemoryError,
                         "Can't allocate memory to compress data");
-        return NULL;
+        goto error;
     }
 
     /* Past the point of no return.  From here on out, we need to make sure
@@ -203,7 +202,7 @@ PyDoc_STRVAR(decompress__doc__,
 static PyObject *
 PyZlib_decompress(PyObject *self, PyObject *args)
 {
-    PyObject *result_str;
+    PyObject *result_str = NULL;
     Py_buffer pinput;
     Byte *input;
     unsigned int length;
@@ -218,11 +217,11 @@ PyZlib_decompress(PyObject *self, PyObject *args)
 
     if (pinput.len > UINT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
-            "size does not fit in an unsigned int");
-        return NULL;
+                        "Size does not fit in an unsigned int");
+        goto error;
     }
-    length = pinput.len;
     input = pinput.buf;
+    length = pinput.len;
 
     if (r_strlen <= 0)
         r_strlen = 1;
@@ -230,10 +229,8 @@ PyZlib_decompress(PyObject *self, PyObject *args)
     zst.avail_in = length;
     zst.avail_out = r_strlen;
 
-    if (!(result_str = PyBytes_FromStringAndSize(NULL, r_strlen))) {
-        PyBuffer_Release(&pinput);
-        return NULL;
-    }
+    if (!(result_str = PyBytes_FromStringAndSize(NULL, r_strlen)))
+        goto error;
 
     zst.zalloc = (alloc_func)NULL;
     zst.zfree = (free_func)Z_NULL;
