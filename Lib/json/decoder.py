@@ -5,7 +5,7 @@ import re
 import sys
 import struct
 
-from json.scanner import make_scanner
+from json import scanner
 try:
     from _json import scanstring as c_scanstring
 except ImportError:
@@ -340,7 +340,7 @@ class JSONDecoder(object):
         self.parse_array = JSONArray
         self.parse_string = scanstring
         self.memo = {}
-        self.scan_once = make_scanner(self)
+        self.scan_once = scanner.make_scanner(self)
 
 
     def decode(self, s, _w=WHITESPACE.match):
