@@ -147,6 +147,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #8650: Make zlib module 64-bit clean. compress(), decompress() and
+  their incremental counterparts now raise OverflowError if given an input
+  larger than 4GB, instead of silently truncating the input and returning
+  an incorrect result.
+
 - Issue #12050: zlib.decompressobj().decompress() now clears the unconsumed_tail
   attribute when called without a max_length argument.
 
