@@ -7,7 +7,6 @@ import sys
 import re
 import fileinput
 import collections
-import gzip
 import types
 import codecs
 import unittest
@@ -16,6 +15,10 @@ try:
     import bz2
 except ImportError:
     bz2 = None
+try:
+    import gzip
+except ImportError:
+    gzip = None
 
 from io import StringIO
 from fileinput import FileInput, hook_encoded
@@ -758,6 +761,7 @@ class Test_hook_compressed(unittest.TestCase):
     def test_no_ext(self):
         self.do_test_use_builtin_open("abcd", 2)
 
+    @unittest.skipUnless(gzip, "Requires gzip and zlib")
     def test_gz_ext_fake(self):
         original_open = gzip.open
         gzip.open = self.fake_open
