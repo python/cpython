@@ -84,19 +84,15 @@ def import_module(name, deprecated=False):
 def _save_and_remove_module(name, orig_modules):
     """Helper function to save and remove a module from sys.modules
 
-       Return True if the module was in sys.modules, False otherwise.
        Raise ImportError if the module can't be imported."""
-    saved = True
-    try:
-        orig_modules[name] = sys.modules[name]
-    except KeyError:
-        # try to import the module and raise an error if it can't be imported
+    # try to import the module and raise an error if it can't be imported
+    if name not in sys.modules:
         __import__(name)
-        saved = False
-    else:
         del sys.modules[name]
-    return saved
-
+    for modname in list(sys.modules):
+        if modname == name or modname.startswith(name + '.'):
+            orig_modules[modname] = sys.modules[modname]
+            del sys.modules[modname]
 
 def _save_and_block_module(name, orig_modules):
     """Helper function to save and block a module in sys.modules
