@@ -1,29 +1,23 @@
-from unittest import TestCase, skipUnless
+from json.tests import CTest
 
-from json import decoder, encoder, scanner
 
-try:
-    import _json
-except ImportError:
-    _json = None
-
-@skipUnless(_json, 'test requires the _json module')
-class TestSpeedups(TestCase):
+class TestSpeedups(CTest):
     def test_scanstring(self):
-        self.assertEqual(decoder.scanstring.__module__, "_json")
-        self.assertIs(decoder.scanstring, decoder.c_scanstring)
+        self.assertEqual(self.json.decoder.scanstring.__module__, "_json")
+        self.assertIs(self.json.decoder.scanstring, self.json.decoder.c_scanstring)
 
     def test_encode_basestring_ascii(self):
-        self.assertEqual(encoder.encode_basestring_ascii.__module__, "_json")
-        self.assertIs(encoder.encode_basestring_ascii,
-                      encoder.c_encode_basestring_ascii)
+        self.assertEqual(self.json.encoder.encode_basestring_ascii.__module__,
+                         "_json")
+        self.assertIs(self.json.encoder.encode_basestring_ascii,
+                      self.json.encoder.c_encode_basestring_ascii)
 
-class TestDecode(TestCase):
+class TestDecode(CTest):
     def test_make_scanner(self):
-        self.assertRaises(AttributeError, scanner.c_make_scanner, 1)
+        self.assertRaises(AttributeError, self.json.scanner.c_make_scanner, 1)
 
     def test_make_encoder(self):
-        self.assertRaises(TypeError, encoder.c_make_encoder,
+        self.assertRaises(TypeError, self.json.encoder.c_make_encoder,
             None,
             "\xCD\x7D\x3D\x4E\x12\x4C\xF9\x79\xD7\x52\xBA\x82\xF2\x27\x4A\x7D\xA0\xCA\x75",
             None)
