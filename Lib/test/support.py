@@ -37,6 +37,7 @@ __all__ = [
     "findfile", "sortdict", "check_syntax_error", "open_urlresource",
     "check_warnings", "CleanImport", "EnvironmentVarGuard",
     "TransientResource", "captured_output", "captured_stdout",
+    "captured_stdin", "captured_stderr",
     "time_out", "socket_peer_reset", "ioerror_peer_reset",
     "run_with_locale", 'temp_umask', "transient_internet",
     "set_memlimit", "bigmemtest", "bigaddrspacetest", "BasicTestRunner",
@@ -891,7 +892,7 @@ def transient_internet(resource_name, *, timeout=30.0, errnos=()):
 
 @contextlib.contextmanager
 def captured_output(stream_name):
-    """Return a context manager used by captured_stdout and captured_stdin
+    """Return a context manager used by captured_stdout/stdin/stderr
     that temporarily replaces the sys stream *stream_name* with a StringIO."""
     import io
     orig_stdout = getattr(sys, stream_name)
@@ -915,6 +916,7 @@ def captured_stderr():
 
 def captured_stdin():
     return captured_output("stdin")
+
 
 def gc_collect():
     """Force as many objects as possible to be collected.
