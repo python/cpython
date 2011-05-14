@@ -1,9 +1,12 @@
-from unittest import TestCase
+from test.json_tests import PyTest, CTest
 
-import json
 
-class TestDefault(TestCase):
+class TestDefault:
     def test_default(self):
         self.assertEqual(
-            json.dumps(type, default=repr),
-            json.dumps(repr(type)))
+            self.dumps(type, default=repr),
+            self.dumps(repr(type)))
+
+
+class TestPyDefault(TestDefault, PyTest): pass
+class TestCDefault(TestDefault, CTest): pass

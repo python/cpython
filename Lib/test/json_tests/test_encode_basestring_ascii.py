@@ -1,8 +1,6 @@
-from unittest import TestCase
-
-import json.encoder
-from json import dumps
 from collections import OrderedDict
+from test.json_tests import PyTest, CTest
+
 
 CASES = [
     ('/\\"\ucafe\ubabe\uab98\ufcde\ubcda\uef4a\x08\x0c\n\r\t`1~!@#$%^&*()_+-=[]{}|;:\',./<>?', '"/\\\\\\"\\ucafe\\ubabe\\uab98\\ufcde\\ubcda\\uef4a\\b\\f\\n\\r\\t`1~!@#$%^&*()_+-=[]{}|;:\',./<>?"'),
@@ -21,19 +19,11 @@ CASES = [
     ('\u0123\u4567\u89ab\ucdef\uabcd\uef4a', '"\\u0123\\u4567\\u89ab\\ucdef\\uabcd\\uef4a"'),
 ]
 
-class TestEncodeBaseStringAscii(TestCase):
-    def test_py_encode_basestring_ascii(self):
-        self._test_encode_basestring_ascii(json.encoder.py_encode_basestring_ascii)
-
-    def test_c_encode_basestring_ascii(self):
-        if not json.encoder.c_encode_basestring_ascii:
-            return
-        self._test_encode_basestring_ascii(json.encoder.c_encode_basestring_ascii)
-
-    def _test_encode_basestring_ascii(self, encode_basestring_ascii):
-        fname = encode_basestring_ascii.__name__
+class TestEncodeBasestringAscii:
+    def test_encode_basestring_ascii(self):
+        fname = self.json.encoder.encode_basestring_ascii.__name__
         for input_string, expect in CASES:
-            result = encode_basestring_ascii(input_string)
+            result = self.json.encoder.encode_basestring_ascii(input_string)
             self.assertEqual(result, expect,
                 '{0!r} != {1!r} for {2}({3!r})'.format(
                     result, expect, fname, input_string))
@@ -41,10 +31,14 @@ class TestEncodeBaseStringAscii(TestCase):
     def test_ordered_dict(self):
         # See issue 6105
         items = [('one', 1), ('two', 2), ('three', 3), ('four', 4), ('five', 5)]
-        s = json.dumps(OrderedDict(items))
+        s = self.dumps(OrderedDict(items))
         self.assertEqual(s, '{"one": 1, "two": 2, "three": 3, "four": 4, "five": 5}')
 
     def test_sorted_dict(self):
         items = [('one', 1), ('two', 2), ('three', 3), ('four', 4), ('five', 5)]
-        s = json.dumps(dict(items), sort_keys=True)
+        s = self.dumps(dict(items), sort_keys=True)
         self.assertEqual(s, '{"five": 5, "four": 4, "one": 1, "three": 3, "two": 2}')
+
+
+class TestPyEncodeBasestringAscii(TestEncodeBasestringAscii, PyTest): pass
+class TestCEncodeBasestringAscii(TestEncodeBasestringAscii, CTest): pass
