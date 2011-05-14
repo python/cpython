@@ -659,6 +659,8 @@ Extension Modules
 Tests
 -----
 
+- Issue #5723: Improve json tests to be executed with and without accelerations.
+
 - Issue #12041: Make test_wait3 more robust.
 
 - Issue #11873: Change regex in test_compileall to fix occasional failures when
