@@ -116,8 +116,8 @@ def import_fresh_module(name, fresh=(), blocked=(), deprecated=False):
 
     If deprecated is True, any module or package deprecation messages
     will be suppressed."""
-    # NOTE: test_heapq and test_warnings include extra sanity checks to make
-    # sure that this utility function is working as expected
+    # NOTE: test_heapq, test_json and test_warnings include extra sanity checks
+    # to make sure that this utility function is working as expected
     with _ignore_deprecated_imports(deprecated):
         # Keep track of modules saved for later restoration as well
         # as those which just need a blocking entry removed

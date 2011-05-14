@@ -1,33 +1,16 @@
-from unittest import TestCase
+from json.tests import PyTest, CTest
 
-import json
 
 class JSONTestObject:
     pass
 
 
-class RecursiveJSONEncoder(json.JSONEncoder):
-    recurse = False
-    def default(self, o):
-        if o is JSONTestObject:
-            if self.recurse:
-                return [JSONTestObject]
-            else:
-                return 'JSONTestObject'
-        return json.JSONEncoder.default(o)
-
-class EndlessJSONEncoder(json.JSONEncoder):
-    def default(self, o):
-        """If check_circular is False, this will keep adding another list."""
-        return [o]
-
-
-class TestRecursion(TestCase):
+class TestRecursion:
     def test_listrecursion(self):
         x = []
         x.append(x)
         try:
-            json.dumps(x)
+            self.dumps(x)
         except ValueError:
             pass
         else:
@@ -36,7 +19,7 @@ class TestRecursion(TestCase):
         y = [x]
         x.append(y)
         try:
-            json.dumps(x)
+            self.dumps(x)
         except ValueError:
             pass
         else:
@@ -44,13 +27,13 @@ class TestRecursion(TestCase):
         y = []
         x = [y, y]
         # ensure that the marker is cleared
-        json.dumps(x)
+        self.dumps(x)
 
     def test_dictrecursion(self):
         x = {}
         x["test"] = x
         try:
-            json.dumps(x)
+            self.dumps(x)
         except ValueError:
             pass
         else:
@@ -58,9 +41,19 @@ class TestRecursion(TestCase):
         x = {}
         y = {"a": x, "b": x}
         # ensure that the marker is cleared
-        json.dumps(x)
+        self.dumps(x)
 
     def test_defaultrecursion(self):
+        class RecursiveJSONEncoder(self.json.JSONEncoder):
+            recurse = False
+            def default(self, o):
+                if o is JSONTestObject:
+                    if self.recurse:
+                        return [JSONTestObject]
+                    else:
+                        return 'JSONTestObject'
+                return pyjson.JSONEncoder.default(o)
+
         enc = RecursiveJSONEncoder()
         self.assertEqual(enc.encode(JSONTestObject), '"JSONTestObject"')
         enc.recurse = True
@@ -76,11 +69,11 @@ class TestRecursion(TestCase):
         # test that loading highly-nested objects doesn't segfault when C
         # accelerations are used. See #12017
         with self.assertRaises(RuntimeError):
-            json.loads('{"a":' * 100000 + '1' + '}' * 100000)
+            self.loads('{"a":' * 100000 + '1' + '}' * 100000)
         with self.assertRaises(RuntimeError):
-            json.loads('{"a":' * 100000 + '[1]' + '}' * 100000)
+            self.loads('{"a":' * 100000 + '[1]' + '}' * 100000)
         with self.assertRaises(RuntimeError):
-            json.loads('[' * 100000 + '1' + ']' * 100000)
+            self.loads('[' * 100000 + '1' + ']' * 100000)
 
     def test_highly_nested_objects_encoding(self):
         # See #12051
@@ -88,11 +81,20 @@ class TestRecursion(TestCase):
         for x in range(100000):
             l, d = [l], {'k':d}
         with self.assertRaises(RuntimeError):
-            json.dumps(l)
+            self.dumps(l)
         with self.assertRaises(RuntimeError):
-            json.dumps(d)
+            self.dumps(d)
 
     def test_endless_recursion(self):
         # See #12051
+        class EndlessJSONEncoder(self.json.JSONEncoder):
+            def default(self, o):
+                """If check_circular is False, this will keep adding another list."""
+                return [o]
+
         with self.assertRaises(RuntimeError):
             EndlessJSONEncoder(check_circular=False).encode(5j)
+
+
+class TestPyRecursion(TestRecursion, PyTest): pass
+class TestCRecursion(TestRecursion, CTest): pass
