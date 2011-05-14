@@ -188,36 +188,105 @@ are converted to strings.  The default implementation uses the internals of the
 
 .. _pprint-example:
 
-pprint Example
---------------
+Example
+-------
 
-This example demonstrates several uses of the :func:`pprint` function and its parameters.
+To demonstrate several uses of the :func:`pprint` function and its parameters,
+let's fetch information about a package from PyPI::
 
+   >>> import json
    >>> import pprint
-   >>> tup = ('spam', ('eggs', ('lumberjack', ('knights', ('ni', ('dead',
-   ... ('parrot', ('fresh fruit',))))))))
-   >>> stuff = ['a' * 10, tup, ['a' * 30, 'b' * 30], ['c' * 20, 'd' * 20]]
-   >>> pprint.pprint(stuff)
-   ['aaaaaaaaaa',
-    ('spam',
-     ('eggs',
-      ('lumberjack',
-       ('knights', ('ni', ('dead', ('parrot', ('fresh fruit',)))))))),
-    ['aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'],
-    ['cccccccccccccccccccc', 'dddddddddddddddddddd']]
-   >>> pprint.pprint(stuff, depth=3)
-   ['aaaaaaaaaa',
-    ('spam', ('eggs', (...))),
-    ['aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'],
-    ['cccccccccccccccccccc', 'dddddddddddddddddddd']]
-   >>> pprint.pprint(stuff, width=60)
-   ['aaaaaaaaaa',
-    ('spam',
-     ('eggs',
-      ('lumberjack',
-       ('knights',
-        ('ni', ('dead', ('parrot', ('fresh fruit',)))))))),
-    ['aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-     'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'],
-    ['cccccccccccccccccccc', 'dddddddddddddddddddd']]
+   >>> from urllib.request import urlopen
+   >>> with urlopen('http://pypi.python.org/pypi/configparser/json') as url:
+   ...     http_info = url.info()
+   ...     raw_data = url.read().decode(http_info.get_content_charset())
+   >>> package_data = json.loads(raw_data)
+   >>> result = {'headers': http_info.items(), 'body': package_data}
 
+In its basic form, :func:`pprint` shows the whole object::
+
+   >>> pprint.pprint(result)
+   {'body': {'info': {'_pypi_hidden': False,
+                      '_pypi_ordering': 12,
+                      'classifiers': ['Development Status :: 4 - Beta',
+                                      'Intended Audience :: Developers',
+                                      'License :: OSI Approved :: MIT License',
+                                      'Natural Language :: English',
+                                      'Operating System :: OS Independent',
+                                      'Programming Language :: Python',
+                                      'Programming Language :: Python :: 2',
+                                      'Programming Language :: Python :: 2.6',
+                                      'Programming Language :: Python :: 2.7',
+                                      'Topic :: Software Development :: Libraries',
+                                      'Topic :: Software Development :: Libraries :: Python Modules'],
+                      'download_url': 'UNKNOWN',
+                      'home_page': 'http://docs.python.org/py3k/library/configparser.html',
+                      'keywords': 'configparser ini parsing conf cfg configuration file',
+                      'license': 'MIT',
+                      'name': 'configparser',
+                      'package_url': 'http://pypi.python.org/pypi/configparser',
+                      'platform': 'any',
+                      'release_url': 'http://pypi.python.org/pypi/configparser/3.2.0r3',
+                      'requires_python': None,
+                      'stable_version': None,
+                      'summary': 'This library brings the updated configparser from Python 3.2+ to Python 2.6-2.7.',
+                      'version': '3.2.0r3'},
+           'urls': [{'comment_text': '',
+                     'downloads': 47,
+                     'filename': 'configparser-3.2.0r3.tar.gz',
+                     'has_sig': False,
+                     'md5_digest': '8500fd87c61ac0de328fc996fce69b96',
+                     'packagetype': 'sdist',
+                     'python_version': 'source',
+                     'size': 32281,
+                     'upload_time': '2011-05-10T16:28:50',
+                     'url': 'http://pypi.python.org/packages/source/c/configparser/configparser-3.2.0r3.tar.gz'}]},
+   'headers': [('Date', 'Sat, 14 May 2011 12:48:52 GMT'),
+               ('Server', 'Apache/2.2.16 (Debian)'),
+               ('Content-Disposition', 'inline'),
+               ('Connection', 'close'),
+               ('Transfer-Encoding', 'chunked'),
+               ('Content-Type', 'application/json; charset="UTF-8"')]}
+
+The result can be limited to a certain *depth* (ellipsis is used for deeper
+contents)::
+
+   >>> pprint.pprint(result, depth=3)
+   {'body': {'info': {'_pypi_hidden': False,
+                      '_pypi_ordering': 12,
+                      'classifiers': [...],
+                      'download_url': 'UNKNOWN',
+                      'home_page': 'http://docs.python.org/py3k/library/configparser.html',
+                      'keywords': 'configparser ini parsing conf cfg configuration file',
+                      'license': 'MIT',
+                      'name': 'configparser',
+                      'package_url': 'http://pypi.python.org/pypi/configparser',
+                      'platform': 'any',
+                      'release_url': 'http://pypi.python.org/pypi/configparser/3.2.0r3',
+                      'requires_python': None,
+                      'stable_version': None,
+                      'summary': 'This library brings the updated configparser from Python 3.2+ to Python 2.6-2.7.',
+                      'version': '3.2.0r3'},
+           'urls': [{...}]},
+   'headers': [('Date', 'Sat, 14 May 2011 12:48:52 GMT'),
+               ('Server', 'Apache/2.2.16 (Debian)'),
+               ('Content-Disposition', 'inline'),
+               ('Connection', 'close'),
+               ('Transfer-Encoding', 'chunked'),
+               ('Content-Type', 'application/json; charset="UTF-8"')]}
+
+Additionally, maximum *width* can be suggested. If a long object cannot be
+split, the specified width will be exceeded::
+
+   >>> pprint.pprint(result['headers'], width=30)
+   [('Date',
+     'Sat, 14 May 2011 12:48:52 GMT'),
+    ('Server',
+     'Apache/2.2.16 (Debian)'),
+    ('Content-Disposition',
+     'inline'),
+    ('Connection', 'close'),
+    ('Transfer-Encoding',
+     'chunked'),
+    ('Content-Type',
+     'application/json; charset="UTF-8"')]
