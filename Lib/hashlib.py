@@ -64,26 +64,29 @@ __all__ = __always_supported + ('new', 'algorithms')
 
 
 def __get_builtin_constructor(name):
-    if name in ('SHA1', 'sha1'):
-        import _sha
-        return _sha.new
-    elif name in ('MD5', 'md5'):
-        import _md5
-        return _md5.new
-    elif name in ('SHA256', 'sha256', 'SHA224', 'sha224'):
-        import _sha256
-        bs = name[3:]
-        if bs == '256':
-            return _sha256.sha256
-        elif bs == '224':
-            return _sha256.sha224
-    elif name in ('SHA512', 'sha512', 'SHA384', 'sha384'):
-        import _sha512
-        bs = name[3:]
-        if bs == '512':
-            return _sha512.sha512
-        elif bs == '384':
-            return _sha512.sha384
+    try:
+        if name in ('SHA1', 'sha1'):
+            import _sha
+            return _sha.new
+        elif name in ('MD5', 'md5'):
+            import _md5
+            return _md5.new
+        elif name in ('SHA256', 'sha256', 'SHA224', 'sha224'):
+            import _sha256
+            bs = name[3:]
+            if bs == '256':
+                return _sha256.sha256
+            elif bs == '224':
+                return _sha256.sha224
+        elif name in ('SHA512', 'sha512', 'SHA384', 'sha384'):
+            import _sha512
+            bs = name[3:]
+            if bs == '512':
+                return _sha512.sha512
+            elif bs == '384':
+                return _sha512.sha384
+    except ImportError:
+        pass  # no extension module, this hash is unsupported.
 
     raise ValueError('unsupported hash type %s' % name)
 
