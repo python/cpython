@@ -193,6 +193,7 @@ class CompressTestCase(BaseCompressTestCase, unittest.TestCase):
         data = b'x' * size
         try:
             self.assertRaises(OverflowError, zlib.compress, data, 1)
+            self.assertRaises(OverflowError, zlib.decompress, data)
         finally:
             data = None
 
@@ -359,6 +360,15 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         dco = zlib.decompressobj()
         self.assertRaises(ValueError, dco.decompress, b"", -1)
         self.assertEqual(b'', dco.unconsumed_tail)
+
+    def test_clear_unconsumed_tail(self):
+        # Issue #12050: calling decompress() without providing max_length
+        # should clear the unconsumed_tail attribute.
+        cdata = b"x\x9cKLJ\x06\x00\x02M\x01"    # "abc"
+        dco = zlib.decompressobj()
+        ddata = dco.decompress(cdata, 1)
+        ddata += dco.decompress(dco.unconsumed_tail)
+        self.assertEqual(dco.unconsumed_tail, b"")
 
     def test_flushes(self):
         # Test flush() with the various options, using all the
