@@ -1,24 +1,10 @@
 import sys
-from unittest import TestCase, skipUnless
+from test.json_tests import PyTest, CTest
 
-import json
-import json.decoder
 
-try:
-    import _json
-except ImportError:
-    _json = None
-
-class TestScanString(TestCase):
-    def test_py_scanstring(self):
-        self._test_scanstring(json.decoder.py_scanstring)
-
-    @skipUnless(_json, 'test requires the _json module')
-    def test_c_scanstring(self):
-        if json.decoder.c_scanstring is not None:
-            self._test_scanstring(json.decoder.c_scanstring)
-
-    def _test_scanstring(self, scanstring):
+class TestScanstring:
+    def test_scanstring(self):
+        scanstring = self.json.decoder.scanstring
         self.assertEqual(
             scanstring('"z\\ud834\\udd20x"', 1, True),
             ('z\U0001d120x', 16))
@@ -109,4 +95,9 @@ class TestScanString(TestCase):
             ('Bad value', 12))
 
     def test_overflow(self):
-        self.assertRaises(OverflowError, json.decoder.scanstring, b"xxx", sys.maxsize+1)
+        with self.assertRaises(OverflowError):
+            self.json.decoder.scanstring(b"xxx", sys.maxsize+1)
+
+
+class TestPyScanstring(TestScanstring, PyTest): pass
+class TestCScanstring(TestScanstring, CTest): pass

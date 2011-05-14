@@ -90,6 +90,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12050: zlib.decompressobj().decompress() now clears the unconsumed_tail
+  attribute when called without a max_length argument.
+
 - Issue #12062: Fix a flushing bug when doing a certain type of I/O sequence
   on a file opened in read+write mode (namely: reading, seeking a bit forward,
   writing, then seeking before the previous write but still within buffered
@@ -378,6 +381,8 @@ Extension Modules
 
 Tests
 -----
+
+- Issue #5723: Improve json tests to be executed with and without accelerations.
 
 - Issue #11873: Change regex in test_compileall to fix occasional failures when
   when the randomly generated temporary path happened to match the regex.
