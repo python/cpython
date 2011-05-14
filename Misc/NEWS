@@ -376,6 +376,8 @@ Build
 Tests
 -----
 
+- Issue #5723: Improve json tests to be executed with and without accelerations.
+
 - Issue #11910: Fix test_heapq to skip the C tests when _heapq is missing.
 
 - Fix test_startfile to wait for child process to terminate before finishing.
