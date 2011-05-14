@@ -86,7 +86,7 @@ def __get_builtin_constructor(name):
             elif bs == '384':
                 return _sha512.sha384
     except ImportError:
-         pass  # no extension module, this hash is unsupported.
+        pass  # no extension module, this hash is unsupported.
 
     raise ValueError('unsupported hash type %s' % name)
 
