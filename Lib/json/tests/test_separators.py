@@ -1,10 +1,8 @@
 import textwrap
-from unittest import TestCase
-
-import json
+from json.tests import PyTest, CTest
 
 
-class TestSeparators(TestCase):
+class TestSeparators(object):
     def test_separators(self):
         h = [['blorpie'], ['whoops'], [], 'd-shtaeou', 'd-nthiouh', 'i-vhbjkhnth',
              {'nifty': 87}, {'field': 'yes', 'morefield': False} ]
@@ -31,12 +29,16 @@ class TestSeparators(TestCase):
         ]""")
 
 
-        d1 = json.dumps(h)
-        d2 = json.dumps(h, indent=2, sort_keys=True, separators=(' ,', ' : '))
+        d1 = self.dumps(h)
+        d2 = self.dumps(h, indent=2, sort_keys=True, separators=(' ,', ' : '))
 
-        h1 = json.loads(d1)
-        h2 = json.loads(d2)
+        h1 = self.loads(d1)
+        h2 = self.loads(d2)
 
         self.assertEqual(h1, h)
         self.assertEqual(h2, h)
         self.assertEqual(d2, expect)
+
+
+class TestPySeparators(TestSeparators, PyTest): pass
+class TestCSeparators(TestSeparators, CTest): pass
