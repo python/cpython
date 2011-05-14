@@ -3,6 +3,8 @@ What's New in IDLE 3.1.4?
 
 *Release date: XX-XXX-11*
 
+- Issue #6378: Further adjust idle.bat to start associated Python
+
 - Issue #11896: Save on Close failed despite selecting "Yes" in dialog.
 
 - Issue #1028: Ctrl-space binding to show completions was causing IDLE to exit.
@@ -63,7 +65,7 @@ What's New in IDLE 2.7? (UNRELEASED, but merged into 3.1 releases above.)
   extract port from command line when warnings are present.
 
 - Tk 8.5 Text widget requires 'wordprocessor' tabstyle attr to handle
-  mixed space/tab properly. Issue 5120, patch by Guilherme Polo.
+  mixed space/tab properly. Issue 5129, patch by Guilherme Polo.
 
 - Issue #3549: On MacOS the preferences menu was not present
 
