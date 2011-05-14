@@ -528,9 +528,11 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         if size < _4G + 100:
             self.skipTest("not enough free memory, need at least 4 GB")
         data = b'x' * size
+        c = zlib.compressobj(1)
+        d = zlib.decompressobj()
         try:
-            self.assertRaises(OverflowError, zlib.compress, data, 1)
-            self.assertRaises(OverflowError, zlib.decompress, data)
+            self.assertRaises(OverflowError, c.compress, data)
+            self.assertRaises(OverflowError, d.decompress, data)
         finally:
             data = None
 
