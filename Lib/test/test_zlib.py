@@ -186,6 +186,17 @@ class CompressTestCase(BaseCompressTestCase, unittest.TestCase):
     def test_big_decompress_buffer(self, size):
         self.check_big_decompress_buffer(size, zlib.decompress)
 
+    @precisionbigmemtest(size=_4G + 100, memuse=1)
+    def test_length_overflow(self, size):
+        if size < _4G + 100:
+            self.skipTest("not enough free memory, need at least 4 GB")
+        data = b'x' * size
+        try:
+            self.assertRaises(OverflowError, zlib.compress, data, 1)
+            self.assertRaises(OverflowError, zlib.decompress, data)
+        finally:
+            data = None
+
 
 class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
     # Test compression object
