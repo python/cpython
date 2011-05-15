@@ -72,6 +72,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10756: atexit normalizes the exception before displaying it. Patch by
+  Andreas Stührk.
+
 - Issue #8650: Make zlib module 64-bit clean. compress(), decompress() and
   their incremental counterparts now raise OverflowError if given an input
   larger than 4GB, instead of silently truncating the input and returning
