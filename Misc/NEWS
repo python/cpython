@@ -10,6 +10,9 @@ What's New in Python 3.1.4?
 Core and Builtins
 -----------------
 
+- Issue #12060: Use sig_atomic_t type and volatile keyword in the signal
+  module. Patch written by Charles-François Natali.
+
 - Issue #1195: Fix input() if it is interrupted by CTRL+d and then CTRL+c,
   clear the end-of-file indicator after CTRL+d.
 
