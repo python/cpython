@@ -297,21 +297,6 @@ def _init_posix(vars):
             msg = msg + " (%s)" % e.strerror
         raise IOError(msg)
 
-    # On MacOSX we need to check the setting of the environment variable
-    # MACOSX_DEPLOYMENT_TARGET: configure bases some choices on it so
-    # it needs to be compatible.
-    # If it isn't set we set it to the configure-time value
-    if sys.platform == 'darwin' and 'MACOSX_DEPLOYMENT_TARGET' in vars:
-        cfg_target = vars['MACOSX_DEPLOYMENT_TARGET']
-        cur_target = os.getenv('MACOSX_DEPLOYMENT_TARGET', '')
-        if cur_target == '':
-            cur_target = cfg_target
-            os.putenv('MACOSX_DEPLOYMENT_TARGET', cfg_target)
-        elif map(int, cfg_target.split('.')) > map(int, cur_target.split('.')):
-            msg = ('$MACOSX_DEPLOYMENT_TARGET mismatch: now "%s" but "%s" '
-                   'during configure' % (cur_target, cfg_target))
-            raise IOError(msg)
-
     # On AIX, there are wrong paths to the linker scripts in the Makefile
     # -- these paths are relative to the Python source, but when installed
     # the scripts are in another directory.
@@ -616,9 +601,7 @@ def get_platform():
         # machine is going to compile and link as if it were
         # MACOSX_DEPLOYMENT_TARGET.
         cfgvars = get_config_vars()
-        macver = os.environ.get('MACOSX_DEPLOYMENT_TARGET')
-        if not macver:
-            macver = cfgvars.get('MACOSX_DEPLOYMENT_TARGET')
+        macver = cfgvars.get('MACOSX_DEPLOYMENT_TARGET')
 
         if 1:
             # Always calculate the release of the running machine,

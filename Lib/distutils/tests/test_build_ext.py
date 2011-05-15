@@ -3,12 +3,13 @@ import os
 import tempfile
 import shutil
 from StringIO import StringIO
+import textwrap
 
 from distutils.core import Extension, Distribution
 from distutils.command.build_ext import build_ext
 from distutils import sysconfig
 from distutils.tests import support
-from distutils.errors import DistutilsSetupError
+from distutils.errors import DistutilsSetupError, CompileError
 
 import unittest
 from test import test_support
@@ -429,6 +430,59 @@ class BuildExtTestCase(support.TempdirManager,
         ext_path = cmd.get_ext_fullpath(ext_name)
         wanted = os.path.join(cmd.build_lib, 'UpdateManager', 'fdsend' + ext)
         self.assertEqual(ext_path, wanted)
+
+    @unittest.skipUnless(sys.platform == 'darwin', 'test only relevant for MacOSX')
+    def test_deployment_target(self):
+        self._try_compile_deployment_target()
+
+        orig_environ = os.environ
+        os.environ = orig_environ.copy()
+        self.addCleanup(setattr, os, 'environ', orig_environ)
+
+        os.environ['MACOSX_DEPLOYMENT_TARGET']='10.1'
+        self._try_compile_deployment_target()
+
+
+    def _try_compile_deployment_target(self):
+        deptarget_c = os.path.join(self.tmp_dir, 'deptargetmodule.c')
+
+        with open(deptarget_c, 'w') as fp:
+            fp.write(textwrap.dedent('''\
+                #include <AvailabilityMacros.h>
+
+                int dummy;
+
+                #if TARGET != MAC_OS_X_VERSION_MIN_REQUIRED
+                #error "Unexpected target"
+               #endif
+
+            '''))
+
+        target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
+        target = tuple(map(int, target.split('.')))
+        target = '%02d%01d0' % target
+
+        deptarget_ext = Extension(
+            'deptarget',
+            [deptarget_c],
+            extra_compile_args=['-DTARGET=%s'%(target,)],
+        )
+        dist = Distribution({
+            'name': 'deptarget',
+            'ext_modules': [deptarget_ext]
+        })
+        dist.package_dir = self.tmp_dir
+        cmd = build_ext(dist)
+        cmd.build_lib = self.tmp_dir
+        cmd.build_temp = self.tmp_dir
+
+        try:
+            old_stdout = sys.stdout
+            cmd.ensure_finalized()
+            cmd.run()
+
+        except CompileError:
+            self.fail("Wrong deployment target during compilation")
 
 def test_suite():
     return unittest.makeSuite(BuildExtTestCase)

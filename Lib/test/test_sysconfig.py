@@ -141,7 +141,7 @@ class TestSysConfig(unittest.TestCase):
                    ('Darwin Kernel Version 8.11.1: '
                     'Wed Oct 10 18:23:28 PDT 2007; '
                     'root:xnu-792.25.20~1/RELEASE_I386'), 'PowerPC'))
-        os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.3'
+        get_config_vars()['MACOSX_DEPLOYMENT_TARGET'] = '10.3'
 
         get_config_vars()['CFLAGS'] = ('-fno-strict-aliasing -DNDEBUG -g '
                                        '-fwrapv -O3 -Wall -Wstrict-prototypes')
@@ -161,7 +161,6 @@ class TestSysConfig(unittest.TestCase):
                     'Wed Oct 10 18:23:28 PDT 2007; '
                     'root:xnu-792.25.20~1/RELEASE_I386'), 'i386'))
         get_config_vars()['MACOSX_DEPLOYMENT_TARGET'] = '10.3'
-        os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.3'
 
         get_config_vars()['CFLAGS'] = ('-fno-strict-aliasing -DNDEBUG -g '
                                        '-fwrapv -O3 -Wall -Wstrict-prototypes')
@@ -176,7 +175,7 @@ class TestSysConfig(unittest.TestCase):
             sys.maxint = maxint
 
         # macbook with fat binaries (fat, universal or fat64)
-        os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.4'
+        get_config_vars()['MACOSX_DEPLOYMENT_TARGET'] = '10.4'
         get_config_vars()['CFLAGS'] = ('-arch ppc -arch i386 -isysroot '
                                        '/Developer/SDKs/MacOSX10.4u.sdk  '
                                        '-fno-strict-aliasing -fno-common '
@@ -264,6 +263,51 @@ class TestSysConfig(unittest.TestCase):
             global_path = get_path(name, 'posix_prefix')
             user_path = get_path(name, 'posix_user')
             self.assertEqual(user_path, global_path.replace(base, user))
+
+    @unittest.skipUnless(sys.platform == "darwin", "test only relevant on MacOSX")
+    def test_platform_in_subprocess(self):
+        my_platform = sysconfig.get_platform()
+
+        # Test without MACOSX_DEPLOYMENT_TARGET in the environment
+
+        env = os.environ.copy()
+        if 'MACOSX_DEPLOYMENT_TARGET' in env:
+            del env['MACOSX_DEPLOYMENT_TARGET']
+
+        with open('/dev/null', 'w') as devnull_fp:
+            p = subprocess.Popen([
+                    sys.executable, '-c',
+                   'import sysconfig; print(sysconfig.get_platform())',
+                ],
+                stdout=subprocess.PIPE,
+                stderr=devnull_fp,
+                env=env)
+        test_platform = p.communicate()[0].strip()
+        test_platform = test_platform.decode('utf-8')
+        status = p.wait()
+
+        self.assertEqual(status, 0)
+        self.assertEqual(my_platform, test_platform)
+
+
+        # Test with MACOSX_DEPLOYMENT_TARGET in the environment, and
+        # using a value that is unlikely to be the default one.
+        env = os.environ.copy()
+        env['MACOSX_DEPLOYMENT_TARGET'] = '10.1'
+
+        p = subprocess.Popen([
+                sys.executable, '-c',
+                'import sysconfig; print(sysconfig.get_platform())',
+            ],
+            stdout=subprocess.PIPE,
+            stderr=open('/dev/null'),
+            env=env)
+        test_platform = p.communicate()[0].strip()
+        test_platform = test_platform.decode('utf-8')
+        status = p.wait()
+
+        self.assertEqual(status, 0)
+        self.assertEqual(my_platform, test_platform)
 
 def test_main():
     run_unittest(TestSysConfig)

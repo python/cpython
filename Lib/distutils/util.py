@@ -97,9 +97,7 @@ def get_platform ():
         from distutils.sysconfig import get_config_vars
         cfgvars = get_config_vars()
 
-        macver = os.environ.get('MACOSX_DEPLOYMENT_TARGET')
-        if not macver:
-            macver = cfgvars.get('MACOSX_DEPLOYMENT_TARGET')
+        macver = cfgvars.get('MACOSX_DEPLOYMENT_TARGET')
 
         if 1:
             # Always calculate the release of the running machine,
