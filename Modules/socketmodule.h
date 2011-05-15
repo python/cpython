@@ -59,9 +59,12 @@ typedef int socklen_t;
 #include <bluetooth.h>
 #endif
 
+#ifdef HAVE_NET_IF_H
+# include <net/if.h>
+#endif
+
 #ifdef HAVE_NETPACKET_PACKET_H
 # include <sys/ioctl.h>
-# include <net/if.h>
 # include <netpacket/packet.h>
 #endif
 
