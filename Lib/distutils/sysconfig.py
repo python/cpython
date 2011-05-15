@@ -428,7 +428,7 @@ def _init_posix():
         cur_target = os.getenv('MACOSX_DEPLOYMENT_TARGET', '')
         if cur_target == '':
             cur_target = cfg_target
-            os.putenv('MACOSX_DEPLOYMENT_TARGET', cfg_target)
+            os.environ['MACOSX_DEPLOYMENT_TARGET'] = cfg_target
         elif [int(x) for x in cfg_target.split('.')] > [int(x) for x in cur_target.split('.')]:
             my_msg = ('$MACOSX_DEPLOYMENT_TARGET mismatch: now "%s" but "%s" during configure'
                 % (cur_target, cfg_target))
