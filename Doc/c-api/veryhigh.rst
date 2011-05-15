@@ -34,11 +34,12 @@ the same library that the Python runtime is using.
    according to the user's locale).  It is important to note that the
    argument list may be modified (but the contents of the strings
    pointed to by the argument list are not). The return value will be
-   the integer passed to the :func:`sys.exit` function, ``1`` if the
-   interpreter exits due to an exception, or ``2`` if the parameter
-   list does not represent a valid Python command line.
+   ```0``` if the interpreter exits normally (ie, without an
+   exception), ``1`` if the interpreter exits due to an exception, or
+   ``2`` if the parameter list does not represent a valid Python
+   command line.
 
-   Note that if an otherwise unhandled :exc:`SystemError` is raised, this
+   Note that if an otherwise unhandled :exc:`SystemExit` is raised, this
    function will not return ``1``, but exit the process, as long as
    ``Py_InspectFlag`` is not set.
 
@@ -85,7 +86,7 @@ the same library that the Python runtime is using.
    there was an error, there is no way to get the exception information. For the
    meaning of *flags*, see below.
 
-   Note that if an otherwise unhandled :exc:`SystemError` is raised, this
+   Note that if an otherwise unhandled :exc:`SystemExit` is raised, this
    function will not return ``-1``, but exit the process, as long as
    ``Py_InspectFlag`` is not set.
 
