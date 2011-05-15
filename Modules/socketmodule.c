@@ -42,6 +42,9 @@ Module interface:
 - socket.inet_ntoa(packed IP) -> IP address string
 - socket.getdefaulttimeout() -> None | float
 - socket.setdefaulttimeout(None | float)
+- socket.if_nameindex() -> list of tuples (if_index, if_name)
+- socket.if_nametoindex(name) -> corresponding interface index
+- socket.if_indextoname(index) -> corresponding interface name
 - an Internet socket address is a pair (hostname, port)
   where hostname can be anything recognized by gethostbyname()
   (including the dd.dd.dd.dd notation) and port is in host byte order
@@ -133,6 +136,9 @@ setblocking(0 | 1) -- set or clear the blocking I/O flag\n\
 setsockopt(level, optname, value) -- set socket options\n\
 settimeout(None | float) -- set or clear the timeout\n\
 shutdown(how) -- shut down traffic in one or both directions\n\
+if_nameindex() -- return all network interface indices and names\n\
+if_nametoindex(name) -- returns the corresponding interface index\n\
+if_indextoname(index) -- returns the corresponding interface name\n\
 \n\
  [*] not available on all platforms!");
 
@@ -4267,6 +4273,102 @@ A value of None indicates that new socket objects have no timeout.\n\
 When the socket module is first imported, the default is None.");
 
 
+#ifdef HAVE_IF_NAMEINDEX
+/* Python API for getting interface indices and names */
+
+static PyObject *
+socket_if_nameindex(PyObject *self, PyObject *arg)
+{
+    int i = 0;
+    PyObject *list;
+    struct if_nameindex *ni = if_nameindex();
+
+    if (ni == NULL) {
+        PyErr_SetString(socket_error, "if_nameindex() returned NULL.");
+        return NULL;
+    }
+
+    list = PyList_New(0);
+    if (list == NULL) {
+        if_freenameindex(ni);
+        return NULL;
+    }
+
+    while (ni[i].if_index != 0 && i < INT_MAX) {
+        PyObject *ni_tuple = Py_BuildValue(
+                "Iy", ni[i].if_index, ni[i].if_name);
+
+        if (ni_tuple == NULL || PyList_Append(list, ni_tuple) == -1) {
+            Py_XDECREF(ni_tuple);
+            goto error;
+        }
+        Py_DECREF(ni_tuple);
+
+        ++i;
+    }
+
+    if_freenameindex(ni);
+    return list;
+
+error:
+    Py_DECREF(list);
+    if_freenameindex(ni);
+    return NULL;
+}
+
+PyDoc_STRVAR(if_nameindex_doc,
+"if_nameindex()\n\
+\n\
+Returns a list of network interface information (index, name) tuples.");
+
+
+PyObject*
+socket_if_nametoindex(PyObject *self, PyObject *arg)
+{
+    char* ifname = PyBytes_AsString(arg);
+    unsigned long index;
+
+    if (ifname == NULL)
+        return NULL;
+
+    index = if_nametoindex(ifname);
+    if (index == 0) {
+        PyErr_SetString(socket_error, "no interface with this name");
+        return NULL;
+    }
+
+    return PyLong_FromUnsignedLong(index);
+}
+
+PyDoc_STRVAR(if_nametoindex_doc,
+"if_nametoindex(if_name)\n\
+\n\
+Returns the interface index corresponding to the interface name if_name.");
+
+
+PyObject*
+socket_if_indextoname(PyObject *self, PyObject *arg)
+{
+    unsigned long index = PyLong_AsUnsignedLongMask(arg);
+    char name[IF_NAMESIZE + 1];  /* or use IFNAMSIZ ?*/
+    char *ret = if_indextoname(index, &name[0]);
+
+    if (ret == NULL) {
+        PyErr_SetString(socket_error, "no interface with this index");
+        return NULL;
+    }
+
+    return PyBytes_FromString(name);
+}
+
+PyDoc_STRVAR(if_indextoname_doc,
+"if_indextoname(if_index)\n\
+\n\
+Returns the interface name corresponding to the interface index if_index.");
+
+#endif  /* HAVE_IF_NAMEINDEX */
+
+
 /* List of functions exported by this module. */
 
 static PyMethodDef socket_methods[] = {
@@ -4322,6 +4424,14 @@ static PyMethodDef socket_methods[] = {
      METH_NOARGS, getdefaulttimeout_doc},
     {"setdefaulttimeout",       socket_setdefaulttimeout,
      METH_O, setdefaulttimeout_doc},
+#ifdef HAVE_IF_NAMEINDEX
+    {"if_nameindex", socket_if_nameindex,
+     METH_NOARGS, if_nameindex_doc},
+    {"if_nametoindex", socket_if_nametoindex,
+     METH_O, if_nametoindex_doc},
+    {"if_indextoname", socket_if_indextoname,
+     METH_O, if_indextoname_doc},
+#endif
     {NULL,                      NULL}            /* Sentinel */
 };
 
