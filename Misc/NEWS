@@ -80,6 +80,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9516: avoid errors in sysconfig when MACOSX_DEPLOYMENT_TARGET is 
+  set in shell.
+
 - Issue #12050: zlib.decompressobj().decompress() now clears the unconsumed_tail
   attribute when called without a max_length argument.
 
