@@ -10,6 +10,9 @@ What's New in Python 3.2.1 beta 1?
 Core and Builtins
 -----------------
 
+- Issue #12060: Use sig_atomic_t type and volatile keyword in the signal
+  module. Patch written by Charles-François Natali.
+
 - Issue #12044: Fixed subprocess.Popen when used as a context manager to
   wait for the process to end when exiting the context to avoid unintentionally
   leaving zombie processes around.
