@@ -65,6 +65,14 @@ class TestCase(unittest.TestCase):
 
         self.assertRaises(TypeError, atexit._run_exitfuncs)
 
+    def test_raise_unnormalized(self):
+        # Issue #10756: Make sure that an unnormalized exception is
+        # handled properly
+        atexit.register(lambda: 1 / 0)
+
+        self.assertRaises(ZeroDivisionError, atexit._run_exitfuncs)
+        self.assertIn("ZeroDivisionError", self.stream.getvalue())
+
     def test_stress(self):
         a = [0]
         def inc():
