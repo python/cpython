@@ -78,12 +78,12 @@ static long main_thread;
 static pid_t main_pid;
 #endif
 
-static struct {
-    int tripped;
+static volatile struct {
+    sig_atomic_t tripped;
     PyObject *func;
 } Handlers[NSIG];
 
-static sig_atomic_t wakeup_fd = -1;
+static volatile sig_atomic_t wakeup_fd = -1;
 
 /* Speed up sigcheck() when none tripped */
 static volatile sig_atomic_t is_tripped = 0;
