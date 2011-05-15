@@ -2,10 +2,10 @@
 Python News
 +++++++++++
 
-What's New in Python 3.2.1 beta 1?
-==================================
+What's New in Python 3.2.1 release candidate 1?
+===============================================
 
-*Release date: 08-May-2011*
+*Release date: XX-XXX-2011*
 
 Core and Builtins
 -----------------
@@ -16,6 +16,68 @@ Core and Builtins
 
 - Issue #1195: Fix input() if it is interrupted by CTRL+d and then CTRL+c,
   clear the end-of-file indicator after CTRL+d.
+
+Library
+-------
+
+- Issue #12012: ssl.PROTOCOL_SSLv2 becomes optional.
+
+- Issue #8650: Make zlib module 64-bit clean. compress(), decompress() and
+  their incremental counterparts now raise OverflowError if given an input
+  larger than 4GB, instead of silently truncating the input and returning
+  an incorrect result.
+
+- Issue #12050: zlib.decompressobj().decompress() now clears the unconsumed_tail
+  attribute when called without a max_length argument.
+
+- Issue #12062: Fix a flushing bug when doing a certain type of I/O sequence
+  on a file opened in read+write mode (namely: reading, seeking a bit forward,
+  writing, then seeking before the previous write but still within buffered
+  data, and writing again).
+
+- Issue #1028: Tk returns invalid Unicode null in %A: UnicodeDecodeError.
+  With Tk < 8.5 _tkinter.c:PythonCmd() raised UnicodeDecodeError, caused
+  IDLE to exit.  Converted to valid Unicode null in PythonCmd().
+
+- Issue #11169: compileall module uses repr() to format filenames and paths to
+  escape surrogate characters and show spaces.
+
+- Issue #10419, #6011: build_scripts command of distutils handles correctly
+  non-ASCII path (path to the Python executable). Open and write the script in
+  binary mode, but ensure that the shebang is decodable from UTF-8 and from the
+  encoding of the script.
+
+- Issue #8498: In socket.accept(), allow to specify 0 as a backlog value in
+  order to accept exactly one connection.  Patch by Daniel Evers.
+
+- Issue #11164: Stop trying to use _xmlplus in the xml module.
+
+Build
+-----
+
+- Issue #11347: Use --no-as-needed when linking libpython3.so.
+
+Tools/Demos
+-----------
+
+- Issue #11996: libpython (gdb), replace "py-bt" command by "py-bt-full" and
+  add a smarter "py-bt" command printing a classic Python traceback.
+
+Tests
+-----
+
+- Issue #5723: Improve json tests to be executed with and without accelerations.
+
+- Issue #11910: Fix test_heapq to skip the C tests when _heapq is missing.
+
+
+What's New in Python 3.2.1 beta 1?
+==================================
+
+*Release date: 08-May-2011*
+
+Core and Builtins
+-----------------
 
 - Issue #1856: Avoid crashes and lockups when daemon threads run while the
   interpreter is shutting down; instead, these threads are now killed when they
@@ -89,36 +151,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #8650: Make zlib module 64-bit clean. compress(), decompress() and
-  their incremental counterparts now raise OverflowError if given an input
-  larger than 4GB, instead of silently truncating the input and returning
-  an incorrect result.
-
-- Issue #12050: zlib.decompressobj().decompress() now clears the unconsumed_tail
-  attribute when called without a max_length argument.
-
-- Issue #12062: Fix a flushing bug when doing a certain type of I/O sequence
-  on a file opened in read+write mode (namely: reading, seeking a bit forward,
-  writing, then seeking before the previous write but still within buffered
-  data, and writing again).
-
-- Issue #1028: Tk returns invalid Unicode null in %A: UnicodeDecodeError.
-  With Tk < 8.5 _tkinter.c:PythonCmd() raised UnicodeDecodeError, caused
-  IDLE to exit.  Converted to valid Unicode null in PythonCmd().
-
-- Issue #11169: compileall module uses repr() to format filenames and paths to
-  escape surrogate characters and show spaces.
-
-- Issue #10419, #6011: build_scripts command of distutils handles correctly
-  non-ASCII path (path to the Python executable). Open and write the script in
-  binary mode, but ensure that the shebang is decodable from UTF-8 and from the
-  encoding of the script.
-
-- Issue #8498: In socket.accept(), allow to specify 0 as a backlog value in
-  order to accept exactly one connection.  Patch by Daniel Evers.
-
-- Issue #11164: Stop trying to use _xmlplus in the xml module.
 
 - Issue #11927: SMTP_SSL now uses port 465 by default as documented.  Patch by
   Kasun Herath.
@@ -351,8 +383,6 @@ Library
 Build
 -----
 
-- Issue #11347: Use --no-as-needed when linking libpython3.so.
-
 - Issue #11411: Fix 'make DESTDIR=' with a relative destination.
 
 - Issue #11268: Prevent Mac OS X Installer failure if Documentation package had
@@ -366,9 +396,6 @@ IDLE
 
 Tools/Demos
 -----------
-
-- Issue #11996: libpython (gdb), replace "py-bt" command by "py-bt-full" and
-  add a smarter "py-bt" command printing a classic Python traceback.
 
 - Issue #11179: Make ccbench work under Python 3.1 and 2.7 again.
 
@@ -386,8 +413,6 @@ Extension Modules
 
 Tests
 -----
-
-- Issue #5723: Improve json tests to be executed with and without accelerations.
 
 - Issue #11873: Change regex in test_compileall to fix occasional failures when
   when the randomly generated temporary path happened to match the regex.
@@ -660,8 +685,6 @@ Core and Builtins
 Library
 -------
 
-- Issue #12012: ssl.PROTOCOL_SSLv2 becomes optional.
-
 - Issue #10916: mmap should not segfault when a file is mapped using 0 as length
   and a non-zero offset, and an attempt to read past the end of file is made
   (IndexError is raised instead).  Patch by Ross Lagerwall.
@@ -876,8 +899,6 @@ Tools/Demos
 
 Tests
 -----
-
-- Issue #11910: Fix test_heapq to skip the C tests when _heapq is missing.
 
 - Fix test_startfile to wait for child process to terminate before finishing.
 
