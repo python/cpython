@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Added the if_nameindex, if_indextoname, if_nametoindex methods to
+  the socket module as requested in issue #1746656.
+
 - Issue #12044: Fixed subprocess.Popen when used as a context manager to
   wait for the process to end when exiting the context to avoid unintentionally
   leaving zombie processes around.

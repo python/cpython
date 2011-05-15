@@ -372,6 +372,16 @@ class GeneralModuleTests(unittest.TestCase):
         finally:
             socket.sethostname(oldhn)
 
+    @unittest.skipUnless(hasattr(socket, 'if_nameindex'),
+                         'socket.if_nameindex() not available.')
+    def testInterfaceNameIndex(self):
+        interfaces = socket.if_nameindex()
+        for index, name in interfaces:
+            # interface indices are non-zero integers
+            self.assertGreater(index, 0)
+            self.assertEqual(index, socket.if_nametoindex(name))
+            self.assertEqual(name, socket.if_indextoname(index))
+
     def testRefCountGetNameInfo(self):
         # Testing reference count for getnameinfo
         if hasattr(sys, "getrefcount"):

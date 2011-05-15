@@ -536,6 +536,39 @@ The module :mod:`socket` exports the following constants and functions:
    .. versionadded:: 3.3
 
 
+.. function:: if_nameindex()
+
+   Returns a list of network interface information
+   (index, name as a byte string) tuples.
+   :exc:`socket.error` if the system call fails for any reason.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+
+.. function:: if_nametoindex(if_name)
+
+   Returns a network interface index number corresponding to an
+   interface name byte string.
+   :exc:`socket.error` if no interface with the given name exists.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+
+.. function:: if_indextoname(if_index)
+
+   Returns a network interface name byte string corresponding to a
+   interface index.
+   :exc:`socket.error` if no interface with the given index exists.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+
 .. data:: SocketType
 
    This is a Python type object that represents the socket object type. It is the
