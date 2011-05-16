@@ -3,20 +3,21 @@ import imp
 import unittest
 from .. import abc
 from .. import util
-
+from test.support import captured_stdout
 
 class LoaderTests(abc.LoaderTests):
 
     def test_module(self):
-        with util.uncache('__hello__'):
+        with util.uncache('__hello__'), captured_stdout() as stdout:
             module = machinery.FrozenImporter.load_module('__hello__')
             check = {'__name__': '__hello__', '__file__': '<frozen>',
                     '__package__': '', '__loader__': machinery.FrozenImporter}
             for attr, value in check.items():
                 self.assertEqual(getattr(module, attr), value)
+            self.assertEqual(stdout.getvalue(), 'Hello world!\n')
 
     def test_package(self):
-        with util.uncache('__phello__'):
+        with util.uncache('__phello__'),  captured_stdout() as stdout:
             module = machinery.FrozenImporter.load_module('__phello__')
             check = {'__name__': '__phello__', '__file__': '<frozen>',
                      '__package__': '__phello__', '__path__': ['__phello__'],
@@ -26,9 +27,11 @@ class LoaderTests(abc.LoaderTests):
                 self.assertEqual(attr_value, value,
                                  "for __phello__.%s, %r != %r" %
                                  (attr, attr_value, value))
+            self.assertEqual(stdout.getvalue(), 'Hello world!\n')
 
     def test_lacking_parent(self):
-        with util.uncache('__phello__', '__phello__.spam'):
+        with util.uncache('__phello__', '__phello__.spam'), \
+             captured_stdout() as stdout:
             module = machinery.FrozenImporter.load_module('__phello__.spam')
             check = {'__name__': '__phello__.spam', '__file__': '<frozen>',
                     '__package__': '__phello__',
@@ -38,12 +41,15 @@ class LoaderTests(abc.LoaderTests):
                 self.assertEqual(attr_value, value,
                                  "for __phello__.spam.%s, %r != %r" %
                                  (attr, attr_value, value))
+            self.assertEqual(stdout.getvalue(), 'Hello world!\n')
 
     def test_module_reuse(self):
-        with util.uncache('__hello__'):
+        with util.uncache('__hello__'), captured_stdout() as stdout:
             module1 = machinery.FrozenImporter.load_module('__hello__')
             module2 = machinery.FrozenImporter.load_module('__hello__')
             self.assertTrue(module1 is module2)
+            self.assertEqual(stdout.getvalue(),
+                             'Hello world!\nHello world!\n')
 
     def test_state_after_failure(self):
         # No way to trigger an error in a frozen module.
@@ -62,10 +68,12 @@ class InspectLoaderTests(unittest.TestCase):
     def test_get_code(self):
         # Make sure that the code object is good.
         name = '__hello__'
-        code = machinery.FrozenImporter.get_code(name)
-        mod = imp.new_module(name)
-        exec(code, mod.__dict__)
-        self.assertTrue(hasattr(mod, 'initialized'))
+        with captured_stdout() as stdout:
+            code = machinery.FrozenImporter.get_code(name)
+            mod = imp.new_module(name)
+            exec(code, mod.__dict__)
+            self.assertTrue(hasattr(mod, 'initialized'))
+            self.assertEqual(stdout.getvalue(), 'Hello world!\n')
 
     def test_get_source(self):
         # Should always return None.
