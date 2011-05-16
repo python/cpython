@@ -23,7 +23,7 @@ Core and Builtins
 Library
 -------
 
-- Issue #9516: Issue #9516: avoid errors in sysconfig when MACOSX_DEPLOYMENT_TARGET 
+- Issue #9516: Issue #9516: avoid errors in sysconfig when MACOSX_DEPLOYMENT_TARGET
   is set in shell.
 
 - Issue #12012: ssl.PROTOCOL_SSLv2 becomes optional.
@@ -71,6 +71,9 @@ Tools/Demos
 
 Tests
 -----
+
+- Issue #11614: import __hello__ prints "Hello World!". Patch written by
+  Andreas Stührk.
 
 - Issue #5723: Improve json tests to be executed with and without accelerations.
 
