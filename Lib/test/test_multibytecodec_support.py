@@ -4,8 +4,11 @@
 #   Common Unittest Routines for CJK codecs
 #
 
-import sys, codecs
-import unittest, re
+import codecs
+import os
+import re
+import sys
+import unittest
 from http.client import HTTPException
 from test import support
 from io import BytesIO
@@ -343,6 +346,10 @@ class TestBase_Mapping(unittest.TestCase):
         if (csetch, unich) not in self.pass_dectest:
             self.assertEqual(str(csetch, self.encoding), unich)
 
-def load_teststring(encoding):
-    from test import cjkencodings_test
-    return cjkencodings_test.teststring[encoding]
+def load_teststring(name):
+    dir = os.path.join(os.path.dirname(__file__), 'cjkencodings')
+    with open(os.path.join(dir, name + '.txt'), 'rb') as f:
+        encoded = f.read()
+    with open(os.path.join(dir, name + '-utf8.txt'), 'rb') as f:
+        utf8 = f.read()
+    return encoded, utf8
