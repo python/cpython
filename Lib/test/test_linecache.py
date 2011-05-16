@@ -9,7 +9,7 @@ from test import support
 FILENAME = linecache.__file__
 INVALID_NAME = '!@$)(!@#_1'
 EMPTY = ''
-TESTS = 'cjkencodings_test inspect_fodder inspect_fodder2 mapping_tests'
+TESTS = 'inspect_fodder inspect_fodder2 mapping_tests'
 TESTS = TESTS.split()
 TEST_PATH = os.path.dirname(support.__file__)
 MODULES = "linecache abc".split()
