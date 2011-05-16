@@ -6,31 +6,37 @@ import sys, os
 
 class FrozenTests(unittest.TestCase):
     def test_frozen(self):
-        try:
-            import __hello__
-        except ImportError as x:
-            self.fail("import __hello__ failed:" + str(x))
-        self.assertEqual(__hello__.initialized, True)
-        self.assertEqual(len(dir(__hello__)), 6, dir(__hello__))
+        with captured_stdout() as stdout:
+            try:
+                import __hello__
+            except ImportError as x:
+                self.fail("import __hello__ failed:" + str(x))
+            self.assertEqual(__hello__.initialized, True)
+            self.assertEqual(len(dir(__hello__)), 6, dir(__hello__))
+            self.assertEqual(stdout.getvalue(), 'Hello world!\n')
 
-        try:
-            import __phello__
-        except ImportError as x:
-            self.fail("import __phello__ failed:" + str(x))
-        self.assertEqual(__phello__.initialized, True)
-        if not "__phello__.spam" in sys.modules:
-            self.assertEqual(len(dir(__phello__)), 7, dir(__phello__))
-        else:
-            self.assertEqual(len(dir(__phello__)), 8, dir(__phello__))
-        self.assertEqual(__phello__.__path__, [__phello__.__name__])
+        with captured_stdout() as stdout:
+            try:
+                import __phello__
+            except ImportError as x:
+                self.fail("import __phello__ failed:" + str(x))
+            self.assertEqual(__phello__.initialized, True)
+            if not "__phello__.spam" in sys.modules:
+                self.assertEqual(len(dir(__phello__)), 7, dir(__phello__))
+            else:
+                self.assertEqual(len(dir(__phello__)), 8, dir(__phello__))
+            self.assertEqual(__phello__.__path__, [__phello__.__name__])
+            self.assertEqual(stdout.getvalue(), 'Hello world!\n')
 
-        try:
-            import __phello__.spam
-        except ImportError as x:
-            self.fail("import __phello__.spam failed:" + str(x))
-        self.assertEqual(__phello__.spam.initialized, True)
-        self.assertEqual(len(dir(__phello__.spam)), 6)
-        self.assertEqual(len(dir(__phello__)), 8)
+        with captured_stdout() as stdout:
+            try:
+                import __phello__.spam
+            except ImportError as x:
+                self.fail("import __phello__.spam failed:" + str(x))
+            self.assertEqual(__phello__.spam.initialized, True)
+            self.assertEqual(len(dir(__phello__.spam)), 6)
+            self.assertEqual(len(dir(__phello__)), 8)
+            self.assertEqual(stdout.getvalue(), 'Hello world!\n')
 
         try:
             import __phello__.foo
