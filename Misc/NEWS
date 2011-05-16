@@ -676,6 +676,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #11614: import __hello__ prints "Hello World!". Patch written by
+  Andreas Stührk.
+
 - Issue #5723: Improve json tests to be executed with and without accelerations.
 
 - Issue #12041: Make test_wait3 more robust.
