@@ -390,6 +390,9 @@ Build
 Tests
 -----
 
+- Issue #11614: import __hello__ prints "Hello World!". Patch written by
+  Andreas Stührk.
+
 - Issue #5723: Improve json tests to be executed with and without accelerations.
 
 - Issue #11910: Fix test_heapq to skip the C tests when _heapq is missing.
