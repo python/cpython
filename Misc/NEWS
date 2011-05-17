@@ -999,6 +999,9 @@ Library
   and a non-zero offset, and an attempt to read past the end of file is made
   (IndexError is raised instead).  Patch by Ross Lagerwall.
 
+- Issue #10154, #10090: change the normalization of UTF-8 to "UTF-8" instead
+  of "UTF8" in the locale module as the latter is not supported MacOSX and OpenBSD.
+
 - Issue #10907: Warn OS X 10.6 IDLE users to use ActiveState Tcl/Tk 8.5, rather
   than the currently problematic Apple-supplied one, when running with the
   64-/32-bit installer variant.
