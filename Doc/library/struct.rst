@@ -314,7 +314,7 @@ the result in a named tuple::
 
     >>> from collections import namedtuple
     >>> Student = namedtuple('Student', 'name serialnum school gradelevel')
-    >>> Student._make(unpack('<10sHHb', s))
+    >>> Student._make(unpack('<10sHHb', record))
     Student(name='raymond   ', serialnum=4658, school=264, gradelevel=8)
 
 The ordering of format characters may have an impact on size since the padding
