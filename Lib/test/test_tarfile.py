@@ -872,6 +872,66 @@ class WriteTest(WriteTestBase):
             os.unlink(temparchive)
             shutil.rmtree(tempdir)
 
+    @unittest.skipUnless(hasattr(os, 'symlink'), "needs os.symlink")
+    def test_extractall_broken_symlinks(self):
+        # Test if extractall works properly when tarfile contains broken
+        # symlinks
+        tempdir = os.path.join(TEMPDIR, "testsymlinks")
+        temparchive = os.path.join(TEMPDIR, "testsymlinks.tar")
+        os.mkdir(tempdir)
+        try:
+            source_file = os.path.join(tempdir,'source')
+            target_file = os.path.join(tempdir,'symlink')
+            with open(source_file,'w') as f:
+                f.write('something\n')
+            os.symlink(source_file, target_file)
+            tar = tarfile.open(temparchive,'w')
+            tar.add(target_file, arcname=os.path.basename(target_file))
+            tar.close()
+            # remove the real file
+            os.unlink(source_file)
+            # Let's extract it to the location which contains the symlink
+            tar = tarfile.open(temparchive,'r')
+            # this should not raise OSError: [Errno 17] File exists
+            try:
+                tar.extractall(path=tempdir)
+            except OSError:
+                self.fail("extractall failed with broken symlinked files")
+            finally:
+                tar.close()
+        finally:
+            os.unlink(temparchive)
+            shutil.rmtree(tempdir)
+
+    @unittest.skipUnless(hasattr(os, 'link'), "needs os.link")
+    def test_extractall_hardlinks(self):
+        # Test if extractall works properly when tarfile contains symlinks
+        tempdir = os.path.join(TEMPDIR, "testsymlinks")
+        temparchive = os.path.join(TEMPDIR, "testsymlinks.tar")
+        os.mkdir(tempdir)
+        try:
+            source_file = os.path.join(tempdir,'source')
+            target_file = os.path.join(tempdir,'symlink')
+            with open(source_file,'w') as f:
+                f.write('something\n')
+            os.link(source_file, target_file)
+            tar = tarfile.open(temparchive,'w')
+            tar.add(source_file, arcname=os.path.basename(source_file))
+            tar.add(target_file, arcname=os.path.basename(target_file))
+            tar.close()
+            # Let's extract it to the location which contains the symlink
+            tar = tarfile.open(temparchive,'r')
+            # this should not raise OSError: [Errno 17] File exists
+            try:
+                tar.extractall(path=tempdir)
+            except OSError:
+                self.fail("extractall failed with linked files")
+            finally:
+                tar.close()
+        finally:
+            os.unlink(temparchive)
+            shutil.rmtree(tempdir)
+
 class StreamWriteTest(WriteTestBase):
 
     mode = "w|"
