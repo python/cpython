@@ -382,6 +382,10 @@ Library
 Extension Modules
 -----------------
 
+- Stop using the old interface for providing methods and attributes in the _sre
+  module. Among other things, this gives these classes ``__class__``
+  attributes. (See #12099)
+
 - Issue #10169: Fix argument parsing in socket.sendto() to avoid error masking.
 
 - Issue #12051: Fix segfault in json.dumps() while encoding highly-nested
