@@ -455,10 +455,9 @@ and of course it would print::
    shopkeeper : Michael Palin
    sketch : Cheese Shop Sketch
 
-Note that the :meth:`sort` method of the list of keyword argument names is
-called before printing the contents of the ``keywords`` dictionary; if this is
-not done, the order in which the arguments are printed is undefined.
-
+Note that the list of keyword argument names is created by sorting the result
+of the keywords dictionary's ``keys()`` method before printing its contents;
+if this is not done, the order in which the arguments are printed is undefined.
 
 .. _tut-arbitraryargs:
 
