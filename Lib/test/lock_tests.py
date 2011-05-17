@@ -474,7 +474,7 @@ class ConditionTests(BaseTestCase):
                 self.assertEqual(state, 4)
         b = Bunch(f, 1)
         b.wait_for_started()
-        for i in range(5):
+        for i in range(4):
             time.sleep(0.01)
             with cond:
                 state += 1
