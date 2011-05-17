@@ -643,7 +643,7 @@ locale_encoding_alias = {
     'tactis':                       'TACTIS',
     'euc_jp':                       'eucJP',
     'euc_kr':                       'eucKR',
-    'utf_8':                        'UTF8',
+    'utf_8':                        'UTF-8',
     'koi8_r':                       'KOI8-R',
     'koi8_u':                       'KOI8-U',
     # XXX This list is still incomplete. If you know more
