@@ -698,6 +698,9 @@ Library
   and a non-zero offset, and an attempt to read past the end of file is made
   (IndexError is raised instead).  Patch by Ross Lagerwall.
 
+- Issue #10154, #10090: change the normalization of UTF-8 to "UTF-8" instead
+  of "UTF8" in the locale module as the latter is not supported MacOSX and OpenBSD.
+
 - Issue #10684: shutil.move used to delete a folder on case insensitive
   filesystems when the source and destination name where the same except
   for the case.
