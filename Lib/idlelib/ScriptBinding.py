@@ -27,6 +27,7 @@ from idlelib.EditorWindow import EditorWindow
 from idlelib import PyShell, IOBinding
 
 from idlelib.configHandler import idleConf
+from idlelib import macosxSupport
 
 indent_message = """Error: Inconsistent indentation detected!
 
@@ -51,6 +52,9 @@ class ScriptBinding:
         # XXX This should be done differently
         self.flist = self.editwin.flist
         self.root = self.editwin.root
+
+        if macosxSupport.runningAsOSXApp():
+            self.editwin.text_frame.bind('<<run-module-event-2>>', self._run_module_event)
 
     def check_module_event(self, event):
         filename = self.getfilename()
@@ -116,14 +120,27 @@ class ScriptBinding:
             shell.set_warning_stream(saved_stream)
 
     def run_module_event(self, event):
+        if macosxSupport.runningAsOSXApp():
+            # Tk-Cocoa in MacOSX is broken until at least
+            # Tk 8.5.9, and without this rather
+            # crude workaround IDLE would hang when a user
+            # tries to run a module using the keyboard shortcut
+            # (the menu item works fine).
+            self.editwin.text_frame.after(200,
+                lambda: self.editwin.text_frame.event_generate('<<run-module-event-2>>'))
+            return 'break'
+        else:
+            return self._run_module_event(event)
+
+    def _run_module_event(self, event):
         """Run the module after setting up the environment.
 
         First check the syntax.  If OK, make sure the shell is active and
         then transfer the arguments, set the run environment's working
         directory to the directory of the module being executed and also
         add that directory to its sys.path if not already included.
-
         """
+
         filename = self.getfilename()
         if not filename:
             return 'break'

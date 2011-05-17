@@ -153,6 +153,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11088: don't crash when using F5 to run a script in IDLE on MacOSX
+  with Tk 8.5.
+
 - Issue #9516: Issue #9516: avoid errors in sysconfig when MACOSX_DEPLOYMENT_TARGET
   is set in shell.
 
