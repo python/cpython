@@ -26,6 +26,7 @@ import tkMessageBox
 from idlelib import PyShell
 
 from idlelib.configHandler import idleConf
+from idlelib import macosxSupport
 
 IDENTCHARS = string.ascii_letters + string.digits + "_"
 
@@ -52,6 +53,9 @@ class ScriptBinding:
         # XXX This should be done differently
         self.flist = self.editwin.flist
         self.root = self.editwin.root
+
+        if macosxSupport.runningAsOSXApp():
+            self.editwin.text_frame.bind('<<run-module-event-2>>', self._run_module_event)
 
     def check_module_event(self, event):
         filename = self.getfilename()
@@ -165,6 +169,19 @@ class ScriptBinding:
         #         Need to change streams in PyShell.ModifiedInterpreter.
         interp.runcode(code)
         return 'break'
+
+    if macosxSupport.runningAsOSXApp():
+        # Tk-Cocoa in MacOSX is broken until at least
+        # Tk 8.5.9, and without this rather
+        # crude workaround IDLE would hang when a user
+        # tries to run a module using the keyboard shortcut
+        # (the menu item works fine).
+        _run_module_event = run_module_event
+
+        def run_module_event(self, event):
+            self.editwin.text_frame.after(200,
+                lambda: self.editwin.text_frame.event_generate('<<run-module-event-2>>'))
+            return 'break'
 
     def getfilename(self):
         """Get source filename.  If not saved, offer to save (or create) file
