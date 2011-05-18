@@ -3,7 +3,8 @@
 import unittest
 from test import support
 import smtplib
-import ssl
+
+ssl = support.import_module("ssl")
 
 support.requires("network")
 
