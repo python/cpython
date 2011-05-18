@@ -1309,88 +1309,89 @@ class ProgramPriorityTests(unittest.TestCase):
                     raise
 
 
-class SendfileTestServer(asyncore.dispatcher, threading.Thread):
+if threading is not None:
+    class SendfileTestServer(asyncore.dispatcher, threading.Thread):
 
-    class Handler(asynchat.async_chat):
+        class Handler(asynchat.async_chat):
 
-        def __init__(self, conn):
-            asynchat.async_chat.__init__(self, conn)
-            self.in_buffer = []
-            self.closed = False
-            self.push(b"220 ready\r\n")
+            def __init__(self, conn):
+                asynchat.async_chat.__init__(self, conn)
+                self.in_buffer = []
+                self.closed = False
+                self.push(b"220 ready\r\n")
 
-        def handle_read(self):
-            data = self.recv(4096)
-            self.in_buffer.append(data)
+            def handle_read(self):
+                data = self.recv(4096)
+                self.in_buffer.append(data)
 
-        def get_data(self):
-            return b''.join(self.in_buffer)
+            def get_data(self):
+                return b''.join(self.in_buffer)
 
-        def handle_close(self):
+            def handle_close(self):
+                self.close()
+                self.closed = True
+
+            def handle_error(self):
+                raise
+
+        def __init__(self, address):
+            threading.Thread.__init__(self)
+            asyncore.dispatcher.__init__(self)
+            self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.bind(address)
+            self.listen(5)
+            self.host, self.port = self.socket.getsockname()[:2]
+            self.handler_instance = None
+            self._active = False
+            self._active_lock = threading.Lock()
+
+        # --- public API
+
+        @property
+        def running(self):
+            return self._active
+
+        def start(self):
+            assert not self.running
+            self.__flag = threading.Event()
+            threading.Thread.start(self)
+            self.__flag.wait()
+
+        def stop(self):
+            assert self.running
+            self._active = False
+            self.join()
+
+        def wait(self):
+            # wait for handler connection to be closed, then stop the server
+            while not getattr(self.handler_instance, "closed", False):
+                time.sleep(0.001)
+            self.stop()
+
+        # --- internals
+
+        def run(self):
+            self._active = True
+            self.__flag.set()
+            while self._active and asyncore.socket_map:
+                self._active_lock.acquire()
+                asyncore.loop(timeout=0.001, count=1)
+                self._active_lock.release()
+            asyncore.close_all()
+
+        def handle_accept(self):
+            conn, addr = self.accept()
+            self.handler_instance = self.Handler(conn)
+
+        def handle_connect(self):
             self.close()
-            self.closed = True
+        handle_read = handle_connect
+
+        def writable(self):
+            return 0
 
         def handle_error(self):
             raise
-
-    def __init__(self, address):
-        threading.Thread.__init__(self)
-        asyncore.dispatcher.__init__(self)
-        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.bind(address)
-        self.listen(5)
-        self.host, self.port = self.socket.getsockname()[:2]
-        self.handler_instance = None
-        self._active = False
-        self._active_lock = threading.Lock()
-
-    # --- public API
-
-    @property
-    def running(self):
-        return self._active
-
-    def start(self):
-        assert not self.running
-        self.__flag = threading.Event()
-        threading.Thread.start(self)
-        self.__flag.wait()
-
-    def stop(self):
-        assert self.running
-        self._active = False
-        self.join()
-
-    def wait(self):
-        # wait for handler connection to be closed, then stop the server
-        while not getattr(self.handler_instance, "closed", False):
-            time.sleep(0.001)
-        self.stop()
-
-    # --- internals
-
-    def run(self):
-        self._active = True
-        self.__flag.set()
-        while self._active and asyncore.socket_map:
-            self._active_lock.acquire()
-            asyncore.loop(timeout=0.001, count=1)
-            self._active_lock.release()
-        asyncore.close_all()
-
-    def handle_accept(self):
-        conn, addr = self.accept()
-        self.handler_instance = self.Handler(conn)
-
-    def handle_connect(self):
-        self.close()
-    handle_read = handle_connect
-
-    def writable(self):
-        return 0
-
-    def handle_error(self):
-        raise
 
 
 @unittest.skipUnless(threading is not None, "test needs threading module")
