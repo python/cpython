@@ -635,7 +635,7 @@ class SMTP:
         # We could not login sucessfully. Return result of last attempt.
         raise SMTPAuthenticationError(code, resp)
 
-    def starttls(self, keyfile=None, certfile=None):
+    def starttls(self, keyfile=None, certfile=None, context=None):
         """Puts the connection to the SMTP server into TLS mode.
 
         If there has been no previous EHLO or HELO command this session, this
@@ -659,7 +659,16 @@ class SMTP:
         if resp == 220:
             if not _have_ssl:
                 raise RuntimeError("No SSL support included in this Python")
-            self.sock = ssl.wrap_socket(self.sock, keyfile, certfile)
+            if context is not None and keyfile is not None:
+                raise ValueError("context and keyfile arguments are mutually "
+                                 "exclusive")
+            if context is not None and certfile is not None:
+                raise ValueError("context and certfile arguments are mutually "
+                                 "exclusive")
+            if context is not None:
+                self.sock = context.wrap_socket(self.sock)
+            else:
+                self.sock = ssl.wrap_socket(self.sock, keyfile, certfile)
             self.file = SSLFakeFile(self.sock)
             # RFC 3207:
             # The client MUST discard any knowledge obtained from
@@ -815,23 +824,35 @@ if _have_ssl:
         support). If host is not specified, '' (the local host) is used. If port is
         omitted, the standard SMTP-over-SSL port (465) is used. keyfile and certfile
         are also optional - they can contain a PEM formatted private key and
-        certificate chain file for the SSL connection.
+        certificate chain file for the SSL connection. context also optional, can contain
+        a SSLContext, and is an alternative to keyfile and certfile; If it is specified both
+        keyfile and certfile must be None.
         """
 
         default_port = SMTP_SSL_PORT
 
         def __init__(self, host='', port=0, local_hostname=None,
                      keyfile=None, certfile=None,
-                     timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
+                     timeout=socket._GLOBAL_DEFAULT_TIMEOUT, context=None):
+            if context is not None and keyfile is not None:
+                raise ValueError("context and keyfile arguments are mutually "
+                                 "exclusive")
+            if context is not None and certfile is not None:
+                raise ValueError("context and certfile arguments are mutually "
+                                 "exclusive")
             self.keyfile = keyfile
             self.certfile = certfile
+            self.context = context
             SMTP.__init__(self, host, port, local_hostname, timeout)
 
         def _get_socket(self, host, port, timeout):
             if self.debuglevel > 0:
                 print('connect:', (host, port), file=stderr)
             new_socket = socket.create_connection((host, port), timeout)
-            new_socket = ssl.wrap_socket(new_socket, self.keyfile, self.certfile)
+            if self.context is not None:
+                new_socket = self.context.wrap_socket(new_socket)
+            else:
+                new_socket = ssl.wrap_socket(new_socket, self.keyfile, self.certfile)
             self.file = SSLFakeFile(new_socket)
             return new_socket
 
