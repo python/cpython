@@ -49,7 +49,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
       Support for the :keyword:`with` statement was added.
 
 
-.. class:: SMTP_SSL(host='', port=0, local_hostname=None, keyfile=None, certfile=None[, timeout])
+.. class:: SMTP_SSL(host='', port=0, local_hostname=None, keyfile=None, certfile=None[, timeout], context=None)
 
    A :class:`SMTP_SSL` instance behaves exactly the same as instances of
    :class:`SMTP`. :class:`SMTP_SSL` should be used for situations where SSL is
@@ -57,10 +57,15 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    not appropriate. If *host* is not specified, the local host is used. If
    *port* is zero, the standard SMTP-over-SSL port (465) is used. *keyfile*
    and *certfile* are also optional, and can contain a PEM formatted private key
-   and certificate chain file for the SSL connection. The optional *timeout*
+   and certificate chain file for the SSL connection. *context* also optional, can contain
+   a SSLContext, and is an alternative to keyfile and certfile; If it is specified both
+   keyfile and certfile must be None.  The optional *timeout*
    parameter specifies a timeout in seconds for blocking operations like the
    connection attempt (if not specified, the global default timeout setting
    will be used).
+
+   .. versionchanged:: 3.3
+      *context* was added.
 
 
 .. class:: LMTP(host='', port=LMTP_PORT, local_hostname=None)
@@ -256,7 +261,7 @@ An :class:`SMTP` instance has the following methods:
       No suitable authentication method was found.
 
 
-.. method:: SMTP.starttls(keyfile=None, certfile=None)
+.. method:: SMTP.starttls(keyfile=None, certfile=None, context=None)
 
    Put the SMTP connection in TLS (Transport Layer Security) mode.  All SMTP
    commands that follow will be encrypted.  You should then call :meth:`ehlo`
@@ -264,6 +269,9 @@ An :class:`SMTP` instance has the following methods:
 
    If *keyfile* and *certfile* are provided, these are passed to the :mod:`socket`
    module's :func:`ssl` function.
+
+   Optional *context* parameter is a :class:`ssl.SSLContext` object; This is an alternative to
+   using a keyfile and a certfile and if specified both *keyfile* and *certfile* should be None.
 
    If there has been no previous ``EHLO`` or ``HELO`` command this session,
    this method tries ESMTP ``EHLO`` first.
@@ -276,6 +284,9 @@ An :class:`SMTP` instance has the following methods:
 
    :exc:`RuntimeError`
      SSL/TLS support is not available to your Python interpreter.
+
+   .. versionchanged:: 3.3
+      *context* was added.
 
 
 .. method:: SMTP.sendmail(from_addr, to_addrs, msg, mail_options=[], rcpt_options=[])
