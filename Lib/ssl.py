@@ -442,7 +442,7 @@ class SSLSocket(socket):
         finally:
             self.settimeout(timeout)
 
-    def _real_connect(self, addr, return_errno):
+    def _real_connect(self, addr, connect_ex):
         if self.server_side:
             raise ValueError("can't connect in server-side mode")
         # Here we assume that the socket is client-side, and not
@@ -451,17 +451,19 @@ class SSLSocket(socket):
             raise ValueError("attempt to connect already-connected SSLSocket!")
         self._sslobj = self.context._wrap_socket(self, False, self.server_hostname)
         try:
-            socket.connect(self, addr)
-            if self.do_handshake_on_connect:
-                self.do_handshake()
-        except socket_error as e:
-            if return_errno:
-                return e.errno
+            if connect_ex:
+                rc = socket.connect_ex(self, addr)
             else:
-                self._sslobj = None
-                raise e
-        self._connected = True
-        return 0
+                rc = None
+                socket.connect(self, addr)
+            if not rc:
+                if self.do_handshake_on_connect:
+                    self.do_handshake()
+                self._connected = True
+            return rc
+        except socket_error:
+            self._sslobj = None
+            raise
 
     def connect(self, addr):
         """Connects to remote ADDR, and then wraps the connection in
