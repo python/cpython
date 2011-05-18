@@ -18,8 +18,8 @@ class SmtpTest(unittest.TestCase):
         with support.transient_internet(self.testServer):
             server = smtplib.SMTP(self.testServer, self.remotePort)
             server.starttls(context=self.context)
-        server.ehlo()
-        server.quit()
+            server.ehlo()
+            server.quit()
 
 
 class SmtpSSLTest(unittest.TestCase):
@@ -31,22 +31,22 @@ class SmtpSSLTest(unittest.TestCase):
         support.get_attribute(smtplib, 'SMTP_SSL')
         with support.transient_internet(self.testServer):
             server = smtplib.SMTP_SSL(self.testServer, self.remotePort)
-        server.ehlo()
-        server.quit()
+            server.ehlo()
+            server.quit()
 
     def test_connect_default_port(self):
         support.get_attribute(smtplib, 'SMTP_SSL')
         with support.transient_internet(self.testServer):
             server = smtplib.SMTP_SSL(self.testServer)
-        server.ehlo()
-        server.quit()
+            server.ehlo()
+            server.quit()
 
     def test_connect_using_sslcontext(self):
         support.get_attribute(smtplib, 'SMTP_SSL')
         with support.transient_internet(self.testServer):
             server = smtplib.SMTP_SSL(self.testServer, self.remotePort, context=self.context)
-        server.ehlo()
-        server.quit()
+            server.ehlo()
+            server.quit()
 
 
 def test_main():
