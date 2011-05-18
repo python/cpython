@@ -317,7 +317,7 @@ class Random(_random.Random):
 
         n = len(population)
         if not 0 <= k <= n:
-            raise ValueError, "sample larger than population"
+            raise ValueError("sample larger than population")
         random = self.random
         _int = int
         result = [None] * k
