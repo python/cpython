@@ -72,6 +72,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10801: In zipfile, support different encodings for the header and
+  the filenames.
+
 - Issue #10154, #10090: change the normalization of UTF-8 to "UTF-8" instead
   of "UTF8" in the locale module as the latter is not supported MacOSX and OpenBSD.
 
