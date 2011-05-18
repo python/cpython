@@ -153,6 +153,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12065: connect_ex() on an SSL socket now returns the original errno
+  when the socket's timeout expires (it used to return None).
+
 - Issue #8809: The SMTP_SSL constructor and SMTP.starttls() now support
   passing a ``context`` argument pointing to an ssl.SSLContext instance.
   Patch by Kasun Herath.
