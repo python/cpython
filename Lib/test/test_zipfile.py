@@ -3,7 +3,13 @@ try:
     import zlib
 except ImportError:
     zlib = None
-import zipfile, os, unittest, sys, shutil, struct, io
+import io
+import os
+import shutil
+import struct
+import sys
+import unittest
+import zipfile
 
 from tempfile import TemporaryFile
 from random import randint, random
@@ -14,6 +20,7 @@ from test.support import TESTFN, run_unittest, findfile
 TESTFN2 = TESTFN + "2"
 TESTFNDIR = TESTFN + "d"
 FIXEDTEST_SIZE = 1000
+DATAFILES_DIR = 'zipfile_datafiles'
 
 SMALL_TEST_DATA = [('_ziptest1', '1q2w3e4r5t'),
                    ('ziptest2dir/_ziptest2', 'qawsedrftg'),
@@ -387,9 +394,25 @@ class TestsWithSourceFile(unittest.TestCase):
             orig_zip.writestr(zinfo, data)
         orig_zip.close()
 
+    def test_unicode_filenames(self):
+        if __name__ == '__main__':
+            myfile = sys.argv[0]
+        else:
+            myfile = __file__
+
+        mydir = os.path.dirname(myfile) or os.curdir
+        fname = os.path.join(mydir, 'zip_cp437_header.zip')
+
+        print(fname)
+        zipfp = zipfile.ZipFile(fname)
+        try:
+            zipfp.extractall()
+        finally:
+            zipfp.close()
+
     def tearDown(self):
-        os.remove(TESTFN)
-        os.remove(TESTFN2)
+        support.unlink(TESTFN)
+        support.unlink(TESTFN2)
 
 class TestZip64InSmallFiles(unittest.TestCase):
     # These tests test the ZIP64 functionality without using large files,
