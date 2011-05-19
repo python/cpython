@@ -7,7 +7,7 @@ from packaging.pypi.dist import (ReleaseInfo, ReleasesList, DistInfo,
 from packaging.pypi.errors import HashDoesNotMatch, UnsupportedHashName
 
 from packaging.tests import unittest
-from packaging.tests.support import TempdirManager
+from packaging.tests.support import TempdirManager, requires_zlib
 from packaging.tests.pypi_server import use_pypi_server
 
 
@@ -158,6 +158,7 @@ class TestDistInfo(TempdirManager, unittest.TestCase):
                           hashname="invalid_hashname",
                           hashval="value")
 
+    @requires_zlib
     @use_pypi_server('downloads_with_md5')
     def test_unpack(self, server):
         url = server.full_address + self.srcpath

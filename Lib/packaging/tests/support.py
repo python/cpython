@@ -37,10 +37,11 @@ import tempfile
 from packaging import logger
 from packaging.dist import Distribution
 from packaging.tests import unittest
+from test.support import requires_zlib
 
 __all__ = ['LoggingCatcher', 'TempdirManager', 'EnvironRestorer',
            'DummyCommand', 'unittest', 'create_distribution',
-           'skip_unless_symlink']
+           'skip_unless_symlink', 'requires_zlib']
 
 
 class _TestHandler(logging.handlers.BufferingHandler):
