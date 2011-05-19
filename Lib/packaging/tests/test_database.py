@@ -133,7 +133,7 @@ class TestDistribution(CommonDistributionTests, unittest.TestCase):
     def tearDown(self):
         for distinfo_dir in self.dirs:
             record_file = os.path.join(distinfo_dir, 'RECORD')
-            open(record_file, 'w').close()
+            open(record_file, 'wb').close()
         super(TestDistribution, self).tearDown()
 
     def test_instantiation(self):
