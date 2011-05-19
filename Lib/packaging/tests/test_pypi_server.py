@@ -5,10 +5,18 @@ import urllib.request
 import urllib.parse
 import urllib.error
 
-from packaging.tests.pypi_server import PyPIServer, PYPI_DEFAULT_STATIC_PATH
+try:
+    import threading
+    from packaging.tests.pypi_server import PyPIServer, PYPI_DEFAULT_STATIC_PATH
+except ImportError:
+    threading = None
+    PyPIServer = None
+    PYPI_DEFAULT_STATIC_PATH = None
+
 from packaging.tests import unittest
 
 
+@unittest.skipIf(threading is None, "Needs threading")
 class PyPIServerTest(unittest.TestCase):
 
     def test_records_requests(self):

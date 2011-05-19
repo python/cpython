@@ -7,7 +7,12 @@ from packaging.pypi.xmlrpc import Client
 from packaging.metadata import Metadata
 
 from packaging.tests.support import LoggingCatcher, TempdirManager, unittest
-from packaging.tests.pypi_server import use_xmlrpc_server
+try:
+    import threading
+    from packaging.tests.pypi_server import use_xmlrpc_server
+except ImportError:
+    threading = None
+    use_xmlrpc_server = None
 
 
 class InstalledDist:
@@ -96,6 +101,7 @@ class TestInstall(LoggingCatcher, TempdirManager, unittest.TestCase):
         conflict = [(o.name, str(o.version)) for o in output['conflict']]
         return installed, remove, conflict
 
+    @unittest.skipIf(threading is None, 'needs threading')
     @use_xmlrpc_server()
     def test_existing_deps(self, server):
         # Test that the installer get the dependencies from the metadatas
@@ -132,6 +138,7 @@ class TestInstall(LoggingCatcher, TempdirManager, unittest.TestCase):
         self.assertIn(('towel-stuff', '0.1'), readable_output)
         self.assertIn(('choxie', '2.0.0.9'), readable_output)
 
+    @unittest.skipIf(threading is None, 'needs threading')
     @use_xmlrpc_server()
     def test_upgrade_existing_deps(self, server):
         client = self._get_client(server)
@@ -164,6 +171,7 @@ class TestInstall(LoggingCatcher, TempdirManager, unittest.TestCase):
         self.assertIn(('bacon', '0.1'), remove)
         self.assertEqual(0, len(output['conflict']))
 
+    @unittest.skipIf(threading is None, 'needs threading')
     @use_xmlrpc_server()
     def test_conflicts(self, server):
         # Tests that conflicts are detected
@@ -202,6 +210,7 @@ class TestInstall(LoggingCatcher, TempdirManager, unittest.TestCase):
         self.assertIn(('bacon', '0.1'), remove)
         self.assertIn(('chicken', '1.1'), conflict)
 
+    @unittest.skipIf(threading is None, 'needs threading')
     @use_xmlrpc_server()
     def test_installation_unexisting_project(self, server):
         # Test that the isntalled raises an exception if the project does not
