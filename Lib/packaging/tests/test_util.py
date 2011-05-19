@@ -720,17 +720,15 @@ class EggInfoToDistInfoTestCase(support.TempdirManager,
             dir_paths.append(path)
         for f in files:
             path = os.path.join(tempdir, f)
-            _f = open(path, 'w')
-            _f.write(f)
-            _f.close()
+            with open(path, 'w') as _f:
+                _f.write(f)
             file_paths.append(path)
 
-        record_file = open(record_file_path, 'w')
-        for fpath in file_paths:
-            record_file.write(fpath + '\n')
-        for dpath in dir_paths:
-            record_file.write(dpath + '\n')
-        record_file.close()
+        with open(record_file_path, 'w') as record_file:
+            for fpath in file_paths:
+                record_file.write(fpath + '\n')
+            for dpath in dir_paths:
+                record_file.write(dpath + '\n')
 
         return (tempdir, record_file_path)
 

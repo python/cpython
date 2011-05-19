@@ -54,11 +54,9 @@ class PyPIServerTest(unittest.TestCase):
             url = server.full_address + url_path
             request = urllib.request.Request(url)
             response = urllib.request.urlopen(request)
-            file = open(PYPI_DEFAULT_STATIC_PATH + "/test_pypi_server" +
-               url_path)
-            answer = response.read().decode() == file.read()
-            file.close()
-            return answer
+            with open(PYPI_DEFAULT_STATIC_PATH + "/test_pypi_server"
+                      + url_path) as file:
+                return response.read().decode() == file.read()
 
         server = PyPIServer(static_uri_paths=["simple", "external"],
             static_filesystem_paths=["test_pypi_server"])

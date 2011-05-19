@@ -18,14 +18,13 @@ from packaging.command.cmd import Command
 def zip_dir(directory):
     """Compresses recursively contents of directory into a BytesIO object"""
     destination = BytesIO()
-    zip_file = zipfile.ZipFile(destination, "w")
-    for root, dirs, files in os.walk(directory):
-        for name in files:
-            full = os.path.join(root, name)
-            relative = root[len(directory):].lstrip(os.path.sep)
-            dest = os.path.join(relative, name)
-            zip_file.write(full, dest)
-    zip_file.close()
+    with zipfile.ZipFile(destination, "w") as zip_file:
+        for root, dirs, files in os.walk(directory):
+            for name in files:
+                full = os.path.join(root, name)
+                relative = root[len(directory):].lstrip(os.path.sep)
+                dest = os.path.join(relative, name)
+                zip_file.write(full, dest)
     return destination
 
 
