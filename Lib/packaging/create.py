@@ -437,19 +437,6 @@ class MainProgram:
             raise ValueError('Unable to load metadata from setup.py')
         return success
 
-    def inspect_file(self, path):
-        with open(path, 'r') as fp:
-            for _ in range(10):
-                line = fp.readline()
-                m = re.match(r'^#!.*python((?P<major>\d)(\.\d+)?)?$', line)
-                if m:
-                    if m.group('major') == '3':
-                        self.classifiers.add(
-                            'Programming Language :: Python :: 3')
-                    else:
-                        self.classifiers.add(
-                        'Programming Language :: Python :: 2')
-
     def inspect(self):
         """Inspect the current working diretory for a name and version.
 
