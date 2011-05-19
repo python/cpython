@@ -72,6 +72,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12124: zipimport doesn't keep a reference to zlib.decompress() anymore
+  to be able to unload the module.
+
 - Issue #10801: In zipfile, support different encodings for the header and
   the filenames.
 

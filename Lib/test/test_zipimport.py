@@ -19,11 +19,6 @@ import io
 from traceback import extract_tb, extract_stack, print_tb
 raise_src = 'def do_raise(): raise TypeError\n'
 
-# so we only run testAFakeZlib once if this test is run repeatedly
-# which happens when we look for ref leaks
-test_imported = False
-
-
 def make_pyc(co, mtime):
     data = marshal.dumps(co)
     if type(mtime) is type(0.0):
@@ -453,19 +448,7 @@ class BadFileZipImportTestCase(unittest.TestCase):
             zipimport._zip_directory_cache.clear()
 
 
-def cleanup():
-    # this is necessary if test is run repeated (like when finding leaks)
-    global test_imported
-    if test_imported:
-        zipimport._zip_directory_cache.clear()
-        if hasattr(UncompressedZipImportTestCase, 'testAFakeZlib'):
-            delattr(UncompressedZipImportTestCase, 'testAFakeZlib')
-        if hasattr(CompressedZipImportTestCase, 'testAFakeZlib'):
-            delattr(CompressedZipImportTestCase, 'testAFakeZlib')
-    test_imported = True
-
 def test_main():
-    cleanup()
     try:
         support.run_unittest(
               UncompressedZipImportTestCase,
