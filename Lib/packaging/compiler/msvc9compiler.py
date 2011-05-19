@@ -358,8 +358,8 @@ class MSVCCompiler(CCompiler) :
             # take care to only use strings in the environment.
             self.__paths = [part.encode('mbcs') for part in
                             vc_env['path'].split(os.pathsep)]
-            os.environ['lib'] = vc_env['lib'].encode('mbcs')
-            os.environ['include'] = vc_env['include'].encode('mbcs')
+            os.environ['lib'] = vc_env['lib']
+            os.environ['include'] = vc_env['include']
 
             if len(self.__paths) == 0:
                 raise PackagingPlatformError("Python was built with %s, "
