@@ -1,0 +1,6 @@
+# this should be ignored
+
+strawberry >=0.5
+
+[section ignored]
+foo ==0.5

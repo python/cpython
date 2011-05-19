@@ -16,7 +16,7 @@ from test.support import (run_unittest, TESTFN, unlink, get_attribute,
 
 import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
-                       get_path, get_path_names, _INSTALL_SCHEMES,
+                       get_path, get_path_names, _SCHEMES,
                        _get_default_scheme, _expand_vars,
                        get_scheme_names, get_config_var, _main)
 
@@ -44,7 +44,13 @@ class TestSysConfig(unittest.TestCase):
         self.isabs = os.path.isabs
         self.splitdrive = os.path.splitdrive
         self._config_vars = copy(sysconfig._CONFIG_VARS)
-        self.old_environ = deepcopy(os.environ)
+        self._added_envvars = []
+        self._changed_envvars = []
+        for var in ('MACOSX_DEPLOYMENT_TARGET', 'Path'):
+            if var in os.environ:
+                self._changed_envvars.append((var, os.environ[var]))
+            else:
+                self._added_envvars.append(var)
 
     def tearDown(self):
         """Restore sys.path"""
@@ -64,13 +70,10 @@ class TestSysConfig(unittest.TestCase):
         os.path.isabs = self.isabs
         os.path.splitdrive = self.splitdrive
         sysconfig._CONFIG_VARS = copy(self._config_vars)
-        for key, value in self.old_environ.items():
-            if os.environ.get(key) != value:
-                os.environ[key] = value
-
-        for key in list(os.environ.keys()):
-            if key not in self.old_environ:
-                del os.environ[key]
+        for var, value in self._changed_envvars:
+            os.environ[var] = value
+        for var in self._added_envvars:
+            os.environ.pop(var, None)
 
         super(TestSysConfig, self).tearDown()
 
@@ -88,7 +91,7 @@ class TestSysConfig(unittest.TestCase):
             shutil.rmtree(path)
 
     def test_get_path_names(self):
-        self.assertEqual(get_path_names(), sysconfig._SCHEME_KEYS)
+        self.assertEqual(get_path_names(), _SCHEMES.options('posix_prefix'))
 
     def test_get_paths(self):
         scheme = get_paths()
@@ -102,8 +105,8 @@ class TestSysConfig(unittest.TestCase):
 
     def test_get_path(self):
         # xxx make real tests here
-        for scheme in _INSTALL_SCHEMES:
-            for name in _INSTALL_SCHEMES[scheme]:
+        for scheme in _SCHEMES:
+            for name in _SCHEMES[scheme]:
                 res = get_path(name, scheme)
 
     def test_get_config_vars(self):
