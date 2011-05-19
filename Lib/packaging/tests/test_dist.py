@@ -78,7 +78,7 @@ class DistributionTestCase(support.TempdirManager,
         # let's make sure the file can be written
         # with Unicode fields. they are encoded with
         # PKG_INFO_ENCODING
-        with open(my_file, 'w') as fp:
+        with open(my_file, 'w', encoding='utf-8') as fp:
             dist.metadata.write_file(fp)
 
         # regular ascii is of course always usable

@@ -17,7 +17,7 @@ class MetadataTestCase(LoggingCatcher,
 
     def test_instantiation(self):
         PKG_INFO = os.path.join(os.path.dirname(__file__), 'PKG-INFO')
-        with open(PKG_INFO, 'r') as f:
+        with open(PKG_INFO, 'r', encoding='utf-8') as f:
             contents = f.read()
         fp = StringIO(contents)
 
@@ -57,7 +57,7 @@ class MetadataTestCase(LoggingCatcher,
     def test_metadata_markers(self):
         # see if we can be platform-aware
         PKG_INFO = os.path.join(os.path.dirname(__file__), 'PKG-INFO')
-        with open(PKG_INFO, 'r') as f:
+        with open(PKG_INFO, 'r', encoding='utf-8') as f:
             content = f.read() % sys.platform
         metadata = Metadata(platform_dependent=True)
 
@@ -77,7 +77,7 @@ class MetadataTestCase(LoggingCatcher,
 
     def test_description(self):
         PKG_INFO = os.path.join(os.path.dirname(__file__), 'PKG-INFO')
-        with open(PKG_INFO, 'r') as f:
+        with open(PKG_INFO, 'r', encoding='utf-8') as f:
             content = f.read() % sys.platform
         metadata = Metadata()
         metadata.read_file(StringIO(content))
@@ -97,7 +97,7 @@ class MetadataTestCase(LoggingCatcher,
 
     def test_mapping_api(self):
         PKG_INFO = os.path.join(os.path.dirname(__file__), 'PKG-INFO')
-        with open(PKG_INFO, 'r') as f:
+        with open(PKG_INFO, 'r', encoding='utf-8') as f:
             content = f.read() % sys.platform
         metadata = Metadata(fileobj=StringIO(content))
         self.assertIn('Version', metadata.keys())
@@ -130,14 +130,14 @@ class MetadataTestCase(LoggingCatcher,
 
         PKG_INFO = os.path.join(os.path.dirname(__file__),
                                 'SETUPTOOLS-PKG-INFO')
-        with open(PKG_INFO, 'r') as f:
+        with open(PKG_INFO, 'r', encoding='utf-8') as f:
             content = f.read()
         metadata.read_file(StringIO(content))
         self.assertEqual(metadata['Metadata-Version'], '1.0')
 
         PKG_INFO = os.path.join(os.path.dirname(__file__),
                                 'SETUPTOOLS-PKG-INFO2')
-        with open(PKG_INFO, 'r') as f:
+        with open(PKG_INFO, 'r', encoding='utf-8') as f:
             content = f.read()
         metadata.read_file(StringIO(content))
         self.assertEqual(metadata['Metadata-Version'], '1.1')
