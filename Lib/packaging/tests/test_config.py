@@ -11,6 +11,7 @@ from packaging.compiler import new_compiler, _COMPILERS
 from packaging.command.sdist import sdist
 
 from packaging.tests import unittest, support
+from packaging.tests.support import requires_zlib
 
 
 SETUP_CFG = """
@@ -343,6 +344,7 @@ class ConfigTestCase(support.TempdirManager,
         cmd.get_file_list()
         self.assertRaises(PackagingFileError, cmd.make_distribution)
 
+    @requires_zlib
     def test_metadata_requires_description_files(self):
         # Create the following file structure:
         #   README
