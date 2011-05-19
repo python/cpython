@@ -138,7 +138,7 @@ class TempdirManager:
         d = tempfile.mkdtemp(dir=self._basetempdir)
         return d
 
-    def write_file(self, path, content='xxx'):
+    def write_file(self, path, content='xxx', encoding=None):
         """Write a file at the given path.
 
         path can be a string, a tuple or a list; if it's a tuple or list,
@@ -146,7 +146,7 @@ class TempdirManager:
         """
         if isinstance(path, (list, tuple)):
             path = os.path.join(*path)
-        with open(path, 'w') as f:
+        with open(path, 'w', encoding=encoding) as f:
             f.write(content)
 
     def create_dist(self, **kw):

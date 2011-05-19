@@ -91,7 +91,7 @@ class CreateTestCase(support.TempdirManager,
     def test_convert_setup_py_to_cfg(self):
         self.write_file((self.wdir, 'setup.py'),
                         dedent("""
-        # -*- coding: utf-8 -*-
+        # coding: utf-8
         from distutils.core import setup
 
         long_description = '''My super Death-scription
@@ -124,12 +124,12 @@ class CreateTestCase(support.TempdirManager,
                            },
               scripts=['my_script', 'bin/run'],
               )
-        """))
+        """), encoding='utf-8')
         sys.stdin.write('y\n')
         sys.stdin.seek(0)
         main()
 
-        with open(os.path.join(self.wdir, 'setup.cfg')) as fp:
+        with open(os.path.join(self.wdir, 'setup.cfg'), encoding='utf-8') as fp:
             lines = set(line.rstrip() for line in fp)
 
         # FIXME don't use sets
@@ -171,7 +171,7 @@ class CreateTestCase(support.TempdirManager,
     def test_convert_setup_py_to_cfg_with_description_in_readme(self):
         self.write_file((self.wdir, 'setup.py'),
                         dedent("""
-        # -*- coding: utf-8 -*-
+        # coding: utf-8
         from distutils.core import setup
         with open('README.txt') as fp:
             long_description = fp.read()
@@ -191,7 +191,7 @@ class CreateTestCase(support.TempdirManager,
                 ('share/man', ['pyxfoil.1']),
               ],
         )
-        """))
+        """), encoding='utf-8')
         self.write_file((self.wdir, 'README.txt'),
                         dedent('''
 My super Death-scription
@@ -202,7 +202,7 @@ ho, baby!
         sys.stdin.seek(0)
         # FIXME Out of memory error.
         main()
-        with open(os.path.join(self.wdir, 'setup.cfg')) as fp:
+        with open(os.path.join(self.wdir, 'setup.cfg'), encoding='utf-8') as fp:
             lines = set(line.rstrip() for line in fp)
 
         self.assertEqual(lines, set(['',

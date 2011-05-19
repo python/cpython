@@ -282,7 +282,7 @@ class Config:
 
         for filename in filenames:
             logger.debug("  reading %s", filename)
-            parser.read(filename)
+            parser.read(filename, encoding='utf-8')
 
             if os.path.split(filename)[-1] == 'setup.cfg':
                 self._read_setup_cfg(parser, filename)
