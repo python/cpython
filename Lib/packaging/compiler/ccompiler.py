@@ -728,8 +728,7 @@ class CCompiler:
         if library_dirs is None:
             library_dirs = []
         fd, fname = tempfile.mkstemp(".c", funcname, text=True)
-        f = os.fdopen(fd, "w")
-        try:
+        with os.fdopen(fd, "w") as f:
             for incl in includes:
                 f.write("""#include "%s"\n""" % incl)
             f.write("""\
@@ -737,8 +736,6 @@ main (int argc, char **argv) {
     %s();
 }
 """ % funcname)
-        finally:
-            f.close()
         try:
             objects = self.compile([fname], include_dirs=include_dirs)
         except CompileError:

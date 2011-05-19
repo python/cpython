@@ -146,11 +146,8 @@ class TempdirManager:
         """
         if isinstance(path, (list, tuple)):
             path = os.path.join(*path)
-        f = open(path, 'w')
-        try:
+        with open(path, 'w') as f:
             f.write(content)
-        finally:
-            f.close()
 
     def create_dist(self, **kw):
         """Create a stub distribution object and files.
