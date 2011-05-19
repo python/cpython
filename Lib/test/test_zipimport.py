@@ -9,12 +9,6 @@ import unittest
 from test import support
 from test.test_importhooks import ImportHooksBaseTestCase, test_src, test_co
 
-# some tests can be ran even without zlib
-try:
-    import zlib
-except ImportError:
-    zlib = None
-
 from zipfile import ZipFile, ZipInfo, ZIP_STORED, ZIP_DEFLATED
 
 import zipimport
@@ -397,7 +391,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             os.remove(filename)
 
 
-@unittest.skipUnless(zlib, "requires zlib")
+@support.requires_zlib
 class CompressedZipImportTestCase(UncompressedZipImportTestCase):
     compression = ZIP_DEFLATED
 
