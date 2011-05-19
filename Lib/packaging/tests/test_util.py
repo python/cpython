@@ -542,7 +542,7 @@ class GlobTestCase(GlobTestCaseBase):
         self.assertGlobMatch(glob, spec)
 
     def test_simple_glob_in_dir(self):
-        glob = 'babar/*.tp?'
+        glob = os.path.join('babar', '*.tp?')
         spec = {'babar/coucou.tpl': True,
                  'babar/coucou.tpj': True,
                  'babar/toto.bin': False,
@@ -550,7 +550,7 @@ class GlobTestCase(GlobTestCaseBase):
         self.assertGlobMatch(glob, spec)
 
     def test_recursive_glob_head(self):
-        glob = '**/tip/*.t?l'
+        glob = os.path.join('**', 'tip', '*.t?l')
         spec = {'babar/zaza/zuzu/tip/coucou.tpl': True,
                  'babar/z/tip/coucou.tpl': True,
                  'babar/tip/coucou.tpl': True,
@@ -563,7 +563,7 @@ class GlobTestCase(GlobTestCaseBase):
         self.assertGlobMatch(glob, spec)
 
     def test_recursive_glob_tail(self):
-        glob = 'babar/**'
+        glob = os.path.join('babar', '**')
         spec = {'babar/zaza/': True,
                 'babar/zaza/zuzu/': True,
                 'babar/zaza/zuzu/babar.xml': True,
@@ -577,7 +577,7 @@ class GlobTestCase(GlobTestCaseBase):
         self.assertGlobMatch(glob, spec)
 
     def test_recursive_glob_middle(self):
-        glob = 'babar/**/tip/*.t?l'
+        glob = os.path.join('babar', '**', 'tip', '*.t?l')
         spec = {'babar/zaza/zuzu/tip/coucou.tpl': True,
                  'babar/z/tip/coucou.tpl': True,
                  'babar/tip/coucou.tpl': True,
@@ -590,7 +590,7 @@ class GlobTestCase(GlobTestCaseBase):
         self.assertGlobMatch(glob, spec)
 
     def test_glob_set_tail(self):
-        glob = 'bin/*.{bin,sh,exe}'
+        glob = os.path.join('bin', '*.{bin,sh,exe}')
         spec = {'bin/babar.bin': True,
                  'bin/zephir.sh': True,
                  'bin/celestine.exe': True,
@@ -601,7 +601,7 @@ class GlobTestCase(GlobTestCaseBase):
         self.assertGlobMatch(glob, spec)
 
     def test_glob_set_middle(self):
-        glob = 'xml/{babar,toto}.xml'
+        glob = os.path.join('xml', '{babar,toto}.xml')
         spec = {'xml/babar.xml': True,
                  'xml/toto.xml': True,
                  'xml/babar.xslt': False,
@@ -612,7 +612,7 @@ class GlobTestCase(GlobTestCaseBase):
         self.assertGlobMatch(glob, spec)
 
     def test_glob_set_head(self):
-        glob = '{xml,xslt}/babar.*'
+        glob = os.path.join('{xml,xslt}', 'babar.*')
         spec = {'xml/babar.xml': True,
                  'xml/toto.xml': False,
                  'xslt/babar.xslt': True,
@@ -622,7 +622,9 @@ class GlobTestCase(GlobTestCaseBase):
         self.assertGlobMatch(glob, spec)
 
     def test_glob_all(self):
-        glob = '{xml/*,xslt/**}/babar.xml'
+        dirs = '{%s,%s}' % (os.path.join('xml', '*'),
+                            os.path.join('xslt', '**'))
+        glob = os.path.join(dirs, 'babar.xml')
         spec = {'xml/a/babar.xml': True,
                  'xml/b/babar.xml': True,
                  'xml/a/c/babar.xml': False,
