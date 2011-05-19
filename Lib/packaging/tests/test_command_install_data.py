@@ -11,15 +11,22 @@ class InstallDataTestCase(support.TempdirManager,
                           unittest.TestCase):
 
     def test_simple_run(self):
-        self.addCleanup(setattr, sysconfig, '_SCHEMES', sysconfig._SCHEMES)
+        scheme = _get_default_scheme()
+        old_items = sysconfig._SCHEMES.items(scheme)
+        def restore():
+            sysconfig._SCHEMES.remove_section(scheme)
+            sysconfig._SCHEMES.add_section(scheme)
+            for option, value in old_items:
+                sysconfig._SCHEMES.set(scheme, option, value)
+        self.addCleanup(restore)
 
         pkg_dir, dist = self.create_dist()
         cmd = install_data(dist)
         cmd.install_dir = inst = os.path.join(pkg_dir, 'inst')
 
-        sysconfig._SCHEMES.set(_get_default_scheme(), 'inst',
+        sysconfig._SCHEMES.set(scheme, 'inst',
                                os.path.join(pkg_dir, 'inst'))
-        sysconfig._SCHEMES.set(_get_default_scheme(), 'inst2',
+        sysconfig._SCHEMES.set(scheme, 'inst2',
                                os.path.join(pkg_dir, 'inst2'))
 
         one = os.path.join(pkg_dir, 'one')
@@ -59,7 +66,7 @@ class InstallDataTestCase(support.TempdirManager,
         three = os.path.join(cmd.install_dir, 'three')
         self.write_file(three, 'xx')
 
-        sysconfig._SCHEMES.set(_get_default_scheme(), 'inst3',
+        sysconfig._SCHEMES.set(scheme, 'inst3',
                                cmd.install_dir)
 
         cmd.data_files = {one: '{inst}/one', two: '{inst2}/two',
