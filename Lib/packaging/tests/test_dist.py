@@ -196,13 +196,16 @@ class DistributionTestCase(support.TempdirManager,
 
     def test_hooks_get_run(self):
         temp_home = self.mkdtemp()
+        module_name = os.path.split(temp_home)[-1]
+        pyname = '%s.py' % module_name
         config_file = os.path.join(temp_home, "config1.cfg")
-        hooks_module = os.path.join(temp_home, "testhooks.py")
+        hooks_module = os.path.join(temp_home, pyname)
 
         self.write_file(config_file, textwrap.dedent('''
             [test_dist]
-            pre-hook.test = testhooks.log_pre_call
-            post-hook.test = testhooks.log_post_call'''))
+            pre-hook.test = %(modname)s.log_pre_call
+            post-hook.test = %(modname)s.log_post_call'''
+            % {'modname': module_name}))
 
         self.write_file(hooks_module, textwrap.dedent('''
         record = []
@@ -221,12 +224,17 @@ class DistributionTestCase(support.TempdirManager,
         # prepare the call recorders
         sys.path.append(temp_home)
         self.addCleanup(sys.path.remove, temp_home)
-        from testhooks import record
+        record = __import__(module_name).record
 
+        old_run = cmd.run
+        old_finalize = cmd.finalize_options
         cmd.run = lambda: record.append('run')
         cmd.finalize_options = lambda: record.append('finalize')
-
-        d.run_command('test_dist')
+        try:
+            d.run_command('test_dist')
+        finally:
+            cmd.run = old_run
+            cmd.finalize_options = old_finalize
 
         self.assertEqual(record, ['finalize',
                                   'pre-test_dist',
