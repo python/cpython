@@ -3,16 +3,10 @@
 import sys
 import os
 
-# zlib is not used here, but if it's not available
-# test_simple_built will fail
-try:
-    import zlib
-except ImportError:
-    zlib = None
-
 from packaging.dist import Distribution
 from packaging.command.bdist_dumb import bdist_dumb
 from packaging.tests import unittest, support
+from packaging.tests.support import requires_zlib
 
 
 SETUP_PY = """\
@@ -39,7 +33,7 @@ class BuildDumbTestCase(support.TempdirManager,
         sys.argv[:] = self.old_sys_argv[1]
         super(BuildDumbTestCase, self).tearDown()
 
-    @unittest.skipUnless(zlib, "requires zlib")
+    @requires_zlib
     def test_simple_built(self):
 
         # let's create a simple package
