@@ -153,6 +153,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12120, #12119: skip a test in packaging and distutils
+  if sys.dont_write_bytecode is set to True.
+
 - Issue #12065: connect_ex() on an SSL socket now returns the original errno
   when the socket's timeout expires (it used to return None).
 
