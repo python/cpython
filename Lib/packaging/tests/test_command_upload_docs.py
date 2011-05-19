@@ -141,7 +141,7 @@ class UploadDocsTestCase(support.TempdirManager,
     def test_https_connection(self):
         https_called = False
 
-        orig_https = upload_docs_mod.http.client.HTTPConnection
+        orig_https = upload_docs_mod.http.client.HTTPSConnection
 
         def https_conn_wrapper(*args):
             nonlocal https_called
@@ -159,7 +159,7 @@ class UploadDocsTestCase(support.TempdirManager,
             self.cmd.run()
             self.assertTrue(https_called)
         finally:
-            upload_docs_mod.http.client.HTTPConnection = orig_https
+            upload_docs_mod.http.client.HTTPSConnection = orig_https
 
     def test_handling_response(self):
         self.pypi.default_response_status = '403 Forbidden'
