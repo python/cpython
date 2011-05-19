@@ -350,7 +350,7 @@ def byte_compile(py_files, optimize=0, force=False, prefix=None,
             else:
                 script = open(script_name, "w")
 
-            try:
+            with script:
                 script.write("""\
 from packaging.util import byte_compile
 files = [
@@ -377,9 +377,6 @@ byte_compile(files, optimize=%r, force=%r,
              verbose=%r, dry_run=False,
              direct=True)
 """ % (optimize, force, prefix, base_dir, verbose))
-
-            finally:
-                script.close()
 
         cmd = [sys.executable, script_name]
         if optimize == 1:

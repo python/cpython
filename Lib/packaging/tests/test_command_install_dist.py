@@ -193,11 +193,8 @@ class InstallTestCase(support.TempdirManager,
         # let's check the record file was created with four
         # lines, one for each .dist-info entry: METADATA,
         # INSTALLER, REQUSTED, RECORD
-        f = open(cmd.record)
-        try:
+        with open(cmd.record) as f:
             self.assertEqual(len(f.readlines()), 4)
-        finally:
-            f.close()
 
         # XXX test that fancy_getopt is okay with options named
         # record and no-record but unrelated

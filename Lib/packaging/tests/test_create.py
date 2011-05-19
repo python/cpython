@@ -173,11 +173,8 @@ class CreateTestCase(support.TempdirManager,
                         dedent("""
         # -*- coding: utf-8 -*-
         from distutils.core import setup
-        fp = open('README.txt')
-        try:
+        with open('README.txt') as fp:
             long_description = fp.read()
-        finally:
-            fp.close()
 
         setup(name='pyxfoil',
               version='0.2',
