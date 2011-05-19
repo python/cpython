@@ -1,0 +1,7 @@
+Metadata-Version: 1.2
+Name: towel-stuff
+Version: 0.1
+Provides-Dist: truffles (1.1.2)
+Provides-Dist: towel-stuff (0.1)
+Obsoletes-Dist: truffles (!=0.8,<1.0)
+Requires-Dist: bacon (<=0.2)

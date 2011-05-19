@@ -1,9 +1,10 @@
-"""Provide access to Python's configuration information.
+"""Access to Python's configuration information."""
 
-"""
-import sys
 import os
+import re
+import sys
 from os.path import pardir, realpath
+from configparser import RawConfigParser
 
 __all__ = [
     'get_config_h_filename',
@@ -17,91 +18,51 @@ __all__ = [
     'get_python_version',
     'get_scheme_names',
     'parse_config_h',
-    ]
+]
 
-_INSTALL_SCHEMES = {
-    'posix_prefix': {
-        'stdlib': '{base}/lib/python{py_version_short}',
-        'platstdlib': '{platbase}/lib/python{py_version_short}',
-        'purelib': '{base}/lib/python{py_version_short}/site-packages',
-        'platlib': '{platbase}/lib/python{py_version_short}/site-packages',
-        'include':
-            '{base}/include/python{py_version_short}{abiflags}',
-        'platinclude':
-            '{platbase}/include/python{py_version_short}{abiflags}',
-        'scripts': '{base}/bin',
-        'data': '{base}',
-        },
-    'posix_home': {
-        'stdlib': '{base}/lib/python',
-        'platstdlib': '{base}/lib/python',
-        'purelib': '{base}/lib/python',
-        'platlib': '{base}/lib/python',
-        'include': '{base}/include/python',
-        'platinclude': '{base}/include/python',
-        'scripts': '{base}/bin',
-        'data'   : '{base}',
-        },
-    'nt': {
-        'stdlib': '{base}/Lib',
-        'platstdlib': '{base}/Lib',
-        'purelib': '{base}/Lib/site-packages',
-        'platlib': '{base}/Lib/site-packages',
-        'include': '{base}/Include',
-        'platinclude': '{base}/Include',
-        'scripts': '{base}/Scripts',
-        'data'   : '{base}',
-        },
-    'os2': {
-        'stdlib': '{base}/Lib',
-        'platstdlib': '{base}/Lib',
-        'purelib': '{base}/Lib/site-packages',
-        'platlib': '{base}/Lib/site-packages',
-        'include': '{base}/Include',
-        'platinclude': '{base}/Include',
-        'scripts': '{base}/Scripts',
-        'data'   : '{base}',
-        },
-    'os2_home': {
-        'stdlib': '{userbase}/lib/python{py_version_short}',
-        'platstdlib': '{userbase}/lib/python{py_version_short}',
-        'purelib': '{userbase}/lib/python{py_version_short}/site-packages',
-        'platlib': '{userbase}/lib/python{py_version_short}/site-packages',
-        'include': '{userbase}/include/python{py_version_short}',
-        'scripts': '{userbase}/bin',
-        'data'   : '{userbase}',
-        },
-    'nt_user': {
-        'stdlib': '{userbase}/Python{py_version_nodot}',
-        'platstdlib': '{userbase}/Python{py_version_nodot}',
-        'purelib': '{userbase}/Python{py_version_nodot}/site-packages',
-        'platlib': '{userbase}/Python{py_version_nodot}/site-packages',
-        'include': '{userbase}/Python{py_version_nodot}/Include',
-        'scripts': '{userbase}/Scripts',
-        'data'   : '{userbase}',
-        },
-    'posix_user': {
-        'stdlib': '{userbase}/lib/python{py_version_short}',
-        'platstdlib': '{userbase}/lib/python{py_version_short}',
-        'purelib': '{userbase}/lib/python{py_version_short}/site-packages',
-        'platlib': '{userbase}/lib/python{py_version_short}/site-packages',
-        'include': '{userbase}/include/python{py_version_short}',
-        'scripts': '{userbase}/bin',
-        'data'   : '{userbase}',
-        },
-    'osx_framework_user': {
-        'stdlib': '{userbase}/lib/python',
-        'platstdlib': '{userbase}/lib/python',
-        'purelib': '{userbase}/lib/python/site-packages',
-        'platlib': '{userbase}/lib/python/site-packages',
-        'include': '{userbase}/include',
-        'scripts': '{userbase}/bin',
-        'data'   : '{userbase}',
-        },
-    }
+# let's read the configuration file
+# XXX _CONFIG_DIR will be set by the Makefile later
+_CONFIG_DIR = os.path.normpath(os.path.dirname(__file__))
+_CONFIG_FILE = os.path.join(_CONFIG_DIR, 'sysconfig.cfg')
+_SCHEMES = RawConfigParser()
+_SCHEMES.read(_CONFIG_FILE)
+_VAR_REPL = re.compile(r'\{([^{]*?)\}')
 
-_SCHEME_KEYS = ('stdlib', 'platstdlib', 'purelib', 'platlib', 'include',
-                'scripts', 'data')
+
+def _expand_globals(config):
+    if config.has_section('globals'):
+        globals = config.items('globals')
+    else:
+        globals = tuple()
+
+    sections = config.sections()
+    for section in sections:
+        if section == 'globals':
+            continue
+        for option, value in globals:
+            if config.has_option(section, option):
+                continue
+            config.set(section, option, value)
+    config.remove_section('globals')
+
+    # now expanding local variables defined in the cfg file
+    #
+    for section in config.sections():
+        variables = dict(config.items(section))
+
+        def _replacer(matchobj):
+            name = matchobj.group(1)
+            if name in variables:
+                return variables[name]
+            return matchobj.group(0)
+
+        for option, value in config.items(section):
+            config.set(section, option, _VAR_REPL.sub(_replacer, value))
+
+_expand_globals(_SCHEMES)
+
+ # FIXME don't rely on sys.version here, its format is an implementatin detail
+ # of CPython, use sys.version_info or sys.hexversion
 _PY_VERSION = sys.version.split()[0]
 _PY_VERSION_SHORT = sys.version[:3]
 _PY_VERSION_SHORT_NO_DOT = _PY_VERSION[0] + _PY_VERSION[2]
@@ -109,6 +70,7 @@ _PREFIX = os.path.normpath(sys.prefix)
 _EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 _CONFIG_VARS = None
 _USER_BASE = None
+
 
 def _safe_realpath(path):
     try:
@@ -132,6 +94,7 @@ if os.name == "nt" and "\\pc\\v" in _PROJECT_BASE[-10:].lower():
 if os.name == "nt" and "\\pcbuild\\amd64" in _PROJECT_BASE[-14:].lower():
     _PROJECT_BASE = _safe_realpath(os.path.join(_PROJECT_BASE, pardir, pardir))
 
+
 def is_python_build():
     for fn in ("Setup.dist", "Setup.local"):
         if os.path.isfile(os.path.join(_PROJECT_BASE, "Modules", fn)):
@@ -142,17 +105,25 @@ _PYTHON_BUILD = is_python_build()
 
 if _PYTHON_BUILD:
     for scheme in ('posix_prefix', 'posix_home'):
-        _INSTALL_SCHEMES[scheme]['include'] = '{srcdir}/Include'
-        _INSTALL_SCHEMES[scheme]['platinclude'] = '{projectbase}/.'
+        _SCHEMES.set(scheme, 'include', '{srcdir}/Include')
+        _SCHEMES.set(scheme, 'platinclude', '{projectbase}/.')
 
-def _subst_vars(s, local_vars):
-    try:
-        return s.format(**local_vars)
-    except KeyError:
-        try:
-            return s.format(**os.environ)
-        except KeyError as var:
-            raise AttributeError('{%s}' % var)
+
+def _subst_vars(path, local_vars):
+    """In the string `path`, replace tokens like {some.thing} with the
+    corresponding value from the map `local_vars`.
+
+    If there is no corresponding value, leave the token unchanged.
+    """
+    def _replacer(matchobj):
+        name = matchobj.group(1)
+        if name in local_vars:
+            return local_vars[name]
+        elif name in os.environ:
+            return os.environ[name]
+        return matchobj.group(0)
+    return _VAR_REPL.sub(_replacer, path)
+
 
 def _extend_dict(target_dict, other_dict):
     target_keys = target_dict.keys()
@@ -161,17 +132,28 @@ def _extend_dict(target_dict, other_dict):
             continue
         target_dict[key] = value
 
+
 def _expand_vars(scheme, vars):
     res = {}
     if vars is None:
         vars = {}
     _extend_dict(vars, get_config_vars())
 
-    for key, value in _INSTALL_SCHEMES[scheme].items():
+    for key, value in _SCHEMES.items(scheme):
         if os.name in ('posix', 'nt'):
             value = os.path.expanduser(value)
         res[key] = os.path.normpath(_subst_vars(value, vars))
     return res
+
+
+def format_value(value, vars):
+    def _replacer(matchobj):
+        name = matchobj.group(1)
+        if name in vars:
+            return vars[name]
+        return matchobj.group(0)
+    return _VAR_REPL.sub(_replacer, value)
+
 
 def _get_default_scheme():
     if os.name == 'posix':
@@ -179,23 +161,34 @@ def _get_default_scheme():
         return 'posix_prefix'
     return os.name
 
+
 def _getuserbase():
     env_base = os.environ.get("PYTHONUSERBASE", None)
+
     def joinuser(*args):
         return os.path.expanduser(os.path.join(*args))
 
     # what about 'os2emx', 'riscos' ?
     if os.name == "nt":
         base = os.environ.get("APPDATA") or "~"
-        return env_base if env_base else joinuser(base, "Python")
+        if env_base:
+            return env_base
+        else:
+            return joinuser(base, "Python")
 
     if sys.platform == "darwin":
         framework = get_config_var("PYTHONFRAMEWORK")
         if framework:
-            return env_base if env_base else joinuser("~", "Library", framework, "%d.%d"%(
-                sys.version_info[:2]))
+            if env_base:
+                return env_base
+            else:
+                return joinuser("~", "Library", framework, "%d.%d" %
+                                sys.version_info[:2])
 
-    return env_base if env_base else joinuser("~", ".local")
+    if env_base:
+        return env_base
+    else:
+        return joinuser("~", ".local")
 
 
 def _parse_makefile(filename, vars=None):
@@ -205,7 +198,6 @@ def _parse_makefile(filename, vars=None):
     optional dictionary is passed in as the second argument, it is
     used instead of a new dictionary.
     """
-    import re
     # Regexes needed for parsing Makefile (and similar syntaxes,
     # like old-style Setup files).
     _variable_rx = re.compile("([a-zA-Z][a-zA-Z0-9_]+)\s*=\s*(.*)")
@@ -267,7 +259,8 @@ def _parse_makefile(filename, vars=None):
                     item = os.environ[n]
 
                 elif n in renamed_variables:
-                    if name.startswith('PY_') and name[3:] in renamed_variables:
+                    if (name.startswith('PY_') and
+                        name[3:] in renamed_variables):
                         item = ""
 
                     elif 'PY_' + n in notdone:
@@ -300,7 +293,6 @@ def _parse_makefile(filename, vars=None):
                             if name not in done:
                                 done[name] = value
 
-
             else:
                 # bogus variable reference; just drop it since we can't deal
                 variables.remove(name)
@@ -319,9 +311,11 @@ def get_makefile_filename():
     """Return the path of the Makefile."""
     if _PYTHON_BUILD:
         return os.path.join(_PROJECT_BASE, "Makefile")
-    return os.path.join(get_path('stdlib'),
-                        'config-{}{}'.format(_PY_VERSION_SHORT, sys.abiflags),
-                        'Makefile')
+    if hasattr(sys, 'abiflags'):
+        config_dir_name = 'config-%s%s' % (_PY_VERSION_SHORT, sys.abiflags)
+    else:
+        config_dir_name = 'config'
+    return os.path.join(get_path('stdlib'), config_dir_name, 'Makefile')
 
 
 def _init_posix(vars):
@@ -351,6 +345,7 @@ def _init_posix(vars):
     if _PYTHON_BUILD:
         vars['LDSHARED'] = vars['BLDSHARED']
 
+
 def _init_non_posix(vars):
     """Initialize the module as appropriate for NT"""
     # set basic install directories
@@ -374,7 +369,6 @@ def parse_config_h(fp, vars=None):
     optional dictionary is passed in as the second argument, it is
     used instead of a new dictionary.
     """
-    import re
     if vars is None:
         vars = {}
     define_rx = re.compile("#define ([A-Z][A-Za-z0-9_]+) (.*)\n")
@@ -387,14 +381,17 @@ def parse_config_h(fp, vars=None):
         m = define_rx.match(line)
         if m:
             n, v = m.group(1, 2)
-            try: v = int(v)
-            except ValueError: pass
+            try:
+                v = int(v)
+            except ValueError:
+                pass
             vars[n] = v
         else:
             m = undef_rx.match(line)
             if m:
                 vars[m.group(1)] = 0
     return vars
+
 
 def get_config_h_filename():
     """Return the path of pyconfig.h."""
@@ -407,15 +404,17 @@ def get_config_h_filename():
         inc_dir = get_path('platinclude')
     return os.path.join(inc_dir, 'pyconfig.h')
 
+
 def get_scheme_names():
     """Return a tuple containing the schemes names."""
-    schemes = list(_INSTALL_SCHEMES.keys())
-    schemes.sort()
-    return tuple(schemes)
+    return tuple(sorted(_SCHEMES.sections()))
+
 
 def get_path_names():
     """Return a tuple containing the paths names."""
-    return _SCHEME_KEYS
+    # xxx see if we want a static list
+    return _SCHEMES.options('posix_prefix')
+
 
 def get_paths(scheme=_get_default_scheme(), vars=None, expand=True):
     """Return a mapping containing an install scheme.
@@ -426,7 +425,8 @@ def get_paths(scheme=_get_default_scheme(), vars=None, expand=True):
     if expand:
         return _expand_vars(scheme, vars)
     else:
-        return _INSTALL_SCHEMES[scheme]
+        return dict(_SCHEMES.items(scheme))
+
 
 def get_path(name, scheme=_get_default_scheme(), vars=None, expand=True):
     """Return a path corresponding to the scheme.
@@ -434,6 +434,7 @@ def get_path(name, scheme=_get_default_scheme(), vars=None, expand=True):
     ``scheme`` is the install scheme name.
     """
     return get_paths(scheme, vars, expand)[name]
+
 
 def get_config_vars(*args):
     """With no arguments, return a dictionary of all configuration
@@ -445,13 +446,12 @@ def get_config_vars(*args):
     With arguments, return a list of values that result from looking up
     each argument in the configuration variable dictionary.
     """
-    import re
     global _CONFIG_VARS
     if _CONFIG_VARS is None:
         _CONFIG_VARS = {}
         # Normalized versions of prefix and exec_prefix are handy to have;
         # in fact, these are the standard versions used most places in the
-        # Distutils.
+        # packaging module.
         _CONFIG_VARS['prefix'] = _PREFIX
         _CONFIG_VARS['exec_prefix'] = _EXEC_PREFIX
         _CONFIG_VARS['py_version'] = _PY_VERSION
@@ -473,13 +473,13 @@ def get_config_vars(*args):
         # Setting 'userbase' is done below the call to the
         # init function to enable using 'get_config_var' in
         # the init-function.
-        _CONFIG_VARS['userbase'] = _getuserbase()
+        if sys.version >= '2.6':
+            _CONFIG_VARS['userbase'] = _getuserbase()
 
         if 'srcdir' not in _CONFIG_VARS:
             _CONFIG_VARS['srcdir'] = _PROJECT_BASE
         else:
             _CONFIG_VARS['srcdir'] = _safe_realpath(_CONFIG_VARS['srcdir'])
-
 
         # Convert srcdir into an absolute path if it appears necessary.
         # Normally it is relative to the build directory.  However, during
@@ -500,7 +500,7 @@ def get_config_vars(*args):
                 _CONFIG_VARS['srcdir'] = os.path.normpath(srcdir)
 
         if sys.platform == 'darwin':
-            kernel_version = os.uname()[2] # Kernel version (8.4.3)
+            kernel_version = os.uname()[2]  # Kernel version (8.4.3)
             major_version = int(kernel_version.split('.')[0])
 
             if major_version < 8:
@@ -566,6 +566,7 @@ def get_config_vars(*args):
     else:
         return _CONFIG_VARS
 
+
 def get_config_var(name):
     """Return the value of a single variable using the dictionary returned by
     'get_config_vars()'.
@@ -573,6 +574,7 @@ def get_config_var(name):
     Equivalent to get_config_vars().get(name)
     """
     return get_config_vars().get(name)
+
 
 def get_platform():
     """Return a string that identifies the current platform.
@@ -599,7 +601,6 @@ def get_platform():
 
     For other non-POSIX platforms, currently just returns 'sys.platform'.
     """
-    import re
     if os.name == 'nt':
         # sniff sys.version for architecture.
         prefix = " bit ("
@@ -644,7 +645,7 @@ def get_platform():
         return "%s-%s.%s" % (osname, version, release)
     elif osname[:6] == "cygwin":
         osname = "cygwin"
-        rel_re = re.compile (r'[\d.]+')
+        rel_re = re.compile(r'[\d.]+')
         m = rel_re.match(release)
         if m:
             release = m.group()
@@ -675,14 +676,13 @@ def get_platform():
                 pass
             else:
                 try:
-                    m = re.search(
-                            r'<key>ProductUserVisibleVersion</key>\s*' +
-                            r'<string>(.*?)</string>', f.read())
-                    if m is not None:
-                        macrelease = '.'.join(m.group(1).split('.')[:2])
-                    # else: fall back to the default behaviour
+                    m = re.search(r'<key>ProductUserVisibleVersion</key>\s*'
+                                  r'<string>(.*?)</string>', f.read())
                 finally:
                     f.close()
+                if m is not None:
+                    macrelease = '.'.join(m.group(1).split('.')[:2])
+                # else: fall back to the default behaviour
 
         if not macver:
             macver = macrelease
@@ -691,8 +691,8 @@ def get_platform():
             release = macver
             osname = "macosx"
 
-            if (macrelease + '.') >= '10.4.' and \
-                    '-arch' in get_config_vars().get('CFLAGS', '').strip():
+            if ((macrelease + '.') >= '10.4.' and
+                '-arch' in get_config_vars().get('CFLAGS', '').strip()):
                 # The universal build will build fat binaries, but not on
                 # systems before 10.4
                 #
@@ -719,7 +719,7 @@ def get_platform():
                     machine = 'universal'
                 else:
                     raise ValueError(
-                       "Don't know machine value for archs=%r"%(archs,))
+                       "Don't know machine value for archs=%r" % (archs,))
 
             elif machine == 'i386':
                 # On OSX the machine type returned by uname is always the
@@ -742,21 +742,24 @@ def get_platform():
 def get_python_version():
     return _PY_VERSION_SHORT
 
+
 def _print_dict(title, data):
     for index, (key, value) in enumerate(sorted(data.items())):
         if index == 0:
-            print('{0}: '.format(title))
-        print('\t{0} = "{1}"'.format(key, value))
+            print('%s: ' % (title))
+        print('\t%s = "%s"' % (key, value))
+
 
 def _main():
     """Display all information sysconfig detains."""
-    print('Platform: "{0}"'.format(get_platform()))
-    print('Python version: "{0}"'.format(get_python_version()))
-    print('Current installation scheme: "{0}"'.format(_get_default_scheme()))
+    print('Platform: "%s"' % get_platform())
+    print('Python version: "%s"' % get_python_version())
+    print('Current installation scheme: "%s"' % _get_default_scheme())
     print('')
     _print_dict('Paths', get_paths())
-    print('')
+    print()
     _print_dict('Variables', get_config_vars())
+
 
 if __name__ == '__main__':
     _main()

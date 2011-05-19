@@ -1,0 +1,183 @@
+Metadata-Version: 1.1
+Name: setuptools
+Version: 0.6c9
+Summary: Download, build, install, upgrade, and uninstall Python packages -- easily!
+Home-page: http://pypi.python.org/pypi/setuptools
+Author: Phillip J. Eby
+Author-email: distutils-sig@python.org
+License: PSF or ZPL
+Description: ===============================
+        Installing and Using Setuptools
+        ===============================
+
+        .. contents:: **Table of Contents**
+
+
+        -------------------------
+        Installation Instructions
+        -------------------------
+
+        Windows
+        =======
+
+        Install setuptools using the provided ``.exe`` installer.  If you've previously
+        installed older versions of setuptools, please delete all ``setuptools*.egg``
+        and ``setuptools.pth`` files from your system's ``site-packages`` directory
+        (and any other ``sys.path`` directories) FIRST.
+
+        If you are upgrading a previous version of setuptools that was installed using
+        an ``.exe`` installer, please be sure to also *uninstall that older version*
+        via your system's "Add/Remove Programs" feature, BEFORE installing the newer
+        version.
+
+        Once installation is complete, you will find an ``easy_install.exe`` program in
+        your Python ``Scripts`` subdirectory.  Be sure to add this directory to your
+        ``PATH`` environment variable, if you haven't already done so.
+
+
+        RPM-Based Systems
+        =================
+
+        Install setuptools using the provided source RPM.  The included ``.spec`` file
+        assumes you are installing using the default ``python`` executable, and is not
+        specific to a particular Python version.  The ``easy_install`` executable will
+        be installed to a system ``bin`` directory such as ``/usr/bin``.
+
+        If you wish to install to a location other than the default Python
+        installation's default ``site-packages`` directory (and ``$prefix/bin`` for
+        scripts), please use the ``.egg``-based installation approach described in the
+        following section.
+
+
+        Cygwin, Mac OS X, Linux, Other
+        ==============================
+
+        1. Download the appropriate egg for your version of Python (e.g.
+        ``setuptools-0.6c9-py2.4.egg``).  Do NOT rename it.
+
+        2. Run it as if it were a shell script, e.g. ``sh setuptools-0.6c9-py2.4.egg``.
+        Setuptools will install itself using the matching version of Python (e.g.
+        ``python2.4``), and will place the ``easy_install`` executable in the
+        default location for installing Python scripts (as determined by the
+        standard distutils configuration files, or by the Python installation).
+
+        If you want to install setuptools to somewhere other than ``site-packages`` or
+        your default distutils installation locations for libraries and scripts, you
+        may include EasyInstall command-line options such as ``--prefix``,
+        ``--install-dir``, and so on, following the ``.egg`` filename on the same
+        command line.  For example::
+
+        sh setuptools-0.6c9-py2.4.egg --prefix=~
+
+        You can use ``--help`` to get a full options list, but we recommend consulting
+        the `EasyInstall manual`_ for detailed instructions, especially `the section
+        on custom installation locations`_.
+
+        .. _EasyInstall manual: http://peak.telecommunity.com/DevCenter/EasyInstall
+        .. _the section on custom installation locations: http://peak.telecommunity.com/DevCenter/EasyInstall#custom-installation-locations
+
+
+        Cygwin Note
+        -----------
+
+        If you are trying to install setuptools for the **Windows** version of Python
+        (as opposed to the Cygwin version that lives in ``/usr/bin``), you must make
+        sure that an appropriate executable (``python2.3``, ``python2.4``, or
+        ``python2.5``) is on your **Cygwin** ``PATH`` when invoking the egg.  For
+        example, doing the following at a Cygwin bash prompt will install setuptools
+        for the **Windows** Python found at ``C:\\Python24``::
+
+        ln -s /cygdrive/c/Python24/python.exe python2.4
+        PATH=.:$PATH sh setuptools-0.6c9-py2.4.egg
+        rm python2.4
+
+
+        Downloads
+        =========
+
+        All setuptools downloads can be found at `the project's home page in the Python
+        Package Index`_.  Scroll to the very bottom of the page to find the links.
+
+        .. _the project's home page in the Python Package Index: http://pypi.python.org/pypi/setuptools
+
+        In addition to the PyPI downloads, the development version of ``setuptools``
+        is available from the `Python SVN sandbox`_, and in-development versions of the
+        `0.6 branch`_ are available as well.
+
+        .. _0.6 branch: http://svn.python.org/projects/sandbox/branches/setuptools-0.6/#egg=setuptools-dev06
+
+        .. _Python SVN sandbox: http://svn.python.org/projects/sandbox/trunk/setuptools/#egg=setuptools-dev
+
+        --------------------------------
+        Using Setuptools and EasyInstall
+        --------------------------------
+
+        Here are some of the available manuals, tutorials, and other resources for
+        learning about Setuptools, Python Eggs, and EasyInstall:
+
+        * `The EasyInstall user's guide and reference manual`_
+        * `The setuptools Developer's Guide`_
+        * `The pkg_resources API reference`_
+        * `Package Compatibility Notes`_ (user-maintained)
+        * `The Internal Structure of Python Eggs`_
+
+        Questions, comments, and bug reports should be directed to the `distutils-sig
+        mailing list`_.  If you have written (or know of) any tutorials, documentation,
+        plug-ins, or other resources for setuptools users, please let us know about
+        them there, so this reference list can be updated.  If you have working,
+        *tested* patches to correct problems or add features, you may submit them to
+        the `setuptools bug tracker`_.
+
+        .. _setuptools bug tracker: http://bugs.python.org/setuptools/
+        .. _Package Compatibility Notes: http://peak.telecommunity.com/DevCenter/PackageNotes
+        .. _The Internal Structure of Python Eggs: http://peak.telecommunity.com/DevCenter/EggFormats
+        .. _The setuptools Developer's Guide: http://peak.telecommunity.com/DevCenter/setuptools
+        .. _The pkg_resources API reference: http://peak.telecommunity.com/DevCenter/PkgResources
+        .. _The EasyInstall user's guide and reference manual: http://peak.telecommunity.com/DevCenter/EasyInstall
+        .. _distutils-sig mailing list: http://mail.python.org/pipermail/distutils-sig/
+
+
+        -------
+        Credits
+        -------
+
+        * The original design for the ``.egg`` format and the ``pkg_resources`` API was
+        co-created by Phillip Eby and Bob Ippolito.  Bob also implemented the first
+        version of ``pkg_resources``, and supplied the OS X operating system version
+        compatibility algorithm.
+
+        * Ian Bicking implemented many early "creature comfort" features of
+        easy_install, including support for downloading via Sourceforge and
+        Subversion repositories.  Ian's comments on the Web-SIG about WSGI
+        application deployment also inspired the concept of "entry points" in eggs,
+        and he has given talks at PyCon and elsewhere to inform and educate the
+        community about eggs and setuptools.
+
+        * Jim Fulton contributed time and effort to build automated tests of various
+        aspects of ``easy_install``, and supplied the doctests for the command-line
+        ``.exe`` wrappers on Windows.
+
+        * Phillip J. Eby is the principal author and maintainer of setuptools, and
+        first proposed the idea of an importable binary distribution format for
+        Python application plug-ins.
+
+        * Significant parts of the implementation of setuptools were funded by the Open
+        Source Applications Foundation, to provide a plug-in infrastructure for the
+        Chandler PIM application.  In addition, many OSAF staffers (such as Mike
+        "Code Bear" Taylor) contributed their time and stress as guinea pigs for the
+        use of eggs and setuptools, even before eggs were "cool".  (Thanks, guys!)
+
+
+Keywords: CPAN PyPI distutils eggs package management
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: Python Software Foundation License
+Classifier: License :: OSI Approved :: Zope Public License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: System :: Archiving :: Packaging
+Classifier: Topic :: System :: Systems Administration
+Classifier: Topic :: Utilities
+Requires: Foo

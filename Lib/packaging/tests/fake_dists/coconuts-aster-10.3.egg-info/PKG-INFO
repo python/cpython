@@ -1,0 +1,5 @@
+Metadata-Version: 1.2
+Name: coconuts-aster
+Version: 10.3
+Provides-Dist: strawberry (0.6)
+Provides-Dist: banana (0.4)
