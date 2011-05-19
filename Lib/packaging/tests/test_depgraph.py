@@ -7,6 +7,7 @@ import packaging.database
 from packaging import depgraph
 
 from packaging.tests import unittest, support
+from packaging.tests.support import requires_zlib
 
 
 class DepGraphTestCase(support.LoggingCatcher,
@@ -56,6 +57,7 @@ class DepGraphTestCase(support.LoggingCatcher,
         self.checkLists([], deps)
         self.checkLists(graph.missing[towel], ['bacon (<=0.2)'])
 
+    @requires_zlib
     def test_generate_graph_egg(self):
         dists = []
         for name in self.DISTROS_DIST + self.DISTROS_EGG:
@@ -117,6 +119,7 @@ class DepGraphTestCase(support.LoggingCatcher,
         deps = [d.name for d in depgraph.dependent_dists(dists, towel)]
         self.checkLists(['choxie'], deps)
 
+    @requires_zlib
     def test_dependent_dists_egg(self):
         dists = []
         for name in self.DISTROS_DIST + self.DISTROS_EGG:
@@ -144,6 +147,7 @@ class DepGraphTestCase(support.LoggingCatcher,
         deps = [d.name for d in depgraph.dependent_dists(dists, cheese)]
         self.checkLists([], deps)
 
+    @requires_zlib
     def test_graph_to_dot(self):
         expected = (
             ('towel-stuff', 'bacon', 'bacon (<=0.2)'),
@@ -173,6 +177,7 @@ class DepGraphTestCase(support.LoggingCatcher,
 
         self.checkLists(matches, expected)
 
+    @requires_zlib
     def test_graph_disconnected_to_dot(self):
         dependencies_expected = (
             ('towel-stuff', 'bacon', 'bacon (<=0.2)'),
@@ -234,6 +239,7 @@ class DepGraphTestCase(support.LoggingCatcher,
         self.checkLists(dependencies_matches, dependencies_expected)
         self.checkLists(disconnected_matches, disconnected_expected)
 
+    @requires_zlib
     def test_graph_bad_version_to_dot(self):
         expected = (
             ('towel-stuff', 'bacon', 'bacon (<=0.2)'),
@@ -263,6 +269,7 @@ class DepGraphTestCase(support.LoggingCatcher,
 
         self.checkLists(matches, expected)
 
+    @requires_zlib
     def test_repr(self):
         dists = []
         for name in self.DISTROS_DIST + self.DISTROS_EGG + self.BAD_EGGS:
@@ -273,6 +280,7 @@ class DepGraphTestCase(support.LoggingCatcher,
         graph = depgraph.generate_graph(dists)
         self.assertTrue(repr(graph))
 
+    @requires_zlib
     def test_main(self):
         tempout = io.StringIO()
         old = sys.stdout

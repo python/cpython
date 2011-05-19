@@ -28,6 +28,11 @@ try:
 except ImportError:
     _thread = None
 
+try:
+    import zlib
+except ImportError:
+    zlib = None
+
 __all__ = [
     "Error", "TestFailed", "ResourceDenied", "import_module",
     "verbose", "use_resources", "max_memuse", "record_original_stdout",
@@ -43,7 +48,7 @@ __all__ = [
     "threading_cleanup", "reap_children", "cpython_only", "check_impl_detail",
     "get_attribute", "swap_item", "swap_attr", "requires_IEEE_754",
     "TestHandler", "Matcher", "can_symlink", "skip_unless_symlink",
-    "import_fresh_module"
+    "import_fresh_module", "requires_zlib"
     ]
 
 class Error(Exception):
@@ -400,6 +405,8 @@ IPV6_ENABLED = _is_ipv6_enabled()
 requires_IEEE_754 = unittest.skipUnless(
     float.__getformat__("double").startswith("IEEE"),
     "test requires IEEE 754 doubles")
+
+requires_zlib = unittest.skipUnless(zlib, 'requires zlib')
 
 is_jython = sys.platform.startswith('java')
 

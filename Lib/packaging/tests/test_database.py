@@ -12,6 +12,7 @@ from hashlib import md5
 from packaging.errors import PackagingError
 from packaging.metadata import Metadata
 from packaging.tests import unittest, run_unittest, support, TESTFN
+from packaging.tests.support import requires_zlib
 
 from packaging.database import (
     Distribution, EggInfoDistribution, get_distribution, get_distributions,
@@ -64,11 +65,13 @@ class CommonDistributionTests:
         self.assertEqual(dist.version, version)
         self.assertEqual(dist.metadata['Version'], version)
 
+    @requires_zlib
     def test_repr(self):
         dist = self.cls(self.dirs[0])
         # just check that the class name is in the repr
         self.assertIn(self.cls.__name__, repr(dist))
 
+    @requires_zlib
     def test_comparison(self):
         # tests for __eq__ and __hash__
         dist = self.cls(self.dirs[0])
@@ -281,6 +284,7 @@ class TestDatabase(support.LoggingCatcher,
             dirname = distinfo_dirname(name, version)
             self.assertEqual(dirname, standard_dirname)
 
+    @requires_zlib
     def test_get_distributions(self):
         # Lookup all distributions found in the ``sys.path``.
         # This test could potentially pick up other installed distributions
@@ -321,6 +325,7 @@ class TestDatabase(support.LoggingCatcher,
 
         self.assertEqual(sorted(fake_dists), sorted(found_dists))
 
+    @requires_zlib
     def test_get_distribution(self):
         # Test for looking up a distribution by name.
         # Test the lookup of the towel-stuff distribution
@@ -371,6 +376,7 @@ class TestDatabase(support.LoggingCatcher,
             self.assertIsInstance(dist, Distribution)
             self.assertEqual(dist.name, name)
 
+    @requires_zlib
     def test_provides(self):
         # Test for looking up distributions by what they provide
         checkLists = lambda x, y: self.assertEqual(sorted(x), sorted(y))
@@ -437,6 +443,7 @@ class TestDatabase(support.LoggingCatcher,
                                                          use_egg_info=True)]
         checkLists(l, [])
 
+    @requires_zlib
     def test_obsoletes(self):
         # Test looking for distributions based on what they obsolete
         checkLists = lambda x, y: self.assertEqual(sorted(x), sorted(y))
@@ -465,6 +472,7 @@ class TestDatabase(support.LoggingCatcher,
         l = [dist.name for dist in obsoletes_distribution('truffles', '0.2')]
         checkLists(l, ['towel-stuff'])
 
+    @requires_zlib
     def test_yield_distribution(self):
         # tests the internal function _yield_distributions
         checkLists = lambda x, y: self.assertEqual(sorted(x), sorted(y))
