@@ -276,7 +276,7 @@ class MainProgram:
                 return
             shutil.move(_FILENAME, '%s.old' % _FILENAME)
 
-        with open(_FILENAME, 'w') as fp:
+        with open(_FILENAME, 'w', encoding='utf-8') as fp:
             fp.write('[metadata]\n')
             # simple string entries
             for name in ('name', 'version', 'summary', 'download_url'):

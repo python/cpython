@@ -183,7 +183,7 @@ class ConfigTestCase(support.TempdirManager,
                 'setup-hook': 'packaging.tests.test_config.hook'}
         if kwargs:
             opts.update(kwargs)
-        self.write_file('setup.cfg', SETUP_CFG % opts)
+        self.write_file('setup.cfg', SETUP_CFG % opts, encoding='utf-8')
 
     def get_dist(self):
         dist = Distribution()
