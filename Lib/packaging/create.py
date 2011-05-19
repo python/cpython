@@ -400,10 +400,10 @@ class MainProgram:
                                  self.data['description']).lower().encode())
                 ref = ref.digest()
                 for readme in glob.glob('README*'):
-                    with open(readme) as fp:
+                    with open(readme, encoding='utf-8') as fp:
                         contents = fp.read()
-                    val = md5(re.sub('\s', '',
-                                     contents.lower()).encode()).digest()
+                    contents = re.sub('\s', '', contents.lower()).encode()
+                    val = md5(contents).digest()
                     if val == ref:
                         del data['description']
                         data['description-file'] = readme
