@@ -346,9 +346,9 @@ def byte_compile(py_files, optimize=0, force=False, prefix=None,
         logger.info("writing byte-compilation script '%s'", script_name)
         if not dry_run:
             if script_fd is not None:
-                script = os.fdopen(script_fd, "w")
+                script = os.fdopen(script_fd, "w", encoding='utf-8')
             else:
-                script = open(script_name, "w")
+                script = open(script_name, "w", encoding='utf-8')
 
             with script:
                 script.write("""\
@@ -1087,7 +1087,7 @@ def generate_setup_py():
     if os.path.exists("setup.py"):
         raise PackagingFileError("a setup.py file alreadyexists")
 
-    with open("setup.py", "w") as fp:
+    with open("setup.py", "w", encoding='utf-8') as fp:
         fp.write(_SETUP_TMPL % {'func': getsource(cfg_to_args)})
 
 
