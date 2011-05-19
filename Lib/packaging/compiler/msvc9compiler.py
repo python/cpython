@@ -356,8 +356,7 @@ class MSVCCompiler(CCompiler) :
             vc_env = query_vcvarsall(VERSION, plat_spec)
 
             # take care to only use strings in the environment.
-            self.__paths = [part.encode('mbcs') for part in
-                            vc_env['path'].split(os.pathsep)]
+            self.__paths = vc_env['path'].split(os.pathsep)
             os.environ['lib'] = vc_env['lib']
             os.environ['include'] = vc_env['include']
 
