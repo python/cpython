@@ -32,6 +32,7 @@ import glob
 import re
 import shutil
 import sysconfig
+import tokenize
 from configparser import RawConfigParser
 from textwrap import dedent
 from hashlib import md5
@@ -116,7 +117,9 @@ def load_setup():
     This function load the setup file in all cases (even if it have already
     been loaded before, because we are monkey patching its setup function with
     a particular one"""
-    with open("setup.py") as f:
+    with open("setup.py", "rb") as f:
+        encoding, lines = tokenize.detect_encoding(f.readline)
+    with open("setup.py", encoding=encoding) as f:
         imp.load_module("setup", f, "setup.py", (".py", "r", imp.PY_SOURCE))
 
 
