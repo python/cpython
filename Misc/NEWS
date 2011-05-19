@@ -13,8 +13,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #12124: zipimport doesn't keep a reference to zlib.decompress() anymore
+  to be able to unload the module.
+
 - Issue #12065: connect_ex() on an SSL socket now returns the original errno
   when the socket's timeout expires (it used to return None).
+
 
 
 What's New in Python 3.2.1 release candidate 1?
