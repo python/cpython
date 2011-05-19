@@ -58,7 +58,8 @@ class BuildPyTestCase(support.TempdirManager,
         pkgdest = os.path.join(destination, "pkg")
         files = os.listdir(pkgdest)
         self.assertTrue("__init__.py" in files)
-        self.assertTrue("__init__.pyc" in files)
+        if not sys.dont_write_bytecode:
+            self.assertTrue("__init__.pyc" in files)
         self.assertTrue("README.txt" in files)
 
     def test_empty_package_dir (self):
