@@ -307,7 +307,7 @@ class Metadata:
 
     def read(self, filepath):
         """Read the metadata values from a file path."""
-        with open(filepath, 'r', encoding='ascii') as fp:
+        with open(filepath, 'r', encoding='utf-8') as fp:
             self.read_file(fp)
 
     def read_file(self, fileob):
@@ -330,7 +330,7 @@ class Metadata:
 
     def write(self, filepath):
         """Write the metadata fields to filepath."""
-        with open(filepath, 'w') as fp:
+        with open(filepath, 'w', encoding='utf-8') as fp:
             self.write_file(fp)
 
     def write_file(self, fileobject):
