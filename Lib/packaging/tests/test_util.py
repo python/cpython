@@ -56,8 +56,14 @@ password:xxx
 class FakePopen:
     test_class = None
 
-    def __init__(self, cmd, shell, stdout, stderr):
-        self.cmd = cmd.split()[0]
+    def __init__(self, args, bufsize=0, executable=None,
+                 stdin=None, stdout=None, stderr=None,
+                 preexec_fn=None, close_fds=False,
+                 shell=False, cwd=None, env=None, universal_newlines=False,
+                 startupinfo=None, creationflags=0,
+                 restore_signals=True, start_new_session=False,
+                 pass_fds=()):
+        self.cmd = args.split()[0]
         exes = self.test_class._exes
         if self.cmd not in exes:
             # we don't want to call the system, returning an empty
