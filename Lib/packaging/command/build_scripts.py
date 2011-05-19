@@ -3,6 +3,7 @@
 import os
 import re
 import sysconfig
+import tokenize
 
 from packaging.command.cmd import Command
 from packaging.util import convert_path, newer
@@ -11,7 +12,7 @@ from packaging.compat import Mixin2to3
 
 
 # check if Python is called on the first line with this expression
-first_line_re = re.compile('^#!.*python[0-9.]*([ \t].*)?$')
+first_line_re = re.compile(b'^#!.*python[0-9.]*([ \t].*)?$')
 
 class build_scripts(Command, Mixin2to3):
 
@@ -76,12 +77,14 @@ class build_scripts(Command, Mixin2to3):
             # that way, we'll get accurate feedback if we can read the
             # script.
             try:
-                f = open(script, "r")
+                f = open(script, "rb")
             except IOError:
                 if not self.dry_run:
                     raise
                 f = None
             else:
+                encoding, lines = tokenize.detect_encoding(f.readline)
+                f.seek(0)
                 first_line = f.readline()
                 if not first_line:
                     logger.warning('%s: %s is an empty file (skipping)',
@@ -91,26 +94,45 @@ class build_scripts(Command, Mixin2to3):
                 match = first_line_re.match(first_line)
                 if match:
                     adjust = True
-                    post_interp = match.group(1) or ''
+                    post_interp = match.group(1) or b''
 
             if adjust:
                 logger.info("copying and adjusting %s -> %s", script,
                          self.build_dir)
                 if not self.dry_run:
-                    outf = open(outfile, "w")
                     if not sysconfig.is_python_build():
-                        outf.write("#!%s%s\n" %
-                                   (self.executable,
-                                    post_interp))
+                        executable = self.executable
                     else:
-                        outf.write("#!%s%s\n" %
-                                   (os.path.join(
+                        executable = os.path.join(
                             sysconfig.get_config_var("BINDIR"),
                            "python%s%s" % (sysconfig.get_config_var("VERSION"),
-                                           sysconfig.get_config_var("EXE"))),
-                                    post_interp))
-                    outf.writelines(f.readlines())
-                    outf.close()
+                                           sysconfig.get_config_var("EXE")))
+                    executable = os.fsencode(executable)
+                    shebang = b"#!" + executable + post_interp + b"\n"
+                    # Python parser starts to read a script using UTF-8 until
+                    # it gets a #coding:xxx cookie. The shebang has to be the
+                    # first line of a file, the #coding:xxx cookie cannot be
+                    # written before. So the shebang has to be decodable from
+                    # UTF-8.
+                    try:
+                        shebang.decode('utf-8')
+                    except UnicodeDecodeError:
+                        raise ValueError(
+                            "The shebang ({!r}) is not decodable "
+                            "from utf-8".format(shebang))
+                    # If the script is encoded to a custom encoding (use a
+                    # #coding:xxx cookie), the shebang has to be decodable from
+                    # the script encoding too.
+                    try:
+                        shebang.decode(encoding)
+                    except UnicodeDecodeError:
+                        raise ValueError(
+                            "The shebang ({!r}) is not decodable "
+                            "from the script encoding ({})"
+                            .format(shebang, encoding))
+                    with open(outfile, "wb") as outf:
+                        outf.write(shebang)
+                        outf.writelines(f.readlines())
                 if f:
                     f.close()
             else:
