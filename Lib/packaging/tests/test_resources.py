@@ -58,7 +58,7 @@ class DataFilesTestCase(GlobTestCaseBase):
 
     def test_set_match_exclude(self):
         rules = [('scripts', '*', '{appscript}'),
-                 ('', '**/*.sh', None)]
+                 ('', os.path.join('**', '*.sh'), None)]
         spec = {'scripts/scripts.bin': '{appscript}/scripts.bin',
                 'scripts/script.sh':  None,
                 'Babarlikestrawberry': None}
@@ -73,7 +73,7 @@ class DataFilesTestCase(GlobTestCaseBase):
         self.assertRulesMatch(rules, spec)
 
     def test_recursive_glob(self):
-        rules = [('', '**/*.bin', '{binary}')]
+        rules = [('', os.path.join('**', '*.bin'), '{binary}')]
         spec = {'binary0.bin': '{binary}/binary0.bin',
                 'scripts/binary1.bin': '{binary}/scripts/binary1.bin',
                 'scripts/bin/binary2.bin': '{binary}/scripts/bin/binary2.bin',
@@ -83,12 +83,12 @@ class DataFilesTestCase(GlobTestCaseBase):
     def test_final_exemple_glob(self):
         rules = [
             ('mailman/database/schemas/', '*', '{appdata}/schemas'),
-            ('', '**/*.tpl', '{appdata}/templates'),
-            ('', 'developer-docs/**/*.txt', '{doc}'),
+            ('', os.path.join('**', '*.tpl'), '{appdata}/templates'),
+            ('', os.path.join('developer-docs', '**', '*.txt'), '{doc}'),
             ('', 'README', '{doc}'),
             ('mailman/etc/', '*', '{config}'),
-            ('mailman/foo/', '**/bar/*.cfg', '{config}/baz'),
-            ('mailman/foo/', '**/*.cfg', '{config}/hmm'),
+            ('mailman/foo/', os.path.join('**', 'bar', '*.cfg'), '{config}/baz'),
+            ('mailman/foo/', os.path.join('**', '*.cfg'), '{config}/hmm'),
             ('', 'some-new-semantic.sns', '{funky-crazy-category}'),
         ]
         spec = {
