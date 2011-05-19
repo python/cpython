@@ -168,8 +168,8 @@ class InstallDistinfoTestCase(support.TempdirManager,
             else:
                 size = os.path.getsize(f)
                 md5 = hashlib.md5()
-                with open(f) as fp:
-                    md5.update(fp.read().encode())
+                with open(f, 'rb') as fp:
+                    md5.update(fp.read())
                 hash = md5.hexdigest()
                 expected.append([f, hash, str(size)])
 

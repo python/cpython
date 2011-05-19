@@ -133,9 +133,9 @@ class install_distinfo(Command):
                             writer.writerow((fpath, '', ''))
                         else:
                             size = os.path.getsize(fpath)
-                            with open(fpath, 'r') as fp:
+                            with open(fpath, 'rb') as fp:
                                 hash = hashlib.md5()
-                                hash.update(fp.read().encode())
+                                hash.update(fp.read())
                             md5sum = hash.hexdigest()
                             writer.writerow((fpath, md5sum, size))
 
