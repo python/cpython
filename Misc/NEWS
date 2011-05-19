@@ -153,6 +153,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12124: zipimport doesn't keep a reference to zlib.decompress() anymore
+  to be able to unload the module.
+
 - Issue #12120, #12119: skip a test in packaging and distutils
   if sys.dont_write_bytecode is set to True.
 
