@@ -72,10 +72,10 @@ class BuildPyTestCase(support.TempdirManager,
         sources = self.mkdtemp()
         pkg = os.path.join(sources, 'pkg')
         os.mkdir(pkg)
-        open(os.path.join(pkg, "__init__.py"), "w").close()
+        open(os.path.join(pkg, "__init__.py"), "wb").close()
         testdir = os.path.join(pkg, "doc")
         os.mkdir(testdir)
-        open(os.path.join(testdir, "testfile"), "w").close()
+        open(os.path.join(testdir, "testfile"), "wb").close()
 
         os.chdir(sources)
         old_stdout = sys.stdout

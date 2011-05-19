@@ -1201,7 +1201,7 @@ def egginfo_to_distinfo(record_file, installer=_DEFAULT_INSTALLER,
     if requested:
         requested_path = distinfo['requested_path']
         logger.info('creating %s', requested_path)
-        open(requested_path, 'w').close()
+        open(requested_path, 'wb').close()
         distinfo['installed'].append(requested_path)
 
     record_path = distinfo['record_path']
