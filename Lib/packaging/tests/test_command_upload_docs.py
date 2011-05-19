@@ -11,7 +11,12 @@ from packaging.dist import Distribution
 from packaging.errors import PackagingFileError, PackagingOptionError
 
 from packaging.tests import unittest, support
-from packaging.tests.pypi_server import PyPIServerTestCase
+try:
+    import threading
+    from packaging.tests.pypi_server import PyPIServerTestCase
+except ImportError:
+    threading = None
+    PyPIServerTestCase = object
 
 
 EXPECTED_MULTIPART_OUTPUT = [
@@ -41,6 +46,8 @@ username = real_slim_shady
 password = long_island
 """
 
+
+@unittest.skipIf(threading is None, "Needs threading")
 class UploadDocsTestCase(support.TempdirManager,
                          support.EnvironRestorer,
                          support.LoggingCatcher,

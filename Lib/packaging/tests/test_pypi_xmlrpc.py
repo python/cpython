@@ -3,9 +3,16 @@
 from packaging.pypi.xmlrpc import Client, InvalidSearchField, ProjectNotFound
 
 from packaging.tests import unittest
-from packaging.tests.pypi_server import use_xmlrpc_server
+
+try:
+    import threading
+    from packaging.tests.pypi_server import use_xmlrpc_server
+except ImportError:
+    threading = None
+    use_xmlrpc_server = None
 
 
+@unittest.skipIf(threading is None, "Needs threading")
 class TestXMLRPCClient(unittest.TestCase):
     def _get_client(self, server, *args, **kwargs):
         return Client(server.full_address, *args, **kwargs)
