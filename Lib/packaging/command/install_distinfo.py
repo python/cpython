@@ -98,7 +98,7 @@ class install_distinfo(Command):
             if self.requested:
                 requested_path = os.path.join(self.distinfo_dir, 'REQUESTED')
                 logger.info('creating %s', requested_path)
-                open(requested_path, 'w').close()
+                open(requested_path, 'wb').close()
                 self.outputs.append(requested_path)
 
 

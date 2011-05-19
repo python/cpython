@@ -227,7 +227,7 @@ class TestInstall(LoggingCatcher, TempdirManager, unittest.TestCase):
         newpath = self.mkdtemp()
         files = [os.path.join(path, str(x)) for x in range(1, 20)]
         for f in files:
-            open(f, 'a+').close()
+            open(f, 'ab+').close()
         output = [o for o in install._move_files(files, newpath)]
 
         # check that output return the list of old/new places
