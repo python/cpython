@@ -78,7 +78,12 @@ class PyPIServerTestCase(unittest.TestCase):
         super(PyPIServerTestCase, self).setUp()
         self.pypi = PyPIServer()
         self.pypi.start()
-        self.addCleanup(self.pypi.stop)
+
+    def tearDown(self):
+        super(PyPIServerTestCase, self).tearDown()
+        self.pypi.stop()
+        self.pypi.join()
+        self.pypi.server.server_close()
 
 
 class PyPIServer(threading.Thread):
