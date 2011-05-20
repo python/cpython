@@ -20,6 +20,11 @@ from test.support import TESTFN, forget, rmtree, EnvironmentVarGuard, \
 
 from test import pydoc_mod
 
+try:
+    import threading
+except ImportError:
+    threading = None
+
 # Just in case sys.modules["test"] has the optional attribute __loader__.
 if hasattr(pydoc_mod, "__loader__"):
     del pydoc_mod.__loader__
@@ -409,6 +414,7 @@ class TestDescriptions(unittest.TestCase):
         self.assertIn(expected, pydoc.render_doc(c))
 
 
+@unittest.skipUnless(threading, 'Threading required for this test.')
 class PydocServerTest(unittest.TestCase):
     """Tests for pydoc._start_server"""
 
