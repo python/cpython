@@ -78,12 +78,7 @@ class PyPIServerTestCase(unittest.TestCase):
         super(PyPIServerTestCase, self).setUp()
         self.pypi = PyPIServer()
         self.pypi.start()
-
-    def tearDown(self):
-        super(PyPIServerTestCase, self).tearDown()
-        self.pypi.stop()
-        self.pypi.join()
-        self.pypi.server.server_close()
+        self.addCleanup(self.pypi.stop)
 
 
 class PyPIServer(threading.Thread):
@@ -154,6 +149,8 @@ class PyPIServer(threading.Thread):
     def stop(self):
         """self shutdown is not supported for python < 2.6"""
         self._run = False
+        self.join()
+        self.server.server_close()
 
     def get_next_response(self):
         return (self.default_response_status,
