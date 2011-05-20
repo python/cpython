@@ -1358,7 +1358,7 @@ Files and Directories
 
          try:
              fp = open("myfile")
-         except OSError as e:
+         except IOError as e:
              if e.errno == errno.EACCESS:
                  return "some default data"
              # Not a permission error.
