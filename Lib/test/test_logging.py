@@ -810,7 +810,8 @@ if threading:
         :param poll_interval: The polling interval in seconds.
         :param log: Pass ``True`` to enable log messages.
         """
-        def __init__(self, addr, handler, poll_interval=0.5, log=False):
+        def __init__(self, addr, handler, poll_interval=0.5,
+                     log=False, sslctx=None):
             class DelegatingHTTPRequestHandler(BaseHTTPRequestHandler):
                 def __getattr__(self, name, default=None):
                     if name.startswith('do_'):
@@ -826,6 +827,18 @@ if threading:
                               self).log_message(format, *args)
             HTTPServer.__init__(self, addr, DelegatingHTTPRequestHandler)
             ControlMixin.__init__(self, handler, poll_interval)
+            self.sslctx = sslctx
+
+        def get_request(self):
+            try:
+                sock, addr = self.socket.accept()
+                if self.sslctx:
+                    sock = self.sslctx.wrap_socket(sock, server_side=True)
+            except socket.error as e:
+                # socket errors are silenced by the caller, print them here
+                sys.stderr.write("Got an error:\n%s\n" % e)
+                raise
+            return sock, addr
 
     class TestTCPServer(ControlMixin, ThreadingTCPServer):
         """
