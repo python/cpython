@@ -149,7 +149,8 @@ class PyPIServer(threading.Thread):
     def stop(self):
         """self shutdown is not supported for python < 2.6"""
         self._run = False
-        self.join()
+        if self.is_alive():
+            self.join()
         self.server.server_close()
 
     def get_next_response(self):

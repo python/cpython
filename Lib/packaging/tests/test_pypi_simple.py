@@ -233,6 +233,7 @@ class SimpleCrawlerTestCase(TempdirManager,
             self.assertEqual(4, len(crawler.get_releases("foo")))
         finally:
             mirror.stop()
+            server.stop()
 
     def test_simple_link_matcher(self):
         # Test that the simple link matcher finds the right links"""
