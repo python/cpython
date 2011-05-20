@@ -377,10 +377,26 @@ class GeneralModuleTests(unittest.TestCase):
     def testInterfaceNameIndex(self):
         interfaces = socket.if_nameindex()
         for index, name in interfaces:
+            self.assertIsInstance(index, int)
+            self.assertIsInstance(name, str)
             # interface indices are non-zero integers
             self.assertGreater(index, 0)
-            self.assertEqual(index, socket.if_nametoindex(name))
-            self.assertEqual(name, socket.if_indextoname(index))
+            _index = socket.if_nametoindex(name)
+            self.assertIsInstance(_index, int)
+            self.assertEqual(index, _index)
+            _name = socket.if_indextoname(index)
+            self.assertIsInstance(_name, str)
+            self.assertEqual(name, _name)
+
+    @unittest.skipUnless(hasattr(socket, 'if_nameindex'),
+                         'socket.if_nameindex() not available.')
+    def testInvalidInterfaceNameIndex(self):
+        # test nonexistent interface index/name
+        self.assertRaises(socket.error, socket.if_indextoname, 0)
+        self.assertRaises(socket.error, socket.if_nametoindex, '_DEADBEEF')
+        # test with invalid values
+        self.assertRaises(TypeError, socket.if_nametoindex, 0)
+        self.assertRaises(TypeError, socket.if_indextoname, '_DEADBEEF')
 
     def testRefCountGetNameInfo(self):
         # Testing reference count for getnameinfo

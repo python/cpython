@@ -4280,19 +4280,19 @@ Set the default timeout in floating seconds for new socket objects.\n\
 A value of None indicates that new socket objects have no timeout.\n\
 When the socket module is first imported, the default is None.");
 
-
 #ifdef HAVE_IF_NAMEINDEX
 /* Python API for getting interface indices and names */
 
 static PyObject *
 socket_if_nameindex(PyObject *self, PyObject *arg)
 {
-    int i = 0;
     PyObject *list;
-    struct if_nameindex *ni = if_nameindex();
-
+    int i;
+    struct if_nameindex *ni;
+  
+    ni = if_nameindex();
     if (ni == NULL) {
-        PyErr_SetString(socket_error, "if_nameindex() returned NULL.");
+        PyErr_SetFromErrno(socket_error);
         return NULL;
     }
 
@@ -4302,26 +4302,21 @@ socket_if_nameindex(PyObject *self, PyObject *arg)
         return NULL;
     }
 
-    while (ni[i].if_index != 0 && i < INT_MAX) {
-        PyObject *ni_tuple = Py_BuildValue(
-                "Iy", ni[i].if_index, ni[i].if_name);
+    for (i = 0; ni[i].if_index != 0 && i < INT_MAX; i++) {
+        PyObject *ni_tuple = Py_BuildValue("IO&",
+                ni[i].if_index, PyUnicode_DecodeFSDefault, ni[i].if_name);
 
         if (ni_tuple == NULL || PyList_Append(list, ni_tuple) == -1) {
             Py_XDECREF(ni_tuple);
-            goto error;
+            Py_DECREF(list);
+            if_freenameindex(ni);
+            return NULL;
         }
         Py_DECREF(ni_tuple);
-
-        ++i;
     }
 
     if_freenameindex(ni);
     return list;
-
-error:
-    Py_DECREF(list);
-    if_freenameindex(ni);
-    return NULL;
 }
 
 PyDoc_STRVAR(if_nameindex_doc,
@@ -4329,18 +4324,20 @@ PyDoc_STRVAR(if_nameindex_doc,
 \n\
 Returns a list of network interface information (index, name) tuples.");
 
-
-PyObject*
-socket_if_nametoindex(PyObject *self, PyObject *arg)
+static PyObject *
+socket_if_nametoindex(PyObject *self, PyObject *args)
 {
-    char* ifname = PyBytes_AsString(arg);
+    PyObject *oname;
     unsigned long index;
 
-    if (ifname == NULL)
+    if (!PyArg_ParseTuple(args, "O&:if_nametoindex",
+                          PyUnicode_FSConverter, &oname))
         return NULL;
 
-    index = if_nametoindex(ifname);
+    index = if_nametoindex(PyBytes_AS_STRING(oname));
+    Py_DECREF(oname);
     if (index == 0) {
+        /* if_nametoindex() doesn't set errno */
         PyErr_SetString(socket_error, "no interface with this name");
         return NULL;
     }
@@ -4353,20 +4350,22 @@ PyDoc_STRVAR(if_nametoindex_doc,
 \n\
 Returns the interface index corresponding to the interface name if_name.");
 
-
-PyObject*
+static PyObject *
 socket_if_indextoname(PyObject *self, PyObject *arg)
 {
-    unsigned long index = PyLong_AsUnsignedLongMask(arg);
-    char name[IF_NAMESIZE + 1];  /* or use IFNAMSIZ ?*/
-    char *ret = if_indextoname(index, &name[0]);
+    unsigned long index;
+    char name[IF_NAMESIZE + 1];
 
-    if (ret == NULL) {
-        PyErr_SetString(socket_error, "no interface with this index");
+    index = PyLong_AsUnsignedLong(arg);
+    if (index == (unsigned long) -1)
+        return NULL;
+
+    if (if_indextoname(index, name) == NULL) {
+        PyErr_SetFromErrno(socket_error);
         return NULL;
     }
 
-    return PyBytes_FromString(name);
+    return PyUnicode_DecodeFSDefault(name);
 }
 
 PyDoc_STRVAR(if_indextoname_doc,
@@ -4436,7 +4435,7 @@ static PyMethodDef socket_methods[] = {
     {"if_nameindex", socket_if_nameindex,
      METH_NOARGS, if_nameindex_doc},
     {"if_nametoindex", socket_if_nametoindex,
-     METH_O, if_nametoindex_doc},
+     METH_VARARGS, if_nametoindex_doc},
     {"if_indextoname", socket_if_indextoname,
      METH_O, if_indextoname_doc},
 #endif
