@@ -43,16 +43,18 @@ class ToInstallDist:
         self.version = "fake"
         if files:
             for f in range(0, 3):
-                self._real_files.append(mkstemp())
+                fp, fn = mkstemp()
+                os.close(fp)
+                self._real_files.append(fn)
 
     def _unlink_installed_files(self):
         if self._files:
-            for f in self._real_files:
-                os.unlink(f[1])
+            for fn in self._real_files:
+                os.unlink(fn)
 
     def list_installed_files(self, **args):
         if self._files:
-            return [f[1] for f in self._real_files]
+            return self._real_files
 
     def get_install(self, **args):
         return self.list_installed_files()
@@ -231,8 +233,10 @@ class TestInstall(LoggingCatcher, TempdirManager, unittest.TestCase):
         output = [o for o in install._move_files(files, newpath)]
 
         # check that output return the list of old/new places
-        for f in files:
-            self.assertIn((f, '%s%s' % (newpath, f)), output)
+        for file_ in files:
+            name = os.path.split(file_)[-1]
+            newloc = os.path.join(newpath, name)
+            self.assertIn((file_, newloc), output)
 
         # remove the files
         for f in [o[1] for o in output]:  # o[1] is the new place

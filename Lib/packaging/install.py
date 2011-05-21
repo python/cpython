@@ -47,10 +47,8 @@ def _move_files(files, destination):
         destination = tempfile.mkdtemp()
 
     for old in files:
-        # not using os.path.join() because basename() might not be
-        # unique in destination
-        new = "%s%s" % (destination, old)
-
+        filename = os.path.split(old)[-1]
+        new = os.path.join(destination, filename)
         # try to make the paths.
         try:
             os.makedirs(os.path.dirname(new))
