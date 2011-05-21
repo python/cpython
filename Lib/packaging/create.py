@@ -383,19 +383,25 @@ class MainProgram:
                 path_tokens.sort(key=cmp_to_key(length_comparison))
                 for dest, srcs in (dist.data_files or []):
                     dest = os.path.join(sys.prefix, dest)
+                    dest = dest.replace(os.path.sep, '/')
                     for tok, path in path_tokens:
-                        if dest.startswith(path):
-                            dest = ('{%s}' % tok) + dest[len(path):]
-                            files = [('/ '.join(src.rsplit('/', 1)), dest)
-                                     for src in srcs]
-                            data['resources'].extend(files)
+                        path = path.replace(os.path.sep, '/')
+                        if not dest.startswith(path):
                             continue
+
+                        dest = ('{%s}' % tok) + dest[len(path):]
+                        files = [('/ '.join(src.rsplit('/', 1)), dest)
+                                    for src in srcs]
+                        data['resources'].extend(files)
+
             # 2.2 package_data -> extra_files
             package_dirs = dist.package_dir or {}
             for package, extras in iter(dist.package_data.items()) or []:
                 package_dir = package_dirs.get(package, package)
-                files = [os.path.join(package_dir, f) for f in extras]
-                data['extra_files'].extend(files)
+                for file_ in extras:
+                    if package_dir:
+                        file_ = package_dir + '/' + file_
+                    data['extra_files'].append(file_)
 
             # Use README file if its content is the desciption
             if "description" in data:
