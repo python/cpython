@@ -239,7 +239,7 @@ class BuildExtTestCase(support.TempdirManager,
     def test_get_outputs(self):
         tmp_dir = self.mkdtemp()
         c_file = os.path.join(tmp_dir, 'foo.c')
-        self.write_file(c_file, 'void initfoo(void) {};\n')
+        self.write_file(c_file, 'void PyInit_foo(void) {};\n')
         ext = Extension('foo', [c_file], optional=False)
         dist = Distribution({'name': 'xx',
                              'ext_modules': [ext]})
