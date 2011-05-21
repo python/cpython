@@ -226,6 +226,7 @@ class PyPIRequestHandler(SimpleHTTPRequestHandler):
                             data = file.read().encode()
                         headers = [('Content-type', 'text/html')]
 
+                    headers.append(('Content-Length', len(data)))
                     self.make_response(data, headers=headers)
 
                 except IOError:
