@@ -159,7 +159,8 @@ class Distribution:
 
     def _get_records(self, local=False):
         with self.get_distinfo_file('RECORD') as record:
-            record_reader = csv.reader(record, delimiter=',')
+            record_reader = csv.reader(record, delimiter=',',
+                                       lineterminator='\n')
             # XXX needs an explaining comment
             for row in record_reader:
                 path, checksum, size = (row[:] +
@@ -171,7 +172,8 @@ class Distribution:
 
     def get_resource_path(self, relative_path):
         with self.get_distinfo_file('RESOURCES') as resources_file:
-            resources_reader = csv.reader(resources_file, delimiter=',')
+            resources_reader = csv.reader(resources_file, delimiter=',',
+                                           lineterminator='\n')
             for relative, destination in resources_reader:
                 if relative == relative_path:
                     return destination

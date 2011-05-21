@@ -110,7 +110,7 @@ class install_distinfo(Command):
                     logger.info('creating %s', resources_path)
                     with open(resources_path, 'wb') as f:
                         writer = csv.writer(f, delimiter=',',
-                                            lineterminator=os.linesep,
+                                            lineterminator='\n',
                                             quotechar='"')
                         for tuple in install_data.get_resources_out():
                             writer.writerow(tuple)
@@ -122,7 +122,7 @@ class install_distinfo(Command):
                 logger.info('creating %s', record_path)
                 with open(record_path, 'w', encoding='utf-8') as f:
                     writer = csv.writer(f, delimiter=',',
-                                        lineterminator=os.linesep,
+                                        lineterminator='\n',
                                         quotechar='"')
 
                     install = self.get_finalized_command('install_dist')
