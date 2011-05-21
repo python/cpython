@@ -3,6 +3,10 @@ import os
 import sys
 import shutil
 import zipfile
+try:
+    import _ssl
+except ImportError:
+    _ssl = None
 
 from packaging.command import upload_docs as upload_docs_mod
 from packaging.command.upload_docs import (upload_docs, zip_dir,
@@ -145,6 +149,7 @@ class UploadDocsTestCase(support.TempdirManager,
         self.assertIn(b'docs/index.html', content)
         self.assertIn(b'Ce mortel ennui', content)
 
+    @unittest.skipIf(_ssl is None, 'Needs SSL support')
     def test_https_connection(self):
         https_called = False
 
