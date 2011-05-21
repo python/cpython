@@ -111,7 +111,8 @@ class TestDistribution(CommonDistributionTests, unittest.TestCase):
             record_file = os.path.join(distinfo_dir, 'RECORD')
             with open(record_file, 'w') as file:
                 record_writer = csv.writer(
-                    file, delimiter=',', quoting=csv.QUOTE_NONE)
+                    file, delimiter=',', quoting=csv.QUOTE_NONE,
+                    lineterminator='\n')
 
                 dist_location = distinfo_dir.replace('.dist-info', '')
 
@@ -125,9 +126,11 @@ class TestDistribution(CommonDistributionTests, unittest.TestCase):
                 record_writer.writerow([relpath(record_file, sys.prefix)])
 
             with open(record_file) as file:
-                record_reader = csv.reader(file)
+                record_reader = csv.reader(file, lineterminator='\n')
                 record_data = {}
                 for row in record_reader:
+                    if row == []:
+                        continue
                     path, md5_, size = (row[:] +
                                         [None for i in range(len(row), 3)])
                     record_data[path] = md5_, size
