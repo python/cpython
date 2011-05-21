@@ -25,7 +25,6 @@ class DataFilesTestCase(GlobTestCaseBase):
         files = {}
         for path, value in spec.items():
             if value is not None:
-                path = self.os_dependent_path(path)
                 files[path] = value
         return files
 

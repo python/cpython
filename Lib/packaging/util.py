@@ -939,7 +939,7 @@ class Mixin2to3:
                         self.options, self.explicit)
 
 RICH_GLOB = re.compile(r'\{([^}]*)\}')
-_CHECK_RECURSIVE_GLOB = re.compile(r'[^/,{]\*\*|\*\*[^/,}]')
+_CHECK_RECURSIVE_GLOB = re.compile(r'[^/\\,{]\*\*|\*\*[^/\\,}]')
 _CHECK_MISMATCH_SET = re.compile(r'^[^{]*\}|\{[^}]*$')
 
 
@@ -973,7 +973,9 @@ def _iglob(path_glob):
             if radical == '':
                 radical = '*'
             else:
+                # we support both
                 radical = radical.lstrip('/')
+                radical = radical.lstrip('\\')
             for path, dir, files in os.walk(prefix):
                 path = os.path.normpath(path)
                 for file in _iglob(os.path.join(path, radical)):
