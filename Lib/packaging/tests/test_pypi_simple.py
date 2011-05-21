@@ -1,5 +1,5 @@
 """Tests for the packaging.pypi.simple module."""
-
+import re
 import os
 import sys
 import http.client
@@ -277,8 +277,16 @@ class SimpleCrawlerTestCase(TempdirManager,
 
     def test_browse_local_files(self):
         # Test that we can browse local files"""
-        index_path = os.sep.join(["file://" + PYPI_DEFAULT_STATIC_PATH,
-                                  "test_found_links", "simple"])
+        index_url = "file://" + PYPI_DEFAULT_STATIC_PATH
+        if sys.platform == 'win32':
+            # under windows the correct syntax is:
+            #   file:///C|\the\path\here
+            # instead of
+            #   file://C:\the\path\here
+            fix = re.compile(r'^(file://)([A-Za-z])(:)')
+            index_url = fix.sub('\\1/\\2|', index_url)
+
+        index_path = os.sep.join([index_url, "test_found_links", "simple"])
         crawler = Crawler(index_path)
         dists = crawler.get_releases("foobar")
         self.assertEqual(4, len(dists))
