@@ -1526,14 +1526,17 @@ IRbTpvlHWPjsSvHz0ZOH
         for secure in (False, True):
             addr = ('localhost', 0)
             if secure:
-                import ssl
-                fd, fn = tempfile.mkstemp()
-                os.close(fd)
-                with open(fn, 'w') as f:
-                    f.write(self.PEMFILE)
-                sslctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-                sslctx.load_cert_chain(fn)
-                os.unlink(fn)
+                try:
+                    import ssl
+                    fd, fn = tempfile.mkstemp()
+                    os.close(fd)
+                    with open(fn, 'w') as f:
+                        f.write(self.PEMFILE)
+                    sslctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+                    sslctx.load_cert_chain(fn)
+                    os.unlink(fn)
+                except ImportError:
+                    sslctx = None
             else:
                 sslctx = None
             self.server = server = TestHTTPServer(addr, self.handle_request,
@@ -1541,7 +1544,9 @@ IRbTpvlHWPjsSvHz0ZOH
             server.start()
             server.ready.wait()
             host = 'localhost:%d' % server.server_port
-            self.h_hdlr = logging.handlers.HTTPHandler(host, '/frob', secure=secure)
+            secure_client = secure and sslctx
+            self.h_hdlr = logging.handlers.HTTPHandler(host, '/frob',
+                                                       secure=secure_client)
             self.log_data = None
             root_logger.addHandler(self.h_hdlr)
 
