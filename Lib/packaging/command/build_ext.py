@@ -589,7 +589,7 @@ class build_ext(Command):
         provided, "init" + module_name.  Only relevant on Windows, where
         the .pyd file (DLL) must export the module "init" function.
         """
-        initfunc_name = "init" + ext.name.split('.')[-1]
+        initfunc_name = "PyInit_" + ext.name.split('.')[-1]
         if initfunc_name not in ext.export_symbols:
             ext.export_symbols.append(initfunc_name)
         return ext.export_symbols
