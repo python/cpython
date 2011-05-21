@@ -464,7 +464,7 @@ def _find_exe_version(cmd, pattern=_RE_VERSION):
         return None
     pipe = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
     try:
-        stdout, stderr = pipe.stdout.read(), pipe.stderr.read()
+        stdout, stderr = pipe.communicate()
     finally:
         pipe.stdout.close()
         pipe.stderr.close()

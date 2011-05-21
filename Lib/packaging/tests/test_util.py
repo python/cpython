@@ -74,6 +74,9 @@ class FakePopen:
             self.stdout = StringIO(exes[self.cmd])
             self.stderr = StringIO()
 
+    def communicate(self, input=None, timeout=None):
+        return self.stdout.read(), self.stderr.read()
+
 
 class UtilTestCase(support.EnvironRestorer,
                    support.TempdirManager,
