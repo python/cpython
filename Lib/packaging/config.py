@@ -33,6 +33,9 @@ def _pop_values(values_dct, key):
 
 
 def _rel_path(base, path):
+    # normalizes and returns a lstripped-/-separated path
+    base = base.replace(os.path.sep, '/')
+    path = path.replace(os.path.sep, '/')
     assert path.startswith(base)
     return path[len(base):].lstrip('/')
 
@@ -50,7 +53,8 @@ def get_resources_dests(resources_root, rules):
                     destinations.pop(resource_file, None)
                 else:
                     rel_path = _rel_path(abs_base, abs_path)
-                    destinations[resource_file] = os.path.join(dest, rel_path)
+                    rel_dest = dest.replace(os.path.sep, '/').rstrip('/')
+                    destinations[resource_file] = rel_dest + '/' + rel_path
     return destinations
 
 
