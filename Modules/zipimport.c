@@ -798,35 +798,33 @@ error:
 
 /* Return the zlib.decompress function object, or NULL if zlib couldn't
    be imported. The function is cached when found, so subsequent calls
-   don't import zlib again. Returns a *borrowed* reference.
-   XXX This makes zlib.decompress immortal. */
+   don't import zlib again. */
 static PyObject *
 get_decompress_func(void)
 {
-    static PyObject *decompress = NULL;
+    static int importing_zlib = 0;
+    PyObject *zlib;
+    PyObject *decompress;
 
-    if (decompress == NULL) {
-        PyObject *zlib;
-        static int importing_zlib = 0;
-
-        if (importing_zlib != 0)
-            /* Someone has a zlib.py[co] in their Zip file;
-               let's avoid a stack overflow. */
-            return NULL;
-        importing_zlib = 1;
-        zlib = PyImport_ImportModuleNoBlock("zlib");
-        importing_zlib = 0;
-        if (zlib != NULL) {
-            decompress = PyObject_GetAttrString(zlib,
-                                                "decompress");
-            Py_DECREF(zlib);
-        }
-        else
-            PyErr_Clear();
-        if (Py_VerboseFlag)
-            PySys_WriteStderr("# zipimport: zlib %s\n",
-                zlib != NULL ? "available": "UNAVAILABLE");
+    if (importing_zlib != 0)
+        /* Someone has a zlib.py[co] in their Zip file;
+           let's avoid a stack overflow. */
+        return NULL;
+    importing_zlib = 1;
+    zlib = PyImport_ImportModuleNoBlock("zlib");
+    importing_zlib = 0;
+    if (zlib != NULL) {
+        decompress = PyObject_GetAttrString(zlib,
+                                            "decompress");
+        Py_DECREF(zlib);
     }
+    else {
+        PyErr_Clear();
+        decompress = NULL;
+    }
+    if (Py_VerboseFlag)
+        PySys_WriteStderr("# zipimport: zlib %s\n",
+            zlib != NULL ? "available": "UNAVAILABLE");
     return decompress;
 }
 
@@ -911,6 +909,7 @@ get_data(char *archive, PyObject *toc_entry)
         goto error;
     }
     data = PyObject_CallFunction(decompress, "Oi", raw_data, -15);
+    Py_DECREF(decompress);
 error:
     Py_DECREF(raw_data);
     return data;
