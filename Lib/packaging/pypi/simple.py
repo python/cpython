@@ -123,8 +123,14 @@ class Crawler(BaseClient):
         self.follow_externals = follow_externals
 
         # mirroring attributes.
-        if not index_url.endswith("/"):
-            index_url += "/"
+        parsed = urllib.parse.urlparse(index_url)
+        self.scheme = parsed[0]
+        if self.scheme == 'file':
+            ender = os.path.sep
+        else:
+            ender = '/'
+        if not index_url.endswith(ender):
+            index_url += ender
         # if no mirrors are defined, use the method described in PEP 381.
         if mirrors is None:
             mirrors = get_mirrors(mirrors_url)
@@ -376,7 +382,11 @@ class Crawler(BaseClient):
         :param name: the name of the project to find the page
         """
         # Browse and index the content of the given PyPI page.
-        url = self.index_url + name + "/"
+        if self.scheme == 'file':
+            ender = os.path.sep
+        else:
+            ender = '/'
+        url = self.index_url + name + ender
         self._process_url(url, name)
 
     @socket_timeout()
@@ -395,7 +405,7 @@ class Crawler(BaseClient):
 
         # add index.html automatically for filesystem paths
         if scheme == 'file':
-            if url.endswith('/'):
+            if url.endswith(os.path.sep):
                 url += "index.html"
 
         # add authorization headers if auth is provided
