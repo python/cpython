@@ -947,7 +947,7 @@ libinstall:	build_all $(srcdir)/Lib/$(PLATDIR)
 		else	true; \
 		fi; \
 	done
-	@for i in $(srcdir)/Lib/*.py $(srcdir)/Lib/*.egg-info ; \
+	@for i in $(srcdir)/Lib/*.py $(srcdir)/Lib/*.egg-info $(srcdir)/Lib/*.cfg ; \
 	do \
 		if test -x $$i; then \
 			$(INSTALL_SCRIPT) $$i $(DESTDIR)$(LIBDEST); \
