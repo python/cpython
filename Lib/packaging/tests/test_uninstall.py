@@ -82,6 +82,7 @@ class UninstallTestCase(support.TempdirManager,
         self.assertRaises(PackagingError, remove, 'Foo',
                           paths=[self.root_dir])
 
+    @unittest.skipIf(sys.platform == 'win32', 'deactivated for now')
     def test_uninstall(self):
         dist, install_lib = self.install_dist()
         self.assertIsFile(install_lib, 'foo', '__init__.py')
