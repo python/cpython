@@ -307,7 +307,7 @@ class ConfigTestCase(support.TempdirManager,
             ['/usr/include/gecode', '/usr/include/blitz'])
         cargs = ['-fPIC', '-O2']
         if sys.platform == 'win32':
-            cargs.append("/DGECODE_VERSION='win32'")
+            cargs.append("/DGECODE_VERSION=win32")
         else:
             cargs.append('-DGECODE_VERSION=$(./gecode_version)')
         self.assertEqual(ext.extra_compile_args, cargs)

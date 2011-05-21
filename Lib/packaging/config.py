@@ -21,7 +21,8 @@ def _pop_values(values_dct, key):
     if not vals_str:
         return
     fields = []
-    for field in vals_str.split(os.linesep):
+    # the line separator is \n for setup.cfg files
+    for field in vals_str.split('\n'):
         tmp_vals = field.split('--')
         if len(tmp_vals) == 2 and not interpret(tmp_vals[1]):
             continue
