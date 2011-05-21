@@ -112,26 +112,28 @@ class TempdirManager:
     def setUp(self):
         super(TempdirManager, self).setUp()
         self._basetempdir = tempfile.mkdtemp()
+        self._files = []
 
     def tearDown(self):
         shutil.rmtree(self._basetempdir, os.name in ('nt', 'cygwin'))
+
+        for handle, name in self._files:
+            handle.close()
+            if os.path.exists(name):
+                try:
+                    os.remove(name)
+                except OSError as exc:
+                    if exc.errno != errno.ENOENT:
+                        raise
+
         super(TempdirManager, self).tearDown()
 
     def mktempfile(self):
         """Create a read-write temporary file and return it."""
-
-        def _delete_file(filename):
-            try:
-                os.remove(filename)
-            except OSError as exc:
-                if exc.errno != errno.ENOENT:
-                    raise
-
         fd, fn = tempfile.mkstemp(dir=self._basetempdir)
         os.close(fd)
         fp = open(fn, 'w+')
-        self.addCleanup(fp.close)
-        self.addCleanup(_delete_file, fn)
+        self._files.append((fp, fn))
         return fp
 
     def mkdtemp(self):

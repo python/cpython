@@ -63,7 +63,9 @@ class FakePopen:
                  startupinfo=None, creationflags=0,
                  restore_signals=True, start_new_session=False,
                  pass_fds=()):
-        self.cmd = args.split()[0]
+        if isinstance(args, str):
+            args = args.split()
+        self.cmd = args[0]
         exes = self.test_class._exes
         if self.cmd not in exes:
             # we don't want to call the system, returning an empty
@@ -76,6 +78,9 @@ class FakePopen:
 
     def communicate(self, input=None, timeout=None):
         return self.stdout.read(), self.stderr.read()
+
+    def wait(self, timeout=None):
+        return 0
 
 
 class UtilTestCase(support.EnvironRestorer,
@@ -424,10 +429,8 @@ class UtilTestCase(support.EnvironRestorer,
     @unittest.skipUnless(os.name in ('nt', 'posix'),
                          'runs only under posix or nt')
     def test_spawn(self):
-        # Do not patch subprocess on unix because
-        # packaging.util._spawn_posix uses it
-        if os.name in 'posix':
-            subprocess.Popen = self.old_popen
+        # no patching of Popen here
+        subprocess.Popen = self.old_popen
         tmpdir = self.mkdtemp()
 
         # creating something executable
