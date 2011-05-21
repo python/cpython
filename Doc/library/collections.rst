@@ -889,10 +889,6 @@ so that the counter remembers the order elements are first encountered::
    class OrderedCounter(Counter, OrderedDict):
         'Counter that remembers the order elements are first encountered'
 
-        def __init__(self, iterable=None, **kwds):
-            OrderedDict.__init__(self)
-            Counter.__init__(self, iterable, **kwds)
-
         def __repr__(self):
             return '%s(%r)' % (self.__class__.__name__, OrderedDict(self))
 
