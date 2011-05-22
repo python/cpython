@@ -32,7 +32,6 @@ implementations (static HTTP and XMLRPC over HTTP).
 import os
 import queue
 import select
-import socket
 import threading
 import socketserver
 from functools import wraps
@@ -135,7 +134,7 @@ class PyPIServer(threading.Thread):
             self.server.register_introspection_functions()
             self.server.register_instance(self.xmlrpc)
 
-        self.address = (self.server.server_name, self.server.server_port)
+        self.address = ('127.0.0.1', self.server.server_port)
         # to not have unwanted outputs.
         self.server.RequestHandlerClass.log_request = lambda *_: None
 
@@ -270,7 +269,6 @@ class PyPIXMLRPCServer(SimpleXMLRPCServer):
         """Override server_bind to store the server name."""
         socketserver.TCPServer.server_bind(self)
         host, port = self.socket.getsockname()[:2]
-        self.server_name = socket.getfqdn(host)
         self.server_port = port
 
 
