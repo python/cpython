@@ -357,8 +357,7 @@ reason to do otherwise.
 
 In return, you will get three lists. They contain the sockets that are actually
 readable, writable and in error. Each of these lists is a subset (possibly
-empty) of the corresponding list you passed in. If you put a socket in more
-than one input list, it will only be (at most) in one output list.
+empty) of the corresponding list you passed in.
 
 If a socket is in the output readable list, you can be
 as-close-to-certain-as-we-ever-get-in-this-business that a ``recv`` on that
