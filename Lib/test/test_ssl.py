@@ -20,12 +20,7 @@ import platform
 from BaseHTTPServer import HTTPServer
 from SimpleHTTPServer import SimpleHTTPRequestHandler
 
-# Optionally test SSL support, if we have it in the tested platform
-skip_expected = False
-try:
-    import ssl
-except ImportError:
-    skip_expected = True
+ssl = test_support.import_module("ssl")
 
 HOST = test_support.HOST
 CERTFILE = None
@@ -1334,9 +1329,6 @@ else:
 
 
 def test_main(verbose=False):
-    if skip_expected:
-        raise unittest.SkipTest("No SSL support")
-
     global CERTFILE, SVN_PYTHON_ORG_ROOT_CERT
     CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir,
                             "keycert.pem")
