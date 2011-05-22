@@ -16,11 +16,11 @@ set_compiler, show_compilers.
 import os
 import sys
 import re
-
 import sysconfig
+
 from packaging.util import resolve_name
 from packaging.errors import PackagingPlatformError
-
+from packaging import logger
 
 def customize_compiler(compiler):
     """Do any platform-specific customization of a CCompiler instance.
@@ -274,7 +274,7 @@ def gen_lib_options(compiler, library_dirs, runtime_library_dirs, libraries):
             if lib_file is not None:
                 lib_opts.append(lib_file)
             else:
-                compiler.warn("no library file corresponding to "
+                logger.warning("no library file corresponding to "
                               "'%s' found (skipping)" % lib)
         else:
             lib_opts.append(compiler.library_option(lib))
