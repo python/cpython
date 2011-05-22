@@ -7,7 +7,12 @@ from packaging.dist import Distribution
 from packaging.errors import PackagingOptionError
 
 from packaging.tests import unittest, support
-from packaging.tests.pypi_server import PyPIServer, PyPIServerTestCase
+try:
+    import threading
+    from packaging.tests.pypi_server import PyPIServerTestCase
+except ImportError:
+    threading = None
+    PyPIServerTestCase = unittest.TestCase
 
 
 PYPIRC_NOPASSWORD = """\
@@ -39,6 +44,7 @@ repository:http://another.pypi/
 """
 
 
+@unittest.skipIf(threading is None, 'needs threading')
 class UploadTestCase(support.TempdirManager, support.EnvironRestorer,
                      support.LoggingCatcher, PyPIServerTestCase):
 

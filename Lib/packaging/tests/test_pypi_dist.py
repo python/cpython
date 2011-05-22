@@ -8,7 +8,11 @@ from packaging.pypi.errors import HashDoesNotMatch, UnsupportedHashName
 
 from packaging.tests import unittest
 from packaging.tests.support import TempdirManager, requires_zlib
-from packaging.tests.pypi_server import use_pypi_server
+try:
+    import threading
+    from packaging.tests.pypi_server import use_pypi_server
+except ImportError:
+    threading = use_pypi_server = None
 
 
 def Dist(*args, **kwargs):
@@ -120,6 +124,7 @@ class TestDistInfo(TempdirManager, unittest.TestCase):
         # assert we can't compare dists with different names
         self.assertRaises(TypeError, foo1.__eq__, bar)
 
+    @unittest.skipIf(threading is None, 'needs threading')
     @use_pypi_server("downloads_with_md5")
     def test_download(self, server):
         # Download is possible, and the md5 is checked if given
@@ -158,6 +163,7 @@ class TestDistInfo(TempdirManager, unittest.TestCase):
                           hashname="invalid_hashname",
                           hashval="value")
 
+    @unittest.skipIf(threading is None, 'needs threading')
     @requires_zlib
     @use_pypi_server('downloads_with_md5')
     def test_unpack(self, server):
