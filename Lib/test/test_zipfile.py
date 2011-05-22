@@ -403,7 +403,6 @@ class TestsWithSourceFile(unittest.TestCase):
         mydir = os.path.dirname(myfile) or os.curdir
         fname = os.path.join(mydir, 'zip_cp437_header.zip')
 
-        print(fname)
         zipfp = zipfile.ZipFile(fname)
         try:
             zipfp.extractall()
