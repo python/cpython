@@ -9,7 +9,12 @@ try:
     from packaging.tests.pypi_server import use_xmlrpc_server
 except ImportError:
     threading = None
-    use_xmlrpc_server = None
+    def use_xmlrpc_server():
+        def _use(func):
+            def __use(*args, **kw):
+                return func(*args, **kw)
+            return __use
+        return _use
 
 
 @unittest.skipIf(threading is None, "Needs threading")
