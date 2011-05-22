@@ -1871,6 +1871,7 @@ class Decimal(object):
         """
 
         other = _convert_other(other, raiseit=True)
+        third = _convert_other(third, raiseit=True)
 
         # compute product; raise InvalidOperation if either operand is
         # a signaling NaN or if the product is zero times infinity.
@@ -1900,7 +1901,6 @@ class Decimal(object):
                                        str(int(self._int) * int(other._int)),
                                        self._exp + other._exp)
 
-        third = _convert_other(third, raiseit=True)
         return product.__add__(third, context)
 
     def _power_modulo(self, other, modulo, context=None):
