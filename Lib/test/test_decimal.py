@@ -1970,6 +1970,17 @@ class ContextAPItests(unittest.TestCase):
         self.assertRaises(TypeError, c.fma, 2, '3', 4)
         self.assertRaises(TypeError, c.fma, 2, 3, '4')
 
+        # Issue 12079 for Context.fma ...
+        self.assertRaises(TypeError, c.fma,
+                          Decimal('Infinity'), Decimal(0), "not a decimal")
+        self.assertRaises(TypeError, c.fma,
+                          Decimal(1), Decimal('snan'), 1.222)
+        # ... and for Decimal.fma.
+        self.assertRaises(TypeError, Decimal('Infinity').fma,
+                          Decimal(0), "not a decimal")
+        self.assertRaises(TypeError, Decimal(1).fma,
+                          Decimal('snan'), 1.222)
+
     def test_is_finite(self):
         c = Context()
         d = c.is_finite(Decimal(10))
