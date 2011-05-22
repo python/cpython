@@ -9783,6 +9783,9 @@ all_ins(PyObject *d)
 #ifdef PRIO_USER
     if (ins(d, "PRIO_USER", (long)PRIO_USER)) return -1;
 #endif
+#ifdef O_CLOEXEC
+    if (ins(d, "O_CLOEXEC", (long)O_CLOEXEC)) return -1;
+#endif
 /* posix - constants for *at functions */
 #ifdef AT_SYMLINK_NOFOLLOW
         if (ins(d, "AT_SYMLINK_NOFOLLOW", (long)AT_SYMLINK_NOFOLLOW)) return -1;
