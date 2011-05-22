@@ -1298,6 +1298,7 @@ or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Window
           O_NOCTTY
           O_SHLOCK
           O_EXLOCK
+          O_CLOEXEC
 
    These constants are only available on Unix.
 
