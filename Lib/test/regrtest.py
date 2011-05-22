@@ -265,6 +265,10 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     directly to set the values that would normally be set by flags
     on the command line.
     """
+
+    # Display the Python traceback fatal errors (e.g. segfault)
+    faulthandler.enable(all_threads=True)
+
     if hasattr(faulthandler, 'dump_tracebacks_later'):
         timeout = 60*60
     else:
@@ -1588,9 +1592,6 @@ def _make_temp_dir_for_build(TEMPDIR):
     return TEMPDIR, TESTCWD
 
 if __name__ == '__main__':
-    # Display the Python traceback on segfault and division by zero
-    faulthandler.enable(all_threads=True)
-
     # Remove regrtest.py's own directory from the module search path. Despite
     # the elimination of implicit relative imports, this is still needed to
     # ensure that submodules of the test package do not inappropriately appear
