@@ -9,6 +9,7 @@ import errno
 import sys
 import time
 import os
+import fcntl
 import pwd
 import shutil
 import stat
@@ -306,6 +307,12 @@ class PosixTester(unittest.TestCase):
             finally:
                 fp1.close()
                 fp2.close()
+
+    @unittest.skipUnless(hasattr(os, 'O_CLOEXEC'), "needs os.O_CLOEXEC")
+    def test_oscloexec(self):
+        fd = os.open(support.TESTFN, os.O_RDONLY|os.O_CLOEXEC)
+        self.addCleanup(os.close, fd)
+        self.assertTrue(fcntl.fcntl(fd, fcntl.F_GETFD) & fcntl.FD_CLOEXEC)
 
     def test_osexlock(self):
         if hasattr(posix, "O_EXLOCK"):

@@ -153,6 +153,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #12105: Add O_CLOEXEC to the os module.
+
 - Issue #12079: Decimal('Infinity').fma(Decimal('0'), (3.91224318126786e+19+0j))
   now raises TypeError (reflecting the invalid type of the 3rd argument) rather
   than Decimal.InvalidOperation.
