@@ -2545,8 +2545,6 @@ logging module using these functions or by making calls to the main API (defined
 in :mod:`logging` itself) and defining handlers which are declared either in
 :mod:`logging` or :mod:`logging.handlers`.
 
-.. currentmodule:: logging.config
-
 
 .. function:: fileConfig(fname[, defaults])
 
@@ -2579,8 +2577,6 @@ in :mod:`logging` itself) and defining handlers which are declared either in
    This is typically called before calling :meth:`join` on the return value from
    :func:`listen`.
 
-
-.. currentmodule:: logging
 
 .. _logging-config-fileformat:
 

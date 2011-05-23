@@ -79,11 +79,8 @@ write-back, as will be the keys within each section.
    The basic configuration object.  When *defaults* is given, it is initialized
    into the dictionary of intrinsic defaults.  When *dict_type* is given, it will
    be used to create the dictionary objects for the list of sections, for the
-   options within a section, and for the default values.  This class does not
+   options within a section, and for the default values. This class does not
    support the magical interpolation behavior.
-
-   All option names are passed through the :meth:`optionxform` method.  Its
-   default implementation converts option names to lower case.
 
    .. versionadded:: 2.3
 
@@ -101,9 +98,10 @@ write-back, as will be the keys within each section.
    *defaults*.
 
    All option names used in interpolation will be passed through the
-   :meth:`optionxform` method just like any other option name reference.  Using
-   the default implementation of :meth:`optionxform`, the values ``foo %(bar)s``
-   and ``foo %(BAR)s`` are equivalent.
+   :meth:`optionxform` method just like any other option name reference.  For
+   example, using the default implementation of :meth:`optionxform` (which converts
+   option names to lower case), the values ``foo %(bar)s`` and ``foo %(BAR)s`` are
+   equivalent.
 
 
 .. class:: SafeConfigParser([defaults[, dict_type]])

@@ -4,10 +4,10 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
-What's New in Python 2.6.7?
-===========================
+What's New in Python 2.6.7 rc 1?
+================================
 
-*Release date: XXXX-XX-XX*
+*Release date: 2011-05-06*
 
 *NOTE: Python 2.6 is in security-fix-only mode.  No non-security bug fixes are
  allowed.  Python 2.6.7 and beyond will be source only releases.*
@@ -19,11 +19,20 @@ Core and Builtins
 Library
 -------
 
-- Issue #11442: Add a charset parameter to the Content-type in SimpleHTTPServer
-  to avoid XSS attacks.
+- Issue #9129: smtpd.py is vulnerable to DoS attacks deriving from missing
+  error handling when accepting a new connection.
 
-- Issue #11662: Make urllib and urllib2 ignore redirections if the
-  scheme is not HTTP, HTTPS or FTP (CVE-2011-1521).
+
+What's New in Python 2.6.6?
+===========================
+
+*Release date: 2010-08-24*
+
+Core and Builtins
+-----------------
+
+Library
+-------
 
 
 What's New in Python 2.6.6 rc 2?
