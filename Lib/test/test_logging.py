@@ -901,7 +901,7 @@ if threading:
                     except socket.error:
                         msg = ('Error during finish, while sending %r, '
                                'closed = %s')
-                        print(msg % (data, self._closed), file=sys.stderr)
+                        print(msg % (data, self.server._closed), file=sys.stderr)
                         raise
 
             ThreadingUDPServer.__init__(self, addr, DelegatingUDPRequestHandler,
