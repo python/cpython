@@ -26,6 +26,14 @@ class ManifestTestCase(support.TempdirManager,
                        support.LoggingCatcher,
                        unittest.TestCase):
 
+    def setUp(self):
+        super(ManifestTestCase, self).setUp()
+        self.cwd = os.getcwd()
+
+    def tearDown(self):
+        os.chdir(self.cwd)
+        super(ManifestTestCase, self).tearDown()
+
     def test_manifest_reader(self):
         tmpdir = self.mkdtemp()
         MANIFEST = os.path.join(tmpdir, 'MANIFEST.in')
