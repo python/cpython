@@ -1718,6 +1718,7 @@ order (MRO) for bases """
             ("__exit__", run_context, swallow, set(), {"__enter__" : iden}),
             ("__complex__", complex, complex_num, set(), {}),
             ("__format__", format, format_impl, set(), {}),
+            ("__dir__", dir, empty_seq, set(), {}),
             ]
 
         class Checker(object):

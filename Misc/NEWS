@@ -9,6 +9,9 @@ What's New in Python 2.7.2?
 Core and Builtins
 -----------------
 
+- Correct lookup of __dir__ on objects. Among other things, this causes errors
+  besides AttributeError found on lookup to be propagated.
+
 - Issue #1195: Fix input() if it is interrupted by CTRL+d and then CTRL+c,
   clear the end-of-file indicator after CTRL+d.
 
