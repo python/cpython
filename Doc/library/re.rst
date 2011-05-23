@@ -1301,24 +1301,27 @@ The text categories are specified with regular expressions.  The technique is
 to combine those into a single master regular expression and to loop over
 successive matches::
 
-    Token = collections.namedtuple('Token', 'typ value line column')
+    import collections
+    import re
+
+    Token = collections.namedtuple('Token', ['typ', 'value', 'line', 'column'])
 
     def tokenize(s):
-        keywords = {'IF', 'THEN', 'FOR', 'NEXT', 'GOSUB', 'RETURN'}
-        tok_spec = [
-            ('NUMBER', r'\d+(\.\d*)?'), # Integer or decimal number
-            ('ASSIGN', r':='),          # Assignment operator
-            ('END', ';'),               # Statement terminator
-            ('ID', r'[A-Za-z]+'),       # Identifiers
-            ('OP', r'[+*\/\-]'),        # Arithmetic operators
-            ('NEWLINE', r'\n'),         # Line endings
-            ('SKIP', r'[ \t]'),         # Skip over spaces and tabs
+        keywords = {'IF', 'THEN', 'ENDIF', 'FOR', 'NEXT', 'GOSUB', 'RETURN'}
+        token_specification = [
+            ('NUMBER',  r'\d+(\.\d*)?'), # Integer or decimal number
+            ('ASSIGN',  r':='),          # Assignment operator
+            ('END',     r';'),           # Statement terminator
+            ('ID',      r'[A-Za-z]+'),   # Identifiers
+            ('OP',      r'[+*\/\-]'),    # Arithmetic operators
+            ('NEWLINE', r'\n'),          # Line endings
+            ('SKIP',    r'[ \t]'),       # Skip over spaces and tabs
         ]
-        tok_re = '|'.join('(?P<%s>%s)' % pair for pair in tok_spec)
-        gettok = re.compile(tok_re).match
+        tok_regex = '|'.join('(?P<%s>%s)' % pair for pair in token_specification)
+        get_token = re.compile(tok_regex).match
         line = 1
         pos = line_start = 0
-        mo = gettok(s)
+        mo = get_token(s)
         while mo is not None:
             typ = mo.lastgroup
             if typ == 'NEWLINE':
@@ -1330,13 +1333,15 @@ successive matches::
                     typ = val
                 yield Token(typ, val, line, mo.start()-line_start)
             pos = mo.end()
-            mo = gettok(s, pos)
+            mo = get_token(s, pos)
         if pos != len(s):
             raise RuntimeError('Unexpected character %r on line %d' %(s[pos], line))
 
-    statements = '''\
-        total := total + price * quantity;
-        tax := price * 0.05;
+    statements = '''
+        IF quantity THEN
+            total := total + price * quantity;
+            tax := price * 0.05;
+        ENDIF;
     '''
 
     for token in tokenize(statements):
@@ -1344,17 +1349,22 @@ successive matches::
 
 The tokenizer produces the following output::
 
-    Token(typ='ID', value='total', line=1, column=8)
-    Token(typ='ASSIGN', value=':=', line=1, column=14)
-    Token(typ='ID', value='total', line=1, column=17)
-    Token(typ='OP', value='+', line=1, column=23)
-    Token(typ='ID', value='price', line=1, column=25)
-    Token(typ='OP', value='*', line=1, column=31)
-    Token(typ='ID', value='quantity', line=1, column=33)
-    Token(typ='END', value=';', line=1, column=41)
-    Token(typ='ID', value='tax', line=2, column=9)
-    Token(typ='ASSIGN', value=':=', line=2, column=13)
-    Token(typ='ID', value='price', line=2, column=16)
-    Token(typ='OP', value='*', line=2, column=22)
-    Token(typ='NUMBER', value='0.05', line=2, column=24)
-    Token(typ='END', value=';', line=2, column=28)
+    Token(typ='IF', value='IF', line=2, column=5)
+    Token(typ='ID', value='quantity', line=2, column=8)
+    Token(typ='THEN', value='THEN', line=2, column=17)
+    Token(typ='ID', value='total', line=3, column=9)
+    Token(typ='ASSIGN', value=':=', line=3, column=15)
+    Token(typ='ID', value='total', line=3, column=18)
+    Token(typ='OP', value='+', line=3, column=24)
+    Token(typ='ID', value='price', line=3, column=26)
+    Token(typ='OP', value='*', line=3, column=32)
+    Token(typ='ID', value='quantity', line=3, column=34)
+    Token(typ='END', value=';', line=3, column=42)
+    Token(typ='ID', value='tax', line=4, column=9)
+    Token(typ='ASSIGN', value=':=', line=4, column=13)
+    Token(typ='ID', value='price', line=4, column=16)
+    Token(typ='OP', value='*', line=4, column=22)
+    Token(typ='NUMBER', value='0.05', line=4, column=24)
+    Token(typ='END', value=';', line=4, column=28)
+    Token(typ='ENDIF', value='ENDIF', line=5, column=5)
+    Token(typ='END', value=';', line=5, column=10)
