@@ -1595,6 +1595,7 @@ order (MRO) for bases """
             # probably not worth it.
             # ("__enter__", run_context, iden),
             # ("__exit__", run_context, iden),
+            ("__dir__", dir, empty_seq, set(), {}),
             ]
 
         class Checker(object):

@@ -10,6 +10,9 @@ What's New in Python 3.1.4?
 Core and Builtins
 -----------------
 
+- Correct lookup of __dir__ on objects. Among other things, this causes errors
+  besides AttributeError found on lookup to be propagated.
+
 - Issue #12060: Use sig_atomic_t type and volatile keyword in the signal
   module. Patch written by Charles-François Natali.
 
