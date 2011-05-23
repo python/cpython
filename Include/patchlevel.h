@@ -27,7 +27,7 @@
 #define PY_RELEASE_SERIAL	2
 
 /* Version as a string */
-#define PY_VERSION      	"2.6.7rc2"
+#define PY_VERSION      	"2.6.7rc2+"
 /*--end constants--*/
 
 /* Subversion Revision number of this file (not of the repository) */
