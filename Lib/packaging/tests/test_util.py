@@ -526,11 +526,18 @@ class GlobTestCaseBase(support.TempdirManager,
 
 class GlobTestCase(GlobTestCaseBase):
 
+    def setUp(self):
+        super(GlobTestCase, self).setUp()
+        self.cwd = os.getcwd()
+
+    def tearDown(self):
+        os.chdir(self.cwd)
+        super(GlobTestCase, self).tearDown()
+
     def assertGlobMatch(self, glob, spec):
         """"""
         tempdir = self.build_files_tree(spec)
         expected = self.clean_tree(spec)
-        self.addCleanup(os.chdir, os.getcwd())
         os.chdir(tempdir)
         result = list(iglob(glob))
         self.assertCountEqual(expected, result)
