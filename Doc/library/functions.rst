@@ -1464,7 +1464,7 @@ available.  They are listed here in alphabetical order.
       also requires that the number of elements fit in a native C long.  If a
       larger range is needed, an alternate version can be crafted using the
       :mod:`itertools` module: ``islice(count(start, step),
-      (stop-start+step-1)//step)``.
+      (stop-start+step-1+2*(step<0))//step)``.
 
 
 .. function:: zip([iterable, ...])
