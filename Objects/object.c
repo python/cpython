@@ -1906,14 +1906,21 @@ _dir_object(PyObject *obj)
 {
     PyObject *result = NULL;
     static PyObject *dir_str = NULL;
-    PyObject *dirfunc = _PyObject_LookupSpecial(obj, "__dir__", &dir_str);
+    PyObject *dirfunc;
 
     assert(obj);
-    if (dirfunc == NULL) {
+    if (PyInstance_Check(obj)) {
+        dirfunc = PyObject_GetAttrString(obj, "__dir__");
+        if (dirfunc == NULL && !PyErr_ExceptionMatches(PyExc_AttributeError))
+            return NULL;
+    }
+    else {
+        dirfunc = _PyObject_LookupSpecial(obj, "__dir__", &dir_str);
         if (PyErr_Occurred())
             return NULL;
+    }
+    if (dirfunc == NULL) {
         /* use default implementation */
-        PyErr_Clear();
         if (PyModule_Check(obj))
             result = _specialized_dir_module(obj);
         else if (PyType_Check(obj) || PyClass_Check(obj))
