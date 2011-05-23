@@ -67,6 +67,10 @@ class InstallLibTestCase(support.TempdirManager,
         cmd.distribution.packages = [pkg_dir]
         cmd.distribution.script_name = 'setup.py'
 
+        # make sure the build_lib is set the temp dir
+        build_dir = os.path.split(pkg_dir)[0]
+        cmd.get_finalized_command('build_py').build_lib = build_dir
+
         # get_output should return 4 elements
         self.assertEqual(len(cmd.get_outputs()), 4)
 
