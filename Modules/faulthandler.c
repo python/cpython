@@ -854,7 +854,7 @@ faulthandler_fatal_error_py(PyObject *self, PyObject *args)
 }
 
 #if defined(HAVE_SIGALTSTACK) && defined(HAVE_SIGACTION)
-void*
+static void*
 stack_overflow(void *min_sp, void *max_sp, size_t *depth)
 {
     /* allocate 4096 bytes on the stack at each call */
