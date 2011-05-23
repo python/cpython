@@ -893,14 +893,29 @@ if threading:
 
                 def handle(self):
                     self.server._handler(self)
+
+                def finish(self):
+                    data = self.wfile.getvalue()
+                    try:
+                        super(DelegatingUDPRequestHandler, self).finish()
+                    except socket.error:
+                        msg = ('Error during finish, while sending %r, '
+                               'closed = %s')
+                        print(msg % (data, self._closed), file=sys.stderr)
+                        raise
+
             ThreadingUDPServer.__init__(self, addr, DelegatingUDPRequestHandler,
                                         bind_and_activate)
             ControlMixin.__init__(self, handler, poll_interval)
+            self._closed = False
 
         def server_bind(self):
             super(TestUDPServer, self).server_bind()
             self.port = self.socket.getsockname()[1]
 
+        def server_close(self):
+            super(TestUDPServer, self).server_close()
+            self._closed = True
 
 # - end of server_helper section
 
