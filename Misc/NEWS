@@ -153,6 +153,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6501: os.device_encoding() returns None on Windows if the application
+  has no console.
+
 - Issue #12132: Skip test_build_ext in case the xxmodule is not found.
 
 - Issue #12105: Add O_CLOEXEC to the os module.
