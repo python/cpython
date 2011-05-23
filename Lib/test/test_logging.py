@@ -888,7 +888,8 @@ if threading:
                             before calling :meth:`start`, so that the server will
                             set up the socket and listen on it.
         """
-        def __init__(self, addr, handler, poll_interval=0.5, bind_and_activate=True):
+        def __init__(self, addr, handler, poll_interval=0.5,
+                     bind_and_activate=True):
             class DelegatingUDPRequestHandler(DatagramRequestHandler):
 
                 def handle(self):
@@ -896,15 +897,15 @@ if threading:
 
                 def finish(self):
                     data = self.wfile.getvalue()
-                    try:
-                        super(DelegatingUDPRequestHandler, self).finish()
-                    except socket.error:
-                        msg = ('Error during finish, while sending %r, '
-                               'closed = %s')
-                        print(msg % (data, self.server._closed), file=sys.stderr)
-                        raise
+                    if data:
+                        try:
+                            super(DelegatingUDPRequestHandler, self).finish()
+                        except socket.error:
+                            if not self.server._closed:
+                                raise
 
-            ThreadingUDPServer.__init__(self, addr, DelegatingUDPRequestHandler,
+            ThreadingUDPServer.__init__(self, addr,
+                                        DelegatingUDPRequestHandler,
                                         bind_and_activate)
             ControlMixin.__init__(self, handler, poll_interval)
             self._closed = False
