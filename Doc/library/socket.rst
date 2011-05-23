@@ -538,9 +538,9 @@ The module :mod:`socket` exports the following constants and functions:
 
 .. function:: if_nameindex()
 
-   Returns a list of network interface information
-   (index, name as a string) tuples.
-   :exc:`socket.error` if the system call fails for any reason.
+   Return a list of network interface information
+   (index int, name string) tuples.
+   :exc:`socket.error` if the system call fails.
 
    Availability: Unix.
 
@@ -549,8 +549,8 @@ The module :mod:`socket` exports the following constants and functions:
 
 .. function:: if_nametoindex(if_name)
 
-   Returns a network interface index number corresponding to an
-   interface name string.
+   Return a network interface index number corresponding to an
+   interface name.
    :exc:`socket.error` if no interface with the given name exists.
 
    Availability: Unix.
@@ -560,8 +560,8 @@ The module :mod:`socket` exports the following constants and functions:
 
 .. function:: if_indextoname(if_index)
 
-   Returns a network interface name string corresponding to a
-   interface index.
+   Return a network interface name corresponding to a
+   interface index number.
    :exc:`socket.error` if no interface with the given index exists.
 
    Availability: Unix.

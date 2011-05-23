@@ -13,8 +13,8 @@ Core and Builtins
 - Issue #12060: Use sig_atomic_t type and volatile keyword in the signal
   module. Patch written by Charles-François Natali.
 
-- Added the if_nameindex, if_indextoname, if_nametoindex methods to
-  the socket module as requested in issue #1746656.
+- Issue #1746656: Added the if_nameindex, if_indextoname, if_nametoindex
+  methods to the socket module.
 
 - Issue #12044: Fixed subprocess.Popen when used as a context manager to
   wait for the process to end when exiting the context to avoid unintentionally
