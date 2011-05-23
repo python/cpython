@@ -176,8 +176,13 @@ class ConfigTestCase(support.TempdirManager,
 
         self.addCleanup(os.chdir, os.getcwd())
         tempdir = self.mkdtemp()
+        self.working_dir = os.getcwd()
         os.chdir(tempdir)
         self.tempdir = tempdir
+
+    def tearDown(self):
+        os.chdir(self.working_dir)
+        super(ConfigTestCase, self).tearDown()
 
     def write_setup(self, kwargs=None):
         opts = {'description-file': 'README', 'extra-files': '',
