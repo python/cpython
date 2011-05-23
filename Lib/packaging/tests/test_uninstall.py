@@ -36,7 +36,12 @@ class UninstallTestCase(support.TempdirManager,
         self.addCleanup(os.chdir, os.getcwd())
         self.addCleanup(enable_cache)
         self.root_dir = self.mkdtemp()
+        self.cwd = os.getcwd()
         disable_cache()
+
+    def tearDown(self):
+        os.chdir(self.cwd)
+        super(UninstallTestCase, self).tearDown()
 
     def run_setup(self, *args):
         # run setup with args

@@ -153,6 +153,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #12125: fixed the failures under Solaris due to improper test cleanup.
+
 - Issue #6501: os.device_encoding() returns None on Windows if the application
   has no console.
 
