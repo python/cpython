@@ -30,6 +30,12 @@ Lib/email/test/data/msg_26.txt = BIN
 Lib/test/sndhdrdata/sndhdr.* = BIN
 Lib/test/decimaltestdata/*.decTest = BIN
 
+Doc/make.bat = CRLF
+Tools/buildbot/*.bat = CRLF
+Tools/msi/merge.py = CRLF
+PC/VS7.1/*.bat = CRLF
+PC/VS8.0/*.bat = CRLF
+
 # All other files (which presumably are human-editable) are "native".
 # This must be the last rule!
 
