@@ -1911,8 +1911,12 @@ _dir_object(PyObject *obj)
     assert(obj);
     if (PyInstance_Check(obj)) {
         dirfunc = PyObject_GetAttrString(obj, "__dir__");
-        if (dirfunc == NULL && !PyErr_ExceptionMatches(PyExc_AttributeError))
-            return NULL;
+        if (dirfunc == NULL) {
+            if (PyErr_ExceptionMatches(PyExc_AttributeError))
+                PyErr_Clear();
+            else
+                return NULL;
+        }
     }
     else {
         dirfunc = _PyObject_LookupSpecial(obj, "__dir__", &dir_str);
