@@ -469,13 +469,11 @@ class UTF16Test(ReadTest):
         s1 = u'Hello\r\nworld\r\n'
 
         s = s1.encode(self.encoding)
-        try:
-            with open(test_support.TESTFN, 'wb') as fp:
-                fp.write(s)
-            with codecs.open(test_support.TESTFN, 'U', encoding=self.encoding) as reader:
-                self.assertEqual(reader.read(), s1)
-        finally:
-            test_support.unlink(test_support.TESTFN)
+        self.addCleanup(test_support.unlink, test_support.TESTFN)
+        with open(test_support.TESTFN, 'wb') as fp:
+            fp.write(s)
+        with codecs.open(test_support.TESTFN, 'U', encoding=self.encoding) as reader:
+            self.assertEqual(reader.read(), s1)
 
 class UTF16LETest(ReadTest):
     encoding = "utf-16-le"
@@ -1532,6 +1530,7 @@ class BomTest(unittest.TestCase):
                  "utf-32",
                  "utf-32-le",
                  "utf-32-be")
+        self.addCleanup(test_support.unlink, test_support.TESTFN)
         for encoding in tests:
             # Check if the BOM is written only once
             with codecs.open(test_support.TESTFN, 'w+', encoding=encoding) as f:
