@@ -632,7 +632,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     continue
                 accumulate_result(test, result)
                 if not quiet:
-                    print("[{1:{0}}{2}/{3}] {4}".format(
+                    fmt = "[{1:{0}}{2}/{3}] {4}" if bad else "[{1:{0}}{2}] {4}"
+                    print(fmt.format(
                         test_count_width, test_index, test_count,
                         len(bad), test))
                 if stdout:
@@ -653,7 +654,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     else:
         for test_index, test in enumerate(tests, 1):
             if not quiet:
-                print("[{1:{0}}{2}/{3}] {4}".format(
+                fmt = "[{1:{0}}{2}/{3}] {4}" if bad else "[{1:{0}}{2}] {4}"
+                print(fmt.format(
                     test_count_width, test_index, test_count, len(bad), test))
                 sys.stdout.flush()
             if trace:
