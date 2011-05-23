@@ -291,6 +291,14 @@ def requires(resource, msg=None):
             msg = "Use of the `%s' resource not enabled" % resource
         raise ResourceDenied(msg)
 
+def linux_version():
+    try:
+        # platform.release() is something like '2.6.33.7-desktop-2mnb'
+        version_string = platform.release().split('-')[0]
+        return tuple(map(int, version_string.split('.')))
+    except ValueError:
+        return 0, 0, 0
+
 HOST = 'localhost'
 
 def find_unused_port(family=socket.AF_INET, socktype=socket.SOCK_STREAM):

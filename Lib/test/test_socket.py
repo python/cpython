@@ -24,14 +24,6 @@ try:
 except ImportError:
     fcntl = False
 
-def linux_version():
-    try:
-        # platform.release() is something like '2.6.33.7-desktop-2mnb'
-        version_string = platform.release().split('-')[0]
-        return tuple(map(int, version_string.split('.')))
-    except ValueError:
-        return 0, 0, 0
-
 HOST = support.HOST
 MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8') ## test unicode string and carriage return
 
@@ -1032,7 +1024,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
 
     if hasattr(socket, "SOCK_NONBLOCK"):
         def testInitNonBlocking(self):
-            v = linux_version()
+            v = support.linux_version()
             if v < (2, 6, 28):
                 self.skipTest("Linux kernel 2.6.28 or higher required, not %s"
                               % ".".join(map(str, v)))
@@ -2010,7 +2002,7 @@ class ContextManagersTest(ThreadedTCPSocketTest):
 @unittest.skipUnless(fcntl, "module fcntl not available")
 class CloexecConstantTest(unittest.TestCase):
     def test_SOCK_CLOEXEC(self):
-        v = linux_version()
+        v = support.linux_version()
         if v < (2, 6, 28):
             self.skipTest("Linux kernel 2.6.28 or higher required, not %s"
                           % ".".join(map(str, v)))
@@ -2032,7 +2024,7 @@ class NonblockConstantTest(unittest.TestCase):
             self.assertEqual(s.gettimeout(), None)
 
     def test_SOCK_NONBLOCK(self):
-        v = linux_version()
+        v = support.linux_version()
         if v < (2, 6, 28):
             self.skipTest("Linux kernel 2.6.28 or higher required, not %s"
                           % ".".join(map(str, v)))
