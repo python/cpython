@@ -161,6 +161,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10818: Remove the Tk GUI of the pydoc module (pydoc -g has been
+  deprecated in Python 3.2).
+
 - Issue #1441530: In imaplib, read the data in one chunk to speed up large
   reads and simplify code.
 

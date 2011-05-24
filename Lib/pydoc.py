@@ -22,11 +22,6 @@ Run "pydoc -b" to start an HTTP server on an arbitrary unused port and
 open a Web browser to interactively browse documentation.  The -p option
 can be used with the -b option to explicitly specify the server port.
 
-For platforms without a command line, "pydoc -g" starts the HTTP server
-and also pops up a little window for controlling it.  This option is
-deprecated, since the server can now be controlled directly from HTTP
-clients.
-
 Run "pydoc -w <name>" to write out the HTML documentation for a module
 to a file named "<name>.html".
 
@@ -2140,187 +2135,6 @@ pydoc</strong> by Ka-Ping Yee &lt;ping@lfw.org&gt;</font>'''
     finally:
         if completer: completer()
 
-# ----------------------------------------------------- graphical interface
-
-def gui():
-    """Graphical interface (starts Web server and pops up a control window)."""
-
-    msg = ('the pydoc.gui() function and "pydoc -g" option are deprecated\n',
-           'use "pydoc.browse() function and "pydoc -b" option instead.')
-    warnings.warn(msg, DeprecationWarning, stacklevel=2)
-
-    class GUI:
-        def __init__(self, window, port=7464):
-            self.window = window
-            self.server = None
-            self.scanner = None
-
-            import tkinter
-            self.server_frm = tkinter.Frame(window)
-            self.title_lbl = tkinter.Label(self.server_frm,
-                text='Starting server...\n ')
-            self.open_btn = tkinter.Button(self.server_frm,
-                text='open browser', command=self.open, state='disabled')
-            self.quit_btn = tkinter.Button(self.server_frm,
-                text='quit serving', command=self.quit, state='disabled')
-
-            self.search_frm = tkinter.Frame(window)
-            self.search_lbl = tkinter.Label(self.search_frm, text='Search for')
-            self.search_ent = tkinter.Entry(self.search_frm)
-            self.search_ent.bind('<Return>', self.search)
-            self.stop_btn = tkinter.Button(self.search_frm,
-                text='stop', pady=0, command=self.stop, state='disabled')
-            if sys.platform == 'win32':
-                # Trying to hide and show this button crashes under Windows.
-                self.stop_btn.pack(side='right')
-
-            self.window.title('pydoc')
-            self.window.protocol('WM_DELETE_WINDOW', self.quit)
-            self.title_lbl.pack(side='top', fill='x')
-            self.open_btn.pack(side='left', fill='x', expand=1)
-            self.quit_btn.pack(side='right', fill='x', expand=1)
-            self.server_frm.pack(side='top', fill='x')
-
-            self.search_lbl.pack(side='left')
-            self.search_ent.pack(side='right', fill='x', expand=1)
-            self.search_frm.pack(side='top', fill='x')
-            self.search_ent.focus_set()
-
-            font = ('helvetica', sys.platform == 'win32' and 8 or 10)
-            self.result_lst = tkinter.Listbox(window, font=font, height=6)
-            self.result_lst.bind('<Button-1>', self.select)
-            self.result_lst.bind('<Double-Button-1>', self.goto)
-            self.result_scr = tkinter.Scrollbar(window,
-                orient='vertical', command=self.result_lst.yview)
-            self.result_lst.config(yscrollcommand=self.result_scr.set)
-
-            self.result_frm = tkinter.Frame(window)
-            self.goto_btn = tkinter.Button(self.result_frm,
-                text='go to selected', command=self.goto)
-            self.hide_btn = tkinter.Button(self.result_frm,
-                text='hide results', command=self.hide)
-            self.goto_btn.pack(side='left', fill='x', expand=1)
-            self.hide_btn.pack(side='right', fill='x', expand=1)
-
-            self.window.update()
-            self.minwidth = self.window.winfo_width()
-            self.minheight = self.window.winfo_height()
-            self.bigminheight = (self.server_frm.winfo_reqheight() +
-                                 self.search_frm.winfo_reqheight() +
-                                 self.result_lst.winfo_reqheight() +
-                                 self.result_frm.winfo_reqheight())
-            self.bigwidth, self.bigheight = self.minwidth, self.bigminheight
-            self.expanded = 0
-            self.window.wm_geometry('%dx%d' % (self.minwidth, self.minheight))
-            self.window.wm_minsize(self.minwidth, self.minheight)
-            self.window.tk.willdispatch()
-
-            import threading
-            threading.Thread(
-                target=serve, args=(port, self.ready, self.quit)).start()
-
-        def ready(self, server):
-            self.server = server
-            self.title_lbl.config(
-                text='Python documentation server at\n' + server.url)
-            self.open_btn.config(state='normal')
-            self.quit_btn.config(state='normal')
-
-        def open(self, event=None, url=None):
-            url = url or self.server.url
-            import webbrowser
-            webbrowser.open(url)
-
-        def quit(self, event=None):
-            if self.server:
-                self.server.quit = 1
-            self.window.quit()
-
-        def search(self, event=None):
-            key = self.search_ent.get()
-            self.stop_btn.pack(side='right')
-            self.stop_btn.config(state='normal')
-            self.search_lbl.config(text='Searching for "%s"...' % key)
-            self.search_ent.forget()
-            self.search_lbl.pack(side='left')
-            self.result_lst.delete(0, 'end')
-            self.goto_btn.config(state='disabled')
-            self.expand()
-
-            import threading
-            if self.scanner:
-                self.scanner.quit = 1
-            self.scanner = ModuleScanner()
-            threading.Thread(target=self.scanner.run,
-                             args=(self.update, key, self.done)).start()
-
-        def update(self, path, modname, desc):
-            if modname[-9:] == '.__init__':
-                modname = modname[:-9] + ' (package)'
-            self.result_lst.insert('end',
-                modname + ' - ' + (desc or '(no description)'))
-
-        def stop(self, event=None):
-            if self.scanner:
-                self.scanner.quit = 1
-                self.scanner = None
-
-        def done(self):
-            self.scanner = None
-            self.search_lbl.config(text='Search for')
-            self.search_lbl.pack(side='left')
-            self.search_ent.pack(side='right', fill='x', expand=1)
-            if sys.platform != 'win32': self.stop_btn.forget()
-            self.stop_btn.config(state='disabled')
-
-        def select(self, event=None):
-            self.goto_btn.config(state='normal')
-
-        def goto(self, event=None):
-            selection = self.result_lst.curselection()
-            if selection:
-                modname = self.result_lst.get(selection[0]).split()[0]
-                self.open(url=self.server.url + modname + '.html')
-
-        def collapse(self):
-            if not self.expanded: return
-            self.result_frm.forget()
-            self.result_scr.forget()
-            self.result_lst.forget()
-            self.bigwidth = self.window.winfo_width()
-            self.bigheight = self.window.winfo_height()
-            self.window.wm_geometry('%dx%d' % (self.minwidth, self.minheight))
-            self.window.wm_minsize(self.minwidth, self.minheight)
-            self.expanded = 0
-
-        def expand(self):
-            if self.expanded: return
-            self.result_frm.pack(side='bottom', fill='x')
-            self.result_scr.pack(side='right', fill='y')
-            self.result_lst.pack(side='top', fill='both', expand=1)
-            self.window.wm_geometry('%dx%d' % (self.bigwidth, self.bigheight))
-            self.window.wm_minsize(self.minwidth, self.bigminheight)
-            self.expanded = 1
-
-        def hide(self, event=None):
-            self.stop()
-            self.collapse()
-
-    import tkinter
-    try:
-        root = tkinter.Tk()
-        # Tk will crash if pythonw.exe has an XP .manifest
-        # file and the root has is not destroyed explicitly.
-        # If the problem is ever fixed in Tk, the explicit
-        # destroy can go.
-        try:
-            gui = GUI(root)
-            root.mainloop()
-        finally:
-            root.destroy()
-    except KeyboardInterrupt:
-        pass
-
 
 # --------------------------------------- enhanced Web browser interface
 
@@ -2778,15 +2592,12 @@ def cli():
         sys.path.insert(0, '.')
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'bgk:p:w')
+        opts, args = getopt.getopt(sys.argv[1:], 'bk:p:w')
         writing = False
         start_server = False
         open_browser = False
         port = None
         for opt, val in opts:
-            if opt == '-g':
-                gui()
-                return
             if opt == '-b':
                 start_server = True
                 open_browser = True
@@ -2846,9 +2657,6 @@ def cli():
     Start an HTTP server on an arbitrary unused port and open a Web browser
     to interactively browse documentation.  The -p option can be used with
     the -b option to explicitly specify the server port.
-
-{cmd} -g
-    Deprecated.
 
 {cmd} -w <name> ...
     Write out the HTML documentation for a module to a file in the current
