@@ -152,6 +152,16 @@ signal
   instead of a RuntimeError: OSError has an errno attribute.
 
 
+ssl
+---
+
+The :mod:`ssl` module has new functions:
+
+  * :func:`~ssl.RAND_bytes`: generate cryptographically strong
+    pseudo-random bytes.
+  * :func:`~ssl.RAND_pseudo_bytes`: generate pseudo-random bytes.
+
+
 Optimizations
 =============
 
