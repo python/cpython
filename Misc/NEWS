@@ -13,6 +13,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5715: In socketserver, close the server socket in the child process.
+
 - Correct lookup of __dir__ on objects. Among other things, this causes errors
   besides AttributeError found on lookup to be propagated.
 
