@@ -294,7 +294,7 @@ def _parse_makefile(filename, vars=None):
                         variables.remove(name)
 
                         if name.startswith('PY_') \
-                                and name[3:] in renamed_variables:
+                        and name[3:] in renamed_variables:
 
                             name = name[3:]
                             if name not in done:
@@ -302,7 +302,9 @@ def _parse_makefile(filename, vars=None):
 
 
             else:
-                # bogus variable reference; just drop it since we can't deal
+                # bogus variable reference (e.g. "prefix=$/opt/python");
+                # just drop it since we can't deal
+                done[name] = value
                 variables.remove(name)
 
     # strip spurious spaces
