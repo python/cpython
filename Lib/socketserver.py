@@ -552,15 +552,16 @@ class ForkingMixIn:
         else:
             # Child process.
             # This must never return, hence os._exit()!
-            self.socket.close()
             try:
                 self.finish_request(request, client_address)
                 self.shutdown_request(request)
+                self.socket.close()
                 os._exit(0)
             except:
                 try:
                     self.handle_error(request, client_address)
                     self.shutdown_request(request)
+                    self.socket.close()
                 finally:
                     os._exit(1)
 
