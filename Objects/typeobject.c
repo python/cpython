@@ -2515,9 +2515,9 @@ static PyMethodDef type_methods[] = {
      PyDoc_STR("__prepare__() -> dict\n"
                "used to create the namespace for the class statement")},
     {"__instancecheck__", type___instancecheck__, METH_O,
-     PyDoc_STR("__instancecheck__() -> check if an object is an instance")},
+     PyDoc_STR("__instancecheck__() -> bool\ncheck if an object is an instance")},
     {"__subclasscheck__", type___subclasscheck__, METH_O,
-     PyDoc_STR("__subclasscheck__() -> check if a class is a subclass")},
+     PyDoc_STR("__subclasscheck__() -> bool\ncheck if a class is a subclass")},
     {0}
 };
 
@@ -3354,7 +3354,7 @@ static PyMethodDef object_methods[] = {
     {"__format__", object_format, METH_VARARGS,
      PyDoc_STR("default object formatter")},
     {"__sizeof__", object_sizeof, METH_NOARGS,
-     PyDoc_STR("__sizeof__() -> size of object in memory, in bytes")},
+     PyDoc_STR("__sizeof__() -> int\nsize of object in memory, in bytes")},
     {0}
 };
 
