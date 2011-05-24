@@ -43,6 +43,12 @@ The :mod:`random` module also provides the :class:`SystemRandom` class which
 uses the system function :func:`os.urandom` to generate random numbers
 from sources provided by the operating system.
 
+.. warning::
+
+   The generators of the :mod:`random` module should not be used for security
+   purposes, they are not cryptographic. Use :func:`ssl.RAND_bytes` if you
+   require a cryptographically secure pseudorandom number generator.
+
 
 Bookkeeping functions:
 
