@@ -156,6 +156,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12049: Add RAND_bytes() and RAND_pseudo_bytes() functions to the ssl
+  module.
+
 - Issue #12125: fixed the failures under Solaris due to improper test cleanup.
 
 - Issue #6501: os.device_encoding() returns None on Windows if the application
