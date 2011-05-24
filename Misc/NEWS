@@ -161,6 +161,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #12100: Don't reset incremental encoders of CJK codecs at each call to
+  their encode() method anymore, but continue to call the reset() method if the
+  final argument is True.
+
 - Issue #12049: Add RAND_bytes() and RAND_pseudo_bytes() functions to the ssl
   module.
 
