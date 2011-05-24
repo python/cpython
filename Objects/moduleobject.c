@@ -437,7 +437,7 @@ module_dir(PyObject *self, PyObject *args)
 
 static PyMethodDef module_methods[] = {
     {"__dir__", module_dir, METH_NOARGS,
-     PyDoc_STR("__dir__() -> specialized dir() implementation")},
+     PyDoc_STR("__dir__() -> list\nspecialized dir() implementation")},
     {0}
 };
 
