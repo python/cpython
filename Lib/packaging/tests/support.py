@@ -71,8 +71,8 @@ class LoggingCatcher:
     def setUp(self):
         super(LoggingCatcher, self).setUp()
         self.loghandler = handler = _TestHandler()
+        self.old_level = logger.level
         logger.addHandler(handler)
-        self.addCleanup(logger.setLevel, logger.level)
         logger.setLevel(logging.DEBUG)  # we want all messages
 
     def tearDown(self):
@@ -84,6 +84,7 @@ class LoggingCatcher:
         for ref in weakref.getweakrefs(handler):
             logging._removeHandlerRef(ref)
         del self.loghandler
+        logger.setLevel(self.old_level)
         super(LoggingCatcher, self).tearDown()
 
     def get_logs(self, *levels):
