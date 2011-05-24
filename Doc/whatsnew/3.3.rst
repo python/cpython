@@ -127,8 +127,9 @@ os
 pydoc
 -----
 
-The Tk GUI has been removed from the :mod:`ssl` module: ``pydoc -g`` has been
-deprecated in Python 3.2.
+The Tk GUI and the :func:`~pydoc.serve` function have been removed from the
+:mod:`pydoc` module: ``pydoc -g`` and :func:`~pydoc.serve` have been deprecated
+in Python 3.2.
 
 
 sys
