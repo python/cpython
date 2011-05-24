@@ -1182,66 +1182,6 @@ PyCallable_Check(PyObject *x)
     return x->ob_type->tp_call != NULL;
 }
 
-/* ------------------------- PyObject_Dir() helpers ------------------------- */
-
-/* Helper for PyObject_Dir.
-   Merge the __dict__ of aclass into dict, and recursively also all
-   the __dict__s of aclass's base classes.  The order of merging isn't
-   defined, as it's expected that only the final set of dict keys is
-   interesting.
-   Return 0 on success, -1 on error.
-*/
-
-static int
-merge_class_dict(PyObject* dict, PyObject* aclass)
-{
-    PyObject *classdict;
-    PyObject *bases;
-
-    assert(PyDict_Check(dict));
-    assert(aclass);
-
-    /* Merge in the type's dict (if any). */
-    classdict = PyObject_GetAttrString(aclass, "__dict__");
-    if (classdict == NULL)
-        PyErr_Clear();
-    else {
-        int status = PyDict_Update(dict, classdict);
-        Py_DECREF(classdict);
-        if (status < 0)
-            return -1;
-    }
-
-    /* Recursively merge in the base types' (if any) dicts. */
-    bases = PyObject_GetAttrString(aclass, "__bases__");
-    if (bases == NULL)
-        PyErr_Clear();
-    else {
-        /* We have no guarantee that bases is a real tuple */
-        Py_ssize_t i, n;
-        n = PySequence_Size(bases); /* This better be right */
-        if (n < 0)
-            PyErr_Clear();
-        else {
-            for (i = 0; i < n; i++) {
-                int status;
-                PyObject *base = PySequence_GetItem(bases, i);
-                if (base == NULL) {
-                    Py_DECREF(bases);
-                    return -1;
-                }
-                status = merge_class_dict(dict, base);
-                Py_DECREF(base);
-                if (status < 0) {
-                    Py_DECREF(bases);
-                    return -1;
-                }
-            }
-        }
-        Py_DECREF(bases);
-    }
-    return 0;
-}
 
 /* Helper for PyObject_Dir without arguments: returns the local scope. */
 static PyObject *
@@ -1269,133 +1209,34 @@ _dir_locals(void)
     return names;
 }
 
-/* Helper for PyObject_Dir of type objects: returns __dict__ and __bases__.
-   We deliberately don't suck up its __class__, as methods belonging to the
-   metaclass would probably be more confusing than helpful.
-*/
-static PyObject *
-_specialized_dir_type(PyObject *obj)
-{
-    PyObject *result = NULL;
-    PyObject *dict = PyDict_New();
-
-    if (dict != NULL && merge_class_dict(dict, obj) == 0)
-        result = PyDict_Keys(dict);
-
-    Py_XDECREF(dict);
-    return result;
-}
-
-/* Helper for PyObject_Dir of module objects: returns the module's __dict__. */
-static PyObject *
-_specialized_dir_module(PyObject *obj)
-{
-    PyObject *result = NULL;
-    PyObject *dict = PyObject_GetAttrString(obj, "__dict__");
-
-    if (dict != NULL) {
-        if (PyDict_Check(dict))
-            result = PyDict_Keys(dict);
-        else {
-            const char *name = PyModule_GetName(obj);
-            if (name)
-                PyErr_Format(PyExc_TypeError,
-                             "%.200s.__dict__ is not a dictionary",
-                             name);
-        }
-    }
-
-    Py_XDECREF(dict);
-    return result;
-}
-
-/* Helper for PyObject_Dir of generic objects: returns __dict__, __class__,
-   and recursively up the __class__.__bases__ chain.
-*/
-static PyObject *
-_generic_dir(PyObject *obj)
-{
-    PyObject *result = NULL;
-    PyObject *dict = NULL;
-    PyObject *itsclass = NULL;
-
-    /* Get __dict__ (which may or may not be a real dict...) */
-    dict = PyObject_GetAttrString(obj, "__dict__");
-    if (dict == NULL) {
-        PyErr_Clear();
-        dict = PyDict_New();
-    }
-    else if (!PyDict_Check(dict)) {
-        Py_DECREF(dict);
-        dict = PyDict_New();
-    }
-    else {
-        /* Copy __dict__ to avoid mutating it. */
-        PyObject *temp = PyDict_Copy(dict);
-        Py_DECREF(dict);
-        dict = temp;
-    }
-
-    if (dict == NULL)
-        goto error;
-
-    /* Merge in attrs reachable from its class. */
-    itsclass = PyObject_GetAttrString(obj, "__class__");
-    if (itsclass == NULL)
-        /* XXX(tomer): Perhaps fall back to obj->ob_type if no
-                       __class__ exists? */
-        PyErr_Clear();
-    else {
-        if (merge_class_dict(dict, itsclass) != 0)
-            goto error;
-    }
-
-    result = PyDict_Keys(dict);
-    /* fall through */
-error:
-    Py_XDECREF(itsclass);
-    Py_XDECREF(dict);
-    return result;
-}
-
-/* Helper for PyObject_Dir: object introspection.
-   This calls one of the above specialized versions if no __dir__ method
-   exists. */
+/* Helper for PyObject_Dir: object introspection. */
 static PyObject *
 _dir_object(PyObject *obj)
 {
-    PyObject *result = NULL;
+    PyObject *result;
     static PyObject *dir_str = NULL;
     PyObject *dirfunc = _PyObject_LookupSpecial(obj, "__dir__", &dir_str);
 
     assert(obj);
     if (dirfunc == NULL) {
-        if (PyErr_Occurred())
-            return NULL;
-        /* use default implementation */
-        if (PyModule_Check(obj))
-            result = _specialized_dir_module(obj);
-        else if (PyType_Check(obj))
-            result = _specialized_dir_type(obj);
-        else
-            result = _generic_dir(obj);
+        if (!PyErr_Occurred())
+            PyErr_SetString(PyExc_TypeError, "object does not provide __dir__");
+        return NULL;
     }
-    else {
-        /* use __dir__ */
-        result = PyObject_CallFunctionObjArgs(dirfunc, NULL);
-        Py_DECREF(dirfunc);
-        if (result == NULL)
-            return NULL;
+    /* use __dir__ */
+    result = PyObject_CallFunctionObjArgs(dirfunc, NULL);
+    Py_DECREF(dirfunc);
+    if (result == NULL)
+        return NULL;
 
-        /* result must be a list */
-        /* XXX(gbrandl): could also check if all items are strings */
-        if (!PyList_Check(result)) {
-            PyErr_Format(PyExc_TypeError,
-                         "__dir__() must return a list, not %.200s",
-                         Py_TYPE(result)->tp_name);
-            Py_DECREF(result);
-            result = NULL;
-        }
+    /* result must be a list */
+    /* XXX(gbrandl): could also check if all items are strings */
+    if (!PyList_Check(result)) {
+        PyErr_Format(PyExc_TypeError,
+                     "__dir__() must return a list, not %.200s",
+                     Py_TYPE(result)->tp_name);
+        Py_DECREF(result);
+        result = NULL;
     }
 
     return result;
