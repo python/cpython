@@ -83,6 +83,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #12100: Don't reset incremental encoders of CJK codecs at each call to
+  their encode() method anymore, but continue to call the reset() method if the
+  final argument is True.
+
 - Issue #12124: zipimport doesn't keep a reference to zlib.decompress() anymore
   to be able to unload the module.
 
