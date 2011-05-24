@@ -534,12 +534,10 @@ class ForkingMixIn:
             # This must never return, hence os._exit()!
             try:
                 self.finish_request(request, client_address)
-                self.socket.close()
                 os._exit(0)
             except:
                 try:
                     self.handle_error(request, client_address)
-                    self.socket.close()
                 finally:
                     os._exit(1)
 
