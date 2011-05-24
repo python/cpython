@@ -155,7 +155,7 @@ class BZ2File(io.BufferedIOBase):
         if not self.seekable():
             self._check_not_closed()
             raise io.UnsupportedOperation("Seeking is only supported "
-                                          "on files opening for reading")
+                                          "on files open for reading")
 
     # Fill the readahead buffer if it is empty. Returns False on EOF.
     def _fill_buffer(self):
