@@ -1022,6 +1022,8 @@ def add_files(db):
             lib.add_file("zipdir.zip")
         if dir=='tests' and parent.physical=='distutils':
             lib.add_file("Setup.sample")
+        if dir=='cjkencodings':
+            lib.glob("*.txt")
         if dir=='decimaltestdata':
             lib.glob("*.decTest")
         if dir=='xmltestdata':
