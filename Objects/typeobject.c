@@ -2662,7 +2662,7 @@ static PyMethodDef type_methods[] = {
     {"__subclasscheck__", type___subclasscheck__, METH_O,
      PyDoc_STR("__subclasscheck__() -> bool\ncheck if a class is a subclass")},
     {"__dir__", type_dir, METH_NOARGS,
-     PyDoc_STR("__dir__() -> specialized __dir__ implementation for types")},
+     PyDoc_STR("__dir__() -> list\nspecialized __dir__ implementation for types")},
     {0}
 };
 
@@ -3575,7 +3575,7 @@ static PyMethodDef object_methods[] = {
     {"__sizeof__", object_sizeof, METH_NOARGS,
      PyDoc_STR("__sizeof__() -> int\nsize of object in memory, in bytes")},
     {"__dir__", object_dir, METH_NOARGS,
-     PyDoc_STR("__dir__() -> default dir() implementation")},
+     PyDoc_STR("__dir__() -> list\ndefault dir() implementation")},
     {0}
 };
 
