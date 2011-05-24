@@ -50,6 +50,35 @@ class Test_GB18030(test_multibytecodec_support.TestBase, unittest.TestCase):
     )
     has_iso10646 = True
 
+class Test_HZ(test_multibytecodec_support.TestBase, unittest.TestCase):
+    encoding = 'hz'
+    tstring = test_multibytecodec_support.load_teststring('hz')
+    codectests = (
+        # test '~\n' (3 lines)
+        (b'This sentence is in ASCII.\n'
+         b'The next sentence is in GB.~{<:Ky2;S{#,~}~\n'
+         b'~{NpJ)l6HK!#~}Bye.\n',
+         'strict',
+         u'This sentence is in ASCII.\n'
+         u'The next sentence is in GB.'
+         u'\u5df1\u6240\u4e0d\u6b32\uff0c\u52ff\u65bd\u65bc\u4eba\u3002'
+         u'Bye.\n'),
+        # test '~\n' (4 lines)
+        (b'This sentence is in ASCII.\n'
+         b'The next sentence is in GB.~\n'
+         b'~{<:Ky2;S{#,NpJ)l6HK!#~}~\n'
+         b'Bye.\n',
+         'strict',
+         u'This sentence is in ASCII.\n'
+         u'The next sentence is in GB.'
+         u'\u5df1\u6240\u4e0d\u6b32\uff0c\u52ff\u65bd\u65bc\u4eba\u3002'
+         u'Bye.\n'),
+        # invalid bytes
+        (b'ab~cd', 'replace', u'ab\uFFFDd'),
+        (b'ab\xffcd', 'replace', u'ab\uFFFDcd'),
+        (b'ab~{\x81\x81\x41\x44~}cd', 'replace', u'ab\uFFFD\uFFFD\u804Acd'),
+    )
+
 def test_main():
     test_support.run_unittest(__name__)
 
