@@ -1158,28 +1158,17 @@ else:
             self.port = port
             self.sock = socket.create_connection((host, port))
             self.sslobj = ssl.wrap_socket(self.sock, self.keyfile, self.certfile)
+            self.file = self.sslobj.makefile('rb')
 
 
         def read(self, size):
             """Read 'size' bytes from remote."""
-            # sslobj.read() sometimes returns < size bytes
-            chunks = []
-            read = 0
-            while read < size:
-                data = self.sslobj.read(min(size-read, 16384))
-                read += len(data)
-                chunks.append(data)
-
-            return ''.join(chunks)
+            return self.file.read(size)
 
 
         def readline(self):
             """Read line from remote."""
-            line = []
-            while 1:
-                char = self.sslobj.read(1)
-                line.append(char)
-                if char in ("\n", ""): return ''.join(line)
+            return self.file.readline()
 
 
         def send(self, data):
@@ -1195,6 +1184,7 @@ else:
 
         def shutdown(self):
             """Close I/O established in "open"."""
+            self.file.close()
             self.sock.close()
 
 
