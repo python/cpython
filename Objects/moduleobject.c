@@ -413,6 +413,34 @@ module_clear(PyModuleObject *m)
     return 0;
 }
 
+static PyObject *
+module_dir(PyObject *self, PyObject *args)
+{
+    PyObject *result = NULL;
+    PyObject *dict = PyObject_GetAttrString(self, "__dict__");
+
+    if (dict != NULL) {
+        if (PyDict_Check(dict))
+            result = PyDict_Keys(dict);
+        else {
+            const char *name = PyModule_GetName(self);
+            if (name)
+                PyErr_Format(PyExc_TypeError,
+                             "%.200s.__dict__ is not a dictionary",
+                             name);
+        }
+    }
+
+    Py_XDECREF(dict);
+    return result;
+}
+
+static PyMethodDef module_methods[] = {
+    {"__dir__", module_dir, METH_NOARGS,
+     PyDoc_STR("__dir__() -> specialized dir() implementation")},
+    {0}
+};
+
 
 PyDoc_STRVAR(module_doc,
 "module(name[, doc])\n\
@@ -449,7 +477,7 @@ PyTypeObject PyModule_Type = {
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
+    module_methods,                             /* tp_methods */
     module_members,                             /* tp_members */
     0,                                          /* tp_getset */
     0,                                          /* tp_base */

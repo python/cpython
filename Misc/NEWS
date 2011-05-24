@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #12166: Move implementations of dir() specialized for various types into
+  the __dir__() methods of those types.
+
 - Correct lookup of __dir__ on objects. Among other things, this causes errors
   besides AttributeError found on lookup to be propagated.
 

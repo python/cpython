@@ -2572,6 +2572,82 @@ type_prepare(PyObject *self, PyObject *args, PyObject *kwds)
     return PyDict_New();
 }
 
+/* 
+   Merge the __dict__ of aclass into dict, and recursively also all
+   the __dict__s of aclass's base classes.  The order of merging isn't
+   defined, as it's expected that only the final set of dict keys is
+   interesting.
+   Return 0 on success, -1 on error.
+*/
+
+static int
+merge_class_dict(PyObject *dict, PyObject *aclass)
+{
+    PyObject *classdict;
+    PyObject *bases;
+
+    assert(PyDict_Check(dict));
+    assert(aclass);
+
+    /* Merge in the type's dict (if any). */
+    classdict = PyObject_GetAttrString(aclass, "__dict__");
+    if (classdict == NULL)
+        PyErr_Clear();
+    else {
+        int status = PyDict_Update(dict, classdict);
+        Py_DECREF(classdict);
+        if (status < 0)
+            return -1;
+    }
+
+    /* Recursively merge in the base types' (if any) dicts. */
+    bases = PyObject_GetAttrString(aclass, "__bases__");
+    if (bases == NULL)
+        PyErr_Clear();
+    else {
+        /* We have no guarantee that bases is a real tuple */
+        Py_ssize_t i, n;
+        n = PySequence_Size(bases); /* This better be right */
+        if (n < 0)
+            PyErr_Clear();
+        else {
+            for (i = 0; i < n; i++) {
+                int status;
+                PyObject *base = PySequence_GetItem(bases, i);
+                if (base == NULL) {
+                    Py_DECREF(bases);
+                    return -1;
+                }
+                status = merge_class_dict(dict, base);
+                Py_DECREF(base);
+                if (status < 0) {
+                    Py_DECREF(bases);
+                    return -1;
+                }
+            }
+        }
+        Py_DECREF(bases);
+    }
+    return 0;
+}
+
+/* __dir__ for type objects: returns __dict__ and __bases__.
+   We deliberately don't suck up its __class__, as methods belonging to the
+   metaclass would probably be more confusing than helpful.
+*/
+static PyObject *
+type_dir(PyObject *self, PyObject *args)
+{
+    PyObject *result = NULL;
+    PyObject *dict = PyDict_New();
+
+    if (dict != NULL && merge_class_dict(dict, self) == 0)
+        result = PyDict_Keys(dict);
+
+    Py_XDECREF(dict);
+    return result;
+}
+
 static PyMethodDef type_methods[] = {
     {"mro", (PyCFunction)mro_external, METH_NOARGS,
      PyDoc_STR("mro() -> list\nreturn a type's method resolution order")},
@@ -2585,6 +2661,8 @@ static PyMethodDef type_methods[] = {
      PyDoc_STR("__instancecheck__() -> check if an object is an instance")},
     {"__subclasscheck__", type___subclasscheck__, METH_O,
      PyDoc_STR("__subclasscheck__() -> check if a class is a subclass")},
+    {"__dir__", type_dir, METH_NOARGS,
+     PyDoc_STR("__dir__() -> specialized __dir__ implementation for types")},
     {0}
 };
 
@@ -3438,6 +3516,53 @@ object_sizeof(PyObject *self, PyObject *args)
     return PyLong_FromSsize_t(res);
 }
 
+/* __dir__ for generic objects: returns __dict__, __class__,
+   and recursively up the __class__.__bases__ chain.
+*/
+static PyObject *
+object_dir(PyObject *self, PyObject *args)
+{
+    PyObject *result = NULL;
+    PyObject *dict = NULL;
+    PyObject *itsclass = NULL;
+
+    /* Get __dict__ (which may or may not be a real dict...) */
+    dict = PyObject_GetAttrString(self, "__dict__");
+    if (dict == NULL) {
+        PyErr_Clear();
+        dict = PyDict_New();
+    }
+    else if (!PyDict_Check(dict)) {
+        Py_DECREF(dict);
+        dict = PyDict_New();
+    }
+    else {
+        /* Copy __dict__ to avoid mutating it. */
+        PyObject *temp = PyDict_Copy(dict);
+        Py_DECREF(dict);
+        dict = temp;
+    }
+
+    if (dict == NULL)
+        goto error;
+
+    /* Merge in attrs reachable from its class. */
+    itsclass = PyObject_GetAttrString(self, "__class__");
+    if (itsclass == NULL)
+        /* XXX(tomer): Perhaps fall back to obj->ob_type if no
+                       __class__ exists? */
+        PyErr_Clear();
+    else if (merge_class_dict(dict, itsclass) != 0)
+        goto error;
+
+    result = PyDict_Keys(dict);
+    /* fall through */
+error:
+    Py_XDECREF(itsclass);
+    Py_XDECREF(dict);
+    return result;
+}
+
 static PyMethodDef object_methods[] = {
     {"__reduce_ex__", object_reduce_ex, METH_VARARGS,
      PyDoc_STR("helper for pickle")},
@@ -3449,6 +3574,8 @@ static PyMethodDef object_methods[] = {
      PyDoc_STR("default object formatter")},
     {"__sizeof__", object_sizeof, METH_NOARGS,
      PyDoc_STR("__sizeof__() -> size of object in memory, in bytes")},
+    {"__dir__", object_dir, METH_NOARGS,
+     PyDoc_STR("__dir__() -> default dir() implementation")},
     {0}
 };
 
