@@ -75,6 +75,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5715: In socketserver, close the server socket in the child process.
+
 - Issue #12124: zipimport doesn't keep a reference to zlib.decompress() anymore
   to be able to unload the module.
 
