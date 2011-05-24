@@ -13,6 +13,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #12100: Don't reset incremental encoders of CJK codecs at each call to
+  their encode() method anymore, but continue to call the reset() method if the
+  final argument is True.
+
 - Issue #5715: In socketserver, close the server socket in the child process.
 
 - Correct lookup of __dir__ on objects. Among other things, this causes errors
