@@ -124,6 +124,13 @@ os
   (Patch submitted by Giampaolo Rodolà in :issue:`10784`.)
 
 
+pydoc
+-----
+
+The Tk GUI has been removed from the :mod:`ssl` module: ``pydoc -g`` has been
+deprecated in Python 3.2.
+
+
 sys
 ---
 
