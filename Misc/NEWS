@@ -161,6 +161,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1441530: In imaplib, read the data in one chunk to speed up large
+  reads and simplify code.
+
 - Issue #12070: Fix the Makefile parser of the sysconfig module to handle
   correctly references to "bogus variable" (e.g. "prefix=$/opt/python").
 

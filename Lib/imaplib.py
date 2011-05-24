@@ -249,15 +249,7 @@ class IMAP4:
 
     def read(self, size):
         """Read 'size' bytes from remote."""
-        chunks = []
-        read = 0
-        while read < size:
-            data = self.file.read(min(size-read, 4096))
-            if not data:
-                break
-            read += len(data)
-            chunks.append(data)
-        return b''.join(chunks)
+        return self.file.read(size)
 
 
     def readline(self):
