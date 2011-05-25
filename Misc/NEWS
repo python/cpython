@@ -75,6 +75,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12175: FileIO.readall() now raises a ValueError instead of an IOError
+  if the file is closed.
+
 - Issue #12100: Don't reset incremental encoders of CJK codecs at each call to
   their encode() method anymore, but continue to call the reset() method if the
   final argument is True.
