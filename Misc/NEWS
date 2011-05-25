@@ -161,11 +161,16 @@ Core and Builtins
 Library
 -------
 
-- Issue #11109 -  New service_action method for BaseServer, used by
-  ForkingMixin class for cleanup. Initial Patch by Justin Wark.
-  
-- Issue #12045: Avoid duplicate execution of command in ctypes.util._get_soname().
-  Patch by Sijin Joseph.
+- Issue #12175: RawIOBase.readall() now returns None if read() returns None.
+
+- Issue #12175: FileIO.readall() now raises a ValueError instead of an IOError
+  if the file is closed.
+
+- Issue #11109: New service_action method for BaseServer, used by ForkingMixin
+  class for cleanup. Initial Patch by Justin Wark.
+
+- Issue #12045: Avoid duplicate execution of command in
+  ctypes.util._get_soname().  Patch by Sijin Joseph.
 
 - Issue #10818: Remove the Tk GUI and the serve() function of the pydoc module,
   pydoc -g has been deprecated in Python 3.2 and it has a new enhanced web
@@ -1061,9 +1066,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #12175: FileIO.readall() now raises a ValueError instead of an IOError
-  if the file is closed.
 
 - Issue #10916: mmap should not segfault when a file is mapped using 0 as length
   and a non-zero offset, and an attempt to read past the end of file is made
