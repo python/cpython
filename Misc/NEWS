@@ -77,6 +77,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12045: Avoid duplicate execution of command in ctypes.util._get_soname().
+  Patch by Sijin Joseph.
+
 - Issue #26960: Backported #16270 from Python 3 to Python 2, to prevent urllib
   from hanging when retrieving certain FTP files.
 

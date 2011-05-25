@@ -137,16 +137,13 @@ elif os.name == "posix":
             cmd = 'if ! type objdump >/dev/null 2>&1; then exit 10; fi;' \
                   "objdump -p -j .dynamic 2>/dev/null " + f
             f = os.popen(cmd)
-            dump = f.read()
-            rv = f.close()
+            try:
+                dump = f.read()
+            finally:
+                rv = f.close()
             if rv == 10:
                 raise OSError, 'objdump command not found'
-            f = os.popen(cmd)
-            try:
-                data = f.read()
-            finally:
-                f.close()
-            res = re.search(r'\sSONAME\s+([^\s]+)', data)
+            res = re.search(r'\sSONAME\s+([^\s]+)', dump)
             if not res:
                 return None
             return res.group(1)
