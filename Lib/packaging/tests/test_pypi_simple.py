@@ -10,9 +10,19 @@ import urllib.request
 from packaging.pypi.simple import Crawler
 
 from packaging.tests import unittest
-from packaging.tests.support import TempdirManager, LoggingCatcher
-from packaging.tests.pypi_server import (use_pypi_server, PyPIServer,
-                                         PYPI_DEFAULT_STATIC_PATH)
+from packaging.tests.support import (TempdirManager, LoggingCatcher,
+                                     fake_dec)
+
+try:
+    import _thread
+    from packaging.tests.pypi_server import (use_pypi_server, PyPIServer,
+                                             PYPI_DEFAULT_STATIC_PATH)
+except ImportError:
+    _thread = None
+    use_pypi_server = fake_dec
+    PYPI_DEFAULT_STATIC_PATH = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), 'pypiserver')
+
 
 
 class SimpleCrawlerTestCase(TempdirManager,
@@ -28,6 +38,7 @@ class SimpleCrawlerTestCase(TempdirManager,
         return Crawler(server.full_address + base_url, *args,
                        **kwargs)
 
+    @unittest.skipIf(_thread is None, 'needs threads')
     @use_pypi_server()
     def test_bad_urls(self, server):
         crawler = Crawler()
@@ -84,6 +95,7 @@ class SimpleCrawlerTestCase(TempdirManager,
                 'http://www.famfamfam.com/">')
         crawler._process_url(url, page)
 
+    @unittest.skipIf(_thread is None, 'needs threads')
     @use_pypi_server("test_found_links")
     def test_found_links(self, server):
         # Browse the index, asking for a specified release version
@@ -139,6 +151,7 @@ class SimpleCrawlerTestCase(TempdirManager,
         self.assertTrue(
             crawler._is_browsable("http://pypi.example.org/a/path"))
 
+    @unittest.skipIf(_thread is None, 'needs threads')
     @use_pypi_server("with_externals")
     def test_follow_externals(self, server):
         # Include external pages
@@ -149,6 +162,7 @@ class SimpleCrawlerTestCase(TempdirManager,
         self.assertIn(server.full_address + "/external/external.html",
             crawler._processed_urls)
 
+    @unittest.skipIf(_thread is None, 'needs threads')
     @use_pypi_server("with_real_externals")
     def test_restrict_hosts(self, server):
         # Only use a list of allowed hosts is possible
@@ -159,6 +173,7 @@ class SimpleCrawlerTestCase(TempdirManager,
         self.assertNotIn(server.full_address + "/external/external.html",
             crawler._processed_urls)
 
+    @unittest.skipIf(_thread is None, 'needs threads')
     @use_pypi_server(static_filesystem_paths=["with_externals"],
         static_uri_paths=["simple", "external"])
     def test_links_priority(self, server):
@@ -192,6 +207,7 @@ class SimpleCrawlerTestCase(TempdirManager,
                          releases[0].dists['sdist'].url['hashval'])
         self.assertEqual('md5', releases[0].dists['sdist'].url['hashname'])
 
+    @unittest.skipIf(_thread is None, 'needs threads')
     @use_pypi_server(static_filesystem_paths=["with_norel_links"],
         static_uri_paths=["simple", "external"])
     def test_not_scan_all_links(self, server):
@@ -217,6 +233,7 @@ class SimpleCrawlerTestCase(TempdirManager,
         self.assertIn("%s/foobar-2.0.tar.gz" % server.full_address,
             crawler._processed_urls)  # linked from external homepage (rel)
 
+    @unittest.skipIf(_thread is None, 'needs threads')
     def test_uses_mirrors(self):
         # When the main repository seems down, try using the given mirrors"""
         server = PyPIServer("foo_bar_baz")
@@ -314,6 +331,7 @@ class SimpleCrawlerTestCase(TempdirManager,
         self.assertIn('http://example.org/some/simpleurl', found_links)
         self.assertIn('http://example.org/some/download', found_links)
 
+    @unittest.skipIf(_thread is None, 'needs threads')
     @use_pypi_server("project_list")
     def test_search_projects(self, server):
         # we can search the index for some projects, on their names
