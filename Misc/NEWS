@@ -161,7 +161,10 @@ Core and Builtins
 Library
 -------
 
-- Issue #12180: Fixed a few remaining errors in test_packaging when no 
+- Issue #12175: FileIO.readall() now only reads the file position and size
+  once.
+
+- Issue #12180: Fixed a few remaining errors in test_packaging when no
   threading.
 
 - Issue #12175: RawIOBase.readall() now returns None if read() returns None.
