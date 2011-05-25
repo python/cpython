@@ -2818,7 +2818,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
 }
 
 PyObject *
-PyImport_ImportModuleLevel(char *name, PyObject *globals, PyObject *locals,
+PyImport_ImportModuleLevel(const char *name, PyObject *globals, PyObject *locals,
                            PyObject *fromlist, int level)
 {
     PyObject *nameobj, *mod;
