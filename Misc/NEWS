@@ -83,6 +83,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12175: FileIO.readall() now raises a ValueError instead of an IOError
+  if the file is closed.
+
 - Issue #1441530: In imaplib, use makefile() to wrap the SSL socket to avoid
   heap fragmentation and MemoryError with some malloc implementations.
 
