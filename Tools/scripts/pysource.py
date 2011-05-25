@@ -42,7 +42,7 @@ def _open(fullpath):
         return None
 
     try:
-        return open(fullpath, 'rU')
+        return open(fullpath)
     except IOError as err: # Access denied, or a special file - ignore it
         print_debug("%s: access denied: %s" % (fullpath, err))
         return None
