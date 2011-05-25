@@ -253,6 +253,15 @@ def create_distribution(configfiles=()):
     return d
 
 
+def fake_dec(*args, **kw):
+    """Fake decorator"""
+    def _wrap(func):
+        def __wrap(*args, **kw):
+            return func(*args, **kw)
+        return __wrap
+    return _wrap
+
+
 try:
     from test.support import skip_unless_symlink
 except ImportError:

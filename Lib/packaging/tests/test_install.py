@@ -6,13 +6,14 @@ from packaging import install
 from packaging.pypi.xmlrpc import Client
 from packaging.metadata import Metadata
 
-from packaging.tests.support import LoggingCatcher, TempdirManager, unittest
+from packaging.tests.support import (LoggingCatcher, TempdirManager, unittest,
+                                     fake_dec)
 try:
     import threading
     from packaging.tests.pypi_server import use_xmlrpc_server
 except ImportError:
     threading = None
-    use_xmlrpc_server = None
+    use_xmlrpc_server = fake_dec
 
 
 class InstalledDist:
