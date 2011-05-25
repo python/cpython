@@ -161,6 +161,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12045: Avoid duplicate execution of command in ctypes.util._get_soname().
+  Patch by Sijin Joseph.
+
 - Issue #10818: Remove the Tk GUI and the serve() function of the pydoc module,
   pydoc -g has been deprecated in Python 3.2 and it has a new enhanced web
   server.
