@@ -1,9 +1,3 @@
-"""Tests for 'site'.
-
-Tests assume the initial paths in sys.path once the interpreter has begun
-executing have not been removed.
-
-"""
 import unittest
 import sys
 import os
@@ -23,7 +17,6 @@ from sysconfig import (get_paths, get_platform, get_config_vars,
 class TestSysConfig(unittest.TestCase):
 
     def setUp(self):
-        """Make a copy of sys.path"""
         super(TestSysConfig, self).setUp()
         self.sys_path = sys.path[:]
         self.makefile = None
@@ -53,7 +46,6 @@ class TestSysConfig(unittest.TestCase):
                 self._added_envvars.append(var)
 
     def tearDown(self):
-        """Restore sys.path"""
         sys.path[:] = self.sys_path
         if self.makefile is not None:
             os.unlink(self.makefile)
@@ -145,8 +137,6 @@ class TestSysConfig(unittest.TestCase):
                    ('Darwin Kernel Version 8.11.1: '
                     'Wed Oct 10 18:23:28 PDT 2007; '
                     'root:xnu-792.25.20~1/RELEASE_I386'), 'PowerPC'))
-
-
         get_config_vars()['MACOSX_DEPLOYMENT_TARGET'] = '10.3'
 
         get_config_vars()['CFLAGS'] = ('-fno-strict-aliasing -DNDEBUG -g '
@@ -160,7 +150,6 @@ class TestSysConfig(unittest.TestCase):
             self.assertEqual(get_platform(), 'macosx-10.3-ppc64')
         finally:
             sys.maxsize = maxint
-
 
         self._set_uname(('Darwin', 'macziade', '8.11.1',
                    ('Darwin Kernel Version 8.11.1: '
@@ -295,7 +284,6 @@ class TestSysConfig(unittest.TestCase):
 
         self.assertIn(ldflags, ldshared)
 
-
     @unittest.skipUnless(sys.platform == "darwin", "test only relevant on MacOSX")
     def test_platform_in_subprocess(self):
         my_platform = sysconfig.get_platform()
@@ -321,7 +309,6 @@ class TestSysConfig(unittest.TestCase):
         self.assertEqual(status, 0)
         self.assertEqual(my_platform, test_platform)
 
-
         # Test with MACOSX_DEPLOYMENT_TARGET in the environment, and
         # using a value that is unlikely to be the default one.
         env = os.environ.copy()
@@ -340,8 +327,6 @@ class TestSysConfig(unittest.TestCase):
 
         self.assertEqual(status, 0)
         self.assertEqual(my_platform, test_platform)
-
-
 
 
 def test_main():
