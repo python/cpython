@@ -385,6 +385,8 @@ class BuiltinTest(unittest.TestCase):
         except:
             self.assertEqual(len(dir(sys.exc_info()[2])), 4)
 
+        # test that object has a __dir__()
+        self.assertEqual(sorted([].__dir__()), dir([]))
 
     def test_divmod(self):
         self.assertEqual(divmod(12, 7), (1, 5))
