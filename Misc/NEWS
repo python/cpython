@@ -161,6 +161,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11109 -  New service_action method for BaseServer, used by
+  ForkingMixin class for cleanup. Initial Patch by Justin Wark.
+
 - Issue #10818: Remove the Tk GUI and the serve() function of the pydoc module,
   pydoc -g has been deprecated in Python 3.2 and it has a new enhanced web
   server.
