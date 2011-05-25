@@ -826,6 +826,9 @@ C-API
 - PY_PATCHLEVEL_REVISION has been removed, since it's meaningless with
   Mercurial.
 
+- Issue #12173: The first argument of PyImport_ImportModuleLevel is now `const
+  char *` instead of `char *1`.
+
 Documentation
 -------------
 
