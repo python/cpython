@@ -2467,6 +2467,8 @@ class MiscIOTest(unittest.TestCase):
             self.assertRaises(ValueError, f.read)
             if hasattr(f, "read1"):
                 self.assertRaises(ValueError, f.read1, 1024)
+            if hasattr(f, "readall"):
+                self.assertRaises(ValueError, f.readall)
             if hasattr(f, "readinto"):
                 self.assertRaises(ValueError, f.readinto, bytearray(1024))
             self.assertRaises(ValueError, f.readline)
