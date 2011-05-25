@@ -731,6 +731,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12175: FileIO.readall() now raises a ValueError instead of an IOError
+  if the file is closed.
+
 - Issue #10916: mmap should not segfault when a file is mapped using 0 as length
   and a non-zero offset, and an attempt to read past the end of file is made
   (IndexError is raised instead).  Patch by Ross Lagerwall.
