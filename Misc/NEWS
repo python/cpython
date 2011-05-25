@@ -83,6 +83,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #12175: RawIOBase.readall() now returns None if read() returns None.
+
 - Issue #12175: FileIO.readall() now raises a ValueError instead of an IOError
   if the file is closed.
 
