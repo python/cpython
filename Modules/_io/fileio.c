@@ -539,6 +539,8 @@ fileio_readall(fileio *self)
     Py_ssize_t total = 0;
     int n;
 
+    if (self->fd < 0)
+        return err_closed();
     if (!_PyVerify_fd(self->fd))
         return PyErr_SetFromErrno(PyExc_IOError);
 
