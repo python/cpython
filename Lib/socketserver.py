@@ -82,7 +82,7 @@ On the other hand, if you are building e.g. an HTTP server, where all
 data is stored externally (e.g. in the file system), a synchronous
 class will essentially render the service "deaf" while one request is
 being handled -- which may be for a very long time if a client is slow
-to reqd all the data it has requested.  Here a threading or forking
+to recv all the data it has requested.  Here a threading or forking
 server is appropriate.
 
 In some cases, it may be appropriate to process part of a request
@@ -170,6 +170,7 @@ class BaseServer:
     - process_request(request, client_address)
     - shutdown_request(request)
     - close_request(request)
+    - service_actions()
     - handle_error()
 
     Methods for derived classes:
@@ -225,6 +226,8 @@ class BaseServer:
                 r, w, e = select.select([self], [], [], poll_interval)
                 if self in r:
                     self._handle_request_noblock()
+
+                self.service_actions()
         finally:
             self.__shutdown_request = False
             self.__is_shut_down.set()
@@ -238,6 +241,14 @@ class BaseServer:
         """
         self.__shutdown_request = True
         self.__is_shut_down.wait()
+
+    def service_actions(self):
+        """Called by the serve_forever() loop.
+
+        May be overridden by a subclass / Mixin to implement any code that
+        needs to be run during the loop.
+        """
+        pass
 
     # The distinction between handling, getting, processing and
     # finishing a request is fairly arbitrary.  Remember:
@@ -539,9 +550,15 @@ class ForkingMixIn:
         """
         self.collect_children()
 
+    def service_actions(self):
+        """Collect the zombie child processes regularly in the ForkingMixin.
+
+        service_actions is called in the BaseServer's serve_forver loop.
+        """
+        self.collect_children()
+
     def process_request(self, request, client_address):
         """Fork a new subprocess to process the request."""
-        self.collect_children()
         pid = os.fork()
         if pid:
             # Parent process
@@ -549,6 +566,7 @@ class ForkingMixIn:
                 self.active_children = []
             self.active_children.append(pid)
             self.close_request(request)
+            return
         else:
             # Child process.
             # This must never return, hence os._exit()!
