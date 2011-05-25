@@ -164,10 +164,14 @@ Random generation
 
 .. function:: RAND_bytes(num)
 
-   Returns *num* cryptographically strong pseudo-random bytes.
+   Returns *num* cryptographically strong pseudo-random bytes. Raises an
+   :class:`SSLError` if the PRNG has not been seeded with enough data or if the
+   operation is not supported by the current RAND method. :func:`RAND_status`
+   can be used to check the status of the PRNG and :func:`RAND_add` can be used
+   to seed the PRNG.
 
    Read the Wikipedia article, `Cryptographically secure pseudorandom number
-   generator
+   generator (CSPRNG)
    <http://en.wikipedia.org/wiki/Cryptographically_secure_pseudorandom_number_generator>`_,
    to get the requirements of a cryptographically generator.
 
@@ -177,7 +181,8 @@ Random generation
 
    Returns (bytes, is_cryptographic): bytes are *num* pseudo-random bytes,
    is_cryptographic is True if the bytes generated are cryptographically
-   strong.
+   strong. Raises an :class:`SSLError` if the operation is not supported by the
+   current RAND method.
 
    Generated pseudo-random byte sequences will be unique if they are of
    sufficient length, but are not necessarily unpredictable. They can be used
