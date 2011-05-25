@@ -1407,32 +1407,57 @@ static PyObject *
 _bufferedreader_read_all(buffered *self)
 {
     Py_ssize_t current_size;
-    PyObject *res, *data = NULL;
-    PyObject *chunks = PyList_New(0);
-
-    if (chunks == NULL)
-        return NULL;
+    PyObject *res, *data = NULL, *chunk, *chunks;
 
     /* First copy what we have in the current buffer. */
     current_size = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
     if (current_size) {
         data = PyBytes_FromStringAndSize(
             self->buffer + self->pos, current_size);
-        if (data == NULL) {
-            Py_DECREF(chunks);
+        if (data == NULL)
             return NULL;
-        }
     }
     _bufferedreader_reset_buf(self);
     /* We're going past the buffer's bounds, flush it */
     if (self->writable) {
         res = _bufferedwriter_flush_unlocked(self, 1);
-        if (res == NULL) {
-            Py_DECREF(chunks);
+        if (res == NULL)
             return NULL;
-        }
         Py_CLEAR(res);
     }
+
+    if (PyObject_HasAttr(self->raw, _PyIO_str_readall)) {
+        chunk = PyObject_CallMethodObjArgs(self->raw, _PyIO_str_readall, NULL);
+        if (chunk == NULL)
+            return NULL;
+        if (chunk != Py_None && !PyBytes_Check(chunk)) {
+            Py_XDECREF(data);
+            Py_DECREF(chunk);
+            PyErr_SetString(PyExc_TypeError, "readall() should return bytes");
+            return NULL;
+        }
+        if (chunk == Py_None) {
+            if (current_size == 0)
+                return chunk;
+            else {
+                Py_DECREF(chunk);
+                return data;
+            }
+        }
+        else if (current_size) {
+            PyBytes_Concat(&data, chunk);
+            Py_DECREF(chunk);
+            if (data == NULL)
+                return NULL;
+            return data;
+        } else
+            return chunk;
+    }
+
+    chunks = PyList_New(0);
+    if (chunks == NULL)
+        return NULL;
+
     while (1) {
         if (data) {
             if (PyList_Append(chunks, data) < 0) {
