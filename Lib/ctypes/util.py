@@ -137,9 +137,7 @@ elif os.name == "posix":
             rv = f.close()
             if rv == 10:
                 raise OSError('objdump command not found')
-            with contextlib.closing(os.popen(cmd)) as f:
-                data = f.read()
-            res = re.search(r'\sSONAME\s+([^\s]+)', data)
+            res = re.search(r'\sSONAME\s+([^\s]+)', dump)
             if not res:
                 return None
             return res.group(1)
