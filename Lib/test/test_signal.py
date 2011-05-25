@@ -226,10 +226,16 @@ class WakeupSignalTests(unittest.TestCase):
     TIMEOUT_FULL = 10
     TIMEOUT_HALF = 5
 
-    def check_signum(self, *signals):
+    def handler(self, signum, frame):
+        pass
+
+    def check_signum(self, *signals, **kw):
         data = os.read(self.read, len(signals)+1)
         raised = struct.unpack('%uB' % len(data), data)
-        self.assertSequenceEqual(raised, signals)
+        if kw.get('unordered', False):
+            raised = set(raised)
+            signals = set(signals)
+        self.assertEqual(raised, signals)
 
     def test_wakeup_fd_early(self):
         import select
@@ -259,16 +265,38 @@ class WakeupSignalTests(unittest.TestCase):
         self.check_signum(signal.SIGALRM)
 
     def test_signum(self):
-        old_handler = signal.signal(signal.SIGUSR1, lambda x,y:None)
+        old_handler = signal.signal(signal.SIGUSR1, self.handler)
         self.addCleanup(signal.signal, signal.SIGUSR1, old_handler)
         os.kill(os.getpid(), signal.SIGUSR1)
         os.kill(os.getpid(), signal.SIGALRM)
         self.check_signum(signal.SIGUSR1, signal.SIGALRM)
 
+    @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
+                         'need signal.pthread_sigmask()')
+    @unittest.skipUnless(hasattr(signal, 'pthread_kill'),
+                         'need signal.pthread_kill()')
+    def test_pending(self):
+        signum1 = signal.SIGUSR1
+        signum2 = signal.SIGUSR2
+        tid = threading.current_thread().ident
+
+        old_handler = signal.signal(signum1, self.handler)
+        self.addCleanup(signal.signal, signum1, old_handler)
+        old_handler = signal.signal(signum2, self.handler)
+        self.addCleanup(signal.signal, signum2, old_handler)
+
+        signal.pthread_sigmask(signal.SIG_BLOCK, (signum1, signum2))
+        signal.pthread_kill(tid, signum1)
+        signal.pthread_kill(tid, signum2)
+        # Unblocking the 2 signals calls the C signal handler twice
+        signal.pthread_sigmask(signal.SIG_UNBLOCK, (signum1, signum2))
+
+        self.check_signum(signum1, signum2, unordered=True)
+
     def setUp(self):
         import fcntl
 
-        self.alrm = signal.signal(signal.SIGALRM, lambda x,y:None)
+        self.alrm = signal.signal(signal.SIGALRM, self.handler)
         self.read, self.write = os.pipe()
         flags = fcntl.fcntl(self.write, fcntl.F_GETFL, 0)
         flags = flags | os.O_NONBLOCK
