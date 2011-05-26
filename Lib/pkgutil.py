@@ -11,7 +11,7 @@ from types import ModuleType
 
 __all__ = [
     'get_importer', 'iter_importers', 'get_loader', 'find_loader',
-    'walk_packages', 'iter_modules',
+    'walk_packages', 'iter_modules', 'get_data',
     'ImpImporter', 'ImpLoader', 'read_code', 'extend_path',
 ]
 
