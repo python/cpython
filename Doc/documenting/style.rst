@@ -92,7 +92,7 @@ Good example (establishing confident knowledge in the effective use of the langu
 Economy of Expression
 ---------------------
 
-More documentation is not necessarily better documentation.  Error on the side
+More documentation is not necessarily better documentation.  Err on the side
 of being succinct.
 
 It is an unfortunate fact that making documentation longer can be an impediment
@@ -154,7 +154,7 @@ Audience
 The tone of the tutorial (and all the docs) needs to be respectful of the
 reader's intelligence.  Don't presume that the readers are stupid.  Lay out the
 relevant information, show motivating use cases, provide glossary links, and do
-our best to connect-the-dots, but don't talk down to them or waste their time.
+your best to connect the dots, but don't talk down to them or waste their time.
 
 The tutorial is meant for newcomers, many of whom will be using the tutorial to
 evaluate the language as a whole.  The experience needs to be positive and not
