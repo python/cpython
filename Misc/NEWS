@@ -166,9 +166,6 @@ Library
 - Issue #12175: FileIO.readall() now only reads the file position and size
   once.
 
-- Issue #12180: Fixed a few remaining errors in test_packaging when no
-  threading.
-
 - Issue #12175: RawIOBase.readall() now returns None if read() returns None.
 
 - Issue #12175: FileIO.readall() now raises a ValueError instead of an IOError
@@ -212,9 +209,6 @@ Library
 
 - Issue #12124: zipimport doesn't keep a reference to zlib.decompress() anymore
   to be able to unload the module.
-
-- Issue #12120, #12119: skip a test in packaging and distutils
-  if sys.dont_write_bytecode is set to True.
 
 - Issue #12065: connect_ex() on an SSL socket now returns the original errno
   when the socket's timeout expires (it used to return None).
@@ -748,6 +742,12 @@ Extension Modules
 
 Tests
 -----
+
+- Issue #12180: Fixed a few remaining errors in test_packaging when no
+  threading.
+
+- Issue #12120, #12119: skip a test in packaging and distutils
+  if sys.dont_write_bytecode is set to True.
 
 - Issue #12096: Fix a race condition in test_threading.test_waitfor(). Patch
   written by Charles-François Natali.
