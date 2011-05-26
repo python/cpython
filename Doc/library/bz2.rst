@@ -37,14 +37,18 @@ All of the classes in this module may safely be accessed from multiple threads.
    *fileobj*), or operate directly on a named file (named by *filename*).
    Exactly one of these two parameters should be provided.
 
-   The *mode* argument can be either ``'r'`` for reading (default), or ``'w'``
-   for writing.
+   The *mode* argument can be either ``'r'`` for reading (default), ``'w'`` for
+   overwriting, or ``'a'`` for appending. If *fileobj* is provided, a mode of
+   ``'w'`` does not truncate the file, and is instead equivalent to ``'a'``.
 
    The *buffering* argument is ignored. Its use is deprecated.
 
-   If *mode* is ``'w'``, *compresslevel* can be a number between ``1`` and
-   ``9`` specifying the level of compression: ``1`` produces the least
-   compression, and ``9`` (default) produces the most compression.
+   If *mode* is ``'w'`` or ``'a'``, *compresslevel* can be a number between
+   ``1`` and ``9`` specifying the level of compression: ``1`` produces the
+   least compression, and ``9`` (default) produces the most compression.
+
+   If *mode* is ``'r'``, the input file may be the concatenation of multiple
+   compressed streams.
 
    :class:`BZ2File` provides all of the members specified by the
    :class:`io.BufferedIOBase`, except for :meth:`detach` and :meth:`truncate`.
@@ -69,6 +73,10 @@ All of the classes in this module may safely be accessed from multiple threads.
 
    .. versionchanged:: 3.3
       The *fileobj* argument to the constructor was added.
+
+   .. versionchanged:: 3.3
+      The ``'a'`` (append) mode was added, along with support for reading
+      multi-stream files.
 
 
 Incremental (de)compression
@@ -106,14 +114,20 @@ Incremental (de)compression
    incrementally. For one-shot compression, use the :func:`decompress` function
    instead.
 
+   .. note::
+      This class does not transparently handle inputs containing multiple
+      compressed streams, unlike :func:`decompress` and :class:`BZ2File`. If
+      you need to decompress a multi-stream input with :class:`BZ2Decompressor`,
+      you must use a new decompressor for each stream.
+
    .. method:: decompress(data)
 
       Provide data to the decompressor object. Returns a chunk of decompressed
       data if possible, or an empty byte string otherwise.
 
-      Attempting to decompress data after the end of stream is reached raises
-      an :exc:`EOFError`. If any data is found after the end of the stream, it
-      is ignored and saved in the :attr:`unused_data` attribute.
+      Attempting to decompress data after the end of the current stream is
+      reached raises an :exc:`EOFError`. If any data is found after the end of
+      the stream, it is ignored and saved in the :attr:`unused_data` attribute.
 
 
    .. attribute:: eof
@@ -126,6 +140,9 @@ Incremental (de)compression
    .. attribute:: unused_data
 
       Data found after the end of the compressed stream.
+
+      If this attribute is accessed before the end of the stream has been
+      reached, its value will be ``b''``.
 
 
 One-shot (de)compression
@@ -145,5 +162,11 @@ One-shot (de)compression
 
    Decompress *data*.
 
+   If *data* is the concatenation of multiple compressed streams, decompress
+   all of the streams.
+
    For incremental decompression, use a :class:`BZ2Decompressor` instead.
+
+   .. versionchanged:: 3.3
+      Support for multi-stream inputs was added.
 
