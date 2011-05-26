@@ -612,9 +612,9 @@ set_repr(PySetObject *so)
         *u++ = '{';
         /* Omit the brackets from the listrepr */
         Py_UNICODE_COPY(u, PyUnicode_AS_UNICODE(listrepr)+1,
-                           PyUnicode_GET_SIZE(listrepr)-2);
+                           newsize-2);
         u += newsize-2;
-        *u++ = '}';
+        *u = '}';
     }
     Py_DECREF(listrepr);
     if (Py_TYPE(so) != &PySet_Type) {
