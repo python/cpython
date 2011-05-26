@@ -6474,7 +6474,7 @@ PyUnicode_EncodeDecimal(Py_UNICODE *s,
         }
     }
     /* 0-terminate the output string */
-    *output++ = '\0';
+    *output = '\0';
     Py_XDECREF(exc);
     Py_XDECREF(errorHandler);
     return 0;
