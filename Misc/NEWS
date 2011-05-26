@@ -846,7 +846,7 @@ C-API
   Mercurial.
 
 - Issue #12173: The first argument of PyImport_ImportModuleLevel is now `const
-  char *` instead of `char *1`.
+  char *` instead of `char *`.
 
 Documentation
 -------------
