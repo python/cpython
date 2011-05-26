@@ -84,9 +84,9 @@ class BZ2FileTest(BaseTest):
         else:
             return self.DATA
 
-    def createTempFile(self, crlf=False):
+    def createTempFile(self, crlf=False, streams=1):
         with open(self.filename, "wb") as f:
-            f.write(self.getData(crlf))
+            f.write(self.getData(crlf) * streams)
 
     def testRead(self):
         # "Test BZ2File.read()"
@@ -94,6 +94,26 @@ class BZ2FileTest(BaseTest):
         with BZ2File(self.filename) as bz2f:
             self.assertRaises(TypeError, bz2f.read, None)
             self.assertEqual(bz2f.read(), self.TEXT)
+
+    def testReadMultiStream(self):
+        # "Test BZ2File.read() with a multi stream archive"
+        self.createTempFile(streams=5)
+        with BZ2File(self.filename) as bz2f:
+            self.assertRaises(TypeError, bz2f.read, None)
+            self.assertEqual(bz2f.read(), self.TEXT * 5)
+
+    def testReadMonkeyMultiStream(self):
+        # "Test BZ2File.read() with a multi stream archive in which stream"
+        # "end is alined with internal buffer size"
+        buffer_size = bz2._BUFFER_SIZE
+        bz2._BUFFER_SIZE = len(self.DATA)
+        try:
+            self.createTempFile(streams=5)
+            with BZ2File(self.filename) as bz2f:
+                self.assertRaises(TypeError, bz2f.read, None)
+                self.assertEqual(bz2f.read(), self.TEXT * 5)
+        finally:
+            bz2._BUFFER_SIZE = buffer_size
 
     def testRead0(self):
         # "Test BBZ2File.read(0)"
@@ -113,6 +133,18 @@ class BZ2FileTest(BaseTest):
                     break
                 text += str
             self.assertEqual(text, self.TEXT)
+
+    def testReadChunk10MultiStream(self):
+        # "Test BZ2File.read() in chunks of 10 bytes with a multi stream archive"
+        self.createTempFile(streams=5)
+        with BZ2File(self.filename) as bz2f:
+            text = b''
+            while 1:
+                str = bz2f.read(10)
+                if not str:
+                    break
+                text += str
+            self.assertEqual(text, self.TEXT * 5)
 
     def testRead100(self):
         # "Test BZ2File.read(100)"
@@ -151,6 +183,15 @@ class BZ2FileTest(BaseTest):
             for line in sio.readlines():
                 self.assertEqual(bz2f.readline(), line)
 
+    def testReadLineMultiStream(self):
+        # "Test BZ2File.readline() with a multi stream archive"
+        self.createTempFile(streams=5)
+        with BZ2File(self.filename) as bz2f:
+            self.assertRaises(TypeError, bz2f.readline, None)
+            sio = BytesIO(self.TEXT * 5)
+            for line in sio.readlines():
+                self.assertEqual(bz2f.readline(), line)
+
     def testReadLines(self):
         # "Test BZ2File.readlines()"
         self.createTempFile()
@@ -159,11 +200,26 @@ class BZ2FileTest(BaseTest):
             sio = BytesIO(self.TEXT)
             self.assertEqual(bz2f.readlines(), sio.readlines())
 
+    def testReadLinesMultiStream(self):
+        # "Test BZ2File.readlines() with a multi stream archive"
+        self.createTempFile(streams=5)
+        with BZ2File(self.filename) as bz2f:
+            self.assertRaises(TypeError, bz2f.readlines, None)
+            sio = BytesIO(self.TEXT * 5)
+            self.assertEqual(bz2f.readlines(), sio.readlines())
+
     def testIterator(self):
         # "Test iter(BZ2File)"
         self.createTempFile()
         with BZ2File(self.filename) as bz2f:
             sio = BytesIO(self.TEXT)
+            self.assertEqual(list(iter(bz2f)), sio.readlines())
+
+    def testIteratorMultiStream(self):
+        # "Test iter(BZ2File) with a multi stream archive"
+        self.createTempFile(streams=5)
+        with BZ2File(self.filename) as bz2f:
+            sio = BytesIO(self.TEXT * 5)
             self.assertEqual(list(iter(bz2f)), sio.readlines())
 
     def testClosedIteratorDeadlock(self):
@@ -217,12 +273,31 @@ class BZ2FileTest(BaseTest):
             self.assertRaises(IOError, bz2f.write, b"a")
             self.assertRaises(IOError, bz2f.writelines, [b"a"])
 
+    def testAppend(self):
+        # "Test BZ2File.write()"
+        with BZ2File(self.filename, "w") as bz2f:
+            self.assertRaises(TypeError, bz2f.write)
+            bz2f.write(self.TEXT)
+        with BZ2File(self.filename, "a") as bz2f:
+            self.assertRaises(TypeError, bz2f.write)
+            bz2f.write(self.TEXT)
+        with open(self.filename, 'rb') as f:
+            self.assertEqual(self.decompress(f.read()), self.TEXT * 2)
+
     def testSeekForward(self):
         # "Test BZ2File.seek(150, 0)"
         self.createTempFile()
         with BZ2File(self.filename) as bz2f:
             self.assertRaises(TypeError, bz2f.seek)
             bz2f.seek(150)
+            self.assertEqual(bz2f.read(), self.TEXT[150:])
+
+    def testSeekForwardMultiStream(self):
+        # "Test BZ2File.seek(150, 0) across stream boundaries"
+        self.createTempFile(streams=2)
+        with BZ2File(self.filename) as bz2f:
+            self.assertRaises(TypeError, bz2f.seek)
+            bz2f.seek(len(self.TEXT) + 150)
             self.assertEqual(bz2f.read(), self.TEXT[150:])
 
     def testSeekBackwards(self):
@@ -233,6 +308,16 @@ class BZ2FileTest(BaseTest):
             bz2f.seek(-150, 1)
             self.assertEqual(bz2f.read(), self.TEXT[500-150:])
 
+    def testSeekBackwardsMultiStream(self):
+        # "Test BZ2File.seek(-150, 1) across stream boundaries"
+        self.createTempFile(streams=2)
+        with BZ2File(self.filename) as bz2f:
+            readto = len(self.TEXT) + 100
+            while readto > 0:
+                readto -= len(bz2f.read(readto))
+            bz2f.seek(-150, 1)
+            self.assertEqual(bz2f.read(), self.TEXT[100-150:] + self.TEXT)
+
     def testSeekBackwardsFromEnd(self):
         # "Test BZ2File.seek(-150, 2)"
         self.createTempFile()
@@ -240,12 +325,27 @@ class BZ2FileTest(BaseTest):
             bz2f.seek(-150, 2)
             self.assertEqual(bz2f.read(), self.TEXT[len(self.TEXT)-150:])
 
+    def testSeekBackwardsFromEndMultiStream(self):
+        # "Test BZ2File.seek(-1000, 2) across stream boundaries"
+        self.createTempFile(streams=2)
+        with BZ2File(self.filename) as bz2f:
+            bz2f.seek(-1000, 2)
+            self.assertEqual(bz2f.read(), (self.TEXT * 2)[-1000:])
+
     def testSeekPostEnd(self):
         # "Test BZ2File.seek(150000)"
         self.createTempFile()
         with BZ2File(self.filename) as bz2f:
             bz2f.seek(150000)
             self.assertEqual(bz2f.tell(), len(self.TEXT))
+            self.assertEqual(bz2f.read(), b"")
+
+    def testSeekPostEndMultiStream(self):
+        # "Test BZ2File.seek(150000)"
+        self.createTempFile(streams=5)
+        with BZ2File(self.filename) as bz2f:
+            bz2f.seek(150000)
+            self.assertEqual(bz2f.tell(), len(self.TEXT) * 5)
             self.assertEqual(bz2f.read(), b"")
 
     def testSeekPostEndTwice(self):
@@ -257,6 +357,15 @@ class BZ2FileTest(BaseTest):
             self.assertEqual(bz2f.tell(), len(self.TEXT))
             self.assertEqual(bz2f.read(), b"")
 
+    def testSeekPostEndTwiceMultiStream(self):
+        # "Test BZ2File.seek(150000) twice with a multi stream archive"
+        self.createTempFile(streams=5)
+        with BZ2File(self.filename) as bz2f:
+            bz2f.seek(150000)
+            bz2f.seek(150000)
+            self.assertEqual(bz2f.tell(), len(self.TEXT) * 5)
+            self.assertEqual(bz2f.read(), b"")
+
     def testSeekPreStart(self):
         # "Test BZ2File.seek(-150, 0)"
         self.createTempFile()
@@ -264,6 +373,14 @@ class BZ2FileTest(BaseTest):
             bz2f.seek(-150)
             self.assertEqual(bz2f.tell(), 0)
             self.assertEqual(bz2f.read(), self.TEXT)
+
+    def testSeekPreStartMultiStream(self):
+        # "Test BZ2File.seek(-150, 0) with a multi stream archive"
+        self.createTempFile(streams=2)
+        with BZ2File(self.filename) as bz2f:
+            bz2f.seek(-150)
+            self.assertEqual(bz2f.tell(), 0)
+            self.assertEqual(bz2f.read(), self.TEXT * 2)
 
     def testFileno(self):
         # "Test BZ2File.fileno()"
@@ -509,6 +626,11 @@ class FuncTest(BaseTest):
     def testDecompressIncomplete(self):
         # "Test decompress() function with incomplete data"
         self.assertRaises(ValueError, bz2.decompress, self.DATA[:-10])
+
+    def testDecompressMultiStream(self):
+        # "Test decompress() function for data with multiple streams"
+        text = bz2.decompress(self.DATA * 5)
+        self.assertEqual(text, self.TEXT * 5)
 
 def test_main():
     support.run_unittest(
