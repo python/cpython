@@ -1196,7 +1196,7 @@ get_module_code(ZipImporter *self, PyObject *fullname,
                 int *p_ispackage, PyObject **p_modpath)
 {
     PyObject *code = NULL, *toc_entry, *subname;
-    PyObject *path, *fullpath;
+    PyObject *path, *fullpath = NULL;
     struct st_zip_searchorder *zso;
 
     subname = get_subname(fullname);
