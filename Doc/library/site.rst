@@ -129,6 +129,10 @@ empty, and the path manipulations are skipped; however the import of
    unless the :program:`python` interpreter was started with the :option:`-S`
    flag.
 
+   .. versionchanged:: 3.3
+      This function used to be called unconditionnally.
+
+
 .. function:: addsitedir(sitedir, known_paths=None)
 
    Adds a directory to sys.path and processes its pth files.
