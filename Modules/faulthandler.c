@@ -1005,9 +1005,10 @@ static int
 faulthandler_env_options(void)
 {
     PyObject *xoptions, *key, *module, *res;
-    int enable;
 
     if (!Py_GETENV("PYTHONFAULTHANDLER")) {
+        int has_key;
+
         xoptions = PySys_GetXOptions();
         if (xoptions == NULL)
             return -1;
@@ -1016,13 +1017,11 @@ faulthandler_env_options(void)
         if (key == NULL)
             return -1;
 
-        enable = PyDict_Contains(xoptions, key);
+        has_key = PyDict_Contains(xoptions, key);
         Py_DECREF(key);
-        if (!enable)
+        if (!has_key)
             return 0;
     }
-    else
-        enable = 1;
 
     module = PyImport_ImportModule("faulthandler");
     if (module == NULL) {
