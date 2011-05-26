@@ -85,6 +85,9 @@ It defines the following functions:
    In case a search function cannot find a given encoding, it should return
    ``None``.
 
+   .. deprecated:: 3.3
+      *streamreader* and *streamwriter* attributes are now deprecated.
+
 
 .. function:: lookup(encoding)
 
@@ -139,6 +142,8 @@ functions which use :func:`lookup` for the codec lookup:
 
    Raises a :exc:`LookupError` in case the encoding cannot be found.
 
+   .. deprecated:: 3.3
+
 
 .. function:: getwriter(encoding)
 
@@ -146,6 +151,8 @@ functions which use :func:`lookup` for the codec lookup:
    factory function.
 
    Raises a :exc:`LookupError` in case the encoding cannot be found.
+
+   .. deprecated:: 3.3
 
 
 .. function:: register_error(name, error_handler)
@@ -217,6 +224,11 @@ utility functions:
 
    .. note::
 
+      This function is kept for backward compatibility with Python 2, the
+      builtin :func:`open` function should be used instead.
+
+   .. note::
+
       The wrapped version's methods will accept and return strings only.  Bytes
       arguments will be rejected.
 
@@ -250,6 +262,8 @@ utility functions:
    *errors* may be given to define the error handling. It defaults to
    ``'strict'``, which causes :exc:`ValueError` to be raised in case an encoding
    error occurs.
+
+   .. deprecated:: 3.3
 
 
 .. function:: iterencode(iterator, encoding, errors='strict', **kwargs)
@@ -563,6 +577,9 @@ The :class:`StreamWriter` class is a subclass of :class:`Codec` and defines the
 following methods which every stream writer must define in order to be
 compatible with the Python codec registry.
 
+.. deprecated:: 3.3
+   Use the builtin the :class:`io.TextIOWrapper` class.
+
 
 .. class:: StreamWriter(stream[, errors])
 
@@ -627,6 +644,9 @@ StreamReader Objects
 The :class:`StreamReader` class is a subclass of :class:`Codec` and defines the
 following methods which every stream reader must define in order to be
 compatible with the Python codec registry.
+
+.. deprecated:: 3.3
+   Use the builtin the :class:`io.TextIOWrapper` class.
 
 
 .. class:: StreamReader(stream[, errors])
@@ -728,6 +748,9 @@ and write modes.
 The design is such that one can use the factory functions returned by the
 :func:`lookup` function to construct the instance.
 
+.. deprecated:: 3.3
+   Use the :class:`io.TextIOWrapper` class.
+
 
 .. class:: StreamReaderWriter(stream, Reader, Writer, errors)
 
@@ -751,6 +774,8 @@ which is sometimes useful when dealing with different encoding environments.
 
 The design is such that one can use the factory functions returned by the
 :func:`lookup` function to construct the instance.
+
+.. deprecated:: 3.3
 
 
 .. class:: StreamRecoder(stream, encode, decode, Reader, Writer, errors)
