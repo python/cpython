@@ -100,6 +100,10 @@ class TestGenericStringIO(unittest.TestCase):
         self._fp.close()
         self.assertRaises(ValueError, self._fp.next)
 
+    def test_getvalue(self):
+        self._fp.close()
+        self.assertRaises(ValueError, self._fp.getvalue)
+
 class TestStringIO(TestGenericStringIO):
     MODULE = StringIO
 
