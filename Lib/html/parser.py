@@ -99,7 +99,7 @@ class HTMLParser(_markupbase.ParserBase):
         _markupbase.ParserBase.reset(self)
 
     def feed(self, data):
-        """Feed data to the parser.
+        r"""Feed data to the parser.
 
         Call this as often as you want, with as little or as much text
         as you want (may include '\n').
