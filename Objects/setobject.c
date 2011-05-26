@@ -607,16 +607,18 @@ set_repr(PySetObject *so)
         goto done;
     newsize = PyUnicode_GET_SIZE(listrepr);
     result = PyUnicode_FromUnicode(NULL, newsize);
-    if (result) {
-        u = PyUnicode_AS_UNICODE(result);
-        *u++ = '{';
-        /* Omit the brackets from the listrepr */
-        Py_UNICODE_COPY(u, PyUnicode_AS_UNICODE(listrepr)+1,
-                           newsize-2);
-        u += newsize-2;
-        *u = '}';
-    }
+    if (result == NULL)
+        goto done;
+
+    u = PyUnicode_AS_UNICODE(result);
+    *u++ = '{';
+    /* Omit the brackets from the listrepr */
+    Py_UNICODE_COPY(u, PyUnicode_AS_UNICODE(listrepr)+1,
+                       newsize-2);
+    u += newsize-2;
+    *u = '}';
     Py_DECREF(listrepr);
+
     if (Py_TYPE(so) != &PySet_Type) {
         PyObject *tmp = PyUnicode_FromFormat("%s(%U)",
                                              Py_TYPE(so)->tp_name,
