@@ -83,6 +83,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12161: Cause StringIO.getvalue() to raise a ValueError when used on a
+  closed StringIO instance.
+
 - Issue #12182: Fix pydoc.HTMLDoc.multicolumn() if Python uses the new (true)
   division (python -Qnew). Patch written by Ralf W. Grosse-Kunstleve.
 
