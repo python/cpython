@@ -1733,7 +1733,6 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
     Py_UNICODE buf[MAXPATHLEN+1];
     Py_ssize_t buflen = MAXPATHLEN+1;
     PyObject *path_unicode, *filename;
-    const Py_UNICODE *base;
     Py_ssize_t len;
     struct stat statbuf;
     static struct filedescr fd_package = {"", "", PKG_DIRECTORY};
@@ -1751,7 +1750,6 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
     else
         return 0;
 
-    base = PyUnicode_AS_UNICODE(path_unicode);
     len = PyUnicode_GET_SIZE(path_unicode);
     if (len + 2 + PyUnicode_GET_SIZE(name) + MAXSUFFIXSIZE >= buflen) {
         Py_DECREF(path_unicode);
@@ -2275,12 +2273,10 @@ case_ok(PyObject *filename, Py_ssize_t prefix_delta, PyObject *name)
 static int
 find_init_module(PyObject *directory)
 {
-    size_t len;
     struct stat statbuf;
     PyObject *filename;
     int match;
 
-    len = PyUnicode_GET_SIZE(directory);
     filename = PyUnicode_FromFormat("%U%c__init__.py", directory, SEP);
     if (filename == NULL)
         return -1;
