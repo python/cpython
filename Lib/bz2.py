@@ -76,6 +76,10 @@ class BZ2File(io.BufferedIOBase):
             mode = "wb"
             mode_code = _MODE_WRITE
             self._compressor = BZ2Compressor()
+        elif mode in ("a", "ab"):
+            mode = "ab"
+            mode_code = _MODE_WRITE
+            self._compressor = BZ2Compressor()
         else:
             raise ValueError("Invalid mode: {!r}".format(mode))
 
@@ -161,14 +165,25 @@ class BZ2File(io.BufferedIOBase):
     def _fill_buffer(self):
         if self._buffer:
             return True
-        if self._decompressor.eof:
-            self._mode = _MODE_READ_EOF
-            self._size = self._pos
-            return False
-        rawblock = self._fp.read(_BUFFER_SIZE)
+
+        if self._decompressor.unused_data:
+            rawblock = self._decompressor.unused_data
+        else:
+            rawblock = self._fp.read(_BUFFER_SIZE)
+
         if not rawblock:
-            raise EOFError("Compressed file ended before the "
-                           "end-of-stream marker was reached")
+            if self._decompressor.eof:
+                self._mode = _MODE_READ_EOF
+                self._size = self._pos
+                return False
+            else:
+                raise EOFError("Compressed file ended before the "
+                               "end-of-stream marker was reached")
+
+        # Continue to next stream.
+        if self._decompressor.eof:
+            self._decompressor = BZ2Decompressor()
+
         self._buffer = self._decompressor.decompress(rawblock)
         return True
 
@@ -384,9 +399,15 @@ def decompress(data):
     """
     if len(data) == 0:
         return b""
-    decomp = BZ2Decompressor()
-    result = decomp.decompress(data)
-    if not decomp.eof:
-        raise ValueError("Compressed data ended before the "
-                         "end-of-stream marker was reached")
-    return result
+
+    result = b""
+    while True:
+        decomp = BZ2Decompressor()
+        result += decomp.decompress(data)
+        if not decomp.eof:
+            raise ValueError("Compressed data ended before the "
+                             "end-of-stream marker was reached")
+        if not decomp.unused_data:
+            return result
+        # There is unused data left over. Proceed to next stream.
+        data = decomp.unused_data
