@@ -135,6 +135,7 @@ managed by compiler_enter_scope() and compiler_exit_scope().
 
 struct compiler {
     const char *c_filename;
+    PyObject *c_filename_obj;
     struct symtable *c_st;
     PyFutureFeatures *c_future; /* pointer to module's __future__ */
     PyCompilerFlags *c_flags;
@@ -272,6 +273,9 @@ PyAST_CompileEx(mod_ty mod, const char *filename, PyCompilerFlags *flags,
     if (!compiler_init(&c))
         return NULL;
     c.c_filename = filename;
+    c.c_filename_obj = PyUnicode_DecodeFSDefault(filename);
+    if (!c.c_filename_obj)
+        goto finally;
     c.c_arena = arena;
     c.c_future = PyFuture_FromAST(mod, filename);
     if (c.c_future == NULL)
@@ -324,6 +328,8 @@ compiler_free(struct compiler *c)
         PySymtable_Free(c->c_st);
     if (c->c_future)
         PyObject_Free(c->c_future);
+    if (c->c_filename_obj)
+        Py_DECREF(c->c_filename_obj);
     Py_DECREF(c->c_stack);
 }
 
@@ -3361,7 +3367,7 @@ compiler_in_loop(struct compiler *c) {
 static int
 compiler_error(struct compiler *c, const char *errstr)
 {
-    PyObject *loc, *filename;
+    PyObject *loc;
     PyObject *u = NULL, *v = NULL;
 
     loc = PyErr_ProgramText(c->c_filename, c->u->u_lineno);
@@ -3369,16 +3375,7 @@ compiler_error(struct compiler *c, const char *errstr)
         Py_INCREF(Py_None);
         loc = Py_None;
     }
-    if (c->c_filename != NULL) {
-        filename = PyUnicode_DecodeFSDefault(c->c_filename);
-        if (!filename)
-            goto exit;
-    }
-    else {
-        Py_INCREF(Py_None);
-        filename = Py_None;
-    }
-    u = Py_BuildValue("(NiiO)", filename, c->u->u_lineno,
+    u = Py_BuildValue("(OiiO)", c->c_filename_obj, c->u->u_lineno,
                       c->u->u_col_offset, loc);
     if (!u)
         goto exit;
@@ -3927,7 +3924,6 @@ makecode(struct compiler *c, struct assembler *a)
     PyObject *consts = NULL;
     PyObject *names = NULL;
     PyObject *varnames = NULL;
-    PyObject *filename = NULL;
     PyObject *name = NULL;
     PyObject *freevars = NULL;
     PyObject *cellvars = NULL;
@@ -3951,10 +3947,6 @@ makecode(struct compiler *c, struct assembler *a)
     freevars = dict_keys_inorder(c->u->u_freevars, PyTuple_Size(cellvars));
     if (!freevars)
         goto error;
-    filename = PyUnicode_DecodeFSDefault(c->c_filename);
-    if (!filename)
-        goto error;
-
     nlocals = PyDict_Size(c->u->u_varnames);
     flags = compute_code_flags(c);
     if (flags < 0)
@@ -3974,14 +3966,13 @@ makecode(struct compiler *c, struct assembler *a)
                     nlocals, stackdepth(c), flags,
                     bytecode, consts, names, varnames,
                     freevars, cellvars,
-                    filename, c->u->u_name,
+                    c->c_filename_obj, c->u->u_name,
                     c->u->u_firstlineno,
                     a->a_lnotab);
  error:
     Py_XDECREF(consts);
     Py_XDECREF(names);
     Py_XDECREF(varnames);
-    Py_XDECREF(filename);
     Py_XDECREF(name);
     Py_XDECREF(freevars);
     Py_XDECREF(cellvars);
