@@ -345,8 +345,6 @@ class StreamWriter(Codec):
             The set of allowed parameter values can be extended via
             register_error.
         """
-        import warnings
-        warnings.warn('use io.TextIOWrapper', DeprecationWarning, stacklevel=2)
         self.stream = stream
         self.errors = errors
 
@@ -418,8 +416,6 @@ class StreamReader(Codec):
             The set of allowed parameter values can be extended via
             register_error.
         """
-        import warnings
-        warnings.warn('use io.TextIOWrapper', DeprecationWarning, stacklevel=2)
         self.stream = stream
         self.errors = errors
         self.bytebuffer = b""
@@ -850,7 +846,7 @@ class StreamRecoder:
 
 ### Shortcuts
 
-def open(filename, mode='r', encoding=None, errors=None, buffering=1):
+def open(filename, mode='rb', encoding=None, errors='strict', buffering=1):
 
     """ Open an encoded file using the given mode and return
         a wrapped version providing transparent encoding/decoding.
@@ -881,13 +877,18 @@ def open(filename, mode='r', encoding=None, errors=None, buffering=1):
         parameter.
 
     """
-    if encoding is not None:
-        return builtins.open(filename, mode, buffering,
-                             encoding, errors, newline='')
-    else:
-        if 'b' not in mode:
-            mode = mode + 'b'
-        return builtins.open(filename, mode, buffering, encoding, errors)
+    if encoding is not None and \
+       'b' not in mode:
+        # Force opening of the file in binary mode
+        mode = mode + 'b'
+    file = builtins.open(filename, mode, buffering)
+    if encoding is None:
+        return file
+    info = lookup(encoding)
+    srw = StreamReaderWriter(file, info.streamreader, info.streamwriter, errors)
+    # Add attributes to simplify introspection
+    srw.encoding = encoding
+    return srw
 
 def EncodedFile(file, data_encoding, file_encoding=None, errors='strict'):
 
