@@ -161,6 +161,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1625: BZ2File and bz2.decompress() now support multi-stream files.
+  Initial patch by Nir Aides.
+
 - Issue #8796: codecs.open() calls the builtin open() function instead of using
   StreamReaderWriter. Deprecate StreamReader, StreamWriter, StreamReaderWriter,
   StreamRecoder and EncodedFile() of the codec module. Use the builtin open()
