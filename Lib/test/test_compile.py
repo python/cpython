@@ -1,6 +1,7 @@
 import unittest
 import sys
 import _ast
+import types
 from test import support
 
 class TestSpecifics(unittest.TestCase):
@@ -432,6 +433,14 @@ if 1:
         ast = _ast.Module()
         ast.body = [_ast.BoolOp()]
         self.assertRaises(TypeError, compile, ast, '<ast>', 'exec')
+
+    @support.cpython_only
+    def test_same_filename_used(self):
+        s = """def f(): pass\ndef g(): pass"""
+        c = compile(s, "myfile", "exec")
+        for obj in c.co_consts:
+            if isinstance(obj, types.CodeType):
+                self.assertIs(obj.co_filename, c.co_filename)
 
 
 def test_main():

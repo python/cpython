@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #12190: Try to use the same filename object when compiling unmarshalling
+  a code objects in the same file.
+
 - Issue #12166: Move implementations of dir() specialized for various types into
   the __dir__() methods of those types.
 
