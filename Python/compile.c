@@ -3744,11 +3744,11 @@ assemble_lnotab(struct assembler *a, struct instr *i)
     a->a_lnotab_off += 2;
     if (d_bytecode) {
         *lnotab++ = d_bytecode;
-        *lnotab = d_lineno;
+        *lnotab++ = d_lineno;
     }
     else {      /* First line of a block; def stmt, etc. */
         *lnotab++ = 0;
-        *lnotab = d_lineno;
+        *lnotab++ = d_lineno;
     }
     a->a_lineno = i->i_lineno;
     a->a_lineno_off = a->a_offset;
@@ -3793,7 +3793,7 @@ assemble_emit(struct assembler *a, struct instr *i)
     if (i->i_hasarg) {
         assert(size == 3 || size == 6);
         *code++ = arg & 0xff;
-        *code = arg >> 8;
+        *code++ = arg >> 8;
     }
     return 1;
 }
