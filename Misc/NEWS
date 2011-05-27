@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #12106: The use of the multiple-with shorthand syntax is now reflected
+  in the AST.
+
 - Issue #12190: Try to use the same filename object when compiling unmarshalling
   a code objects in the same file.
 

@@ -95,8 +95,7 @@ static char *If_fields[]={
 };
 static PyTypeObject *With_type;
 static char *With_fields[]={
-        "context_expr",
-        "optional_vars",
+        "items",
         "body",
 };
 static PyTypeObject *Raise_type;
@@ -392,6 +391,12 @@ static char *alias_fields[]={
         "name",
         "asname",
 };
+static PyTypeObject *withitem_type;
+static PyObject* ast2obj_withitem(void*);
+static char *withitem_fields[]={
+        "context_expr",
+        "optional_vars",
+};
 
 
 static int
@@ -680,7 +685,7 @@ static int init_types(void)
         if (!While_type) return 0;
         If_type = make_type("If", stmt_type, If_fields, 3);
         if (!If_type) return 0;
-        With_type = make_type("With", stmt_type, With_fields, 3);
+        With_type = make_type("With", stmt_type, With_fields, 2);
         if (!With_type) return 0;
         Raise_type = make_type("Raise", stmt_type, Raise_fields, 2);
         if (!Raise_type) return 0;
@@ -938,6 +943,8 @@ static int init_types(void)
         if (!keyword_type) return 0;
         alias_type = make_type("alias", &AST_type, alias_fields, 2);
         if (!alias_type) return 0;
+        withitem_type = make_type("withitem", &AST_type, withitem_fields, 2);
+        if (!withitem_type) return 0;
         initialized = 1;
         return 1;
 }
@@ -960,6 +967,7 @@ static int obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena);
 static int obj2ast_arg(PyObject* obj, arg_ty* out, PyArena* arena);
 static int obj2ast_keyword(PyObject* obj, keyword_ty* out, PyArena* arena);
 static int obj2ast_alias(PyObject* obj, alias_ty* out, PyArena* arena);
+static int obj2ast_withitem(PyObject* obj, withitem_ty* out, PyArena* arena);
 
 mod_ty
 Module(asdl_seq * body, PyArena *arena)
@@ -1225,21 +1233,15 @@ If(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno, int
 }
 
 stmt_ty
-With(expr_ty context_expr, expr_ty optional_vars, asdl_seq * body, int lineno,
-     int col_offset, PyArena *arena)
+With(asdl_seq * items, asdl_seq * body, int lineno, int col_offset, PyArena
+     *arena)
 {
         stmt_ty p;
-        if (!context_expr) {
-                PyErr_SetString(PyExc_ValueError,
-                                "field context_expr is required for With");
-                return NULL;
-        }
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p)
                 return NULL;
         p->kind = With_kind;
-        p->v.With.context_expr = context_expr;
-        p->v.With.optional_vars = optional_vars;
+        p->v.With.items = items;
         p->v.With.body = body;
         p->lineno = lineno;
         p->col_offset = col_offset;
@@ -2135,6 +2137,23 @@ alias(identifier name, identifier asname, PyArena *arena)
         return p;
 }
 
+withitem_ty
+withitem(expr_ty context_expr, expr_ty optional_vars, PyArena *arena)
+{
+        withitem_ty p;
+        if (!context_expr) {
+                PyErr_SetString(PyExc_ValueError,
+                                "field context_expr is required for withitem");
+                return NULL;
+        }
+        p = (withitem_ty)PyArena_Malloc(arena, sizeof(*p));
+        if (!p)
+                return NULL;
+        p->context_expr = context_expr;
+        p->optional_vars = optional_vars;
+        return p;
+}
+
 
 PyObject*
 ast2obj_mod(void* _o)
@@ -2390,15 +2409,9 @@ ast2obj_stmt(void* _o)
         case With_kind:
                 result = PyType_GenericNew(With_type, NULL, NULL);
                 if (!result) goto failed;
-                value = ast2obj_expr(o->v.With.context_expr);
+                value = ast2obj_list(o->v.With.items, ast2obj_withitem);
                 if (!value) goto failed;
-                if (PyObject_SetAttrString(result, "context_expr", value) == -1)
-                        goto failed;
-                Py_DECREF(value);
-                value = ast2obj_expr(o->v.With.optional_vars);
-                if (!value) goto failed;
-                if (PyObject_SetAttrString(result, "optional_vars", value) ==
-                    -1)
+                if (PyObject_SetAttrString(result, "items", value) == -1)
                         goto failed;
                 Py_DECREF(value);
                 value = ast2obj_list(o->v.With.body, ast2obj_stmt);
@@ -3370,6 +3383,35 @@ failed:
         return NULL;
 }
 
+PyObject*
+ast2obj_withitem(void* _o)
+{
+        withitem_ty o = (withitem_ty)_o;
+        PyObject *result = NULL, *value = NULL;
+        if (!o) {
+                Py_INCREF(Py_None);
+                return Py_None;
+        }
+
+        result = PyType_GenericNew(withitem_type, NULL, NULL);
+        if (!result) return NULL;
+        value = ast2obj_expr(o->context_expr);
+        if (!value) goto failed;
+        if (PyObject_SetAttrString(result, "context_expr", value) == -1)
+                goto failed;
+        Py_DECREF(value);
+        value = ast2obj_expr(o->optional_vars);
+        if (!value) goto failed;
+        if (PyObject_SetAttrString(result, "optional_vars", value) == -1)
+                goto failed;
+        Py_DECREF(value);
+        return result;
+failed:
+        Py_XDECREF(value);
+        Py_XDECREF(result);
+        return NULL;
+}
+
 
 int
 obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
@@ -4210,32 +4252,33 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 return 1;
         }
         if (isinstance) {
-                expr_ty context_expr;
-                expr_ty optional_vars;
+                asdl_seq* items;
                 asdl_seq* body;
 
-                if (PyObject_HasAttrString(obj, "context_expr")) {
+                if (PyObject_HasAttrString(obj, "items")) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "context_expr");
+                        Py_ssize_t len;
+                        Py_ssize_t i;
+                        tmp = PyObject_GetAttrString(obj, "items");
                         if (tmp == NULL) goto failed;
-                        res = obj2ast_expr(tmp, &context_expr, arena);
-                        if (res != 0) goto failed;
+                        if (!PyList_Check(tmp)) {
+                                PyErr_Format(PyExc_TypeError, "With field \"items\" must be a list, not a %.200s", tmp->ob_type->tp_name);
+                                goto failed;
+                        }
+                        len = PyList_GET_SIZE(tmp);
+                        items = asdl_seq_new(len, arena);
+                        if (items == NULL) goto failed;
+                        for (i = 0; i < len; i++) {
+                                withitem_ty value;
+                                res = obj2ast_withitem(PyList_GET_ITEM(tmp, i), &value, arena);
+                                if (res != 0) goto failed;
+                                asdl_seq_SET(items, i, value);
+                        }
                         Py_XDECREF(tmp);
                         tmp = NULL;
                 } else {
-                        PyErr_SetString(PyExc_TypeError, "required field \"context_expr\" missing from With");
+                        PyErr_SetString(PyExc_TypeError, "required field \"items\" missing from With");
                         return 1;
-                }
-                if (PyObject_HasAttrString(obj, "optional_vars")) {
-                        int res;
-                        tmp = PyObject_GetAttrString(obj, "optional_vars");
-                        if (tmp == NULL) goto failed;
-                        res = obj2ast_expr(tmp, &optional_vars, arena);
-                        if (res != 0) goto failed;
-                        Py_XDECREF(tmp);
-                        tmp = NULL;
-                } else {
-                        optional_vars = NULL;
                 }
                 if (PyObject_HasAttrString(obj, "body")) {
                         int res;
@@ -4262,8 +4305,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from With");
                         return 1;
                 }
-                *out = With(context_expr, optional_vars, body, lineno,
-                            col_offset, arena);
+                *out = With(items, body, lineno, col_offset, arena);
                 if (*out == NULL) goto failed;
                 return 0;
         }
@@ -6723,6 +6765,43 @@ failed:
         return 1;
 }
 
+int
+obj2ast_withitem(PyObject* obj, withitem_ty* out, PyArena* arena)
+{
+        PyObject* tmp = NULL;
+        expr_ty context_expr;
+        expr_ty optional_vars;
+
+        if (PyObject_HasAttrString(obj, "context_expr")) {
+                int res;
+                tmp = PyObject_GetAttrString(obj, "context_expr");
+                if (tmp == NULL) goto failed;
+                res = obj2ast_expr(tmp, &context_expr, arena);
+                if (res != 0) goto failed;
+                Py_XDECREF(tmp);
+                tmp = NULL;
+        } else {
+                PyErr_SetString(PyExc_TypeError, "required field \"context_expr\" missing from withitem");
+                return 1;
+        }
+        if (PyObject_HasAttrString(obj, "optional_vars")) {
+                int res;
+                tmp = PyObject_GetAttrString(obj, "optional_vars");
+                if (tmp == NULL) goto failed;
+                res = obj2ast_expr(tmp, &optional_vars, arena);
+                if (res != 0) goto failed;
+                Py_XDECREF(tmp);
+                tmp = NULL;
+        } else {
+                optional_vars = NULL;
+        }
+        *out = withitem(context_expr, optional_vars, arena);
+        return 0;
+failed:
+        Py_XDECREF(tmp);
+        return 1;
+}
+
 
 static struct PyModuleDef _astmodule = {
   PyModuleDef_HEAD_INIT, "_ast"
@@ -6940,6 +7019,8 @@ PyInit__ast(void)
             return NULL;
         if (PyDict_SetItemString(d, "alias", (PyObject*)alias_type) < 0) return
             NULL;
+        if (PyDict_SetItemString(d, "withitem", (PyObject*)withitem_type) < 0)
+            return NULL;
         return m;
 }
 
