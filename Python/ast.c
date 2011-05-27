@@ -2967,8 +2967,8 @@ ast_for_try_stmt(struct compiling *c, const node *n)
 }
 
 /* with_item: test ['as' expr] */
-static stmt_ty
-ast_for_with_item(struct compiling *c, const node *n, asdl_seq *content)
+static withitem_ty
+ast_for_with_item(struct compiling *c, const node *n)
 {
     expr_ty context_expr, optional_vars = NULL;
 
@@ -2987,43 +2987,32 @@ ast_for_with_item(struct compiling *c, const node *n, asdl_seq *content)
         }
     }
 
-    return With(context_expr, optional_vars, content, LINENO(n),
-                n->n_col_offset, c->c_arena);
+    return withitem(context_expr, optional_vars, c->c_arena);
 }
 
 /* with_stmt: 'with' with_item (',' with_item)* ':' suite */
 static stmt_ty
 ast_for_with_stmt(struct compiling *c, const node *n)
 {
-    int i;
-    stmt_ty ret;
-    asdl_seq *inner;
+    int i, n_items;
+    asdl_seq *items, *body;
 
     REQ(n, with_stmt);
 
-    /* process the with items inside-out */
-    i = NCH(n) - 1;
-    /* the suite of the innermost with item is the suite of the with stmt */
-    inner = ast_for_suite(c, CHILD(n, i));
-    if (!inner)
-        return NULL;
-
-    for (;;) {
-        i -= 2;
-        ret = ast_for_with_item(c, CHILD(n, i), inner);
-        if (!ret)
+    n_items = (NCH(n) - 2) / 2;
+    items = asdl_seq_new(n_items, c->c_arena);
+    for (i = 1; i < NCH(n) - 2; i += 2) {
+        withitem_ty item = ast_for_with_item(c, CHILD(n, i));
+        if (!item)
             return NULL;
-        /* was this the last item? */
-        if (i == 1)
-            break;
-        /* if not, wrap the result so far in a new sequence */
-        inner = asdl_seq_new(1, c->c_arena);
-        if (!inner)
-            return NULL;
-        asdl_seq_SET(inner, 0, ret);
+        asdl_seq_SET(items, (i - 1) / 2, item);
     }
 
-    return ret;
+    body = ast_for_suite(c, CHILD(n, NCH(n) - 1));
+    if (!body)
+        return NULL;
+
+    return With(items, body, LINENO(n), n->n_col_offset, c->c_arena);
 }
 
 static stmt_ty

@@ -179,7 +179,7 @@ static int compiler_in_loop(struct compiler *);
 static int inplace_binop(struct compiler *, operator_ty);
 static int expr_constant(struct compiler *, expr_ty);
 
-static int compiler_with(struct compiler *, stmt_ty);
+static int compiler_with(struct compiler *, stmt_ty, int);
 static int compiler_call_helper(struct compiler *c, int n,
                                 asdl_seq *args,
                                 asdl_seq *keywords,
@@ -2341,7 +2341,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     case Continue_kind:
         return compiler_continue(c);
     case With_kind:
-        return compiler_with(c, s);
+        return compiler_with(c, s, 0);
     }
     return 1;
 }
@@ -3068,9 +3068,10 @@ expr_constant(struct compiler *c, expr_ty e)
        exit(*exc)
  */
 static int
-compiler_with(struct compiler *c, stmt_ty s)
+compiler_with(struct compiler *c, stmt_ty s, int pos)
 {
     basicblock *block, *finally;
+    withitem_ty item = asdl_seq_GET(s->v.With.items, pos);
 
     assert(s->kind == With_kind);
 
@@ -3080,7 +3081,7 @@ compiler_with(struct compiler *c, stmt_ty s)
         return 0;
 
     /* Evaluate EXPR */
-    VISIT(c, expr, s->v.With.context_expr);
+    VISIT(c, expr, item->context_expr);
     ADDOP_JREL(c, SETUP_WITH, finally);
 
     /* SETUP_WITH pushes a finally block. */
@@ -3089,16 +3090,20 @@ compiler_with(struct compiler *c, stmt_ty s)
         return 0;
     }
 
-    if (s->v.With.optional_vars) {
-        VISIT(c, expr, s->v.With.optional_vars);
+    if (item->optional_vars) {
+        VISIT(c, expr, item->optional_vars);
     }
     else {
     /* Discard result from context.__enter__() */
         ADDOP(c, POP_TOP);
     }
 
-    /* BLOCK code */
-    VISIT_SEQ(c, stmt, s->v.With.body);
+    pos++;
+    if (pos == asdl_seq_LEN(s->v.With.items))
+        /* BLOCK code */
+        VISIT_SEQ(c, stmt, s->v.With.body)
+    else if (!compiler_with(c, s, pos))
+            return 0;
 
     /* End of try block; start the finally block */
     ADDOP(c, POP_BLOCK);
