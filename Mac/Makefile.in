@@ -76,6 +76,13 @@ installunixtools:
 	do \
 		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
 	done
+ifneq ($(LIPO_32BIT_FLAGS),)
+	for fn in python3-32 pythonw3-32 \
+		  python$(VERSION)-32 pythonw$(VERSION)-32 ;\
+	do \
+		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
+	done
+endif
 
 
 #
@@ -90,6 +97,12 @@ altinstallunixtools:
 	do \
 		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
 	done
+ifneq ($(LIPO_32BIT_FLAGS),)
+	for fn in python$(VERSION)-32 pythonw$(VERSION)-32 ;\
+	do \
+		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
+	done
+endif
 
 pythonw: $(srcdir)/Tools/pythonw.c Makefile
 	$(CC) $(LDFLAGS) -DPYTHONFRAMEWORK='"$(PYTHONFRAMEWORK)"' -o $@ $(srcdir)/Tools/pythonw.c -I.. -I$(srcdir)/../Include ../$(PYTHONFRAMEWORK).framework/Versions/$(VERSION)/$(PYTHONFRAMEWORK)
