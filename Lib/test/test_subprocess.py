@@ -1498,15 +1498,23 @@ class ProcessTestCaseNoPoll(ProcessTestCase):
 @unittest.skipUnless(getattr(subprocess, '_posixsubprocess', False),
                      "_posixsubprocess extension module not found.")
 class ProcessTestCasePOSIXPurePython(ProcessTestCase, POSIXProcessTestCase):
-    def setUp(self):
-        subprocess._posixsubprocess = None
-        ProcessTestCase.setUp(self)
-        POSIXProcessTestCase.setUp(self)
+    @classmethod
+    def setUpClass(cls):
+        global subprocess
+        assert subprocess._posixsubprocess
+        # Reimport subprocess while forcing _posixsubprocess to not exist.
+        with support.check_warnings(('.*_posixsubprocess .* not being used.*',
+                                     RuntimeWarning)):
+            subprocess = support.import_fresh_module(
+                    'subprocess', blocked=['_posixsubprocess'])
+        assert not subprocess._posixsubprocess
 
-    def tearDown(self):
-        subprocess._posixsubprocess = sys.modules['_posixsubprocess']
-        POSIXProcessTestCase.tearDown(self)
-        ProcessTestCase.tearDown(self)
+    @classmethod
+    def tearDownClass(cls):
+        global subprocess
+        # Reimport subprocess as it should be, restoring order to the universe.
+        subprocess = support.import_fresh_module('subprocess')
+        assert subprocess._posixsubprocess
 
 
 class HelperFunctionTests(unittest.TestCase):
