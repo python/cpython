@@ -437,6 +437,10 @@ Extension Modules
 Build
 -----
 
+- Issue #11217: For 64-bit/32-bit Mac OS X universal framework builds,
+  ensure "make install" creates symlinks in --prefix bin for the "-32"
+  files in the framework bin directory like the installer does.
+
 - Issue #11411: Fix 'make DESTDIR=' with a relative destination.
 
 - Issue #10709: Add updated AIX notes in Misc/README.AIX.
