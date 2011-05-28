@@ -9,6 +9,11 @@ What's New in Python 2.7.2?
 Core and Builtins
 -----------------
 
+- Issue #9670: Increase the default stack size for secondary threads on
+  Mac OS X and FreeBSD to reduce the chances of a crash instead of a
+  "maximum recursion depth" RuntimeError exception.
+  (patch by Ronald Oussoren)
+
 - Correct lookup of __dir__ on objects. Among other things, this causes errors
   besides AttributeError found on lookup to be propagated.
 
