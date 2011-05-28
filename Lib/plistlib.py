@@ -68,13 +68,15 @@ def readPlist(pathOrFile):
     usually is a dictionary).
     """
     didOpen = False
-    if isinstance(pathOrFile, str):
-        pathOrFile = open(pathOrFile, 'rb')
-        didOpen = True
-    p = PlistParser()
-    rootObject = p.parse(pathOrFile)
-    if didOpen:
-        pathOrFile.close()
+    try:
+        if isinstance(pathOrFile, str):
+            pathOrFile = open(pathOrFile, 'rb')
+            didOpen = True
+        p = PlistParser()
+        rootObject = p.parse(pathOrFile)
+    finally:
+        if didOpen:
+            pathOrFile.close()
     return rootObject
 
 
@@ -83,15 +85,17 @@ def writePlist(rootObject, pathOrFile):
     file name or a (writable) file object.
     """
     didOpen = False
-    if isinstance(pathOrFile, str):
-        pathOrFile = open(pathOrFile, 'wb')
-        didOpen = True
-    writer = PlistWriter(pathOrFile)
-    writer.writeln("<plist version=\"1.0\">")
-    writer.writeValue(rootObject)
-    writer.writeln("</plist>")
-    if didOpen:
-        pathOrFile.close()
+    try:
+        if isinstance(pathOrFile, str):
+            pathOrFile = open(pathOrFile, 'wb')
+            didOpen = True
+        writer = PlistWriter(pathOrFile)
+        writer.writeln("<plist version=\"1.0\">")
+        writer.writeValue(rootObject)
+        writer.writeln("</plist>")
+    finally:
+        if didOpen:
+            pathOrFile.close()
 
 
 def readPlistFromBytes(data):
@@ -352,7 +356,6 @@ class Data:
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__, repr(self.data))
 
-
 class PlistParser:
 
     def __init__(self):
@@ -362,11 +365,11 @@ class PlistParser:
 
     def parse(self, fileobj):
         from xml.parsers.expat import ParserCreate
-        parser = ParserCreate()
-        parser.StartElementHandler = self.handleBeginElement
-        parser.EndElementHandler = self.handleEndElement
-        parser.CharacterDataHandler = self.handleData
-        parser.ParseFile(fileobj)
+        self.parser = ParserCreate()
+        self.parser.StartElementHandler = self.handleBeginElement
+        self.parser.EndElementHandler = self.handleEndElement
+        self.parser.CharacterDataHandler = self.handleData
+        self.parser.ParseFile(fileobj)
         return self.root
 
     def handleBeginElement(self, element, attrs):
@@ -385,12 +388,18 @@ class PlistParser:
 
     def addObject(self, value):
         if self.currentKey is not None:
+            if not isinstance(self.stack[-1], type({})):
+                raise ValueError("unexpected element at line %d" %
+                                 self.parser.CurrentLineNumber)
             self.stack[-1][self.currentKey] = value
             self.currentKey = None
         elif not self.stack:
             # this is the root object
             self.root = value
         else:
+            if not isinstance(self.stack[-1], type([])):
+                raise ValueError("unexpected element at line %d" %
+                                 self.parser.CurrentLineNumber)
             self.stack[-1].append(value)
 
     def getData(self):
@@ -405,9 +414,15 @@ class PlistParser:
         self.addObject(d)
         self.stack.append(d)
     def end_dict(self):
+        if self.currentKey:
+            raise ValueError("missing value for key '%s' at line %d" %
+                             (self.currentKey,self.parser.CurrentLineNumber))
         self.stack.pop()
 
     def end_key(self):
+        if self.currentKey or not isinstance(self.stack[-1], type({})):
+            raise ValueError("unexpected key at line %d" %
+                             self.parser.CurrentLineNumber)
         self.currentKey = self.getData()
 
     def begin_array(self, attrs):

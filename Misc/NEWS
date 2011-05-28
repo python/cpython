@@ -80,6 +80,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #985064: Make plistlib more resilient to faulty input plists.
+  Patch by Mher Movsisyan.
+
 - Issue #12175: RawIOBase.readall() now returns None if read() returns None.
 
 - Issue #12175: FileIO.readall() now raises a ValueError instead of an IOError
