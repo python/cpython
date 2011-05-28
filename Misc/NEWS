@@ -172,6 +172,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #985064: Make plistlib more resilient to faulty input plists.
+  Patch by Mher Movsisyan.
+
 - Issue #1625: BZ2File and bz2.decompress() now support multi-stream files.
   Initial patch by Nir Aides.
 
