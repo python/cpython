@@ -1603,7 +1603,6 @@ def test_main():
     unit_tests = (ProcessTestCase,
                   POSIXProcessTestCase,
                   Win32ProcessTestCase,
-                  ProcessTestCasePOSIXPurePython,
                   CommandTests,
                   ProcessTestCaseNoPoll,
                   HelperFunctionTests,
