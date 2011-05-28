@@ -77,6 +77,13 @@ installunixtools:
 	do \
 		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
 	done
+ifneq ($(LIPO_32BIT_FLAGS),)
+	for fn in python-32 pythonw-32 \
+		  python$(VERSION)-32 pythonw$(VERSION)-32 ;\
+	do \
+		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
+	done
+endif
 
 
 #
@@ -91,6 +98,12 @@ altinstallunixtools:
 	do \
 		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
 	done
+ifneq ($(LIPO_32BIT_FLAGS),)
+	for fn in python$(VERSION)-32 pythonw$(VERSION)-32 ;\
+	do \
+		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
+	done
+endif
 	ln -fs "$(prefix)/bin/2to3-$(VERSION)" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/2to3-$(VERSION)" ;\
 
 # By default most tools are installed without a version in their basename, to
