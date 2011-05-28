@@ -1,3 +1,8 @@
+What's New in IDLE 1.2.6c1?
+===========================
+
+*Release date: 17-Apr-2011*
+
 What's New in IDLE 1.2.5?
 =========================
 
