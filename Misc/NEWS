@@ -44,6 +44,12 @@ Library
 - Issue #12065: connect_ex() on an SSL socket now returns the original errno
   when the socket's timeout expires (it used to return None).
 
+Build
+-----
+
+- Issue #11217: For 64-bit/32-bit Mac OS X universal framework builds,
+  ensure "make install" creates symlinks in --prefix bin for the "-32"
+  files in the framework bin directory like the installer does.
 
 
 What's New in Python 3.2.1 release candidate 1?
