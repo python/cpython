@@ -397,39 +397,14 @@ if mswindows:
 else:
     import select
     _has_poll = hasattr(select, 'poll')
-    import fcntl
-    import pickle
-
-    try:
-        import _posixsubprocess
-    except ImportError:
-        _posixsubprocess = None
-        warnings.warn("The _posixsubprocess module is not being used. "
-                      "Child process reliability may suffer if your "
-                      "program uses threads.", RuntimeWarning)
+    import _posixsubprocess
+    _create_pipe = _posixsubprocess.cloexec_pipe
 
     # When select or poll has indicated that the file is writable,
     # we can write up to _PIPE_BUF bytes without risk of blocking.
     # POSIX defines PIPE_BUF as >= 512.
     _PIPE_BUF = getattr(select, 'PIPE_BUF', 512)
 
-    _FD_CLOEXEC = getattr(fcntl, 'FD_CLOEXEC', 1)
-
-    def _set_cloexec(fd, cloexec):
-        old = fcntl.fcntl(fd, fcntl.F_GETFD)
-        if cloexec:
-            fcntl.fcntl(fd, fcntl.F_SETFD, old | _FD_CLOEXEC)
-        else:
-            fcntl.fcntl(fd, fcntl.F_SETFD, old & ~_FD_CLOEXEC)
-
-    if _posixsubprocess:
-        _create_pipe = _posixsubprocess.cloexec_pipe
-    else:
-        def _create_pipe():
-            fds = os.pipe()
-            _set_cloexec(fds[0], True)
-            _set_cloexec(fds[1], True)
-            return fds
 
 __all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "getstatusoutput",
            "getoutput", "check_output", "CalledProcessError", "DEVNULL"]
@@ -1267,140 +1242,33 @@ class Popen(object):
             errpipe_read, errpipe_write = _create_pipe()
             try:
                 try:
+                    # We must avoid complex work that could involve
+                    # malloc or free in the child process to avoid
+                    # potential deadlocks, thus we do all this here.
+                    # and pass it to fork_exec()
 
-                    if _posixsubprocess:
-                        # We must avoid complex work that could involve
-                        # malloc or free in the child process to avoid
-                        # potential deadlocks, thus we do all this here.
-                        # and pass it to fork_exec()
-
-                        if env:
-                            env_list = [os.fsencode(k) + b'=' + os.fsencode(v)
-                                        for k, v in env.items()]
-                        else:
-                            env_list = None  # Use execv instead of execve.
-                        executable = os.fsencode(executable)
-                        if os.path.dirname(executable):
-                            executable_list = (executable,)
-                        else:
-                            # This matches the behavior of os._execvpe().
-                            executable_list = tuple(
-                                os.path.join(os.fsencode(dir), executable)
-                                for dir in os.get_exec_path(env))
-                        fds_to_keep = set(pass_fds)
-                        fds_to_keep.add(errpipe_write)
-                        self.pid = _posixsubprocess.fork_exec(
-                                args, executable_list,
-                                close_fds, sorted(fds_to_keep), cwd, env_list,
-                                p2cread, p2cwrite, c2pread, c2pwrite,
-                                errread, errwrite,
-                                errpipe_read, errpipe_write,
-                                restore_signals, start_new_session, preexec_fn)
+                    if env:
+                        env_list = [os.fsencode(k) + b'=' + os.fsencode(v)
+                                    for k, v in env.items()]
                     else:
-                        # Pure Python implementation: It is not thread safe.
-                        # This implementation may deadlock in the child if your
-                        # parent process has any other threads running.
-
-                        gc_was_enabled = gc.isenabled()
-                        # Disable gc to avoid bug where gc -> file_dealloc ->
-                        # write to stderr -> hang.  See issue1336
-                        gc.disable()
-                        try:
-                            self.pid = os.fork()
-                        except:
-                            if gc_was_enabled:
-                                gc.enable()
-                            raise
-                        self._child_created = True
-                        if self.pid == 0:
-                            # Child
-                            try:
-                                # Close parent's pipe ends
-                                if p2cwrite != -1:
-                                    os.close(p2cwrite)
-                                if c2pread != -1:
-                                    os.close(c2pread)
-                                if errread != -1:
-                                    os.close(errread)
-                                os.close(errpipe_read)
-
-                                # Dup fds for child
-                                def _dup2(a, b):
-                                    # dup2() removes the CLOEXEC flag but
-                                    # we must do it ourselves if dup2()
-                                    # would be a no-op (issue #10806).
-                                    if a == b:
-                                        _set_cloexec(a, False)
-                                    elif a != -1:
-                                        os.dup2(a, b)
-                                _dup2(p2cread, 0)
-                                _dup2(c2pwrite, 1)
-                                _dup2(errwrite, 2)
-
-                                # Close pipe fds.  Make sure we don't close the
-                                # same fd more than once, or standard fds.
-                                closed = set()
-                                for fd in [p2cread, c2pwrite, errwrite]:
-                                    if fd > 2 and fd not in closed:
-                                        os.close(fd)
-                                        closed.add(fd)
-
-                                # Close all other fds, if asked for
-                                if close_fds:
-                                    fds_to_keep = set(pass_fds)
-                                    fds_to_keep.add(errpipe_write)
-                                    self._close_fds(fds_to_keep)
-
-
-                                if cwd is not None:
-                                    os.chdir(cwd)
-
-                                # This is a copy of Python/pythonrun.c
-                                # _Py_RestoreSignals().  If that were exposed
-                                # as a sys._py_restoresignals func it would be
-                                # better.. but this pure python implementation
-                                # isn't likely to be used much anymore.
-                                if restore_signals:
-                                    signals = ('SIGPIPE', 'SIGXFZ', 'SIGXFSZ')
-                                    for sig in signals:
-                                        if hasattr(signal, sig):
-                                            signal.signal(getattr(signal, sig),
-                                                          signal.SIG_DFL)
-
-                                if start_new_session and hasattr(os, 'setsid'):
-                                    os.setsid()
-
-                                if preexec_fn:
-                                    preexec_fn()
-
-                                if env is None:
-                                    os.execvp(executable, args)
-                                else:
-                                    os.execvpe(executable, args, env)
-
-                            except:
-                                try:
-                                    exc_type, exc_value = sys.exc_info()[:2]
-                                    if isinstance(exc_value, OSError):
-                                        errno_num = exc_value.errno
-                                    else:
-                                        errno_num = 0
-                                    message = '%s:%x:%s' % (exc_type.__name__,
-                                                            errno_num, exc_value)
-                                    message = message.encode(errors="surrogatepass")
-                                    os.write(errpipe_write, message)
-                                except Exception:
-                                    # We MUST not allow anything odd happening
-                                    # above to prevent us from exiting below.
-                                    pass
-
-                            # This exitcode won't be reported to applications
-                            # so it really doesn't matter what we return.
-                            os._exit(255)
-
-                        # Parent
-                        if gc_was_enabled:
-                            gc.enable()
+                        env_list = None  # Use execv instead of execve.
+                    executable = os.fsencode(executable)
+                    if os.path.dirname(executable):
+                        executable_list = (executable,)
+                    else:
+                        # This matches the behavior of os._execvpe().
+                        executable_list = tuple(
+                            os.path.join(os.fsencode(dir), executable)
+                            for dir in os.get_exec_path(env))
+                    fds_to_keep = set(pass_fds)
+                    fds_to_keep.add(errpipe_write)
+                    self.pid = _posixsubprocess.fork_exec(
+                            args, executable_list,
+                            close_fds, sorted(fds_to_keep), cwd, env_list,
+                            p2cread, p2cwrite, c2pread, c2pwrite,
+                            errread, errwrite,
+                            errpipe_read, errpipe_write,
+                            restore_signals, start_new_session, preexec_fn)
                 finally:
                     # be sure the FD is closed no matter what
                     os.close(errpipe_write)
