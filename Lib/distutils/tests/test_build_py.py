@@ -57,11 +57,15 @@ class BuildPyTestCase(support.TempdirManager,
         self.assertEqual(len(cmd.get_outputs()), 3)
         pkgdest = os.path.join(destination, "pkg")
         files = os.listdir(pkgdest)
-        self.assertTrue("__init__.py" in files)
-        self.assertTrue("__init__.pyc" in files)
-        self.assertTrue("README.txt" in files)
+        self.assertIn("__init__.py", files)
+        self.assertIn("README.txt", files)
+        # XXX even with -O, distutils writes pyc, not pyo; bug?
+        if sys.dont_write_bytecode:
+            self.assertNotIn("__init__.pyc", files)
+        else:
+            self.assertIn("__init__.pyc", files)
 
-    def test_empty_package_dir (self):
+    def test_empty_package_dir(self):
         # See SF 1668596/1720897.
         cwd = os.getcwd()
 
@@ -109,7 +113,7 @@ class BuildPyTestCase(support.TempdirManager,
         finally:
             sys.dont_write_bytecode = old_dont_write_bytecode
 
-        self.assertTrue('byte-compiling is disabled' in self.logs[0][1])
+        self.assertIn('byte-compiling is disabled', self.logs[0][1])
 
 def test_suite():
     return unittest.makeSuite(BuildPyTestCase)
