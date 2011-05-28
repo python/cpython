@@ -10,6 +10,11 @@ What's New in Python 3.2.1 release candidate 2?
 Core and Builtins
 -----------------
 
+- Issue #9670: Increase the default stack size for secondary threads on
+  Mac OS X and FreeBSD to reduce the chances of a crash instead of a
+  "maximum recursion depth" RuntimeError exception.
+  (patch by Ronald Oussoren)
+
 Library
 -------
 
