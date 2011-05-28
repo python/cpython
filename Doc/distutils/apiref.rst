@@ -21,7 +21,7 @@ setup script). Indirectly provides the  :class:`distutils.dist.Distribution` and
 .. function:: setup(arguments)
 
    The basic do-everything function that does most everything you could ever ask
-   for from a Distutils method. See XXXXX
+   for from a Distutils method.
 
    The setup function takes a large number of arguments. These are laid out in the
    following table.
@@ -1759,7 +1759,7 @@ Subclasses of :class:`Command` must define the following methods.
    predicate)``, with *command_name* a string and *predicate* a function, a
    string or ``None``.  *predicate* is a method of the parent command that
    determines whether the corresponding command is applicable in the current
-   situation.  (E.g. we ``install_headers`` is only applicable if we have any C
+   situation.  (E.g. ``install_headers`` is only applicable if we have any C
    header files to install.)  If *predicate* is ``None``, that command is always
    applicable.
 
