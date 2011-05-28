@@ -175,6 +175,32 @@ class TestPlistlib(unittest.TestCase):
         self.assertEqual(test1, result1)
         self.assertEqual(test2, result2)
 
+    def test_invalidarray(self):
+        for i in ["<key>key inside an array</key>",
+                  "<key>key inside an array2</key><real>3</real>",
+                  "<true/><key>key inside an array3</key>"]:
+            self.assertRaises(ValueError, plistlib.readPlistFromBytes,
+                              ("<plist><array>%s</array></plist>"%i).encode())
+
+    def test_invaliddict(self):
+        for i in ["<key><true/>k</key><string>compound key</string>",
+                  "<key>single key</key>",
+                  "<string>missing key</string>",
+                  "<key>k1</key><string>v1</string><real>5.3</real>"
+                  "<key>k1</key><key>k2</key><string>double key</string>"]:
+            self.assertRaises(ValueError, plistlib.readPlistFromBytes,
+                              ("<plist><dict>%s</dict></plist>"%i).encode())
+            self.assertRaises(ValueError, plistlib.readPlistFromBytes,
+                              ("<plist><array><dict>%s</dict></array></plist>"%i).encode())
+
+    def test_invalidinteger(self):
+        self.assertRaises(ValueError, plistlib.readPlistFromBytes,
+                          b"<plist><integer>not integer</integer></plist>")
+
+    def test_invalidreal(self):
+        self.assertRaises(ValueError, plistlib.readPlistFromBytes,
+                          b"<plist><integer>not real</integer></plist>")
+
 
 def test_main():
     support.run_unittest(TestPlistlib)
