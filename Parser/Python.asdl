@@ -31,8 +31,7 @@ module Python
 	      | With(withitem* items, stmt* body)
 
 	      | Raise(expr? exc, expr? cause)
-	      | TryExcept(stmt* body, excepthandler* handlers, stmt* orelse)
-	      | TryFinally(stmt* body, stmt* finalbody)
+	      | Try(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)
 	      | Assert(expr test, expr? msg)
 
 	      | Import(alias* names)
