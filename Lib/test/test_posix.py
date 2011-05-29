@@ -478,6 +478,31 @@ class PosixTester(unittest.TestCase):
             os.close(reader)
             os.close(writer)
 
+    @unittest.skipUnless(hasattr(os, 'pipe2'), "test needs os.pipe2()")
+    def test_pipe2(self):
+        self.assertRaises(TypeError, os.pipe2, 'DEADBEEF')
+        self.assertRaises(TypeError, os.pipe2, 0, 0)
+
+        # try calling without flag, like os.pipe()
+        r, w = os.pipe2()
+        os.close(r)
+        os.close(w)
+
+        # test flags
+        r, w = os.pipe2(os.O_CLOEXEC|os.O_NONBLOCK)
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        self.assertTrue(fcntl.fcntl(r, fcntl.F_GETFD) & fcntl.FD_CLOEXEC)
+        self.assertTrue(fcntl.fcntl(w, fcntl.F_GETFD) & fcntl.FD_CLOEXEC)
+        # try reading from an empty pipe: this should fail, not block
+        self.assertRaises(OSError, os.read, r, 1)
+        # try a write big enough to fill-up the pipe: this should either
+        # fail or perform a partial write, not block
+        try:
+            os.write(w, b'x' * support.PIPE_MAX_SIZE)
+        except OSError:
+            pass
+
     def test_utime(self):
         if hasattr(posix, 'utime'):
             now = time.time()

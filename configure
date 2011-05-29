@@ -9307,7 +9307,7 @@ for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  getpriority getresuid getresgid getpwent getspnam getspent getsid getwd \
  if_nameindex \
  initgroups kill killpg lchmod lchown lockf linkat lstat lutimes mbrtowc mkdirat mkfifo \
- mkfifoat mknod mknodat mktime mremap nice openat pathconf pause plock poll \
+ mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
  posix_fallocate posix_fadvise pread \
  pthread_init pthread_kill putenv pwrite readlink readlinkat readv realpath renameat \
  select sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
@@ -13822,14 +13822,6 @@ AIX*)
 $as_echo "#define HAVE_BROKEN_PIPE_BUF 1" >>confdefs.h
  ;;
 esac
-
-
-ac_fn_c_check_func "$LINENO" "pipe2" "ac_cv_func_pipe2"
-if test "x$ac_cv_func_pipe2" = x""yes; then :
-
-$as_echo "#define HAVE_PIPE2 1" >>confdefs.h
-
-fi
 
 
 
