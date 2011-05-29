@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #12199: The TryExcept and TryFinally and AST nodes have been unified
+  into a Try node.
+
 - Issue #9670: Increase the default stack size for secondary threads on
   Mac OS X and FreeBSD to reduce the chances of a crash instead of a
   "maximum recursion depth" RuntimeError exception.
