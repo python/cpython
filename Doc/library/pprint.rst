@@ -192,7 +192,7 @@ Example
 -------
 
 To demonstrate several uses of the :func:`pprint` function and its parameters,
-let's fetch information about a package from PyPI::
+let's fetch information about a project from PyPI::
 
    >>> import json
    >>> import pprint
@@ -200,8 +200,8 @@ let's fetch information about a package from PyPI::
    >>> with urlopen('http://pypi.python.org/pypi/configparser/json') as url:
    ...     http_info = url.info()
    ...     raw_data = url.read().decode(http_info.get_content_charset())
-   >>> package_data = json.loads(raw_data)
-   >>> result = {'headers': http_info.items(), 'body': package_data}
+   >>> project_info = json.loads(raw_data)
+   >>> result = {'headers': http_info.items(), 'body': project_info}
 
 In its basic form, :func:`pprint` shows the whole object::
 
