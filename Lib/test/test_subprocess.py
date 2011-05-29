@@ -489,24 +489,21 @@ class ProcessTestCase(BaseTestCase):
         # This test will probably deadlock rather than fail, if
         # communicate() does not work properly.
         x, y = os.pipe()
-        if mswindows:
-            pipe_buf = 512
-        else:
-            pipe_buf = os.fpathconf(x, "PC_PIPE_BUF")
         os.close(x)
         os.close(y)
         p = subprocess.Popen([sys.executable, "-c",
                               'import sys,os;'
                               'sys.stdout.write(sys.stdin.read(47));'
-                              'sys.stderr.write("xyz"*%d);'
-                              'sys.stdout.write(sys.stdin.read())' % pipe_buf],
+                              'sys.stderr.write("x" * %d);'
+                              'sys.stdout.write(sys.stdin.read())' %
+                              support.PIPE_MAX_SIZE],
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
         self.addCleanup(p.stdout.close)
         self.addCleanup(p.stderr.close)
         self.addCleanup(p.stdin.close)
-        string_to_write = b"abc"*pipe_buf
+        string_to_write = b"a" * support.PIPE_MAX_SIZE
         (stdout, stderr) = p.communicate(string_to_write)
         self.assertEqual(stdout, string_to_write)
 
