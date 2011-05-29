@@ -185,6 +185,7 @@ static int compiler_call_helper(struct compiler *c, int n,
                                 asdl_seq *keywords,
                                 expr_ty starargs,
                                 expr_ty kwargs);
+static int compiler_try_except(struct compiler *, stmt_ty);
 
 static PyCodeObject *assemble(struct compiler *, int addNone);
 static PyObject *__doc__;
@@ -1898,7 +1899,13 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     compiler_use_next_block(c, body);
     if (!compiler_push_fblock(c, FINALLY_TRY, body))
         return 0;
-    VISIT_SEQ(c, stmt, s->v.TryFinally.body);
+    if (s->v.Try.handlers && asdl_seq_LEN(s->v.Try.handlers)) {
+        if (!compiler_try_except(c, s))
+            return 0;
+    }
+    else {
+        VISIT_SEQ(c, stmt, s->v.Try.body);
+    }
     ADDOP(c, POP_BLOCK);
     compiler_pop_fblock(c, FINALLY_TRY, body);
 
@@ -1906,7 +1913,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     compiler_use_next_block(c, end);
     if (!compiler_push_fblock(c, FINALLY_END, end))
         return 0;
-    VISIT_SEQ(c, stmt, s->v.TryFinally.finalbody);
+    VISIT_SEQ(c, stmt, s->v.Try.finalbody);
     ADDOP(c, END_FINALLY);
     compiler_pop_fblock(c, FINALLY_END, end);
 
@@ -1960,15 +1967,15 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     compiler_use_next_block(c, body);
     if (!compiler_push_fblock(c, EXCEPT, body))
         return 0;
-    VISIT_SEQ(c, stmt, s->v.TryExcept.body);
+    VISIT_SEQ(c, stmt, s->v.Try.body);
     ADDOP(c, POP_BLOCK);
     compiler_pop_fblock(c, EXCEPT, body);
     ADDOP_JREL(c, JUMP_FORWARD, orelse);
-    n = asdl_seq_LEN(s->v.TryExcept.handlers);
+    n = asdl_seq_LEN(s->v.Try.handlers);
     compiler_use_next_block(c, except);
     for (i = 0; i < n; i++) {
         excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
-            s->v.TryExcept.handlers, i);
+            s->v.Try.handlers, i);
         if (!handler->v.ExceptHandler.type && i < n-1)
             return compiler_error(c, "default 'except:' must be last");
         c->u->u_lineno_set = 0;
@@ -2055,10 +2062,19 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     }
     ADDOP(c, END_FINALLY);
     compiler_use_next_block(c, orelse);
-    VISIT_SEQ(c, stmt, s->v.TryExcept.orelse);
+    VISIT_SEQ(c, stmt, s->v.Try.orelse);
     compiler_use_next_block(c, end);
     return 1;
 }
+
+static int
+compiler_try(struct compiler *c, stmt_ty s) {
+    if (s->v.Try.finalbody && asdl_seq_LEN(s->v.Try.finalbody))
+        return compiler_try_finally(c, s);
+    else
+        return compiler_try_except(c, s);
+}
+
 
 static int
 compiler_import_as(struct compiler *c, identifier name, identifier asname)
@@ -2307,10 +2323,8 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
         }
         ADDOP_I(c, RAISE_VARARGS, n);
         break;
-    case TryExcept_kind:
-        return compiler_try_except(c, s);
-    case TryFinally_kind:
-        return compiler_try_finally(c, s);
+    case Try_kind:
+        return compiler_try(c, s);
     case Assert_kind:
         return compiler_assert(c, s);
     case Import_kind:

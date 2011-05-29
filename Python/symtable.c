@@ -1211,14 +1211,11 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             }
         }
         break;
-    case TryExcept_kind:
-        VISIT_SEQ(st, stmt, s->v.TryExcept.body);
-        VISIT_SEQ(st, stmt, s->v.TryExcept.orelse);
-        VISIT_SEQ(st, excepthandler, s->v.TryExcept.handlers);
-        break;
-    case TryFinally_kind:
-        VISIT_SEQ(st, stmt, s->v.TryFinally.body);
-        VISIT_SEQ(st, stmt, s->v.TryFinally.finalbody);
+    case Try_kind:
+        VISIT_SEQ(st, stmt, s->v.Try.body);
+        VISIT_SEQ(st, stmt, s->v.Try.orelse);
+        VISIT_SEQ(st, excepthandler, s->v.Try.handlers);
+        VISIT_SEQ(st, stmt, s->v.Try.finalbody);
         break;
     case Assert_kind:
         VISIT(st, expr, s->v.Assert.test);

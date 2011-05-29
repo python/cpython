@@ -2893,7 +2893,7 @@ ast_for_try_stmt(struct compiling *c, const node *n)
 {
     const int nch = NCH(n);
     int n_except = (nch - 3)/3;
-    asdl_seq *body, *orelse = NULL, *finally = NULL;
+    asdl_seq *body, *handlers = NULL, *orelse = NULL, *finally = NULL;
 
     REQ(n, try_stmt);
 
@@ -2934,9 +2934,8 @@ ast_for_try_stmt(struct compiling *c, const node *n)
 
     if (n_except > 0) {
         int i;
-        stmt_ty except_st;
         /* process except statements to create a try ... except */
-        asdl_seq *handlers = asdl_seq_new(n_except, c->c_arena);
+        handlers = asdl_seq_new(n_except, c->c_arena);
         if (handlers == NULL)
             return NULL;
 
@@ -2947,23 +2946,10 @@ ast_for_try_stmt(struct compiling *c, const node *n)
                 return NULL;
             asdl_seq_SET(handlers, i, e);
         }
-
-        except_st = TryExcept(body, handlers, orelse, LINENO(n),
-                              n->n_col_offset, c->c_arena);
-        if (!finally)
-            return except_st;
-
-        /* if a 'finally' is present too, we nest the TryExcept within a
-           TryFinally to emulate try ... except ... finally */
-        body = asdl_seq_new(1, c->c_arena);
-        if (body == NULL)
-            return NULL;
-        asdl_seq_SET(body, 0, except_st);
     }
 
-    /* must be a try ... finally (except clauses are in body, if any exist) */
-    assert(finally != NULL);
-    return TryFinally(body, finally, LINENO(n), n->n_col_offset, c->c_arena);
+    assert(finally != NULL || asdl_seq_LEN(handlers));
+    return Try(body, handlers, orelse, finally, LINENO(n), n->n_col_offset, c->c_arena);
 }
 
 /* with_item: test ['as' expr] */
