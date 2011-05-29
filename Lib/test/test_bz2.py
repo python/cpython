@@ -426,6 +426,17 @@ class BZ2FileTest(BaseTest):
                 next(bz2f)
             self.assertEqual(bz2f.readlines(), [])
 
+    def testMultiStreamOrdering(self):
+        # Test the ordering of streams when reading a multi-stream archive.
+        data1 = b"foo" * 1000
+        data2 = b"bar" * 1000
+        with BZ2File(self.filename, "w") as bz2f:
+            bz2f.write(data1)
+        with BZ2File(self.filename, "a") as bz2f:
+            bz2f.write(data2)
+        with BZ2File(self.filename) as bz2f:
+            self.assertEqual(bz2f.read(), data1 + data2)
+
     # Tests for a BZ2File wrapping another file object:
 
     def testReadBytesIO(self):
