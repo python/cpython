@@ -15,8 +15,8 @@ want to modify existing commands; many simply add a few file extensions that
 should be copied into packages in addition to :file:`.py` files as a
 convenience.
 
-Most distutils command implementations are subclasses of the :class:`Command`
-class from :mod:`distutils.cmd`.  New commands may directly inherit from
+Most distutils command implementations are subclasses of the
+:class:`distutils.cmd.Command` class.  New commands may directly inherit from
 :class:`Command`, while replacements often derive from :class:`Command`
 indirectly, directly subclassing the command they are replacing.  Commands are
 required to derive from :class:`Command`.
