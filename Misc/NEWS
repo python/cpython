@@ -285,7 +285,7 @@ Library
 - Issue #7311: fix html.parser to accept non-ASCII attribute values.
 
 - Issue #11605: email.parser.BytesFeedParser was incorrectly converting
-  multipart subpararts with an 8bit CTE into unicode instead of preserving the
+  multipart subparts with an 8-bit CTE into unicode instead of preserving the
   bytes.
 
 - Issue #10963: Ensure that subprocess.communicate() never raises EPIPE.
@@ -482,7 +482,7 @@ Tests
 
 - Issue #11577: improve test coverage of binhex.py. Patch by Arkady Koplyarov.
 
-- Issue #11578: added test for the timeit module.  Patch Michael Henry.
+- Issue #11578: added test for the timeit module.  Patch by Michael Henry.
 
 - Issue #11503: improve test coverage of posixpath.py. Patch by Evan Dandrea.
 
@@ -782,10 +782,10 @@ Library
   comparisons that could lead to infinite recursion.
 
 - Issue #10686: the email package now :rfc:`2047`\ -encodes headers with
-  non-ASCII bytes (parsed by a Bytes Parser) when doing conversion to 7bit-clean
+  non-ASCII bytes (parsed by a BytesParser) when doing conversion to 7bit-clean
   presentation, instead of replacing them with ?s.
 
-- email.header.Header was incorrectly encoding folding white space when
+- email.header.Header was incorrectly encoding folding whitespace when
   rfc2047-encoding header values with embedded newlines, leaving them without
   folding whitespace.  It now uses the continuation_ws, as it does for
   continuation lines that it creates itself.
