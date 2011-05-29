@@ -48,7 +48,7 @@ __all__ = [
     "threading_cleanup", "reap_children", "cpython_only", "check_impl_detail",
     "get_attribute", "swap_item", "swap_attr", "requires_IEEE_754",
     "TestHandler", "Matcher", "can_symlink", "skip_unless_symlink",
-    "import_fresh_module", "requires_zlib"
+    "import_fresh_module", "requires_zlib", "PIPE_MAX_SIZE"
     ]
 
 class Error(Exception):
@@ -408,6 +408,13 @@ def _is_ipv6_enabled():
     return False
 
 IPV6_ENABLED = _is_ipv6_enabled()
+
+
+# A constant likely larger than the underlying OS pipe buffer size.
+# Windows limit seems to be around 512B, and most Unix kernels have a 64K pipe
+# buffer size: take 1M to be sure.
+PIPE_MAX_SIZE = 1024 * 1024
+
 
 # decorator for skipping tests on non-IEEE 754 platforms
 requires_IEEE_754 = unittest.skipUnless(
