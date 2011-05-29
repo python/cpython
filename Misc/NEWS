@@ -439,11 +439,12 @@ Library
 
 - Issue #7311: fix html.parser to accept non-ASCII attribute values.
 
-- Issue #11605: email.parser.BytesFeedParser was incorrectly converting multipart
-  subpararts with an 8bit CTE into unicode instead of preserving the bytes.
+- Issue #11605: email.parser.BytesFeedParser was incorrectly converting
+  multipart subparts with an 8-bit CTE into unicode instead of preserving the
+  bytes.
 
-- Issue #1690608: email.util.formataddr is now RFC2047 aware:  it now has a
-  charset parameter that defaults utf-8 which is used as the charset for RFC
+- Issue #1690608: email.util.formataddr is now RFC 2047 aware:  it now has a
+  charset parameter that defaults to utf-8 and is used as the charset for RFC
   2047 encoding when the realname contains non-ASCII characters.
 
 - Issue #10963: Ensure that subprocess.communicate() never raises EPIPE.
@@ -597,7 +598,7 @@ Library
   the "n" as the flag argument and the file exists. The behavior matches
   the documentation and general logic.
 
-- Issue #1162477: Postel Principal adjustment to email date parsing: handle the
+- Issue #1162477: Postel Principle adjustment to email date parsing: handle the
   fact that some non-compliant MUAs use '.' instead of ':' in time specs.
 
 - Issue #11131: Fix sign of zero in decimal.Decimal plus and minus
@@ -824,7 +825,7 @@ Tests
 - New test_crashers added to exercise the scripts in the Lib/test/crashers
   directory and confirm they fail as expected
 
-- Issue #11578: added test for the timeit module.  Patch Michael Henry.
+- Issue #11578: added test for the timeit module.  Patch by Michael Henry.
 
 - Issue #11503: improve test coverage of posixpath.py. Patch by Evan Dandrea.
 
@@ -1138,10 +1139,10 @@ Library
   comparisons that could lead to infinite recursion.
 
 - Issue #10686: the email package now :rfc:`2047`\ -encodes headers with
-  non-ASCII bytes (parsed by a Bytes Parser) when doing conversion to 7bit-clean
+  non-ASCII bytes (parsed by a BytesParser) when doing conversion to 7bit-clean
   presentation, instead of replacing them with ?s.
 
-- email.header.Header was incorrectly encoding folding white space when
+- email.header.Header was incorrectly encoding folding whitespace when
   rfc2047-encoding header values with embedded newlines, leaving them without
   folding whitespace.  It now uses the continuation_ws, as it does for
   continuation lines that it creates itself.
