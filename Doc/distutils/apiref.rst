@@ -21,7 +21,7 @@ setup script). Indirectly provides the  :class:`distutils.dist.Distribution` and
 .. function:: setup(arguments)
 
    The basic do-everything function that does most everything you could ever ask
-   for from a Distutils method. See XXXXX
+   for from a Distutils method.
 
    The setup function takes a large number of arguments. These are laid out in the
    following table.
@@ -1759,7 +1759,7 @@ Subclasses of :class:`Command` must define the following methods.
    predicate)``, with *command_name* a string and *predicate* a function, a
    string or ``None``.  *predicate* is a method of the parent command that
    determines whether the corresponding command is applicable in the current
-   situation.  (E.g. we ``install_headers`` is only applicable if we have any C
+   situation.  (E.g. ``install_headers`` is only applicable if we have any C
    header files to install.)  If *predicate* is ``None``, that command is always
    applicable.
 
@@ -2004,5 +2004,19 @@ Subclasses of :class:`Command` must define the following methods.
 
 The ``register`` command registers the package with the Python Package  Index.
 This is described in more detail in :pep:`301`.
+
+.. % todo
+
+
+:mod:`distutils.command.check` --- Check the meta-data of a package
+===================================================================
+
+.. module:: distutils.command.check
+   :synopsis: Check the metadata of a package
+
+
+The ``check`` command performs some tests on the meta-data of a package.
+For example, it verifies that all required meta-data are provided as
+the arguments passed to the :func:`setup` function.
 
 .. % todo
