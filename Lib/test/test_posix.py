@@ -480,6 +480,10 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'pipe2'), "test needs os.pipe2()")
     def test_pipe2(self):
+        version = support.linux_version()
+        if sys.platform == 'linux2' and version < (2, 6, 27):
+            self.skipTest("Linux kernel 2.6.27 or higher required, "
+                          "not %s.%s.%s" % version)
         self.assertRaises(TypeError, os.pipe2, 'DEADBEEF')
         self.assertRaises(TypeError, os.pipe2, 0, 0)
 
