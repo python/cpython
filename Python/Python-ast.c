@@ -2,7 +2,7 @@
 
 
 /*
-   __version__ 9b11cc4e2918.
+   __version__ e0e663132363.
 
    This module must be committed separately after each AST grammar change;
    The __version__ number is set to the revision number of the commit
@@ -6750,7 +6750,7 @@ PyInit__ast(void)
             NULL;
         if (PyModule_AddIntConstant(m, "PyCF_ONLY_AST", PyCF_ONLY_AST) < 0)
                 return NULL;
-        if (PyModule_AddStringConstant(m, "__version__", "9b11cc4e2918") < 0)
+        if (PyModule_AddStringConstant(m, "__version__", "e0e663132363") < 0)
                 return NULL;
         if (PyDict_SetItemString(d, "mod", (PyObject*)mod_type) < 0) return
             NULL;
