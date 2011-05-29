@@ -131,18 +131,20 @@ Examples
 
 A simple example illustrating typical use::
 
-   import crypt, getpass, pwd
+   import pwd
+   import crypt
+   import getpass
 
    def login():
-       username = input('Python login:')
+       username = input('Python login: ')
        cryptedpasswd = pwd.getpwnam(username)[1]
        if cryptedpasswd:
            if cryptedpasswd == 'x' or cryptedpasswd == '*':
-               raise "Sorry, currently no support for shadow passwords"
+               raise ValueError('no support for shadow passwords')
            cleartext = getpass.getpass()
            return crypt.crypt(cleartext, cryptedpasswd) == cryptedpasswd
        else:
-           return 1
+           return True
 
 To generate a hash of a password using the strongest available method and
 check it against the original::
@@ -151,4 +153,4 @@ check it against the original::
 
    hashed = crypt.crypt(plaintext)
    if hashed != crypt.crypt(plaintext, hashed):
-      raise "Hashed version doesn't validate against original"
+      raise ValueError("hashed version doesn't validate against original")
