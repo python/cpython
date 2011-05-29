@@ -242,7 +242,7 @@ Glossary
       processing, remembering the location execution state (including local
       variables and pending try-statements).  When the generator resumes, it
       picks-up where it left-off (in contrast to functions which start fresh on
-      every invocation.
+      every invocation).
 
       .. index:: single: generator expression
 
