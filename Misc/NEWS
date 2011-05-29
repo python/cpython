@@ -421,6 +421,8 @@ Build
 Tests
 -----
 
+- Issue #12205: Fix test_subprocess failure due to uninstalled test data.
+
 - Issue #11614: import __hello__ prints "Hello World!". Patch written by
   Andreas Stührk.
 
