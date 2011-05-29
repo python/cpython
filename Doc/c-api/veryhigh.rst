@@ -34,7 +34,7 @@ the same library that the Python runtime is using.
    according to the user's locale).  It is important to note that the
    argument list may be modified (but the contents of the strings
    pointed to by the argument list are not). The return value will be
-   ```0``` if the interpreter exits normally (ie, without an
+   ``0`` if the interpreter exits normally (i.e. without an
    exception), ``1`` if the interpreter exits due to an exception, or
    ``2`` if the parameter list does not represent a valid Python
    command line.
