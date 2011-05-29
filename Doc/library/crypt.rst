@@ -29,6 +29,8 @@ this module.
 Hashing Methods
 ---------------
 
+.. versionadded:: 3.3
+
 The :mod:`crypt` module defines the list of hashing methods (not all methods
 are available on all platforms):
 
@@ -37,41 +39,32 @@ are available on all platforms):
    A Modular Crypt Format method with 16 character salt and 86 character
    hash.  This is the strongest method.
 
-   .. versionadded:: 3.3
-
 .. data:: METHOD_SHA256
 
    Another Modular Crypt Format method with 16 character salt and 43
    character hash.
-
-   .. versionadded:: 3.3
 
 .. data:: METHOD_MD5
 
    Another Modular Crypt Format method with 8 character salt and 22
    character hash.
 
-   .. versionadded:: 3.3
-
 .. data:: METHOD_CRYPT
 
    The traditional method with a 2 character salt and 13 characters of
    hash.  This is the weakest method.
 
-   .. versionadded:: 3.3
-
 
 Module Attributes
 -----------------
 
+.. versionadded:: 3.3
 
 .. attribute:: methods
 
    A list of available password hashing algorithms, as
    ``crypt.METHOD_*`` objects.  This list is sorted from strongest to
    weakest, and is guaranteed to have at least ``crypt.METHOD_CRYPT``.
-
-   .. versionadded:: 3.3
 
 
 Module Functions
@@ -108,9 +101,8 @@ The :mod:`crypt` module defines the following functions:
    different sizes in the *salt*, it is recommended to use  the full crypted
    password as salt when checking for a password.
 
-.. versionchanged:: 3.3
-   Before version 3.3, *salt*  must be specified as a string and cannot
-   accept ``crypt.METHOD_*`` values (which don't exist anyway).
+   .. versionchanged:: 3.3
+      Accept ``crypt.METHOD_*`` values in addition to strings for *salt*.
 
 
 .. function:: mksalt(method=None)
@@ -124,7 +116,7 @@ The :mod:`crypt` module defines the following functions:
    16 random characters from the set ``[./a-zA-Z0-9]``, suitable for
    passing as the *salt* argument to :func:`crypt`.
 
-.. versionadded:: 3.3
+   .. versionadded:: 3.3
 
 Examples
 --------
