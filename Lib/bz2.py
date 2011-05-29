@@ -400,14 +400,14 @@ def decompress(data):
     if len(data) == 0:
         return b""
 
-    result = b""
+    results = []
     while True:
         decomp = BZ2Decompressor()
-        result += decomp.decompress(data)
+        results.append(decomp.decompress(data))
         if not decomp.eof:
             raise ValueError("Compressed data ended before the "
                              "end-of-stream marker was reached")
         if not decomp.unused_data:
-            return result
+            return b"".join(results)
         # There is unused data left over. Proceed to next stream.
         data = decomp.unused_data
