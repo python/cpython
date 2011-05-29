@@ -488,6 +488,8 @@ IDLE
 Tests
 -----
 
+- Issue #12205: Fix test_subprocess failure due to uninstalled test data.
+
 - Issue #5723: Improve json tests to be executed with and without accelerations.
 
 - Issue #11910: Fix test_heapq to skip the C tests when _heapq is missing.

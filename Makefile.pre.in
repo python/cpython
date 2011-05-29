@@ -854,7 +854,7 @@ PLATMACDIRS= plat-mac plat-mac/Carbon plat-mac/lib-scriptpackages \
 PLATMACPATH=:plat-mac:plat-mac/lib-scriptpackages
 LIBSUBDIRS=	lib-tk lib-tk/test lib-tk/test/test_tkinter \
 		lib-tk/test/test_ttk site-packages test test/data \
-		test/cjkencodings test/decimaltestdata test/xmltestdata \
+		test/cjkencodings test/decimaltestdata test/xmltestdata test/subprocessdata \
 		test/tracedmodules \
 		encodings compiler hotshot \
 		email email/mime email/test email/test/data \
