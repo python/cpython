@@ -2006,6 +2006,7 @@ This is described in more detail in :pep:`301`.
 
 .. % todo
 
+
 :mod:`distutils.command.check` --- Check the meta-data of a package
 ===================================================================
 
