@@ -770,9 +770,6 @@ Extension Modules
 Tests
 -----
 
-- Issue #10736: Fix test_ttk test_widgets failures with Cocoa Tk 8.5.9
-  on Mac OS X.  (Patch by Ronald Oussoren)
-
 - Issue #12180: Fixed a few remaining errors in test_packaging when no
   threading.
 
