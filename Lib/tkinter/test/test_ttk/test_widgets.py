@@ -3,7 +3,6 @@ import tkinter
 import os
 from tkinter import ttk
 from test.support import requires, run_unittest
-import sys
 
 import tkinter.test.support as support
 from tkinter.test.test_ttk.test_functions import MockTclObj, MockStateSpec
@@ -562,19 +561,11 @@ class NotebookTest(unittest.TestCase):
 
         self.nb.pack()
         self.nb.wait_visibility()
-        if sys.platform == 'darwin':
-            tb_idx = "@20,5"
-        else:
-            tb_idx = "@5,5"
-        self.assertEqual(self.nb.tab(tb_idx), self.nb.tab('current'))
+        self.assertEqual(self.nb.tab('@5,5'), self.nb.tab('current'))
 
         for i in range(5, 100, 5):
-            try:
-                if self.nb.tab('@%d, 5' % i, text=None) == 'a':
-                    break
-            except tkinter.TclError:
-                pass
-
+            if self.nb.tab('@%d, 5' % i, text=None) == 'a':
+                break
         else:
             self.fail("Tab with text 'a' not found")
 
@@ -731,10 +722,7 @@ class NotebookTest(unittest.TestCase):
         self.nb.enable_traversal()
         self.nb.focus_force()
         support.simulate_mouse_click(self.nb, 5, 5)
-        if sys.platform == 'darwin':
-            self.nb.event_generate('<Option-a>')
-        else:
-            self.nb.event_generate('<Alt-a>')
+        self.nb.event_generate('<Alt-a>')
         self.assertEqual(self.nb.select(), str(self.child1))
 
 
