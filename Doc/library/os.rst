@@ -1019,6 +1019,19 @@ as internal buffering of data.
    Availability: Unix, Windows.
 
 
+.. function:: pipe2(flags=0)
+
+   Create a pipe with *flags* set atomically.
+   *flags* is optional and can be constructed by ORing together zero or more of
+   these values: :data:`O_NONBLOCK`, :data:`O_CLOEXEC`.
+   Return a pair of file descriptors ``(r, w)`` usable for reading and writing,
+   respectively.
+
+   Availability: some flavors of Unix.
+
+   .. versionadded:: 3.3
+
+
 .. function:: posix_fallocate(fd, offset, len)
 
    Ensures that enough disk space is allocated for the file specified by *fd*
