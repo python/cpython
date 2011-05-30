@@ -5,6 +5,7 @@ import re
 import sys
 import getopt
 import logging
+from copy import copy
 
 from packaging import logger
 from packaging.dist import Distribution
@@ -227,12 +228,13 @@ def _install(dispatcher, args, **kw):
             logger.warning('no project to install')
             return
 
+    target = args[1]
     # installing from a source dir or archive file?
-    if os.path.isdir(args[1]) or _is_archive_file(args[1]):
-        install_local_project(args[1])
+    if os.path.isdir(target) or _is_archive_file(target):
+        install_local_project(target)
     else:
         # download from PyPI
-        install(args[1])
+        install(target)
 
 
 @action_help(metadata_usage)
@@ -399,6 +401,17 @@ class Dispatcher:
             msg = 'Unrecognized action "%s"' % self.action
             raise PackagingArgError(msg)
 
+        self._set_logger()
+
+        # for display options we return immediately
+        option_order = self.parser.get_option_order()
+
+        self.args = args
+
+        if self.help or self.action is None:
+            self._show_help(self.parser, display_options_=False)
+
+    def _set_logger(self):
         # setting up the logging level from the command-line options
         # -q gets warning, error and critical
         if self.verbose == 0:
@@ -416,13 +429,11 @@ class Dispatcher:
         else:  # -vv and more for debug
             level = logging.DEBUG
 
-        # for display options we return immediately
-        option_order = self.parser.get_option_order()
-
-        self.args = args
-
-        if self.help or self.action is None:
-            self._show_help(self.parser, display_options_=False)
+        # setting up the stream handler
+        handler = logging.StreamHandler(sys.stderr)
+        handler.setLevel(level)
+        logger.addHandler(handler)
+        logger.setLevel(level)
 
     def _parse_command_opts(self, parser, args):
         # Pull the current command from the head of the command line
@@ -635,11 +646,17 @@ class Dispatcher:
 
 
 def main(args=None):
-    dispatcher = Dispatcher(args)
-    if dispatcher.action is None:
-        return
+    old_level = logger.level
+    old_handlers = copy(logger.handlers)
+    try:
+        dispatcher = Dispatcher(args)
+        if dispatcher.action is None:
+            return
+        return dispatcher()
+    finally:
+        logger.setLevel(old_level)
+        logger.handlers[:] = old_handlers
 
-    return dispatcher()
 
 if __name__ == '__main__':
     sys.exit(main())

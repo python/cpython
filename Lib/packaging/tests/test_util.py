@@ -818,51 +818,51 @@ class PackagingLibChecks(support.TempdirManager,
 
     def test_is_setuptools_logs_setup_py_text_found(self):
         is_setuptools(self._setuptools_setup_py_pkg())
-        expected = ['setup.py file found', 'found setuptools text in setup.py']
-        self.assertEqual(expected, self.get_logs(logging.INFO))
+        expected = ['setup.py file found.',
+                    'No egg-info directory found.',
+                    'Found setuptools text in setup.py.']
+        self.assertEqual(expected, self.get_logs(logging.DEBUG))
 
     def test_is_setuptools_logs_setup_py_text_not_found(self):
         directory = self._random_setup_py_pkg()
         is_setuptools(directory)
-        info_expected = ['setup.py file found']
-        warn_expected = ['no egg-info directory found',
-                         'no setuptools text found in setup.py']
-        self.assertEqual(info_expected, self.get_logs(logging.INFO))
-        self.assertEqual(warn_expected, self.get_logs(logging.WARN))
+        expected = ['setup.py file found.', 'No egg-info directory found.',
+                    'No setuptools text found in setup.py.']
+        self.assertEqual(expected, self.get_logs(logging.DEBUG))
 
     def test_is_setuptools_logs_egg_info_dir_found(self):
         is_setuptools(self._setuptools_egg_info_pkg())
-        expected = ['setup.py file found', 'found egg-info directory']
-        self.assertEqual(expected, self.get_logs(logging.INFO))
+        expected = ['setup.py file found.', 'Found egg-info directory.']
+        self.assertEqual(expected, self.get_logs(logging.DEBUG))
 
     def test_is_distutils_logs_setup_py_text_found(self):
         is_distutils(self._distutils_setup_py_pkg())
-        expected = ['setup.py file found', 'found distutils text in setup.py']
-        self.assertEqual(expected, self.get_logs(logging.INFO))
+        expected = ['setup.py file found.',
+                    'No PKG-INFO file found.',
+                    'Found distutils text in setup.py.']
+        self.assertEqual(expected, self.get_logs(logging.DEBUG))
 
     def test_is_distutils_logs_setup_py_text_not_found(self):
         directory = self._random_setup_py_pkg()
         is_distutils(directory)
-        info_expected = ['setup.py file found']
-        warn_expected = ['no PKG-INFO file found',
-                         'no distutils text found in setup.py']
-        self.assertEqual(info_expected, self.get_logs(logging.INFO))
-        self.assertEqual(warn_expected, self.get_logs(logging.WARN))
+        expected = ['setup.py file found.', 'No PKG-INFO file found.',
+                    'No distutils text found in setup.py.']
+        self.assertEqual(expected, self.get_logs(logging.DEBUG))
 
     def test_is_distutils_logs_pkg_info_file_found(self):
         is_distutils(self._distutils_pkg_info())
-        expected = ['setup.py file found', 'PKG-INFO file found']
-        self.assertEqual(expected, self.get_logs(logging.INFO))
+        expected = ['setup.py file found.', 'PKG-INFO file found.']
+        self.assertEqual(expected, self.get_logs(logging.DEBUG))
 
     def test_is_packaging_logs_setup_cfg_found(self):
         is_packaging(self._valid_setup_cfg_pkg())
-        expected = ['setup.cfg file found']
-        self.assertEqual(expected, self.get_logs(logging.INFO))
+        expected = ['setup.cfg file found.']
+        self.assertEqual(expected, self.get_logs(logging.DEBUG))
 
     def test_is_packaging_logs_setup_cfg_not_found(self):
         is_packaging(self._empty_dir)
-        expected = ['no setup.cfg file found']
-        self.assertEqual(expected, self.get_logs(logging.WARN))
+        expected = ['No setup.cfg file found.']
+        self.assertEqual(expected, self.get_logs(logging.DEBUG))
 
     def _write_setuptools_setup_py(self, directory):
         self.write_file((directory, 'setup.py'),

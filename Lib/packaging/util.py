@@ -1224,9 +1224,9 @@ def _has_egg_info(srcdir):
         for item in os.listdir(srcdir):
             full_path = os.path.join(srcdir, item)
             if item.endswith('.egg-info') and os.path.isdir(full_path):
-                logger.info("found egg-info directory")
+                logger.debug("Found egg-info directory.")
                 return True
-    logger.warning("no egg-info directory found")
+    logger.debug("No egg-info directory found.")
     return False
 
 
@@ -1243,9 +1243,9 @@ def _has_text(setup_py, installer):
     with open(setup_py, 'r', encoding='utf-8') as setup:
         for line in setup:
             if re.search(installer_pattern, line):
-                logger.info("found %s text in setup.py", installer)
+                logger.debug("Found %s text in setup.py.", installer)
                 return True
-    logger.warning("no %s text found in setup.py", installer)
+    logger.debug("No %s text found in setup.py.", installer)
     return False
 
 
@@ -1261,15 +1261,16 @@ def _has_pkg_info(srcdir):
     pkg_info = os.path.join(srcdir, 'PKG-INFO')
     has_pkg_info = os.path.isfile(pkg_info)
     if has_pkg_info:
-        logger.info("PKG-INFO file found")
-    logger.warning("no PKG-INFO file found")
+        logger.debug("PKG-INFO file found.")
+    else:
+        logger.debug("No PKG-INFO file found.")
     return has_pkg_info
 
 
 def _has_setup_py(srcdir):
     setup_py = os.path.join(srcdir, 'setup.py')
     if os.path.isfile(setup_py):
-        logger.info('setup.py file found')
+        logger.debug('setup.py file found.')
         return True
     return False
 
@@ -1277,9 +1278,9 @@ def _has_setup_py(srcdir):
 def _has_setup_cfg(srcdir):
     setup_cfg = os.path.join(srcdir, 'setup.cfg')
     if os.path.isfile(setup_cfg):
-        logger.info('setup.cfg file found')
+        logger.debug('setup.cfg file found.')
         return True
-    logger.warning("no setup.cfg file found")
+    logger.debug("No setup.cfg file found.")
     return False
 
 
