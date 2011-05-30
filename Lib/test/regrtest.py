@@ -1023,10 +1023,6 @@ class saved_test_environment:
 
 def runtest_inner(test, verbose, quiet, huntrleaks=False, debug=False):
     support.unload(test)
-    if verbose:
-        capture_stdout = None
-    else:
-        capture_stdout = io.StringIO()
 
     test_time = 0.0
     refleak = False  # True if the test leaked references.
