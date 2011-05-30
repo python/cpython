@@ -55,6 +55,12 @@ Build
   ensure "make install" creates symlinks in --prefix bin for the "-32"
   files in the framework bin directory like the installer does.
 
+Tests
+-----
+
+- Issue #12057: Add tests for ISO 2022 codecs (iso2022_jp, iso2022_jp_2,
+  iso2022_kr).
+
 
 What's New in Python 3.2.1 release candidate 1?
 ===============================================
