@@ -173,7 +173,7 @@ class ThreadTests(BaseTestCase):
         exception = ctypes.py_object(AsyncExc)
 
         # First check it works when setting the exception from the same thread.
-        tid = _thread.get_ident()
+        tid = threading.get_ident()
 
         try:
             result = set_async_exc(ctypes.c_long(tid), exception)
@@ -202,7 +202,7 @@ class ThreadTests(BaseTestCase):
 
         class Worker(threading.Thread):
             def run(self):
-                self.id = _thread.get_ident()
+                self.id = threading.get_ident()
                 self.finished = False
 
                 try:

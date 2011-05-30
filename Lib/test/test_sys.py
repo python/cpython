@@ -343,7 +343,7 @@ class SysModuleTest(unittest.TestCase):
     # Test sys._current_frames() in a WITH_THREADS build.
     @test.support.reap_threads
     def current_frames_with_threads(self):
-        import threading, _thread
+        import threading
         import traceback
 
         # Spawn a thread that blocks at a known place.  Then the main
@@ -357,7 +357,7 @@ class SysModuleTest(unittest.TestCase):
             g456()
 
         def g456():
-            thread_info.append(_thread.get_ident())
+            thread_info.append(threading.get_ident())
             entered_g.set()
             leave_g.wait()
 
@@ -373,7 +373,7 @@ class SysModuleTest(unittest.TestCase):
 
         d = sys._current_frames()
 
-        main_id = _thread.get_ident()
+        main_id = threading.get_ident()
         self.assertIn(main_id, d)
         self.assertIn(thread_id, d)
 

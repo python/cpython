@@ -557,7 +557,7 @@ class PendingSignalsTests(unittest.TestCase):
 
     def kill(self, signum):
         if self.has_pthread_kill:
-            tid = threading.current_thread().ident
+            tid = threading.get_ident()
             signal.pthread_kill(tid, signum)
         else:
             pid = os.getpid()
@@ -589,7 +589,7 @@ class PendingSignalsTests(unittest.TestCase):
                          'need signal.pthread_kill()')
     def test_pthread_kill(self):
         signum = signal.SIGUSR1
-        current = threading.current_thread().ident
+        current = threading.get_ident()
 
         old_handler = signal.signal(signum, self.handler)
         self.addCleanup(signal.signal, signum, old_handler)
