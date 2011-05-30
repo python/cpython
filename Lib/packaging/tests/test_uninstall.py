@@ -1,6 +1,7 @@
 """Tests for the uninstall command."""
 import os
 import sys
+from io import StringIO
 
 from packaging.database import disable_cache, enable_cache
 from packaging.run import main
@@ -79,7 +80,12 @@ class UninstallTestCase(support.TempdirManager,
         if not dirname:
             dirname = self.make_dist(name, **kw)
         os.chdir(dirname)
-        dist = self.run_setup('install_dist', '--prefix=' + self.root_dir)
+        old_out = sys.stdout
+        sys.stderr = StringIO()
+        try:
+            dist = self.run_setup('install_dist', '--prefix=' + self.root_dir)
+        finally:
+            sys.sterr = old_out
         install_lib = self.get_path(dist, 'purelib')
         return dist, install_lib
 
