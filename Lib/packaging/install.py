@@ -118,15 +118,15 @@ def install_local_project(path):
     """
     path = os.path.abspath(path)
     if os.path.isdir(path):
-        logger.info('installing from source directory: %s', path)
+        logger.info('Installing from source directory: %s', path)
         _run_install_from_dir(path)
     elif _is_archive_file(path):
-        logger.info('installing from archive: %s', path)
+        logger.info('Installing from archive: %s', path)
         _unpacked_dir = tempfile.mkdtemp()
         shutil.unpack_archive(path, _unpacked_dir)
         _run_install_from_archive(_unpacked_dir)
     else:
-        logger.warning('no projects to install')
+        logger.warning('No projects to install.')
 
 
 def _run_install_from_archive(source_dir):
@@ -174,16 +174,16 @@ def install_dists(dists, path, paths=sys.path):
 
     installed_dists = []
     for dist in dists:
-        logger.info('installing %s %s', dist.name, dist.version)
+        logger.info('Installing %r %s...', dist.name, dist.version)
         try:
             _install_dist(dist, path)
             installed_dists.append(dist)
         except Exception as e:
-            logger.info('failed: %s', e)
+            logger.info('Failed: %s', e)
 
             # reverting
             for installed_dist in installed_dists:
-                logger.info('reverting %s', installed_dist)
+                logger.info('Reverting %s', installed_dist)
                 _remove_dist(installed_dist, paths)
             raise e
     return installed_dists
@@ -292,7 +292,7 @@ def get_infos(requirements, index=None, installed=None, prefer_final=True):
     #    or remove
 
     if not installed:
-        logger.info('reading installed distributions')
+        logger.debug('Reading installed distributions')
         installed = list(get_distributions(use_egg_info=True))
 
     infos = {'install': [], 'remove': [], 'conflict': []}
@@ -306,7 +306,7 @@ def get_infos(requirements, index=None, installed=None, prefer_final=True):
         if predicate.name.lower() != installed_project.name.lower():
             continue
         found = True
-        logger.info('found %s %s', installed_project.name,
+        logger.info('Found %s %s', installed_project.name,
                     installed_project.metadata['version'])
 
         # if we already have something installed, check it matches the
@@ -316,7 +316,7 @@ def get_infos(requirements, index=None, installed=None, prefer_final=True):
         break
 
     if not found:
-        logger.info('project not installed')
+        logger.debug('Project not installed')
 
     if not index:
         index = wrapper.ClientWrapper()
@@ -331,7 +331,7 @@ def get_infos(requirements, index=None, installed=None, prefer_final=True):
         raise InstallationException('Release not found: "%s"' % requirements)
 
     if release is None:
-        logger.info('could not find a matching project')
+        logger.info('Could not find a matching project')
         return infos
 
     metadata = release.fetch_metadata()
@@ -348,7 +348,7 @@ def get_infos(requirements, index=None, installed=None, prefer_final=True):
     # Get what the missing deps are
     dists = depgraph.missing[release]
     if dists:
-        logger.info("missing dependencies found, retrieving metadata")
+        logger.info("Missing dependencies found, retrieving metadata")
         # we have missing deps
         for dist in dists:
             _update_infos(infos, get_infos(dist, index, installed))
@@ -401,7 +401,7 @@ def remove(project_name, paths=sys.path, auto_confirm=True):
     finally:
         shutil.rmtree(tmp)
 
-    logger.info('removing %r: ', project_name)
+    logger.info('Removing %r: ', project_name)
 
     for file_ in rmfiles:
         logger.info('  %s', file_)
@@ -444,20 +444,20 @@ def remove(project_name, paths=sys.path, auto_confirm=True):
         if os.path.exists(dist.path):
             shutil.rmtree(dist.path)
 
-        logger.info('success: removed %d files and %d dirs',
+        logger.info('Success: removed %d files and %d dirs',
                     file_count, dir_count)
 
 
 def install(project):
-    logger.info('getting information about %r', project)
+    logger.info('Getting information about %r...', project)
     try:
         info = get_infos(project)
     except InstallationException:
-        logger.info('cound not find %r', project)
+        logger.info('Cound not find %r', project)
         return
 
     if info['install'] == []:
-        logger.info('nothing to install')
+        logger.info('Nothing to install')
         return
 
     install_path = get_config_var('base')
