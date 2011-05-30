@@ -10,6 +10,8 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #12216: Allow unexpected EOF errors to happen on any line of the file.
+
 - Issue #12199: The TryExcept and TryFinally and AST nodes have been unified
   into a Try node.
 
