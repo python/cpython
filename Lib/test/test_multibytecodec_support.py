@@ -60,7 +60,9 @@ class TestBase:
                     self.assertTrue(type(result) is str, type(result))
                 else:
                     self.assertTrue(type(result) is bytes, type(result))
-                self.assertEqual(result, expected)
+                self.assertEqual(result, expected,
+                                 '%a.decode(%r)=%a != %a'
+                                 % (source, self.encoding, result, expected))
             else:
                 self.assertRaises(UnicodeError, func, source, scheme)
 
