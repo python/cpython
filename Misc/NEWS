@@ -1,6 +1,22 @@
 Python News
 +++++++++++
 
+What's New in Python 2.7.3?
+===========================
+
+*Release date: XXXX-XX-XX*
+
+Core and Builtins
+-----------------
+
+- Issue #12016: my_fgets() now always clears errors before calling fgets(). Fix
+  the following case: sys.stdin.read() stopped with CTRL+d (end of file),
+  raw_input() interrupted by CTRL+c.
+
+Library
+-------
+
+
 What's New in Python 2.7.2?
 ===========================
 
