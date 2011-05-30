@@ -50,7 +50,9 @@ class TestBase:
                 func = self.encode
             if expected:
                 result = func(source, scheme)[0]
-                self.assertEqual(result, expected)
+                self.assertEqual(result, expected,
+                                 '%r.decode(%r)=%r != %r'
+                                 % (source, self.encoding, result, expected))
             else:
                 self.assertRaises(UnicodeError, func, source, scheme)
 
