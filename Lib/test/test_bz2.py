@@ -163,43 +163,37 @@ class BZ2FileTest(BaseTest):
         self.createTempFile()
         with BZ2File(self.filename) as bz2f:
             self.assertRaises(TypeError, bz2f.readline, None)
-            sio = BytesIO(self.TEXT)
-            for line in sio.readlines():
+            for line in self.TEXT_LINES:
                 self.assertEqual(bz2f.readline(), line)
 
     def testReadLineMultiStream(self):
         self.createTempFile(streams=5)
         with BZ2File(self.filename) as bz2f:
             self.assertRaises(TypeError, bz2f.readline, None)
-            sio = BytesIO(self.TEXT * 5)
-            for line in sio.readlines():
+            for line in self.TEXT_LINES * 5:
                 self.assertEqual(bz2f.readline(), line)
 
     def testReadLines(self):
         self.createTempFile()
         with BZ2File(self.filename) as bz2f:
             self.assertRaises(TypeError, bz2f.readlines, None)
-            sio = BytesIO(self.TEXT)
-            self.assertEqual(bz2f.readlines(), sio.readlines())
+            self.assertEqual(bz2f.readlines(), self.TEXT_LINES)
 
     def testReadLinesMultiStream(self):
         self.createTempFile(streams=5)
         with BZ2File(self.filename) as bz2f:
             self.assertRaises(TypeError, bz2f.readlines, None)
-            sio = BytesIO(self.TEXT * 5)
-            self.assertEqual(bz2f.readlines(), sio.readlines())
+            self.assertEqual(bz2f.readlines(), self.TEXT_LINES * 5)
 
     def testIterator(self):
         self.createTempFile()
         with BZ2File(self.filename) as bz2f:
-            sio = BytesIO(self.TEXT)
-            self.assertEqual(list(iter(bz2f)), sio.readlines())
+            self.assertEqual(list(iter(bz2f)), self.TEXT_LINES)
 
     def testIteratorMultiStream(self):
         self.createTempFile(streams=5)
         with BZ2File(self.filename) as bz2f:
-            sio = BytesIO(self.TEXT * 5)
-            self.assertEqual(list(iter(bz2f)), sio.readlines())
+            self.assertEqual(list(iter(bz2f)), self.TEXT_LINES * 5)
 
     def testClosedIteratorDeadlock(self):
         # Issue #3309: Iteration on a closed BZ2File should release the lock.
@@ -233,8 +227,7 @@ class BZ2FileTest(BaseTest):
     def testWriteLines(self):
         with BZ2File(self.filename, "w") as bz2f:
             self.assertRaises(TypeError, bz2f.writelines)
-            sio = BytesIO(self.TEXT)
-            bz2f.writelines(sio.readlines())
+            bz2f.writelines(self.TEXT_LINES)
         # Issue #1535500: Calling writelines() on a closed BZ2File
         # should raise an exception.
         self.assertRaises(ValueError, bz2f.writelines, ["a"])
