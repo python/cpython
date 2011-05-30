@@ -178,7 +178,7 @@ Library
 -------
 
 - Issue #12028: Make threading._get_ident() public, rename it to
-  threading.get_ident() and document it. This function was used by
+  threading.get_ident() and document it. This function was already used using
   _thread.get_ident().
 
 - Issue #12171: IncrementalEncoder.reset() of CJK codecs (multibytecodec) calls
