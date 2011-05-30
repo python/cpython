@@ -18,8 +18,7 @@ __all__ = [
     'get_distributions', 'get_distribution', 'get_file_users',
     'provides_distribution', 'obsoletes_distribution',
     'enable_cache', 'disable_cache', 'clear_cache',
-    'get_file_path', 'get_file'
-]
+    'get_file_path', 'get_file']
 
 
 # TODO update docs

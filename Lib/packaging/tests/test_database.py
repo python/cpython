@@ -1,23 +1,20 @@
 import os
 import io
 import csv
-import imp
 import sys
 import shutil
-import zipfile
 import tempfile
 from os.path import relpath  # separate import for backport concerns
 from hashlib import md5
 from textwrap import dedent
 
-from packaging.tests import unittest
 from packaging.tests.test_util import GlobTestCaseBase
 from packaging.tests.support import requires_zlib
 
 from packaging.config import get_resources_dests
 from packaging.errors import PackagingError
 from packaging.metadata import Metadata
-from packaging.tests import unittest, run_unittest, support, TESTFN
+from packaging.tests import unittest, support
 from packaging.database import (
     Distribution, EggInfoDistribution, get_distribution, get_distributions,
     provides_distribution, obsoletes_distribution, get_file_users,
@@ -582,7 +579,8 @@ class DataFilesTestCase(GlobTestCaseBase):
             ('', os.path.join('developer-docs', '**', '*.txt'), '{doc}'),
             ('', 'README', '{doc}'),
             ('mailman/etc/', '*', '{config}'),
-            ('mailman/foo/', os.path.join('**', 'bar', '*.cfg'), '{config}/baz'),
+            ('mailman/foo/', os.path.join('**', 'bar', '*.cfg'),
+             '{config}/baz'),
             ('mailman/foo/', os.path.join('**', '*.cfg'), '{config}/hmm'),
             ('', 'some-new-semantic.sns', '{funky-crazy-category}'),
         ]
