@@ -80,12 +80,12 @@ class UninstallTestCase(support.TempdirManager,
         if not dirname:
             dirname = self.make_dist(name, **kw)
         os.chdir(dirname)
-        old_out = sys.stdout
+        old_out = sys.stderr
         sys.stderr = StringIO()
         try:
             dist = self.run_setup('install_dist', '--prefix=' + self.root_dir)
         finally:
-            sys.sterr = old_out
+            sys.stderr = old_out
         install_lib = self.get_path(dist, 'purelib')
         return dist, install_lib
 
