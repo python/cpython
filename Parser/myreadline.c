@@ -40,6 +40,7 @@ my_fgets(char *buf, int len, FILE *fp)
         if (PyOS_InputHook != NULL)
             (void)(PyOS_InputHook)();
         errno = 0;
+        clearerr(fp);
         p = fgets(buf, len, fp);
         if (p != NULL)
             return 0; /* No error */
