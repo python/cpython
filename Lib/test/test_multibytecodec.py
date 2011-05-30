@@ -260,7 +260,8 @@ class TestStateful(unittest.TestCase):
     text = '\u4E16\u4E16'
     encoding = 'iso-2022-jp'
     expected = b'\x1b$B@$@$'
-    expected_reset = b'\x1b$B@$@$\x1b(B'
+    reset = b'\x1b(B'
+    expected_reset = expected + reset
 
     def test_encode(self):
         self.assertEqual(self.text.encode(self.encoding), self.expected_reset)
@@ -271,6 +272,8 @@ class TestStateful(unittest.TestCase):
             encoder.encode(char)
             for char in self.text)
         self.assertEqual(output, self.expected)
+        self.assertEqual(encoder.encode('', final=True), self.reset)
+        self.assertEqual(encoder.encode('', final=True), b'')
 
     def test_incrementalencoder_final(self):
         encoder = codecs.getincrementalencoder(self.encoding)()
@@ -279,12 +282,14 @@ class TestStateful(unittest.TestCase):
             encoder.encode(char, index == last_index)
             for index, char in enumerate(self.text))
         self.assertEqual(output, self.expected_reset)
+        self.assertEqual(encoder.encode('', final=True), b'')
 
 class TestHZStateful(TestStateful):
     text = '\u804a\u804a'
     encoding = 'hz'
     expected = b'~{ADAD'
-    expected_reset = b'~{ADAD~}'
+    reset = b'~}'
+    expected_reset = expected + reset
 
 def test_main():
     support.run_unittest(__name__)

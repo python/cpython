@@ -901,11 +901,17 @@ mbiencoder_encode(MultibyteIncrementalEncoderObject *self,
 static PyObject *
 mbiencoder_reset(MultibyteIncrementalEncoderObject *self)
 {
-    if (self->codec->decreset != NULL &&
-        self->codec->decreset(&self->state, self->codec->config) != 0)
-        return NULL;
+    /* Longest output: 4 bytes (b'\x0F\x1F(B') with ISO 2022 */
+    unsigned char buffer[4], *outbuf;
+    Py_ssize_t r;
+    if (self->codec->encreset != NULL) {
+        outbuf = buffer;
+        r = self->codec->encreset(&self->state, self->codec->config,
+                                  &outbuf, sizeof(buffer));
+        if (r != 0)
+            return NULL;
+    }
     self->pendingsize = 0;
-
     Py_RETURN_NONE;
 }
 
