@@ -177,6 +177,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #12218: Removed wsgiref.egg-info.
+
 - Issue #12196: Add pipe2() to the os module. 
 
 - Issue #985064: Make plistlib more resilient to faulty input plists.
