@@ -1815,7 +1815,7 @@ Subclasses of :class:`Command` must define the following methods.
 .. module:: distutils.command.bdist_msi
    :synopsis: Build a binary distribution as a Windows MSI file
 
-.. class:: bdist_msi(Command)
+.. class:: bdist_msi
 
    Builds a `Windows Installer`_ (.msi) binary package.
 
