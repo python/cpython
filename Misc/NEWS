@@ -16,6 +16,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #12085: Fix an attribute error in subprocess.Popen destructor if the
+  constructor has failed, e.g. because of an undeclared keyword argument. Patch
+  written by Oleg Oshmyan.
+
 Tests
 -----
 
