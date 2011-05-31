@@ -811,7 +811,13 @@ fi
 AC_SUBST(HGVERSION)
 AC_SUBST(HGTAG)
 AC_SUBST(HGBRANCH)
+
+if test -e $srcdir/.hg/00changelog.i
+then
 AC_CHECK_PROG(HAS_HG, hg, found, not-found)
+else
+HAS_HG=no-repository
+fi
 if test $HAS_HG = found
 then
     HGVERSION="hg id -i \$(srcdir)"
@@ -822,6 +828,15 @@ else
     HGTAG=""
     HGBRANCH=""
 fi
+
+AC_SUBST(DISABLE_ASDLGEN)
+DISABLE_ASDLGEN=""
+AC_CHECK_PROG(HAS_PYTHON, python, found, not-found)
+if test $HAS_HG != found -o $HAS_PYTHON != found
+then
+    DISABLE_ASDLGEN="@echo hg: $HAS_HG, python: $HAS_PYTHON! cannot run \$(srcdir)/Parser/asdl_c.py #"
+fi
+
 
 case $MACHDEP in
 bsdos*|hp*|HP*)
