@@ -768,7 +768,10 @@ class Popen(object):
         self.wait()
 
     def __del__(self, _maxsize=sys.maxsize, _active=_active):
-        if not self._child_created:
+        # If __init__ hasn't had a chance to execute (e.g. if it
+        # was passed an undeclared keyword argument), we don't
+        # have a _child_created attribute at all.
+        if not getattr(self, '_child_created', False):
             # We didn't get to successfully create a child process.
             return
         # In case the child hasn't been waited on, check if it's done.
