@@ -351,7 +351,7 @@ def _list(dispatcher, args, **kw):
     number = 0
     for dist in results:
         print('%s %s at %s' % (dist.name, dist.metadata['version'], dist.path))
-        number +=1
+        number += 1
 
     print('')
     if number == 0:
@@ -367,8 +367,9 @@ def _search(dispatcher, args, **kw):
     It is able to search for a specific index (specified with --index), using
     the simple or xmlrpc index types (with --type xmlrpc / --type simple)
     """
-    opts = _parse_args(args[1:], '', ['simple', 'xmlrpc'])
+    #opts = _parse_args(args[1:], '', ['simple', 'xmlrpc'])
     # 1. what kind of index is requested ? (xmlrpc / simple)
+    raise NotImplementedError()
 
 
 actions = [
@@ -416,12 +417,9 @@ class Dispatcher:
             raise PackagingArgError(msg)
 
         self._set_logger()
-
-        # for display options we return immediately
-        option_order = self.parser.get_option_order()
-
         self.args = args
 
+        # for display options we return immediately
         if self.help or self.action is None:
             self._show_help(self.parser, display_options_=False)
 
@@ -591,8 +589,6 @@ class Dispatcher:
     def _show_command_help(self, command):
         if isinstance(command, str):
             command = get_command_class(command)
-
-        name = command.get_command_name()
 
         desc = getattr(command, 'description', '(no description available)')
         print('Description: %s' % desc)
