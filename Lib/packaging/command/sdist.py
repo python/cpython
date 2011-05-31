@@ -1,10 +1,9 @@
 """Create a source distribution."""
 
 import os
-import sys
 import re
+import sys
 from io import StringIO
-from glob import glob
 from shutil import get_archive_formats, rmtree
 
 from packaging import logger
@@ -203,45 +202,14 @@ class sdist(Command):
 
     def add_defaults(self):
         """Add all the default files to self.filelist:
-          - README or README.txt
-          - test/test*.py
           - all pure Python modules mentioned in setup script
           - all files pointed by package_data (build_py)
           - all files defined in data_files.
           - all files defined as scripts.
           - all C sources listed as part of extensions or C libraries
             in the setup script (doesn't catch C headers!)
-        Warns if (README or README.txt) or setup.py are missing; everything
-        else is optional.
+        Everything is optional.
         """
-        standards = [('README', 'README.txt')]
-        for fn in standards:
-            if isinstance(fn, tuple):
-                alts = fn
-                got_it = False
-                for fn in alts:
-                    if os.path.exists(fn):
-                        got_it = True
-                        self.filelist.append(fn)
-                        break
-
-                if not got_it:
-                    logger.warning(
-                        '%s: standard file not found: should have one of %s',
-                        self.get_command_name(), ', '.join(alts))
-            else:
-                if os.path.exists(fn):
-                    self.filelist.append(fn)
-                else:
-                    logger.warning('%s: standard file %r not found',
-                                   self.get_command_name(), fn)
-
-        optional = ['test/test*.py', 'setup.cfg']
-        for pattern in optional:
-            files = [f for f in glob(pattern) if os.path.isfile(f)]
-            if files:
-                self.filelist.extend(files)
-
         for cmd_name in get_command_names():
             try:
                 cmd_obj = self.get_finalized_command(cmd_name)
