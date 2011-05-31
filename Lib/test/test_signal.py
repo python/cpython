@@ -229,12 +229,13 @@ class WakeupSignalTests(unittest.TestCase):
     def handler(self, signum, frame):
         pass
 
-    def check_signum(self, *signals, **kw):
+    def check_signum(self, *signals):
         data = os.read(self.read, len(signals)+1)
         raised = struct.unpack('%uB' % len(data), data)
-        if kw.get('unordered', False):
-            raised = set(raised)
-            signals = set(signals)
+        # We don't care of the signal delivery order (it's not portable or
+        # reliable)
+        raised = set(raised)
+        signals = set(signals)
         self.assertEqual(raised, signals)
 
     def test_wakeup_fd_early(self):
@@ -291,7 +292,7 @@ class WakeupSignalTests(unittest.TestCase):
         # Unblocking the 2 signals calls the C signal handler twice
         signal.pthread_sigmask(signal.SIG_UNBLOCK, (signum1, signum2))
 
-        self.check_signum(signum1, signum2, unordered=True)
+        self.check_signum(signum1, signum2)
 
     def setUp(self):
         import fcntl
