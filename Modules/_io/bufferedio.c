@@ -589,7 +589,7 @@ _bufferedreader_reset_buf(buffered *self);
 static void
 _bufferedwriter_reset_buf(buffered *self);
 static PyObject *
-_bufferedreader_peek_unlocked(buffered *self, Py_ssize_t);
+_bufferedreader_peek_unlocked(buffered *self);
 static PyObject *
 _bufferedreader_read_all(buffered *self);
 static PyObject *
@@ -797,7 +797,7 @@ buffered_peek(buffered *self, PyObject *args)
             goto end;
         Py_CLEAR(res);
     }
-    res = _bufferedreader_peek_unlocked(self, n);
+    res = _bufferedreader_peek_unlocked(self);
 
 end:
     LEAVE_BUFFERED(self)
@@ -1611,7 +1611,7 @@ error:
 }
 
 static PyObject *
-_bufferedreader_peek_unlocked(buffered *self, Py_ssize_t n)
+_bufferedreader_peek_unlocked(buffered *self)
 {
     Py_ssize_t have, r;
 
