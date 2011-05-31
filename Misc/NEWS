@@ -2,6 +2,16 @@
 Python News
 +++++++++++
 
+What's New in Python 3.1.4?
+===========================
+
+*Release date: 2011-05-XX*
+
+Extension Modules
+-----------------
+
+- Issue #12221: Replace pyexpat.__version__ with the Python version.
+
 What's New in Python 3.1.4 release candidate 1?
 ===============================================
 
