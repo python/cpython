@@ -3,8 +3,12 @@
 import os
 import sys
 import shutil
+from tempfile import mkstemp
+from io import StringIO
 
+from packaging import install
 from packaging.tests import unittest, support, TESTFN
+from packaging.run import main
 
 # setup script that uses __file__
 setup_using___file__ = """\
@@ -25,7 +29,8 @@ setup()
 """
 
 
-class CoreTestCase(unittest.TestCase):
+class CoreTestCase(support.TempdirManager, support.LoggingCatcher,
+                   unittest.TestCase):
 
     def setUp(self):
         super(CoreTestCase, self).setUp()
@@ -53,6 +58,24 @@ class CoreTestCase(unittest.TestCase):
         return path
 
     # TODO restore the tests removed six months ago and port them to pysetup
+
+    def test_install(self):
+        # making sure install returns 0 or 1 exit codes
+        project = os.path.join(os.path.dirname(__file__), 'package.tgz')
+        install_path = self.mkdtemp()
+        old_get_path = install.get_path
+        install.get_path = lambda path: install_path
+        old_mod = os.stat(install_path).st_mode
+        os.chmod(install_path, 0)
+        old_stderr = sys.stderr
+        sys.stderr = StringIO()
+        try:
+            self.assertFalse(install.install(project))
+            self.assertEqual(main(['install', 'blabla']), 1)
+        finally:
+            sys.stderr = old_stderr
+            os.chmod(install_path, old_mod)
+            install.get_path = old_get_path
 
 
 def test_suite():

@@ -6,7 +6,6 @@ obtained from an index (e.g. PyPI), with dependencies.
 This is a higher-level module built on packaging.database and
 packaging.pypi.
 """
-
 import os
 import sys
 import stat
@@ -14,7 +13,7 @@ import errno
 import shutil
 import logging
 import tempfile
-from sysconfig import get_config_var
+from sysconfig import get_config_var, get_path
 
 from packaging import logger
 from packaging.dist import Distribution
@@ -28,6 +27,8 @@ from packaging.depgraph import generate_graph
 from packaging.errors import (PackagingError, InstallationException,
                               InstallationConflict, CCompilerError)
 from packaging.pypi.errors import ProjectNotFound, ReleaseNotFound
+from packaging import database
+
 
 __all__ = ['install_dists', 'install_from_infos', 'get_infos', 'remove',
            'install', 'install_local_project']
@@ -75,6 +76,7 @@ def _run_distutils_install(path):
 def _run_setuptools_install(path):
     cmd = '%s setup.py install --record=%s --single-version-externally-managed'
     record_file = os.path.join(path, 'RECORD')
+
     os.system(cmd % (sys.executable, record_file))
     if not os.path.exists(record_file):
         raise ValueError('failed to install')
@@ -88,8 +90,10 @@ def _run_packaging_install(path):
     dist.parse_config_files()
     try:
         dist.run_command('install_dist')
+        name = dist.metadata['name']
+        return database.get_distribution(name) is not None
     except (IOError, os.error, PackagingError, CCompilerError) as msg:
-        raise SystemExit("error: " + str(msg))
+        raise ValueError("Failed to install, " + str(msg))
 
 
 def _install_dist(dist, path):
@@ -115,18 +119,20 @@ def install_local_project(path):
     If the source directory contains a setup.py install using distutils1.
     If a setup.cfg is found, install using the install_dist command.
 
+    Returns True on success, False on Failure.
     """
     path = os.path.abspath(path)
     if os.path.isdir(path):
         logger.info('Installing from source directory: %s', path)
-        _run_install_from_dir(path)
+        return _run_install_from_dir(path)
     elif _is_archive_file(path):
         logger.info('Installing from archive: %s', path)
         _unpacked_dir = tempfile.mkdtemp()
         shutil.unpack_archive(path, _unpacked_dir)
-        _run_install_from_archive(_unpacked_dir)
+        return _run_install_from_archive(_unpacked_dir)
     else:
         logger.warning('No projects to install.')
+        return False
 
 
 def _run_install_from_archive(source_dir):
@@ -152,7 +158,13 @@ def _run_install_from_dir(source_dir):
     func = install_methods[install_method]
     try:
         func = install_methods[install_method]
-        return func(source_dir)
+        try:
+            func(source_dir)
+            return True
+        except ValueError as err:
+            # failed to install
+            logger.info(str(err))
+            return False
     finally:
         os.chdir(old_dir)
 
@@ -472,16 +484,34 @@ def remove(project_name, paths=sys.path, auto_confirm=True):
 
 
 def install(project):
+    """Installs a project.
+
+    Returns True on success, False on failure
+    """
+    logger.info('Checking the installation location...')
+    purelib_path = get_path('purelib')
+    # trying to write a file there
+    try:
+        with tempfile.NamedTemporaryFile(suffix=project,
+                                         dir=purelib_path) as testfile:
+            testfile.write(b'test')
+    except OSError:
+        # was unable to write a file
+        logger.info('Unable to write in "%s". Do you have the permissions ?'
+                    % purelib_path)
+        return False
+
+
     logger.info('Getting information about %r...', project)
     try:
         info = get_infos(project)
     except InstallationException:
         logger.info('Cound not find %r', project)
-        return
+        return False
 
     if info['install'] == []:
         logger.info('Nothing to install')
-        return
+        return False
 
     install_path = get_config_var('base')
     try:
@@ -492,6 +522,8 @@ def install(project):
         if logger.isEnabledFor(logging.INFO):
             projects = ['%s %s' % (p.name, p.version) for p in e.args[0]]
             logger.info('%r conflicts with %s', project, ','.join(projects))
+
+    return True
 
 
 def _main(**attrs):

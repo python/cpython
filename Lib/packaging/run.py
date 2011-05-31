@@ -225,16 +225,22 @@ def _install(dispatcher, args, **kw):
         if 'setup.py' in listing or 'setup.cfg' in listing:
             args.insert(1, os.getcwd())
         else:
-            logger.warning('no project to install')
-            return
+            logger.warning('No project to install.')
+            return 1
 
     target = args[1]
     # installing from a source dir or archive file?
     if os.path.isdir(target) or _is_archive_file(target):
-        install_local_project(target)
+        if install_local_project(target):
+            return 0
+        else:
+            return 1
     else:
         # download from PyPI
-        install(target)
+        if install(target):
+            return 0
+        else:
+            return 1
 
 
 @action_help(metadata_usage)
