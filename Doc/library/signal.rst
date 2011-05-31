@@ -187,10 +187,9 @@ The :mod:`signal` module defines the following functions:
    Send the signal *signum* to the thread *thread_id*, another thread in the same
    process as the caller.  The signal is asynchronously directed to thread.
 
-   *thread_id* can be read from the :attr:`~threading.Thread.ident` attribute
-   of :attr:`threading.Thread`.  For example,
-   ``threading.current_thread().ident`` gives the identifier of the current
-   thread.
+   Use :func:`threading.get_ident()` or the :attr:`~threading.Thread.ident`
+   attribute of :attr:`threading.Thread` to get a 'thread identifier' for
+   *thread_id*.
 
    If *signum* is 0, then no signal is sent, but error checking is still
    performed; this can be used to check if a thread is still running.

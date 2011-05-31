@@ -376,7 +376,10 @@ def _remove_dist(dist, paths=sys.path):
 
 
 def remove(project_name, paths=sys.path, auto_confirm=True):
-    """Removes a single project from the installation"""
+    """Removes a single project from the installation.
+
+    Returns True on success
+    """
     dist = get_distribution(project_name, use_egg_info=True, paths=paths)
     if dist is None:
         raise PackagingError('Distribution "%s" not found' % project_name)
@@ -384,13 +387,26 @@ def remove(project_name, paths=sys.path, auto_confirm=True):
     rmdirs = []
     rmfiles = []
     tmp = tempfile.mkdtemp(prefix=project_name + '-uninstall')
+
+    def _move_file(source, target):
+        try:
+            os.rename(source, target)
+        except OSError as err:
+            return err
+        return None
+
+    success = True
+    error = None
     try:
         for file_, md5, size in files:
             if os.path.isfile(file_):
                 dirname, filename = os.path.split(file_)
                 tmpfile = os.path.join(tmp, filename)
                 try:
-                    os.rename(file_, tmpfile)
+                    error = _move_file(file_, tmpfile)
+                    if error is not None:
+                        success = False
+                        break
                 finally:
                     if not os.path.isfile(file_):
                         os.rename(tmpfile, file_)
@@ -400,6 +416,11 @@ def remove(project_name, paths=sys.path, auto_confirm=True):
                     rmdirs.append(dirname)
     finally:
         shutil.rmtree(tmp)
+
+    if not success:
+        logger.info('%r cannot be removed.', project_name)
+        logger.info('Error: %s' % str(error))
+        return False
 
     logger.info('Removing %r: ', project_name)
 
@@ -446,6 +467,8 @@ def remove(project_name, paths=sys.path, auto_confirm=True):
 
         logger.info('Success: removed %d files and %d dirs',
                     file_count, dir_count)
+
+    return True
 
 
 def install(project):

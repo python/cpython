@@ -190,18 +190,17 @@ def test_main():
         idents = []
 
         def callback():
-            idents.append(_thread.get_ident())
+            idents.append(threading.get_ident())
 
         _testcapi._test_thread_state(callback)
         a = b = callback
         time.sleep(1)
         # Check our main thread is in the list exactly 3 times.
-        if idents.count(_thread.get_ident()) != 3:
+        if idents.count(threading.get_ident()) != 3:
             raise support.TestFailed(
                         "Couldn't find main thread correctly in the list")
 
     if threading:
-        import _thread
         import time
         TestThreadState()
         t = threading.Thread(target=TestThreadState)
