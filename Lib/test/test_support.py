@@ -833,6 +833,9 @@ def captured_stdout():
     """
     return captured_output("stdout")
 
+def captured_stderr():
+    return captured_output("stderr")
+
 def captured_stdin():
     return captured_output("stdin")
 
