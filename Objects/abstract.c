@@ -237,7 +237,8 @@ PyObject_AsCharBuffer(PyObject *obj,
     pb = obj->ob_type->tp_as_buffer;
     if (pb == NULL || pb->bf_getbuffer == NULL) {
         PyErr_SetString(PyExc_TypeError,
-                        "expected an object with the buffer interface");
+                        "expected bytes, bytearray "
+                        "or buffer compatible object");
         return -1;
     }
     if ((*pb->bf_getbuffer)(obj, &view, PyBUF_SIMPLE)) return -1;

@@ -30,7 +30,7 @@ def task(N, done, done_tasks, errors):
     except Exception as e:
         errors.append(e.with_traceback(None))
     finally:
-        done_tasks.append(thread.get_ident())
+        done_tasks.append(threading.get_ident())
         finished = len(done_tasks) == N
         if finished:
             done.set()
