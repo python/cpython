@@ -1730,26 +1730,6 @@ static struct PyMethodDef pyexpat_methods[] = {
 PyDoc_STRVAR(pyexpat_module_documentation,
 "Python wrapper for Expat parser.");
 
-/* Return a Python string that represents the version number without the
- * extra cruft added by revision control, even if the right options were
- * given to the "cvs export" command to make it not include the extra
- * cruft.
- */
-static PyObject *
-get_version_string(void)
-{
-    static char *rcsid = "$Revision$";
-    char *rev = rcsid;
-    int i = 0;
-
-    while (!isdigit(Py_CHARMASK(*rev)))
-        ++rev;
-    while (rev[i] != ' ' && rev[i] != '\0')
-        ++i;
-
-    return PyUnicode_FromStringAndSize(rev, i);
-}
-
 /* Initialization function for the module */
 
 #ifndef MODULE_NAME
@@ -1790,6 +1770,7 @@ MODULE_INITFUNC(void)
     PyObject *errors_module;
     PyObject *modelmod_name;
     PyObject *model_module;
+    PyObject *version;
     PyObject *sys_modules;
     static struct PyExpat_CAPI capi;
     PyObject* capi_object;
@@ -1822,7 +1803,10 @@ MODULE_INITFUNC(void)
     Py_INCREF(&Xmlparsetype);
     PyModule_AddObject(m, "XMLParserType", (PyObject *) &Xmlparsetype);
 
-    PyModule_AddObject(m, "__version__", get_version_string());
+    version = PyUnicode_FromString(PY_VERSION);
+    if (!version)
+        return;
+    PyModule_AddObject(m, "__version__", version);
     PyModule_AddStringConstant(m, "EXPAT_VERSION",
                                (char *) XML_ExpatVersion());
     {
