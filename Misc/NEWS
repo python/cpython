@@ -184,6 +184,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #12085: Fix an attribute error in subprocess.Popen destructor if the
+  constructor has failed, e.g. because of an undeclared keyword argument. Patch
+  written by Oleg Oshmyan.
+
 - Issue #12028: Make threading._get_ident() public, rename it to
   threading.get_ident() and document it. This function was already used using
   _thread.get_ident().
