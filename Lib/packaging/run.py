@@ -337,13 +337,21 @@ def _run(dispatcher, args, **kw):
 def _list(dispatcher, args, **kw):
     opts = _parse_args(args[1:], '', ['all'])
     dists = get_distributions(use_egg_info=True)
-    if 'all' in opts:
+    if 'all' in opts or opts['args'] == []:
         results = dists
     else:
         results = [d for d in dists if d.name.lower() in opts['args']]
 
+    number = 0
     for dist in results:
         print('%s %s at %s' % (dist.name, dist.metadata['version'], dist.path))
+        number +=1
+
+    print('')
+    if number == 0:
+        print('Nothing seems to be installed.')
+    else:
+        print('Found %d projects installed.' % number)
 
 
 @action_help(search_usage)
