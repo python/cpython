@@ -1,11 +1,10 @@
 """Tests for the packaging.install module."""
-
 import os
 from tempfile import mkstemp
+
 from packaging import install
 from packaging.pypi.xmlrpc import Client
 from packaging.metadata import Metadata
-
 from packaging.tests.support import (LoggingCatcher, TempdirManager, unittest,
                                      fake_dec)
 try:
@@ -340,7 +339,7 @@ class TestInstall(LoggingCatcher, TempdirManager, unittest.TestCase):
                     self.assertTrue(os.path.exists(f))
                 dist._unlink_installed_files()
         finally:
-            install.install_dist = old_install_dist
+            install._install_dist = old_install_dist
             install.uninstall = old_uninstall
 
     def test_install_from_infos_install_succes(self):
@@ -356,6 +355,21 @@ class TestInstall(LoggingCatcher, TempdirManager, unittest.TestCase):
                 install._install_dist.called_with(install_path)
         finally:
             install._install_dist = old_install_dist
+
+    def test_install_permission_denied(self):
+        # if we don't have the access to the installation
+        # path, we should abort immediatly
+        project = os.path.join(os.path.dirname(__file__), 'package.tgz')
+        install_path = self.mkdtemp()
+        old_get_path = install.get_path
+        install.get_path = lambda path: install_path
+        old_mod = os.stat(install_path).st_mode
+        os.chmod(install_path, 0)
+        try:
+            self.assertFalse(install.install(project))
+        finally:
+            os.chmod(install_path, old_mod)
+            install.get_path = old_get_path
 
 
 def test_suite():
