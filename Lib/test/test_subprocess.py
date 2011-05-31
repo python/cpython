@@ -116,7 +116,7 @@ class ProcessTestCase(BaseTestCase):
     def test_invalid_args(self):
         # Popen() called with invalid arguments should raise TypeError
         # but Popen.__del__ should not complain (issue #12085)
-        with support.captured_stderr() as s:
+        with test_support.captured_stderr() as s:
             self.assertRaises(TypeError, subprocess.Popen, invalid_arg_name=1)
             argcount = subprocess.Popen.__init__.__code__.co_argcount
             too_many_args = [0] * (argcount + 1)
