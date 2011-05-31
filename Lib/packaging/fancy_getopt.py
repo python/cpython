@@ -142,20 +142,20 @@ class FancyGetopt:
 
         for option in self.option_table:
             if len(option) == 3:
-                integer, short, help = option
+                longopt, short, help = option
                 repeat = 0
             elif len(option) == 4:
-                integer, short, help, repeat = option
+                longopt, short, help, repeat = option
             else:
                 # the option table is part of the code, so simply
                 # assert that it is correct
                 raise ValueError("invalid option tuple: %r" % option)
 
             # Type- and value-check the option names
-            if not isinstance(integer, str) or len(integer) < 2:
+            if not isinstance(longopt, str) or len(longopt) < 2:
                 raise PackagingGetoptError(
                       ("invalid long option '%s': "
-                       "must be a string of length >= 2") % integer)
+                       "must be a string of length >= 2") % longopt)
 
             if (not ((short is None) or
                      (isinstance(short, str) and len(short) == 1))):
@@ -163,55 +163,55 @@ class FancyGetopt:
                       ("invalid short option '%s': "
                        "must be a single character or None") % short)
 
-            self.repeat[integer] = repeat
-            self.long_opts.append(integer)
+            self.repeat[longopt] = repeat
+            self.long_opts.append(longopt)
 
-            if integer[-1] == '=':             # option takes an argument?
+            if longopt[-1] == '=':             # option takes an argument?
                 if short:
                     short = short + ':'
-                integer = integer[0:-1]
-                self.takes_arg[integer] = 1
+                longopt = longopt[0:-1]
+                self.takes_arg[longopt] = 1
             else:
 
                 # Is option is a "negative alias" for some other option (eg.
                 # "quiet" == "!verbose")?
-                alias_to = self.negative_alias.get(integer)
+                alias_to = self.negative_alias.get(longopt)
                 if alias_to is not None:
                     if self.takes_arg[alias_to]:
                         raise PackagingGetoptError(
                               ("invalid negative alias '%s': "
                                "aliased option '%s' takes a value") % \
-                               (integer, alias_to))
+                               (longopt, alias_to))
 
-                    self.long_opts[-1] = integer   # XXX redundant?!
-                    self.takes_arg[integer] = 0
+                    self.long_opts[-1] = longopt   # XXX redundant?!
+                    self.takes_arg[longopt] = 0
 
                 else:
-                    self.takes_arg[integer] = 0
+                    self.takes_arg[longopt] = 0
 
             # If this is an alias option, make sure its "takes arg" flag is
             # the same as the option it's aliased to.
-            alias_to = self.alias.get(integer)
+            alias_to = self.alias.get(longopt)
             if alias_to is not None:
-                if self.takes_arg[integer] != self.takes_arg[alias_to]:
+                if self.takes_arg[longopt] != self.takes_arg[alias_to]:
                     raise PackagingGetoptError(
                           ("invalid alias '%s': inconsistent with "
                            "aliased option '%s' (one of them takes a value, "
-                           "the other doesn't") % (integer, alias_to))
+                           "the other doesn't") % (longopt, alias_to))
 
             # Now enforce some bondage on the long option name, so we can
             # later translate it to an attribute name on some object.  Have
             # to do this a bit late to make sure we've removed any trailing
             # '='.
-            if not longopt_re.match(integer):
+            if not longopt_re.match(longopt):
                 raise PackagingGetoptError(
                       ("invalid long option name '%s' " +
-                       "(must be letters, numbers, hyphens only") % integer)
+                       "(must be letters, numbers, hyphens only") % longopt)
 
-            self.attr_name[integer] = integer.replace('-', '_')
+            self.attr_name[longopt] = longopt.replace('-', '_')
             if short:
                 self.short_opts.append(short)
-                self.short2long[short[0]] = integer
+                self.short2long[short[0]] = longopt
 
     def getopt(self, args=None, object=None):
         """Parse command-line options in args. Store as attributes on object.
@@ -297,10 +297,10 @@ class FancyGetopt:
         # First pass: determine maximum length of long option names
         max_opt = 0
         for option in self.option_table:
-            integer = option[0]
+            longopt = option[0]
             short = option[1]
-            l = len(integer)
-            if integer[-1] == '=':
+            l = len(longopt)
+            if longopt[-1] == '=':
                 l = l - 1
             if short is not None:
                 l = l + 5                   # " (-x)" where short == 'x'
@@ -340,20 +340,20 @@ class FancyGetopt:
             lines = ['Option summary:']
 
         for option in self.option_table:
-            integer, short, help = option[:3]
+            longopt, short, help = option[:3]
             text = textwrap.wrap(help, text_width)
 
             # Case 1: no short option at all (makes life easy)
             if short is None:
                 if text:
-                    lines.append("  --%-*s  %s" % (max_opt, integer, text[0]))
+                    lines.append("  --%-*s  %s" % (max_opt, longopt, text[0]))
                 else:
-                    lines.append("  --%-*s  " % (max_opt, integer))
+                    lines.append("  --%-*s  " % (max_opt, longopt))
 
             # Case 2: we have a short option, so we have to include it
             # just after the long option
             else:
-                opt_names = "%s (-%s)" % (integer, short)
+                opt_names = "%s (-%s)" % (longopt, short)
                 if text:
                     lines.append("  --%-*s  %s" %
                                  (max_opt, opt_names, text[0]))
