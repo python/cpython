@@ -274,7 +274,7 @@ AST_ASDL=	$(srcdir)/Parser/Python.asdl
 
 ASDLGEN_FILES=	$(srcdir)/Parser/asdl.py $(srcdir)/Parser/asdl_c.py
 # XXX Note that a build now requires Python exist before the build starts
-ASDLGEN=	$(srcdir)/Parser/asdl_c.py
+ASDLGEN=	@DISABLE_ASDLGEN@ $(srcdir)/Parser/asdl_c.py
 
 ##########################################################################
 # Python
