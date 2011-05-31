@@ -10,6 +10,10 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #1195: my_fgets() now always clears errors before calling fgets(). Fix
+  the following case: sys.stdin.read() stopped with CTRL+d (end of file),
+  raw_input() interrupted by CTRL+c.
+
 - Issue #12216: Allow unexpected EOF errors to happen on any line of the file.
 
 - Issue #12199: The TryExcept and TryFinally and AST nodes have been unified
@@ -177,9 +181,16 @@ Core and Builtins
 Library
 -------
 
+- Issue #12028: Make threading._get_ident() public, rename it to
+  threading.get_ident() and document it. This function was already used using
+  _thread.get_ident().
+
+- Issue #12171: IncrementalEncoder.reset() of CJK codecs (multibytecodec) calls
+  encreset() instead of decreset().
+
 - Issue #12218: Removed wsgiref.egg-info.
 
-- Issue #12196: Add pipe2() to the os module. 
+- Issue #12196: Add pipe2() to the os module.
 
 - Issue #985064: Make plistlib more resilient to faulty input plists.
   Patch by Mher Movsisyan.
@@ -773,6 +784,9 @@ Extension Modules
 
 Tests
 -----
+
+- Issue #12057: Add tests for ISO 2022 codecs (iso2022_jp, iso2022_jp_2,
+  iso2022_kr).
 
 - Issue #12180: Fixed a few remaining errors in test_packaging when no
   threading.
