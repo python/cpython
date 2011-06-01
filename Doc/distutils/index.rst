@@ -29,3 +29,16 @@ very little overhead for build/release/install mechanics.
    extending.rst
    commandref.rst
    apiref.rst
+
+Another document describes how to install modules and extensions packaged
+following the above guidelines:
+
+.. toctree::
+
+   install.rst
+
+
+.. seealso::
+
+   :ref:`packaging-index` and :ref:`packaging-install-index`
+      Documentation of Packaging, the new version of Distutils.
