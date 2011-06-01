@@ -9,7 +9,7 @@ installing modules using Distutils.  The main purpose of the setup script is
 to describe your module distribution to Distutils, so that the various
 commands that operate on your modules do the right thing.  As we saw in section
 :ref:`packaging-simple-example`, the setup script consists mainly of a
-call to :func:`setup` where the most information is supplied as 
+call to :func:`setup` where the most information is supplied as
 keyword arguments to :func:`setup`.
 
 Here's a slightly more involved example, which we'll follow for the next couple
