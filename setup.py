@@ -1,8 +1,6 @@
 # Autodetecting setup.py script for building the Python extensions
 #
 
-__version__ = "$Revision$"
-
 import sys, os, imp, re, optparse
 from glob import glob
 import sysconfig

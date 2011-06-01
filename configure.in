@@ -7,8 +7,30 @@ m4_define(PYTHON_VERSION, 3.3)
 
 AC_PREREQ(2.65)
 
-AC_REVISION($Revision$)
 AC_INIT(python, PYTHON_VERSION, http://bugs.python.org/)
+
+AC_SUBST(HGVERSION)
+AC_SUBST(HGTAG)
+AC_SUBST(HGBRANCH)
+
+if test -e $srcdir/.hg/00changelog.i
+then
+AC_CHECK_PROG(HAS_HG, hg, found, not-found)
+else
+HAS_HG=no-repository
+fi
+if test $HAS_HG = found
+then
+    HGVERSION="hg id -i \$(srcdir)"
+    HGTAG="hg id -t \$(srcdir)"
+    HGBRANCH="hg id -b \$(srcdir)"
+else
+    HGVERSION=""
+    HGTAG=""
+    HGBRANCH=""
+fi
+
+AC_REVISION(HGVERSION)
 AC_CONFIG_SRCDIR([Include/object.h])
 AC_CONFIG_HEADER(pyconfig.h)
 
@@ -806,27 +828,6 @@ AC_SUBST(ARFLAGS)
 if test -z "$ARFLAGS"
 then
         ARFLAGS="rc"
-fi
-
-AC_SUBST(HGVERSION)
-AC_SUBST(HGTAG)
-AC_SUBST(HGBRANCH)
-
-if test -e $srcdir/.hg/00changelog.i
-then
-AC_CHECK_PROG(HAS_HG, hg, found, not-found)
-else
-HAS_HG=no-repository
-fi
-if test $HAS_HG = found
-then
-    HGVERSION="hg id -i \$(srcdir)"
-    HGTAG="hg id -t \$(srcdir)"
-    HGBRANCH="hg id -b \$(srcdir)"
-else
-    HGVERSION=""
-    HGTAG=""
-    HGBRANCH=""
 fi
 
 AC_SUBST(DISABLE_ASDLGEN)
