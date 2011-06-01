@@ -55,7 +55,7 @@ as much as it can.
    Return the referenced object from a weak reference, *ref*.  If the referent is
    no longer live, returns :const:`Py_None`.
 
-   .. warning::
+   .. note::
 
       This function returns a **borrowed reference** to the referenced object.
       This means that you should always call :c:func:`Py_INCREF` on the object
