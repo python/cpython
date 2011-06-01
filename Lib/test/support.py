@@ -32,7 +32,8 @@ __all__ = [
     "Error", "TestFailed", "ResourceDenied", "import_module",
     "verbose", "use_resources", "max_memuse", "record_original_stdout",
     "get_original_stdout", "unload", "unlink", "rmtree", "forget",
-    "is_resource_enabled", "requires", "find_unused_port", "bind_port",
+    "is_resource_enabled", "requires", "requires_mac_ver",
+    "find_unused_port", "bind_port",
     "fcmp", "is_jython", "TESTFN", "HOST", "FUZZ", "SAVEDCWD", "temp_cwd",
     "findfile", "sortdict", "check_syntax_error", "open_urlresource",
     "check_warnings", "CleanImport", "EnvironmentVarGuard",
@@ -287,6 +288,33 @@ def requires(resource, msg=None):
         if msg is None:
             msg = "Use of the `%s' resource not enabled" % resource
         raise ResourceDenied(msg)
+
+def requires_mac_ver(*min_version):
+    """Decorator raising SkipTest if the OS is Mac OS X and the OS X
+    version if less than min_version.
+
+    For example, @requires_mac_ver(10, 5) raises SkipTest if the OS X version
+    is lesser than 10.5.
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kw):
+            if sys.platform == 'darwin':
+                version_txt = platform.mac_ver()[0]
+                try:
+                    version = tuple(map(int, version_txt.split('.')))
+                except ValueError:
+                    pass
+                else:
+                    if version < min_version:
+                        min_version_txt = '.'.join(map(str, min_version))
+                        raise unittest.SkipTest(
+                            "Mac OS X %s or higher required, not %s"
+                            % (min_version_txt, version_txt))
+            return func(*args, **kw)
+        wrapper.min_version = min_version
+        return wrapper
+    return decorator
 
 HOST = 'localhost'
 
