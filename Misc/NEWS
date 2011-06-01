@@ -184,6 +184,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #12221: Remove __version__ attributes from pyexpat, pickle, tarfile,
+  pydoc, tkinter, and xml.parsers.expat. This were useless version constants
+  left over from the Mercurial transition
+
 - Issue #12085: Fix an attribute error in subprocess.Popen destructor if the
   constructor has failed, e.g. because of an undeclared keyword argument. Patch
   written by Oleg Oshmyan.
