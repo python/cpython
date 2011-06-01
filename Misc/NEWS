@@ -52,6 +52,11 @@ Library
 - Issue #12065: connect_ex() on an SSL socket now returns the original errno
   when the socket's timeout expires (it used to return None).
 
+Extension Modules
+-----------------
+
+- Issue #12221: Replace pyexpat.__version__ with the Python version.
+
 Build
 -----
 
