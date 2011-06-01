@@ -29,8 +29,6 @@
 """Read from and write to tar format archives.
 """
 
-__version__ = "$Revision$"
-
 version     = "0.9.0"
 __author__  = "Lars Gust\u00e4bel (lars@gustaebel.de)"
 __date__    = "$Date$"
