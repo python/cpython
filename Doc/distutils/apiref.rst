@@ -1814,7 +1814,7 @@ Subclasses of :class:`Command` must define the following methods.
 .. module:: distutils.command.bdist_msi
    :synopsis: Build a binary distribution as a Windows MSI file
 
-.. class:: bdist_msi(Command)
+.. class:: bdist_msi
 
    Builds a `Windows Installer`_ (.msi) binary package.
 
@@ -1893,9 +1893,9 @@ Subclasses of :class:`Command` must define the following methods.
    :synopsis: Build the .py/.pyc files of a package
 
 
-.. class:: build_py(Command)
+.. class:: build_py
 
-.. class:: build_py_2to3(build_py)
+.. class:: build_py_2to3
 
    Alternative implementation of build_py which also runs the
    2to3 conversion library on each .py file that is going to be
