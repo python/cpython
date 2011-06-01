@@ -31,11 +31,11 @@ class Client(BaseClient):
     If no server_url is specified, use the default PyPI XML-RPC URL,
     defined in the DEFAULT_XMLRPC_INDEX_URL constant::
 
-        >>> client = XMLRPCClient()
+        >>> client = Client()
         >>> client.server_url == DEFAULT_XMLRPC_INDEX_URL
         True
 
-        >>> client = XMLRPCClient("http://someurl/")
+        >>> client = Client("http://someurl/")
         >>> client.server_url
         'http://someurl/'
     """
@@ -69,7 +69,7 @@ class Client(BaseClient):
         informations (eg. make a new XML-RPC call).
         ::
 
-            >>> client = XMLRPCClient()
+            >>> client = Client()
             >>> client.get_releases('Foo')
             ['1.1', '1.2', '1.3']
 
@@ -189,7 +189,7 @@ class Client(BaseClient):
 
         If no server proxy is defined yet, creates a new one::
 
-            >>> client = XmlRpcClient()
+            >>> client = Client()
             >>> client.proxy()
             <ServerProxy for python.org/pypi>
 

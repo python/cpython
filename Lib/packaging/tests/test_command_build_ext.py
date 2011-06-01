@@ -370,8 +370,8 @@ def test_suite():
     src = _get_source_filename()
     if not os.path.exists(src):
         if verbose:
-            print ('test_build_ext: Cannot find source code (test'
-                   ' must run in python build dir)')
+            print('test_command_build_ext: Cannot find source code (test'
+                  ' must run in python build dir)')
         return unittest.TestSuite()
     else:
         return unittest.makeSuite(BuildExtTestCase)
