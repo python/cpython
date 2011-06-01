@@ -83,19 +83,16 @@ def customize_compiler(compiler):
 # patterns. Order is important; platform mappings are preferred over
 # OS names.
 _default_compilers = (
-
     # Platform string mappings
 
     # on a cygwin built python we can use gcc like an ordinary UNIXish
     # compiler
     ('cygwin.*', 'unix'),
-    ('os2emx', 'emx'),
 
     # OS name mappings
     ('posix', 'unix'),
     ('nt', 'msvc'),
-
-    )
+)
 
 def get_default_compiler(osname=None, platform=None):
     """ Determine the default compiler to use for the given platform.
