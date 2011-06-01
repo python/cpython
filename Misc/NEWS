@@ -780,6 +780,8 @@ Tools/Demos
 Extension Modules
 -----------------
 
+- Issue #12221: Replace pyexpat.__version__ with the Python version.
+
 - Issue #12051: Fix segfault in json.dumps() while encoding highly-nested
   objects using the C accelerations.
 
