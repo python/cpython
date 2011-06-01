@@ -30,6 +30,17 @@ Tests
 What's New in Python 2.7.2?
 ===========================
 
+*Release date: 2011-06-XX*
+
+Extension Modules
+-----------------
+
+- Issue #1221: Make pyexpat.__version__ equal to the Python version.
+
+
+What's New in Python 2.7.2 release candidate 1?
+===============================================
+
 *Release date: 2011-05-29*
 
 Core and Builtins
