@@ -27,3 +27,8 @@ This package is discussed in two separate chapters:
       modules into an existing Python installation.  You do not need to be a
       Python programmer to read this manual.
 
+
+.. toctree::
+   :hidden:
+
+   ../distutils/index
