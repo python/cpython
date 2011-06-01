@@ -33,13 +33,13 @@ code, of course!) are:
 
 All of these tasks are covered in this document.
 
-Not all module developers have access to multiple platforms, so one cannot 
+Not all module developers have access to multiple platforms, so one cannot
 expect them to create buildt distributions for every platform.  To remedy
 this, it is hoped that intermediaries called *packagers* will arise to address
 this need.  Packagers take source distributions released by module developers,
-build them on one or more platforms and release the resulting built 
-distributions.  Thus, users on a greater range of platforms will be able to 
-install the most popular Python modules in the most natural way for their 
+build them on one or more platforms and release the resulting built
+distributions.  Thus, users on a greater range of platforms will be able to
+install the most popular Python modules in the most natural way for their
 platform without having to run a setup script or compile a single line of code.
 
 
@@ -69,14 +69,14 @@ Some observations:
   arguments to the :func:`setup` function
 
 * those keyword arguments fall into two categories: package metadata (name,
-  version number, etc.) and information about what's in the package (a list 
+  version number, etc.) and information about what's in the package (a list
   of pure Python modules in this case)
 
 * modules are specified by module name, not filename (the same will hold true
   for packages and extensions)
 
-* it's recommended that you supply a little more metadata than we have in the 
-  example.  In particular your name, email address and a URL for the 
+* it's recommended that you supply a little more metadata than we have in the
+  example.  In particular your name, email address and a URL for the
   project if appropriate (see section :ref:`packaging-setup-script` for an example)
 
 To create a source distribution for this module you would create a setup
@@ -102,10 +102,10 @@ This simple example demonstrates some fundamental concepts of Distutils.
 First, both developers and installers have the same basic user interface, i.e.
 the setup script.  The difference is which Distutils *commands* they use: the
 :command:`sdist` command is almost exclusively for module developers, while
-:command:`install` is more often used by installers (although some developers 
+:command:`install` is more often used by installers (although some developers
 will want to install their own code occasionally).
 
-If you want to make things really easy for your users, you can create more 
+If you want to make things really easy for your users, you can create more
 than one built distributions for them.  For instance, if you are running on a
 Windows machine and want to make things easy for other Windows users, you can
 create an executable installer (the most appropriate type of built distribution
@@ -125,18 +125,18 @@ by running ::
 General Python terminology
 ==========================
 
-If you're reading this document, you probably have a good idea of what Python 
-modules, extensions and so forth are.  Nevertheless, just to be sure that 
+If you're reading this document, you probably have a good idea of what Python
+modules, extensions and so forth are.  Nevertheless, just to be sure that
 everyone is on the same page, here's a quick overview of Python terms:
 
 module
-   The basic unit of code reusability in Python: a block of code imported by 
-   some other code.  Three types of modules are important to us here: pure 
+   The basic unit of code reusability in Python: a block of code imported by
+   some other code.  Three types of modules are important to us here: pure
    Python modules, extension modules and packages.
 
 pure Python module
    A module written in Python and contained in a single :file:`.py` file (and
-   possibly associated :file:`.pyc` and/or :file:`.pyo` files).  Sometimes 
+   possibly associated :file:`.pyc` and/or :file:`.pyo` files).  Sometimes
    referred to as a "pure module."
 
 extension module
@@ -148,18 +148,18 @@ extension module
    currently Distutils only handles C/C++ extensions for Python.
 
 package
-   A module that contains other modules, typically contained in a directory of 
-   the filesystem and distinguished from other directories by the presence of a 
+   A module that contains other modules, typically contained in a directory of
+   the filesystem and distinguished from other directories by the presence of a
    file :file:`__init__.py`.
 
 root package
-   The root of the hierarchy of packages.  (This isn't really a package, 
-   since it doesn't have an :file:`__init__.py` file.  But... we have to 
-   call it something, right?)  The vast majority of the standard library is 
-   in the root package, as are many small standalone third-party modules that 
-   don't belong to a larger module collection.  Unlike regular packages, 
-   modules in the root package can be found in many directories: in fact, 
-   every directory listed in ``sys.path`` contributes modules to the root 
+   The root of the hierarchy of packages.  (This isn't really a package,
+   since it doesn't have an :file:`__init__.py` file.  But... we have to
+   call it something, right?)  The vast majority of the standard library is
+   in the root package, as are many small standalone third-party modules that
+   don't belong to a larger module collection.  Unlike regular packages,
+   modules in the root package can be found in many directories: in fact,
+   every directory listed in ``sys.path`` contributes modules to the root
    package.
 
 
@@ -175,8 +175,8 @@ module distribution
    A collection of Python modules distributed together as a single downloadable
    resource and meant to be installed all as one.  Examples of some well-known
    module distributions are NumPy, SciPy, PIL (the Python Imaging
-   Library) or mxBase.  (Module distributions would be called a *package*, 
-   except that term is already taken in the Python context: a single module 
+   Library) or mxBase.  (Module distributions would be called a *package*,
+   except that term is already taken in the Python context: a single module
    distribution may contain zero, one, or many Python packages.)
 
 pure module distribution
@@ -189,5 +189,5 @@ non-pure module distribution
 
 distribution root
    The top-level directory of your source tree (or  source distribution).  The
-   directory where :file:`setup.py` exists.  Generally  :file:`setup.py` will 
+   directory where :file:`setup.py` exists.  Generally  :file:`setup.py` will
    be run from this directory.

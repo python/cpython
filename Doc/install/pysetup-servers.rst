@@ -8,7 +8,7 @@ Pysetup supports installing Python packages from *Package Servers* in addition
 to PyPI indexes and mirrors.
 
 Package Servers are simple directory listings of Python distributions. Directories
-can be served via HTTP or a local file system. This is useful when you want to 
+can be served via HTTP or a local file system. This is useful when you want to
 dump source distributions in a directory and not worry about the full index structure.
 
 Serving distributions from Apache
