@@ -306,11 +306,10 @@ available.  They are listed here in alphabetical order.
        'unpack', 'unpack_from']
       >>> class Shape(object):
               def __dir__(self):
-                  return ['area', 'perimter', 'location']
-
-      >>> f = Shape()
-      >>> dir(f)
-      ['area', 'perimter', 'location']
+                  return ['area', 'perimeter', 'location']
+      >>> s = Shape()
+      >>> dir(s)
+      ['area', 'perimeter', 'location']
 
    .. note::
 
