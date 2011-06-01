@@ -1091,7 +1091,7 @@ thread_PyThread_exit_thread(PyObject *self)
 
 PyDoc_STRVAR(exit_doc,
 "exit()\n\
-(PyThread_exit_thread() is an obsolete synonym)\n\
+(exit_thread() is an obsolete synonym)\n\
 \n\
 This is synonymous to ``raise SystemExit''.  It will cause the current\n\
 thread to exit silently unless the exception is caught.");
