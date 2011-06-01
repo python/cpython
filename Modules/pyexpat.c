@@ -1700,7 +1700,7 @@ MODULE_INITFUNC(void)
 
     version = PyUnicode_FromString(PY_VERSION);
     if (!version)
-        return;
+        return NULL;
     PyModule_AddObject(m, "__version__", version);
     PyModule_AddStringConstant(m, "EXPAT_VERSION",
                                (char *) XML_ExpatVersion());
