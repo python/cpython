@@ -352,7 +352,7 @@ class CCompiler:
         return macros, objects, extra, pp_opts, build
 
     def _get_cc_args(self, pp_opts, debug, before):
-        # works for unixccompiler, emxccompiler, cygwinccompiler
+        # works for unixccompiler and cygwinccompiler
         cc_args = pp_opts + ['-c']
         if debug:
             cc_args[:0] = ['-g']
