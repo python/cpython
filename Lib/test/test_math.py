@@ -2,6 +2,7 @@
 # XXXX Should not do tests around zero only
 
 from test.support import run_unittest, verbose, requires_IEEE_754
+from test import support
 import unittest
 import math
 import os
@@ -669,10 +670,10 @@ class MathTests(unittest.TestCase):
         self.assertTrue(math.isnan(math.log2(NAN)))
 
     @requires_IEEE_754
-    @unittest.skipIf(sys.platform == 'darwin'
-                     and platform.mac_ver()[0].startswith('10.4.'),
-                     'Mac OS X Tiger log2() is not accurate enough')
     def testLog2Exact(self):
+        # log2() is not accurate enough on Mac OS X Tiger (10.4)
+        support.requires_mac_ver(10, 5)
+
         # Check that we get exact equality for log2 of powers of 2.
         actual = [math.log2(math.ldexp(1.0, n)) for n in range(-1074, 1024)]
         expected = [float(n) for n in range(-1074, 1024)]
