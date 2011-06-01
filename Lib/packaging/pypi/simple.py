@@ -1,6 +1,6 @@
 """Spider using the screen-scraping "simple" PyPI API.
 
-This module contains the class SimpleIndexCrawler, a simple spider that
+This module contains the class Crawler, a simple spider that
 can be used to find and retrieve distributions from a project index
 (like the Python Package Index), using its so-called simple API (see
 reference implementation available at http://pypi.python.org/simple/).
@@ -178,7 +178,7 @@ class Crawler(BaseClient):
 
     def get_releases(self, requirements, prefer_final=None,
                      force_update=False):
-        """Search for releases and return a ReleaseList object containing
+        """Search for releases and return a ReleasesList object containing
         the results.
         """
         predicate = get_version_predicate(requirements)
