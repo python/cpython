@@ -1185,6 +1185,11 @@ class POSIXProcessTestCase(BaseTestCase):
                          "Some fds were left open")
         self.assertIn(1, remaining_fds, "Subprocess failed")
 
+    # Mac OS X Tiger (10.4) has a kernel bug: sometimes, the file
+    # descriptor of a pipe closed in the parent process is valid in the
+    # child process according to fstat(), but the mode of the file
+    # descriptor is invalid, and read or write raise an error.
+    @support.requires_mac_ver(10, 5)
     def test_pass_fds(self):
         fd_status = support.findfile("fd_status.py", subdir="subprocessdata")
 
