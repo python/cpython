@@ -466,6 +466,7 @@ sys_setcheckinterval(PyObject *self, PyObject *args)
 {
     if (!PyArg_ParseTuple(args, "i:setcheckinterval", &_Py_CheckInterval))
         return NULL;
+    _Py_Ticker = _Py_CheckInterval;
     Py_INCREF(Py_None);
     return Py_None;
 }
