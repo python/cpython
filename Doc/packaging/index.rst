@@ -4,7 +4,7 @@
  Distributing Python Projects
 ##############################
 
-:Authors: Greg Ward, Anthony Baxter and Packaging contributors
+:Authors: The Fellowship of The Packaging
 :Email: distutils-sig@python.org
 :Release: |version|
 :Date: |today|
