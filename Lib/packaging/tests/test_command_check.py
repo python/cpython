@@ -124,6 +124,17 @@ class CheckTestCase(support.LoggingCatcher,
         cmd.check_hooks_resolvable()
         self.assertEqual(len(self.get_logs(logging.WARNING)), 1)
 
+    def test_warn(self):
+        _, dist = self.create_dist()
+        cmd = check(dist)
+        self.assertEqual([], self.get_logs())
+        cmd.warn('hello')
+        self.assertEqual(['check: hello'], self.get_logs())
+        cmd.warn('hello %s', 'world')
+        self.assertEqual(['check: hello world'], self.get_logs())
+        cmd.warn('hello %s %s', 'beautiful', 'world')
+        self.assertEqual(['check: hello beautiful world'], self.get_logs())
+
 
 def test_suite():
     return unittest.makeSuite(CheckTestCase)
