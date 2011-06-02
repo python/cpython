@@ -36,7 +36,6 @@ class CheckTestCase(support.LoggingCatcher,
         # now let's add the required fields
         # and run it again, to make sure we don't get
         # any warning anymore
-        self.loghandler.flush()
         metadata = {'home_page': 'xxx', 'author': 'xxx',
                     'author_email': 'xxx',
                     'name': 'xxx', 'version': '4.2',
@@ -50,8 +49,10 @@ class CheckTestCase(support.LoggingCatcher,
         self.assertRaises(PackagingSetupError, self._run,
             {'name': 'xxx', 'version': 'xxx'}, **{'strict': 1})
 
-        # and of course, no error when all metadata fields are present
+        # clear warnings from the previous calls
         self.loghandler.flush()
+
+        # and of course, no error when all metadata fields are present
         cmd = self._run(metadata, strict=True)
         self.assertEqual([], self.get_logs(logging.WARNING))
 
@@ -70,7 +71,6 @@ class CheckTestCase(support.LoggingCatcher,
                     'name': 'xxx', 'version': '4.2',
                     'requires_python': '2.4',
                     }
-        self.loghandler.flush()
         cmd = self._run(metadata)
         self.assertEqual([], self.get_logs(logging.WARNING))
 
@@ -85,9 +85,11 @@ class CheckTestCase(support.LoggingCatcher,
         self.assertRaises(PackagingSetupError, self._run, metadata,
             **{'strict': 1})
 
+        # clear warnings from the previous calls
+        self.loghandler.flush()
+
         # now with correct version format again
         metadata['version'] = '4.2'
-        self.loghandler.flush()
         cmd = self._run(metadata, strict=True)
         self.assertEqual([], self.get_logs(logging.WARNING))
 
@@ -100,7 +102,6 @@ class CheckTestCase(support.LoggingCatcher,
         cmd.check_restructuredtext()
         self.assertEqual(len(self.get_logs(logging.WARNING)), 1)
 
-        self.loghandler.flush()
         pkg_info, dist = self.create_dist(description='title\n=====\n\ntest')
         cmd = check(dist)
         cmd.check_restructuredtext()
