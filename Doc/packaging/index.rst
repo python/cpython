@@ -4,7 +4,7 @@
  Distributing Python Projects
 ##############################
 
-:Authors: The Fellowship of The Packaging
+:Authors: The Fellowship of the Packaging
 :Email: distutils-sig@python.org
 :Release: |version|
 :Date: |today|

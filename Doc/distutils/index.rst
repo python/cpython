@@ -14,6 +14,10 @@ the module developer's point of view, describing how to use the Distutils to
 make Python modules and extensions easily available to a wider audience with
 very little overhead for build/release/install mechanics.
 
+.. deprecated:: 3.3
+   :mod:`packaging` replaces Distutils.  See :ref:`packaging-index` and
+   :ref:`packaging-install-index`.
+
 .. toctree::
    :maxdepth: 2
    :numbered:
@@ -36,9 +40,3 @@ following the above guidelines:
 .. toctree::
 
    install.rst
-
-
-.. seealso::
-
-   :ref:`packaging-index` and :ref:`packaging-install-index`
-      Documentation of Packaging, the new version of Distutils.
