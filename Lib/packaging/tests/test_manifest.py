@@ -50,9 +50,6 @@ class ManifestTestCase(support.TempdirManager,
         for warning in warnings:
             self.assertIn('no files found matching', warning)
 
-        # reset logs for the next assert
-        self.loghandler.flush()
-
         # manifest also accepts file-like objects
         with open(MANIFEST) as f:
             manifest.read_template(f)
