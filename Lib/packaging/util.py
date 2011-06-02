@@ -1087,7 +1087,7 @@ def generate_setup_py():
     Raises a PackagingFileError when a setup.py already exists.
     """
     if os.path.exists("setup.py"):
-        raise PackagingFileError("a setup.py file alreadyexists")
+        raise PackagingFileError("a setup.py file already exists")
 
     with open("setup.py", "w", encoding='utf-8') as fp:
         fp.write(_SETUP_TMPL % {'func': getsource(cfg_to_args)})
