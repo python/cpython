@@ -90,17 +90,23 @@ class LoggingCatcher:
     def get_logs(self, *levels):
         """Return all log messages with level in *levels*.
 
-        Without explicit levels given, returns all messages.
-        *levels* defaults to all levels.  For log calls with arguments (i.e.
-        logger.info('bla bla %s', arg)), the messages
-        Returns a list.
+        Without explicit levels given, returns all messages.  *levels* defaults
+        to all levels.  For log calls with arguments (i.e.
+        logger.info('bla bla %r', arg)), the messages will be formatted before
+        being returned (e.g. "bla bla 'thing'").
+
+        Returns a list.  Automatically flushes the loghandler after being
+        called.
 
         Example: self.get_logs(logging.WARN, logging.DEBUG).
         """
         if not levels:
-            return [log.getMessage() for log in self.loghandler.buffer]
-        return [log.getMessage() for log in self.loghandler.buffer
-                if log.levelno in levels]
+            messages = [log.getMessage() for log in self.loghandler.buffer]
+        else:
+            messages = [log.getMessage() for log in self.loghandler.buffer
+                        if log.levelno in levels]
+        self.loghandler.flush()
+        return messages
 
 
 class TempdirManager:
