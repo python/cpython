@@ -9,7 +9,7 @@ from copy import copy
 
 from packaging import logger
 from packaging.dist import Distribution
-from packaging.util import _is_archive_file
+from packaging.util import _is_archive_file, generate_setup_py
 from packaging.command import get_command_class, STANDARD_COMMANDS
 from packaging.install import install, install_local_project, remove
 from packaging.database import get_distribution, get_distributions
@@ -37,6 +37,14 @@ Usage: pysetup create
 
 Create a new Python package.
 """
+
+generate_usage = """\
+Usage: pysetup generate-setup
+   or: pysetup generate-setup --help
+
+Generates a setup.py script for backward-compatibility purposes.
+"""
+
 
 graph_usage = """\
 Usage: pysetup graph dist
@@ -202,6 +210,13 @@ class action_help:
 def _create(distpatcher, args, **kw):
     from packaging.create import main
     return main()
+
+
+@action_help(generate_usage)
+def _generate(distpatcher, args, **kw):
+    generate_setup_py()
+    print('The setup.py was generated')
+
 
 
 @action_help(graph_usage)
@@ -381,6 +396,7 @@ actions = [
     ('list', 'Search for local projects', _list),
     ('graph', 'Display a graph', _graph),
     ('create', 'Create a Project', _create),
+    ('generate-setup', 'Generates a backward-comptatible setup.py', _generate)
 ]
 
 
