@@ -16,6 +16,13 @@ Core and Builtins
 Library
 -------
 
+- sys.setcheckinterval() now updates the current ticker count as well as updating
+  the check interval, so if the user decreases the check interval, the ticker
+  doesn't have to wind down to zero from the old starting point before the new
+  interval takes effect.  And if the user increases the interval, it makes sure
+  the new limit takes effect right away rather have an early task switch before
+  recognizing the new interval.
+
 - Issue #12085: Fix an attribute error in subprocess.Popen destructor if the
   constructor has failed, e.g. because of an undeclared keyword argument. Patch
   written by Oleg Oshmyan.
