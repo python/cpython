@@ -119,7 +119,7 @@ Core and Builtins
 - Issue #11320: fix bogus memory management in Modules/getpath.c, leading to
   a possible crash when calling Py_SetPath().
 
-- _ast.__version__ is now a Mercurial integer and hex revision.
+- _ast.__version__ is now a Mercurial hex revision.
 
 - Issue #11432: A bug was introduced in subprocess.Popen on posix systems with
   3.2.0 where the stdout or stderr file descriptor being the same as the stdin
@@ -259,6 +259,9 @@ Library
 
 - Issue #12124: zipimport doesn't keep a reference to zlib.decompress() anymore
   to be able to unload the module.
+
+- Add the packaging module, an improved fork of distutils (also known as
+  distutils2).
 
 - Issue #12065: connect_ex() on an SSL socket now returns the original errno
   when the socket's timeout expires (it used to return None).
