@@ -371,11 +371,11 @@ DECODER(euc_jp)
 
         REQUIRE_OUTBUF(1)
 
-            if (c < 0x80) {
-                OUT1(c)
-                NEXT(1, 1)
-                continue;
-            }
+        if (c < 0x80) {
+            OUT1(c)
+            NEXT(1, 1)
+            continue;
+        }
 
         if (c == 0x8e) {
             /* JIS X 0201 half-width katakana */
