@@ -309,11 +309,8 @@ class PosixTester(unittest.TestCase):
                 fp2.close()
 
     @unittest.skipUnless(hasattr(os, 'O_CLOEXEC'), "needs os.O_CLOEXEC")
+    @support.requires_linux_version(2, 6, 23)
     def test_oscloexec(self):
-        version = support.linux_version()
-        if sys.platform == 'linux2' and version < (2, 6, 23):
-            self.skipTest("Linux kernel 2.6.23 or higher required, "
-                          "not %s.%s.%s" % version)
         fd = os.open(support.TESTFN, os.O_RDONLY|os.O_CLOEXEC)
         self.addCleanup(os.close, fd)
         self.assertTrue(fcntl.fcntl(fd, fcntl.F_GETFD) & fcntl.FD_CLOEXEC)
@@ -479,11 +476,8 @@ class PosixTester(unittest.TestCase):
             os.close(writer)
 
     @unittest.skipUnless(hasattr(os, 'pipe2'), "test needs os.pipe2()")
+    @support.requires_linux_version(2, 6, 27)
     def test_pipe2(self):
-        version = support.linux_version()
-        if sys.platform == 'linux2' and version < (2, 6, 27):
-            self.skipTest("Linux kernel 2.6.27 or higher required, "
-                          "not %s.%s.%s" % version)
         self.assertRaises(TypeError, os.pipe2, 'DEADBEEF')
         self.assertRaises(TypeError, os.pipe2, 0, 0)
 
