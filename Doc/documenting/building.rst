@@ -14,6 +14,7 @@ Using make
 Luckily, a Makefile has been prepared so that on Unix, provided you have
 installed Python and Subversion, you can just run ::
 
+   cd Doc
    make html
 
 to check out the necessary toolset in the `tools/` subdirectory and build the
