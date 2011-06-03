@@ -58,11 +58,16 @@ class TestBase:
                 result = func(source, scheme)[0]
                 if func is self.decode:
                     self.assertTrue(type(result) is str, type(result))
+                    self.assertEqual(result, expected,
+                                     '%a.decode(%r, %r)=%a != %a'
+                                     % (source, self.encoding, scheme, result,
+                                        expected))
                 else:
                     self.assertTrue(type(result) is bytes, type(result))
-                self.assertEqual(result, expected,
-                                 '%a.decode(%r)=%a != %a'
-                                 % (source, self.encoding, result, expected))
+                    self.assertEqual(result, expected,
+                                     '%a.encode(%r, %r)=%a != %a'
+                                     % (source, self.encoding, scheme, result,
+                                        expected))
             else:
                 self.assertRaises(UnicodeError, func, source, scheme)
 
@@ -279,6 +284,7 @@ class TestBase_Mapping(unittest.TestCase):
     pass_enctest = []
     pass_dectest = []
     supmaps = []
+    codectests = []
 
     def __init__(self, *args, **kw):
         unittest.TestCase.__init__(self, *args, **kw)
@@ -347,6 +353,30 @@ class TestBase_Mapping(unittest.TestCase):
             self.assertEqual(unich.encode(self.encoding), csetch)
         if (csetch, unich) not in self.pass_dectest:
             self.assertEqual(str(csetch, self.encoding), unich)
+
+    def test_errorhandle(self):
+        for source, scheme, expected in self.codectests:
+            if isinstance(source, bytes):
+                func = source.decode
+            else:
+                func = source.encode
+            if expected:
+                if isinstance(source, bytes):
+                    result = func(self.encoding, scheme)
+                    self.assertTrue(type(result) is str, type(result))
+                    self.assertEqual(result, expected,
+                                     '%a.decode(%r, %r)=%a != %a'
+                                     % (source, self.encoding, scheme, result,
+                                        expected))
+                else:
+                    result = func(self.encoding, scheme)
+                    self.assertTrue(type(result) is bytes, type(result))
+                    self.assertEqual(result, expected,
+                                     '%a.encode(%r, %r)=%a != %a'
+                                     % (source, self.encoding, scheme, result,
+                                        expected))
+            else:
+                self.assertRaises(UnicodeError, func, self.encoding, scheme)
 
 def load_teststring(name):
     dir = os.path.join(os.path.dirname(__file__), 'cjkencodings')
