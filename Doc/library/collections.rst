@@ -623,6 +623,8 @@ they add the ability to access fields by name instead of position index.
                'Return a new OrderedDict which maps field names to their values'
                return OrderedDict(zip(self._fields, self))
    <BLANKLINE>
+           __dict__ = property(_asdict)
+   <BLANKLINE>
            def _replace(_self, **kwds):
                'Return a new Point object replacing specified fields with new values'
                result = _self._make(map(kwds.pop, ('x', 'y'), _self))
