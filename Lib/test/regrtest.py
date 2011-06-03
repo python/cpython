@@ -22,8 +22,7 @@ Options:
 -h/--help       -- print this text and exit
 --timeout TIMEOUT
                 -- dump the traceback and exit if a test takes more
-                   than TIMEOUT seconds (default: 30 minutes); disable
-                   the timeout if TIMEOUT is zero
+                   than TIMEOUT seconds
 --wait          -- wait for user input, e.g., allow a debugger to be attached
 
 Verbosity
@@ -269,11 +268,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     # Display the Python traceback fatal errors (e.g. segfault)
     faulthandler.enable(all_threads=True)
 
-    if hasattr(faulthandler, 'dump_tracebacks_later'):
-        timeout = 60*60
-    else:
-        timeout = None
-
     replace_stdout()
 
     support.record_original_stdout(sys.stdout)
@@ -295,6 +289,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         use_resources = []
     debug = False
     start = None
+    timeout = None
     for o, a in opts:
         if o in ('-h', '--help'):
             print(__doc__)
@@ -420,10 +415,13 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             testdir = os.path.join(support.SAVEDCWD, a)
         elif o == '--timeout':
             if not hasattr(faulthandler, 'dump_tracebacks_later'):
-                print("--timeout option requires "
+                print("The timeout option requires "
                       "faulthandler.dump_tracebacks_later", file=sys.stderr)
                 sys.exit(1)
             timeout = float(a)
+            if timeout <= 0:
+                print("The timeout must be greater than 0", file=sys.stderr)
+                sys.exit(1)
         elif o == '--wait':
             input("Press any key to continue...")
         else:
@@ -835,7 +833,7 @@ def runtest(test, verbose, quiet,
     support.verbose = verbose  # Tell tests to be moderately quiet
     if use_resources is not None:
         support.use_resources = use_resources
-    use_timeout = (timeout is not None and timeout > 0)
+    use_timeout = (timeout is not None)
     if use_timeout:
         faulthandler.dump_tracebacks_later(timeout, exit=True)
     try:
