@@ -65,7 +65,10 @@ class LoggingCatcher:
     configured to record all messages logged to the 'packaging' logger.
 
     Use get_logs to retrieve messages and self.loghandler.flush to discard
-    them.
+    them.  get_logs automatically flushes the logs; if you test code that
+    generates logging messages but don't use get_logs, you have to flush
+    manually before doing other checks on logging message, otherwise you
+    will get irrelevant results.  See example in test_command_check.
     """
 
     def setUp(self):
