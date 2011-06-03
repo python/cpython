@@ -34,7 +34,7 @@ Python's general purpose built-in containers, :class:`dict`, :class:`list`,
 =====================   ====================================================================
 
 .. versionchanged:: 3.3
-   Moved :ref:`abstract-base-classes` to the :mod:`collections.abc` module.
+   Moved :ref:`collections-abstract-base-classes` to the :mod:`collections.abc` module.
    For backwards compatibility, they continue to be visible in this module
    as well.
 
