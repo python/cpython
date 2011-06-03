@@ -188,6 +188,8 @@ Library
   pydoc, tkinter, and xml.parsers.expat. This were useless version constants
   left over from the Mercurial transition
 
+- Named tuples now work correctly with vars().
+
 - Issue #12085: Fix an attribute error in subprocess.Popen destructor if the
   constructor has failed, e.g. because of an undeclared keyword argument. Patch
   written by Oleg Oshmyan.
