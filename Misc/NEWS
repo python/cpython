@@ -26,8 +26,9 @@ Core and Builtins
   "maximum recursion depth" RuntimeError exception.
   (patch by Ronald Oussoren)
 
-- Correct lookup of __dir__ on objects. Among other things, this causes errors
-  besides AttributeError found on lookup to be propagated.
+- Correct lookup of __dir__ on objects. This allows old-style classes to have
+  __dir__. It also causes errors besides AttributeError found on lookup to be
+  propagated.
 
 - Issue #1195: Fix input() if it is interrupted by CTRL+d and then CTRL+c,
   clear the end-of-file indicator after CTRL+d.
