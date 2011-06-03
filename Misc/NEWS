@@ -16,6 +16,8 @@ Core and Builtins
 Library
 -------
 
+- Named tuples now work correctly with vars().
+
 - sys.setcheckinterval() now updates the current ticker count as well as updating
   the check interval, so if the user decreases the check interval, the ticker
   doesn't have to wind down to zero from the old starting point before the new

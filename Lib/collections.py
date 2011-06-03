@@ -312,6 +312,7 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
         def _asdict(self):
             'Return a new OrderedDict which maps field names to their values'
             return OrderedDict(zip(self._fields, self)) \n
+        __dict__ = property(_asdict) \n
         def _replace(_self, **kwds):
             'Return a new %(typename)s object replacing specified fields with new values'
             result = _self._make(map(kwds.pop, %(field_names)r, _self))
