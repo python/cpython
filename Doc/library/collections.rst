@@ -1136,9 +1136,6 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
 
 .. seealso::
 
-   * Latest version of the :source:`Python source code for the collections
-     abstract base classes <Lib/_abcoll.py>`
-
    * `OrderedSet recipe <http://code.activestate.com/recipes/576694/>`_ for an
      example built on :class:`MutableSet`.
 
