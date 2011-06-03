@@ -110,8 +110,12 @@ typedef unsigned short mode_t;
    TAG and PYC_TAG_UNICODE must change for each major Python release. The magic
    number will take care of any bytecode changes that occur during development.
 */
+#define QUOTE(arg) #arg
+#define STRIFY(name) QUOTE(name)
+#define MAJOR STRIFY(PY_MAJOR_VERSION)
+#define MINOR STRIFY(PY_MINOR_VERSION)
 #define MAGIC (3180 | ((long)'\r'<<16) | ((long)'\n'<<24))
-#define TAG "cpython-32"
+#define TAG "cpython-" MAJOR MINOR;
 #define CACHEDIR "__pycache__"
 static const Py_UNICODE CACHEDIR_UNICODE[] = {
     '_', '_', 'p', 'y', 'c', 'a', 'c', 'h', 'e', '_', '_', '\0'};
@@ -119,7 +123,11 @@ static const Py_UNICODE CACHEDIR_UNICODE[] = {
 static long pyc_magic = MAGIC;
 static const char *pyc_tag = TAG;
 static const Py_UNICODE PYC_TAG_UNICODE[] = {
-    'c', 'p', 'y', 't', 'h', 'o', 'n', '-', '3', '2', '\0'};
+    'c', 'p', 'y', 't', 'h', 'o', 'n', '-', PY_MAJOR_VERSION + 48, PY_MINOR_VERSION + 48, '\0'};
+#undef QUOTE
+#undef STRIFY
+#undef MAJOR
+#undef MINOR
 
 /* See _PyImport_FixupExtensionObject() below */
 static PyObject *extensions = NULL;
