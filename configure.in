@@ -30,7 +30,6 @@ else
     HGBRANCH=""
 fi
 
-AC_REVISION(HGVERSION)
 AC_CONFIG_SRCDIR([Include/object.h])
 AC_CONFIG_HEADER(pyconfig.h)
 
