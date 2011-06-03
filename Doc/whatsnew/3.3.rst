@@ -129,6 +129,19 @@ os
   (Patch submitted by Giampaolo Rodolà in :issue:`10784`.)
 
 
+packaging
+---------
+
+:mod:`distutils` has undergone additions and refactoring under a new name,
+:mod:`packaging`, to allow developers to break backward compatibility.
+:mod:`distutils` is still provided in the standard library, but users are
+encouraged to transition to :mod:`packaging`.  For older versions of Python, a
+backport compatible with 2.4+ and 3.1+ will be made available on PyPI under the
+name :mod:`distutils2`.
+
+.. TODO add examples and howto to the packaging docs and link to them
+
+
 pydoc
 -----
 
