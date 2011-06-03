@@ -37,8 +37,8 @@ __all__ = [
     "Error", "TestFailed", "ResourceDenied", "import_module",
     "verbose", "use_resources", "max_memuse", "record_original_stdout",
     "get_original_stdout", "unload", "unlink", "rmtree", "forget",
-    "is_resource_enabled", "requires", "linux_version", "requires_mac_ver",
-    "find_unused_port", "bind_port",
+    "is_resource_enabled", "requires", "requires_linux_version",
+    "requires_mac_ver", "find_unused_port", "bind_port",
     "IPV6_ENABLED", "is_jython", "TESTFN", "HOST", "SAVEDCWD", "temp_cwd",
     "findfile", "sortdict", "check_syntax_error", "open_urlresource",
     "check_warnings", "CleanImport", "EnvironmentVarGuard", "TransientResource",
@@ -292,13 +292,32 @@ def requires(resource, msg=None):
             msg = "Use of the `%s' resource not enabled" % resource
         raise ResourceDenied(msg)
 
-def linux_version():
-    try:
-        # platform.release() is something like '2.6.33.7-desktop-2mnb'
-        version_string = platform.release().split('-')[0]
-        return tuple(map(int, version_string.split('.')))
-    except ValueError:
-        return 0, 0, 0
+def requires_linux_version(*min_version):
+    """Decorator raising SkipTest if the OS is Linux and the kernel version is
+    less than min_version.
+
+    For example, @requires_linux_version(2, 6, 35) raises SkipTest if the Linux
+    kernel version is less than 2.6.35.
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kw):
+            if sys.platform.startswith('linux'):
+                version_txt = platform.release().split('-', 1)[0]
+                try:
+                    version = tuple(map(int, version_txt.split('.')))
+                except ValueError:
+                    pass
+                else:
+                    if version < min_version:
+                        min_version_txt = '.'.join(map(str, min_version))
+                        raise unittest.SkipTest(
+                            "Linux kernel %s or higher required, not %s"
+                            % (min_version_txt, version_txt))
+            return func(*args, **kw)
+        wrapper.min_version = min_version
+        return wrapper
+    return decorator
 
 def requires_mac_ver(*min_version):
     """Decorator raising SkipTest if the OS is Mac OS X and the OS X
