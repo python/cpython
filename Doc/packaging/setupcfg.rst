@@ -4,11 +4,114 @@
 Specification of the :file:`setup.cfg` file
 *******************************************
 
-.. :version: 1.0
+:version: 0.9
 
 This document describes the :file:`setup.cfg`, an ini-style configuration file
-(compatible with :class:`configparser.RawConfigParser`) configuration file used
-by Packaging to replace the :file:`setup.py` file.
+(compatible with :class:`configparser.RawConfigParser`) used by Packaging to
+replace the :file:`setup.py` file.
+
+
+Syntax
+======
+
+The configuration file is an ini-based file. Variables name can be
+assigned values, and grouped into sections. A line that starts with "#" is
+commented out. Empty lines are also removed.
+
+Example::
+
+   [section1]
+   # comment
+   name = value
+   name2 = "other value"
+
+   [section2]
+   foo = bar
+
+
+Values conversion
+-----------------
+
+Here are a set of rules for converting values:
+
+- If value is quoted with " chars, it's a string. This notation is useful to
+  include "=" characters in the value. In case the value contains a "
+  character, it must be escaped with a "\" character.
+- If the value is "true" or "false" --no matter what the case is--, it's
+  converted to a boolean, or 0 and 1 when the language does not have a
+  boolean type.
+- A value can contains multiple lines. When read, lines are converted into a
+  sequence of values. Each new line for a multiple lines value must start with
+  a least one space or tab character. These indentation characters will be
+  stripped.
+- all other values are considered as strings
+
+Examples::
+
+   [section]
+   foo = one
+         two
+         three
+
+   bar = false
+   baz = 1.3
+   boo = "ok"
+   beee = "wqdqw pojpj w\"ddq"
+
+
+Extending files
+---------------
+
+An INI file can extend another file. For this, a "DEFAULT" section must contain
+an "extends" variable that can point to one or several INI files which will be
+merged to the current file by adding new sections and values.
+
+If the file pointed in "extends" contains section/variable names that already
+exist in the original file, they will not override existing ones.
+
+file_one.ini::
+
+    [section1]
+    name2 = "other value"
+
+    [section2]
+    foo = baz
+    bas = bar
+
+file_two.ini::
+
+    [DEFAULT]
+    extends = file_one.ini
+
+    [section2]
+    foo = bar
+
+Result::
+
+    [section1]
+    name2 = "other value"
+
+    [section2]
+    foo = bar
+    bas = bar
+
+To point several files, the multi-line notation can be used::
+
+    [DEFAULT]
+    extends = file_one.ini
+              file_two.ini
+
+When several files are provided, they are processed sequentially. So if the
+first one has a value that is also present in the second, the second one will
+be ignored. This means that the configuration goes from the most specialized to
+the most common.
+
+**Tools will need to provide a way to produce a canonical version of the
+file**. This will be useful to publish a single file.
+
+
+Description of sections and fields
+==================================
 
 Each section contains a description of its options.
 
@@ -646,3 +749,57 @@ section named after the command.  Example::
 
 Option values given in the configuration file can be overriden on the command
 line.  See :ref:`packaging-setup-config` for more information.
+
+
+Extensibility
+=============
+
+Every section can define new variables that are not part of the specification.
+They are called **extensions**.
+
+An extension field starts with *X-*.
+
+Example::
+
+   [metadata]
+   ...
+   X-Debian-Name = python-distribute
+
+
+Changes in the specification
+============================
+
+The version scheme for this specification is **MAJOR.MINOR**.
+Changes in the specification will increment the version.
+
+- minor version changes (1.x): backwards compatible
+
+ - new fields and sections (both optional and mandatory) can be added
+ - optional fields can be removed
+
+- major channges (2.X): backwards-incompatible
+
+ - mandatory fields/sections are removed
+ - fields change their meaning
+
+As a consequence, a tool written to consume 1.X (say, X=5) has these
+properties:
+
+- reading 1.Y, Y<X (e.g. 1.1) is possible, since the tool knows what
+  optional fields weren't there
+- reading 1.Y, Y>X is also possible. The tool will just ignore the new
+  fields (even if they are mandatory in that version)
+  If optional fields were removed, the tool will just consider them absent.
+- reading 2.X is not possible; the tool should refuse to interpret
+  the file.
+
+A tool written to produce 1.X should have these properties:
+
+- it will write all mandatory fields
+- it may write optional fields
+
+
+Acks
+====
+
+XXX
