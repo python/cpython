@@ -14,7 +14,6 @@ import zipfile
 import posixpath
 import sysconfig
 import subprocess
-from copy import copy
 from glob import iglob as std_iglob
 from fnmatch import fnmatchcase
 from inspect import getsource
@@ -384,7 +383,7 @@ byte_compile(files, optimize=%r, force=%r,
         elif optimize == 2:
             cmd.insert(1, "-OO")
 
-        env = copy(os.environ)
+        env = os.environ.copy()
         env['PYTHONPATH'] = os.path.pathsep.join(sys.path)
         try:
             spawn(cmd, env=env)
