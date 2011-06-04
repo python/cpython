@@ -34,14 +34,14 @@ create_usage = """\
 Usage: pysetup create
    or: pysetup create --help
 
-Create a new Python package.
+Create a new Python project.
 """
 
 generate_usage = """\
 Usage: pysetup generate-setup
    or: pysetup generate-setup --help
 
-Generates a setup.py script for backward-compatibility purposes.
+Generate a setup.py script for backward-compatibility purposes.
 """
 
 
@@ -95,7 +95,7 @@ positional arguments:
    dist  installed distribution name
 
 optional arguments:
-   -y  auto confirm package removal
+   -y  auto confirm distribution removal
 """
 
 run_usage = """\
@@ -215,7 +215,6 @@ def _create(distpatcher, args, **kw):
 def _generate(distpatcher, args, **kw):
     generate_setup_py()
     print('The setup.py was generated')
-
 
 
 @action_help(graph_usage)
@@ -392,10 +391,10 @@ actions = [
     ('install', 'Install a project', _install),
     ('remove', 'Remove a project', _remove),
     ('search', 'Search for a project in the indexes', _search),
-    ('list', 'Search for local projects', _list),
+    ('list', 'List installed releases', _list),
     ('graph', 'Display a graph', _graph),
-    ('create', 'Create a Project', _create),
-    ('generate-setup', 'Generates a backward-comptatible setup.py', _generate)
+    ('create', 'Create a project', _create),
+    ('generate-setup', 'Generate a backward-comptatible setup.py', _generate),
 ]
 
 
