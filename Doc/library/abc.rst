@@ -1,5 +1,3 @@
-.. _abstract-base-classes:
-
 :mod:`abc` --- Abstract Base Classes
 ====================================
 
