@@ -1,19 +1,18 @@
-"""packaging.util
-Miscellaneous utility functions.
-"""
-import errno
-import csv
-import hashlib
+"""Miscellaneous utility functions."""
+
 import os
-import sys
 import re
+import csv
+import sys
+import errno
 import shutil
 import string
+import hashlib
 import tarfile
 import zipfile
 import posixpath
-import sysconfig
 import subprocess
+import sysconfig
 from glob import iglob as std_iglob
 from fnmatch import fnmatchcase
 from inspect import getsource

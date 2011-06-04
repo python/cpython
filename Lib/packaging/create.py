@@ -1,15 +1,8 @@
-#!/usr/bin/env python
 """Interactive helper used to create a setup.cfg file.
 
 This script will generate a packaging configuration file by looking at
 the current directory and asking the user questions.  It is intended to
-be called as
-
-  pysetup create
-
-or
-
-  python3.3 -m packaging.create
+be called as *pysetup create*.
 """
 
 #  Original code by Sean Reifschneider <jafo@tummy.com>
@@ -26,17 +19,17 @@ or
 #  Detect scripts (not sure how.  #! outside of package?)
 
 import os
+import re
 import imp
 import sys
 import glob
-import re
 import shutil
 import sysconfig
 import tokenize
-from configparser import RawConfigParser
-from textwrap import dedent
 from hashlib import md5
+from textwrap import dedent
 from functools import cmp_to_key
+from configparser import RawConfigParser
 # importing this with an underscore as it should be replaced by the
 # dict form or another structures for all purposes
 from packaging._trove import all_classifiers as _CLASSIFIERS_LIST
@@ -230,7 +223,7 @@ class MainProgram:
         self._write_cfg()
 
     def has_setup_py(self):
-        """Test for the existance of a setup.py file."""
+        """Test for the existence of a setup.py file."""
         return os.path.exists('setup.py')
 
     def define_cfg_values(self):
