@@ -274,9 +274,13 @@ class MainProgram:
 
         with open(_FILENAME, 'w', encoding='utf-8') as fp:
             fp.write('[metadata]\n')
+            # TODO use metadata module instead of hard-coding field-specific
+            # behavior here
+
             # simple string entries
             for name in ('name', 'version', 'summary', 'download_url'):
                 fp.write('%s = %s\n' % (name, self.data.get(name, 'UNKNOWN')))
+
             # optional string entries
             if 'keywords' in self.data and self.data['keywords']:
                 fp.write('keywords = %s\n' % ' '.join(self.data['keywords']))
@@ -288,6 +292,7 @@ class MainProgram:
                 fp.write(
                     'description = %s\n'
                     % '\n       |'.join(self.data['description'].split('\n')))
+
             # multiple use string entries
             for name in ('platform', 'supported-platform', 'classifier',
                          'requires-dist', 'provides-dist', 'obsoletes-dist',
@@ -322,8 +327,8 @@ class MainProgram:
 
         def setup_mock(**attrs):
             """Mock the setup(**attrs) in order to retrieve metadata."""
-            # use the distutils v1 processings to correctly parse metadata.
-            #XXX we could also use the setuptools distibution ???
+
+            # TODO use config and metadata instead of Distribution
             from distutils.dist import Distribution
             dist = Distribution(attrs)
             dist.parse_config_files()
@@ -355,13 +360,14 @@ class MainProgram:
             data['modules'].extend(dist.py_modules or [])
             # 2.1 data_files -> resources
             if dist.data_files:
-                if len(dist.data_files) < 2 or \
-                   isinstance(dist.data_files[1], str):
+                if (len(dist.data_files) < 2 or
+                    isinstance(dist.data_files[1], str)):
                     dist.data_files = [('', dist.data_files)]
                 # add tokens in the destination paths
                 vars = {'distribution.name': data['name']}
                 path_tokens = list(sysconfig.get_paths(vars=vars).items())
 
+                # TODO replace this with a key function
                 def length_comparison(x, y):
                     len_x = len(x[1])
                     len_y = len(y[1])
@@ -384,12 +390,12 @@ class MainProgram:
 
                         dest = ('{%s}' % tok) + dest[len(path):]
                         files = [('/ '.join(src.rsplit('/', 1)), dest)
-                                    for src in srcs]
+                                 for src in srcs]
                         data['resources'].extend(files)
 
             # 2.2 package_data -> extra_files
             package_dirs = dist.package_dir or {}
-            for package, extras in iter(dist.package_data.items()) or []:
+            for package, extras in dist.package_data.items() or []:
                 package_dir = package_dirs.get(package, package)
                 for file_ in extras:
                     if package_dir:
@@ -451,10 +457,10 @@ class MainProgram:
         if match:
             self.data['name'] = match.group(1)
             self.data['version'] = match.group(2)
-            # TODO Needs tested!
+            # TODO needs testing!
             if not is_valid_version(self.data['version']):
                 msg = "Invalid version discovered: %s" % self.data['version']
-                raise RuntimeError(msg)
+                raise ValueError(msg)
 
     def query_user(self):
         self.data['name'] = ask('Project name', self.data['name'],
