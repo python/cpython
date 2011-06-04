@@ -383,7 +383,7 @@ def _search(dispatcher, args, **kw):
     """
     #opts = _parse_args(args[1:], '', ['simple', 'xmlrpc'])
     # 1. what kind of index is requested ? (xmlrpc / simple)
-    raise NotImplementedError()
+    raise NotImplementedError
 
 
 actions = [
