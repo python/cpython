@@ -61,7 +61,7 @@ E-mail address of the project author (typically you).
     'do_classifier': '''
 Trove classifiers are optional identifiers that allow you to specify the
 intended audience by saying things like "Beta software with a text UI
-for Linux under the PSF license.  However, this can be a somewhat involved
+for Linux under the PSF license".  However, this can be a somewhat involved
 process.
 ''',
     'packages': '''
@@ -88,7 +88,7 @@ human language, programming language, user interface, etc...
 ''',
     'setup.py found': '''
 The setup.py script will be executed to retrieve the metadata.
-A wizard will be run if you answer "n",
+An interactive helper will be run if you answer "n",
 ''',
 }
 
@@ -475,25 +475,25 @@ class MainProgram:
               self.data.get('author'), _helptext['author'])
         self.data['author_email'] = ask('Author e-mail address',
               self.data.get('author_email'), _helptext['author_email'])
-        self.data['home_page'] = ask('Project Home Page',
+        self.data['home_page'] = ask('Project home page',
               self.data.get('home_page'), _helptext['home_page'],
               required=False)
 
         if ask_yn('Do you want me to automatically build the file list '
-              'with everything I can find in the current directory ? '
+              'with everything I can find in the current directory? '
               'If you say no, you will have to define them manually.') == 'y':
             self._find_files()
         else:
-            while ask_yn('Do you want to add a single module ?'
+            while ask_yn('Do you want to add a single module?'
                         ' (you will be able to add full packages next)',
                     helptext=_helptext['modules']) == 'y':
                 self._set_multi('Module name', 'modules')
 
-            while ask_yn('Do you want to add a package ?',
+            while ask_yn('Do you want to add a package?',
                     helptext=_helptext['packages']) == 'y':
                 self._set_multi('Package name', 'packages')
 
-            while ask_yn('Do you want to add an extra file ?',
+            while ask_yn('Do you want to add an extra file?',
                         helptext=_helptext['extra_files']) == 'y':
                 self._set_multi('Extra file/dir name', 'extra_files')
 
@@ -581,7 +581,7 @@ class MainProgram:
         self.set_other_classifier(self.classifiers)
 
     def set_other_classifier(self, classifiers):
-        if ask_yn('Do you want to set other trove identifiers', 'n',
+        if ask_yn('Do you want to set other trove identifiers?', 'n',
                   _helptext['trove_generic']) != 'y':
             return
         self.walk_classifiers(classifiers, [CLASSIFIERS], '')
@@ -598,7 +598,7 @@ class MainProgram:
                     classifiers.add(desc[4:] + ' :: ' + key)
                 continue
 
-            if ask_yn('Do you want to set items under\n   "%s" (%d sub-items)'
+            if ask_yn('Do you want to set items under\n   "%s" (%d sub-items)?'
                       % (key, len(trove[key])), 'n',
                       _helptext['trove_generic']) == 'y':
                 self.walk_classifiers(classifiers, trovepath + [trove[key]],
@@ -606,7 +606,7 @@ class MainProgram:
 
     def set_license(self, classifiers):
         while True:
-            license = ask('What license do you use',
+            license = ask('What license do you use?',
                           helptext=_helptext['trove_license'], required=False)
             if not license:
                 return
