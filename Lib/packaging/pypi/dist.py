@@ -135,7 +135,7 @@ class ReleaseInfo(IndexReference):
         not return one existing distribution.
         """
         if len(self.dists) == 0:
-            raise LookupError()
+            raise LookupError
         if dist_type:
             return self[dist_type]
         if prefer_source:

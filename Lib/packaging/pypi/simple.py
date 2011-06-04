@@ -189,7 +189,7 @@ class Crawler(BaseClient):
         self._process_index_page(predicate.name)
 
         if predicate.name.lower() not in self._projects:
-            raise ProjectNotFound()
+            raise ProjectNotFound
 
         releases = self._projects.get(predicate.name.lower())
         releases.sort_releases(prefer_final=prefer_final)
