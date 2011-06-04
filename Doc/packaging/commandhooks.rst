@@ -1,3 +1,5 @@
+.. TODO integrate this in commandref and configfile
+
 =============
 Command hooks
 =============
@@ -8,6 +10,9 @@ objects) and are specified in the config file using their full qualified names.
 The pre-hooks are run after the command is finalized (its options are
 processed), but before it is run. The post-hooks are run after the command
 itself. Both types of hooks receive an instance of the command object.
+
+See also global setup hooks in :ref:`packaging-setupcfg`.
+
 
 Sample usage of hooks
 =====================
