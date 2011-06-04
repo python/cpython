@@ -1942,9 +1942,9 @@ class Decimal(object):
         nonzero.  For efficiency, other._exp should not be too large,
         so that 10**abs(other._exp) is a feasible calculation."""
 
-        # In the comments below, we write x for the value of self and
-        # y for the value of other.  Write x = xc*10**xe and y =
-        # yc*10**ye.
+        # In the comments below, we write x for the value of self and y for the
+        # value of other.  Write x = xc*10**xe and abs(y) = yc*10**ye, with xc
+        # and yc positive integers not divisible by 10.
 
         # The main purpose of this method is to identify the *failure*
         # of x**y to be exactly representable with as little effort as
@@ -1952,13 +1952,12 @@ class Decimal(object):
         # eliminate the possibility of x**y being exact.  Only if all
         # these tests are passed do we go on to actually compute x**y.
 
-        # Here's the main idea.  First normalize both x and y.  We
-        # express y as a rational m/n, with m and n relatively prime
-        # and n>0.  Then for x**y to be exactly representable (at
-        # *any* precision), xc must be the nth power of a positive
-        # integer and xe must be divisible by n.  If m is negative
-        # then additionally xc must be a power of either 2 or 5, hence
-        # a power of 2**n or 5**n.
+        # Here's the main idea.  Express y as a rational number m/n, with m and
+        # n relatively prime and n>0.  Then for x**y to be exactly
+        # representable (at *any* precision), xc must be the nth power of a
+        # positive integer and xe must be divisible by n.  If y is negative
+        # then additionally xc must be a power of either 2 or 5, hence a power
+        # of 2**n or 5**n.
         #
         # There's a limit to how small |y| can be: if y=m/n as above
         # then:
@@ -2030,21 +2029,43 @@ class Decimal(object):
                     return None
                 # now xc is a power of 2; e is its exponent
                 e = _nbits(xc)-1
-                # find e*y and xe*y; both must be integers
-                if ye >= 0:
-                    y_as_int = yc*10**ye
-                    e = e*y_as_int
-                    xe = xe*y_as_int
-                else:
-                    ten_pow = 10**-ye
-                    e, remainder = divmod(e*yc, ten_pow)
-                    if remainder:
-                        return None
-                    xe, remainder = divmod(xe*yc, ten_pow)
-                    if remainder:
-                        return None
 
-                if e*65 >= p*93: # 93/65 > log(10)/log(5)
+                # We now have:
+                #
+                #   x = 2**e * 10**xe, e > 0, and y < 0.
+                #
+                # The exact result is:
+                #
+                #   x**y = 5**(-e*y) * 10**(e*y + xe*y)
+                #
+                # provided that both e*y and xe*y are integers.  Note that if
+                # 5**(-e*y) >= 10**p, then the result can't be expressed
+                # exactly with p digits of precision.
+                #
+                # Using the above, we can guard against large values of ye.
+                # 93/65 is an upper bound for log(10)/log(5), so if
+                #
+                #   ye >= len(str(93*p//65))
+                #
+                # then
+                #
+                #   -e*y >= -y >= 10**ye > 93*p/65 > p*log(10)/log(5),
+                #
+                # so 5**(-e*y) >= 10**p, and the coefficient of the result
+                # can't be expressed in p digits.
+
+                # emax >= largest e such that 5**e < 10**p.
+                emax = p*93//65
+                if ye >= len(str(emax)):
+                    return None
+
+                # Find -e*y and -xe*y; both must be integers
+                e = _decimal_lshift_exact(e * yc, ye)
+                xe = _decimal_lshift_exact(xe * yc, ye)
+                if e is None or xe is None:
+                    return None
+
+                if e > emax:
                     return None
                 xc = 5**e
 
@@ -2058,19 +2079,20 @@ class Decimal(object):
                 while xc % 5 == 0:
                     xc //= 5
                     e -= 1
-                if ye >= 0:
-                    y_as_integer = yc*10**ye
-                    e = e*y_as_integer
-                    xe = xe*y_as_integer
-                else:
-                    ten_pow = 10**-ye
-                    e, remainder = divmod(e*yc, ten_pow)
-                    if remainder:
-                        return None
-                    xe, remainder = divmod(xe*yc, ten_pow)
-                    if remainder:
-                        return None
-                if e*3 >= p*10: # 10/3 > log(10)/log(2)
+
+                # Guard against large values of ye, using the same logic as in
+                # the 'xc is a power of 2' branch.  10/3 is an upper bound for
+                # log(10)/log(2).
+                emax = p*10//3
+                if ye >= len(str(emax)):
+                    return None
+
+                e = _decimal_lshift_exact(e * yc, ye)
+                xe = _decimal_lshift_exact(xe * yc, ye)
+                if e is None or xe is None:
+                    return None
+
+                if e > emax:
                     return None
                 xc = 2**e
             else:
@@ -5462,6 +5484,27 @@ def _nbits(n, correction = {
         raise ValueError("The argument to _nbits should be nonnegative.")
     hex_n = "%x" % n
     return 4*len(hex_n) - correction[hex_n[0]]
+
+def _decimal_lshift_exact(n, e):
+    """ Given integers n and e, return n * 10**e if it's an integer, else None.
+
+    The computation is designed to avoid computing large powers of 10
+    unnecessarily.
+
+    >>> _decimal_lshift_exact(3, 4)
+    30000
+    >>> _decimal_lshift_exact(300, -999999999)  # returns None
+
+    """
+    if n == 0:
+        return 0
+    elif e >= 0:
+        return n * 10**e
+    else:
+        # val_n = largest power of 10 dividing n.
+        str_n = str(abs(n))
+        val_n = len(str_n) - len(str_n.rstrip('0'))
+        return None if val_n < -e else n // 10**-e
 
 def _sqrt_nearest(n, a):
     """Closest integer to the square root of the positive integer n.  a is
