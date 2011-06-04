@@ -222,11 +222,24 @@ extr1700 power 10 1e-999999999 -> 1.000000000000000 Inexact Rounded
 extr1701 power 100.0 -557.71e-742888888 -> 1.000000000000000 Inexact Rounded
 extr1702 power 10 1e-100 -> 1.000000000000000 Inexact Rounded
 
+-- Another one (see issue #12080).  Thanks again to Stefan Krah.
+extr1703 power 4 -1.2e-999999999 -> 1.000000000000000 Inexact Rounded
+
 -- A couple of interesting exact cases for power.  Note that the specification
 -- requires these to be reported as Inexact.
 extr1710 power 1e375 56e-3 -> 1.000000000000000E+21 Inexact Rounded
 extr1711 power 10000 0.75 -> 1000.000000000000 Inexact Rounded
 extr1712 power 1e-24 0.875 -> 1.000000000000000E-21 Inexact Rounded
+
+-- Some more exact cases, exercising power with negative second argument.
+extr1720 power 400 -0.5 -> 0.05000000000000000 Inexact Rounded
+extr1721 power 4096 -0.75 -> 0.001953125000000000 Inexact Rounded
+extr1722 power 625e4 -0.25 -> 0.02000000000000000 Inexact Rounded
+
+-- Nonexact cases, to exercise some of the early exit conditions from
+-- _power_exact.
+extr1730 power 2048 -0.75 -> 0.003284751622084822 Inexact Rounded
+
 
 -- Tests for the is_* boolean operations
 precision: 9

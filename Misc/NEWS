@@ -16,6 +16,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12080: Fix a performance issue in Decimal._power_exact that caused
+  some corner-case Decimal.__pow__ calls to take an unreasonably long time.
+
 - Named tuples now work correctly with vars().
 
 - sys.setcheckinterval() now updates the current ticker count as well as updating
