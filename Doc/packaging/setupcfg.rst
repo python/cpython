@@ -1,5 +1,7 @@
 .. highlightlang:: cfg
 
+.. _packaging-setupcfg:
+
 *******************************************
 Specification of the :file:`setup.cfg` file
 *******************************************
