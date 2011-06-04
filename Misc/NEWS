@@ -5,13 +5,12 @@ Python News
 What's New in Python 2.6.7?
 ===========================
 
-*Release date: XXXX-XX-XX*
+*Release date: 2011-06-03*
 
-Core and Builtins
------------------
+*NOTE: Python 2.6 is in security-fix-only mode.  No non-security bug fixes are
+ allowed.  Python 2.6.7 and beyond will be source only releases.*
 
-Library
--------
+* No changes since 2.6.7rc2.
 
 
 What's New in Python 2.6.7 rc 2?
@@ -38,13 +37,6 @@ What's New in Python 2.6.7 rc 1?
 
 *Release date: 2011-05-06*
 
-*NOTE: Python 2.6 is in security-fix-only mode.  No non-security bug fixes are
- allowed.  Python 2.6.7 and beyond will be source only releases.*
-
-
-Core and Builtins
------------------
-
 Library
 -------
 
@@ -57,11 +49,7 @@ What's New in Python 2.6.6?
 
 *Release date: 2010-08-24*
 
-Core and Builtins
------------------
-
-Library
--------
+* No changes since 2.6.6rc2.
 
 
 What's New in Python 2.6.6 rc 2?
