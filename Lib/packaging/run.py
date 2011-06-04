@@ -5,7 +5,6 @@ import re
 import sys
 import getopt
 import logging
-from copy import copy
 
 from packaging import logger
 from packaging.dist import Distribution
@@ -673,7 +672,7 @@ class Dispatcher:
 
 def main(args=None):
     old_level = logger.level
-    old_handlers = copy(logger.handlers)
+    old_handlers = list(logger.handlers)
     try:
         dispatcher = Dispatcher(args)
         if dispatcher.action is None:
