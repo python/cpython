@@ -12,6 +12,10 @@ This document describes the :file:`setup.cfg`, an ini-style configuration file
 (compatible with :class:`configparser.RawConfigParser`) used by Packaging to
 replace the :file:`setup.py` file.
 
+.. contents::
+   :depth: 3
+   :local:
+
 
 Syntax
 ======
