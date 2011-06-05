@@ -1,6 +1,6 @@
 .. highlightlang:: cfg
 
-.. _packaging-setupcfg:
+.. _setupcfg-spec:
 
 *******************************************
 Specification of the :file:`setup.cfg` file
@@ -387,7 +387,7 @@ The final paths where files will be placed are composed by : **source** +
 **destination**. In the previous example, **doc/doc.man** will be placed in
 **destination_doc/doc/doc.man** and **scripts/foo.sh** will be placed in
 **destination_scripts/scripts/foo.sh**. (If you want more control on the final
-path, take a look at base_prefix_).
+path, take a look at :ref:`setupcfg-resources-base-prefix`).
 
 The **destination** part of resources declaration are paths with categories.
 Indeed, it's generally a bad idea to give absolute path as it will be cross
@@ -511,7 +511,7 @@ Your **files** section will be::
 More control on destination part
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. _base_prefix:
+.. _setupcfg-resources-base-prefix:
 
 Defining a base prefix
 """"""""""""""""""""""
