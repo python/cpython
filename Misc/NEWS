@@ -184,6 +184,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12080: Fix a Decimal.power() case that took an unreasonably long time
+  to compute.
+
 - Issue #12221: Remove __version__ attributes from pyexpat, pickle, tarfile,
   pydoc, tkinter, and xml.parsers.expat. This were useless version constants
   left over from the Mercurial transition
