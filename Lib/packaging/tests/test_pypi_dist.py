@@ -7,12 +7,13 @@ from packaging.pypi.dist import (ReleaseInfo, ReleasesList, DistInfo,
 from packaging.pypi.errors import HashDoesNotMatch, UnsupportedHashName
 
 from packaging.tests import unittest
-from packaging.tests.support import TempdirManager, requires_zlib
+from packaging.tests.support import TempdirManager, requires_zlib, fake_dec
 try:
     import threading
     from packaging.tests.pypi_server import use_pypi_server
 except ImportError:
-    threading = use_pypi_server = None
+    threading = None
+    use_pypi_server = fake_dec
 
 
 def Dist(*args, **kwargs):

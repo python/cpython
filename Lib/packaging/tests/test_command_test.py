@@ -150,8 +150,7 @@ class TestTest(TempdirManager,
         cmd.tests_require = [phony_project]
         cmd.ensure_finalized()
         logs = self.get_logs(logging.WARNING)
-        self.assertEqual(1, len(logs))
-        self.assertIn(phony_project, logs[0])
+        self.assertIn(phony_project, logs[-1])
 
     def prepare_a_module(self):
         tmp_dir = self.mkdtemp()

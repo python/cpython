@@ -479,7 +479,7 @@ multibytecodec_encode(MultibyteCodec *codec,
     MultibyteEncodeBuffer buf;
     Py_ssize_t finalsize, r = 0;
 
-    if (datalen == 0)
+    if (datalen == 0 && !(flags & MBENC_RESET))
         return PyBytes_FromStringAndSize(NULL, 0);
 
     buf.excobj = NULL;
@@ -515,7 +515,7 @@ multibytecodec_encode(MultibyteCodec *codec,
             break;
     }
 
-    if (codec->encreset != NULL)
+    if (codec->encreset != NULL && (flags & MBENC_RESET))
         for (;;) {
             Py_ssize_t outleft;
 
@@ -785,8 +785,8 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
     inbuf_end = inbuf + datalen;
 
     r = multibytecodec_encode(ctx->codec, &ctx->state,
-                    (const Py_UNICODE **)&inbuf,
-                    datalen, ctx->errors, final ? MBENC_FLUSH : 0);
+                    (const Py_UNICODE **)&inbuf, datalen,
+                    ctx->errors, final ? MBENC_FLUSH | MBENC_RESET : 0);
     if (r == NULL) {
         /* recover the original pending buffer */
         if (origpending > 0)
@@ -901,11 +901,17 @@ mbiencoder_encode(MultibyteIncrementalEncoderObject *self,
 static PyObject *
 mbiencoder_reset(MultibyteIncrementalEncoderObject *self)
 {
-    if (self->codec->decreset != NULL &&
-        self->codec->decreset(&self->state, self->codec->config) != 0)
-        return NULL;
+    /* Longest output: 4 bytes (b'\x0F\x1F(B') with ISO 2022 */
+    unsigned char buffer[4], *outbuf;
+    Py_ssize_t r;
+    if (self->codec->encreset != NULL) {
+        outbuf = buffer;
+        r = self->codec->encreset(&self->state, self->codec->config,
+                                  &outbuf, sizeof(buffer));
+        if (r != 0)
+            return NULL;
+    }
     self->pendingsize = 0;
-
     Py_RETURN_NONE;
 }
 

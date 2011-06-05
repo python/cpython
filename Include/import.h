@@ -44,7 +44,7 @@ PyAPI_FUNC(PyObject *) PyImport_ImportModuleNoBlock(
     const char *name            /* UTF-8 encoded string */
     );
 PyAPI_FUNC(PyObject *) PyImport_ImportModuleLevel(
-    char *name,                 /* UTF-8 encoded string */
+    const char *name,           /* UTF-8 encoded string */
     PyObject *globals,
     PyObject *locals,
     PyObject *fromlist,

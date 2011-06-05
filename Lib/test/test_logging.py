@@ -888,19 +888,35 @@ if threading:
                             before calling :meth:`start`, so that the server will
                             set up the socket and listen on it.
         """
-        def __init__(self, addr, handler, poll_interval=0.5, bind_and_activate=True):
+        def __init__(self, addr, handler, poll_interval=0.5,
+                     bind_and_activate=True):
             class DelegatingUDPRequestHandler(DatagramRequestHandler):
 
                 def handle(self):
                     self.server._handler(self)
-            ThreadingUDPServer.__init__(self, addr, DelegatingUDPRequestHandler,
+
+                def finish(self):
+                    data = self.wfile.getvalue()
+                    if data:
+                        try:
+                            super(DelegatingUDPRequestHandler, self).finish()
+                        except socket.error:
+                            if not self.server._closed:
+                                raise
+
+            ThreadingUDPServer.__init__(self, addr,
+                                        DelegatingUDPRequestHandler,
                                         bind_and_activate)
             ControlMixin.__init__(self, handler, poll_interval)
+            self._closed = False
 
         def server_bind(self):
             super(TestUDPServer, self).server_bind()
             self.port = self.socket.getsockname()[1]
 
+        def server_close(self):
+            super(TestUDPServer, self).server_close()
+            self._closed = True
 
 # - end of server_helper section
 
@@ -3570,7 +3586,7 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         r = logging.makeLogRecord({'msg': 'testing'})
         fh.emit(r)
         self.assertLogFile(self.fn)
-        time.sleep(1.0)
+        time.sleep(1.01)    # just a little over a second ...
         fh.emit(r)
         fh.close()
         # At this point, we should have a recent rotated file which we

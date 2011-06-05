@@ -36,6 +36,8 @@ typedef struct _keyword *keyword_ty;
 
 typedef struct _alias *alias_ty;
 
+typedef struct _withitem *withitem_ty;
+
 
 enum _mod_kind {Module_kind=1, Interactive_kind=2, Expression_kind=3,
                  Suite_kind=4};
@@ -64,10 +66,9 @@ struct _mod {
 enum _stmt_kind {FunctionDef_kind=1, ClassDef_kind=2, Return_kind=3,
                   Delete_kind=4, Assign_kind=5, AugAssign_kind=6, For_kind=7,
                   While_kind=8, If_kind=9, With_kind=10, Raise_kind=11,
-                  TryExcept_kind=12, TryFinally_kind=13, Assert_kind=14,
-                  Import_kind=15, ImportFrom_kind=16, Global_kind=17,
-                  Nonlocal_kind=18, Expr_kind=19, Pass_kind=20, Break_kind=21,
-                  Continue_kind=22};
+                  Try_kind=12, Assert_kind=13, Import_kind=14,
+                  ImportFrom_kind=15, Global_kind=16, Nonlocal_kind=17,
+                  Expr_kind=18, Pass_kind=19, Break_kind=20, Continue_kind=21};
 struct _stmt {
         enum _stmt_kind kind;
         union {
@@ -128,8 +129,7 @@ struct _stmt {
                 } If;
                 
                 struct {
-                        expr_ty context_expr;
-                        expr_ty optional_vars;
+                        asdl_seq *items;
                         asdl_seq *body;
                 } With;
                 
@@ -142,12 +142,8 @@ struct _stmt {
                         asdl_seq *body;
                         asdl_seq *handlers;
                         asdl_seq *orelse;
-                } TryExcept;
-                
-                struct {
-                        asdl_seq *body;
                         asdl_seq *finalbody;
-                } TryFinally;
+                } Try;
                 
                 struct {
                         expr_ty test;
@@ -383,6 +379,11 @@ struct _alias {
         identifier asname;
 };
 
+struct _withitem {
+        expr_ty context_expr;
+        expr_ty optional_vars;
+};
+
 
 #define Module(a0, a1) _Py_Module(a0, a1)
 mod_ty _Py_Module(asdl_seq * body, PyArena *arena);
@@ -421,18 +422,16 @@ stmt_ty _Py_While(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno,
 #define If(a0, a1, a2, a3, a4, a5) _Py_If(a0, a1, a2, a3, a4, a5)
 stmt_ty _Py_If(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno,
                int col_offset, PyArena *arena);
-#define With(a0, a1, a2, a3, a4, a5) _Py_With(a0, a1, a2, a3, a4, a5)
-stmt_ty _Py_With(expr_ty context_expr, expr_ty optional_vars, asdl_seq * body,
-                 int lineno, int col_offset, PyArena *arena);
+#define With(a0, a1, a2, a3, a4) _Py_With(a0, a1, a2, a3, a4)
+stmt_ty _Py_With(asdl_seq * items, asdl_seq * body, int lineno, int col_offset,
+                 PyArena *arena);
 #define Raise(a0, a1, a2, a3, a4) _Py_Raise(a0, a1, a2, a3, a4)
 stmt_ty _Py_Raise(expr_ty exc, expr_ty cause, int lineno, int col_offset,
                   PyArena *arena);
-#define TryExcept(a0, a1, a2, a3, a4, a5) _Py_TryExcept(a0, a1, a2, a3, a4, a5)
-stmt_ty _Py_TryExcept(asdl_seq * body, asdl_seq * handlers, asdl_seq * orelse,
-                      int lineno, int col_offset, PyArena *arena);
-#define TryFinally(a0, a1, a2, a3, a4) _Py_TryFinally(a0, a1, a2, a3, a4)
-stmt_ty _Py_TryFinally(asdl_seq * body, asdl_seq * finalbody, int lineno, int
-                       col_offset, PyArena *arena);
+#define Try(a0, a1, a2, a3, a4, a5, a6) _Py_Try(a0, a1, a2, a3, a4, a5, a6)
+stmt_ty _Py_Try(asdl_seq * body, asdl_seq * handlers, asdl_seq * orelse,
+                asdl_seq * finalbody, int lineno, int col_offset, PyArena
+                *arena);
 #define Assert(a0, a1, a2, a3, a4) _Py_Assert(a0, a1, a2, a3, a4)
 stmt_ty _Py_Assert(expr_ty test, expr_ty msg, int lineno, int col_offset,
                    PyArena *arena);
@@ -547,6 +546,9 @@ arg_ty _Py_arg(identifier arg, expr_ty annotation, PyArena *arena);
 keyword_ty _Py_keyword(identifier arg, expr_ty value, PyArena *arena);
 #define alias(a0, a1, a2) _Py_alias(a0, a1, a2)
 alias_ty _Py_alias(identifier name, identifier asname, PyArena *arena);
+#define withitem(a0, a1, a2) _Py_withitem(a0, a1, a2)
+withitem_ty _Py_withitem(expr_ty context_expr, expr_ty optional_vars, PyArena
+                         *arena);
 
 PyObject* PyAST_mod2obj(mod_ty t);
 mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);

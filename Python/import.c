@@ -110,8 +110,12 @@ typedef unsigned short mode_t;
    TAG and PYC_TAG_UNICODE must change for each major Python release. The magic
    number will take care of any bytecode changes that occur during development.
 */
+#define QUOTE(arg) #arg
+#define STRIFY(name) QUOTE(name)
+#define MAJOR STRIFY(PY_MAJOR_VERSION)
+#define MINOR STRIFY(PY_MINOR_VERSION)
 #define MAGIC (3180 | ((long)'\r'<<16) | ((long)'\n'<<24))
-#define TAG "cpython-32"
+#define TAG "cpython-" MAJOR MINOR;
 #define CACHEDIR "__pycache__"
 static const Py_UNICODE CACHEDIR_UNICODE[] = {
     '_', '_', 'p', 'y', 'c', 'a', 'c', 'h', 'e', '_', '_', '\0'};
@@ -119,7 +123,11 @@ static const Py_UNICODE CACHEDIR_UNICODE[] = {
 static long pyc_magic = MAGIC;
 static const char *pyc_tag = TAG;
 static const Py_UNICODE PYC_TAG_UNICODE[] = {
-    'c', 'p', 'y', 't', 'h', 'o', 'n', '-', '3', '2', '\0'};
+    'c', 'p', 'y', 't', 'h', 'o', 'n', '-', PY_MAJOR_VERSION + 48, PY_MINOR_VERSION + 48, '\0'};
+#undef QUOTE
+#undef STRIFY
+#undef MAJOR
+#undef MINOR
 
 /* See _PyImport_FixupExtensionObject() below */
 static PyObject *extensions = NULL;
@@ -1733,7 +1741,6 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
     Py_UNICODE buf[MAXPATHLEN+1];
     Py_ssize_t buflen = MAXPATHLEN+1;
     PyObject *path_unicode, *filename;
-    const Py_UNICODE *base;
     Py_ssize_t len;
     struct stat statbuf;
     static struct filedescr fd_package = {"", "", PKG_DIRECTORY};
@@ -1751,7 +1758,6 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
     else
         return 0;
 
-    base = PyUnicode_AS_UNICODE(path_unicode);
     len = PyUnicode_GET_SIZE(path_unicode);
     if (len + 2 + PyUnicode_GET_SIZE(name) + MAXSUFFIXSIZE >= buflen) {
         Py_DECREF(path_unicode);
@@ -2275,12 +2281,10 @@ case_ok(PyObject *filename, Py_ssize_t prefix_delta, PyObject *name)
 static int
 find_init_module(PyObject *directory)
 {
-    size_t len;
     struct stat statbuf;
     PyObject *filename;
     int match;
 
-    len = PyUnicode_GET_SIZE(directory);
     filename = PyUnicode_FromFormat("%U%c__init__.py", directory, SEP);
     if (filename == NULL)
         return -1;
@@ -2818,7 +2822,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
 }
 
 PyObject *
-PyImport_ImportModuleLevel(char *name, PyObject *globals, PyObject *locals,
+PyImport_ImportModuleLevel(const char *name, PyObject *globals, PyObject *locals,
                            PyObject *fromlist, int level)
 {
     PyObject *nameobj, *mod;

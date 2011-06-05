@@ -2,7 +2,7 @@
 
 """List all those Python files that require a coding directive
 
-Usage: nocoding.py dir1 [dir2...]
+Usage: findnocoding.py dir1 [dir2...]
 """
 
 __author__ = "Oleg Broytmann, Georg Brandl"
@@ -50,7 +50,7 @@ def has_correct_encoding(text, codec):
 
 def needs_declaration(fullpath):
     try:
-        infile = open(fullpath, 'rU')
+        infile = open(fullpath)
     except IOError: # Oops, the file was removed - ignore it
         return None
 

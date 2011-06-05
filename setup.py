@@ -1,8 +1,6 @@
 # Autodetecting setup.py script for building the Python extensions
 #
 
-__version__ = "$Revision$"
-
 import sys, os, imp, re, optparse
 from glob import glob
 import sysconfig
@@ -1889,7 +1887,7 @@ def main():
           # check the PyBuildScripts command above, and change the links
           # created by the bininstall target in Makefile.pre.in
           scripts = ["Tools/scripts/pydoc3", "Tools/scripts/idle3",
-                     "Tools/scripts/2to3"]
+                     "Tools/scripts/2to3", "Tools/scripts/pysetup3"]
         )
 
 # --install-platlib

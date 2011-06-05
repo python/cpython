@@ -61,9 +61,12 @@ class BuildPyTestCase(support.TempdirManager,
         pkgdest = os.path.join(destination, "pkg")
         files = os.listdir(pkgdest)
         self.assertIn("__init__.py", files)
-        if not sys.dont_write_bytecode:
-            self.assertIn("__init__.pyc", files)
         self.assertIn("README.txt", files)
+        # XXX even with -O, distutils writes pyc, not pyo; bug?
+        if sys.dont_write_bytecode:
+            self.assertNotIn("__init__.pyc", files)
+        else:
+            self.assertIn("__init__.pyc", files)
 
     def test_empty_package_dir(self):
         # See SF 1668596/1720897.
@@ -93,7 +96,7 @@ class BuildPyTestCase(support.TempdirManager,
 
             try:
                 dist.run_commands()
-            except PackagingFileError as e:
+            except PackagingFileError:
                 self.fail("failed package_data test when package_dir is ''")
         finally:
             # Restore state.

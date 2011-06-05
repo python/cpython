@@ -330,6 +330,16 @@ class BoolTest(unittest.TestCase):
                 except (Exception) as e_len:
                     self.assertEqual(str(e_bool), str(e_len))
 
+    def test_real_and_imag(self):
+        self.assertEqual(True.real, 1)
+        self.assertEqual(True.imag, 0)
+        self.assertIs(type(True.real), int)
+        self.assertIs(type(True.imag), int)
+        self.assertEqual(False.real, 0)
+        self.assertEqual(False.imag, 0)
+        self.assertIs(type(False.real), int)
+        self.assertIs(type(False.imag), int)
+
 def test_main():
     support.run_unittest(BoolTest)
 

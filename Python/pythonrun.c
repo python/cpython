@@ -1593,7 +1593,7 @@ print_exception(PyObject *f, PyObject *value)
         moduleName = PyObject_GetAttrString(type, "__module__");
         if (moduleName == NULL || !PyUnicode_Check(moduleName))
         {
-            Py_DECREF(moduleName);
+            Py_XDECREF(moduleName);
             err = PyFile_WriteString("<unknown>", f);
         }
         else {

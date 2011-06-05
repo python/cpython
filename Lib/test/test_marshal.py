@@ -5,6 +5,7 @@ import marshal
 import sys
 import unittest
 import os
+import types
 
 class HelperMixin:
     def helper(self, sample, *extra):
@@ -112,6 +113,22 @@ class CodeTestCase(unittest.TestCase):
         count = 5000    # more than MAX_MARSHAL_STACK_DEPTH
         codes = (ExceptionTestCase.test_exceptions.__code__,) * count
         marshal.loads(marshal.dumps(codes))
+
+    def test_different_filenames(self):
+        co1 = compile("x", "f1", "exec")
+        co2 = compile("y", "f2", "exec")
+        co1, co2 = marshal.loads(marshal.dumps((co1, co2)))
+        self.assertEqual(co1.co_filename, "f1")
+        self.assertEqual(co2.co_filename, "f2")
+
+    @support.cpython_only
+    def test_same_filename_used(self):
+        s = """def f(): pass\ndef g(): pass"""
+        co = compile(s, "myfile", "exec")
+        co = marshal.loads(marshal.dumps(co))
+        for obj in co.co_consts:
+            if isinstance(obj, types.CodeType):
+                self.assertIs(co.co_filename, obj.co_filename)
 
 class ContainerTestCase(unittest.TestCase, HelperMixin):
     d = {'astring': 'foo@bar.baz.spam',

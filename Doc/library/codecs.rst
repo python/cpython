@@ -458,7 +458,8 @@ define in order to be compatible with the Python codec registry.
 
    .. method:: reset()
 
-      Reset the encoder to the initial state.
+      Reset the encoder to the initial state. The output is discarded: call
+      ``.encode('', final=True)`` to reset the encoder and to get the output.
 
 
 .. method:: IncrementalEncoder.getstate()

@@ -1513,8 +1513,13 @@ textiowrapper_read(textio *self, PyObject *args)
         PyObject *decoded;
         if (bytes == NULL)
             goto fail;
-        decoded = PyObject_CallMethodObjArgs(self->decoder, _PyIO_str_decode,
-                                             bytes, Py_True, NULL);
+
+        if (Py_TYPE(self->decoder) == &PyIncrementalNewlineDecoder_Type)
+            decoded = _PyIncrementalNewlineDecoder_decode(self->decoder,
+                                                          bytes, 1);
+        else
+            decoded = PyObject_CallMethodObjArgs(
+                self->decoder, _PyIO_str_decode, bytes, Py_True, NULL);
         Py_DECREF(bytes);
         if (decoded == NULL)
             goto fail;

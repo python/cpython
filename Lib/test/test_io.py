@@ -833,13 +833,16 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
         # Inject some None's in there to simulate EWOULDBLOCK
         rawio = self.MockRawIO((b"abc", b"d", None, b"efg", None, None, None))
         bufio = self.tp(rawio)
-
         self.assertEqual(b"abcd", bufio.read(6))
         self.assertEqual(b"e", bufio.read(1))
         self.assertEqual(b"fg", bufio.read())
         self.assertEqual(b"", bufio.peek(1))
-        self.assertTrue(None is bufio.read())
+        self.assertIsNone(bufio.read())
         self.assertEqual(b"", bufio.read())
+
+        rawio = self.MockRawIO((b"a", None, None))
+        self.assertEqual(b"a", rawio.readall())
+        self.assertIsNone(rawio.readall())
 
     def test_read_past_eof(self):
         rawio = self.MockRawIO((b"abc", b"d", b"efg"))
@@ -2512,6 +2515,8 @@ class MiscIOTest(unittest.TestCase):
             self.assertRaises(ValueError, f.read)
             if hasattr(f, "read1"):
                 self.assertRaises(ValueError, f.read1, 1024)
+            if hasattr(f, "readall"):
+                self.assertRaises(ValueError, f.readall)
             if hasattr(f, "readinto"):
                 self.assertRaises(ValueError, f.readinto, bytearray(1024))
             self.assertRaises(ValueError, f.readline)
@@ -2678,7 +2683,7 @@ class SignalsTest(unittest.TestCase):
             # The buffered IO layer must check for pending signal
             # handlers, which in this case will invoke alarm_interrupt().
             self.assertRaises(ZeroDivisionError,
-                              wio.write, item * (1024 * 1024))
+                        wio.write, item * (support.PIPE_MAX_SIZE // len(item)))
             t.join()
             # We got one byte, get another one and check that it isn't a
             # repeat of the first one.
