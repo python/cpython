@@ -218,10 +218,6 @@ description
    in Distutils1.) A file can be provided in the *description-file* field.
    *optional*
 
-description-file
-   path to a text file that will be used for the
-   **description** field. *optional*
-
 keywords
    A list of additional keywords to be used to assist searching
    for the distribution in a larger catalog. Comma or space-separated.
@@ -281,6 +277,13 @@ requires-externals
 project-url
    A label, followed by a browsable URL for the project.
    "label, url". The label is limited to 32 signs. *optional*, *multi*
+
+One extra field not present in PEP 345 is supported:
+
+description-file
+   Path to a text file that will be used to fill the ``description`` field.
+   ``description-file`` and ``description`` are mutually exclusive.  *optional*
+
 
 
 Example::
