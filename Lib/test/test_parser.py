@@ -614,6 +614,13 @@ class STObjectTestCase(unittest.TestCase):
 
     # XXX tests for pickling and unpickling of ST objects should go here
 
+class OtherParserCase(unittest.TestCase):
+
+    def test_two_args_to_expr(self):
+        # See bug #12264
+        with self.assertRaises(TypeError):
+            parser.expr("a", "b")
+
 
 def test_main():
     support.run_unittest(
@@ -622,6 +629,7 @@ def test_main():
         CompileTestCase,
         ParserStackLimitTestCase,
         STObjectTestCase,
+        OtherParserCase,
     )
 
 
