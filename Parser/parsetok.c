@@ -232,7 +232,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
     PyParser_Delete(ps);
 
     if (n == NULL) {
-        if (tok->lineno <= 1 && tok->done == E_EOF)
+        if (tok->done == E_EOF)
             err_ret->error = E_EOF;
         err_ret->lineno = tok->lineno;
         if (tok->buf != NULL) {

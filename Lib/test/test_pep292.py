@@ -42,19 +42,6 @@ class TestTemplate(unittest.TestCase):
         s = Template('$who likes $$')
         eq(s.substitute(dict(who='tim', what='ham')), 'tim likes $')
 
-    def test_invalid(self):
-        class MyPattern(Template):
-            pattern = r"""
-            (?:
-            (?P<invalid>)            |
-            (?P<escaped>%(delim)s)   |
-            @(?P<named>%(id)s)       |
-            @{(?P<braced>%(id)s)}
-            )
-            """
-        s = MyPattern('$')
-        self.assertRaises(ValueError, s.substitute, dict())
-
     def test_percents(self):
         eq = self.assertEqual
         s = Template('%(foo)s $foo ${foo}')
@@ -171,6 +158,26 @@ class TestTemplate(unittest.TestCase):
         self.assertEqual(t.safe_substitute(), tmpl)
         val = t.safe_substitute({'location': 'Cleveland'})
         self.assertEqual(val, 'PyCon in Cleveland')
+
+    def test_invalid_with_no_lines(self):
+        # The error formatting for invalid templates
+        # has a special case for no data that the default
+        # pattern can't trigger (always has at least '$')
+        # So we craft a pattern that is always invalid
+        # with no leading data.
+        class MyTemplate(Template):
+            pattern = r"""
+              (?P<invalid>) |
+              unreachable(
+                (?P<named>)   |
+                (?P<braced>)  |
+                (?P<escaped>)
+              )
+            """
+        s = MyTemplate('')
+        with self.assertRaises(ValueError) as err:
+            s.substitute({})
+        self.assertIn('line 1, col 1', str(err.exception))
 
     def test_unicode_values(self):
         s = Template('$who likes $what')

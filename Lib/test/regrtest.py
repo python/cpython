@@ -22,8 +22,7 @@ Options:
 -h/--help       -- print this text and exit
 --timeout TIMEOUT
                 -- dump the traceback and exit if a test takes more
-                   than TIMEOUT seconds (default: 30 minutes); disable
-                   the timeout if TIMEOUT is zero
+                   than TIMEOUT seconds
 --wait          -- wait for user input, e.g., allow a debugger to be attached
 
 Verbosity
@@ -269,11 +268,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     # Display the Python traceback fatal errors (e.g. segfault)
     faulthandler.enable(all_threads=True)
 
-    if hasattr(faulthandler, 'dump_tracebacks_later'):
-        timeout = 60*60
-    else:
-        timeout = None
-
     replace_stdout()
 
     support.record_original_stdout(sys.stdout)
@@ -295,6 +289,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         use_resources = []
     debug = False
     start = None
+    timeout = None
     for o, a in opts:
         if o in ('-h', '--help'):
             print(__doc__)
@@ -420,10 +415,13 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             testdir = os.path.join(support.SAVEDCWD, a)
         elif o == '--timeout':
             if not hasattr(faulthandler, 'dump_tracebacks_later'):
-                print("--timeout option requires "
+                print("The timeout option requires "
                       "faulthandler.dump_tracebacks_later", file=sys.stderr)
                 sys.exit(1)
             timeout = float(a)
+            if timeout <= 0:
+                print("The timeout must be greater than 0", file=sys.stderr)
+                sys.exit(1)
         elif o == '--wait':
             input("Press any key to continue...")
         else:
@@ -630,9 +628,12 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 if test is None:
                     finished += 1
                     continue
+                accumulate_result(test, result)
                 if not quiet:
-                    print("[{1:{0}}{2}] {3}".format(
-                        test_count_width, test_index, test_count, test))
+                    fmt = "[{1:{0}}{2}/{3}] {4}" if bad else "[{1:{0}}{2}] {4}"
+                    print(fmt.format(
+                        test_count_width, test_index, test_count,
+                        len(bad), test))
                 if stdout:
                     print(stdout)
                 if stderr:
@@ -642,7 +643,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     raise KeyboardInterrupt   # What else?
                 if result[0] == CHILD_ERROR:
                     raise Exception("Child error on {}: {}".format(test, result[1]))
-                accumulate_result(test, result)
                 test_index += 1
         except KeyboardInterrupt:
             interrupted = True
@@ -652,8 +652,9 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     else:
         for test_index, test in enumerate(tests, 1):
             if not quiet:
-                print("[{1:{0}}{2}] {3}".format(
-                    test_count_width, test_index, test_count, test))
+                fmt = "[{1:{0}}{2}/{3}] {4}" if bad else "[{1:{0}}{2}] {4}"
+                print(fmt.format(
+                    test_count_width, test_index, test_count, len(bad), test))
                 sys.stdout.flush()
             if trace:
                 # If we're tracing code coverage, then we don't exit with status
@@ -791,17 +792,14 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
 def replace_stdout():
     """Set stdout encoder error handler to backslashreplace (as stderr error
     handler) to avoid UnicodeEncodeError when printing a traceback"""
-    if os.name == "nt":
-        # Replace sys.stdout breaks the stdout newlines on Windows: issue #8533
-        return
-
     import atexit
 
     stdout = sys.stdout
     sys.stdout = open(stdout.fileno(), 'w',
         encoding=stdout.encoding,
         errors="backslashreplace",
-        closefd=False)
+        closefd=False,
+        newline='\n')
 
     def restore_stdout():
         sys.stdout.close()
@@ -835,7 +833,7 @@ def runtest(test, verbose, quiet,
     support.verbose = verbose  # Tell tests to be moderately quiet
     if use_resources is not None:
         support.use_resources = use_resources
-    use_timeout = (timeout is not None and timeout > 0)
+    use_timeout = (timeout is not None)
     if use_timeout:
         faulthandler.dump_tracebacks_later(timeout, exit=True)
     try:
@@ -1023,10 +1021,6 @@ class saved_test_environment:
 
 def runtest_inner(test, verbose, quiet, huntrleaks=False, debug=False):
     support.unload(test)
-    if verbose:
-        capture_stdout = None
-    else:
-        capture_stdout = io.StringIO()
 
     test_time = 0.0
     refleak = False  # True if the test leaked references.

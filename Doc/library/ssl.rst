@@ -162,6 +162,35 @@ instead.
 Random generation
 ^^^^^^^^^^^^^^^^^
 
+.. function:: RAND_bytes(num)
+
+   Returns *num* cryptographically strong pseudo-random bytes. Raises an
+   :class:`SSLError` if the PRNG has not been seeded with enough data or if the
+   operation is not supported by the current RAND method. :func:`RAND_status`
+   can be used to check the status of the PRNG and :func:`RAND_add` can be used
+   to seed the PRNG.
+
+   Read the Wikipedia article, `Cryptographically secure pseudorandom number
+   generator (CSPRNG)
+   <http://en.wikipedia.org/wiki/Cryptographically_secure_pseudorandom_number_generator>`_,
+   to get the requirements of a cryptographically generator.
+
+   .. versionadded:: 3.3
+
+.. function:: RAND_pseudo_bytes(num)
+
+   Returns (bytes, is_cryptographic): bytes are *num* pseudo-random bytes,
+   is_cryptographic is True if the bytes generated are cryptographically
+   strong. Raises an :class:`SSLError` if the operation is not supported by the
+   current RAND method.
+
+   Generated pseudo-random byte sequences will be unique if they are of
+   sufficient length, but are not necessarily unpredictable. They can be used
+   for non-cryptographic purposes and for certain purposes in cryptographic
+   protocols, but usually not for key generation etc.
+
+   .. versionadded:: 3.3
+
 .. function:: RAND_status()
 
    Returns True if the SSL pseudo-random number generator has been seeded with
@@ -171,7 +200,7 @@ Random generation
 
 .. function:: RAND_egd(path)
 
-   If you are running an entropy-gathering daemon (EGD) somewhere, and ``path``
+   If you are running an entropy-gathering daemon (EGD) somewhere, and *path*
    is the pathname of a socket connection open to it, this will read 256 bytes
    of randomness from the socket, and add it to the SSL pseudo-random number
    generator to increase the security of generated secret keys.  This is
@@ -182,8 +211,8 @@ Random generation
 
 .. function:: RAND_add(bytes, entropy)
 
-   Mixes the given ``bytes`` into the SSL pseudo-random number generator.  The
-   parameter ``entropy`` (a float) is a lower bound on the entropy contained in
+   Mixes the given *bytes* into the SSL pseudo-random number generator.  The
+   parameter *entropy* (a float) is a lower bound on the entropy contained in
    string (so you can always use :const:`0.0`).  See :rfc:`1750` for more
    information on sources of entropy.
 

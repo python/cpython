@@ -2,7 +2,7 @@
 
 
 /*
-   __version__ 0daa6ba25d9b.
+   __version__ e0e663132363.
 
    This module must be committed separately after each AST grammar change;
    The __version__ number is set to the revision number of the commit
@@ -95,8 +95,7 @@ static char *If_fields[]={
 };
 static PyTypeObject *With_type;
 static char *With_fields[]={
-        "context_expr",
-        "optional_vars",
+        "items",
         "body",
 };
 static PyTypeObject *Raise_type;
@@ -104,15 +103,11 @@ static char *Raise_fields[]={
         "exc",
         "cause",
 };
-static PyTypeObject *TryExcept_type;
-static char *TryExcept_fields[]={
+static PyTypeObject *Try_type;
+static char *Try_fields[]={
         "body",
         "handlers",
         "orelse",
-};
-static PyTypeObject *TryFinally_type;
-static char *TryFinally_fields[]={
-        "body",
         "finalbody",
 };
 static PyTypeObject *Assert_type;
@@ -391,6 +386,12 @@ static PyObject* ast2obj_alias(void*);
 static char *alias_fields[]={
         "name",
         "asname",
+};
+static PyTypeObject *withitem_type;
+static PyObject* ast2obj_withitem(void*);
+static char *withitem_fields[]={
+        "context_expr",
+        "optional_vars",
 };
 
 
@@ -680,15 +681,12 @@ static int init_types(void)
         if (!While_type) return 0;
         If_type = make_type("If", stmt_type, If_fields, 3);
         if (!If_type) return 0;
-        With_type = make_type("With", stmt_type, With_fields, 3);
+        With_type = make_type("With", stmt_type, With_fields, 2);
         if (!With_type) return 0;
         Raise_type = make_type("Raise", stmt_type, Raise_fields, 2);
         if (!Raise_type) return 0;
-        TryExcept_type = make_type("TryExcept", stmt_type, TryExcept_fields, 3);
-        if (!TryExcept_type) return 0;
-        TryFinally_type = make_type("TryFinally", stmt_type, TryFinally_fields,
-                                    2);
-        if (!TryFinally_type) return 0;
+        Try_type = make_type("Try", stmt_type, Try_fields, 4);
+        if (!Try_type) return 0;
         Assert_type = make_type("Assert", stmt_type, Assert_fields, 2);
         if (!Assert_type) return 0;
         Import_type = make_type("Import", stmt_type, Import_fields, 1);
@@ -938,6 +936,8 @@ static int init_types(void)
         if (!keyword_type) return 0;
         alias_type = make_type("alias", &AST_type, alias_fields, 2);
         if (!alias_type) return 0;
+        withitem_type = make_type("withitem", &AST_type, withitem_fields, 2);
+        if (!withitem_type) return 0;
         initialized = 1;
         return 1;
 }
@@ -960,6 +960,7 @@ static int obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena);
 static int obj2ast_arg(PyObject* obj, arg_ty* out, PyArena* arena);
 static int obj2ast_keyword(PyObject* obj, keyword_ty* out, PyArena* arena);
 static int obj2ast_alias(PyObject* obj, alias_ty* out, PyArena* arena);
+static int obj2ast_withitem(PyObject* obj, withitem_ty* out, PyArena* arena);
 
 mod_ty
 Module(asdl_seq * body, PyArena *arena)
@@ -1225,21 +1226,15 @@ If(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno, int
 }
 
 stmt_ty
-With(expr_ty context_expr, expr_ty optional_vars, asdl_seq * body, int lineno,
-     int col_offset, PyArena *arena)
+With(asdl_seq * items, asdl_seq * body, int lineno, int col_offset, PyArena
+     *arena)
 {
         stmt_ty p;
-        if (!context_expr) {
-                PyErr_SetString(PyExc_ValueError,
-                                "field context_expr is required for With");
-                return NULL;
-        }
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p)
                 return NULL;
         p->kind = With_kind;
-        p->v.With.context_expr = context_expr;
-        p->v.With.optional_vars = optional_vars;
+        p->v.With.items = items;
         p->v.With.body = body;
         p->lineno = lineno;
         p->col_offset = col_offset;
@@ -1262,33 +1257,18 @@ Raise(expr_ty exc, expr_ty cause, int lineno, int col_offset, PyArena *arena)
 }
 
 stmt_ty
-TryExcept(asdl_seq * body, asdl_seq * handlers, asdl_seq * orelse, int lineno,
-          int col_offset, PyArena *arena)
+Try(asdl_seq * body, asdl_seq * handlers, asdl_seq * orelse, asdl_seq *
+    finalbody, int lineno, int col_offset, PyArena *arena)
 {
         stmt_ty p;
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p)
                 return NULL;
-        p->kind = TryExcept_kind;
-        p->v.TryExcept.body = body;
-        p->v.TryExcept.handlers = handlers;
-        p->v.TryExcept.orelse = orelse;
-        p->lineno = lineno;
-        p->col_offset = col_offset;
-        return p;
-}
-
-stmt_ty
-TryFinally(asdl_seq * body, asdl_seq * finalbody, int lineno, int col_offset,
-           PyArena *arena)
-{
-        stmt_ty p;
-        p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p)
-                return NULL;
-        p->kind = TryFinally_kind;
-        p->v.TryFinally.body = body;
-        p->v.TryFinally.finalbody = finalbody;
+        p->kind = Try_kind;
+        p->v.Try.body = body;
+        p->v.Try.handlers = handlers;
+        p->v.Try.orelse = orelse;
+        p->v.Try.finalbody = finalbody;
         p->lineno = lineno;
         p->col_offset = col_offset;
         return p;
@@ -2135,6 +2115,23 @@ alias(identifier name, identifier asname, PyArena *arena)
         return p;
 }
 
+withitem_ty
+withitem(expr_ty context_expr, expr_ty optional_vars, PyArena *arena)
+{
+        withitem_ty p;
+        if (!context_expr) {
+                PyErr_SetString(PyExc_ValueError,
+                                "field context_expr is required for withitem");
+                return NULL;
+        }
+        p = (withitem_ty)PyArena_Malloc(arena, sizeof(*p));
+        if (!p)
+                return NULL;
+        p->context_expr = context_expr;
+        p->optional_vars = optional_vars;
+        return p;
+}
+
 
 PyObject*
 ast2obj_mod(void* _o)
@@ -2390,15 +2387,9 @@ ast2obj_stmt(void* _o)
         case With_kind:
                 result = PyType_GenericNew(With_type, NULL, NULL);
                 if (!result) goto failed;
-                value = ast2obj_expr(o->v.With.context_expr);
+                value = ast2obj_list(o->v.With.items, ast2obj_withitem);
                 if (!value) goto failed;
-                if (PyObject_SetAttrString(result, "context_expr", value) == -1)
-                        goto failed;
-                Py_DECREF(value);
-                value = ast2obj_expr(o->v.With.optional_vars);
-                if (!value) goto failed;
-                if (PyObject_SetAttrString(result, "optional_vars", value) ==
-                    -1)
+                if (PyObject_SetAttrString(result, "items", value) == -1)
                         goto failed;
                 Py_DECREF(value);
                 value = ast2obj_list(o->v.With.body, ast2obj_stmt);
@@ -2421,35 +2412,25 @@ ast2obj_stmt(void* _o)
                         goto failed;
                 Py_DECREF(value);
                 break;
-        case TryExcept_kind:
-                result = PyType_GenericNew(TryExcept_type, NULL, NULL);
+        case Try_kind:
+                result = PyType_GenericNew(Try_type, NULL, NULL);
                 if (!result) goto failed;
-                value = ast2obj_list(o->v.TryExcept.body, ast2obj_stmt);
+                value = ast2obj_list(o->v.Try.body, ast2obj_stmt);
                 if (!value) goto failed;
                 if (PyObject_SetAttrString(result, "body", value) == -1)
                         goto failed;
                 Py_DECREF(value);
-                value = ast2obj_list(o->v.TryExcept.handlers,
-                                     ast2obj_excepthandler);
+                value = ast2obj_list(o->v.Try.handlers, ast2obj_excepthandler);
                 if (!value) goto failed;
                 if (PyObject_SetAttrString(result, "handlers", value) == -1)
                         goto failed;
                 Py_DECREF(value);
-                value = ast2obj_list(o->v.TryExcept.orelse, ast2obj_stmt);
+                value = ast2obj_list(o->v.Try.orelse, ast2obj_stmt);
                 if (!value) goto failed;
                 if (PyObject_SetAttrString(result, "orelse", value) == -1)
                         goto failed;
                 Py_DECREF(value);
-                break;
-        case TryFinally_kind:
-                result = PyType_GenericNew(TryFinally_type, NULL, NULL);
-                if (!result) goto failed;
-                value = ast2obj_list(o->v.TryFinally.body, ast2obj_stmt);
-                if (!value) goto failed;
-                if (PyObject_SetAttrString(result, "body", value) == -1)
-                        goto failed;
-                Py_DECREF(value);
-                value = ast2obj_list(o->v.TryFinally.finalbody, ast2obj_stmt);
+                value = ast2obj_list(o->v.Try.finalbody, ast2obj_stmt);
                 if (!value) goto failed;
                 if (PyObject_SetAttrString(result, "finalbody", value) == -1)
                         goto failed;
@@ -3370,6 +3351,35 @@ failed:
         return NULL;
 }
 
+PyObject*
+ast2obj_withitem(void* _o)
+{
+        withitem_ty o = (withitem_ty)_o;
+        PyObject *result = NULL, *value = NULL;
+        if (!o) {
+                Py_INCREF(Py_None);
+                return Py_None;
+        }
+
+        result = PyType_GenericNew(withitem_type, NULL, NULL);
+        if (!result) return NULL;
+        value = ast2obj_expr(o->context_expr);
+        if (!value) goto failed;
+        if (PyObject_SetAttrString(result, "context_expr", value) == -1)
+                goto failed;
+        Py_DECREF(value);
+        value = ast2obj_expr(o->optional_vars);
+        if (!value) goto failed;
+        if (PyObject_SetAttrString(result, "optional_vars", value) == -1)
+                goto failed;
+        Py_DECREF(value);
+        return result;
+failed:
+        Py_XDECREF(value);
+        Py_XDECREF(result);
+        return NULL;
+}
+
 
 int
 obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
@@ -4210,32 +4220,33 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 return 1;
         }
         if (isinstance) {
-                expr_ty context_expr;
-                expr_ty optional_vars;
+                asdl_seq* items;
                 asdl_seq* body;
 
-                if (PyObject_HasAttrString(obj, "context_expr")) {
+                if (PyObject_HasAttrString(obj, "items")) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "context_expr");
+                        Py_ssize_t len;
+                        Py_ssize_t i;
+                        tmp = PyObject_GetAttrString(obj, "items");
                         if (tmp == NULL) goto failed;
-                        res = obj2ast_expr(tmp, &context_expr, arena);
-                        if (res != 0) goto failed;
+                        if (!PyList_Check(tmp)) {
+                                PyErr_Format(PyExc_TypeError, "With field \"items\" must be a list, not a %.200s", tmp->ob_type->tp_name);
+                                goto failed;
+                        }
+                        len = PyList_GET_SIZE(tmp);
+                        items = asdl_seq_new(len, arena);
+                        if (items == NULL) goto failed;
+                        for (i = 0; i < len; i++) {
+                                withitem_ty value;
+                                res = obj2ast_withitem(PyList_GET_ITEM(tmp, i), &value, arena);
+                                if (res != 0) goto failed;
+                                asdl_seq_SET(items, i, value);
+                        }
                         Py_XDECREF(tmp);
                         tmp = NULL;
                 } else {
-                        PyErr_SetString(PyExc_TypeError, "required field \"context_expr\" missing from With");
+                        PyErr_SetString(PyExc_TypeError, "required field \"items\" missing from With");
                         return 1;
-                }
-                if (PyObject_HasAttrString(obj, "optional_vars")) {
-                        int res;
-                        tmp = PyObject_GetAttrString(obj, "optional_vars");
-                        if (tmp == NULL) goto failed;
-                        res = obj2ast_expr(tmp, &optional_vars, arena);
-                        if (res != 0) goto failed;
-                        Py_XDECREF(tmp);
-                        tmp = NULL;
-                } else {
-                        optional_vars = NULL;
                 }
                 if (PyObject_HasAttrString(obj, "body")) {
                         int res;
@@ -4262,8 +4273,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from With");
                         return 1;
                 }
-                *out = With(context_expr, optional_vars, body, lineno,
-                            col_offset, arena);
+                *out = With(items, body, lineno, col_offset, arena);
                 if (*out == NULL) goto failed;
                 return 0;
         }
@@ -4301,7 +4311,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
-        isinstance = PyObject_IsInstance(obj, (PyObject*)TryExcept_type);
+        isinstance = PyObject_IsInstance(obj, (PyObject*)Try_type);
         if (isinstance == -1) {
                 return 1;
         }
@@ -4309,6 +4319,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 asdl_seq* body;
                 asdl_seq* handlers;
                 asdl_seq* orelse;
+                asdl_seq* finalbody;
 
                 if (PyObject_HasAttrString(obj, "body")) {
                         int res;
@@ -4317,7 +4328,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         tmp = PyObject_GetAttrString(obj, "body");
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
-                                PyErr_Format(PyExc_TypeError, "TryExcept field \"body\" must be a list, not a %.200s", tmp->ob_type->tp_name);
+                                PyErr_Format(PyExc_TypeError, "Try field \"body\" must be a list, not a %.200s", tmp->ob_type->tp_name);
                                 goto failed;
                         }
                         len = PyList_GET_SIZE(tmp);
@@ -4332,7 +4343,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         Py_XDECREF(tmp);
                         tmp = NULL;
                 } else {
-                        PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from TryExcept");
+                        PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from Try");
                         return 1;
                 }
                 if (PyObject_HasAttrString(obj, "handlers")) {
@@ -4342,7 +4353,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         tmp = PyObject_GetAttrString(obj, "handlers");
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
-                                PyErr_Format(PyExc_TypeError, "TryExcept field \"handlers\" must be a list, not a %.200s", tmp->ob_type->tp_name);
+                                PyErr_Format(PyExc_TypeError, "Try field \"handlers\" must be a list, not a %.200s", tmp->ob_type->tp_name);
                                 goto failed;
                         }
                         len = PyList_GET_SIZE(tmp);
@@ -4357,7 +4368,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         Py_XDECREF(tmp);
                         tmp = NULL;
                 } else {
-                        PyErr_SetString(PyExc_TypeError, "required field \"handlers\" missing from TryExcept");
+                        PyErr_SetString(PyExc_TypeError, "required field \"handlers\" missing from Try");
                         return 1;
                 }
                 if (PyObject_HasAttrString(obj, "orelse")) {
@@ -4367,7 +4378,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         tmp = PyObject_GetAttrString(obj, "orelse");
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
-                                PyErr_Format(PyExc_TypeError, "TryExcept field \"orelse\" must be a list, not a %.200s", tmp->ob_type->tp_name);
+                                PyErr_Format(PyExc_TypeError, "Try field \"orelse\" must be a list, not a %.200s", tmp->ob_type->tp_name);
                                 goto failed;
                         }
                         len = PyList_GET_SIZE(tmp);
@@ -4382,45 +4393,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         Py_XDECREF(tmp);
                         tmp = NULL;
                 } else {
-                        PyErr_SetString(PyExc_TypeError, "required field \"orelse\" missing from TryExcept");
-                        return 1;
-                }
-                *out = TryExcept(body, handlers, orelse, lineno, col_offset,
-                                 arena);
-                if (*out == NULL) goto failed;
-                return 0;
-        }
-        isinstance = PyObject_IsInstance(obj, (PyObject*)TryFinally_type);
-        if (isinstance == -1) {
-                return 1;
-        }
-        if (isinstance) {
-                asdl_seq* body;
-                asdl_seq* finalbody;
-
-                if (PyObject_HasAttrString(obj, "body")) {
-                        int res;
-                        Py_ssize_t len;
-                        Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "body");
-                        if (tmp == NULL) goto failed;
-                        if (!PyList_Check(tmp)) {
-                                PyErr_Format(PyExc_TypeError, "TryFinally field \"body\" must be a list, not a %.200s", tmp->ob_type->tp_name);
-                                goto failed;
-                        }
-                        len = PyList_GET_SIZE(tmp);
-                        body = asdl_seq_new(len, arena);
-                        if (body == NULL) goto failed;
-                        for (i = 0; i < len; i++) {
-                                stmt_ty value;
-                                res = obj2ast_stmt(PyList_GET_ITEM(tmp, i), &value, arena);
-                                if (res != 0) goto failed;
-                                asdl_seq_SET(body, i, value);
-                        }
-                        Py_XDECREF(tmp);
-                        tmp = NULL;
-                } else {
-                        PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from TryFinally");
+                        PyErr_SetString(PyExc_TypeError, "required field \"orelse\" missing from Try");
                         return 1;
                 }
                 if (PyObject_HasAttrString(obj, "finalbody")) {
@@ -4430,7 +4403,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         tmp = PyObject_GetAttrString(obj, "finalbody");
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
-                                PyErr_Format(PyExc_TypeError, "TryFinally field \"finalbody\" must be a list, not a %.200s", tmp->ob_type->tp_name);
+                                PyErr_Format(PyExc_TypeError, "Try field \"finalbody\" must be a list, not a %.200s", tmp->ob_type->tp_name);
                                 goto failed;
                         }
                         len = PyList_GET_SIZE(tmp);
@@ -4445,10 +4418,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         Py_XDECREF(tmp);
                         tmp = NULL;
                 } else {
-                        PyErr_SetString(PyExc_TypeError, "required field \"finalbody\" missing from TryFinally");
+                        PyErr_SetString(PyExc_TypeError, "required field \"finalbody\" missing from Try");
                         return 1;
                 }
-                *out = TryFinally(body, finalbody, lineno, col_offset, arena);
+                *out = Try(body, handlers, orelse, finalbody, lineno,
+                           col_offset, arena);
                 if (*out == NULL) goto failed;
                 return 0;
         }
@@ -6723,6 +6697,43 @@ failed:
         return 1;
 }
 
+int
+obj2ast_withitem(PyObject* obj, withitem_ty* out, PyArena* arena)
+{
+        PyObject* tmp = NULL;
+        expr_ty context_expr;
+        expr_ty optional_vars;
+
+        if (PyObject_HasAttrString(obj, "context_expr")) {
+                int res;
+                tmp = PyObject_GetAttrString(obj, "context_expr");
+                if (tmp == NULL) goto failed;
+                res = obj2ast_expr(tmp, &context_expr, arena);
+                if (res != 0) goto failed;
+                Py_XDECREF(tmp);
+                tmp = NULL;
+        } else {
+                PyErr_SetString(PyExc_TypeError, "required field \"context_expr\" missing from withitem");
+                return 1;
+        }
+        if (PyObject_HasAttrString(obj, "optional_vars")) {
+                int res;
+                tmp = PyObject_GetAttrString(obj, "optional_vars");
+                if (tmp == NULL) goto failed;
+                res = obj2ast_expr(tmp, &optional_vars, arena);
+                if (res != 0) goto failed;
+                Py_XDECREF(tmp);
+                tmp = NULL;
+        } else {
+                optional_vars = NULL;
+        }
+        *out = withitem(context_expr, optional_vars, arena);
+        return 0;
+failed:
+        Py_XDECREF(tmp);
+        return 1;
+}
+
 
 static struct PyModuleDef _astmodule = {
   PyModuleDef_HEAD_INIT, "_ast"
@@ -6739,7 +6750,7 @@ PyInit__ast(void)
             NULL;
         if (PyModule_AddIntConstant(m, "PyCF_ONLY_AST", PyCF_ONLY_AST) < 0)
                 return NULL;
-        if (PyModule_AddStringConstant(m, "__version__", "0daa6ba25d9b") < 0)
+        if (PyModule_AddStringConstant(m, "__version__", "e0e663132363") < 0)
                 return NULL;
         if (PyDict_SetItemString(d, "mod", (PyObject*)mod_type) < 0) return
             NULL;
@@ -6774,10 +6785,8 @@ PyInit__ast(void)
             NULL;
         if (PyDict_SetItemString(d, "Raise", (PyObject*)Raise_type) < 0) return
             NULL;
-        if (PyDict_SetItemString(d, "TryExcept", (PyObject*)TryExcept_type) <
-            0) return NULL;
-        if (PyDict_SetItemString(d, "TryFinally", (PyObject*)TryFinally_type) <
-            0) return NULL;
+        if (PyDict_SetItemString(d, "Try", (PyObject*)Try_type) < 0) return
+            NULL;
         if (PyDict_SetItemString(d, "Assert", (PyObject*)Assert_type) < 0)
             return NULL;
         if (PyDict_SetItemString(d, "Import", (PyObject*)Import_type) < 0)
@@ -6940,6 +6949,8 @@ PyInit__ast(void)
             return NULL;
         if (PyDict_SetItemString(d, "alias", (PyObject*)alias_type) < 0) return
             NULL;
+        if (PyDict_SetItemString(d, "withitem", (PyObject*)withitem_type) < 0)
+            return NULL;
         return m;
 }
 

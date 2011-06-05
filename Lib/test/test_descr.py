@@ -1587,6 +1587,7 @@ order (MRO) for bases """
             ("__floor__", math.floor, zero, set(), {}),
             ("__trunc__", math.trunc, zero, set(), {}),
             ("__ceil__", math.ceil, zero, set(), {}),
+            ("__dir__", dir, empty_seq, set(), {}),
             ]
 
         class Checker(object):
@@ -1630,12 +1631,7 @@ order (MRO) for bases """
             for attr, obj in env.items():
                 setattr(X, attr, obj)
             setattr(X, name, ErrDescr())
-            try:
-                runner(X())
-            except MyException:
-                pass
-            else:
-                self.fail("{0!r} didn't raise".format(name))
+            self.assertRaises(MyException, runner, X())
 
     def test_specials(self):
         # Testing special operators...

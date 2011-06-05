@@ -170,6 +170,7 @@ You can get the information from the list type:
      '__contains__',
      '__delattr__',
      '__delitem__',
+     '__dir__',
      '__doc__',
      '__eq__',
      '__format__',

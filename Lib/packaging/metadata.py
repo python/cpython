@@ -396,22 +396,24 @@ class Metadata:
                 value = []
 
         if logger.isEnabledFor(logging.WARNING):
+            project_name = self['Name']
+
             if name in _PREDICATE_FIELDS and value is not None:
                 for v in value:
                     # check that the values are valid predicates
                     if not is_valid_predicate(v.split(';')[0]):
                         logger.warning(
-                            '%r is not a valid predicate (field %r)',
-                            v, name)
+                            '%r: %r is not a valid predicate (field %r)',
+                            project_name, v, name)
             # FIXME this rejects UNKNOWN, is that right?
             elif name in _VERSIONS_FIELDS and value is not None:
                 if not is_valid_versions(value):
-                    logger.warning('%r is not a valid version (field %r)',
-                                   value, name)
+                    logger.warning('%r: %r is not a valid version (field %r)',
+                                   project_name, value, name)
             elif name in _VERSION_FIELDS and value is not None:
                 if not is_valid_version(value):
-                    logger.warning('%r is not a valid version (field %r)',
-                                   value, name)
+                    logger.warning('%r: %r is not a valid version (field %r)',
+                                   project_name, value, name)
 
         if name in _UNICODEFIELDS:
             if name == 'Description':

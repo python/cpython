@@ -146,6 +146,16 @@ class ProcessTestCase(BaseTestCase):
                              env=newenv)
         self.assertEqual(rc, 1)
 
+    def test_invalid_args(self):
+        # Popen() called with invalid arguments should raise TypeError
+        # but Popen.__del__ should not complain (issue #12085)
+        with support.captured_stderr() as s:
+            self.assertRaises(TypeError, subprocess.Popen, invalid_arg_name=1)
+            argcount = subprocess.Popen.__init__.__code__.co_argcount
+            too_many_args = [0] * (argcount + 1)
+            self.assertRaises(TypeError, subprocess.Popen, *too_many_args)
+        self.assertEqual(s.getvalue(), '')
+
     def test_stdin_none(self):
         # .stdin is None when not redirected
         p = subprocess.Popen([sys.executable, "-c", 'print("banana")'],
@@ -489,24 +499,21 @@ class ProcessTestCase(BaseTestCase):
         # This test will probably deadlock rather than fail, if
         # communicate() does not work properly.
         x, y = os.pipe()
-        if mswindows:
-            pipe_buf = 512
-        else:
-            pipe_buf = os.fpathconf(x, "PC_PIPE_BUF")
         os.close(x)
         os.close(y)
         p = subprocess.Popen([sys.executable, "-c",
                               'import sys,os;'
                               'sys.stdout.write(sys.stdin.read(47));'
-                              'sys.stderr.write("xyz"*%d);'
-                              'sys.stdout.write(sys.stdin.read())' % pipe_buf],
+                              'sys.stderr.write("x" * %d);'
+                              'sys.stdout.write(sys.stdin.read())' %
+                              support.PIPE_MAX_SIZE],
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
         self.addCleanup(p.stdout.close)
         self.addCleanup(p.stderr.close)
         self.addCleanup(p.stdin.close)
-        string_to_write = b"abc"*pipe_buf
+        string_to_write = b"a" * support.PIPE_MAX_SIZE
         (stdout, stderr) = p.communicate(string_to_write)
         self.assertEqual(stdout, string_to_write)
 
@@ -1274,6 +1281,11 @@ class POSIXProcessTestCase(BaseTestCase):
                          "Some fds were left open")
         self.assertIn(1, remaining_fds, "Subprocess failed")
 
+    # Mac OS X Tiger (10.4) has a kernel bug: sometimes, the file
+    # descriptor of a pipe closed in the parent process is valid in the
+    # child process according to fstat(), but the mode of the file
+    # descriptor is invalid, and read or write raise an error.
+    @support.requires_mac_ver(10, 5)
     def test_pass_fds(self):
         fd_status = support.findfile("fd_status.py", subdir="subprocessdata")
 
@@ -1495,20 +1507,6 @@ class ProcessTestCaseNoPoll(ProcessTestCase):
         ProcessTestCase.tearDown(self)
 
 
-@unittest.skipUnless(getattr(subprocess, '_posixsubprocess', False),
-                     "_posixsubprocess extension module not found.")
-class ProcessTestCasePOSIXPurePython(ProcessTestCase, POSIXProcessTestCase):
-    def setUp(self):
-        subprocess._posixsubprocess = None
-        ProcessTestCase.setUp(self)
-        POSIXProcessTestCase.setUp(self)
-
-    def tearDown(self):
-        subprocess._posixsubprocess = sys.modules['_posixsubprocess']
-        POSIXProcessTestCase.tearDown(self)
-        ProcessTestCase.tearDown(self)
-
-
 class HelperFunctionTests(unittest.TestCase):
     @unittest.skipIf(mswindows, "errno and EINTR make no sense on windows")
     def test_eintr_retry_call(self):
@@ -1617,7 +1615,6 @@ def test_main():
     unit_tests = (ProcessTestCase,
                   POSIXProcessTestCase,
                   Win32ProcessTestCase,
-                  ProcessTestCasePOSIXPurePython,
                   CommandTests,
                   ProcessTestCaseNoPoll,
                   HelperFunctionTests,

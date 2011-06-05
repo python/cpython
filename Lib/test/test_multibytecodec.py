@@ -256,6 +256,41 @@ class Test_ISO2022(unittest.TestCase):
             # Any ISO 2022 codec will cause the segfault
             myunichr(x).encode('iso_2022_jp', 'ignore')
 
+class TestStateful(unittest.TestCase):
+    text = '\u4E16\u4E16'
+    encoding = 'iso-2022-jp'
+    expected = b'\x1b$B@$@$'
+    reset = b'\x1b(B'
+    expected_reset = expected + reset
+
+    def test_encode(self):
+        self.assertEqual(self.text.encode(self.encoding), self.expected_reset)
+
+    def test_incrementalencoder(self):
+        encoder = codecs.getincrementalencoder(self.encoding)()
+        output = b''.join(
+            encoder.encode(char)
+            for char in self.text)
+        self.assertEqual(output, self.expected)
+        self.assertEqual(encoder.encode('', final=True), self.reset)
+        self.assertEqual(encoder.encode('', final=True), b'')
+
+    def test_incrementalencoder_final(self):
+        encoder = codecs.getincrementalencoder(self.encoding)()
+        last_index = len(self.text) - 1
+        output = b''.join(
+            encoder.encode(char, index == last_index)
+            for index, char in enumerate(self.text))
+        self.assertEqual(output, self.expected_reset)
+        self.assertEqual(encoder.encode('', final=True), b'')
+
+class TestHZStateful(TestStateful):
+    text = '\u804a\u804a'
+    encoding = 'hz'
+    expected = b'~{ADAD'
+    reset = b'~}'
+    expected_reset = expected + reset
+
 def test_main():
     support.run_unittest(__name__)
 

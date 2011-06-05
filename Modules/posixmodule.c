@@ -6547,6 +6547,31 @@ posix_pipe(PyObject *self, PyObject *noargs)
 }
 #endif  /* HAVE_PIPE */
 
+#ifdef HAVE_PIPE2
+PyDoc_STRVAR(posix_pipe2__doc__,
+"pipe2(flags=0) -> (read_end, write_end)\n\n\
+Create a pipe with flags set atomically.\
+flags is optional and can be constructed by ORing together zero or more\n\
+of these values: O_NONBLOCK, O_CLOEXEC.\n\
+");
+
+static PyObject *
+posix_pipe2(PyObject *self, PyObject *args)
+{
+    int flags = 0;
+    int fds[2];
+    int res;
+
+    if (!PyArg_ParseTuple(args, "|i:pipe2", &flags))
+        return NULL;
+
+    res = pipe2(fds, flags);
+    if (res != 0)
+        return posix_error();
+    return Py_BuildValue("(ii)", fds[0], fds[1]);
+}
+#endif /* HAVE_PIPE2 */
+
 #ifdef HAVE_WRITEV
 PyDoc_STRVAR(posix_writev__doc__,
 "writev(fd, buffers) -> byteswritten\n\n\
@@ -8495,6 +8520,9 @@ static PyObject *
 device_encoding(PyObject *self, PyObject *args)
 {
     int fd;
+#if defined(MS_WINDOWS) || defined(MS_WIN64)
+    UINT cp;
+#endif
     if (!PyArg_ParseTuple(args, "i:device_encoding", &fd))
         return NULL;
     if (!_PyVerify_fd(fd) || !isatty(fd)) {
@@ -8502,16 +8530,16 @@ device_encoding(PyObject *self, PyObject *args)
         return Py_None;
     }
 #if defined(MS_WINDOWS) || defined(MS_WIN64)
-    if (fd == 0) {
-        char buf[100];
-        sprintf(buf, "cp%d", GetConsoleCP());
-        return PyUnicode_FromString(buf);
-    }
-    if (fd == 1 || fd == 2) {
-        char buf[100];
-        sprintf(buf, "cp%d", GetConsoleOutputCP());
-        return PyUnicode_FromString(buf);
-    }
+    if (fd == 0)
+        cp = GetConsoleCP();
+    else if (fd == 1 || fd == 2)
+        cp = GetConsoleOutputCP();
+    else
+        cp = 0;
+    /* GetConsoleCP() and GetConsoleOutputCP() return 0 if the application
+       has no console */
+    if (cp != 0)
+        return PyUnicode_FromFormat("cp%u", (unsigned int)cp);
 #elif defined(CODESET)
     {
         char *codeset = nl_langinfo(CODESET);
@@ -9437,6 +9465,9 @@ static PyMethodDef posix_methods[] = {
     {"isatty",          posix_isatty, METH_VARARGS, posix_isatty__doc__},
 #ifdef HAVE_PIPE
     {"pipe",            posix_pipe, METH_NOARGS, posix_pipe__doc__},
+#endif
+#ifdef HAVE_PIPE2
+    {"pipe2",           posix_pipe2, METH_VARARGS, posix_pipe2__doc__},
 #endif
 #ifdef HAVE_MKFIFO
     {"mkfifo",          posix_mkfifo, METH_VARARGS, posix_mkfifo__doc__},

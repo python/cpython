@@ -815,6 +815,14 @@ rawiobase_readall(PyObject *self, PyObject *args)
             Py_DECREF(chunks);
             return NULL;
         }
+        if (data == Py_None) {
+            if (PyList_GET_SIZE(chunks) == 0) {
+                Py_DECREF(chunks);
+                return data;
+            }
+            Py_DECREF(data);
+            break;
+        }
         if (!PyBytes_Check(data)) {
             Py_DECREF(chunks);
             Py_DECREF(data);

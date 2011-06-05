@@ -5,10 +5,11 @@ import re
 import sys
 import getopt
 import logging
+from copy import copy
 
 from packaging import logger
 from packaging.dist import Distribution
-from packaging.util import _is_archive_file
+from packaging.util import _is_archive_file, generate_setup_py
 from packaging.command import get_command_class, STANDARD_COMMANDS
 from packaging.install import install, install_local_project, remove
 from packaging.database import get_distribution, get_distributions
@@ -36,6 +37,14 @@ Usage: pysetup create
 
 Create a new Python package.
 """
+
+generate_usage = """\
+Usage: pysetup generate-setup
+   or: pysetup generate-setup --help
+
+Generates a setup.py script for backward-compatibility purposes.
+"""
+
 
 graph_usage = """\
 Usage: pysetup graph dist
@@ -203,6 +212,13 @@ def _create(distpatcher, args, **kw):
     return main()
 
 
+@action_help(generate_usage)
+def _generate(distpatcher, args, **kw):
+    generate_setup_py()
+    print('The setup.py was generated')
+
+
+
 @action_help(graph_usage)
 def _graph(dispatcher, args, **kw):
     name = args[1]
@@ -224,15 +240,22 @@ def _install(dispatcher, args, **kw):
         if 'setup.py' in listing or 'setup.cfg' in listing:
             args.insert(1, os.getcwd())
         else:
-            logger.warning('no project to install')
-            return
+            logger.warning('No project to install.')
+            return 1
 
+    target = args[1]
     # installing from a source dir or archive file?
-    if os.path.isdir(args[1]) or _is_archive_file(args[1]):
-        install_local_project(args[1])
+    if os.path.isdir(target) or _is_archive_file(target):
+        if install_local_project(target):
+            return 0
+        else:
+            return 1
     else:
         # download from PyPI
-        install(args[1])
+        if install(target):
+            return 0
+        else:
+            return 1
 
 
 @action_help(metadata_usage)
@@ -335,13 +358,21 @@ def _run(dispatcher, args, **kw):
 def _list(dispatcher, args, **kw):
     opts = _parse_args(args[1:], '', ['all'])
     dists = get_distributions(use_egg_info=True)
-    if 'all' in opts:
+    if 'all' in opts or opts['args'] == []:
         results = dists
     else:
         results = [d for d in dists if d.name.lower() in opts['args']]
 
+    number = 0
     for dist in results:
         print('%s %s at %s' % (dist.name, dist.metadata['version'], dist.path))
+        number += 1
+
+    print('')
+    if number == 0:
+        print('Nothing seems to be installed.')
+    else:
+        print('Found %d projects installed.' % number)
 
 
 @action_help(search_usage)
@@ -351,8 +382,9 @@ def _search(dispatcher, args, **kw):
     It is able to search for a specific index (specified with --index), using
     the simple or xmlrpc index types (with --type xmlrpc / --type simple)
     """
-    opts = _parse_args(args[1:], '', ['simple', 'xmlrpc'])
+    #opts = _parse_args(args[1:], '', ['simple', 'xmlrpc'])
     # 1. what kind of index is requested ? (xmlrpc / simple)
+    raise NotImplementedError()
 
 
 actions = [
@@ -364,6 +396,7 @@ actions = [
     ('list', 'Search for local projects', _list),
     ('graph', 'Display a graph', _graph),
     ('create', 'Create a Project', _create),
+    ('generate-setup', 'Generates a backward-comptatible setup.py', _generate)
 ]
 
 
@@ -399,6 +432,14 @@ class Dispatcher:
             msg = 'Unrecognized action "%s"' % self.action
             raise PackagingArgError(msg)
 
+        self._set_logger()
+        self.args = args
+
+        # for display options we return immediately
+        if self.help or self.action is None:
+            self._show_help(self.parser, display_options_=False)
+
+    def _set_logger(self):
         # setting up the logging level from the command-line options
         # -q gets warning, error and critical
         if self.verbose == 0:
@@ -416,13 +457,11 @@ class Dispatcher:
         else:  # -vv and more for debug
             level = logging.DEBUG
 
-        # for display options we return immediately
-        option_order = self.parser.get_option_order()
-
-        self.args = args
-
-        if self.help or self.action is None:
-            self._show_help(self.parser, display_options_=False)
+        # setting up the stream handler
+        handler = logging.StreamHandler(sys.stderr)
+        handler.setLevel(level)
+        logger.addHandler(handler)
+        logger.setLevel(level)
 
     def _parse_command_opts(self, parser, args):
         # Pull the current command from the head of the command line
@@ -567,8 +606,6 @@ class Dispatcher:
         if isinstance(command, str):
             command = get_command_class(command)
 
-        name = command.get_command_name()
-
         desc = getattr(command, 'description', '(no description available)')
         print('Description: %s' % desc)
         print('')
@@ -635,11 +672,17 @@ class Dispatcher:
 
 
 def main(args=None):
-    dispatcher = Dispatcher(args)
-    if dispatcher.action is None:
-        return
+    old_level = logger.level
+    old_handlers = copy(logger.handlers)
+    try:
+        dispatcher = Dispatcher(args)
+        if dispatcher.action is None:
+            return
+        return dispatcher()
+    finally:
+        logger.setLevel(old_level)
+        logger.handlers[:] = old_handlers
 
-    return dispatcher()
 
 if __name__ == '__main__':
     sys.exit(main())

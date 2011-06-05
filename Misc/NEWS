@@ -10,6 +10,37 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #12225: Still allow Python to build if Python is not in its hg repo or
+  mercurial is not installed.
+
+- Issue #1195: my_fgets() now always clears errors before calling fgets(). Fix
+  the following case: sys.stdin.read() stopped with CTRL+d (end of file),
+  raw_input() interrupted by CTRL+c.
+
+- Issue #12216: Allow unexpected EOF errors to happen on any line of the file.
+
+- Issue #12199: The TryExcept and TryFinally and AST nodes have been unified
+  into a Try node.
+
+- Issue #9670: Increase the default stack size for secondary threads on
+  Mac OS X and FreeBSD to reduce the chances of a crash instead of a
+  "maximum recursion depth" RuntimeError exception.
+  (patch by Ronald Oussoren)
+
+- Issue #12106: The use of the multiple-with shorthand syntax is now reflected
+  in the AST.
+
+- Issue #12190: Try to use the same filename object when compiling unmarshalling
+  a code objects in the same file.
+
+- Issue #12166: Move implementations of dir() specialized for various types into
+  the __dir__() methods of those types.
+
+- Issue #5715: In socketserver, close the server socket in the child process.
+
+- Correct lookup of __dir__ on objects. Among other things, this causes errors
+  besides AttributeError found on lookup to be propagated.
+
 - Issue #12060: Use sig_atomic_t type and volatile keyword in the signal
   module. Patch written by Charles-François Natali.
 
@@ -88,7 +119,7 @@ Core and Builtins
 - Issue #11320: fix bogus memory management in Modules/getpath.c, leading to
   a possible crash when calling Py_SetPath().
 
-- _ast.__version__ is now a Mercurial integer and hex revision.
+- _ast.__version__ is now a Mercurial hex revision.
 
 - Issue #11432: A bug was introduced in subprocess.Popen on posix systems with
   3.2.0 where the stdout or stderr file descriptor being the same as the stdin
@@ -153,6 +184,74 @@ Core and Builtins
 Library
 -------
 
+- Issue #12080: Fix a Decimal.power() case that took an unreasonably long time
+  to compute.
+
+- Issue #12221: Remove __version__ attributes from pyexpat, pickle, tarfile,
+  pydoc, tkinter, and xml.parsers.expat. This were useless version constants
+  left over from the Mercurial transition
+
+- Named tuples now work correctly with vars().
+
+- Issue #12085: Fix an attribute error in subprocess.Popen destructor if the
+  constructor has failed, e.g. because of an undeclared keyword argument. Patch
+  written by Oleg Oshmyan.
+
+- Issue #12028: Make threading._get_ident() public, rename it to
+  threading.get_ident() and document it. This function was already used using
+  _thread.get_ident().
+
+- Issue #12171: IncrementalEncoder.reset() of CJK codecs (multibytecodec) calls
+  encreset() instead of decreset().
+
+- Issue #12218: Removed wsgiref.egg-info.
+
+- Issue #12196: Add pipe2() to the os module.
+
+- Issue #985064: Make plistlib more resilient to faulty input plists.
+  Patch by Mher Movsisyan.
+
+- Issue #1625: BZ2File and bz2.decompress() now support multi-stream files.
+  Initial patch by Nir Aides.
+
+- Issue #12175: BufferedReader.read(-1) now calls raw.readall() if available.
+
+- Issue #12175: FileIO.readall() now only reads the file position and size
+  once.
+
+- Issue #12175: RawIOBase.readall() now returns None if read() returns None.
+
+- Issue #12175: FileIO.readall() now raises a ValueError instead of an IOError
+  if the file is closed.
+
+- Issue #11109: New service_action method for BaseServer, used by ForkingMixin
+  class for cleanup. Initial Patch by Justin Wark.
+
+- Issue #12045: Avoid duplicate execution of command in
+  ctypes.util._get_soname().  Patch by Sijin Joseph.
+
+- Issue #10818: Remove the Tk GUI and the serve() function of the pydoc module,
+  pydoc -g has been deprecated in Python 3.2 and it has a new enhanced web
+  server.
+
+- Issue #1441530: In imaplib, read the data in one chunk to speed up large
+  reads and simplify code.
+
+- Issue #12070: Fix the Makefile parser of the sysconfig module to handle
+  correctly references to "bogus variable" (e.g. "prefix=$/opt/python").
+
+- Issue #12100: Don't reset incremental encoders of CJK codecs at each call to
+  their encode() method anymore, but continue to call the reset() method if the
+  final argument is True.
+
+- Issue #12049: Add RAND_bytes() and RAND_pseudo_bytes() functions to the ssl
+  module.
+
+- Issue #12125: fixed the failures under Solaris due to improper test cleanup.
+
+- Issue #6501: os.device_encoding() returns None on Windows if the application
+  has no console.
+
 - Issue #12132: Skip test_build_ext in case the xxmodule is not found.
 
 - Issue #12105: Add O_CLOEXEC to the os module.
@@ -164,8 +263,8 @@ Library
 - Issue #12124: zipimport doesn't keep a reference to zlib.decompress() anymore
   to be able to unload the module.
 
-- Issue #12120, #12119: skip a test in packaging and distutils
-  if sys.dont_write_bytecode is set to True.
+- Add the packaging module, an improved fork of distutils (also known as
+  distutils2).
 
 - Issue #12065: connect_ex() on an SSL socket now returns the original errno
   when the socket's timeout expires (it used to return None).
@@ -379,11 +478,12 @@ Library
 
 - Issue #7311: fix html.parser to accept non-ASCII attribute values.
 
-- Issue #11605: email.parser.BytesFeedParser was incorrectly converting multipart
-  subpararts with an 8bit CTE into unicode instead of preserving the bytes.
+- Issue #11605: email.parser.BytesFeedParser was incorrectly converting
+  multipart subparts with an 8-bit CTE into unicode instead of preserving the
+  bytes.
 
-- Issue #1690608: email.util.formataddr is now RFC2047 aware:  it now has a
-  charset parameter that defaults utf-8 which is used as the charset for RFC
+- Issue #1690608: email.util.formataddr is now RFC 2047 aware:  it now has a
+  charset parameter that defaults to utf-8 and is used as the charset for RFC
   2047 encoding when the realname contains non-ASCII characters.
 
 - Issue #10963: Ensure that subprocess.communicate() never raises EPIPE.
@@ -537,7 +637,7 @@ Library
   the "n" as the flag argument and the file exists. The behavior matches
   the documentation and general logic.
 
-- Issue #1162477: Postel Principal adjustment to email date parsing: handle the
+- Issue #1162477: Postel Principle adjustment to email date parsing: handle the
   fact that some non-compliant MUAs use '.' instead of ':' in time specs.
 
 - Issue #11131: Fix sign of zero in decimal.Decimal plus and minus
@@ -661,6 +761,10 @@ Library
 Build
 -----
 
+- Issue #11217: For 64-bit/32-bit Mac OS X universal framework builds,
+  ensure "make install" creates symlinks in --prefix bin for the "-32"
+  files in the framework bin directory like the installer does.
+
 - Issue #11347: Use --no-as-needed when linking libpython3.so.
 
 - Issue #11411: Fix 'make DESTDIR=' with a relative destination.
@@ -688,6 +792,8 @@ Tools/Demos
 Extension Modules
 -----------------
 
+- Issue #12221: Replace pyexpat.__version__ with the Python version.
+
 - Issue #12051: Fix segfault in json.dumps() while encoding highly-nested
   objects using the C accelerations.
 
@@ -699,6 +805,15 @@ Extension Modules
 
 Tests
 -----
+
+- Issue #12057: Add tests for ISO 2022 codecs (iso2022_jp, iso2022_jp_2,
+  iso2022_kr).
+
+- Issue #12180: Fixed a few remaining errors in test_packaging when no
+  threading.
+
+- Issue #12120, #12119: skip a test in packaging and distutils
+  if sys.dont_write_bytecode is set to True.
 
 - Issue #12096: Fix a race condition in test_threading.test_waitfor(). Patch
   written by Charles-François Natali.
@@ -754,12 +869,12 @@ Tests
 - New test_crashers added to exercise the scripts in the Lib/test/crashers
   directory and confirm they fail as expected
 
-- Issue #11578: added test for the timeit module.  Patch Michael Henry.
+- Issue #11578: added test for the timeit module.  Patch by Michael Henry.
 
 - Issue #11503: improve test coverage of posixpath.py. Patch by Evan Dandrea.
 
-- Issue #11505: improves test coverage of string.py. Patch by Alicia
-  Arlen.
+- Issue #11505: improves test coverage of string.py, increases granularity of
+  string.Formatter tests. Initial patch by Alicia Arlen.
 
 - Issue #11548: Improve test coverage of the shutil module. Patch by
   Evan Dandrea.
@@ -793,7 +908,11 @@ Tests
 C-API
 -----
 
-- PY_PATCHLEVEL_REVISION has been removed, since it's meaningless with Mercurial.
+- PY_PATCHLEVEL_REVISION has been removed, since it's meaningless with
+  Mercurial.
+
+- Issue #12173: The first argument of PyImport_ImportModuleLevel is now `const
+  char *` instead of `char *`.
 
 Documentation
 -------------
@@ -1064,10 +1183,10 @@ Library
   comparisons that could lead to infinite recursion.
 
 - Issue #10686: the email package now :rfc:`2047`\ -encodes headers with
-  non-ASCII bytes (parsed by a Bytes Parser) when doing conversion to 7bit-clean
+  non-ASCII bytes (parsed by a BytesParser) when doing conversion to 7bit-clean
   presentation, instead of replacing them with ?s.
 
-- email.header.Header was incorrectly encoding folding white space when
+- email.header.Header was incorrectly encoding folding whitespace when
   rfc2047-encoding header values with embedded newlines, leaving them without
   folding whitespace.  It now uses the continuation_ws, as it does for
   continuation lines that it creates itself.

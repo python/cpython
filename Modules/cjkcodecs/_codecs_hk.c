@@ -115,55 +115,56 @@ DECODER(big5hkscs)
 
         REQUIRE_INBUF(2)
 
-        if (0xc6 <= c && c <= 0xc8 && (c >= 0xc7 || IN2 >= 0xa1))
-            goto hkscsdec;
-
-        TRYMAP_DEC(big5, **outbuf, c, IN2) {
-            NEXT(2, 1)
+        if (0xc6 > c || c > 0xc8 || (c < 0xc7 && IN2 < 0xa1)) {
+            TRYMAP_DEC(big5, **outbuf, c, IN2) {
+                NEXT(2, 1)
+                continue;
+            }
         }
-        else
-hkscsdec:       TRYMAP_DEC(big5hkscs, decoded, c, IN2) {
-                        int s = BH2S(c, IN2);
-                        const unsigned char *hintbase;
 
-                        assert(0x87 <= c && c <= 0xfe);
-                        assert(0x40 <= IN2 && IN2 <= 0xfe);
+        TRYMAP_DEC(big5hkscs, decoded, c, IN2)
+        {
+            int s = BH2S(c, IN2);
+            const unsigned char *hintbase;
 
-                        if (BH2S(0x87, 0x40) <= s && s <= BH2S(0xa0, 0xfe)) {
-                                hintbase = big5hkscs_phint_0;
-                                s -= BH2S(0x87, 0x40);
-                        }
-                        else if (BH2S(0xc6,0xa1) <= s && s <= BH2S(0xc8,0xfe)){
-                                hintbase = big5hkscs_phint_12130;
-                                s -= BH2S(0xc6, 0xa1);
-                        }
-                        else if (BH2S(0xf9,0xd6) <= s && s <= BH2S(0xfe,0xfe)){
-                                hintbase = big5hkscs_phint_21924;
-                                s -= BH2S(0xf9, 0xd6);
-                        }
-                        else
-                                return MBERR_INTERNAL;
+            assert(0x87 <= c && c <= 0xfe);
+            assert(0x40 <= IN2 && IN2 <= 0xfe);
 
-                        if (hintbase[s >> 3] & (1 << (s & 7))) {
-                                WRITEUCS4(decoded | 0x20000)
-                                NEXT_IN(2)
-                        }
-                        else {
-                                OUT1(decoded)
-                                NEXT(2, 1)
-                        }
-                }
-                else {
-                        switch ((c << 8) | IN2) {
-                        case 0x8862: WRITE2(0x00ca, 0x0304); break;
-                        case 0x8864: WRITE2(0x00ca, 0x030c); break;
-                        case 0x88a3: WRITE2(0x00ea, 0x0304); break;
-                        case 0x88a5: WRITE2(0x00ea, 0x030c); break;
-                        default: return 2;
-                        }
+            if (BH2S(0x87, 0x40) <= s && s <= BH2S(0xa0, 0xfe)) {
+                    hintbase = big5hkscs_phint_0;
+                    s -= BH2S(0x87, 0x40);
+            }
+            else if (BH2S(0xc6,0xa1) <= s && s <= BH2S(0xc8,0xfe)){
+                    hintbase = big5hkscs_phint_12130;
+                    s -= BH2S(0xc6, 0xa1);
+            }
+            else if (BH2S(0xf9,0xd6) <= s && s <= BH2S(0xfe,0xfe)){
+                    hintbase = big5hkscs_phint_21924;
+                    s -= BH2S(0xf9, 0xd6);
+            }
+            else
+                    return MBERR_INTERNAL;
 
-                        NEXT(2, 2) /* all decoded codepoints are pairs, above. */
+            if (hintbase[s >> 3] & (1 << (s & 7))) {
+                    WRITEUCS4(decoded | 0x20000)
+                    NEXT_IN(2)
+            }
+            else {
+                    OUT1(decoded)
+                    NEXT(2, 1)
+            }
+            continue;
         }
+
+        switch ((c << 8) | IN2) {
+        case 0x8862: WRITE2(0x00ca, 0x0304); break;
+        case 0x8864: WRITE2(0x00ca, 0x030c); break;
+        case 0x88a3: WRITE2(0x00ea, 0x0304); break;
+        case 0x88a5: WRITE2(0x00ea, 0x030c); break;
+        default: return 2;
+        }
+
+        NEXT(2, 2) /* all decoded codepoints are pairs, above. */
     }
 
     return 0;

@@ -29,13 +29,14 @@ else:
         except (ValueError, resource_error):
             pass
 
-def expected_traceback(lineno1, lineno2, header, count=1):
+def expected_traceback(lineno1, lineno2, header, min_count=1):
     regex = header
     regex += '  File "<string>", line %s in func\n' % lineno1
     regex += '  File "<string>", line %s in <module>' % lineno2
-    if count != 1:
-        regex = (regex + '\n') * (count - 1) + regex
-    return '^' + regex + '$'
+    if 1 < min_count:
+        return '^' + (regex + '\n') * (min_count - 1) + regex
+    else:
+        return '^' + regex + '$'
 
 @contextmanager
 def temporary_filename():
@@ -371,7 +372,7 @@ def func(timeout, repeat, cancel, file, loops):
         faulthandler.dump_tracebacks_later(timeout, repeat=repeat, file=file)
         if cancel:
             faulthandler.cancel_dump_tracebacks_later()
-        time.sleep(timeout * 2.5)
+        time.sleep(timeout * 5)
         faulthandler.cancel_dump_tracebacks_later()
 
 timeout = {timeout}
@@ -402,7 +403,7 @@ if file is not None:
             if repeat:
                 count *= 2
             header = r'Timeout \(%s\)!\nThread 0x[0-9a-f]+:\n' % timeout_str
-            regex = expected_traceback(9, 20, header, count=count)
+            regex = expected_traceback(9, 20, header, min_count=count)
             self.assertRegex(trace, regex)
         else:
             self.assertEqual(trace, '')

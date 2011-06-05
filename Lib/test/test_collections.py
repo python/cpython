@@ -181,12 +181,12 @@ class TestNamedTuple(unittest.TestCase):
         self.assertRaises(TypeError, eval, 'Point(XXX=1, y=2)', locals())   # wrong keyword argument
         self.assertRaises(TypeError, eval, 'Point(x=1)', locals())          # missing keyword argument
         self.assertEqual(repr(p), 'Point(x=11, y=22)')
-        self.assertNotIn('__dict__', dir(p))                              # verify instance has no dict
         self.assertNotIn('__weakref__', dir(p))
         self.assertEqual(p, Point._make([11, 22]))                          # test _make classmethod
         self.assertEqual(p._fields, ('x', 'y'))                             # test _fields attribute
         self.assertEqual(p._replace(x=1), (1, 22))                          # test _replace method
         self.assertEqual(p._asdict(), dict(x=11, y=22))                     # test _asdict method
+        self.assertEqual(vars(p), p._asdict())                              # verify that vars() works
 
         try:
             p._replace(x=1, error=2)

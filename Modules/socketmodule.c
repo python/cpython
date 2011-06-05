@@ -2782,6 +2782,7 @@ sock_sendto(PySocketSockObject *s, PyObject *args)
             PyErr_Format(PyExc_TypeError,
                          "sendto() takes 2 or 3 arguments (%d given)",
                          arglen);
+            return NULL;
     }
     if (PyErr_Occurred())
         return NULL;
@@ -3144,7 +3145,7 @@ socket_gethostname(PyObject *self, PyObject *unused)
         }
         return PyErr_SetExcFromWindowsErr(PyExc_WindowsError, GetLastError());
     }
-    return PyUnicode_FromUnicode(buf, size);            
+    return PyUnicode_FromUnicode(buf, size);
 #else
     char buf[1024];
     int res;
@@ -4038,7 +4039,7 @@ socket_inet_ntop(PyObject *self, PyObject *args)
 static PyObject *
 socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
 {
-    static char* kwnames[] = {"host", "port", "family", "type", "proto", 
+    static char* kwnames[] = {"host", "port", "family", "type", "proto",
                               "flags", 0};
     struct addrinfo hints, *res;
     struct addrinfo *res0 = NULL;
@@ -4053,7 +4054,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
 
     family = socktype = protocol = flags = 0;
     family = AF_UNSPEC;
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|iiii:getaddrinfo", 
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|iiii:getaddrinfo",
                           kwnames, &hobj, &pobj, &family, &socktype,
                           &protocol, &flags)) {
         return NULL;
@@ -4289,7 +4290,7 @@ socket_if_nameindex(PyObject *self, PyObject *arg)
     PyObject *list;
     int i;
     struct if_nameindex *ni;
-  
+
     ni = if_nameindex();
     if (ni == NULL) {
         PyErr_SetFromErrno(socket_error);

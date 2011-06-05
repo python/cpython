@@ -26,6 +26,14 @@ class ManifestTestCase(support.TempdirManager,
                        support.LoggingCatcher,
                        unittest.TestCase):
 
+    def setUp(self):
+        super(ManifestTestCase, self).setUp()
+        self.cwd = os.getcwd()
+
+    def tearDown(self):
+        os.chdir(self.cwd)
+        super(ManifestTestCase, self).tearDown()
+
     def test_manifest_reader(self):
         tmpdir = self.mkdtemp()
         MANIFEST = os.path.join(tmpdir, 'MANIFEST.in')
@@ -41,9 +49,6 @@ class ManifestTestCase(support.TempdirManager,
         self.assertEqual(3, len(warnings))
         for warning in warnings:
             self.assertIn('no files found matching', warning)
-
-        # reset logs for the next assert
-        self.loghandler.flush()
 
         # manifest also accepts file-like objects
         with open(MANIFEST) as f:

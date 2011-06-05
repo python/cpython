@@ -23,8 +23,8 @@ It's not really a tutorial - you'll still have work to do in getting things
 working. It doesn't cover the fine points (and there are a lot of them), but I
 hope it will give you enough background to begin using them decently.
 
-I'm only going to talk about INET sockets, but they account for at least 99% of
-the sockets in use. And I'll only talk about STREAM sockets - unless you really
+I'm only going to talk about INET (i.e. IPv4) sockets, but they account for at least 99% of
+the sockets in use. And I'll only talk about STREAM (i.e. TCP) sockets - unless you really
 know what you're doing (in which case this HOWTO isn't for you!), you'll get
 better behavior and performance from a STREAM socket than anything else. I will
 try to clear up the mystery of what a socket is, as well as some hints on how to
@@ -208,10 +208,10 @@ length message::
                totalsent = totalsent + sent
 
        def myreceive(self):
-           msg = ''
+           msg = b''
            while len(msg) < MSGLEN:
                chunk = self.sock.recv(MSGLEN-len(msg))
-               if chunk == '':
+               if chunk == b'':
                    raise RuntimeError("socket connection broken")
                msg = msg + chunk
            return msg

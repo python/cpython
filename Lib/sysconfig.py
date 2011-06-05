@@ -287,14 +287,16 @@ def _parse_makefile(filename, vars=None):
                         variables.remove(name)
 
                         if name.startswith('PY_') \
-                                and name[3:] in renamed_variables:
+                        and name[3:] in renamed_variables:
 
                             name = name[3:]
                             if name not in done:
                                 done[name] = value
 
             else:
-                # bogus variable reference; just drop it since we can't deal
+                # bogus variable reference (e.g. "prefix=$/opt/python");
+                # just drop it since we can't deal
+                done[name] = value
                 variables.remove(name)
 
     # strip spurious spaces
@@ -656,11 +658,10 @@ def get_platform():
         # to. This makes the compatibility story a bit more sane because the
         # machine is going to compile and link as if it were
         # MACOSX_DEPLOYMENT_TARGET.
-        #
         cfgvars = get_config_vars()
         macver = cfgvars.get('MACOSX_DEPLOYMENT_TARGET')
 
-        if 1:
+        if True:
             # Always calculate the release of the running machine,
             # needed to determine if we can build fat binaries or not.
 
@@ -755,7 +756,7 @@ def _main():
     print('Platform: "%s"' % get_platform())
     print('Python version: "%s"' % get_python_version())
     print('Current installation scheme: "%s"' % _get_default_scheme())
-    print('')
+    print()
     _print_dict('Paths', get_paths())
     print()
     _print_dict('Variables', get_config_vars())

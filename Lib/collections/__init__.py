@@ -269,6 +269,8 @@ class {typename}(tuple):
         'Return a new OrderedDict which maps field names to their values'
         return OrderedDict(zip(self._fields, self))
 
+    __dict__ = property(_asdict)
+
     def _replace(_self, **kwds):
         'Return a new {typename} object replacing specified fields with new values'
         result = _self._make(map(kwds.pop, {field_names!r}, _self))
