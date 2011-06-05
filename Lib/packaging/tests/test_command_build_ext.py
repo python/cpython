@@ -265,7 +265,7 @@ class BuildExtTestCase(support.TempdirManager,
     def test_get_outputs(self):
         tmp_dir = self.mkdtemp()
         c_file = os.path.join(tmp_dir, 'foo.c')
-        self.write_file(c_file, 'void PyInit_foo(void) {};\n')
+        self.write_file(c_file, 'void PyInit_foo(void) {}\n')
         ext = Extension('foo', [c_file], optional=False)
         dist = Distribution({'name': 'xx',
                              'ext_modules': [ext]})
@@ -370,8 +370,8 @@ def test_suite():
     src = _get_source_filename()
     if not os.path.exists(src):
         if verbose:
-            print ('test_build_ext: Cannot find source code (test'
-                   ' must run in python build dir)')
+            print('test_command_build_ext: Cannot find source code (test'
+                  ' must run in python build dir)')
         return unittest.TestSuite()
     else:
         return unittest.makeSuite(BuildExtTestCase)

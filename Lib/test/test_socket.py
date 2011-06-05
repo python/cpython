@@ -24,14 +24,6 @@ try:
 except ImportError:
     fcntl = False
 
-def linux_version():
-    try:
-        # platform.release() is something like '2.6.33.7-desktop-2mnb'
-        version_string = platform.release().split('-')[0]
-        return tuple(map(int, version_string.split('.')))
-    except ValueError:
-        return 0, 0, 0
-
 HOST = support.HOST
 MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8') ## test unicode string and carriage return
 
@@ -1031,11 +1023,8 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         pass
 
     if hasattr(socket, "SOCK_NONBLOCK"):
+        @support.requires_linux_version(2, 6, 28)
         def testInitNonBlocking(self):
-            v = linux_version()
-            if v < (2, 6, 28):
-                self.skipTest("Linux kernel 2.6.28 or higher required, not %s"
-                              % ".".join(map(str, v)))
             # reinit server socket
             self.serv.close()
             self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM |
@@ -2009,11 +1998,8 @@ class ContextManagersTest(ThreadedTCPSocketTest):
                      "SOCK_CLOEXEC not defined")
 @unittest.skipUnless(fcntl, "module fcntl not available")
 class CloexecConstantTest(unittest.TestCase):
+    @support.requires_linux_version(2, 6, 28)
     def test_SOCK_CLOEXEC(self):
-        v = linux_version()
-        if v < (2, 6, 28):
-            self.skipTest("Linux kernel 2.6.28 or higher required, not %s"
-                          % ".".join(map(str, v)))
         with socket.socket(socket.AF_INET,
                            socket.SOCK_STREAM | socket.SOCK_CLOEXEC) as s:
             self.assertTrue(s.type & socket.SOCK_CLOEXEC)
@@ -2031,11 +2017,8 @@ class NonblockConstantTest(unittest.TestCase):
             self.assertFalse(s.type & socket.SOCK_NONBLOCK)
             self.assertEqual(s.gettimeout(), None)
 
+    @support.requires_linux_version(2, 6, 28)
     def test_SOCK_NONBLOCK(self):
-        v = linux_version()
-        if v < (2, 6, 28):
-            self.skipTest("Linux kernel 2.6.28 or higher required, not %s"
-                          % ".".join(map(str, v)))
         # a lot of it seems silly and redundant, but I wanted to test that
         # changing back and forth worked ok
         with socket.socket(socket.AF_INET,

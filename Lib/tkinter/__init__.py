@@ -30,8 +30,6 @@ button.pack(side=BOTTOM)
 tk.mainloop()
 """
 
-__version__ = "$Revision$"
-
 import sys
 if sys.platform == "win32":
     # Attempt to configure Tcl/Tk without requiring PATH

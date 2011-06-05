@@ -135,6 +135,7 @@ managed by compiler_enter_scope() and compiler_exit_scope().
 
 struct compiler {
     const char *c_filename;
+    PyObject *c_filename_obj;
     struct symtable *c_st;
     PyFutureFeatures *c_future; /* pointer to module's __future__ */
     PyCompilerFlags *c_flags;
@@ -178,12 +179,13 @@ static int compiler_in_loop(struct compiler *);
 static int inplace_binop(struct compiler *, operator_ty);
 static int expr_constant(struct compiler *, expr_ty);
 
-static int compiler_with(struct compiler *, stmt_ty);
+static int compiler_with(struct compiler *, stmt_ty, int);
 static int compiler_call_helper(struct compiler *c, int n,
                                 asdl_seq *args,
                                 asdl_seq *keywords,
                                 expr_ty starargs,
                                 expr_ty kwargs);
+static int compiler_try_except(struct compiler *, stmt_ty);
 
 static PyCodeObject *assemble(struct compiler *, int addNone);
 static PyObject *__doc__;
@@ -272,6 +274,9 @@ PyAST_CompileEx(mod_ty mod, const char *filename, PyCompilerFlags *flags,
     if (!compiler_init(&c))
         return NULL;
     c.c_filename = filename;
+    c.c_filename_obj = PyUnicode_DecodeFSDefault(filename);
+    if (!c.c_filename_obj)
+        goto finally;
     c.c_arena = arena;
     c.c_future = PyFuture_FromAST(mod, filename);
     if (c.c_future == NULL)
@@ -324,6 +329,8 @@ compiler_free(struct compiler *c)
         PySymtable_Free(c->c_st);
     if (c->c_future)
         PyObject_Free(c->c_future);
+    if (c->c_filename_obj)
+        Py_DECREF(c->c_filename_obj);
     Py_DECREF(c->c_stack);
 }
 
@@ -1892,7 +1899,13 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     compiler_use_next_block(c, body);
     if (!compiler_push_fblock(c, FINALLY_TRY, body))
         return 0;
-    VISIT_SEQ(c, stmt, s->v.TryFinally.body);
+    if (s->v.Try.handlers && asdl_seq_LEN(s->v.Try.handlers)) {
+        if (!compiler_try_except(c, s))
+            return 0;
+    }
+    else {
+        VISIT_SEQ(c, stmt, s->v.Try.body);
+    }
     ADDOP(c, POP_BLOCK);
     compiler_pop_fblock(c, FINALLY_TRY, body);
 
@@ -1900,7 +1913,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     compiler_use_next_block(c, end);
     if (!compiler_push_fblock(c, FINALLY_END, end))
         return 0;
-    VISIT_SEQ(c, stmt, s->v.TryFinally.finalbody);
+    VISIT_SEQ(c, stmt, s->v.Try.finalbody);
     ADDOP(c, END_FINALLY);
     compiler_pop_fblock(c, FINALLY_END, end);
 
@@ -1954,15 +1967,15 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     compiler_use_next_block(c, body);
     if (!compiler_push_fblock(c, EXCEPT, body))
         return 0;
-    VISIT_SEQ(c, stmt, s->v.TryExcept.body);
+    VISIT_SEQ(c, stmt, s->v.Try.body);
     ADDOP(c, POP_BLOCK);
     compiler_pop_fblock(c, EXCEPT, body);
     ADDOP_JREL(c, JUMP_FORWARD, orelse);
-    n = asdl_seq_LEN(s->v.TryExcept.handlers);
+    n = asdl_seq_LEN(s->v.Try.handlers);
     compiler_use_next_block(c, except);
     for (i = 0; i < n; i++) {
         excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
-                                        s->v.TryExcept.handlers, i);
+            s->v.Try.handlers, i);
         if (!handler->v.ExceptHandler.type && i < n-1)
             return compiler_error(c, "default 'except:' must be last");
         c->u->u_lineno_set = 0;
@@ -1979,80 +1992,89 @@ compiler_try_except(struct compiler *c, stmt_ty s)
         }
         ADDOP(c, POP_TOP);
         if (handler->v.ExceptHandler.name) {
-        basicblock *cleanup_end, *cleanup_body;
+            basicblock *cleanup_end, *cleanup_body;
 
-        cleanup_end = compiler_new_block(c);
-        cleanup_body = compiler_new_block(c);
-        if(!(cleanup_end || cleanup_body))
-        return 0;
+            cleanup_end = compiler_new_block(c);
+            cleanup_body = compiler_new_block(c);
+            if (!(cleanup_end || cleanup_body))
+                return 0;
 
-        compiler_nameop(c, handler->v.ExceptHandler.name, Store);
-        ADDOP(c, POP_TOP);
+            compiler_nameop(c, handler->v.ExceptHandler.name, Store);
+            ADDOP(c, POP_TOP);
 
-        /*
-        try:
-            # body
-        except type as name:
-            try:
-            # body
-            finally:
-            name = None
-            del name
-        */
+            /*
+              try:
+              # body
+              except type as name:
+              try:
+              # body
+              finally:
+              name = None
+              del name
+            */
 
-        /* second try: */
-        ADDOP_JREL(c, SETUP_FINALLY, cleanup_end);
-        compiler_use_next_block(c, cleanup_body);
-        if (!compiler_push_fblock(c, FINALLY_TRY, cleanup_body))
-            return 0;
+            /* second try: */
+            ADDOP_JREL(c, SETUP_FINALLY, cleanup_end);
+            compiler_use_next_block(c, cleanup_body);
+            if (!compiler_push_fblock(c, FINALLY_TRY, cleanup_body))
+                return 0;
 
-        /* second # body */
-        VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
-        ADDOP(c, POP_BLOCK);
-        ADDOP(c, POP_EXCEPT);
-        compiler_pop_fblock(c, FINALLY_TRY, cleanup_body);
+            /* second # body */
+            VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
+            ADDOP(c, POP_BLOCK);
+            ADDOP(c, POP_EXCEPT);
+            compiler_pop_fblock(c, FINALLY_TRY, cleanup_body);
 
-        /* finally: */
-        ADDOP_O(c, LOAD_CONST, Py_None, consts);
-        compiler_use_next_block(c, cleanup_end);
-        if (!compiler_push_fblock(c, FINALLY_END, cleanup_end))
-            return 0;
+            /* finally: */
+            ADDOP_O(c, LOAD_CONST, Py_None, consts);
+            compiler_use_next_block(c, cleanup_end);
+            if (!compiler_push_fblock(c, FINALLY_END, cleanup_end))
+                return 0;
 
-        /* name = None */
-        ADDOP_O(c, LOAD_CONST, Py_None, consts);
-        compiler_nameop(c, handler->v.ExceptHandler.name, Store);
+            /* name = None */
+            ADDOP_O(c, LOAD_CONST, Py_None, consts);
+            compiler_nameop(c, handler->v.ExceptHandler.name, Store);
 
-        /* del name */
-        compiler_nameop(c, handler->v.ExceptHandler.name, Del);
+            /* del name */
+            compiler_nameop(c, handler->v.ExceptHandler.name, Del);
 
-        ADDOP(c, END_FINALLY);
-        compiler_pop_fblock(c, FINALLY_END, cleanup_end);
+            ADDOP(c, END_FINALLY);
+            compiler_pop_fblock(c, FINALLY_END, cleanup_end);
         }
         else {
-        basicblock *cleanup_body;
+            basicblock *cleanup_body;
 
-        cleanup_body = compiler_new_block(c);
-        if(!cleanup_body)
-        return 0;
+            cleanup_body = compiler_new_block(c);
+            if (!cleanup_body)
+                return 0;
 
             ADDOP(c, POP_TOP);
-        ADDOP(c, POP_TOP);
-        compiler_use_next_block(c, cleanup_body);
-        if (!compiler_push_fblock(c, FINALLY_TRY, cleanup_body))
-            return 0;
+            ADDOP(c, POP_TOP);
+            compiler_use_next_block(c, cleanup_body);
+            if (!compiler_push_fblock(c, FINALLY_TRY, cleanup_body))
+                return 0;
             VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
-        ADDOP(c, POP_EXCEPT);
-        compiler_pop_fblock(c, FINALLY_TRY, cleanup_body);
+            ADDOP(c, POP_EXCEPT);
+            compiler_pop_fblock(c, FINALLY_TRY, cleanup_body);
         }
         ADDOP_JREL(c, JUMP_FORWARD, end);
         compiler_use_next_block(c, except);
     }
     ADDOP(c, END_FINALLY);
     compiler_use_next_block(c, orelse);
-    VISIT_SEQ(c, stmt, s->v.TryExcept.orelse);
+    VISIT_SEQ(c, stmt, s->v.Try.orelse);
     compiler_use_next_block(c, end);
     return 1;
 }
+
+static int
+compiler_try(struct compiler *c, stmt_ty s) {
+    if (s->v.Try.finalbody && asdl_seq_LEN(s->v.Try.finalbody))
+        return compiler_try_finally(c, s);
+    else
+        return compiler_try_except(c, s);
+}
+
 
 static int
 compiler_import_as(struct compiler *c, identifier name, identifier asname)
@@ -2301,10 +2323,8 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
         }
         ADDOP_I(c, RAISE_VARARGS, n);
         break;
-    case TryExcept_kind:
-        return compiler_try_except(c, s);
-    case TryFinally_kind:
-        return compiler_try_finally(c, s);
+    case Try_kind:
+        return compiler_try(c, s);
     case Assert_kind:
         return compiler_assert(c, s);
     case Import_kind:
@@ -2335,7 +2355,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     case Continue_kind:
         return compiler_continue(c);
     case With_kind:
-        return compiler_with(c, s);
+        return compiler_with(c, s, 0);
     }
     return 1;
 }
@@ -3062,9 +3082,10 @@ expr_constant(struct compiler *c, expr_ty e)
        exit(*exc)
  */
 static int
-compiler_with(struct compiler *c, stmt_ty s)
+compiler_with(struct compiler *c, stmt_ty s, int pos)
 {
     basicblock *block, *finally;
+    withitem_ty item = asdl_seq_GET(s->v.With.items, pos);
 
     assert(s->kind == With_kind);
 
@@ -3074,7 +3095,7 @@ compiler_with(struct compiler *c, stmt_ty s)
         return 0;
 
     /* Evaluate EXPR */
-    VISIT(c, expr, s->v.With.context_expr);
+    VISIT(c, expr, item->context_expr);
     ADDOP_JREL(c, SETUP_WITH, finally);
 
     /* SETUP_WITH pushes a finally block. */
@@ -3083,16 +3104,20 @@ compiler_with(struct compiler *c, stmt_ty s)
         return 0;
     }
 
-    if (s->v.With.optional_vars) {
-        VISIT(c, expr, s->v.With.optional_vars);
+    if (item->optional_vars) {
+        VISIT(c, expr, item->optional_vars);
     }
     else {
     /* Discard result from context.__enter__() */
         ADDOP(c, POP_TOP);
     }
 
-    /* BLOCK code */
-    VISIT_SEQ(c, stmt, s->v.With.body);
+    pos++;
+    if (pos == asdl_seq_LEN(s->v.With.items))
+        /* BLOCK code */
+        VISIT_SEQ(c, stmt, s->v.With.body)
+    else if (!compiler_with(c, s, pos))
+            return 0;
 
     /* End of try block; start the finally block */
     ADDOP(c, POP_BLOCK);
@@ -3361,7 +3386,7 @@ compiler_in_loop(struct compiler *c) {
 static int
 compiler_error(struct compiler *c, const char *errstr)
 {
-    PyObject *loc, *filename;
+    PyObject *loc;
     PyObject *u = NULL, *v = NULL;
 
     loc = PyErr_ProgramText(c->c_filename, c->u->u_lineno);
@@ -3369,16 +3394,7 @@ compiler_error(struct compiler *c, const char *errstr)
         Py_INCREF(Py_None);
         loc = Py_None;
     }
-    if (c->c_filename != NULL) {
-        filename = PyUnicode_DecodeFSDefault(c->c_filename);
-        if (!filename)
-            goto exit;
-    }
-    else {
-        Py_INCREF(Py_None);
-        filename = Py_None;
-    }
-    u = Py_BuildValue("(NiiO)", filename, c->u->u_lineno,
+    u = Py_BuildValue("(OiiO)", c->c_filename_obj, c->u->u_lineno,
                       c->u->u_col_offset, loc);
     if (!u)
         goto exit;
@@ -3927,7 +3943,6 @@ makecode(struct compiler *c, struct assembler *a)
     PyObject *consts = NULL;
     PyObject *names = NULL;
     PyObject *varnames = NULL;
-    PyObject *filename = NULL;
     PyObject *name = NULL;
     PyObject *freevars = NULL;
     PyObject *cellvars = NULL;
@@ -3951,10 +3966,6 @@ makecode(struct compiler *c, struct assembler *a)
     freevars = dict_keys_inorder(c->u->u_freevars, PyTuple_Size(cellvars));
     if (!freevars)
         goto error;
-    filename = PyUnicode_DecodeFSDefault(c->c_filename);
-    if (!filename)
-        goto error;
-
     nlocals = PyDict_Size(c->u->u_varnames);
     flags = compute_code_flags(c);
     if (flags < 0)
@@ -3974,14 +3985,13 @@ makecode(struct compiler *c, struct assembler *a)
                     nlocals, stackdepth(c), flags,
                     bytecode, consts, names, varnames,
                     freevars, cellvars,
-                    filename, c->u->u_name,
+                    c->c_filename_obj, c->u->u_name,
                     c->u->u_firstlineno,
                     a->a_lnotab);
  error:
     Py_XDECREF(consts);
     Py_XDECREF(names);
     Py_XDECREF(varnames);
-    Py_XDECREF(filename);
     Py_XDECREF(name);
     Py_XDECREF(freevars);
     Py_XDECREF(cellvars);

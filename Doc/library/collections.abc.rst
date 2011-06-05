@@ -23,7 +23,7 @@ example, whether it is hashable or whether it is a mapping.
 .. versionchanged:: 3.3
    Formerly, this module was part of the :mod:`collections` module.
 
-.. _abstract-base-classes:
+.. _collections-abstract-base-classes:
 
 Collections Abstract Base Classes
 ---------------------------------

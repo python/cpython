@@ -200,11 +200,13 @@ void pysqlite_do_all_statements(pysqlite_Connection* self, int action, int reset
         weakref = PyList_GetItem(self->statements, i);
         statement = PyWeakref_GetObject(weakref);
         if (statement != Py_None) {
+            Py_INCREF(statement);
             if (action == ACTION_RESET) {
                 (void)pysqlite_statement_reset((pysqlite_Statement*)statement);
             } else {
                 (void)pysqlite_statement_finalize((pysqlite_Statement*)statement);
             }
+            Py_DECREF(statement);
         }
     }
 

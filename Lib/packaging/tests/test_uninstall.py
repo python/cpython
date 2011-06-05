@@ -1,6 +1,8 @@
 """Tests for the uninstall command."""
 import os
 import sys
+from io import StringIO
+import stat
 
 from packaging.database import disable_cache, enable_cache
 from packaging.run import main
@@ -36,7 +38,12 @@ class UninstallTestCase(support.TempdirManager,
         self.addCleanup(os.chdir, os.getcwd())
         self.addCleanup(enable_cache)
         self.root_dir = self.mkdtemp()
+        self.cwd = os.getcwd()
         disable_cache()
+
+    def tearDown(self):
+        os.chdir(self.cwd)
+        super(UninstallTestCase, self).tearDown()
 
     def run_setup(self, *args):
         # run setup with args
@@ -74,6 +81,8 @@ class UninstallTestCase(support.TempdirManager,
         if not dirname:
             dirname = self.make_dist(name, **kw)
         os.chdir(dirname)
+        old_out = sys.stderr
+        sys.stderr = StringIO()
         dist = self.run_setup('install_dist', '--prefix=' + self.root_dir)
         install_lib = self.get_path(dist, 'purelib')
         return dist, install_lib
@@ -88,9 +97,29 @@ class UninstallTestCase(support.TempdirManager,
         self.assertIsFile(install_lib, 'foo', '__init__.py')
         self.assertIsFile(install_lib, 'foo', 'sub', '__init__.py')
         self.assertIsFile(install_lib, 'Foo-0.1.dist-info', 'RECORD')
-        remove('Foo', paths=[install_lib])
+        self.assertTrue(remove('Foo', paths=[install_lib]))
         self.assertIsNotFile(install_lib, 'foo', 'sub', '__init__.py')
         self.assertIsNotFile(install_lib, 'Foo-0.1.dist-info', 'RECORD')
+
+    @unittest.skipIf(sys.platform == 'win32', 'deactivated for now')
+    def test_remove_issue(self):
+        # makes sure if there are OSErrors (like permission denied)
+        # remove() stops and display a clean error
+        dist, install_lib = self.install_dist('Meh')
+
+        # breaking os.rename
+        old = os.rename
+
+        def _rename(source, target):
+            raise OSError()
+
+        os.rename = _rename
+        try:
+            self.assertFalse(remove('Meh', paths=[install_lib]))
+        finally:
+            os.rename = old
+
+        self.assertTrue(remove('Meh', paths=[install_lib]))
 
 
 def test_suite():

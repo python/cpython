@@ -58,9 +58,9 @@ typedef struct {
     int depth;
     /* If fp == NULL, the following are valid: */
     PyObject *str;
+    PyObject *current_filename;
     char *ptr;
     char *end;
-    PyObject *strings; /* dict on marshal, list on unmarshal */
     int version;
 } WFILE;
 
@@ -444,7 +444,6 @@ PyMarshal_WriteLongToFile(long x, FILE *fp, int version)
     wf.fp = fp;
     wf.error = WFERR_OK;
     wf.depth = 0;
-    wf.strings = NULL;
     wf.version = version;
     w_long(x, &wf);
 }
@@ -456,10 +455,8 @@ PyMarshal_WriteObjectToFile(PyObject *x, FILE *fp, int version)
     wf.fp = fp;
     wf.error = WFERR_OK;
     wf.depth = 0;
-    wf.strings = (version > 0) ? PyDict_New() : NULL;
     wf.version = version;
     w_object(x, &wf);
-    Py_XDECREF(wf.strings);
 }
 
 typedef WFILE RFILE; /* Same struct with different invariants */
@@ -980,6 +977,18 @@ r_object(RFILE *p)
             filename = r_object(p);
             if (filename == NULL)
                 goto code_error;
+            if (PyUnicode_CheckExact(filename)) {
+                if (p->current_filename != NULL) {
+                    if (!PyUnicode_Compare(filename, p->current_filename)) {
+                        Py_DECREF(filename);
+                        Py_INCREF(p->current_filename);
+                        filename = p->current_filename;
+                    }
+                }
+                else {
+                    p->current_filename = filename;
+                }
+            }
             name = r_object(p);
             if (name == NULL)
                 goto code_error;
@@ -1041,7 +1050,7 @@ PyMarshal_ReadShortFromFile(FILE *fp)
     RFILE rf;
     assert(fp);
     rf.fp = fp;
-    rf.strings = NULL;
+    rf.current_filename = NULL;
     rf.end = rf.ptr = NULL;
     return r_short(&rf);
 }
@@ -1051,7 +1060,7 @@ PyMarshal_ReadLongFromFile(FILE *fp)
 {
     RFILE rf;
     rf.fp = fp;
-    rf.strings = NULL;
+    rf.current_filename = NULL;
     rf.ptr = rf.end = NULL;
     return r_long(&rf);
 }
@@ -1112,11 +1121,10 @@ PyMarshal_ReadObjectFromFile(FILE *fp)
     RFILE rf;
     PyObject *result;
     rf.fp = fp;
-    rf.strings = PyList_New(0);
+    rf.current_filename = NULL;
     rf.depth = 0;
     rf.ptr = rf.end = NULL;
     result = r_object(&rf);
-    Py_DECREF(rf.strings);
     return result;
 }
 
@@ -1126,12 +1134,11 @@ PyMarshal_ReadObjectFromString(char *str, Py_ssize_t len)
     RFILE rf;
     PyObject *result;
     rf.fp = NULL;
+    rf.current_filename = NULL;
     rf.ptr = str;
     rf.end = str + len;
-    rf.strings = PyList_New(0);
     rf.depth = 0;
     result = r_object(&rf);
-    Py_DECREF(rf.strings);
     return result;
 }
 
@@ -1150,9 +1157,7 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
     wf.error = WFERR_OK;
     wf.depth = 0;
     wf.version = version;
-    wf.strings = (version > 0) ? PyDict_New() : NULL;
     w_object(x, &wf);
-    Py_XDECREF(wf.strings);
     if (wf.str != NULL) {
         char *base = PyBytes_AS_STRING((PyBytesObject *)wf.str);
         if (wf.ptr - base > PY_SSIZE_T_MAX) {
@@ -1226,6 +1231,7 @@ marshal_load(PyObject *self, PyObject *f)
     if (data == NULL)
         return NULL;
     rf.fp = NULL;
+    rf.current_filename = NULL;
     if (PyBytes_Check(data)) {
         rf.ptr = PyBytes_AS_STRING(data);
         rf.end = rf.ptr + PyBytes_GET_SIZE(data);
@@ -1242,10 +1248,8 @@ marshal_load(PyObject *self, PyObject *f)
         Py_DECREF(data);
         return NULL;
     }
-    rf.strings = PyList_New(0);
     rf.depth = 0;
     result = read_object(&rf);
-    Py_DECREF(rf.strings);
     Py_DECREF(data);
     return result;
 }
@@ -1296,12 +1300,11 @@ marshal_loads(PyObject *self, PyObject *args)
     s = p.buf;
     n = p.len;
     rf.fp = NULL;
+    rf.current_filename = NULL;
     rf.ptr = s;
     rf.end = s + n;
-    rf.strings = PyList_New(0);
     rf.depth = 0;
     result = read_object(&rf);
-    Py_DECREF(rf.strings);
     PyBuffer_Release(&p);
     return result;
 }

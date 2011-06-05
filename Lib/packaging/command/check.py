@@ -32,7 +32,7 @@ class check(Command):
         # XXX we could use a special handler for this, but would need to test
         # if it works even if the logger has a too high level
         self._warnings.append((msg, args))
-        return logger.warning(self.get_command_name() + msg, *args)
+        return logger.warning('%s: %s' % (self.get_command_name(), msg), *args)
 
     def run(self):
         """Runs the command."""

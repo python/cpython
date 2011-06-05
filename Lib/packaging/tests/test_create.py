@@ -31,11 +31,11 @@ class CreateTestCase(support.TempdirManager,
             'doc': sys.prefix + '/share/doc/pyxfoil', }
 
     def tearDown(self):
-        super(CreateTestCase, self).tearDown()
         sys.stdin = self._stdin
         sys.stdout = self._stdout
         os.chdir(self._cwd)
         sysconfig.get_paths = self._old_get_paths
+        super(CreateTestCase, self).tearDown()
 
     def test_ask_yn(self):
         sys.stdin.write('y\n')

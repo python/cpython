@@ -65,14 +65,17 @@ class LoggingCatcher:
     configured to record all messages logged to the 'packaging' logger.
 
     Use get_logs to retrieve messages and self.loghandler.flush to discard
-    them.
+    them.  get_logs automatically flushes the logs; if you test code that
+    generates logging messages but don't use get_logs, you have to flush
+    manually before doing other checks on logging message, otherwise you
+    will get irrelevant results.  See example in test_command_check.
     """
 
     def setUp(self):
         super(LoggingCatcher, self).setUp()
         self.loghandler = handler = _TestHandler()
+        self.old_level = logger.level
         logger.addHandler(handler)
-        self.addCleanup(logger.setLevel, logger.level)
         logger.setLevel(logging.DEBUG)  # we want all messages
 
     def tearDown(self):
@@ -84,22 +87,29 @@ class LoggingCatcher:
         for ref in weakref.getweakrefs(handler):
             logging._removeHandlerRef(ref)
         del self.loghandler
+        logger.setLevel(self.old_level)
         super(LoggingCatcher, self).tearDown()
 
     def get_logs(self, *levels):
         """Return all log messages with level in *levels*.
 
-        Without explicit levels given, returns all messages.
-        *levels* defaults to all levels.  For log calls with arguments (i.e.
-        logger.info('bla bla %s', arg)), the messages
-        Returns a list.
+        Without explicit levels given, returns all messages.  *levels* defaults
+        to all levels.  For log calls with arguments (i.e.
+        logger.info('bla bla %r', arg)), the messages will be formatted before
+        being returned (e.g. "bla bla 'thing'").
+
+        Returns a list.  Automatically flushes the loghandler after being
+        called.
 
         Example: self.get_logs(logging.WARN, logging.DEBUG).
         """
         if not levels:
-            return [log.getMessage() for log in self.loghandler.buffer]
-        return [log.getMessage() for log in self.loghandler.buffer
-                if log.levelno in levels]
+            messages = [log.getMessage() for log in self.loghandler.buffer]
+        else:
+            messages = [log.getMessage() for log in self.loghandler.buffer
+                        if log.levelno in levels]
+        self.loghandler.flush()
+        return messages
 
 
 class TempdirManager:
@@ -250,6 +260,15 @@ def create_distribution(configfiles=()):
     d.parse_config_files()
     d.parse_command_line()
     return d
+
+
+def fake_dec(*args, **kw):
+    """Fake decorator"""
+    def _wrap(func):
+        def __wrap(*args, **kw):
+            return func(*args, **kw)
+        return __wrap
+    return _wrap
 
 
 try:

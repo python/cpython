@@ -13,6 +13,7 @@ from packaging.errors import PackagingModuleError, PackagingOptionError
 from packaging.tests import TESTFN, captured_stdout
 from packaging.tests import support, unittest
 from packaging.tests.support import create_distribution
+from test.support import unload
 
 
 class test_dist(Command):
@@ -224,6 +225,7 @@ class DistributionTestCase(support.TempdirManager,
         # prepare the call recorders
         sys.path.append(temp_home)
         self.addCleanup(sys.path.remove, temp_home)
+        self.addCleanup(unload, module_name)
         record = __import__(module_name).record
 
         old_run = cmd.run

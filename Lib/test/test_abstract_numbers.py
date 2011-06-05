@@ -14,6 +14,7 @@ class TestNumbers(unittest.TestCase):
         self.assertEqual(7, int(7).real)
         self.assertEqual(0, int(7).imag)
         self.assertEqual(7, int(7).conjugate())
+        self.assertEqual(-7, int(-7).conjugate())
         self.assertEqual(7, int(7).numerator)
         self.assertEqual(1, int(7).denominator)
 
@@ -24,6 +25,7 @@ class TestNumbers(unittest.TestCase):
         self.assertEqual(7.3, float(7.3).real)
         self.assertEqual(0, float(7.3).imag)
         self.assertEqual(7.3, float(7.3).conjugate())
+        self.assertEqual(-7.3, float(-7.3).conjugate())
 
     def test_complex(self):
         self.assertFalse(issubclass(complex, Real))
