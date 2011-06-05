@@ -77,38 +77,37 @@ or more files which will be merged into the current files by adding new sections
 and fields.  If a file loaded by ``extends`` contains sections or keys that
 already exist in the original file, they will not override the previous values.
 
-
-file_one.ini::
-
-    [section1]
-    name2 = "other value"
-
-    [section2]
-    foo = baz
-    bas = bar
-
-file_two.ini::
-
-    [DEFAULT]
-    extends = file_one.ini
-
-    [section2]
-    foo = bar
-
-Result::
+Contents of :file:`one.cfg`::
 
     [section1]
-    name2 = "other value"
+    name = value
 
     [section2]
-    foo = bar
-    bas = bar
+    foo = foo from one.cfg
 
-To point several files, the multi-line notation can be used::
+Contents of :file:`two.cfg`::
 
     [DEFAULT]
-    extends = file_one.ini
-              file_two.ini
+    extends = one.cfg
+
+    [section2]
+    foo = foo from two.cfg
+    baz = baz from two.cfg
+
+The result of parsing :file:`two.cfg` is equivalent to this file::
+
+    [section1]
+    name = value
+
+    [section2]
+    foo = foo from one.cfg
+    baz = baz from two.cfg
+
+Example use of multi-line notation to include more than one file::
+
+    [DEFAULT]
+    extends = one.cfg
+              two.cfg
 
 When several files are provided, they are processed sequentially, following the
 precedence rules explained above.  This means that the list of files should go
