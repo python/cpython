@@ -11,7 +11,7 @@ The pre-hooks are run after the command is finalized (its options are
 processed), but before it is run. The post-hooks are run after the command
 itself. Both types of hooks receive an instance of the command object.
 
-See also global setup hooks in :ref:`packaging-setupcfg`.
+See also global setup hooks in :ref:`setupcfg-spec`.
 
 
 Sample usage of hooks
