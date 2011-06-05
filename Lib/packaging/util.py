@@ -271,7 +271,7 @@ def execute(func, args, msg=None, verbose=0, dry_run=False):
 
 
 def strtobool(val):
-    """Convert a string representation of truth to true (1) or false (0).
+    """Convert a string representation of truth to a boolean.
 
     True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
     are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
