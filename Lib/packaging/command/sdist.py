@@ -201,15 +201,20 @@ class sdist(Command):
         self.filelist.write(self.manifest)
 
     def add_defaults(self):
-        """Add all the default files to self.filelist:
-          - all pure Python modules mentioned in setup script
-          - all files pointed by package_data (build_py)
-          - all files defined in data_files.
-          - all files defined as scripts.
-          - all C sources listed as part of extensions or C libraries
-            in the setup script (doesn't catch C headers!)
-        Everything is optional.
+        """Add all default files to self.filelist.
+
+        In addition to the setup.cfg file, this will include all files returned
+        by the get_source_files of every registered command.  This will find
+        Python modules and packages, data files listed in package_data_,
+        data_files and extra_files, scripts, C sources of extension modules or
+        C libraries (headers are missing).
         """
+        if os.path.exists('setup.cfg'):
+            self.filelist.append('setup.cfg')
+        else:
+            logger.warning("%s: standard 'setup.cfg' file not found",
+                           self.get_command_name())
+
         for cmd_name in get_command_names():
             try:
                 cmd_obj = self.get_finalized_command(cmd_name)
