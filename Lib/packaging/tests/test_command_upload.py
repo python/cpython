@@ -140,8 +140,8 @@ class UploadTestCase(support.TempdirManager, support.EnvironRestorer,
         cmd.upload_docs = True
         cmd.ensure_finalized()
         cmd.repository = self.pypi.full_address
+        prev_dir = os.getcwd()
         try:
-            prev_dir = os.getcwd()
             os.chdir(self.tmp_dir)
             cmd.run()
         finally:
