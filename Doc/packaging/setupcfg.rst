@@ -521,7 +521,7 @@ Defining a base prefix
 """"""""""""""""""""""
 
 When you define your resources, you can have more control of how the final path
-is compute.
+is computed.
 
 By default, the final path is::
 
@@ -548,7 +548,7 @@ The **prefix** is "docs/" and the **suffix** is "doc.html".
 
 .. note::
 
-   Glob syntax is working the same way with standard source and splitted source.
+   Glob syntax is working the same way with standard source and split source.
    So these rules::
 
       docs/*
@@ -557,7 +557,7 @@ The **prefix** is "docs/" and the **suffix** is "doc.html".
 
    Will match all the files in the docs directory.
 
-When you use splitted source, the final path is compute in this way::
+When you use split source, the final path is computed this way::
 
    destination + prefix
 
