@@ -98,11 +98,12 @@ following example shows all of the features of this directive type::
 
        Spam or ham the foo.
 
-The signatures of object methods or data attributes should always include the
-type name (``.. method:: FileInput.input(...)``), even if it is obvious from the
-context which type they belong to; this is to enable consistent
-cross-references.  If you describe methods belonging to an abstract protocol,
-such as "context managers", include a (pseudo-)type name too to make the
+The signatures of object methods or data attributes should not include the
+class name, but be nested in a class directive.  The generated files will
+reflect this nesting, and the target identifiers (for HTML output) will use
+both the class and method name, to enable consistent cross-references.  If you
+describe methods belonging to an abstract protocol such as context managers,
+use a class directive with a (pseudo-)type name too to make the
 index entries more informative.
 
 The directives are:
