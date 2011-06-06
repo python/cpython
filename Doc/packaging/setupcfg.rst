@@ -1,14 +1,124 @@
 .. highlightlang:: cfg
 
+.. _setupcfg-spec:
+
 *******************************************
 Specification of the :file:`setup.cfg` file
 *******************************************
 
-.. :version: 1.0
+:version: 0.9
 
 This document describes the :file:`setup.cfg`, an ini-style configuration file
-(compatible with :class:`configparser.RawConfigParser`) configuration file used
-by Packaging to replace the :file:`setup.py` file.
+used by Packaging to replace the :file:`setup.py` file used by Distutils.
+This specification is language-agnostic, and will therefore repeat some
+information that's already documented for Python in the
+:class:`configparser.RawConfigParser` documentation.
+
+.. contents::
+   :depth: 3
+   :local:
+
+
+Syntax
+======
+
+The ini-style format used in the configuration file is a simple collection of
+sections that group sets of key-value fields separated by ``=`` or ``:`` and
+optional whitespace.  Lines starting with ``#`` or ``;`` are comments and will
+be ignored.  Empty lines are also ignored.  Example::
+
+   [section1]
+   # comment
+   name = value
+   name2 = "other value"
+
+   [section2]
+   foo = bar
+
+
+Parsing values
+---------------
+
+Here are a set of rules to parse values:
+
+- If a value is quoted with ``"`` chars, it's a string.  If a quote character is
+  present in the quoted value, it can be escaped as ``\"`` or left as-is.
+
+- If the value is ``true``, ``t``, ``yes``, ``y`` (case-insensitive) or ``1``,
+  it's converted to the language equivalent of a ``True`` value; if it's
+  ``false``, ``f``, ``no``, ``n`` (case-insensitive) or ``0``, it's converted to
+  the equivalent of ``False``.
+
+- A value can contain multiple lines.  When read, lines are converted into a
+  sequence of values.  Each line after the first must start with a least one
+  space or tab character; this leading indentation will be stripped.
+
+- All other values are considered strings.
+
+Examples::
+
+   [section]
+   foo = one
+         two
+         three
+
+   bar = false
+   baz = 1.3
+   boo = "ok"
+   beee = "wqdqw pojpj w\"ddq"
+
+
+Extending files
+---------------
+
+A configuration file can be extended (i.e. included) by other files.  For this,
+a ``DEFAULT`` section must contain an ``extends`` key which value points to one
+or more files which will be merged into the current files by adding new sections
+and fields.  If a file loaded by ``extends`` contains sections or keys that
+already exist in the original file, they will not override the previous values.
+
+Contents of :file:`one.cfg`::
+
+    [section1]
+    name = value
+
+    [section2]
+    foo = foo from one.cfg
+
+Contents of :file:`two.cfg`::
+
+    [DEFAULT]
+    extends = one.cfg
+
+    [section2]
+    foo = foo from two.cfg
+    baz = baz from two.cfg
+
+The result of parsing :file:`two.cfg` is equivalent to this file::
+
+    [section1]
+    name = value
+
+    [section2]
+    foo = foo from one.cfg
+    baz = baz from two.cfg
+
+Example use of multi-line notation to include more than one file::
+
+    [DEFAULT]
+    extends = one.cfg
+              two.cfg
+
+When several files are provided, they are processed sequentially, following the
+precedence rules explained above.  This means that the list of files should go
+from most specialized to most common.
+
+**Tools will need to provide a way to produce a merged version of the
+file**.  This will be useful to let users publish a single file.
+
+
+Description of sections and fields
+==================================
 
 Each section contains a description of its options.
 
@@ -108,10 +218,6 @@ description
    in Distutils1.) A file can be provided in the *description-file* field.
    *optional*
 
-description-file
-   path to a text file that will be used for the
-   **description** field. *optional*
-
 keywords
    A list of additional keywords to be used to assist searching
    for the distribution in a larger catalog. Comma or space-separated.
@@ -171,6 +277,13 @@ requires-externals
 project-url
    A label, followed by a browsable URL for the project.
    "label, url". The label is limited to 32 signs. *optional*, *multi*
+
+One extra field not present in PEP 345 is supported:
+
+description-file
+   Path to a text file that will be used to fill the ``description`` field.
+   ``description-file`` and ``description`` are mutually exclusive.  *optional*
+
 
 
 Example::
@@ -278,7 +391,7 @@ The final paths where files will be placed are composed by : **source** +
 **destination**. In the previous example, **doc/doc.man** will be placed in
 **destination_doc/doc/doc.man** and **scripts/foo.sh** will be placed in
 **destination_scripts/scripts/foo.sh**. (If you want more control on the final
-path, take a look at base_prefix_).
+path, take a look at :ref:`setupcfg-resources-base-prefix`).
 
 The **destination** part of resources declaration are paths with categories.
 Indeed, it's generally a bad idea to give absolute path as it will be cross
@@ -402,13 +515,13 @@ Your **files** section will be::
 More control on destination part
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. _base_prefix:
+.. _setupcfg-resources-base-prefix:
 
 Defining a base prefix
 """"""""""""""""""""""
 
 When you define your resources, you can have more control of how the final path
-is compute.
+is computed.
 
 By default, the final path is::
 
@@ -435,7 +548,7 @@ The **prefix** is "docs/" and the **suffix** is "doc.html".
 
 .. note::
 
-   Glob syntax is working the same way with standard source and splitted source.
+   Glob syntax is working the same way with standard source and split source.
    So these rules::
 
       docs/*
@@ -444,7 +557,7 @@ The **prefix** is "docs/" and the **suffix** is "doc.html".
 
    Will match all the files in the docs directory.
 
-When you use splitted source, the final path is compute in this way::
+When you use split source, the final path is computed this way::
 
    destination + prefix
 
@@ -646,3 +759,64 @@ section named after the command.  Example::
 
 Option values given in the configuration file can be overriden on the command
 line.  See :ref:`packaging-setup-config` for more information.
+
+
+Extensibility
+=============
+
+Every section can have fields that are not part of this specification.  They are
+called **extensions**.
+
+An extension field starts with ``X-``.  Example::
+
+   [metadata]
+   name = Distribute
+   X-Debian-Name = python-distribute
+
+
+Changes in the specification
+============================
+
+The versioning scheme for this specification is **MAJOR.MINOR**.  Changes in the
+specification will cause the version number to be updated.
+
+Changes to the minor number reflect backwards-compatible changes:
+
+- New fields and sections (optional or mandatory) can be added.
+- Optional fields can be removed.
+
+The major number will be incremented for backwards-incompatible changes:
+
+- Mandatory fields or sections are removed.
+- Fields change their meaning.
+
+As a consequence, a tool written to consume 1.5 has these properties:
+
+- Can read 1.1, 1.2 and all versions < 1.5, since the tool knows what
+  optional fields weren't there.
+
+  .. XXX clarify
+
+- Can also read 1.6 and other 1.x versions: The tool will just ignore fields it
+  doesn't know about, even if they are mandatory in the new version.  If
+  optional fields were removed, the tool will just consider them absent.
+
+- Cannot read 2.x and should refuse to interpret such files.
+
+A tool written to produce 1.x should have these properties:
+
+- Writes all mandatory fields.
+- May write optional fields.
+
+
+Acknowledgments
+===============
+
+This specification includes work and feedback from these people:
+
+- Tarek Ziadé
+- Julien Jehannet
+- Boris Feld
+- Éric Araujo
+
+(If your name is missing, please :ref:`let us know <reporting-bugs>`.)
