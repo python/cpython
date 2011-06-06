@@ -1010,8 +1010,6 @@ def add_files(db):
             lib.remove_pyc()
         # package READMEs if present
         lib.glob("README")
-        if dir=='Lib':
-            lib.add_file('wsgiref.egg-info')
         if dir=='test' and parent.physical=='Lib':
             lib.add_file("185test.db")
             lib.add_file("audiotest.au")
