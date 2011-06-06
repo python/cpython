@@ -22,7 +22,8 @@ Options:
 -h/--help       -- print this text and exit
 --timeout TIMEOUT
                 -- dump the traceback and exit if a test takes more
-                   than TIMEOUT seconds
+                   than TIMEOUT seconds; disabled if TIMEOUT is negative
+                   or equals to zero
 --wait          -- wait for user input, e.g., allow a debugger to be attached
 
 Verbosity
@@ -420,8 +421,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 sys.exit(1)
             timeout = float(a)
             if timeout <= 0:
-                print("The timeout must be greater than 0", file=sys.stderr)
-                sys.exit(1)
+                timeout = None
         elif o == '--wait':
             input("Press any key to continue...")
         else:
