@@ -764,15 +764,13 @@ line.  See :ref:`packaging-setup-config` for more information.
 Extensibility
 =============
 
-Every section can define new variables that are not part of the specification.
-They are called **extensions**.
+Every section can have fields that are not part of this specification.  They are
+called **extensions**.
 
-An extension field starts with *X-*.
-
-Example::
+An extension field starts with ``X-``.  Example::
 
    [metadata]
-   ...
+   name = Distribute
    X-Debian-Name = python-distribute
 
 
@@ -809,7 +807,17 @@ A tool written to produce 1.X should have these properties:
 - it may write optional fields
 
 
-Acks
-====
 
-XXX
+
+
+Acknowledgments
+===============
+
+This specification includes work and feedback from these people:
+
+- Tarek Ziadé
+- Julien Jehannet
+- Boris Feld
+- Éric Araujo
+
+(If your name is missing, please :ref:`let us know <reporting-bugs>`.)
