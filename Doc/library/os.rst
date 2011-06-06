@@ -1019,11 +1019,11 @@ as internal buffering of data.
    Availability: Unix, Windows.
 
 
-.. function:: pipe2(flags=0)
+.. function:: pipe2(flags)
 
    Create a pipe with *flags* set atomically.
-   *flags* is optional and can be constructed by ORing together zero or more of
-   these values: :data:`O_NONBLOCK`, :data:`O_CLOEXEC`.
+   *flags* can be constructed by ORing together one or more of these values:
+   :data:`O_NONBLOCK`, :data:`O_CLOEXEC`.
    Return a pair of file descriptors ``(r, w)`` usable for reading and writing,
    respectively.
 

@@ -481,8 +481,8 @@ class PosixTester(unittest.TestCase):
         self.assertRaises(TypeError, os.pipe2, 'DEADBEEF')
         self.assertRaises(TypeError, os.pipe2, 0, 0)
 
-        # try calling without flag, like os.pipe()
-        r, w = os.pipe2()
+        # try calling with flags = 0, like os.pipe()
+        r, w = os.pipe2(0)
         os.close(r)
         os.close(w)
 
