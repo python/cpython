@@ -1,15 +1,8 @@
-#!/usr/bin/env python
 """Interactive helper used to create a setup.cfg file.
 
 This script will generate a packaging configuration file by looking at
 the current directory and asking the user questions.  It is intended to
-be called as
-
-  pysetup create
-
-or
-
-  python3.3 -m packaging.create
+be called as *pysetup create*.
 """
 
 #  Original code by Sean Reifschneider <jafo@tummy.com>
@@ -26,17 +19,17 @@ or
 #  Detect scripts (not sure how.  #! outside of package?)
 
 import os
+import re
 import imp
 import sys
 import glob
-import re
 import shutil
 import sysconfig
 import tokenize
-from configparser import RawConfigParser
-from textwrap import dedent
 from hashlib import md5
+from textwrap import dedent
 from functools import cmp_to_key
+from configparser import RawConfigParser
 # importing this with an underscore as it should be replaced by the
 # dict form or another structures for all purposes
 from packaging._trove import all_classifiers as _CLASSIFIERS_LIST
@@ -68,7 +61,7 @@ E-mail address of the project author (typically you).
     'do_classifier': '''
 Trove classifiers are optional identifiers that allow you to specify the
 intended audience by saying things like "Beta software with a text UI
-for Linux under the PSF license.  However, this can be a somewhat involved
+for Linux under the PSF license".  However, this can be a somewhat involved
 process.
 ''',
     'packages': '''
@@ -95,7 +88,7 @@ human language, programming language, user interface, etc...
 ''',
     'setup.py found': '''
 The setup.py script will be executed to retrieve the metadata.
-A wizard will be run if you answer "n",
+An interactive helper will be run if you answer "n",
 ''',
 }
 
@@ -230,7 +223,7 @@ class MainProgram:
         self._write_cfg()
 
     def has_setup_py(self):
-        """Test for the existance of a setup.py file."""
+        """Test for the existence of a setup.py file."""
         return os.path.exists('setup.py')
 
     def define_cfg_values(self):
@@ -281,9 +274,13 @@ class MainProgram:
 
         with open(_FILENAME, 'w', encoding='utf-8') as fp:
             fp.write('[metadata]\n')
+            # TODO use metadata module instead of hard-coding field-specific
+            # behavior here
+
             # simple string entries
             for name in ('name', 'version', 'summary', 'download_url'):
                 fp.write('%s = %s\n' % (name, self.data.get(name, 'UNKNOWN')))
+
             # optional string entries
             if 'keywords' in self.data and self.data['keywords']:
                 fp.write('keywords = %s\n' % ' '.join(self.data['keywords']))
@@ -295,6 +292,7 @@ class MainProgram:
                 fp.write(
                     'description = %s\n'
                     % '\n       |'.join(self.data['description'].split('\n')))
+
             # multiple use string entries
             for name in ('platform', 'supported-platform', 'classifier',
                          'requires-dist', 'provides-dist', 'obsoletes-dist',
@@ -329,8 +327,8 @@ class MainProgram:
 
         def setup_mock(**attrs):
             """Mock the setup(**attrs) in order to retrieve metadata."""
-            # use the distutils v1 processings to correctly parse metadata.
-            #XXX we could also use the setuptools distibution ???
+
+            # TODO use config and metadata instead of Distribution
             from distutils.dist import Distribution
             dist = Distribution(attrs)
             dist.parse_config_files()
@@ -362,13 +360,14 @@ class MainProgram:
             data['modules'].extend(dist.py_modules or [])
             # 2.1 data_files -> resources
             if dist.data_files:
-                if len(dist.data_files) < 2 or \
-                   isinstance(dist.data_files[1], str):
+                if (len(dist.data_files) < 2 or
+                    isinstance(dist.data_files[1], str)):
                     dist.data_files = [('', dist.data_files)]
                 # add tokens in the destination paths
                 vars = {'distribution.name': data['name']}
                 path_tokens = list(sysconfig.get_paths(vars=vars).items())
 
+                # TODO replace this with a key function
                 def length_comparison(x, y):
                     len_x = len(x[1])
                     len_y = len(y[1])
@@ -391,12 +390,12 @@ class MainProgram:
 
                         dest = ('{%s}' % tok) + dest[len(path):]
                         files = [('/ '.join(src.rsplit('/', 1)), dest)
-                                    for src in srcs]
+                                 for src in srcs]
                         data['resources'].extend(files)
 
             # 2.2 package_data -> extra_files
             package_dirs = dist.package_dir or {}
-            for package, extras in iter(dist.package_data.items()) or []:
+            for package, extras in dist.package_data.items() or []:
                 package_dir = package_dirs.get(package, package)
                 for file_ in extras:
                     if package_dir:
@@ -458,10 +457,10 @@ class MainProgram:
         if match:
             self.data['name'] = match.group(1)
             self.data['version'] = match.group(2)
-            # TODO Needs tested!
+            # TODO needs testing!
             if not is_valid_version(self.data['version']):
                 msg = "Invalid version discovered: %s" % self.data['version']
-                raise RuntimeError(msg)
+                raise ValueError(msg)
 
     def query_user(self):
         self.data['name'] = ask('Project name', self.data['name'],
@@ -476,25 +475,25 @@ class MainProgram:
               self.data.get('author'), _helptext['author'])
         self.data['author_email'] = ask('Author e-mail address',
               self.data.get('author_email'), _helptext['author_email'])
-        self.data['home_page'] = ask('Project Home Page',
+        self.data['home_page'] = ask('Project home page',
               self.data.get('home_page'), _helptext['home_page'],
               required=False)
 
         if ask_yn('Do you want me to automatically build the file list '
-              'with everything I can find in the current directory ? '
+              'with everything I can find in the current directory? '
               'If you say no, you will have to define them manually.') == 'y':
             self._find_files()
         else:
-            while ask_yn('Do you want to add a single module ?'
+            while ask_yn('Do you want to add a single module?'
                         ' (you will be able to add full packages next)',
                     helptext=_helptext['modules']) == 'y':
                 self._set_multi('Module name', 'modules')
 
-            while ask_yn('Do you want to add a package ?',
+            while ask_yn('Do you want to add a package?',
                     helptext=_helptext['packages']) == 'y':
                 self._set_multi('Package name', 'packages')
 
-            while ask_yn('Do you want to add an extra file ?',
+            while ask_yn('Do you want to add an extra file?',
                         helptext=_helptext['extra_files']) == 'y':
                 self._set_multi('Extra file/dir name', 'extra_files')
 
@@ -582,7 +581,7 @@ class MainProgram:
         self.set_other_classifier(self.classifiers)
 
     def set_other_classifier(self, classifiers):
-        if ask_yn('Do you want to set other trove identifiers', 'n',
+        if ask_yn('Do you want to set other trove identifiers?', 'n',
                   _helptext['trove_generic']) != 'y':
             return
         self.walk_classifiers(classifiers, [CLASSIFIERS], '')
@@ -599,7 +598,7 @@ class MainProgram:
                     classifiers.add(desc[4:] + ' :: ' + key)
                 continue
 
-            if ask_yn('Do you want to set items under\n   "%s" (%d sub-items)'
+            if ask_yn('Do you want to set items under\n   "%s" (%d sub-items)?'
                       % (key, len(trove[key])), 'n',
                       _helptext['trove_generic']) == 'y':
                 self.walk_classifiers(classifiers, trovepath + [trove[key]],
@@ -607,7 +606,7 @@ class MainProgram:
 
     def set_license(self, classifiers):
         while True:
-            license = ask('What license do you use',
+            license = ask('What license do you use?',
                           helptext=_helptext['trove_license'], required=False)
             if not license:
                 return

@@ -48,7 +48,6 @@ of GCC (same as cygwin in no-cygwin mode).
 
 import os
 import sys
-import copy
 
 from packaging import logger
 from packaging.compiler.unixccompiler import UnixCCompiler
@@ -172,9 +171,9 @@ class CygwinCCompiler(UnixCCompiler):
              extra_postargs=None, build_temp=None, target_lang=None):
         """Link the objects."""
         # use separate copies, so we can modify the lists
-        extra_preargs = copy.copy(extra_preargs or [])
-        libraries = copy.copy(libraries or [])
-        objects = copy.copy(objects or [])
+        extra_preargs = list(extra_preargs or [])
+        libraries = list(libraries or [])
+        objects = list(objects or [])
 
         # Additional libraries
         libraries.extend(self.dll_libraries)

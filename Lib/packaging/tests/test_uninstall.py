@@ -111,7 +111,7 @@ class UninstallTestCase(support.TempdirManager,
         old = os.rename
 
         def _rename(source, target):
-            raise OSError()
+            raise OSError
 
         os.rename = _rename
         try:

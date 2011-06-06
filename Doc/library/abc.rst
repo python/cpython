@@ -1,5 +1,3 @@
-.. _abstract-base-classes:
-
 :mod:`abc` --- Abstract Base Classes
 ====================================
 
@@ -20,7 +18,7 @@ regarding a type hierarchy for numbers based on ABCs.)
 
 The :mod:`collections` module has some concrete classes that derive from
 ABCs; these can, of course, be further derived. In addition the
-:mod:`collections` module has some ABCs that can be used to test whether
+:mod:`collections.abc` submodule has some ABCs that can be used to test whether
 a class or instance provides a particular interface, for example, is it
 hashable or a mapping.
 

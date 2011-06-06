@@ -1,20 +1,18 @@
-"""packaging.util
-Miscellaneous utility functions.
-"""
-import errno
-import csv
-import hashlib
+"""Miscellaneous utility functions."""
+
 import os
-import sys
 import re
+import csv
+import sys
+import errno
 import shutil
 import string
+import hashlib
 import tarfile
 import zipfile
 import posixpath
-import sysconfig
 import subprocess
-from copy import copy
+import sysconfig
 from glob import iglob as std_iglob
 from fnmatch import fnmatchcase
 from inspect import getsource
@@ -273,7 +271,7 @@ def execute(func, args, msg=None, verbose=0, dry_run=False):
 
 
 def strtobool(val):
-    """Convert a string representation of truth to true (1) or false (0).
+    """Convert a string representation of truth to a boolean.
 
     True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
     are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
@@ -384,7 +382,7 @@ byte_compile(files, optimize=%r, force=%r,
         elif optimize == 2:
             cmd.insert(1, "-OO")
 
-        env = copy(os.environ)
+        env = os.environ.copy()
         env['PYTHONPATH'] = os.path.pathsep.join(sys.path)
         try:
             spawn(cmd, env=env)
