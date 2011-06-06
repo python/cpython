@@ -172,27 +172,6 @@ try:
 except ImportError:
     _have_ssl = False
 else:
-    class SSLFakeFile:
-        """A fake file like object that really wraps a SSLObject.
-
-        It only supports what is needed in smtplib.
-        """
-        def __init__(self, sslobj):
-            self.sslobj = sslobj
-
-        def readline(self):
-            str = b""
-            chr = None
-            while chr != b"\n":
-                chr = self.sslobj.read(1)
-                if not chr:
-                    break
-                str += chr
-            return str
-
-        def close(self):
-            pass
-
     _have_ssl = True
 
 
@@ -322,6 +301,7 @@ class SMTP:
         if self.debuglevel > 0:
             print('connect:', (host, port), file=stderr)
         self.sock = self._get_socket(host, port, self.timeout)
+        self.file = None
         (code, msg) = self.getreply()
         if self.debuglevel > 0:
             print("connect:", msg, file=stderr)
@@ -669,7 +649,7 @@ class SMTP:
                 self.sock = context.wrap_socket(self.sock)
             else:
                 self.sock = ssl.wrap_socket(self.sock, keyfile, certfile)
-            self.file = SSLFakeFile(self.sock)
+            self.file = None
             # RFC 3207:
             # The client MUST discard any knowledge obtained from
             # the server, such as the list of SMTP service extensions,
@@ -853,7 +833,6 @@ if _have_ssl:
                 new_socket = self.context.wrap_socket(new_socket)
             else:
                 new_socket = ssl.wrap_socket(new_socket, self.keyfile, self.certfile)
-            self.file = SSLFakeFile(new_socket)
             return new_socket
 
     __all__.append("SMTP_SSL")
@@ -890,6 +869,7 @@ class LMTP(SMTP):
         # Handle Unix-domain sockets.
         try:
             self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            self.file = None
             self.sock.connect(host)
         except socket.error as msg:
             if self.debuglevel > 0:
