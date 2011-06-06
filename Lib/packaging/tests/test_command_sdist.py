@@ -211,7 +211,7 @@ class SDistTestCase(support.TempdirManager,
         with zipfile.ZipFile(join(dist_folder, 'fake-1.0.zip')) as zip_file:
             content = zip_file.namelist()
 
-        # Making sure everything was added. This includes 9 code and data
+        # Making sure everything was added. This includes 8 code and data
         # files in addition to PKG-INFO.
         self.assertEqual(len(content), 9)
 
