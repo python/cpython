@@ -914,6 +914,29 @@ def formatargvalues(args, varargs, varkw, locals,
         specs.append(formatvarkw(varkw) + formatvalue(locals[varkw]))
     return '(' + ', '.join(specs) + ')'
 
+def _positional_error(f_name, args, kwonly, varargs, defcount, given, values):
+    atleast = len(args) - defcount
+    if given is None:
+        given = len([arg for arg in args if arg in values])
+    kwonly_given = len([arg for arg in kwonly if arg in values])
+    if varargs:
+        plural = atleast != 1
+        sig = "at least %d" % (atleast,)
+    elif defcount:
+        plural = True
+        sig = "from %d to %d" % (atleast, len(args))
+    else:
+        plural = len(args) != 1
+        sig = str(len(args))
+    kwonly_sig = ""
+    if kwonly_given:
+        msg = " positional argument%s (and %d keyword-only argument%s)"
+        kwonly_sig = (msg % ("s" if given != 1 else "", kwonly_given,
+                             "s" if kwonly_given != 1 else ""))
+    raise TypeError("%s() takes %s positional argument%s but %d%s %s given" %
+            (f_name, sig, "s" if plural else "", given, kwonly_sig,
+             "was" if given == 1 and not kwonly_given else "were"))
+
 def getcallargs(func, *positional, **named):
     """Get the mapping of arguments to values.
 
@@ -925,64 +948,50 @@ def getcallargs(func, *positional, **named):
     f_name = func.__name__
     arg2value = {}
 
+
     if ismethod(func) and func.__self__ is not None:
         # implicit 'self' (or 'cls' for classmethods) argument
         positional = (func.__self__,) + positional
     num_pos = len(positional)
-    num_total = num_pos + len(named)
     num_args = len(args)
     num_defaults = len(defaults) if defaults else 0
-    for arg, value in zip(args, positional):
-        arg2value[arg] = value
-    if varargs:
-        if num_pos > num_args:
-            arg2value[varargs] = positional[-(num_pos-num_args):]
-        else:
-            arg2value[varargs] = ()
-    elif 0 < num_args < num_pos:
-        raise TypeError('%s() takes %s %d positional %s (%d given)' % (
-            f_name, 'at most' if defaults else 'exactly', num_args,
-            'arguments' if num_args > 1 else 'argument', num_total))
-    elif num_args == 0 and num_total:
-        if varkw or kwonlyargs:
-            if num_pos:
-                # XXX: We should use num_pos, but Python also uses num_total:
-                raise TypeError('%s() takes exactly 0 positional arguments '
-                                '(%d given)' % (f_name, num_total))
-        else:
-            raise TypeError('%s() takes no arguments (%d given)' %
-                            (f_name, num_total))
 
-    for arg in itertools.chain(args, kwonlyargs):
-        if arg in named:
-            if arg in arg2value:
-                raise TypeError("%s() got multiple values for keyword "
-                                "argument '%s'" % (f_name, arg))
-            else:
-                arg2value[arg] = named.pop(arg)
-    for kwonlyarg in kwonlyargs:
-        if kwonlyarg not in arg2value:
-            try:
-                arg2value[kwonlyarg] = kwonlydefaults[kwonlyarg]
-            except KeyError:
-                raise TypeError("%s() needs keyword-only argument %s" %
-                                (f_name, kwonlyarg))
-    if defaults:    # fill in any missing values with the defaults
-        for arg, value in zip(args[-num_defaults:], defaults):
-            if arg not in arg2value:
-                arg2value[arg] = value
+    n = min(num_pos, num_args)
+    for i in range(n):
+        arg2value[args[i]] = positional[i]
+    if varargs:
+        arg2value[varargs] = tuple(positional[n:])
+    possible_kwargs = set(args + kwonlyargs)
     if varkw:
-        arg2value[varkw] = named
-    elif named:
-        unexpected = next(iter(named))
-        raise TypeError("%s() got an unexpected keyword argument '%s'" %
-                        (f_name, unexpected))
-    unassigned = num_args - len([arg for arg in args if arg in arg2value])
-    if unassigned:
-        num_required = num_args - num_defaults
-        raise TypeError('%s() takes %s %d %s (%d given)' % (
-            f_name, 'at least' if defaults else 'exactly', num_required,
-            'arguments' if num_required > 1 else 'argument', num_total))
+        arg2value[varkw] = {}
+    for kw, value in named.items():
+        if kw not in possible_kwargs:
+            if not varkw:
+                raise TypeError("%s() got an unexpected keyword argument %r" %
+                                (f_name, kw))
+            arg2value[varkw][kw] = value
+            continue
+        if kw in arg2value:
+            raise TypeError("%s() got multiple values for argument %r" %
+                            (f_name, kw))
+        arg2value[kw] = value
+    if num_pos > num_args and not varargs:
+        _positional_error(f_name, args, kwonlyargs, varargs, num_defaults,
+                          num_pos, arg2value)
+    if num_pos < num_args:
+        for arg in args[:num_args - num_defaults]:
+            if arg not in arg2value:
+                _positional_error(f_name, args, kwonlyargs, varargs,
+                                  num_defaults, None, arg2value)
+        for i, arg in enumerate(args[num_args - num_defaults:]):
+            if arg not in arg2value:
+                arg2value[arg] = defaults[i]
+    for kwarg in kwonlyargs:
+        if kwarg not in arg2value:
+            if kwarg not in kwonlydefaults:
+                raise TypeError("%s() requires keyword-only argument %r" %
+                                (f_name, kwarg))
+            arg2value[kwarg] = kwonlydefaults[kwarg]
     return arg2value
 
 # -------------------------------------------------- stack frame extraction

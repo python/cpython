@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #12265: Make error messages produced by passing an invalid set of
+  arguments to a function more informative.
+
 - Issue #12225: Still allow Python to build if Python is not in its hg repo or
   mercurial is not installed.
 
