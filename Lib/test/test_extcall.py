@@ -66,17 +66,17 @@ Verify clearing of SF bug #733667
     >>> g()
     Traceback (most recent call last):
       ...
-    TypeError: g() takes at least 1 argument (0 given)
+    TypeError: g() takes at least 1 positional argument but 0 were given
 
     >>> g(*())
     Traceback (most recent call last):
       ...
-    TypeError: g() takes at least 1 argument (0 given)
+    TypeError: g() takes at least 1 positional argument but 0 were given
 
     >>> g(*(), **{})
     Traceback (most recent call last):
       ...
-    TypeError: g() takes at least 1 argument (0 given)
+    TypeError: g() takes at least 1 positional argument but 0 were given
 
     >>> g(1)
     1 () {}
@@ -151,7 +151,7 @@ What about willful misconduct?
     >>> g(1, 2, 3, **{'x': 4, 'y': 5})
     Traceback (most recent call last):
       ...
-    TypeError: g() got multiple values for keyword argument 'x'
+    TypeError: g() got multiple values for argument 'x'
 
     >>> f(**{1:2})
     Traceback (most recent call last):
@@ -263,29 +263,91 @@ the function call setup. See <http://bugs.python.org/issue2016>.
     >>> f(**x)
     1 2
 
-A obscure message:
+Some additional tests about positional argument errors:
 
     >>> def f(a, b):
     ...    pass
     >>> f(b=1)
     Traceback (most recent call last):
       ...
-    TypeError: f() takes exactly 2 arguments (1 given)
-
-The number of arguments passed in includes keywords:
+    TypeError: f() takes 2 positional arguments but 1 was given
 
     >>> def f(a):
     ...    pass
     >>> f(6, a=4, *(1, 2, 3))
     Traceback (most recent call last):
       ...
-    TypeError: f() takes exactly 1 positional argument (5 given)
+    TypeError: f() got multiple values for argument 'a'
     >>> def f(a, *, kw):
     ...    pass
     >>> f(6, 4, kw=4)
     Traceback (most recent call last):
       ...
-    TypeError: f() takes exactly 1 positional argument (3 given)
+    TypeError: f() takes 1 positional argument but 2 positional arguments (and 1 keyword-only argument) were given
+
+    >>> def f(a):
+    ...    pass
+    >>> f()
+    Traceback (most recent call last):
+      ...
+    TypeError: f() takes 1 positional argument but 0 were given
+
+    >>> def f(a, b):
+    ...    pass
+    >>> f(1)
+    Traceback (most recent call last):
+      ...
+    TypeError: f() takes 2 positional arguments but 1 was given
+
+    >>> def f(a, *b):
+    ...    pass
+    >>> f()
+    Traceback (most recent call last):
+      ...
+    TypeError: f() takes at least 1 positional argument but 0 were given
+
+    >>> def f(a, *, kw=4):
+    ...    pass
+    >>> f(kw=4)
+    Traceback (most recent call last):
+      ...
+    TypeError: f() takes 1 positional argument but 0 positional arguments (and 1 keyword-only argument) were given
+
+    >>> def f(a, b=2):
+    ...    pass
+    >>> f()
+    Traceback (most recent call last):
+      ...
+    TypeError: f() takes from 1 to 2 positional arguments but 0 were given
+
+    >>> def f(a, *b):
+    ...    pass
+    >>> f()
+    Traceback (most recent call last):
+      ...
+    TypeError: f() takes at least 1 positional argument but 0 were given
+
+    >>> def f(*, kw):
+    ...    pass
+    >>> f(3, kw=4)
+    Traceback (most recent call last):
+      ...
+    TypeError: f() takes 0 positional arguments but 1 positional argument (and 1 keyword-only argument) were given
+
+    >>> def f(a, c=3, *b, kw):
+    ...    pass
+    >>> f()
+    Traceback (most recent call last):
+     ...
+    TypeError: f() takes at least 1 positional argument but 0 were given
+    >>> f(kw=3)
+    Traceback (most recent call last):
+     ...
+    TypeError: f() takes at least 1 positional argument but 0 positional arguments (and 1 keyword-only argument) were given
+    >>> f(kw=3, c=4)
+    Traceback (most recent call last):
+     ...
+    TypeError: f() takes at least 1 positional argument but 1 positional argument (and 1 keyword-only argument) were given
 """
 
 import sys

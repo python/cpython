@@ -3045,6 +3045,63 @@ exit_eval_frame:
     return retval;
 }
 
+static void
+positional_argument_error(PyCodeObject *co, int given, int defcount, PyObject **fastlocals)
+{
+    int plural;
+    int kwonly_given = 0;
+    int atleast = co->co_argcount - defcount;
+    int i;
+    PyObject *sig, *kwonly_sig;
+
+    if (given == -1) {
+        given = 0;
+        for (i = 0; i < co->co_argcount; i++)
+            if (GETLOCAL(i))
+                given++;
+    }
+    for (i = co->co_argcount; i < co->co_argcount + co->co_kwonlyargcount; i++)
+        if (GETLOCAL(i))
+            kwonly_given++;
+    if (co->co_flags & CO_VARARGS) {
+        plural = atleast != 1;
+        sig = PyUnicode_FromFormat("at least %d", atleast);
+    }
+    else if (defcount) {
+        plural = 1;
+        sig = PyUnicode_FromFormat("from %d to %d", atleast, co->co_argcount);
+    }
+    else {
+        plural = co->co_argcount != 1;
+        sig = PyUnicode_FromFormat("%d", co->co_argcount);
+    }
+    if (sig == NULL)
+        return;
+    if (kwonly_given) {
+        const char *format = " positional argument%s (and %d keyword-only argument%s)";
+        kwonly_sig = PyUnicode_FromFormat(format, given != 1 ? "s" : "", kwonly_given,
+                                              kwonly_given != 1 ? "s" : "");
+        if (kwonly_sig == NULL) {
+            Py_DECREF(sig);
+            return;
+        }
+    }
+    else {
+        /* This will not fail. */
+        kwonly_sig = PyUnicode_FromString("");
+    }
+    PyErr_Format(PyExc_TypeError,
+                 "%U() takes %U positional argument%s but %d%U %s given",
+                 co->co_name,
+                 sig,
+                 plural ? "s" : "",
+                 given,
+                 kwonly_sig,
+                 given == 1 && !kwonly_given ? "was" : "were");
+    Py_DECREF(sig);
+    Py_DECREF(kwonly_sig);
+}
+
 /* This is gonna seem *real weird*, but if you put some other code between
    PyEval_EvalFrame() and PyEval_EvalCodeEx() you will need to adjust
    the test in the if statements in Misc/gdbinit (pystack and pystackv). */
@@ -3061,6 +3118,9 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
     PyThreadState *tstate = PyThreadState_GET();
     PyObject *x, *u;
     int total_args = co->co_argcount + co->co_kwonlyargcount;
+    int i;
+    int n = argcount;
+    PyObject *kwdict = NULL;
 
     if (globals == NULL) {
         PyErr_SetString(PyExc_SystemError,
@@ -3077,161 +3137,130 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
     fastlocals = f->f_localsplus;
     freevars = f->f_localsplus + co->co_nlocals;
 
-    if (total_args || co->co_flags & (CO_VARARGS | CO_VARKEYWORDS)) {
-        int i;
-        int n = argcount;
-        PyObject *kwdict = NULL;
-        if (co->co_flags & CO_VARKEYWORDS) {
-            kwdict = PyDict_New();
-            if (kwdict == NULL)
-                goto fail;
-            i = total_args;
-            if (co->co_flags & CO_VARARGS)
-                i++;
-            SETLOCAL(i, kwdict);
-        }
-        if (argcount > co->co_argcount) {
-            if (!(co->co_flags & CO_VARARGS)) {
-                PyErr_Format(PyExc_TypeError,
-                    "%U() takes %s %d "
-                    "positional argument%s (%d given)",
-                    co->co_name,
-                    defcount ? "at most" : "exactly",
-                    co->co_argcount,
-                    co->co_argcount == 1 ? "" : "s",
-                    argcount + kwcount);
-                goto fail;
-            }
-            n = co->co_argcount;
-        }
-        for (i = 0; i < n; i++) {
+    /* Parse arguments. */
+    if (co->co_flags & CO_VARKEYWORDS) {
+        kwdict = PyDict_New();
+        if (kwdict == NULL)
+            goto fail;
+        i = total_args;
+        if (co->co_flags & CO_VARARGS)
+            i++;
+        SETLOCAL(i, kwdict);
+    }
+    if (argcount > co->co_argcount)
+        n = co->co_argcount;
+    for (i = 0; i < n; i++) {
+        x = args[i];
+        Py_INCREF(x);
+        SETLOCAL(i, x);
+    }
+    if (co->co_flags & CO_VARARGS) {
+        u = PyTuple_New(argcount - n);
+        if (u == NULL)
+            goto fail;
+        SETLOCAL(total_args, u);
+        for (i = n; i < argcount; i++) {
             x = args[i];
             Py_INCREF(x);
-            SETLOCAL(i, x);
+            PyTuple_SET_ITEM(u, i-n, x);
         }
-        if (co->co_flags & CO_VARARGS) {
-            u = PyTuple_New(argcount - n);
-            if (u == NULL)
-                goto fail;
-            SETLOCAL(total_args, u);
-            for (i = n; i < argcount; i++) {
-                x = args[i];
-                Py_INCREF(x);
-                PyTuple_SET_ITEM(u, i-n, x);
-            }
+    }
+    for (i = 0; i < kwcount; i++) {
+        PyObject **co_varnames;
+        PyObject *keyword = kws[2*i];
+        PyObject *value = kws[2*i + 1];
+        int j;
+        if (keyword == NULL || !PyUnicode_Check(keyword)) {
+            PyErr_Format(PyExc_TypeError,
+                         "%U() keywords must be strings",
+                         co->co_name);
+            goto fail;
         }
-        for (i = 0; i < kwcount; i++) {
-            PyObject **co_varnames;
-            PyObject *keyword = kws[2*i];
-            PyObject *value = kws[2*i + 1];
-            int j;
-            if (keyword == NULL || !PyUnicode_Check(keyword)) {
-                PyErr_Format(PyExc_TypeError,
-                    "%U() keywords must be strings",
-                    co->co_name);
+        /* Speed hack: do raw pointer compares. As names are
+           normally interned this should almost always hit. */
+        co_varnames = ((PyTupleObject *)(co->co_varnames))->ob_item;
+        for (j = 0; j < total_args; j++) {
+            PyObject *nm = co_varnames[j];
+            if (nm == keyword)
+                goto kw_found;
+        }
+        /* Slow fallback, just in case */
+        for (j = 0; j < total_args; j++) {
+            PyObject *nm = co_varnames[j];
+            int cmp = PyObject_RichCompareBool(
+                keyword, nm, Py_EQ);
+            if (cmp > 0)
+                goto kw_found;
+            else if (cmp < 0)
                 goto fail;
-            }
-            /* Speed hack: do raw pointer compares. As names are
-               normally interned this should almost always hit. */
-            co_varnames = ((PyTupleObject *)(co->co_varnames))->ob_item;
-            for (j = 0; j < total_args; j++) {
-                PyObject *nm = co_varnames[j];
-                if (nm == keyword)
-                    goto kw_found;
-            }
-            /* Slow fallback, just in case */
-            for (j = 0; j < total_args; j++) {
-                PyObject *nm = co_varnames[j];
-                int cmp = PyObject_RichCompareBool(
-                    keyword, nm, Py_EQ);
-                if (cmp > 0)
-                    goto kw_found;
-                else if (cmp < 0)
-                    goto fail;
-            }
-            if (j >= total_args && kwdict == NULL) {
-                PyErr_Format(PyExc_TypeError,
-                             "%U() got an unexpected "
-                             "keyword argument '%S'",
-                             co->co_name,
-                             keyword);
-                goto fail;
-            }
-            PyDict_SetItem(kwdict, keyword, value);
-            continue;
-          kw_found:
-            if (GETLOCAL(j) != NULL) {
-                PyErr_Format(PyExc_TypeError,
-                         "%U() got multiple "
-                         "values for keyword "
-                         "argument '%S'",
+        }
+        if (j >= total_args && kwdict == NULL) {
+            PyErr_Format(PyExc_TypeError,
+                         "%U() got an unexpected "
+                         "keyword argument '%S'",
                          co->co_name,
                          keyword);
-                goto fail;
-            }
-            Py_INCREF(value);
-            SETLOCAL(j, value);
+            goto fail;
         }
-        if (co->co_kwonlyargcount > 0) {
-            for (i = co->co_argcount; i < total_args; i++) {
-                PyObject *name;
-                if (GETLOCAL(i) != NULL)
-                    continue;
-                name = PyTuple_GET_ITEM(co->co_varnames, i);
-                if (kwdefs != NULL) {
-                    PyObject *def = PyDict_GetItem(kwdefs, name);
-                    if (def) {
-                        Py_INCREF(def);
-                        SETLOCAL(i, def);
-                        continue;
-                    }
-                }
-                PyErr_Format(PyExc_TypeError,
-                    "%U() needs keyword-only argument %S",
-                    co->co_name, name);
-                goto fail;
-            }
+        PyDict_SetItem(kwdict, keyword, value);
+        continue;
+      kw_found:
+        if (GETLOCAL(j) != NULL) {
+            PyErr_Format(PyExc_TypeError,
+                         "%U() got multiple "
+                         "values for argument '%S'",
+                         co->co_name,
+                         keyword);
+            goto fail;
         }
-        if (argcount < co->co_argcount) {
-            int m = co->co_argcount - defcount;
-            for (i = argcount; i < m; i++) {
-                if (GETLOCAL(i) == NULL) {
-                    int j, given = 0;
-                    for (j = 0; j < co->co_argcount; j++)
-                        if (GETLOCAL(j))
-                            given++;
-                    PyErr_Format(PyExc_TypeError,
-                        "%U() takes %s %d "
-                        "argument%s "
-                        "(%d given)",
-                        co->co_name,
-                        ((co->co_flags & CO_VARARGS) ||
-                         defcount) ? "at least"
-                                   : "exactly",
-                             m, m == 1 ? "" : "s", given);
-                    goto fail;
-                }
-            }
-            if (n > m)
-                i = n - m;
-            else
-                i = 0;
-            for (; i < defcount; i++) {
-                if (GETLOCAL(m+i) == NULL) {
-                    PyObject *def = defs[i];
-                    Py_INCREF(def);
-                    SETLOCAL(m+i, def);
-                }
-            }
-        }
+        Py_INCREF(value);
+        SETLOCAL(j, value);
     }
-    else if (argcount > 0 || kwcount > 0) {
-        PyErr_Format(PyExc_TypeError,
-                     "%U() takes no arguments (%d given)",
-                     co->co_name,
-                     argcount + kwcount);
+    if (argcount > co->co_argcount && !(co->co_flags & CO_VARARGS)) {
+        positional_argument_error(co, argcount, defcount, fastlocals);
         goto fail;
     }
+    if (argcount < co->co_argcount) {
+        int m = co->co_argcount - defcount;
+        for (i = argcount; i < m; i++) {
+            if (GETLOCAL(i) == NULL) {
+                positional_argument_error(co, -1, defcount, fastlocals);
+                goto fail;
+            }
+        }
+        if (n > m)
+            i = n - m;
+        else
+            i = 0;
+        for (; i < defcount; i++) {
+            if (GETLOCAL(m+i) == NULL) {
+                PyObject *def = defs[i];
+                Py_INCREF(def);
+                SETLOCAL(m+i, def);
+            }
+        }
+    }
+    if (co->co_kwonlyargcount > 0) {
+        for (i = co->co_argcount; i < total_args; i++) {
+            PyObject *name;
+            if (GETLOCAL(i) != NULL)
+                continue;
+            name = PyTuple_GET_ITEM(co->co_varnames, i);
+            if (kwdefs != NULL) {
+                PyObject *def = PyDict_GetItem(kwdefs, name);
+                if (def) {
+                    Py_INCREF(def);
+                    SETLOCAL(i, def);
+                    continue;
+                }
+            }
+            PyErr_Format(PyExc_TypeError,
+                         "%U() requires keyword-only argument '%S'",
+                         co->co_name, name);
+            goto fail;
+        }
+    }
+
     /* Allocate and initialize storage for cell vars, and copy free
        vars into frame.  This isn't too efficient right now. */
     if (PyTuple_GET_SIZE(co->co_cellvars)) {
