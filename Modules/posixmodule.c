@@ -6549,20 +6549,21 @@ posix_pipe(PyObject *self, PyObject *noargs)
 
 #ifdef HAVE_PIPE2
 PyDoc_STRVAR(posix_pipe2__doc__,
-"pipe2(flags=0) -> (read_end, write_end)\n\n\
-Create a pipe with flags set atomically.\
-flags is optional and can be constructed by ORing together zero or more\n\
-of these values: O_NONBLOCK, O_CLOEXEC.\n\
+"pipe2(flags) -> (read_end, write_end)\n\n\
+Create a pipe with flags set atomically.\n\
+flags can be constructed by ORing together one or more of these values:\n\
+O_NONBLOCK, O_CLOEXEC.\n\
 ");
 
 static PyObject *
-posix_pipe2(PyObject *self, PyObject *args)
+posix_pipe2(PyObject *self, PyObject *arg)
 {
-    int flags = 0;
+    int flags;
     int fds[2];
     int res;
 
-    if (!PyArg_ParseTuple(args, "|i:pipe2", &flags))
+    flags = PyLong_AsLong(arg);
+    if (flags == -1 && PyErr_Occurred())
         return NULL;
 
     res = pipe2(fds, flags);
@@ -9467,7 +9468,7 @@ static PyMethodDef posix_methods[] = {
     {"pipe",            posix_pipe, METH_NOARGS, posix_pipe__doc__},
 #endif
 #ifdef HAVE_PIPE2
-    {"pipe2",           posix_pipe2, METH_VARARGS, posix_pipe2__doc__},
+    {"pipe2",           posix_pipe2, METH_O, posix_pipe2__doc__},
 #endif
 #ifdef HAVE_MKFIFO
     {"mkfifo",          posix_mkfifo, METH_VARARGS, posix_mkfifo__doc__},
