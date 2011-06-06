@@ -265,9 +265,9 @@ obsoletes-dist
    Same format than *requires-dist*. *optional*, *multi*, *environ*
 
 requires-python
-   Specifies the Python version the distribution requires.
-   The value is a version number, as described in PEP 345.
-   *optional*, *multi*, *environ*
+   Specifies the Python version the distribution requires.  The value is a
+   comma-separated list of version predicates, as described in PEP 345.
+   *optional*, *environ*
 
 requires-externals
    a dependency in the system. This field is free-form,
