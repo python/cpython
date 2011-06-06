@@ -335,4 +335,3 @@ def _eintr_retry(func, _errors=(EnvironmentError, select.error)):
                     continue
                 raise
     return wrapped
-
