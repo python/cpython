@@ -371,12 +371,6 @@ have created a new socket to ``connect`` to someone else, put it in the
 potential_writers list. If it shows up in the writable list, you have a decent
 chance that it has connected.
 
-One very nasty problem with ``select``: if somewhere in those input lists of
-sockets is one which has died a nasty death, the ``select`` will fail. You then
-need to loop through every single damn socket in all those lists and do a
-``select([sock],[],[],0)`` until you find the bad one. That timeout of 0 means
-it won't take long, but it's ugly.
-
 Actually, ``select`` can be handy even with blocking sockets. It's one way of
 determining whether you will block - the socket returns as readable when there's
 something in the buffers.  However, this still doesn't help with the problem of
