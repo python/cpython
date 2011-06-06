@@ -187,6 +187,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11893: Remove obsolete internal wrapper class ``SSLFakeFile`` in the
+  smtplib module.  Patch by Catalin Iacob.
+
 - Issue #12080: Fix a Decimal.power() case that took an unreasonably long time
   to compute.
 
