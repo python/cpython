@@ -33,8 +33,9 @@ Python's general purpose built-in containers, :class:`dict`, :class:`list`,
 =====================   ====================================================================
 
 In addition to the concrete container classes, the collections module provides
-:ref:`abstract-base-classes` that can be used to test whether a class provides a
-particular interface, for example, whether it is hashable or a mapping.
+:ref:`abstract base classes <collections-abstract-base-classes>` that can be
+used to test whether a class provides a particular interface, for example,
+whether it is hashable or a mapping.
 
 
 :class:`Counter` objects
@@ -984,7 +985,7 @@ attribute.
    subclass) or an arbitrary sequence which can be converted into a string using
    the built-in :func:`str` function.
 
-.. _abstract-base-classes:
+.. _collections-abstract-base-classes:
 
 ABCs - abstract base classes
 ----------------------------
@@ -1135,9 +1136,6 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
    ``__hash__ = Set._hash``.
 
 .. seealso::
-
-   * Latest version of the :source:`Python source code for the collections
-     abstract base classes <Lib/_abcoll.py>`
 
    * `OrderedSet recipe <http://code.activestate.com/recipes/576694/>`_ for an
      example built on :class:`MutableSet`.
