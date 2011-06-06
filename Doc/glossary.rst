@@ -27,12 +27,14 @@ Glossary
       :ref:`2to3-reference`.
 
    abstract base class
-      :ref:`abstract-base-classes` complement :term:`duck-typing` by
+      Abstract base classes complement :term:`duck-typing` by
       providing a way to define interfaces when other techniques like
-      :func:`hasattr` would be clumsy. Python comes with many built-in ABCs for
+      :func:`hasattr` would be clumsy or subtly wrong (for example with
+      :ref:`magic methods <special-lookup>`). Python comes with many built-in ABCs for
       data structures (in the :mod:`collections` module), numbers (in the
-      :mod:`numbers` module), and streams (in the :mod:`io` module). You can
-      create your own ABC with the :mod:`abc` module.
+      :mod:`numbers` module), streams (in the :mod:`io` module), import finders
+      and loaders (in the :mod:`importlib.abc` module).  You can create your own
+      ABCs with the :mod:`abc` module.
 
    argument
       A value passed to a function or method, assigned to a named local
@@ -430,8 +432,8 @@ Glossary
    mapping
       A container object that supports arbitrary key lookups and implements the
       methods specified in the :class:`Mapping` or :class:`MutableMapping`
-      :ref:`abstract base classes <abstract-base-classes>`. Examples include
-      :class:`dict`, :class:`collections.defaultdict`,
+      :ref:`abstract base classes <collections-abstract-base-classes>`.  Examples
+      include :class:`dict`, :class:`collections.defaultdict`,
       :class:`collections.OrderedDict` and :class:`collections.Counter`.
 
    metaclass
