@@ -66,10 +66,15 @@ class CreateTestCase(support.TempdirManager,
         # building the structure
         tempdir = self.wdir
         dirs = ['pkg1', 'data', 'pkg2', 'pkg2/sub']
-        files = ['README', 'setup.cfg', 'foo.py',
-                 'pkg1/__init__.py', 'pkg1/bar.py',
-                 'data/data1', 'pkg2/__init__.py',
-                 'pkg2/sub/__init__.py']
+        files = [
+            'README',
+            'data/data1',
+            'foo.py',
+            'pkg1/__init__.py',
+            'pkg1/bar.py',
+            'pkg2/__init__.py',
+            'pkg2/sub/__init__.py',
+        ]
 
         for dir_ in dirs:
             os.mkdir(os.path.join(tempdir, dir_))
@@ -86,8 +91,8 @@ class CreateTestCase(support.TempdirManager,
                          ['pkg1', 'pkg2', 'pkg2.sub'])
         self.assertEqual(mainprogram.data['modules'], ['foo'])
         data_fn = os.path.join('data', 'data1')
-        self.assertEqual(set(mainprogram.data['extra_files']),
-                         set(['setup.cfg', 'README', data_fn]))
+        self.assertEqual(mainprogram.data['extra_files'],
+                         ['README', data_fn])
 
     def test_convert_setup_py_to_cfg(self):
         self.write_file((self.wdir, 'setup.py'),
