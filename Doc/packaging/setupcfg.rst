@@ -777,37 +777,36 @@ An extension field starts with ``X-``.  Example::
 Changes in the specification
 ============================
 
-The version scheme for this specification is **MAJOR.MINOR**.
-Changes in the specification will increment the version.
+The versioning scheme for this specification is **MAJOR.MINOR**.  Changes in the
+specification will cause the version number to be updated.
 
-- minor version changes (1.x): backwards compatible
+Changes to the minor number reflect backwards-compatible changes:
 
- - new fields and sections (both optional and mandatory) can be added
- - optional fields can be removed
+- New fields and sections (optional or mandatory) can be added.
+- Optional fields can be removed.
 
-- major channges (2.X): backwards-incompatible
+The major number will be incremented for backwards-incompatible changes:
 
- - mandatory fields/sections are removed
- - fields change their meaning
+- Mandatory fields or sections are removed.
+- Fields change their meaning.
 
-As a consequence, a tool written to consume 1.X (say, X=5) has these
-properties:
+As a consequence, a tool written to consume 1.5 has these properties:
 
-- reading 1.Y, Y<X (e.g. 1.1) is possible, since the tool knows what
-  optional fields weren't there
-- reading 1.Y, Y>X is also possible. The tool will just ignore the new
-  fields (even if they are mandatory in that version)
-  If optional fields were removed, the tool will just consider them absent.
-- reading 2.X is not possible; the tool should refuse to interpret
-  the file.
+- Can read 1.1, 1.2 and all versions < 1.5, since the tool knows what
+  optional fields weren't there.
 
-A tool written to produce 1.X should have these properties:
+  .. XXX clarify
 
-- it will write all mandatory fields
-- it may write optional fields
+- Can also read 1.6 and other 1.x versions: The tool will just ignore fields it
+  doesn't know about, even if they are mandatory in the new version.  If
+  optional fields were removed, the tool will just consider them absent.
 
+- Cannot read 2.x and should refuse to interpret such files.
 
+A tool written to produce 1.x should have these properties:
 
+- Writes all mandatory fields.
+- May write optional fields.
 
 
 Acknowledgments
