@@ -9,8 +9,10 @@ Specification of the :file:`setup.cfg` file
 :version: 0.9
 
 This document describes the :file:`setup.cfg`, an ini-style configuration file
-(compatible with :class:`configparser.RawConfigParser`) used by Packaging to
-replace the :file:`setup.py` file.
+used by Packaging to replace the :file:`setup.py` file used by Distutils.
+This specification is language-agnostic, and will therefore repeat some
+information that's already documented for Python in the
+:class:`configparser.RawConfigParser` documentation.
 
 .. contents::
    :depth: 3
@@ -20,11 +22,10 @@ replace the :file:`setup.py` file.
 Syntax
 ======
 
-The configuration file is an ini-based file. Variables name can be
-assigned values, and grouped into sections. A line that starts with "#" is
-commented out. Empty lines are also removed.
-
-Example::
+The ini-style format used in the configuration file is a simple collection of
+sections that group sets of key-value fields separated by ``=`` or ``:`` and
+optional whitespace.  Lines starting with ``#`` or ``;`` are comments and will
+be ignored.  Empty lines are also ignored.  Example::
 
    [section1]
    # comment
@@ -35,22 +36,24 @@ Example::
    foo = bar
 
 
-Values conversion
------------------
+Parsing values
+---------------
 
-Here are a set of rules for converting values:
+Here are a set of rules to parse values:
 
-- If value is quoted with " chars, it's a string. This notation is useful to
-  include "=" characters in the value. In case the value contains a "
-  character, it must be escaped with a "\" character.
-- If the value is "true" or "false" --no matter what the case is--, it's
-  converted to a boolean, or 0 and 1 when the language does not have a
-  boolean type.
-- A value can contains multiple lines. When read, lines are converted into a
-  sequence of values. Each new line for a multiple lines value must start with
-  a least one space or tab character. These indentation characters will be
-  stripped.
-- all other values are considered as strings
+- If a value is quoted with ``"`` chars, it's a string.  If a quote character is
+  present in the quoted value, it can be escaped as ``\"`` or left as-is.
+
+- If the value is ``true``, ``t``, ``yes``, ``y`` (case-insensitive) or ``1``,
+  it's converted to the language equivalent of a ``True`` value; if it's
+  ``false``, ``f``, ``no``, ``n`` (case-insensitive) or ``0``, it's converted to
+  the equivalent of ``False``.
+
+- A value can contain multiple lines.  When read, lines are converted into a
+  sequence of values.  Each line after the first must start with a least one
+  space or tab character; this leading indentation will be stripped.
+
+- All other values are considered strings.
 
 Examples::
 
@@ -68,12 +71,12 @@ Examples::
 Extending files
 ---------------
 
-An INI file can extend another file. For this, a "DEFAULT" section must contain
-an "extends" variable that can point to one or several INI files which will be
-merged to the current file by adding new sections and values.
+A configuration file can be extended (i.e. included) by other files.  For this,
+a ``DEFAULT`` section must contain an ``extends`` key which value points to one
+or more files which will be merged into the current files by adding new sections
+and fields.  If a file loaded by ``extends`` contains sections or keys that
+already exist in the original file, they will not override the previous values.
 
-If the file pointed in "extends" contains section/variable names that already
-exist in the original file, they will not override existing ones.
 
 file_one.ini::
 
@@ -107,13 +110,12 @@ To point several files, the multi-line notation can be used::
     extends = file_one.ini
               file_two.ini
 
-When several files are provided, they are processed sequentially. So if the
-first one has a value that is also present in the second, the second one will
-be ignored. This means that the configuration goes from the most specialized to
-the most common.
+When several files are provided, they are processed sequentially, following the
+precedence rules explained above.  This means that the list of files should go
+from most specialized to most common.
 
-**Tools will need to provide a way to produce a canonical version of the
-file**. This will be useful to publish a single file.
+**Tools will need to provide a way to produce a merged version of the
+file**.  This will be useful to let users publish a single file.
 
 
 Description of sections and fields
