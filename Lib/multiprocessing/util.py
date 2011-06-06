@@ -32,9 +32,11 @@
 # SUCH DAMAGE.
 #
 
+import functools
 import itertools
 import weakref
 import atexit
+import select
 import threading        # we want threading to install it's
                         # cleanup function before multiprocessing does
 
@@ -315,3 +317,22 @@ class ForkAwareLocal(threading.local):
         register_after_fork(self, lambda obj : obj.__dict__.clear())
     def __reduce__(self):
         return type(self), ()
+
+
+#
+# Automatic retry after EINTR
+#
+
+def _eintr_retry(func, _errors=(EnvironmentError, select.error)):
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        while True:
+            try:
+                return func(*args, **kwargs)
+            except _errors as e:
+                # select.error has no `errno` attribute
+                if e.args[0] == errno.EINTR:
+                    continue
+                raise
+    return wrapped
+
