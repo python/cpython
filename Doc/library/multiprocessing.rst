@@ -411,6 +411,20 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
       See :ref:`multiprocessing-auth-keys`.
 
+   .. attribute:: sentinel
+
+      A numeric handle of a system object which will become "ready" when
+      the process ends.
+
+      On Windows, this is an OS handle usable with the ``WaitForSingleObject``
+      and ``WaitForMultipleObjects`` family of API calls.  On Unix, this is
+      a file descriptor usable with primitives from the :mod:`select` module.
+
+      You can use this value if you want to wait on several events at once.
+      Otherwise calling :meth:`join()` is simpler.
+
+      .. versionadded:: 3.3
+
    .. method:: terminate()
 
       Terminate the process.  On Unix this is done using the ``SIGTERM`` signal;

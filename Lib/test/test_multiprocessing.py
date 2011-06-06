@@ -71,6 +71,23 @@ HAVE_GETVALUE = not getattr(_multiprocessing,
                             'HAVE_BROKEN_SEM_GETVALUE', False)
 
 WIN32 = (sys.platform == "win32")
+if WIN32:
+    from _subprocess import WaitForSingleObject, INFINITE, WAIT_OBJECT_0
+
+    def wait_for_handle(handle, timeout):
+        if timeout is None or timeout < 0.0:
+            timeout = INFINITE
+        else:
+            timeout = int(1000 * timeout)
+        return WaitForSingleObject(handle, timeout) == WAIT_OBJECT_0
+else:
+    from select import select
+    _select = util._eintr_retry(select)
+
+    def wait_for_handle(handle, timeout):
+        if timeout is not None and timeout < 0.0:
+            timeout = None
+        return handle in _select([handle], [], [], timeout)[0]
 
 #
 # Some tests require ctypes
@@ -306,6 +323,26 @@ class _TestProcess(BaseTestCase):
                 [1, 1]
             ]
         self.assertEqual(result, expected)
+
+    @classmethod
+    def _test_sentinel(cls, event):
+        event.wait(10.0)
+
+    def test_sentinel(self):
+        if self.TYPE == "threads":
+            return
+        event = self.Event()
+        p = self.Process(target=self._test_sentinel, args=(event,))
+        with self.assertRaises(ValueError):
+            p.sentinel
+        p.start()
+        self.addCleanup(p.join)
+        sentinel = p.sentinel
+        self.assertIsInstance(sentinel, int)
+        self.assertFalse(wait_for_handle(sentinel, timeout=0.0))
+        event.set()
+        p.join()
+        self.assertTrue(wait_for_handle(sentinel, timeout=DELTA))
 
 #
 #

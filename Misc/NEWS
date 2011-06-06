@@ -187,6 +187,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #12040: Expose a new attribute ``sentinel`` on instances of
+  :class:`multiprocessing.Process`.  Also, fix Process.join() to not use
+  polling anymore, when given a timeout.
+
 - Issue #11893: Remove obsolete internal wrapper class ``SSLFakeFile`` in the
   smtplib module.  Patch by Catalin Iacob.
 
