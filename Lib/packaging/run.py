@@ -5,7 +5,6 @@ import re
 import sys
 import getopt
 import logging
-from copy import copy
 
 from packaging import logger
 from packaging.dist import Distribution
@@ -35,14 +34,14 @@ create_usage = """\
 Usage: pysetup create
    or: pysetup create --help
 
-Create a new Python package.
+Create a new Python project.
 """
 
 generate_usage = """\
 Usage: pysetup generate-setup
    or: pysetup generate-setup --help
 
-Generates a setup.py script for backward-compatibility purposes.
+Generate a setup.py script for backward-compatibility purposes.
 """
 
 
@@ -96,7 +95,7 @@ positional arguments:
    dist  installed distribution name
 
 optional arguments:
-   -y  auto confirm package removal
+   -y  auto confirm distribution removal
 """
 
 run_usage = """\
@@ -216,7 +215,6 @@ def _create(distpatcher, args, **kw):
 def _generate(distpatcher, args, **kw):
     generate_setup_py()
     print('The setup.py was generated')
-
 
 
 @action_help(graph_usage)
@@ -384,7 +382,7 @@ def _search(dispatcher, args, **kw):
     """
     #opts = _parse_args(args[1:], '', ['simple', 'xmlrpc'])
     # 1. what kind of index is requested ? (xmlrpc / simple)
-    raise NotImplementedError()
+    raise NotImplementedError
 
 
 actions = [
@@ -393,10 +391,10 @@ actions = [
     ('install', 'Install a project', _install),
     ('remove', 'Remove a project', _remove),
     ('search', 'Search for a project in the indexes', _search),
-    ('list', 'Search for local projects', _list),
+    ('list', 'List installed releases', _list),
     ('graph', 'Display a graph', _graph),
-    ('create', 'Create a Project', _create),
-    ('generate-setup', 'Generates a backward-comptatible setup.py', _generate)
+    ('create', 'Create a project', _create),
+    ('generate-setup', 'Generate a backward-comptatible setup.py', _generate),
 ]
 
 
@@ -673,7 +671,7 @@ class Dispatcher:
 
 def main(args=None):
     old_level = logger.level
-    old_handlers = copy(logger.handlers)
+    old_handlers = list(logger.handlers)
     try:
         dispatcher = Dispatcher(args)
         if dispatcher.action is None:

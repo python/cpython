@@ -44,7 +44,7 @@ ABC                        Inherits from          Abstract Methods        Mixin 
                            :class:`Iterable`,                             ``index``, and ``count``
                            :class:`Container`
 
-:class:`MutableSequence`   :class:`Sequence`      ``__setitem__``         Inherited :class:`Sequence` methods and
+:class:`MutableSequence`   :class:`Sequence`      ``__setitem__``,        Inherited :class:`Sequence` methods and
                                                   ``__delitem__``,        ``append``, ``reverse``, ``extend``, ``pop``,
                                                   ``insert``              ``remove``, ``clear``, and ``__iadd__``
 
@@ -175,7 +175,7 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
 
 .. seealso::
 
-  * `OrderedSet recipe <http://code.activestate.com/recipes/576694/>`_ that uses
-    :class:`MutableSet`.
+   * `OrderedSet recipe <http://code.activestate.com/recipes/576694/>`_ for an
+     example built on :class:`MutableSet`.
 
-  * For more about ABCs, see the :mod:`abc` module and :pep:`3119`.
+   * For more about ABCs, see the :mod:`abc` module and :pep:`3119`.
