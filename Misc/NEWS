@@ -771,6 +771,9 @@ Library
 Build
 -----
 
+- Do not accidentally include the directory containing sqlite.h twice when
+  building sqlite3.
+
 - Issue #11217: For 64-bit/32-bit Mac OS X universal framework builds,
   ensure "make install" creates symlinks in --prefix bin for the "-32"
   files in the framework bin directory like the installer does.
