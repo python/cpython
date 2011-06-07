@@ -411,7 +411,7 @@ nis_maps (PyObject *self, PyObject *args, PyObject *kwdict)
         return NULL;
     if ((list = PyList_New(0)) == NULL)
         return NULL;
-    for (maps = maps; maps; maps = maps->next) {
+    for (; maps; maps = maps->next) {
         PyObject *str = PyUnicode_FromString(maps->map);
         if (!str || PyList_Append(list, str) < 0)
         {
