@@ -1045,10 +1045,15 @@ class PyBuildExt(build_ext):
             else:
                 sqlite_extra_link_args = ()
 
+            include_dirs = ["Modules/_sqlite"]
+            # Only include the directory where sqlite was found if it does
+            # not already exist in set include directories, otherwise you
+            # can end up with a bad search path order.
+            if sqlite_incdir not in self.compiler.include_dirs:
+                include_dirs.append(sqlite_incdir)
             exts.append(Extension('_sqlite3', sqlite_srcs,
                                   define_macros=sqlite_defines,
-                                  include_dirs=["Modules/_sqlite",
-                                                sqlite_incdir],
+                                  include_dirs=include_dirs,
                                   library_dirs=sqlite_libdir,
                                   runtime_library_dirs=sqlite_libdir,
                                   extra_link_args=sqlite_extra_link_args,
