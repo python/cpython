@@ -645,9 +645,9 @@ mmap_move_method(mmap_object *self, PyObject *args)
         return NULL;
     } else {
         /* bounds check the values */
-        if (cnt < 0 || (cnt + dest) < cnt || (cnt + src) < cnt ||
-           src < 0 || src > self->size || (src + cnt) > self->size ||
-           dest < 0 || dest > self->size || (dest + cnt) > self->size) {
+        if ((cnt + dest) < cnt || (cnt + src) < cnt ||
+           src > self->size || (src + cnt) > self->size ||
+           dest > self->size || (dest + cnt) > self->size) {
             PyErr_SetString(PyExc_ValueError,
                 "source, destination, or count out of range");
             return NULL;
