@@ -2091,7 +2091,7 @@ array_repr(arrayobject *a)
     if (len == 0) {
         return PyUnicode_FromFormat("array('%c')", (int)typecode);
     }
-    if ((typecode == 'u'))
+    if ('u' == typecode)
         v = array_tounicode(a, NULL);
     else
         v = array_tolist(a, NULL);
