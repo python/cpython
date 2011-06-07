@@ -13,6 +13,7 @@ class CreateTestCase(support.TempdirManager,
                      support.EnvironRestorer,
                      unittest.TestCase):
 
+    maxDiff = None
     restore_environ = ['PLAT']
 
     def setUp(self):
@@ -65,10 +66,15 @@ class CreateTestCase(support.TempdirManager,
         # building the structure
         tempdir = self.wdir
         dirs = ['pkg1', 'data', 'pkg2', 'pkg2/sub']
-        files = ['README', 'setup.cfg', 'foo.py',
-                 'pkg1/__init__.py', 'pkg1/bar.py',
-                 'data/data1', 'pkg2/__init__.py',
-                 'pkg2/sub/__init__.py']
+        files = [
+            'README',
+            'data/data1',
+            'foo.py',
+            'pkg1/__init__.py',
+            'pkg1/bar.py',
+            'pkg2/__init__.py',
+            'pkg2/sub/__init__.py',
+        ]
 
         for dir_ in dirs:
             os.mkdir(os.path.join(tempdir, dir_))
@@ -85,8 +91,8 @@ class CreateTestCase(support.TempdirManager,
                          ['pkg1', 'pkg2', 'pkg2.sub'])
         self.assertEqual(mainprogram.data['modules'], ['foo'])
         data_fn = os.path.join('data', 'data1')
-        self.assertEqual(set(mainprogram.data['extra_files']),
-                         set(['setup.cfg', 'README', data_fn]))
+        self.assertEqual(mainprogram.data['extra_files'],
+                         ['README', data_fn])
 
     def test_convert_setup_py_to_cfg(self):
         self.write_file((self.wdir, 'setup.py'),
@@ -130,43 +136,45 @@ class CreateTestCase(support.TempdirManager,
         main()
 
         with open(os.path.join(self.wdir, 'setup.cfg'), encoding='utf-8') as fp:
-            lines = set(line.rstrip() for line in fp)
+            contents = fp.read()
 
-        # FIXME don't use sets
-        self.assertEqual(lines, set(['',
-            '[metadata]',
-            'version = 0.2',
-            'name = pyxfoil',
-            'maintainer = André Espaze',
-            'description = My super Death-scription',
-            '       |barbar is now on the public domain,',
-            '       |ho, baby !',
-            'maintainer_email = andre.espaze@logilab.fr',
-            'home_page = http://www.python-science.org/project/pyxfoil',
-            'download_url = UNKNOWN',
-            'summary = Python bindings for the Xfoil engine',
-            '[files]',
-            'modules = my_lib',
-            '    mymodule',
-            'packages = pyxfoil',
-            '    babar',
-            '    me',
-            'extra_files = Martinique/Lamentin/dady',
-            '    Martinique/Lamentin/mumy',
-            '    Martinique/Lamentin/sys',
-            '    Martinique/Lamentin/bro',
-            '    Pom',
-            '    Flora',
-            '    Alexander',
-            '    setup.py',
-            '    README',
-            '    pyxfoil/fengine.so',
-            'scripts = my_script',
-            '    bin/run',
-            'resources =',
-            '    README.rst = {doc}',
-            '    pyxfoil.1 = {man}',
-        ]))
+        self.assertEqual(contents, dedent("""\
+            [metadata]
+            name = pyxfoil
+            version = 0.2
+            summary = Python bindings for the Xfoil engine
+            download_url = UNKNOWN
+            home_page = http://www.python-science.org/project/pyxfoil
+            maintainer = André Espaze
+            maintainer_email = andre.espaze@logilab.fr
+            description = My super Death-scription
+                   |barbar is now on the public domain,
+                   |ho, baby !
+
+            [files]
+            packages = pyxfoil
+                babar
+                me
+            modules = my_lib
+                mymodule
+            scripts = my_script
+                bin/run
+            extra_files = Martinique/Lamentin/dady
+                Martinique/Lamentin/mumy
+                Martinique/Lamentin/sys
+                Martinique/Lamentin/bro
+                setup.py
+                README
+                Pom
+                Flora
+                Alexander
+                pyxfoil/fengine.so
+
+            resources =
+                README.rst = {doc}
+                pyxfoil.1 = {man}
+
+            """))
 
     def test_convert_setup_py_to_cfg_with_description_in_readme(self):
         self.write_file((self.wdir, 'setup.py'),
@@ -203,26 +211,29 @@ ho, baby!
         # FIXME Out of memory error.
         main()
         with open(os.path.join(self.wdir, 'setup.cfg'), encoding='utf-8') as fp:
-            lines = set(line.rstrip() for line in fp)
+            contents = fp.read()
 
-        self.assertEqual(lines, set(['',
-            '[metadata]',
-            'version = 0.2',
-            'name = pyxfoil',
-            'maintainer = André Espaze',
-            'maintainer_email = andre.espaze@logilab.fr',
-            'home_page = http://www.python-science.org/project/pyxfoil',
-            'download_url = UNKNOWN',
-            'summary = Python bindings for the Xfoil engine',
-            'description-file = README.txt',
-            '[files]',
-            'packages = pyxfoil',
-            'extra_files = pyxfoil/fengine.so',
-            '    pyxfoil/babar.so',
-            'resources =',
-            '    README.rst = {doc}',
-            '    pyxfoil.1 = {man}',
-        ]))
+        self.assertEqual(contents, dedent("""\
+            [metadata]
+            name = pyxfoil
+            version = 0.2
+            summary = Python bindings for the Xfoil engine
+            download_url = UNKNOWN
+            home_page = http://www.python-science.org/project/pyxfoil
+            maintainer = André Espaze
+            maintainer_email = andre.espaze@logilab.fr
+            description-file = README.txt
+
+            [files]
+            packages = pyxfoil
+            extra_files = pyxfoil/fengine.so
+                pyxfoil/babar.so
+
+            resources =
+                README.rst = {doc}
+                pyxfoil.1 = {man}
+
+            """))
 
 
 def test_suite():
