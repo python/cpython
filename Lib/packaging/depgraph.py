@@ -58,7 +58,7 @@ class DependencyGraph:
         """
         self.adjacency_list[x].append((y, label))
         # multiple edges are allowed, so be careful
-        if not x in self.reverse_list[y]:
+        if x not in self.reverse_list[y]:
             self.reverse_list[y].append(x)
 
     def add_missing(self, distribution, requirement):
@@ -157,7 +157,7 @@ def generate_graph(dists):
                     raise PackagingError('distribution %r has ill-formed'
                                          'provides field: %r' % (dist.name, p))
                 version = version[1:-1]  # trim off parenthesis
-            if not name in provided:
+            if name not in provided:
                 provided[name] = []
             provided[name].append((version, dist))
 
@@ -174,7 +174,7 @@ def generate_graph(dists):
 
             name = predicate.name
 
-            if not name in provided:
+            if name not in provided:
                 graph.add_missing(dist, req)
             else:
                 matched = False
@@ -216,7 +216,7 @@ def dependent_dists(dists, dist):
         node = fringe.pop()
         dep.append(node)
         for prev in graph.reverse_list[node]:
-            if not prev in dep:
+            if prev not in dep:
                 fringe.append(prev)
 
     dep.pop(0)  # remove dist from dep, was there to prevent infinite loops
