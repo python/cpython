@@ -44,7 +44,7 @@ import weakref
 
 from queue import Empty, Full
 import _multiprocessing
-from multiprocessing import Pipe
+from multiprocessing.connection import Pipe, SentinelReady
 from multiprocessing.synchronize import Lock, BoundedSemaphore, Semaphore, Condition
 from multiprocessing.util import debug, info, Finalize, register_after_fork
 from multiprocessing.forking import assert_spawning
@@ -372,10 +372,10 @@ class SimpleQueue(object):
     def _make_methods(self):
         recv = self._reader.recv
         racquire, rrelease = self._rlock.acquire, self._rlock.release
-        def get():
+        def get(*, sentinels=None):
             racquire()
             try:
-                return recv()
+                return recv(sentinels)
             finally:
                 rrelease()
         self.get = get

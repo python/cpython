@@ -187,6 +187,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #9205: concurrent.futures.ProcessPoolExecutor now detects killed
+  children and raises BrokenProcessPool in such a situation.  Previously it
+  would reliably freeze/deadlock.
+
 - Issue #12040: Expose a new attribute ``sentinel`` on instances of
   :class:`multiprocessing.Process`.  Also, fix Process.join() to not use
   polling anymore, when given a timeout.
