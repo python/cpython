@@ -35,6 +35,7 @@
 import os
 import sys
 import signal
+import select
 
 from multiprocessing import util, process
 

@@ -169,6 +169,12 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    of at most *max_workers* processes.  If *max_workers* is ``None`` or not
    given, it will default to the number of processors on the machine.
 
+   .. versionchanged:: 3.3
+      When one of the worker processes terminates abruptly, a
+      :exc:`BrokenProcessPool` error is now raised.  Previously, behaviour
+      was undefined but operations on the executor or its futures would often
+      freeze or deadlock.
+
 
 .. _processpoolexecutor-example:
 
@@ -369,3 +375,16 @@ Module Functions
    :pep:`3148` -- futures - execute computations asynchronously
       The proposal which described this feature for inclusion in the Python
       standard library.
+
+
+Exception classes
+-----------------
+
+.. exception:: BrokenProcessPool
+
+   Derived from :exc:`RuntimeError`, this exception class is raised when
+   one of the workers of a :class:`ProcessPoolExecutor` has terminated
+   in a non-clean fashion (for example, if it was killed from the outside).
+
+   .. versionadded:: 3.3
+

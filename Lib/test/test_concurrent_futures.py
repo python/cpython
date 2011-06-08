@@ -19,7 +19,7 @@ import unittest
 from concurrent import futures
 from concurrent.futures._base import (
     PENDING, RUNNING, CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED, Future)
-import concurrent.futures.process
+from concurrent.futures.process import BrokenProcessPool
 
 
 def create_future(state=PENDING, exception=None, result=None):
@@ -154,7 +154,7 @@ class ProcessPoolShutdownTest(ProcessPoolMixin, ExecutorShutdownTest):
         processes = self.executor._processes
         self.executor.shutdown()
 
-        for p in processes:
+        for p in processes.values():
             p.join()
 
     def test_context_manager_shutdown(self):
@@ -163,7 +163,7 @@ class ProcessPoolShutdownTest(ProcessPoolMixin, ExecutorShutdownTest):
             self.assertEqual(list(e.map(abs, range(-5, 5))),
                              [5, 4, 3, 2, 1, 0, 1, 2, 3, 4])
 
-        for p in processes:
+        for p in processes.values():
             p.join()
 
     def test_del_shutdown(self):
@@ -174,7 +174,7 @@ class ProcessPoolShutdownTest(ProcessPoolMixin, ExecutorShutdownTest):
         del executor
 
         queue_management_thread.join()
-        for p in processes:
+        for p in processes.values():
             p.join()
 
 class WaitTests(unittest.TestCase):
@@ -381,7 +381,17 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest):
 
 
 class ProcessPoolExecutorTest(ProcessPoolMixin, ExecutorTest):
-    pass
+    def test_killed_child(self):
+        # When a child process is abruptly terminated, the whole pool gets
+        # "broken".
+        futures = [self.executor.submit(time.sleep, 3)]
+        # Get one of the processes, and terminate (kill) it
+        p = next(iter(self.executor._processes.values()))
+        p.terminate()
+        for fut in futures:
+            self.assertRaises(BrokenProcessPool, fut.result)
+        # Submitting other jobs fails as well.
+        self.assertRaises(BrokenProcessPool, self.executor.submit, pow, 2, 8)
 
 
 class FutureTests(unittest.TestCase):
