@@ -405,7 +405,6 @@ class Dispatcher:
         self.verbose = 1
         self.dry_run = False
         self.help = False
-        self.script_name = 'pysetup'
         self.cmdclass = {}
         self.commands = []
         self.command_options = {}
