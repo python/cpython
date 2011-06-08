@@ -286,9 +286,9 @@ def _metadata(dispatcher, args, **kw):
             value = metadata[key]
             if isinstance(value, list):
                 for v in value:
-                    print('    ' + v)
+                    print('   ', v)
             else:
-                print('    ' + value.replace('\n', '\n    '))
+                print('   ', value.replace('\n', '\n    '))
 
 
 @action_help(remove_usage)
@@ -366,7 +366,7 @@ def _list(dispatcher, args, **kw):
         print('%s %s at %s' % (dist.name, dist.metadata['version'], dist.path))
         number += 1
 
-    print('')
+    print()
     if number == 0:
         print('Nothing seems to be installed.')
     else:
@@ -573,17 +573,17 @@ class Dispatcher:
         from packaging.command.cmd import Command
 
         print('Usage: pysetup [options] action [action_options]')
-        print('')
+        print()
         if global_options_:
             self.print_usage(self.parser)
-            print('')
+            print()
 
         if display_options_:
             parser.set_option_table(display_options)
             parser.print_help(
                 "Information display options (just display " +
                 "information, ignore any commands)")
-            print('')
+            print()
 
         for command in commands:
             if isinstance(command, type) and issubclass(command, Command):
@@ -597,15 +597,15 @@ class Dispatcher:
                 parser.set_option_table(cls.user_options)
 
             parser.print_help("Options for %r command:" % cls.__name__)
-            print('')
+            print()
 
     def _show_command_help(self, command):
         if isinstance(command, str):
             command = get_command_class(command)
 
         desc = getattr(command, 'description', '(no description available)')
-        print('Description: %s' % desc)
-        print('')
+        print('Description:', desc)
+        print()
 
         if (hasattr(command, 'help_options') and
             isinstance(command.help_options, list)):
@@ -615,7 +615,7 @@ class Dispatcher:
             self.parser.set_option_table(command.user_options)
 
         self.parser.print_help("Options:")
-        print('')
+        print()
 
     def _get_command_groups(self):
         """Helper function to retrieve all the command class names divided
