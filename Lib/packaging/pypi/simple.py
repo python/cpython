@@ -231,7 +231,8 @@ class Crawler(BaseClient):
         """
         self._mirrors_used.add(self.index_url)
         index_url = self._mirrors.pop()
-        if not ("http://" or "https://" or "file://") in index_url:
+        # XXX use urllib.parse for a real check of missing scheme part
+        if not index_url.startswith(("http://", "https://", "file://")):
             index_url = "http://%s" % index_url
 
         if not index_url.endswith("/simple"):
