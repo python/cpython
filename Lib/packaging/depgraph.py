@@ -236,7 +236,9 @@ def main():
     except Exception as e:
         tempout.seek(0)
         tempout = tempout.read()
-        print('Could not generate the graph\n%s\n%s\n' % (tempout, e))
+        print('Could not generate the graph')
+        print(tempout)
+        print(e)
         sys.exit(1)
 
     for dist, reqs in graph.missing.items():
@@ -246,7 +248,7 @@ def main():
     # XXX replace with argparse
     if len(sys.argv) == 1:
         print('Dependency graph:')
-        print('    ' + repr(graph).replace('\n', '\n    '))
+        print('   ', repr(graph).replace('\n', '\n    '))
         sys.exit(0)
     elif len(sys.argv) > 1 and sys.argv[1] in ('-d', '--dot'):
         if len(sys.argv) > 2:
