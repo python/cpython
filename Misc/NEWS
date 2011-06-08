@@ -187,6 +187,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11583: Speed up os.path.isdir on Windows by using GetFileAttributes
+  instead of os.stat.
+
 - Issue #12021: Make mmap's read() method argument optional. Patch by Petri
   Lehtinen.
 

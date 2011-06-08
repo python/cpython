@@ -2960,6 +2960,42 @@ posix__getfileinformation(PyObject *self, PyObject *args)
                                 info.nFileIndexHigh,
                                 info.nFileIndexLow);
 }
+
+static PyObject *
+posix__isdir(PyObject *self, PyObject *args)
+{
+    PyObject *opath;
+    char *path;
+    PyUnicodeObject *po;
+    DWORD attributes;
+
+    if (PyArg_ParseTuple(args, "U|:_isdir", &po)) {
+        Py_UNICODE *wpath = PyUnicode_AS_UNICODE(po);
+
+        attributes = GetFileAttributesW(wpath);
+        if (attributes == INVALID_FILE_ATTRIBUTES)
+            Py_RETURN_FALSE;
+        goto check;
+    }
+    /* Drop the argument parsing error as narrow strings
+       are also valid. */
+    PyErr_Clear();
+
+    if (!PyArg_ParseTuple(args, "O&:_isdir",
+                          PyUnicode_FSConverter, &opath))
+        return NULL;
+
+    path = PyBytes_AsString(opath);
+    attributes = GetFileAttributesA(path);
+    if (attributes == INVALID_FILE_ATTRIBUTES)
+        Py_RETURN_FALSE;
+
+check:
+    if (attributes & FILE_ATTRIBUTE_DIRECTORY)
+        Py_RETURN_TRUE;
+    else
+        Py_RETURN_FALSE;
+}
 #endif /* MS_WINDOWS */
 
 PyDoc_STRVAR(posix_mkdir__doc__,
@@ -9561,6 +9597,7 @@ static PyMethodDef posix_methods[] = {
     {"_getfullpathname",        posix__getfullpathname, METH_VARARGS, NULL},
     {"_getfinalpathname",       posix__getfinalpathname, METH_VARARGS, NULL},
     {"_getfileinformation",     posix__getfileinformation, METH_VARARGS, NULL},
+    {"_isdir",                  posix__isdir, METH_VARARGS, NULL},
 #endif
 #ifdef HAVE_GETLOADAVG
     {"getloadavg",      posix_getloadavg, METH_NOARGS, posix_getloadavg__doc__},
