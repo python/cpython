@@ -672,3 +672,16 @@ except ImportError:
 def sameopenfile(f1, f2):
     """Test whether two file objects reference the same file"""
     return _getfileinformation(f1) == _getfileinformation(f2)
+
+
+try:
+    # The genericpath.isdir implementation uses os.stat and checks the mode
+    # attribute to tell whether or not the path is a directory.
+    # This is overkill on Windows - just pass the path to GetFileAttributes
+    # and check the attribute from there.
+    from nt import _isdir
+except ImportError:
+    from genericpath import isdir as _isdir
+
+def isdir(path):
+    return _isdir(path)
