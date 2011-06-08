@@ -72,7 +72,7 @@ class DependencyGraph:
         self.missing[distribution].append(requirement)
 
     def _repr_dist(self, dist):
-        return '%s %s' % (dist.name, dist.metadata['Version'])
+        return '%r %s' % (dist.name, dist.metadata['Version'])
 
     def repr_node(self, dist, level=1):
         """Prints only a subgraph"""
@@ -154,8 +154,8 @@ def generate_graph(dists):
             if len(comps) == 2:
                 version = comps[1]
                 if len(version) < 3 or version[0] != '(' or version[-1] != ')':
-                    raise PackagingError('Distribution %s has ill formed' \
-                                         'provides field: %s' % (dist.name, p))
+                    raise PackagingError('distribution %r has ill-formed'
+                                         'provides field: %r' % (dist.name, p))
                 version = version[1:-1]  # trim off parenthesis
             if not name in provided:
                 provided[name] = []
@@ -204,8 +204,9 @@ def dependent_dists(dists, dist):
     :param dists: a list of distributions
     :param dist: a distribution, member of *dists* for which we are interested
     """
-    if not dist in dists:
-        raise ValueError('The given distribution is not a member of the list')
+    if dist not in dists:
+        raise ValueError('given distribution %r is not a member of the list' %
+                         dist.name)
     graph = generate_graph(dists)
 
     dep = [dist]  # dependent distributions
@@ -243,7 +244,7 @@ def main():
 
     for dist, reqs in graph.missing.items():
         if len(reqs) > 0:
-            print("Warning: Missing dependencies for %s:" % dist.name,
+            print("Warning: Missing dependencies for %r:" % dist.name,
                   ", ".join(reqs))
     # XXX replace with argparse
     if len(sys.argv) == 1:
@@ -261,7 +262,7 @@ def main():
         tempout.seek(0)
         tempout = tempout.read()
         print(tempout)
-        print('Dot file written at "%s"' % filename)
+        print('Dot file written at %r' % filename)
         sys.exit(0)
     else:
         print('Supported option: -d [filename]')
