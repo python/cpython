@@ -30,8 +30,6 @@ class InstallTestCase(support.TempdirManager,
         destination = os.path.join(builddir, "installation")
 
         dist = Distribution({"name": "foopkg"})
-        # script_name need not exist, it just need to be initialized
-        dist.script_name = os.path.join(builddir, "setup.py")
         dist.command_obj["build"] = support.DummyCommand(
             build_base=builddir,
             build_lib=os.path.join(builddir, "lib"),

@@ -65,7 +65,6 @@ class InstallLibTestCase(support.TempdirManager,
         self.write_file(f, '# python package')
         cmd.distribution.ext_modules = [Extension('foo', ['xxx'])]
         cmd.distribution.packages = [pkg_dir]
-        cmd.distribution.script_name = 'setup.py'
 
         # make sure the build_lib is set the temp dir
         build_dir = os.path.split(pkg_dir)[0]
@@ -86,7 +85,6 @@ class InstallLibTestCase(support.TempdirManager,
         self.write_file(f, '# python package')
         cmd.distribution.ext_modules = [Extension('foo', ['xxx'])]
         cmd.distribution.packages = [pkg_dir]
-        cmd.distribution.script_name = 'setup.py'
 
         # get_input should return 2 elements
         self.assertEqual(len(cmd.get_inputs()), 2)
