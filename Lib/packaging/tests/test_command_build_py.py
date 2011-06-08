@@ -33,9 +33,7 @@ class BuildPyTestCase(support.TempdirManager,
 
         dist = Distribution({"packages": ["pkg"],
                              "package_dir": sources})
-        # script_name need not exist, it just need to be initialized
 
-        dist.script_name = os.path.join(sources, "setup.py")
         dist.command_obj["build"] = support.DummyCommand(
             force=False,
             build_lib=destination,
@@ -89,8 +87,6 @@ class BuildPyTestCase(support.TempdirManager,
             dist = Distribution({"packages": ["pkg"],
                                  "package_dir": sources,
                                  "package_data": {"pkg": ["doc/*"]}})
-            # script_name need not exist, it just need to be initialized
-            dist.script_name = os.path.join(sources, "setup.py")
             dist.script_args = ["build"]
             dist.parse_command_line()
 

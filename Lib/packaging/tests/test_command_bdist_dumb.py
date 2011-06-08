@@ -49,7 +49,6 @@ class BuildDumbTestCase(support.TempdirManager,
                              'py_modules': ['foo'],
                              'url': 'xxx', 'author': 'xxx',
                              'author_email': 'xxx'})
-        dist.script_name = 'setup.py'
         os.chdir(pkg_dir)
 
         sys.argv[:] = ['setup.py']
