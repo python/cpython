@@ -2961,6 +2961,9 @@ posix__getfileinformation(PyObject *self, PyObject *args)
                                 info.nFileIndexLow);
 }
 
+PyDoc_STRVAR(posix__isdir__doc__,
+"Return true if the pathname refers to an existing directory.");
+
 static PyObject *
 posix__isdir(PyObject *self, PyObject *args)
 {
@@ -9597,7 +9600,7 @@ static PyMethodDef posix_methods[] = {
     {"_getfullpathname",        posix__getfullpathname, METH_VARARGS, NULL},
     {"_getfinalpathname",       posix__getfinalpathname, METH_VARARGS, NULL},
     {"_getfileinformation",     posix__getfileinformation, METH_VARARGS, NULL},
-    {"_isdir",                  posix__isdir, METH_VARARGS, NULL},
+    {"_isdir",                  posix__isdir, METH_VARARGS, posix__isdir__doc__},
 #endif
 #ifdef HAVE_GETLOADAVG
     {"getloadavg",      posix_getloadavg, METH_NOARGS, posix_getloadavg__doc__},
