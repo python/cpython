@@ -187,6 +187,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10424: Argparse now includes the names of the missing required
+  arguments in the missing arguments error message.
+
 - Issue #12168: SysLogHandler now allows NUL termination to be controlled using
   a new 'append_nul' attribute on the handler.
 
