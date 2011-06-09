@@ -527,9 +527,7 @@ try:
     # attribute to tell whether or not the path is a directory.
     # This is overkill on Windows - just pass the path to GetFileAttributes
     # and check the attribute from there.
-    from nt import _isdir
+    from nt import _isdir as isdir
 except ImportError:
-    from genericpath import isdir as _isdir
-
-def isdir(path):
-    return _isdir(path)
+    # Use genericpath.isdir as imported above.
+    pass
