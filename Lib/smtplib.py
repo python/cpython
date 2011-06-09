@@ -162,7 +162,7 @@ def quotedata(data):
         re.sub(r'(?:\r\n|\n|\r(?!\n))', CRLF, data))
 
 def _quote_periods(bindata):
-    return re.sub(br'(?m)^\.', '..', bindata)
+    return re.sub(br'(?m)^\.', b'..', bindata)
 
 def _fix_eols(data):
     return  re.sub(r'(?:\r\n|\n|\r(?!\n))', CRLF, data)
