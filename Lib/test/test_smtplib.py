@@ -278,6 +278,21 @@ class DebuggingServerTests(unittest.TestCase):
         mexpect = '%s%s\n%s' % (MSG_BEGIN, m.decode('ascii'), MSG_END)
         self.assertEqual(self.output.getvalue(), mexpect)
 
+    def testSendNeedingDotQuote(self):
+        # Issue 12283
+        m = '.A test\n.mes.sage.'
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=3)
+        smtp.sendmail('John', 'Sally', m)
+        # XXX (see comment in testSend)
+        time.sleep(0.01)
+        smtp.quit()
+
+        self.client_evt.set()
+        self.serv_evt.wait()
+        self.output.flush()
+        mexpect = '%s%s\n%s' % (MSG_BEGIN, m, MSG_END)
+        self.assertEqual(self.output.getvalue(), mexpect)
+
     def testSendMessage(self):
         m = email.mime.text.MIMEText('A test message')
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=3)
