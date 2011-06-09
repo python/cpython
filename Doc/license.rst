@@ -847,7 +847,7 @@ expat
 -----
 
 The :mod:`pyexpat` extension is built using an included copy of the expat
-sources unless the build is configured :option:`--with-system-expat`::
+sources unless the build is configured ``--with-system-expat``::
 
   Copyright (c) 1998, 1999, 2000 Thai Open Source Software Center Ltd
                                  and Clark Cooper
@@ -876,7 +876,7 @@ libffi
 ------
 
 The :mod:`_ctypes` extension is built using an included copy of the libffi
-sources unless the build is configured :option:`--with-system-libffi`::
+sources unless the build is configured ``--with-system-libffi``::
 
    Copyright (c) 1996-2008  Red Hat, Inc and others.
 
