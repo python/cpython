@@ -781,6 +781,9 @@ Library
 Build
 -----
 
+- Issue #10645: Installing Python does no longer create a
+  Python-X.Y.Z-pyX.Y.egg-info file in the lib-dynload directory.
+
 - Do not accidentally include the directory containing sqlite.h twice when
   building sqlite3.
 
