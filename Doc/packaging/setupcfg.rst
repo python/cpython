@@ -141,6 +141,9 @@ files
    Modules, scripts, data, documentation and other files to include in the
    distribution.
 
+extension sections
+   Options used to build extension modules.
+
 command sections
    Options given for specific commands, identical to those that can be given
    on the command line.
@@ -734,6 +737,35 @@ Source tree::
 
 We use brace expansion syntax to place all the shell and batch scripts into
 {scripts} category.
+
+
+Extension sections
+------------------
+
+If a project includes extension modules written in C or C++, each one of them
+needs to have its options defined in a dedicated section.  Here's an example::
+
+   [files]
+   packages = coconut
+
+   [extension=_fastcoconut]
+   name = coconut._fastcoconut
+   language = cxx
+   sources = cxx_src/cononut_utils.cxx
+             cxx_src/python_module.cxx
+   include_dirs = /usr/include/gecode
+                  /usr/include/blitz
+   extra_compile_args =
+       -fPIC -O2
+       -DGECODE_VERSION=$(./gecode_version) -- sys.platform != 'win32'
+       /DGECODE_VERSION='win32' -- sys.platform == 'win32'
+
+The section name must start with ``extension=``; the righ-hand part is currently
+discarded.  Valid fields and their values are listed in the documentation of the
+:class:`packaging.compiler.extension.Extension` class; values documented as
+Python lists translate to multi-line values in the configuration file.  In
+addition, multi-line values accept environment markers on each line, after a
+``--``.
 
 
 Command sections
