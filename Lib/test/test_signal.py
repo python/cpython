@@ -607,6 +607,25 @@ class PendingSignalsTests(unittest.TestCase):
         signal.alarm(1)
         self.assertEqual(signal.sigwait([signal.SIGALRM]), signal.SIGALRM)
 
+    @unittest.skipUnless(hasattr(signal, 'sigwait'),
+                         'need signal.sigwait()')
+    @unittest.skipIf(threading is None, "test needs threading module")
+    def test_sigwait_thread(self):
+        signum = signal.SIGUSR1
+        old_handler = signal.signal(signum, self.handler)
+        self.addCleanup(signal.signal, signum, old_handler)
+
+        def kill_later():
+            time.sleep(1)
+            os.kill(os.getpid(), signum)
+
+        killer = threading.Thread(target=kill_later)
+        killer.start()
+        try:
+            self.assertEqual(signal.sigwait([signum]), signum)
+        finally:
+            killer.join()
+
     @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
                          'need signal.pthread_sigmask()')
     def test_pthread_sigmask_arguments(self):
