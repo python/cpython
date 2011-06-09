@@ -662,7 +662,9 @@ signal_sigwait(PyObject *self, PyObject *args)
     if (iterable_to_sigset(signals, &set))
         return NULL;
 
+    Py_BEGIN_ALLOW_THREADS
     err = sigwait(&set, &signum);
+    Py_END_ALLOW_THREADS
     if (err) {
         errno = err;
         return PyErr_SetFromErrno(PyExc_OSError);
