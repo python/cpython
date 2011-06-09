@@ -58,7 +58,7 @@ class DependencyGraph:
         """
         self.adjacency_list[x].append((y, label))
         # multiple edges are allowed, so be careful
-        if not x in self.reverse_list[y]:
+        if x not in self.reverse_list[y]:
             self.reverse_list[y].append(x)
 
     def add_missing(self, distribution, requirement):
@@ -72,7 +72,7 @@ class DependencyGraph:
         self.missing[distribution].append(requirement)
 
     def _repr_dist(self, dist):
-        return '%s %s' % (dist.name, dist.metadata['Version'])
+        return '%r %s' % (dist.name, dist.metadata['Version'])
 
     def repr_node(self, dist, level=1):
         """Prints only a subgraph"""
@@ -154,10 +154,10 @@ def generate_graph(dists):
             if len(comps) == 2:
                 version = comps[1]
                 if len(version) < 3 or version[0] != '(' or version[-1] != ')':
-                    raise PackagingError('Distribution %s has ill formed' \
-                                         'provides field: %s' % (dist.name, p))
+                    raise PackagingError('distribution %r has ill-formed'
+                                         'provides field: %r' % (dist.name, p))
                 version = version[1:-1]  # trim off parenthesis
-            if not name in provided:
+            if name not in provided:
                 provided[name] = []
             provided[name].append((version, dist))
 
@@ -174,7 +174,7 @@ def generate_graph(dists):
 
             name = predicate.name
 
-            if not name in provided:
+            if name not in provided:
                 graph.add_missing(dist, req)
             else:
                 matched = False
@@ -204,8 +204,9 @@ def dependent_dists(dists, dist):
     :param dists: a list of distributions
     :param dist: a distribution, member of *dists* for which we are interested
     """
-    if not dist in dists:
-        raise ValueError('The given distribution is not a member of the list')
+    if dist not in dists:
+        raise ValueError('given distribution %r is not a member of the list' %
+                         dist.name)
     graph = generate_graph(dists)
 
     dep = [dist]  # dependent distributions
@@ -215,7 +216,7 @@ def dependent_dists(dists, dist):
         node = fringe.pop()
         dep.append(node)
         for prev in graph.reverse_list[node]:
-            if not prev in dep:
+            if prev not in dep:
                 fringe.append(prev)
 
     dep.pop(0)  # remove dist from dep, was there to prevent infinite loops
@@ -236,17 +237,19 @@ def main():
     except Exception as e:
         tempout.seek(0)
         tempout = tempout.read()
-        print('Could not generate the graph\n%s\n%s\n' % (tempout, e))
+        print('Could not generate the graph')
+        print(tempout)
+        print(e)
         sys.exit(1)
 
     for dist, reqs in graph.missing.items():
         if len(reqs) > 0:
-            print("Warning: Missing dependencies for %s:" % dist.name,
+            print("Warning: Missing dependencies for %r:" % dist.name,
                   ", ".join(reqs))
     # XXX replace with argparse
     if len(sys.argv) == 1:
         print('Dependency graph:')
-        print('    ' + repr(graph).replace('\n', '\n    '))
+        print('   ', repr(graph).replace('\n', '\n    '))
         sys.exit(0)
     elif len(sys.argv) > 1 and sys.argv[1] in ('-d', '--dot'):
         if len(sys.argv) > 2:
@@ -259,7 +262,7 @@ def main():
         tempout.seek(0)
         tempout = tempout.read()
         print(tempout)
-        print('Dot file written at "%s"' % filename)
+        print('Dot file written at %r' % filename)
         sys.exit(0)
     else:
         print('Supported option: -d [filename]')

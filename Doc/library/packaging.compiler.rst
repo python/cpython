@@ -569,10 +569,10 @@ extension modules.
 .. class:: Extension
 
    The Extension class describes a single C or C++ extension module.  It accepts
-   the following keyword arguments in its constructor
+   the following keyword arguments in its constructor:
 
    +------------------------+--------------------------------+---------------------------+
-   | argument name          | value                          | type                      |
+   | argument name          | value                          | type [#]_                 |
    +========================+================================+===========================+
    | *name*                 | the full name of the           | string                    |
    |                        | extension, including any       |                           |
@@ -670,3 +670,5 @@ extension modules.
    |                        | from the source extensions if  |                           |
    |                        | not provided.                  |                           |
    +------------------------+--------------------------------+---------------------------+
+
+.. [#] For values documented as lists, the given type is the type of each element.

@@ -256,7 +256,7 @@ class DistInfo(IndexReference):
                 hashlib.new(hashname)
             except ValueError:
                 raise UnsupportedHashName(hashname)
-        if not url in [u['url'] for u in self.urls]:
+        if url not in [u['url'] for u in self.urls]:
             self.urls.append({
                 'url': url,
                 'hashname': hashname,
@@ -329,7 +329,7 @@ class DistInfo(IndexReference):
         url param"""
         hashname = self.url['hashname']
         expected_hashval = self.url['hashval']
-        if not None in (expected_hashval, hashname):
+        if None not in (expected_hashval, hashname):
             with open(filename, 'rb') as f:
                 hashval = hashlib.new(hashname)
                 hashval.update(f.read())
@@ -409,7 +409,7 @@ class ReleasesList(IndexReference):
                                  (release.name, self.name))
             version = str(release.version)
 
-            if not version in self.get_versions():
+            if version not in self.get_versions():
                 # append only if not already exists
                 self.releases.append(release)
             for dist in release.dists.values():
