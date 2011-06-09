@@ -22,6 +22,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10694: zipfile now ignores garbage at the end of a zipfile.
+
 - Issue #12283: Fixed regression in smtplib quoting of leading dots in DATA.
 
 - Issue #12168: SysLogHandler now allows NUL termination to be controlled using
