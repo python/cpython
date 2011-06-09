@@ -769,6 +769,8 @@ class SysLogHandler(logging.Handler):
         """
         return self.priority_map.get(levelName, "warning")
 
+    append_nul = True   # some old syslog daemons expect a NUL terminator
+
     def emit(self, record):
         """
         Emit a record.
@@ -776,7 +778,9 @@ class SysLogHandler(logging.Handler):
         The record is formatted, and then sent to the syslog server. If
         exception information is present, it is NOT sent to the server.
         """
-        msg = self.format(record) + '\000'
+        msg = self.format(record)
+        if self.append_nul:
+            msg += '\000'
         """
         We need to convert record level to lowercase, maybe this will
         change in the future.

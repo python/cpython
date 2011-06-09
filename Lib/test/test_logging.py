@@ -1399,8 +1399,7 @@ class DatagramHandlerTest(BaseTest):
         pointing to that server's address and port."""
         BaseTest.setUp(self)
         addr = ('localhost', 0)
-        self.server = server = TestUDPServer(addr, self.handle_datagram,
-                                                0.01)
+        self.server = server = TestUDPServer(addr, self.handle_datagram, 0.01)
         server.start()
         server.ready.wait()
         self.sock_hdlr = logging.handlers.DatagramHandler('localhost',
@@ -1478,6 +1477,11 @@ class SysLogHandlerTest(BaseTest):
         logger.error("sp\xe4m")
         self.handled.wait()
         self.assertEqual(self.log_output, b'<11>\xef\xbb\xbfsp\xc3\xa4m\x00')
+        self.handled.clear()
+        self.sl_hdlr.append_nul = False
+        logger.error("sp\xe4m")
+        self.handled.wait()
+        self.assertEqual(self.log_output, b'<11>\xef\xbb\xbfsp\xc3\xa4m')
 
 
 @unittest.skipUnless(threading, 'Threading required for this test.')
