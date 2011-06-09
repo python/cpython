@@ -104,12 +104,12 @@ def _generate_cache(use_egg_info=False, paths=sys.path):
         for dist in _yield_distributions(gen_dist, gen_egg, paths):
             if isinstance(dist, Distribution):
                 _cache_path[dist.path] = dist
-                if not dist.name in _cache_name:
+                if dist.name not in _cache_name:
                     _cache_name[dist.name] = []
                 _cache_name[dist.name].append(dist)
             else:
                 _cache_path_egg[dist.path] = dist
-                if not dist.name in _cache_name_egg:
+                if dist.name not in _cache_name_egg:
                     _cache_name_egg[dist.name] = []
                 _cache_name_egg[dist.name].append(dist)
 
@@ -150,7 +150,7 @@ class Distribution:
         self.version = self.metadata['Version']
         self.path = path
 
-        if _cache_enabled and not path in _cache_path:
+        if _cache_enabled and path not in _cache_path:
             _cache_path[path] = self
 
     def __repr__(self):

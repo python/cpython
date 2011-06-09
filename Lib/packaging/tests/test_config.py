@@ -114,7 +114,7 @@ libraries = gecodeint gecodekernel -- sys.platform != 'win32'
     GecodeInt GecodeKernel -- sys.platform == 'win32'
 
 [extension=fast_taunt]
-name = three.fast_taunt
+name = two.fast_taunt
 sources = cxx_src/utils_taunt.cxx
           cxx_src/python_module.cxx
 include_dirs = /usr/include/gecode
@@ -305,7 +305,7 @@ class ConfigTestCase(support.TempdirManager,
         self.assertEqual(ext.extra_link_args,
             ['`gcc -print-file-name=libgcc.a`', '-shared'])
 
-        ext = ext_modules.get('three.fast_taunt')
+        ext = ext_modules.get('two.fast_taunt')
         self.assertEqual(ext.sources,
             ['cxx_src/utils_taunt.cxx', 'cxx_src/python_module.cxx'])
         self.assertEqual(ext.include_dirs,
