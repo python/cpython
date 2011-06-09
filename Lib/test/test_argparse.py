@@ -4480,6 +4480,67 @@ class TestArgumentTypeError(TestCase):
         else:
             self.fail()
 
+# =========================
+# MessageContentError tests
+# =========================
+
+class TestMessageContentError(TestCase):
+
+    def test_missing_argument_name_in_message(self):
+        parser = ErrorRaisingArgumentParser(prog='PROG', usage='')
+        parser.add_argument('req_pos', type=str)
+        parser.add_argument('-req_opt', type=int, required=True)
+        parser.add_argument('need_one', type=str, nargs='+')
+
+        with self.assertRaises(ArgumentParserError) as cm:
+            parser.parse_args([])
+        msg = str(cm.exception)
+        self.assertRegex(msg, 'req_pos')
+        self.assertRegex(msg, 'req_opt')
+        self.assertRegex(msg, 'need_one')
+        with self.assertRaises(ArgumentParserError) as cm:
+            parser.parse_args(['myXargument'])
+        msg = str(cm.exception)
+        self.assertNotIn(msg, 'req_pos')
+        self.assertRegex(msg, 'req_opt')
+        self.assertRegex(msg, 'need_one')
+        with self.assertRaises(ArgumentParserError) as cm:
+            parser.parse_args(['myXargument', '-req_opt=1'])
+        msg = str(cm.exception)
+        self.assertNotIn(msg, 'req_pos')
+        self.assertNotIn(msg, 'req_opt')
+        self.assertRegex(msg, 'need_one')
+
+    def test_optional_optional_not_in_message(self):
+        parser = ErrorRaisingArgumentParser(prog='PROG', usage='')
+        parser.add_argument('req_pos', type=str)
+        parser.add_argument('--req_opt', type=int, required=True)
+        parser.add_argument('--opt_opt', type=bool, nargs='?',
+                            default=True)
+        with self.assertRaises(ArgumentParserError) as cm:
+            parser.parse_args([])
+        msg = str(cm.exception)
+        self.assertRegex(msg, 'req_pos')
+        self.assertRegex(msg, 'req_opt')
+        self.assertNotIn(msg, 'opt_opt')
+        with self.assertRaises(ArgumentParserError) as cm:
+            parser.parse_args(['--req_opt=1'])
+        msg = str(cm.exception)
+        self.assertRegex(msg, 'req_pos')
+        self.assertNotIn(msg, 'req_opt')
+        self.assertNotIn(msg, 'opt_opt')
+
+    def test_optional_positional_not_in_message(self):
+        parser = ErrorRaisingArgumentParser(prog='PROG', usage='')
+        parser.add_argument('req_pos')
+        parser.add_argument('optional_positional', nargs='?', default='eggs')
+        with self.assertRaises(ArgumentParserError) as cm:
+            parser.parse_args([])
+        msg = str(cm.exception)
+        self.assertRegex(msg, 'req_pos')
+        self.assertNotIn(msg, 'optional_positional')
+
+
 # ======================
 # parse_known_args tests
 # ======================

@@ -1969,17 +1969,12 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # if we didn't consume all the argument strings, there were extras
         extras.extend(arg_strings[stop_index:])
 
-        # if we didn't use all the Positional objects, there were too few
-        # arg strings supplied.
-        if positionals:
-            self.error(_('too few arguments'))
-
         # make sure all required actions were present
-        for action in self._actions:
-            if action.required:
-                if action not in seen_actions:
-                    name = _get_action_name(action)
-                    self.error(_('argument %s is required') % name)
+        required_actions = [_get_action_name(action) for action in self._actions
+                            if action.required and action not in seen_actions]
+        if required_actions:
+            self.error(_('the following arguments are required: %s') %
+                       ', '.join(required_actions))
 
         # make sure all required groups had one option present
         for group in self._mutually_exclusive_groups:
