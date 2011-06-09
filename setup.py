@@ -1780,6 +1780,13 @@ class PyBuildInstall(install):
         install.initialize_options(self)
         self.warn_dir=0
 
+    # Customize subcommands to not install an egg-info file for Python
+    sub_commands = [('install_lib', install.has_lib),
+                    ('install_headers', install.has_headers),
+                    ('install_scripts', install.has_scripts),
+                    ('install_data', install.has_data)]
+
+
 class PyBuildInstallLib(install_lib):
     # Do exactly what install_lib does but make sure correct access modes get
     # set on installed directories and files. All installed files with get
