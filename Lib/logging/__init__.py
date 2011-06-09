@@ -467,6 +467,9 @@ class Formatter(object):
         self._fmt = self._style._fmt
         self.datefmt = datefmt
 
+    default_time_format = '%Y-%m-%d %H:%M:%S'
+    default_msec_format = '%s,%03d'
+
     def formatTime(self, record, datefmt=None):
         """
         Return the creation time of the specified LogRecord as formatted text.
@@ -489,8 +492,8 @@ class Formatter(object):
         if datefmt:
             s = time.strftime(datefmt, ct)
         else:
-            t = time.strftime("%Y-%m-%d %H:%M:%S", ct)
-            s = "%s,%03d" % (t, record.msecs) # the use of % here is internal
+            t = time.strftime(self.default_time_format, ct)
+            s = self.default_msec_format % (t, record.msecs)
         return s
 
     def formatException(self, ei):
