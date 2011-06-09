@@ -351,6 +351,24 @@ class TestsWithSourceFile(unittest.TestCase):
             with zipfile.ZipFile(f, "r") as zipfp:
                 self.assertEqual(zipfp.namelist(), [TESTFN])
 
+    def test_ignores_newline_at_end(self):
+        with zipfile.ZipFile(TESTFN2, "w", zipfile.ZIP_STORED) as zipfp:
+            zipfp.write(TESTFN, TESTFN)
+        with open(TESTFN2, 'a') as f:
+            f.write("\r\n\00\00\00")
+        with zipfile.ZipFile(TESTFN2, "r") as zipfp:
+            self.assertIsInstance(zipfp, zipfile.ZipFile)
+
+    def test_ignores_stuff_appended_past_comments(self):
+        with zipfile.ZipFile(TESTFN2, "w", zipfile.ZIP_STORED) as zipfp:
+            zipfp.comment = b"this is a comment"
+            zipfp.write(TESTFN, TESTFN)
+        with open(TESTFN2, 'a') as f:
+            f.write("abcdef\r\n")
+        with zipfile.ZipFile(TESTFN2, "r") as zipfp:
+            self.assertIsInstance(zipfp, zipfile.ZipFile)
+            self.assertEqual(zipfp.comment, b"this is a comment")
+
     def test_write_default_name(self):
         """Check that calling ZipFile.write without arcname specified
         produces the expected result."""
