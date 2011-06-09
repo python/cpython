@@ -96,9 +96,15 @@ in the name of the downloaded archive, e.g. :file:`foo-1.0.tar.gz` or
 directory: :file:`foo-1.0` or :file:`widget-0.9.7`.  Additionally, the
 distribution will contain a setup script :file:`setup.py`, and a file named
 :file:`README.txt` or possibly just :file:`README`, which should explain that
-building and installing the module distribution is a simple matter of running ::
+building and installing the module distribution is a simple matter of running
+one command from a terminal::
 
    python setup.py install
+
+For Windows, this command should be run from a command prompt windows ("DOS
+box")::
+
+   setup.py install
 
 If all these things are true, then you already know how to build and install the
 modules you've just downloaded:  Run the command above. Unless you need to
@@ -113,13 +119,10 @@ Standard Build and Install
 ==========================
 
 As described in section :ref:`inst-new-standard`, building and installing a module
-distribution using the Distutils is usually one simple command::
+distribution using the Distutils is usually one simple command to run from a
+terminal::
 
    python setup.py install
-
-On Unix, you'd run this command from a shell prompt; on Windows, you have to
-open a command prompt window ("DOS box") and do it there; on Mac OS X, you open
-a :command:`Terminal` window to get a shell prompt.
 
 
 .. _inst-platform-variations:
