@@ -619,10 +619,11 @@ class PendingSignalsTests(unittest.TestCase):
                     print("the signal handler has been called",
                           file=sys.stderr)
                     os._exit(1)
-
-                os._exit(0)
-            finally:
+            except BaseException as err:
+                print("error: {}".format(err), file=sys.stderr)
                 os._exit(1)
+            else:
+                os._exit(0)
         else:
             # parent: let the child some time to wait, send him the signal, and
             # check it correcty received it
