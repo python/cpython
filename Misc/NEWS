@@ -44,6 +44,11 @@ What's New in Python 2.7.2?
 
 *Release date: 2011-06-XX*
 
+Library
+-------
+
+- Issue #12009: Fixed regression in netrc file comment handling.
+
 Extension Modules
 -----------------
 
