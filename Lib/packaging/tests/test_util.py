@@ -8,16 +8,18 @@ import subprocess
 from io import StringIO
 
 from packaging.tests import support, unittest
+from packaging.tests.test_config import SETUP_CFG
 from packaging.errors import (
     PackagingPlatformError, PackagingByteCompileError, PackagingFileError,
     PackagingExecError, InstallationException)
 from packaging import util
+from packaging.dist import Distribution
 from packaging.util import (
     convert_path, change_root, split_quoted, strtobool, rfc822_escape,
     get_compiler_versions, _MAC_OS_X_LD_VERSION, byte_compile, find_packages,
     spawn, get_pypirc_path, generate_pypirc, read_pypirc, resolve_name, iglob,
     RICH_GLOB, egginfo_to_distinfo, is_setuptools, is_distutils, is_packaging,
-    get_install_method)
+    get_install_method, cfg_to_args)
 
 
 PYPIRC = """\
@@ -88,13 +90,15 @@ class UtilTestCase(support.EnvironRestorer,
                    support.LoggingCatcher,
                    unittest.TestCase):
 
-    restore_environ = ['HOME']
+    restore_environ = ['HOME', 'PLAT']
 
     def setUp(self):
         super(UtilTestCase, self).setUp()
-        self.tmp_dir = self.mkdtemp()
-        self.rc = os.path.join(self.tmp_dir, '.pypirc')
-        os.environ['HOME'] = self.tmp_dir
+        self.addCleanup(os.chdir, os.getcwd())
+        tempdir = self.mkdtemp()
+        self.rc = os.path.join(tempdir, '.pypirc')
+        os.environ['HOME'] = tempdir
+        os.chdir(tempdir)
         # saving the environment
         self.name = os.name
         self.platform = sys.platform
@@ -103,7 +107,6 @@ class UtilTestCase(support.EnvironRestorer,
         self.join = os.path.join
         self.isabs = os.path.isabs
         self.splitdrive = os.path.splitdrive
-        #self._config_vars = copy(sysconfig._config_vars)
 
         # patching os.uname
         if hasattr(os, 'uname'):
@@ -137,7 +140,6 @@ class UtilTestCase(support.EnvironRestorer,
             os.uname = self.uname
         else:
             del os.uname
-        #sysconfig._config_vars = copy(self._config_vars)
         util.find_executable = self.old_find_executable
         subprocess.Popen = self.old_popen
         sys.old_stdout = self.old_stdout
@@ -490,6 +492,38 @@ class UtilTestCase(support.EnvironRestorer,
         with open(rc) as f:
             content = f.read()
         self.assertEqual(content, WANTED)
+
+    def test_cfg_to_args(self):
+        opts = {'description-file': 'README', 'extra-files': '',
+                'setup-hook': 'packaging.tests.test_config.hook'}
+        self.write_file('setup.cfg', SETUP_CFG % opts)
+        self.write_file('README', 'loooong description')
+
+        args = cfg_to_args()
+        # use Distribution to get the contents of the setup.cfg file
+        dist = Distribution()
+        dist.parse_config_files()
+        metadata = dist.metadata
+
+        self.assertEqual(args['name'], metadata['Name'])
+        # + .dev1 because the test SETUP_CFG also tests a hook function in
+        # test_config.py for appending to the version string
+        self.assertEqual(args['version'] + '.dev1', metadata['Version'])
+        self.assertEqual(args['author'], metadata['Author'])
+        self.assertEqual(args['author_email'], metadata['Author-Email'])
+        self.assertEqual(args['maintainer'], metadata['Maintainer'])
+        self.assertEqual(args['maintainer_email'],
+                         metadata['Maintainer-Email'])
+        self.assertEqual(args['description'], metadata['Summary'])
+        self.assertEqual(args['long_description'], metadata['Description'])
+        self.assertEqual(args['classifiers'], metadata['Classifier'])
+        self.assertEqual(args['requires'], metadata['Requires-Dist'])
+        self.assertEqual(args['provides'], metadata['Provides-Dist'])
+
+        self.assertEqual(args['package_dir'].get(''), dist.package_dir)
+        self.assertEqual(args['packages'], dist.packages)
+        self.assertEqual(args['scripts'], dist.scripts)
+        self.assertEqual(args['py_modules'], dist.py_modules)
 
 
 class GlobTestCaseBase(support.TempdirManager,
