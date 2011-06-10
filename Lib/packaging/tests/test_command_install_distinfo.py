@@ -162,7 +162,7 @@ class InstallDistinfoTestCase(support.TempdirManager,
 
         expected = []
         for f in install.get_outputs():
-            if (f.endswith('.pyc') or f == os.path.join(
+            if (f.endswith(('.pyc', '.pyo')) or f == os.path.join(
                 install_dir, 'foo-1.0.dist-info', 'RECORD')):
                 expected.append([f, '', ''])
             else:
