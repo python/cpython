@@ -2308,7 +2308,7 @@ will not be supported.
 
 *
 
-  In ``x * y``, if one operator is a sequence that implements sequence
+  In ``x * y``, if one operand is a sequence that implements sequence
   repetition, and the other is an integer (:class:`int` or :class:`long`),
   sequence repetition is invoked.
 
