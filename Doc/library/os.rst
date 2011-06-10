@@ -219,6 +219,17 @@ process and user.
    Availability: Unix.
 
 
+.. function:: getgrouplist(user, group)
+
+   Return list of group ids that *user* belongs to. If *group* is not in the
+   list, it is included; typically, *group* is specified as the group ID
+   field from the password record for *user*.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+
 .. function:: getgroups()
 
    Return list of supplemental group ids associated with the current process.
