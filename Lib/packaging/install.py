@@ -13,7 +13,7 @@ import errno
 import shutil
 import logging
 import tempfile
-from sysconfig import get_config_var, get_path
+from sysconfig import get_config_var, get_path, is_python_build
 
 from packaging import logger
 from packaging.dist import Distribution
@@ -488,19 +488,30 @@ def install(project):
 
     Returns True on success, False on failure
     """
+    if is_python_build():
+        # Python would try to install into the site-packages directory under
+        # $PREFIX, but when running from an uninstalled code checkout we don't
+        # want to create directories under the installation root
+        message = ('installing third-party projects from an uninstalled '
+                   'Python is not supported')
+        logger.error(message)
+        return False
+
     logger.info('Checking the installation location...')
     purelib_path = get_path('purelib')
+
     # trying to write a file there
     try:
         with tempfile.NamedTemporaryFile(suffix=project,
                                          dir=purelib_path) as testfile:
             testfile.write(b'test')
     except OSError:
-        # was unable to write a file
+        # FIXME this should check the errno, or be removed altogether (race
+        # condition: the directory permissions could be changed between here
+        # and the actual install)
         logger.info('Unable to write in "%s". Do you have the permissions ?'
                     % purelib_path)
         return False
-
 
     logger.info('Getting information about %r...', project)
     try:
@@ -520,7 +531,7 @@ def install(project):
 
     except InstallationConflict as e:
         if logger.isEnabledFor(logging.INFO):
-            projects = ['%s %s' % (p.name, p.version) for p in e.args[0]]
+            projects = ['%r %s' % (p.name, p.version) for p in e.args[0]]
             logger.info('%r conflicts with %s', project, ','.join(projects))
 
     return True
