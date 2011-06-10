@@ -1015,16 +1015,20 @@ def cfg_to_args(path='setup.cfg'):
                         "requires": ("metadata", "requires_dist"),
                         "provides": ("metadata", "provides_dist"),  # **
                         "obsoletes": ("metadata", "obsoletes_dist"),  # **
+                        "package_dir": ("files", 'packages_root'),
                         "packages": ("files",),
                         "scripts": ("files",),
                         "py_modules": ("files", "modules"),  # **
                         }
 
     MULTI_FIELDS = ("classifiers",
-                    "requires",
                     "platforms",
+                    "requires",
+                    "provides",
+                    "obsoletes",
                     "packages",
-                    "scripts")
+                    "scripts",
+                    "py_modules")
 
     def has_get_option(config, section, option):
         if config.has_option(section, option):
@@ -1036,9 +1040,9 @@ def cfg_to_args(path='setup.cfg'):
 
     # The real code starts here
     config = RawConfigParser()
-    if not os.path.exists(file):
+    if not os.path.exists(path):
         raise PackagingFileError("file '%s' does not exist" %
-                                 os.path.abspath(file))
+                                 os.path.abspath(path))
     config.read(path)
 
     kwargs = {}
@@ -1055,17 +1059,24 @@ def cfg_to_args(path='setup.cfg'):
         in_cfg_value = has_get_option(config, section, option)
         if not in_cfg_value:
             # There is no such option in the setup.cfg
-            if arg == "long_description":
-                filename = has_get_option(config, section, "description_file")
-                if filename:
-                    with open(filename) as fp:
-                        in_cfg_value = fp.read()
+            if arg == 'long_description':
+                filenames = has_get_option(config, section, 'description-file')
+                if filenames:
+                    filenames = split_multiline(filenames)
+                    in_cfg_value = []
+                    for filename in filenames:
+                        with open(filename) as fp:
+                            in_cfg_value.append(fp.read())
+                    in_cfg_value = '\n\n'.join(in_cfg_value)
             else:
                 continue
 
+        if arg == 'package_dir' and in_cfg_value:
+            in_cfg_value = {'': in_cfg_value}
+
         if arg in MULTI_FIELDS:
             # support multiline options
-            in_cfg_value = in_cfg_value.strip().split('\n')
+            in_cfg_value = split_multiline(in_cfg_value)
 
         kwargs[arg] = in_cfg_value
 
