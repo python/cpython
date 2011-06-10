@@ -598,6 +598,8 @@ class PendingSignalsTests(unittest.TestCase):
         with self.assertRaises(ZeroDivisionError):
             signal.pthread_kill(current, signum)
 
+    @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
+                         'need signal.pthread_sigmask()')
     def check_sigwait(self, test, signum):
         # sigwait must be called with the signal blocked: since the current
         # process might have several threads running, we fork() a child process
