@@ -453,6 +453,18 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
       record. Otherwise, the ISO8601 format is used.  The resulting string is
       returned.
 
+      .. versionchanged:: 3.3
+      Previously, the default ISO 8601 format was hard-coded as in this
+      example: ``2010-09-06 22:38:15,292`` where the part before the comma is
+      handled by a strptime format string (``'%Y-%m-%d %H:%M:%S'``), and the
+      part after the comma is a millisecond value. Because strptime does not
+      have a format placeholder for milliseconds, the millisecond value is
+      appended using another format string, ``'%s,%03d'`` – and both of these
+      format strings have been hardcoded into this method. With the change,
+      these strings are defined as class-level attributes which can be
+      overridden at the instance level when desired. The names of the
+      attributes are ``default_time_format`` (for the strptime format string)
+      and ``default_msec_format`` (for appending the millisecond value).
 
    .. method:: formatException(exc_info)
 
