@@ -90,7 +90,7 @@ commands =
 compilers =
     packaging.tests.test_config.DCompiler
 
-setup_hook = %(setup-hook)s
+setup_hooks = %(setup-hooks)s
 
 
 
@@ -135,8 +135,16 @@ class DCompiler:
         pass
 
 
-def hook(content):
-    content['metadata']['version'] += '.dev1'
+def version_hook(config):
+    config['metadata']['version'] += '.dev1'
+
+
+def first_hook(config):
+    config['files']['modules'] += '\n first'
+
+
+def third_hook(config):
+    config['files']['modules'] += '\n third'
 
 
 class FooBarBazTest:
@@ -186,7 +194,7 @@ class ConfigTestCase(support.TempdirManager,
 
     def write_setup(self, kwargs=None):
         opts = {'description-file': 'README', 'extra-files': '',
-                'setup-hook': 'packaging.tests.test_config.hook'}
+                'setup-hooks': 'packaging.tests.test_config.version_hook'}
         if kwargs:
             opts.update(kwargs)
         self.write_file('setup.cfg', SETUP_CFG % opts, encoding='utf-8')
@@ -318,13 +326,27 @@ class ConfigTestCase(support.TempdirManager,
         self.assertEqual(ext.extra_compile_args, cargs)
         self.assertEqual(ext.language, 'cxx')
 
-    def test_missing_setuphook_warns(self):
-        self.write_setup({'setup-hook': 'this.does._not.exist'})
+    def test_missing_setup_hook_warns(self):
+        self.write_setup({'setup-hooks': 'this.does._not.exist'})
         self.write_file('README', 'yeah')
         dist = self.get_dist()
         logs = self.get_logs(logging.WARNING)
         self.assertEqual(1, len(logs))
-        self.assertIn('could not import setup_hook', logs[0])
+        self.assertIn('cannot find setup hook', logs[0])
+
+    def test_multiple_setup_hooks(self):
+        self.write_setup({
+            'setup-hooks': '\n  packaging.tests.test_config.first_hook'
+                           '\n  packaging.tests.test_config.missing_hook'
+                           '\n  packaging.tests.test_config.third_hook'
+        })
+        self.write_file('README', 'yeah')
+        dist = self.get_dist()
+
+        self.assertEqual(['haven', 'first', 'third'], dist.py_modules)
+        logs = self.get_logs(logging.WARNING)
+        self.assertEqual(1, len(logs))
+        self.assertIn('cannot find setup hook', logs[0])
 
     def test_metadata_requires_description_files_missing(self):
         self.write_setup({'description-file': 'README README2'})
