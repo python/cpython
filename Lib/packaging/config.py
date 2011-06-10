@@ -61,17 +61,15 @@ def get_resources_dests(resources_root, rules):
 
 
 class Config:
-    """Reads configuration files and work with the Distribution instance
-    """
+    """Class used to work with configuration files"""
     def __init__(self, dist):
         self.dist = dist
-        self.setup_hook = None
+        self.setup_hooks = []
 
-    def run_hook(self, config):
-        if self.setup_hook is None:
-            return
-        # the hook gets only the config
-        self.setup_hook(config)
+    def run_hooks(self, config):
+        """Run setup hooks in the order defined in the spec."""
+        for hook in self.setup_hooks:
+            hook(config)
 
     def find_config_files(self):
         """Find as many configuration files as should be processed for this
@@ -131,17 +129,20 @@ class Config:
         for section in parser.sections():
             content[section] = dict(parser.items(section))
 
-        # global:setup_hook is called *first*
+        # global setup hooks are called first
         if 'global' in content:
-            if 'setup_hook' in content['global']:
-                setup_hook = content['global']['setup_hook']
-                try:
-                    self.setup_hook = resolve_name(setup_hook)
-                except ImportError as e:
-                    logger.warning('could not import setup_hook: %s',
-                            e.args[0])
-                else:
-                    self.run_hook(content)
+            if 'setup_hooks' in content['global']:
+                setup_hooks = split_multiline(content['global']['setup_hooks'])
+
+                for line in setup_hooks:
+                    try:
+                        hook = resolve_name(line)
+                    except ImportError as e:
+                        logger.warning('cannot find setup hook: %s', e.args[0])
+                    else:
+                        self.setup_hooks.append(hook)
+
+                self.run_hooks(content)
 
         metadata = self.dist.metadata
 
