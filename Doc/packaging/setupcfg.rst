@@ -285,6 +285,7 @@ One extra field not present in PEP 345 is supported:
 
 description-file
    Path to a text file that will be used to fill the ``description`` field.
+   Multiple values are accepted; they must be separated by whitespace.
    ``description-file`` and ``description`` are mutually exclusive.  *optional*
 
 
