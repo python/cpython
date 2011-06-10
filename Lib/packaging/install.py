@@ -520,7 +520,7 @@ def install(project):
 
     except InstallationConflict as e:
         if logger.isEnabledFor(logging.INFO):
-            projects = ['%s %s' % (p.name, p.version) for p in e.args[0]]
+            projects = ['%r %s' % (p.name, p.version) for p in e.args[0]]
             logger.info('%r conflicts with %s', project, ','.join(projects))
 
     return True
