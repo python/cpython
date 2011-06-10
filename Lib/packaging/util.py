@@ -250,6 +250,14 @@ def split_quoted(s):
     return words
 
 
+def split_multiline(value):
+    """Split a multiline string into a list, excluding blank lines."""
+
+    return [element for element in
+            (line.strip() for line in value.split('\n'))
+            if element]
+
+
 def execute(func, args, msg=None, verbose=0, dry_run=False):
     """Perform some action that affects the outside world.
 
@@ -542,18 +550,15 @@ def write_file(filename, contents):
 
 
 def _is_package(path):
-    if not os.path.isdir(path):
-        return False
-    return os.path.isfile(os.path.join(path, '__init__.py'))
+    return os.path.isdir(path) and os.path.isfile(
+        os.path.join(path, '__init__.py'))
 
 
 # Code taken from the pip project
 def _is_archive_file(name):
     archives = ('.zip', '.tar.gz', '.tar.bz2', '.tgz', '.tar')
     ext = splitext(name)[1].lower()
-    if ext in archives:
-        return True
-    return False
+    return ext in archives
 
 
 def _under(path, root):
