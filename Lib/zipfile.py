@@ -236,16 +236,14 @@ def _EndRecData(fpin):
         # found the magic number; attempt to unpack and interpret
         recData = data[start:start+sizeEndCentDir]
         endrec = list(struct.unpack(structEndArchive, recData))
-        comment = data[start+sizeEndCentDir:]
-        # check that comment length is correct
-        if endrec[_ECD_COMMENT_SIZE] == len(comment):
-            # Append the archive comment and start offset
-            endrec.append(comment)
-            endrec.append(maxCommentStart + start)
+        commentSize = endrec[_ECD_COMMENT_SIZE] #as claimed by the zip file
+        comment = data[start+sizeEndCentDir:start+sizeEndCentDir+commentSize]
+        endrec.append(comment)
+        endrec.append(maxCommentStart + start)
 
-            # Try to read the "Zip64 end of central directory" structure
-            return _EndRecData64(fpin, maxCommentStart + start - filesize,
-                                 endrec)
+        # Try to read the "Zip64 end of central directory" structure
+        return _EndRecData64(fpin, maxCommentStart + start - filesize,
+                             endrec)
 
     # Unable to find a valid end of central directory structure
     return

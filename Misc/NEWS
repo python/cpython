@@ -16,6 +16,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #10694: zipfile now ignores garbage at the end of a zipfile.
+
+- Issue #11583: Speed up os.path.isdir on Windows by using GetFileAttributes
+  instead of os.stat.
+
 - Issue #12080: Fix a performance issue in Decimal._power_exact that caused
   some corner-case Decimal.__pow__ calls to take an unreasonably long time.
 

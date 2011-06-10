@@ -4199,6 +4199,44 @@ win32_kill(PyObject *self, PyObject *args)
     CloseHandle(handle);
     return result;
 }
+
+PyDoc_STRVAR(posix__isdir__doc__,
+"Return true if the pathname refers to an existing directory.");
+
+static PyObject *
+posix__isdir(PyObject *self, PyObject *args)
+{
+    PyObject *opath;
+    char *path;
+    PyUnicodeObject *po;
+    DWORD attributes;
+
+    if (PyArg_ParseTuple(args, "U|:_isdir", &po)) {
+        Py_UNICODE *wpath = PyUnicode_AS_UNICODE(po);
+
+        attributes = GetFileAttributesW(wpath);
+        if (attributes == INVALID_FILE_ATTRIBUTES)
+            Py_RETURN_FALSE;
+        goto check;
+    }
+    /* Drop the argument parsing error as narrow strings
+       are also valid. */
+    PyErr_Clear();
+
+    if (!PyArg_ParseTuple(args, "et:_isdir",
+                          Py_FileSystemDefaultEncoding, &path))
+        return NULL;
+
+    attributes = GetFileAttributesA(path);
+    if (attributes == INVALID_FILE_ATTRIBUTES)
+        Py_RETURN_FALSE;
+
+check:
+    if (attributes & FILE_ATTRIBUTE_DIRECTORY)
+        Py_RETURN_TRUE;
+    else
+        Py_RETURN_FALSE;
+}
 #endif /* MS_WINDOWS */
 
 #ifdef HAVE_PLOCK
@@ -8968,6 +9006,7 @@ static PyMethodDef posix_methods[] = {
     {"abort",           posix_abort, METH_NOARGS, posix_abort__doc__},
 #ifdef MS_WINDOWS
     {"_getfullpathname",        posix__getfullpathname, METH_VARARGS, NULL},
+    {"_isdir",                  posix__isdir, METH_VARARGS, posix__isdir__doc__},
 #endif
 #ifdef HAVE_GETLOADAVG
     {"getloadavg",      posix_getloadavg, METH_NOARGS, posix_getloadavg__doc__},
