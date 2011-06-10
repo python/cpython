@@ -2,7 +2,7 @@
 
 # Module and documentation by Eric S. Raymond, 21 Dec 1998
 
-import os, shlex
+import io, os, shlex
 
 __all__ = ["netrc", "NetrcParseError"]
 
@@ -37,12 +37,14 @@ class netrc:
         lexer.commenters = lexer.commenters.replace('#', '')
         while 1:
             # Look for a machine, default, or macdef top-level keyword
+            saved_lineno = lexer.lineno
             toplevel = tt = lexer.get_token()
             if not tt:
                 break
             elif tt[0] == '#':
-                fp.readline();
-                continue;
+                if lexer.lineno == saved_lineno and len(tt) == 1:
+                    lexer.instream.readline()
+                continue
             elif tt == 'machine':
                 entryname = lexer.get_token()
             elif tt == 'default':
@@ -68,8 +70,8 @@ class netrc:
             self.hosts[entryname] = {}
             while 1:
                 tt = lexer.get_token()
-                if (tt=='' or tt == 'machine' or
-                    tt == 'default' or tt =='macdef'):
+                if (tt.startswith('#') or
+                    tt in {'', 'machine', 'default', 'macdef'}):
                     if password:
                         self.hosts[entryname] = (login, account, password)
                         lexer.push_token(tt)
