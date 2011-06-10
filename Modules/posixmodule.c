@@ -4672,6 +4672,70 @@ posix_getpid(PyObject *self, PyObject *noargs)
     return PyLong_FromPid(getpid());
 }
 
+#ifdef HAVE_GETGROUPLIST
+PyDoc_STRVAR(posix_getgrouplist__doc__,
+"getgrouplist(user, group) -> list of groups to which a user belongs\n\n\
+Returns a list of groups to which a user belongs.\n\n\
+    user: username to lookup\n\
+    group: base group id of the user");
+
+static PyObject *
+posix_getgrouplist(PyObject *self, PyObject *args)
+{
+#ifdef NGROUPS_MAX
+#define MAX_GROUPS NGROUPS_MAX
+#else
+    /* defined to be 16 on Solaris7, so this should be a small number */
+#define MAX_GROUPS 64
+#endif
+
+    const char *user;
+    int i, ngroups;
+    PyObject *list;
+#ifdef __APPLE__
+    int *groups, basegid;
+#else
+    gid_t *groups, basegid;
+#endif
+    ngroups = MAX_GROUPS;
+
+    if (!PyArg_ParseTuple(args, "si", &user, &basegid))
+        return NULL;
+
+#ifdef __APPLE__
+    groups = PyMem_Malloc(ngroups * sizeof(int));
+#else
+    groups = PyMem_Malloc(ngroups * sizeof(gid_t));
+#endif
+    if (groups == NULL)
+        return PyErr_NoMemory();
+
+    if (getgrouplist(user, basegid, groups, &ngroups) == -1) {
+        PyMem_Del(groups);
+        return posix_error();
+    }
+
+    list = PyList_New(ngroups);
+    if (list == NULL) {
+        PyMem_Del(groups);
+        return NULL;
+    }
+
+    for (i = 0; i < ngroups; i++) {
+        PyObject *o = PyLong_FromUnsignedLong((unsigned long)groups[i]);
+        if (o == NULL) {
+            Py_DECREF(list);
+            PyMem_Del(groups);
+            return NULL;
+        }
+        PyList_SET_ITEM(list, i, o);
+    }
+
+    PyMem_Del(groups);
+
+    return list;
+}
+#endif
 
 #ifdef HAVE_GETGROUPS
 PyDoc_STRVAR(posix_getgroups__doc__,
@@ -9383,6 +9447,9 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_GETGID
     {"getgid",          posix_getgid, METH_NOARGS, posix_getgid__doc__},
 #endif /* HAVE_GETGID */
+#ifdef HAVE_GETGROUPLIST
+    {"getgrouplist",    posix_getgrouplist, METH_VARARGS, posix_getgrouplist__doc__},
+#endif
 #ifdef HAVE_GETGROUPS
     {"getgroups",       posix_getgroups, METH_NOARGS, posix_getgroups__doc__},
 #endif
