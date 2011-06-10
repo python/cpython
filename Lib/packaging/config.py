@@ -9,7 +9,8 @@ from configparser import RawConfigParser
 from packaging import logger
 from packaging.errors import PackagingOptionError
 from packaging.compiler.extension import Extension
-from packaging.util import check_environ, iglob, resolve_name, strtobool
+from packaging.util import (check_environ, iglob, resolve_name, strtobool,
+                            split_multiline)
 from packaging.compiler import set_compiler
 from packaging.command import set_command
 from packaging.markers import interpret
@@ -124,12 +125,6 @@ class Config:
         # XXX
         return value
 
-    def _multiline(self, value):
-        value = [v for v in
-                 [v.strip() for v in value.split('\n')]
-                 if v != '']
-        return value
-
     def _read_setup_cfg(self, parser, cfg_filename):
         cfg_directory = os.path.dirname(os.path.abspath(cfg_filename))
         content = {}
@@ -155,7 +150,7 @@ class Config:
             for key, value in content['metadata'].items():
                 key = key.replace('_', '-')
                 if metadata.is_multi_field(key):
-                    value = self._multiline(value)
+                    value = split_multiline(value)
 
                 if key == 'project-url':
                     value = [(label.strip(), url.strip())
@@ -192,7 +187,7 @@ class Config:
             files = content['files']
             self.dist.package_dir = files.pop('packages_root', None)
 
-            files = dict((key, self._multiline(value)) for key, value in
+            files = dict((key, split_multiline(value)) for key, value in
                          files.items())
 
             self.dist.packages = []
@@ -310,7 +305,7 @@ class Config:
                     opt = opt.replace('-', '_')
 
                     if opt == 'sub_commands':
-                        val = self._multiline(val)
+                        val = split_multiline(val)
                         if isinstance(val, str):
                             val = [val]
 
@@ -348,14 +343,14 @@ class Config:
                     raise PackagingOptionError(msg)
 
     def _load_compilers(self, compilers):
-        compilers = self._multiline(compilers)
+        compilers = split_multiline(compilers)
         if isinstance(compilers, str):
             compilers = [compilers]
         for compiler in compilers:
             set_compiler(compiler.strip())
 
     def _load_commands(self, commands):
-        commands = self._multiline(commands)
+        commands = split_multiline(commands)
         if isinstance(commands, str):
             commands = [commands]
         for command in commands:
