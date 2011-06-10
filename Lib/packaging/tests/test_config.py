@@ -327,7 +327,7 @@ class ConfigTestCase(support.TempdirManager,
         self.assertIn('could not import setup_hook', logs[0])
 
     def test_metadata_requires_description_files_missing(self):
-        self.write_setup({'description-file': 'README\n  README2'})
+        self.write_setup({'description-file': 'README README2'})
         self.write_file('README', 'yeah')
         self.write_file('README2', 'yeah')
         os.mkdir('src')

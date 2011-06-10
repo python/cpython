@@ -163,21 +163,18 @@ class Config:
                                "mutually exclusive")
                         raise PackagingOptionError(msg)
 
-                    if isinstance(value, list):
-                        filenames = value
-                    else:
-                        filenames = value.split()
+                    filenames = value.split()
 
-                    # concatenate each files
-                    value = ''
+                    # concatenate all files
+                    value = []
                     for filename in filenames:
                         # will raise if file not found
                         with open(filename) as description_file:
-                            value += description_file.read().strip() + '\n'
+                            value.append(description_file.read().strip())
                         # add filename as a required file
                         if filename not in metadata.requires_files:
                             metadata.requires_files.append(filename)
-                    value = value.strip()
+                    value = '\n'.join(value).strip()
                     key = 'description'
 
                 if metadata.is_metadata_field(key):
