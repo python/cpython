@@ -41,8 +41,12 @@ class netrc:
             if not tt:
                 break
             elif tt[0] == '#':
-                fp.readline();
-                continue;
+                # seek to beginning of comment, in case reading the token put
+                # us on a new line, and then skip the rest of the line.
+                pos = len(tt) + 1
+                lexer.instream.seek(-pos, 1)
+                lexer.instream.readline()
+                continue
             elif tt == 'machine':
                 entryname = lexer.get_token()
             elif tt == 'default':
@@ -68,8 +72,8 @@ class netrc:
             self.hosts[entryname] = {}
             while 1:
                 tt = lexer.get_token()
-                if (tt=='' or tt == 'machine' or
-                    tt == 'default' or tt =='macdef'):
+                if (tt.startswith('#') or
+                    tt in {'', 'machine', 'default', 'macdef'}):
                     if password:
                         self.hosts[entryname] = (login, account, password)
                         lexer.push_token(tt)
