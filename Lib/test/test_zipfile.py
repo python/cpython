@@ -405,7 +405,8 @@ class TestsWithSourceFile(unittest.TestCase):
 
         zipfp = zipfile.ZipFile(fname)
         try:
-            zipfp.extractall()
+            for name in zipfp.namelist():
+                zipfp.open(name).close()
         finally:
             zipfp.close()
 
