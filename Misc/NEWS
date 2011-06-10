@@ -189,6 +189,10 @@ Library
 
 - Issue #12009: Fixed regression in netrc file comment handling.
 
+- Issue #12246: Warn and fail when trying to install a third-party project from
+  an uninstalled Python (built in a source checkout).  Original patch by
+  Tshepang Lekhonkhobe.
+
 - Issue #10694: zipfile now ignores garbage at the end of a zipfile.
 
 - Issue #12283: Fixed regression in smtplib quoting of leading dots in DATA.

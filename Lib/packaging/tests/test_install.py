@@ -1,5 +1,7 @@
 """Tests for the packaging.install module."""
 import os
+import logging
+from sysconfig import is_python_build
 from tempfile import mkstemp
 
 from packaging import install
@@ -357,9 +359,17 @@ class TestInstall(LoggingCatcher, TempdirManager, unittest.TestCase):
             install._install_dist = old_install_dist
 
     def test_install_permission_denied(self):
-        # if we don't have the access to the installation
-        # path, we should abort immediatly
+        # if we don't have access to the installation path, we should abort
+        # immediately
         project = os.path.join(os.path.dirname(__file__), 'package.tgz')
+
+        # when running from an uninstalled build, a warning is emitted and the
+        # installation is not attempted
+        if is_python_build():
+            self.assertFalse(install.install(project))
+            self.assertEqual(1, len(self.get_logs(logging.ERROR)))
+            return
+
         install_path = self.mkdtemp()
         old_get_path = install.get_path
         install.get_path = lambda path: install_path
