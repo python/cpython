@@ -176,15 +176,19 @@ compilers
       compilers =
           hotcompiler.SmartCCompiler
 
-setup_hook
-   defines a callable that will be called right after the
-   :file:`setup.cfg` file is read. The callable receives the configuration
-   in form of a mapping and can make some changes to it. *optional*
+setup_hooks
+   Defines a list of callables to be called right after the :file:`setup.cfg`
+   file is read, before any other processing.  The callables are executed in the
+   order they're found in the file; if one of them cannot be found, tools should
+   not stop, but for example produce a warning and continue with the next line.
+   Each callable receives the configuration as a dictionary (keys are
+   :file:`setup.cfg` sections, values are dictionaries of fields) and can make
+   any changes to it.  *optional*, *multi*
 
    Example::
 
       [global]
-      setup_hook = package.setup.customize_dist
+      setup_hooks = package.setup.customize_dist
 
 
 Metadata
@@ -285,6 +289,7 @@ One extra field not present in PEP 345 is supported:
 
 description-file
    Path to a text file that will be used to fill the ``description`` field.
+   Multiple values are accepted; they must be separated by whitespace.
    ``description-file`` and ``description`` are mutually exclusive.  *optional*
 
 

@@ -9,7 +9,8 @@ from configparser import RawConfigParser
 from packaging import logger
 from packaging.errors import PackagingOptionError
 from packaging.compiler.extension import Extension
-from packaging.util import check_environ, iglob, resolve_name, strtobool
+from packaging.util import (check_environ, iglob, resolve_name, strtobool,
+                            split_multiline)
 from packaging.compiler import set_compiler
 from packaging.command import set_command
 from packaging.markers import interpret
@@ -60,17 +61,15 @@ def get_resources_dests(resources_root, rules):
 
 
 class Config:
-    """Reads configuration files and work with the Distribution instance
-    """
+    """Class used to work with configuration files"""
     def __init__(self, dist):
         self.dist = dist
-        self.setup_hook = None
+        self.setup_hooks = []
 
-    def run_hook(self, config):
-        if self.setup_hook is None:
-            return
-        # the hook gets only the config
-        self.setup_hook(config)
+    def run_hooks(self, config):
+        """Run setup hooks in the order defined in the spec."""
+        for hook in self.setup_hooks:
+            hook(config)
 
     def find_config_files(self):
         """Find as many configuration files as should be processed for this
@@ -124,29 +123,26 @@ class Config:
         # XXX
         return value
 
-    def _multiline(self, value):
-        value = [v for v in
-                 [v.strip() for v in value.split('\n')]
-                 if v != '']
-        return value
-
     def _read_setup_cfg(self, parser, cfg_filename):
         cfg_directory = os.path.dirname(os.path.abspath(cfg_filename))
         content = {}
         for section in parser.sections():
             content[section] = dict(parser.items(section))
 
-        # global:setup_hook is called *first*
+        # global setup hooks are called first
         if 'global' in content:
-            if 'setup_hook' in content['global']:
-                setup_hook = content['global']['setup_hook']
-                try:
-                    self.setup_hook = resolve_name(setup_hook)
-                except ImportError as e:
-                    logger.warning('could not import setup_hook: %s',
-                            e.args[0])
-                else:
-                    self.run_hook(content)
+            if 'setup_hooks' in content['global']:
+                setup_hooks = split_multiline(content['global']['setup_hooks'])
+
+                for line in setup_hooks:
+                    try:
+                        hook = resolve_name(line)
+                    except ImportError as e:
+                        logger.warning('cannot find setup hook: %s', e.args[0])
+                    else:
+                        self.setup_hooks.append(hook)
+
+                self.run_hooks(content)
 
         metadata = self.dist.metadata
 
@@ -155,7 +151,7 @@ class Config:
             for key, value in content['metadata'].items():
                 key = key.replace('_', '-')
                 if metadata.is_multi_field(key):
-                    value = self._multiline(value)
+                    value = split_multiline(value)
 
                 if key == 'project-url':
                     value = [(label.strip(), url.strip())
@@ -168,21 +164,18 @@ class Config:
                                "mutually exclusive")
                         raise PackagingOptionError(msg)
 
-                    if isinstance(value, list):
-                        filenames = value
-                    else:
-                        filenames = value.split()
+                    filenames = value.split()
 
-                    # concatenate each files
-                    value = ''
+                    # concatenate all files
+                    value = []
                     for filename in filenames:
                         # will raise if file not found
                         with open(filename) as description_file:
-                            value += description_file.read().strip() + '\n'
+                            value.append(description_file.read().strip())
                         # add filename as a required file
                         if filename not in metadata.requires_files:
                             metadata.requires_files.append(filename)
-                    value = value.strip()
+                    value = '\n'.join(value).strip()
                     key = 'description'
 
                 if metadata.is_metadata_field(key):
@@ -192,7 +185,7 @@ class Config:
             files = content['files']
             self.dist.package_dir = files.pop('packages_root', None)
 
-            files = dict((key, self._multiline(value)) for key, value in
+            files = dict((key, split_multiline(value)) for key, value in
                          files.items())
 
             self.dist.packages = []
@@ -310,7 +303,7 @@ class Config:
                     opt = opt.replace('-', '_')
 
                     if opt == 'sub_commands':
-                        val = self._multiline(val)
+                        val = split_multiline(val)
                         if isinstance(val, str):
                             val = [val]
 
@@ -348,14 +341,14 @@ class Config:
                     raise PackagingOptionError(msg)
 
     def _load_compilers(self, compilers):
-        compilers = self._multiline(compilers)
+        compilers = split_multiline(compilers)
         if isinstance(compilers, str):
             compilers = [compilers]
         for compiler in compilers:
             set_compiler(compiler.strip())
 
     def _load_commands(self, commands):
-        commands = self._multiline(commands)
+        commands = split_multiline(commands)
         if isinstance(commands, str):
             commands = [commands]
         for command in commands:
