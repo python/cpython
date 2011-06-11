@@ -170,6 +170,22 @@ class OSSAudioDevTests(unittest.TestCase):
             pass
         self.assertTrue(dsp.closed)
 
+    def test_on_closed(self):
+        dsp = ossaudiodev.open('w')
+        dsp.close()
+        self.assertRaises(ValueError, dsp.fileno)
+        self.assertRaises(ValueError, dsp.read, 1)
+        self.assertRaises(ValueError, dsp.write, b'x')
+        self.assertRaises(ValueError, dsp.writeall, b'x')
+        self.assertRaises(ValueError, dsp.bufsize)
+        self.assertRaises(ValueError, dsp.obufcount)
+        self.assertRaises(ValueError, dsp.obufcount)
+        self.assertRaises(ValueError, dsp.obuffree)
+        self.assertRaises(ValueError, dsp.getptr)
+
+        mixer = ossaudiodev.openmixer()
+        mixer.close()
+        self.assertRaises(ValueError, mixer.fileno)
 
 def test_main():
     try:
