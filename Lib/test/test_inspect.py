@@ -298,6 +298,23 @@ class TestRetrievingSourceCode(GetSourceBase):
         del sys.modules[name]
         inspect.getmodule(compile('a=10','','single'))
 
+    def test_proceed_with_fake_filename(self):
+        '''doctest monkeypatches linecache to enable inspection'''
+        fn, source = '<test>', 'def x(): pass\n'
+        getlines = linecache.getlines
+        def monkey(filename, module_globals=None):
+            if filename == fn:
+                return source.splitlines(True)
+            else:
+                return getlines(filename, module_globals)
+        linecache.getlines = monkey
+        try:
+            ns = {}
+            exec(compile(source, fn, 'single'), ns)
+            inspect.getsource(ns["x"])
+        finally:
+            linecache.getlines = getlines
+
 class TestDecorators(GetSourceBase):
     fodderModule = mod2
 
