@@ -169,6 +169,8 @@ also be ``.pyw``, in that case, the console window that normally appears is
 suppressed.
 
 
+.. _tut-source-encoding:
+
 Source Code Encoding
 --------------------
 
