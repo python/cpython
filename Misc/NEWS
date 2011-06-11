@@ -187,6 +187,13 @@ Core and Builtins
 Library
 -------
 
+- Issue #12240: Allow multiple setup hooks in packaging's setup.cfg files.
+  Original patch by Erik Bray.
+
+- Issue #11595: Fix assorted bugs in packaging.util.cfg_to_args, a
+  compatibility helper for the distutils-packaging transition.  Original patch
+  by Erik Bray.
+
 - Issue #12287: In ossaudiodev, check that the device isn't closed in several
   methods.
 

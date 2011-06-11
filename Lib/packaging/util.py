@@ -250,6 +250,14 @@ def split_quoted(s):
     return words
 
 
+def split_multiline(value):
+    """Split a multiline string into a list, excluding blank lines."""
+
+    return [element for element in
+            (line.strip() for line in value.split('\n'))
+            if element]
+
+
 def execute(func, args, msg=None, verbose=0, dry_run=False):
     """Perform some action that affects the outside world.
 
@@ -542,18 +550,15 @@ def write_file(filename, contents):
 
 
 def _is_package(path):
-    if not os.path.isdir(path):
-        return False
-    return os.path.isfile(os.path.join(path, '__init__.py'))
+    return os.path.isdir(path) and os.path.isfile(
+        os.path.join(path, '__init__.py'))
 
 
 # Code taken from the pip project
 def _is_archive_file(name):
     archives = ('.zip', '.tar.gz', '.tar.bz2', '.tgz', '.tar')
     ext = splitext(name)[1].lower()
-    if ext in archives:
-        return True
-    return False
+    return ext in archives
 
 
 def _under(path, root):
@@ -772,12 +777,13 @@ def spawn(cmd, search_path=True, verbose=0, dry_run=False, env=None):
     Raise PackagingExecError if running the program fails in any way; just
     return on success.
     """
-    logger.info(' '.join(cmd))
+    logger.debug('spawn: running %r', cmd)
     if dry_run:
+        logging.debug('dry run, no process actually spawned')
         return
     exit_status = subprocess.call(cmd, env=env)
     if exit_status != 0:
-        msg = "command '%s' failed with exit status %d"
+        msg = "command %r failed with exit status %d"
         raise PackagingExecError(msg % (cmd, exit_status))
 
 
@@ -1010,16 +1016,20 @@ def cfg_to_args(path='setup.cfg'):
                         "requires": ("metadata", "requires_dist"),
                         "provides": ("metadata", "provides_dist"),  # **
                         "obsoletes": ("metadata", "obsoletes_dist"),  # **
+                        "package_dir": ("files", 'packages_root'),
                         "packages": ("files",),
                         "scripts": ("files",),
                         "py_modules": ("files", "modules"),  # **
                         }
 
     MULTI_FIELDS = ("classifiers",
-                    "requires",
                     "platforms",
+                    "requires",
+                    "provides",
+                    "obsoletes",
                     "packages",
-                    "scripts")
+                    "scripts",
+                    "py_modules")
 
     def has_get_option(config, section, option):
         if config.has_option(section, option):
@@ -1031,9 +1041,9 @@ def cfg_to_args(path='setup.cfg'):
 
     # The real code starts here
     config = RawConfigParser()
-    if not os.path.exists(file):
+    if not os.path.exists(path):
         raise PackagingFileError("file '%s' does not exist" %
-                                 os.path.abspath(file))
+                                 os.path.abspath(path))
     config.read(path)
 
     kwargs = {}
@@ -1050,17 +1060,24 @@ def cfg_to_args(path='setup.cfg'):
         in_cfg_value = has_get_option(config, section, option)
         if not in_cfg_value:
             # There is no such option in the setup.cfg
-            if arg == "long_description":
-                filename = has_get_option(config, section, "description_file")
-                if filename:
-                    with open(filename) as fp:
-                        in_cfg_value = fp.read()
+            if arg == 'long_description':
+                filenames = has_get_option(config, section, 'description-file')
+                if filenames:
+                    filenames = split_multiline(filenames)
+                    in_cfg_value = []
+                    for filename in filenames:
+                        with open(filename) as fp:
+                            in_cfg_value.append(fp.read())
+                    in_cfg_value = '\n\n'.join(in_cfg_value)
             else:
                 continue
 
+        if arg == 'package_dir' and in_cfg_value:
+            in_cfg_value = {'': in_cfg_value}
+
         if arg in MULTI_FIELDS:
             # support multiline options
-            in_cfg_value = in_cfg_value.strip().split('\n')
+            in_cfg_value = split_multiline(in_cfg_value)
 
         kwargs[arg] = in_cfg_value
 
