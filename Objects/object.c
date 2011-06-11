@@ -1,5 +1,5 @@
 
-/* Generic object operations; and implementation of None (NoObject) */
+/* Generic object operations; and implementation of None */
 
 #include "Python.h"
 #include "frameobject.h"
@@ -1255,10 +1255,9 @@ PyObject_Dir(PyObject *obj)
 }
 
 /*
-NoObject is usable as a non-NULL undefined value, used by the macro None.
+None is as a non-NULL undefined value.
 There is (and should be!) no way to create other objects of this type,
 so there is exactly one (which is indestructible, by the way).
-(XXX This type and the type of NotImplemented below should be unified.)
 */
 
 /* ARGSUSED */
