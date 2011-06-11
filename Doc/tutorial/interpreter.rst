@@ -168,6 +168,8 @@ suppressed.
 
 .. _tut-source-encoding:
 
+.. _tut-source-encoding:
+
 Source Code Encoding
 --------------------
 
