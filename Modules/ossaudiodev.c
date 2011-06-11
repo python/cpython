@@ -213,6 +213,21 @@ oss_mixer_dealloc(oss_mixer_t *self)
  * Helper functions
  */
 
+/* Check if a given file descriptor is valid (i.e. hasn't been closed).
+ * If true, return 1. Otherwise, raise ValueError and return 0.
+ */
+static int _is_fd_valid(int fd)
+{
+    /* the FD is set to -1 in oss_close()/oss_mixer_close() */
+    if (fd >= 0) {
+        return 1;
+    } else {
+        PyErr_SetString(PyExc_ValueError,
+                        "Operation on closed OSS device.");
+        return 0;
+    }
+}
+
 /* _do_ioctl_1() is a private helper function used for the OSS ioctls --
    SNDCTL_DSP_{SETFMT,CHANNELS,SPEED} -- that that are called from C
    like this:
@@ -300,6 +315,9 @@ _do_ioctl_0(int fd, PyObject *args, char *fname, int cmd)
 static PyObject *
 oss_nonblock(oss_audio_t *self, PyObject *unused)
 {
+    if (!_is_fd_valid(self->fd))
+        return NULL;
+
     /* Hmmm: it doesn't appear to be possible to return to blocking
        mode once we're in non-blocking mode! */
     if (ioctl(self->fd, SNDCTL_DSP_NONBLOCK, NULL) == -1)
@@ -311,6 +329,9 @@ oss_nonblock(oss_audio_t *self, PyObject *unused)
 static PyObject *
 oss_setfmt(oss_audio_t *self, PyObject *args)
 {
+    if (!_is_fd_valid(self->fd))
+        return NULL;
+
     return _do_ioctl_1(self->fd, args, "setfmt", SNDCTL_DSP_SETFMT);
 }
 
@@ -318,6 +339,10 @@ static PyObject *
 oss_getfmts(oss_audio_t *self, PyObject *unused)
 {
     int mask;
+
+    if (!_is_fd_valid(self->fd))
+        return NULL;
+
     if (ioctl(self->fd, SNDCTL_DSP_GETFMTS, &mask) == -1)
         return PyErr_SetFromErrno(PyExc_IOError);
     return PyLong_FromLong(mask);
@@ -326,30 +351,45 @@ oss_getfmts(oss_audio_t *self, PyObject *unused)
 static PyObject *
 oss_channels(oss_audio_t *self, PyObject *args)
 {
+    if (!_is_fd_valid(self->fd))
+        return NULL;
+
     return _do_ioctl_1(self->fd, args, "channels", SNDCTL_DSP_CHANNELS);
 }
 
 static PyObject *
 oss_speed(oss_audio_t *self, PyObject *args)
 {
+    if (!_is_fd_valid(self->fd))
+        return NULL;
+
     return _do_ioctl_1(self->fd, args, "speed", SNDCTL_DSP_SPEED);
 }
 
 static PyObject *
 oss_sync(oss_audio_t *self, PyObject *args)
 {
+    if (!_is_fd_valid(self->fd))
+        return NULL;
+
     return _do_ioctl_0(self->fd, args, "sync", SNDCTL_DSP_SYNC);
 }
 
 static PyObject *
 oss_reset(oss_audio_t *self, PyObject *args)
 {
+    if (!_is_fd_valid(self->fd))
+        return NULL;
+
     return _do_ioctl_0(self->fd, args, "reset", SNDCTL_DSP_RESET);
 }
 
 static PyObject *
 oss_post(oss_audio_t *self, PyObject *args)
 {
+    if (!_is_fd_valid(self->fd))
+        return NULL;
+
     return _do_ioctl_0(self->fd, args, "post", SNDCTL_DSP_POST);
 }
 
@@ -363,6 +403,9 @@ oss_read(oss_audio_t *self, PyObject *args)
     int size, count;
     char *cp;
     PyObject *rv;
+
+    if (!_is_fd_valid(self->fd))
+        return NULL;
 
     if (!PyArg_ParseTuple(args, "i:read", &size))
         return NULL;
@@ -390,6 +433,9 @@ oss_write(oss_audio_t *self, PyObject *args)
 {
     char *cp;
     int rv, size;
+
+    if (!_is_fd_valid(self->fd))
+        return NULL;
 
     if (!PyArg_ParseTuple(args, "y#:write", &cp, &size)) {
         return NULL;
@@ -421,6 +467,9 @@ oss_writeall(oss_audio_t *self, PyObject *args)
        write() in blocking mode consumes the whole buffer.  In blocking
        mode, the behaviour of write() and writeall() from Python is
        indistinguishable. */
+
+    if (!_is_fd_valid(self->fd))
+        return NULL;
 
     if (!PyArg_ParseTuple(args, "y#:write", &cp, &size))
         return NULL;
@@ -489,6 +538,9 @@ oss_exit(PyObject *self, PyObject *unused)
 static PyObject *
 oss_fileno(oss_audio_t *self, PyObject *unused)
 {
+    if (!_is_fd_valid(self->fd))
+        return NULL;
+
     return PyLong_FromLong(self->fd);
 }
 
@@ -502,6 +554,9 @@ oss_setparameters(oss_audio_t *self, PyObject *args)
     int wanted_fmt, wanted_channels, wanted_rate, strict=0;
     int fmt, channels, rate;
     PyObject * rv;                    /* return tuple (fmt, channels, rate) */
+
+    if (!_is_fd_valid(self->fd))
+        return NULL;
 
     if (!PyArg_ParseTuple(args, "iii|i:setparameters",
                           &wanted_fmt, &wanted_channels, &wanted_rate,
@@ -593,6 +648,9 @@ oss_bufsize(oss_audio_t *self, PyObject *unused)
     audio_buf_info ai;
     int nchannels=0, ssize=0;
 
+    if (!_is_fd_valid(self->fd))
+        return NULL;
+
     if (_ssize(self, &nchannels, &ssize) < 0 || !nchannels || !ssize) {
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
@@ -611,6 +669,9 @@ oss_obufcount(oss_audio_t *self, PyObject *unused)
 {
     audio_buf_info ai;
     int nchannels=0, ssize=0;
+
+    if (!_is_fd_valid(self->fd))
+        return NULL;
 
     if (_ssize(self, &nchannels, &ssize) < 0 || !nchannels || !ssize) {
         PyErr_SetFromErrno(PyExc_IOError);
@@ -632,6 +693,9 @@ oss_obuffree(oss_audio_t *self, PyObject *unused)
     audio_buf_info ai;
     int nchannels=0, ssize=0;
 
+    if (!_is_fd_valid(self->fd))
+        return NULL;
+
     if (_ssize(self, &nchannels, &ssize) < 0 || !nchannels || !ssize) {
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
@@ -648,6 +712,9 @@ oss_getptr(oss_audio_t *self, PyObject *unused)
 {
     count_info info;
     int req;
+
+    if (!_is_fd_valid(self->fd))
+        return NULL;
 
     if (self->mode == O_RDONLY)
         req = SNDCTL_DSP_GETIPTR;
@@ -679,6 +746,9 @@ oss_mixer_close(oss_mixer_t *self, PyObject *unused)
 static PyObject *
 oss_mixer_fileno(oss_mixer_t *self, PyObject *unused)
 {
+    if (!_is_fd_valid(self->fd))
+        return NULL;
+
     return PyLong_FromLong(self->fd);
 }
 
@@ -687,6 +757,9 @@ oss_mixer_fileno(oss_mixer_t *self, PyObject *unused)
 static PyObject *
 oss_mixer_controls(oss_mixer_t *self, PyObject *args)
 {
+    if (!_is_fd_valid(self->fd))
+        return NULL;
+
     return _do_ioctl_1_internal(self->fd, args, "controls",
         SOUND_MIXER_READ_DEVMASK);
 }
@@ -694,6 +767,9 @@ oss_mixer_controls(oss_mixer_t *self, PyObject *args)
 static PyObject *
 oss_mixer_stereocontrols(oss_mixer_t *self, PyObject *args)
 {
+    if (!_is_fd_valid(self->fd))
+        return NULL;
+
     return _do_ioctl_1_internal(self->fd, args, "stereocontrols",
         SOUND_MIXER_READ_STEREODEVS);
 }
@@ -701,6 +777,9 @@ oss_mixer_stereocontrols(oss_mixer_t *self, PyObject *args)
 static PyObject *
 oss_mixer_reccontrols(oss_mixer_t *self, PyObject *args)
 {
+    if (!_is_fd_valid(self->fd))
+        return NULL;
+
     return _do_ioctl_1_internal(self->fd, args, "reccontrols",
         SOUND_MIXER_READ_RECMASK);
 }
@@ -709,6 +788,9 @@ static PyObject *
 oss_mixer_get(oss_mixer_t *self, PyObject *args)
 {
     int channel, volume;
+
+    if (!_is_fd_valid(self->fd))
+        return NULL;
 
     /* Can't use _do_ioctl_1 because of encoded arg thingy. */
     if (!PyArg_ParseTuple(args, "i:get", &channel))
@@ -729,6 +811,9 @@ static PyObject *
 oss_mixer_set(oss_mixer_t *self, PyObject *args)
 {
     int channel, volume, leftVol, rightVol;
+
+    if (!_is_fd_valid(self->fd))
+        return NULL;
 
     /* Can't use _do_ioctl_1 because of encoded arg thingy. */
     if (!PyArg_ParseTuple(args, "i(ii):set", &channel, &leftVol, &rightVol))
@@ -755,6 +840,9 @@ oss_mixer_set(oss_mixer_t *self, PyObject *args)
 static PyObject *
 oss_mixer_get_recsrc(oss_mixer_t *self, PyObject *args)
 {
+    if (!_is_fd_valid(self->fd))
+        return NULL;
+
     return _do_ioctl_1_internal(self->fd, args, "get_recsrc",
         SOUND_MIXER_READ_RECSRC);
 }
@@ -762,6 +850,9 @@ oss_mixer_get_recsrc(oss_mixer_t *self, PyObject *args)
 static PyObject *
 oss_mixer_set_recsrc(oss_mixer_t *self, PyObject *args)
 {
+    if (!_is_fd_valid(self->fd))
+        return NULL;
+
     return _do_ioctl_1(self->fd, args, "set_recsrc",
         SOUND_MIXER_WRITE_RECSRC);
 }
