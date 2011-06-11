@@ -777,12 +777,13 @@ def spawn(cmd, search_path=True, verbose=0, dry_run=False, env=None):
     Raise PackagingExecError if running the program fails in any way; just
     return on success.
     """
-    logger.info(' '.join(cmd))
+    logger.debug('spawn: running %r', cmd)
     if dry_run:
+        logging.debug('dry run, no process actually spawned')
         return
     exit_status = subprocess.call(cmd, env=env)
     if exit_status != 0:
-        msg = "command '%s' failed with exit status %d"
+        msg = "command %r failed with exit status %d"
         raise PackagingExecError(msg % (cmd, exit_status))
 
 
