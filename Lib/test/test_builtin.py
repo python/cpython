@@ -372,7 +372,15 @@ class BuiltinTest(unittest.TestCase):
         f = Foo()
         self.assertTrue(dir(f) == ["ga", "kan", "roo"])
 
-        # dir(obj__dir__not_list)
+        # dir(obj__dir__tuple)
+        class Foo(object):
+            def __dir__(self):
+                return ("b", "c", "a")
+        res = dir(Foo())
+        self.assertIsInstance(res, list)
+        self.assertTrue(res == ["a", "b", "c"])
+
+        # dir(obj__dir__not_sequence)
         class Foo(object):
             def __dir__(self):
                 return 7
