@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Loosen type restrictions on the __dir__ method. __dir__ can now return any
+  sequence, which will be converted to a list and sorted by dir().
+
 - Issue #12265: Make error messages produced by passing an invalid set of
   arguments to a function more informative.
 
