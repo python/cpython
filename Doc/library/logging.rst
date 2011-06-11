@@ -556,6 +556,9 @@ wire).
    :param name:  The name of the logger used to log the event represented by
                  this LogRecord.
    :param level: The numeric level of the logging event (one of DEBUG, INFO etc.)
+                 Note that this is converted to *two* attributes of the LogRecord:
+                 ``levelno`` for the numeric value and ``levelname`` for the
+                 corresponding level name.
    :param pathname: The full pathname of the source file where the logging call
                     was made.
    :param lineno: The line number in the source file where the logging call was
