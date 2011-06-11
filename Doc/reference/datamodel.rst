@@ -1343,7 +1343,8 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
 
 .. method:: object.__dir__(self)
 
-   Called when :func:`dir` is called on the object.  A list must be returned.
+   Called when :func:`dir` is called on the object. A sequence must be
+   returned. :func:`dir` converts the returned sequence to a list and sorts it.
 
 
 .. _descriptors:
