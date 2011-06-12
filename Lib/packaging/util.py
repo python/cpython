@@ -1044,7 +1044,7 @@ def cfg_to_args(path='setup.cfg'):
     if not os.path.exists(path):
         raise PackagingFileError("file '%s' does not exist" %
                                  os.path.abspath(path))
-    config.read(path)
+    config.read(path, encoding='utf-8')
 
     kwargs = {}
     for arg in D1_D2_SETUP_ARGS:
