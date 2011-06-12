@@ -453,6 +453,14 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
       record. Otherwise, the ISO8601 format is used.  The resulting string is
       returned.
 
+      This function uses a user-configurable function to convert the creation
+      time to a tuple. By default, :func:`time.localtime` is used; to change
+      this for a particular formatter instance, set the ``converter`` attribute
+      to a function with the same signature as :func:`time.localtime` or
+      :func:`time.gmtime`. To change it for all formatters, for example if you
+      want all logging times to be shown in GMT, set the ``converter``
+      attribute in the ``Formatter`` class.
+
       .. versionchanged:: 3.3
       Previously, the default ISO 8601 format was hard-coded as in this
       example: ``2010-09-06 22:38:15,292`` where the part before the comma is
