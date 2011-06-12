@@ -496,7 +496,7 @@ class UtilTestCase(support.EnvironRestorer,
     def test_cfg_to_args(self):
         opts = {'description-file': 'README', 'extra-files': '',
                 'setup-hooks': 'packaging.tests.test_config.version_hook'}
-        self.write_file('setup.cfg', SETUP_CFG % opts)
+        self.write_file('setup.cfg', SETUP_CFG % opts, encoding='utf-8')
         self.write_file('README', 'loooong description')
 
         args = cfg_to_args()
