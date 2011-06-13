@@ -10,6 +10,9 @@ What's New in Python 3.2.1 release candidate 2?
 Core and Builtins
 -----------------
 
+- Issue #12084: os.stat on Windows now works properly with relative symbolic
+  links when called from any directory.
+
 - Issue #1195: my_fgets() now always clears errors before calling fgets(). Fix
   the following case: sys.stdin.read() stopped with CTRL+d (end of file),
   raw_input() interrupted by CTRL+c.

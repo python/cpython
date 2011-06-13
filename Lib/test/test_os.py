@@ -1243,6 +1243,51 @@ class Win32SymlinkTests(unittest.TestCase):
         self.assertEqual(os.stat(link), os.stat(target))
         self.assertNotEqual(os.lstat(link), os.stat(link))
 
+        bytes_link = os.fsencode(link)
+        self.assertEqual(os.stat(bytes_link), os.stat(target))
+        self.assertNotEqual(os.lstat(bytes_link), os.stat(bytes_link))
+
+    def test_12084(self):
+        level1 = os.path.abspath(support.TESTFN)
+        level2 = os.path.join(level1, "level2")
+        level3 = os.path.join(level2, "level3")
+        try:
+            os.mkdir(level1)
+            os.mkdir(level2)
+            os.mkdir(level3)
+
+            file1 = os.path.abspath(os.path.join(level1, "file1"))
+
+            with open(file1, "w") as f:
+                f.write("file1")
+
+            orig_dir = os.getcwd()
+            try:
+                os.chdir(level2)
+                link = os.path.join(level2, "link")
+                os.symlink(os.path.relpath(file1), "link")
+                self.assertIn("link", os.listdir(os.getcwd()))
+
+                # Check os.stat calls from the same dir as the link
+                self.assertEqual(os.stat(file1), os.stat("link"))
+
+                # Check os.stat calls from a dir below the link
+                os.chdir(level1)
+                self.assertEqual(os.stat(file1),
+                                 os.stat(os.path.relpath(link)))
+
+                # Check os.stat calls from a dir above the link
+                os.chdir(level3)
+                self.assertEqual(os.stat(file1),
+                                 os.stat(os.path.relpath(link)))
+            finally:
+                os.chdir(orig_dir)
+        except OSError as err:
+            self.fail(err)
+        finally:
+            os.remove(file1)
+            shutil.rmtree(level1)
+
 
 class FSEncodingTests(unittest.TestCase):
     def test_nop(self):
