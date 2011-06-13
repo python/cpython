@@ -436,6 +436,21 @@ supports sending logging messages to a remote or local Unix syslog.
       The record is formatted, and then sent to the syslog server. If exception
       information is present, it is *not* sent to the server.
 
+      .. versionchanged:: 3.2.1
+         (See: :issue:`12168`.) In earlier versions, the message sent to the
+         syslog daemons was always terminated with a NUL byte, because early
+         versions of these daemons expected a NUL terminated message - even
+         though it's not in the relevant specification (RF 5424). More recent
+         versions of these daemons don't expect the NUL byte but strip it off
+         if it's there, and even more recent daemons (which adhere more closely
+         to RFC 5424) pass the NUL byte on as part of the message.
+
+         To enable easier handling of syslog messages in the face of all these
+         differing daemon behaviours, the appending of the NUL byte has been
+         made configurable, through the use of a class-level attribute,
+         ``append_nul``. This defaults to ``True`` (preserving the existing
+         behaviour) but can be set to ``False`` on a ``SysLogHandler`` instance
+         in order for that instance to *not* append the NUL terminator.
 
    .. method:: encodePriority(facility, priority)
 
