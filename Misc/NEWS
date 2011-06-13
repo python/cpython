@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #12084: os.stat on Windows now works properly with relative symbolic
+  links when called from any directory.
+
 - Loosen type restrictions on the __dir__ method. __dir__ can now return any
   sequence, which will be converted to a list and sorted by dir().
 
