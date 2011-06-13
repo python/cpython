@@ -46,8 +46,8 @@
 [General]
 editor-on-startup= 0
 autosave= 0
-print-command-posix=lpr %s
-print-command-win=start /min notepad /p %s
+print-command-posix=lpr %%s
+print-command-win=start /min notepad /p %%s
 delete-exitfunc= 1
 
 [EditorWindow]
