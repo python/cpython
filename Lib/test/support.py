@@ -1562,7 +1562,7 @@ def can_symlink():
         os.symlink(TESTFN, symlink_path)
         can = True
         os.remove(symlink_path)
-    except (OSError, NotImplementedError):
+    except (OSError, NotImplementedError, AttributeError):
         can = False
     _can_symlink = can
     return can
