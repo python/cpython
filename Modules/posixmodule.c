@@ -1131,6 +1131,11 @@ get_target_path(HANDLE hdl, wchar_t **target_path)
         return FALSE;
 
     buf = (wchar_t *)malloc((buf_size+1)*sizeof(wchar_t));
+    if (!buf) {
+        SetLastError(ERROR_OUTOFMEMORY);
+        return FALSE;
+    }
+
     result_length = Py_GetFinalPathNameByHandleW(hdl,
                        buf, buf_size, VOLUME_NAME_DOS);
 
@@ -1165,11 +1170,9 @@ win32_xstat_impl(const char *path, struct win32_stat *result,
     const char *dot;
 
     if(!check_GetFinalPathNameByHandle()) {
-        /* If the OS doesn't have GetFinalPathNameByHandle, return a
-           NotImplementedError. */
-        PyErr_SetString(PyExc_NotImplementedError,
-            "GetFinalPathNameByHandle not available on this platform");
-        return -1;
+        /* If the OS doesn't have GetFinalPathNameByHandle, don't
+           traverse reparse point. */
+        traverse = FALSE;
     }
 
     hFile = CreateFileA(
@@ -1263,11 +1266,9 @@ win32_xstat_impl_w(const wchar_t *path, struct win32_stat *result,
     const wchar_t *dot;
 
     if(!check_GetFinalPathNameByHandle()) {
-        /* If the OS doesn't have GetFinalPathNameByHandle, return a
-           NotImplementedError. */
-        PyErr_SetString(PyExc_NotImplementedError,
-            "GetFinalPathNameByHandle not available on this platform");
-        return -1;
+        /* If the OS doesn't have GetFinalPathNameByHandle, don't
+           traverse reparse point. */
+        traverse = FALSE;
     }
 
     hFile = CreateFileW(
