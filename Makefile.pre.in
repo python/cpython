@@ -912,7 +912,8 @@ MACHDEPS=	$(PLATDIR) $(EXTRAPLATDIR)
 XMLLIBSUBDIRS=  xml xml/dom xml/etree xml/parsers xml/sax
 LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		tkinter/test/test_ttk site-packages test \
-		test/cjkencodings test/decimaltestdata test/xmltestdata test/subprocessdata \
+		test/cjkencodings test/decimaltestdata test/xmltestdata \
+		test/subprocessdata \
 		test/tracedmodules test/encoded_modules \
 		collections concurrent concurrent/futures encodings \
 		email email/mime email/test email/test/data \
@@ -920,12 +921,63 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		sqlite3 sqlite3/test \
 		logging csv wsgiref urllib \
 		lib2to3 lib2to3/fixes lib2to3/pgen2 lib2to3/tests \
-		lib2to3/tests/data lib2to3/tests/data/fixers lib2to3/tests/data/fixers/myfixes \
+		lib2to3/tests/data lib2to3/tests/data/fixers \
+		lib2to3/tests/data/fixers/myfixes \
 		ctypes ctypes/test ctypes/macholib idlelib idlelib/Icons \
 		distutils distutils/command distutils/tests $(XMLLIBSUBDIRS) \
 		importlib importlib/test importlib/test/builtin \
 		importlib/test/extension importlib/test/frozen \
 		importlib/test/import_ importlib/test/source \
+		packaging packaging/command packaging/compiler \
+		packaging/pypi packaging/tests \
+		packaging/tests/fake_dists \
+		packaging/tests/fake_dists/babar-0.1.dist-info \
+		packaging/tests/fake_dists/bacon-0.1.egg-info \
+		packaging/tests/fake_dists/banana-0.4.egg \
+		packaging/tests/fake_dists/banana-0.4.egg/EGG-INFO \
+		packaging/tests/fake_dists/choxie-2.0.0.9 \
+		packaging/tests/fake_dists/choxie-2.0.0.9/choxie \
+		packaging/tests/fake_dists/choxie-2.0.0.9.dist-info \
+		packaging/tests/fake_dists/coconuts-aster-10.3.egg-info \
+		packaging/tests/fake_dists/grammar-1.0a4 \
+		packaging/tests/fake_dists/grammar-1.0a4.dist-info \
+		packaging/tests/fake_dists/grammar-1.0a4/grammar \
+		packaging/tests/fake_dists/towel_stuff-0.1 \
+		packaging/tests/fake_dists/towel_stuff-0.1.dist-info \
+		packaging/tests/fake_dists/towel_stuff-0.1/towel_stuff \
+		packaging/tests/fixer packaging/tests/pypiserver \
+		packaging/tests/pypiserver/downloads_with_md5 \
+		packaging/tests/pypiserver/downloads_with_md5/packages \
+		packaging/tests/pypiserver/downloads_with_md5/packages/source \
+		packaging/tests/pypiserver/downloads_with_md5/packages/source/f \
+		packaging/tests/pypiserver/downloads_with_md5/packages/source/f/foobar \
+		packaging/tests/pypiserver/downloads_with_md5/simple \
+		packaging/tests/pypiserver/downloads_with_md5/simple/badmd5 \
+		packaging/tests/pypiserver/downloads_with_md5/simple/foobar \
+		packaging/tests/pypiserver/foo_bar_baz \
+		packaging/tests/pypiserver/foo_bar_baz/simple \
+		packaging/tests/pypiserver/foo_bar_baz/simple/bar \
+		packaging/tests/pypiserver/foo_bar_baz/simple/baz \
+		packaging/tests/pypiserver/foo_bar_baz/simple/foo \
+		packaging/tests/pypiserver/project_list \
+		packaging/tests/pypiserver/project_list/simple \
+		packaging/tests/pypiserver/test_found_links \
+		packaging/tests/pypiserver/test_found_links/simple \
+		packaging/tests/pypiserver/test_found_links/simple/foobar \
+		packaging/tests/pypiserver/test_pypi_server \
+		packaging/tests/pypiserver/test_pypi_server/external \
+		packaging/tests/pypiserver/test_pypi_server/simple \
+		packaging/tests/pypiserver/with_externals \
+		packaging/tests/pypiserver/with_externals/external \
+		packaging/tests/pypiserver/with_externals/simple \
+		packaging/tests/pypiserver/with_externals/simple/foobar \
+		packaging/tests/pypiserver/with_norel_links \
+		packaging/tests/pypiserver/with_norel_links/external \
+		packaging/tests/pypiserver/with_norel_links/simple \
+		packaging/tests/pypiserver/with_norel_links/simple/foobar \
+		packaging/tests/pypiserver/with_real_externals \
+		packaging/tests/pypiserver/with_real_externals/simple \
+		packaging/tests/pypiserver/with_real_externals/simple/foobar \
 		turtledemo \
 		multiprocessing multiprocessing/dummy \
 		unittest unittest/test \
