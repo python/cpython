@@ -11,8 +11,8 @@
 
 --------------
 
-This module provides the infrastructure for defining an :term:`abstract base
-class` (ABC) in Python, as outlined in :pep:`3119`; see the PEP for why this
+This module provides the infrastructure for defining :term:`abstract base
+classes <abstract base class>` (ABCs) in Python, as outlined in :pep:`3119`; see the PEP for why this
 was added to Python. (See also :pep:`3141` and the :mod:`numbers` module
 regarding a type hierarchy for numbers based on ABCs.)
 
