@@ -88,7 +88,7 @@ class PyPIServer(threading.Thread):
     """
 
     def __init__(self, test_static_path=None,
-                 static_filesystem_paths=["default"],
+                 static_filesystem_paths=None,
                  static_uri_paths=["simple", "packages"], serve_xmlrpc=False):
         """Initialize the server.
 
@@ -105,6 +105,8 @@ class PyPIServer(threading.Thread):
         threading.Thread.__init__(self)
         self._run = True
         self._serve_xmlrpc = serve_xmlrpc
+        if static_filesystem_paths is None:
+            static_filesystem_paths = ["default"]
 
         #TODO allow to serve XMLRPC and HTTP static files at the same time.
         if not self._serve_xmlrpc:
