@@ -134,8 +134,7 @@ class MacroExpander:
 """Python was built with Visual Studio 2003; extensions must be built with
 a compiler than can generate compatible binaries. Visual Studio 2003 was
 not found on this system. If you have Cygwin installed, you can try
-compiling with MingW32, by passing "-c mingw32" to setup.py.""")
-# XXX update this comment for setup.cfg
+compiling with MingW32, by passing "-c mingw32" to pysetup.""")
 
         p = r"Software\Microsoft\NET Framework Setup\Product"
         for base in HKEYS:
