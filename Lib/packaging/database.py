@@ -72,7 +72,7 @@ def clear_cache():
     _cache_generated_egg = False
 
 
-def _yield_distributions(include_dist, include_egg, paths=sys.path):
+def _yield_distributions(include_dist, include_egg, paths):
     """
     Yield .dist-info and .egg(-info) distributions, based on the arguments
 
@@ -92,7 +92,7 @@ def _yield_distributions(include_dist, include_egg, paths=sys.path):
                 yield EggInfoDistribution(dist_path)
 
 
-def _generate_cache(use_egg_info=False, paths=sys.path):
+def _generate_cache(use_egg_info, paths):
     global _cache_generated, _cache_generated_egg
 
     if _cache_generated_egg or (_cache_generated and not use_egg_info):
@@ -472,7 +472,7 @@ def distinfo_dirname(name, version):
     return '-'.join([name, normalized_version]) + file_extension
 
 
-def get_distributions(use_egg_info=False, paths=sys.path):
+def get_distributions(use_egg_info=False, paths=None):
     """
     Provides an iterator that looks for ``.dist-info`` directories in
     ``sys.path`` and returns :class:`Distribution` instances for each one of
@@ -482,6 +482,9 @@ def get_distributions(use_egg_info=False, paths=sys.path):
     :rtype: iterator of :class:`Distribution` and :class:`EggInfoDistribution`
             instances
     """
+    if paths is None:
+        paths = sys.path
+
     if not _cache_enabled:
         for dist in _yield_distributions(True, use_egg_info, paths):
             yield dist
@@ -513,7 +516,7 @@ def get_distribution(name, use_egg_info=False, paths=None):
 
     :rtype: :class:`Distribution` or :class:`EggInfoDistribution` or None
     """
-    if paths == None:
+    if paths is None:
         paths = sys.path
 
     if not _cache_enabled:
@@ -632,7 +635,7 @@ def get_file_users(path):
 def get_file_path(distribution_name, relative_path):
     """Return the path to a resource file."""
     dist = get_distribution(distribution_name)
-    if dist != None:
+    if dist is not None:
         return dist.get_resource_path(relative_path)
     raise LookupError('no distribution named %r found' % distribution_name)
 
