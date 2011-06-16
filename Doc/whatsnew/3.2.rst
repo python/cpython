@@ -385,7 +385,7 @@ PEP 3333: Python Web Server Gateway Interface v1.0.1
 =====================================================
 
 This informational PEP clarifies how bytes/text issues are to be handled by the
-WGSI protocol.  The challenge is that string handling in Python 3 is most
+WSGI protocol.  The challenge is that string handling in Python 3 is most
 conveniently handled with the :class:`str` type even though the HTTP protocol
 is itself bytes oriented.
 
