@@ -1,21 +1,11 @@
 """Tests for distutils.command.bdist_dumb."""
 
-import sys
 import os
 
 from packaging.dist import Distribution
 from packaging.command.bdist_dumb import bdist_dumb
 from packaging.tests import unittest, support
 from packaging.tests.support import requires_zlib
-
-
-SETUP_PY = """\
-from distutils.run import setup
-import foo
-
-setup(name='foo', version='0.1', py_modules=['foo'],
-      url='xxx', author='xxx', author_email='xxx')
-"""
 
 
 class BuildDumbTestCase(support.TempdirManager,
@@ -25,12 +15,9 @@ class BuildDumbTestCase(support.TempdirManager,
     def setUp(self):
         super(BuildDumbTestCase, self).setUp()
         self.old_location = os.getcwd()
-        self.old_sys_argv = sys.argv, sys.argv[:]
 
     def tearDown(self):
         os.chdir(self.old_location)
-        sys.argv = self.old_sys_argv[0]
-        sys.argv[:] = self.old_sys_argv[1]
         super(BuildDumbTestCase, self).tearDown()
 
     @requires_zlib
@@ -40,7 +27,6 @@ class BuildDumbTestCase(support.TempdirManager,
         tmp_dir = self.mkdtemp()
         pkg_dir = os.path.join(tmp_dir, 'foo')
         os.mkdir(pkg_dir)
-        self.write_file((pkg_dir, 'setup.py'), SETUP_PY)
         self.write_file((pkg_dir, 'foo.py'), '#')
         self.write_file((pkg_dir, 'MANIFEST.in'), 'include foo.py')
         self.write_file((pkg_dir, 'README'), '')
@@ -50,8 +36,6 @@ class BuildDumbTestCase(support.TempdirManager,
                              'url': 'xxx', 'author': 'xxx',
                              'author_email': 'xxx'})
         os.chdir(pkg_dir)
-
-        sys.argv[:] = ['setup.py']
         cmd = bdist_dumb(dist)
 
         # so the output is the same no matter

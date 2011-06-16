@@ -33,7 +33,7 @@ import sysconfig
 #     we need some way for outsiders to feed preprocessor/compiler/linker
 #     flags in to us -- eg. a sysadmin might want to mandate certain flags
 #     via a site config file, or a user might want to set something for
-#     compiling this module distribution only via the setup.py command
+#     compiling this module distribution only via the pysetup command
 #     line, whatever.  As long as these options come from something on the
 #     current system, they can be as system-dependent as they like, and we
 #     should just happily stuff them into the preprocessor/compiler/linker

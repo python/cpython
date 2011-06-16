@@ -4,6 +4,7 @@ import io
 import sys
 import logging
 import textwrap
+import sysconfig
 import packaging.dist
 
 from packaging.dist import Distribution
@@ -396,7 +397,8 @@ class MetadataTestCase(support.TempdirManager,
         dist = Distribution()
         sys.argv = []
         dist.help = True
-        dist.script_name = 'setup.py'
+        dist.script_name = os.path.join(sysconfig.get_path('scripts'),
+                                        'pysetup')
         __, stdout = captured_stdout(dist.parse_command_line)
         output = [line for line in stdout.split('\n')
                   if line.strip() != '']
