@@ -7,15 +7,13 @@ Release objects contain metadata-related information (see PEP 376);
 distribution objects contain download-related information.
 """
 
-import sys
-import mimetypes
 import re
+import hashlib
 import tempfile
 import urllib.request
 import urllib.parse
 import urllib.error
 import urllib.parse
-import hashlib
 from shutil import unpack_archive
 
 from packaging.errors import IrrationalVersionError
@@ -318,7 +316,6 @@ class DistInfo(IndexReference):
                 path = tempfile.mkdtemp()
 
             filename = self.download(path)
-            content_type = mimetypes.guess_type(filename)[0]
             unpack_archive(filename, path)
             self._unpacked_dir = path
 
