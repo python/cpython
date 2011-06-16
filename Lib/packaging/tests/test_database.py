@@ -259,12 +259,11 @@ class TestDatabase(support.LoggingCatcher,
         disable_cache()
         # Setup the path environment with our fake distributions
         current_path = os.path.abspath(os.path.dirname(__file__))
-        self.sys_path = sys.path[:]
         self.fake_dists_path = os.path.join(current_path, 'fake_dists')
         sys.path.insert(0, self.fake_dists_path)
 
     def tearDown(self):
-        sys.path[:] = self.sys_path
+        sys.path.remove(self.fake_dists_path)
         enable_cache()
         super(TestDatabase, self).tearDown()
 
@@ -488,20 +487,20 @@ class TestDatabase(support.LoggingCatcher,
         dists = [('choxie', '2.0.0.9'), ('grammar', '1.0a4'),
                  ('towel-stuff', '0.1'), ('babar', '0.1')]
 
-        checkLists([], _yield_distributions(False, False))
+        checkLists([], _yield_distributions(False, False, sys.path))
 
         found = [(dist.name, dist.metadata['Version'])
-                 for dist in _yield_distributions(False, True)
+                 for dist in _yield_distributions(False, True, sys.path)
                  if dist.path.startswith(self.fake_dists_path)]
         checkLists(eggs, found)
 
         found = [(dist.name, dist.metadata['Version'])
-                 for dist in _yield_distributions(True, False)
+                 for dist in _yield_distributions(True, False, sys.path)
                  if dist.path.startswith(self.fake_dists_path)]
         checkLists(dists, found)
 
         found = [(dist.name, dist.metadata['Version'])
-                 for dist in _yield_distributions(True, True)
+                 for dist in _yield_distributions(True, True, sys.path)
                  if dist.path.startswith(self.fake_dists_path)]
         checkLists(dists + eggs, found)
 
