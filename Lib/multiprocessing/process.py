@@ -251,9 +251,15 @@ class Process(object):
                     sys.stdin = open(os.devnull)
                 except (OSError, ValueError):
                     pass
+            old_process = _current_process
             _current_process = self
-            util._finalizer_registry.clear()
-            util._run_after_forkers()
+            try:
+                util._finalizer_registry.clear()
+                util._run_after_forkers()
+            finally:
+                # delay finalization of the old process object until after
+                # _run_after_forkers() is executed
+                del old_process
             util.info('child process calling self.run()')
             try:
                 self.run()
