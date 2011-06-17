@@ -126,13 +126,12 @@ class TempdirManager:
         self._files = []
 
     def tearDown(self):
-        os.chdir(self._olddir)
-        shutil.rmtree(self._basetempdir)
-
         for handle, name in self._files:
             handle.close()
             unlink(name)
 
+        os.chdir(self._olddir)
+        shutil.rmtree(self._basetempdir)
         super(TempdirManager, self).tearDown()
 
     def mktempfile(self):
