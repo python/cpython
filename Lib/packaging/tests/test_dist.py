@@ -10,6 +10,7 @@ import packaging.dist
 from packaging.dist import Distribution
 from packaging.command import set_command
 from packaging.command.cmd import Command
+from packaging.metadata import Metadata
 from packaging.errors import PackagingModuleError, PackagingOptionError
 from packaging.tests import TESTFN, captured_stdout
 from packaging.tests import support, unittest
@@ -203,21 +204,21 @@ class DistributionTestCase(support.TempdirManager,
         config_file = os.path.join(temp_home, "config1.cfg")
         hooks_module = os.path.join(temp_home, pyname)
 
-        self.write_file(config_file, textwrap.dedent('''
+        self.write_file(config_file, textwrap.dedent('''\
             [test_dist]
             pre-hook.test = %(modname)s.log_pre_call
             post-hook.test = %(modname)s.log_post_call'''
             % {'modname': module_name}))
 
-        self.write_file(hooks_module, textwrap.dedent('''
-        record = []
+        self.write_file(hooks_module, textwrap.dedent('''\
+            record = []
 
-        def log_pre_call(cmd):
-            record.append('pre-%s' % cmd.get_command_name())
+            def log_pre_call(cmd):
+                record.append('pre-%s' % cmd.get_command_name())
 
-        def log_post_call(cmd):
-            record.append('post-%s' % cmd.get_command_name())
-        '''))
+            def log_post_call(cmd):
+                record.append('post-%s' % cmd.get_command_name())
+            '''))
 
         set_command('packaging.tests.test_dist.test_dist')
         d = create_distribution([config_file])
@@ -229,15 +230,9 @@ class DistributionTestCase(support.TempdirManager,
         self.addCleanup(unload, module_name)
         record = __import__(module_name).record
 
-        old_run = cmd.run
-        old_finalize = cmd.finalize_options
         cmd.run = lambda: record.append('run')
         cmd.finalize_options = lambda: record.append('finalize')
-        try:
-            d.run_command('test_dist')
-        finally:
-            cmd.run = old_run
-            cmd.finalize_options = old_finalize
+        d.run_command('test_dist')
 
         self.assertEqual(record, ['finalize',
                                   'pre-test_dist',
@@ -248,7 +243,7 @@ class DistributionTestCase(support.TempdirManager,
         temp_home = self.mkdtemp()
         config_file = os.path.join(temp_home, "config1.cfg")
 
-        self.write_file(config_file, textwrap.dedent('''
+        self.write_file(config_file, textwrap.dedent('''\
             [test_dist]
             pre-hook.test = nonexistent.dotted.name'''))
 
@@ -263,7 +258,7 @@ class DistributionTestCase(support.TempdirManager,
         temp_home = self.mkdtemp()
         config_file = os.path.join(temp_home, "config1.cfg")
 
-        self.write_file(config_file, textwrap.dedent('''
+        self.write_file(config_file, textwrap.dedent('''\
             [test_dist]
             pre-hook.test = packaging.tests.test_dist.__doc__'''))
 
@@ -429,14 +424,13 @@ class MetadataTestCase(support.TempdirManager,
                  "requires_dist": ['foo']}
 
         dist = Distribution(attrs)
-        metadata = dist.metadata
-
-        # write it then reloads it
         PKG_INFO = io.StringIO()
-        metadata.write_file(PKG_INFO)
+        dist.metadata.write_file(PKG_INFO)
         PKG_INFO.seek(0)
 
+        metadata = Metadata()
         metadata.read_file(PKG_INFO)
+
         self.assertEqual(metadata['name'], "package")
         self.assertEqual(metadata['version'], "1.0")
         self.assertEqual(metadata['summary'], "xxx")
