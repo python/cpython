@@ -1172,6 +1172,8 @@ class AbstractHTTPHandler(BaseHandler):
                 r = h.getresponse()
         except socket.error, err: # XXX what error?
             raise URLError(err)
+        finally:
+            h.close()
 
         # Pick apart the HTTPResponse object to get the addinfourl
         # object initialized properly.
