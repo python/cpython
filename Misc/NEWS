@@ -193,6 +193,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #12133: AbstractHTTPHandler.do_open() of urllib.request closes the HTTP
+  connection if its getresponse() method fails with a socket error. Patch
+  written by Ezio Melotti.
+
 - Issue #12240: Allow multiple setup hooks in packaging's setup.cfg files.
   Original patch by Erik Bray.
 

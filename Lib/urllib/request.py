@@ -1146,6 +1146,8 @@ class AbstractHTTPHandler(BaseHandler):
             r = h.getresponse()  # an HTTPResponse instance
         except socket.error as err:
             raise URLError(err)
+        finally:
+            h.close()
 
         r.url = req.get_full_url()
         # This line replaces the .msg attribute of the HTTPResponse
