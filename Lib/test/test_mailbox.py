@@ -1201,6 +1201,37 @@ class TestBabyl(TestMailbox):
         self.assertEqual(set(self._box.get_labels()), set(['blah']))
 
 
+class FakeFileLikeObject:
+
+    def __init__(self):
+        self.closed = False
+
+    def close(self):
+        self.closed = True
+
+
+class FakeMailBox(mailbox.Mailbox):
+
+    def __init__(self):
+        mailbox.Mailbox.__init__(self, '', lambda file: None)
+        self.files = [FakeFileLikeObject() for i in range(10)]
+
+    def get_file(self, key):
+        return self.files[key]
+
+
+class TestFakeMailBox(unittest.TestCase):
+
+    def test_closing_fd(self):
+        box = FakeMailBox()
+        for i in range(10):
+            self.assertFalse(box.files[i].closed)
+        for i in range(10):
+            box[i]
+        for i in range(10):
+            self.assertTrue(box.files[i].closed)
+
+
 class TestMessage(TestBase):
 
     _factory = mailbox.Message      # Overridden by subclasses to reuse tests
@@ -2113,7 +2144,7 @@ def test_main():
              TestBabyl, TestMessage, TestMaildirMessage, TestMboxMessage,
              TestMHMessage, TestBabylMessage, TestMMDFMessage,
              TestMessageConversion, TestProxyFile, TestPartialFile,
-             MaildirTestCase)
+             MaildirTestCase, TestFakeMailBox)
     support.run_unittest(*tests)
     support.reap_children()
 
