@@ -293,6 +293,7 @@ class MockHTTPClass:
             self._tunnel_headers = headers
         else:
             self._tunnel_headers.clear()
+
     def request(self, method, url, body=None, headers=None):
         self.method = method
         self.selector = url
@@ -304,8 +305,12 @@ class MockHTTPClass:
         if self.raise_on_endheaders:
             import socket
             raise socket.error()
+
     def getresponse(self):
         return MockHTTPResponse(MockFile(), {}, 200, "OK")
+
+    def close(self):
+        pass
 
 class MockHandler:
     # useful for testing handler machinery
