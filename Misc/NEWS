@@ -25,6 +25,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #11767: Correct file descriptor leak in mailbox's __getitem__ method.
+
 - Issue #12133: AbstractHTTPHandler.do_open() of urllib.request closes the HTTP
   connection if its getresponse() method fails with a socket error. Patch
   written by Ezio Melotti.

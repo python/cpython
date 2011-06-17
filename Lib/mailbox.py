@@ -20,6 +20,7 @@ import email
 import email.message
 import email.generator
 import io
+import contextlib
 try:
     if sys.platform == 'os2emx':
         # OS/2 EMX fcntl() not adequate
@@ -76,7 +77,8 @@ class Mailbox:
         if not self._factory:
             return self.get_message(key)
         else:
-            return self._factory(self.get_file(key))
+            with contextlib.closing(self.get_file(key)) as file:
+                return self._factory(file)
 
     def get_message(self, key):
         """Return a Message representation or raise a KeyError."""
