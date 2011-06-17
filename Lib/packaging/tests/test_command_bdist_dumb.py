@@ -1,6 +1,7 @@
 """Tests for distutils.command.bdist_dumb."""
 
 import os
+import packaging.util
 
 from packaging.dist import Distribution
 from packaging.command.bdist_dumb import bdist_dumb
@@ -18,6 +19,7 @@ class BuildDumbTestCase(support.TempdirManager,
 
     def tearDown(self):
         os.chdir(self.old_location)
+        packaging.util._path_created.clear()
         super(BuildDumbTestCase, self).tearDown()
 
     @requires_zlib

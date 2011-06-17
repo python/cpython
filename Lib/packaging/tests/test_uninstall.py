@@ -3,6 +3,7 @@ import os
 import sys
 from io import StringIO
 import stat
+import packaging.util
 
 from packaging.database import disable_cache, enable_cache
 from packaging.run import main
@@ -43,6 +44,7 @@ class UninstallTestCase(support.TempdirManager,
 
     def tearDown(self):
         os.chdir(self.cwd)
+        packaging.util._path_created.clear()
         super(UninstallTestCase, self).tearDown()
 
     def run_setup(self, *args):
