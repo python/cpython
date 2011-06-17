@@ -916,7 +916,7 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		test/subprocessdata \
 		test/tracedmodules test/encoded_modules \
 		collections concurrent concurrent/futures encodings \
-		email email/mime email/test email/test/data \
+		email email/mime test/test_email test/test_email/data \
 		html json test/json_tests http dbm xmlrpc \
 		sqlite3 sqlite3/test \
 		logging csv wsgiref urllib \
