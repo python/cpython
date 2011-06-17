@@ -121,7 +121,7 @@ corresponding Unix manual entries for more information on calls.");
 #ifdef _MSC_VER         /* Microsoft compiler */
 #define HAVE_GETCWD     1
 #define HAVE_GETPPID    1
-#define HAVE_GETLOGIN   1 
+#define HAVE_GETLOGIN   1
 #define HAVE_SPAWNV     1
 #define HAVE_EXECV      1
 #define HAVE_PIPE       1
@@ -1133,11 +1133,11 @@ static int
 win32_xstat_impl(const char *path, struct win32_stat *result,
                  BOOL traverse)
 {
-    int code; 
+    int code;
     HANDLE hFile, hFile2;
     BY_HANDLE_FILE_INFORMATION info;
     ULONG reparse_tag = 0;
-	wchar_t *target_path;
+    wchar_t *target_path;
     const char *dot;
 
     if(!check_GetFinalPathNameByHandle()) {
@@ -1233,7 +1233,7 @@ win32_xstat_impl_w(const wchar_t *path, struct win32_stat *result,
     HANDLE hFile, hFile2;
     BY_HANDLE_FILE_INFORMATION info;
     ULONG reparse_tag = 0;
-	wchar_t *target_path;
+    wchar_t *target_path;
     const wchar_t *dot;
 
     if(!check_GetFinalPathNameByHandle()) {
@@ -1252,7 +1252,7 @@ win32_xstat_impl_w(const wchar_t *path, struct win32_stat *result,
         /* FILE_FLAG_OPEN_REPARSE_POINT does not follow the symlink.
            Because of this, calls like GetFinalPathNameByHandle will return
            the symlink path agin and not the actual final path. */
-        FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS| 
+        FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS|
             FILE_FLAG_OPEN_REPARSE_POINT,
         NULL);
 
@@ -1371,7 +1371,7 @@ win32_stat(const char* path, struct win32_stat *result)
     return win32_xstat(path, result, TRUE);
 }
 
-static int 
+static int
 win32_stat_w(const wchar_t* path, struct win32_stat *result)
 {
     return win32_xstat_w(path, result, TRUE);
@@ -2204,7 +2204,7 @@ posix_fchown(PyObject *self, PyObject *args)
     int fd;
     long uid, gid;
     int res;
-    if (!PyArg_ParseTuple(args, "ill:chown", &fd, &uid, &gid))
+    if (!PyArg_ParseTuple(args, "ill:fchown", &fd, &uid, &gid))
         return NULL;
     Py_BEGIN_ALLOW_THREADS
     res = fchown(fd, (uid_t) uid, (gid_t) gid);
@@ -2409,7 +2409,7 @@ posix_listdir(PyObject *self, PyObject *args)
     if (PyArg_ParseTuple(args, "|U:listdir", &po)) {
         WIN32_FIND_DATAW wFileData;
         Py_UNICODE *wnamebuf, *po_wchars;
-        
+
         if (po == NULL) { /* Default arg: "." */
             po_wchars = L".";
             len = 1;
@@ -2789,7 +2789,7 @@ posix__getfinalpathname(PyObject *self, PyObject *args)
     int result_length;
     PyObject *result;
     wchar_t *path;
-    
+
     if (!PyArg_ParseTuple(args, "u|:_getfinalpathname", &path)) {
         return NULL;
     }
@@ -2810,7 +2810,7 @@ posix__getfinalpathname(PyObject *self, PyObject *args)
         /* FILE_FLAG_BACKUP_SEMANTICS is required to open a directory */
         FILE_FLAG_BACKUP_SEMANTICS,
         NULL);
-    
+
     if(hFile == INVALID_HANDLE_VALUE) {
         return win32_error_unicode("GetFinalPathNamyByHandle", path);
         return PyErr_Format(PyExc_RuntimeError,
@@ -3159,7 +3159,7 @@ BOOL WINAPI Py_DeleteFileW(LPCWSTR lpFileName)
 
     if (GetFileAttributesExW(lpFileName, GetFileExInfoStandard, &info)) {
         is_directory = info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
-        
+
         /* Get WIN32_FIND_DATA structure for the path to determine if
            it is a symlink */
         if(is_directory &&
@@ -4349,7 +4349,7 @@ posix_getgroups(PyObject *self, PyObject *noargs)
 #endif
     gid_t grouplist[MAX_GROUPS];
 
-    /* On MacOSX getgroups(2) can return more than MAX_GROUPS results 
+    /* On MacOSX getgroups(2) can return more than MAX_GROUPS results
      * This is a helper variable to store the intermediate result when
      * that happens.
      *
@@ -4565,15 +4565,15 @@ static PyObject *
 posix_getlogin(PyObject *self, PyObject *noargs)
 {
     PyObject *result = NULL;
-#ifdef MS_WINDOWS    
+#ifdef MS_WINDOWS
     wchar_t user_name[UNLEN + 1];
     DWORD num_chars = sizeof(user_name)/sizeof(user_name[0]);
 
     if (GetUserNameW(user_name, &num_chars)) {
         /* num_chars is the number of unicode chars plus null terminator */
         result = PyUnicode_FromWideChar(user_name, num_chars - 1);
-    } 
-    else 
+    }
+    else
         result = PyErr_SetFromWindowsErr(GetLastError());
 #else
     char *name;
@@ -5257,12 +5257,12 @@ win_readlink(PyObject *self, PyObject *args)
         FILE_FLAG_OPEN_REPARSE_POINT|FILE_FLAG_BACKUP_SEMANTICS,
         0);
     Py_END_ALLOW_THREADS
-    
+
     if (reparse_point_handle==INVALID_HANDLE_VALUE)
     {
         return win32_error_unicode("readlink", path);
     }
-    
+
     Py_BEGIN_ALLOW_THREADS
     /* New call DeviceIoControl to read the reparse point */
     io_result = DeviceIoControl(
@@ -5333,7 +5333,7 @@ win_symlink(PyObject *self, PyObject *args, PyObject *kwargs)
     int target_is_directory = 0;
     DWORD res;
     WIN32_FILE_ATTRIBUTE_DATA src_info;
-    
+
     if (!check_CreateSymbolicLinkW())
     {
         /* raise NotImplementedError */
@@ -5352,7 +5352,7 @@ win_symlink(PyObject *self, PyObject *args, PyObject *kwargs)
         Py_DECREF(src);
         return NULL;
     }
-    
+
     /* if src is a directory, ensure target_is_directory==1 */
     if(
         GetFileAttributesExW(
@@ -5375,7 +5375,7 @@ win_symlink(PyObject *self, PyObject *args, PyObject *kwargs)
     {
         return win32_error_unicode("symlink", PyUnicode_AsUnicode(src));
     }
-    
+
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -5573,7 +5573,7 @@ posix_open(PyObject *self, PyObject *args)
 
 #ifdef MS_WINDOWS
     PyUnicodeObject *po;
-    if (PyArg_ParseTuple(args, "Ui|i:mkdir", &po, &flag, &mode)) {
+    if (PyArg_ParseTuple(args, "Ui|i:open", &po, &flag, &mode)) {
         Py_BEGIN_ALLOW_THREADS
         /* PyUnicode_AS_UNICODE OK without thread
            lock as it is a simple dereference. */
@@ -5588,7 +5588,7 @@ posix_open(PyObject *self, PyObject *args)
     PyErr_Clear();
 #endif
 
-    if (!PyArg_ParseTuple(args, "O&i|i",
+    if (!PyArg_ParseTuple(args, "O&i|i:open",
                           PyUnicode_FSConverter, &ofile,
                           &flag, &mode))
         return NULL;
