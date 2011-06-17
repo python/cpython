@@ -37,7 +37,7 @@ import tempfile
 from packaging import logger
 from packaging.dist import Distribution
 from packaging.tests import unittest
-from test.support import requires_zlib
+from test.support import requires_zlib, unlink
 
 __all__ = ['LoggingCatcher', 'TempdirManager', 'EnvironRestorer',
            'DummyCommand', 'unittest', 'create_distribution',
@@ -121,20 +121,17 @@ class TempdirManager:
 
     def setUp(self):
         super(TempdirManager, self).setUp()
+        self._olddir = os.getcwd()
         self._basetempdir = tempfile.mkdtemp()
         self._files = []
 
     def tearDown(self):
-        shutil.rmtree(self._basetempdir, os.name in ('nt', 'cygwin'))
+        os.chdir(self._olddir)
+        shutil.rmtree(self._basetempdir)
 
         for handle, name in self._files:
             handle.close()
-            if os.path.exists(name):
-                try:
-                    os.remove(name)
-                except OSError as exc:
-                    if exc.errno != errno.ENOENT:
-                        raise
+            unlink(name)
 
         super(TempdirManager, self).tearDown()
 
