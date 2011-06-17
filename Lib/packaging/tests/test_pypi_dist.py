@@ -239,7 +239,6 @@ class TestReleasesList(unittest.TestCase):
 
     def test_prefer_final(self):
         # Can order the distributions using prefer_final
-
         fb10 = ReleaseInfo("FooBar", "1.0")  # final distribution
         fb11a = ReleaseInfo("FooBar", "1.1a1")  # alpha
         fb12a = ReleaseInfo("FooBar", "1.2a1")  # alpha
@@ -252,22 +251,23 @@ class TestReleasesList(unittest.TestCase):
         dists.sort_releases(prefer_final=False)
         self.assertEqual(fb12b, dists[0])
 
-#    def test_prefer_source(self):
-#        # Ordering support prefer_source
-#        fb_source = Dist("FooBar", "1.0", type="source")
-#        fb_binary = Dist("FooBar", "1.0", type="binary")
-#        fb2_binary = Dist("FooBar", "2.0", type="binary")
-#        dists = ReleasesList([fb_binary, fb_source])
-#
-#        dists.sort_distributions(prefer_source=True)
-#        self.assertEqual(fb_source, dists[0])
-#
-#        dists.sort_distributions(prefer_source=False)
-#        self.assertEqual(fb_binary, dists[0])
-#
-#        dists.append(fb2_binary)
-#        dists.sort_distributions(prefer_source=True)
-#        self.assertEqual(fb2_binary, dists[0])
+    @unittest.skip('method not implemented yet')
+    def test_prefer_source(self):
+        # Ordering supports prefer_source
+        fb_source = Dist("FooBar", "1.0", type="source")
+        fb_binary = Dist("FooBar", "1.0", type="binary")
+        fb2_binary = Dist("FooBar", "2.0", type="binary")
+        dists = ReleasesList([fb_binary, fb_source])
+
+        dists.sort_distributions(prefer_source=True)
+        self.assertEqual(fb_source, dists[0])
+
+        dists.sort_distributions(prefer_source=False)
+        self.assertEqual(fb_binary, dists[0])
+
+        dists.append(fb2_binary)
+        dists.sort_distributions(prefer_source=True)
+        self.assertEqual(fb2_binary, dists[0])
 
     def test_get_last(self):
         dists = ReleasesList('Foo')
