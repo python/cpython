@@ -15,8 +15,8 @@ import urllib.parse
 import urllib.error
 import os
 
-
 from fnmatch import translate
+from functools import wraps
 from packaging import logger
 from packaging.metadata import Metadata
 from packaging.version import get_version_predicate
@@ -53,8 +53,9 @@ REL = re.compile("""<([^>]*\srel\s*=\s*['"]?([^'">]+)[^>]*)>""", re.I)
 def socket_timeout(timeout=SOCKET_TIMEOUT):
     """Decorator to add a socket timeout when requesting pages on PyPI.
     """
-    def _socket_timeout(func):
-        def _socket_timeout(self, *args, **kwargs):
+    def wrapper(func):
+        @wraps(func)
+        def wrapped(self, *args, **kwargs):
             old_timeout = socket.getdefaulttimeout()
             if hasattr(self, "_timeout"):
                 timeout = self._timeout
@@ -63,13 +64,14 @@ def socket_timeout(timeout=SOCKET_TIMEOUT):
                 return func(self, *args, **kwargs)
             finally:
                 socket.setdefaulttimeout(old_timeout)
-        return _socket_timeout
-    return _socket_timeout
+        return wrapped
+    return wrapper
 
 
 def with_mirror_support():
     """Decorator that makes the mirroring support easier"""
     def wrapper(func):
+        @wraps(func)
         def wrapped(self, *args, **kwargs):
             try:
                 return func(self, *args, **kwargs)
