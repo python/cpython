@@ -130,10 +130,10 @@ class MacroExpander:
                 raise KeyError("sdkinstallrootv2.0")
         except KeyError:
             raise PackagingPlatformError(
-            """Python was built with Visual Studio 2008;
-extensions must be built with a compiler than can generate compatible binaries.
-Visual Studio 2008 was not found on this system. If you have Cygwin installed,
-you can try compiling with MingW32, by passing "-c mingw32" to setup.py.""")
+"""Python was built with Visual Studio 2008; extensions must be built with a
+compiler than can generate compatible binaries. Visual Studio 2008 was not
+found on this system. If you have Cygwin installed, you can try compiling
+with MingW32, by passing "-c mingw32" to pysetup.""")
 
         if version >= 9.0:
             self.set_macro("FrameworkVersion", self.vsbase, "clr version")

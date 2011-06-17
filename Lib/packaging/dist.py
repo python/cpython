@@ -47,7 +47,7 @@ class Distribution:
 
     # 'global_options' describes the command-line options that may be
     # supplied to the setup script prior to any actual commands.
-    # Eg. "./setup.py -n" or "./setup.py --dry-run" both take advantage of
+    # Eg. "pysetup -n" or "pysetup --dry-run" both take advantage of
     # these global options.  This list should be kept to a bare minimum,
     # since every global option is also valid as a command option -- and we
     # don't want to pollute the commands with too many options that they
@@ -63,14 +63,15 @@ class Distribution:
     common_usage = """\
 Common commands: (see '--help-commands' for more)
 
-  setup.py build      will build the package underneath 'build/'
-  setup.py install    will install the package
+  pysetup run build      will build the package underneath 'build/'
+  pysetup run install    will install the package
 """
 
     # options that are not propagated to the commands
     display_options = [
         ('help-commands', None,
          "list all available commands"),
+        # XXX this is obsoleted by the pysetup metadata action
         ('name', None,
          "print package name"),
         ('version', 'V',
@@ -360,7 +361,7 @@ Common commands: (see '--help-commands' for more)
                 return
 
         # Handle the cases of --help as a "global" option, ie.
-        # "setup.py --help" and "setup.py --help command ...".  For the
+        # "pysetup run --help" and "pysetup run --help command ...".  For the
         # former, we show global options (--dry-run, etc.)
         # and display-only options (--name, --version, etc.); for the
         # latter, we omit the display-only options and show help for
