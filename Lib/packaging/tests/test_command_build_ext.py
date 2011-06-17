@@ -37,6 +37,16 @@ class BuildExtTestCase(support.TempdirManager,
         site.USER_BASE = self.mkdtemp()
         build_ext.USER_BASE = site.USER_BASE
 
+    def tearDown(self):
+        # Get everything back to normal
+        unload('xx')
+        sys.path.remove(self.tmp_dir)
+        if sys.version > "2.6":
+            site.USER_BASE = self.old_user_base
+            build_ext.USER_BASE = self.old_user_base
+
+        super(BuildExtTestCase, self).tearDown()
+
     def _fixup_command(self, cmd):
         # When Python was build with --enable-shared, -L. is not good enough
         # to find the libpython<blah>.so.  This is because regrtest runs it
@@ -102,16 +112,6 @@ class BuildExtTestCase(support.TempdirManager,
         self.assertEqual(xx.__doc__, doc)
         self.assertTrue(isinstance(xx.Null(), xx.Null))
         self.assertTrue(isinstance(xx.Str(), xx.Str))
-
-    def tearDown(self):
-        # Get everything back to normal
-        unload('xx')
-        sys.path.remove(self.tmp_dir)
-        if sys.version > "2.6":
-            site.USER_BASE = self.old_user_base
-            build_ext.USER_BASE = self.old_user_base
-
-        super(BuildExtTestCase, self).tearDown()
 
     def test_solaris_enable_shared(self):
         dist = Distribution({'name': 'xx'})
