@@ -700,14 +700,8 @@ class GlobTestCase(GlobTestCaseBase):
             '{a**a,babar}',
             '{bob,b**z}',
         ]
-        msg = "%r is not supposed to be a valid pattern"
         for pattern in invalids:
-            try:
-                iglob(pattern)
-            except ValueError:
-                continue
-            else:
-                self.fail(msg % pattern)
+            self.assertRaises(ValueError, iglob, pattern)
 
 
 class EggInfoToDistInfoTestCase(support.TempdirManager,
