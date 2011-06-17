@@ -54,10 +54,8 @@ def _move_files(files, destination):
         try:
             os.makedirs(os.path.dirname(new))
         except OSError as e:
-            if e.errno == errno.EEXIST:
-                pass
-            else:
-                raise e
+            if e.errno != errno.EEXIST:
+                raise
         os.rename(old, new)
         yield old, new
 
@@ -169,7 +167,7 @@ def _run_install_from_dir(source_dir):
         os.chdir(old_dir)
 
 
-def install_dists(dists, path, paths=sys.path):
+def install_dists(dists, path, paths=None):
     """Install all distributions provided in dists, with the given prefix.
 
     If an error occurs while installing one of the distributions, uninstall all
@@ -196,13 +194,13 @@ def install_dists(dists, path, paths=sys.path):
             # reverting
             for installed_dist in installed_dists:
                 logger.info('Reverting %s', installed_dist)
-                _remove_dist(installed_dist, paths)
+                remove(installed_dist.name, paths)
             raise e
     return installed_dists
 
 
 def install_from_infos(install_path=None, install=[], remove=[], conflicts=[],
-                       paths=sys.path):
+                       paths=None):
     """Install and remove the given distributions.
 
     The function signature is made to be compatible with the one of get_infos.
@@ -383,11 +381,7 @@ def _update_infos(infos, new_infos):
             infos[key].extend(new_infos[key])
 
 
-def _remove_dist(dist, paths=sys.path):
-    remove(dist.name, paths)
-
-
-def remove(project_name, paths=sys.path, auto_confirm=True):
+def remove(project_name, paths=None, auto_confirm=True):
     """Removes a single project from the installation.
 
     Returns True on success
@@ -539,7 +533,6 @@ def install(project):
 
 def _main(**attrs):
     if 'script_args' not in attrs:
-        import sys
         attrs['requirements'] = sys.argv[1]
     get_infos(**attrs)
 
