@@ -318,6 +318,9 @@ class MockHTTPClass:
     def getresponse(self):
         return MockHTTPResponse(MockFile(), {}, 200, "OK")
 
+    def close(self):
+        pass
+
 class MockHandler:
     # useful for testing handler machinery
     # see add_ordered_mock_handlers() docstring
