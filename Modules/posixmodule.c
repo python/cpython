@@ -1162,11 +1162,11 @@ static int
 win32_xstat_impl(const char *path, struct win32_stat *result,
                  BOOL traverse)
 {
-    int code; 
+    int code;
     HANDLE hFile, hFile2;
     BY_HANDLE_FILE_INFORMATION info;
     ULONG reparse_tag = 0;
-	wchar_t *target_path;
+    wchar_t *target_path;
     const char *dot;
 
     if(!check_GetFinalPathNameByHandle()) {
@@ -1262,7 +1262,7 @@ win32_xstat_impl_w(const wchar_t *path, struct win32_stat *result,
     HANDLE hFile, hFile2;
     BY_HANDLE_FILE_INFORMATION info;
     ULONG reparse_tag = 0;
-	wchar_t *target_path;
+    wchar_t *target_path;
     const wchar_t *dot;
 
     if(!check_GetFinalPathNameByHandle()) {
@@ -1281,7 +1281,7 @@ win32_xstat_impl_w(const wchar_t *path, struct win32_stat *result,
         /* FILE_FLAG_OPEN_REPARSE_POINT does not follow the symlink.
            Because of this, calls like GetFinalPathNameByHandle will return
            the symlink path agin and not the actual final path. */
-        FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS| 
+        FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS|
             FILE_FLAG_OPEN_REPARSE_POINT,
         NULL);
 
@@ -2275,7 +2275,7 @@ posix_fchown(PyObject *self, PyObject *args)
     int fd;
     long uid, gid;
     int res;
-    if (!PyArg_ParseTuple(args, "ill:chown", &fd, &uid, &gid))
+    if (!PyArg_ParseTuple(args, "ill:fchown", &fd, &uid, &gid))
         return NULL;
     Py_BEGIN_ALLOW_THREADS
     res = fchown(fd, (uid_t) uid, (gid_t) gid);
@@ -6076,7 +6076,7 @@ posix_open(PyObject *self, PyObject *args)
 
 #ifdef MS_WINDOWS
     PyUnicodeObject *po;
-    if (PyArg_ParseTuple(args, "Ui|i:mkdir", &po, &flag, &mode)) {
+    if (PyArg_ParseTuple(args, "Ui|i:open", &po, &flag, &mode)) {
         Py_BEGIN_ALLOW_THREADS
         /* PyUnicode_AS_UNICODE OK without thread
            lock as it is a simple dereference. */
@@ -6091,7 +6091,7 @@ posix_open(PyObject *self, PyObject *args)
     PyErr_Clear();
 #endif
 
-    if (!PyArg_ParseTuple(args, "O&i|i",
+    if (!PyArg_ParseTuple(args, "O&i|i:open",
                           PyUnicode_FSConverter, &ofile,
                           &flag, &mode))
         return NULL;
@@ -8982,12 +8982,12 @@ posix_futimesat(PyObject *self, PyObject *args)
     }
     else {
         if (extract_time(PyTuple_GET_ITEM(arg, 0),
-				&(buf[0].tv_sec), &(buf[0].tv_usec)) == -1) {
+                         &(buf[0].tv_sec), &(buf[0].tv_usec)) == -1) {
             Py_DECREF(opath);
             return NULL;
         }
         if (extract_time(PyTuple_GET_ITEM(arg, 1),
-				&(buf[1].tv_sec), &(buf[1].tv_usec)) == -1) {
+                         &(buf[1].tv_sec), &(buf[1].tv_usec)) == -1) {
             Py_DECREF(opath);
             return NULL;
         }
