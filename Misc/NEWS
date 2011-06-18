@@ -26,7 +26,8 @@ Library
 -------
 
 - Issue #11584: email.header.decode_header no longer fails if the header
-  passed to it is a Header object.
+  passed to it is a Header object, and Header/make_header no longer fail
+  if given binary unknown-8bit input.
 
 - Issue #11700: mailbox proxy object close methods can now be called multiple
   times without error.

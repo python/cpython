@@ -275,7 +275,10 @@ class Header:
             charset = Charset(charset)
         if not isinstance(s, str):
             input_charset = charset.input_codec or 'us-ascii'
-            s = s.decode(input_charset, errors)
+            if input_charset == _charset.UNKNOWN8BIT:
+                s = s.decode('us-ascii', 'surrogateescape')
+            else:
+                s = s.decode(input_charset, errors)
         # Ensure that the bytes we're storing can be decoded to the output
         # character set, otherwise an early error is thrown.
         output_charset = charset.output_codec or 'us-ascii'
