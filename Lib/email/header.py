@@ -73,9 +73,10 @@ def decode_header(header):
     An email.errors.HeaderParseError may be raised when certain decoding error
     occurs (e.g. a base64 decoding exception).
     """
-    # If it is a Header object, we can just return the chunks.
+    # If it is a Header object, we can just return the encoded chunks.
     if hasattr(header, '_chunks'):
-        return list(header._chunks)
+        return [(_charset._encode(string, str(charset)), str(charset))
+                    for string, charset in header._chunks]
     # If no encoding, just return the header with no charset.
     if not ecre.search(header):
         return [(header, None)]
