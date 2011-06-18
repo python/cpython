@@ -4,31 +4,36 @@
 .. module:: faulthandler
    :synopsis: Dump the Python traceback.
 
-This module contains functions to dump the Python traceback explicitly, on a
-fault, after a timeout or on a user signal. Call :func:`faulthandler.enable` to
-install fault handlers for :const:`SIGSEGV`, :const:`SIGFPE`, :const:`SIGABRT`,
-:const:`SIGBUS` and :const:`SIGILL` signals. You can also enable them at
-startup by setting the :envvar:`PYTHONFAULTHANDLER` environment variable or by
-using :option:`-X` ``faulthandler`` command line option.
+This module contains functions to dump Python tracebacks explicitly, on a fault,
+after a timeout, or on a user signal. Call :func:`faulthandler.enable` to
+install fault handlers for the :const:`SIGSEGV`, :const:`SIGFPE`,
+:const:`SIGABRT`, :const:`SIGBUS`, and :const:`SIGILL` signals. You can also
+enable them at startup by setting the :envvar:`PYTHONFAULTHANDLER` environment
+variable or by using :option:`-X` ``faulthandler`` command line option.
 
-The fault handler is compatible with system fault handlers like Apport or
-the Windows fault handler. The module uses an alternative stack for signal
-handlers, if the :c:func:`sigaltstack` function is available, to be able to
-dump the traceback even on a stack overflow.
+The fault handler is compatible with system fault handlers like Apport or the
+Windows fault handler. The module uses an alternative stack for signal handlers
+if the :c:func:`sigaltstack` function is available. This allows it to dump the
+traceback even on a stack overflow.
 
-The fault handler is called on catastrophic cases and so can only use
-signal-safe functions (e.g. it cannot allocate memory on the heap). That's why
-the traceback is limited: only support ASCII encoding (use the
-``backslashreplace`` error handler), limit each string to 100 characters, don't
-print the source code (only the filename, the function name and the line
-number), limit to 100 frames and 100 threads.
+The fault handler is called on catastrophic cases and therefore can only use
+signal-safe functions (e.g. it cannot allocate memory on the heap). Because of
+this limitation traceback dumping is minimal compared to normal Python
+tracebacks:
 
-By default, the Python traceback is written to :data:`sys.stderr`. Start your
-graphical applications in a terminal and run your server in foreground to see
-the traceback, or specify a log file to :func:`faulthandler.enable()`.
+* Only ASCII is supported. The ``backslashreplace`` error handler is used on
+  encoding.
+* Each string is limited to 100 characters.
+* Only the the filename, the function name and the line number are
+  displayed. (no source code)
+* It is limited to 100 frames and 100 threads.
 
-The module is implemented in C to be able to dump a traceback on a crash or
-when Python is blocked (e.g. deadlock).
+By default, the Python traceback is written to :data:`sys.stderr`. To see
+tracebacks, applications must be run in the terminal. A log file can
+alternatively be passed to :func:`faulthandler.enable`.
+
+The module is implemented in C, so tracebacks can be dumped on a crash or when
+Python is deadlocked.
 
 .. versionadded:: 3.3
 
@@ -38,8 +43,9 @@ Dump the traceback
 
 .. function:: dump_traceback(file=sys.stderr, all_threads=True)
 
-   Dump the traceback of all threads, or of the current thread if *all_threads*
-   is ``False``, into *file*.
+   Dump the traceback of all threads into *file*. If *all_threads* is ``True``,
+   produce tracebacks for every running thread. Otherwise, dump only the current
+   thread.
 
 
 Fault handler state
@@ -47,11 +53,11 @@ Fault handler state
 
 .. function:: enable(file=sys.stderr, all_threads=True)
 
-   Enable the fault handler: install handlers for :const:`SIGSEGV`,
+   Enable the fault handler: install handlers for the :const:`SIGSEGV`,
    :const:`SIGFPE`, :const:`SIGABRT`, :const:`SIGBUS` and :const:`SIGILL`
-   signals to dump the Python traceback. It dumps the traceback of the all
-   threads, or of the current thread if *all_threads* is ``False``, into
-   *file*.
+   signals to dump the Python traceback. If *all_threads* is ``True``,
+   produce tracebacks for every running thread. Otherwise, dump only the current
+   thread.
 
 .. function:: disable()
 
@@ -69,15 +75,14 @@ Dump the tracebacks after a timeout
 .. function:: dump_tracebacks_later(timeout, repeat=False, file=sys.stderr, exit=False)
 
    Dump the tracebacks of all threads, after a timeout of *timeout* seconds, or
-   each *timeout* seconds if *repeat* is ``True``.  If *exit* is True, call
-   :c:func:`_exit` with status=1 after dumping the tracebacks to terminate
-   immediatly the process, which is not safe.  For example, :c:func:`_exit`
-   doesn't flush file buffers.  If the function is called twice, the new call
-   replaces previous parameters (resets the timeout). The timer has a
-   sub-second resolution.
+   every *timeout* seconds if *repeat* is ``True``.  If *exit* is ``True``, call
+   :c:func:`_exit` with status=1 after dumping the tracebacks.  (Note
+   :c:func:`_exit` doesn't flush file buffers.) If the function is called twice,
+   the new call replaces previous parameters and resets the timeout. The timer
+   has a sub-second resolution.
 
-   This function is implemented using a watchdog thread, and therefore is
-   not available if Python is compiled with threads disabled.
+   This function is implemented using a watchdog thread and therefore is not
+   available if Python is compiled with threads disabled.
 
 .. function:: cancel_dump_tracebacks_later()
 
