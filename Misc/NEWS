@@ -193,6 +193,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11700: mailbox proxy object close methods can now be called multiple
+  times without error.
+
 - Issue #11767: Correct file descriptor leak in mailbox's __getitem__ method.
 
 - Issue #12133: AbstractHTTPHandler.do_open() of urllib.request closes the HTTP

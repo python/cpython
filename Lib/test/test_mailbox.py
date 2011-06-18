@@ -297,6 +297,13 @@ class TestMailbox(TestBase):
         self.assertEqual(data1.decode('ascii').replace(os.linesep, '\n'),
                          _sample_message)
 
+    def test_get_file_can_be_closed_twice(self):
+        # Issue 11700
+        key = self._box.add(_sample_message)
+        f = self._box.get_file(key)
+        f.close()
+        f.close()
+
     def test_iterkeys(self):
         # Get keys using iterkeys()
         self._check_iteration(self._box.keys, do_keys=True, do_values=False)
@@ -1862,8 +1869,12 @@ class TestProxyFileBase(TestBase):
 
     def _test_close(self, proxy):
         # Close a file
+        self.assertFalse(proxy.closed)
         proxy.close()
-        self.assertRaises(AttributeError, lambda: proxy.close())
+        self.assertTrue(proxy.closed)
+        # Issue 11700 subsequent closes should be a no-op.
+        proxy.close()
+        self.assertTrue(proxy.closed)
 
 
 class TestProxyFile(TestProxyFileBase):
