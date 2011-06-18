@@ -1854,7 +1854,10 @@ class _ProxyFile:
 
     def close(self):
         """Close the file."""
-        del self._file
+        if hasattr(self, '_file'):
+            if hasattr(self._file, 'close'):
+                self._file.close()
+            del self._file
 
     def _read(self, size, read_method):
         """Read size bytes using read_method."""
@@ -1897,6 +1900,12 @@ class _PartialFile(_ProxyFile):
         if size is None or size < 0 or size > remaining:
             size = remaining
         return _ProxyFile._read(self, size, read_method)
+
+    def close(self):
+        # do *not* close the underlying file object for partial files,
+        # since it's global to the mailbox object
+        if hasattr(self, '_file'):
+            del self._file
 
 
 def _lock_file(f, dotlock=True):
