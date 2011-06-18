@@ -193,6 +193,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11584: email.header.decode_header no longer fails if the header
+  passed to it is a Header object.
+
 - Issue #11700: mailbox proxy object close methods can now be called multiple
   times without error.
 
