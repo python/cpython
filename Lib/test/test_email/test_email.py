@@ -4330,6 +4330,21 @@ A very long line that must get split to something other than at the
                         'Ynwp4dUEbay Auction Semiar- No Charge \uFFFD Earn Big')
         self.assertEqual(email.header.decode_header(h), [(x, 'unknown-8bit')])
 
+    def test_header_handles_binary_unknown8bit(self):
+        x = b'Ynwp4dUEbay Auction Semiar- No Charge \x96 Earn Big'
+        h = Header(x, charset=email.charset.UNKNOWN8BIT)
+        self.assertEqual(str(h),
+                        'Ynwp4dUEbay Auction Semiar- No Charge \uFFFD Earn Big')
+        self.assertEqual(email.header.decode_header(h), [(x, 'unknown-8bit')])
+
+    def test_make_header_handles_binary_unknown8bit(self):
+        x = b'Ynwp4dUEbay Auction Semiar- No Charge \x96 Earn Big'
+        h = Header(x, charset=email.charset.UNKNOWN8BIT)
+        h2 = email.header.make_header(email.header.decode_header(h))
+        self.assertEqual(str(h2),
+                        'Ynwp4dUEbay Auction Semiar- No Charge \uFFFD Earn Big')
+        self.assertEqual(email.header.decode_header(h2), [(x, 'unknown-8bit')])
+
     def test_modify_returned_list_does_not_change_header(self):
         h = Header('test')
         chunks = email.header.decode_header(h)
