@@ -4176,8 +4176,8 @@ A very long line that must get split to something other than at the
 
     def test_escaped_8bit_header(self):
         x = b'Ynwp4dUEbay Auction Semiar- No Charge \x96 Earn Big'
-        x = x.decode('ascii', 'surrogateescape')
-        h = Header(x, charset=email.charset.UNKNOWN8BIT)
+        e = x.decode('ascii', 'surrogateescape')
+        h = Header(e, charset=email.charset.UNKNOWN8BIT)
         self.assertEqual(str(h),
                         'Ynwp4dUEbay Auction Semiar- No Charge \uFFFD Earn Big')
         self.assertEqual(email.header.decode_header(h), [(x, 'unknown-8bit')])
