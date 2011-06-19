@@ -44,33 +44,33 @@ class G(A):
 
 class TestSuper(unittest.TestCase):
 
-    def testBasicsWorking(self):
+    def test_basics_working(self):
         self.assertEqual(D().f(), 'ABCD')
 
-    def testClassGetattrWorking(self):
+    def test_class_getattr_working(self):
         self.assertEqual(D.f(D()), 'ABCD')
 
-    def testSubclassNoOverrideWorking(self):
+    def test_subclass_no_override_working(self):
         self.assertEqual(E().f(), 'ABCD')
         self.assertEqual(E.f(E()), 'ABCD')
 
-    def testUnboundMethodTransferWorking(self):
+    def test_unbound_method_transfer_working(self):
         self.assertEqual(F().f(), 'ABCD')
         self.assertEqual(F.f(F()), 'ABCD')
 
-    def testClassMethodsStillWorking(self):
+    def test_class_methods_still_working(self):
         self.assertEqual(A.cm(), (A, 'A'))
         self.assertEqual(A().cm(), (A, 'A'))
         self.assertEqual(G.cm(), (G, 'A'))
         self.assertEqual(G().cm(), (G, 'A'))
 
-    def testSuperInClassMethodsWorking(self):
+    def test_super_in_class_methods_working(self):
         d = D()
         self.assertEqual(d.cm(), (d, (D, (D, (D, 'A'), 'B'), 'C'), 'D'))
         e = E()
         self.assertEqual(e.cm(), (e, (E, (E, (E, 'A'), 'B'), 'C'), 'D'))
 
-    def testSuperWithClosure(self):
+    def test_super_with_closure(self):
         # Issue4360: super() did not work in a function that
         # contains a closure
         class E(A):
