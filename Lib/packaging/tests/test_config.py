@@ -126,6 +126,15 @@ language = cxx
 
 """
 
+HOOKS_MODULE = """
+import logging
+
+logger = logging.getLogger('packaging')
+
+def logging_hook(config):
+    logger.warning('logging_hook called')
+"""
+
 
 class DCompiler:
     name = 'd'
@@ -326,10 +335,21 @@ class ConfigTestCase(support.TempdirManager,
         self.assertEqual(ext.extra_compile_args, cargs)
         self.assertEqual(ext.language, 'cxx')
 
+    def test_project_setup_hook_works(self):
+        # Bug #11637: ensure the project directory is on sys.path to allow
+        # project-specific hooks
+        self.write_setup({'setup-hooks': 'hooks.logging_hook'})
+        self.write_file('README', 'yeah')
+        self.write_file('hooks.py', HOOKS_MODULE)
+        self.get_dist()
+        logs = self.get_logs(logging.WARNING)
+        self.assertEqual(['logging_hook called'], logs)
+        self.assertIn('hooks', sys.modules)
+
     def test_missing_setup_hook_warns(self):
         self.write_setup({'setup-hooks': 'this.does._not.exist'})
         self.write_file('README', 'yeah')
-        dist = self.get_dist()
+        self.get_dist()
         logs = self.get_logs(logging.WARNING)
         self.assertEqual(1, len(logs))
         self.assertIn('cannot find setup hook', logs[0])
