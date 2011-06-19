@@ -134,15 +134,20 @@ class Config:
             if 'setup_hooks' in content['global']:
                 setup_hooks = split_multiline(content['global']['setup_hooks'])
 
-                for line in setup_hooks:
-                    try:
-                        hook = resolve_name(line)
-                    except ImportError as e:
-                        logger.warning('cannot find setup hook: %s', e.args[0])
-                    else:
-                        self.setup_hooks.append(hook)
-
-                self.run_hooks(content)
+                # add project directory to sys.path, to allow hooks to be
+                # distributed with the project
+                sys.path.insert(0, cfg_directory)
+                try:
+                    for line in setup_hooks:
+                        try:
+                            hook = resolve_name(line)
+                        except ImportError as e:
+                            logger.warning('cannot find setup hook: %s', e.args[0])
+                        else:
+                            self.setup_hooks.append(hook)
+                    self.run_hooks(content)
+                finally:
+                    sys.path.pop(0)
 
         metadata = self.dist.metadata
 
