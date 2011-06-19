@@ -43,9 +43,8 @@ Dump the traceback
 
 .. function:: dump_traceback(file=sys.stderr, all_threads=True)
 
-   Dump the traceback of all threads into *file*. If *all_threads* is ``True``,
-   produce tracebacks for every running thread. Otherwise, dump only the current
-   thread.
+   Dump the tracebacks of all threads into *file*. If *all_threads* is
+   ``False``, dump only the current thread.
 
 
 Fault handler state
@@ -77,9 +76,10 @@ Dump the tracebacks after a timeout
    Dump the tracebacks of all threads, after a timeout of *timeout* seconds, or
    every *timeout* seconds if *repeat* is ``True``.  If *exit* is ``True``, call
    :c:func:`_exit` with status=1 after dumping the tracebacks.  (Note
-   :c:func:`_exit` doesn't flush file buffers.) If the function is called twice,
-   the new call replaces previous parameters and resets the timeout. The timer
-   has a sub-second resolution.
+   :c:func:`_exit` exits the process immediately, which means it doesn't do any
+   cleanup like flushing file buffers.) If the function is called twice, the new
+   call replaces previous parameters and resets the timeout. The timer has a
+   sub-second resolution.
 
    This function is implemented using a watchdog thread and therefore is not
    available if Python is compiled with threads disabled.
