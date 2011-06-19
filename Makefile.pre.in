@@ -73,7 +73,7 @@ PY_CFLAGS=	$(BASECFLAGS) $(OPT) $(CONFIGURE_CFLAGS) $(CFLAGS) $(EXTRA_CFLAGS)
 # Both CPPFLAGS and LDFLAGS need to contain the shell's value for setup.py to
 # be able to build extension modules using the directories specified in the
 # environment variables
-PY_CPPFLAGS=	-I. -IInclude -I$(srcdir)/Include $(CONFIGURE_CPPFLAGS) $(CPPFLAGS)
+PY_CPPFLAGS=	-I. -IInclude $(CONFIGURE_CPPFLAGS) $(CPPFLAGS)
 PY_LDFLAGS=	$(CONFIGURE_LDFLAGS) $(LDFLAGS)
 NO_AS_NEEDED=	@NO_AS_NEEDED@
 LDLAST=		@LDLAST@
