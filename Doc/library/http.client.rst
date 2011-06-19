@@ -543,6 +543,9 @@ statement.
    A debugging hook.  If :attr:`debuglevel` is greater than zero, messages
    will be printed to stdout as the response is read and parsed.
 
+.. attribute:: HTTPResponse.closed
+
+   Is True if the stream is closed. 
 
 Examples
 --------
@@ -555,7 +558,15 @@ Here is an example session that uses the ``GET`` method::
    >>> r1 = conn.getresponse()
    >>> print(r1.status, r1.reason)
    200 OK
-   >>> data1 = r1.read()
+   >>> data1 = r1.read()  # This will return entire content.
+   >>> # The following example demonstrates reading data in chunks.
+   >>> conn.request("GET", "/index.html")
+   >>> r1 = conn.getresponse()
+   >>> while not r1.closed:
+   ...     print(r1.read(200)) # 200 bytes
+   b'<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"...
+   ...
+   >>> # Example of an invalid request
    >>> conn.request("GET", "/parrot.spam")
    >>> r2 = conn.getresponse()
    >>> print(r2.status, r2.reason)
