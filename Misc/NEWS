@@ -193,7 +193,10 @@ Core and Builtins
 Library
 -------
 
-- Issue #6771: moved the curses.wrapper function from the single-function
+- Issue #11637: Fix support for importing packaging setup hooks from the
+  project directory.
+
+- Issue #6771: Moved the curses.wrapper function from the single-function
   wrapper module into __init__, eliminating the module.  Since __init__ was
   already importing the function to curses.wrapper, there is no API change.
 
