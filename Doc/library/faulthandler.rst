@@ -24,7 +24,7 @@ tracebacks:
 * Only ASCII is supported. The ``backslashreplace`` error handler is used on
   encoding.
 * Each string is limited to 100 characters.
-* Only the the filename, the function name and the line number are
+* Only the filename, the function name and the line number are
   displayed. (no source code)
 * It is limited to 100 frames and 100 threads.
 

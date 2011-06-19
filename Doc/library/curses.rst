@@ -41,10 +41,6 @@ Linux and the BSD variants of Unix.
    Module :mod:`curses.textpad`
       Editable text widget for curses supporting  :program:`Emacs`\ -like bindings.
 
-   Module :mod:`curses.wrapper`
-      Convenience function to ensure proper terminal setup and resetting on
-      application entry and exit.
-
    :ref:`curses-howto`
       Tutorial material on using curses with Python, by Andrew Kuchling and Eric
       Raymond.
@@ -590,6 +586,19 @@ The module :mod:`curses` defines the following functions:
    to the color number -1. After calling this function,  ``init_pair(x,
    curses.COLOR_RED, -1)`` initializes, for instance, color pair *x* to a red
    foreground color on the default background.
+
+
+.. function:: wrapper(func, ...)
+
+   Initialize curses and call another callable object, *func*, which should be the
+   rest of your curses-using application.  If the application raises an exception,
+   this function will restore the terminal to a sane state before re-raising the
+   exception and generating a traceback.  The callable object *func* is then passed
+   the main window 'stdscr' as its first argument, followed by any other arguments
+   passed to :func:`wrapper`.  Before calling *func*, :func:`wrapper` turns on
+   cbreak mode, turns off echo, enables the terminal keypad, and initializes colors
+   if the terminal has color support.  On exit (whether normally or by exception)
+   it restores cooked mode, turns on echo, and disables the terminal keypad.
 
 
 .. _curses-window-objects:
@@ -1659,32 +1668,3 @@ You can instantiate a :class:`Textbox` object as follows:
       cursor motion that would land the cursor on a trailing blank goes to the
       end of that line instead, and trailing blanks are stripped when the window
       contents are gathered.
-
-
-:mod:`curses.wrapper` --- Terminal handler for curses programs
-==============================================================
-
-.. module:: curses.wrapper
-   :synopsis: Terminal configuration wrapper for curses programs.
-.. moduleauthor:: Eric Raymond <esr@thyrsus.com>
-.. sectionauthor:: Eric Raymond <esr@thyrsus.com>
-
-
-This module supplies one function, :func:`wrapper`, which runs another function
-which should be the rest of your curses-using application.  If the application
-raises an exception, :func:`wrapper` will restore the terminal to a sane state
-before re-raising the exception and generating a traceback.
-
-
-.. function:: wrapper(func, ...)
-
-   Wrapper function that initializes curses and calls another function, *func*,
-   restoring normal keyboard/screen behavior on error. The callable object *func*
-   is then passed the main window 'stdscr' as its first argument, followed by any
-   other arguments passed to :func:`wrapper`.
-
-Before calling the hook function, :func:`wrapper` turns on cbreak mode, turns
-off echo, enables the terminal keypad, and initializes colors if the terminal
-has color support.  On exit (whether normally or by exception) it restores
-cooked mode, turns on echo, and disables the terminal keypad.
-
