@@ -53,7 +53,7 @@ The :mod:`urllib.parse` module defines the following functions:
    input is presumed to be a relative URL and thus to start with
    a path component.
 
-       >>> from urlparse import urlparse
+       >>> from urllib.parse import urlparse
        >>> urlparse('//www.cwi.nl:80/%7Eguido/Python.html')
        ParseResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
                   params='', query='', fragment='')
@@ -351,7 +351,7 @@ The :mod:`urllib.parse` module defines the following functions:
 .. seealso::
 
    :rfc:`3986` - Uniform Resource Identifiers
-      This is the current standard (STD66). Any changes to urlparse module
+      This is the current standard (STD66). Any changes to urllib.parse module
       should conform to this. Certain deviations could be observed, which are
       mostly for backward compatibility purposes and for certain de-facto
       parsing requirements as commonly observed in major browsers.
