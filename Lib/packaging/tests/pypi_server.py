@@ -22,7 +22,7 @@ I think of something like that:
 
 Then, the server must have only one port to rely on, eg.
 
-    >>> server.fulladress()
+    >>> server.fulladdress()
     "http://ip:port/"
 
 It could be simple to have one HTTP server, relaying the requests to the two
