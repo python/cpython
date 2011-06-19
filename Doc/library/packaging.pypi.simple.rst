@@ -6,26 +6,87 @@
               and distributions.
 
 
-`packaging.pypi.simple` can process Python Package Indexes  and provides
-useful information about distributions. It also can crawl local indexes, for
-instance.
+The class provided by :mod:`packaging.pypi.simple` can access project indexes
+and provide useful information about distributions.  PyPI, other indexes and
+local indexes are supported.
 
-You should use `packaging.pypi.simple` for:
-
-    * Search distributions by name and versions.
-    * Process index external pages.
-    * Download distributions by name and versions.
-
-And should not be used for:
-
-    * Things that will end up in too long index processing (like "finding all
-      distributions with a specific version, no matters the name")
+You should use this module to search distributions by name and versions, process
+index external pages and download distributions.  It is not suited for things
+that will end up in too long index processing (like "finding all distributions
+with a specific version, no matter the name"); use :mod:`packaging.pypi.xmlrpc`
+for that.
 
 
 API
 ---
 
-.. class:: Crawler
+.. class:: Crawler(index_url=DEFAULT_SIMPLE_INDEX_URL, \
+                   prefer_final=False, prefer_source=True, \
+                   hosts=('*',), follow_externals=False, \
+                   mirrors_url=None, mirrors=None, timeout=15, \
+                   mirrors_max_tries=0, verbose=False)
+
+      *index_url* is the address of the index to use for requests.
+
+      The first two parameters control the query results.  *prefer_final*
+      indicates whether a final version (not alpha, beta or candidate) is to be
+      prefered over a newer but non-final version (for example, whether to pick
+      up 1.0 over 2.0a3).  It is used only for queries that don't give a version
+      argument.  Likewise, *prefer_source* tells whether to prefer a source
+      distribution over a binary one, if no distribution argument was prodived.
+
+      Other parameters are related to external links (that is links that go
+      outside the simple index): *hosts* is a list of hosts allowed to be
+      processed if *follow_externals* is true (default behavior is to follow all
+      hosts), *follow_externals* enables or disables following external links
+      (default is false, meaning disabled).
+
+      The remaining parameters are related to the mirroring infrastructure
+      defined in :PEP:`381`.  *mirrors_url* gives a URL to look on for DNS
+      records giving mirror adresses; *mirrors* is a list of mirror URLs (see
+      the PEP).  If both *mirrors* and *mirrors_url* are given, *mirrors_url*
+      will only be used if *mirrors* is set to ``None``.  *timeout* is the time
+      (in seconds) to wait before considering a URL has timed out;
+      *mirrors_max_tries"* is the number of times to try requesting informations
+      on mirrors before switching.
+
+      The following methods are defined:
+
+      .. method:: get_distributions(project_name, version)
+
+         Return the distributions found in the index for the given release.
+
+      .. method:: get_metadata(project_name, version)
+
+         Return the metadata found on the index for this project name and
+         version.  Currently downloads and unpacks a distribution to read the
+         PKG-INFO file.
+
+      .. method:: get_release(requirements, prefer_final=None)
+
+         Return one release that fulfills the given requirements.
+
+      .. method:: get_releases(requirements, prefer_final=None, force_update=False)
+
+         Search for releases and return a
+         :class:`~packaging.pypi.dist.ReleasesList` object containing the
+         results.
+
+      .. method:: search_projects(name=None)
+
+         Search the index for projects containing the given name and return a
+         list of matching names.
+
+   See also the base class :class:`packaging.pypi.base.BaseClient` for inherited
+   methods.
+
+
+.. data:: DEFAULT_SIMPLE_INDEX_URL
+
+   The address used by default by the crawler class.  It is currently
+   ``'http://a.pypi.python.org/simple/'``, the main PyPI installation.
+
+
 
 
 Usage Exemples

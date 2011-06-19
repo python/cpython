@@ -51,3 +51,24 @@ with a preference toward the latter.
    .. method:: get_release
 
    .. method:: get_releases
+
+
+:mod:`packaging.pypi.base` --- Base class for index crawlers
+============================================================
+
+.. module:: packaging.pypi.base
+   :synopsis: Base class used to implement crawlers.
+
+
+.. class:: BaseClient(prefer_final, prefer_source)
+
+   Base class containing common methods for the index crawlers or clients.  One
+   method is currently defined:
+
+   .. method:: download_distribution(requirements, temp_path=None, \
+                                     prefer_source=None, prefer_final=None)
+
+      Download a distribution from the last release according to the
+      requirements.  If *temp_path* is provided, download to this path,
+      otherwise, create a temporary directory for the download.  If a release is
+      found, the full path to the downloaded file is returned.
