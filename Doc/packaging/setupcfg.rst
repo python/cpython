@@ -178,17 +178,20 @@ compilers
 
 setup_hooks
    Defines a list of callables to be called right after the :file:`setup.cfg`
-   file is read, before any other processing.  The callables are executed in the
+   file is read, before any other processing.  Each value is a Python dotted
+   name to an object, which has to be defined in a module present in the project
+   directory alonside :file:`setup.cfg` or on Python's :data:`sys.path` (see
+   :ref:`packaging-finding-hooks`).  The callables are executed in the
    order they're found in the file; if one of them cannot be found, tools should
    not stop, but for example produce a warning and continue with the next line.
    Each callable receives the configuration as a dictionary (keys are
    :file:`setup.cfg` sections, values are dictionaries of fields) and can make
-   any changes to it.  *optional*, *multi*
+   any change to it.  *optional*, *multi*
 
    Example::
 
       [global]
-      setup_hooks = package.setup.customize_dist
+      setup_hooks = _setuphooks.customize_config
 
 
 Metadata
