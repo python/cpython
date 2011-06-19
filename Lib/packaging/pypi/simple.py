@@ -110,7 +110,7 @@ class Crawler(BaseClient):
     :param follow_externals: tell if following external links is needed or
                              not. Default is False.
     :param mirrors_url: the url to look on for DNS records giving mirror
-                        adresses.
+                        addresses.
     :param mirrors: a list of mirrors (see PEP 381).
     :param timeout: time in seconds to consider a url has timeouted.
     :param mirrors_max_tries": number of times to try requesting informations
