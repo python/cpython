@@ -1057,14 +1057,14 @@ def add_files(db):
             lib.add_file("turtle.cfg")
         if dir=="pydoc_data":
             lib.add_file("_pydoc.css")
-        if dir=="data" and parent.physical=="test" and parent.basedir.physical=="email":
+        if dir=="data" and parent.physical=="test_email":
             # This should contain all non-.svn files listed in subversion
             for f in os.listdir(lib.absolute):
                 if f.endswith(".txt") or f==".svn":continue
                 if f.endswith(".au") or f.endswith(".gif"):
                     lib.add_file(f)
                 else:
-                    print("WARNING: New file %s in email/test/data" % f)
+                    print("WARNING: New file %s in test/test_email/data" % f)
         for f in os.listdir(lib.absolute):
             if os.path.isdir(os.path.join(lib.absolute, f)):
                 pydirs.append((lib, f))
