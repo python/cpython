@@ -193,6 +193,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #6771: moved the curses.wrapper function from the single-function
+  wrapper module into __init__, eliminating the module.  Since __init__ was
+  already importing the function to curses.wrapper, there is no API change.
+
 - Issue #11584: email.header.decode_header no longer fails if the header
   passed to it is a Header object, and Header/make_header no longer fail
   if given binary unknown-8bit input.
