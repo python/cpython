@@ -406,7 +406,7 @@ calculate_path(void)
     static wchar_t delimiter[2] = {DELIM, '\0'};
     static wchar_t separator[2] = {SEP, '\0'};
     char *_rtpypath = Py_GETENV("PYTHONPATH"); /* XXX use wide version on Windows */
-    wchar_t rtpypath[MAXPATHLEN+1];
+    wchar_t *rtpypath = NULL;
     wchar_t *home = Py_GetPythonHome();
     char *_path = getenv("PATH");
     wchar_t *path_buffer = NULL;
@@ -606,12 +606,12 @@ calculate_path(void)
     bufsz = 0;
 
     if (_rtpypath) {
-        size_t s = mbstowcs(rtpypath, _rtpypath, sizeof(rtpypath)/sizeof(wchar_t));
-        if (s == (size_t)-1 || s >=sizeof(rtpypath))
-            /* XXX deal with errors more gracefully */
+        size_t rtpypath_len;
+        rtpypath = _Py_char2wchar(_rtpypath, &rtpypath_len);
+        if (rtpypath != NULL)
+            bufsz += rtpypath_len + 1;
+        else
             _rtpypath = NULL;
-        if (_rtpypath)
-            bufsz += wcslen(rtpypath) + 1;
     }
 
     defpath = _pythonpath;
@@ -645,7 +645,7 @@ calculate_path(void)
     }
     else {
         /* Run-time value of $PYTHONPATH goes first */
-        if (_rtpypath) {
+        if (rtpypath) {
             wcscpy(buf, rtpypath);
             wcscat(buf, delimiter);
         }
@@ -719,6 +719,8 @@ calculate_path(void)
     PyMem_Free(_pythonpath);
     PyMem_Free(_prefix);
     PyMem_Free(_exec_prefix);
+    if (rtpypath != NULL)
+        PyMem_Free(rtpypath);
 }
 
 
