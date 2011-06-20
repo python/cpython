@@ -525,7 +525,7 @@ def setlocale(category, locale=None):
         category may be given as one of the LC_* values.
 
     """
-    if locale and not isinstance(locale, basestring):
+    if locale and type(locale) is not type(""):
         # convert to string
         locale = normalize(_build_localename(locale))
     return _setlocale(category, locale)
