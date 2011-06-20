@@ -81,6 +81,16 @@ class TestSuper(unittest.TestCase):
 
         self.assertEqual(E().f(), 'AE')
 
+    def test___class___set(self):
+        # See issue #12370
+        class X(A):
+            def f(self):
+                return super().f()
+            __class__ = 413
+        x = X()
+        self.assertEqual(x.f(), 'A')
+        self.assertEqual(x.__class__, 413)
+
 
 def test_main():
     support.run_unittest(TestSuper)
