@@ -16,6 +16,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #3067: locale.setlocale() accepts a Unicode locale.
+
 - Issue #11700: mailbox proxy object close methods can now be called multiple
   times without error, and _ProxyFile now closes the wrapped file.
 
