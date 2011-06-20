@@ -160,13 +160,13 @@ The Module Search Path
 .. index:: triple: module; search; path
 
 When a module named :mod:`spam` is imported, the interpreter searches for a
-file named :file:`spam.py` in the directory containing the input script (or
-the current directory), and then in the list of directories specified by the
-environment variable :envvar:`PYTHONPATH`.  This has the same syntax as the
-shell variable :envvar:`PATH`, that is, a list of directory names.  When
-:envvar:`PYTHONPATH` is not set, or when the file is not found there, the
-search continues in an installation-dependent default path; on Unix, this is
-usually :file:`.:/usr/local/lib/python`.
+file named :file:`spam.py` in the directory containing the input script and
+then in the list of directories specified by the environment variable
+:envvar:`PYTHONPATH`.  This has the same syntax as the shell variable
+:envvar:`PATH`, that is, a list of directory names.  When :envvar:`PYTHONPATH`
+is not set, or when the file is not found there, the search continues in an
+installation-dependent default path; on Unix, this is usually
+:file:`.:/usr/local/lib/python`.
 
 Actually, modules are searched in the list of directories given by the variable
 ``sys.path`` which is initialized from the directory containing the input script
