@@ -897,11 +897,7 @@ def nobody_uid():
 
 def executable(path):
     """Test for executable file."""
-    try:
-        st = os.stat(path)
-    except os.error:
-        return False
-    return st.st_mode & 0o111 != 0
+    return os.access(path, os.X_OK)
 
 
 class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
@@ -1015,7 +1011,7 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                             scriptname)
             return
         ispy = self.is_python(scriptname)
-        if not ispy:
+        if self.have_fork or not ispy:
             if not self.is_executable(scriptfile):
                 self.send_error(403, "CGI script is not executable (%r)" %
                                 scriptname)
