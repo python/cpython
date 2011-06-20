@@ -1085,6 +1085,9 @@ class _TestPool(BaseTestCase):
         self.assertEqual(sorted(it), map(sqr, range(1000)))
 
     def test_make_pool(self):
+        self.assertRaises(ValueError, multiprocessing.Pool, -1)
+        self.assertRaises(ValueError, multiprocessing.Pool, 0)
+
         p = multiprocessing.Pool(3)
         self.assertEqual(3, len(p._pool))
         p.close()
