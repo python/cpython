@@ -225,10 +225,17 @@ symtable_new(void)
 struct symtable *
 PySymtable_Build(mod_ty mod, const char *filename, PyFutureFeatures *future)
 {
-    struct symtable *st = symtable_new();
+    struct symtable *st;
     asdl_seq *seq;
     int i;
 
+    if (__class__ == NULL) {
+        __class__ = PyUnicode_InternFromString("@__class__");
+        if (__class__ == NULL)
+            return NULL;
+    }
+
+    st = symtable_new();
     if (st == NULL)
         return st;
     st->st_filename = filename;
@@ -744,8 +751,6 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     }
     else {
         /* Special-case __class__ */
-        if (!GET_IDENTIFIER(__class__))
-            goto error;
         assert(PySet_Contains(local, __class__) == 1);
         if (PySet_Add(newbound, __class__) < 0)
             goto error;
@@ -783,7 +788,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
                                                          NULL))
         goto error;
     else if (ste->ste_type == ClassBlock && !analyze_cells(scopes, newfree,
-                                                           "__class__"))
+                                                           "@__class__"))
         goto error;
     /* Records the results of the analysis in the symbol table entry */
     if (!update_symbols(ste->ste_symbols, scopes, bound, newfree,
@@ -1143,8 +1148,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         if (!symtable_enter_block(st, s->v.ClassDef.name, ClassBlock,
                                   (void *)s, s->lineno, s->col_offset))
             return 0;
-        if (!GET_IDENTIFIER(__class__) ||
-            !symtable_add_def(st, __class__, DEF_LOCAL) ||
+        if (!symtable_add_def(st, __class__, DEF_LOCAL) ||
             !GET_IDENTIFIER(__locals__) ||
             !symtable_add_def(st, __locals__, DEF_PARAM)) {
             symtable_exit_block(st, s);
@@ -1417,8 +1421,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         if (e->v.Name.ctx == Load &&
             st->st_cur->ste_type == FunctionBlock &&
             !PyUnicode_CompareWithASCIIString(e->v.Name.id, "super")) {
-            if (!GET_IDENTIFIER(__class__) ||
-                !symtable_add_def(st, __class__, USE))
+            if (!symtable_add_def(st, __class__, USE))
                 return 0;
         }
         break;
