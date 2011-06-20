@@ -102,6 +102,7 @@ typedef unsigned short mode_t;
        Python 3.2a1: 3170 (add DUP_TOP_TWO, remove DUP_TOPX and ROT_FOUR)
                      tag: cpython-32
        Python 3.2a2  3180 (add DELETE_DEREF)
+       Python 3.3a0  3190 __class__ super closure changed
 */
 
 /* MAGIC must change whenever the bytecode emitted by the compiler may no
@@ -114,7 +115,7 @@ typedef unsigned short mode_t;
 #define STRIFY(name) QUOTE(name)
 #define MAJOR STRIFY(PY_MAJOR_VERSION)
 #define MINOR STRIFY(PY_MINOR_VERSION)
-#define MAGIC (3180 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (3190 | ((long)'\r'<<16) | ((long)'\n'<<24))
 #define TAG "cpython-" MAJOR MINOR;
 #define CACHEDIR "__pycache__"
 static const Py_UNICODE CACHEDIR_UNICODE[] = {
