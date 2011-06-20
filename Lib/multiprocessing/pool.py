@@ -148,6 +148,8 @@ class Pool(object):
                 processes = cpu_count()
             except NotImplementedError:
                 processes = 1
+        if processes < 1:
+            raise ValueError("Number of processes must be at least 1")
 
         if initializer is not None and not hasattr(initializer, '__call__'):
             raise TypeError('initializer must be a callable')
