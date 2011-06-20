@@ -1908,6 +1908,10 @@ find_module_path_list(PyObject *fullname, PyObject *name,
             fp = _Py_fopen(filename, filemode);
             if (fp == NULL) {
                 Py_DECREF(filename);
+                if (PyErr_Occurred()) {
+                    Py_DECREF(prefix);
+                    return NULL;
+                }
                 continue;
             }
             match = case_ok(filename, -(Py_ssize_t)strlen(fdp->suffix), name);
