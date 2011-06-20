@@ -157,8 +157,8 @@ any that have been added to the map during asynchronous service) is closed.
 
       Called on listening channels (passive openers) when a connection has been
       established with a new remote endpoint that has issued a :meth:`connect`
-      call for the local endpoint.  *conn* is a *new* socket object usable to
-      send and receive data on the connection, and *address* is the address
+      call for the local endpoint.  *sock* is a *new* socket object usable to
+      send and receive data on the connection, and *addr* is the address
       bound to the socket on the other end of the connection.
 
       .. versionadded:: 3.2
