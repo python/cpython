@@ -161,7 +161,7 @@ The Module Search Path
 
 When a module named :mod:`spam` is imported, the interpreter searches for a
 file named :file:`spam.py` in the directory containing the input script (or
-thecurrent directory), and then in the list of directories specified by the
+the current directory), and then in the list of directories specified by the
 environment variable :envvar:`PYTHONPATH`.  This has the same syntax as the
 shell variable :envvar:`PATH`, that is, a list of directory names.  When
 :envvar:`PYTHONPATH` is not set, or when the file is not found there, the
