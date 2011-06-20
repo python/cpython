@@ -3567,6 +3567,10 @@ call_find_module(PyObject *name, PyObject *path_list)
         if (fd != -1)
             fd = dup(fd);
         fclose(fp);
+        if (fd == -1) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            return NULL;
+        }
         fp = NULL;
     }
     if (fd != -1) {
