@@ -2283,7 +2283,7 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
 
  loop:
     switch (TYPE(n)) {
-         case import_as_name: {
+        case import_as_name: {
             node *name_node = CHILD(n, 0);
             str = NULL;
             name = NEW_IDENTIFIER(name_node);
