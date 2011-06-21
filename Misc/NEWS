@@ -196,6 +196,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12383: Fix subprocess module with env={}: don't copy the environment
+  variables, start with an empty environment.
+
 - Issue #11637: Fix support for importing packaging setup hooks from the
   project directory.
 
