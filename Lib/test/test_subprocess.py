@@ -339,14 +339,17 @@ class ProcessTestCase(BaseTestCase):
             stdout, stderr = p.communicate()
             self.assertEqual(stdout, b"orange")
 
+    @unittest.skipIf(sysconfig.get_config_var('Py_ENABLE_SHARED') == 1,
+                     'the python library cannot be loaded '
+                     'with an empty environment')
     def test_empty_env(self):
         with subprocess.Popen([sys.executable, "-c",
                                'import os; '
-                               'print(len(os.environ))'],
+                               'print(list(os.environ.keys()))'],
                               stdout=subprocess.PIPE,
                               env={}) as p:
             stdout, stderr = p.communicate()
-            self.assertEqual(stdout.strip(), b"0")
+            self.assertEqual(stdout.strip(), b"[]")
 
     def test_communicate_stdin(self):
         p = subprocess.Popen([sys.executable, "-c",
