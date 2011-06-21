@@ -1568,12 +1568,12 @@ symtable_visit_alias(struct symtable *st, alias_ty a)
     }
     else {
         if (st->st_cur->ste_type != ModuleBlock) {
-        int lineno = st->st_cur->ste_lineno;
-        int col_offset = st->st_cur->ste_col_offset;
-        PyErr_SetString(PyExc_SyntaxError, IMPORT_STAR_WARNING);
-        PyErr_SyntaxLocationEx(st->st_filename, lineno, col_offset);
-        Py_DECREF(store_name);
-        return 0;
+            int lineno = st->st_cur->ste_lineno;
+            int col_offset = st->st_cur->ste_col_offset;
+            PyErr_SetString(PyExc_SyntaxError, IMPORT_STAR_WARNING);
+            PyErr_SyntaxLocationEx(st->st_filename, lineno, col_offset);
+            Py_DECREF(store_name);
+            return 0;
         }
         st->st_cur->ste_unoptimized |= OPT_IMPORT_STAR;
         Py_DECREF(store_name);
