@@ -331,13 +331,22 @@ class ProcessTestCase(BaseTestCase):
     def test_env(self):
         newenv = os.environ.copy()
         newenv["FRUIT"] = "orange"
-        p = subprocess.Popen([sys.executable, "-c",
-                              'import sys,os;'
-                              'sys.stdout.write(os.getenv("FRUIT"))'],
-                             stdout=subprocess.PIPE,
-                             env=newenv)
-        self.addCleanup(p.stdout.close)
-        self.assertEqual(p.stdout.read(), b"orange")
+        with subprocess.Popen([sys.executable, "-c",
+                               'import sys,os;'
+                               'sys.stdout.write(os.getenv("FRUIT"))'],
+                              stdout=subprocess.PIPE,
+                              env=newenv) as p:
+            stdout, stderr = p.communicate()
+            self.assertEqual(stdout, b"orange")
+
+    def test_empty_env(self):
+        with subprocess.Popen([sys.executable, "-c",
+                               'import os; '
+                               'print(len(os.environ))'],
+                              stdout=subprocess.PIPE,
+                              env={}) as p:
+            stdout, stderr = p.communicate()
+            self.assertEqual(stdout.strip(), b"0")
 
     def test_communicate_stdin(self):
         p = subprocess.Popen([sys.executable, "-c",
