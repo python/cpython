@@ -1250,7 +1250,7 @@ class Popen(object):
                     # potential deadlocks, thus we do all this here.
                     # and pass it to fork_exec()
 
-                    if env:
+                    if env is not None:
                         env_list = [os.fsencode(k) + b'=' + os.fsencode(v)
                                     for k, v in env.items()]
                     else:
