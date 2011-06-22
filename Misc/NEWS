@@ -196,6 +196,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1874: email now detects and reports as a defect the presence of
+  any CTE other than 7bit, 8bit, or binary on a multipart.
+
 - Issue #12383: Fix subprocess module with env={}: don't copy the environment
   variables, start with an empty environment.
 

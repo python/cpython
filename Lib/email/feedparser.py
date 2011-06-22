@@ -300,6 +300,11 @@ class FeedParser:
                     lines.append(line)
                 self._cur.set_payload(EMPTYSTRING.join(lines))
                 return
+            # Make sure a valid content type was specified per RFC 2045:6.4.
+            if (self._cur.get('content-transfer-encoding', '8bit').lower()
+                    not in ('7bit', '8bit', 'binary')):
+                defect = errors.InvalidMultipartContentTransferEncodingDefect()
+                self.policy.handle_defect(self._cur, defect)
             # Create a line match predicate which matches the inter-part
             # boundary as well as the end-of-multipart boundary.  Don't push
             # this onto the input stream until we've scanned past the
