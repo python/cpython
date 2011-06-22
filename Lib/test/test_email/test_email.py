@@ -1809,6 +1809,51 @@ class TestNonConformantBase:
         unless(isinstance(self.get_defects(msg)[1],
                           errors.MultipartInvariantViolationDefect))
 
+    multipart_msg = textwrap.dedent("""\
+        Date: Wed, 14 Nov 2007 12:56:23 GMT
+        From: foo@bar.invalid
+        To: foo@bar.invalid
+        Subject: Content-Transfer-Encoding: base64 and multipart
+        MIME-Version: 1.0
+        Content-Type: multipart/mixed;
+            boundary="===============3344438784458119861=="{}
+
+        --===============3344438784458119861==
+        Content-Type: text/plain
+
+        Test message
+
+        --===============3344438784458119861==
+        Content-Type: application/octet-stream
+        Content-Transfer-Encoding: base64
+
+        YWJj
+
+        --===============3344438784458119861==--
+        """)
+
+    def test_multipart_invalid_cte(self):
+        msg = email.message_from_string(
+            self.multipart_msg.format("\nContent-Transfer-Encoding: base64"),
+            policy = self.policy)
+        self.assertEqual(len(self.get_defects(msg)), 1)
+        self.assertIsInstance(self.get_defects(msg)[0],
+            errors.InvalidMultipartContentTransferEncodingDefect)
+
+    def test_multipart_no_cte_no_defect(self):
+        msg = email.message_from_string(
+            self.multipart_msg.format(''),
+            policy = self.policy)
+        self.assertEqual(len(self.get_defects(msg)), 0)
+
+    def test_multipart_valid_cte_no_defect(self):
+        for cte in ('7bit', '8bit', 'BINary'):
+            msg = email.message_from_string(
+                self.multipart_msg.format(
+                    "\nContent-Transfer-Encoding: {}".format(cte)),
+                policy = self.policy)
+            self.assertEqual(len(self.get_defects(msg)), 0)
+
     def test_invalid_content_type(self):
         eq = self.assertEqual
         neq = self.ndiffAssertEqual
