@@ -333,6 +333,9 @@ class SiginterruptTest(unittest.TestCase):
             def handler(signum, frame):
                 pass
 
+            print("ready")
+            sys.stdout.flush()
+
             signal.signal(signal.SIGALRM, handler)
             if interrupt is not None:
                 signal.siginterrupt(signal.SIGALRM, interrupt)
@@ -353,11 +356,15 @@ class SiginterruptTest(unittest.TestCase):
         """ % (interrupt,)
         with spawn_python('-c', code) as process:
             try:
+                # wait until the child process is loaded and has started
+                first_line = process.stdout.readline()
+
                 stdout, stderr = process.communicate(timeout=3.0)
             except subprocess.TimeoutExpired:
                 process.kill()
                 return False
             else:
+                stdout = first_line + stdout
                 exitcode = process.wait()
                 if exitcode not in (2, 3):
                     raise Exception("Child error (exit code %s): %s"
