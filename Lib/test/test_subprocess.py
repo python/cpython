@@ -390,6 +390,10 @@ class ProcessTestCase(BaseTestCase):
             stdout, stderr = p.communicate()
             self.assertEqual(stdout, b"orange")
 
+    # Windows requires at least the SYSTEMROOT environment variable to start
+    # Python
+    @unittest.skipIf(sys.platform == 'win32',
+                     'cannot test an empty env on Windows')
     @unittest.skipIf(sysconfig.get_config_var('Py_ENABLE_SHARED') is not None,
                      'the python library cannot be loaded '
                      'with an empty environment')
