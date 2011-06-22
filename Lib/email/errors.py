@@ -55,3 +55,6 @@ class MalformedHeaderDefect(MessageDefect):
 
 class MultipartInvariantViolationDefect(MessageDefect):
     """A message claimed to be a multipart but no subparts were found."""
+
+class InvalidMultipartContentTransferEncodingDefect(MessageDefect):
+    """An invalid content transfer encoding was set on the multipart itself."""
