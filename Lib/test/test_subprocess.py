@@ -390,7 +390,7 @@ class ProcessTestCase(BaseTestCase):
             stdout, stderr = p.communicate()
             self.assertEqual(stdout, b"orange")
 
-    @unittest.skipIf(sysconfig.get_config_var('Py_ENABLE_SHARED') == 1,
+    @unittest.skipIf(sysconfig.get_config_var('Py_ENABLE_SHARED') is not None,
                      'the python library cannot be loaded '
                      'with an empty environment')
     def test_empty_env(self):
@@ -400,7 +400,11 @@ class ProcessTestCase(BaseTestCase):
                               stdout=subprocess.PIPE,
                               env={}) as p:
             stdout, stderr = p.communicate()
-            self.assertEqual(stdout.strip(), b"[]")
+            self.assertIn(stdout.strip(),
+                (b"[]",
+                 # Mac OS X adds __CF_USER_TEXT_ENCODING variable to an empty
+                 # environment
+                 b"['__CF_USER_TEXT_ENCODING']"))
 
     def test_communicate_stdin(self):
         p = subprocess.Popen([sys.executable, "-c",
