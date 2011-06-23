@@ -10,8 +10,6 @@ This module also provides some data items to the user:
 
   TMP_MAX  - maximum number of names that will be tried before
              giving up.
-  template - the default prefix for all temporary names.
-             You may change this to control the default prefix.
   tempdir  - If this is set to a string before the first use of
              any routine from this module, it will be considered as
              another candidate location to store temporary files.
@@ -74,6 +72,8 @@ if hasattr(_os, 'TMP_MAX'):
 else:
     TMP_MAX = 10000
 
+# Although it does not have an underscore for historical reasons, this
+# variable is an internal implementation detail (see issue 10354).
 template = "tmp"
 
 # Internal routines.

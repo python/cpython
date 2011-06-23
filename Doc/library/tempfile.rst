@@ -25,7 +25,7 @@ instead a string of six random characters is used.
 
 Also, all the user-callable functions now take additional arguments which
 allow direct control over the location and name of temporary files.  It is
-no longer necessary to use the global *tempdir* and *template* variables.
+no longer necessary to use the global *tempdir* variable.
 To maintain backward compatibility, the argument order is somewhat odd; it
 is recommended to use keyword arguments for clarity.
 
