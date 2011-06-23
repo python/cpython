@@ -70,6 +70,11 @@ class ThreadSignals(unittest.TestCase):
     def alarm_interrupt(self, sig, frame):
         raise KeyboardInterrupt
 
+    # Issue #11223: Locks are implemented using a mutex and a condition
+    # variable of the pthread library on FreeBSD6. POSIX condition variables
+    # cannot be interrupted by signals (see pthread_cond_wait manual page).
+    @unittest.skipIf(sys.platform == 'freebsd6',
+                     'POSIX condition variables cannot be interrupted')
     def test_lock_acquire_interruption(self):
         # Mimic receiving a SIGINT (KeyboardInterrupt) with SIGALRM while stuck
         # in a deadlock.
