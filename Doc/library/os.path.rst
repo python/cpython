@@ -190,10 +190,11 @@ applications should use string objects to access all files.
    path, all previous components (on Windows, including the previous drive letter,
    if there was one) are thrown away, and joining continues.  The return value is
    the concatenation of *path1*, and optionally *path2*, etc., with exactly one
-   directory separator (``os.sep``) inserted between components, unless *path2* is
-   empty.  Note that on Windows, since there is a current directory for each drive,
-   ``os.path.join("c:", "foo")`` represents a path relative to the current
-   directory on drive :file:`C:` (:file:`c:foo`), not :file:`c:\\foo`.
+   directory separator (``os.sep``) following each non-empty part except the last.
+   (This means that an empty last part will result in a path that ends with a
+   separator.)  Note that on Windows, since there is a current directory for
+   each drive, ``os.path.join("c:", "foo")`` represents a path relative to the
+   current directory on drive :file:`C:` (:file:`c:foo`), not :file:`c:\\foo`.
 
 
 .. function:: normcase(path)
