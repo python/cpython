@@ -265,6 +265,13 @@ class CmdLineTest(unittest.TestCase):
             "print(repr(input()))",
             b"'abc'")
 
+    def test_unmached_quote(self):
+        # Issue #10206: python program starting with unmatched quote
+        # spewed spaces to stdout
+        rc, out, err = assert_python_failure('-c', "'")
+        self.assertRegex(err.decode('ascii', 'ignore'), 'SyntaxError')
+        self.assertEqual(b'', out)
+
 
 def test_main():
     test.support.run_unittest(CmdLineTest)
