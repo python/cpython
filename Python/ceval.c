@@ -3046,28 +3046,118 @@ exit_eval_frame:
 }
 
 static void
-positional_argument_error(PyCodeObject *co, int given, int defcount, PyObject **fastlocals)
+format_missing(const char *kind, PyCodeObject *co, PyObject *names)
+{
+    int err;
+    Py_ssize_t len = PyList_GET_SIZE(names);
+    PyObject *name_str, *comma, *tail, *tmp;
+
+    assert(PyList_CheckExact(names));
+    assert(len >= 1);
+    /* Deal with the joys of natural language. */
+    switch (len) {
+    case 1:
+        name_str = PyList_GET_ITEM(names, 0);
+        Py_INCREF(name_str);
+        break;
+    case 2:
+        name_str = PyUnicode_FromFormat("%U and %U",
+                                        PyList_GET_ITEM(names, len - 2),
+                                        PyList_GET_ITEM(names, len - 1));
+        break;
+    default:
+        tail = PyUnicode_FromFormat(", %U, and %U",
+                                    PyList_GET_ITEM(names, len - 2),
+                                    PyList_GET_ITEM(names, len - 1));
+        /* Chop off the last two objects in the list. This shouldn't actually
+           fail, but we can't be too careful. */
+        err = PyList_SetSlice(names, len - 2, len, NULL);
+        if (err == -1) {
+            Py_DECREF(tail);
+            return;
+        }
+        /* Stitch everything up into a nice comma-separated list. */
+        comma = PyUnicode_FromString(", ");
+        if (comma == NULL) {
+            Py_DECREF(tail);
+            return;
+        }
+        tmp = PyUnicode_Join(comma, names);
+        Py_DECREF(comma);
+        if (tmp == NULL) {
+            Py_DECREF(tail);
+            return;
+        }
+        name_str = PyUnicode_Concat(tmp, tail);
+        Py_DECREF(tmp);
+        Py_DECREF(tail);
+        break;
+    }
+    if (name_str == NULL)
+        return;
+    PyErr_Format(PyExc_TypeError,
+                 "%U() missing %i required %s argument%s: %U",
+                 co->co_name,
+                 len,
+                 kind,
+                 len == 1 ? "" : "s",
+                 name_str);
+    Py_DECREF(name_str);
+}
+
+static void
+missing_arguments(PyCodeObject *co, int missing, int defcount,
+                  PyObject **fastlocals)
+{
+    int i, j = 0;
+    int start, end;
+    int positional = defcount != -1;
+    const char *kind = positional ? "positional" : "keyword-only";
+    PyObject *missing_names;
+
+    /* Compute the names of the arguments that are missing. */
+    missing_names = PyList_New(missing);
+    if (missing_names == NULL)
+        return;
+    if (positional) {
+        start = 0;
+        end = co->co_argcount - defcount;
+    }
+    else {
+        start = co->co_argcount;
+        end = start + co->co_kwonlyargcount;
+    }
+    for (i = start; i < end; i++) {
+        if (GETLOCAL(i) == NULL) {
+            PyObject *raw = PyTuple_GET_ITEM(co->co_varnames, i);
+            PyObject *name = PyObject_Repr(raw);
+            if (name == NULL) {
+                Py_DECREF(missing_names);
+                return;
+            }
+            PyList_SET_ITEM(missing_names, j++, name);
+        }
+    }
+    assert(j == missing);
+    format_missing(kind, co, missing_names);
+    Py_DECREF(missing_names);
+}
+
+static void
+too_many_positional(PyCodeObject *co, int given, int defcount, PyObject **fastlocals)
 {
     int plural;
     int kwonly_given = 0;
-    int atleast = co->co_argcount - defcount;
     int i;
     PyObject *sig, *kwonly_sig;
 
-    if (given == -1) {
-        given = 0;
-        for (i = 0; i < co->co_argcount; i++)
-            if (GETLOCAL(i))
-                given++;
-    }
+    assert((co->co_flags & CO_VARARGS) == 0);
+    /* Count missing keyword-only args. */
     for (i = co->co_argcount; i < co->co_argcount + co->co_kwonlyargcount; i++)
-        if (GETLOCAL(i))
+        if (GETLOCAL(i) != NULL)
             kwonly_given++;
-    if (co->co_flags & CO_VARARGS) {
-        plural = atleast != 1;
-        sig = PyUnicode_FromFormat("at least %d", atleast);
-    }
-    else if (defcount) {
+    if (defcount) {
+        int atleast = co->co_argcount - defcount;
         plural = 1;
         sig = PyUnicode_FromFormat("from %d to %d", atleast, co->co_argcount);
     }
@@ -3089,6 +3179,7 @@ positional_argument_error(PyCodeObject *co, int given, int defcount, PyObject **
     else {
         /* This will not fail. */
         kwonly_sig = PyUnicode_FromString("");
+        assert(kwonly_sig != NULL);
     }
     PyErr_Format(PyExc_TypeError,
                  "%U() takes %U positional argument%s but %d%U %s given",
@@ -3217,16 +3308,18 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
         SETLOCAL(j, value);
     }
     if (argcount > co->co_argcount && !(co->co_flags & CO_VARARGS)) {
-        positional_argument_error(co, argcount, defcount, fastlocals);
+        too_many_positional(co, argcount, defcount, fastlocals);
         goto fail;
     }
     if (argcount < co->co_argcount) {
         int m = co->co_argcount - defcount;
-        for (i = argcount; i < m; i++) {
-            if (GETLOCAL(i) == NULL) {
-                positional_argument_error(co, -1, defcount, fastlocals);
-                goto fail;
-            }
+        int missing = 0;
+        for (i = argcount; i < m; i++)
+            if (GETLOCAL(i) == NULL)
+                missing++;
+        if (missing) {
+            missing_arguments(co, missing, defcount, fastlocals);
+            goto fail;
         }
         if (n > m)
             i = n - m;
@@ -3241,6 +3334,7 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
         }
     }
     if (co->co_kwonlyargcount > 0) {
+        int missing = 0;
         for (i = co->co_argcount; i < total_args; i++) {
             PyObject *name;
             if (GETLOCAL(i) != NULL)
@@ -3254,9 +3348,10 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
                     continue;
                 }
             }
-            PyErr_Format(PyExc_TypeError,
-                         "%U() requires keyword-only argument '%S'",
-                         co->co_name, name);
+            missing++;
+        }
+        if (missing) {
+            missing_arguments(co, missing, -1, fastlocals);
             goto fail;
         }
     }
