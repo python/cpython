@@ -918,10 +918,24 @@ def formatargvalues(args, varargs, varkw, locals,
         specs.append(formatvarkw(varkw) + formatvalue(locals[varkw]))
     return '(' + ', '.join(specs) + ')'
 
-def _positional_error(f_name, args, kwonly, varargs, defcount, given, values):
+def _missing_arguments(f_name, argnames, pos, values):
+    names = [repr(name) for name in argnames if name not in values]
+    missing = len(names)
+    if missing == 1:
+        s = names[0]
+    elif missing == 2:
+        s = "{} and {}".format(*names)
+    else:
+        tail = ", {} and {}".format(names[-2:])
+        del names[-2:]
+        s = ", ".join(names) + tail
+    raise TypeError("%s() missing %i required %s argument%s: %s" %
+                    (f_name, missing,
+                      "positional" if pos else "keyword-only",
+                      "" if missing == 1 else "s", s))
+
+def _too_many(f_name, args, kwonly, varargs, defcount, given, values):
     atleast = len(args) - defcount
-    if given is None:
-        given = len([arg for arg in args if arg in values])
     kwonly_given = len([arg for arg in kwonly if arg in values])
     if varargs:
         plural = atleast != 1
@@ -980,22 +994,25 @@ def getcallargs(func, *positional, **named):
                             (f_name, kw))
         arg2value[kw] = value
     if num_pos > num_args and not varargs:
-        _positional_error(f_name, args, kwonlyargs, varargs, num_defaults,
-                          num_pos, arg2value)
+        _too_many(f_name, args, kwonlyargs, varargs, num_defaults,
+                   num_pos, arg2value)
     if num_pos < num_args:
-        for arg in args[:num_args - num_defaults]:
+        req = args[:num_args - num_defaults]
+        for arg in req:
             if arg not in arg2value:
-                _positional_error(f_name, args, kwonlyargs, varargs,
-                                  num_defaults, None, arg2value)
+                _missing_arguments(f_name, req, True, arg2value)
         for i, arg in enumerate(args[num_args - num_defaults:]):
             if arg not in arg2value:
                 arg2value[arg] = defaults[i]
+    missing = 0
     for kwarg in kwonlyargs:
         if kwarg not in arg2value:
-            if kwarg not in kwonlydefaults:
-                raise TypeError("%s() requires keyword-only argument %r" %
-                                (f_name, kwarg))
-            arg2value[kwarg] = kwonlydefaults[kwarg]
+            if kwarg in kwonlydefaults:
+                arg2value[kwarg] = kwonlydefaults[kwarg]
+            else:
+                missing += 1
+    if missing:
+        _missing_arguments(f_name, kwonlyargs, False, arg2value)
     return arg2value
 
 # -------------------------------------------------- stack frame extraction
