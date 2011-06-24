@@ -295,6 +295,31 @@ class WakeupSignalTests(unittest.TestCase):
 
         self.check_signum(signum1, signum2)
 
+    @unittest.skipUnless(hasattr(signal, 'pthread_kill'),
+                         'need signal.pthread_kill()')
+    def test_pthread_kill_main_thread(self):
+        # Test that a signal can be sent to the main thread with pthread_kill()
+        # before any other thread has been created (see issue #12392).
+        code = """if True:
+            import threading
+            import signal
+            import sys
+
+            def handler(signum, frame):
+                sys.exit(3)
+
+            signal.signal(signal.SIGUSR1, handler)
+            signal.pthread_kill(threading.get_ident(), signal.SIGUSR1)
+            sys.exit(1)
+        """
+
+        with spawn_python('-c', code) as process:
+            stdout, stderr = process.communicate()
+            exitcode = process.wait()
+            if exitcode != 3:
+                raise Exception("Child error (exit code %s): %s" %
+                                (exitcode, stdout))
+
     def setUp(self):
         import fcntl
 
