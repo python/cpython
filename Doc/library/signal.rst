@@ -179,7 +179,8 @@ The :mod:`signal` module defines the following functions:
    will then be called.  Returns nothing.  Not on Windows. (See the Unix man page
    :manpage:`signal(2)`.)
 
-   See also :func:`sigwait` and :func:`sigpending`.
+   See also :func:`sigwait`, :func:`sigwaitinfo`, :func:`sigtimedwait` and
+   :func:`sigpending`.
 
 
 .. function:: pthread_kill(thread_id, signum)
@@ -334,7 +335,47 @@ The :mod:`signal` module defines the following functions:
    Availability: Unix (see the man page :manpage:`sigwait(3)` for further
    information).
 
-   See also :func:`pause`, :func:`pthread_sigmask` and :func:`sigpending`.
+   See also :func:`pause`, :func:`pthread_sigmask`, :func:`sigpending`,
+   :func:`sigwaitinfo` and :func:`sigtimedwait`.
+
+   .. versionadded:: 3.3
+
+
+.. function:: sigwaitinfo(sigset)
+
+   Suspend execution of the calling thread until the delivery of one of the
+   signals specified in the signal set *sigset*.  The function accepts the
+   signal and removes it from the pending list of signals. If one of the
+   signals in *sigset* is already pending for the calling thread, the function
+   will return immediately with information about that signal. The signal
+   handler is not called for the delivered signal. The function raises an
+   :exc:`OSError` with error number set to :const:`errno.EINTR` if it is
+   interrupted by a signal that is not in *sigset*.
+
+   The return value is an object representing the data contained in the
+   :c:type:`siginfo_t` structure, namely: :attr:`si_signo`, :attr:`si_code`,
+   :attr:`si_errno`, :attr:`si_pid`, :attr:`si_uid`, :attr:`si_status`,
+   :attr:`si_band`.
+
+   Availability: Unix (see the man page :manpage:`sigwaitinfo(2)` for further
+   information).
+
+   See also :func:`pause`, :func:`sigwait` and :func:`sigtimedwait`.
+
+   .. versionadded:: 3.3
+
+
+.. function:: sigtimedwait(sigset, (timeout_sec, timeout_nsec))
+
+   Like :func:`sigtimedwait`, but takes a tuple of ``(seconds, nanoseconds)``
+   as an additional argument specifying a timeout. If both *timeout_sec* and
+   *timeout_nsec* are specified as :const:`0`, a poll is performed. Returns
+   :const:`None` if a timeout occurs.
+
+   Availability: Unix (see the man page :manpage:`sigtimedwait(2)` for further
+   information).
+
+   See also :func:`pause`, :func:`sigwait` and :func:`sigwaitinfo`.
 
    .. versionadded:: 3.3
 

@@ -743,8 +743,14 @@
 /* Define to 1 if you have the `sigrelse' function. */
 #undef HAVE_SIGRELSE
 
+/* Define to 1 if you have the `sigtimedwait' function. */
+#undef HAVE_SIGTIMEDWAIT
+
 /* Define to 1 if you have the `sigwait' function. */
 #undef HAVE_SIGWAIT
+
+/* Define to 1 if you have the `sigwaitinfo' function. */
+#undef HAVE_SIGWAITINFO
 
 /* Define to 1 if you have the `snprintf' function. */
 #undef HAVE_SNPRINTF
