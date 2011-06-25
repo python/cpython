@@ -821,10 +821,10 @@ the items are returned in the order their keys were first added.
 
           >>> d = OrderedDict.fromkeys('abcde')
           >>> d.move_to_end('b')
-          >>> ''.join(d.keys)
+          >>> ''.join(d.keys())
           'acdeb'
           >>> d.move_to_end('b', last=False)
-          >>> ''.join(d.keys)
+          >>> ''.join(d.keys())
           'bacde'
 
       .. versionadded:: 3.2
