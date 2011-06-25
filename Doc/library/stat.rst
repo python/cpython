@@ -307,11 +307,11 @@ The following flags can be used in the *flags* argument of :func:`os.chflags`:
 
    The file may only be appended to.
 
-.. data:: UF_OPAQUE
+.. data:: UF_NOUNLINK
 
    The file may not be renamed or deleted.
 
-.. data:: UF_NOUNLINK
+.. data:: UF_OPAQUE
 
    The directory is opaque when viewed through a union stack.
 
