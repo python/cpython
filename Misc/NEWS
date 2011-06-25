@@ -25,6 +25,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12404: Remove C89 incompatible code from mmap module. Patch by Akira
+  Kitada.
+
 - Issue #12383: Fix subprocess module with env={}: don't copy the environment
   variables, start with an empty environment.
 
