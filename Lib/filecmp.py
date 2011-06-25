@@ -48,11 +48,12 @@ def cmp(f1, f2, shallow=1):
     if s1[1] != s2[1]:
         return False
 
-    result = _cache.get((f1, f2))
-    if result and (s1, s2) == result[:2]:
-        return result[2]
-    outcome = _do_cmp(f1, f2)
-    _cache[f1, f2] = s1, s2, outcome
+    outcome = _cache.get((f1, f2, s1, s2))
+    if outcome is None:
+        outcome = _do_cmp(f1, f2)
+        if len(_cache) > 100:      # limit the maximum size of the cache
+            _cache.clear()
+        _cache[f1, f2, s1, s2] = outcome
     return outcome
 
 def _sig(st):
