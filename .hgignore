@@ -62,3 +62,6 @@ PCbuild/*.o
 PCbuild/*.ncb
 PCbuild/*.bsc
 PCbuild/Win32-temp-*
+.coverage
+coverage/
+htmlcov/
