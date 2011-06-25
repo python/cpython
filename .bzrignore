@@ -40,3 +40,6 @@ __pycache__
 .coverage
 coverage/*
 htmlcov/*
+.coverage
+coverage/*
+htmlcov/*
