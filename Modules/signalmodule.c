@@ -507,7 +507,8 @@ PyDoc_STRVAR(getitimer_doc,
 Returns current value of given itimer.");
 #endif
 
-#if defined(PYPTHREAD_SIGMASK) || defined(HAVE_SIGWAIT)
+#if defined(PYPTHREAD_SIGMASK) || defined(HAVE_SIGWAIT) || \
+        defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
 /* Convert an iterable to a sigset.
    Return 0 on success, return -1 and raise an exception on error. */
 
@@ -679,6 +680,140 @@ PyDoc_STRVAR(signal_sigwait_doc,
 Wait a signal.");
 #endif   /* #ifdef HAVE_SIGPENDING */
 
+#if defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
+static int initialized;
+static PyStructSequence_Field struct_siginfo_fields[] = {
+    {"si_signo",        "signal number"},
+    {"si_code",         "signal code"},
+    {"si_errno",        "errno associated with this signal"},
+    {"si_pid",          "sending process ID"},
+    {"si_uid",          "real user ID of sending process"},
+    {"si_status",       "exit value or signal"},
+    {"si_band",         "band event for SIGPOLL"},
+    {0}
+};
+
+PyDoc_STRVAR(struct_siginfo__doc__,
+"struct_siginfo: Result from sigwaitinfo or sigtimedwait.\n\n\
+This object may be accessed either as a tuple of\n\
+(si_signo, si_code, si_errno, si_pid, si_uid, si_status, si_band),\n\
+or via the attributes si_signo, si_code, and so on.");
+
+static PyStructSequence_Desc struct_siginfo_desc = {
+    "signal.struct_siginfo",           /* name */
+    struct_siginfo__doc__,       /* doc */
+    struct_siginfo_fields,       /* fields */
+    7          /* n_in_sequence */
+};
+
+static PyTypeObject SiginfoType;
+
+static PyObject *
+fill_siginfo(siginfo_t *si)
+{
+    PyObject *result = PyStructSequence_New(&SiginfoType);
+    if (!result)
+        return NULL;
+
+    PyStructSequence_SET_ITEM(result, 0, PyLong_FromLong((long)(si->si_signo)));
+    PyStructSequence_SET_ITEM(result, 1, PyLong_FromLong((long)(si->si_code)));
+    PyStructSequence_SET_ITEM(result, 2, PyLong_FromLong((long)(si->si_errno)));
+    PyStructSequence_SET_ITEM(result, 3, PyLong_FromPid(si->si_pid));
+    PyStructSequence_SET_ITEM(result, 4, PyLong_FromLong((long)(si->si_uid)));
+    PyStructSequence_SET_ITEM(result, 5,
+                                PyLong_FromLong((long)(si->si_status)));
+    PyStructSequence_SET_ITEM(result, 6, PyLong_FromLong(si->si_band));
+    if (PyErr_Occurred()) {
+        Py_DECREF(result);
+        return NULL;
+    }
+
+    return result;
+}
+#endif
+
+#ifdef HAVE_SIGWAITINFO
+static PyObject *
+signal_sigwaitinfo(PyObject *self, PyObject *args)
+{
+    PyObject *signals;
+    sigset_t set;
+    siginfo_t si;
+    int err;
+
+    if (!PyArg_ParseTuple(args, "O:sigwaitinfo", &signals))
+        return NULL;
+
+    if (iterable_to_sigset(signals, &set))
+        return NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+    err = sigwaitinfo(&set, &si);
+    Py_END_ALLOW_THREADS
+    if (err == -1)
+        return PyErr_SetFromErrno(PyExc_OSError);
+
+    return fill_siginfo(&si);
+}
+
+PyDoc_STRVAR(signal_sigwaitinfo_doc,
+"sigwaitinfo(sigset) -> struct_siginfo\n\
+\n\
+Wait synchronously for a signal until one of the signals in *sigset* is\n\
+delivered.\n\
+Returns a struct_siginfo containing information about the signal.");
+#endif   /* #ifdef HAVE_SIGWAITINFO */
+
+#ifdef HAVE_SIGTIMEDWAIT
+static PyObject *
+signal_sigtimedwait(PyObject *self, PyObject *args)
+{
+    PyObject *signals, *timeout;
+    struct timespec buf;
+    sigset_t set;
+    siginfo_t si;
+    int err;
+
+    if (!PyArg_ParseTuple(args, "OO:sigtimedwait", &signals, &timeout))
+        return NULL;
+
+    if (!PyTuple_Check(timeout) || PyTuple_Size(timeout) != 2) {
+        PyErr_SetString(PyExc_TypeError,
+            "sigtimedwait() arg 2 must be a tuple "
+            "(timeout_sec, timeout_nsec)");
+        return NULL;
+    } else if (!PyArg_ParseTuple(timeout, "ll:sigtimedwait",
+                    &(buf.tv_sec), &(buf.tv_nsec)))
+        return NULL;
+
+    if (buf.tv_sec < 0 || buf.tv_nsec < 0) {
+        PyErr_SetString(PyExc_ValueError, "timeout must be non-negative");
+        return NULL;
+    }
+
+    if (iterable_to_sigset(signals, &set))
+        return NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+    err = sigtimedwait(&set, &si, &buf);
+    Py_END_ALLOW_THREADS
+    if (err == -1) {
+        if (errno == EAGAIN)
+            Py_RETURN_NONE;
+        else
+            return PyErr_SetFromErrno(PyExc_OSError);
+    }
+
+    return fill_siginfo(&si);
+}
+
+PyDoc_STRVAR(signal_sigtimedwait_doc,
+"sigtimedwait(sigset, (timeout_sec, timeout_nsec)) -> struct_siginfo\n\
+\n\
+Like sigwaitinfo(), but with a timeout specified as a tuple of (seconds,\n\
+nanoseconds).");
+#endif   /* #ifdef HAVE_SIGTIMEDWAIT */
+
 
 #if defined(HAVE_PTHREAD_KILL) && defined(WITH_THREAD)
 static PyObject *
@@ -752,6 +887,14 @@ static PyMethodDef signal_methods[] = {
     {"sigwait",                 (PyCFunction)signal_sigwait,
      METH_VARARGS, signal_sigwait_doc},
 #endif
+#ifdef HAVE_SIGWAITINFO
+    {"sigwaitinfo",             (PyCFunction)signal_sigwaitinfo,
+     METH_VARARGS, signal_sigwaitinfo_doc},
+#endif
+#ifdef HAVE_SIGTIMEDWAIT
+    {"sigtimedwait",            (PyCFunction)signal_sigtimedwait,
+     METH_VARARGS, signal_sigtimedwait_doc},
+#endif
     {NULL,                      NULL}           /* sentinel */
 };
 
@@ -819,6 +962,15 @@ PyInit_signal(void)
     m = PyModule_Create(&signalmodule);
     if (m == NULL)
         return NULL;
+
+#if defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
+    if (!initialized)
+        PyStructSequence_InitType(&SiginfoType, &struct_siginfo_desc);
+
+    Py_INCREF((PyObject*) &SiginfoType);
+    PyModule_AddObject(m, "struct_siginfo", (PyObject*) &SiginfoType);
+    initialized = 1;
+#endif
 
     /* Add some symbolic constants to the module */
     d = PyModule_GetDict(m);

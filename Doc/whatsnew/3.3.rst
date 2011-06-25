@@ -169,6 +169,10 @@ signal
   * :func:`~signal.pthread_kill`: send a signal to a thread ;
   * :func:`~signal.sigpending`: examine pending functions ;
   * :func:`~signal.sigwait`: wait a signal.
+  * :func:`~signal.sigwaitinfo`: wait for a signal, returning detailed
+    information about it.
+  * :func:`~signal.sigtimedwait`: like :func:`~signal.sigwaitinfo` but with a
+    timeout.
 
 * The signal handler writes the signal number as a single byte instead of
   a nul byte into the wakeup file descriptor. So it is possible to wait more
