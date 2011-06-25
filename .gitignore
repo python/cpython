@@ -45,3 +45,6 @@ tags
 .coverage
 coverage/
 htmlcov/
+.coverage
+coverage/
+htmlcov/
