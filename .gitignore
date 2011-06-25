@@ -42,3 +42,6 @@ pyconfig.h
 python
 python-gdb.py
 tags
+.coverage
+coverage/
+htmlcov/
