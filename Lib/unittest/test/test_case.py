@@ -1,5 +1,6 @@
 import difflib
 import pprint
+import pickle
 import re
 import sys
 
@@ -1103,6 +1104,20 @@ test case
             klass('test_something').run(result)
             self.assertEqual(len(result.errors), 1)
             self.assertEqual(result.testsRun, 1)
+
+    def testPickle(self):
+        # Issue 10326
+
+        # Can't use TestCase classes defined in Test class as
+        # pickle does not work with inner classes
+        test = unittest.TestCase('run')
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+
+            # blew up prior to fix
+            pickled_test = pickle.dumps(test, protocol=protocol)
+
+            unpickled_test = pickle.loads(pickled_test)
+            self.assertEqual(test, unpickled_test)
 
 
 if __name__ == '__main__':

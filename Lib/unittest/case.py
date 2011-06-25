@@ -129,6 +129,27 @@ class _AssertRaisesContext(object):
         return True
 
 
+class _TypeEqualityDict(object):
+
+    def __init__(self, testcase):
+        self.testcase = testcase
+        self._store = {}
+
+    def __setitem__(self, key, value):
+        self._store[key] = value
+
+    def __getitem__(self, key):
+        value = self._store[key]
+        if isinstance(value, basestring):
+            return getattr(self.testcase, value)
+        return value
+
+    def get(self, key, default=None):
+        if key in self._store:
+            return self[key]
+        return default
+
+
 class TestCase(object):
     """A class whose instances are single test cases.
 
@@ -195,13 +216,13 @@ class TestCase(object):
         # Map types to custom assertEqual functions that will compare
         # instances of said type in more detail to generate a more useful
         # error message.
-        self._type_equality_funcs = {}
-        self.addTypeEqualityFunc(dict, self.assertDictEqual)
-        self.addTypeEqualityFunc(list, self.assertListEqual)
-        self.addTypeEqualityFunc(tuple, self.assertTupleEqual)
-        self.addTypeEqualityFunc(set, self.assertSetEqual)
-        self.addTypeEqualityFunc(frozenset, self.assertSetEqual)
-        self.addTypeEqualityFunc(unicode, self.assertMultiLineEqual)
+        self._type_equality_funcs = _TypeEqualityDict(self)
+        self.addTypeEqualityFunc(dict, 'assertDictEqual')
+        self.addTypeEqualityFunc(list, 'assertListEqual')
+        self.addTypeEqualityFunc(tuple, 'assertTupleEqual')
+        self.addTypeEqualityFunc(set, 'assertSetEqual')
+        self.addTypeEqualityFunc(frozenset, 'assertSetEqual')
+        self.addTypeEqualityFunc(unicode, 'assertMultiLineEqual')
 
     def addTypeEqualityFunc(self, typeobj, function):
         """Add a type specific assertEqual style function to compare a type.
