@@ -611,7 +611,7 @@ class PendingSignalsTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
                          'need signal.pthread_sigmask()')
     @unittest.skipUnless(hasattr(os, 'fork'), 'need os.fork()')
-    def wait_helper(self, test, handler, blocked=signal.SIGALRM):
+    def wait_helper(self, test, handler, blocked):
         signum = signal.SIGALRM
 
         # sig*wait* must be called with the signal blocked: since the current
@@ -651,7 +651,7 @@ class PendingSignalsTests(unittest.TestCase):
             signal.alarm(1)
             self.assertEqual(signum, signal.sigwait([signum]))
 
-        self.wait_helper(test, self.handler)
+        self.wait_helper(test, self.handler, signal.SIGALRM)
 
     @unittest.skipUnless(hasattr(signal, 'sigwaitinfo'),
                          'need signal.sigwaitinfo()')
@@ -661,7 +661,7 @@ class PendingSignalsTests(unittest.TestCase):
             info = signal.sigwaitinfo([signum])
             self.assertEqual(signum, info.si_signo)
 
-        self.wait_helper(test, self.handler)
+        self.wait_helper(test, self.handler, signal.SIGALRM)
 
     @unittest.skipUnless(hasattr(signal, 'sigtimedwait'),
                          'need signal.sigtimedwait()')
@@ -671,7 +671,7 @@ class PendingSignalsTests(unittest.TestCase):
             info = signal.sigtimedwait([signum], (10, 1000))
             self.assertEqual(signum, info.si_signo)
 
-        self.wait_helper(test, self.handler)
+        self.wait_helper(test, self.handler, signal.SIGALRM)
 
     # check that polling with sigtimedwait works
     @unittest.skipUnless(hasattr(signal, 'sigtimedwait'),
@@ -682,7 +682,7 @@ class PendingSignalsTests(unittest.TestCase):
             info = signal.sigtimedwait([signum], (0, 0))
             self.assertEqual(signum, info.si_signo)
 
-        self.wait_helper(test, self.handler)
+        self.wait_helper(test, self.handler, signal.SIGALRM)
 
     @unittest.skipUnless(hasattr(signal, 'sigtimedwait'),
                          'need signal.sigtimedwait()')
@@ -690,7 +690,7 @@ class PendingSignalsTests(unittest.TestCase):
         def test(signum):
             self.assertEqual(None, signal.sigtimedwait([signum], (1, 35500)))
 
-        self.wait_helper(test, self.handler)
+        self.wait_helper(test, self.handler, signal.SIGALRM)
 
     @unittest.skipUnless(hasattr(signal, 'sigtimedwait'),
                          'need signal.sigtimedwait()')
