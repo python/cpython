@@ -279,6 +279,7 @@ class MinidomTest(unittest.TestCase):
 
         child.setAttribute("def", "ghi")
         self.confirm(len(child.attributes) == 1)
+        self.assertRaises(xml.dom.NotFoundErr, child.removeAttribute, "foo")
         child.removeAttribute("def")
         self.confirm(len(child.attributes) == 0)
         dom.unlink()
@@ -290,6 +291,8 @@ class MinidomTest(unittest.TestCase):
         child.setAttributeNS("http://www.w3.org", "xmlns:python",
                                                 "http://www.python.org")
         child.setAttributeNS("http://www.python.org", "python:abcattr", "foo")
+        self.assertRaises(xml.dom.NotFoundErr, child.removeAttributeNS,
+            "foo", "http://www.python.org")
         self.confirm(len(child.attributes) == 2)
         child.removeAttributeNS("http://www.python.org", "abcattr")
         self.confirm(len(child.attributes) == 1)
@@ -301,10 +304,22 @@ class MinidomTest(unittest.TestCase):
         child.setAttribute("spam", "jam")
         self.confirm(len(child.attributes) == 1)
         node = child.getAttributeNode("spam")
+        self.assertRaises(xml.dom.NotFoundErr, child.removeAttributeNode,
+            None)
         child.removeAttributeNode(node)
         self.confirm(len(child.attributes) == 0
                 and child.getAttributeNode("spam") is None)
+        dom2 = Document()
+        child2 = dom2.appendChild(dom.createElement("foo"))
+        self.assertRaises(xml.dom.NotFoundErr, child.removeAttributeNode,
+            node)
         dom.unlink()
+
+    def testHasAttribute(self):
+        dom = Document()
+        child = dom.appendChild(dom.createElement("foo"))
+        child.setAttribute("spam", "jam")
+        self.confirm(child.hasAttribute("spam"))
 
     def testChangeAttr(self):
         dom = parseString("<abc/>")
@@ -353,7 +368,16 @@ class MinidomTest(unittest.TestCase):
 
     def testGetAttribute(self): pass
 
-    def testGetAttributeNS(self): pass
+    def testGetAttributeNS(self):
+        dom = Document()
+        child = dom.appendChild(
+                dom.createElementNS("http://www.python.org", "python:abc"))
+        child.setAttributeNS("http://www.w3.org", "xmlns:python",
+                                                "http://www.python.org")
+        self.assertEqual(child.getAttributeNS("http://www.w3.org", "python"),
+            'http://www.python.org')
+        self.assertEqual(child.getAttributeNS("http://www.w3.org", "other"),
+            '')
 
     def testGetAttributeNode(self): pass
 
@@ -537,7 +561,13 @@ class MinidomTest(unittest.TestCase):
 
     def testFirstChild(self): pass
 
-    def testHasChildNodes(self): pass
+    def testHasChildNodes(self):
+        dom = parseString("<doc><foo/></doc>")
+        doc = dom.documentElement
+        self.assertTrue(dom.hasChildNodes())
+        dom2 = parseString("<doc/>")
+        doc2 = dom2.documentElement
+        self.assertFalse(doc2.hasChildNodes())
 
     def _testCloneElementCopiesAttributes(self, e1, e2, test):
         attrs1 = e1.attributes
@@ -1439,6 +1469,14 @@ class MinidomTest(unittest.TestCase):
         doc2 = parseString(doc.toxml())
         self.confirm(doc2.namespaceURI == xml.dom.EMPTY_NAMESPACE)
 
+    def testDocRemoveChild(self):
+        doc = parse(tstfile)
+        title_tag = doc.documentElement.getElementsByTagName("TITLE")[0]
+        self.assertRaises( xml.dom.NotFoundErr, doc.removeChild, title_tag)
+        num_children_before = len(doc.childNodes)
+        doc.removeChild(doc.childNodes[0])
+        num_children_after = len(doc.childNodes)
+        self.assertTrue(num_children_after == num_children_before - 1)
 
 def test_main():
     run_unittest(MinidomTest)
