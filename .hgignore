@@ -73,3 +73,6 @@ Modules/_testembed
 .coverage
 coverage/
 htmlcov/
+.coverage
+coverage/
+htmlcov/
