@@ -331,14 +331,13 @@ are always available.  They are listed here in alphabetical order.
    :term:`iterator`, or some other object which supports iteration.  The
    :meth:`__next__` method of the iterator returned by :func:`enumerate` returns a
    tuple containing a count (from *start* which defaults to 0) and the
-   corresponding value obtained from iterating over *iterable*.
+   values obtained from iterating over *iterable*.
 
-      >>> for i, season in enumerate('Spring Summer Fall Winter'.split(), start=1):
-              print(i, season)
-      1 Spring
-      2 Summer
-      3 Fall
-      4 Winter
+      >>> seasons = ['Spring', 'Summer', 'Fall', 'Winter']
+      >>> list(enumerate(seasons))
+      [(0, 'Spring'), (1, 'Summer'), (2, 'Fall'), (3, 'Winter')]
+      >>> list(enumerate(seasons, start=1))
+      [(1, 'Spring'), (2, 'Summer'), (3, 'Fall'), (4, 'Winter')]
 
    Equivalent to::
 
