@@ -200,6 +200,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12404: Remove C89 incompatible code from mmap module. Patch by Akira
+  Kitada.
+
 - Issue #1874: email now detects and reports as a defect the presence of
   any CTE other than 7bit, 8bit, or binary on a multipart.
 

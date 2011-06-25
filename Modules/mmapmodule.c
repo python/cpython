@@ -1162,12 +1162,13 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 #  endif
     if (fd != -1 && fstat(fd, &st) == 0 && S_ISREG(st.st_mode)) {
         if (map_size == 0) {
+            off_t calc_size;
             if (offset >= st.st_size) {
                 PyErr_SetString(PyExc_ValueError,
                                 "mmap offset is greater than file size");
                 return NULL;
             }
-            off_t calc_size = st.st_size - offset;
+            calc_size = st.st_size - offset;
             map_size = calc_size;
             if (map_size != calc_size) {
                 PyErr_SetString(PyExc_ValueError,
