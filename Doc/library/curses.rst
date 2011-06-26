@@ -299,6 +299,12 @@ The module :mod:`curses` defines the following functions:
       cause the interpreter to exit.
 
 
+.. function:: is_term_resized(nlines, ncols)
+
+   Return ``True`` if :func:`resize_term` would modify the window structure,
+   ``False`` otherwise.
+
+
 .. function:: isendwin()
 
    Return ``True`` if :func:`endwin` has been called (that is, the  curses library has
@@ -466,6 +472,35 @@ The module :mod:`curses` defines the following functions:
 
    Restore the  terminal  to "shell" mode, as previously saved  by
    :func:`def_shell_mode`.
+
+
+.. function:: resetty()
+
+   Restore the state of the terminal modes to what it was at the last call to
+   :func:`savetty`.
+
+
+.. function:: resize_term(nlines, ncols)
+
+   Backend function used by :func:`resizeterm`, performing most of the work;
+   when resizing the windows, :func:`resize_term` blank-fills the areas that are
+   extended.  The calling application should fill in these areas with
+   appropriate data.  The :func:`resize_term` function attempts to resize all
+   windows.  However, due to the calling convention of pads, it is not possible
+   to resize these without additional interaction with the application.
+
+
+.. function:: resizeterm(nlines, ncols)
+
+   Resize the standard and current windows to the specified dimensions, and
+   adjusts other bookkeeping data used by the curses library that record the
+   window dimensions (in particular the SIGWINCH handler).
+
+
+.. function:: savetty()
+
+   Save the current state of the terminal modes in a buffer, usable by
+   :func:`resetty`.
 
 
 .. function:: setsyx(y, x)
@@ -801,6 +836,11 @@ the following methods:
    Return a tuple ``(y, x)`` of co-ordinates of upper-left corner.
 
 
+.. method:: window.getbkgd()
+
+   Return the given window's current background character/attribute pair.
+
+
 .. method:: window.getch([y, x])
 
    Get a character. Note that the integer returned does *not* have to be in ASCII
@@ -1044,6 +1084,14 @@ the following methods:
    rectangles must be the same size.  Both rectangles must be entirely contained
    within their respective structures.  Negative values of *pminrow*, *pmincol*,
    *sminrow*, or *smincol* are treated as if they were zero.
+
+
+.. method:: window.resize(nlines, ncols)
+
+   Reallocate storage for a curses window to adjust its dimensions to the
+   specified values.  If either dimension is larger than the current values, the
+   window's data is filled with blanks that have the current background
+   rendition (as set by :meth:`bkgdset`) merged into them.
 
 
 .. method:: window.scroll([lines=1])
