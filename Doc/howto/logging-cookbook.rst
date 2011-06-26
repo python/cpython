@@ -723,7 +723,7 @@ the basis for code meeting your own specific requirements::
     # The size of the rotated files is made small so you can see the results easily.
     def listener_configurer():
         root = logging.getLogger()
-        h = logging.handlers.RotatingFileHandler('/tmp/mptest.log', 'a', 300, 10)
+        h = logging.handlers.RotatingFileHandler('mptest.log', 'a', 300, 10)
         f = logging.Formatter('%(asctime)s %(processName)-10s %(name)s %(levelname)-8s %(message)s')
         h.setFormatter(f)
         root.addHandler(h)
