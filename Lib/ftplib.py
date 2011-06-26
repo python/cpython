@@ -351,6 +351,7 @@ class FTP:
             conn, sockaddr = sock.accept()
             if self.timeout is not _GLOBAL_DEFAULT_TIMEOUT:
                 conn.settimeout(self.timeout)
+            sock.close()
         if resp[:3] == '150':
             # this is conditional in case we received a 125
             size = parse150(resp)
@@ -575,11 +576,11 @@ class FTP:
 
     def close(self):
         '''Close the connection without assuming anything about it.'''
-        if self.file:
+        if self.file is not None:
             self.file.close()
+        if self.sock is not None:
             self.sock.close()
-            self.file = self.sock = None
-
+        self.file = self.sock = None
 
 try:
     import ssl
