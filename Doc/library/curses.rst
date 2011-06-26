@@ -75,7 +75,7 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: baudrate()
 
-   Returns the output speed of the terminal in bits per second.  On software
+   Return the output speed of the terminal in bits per second.  On software
    terminal emulators it will have a fixed high value. Included for historical
    reasons; in former times, it was used to  write output loops for time delays and
    occasionally to change interfaces depending on the line speed.
@@ -88,7 +88,7 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: can_change_color()
 
-   Returns true or false, depending on whether the programmer can change the colors
+   Return ``True`` or ``False``, depending on whether the programmer can change the colors
    displayed by the terminal.
 
 
@@ -103,7 +103,7 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: color_content(color_number)
 
-   Returns the intensity of the red, green, and blue (RGB) components in the color
+   Return the intensity of the red, green, and blue (RGB) components in the color
    *color_number*, which must be between ``0`` and :const:`COLORS`.  A 3-tuple is
    returned, containing the R,G,B values for the given color, which will be between
    ``0`` (no component) and ``1000`` (maximum amount of component).
@@ -111,7 +111,7 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: color_pair(color_number)
 
-   Returns the attribute value for displaying text in the specified color.  This
+   Return the attribute value for displaying text in the specified color.  This
    attribute value can be combined with :const:`A_STANDOUT`, :const:`A_REVERSE`,
    and the other :const:`A_\*` attributes.  :func:`pair_number` is the counterpart
    to this function.
@@ -119,7 +119,7 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: curs_set(visibility)
 
-   Sets the cursor state.  *visibility* can be set to 0, 1, or 2, for invisible,
+   Set the cursor state.  *visibility* can be set to 0, 1, or 2, for invisible,
    normal, or very visible.  If the terminal supports the visibility requested, the
    previous cursor state is returned; otherwise, an exception is raised.  On many
    terminals, the "visible" mode is an underline cursor and the "very visible" mode
@@ -128,7 +128,7 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: def_prog_mode()
 
-   Saves the current terminal mode as the "program" mode, the mode when the running
+   Save the current terminal mode as the "program" mode, the mode when the running
    program is using curses.  (Its counterpart is the "shell" mode, for when the
    program is not in curses.)  Subsequent calls to :func:`reset_prog_mode` will
    restore this mode.
@@ -136,7 +136,7 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: def_shell_mode()
 
-   Saves the current terminal mode as the "shell" mode, the mode when the running
+   Save the current terminal mode as the "shell" mode, the mode when the running
    program is not using curses.  (Its counterpart is the "program" mode, when the
    program is using curses capabilities.) Subsequent calls to
    :func:`reset_shell_mode` will restore this mode.
@@ -144,7 +144,7 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: delay_output(ms)
 
-   Inserts an *ms* millisecond pause in output.
+   Insert an *ms* millisecond pause in output.
 
 
 .. function:: doupdate()
@@ -175,7 +175,7 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: erasechar()
 
-   Returns the user's current erase character.  Under Unix operating systems this
+   Return the user's current erase character.  Under Unix operating systems this
    is a property of the controlling tty of the curses program, and is not set by
    the curses library itself.
 
@@ -183,7 +183,7 @@ The module :mod:`curses` defines the following functions:
 .. function:: filter()
 
    The :func:`.filter` routine, if used, must be called before :func:`initscr` is
-   called.  The effect is that, during those calls, LINES is set to 1; the
+   called.  The effect is that, during those calls, :envvar:`LINES` is set to 1; the
    capabilities clear, cup, cud, cud1, cuu1, cuu, vpa are disabled; and the home
    string is set to the value of cr. The effect is that the cursor is confined to
    the current line, and so are screen updates.  This may be used for enabling
@@ -209,7 +209,7 @@ The module :mod:`curses` defines the following functions:
    method should be call to retrieve the queued mouse event, represented as a
    5-tuple ``(id, x, y, z, bstate)``. *id* is an ID value used to distinguish
    multiple devices, and *x*, *y*, *z* are the event's coordinates.  (*z* is
-   currently unused.).  *bstate* is an integer value whose bits will be set to
+   currently unused.)  *bstate* is an integer value whose bits will be set to
    indicate the type of event, and will be the bitwise OR of one or more of the
    following constants, where *n* is the button number from 1 to 4:
    :const:`BUTTONn_PRESSED`, :const:`BUTTONn_RELEASED`, :const:`BUTTONn_CLICKED`,
@@ -219,32 +219,32 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: getsyx()
 
-   Returns the current coordinates of the virtual screen cursor in y and x.  If
+   Return the current coordinates of the virtual screen cursor in y and x.  If
    leaveok is currently true, then -1,-1 is returned.
 
 
 .. function:: getwin(file)
 
-   Reads window related data stored in the file by an earlier :func:`putwin` call.
+   Read window related data stored in the file by an earlier :func:`putwin` call.
    The routine then creates and initializes a new window using that data, returning
    the new window object.
 
 
 .. function:: has_colors()
 
-   Returns true if the terminal can display colors; otherwise, it returns false.
+   Return ``True`` if the terminal can display colors; otherwise, return ``False``.
 
 
 .. function:: has_ic()
 
-   Returns true if the terminal has insert- and delete- character capabilities.
+   Return ``True`` if the terminal has insert- and delete-character capabilities.
    This function is included for historical reasons only, as all modern software
    terminal emulators have such capabilities.
 
 
 .. function:: has_il()
 
-   Returns true if the terminal has insert- and delete-line  capabilities,  or  can
+   Return ``True`` if the terminal has insert- and delete-line capabilities, or can
    simulate  them  using scrolling regions. This function is included for
    historical reasons only, as all modern software terminal emulators have such
    capabilities.
@@ -252,7 +252,7 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: has_key(ch)
 
-   Takes a key value *ch*, and returns true if the current terminal type recognizes
+   Take a key value *ch*, and return ``True`` if the current terminal type recognizes
    a key with that value.
 
 
@@ -261,13 +261,13 @@ The module :mod:`curses` defines the following functions:
    Used for half-delay mode, which is similar to cbreak mode in that characters
    typed by the user are immediately available to the program. However, after
    blocking for *tenths* tenths of seconds, an exception is raised if nothing has
-   been typed.  The value of *tenths* must be a number between 1 and 255.  Use
+   been typed.  The value of *tenths* must be a number between ``1`` and ``255``.  Use
    :func:`nocbreak` to leave half-delay mode.
 
 
 .. function:: init_color(color_number, r, g, b)
 
-   Changes the definition of a color, taking the number of the color to be changed
+   Change the definition of a color, taking the number of the color to be changed
    followed by three RGB values (for the amounts of red, green, and blue
    components).  The value of *color_number* must be between ``0`` and
    :const:`COLORS`.  Each of *r*, *g*, *b*, must be a value between ``0`` and
@@ -278,7 +278,7 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: init_pair(pair_number, fg, bg)
 
-   Changes the definition of a color-pair.  It takes three arguments: the number of
+   Change the definition of a color-pair.  It takes three arguments: the number of
    the color-pair to be changed, the foreground color number, and the background
    color number.  The value of *pair_number* must be between ``1`` and
    ``COLOR_PAIRS - 1`` (the ``0`` color pair is wired to white on black and cannot
@@ -290,7 +290,7 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: initscr()
 
-   Initialize the library. Returns a :class:`WindowObject` which represents the
+   Initialize the library. Return a :class:`WindowObject` which represents the
    whole screen.
 
    .. note::
@@ -301,7 +301,7 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: isendwin()
 
-   Returns true if :func:`endwin` has been called (that is, the  curses library has
+   Return ``True`` if :func:`endwin` has been called (that is, the  curses library has
    been deinitialized).
 
 
@@ -317,14 +317,14 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: killchar()
 
-   Returns the user's current line kill character. Under Unix operating systems
+   Return the user's current line kill character. Under Unix operating systems
    this is a property of the controlling tty of the curses program, and is not set
    by the curses library itself.
 
 
 .. function:: longname()
 
-   Returns a string containing the terminfo long name field describing the current
+   Return a string containing the terminfo long name field describing the current
    terminal.  The maximum length of a verbose description is 128 characters.  It is
    defined only after the call to :func:`initscr`.
 
@@ -337,14 +337,14 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: mouseinterval(interval)
 
-   Sets the maximum time in milliseconds that can elapse between press and release
-   events in order for them to be recognized as a click, and returns the previous
+   Set the maximum time in milliseconds that can elapse between press and release
+   events in order for them to be recognized as a click, and return the previous
    interval value.  The default value is 200 msec, or one fifth of a second.
 
 
 .. function:: mousemask(mousemask)
 
-   Sets the mouse events to be reported, and returns a tuple ``(availmask,
+   Set the mouse events to be reported, and return a tuple ``(availmask,
    oldmask)``.   *availmask* indicates which of the specified mouse events can be
    reported; on complete failure it returns 0.  *oldmask* is the previous value of
    the given window's mouse event mask.  If this function is never called, no mouse
@@ -358,7 +358,7 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: newpad(nlines, ncols)
 
-   Creates and returns a pointer to a new pad data structure with the given number
+   Create and return a pointer to a new pad data structure with the given number
    of lines and columns.  A pad is returned as a window object.
 
    A pad is like a window, except that it is not restricted by the screen size, and
@@ -368,9 +368,9 @@ The module :mod:`curses` defines the following functions:
    echoing of input) do not occur.  The :meth:`refresh` and :meth:`noutrefresh`
    methods of a pad require 6 arguments to specify the part of the pad to be
    displayed and the location on the screen to be used for the display. The
-   arguments are pminrow, pmincol, sminrow, smincol, smaxrow, smaxcol; the p
+   arguments are *pminrow*, *pmincol*, *sminrow*, *smincol*, *smaxrow*, *smaxcol*; the *p*
    arguments refer to the upper left corner of the pad region to be displayed and
-   the s arguments define a clipping box on the screen within which the pad region
+   the *s* arguments define a clipping box on the screen within which the pad region
    is to be displayed.
 
 
@@ -412,7 +412,7 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: noqiflush()
 
-   When the noqiflush routine is used, normal flush of input and output queues
+   When the :func:`noqiflush` routine is used, normal flush of input and output queues
    associated with the INTR, QUIT and SUSP characters will not be done.  You may
    want to call :func:`noqiflush` in a signal handler if you want output to
    continue as though the interrupt had not occurred, after the handler exits.
@@ -425,27 +425,27 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: pair_content(pair_number)
 
-   Returns a tuple ``(fg, bg)`` containing the colors for the requested color pair.
+   Return a tuple ``(fg, bg)`` containing the colors for the requested color pair.
    The value of *pair_number* must be between ``1`` and ``COLOR_PAIRS - 1``.
 
 
 .. function:: pair_number(attr)
 
-   Returns the number of the color-pair set by the attribute value *attr*.
+   Return the number of the color-pair set by the attribute value *attr*.
    :func:`color_pair` is the counterpart to this function.
 
 
 .. function:: putp(string)
 
-   Equivalent to ``tputs(str, 1, putchar)``; emits the value of a specified
-   terminfo capability for the current terminal.  Note that the output of putp
+   Equivalent to ``tputs(str, 1, putchar)``; emit the value of a specified
+   terminfo capability for the current terminal.  Note that the output of :func:`putp`
    always goes to standard output.
 
 
 .. function:: qiflush( [flag] )
 
-   If *flag* is false, the effect is the same as calling :func:`noqiflush`. If
-   *flag* is true, or no argument is provided, the queues will be flushed when
+   If *flag* is ``False``, the effect is the same as calling :func:`noqiflush`. If
+   *flag* is ``True``, or no argument is provided, the queues will be flushed when
    these control characters are read.
 
 
@@ -458,26 +458,26 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: reset_prog_mode()
 
-   Restores the  terminal  to "program" mode, as previously saved  by
+   Restore the  terminal  to "program" mode, as previously saved  by
    :func:`def_prog_mode`.
 
 
 .. function:: reset_shell_mode()
 
-   Restores the  terminal  to "shell" mode, as previously saved  by
+   Restore the  terminal  to "shell" mode, as previously saved  by
    :func:`def_shell_mode`.
 
 
 .. function:: setsyx(y, x)
 
-   Sets the virtual screen cursor to *y*, *x*. If *y* and *x* are both -1, then
+   Set the virtual screen cursor to *y*, *x*. If *y* and *x* are both -1, then
    leaveok is set.
 
 
 .. function:: setupterm([termstr, fd])
 
-   Initializes the terminal.  *termstr* is a string giving the terminal name; if
-   omitted, the value of the TERM environment variable will be used.  *fd* is the
+   Initialize the terminal.  *termstr* is a string giving the terminal name; if
+   omitted, the value of the :envvar:`TERM` environment variable will be used.  *fd* is the
    file descriptor to which any initialization sequences will be sent; if not
    supplied, the file descriptor for ``sys.stdout`` will be used.
 
@@ -497,19 +497,19 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: termattrs()
 
-   Returns a logical OR of all video attributes supported by the terminal.  This
+   Return a logical OR of all video attributes supported by the terminal.  This
    information is useful when a curses program needs complete control over the
    appearance of the screen.
 
 
 .. function:: termname()
 
-   Returns the value of the environment variable TERM, truncated to 14 characters.
+   Return the value of the environment variable :envvar:`TERM`, truncated to 14 characters.
 
 
 .. function:: tigetflag(capname)
 
-   Returns the value of the Boolean capability corresponding to the terminfo
+   Return the value of the Boolean capability corresponding to the terminfo
    capability name *capname*.  The value ``-1`` is returned if *capname* is not a
    Boolean capability, or ``0`` if it is canceled or absent from the terminal
    description.
@@ -517,7 +517,7 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: tigetnum(capname)
 
-   Returns the value of the numeric capability corresponding to the terminfo
+   Return the value of the numeric capability corresponding to the terminfo
    capability name *capname*.  The value ``-2`` is returned if *capname* is not a
    numeric capability, or ``-1`` if it is canceled or absent from the terminal
    description.
@@ -525,22 +525,22 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: tigetstr(capname)
 
-   Returns the value of the string capability corresponding to the terminfo
+   Return the value of the string capability corresponding to the terminfo
    capability name *capname*.  ``None`` is returned if *capname* is not a string
    capability, or is canceled or absent from the terminal description.
 
 
 .. function:: tparm(str[,...])
 
-   Instantiates the string *str* with the supplied parameters, where  *str* should
-   be a parameterized string obtained from the terminfo  database.  E.g.
-   ``tparm(tigetstr("cup"), 5, 3)`` could result in  ``'\033[6;4H'``, the exact
+   Instantiate the string *str* with the supplied parameters, where *str* should
+   be a parameterized string obtained from the terminfo database.  E.g.
+   ``tparm(tigetstr("cup"), 5, 3)`` could result in ``'\033[6;4H'``, the exact
    result depending on terminal type.
 
 
 .. function:: typeahead(fd)
 
-   Specifies that the file descriptor *fd* be used for typeahead checking.  If *fd*
+   Specify that the file descriptor *fd* be used for typeahead checking.  If *fd*
    is ``-1``, then no typeahead checking is done.
 
    The curses library does "line-breakout optimization" by looking for typeahead
@@ -552,7 +552,7 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: unctrl(ch)
 
-   Returns a string which is a printable representation of the character *ch*.
+   Return a string which is a printable representation of the character *ch*.
    Control characters are displayed as a caret followed by the character, for
    example as ``^C``. Printing characters are left as they are.
 
@@ -575,7 +575,7 @@ The module :mod:`curses` defines the following functions:
 .. function:: use_env(flag)
 
    If used, this function should be called before :func:`initscr` or newterm are
-   called.  When *flag* is false, the values of lines and columns specified in the
+   called.  When *flag* is ``False``, the values of lines and columns specified in the
    terminfo database will be used, even if environment variables :envvar:`LINES`
    and :envvar:`COLUMNS` (used by default) are set, or if curses is running in a
    window (in which case default behavior would be to use the window size if
@@ -659,7 +659,7 @@ the following methods:
 
 .. method:: window.bkgd(ch[, attr])
 
-   Sets the background property of the window to the character *ch*, with
+   Set the background property of the window to the character *ch*, with
    attributes *attr*.  The change is then applied to every character position in
    that window:
 
@@ -672,7 +672,7 @@ the following methods:
 
 .. method:: window.bkgdset(ch[, attr])
 
-   Sets the window's background.  A window's background consists of a character and
+   Set the window's background.  A window's background consists of a character and
    any combination of attributes.  The attribute part of the background is combined
    (OR'ed) with all non-blank characters that are written into the window.  Both
    the character and attribute parts of the background are combined with the blank
@@ -717,12 +717,12 @@ the following methods:
 .. method:: window.box([vertch, horch])
 
    Similar to :meth:`border`, but both *ls* and *rs* are *vertch* and both *ts* and
-   bs are *horch*.  The default corner characters are always used by this function.
+   *bs* are *horch*.  The default corner characters are always used by this function.
 
 
 .. method:: window.chgat([y, x, ] [num,] attr)
 
-   Sets the attributes of *num* characters at the current cursor position, or at
+   Set the attributes of *num* characters at the current cursor position, or at
    position ``(y, x)`` if supplied. If no value of *num* is given or *num* = -1,
    the attribute will  be set on all the characters to the end of the line.  This
    function does not move the cursor. The changed line will be touched using the
@@ -732,7 +732,7 @@ the following methods:
 
 .. method:: window.clear()
 
-   Like :meth:`erase`, but also causes the whole window to be repainted upon next
+   Like :meth:`erase`, but also cause the whole window to be repainted upon next
    call to :meth:`refresh`.
 
 
@@ -755,7 +755,7 @@ the following methods:
 
 .. method:: window.cursyncup()
 
-   Updates the current cursor position of all the ancestors of the window to
+   Update the current cursor position of all the ancestors of the window to
    reflect the current cursor position of the window.
 
 
@@ -766,14 +766,14 @@ the following methods:
 
 .. method:: window.deleteln()
 
-   Delete the line under the cursor. All following lines are moved up by 1 line.
+   Delete the line under the cursor. All following lines are moved up by one line.
 
 
 .. method:: window.derwin([nlines, ncols,] begin_y, begin_x)
 
    An abbreviation for "derive window", :meth:`derwin` is the same as calling
    :meth:`subwin`, except that *begin_y* and *begin_x* are relative to the origin
-   of the window, rather than relative to the entire screen.  Returns a window
+   of the window, rather than relative to the entire screen.  Return a window
    object for the derived window.
 
 
@@ -785,8 +785,8 @@ the following methods:
 
 .. method:: window.enclose(y, x)
 
-   Tests whether the given pair of screen-relative character-cell coordinates are
-   enclosed by the given window, returning true or false.  It is useful for
+   Test whether the given pair of screen-relative character-cell coordinates are
+   enclosed by the given window, returning ``True`` or ``False``.  It is useful for
    determining what subset of the screen windows enclose the location of a mouse
    event.
 
@@ -823,8 +823,8 @@ the following methods:
 
 .. method:: window.getparyx()
 
-   Returns the beginning coordinates of this window relative to its parent window
-   into two integer variables y and x.  Returns ``-1,-1`` if this window has no
+   Return the beginning coordinates of this window relative to its parent window
+   into two integer variables y and x.  Return ``-1, -1`` if this window has no
    parent.
 
 
@@ -847,8 +847,8 @@ the following methods:
 
 .. method:: window.idcok(flag)
 
-   If *flag* is false, curses no longer considers using the hardware insert/delete
-   character feature of the terminal; if *flag* is true, use of character insertion
+   If *flag* is ``False``, curses no longer considers using the hardware insert/delete
+   character feature of the terminal; if *flag* is ``True``, use of character insertion
    and deletion is enabled.  When curses is first initialized, use of character
    insert/delete is enabled by default.
 
@@ -861,7 +861,7 @@ the following methods:
 
 .. method:: window.immedok(flag)
 
-   If *flag* is true, any change in the window image automatically causes the
+   If *flag* is ``True``, any change in the window image automatically causes the
    window to be refreshed; you no longer have to call :meth:`refresh` yourself.
    However, it may degrade performance considerably, due to repeated calls to
    wrefresh.  This option is disabled by default.
@@ -881,7 +881,7 @@ the following methods:
 
 .. method:: window.insdelln(nlines)
 
-   Inserts *nlines* lines into the specified window above the current line.  The
+   Insert *nlines* lines into the specified window above the current line.  The
    *nlines* bottom lines are lost.  For negative *nlines*, delete *nlines* lines
    starting with the one under the cursor, and move the remaining lines up.  The
    bottom *nlines* lines are cleared.  The current cursor position remains the
@@ -890,7 +890,7 @@ the following methods:
 
 .. method:: window.insertln()
 
-   Insert a blank line under the cursor. All following lines are moved down by 1
+   Insert a blank line under the cursor. All following lines are moved down by one
    line.
 
 
@@ -913,23 +913,23 @@ the following methods:
 
 .. method:: window.instr([y, x] [, n])
 
-   Returns a string of characters, extracted from the window starting at the
+   Return a string of characters, extracted from the window starting at the
    current cursor position, or at *y*, *x* if specified. Attributes are stripped
-   from the characters.  If *n* is specified, :meth:`instr` returns return a string
+   from the characters.  If *n* is specified, :meth:`instr` returns a string
    at most *n* characters long (exclusive of the trailing NUL).
 
 
 .. method:: window.is_linetouched(line)
 
-   Returns true if the specified line was modified since the last call to
-   :meth:`refresh`; otherwise returns false.  Raises a :exc:`curses.error`
+   Return ``True`` if the specified line was modified since the last call to
+   :meth:`refresh`; otherwise return ``False``.  Raise a :exc:`curses.error`
    exception if *line* is not valid for the given window.
 
 
 .. method:: window.is_wintouched()
 
-   Returns true if the specified window was modified since the last call to
-   :meth:`refresh`; otherwise returns false.
+   Return ``True`` if the specified window was modified since the last call to
+   :meth:`refresh`; otherwise return ``False``.
 
 
 .. method:: window.keypad(yes)
@@ -955,7 +955,7 @@ the following methods:
 
 .. method:: window.mvderwin(y, x)
 
-   Moves the window inside its parent window.  The screen-relative parameters of
+   Move the window inside its parent window.  The screen-relative parameters of
    the window are not changed.  This routine is used to display different parts of
    the parent window at the same physical position on the screen.
 
@@ -1013,19 +1013,19 @@ the following methods:
 
 .. method:: window.putwin(file)
 
-   Writes all data associated with the window into the provided file object.  This
+   Write all data associated with the window into the provided file object.  This
    information can be later retrieved using the :func:`getwin` function.
 
 
 .. method:: window.redrawln(beg, num)
 
-   Indicates that the *num* screen lines, starting at line *beg*, are corrupted and
+   Indicate that the *num* screen lines, starting at line *beg*, are corrupted and
    should be completely redrawn on the next :meth:`refresh` call.
 
 
 .. method:: window.redrawwin()
 
-   Touches the entire window, causing it to be completely redrawn on the next
+   Touch the entire window, causing it to be completely redrawn on the next
    :meth:`refresh` call.
 
 
@@ -1053,7 +1053,7 @@ the following methods:
 
 .. method:: window.scrollok(flag)
 
-   Controls what happens when the cursor of a window is moved off the edge of the
+   Control what happens when the cursor of a window is moved off the edge of the
    window or scrolling region, either as a result of a newline action on the bottom
    line, or typing the last character of the last line.  If *flag* is false, the
    cursor is left on the bottom line.  If *flag* is true, the window is scrolled up
@@ -1095,26 +1095,26 @@ the following methods:
 
 .. method:: window.syncdown()
 
-   Touches each location in the window that has been touched in any of its ancestor
+   Touch each location in the window that has been touched in any of its ancestor
    windows.  This routine is called by :meth:`refresh`, so it should almost never
    be necessary to call it manually.
 
 
 .. method:: window.syncok(flag)
 
-   If called with *flag* set to true, then :meth:`syncup` is called automatically
+   If called with *flag* set to ``True``, then :meth:`syncup` is called automatically
    whenever there is a change in the window.
 
 
 .. method:: window.syncup()
 
-   Touches all locations in ancestors of the window that have been changed in  the
+   Touch all locations in ancestors of the window that have been changed in  the
    window.
 
 
 .. method:: window.timeout(delay)
 
-   Sets blocking or non-blocking read behavior for the window.  If *delay* is
+   Set blocking or non-blocking read behavior for the window.  If *delay* is
    negative, blocking read is used (which will wait indefinitely for input).  If
    *delay* is zero, then non-blocking read is used, and -1 will be returned by
    :meth:`getch` if no input is waiting.  If *delay* is positive, then
@@ -1137,7 +1137,7 @@ the following methods:
 
 .. method:: window.untouchwin()
 
-   Marks all lines in  the  window  as unchanged since the last call to
+   Mark all lines in  the  window  as unchanged since the last call to
    :meth:`refresh`.
 
 
@@ -1662,7 +1662,7 @@ You can instantiate a :class:`Textbox` object as follows:
 
    .. method:: gather()
 
-      This method returns the window contents as a string; whether blanks in the
+      Return the window contents as a string; whether blanks in the
       window are included is affected by the :attr:`stripspaces` member.
 
 
