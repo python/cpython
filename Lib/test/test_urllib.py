@@ -110,8 +110,9 @@ class urlopen_FileTests(unittest.TestCase):
         # Test iterator
         # Don't need to count number of iterations since test would fail the
         # instant it returned anything beyond the first line from the
-        # comparison
-        for line in self.returned_obj.__iter__():
+        # comparison.
+        # Use the iterator in the usual implicit way to test for ticket #4608.
+        for line in self.returned_obj:
             self.assertEqual(line, self.text)
 
 class ProxyTests(unittest.TestCase):
