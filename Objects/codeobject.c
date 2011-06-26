@@ -51,7 +51,8 @@ PyCode_New(int argcount, int kwonlyargcount,
            PyObject *lnotab)
 {
     PyCodeObject *co;
-    Py_ssize_t i;
+    unsigned char *cell2arg = NULL;
+    Py_ssize_t i, n_cellvars;
 
     /* Check argument types */
     if (argcount < 0 || kwonlyargcount < 0 || nlocals < 0 ||
@@ -68,12 +69,13 @@ PyCode_New(int argcount, int kwonlyargcount,
         PyErr_BadInternalCall();
         return NULL;
     }
+    n_cellvars = PyTuple_GET_SIZE(cellvars);
     intern_strings(names);
     intern_strings(varnames);
     intern_strings(freevars);
     intern_strings(cellvars);
     /* Intern selected string constants */
-    for (i = PyTuple_Size(consts); --i >= 0; ) {
+    for (i = PyTuple_GET_SIZE(consts); --i >= 0; ) {
         PyObject *v = PyTuple_GetItem(consts, i);
         if (!PyUnicode_Check(v))
             continue;
@@ -81,35 +83,67 @@ PyCode_New(int argcount, int kwonlyargcount,
             continue;
         PyUnicode_InternInPlace(&PyTuple_GET_ITEM(consts, i));
     }
-    co = PyObject_NEW(PyCodeObject, &PyCode_Type);
-    if (co != NULL) {
-        co->co_argcount = argcount;
-        co->co_kwonlyargcount = kwonlyargcount;
-        co->co_nlocals = nlocals;
-        co->co_stacksize = stacksize;
-        co->co_flags = flags;
-        Py_INCREF(code);
-        co->co_code = code;
-        Py_INCREF(consts);
-        co->co_consts = consts;
-        Py_INCREF(names);
-        co->co_names = names;
-        Py_INCREF(varnames);
-        co->co_varnames = varnames;
-        Py_INCREF(freevars);
-        co->co_freevars = freevars;
-        Py_INCREF(cellvars);
-        co->co_cellvars = cellvars;
-        Py_INCREF(filename);
-        co->co_filename = filename;
-        Py_INCREF(name);
-        co->co_name = name;
-        co->co_firstlineno = firstlineno;
-        Py_INCREF(lnotab);
-        co->co_lnotab = lnotab;
-        co->co_zombieframe = NULL;
-        co->co_weakreflist = NULL;
+    /* Create mapping between cells and arguments if needed. */
+    if (n_cellvars) {
+        Py_ssize_t total_args = argcount + kwonlyargcount +
+            ((flags & CO_VARARGS) != 0) + ((flags & CO_VARKEYWORDS) != 0);
+        Py_ssize_t alloc_size = sizeof(unsigned char) * n_cellvars;
+        int used_cell2arg = 0;
+        cell2arg = PyMem_MALLOC(alloc_size);
+        if (cell2arg == NULL)
+            return NULL;
+        memset(cell2arg, CO_CELL_NOT_AN_ARG, alloc_size);
+        /* Find cells which are also arguments. */
+        for (i = 0; i < n_cellvars; i++) {
+            Py_ssize_t j;
+            PyObject *cell = PyTuple_GET_ITEM(cellvars, i);
+            for (j = 0; j < total_args; j++) {
+                PyObject *arg = PyTuple_GET_ITEM(varnames, j);
+                if (!PyUnicode_Compare(cell, arg)) {
+                    cell2arg[i] = j;
+                    used_cell2arg = 1;
+                    break;
+                }
+            }
+        }
+        if (!used_cell2arg) {
+            PyMem_FREE(cell2arg);
+            cell2arg = NULL;
+        }
     }
+    co = PyObject_NEW(PyCodeObject, &PyCode_Type);
+    if (co == NULL) {
+        if (cell2arg)
+            PyMem_FREE(cell2arg);
+        return NULL;
+    }
+    co->co_argcount = argcount;
+    co->co_kwonlyargcount = kwonlyargcount;
+    co->co_nlocals = nlocals;
+    co->co_stacksize = stacksize;
+    co->co_flags = flags;
+    Py_INCREF(code);
+    co->co_code = code;
+    Py_INCREF(consts);
+    co->co_consts = consts;
+    Py_INCREF(names);
+    co->co_names = names;
+    Py_INCREF(varnames);
+    co->co_varnames = varnames;
+    Py_INCREF(freevars);
+    co->co_freevars = freevars;
+    Py_INCREF(cellvars);
+    co->co_cellvars = cellvars;
+    co->co_cell2arg = cell2arg;
+    Py_INCREF(filename);
+    co->co_filename = filename;
+    Py_INCREF(name);
+    co->co_name = name;
+    co->co_firstlineno = firstlineno;
+    Py_INCREF(lnotab);
+    co->co_lnotab = lnotab;
+    co->co_zombieframe = NULL;
+    co->co_weakreflist = NULL;
     return co;
 }
 
@@ -330,6 +364,8 @@ code_dealloc(PyCodeObject *co)
     Py_XDECREF(co->co_filename);
     Py_XDECREF(co->co_name);
     Py_XDECREF(co->co_lnotab);
+    if (co->co_cell2arg != NULL)
+        PyMem_FREE(co->co_cell2arg);
     if (co->co_zombieframe != NULL)
         PyObject_GC_Del(co->co_zombieframe);
     if (co->co_weakreflist != NULL)

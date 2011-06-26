@@ -665,7 +665,7 @@ class SizeofTest(unittest.TestCase):
             return inner
         check(get_cell().__closure__[0], size(h + 'P'))
         # code
-        check(get_cell().__code__, size(h + '5i8Pi3P'))
+        check(get_cell().__code__, size(h + '5i9Pi3P'))
         # complex
         check(complex(0,1), size(h + '2d'))
         # method_descriptor (descriptor object)
