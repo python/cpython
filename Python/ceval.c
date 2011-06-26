@@ -3357,56 +3357,24 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
     }
 
     /* Allocate and initialize storage for cell vars, and copy free
-       vars into frame.  This isn't too efficient right now. */
-    if (PyTuple_GET_SIZE(co->co_cellvars)) {
-        int i, j, nargs, found;
-        Py_UNICODE *cellname, *argname;
+       vars into frame. */
+    for (i = 0; i < PyTuple_GET_SIZE(co->co_cellvars); ++i) {
         PyObject *c;
-
-        nargs = total_args;
-        if (co->co_flags & CO_VARARGS)
-            nargs++;
-        if (co->co_flags & CO_VARKEYWORDS)
-            nargs++;
-
-        /* Initialize each cell var, taking into account
-           cell vars that are initialized from arguments.
-
-           Should arrange for the compiler to put cellvars
-           that are arguments at the beginning of the cellvars
-           list so that we can march over it more efficiently?
-        */
-        for (i = 0; i < PyTuple_GET_SIZE(co->co_cellvars); ++i) {
-            cellname = PyUnicode_AS_UNICODE(
-                PyTuple_GET_ITEM(co->co_cellvars, i));
-            found = 0;
-            for (j = 0; j < nargs; j++) {
-                argname = PyUnicode_AS_UNICODE(
-                    PyTuple_GET_ITEM(co->co_varnames, j));
-                if (Py_UNICODE_strcmp(cellname, argname) == 0) {
-                    c = PyCell_New(GETLOCAL(j));
-                    if (c == NULL)
-                        goto fail;
-                    GETLOCAL(co->co_nlocals + i) = c;
-                    found = 1;
-                    break;
-                }
-            }
-            if (found == 0) {
-                c = PyCell_New(NULL);
-                if (c == NULL)
-                    goto fail;
-                SETLOCAL(co->co_nlocals + i, c);
-            }
-        }
+        int arg;
+        /* Possibly account for the cell variable being an argument. */
+        if (co->co_cell2arg != NULL &&
+            (arg = co->co_cell2arg[i]) != CO_CELL_NOT_AN_ARG)
+            c = PyCell_New(GETLOCAL(arg));
+        else
+            c = PyCell_New(NULL);
+        if (c == NULL)
+            goto fail;
+        SETLOCAL(co->co_nlocals + i, c);
     }
-    if (PyTuple_GET_SIZE(co->co_freevars)) {
-        int i;
-        for (i = 0; i < PyTuple_GET_SIZE(co->co_freevars); ++i) {
-            PyObject *o = PyTuple_GET_ITEM(closure, i);
-            Py_INCREF(o);
-            freevars[PyTuple_GET_SIZE(co->co_cellvars) + i] = o;
-        }
+    for (i = 0; i < PyTuple_GET_SIZE(co->co_freevars); ++i) {
+        PyObject *o = PyTuple_GET_ITEM(closure, i);
+        Py_INCREF(o);
+        freevars[PyTuple_GET_SIZE(co->co_cellvars) + i] = o;
     }
 
     if (co->co_flags & CO_GENERATOR) {

@@ -22,6 +22,7 @@ typedef struct {
     PyObject *co_freevars;	/* tuple of strings (free variable names) */
     PyObject *co_cellvars;      /* tuple of strings (cell variable names) */
     /* The rest doesn't count for hash or comparisons */
+    unsigned char *co_cell2arg; /* Maps cell vars which are arguments. */
     PyObject *co_filename;	/* unicode (where it was loaded from) */
     PyObject *co_name;		/* unicode (name, for reference) */
     int co_firstlineno;		/* first source line number */
@@ -56,6 +57,11 @@ typedef struct {
 #define CO_FUTURE_UNICODE_LITERALS 0x20000
 
 #define CO_FUTURE_BARRY_AS_BDFL  0x40000
+
+/* This value is found in the co_cell2arg array when the associated cell
+   variable does not correspond to an argument. The maximum number of
+   arguments is 255 (indexed up to 254), so 255 work as a special flag.*/
+#define CO_CELL_NOT_AN_ARG 255
 
 /* This should be defined if a future statement modifies the syntax.
    For example, when a keyword is added.
