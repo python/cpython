@@ -921,7 +921,7 @@ pyepoll_register(pyEpoll_Object *self, PyObject *args, PyObject *kwds)
 PyDoc_STRVAR(pyepoll_register_doc,
 "register(fd[, eventmask]) -> None\n\
 \n\
-Registers a new fd or modifies an already registered fd.\n\
+Registers a new fd or raises an IOError if the fd is already registered.\n\
 fd is the target file descriptor of the operation.\n\
 events is a bit set composed of the various EPOLL constants; the default\n\
 is EPOLL_IN | EPOLL_OUT | EPOLL_PRI.\n\
