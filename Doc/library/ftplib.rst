@@ -426,6 +426,14 @@ FTP_TLS Objects
 
    Set up secure control connection by using TLS or SSL, depending on what specified in :meth:`ssl_version` attribute.
 
+.. method:: FTP_TLS.ccc()
+
+   Revert control channel back to plaintex.  This can be useful to take
+   advantage of firewalls that know how to handle NAT with non-secure FTP
+   without opening fixed ports.
+
+   .. versionadded:: 3.3
+
 .. method:: FTP_TLS.prot_p()
 
    Set up secure data connection.

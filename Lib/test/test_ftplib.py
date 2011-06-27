@@ -303,11 +303,11 @@ if ssl is not None:
         _ssl_closing = False
 
         def secure_connection(self):
-            self.del_channel()
             socket = ssl.wrap_socket(self.socket, suppress_ragged_eofs=False,
                                      certfile=CERTFILE, server_side=True,
                                      do_handshake_on_connect=False,
                                      ssl_version=ssl.PROTOCOL_SSLv23)
+            self.del_channel()
             self.set_socket(socket)
             self._ssl_accepting = True
 
@@ -342,7 +342,10 @@ if ssl is not None:
                 # http://www.mail-archive.com/openssl-users@openssl.org/msg60710.html
                 pass
             self._ssl_closing = False
-            super(SSLConnection, self).close()
+            if getattr(self, '_ccc', False) == False:
+                super(SSLConnection, self).close()
+            else:
+                pass
 
         def handle_read_event(self):
             if self._ssl_accepting:
@@ -410,11 +413,17 @@ if ssl is not None:
         def __init__(self, conn):
             DummyFTPHandler.__init__(self, conn)
             self.secure_data_channel = False
+            self._ccc = False
 
         def cmd_auth(self, line):
             """Set up secure control channel."""
             self.push('234 AUTH TLS successful')
             self.secure_connection()
+
+        def cmd_ccc(self, line):
+            self.push('220 Reverting back to clear-text')
+            self._ccc = True
+            self._do_ssl_shutdown()
 
         def cmd_pbsz(self, line):
             """Negotiate size of buffer for secure data transfer.
@@ -871,6 +880,15 @@ class TestTLS_FTPClass(TestCase):
         with self.client.transfercmd('list') as sock:
             self.assertIs(sock.context, ctx)
             self.assertIsInstance(sock, ssl.SSLSocket)
+
+    def test_ccc(self):
+        self.assertRaises(ValueError, self.client.ccc)
+        self.client.login(secure=True)
+        self.assertIsInstance(self.client.sock, ssl.SSLSocket)
+        self.client.ccc()
+        self.assertRaises(ValueError, self.client.sock.unwrap)
+        self.client.sendcmd('noop')
+        self.client.quit()
 
 
 class TestTimeouts(TestCase):
