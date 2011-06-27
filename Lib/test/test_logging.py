@@ -1482,6 +1482,11 @@ class SysLogHandlerTest(BaseTest):
         logger.error("sp\xe4m")
         self.handled.wait()
         self.assertEqual(self.log_output, b'<11>\xef\xbb\xbfsp\xc3\xa4m')
+        self.handled.clear()
+        self.sl_hdlr.ident = "h\xe4m-"
+        logger.error("sp\xe4m")
+        self.handled.wait()
+        self.assertEqual(self.log_output, b'<11>\xef\xbb\xbfh\xc3\xa4m-sp\xc3\xa4m')
 
 
 @unittest.skipUnless(threading, 'Threading required for this test.')
