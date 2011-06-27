@@ -366,10 +366,10 @@ _Py_bytes_swapcase(char *result, char *s, Py_ssize_t len)
 PyDoc_STRVAR_shared(_Py_maketrans__doc__,
 "B.maketrans(frm, to) -> translation table\n\
 \n\
-Return a translation table (a bytes object of length 256)\n\
-suitable for use in bytes.translate where each byte in frm is\n\
-mapped to the byte at the same position in to.\n\
-The strings frm and to must be of the same length.");
+Return a translation table (a bytes object of length 256) suitable\n\
+for use in the bytes or bytearray translate method where each byte\n\
+in frm is mapped to the byte at the same position in to.\n\
+The bytes objects frm and to must be of the same length.");
 
 static Py_ssize_t
 _getbuffer(PyObject *obj, Py_buffer *view)
