@@ -310,7 +310,7 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(x.left, n1)
         self.assertEqual(x.op, addop)
         self.assertEqual(x.right, n3)
-        
+
         x = ast.BinOp(1, 2, 3)
         self.assertEqual(x.left, 1)
         self.assertEqual(x.op, 2)
