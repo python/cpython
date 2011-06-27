@@ -38,9 +38,6 @@ def changed_files():
     if os.path.isdir('.hg'):
         vcs = 'hg'
         cmd = 'hg status --added --modified --no-status'
-    elif os.path.isdir('.svn'):
-        vcs = 'svn'
-        cmd = 'svn status --quiet --non-interactive --ignore-externals'
     else:
         sys.exit('need a checkout to get modified files')
 
