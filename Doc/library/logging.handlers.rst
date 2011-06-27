@@ -452,6 +452,15 @@ supports sending logging messages to a remote or local Unix syslog.
          behaviour) but can be set to ``False`` on a ``SysLogHandler`` instance
          in order for that instance to *not* append the NUL terminator.
 
+      .. versionchanged:: 3.3
+         (See: :issue:`12419`.) In earlier versions, there was no facility for
+         an "ident" or "tag" prefix to identify the source of the message. This
+         can now be specified using a class-level attribute, defaulting to
+         ``""`` to preserve existing behaviour, but which can be overridden on
+         a ``SysLogHandler`` instance in order for that instance to prepend
+         the ident to every message handled. Note that the provided ident must
+         be text, not bytes, and is prepended to the message exactly as is.
+
    .. method:: encodePriority(facility, priority)
 
       Encodes the facility and priority into an integer. You can pass in strings

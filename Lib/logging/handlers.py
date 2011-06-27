@@ -769,6 +769,7 @@ class SysLogHandler(logging.Handler):
         """
         return self.priority_map.get(levelName, "warning")
 
+    ident = ''          # prepended to all messages
     append_nul = True   # some old syslog daemons expect a NUL terminator
 
     def emit(self, record):
@@ -779,6 +780,8 @@ class SysLogHandler(logging.Handler):
         exception information is present, it is NOT sent to the server.
         """
         msg = self.format(record)
+        if self.ident:
+            msg = self.ident + msg
         if self.append_nul:
             msg += '\000'
         """
