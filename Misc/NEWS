@@ -200,6 +200,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12422: In the copy module, don't store objects that are their own copy
+  in the memo dict.
+
 - Issue #12303: Add sigwaitinfo() and sigtimedwait() to the signal module.
 
 - Issue #12404: Remove C89 incompatible code from mmap module. Patch by Akira
