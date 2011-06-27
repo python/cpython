@@ -36,7 +36,6 @@ def status(message, modal=False, info=None):
 def changed_files():
     """Get the list of changed or added files from the VCS."""
     if os.path.isdir('.hg'):
-        vcs = 'hg'
         cmd = 'hg status --added --modified --no-status'
     else:
         sys.exit('need a checkout to get modified files')
@@ -44,12 +43,7 @@ def changed_files():
     st = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
     try:
         st.wait()
-        if vcs == 'hg':
-            return [x.decode().rstrip() for x in st.stdout]
-        else:
-            output = (x.decode().rstrip().rsplit(None, 1)[-1]
-                      for x in st.stdout if x[0] in b'AM')
-        return set(path for path in output if os.path.isfile(path))
+        return [x.decode().rstrip() for x in st.stdout]
     finally:
         st.stdout.close()
 
@@ -69,10 +63,8 @@ def report_modified_files(file_paths):
 def normalize_whitespace(file_paths):
     """Make sure that the whitespace for .py files have been normalized."""
     reindent.makebackup = False  # No need to create backups.
-    fixed = []
-    for path in (x for x in file_paths if x.endswith('.py')):
-        if reindent.check(path):
-            fixed.append(path)
+    fixed = [path for path in file_paths if path.endswith('.py') and
+             reindent.check(path)]
     return fixed
 
 
