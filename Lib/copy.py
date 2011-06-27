@@ -173,8 +173,10 @@ def deepcopy(x, memo=None, _nil=[]):
                                 "un(deep)copyable object of type %s" % cls)
                 y = _reconstruct(x, rv, 1, memo)
 
-    memo[d] = y
-    _keep_alive(x, memo) # Make sure x lives at least as long as d
+    # If is its own copy, don't memoize.
+    if y is not x:
+        memo[d] = y
+        _keep_alive(x, memo) # Make sure x lives at least as long as d
     return y
 
 _deepcopy_dispatch = d = {}
@@ -214,9 +216,10 @@ def _deepcopy_tuple(x, memo):
     y = []
     for a in x:
         y.append(deepcopy(a, memo))
-    d = id(x)
+    # We're not going to put the tuple in the memo, but it's still important we
+    # check for it, in case the tuple contains recursive mutable structures.
     try:
-        return memo[d]
+        return memo[id(x)]
     except KeyError:
         pass
     for i in range(len(x)):
@@ -225,7 +228,6 @@ def _deepcopy_tuple(x, memo):
             break
     else:
         y = x
-    memo[d] = y
     return y
 d[tuple] = _deepcopy_tuple
 

@@ -321,9 +321,24 @@ class TestCopy(unittest.TestCase):
 
     def test_deepcopy_keepalive(self):
         memo = {}
-        x = 42
+        x = []
         y = copy.deepcopy(x, memo)
-        self.assertTrue(memo[id(x)] is x)
+        self.assertIs(memo[id(memo)][0], x)
+
+    def test_deepcopy_dont_memo_immutable(self):
+        memo = {}
+        x = [1, 2, 3, 4]
+        y = copy.deepcopy(x, memo)
+        self.assertEqual(y, x)
+        # There's the entry for the new list, and the keep alive.
+        self.assertEqual(len(memo), 2)
+
+        memo = {}
+        x = [(1, 2)]
+        y = copy.deepcopy(x, memo)
+        self.assertEqual(y, x)
+        # Tuples with immutable contents are immutable for deepcopy.
+        self.assertEqual(len(memo), 2)
 
     def test_deepcopy_inst_vanilla(self):
         class C:
