@@ -857,6 +857,11 @@ Library
 Build
 -----
 
+- Issue #8746: Correct faulty configure checks so that os.chflags() and
+  os.lchflags() are once again built on systems that support these
+  functions (*BSD and OS X).  Also add new stat file flags for OS X
+  (UF_HIDDEN and UF_COMPRESSED).
+
 - Issue #10645: Installing Python does no longer create a
   Python-X.Y.Z-pyX.Y.egg-info file in the lib-dynload directory.
 
@@ -907,6 +912,9 @@ Extension Modules
 
 Tests
 -----
+
+- Issue #8746: Add additional tests for os.chflags() and os.lchflags().
+  Patch by Garrett Cooper.
 
 - Issue #10736: Fix test_ttk test_widgets failures with Cocoa Tk 8.5.9
   2.8 +  on Mac OS X.  (Patch by Ronald Oussoren)

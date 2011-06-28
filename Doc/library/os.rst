@@ -1465,6 +1465,8 @@ Files and Directories
    * :data:`stat.UF_APPEND`
    * :data:`stat.UF_OPAQUE`
    * :data:`stat.UF_NOUNLINK`
+   * :data:`stat.UF_COMPRESSED`
+   * :data:`stat.UF_HIDDEN`
    * :data:`stat.SF_ARCHIVED`
    * :data:`stat.SF_IMMUTABLE`
    * :data:`stat.SF_APPEND`

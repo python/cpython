@@ -307,13 +307,21 @@ The following flags can be used in the *flags* argument of :func:`os.chflags`:
 
    The file may only be appended to.
 
+.. data:: UF_OPAQUE
+
+   The directory is opaque when viewed through a union stack.
+
 .. data:: UF_NOUNLINK
 
    The file may not be renamed or deleted.
 
-.. data:: UF_OPAQUE
+.. data:: UF_COMPRESSED
 
-   The directory is opaque when viewed through a union stack.
+   The file is stored compressed (Mac OS X 10.6+).
+
+.. data:: UF_HIDDEN
+
+   The file should not be displayed in a GUI (Mac OS X 10.5+).
 
 .. data:: SF_ARCHIVED
 
