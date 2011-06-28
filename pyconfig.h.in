@@ -101,7 +101,7 @@
 /* Define this if you have the type _Bool. */
 #undef HAVE_C99_BOOL
 
-/* Define to 1 if you have the `chflags' function. */
+/* Define to 1 if you have the 'chflags' function. */
 #undef HAVE_CHFLAGS
 
 /* Define to 1 if you have the `chown' function. */
@@ -395,7 +395,7 @@
    Solaris and Linux, the necessary defines are already defined.) */
 #undef HAVE_LARGEFILE_SUPPORT
 
-/* Define to 1 if you have the `lchflags' function. */
+/* Define to 1 if you have the 'lchflags' function. */
 #undef HAVE_LCHFLAGS
 
 /* Define to 1 if you have the `lchmod' function. */
@@ -1151,6 +1151,9 @@
 
 /* This must be defined on some systems to enable large file support. */
 #undef _LARGEFILE_SOURCE
+
+/* This must be defined on AIX systems to enable large file support. */
+#undef _LARGE_FILES
 
 /* Define to 1 if on MINIX. */
 #undef _MINIX
