@@ -99,12 +99,20 @@ Extension Modules
 Build
 -----
 
+- Issue #8746: Correct faulty configure checks so that os.chflags() and
+  os.lchflags() are once again built on systems that support these
+  functions (*BSD and OS X).  Also add new stat file flags for OS X
+  (UF_HIDDEN and UF_COMPRESSED).
+
 - Issue #11217: For 64-bit/32-bit Mac OS X universal framework builds,
   ensure "make install" creates symlinks in --prefix bin for the "-32"
   files in the framework bin directory like the installer does.
 
 Tests
 -----
+
+- Issue #8746: Add additional tests for os.chflags() and os.lchflags().
+  Patch by Garrett Cooper.
 
 - Issue #10736: Fix test_ttk test_widgets failures with Cocoa Tk 8.5.9
   on Mac OS X.  (Patch by Ronald Oussoren)
