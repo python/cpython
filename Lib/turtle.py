@@ -108,7 +108,6 @@ import tkinter as TK
 import types
 import math
 import time
-import os
 import inspect
 
 from os.path import isfile, split, join

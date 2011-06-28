@@ -1,5 +1,6 @@
 """Filename globbing utility."""
 
+import sys
 import os
 import re
 import fnmatch
