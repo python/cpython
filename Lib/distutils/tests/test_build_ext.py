@@ -22,6 +22,11 @@ from test.support import run_unittest
 ALREADY_TESTED = False
 
 def _get_source_filename():
+    # use installed copy if available
+    tests_f = os.path.join(os.path.dirname(__file__), 'xxmodule.c')
+    if os.path.exists(tests_f):
+        return tests_f
+    # otherwise try using copy from build directory
     srcdir = sysconfig.get_config_var('srcdir')
     return os.path.join(srcdir, 'Modules', 'xxmodule.c')
 
@@ -35,7 +40,9 @@ class BuildExtTestCase(TempdirManager,
         self.tmp_dir = self.mkdtemp()
         self.sys_path = sys.path, sys.path[:]
         sys.path.append(self.tmp_dir)
-        shutil.copy(_get_source_filename(), self.tmp_dir)
+        filename = _get_source_filename()
+        if os.path.exists(filename):
+            shutil.copy(filename, self.tmp_dir)
         if sys.version > "2.6":
             import site
             self.old_user_base = site.USER_BASE
@@ -65,6 +72,8 @@ class BuildExtTestCase(TempdirManager,
     def test_build_ext(self):
         global ALREADY_TESTED
         xx_c = os.path.join(self.tmp_dir, 'xxmodule.c')
+        if not os.path.exists(xx_c):
+            return
         xx_ext = Extension('xx', [xx_c])
         dist = Distribution({'name': 'xx', 'ext_modules': [xx_ext]})
         dist.package_dir = self.tmp_dir
