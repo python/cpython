@@ -31,7 +31,6 @@ import tempfile
 import time
 import tokenize
 import traceback
-import types
 
 def reset():
     """Return a string that resets the CGI and browser to a known state."""

@@ -33,7 +33,6 @@ import sys
 import os
 import types
 import itertools
-import string
 import re
 import imp
 import tokenize

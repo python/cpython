@@ -23,7 +23,6 @@ hexbin(inputfilename, outputfilename)
 #
 import io
 import os
-import sys
 import struct
 import binascii
 

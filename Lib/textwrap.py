@@ -7,7 +7,7 @@
 
 __revision__ = "$Id$"
 
-import string, re
+import re
 
 __all__ = ['TextWrapper', 'wrap', 'fill', 'dedent']
 

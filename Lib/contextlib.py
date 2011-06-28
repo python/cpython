@@ -2,7 +2,6 @@
 
 import sys
 from functools import wraps
-from warnings import warn
 
 __all__ = ["contextmanager", "closing", "ContextDecorator"]
 
