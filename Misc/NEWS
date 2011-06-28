@@ -913,6 +913,11 @@ Extension Modules
 Tests
 -----
 
+- Issue #12141: Install copies of template C module file so that
+  test_build_ext of test_distutils and test_command_build_ext of
+  test_packaging are no longer silently skipped when
+  run outside of a build directory.
+
 - Issue #8746: Add additional tests for os.chflags() and os.lchflags().
   Patch by Garrett Cooper.
 

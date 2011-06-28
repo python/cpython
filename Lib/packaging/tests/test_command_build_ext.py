@@ -14,6 +14,11 @@ from packaging.tests import support, unittest, verbose, unload
 
 
 def _get_source_filename():
+    # use installed copy if available
+    tests_f = os.path.join(os.path.dirname(__file__), 'xxmodule.c')
+    if os.path.exists(tests_f):
+        return tests_f
+    # otherwise try using copy from build directory
     srcdir = sysconfig.get_config_var('srcdir')
     return os.path.join(srcdir, 'Modules', 'xxmodule.c')
 
