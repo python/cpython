@@ -2675,7 +2675,7 @@ AC_CHECK_LIB(c, inet_aton, [$ac_cv_prog_TRUE],
 # On Tru64, chflags seems to be present, but calling it will
 # exit Python
 AC_CACHE_CHECK([for chflags], [ac_cv_have_chflags], [dnl
-AC_RUN_IFELSE([AC_LANG_SOURCE([[[
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <sys/stat.h>
 #include <unistd.h>
 int main(int argc, char*argv[])
@@ -2684,7 +2684,7 @@ int main(int argc, char*argv[])
     return 1;
   return 0;
 }
-]]])],
+]])],
 [ac_cv_have_chflags=yes],
 [ac_cv_have_chflags=no],
 [ac_cv_have_chflags=cross])
@@ -2693,11 +2693,11 @@ if test "$ac_cv_have_chflags" = cross ; then
   AC_CHECK_FUNC([chflags], [ac_cv_have_chflags="yes"], [ac_cv_have_chflags="no"])
 fi
 if test "$ac_cv_have_chflags" = yes ; then
-  AC_DEFINE(HAVE_CHFLAGS, 1, [Define to 1 if you have the `chflags' function.])
+  AC_DEFINE(HAVE_CHFLAGS, 1, [Define to 1 if you have the 'chflags' function.])
 fi
 
 AC_CACHE_CHECK([for lchflags], [ac_cv_have_lchflags], [dnl
-AC_RUN_IFELSE([AC_LANG_SOURCE([[[
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <sys/stat.h>
 #include <unistd.h>
 int main(int argc, char*argv[])
@@ -2706,13 +2706,13 @@ int main(int argc, char*argv[])
     return 1;
   return 0;
 }
-]]])],[ac_cv_have_lchflags=yes],[ac_cv_have_lchflags=no],[ac_cv_have_lchflags=cross])
+]])],[ac_cv_have_lchflags=yes],[ac_cv_have_lchflags=no],[ac_cv_have_lchflags=cross])
 ])
 if test "$ac_cv_have_lchflags" = cross ; then
   AC_CHECK_FUNC([lchflags], [ac_cv_have_lchflags="yes"], [ac_cv_have_lchflags="no"])
 fi
 if test "$ac_cv_have_lchflags" = yes ; then
-  AC_DEFINE(HAVE_LCHFLAGS, 1, [Define to 1 if you have the `lchflags' function.])
+  AC_DEFINE(HAVE_LCHFLAGS, 1, [Define to 1 if you have the 'lchflags' function.])
 fi
 
 dnl Check if system zlib has *Copy() functions

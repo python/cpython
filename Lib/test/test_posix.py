@@ -16,6 +16,7 @@ import stat
 import unittest
 import warnings
 
+_DUMMY_SYMLINK = '%s/dummy-symlink' % os.getenv('TMPDIR', '/tmp')
 
 class PosixTester(unittest.TestCase):
 
@@ -23,13 +24,15 @@ class PosixTester(unittest.TestCase):
         # create empty file
         fp = open(support.TESTFN, 'w+')
         fp.close()
+        self.teardown_files = [ support.TESTFN ]
         self._warnings_manager = support.check_warnings()
         self._warnings_manager.__enter__()
         warnings.filterwarnings('ignore', '.* potential security risk .*',
                                 RuntimeWarning)
 
     def tearDown(self):
-        support.unlink(support.TESTFN)
+        for teardown_file in self.teardown_files:
+            support.unlink(teardown_file)
         self._warnings_manager.__exit__(None, None, None)
 
     def testNoArgFunctions(self):
@@ -426,7 +429,7 @@ class PosixTester(unittest.TestCase):
     def test_lchown(self):
         os.unlink(support.TESTFN)
         # create a symlink
-        os.symlink('/tmp/dummy-symlink-target', support.TESTFN)
+        os.symlink(_DUMMY_SYMLINK, support.TESTFN)
         self._test_all_chown_common(posix.lchown, support.TESTFN)
 
     def test_chdir(self):
@@ -511,17 +514,49 @@ class PosixTester(unittest.TestCase):
             posix.utime(support.TESTFN, (int(now), int(now)))
             posix.utime(support.TESTFN, (now, now))
 
-    def test_chflags(self):
-        if hasattr(posix, 'chflags'):
-            st = os.stat(support.TESTFN)
-            if hasattr(st, 'st_flags'):
-                posix.chflags(support.TESTFN, st.st_flags)
+    def _test_chflags_regular_file(self, chflags_func, target_file):
+        st = os.stat(target_file)
+        self.assertTrue(hasattr(st, 'st_flags'))
+        chflags_func(target_file, st.st_flags | stat.UF_IMMUTABLE)
+        try:
+            new_st = os.stat(target_file)
+            self.assertEqual(st.st_flags | stat.UF_IMMUTABLE, new_st.st_flags)
+            try:
+                fd = open(target_file, 'w+')
+            except IOError as e:
+                self.assertEqual(e.errno, errno.EPERM)
+        finally:
+            posix.chflags(target_file, st.st_flags)
 
-    def test_lchflags(self):
-        if hasattr(posix, 'lchflags'):
-            st = os.stat(support.TESTFN)
-            if hasattr(st, 'st_flags'):
-                posix.lchflags(support.TESTFN, st.st_flags)
+    @unittest.skipUnless(hasattr(posix, 'chflags'), 'test needs os.chflags()')
+    def test_chflags(self):
+        self._test_chflags_regular_file(posix.chflags, support.TESTFN)
+
+    @unittest.skipUnless(hasattr(posix, 'lchflags'), 'test needs os.lchflags()')
+    def test_lchflags_regular_file(self):
+        self._test_chflags_regular_file(posix.lchflags, support.TESTFN)
+
+    @unittest.skipUnless(hasattr(posix, 'lchflags'), 'test needs os.lchflags()')
+    def test_lchflags_symlink(self):
+        testfn_st = os.stat(support.TESTFN)
+
+        self.assertTrue(hasattr(testfn_st, 'st_flags'))
+
+        os.symlink(support.TESTFN, _DUMMY_SYMLINK)
+        self.teardown_files.append(_DUMMY_SYMLINK)
+        dummy_symlink_st = os.lstat(_DUMMY_SYMLINK)
+
+        posix.lchflags(_DUMMY_SYMLINK,
+                       dummy_symlink_st.st_flags | stat.UF_IMMUTABLE)
+        try:
+            new_testfn_st = os.stat(support.TESTFN)
+            new_dummy_symlink_st = os.lstat(_DUMMY_SYMLINK)
+
+            self.assertEqual(testfn_st.st_flags, new_testfn_st.st_flags)
+            self.assertEqual(dummy_symlink_st.st_flags | stat.UF_IMMUTABLE,
+                             new_dummy_symlink_st.st_flags)
+        finally:
+            posix.lchflags(_DUMMY_SYMLINK, dummy_symlink_st.st_flags)
 
     def test_environ(self):
         if os.name == "nt":

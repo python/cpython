@@ -9912,7 +9912,7 @@ else
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-[
+
 #include <sys/stat.h>
 #include <unistd.h>
 int main(int argc, char*argv[])
@@ -9921,7 +9921,7 @@ int main(int argc, char*argv[])
     return 1;
   return 0;
 }
-]
+
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
   ac_cv_have_chflags=yes
@@ -9961,7 +9961,7 @@ else
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-[
+
 #include <sys/stat.h>
 #include <unistd.h>
 int main(int argc, char*argv[])
@@ -9970,7 +9970,7 @@ int main(int argc, char*argv[])
     return 1;
   return 0;
 }
-]
+
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
   ac_cv_have_lchflags=yes
