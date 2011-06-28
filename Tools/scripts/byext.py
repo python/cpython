@@ -23,12 +23,11 @@ class Stats:
     def statdir(self, dir):
         self.addstats("<dir>", "dirs", 1)
         try:
-            names = os.listdir(dir)
-        except os.error, err:
+            names = sorted(os.listdir(dir))
+        except os.error as err:
             sys.stderr.write("Can't list %s: %s\n" % (dir, err))
             self.addstats("<dir>", "unlistable", 1)
             return
-        names.sort()
         for name in names:
             if name.startswith(".#"):
                 continue # Skip CVS temp files
@@ -53,14 +52,14 @@ class Stats:
         self.addstats(ext, "files", 1)
         try:
             f = open(filename, "rb")
-        except IOError, err:
+        except IOError as err:
             sys.stderr.write("Can't open %s: %s\n" % (filename, err))
             self.addstats(ext, "unopenable", 1)
             return
         data = f.read()
         f.close()
         self.addstats(ext, "bytes", len(data))
-        if '\0' in data:
+        if b'\0' in data:
             self.addstats(ext, "binary", 1)
             return
         if not data:
@@ -77,14 +76,12 @@ class Stats:
         d[key] = d.get(key, 0) + n
 
     def report(self):
-        exts = self.stats.keys()
-        exts.sort()
+        exts = sorted(self.stats.keys())
         # Get the column keys
         columns = {}
         for ext in exts:
             columns.update(self.stats[ext])
-        cols = columns.keys()
-        cols.sort()
+        cols = sorted(columns.keys())
         colwidth = {}
         colwidth["ext"] = max([len(ext) for ext in exts])
         minwidth = 6
@@ -109,14 +106,14 @@ class Stats:
         cols.insert(0, "ext")
         def printheader():
             for col in cols:
-                print "%*s" % (colwidth[col], col),
-            print
+                print("%*s" % (colwidth[col], col), end=" ")
+            print()
         printheader()
         for ext in exts:
             for col in cols:
                 value = self.stats[ext].get(col, "")
-                print "%*s" % (colwidth[col], value),
-            print
+                print("%*s" % (colwidth[col], value), end=" ")
+            print()
         printheader() # Another header at the bottom
 
 def main():
