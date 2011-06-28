@@ -19,6 +19,11 @@ from test import test_support
 ALREADY_TESTED = False
 
 def _get_source_filename():
+    # use installed copy if available
+    tests_f = os.path.join(os.path.dirname(__file__), 'xxmodule.c')
+    if os.path.exists(tests_f):
+        return tests_f
+    # otherwise try using copy from build directory
     srcdir = sysconfig.get_config_var('srcdir')
     if srcdir is None:
         return os.path.join(sysconfig.project_base, 'Modules', 'xxmodule.c')
