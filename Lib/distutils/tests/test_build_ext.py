@@ -11,7 +11,8 @@ from distutils.tests.support import TempdirManager
 from distutils.tests.support import LoggingSilencer
 from distutils.extension import Extension
 from distutils.errors import (
-    CompileError, DistutilsSetupError, UnknownFileError)
+    CompileError, DistutilsPlatformError, DistutilsSetupError,
+    UnknownFileError)
 
 import unittest
 from test import support
@@ -431,18 +432,43 @@ class BuildExtTestCase(TempdirManager,
 
 
     @unittest.skipUnless(sys.platform == 'darwin', 'test only relevant for MacOSX')
-    def test_deployment_target(self):
-        self._try_compile_deployment_target()
+    def test_deployment_target_default(self):
+        # Issue 9516: Test that, in the absence of the environment variable,
+        # an extension module is compiled with the same deployment target as
+        #  the interpreter.
+        self._try_compile_deployment_target('==', None)
 
+    @unittest.skipUnless(sys.platform == 'darwin', 'test only relevant for MacOSX')
+    def test_deployment_target_too_low(self):
+        # Issue 9516: Test that an extension module is not allowed to be
+        # compiled with a deployment target less than that of the interpreter.
+        self.assertRaises(DistutilsPlatformError,
+            self._try_compile_deployment_target, '>', '10.1')
+
+    @unittest.skipUnless(sys.platform == 'darwin', 'test only relevant for MacOSX')
+    def test_deployment_target_higher_ok(self):
+        # Issue 9516: Test that an extension module can be compiled with a
+        # deployment target higher than that of the interpreter: the ext
+        # module may depend on some newer OS feature.
+        deptarget = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
+        if deptarget:
+            # increment the minor version number (i.e. 10.6 -> 10.7)
+            deptarget = [int(x) for x in deptarget.split('.')]
+            deptarget[-1] += 1
+            deptarget = '.'.join(str(i) for i in deptarget)
+            self._try_compile_deployment_target('<', deptarget)
+
+    def _try_compile_deployment_target(self, operator, target):
         orig_environ = os.environ
         os.environ = orig_environ.copy()
         self.addCleanup(setattr, os, 'environ', orig_environ)
 
-        os.environ['MACOSX_DEPLOYMENT_TARGET']='10.1'
-        self._try_compile_deployment_target()
+        if target is None:
+            if os.environ.get('MACOSX_DEPLOYMENT_TARGET'):
+                del os.environ['MACOSX_DEPLOYMENT_TARGET']
+        else:
+            os.environ['MACOSX_DEPLOYMENT_TARGET'] = target
 
-
-    def _try_compile_deployment_target(self):
         deptarget_c = os.path.join(self.tmp_dir, 'deptargetmodule.c')
 
         with open(deptarget_c, 'w') as fp:
@@ -451,16 +477,17 @@ class BuildExtTestCase(TempdirManager,
 
                 int dummy;
 
-                #if TARGET != MAC_OS_X_VERSION_MIN_REQUIRED
+                #if TARGET %s MAC_OS_X_VERSION_MIN_REQUIRED
+                #else
                 #error "Unexpected target"
                 #endif
 
-            '''))
+            ''' % operator))
 
+        # get the deployment target that the interpreter was built with
         target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
         target = tuple(map(int, target.split('.')))
         target = '%02d%01d0' % target
-
         deptarget_ext = Extension(
             'deptarget',
             [deptarget_c],
