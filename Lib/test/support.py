@@ -1230,16 +1230,9 @@ def run_doctest(module, verbosity=None):
     else:
         verbosity = None
 
-    # Direct doctest output (normally just errors) to real stdout; doctest
-    # output shouldn't be compared by regrtest.
-    save_stdout = sys.stdout
-    sys.stdout = get_original_stdout()
-    try:
-        f, t = doctest.testmod(module, verbose=verbosity)
-        if f:
-            raise TestFailed("%d of %d doctests failed" % (f, t))
-    finally:
-        sys.stdout = save_stdout
+    f, t = doctest.testmod(module, verbose=verbosity)
+    if f:
+        raise TestFailed("%d of %d doctests failed" % (f, t))
     if verbose:
         print('doctest (%s) ... %d tests with zero failures' %
               (module.__name__, t))
