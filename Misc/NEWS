@@ -924,6 +924,10 @@ Extension Modules
 Tests
 -----
 
+- Issue #12400: regrtest -W doesn't rerun the tests twice anymore, but captures
+  the output and displays it on failure instead. regrtest -v doesn't print the
+  error twice anymore if there is only one error.
+
 - Issue #12141: Install copies of template C module file so that
   test_build_ext of test_distutils and test_command_build_ext of
   test_packaging are no longer silently skipped when
