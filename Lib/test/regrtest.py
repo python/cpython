@@ -845,9 +845,12 @@ def runtest(test, verbose, quiet,
             # tests keep a reference to sys.stdout or sys.stderr
             # (eg. test_argparse).
             if runtest.stringio is None:
-                runtest.stringio = io.StringIO()
-            stream = runtest.stringio
-            stream.truncate(0)
+                stream = io.StringIO()
+                runtest.stringio = stream
+            else:
+                stream = runtest.stringio
+                stream.seek(0)
+                stream.truncate()
 
             orig_stdout = sys.stdout
             orig_stderr = sys.stderr
