@@ -168,7 +168,6 @@ import json
 import os
 import random
 import re
-import io
 import sys
 import time
 import errno
