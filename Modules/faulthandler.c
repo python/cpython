@@ -4,6 +4,10 @@
 #include <object.h>
 #include <frameobject.h>
 #include <signal.h>
+#if defined(HAVE_PTHREAD_SIGMASK) && !defined(HAVE_BROKEN_PTHREAD_SIGMASK)
+#include <pthread.h>
+#endif
+
 
 /* Allocate at maximum 100 MB of the stack to raise the stack overflow */
 #define STACK_OVERFLOW_MAX_SIZE (100*1024*1024)
