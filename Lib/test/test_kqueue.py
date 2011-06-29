@@ -23,7 +23,10 @@ class TestKQueue(unittest.TestCase):
 
     def test_create_event(self):
         from operator import lt, le, gt, ge
-        fd = sys.stderr.fileno()
+
+        fd = os.open(os.devnull, os.O_WRONLY)
+        self.addCleanup(os.close, fd)
+
         ev = select.kevent(fd)
         other = select.kevent(1000)
         self.assertEqual(ev.ident, fd)
