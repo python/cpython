@@ -1,11 +1,12 @@
 """
 Tests for kqueue wrapper.
 """
-import socket
 import errno
-import time
+import os
 import select
+import socket
 import sys
+import time
 import unittest
 
 from test import support
