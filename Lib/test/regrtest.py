@@ -154,22 +154,23 @@ option '-uall,-gui'.
 """
 
 import builtins
+import errno
 import getopt
+import io
 import json
+import logging
 import os
+import platform
 import random
 import re
 import sys
-import time
-import errno
-import traceback
-import warnings
-import unittest
-from inspect import isabstract
-import tempfile
-import platform
 import sysconfig
-import logging
+import tempfile
+import time
+import traceback
+import unittest
+import warnings
+from inspect import isabstract
 
 
 # Some times __path__ and __file__ are not absolute (e.g. while running from
@@ -535,7 +536,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 args_tuple = (
                     (test, verbose, quiet),
                     dict(huntrleaks=huntrleaks, use_resources=use_resources,
-                         debug=debug, rerun_failed=verbose3)
+                         debug=debug, output_on_failure=verbose3)
                 )
                 yield (test, args_tuple)
         pending = tests_and_args()
@@ -613,7 +614,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             else:
                 try:
                     result = runtest(test, verbose, quiet, huntrleaks, debug,
-                                     rerun_failed=verbose3)
+                                     output_on_failure=verbose3)
                     accumulate_result(test, result)
                 except KeyboardInterrupt:
                     interrupted = True
@@ -760,7 +761,7 @@ def replace_stdout():
 
 def runtest(test, verbose, quiet,
             huntrleaks=False, debug=False, use_resources=None,
-            rerun_failed=False):
+            output_on_failure=False):
     """Run a single test.
 
     test -- the name of the test
@@ -769,7 +770,7 @@ def runtest(test, verbose, quiet,
     test_times -- a list of (time, test_name) pairs
     huntrleaks -- run multiple times to test for leaks; requires a debug
                   build; a triple corresponding to -R's three arguments
-    rerun_failed -- if true, re-run in verbose mode when failed
+    output_on_failure -- if true, display test output on failure
 
     Returns one of the test result constants:
         INTERRUPTED      KeyboardInterrupt when run under -j
@@ -783,27 +784,35 @@ def runtest(test, verbose, quiet,
     if use_resources is not None:
         support.use_resources = use_resources
     try:
-        if rerun_failed:
-            support.verbose = True
+        support.verbose = verbose  # Tell tests to be moderately quiet
+        if output_on_failure:
+            if runtest.stringio is None:
+                # Reuse the same instance to all calls to runtest(). Some
+                # tests keep a reference to sys.stdout or sys.stderr
+                # (eg. test_argparse).
+                runtest.stringio = io.StringIO()
+
+            orig_stdout = sys.stdout
             orig_stderr = sys.stderr
-            with support.captured_stdout() as stream:
-                try:
-                    sys.stderr = stream
-                    result = runtest_inner(test, verbose, quiet, huntrleaks,
-                                           debug, display_failure=False)
-                    if result[0] == FAILED:
-                        output = stream.getvalue()
-                        orig_stderr.write(output)
-                        orig_stderr.flush()
-                finally:
-                    sys.stderr = orig_stderr
+            try:
+                sys.stdout = runtest.stringio
+                sys.stderr = runtest.stringio
+                result = runtest_inner(test, verbose, quiet, huntrleaks,
+                                       debug, display_failure=False)
+                if result[0] == FAILED:
+                    output = stringio.getvalue()
+                    orig_stderr.write(output)
+                    orig_stderr.flush()
+            finally:
+                sys.stdout = orig_stdout
+                sys.stderr = orig_stderr
         else:
-            support.verbose = verbose  # Tell tests to be moderately quiet
             result = runtest_inner(test, verbose, quiet, huntrleaks, debug,
                                    display_failure=not verbose)
         return result
     finally:
         cleanup_test_droppings(test, verbose)
+runtest.stringio = None
 
 # Unit tests are supposed to leave the execution environment unchanged
 # once they complete.  But sometimes tests have bugs, especially when
