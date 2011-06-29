@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 import datetime
 import faulthandler
+import os
 import re
 import signal
 import subprocess
@@ -230,17 +231,30 @@ faulthandler._read_null()
         self.assertNotEqual(exitcode, 0)
 
     def test_is_enabled(self):
-        was_enabled = faulthandler.is_enabled()
+        null_stderr = None
+        orig_stderr = sys.stderr
         try:
-            faulthandler.enable()
-            self.assertTrue(faulthandler.is_enabled())
-            faulthandler.disable()
-            self.assertFalse(faulthandler.is_enabled())
-        finally:
-            if was_enabled:
+            # regrtest may replace sys.stderr by io.StringIO object, but
+            # faulthandler.enable() requires that sys.stderr has a fileno()
+            # method
+            null_stderr = open(os.devnull, 'w')
+            sys.stderr = null_stderr
+
+            was_enabled = faulthandler.is_enabled()
+            try:
                 faulthandler.enable()
-            else:
+                self.assertTrue(faulthandler.is_enabled())
                 faulthandler.disable()
+                self.assertFalse(faulthandler.is_enabled())
+            finally:
+                if was_enabled:
+                    faulthandler.enable()
+                else:
+                    faulthandler.disable()
+        finally:
+            sys.stderr = orig_stderr
+            if null_stderr is not None:
+                null_stderr.close()
 
     def check_dump_traceback(self, filename):
         """
