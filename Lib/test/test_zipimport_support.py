@@ -33,26 +33,19 @@ from test import test_doctest, sample_doctest
 
 
 def _run_object_doctest(obj, module):
-    # Direct doctest output (normally just errors) to real stdout; doctest
-    # output shouldn't be compared by regrtest.
-    save_stdout = sys.stdout
-    sys.stdout = test.support.get_original_stdout()
+    finder = doctest.DocTestFinder(verbose=verbose, recurse=False)
+    runner = doctest.DocTestRunner(verbose=verbose)
+    # Use the object's fully qualified name if it has one
+    # Otherwise, use the module's name
     try:
-        finder = doctest.DocTestFinder(verbose=verbose, recurse=False)
-        runner = doctest.DocTestRunner(verbose=verbose)
-        # Use the object's fully qualified name if it has one
-        # Otherwise, use the module's name
-        try:
-            name = "%s.%s" % (obj.__module__, obj.__name__)
-        except AttributeError:
-            name = module.__name__
-        for example in finder.find(obj, name, module):
-            runner.run(example)
-        f, t = runner.failures, runner.tries
-        if f:
-            raise test.support.TestFailed("%d of %d doctests failed" % (f, t))
-    finally:
-        sys.stdout = save_stdout
+        name = "%s.%s" % (obj.__module__, obj.__name__)
+    except AttributeError:
+        name = module.__name__
+    for example in finder.find(obj, name, module):
+        runner.run(example)
+    f, t = runner.failures, runner.tries
+    if f:
+        raise test.support.TestFailed("%d of %d doctests failed" % (f, t))
     if verbose:
         print ('doctest (%s) ... %d tests with zero failures' % (module.__name__, t))
     return f, t
