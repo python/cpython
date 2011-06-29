@@ -3,9 +3,11 @@ import sys
 import site
 import shutil
 import sysconfig
+import textwrap
 from io import StringIO
 from packaging.dist import Distribution
-from packaging.errors import UnknownFileError, CompileError
+from packaging.errors import (UnknownFileError, CompileError,
+                              PackagingPlatformError)
 from packaging.command.build_ext import build_ext
 from packaging.compiler.extension import Extension
 from test.script_helper import assert_python_ok
@@ -361,6 +363,95 @@ class BuildExtTestCase(support.TempdirManager,
         path = cmd.get_ext_fullpath('twisted.runner.portmap')
         wanted = os.path.join(curdir, 'twisted', 'runner', 'portmap' + ext)
         self.assertEqual(wanted, path)
+
+    @unittest.skipUnless(sys.platform == 'darwin',
+                         'test only relevant for Mac OS X')
+    def test_deployment_target_default(self):
+        # Issue 9516: Test that, in the absence of the environment variable,
+        # an extension module is compiled with the same deployment target as
+        #  the interpreter.
+        self._try_compile_deployment_target('==', None)
+
+    @unittest.skipUnless(sys.platform == 'darwin',
+                         'test only relevant for Mac OS X')
+    def test_deployment_target_too_low(self):
+        # Issue 9516: Test that an extension module is not allowed to be
+        # compiled with a deployment target less than that of the interpreter.
+        self.assertRaises(PackagingPlatformError,
+            self._try_compile_deployment_target, '>', '10.1')
+
+    @unittest.skipUnless(sys.platform == 'darwin',
+                         'test only relevant for Mac OS X')
+    def test_deployment_target_higher_ok(self):
+        # Issue 9516: Test that an extension module can be compiled with a
+        # deployment target higher than that of the interpreter: the ext
+        # module may depend on some newer OS feature.
+        deptarget = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
+        if deptarget:
+            # increment the minor version number (i.e. 10.6 -> 10.7)
+            deptarget = [int(x) for x in deptarget.split('.')]
+            deptarget[-1] += 1
+            deptarget = '.'.join(str(i) for i in deptarget)
+            self._try_compile_deployment_target('<', deptarget)
+
+    def _try_compile_deployment_target(self, operator, target):
+        orig_environ = os.environ
+        os.environ = orig_environ.copy()
+        self.addCleanup(setattr, os, 'environ', orig_environ)
+
+        if target is None:
+            if os.environ.get('MACOSX_DEPLOYMENT_TARGET'):
+                del os.environ['MACOSX_DEPLOYMENT_TARGET']
+        else:
+            os.environ['MACOSX_DEPLOYMENT_TARGET'] = target
+
+        deptarget_c = os.path.join(self.tmp_dir, 'deptargetmodule.c')
+
+        with open(deptarget_c, 'w') as fp:
+            fp.write(textwrap.dedent('''\
+                #include <AvailabilityMacros.h>
+
+                int dummy;
+
+                #if TARGET %s MAC_OS_X_VERSION_MIN_REQUIRED
+                #else
+                #error "Unexpected target"
+                #endif
+
+            ''' % operator))
+
+        # get the deployment target that the interpreter was built with
+        target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
+        target = tuple(map(int, target.split('.')))
+        target = '%02d%01d0' % target
+
+        deptarget_ext = Extension(
+            'deptarget',
+            [deptarget_c],
+            extra_compile_args=['-DTARGET=%s' % (target,)],
+        )
+        dist = Distribution({
+            'name': 'deptarget',
+            'ext_modules': [deptarget_ext],
+        })
+        dist.package_dir = self.tmp_dir
+        cmd = build_ext(dist)
+        cmd.build_lib = self.tmp_dir
+        cmd.build_temp = self.tmp_dir
+
+        try:
+            old_stdout = sys.stdout
+            if not verbose:
+                # silence compiler output
+                sys.stdout = StringIO()
+            try:
+                cmd.ensure_finalized()
+                cmd.run()
+            finally:
+                sys.stdout = old_stdout
+
+        except CompileError:
+            self.fail("Wrong deployment target during compilation")
 
 
 def test_suite():
