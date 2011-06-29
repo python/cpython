@@ -757,6 +757,9 @@ def split_leading_dir(path):
     else:
         return path, ''
 
+if sys.platform == 'darwin':
+    _cfg_target = None
+    _cfg_target_split = None
 
 def spawn(cmd, search_path=True, verbose=0, dry_run=False, env=None):
     """Run another program specified as a command list 'cmd' in a new process.
@@ -781,6 +784,26 @@ def spawn(cmd, search_path=True, verbose=0, dry_run=False, env=None):
     if dry_run:
         logging.debug('dry run, no process actually spawned')
         return
+    if sys.platform == 'darwin':
+        global _cfg_target, _cfg_target_split
+        if _cfg_target is None:
+            _cfg_target = sysconfig.get_config_var(
+                                  'MACOSX_DEPLOYMENT_TARGET') or ''
+            if _cfg_target:
+                _cfg_target_split = [int(x) for x in _cfg_target.split('.')]
+        if _cfg_target:
+            # ensure that the deployment target of build process is not less
+            # than that used when the interpreter was built. This ensures
+            # extension modules are built with correct compatibility values
+            env = env or os.environ
+            cur_target = env.get('MACOSX_DEPLOYMENT_TARGET', _cfg_target)
+            if _cfg_target_split > [int(x) for x in cur_target.split('.')]:
+                my_msg = ('$MACOSX_DEPLOYMENT_TARGET mismatch: '
+                          'now "%s" but "%s" during configure'
+                                % (cur_target, _cfg_target))
+                raise PackagingPlatformError(my_msg)
+            env = dict(env, MACOSX_DEPLOYMENT_TARGET=cur_target)
+
     exit_status = subprocess.call(cmd, env=env)
     if exit_status != 0:
         msg = "command %r failed with exit status %d"
