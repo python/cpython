@@ -231,14 +231,12 @@ faulthandler._read_null()
         self.assertNotEqual(exitcode, 0)
 
     def test_is_enabled(self):
-        null_stderr = None
         orig_stderr = sys.stderr
         try:
             # regrtest may replace sys.stderr by io.StringIO object, but
             # faulthandler.enable() requires that sys.stderr has a fileno()
             # method
-            null_stderr = open(os.devnull, 'w')
-            sys.stderr = null_stderr
+            sys.stderr = sys.__stderr__
 
             was_enabled = faulthandler.is_enabled()
             try:
@@ -253,8 +251,6 @@ faulthandler._read_null()
                     faulthandler.disable()
         finally:
             sys.stderr = orig_stderr
-            if null_stderr is not None:
-                null_stderr.close()
 
     def check_dump_traceback(self, filename):
         """
