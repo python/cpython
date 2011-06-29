@@ -16,6 +16,17 @@ Core and Builtins
 Library
 -------
 
+- Issue #9516: On Mac OS X, change Distutils to no longer globally attempt to
+  check or set the MACOSX_DEPLOYMENT_TARGET environment variable for the
+  interpreter process.  This could cause failures in non-Distutils subprocesses
+  and was unreliable since tests or user programs could modify the interpreter
+  environment after Distutils set it.  Instead, have Distutils set the the
+  deployment target only in the environment of each build subprocess.  It is
+  still possible to globally override the default by setting
+  MACOSX_DEPLOYMENT_TARGET before launching the interpreter; its value must be
+  greater or equal to the default value, the value with which the interpreter
+  was built.
+
 - Issue #11802:  The cache in filecmp now has a maximum size of 100 so that
   it won't grow without bound.
 
