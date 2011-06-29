@@ -1029,12 +1029,6 @@ error:
     if (!symtable_visit_ ## TYPE((ST), (V))) \
         return 0;
 
-#define VISIT_IN_BLOCK(ST, TYPE, V, S) \
-    if (!symtable_visit_ ## TYPE((ST), (V))) { \
-        symtable_exit_block((ST), (S)); \
-        return 0; \
-    }
-
 #define VISIT_SEQ(ST, TYPE, SEQ) { \
     int i; \
     asdl_seq *seq = (SEQ); /* avoid variable capture */ \
@@ -1045,18 +1039,6 @@ error:
     } \
 }
 
-#define VISIT_SEQ_IN_BLOCK(ST, TYPE, SEQ, S) { \
-    int i; \
-    asdl_seq *seq = (SEQ); /* avoid variable capture */ \
-    for (i = 0; i < asdl_seq_LEN(seq); i++) { \
-        TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
-        if (!symtable_visit_ ## TYPE((ST), elt)) { \
-            symtable_exit_block((ST), (S)); \
-            return 0; \
-        } \
-    } \
-}
-
 #define VISIT_SEQ_TAIL(ST, TYPE, SEQ, START) { \
     int i; \
     asdl_seq *seq = (SEQ); /* avoid variable capture */ \
@@ -1064,18 +1046,6 @@ error:
         TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
         if (!symtable_visit_ ## TYPE((ST), elt)) \
             return 0; \
-    } \
-}
-
-#define VISIT_SEQ_TAIL_IN_BLOCK(ST, TYPE, SEQ, START, S) { \
-    int i; \
-    asdl_seq *seq = (SEQ); /* avoid variable capture */ \
-    for (i = (START); i < asdl_seq_LEN(seq); i++) { \
-        TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
-        if (!symtable_visit_ ## TYPE((ST), elt)) { \
-            symtable_exit_block((ST), (S)); \
-            return 0; \
-        } \
     } \
 }
 
@@ -1128,8 +1098,8 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                                   FunctionBlock, (void *)s, s->lineno,
                                   s->col_offset))
             return 0;
-        VISIT_IN_BLOCK(st, arguments, s->v.FunctionDef.args, s);
-        VISIT_SEQ_IN_BLOCK(st, stmt, s->v.FunctionDef.body, s);
+        VISIT(st, arguments, s->v.FunctionDef.args);
+        VISIT_SEQ(st, stmt, s->v.FunctionDef.body);
         if (!symtable_exit_block(st, s))
             return 0;
         break;
@@ -1156,7 +1126,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         }
         tmp = st->st_private;
         st->st_private = s->v.ClassDef.name;
-        VISIT_SEQ_IN_BLOCK(st, stmt, s->v.ClassDef.body, s);
+        VISIT_SEQ(st, stmt, s->v.ClassDef.body);
         st->st_private = tmp;
         if (!symtable_exit_block(st, s))
             return 0;
@@ -1337,8 +1307,8 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
                                   FunctionBlock, (void *)e, e->lineno,
                                   e->col_offset))
             return 0;
-        VISIT_IN_BLOCK(st, arguments, e->v.Lambda.args, (void*)e);
-        VISIT_IN_BLOCK(st, expr, e->v.Lambda.body, (void*)e);
+        VISIT(st, arguments, e->v.Lambda.args);
+        VISIT(st, expr, e->v.Lambda.body);
         if (!symtable_exit_block(st, (void *)e))
             return 0;
         break;
@@ -1658,13 +1628,12 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
         symtable_exit_block(st, (void *)e);
         return 0;
     }
-    VISIT_IN_BLOCK(st, expr, outermost->target, (void*)e);
-    VISIT_SEQ_IN_BLOCK(st, expr, outermost->ifs, (void*)e);
-    VISIT_SEQ_TAIL_IN_BLOCK(st, comprehension,
-                            generators, 1, (void*)e);
+    VISIT(st, expr, outermost->target);
+    VISIT_SEQ(st, expr, outermost->ifs);
+    VISIT_SEQ_TAIL(st, comprehension, generators, 1);
     if (value)
-        VISIT_IN_BLOCK(st, expr, value, (void*)e);
-    VISIT_IN_BLOCK(st, expr, elt, (void*)e);
+        VISIT(st, expr, value);
+    VISIT(st, expr, elt);
     return symtable_exit_block(st, (void *)e);
 }
 
