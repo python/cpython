@@ -122,6 +122,10 @@ Build
 Tests
 -----
 
+- Issue #12400: regrtest -W doesn't rerun the tests twice anymore, but captures
+  the output and displays it on failure instead. regrtest -v doesn't print the
+  error twice anymore if there is only one error.
+
 - Issue #12141: Install a copy of template C module file so that
   test_build_ext of test_distutils is no longer silently skipped when
   run outside of a build directory.
