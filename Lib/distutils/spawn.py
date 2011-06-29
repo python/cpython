@@ -96,17 +96,43 @@ def _spawn_os2(cmd, search_path=1, verbose=0, dry_run=0):
             raise DistutilsExecError, \
                   "command '%s' failed with exit status %d" % (cmd[0], rc)
 
+if sys.platform == 'darwin':
+    from distutils import sysconfig
+    _cfg_target = None
+    _cfg_target_split = None
 
 def _spawn_posix(cmd, search_path=1, verbose=0, dry_run=0):
     log.info(' '.join(cmd))
     if dry_run:
         return
     exec_fn = search_path and os.execvp or os.execv
+    exec_args = [cmd[0], cmd]
+    if sys.platform == 'darwin':
+        global _cfg_target, _cfg_target_split
+        if _cfg_target is None:
+            _cfg_target = sysconfig.get_config_var(
+                                  'MACOSX_DEPLOYMENT_TARGET') or ''
+            if _cfg_target:
+                _cfg_target_split = [int(x) for x in _cfg_target.split('.')]
+        if _cfg_target:
+            # ensure that the deployment target of build process is not less
+            # than that used when the interpreter was built. This ensures
+            # extension modules are built with correct compatibility values
+            cur_target = os.environ.get('MACOSX_DEPLOYMENT_TARGET', _cfg_target)
+            if _cfg_target_split > [int(x) for x in cur_target.split('.')]:
+                my_msg = ('$MACOSX_DEPLOYMENT_TARGET mismatch: '
+                          'now "%s" but "%s" during configure'
+                                % (cur_target, _cfg_target))
+                raise DistutilsPlatformError(my_msg)
+            env = dict(os.environ,
+                       MACOSX_DEPLOYMENT_TARGET=cur_target)
+            exec_fn = search_path and os.execvpe or os.execve
+            exec_args.append(env)
     pid = os.fork()
 
     if pid == 0:  # in the child
         try:
-            exec_fn(cmd[0], cmd)
+            exec_fn(*exec_args)
         except OSError, e:
             sys.stderr.write("unable to execute %s: %s\n" %
                              (cmd[0], e.strerror))
