@@ -793,6 +793,7 @@ def runtest(test, verbose, quiet,
             if runtest.stringio is None:
                 runtest.stringio = io.StringIO()
             stream = runtest.stringio
+            stream.truncate(0)
 
             orig_stdout = sys.stdout
             orig_stderr = sys.stderr
