@@ -209,7 +209,7 @@ Library
   still possible to globally override the default by setting
   MACOSX_DEPLOYMENT_TARGET before launching the interpreter; its value must be
   greater or equal to the default value, the value with which the interpreter
-  was built.
+  was built.  Also, implement the same handling in packaging.
 
 - Issue #12422: In the copy module, don't store objects that are their own copy
   in the memo dict.
