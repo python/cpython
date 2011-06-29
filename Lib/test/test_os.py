@@ -40,7 +40,6 @@ class FileTests(unittest.TestCase):
     tearDown = setUp
 
     def test_access(self):
-        self.assertEqual(1,2)
         f = os.open(support.TESTFN, os.O_CREAT|os.O_RDWR)
         os.close(f)
         self.assertTrue(os.access(support.TESTFN, os.W_OK))
