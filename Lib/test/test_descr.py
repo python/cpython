@@ -4589,6 +4589,10 @@ class DictProxyTests(unittest.TestCase):
                 pass
         self.C = C
 
+    def test_repr(self):
+        self.assertIn('dict_proxy({', repr(vars(self.C)))
+        self.assertIn("'meth':", repr(vars(self.C)))
+
     def test_iter_keys(self):
         # Testing dict-proxy iterkeys...
         keys = [ key for key in self.C.__dict__.iterkeys() ]
