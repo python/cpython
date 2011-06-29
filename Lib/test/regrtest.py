@@ -30,7 +30,7 @@ Verbosity
 
 -v/--verbose    -- run tests in verbose mode with output to stdout
 -w/--verbose2   -- re-run failed tests in verbose mode
--W/--verbose3   -- re-run failed tests in verbose mode immediately
+-W/--verbose3   -- display test output on failure
 -d/--debug      -- print traceback for failed tests
 -q/--quiet      -- no output unless one or more tests fail
 -S/--slow       -- print the slowest 10 tests
@@ -831,20 +831,30 @@ def runtest(test, verbose, quiet,
         PASSED           test passed
     """
 
-    support.verbose = verbose  # Tell tests to be moderately quiet
     if use_resources is not None:
         support.use_resources = use_resources
     use_timeout = (timeout is not None)
     if use_timeout:
         faulthandler.dump_tracebacks_later(timeout, exit=True)
     try:
-        result = runtest_inner(test, verbose, quiet, huntrleaks, debug)
-        if result[0] == FAILED and rerun_failed:
-            cleanup_test_droppings(test, verbose)
-            sys.stdout.flush()
-            sys.stderr.flush()
-            print("Re-running test {} in verbose mode".format(test))
-            runtest(test, True, quiet, huntrleaks, debug, timeout=timeout)
+        if rerun_failed:
+            support.verbose = True
+            orig_stderr = sys.stderr
+            with support.captured_stdout() as stream:
+                try:
+                    sys.stderr = stream
+                    result = runtest_inner(test, verbose, quiet, huntrleaks,
+                                           debug, display_failure=False)
+                    if result[0] == FAILED:
+                        output = stream.getvalue()
+                        orig_stderr.write(output)
+                        orig_stderr.flush()
+                finally:
+                    sys.stderr = orig_stderr
+        else:
+            support.verbose = verbose  # Tell tests to be moderately quiet
+            result = runtest_inner(test, verbose, quiet, huntrleaks, debug,
+                                   display_failure=not verbose)
         return result
     finally:
         if use_timeout:
@@ -1020,7 +1030,8 @@ class saved_test_environment:
         return False
 
 
-def runtest_inner(test, verbose, quiet, huntrleaks=False, debug=False):
+def runtest_inner(test, verbose, quiet,
+                  huntrleaks=False, debug=False, display_failure=True):
     support.unload(test)
 
     test_time = 0.0
@@ -1058,7 +1069,10 @@ def runtest_inner(test, verbose, quiet, huntrleaks=False, debug=False):
     except KeyboardInterrupt:
         raise
     except support.TestFailed as msg:
-        print("test", test, "failed --", msg, file=sys.stderr)
+        if display_failure:
+            print("test", test, "failed --", msg, file=sys.stderr)
+        else:
+            print("test", test, "failed", file=sys.stderr)
         sys.stderr.flush()
         return FAILED, test_time
     except:
