@@ -784,29 +784,32 @@ def runtest(test, verbose, quiet,
     if use_resources is not None:
         support.use_resources = use_resources
     try:
-        support.verbose = verbose  # Tell tests to be moderately quiet
         if output_on_failure:
+            support.verbose = True
+
+            # Reuse the same instance to all calls to runtest(). Some
+            # tests keep a reference to sys.stdout or sys.stderr
+            # (eg. test_argparse).
             if runtest.stringio is None:
-                # Reuse the same instance to all calls to runtest(). Some
-                # tests keep a reference to sys.stdout or sys.stderr
-                # (eg. test_argparse).
                 runtest.stringio = io.StringIO()
+            stream = runtest.stringio
 
             orig_stdout = sys.stdout
             orig_stderr = sys.stderr
             try:
-                sys.stdout = runtest.stringio
-                sys.stderr = runtest.stringio
+                sys.stdout = stream
+                sys.stderr = stream
                 result = runtest_inner(test, verbose, quiet, huntrleaks,
                                        debug, display_failure=False)
                 if result[0] == FAILED:
-                    output = stringio.getvalue()
+                    output = stream.getvalue()
                     orig_stderr.write(output)
                     orig_stderr.flush()
             finally:
                 sys.stdout = orig_stdout
                 sys.stderr = orig_stderr
         else:
+            support.verbose = verbose  # Tell tests to be moderately quiet
             result = runtest_inner(test, verbose, quiet, huntrleaks, debug,
                                    display_failure=not verbose)
         return result
