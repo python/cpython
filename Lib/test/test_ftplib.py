@@ -887,8 +887,6 @@ class TestTLS_FTPClass(TestCase):
         self.assertIsInstance(self.client.sock, ssl.SSLSocket)
         self.client.ccc()
         self.assertRaises(ValueError, self.client.sock.unwrap)
-        self.client.sendcmd('noop')
-        self.client.quit()
 
 
 class TestTimeouts(TestCase):
