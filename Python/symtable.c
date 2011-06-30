@@ -899,17 +899,14 @@ symtable_warn(struct symtable *st, char *msg, int lineno)
 static int
 symtable_exit_block(struct symtable *st, void *ast)
 {
-    Py_ssize_t end;
+    Py_ssize_t size;
 
-    Py_CLEAR(st->st_cur);
-    end = PyList_GET_SIZE(st->st_stack) - 1;
-    if (end >= 0) {
+    st->st_cur = NULL;
+    size = PyList_GET_SIZE(st->st_stack);
+    if (size) {
         st->st_cur = (PySTEntryObject *)PyList_GET_ITEM(st->st_stack,
-                                                        end);
-        if (st->st_cur == NULL)
-            return 0;
-        Py_INCREF(st->st_cur);
-        if (PySequence_DelItem(st->st_stack, end) < 0)
+                                                        size - 2);
+        if (PyList_SetSlice(st->st_stack, size - 1, size, NULL) < 0)
             return 0;
     }
     return 1;
@@ -919,23 +916,23 @@ static int
 symtable_enter_block(struct symtable *st, identifier name, _Py_block_ty block,
                      void *ast, int lineno, int col_offset)
 {
-    PySTEntryObject *prev = NULL;
+    PySTEntryObject *prev = NULL, *ste;
 
-    if (st->st_cur) {
-        prev = st->st_cur;
-        if (PyList_Append(st->st_stack, (PyObject *)st->st_cur) < 0) {
-            return 0;
-        }
-        Py_DECREF(st->st_cur);
-    }
-    st->st_cur = ste_new(st, name, block, ast, lineno, col_offset);
-    if (st->st_cur == NULL)
+    ste = ste_new(st, name, block, ast, lineno, col_offset);
+    if (ste == NULL)
         return 0;
+    if (PyList_Append(st->st_stack, (PyObject *)ste) < 0) {
+        Py_DECREF(ste);
+        return 0;
+    }
+    prev = st->st_cur;
+    /* The entry is owned by the stack. Borrow it for st_cur. */
+    Py_DECREF(ste);
+    st->st_cur = ste;
     if (block == ModuleBlock)
         st->st_global = st->st_cur->ste_symbols;
     if (prev) {
-        if (PyList_Append(prev->ste_children,
-                          (PyObject *)st->st_cur) < 0) {
+        if (PyList_Append(prev->ste_children, (PyObject *)ste) < 0) {
             return 0;
         }
     }
