@@ -7,7 +7,8 @@ import re
 import tempfile
 import py_compile
 from test.support import (
-    forget, make_legacy_pyc, run_unittest, unload, verbose, no_tracing)
+    forget, make_legacy_pyc, run_unittest, unload, verbose, no_tracing,
+    create_empty_file)
 from test.script_helper import (
     make_pkg, make_script, make_zip_pkg, make_zip_script, temp_dir)
 
@@ -113,8 +114,7 @@ class RunModuleTest(unittest.TestCase):
     def _add_pkg_dir(self, pkg_dir):
         os.mkdir(pkg_dir)
         pkg_fname = os.path.join(pkg_dir, "__init__.py")
-        pkg_file = open(pkg_fname, "w")
-        pkg_file.close()
+        create_empty_file(pkg_fname)
         return pkg_fname
 
     def _make_pkg(self, source, depth, mod_base="runpy_test"):
@@ -219,8 +219,7 @@ class RunModuleTest(unittest.TestCase):
             module_dir = os.path.join(module_dir, pkg_name)
         # Add sibling module
         sibling_fname = os.path.join(module_dir, "sibling.py")
-        sibling_file = open(sibling_fname, "w")
-        sibling_file.close()
+        create_empty_file(sibling_fname)
         if verbose: print("  Added sibling module:", sibling_fname)
         # Add nephew module
         uncle_dir = os.path.join(parent_dir, "uncle")
@@ -230,8 +229,7 @@ class RunModuleTest(unittest.TestCase):
         self._add_pkg_dir(cousin_dir)
         if verbose: print("  Added cousin package:", cousin_dir)
         nephew_fname = os.path.join(cousin_dir, "nephew.py")
-        nephew_file = open(nephew_fname, "w")
-        nephew_file.close()
+        create_empty_file(nephew_fname)
         if verbose: print("  Added nephew module:", nephew_fname)
 
     def _check_relative_imports(self, depth, run_name=None):

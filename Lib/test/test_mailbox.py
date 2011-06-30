@@ -902,8 +902,7 @@ class TestMaildir(TestMailbox):
         # Now, write something into cur and remove it.  This changes
         # the mtime and should cause a re-read.
         filename = os.path.join(self._path, 'cur', 'stray-file')
-        f = open(filename, 'w')
-        f.close()
+        support.create_empty_file(filename)
         os.unlink(filename)
         self._box._refresh()
         self.assertTrue(refreshed())

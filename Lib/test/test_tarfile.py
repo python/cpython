@@ -893,7 +893,7 @@ class WriteTest(WriteTestBase):
         try:
             for name in ("foo", "bar", "baz"):
                 name = os.path.join(tempdir, name)
-                open(name, "wb").close()
+                support.create_empty_file(name)
 
             exclude = os.path.isfile
 
@@ -920,7 +920,7 @@ class WriteTest(WriteTestBase):
         try:
             for name in ("foo", "bar", "baz"):
                 name = os.path.join(tempdir, name)
-                open(name, "wb").close()
+                support.create_empty_file(name)
 
             def filter(tarinfo):
                 if os.path.basename(tarinfo.name) == "bar":
@@ -959,7 +959,7 @@ class WriteTest(WriteTestBase):
         # and compare the stored name with the original.
         foo = os.path.join(TEMPDIR, "foo")
         if not dir:
-            open(foo, "w").close()
+            support.create_empty_file(foo)
         else:
             os.mkdir(foo)
 

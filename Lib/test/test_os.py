@@ -1028,8 +1028,7 @@ if sys.platform != 'win32':
             os.mkdir(self.dir)
             try:
                 for fn in bytesfn:
-                    f = open(os.path.join(self.bdir, fn), "w")
-                    f.close()
+                    support.create_empty_file(os.path.join(self.bdir, fn))
                     fn = os.fsdecode(fn)
                     if fn in self.unicodefn:
                         raise ValueError("duplicate filename")

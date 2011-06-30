@@ -107,8 +107,7 @@ class TestShutil(unittest.TestCase):
             self.errorState = 0
             os.mkdir(TESTFN)
             self.childpath = os.path.join(TESTFN, 'a')
-            f = open(self.childpath, 'w')
-            f.close()
+            support.create_empty_file(self.childpath)
             old_dir_mode = os.stat(TESTFN).st_mode
             old_child_mode = os.stat(self.childpath).st_mode
             # Make unwritable.
@@ -156,7 +155,7 @@ class TestShutil(unittest.TestCase):
     def test_rmtree_dont_delete_file(self):
         # When called on a file instead of a directory, don't delete it.
         handle, path = tempfile.mkstemp()
-        os.fdopen(handle).close()
+        os.close(handle)
         self.assertRaises(OSError, shutil.rmtree, path)
         os.remove(path)
 
