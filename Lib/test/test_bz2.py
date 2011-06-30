@@ -340,7 +340,7 @@ class BZ2FileTest(BaseTest):
 
     def testFileno(self):
         self.createTempFile()
-        with open(self.filename) as rawf:
+        with open(self.filename, 'rb') as rawf:
             with BZ2File(fileobj=rawf) as bz2f:
                 self.assertEqual(bz2f.fileno(), rawf.fileno())
 
