@@ -51,16 +51,17 @@ Richard Chamberlain, for the first implementation of textdoc.
 #     the current directory is changed with os.chdir(), an incorrect
 #     path will be displayed.
 
-import os
-import sys
 import builtins
 import imp
-import io
 import inspect
+import io
+import os
 import pkgutil
 import platform
 import re
+import sys
 import time
+import tokenize
 import warnings
 from collections import deque
 from reprlib import Repr
@@ -221,7 +222,7 @@ def synopsis(filename, cache={}):
     if lastupdate < mtime:
         info = inspect.getmoduleinfo(filename)
         try:
-            file = open(filename)
+            file = tokenize.open(filename)
         except IOError:
             # module can't be opened, so skip it
             return None
