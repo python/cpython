@@ -92,10 +92,15 @@ __all__ = [
 ]
 
 import __future__
-
-import sys, traceback, inspect, linecache, os, re
-import unittest, difflib, pdb, tempfile
-import warnings
+import difflib
+import inspect
+import linecache
+import os
+import pdb
+import re
+import sys
+import traceback
+import unittest
 from io import StringIO
 from collections import namedtuple
 
@@ -2511,39 +2516,21 @@ def debug_script(src, pm=False, globs=None):
     "Debug a test script.  `src` is the script, as a string."
     import pdb
 
-    # Note that tempfile.NameTemporaryFile() cannot be used.  As the
-    # docs say, a file so created cannot be opened by name a second time
-    # on modern Windows boxes, and exec() needs to open and read it.
-    srcfilename = tempfile.mktemp(".py", "doctestdebug")
-    f = open(srcfilename, 'w')
-    f.write(src)
-    f.close()
+    if globs:
+        globs = globs.copy()
+    else:
+        globs = {}
 
-    try:
-        if globs:
-            globs = globs.copy()
-        else:
-            globs = {}
-
-        if pm:
-            try:
-                with open(srcfilename) as f:
-                    exec(f.read(), globs, globs)
-            except:
-                print(sys.exc_info()[1])
-                p = pdb.Pdb(nosigint=True)
-                p.reset()
-                p.interaction(None, sys.exc_info()[2])
-        else:
-            fp = open(srcfilename)
-            try:
-                script = fp.read()
-            finally:
-                fp.close()
-            pdb.Pdb(nosigint=True).run("exec(%r)" % script, globs, globs)
-
-    finally:
-        os.remove(srcfilename)
+    if pm:
+        try:
+            exec(src, globs, globs)
+        except:
+            print(sys.exc_info()[1])
+            p = pdb.Pdb(nosigint=True)
+            p.reset()
+            p.interaction(None, sys.exc_info()[2])
+    else:
+        pdb.Pdb(nosigint=True).run("exec(%r)" % src, globs, globs)
 
 def debug(module, name, pm=False):
     """Debug a single doctest docstring.
