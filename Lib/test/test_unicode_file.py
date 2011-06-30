@@ -6,7 +6,7 @@ import unicodedata
 
 import unittest
 from test.support import (run_unittest, rmtree,
-    TESTFN_ENCODING, TESTFN_UNICODE, TESTFN_UNENCODABLE)
+    TESTFN_ENCODING, TESTFN_UNICODE, TESTFN_UNENCODABLE, create_empty_file)
 
 if not os.path.supports_unicode_filenames:
     try:
@@ -99,8 +99,7 @@ class TestUnicodeFiles(unittest.TestCase):
     # top-level 'test' functions would be if they could take params
     def _test_single(self, filename):
         remove_if_exists(filename)
-        f = open(filename, "w")
-        f.close()
+        create_empty_file(filename)
         try:
             self._do_single(filename)
         finally:

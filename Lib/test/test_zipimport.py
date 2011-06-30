@@ -411,7 +411,7 @@ class BadFileZipImportTestCase(unittest.TestCase):
 
     def testEmptyFile(self):
         support.unlink(TESTMOD)
-        open(TESTMOD, 'w+').close()
+        support.create_empty_file(TESTMOD)
         self.assertZipFailure(TESTMOD)
 
     def testFileUnreadable(self):

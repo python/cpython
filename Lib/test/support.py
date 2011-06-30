@@ -40,7 +40,7 @@ __all__ = [
     "is_resource_enabled", "requires", "requires_linux_version",
     "requires_mac_ver", "find_unused_port", "bind_port",
     "IPV6_ENABLED", "is_jython", "TESTFN", "HOST", "SAVEDCWD", "temp_cwd",
-    "findfile", "sortdict", "check_syntax_error", "open_urlresource",
+    "findfile", "create_empty_file", "sortdict", "check_syntax_error", "open_urlresource",
     "check_warnings", "CleanImport", "EnvironmentVarGuard", "TransientResource",
     "captured_stdout", "captured_stdin", "captured_stderr", "time_out",
     "socket_peer_reset", "ioerror_peer_reset", "run_with_locale", 'temp_umask',
@@ -595,6 +595,11 @@ def findfile(file, here=__file__, subdir=None):
         fn = os.path.join(dn, file)
         if os.path.exists(fn): return fn
     return file
+
+def create_empty_file(filename):
+    """Create an empty file. If the file already exists, truncate it."""
+    fd = os.open(filename, os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
+    os.close(fd)
 
 def sortdict(dict):
     "Like repr(dict), but in sorted order."

@@ -14,7 +14,7 @@ import textwrap
 from test.support import (
     EnvironmentVarGuard, TESTFN, check_warnings, forget, is_jython,
     make_legacy_pyc, rmtree, run_unittest, swap_attr, swap_item, temp_umask,
-    unlink, unload)
+    unlink, unload, create_empty_file)
 from test import script_helper
 
 
@@ -103,7 +103,7 @@ class ImportTests(unittest.TestCase):
             sys.path.insert(0, os.curdir)
             try:
                 fname = TESTFN + os.extsep + "py"
-                open(fname, 'w').close()
+                create_empty_file(fname)
                 os.chmod(fname, (stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH |
                                  stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH))
                 __import__(TESTFN)

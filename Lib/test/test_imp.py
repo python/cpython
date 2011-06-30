@@ -324,8 +324,7 @@ class PEP3147Tests(unittest.TestCase):
             shutil.rmtree('pep3147')
         self.addCleanup(cleanup)
         # Touch the __init__.py file.
-        with open('pep3147/__init__.py', 'w'):
-            pass
+        support.create_empty_file('pep3147/__init__.py')
         m = __import__('pep3147')
         # Ensure we load the pyc file.
         support.forget('pep3147')
