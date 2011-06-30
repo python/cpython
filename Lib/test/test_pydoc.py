@@ -16,7 +16,7 @@ from io import StringIO
 from collections import namedtuple
 from contextlib import contextmanager
 from test.support import TESTFN, forget, rmtree, EnvironmentVarGuard, \
-     reap_children, captured_output, captured_stdout
+     reap_children, captured_output, captured_stdout, unlink
 
 from test import pydoc_mod
 
@@ -394,6 +394,17 @@ class PydocDocTest(unittest.TestCase):
         self.assertIn('_1', helptext)
         self.assertIn('_replace', helptext)
         self.assertIn('_asdict', helptext)
+
+    def test_synopsis(self):
+        self.addCleanup(unlink, TESTFN)
+        for encoding in ('ISO-8859-1', 'UTF-8'):
+            with open(TESTFN, 'w', encoding=encoding) as script:
+                if encoding != 'UTF-8':
+                    print('#coding: {}'.format(encoding), file=script)
+                print('"""line 1: h\xe9', file=script)
+                print('line 2: hi"""', file=script)
+            synopsis = pydoc.synopsis(TESTFN, {})
+            self.assertEqual(synopsis, 'line 1: h\xe9')
 
 
 class TestDescriptions(unittest.TestCase):
