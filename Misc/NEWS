@@ -25,6 +25,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #12451: The XInclude default loader of xml.etree now decodes files from
+  UTF-8 instead of the locale encoding if the encoding is not specified. It now
+  also opens XML files for the parser in binary mode instead of the text mode
+  to avoid encoding issues.
+
 - Issue #12451: doctest.debug_script() doesn't create a temporary file
   anymore to avoid encoding issues.
 
