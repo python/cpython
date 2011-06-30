@@ -8,7 +8,8 @@ really defined in distutils.dist and distutils.cmd.
 
 __revision__ = "$Id$"
 
-import sys, os
+import os
+import sys
 
 from distutils.debug import DEBUG
 from distutils.errors import *
@@ -215,11 +216,8 @@ def run_setup (script_name, script_args=None, stop_after="run"):
             sys.argv[0] = script_name
             if script_args is not None:
                 sys.argv[1:] = script_args
-            f = open(script_name)
-            try:
+            with open(script_name, 'rb') as f:
                 exec(f.read(), g, l)
-            finally:
-                f.close()
         finally:
             sys.argv = save_argv
             _setup_stop_after = None

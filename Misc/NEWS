@@ -25,6 +25,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12451: distutils now opens the setup script in binary mode to read the
+  encoding cookie, instead of opening it in UTF-8.
+
 - Issue #9516: On Mac OS X, change Distutils to no longer globally attempt to
   check or set the MACOSX_DEPLOYMENT_TARGET environment variable for the
   interpreter process.  This could cause failures in non-Distutils subprocesses
