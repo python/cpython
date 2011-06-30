@@ -136,6 +136,8 @@ Build
 Tests
 -----
 
+- Issue #12407: Explicitly skip test_capi.EmbeddingTest under Windows.
+
 - Issue #12400: regrtest -W doesn't rerun the tests twice anymore, but captures
   the output and displays it on failure instead. regrtest -v doesn't print the
   error twice anymore if there is only one error.

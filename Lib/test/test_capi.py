@@ -145,6 +145,9 @@ class Test6012(unittest.TestCase):
 
 class EmbeddingTest(unittest.TestCase):
 
+    @unittest.skipIf(
+        sys.platform.startswith('win'),
+        "test doesn't work under Windows")
     def test_subinterps(self):
         # XXX only tested under Unix checkouts
         basepath = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
