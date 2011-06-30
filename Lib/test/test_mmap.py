@@ -108,7 +108,7 @@ class MmapTests(unittest.TestCase):
 
             # Check that the underlying file is truncated too
             # (bug #728515)
-            f = open(TESTFN)
+            f = open(TESTFN, 'rb')
             try:
                 f.seek(0, 2)
                 self.assertEqual(f.tell(), 512)
@@ -308,7 +308,7 @@ class MmapTests(unittest.TestCase):
         f.write(2**16 * b'a') # Arbitrary character
         f.close()
 
-        f = open(TESTFN)
+        f = open(TESTFN, 'rb')
         mf = mmap.mmap(f.fileno(), 2**16, access=mmap.ACCESS_READ)
         mf.close()
         mf.close()
@@ -530,7 +530,7 @@ class MmapTests(unittest.TestCase):
                 self.assertEqual(m[0:3], b'foo')
 
                 # Check that the underlying file is truncated too
-                f = open(TESTFN)
+                f = open(TESTFN, 'rb')
                 f.seek(0, 2)
                 self.assertEqual(f.tell(), halfsize + 512)
                 f.close()

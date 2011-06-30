@@ -694,12 +694,11 @@ class MakedirTests(unittest.TestCase):
 
 class DevNullTests(unittest.TestCase):
     def test_devnull(self):
-        f = open(os.devnull, 'w')
-        f.write('hello')
-        f.close()
-        f = open(os.devnull, 'r')
-        self.assertEqual(f.read(), '')
-        f.close()
+        with open(os.devnull, 'wb') as f:
+            f.write(b'hello')
+            f.close()
+        with open(os.devnull, 'rb') as f:
+            self.assertEqual(f.read(), b'')
 
 class URandomTests(unittest.TestCase):
     def test_urandom(self):
@@ -1049,7 +1048,7 @@ if sys.platform != 'win32':
 
         def test_open(self):
             for fn in self.unicodefn:
-                f = open(os.path.join(self.dir, fn))
+                f = open(os.path.join(self.dir, fn), 'rb')
                 f.close()
 
         def test_stat(self):
