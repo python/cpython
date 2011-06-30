@@ -71,8 +71,8 @@ class AnyDBMTestCase(unittest.TestCase):
         f.close()
 
     def test_anydbm_creation_n_file_exists_with_invalid_contents(self):
-        with open(_fname, "w") as w:
-            pass # create an empty file
+        # create an empty file
+        test.support.create_empty_file(_fname)
 
         f = dbm.open(_fname, 'n')
         self.addCleanup(f.close)

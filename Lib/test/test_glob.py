@@ -1,5 +1,6 @@
 import unittest
-from test.support import run_unittest, TESTFN, skip_unless_symlink, can_symlink
+from test.support import (run_unittest, TESTFN, skip_unless_symlink,
+    can_symlink, create_empty_file)
 import glob
 import os
 import shutil
@@ -14,8 +15,7 @@ class GlobTests(unittest.TestCase):
         base, file = os.path.split(filename)
         if not os.path.exists(base):
             os.makedirs(base)
-        f = open(filename, 'w')
-        f.close()
+        create_empty_file(filename)
 
     def setUp(self):
         self.tempdir = TESTFN+"_dir"

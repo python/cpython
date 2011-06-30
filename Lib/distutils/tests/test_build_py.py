@@ -10,7 +10,7 @@ from distutils.core import Distribution
 from distutils.errors import DistutilsFileError
 
 from distutils.tests import support
-from test.support import run_unittest
+from test.support import run_unittest, create_empty_file
 
 
 class BuildPyTestCase(support.TempdirManager,
@@ -71,11 +71,11 @@ class BuildPyTestCase(support.TempdirManager,
 
         # create the distribution files.
         sources = self.mkdtemp()
-        open(os.path.join(sources, "__init__.py"), "w").close()
+        create_empty_file(os.path.join(sources, "__init__.py"))
 
         testdir = os.path.join(sources, "doc")
         os.mkdir(testdir)
-        open(os.path.join(testdir, "testfile"), "w").close()
+        create_empty_file(os.path.join(testdir, "testfile"))
 
         os.chdir(sources)
         old_stdout = sys.stdout

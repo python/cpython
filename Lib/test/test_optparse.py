@@ -1023,7 +1023,7 @@ class TestExtendAddTypes(BaseTest):
         TYPE_CHECKER["file"] = check_file
 
     def test_filetype_ok(self):
-        open(support.TESTFN, "w").close()
+        support.create_empty_file(support.TESTFN)
         self.assertParseOK(["--file", support.TESTFN, "-afoo"],
                            {'file': support.TESTFN, 'a': 'foo'},
                            [])

@@ -410,7 +410,7 @@ class PosixTester(unittest.TestCase):
         self.assertRaises(OSError, posix.chown, support.TESTFN, -1, -1)
 
         # re-create the file
-        open(support.TESTFN, 'w').close()
+        support.create_empty_file(support.TESTFN)
         self._test_all_chown_common(posix.chown, support.TESTFN)
 
     @unittest.skipUnless(hasattr(posix, 'fchown'), "test needs os.fchown()")
@@ -661,7 +661,7 @@ class PosixTester(unittest.TestCase):
     @unittest.skipUnless(hasattr(posix, 'fchownat'), "test needs posix.fchownat()")
     def test_fchownat(self):
         support.unlink(support.TESTFN)
-        open(support.TESTFN, 'w').close()
+        support.create_empty_file(support.TESTFN)
 
         f = posix.open(posix.getcwd(), posix.O_RDONLY)
         try:
@@ -766,7 +766,7 @@ class PosixTester(unittest.TestCase):
     @unittest.skipUnless(hasattr(posix, 'renameat'), "test needs posix.renameat()")
     def test_renameat(self):
         support.unlink(support.TESTFN)
-        open(support.TESTFN + 'ren', 'w').close()
+        support.create_empty_file(support.TESTFN + 'ren')
         f = posix.open(posix.getcwd(), posix.O_RDONLY)
         try:
             posix.renameat(f, support.TESTFN + 'ren', f, support.TESTFN)
@@ -791,7 +791,7 @@ class PosixTester(unittest.TestCase):
     @unittest.skipUnless(hasattr(posix, 'unlinkat'), "test needs posix.unlinkat()")
     def test_unlinkat(self):
         f = posix.open(posix.getcwd(), posix.O_RDONLY)
-        open(support.TESTFN + 'del', 'w').close()
+        support.create_empty_file(support.TESTFN + 'del')
         posix.stat(support.TESTFN + 'del') # should not throw exception
         try:
             posix.unlinkat(f, support.TESTFN + 'del')
