@@ -7,7 +7,7 @@ termios = import_module('termios')
 get_attribute(termios, 'TIOCGPGRP') #Can't run tests without this feature
 
 try:
-    tty = open("/dev/tty", "r")
+    tty = open("/dev/tty", "rb")
 except IOError:
     raise unittest.SkipTest("Unable to open /dev/tty")
 else:
@@ -30,7 +30,7 @@ class IoctlTests(unittest.TestCase):
         # If this process has been put into the background, TIOCGPGRP returns
         # the session ID instead of the process group id.
         ids = (os.getpgrp(), os.getsid(0))
-        with open("/dev/tty", "r") as tty:
+        with open("/dev/tty", "rb") as tty:
             r = fcntl.ioctl(tty, termios.TIOCGPGRP, "    ")
             rpgrp = struct.unpack("i", r)[0]
             self.assertIn(rpgrp, ids)
@@ -47,7 +47,7 @@ class IoctlTests(unittest.TestCase):
             self.assertEqual(len(buf) * intsize, nbytes)   # sanity check
         else:
             buf.append(fill)
-        with open("/dev/tty", "r") as tty:
+        with open("/dev/tty", "rb") as tty:
             r = fcntl.ioctl(tty, termios.TIOCGPGRP, buf, 1)
         rpgrp = buf[0]
         self.assertEqual(r, 0)
