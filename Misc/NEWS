@@ -25,6 +25,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12451: doctest.debug_script() doesn't create a temporary file
+  anymore to avoid encoding issues.
+
 - Issue #12451: pydoc.synopsis() now reads the encoding cookie if available,
   to read the Python script from the right encoding.
 
