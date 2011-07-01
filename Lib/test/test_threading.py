@@ -410,6 +410,13 @@ class ThreadTests(BaseTestCase):
 
 class ThreadJoinOnShutdown(BaseTestCase):
 
+    # Between fork() and exec(), only async-safe functions are allowed (issues
+    # #12316 and #11870), and fork() from a worker thread is known to trigger
+    # problems with some operating systems (issue #3863): skip problematic tests
+    # on platforms known to behave badly.
+    platforms_to_skip = ('freebsd4', 'freebsd5', 'freebsd6', 'netbsd5',
+                         'os2emx')
+
     def _run_and_join(self, script):
         script = """if 1:
             import sys, os, time, threading
@@ -440,6 +447,7 @@ class ThreadJoinOnShutdown(BaseTestCase):
         self._run_and_join(script)
 
     @unittest.skipUnless(hasattr(os, 'fork'), "needs os.fork()")
+    @unittest.skipIf(sys.platform in platforms_to_skip, "due to known OS bug")
     def test_2_join_in_forked_process(self):
         # Like the test above, but from a forked interpreter
         script = """if 1:
@@ -456,15 +464,11 @@ class ThreadJoinOnShutdown(BaseTestCase):
         self._run_and_join(script)
 
     @unittest.skipUnless(hasattr(os, 'fork'), "needs os.fork()")
+    @unittest.skipIf(sys.platform in platforms_to_skip, "due to known OS bug")
     def test_3_join_in_forked_from_thread(self):
         # Like the test above, but fork() was called from a worker thread
         # In the forked process, the main Thread object must be marked as stopped.
 
-        # Skip platforms with known problems forking from a worker thread.
-        # See http://bugs.python.org/issue3863.
-        if sys.platform in ('freebsd4', 'freebsd5', 'freebsd6', 'netbsd5',
-                           'os2emx'):
-            raise unittest.SkipTest('due to known OS bugs on ' + sys.platform)
         script = """if 1:
             main_thread = threading.current_thread()
             def worker():
@@ -490,14 +494,10 @@ class ThreadJoinOnShutdown(BaseTestCase):
         self.assertEqual(data, expected_output)
 
     @unittest.skipUnless(hasattr(os, 'fork'), "needs os.fork()")
+    @unittest.skipIf(sys.platform in platforms_to_skip, "due to known OS bug")
     def test_4_joining_across_fork_in_worker_thread(self):
         # There used to be a possible deadlock when forking from a child
         # thread.  See http://bugs.python.org/issue6643.
-
-        # Skip platforms with known problems forking from a worker thread.
-        # See http://bugs.python.org/issue3863.
-        if sys.platform in ('freebsd4', 'freebsd5', 'freebsd6', 'os2emx'):
-            raise unittest.SkipTest('due to known OS bugs on ' + sys.platform)
 
         # The script takes the following steps:
         # - The main thread in the parent process starts a new thread and then
@@ -567,6 +567,7 @@ class ThreadJoinOnShutdown(BaseTestCase):
         self.assertScriptHasOutput(script, "end of main\n")
 
     @unittest.skipUnless(hasattr(os, 'fork'), "needs os.fork()")
+    @unittest.skipIf(sys.platform in platforms_to_skip, "due to known OS bug")
     def test_5_clear_waiter_locks_to_avoid_crash(self):
         # Check that a spawned thread that forks doesn't segfault on certain
         # platforms, namely OS X.  This used to happen if there was a waiter
@@ -579,10 +580,6 @@ class ThreadJoinOnShutdown(BaseTestCase):
         # lock will be acquired, we can't know if the internal mutex will be
         # acquired at the time of the fork.
 
-        # Skip platforms with known problems forking from a worker thread.
-        # See http://bugs.python.org/issue3863.
-        if sys.platform in ('freebsd4', 'freebsd5', 'freebsd6', 'os2emx'):
-            raise unittest.SkipTest('due to known OS bugs on ' + sys.platform)
         script = """if True:
             import os, time, threading
 
