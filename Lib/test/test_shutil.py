@@ -728,6 +728,16 @@ class TestShutil(unittest.TestCase):
         unregister_unpack_format('Boo2')
         self.assertEqual(get_unpack_formats(), formats)
 
+    @unittest.skipUnless(hasattr(shutil, 'disk_usage'),
+                         "disk_usage not available on this platform")
+    def test_disk_usage(self):
+        usage = shutil.disk_usage(os.getcwd())
+        self.assertTrue(usage.total > 0)
+        self.assertTrue(usage.used > 0)
+        self.assertTrue(usage.free >= 0)
+        self.assertTrue(usage.total >= usage.used)
+        self.assertTrue(usage.total > usage.free)
+
 
 class TestMove(unittest.TestCase):
 

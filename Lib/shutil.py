@@ -12,6 +12,7 @@ import fnmatch
 import collections
 import errno
 import tarfile
+from collections import namedtuple
 
 try:
     import bz2
@@ -754,3 +755,21 @@ def unpack_archive(filename, extract_dir=None, format=None):
         func = _UNPACK_FORMATS[format][1]
         kwargs = dict(_UNPACK_FORMATS[format][2])
         func(filename, extract_dir, **kwargs)
+
+if hasattr(os, "statvfs") or os.name == 'nt':
+    _ntuple_diskusage = namedtuple('usage', 'total used free')
+
+    def disk_usage(path):
+        """Return disk usage statistics about the given path as a namedtuple
+        including total, used and free space expressed in bytes.
+        """
+        if hasattr(os, "statvfs"):
+            st = os.statvfs(path)
+            free = (st.f_bavail * st.f_frsize)
+            total = (st.f_blocks * st.f_frsize)
+            used = (st.f_blocks - st.f_bfree) * st.f_frsize
+        else:
+            import nt
+            total, free = nt._getdiskusage(path)
+            used = total - free
+        return _ntuple_diskusage(total, used, free)
