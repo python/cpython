@@ -905,7 +905,11 @@ class PyFrameObjectPtr(PyObjectPtr):
         if self.is_optimized_out():
             return '(frame information optimized out)'
         filename = self.filename()
-        with open(os_fsencode(filename), 'r') as f:
+        try:
+            f = open(os_fsencode(filename), 'r')
+        except IOError:
+            return None
+        with f:
             all_lines = f.readlines()
             # Convert from 1-based current_line_num to 0-based list offset:
             return all_lines[self.current_line_num()-1]
@@ -1430,7 +1434,9 @@ class Frame(object):
             if pyop:
                 line = pyop.get_truncated_repr(MAX_OUTPUT_LEN)
                 write_unicode(sys.stdout, '#%i %s\n' % (self.get_index(), line))
-                sys.stdout.write(pyop.current_line())
+                line = pyop.current_line()
+                if line is not None:
+                    sys.stdout.write(line)
             else:
                 sys.stdout.write('#%i (unable to read python frame information)\n' % self.get_index())
         else:
@@ -1441,7 +1447,9 @@ class Frame(object):
             pyop = self.get_pyop()
             if pyop:
                 pyop.print_traceback()
-                sys.stdout.write('    %s\n' % pyop.current_line().strip())
+                line = pyop.current_line()
+                if line is not None:
+                    sys.stdout.write('    %s\n' % line.strip())
             else:
                 sys.stdout.write('  (unable to read python frame information)\n')
         else:
@@ -1501,7 +1509,13 @@ class PyList(gdb.Command):
         if start<1:
             start = 1
 
-        with open(os_fsencode(filename), 'r') as f:
+        try:
+            f = open(os_fsencode(filename), 'r')
+        except IOError as err:
+            sys.stdout.write('Unable to open %s: %s\n'
+                             % (filename, err))
+            return
+        with f:
             all_lines = f.readlines()
             # start and end are 1-based, all_lines is 0-based;
             # so [start-1:end] as a python slice gives us [start, end] as a
