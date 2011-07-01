@@ -915,23 +915,28 @@ floatsleep(double secs)
 #if defined(HAVE_SELECT) && !defined(__EMX__)
     struct timeval t;
     double frac;
+    int err;
+
     frac = fmod(secs, 1.0);
     secs = floor(secs);
     t.tv_sec = (long)secs;
     t.tv_usec = (long)(frac*1000000.0);
     Py_BEGIN_ALLOW_THREADS
-    if (select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &t) != 0) {
+    err = select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &t);
+    Py_END_ALLOW_THREADS
+    if (err != 0) {
 #ifdef EINTR
-        if (errno != EINTR) {
-#else
-        if (1) {
+        if (errno == EINTR) {
+            if (PyErr_CheckSignals())
+                return -1;
+        }
+        else
 #endif
-            Py_BLOCK_THREADS
+        {
             PyErr_SetFromErrno(PyExc_IOError);
             return -1;
         }
     }
-    Py_END_ALLOW_THREADS
 #elif defined(__WATCOMC__) && !defined(__QNX__)
     /* XXX Can't interrupt this sleep */
     Py_BEGIN_ALLOW_THREADS
