@@ -1632,6 +1632,7 @@ def test_main():
         LinkTests,
         TestSendfile,
         ProgramPriorityTests,
+        TemporaryFileTests,
     )
 
 if __name__ == "__main__":
