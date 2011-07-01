@@ -200,6 +200,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #12462: time.sleep() now calls immediatly the (Python) signal handler
+  if it is interrupted by a signal, instead of having to wait until the next
+  instruction.
+
 - Issue #12442: new shutil.disk_usage function, providing total, used and free
   disk space statistics.
 
