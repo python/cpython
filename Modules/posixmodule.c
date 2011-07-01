@@ -338,20 +338,6 @@ extern int lstat(const char *, struct stat *);
 #define USE_TMPNAM_R
 #endif
 
-/* choose the appropriate stat and fstat functions and return structs */
-#undef STAT
-#undef FSTAT
-#undef STRUCT_STAT
-#if defined(MS_WIN64) || defined(MS_WINDOWS)
-#       define STAT win32_stat
-#       define FSTAT win32_fstat
-#       define STRUCT_STAT struct win32_stat
-#else
-#       define STAT stat
-#       define FSTAT fstat
-#       define STRUCT_STAT struct stat
-#endif
-
 #if defined(MAJOR_IN_MKDEV)
 #include <sys/mkdev.h>
 #else
@@ -840,6 +826,20 @@ win32_wchdir(LPCWSTR path)
         free(new_path);
     return result;
 }
+#endif
+
+/* choose the appropriate stat and fstat functions and return structs */
+#undef STAT
+#undef FSTAT
+#undef STRUCT_STAT
+#if defined(MS_WIN64) || defined(MS_WINDOWS)
+#       define STAT win32_stat
+#       define FSTAT win32_fstat
+#       define STRUCT_STAT struct win32_stat
+#else
+#       define STAT stat
+#       define FSTAT fstat
+#       define STRUCT_STAT struct stat
 #endif
 
 #ifdef MS_WINDOWS
