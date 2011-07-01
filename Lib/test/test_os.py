@@ -1344,6 +1344,7 @@ def test_main():
         PidTests,
         LoginTests,
         LinkTests,
+        TemporaryFileTests,
     )
 
 if __name__ == "__main__":
