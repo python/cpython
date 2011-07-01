@@ -7451,6 +7451,32 @@ posix_statvfs(PyObject *self, PyObject *args)
 }
 #endif /* HAVE_STATVFS */
 
+#ifdef MS_WINDOWS
+PyDoc_STRVAR(win32__getdiskusage__doc__,
+"_getdiskusage(path) -> (total, free)\n\n\
+Return disk usage statistics about the given path as (total, free) tuple.");
+
+static PyObject *
+win32__getdiskusage(PyObject *self, PyObject *args)
+{
+    BOOL retval;
+    ULARGE_INTEGER _, total, free;
+    LPCTSTR path;
+
+    if (! PyArg_ParseTuple(args, "s", &path))
+        return NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+    retval = GetDiskFreeSpaceEx(path, &_, &total, &free);
+    Py_END_ALLOW_THREADS
+    if (retval == 0)
+        return PyErr_SetFromWindowsErr(0);
+
+    return Py_BuildValue("(LL)", total.QuadPart, free.QuadPart);
+}
+#endif
+
+
 /* This is used for fpathconf(), pathconf(), confstr() and sysconf().
  * It maps strings representing configuration variable names to
  * integer values, allowing those functions to be called with the
@@ -9716,6 +9742,7 @@ static PyMethodDef posix_methods[] = {
     {"_getfinalpathname",       posix__getfinalpathname, METH_VARARGS, NULL},
     {"_getfileinformation",     posix__getfileinformation, METH_VARARGS, NULL},
     {"_isdir",                  posix__isdir, METH_VARARGS, posix__isdir__doc__},
+    {"_getdiskusage",           win32__getdiskusage, METH_VARARGS, win32__getdiskusage__doc__},
 #endif
 #ifdef HAVE_GETLOADAVG
     {"getloadavg",      posix_getloadavg, METH_NOARGS, posix_getloadavg__doc__},

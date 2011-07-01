@@ -200,7 +200,16 @@ The :class:`~ftplib.FTP_TLS` class now provides a new
 plaintex.  This can be useful to take advantage of firewalls that know how to
 handle NAT with non-secure FTP without opening fixed ports.
 
-(Patch submitted by Giampaolo Rodolà in :issue:`12139`.)
+(Contributed by Giampaolo Rodolà in :issue:`12139`)
+
+
+shutil
+------
+
+The :mod:`shutil` module has a new :func:`~shutil.disk_usage` providing total,
+used and free disk space statistics.
+
+(Contributed by Giampaolo Rodolà in :issue:`12442`)
 
 
 Optimizations

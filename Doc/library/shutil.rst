@@ -164,6 +164,14 @@ Directory and files operations
    If the destination is on the current filesystem, then simply use rename.
    Otherwise, copy src (with :func:`copy2`) to the dst and then remove src.
 
+.. function:: disk_usage(path)
+
+   Return disk usage statistics about the given path as a namedtuple including
+   total, used and free space expressed in bytes.
+
+   .. versionadded:: 3.3
+
+   Availability: Unix, Windows.
 
 .. exception:: Error
 
