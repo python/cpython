@@ -302,12 +302,12 @@ class SiginterruptTest(unittest.TestCase):
             def handler(signum, frame):
                 pass
 
-            print("ready")
-            sys.stdout.flush()
-
             signal.signal(signal.SIGALRM, handler)
             if interrupt is not None:
                 signal.siginterrupt(signal.SIGALRM, interrupt)
+
+            print("ready")
+            sys.stdout.flush()
 
             # run the test twice
             for loop in range(2):
@@ -328,8 +328,8 @@ class SiginterruptTest(unittest.TestCase):
                 # wait until the child process is loaded and has started
                 first_line = process.stdout.readline()
 
-                # Wait the process with a timeout of 3 seconds
-                timeout = time.time() + 3.0
+                # Wait the process with a timeout of 5 seconds
+                timeout = time.time() + 5.0
                 while True:
                     if timeout < time.time():
                         raise Timeout()
