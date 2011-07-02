@@ -367,6 +367,13 @@ class ExecutorTest(unittest.TestCase):
 
         self.assertEqual([None, None], results)
 
+    def test_shutdown_race_issue12456(self):
+        # Issue #12456: race condition at shutdown where trying to post a
+        # sentinel in the call queue blocks (the queue is full while processes
+        # have exited).
+        self.executor.map(str, [2] * (self.worker_count + 1))
+        self.executor.shutdown()
+
 
 class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest):
     def test_map_submits_without_iteration(self):
