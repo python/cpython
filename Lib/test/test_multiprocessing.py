@@ -1640,12 +1640,11 @@ class _TestHeap(BaseTestCase):
         # Make sure the GC is enabled, and set lower collection thresholds to
         # make collections more frequent (and increase the probability of
         # deadlock).
-        if gc.isenabled():
-            thresholds = gc.get_threshold()
-            self.addCleanup(gc.set_threshold, *thresholds)
-        else:
+        if not gc.isenabled():
             gc.enable()
             self.addCleanup(gc.disable)
+        thresholds = gc.get_threshold()
+        self.addCleanup(gc.set_threshold, *thresholds)
         gc.set_threshold(10)
 
         # perform numerous block allocations, with cyclic references to make
