@@ -1339,6 +1339,7 @@ marshal_load(PyObject *self, PyObject *f)
         rf.depth = 0;
         rf.fp = NULL;
         rf.readable = f;
+        rf.current_filename = NULL;
         result = read_object(&rf);
     }
     Py_DECREF(data);
