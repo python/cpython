@@ -1320,8 +1320,6 @@ marshal_load(PyObject *self, PyObject *f)
 {
     PyObject *data, *result;
     RFILE rf;
-    char *p;
-    int n;
 
     /*
      * Make a call to the read method, but read zero bytes.
@@ -1338,12 +1336,10 @@ marshal_load(PyObject *self, PyObject *f)
         result = NULL;
     }
     else {
-        rf.strings = PyList_New(0);
         rf.depth = 0;
         rf.fp = NULL;
         rf.readable = f;
         result = read_object(&rf);
-        Py_DECREF(rf.strings);
     }
     Py_DECREF(data);
     return result;
