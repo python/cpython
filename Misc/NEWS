@@ -107,6 +107,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12352: Fix a deadlock in multiprocessing.Heap when a block is freed by
+  the garbage collector while the Heap lock is held.
+
 - Issue #985064: Make plistlib more resilient to faulty input plists.
   Patch by Mher Movsisyan.
 
