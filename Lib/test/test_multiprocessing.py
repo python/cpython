@@ -1615,6 +1615,8 @@ class _TestHeap(BaseTestCase):
         # verify the state of the heap
         all = []
         occupied = 0
+        heap._lock.acquire()
+        self.addCleanup(heap._lock.release)
         for L in heap._len_to_seq.values():
             for arena, start, stop in L:
                 all.append((heap._arenas.index(arena), start, stop,
@@ -1631,6 +1633,29 @@ class _TestHeap(BaseTestCase):
             (narena, nstart, nstop) = all[i+1][:3]
             self.assertTrue((arena != narena and nstart == 0) or
                             (stop == nstart))
+
+    def test_free_from_gc(self):
+        # Check that freeing of blocks by the garbage collector doesn't deadlock
+        # (issue #12352).
+        # Make sure the GC is enabled, and set lower collection thresholds to
+        # make collections more frequent (and increase the probability of
+        # deadlock).
+        if gc.isenabled():
+            thresholds = gc.get_threshold()
+            self.addCleanup(gc.set_threshold, *thresholds)
+        else:
+            gc.enable()
+            self.addCleanup(gc.disable)
+        gc.set_threshold(10)
+
+        # perform numerous block allocations, with cyclic references to make
+        # sure objects are collected asynchronously by the gc
+        for i in range(5000):
+            a = multiprocessing.heap.BufferWrapper(1)
+            b = multiprocessing.heap.BufferWrapper(1)
+            # circular references
+            a.buddy = b
+            b.buddy = a
 
 #
 #
