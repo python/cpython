@@ -904,10 +904,10 @@ symtable_exit_block(struct symtable *st, void *ast)
     st->st_cur = NULL;
     size = PyList_GET_SIZE(st->st_stack);
     if (size) {
-        st->st_cur = (PySTEntryObject *)PyList_GET_ITEM(st->st_stack,
-                                                        size - 2);
         if (PyList_SetSlice(st->st_stack, size - 1, size, NULL) < 0)
             return 0;
+        if (--size)
+            st->st_cur = (PySTEntryObject *)PyList_GET_ITEM(st->st_stack, size - 1);
     }
     return 1;
 }
