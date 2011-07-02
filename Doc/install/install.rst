@@ -4,7 +4,7 @@
 Installing Python projects: overwiew
 ====================================
 
-.. _packaging_packaging-intro:
+.. _packaging-install-intro:
 
 Introduction
 ============
