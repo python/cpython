@@ -1315,8 +1315,6 @@ marshal_load(PyObject *self, PyObject *f)
 {
     PyObject *data, *result;
     RFILE rf;
-    char *p;
-    int n;
 
     /*
      * Make a call to the read method, but read zero bytes.
