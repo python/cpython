@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #12291: You can now load multiple marshalled objects from a stream,
+  with other data interleaved between marshalled objects.
+
 - Issue #12356: When required positional or keyword-only arguments are not
   given, produce a informative error message which includes the name(s) of the
   missing arguments.
