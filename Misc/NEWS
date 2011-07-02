@@ -10,6 +10,9 @@ What's New in Python 3.2.1 release candidate 2?
 Core and Builtins
 -----------------
 
+- Issue #12291: You can now load multiple marshalled objects from a stream,
+  with other data interleaved between marshalled objects.
+
 - Issue #12084: os.stat on Windows now works properly with relative symbolic
   links when called from any directory.
 
