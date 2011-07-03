@@ -1865,10 +1865,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             retval = POP();
             f->f_stacktop = stack_pointer;
             why = WHY_YIELD;
-            /* Put aside the current exception state and restore
-               that of the calling frame. This only serves when
-               "yield" is used inside an except handler. */
-            SWAP_EXC_STATE();
             goto fast_yield;
 
         TARGET(POP_EXCEPT)
@@ -3005,6 +3001,11 @@ fast_block_end:
         retval = NULL;
 
 fast_yield:
+    if (co->co_flags & CO_GENERATOR && (why == WHY_YIELD || why == WHY_RETURN))
+        /* Put aside the current exception state and restore that of the
+           calling frame. */
+        SWAP_EXC_STATE();
+
     if (tstate->use_tracing) {
         if (tstate->c_tracefunc) {
             if (why == WHY_RETURN || why == WHY_YIELD) {
