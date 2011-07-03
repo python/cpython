@@ -206,7 +206,7 @@ handle NAT with non-secure FTP without opening fixed ports.
 shutil
 ------
 
-The :mod:`shutil` module has a new :func:`~shutil.disk_usage` providing total,
+The :mod:`shutil` module has a new :func:`~shutil.disk_usage` function providing total,
 used and free disk space statistics.
 
 (Contributed by Giampaolo Rodolà in :issue:`12442`)

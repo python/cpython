@@ -459,20 +459,20 @@ class TestDialectExcel(TestCsvBase):
                                  '5', '6']])
 
     def test_quoted_quote(self):
-        self.readerAssertEqual('1,2,3,"""I see,"" said the blind man","as he picked up his hammer and saw"',
+        self.readerAssertEqual('1,2,3,"""I see,"" said the happy man","as he picked up his hammer and saw"',
                                [['1', '2', '3',
-                                 '"I see," said the blind man',
+                                 '"I see," said the happy man',
                                  'as he picked up his hammer and saw']])
 
     def test_quoted_nl(self):
         input = '''\
 1,2,3,"""I see,""
-said the blind man","as he picked up his
+said the happy man","as he picked up his
 hammer and saw"
 9,8,7,6'''
         self.readerAssertEqual(input,
                                [['1', '2', '3',
-                                   '"I see,"\nsaid the blind man',
+                                   '"I see,"\nsaid the happy man',
                                    'as he picked up his\nhammer and saw'],
                                 ['9','8','7','6']])
 
