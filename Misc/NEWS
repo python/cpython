@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- When a generator yields, do not retain the caller's exception state on the
+  generator.
+
 - Issue #12475: Prevent generators from leaking their exception state into the
   caller's frame as they return for the last time.
 
