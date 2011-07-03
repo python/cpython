@@ -10,8 +10,8 @@ What's New in Python 3.2.1 release candidate 2?
 Core and Builtins
 -----------------
 
-- Issue #12291: You can now load multiple marshalled objects from a stream,
-  with other data interleaved between marshalled objects.
+- Issue #12291: You can now load multiple marshalled objects from a stream, with
+  other data interleaved between marshalled objects.
 
 - Issue #12084: os.stat on Windows now works properly with relative symbolic
   links when called from any directory.
@@ -20,30 +20,29 @@ Core and Builtins
   the following case: sys.stdin.read() stopped with CTRL+d (end of file),
   raw_input() interrupted by CTRL+c.
 
-- Issue #9670: Increase the default stack size for secondary threads on
-  Mac OS X and FreeBSD to reduce the chances of a crash instead of a
-  "maximum recursion depth" RuntimeError exception.
-  (patch by Ronald Oussoren)
+- Issue #9670: Increase the default stack size for secondary threads on Mac OS X
+  and FreeBSD to reduce the chances of a crash instead of a "maximum recursion
+  depth" RuntimeError exception (patch by Ronald Oussoren).
 
 Library
 -------
 
 - Issue #12147: Adjust the new-in-3.2 smtplib.send_message method for better
-  conformance to the RFCs:  correctly handle Sender and Resent- headers.
+  conformance to the RFCs: correctly handle Sender and Resent headers.
 
 - Issue #12352: Fix a deadlock in multiprocessing.Heap when a block is freed by
   the garbage collector while the Heap lock is held.
 
 - Issue #12451: The XInclude default loader of xml.etree now decodes files from
   UTF-8 instead of the locale encoding if the encoding is not specified. It now
-  also opens XML files for the parser in binary mode instead of the text mode
+  also opens XML files for the parser in binary mode instead of the text mode to
+  avoid encoding issues.
+
+- Issue #12451: doctest.debug_script() doesn't create a temporary file anymore
   to avoid encoding issues.
 
-- Issue #12451: doctest.debug_script() doesn't create a temporary file
-  anymore to avoid encoding issues.
-
-- Issue #12451: pydoc.synopsis() now reads the encoding cookie if available,
-  to read the Python script from the right encoding.
+- Issue #12451: pydoc.synopsis() now reads the encoding cookie if available, to
+  read the Python script from the right encoding.
 
 - Issue #12451: distutils now opens the setup script in binary mode to read the
   encoding cookie, instead of opening it in UTF-8.
@@ -65,9 +64,9 @@ Library
 - Issue #12383: Fix subprocess module with env={}: don't copy the environment
   variables, start with an empty environment.
 
-- Issue #11584: email.header.decode_header no longer fails if the header
-  passed to it is a Header object, and Header/make_header no longer fail
-  if given binary unknown-8bit input.
+- Issue #11584: email.header.decode_header no longer fails if the header passed
+  to it is a Header object, and Header/make_header no longer fail if given
+  binary unknown-8bit input.
 
 - Issue #11700: mailbox proxy object close methods can now be called multiple
   times without error.
@@ -99,8 +98,8 @@ Library
   constructor has failed, e.g. because of an undeclared keyword argument. Patch
   written by Oleg Oshmyan.
 
-- Issue #985064: Make plistlib more resilient to faulty input plists.
-  Patch by Mher Movsisyan.
+- Issue #985064: Make plistlib more resilient to faulty input plists.  Patch by
+  Mher Movsisyan.
 
 - Issue #12175: RawIOBase.readall() now returns None if read() returns None.
 
@@ -134,13 +133,13 @@ Build
 -----
 
 - Issue #8746: Correct faulty configure checks so that os.chflags() and
-  os.lchflags() are once again built on systems that support these
-  functions (*BSD and OS X).  Also add new stat file flags for OS X
-  (UF_HIDDEN and UF_COMPRESSED).
+  os.lchflags() are once again built on systems that support these functions
+  (*BSD and OS X).  Also add new stat file flags for OS X (UF_HIDDEN and
+  UF_COMPRESSED).
 
-- Issue #11217: For 64-bit/32-bit Mac OS X universal framework builds,
-  ensure "make install" creates symlinks in --prefix bin for the "-32"
-  files in the framework bin directory like the installer does.
+- Issue #11217: For 64-bit/32-bit Mac OS X universal framework builds, ensure
+  "make install" creates symlinks in --prefix bin for the "-32" files in the
+  framework bin directory like the installer does.
 
 Tests
 -----
@@ -151,15 +150,15 @@ Tests
   the output and displays it on failure instead. regrtest -v doesn't print the
   error twice anymore if there is only one error.
 
-- Issue #12141: Install a copy of template C module file so that
-  test_build_ext of test_distutils is no longer silently skipped when
-  run outside of a build directory.
+- Issue #12141: Install a copy of template C module file so that test_build_ext
+  of test_distutils is no longer silently skipped when run outside of a build
+  directory.
 
-- Issue #8746: Add additional tests for os.chflags() and os.lchflags().
-  Patch by Garrett Cooper.
+- Issue #8746: Add additional tests for os.chflags() and os.lchflags().  Patch
+  by Garrett Cooper.
 
-- Issue #10736: Fix test_ttk test_widgets failures with Cocoa Tk 8.5.9
-  on Mac OS X.  (Patch by Ronald Oussoren)
+- Issue #10736: Fix test_ttk test_widgets failures with Cocoa Tk 8.5.9 on Mac
+  OS X.  (Patch by Ronald Oussoren)
 
 - Issue #12057: Add tests for ISO 2022 codecs (iso2022_jp, iso2022_jp_2,
   iso2022_kr).
