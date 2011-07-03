@@ -204,7 +204,7 @@ def _queue_management_worker(executor_reference,
         # This is an upper bound
         nb_children_alive = sum(p.is_alive() for p in processes.values())
         for i in range(0, nb_children_alive):
-            call_queue.put(None)
+            call_queue.put_nowait(None)
         # If .join() is not called on the created processes then
         # some multiprocessing.Queue methods may deadlock on Mac OS X.
         for p in processes.values():
@@ -265,18 +265,18 @@ def _queue_management_worker(executor_reference,
         #   - The executor that owns this worker has been collected OR
         #   - The executor that owns this worker has been shutdown.
         if shutting_down():
-            # Since no new work items can be added, it is safe to shutdown
-            # this thread if there are no pending work items.
-            if not pending_work_items and call_queue.qsize() == 0:
-                shutdown_worker()
-                return
             try:
-                # Start shutting down by telling a process it can exit.
-                call_queue.put_nowait(None)
+                # Since no new work items can be added, it is safe to shutdown
+                # this thread if there are no pending work items.
+                if not pending_work_items:
+                    shutdown_worker()
+                    return
+                else:
+                    # Start shutting down by telling a process it can exit.
+                    call_queue.put_nowait(None)
             except Full:
                 # This is not a problem: we will eventually be woken up (in
-                # result_queue.get()) and be able to send a sentinel again,
-                # if necessary.
+                # result_queue.get()) and be able to send a sentinel again.
                 pass
         executor = None
 
