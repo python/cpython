@@ -1115,9 +1115,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
 /* Start of code */
 
-    if (f == NULL)
-        return NULL;
-
     /* push frame */
     if (Py_EnterRecursiveCall(""))
         return NULL;
