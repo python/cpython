@@ -28,6 +28,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12147: Adjust the new-in-3.2 smtplib.send_message method for better
+  conformance to the RFCs:  correctly handle Sender and Resent- headers.
+
 - Issue #12352: Fix a deadlock in multiprocessing.Heap when a block is freed by
   the garbage collector while the Heap lock is held.
 
