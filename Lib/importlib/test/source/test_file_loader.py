@@ -214,7 +214,7 @@ class BadBytecodeTest(unittest.TestCase):
                                                 lambda bc: bc[:8] + b'<test>',
                                                 del_source=del_source)
             file_path = mapping['_temp'] if not del_source else bytecode_path
-            with self.assertRaises(ValueError):
+            with self.assertRaises(EOFError):
                 self.import_(file_path, '_temp')
 
     def _test_bad_magic(self, test, *, del_source=False):

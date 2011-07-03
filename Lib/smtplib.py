@@ -49,6 +49,7 @@ import email.message
 import email.generator
 import base64
 import hmac
+import copy
 from email.base64mime import body_encode as encode_base64
 from sys import stderr
 
@@ -674,7 +675,7 @@ class SMTP:
 
         msg may be a string containing characters in the ASCII range, or a byte
         string.  A string is encoded to bytes using the ascii codec, and lone
-        \r and \n characters are converted to \r\n characters.
+        \\r and \\n characters are converted to \\r\\n characters.
 
         If there has been no previous EHLO or HELO command this session, this
         method tries ESMTP EHLO first.  If the server does ESMTP, message size
@@ -757,24 +758,49 @@ class SMTP:
         """Converts message to a bytestring and passes it to sendmail.
 
         The arguments are as for sendmail, except that msg is an
-        email.message.Message object.  If from_addr is None, the from_addr is
-        taken from the 'From' header of the Message.  If to_addrs is None, its
-        value is composed from the addresses listed in the 'To', 'CC', and
-        'Bcc' fields.  Regardless of the values of from_addr and to_addr, any
-        Bcc field in the Message object is deleted.  The Message object is then
-        serialized using email.generator.BytesGenerator and sendmail is called
-        to transmit the message.
+        email.message.Message object.  If from_addr is None or to_addrs is
+        None, these arguments are taken from the headers of the Message as
+        described in RFC 2822 (a ValueError is raised if there is more than
+        one set of 'Resent-' headers).  Regardless of the values of from_addr and
+        to_addr, any Bcc field (or Resent-Bcc field, when the Message is a
+        resent) of the Message object won't be transmitted.  The Message
+        object is then serialized using email.generator.BytesGenerator and
+        sendmail is called to transmit the message.
+
         """
+        # 'Resent-Date' is a mandatory field if the Message is resent (RFC 2822
+        # Section 3.6.6). In such a case, we use the 'Resent-*' fields.  However,
+        # if there is more than one 'Resent-' block there's no way to
+        # unambiguously determine which one is the most recent in all cases,
+        # so rather than guess we raise a ValueError in that case.
+        #
+        # TODO implement heuristics to guess the correct Resent-* block with an
+        # option allowing the user to enable the heuristics.  (It should be
+        # possible to guess correctly almost all of the time.)
+        resent =msg.get_all('Resent-Date')
+        if resent is None:
+            header_prefix = ''
+        elif len(resent) == 1:
+            header_prefix = 'Resent-'
+        else:
+            raise ValueError("message has more than one 'Resent-' header block")
         if from_addr is None:
-            from_addr = msg['From']
+            # Prefer the sender field per RFC 2822:3.6.2.
+            from_addr = (msg[header_prefix+'Sender']
+                           if (header_prefix+'Sender') in msg
+                           else msg[header_prefix+'From'])
         if to_addrs is None:
-            addr_fields = [f for f in (msg['To'], msg['Bcc'], msg['CC'])
-                            if f is not None]
+            addr_fields = [f for f in (msg[header_prefix+'To'],
+                                       msg[header_prefix+'Bcc'],
+                                       msg[header_prefix+'Cc']) if f is not None]
             to_addrs = [a[1] for a in email.utils.getaddresses(addr_fields)]
-        del msg['Bcc']
+        # Make a local copy so we can delete the bcc headers.
+        msg_copy = copy.copy(msg)
+        del msg_copy['Bcc']
+        del msg_copy['Resent-Bcc']
         with io.BytesIO() as bytesmsg:
             g = email.generator.BytesGenerator(bytesmsg)
-            g.flatten(msg, linesep='\r\n')
+            g.flatten(msg_copy, linesep='\r\n')
             flatmsg = bytesmsg.getvalue()
         return self.sendmail(from_addr, to_addrs, flatmsg, mail_options,
                              rcpt_options)
