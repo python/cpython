@@ -1141,6 +1141,23 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         f->f_exc_traceback = tmp; \
     }
 
+#define RESTORE_AND_CLEAR_EXC_STATE() \
+    { \
+        PyObject *type, *value, *tb; \
+        type = tstate->exc_type; \
+        value = tstate->exc_value; \
+        tb = tstate->exc_traceback; \
+        tstate->exc_type = f->f_exc_type; \
+        tstate->exc_value = f->f_exc_value; \
+        tstate->exc_traceback = f->f_exc_traceback; \
+        f->f_exc_type = NULL; \
+        f->f_exc_value = NULL; \
+        f->f_exc_traceback = NULL; \
+        Py_XDECREF(type); \
+        Py_XDECREF(value); \
+        Py_XDECREF(tb); \
+    }
+
 /* Start of code */
 
     if (f == NULL)
@@ -3001,10 +3018,25 @@ fast_block_end:
         retval = NULL;
 
 fast_yield:
-    if (co->co_flags & CO_GENERATOR && (why == WHY_YIELD || why == WHY_RETURN))
-        /* Put aside the current exception state and restore that of the
-           calling frame. */
-        SWAP_EXC_STATE();
+    if (co->co_flags & CO_GENERATOR && (why == WHY_YIELD || why == WHY_RETURN)) {
+        /* The purpose of this block is to put aside the generator's exception
+           state and restore that of the calling frame. If the current
+           exception state is from the caller, we clear the exception values
+           on the generator frame, so they are not swapped back in latter. The
+           origin of the current exception state is determined by checking for
+           except handler blocks, which we must be in iff a new exception
+           state came into existence in this frame. (An uncaught exception
+           would have why == WHY_EXCEPTION, and we wouldn't be here). */
+        int i;
+        for (i = 0; i < f->f_iblock; i++)
+            if (f->f_blockstack[i].b_type == EXCEPT_HANDLER)
+                break;
+        if (i == f->f_iblock)
+            /* We did not create this exception. */
+            RESTORE_AND_CLEAR_EXC_STATE()
+        else
+            SWAP_EXC_STATE()
+    }
 
     if (tstate->use_tracing) {
         if (tstate->c_tracefunc) {
