@@ -27,6 +27,9 @@ What's New in Python 3.2.1 release candidate 2?
 Core and Builtins
 -----------------
 
+- Issue #12291: You can now load multiple marshalled objects from a stream,
+  with other data interleaved between marshalled objects.
+
 - Issue #12084: os.stat on Windows now works properly with relative symbolic
   links when called from any directory.
 
@@ -41,6 +44,9 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #12147: Adjust the new-in-3.2 smtplib.send_message method for better
+  conformance to the RFCs:  correctly handle Sender and Resent- headers.
 
 - Issue #12352: Fix a deadlock in multiprocessing.Heap when a block is freed by
   the garbage collector while the Heap lock is held.
