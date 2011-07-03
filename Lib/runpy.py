@@ -226,7 +226,7 @@ def _get_code_from_file(fname):
         code = read_code(f)
     if code is None:
         # That didn't work, so try it as normal source code
-        with open(fname, "r") as f:
+        with open(fname, "rb") as f:
             code = compile(f.read(), fname, 'exec')
     return code
 

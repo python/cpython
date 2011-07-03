@@ -405,6 +405,16 @@ argv0 = sys.argv[0]
             msg = "recursion depth exceeded"
             self.assertRaisesRegex(RuntimeError, msg, run_path, zip_name)
 
+    def test_encoding(self):
+        with temp_dir() as script_dir:
+            filename = os.path.join(script_dir, 'script.py')
+            with open(filename, 'w', encoding='latin1') as f:
+                f.write("""
+#coding:latin1
+"non-ASCII: h\xe9"
+""")
+            result = run_path(filename)
+            self.assertEqual(result['__doc__'], "non-ASCII: h\xe9")
 
 
 def test_main():

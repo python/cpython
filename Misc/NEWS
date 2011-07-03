@@ -209,6 +209,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #12451: runpy: run_path() now opens the Python script in binary mode,
+  instead of text mode using the locale encoding, to support other encodings
+  than UTF-8 (scripts using the coding cookie).
+
 - Issue #12451: xml.dom.pulldom: parse() now opens files in binary mode instead
   of the text mode (using the locale encoding) to avoid encoding issues.
 
