@@ -323,21 +323,32 @@ An :class:`SMTP` instance has the following methods:
    .. versionchanged:: 3.2 *msg* may be a byte string.
 
 
-.. method:: SMTP.send_message(msg, from_addr=None, to_addrs=None, mail_options=[], rcpt_options=[])
+.. method:: SMTP.send_message(msg, from_addr=None, to_addrs=None, \
+                              mail_options=[], rcpt_options=[])
 
    This is a convenience method for calling :meth:`sendmail` with the message
    represented by an :class:`email.message.Message` object.  The arguments have
    the same meaning as for :meth:`sendmail`, except that *msg* is a ``Message``
    object.
 
-   If *from_addr* is ``None``, ``send_message`` sets its value to the value of
-   the :mailheader:`From` header from *msg*.  If *to_addrs* is ``None``,
-   ``send_message`` combines the values (if any) of the :mailheader:`To`,
-   :mailheader:`CC`, and :mailheader:`Bcc` fields from *msg*.  Regardless of
-   the values of *from_addr* and *to_addrs*, ``send_message`` deletes any  Bcc
-   field from *msg*.  It then serializes *msg* using
+   If *from_addr* is ``None`` or *to_addrs* is ``None``, ``send_message`` fills
+   those arguments with addresses extracted from the headers of *msg* as
+   specified in :rfc:`2822`\: *from_addr* is set to the :mailheader:`Sender`
+   field if it is present, and otherwise to the :mailheader:`From` field.
+   *to_adresses* combines the values (if any) of the :mailheader:`To`,
+   :mailheader:`Cc`, and :mailheader:`Bcc` fields from *msg*.  If exactly one
+   set of :mailheader:`Resent-*` headers appear in the message, the regular
+   headers are ignored and the :mailheader:`Resent-*` headers are used instead.
+   If the message contains more than one set of :mailheader:`Resent-*` headers,
+   a :exc:`ValueError` is raised, since there is no way to unambiguously detect
+   the most recent set of :mailheader:`Resent-` headers.
+
+   ``send_message`` serializes *msg* using
    :class:`~email.generator.BytesGenerator` with ``\r\n`` as the *linesep*, and
-   calls :meth:`sendmail` to transmit the resulting message.
+   calls :meth:`sendmail` to transmit the resulting message.  Regardless of the
+   values of *from_addr* and *to_addrs*, ``send_message`` does not transmit any
+   :mailheader:`Bcc` or :mailheader:`Resent-Bcc` headers that may appear
+   in *msg*.
 
    .. versionadded:: 3.2
 
