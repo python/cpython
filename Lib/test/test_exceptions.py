@@ -567,6 +567,21 @@ class ExceptionTests(unittest.TestCase):
             del g
             self.assertEqual(sys.exc_info()[0], TypeError)
 
+    def test_generator_leaking2(self):
+        # See issue 12475.
+        def g():
+            yield
+        try:
+            raise RuntimeError
+        except RuntimeError:
+            it = g()
+            next(it)
+        try:
+            next(it)
+        except StopIteration:
+            pass
+        self.assertEqual(sys.exc_info(), (None, None, None))
+
     def test_generator_finalizing_and_exc_info(self):
         # See #7173
         def simple_gen():

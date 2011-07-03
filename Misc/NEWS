@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #12475: Prevent generators from leaking their exception state into the
+  callers frame as they return for the last time.
+
 - Issue #12291: You can now load multiple marshalled objects from a stream,
   with other data interleaved between marshalled objects.
 
