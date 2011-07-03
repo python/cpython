@@ -395,15 +395,13 @@ PyGen_NeedsFinalizing(PyGenObject *gen)
     int i;
     PyFrameObject *f = gen->gi_frame;
 
-    if (f == NULL || f->f_stacktop == NULL || f->f_iblock <= 0)
+    if (f == NULL || f->f_stacktop == NULL)
         return 0; /* no frame or empty blockstack == no finalization */
 
     /* Any block type besides a loop requires cleanup. */
-    i = f->f_iblock;
-    while (--i >= 0) {
+    for (i = 0; i < f->f_iblock; i++)
         if (f->f_blockstack[i].b_type != SETUP_LOOP)
             return 1;
-    }
 
     /* No blocks except loops, it's safe to skip finalization. */
     return 0;
