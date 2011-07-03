@@ -19,6 +19,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12451: xml.dom.pulldom: parse() now opens files in binary mode instead
+  of the text mode (using the locale encoding) to avoid encoding issues.
+
 C-API
 -----
 
