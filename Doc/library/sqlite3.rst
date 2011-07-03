@@ -615,43 +615,43 @@ Row Objects
 
 Let's assume we initialize a table as in the example given above::
 
-    conn = sqlite3.connect(":memory:")
-    c = conn.cursor()
-    c.execute('''create table stocks
-    (date text, trans text, symbol text,
-     qty real, price real)''')
-    c.execute("""insert into stocks
-              values ('2006-01-05','BUY','RHAT',100,35.14)""")
-    conn.commit()
-    c.close()
+   conn = sqlite3.connect(":memory:")
+   c = conn.cursor()
+   c.execute('''create table stocks
+   (date text, trans text, symbol text,
+    qty real, price real)''')
+   c.execute("""insert into stocks
+             values ('2006-01-05','BUY','RHAT',100,35.14)""")
+   conn.commit()
+   c.close()
 
 Now we plug :class:`Row` in::
 
-    >>> conn.row_factory = sqlite3.Row
-    >>> c = conn.cursor()
-    >>> c.execute('select * from stocks')
-    <sqlite3.Cursor object at 0x7f4e7dd8fa80>
-    >>> r = c.fetchone()
-    >>> type(r)
-    <class 'sqlite3.Row'>
-    >>> tuple(r)
-    ('2006-01-05', 'BUY', 'RHAT', 100.0, 35.14)
-    >>> len(r)
-    5
-    >>> r[2]
-    'RHAT'
-    >>> r.keys()
-    ['date', 'trans', 'symbol', 'qty', 'price']
-    >>> r['qty']
-    100.0
-    >>> for member in r:
-    ...     print(member)
-    ...
-    2006-01-05
-    BUY
-    RHAT
-    100.0
-    35.14
+   >>> conn.row_factory = sqlite3.Row
+   >>> c = conn.cursor()
+   >>> c.execute('select * from stocks')
+   <sqlite3.Cursor object at 0x7f4e7dd8fa80>
+   >>> r = c.fetchone()
+   >>> type(r)
+   <class 'sqlite3.Row'>
+   >>> tuple(r)
+   ('2006-01-05', 'BUY', 'RHAT', 100.0, 35.14)
+   >>> len(r)
+   5
+   >>> r[2]
+   'RHAT'
+   >>> r.keys()
+   ['date', 'trans', 'symbol', 'qty', 'price']
+   >>> r['qty']
+   100.0
+   >>> for member in r:
+   ...     print(member)
+   ...
+   2006-01-05
+   BUY
+   RHAT
+   100.0
+   35.14
 
 
 .. _sqlite3-types:
@@ -902,6 +902,7 @@ only makes sense to call from a different thread.
 .. rubric:: Footnotes
 
 .. [#f1] The sqlite3 module is not built with loadable extension support by
-  default, because some platforms (notably Mac OS X) have SQLite libraries which
-  are compiled without this feature. To get loadable extension support, you must
-  pass --enable-loadable-sqlite-extensions to configure.
+   default, because some platforms (notably Mac OS X) have SQLite
+   libraries which are compiled without this feature. To get loadable
+   extension support, you must pass --enable-loadable-sqlite-extensions to
+   configure.
