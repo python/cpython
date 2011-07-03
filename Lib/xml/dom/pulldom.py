@@ -326,7 +326,7 @@ def parse(stream_or_string, parser=None, bufsize=None):
     if bufsize is None:
         bufsize = default_bufsize
     if isinstance(stream_or_string, str):
-        stream = open(stream_or_string)
+        stream = open(stream_or_string, 'rb')
     else:
         stream = stream_or_string
     if not parser:
