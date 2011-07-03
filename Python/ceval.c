@@ -749,6 +749,9 @@ enum why_code {
         WHY_SILENCED =  0x0080  /* Exception silenced by 'with' */
 };
 
+static void save_exc_state(PyThreadState *, PyFrameObject *);
+static void swap_exc_state(PyThreadState *, PyFrameObject *);
+static void restore_and_clear_exc_state(PyThreadState *, PyFrameObject *);
 static enum why_code do_raise(PyObject *, PyObject *);
 static int unpack_iterable(PyObject *, int, int, PyObject **);
 
@@ -1110,54 +1113,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         Py_XDECREF(traceback); \
     }
 
-#define SAVE_EXC_STATE() \
-    { \
-        PyObject *type, *value, *traceback; \
-        Py_XINCREF(tstate->exc_type); \
-        Py_XINCREF(tstate->exc_value); \
-        Py_XINCREF(tstate->exc_traceback); \
-        type = f->f_exc_type; \
-        value = f->f_exc_value; \
-        traceback = f->f_exc_traceback; \
-        f->f_exc_type = tstate->exc_type; \
-        f->f_exc_value = tstate->exc_value; \
-        f->f_exc_traceback = tstate->exc_traceback; \
-        Py_XDECREF(type); \
-        Py_XDECREF(value); \
-        Py_XDECREF(traceback); \
-    }
-
-#define SWAP_EXC_STATE() \
-    { \
-        PyObject *tmp; \
-        tmp = tstate->exc_type; \
-        tstate->exc_type = f->f_exc_type; \
-        f->f_exc_type = tmp; \
-        tmp = tstate->exc_value; \
-        tstate->exc_value = f->f_exc_value; \
-        f->f_exc_value = tmp; \
-        tmp = tstate->exc_traceback; \
-        tstate->exc_traceback = f->f_exc_traceback; \
-        f->f_exc_traceback = tmp; \
-    }
-
-#define RESTORE_AND_CLEAR_EXC_STATE() \
-    { \
-        PyObject *type, *value, *tb; \
-        type = tstate->exc_type; \
-        value = tstate->exc_value; \
-        tb = tstate->exc_traceback; \
-        tstate->exc_type = f->f_exc_type; \
-        tstate->exc_value = f->f_exc_value; \
-        tstate->exc_traceback = f->f_exc_traceback; \
-        f->f_exc_type = NULL; \
-        f->f_exc_value = NULL; \
-        f->f_exc_traceback = NULL; \
-        Py_XDECREF(type); \
-        Py_XDECREF(value); \
-        Py_XDECREF(tb); \
-    }
-
 /* Start of code */
 
     if (f == NULL)
@@ -1236,11 +1191,10 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             /* We were in an except handler when we left,
                restore the exception state which was put aside
                (see YIELD_VALUE). */
-            SWAP_EXC_STATE();
+            swap_exc_state(tstate, f);
         }
-        else {
-            SAVE_EXC_STATE();
-        }
+        else
+            save_exc_state(tstate, f);
     }
 
 #ifdef LLTRACE
@@ -3033,9 +2987,9 @@ fast_yield:
                 break;
         if (i == f->f_iblock)
             /* We did not create this exception. */
-            RESTORE_AND_CLEAR_EXC_STATE()
+            restore_and_clear_exc_state(tstate, f);
         else
-            SWAP_EXC_STATE()
+            swap_exc_state(tstate, f);
     }
 
     if (tstate->use_tracing) {
@@ -3450,6 +3404,60 @@ special_lookup(PyObject *o, char *meth, PyObject **cache)
         return NULL;
     }
     return res;
+}
+
+
+/* These 3 functions deal with the exception state of generators. */
+
+static void
+save_exc_state(PyThreadState *tstate, PyFrameObject *f)
+{
+    PyObject *type, *value, *traceback;
+    Py_XINCREF(tstate->exc_type);
+    Py_XINCREF(tstate->exc_value);
+    Py_XINCREF(tstate->exc_traceback);
+    type = f->f_exc_type;
+    value = f->f_exc_value;
+    traceback = f->f_exc_traceback;
+    f->f_exc_type = tstate->exc_type;
+    f->f_exc_value = tstate->exc_value;
+    f->f_exc_traceback = tstate->exc_traceback;
+    Py_XDECREF(type);
+    Py_XDECREF(value);
+    Py_XDECREF(traceback); 
+}
+
+static void
+swap_exc_state(PyThreadState *tstate, PyFrameObject *f)
+{
+    PyObject *tmp;
+    tmp = tstate->exc_type;
+    tstate->exc_type = f->f_exc_type;
+    f->f_exc_type = tmp;
+    tmp = tstate->exc_value;
+    tstate->exc_value = f->f_exc_value;
+    f->f_exc_value = tmp;
+    tmp = tstate->exc_traceback;
+    tstate->exc_traceback = f->f_exc_traceback;
+    f->f_exc_traceback = tmp;
+}
+
+static void
+restore_and_clear_exc_state(PyThreadState *tstate, PyFrameObject *f)
+{
+    PyObject *type, *value, *tb;
+    type = tstate->exc_type;
+    value = tstate->exc_value;
+    tb = tstate->exc_traceback;
+    tstate->exc_type = f->f_exc_type;
+    tstate->exc_value = f->f_exc_value;
+    tstate->exc_traceback = f->f_exc_traceback;
+    f->f_exc_type = NULL;
+    f->f_exc_value = NULL;
+    f->f_exc_traceback = NULL;
+    Py_XDECREF(type);
+    Py_XDECREF(value);
+    Py_XDECREF(tb);
 }
 
 
