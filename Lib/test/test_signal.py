@@ -670,9 +670,6 @@ class PendingSignalsTests(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(signal, 'sigtimedwait'),
                          'need signal.sigtimedwait()')
-    # issue #12303: sigtimedwait() takes 30 seconds on FreeBSD 6 (kernel bug)
-    @unittest.skipIf(sys.platform =='freebsd6',
-        "sigtimedwait() with a null timeout doens't work on FreeBSD 6")
     def test_sigtimedwait_poll(self):
         # check that polling with sigtimedwait works
         self.wait_helper(signal.SIGALRM, '''
