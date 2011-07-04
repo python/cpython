@@ -260,7 +260,7 @@ Exceptions in this module are coded as class instances:
 
 .. exception:: Error
 
-   The base exception class.  :exc:`Error` has a single public data member
+   The base exception class.  :exc:`Error` has a single public attribute
    :attr:`msg` containing the description of the error.
 
 

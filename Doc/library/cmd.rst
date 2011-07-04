@@ -50,7 +50,7 @@ A :class:`Cmd` instance has the following methods:
    the line as argument.
 
    The optional argument is a banner or intro string to be issued before the first
-   prompt (this overrides the :attr:`intro` class member).
+   prompt (this overrides the :attr:`intro` class attribute).
 
    If the :mod:`readline` module is loaded, input will automatically inherit
    :program:`bash`\ -like history-list editing (e.g. :kbd:`Control-P` scrolls back
