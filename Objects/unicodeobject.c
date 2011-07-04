@@ -1506,7 +1506,7 @@ PyUnicode_Decode(const char *s,
                  (strcmp(lower, "latin1") == 0) ||
                  (strcmp(lower, "iso-8859-1") == 0))
             return PyUnicode_DecodeLatin1(s, size, errors);
-#if defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)
+#ifdef HAVE_MBCS
         else if (strcmp(lower, "mbcs") == 0)
             return PyUnicode_DecodeMBCS(s, size, errors);
 #endif
@@ -1644,7 +1644,7 @@ PyUnicode_AsEncodedObject(PyObject *unicode,
 PyObject *
 PyUnicode_EncodeFSDefault(PyObject *unicode)
 {
-#if defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)
+#ifdef HAVE_MBCS
     return PyUnicode_EncodeMBCS(PyUnicode_AS_UNICODE(unicode),
                                 PyUnicode_GET_SIZE(unicode),
                                 NULL);
@@ -1746,7 +1746,7 @@ PyUnicode_AsEncodedString(PyObject *unicode,
             return PyUnicode_EncodeLatin1(PyUnicode_AS_UNICODE(unicode),
                                           PyUnicode_GET_SIZE(unicode),
                                           errors);
-#if defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)
+#ifdef HAVE_MBCS
         else if (strcmp(lower, "mbcs") == 0)
             return PyUnicode_EncodeMBCS(PyUnicode_AS_UNICODE(unicode),
                                         PyUnicode_GET_SIZE(unicode),
@@ -1848,7 +1848,7 @@ PyUnicode_DecodeFSDefault(const char *s) {
 PyObject*
 PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 {
-#if defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)
+#ifdef HAVE_MBCS
     return PyUnicode_DecodeMBCS(s, size, NULL);
 #elif defined(__APPLE__)
     return PyUnicode_DecodeUTF8(s, size, "surrogateescape");
@@ -4942,7 +4942,7 @@ PyUnicode_AsASCIIString(PyObject *unicode)
                                  NULL);
 }
 
-#if defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)
+#ifdef HAVE_MBCS
 
 /* --- MBCS codecs for Windows -------------------------------------------- */
 
@@ -5229,7 +5229,7 @@ PyUnicode_AsMBCSString(PyObject *unicode)
 
 #undef NEED_RETRY
 
-#endif /* MS_WINDOWS */
+#endif /* HAVE_MBCS */
 
 /* --- Character Mapping Codec -------------------------------------------- */
 

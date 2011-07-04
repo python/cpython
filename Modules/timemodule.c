@@ -43,7 +43,7 @@ static long main_thread;
 #endif /* MS_WINDOWS */
 #endif /* !__WATCOMC__ || __QNX__ */
 
-#if defined(MS_WINDOWS)
+#if defined(HAVE_MBCS)
 #  define TZNAME_ENCODING "mbcs"
 #else
 #  define TZNAME_ENCODING "utf-8"
