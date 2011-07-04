@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #9642: Uniformize the tests on the availability of the mbcs codec, add
+  a new HAVE_MBCS define.
+
 - Issue #9642: Fix filesystem encoding initialization: use the ANSI code page
   on Windows if the mbcs codec is not available, and fail with a fatal error if
   we cannot get the locale encoding (if nl_langinfo(CODESET) is not available)
