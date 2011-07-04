@@ -1826,7 +1826,7 @@ Files and Directories
 
    .. note::
 
-      The exact meaning and resolution of the :attr:`st_atime`, 
+      The exact meaning and resolution of the :attr:`st_atime`,
       :attr:`st_mtime`, and :attr:`st_ctime` attributes depend on the operating
       system and the file system. For example, on Windows systems using the FAT
       or FAT32 file systems, :attr:`st_mtime` has 2-second resolution, and
