@@ -566,7 +566,7 @@ The module :mod:`curses` defines the following functions:
 
    Instantiate the string *str* with the supplied parameters, where *str* should
    be a parameterized string obtained from the terminfo database.  E.g.
-   ``tparm(tigetstr("cup"), 5, 3)`` could result in x``'\033[6;4H'``, the exact
+   ``tparm(tigetstr("cup"), 5, 3)`` could result in ``'\033[6;4H'``, the exact
    result depending on terminal type.
 
 
