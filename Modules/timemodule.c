@@ -3,8 +3,6 @@
 #include "Python.h"
 #include "_time.h"
 
-#define TZNAME_ENCODING "utf-8"
-
 #include <ctype.h>
 
 #ifdef HAVE_SYS_TYPES_H
@@ -45,12 +43,11 @@ static long main_thread;
 #endif /* MS_WINDOWS */
 #endif /* !__WATCOMC__ || __QNX__ */
 
-#if defined(MS_WINDOWS) && !defined(__BORLANDC__)
-/* Win32 has better clock replacement; we have our own version below. */
-#undef HAVE_CLOCK
-#undef TZNAME_ENCODING
-#define TZNAME_ENCODING "mbcs"
-#endif /* MS_WINDOWS && !defined(__BORLANDC__) */
+#if defined(MS_WINDOWS)
+#  define TZNAME_ENCODING "mbcs"
+#else
+#  define TZNAME_ENCODING "utf-8"
+#endif
 
 #if defined(PYOS_OS2)
 #define INCL_DOS
@@ -84,25 +81,9 @@ PyDoc_STRVAR(time_doc,
 Return the current time in seconds since the Epoch.\n\
 Fractions of a second may be present if the system clock provides them.");
 
-#ifdef HAVE_CLOCK
-
-#ifndef CLOCKS_PER_SEC
-#ifdef CLK_TCK
-#define CLOCKS_PER_SEC CLK_TCK
-#else
-#define CLOCKS_PER_SEC 1000000
-#endif
-#endif
-
-static PyObject *
-time_clock(PyObject *self, PyObject *unused)
-{
-    return PyFloat_FromDouble(((double)clock()) / CLOCKS_PER_SEC);
-}
-#endif /* HAVE_CLOCK */
-
 #if defined(MS_WINDOWS) && !defined(__BORLANDC__)
-/* Due to Mark Hammond and Tim Peters */
+/* Win32 has better clock replacement; we have our own version, due to Mark
+   Hammond and Tim Peters */
 static PyObject *
 time_clock(PyObject *self, PyObject *unused)
 {
@@ -127,8 +108,23 @@ time_clock(PyObject *self, PyObject *unused)
     return PyFloat_FromDouble(diff / divisor);
 }
 
-#define HAVE_CLOCK /* So it gets included in the methods */
-#endif /* MS_WINDOWS && !defined(__BORLANDC__) */
+#elif defined(HAVE_CLOCK)
+
+#ifndef CLOCKS_PER_SEC
+#ifdef CLK_TCK
+#define CLOCKS_PER_SEC CLK_TCK
+#else
+#define CLOCKS_PER_SEC 1000000
+#endif
+#endif
+
+static PyObject *
+time_clock(PyObject *self, PyObject *unused)
+{
+    return PyFloat_FromDouble(((double)clock()) / CLOCKS_PER_SEC);
+}
+#endif /* HAVE_CLOCK */
+
 
 #ifdef HAVE_CLOCK
 PyDoc_STRVAR(clock_doc,
@@ -784,7 +780,7 @@ PyInit_timezone(PyObject *m) {
 
 static PyMethodDef time_methods[] = {
     {"time",            time_time, METH_NOARGS, time_doc},
-#ifdef HAVE_CLOCK
+#if (defined(MS_WINDOWS) && !defined(__BORLANDC__)) || defined(HAVE_CLOCK)
     {"clock",           time_clock, METH_NOARGS, clock_doc},
 #endif
     {"sleep",           time_sleep, METH_VARARGS, sleep_doc},
