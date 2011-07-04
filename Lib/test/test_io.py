@@ -2651,6 +2651,8 @@ class SignalsTest(unittest.TestCase):
         1/0
 
     @unittest.skipUnless(threading, 'Threading required for this test.')
+    @unittest.skipIf(sys.platform in ('freebsd5', 'freebsd6', 'freebsd7'),
+                     'issue #12429: skip test on FreeBSD <= 7')
     def check_interrupted_write(self, item, bytes, **fdopen_kwargs):
         """Check that a partial write, when it gets interrupted, properly
         invokes the signal handler, and bubbles up the exception raised
