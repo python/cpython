@@ -240,10 +240,6 @@ class WakeupSignalTests(unittest.TestCase):
         def check_signum(signals):
             data = os.read(read, len(signals)+1)
             raised = struct.unpack('%uB' % len(data), data)
-            if sys.platform == 'freebsd6':
-                # when signals are unblocked, FreeBSD 6 delivers signals in the
-                # reverse order of their number
-                signals = tuple(sorted(signals, reverse=False))
             if raised != signals:
                 raise Exception("%r != %r" % (raised, signals))
 
@@ -323,6 +319,11 @@ class WakeupSignalTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
                          'need signal.pthread_sigmask()')
     def test_pending(self):
+        signals = (signal.SIGUSR1, signal.SIGUSR2)
+        # when signals are unblocked, pending signal ared delivered in the
+        # reverse order of their number
+        signals = tuple(sorted(signals, reverse=True))
+
         self.check_wakeup("""def test():
             signum1 = signal.SIGUSR1
             signum2 = signal.SIGUSR2
@@ -335,7 +336,7 @@ class WakeupSignalTests(unittest.TestCase):
             os.kill(os.getpid(), signum2)
             # Unblocking the 2 signals calls the C signal handler twice
             signal.pthread_sigmask(signal.SIG_UNBLOCK, (signum1, signum2))
-        """,  signal.SIGUSR1, signal.SIGUSR2)
+        """,  *signals)
 
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
