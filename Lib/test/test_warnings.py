@@ -530,6 +530,18 @@ class _WarningsTests(BaseTest):
         assert expected_line
         self.assertEqual(second_line, expected_line)
 
+    def test_filename_none(self):
+        # issue #12467: race condition if a warning is emitted at shutdown
+        globals_dict = globals()
+        oldfile = globals_dict['__file__']
+        try:
+            with original_warnings.catch_warnings(module=self.module) as w:
+                self.module.filterwarnings("always", category=UserWarning)
+                globals_dict['__file__'] = None
+                self.module.warn('test', UserWarning)
+        finally:
+            globals_dict['__file__'] = oldfile
+
 
 class WarningsDisplayTests(unittest.TestCase):
 

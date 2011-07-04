@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12467: warnings: fix a race condition if a warning is emitted at
+  shutdown, if globals()['__file__'] is None.
+
 - Issue #12352: Fix a deadlock in multiprocessing.Heap when a block is freed by
   the garbage collector while the Heap lock is held.
 
