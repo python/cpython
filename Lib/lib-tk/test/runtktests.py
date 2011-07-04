@@ -37,9 +37,10 @@ def check_tk_availability():
         if stderr or p.returncode:
             raise unittest.SkipTest("tk cannot be initialized: %s" % stderr)
     else:
+        import Tkinter
         try:
             Tkinter.Button()
-        except tkinter.TclError as msg:
+        except Tkinter.TclError as msg:
             # assuming tk is not available
             raise unittest.SkipTest("tk not available: %s" % msg)
 
