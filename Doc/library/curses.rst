@@ -1639,7 +1639,7 @@ You can instantiate a :class:`Textbox` object as follows:
       each keystroke entered with the keystroke as a parameter; command dispatch
       is done on the result. This method returns the window contents as a
       string; whether blanks in the window are included is affected by the
-      :attr:`stripspaces` member.
+      :attr:`stripspaces` attribute.
 
 
    .. method:: do_command(ch)
@@ -1711,7 +1711,7 @@ You can instantiate a :class:`Textbox` object as follows:
 
    .. attribute:: stripspaces
 
-      This data member is a flag which controls the interpretation of blanks in
+      This attribute is a flag which controls the interpretation of blanks in
       the window.  When it is on, trailing blanks on each line are ignored; any
       cursor motion that would land the cursor on a trailing blank goes to the
       end of that line instead, and trailing blanks are stripped when the window

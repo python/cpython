@@ -11,7 +11,7 @@
 
 This module defines three dictionaries, ``name2codepoint``, ``codepoint2name``,
 and ``entitydefs``. ``entitydefs`` is used to provide the :attr:`entitydefs`
-member of the :class:`html.parser.HTMLParser` class.  The definition provided
+attribute of the :class:`html.parser.HTMLParser` class.  The definition provided
 here contains all the entities defined by XHTML 1.0 that can be handled using
 simple textual substitution in the Latin-1 character set (ISO-8859-1).
 
