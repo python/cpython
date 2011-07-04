@@ -973,6 +973,10 @@ Extension Modules
 Tests
 -----
 
+- Issue #8716: Avoid crashes caused by Aqua Tk on OSX when attempting to run
+  test_tk or test_ttk_guionly under a username that is not currently logged
+  in to the console windowserver (as may be the case under buildbot or ssh).
+
 - Issue #12407: Explicitly skip test_capi.EmbeddingTest under Windows.
 
 - Issue #12400: regrtest -W doesn't rerun the tests twice anymore, but captures
