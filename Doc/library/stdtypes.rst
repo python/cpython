@@ -2578,7 +2578,7 @@ statement is not, strictly speaking, an operation on a module object; ``import
 foo`` does not require a module object named *foo* to exist, rather it requires
 an (external) *definition* for a module named *foo* somewhere.)
 
-A special member of every module is :attr:`__dict__`. This is the dictionary
+A special attribute of every module is :attr:`__dict__`. This is the dictionary
 containing the module's symbol table. Modifying this dictionary will actually
 change the module's symbol table, but direct assignment to the :attr:`__dict__`
 attribute is not possible (you can write ``m.__dict__['a'] = 1``, which defines

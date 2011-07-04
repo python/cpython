@@ -105,7 +105,7 @@ The :mod:`urllib.request` module defines the following functions:
    can be imported), :class:`HTTPSHandler` will also be added.
 
    A :class:`BaseHandler` subclass may also change its :attr:`handler_order`
-   member variable to modify its position in the handlers list.
+   attribute to modify its position in the handlers list.
 
 
 .. function:: pathname2url(path)
@@ -546,7 +546,7 @@ intended for direct use:
 
    Remove any parents.
 
-The following members and methods should only be used by classes derived from
+The following attribute and methods should only be used by classes derived from
 :class:`BaseHandler`.
 
 .. note::

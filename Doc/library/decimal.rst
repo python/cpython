@@ -654,7 +654,7 @@ Decimal objects
 
       Normalize the number by stripping the rightmost trailing zeros and
       converting any result equal to :const:`Decimal('0')` to
-      :const:`Decimal('0e0')`. Used for producing canonical values for members
+      :const:`Decimal('0e0')`. Used for producing canonical values for attributes
       of an equivalence class. For example, ``Decimal('32.100')`` and
       ``Decimal('0.321000e+2')`` both normalize to the equivalent value
       ``Decimal('32.1')``.

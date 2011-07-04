@@ -24,8 +24,8 @@ The :mod:`shlex` module defines the following functions:
 
    Split the string *s* using shell-like syntax. If *comments* is :const:`False`
    (the default), the parsing of comments in the given string will be disabled
-   (setting the :attr:`commenters` member of the :class:`shlex` instance to the
-   empty string).  This function operates in POSIX mode by default, but uses
+   (setting the :attr:`commenters` attribute of the :class:`shlex` instance to
+   the empty string).  This function operates in POSIX mode by default, but uses
    non-POSIX mode if the *posix* argument is false.
 
    .. note::
@@ -44,7 +44,7 @@ The :mod:`shlex` module defines the following class:
    from. It must be a file-/stream-like object with :meth:`read` and
    :meth:`readline` methods, or a string.  If no argument is given, input will
    be taken from ``sys.stdin``.  The second optional argument is a filename
-   string, which sets the initial value of the :attr:`infile` member.  If the
+   string, which sets the initial value of the :attr:`infile` attribute.  If the
    *instream* argument is omitted or equal to ``sys.stdin``, this second
    argument defaults to "stdin".  The *posix* argument defines the operational
    mode: when *posix* is not true (default), the :class:`shlex` instance will
@@ -202,8 +202,8 @@ either control lexical analysis or can be used for debugging:
 
 .. attribute:: shlex.source
 
-   This member is ``None`` by default.  If you assign a string to it, that string
-   will be recognized as a lexical-level inclusion request similar to the
+   This attribute is ``None`` by default.  If you assign a string to it, that
+   string will be recognized as a lexical-level inclusion request similar to the
    ``source`` keyword in various shells.  That is, the immediately following token
    will opened as a filename and input taken from that stream until EOF, at which
    point the :meth:`close` method of that stream will be called and the input
@@ -213,7 +213,7 @@ either control lexical analysis or can be used for debugging:
 
 .. attribute:: shlex.debug
 
-   If this member is numeric and ``1`` or more, a :class:`shlex` instance will
+   If this attribute is numeric and ``1`` or more, a :class:`shlex` instance will
    print verbose progress output on its behavior.  If you need to use this, you can
    read the module source code to learn the details.
 
