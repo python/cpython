@@ -1251,7 +1251,7 @@ Supported operations:
   subtracting their UTC offsets (obtained from ``self.utcoffset()``). In order
   to stop mixed-type comparisons from falling back to the default comparison by
   object address, when a :class:`time` object is compared to an object of a
-  different type, :exc:`TypeError` is raised unless the comparison is ``==`` or 
+  different type, :exc:`TypeError` is raised unless the comparison is ``==`` or
   ``!=``.  The latter cases return :const:`False` or :const:`True`, respectively.
 
 * hash, use as dict key
