@@ -428,38 +428,39 @@ on Windows.
 
    .. attribute:: dwFlags
 
-      A bit field that determines whether certain :class:`STARTUPINFO` members
-      are used when the process creates a window. ::
+      A bit field that determines whether certain :class:`STARTUPINFO`
+      attributes are used when the process creates a window. ::
 
          si = subprocess.STARTUPINFO()
          si.dwFlags = subprocess.STARTF_USESTDHANDLES | subprocess.STARTF_USESHOWWINDOW
 
    .. attribute:: hStdInput
 
-      If :attr:`dwFlags` specifies :data:`STARTF_USESTDHANDLES`, this member is
-      the standard input handle for the process. If :data:`STARTF_USESTDHANDLES`
-      is not specified, the default for standard input is the keyboard buffer.
+      If :attr:`dwFlags` specifies :data:`STARTF_USESTDHANDLES`, this attribute
+      is the standard input handle for the process. If
+      :data:`STARTF_USESTDHANDLES` is not specified, the default for standard
+      input is the keyboard buffer.
 
    .. attribute:: hStdOutput
 
-      If :attr:`dwFlags` specifies :data:`STARTF_USESTDHANDLES`, this member is
-      the standard output handle for the process. Otherwise, this member is
-      ignored and the default for standard output is the console window's
+      If :attr:`dwFlags` specifies :data:`STARTF_USESTDHANDLES`, this attribute
+      is the standard output handle for the process. Otherwise, this attribute
+      is ignored and the default for standard output is the console window's
       buffer.
 
    .. attribute:: hStdError
 
-      If :attr:`dwFlags` specifies :data:`STARTF_USESTDHANDLES`, this member is
-      the standard error handle for the process. Otherwise, this member is
+      If :attr:`dwFlags` specifies :data:`STARTF_USESTDHANDLES`, this attribute
+      is the standard error handle for the process. Otherwise, this attribute is
       ignored and the default for standard error is the console window's buffer.
 
    .. attribute:: wShowWindow
 
-      If :attr:`dwFlags` specifies :data:`STARTF_USESHOWWINDOW`, this member
+      If :attr:`dwFlags` specifies :data:`STARTF_USESHOWWINDOW`, this attribute
       can be any of the values that can be specified in the ``nCmdShow``
       parameter for the
       `ShowWindow <http://msdn.microsoft.com/en-us/library/ms633548(v=vs.85).aspx>`__
-      function, except for ``SW_SHOWDEFAULT``. Otherwise, this member is
+      function, except for ``SW_SHOWDEFAULT``. Otherwise, this attribute is
       ignored.
 
       :data:`SW_HIDE` is provided for this attribute. It is used when
@@ -493,12 +494,12 @@ The :mod:`subprocess` module exposes the following constants.
 .. data:: STARTF_USESTDHANDLES
 
    Specifies that the :attr:`STARTUPINFO.hStdInput`,
-   :attr:`STARTUPINFO.hStdOutput`, and :attr:`STARTUPINFO.hStdError` members
+   :attr:`STARTUPINFO.hStdOutput`, and :attr:`STARTUPINFO.hStdError` attributes
    contain additional information.
 
 .. data:: STARTF_USESHOWWINDOW
 
-   Specifies that the :attr:`STARTUPINFO.wShowWindow` member contains
+   Specifies that the :attr:`STARTUPINFO.wShowWindow` attribute contains
    additional information.
 
 .. data:: CREATE_NEW_CONSOLE

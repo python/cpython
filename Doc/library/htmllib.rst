@@ -168,7 +168,7 @@ additional methods and instance variables for use within tag methods.
 
 This module defines three dictionaries, ``name2codepoint``, ``codepoint2name``,
 and ``entitydefs``. ``entitydefs`` is used by the :mod:`htmllib` module to
-provide the :attr:`entitydefs` member of the :class:`HTMLParser` class.  The
+provide the :attr:`entitydefs` attribute of the :class:`HTMLParser` class.  The
 definition provided here contains all the entities defined by XHTML 1.0  that
 can be handled using simple textual substitution in the Latin-1 character set
 (ISO-8859-1).

@@ -1199,12 +1199,11 @@ DocTest Objects
 .. class:: DocTest(examples, globs, name, filename, lineno, docstring)
 
    A collection of doctest examples that should be run in a single namespace.  The
-   constructor arguments are used to initialize the member variables of the same
-   names.
+   constructor arguments are used to initialize the attributes of the same names.
 
    .. versionadded:: 2.4
 
-   :class:`DocTest` defines the following member variables.  They are initialized by
+   :class:`DocTest` defines the following attributes.  They are initialized by
    the constructor, and should not be modified directly.
 
 
@@ -1257,12 +1256,12 @@ Example Objects
 .. class:: Example(source, want[, exc_msg][, lineno][, indent][, options])
 
    A single interactive example, consisting of a Python statement and its expected
-   output.  The constructor arguments are used to initialize the member variables
-   of the same names.
+   output.  The constructor arguments are used to initialize the attributes of the
+   same names.
 
    .. versionadded:: 2.4
 
-   :class:`Example` defines the following member variables.  They are initialized by
+   :class:`Example` defines the following attributes.  They are initialized by
    the constructor, and should not be modified directly.
 
 
@@ -1770,9 +1769,9 @@ There are two exceptions that may be raised by :class:`DebugRunner` instances:
 
    An exception raised by :class:`DocTestRunner` to signal that a doctest example's
    actual output did not match its expected output. The constructor arguments are
-   used to initialize the member variables of the same names.
+   used to initialize the attributes of the same names.
 
-:exc:`DocTestFailure` defines the following member variables:
+:exc:`DocTestFailure` defines the following attributes:
 
 
 .. attribute:: DocTestFailure.test
@@ -1794,9 +1793,9 @@ There are two exceptions that may be raised by :class:`DebugRunner` instances:
 
    An exception raised by :class:`DocTestRunner` to signal that a doctest
    example raised an unexpected exception.  The constructor arguments are used
-   to initialize the member variables of the same names.
+   to initialize the attributes of the same names.
 
-:exc:`UnexpectedException` defines the following member variables:
+:exc:`UnexpectedException` defines the following attributes:
 
 
 .. attribute:: UnexpectedException.test

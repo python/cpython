@@ -90,7 +90,7 @@ The :mod:`urllib2` module defines the following functions:
    :class:`HTTPSHandler` will also be added.
 
    Beginning in Python 2.3, a :class:`BaseHandler` subclass may also change its
-   :attr:`handler_order` member variable to modify its position in the handlers
+   :attr:`handler_order` attribute to modify its position in the handlers
    list.
 
 The following exceptions are raised as appropriate:
@@ -495,7 +495,7 @@ intended for direct use:
 
    Remove any parents.
 
-The following members and methods should only be used by classes derived from
+The following attributes and methods should only be used by classes derived from
 :class:`BaseHandler`.
 
 .. note::
