@@ -244,7 +244,8 @@ class WakeupSignalTests(unittest.TestCase):
             # reliable)
             raised = set(raised)
             signals = set(signals)
-            assert raised == signals, "%r != %r" % (raised, signals)
+            if raised != signals:
+                raise Exception("%r != %r" % (raised, signals))
 
         {}
 
@@ -280,11 +281,13 @@ class WakeupSignalTests(unittest.TestCase):
             time.sleep(TIMEOUT_FULL)
             mid_time = time.time()
             dt = mid_time - before_time
-            assert dt < TIMEOUT_HALF, dt
+            if dt >= TIMEOUT_HALF:
+                raise Exception("%s >= %s" % (dt, TIMEOUT_HALF))
             select.select([read], [], [], TIMEOUT_FULL)
             after_time = time.time()
             dt = after_time - mid_time
-            assert dt < TIMEOUT_HALF, dt
+            if dt >= TIMEOUT_HALF:
+                raise Exception("%s >= %s" % (dt, TIMEOUT_HALF))
         """, signal.SIGALRM)
 
     def test_wakeup_fd_during(self):
@@ -306,7 +309,8 @@ class WakeupSignalTests(unittest.TestCase):
                 raise Exception("select.error not raised")
             after_time = time.time()
             dt = after_time - before_time
-            assert dt < TIMEOUT_HALF, dt
+            if dt >= TIMEOUT_HALF:
+                raise Exception("%s >= %s" % (dt, TIMEOUT_HALF))
         """, signal.SIGALRM)
 
     def test_signum(self):
@@ -540,7 +544,8 @@ class PendingSignalsTests(unittest.TestCase):
             signal.pthread_sigmask(signal.SIG_BLOCK, [signum])
             os.kill(os.getpid(), signum)
             pending = signal.sigpending()
-            assert pending == {signum}, '%s != {%s}' % (pending, signum)
+            if pending != {signum}:
+                raise Exception('%s != {%s}' % (pending, signum))
             try:
                 signal.pthread_sigmask(signal.SIG_UNBLOCK, [signum])
             except ZeroDivisionError:
@@ -637,7 +642,8 @@ class PendingSignalsTests(unittest.TestCase):
         def test(signum):
             signal.alarm(1)
             received = signal.sigwait([signum])
-            assert received == signum , 'received %s, not %s' % (received, signum)
+            if received != signum:
+                raise Exception('received %s, not %s' % (received, signum))
         ''')
 
     @unittest.skipUnless(hasattr(signal, 'sigwaitinfo'),
@@ -647,7 +653,8 @@ class PendingSignalsTests(unittest.TestCase):
         def test(signum):
             signal.alarm(1)
             info = signal.sigwaitinfo([signum])
-            assert info.si_signo == signum, "info.si_signo != %s" % signum
+            if info.si_signo != signum:
+                raise Exception("info.si_signo != %s" % signum)
         ''')
 
     @unittest.skipUnless(hasattr(signal, 'sigtimedwait'),
@@ -657,7 +664,8 @@ class PendingSignalsTests(unittest.TestCase):
         def test(signum):
             signal.alarm(1)
             info = signal.sigtimedwait([signum], (10, 1000))
-            assert info.si_signo == signum, 'info.si_signo != %s' % signum
+            if info.si_signo != signum:
+                raise Exception('info.si_signo != %s' % signum)
         ''')
 
     @unittest.skipUnless(hasattr(signal, 'sigtimedwait'),
@@ -672,7 +680,8 @@ class PendingSignalsTests(unittest.TestCase):
             import os
             os.kill(os.getpid(), signum)
             info = signal.sigtimedwait([signum], (0, 0))
-            assert info.si_signo == signum, 'info.si_signo != %s' % signum
+            if info.si_signo != signum:
+                raise Exception('info.si_signo != %s' % signum)
         ''')
 
     @unittest.skipUnless(hasattr(signal, 'sigtimedwait'),
@@ -681,7 +690,8 @@ class PendingSignalsTests(unittest.TestCase):
         self.wait_helper(signal.SIGALRM, '''
         def test(signum):
             received = signal.sigtimedwait([signum], (1, 0))
-            assert received is None, "received=%r" % (received,)
+            if received is not None:
+                raise Exception("received=%r" % (received,))
         ''')
 
     @unittest.skipUnless(hasattr(signal, 'sigtimedwait'),
@@ -709,7 +719,8 @@ class PendingSignalsTests(unittest.TestCase):
                 signal.sigwaitinfo([signal.SIGUSR1])
             except OSError as e:
                 if e.errno == errno.EINTR:
-                    assert hndl_called, "SIGALRM handler not called"
+                    if not hndl_called:
+                        raise Exception("SIGALRM handler not called")
                 else:
                     raise Exception("Expected EINTR to be raised by sigwaitinfo")
             else:
@@ -796,8 +807,10 @@ class PendingSignalsTests(unittest.TestCase):
 
         # Check the new mask
         blocked = read_sigmask()
-        assert signum in blocked, "%s not in %s" % (signum, blocked)
-        assert old_mask ^ blocked == {signum}, "%s ^ %s != {%s}" % (old_mask, blocked, signum)
+        if signum not in blocked:
+            raise Exception("%s not in %s" % (signum, blocked))
+        if old_mask ^ blocked != {signum}:
+            raise Exception("%s ^ %s != {%s}" % (old_mask, blocked, signum))
 
         # Unblock SIGUSR1
         try:
@@ -816,9 +829,12 @@ class PendingSignalsTests(unittest.TestCase):
 
         # Check the new mask
         unblocked = read_sigmask()
-        assert signum not in unblocked, "%s in %s" % (signum, unblocked)
-        assert blocked ^ unblocked == {signum}, "%s ^ %s != {%s}" % (blocked, unblocked, signum)
-        assert old_mask == unblocked, "%s != %s" % (old_mask, unblocked)
+        if signum in unblocked:
+            raise Exception("%s in %s" % (signum, unblocked))
+        if blocked ^ unblocked != {signum}:
+            raise Exception("%s ^ %s != {%s}" % (blocked, unblocked, signum))
+        if old_mask != unblocked:
+            raise Exception("%s != %s" % (old_mask, unblocked))
         """
         assert_python_ok('-c', code)
 
