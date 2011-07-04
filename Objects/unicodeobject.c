@@ -9689,8 +9689,6 @@ PyObject *PyUnicode_Format(PyObject *format,
             case 'o':
             case 'x':
             case 'X':
-                if (c == 'i')
-                    c = 'd';
                 isnumok = 0;
                 if (PyNumber_Check(v)) {
                     PyObject *iobj=NULL;
@@ -9705,7 +9703,7 @@ PyObject *PyUnicode_Format(PyObject *format,
                     if (iobj!=NULL) {
                         if (PyLong_Check(iobj)) {
                             isnumok = 1;
-                            temp = formatlong(iobj, flags, prec, c);
+                            temp = formatlong(iobj, flags, prec, (c == 'i'? 'd': c));
                             Py_DECREF(iobj);
                             if (!temp)
                                 goto onError;
