@@ -11,7 +11,7 @@ import traceback
 import unittest
 from test import support
 from contextlib import closing
-from test.script_helper import spawn_python
+from test.script_helper import assert_python_ok, spawn_python
 
 if sys.platform in ('os2', 'riscos'):
     raise unittest.SkipTest("Can't test signal on %s" % sys.platform)
@@ -233,49 +233,80 @@ class WindowsSignalTests(unittest.TestCase):
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
 class WakeupSignalTests(unittest.TestCase):
-    TIMEOUT_FULL = 10
-    TIMEOUT_HALF = 5
+    def check_wakeup(self, test_body):
+        # use a subprocess to have only one thread and to not change signal
+        # handling of the parent process
+        code = """if 1:
+        import fcntl
+        import os
+        import signal
+
+        def handler(signum, frame):
+            pass
+
+        {}
+
+        signal.signal(signal.SIGALRM, handler)
+        read, write = os.pipe()
+        flags = fcntl.fcntl(write, fcntl.F_GETFL, 0)
+        flags = flags | os.O_NONBLOCK
+        fcntl.fcntl(write, fcntl.F_SETFL, flags)
+        signal.set_wakeup_fd(write)
+
+        test()
+
+        os.close(read)
+        os.close(write)
+        """.format(test_body)
+
+        assert_python_ok('-c', code)
 
     def test_wakeup_fd_early(self):
-        import select
+        self.check_wakeup("""def test():
+            import select
+            import time
 
-        signal.alarm(1)
-        before_time = time.time()
-        # We attempt to get a signal during the sleep,
-        # before select is called
-        time.sleep(self.TIMEOUT_FULL)
-        mid_time = time.time()
-        self.assertTrue(mid_time - before_time < self.TIMEOUT_HALF)
-        select.select([self.read], [], [], self.TIMEOUT_FULL)
-        after_time = time.time()
-        self.assertTrue(after_time - mid_time < self.TIMEOUT_HALF)
+            TIMEOUT_FULL = 10
+            TIMEOUT_HALF = 5
+
+            signal.alarm(1)
+            before_time = time.time()
+            # We attempt to get a signal during the sleep,
+            # before select is called
+            time.sleep(TIMEOUT_FULL)
+            mid_time = time.time()
+            dt = mid_time - before_time
+            if dt >= TIMEOUT_HALF:
+                raise Exception("%s >= %s" % (dt, TIMEOUT_HALF))
+            select.select([read], [], [], TIMEOUT_FULL)
+            after_time = time.time()
+            dt = after_time - mid_time
+            if dt >= TIMEOUT_HALF:
+                raise Exception("%s >= %s" % (dt, TIMEOUT_HALF))
+        """)
 
     def test_wakeup_fd_during(self):
-        import select
+        self.check_wakeup("""def test():
+            import select
+            import time
 
-        signal.alarm(1)
-        before_time = time.time()
-        # We attempt to get a signal during the select call
-        self.assertRaises(select.error, select.select,
-            [self.read], [], [], self.TIMEOUT_FULL)
-        after_time = time.time()
-        self.assertTrue(after_time - before_time < self.TIMEOUT_HALF)
+            TIMEOUT_FULL = 10
+            TIMEOUT_HALF = 5
 
-    def setUp(self):
-        import fcntl
-
-        self.alrm = signal.signal(signal.SIGALRM, lambda x,y:None)
-        self.read, self.write = os.pipe()
-        flags = fcntl.fcntl(self.write, fcntl.F_GETFL, 0)
-        flags = flags | os.O_NONBLOCK
-        fcntl.fcntl(self.write, fcntl.F_SETFL, flags)
-        self.old_wakeup = signal.set_wakeup_fd(self.write)
-
-    def tearDown(self):
-        signal.set_wakeup_fd(self.old_wakeup)
-        os.close(self.read)
-        os.close(self.write)
-        signal.signal(signal.SIGALRM, self.alrm)
+            signal.alarm(1)
+            before_time = time.time()
+            # We attempt to get a signal during the select call
+            try:
+                select.select([read], [], [], TIMEOUT_FULL)
+            except select.error:
+                pass
+            else:
+                raise Exception("select.error not raised")
+            after_time = time.time()
+            dt = after_time - before_time
+            if dt >= TIMEOUT_HALF:
+                raise Exception("%s >= %s" % (dt, TIMEOUT_HALF))
+        """)
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
 class SiginterruptTest(unittest.TestCase):
