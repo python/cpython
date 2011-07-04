@@ -209,6 +209,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12467: warnings: fix a race condition if a warning is emitted at
+  shutdown, if globals()['__file__'] is None.
+
 - Issue #12451: pydoc: importfile() now opens the Python script in binary mode,
   instead of text mode using the locale encoding, to avoid encoding issues.
 
