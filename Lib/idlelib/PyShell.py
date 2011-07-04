@@ -61,7 +61,7 @@ else:
             file = warning_stream
         try:
             file.write(warnings.formatwarning(message, category, filename,
-                                              lineno, file=file, line=line))
+                                              lineno, line=line))
         except IOError:
             pass  ## file (probably __stderr__) is invalid, warning dropped.
     warnings.showwarning = idle_showwarning
