@@ -1,17 +1,8 @@
 import os
-import unittest
 from test import test_support
 
 # Skip test if _tkinter wasn't built.
 test_support.import_module('_tkinter')
-
-import Tkinter
-
-try:
-    Tkinter.Button()
-except Tkinter.TclError, msg:
-    # assuming tk is not available
-    raise unittest.SkipTest("tk not available: %s" % msg)
 
 this_dir = os.path.dirname(os.path.abspath(__file__))
 lib_tk_test = os.path.abspath(os.path.join(this_dir, os.path.pardir,
@@ -19,6 +10,9 @@ lib_tk_test = os.path.abspath(os.path.join(this_dir, os.path.pardir,
 
 with test_support.DirsOnSysPath(lib_tk_test):
     import runtktests
+
+# Skip test if tk cannot be initialized.
+runtktests.check_tk_availability()
 
 def test_main(enable_gui=False):
     if enable_gui:

@@ -83,6 +83,10 @@ Build
 Tests
 -----
 
+- Issue #8716: Avoid crashes caused by Aqua Tk on OSX when attempting to run
+  test_tk or test_ttk_guionly under a username that is not currently logged
+  in to the console windowserver (as may be the case under buildbot or ssh).
+
 - Issue #12141: Install a copy of template C module file so that
   test_build_ext of test_distutils is no longer silently skipped when
   run outside of a build directory.
