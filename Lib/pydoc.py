@@ -256,20 +256,18 @@ class ErrorDuringImport(Exception):
 def importfile(path):
     """Import a Python source file or compiled file given its path."""
     magic = imp.get_magic()
-    file = open(path, 'r')
-    if file.read(len(magic)) == magic:
-        kind = imp.PY_COMPILED
-    else:
-        kind = imp.PY_SOURCE
-    file.close()
-    filename = os.path.basename(path)
-    name, ext = os.path.splitext(filename)
-    file = open(path, 'r')
-    try:
-        module = imp.load_module(name, file, path, (ext, 'r', kind))
-    except:
-        raise ErrorDuringImport(path, sys.exc_info())
-    file.close()
+    with open(path, 'rb') as file:
+        if file.read(len(magic)) == magic:
+            kind = imp.PY_COMPILED
+        else:
+            kind = imp.PY_SOURCE
+        file.seek(0)
+        filename = os.path.basename(path)
+        name, ext = os.path.splitext(filename)
+        try:
+            module = imp.load_module(name, file, path, (ext, 'r', kind))
+        except:
+            raise ErrorDuringImport(path, sys.exc_info())
     return module
 
 def safeimport(path, forceload=0, cache={}):
