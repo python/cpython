@@ -1459,7 +1459,7 @@ complete list of changes, or look through the SVN logs for all the details.
 
   On FreeBSD, the :func:`os.stat` function now returns  times with nanosecond
   resolution, and the returned object now has :attr:`st_gen` and
-  :attr:`st_birthtime`. The :attr:`st_flags` member is also available, if the
+  :attr:`st_birthtime`. The :attr:`st_flags` attribute is also available, if the
   platform supports it. (Contributed by Antti Louko and  Diego Pettenò.)
 
   .. (Patch 1180695, 1212117)

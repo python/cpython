@@ -394,7 +394,7 @@ tuples or objects that the method normally returns will be empty.
 
    Send an ``ARTICLE`` command, where *message_spec* has the same meaning as
    for :meth:`stat`.  Return a tuple ``(response, info)`` where *info*
-   is a :class:`~collections.namedtuple` with three members *number*,
+   is a :class:`~collections.namedtuple` with three attributes *number*,
    *message_id* and *lines* (in that order).  *number* is the article number
    in the group (or 0 if the information is not available), *message_id* the
    message id as a string, and *lines* a list of lines (without terminating

@@ -60,7 +60,7 @@ The module defines the following user-callable items:
    This function operates exactly as :func:`TemporaryFile` does, except that
    the file is guaranteed to have a visible name in the file system (on
    Unix, the directory entry is not unlinked).  That name can be retrieved
-   from the :attr:`name` member of the file object.  Whether the name can be
+   from the :attr:`name` attribute of the file object.  Whether the name can be
    used to open the file a second time, while the named temporary file is
    still open, varies across platforms (it can be so used on Unix; it cannot
    on Windows NT or later).  If *delete* is true (the default), the file is
@@ -96,7 +96,7 @@ The module defines the following user-callable items:
    of the temporary directory object), the newly created temporary directory
    and all its contents are removed from the filesystem.
 
-   The directory name can be retrieved from the :attr:`name` member
+   The directory name can be retrieved from the :attr:`name` attribute
    of the returned object.
 
    The directory can be explicitly cleaned up by calling the

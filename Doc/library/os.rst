@@ -1339,11 +1339,12 @@ Files and Directories
 
    .. note::
 
-      The exact meaning and resolution of the :attr:`st_atime`, :attr:`st_mtime`, and
-      :attr:`st_ctime` members depends on the operating system and the file system.
-      For example, on Windows systems using the FAT or FAT32 file systems,
-      :attr:`st_mtime` has 2-second resolution, and :attr:`st_atime` has only 1-day
-      resolution.  See your operating system documentation for details.
+      The exact meaning and resolution of the :attr:`st_atime`, 
+      :attr:`st_mtime`, and :attr:`st_ctime` attributes depend on the operating
+      system and the file system. For example, on Windows systems using the FAT
+      or FAT32 file systems, :attr:`st_mtime` has 2-second resolution, and
+      :attr:`st_atime` has only 1-day resolution.  See your operating system
+      documentation for details.
 
    For backward compatibility, the return value of :func:`~os.stat` is also accessible
    as a tuple of at least 10 integers giving the most important (and portable)
