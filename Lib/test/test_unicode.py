@@ -788,6 +788,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('%c' % '\U00021483', '\U00021483')
         self.assertRaises(TypeError, "%c".__mod__, "aa")
         self.assertRaises(ValueError, "%.1\u1032f".__mod__, (1.0/3))
+        self.assertRaises(TypeError, "%i".__mod__, "aa")
 
         # formatting jobs delegated from the string implementation:
         self.assertEqual('...%(foo)s...' % {'foo':"abc"}, '...abc...')
