@@ -144,10 +144,7 @@ typedef struct {
  * Initialization.
  */
 
-/* On FreeBSD6, pthread_kill() doesn't work on the main thread before
-   the creation of the first thread */
-#if defined(_HAVE_BSDI) \
-    || (defined(__FreeBSD__) && __FreeBSD_version < 700000)
+#if defined(_HAVE_BSDI)
 static
 void _noop(void)
 {
