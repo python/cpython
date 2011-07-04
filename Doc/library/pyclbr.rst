@@ -45,7 +45,7 @@ Class Objects
 
 The :class:`Class` objects used as values in the dictionary returned by
 :func:`readmodule` and :func:`readmodule_ex` provide the following data
-members:
+attributes:
 
 
 .. attribute:: Class.module
@@ -89,7 +89,7 @@ Function Objects
 ----------------
 
 The :class:`Function` objects used as values in the dictionary returned by
-:func:`readmodule_ex` provide the following data members:
+:func:`readmodule_ex` provide the following attributes:
 
 
 .. attribute:: Function.module

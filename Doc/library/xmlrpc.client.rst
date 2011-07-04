@@ -136,7 +136,7 @@ returning a value, which may be either returned data in a conformant type or a
 :class:`Fault` or :class:`ProtocolError` object indicating an error.
 
 Servers that support the XML introspection API support some common methods
-grouped under the reserved :attr:`system` member:
+grouped under the reserved :attr:`system` attribute:
 
 
 .. method:: ServerProxy.system.listMethods()
@@ -310,7 +310,7 @@ Fault Objects
 -------------
 
 A :class:`Fault` object encapsulates the content of an XML-RPC fault tag. Fault
-objects have the following members:
+objects have the following attributes:
 
 
 .. attribute:: Fault.faultCode
@@ -359,7 +359,7 @@ ProtocolError Objects
 
 A :class:`ProtocolError` object describes a protocol error in the underlying
 transport layer (such as a 404 'not found' error if the server named by the URI
-does not exist).  It has the following members:
+does not exist).  It has the following attributes:
 
 
 .. attribute:: ProtocolError.url

@@ -391,8 +391,8 @@ I/O Base Classes
    :class:`RawIOBase` implementation, but wrap one, like
    :class:`BufferedWriter` and :class:`BufferedReader` do.
 
-   :class:`BufferedIOBase` provides or overrides these members in addition to
-   those from :class:`IOBase`:
+   :class:`BufferedIOBase` provides or overrides these methods and attribute in
+   addition to those from :class:`IOBase`:
 
    .. attribute:: raw
 
