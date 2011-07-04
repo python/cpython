@@ -491,7 +491,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
 
     /* Setup filename. */
     *filename = PyDict_GetItemString(globals, "__file__");
-    if (*filename != NULL) {
+    if (*filename != NULL && PyString_Check(*filename)) {
             Py_ssize_t len = PyString_Size(*filename);
         const char *file_str = PyString_AsString(*filename);
             if (file_str == NULL || (len < 0 && PyErr_Occurred()))
