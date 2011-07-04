@@ -266,13 +266,13 @@ class _InternalDict(dict):
             raise AttributeError(attr)
         from warnings import warn
         warn("Attribute access from plist dicts is deprecated, use d[key] "
-             "notation instead", PendingDeprecationWarning, 2)
+             "notation instead", DeprecationWarning, 2)
         return value
 
     def __setattr__(self, attr, value):
         from warnings import warn
         warn("Attribute access from plist dicts is deprecated, use d[key] "
-             "notation instead", PendingDeprecationWarning, 2)
+             "notation instead", DeprecationWarning, 2)
         self[attr] = value
 
     def __delattr__(self, attr):
@@ -282,14 +282,14 @@ class _InternalDict(dict):
             raise AttributeError(attr)
         from warnings import warn
         warn("Attribute access from plist dicts is deprecated, use d[key] "
-             "notation instead", PendingDeprecationWarning, 2)
+             "notation instead", DeprecationWarning, 2)
 
 class Dict(_InternalDict):
 
     def __init__(self, **kwargs):
         from warnings import warn
         warn("The plistlib.Dict class is deprecated, use builtin dict instead",
-             PendingDeprecationWarning, 2)
+             DeprecationWarning, 2)
         super().__init__(**kwargs)
 
 
@@ -302,7 +302,7 @@ class Plist(_InternalDict):
     def __init__(self, **kwargs):
         from warnings import warn
         warn("The Plist class is deprecated, use the readPlist() and "
-             "writePlist() functions instead", PendingDeprecationWarning, 2)
+             "writePlist() functions instead", DeprecationWarning, 2)
         super().__init__(**kwargs)
 
     def fromFile(cls, pathOrFile):
