@@ -496,7 +496,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
 
     /* Setup filename. */
     *filename = PyDict_GetItemString(globals, "__file__");
-    if (*filename != NULL) {
+    if (*filename != NULL && PyUnicode_Check(*filename)) {
         Py_ssize_t len = PyUnicode_GetSize(*filename);
         Py_UNICODE *unicode = PyUnicode_AS_UNICODE(*filename);
 
