@@ -421,7 +421,7 @@ class TestShutil(unittest.TestCase):
         self.assertEqual(os.stat(file1).st_mode, os.stat(file2).st_mode)
 
     @unittest.skipUnless(hasattr(os, 'chmod'), 'requires os.chmod')
-    @unittest.skipUnless(hasattr(os, 'chmod'), 'requires os.utime')
+    @unittest.skipUnless(hasattr(os, 'utime'), 'requires os.utime')
     def test_copy2(self):
         # Ensure that the copied file exists and has the same mode and
         # modification time bits.
