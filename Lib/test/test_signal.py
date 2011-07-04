@@ -240,10 +240,10 @@ class WakeupSignalTests(unittest.TestCase):
         def check_signum(signals):
             data = os.read(read, len(signals)+1)
             raised = struct.unpack('%uB' % len(data), data)
-            # We don't care of the signal delivery order (it's not portable or
-            # reliable)
-            raised = set(raised)
-            signals = set(signals)
+            if sys.platform == 'freebsd6':
+                # when signals are unblocked, FreeBSD 6 delivers signals in the
+                # reverse order of their number
+                signals = tuple(sorted(signals, reverse=False))
             if raised != signals:
                 raise Exception("%r != %r" % (raised, signals))
 
