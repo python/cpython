@@ -10,6 +10,11 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #9642: Fix filesystem encoding initialization: use the ANSI code page
+  on Windows if the mbcs codec is not available, and fail with a fatal error if
+  we cannot get the locale encoding (if nl_langinfo(CODESET) is not available)
+  instead of using UTF-8.
+
 - When a generator yields, do not retain the caller's exception state on the
   generator.
 

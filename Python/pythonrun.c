@@ -168,18 +168,25 @@ error:
     return NULL;
 }
 
-#if defined(HAVE_LANGINFO_H) && defined(CODESET)
 static char*
-get_codeset(void)
+get_locale_encoding(void)
 {
+#ifdef MS_WINDOWS
+    char codepage[100];
+    PyOS_snprintf(codepage, sizeof(codepage), "cp%d", GetACP());
+    return get_codec_name(codepage);
+#elif defined(HAVE_LANGINFO_H) && defined(CODESET)
     char* codeset = nl_langinfo(CODESET);
     if (!codeset || codeset[0] == '\0') {
         PyErr_SetString(PyExc_ValueError, "CODESET is not set or empty");
         return NULL;
     }
     return get_codec_name(codeset);
-}
+#else
+    PyErr_SetNone(PyExc_NotImplementedError);
+    return NULL;
 #endif
+}
 
 void
 Py_InitializeEx(int install_sigs)
@@ -746,24 +753,17 @@ static int
 initfsencoding(PyInterpreterState *interp)
 {
     PyObject *codec;
-#if defined(HAVE_LANGINFO_H) && defined(CODESET)
-    char *codeset = NULL;
 
-    if (Py_FileSystemDefaultEncoding == NULL) {
-        /* On Unix, set the file system encoding according to the
-           user's preference, if the CODESET names a well-known
-           Python codec, and Py_FileSystemDefaultEncoding isn't
-           initialized by other means. */
-        codeset = get_codeset();
-        if (codeset == NULL)
+    if (Py_FileSystemDefaultEncoding == NULL)
+    {
+        Py_FileSystemDefaultEncoding = get_locale_encoding();
+        if (Py_FileSystemDefaultEncoding == NULL)
             Py_FatalError("Py_Initialize: Unable to get the locale encoding");
 
-        Py_FileSystemDefaultEncoding = codeset;
         Py_HasFileSystemDefaultEncoding = 0;
         interp->fscodec_initialized = 1;
         return 0;
     }
-#endif
 
     /* the encoding is mbcs, utf-8 or ascii */
     codec = _PyCodec_Lookup(Py_FileSystemDefaultEncoding);
