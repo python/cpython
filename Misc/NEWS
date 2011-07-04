@@ -981,6 +981,10 @@ Extension Modules
 Tests
 -----
 
+- Issue #12469: Run wakeup and pending signal tests in a subprocess to run the
+  test in a fresh process with only one thread and to not change signal
+  handling of the parent process.
+
 - Issue #8716: Avoid crashes caused by Aqua Tk on OSX when attempting to run
   test_tk or test_ttk_guionly under a username that is not currently logged
   in to the console windowserver (as may be the case under buildbot or ssh).
