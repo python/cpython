@@ -152,7 +152,7 @@ Morsel Objects
 
 .. method:: Morsel.set(key, value, coded_value)
 
-   Set the *key*, *value* and *coded_value* members.
+   Set the *key*, *value* and *coded_value* attributes.
 
 
 .. method:: Morsel.isReservedKey(K)

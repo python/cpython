@@ -11,7 +11,7 @@
 
 The :mod:`datetime` module supplies classes for manipulating dates and times in
 both simple and complex ways.  While date and time arithmetic is supported, the
-focus of the implementation is on efficient member extraction for output
+focus of the implementation is on efficient attribute extraction for output
 formatting and manipulation. For related
 functionality, see also the :mod:`time` and :mod:`calendar` modules.
 
@@ -25,7 +25,7 @@ miles, or mass.  Naive :class:`datetime` objects are easy to understand and to
 work with, at the cost of ignoring some aspects of reality.
 
 For applications requiring more, :class:`datetime` and :class:`time` objects
-have an optional time zone information member, :attr:`tzinfo`, that can contain
+have an optional time zone information attribute, :attr:`tzinfo`, that can contain
 an instance of a subclass of the abstract :class:`tzinfo` class.  These
 :class:`tzinfo` objects capture information about the offset from UTC time, the
 time zone name, and whether Daylight Saving Time is in effect.  Note that only
@@ -499,9 +499,9 @@ Instance methods:
 
 .. method:: date.replace(year, month, day)
 
-   Return a date with the same value, except for those members given new values by
-   whichever keyword arguments are specified.  For example, if ``d == date(2002,
-   12, 31)``, then ``d.replace(day=26) == date(2002, 12, 26)``.
+   Return a date with the same value, except for those parameters given new
+   values by whichever keyword arguments are specified.  For example, if ``d ==
+   date(2002, 12, 31)``, then ``d.replace(day=26) == date(2002, 12, 26)``.
 
 
 .. method:: date.timetuple()
@@ -732,11 +732,11 @@ Other constructors, all class methods:
 
 .. classmethod:: datetime.combine(date, time)
 
-   Return a new :class:`datetime` object whose date members are equal to the given
-   :class:`date` object's, and whose time and :attr:`tzinfo` members are equal to
-   the given :class:`time` object's. For any :class:`datetime` object *d*, ``d ==
-   datetime.combine(d.date(), d.timetz())``.  If date is a :class:`datetime`
-   object, its time and :attr:`tzinfo` members are ignored.
+   Return a new :class:`datetime` object whose date attributes are equal to the
+   given :class:`date` object's, and whose time and :attr:`tzinfo` attributes are
+   equal to the given :class:`time` object's. For any :class:`datetime` object
+   *d*, ``d == datetime.combine(d.date(), d.timetz())``.  If date is a
+   :class:`datetime` object, its time and :attr:`tzinfo` attributes are ignored.
 
 
 .. classmethod:: datetime.strptime(date_string, format)
@@ -830,43 +830,44 @@ Supported operations:
 (1)
    datetime2 is a duration of timedelta removed from datetime1, moving forward in
    time if ``timedelta.days`` > 0, or backward if ``timedelta.days`` < 0.  The
-   result has the same :attr:`tzinfo` member as the input datetime, and datetime2 -
-   datetime1 == timedelta after. :exc:`OverflowError` is raised if datetime2.year
-   would be smaller than :const:`MINYEAR` or larger than :const:`MAXYEAR`. Note
-   that no time zone adjustments are done even if the input is an aware object.
+   result has the same :attr:`tzinfo` attribute as the input datetime, and
+   datetime2 - datetime1 == timedelta after. :exc:`OverflowError` is raised if
+   datetime2.year would be smaller than :const:`MINYEAR` or larger than
+   :const:`MAXYEAR`. Note that no time zone adjustments are done even if the
+   input is an aware object.
 
 (2)
    Computes the datetime2 such that datetime2 + timedelta == datetime1. As for
-   addition, the result has the same :attr:`tzinfo` member as the input datetime,
-   and no time zone adjustments are done even if the input is aware. This isn't
-   quite equivalent to datetime1 + (-timedelta), because -timedelta in isolation
-   can overflow in cases where datetime1 - timedelta does not.
+   addition, the result has the same :attr:`tzinfo` attribute as the input
+   datetime, and no time zone adjustments are done even if the input is aware.
+   This isn't quite equivalent to datetime1 + (-timedelta), because -timedelta
+   in isolation can overflow in cases where datetime1 - timedelta does not.
 
 (3)
    Subtraction of a :class:`datetime` from a :class:`datetime` is defined only if
    both operands are naive, or if both are aware.  If one is aware and the other is
    naive, :exc:`TypeError` is raised.
 
-   If both are naive, or both are aware and have the same :attr:`tzinfo` member,
-   the :attr:`tzinfo` members are ignored, and the result is a :class:`timedelta`
+   If both are naive, or both are aware and have the same :attr:`tzinfo` attribute,
+   the :attr:`tzinfo` attributes are ignored, and the result is a :class:`timedelta`
    object *t* such that ``datetime2 + t == datetime1``.  No time zone adjustments
    are done in this case.
 
-   If both are aware and have different :attr:`tzinfo` members, ``a-b`` acts as if
-   *a* and *b* were first converted to naive UTC datetimes first.  The result is
-   ``(a.replace(tzinfo=None) - a.utcoffset()) - (b.replace(tzinfo=None) -
-   b.utcoffset())`` except that the implementation never overflows.
+   If both are aware and have different :attr:`tzinfo` attributes, ``a-b`` acts
+   as if *a* and *b* were first converted to naive UTC datetimes first.  The
+   result is ``(a.replace(tzinfo=None) - a.utcoffset()) - (b.replace(tzinfo=None)
+   - b.utcoffset())`` except that the implementation never overflows.
 
 (4)
    *datetime1* is considered less than *datetime2* when *datetime1* precedes
    *datetime2* in time.
 
    If one comparand is naive and the other is aware, :exc:`TypeError` is raised.
-   If both comparands are aware, and have the same :attr:`tzinfo` member, the
-   common :attr:`tzinfo` member is ignored and the base datetimes are compared.  If
-   both comparands are aware and have different :attr:`tzinfo` members, the
-   comparands are first adjusted by subtracting their UTC offsets (obtained from
-   ``self.utcoffset()``).
+   If both comparands are aware, and have the same :attr:`tzinfo` attribute, the
+   common :attr:`tzinfo` attribute is ignored and the base datetimes are
+   compared.  If both comparands are aware and have different :attr:`tzinfo`
+   attributes, the comparands are first adjusted by subtracting their UTC
+   offsets (obtained from ``self.utcoffset()``).
 
    .. note::
 
@@ -899,22 +900,22 @@ Instance methods:
 .. method:: datetime.timetz()
 
    Return :class:`time` object with same hour, minute, second, microsecond, and
-   tzinfo members.  See also method :meth:`time`.
+   tzinfo attributes.  See also method :meth:`time`.
 
 
 .. method:: datetime.replace([year[, month[, day[, hour[, minute[, second[, microsecond[, tzinfo]]]]]]]])
 
-   Return a datetime with the same members, except for those members given new
-   values by whichever keyword arguments are specified.  Note that ``tzinfo=None``
-   can be specified to create a naive datetime from an aware datetime with no
-   conversion of date and time members.
+   Return a datetime with the same attributes, except for those attributes given
+   new values by whichever keyword arguments are specified.  Note that
+   ``tzinfo=None`` can be specified to create a naive datetime from an aware
+   datetime with no conversion of date and time attributes.
 
 
 .. method:: datetime.astimezone(tz)
 
-   Return a :class:`datetime` object with new :attr:`tzinfo` member *tz*, adjusting
-   the date and time members so the result is the same UTC time as *self*, but in
-   *tz*'s local time.
+   Return a :class:`datetime` object with new :attr:`tzinfo` attribute *tz*,
+   adjusting the date and time attributes so the result is the same UTC time as
+   *self*, but in *tz*'s local time.
 
    *tz* must be an instance of a :class:`tzinfo` subclass, and its
    :meth:`utcoffset` and :meth:`dst` methods must not return ``None``.  *self* must
@@ -922,18 +923,18 @@ Instance methods:
    not return ``None``).
 
    If ``self.tzinfo`` is *tz*, ``self.astimezone(tz)`` is equal to *self*:  no
-   adjustment of date or time members is performed. Else the result is local time
-   in time zone *tz*, representing the same UTC time as *self*:  after ``astz =
-   dt.astimezone(tz)``, ``astz - astz.utcoffset()`` will usually have the same date
-   and time members as ``dt - dt.utcoffset()``. The discussion of class
-   :class:`tzinfo` explains the cases at Daylight Saving Time transition boundaries
-   where this cannot be achieved (an issue only if *tz* models both standard and
-   daylight time).
+   adjustment of date or time attributes is performed. Else the result is local
+   time in time zone *tz*, representing the same UTC time as *self*:  after
+   ``astz = dt.astimezone(tz)``, ``astz - astz.utcoffset()`` will usually have
+   the same date and time attributes as ``dt - dt.utcoffset()``. The discussion
+   of class :class:`tzinfo` explains the cases at Daylight Saving Time transition
+   boundaries where this cannot be achieved (an issue only if *tz* models both
+   standard and daylight time).
 
    If you merely want to attach a time zone object *tz* to a datetime *dt* without
-   adjustment of date and time members, use ``dt.replace(tzinfo=tz)``.  If you
+   adjustment of date and time attributes, use ``dt.replace(tzinfo=tz)``.  If you
    merely want to remove the time zone object from an aware datetime *dt* without
-   conversion of date and time members, use ``dt.replace(tzinfo=None)``.
+   conversion of date and time attributes, use ``dt.replace(tzinfo=None)``.
 
    Note that the default :meth:`tzinfo.fromutc` method can be overridden in a
    :class:`tzinfo` subclass to affect the result returned by :meth:`astimezone`.
@@ -1244,14 +1245,14 @@ Supported operations:
 * comparison of :class:`time` to :class:`time`, where *a* is considered less
   than *b* when *a* precedes *b* in time.  If one comparand is naive and the other
   is aware, :exc:`TypeError` is raised.  If both comparands are aware, and have
-  the same :attr:`tzinfo` member, the common :attr:`tzinfo` member is ignored and
-  the base times are compared.  If both comparands are aware and have different
-  :attr:`tzinfo` members, the comparands are first adjusted by subtracting their
-  UTC offsets (obtained from ``self.utcoffset()``). In order to stop mixed-type
-  comparisons from falling back to the default comparison by object address, when
-  a :class:`time` object is compared to an object of a different type,
-  :exc:`TypeError` is raised unless the comparison is ``==`` or ``!=``.  The
-  latter cases return :const:`False` or :const:`True`, respectively.
+  the same :attr:`tzinfo` attribute, the common :attr:`tzinfo` attribute is
+  ignored and the base times are compared.  If both comparands are aware and
+  have different :attr:`tzinfo` attributes, the comparands are first adjusted by
+  subtracting their UTC offsets (obtained from ``self.utcoffset()``). In order
+  to stop mixed-type comparisons from falling back to the default comparison by
+  object address, when a :class:`time` object is compared to an object of a
+  different type, :exc:`TypeError` is raised unless the comparison is ``==`` or 
+  ``!=``.  The latter cases return :const:`False` or :const:`True`, respectively.
 
 * hash, use as dict key
 
@@ -1266,10 +1267,10 @@ Instance methods:
 
 .. method:: time.replace([hour[, minute[, second[, microsecond[, tzinfo]]]]])
 
-   Return a :class:`time` with the same value, except for those members given new
-   values by whichever keyword arguments are specified.  Note that ``tzinfo=None``
-   can be specified to create a naive :class:`time` from an aware :class:`time`,
-   without conversion of the time members.
+   Return a :class:`time` with the same value, except for those attributes given
+   new values by whichever keyword arguments are specified.  Note that
+   ``tzinfo=None`` can be specified to create a naive :class:`time` from an
+   aware :class:`time`, without conversion of the time attributes.
 
 
 .. method:: time.isoformat()
@@ -1354,7 +1355,7 @@ EDT.
 
 An instance of (a concrete subclass of) :class:`tzinfo` can be passed to the
 constructors for :class:`datetime` and :class:`time` objects. The latter objects
-view their members as being in local time, and the :class:`tzinfo` object
+view their attributes as being in local time, and the :class:`tzinfo` object
 supports methods revealing offset of local time from UTC, the name of the time
 zone, and DST offset, all relative to a date or time object passed to them.
 
@@ -1399,9 +1400,9 @@ methods.  Exactly which methods are needed depends on the uses made of aware
    already been added to the UTC offset returned by :meth:`utcoffset`, so there's
    no need to consult :meth:`dst` unless you're interested in obtaining DST info
    separately.  For example, :meth:`datetime.timetuple` calls its :attr:`tzinfo`
-   member's :meth:`dst` method to determine how the :attr:`tm_isdst` flag should be
-   set, and :meth:`tzinfo.fromutc` calls :meth:`dst` to account for DST changes
-   when crossing time zones.
+   attribute's :meth:`dst` method to determine how the :attr:`tm_isdst` flag
+   should be set, and :meth:`tzinfo.fromutc` calls :meth:`dst` to account for
+   DST changes when crossing time zones.
 
    An instance *tz* of a :class:`tzinfo` subclass that models both standard and
    daylight times must be consistent in this sense:
@@ -1477,10 +1478,10 @@ There is one more :class:`tzinfo` method that a subclass may wish to override:
 .. method:: tzinfo.fromutc(dt)
 
    This is called from the default :class:`datetime.astimezone()` implementation.
-   When called from that, ``dt.tzinfo`` is *self*, and *dt*'s date and time members
-   are to be viewed as expressing a UTC time.  The purpose of :meth:`fromutc` is to
-   adjust the date and time members, returning an equivalent datetime in *self*'s
-   local time.
+   When called from that, ``dt.tzinfo`` is *self*, and *dt*'s date and time
+   attributes are to be viewed as expressing a UTC time.  The purpose of
+   :meth:`fromutc` is to adjust the date and time attributes, returning an
+   equivalent datetime in *self*'s local time.
 
    Most :class:`tzinfo` subclasses should be able to inherit the default
    :meth:`fromutc` implementation without problems.  It's strong enough to handle

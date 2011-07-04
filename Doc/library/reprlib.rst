@@ -66,7 +66,7 @@ string instead.
 Repr Objects
 ------------
 
-:class:`Repr` instances provide several members which can be used to provide
+:class:`Repr` instances provide several attributes which can be used to provide
 size limits for the representations of different object types,  and methods
 which format specific object types.
 
