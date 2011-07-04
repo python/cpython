@@ -10,9 +10,41 @@ import os
 import sys
 import unittest
 import importlib
+import subprocess
 import test.test_support
 
 this_dir_path = os.path.abspath(os.path.dirname(__file__))
+
+_tk_available = None
+
+def check_tk_availability():
+    """Check that Tk is installed and available."""
+    global _tk_available
+
+    if _tk_available is not None:
+        return
+
+    if sys.platform == 'darwin':
+        # The Aqua Tk implementations on OS X can abort the process if
+        # being called in an environment where a window server connection
+        # cannot be made, for instance when invoked by a buildbot or ssh
+        # process not running under the same user id as the current console
+        # user.  Instead, try to initialize Tk under a subprocess.
+        p = subprocess.Popen(
+                [sys.executable, '-c', 'import Tkinter; Tkinter.Button()'],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stderr = test.test_support.strip_python_stderr(p.communicate()[1])
+        if stderr or p.returncode:
+            raise unittest.SkipTest("tk cannot be initialized: %s" % stderr)
+    else:
+        try:
+            Tkinter.Button()
+        except tkinter.TclError as msg:
+            # assuming tk is not available
+            raise unittest.SkipTest("tk not available: %s" % msg)
+
+    _tk_available = True
+    return
 
 def is_package(path):
     for name in os.listdir(path):
