@@ -5,6 +5,10 @@ from test import support
 # Skip this test if _tkinter wasn't built.
 support.import_module('_tkinter')
 
+# Skip test if tk cannot be initialized.
+from tkinter.test.support import check_tk_availability
+check_tk_availability()
+
 from _tkinter import TclError
 from tkinter import ttk
 from tkinter.test import runtktests
