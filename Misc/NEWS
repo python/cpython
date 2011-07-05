@@ -38,7 +38,10 @@ C-API
 Tests
 -----
 
-- Issue #12496:  Install test/capath directory to prevent test_connect_capath
+- Issue #12497: Install test/data to prevent failures of the various codecmaps
+  tests.
+
+- Issue #12496: Install test/capath directory to prevent test_connect_capath
   testcase failure in test_ssl.
 
 - Issue #12469: Run "wakeup" signal tests in subprocess to run the test in a
