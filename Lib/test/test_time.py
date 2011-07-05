@@ -27,6 +27,8 @@ class TimeTestCase(unittest.TestCase):
                          int(self.t))
 
     def test_sleep(self):
+        self.assertRaises(ValueError, time.sleep, -2)
+        self.assertRaises(ValueError, time.sleep, -1)
         time.sleep(1.2)
 
     def test_strftime(self):
