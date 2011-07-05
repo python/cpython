@@ -10,6 +10,8 @@ What's New in Python 3.2.2?
 Core and Builtins
 -----------------
 
+- Issue #9611, #9015: FileIO.read() clamps the length to INT_MAX on Windows.
+
 - When a generator yields, do not retain the caller's exception state on the
   generator.
 
@@ -908,7 +910,7 @@ Core and Builtins
   (length bigger than 2^31-1 bytes).
 
 - Issue #9015, #9611: FileIO.readinto(), FileIO.write(), os.write() and
-  stdprinter.write() clamp the length to 2^31-1 on Windows.
+  stdprinter.write() clamp the length to INT_MAX on Windows.
 
 - Issue #8278: On Windows and with a NTFS filesystem, os.stat() and os.utime()
   can now handle dates after 2038.
