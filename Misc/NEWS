@@ -27,6 +27,10 @@ Library
 - Issue #12467: warnings: fix a race condition if a warning is emitted at
   shutdown, if globals()['__file__'] is None.
 
+- Issue #12451: pydoc: html_getfile() now uses tokenize.open() to support
+  Python scripts using a encoding different than UTF-8 (read the coding cookie
+  of the script).
+
 - Issue #12451: pydoc: importfile() now opens the Python script in binary mode,
   instead of text mode using the locale encoding, to avoid encoding issues.
 
