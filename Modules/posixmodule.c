@@ -3903,7 +3903,7 @@ posix_getgroups(PyObject *self, PyObject *noargs)
 #endif
     gid_t grouplist[MAX_GROUPS];
 
-    /* On MacOSX getgroups(2) can return more than MAX_GROUPS results 
+    /* On MacOSX getgroups(2) can return more than MAX_GROUPS results
      * This is a helper variable to store the intermediate result when
      * that happens.
      *
@@ -6648,7 +6648,7 @@ posix_write(PyObject *self, PyObject *args)
 {
     Py_buffer pbuf;
     int fd;
-    Py_ssize_t size;
+    Py_ssize_t size, len;
 
     if (!PyArg_ParseTuple(args, "is*:write", &fd, &pbuf))
         return NULL;
@@ -6656,8 +6656,15 @@ posix_write(PyObject *self, PyObject *args)
         PyBuffer_Release(&pbuf);
         return posix_error();
     }
+    len = pbuf.len;
     Py_BEGIN_ALLOW_THREADS
-    size = write(fd, pbuf.buf, (size_t)pbuf.len);
+#if defined(MS_WIN64) || defined(MS_WINDOWS)
+    if (len > INT_MAX)
+        len = INT_MAX;
+    size = write(fd, pbuf.buf, (int)len);
+#else
+    size = write(fd, pbuf.buf, len);
+#endif
     Py_END_ALLOW_THREADS
     PyBuffer_Release(&pbuf);
     if (size < 0)
