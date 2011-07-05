@@ -2311,7 +2311,7 @@ def _url_handler(url, content_type="text/html"):
     def html_getfile(path):
         """Get and display a source file listing safely."""
         path = path.replace('%20', ' ')
-        with open(path, 'r') as fp:
+        with tokenize.open(path) as fp:
             lines = html.escape(fp.read())
         body = '<pre>%s</pre>' % lines
         heading = html.heading(
