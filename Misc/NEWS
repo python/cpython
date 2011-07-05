@@ -9,6 +9,9 @@ What's New in Python 2.7.3?
 Core and Builtins
 -----------------
 
+- Issue #9611, #9015: FileIO.read(), FileIO.readinto(), FileIO.write() and
+  os.write() clamp the length to INT_MAX on Windows.
+
 - Issue #1195: my_fgets() now always clears errors before calling fgets(). Fix
   the following case: sys.stdin.read() stopped with CTRL+d (end of file),
   raw_input() interrupted by CTRL+c.
