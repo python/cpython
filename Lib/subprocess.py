@@ -446,7 +446,7 @@ def _eintr_retry_call(func, *args):
     while True:
         try:
             return func(*args)
-        except OSError as e:
+        except (OSError, IOError) as e:
             if e.errno == errno.EINTR:
                 continue
             raise
@@ -820,10 +820,10 @@ class Popen(object):
                             raise
                 self.stdin.close()
             elif self.stdout:
-                stdout = self.stdout.read()
+                stdout = _eintr_retry_call(self.stdout.read)
                 self.stdout.close()
             elif self.stderr:
-                stderr = self.stderr.read()
+                stderr = _eintr_retry_call(self.stderr.read)
                 self.stderr.close()
             self.wait()
         else:
