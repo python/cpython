@@ -38,6 +38,9 @@ C-API
 Tests
 -----
 
+- Issue #12496:  Install test/capath directory to prevent test_connect_capath
+  testcase failure in test_ssl.
+
 - Issue #12469: Run "wakeup" signal tests in subprocess to run the test in a
   fresh process with only one thread and to not change signal handling of the
   parent process.
