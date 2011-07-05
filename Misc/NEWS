@@ -219,6 +219,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12493: subprocess: Popen.communicate() now also handles EINTR errors
+  if the process has only one pipe.
+
 - Issue #12467: warnings: fix a race condition if a warning is emitted at
   shutdown, if globals()['__file__'] is None.
 
