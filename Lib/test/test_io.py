@@ -2612,7 +2612,7 @@ class SignalsTest(unittest.TestCase):
         def on_alarm(*args):
             # Will be called reentrantly from the same thread
             wio.write(data)
-            1/0
+            1//0
         signal.signal(signal.SIGALRM, on_alarm)
         r, w = os.pipe()
         wio = self.io.open(w, **fdopen_kwargs)
