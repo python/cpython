@@ -664,6 +664,8 @@ class _SuppressCoreFiles(object):
         except (ImportError, ValueError, resource.error):
             pass
 
+    @unittest.skipUnless(hasattr(signal, 'SIGALRM'),
+                         "Requires signal.SIGALRM")
     def test_communicate_eintr(self):
         # Issue #12493: communicate() should handle EINTR
         def handler(signum, frame):
