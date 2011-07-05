@@ -767,6 +767,8 @@ class ProcessTestCase(BaseTestCase):
         time.sleep(2)
         p.communicate(b"x" * 2**20)
 
+    @unittest.skipUnless(hasattr(signal, 'SIGALRM'),
+                         "Requires signal.SIGALRM")
     def test_communicate_eintr(self):
         # Issue #12493: communicate() should handle EINTR
         def handler(signum, frame):
