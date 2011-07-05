@@ -25,20 +25,6 @@ def check_tk_availability():
         return
 
     if sys.platform == 'darwin':
-
-        # ** temporary test code for issue8716 **
-        try:
-            import MacOS
-            wma = MacOS.WMAvailable()
-            print >> test.test_support.get_original_stdout(), \
-                '\tcheck_tk_availability -- WMAvailable returned %r' % wma
-        except ImportError:
-            print >> test.test_support.get_original_stdout(), \
-                '\tcheck_tk_availability -- could not import MacOS'
-        if not wma:
-            raise unittest.SkipTest("Window manager is not available")
-        # ** end of temporary test code for issue8716 **
-
         # The Aqua Tk implementations on OS X can abort the process if
         # being called in an environment where a window server connection
         # cannot be made, for instance when invoked by a buildbot or ssh
