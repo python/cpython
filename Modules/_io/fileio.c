@@ -664,6 +664,10 @@ fileio_read(fileio *self, PyObject *args)
         return fileio_readall(self);
     }
 
+#if defined(MS_WIN64) || defined(MS_WINDOWS)
+    if (size > INT_MAX)
+        size = INT_MAX;
+#endif
     bytes = PyBytes_FromStringAndSize(NULL, size);
     if (bytes == NULL)
         return NULL;
@@ -672,7 +676,11 @@ fileio_read(fileio *self, PyObject *args)
     if (_PyVerify_fd(self->fd)) {
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
+#if defined(MS_WIN64) || defined(MS_WINDOWS)
+        n = read(self->fd, ptr, (int)size);
+#else
         n = read(self->fd, ptr, size);
+#endif
         Py_END_ALLOW_THREADS
     } else
         n = -1;
