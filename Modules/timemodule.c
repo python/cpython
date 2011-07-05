@@ -141,6 +141,11 @@ time_sleep(PyObject *self, PyObject *args)
     double secs;
     if (!PyArg_ParseTuple(args, "d:sleep", &secs))
         return NULL;
+    if (secs < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "sleep length must be non-negative");
+        return NULL;
+    }
     if (floatsleep(secs) != 0)
         return NULL;
     Py_INCREF(Py_None);

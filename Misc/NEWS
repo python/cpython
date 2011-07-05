@@ -219,6 +219,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #12459: time.sleep() now raises a ValueError if the sleep length is
+  negative, instead of an infinite sleep on Windows or raising an IOError on
+  Linux for example, to have the same behaviour on all platforms.
+
 - Issue #12451: pydoc: html_getfile() now uses tokenize.open() to support
   Python scripts using a encoding different than UTF-8 (read the coding cookie
   of the script).
