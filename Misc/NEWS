@@ -994,6 +994,8 @@ Extension Modules
 Tests
 -----
 
+- Issue #11512: Add a test suite for the cgitb module. Patch by Robbie Clemons.
+
 - Issue #12497: Install test/data to prevent failures of the various codecmaps
   tests.
 
