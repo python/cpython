@@ -112,7 +112,7 @@ DECODER(cp932)
         TRYMAP_DEC(cp932ext, **outbuf, c, c2);
         else if ((c >= 0x81 && c <= 0x9f) || (c >= 0xe0 && c <= 0xea)){
             if (c2 < 0x40 || (c2 > 0x7e && c2 < 0x80) || c2 > 0xfc)
-                return 2;
+                return 1;
 
             c = (c < 0xe0 ? c - 0x81 : c - 0xc1);
             c2 = (c2 < 0x80 ? c2 - 0x40 : c2 - 0x41);
@@ -120,7 +120,7 @@ DECODER(cp932)
             c2 = (c2 < 0x5e ? c2 : c2 - 0x5e) + 0x21;
 
             TRYMAP_DEC(jisx0208, **outbuf, c, c2);
-            else return 2;
+            else return 1;
         }
         else if (c >= 0xf0 && c <= 0xf9) {
             if ((c2 >= 0x40 && c2 <= 0x7e) ||
@@ -128,10 +128,10 @@ DECODER(cp932)
                 OUT1(0xe000 + 188 * (c - 0xf0) +
                      (c2 < 0x80 ? c2 - 0x40 : c2 - 0x41))
             else
-                return 2;
+                return 1;
         }
         else
-            return 2;
+            return 1;
 
         NEXT(2, 1)
     }
@@ -256,7 +256,7 @@ DECODER(euc_jis_2004)
                 NEXT(2, 1)
             }
             else
-                return 2;
+                return 1;
         }
         else if (c == 0x8f) {
             unsigned char c2, c3;
@@ -274,7 +274,7 @@ DECODER(euc_jis_2004)
                 continue;
             }
             else TRYMAP_DEC(jisx0212, **outbuf, c2, c3) ;
-            else return 3;
+            else return 1;
             NEXT(3, 1)
         }
         else {
@@ -300,7 +300,7 @@ DECODER(euc_jis_2004)
                 NEXT(2, 2)
                 continue;
             }
-            else return 2;
+            else return 1;
             NEXT(2, 1)
         }
     }
@@ -388,7 +388,7 @@ DECODER(euc_jp)
                 NEXT(2, 1)
             }
             else
-                return 2;
+                return 1;
         }
         else if (c == 0x8f) {
             unsigned char c2, c3;
@@ -401,7 +401,7 @@ DECODER(euc_jp)
                 NEXT(3, 1)
             }
             else
-                return 3;
+                return 1;
         }
         else {
             unsigned char c2;
@@ -417,7 +417,7 @@ DECODER(euc_jp)
 #endif
                 TRYMAP_DEC(jisx0208, **outbuf,
                            c ^ 0x80, c2 ^ 0x80) ;
-            else return 2;
+            else return 1;
             NEXT(2, 1)
         }
     }
@@ -502,7 +502,7 @@ DECODER(shift_jis)
             REQUIRE_INBUF(2)
             c2 = IN2;
             if (c2 < 0x40 || (c2 > 0x7e && c2 < 0x80) || c2 > 0xfc)
-                return 2;
+                return 1;
 
             c1 = (c < 0xe0 ? c - 0x81 : c - 0xc1);
             c2 = (c2 < 0x80 ? c2 - 0x40 : c2 - 0x41);
@@ -522,10 +522,10 @@ DECODER(shift_jis)
                 continue;
             }
             else
-                return 2;
+                return 1;
         }
         else
-            return 2;
+            return 1;
 
         NEXT(1, 1) /* JIS X 0201 */
     }
@@ -645,7 +645,7 @@ DECODER(shift_jis_2004)
             REQUIRE_INBUF(2)
             c2 = IN2;
             if (c2 < 0x40 || (c2 > 0x7e && c2 < 0x80) || c2 > 0xfc)
-                return 2;
+                return 1;
 
             c1 = (c < 0xe0 ? c - 0x81 : c - 0xc1);
             c2 = (c2 < 0x80 ? c2 - 0x40 : c2 - 0x41);
@@ -671,7 +671,7 @@ DECODER(shift_jis_2004)
                     NEXT_OUT(2)
                 }
                 else
-                    return 2;
+                    return 1;
                 NEXT_IN(2)
             }
             else { /* Plane 2 */
@@ -689,13 +689,13 @@ DECODER(shift_jis_2004)
                     continue;
                 }
                 else
-                    return 2;
+                    return 1;
                 NEXT(2, 1)
             }
             continue;
         }
         else
-            return 2;
+            return 1;
 
         NEXT(1, 1) /* JIS X 0201 */
     }
