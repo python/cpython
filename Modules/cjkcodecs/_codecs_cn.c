@@ -85,7 +85,7 @@ DECODER(gb2312)
         TRYMAP_DEC(gb2312, **outbuf, c ^ 0x80, IN2 ^ 0x80) {
             NEXT(2, 1)
         }
-        else return 2;
+        else return 1;
     }
 
     return 0;
@@ -141,7 +141,7 @@ DECODER(gbk)
         REQUIRE_INBUF(2)
 
         GBK_DECODE(c, IN2, **outbuf)
-        else return 2;
+        else return 1;
 
         NEXT(2, 1)
     }
@@ -267,7 +267,7 @@ DECODER(gb18030)
             c3 = IN3;
             c4 = IN4;
             if (c < 0x81 || c3 < 0x81 || c4 < 0x30 || c4 > 0x39)
-                return 4;
+                return 1;
             c -= 0x81;  c2 -= 0x30;
             c3 -= 0x81; c4 -= 0x30;
 
@@ -292,12 +292,12 @@ DECODER(gb18030)
                     continue;
                 }
             }
-            return 4;
+            return 1;
         }
 
         GBK_DECODE(c, c2, **outbuf)
         else TRYMAP_DEC(gb18030ext, **outbuf, c, c2);
-        else return 2;
+        else return 1;
 
         NEXT(2, 1)
     }
@@ -400,7 +400,7 @@ DECODER(hz)
             else if (c2 == '\n')
                 ; /* line-continuation */
             else
-                return 2;
+                return 1;
             NEXT(2, 0);
             continue;
         }
@@ -419,7 +419,7 @@ DECODER(hz)
                 NEXT(2, 1)
             }
             else
-                return 2;
+                return 1;
         }
     }
 

@@ -23,6 +23,9 @@ class TestCP950Map(test_multibytecodec_support.TestBase_Mapping,
         (b'\xa2\xcc', '\u5341'),
         (b'\xa2\xce', '\u5345'),
     ]
+    codectests = (
+        (b"\xFFxy", "replace",  "\ufffdxy"),
+    )
 
 def test_main():
     support.run_unittest(__name__)

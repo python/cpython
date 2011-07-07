@@ -55,7 +55,7 @@ DECODER(big5)
         TRYMAP_DEC(big5, **outbuf, c, IN2) {
             NEXT(2, 1)
         }
-        else return 2;
+        else return 1;
     }
 
     return 0;
@@ -109,7 +109,7 @@ DECODER(cp950)
 
         TRYMAP_DEC(cp950ext, **outbuf, c, IN2);
         else TRYMAP_DEC(big5, **outbuf, c, IN2);
-        else return 2;
+        else return 1;
 
         NEXT(2, 1)
     }
