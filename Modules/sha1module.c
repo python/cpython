@@ -218,7 +218,7 @@ void sha1_process(struct sha1_state *sha1,
            in             += SHA1_BLOCKSIZE;
            inlen          -= SHA1_BLOCKSIZE;
         } else {
-           n = MIN(inlen, (SHA1_BLOCKSIZE - sha1->curlen));
+           n = MIN(inlen, (Py_ssize_t)(SHA1_BLOCKSIZE - sha1->curlen));
            memcpy(sha1->buf + sha1->curlen, in, (size_t)n);
            sha1->curlen   += n;
            in             += n;
