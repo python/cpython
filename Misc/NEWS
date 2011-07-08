@@ -948,6 +948,10 @@ Library
 Build
 -----
 
+- Issue #11863: Remove support for legacy systems deprecated in Python 3.2
+  (following PEP 11).  These systems are systems using Mach C Threads,
+  SunOS lightweight processes, GNU pth threads and IRIX threads.
+
 - Issue #8746: Correct faulty configure checks so that os.chflags() and
   os.lchflags() are once again built on systems that support these
   functions (*BSD and OS X).  Also add new stat file flags for OS X
