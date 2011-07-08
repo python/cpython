@@ -12,9 +12,6 @@
    support for AIX C++ shared extension modules. */
 #undef AIX_GENUINE_CPLUSPLUS
 
-/* Define if you have the Mach cthreads package */
-#undef C_THREADS
-
 /* Define if C doubles are 64-bit IEEE 754 binary format, stored in ARM
    mixed-endian order (byte order 45670123) */
 #undef DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754
@@ -948,9 +945,6 @@
 /* Define to 1 if you have the `tgamma' function. */
 #undef HAVE_TGAMMA
 
-/* Define to 1 if you have the <thread.h> header file. */
-#undef HAVE_THREAD_H
-
 /* Define to 1 if you have the `timegm' function. */
 #undef HAVE_TIMEGM
 
@@ -1049,14 +1043,8 @@
 /* Define to 1 if you have the `_getpty' function. */
 #undef HAVE__GETPTY
 
-/* Define if you are using Mach cthreads directly under /include */
-#undef HURD_C_THREADS
-
 /* Define if log1p(-0.) is 0. rather than -0. */
 #undef LOG1P_DROPS_ZERO_SIGN
-
-/* Define if you are using Mach cthreads under mach / */
-#undef MACH_C_THREADS
 
 /* Define to 1 if `major', `minor', and `makedev' are declared in <mkdev.h>.
    */

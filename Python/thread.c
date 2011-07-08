@@ -26,18 +26,6 @@
 
 #ifndef _POSIX_THREADS
 
-#ifdef __sgi
-#define SGI_THREADS
-#endif
-
-#ifdef HAVE_THREAD_H
-#define SOLARIS_THREADS
-#endif
-
-#if defined(sun) && !defined(SOLARIS_THREADS)
-#define SUN_LWP
-#endif
-
 /* Check if we're running on HP-UX and _SC_THREADS is defined. If so, then
    enough of the Posix threads package is implemented to support python
    threads.
@@ -93,35 +81,9 @@ PyThread_init_thread(void)
    or the size specified by the THREAD_STACK_SIZE macro. */
 static size_t _pythread_stacksize = 0;
 
-#ifdef SGI_THREADS
-#error SGI Irix threads are now unsupported, and code will be removed in 3.3.
-#include "thread_sgi.h"
-#endif
-
-#ifdef SOLARIS_THREADS
-#define PYTHREAD_NAME "solaris"
-#include "thread_solaris.h"
-#endif
-
-#ifdef SUN_LWP
-#error SunOS lightweight processes are now unsupported, and code will be removed in 3.3.
-#include "thread_lwp.h"
-#endif
-
-#ifdef HAVE_PTH
-#error GNU pth threads are now unsupported, and code will be removed in 3.3.
-#include "thread_pth.h"
-#undef _POSIX_THREADS
-#endif
-
 #ifdef _POSIX_THREADS
 #define PYTHREAD_NAME "pthread"
 #include "thread_pthread.h"
-#endif
-
-#ifdef C_THREADS
-#error Mach C Threads are now unsupported, and code will be removed in 3.3.
-#include "thread_cthread.h"
 #endif
 
 #ifdef NT_THREADS
@@ -132,11 +94,6 @@ static size_t _pythread_stacksize = 0;
 #ifdef OS2_THREADS
 #define PYTHREAD_NAME "os2"
 #include "thread_os2.h"
-#endif
-
-#ifdef PLAN9_THREADS
-#define PYTHREAD_NAME "plan9"
-#include "thread_plan9.h"
 #endif
 
 /*

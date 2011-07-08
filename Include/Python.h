@@ -151,11 +151,6 @@ PyAPI_FUNC(PyObject*) _Py_Mangle(PyObject *p, PyObject *name);
 #define Py_file_input 257
 #define Py_eval_input 258
 
-#ifdef HAVE_PTH
-/* GNU pth user-space thread support */
-#include <pth.h>
-#endif
-
 /* Define macros for inline documentation. */
 #define PyDoc_VAR(name) static char name[]
 #define PyDoc_STRVAR(name,str) PyDoc_VAR(name) = PyDoc_STR(str)
