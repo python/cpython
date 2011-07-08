@@ -93,7 +93,6 @@ class UninstallTestCase(support.TempdirManager,
         self.assertRaises(PackagingError, remove, 'Foo',
                           paths=[self.root_dir])
 
-    @unittest.skipIf(sys.platform == 'win32', 'deactivated for now')
     def test_uninstall(self):
         dist, install_lib = self.install_dist()
         self.assertIsFile(install_lib, 'foo', '__init__.py')
@@ -103,7 +102,6 @@ class UninstallTestCase(support.TempdirManager,
         self.assertIsNotFile(install_lib, 'foo', 'sub', '__init__.py')
         self.assertIsNotFile(install_lib, 'Foo-0.1.dist-info', 'RECORD')
 
-    @unittest.skipIf(sys.platform == 'win32', 'deactivated for now')
     def test_remove_issue(self):
         # makes sure if there are OSErrors (like permission denied)
         # remove() stops and display a clean error
