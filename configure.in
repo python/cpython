@@ -1301,7 +1301,7 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS(asm/types.h conio.h curses.h direct.h dlfcn.h errno.h \
 fcntl.h grp.h \
 ieeefp.h io.h langinfo.h libintl.h ncurses.h poll.h process.h pthread.h \
-shadow.h signal.h stdint.h stropts.h termios.h thread.h \
+shadow.h signal.h stdint.h stropts.h termios.h \
 unistd.h utime.h \
 sys/audioio.h sys/bsdtty.h sys/epoll.h sys/event.h sys/file.h sys/loadavg.h \
 sys/lock.h sys/mkdev.h sys/modem.h \
@@ -2044,7 +2044,6 @@ AC_SUBST(LDLAST)
 
 # Templates for things AC_DEFINEd more than once.
 # For a single AC_DEFINE, no template is needed.
-AH_TEMPLATE(C_THREADS,[Define if you have the Mach cthreads package])
 AH_TEMPLATE(_REENTRANT,
   [Define to force use of thread-safe errno, h_errno, and other functions])
 AH_TEMPLATE(WITH_THREAD,
@@ -2126,17 +2125,6 @@ yes
     AC_MSG_RESULT($unistd_defines_pthreads)
 
     AC_DEFINE(_REENTRANT)
-    AC_CHECK_HEADER(cthreads.h, [AC_DEFINE(WITH_THREAD)
-    AC_DEFINE(C_THREADS)
-    AC_DEFINE(HURD_C_THREADS, 1,
-    [Define if you are using Mach cthreads directly under /include])
-    LIBS="$LIBS -lthreads"
-    THREADOBJ="Python/thread.o"],[
-    AC_CHECK_HEADER(mach/cthreads.h, [AC_DEFINE(WITH_THREAD)
-    AC_DEFINE(C_THREADS)
-    AC_DEFINE(MACH_C_THREADS, 1,
-    [Define if you are using Mach cthreads under mach /])
-    THREADOBJ="Python/thread.o"],[
     # Just looking for pthread_create in libpthread is not enough:
     # on HP/UX, pthread.h renames pthread_create to a different symbol name.
     # So we really have to include pthread.h, and then link.
@@ -2172,7 +2160,7 @@ pthread_create (NULL, NULL, start_routine, NULL)]])],[
     LIBS="$LIBS -lcma"
     THREADOBJ="Python/thread.o"],[
     USE_THREAD_MODULE="#"])
-    ])])])])])])])
+    ])])])])])
 
     AC_CHECK_LIB(mpc, usconfig, [AC_DEFINE(WITH_THREAD)
     LIBS="$LIBS -lmpc"
