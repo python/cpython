@@ -149,6 +149,8 @@ class _ConnectionBase:
         self._readable = readable
         self._writable = writable
 
+    # XXX should we use util.Finalize instead of a __del__?
+
     def __del__(self):
         if self._handle is not None:
             self._close()
