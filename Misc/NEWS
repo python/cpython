@@ -16,6 +16,13 @@ Library
 - Issue #12467: warnings: fix a race condition if a warning is emitted at
   shutdown, if globals()['__file__'] is None.
 
+Tests
+-----
+
+- Avoid failing in test_urllibnet.test_bad_address when some overzealous
+  DNS service (e.g. OpenDNS) resolves a non-existent domain name.  The test
+  is now skipped instead.
+
 
 What's New in Python 3.2.1 release candidate 2?
 ===============================================
