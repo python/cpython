@@ -1004,6 +1004,10 @@ Extension Modules
 Tests
 -----
 
+- Issue #12440: When testing whether some bits in SSLContext.options can be
+  reset, check the version of the OpenSSL headers Python was compiled against,
+  rather than the runtime version of the OpenSSL library.
+
 - Issue #11512: Add a test suite for the cgitb module. Patch by Robbie Clemons.
 
 - Issue #12497: Install test/data to prevent failures of the various codecmaps

@@ -60,7 +60,7 @@ def handle_error(prefix):
 
 def can_clear_options():
     # 0.9.8m or higher
-    return ssl.OPENSSL_VERSION_INFO >= (0, 9, 8, 13, 15)
+    return ssl._OPENSSL_API_VERSION >= (0, 9, 8, 13, 15)
 
 def no_sslv2_implies_sslv3_hello():
     # 0.9.7h or higher
