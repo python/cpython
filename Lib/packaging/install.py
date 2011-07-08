@@ -42,10 +42,7 @@ def _move_files(files, destination):
 
     :param files: a list of files to move.
     :param destination: the destination directory to put on the files.
-                        if not defined, create a new one, using mkdtemp
     """
-    if not destination:
-        destination = tempfile.mkdtemp()
 
     for old in files:
         filename = os.path.split(old)[-1]
@@ -126,8 +123,11 @@ def install_local_project(path):
     elif _is_archive_file(path):
         logger.info('Installing from archive: %s', path)
         _unpacked_dir = tempfile.mkdtemp()
-        shutil.unpack_archive(path, _unpacked_dir)
-        return _run_install_from_archive(_unpacked_dir)
+        try:
+            shutil.unpack_archive(path, _unpacked_dir)
+            return _run_install_from_archive(_unpacked_dir)
+        finally:
+            shutil.rmtree(_unpacked_dir)
     else:
         logger.warning('No projects to install.')
         return False
@@ -179,8 +179,6 @@ def install_dists(dists, path, paths=None):
     :param path: base path to install distribution in
     :param paths: list of paths (defaults to sys.path) to look for info
     """
-    if not path:
-        path = tempfile.mkdtemp()
 
     installed_dists = []
     for dist in dists:

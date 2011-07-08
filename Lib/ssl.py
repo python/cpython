@@ -78,6 +78,8 @@ from _ssl import (
 from _ssl import HAS_SNI
 from _ssl import (PROTOCOL_SSLv3, PROTOCOL_SSLv23,
                   PROTOCOL_TLSv1)
+from _ssl import _OPENSSL_API_VERSION
+
 _PROTOCOL_NAMES = {
     PROTOCOL_TLSv1: "TLSv1",
     PROTOCOL_SSLv23: "SSLv23",
