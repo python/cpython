@@ -219,6 +219,16 @@ Core and Builtins
 Library
 -------
 
+- Issue #12504: Close file handles in a timely manner in packaging.database.
+  This fixes a bug with the remove (uninstall) feature on Windows.
+
+- Issues #12169 and #10510: Factor out code used by various packaging commands
+  to make HTTP POST requests, and make sure it uses CRLF.
+
+- Issue #12016: Multibyte CJK decoders now resynchronize faster. They only
+  ignore the first byte of an invalid byte sequence. For example,
+  b'\xff\n'.decode('gb2312', 'replace') gives '\ufffd\n' instead of '\ufffd'.
+
 - Issue #12459: time.sleep() now raises a ValueError if the sleep length is
   negative, instead of an infinite sleep on Windows or raising an IOError on
   Linux for example, to have the same behaviour on all platforms.
@@ -993,6 +1003,18 @@ Extension Modules
 
 Tests
 -----
+
+- Avoid failing in test_robotparser when mueblesmoraleda.com is flaky and
+  an overzealous DNS service (e.g. OpenDNS) redirects to a placeholder
+  Web site.
+
+- Avoid failing in test_urllibnet.test_bad_address when some overzealous
+  DNS service (e.g. OpenDNS) resolves a non-existent domain name.  The test
+  is now skipped instead.
+
+- Issue #12440: When testing whether some bits in SSLContext.options can be
+  reset, check the version of the OpenSSL headers Python was compiled against,
+  rather than the runtime version of the OpenSSL library.
 
 - Issue #11512: Add a test suite for the cgitb module. Patch by Robbie Clemons.
 

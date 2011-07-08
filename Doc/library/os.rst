@@ -2088,8 +2088,9 @@ to be ignored.
 
    Generate a :const:`SIGABRT` signal to the current process.  On Unix, the default
    behavior is to produce a core dump; on Windows, the process immediately returns
-   an exit code of ``3``.  Be aware that programs which use :func:`signal.signal`
-   to register a handler for :const:`SIGABRT` will behave differently.
+   an exit code of ``3``.  Be aware that calling this function will not call the
+   Python signal handler registered for :const:`SIGABRT` with
+   :func:`signal.signal`.
 
    Availability: Unix, Windows.
 

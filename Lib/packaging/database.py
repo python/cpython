@@ -158,17 +158,18 @@ class Distribution:
             self.name, self.version, self.path)
 
     def _get_records(self, local=False):
+        results = []
         with self.get_distinfo_file('RECORD') as record:
             record_reader = csv.reader(record, delimiter=',',
                                        lineterminator='\n')
-            # XXX needs an explaining comment
             for row in record_reader:
-                path, checksum, size = (row[:] +
-                                        [None for i in range(len(row), 3)])
+                missing = [None for i in range(len(row), 3)]
+                path, checksum, size = row + missing
                 if local:
                     path = path.replace('/', os.sep)
                     path = os.path.join(sys.prefix, path)
-                yield path, checksum, size
+                results.append((path, checksum, size))
+        return results
 
     def get_resource_path(self, relative_path):
         with self.get_distinfo_file('RESOURCES') as resources_file:
@@ -197,7 +198,8 @@ class Distribution:
         :type local: boolean
         :returns: iterator of (path, md5, size)
         """
-        return self._get_records(local)
+        for result in self._get_records(local):
+            yield result
 
     def uses(self, path):
         """

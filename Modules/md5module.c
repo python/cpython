@@ -243,7 +243,7 @@ void md5_process(struct md5_state *md5,
            in             += MD5_BLOCKSIZE;
            inlen          -= MD5_BLOCKSIZE;
         } else {
-           n = MIN(inlen, (MD5_BLOCKSIZE - md5->curlen));
+           n = MIN(inlen, (Py_ssize_t)(MD5_BLOCKSIZE - md5->curlen));
            memcpy(md5->buf + md5->curlen, in, (size_t)n);
            md5->curlen    += n;
            in             += n;

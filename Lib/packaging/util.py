@@ -1487,3 +1487,50 @@ def _mkpath(name, mode=0o777, verbose=True, dry_run=False):
 
         _path_created.add(abs_head)
     return created_dirs
+
+
+def encode_multipart(fields, files, boundary=None):
+    """Prepare a multipart HTTP request.
+
+    *fields* is a sequence of (name: str, value: str) elements for regular
+    form fields, *files* is a sequence of (name: str, filename: str, value:
+    bytes) elements for data to be uploaded as files.
+
+    Returns (content_type: bytes, body: bytes) ready for http.client.HTTP.
+    """
+    # Taken from
+    # http://code.activestate.com/recipes/146306-http-client-to-post-using-multipartform-data/
+
+    if boundary is None:
+        boundary = b'--------------GHSKFJDLGDS7543FJKLFHRE75642756743254'
+    elif not isinstance(boundary, bytes):
+        raise TypeError('boundary must be bytes, not %r' % type(boundary))
+
+    l = []
+    for key, values in fields:
+        # handle multiple entries for the same name
+        if not isinstance(values, (tuple, list)):
+            values=[values]
+
+        for value in values:
+            l.extend((
+                b'--' + boundary,
+                ('Content-Disposition: form-data; name="%s"' %
+                 key).encode('utf-8'),
+                b'',
+                value.encode('utf-8')))
+
+    for key, filename, value in files:
+        l.extend((
+            b'--' + boundary,
+            ('Content-Disposition: form-data; name="%s"; filename="%s"' %
+             (key, filename)).encode('utf-8'),
+            b'',
+            value))
+
+    l.append(b'--' + boundary + b'--')
+    l.append(b'')
+
+    body = b'\r\n'.join(l)
+    content_type = b'multipart/form-data; boundary=' + boundary
+    return content_type, body

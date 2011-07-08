@@ -15,50 +15,57 @@ class Test_CP932(test_multibytecodec_support.TestBase, unittest.TestCase):
         # invalid bytes
         (b"abc\x81\x00\x81\x00\x82\x84", "strict",  None),
         (b"abc\xf8", "strict",  None),
-        (b"abc\x81\x00\x82\x84", "replace", "abc\ufffd\uff44"),
-        (b"abc\x81\x00\x82\x84\x88", "replace", "abc\ufffd\uff44\ufffd"),
-        (b"abc\x81\x00\x82\x84", "ignore",  "abc\uff44"),
+        (b"abc\x81\x00\x82\x84", "replace", "abc\ufffd\x00\uff44"),
+        (b"abc\x81\x00\x82\x84\x88", "replace", "abc\ufffd\x00\uff44\ufffd"),
+        (b"abc\x81\x00\x82\x84", "ignore",  "abc\x00\uff44"),
+        (b"ab\xEBxy", "replace", "ab\uFFFDxy"),
+        (b"ab\xF0\x39xy", "replace", "ab\uFFFD9xy"),
+        (b"ab\xEA\xF0xy", "replace", 'ab\ufffd\ue038y'),
         # sjis vs cp932
         (b"\\\x7e", "replace", "\\\x7e"),
         (b"\x81\x5f\x81\x61\x81\x7c", "replace", "\uff3c\u2225\uff0d"),
+    )
+
+euc_commontests = (
+    # invalid bytes
+    (b"abc\x80\x80\xc1\xc4", "strict",  None),
+    (b"abc\x80\x80\xc1\xc4", "replace", "abc\ufffd\ufffd\u7956"),
+    (b"abc\x80\x80\xc1\xc4\xc8", "replace", "abc\ufffd\ufffd\u7956\ufffd"),
+    (b"abc\x80\x80\xc1\xc4", "ignore",  "abc\u7956"),
+    (b"abc\xc8", "strict",  None),
+    (b"abc\x8f\x83\x83", "replace", "abc\ufffd\ufffd\ufffd"),
+    (b"\x82\xFCxy", "replace", "\ufffd\ufffdxy"),
+    (b"\xc1\x64", "strict", None),
+    (b"\xa1\xc0", "strict", "\uff3c"),
+    (b"\xa1\xc0\\", "strict", "\uff3c\\"),
+    (b"\x8eXY", "replace", "\ufffdXY"),
+)
+
+class Test_EUC_JIS_2004(test_multibytecodec_support.TestBase,
+                        unittest.TestCase):
+    encoding = 'euc_jis_2004'
+    tstring = test_multibytecodec_support.load_teststring('euc_jisx0213')
+    codectests = euc_commontests
+    xmlcharnametest = (
+        "\xab\u211c\xbb = \u2329\u1234\u232a",
+        b"\xa9\xa8&real;\xa9\xb2 = &lang;&#4660;&rang;"
     )
 
 class Test_EUC_JISX0213(test_multibytecodec_support.TestBase,
                         unittest.TestCase):
     encoding = 'euc_jisx0213'
     tstring = test_multibytecodec_support.load_teststring('euc_jisx0213')
-    codectests = (
-        # invalid bytes
-        (b"abc\x80\x80\xc1\xc4", "strict",  None),
-        (b"abc\xc8", "strict",  None),
-        (b"abc\x80\x80\xc1\xc4", "replace", "abc\ufffd\u7956"),
-        (b"abc\x80\x80\xc1\xc4\xc8", "replace", "abc\ufffd\u7956\ufffd"),
-        (b"abc\x80\x80\xc1\xc4", "ignore",  "abc\u7956"),
-        (b"abc\x8f\x83\x83", "replace", "abc\ufffd"),
-        (b"\xc1\x64", "strict", None),
-        (b"\xa1\xc0", "strict", "\uff3c"),
-    )
+    codectests = euc_commontests
     xmlcharnametest = (
         "\xab\u211c\xbb = \u2329\u1234\u232a",
         b"\xa9\xa8&real;\xa9\xb2 = &lang;&#4660;&rang;"
     )
 
-eucjp_commontests = (
-    (b"abc\x80\x80\xc1\xc4", "strict",  None),
-    (b"abc\xc8", "strict",  None),
-    (b"abc\x80\x80\xc1\xc4", "replace", "abc\ufffd\u7956"),
-    (b"abc\x80\x80\xc1\xc4\xc8", "replace", "abc\ufffd\u7956\ufffd"),
-    (b"abc\x80\x80\xc1\xc4", "ignore",  "abc\u7956"),
-    (b"abc\x8f\x83\x83", "replace", "abc\ufffd"),
-    (b"\xc1\x64", "strict", None),
-)
-
 class Test_EUC_JP_COMPAT(test_multibytecodec_support.TestBase,
                          unittest.TestCase):
     encoding = 'euc_jp'
     tstring = test_multibytecodec_support.load_teststring('euc_jp')
-    codectests = eucjp_commontests + (
-        (b"\xa1\xc0\\", "strict", "\uff3c\\"),
+    codectests = euc_commontests + (
         ("\xa5", "strict", b"\x5c"),
         ("\u203e", "strict", b"\x7e"),
     )
@@ -66,8 +73,6 @@ class Test_EUC_JP_COMPAT(test_multibytecodec_support.TestBase,
 shiftjis_commonenctests = (
     (b"abc\x80\x80\x82\x84", "strict",  None),
     (b"abc\xf8", "strict",  None),
-    (b"abc\x80\x80\x82\x84", "replace", "abc\ufffd\uff44"),
-    (b"abc\x80\x80\x82\x84\x88", "replace", "abc\ufffd\uff44\ufffd"),
     (b"abc\x80\x80\x82\x84def", "ignore",  "abc\uff44def"),
 )
 
@@ -75,20 +80,41 @@ class Test_SJIS_COMPAT(test_multibytecodec_support.TestBase, unittest.TestCase):
     encoding = 'shift_jis'
     tstring = test_multibytecodec_support.load_teststring('shift_jis')
     codectests = shiftjis_commonenctests + (
+        (b"abc\x80\x80\x82\x84", "replace", "abc\ufffd\ufffd\uff44"),
+        (b"abc\x80\x80\x82\x84\x88", "replace", "abc\ufffd\ufffd\uff44\ufffd"),
+
         (b"\\\x7e", "strict", "\\\x7e"),
         (b"\x81\x5f\x81\x61\x81\x7c", "strict", "\uff3c\u2016\u2212"),
+        (b"abc\x81\x39", "replace",  "abc\ufffd9"),
+        (b"abc\xEA\xFC", "replace",  "abc\ufffd\ufffd"),
+        (b"abc\xFF\x58", "replace",  "abc\ufffdX"),
+    )
+
+class Test_SJIS_2004(test_multibytecodec_support.TestBase, unittest.TestCase):
+    encoding = 'shift_jis_2004'
+    tstring = test_multibytecodec_support.load_teststring('shift_jis')
+    codectests = shiftjis_commonenctests + (
+        (b"\\\x7e", "strict", "\xa5\u203e"),
+        (b"\x81\x5f\x81\x61\x81\x7c", "strict", "\\\u2016\u2212"),
+        (b"abc\xEA\xFC", "strict",  "abc\u64bf"),
+        (b"\x81\x39xy", "replace",  "\ufffd9xy"),
+        (b"\xFF\x58xy", "replace",  "\ufffdXxy"),
+        (b"\x80\x80\x82\x84xy", "replace", "\ufffd\ufffd\uff44xy"),
+        (b"\x80\x80\x82\x84\x88xy", "replace", "\ufffd\ufffd\uff44\u5864y"),
+        (b"\xFC\xFBxy", "replace", '\ufffd\u95b4y'),
+    )
+    xmlcharnametest = (
+        "\xab\u211c\xbb = \u2329\u1234\u232a",
+        b"\x85G&real;\x85Q = &lang;&#4660;&rang;"
     )
 
 class Test_SJISX0213(test_multibytecodec_support.TestBase, unittest.TestCase):
     encoding = 'shift_jisx0213'
     tstring = test_multibytecodec_support.load_teststring('shift_jisx0213')
-    codectests = (
-        # invalid bytes
-        (b"abc\x80\x80\x82\x84", "strict",  None),
-        (b"abc\xf8", "strict",  None),
-        (b"abc\x80\x80\x82\x84", "replace", "abc\ufffd\uff44"),
-        (b"abc\x80\x80\x82\x84\x88", "replace", "abc\ufffd\uff44\ufffd"),
-        (b"abc\x80\x80\x82\x84def", "ignore",  "abc\uff44def"),
+    codectests = shiftjis_commonenctests + (
+        (b"abc\x80\x80\x82\x84", "replace", "abc\ufffd\ufffd\uff44"),
+        (b"abc\x80\x80\x82\x84\x88", "replace", "abc\ufffd\ufffd\uff44\ufffd"),
+
         # sjis vs cp932
         (b"\\\x7e", "replace", "\xa5\u203e"),
         (b"\x81\x5f\x81\x61\x81\x7c", "replace", "\x5c\u2016\u2212"),
