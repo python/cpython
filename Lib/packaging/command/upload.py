@@ -14,7 +14,7 @@ from urllib.request import urlopen, Request
 from packaging import logger
 from packaging.errors import PackagingOptionError
 from packaging.util import (spawn, read_pypirc, DEFAULT_REPOSITORY,
-                            DEFAULT_REALM)
+                            DEFAULT_REALM, encode_multipart)
 from packaging.command.cmd import Command
 
 
@@ -131,54 +131,22 @@ class upload(Command):
         auth = b"Basic " + standard_b64encode(user_pass)
 
         # Build up the MIME payload for the POST data
-        boundary = b'--------------GHSKFJDLGDS7543FJKLFHRE75642756743254'
-        sep_boundary = b'\n--' + boundary
-        end_boundary = sep_boundary + b'--'
-        body = BytesIO()
+        files = []
+        for key in ('content', 'gpg_signature'):
+            if key in data:
+                filename_, value = data.pop(key)
+                files.append((key, filename_, value))
 
-        file_fields = ('content', 'gpg_signature')
-
-        for key, value in data.items():
-            # handle multiple entries for the same name
-            if not isinstance(value, tuple):
-                value = [value]
-
-            content_dispo = '\nContent-Disposition: form-data; name="%s"' % key
-
-            if key in file_fields:
-                filename_, content = value
-                filename_ = ';filename="%s"' % filename_
-                body.write(sep_boundary)
-                body.write(content_dispo.encode('utf-8'))
-                body.write(filename_.encode('utf-8'))
-                body.write(b"\n\n")
-                body.write(content)
-            else:
-                for value in value:
-                    value = str(value).encode('utf-8')
-                    body.write(sep_boundary)
-                    body.write(content_dispo.encode('utf-8'))
-                    body.write(b"\n\n")
-                    body.write(value)
-                    if value and value.endswith(b'\r'):
-                        # write an extra newline (lurve Macs)
-                        body.write(b'\n')
-
-        body.write(end_boundary)
-        body.write(b"\n")
-        body = body.getvalue()
+        content_type, body = encode_multipart(data.items(), files)
 
         logger.info("Submitting %s to %s", filename, self.repository)
 
         # build the Request
-        headers = {'Content-type':
-                        'multipart/form-data; boundary=%s' %
-                        boundary.decode('ascii'),
+        headers = {'Content-type': content_type,
                    'Content-length': str(len(body)),
                    'Authorization': auth}
 
-        request = Request(self.repository, data=body,
-                          headers=headers)
+        request = Request(self.repository, body, headers)
         # send the data
         try:
             result = urlopen(request)

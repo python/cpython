@@ -9,8 +9,7 @@ except ImportError:
     _ssl = None
 
 from packaging.command import upload_docs as upload_docs_mod
-from packaging.command.upload_docs import (upload_docs, zip_dir,
-                                           encode_multipart)
+from packaging.command.upload_docs import upload_docs, zip_dir
 from packaging.dist import Distribution
 from packaging.errors import PackagingFileError, PackagingOptionError
 
@@ -22,23 +21,6 @@ except ImportError:
     threading = None
     PyPIServerTestCase = object
 
-
-EXPECTED_MULTIPART_OUTPUT = [
-    b'---x',
-    b'Content-Disposition: form-data; name="username"',
-    b'',
-    b'wok',
-    b'---x',
-    b'Content-Disposition: form-data; name="password"',
-    b'',
-    b'secret',
-    b'---x',
-    b'Content-Disposition: form-data; name="picture"; filename="wok.png"',
-    b'',
-    b'PNG89',
-    b'---x--',
-    b'',
-]
 
 PYPIRC = """\
 [distutils]
@@ -107,13 +89,6 @@ class UploadDocsTestCase(support.TempdirManager,
 
         zip_f = zipfile.ZipFile(compressed)
         self.assertEqual(zip_f.namelist(), ['index.html', 'docs/index.html'])
-
-    def test_encode_multipart(self):
-        fields = [('username', 'wok'), ('password', 'secret')]
-        files = [('picture', 'wok.png', b'PNG89')]
-        content_type, body = encode_multipart(fields, files, b'-x')
-        self.assertEqual(b'multipart/form-data; boundary=-x', content_type)
-        self.assertEqual(EXPECTED_MULTIPART_OUTPUT, body.split(b'\r\n'))
 
     def prepare_command(self):
         self.cmd.upload_dir = self.prepare_sample_dir()

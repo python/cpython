@@ -152,7 +152,7 @@ class RegisterTestCase(support.TempdirManager,
         req1 = dict(self.conn.reqs[0].headers)
         req2 = dict(self.conn.reqs[1].headers)
         self.assertEqual(req2['Content-length'], req1['Content-length'])
-        self.assertIn('xxx', self.conn.reqs[1].data)
+        self.assertIn(b'xxx', self.conn.reqs[1].data)
 
     def test_password_not_in_file(self):
 
@@ -180,8 +180,8 @@ class RegisterTestCase(support.TempdirManager,
         self.assertEqual(len(self.conn.reqs), 1)
         req = self.conn.reqs[0]
         headers = dict(req.headers)
-        self.assertEqual(headers['Content-length'], '608')
-        self.assertIn('tarek', req.data)
+        self.assertEqual(headers['Content-length'], '628')
+        self.assertIn(b'tarek', req.data)
 
     def test_password_reset(self):
         # this test runs choice 3
@@ -195,8 +195,8 @@ class RegisterTestCase(support.TempdirManager,
         self.assertEqual(len(self.conn.reqs), 1)
         req = self.conn.reqs[0]
         headers = dict(req.headers)
-        self.assertEqual(headers['Content-length'], '290')
-        self.assertIn('tarek', req.data)
+        self.assertEqual(headers['Content-length'], '298')
+        self.assertIn(b'tarek', req.data)
 
     @unittest.skipUnless(DOCUTILS_SUPPORT, 'needs docutils')
     def test_strict(self):
