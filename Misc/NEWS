@@ -219,6 +219,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12504: Close file handles in a timely manner in packaging.database.
+  This fixes a bug with the remove (uninstall) feature on Windows.
+
 - Issues #12169 and #10510: Factor out code used by various packaging commands
   to make HTTP POST requests, and make sure it uses CRLF.
 
