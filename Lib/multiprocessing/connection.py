@@ -290,8 +290,8 @@ if win32:
         """
         _buffered = b''
 
-        def _close(self):
-            win32.CloseHandle(self._handle)
+        def _close(self, _CloseHandle=win32.CloseHandle):
+            _CloseHandle(self._handle)
 
         def _send_bytes(self, buf):
             overlapped = win32.WriteFile(self._handle, buf, overlapped=True)
@@ -376,13 +376,13 @@ class Connection(_ConnectionBase):
     """
 
     if win32:
-        def _close(self):
-            win32.closesocket(self._handle)
+        def _close(self, _close=win32.closesocket):
+            _close(self._handle)
         _write = win32.send
         _read = win32.recv
     else:
-        def _close(self):
-            os.close(self._handle)
+        def _close(self, _close=os.close):
+            _close(self._handle)
         _write = os.write
         _read = os.read
 
