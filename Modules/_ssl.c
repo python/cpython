@@ -2037,6 +2037,24 @@ static struct PyModuleDef _sslmodule = {
     NULL
 };
 
+
+static void
+parse_openssl_version(unsigned long libver,
+                      unsigned int *major, unsigned int *minor,
+                      unsigned int *fix, unsigned int *patch,
+                      unsigned int *status)
+{
+    *status = libver & 0xF;
+    libver >>= 4;
+    *patch = libver & 0xFF;
+    libver >>= 8;
+    *fix = libver & 0xFF;
+    libver >>= 8;
+    *minor = libver & 0xFF;
+    libver >>= 8;
+    *major = libver & 0xFF;
+}
+
 PyMODINIT_FUNC
 PyInit__ssl(void)
 {
@@ -2149,20 +2167,18 @@ PyInit__ssl(void)
         return NULL;
     if (PyModule_AddObject(m, "OPENSSL_VERSION_NUMBER", r))
         return NULL;
-    status = libver & 0xF;
-    libver >>= 4;
-    patch = libver & 0xFF;
-    libver >>= 8;
-    fix = libver & 0xFF;
-    libver >>= 8;
-    minor = libver & 0xFF;
-    libver >>= 8;
-    major = libver & 0xFF;
+    parse_openssl_version(libver, &major, &minor, &fix, &patch, &status);
     r = Py_BuildValue("IIIII", major, minor, fix, patch, status);
     if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION_INFO", r))
         return NULL;
     r = PyUnicode_FromString(SSLeay_version(SSLEAY_VERSION));
     if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION", r))
+        return NULL;
+
+    libver = OPENSSL_VERSION_NUMBER;
+    parse_openssl_version(libver, &major, &minor, &fix, &patch, &status);
+    r = Py_BuildValue("IIIII", major, minor, fix, patch, status);
+    if (r == NULL || PyModule_AddObject(m, "_OPENSSL_API_VERSION", r))
         return NULL;
 
     return m;
