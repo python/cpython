@@ -47,6 +47,10 @@ C-API
 Tests
 -----
 
+- Issue #12440: When testing whether some bits in SSLContext.options can be
+  reset, check the version of the OpenSSL headers Python was compiled against,
+  rather than the runtime version of the OpenSSL library.
+
 - Issue #12497: Install test/data to prevent failures of the various codecmaps
   tests.
 
