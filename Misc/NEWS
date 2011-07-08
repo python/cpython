@@ -219,6 +219,9 @@ Core and Builtins
 Library
 -------
 
+- Issues #12169 and #10510: Factor out code used by various packaging commands
+  to make HTTP POST requests, and make sure it uses CRLF.
+
 - Issue #12016: Multibyte CJK decoders now resynchronize faster. They only
   ignore the first byte of an invalid byte sequence. For example,
   b'\xff\n'.decode('gb2312', 'replace') gives '\ufffd\n' instead of '\ufffd'.
