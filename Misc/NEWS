@@ -47,6 +47,10 @@ C-API
 Tests
 -----
 
+- Avoid failing in test_urllibnet.test_bad_address when some overzealous
+  DNS service (e.g. OpenDNS) resolves a non-existent domain name.  The test
+  is now skipped instead.
+
 - Issue #12440: When testing whether some bits in SSLContext.options can be
   reset, check the version of the OpenSSL headers Python was compiled against,
   rather than the runtime version of the OpenSSL library.
