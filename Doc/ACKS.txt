@@ -103,6 +103,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * Robert Kern
    * Jim Kerr
    * Jan Kim
+   * Kamil Kisiel
    * Greg Kochanski
    * Guido Kollerie
    * Peter A. Koren
@@ -139,7 +140,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * Ross Moore
    * Sjoerd Mullender
    * Dale Nagata
-   * Michal Nowikowski 
+   * Michal Nowikowski
    * Ng Pheng Siong
    * Koray Oner
    * Tomas Oppelstrup
