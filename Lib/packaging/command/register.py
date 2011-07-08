@@ -10,7 +10,7 @@ import urllib.request
 
 from packaging import logger
 from packaging.util import (read_pypirc, generate_pypirc, DEFAULT_REPOSITORY,
-                            DEFAULT_REALM, get_pypirc_path)
+                            DEFAULT_REALM, get_pypirc_path, encode_multipart)
 from packaging.command.cmd import Command
 
 class register(Command):
@@ -231,29 +231,11 @@ Your selection [default 1]: ''')
         if 'name' in data:
             logger.info('Registering %s to %s', data['name'], self.repository)
         # Build up the MIME payload for the urllib2 POST data
-        boundary = '--------------GHSKFJDLGDS7543FJKLFHRE75642756743254'
-        sep_boundary = '\n--' + boundary
-        end_boundary = sep_boundary + '--'
-        body = io.StringIO()
-        for key, value in data.items():
-            # handle multiple entries for the same name
-            if not isinstance(value, (tuple, list)):
-                value = [value]
-
-            for value in value:
-                body.write(sep_boundary)
-                body.write('\nContent-Disposition: form-data; name="%s"'%key)
-                body.write("\n\n")
-                body.write(value)
-                if value and value[-1] == '\r':
-                    body.write('\n')  # write an extra newline (lurve Macs)
-        body.write(end_boundary)
-        body.write("\n")
-        body = body.getvalue()
+        content_type, body = encode_multipart(data.items(), [])
 
         # build the Request
         headers = {
-            'Content-type': 'multipart/form-data; boundary=%s; charset=utf-8'%boundary,
+            'Content-type': content_type,
             'Content-length': str(len(body))
         }
         req = urllib.request.Request(self.repository, body, headers)

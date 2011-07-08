@@ -19,7 +19,7 @@ from packaging.util import (
     get_compiler_versions, _MAC_OS_X_LD_VERSION, byte_compile, find_packages,
     spawn, get_pypirc_path, generate_pypirc, read_pypirc, resolve_name, iglob,
     RICH_GLOB, egginfo_to_distinfo, is_setuptools, is_distutils, is_packaging,
-    get_install_method, cfg_to_args)
+    get_install_method, cfg_to_args, encode_multipart)
 
 
 PYPIRC = """\
@@ -53,6 +53,23 @@ index-servers =
 username:tarek
 password:xxx
 """
+
+EXPECTED_MULTIPART_OUTPUT = [
+    b'---x',
+    b'Content-Disposition: form-data; name="username"',
+    b'',
+    b'wok',
+    b'---x',
+    b'Content-Disposition: form-data; name="password"',
+    b'',
+    b'secret',
+    b'---x',
+    b'Content-Disposition: form-data; name="picture"; filename="wok.png"',
+    b'',
+    b'PNG89',
+    b'---x--',
+    b'',
+]
 
 
 class FakePopen:
@@ -524,6 +541,13 @@ class UtilTestCase(support.EnvironRestorer,
         self.assertEqual(args['packages'], dist.packages)
         self.assertEqual(args['scripts'], dist.scripts)
         self.assertEqual(args['py_modules'], dist.py_modules)
+
+    def test_encode_multipart(self):
+        fields = [('username', 'wok'), ('password', 'secret')]
+        files = [('picture', 'wok.png', b'PNG89')]
+        content_type, body = encode_multipart(fields, files, b'-x')
+        self.assertEqual(b'multipart/form-data; boundary=-x', content_type)
+        self.assertEqual(EXPECTED_MULTIPART_OUTPUT, body.split(b'\r\n'))
 
 
 class GlobTestCaseBase(support.TempdirManager,

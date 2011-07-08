@@ -161,7 +161,7 @@ DECODER(big5hkscs)
         case 0x8864: WRITE2(0x00ca, 0x030c); break;
         case 0x88a3: WRITE2(0x00ea, 0x0304); break;
         case 0x88a5: WRITE2(0x00ea, 0x030c); break;
-        default: return 2;
+        default: return 1;
         }
 
         NEXT(2, 2) /* all decoded codepoints are pairs, above. */

@@ -123,7 +123,7 @@ DECODER(euc_kr)
             if ((*inbuf)[2] != EUCKR_JAMO_FIRSTBYTE ||
                 (*inbuf)[4] != EUCKR_JAMO_FIRSTBYTE ||
                 (*inbuf)[6] != EUCKR_JAMO_FIRSTBYTE)
-                return 8;
+                return 1;
 
             c = (*inbuf)[3];
             if (0xa1 <= c && c <= 0xbe)
@@ -143,7 +143,7 @@ DECODER(euc_kr)
                 jong = NONE;
 
             if (cho == NONE || jung == NONE || jong == NONE)
-                return 8;
+                return 1;
 
             OUT1(0xac00 + cho*588 + jung*28 + jong);
             NEXT(8, 1)
@@ -152,7 +152,7 @@ DECODER(euc_kr)
             NEXT(2, 1)
         }
         else
-            return 2;
+            return 1;
     }
 
     return 0;
@@ -208,7 +208,7 @@ DECODER(cp949)
         REQUIRE_INBUF(2)
         TRYMAP_DEC(ksx1001, **outbuf, c ^ 0x80, IN2 ^ 0x80);
         else TRYMAP_DEC(cp949ext, **outbuf, c, IN2);
-        else return 2;
+        else return 1;
 
         NEXT(2, 1)
     }
@@ -375,7 +375,7 @@ DECODER(johab)
             i_jong = johabidx_jongseong[c_jong];
 
             if (i_cho == NONE || i_jung == NONE || i_jong == NONE)
-                return 2;
+                return 1;
 
             /* we don't use U+1100 hangul jamo yet. */
             if (i_cho == FILL) {
@@ -391,7 +391,7 @@ DECODER(johab)
                         OUT1(0x3100 |
                           johabjamo_jungseong[c_jung])
                     else
-                        return 2;
+                        return 1;
                 }
             } else {
                 if (i_jung == FILL) {
@@ -399,7 +399,7 @@ DECODER(johab)
                         OUT1(0x3100 |
                           johabjamo_choseong[c_cho])
                     else
-                        return 2;
+                        return 1;
                 }
                 else
                     OUT1(0xac00 +
@@ -414,7 +414,7 @@ DECODER(johab)
                 c2 < 0x31 || (c2 >= 0x80 && c2 < 0x91) ||
                 (c2 & 0x7f) == 0x7f ||
                 (c == 0xda && (c2 >= 0xa1 && c2 <= 0xd3)))
-                return 2;
+                return 1;
             else {
                 unsigned char t1, t2;
 
@@ -425,7 +425,7 @@ DECODER(johab)
                 t2 = (t2 < 0x5e ? t2 : t2 - 0x5e) + 0x21;
 
                 TRYMAP_DEC(ksx1001, **outbuf, t1, t2);
-                else return 2;
+                else return 1;
                 NEXT(2, 1)
             }
         }

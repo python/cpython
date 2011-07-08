@@ -1,7 +1,8 @@
 import io
 import unittest
 import urllib.robotparser
-from urllib.error import URLError
+from urllib.error import URLError, HTTPError
+from urllib.request import urlopen
 from test import support
 
 class RobotTestCase(unittest.TestCase):
@@ -237,13 +238,27 @@ class NetworkTestCase(unittest.TestCase):
         support.requires('network')
         with support.transient_internet('mueblesmoraleda.com'):
             url = 'http://mueblesmoraleda.com'
+            robots_url = url + "/robots.txt"
+            # First check the URL is usable for our purposes, since the
+            # test site is a bit flaky.
+            try:
+                urlopen(robots_url)
+            except HTTPError as e:
+                if e.code not in {401, 403}:
+                    self.skipTest(
+                        "%r should return a 401 or 403 HTTP error, not %r"
+                        % (robots_url, e.code))
+            else:
+                self.skipTest(
+                    "%r should return a 401 or 403 HTTP error, not succeed"
+                    % (robots_url))
             parser = urllib.robotparser.RobotFileParser()
             parser.set_url(url)
             try:
                 parser.read()
             except URLError:
                 self.skipTest('%s is unavailable' % url)
-            self.assertEqual(parser.can_fetch("*", url+"/robots.txt"), False)
+            self.assertEqual(parser.can_fetch("*", robots_url), False)
 
     def testPythonOrg(self):
         support.requires('network')
