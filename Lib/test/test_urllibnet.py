@@ -131,6 +131,14 @@ class urlopenNetworkTests(unittest.TestCase):
     def test_bad_address(self):
         # Make sure proper exception is raised when connecting to a bogus
         # address.
+        bogus_domain = "sadflkjsasf.i.nvali.d"
+        try:
+            socket.gethostbyname(bogus_domain)
+        except socket.gaierror:
+            pass
+        else:
+            # This happens with some overzealous DNS providers such as OpenDNS
+            self.skipTest("%r should not resolve for test to work" % bogus_domain)
         self.assertRaises(IOError,
                           # SF patch 809915:  In Sep 2003, VeriSign started
                           # highjacking invalid .com and .net addresses to

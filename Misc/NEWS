@@ -92,6 +92,10 @@ Build
 Tests
 -----
 
+- Avoid failing in test_urllibnet.test_bad_address when some overzealous
+  DNS service (e.g. OpenDNS) resolves a non-existent domain name.  The test
+  is now skipped instead.
+
 - Issue #8716: Avoid crashes caused by Aqua Tk on OSX when attempting to run
   test_tk or test_ttk_guionly under a username that is not currently logged
   in to the console windowserver (as may be the case under buildbot or ssh).
