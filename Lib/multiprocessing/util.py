@@ -188,7 +188,11 @@ class Finalize(object):
 
         _finalizer_registry[self._key] = self
 
-    def __call__(self, wr=None):
+    def __call__(self, wr=None,
+                 # Need to bind these locally because the globals can have
+                 # been cleared at shutdown
+                 _finalizer_registry=_finalizer_registry,
+                 sub_debug=sub_debug):
         '''
         Run the callback unless it has already been called or cancelled
         '''
