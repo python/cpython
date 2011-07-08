@@ -224,7 +224,7 @@ Return the binary representation of an integer or long integer.");
 static PyObject *
 builtin_callable(PyObject *self, PyObject *v)
 {
-    if (PyErr_WarnPy3k("callable() not supported in 3.x; "
+    if (PyErr_WarnPy3k("callable() not supported in 3.1; "
                        "use isinstance(x, collections.Callable)", 1) < 0)
         return NULL;
     return PyBool_FromLong((long)PyCallable_Check(v));

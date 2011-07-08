@@ -1683,6 +1683,7 @@ class TestSorted(unittest.TestCase):
 
 def _run_unittest(*args):
     with check_py3k_warnings(
+            (".+ not supported in 3.1", DeprecationWarning),
             (".+ not supported in 3.x", DeprecationWarning),
             (".+ is renamed to imp.reload", DeprecationWarning),
             ("classic int division", DeprecationWarning)):
