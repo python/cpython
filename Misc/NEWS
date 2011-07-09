@@ -92,6 +92,9 @@ Build
 Tests
 -----
 
+- Skip network tests when getaddrinfo() returns EAI_AGAIN, meaning a temporary
+  failure in name resolution.
+
 - Avoid failing in test_robotparser when mueblesmoraleda.com is flaky and
   an overzealous DNS service (e.g. OpenDNS) redirects to a placeholder
   Web site.
