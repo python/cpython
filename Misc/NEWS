@@ -5,7 +5,7 @@ Python News
 What's New in Python 3.2.2?
 ===========================
 
-*Release date: XX-XX-2011*
+*Release date: XX-XXX-2011*
 
 Core and Builtins
 -----------------
@@ -23,9 +23,6 @@ Library
 
 - Issue #12493: subprocess: Popen.communicate() now also handles EINTR errors
   if the process has only one pipe.
-
-- Issue #12467: warnings: fix a race condition if a warning is emitted at
-  shutdown, if globals()['__file__'] is None.
 
 - Issue #12451: pydoc: html_getfile() now uses tokenize.open() to support
   Python scripts using a encoding different than UTF-8 (read the coding cookie
@@ -47,16 +44,9 @@ C-API
 Tests
 -----
 
-- Skip network tests when getaddrinfo() returns EAI_AGAIN, meaning a temporary
-  failure in name resolution.
-
 - Avoid failing in test_robotparser when mueblesmoraleda.com is flaky and
   an overzealous DNS service (e.g. OpenDNS) redirects to a placeholder
   Web site.
-
-- Avoid failing in test_urllibnet.test_bad_address when some overzealous
-  DNS service (e.g. OpenDNS) resolves a non-existent domain name.  The test
-  is now skipped instead.
 
 - Issue #12440: When testing whether some bits in SSLContext.options can be
   reset, check the version of the OpenSSL headers Python was compiled against,
@@ -80,16 +70,23 @@ Tests
 What's New in Python 3.2.1?
 ===========================
 
-*Release date: XXXX-XX-XX*
-
-Core and Builtins
------------------
+*Release date: 10-Jul-2011*
 
 Library
 -------
 
 - Issue #12467: warnings: fix a race condition if a warning is emitted at
   shutdown, if globals()['__file__'] is None.
+
+Tests
+-----
+
+- Skip network tests when getaddrinfo() returns EAI_AGAIN, meaning a temporary
+  failure in name resolution.
+
+- Avoid failing in test_urllibnet.test_bad_address when some overzealous
+  DNS service (e.g. OpenDNS) resolves a non-existent domain name.  The test
+  is now skipped instead.
 
 
 What's New in Python 3.2.1 release candidate 2?
