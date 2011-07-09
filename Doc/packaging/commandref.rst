@@ -57,7 +57,7 @@ older versions, if installed).
 .. cmdoption:: --suite=NAME, -s NAME
 
    Specify the test suite (or module, class, or method) to be run.  The default
-   for this option can be set by in the project's :file:`setup.cfg` file::
+   for this option can be set by in the project's :file:`setup.cfg` file:
 
    .. code-block:: cfg
 
