@@ -72,13 +72,13 @@ codecs
 ------
 
 Multibyte CJK decoders now resynchronize faster. They only ignore the first
-byte of an invalid byte sequence. For example, b'\xff\n'.decode('gb2312',
-'replace') gives '�\n' instead of '�'.
+byte of an invalid byte sequence. For example, ``b'\xff\n'.decode('gb2312',
+'replace')`` now returns a ``\n`` after the replacement character.
 
-(http://bugs.python.org/issue12016)
+(:issue:`12016`)
 
 Don't reset incremental encoders of CJK codecs at each call to their encode()
-method anymore. For example: ::
+method anymore. For example::
 
     $ ./python -q
     >>> import codecs
@@ -86,10 +86,10 @@ method anymore. For example: ::
     >>> b''.join(encoder.encode(x) for x in '\u52ff\u65bd\u65bc\u4eba\u3002 Bye.')
     b'~{NpJ)l6HK!#~} Bye.'
 
-This example gives b'~{Np~}~{J)~}~{l6~}~{HK~}~{!#~} Bye.' with older Python
+This example gives ``b'~{Np~}~{J)~}~{l6~}~{HK~}~{!#~} Bye.'`` with older Python
 versions.
 
-(http://bugs.python.org/issue12100)
+(:issue:`12100`)
 
 faulthandler
 ------------
