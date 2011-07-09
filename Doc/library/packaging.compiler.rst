@@ -368,7 +368,7 @@ libraries and the like.
 
       *sources* must be a list of filenames, most likely C/C++ files, but in reality
       anything that can be handled by a particular compiler and compiler class (e.g.
-      an ``'msvc'`` compiler` can handle resource files in *sources*).  Return a list of
+      an ``'msvc'`` compiler can handle resource files in *sources*).  Return a list of
       object filenames, one per source filename in *sources*.  Depending on the
       implementation, not all source files will necessarily be compiled, but all
       corresponding object filenames will be returned.
