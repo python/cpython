@@ -726,6 +726,12 @@ always available.
    For Unix systems, this is the lowercased OS name as returned by ``uname -s``
    with the first part of the version as returned by ``uname -r`` appended,
    e.g. ``'sunos5'`` or ``'linux2'``, *at the time when Python was built*.
+   Unless you want to test for a specific system version, it is therefore
+   recommended to use the following idiom::
+
+      if sys.platform.startswith('linux'):
+          # Linux-specific code here...
+
    For other systems, the values are:
 
    ================ ===========================
@@ -740,6 +746,12 @@ always available.
    AtheOS           ``'atheos'``
    ================ ===========================
 
+   .. seealso::
+      :attr:`os.name` has a coarser granularity.  :func:`os.uname` gives
+      system-dependent version information.
+
+      The :mod:`platform` module provides detailed checks for the
+      system's identity.
 
 .. data:: prefix
 

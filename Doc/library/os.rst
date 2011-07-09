@@ -53,6 +53,13 @@ Notes on the availability of these functions:
    names have currently been registered: ``'posix'``, ``'nt'``,
    ``'os2'``, ``'ce'``, ``'java'``, ``'riscos'``.
 
+   .. seealso::
+      :attr:`sys.platform` has a finer granularity.  :func:`os.uname` gives
+      system-dependent version information.
+
+      The :mod:`platform` module provides detailed checks for the
+      system's identity.
+
 
 .. _os-procinfo:
 
