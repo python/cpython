@@ -417,7 +417,7 @@ SSL sockets also have the following additional methods and attributes:
 
 .. method:: SSLSocket.do_handshake()
 
-   Performs the SSL setup handshake.
+   Perform the SSL setup handshake.
 
 .. method:: SSLSocket.getpeercert(binary_form=False)
 
