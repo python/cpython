@@ -408,27 +408,16 @@ SSL sockets provide the following methods of :ref:`socket-objects`:
   the same limitation)
 - :meth:`~socket.socket.shutdown()`
 
-They also have the following additional methods and attributes:
+However, since the SSL (and TLS) protocol has its own framing atop
+of TCP, the SSL sockets abstraction can, in certain respects, diverge from
+the specification of normal, OS-level sockets.  See especially the
+:ref:`notes on non-blocking sockets <ssl-nonblocking>`.
+
+SSL sockets also have the following additional methods and attributes:
 
 .. method:: SSLSocket.do_handshake()
 
-   Performs the SSL setup handshake.  If the socket is non-blocking, this method
-   may raise :exc:`SSLError` with the value of the exception instance's
-   ``args[0]`` being either :const:`SSL_ERROR_WANT_READ` or
-   :const:`SSL_ERROR_WANT_WRITE`, and should be called again until it stops
-   raising those exceptions.  Here's an example of how to do that::
-
-        while True:
-            try:
-                sock.do_handshake()
-                break
-            except ssl.SSLError as err:
-                if err.args[0] == ssl.SSL_ERROR_WANT_READ:
-                    select.select([sock], [], [])
-                elif err.args[0] == ssl.SSL_ERROR_WANT_WRITE:
-                    select.select([], [sock], [])
-                else:
-                    raise
+   Performs the SSL setup handshake.
 
 .. method:: SSLSocket.getpeercert(binary_form=False)
 
@@ -915,6 +904,42 @@ are finished with the client (or the client is finished with you)::
 And go back to listening for new client connections (of course, a real server
 would probably handle each client connection in a separate thread, or put
 the sockets in non-blocking mode and use an event loop).
+
+
+.. _ssl-nonblocking:
+
+Notes on non-blocking sockets
+-----------------------------
+
+When working with non-blocking sockets, there are several things you need
+to be aware of:
+
+- Calling :func:`~select.select` tells you that the OS-level socket can be
+  read from (or written to), but it does not imply that there is sufficient
+  data at the upper SSL layer.  For example, only part of an SSL frame might
+  have arrived.  Therefore, you must be ready to handle :meth:`SSLSocket.recv`
+  and :meth:`SSLSocket.send` failures, and retry after another call to
+  :func:`~select.select`.
+
+  (of course, similar provisions apply when using other primitives such as
+  :func:`~select.poll`)
+
+- The SSL handshake itself will be non-blocking: the
+  :meth:`SSLSocket.do_handshake` method has to be retried until it returns
+  successfully.  Here is a synopsis using :func:`~select.select` to wait for
+  the socket's readiness::
+
+    while True:
+        try:
+            sock.do_handshake()
+            break
+        except ssl.SSLError as err:
+            if err.args[0] == ssl.SSL_ERROR_WANT_READ:
+                select.select([sock], [], [])
+            elif err.args[0] == ssl.SSL_ERROR_WANT_WRITE:
+                select.select([], [sock], [])
+            else:
+                raise
 
 
 .. _ssl-security:
