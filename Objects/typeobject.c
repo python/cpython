@@ -1013,6 +1013,8 @@ subtype_dealloc(PyObject *self)
     assert(basedealloc);
     basedealloc(self);
 
+    PyType_Modified(type);
+
     /* Can't reference self beyond this point */
     Py_DECREF(type);
 

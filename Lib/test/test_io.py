@@ -585,7 +585,24 @@ class IOTest(unittest.TestCase):
         self.assertEqual(rawio.read(2), b"")
 
 class CIOTest(IOTest):
-    pass
+
+    def test_IOBase_finalize(self):
+        # Issue #12149: segmentation fault on _PyIOBase_finalize when both a
+        # class which inherits IOBase and an object of this class are caught
+        # in a reference cycle and close() is already in the method cache.
+        class MyIO(self.IOBase):
+            def close(self):
+                pass
+
+        # create an instance to populate the method cache
+        MyIO()
+        obj = MyIO()
+        obj.obj = obj
+        wr = weakref.ref(obj)
+        del MyIO
+        del obj
+        support.gc_collect()
+        self.assertTrue(wr() is None, wr)
 
 class PyIOTest(IOTest):
     test_array_writes = unittest.skip(
