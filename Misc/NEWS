@@ -10,6 +10,12 @@ What's New in Python 3.2.2?
 Core and Builtins
 -----------------
 
+- Issue #12149: Update the method cache after a type's dictionnary gets
+  cleared by the garbage collector.  This fixes a segfault when an instance
+  and its type get caught in a reference cycle, and the instance's
+  deallocator calls one of the methods on the type (e.g. when subclassing
+  IOBase).  Diagnosis and patch by Davide Rizzo.
+
 - Issue #9611, #9015: FileIO.read() clamps the length to INT_MAX on Windows.
 
 - When a generator yields, do not retain the caller's exception state on the
