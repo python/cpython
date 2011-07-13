@@ -233,9 +233,6 @@ Mac OS Platform
    Entries which cannot be determined are set to ``''``.  All tuple entries are
    strings.
 
-   Documentation for the underlying :cfunc:`gestalt` API is available online at
-   http://www.rgaros.nl/gestalt/.
-
 
 Unix Platforms
 --------------
