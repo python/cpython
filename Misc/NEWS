@@ -225,6 +225,9 @@ Core and Builtins
 Library
 -------
 
+- Raise ValueError when attempting to set the _CHUNK_SIZE attribute of a
+  TextIOWrapper to a huge value, not TypeError.
+
 - Issue #12504: Close file handles in a timely manner in packaging.database.
   This fixes a bug with the remove (uninstall) feature on Windows.
 
