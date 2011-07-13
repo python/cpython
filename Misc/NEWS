@@ -225,6 +225,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4376: ctypes now supports nested structures in a endian different than
+  the parent structure. Patch by Vlad Riscutia.
+
 - Raise ValueError when attempting to set the _CHUNK_SIZE attribute of a
   TextIOWrapper to a huge value, not TypeError.
 
