@@ -92,11 +92,11 @@ Dump the tracebacks after a timeout
 Dump the traceback on a user signal
 -----------------------------------
 
-.. function:: register(signum, file=sys.stderr, all_threads=True)
+.. function:: register(signum, file=sys.stderr, all_threads=True, chain=False)
 
    Register a user signal: install a handler for the *signum* signal to dump
    the traceback of all threads, or of the current thread if *all_threads* is
-   ``False``, into *file*.
+   ``False``, into *file*. Call the previous handler if chain is ``True``.
 
    Not available on Windows.
 
