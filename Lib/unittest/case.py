@@ -129,27 +129,6 @@ class _AssertRaisesContext(object):
         return True
 
 
-class _TypeEqualityDict(object):
-
-    def __init__(self, testcase):
-        self.testcase = testcase
-        self._store = {}
-
-    def __setitem__(self, key, value):
-        self._store[key] = value
-
-    def __getitem__(self, key):
-        value = self._store[key]
-        if isinstance(value, basestring):
-            return getattr(self.testcase, value)
-        return value
-
-    def get(self, key, default=None):
-        if key in self._store:
-            return self[key]
-        return default
-
-
 class TestCase(object):
     """A class whose instances are single test cases.
 
@@ -216,7 +195,7 @@ class TestCase(object):
         # Map types to custom assertEqual functions that will compare
         # instances of said type in more detail to generate a more useful
         # error message.
-        self._type_equality_funcs = _TypeEqualityDict(self)
+        self._type_equality_funcs = {}
         self.addTypeEqualityFunc(dict, 'assertDictEqual')
         self.addTypeEqualityFunc(list, 'assertListEqual')
         self.addTypeEqualityFunc(tuple, 'assertTupleEqual')
@@ -511,6 +490,8 @@ class TestCase(object):
         if type(first) is type(second):
             asserter = self._type_equality_funcs.get(type(first))
             if asserter is not None:
+                if isinstance(asserter, basestring):
+                    asserter = getattr(self, asserter)
                 return asserter
 
         return self._baseAssertEqual
