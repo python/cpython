@@ -354,10 +354,10 @@ in various ways.  There is a separate error indicator for each thread.
 
 .. c:function:: PyObject* PyErr_NewException(char *name, PyObject *base, PyObject *dict)
 
-   This utility function creates and returns a new exception object. The *name*
+   This utility function creates and returns a new exception class. The *name*
    argument must be the name of the new exception, a C string of the form
-   ``module.class``.  The *base* and *dict* arguments are normally *NULL*.  This
-   creates a class object derived from :exc:`Exception` (accessible in C as
+   ``module.classname``.  The *base* and *dict* arguments are normally *NULL*.
+   This creates a class object derived from :exc:`Exception` (accessible in C as
    :c:data:`PyExc_Exception`).
 
    The :attr:`__module__` attribute of the new class is set to the first part (up
