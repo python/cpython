@@ -2556,7 +2556,7 @@ textiowrapper_chunk_size_set(textio *self, PyObject *arg, void *context)
 {
     Py_ssize_t n;
     CHECK_INITIALIZED_INT(self);
-    n = PyNumber_AsSsize_t(arg, PyExc_TypeError);
+    n = PyNumber_AsSsize_t(arg, PyExc_ValueError);
     if (n == -1 && PyErr_Occurred())
         return -1;
     if (n <= 0) {
