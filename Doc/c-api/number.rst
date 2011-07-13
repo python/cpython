@@ -249,7 +249,9 @@ Number Protocol
 .. c:function:: Py_ssize_t PyNumber_AsSsize_t(PyObject *o, PyObject *exc)
 
    Returns *o* converted to a Py_ssize_t value if *o* can be interpreted as an
-   integer. If *o* can be converted to a Python int but the attempt to
+   integer.  If the call fails, an exception is raised and -1 is returned.
+
+   If *o* can be converted to a Python int but the attempt to
    convert to a Py_ssize_t value would raise an :exc:`OverflowError`, then the
    *exc* argument is the type of exception that will be raised (usually
    :exc:`IndexError` or :exc:`OverflowError`).  If *exc* is *NULL*, then the
