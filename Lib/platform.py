@@ -765,6 +765,7 @@ def _mac_ver_gestalt():
                    0x2: 'PowerPC',
                    0xa: 'i386'}.get(sysa,'')
 
+    versioninfo=('', '', '')
     return release,versioninfo,machine
 
 def _mac_ver_xml():
