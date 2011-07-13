@@ -1020,6 +1020,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #12549: Correct test_platform to not fail when OS X returns 'x86_64'
+  as the processor type on some Mac systems.
+
 - Skip network tests when getaddrinfo() returns EAI_AGAIN, meaning a temporary
   failure in name resolution.
 
