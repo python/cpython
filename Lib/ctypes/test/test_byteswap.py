@@ -185,18 +185,32 @@ class Test(unittest.TestCase):
             self.assertRaises(TypeError, setattr, T, "_fields_", [("x", typ)])
 
     def test_struct_struct(self):
-        # Nested structures with different byte order not (yet) supported
-        if sys.byteorder == "little":
-            base = BigEndianStructure
-        else:
-            base = LittleEndianStructure
+        # nested structures with different byteorders
 
-        class T(Structure):
-            _fields_ = [("a", c_int),
-                        ("b", c_int)]
-        class S(base):
-            pass
-        self.assertRaises(TypeError, setattr, S, "_fields_", [("s", T)])
+        # create nested structures with given byteorders and set memory to data
+        def set_structures(endianness, nested_endianness, data):
+            class NestedStructure(nested_endianness):
+                _fields_ = [("x", c_uint32),
+                            ("y", c_uint32)]
+
+            class TestStructure(endianness):
+                _fields_ = [("point", NestedStructure)]
+
+            self.assertEqual(len(data), sizeof(TestStructure))
+            return cast(data, POINTER(TestStructure))[0]
+
+        for nested, data in (
+            (BigEndianStructure, b'\0\0\0\1\0\0\0\2'),
+            (LittleEndianStructure, b'\1\0\0\0\2\0\0\0'),
+        ):
+            for parent in (
+                BigEndianStructure,
+                LittleEndianStructure,
+                Structure,
+            ):
+                s = set_structures(parent, nested, data)
+                self.assertEqual(s.point.x, 1)
+                self.assertEqual(s.point.y, 2)
 
     def test_struct_fields_2(self):
         # standard packing in struct uses no alignment.
