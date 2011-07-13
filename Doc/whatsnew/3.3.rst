@@ -117,10 +117,10 @@ unconditionally consume :exc:`socket.error` exceptions and to close the NNTP
 connection when done::
 
   >>> from nntplib import NNTP
-  >>> with nntplib.NNTP('news.gmane.org') as n:
+  >>> with NNTP('news.gmane.org') as n:
   ...     n.group('gmane.comp.python.committers')
   ...
-  ('211 1454 1 1454 gmane.comp.python.committers', '1454', '1', '1454', 'gmane.comp.python.committers')
+  ('211 1754 1 1754 gmane.comp.python.committers', 1754, 1, 1754, 'gmane.comp.python.committers')
   >>>
 
 (Contributed by Giampaolo Rodolà in :issue:`9795`)
