@@ -8,7 +8,6 @@
 #include <pthread.h>
 #endif
 
-
 /* Allocate at maximum 100 MB of the stack to raise the stack overflow */
 #define STACK_OVERFLOW_MAX_SIZE (100*1024*1024)
 
@@ -72,6 +71,7 @@ typedef struct {
     PyObject *file;
     int fd;
     int all_threads;
+    int chain;
     _Py_sighandler_t previous;
     PyInterpreterState *interp;
 } user_signal_t;
@@ -94,6 +94,7 @@ static user_signal_t *user_signals;
 # endif
 #endif
 
+static void faulthandler_user(int signum);
 #endif /* FAULTHANDLER_USER */
 
 
@@ -259,9 +260,9 @@ faulthandler_fatal_error(int signum)
 
     /* restore the previous handler */
 #ifdef HAVE_SIGACTION
-    (void)sigaction(handler->signum, &handler->previous, NULL);
+    (void)sigaction(signum, &handler->previous, NULL);
 #else
-    (void)signal(handler->signum, handler->previous);
+    (void)signal(signum, handler->previous);
 #endif
     handler->enabled = 0;
 
@@ -587,6 +588,39 @@ faulthandler_cancel_dump_tracebacks_later_py(PyObject *self)
 #endif  /* FAULTHANDLER_LATER */
 
 #ifdef FAULTHANDLER_USER
+static int
+faulthandler_register(int signum, int chain, _Py_sighandler_t *p_previous)
+{
+#ifdef HAVE_SIGACTION
+    struct sigaction action;
+    action.sa_handler = faulthandler_user;
+    sigemptyset(&action.sa_mask);
+    /* if the signal is received while the kernel is executing a system
+       call, try to restart the system call instead of interrupting it and
+       return EINTR. */
+    action.sa_flags = SA_RESTART;
+    if (chain) {
+        /* do not prevent the signal from being received from within its
+           own signal handler */
+        action.sa_flags = SA_NODEFER;
+    }
+#ifdef HAVE_SIGALTSTACK
+    if (stack.ss_sp != NULL) {
+        /* Call the signal handler on an alternate signal stack
+           provided by sigaltstack() */
+        action.sa_flags |= SA_ONSTACK;
+    }
+#endif
+    return sigaction(signum, &action, p_previous);
+#else
+    _Py_sighandler_t previous;
+    previous = signal(signum, faulthandler_user);
+    if (p_previous != NULL)
+        *p_previous = previous;
+    return (previous == SIG_ERR);
+#endif
+}
+
 /* Handler of user signals (e.g. SIGUSR1).
 
    Dump the traceback of the current thread, or of all threads if
@@ -621,6 +655,19 @@ faulthandler_user(int signum)
             return;
         _Py_DumpTraceback(user->fd, tstate);
     }
+#ifdef HAVE_SIGACTION
+    if (user->chain) {
+        (void)sigaction(signum, &user->previous, NULL);
+        /* call the previous signal handler */
+        raise(signum);
+        (void)faulthandler_register(signum, user->chain, NULL);
+    }
+#else
+    if (user->chain) {
+        /* call the previous signal handler */
+        user->previous(signum);
+    }
+#endif
     errno = save_errno;
 }
 
@@ -646,25 +693,23 @@ check_signum(int signum)
 }
 
 static PyObject*
-faulthandler_register(PyObject *self,
-                      PyObject *args, PyObject *kwargs)
+faulthandler_register_py(PyObject *self,
+                         PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"signum", "file", "all_threads", NULL};
+    static char *kwlist[] = {"signum", "file", "all_threads", "chain", NULL};
     int signum;
     PyObject *file = NULL;
     int all_threads = 1;
+    int chain = 0;
     int fd;
     user_signal_t *user;
     _Py_sighandler_t previous;
-#ifdef HAVE_SIGACTION
-    struct sigaction action;
-#endif
     PyThreadState *tstate;
     int err;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "i|Oi:register", kwlist,
-        &signum, &file, &all_threads))
+        "i|Oii:register", kwlist,
+        &signum, &file, &all_threads, &chain))
         return NULL;
 
     if (!check_signum(signum))
@@ -686,25 +731,7 @@ faulthandler_register(PyObject *self,
     user = &user_signals[signum];
 
     if (!user->enabled) {
-#ifdef HAVE_SIGACTION
-        action.sa_handler = faulthandler_user;
-        sigemptyset(&action.sa_mask);
-        /* if the signal is received while the kernel is executing a system
-           call, try to restart the system call instead of interrupting it and
-           return EINTR */
-        action.sa_flags = SA_RESTART;
-#ifdef HAVE_SIGALTSTACK
-        if (stack.ss_sp != NULL) {
-            /* Call the signal handler on an alternate signal stack
-               provided by sigaltstack() */
-            action.sa_flags |= SA_ONSTACK;
-        }
-#endif
-        err = sigaction(signum, &action, &previous);
-#else
-        previous = signal(signum, faulthandler_user);
-        err = (previous == SIG_ERR);
-#endif
+        err = faulthandler_register(signum, chain, &previous);
         if (err) {
             PyErr_SetFromErrno(PyExc_OSError);
             return NULL;
@@ -716,6 +743,7 @@ faulthandler_register(PyObject *self,
     user->file = file;
     user->fd = fd;
     user->all_threads = all_threads;
+    user->chain = chain;
     user->previous = previous;
     user->interp = tstate->interp;
     user->enabled = 1;
@@ -947,8 +975,8 @@ static PyMethodDef module_methods[] = {
 
 #ifdef FAULTHANDLER_USER
     {"register",
-     (PyCFunction)faulthandler_register, METH_VARARGS|METH_KEYWORDS,
-     PyDoc_STR("register(signum, file=sys.stderr, all_threads=True): "
+     (PyCFunction)faulthandler_register_py, METH_VARARGS|METH_KEYWORDS,
+     PyDoc_STR("register(signum, file=sys.stderr, all_threads=True, chain=False): "
                "register an handler for the signal 'signum': dump the "
                "traceback of the current thread, or of all threads if "
                "all_threads is True, into file")},
