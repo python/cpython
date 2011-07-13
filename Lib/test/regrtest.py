@@ -172,6 +172,7 @@ import os
 import platform
 import random
 import re
+import signal
 import sys
 import sysconfig
 import tempfile
@@ -266,8 +267,17 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     on the command line.
     """
 
-    # Display the Python traceback fatal errors (e.g. segfault)
+    # Display the Python traceback on fatal errors (e.g. segfault)
     faulthandler.enable(all_threads=True)
+
+    # Display the Python traceback on SIGALRM or SIGUSR1 signal
+    signals = []
+    if hasattr(signal, 'SIGALRM'):
+        signals.append(signal.SIGALRM)
+    if hasattr(signal, 'SIGUSR1'):
+        signals.append(signal.SIGUSR1)
+    for signum in signals:
+        faulthandler.register(signum, chain=True)
 
     replace_stdout()
 
