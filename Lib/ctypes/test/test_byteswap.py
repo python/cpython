@@ -1,4 +1,4 @@
-import sys, unittest, struct, math
+import sys, unittest, struct, math, ctypes
 from binascii import hexlify
 
 from ctypes import *
@@ -188,16 +188,6 @@ class Test(unittest.TestCase):
         # nested structures with different byteorders
 
         # create nested structures with given byteorders and set memory to data
-        def set_structures(endianness, nested_endianness, data):
-            class NestedStructure(nested_endianness):
-                _fields_ = [("x", c_uint32),
-                            ("y", c_uint32)]
-
-            class TestStructure(endianness):
-                _fields_ = [("point", NestedStructure)]
-
-            self.assertEqual(len(data), sizeof(TestStructure))
-            return cast(data, POINTER(TestStructure))[0]
 
         for nested, data in (
             (BigEndianStructure, b'\0\0\0\1\0\0\0\2'),
@@ -208,7 +198,17 @@ class Test(unittest.TestCase):
                 LittleEndianStructure,
                 Structure,
             ):
-                s = set_structures(parent, nested, data)
+                class NestedStructure(nested):
+                    _fields_ = [("x", c_uint32),
+                                ("y", c_uint32)]
+
+                class TestStructure(parent):
+                    _fields_ = [("point", NestedStructure)]
+
+                self.assertEqual(len(data), sizeof(TestStructure))
+                ptr = POINTER(TestStructure)
+                s = cast(data, ptr)[0]
+                del ctypes._pointer_type_cache[TestStructure]
                 self.assertEqual(s.point.x, 1)
                 self.assertEqual(s.point.y, 2)
 
