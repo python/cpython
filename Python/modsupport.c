@@ -292,11 +292,6 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
         case 'C':
         {
             int i = va_arg(*p_va, int);
-            if (i < 0 || i > PyUnicode_GetMax()) {
-                PyErr_SetString(PyExc_OverflowError,
-                                "%c arg not in range(0x110000)");
-                return NULL;
-            }
             return PyUnicode_FromOrdinal(i);
         }
 
