@@ -257,7 +257,7 @@ class FileCookieJarTests(unittest.TestCase):
                                 "filename should not exist")
             except IOError as exc:
                 # exactly IOError, not LoadError
-                self.assertEqual(exc.__class__, IOError)
+                self.assertIs(exc.__class__, IOError)
             else:
                 self.fail("expected IOError for invalid filename")
         # Invalid contents of cookies file (eg. bad magic string)
