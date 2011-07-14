@@ -225,6 +225,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6755: Add get_wch() method to curses.window class. Patch by Iñigo
+  Serna.
+
 - Add cgi.closelog() function to close the log file.
 
 - Issue #12502: asyncore: fix polling loop with AF_UNIX sockets.
