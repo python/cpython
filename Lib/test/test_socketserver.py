@@ -66,7 +66,7 @@ class SocketServerTest(unittest.TestCase):
     """Test all socket servers."""
 
     def setUp(self):
-        signal_alarm(20)  # Kill deadlocks after 20 seconds.
+        signal_alarm(60)  # Kill deadlocks after 60 seconds.
         self.port_seed = 0
         self.test_files = []
 
@@ -283,4 +283,3 @@ def test_main():
 
 if __name__ == "__main__":
     test_main()
-    signal_alarm(3)  # Shutdown shouldn't take more than 3 seconds.
