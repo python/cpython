@@ -225,6 +225,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #12502: asyncore: fix polling loop with AF_UNIX sockets.
+
 - Issue #4376: ctypes now supports nested structures in a endian different than
   the parent structure. Patch by Vlad Riscutia.
 
