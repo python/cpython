@@ -4,6 +4,7 @@ import pickle
 import re
 import sys
 import warnings
+import weakref
 import inspect
 
 from copy import deepcopy
@@ -1304,3 +1305,11 @@ test case
             klass('test_something').run(result)
             self.assertEqual(len(result.errors), 1)
             self.assertEqual(result.testsRun, 1)
+
+    @support.cpython_only
+    def testNoCycles(self):
+        case = unittest.TestCase()
+        wr = weakref.ref(case)
+        with support.disable_gc():
+            del case
+            self.assertFalse(wr())
