@@ -22,6 +22,8 @@ What's New in Python 3.1.4?
 Library
 -------
 
+- Issue #12502: asyncore: fix polling loop with AF_UNIX sockets.
+
 - Issue #12009: Fixed regression in netrc file comment handling.
 
 Extension Modules
