@@ -155,7 +155,13 @@ class CgiTests(unittest.TestCase):
             cgi.logfp = None
             cgi.logfile = "/dev/null"
             cgi.initlog("%s", "Testing log 3")
-            self.addCleanup(cgi.logfp.close)
+            def log_cleanup():
+                """Restore the global state of the log vars."""
+                cgi.logfile = ''
+                cgi.logfp.close()
+                cgi.logfp = None
+                cgi.log = cgi.initlog
+            self.addCleanup(log_cleanup)
             cgi.log("Testing log 4")
 
     def test_fieldstorage_readline(self):
