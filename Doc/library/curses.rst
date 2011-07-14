@@ -846,6 +846,14 @@ the following methods:
    until a key is pressed.
 
 
+.. method:: window.get_wch([y, x])
+
+   Get a wide character. Like :meth:`getch`, but the integer returned is the
+   Unicode code point for the key pressed, so it can be passed to :func:`chr`.
+
+   .. versionadded:: 3.3
+
+
 .. method:: window.getkey([y, x])
 
    Get a character, returning a string instead of an integer, as :meth:`getch`

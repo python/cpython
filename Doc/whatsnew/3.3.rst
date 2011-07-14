@@ -91,6 +91,14 @@ versions.
 
 (:issue:`12100`)
 
+curses
+------
+
+The :class:`curses.window` class has a new :class:`~curses.window.get_wch`
+method to a wide character. Patch by Iñigo Serna.
+
+(:issue:`6755`)
+
 faulthandler
 ------------
 
