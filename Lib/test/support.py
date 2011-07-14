@@ -1005,6 +1005,16 @@ def gc_collect():
     gc.collect()
     gc.collect()
 
+@contextlib.contextmanager
+def disable_gc():
+    have_gc = gc.isenabled()
+    gc.disable()
+    try:
+        yield
+    finally:
+        if have_gc:
+            gc.enable()
+
 
 def python_is_optimized():
     """Find if Python was built with optimizations."""
