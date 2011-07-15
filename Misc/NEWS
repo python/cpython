@@ -33,6 +33,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11603: Fix a crash when __str__ is rebound as __repr__.  Patch by
+  Andreas Stührk.
+
 - Issue #12502: asyncore: fix polling loop with AF_UNIX sockets.
 
 - Issue #4376: ctypes now supports nested structures in a endian different than
