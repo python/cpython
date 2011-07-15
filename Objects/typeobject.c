@@ -2968,7 +2968,7 @@ object_str(PyObject *self)
     unaryfunc f;
 
     f = Py_TYPE(self)->tp_repr;
-    if (f == NULL)
+    if (f == NULL || f == object_str)
         f = object_repr;
     return f(self);
 }
