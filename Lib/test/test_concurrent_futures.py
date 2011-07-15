@@ -623,16 +623,20 @@ class FutureTests(unittest.TestCase):
 
         self.assertTrue(isinstance(f1.exception(timeout=5), IOError))
 
+@test.support.reap_threads
 def test_main():
-    test.support.run_unittest(ProcessPoolExecutorTest,
-                              ThreadPoolExecutorTest,
-                              ProcessPoolWaitTests,
-                              ThreadPoolWaitTests,
-                              ProcessPoolAsCompletedTests,
-                              ThreadPoolAsCompletedTests,
-                              FutureTests,
-                              ProcessPoolShutdownTest,
-                              ThreadPoolShutdownTest)
+    try:
+        test.support.run_unittest(ProcessPoolExecutorTest,
+                                  ThreadPoolExecutorTest,
+                                  ProcessPoolWaitTests,
+                                  ThreadPoolWaitTests,
+                                  ProcessPoolAsCompletedTests,
+                                  ThreadPoolAsCompletedTests,
+                                  FutureTests,
+                                  ProcessPoolShutdownTest,
+                                  ThreadPoolShutdownTest)
+    finally:
+        test.support.reap_children()
 
 if __name__ == "__main__":
     test_main()

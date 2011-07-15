@@ -6338,8 +6338,10 @@ PyInit__pickle(void)
     if (m == NULL)
         return NULL;
 
+    Py_INCREF(&Pickler_Type);
     if (PyModule_AddObject(m, "Pickler", (PyObject *)&Pickler_Type) < 0)
         return NULL;
+    Py_INCREF(&Unpickler_Type);
     if (PyModule_AddObject(m, "Unpickler", (PyObject *)&Unpickler_Type) < 0)
         return NULL;
 
