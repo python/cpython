@@ -121,6 +121,15 @@ class TestRaise(unittest.TestCase):
         else:
             self.fail("No exception raised")
 
+    def test_new_returns_invalid_instance(self):
+        # See issue #11627.
+        class MyException(Exception):
+            def __new__(cls, *args):
+                return object()
+
+        with self.assertRaises(TypeError):
+            raise MyException
+
 
 class TestCause(unittest.TestCase):
     def test_invalid_cause(self):
