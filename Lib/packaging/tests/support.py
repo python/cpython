@@ -28,13 +28,11 @@ Each class or function has a docstring to explain its purpose and usage.
 """
 
 import os
-import errno
 import shutil
 import logging
 import weakref
 import tempfile
 
-from packaging import logger
 from packaging.dist import Distribution
 from packaging.tests import unittest
 from test.support import requires_zlib, unlink
@@ -42,6 +40,10 @@ from test.support import requires_zlib, unlink
 __all__ = ['LoggingCatcher', 'TempdirManager', 'EnvironRestorer',
            'DummyCommand', 'unittest', 'create_distribution',
            'skip_unless_symlink', 'requires_zlib']
+
+
+logger = logging.getLogger('packaging')
+logger2to3 = logging.getLogger('RefactoringTool')
 
 
 class _TestHandler(logging.handlers.BufferingHandler):
@@ -74,9 +76,10 @@ class LoggingCatcher:
     def setUp(self):
         super(LoggingCatcher, self).setUp()
         self.loghandler = handler = _TestHandler()
-        self.old_level = logger.level
+        self._old_levels = logger.level, logger2to3.level
         logger.addHandler(handler)
         logger.setLevel(logging.DEBUG)  # we want all messages
+        logger2to3.setLevel(logging.CRITICAL)  # we don't want 2to3 messages
 
     def tearDown(self):
         handler = self.loghandler
@@ -87,7 +90,8 @@ class LoggingCatcher:
         for ref in weakref.getweakrefs(handler):
             logging._removeHandlerRef(ref)
         del self.loghandler
-        logger.setLevel(self.old_level)
+        logger.setLevel(self._old_levels[0])
+        logger2to3.setLevel(self._old_levels[1])
         super(LoggingCatcher, self).tearDown()
 
     def get_logs(self, *levels):
