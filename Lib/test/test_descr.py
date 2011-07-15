@@ -4581,6 +4581,14 @@ order (MRO) for bases """
         with self.assertRaises(TypeError):
             str.__add__(fake_str, "abc")
 
+    def test_repr_as_str(self):
+        # Issue #11603: crash or infinite loop when rebinding __str__ as
+        # __repr__.
+        class Foo(object):
+            pass
+        Foo.__repr__ = Foo.__str__
+        foo = Foo()
+        str(foo)
 
 class DictProxyTests(unittest.TestCase):
     def setUp(self):
