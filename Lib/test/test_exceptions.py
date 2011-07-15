@@ -464,6 +464,14 @@ class ExceptionTests(unittest.TestCase):
             self.assertTrue(e is RuntimeError, e)
             self.assertIn("maximum recursion depth exceeded", str(v))
 
+    def test_new_returns_invalid_instance(self):
+        # See issue #11627.
+        class MyException(Exception):
+            def __new__(cls, *args):
+                return object()
+
+        with self.assertRaises(TypeError):
+            raise MyException
 
 
 # Helper class used by TestSameStrAndUnicodeMsg

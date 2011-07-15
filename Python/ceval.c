@@ -3515,9 +3515,17 @@ do_raise(PyObject *type, PyObject *value, PyObject *tb)
         Py_DECREF(tmp);
     }
 
-    if (PyExceptionClass_Check(type))
+    if (PyExceptionClass_Check(type)) {
         PyErr_NormalizeException(&type, &value, &tb);
-
+        if (!PyExceptionInstance_Check(value)) {
+            PyErr_Format(PyExc_TypeError,
+                         "calling %s() should have returned an instance of "
+                         "BaseException, not '%s'",
+                         ((PyTypeObject *)type)->tp_name,
+                         Py_TYPE(value)->tp_name);
+            goto raise_error;
+        }
+    }
     else if (PyExceptionInstance_Check(type)) {
         /* Raising an instance.  The value should be a dummy. */
         if (value != Py_None) {
