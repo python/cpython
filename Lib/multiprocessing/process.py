@@ -42,6 +42,7 @@ import os
 import sys
 import signal
 import itertools
+from _weakrefset import WeakSet
 
 #
 #
@@ -109,6 +110,7 @@ class Process(object):
         self._kwargs = dict(kwargs)
         self._name = name or type(self).__name__ + '-' + \
                      ':'.join(str(i) for i in self._identity)
+        _dangling.add(self)
 
     def run(self):
         '''
@@ -344,3 +346,6 @@ _exitcode_to_name = {}
 for name, signum in list(signal.__dict__.items()):
     if name[:3]=='SIG' and '_' not in name:
         _exitcode_to_name[-signum] = name
+
+# For debug and leak testing
+_dangling = WeakSet()
