@@ -209,6 +209,8 @@ def _queue_management_worker(executor_reference,
         # some multiprocessing.Queue methods may deadlock on Mac OS X.
         for p in processes.values():
             p.join()
+        # Release resources held by the queue
+        call_queue.close()
 
     while True:
         _add_call_item_to_queue(pending_work_items,
@@ -246,7 +248,8 @@ def _queue_management_worker(executor_reference,
             # Clean shutdown of a worker using its PID
             # (avoids marking the executor broken)
             assert shutting_down()
-            del processes[result_item]
+            p = processes.pop(result_item)
+            p.join()
             if not processes:
                 shutdown_worker()
                 return
