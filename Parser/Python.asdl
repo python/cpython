@@ -99,7 +99,6 @@ module Python
 
 	comprehension = (expr target, expr iter, expr* ifs)
 
-	-- not sure what to call the first argument for raise and except
 	excepthandler = ExceptHandler(expr? type, identifier? name, stmt* body)
 	                attributes (int lineno, int col_offset)
 
