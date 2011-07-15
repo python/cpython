@@ -23,7 +23,6 @@ Building blocks
 
 .. toctree::
    :maxdepth: 2
-   :numbered:
 
    packaging-misc
    packaging.version
@@ -42,7 +41,6 @@ The command machinery
 
 .. toctree::
    :maxdepth: 2
-   :numbered:
 
    packaging.dist
    packaging.command
@@ -55,7 +53,6 @@ Other utilities
 
 .. toctree::
    :maxdepth: 2
-   :numbered:
 
    packaging.util
    packaging.tests.pypi_server
