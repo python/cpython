@@ -43,4 +43,3 @@ for name, func, args in [
             errors.append("%s appeared to hang" % name)
     finally:
         del t
-
