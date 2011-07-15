@@ -15,8 +15,10 @@ import textwrap
 from io import StringIO
 from collections import namedtuple
 from contextlib import contextmanager
-from test.support import TESTFN, forget, rmtree, EnvironmentVarGuard, \
-     reap_children, captured_output, captured_stdout, unlink
+from test.support import (
+    TESTFN, forget, rmtree, EnvironmentVarGuard,
+    reap_children, reap_threads, captured_output, captured_stdout, unlink
+)
 
 from test import pydoc_mod
 
@@ -205,11 +207,8 @@ def run_pydoc(module_name, *args):
     output of pydoc.
     """
     cmd = [sys.executable, pydoc.__file__, " ".join(args), module_name]
-    try:
-        output = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
-        return output.strip()
-    finally:
-        reap_children()
+    output = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
+    return output.strip()
 
 def get_pydoc_html(module):
     "Returns pydoc generated output as html"
@@ -488,13 +487,17 @@ class TestHelper(unittest.TestCase):
         self.assertEqual(sorted(pydoc.Helper.keywords),
                          sorted(keyword.kwlist))
 
+@reap_threads
 def test_main():
-    test.support.run_unittest(PydocDocTest,
-                              TestDescriptions,
-                              PydocServerTest,
-                              PydocUrlHandlerTest,
-                              TestHelper,
-                              )
+    try:
+        test.support.run_unittest(PydocDocTest,
+                                  TestDescriptions,
+                                  PydocServerTest,
+                                  PydocUrlHandlerTest,
+                                  TestHelper,
+                                  )
+    finally:
+        reap_children()
 
 if __name__ == "__main__":
     test_main()
