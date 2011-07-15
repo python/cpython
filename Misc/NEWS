@@ -67,6 +67,8 @@ C-API
 Tests
 -----
 
+- Try harder to reap dangling threads in test.support.reap_threads().
+
 - Issue #12573: Add resource checks for dangling Thread and Process objects.
 
 - Issue #12549: Correct test_platform to not fail when OS X returns 'x86_64'
