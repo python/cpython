@@ -228,6 +228,9 @@ Core and Builtins
 Library
 -------
 
+- Silence spurious "broken pipe" tracebacks when shutting down a
+  ProcessPoolExecutor.
+
 - Fix potential resource leaks in concurrent.futures.ProcessPoolExecutor
   by joining all queues and processes when shutdown() is called.
 
