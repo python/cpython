@@ -6,6 +6,7 @@ import _thread
 from time import time as _time, sleep as _sleep
 from traceback import format_exc as _format_exc
 from collections import deque
+from _weakrefset import WeakSet
 
 # Note regarding PEP 8 compliant names
 #  This threading model was originally inspired by Java, and inherited
@@ -608,6 +609,8 @@ _active_limbo_lock = _allocate_lock()
 _active = {}    # maps thread id to Thread object
 _limbo = {}
 
+# For debug and leak testing
+_dangling = WeakSet()
 
 # Main class for threads
 
@@ -645,6 +648,7 @@ class Thread(_Verbose):
         # sys.stderr is not stored in the class like
         # sys.exc_info since it can be changed between instances
         self._stderr = _sys.stderr
+        _dangling.add(self)
 
     def _reset_internal_locks(self):
         # private!  Called by _after_fork() to reset our internal locks as
