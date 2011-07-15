@@ -228,6 +228,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11321: Fix a crash with multiple imports of the _pickle module when
+  embedding Python.  Patch by Andreas Stührk.
+
 - Issue #6755: Add get_wch() method to curses.window class. Patch by Iñigo
   Serna.
 
