@@ -33,7 +33,7 @@ Classes representing installed distributions
    .. method:: get_distinfo_file(path, binary=False)
 
       Return a read-only file object for a file located at
-      :file:`{project-version}.dist-info/path}`.  *path* should be a
+      :file:`{project}-{version}.dist-info/{path}`.  *path* should be a
       ``'/'``-separated path relative to the ``.dist-info`` directory or an
       absolute path; if it is an absolute path and doesn't start with the path
       to the :file:`.dist-info` directory, a :class:`PackagingError` is raised.
@@ -72,7 +72,7 @@ Classes representing installed distributions
    .. attribute:: metadata
 
       Instance of :class:`packaging.metadata.Metadata` filled with the contents
-      of the :file:`{project-version}.dist-info/METADATA` file.
+      of the :file:`{project}-{version}.dist-info/METADATA` file.
 
    .. attribute:: name
 
