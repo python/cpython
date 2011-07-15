@@ -182,6 +182,15 @@ import unittest
 import warnings
 from inspect import isabstract
 
+try:
+    import threading
+except ImportError:
+    threading = None
+try:
+    import multiprocessing.process
+except ImportError:
+    multiprocessing = None
+
 
 # Some times __path__ and __file__ are not absolute (e.g. while running from
 # Lib/) and, if we change the CWD to run the tests in a temporary dir, some
@@ -930,7 +939,8 @@ class saved_test_environment:
                  'os.environ', 'sys.path', 'sys.path_hooks', '__import__',
                  'warnings.filters', 'asyncore.socket_map',
                  'logging._handlers', 'logging._handlerList', 'sys.gettrace',
-                 'sys.warnoptions')
+                 'sys.warnoptions', 'threading._dangling',
+                 'multiprocessing.process._dangling')
 
     def get_sys_argv(self):
         return id(sys.argv), sys.argv, sys.argv[:]
@@ -1022,6 +1032,31 @@ class saved_test_environment:
     def restore_sys_warnoptions(self, saved_options):
         sys.warnoptions = saved_options[1]
         sys.warnoptions[:] = saved_options[2]
+
+    # Controlling dangling references to Thread objects can make it easier
+    # to track reference leaks.
+    def get_threading__dangling(self):
+        if not threading:
+            return None
+        # This copies the weakrefs without making any strong reference
+        return threading._dangling.copy()
+    def restore_threading__dangling(self, saved):
+        if not threading:
+            return
+        threading._dangling.clear()
+        threading._dangling.update(saved)
+
+    # Same for Process objects
+    def get_multiprocessing_process__dangling(self):
+        if not multiprocessing:
+            return None
+        # This copies the weakrefs without making any strong reference
+        return multiprocessing.process._dangling.copy()
+    def restore_multiprocessing_process__dangling(self, saved):
+        if not multiprocessing:
+            return
+        multiprocessing.process._dangling.clear()
+        multiprocessing.process._dangling.update(saved)
 
     def resource_info(self):
         for name in self.resources:

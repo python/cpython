@@ -228,6 +228,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11603: Fix a crash when __str__ is rebound as __repr__.  Patch by
+  Andreas Stührk.
+
 - Issue #11321: Fix a crash with multiple imports of the _pickle module when
   embedding Python.  Patch by Andreas Stührk.
 
@@ -1032,6 +1035,8 @@ Extension Modules
 
 Tests
 -----
+
+- Issue #12573: Add resource checks for dangling Thread and Process objects.
 
 - Issue #12549: Correct test_platform to not fail when OS X returns 'x86_64'
   as the processor type on some Mac systems.
