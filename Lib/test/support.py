@@ -289,7 +289,7 @@ def requires(resource, msg=None):
         return
     if not is_resource_enabled(resource):
         if msg is None:
-            msg = "Use of the `%s' resource not enabled" % resource
+            msg = "Use of the %r resource not enabled" % resource
         raise ResourceDenied(msg)
 
 def requires_linux_version(*min_version):
@@ -665,7 +665,7 @@ def open_urlresource(url, *args, **kw):
     f = check_valid_file(fn)
     if f is not None:
         return f
-    raise TestFailed('invalid resource "%s"' % fn)
+    raise TestFailed('invalid resource %r' % fn)
 
 
 class WarningsRecorder(object):
@@ -916,7 +916,7 @@ def transient_internet(resource_name, *, timeout=30.0, errnos=()):
         ('WSANO_DATA', 11004),
     ]
 
-    denied = ResourceDenied("Resource '%s' is not available" % resource_name)
+    denied = ResourceDenied("Resource %r is not available" % resource_name)
     captured_errnos = errnos
     gai_errnos = []
     if not captured_errnos:
