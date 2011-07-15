@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11603: Fix a crash when __str__ is rebound as __repr__.  Patch by
+  Andreas Stührk.
+
 
 What's New in Python 3.1.4?
 ===========================
