@@ -61,13 +61,12 @@ def disable_cache():
 
 def clear_cache():
     """ Clears the internal cache. """
-    global _cache_name, _cache_name_egg, _cache_path, _cache_path_egg, \
-        _cache_generated, _cache_generated_egg
+    global _cache_generated, _cache_generated_egg
 
-    _cache_name = {}
-    _cache_name_egg = {}
-    _cache_path = {}
-    _cache_path_egg = {}
+    _cache_name.clear()
+    _cache_name_egg.clear()
+    _cache_path.clear()
+    _cache_path_egg.clear()
     _cache_generated = False
     _cache_generated_egg = False
 
