@@ -15,9 +15,12 @@ import textwrap
 from io import StringIO
 from collections import namedtuple
 from contextlib import contextmanager
-from test.support import TESTFN, forget, rmtree, EnvironmentVarGuard, \
-     reap_children, captured_output, captured_stdout, unlink
 
+from test.script_helper import assert_python_ok
+from test.support import (
+    TESTFN, forget, rmtree, EnvironmentVarGuard,
+    reap_children, reap_threads, captured_output, captured_stdout, unlink
+)
 from test import pydoc_mod
 
 try:
@@ -199,17 +202,14 @@ missing_pattern = "no Python documentation found for '%s'"
 # output pattern for module with bad imports
 badimport_pattern = "problem in %s - ImportError: No module named %r"
 
-def run_pydoc(module_name, *args):
+def run_pydoc(module_name, *args, **env):
     """
     Runs pydoc on the specified module. Returns the stripped
     output of pydoc.
     """
-    cmd = [sys.executable, pydoc.__file__, " ".join(args), module_name]
-    try:
-        output = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
-        return output.strip()
-    finally:
-        reap_children()
+    args = args + (module_name,)
+    rc, out, err = assert_python_ok(pydoc.__file__, *args, **env)
+    return out.strip()
 
 def get_pydoc_html(module):
     "Returns pydoc generated output as html"
@@ -312,19 +312,20 @@ class PydocDocTest(unittest.TestCase):
         def newdirinpath(dir):
             os.mkdir(dir)
             sys.path.insert(0, dir)
-            yield
-            sys.path.pop(0)
-            rmtree(dir)
+            try:
+                yield
+            finally:
+                sys.path.pop(0)
+                rmtree(dir)
 
-        with newdirinpath(TESTFN), EnvironmentVarGuard() as env:
-            env['PYTHONPATH'] = TESTFN
+        with newdirinpath(TESTFN):
             fullmodname = os.path.join(TESTFN, modname)
             sourcefn = fullmodname + os.extsep + "py"
             for importstring, expectedinmsg in testpairs:
                 with open(sourcefn, 'w') as f:
                     f.write("import {}\n".format(importstring))
                 try:
-                    result = run_pydoc(modname).decode("ascii")
+                    result = run_pydoc(modname, PYTHONPATH=TESTFN).decode("ascii")
                 finally:
                     forget(modname)
                 expected = badimport_pattern % (modname, expectedinmsg)
@@ -494,13 +495,17 @@ class TestHelper(unittest.TestCase):
         self.assertEqual(sorted(pydoc.Helper.keywords),
                          sorted(keyword.kwlist))
 
+@reap_threads
 def test_main():
-    test.support.run_unittest(PydocDocTest,
-                              TestDescriptions,
-                              PydocServerTest,
-                              PydocUrlHandlerTest,
-                              TestHelper,
-                              )
+    try:
+        test.support.run_unittest(PydocDocTest,
+                                  TestDescriptions,
+                                  PydocServerTest,
+                                  PydocUrlHandlerTest,
+                                  TestHelper,
+                                  )
+    finally:
+        reap_children()
 
 if __name__ == "__main__":
     test_main()
