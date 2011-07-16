@@ -35,8 +35,11 @@ for name, func, args in [
         ("os.path.abspath", os.path.abspath, ('.',)),
         ]:
 
-    t = Worker(func, args)
-    t.start()
-    t.join(TIMEOUT)
-    if t.is_alive():
-        errors.append("%s appeared to hang" % name)
+    try:
+        t = Worker(func, args)
+        t.start()
+        t.join(TIMEOUT)
+        if t.is_alive():
+            errors.append("%s appeared to hang" % name)
+    finally:
+        del t
