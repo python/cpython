@@ -232,6 +232,7 @@ def _queue_management_worker(executor_reference,
                 # X.
                 for p in processes:
                     p.join()
+                call_queue.close()
                 return
             else:
                 # Start shutting down by telling a process it can exit.
