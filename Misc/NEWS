@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #12273: Remove ast.__version__. AST changes can be accounted for by
+  checking sys.version_info or sys._mercurial.
+
 - Issue #11627: Fix segfault when __new__ on a exception returns a non-exception
   class.
 
