@@ -1506,6 +1506,7 @@ class TestSendfile(unittest.TestCase):
                         raise
 
 
+@support.reap_threads
 def test_main():
     support.run_unittest(
         FileTests,

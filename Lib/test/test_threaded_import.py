@@ -11,8 +11,8 @@ import sys
 import time
 import shutil
 import unittest
-from test.support import verbose, import_module, run_unittest, TESTFN
-thread = import_module('_thread')
+from test.support import (
+    verbose, import_module, run_unittest, TESTFN, reap_threads)
 threading = import_module('threading')
 
 def task(N, done, done_tasks, errors):
@@ -62,7 +62,7 @@ class Finder:
     def __init__(self):
         self.numcalls = 0
         self.x = 0
-        self.lock = thread.allocate_lock()
+        self.lock = threading.Lock()
 
     def find_module(self, name, path=None):
         # Simulate some thread-unsafe behaviour. If calls to find_module()
@@ -113,7 +113,9 @@ class ThreadedImportTests(unittest.TestCase):
             done_tasks = []
             done.clear()
             for i in range(N):
-                thread.start_new_thread(task, (N, done, done_tasks, errors,))
+                t = threading.Thread(target=task,
+                                     args=(N, done, done_tasks, errors,))
+                t.start()
             done.wait(60)
             self.assertFalse(errors)
             if verbose:
@@ -203,6 +205,7 @@ class ThreadedImportTests(unittest.TestCase):
         self.assertEqual(set(results), {'a', 'b'})
 
 
+@reap_threads
 def test_main():
     run_unittest(ThreadedImportTests)
 

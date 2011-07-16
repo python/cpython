@@ -24,9 +24,15 @@ import sysconfig
 import logging.handlers
 
 try:
-    import _thread
+    import _thread, threading
 except ImportError:
     _thread = None
+    threading = None
+try:
+    import multiprocessing.process
+except ImportError:
+    multiprocessing = None
+
 
 try:
     import zlib
@@ -1358,19 +1364,20 @@ def modules_cleanup(oldmodules):
 
 def threading_setup():
     if _thread:
-        return _thread._count(),
+        return _thread._count(), threading._dangling.copy()
     else:
-        return 1,
+        return 1, ()
 
-def threading_cleanup(nb_threads):
+def threading_cleanup(*original_values):
     if not _thread:
         return
     _MAX_COUNT = 10
     for count in range(_MAX_COUNT):
-        n = _thread._count()
-        if n == nb_threads:
+        values = _thread._count(), threading._dangling
+        if values == original_values:
             break
         time.sleep(0.1)
+        gc_collect()
     # XXX print a warning in case of failure?
 
 def reap_threads(func):
