@@ -228,6 +228,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12273: Remove ast.__version__. AST changes can be accounted for by
+  checking sys.version_info or sys._mercurial.
+
 - Silence spurious "broken pipe" tracebacks when shutting down a
   ProcessPoolExecutor.
 
