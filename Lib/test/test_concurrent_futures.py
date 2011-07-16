@@ -634,7 +634,8 @@ def test_main():
                                   ThreadPoolAsCompletedTests,
                                   FutureTests,
                                   ProcessPoolShutdownTest,
-                                  ThreadPoolShutdownTest)
+                                  ThreadPoolShutdownTest,
+                                  )
     finally:
         test.support.reap_children()
 
