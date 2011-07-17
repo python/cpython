@@ -323,6 +323,11 @@ The following classes are provided:
    A catch-all class to handle unknown URLs.
 
 
+.. class:: HTTPErrorProcessor()
+
+   Process HTTP error responses.
+
+
 .. _request-objects:
 
 Request Objects
