@@ -240,10 +240,11 @@ not contain whitespace though.
 For the ``'s'`` format character, the count is interpreted as the length of the
 bytes, not a repeat count like for the other format characters; for example,
 ``'10s'`` means a single 10-byte string, while ``'10c'`` means 10 characters.
-For packing, the string is truncated or padded with null bytes as appropriate to
-make it fit. For unpacking, the resulting bytes object always has exactly the
-specified number of bytes.  As a special case, ``'0s'`` means a single, empty
-string (while ``'0c'`` means 0 characters).
+If a count is not given, it defaults to 1.  For packing, the string is
+truncated or padded with null bytes as appropriate to make it fit. For
+unpacking, the resulting bytes object always has exactly the specified number
+of bytes.  As a special case, ``'0s'`` means a single, empty string (while
+``'0c'`` means 0 characters).
 
 When packing a value ``x`` using one of the integer formats (``'b'``,
 ``'B'``, ``'h'``, ``'H'``, ``'i'``, ``'I'``, ``'l'``, ``'L'``,
