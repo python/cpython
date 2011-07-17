@@ -1,4 +1,4 @@
-:mod:`queue` --- A synchronized queue class
+:mod:`Queue` --- A synchronized queue class
 ===========================================
 
 .. module:: Queue
@@ -26,7 +26,7 @@ lowest valued entry is retrieved first.
 
 .. seealso::
 
-   Latest version of the `queue module Python source code
+   Latest version of the `Queue module Python source code
    <http://svn.python.org/view/python/branches/release27-maint/Lib/Queue.py?view=markup>`_.
 
 The :mod:`Queue` module defines the following classes and exceptions:
