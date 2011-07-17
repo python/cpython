@@ -25,8 +25,8 @@ miles, or mass.  Naive :class:`datetime` objects are easy to understand and to
 work with, at the cost of ignoring some aspects of reality.
 
 For applications requiring more, :class:`datetime` and :class:`time` objects
-have an optional time zone information attribute, :attr:`tzinfo`, that can contain
-an instance of a subclass of the abstract :class:`tzinfo` class.  These
+have an optional time zone information attribute, :attr:`tzinfo`, that can be
+set to an instance of a subclass of the abstract :class:`tzinfo` class.  These
 :class:`tzinfo` objects capture information about the offset from UTC time, the
 time zone name, and whether Daylight Saving Time is in effect.  Note that only
 one concrete :class:`tzinfo` class, the :class:`timezone` class, is supplied by the
@@ -748,11 +748,13 @@ Other constructors, all class methods:
 
 .. classmethod:: datetime.combine(date, time)
 
-   Return a new :class:`datetime` object whose date attributes are equal to the
-   given :class:`date` object's, and whose time and :attr:`tzinfo` attributes are
-   equal to the given :class:`time` object's. For any :class:`datetime` object
-   *d*, ``d == datetime.combine(d.date(), d.timetz())``.  If date is a
-   :class:`datetime` object, its time and :attr:`tzinfo` attributes are ignored.
+   Return a new :class:`datetime` object whose date components are equal to the
+   given :class:`date` object's, and whose time components and :attr:`tzinfo`
+   attributes are equal to the given :class:`time` object's. For any
+   :class:`datetime` object *d*,
+   ``d == datetime.combine(d.date(), d.timetz())``.  If date is a
+   :class:`datetime` object, its time components and :attr:`tzinfo` attributes
+   are ignored.
 
 
 .. classmethod:: datetime.strptime(date_string, format)
@@ -924,13 +926,13 @@ Instance methods:
    Return a datetime with the same attributes, except for those attributes given
    new values by whichever keyword arguments are specified.  Note that
    ``tzinfo=None`` can be specified to create a naive datetime from an aware
-   datetime with no conversion of date and time attributes.
+   datetime with no conversion of date and time data.
 
 
 .. method:: datetime.astimezone(tz)
 
    Return a :class:`datetime` object with new :attr:`tzinfo` attribute *tz*,
-   adjusting the date and time attributes so the result is the same UTC time as
+   adjusting the date and time data so the result is the same UTC time as
    *self*, but in *tz*'s local time.
 
    *tz* must be an instance of a :class:`tzinfo` subclass, and its
@@ -939,18 +941,18 @@ Instance methods:
    not return ``None``).
 
    If ``self.tzinfo`` is *tz*, ``self.astimezone(tz)`` is equal to *self*:  no
-   adjustment of date or time attributes is performed. Else the result is local
+   adjustment of date or time data is performed. Else the result is local
    time in time zone *tz*, representing the same UTC time as *self*:  after
    ``astz = dt.astimezone(tz)``, ``astz - astz.utcoffset()`` will usually have
-   the same date and time attributes as ``dt - dt.utcoffset()``. The discussion
+   the same date and time data as ``dt - dt.utcoffset()``. The discussion
    of class :class:`tzinfo` explains the cases at Daylight Saving Time transition
    boundaries where this cannot be achieved (an issue only if *tz* models both
    standard and daylight time).
 
    If you merely want to attach a time zone object *tz* to a datetime *dt* without
-   adjustment of date and time attributes, use ``dt.replace(tzinfo=tz)``.  If you
+   adjustment of date and time data, use ``dt.replace(tzinfo=tz)``.  If you
    merely want to remove the time zone object from an aware datetime *dt* without
-   conversion of date and time attributes, use ``dt.replace(tzinfo=None)``.
+   conversion of date and time data, use ``dt.replace(tzinfo=None)``.
 
    Note that the default :meth:`tzinfo.fromutc` method can be overridden in a
    :class:`tzinfo` subclass to affect the result returned by :meth:`astimezone`.
@@ -1286,7 +1288,7 @@ Instance methods:
    Return a :class:`time` with the same value, except for those attributes given
    new values by whichever keyword arguments are specified.  Note that
    ``tzinfo=None`` can be specified to create a naive :class:`time` from an
-   aware :class:`time`, without conversion of the time attributes.
+   aware :class:`time`, without conversion of the time data.
 
 
 .. method:: time.isoformat()
@@ -1493,10 +1495,10 @@ There is one more :class:`tzinfo` method that a subclass may wish to override:
 
 .. method:: tzinfo.fromutc(dt)
 
-   This is called from the default :class:`datetime.astimezone()` implementation.
-   When called from that, ``dt.tzinfo`` is *self*, and *dt*'s date and time
-   attributes are to be viewed as expressing a UTC time.  The purpose of
-   :meth:`fromutc` is to adjust the date and time attributes, returning an
+   This is called from the default :class:`datetime.astimezone()`
+   implementation.  When called from that, ``dt.tzinfo`` is *self*, and *dt*'s
+   date and time data are to be viewed as expressing a UTC time.  The purpose
+   of :meth:`fromutc` is to adjust the date and time data, returning an
    equivalent datetime in *self*'s local time.
 
    Most :class:`tzinfo` subclasses should be able to inherit the default
