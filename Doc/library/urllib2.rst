@@ -900,8 +900,8 @@ HTTPErrorProcessor Objects
 
 .. method:: HTTPErrorProcessor.https_response()
 
-   Process HTTPS error responses. 
-   
+   Process HTTPS error responses.
+
    The behavior is same as :meth:`http_response`.
 
 
