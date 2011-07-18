@@ -171,11 +171,6 @@ The Python compiler currently generates the following bytecode instructions.
 
 **General instructions**
 
-.. opcode:: STOP_CODE
-
-   Indicates end-of-code to the compiler, not used by the interpreter.
-
-
 .. opcode:: NOP
 
    Do nothing code.  Used as a placeholder by the bytecode optimizer.

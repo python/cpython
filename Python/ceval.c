@@ -1347,8 +1347,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
            x to NULL, err to nonzero, or why to anything but WHY_NOT,
            and that no operation that succeeds does this! */
 
-        /* case STOP_CODE: this is an error! */
-
         TARGET(NOP)
             FAST_DISPATCH();
 
