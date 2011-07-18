@@ -10,6 +10,8 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #10271: Allow warnings.showwarning() be any callable.
+
 - Issue #11627: Fix segfault when __new__ on a exception returns a non-exception
   class.
 
