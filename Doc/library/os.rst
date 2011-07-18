@@ -1930,7 +1930,9 @@ written in Python, such as a mail server's external command delivery program.
       os.spawnvpe(os.P_WAIT, 'cp', L, os.environ)
 
    Availability: Unix, Windows.  :func:`spawnlp`, :func:`spawnlpe`, :func:`spawnvp`
-   and :func:`spawnvpe` are not available on Windows.
+   and :func:`spawnvpe` are not available on Windows.  :func:`spawnle` and
+   :func:`spawnve` are not thread-safe on Windows; we advise you to use the
+   :mod:`subprocess` module instead.
 
 
 .. data:: P_NOWAIT
