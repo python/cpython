@@ -511,6 +511,16 @@ get_field_object(SubString *input, PyObject *args, PyObject *kwargs,
         Py_DECREF(key);
     }
     else {
+        /* If args is NULL, we have a format string with a positional field
+           with only kwargs to retrieve it from. This can only happen when
+           used with format_map(), where positional arguments are not
+           allowed. */
+        if (args == NULL) {
+            PyErr_SetString(PyExc_ValueError, "Format string contains "
+                            "positional fields");
+            goto error;
+        }
+
         /* look up in args */
         obj = PySequence_GetItem(args, index);
         if (obj == NULL)
