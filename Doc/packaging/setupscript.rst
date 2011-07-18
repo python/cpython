@@ -70,7 +70,7 @@ Thus, when you say ``packages = ['foo']`` in your setup script, you are
 promising that the Distutils will find a file :file:`foo/__init__.py` (which
 might be spelled differently on your system, but you get the idea) relative to
 the directory where your setup script lives.  If you break this promise, the
-Distutils will issue a warning but still process the broken package anyways.
+Distutils will issue a warning but still process the broken package anyway.
 
 If you use a different convention to lay out your source directory, that's no
 problem: you just have to supply the :option:`package_dir` option to tell the
