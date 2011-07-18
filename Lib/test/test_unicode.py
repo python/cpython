@@ -736,6 +736,11 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertRaises(TypeError, '{a'.format_map)
         self.assertRaises(TypeError, '}a'.format_map)
 
+        # issue #12579: can't supply positional params to format_map
+        self.assertRaises(ValueError, '{}'.format_map, {'a' : 2})
+        self.assertRaises(ValueError, '{}'.format_map, 'a')
+        self.assertRaises(ValueError, '{a} {}'.format_map, {"a" : 2, "b" : 1})
+
     def test_format_auto_numbering(self):
         class C:
             def __init__(self, x=100):
