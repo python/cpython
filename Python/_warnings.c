@@ -409,10 +409,10 @@ warn_explicit(PyObject *category, PyObject *message,
         else {
             PyObject *res;
 
-            if (!PyMethod_Check(show_fxn) && !PyFunction_Check(show_fxn)) {
+            if (!PyCallable_Check(show_fxn)) {
                 PyErr_SetString(PyExc_TypeError,
                                 "warnings.showwarning() must be set to a "
-                                "function or method");
+                                "callable");
                 Py_DECREF(show_fxn);
                 goto cleanup;
             }

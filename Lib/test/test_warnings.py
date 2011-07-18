@@ -512,12 +512,11 @@ class _WarningsTests(BaseTest):
     def test_showwarning_not_callable(self):
         with original_warnings.catch_warnings(module=self.module):
             self.module.filterwarnings("always", category=UserWarning)
-            old_showwarning = self.module.showwarning
+            self.module.showwarning = print
+            with support.captured_output('stdout'):
+                self.module.warn('Warning!')
             self.module.showwarning = 23
-            try:
-                self.assertRaises(TypeError, self.module.warn, "Warning!")
-            finally:
-                self.module.showwarning = old_showwarning
+            self.assertRaises(TypeError, self.module.warn, "Warning!")
 
     def test_show_warning_output(self):
         # With showarning() missing, make sure that output is okay.
@@ -547,10 +546,13 @@ class _WarningsTests(BaseTest):
         globals_dict = globals()
         oldfile = globals_dict['__file__']
         try:
-            with original_warnings.catch_warnings(module=self.module) as w:
+            catch = original_warnings.catch_warnings(record=True,
+                                                     module=self.module)
+            with catch as w:
                 self.module.filterwarnings("always", category=UserWarning)
                 globals_dict['__file__'] = None
                 original_warnings.warn('test', UserWarning)
+                self.assertTrue(len(w))
         finally:
             globals_dict['__file__'] = oldfile
 

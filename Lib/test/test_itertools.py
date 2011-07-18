@@ -168,7 +168,8 @@ class TestBasicOps(unittest.TestCase):
                 self.assertEqual(result, list(combinations2(values, r))) # matches second pure python version
                 self.assertEqual(result, list(combinations3(values, r))) # matches second pure python version
 
-        # Test implementation detail:  tuple re-use
+    @support.impl_detail("tuple reuse is specific to CPython")
+    def test_combinations_tuple_reuse(self):
         self.assertEqual(len(set(map(id, combinations('abcde', 3)))), 1)
         self.assertNotEqual(len(set(map(id, list(combinations('abcde', 3))))), 1)
 
@@ -238,7 +239,9 @@ class TestBasicOps(unittest.TestCase):
                 self.assertEqual(result, list(cwr1(values, r)))         # matches first pure python version
                 self.assertEqual(result, list(cwr2(values, r)))         # matches second pure python version
 
-        # Test implementation detail:  tuple re-use
+    @support.impl_detail("tuple reuse is specific to CPython")
+    def test_combinations_with_replacement_tuple_reuse(self):
+        cwr = combinations_with_replacement
         self.assertEqual(len(set(map(id, cwr('abcde', 3)))), 1)
         self.assertNotEqual(len(set(map(id, list(cwr('abcde', 3))))), 1)
 
@@ -302,7 +305,8 @@ class TestBasicOps(unittest.TestCase):
                     self.assertEqual(result, list(permutations(values, None))) # test r as None
                     self.assertEqual(result, list(permutations(values)))       # test default r
 
-        # Test implementation detail:  tuple re-use
+    @support.impl_detail("tuple resuse is CPython specific")
+    def test_permutations_tuple_reuse(self):
         self.assertEqual(len(set(map(id, permutations('abcde', 3)))), 1)
         self.assertNotEqual(len(set(map(id, list(permutations('abcde', 3))))), 1)
 
@@ -566,11 +570,13 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(list(zip()), lzip())
         self.assertRaises(TypeError, zip, 3)
         self.assertRaises(TypeError, zip, range(3), 3)
-        # Check tuple re-use (implementation detail)
         self.assertEqual([tuple(list(pair)) for pair in zip('abc', 'def')],
                          lzip('abc', 'def'))
         self.assertEqual([pair for pair in zip('abc', 'def')],
                          lzip('abc', 'def'))
+
+    @support.impl_detail("tuple reuse is specific to CPython")
+    def test_zip_tuple_reuse(self):
         ids = list(map(id, zip('abc', 'def')))
         self.assertEqual(min(ids), max(ids))
         ids = list(map(id, list(zip('abc', 'def'))))
@@ -613,11 +619,13 @@ class TestBasicOps(unittest.TestCase):
             else:
                 self.fail('Did not raise Type in:  ' + stmt)
 
-        # Check tuple re-use (implementation detail)
         self.assertEqual([tuple(list(pair)) for pair in zip_longest('abc', 'def')],
                          list(zip('abc', 'def')))
         self.assertEqual([pair for pair in zip_longest('abc', 'def')],
                          list(zip('abc', 'def')))
+
+    @support.impl_detail("tuple reuse is specific to CPython")
+    def test_zip_longest_tuple_reuse(self):
         ids = list(map(id, zip_longest('abc', 'def')))
         self.assertEqual(min(ids), max(ids))
         ids = list(map(id, list(zip_longest('abc', 'def'))))
@@ -721,7 +729,8 @@ class TestBasicOps(unittest.TestCase):
             args = map(iter, args)
             self.assertEqual(len(list(product(*args))), expected_len)
 
-        # Test implementation detail:  tuple re-use
+    @support.impl_detail("tuple reuse is specific to CPython")
+    def test_product_tuple_reuse(self):
         self.assertEqual(len(set(map(id, product('abc', 'def')))), 1)
         self.assertNotEqual(len(set(map(id, list(product('abc', 'def'))))), 1)
 

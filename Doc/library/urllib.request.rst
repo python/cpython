@@ -323,6 +323,11 @@ The following classes are provided:
    A catch-all class to handle unknown URLs.
 
 
+.. class:: HTTPErrorProcessor()
+
+   Process HTTP error responses.
+
+
 .. _request-objects:
 
 Request Objects
@@ -926,7 +931,7 @@ UnknownHandler Objects
 HTTPErrorProcessor Objects
 --------------------------
 
-.. method:: HTTPErrorProcessor.unknown_open()
+.. method:: HTTPErrorProcessor.http_response()
 
    Process HTTP error responses.
 
@@ -936,6 +941,13 @@ HTTPErrorProcessor Objects
    :meth:`protocol_error_code` handler methods, via :meth:`OpenerDirector.error`.
    Eventually, :class:`HTTPDefaultErrorHandler` will raise an
    :exc:`HTTPError` if no other handler handles the error.
+
+
+.. method:: HTTPErrorProcessor.https_response()
+
+   Process HTTPS error responses.
+
+   The behavior is same as :meth:`http_response`.
 
 
 .. _urllib-request-examples:
