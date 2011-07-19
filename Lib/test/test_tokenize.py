@@ -649,7 +649,7 @@ class TestTokenizerAdheresToPep0263(TestCase):
         return roundtrip(open(path, 'rb'))
 
     def test_utf8_coding_cookie_and_no_utf8_bom(self):
-        f = 'tokenize_tests-utf8-coding-cookie-and-utf8-bom-sig.txt'
+        f = 'tokenize_tests-utf8-coding-cookie-and-no-utf8-bom-sig.txt'
         self.assertTrue(self._testFile(f))
 
     def test_latin1_coding_cookie_and_utf8_bom(self):
