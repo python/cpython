@@ -81,6 +81,9 @@ C-API
 Tests
 -----
 
+- Issue #12587: Correct faulty test file and reference in test_tokenize.
+  (Patch by Robert Xiao)
+
 - Try harder to reap dangling threads in test.support.reap_threads().
 
 - Issue #12573: Add resource checks for dangling Thread and Process objects.
