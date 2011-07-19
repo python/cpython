@@ -14,8 +14,8 @@ Core and Builtins
   format string that contains positional fields. Initial patch by
   Julian Berman.
 
-- Issue #11627: Fix segfault when __new__ on a exception returns a non-exception
-  class.
+- Issue #11627: Fix segfault when __new__ on a exception returns a
+  non-exception class.
 
 - Issue #12149: Update the method cache after a type's dictionnary gets
   cleared by the garbage collector.  This fixes a segfault when an instance
@@ -70,6 +70,13 @@ Library
 
 - Issue #12451: xml.dom.pulldom: parse() now opens files in binary mode instead
   of the text mode (using the locale encoding) to avoid encoding issues.
+
+Extension Modules
+-----------------
+
+- Issue #10309: Define _GNU_SOURCE so that mremap() gets the proper
+  signature.  Without this, architectures where sizeof void* != sizeof int are
+  broken.  Patch given by Hallvard B Furuseth.
 
 C-API
 -----
