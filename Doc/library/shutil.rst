@@ -161,8 +161,10 @@ Directory and files operations
 
    Recursively move a file or directory to another location.
 
-   If the destination is on the current filesystem, then simply use rename.
-   Otherwise, copy src (with :func:`copy2`) to the dst and then remove src.
+   Uses :func:`os.rename` to perform the move. If it fails, for reasons such as
+   when *src* and *dst* are on different filesystems or in case of windows where
+   rename is not supported when *dst* exists, fallback to copying *src* (with
+   :func:`copy2`) to the *dst* and then remove *src*.
 
 
 .. exception:: Error
