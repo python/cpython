@@ -293,6 +293,23 @@ class DebuggingServerTests(unittest.TestCase):
         mexpect = '%s%s\n%s' % (MSG_BEGIN, m, MSG_END)
         self.assertEqual(self.output.getvalue(), mexpect)
 
+    def testSendNullSender(self):
+        m = 'A test message'
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=3)
+        smtp.sendmail('<>', 'Sally', m)
+        # XXX (see comment in testSend)
+        time.sleep(0.01)
+        smtp.quit()
+
+        self.client_evt.set()
+        self.serv_evt.wait()
+        self.output.flush()
+        mexpect = '%s%s\n%s' % (MSG_BEGIN, m, MSG_END)
+        self.assertEqual(self.output.getvalue(), mexpect)
+        debugout = smtpd.DEBUGSTREAM.getvalue()
+        sender = re.compile("^sender: <>$", re.MULTILINE)
+        self.assertRegex(debugout, sender)
+
     def testSendMessage(self):
         m = email.mime.text.MIMEText('A test message')
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=3)
@@ -523,7 +540,7 @@ class BadHELOServerTests(unittest.TestCase):
 
 
 sim_users = {'Mr.A@somewhere.com':'John A',
-             'Ms.B@somewhere.com':'Sally B',
+             'Ms.B@xn--fo-fka.com':'Sally B',
              'Mrs.C@somewhereesle.com':'Ruth C',
             }
 
@@ -539,7 +556,7 @@ sim_auth_credentials = {
 sim_auth_login_password = 'C29TZXBHC3N3B3JK'
 
 sim_lists = {'list-1':['Mr.A@somewhere.com','Mrs.C@somewhereesle.com'],
-             'list-2':['Ms.B@somewhere.com',],
+             'list-2':['Ms.B@xn--fo-fka.com',],
             }
 
 # Simulated SMTP channel & server
@@ -560,15 +577,14 @@ class SimSMTPChannel(smtpd.SMTPChannel):
         self.push(resp)
 
     def smtp_VRFY(self, arg):
-        raw_addr = email.utils.parseaddr(arg)[1]
-        quoted_addr = smtplib.quoteaddr(arg)
-        if raw_addr in sim_users:
-            self.push('250 %s %s' % (sim_users[raw_addr], quoted_addr))
+        # For max compatibility smtplib should be sending the raw address.
+        if arg in sim_users:
+            self.push('250 %s %s' % (sim_users[arg], smtplib.quoteaddr(arg)))
         else:
             self.push('550 No such user: %s' % arg)
 
     def smtp_EXPN(self, arg):
-        list_name = email.utils.parseaddr(arg)[1].lower()
+        list_name = arg.lower()
         if list_name in sim_lists:
             user_list = sim_lists[list_name]
             for n, user_email in enumerate(user_list):
@@ -688,8 +704,7 @@ class SMTPSimTests(unittest.TestCase):
             self.assertEqual(smtp.vrfy(email), expected_known)
 
         u = 'nobody@nowhere.com'
-        expected_unknown = (550, ('No such user: %s'
-                                       % smtplib.quoteaddr(u)).encode('ascii'))
+        expected_unknown = (550, ('No such user: %s' % u).encode('ascii'))
         self.assertEqual(smtp.vrfy(u), expected_unknown)
         smtp.quit()
 

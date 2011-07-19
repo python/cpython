@@ -152,6 +152,13 @@ def quoteaddr(addr):
     else:
         return "<%s>" % m
 
+def _addr_only(addrstring):
+    displayname, addr = email.utils.parseaddr(addrstring)
+    if (displayname, addr) == ('', ''):
+        # parseaddr couldn't parse it, so use it as is.
+        return addrstring
+    return addr
+
 # Legacy method kept for backward compatibility.
 def quotedata(data):
     """Quote data for email.
@@ -514,14 +521,14 @@ class SMTP:
 
     def verify(self, address):
         """SMTP 'verify' command -- checks for address validity."""
-        self.putcmd("vrfy", quoteaddr(address))
+        self.putcmd("vrfy", _addr_only(address))
         return self.getreply()
     # a.k.a.
     vrfy = verify
 
     def expn(self, address):
         """SMTP 'expn' command -- expands a mailing list."""
-        self.putcmd("expn", quoteaddr(address))
+        self.putcmd("expn", _addr_only(address))
         return self.getreply()
 
     # some useful methods
