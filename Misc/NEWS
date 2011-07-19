@@ -33,6 +33,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #12571: Add a plat-linux3 directory mirroring the plat-linux2
+  directory, so that "import DLFCN" and other similar imports work on
+  Linux 3.0.
+
 - Issue #7484: smtplib no longer puts <> around addresses in VRFY and EXPN
   commands; they aren't required and in fact postfix doesn't support that form.
 
