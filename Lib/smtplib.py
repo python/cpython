@@ -133,24 +133,18 @@ class SMTPAuthenticationError(SMTPResponseException):
     combination provided.
     """
 
-def quoteaddr(addr):
+def quoteaddr(addrstring):
     """Quote a subset of the email addresses defined by RFC 821.
 
     Should be able to handle anything email.utils.parseaddr can handle.
     """
-    m = (None, None)
-    try:
-        m = email.utils.parseaddr(addr)[1]
-    except AttributeError:
-        pass
-    if m == (None, None):  # Indicates parse failure or AttributeError
-        # something weird here.. punt -ddm
-        return "<%s>" % addr
-    elif m is None:
-        # the sender wants an empty return address
-        return "<>"
-    else:
-        return "<%s>" % m
+    displayname, addr = email.utils.parseaddr(addrstring)
+    if (displayname, addr) == ('', ''):
+        # parseaddr couldn't parse it, use it as is and hope for the best.
+        if addrstring.strip().startswith('<'):
+            return addrstring
+        return "<%s>" % addrstring
+    return "<%s>" % addr
 
 def _addr_only(addrstring):
     displayname, addr = email.utils.parseaddr(addrstring)
