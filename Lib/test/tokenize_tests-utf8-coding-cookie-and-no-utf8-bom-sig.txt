@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 # IMPORTANT: unlike the other test_tokenize-*.txt files, this file
 # does NOT have the utf-8 BOM signature '\xef\xbb\xbf' at the start
 # of it.  Make sure this is not added inadvertently by your editor
