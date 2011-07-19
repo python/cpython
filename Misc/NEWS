@@ -34,6 +34,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7484: smtplib no longer puts <> around addresses in VRFY and EXPN
+  commands; they aren't required and in fact postfix doesn't support that form.
+
 - Close the call queue in concurrent.futures.ProcessPoolExecutor when
   shutdown() is called, without waiting for the garbage collector to kick in.
 
