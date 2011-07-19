@@ -9,8 +9,8 @@ What's New in Python 2.7.3?
 Core and Builtins
 -----------------
 
-- Issue #11627: Fix segfault when __new__ on a exception returns a non-exception
-  class.
+- Issue #11627: Fix segfault when __new__ on a exception returns a
+  non-exception class.
 
 - Issue #12149: Update the method cache after a type's dictionnary gets
   cleared by the garbage collector.  This fixes a segfault when an instance
@@ -28,7 +28,8 @@ Core and Builtins
   the following case: sys.stdin.read() stopped with CTRL+d (end of file),
   raw_input() interrupted by CTRL+c.
 
-- dict_proxy objects now display their contents rather than just the class name.
+- dict_proxy objects now display their contents rather than just the class
+  name.
 
 Library
 -------
@@ -90,16 +91,23 @@ Library
 
 - Named tuples now work correctly with vars().
 
-- sys.setcheckinterval() now updates the current ticker count as well as updating
-  the check interval, so if the user decreases the check interval, the ticker
-  doesn't have to wind down to zero from the old starting point before the new
-  interval takes effect.  And if the user increases the interval, it makes sure
-  the new limit takes effect right away rather have an early task switch before
-  recognizing the new interval.
+- sys.setcheckinterval() now updates the current ticker count as well as
+  updating the check interval, so if the user decreases the check interval,
+  the ticker doesn't have to wind down to zero from the old starting point
+  before the new interval takes effect.  And if the user increases the
+  interval, it makes sure the new limit takes effect right away rather have an
+  early task switch before recognizing the new interval.
 
 - Issue #12085: Fix an attribute error in subprocess.Popen destructor if the
   constructor has failed, e.g. because of an undeclared keyword argument. Patch
   written by Oleg Oshmyan.
+
+Extension Modules
+-----------------
+
+- Issue #10309: Define _GNU_SOURCE so that mremap() gets the proper
+  signature.  Without this, architectures where sizeof void* != sizeof int are
+  broken.  Patch given by Hallvard B Furuseth.
 
 Build
 -----
