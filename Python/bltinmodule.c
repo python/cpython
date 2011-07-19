@@ -604,7 +604,7 @@ builtin_divmod(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(divmod_doc,
-"divmod(x, y) -> (div, mod)\n\
+"divmod(x, y) -> (quotient, remainder)\n\
 \n\
 Return the tuple ((x-x%y)/y, x%y).  Invariant: div*y + mod == x.");
 
