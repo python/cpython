@@ -386,6 +386,13 @@ Constants
 
    .. versionadded:: 3.2
 
+.. data:: CHANNEL_BINDING_TYPES
+
+   List of supported TLS channel binding types.  Strings in this list
+   can be used as arguments to :meth:`SSLSocket.get_channel_binding`.
+
+   .. versionadded:: 3.3
+
 .. data:: OPENSSL_VERSION
 
    The version string of the OpenSSL library loaded by the interpreter::
@@ -495,6 +502,18 @@ SSL sockets also have the following additional methods and attributes:
    version of the SSL protocol that defines its use, and the number of secret
    bits being used.  If no connection has been established, returns ``None``.
 
+.. method:: SSLSocket.get_channel_binding(cb_type="tls-unique")
+
+   Get channel binding data for current connection, as a bytes object.  Returns
+   ``None`` if not connected or the handshake has not been completed.
+
+   The *cb_type* parameter allow selection of the desired channel binding
+   type. Valid channel binding types are listed in the
+   :data:`CHANNEL_BINDING_TYPES` list.  Currently only the 'tls-unique' channel
+   binding, defined by :rfc:`5929`, is supported.  :exc:`ValueError` will be
+   raised if an unsupported channel binding type is requested.
+
+   .. versionadded:: 3.3
 
 .. method:: SSLSocket.unwrap()
 
