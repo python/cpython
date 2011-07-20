@@ -11,12 +11,14 @@ __all__ = [
     'encode_rfc2231',
     'formataddr',
     'formatdate',
+    'format_datetime',
     'getaddresses',
     'make_msgid',
     'mktime_tz',
     'parseaddr',
     'parsedate',
     'parsedate_tz',
+    'parsedate_to_datetime',
     'unquote',
     ]
 
@@ -26,6 +28,7 @@ import time
 import base64
 import random
 import socket
+import datetime
 import urllib.parse
 import warnings
 from io import StringIO
@@ -37,6 +40,7 @@ from email._parseaddr import mktime_tz
 # We need wormarounds for bugs in these methods in older Pythons (see below)
 from email._parseaddr import parsedate as _parsedate
 from email._parseaddr import parsedate_tz as _parsedate_tz
+from email._parseaddr import _parsedate_tz as __parsedate_tz
 
 from quopri import decodestring as _qdecode
 
@@ -110,6 +114,14 @@ ecre = re.compile(r'''
   ''', re.VERBOSE | re.IGNORECASE)
 
 
+def _format_timetuple_and_zone(timetuple, zone):
+    return '%s, %02d %s %04d %02d:%02d:%02d %s' % (
+        ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][timetuple[6]],
+        timetuple[2],
+        ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][timetuple[1] - 1],
+        timetuple[0], timetuple[3], timetuple[4], timetuple[5],
+        zone)
 
 def formatdate(timeval=None, localtime=False, usegmt=False):
     """Returns a date string as specified by RFC 2822, e.g.:
@@ -154,14 +166,25 @@ def formatdate(timeval=None, localtime=False, usegmt=False):
             zone = 'GMT'
         else:
             zone = '-0000'
-    return '%s, %02d %s %04d %02d:%02d:%02d %s' % (
-        ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][now[6]],
-        now[2],
-        ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][now[1] - 1],
-        now[0], now[3], now[4], now[5],
-        zone)
+    return _format_timetuple_and_zone(now, zone)
 
+def format_datetime(dt, usegmt=False):
+    """Turn a datetime into a date string as specified in RFC 2822.
+
+    If usegmt is True, dt must be an aware datetime with an offset of zero.  In
+    this case 'GMT' will be rendered instead of the normal +0000 required by
+    RFC2822.  This is to support HTTP headers involving date stamps.
+    """
+    now = dt.timetuple()
+    if usegmt:
+        if dt.tzinfo is None or dt.tzinfo != datetime.timezone.utc:
+            raise ValueError("usegmt option requires a UTC datetime")
+        zone = 'GMT'
+    elif dt.tzinfo is None:
+        zone = '-0000'
+    else:
+        zone = dt.strftime("%z")
+    return _format_timetuple_and_zone(now, zone)
 
 
 def make_msgid(idstring=None, domain=None):
@@ -202,6 +225,15 @@ def parsedate_tz(data):
     if not data:
         return None
     return _parsedate_tz(data)
+
+def parsedate_to_datetime(data):
+    if not data:
+        return None
+    *dtuple, tz = __parsedate_tz(data)
+    if tz is None:
+        return datetime.datetime(*dtuple[:6])
+    return datetime.datetime(*dtuple[:6],
+            tzinfo=datetime.timezone(datetime.timedelta(seconds=tz)))
 
 
 def parseaddr(addr):
