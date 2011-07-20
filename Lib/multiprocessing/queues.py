@@ -78,11 +78,11 @@ class Queue(object):
 
     def __getstate__(self):
         assert_spawning(self)
-        return (self._maxsize, self._reader, self._writer,
+        return (self._ignore_epipe, self._maxsize, self._reader, self._writer,
                 self._rlock, self._wlock, self._sem, self._opid)
 
     def __setstate__(self, state):
-        (self._maxsize, self._reader, self._writer,
+        (self._ignore_epipe, self._maxsize, self._reader, self._writer,
          self._rlock, self._wlock, self._sem, self._opid) = state
         self._after_fork()
 
