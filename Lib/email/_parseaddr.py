@@ -47,6 +47,21 @@ def parsedate_tz(data):
 
     Accounts for military timezones.
     """
+    res = _parsedate_tz(data)
+    if res[9] is None:
+        res[9] = 0
+    return tuple(res)
+
+def _parsedate_tz(data):
+    """Convert date to extended time tuple.
+
+    The last (additional) element is the time zone offset in seconds, except if
+    the timezone was specified as -0000.  In that case the last element is
+    None.  This indicates a UTC timestamp that explicitly declaims knowledge of
+    the source timezone, as opposed to a +0000 timestamp that indicates the
+    source timezone really was UTC.
+
+    """
     data = data.split()
     # The FWS after the comma after the day-of-week is optional, so search and
     # adjust for this.
@@ -138,6 +153,8 @@ def parsedate_tz(data):
             tzoffset = int(tz)
         except ValueError:
             pass
+        if tzoffset==0 and tz.startswith('-'):
+            tzoffset = None
     # Convert a timezone offset into seconds ; -0500 -> -18000
     if tzoffset:
         if tzoffset < 0:
@@ -147,7 +164,7 @@ def parsedate_tz(data):
             tzsign = 1
         tzoffset = tzsign * ( (tzoffset//100)*3600 + (tzoffset % 100)*60)
     # Daylight Saving Time flag is set to -1, since DST is unknown.
-    return yy, mm, dd, thh, tmm, tss, 0, 1, -1, tzoffset
+    return [yy, mm, dd, thh, tmm, tss, 0, 1, -1, tzoffset]
 
 
 def parsedate(data):

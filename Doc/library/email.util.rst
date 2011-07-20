@@ -81,6 +81,20 @@ There are several useful utilities provided in the :mod:`email.utils` module:
    indexes 6, 7, and 8 of the result tuple are not usable.
 
 
+.. function:: parsedate_to_datetime(date)
+
+   The inverse of :func:`format_datetime`.  Performs the same function as
+   :func:`parsedate`, but on success returns a :mod:`~datetime.datetime`.  If
+   the input date has a timezone of ``-0000``, the ``datetime`` will be a naive
+   ``datetime``, and if the date is conforming to the RFCs it will represent a
+   time in UTC but with no indication of the actual source timezone of the
+   message the date comes from.  If the input date has any other valid timezone
+   offset, the ``datetime`` will be an aware ``datetime`` with the
+   corresponding a :class:`~datetime.timezone` :class:`~datetime.tzinfo`.
+
+   .. versionadded:: 3.3
+
+
 .. function:: mktime_tz(tuple)
 
    Turn a 10-tuple as returned by :func:`parsedate_tz` into a UTC timestamp.  It
@@ -110,6 +124,20 @@ There are several useful utilities provided in the :mod:`email.utils` module:
    timezone as an ascii string ``GMT``, rather than a numeric ``-0000``. This is
    needed for some protocols (such as HTTP). This only applies when *localtime* is
    ``False``.  The default is ``False``.
+
+
+.. function:: format_datetime(dt, usegmt=False)
+
+   Like ``formatdate``, but the input is a :mod:`datetime` instance.  If it is
+   a naive datetime, it is assumed to be "UTC with no information about the
+   source timezone", and the conventional ``-0000`` is used for the timezone.
+   If it is an aware ``datetime``, then the numeric timezone offset is used.
+   If it is an aware timezone with offset zero, then *usegmt* may be set to
+   ``True``, in which case the string ``GMT`` is used instead of the numeric
+   timezone offset.  This provides a way to generate standards conformant HTTP
+   date headers.
+
+   .. versionadded:: 3.3
 
 
 .. function:: make_msgid(idstring=None, domain=None)

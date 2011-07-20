@@ -234,6 +234,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #665194: email.utils now has format_datetime and parsedate_to_datetime
+  functions, allowing for round tripping of RFC2822 format dates.
+
 - Issue #12571: Add a plat-linux3 directory mirroring the plat-linux2
   directory, so that "import DLFCN" and other similar imports work on
   Linux 3.0.
