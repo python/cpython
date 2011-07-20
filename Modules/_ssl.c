@@ -124,6 +124,17 @@ static unsigned int _ssl_locks_count = 0;
 # undef HAVE_SSL_CTX_CLEAR_OPTIONS
 #endif
 
+/* In case of 'tls-unique' it will be 12 bytes for TLS, 36 bytes for
+ * older SSL, but let's be safe */
+#define PySSL_CB_MAXLEN 128
+
+/* SSL_get_finished got added to OpenSSL in 0.9.5 */
+#if OPENSSL_VERSION_NUMBER >= 0x0090500fL
+# define HAVE_OPENSSL_FINISHED 1
+#else
+# define HAVE_OPENSSL_FINISHED 0
+#endif
+
 typedef struct {
     PyObject_HEAD
     SSL_CTX *ctx;
@@ -135,6 +146,7 @@ typedef struct {
     SSL *ssl;
     X509 *peer_cert;
     int shutdown_seen_zero;
+    enum py_ssl_server_or_client socket_type;
 } PySSLSocket;
 
 static PyTypeObject PySSLContext_Type;
@@ -328,6 +340,7 @@ newPySSLSocket(SSL_CTX *ctx, PySocketSockObject *sock,
         SSL_set_accept_state(self->ssl);
     PySSL_END_ALLOW_THREADS
 
+    self->socket_type = socket_type;
     self->Socket = PyWeakref_NewRef((PyObject *) sock, NULL);
     return self;
 }
@@ -1377,6 +1390,41 @@ PyDoc_STRVAR(PySSL_SSLshutdown_doc,
 Does the SSL shutdown handshake with the remote end, and returns\n\
 the underlying socket object.");
 
+#if HAVE_OPENSSL_FINISHED
+static PyObject *
+PySSL_tls_unique_cb(PySSLSocket *self)
+{
+    PyObject *retval = NULL;
+    char buf[PySSL_CB_MAXLEN];
+    int len;
+
+    if (SSL_session_reused(self->ssl) ^ !self->socket_type) {
+        /* if session is resumed XOR we are the client */
+        len = SSL_get_finished(self->ssl, buf, PySSL_CB_MAXLEN);
+    }
+    else {
+        /* if a new session XOR we are the server */
+        len = SSL_get_peer_finished(self->ssl, buf, PySSL_CB_MAXLEN);
+    }
+
+    /* It cannot be negative in current OpenSSL version as of July 2011 */
+    assert(len >= 0);
+    if (len == 0)
+        Py_RETURN_NONE;
+
+    retval = PyBytes_FromStringAndSize(buf, len);
+
+    return retval;
+}
+
+PyDoc_STRVAR(PySSL_tls_unique_cb_doc,
+"tls_unique_cb() -> bytes\n\
+\n\
+Returns the 'tls-unique' channel binding data, as defined by RFC 5929.\n\
+\n\
+If the TLS handshake is not yet complete, None is returned");
+
+#endif /* HAVE_OPENSSL_FINISHED */
 
 static PyMethodDef PySSLMethods[] = {
     {"do_handshake", (PyCFunction)PySSL_SSLdo_handshake, METH_NOARGS},
@@ -1391,6 +1439,10 @@ static PyMethodDef PySSLMethods[] = {
     {"cipher", (PyCFunction)PySSL_cipher, METH_NOARGS},
     {"shutdown", (PyCFunction)PySSL_SSLshutdown, METH_NOARGS,
      PySSL_SSLshutdown_doc},
+#if HAVE_OPENSSL_FINISHED
+    {"tls_unique_cb", (PyCFunction)PySSL_tls_unique_cb, METH_NOARGS,
+     PySSL_tls_unique_cb_doc},
+#endif
     {NULL, NULL}
 };
 
@@ -2220,6 +2272,14 @@ PyInit__ssl(void)
 #endif
     Py_INCREF(r);
     PyModule_AddObject(m, "HAS_SNI", r);
+
+#if HAVE_OPENSSL_FINISHED
+    r = Py_True;
+#else
+    r = Py_False;
+#endif
+    Py_INCREF(r);
+    PyModule_AddObject(m, "HAS_TLS_UNIQUE", r);
 
     /* OpenSSL version */
     /* SSLeay() gives us the version of the library linked against,

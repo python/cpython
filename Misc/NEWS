@@ -234,6 +234,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #12551: Provide a get_channel_binding() method on SSL sockets so as
+  to get channel binding data for the current SSL session (only the
+  "tls-unique" channel binding is implemented).  This allows the implementation
+  of certain authentication mechanisms such as SCRAM-SHA-1-PLUS.  Patch by
+  Jacek Konieczny.
+
 - Issue #665194: email.utils now has format_datetime and parsedate_to_datetime
   functions, allowing for round tripping of RFC2822 format dates.
 
