@@ -99,6 +99,10 @@ import base64        # for DER-to-PEM translation
 import traceback
 import errno
 
+if _ssl.HAS_TLS_UNIQUE:
+    CHANNEL_BINDING_TYPES = ['tls-unique']
+else:
+    CHANNEL_BINDING_TYPES = []
 
 class CertificateError(ValueError):
     pass
@@ -494,6 +498,21 @@ class SSLSocket(socket):
                           do_handshake_on_connect=
                               self.do_handshake_on_connect),
                 addr)
+
+    def get_channel_binding(self, cb_type="tls-unique"):
+        """Get channel binding data for current connection.  Raise ValueError
+        if the requested `cb_type` is not supported.  Return bytes of the data
+        or None if the data is not available (e.g. before the handshake).
+        """
+        if cb_type not in CHANNEL_BINDING_TYPES:
+            raise ValueError("Unsupported channel binding type")
+        if cb_type != "tls-unique":
+            raise NotImplementedError(
+                            "{0} channel binding type not implemented"
+                            .format(cb_type))
+        if self._sslobj is None:
+            return None
+        return self._sslobj.tls_unique_cb()
 
     def __del__(self):
         # sys.stderr.write("__del__ on %s\n" % repr(self))
