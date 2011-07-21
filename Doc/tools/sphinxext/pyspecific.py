@@ -10,7 +10,7 @@
 """
 
 ISSUE_URI = 'http://bugs.python.org/issue%s'
-SOURCE_URI = 'http://hg.python.org/cpython/file/default/%s'
+SOURCE_URI = 'http://hg.python.org/cpython/file/3.2/%s'
 
 from docutils import nodes, utils
 from sphinx.util.nodes import split_explicit_title
