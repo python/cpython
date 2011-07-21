@@ -232,7 +232,7 @@ class UnixBrowser(BaseBrowser):
                              stdout=(self.redirect_stdout and inout or None),
                              stderr=inout, start_new_session=True)
         if remote:
-            # wait five secons. If the subprocess is not finished, the
+            # wait five seconds. If the subprocess is not finished, the
             # remote invocation has (hopefully) started a new instance.
             time.sleep(1)
             rc = p.poll()
