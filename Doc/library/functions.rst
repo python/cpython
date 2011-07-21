@@ -358,8 +358,8 @@ available.  They are listed here in alphabetical order.
               n += 1
 
    .. versionadded:: 2.3
-   .. versionadded:: 2.6
-      The *start* parameter.
+   .. versionchanged:: 2.6
+      The *start* parameter was added.
 
 
 .. function:: eval(expression[, globals[, locals]])
