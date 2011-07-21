@@ -234,6 +234,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #12372: POSIX semaphores are broken on AIX: don't use them.
+
 - Issue #12551: Provide a get_channel_binding() method on SSL sockets so as
   to get channel binding data for the current SSL session (only the
   "tls-unique" channel binding is implemented).  This allows the implementation

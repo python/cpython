@@ -8792,7 +8792,7 @@ $as_echo "#define _POSIX_THREADS 1" >>confdefs.h
 
       # Bug 662787: Using semaphores causes unexplicable hangs on Solaris 8.
       case  $ac_sys_system/$ac_sys_release in
-  SunOS/5.6)
+      SunOS/5.6)
 $as_echo "#define HAVE_PTHREAD_DESTRUCTOR 1" >>confdefs.h
 
 		       ;;
@@ -8800,14 +8800,10 @@ $as_echo "#define HAVE_PTHREAD_DESTRUCTOR 1" >>confdefs.h
 $as_echo "#define HAVE_BROKEN_POSIX_SEMAPHORES 1" >>confdefs.h
 
 		       ;;
-      AIX/5)
+      AIX/*)
 $as_echo "#define HAVE_BROKEN_POSIX_SEMAPHORES 1" >>confdefs.h
 
 		       ;;
-      AIX/6)
-$as_echo "#define HAVE_BROKEN_POSIX_SEMAPHORES 1" >>confdefs.h
-
-                      ;;
       esac
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking if PTHREAD_SCOPE_SYSTEM is supported" >&5
