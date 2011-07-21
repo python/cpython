@@ -34,6 +34,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #12372: POSIX semaphores are broken on AIX: don't use them.
+
 - Issue #12571: Add a plat-linux3 directory mirroring the plat-linux2
   directory, so that "import DLFCN" and other similar imports work on
   Linux 3.0.
