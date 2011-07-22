@@ -364,6 +364,20 @@ class AST_Tests(unittest.TestCase):
             compile(m, "<test>", "exec")
         self.assertIn("but got <_ast.expr", str(cm.exception))
 
+    def test_invalid_identitifer(self):
+        m = ast.Module([ast.Expr(ast.Name(42, ast.Load()))])
+        ast.fix_missing_locations(m)
+        with self.assertRaises(TypeError) as cm:
+            compile(m, "<test>", "exec")
+        self.assertIn("identifier must be of type str", str(cm.exception))
+
+    def test_invalid_string(self):
+        m = ast.Module([ast.Expr(ast.Str(42))])
+        ast.fix_missing_locations(m)
+        with self.assertRaises(TypeError) as cm:
+            compile(m, "<test>", "exec")
+        self.assertIn("string must be of type str", str(cm.exception))
+
 
 class ASTHelpers_Test(unittest.TestCase):
 
