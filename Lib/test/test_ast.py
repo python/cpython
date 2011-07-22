@@ -362,6 +362,20 @@ class AST_Tests(unittest.TestCase):
                     ast2 = mod.loads(mod.dumps(ast, protocol))
                     self.assertEqual(to_tuple(ast2), to_tuple(ast))
 
+    def test_invalid_identitifer(self):
+        m = ast.Module([ast.Expr(ast.Name(u"x", ast.Load()))])
+        ast.fix_missing_locations(m)
+        with self.assertRaises(TypeError) as cm:
+            compile(m, "<test>", "exec")
+        self.assertIn("identifier must be of type str", str(cm.exception))
+
+    def test_invalid_string(self):
+        m = ast.Module([ast.Expr(ast.Str(43))])
+        ast.fix_missing_locations(m)
+        with self.assertRaises(TypeError) as cm:
+            compile(m, "<test>", "exec")
+        self.assertIn("string must be of type str or uni", str(cm.exception))
+
 
 class ASTHelpers_Test(unittest.TestCase):
 
