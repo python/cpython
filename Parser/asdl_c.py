@@ -802,7 +802,7 @@ static int obj2ast_object(PyObject* obj, PyObject** out, PyArena* arena)
 
 static int obj2ast_identifier(PyObject* obj, PyObject** out, PyArena* arena)
 {
-    if (!PyString_CheckExact(obj)) {
+    if (!PyString_CheckExact(obj) && obj != Py_None) {
         PyErr_Format(PyExc_TypeError,
                     "AST identifier must be of type str");
         return 1;
