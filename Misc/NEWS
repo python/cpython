@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Verify the types of AST strings and identifiers provided by the user before
+  compiling them.
+
 - Issue #12579: str.format_map() now raises a ValueError if used on a
   format string that contains positional fields. Initial patch by
   Julian Berman.
