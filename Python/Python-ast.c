@@ -2,7 +2,7 @@
 
 
 /*
-   __version__ 82163.
+   __version__ .
 
    This module must be committed separately after each AST grammar change;
    The __version__ number is set to the revision number of the commit
@@ -600,8 +600,25 @@ static int obj2ast_object(PyObject* obj, PyObject** out, PyArena* arena)
     return 0;
 }
 
-#define obj2ast_identifier obj2ast_object
-#define obj2ast_string obj2ast_object
+static int obj2ast_stringlike(PyObject* obj, PyObject** out, PyArena* arena,
+    const char *name)
+{
+    if (!PyUnicode_CheckExact(name)) {
+        PyErr_Format(PyExc_TypeError, "AST %s must be of type str", name);
+        return 1;
+    }
+    return obj2ast_object(obj, out, arena);
+}
+
+static int obj2ast_identifier(PyObject* obj, PyObject** out, PyArena* arena)
+{
+    return obj2ast_stringlike(obj, out, arena, "identifier");
+}
+
+static int obj2ast_string(PyObject* obj, PyObject** out, PyArena* arena)
+{
+    return obj2ast_stringlike(obj, out, arena, "string");
+}
 
 static int obj2ast_int(PyObject* obj, int* out, PyArena* arena)
 {
@@ -6739,7 +6756,7 @@ PyInit__ast(void)
             NULL;
         if (PyModule_AddIntConstant(m, "PyCF_ONLY_AST", PyCF_ONLY_AST) < 0)
                 return NULL;
-        if (PyModule_AddStringConstant(m, "__version__", "82163") < 0)
+        if (PyModule_AddStringConstant(m, "__version__", "") < 0)
                 return NULL;
         if (PyDict_SetItemString(d, "mod", (PyObject*)mod_type) < 0) return
             NULL;
