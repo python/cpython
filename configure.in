@@ -327,14 +327,14 @@ case $ac_sys_system/$ac_sys_release in
   # Reconfirmed for OpenBSD 3.3 by Zachary Hamm, for 3.4 by Jason Ish.
   # In addition, Stefan Krah confirms that issue #1244610 exists through
   # OpenBSD 4.6, but is fixed in 4.7.
-  OpenBSD/2.* | OpenBSD/3.@<:@0123456789@:>@ | OpenBSD/4.@<:@0123456@:>@) 
+  OpenBSD/2.* | OpenBSD/3.* | OpenBSD/4.@<:@0123456@:>@) 
     define_xopen_source=no
     # OpenBSD undoes our definition of __BSD_VISIBLE if _XOPEN_SOURCE is
     # also defined. This can be overridden by defining _BSD_SOURCE
     # As this has a different meaning on Linux, only define it on OpenBSD
     AC_DEFINE(_BSD_SOURCE, 1, [Define on OpenBSD to activate all library features])
     ;;
-  OpenBSD/4.@<:@789@:>@)
+  OpenBSD/*)
     # OpenBSD undoes our definition of __BSD_VISIBLE if _XOPEN_SOURCE is
     # also defined. This can be overridden by defining _BSD_SOURCE
     # As this has a different meaning on Linux, only define it on OpenBSD

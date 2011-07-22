@@ -237,6 +237,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #12592: Make Python build on OpenBSD 5 (and future major releases).
+
 - Issue #12372: POSIX semaphores are broken on AIX: don't use them.
 
 - Issue #12551: Provide a get_channel_binding() method on SSL sockets so as
