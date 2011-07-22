@@ -464,7 +464,7 @@ stringio_write(stringio *self, PyObject *obj)
 
     CHECK_INITIALIZED(self);
     if (!PyUnicode_Check(obj)) {
-        PyErr_Format(PyExc_TypeError, "string argument expected, got '%s'",
+        PyErr_Format(PyExc_TypeError, "unicode argument expected, got '%s'",
                      Py_TYPE(obj)->tp_name);
         return NULL;
     }
