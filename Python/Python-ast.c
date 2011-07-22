@@ -2,7 +2,7 @@
 
 
 /*
-   __version__ .
+   __version__ 82160.
 
    This module must be committed separately after each AST grammar change;
    The __version__ number is set to the revision number of the commit
@@ -596,7 +596,7 @@ static int obj2ast_object(PyObject* obj, PyObject** out, PyArena* arena)
 
 static int obj2ast_identifier(PyObject* obj, PyObject** out, PyArena* arena)
 {
-    if (!PyString_CheckExact(obj)) {
+    if (!PyString_CheckExact(obj) && obj != Py_None) {
         PyErr_Format(PyExc_TypeError,
                     "AST identifier must be of type str");
         return 1;
@@ -6587,7 +6587,7 @@ init_ast(void)
         if (PyDict_SetItemString(d, "AST", (PyObject*)&AST_type) < 0) return;
         if (PyModule_AddIntConstant(m, "PyCF_ONLY_AST", PyCF_ONLY_AST) < 0)
                 return;
-        if (PyModule_AddStringConstant(m, "__version__", "") < 0)
+        if (PyModule_AddStringConstant(m, "__version__", "82160") < 0)
                 return;
         if (PyDict_SetItemString(d, "mod", (PyObject*)mod_type) < 0) return;
         if (PyDict_SetItemString(d, "Module", (PyObject*)Module_type) < 0)
