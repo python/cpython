@@ -903,9 +903,6 @@ static int add_ast_fields(void)
             self.emit("if (!%s_singleton) return 0;" % cons.name, 1)
 
 
-def parse_version(mod):
-    return mod.version.value[12:-3]
-
 class ASTModuleVisitor(PickleVisitor):
 
     def visitModule(self, mod):
@@ -922,7 +919,7 @@ class ASTModuleVisitor(PickleVisitor):
         self.emit("return;", 2)
         # Value of version: "$Revision$"
         self.emit('if (PyModule_AddStringConstant(m, "__version__", "%s") < 0)'
-                % parse_version(mod), 1)
+                % mod.version, 1)
         self.emit("return;", 2)
         for dfn in mod.dfns:
             self.visit(dfn)
@@ -1160,6 +1157,7 @@ def main(srcfile):
     argv0 = os.sep.join(components[-2:])
     auto_gen_msg = common_msg % argv0
     mod = asdl.parse(srcfile)
+    mod.version = "82160"
     if not asdl.check(mod):
         sys.exit(1)
     if INC_DIR:
@@ -1181,7 +1179,7 @@ def main(srcfile):
         p = os.path.join(SRC_DIR, str(mod.name) + "-ast.c")
         f = open(p, "wb")
         f.write(auto_gen_msg)
-        f.write(c_file_msg % parse_version(mod))
+        f.write(c_file_msg % mod.version)
         f.write('#include "Python.h"\n')
         f.write('#include "%s-ast.h"\n' % mod.name)
         f.write('\n')
