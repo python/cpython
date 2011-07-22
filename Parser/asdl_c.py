@@ -800,8 +800,25 @@ static int obj2ast_object(PyObject* obj, PyObject** out, PyArena* arena)
     return 0;
 }
 
-#define obj2ast_identifier obj2ast_object
-#define obj2ast_string obj2ast_object
+static int obj2ast_identifier(PyObject* obj, PyObject** out, PyArena* arena)
+{
+    if (!PyString_CheckExact(obj)) {
+        PyErr_Format(PyExc_TypeError,
+                    "AST identifier must be of type str");
+        return 1;
+    }
+    return obj2ast_object(obj, out, arena);
+}
+
+static int obj2ast_string(PyObject* obj, PyObject** out, PyArena* arena)
+{
+    if (!PyString_CheckExact(obj) && !PyUnicode_CheckExact(obj)) {
+        PyErr_SetString(PyExc_TypeError,
+                       "AST string must be of type str or unicode");
+        return 1;
+    }
+    return obj2ast_object(obj, out, arena);
+}
 
 static int obj2ast_int(PyObject* obj, int* out, PyArena* arena)
 {
