@@ -9,6 +9,9 @@ What's New in Python 2.7.3?
 Core and Builtins
 -----------------
 
+- Issues #12610 and #12609: Verify that user generated AST has correct string
+  and identifier types before compiling.
+
 - Issue #11627: Fix segfault when __new__ on a exception returns a
   non-exception class.
 
