@@ -706,7 +706,8 @@ Text I/O
       written.
 
 
-.. class:: TextIOWrapper(buffer, encoding=None, errors=None, newline=None, line_buffering=False)
+.. class:: TextIOWrapper(buffer, encoding=None, errors=None, newline=None, \
+                         line_buffering=False, write_through=False)
 
    A buffered text stream over a :class:`BufferedIOBase` binary stream.
    It inherits :class:`TextIOBase`.
@@ -736,6 +737,13 @@ Text I/O
 
    If *line_buffering* is ``True``, :meth:`flush` is implied when a call to
    write contains a newline character.
+
+   If *write_through* is ``True``, calls to :meth:`write` are guaranteed
+   not to be buffered: any data written on the :class:`TextIOWrapper`
+   object is immediately handled to its underlying binary *buffer*.
+
+   .. versionchanged:: 3.3
+      The *write_through* argument has been added.
 
    :class:`TextIOWrapper` provides one attribute in addition to those of
    :class:`TextIOBase` and its parents:
