@@ -231,6 +231,7 @@ class OtherNetworkTests(unittest.TestCase):
         handlers = []
 
         cfh = urllib2.CacheFTPHandler()
+        self.addCleanup(cfh.clear_cache)
         cfh.setTimeout(1)
         handlers.append(cfh)
 

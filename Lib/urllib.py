@@ -850,13 +850,16 @@ class ftpwrapper:
     """Class used by open_ftp() for cache of open FTP connections."""
 
     def __init__(self, user, passwd, host, port, dirs,
-                 timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
+                 timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
+                 persistent=False):
         self.user = user
         self.passwd = passwd
         self.host = host
         self.port = port
         self.dirs = dirs
         self.timeout = timeout
+        self.refcount = 0
+        self.keepalive = persistent
         self.init()
 
     def init(self):
@@ -883,7 +886,7 @@ class ftpwrapper:
             # Try to retrieve as a file
             try:
                 cmd = 'RETR ' + file
-                conn = self.ftp.ntransfercmd(cmd)
+                conn, retrlen = self.ftp.ntransfercmd(cmd)
             except ftplib.error_perm, reason:
                 if str(reason)[:3] != '550':
                     raise IOError, ('ftp error', reason), sys.exc_info()[2]
@@ -903,11 +906,14 @@ class ftpwrapper:
                 cmd = 'LIST ' + file
             else:
                 cmd = 'LIST'
-            conn = self.ftp.ntransfercmd(cmd)
+            conn, retrlen = self.ftp.ntransfercmd(cmd)
         self.busy = 1
+        ftpobj = addclosehook(conn.makefile('rb'), self.file_close)
+        self.refcount += 1
+        conn.close()
         # Pass back both a suitably decorated object and a retrieval length
-        return (addclosehook(conn[0].makefile('rb'),
-                             self.endtransfer), conn[1])
+        return (ftpobj, retrlen)
+
     def endtransfer(self):
         if not self.busy:
             return
@@ -918,6 +924,17 @@ class ftpwrapper:
             pass
 
     def close(self):
+        self.keepalive = False
+        if self.refcount <= 0:
+            self.real_close()
+
+    def file_close(self):
+        self.endtransfer()
+        self.refcount -= 1
+        if self.refcount <= 0 and not self.keepalive:
+            self.real_close()
+
+    def real_close(self):
         self.endtransfer()
         try:
             self.ftp.close()
