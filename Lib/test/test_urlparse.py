@@ -93,8 +93,11 @@ class UrlParseTestCase(unittest.TestCase):
     def test_qsl(self):
         for orig, expect in parse_qsl_test_cases:
             result = urllib.parse.parse_qsl(orig, keep_blank_values=True)
-            self.assertEqual(result, expect, "Error parsing %s" % repr(orig))
-
+            self.assertEqual(result, expect, "Error parsing %r" % orig)
+            expect_without_blanks = [v for v in expect if len(v[1])]
+            result = urllib.parse.parse_qsl(orig, keep_blank_values=False)
+            self.assertEqual(result, expect_without_blanks,
+                            "Error parsing %r" % orig)
 
     def test_roundtrips(self):
         str_cases = [
@@ -365,6 +368,9 @@ class UrlParseTestCase(unittest.TestCase):
         self.checkJoin(SIMPLE_BASE, 'http:?y','http://a/b/c/d?y')
         self.checkJoin(SIMPLE_BASE, 'http:g?y','http://a/b/c/g?y')
         self.checkJoin(SIMPLE_BASE, 'http:g?y/./x','http://a/b/c/g?y/./x')
+        self.checkJoin('http:///', '..','http:///')
+        self.checkJoin('', 'http://a/b/c/g?y/./x','http://a/b/c/g?y/./x')
+        self.checkJoin('', 'http://a/./g', 'http://a/./g')
 
     def test_RFC2732(self):
         str_cases = [
@@ -719,6 +725,74 @@ class UrlParseTestCase(unittest.TestCase):
                                                           errors="ignore")
         self.assertEqual(result, [('key', '\u0141-')])
 
+    def test_splitnport(self):
+        # Normal cases are exercised by other tests; ensure that we also
+        # catch cases with no port specified. (testcase ensuring coverage)
+        result = urllib.parse.splitnport('parrot:88')
+        self.assertEqual(result, ('parrot', 88))
+        result = urllib.parse.splitnport('parrot')
+        self.assertEqual(result, ('parrot', -1))
+        result = urllib.parse.splitnport('parrot', 55)
+        self.assertEqual(result, ('parrot', 55))
+        result = urllib.parse.splitnport('parrot:')
+        self.assertEqual(result, ('parrot', None))
+
+    def test_splitquery(self):
+        # Normal cases are exercised by other tests; ensure that we also
+        # catch cases with no port specified (testcase ensuring coverage)
+        result = urllib.parse.splitquery('http://python.org/fake?foo=bar')
+        self.assertEqual(result, ('http://python.org/fake', 'foo=bar'))
+        result = urllib.parse.splitquery('http://python.org/fake?foo=bar?')
+        self.assertEqual(result, ('http://python.org/fake?foo=bar', ''))
+        result = urllib.parse.splitquery('http://python.org/fake')
+        self.assertEqual(result, ('http://python.org/fake', None))
+
+    def test_splitvalue(self):
+        # Normal cases are exercised by other tests; test pathological cases
+        # with no key/value pairs. (testcase ensuring coverage)
+        result = urllib.parse.splitvalue('foo=bar')
+        self.assertEqual(result, ('foo', 'bar'))
+        result = urllib.parse.splitvalue('foo=')
+        self.assertEqual(result, ('foo', ''))
+        result = urllib.parse.splitvalue('foobar')
+        self.assertEqual(result, ('foobar', None))
+
+    def test_to_bytes(self):
+        result = urllib.parse.to_bytes('http://www.python.org')
+        self.assertEqual(result, 'http://www.python.org')
+        self.assertRaises(UnicodeError, urllib.parse.to_bytes,
+                          'http://www.python.org/medi\u00e6val')
+
+    def test_urlencode_sequences(self):
+        # Other tests incidentally urlencode things; test non-covered cases:
+        # Sequence and object values.
+        result = urllib.parse.urlencode({'a': [1, 2], 'b': (3, 4, 5)}, True)
+        self.assertEqual(result, 'a=1&a=2&b=3&b=4&b=5')
+
+        class Trivial:
+            def __str__(self):
+                return 'trivial'
+
+        result = urllib.parse.urlencode({'a': Trivial()}, True)
+        self.assertEqual(result, 'a=trivial')
+
+    def test_quote_from_bytes(self):
+        self.assertRaises(TypeError, urllib.parse.quote_from_bytes, 'foo')
+        result = urllib.parse.quote_from_bytes(b'archaeological arcana')
+        self.assertEqual(result, 'archaeological%20arcana')
+        result = urllib.parse.quote_from_bytes(b'')
+        self.assertEqual(result, '')
+
+    def test_unquote_to_bytes(self):
+        result = urllib.parse.unquote_to_bytes('abc%20def')
+        self.assertEqual(result, b'abc def')
+        result = urllib.parse.unquote_to_bytes('')
+        self.assertEqual(result, b'')
+
+    def test_quote_errors(self):
+        self.assertRaises(TypeError, urllib.parse.quote, b'foo',
+                          encoding='utf-8')
+        self.assertRaises(TypeError, urllib.parse.quote, b'foo', errors='strict')
 
 
 def test_main():
