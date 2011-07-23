@@ -43,6 +43,7 @@ Selecting tests
 -f/--fromfile   -- read names of tests to run from a file (see below)
 -x/--exclude    -- arguments are tests to *exclude*
 -s/--single     -- single step through a set of tests (see below)
+-G/--failfast   -- fail as soon as a test fails (only with -v or -W)
 -u/--use RES1,RES2,...
                 -- specify which special resource intensive tests to run
 -M/--memlimit LIMIT
@@ -252,7 +253,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
          findleaks=False, use_resources=None, trace=False, coverdir='coverage',
          runleaks=False, huntrleaks=False, verbose2=False, print_slow=False,
          random_seed=None, use_mp=None, verbose3=False, forever=False,
-         header=False):
+         header=False, failfast=False):
     """Execute a test suite.
 
     This also parses command-line options and modifies its behavior
@@ -292,13 +293,14 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
     support.record_original_stdout(sys.stdout)
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvqxsSrf:lu:t:TD:NLR:FwWM:nj:',
+        opts, args = getopt.getopt(sys.argv[1:], 'hvqxsSrf:lu:t:TD:NLR:FwWM:nj:G',
             ['help', 'verbose', 'verbose2', 'verbose3', 'quiet',
              'exclude', 'single', 'slow', 'random', 'fromfile', 'findleaks',
              'use=', 'threshold=', 'trace', 'coverdir=', 'nocoverdir',
              'runleaks', 'huntrleaks=', 'memlimit=', 'randseed=',
              'multiprocess=', 'coverage', 'slaveargs=', 'forever', 'debug',
-             'start=', 'nowindows', 'header', 'testdir=', 'timeout=', 'wait'])
+             'start=', 'nowindows', 'header', 'testdir=', 'timeout=', 'wait',
+             'failfast'])
     except getopt.error as msg:
         usage(msg)
 
@@ -322,6 +324,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             debug = True
         elif o in ('-W', '--verbose3'):
             verbose3 = True
+        elif o in ('-G', '--failfast'):
+            failfast = True
         elif o in ('-q', '--quiet'):
             quiet = True;
             verbose = 0
@@ -454,6 +458,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         usage("-T and -j don't go together!")
     if use_mp and findleaks:
         usage("-l and -j don't go together!")
+    if failfast and not (verbose or verbose3):
+        usage("-G/--failfast needs either -v or -W")
 
     good = []
     bad = []
@@ -600,7 +606,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     (test, verbose, quiet),
                     dict(huntrleaks=huntrleaks, use_resources=use_resources,
                          debug=debug, output_on_failure=verbose3,
-                         timeout=timeout)
+                         timeout=timeout, failfast=failfast)
                 )
                 yield (test, args_tuple)
         pending = tests_and_args()
@@ -685,7 +691,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             else:
                 try:
                     result = runtest(test, verbose, quiet, huntrleaks, debug,
-                                     output_on_failure=verbose3, timeout=timeout)
+                                     output_on_failure=verbose3,
+                                     timeout=timeout, failfast=failfast)
                     accumulate_result(test, result)
                 except KeyboardInterrupt:
                     interrupted = True
@@ -829,7 +836,7 @@ def replace_stdout():
 
 def runtest(test, verbose, quiet,
             huntrleaks=False, debug=False, use_resources=None,
-            output_on_failure=False, timeout=None):
+            output_on_failure=False, failfast=False, timeout=None):
     """Run a single test.
 
     test -- the name of the test
@@ -857,6 +864,8 @@ def runtest(test, verbose, quiet,
     if use_timeout:
         faulthandler.dump_tracebacks_later(timeout, exit=True)
     try:
+        if failfast:
+            support.failfast = True
         if output_on_failure:
             support.verbose = True
 
