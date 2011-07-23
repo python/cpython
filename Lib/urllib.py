@@ -851,7 +851,7 @@ class ftpwrapper:
 
     def __init__(self, user, passwd, host, port, dirs,
                  timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
-                 persistent=False):
+                 persistent=True):
         self.user = user
         self.passwd = passwd
         self.host = host
