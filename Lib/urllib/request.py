@@ -1371,8 +1371,8 @@ class FTPHandler(BaseHandler):
             raise exc.with_traceback(sys.exc_info()[2])
 
     def connect_ftp(self, user, passwd, host, port, dirs, timeout):
-        fw = ftpwrapper(user, passwd, host, port, dirs, timeout)
-        return fw
+        return ftpwrapper(user, passwd, host, port, dirs, timeout,
+                          persistent=False)
 
 class CacheFTPHandler(FTPHandler):
     # XXX would be nice to have pluggable cache strategies
@@ -1420,6 +1420,13 @@ class CacheFTPHandler(FTPHandler):
                     del self.timeout[k]
                     break
             self.soonest = min(list(self.timeout.values()))
+
+    def clear_cache(self):
+        for conn in self.cache.values():
+            conn.close()
+        self.cache.clear()
+        self.timeout.clear()
+
 
 # Code move from the old urllib module
 
@@ -2144,13 +2151,16 @@ def noheaders():
 class ftpwrapper:
     """Class used by open_ftp() for cache of open FTP connections."""
 
-    def __init__(self, user, passwd, host, port, dirs, timeout=None):
+    def __init__(self, user, passwd, host, port, dirs, timeout=None,
+                 persistent=True):
         self.user = user
         self.passwd = passwd
         self.host = host
         self.port = port
         self.dirs = dirs
         self.timeout = timeout
+        self.refcount = 0
+        self.keepalive = persistent
         self.init()
 
     def init(self):
@@ -2201,7 +2211,8 @@ class ftpwrapper:
             conn, retrlen = self.ftp.ntransfercmd(cmd)
         self.busy = 1
 
-        ftpobj = addclosehook(conn.makefile('rb'), self.endtransfer)
+        ftpobj = addclosehook(conn.makefile('rb'), self.file_close)
+        self.refcount += 1
         conn.close()
         # Pass back both a suitably decorated object and a retrieval length
         return (ftpobj, retrlen)
@@ -2216,6 +2227,17 @@ class ftpwrapper:
             pass
 
     def close(self):
+        self.keepalive = False
+        if self.refcount <= 0:
+            self.real_close()
+
+    def file_close(self):
+        self.endtransfer()
+        self.refcount -= 1
+        if self.refcount <= 0 and not self.keepalive:
+            self.real_close()
+
+    def real_close(self):
         self.endtransfer()
         try:
             self.ftp.close()
