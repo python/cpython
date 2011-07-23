@@ -491,7 +491,6 @@ static struct {
 } pendingcalls[NPENDINGCALLS];
 static int pendingfirst = 0;
 static int pendinglast = 0;
-static char pendingbusy = 0;
 
 int
 Py_AddPendingCall(int (*func)(void *), void *arg)
@@ -538,6 +537,7 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
 int
 Py_MakePendingCalls(void)
 {
+    static int busy = 0;
     int i;
     int r = 0;
 
@@ -552,9 +552,9 @@ Py_MakePendingCalls(void)
     if (main_thread && PyThread_get_thread_ident() != main_thread)
         return 0;
     /* don't perform recursive pending calls */
-    if (pendingbusy)
+    if (busy)
         return 0;
-    pendingbusy = 1;
+    busy = 1;
     /* perform a bounded number of calls, in case of recursion */
     for (i=0; i<NPENDINGCALLS; i++) {
         int j;
@@ -583,7 +583,7 @@ Py_MakePendingCalls(void)
         if (r)
             break;
     }
-    pendingbusy = 0;
+    busy = 0;
     return r;
 }
 
