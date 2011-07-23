@@ -108,19 +108,19 @@ class TestSupport(unittest.TestCase):
         self.assertNotIn("bar", sys.path)
 
     def test_captured_stdout(self):
-       with support.captured_stdout() as s:
-           print("hello")
-       self.assertEqual(s.getvalue(), "hello\n")
+        with support.captured_stdout() as s:
+            print("hello")
+        self.assertEqual(s.getvalue(), "hello\n")
 
     def test_captured_stderr(self):
-       with support.captured_stderr() as s:
-           print("hello", file=sys.stderr)
-       self.assertEqual(s.getvalue(), "hello\n")
+        with support.captured_stderr() as s:
+            print("hello", file=sys.stderr)
+        self.assertEqual(s.getvalue(), "hello\n")
 
     def test_captured_stdin(self):
-       with support.captured_stdin() as s:
-           print("hello", file=sys.stdin)
-       self.assertEqual(s.getvalue(), "hello\n")
+        with support.captured_stdin() as s:
+            print("hello", file=sys.stdin)
+        self.assertEqual(s.getvalue(), "hello\n")
 
     def test_gc_collect(self):
         support.gc_collect()
@@ -175,4 +175,3 @@ def test_main():
 
 if __name__ == '__main__':
     test_main()
-
