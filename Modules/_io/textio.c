@@ -653,10 +653,12 @@ typedef struct
     PyObject *errors;
     const char *writenl; /* utf-8 encoded, NULL stands for \n */
     char line_buffering;
+    char write_through;
     char readuniversal;
     char readtranslate;
     char writetranslate;
     char seekable;
+    char has_read1;
     char telling;
     char deallocating;
     /* Specialized encoding func (see below) */
@@ -809,13 +811,13 @@ static int
 textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
 {
     char *kwlist[] = {"buffer", "encoding", "errors",
-                      "newline", "line_buffering",
+                      "newline", "line_buffering", "write_through",
                       NULL};
     PyObject *buffer, *raw;
     char *encoding = NULL;
     char *errors = NULL;
     char *newline = NULL;
-    int line_buffering = 0;
+    int line_buffering = 0, write_through = 0;
     _PyIO_State *state = IO_STATE;
 
     PyObject *res;
@@ -823,9 +825,9 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
 
     self->ok = 0;
     self->detached = 0;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|zzzi:fileio",
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|zzzii:fileio",
                                      kwlist, &buffer, &encoding, &errors,
-                                     &newline, &line_buffering))
+                                     &newline, &line_buffering, &write_through))
         return -1;
 
     if (newline && newline[0] != '\0'
@@ -930,6 +932,7 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
     self->chunk_size = 8192;
     self->readuniversal = (newline == NULL || newline[0] == '\0');
     self->line_buffering = line_buffering;
+    self->write_through = write_through;
     self->readtranslate = (newline == NULL);
     if (newline) {
         self->readnl = PyUnicode_FromString(newline);
@@ -1038,6 +1041,8 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
         goto error;
     self->seekable = self->telling = PyObject_IsTrue(res);
     Py_DECREF(res);
+
+    self->has_read1 = PyObject_HasAttrString(buffer, "read1");
 
     self->encoding_start_of_stream = 0;
     if (self->seekable && self->encoder) {
@@ -1282,7 +1287,9 @@ textiowrapper_write(textio *self, PyObject *args)
         text = newtext;
     }
 
-    if (self->line_buffering &&
+    if (self->write_through)
+        needflush = 1;
+    else if (self->line_buffering &&
         (haslf ||
          findchar(PyUnicode_AS_UNICODE(text),
                   PyUnicode_GET_SIZE(text), '\r')))
@@ -1429,7 +1436,8 @@ textiowrapper_read_chunk(textio *self)
     if (chunk_size == NULL)
         goto fail;
     input_chunk = PyObject_CallMethodObjArgs(self->buffer,
-        _PyIO_str_read1, chunk_size, NULL);
+        (self->has_read1 ? _PyIO_str_read1: _PyIO_str_read),
+        chunk_size, NULL);
     Py_DECREF(chunk_size);
     if (input_chunk == NULL)
         goto fail;
