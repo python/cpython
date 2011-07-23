@@ -37,6 +37,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10883: Fix socket leaks in urllib.request when using FTP.
+
 - Issue #12592: Make Python build on OpenBSD 5 (and future major releases).
 
 - Issue #12372: POSIX semaphores are broken on AIX: don't use them.
