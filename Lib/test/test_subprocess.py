@@ -474,44 +474,75 @@ class ProcessTestCase(BaseTestCase):
     def test_universal_newlines(self):
         p = subprocess.Popen([sys.executable, "-c",
                               'import sys,os;' + SETBINARY +
-                              'sys.stdout.write("line1\\n");'
+                              'sys.stdout.write(sys.stdin.readline());'
                               'sys.stdout.flush();'
                               'sys.stdout.write("line2\\n");'
                               'sys.stdout.flush();'
-                              'sys.stdout.write("line3\\r\\n");'
+                              'sys.stdout.write(sys.stdin.read());'
                               'sys.stdout.flush();'
-                              'sys.stdout.write("line4\\r");'
+                              'sys.stdout.write("line4\\n");'
                               'sys.stdout.flush();'
-                              'sys.stdout.write("\\nline5");'
+                              'sys.stdout.write("line5\\r\\n");'
                               'sys.stdout.flush();'
-                              'sys.stdout.write("\\nline6");'],
+                              'sys.stdout.write("line6\\r");'
+                              'sys.stdout.flush();'
+                              'sys.stdout.write("\\nline7");'
+                              'sys.stdout.flush();'
+                              'sys.stdout.write("\\nline8");'],
+                             stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
                              universal_newlines=1)
+        p.stdin.write("line1\n")
+        self.assertEqual(p.stdout.readline(), "line1\n")
+        p.stdin.write("line3\n")
+        p.stdin.close()
         self.addCleanup(p.stdout.close)
-        stdout = p.stdout.read()
-        self.assertEqual(stdout, "line1\nline2\nline3\nline4\nline5\nline6")
+        self.assertEqual(p.stdout.readline(),
+                         "line2\n")
+        self.assertEqual(p.stdout.read(6),
+                         "line3\n")
+        self.assertEqual(p.stdout.read(),
+                         "line4\nline5\nline6\nline7\nline8")
 
     def test_universal_newlines_communicate(self):
         # universal newlines through communicate()
         p = subprocess.Popen([sys.executable, "-c",
                               'import sys,os;' + SETBINARY +
-                              'sys.stdout.write("line1\\n");'
-                              'sys.stdout.flush();'
                               'sys.stdout.write("line2\\n");'
                               'sys.stdout.flush();'
-                              'sys.stdout.write("line3\\r\\n");'
+                              'sys.stdout.write("line4\\n");'
                               'sys.stdout.flush();'
-                              'sys.stdout.write("line4\\r");'
+                              'sys.stdout.write("line5\\r\\n");'
                               'sys.stdout.flush();'
-                              'sys.stdout.write("\\nline5");'
+                              'sys.stdout.write("line6\\r");'
                               'sys.stdout.flush();'
-                              'sys.stdout.write("\\nline6");'],
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              'sys.stdout.write("\\nline7");'
+                              'sys.stdout.flush();'
+                              'sys.stdout.write("\\nline8");'],
+                             stderr=subprocess.PIPE,
+                             stdout=subprocess.PIPE,
                              universal_newlines=1)
         self.addCleanup(p.stdout.close)
         self.addCleanup(p.stderr.close)
+        # BUG: can't give a non-empty stdin because it breaks both the
+        # select- and poll-based communicate() implementations.
         (stdout, stderr) = p.communicate()
-        self.assertEqual(stdout, "line1\nline2\nline3\nline4\nline5\nline6")
+        self.assertEqual(stdout,
+                         "line2\nline4\nline5\nline6\nline7\nline8")
+
+    def test_universal_newlines_communicate_stdin(self):
+        # universal newlines through communicate(), with only stdin
+        p = subprocess.Popen([sys.executable, "-c",
+                              'import sys,os;' + SETBINARY + '''\nif True:
+                                  s = sys.stdin.readline()
+                                  assert s == "line1\\n", repr(s)
+                                  s = sys.stdin.read()
+                                  assert s == "line3\\n", repr(s)
+                              '''],
+                             stdin=subprocess.PIPE,
+                             universal_newlines=1)
+        (stdout, stderr) = p.communicate("line1\nline3\n")
+        self.assertEqual(p.returncode, 0)
 
     def test_no_leaking(self):
         # Make sure we leak no resources
@@ -1584,7 +1615,8 @@ def test_main():
                   ProcessTestCaseNoPoll,
                   HelperFunctionTests,
                   CommandsWithSpaces,
-                  ContextManagerTests)
+                  ContextManagerTests,
+                  )
 
     support.run_unittest(*unit_tests)
     support.reap_children()

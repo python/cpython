@@ -37,6 +37,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12591: Improve support of "universal newlines" in the subprocess
+  module: the piped streams can now be properly read from or written to.
+
 - Issue #12591: Allow io.TextIOWrapper to work with raw IO objects (without
   a read1() method), and add an undocumented *write_through* parameter to
   mandate unbuffered writes.
