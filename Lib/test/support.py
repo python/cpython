@@ -170,7 +170,7 @@ def get_attribute(obj, name):
         attribute = getattr(obj, name)
     except AttributeError:
         raise unittest.SkipTest("module %s has no attribute %s" % (
-            obj.__name__, name))
+            repr(obj), name))
     else:
         return attribute
 
@@ -577,14 +577,15 @@ def temp_cwd(name='tempcwd', quiet=False, path=None):
             rmtree(name)
 
 
-@contextlib.contextmanager
-def temp_umask(umask):
-    """Context manager that temporarily sets the process umask."""
-    oldmask = os.umask(umask)
-    try:
-        yield
-    finally:
-        os.umask(oldmask)
+if hasattr(os, "umask"):
+    @contextlib.contextmanager
+    def temp_umask(umask):
+        """Context manager that temporarily sets the process umask."""
+        oldmask = os.umask(umask)
+        try:
+            yield
+        finally:
+            os.umask(oldmask)
 
 
 def findfile(file, here=__file__, subdir=None):
@@ -1029,7 +1030,7 @@ def python_is_optimized():
     for opt in cflags.split():
         if opt.startswith('-O'):
             final_opt = opt
-    return final_opt and final_opt != '-O0'
+    return final_opt != '' and final_opt != '-O0'
 
 
 #=======================================================================
