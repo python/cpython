@@ -1472,7 +1472,7 @@ class TextIOWrapper(TextIOBase):
     _CHUNK_SIZE = 2048
 
     def __init__(self, buffer, encoding=None, errors=None, newline=None,
-                 line_buffering=False):
+                 line_buffering=False, write_through=False):
         if newline is not None and not isinstance(newline, str):
             raise TypeError("illegal newline type: %r" % (type(newline),))
         if newline not in (None, "", "\n", "\r", "\r\n"):
@@ -1515,6 +1515,7 @@ class TextIOWrapper(TextIOBase):
         self._decoded_chars_used = 0  # offset into _decoded_chars for read()
         self._snapshot = None  # info for reconstructing decoder state
         self._seekable = self._telling = self.buffer.seekable()
+        self._has_read1 = hasattr(self.buffer, 'read1')
 
         if self._seekable and self.writable():
             position = self.buffer.tell()
@@ -1680,7 +1681,10 @@ class TextIOWrapper(TextIOBase):
             # len(dec_buffer) bytes ago with decoder state (b'', dec_flags).
 
         # Read a chunk, decode it, and put the result in self._decoded_chars.
-        input_chunk = self.buffer.read1(self._CHUNK_SIZE)
+        if self._has_read1:
+            input_chunk = self.buffer.read1(self._CHUNK_SIZE)
+        else:
+            input_chunk = self.buffer.read(self._CHUNK_SIZE)
         eof = not input_chunk
         self._set_decoded_chars(self._decoder.decode(input_chunk, eof))
 
