@@ -104,6 +104,11 @@ C-API
 Tests
 -----
 
+- Issue #12624: It is now possible to fail after the first failure when
+  running in verbose mode (``-v`` or ``-W``), by using the ``--failfast``
+  (or ``-G``) option to regrtest.  This is useful with long test suites
+  such as test_io or test_subprocess.
+
 - Issue #12587: Correct faulty test file and reference in test_tokenize.
   (Patch by Robert Xiao)
 
