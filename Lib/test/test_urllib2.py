@@ -622,6 +622,7 @@ class HandlerTests(unittest.TestCase):
             def retrfile(self, filename, filetype):
                 self.filename, self.filetype = filename, filetype
                 return io.StringIO(self.data), len(self.data)
+            def close(self): pass
 
         class NullFTPHandler(urllib.request.FTPHandler):
             def __init__(self, data): self.data = data
