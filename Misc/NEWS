@@ -237,6 +237,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #12560: Build libpython.so on OpenBSD. Patch by Stefan Sperling.
+
 - Issue #1813: Fix codec lookup under Turkish locales.
 
 - Issue #12591: Improve support of "universal newlines" in the subprocess
