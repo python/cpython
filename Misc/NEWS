@@ -37,6 +37,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1813: Fix codec lookup and setting/getting locales under Turkish
+  locales.
+
 - Issue #10883: Fix socket leaks in urllib when using FTP.
 
 - Issue #12592: Make Python build on OpenBSD 5 (and future major releases).

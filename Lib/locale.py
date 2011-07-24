@@ -331,6 +331,13 @@ def _test():
 # overridden below)
 _setlocale = setlocale
 
+# Avoid relying on the locale-dependent .lower() method
+# (see issue #1813).
+_ascii_lower_map = ''.join(
+    chr(x + 32 if x >= ord('A') and x <= ord('Z') else x)
+    for x in range(256)
+)
+
 def normalize(localename):
 
     """ Returns a normalized locale code for the given locale
@@ -348,7 +355,7 @@ def normalize(localename):
 
     """
     # Normalize the locale name and extract the encoding
-    fullname = localename.lower()
+    fullname = localename.translate(_ascii_lower_map)
     if ':' in fullname:
         # ':' is sometimes used as encoding delimiter.
         fullname = fullname.replace(':', '.')
