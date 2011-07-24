@@ -1,6 +1,7 @@
 from test import support
 import unittest
 import codecs
+import locale
 import sys, _testcapi, io
 
 class Queue(object):
@@ -1229,6 +1230,19 @@ class CodecsModuleTest(unittest.TestCase):
     def test_getwriter(self):
         self.assertRaises(TypeError, codecs.getwriter)
         self.assertRaises(LookupError, codecs.getwriter, "__spam__")
+
+    def test_lookup_issue1813(self):
+        # Issue #1813: under Turkish locales, lookup of some codecs failed
+        # because 'I' is lowercased as "ı" (dotless i)
+        oldlocale = locale.getlocale(locale.LC_CTYPE)
+        self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)
+        try:
+            locale.setlocale(locale.LC_CTYPE, 'tr_TR')
+        except locale.Error:
+            # Unsupported locale on this system
+            self.skipTest('test needs Turkish locale')
+        c = codecs.lookup('ASCII')
+        self.assertEqual(c.name, 'ascii')
 
 class StreamReaderTest(unittest.TestCase):
 
