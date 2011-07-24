@@ -37,6 +37,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #1813: Fix codec lookup under Turkish locales.
+
 - Issue #12591: Improve support of "universal newlines" in the subprocess
   module: the piped streams can now be properly read from or written to.
 
