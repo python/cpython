@@ -2923,6 +2923,8 @@ class LastResortTest(BaseTest):
         old_raise_exceptions = logging.raiseExceptions
         try:
             sys.stderr = sio = io.StringIO()
+            root.debug('This should not appear')
+            self.assertEqual(sio.getvalue(), '')
             root.warning('This is your final chance!')
             self.assertEqual(sio.getvalue(), 'This is your final chance!\n')
             #No handlers and no last resort, so 'No handlers' message
