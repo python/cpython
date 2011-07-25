@@ -1442,7 +1442,8 @@ class Logger(Filterer):
                 c = c.parent
         if (found == 0):
             if lastResort:
-                lastResort.handle(record)
+                if record.levelno >= lastResort.level:
+                    lastResort.handle(record)
             elif raiseExceptions and not self.manager.emittedNoHandlerWarning:
                 sys.stderr.write("No handlers could be found for logger"
                                  " \"%s\"\n" % self.name)
