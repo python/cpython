@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # This script converts a C file to use the PEP 384 type definition API
 # Usage: abitype.py < old_code > new_code
 import re, sys

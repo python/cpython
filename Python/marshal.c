@@ -57,7 +57,7 @@ typedef struct {
     int error;  /* see WFERR_* values */
     int depth;
     /* If fp == NULL, the following are valid: */
-    PyObject * readable;    /* Stream-like object being read from */
+    PyObject *readable;    /* Stream-like object being read from */
     PyObject *str;
     char *ptr;
     char *end;
@@ -470,7 +470,7 @@ typedef WFILE RFILE; /* Same struct with different invariants */
 static int
 r_string(char *s, int n, RFILE *p)
 {
-    char * ptr;
+    char *ptr;
     int read, left;
 
     if (!p->readable) {
@@ -569,7 +569,7 @@ r_long(RFILE *p)
 static PyObject *
 r_long64(RFILE *p)
 {
-    PyObject * result = NULL;
+    PyObject *result = NULL;
     long lo4 = r_long(p);
     long hi4 = r_long(p);
 
