@@ -128,7 +128,7 @@ connection when done::
   >>> with NNTP('news.gmane.org') as n:
   ...     n.group('gmane.comp.python.committers')
   ...
-  ('211 1754 1 1754 gmane.comp.python.committers', 1754, 1, 1754, 'gmane.comp.python.committers')
+  ('211 1755 1 1755 gmane.comp.python.committers', 1755, 1, 1755, 'gmane.comp.python.committers')
   >>>
 
 (Contributed by Giampaolo Rodolà in :issue:`9795`)

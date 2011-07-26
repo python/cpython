@@ -75,10 +75,10 @@ The module itself defines the following classes:
    connection when done. Here is a sample on how using it:
 
     >>> from nntplib import NNTP
-    >>> with nntplib.NNTP('news.gmane.org') as n:
+    >>> with NNTP('news.gmane.org') as n:
     ...     n.group('gmane.comp.python.committers')
     ...
-    ('211 1454 1 1454 gmane.comp.python.committers', '1454', '1', '1454', 'gmane.comp.python.committers')
+    ('211 1755 1 1755 gmane.comp.python.committers', 1755, 1, 1755, 'gmane.comp.python.committers')
     >>>
 
 
