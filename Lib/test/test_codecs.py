@@ -1234,7 +1234,7 @@ class CodecsModuleTest(unittest.TestCase):
     def test_lookup_issue1813(self):
         # Issue #1813: under Turkish locales, lookup of some codecs failed
         # because 'I' is lowercased as "ı" (dotless i)
-        oldlocale = locale.getlocale(locale.LC_CTYPE)
+        oldlocale = locale.setlocale(locale.LC_CTYPE)
         self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)
         try:
             locale.setlocale(locale.LC_CTYPE, 'tr_TR')
