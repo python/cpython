@@ -13,10 +13,12 @@ import pwd
 import shutil
 import stat
 import sys
+import tempfile
 import unittest
 import warnings
 
-_DUMMY_SYMLINK = '%s/dummy-symlink' % os.getenv('TMPDIR', '/tmp')
+_DUMMY_SYMLINK = os.path.join(tempfile.gettempdir(),
+                              test_support.TESTFN + '-dummy-symlink')
 
 warnings.filterwarnings('ignore', '.* potential security risk .*',
                         RuntimeWarning)
