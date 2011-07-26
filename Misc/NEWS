@@ -1073,6 +1073,9 @@ Tools/Demos
 
 - Issue #11179: Make ccbench work under Python 3.1 and 2.7 again.
 
+- Issue #10639: reindent.py no longer converts newlines and will raise
+  an error if attempting to convert a file with mixed newlines.
+
 Extension Modules
 -----------------
 
