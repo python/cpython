@@ -401,6 +401,8 @@ class TestMiscellaneous(unittest.TestCase):
             # Unsupported locale on this system
             self.skipTest('test needs Turkish locale')
         loc = locale.getlocale()
+        if verbose:
+            print('got locale %a' % (loc,))
         locale.setlocale(locale.LC_CTYPE, loc)
         self.assertEqual(loc, locale.getlocale())
 
