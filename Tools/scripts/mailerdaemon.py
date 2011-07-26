@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Classes to parse mailer-daemon messages."""
 
 import calendar
