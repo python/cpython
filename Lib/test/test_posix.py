@@ -13,10 +13,12 @@ import fcntl
 import pwd
 import shutil
 import stat
+import tempfile
 import unittest
 import warnings
 
-_DUMMY_SYMLINK = '%s/dummy-symlink' % os.getenv('TMPDIR', '/tmp')
+_DUMMY_SYMLINK = os.path.join(tempfile.gettempdir(),
+                              support.TESTFN + '-dummy-symlink')
 
 class PosixTester(unittest.TestCase):
 
