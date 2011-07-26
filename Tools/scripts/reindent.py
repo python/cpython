@@ -35,7 +35,7 @@ tabnanny.py, reindent should do a good job.
 
 The backup file is a copy of the one that is being reindented. The ".bak"
 file is generated with shutil.copy(), but some corner cases regarding
-user/group and permissions could leave the backup file more readable that
+user/group and permissions could leave the backup file more readable than
 you'd prefer. You can always use the --nobackup option to prevent this.
 """
 
@@ -109,13 +109,18 @@ def check(file):
 
     if verbose:
         print("checking", file, "...", end=' ')
-    with  open(file, 'rb') as f:
+    with open(file, 'rb') as f:
         encoding, _ = tokenize.detect_encoding(f.readline)
     try:
         with open(file, encoding=encoding) as f:
             r = Reindenter(f)
     except IOError as msg:
         errprint("%s: I/O Error: %s" % (file, str(msg)))
+        return
+
+    newline = r.newlines
+    if isinstance(newline, tuple):
+        errprint("%s: mixed newlines detected; cannot process file" % file)
         return
 
     if r.run():
@@ -129,7 +134,7 @@ def check(file):
                 shutil.copyfile(file, bak)
                 if verbose:
                     print("backed up", file, "to", bak)
-            with open(file, "w", encoding=encoding) as f:
+            with open(file, "w", encoding=encoding, newline=newline) as f:
                 r.write(f)
             if verbose:
                 print("wrote new", file)
@@ -176,6 +181,10 @@ class Reindenter:
         # signal that tokenize doesn't know what to do about them;
         # indeed, they're our headache!
         self.stats = []
+
+        # Save the newlines found in the file so they can be used to
+        #  create output without mutating the newlines.
+        self.newlines = f.newlines
 
     def run(self):
         tokens = tokenize.generate_tokens(self.getline)
