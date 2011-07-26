@@ -310,6 +310,12 @@ Build
   "make install" creates symlinks in --prefix bin for the "-32" files in the
   framework bin directory like the installer does.
 
+Tools/Demos
+-----------
+
+- Issue #10639: reindent.py no longer converts newlines and will raise
+  an error if attempting to convert a file with mixed newlines.
+
 Tests
 -----
 
