@@ -8,6 +8,8 @@
 -r (--recurse)  Recurse.   Search for all .py files in subdirectories too.
 -n (--nobackup) No backup. Does not make a ".bak" file before reindenting.
 -v (--verbose)  Verbose.   Print informative msgs; else no output.
+   (--newline)  Newline.   Specify the newline character to use (CRLF, LF).
+                           Default is the same as the original file.
 -h (--help)     Help.      Print this usage information and exit.
 
 Change Python (.py) files to use 4-space indents and no hard tab characters.
@@ -65,10 +67,11 @@ def errprint(*args):
 
 def main():
     import getopt
-    global verbose, recurse, dryrun, makebackup
+    global verbose, recurse, dryrun, makebackup, spec_newline
+    spec_newline = None
     try:
         opts, args = getopt.getopt(sys.argv[1:], "drnvh",
-                        ["dryrun", "recurse", "nobackup", "verbose", "help"])
+            ["dryrun", "recurse", "nobackup", "verbose", "newline=", "help"])
     except getopt.error as msg:
         usage(msg)
         return
@@ -81,6 +84,11 @@ def main():
             makebackup = False
         elif o in ('-v', '--verbose'):
             verbose = True
+        elif o in ('--newline',):
+            if not a.upper() in ('CRLF', 'LF'):
+                usage()
+                return
+            spec_newline = dict(CRLF='\r\n', LF='\n')[a.upper()]
         elif o in ('-h', '--help'):
             usage()
             return
@@ -118,9 +126,9 @@ def check(file):
         errprint("%s: I/O Error: %s" % (file, str(msg)))
         return
 
-    newline = r.newlines
+    newline = spec_newline if spec_newline else r.newlines
     if isinstance(newline, tuple):
-        errprint("%s: mixed newlines detected; cannot process file" % file)
+        errprint("%s: mixed newlines detected; cannot continue without --newline" % file)
         return
 
     if r.run():
