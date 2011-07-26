@@ -1075,6 +1075,7 @@ Tools/Demos
 
 - Issue #10639: reindent.py no longer converts newlines and will raise
   an error if attempting to convert a file with mixed newlines.
+  "--newline" option added to specify new line character.
 
 Extension Modules
 -----------------
