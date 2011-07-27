@@ -237,6 +237,13 @@ Core and Builtins
 Library
 -------
 
+- Issue #10968: Remove indirection in threading.  The public names (Thread,
+  Condition, etc.) used to be factory functions returning instances of hidden
+  classes (_Thread, _Condition, etc.), because (if Guido recalls correctly) this
+  code pre-dates the ability to subclass extension types.  It is now possible to
+  inherit from Thread and other classes, without having to import the private
+  underscored names like multiprocessing did.
+
 - Issue #9723: Add shlex.quote functions, to escape filenames and command
   lines.
 
