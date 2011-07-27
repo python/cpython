@@ -37,6 +37,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12607: In subprocess, fix issue where if stdin, stdout or stderr is
+  given as a low fd, it gets overwritten.
+
 - Issue #12102: Document that buffered files must be flushed before being used
   with mmap. Patch by Steffen Daode Nurpmeso.
 

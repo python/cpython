@@ -877,6 +877,64 @@ class POSIXProcessTestCase(BaseTestCase):
         # all standard fds closed.
         self.check_close_std_fds([0, 1, 2])
 
+    def check_swap_fds(self, stdin_no, stdout_no, stderr_no):
+        # open up some temporary files
+        temps = [mkstemp() for i in range(3)]
+        temp_fds = [fd for fd, fname in temps]
+        try:
+            # unlink the files -- we won't need to reopen them
+            for fd, fname in temps:
+                os.unlink(fname)
+
+            # save a copy of the standard file descriptors
+            saved_fds = [os.dup(fd) for fd in range(3)]
+            try:
+                # duplicate the temp files over the standard fd's 0, 1, 2
+                for fd, temp_fd in enumerate(temp_fds):
+                    os.dup2(temp_fd, fd)
+
+                # write some data to what will become stdin, and rewind
+                os.write(stdin_no, b"STDIN")
+                os.lseek(stdin_no, 0, 0)
+
+                # now use those files in the given order, so that subprocess
+                # has to rearrange them in the child
+                p = subprocess.Popen([sys.executable, "-c",
+                    'import sys; got = sys.stdin.read();'
+                    'sys.stdout.write("got %s"%got); sys.stderr.write("err")'],
+                    stdin=stdin_no,
+                    stdout=stdout_no,
+                    stderr=stderr_no)
+                p.wait()
+
+                for fd in temp_fds:
+                    os.lseek(fd, 0, 0)
+
+                out = os.read(stdout_no, 1024)
+                err = test_support.strip_python_stderr(os.read(stderr_no, 1024))
+            finally:
+                for std, saved in enumerate(saved_fds):
+                    os.dup2(saved, std)
+                    os.close(saved)
+
+            self.assertEqual(out, b"got STDIN")
+            self.assertEqual(err, b"err")
+
+        finally:
+            for fd in temp_fds:
+                os.close(fd)
+
+    # When duping fds, if there arises a situation where one of the fds is
+    # either 0, 1 or 2, it is possible that it is overwritten (#12607).
+    # This tests all combinations of this.
+    def test_swap_fds(self):
+        self.check_swap_fds(0, 1, 2)
+        self.check_swap_fds(0, 2, 1)
+        self.check_swap_fds(1, 0, 2)
+        self.check_swap_fds(1, 2, 0)
+        self.check_swap_fds(2, 0, 1)
+        self.check_swap_fds(2, 1, 0)
+
     def test_wait_when_sigchild_ignored(self):
         # NOTE: sigchild_ignore.py may not be an effective test on all OSes.
         sigchild_ignore = test_support.findfile("sigchild_ignore.py",
