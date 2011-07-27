@@ -800,6 +800,7 @@ STDTESTS = [
     'test_unittest',
     'test_doctest',
     'test_doctest2',
+    'test_support'
 ]
 
 # set of tests that we don't want to be executed when using regrtest
