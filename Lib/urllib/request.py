@@ -1144,13 +1144,10 @@ class AbstractHTTPHandler(BaseHandler):
         try:
             h.request(req.get_method(), req.selector, req.data, headers)
         except socket.error as err: # timeout error
+            h.close()
             raise URLError(err)
-        finally:
-            try:
-                r = h.getresponse() # an HTTPResponse instance
-            except Exception as exp:
-                h.close()
-                raise exp
+        else:
+            r = h.getresponse()
 
         r.url = req.get_full_url()
         # This line replaces the .msg attribute of the HTTPResponse
