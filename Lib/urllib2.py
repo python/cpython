@@ -1166,14 +1166,14 @@ class AbstractHTTPHandler(BaseHandler):
 
         try:
             h.request(req.get_method(), req.get_selector(), req.data, headers)
+        except socket.error, err: # XXX what error?
+            h.close()
+            raise URLError(err)
+        else:
             try:
                 r = h.getresponse(buffering=True)
-            except TypeError: #buffering kw not supported
+            except TypeError: # buffering kw not supported
                 r = h.getresponse()
-        except socket.error, err: # XXX what error?
-            raise URLError(err)
-        finally:
-            h.close()
 
         # Pick apart the HTTPResponse object to get the addinfourl
         # object initialized properly.
