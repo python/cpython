@@ -174,6 +174,22 @@ class OtherNetworkTests(unittest.TestCase):
             opener.open(request)
             self.assertEqual(request.get_header('User-agent'),'Test-Agent')
 
+    def test_sites_no_connection_close(self):
+        # Some sites do not send Connection: close header.
+        # Verify that those work properly. (#issue12576)
+
+        try:
+            with urllib.request.urlopen('http://www.imdb.com') as res:
+                pass
+        except ValueError as e:
+            self.fail("urlopen failed for sites not sending Connection:close")
+        else:
+            self.assertTrue(res)
+
+        req = urllib.request.urlopen('http://www.imdb.com')
+        res = req.read()
+        self.assertTrue(res)
+
     def _test_urls(self, urls, handlers, retry=True):
         import time
         import logging
