@@ -1269,7 +1269,7 @@ PyDoc_STRVAR(find__doc__,
 "B.find(sub[, start[, end]]) -> int\n\
 \n\
 Return the lowest index in B where substring sub is found,\n\
-such that sub is contained within s[start:end].  Optional\n\
+such that sub is contained within B[start:end].  Optional\n\
 arguments start and end are interpreted as in slice notation.\n\
 \n\
 Return -1 on failure.");
@@ -1308,7 +1308,7 @@ PyDoc_STRVAR(rfind__doc__,
 "B.rfind(sub[, start[, end]]) -> int\n\
 \n\
 Return the highest index in B where substring sub is found,\n\
-such that sub is contained within s[start:end].  Optional\n\
+such that sub is contained within B[start:end].  Optional\n\
 arguments start and end are interpreted as in slice notation.\n\
 \n\
 Return -1 on failure.");
