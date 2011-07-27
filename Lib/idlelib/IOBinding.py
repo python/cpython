@@ -266,7 +266,7 @@ class IOBinding:
         self.reset_undo()
         self.set_filename(filename)
         self.text.mark_set("insert", "1.0")
-        self.text.see("insert")
+        self.text.yview("insert")
         self.updaterecentfileslist(filename)
         return True
 
