@@ -218,8 +218,8 @@ def source_synopsis(file):
 def synopsis(filename, cache={}):
     """Get the one-line summary out of a module file."""
     mtime = os.stat(filename).st_mtime
-    lastupdate, result = cache.get(filename, (0, None))
-    if lastupdate < mtime:
+    lastupdate, result = cache.get(filename, (None, None))
+    if lastupdate is None or lastupdate < mtime:
         info = inspect.getmoduleinfo(filename)
         try:
             file = tokenize.open(filename)
