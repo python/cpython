@@ -92,7 +92,8 @@ This module defines one class called :class:`Popen`:
          >>> call("cat " + filename, shell=True) # Uh-oh. This will end badly...
 
       *shell=False* does not suffer from this vulnerability; the above Note may be
-      helpful in getting code using *shell=False* to work.
+      helpful in getting code using *shell=False* to work.  See also
+      :func:`shlex.quote` for a function useful to quote filenames and commands.
 
    On Windows: the :class:`Popen` class uses CreateProcess() to execute the
    child program, which operates on strings.  If *args* is a sequence, it will
@@ -871,3 +872,7 @@ runtime):
    described in rule 3.
 
 
+.. seealso::
+
+   :mod:`shlex`
+      Module which provides function to parse and escape command lines.
