@@ -796,7 +796,7 @@ available.  They are listed here in alphabetical order.
       Formerly only returned an unsigned literal.
 
 
-.. function:: open(filename[, mode[, bufsize]])
+.. function:: open(name[, mode[, buffering]])
 
    Open a file, returning an object of the :class:`file` type described in
    section :ref:`bltin-file-objects`.  If the file cannot be opened,
@@ -804,7 +804,7 @@ available.  They are listed here in alphabetical order.
    :func:`open` instead of invoking the :class:`file` constructor directly.
 
    The first two arguments are the same as for ``stdio``'s :cfunc:`fopen`:
-   *filename* is the file name to be opened, and *mode* is a string indicating how
+   *name* is the file name to be opened, and *mode* is a string indicating how
    the file is to be opened.
 
    The most commonly-used values of *mode* are ``'r'`` for reading, ``'w'`` for
@@ -825,9 +825,9 @@ available.  They are listed here in alphabetical order.
       single: buffer size, I/O
       single: I/O control; buffering
 
-   The optional *bufsize* argument specifies the file's desired buffer size: 0
+   The optional *buffering* argument specifies the file's desired buffer size: 0
    means unbuffered, 1 means line buffered, any other positive value means use a
-   buffer of (approximately) that size.  A negative *bufsize* means to use the
+   buffer of (approximately) that size.  A negative *buffering* means to use the
    system default, which is usually line buffered for tty devices and fully
    buffered for other files.  If omitted, the system default is used. [#]_
 
