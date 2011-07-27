@@ -143,6 +143,12 @@ Build
   functions (*BSD and OS X).  Also add new stat file flags for OS X
   (UF_HIDDEN and UF_COMPRESSED).
 
+Tools/Demos
+-----------
+
+- Issue #10639: reindent.py no longer converts newlines and will raise
+  an error if attempting to convert a file with mixed newlines.
+
 Tests
 -----
 
