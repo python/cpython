@@ -237,6 +237,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9723: Add shlex.quote functions, to escape filenames and command
+  lines.
+
 - Issue #12607: In subprocess, fix issue where if stdin, stdout or stderr is
   given as a low fd, it gets overwritten.
 

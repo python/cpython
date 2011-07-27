@@ -1,6 +1,7 @@
-import unittest
-import os, sys, io
+import io
 import shlex
+import string
+import unittest
 
 from test import support
 
@@ -172,6 +173,21 @@ class ShlexTest(unittest.TestCase):
             self.assertEqual(l, self.data[i][1:],
                              "%s: %s != %s" %
                              (self.data[i][0], l, self.data[i][1:]))
+
+    def testQuote(self):
+        safeunquoted = string.ascii_letters + string.digits + '@%_-+=:,./'
+        unsafe = '"`$\\!'
+
+        self.assertEqual(shlex.quote(''), "''")
+        self.assertEqual(shlex.quote(safeunquoted), safeunquoted)
+        self.assertEqual(shlex.quote('test file name'), "'test file name'")
+        for u in unsafe:
+            self.assertEqual(shlex.quote('test%sname' % u),
+                             "'test%sname'" % u)
+        for u in unsafe:
+            self.assertEqual(shlex.quote("test%s'name'" % u),
+                             "'test%s'\"'\"'name'\"'\"''" % u)
+
 
 # Allow this test to be used with old shlex.py
 if not getattr(shlex, "split", None):
