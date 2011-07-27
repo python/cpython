@@ -834,12 +834,12 @@ class BarrierTests(BaseTestCase):
         """
         Test the barrier's default timeout
         """
-        #create a barrier with a low default timeout
-        barrier = self.barriertype(self.N, timeout=0.1)
+        # create a barrier with a low default timeout
+        barrier = self.barriertype(self.N, timeout=0.3)
         def f():
             i = barrier.wait()
             if i == self.N // 2:
-                # One thread is later than the default timeout of 0.1s.
+                # One thread is later than the default timeout of 0.3s.
                 time.sleep(1.0)
             self.assertRaises(threading.BrokenBarrierError, barrier.wait)
         self.run_threads(f)
