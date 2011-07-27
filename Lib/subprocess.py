@@ -1148,6 +1148,14 @@ class Popen(object):
                                 os.close(errread)
                             os.close(errpipe_read)
 
+                            # When duping fds, if there arises a situation
+                            # where one of the fds is either 0, 1 or 2, it
+                            # is possible that it is overwritten (#12607).
+                            if c2pwrite == 0:
+                                c2pwrite = os.dup(c2pwrite)
+                            if errwrite == 0 or errwrite == 1:
+                                errwrite = os.dup(errwrite)
+
                             # Dup fds for child
                             def _dup2(a, b):
                                 # dup2() removes the CLOEXEC flag but
