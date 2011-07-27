@@ -37,6 +37,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12590: IDLE editor window now always displays the first line
+  when opening a long file.  With Tk 8.5, the first line was hidden.
+
 - Issue #12576: Fix urlopen behavior on sites which do not send (or obfuscates)
   Connection:close header.
 
