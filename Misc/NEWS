@@ -237,6 +237,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12576: Fix urlopen behavior on sites which do not send (or obfuscates)
+  Connection:close header.
+
 - Issue #12102: Document that buffered files must be flushed before being used
   with mmap. Patch by Steffen Daode Nurpmeso.
 
