@@ -3,8 +3,6 @@
 Utility functions for creating archive files (tarballs, zip files,
 that sort of thing)."""
 
-__revision__ = "$Id$"
-
 import os
 from warnings import warn
 import sys

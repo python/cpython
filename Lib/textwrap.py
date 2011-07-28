@@ -5,8 +5,6 @@
 # Copyright (C) 2002, 2003 Python Software Foundation.
 # Written by Greg Ward <gward@python.net>
 
-__revision__ = "$Id$"
-
 import re
 
 __all__ = ['TextWrapper', 'wrap', 'fill', 'dedent']

@@ -8,8 +8,6 @@ used from a setup script as
    setup (...)
 """
 
-__revision__ = "$Id$"
-
 # Distutils version
 #
 # Updated automatically by the Python release process.

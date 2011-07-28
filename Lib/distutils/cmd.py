@@ -4,8 +4,6 @@ Provides the Command class, the base class for the command classes
 in the distutils.command package.
 """
 
-__revision__ = "$Id$"
-
 import sys, os, re
 from distutils.errors import DistutilsOptionError
 from distutils import util, dir_util, file_util, archive_util, dep_util

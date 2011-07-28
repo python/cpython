@@ -10,8 +10,6 @@ the package, and perhaps a particular module inside it.
 
 """
 
-__revision__ = "$Id$"
-
 from _curses import *
 import os as _os
 import sys as _sys

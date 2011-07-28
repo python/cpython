@@ -1,6 +1,4 @@
 """Tests for distutils.archive_util."""
-__revision__ = "$Id$"
-
 import unittest
 import os
 import tarfile
