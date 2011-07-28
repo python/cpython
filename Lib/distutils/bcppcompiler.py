@@ -11,8 +11,6 @@ for the Borland C++ compiler.
 # someone should sit down and factor out the common code as
 # WindowsCCompiler!  --GPW
 
-__revision__ = "$Id$"
-
 
 import os
 from distutils.errors import \

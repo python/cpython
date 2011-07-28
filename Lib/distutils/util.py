@@ -4,8 +4,6 @@ Miscellaneous utility functions -- anything that doesn't fit into
 one of the other *util.py modules.
 """
 
-__revision__ = "$Id$"
-
 import sys, os, string, re
 from distutils.errors import DistutilsPlatformError
 from distutils.dep_util import newer

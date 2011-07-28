@@ -8,8 +8,6 @@ usually raised for errors that are obviously the end-user's fault
 This module is safe to use in "from ... import *" mode; it only exports
 symbols whose names start with "Distutils" and end with "Error"."""
 
-__revision__ = "$Id$"
-
 class DistutilsError (Exception):
     """The root of all Distutils evil."""
     pass

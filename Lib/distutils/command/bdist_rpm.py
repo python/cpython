@@ -3,8 +3,6 @@
 Implements the Distutils 'bdist_rpm' command (create RPM source and binary
 distributions)."""
 
-__revision__ = "$Id$"
-
 import sys, os
 from distutils.core import Command
 from distutils.debug import DEBUG

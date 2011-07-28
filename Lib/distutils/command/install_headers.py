@@ -3,8 +3,6 @@
 Implements the Distutils 'install_headers' command, to install C/C++ header
 files to the Python include directory."""
 
-__revision__ = "$Id$"
-
 from distutils.core import Command
 
 
