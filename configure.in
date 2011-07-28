@@ -833,7 +833,7 @@ AC_SUBST(HGVERSION)
 AC_SUBST(HGTAG)
 AC_SUBST(HGBRANCH)
 
-if test -e $srcdir/.hg/00changelog.i
+if test -e $srcdir/.hg/dirstate
 then
 AC_CHECK_PROG(HAS_HG, hg, found, not-found)
 else

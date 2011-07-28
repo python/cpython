@@ -232,7 +232,7 @@ class IOBinding:
             # before being able to execute the code
             self.set_saved(False)
         self.text.mark_set("insert", "1.0")
-        self.text.see("insert")
+        self.text.yview("insert")
         self.updaterecentfileslist(filename)
         return True
 
