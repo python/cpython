@@ -46,8 +46,6 @@ libpython*.so*
 *.pyo
 *.pyd
 *.cover
-*.orig
-*.rej
 *~
 Lib/lib2to3/*.pickle
 Lib/test/data/*
