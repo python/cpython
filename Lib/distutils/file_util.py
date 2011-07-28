@@ -3,8 +3,6 @@
 Utility functions for operating on single files.
 """
 
-__revision__ = "$Id$"
-
 import os
 from distutils.errors import DistutilsFileError
 from distutils import log

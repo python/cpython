@@ -6,8 +6,6 @@ Also provides the 'find_executable()' to search the path for a given
 executable name.
 """
 
-__revision__ = "$Id$"
-
 import sys
 import os
 

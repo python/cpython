@@ -9,8 +9,6 @@ Written by:   Fred L. Drake, Jr.
 Email:        <fdrake@acm.org>
 """
 
-__revision__ = "$Id$"
-
 import os
 import re
 import sys

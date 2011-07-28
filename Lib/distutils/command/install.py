@@ -2,8 +2,6 @@
 
 Implements the Distutils 'install' command."""
 
-__revision__ = "$Id$"
-
 import sys
 import os
 

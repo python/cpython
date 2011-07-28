@@ -4,8 +4,6 @@ Utility functions for simple, timestamp-based dependency of files
 and groups of files; also, function based entirely on such
 timestamp dependency analysis."""
 
-__revision__ = "$Id$"
-
 import os
 from distutils.errors import DistutilsFileError
 

@@ -8,8 +8,6 @@ for the Microsoft Visual Studio.
 # hacked by Robin Becker and Thomas Heller to do a better job of
 #   finding DevStudio (through the registry)
 
-__revision__ = "$Id$"
-
 import sys, os
 from distutils.errors import \
      DistutilsExecError, DistutilsPlatformError, \
