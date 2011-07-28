@@ -393,16 +393,16 @@ class TestMiscellaneous(unittest.TestCase):
 
     def test_getsetlocale_issue1813(self):
         # Issue #1813: setting and getting the locale under a Turkish locale
-        oldlocale = locale.getlocale()
+        oldlocale = locale.setlocale(locale.LC_CTYPE)
         self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)
         try:
             locale.setlocale(locale.LC_CTYPE, 'tr_TR')
         except locale.Error:
             # Unsupported locale on this system
             self.skipTest('test needs Turkish locale')
-        loc = locale.getlocale()
+        loc = locale.getlocale(locale.LC_CTYPE)
         locale.setlocale(locale.LC_CTYPE, loc)
-        self.assertEqual(loc, locale.getlocale())
+        self.assertEqual(loc, locale.getlocale(locale.LC_CTYPE))
 
 
 def test_main():
