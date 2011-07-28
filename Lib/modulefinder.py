@@ -1,6 +1,5 @@
 """Find modules used by a script, using introspection."""
 
-from __future__ import generators
 import dis
 import imp
 import marshal
@@ -8,8 +7,6 @@ import os
 import sys
 import types
 import struct
-
-READ_MODE = "rU"
 
 # XXX Clean up once str8's cstor matches bytes.
 LOAD_CONST = bytes([dis.opname.index('LOAD_CONST')])
@@ -29,8 +26,7 @@ packagePathMap = {}
 
 # A Public interface
 def AddPackagePath(packagename, path):
-    paths = packagePathMap.get(packagename, [])
-    paths.append(path)
+    paths = packagePathMap.setdefault(packagename, []).append(path)
     packagePathMap[packagename] = paths
 
 replacePackageMap = {}
@@ -106,14 +102,14 @@ class ModuleFinder:
 
     def run_script(self, pathname):
         self.msg(2, "run_script", pathname)
-        with open(pathname, READ_MODE) as fp:
+        with open(pathname) as fp:
             stuff = ("", "r", imp.PY_SOURCE)
             self.load_module('__main__', fp, pathname, stuff)
 
     def load_file(self, pathname):
         dir, name = os.path.split(pathname)
         name, ext = os.path.splitext(name)
-        with open(pathname, READ_MODE) as fp:
+        with open(pathname) as fp:
             stuff = (ext, "r", imp.PY_SOURCE)
             self.load_module(name, fp, pathname, stuff)
 
@@ -270,7 +266,8 @@ class ModuleFinder:
         try:
             m = self.load_module(fqname, fp, pathname, stuff)
         finally:
-            if fp: fp.close()
+            if fp:
+                fp.close()
         if parent:
             setattr(parent, partname, m)
         self.msgout(3, "import_module ->", m)
@@ -662,4 +659,4 @@ if __name__ == '__main__':
     try:
         mf = test()
     except KeyboardInterrupt:
-        print("\n[interrupt]")
+        print("\n[interrupted]")
