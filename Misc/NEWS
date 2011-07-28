@@ -41,6 +41,15 @@ Core and Builtins
 Library
 -------
 
+- Issue #12607: In subprocess, fix issue where if stdin, stdout or stderr is
+  given as a low fd, it gets overwritten.
+
+- Issue #12590: IDLE editor window now always displays the first line
+  when opening a long file.  With Tk 8.5, the first line was hidden.
+
+- Issue #12576: Fix urlopen behavior on sites which do not send (or obfuscates)
+  Connection:close header.
+
 - Issue #1813: Fix codec lookup under Turkish locales.
 
 - Issue #12591: Improve support of "universal newlines" in the subprocess
