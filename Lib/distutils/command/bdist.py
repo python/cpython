@@ -3,8 +3,6 @@
 Implements the Distutils 'bdist' command (create a built [binary]
 distribution)."""
 
-__revision__ = "$Id$"
-
 import os
 from distutils.core import Command
 from distutils.errors import *

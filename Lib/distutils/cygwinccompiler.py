@@ -45,8 +45,6 @@ cygwin in no-cygwin mode).
 # * mingw gcc 3.2/ld 2.13 works
 #   (ld supports -shared)
 
-__revision__ = "$Id$"
-
 import os
 import sys
 import copy

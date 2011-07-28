@@ -4,8 +4,6 @@ Provides the FileList class, used for poking about the filesystem
 and building lists of files.
 """
 
-__revision__ = "$Id$"
-
 import os, re
 import fnmatch
 from distutils.util import convert_path
