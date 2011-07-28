@@ -8,8 +8,6 @@ additional features:
   * options set attributes of a passed-in object
 """
 
-__revision__ = "$Id$"
-
 import sys, string, re
 import getopt
 from distutils.errors import *

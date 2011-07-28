@@ -2,8 +2,6 @@
 
 Implements the Distutils 'sdist' command (create a source distribution)."""
 
-__revision__ = "$Id$"
-
 import os
 import string
 import sys

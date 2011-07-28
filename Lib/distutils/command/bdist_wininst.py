@@ -3,8 +3,6 @@
 Implements the Distutils 'bdist_wininst' command: create a windows installer
 exe-program."""
 
-__revision__ = "$Id$"
-
 import sys, os
 from distutils.core import Command
 from distutils.util import get_platform

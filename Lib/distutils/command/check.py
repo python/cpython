@@ -2,8 +2,6 @@
 
 Implements the Distutils 'check' command.
 """
-__revision__ = "$Id$"
-
 from distutils.core import Command
 from distutils.errors import DistutilsSetupError
 
