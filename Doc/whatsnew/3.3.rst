@@ -94,8 +94,8 @@ versions.
 curses
 ------
 
-The :class:`curses.window` class has a new :class:`~curses.window.get_wch`
-method to a wide character. Patch by Iñigo Serna.
+The :class:`curses.window` class has a new :meth:`~curses.window.get_wch` method
+to get a wide character.  Patch by Iñigo Serna.
 
 (:issue:`6755`)
 
