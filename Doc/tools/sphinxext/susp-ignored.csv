@@ -5,7 +5,6 @@ c-api/sequence,,:i2,o[i1:i2]
 c-api/sequence,,:i2,o[i1:i2] = v
 c-api/sequence,,:i2,del o[i1:i2]
 c-api/unicode,,:end,str[start:end]
-distutils/apiref,,:action,http://pypi.python.org/pypi?:action=list_classifiers
 distutils/setupscript,,::,
 extending/embedding,,:numargs,"if(!PyArg_ParseTuple(args, "":numargs""))"
 extending/extending,,:set,"if (PyArg_ParseTuple(args, ""O:set_callback"", &temp)) {"
