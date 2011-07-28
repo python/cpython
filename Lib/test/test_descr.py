@@ -2068,9 +2068,6 @@ order (MRO) for bases """
         # Two essentially featureless objects, just inheriting stuff from
         # object.
         self.assertEqual(dir(NotImplemented), dir(Ellipsis))
-        if support.check_impl_detail():
-            # None differs in PyPy: it has a __nonzero__
-            self.assertEqual(dir(None), dir(Ellipsis))
 
         # Nasty test case for proxied objects
         class Wrapper(object):
