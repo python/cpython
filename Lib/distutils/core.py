@@ -6,8 +6,6 @@ indirectly provides the Distribution and Command classes, although they are
 really defined in distutils.dist and distutils.cmd.
 """
 
-__revision__ = "$Id$"
-
 import os
 import sys
 

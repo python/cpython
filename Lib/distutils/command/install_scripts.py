@@ -5,8 +5,6 @@ Python scripts."""
 
 # contributed by Bastian Kleineidam
 
-__revision__ = "$Id$"
-
 import os
 from distutils.core import Command
 from distutils import log
