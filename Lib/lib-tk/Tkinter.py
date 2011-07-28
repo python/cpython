@@ -30,7 +30,7 @@ button.pack(side=BOTTOM)
 tk.mainloop()
 """
 
-__version__ = "$Revision$"
+__version__ = "$Revision: 81008 $"
 
 import sys
 if sys.platform == "win32":
