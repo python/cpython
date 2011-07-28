@@ -39,6 +39,7 @@ Parser/pgen.stamp$
 
 syntax: glob
 libpython*.a
+libpython*.so*
 *.swp
 *.o
 *.pyc
