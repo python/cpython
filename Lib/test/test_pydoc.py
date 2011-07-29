@@ -1,5 +1,6 @@
 import os
 import sys
+import builtins
 import difflib
 import inspect
 import pydoc
@@ -424,6 +425,23 @@ class TestDescriptions(unittest.TestCase):
         self.assertEqual(pydoc.describe(c), 'C')
         expected = 'C in module %s object' % __name__
         self.assertIn(expected, pydoc.render_doc(c))
+
+    def test_builtin(self):
+        for name in ('str', 'str.translate', 'builtins.str',
+                     'builtins.str.translate'):
+            # test low-level function
+            self.assertIsNotNone(pydoc.locate(name))
+            # test high-level function
+            try:
+                pydoc.render_doc(name)
+            except ImportError:
+                self.fail('finding the doc of {!r} failed'.format(o))
+
+        for name in ('notbuiltins', 'strrr', 'strr.translate',
+                     'str.trrrranslate', 'builtins.strrr',
+                     'builtins.str.trrranslate'):
+            self.assertIsNone(pydoc.locate(name))
+            self.assertRaises(ImportError, pydoc.render_doc, name)
 
 
 @unittest.skipUnless(threading, 'Threading required for this test.')
