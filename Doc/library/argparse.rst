@@ -110,7 +110,7 @@ Parsing arguments
 :class:`ArgumentParser` parses args through the
 :meth:`~ArgumentParser.parse_args` method.  This will inspect the command line,
 convert each arg to the appropriate type and then invoke the appropriate action.
-In most cases, this means a simple namespace object will be built up from
+In most cases, this means a simple :class:`Namespace` object will be built up from
 attributes parsed out of the command line::
 
    >>> parser.parse_args(['--sum', '7', '-1', '42'])
@@ -741,7 +741,7 @@ the Action API.  The easiest way to do this is to extend
 
 * ``parser`` - The ArgumentParser object which contains this action.
 
-* ``namespace`` - The namespace object that will be returned by
+* ``namespace`` - The :class:`Namespace` object that will be returned by
   :meth:`~ArgumentParser.parse_args`.  Most actions add an attribute to this
   object.
 
@@ -1352,11 +1352,14 @@ interactive prompt::
 The Namespace object
 ^^^^^^^^^^^^^^^^^^^^
 
-By default, :meth:`~ArgumentParser.parse_args` will return a new object of type
-:class:`Namespace` where the necessary attributes have been set. This class is
-deliberately simple, just an :class:`object` subclass with a readable string
-representation. If you prefer to have dict-like view of the attributes, you
-can use the standard Python idiom via :func:`vars`::
+.. class:: Namespace
+
+   Simple class used by default by :meth:`~ArgumentParser.parse_args` to create
+   an object holding attributes and return it.
+
+This class is deliberately simple, just an :class:`object` subclass with a
+readable string representation. If you prefer to have dict-like view of the
+attributes, you can use the standard Python idiom, :func:`vars`::
 
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument('--foo')
