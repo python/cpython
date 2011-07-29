@@ -358,8 +358,10 @@ def _list(dispatcher, args, **kw):
     dists = get_distributions(use_egg_info=True)
     if 'all' in opts or opts['args'] == []:
         results = dists
+        listall = True
     else:
         results = [d for d in dists if d.name.lower() in opts['args']]
+        listall = False
 
     number = 0
     for dist in results:
@@ -368,7 +370,11 @@ def _list(dispatcher, args, **kw):
 
     print()
     if number == 0:
-        print('Nothing seems to be installed.')
+        if listall:
+            print('Nothing seems to be installed.')
+        else:
+            print('No matching distribution found.')
+            return 1
     else:
         print('Found %d projects installed.' % number)
 
