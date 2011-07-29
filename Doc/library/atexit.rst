@@ -12,7 +12,9 @@
 
 The :mod:`atexit` module defines a single function to register cleanup
 functions.  Functions thus registered are automatically executed upon normal
-interpreter termination.
+interpreter termination.  The order in which the functions are called is not
+defined; if you have cleanup operations that depend on each other, you should
+wrap them in a function and register that one.  This keeps :mod:`atexit` simple.
 
 .. seealso::
 
