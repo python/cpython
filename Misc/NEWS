@@ -10,6 +10,12 @@ What's New in Python 3.2.2?
 Core and Builtins
 -----------------
 
+- Issue #11603: Fix a crash when __str__ is rebound as __repr__.  Patch by
+  Andreas Stührk.
+
+- Issue #11321: Fix a crash with multiple imports of the _pickle module when
+  embedding Python.  Patch by Andreas Stührk.
+
 - Verify the types of AST strings and identifiers provided by the user before
   compiling them.
 
@@ -25,8 +31,6 @@ Core and Builtins
   and its type get caught in a reference cycle, and the instance's
   deallocator calls one of the methods on the type (e.g. when subclassing
   IOBase).  Diagnosis and patch by Davide Rizzo.
-
-- Issue #9611, #9015: FileIO.read() clamps the length to INT_MAX on Windows.
 
 - When a generator yields, do not retain the caller's exception state on the
   generator.
@@ -51,11 +55,6 @@ Library
 - Issue #12576: Fix urlopen behavior on sites which do not send (or obfuscates)
   Connection:close header.
 
-- Issue #12102: Document that buffered files must be flushed before being used
-  with mmap. Patch by Steffen Daode Nurpmeso.
-
-- Issue #12560: Build libpython.so on OpenBSD. Patch by Stefan Sperling.
-
 - Issue #1813: Fix codec lookup under Turkish locales.
 
 - Issue #12591: Improve support of "universal newlines" in the subprocess
@@ -65,11 +64,9 @@ Library
   a read1() method), and add an undocumented *write_through* parameter to
   mandate unbuffered writes.
 
+- Issue #9611, #9015: FileIO.read() clamps the length to INT_MAX on Windows.
+
 - Issue #10883: Fix socket leaks in urllib.request when using FTP.
-
-- Issue #12592: Make Python build on OpenBSD 5 (and future major releases).
-
-- Issue #12372: POSIX semaphores are broken on AIX: don't use them.
 
 - Issue #12571: Add a plat-linux3 directory mirroring the plat-linux2
   directory, so that "import DLFCN" and other similar imports work on
@@ -81,16 +78,10 @@ Library
 - Close the call queue in concurrent.futures.ProcessPoolExecutor when
   shutdown() is called, without waiting for the garbage collector to kick in.
 
-- Issue #11603: Fix a crash when __str__ is rebound as __repr__.  Patch by
-  Andreas Stührk.
-
-- Issue #11321: Fix a crash with multiple imports of the _pickle module when
-  embedding Python.  Patch by Andreas Stührk.
-
 - Issue #12502: asyncore: fix polling loop with AF_UNIX sockets.
 
-- Issue #4376: ctypes now supports nested structures in a endian different than
-  the parent structure. Patch by Vlad Riscutia.
+- Issue #4376: ctypes now supports nested structures with an endianness
+  different than that of the parent structure.  Patch by Vlad Riscutia.
 
 - Raise ValueError when attempting to set the _CHUNK_SIZE attribute of a
   TextIOWrapper to a huge value, not TypeError.
@@ -99,15 +90,15 @@ Library
   if the process has only one pipe.
 
 - Issue #12451: pydoc: html_getfile() now uses tokenize.open() to support
-  Python scripts using a encoding different than UTF-8 (read the coding cookie
-  of the script).
+  Python modules using a encoding different than UTF-8 (reading the coding
+  cookie of the module).
 
-- Issue #12451: pydoc: importfile() now opens the Python script in binary mode,
+- Issue #12451: pydoc: importfile() now opens the Python module in binary mode,
   instead of text mode using the locale encoding, to avoid encoding issues.
 
-- Issue #12451: runpy: run_path() now opens the Python script in binary mode,
+- Issue #12451: runpy: run_path() now opens the Python module in binary mode,
   instead of text mode using the locale encoding, to support other encodings
-  than UTF-8 (scripts using the coding cookie).
+  than UTF-8 (modules using the coding cookie).
 
 - Issue #12451: xml.dom.pulldom: parse() now opens files in binary mode instead
   of the text mode (using the locale encoding) to avoid encoding issues.
@@ -121,6 +112,21 @@ Extension Modules
 
 C-API
 -----
+
+Build
+-----
+
+- Issue #12560: Build libpython.so on OpenBSD.  Patch by Stefan Sperling.
+
+- Issue #12592: Make Python build on OpenBSD 5 (and future major releases).
+
+- Issue #12372: POSIX semaphores are broken on AIX: don't use them.
+
+Tools/Demos
+-----------
+
+- Issue #10639: reindent.py no longer converts newlines and will raise
+  an error if attempting to convert a file with mixed newlines.
 
 Tests
 -----
@@ -225,7 +231,7 @@ Library
   to avoid encoding issues.
 
 - Issue #12451: pydoc.synopsis() now reads the encoding cookie if available, to
-  read the Python script from the right encoding.
+  read the Python module from the right encoding.
 
 - Issue #12451: distutils now opens the setup script in binary mode to read the
   encoding cookie, instead of opening it in UTF-8.
@@ -240,9 +246,6 @@ Library
   MACOSX_DEPLOYMENT_TARGET before launching the interpreter; its value must be
   greater or equal to the default value, the value with which the interpreter
   was built.
-
-- Issue #12404: Remove C89 incompatible code from mmap module. Patch by Akira
-  Kitada.
 
 - Issue #12383: Fix subprocess module with env={}: don't copy the environment
   variables, start with an empty environment.
@@ -310,6 +313,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #12404: Remove C89 incompatible code from mmap module. Patch by Akira
+  Kitada.
+
 - Issue #12221: Replace pyexpat.__version__ with the Python version.
 
 Build
@@ -324,11 +330,6 @@ Build
   "make install" creates symlinks in --prefix bin for the "-32" files in the
   framework bin directory like the installer does.
 
-Tools/Demos
------------
-
-- Issue #10639: reindent.py no longer converts newlines and will raise
-  an error if attempting to convert a file with mixed newlines.
 
 Tests
 -----

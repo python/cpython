@@ -431,7 +431,8 @@ Glossary
 
    mapping
       A container object that supports arbitrary key lookups and implements the
-      methods specified in the :class:`Mapping` or :class:`MutableMapping`
+      methods specified in the :class:`~collections.Mapping` or
+      :class:`~collections.MutableMapping`
       :ref:`abstract base classes <collections-abstract-base-classes>`.  Examples
       include :class:`dict`, :class:`collections.defaultdict`,
       :class:`collections.OrderedDict` and :class:`collections.Counter`.
