@@ -34,6 +34,22 @@ The :mod:`shlex` module defines the following functions:
       passing ``None`` for *s* will read the string to split from standard
       input.
 
+
+.. function:: quote(s)
+
+   Return a shell-escaped version of the string *s*.  The returned value is a
+   string that can safely be used as one token in a shell command line.
+   Examples::
+
+      >>> filename = 'somefile; rm -rf /home'
+      >>> command = 'ls -l {}'.format(quote(filename))
+      >>> print(command)
+      ls -l 'somefile; rm -rf /home'
+      >>> remote_command = 'ssh home {}'.format(quote(command))
+      >>> print(remote_command)
+      ssh home 'ls -l '"'"'somefile; rm -rf /home'"'"''
+
+
 The :mod:`shlex` module defines the following class:
 
 
@@ -282,5 +298,4 @@ parsing rules.
 
 * EOF is signaled with a :const:`None` value;
 
-* Quoted empty strings (``''``) are allowed;
-
+* Quoted empty strings (``''``) are allowed.

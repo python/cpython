@@ -203,6 +203,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * Kalle Svensson
    * Jim Tittsler
    * David Turner
+   * Sandro Tosi
    * Ville Vainio
    * Nadeem Vawda
    * Martijn Vries

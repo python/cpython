@@ -6,13 +6,14 @@
 # Posix compliance, split(), string arguments, and
 # iterator interface by Gustavo Niemeyer, April 2003.
 
-import os.path
+import os
+import re
 import sys
 from collections import deque
 
 from io import StringIO
 
-__all__ = ["shlex", "split"]
+__all__ = ["shlex", "split", "quote"]
 
 class shlex:
     "A lexical analyzer class for simple shell-like syntaxes."
@@ -273,6 +274,21 @@ def split(s, comments=False, posix=True):
     if not comments:
         lex.commenters = ''
     return list(lex)
+
+
+_find_unsafe = re.compile(r'[^\w\d@%_\-\+=:,\./]').search
+
+def quote(s):
+    """Return a shell-escaped version of the string *s*."""
+    if not s:
+        return "''"
+    if _find_unsafe(s) is None:
+        return s
+
+    # use single quotes, and put single quotes into double quotes
+    # the string $'b is then quoted as '$'"'"'b'
+    return "'" + s.replace("'", "'\"'\"'") + "'"
+
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:

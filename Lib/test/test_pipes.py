@@ -79,20 +79,6 @@ class SimplePipeTests(unittest.TestCase):
         with open(TESTFN) as f:
             self.assertEqual(f.read(), d)
 
-    def testQuoting(self):
-        safeunquoted = string.ascii_letters + string.digits + '@%_-+=:,./'
-        unsafe = '"`$\\!'
-
-        self.assertEqual(pipes.quote(''), "''")
-        self.assertEqual(pipes.quote(safeunquoted), safeunquoted)
-        self.assertEqual(pipes.quote('test file name'), "'test file name'")
-        for u in unsafe:
-            self.assertEqual(pipes.quote('test%sname' % u),
-                              "'test%sname'" % u)
-        for u in unsafe:
-            self.assertEqual(pipes.quote("test%s'name'" % u),
-                             "'test%s'\"'\"'name'\"'\"''" % u)
-
     def testRepr(self):
         t = pipes.Template()
         self.assertEqual(repr(t), "<Template instance, steps=[]>")
