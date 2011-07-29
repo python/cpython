@@ -1344,7 +1344,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, x.translate, b"1"*256, 1)
 
     def test_construct_singletons(self):
-        for const in None, Ellipsis:
+        for const in None, Ellipsis, NotImplemented:
             tp = type(const)
             self.assertIs(tp(), const)
             self.assertRaises(TypeError, tp, 1, 2)
