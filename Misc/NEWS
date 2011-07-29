@@ -238,6 +238,9 @@ Core and Builtins
 - Issue #11386: bytearray.pop() now throws IndexError when the bytearray is
   empty, instead of OverflowError.
 
+- Issue #12380: The rjust, ljust and center methods of bytes and bytearray
+  now accept a bytearray argument.
+
 Library
 -------
 
@@ -1281,6 +1284,8 @@ C-API
 
 - Issue #12173: The first argument of PyImport_ImportModuleLevel is now `const
   char *` instead of `char *`.
+
+- Issue #12380: PyArg_ParseTuple now accepts a bytearray for the 'c' format.
 
 Documentation
 -------------
