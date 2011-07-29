@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Script that generates the ctype.h-replacement in stringobject.c."""
 
 NAMES = ("LOWER", "UPPER", "ALPHA", "DIGIT", "XDIGIT", "ALNUM", "SPACE")
