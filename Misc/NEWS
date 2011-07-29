@@ -244,6 +244,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12464: tempfile.TemporaryDirectory.cleanup() should not follow
+  symlinks: fix it. Patch by Petri Lehtinen.
+
 - Issue #8887: "pydoc somebuiltin.somemethod" (or help('somebuiltin.somemethod')
   in Python code) now finds the doc of the method.
 
