@@ -244,6 +244,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8887: "pydoc somebuiltin.somemethod" (or help('somebuiltin.somemethod')
+  in Python code) now finds the doc of the method.
+
 - Issue #10968: Remove indirection in threading.  The public names (Thread,
   Condition, etc.) used to be factory functions returning instances of hidden
   classes (_Thread, _Condition, etc.), because (if Guido recalls correctly) this
