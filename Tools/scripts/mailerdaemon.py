@@ -1,4 +1,5 @@
-"""mailerdaemon - classes to parse mailer-daemon messages"""
+#!/usr/bin/env python3
+"""Classes to parse mailer-daemon messages."""
 
 import calendar
 import email.message
@@ -6,7 +7,10 @@ import re
 import os
 import sys
 
-Unparseable = 'mailerdaemon.Unparseable'
+
+class Unparseable(Exception):
+    pass
+
 
 class ErrorMessage(email.message.Message):
     def __init__(self):
@@ -18,8 +22,10 @@ class ErrorMessage(email.message.Message):
         if not sub:
             return 0
         sub = sub.lower()
-        if sub.startswith('waiting mail'): return 1
-        if 'warning' in sub: return 1
+        if sub.startswith('waiting mail'):
+            return 1
+        if 'warning' in sub:
+            return 1
         self.sub = sub
         return 0
 
@@ -145,14 +151,17 @@ def emparse_list(fp, sub):
         errors.append(' '.join((email.strip()+': '+reason).split()))
     return errors
 
-EMPARSERS = [emparse_list, ]
+EMPARSERS = [emparse_list]
 
 def sort_numeric(a, b):
     a = int(a)
     b = int(b)
-    if a < b: return -1
-    elif a > b: return 1
-    else: return 0
+    if a < b:
+        return -1
+    elif a > b:
+        return 1
+    else:
+        return 0
 
 def parsedir(dir, modify):
     os.chdir(dir)
