@@ -37,6 +37,7 @@ build/
 config.log
 config.status
 libpython*.a
+libpython*.so*
 pybuilddir.txt
 pyconfig.h
 python
