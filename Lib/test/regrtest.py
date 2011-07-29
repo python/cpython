@@ -43,6 +43,7 @@ Selecting tests
 -f/--fromfile   -- read names of tests to run from a file (see below)
 -x/--exclude    -- arguments are tests to *exclude*
 -s/--single     -- single step through a set of tests (see below)
+-m/--match PAT  -- match test cases and methods with glob pattern PAT
 -G/--failfast   -- fail as soon as a test fails (only with -v or -W)
 -u/--use RES1,RES2,...
                 -- specify which special resource intensive tests to run
@@ -253,7 +254,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
          findleaks=False, use_resources=None, trace=False, coverdir='coverage',
          runleaks=False, huntrleaks=False, verbose2=False, print_slow=False,
          random_seed=None, use_mp=None, verbose3=False, forever=False,
-         header=False, failfast=False):
+         header=False, failfast=False, match_tests=None):
     """Execute a test suite.
 
     This also parses command-line options and modifies its behavior
@@ -293,14 +294,14 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
     support.record_original_stdout(sys.stdout)
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvqxsSrf:lu:t:TD:NLR:FwWM:nj:G',
+        opts, args = getopt.getopt(sys.argv[1:], 'hvqxsSrf:lu:t:TD:NLR:FwWM:nj:Gm:',
             ['help', 'verbose', 'verbose2', 'verbose3', 'quiet',
              'exclude', 'single', 'slow', 'random', 'fromfile', 'findleaks',
              'use=', 'threshold=', 'trace', 'coverdir=', 'nocoverdir',
              'runleaks', 'huntrleaks=', 'memlimit=', 'randseed=',
              'multiprocess=', 'coverage', 'slaveargs=', 'forever', 'debug',
              'start=', 'nowindows', 'header', 'testdir=', 'timeout=', 'wait',
-             'failfast'])
+             'failfast', 'match'])
     except getopt.error as msg:
         usage(msg)
 
@@ -343,6 +344,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             random_seed = int(a)
         elif o in ('-f', '--fromfile'):
             fromfile = a
+        elif o in ('-m', '--match'):
+            match_tests = a
         elif o in ('-l', '--findleaks'):
             findleaks = True
         elif o in ('-L', '--runleaks'):
@@ -606,7 +609,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     (test, verbose, quiet),
                     dict(huntrleaks=huntrleaks, use_resources=use_resources,
                          debug=debug, output_on_failure=verbose3,
-                         timeout=timeout, failfast=failfast)
+                         timeout=timeout, failfast=failfast,
+                         match_tests=match_tests)
                 )
                 yield (test, args_tuple)
         pending = tests_and_args()
@@ -692,7 +696,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 try:
                     result = runtest(test, verbose, quiet, huntrleaks, debug,
                                      output_on_failure=verbose3,
-                                     timeout=timeout, failfast=failfast)
+                                     timeout=timeout, failfast=failfast,
+                                     match_tests=match_tests)
                     accumulate_result(test, result)
                 except KeyboardInterrupt:
                     interrupted = True
@@ -837,7 +842,8 @@ def replace_stdout():
 
 def runtest(test, verbose, quiet,
             huntrleaks=False, debug=False, use_resources=None,
-            output_on_failure=False, failfast=False, timeout=None):
+            output_on_failure=False, failfast=False, match_tests=None,
+            timeout=None):
     """Run a single test.
 
     test -- the name of the test
@@ -865,6 +871,7 @@ def runtest(test, verbose, quiet,
     if use_timeout:
         faulthandler.dump_tracebacks_later(timeout, exit=True)
     try:
+        support.match_tests = match_tests
         if failfast:
             support.failfast = True
         if output_on_failure:
