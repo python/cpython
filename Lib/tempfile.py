@@ -661,6 +661,7 @@ class TemporaryDirectory(object):
     _listdir = staticmethod(_os.listdir)
     _path_join = staticmethod(_os.path.join)
     _isdir = staticmethod(_os.path.isdir)
+    _islink = staticmethod(_os.path.islink)
     _remove = staticmethod(_os.remove)
     _rmdir = staticmethod(_os.rmdir)
     _os_error = _os.error
@@ -672,7 +673,7 @@ class TemporaryDirectory(object):
         for name in self._listdir(path):
             fullname = self._path_join(path, name)
             try:
-                isdir = self._isdir(fullname)
+                isdir = self._isdir(fullname) and not self._islink(fullname)
             except self._os_error:
                 isdir = False
             if isdir:
