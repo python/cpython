@@ -38,6 +38,7 @@ Parser/pgen.stamp$
 syntax: glob
 python.exe-gdb.py
 libpython*.a
+libpython*.so*
 *.swp
 *.o
 *.pyc
