@@ -72,7 +72,7 @@ class DependencyGraph:
         self.missing[distribution].append(requirement)
 
     def _repr_dist(self, dist):
-        return '%r %s' % (dist.name, dist.metadata['Version'])
+        return '%r %s' % (dist.name, dist.version)
 
     def repr_node(self, dist, level=1):
         """Prints only a subgraph"""
@@ -145,7 +145,7 @@ def generate_graph(dists):
         graph.add_distribution(dist)
         provides = (dist.metadata['Provides-Dist'] +
                     dist.metadata['Provides'] +
-                    ['%s (%s)' % (dist.name, dist.metadata['Version'])])
+                    ['%s (%s)' % (dist.name, dist.version)])
 
         for p in provides:
             comps = p.strip().rsplit(" ", 1)

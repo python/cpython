@@ -4,17 +4,10 @@ Tests common to list and UserList.UserList
 
 import sys
 import os
+from functools import cmp_to_key
 
 from test import support, seq_tests
 
-def CmpToKey(mycmp):
-    'Convert a cmp= function into a key= function'
-    class K(object):
-        def __init__(self, obj):
-            self.obj = obj
-        def __lt__(self, other):
-            return mycmp(self.obj, other.obj) == -1
-    return K
 
 class CommonTest(seq_tests.CommonTest):
 
@@ -484,7 +477,7 @@ class CommonTest(seq_tests.CommonTest):
                 return 1
             else: # a > b
                 return -1
-        u.sort(key=CmpToKey(revcmp))
+        u.sort(key=cmp_to_key(revcmp))
         self.assertEqual(u, self.type2test([2,1,0,-1,-2]))
 
         # The following dumps core in unpatched Python 1.5:
@@ -497,7 +490,7 @@ class CommonTest(seq_tests.CommonTest):
             else: # xmod > ymod
                 return 1
         z = self.type2test(range(12))
-        z.sort(key=CmpToKey(myComparison))
+        z.sort(key=cmp_to_key(myComparison))
 
         self.assertRaises(TypeError, z.sort, 2)
 
@@ -509,7 +502,8 @@ class CommonTest(seq_tests.CommonTest):
                 return -1
             else: # x > y
                 return 1
-        self.assertRaises(ValueError, z.sort, key=CmpToKey(selfmodifyingComparison))
+        self.assertRaises(ValueError, z.sort,
+                          key=cmp_to_key(selfmodifyingComparison))
 
         self.assertRaises(TypeError, z.sort, 42, 42, 42, 42)
 

@@ -302,7 +302,7 @@ class TestDatabase(support.LoggingCatcher,
             self.assertIsInstance(dist, Distribution)
             if (dist.name in dict(fake_dists) and
                 dist.path.startswith(self.fake_dists_path)):
-                found_dists.append((dist.name, dist.metadata['version'], ))
+                found_dists.append((dist.name, dist.version))
             else:
                 # check that it doesn't find anything more than this
                 self.assertFalse(dist.path.startswith(self.fake_dists_path))
@@ -323,7 +323,7 @@ class TestDatabase(support.LoggingCatcher,
             self.assertIsInstance(dist, (Distribution, EggInfoDistribution))
             if (dist.name in dict(fake_dists) and
                 dist.path.startswith(self.fake_dists_path)):
-                found_dists.append((dist.name, dist.metadata['version']))
+                found_dists.append((dist.name, dist.version))
             else:
                 self.assertFalse(dist.path.startswith(self.fake_dists_path))
 
@@ -489,17 +489,17 @@ class TestDatabase(support.LoggingCatcher,
 
         checkLists([], _yield_distributions(False, False, sys.path))
 
-        found = [(dist.name, dist.metadata['Version'])
+        found = [(dist.name, dist.version)
                  for dist in _yield_distributions(False, True, sys.path)
                  if dist.path.startswith(self.fake_dists_path)]
         checkLists(eggs, found)
 
-        found = [(dist.name, dist.metadata['Version'])
+        found = [(dist.name, dist.version)
                  for dist in _yield_distributions(True, False, sys.path)
                  if dist.path.startswith(self.fake_dists_path)]
         checkLists(dists, found)
 
-        found = [(dist.name, dist.metadata['Version'])
+        found = [(dist.name, dist.version)
                  for dist in _yield_distributions(True, True, sys.path)
                  if dist.path.startswith(self.fake_dists_path)]
         checkLists(dists + eggs, found)

@@ -57,7 +57,8 @@ class Command:
         from packaging.dist import Distribution
 
         if not isinstance(dist, Distribution):
-            raise TypeError("dist must be a Distribution instance")
+            raise TypeError("dist must be an instance of Distribution, not %r"
+                            % type(dist))
         if self.__class__ is Command:
             raise RuntimeError("Command is an abstract class")
 

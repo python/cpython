@@ -41,14 +41,13 @@ PCbuild/amd64/
 
 syntax: glob
 libpython*.a
+libpython*.so*
 *.swp
 *.o
 *.pyc
 *.pyo
 *.pyd
 *.cover
-*.orig
-*.rej
 *~
 Lib/lib2to3/*.pickle
 Lib/test/data/*

@@ -67,8 +67,8 @@ module distribution being built/packaged/distributed/installed.
    |                    | be built                       | :class:`packaging.compiler.extension.Extension`             |
    +--------------------+--------------------------------+-------------------------------------------------------------+
    | *classifiers*      | A list of categories for the   | The list of available                                       |
-   |                    | distribution                   | categorizations is at                                       |
-   |                    |                                | http://pypi.python.org/pypi?:action=list_classifiers.       |
+   |                    | distribution                   | categorizations is available on `PyPI                       |
+   |                    |                                | <http://pypi.python.org/pypi?:action=list_classifiers>`_.   |
    +--------------------+--------------------------------+-------------------------------------------------------------+
    | *distclass*        | the :class:`Distribution`      | A subclass of                                               |
    |                    | class to use                   | :class:`packaging.dist.Distribution`                        |
