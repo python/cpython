@@ -1128,6 +1128,9 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, sum, 42)
         self.assertRaises(TypeError, sum, ['a', 'b', 'c'])
         self.assertRaises(TypeError, sum, ['a', 'b', 'c'], '')
+        self.assertRaises(TypeError, sum, [b'a', b'c'], b'')
+        values = [bytearray(b'a'), bytearray(b'b')]
+        self.assertRaises(TypeError, sum, values, bytearray(b''))
         self.assertRaises(TypeError, sum, [[1], [2], [3]])
         self.assertRaises(TypeError, sum, [{2:3}])
         self.assertRaises(TypeError, sum, [{2:3}]*2, {2:3})
