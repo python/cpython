@@ -41,6 +41,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8887: "pydoc somebuiltin.somemethod" (or help('somebuiltin.somemethod')
+  in Python code) now finds the doc of the method.
+
 - Issue #12603: Fix pydoc.synopsis() on files with non-negative st_mtime.
 
 - Issue #12514: Use try/finally to assure the timeit module restores garbage
