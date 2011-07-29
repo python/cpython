@@ -1,8 +1,8 @@
-import sys
 import os
-import os.path
+import sys
 import difflib
 import subprocess
+import __builtin__
 import re
 import pydoc
 import inspect
@@ -356,6 +356,23 @@ class TestHelper(unittest.TestCase):
     def test_keywords(self):
         self.assertEqual(sorted(pydoc.Helper.keywords),
                          sorted(keyword.kwlist))
+
+    def test_builtin(self):
+        for name in ('str', 'str.translate', '__builtin__.str',
+                     '__builtin__.str.translate'):
+            # test low-level function
+            self.assertIsNotNone(pydoc.locate(name))
+            # test high-level function
+            try:
+                pydoc.render_doc(name)
+            except ImportError:
+                self.fail('finding the doc of {!r} failed'.format(o))
+
+        for name in ('not__builtin__', 'strrr', 'strr.translate',
+                     'str.trrrranslate', '__builtin__.strrr',
+                     '__builtin__.str.trrranslate'):
+            self.assertIsNone(pydoc.locate(name))
+            self.assertRaises(ImportError, pydoc.render_doc, name)
 
 
 def test_main():
