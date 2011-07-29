@@ -246,6 +246,9 @@ Library
 
 - Issue #12603: Fix pydoc.synopsis() on files with non-negative st_mtime.
 
+- Issue #12514: Use try/finally to assure the timeit module restores garbage
+  collections when it is done.
+
 - Issue #12607: In subprocess, fix issue where if stdin, stdout or stderr is
   given as a low fd, it gets overwritten.
 
