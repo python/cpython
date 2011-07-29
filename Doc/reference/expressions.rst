@@ -735,12 +735,15 @@ dictionary containing the excess keyword arguments (using the keywords as keys
 and the argument values as corresponding values), or a (new) empty dictionary if
 there were no excess keyword arguments.
 
+.. index::
+   single: *; in function calls
+
 If the syntax ``*expression`` appears in the function call, ``expression`` must
-evaluate to a sequence.  Elements from this sequence are treated as if they were
-additional positional arguments; if there are positional arguments *x1*,...,
-*xN*, and ``expression`` evaluates to a sequence *y1*, ..., *yM*, this is
-equivalent to a call with M+N positional arguments *x1*, ..., *xN*, *y1*, ...,
-*yM*.
+evaluate to an iterable.  Elements from this iterable are treated as if they
+were additional positional arguments; if there are positional arguments
+*x1*,...,*xN*, and ``expression`` evaluates to a sequence *y1*, ..., *yM*, this
+is equivalent to a call with M+N positional arguments *x1*, ..., *xN*, *y1*,
+..., *yM*.
 
 A consequence of this is that although the ``*expression`` syntax may appear
 *after* some keyword arguments, it is processed *before* the keyword arguments
@@ -760,6 +763,9 @@ A consequence of this is that although the ``*expression`` syntax may appear
 
 It is unusual for both keyword arguments and the ``*expression`` syntax to be
 used in the same call, so in practice this confusion does not arise.
+
+.. index::
+   single: **; in function calls
 
 If the syntax ``**expression`` appears in the function call, ``expression`` must
 evaluate to a mapping, the contents of which are treated as additional keyword
