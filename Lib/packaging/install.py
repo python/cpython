@@ -85,7 +85,7 @@ def _run_packaging_install(path):
     dist.parse_config_files()
     try:
         dist.run_command('install_dist')
-        name = dist.metadata['name']
+        name = dist.metadata['Name']
         return database.get_distribution(name) is not None
     except (IOError, os.error, PackagingError, CCompilerError) as msg:
         raise ValueError("Failed to install, " + str(msg))
@@ -118,10 +118,10 @@ def install_local_project(path):
     """
     path = os.path.abspath(path)
     if os.path.isdir(path):
-        logger.info('Installing from source directory: %s', path)
+        logger.info('Installing from source directory: %r', path)
         return _run_install_from_dir(path)
     elif _is_archive_file(path):
-        logger.info('Installing from archive: %s', path)
+        logger.info('Installing from archive: %r', path)
         _unpacked_dir = tempfile.mkdtemp()
         try:
             shutil.unpack_archive(path, _unpacked_dir)
@@ -129,7 +129,7 @@ def install_local_project(path):
         finally:
             shutil.rmtree(_unpacked_dir)
     else:
-        logger.warning('No projects to install.')
+        logger.warning('No project to install.')
         return False
 
 
@@ -191,7 +191,7 @@ def install_dists(dists, path, paths=None):
 
             # reverting
             for installed_dist in installed_dists:
-                logger.info('Reverting %s', installed_dist)
+                logger.info('Reverting %r', installed_dist)
                 remove(installed_dist.name, paths)
             raise e
     return installed_dists
@@ -314,12 +314,12 @@ def get_infos(requirements, index=None, installed=None, prefer_final=True):
         if predicate.name.lower() != installed_project.name.lower():
             continue
         found = True
-        logger.info('Found %s %s', installed_project.name,
-                    installed_project.metadata['version'])
+        logger.info('Found %r %s', installed_project.name,
+                    installed_project.version)
 
         # if we already have something installed, check it matches the
         # requirements
-        if predicate.match(installed_project.metadata['version']):
+        if predicate.match(installed_project.version):
             return infos
         break
 
@@ -336,7 +336,7 @@ def get_infos(requirements, index=None, installed=None, prefer_final=True):
     try:
         release = index.get_release(requirements)
     except (ReleaseNotFound, ProjectNotFound):
-        raise InstallationException('Release not found: "%s"' % requirements)
+        raise InstallationException('Release not found: %r' % requirements)
 
     if release is None:
         logger.info('Could not find a matching project')
@@ -386,7 +386,7 @@ def remove(project_name, paths=None, auto_confirm=True):
     """
     dist = get_distribution(project_name, use_egg_info=True, paths=paths)
     if dist is None:
-        raise PackagingError('Distribution "%s" not found' % project_name)
+        raise PackagingError('Distribution %r not found' % project_name)
     files = dist.list_installed_files(local=True)
     rmdirs = []
     rmfiles = []
@@ -423,7 +423,7 @@ def remove(project_name, paths=None, auto_confirm=True):
 
     if not success:
         logger.info('%r cannot be removed.', project_name)
-        logger.info('Error: %s' % str(error))
+        logger.info('Error: %s', error)
         return False
 
     logger.info('Removing %r: ', project_name)
@@ -523,7 +523,7 @@ def install(project):
 
     except InstallationConflict as e:
         if logger.isEnabledFor(logging.INFO):
-            projects = ['%r %s' % (p.name, p.version) for p in e.args[0]]
+            projects = ('%r %s' % (p.name, p.version) for p in e.args[0])
             logger.info('%r conflicts with %s', project, ','.join(projects))
 
     return True

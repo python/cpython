@@ -172,10 +172,7 @@ class _RLock(_Verbose):
 _PyRLock = _RLock
 
 
-def Condition(*args, **kwargs):
-    return _Condition(*args, **kwargs)
-
-class _Condition(_Verbose):
+class Condition(_Verbose):
 
     def __init__(self, lock=None, verbose=None):
         _Verbose.__init__(self, verbose)
@@ -308,10 +305,7 @@ class _Condition(_Verbose):
     notifyAll = notify_all
 
 
-def Semaphore(*args, **kwargs):
-    return _Semaphore(*args, **kwargs)
-
-class _Semaphore(_Verbose):
+class Semaphore(_Verbose):
 
     # After Tim Peters' semaphore class, but not quite the same (no maximum)
 
@@ -366,25 +360,19 @@ class _Semaphore(_Verbose):
         self.release()
 
 
-def BoundedSemaphore(*args, **kwargs):
-    return _BoundedSemaphore(*args, **kwargs)
-
-class _BoundedSemaphore(_Semaphore):
+class BoundedSemaphore(Semaphore):
     """Semaphore that checks that # releases is <= # acquires"""
     def __init__(self, value=1, verbose=None):
-        _Semaphore.__init__(self, value, verbose)
+        Semaphore.__init__(self, value, verbose)
         self._initial_value = value
 
     def release(self):
         if self._value >= self._initial_value:
             raise ValueError("Semaphore released too many times")
-        return _Semaphore.release(self)
+        return Semaphore.release(self)
 
 
-def Event(*args, **kwargs):
-    return _Event(*args, **kwargs)
-
-class _Event(_Verbose):
+class Event(_Verbose):
 
     # After Tim Peters' event class (without is_posted())
 
@@ -918,10 +906,7 @@ class Thread(_Verbose):
 
 # The timer class was contributed by Itamar Shtull-Trauring
 
-def Timer(*args, **kwargs):
-    return _Timer(*args, **kwargs)
-
-class _Timer(Thread):
+class Timer(Thread):
     """Call a function after a specified number of seconds:
 
     t = Timer(30.0, f, args=[], kwargs={})

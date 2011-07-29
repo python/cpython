@@ -214,7 +214,7 @@ def _create(distpatcher, args, **kw):
 @action_help(generate_usage)
 def _generate(distpatcher, args, **kw):
     generate_setup_py()
-    print('The setup.py was generated')
+    logger.info('The setup.py was generated')
 
 
 @action_help(graph_usage)
@@ -222,7 +222,8 @@ def _graph(dispatcher, args, **kw):
     name = args[1]
     dist = get_distribution(name, use_egg_info=True)
     if dist is None:
-        print('Distribution not found.')
+        logger.warning('Distribution not found.')
+        return 1
     else:
         dists = get_distributions(use_egg_info=True)
         graph = generate_graph(dists)
@@ -234,8 +235,7 @@ def _install(dispatcher, args, **kw):
     # first check if we are in a source directory
     if len(args) < 2:
         # are we inside a project dir?
-        listing = os.listdir(os.getcwd())
-        if 'setup.py' in listing or 'setup.cfg' in listing:
+        if os.path.isfile('setup.cfg') or os.path.isfile('setup.py'):
             args.insert(1, os.getcwd())
         else:
             logger.warning('No project to install.')
@@ -244,16 +244,10 @@ def _install(dispatcher, args, **kw):
     target = args[1]
     # installing from a source dir or archive file?
     if os.path.isdir(target) or _is_archive_file(target):
-        if install_local_project(target):
-            return 0
-        else:
-            return 1
+        return not install_local_project(target)
     else:
         # download from PyPI
-        if install(target):
-            return 0
-        else:
-            return 1
+        return not install(target)
 
 
 @action_help(metadata_usage)
@@ -263,12 +257,15 @@ def _metadata(dispatcher, args, **kw):
         name = opts['args'][0]
         dist = get_distribution(name, use_egg_info=True)
         if dist is None:
-            logger.warning('%s not installed', name)
-            return
-    else:
+            logger.warning('%r not installed', name)
+            return 1
+    elif os.path.isfile('setup.cfg'):
         logger.info('searching local dir for metadata')
-        dist = Distribution()
+        dist = Distribution()  # XXX use config module
         dist.parse_config_files()
+    else:
+        logger.warning('no argument given and no local setup.cfg found')
+        return 1
 
     metadata = dist.metadata
 
@@ -299,11 +296,15 @@ def _remove(distpatcher, args, **kw):
     else:
         auto_confirm = False
 
+    retcode = 0
     for dist in set(opts['args']):
         try:
             remove(dist, auto_confirm=auto_confirm)
         except PackagingError:
-            logger.warning('%s not installed', dist)
+            logger.warning('%r not installed', dist)
+            retcode = 1
+
+    return retcode
 
 
 @action_help(run_usage)
@@ -339,14 +340,8 @@ def _run(dispatcher, args, **kw):
     # XXX still need to be extracted from Distribution
     dist.parse_config_files()
 
-    try:
-        for cmd in dispatcher.commands:
-            dist.run_command(cmd, dispatcher.command_options[cmd])
-
-    except KeyboardInterrupt:
-        raise SystemExit("interrupted")
-    except (IOError, os.error, PackagingError, CCompilerError) as msg:
-        raise SystemExit("error: " + str(msg))
+    for cmd in dispatcher.commands:
+        dist.run_command(cmd, dispatcher.command_options[cmd])
 
     # XXX this is crappy
     return dist
@@ -358,19 +353,24 @@ def _list(dispatcher, args, **kw):
     dists = get_distributions(use_egg_info=True)
     if 'all' in opts or opts['args'] == []:
         results = dists
+        listall = True
     else:
-        results = [d for d in dists if d.name.lower() in opts['args']]
+        results = (d for d in dists if d.name.lower() in opts['args'])
+        listall = False
 
     number = 0
     for dist in results:
-        print('%s %s at %s' % (dist.name, dist.metadata['version'], dist.path))
+        print('%r %s (from %r)' % (dist.name, dist.version, dist.path))
         number += 1
 
-    print()
     if number == 0:
-        print('Nothing seems to be installed.')
+        if listall:
+            logger.info('Nothing seems to be installed.')
+        else:
+            logger.warning('No matching distribution found.')
+            return 1
     else:
-        print('Found %d projects installed.' % number)
+        logger.info('Found %d projects installed.', number)
 
 
 @action_help(search_usage)
@@ -382,7 +382,8 @@ def _search(dispatcher, args, **kw):
     """
     #opts = _parse_args(args[1:], '', ['simple', 'xmlrpc'])
     # 1. what kind of index is requested ? (xmlrpc / simple)
-    raise NotImplementedError
+    logger.error('not implemented')
+    return 1
 
 
 actions = [
@@ -662,6 +663,7 @@ class Dispatcher:
     def __call__(self):
         if self.action is None:
             return
+
         for action, desc, func in actions:
             if action == self.action:
                 return func(self, self.args)
@@ -676,6 +678,12 @@ def main(args=None):
         if dispatcher.action is None:
             return
         return dispatcher()
+    except KeyboardInterrupt:
+        logger.info('interrupted')
+        return 1
+    except (IOError, os.error, PackagingError, CCompilerError) as exc:
+        logger.exception(exc)
+        return 1
     finally:
         logger.setLevel(old_level)
         logger.handlers[:] = old_handlers
