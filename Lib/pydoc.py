@@ -1482,13 +1482,14 @@ def locate(path, forceload=0):
         else: break
     if module:
         object = module
-        for part in parts[n:]:
-            try: object = getattr(object, part)
-            except AttributeError: return None
-        return object
     else:
-        if hasattr(builtins, path):
-            return getattr(builtins, path)
+        object = builtins
+    for part in parts[n:]:
+        try:
+            object = getattr(object, part)
+        except AttributeError:
+            return None
+    return object
 
 # --------------------------------------- interactive interpreter interface
 
