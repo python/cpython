@@ -137,6 +137,11 @@ Tools/Demos
 Tests
 -----
 
+- Issue #12626: In regrtest, allow to filter tests using a glob filter
+  with the ``-m`` (or ``--match``) option.  This works with all test cases
+  using the unittest module.  This is useful with long test suites
+  such as test_io or test_subprocess.
+
 - Issue #12624: It is now possible to fail after the first failure when
   running in verbose mode (``-v`` or ``-W``), by using the ``--failfast``
   (or ``-G``) option to regrtest.  This is useful with long test suites
