@@ -294,6 +294,15 @@ class Keywords_TestCase(unittest.TestCase):
             self.fail('TypeError should have been raised')
 
 class Bytes_TestCase(unittest.TestCase):
+    def test_c(self):
+        from _testcapi import getargs_c
+        self.assertRaises(TypeError, getargs_c, b'abc')  # len > 1
+        self.assertEqual(getargs_c(b'a'), b'a')
+        self.assertEqual(getargs_c(bytearray(b'a')), b'a')
+        self.assertRaises(TypeError, getargs_c, memoryview(b'a'))
+        self.assertRaises(TypeError, getargs_c, 's')
+        self.assertRaises(TypeError, getargs_c, None)
+
     def test_s(self):
         from _testcapi import getargs_s
         self.assertEqual(getargs_s('abc\xe9'), b'abc\xc3\xa9')
