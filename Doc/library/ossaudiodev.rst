@@ -17,7 +17,7 @@ the standard audio interface for Linux and recent versions of FreeBSD.
    ALSA is in the standard kernel as of 2.5.x.  Presumably if you
    use ALSA, you'll have to make sure its OSS compatibility layer
    is active to use ossaudiodev, but you're gonna need it for the vast
-   majority of Linux audio apps anyways.
+   majority of Linux audio apps anyway.
 
    Sounds like things are also complicated for other BSDs.  In response
    to my python-dev query, Thomas Wouters said:
