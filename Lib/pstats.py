@@ -1,12 +1,8 @@
 """Class for printing reports on profiled python code."""
 
-# Class for printing reports on profiled python code. rev 1.0  4/1/94
-#
 # Written by James Roskind
 # Based on prior profile module by Sjoerd Mullender...
 #   which was hacked somewhat by: Guido van Rossum
-
-"""Class for profiling Python code."""
 
 # Copyright Disney Enterprises, Inc.  All Rights Reserved.
 # Licensed to PSF under a Contributor Agreement

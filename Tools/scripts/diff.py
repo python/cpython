@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """ Command line interface to difflib.py providing diffs in four formats:
 
 * ndiff:    lists every line and highlights interline changes.
