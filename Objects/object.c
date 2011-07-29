@@ -1277,6 +1277,16 @@ none_dealloc(PyObject* ignore)
     Py_FatalError("deallocating None");
 }
 
+static PyObject *
+none_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    if (PyTuple_GET_SIZE(args) || (kwargs && PyDict_Size(kwargs))) {
+        PyErr_SetString(PyExc_TypeError, "NoneType takes no arguments");
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 static int
 none_bool(PyObject *v)
 {
@@ -1335,6 +1345,30 @@ static PyTypeObject PyNone_Type = {
     0,                  /*tp_as_sequence*/
     0,                  /*tp_as_mapping*/
     0,                  /*tp_hash */
+    0,                  /*tp_call */
+    0,                  /*tp_str */
+    0,                  /*tp_getattro */
+    0,                  /*tp_setattro */
+    0,                  /*tp_as_buffer */
+    Py_TPFLAGS_DEFAULT, /*tp_flags */
+    0,                  /*tp_doc */
+    0,                  /*tp_traverse */
+    0,                  /*tp_clear */
+    0,                  /*tp_richcompare */
+    0,                  /*tp_weaklistoffset */
+    0,                  /*tp_iter */
+    0,                  /*tp_iternext */
+    0,                  /*tp_methods */
+    0,                  /*tp_members */
+    0,                  /*tp_getset */
+    0,                  /*tp_base */
+    0,                  /*tp_dict */
+    0,                  /*tp_descr_get */
+    0,                  /*tp_descr_set */
+    0,                  /*tp_dictoffset */
+    0,                  /*tp_init */
+    0,                  /*tp_alloc */
+    none_new,           /*tp_new */
 };
 
 PyObject _Py_NoneStruct = {

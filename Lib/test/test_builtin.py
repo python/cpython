@@ -1343,6 +1343,13 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(ValueError, x.translate, b"1", 1)
         self.assertRaises(TypeError, x.translate, b"1"*256, 1)
 
+    def test_construct_singletons(self):
+        for const in None, Ellipsis:
+            tp = type(const)
+            self.assertIs(tp(), const)
+            self.assertRaises(TypeError, tp, 1, 2)
+            self.assertRaises(TypeError, tp, a=1, b=2)
+
 class TestSorted(unittest.TestCase):
 
     def test_basic(self):
