@@ -28,7 +28,7 @@ Python's general purpose built-in containers, :class:`dict`, :class:`list`,
 =====================   ====================================================================  ===========================
 
 In addition to the concrete container classes, the collections module provides
-:ref:`abstract-base-classes` that can be used to test whether a class provides a
+:ref:`collections-abstract-base-classes` that can be used to test whether a class provides a
 particular interface, for example, whether it is hashable or a mapping.
 
 .. seealso::
@@ -851,8 +851,8 @@ If a new entry overwrites an existing entry, the
 original insertion position is changed and moved to the end::
 
     class LastUpdatedOrderedDict(OrderedDict):
-
         'Store items in the order the keys were last added'
+
         def __setitem__(self, key, value):
             if key in self:
                 del self[key]
@@ -871,10 +871,10 @@ so that the counter remembers the order elements are first encountered::
             return self.__class__, (OrderedDict(self),)
 
 
-.. _abstract-base-classes:
+.. _collections-abstract-base-classes:
 
-ABCs - abstract base classes
-----------------------------
+Collections Abstract Base Classes
+---------------------------------
 
 The collections module offers the following :term:`ABCs <abstract base class>`:
 
@@ -888,7 +888,7 @@ ABC                        Inherits from          Abstract Methods        Mixin 
 :class:`Sized`                                    ``__len__``
 :class:`Callable`                                 ``__call__``
 
-:class:`Sequence`          :class:`Sized`,        ``__getitem__``         ``__contains__``. ``__iter__``, ``__reversed__``,
+:class:`Sequence`          :class:`Sized`,        ``__getitem__``         ``__contains__``, ``__iter__``, ``__reversed__``,
                            :class:`Iterable`,                             ``index``, and ``count``
                            :class:`Container`
 
