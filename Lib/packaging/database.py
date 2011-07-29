@@ -351,7 +351,7 @@ class EggInfoDistribution:
                 except IOError:
                     requires = None
             self.metadata = Metadata(path=path)
-            self.name = self.metadata['name']
+            self.name = self.metadata['Name']
             self.version = self.metadata['Version']
 
         else:
