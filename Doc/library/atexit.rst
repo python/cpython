@@ -9,7 +9,9 @@
 
 The :mod:`atexit` module defines functions to register and unregister cleanup
 functions.  Functions thus registered are automatically executed upon normal
-interpreter termination.
+interpreter termination.  The order in which the functions are called is not
+defined; if you have cleanup operations that depend on each other, you should
+wrap them in a function and register that one.  This keeps :mod:`atexit` simple.
 
 Note: the functions registered via this module are not called when the program
 is killed by a signal not handled by Python, when a Python fatal internal error
