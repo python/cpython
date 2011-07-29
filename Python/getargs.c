@@ -828,6 +828,8 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         char *p = va_arg(*p_va, char *);
         if (PyBytes_Check(arg) && PyBytes_Size(arg) == 1)
             *p = PyBytes_AS_STRING(arg)[0];
+        else if (PyByteArray_Check(arg) && PyByteArray_Size(arg) == 1)
+            *p = PyByteArray_AS_STRING(arg)[0];
         else
             return converterr("a byte string of length 1", arg, msgbuf, bufsize);
         break;

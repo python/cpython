@@ -475,6 +475,27 @@ class BaseBytesTest(unittest.TestCase):
         self.assertRaises(TypeError, self.type2test(b'abc').lstrip, 'b')
         self.assertRaises(TypeError, self.type2test(b'abc').rstrip, 'b')
 
+    def test_center(self):
+        # Fill character can be either bytes or bytearray (issue 12380)
+        b = self.type2test(b'abc')
+        for fill_type in (bytes, bytearray):
+            self.assertEqual(b.center(7, fill_type(b'-')),
+                             self.type2test(b'--abc--'))
+
+    def test_ljust(self):
+        # Fill character can be either bytes or bytearray (issue 12380)
+        b = self.type2test(b'abc')
+        for fill_type in (bytes, bytearray):
+            self.assertEqual(b.ljust(7, fill_type(b'-')),
+                             self.type2test(b'abc----'))
+
+    def test_rjust(self):
+        # Fill character can be either bytes or bytearray (issue 12380)
+        b = self.type2test(b'abc')
+        for fill_type in (bytes, bytearray):
+            self.assertEqual(b.rjust(7, fill_type(b'-')),
+                             self.type2test(b'----abc'))
+
     def test_ord(self):
         b = self.type2test(b'\0A\x7f\x80\xff')
         self.assertEqual([ord(b[i:i+1]) for i in range(len(b))],
