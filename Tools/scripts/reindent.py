@@ -52,6 +52,8 @@ verbose = False
 recurse = False
 dryrun = False
 makebackup = True
+"A specified newline to be used in the output (set by --newline option)"
+spec_newline = None
 
 
 def usage(msg=None):
@@ -64,11 +66,9 @@ def errprint(*args):
     sys.stderr.write(" ".join(str(arg) for arg in args))
     sys.stderr.write("\n")
 
-
 def main():
     import getopt
     global verbose, recurse, dryrun, makebackup, spec_newline
-    spec_newline = None
     try:
         opts, args = getopt.getopt(sys.argv[1:], "drnvh",
             ["dryrun", "recurse", "nobackup", "verbose", "newline=", "help"])
