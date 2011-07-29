@@ -191,9 +191,11 @@ class Timer:
             it = [None] * number
         gcold = gc.isenabled()
         gc.disable()
-        timing = self.inner(it, self.timer)
-        if gcold:
-            gc.enable()
+        try:
+            timing = self.inner(it, self.timer)
+        finally:
+            if gcold:
+                gc.enable()
         return timing
 
     def repeat(self, repeat=default_repeat, number=default_number):
