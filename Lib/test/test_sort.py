@@ -2,18 +2,11 @@ from test import support
 import random
 import sys
 import unittest
+from functools import cmp_to_key
 
 verbose = support.verbose
 nerrors = 0
 
-def CmpToKey(mycmp):
-    'Convert a cmp= function into a key= function'
-    class K(object):
-        def __init__(self, obj):
-            self.obj = obj
-        def __lt__(self, other):
-            return mycmp(self.obj, other.obj) == -1
-    return K
 
 def check(tag, expected, raw, compare=None):
     global nerrors
@@ -23,7 +16,7 @@ def check(tag, expected, raw, compare=None):
 
     orig = raw[:]   # save input in case of error
     if compare:
-        raw.sort(key=CmpToKey(compare))
+        raw.sort(key=cmp_to_key(compare))
     else:
         raw.sort()
 
@@ -108,7 +101,7 @@ class TestBase(unittest.TestCase):
                 print("    Checking against an insane comparison function.")
                 print("        If the implementation isn't careful, this may segfault.")
             s = x[:]
-            s.sort(key=CmpToKey(lambda a, b:  int(random.random() * 3) - 1))
+            s.sort(key=cmp_to_key(lambda a, b:  int(random.random() * 3) - 1))
             check("an insane function left some permutation", x, s)
 
             if len(x) >= 2:
@@ -165,12 +158,12 @@ class TestBugs(unittest.TestCase):
                 L.pop()
                 return (x > y) - (x < y)
             L = [1,2]
-            self.assertRaises(ValueError, L.sort, key=CmpToKey(mutating_cmp))
+            self.assertRaises(ValueError, L.sort, key=cmp_to_key(mutating_cmp))
             def mutating_cmp(x, y):
                 L.append(3)
                 del L[:]
                 return (x > y) - (x < y)
-            self.assertRaises(ValueError, L.sort, key=CmpToKey(mutating_cmp))
+            self.assertRaises(ValueError, L.sort, key=cmp_to_key(mutating_cmp))
             memorywaster = [memorywaster]
 
 #==============================================================================
@@ -185,7 +178,7 @@ class TestDecorateSortUndecorate(unittest.TestCase):
         def my_cmp(x, y):
             xlower, ylower = x.lower(), y.lower()
             return (xlower > ylower) - (xlower < ylower)
-        copy.sort(key=CmpToKey(my_cmp))
+        copy.sort(key=cmp_to_key(my_cmp))
 
     def test_baddecorator(self):
         data = 'The quick Brown fox Jumped over The lazy Dog'.split()
@@ -261,8 +254,8 @@ class TestDecorateSortUndecorate(unittest.TestCase):
         def my_cmp_reversed(x, y):
             x0, y0 = x[0], y[0]
             return (y0 > x0) - (y0 < x0)
-        data.sort(key=CmpToKey(my_cmp), reverse=True)
-        copy1.sort(key=CmpToKey(my_cmp_reversed))
+        data.sort(key=cmp_to_key(my_cmp), reverse=True)
+        copy1.sort(key=cmp_to_key(my_cmp_reversed))
         self.assertEqual(data, copy1)
         copy2.sort(key=lambda x: x[0], reverse=True)
         self.assertEqual(data, copy2)
