@@ -964,6 +964,27 @@ class test_TemporaryDirectory(TC):
         finally:
             os.rmdir(dir)
 
+    @support.skip_unless_symlink
+    def test_cleanup_with_symlink_to_a_directory(self):
+        # cleanup() should not follow symlinks to directories (issue #12464)
+        d1 = self.do_create()
+        d2 = self.do_create()
+
+        # Symlink d1/foo -> d2
+        os.symlink(d2.name, os.path.join(d1.name, "foo"))
+
+        # This call to cleanup() should not follow the "foo" symlink
+        d1.cleanup()
+
+        self.assertFalse(os.path.exists(d1.name),
+                         "TemporaryDirectory %s exists after cleanup" % d1.name)
+        self.assertTrue(os.path.exists(d2.name),
+                        "Directory pointed to by a symlink was deleted")
+        self.assertEqual(os.listdir(d2.name), ['test.txt'],
+                         "Contents of the directory pointed to by a symlink "
+                         "were deleted")
+        d2.cleanup()
+
     @support.cpython_only
     def test_del_on_collection(self):
         # A TemporaryDirectory is deleted when garbage collected
