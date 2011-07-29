@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 Some helper functions to analyze the output of sys.getdxp() (which is
 only available if Python was built with -DDYNAMIC_EXECUTION_PROFILE).

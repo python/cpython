@@ -13,6 +13,7 @@ Makefile.pre
 platform
 pyconfig.h
 libpython*.a
+libpython*.so*
 python.exe
 python-gdb.py
 reflog.txt

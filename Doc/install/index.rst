@@ -72,7 +72,7 @@ In that case, you would download the installer appropriate to your platform and
 do the obvious thing with it: run it if it's an executable installer, ``rpm
 --install`` it if it's an RPM, etc.  You don't need to run Python or a setup
 script, you don't need to compile anything---you might not even need to read any
-instructions (although it's always a good idea to do so anyways).
+instructions (although it's always a good idea to do so anyway).
 
 Of course, things will not always be that easy.  You might be interested in a
 module distribution that doesn't have an easy-to-use installer for your

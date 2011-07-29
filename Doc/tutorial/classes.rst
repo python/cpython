@@ -556,24 +556,24 @@ occurs within the definition of a class.
 Name mangling is helpful for letting subclasses override methods without
 breaking intraclass method calls.  For example::
 
-    class Mapping:
-        def __init__(self, iterable):
-            self.items_list = []
-            self.__update(iterable)
+   class Mapping:
+       def __init__(self, iterable):
+           self.items_list = []
+           self.__update(iterable)
 
-        def update(self, iterable):
-            for item in iterable:
-                self.items_list.append(item)
+       def update(self, iterable):
+           for item in iterable:
+               self.items_list.append(item)
 
-        __update = update   # private copy of original update() method
+       __update = update   # private copy of original update() method
 
-    class MappingSubclass(Mapping):
+   class MappingSubclass(Mapping):
 
-        def update(self, keys, values):
-            # provides new signature for update()
-            # but does not break __init__()
-            for item in zip(keys, values):
-                self.items_list.append(item)
+       def update(self, keys, values):
+           # provides new signature for update()
+           # but does not break __init__()
+           for item in zip(keys, values):
+               self.items_list.append(item)
 
 Note that the mangling rules are designed mostly to avoid accidents; it still is
 possible to access or modify a variable that is considered private.  This can

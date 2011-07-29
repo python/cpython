@@ -583,7 +583,7 @@ available.  They are listed here in alphabetical order.
    Two objects with non-overlapping lifetimes may have the same :func:`id`
    value.
 
-   .. impl-detail:: This is the address of the object.
+   .. impl-detail:: This is the address of the object in memory.
 
 
 .. function:: input([prompt])
