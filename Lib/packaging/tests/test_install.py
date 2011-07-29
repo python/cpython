@@ -29,7 +29,7 @@ class InstalledDist:
         self.metadata['Requires-Dist'] = deps
 
     def __repr__(self):
-        return '<InstalledDist %s>' % self.metadata['Name']
+        return '<InstalledDist %r>' % self.metadata['Name']
 
 
 class ToInstallDist:
