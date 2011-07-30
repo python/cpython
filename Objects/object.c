@@ -1538,9 +1538,6 @@ _Py_ReadyTypes(void)
     if (PyType_Ready(&PyNone_Type) < 0)
         Py_FatalError("Can't initialize None type");
 
-    if (PyType_Ready(Py_Ellipsis->ob_type) < 0)
-        Py_FatalError("Can't initialize type(Ellipsis)");
-
     if (PyType_Ready(&PyNotImplemented_Type) < 0)
         Py_FatalError("Can't initialize NotImplemented type");
 
