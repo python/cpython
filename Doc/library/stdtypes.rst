@@ -2932,6 +2932,7 @@ supports no special operations.  There is exactly one ellipsis object, named
 
 It is written as ``Ellipsis``.
 
+
 The NotImplemented Object
 -------------------------
 
