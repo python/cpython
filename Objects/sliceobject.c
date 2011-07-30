@@ -17,6 +17,17 @@ this type and there is exactly one in existence.
 #include "structmember.h"
 
 static PyObject *
+ellipsis_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    if (PyTuple_GET_SIZE(args) || (kwargs && PyDict_Size(kwargs))) {
+        PyErr_SetString(PyExc_TypeError, "EllipsisType takes no arguments");
+        return NULL;
+    }
+    Py_INCREF(Py_Ellipsis);
+    return Py_Ellipsis;
+}
+
+static PyObject *
 ellipsis_repr(PyObject *op)
 {
     return PyUnicode_FromString("Ellipsis");
@@ -43,6 +54,24 @@ PyTypeObject PyEllipsis_Type = {
     0,                                  /* tp_setattro */
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT,                 /* tp_flags */
+    0,                                  /* tp_doc */
+    0,                                  /* tp_traverse */
+    0,                                  /* tp_clear */
+    0,                                  /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    0,                                  /* tp_iter */
+    0,                                  /* tp_iternext */
+    0,                                  /* tp_methods */
+    0,                                  /* tp_members */
+    0,                                  /* tp_getset */
+    0,                                  /* tp_base */
+    0,                                  /* tp_dict */
+    0,                                  /* tp_descr_get */
+    0,                                  /* tp_descr_set */
+    0,                                  /* tp_dictoffset */
+    0,                                  /* tp_init */
+    0,                                  /* tp_alloc */
+    ellipsis_new,                       /* tp_new */
 };
 
 PyObject _Py_EllipsisObject = {
