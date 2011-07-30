@@ -655,8 +655,9 @@ option groups is:
 
 .. method:: OptionParser.get_option_group(opt_str)
 
-   Return, if defined, the :class:`OptionGroup` that has the title or the long
-   description equals to *opt_str*
+   Return the :class:`OptionGroup` to which the short or long option
+   string *opt_str* (e.g. ``'-o'`` or ``'--option'``) belongs. If
+   there's no such :class:`OptionGroup`, return ``None``.
 
 .. _optparse-printing-version-string:
 
