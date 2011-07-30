@@ -72,6 +72,14 @@ class GeneralTests(unittest.TestCase):
         smtp = smtplib.SMTP(HOST, self.port)
         smtp.close()
 
+    def testSourceAddress(self):
+        mock_socket.reply_with(b"220 Hola mundo")
+        # connects
+        smtp = smtplib.SMTP(HOST, self.port,
+                source_address=('127.0.0.1',19876))
+        self.assertEqual(smtp.source_address, ('127.0.0.1', 19876))
+        smtp.close()
+
     def testBasic2(self):
         mock_socket.reply_with(b"220 Hola mundo")
         # connects, include port in host name
@@ -204,6 +212,15 @@ class DebuggingServerTests(unittest.TestCase):
     def testBasic(self):
         # connect
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=3)
+        smtp.quit()
+
+    def testSourceAddress(self):
+        # connect
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=3,
+                            source_address=('127.0.0.1', 19876))
+        self.assertEqual(smtp.source_address, ('127.0.0.1', 19876))
+        self.assertEqual(smtp.local_hostname, 'localhost')
+        print(dir(smtp))
         smtp.quit()
 
     def testNOOP(self):
