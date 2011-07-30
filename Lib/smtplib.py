@@ -215,7 +215,8 @@ class SMTP:
     default_port = SMTP_PORT
 
     def __init__(self, host='', port=0, local_hostname=None,
-                 timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
+                 timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
+                 source_address=None):
         """Initialize a new instance.
 
         If specified, `host' is the name of the remote host to which to
@@ -223,11 +224,16 @@ class SMTP:
         By default, smtplib.SMTP_PORT is used.  An SMTPConnectError is raised
         if the specified `host' doesn't respond correctly.  If specified,
         `local_hostname` is used as the FQDN of the local host.  By default,
-        the local hostname is found using socket.getfqdn().
+        the local hostname is found using socket.getfqdn(). The
+        `source_address` parameter takes a 2-tuple (host, port) for the socket
+        to bind to as its source address before connecting. If the host is ''
+        and port is 0, the OS default behavior will be used.
 
         """
         self.timeout = timeout
         self.esmtp_features = {}
+        self.source_address = source_address
+
         if host:
             (code, msg) = self.connect(host, port)
             if code != 220:
@@ -276,10 +282,11 @@ class SMTP:
         # This makes it simpler for SMTP_SSL to use the SMTP connect code
         # and just alter the socket connection bit.
         if self.debuglevel > 0:
-            print('connect:', (host, port), file=stderr)
-        return socket.create_connection((host, port), timeout)
+            print('connect: to', (host, port), self.source_address, file=stderr)
+        return socket.create_connection((host, port), timeout,
+                                        self.source_address)
 
-    def connect(self, host='localhost', port=0):
+    def connect(self, host='localhost', port=0, source_address=None):
         """Connect to a host on a given port.
 
         If the hostname ends with a colon (`:') followed by a number, and
@@ -290,6 +297,7 @@ class SMTP:
         specified during instantiation.
 
         """
+        if source_address: self.source_address = source_address
         if not port and (host.find(':') == host.rfind(':')):
             i = host.rfind(':')
             if i >= 0:
@@ -829,7 +837,8 @@ if _have_ssl:
         """ This is a subclass derived from SMTP that connects over an SSL encrypted
         socket (to use this class you need a socket module that was compiled with SSL
         support). If host is not specified, '' (the local host) is used. If port is
-        omitted, the standard SMTP-over-SSL port (465) is used. keyfile and certfile
+        omitted, the standard SMTP-over-SSL port (465) is used. The optional
+        source_address takes a two-tuple (host,port) for socket to bind to. keyfile and certfile
         are also optional - they can contain a PEM formatted private key and
         certificate chain file for the SSL connection. context also optional, can contain
         a SSLContext, and is an alternative to keyfile and certfile; If it is specified both
@@ -840,7 +849,8 @@ if _have_ssl:
 
         def __init__(self, host='', port=0, local_hostname=None,
                      keyfile=None, certfile=None,
-                     timeout=socket._GLOBAL_DEFAULT_TIMEOUT, context=None):
+                     timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
+                     source_address=None, context=None):
             if context is not None and keyfile is not None:
                 raise ValueError("context and keyfile arguments are mutually "
                                  "exclusive")
@@ -850,12 +860,14 @@ if _have_ssl:
             self.keyfile = keyfile
             self.certfile = certfile
             self.context = context
-            SMTP.__init__(self, host, port, local_hostname, timeout)
+            SMTP.__init__(self, host, port, local_hostname, timeout,
+                    source_address)
 
         def _get_socket(self, host, port, timeout):
             if self.debuglevel > 0:
                 print('connect:', (host, port), file=stderr)
-            new_socket = socket.create_connection((host, port), timeout)
+            new_socket = socket.create_connection((host, port), timeout,
+                    self.source_address)
             if self.context is not None:
                 new_socket = self.context.wrap_socket(new_socket)
             else:
@@ -884,14 +896,16 @@ class LMTP(SMTP):
 
     ehlo_msg = "lhlo"
 
-    def __init__(self, host='', port=LMTP_PORT, local_hostname=None):
+    def __init__(self, host='', port=LMTP_PORT, local_hostname=None,
+            source_address=None):
         """Initialize a new instance."""
-        SMTP.__init__(self, host, port, local_hostname)
+        SMTP.__init__(self, host, port, local_hostname = local_hostname,
+                source_address = source_address)
 
-    def connect(self, host='localhost', port=0):
+    def connect(self, host='localhost', port=0, source_address=None):
         """Connect to the LMTP daemon, on either a Unix or a TCP socket."""
         if host[0] != '/':
-            return SMTP.connect(self, host, port)
+            return SMTP.connect(self, host, port, source_address = source_address)
 
         # Handle Unix-domain sockets.
         try:
