@@ -673,7 +673,7 @@ there were no excess keyword arguments.
 If the syntax ``*expression`` appears in the function call, ``expression`` must
 evaluate to an iterable.  Elements from this iterable are treated as if they
 were additional positional arguments; if there are positional arguments
-*x1*, ... ,*xN*, and ``expression`` evaluates to a sequence *y1*, ..., *yM*,
+*x1*, ..., *xN*, and ``expression`` evaluates to a sequence *y1*, ..., *yM*,
 this is equivalent to a call with M+N positional arguments *x1*, ..., *xN*,
 *y1*, ..., *yM*.
 
