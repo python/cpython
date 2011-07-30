@@ -2723,6 +2723,16 @@ special operations.  There is exactly one ellipsis object, named
 It is written as ``Ellipsis`` or ``...``.
 
 
+The NotImplemented Object
+-------------------------
+
+This object is returned from comparisons and binary operations when they are
+asked to operate on types they don't support. See :ref:`comparisons` for more
+information.
+
+It is written as ``NotImplemented``.
+
+
 Boolean Values
 --------------
 
