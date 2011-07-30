@@ -187,18 +187,23 @@ executing :program:`rt.bat` from your :file:`PCBuild` directory will run all
 regression tests.
 
 
-:mod:`test.support` --- Utility functions for tests
-===================================================
+:mod:`test.support` --- Utilities for the Python test suite
+===========================================================
 
 .. module:: test.support
-   :synopsis: Support for Python regression tests.
+   :synopsis: Support for Python's regression test suite.
 
 
 The :mod:`test.support` module provides support for Python's regression
-tests.
+test suite.
+
+.. note::
+   :mod:`test.support` is not a public module.  It is documented here to help
+   Python developers write tests.  The API of this module is subject to change
+   without backwards compatibility concerns between releases.
+
 
 This module defines the following exceptions:
-
 
 .. exception:: TestFailed
 
@@ -213,8 +218,8 @@ This module defines the following exceptions:
    network connection) is not available. Raised by the :func:`requires`
    function.
 
-The :mod:`test.support` module defines the following constants:
 
+The :mod:`test.support` module defines the following constants:
 
 .. data:: verbose
 
@@ -233,8 +238,8 @@ The :mod:`test.support` module defines the following constants:
    Set to a name that is safe to use as the name of a temporary file.  Any
    temporary file that is created should be closed and unlinked (removed).
 
-The :mod:`test.support` module defines the following functions:
 
+The :mod:`test.support` module defines the following functions:
 
 .. function:: forget(module_name)
 
