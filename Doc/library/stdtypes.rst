@@ -2706,7 +2706,7 @@ The Null Object
 
 This object is returned by functions that don't explicitly return a value.  It
 supports no special operations.  There is exactly one null object, named
-``None`` (a built-in name).
+``None`` (a built-in name).  Calling ``type(None)`` produces the same singleton.
 
 It is written as ``None``.
 
@@ -2718,7 +2718,8 @@ The Ellipsis Object
 
 This object is commonly used by slicing (see :ref:`slicings`).  It supports no
 special operations.  There is exactly one ellipsis object, named
-:const:`Ellipsis` (a built-in name).
+:const:`Ellipsis` (a built-in name).  Calling ``type(Ellipsis)`` produces the
+:const:`Ellipsis` singleton.
 
 It is written as ``Ellipsis`` or ``...``.
 
@@ -2728,7 +2729,8 @@ The NotImplemented Object
 
 This object is returned from comparisons and binary operations when they are
 asked to operate on types they don't support. See :ref:`comparisons` for more
-information.
+information.  There is exactly one ``NotImplemented`` object.  Calling
+``type(NotImplemented)`` produces the singleton instance.
 
 It is written as ``NotImplemented``.
 
