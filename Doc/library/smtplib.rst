@@ -90,7 +90,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    :meth:`connect` method must support that as well as a regular host:port
    server. The optional parameters local_hostname and source_address has the
    same meaning as that of SMTP client.To specify a Unix socket, you must use
-   an absolute path for *host*, starting with a '/'. 
+   an absolute path for *host*, starting with a '/'.
 
    Authentication is supported, using the regular SMTP mechanism. When using a Unix
    socket, LMTP generally don't support or require any authentication, but your
