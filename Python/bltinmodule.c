@@ -1891,6 +1891,7 @@ builtin_sum(PyObject *self, PyObject *args)
         if (PyBytes_Check(result)) {
             PyErr_SetString(PyExc_TypeError,
                 "sum() can't sum bytes [use b''.join(seq) instead]");
+            Py_DECREF(iter);
             return NULL;
         }
         if (PyByteArray_Check(result)) {
