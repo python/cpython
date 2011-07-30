@@ -2711,6 +2711,7 @@ special operations.  There is exactly one ellipsis object, named
 
 It is written as ``Ellipsis`` or ``...``.
 
+
 The NotImplemented Object
 -------------------------
 
