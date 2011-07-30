@@ -20,7 +20,7 @@ details of SMTP and ESMTP operation, consult :rfc:`821` (Simple Mail Transfer
 Protocol) and :rfc:`1869` (SMTP Service Extensions).
 
 
-.. class:: SMTP(host='', port=0, local_hostname=None[, timeout])
+.. class:: SMTP(host='', port=0, local_hostname=None[, timeout], source_address=None)
 
    A :class:`SMTP` instance encapsulates an SMTP connection.  It has methods
    that support a full repertoire of SMTP and ESMTP operations. If the optional
@@ -29,7 +29,12 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    raised if the specified host doesn't respond correctly. The optional
    *timeout* parameter specifies a timeout in seconds for blocking operations
    like the connection attempt (if not specified, the global default timeout
-   setting will be used).
+   setting will be used). The optional source_address parameter allows to bind to some
+   specific source address in a machine with multiple network interfaces,
+   and/or to some specific source tcp port. It takes a 2-tuple (host, port),
+   for the socket to bind to as its source address before connecting. If
+   ommited (or if host or port are '' and/or 0 respectively) the OS default
+   behavior will be used.
 
    For normal use, you should only require the initialization/connect,
    :meth:`sendmail`, and :meth:`quit` methods.  An example is included below.
@@ -48,8 +53,10 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    .. versionchanged:: 3.3
       Support for the :keyword:`with` statement was added.
 
+   .. versionadded:: 3.3
+      source_address parameter.
 
-.. class:: SMTP_SSL(host='', port=0, local_hostname=None, keyfile=None, certfile=None[, timeout], context=None)
+.. class:: SMTP_SSL(host='', port=0, local_hostname=None, keyfile=None, certfile=None[, timeout], context=None, source_address=None)
 
    A :class:`SMTP_SSL` instance behaves exactly the same as instances of
    :class:`SMTP`. :class:`SMTP_SSL` should be used for situations where SSL is
@@ -62,18 +69,28 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    keyfile and certfile must be None.  The optional *timeout*
    parameter specifies a timeout in seconds for blocking operations like the
    connection attempt (if not specified, the global default timeout setting
-   will be used).
+   will be used). The optional source_address parameter allows to bind to some
+   specific source address in a machine with multiple network interfaces,
+   and/or to some specific source tcp port. It takes a 2-tuple (host, port),
+   for the socket to bind to as its source address before connecting. If
+   ommited (or if host or port are '' and/or 0 respectively) the OS default
+   behavior will be used.
 
    .. versionchanged:: 3.3
       *context* was added.
 
+   .. versionadded:: 3.3
+      source_address parameter.
 
-.. class:: LMTP(host='', port=LMTP_PORT, local_hostname=None)
+
+.. class:: LMTP(host='', port=LMTP_PORT, local_hostname=None, source_address=None)
 
    The LMTP protocol, which is very similar to ESMTP, is heavily based on the
-   standard SMTP client. It's common to use Unix sockets for LMTP, so our :meth:`connect`
-   method must support that as well as a regular host:port server. To specify a
-   Unix socket, you must use an absolute path for *host*, starting with a '/'.
+   standard SMTP client. It's common to use Unix sockets for LMTP, so our
+   :meth:`connect` method must support that as well as a regular host:port
+   server. The optional parameters local_hostname and source_address has the
+   same meaning as that of SMTP client.To specify a Unix socket, you must use
+   an absolute path for *host*, starting with a '/'. 
 
    Authentication is supported, using the regular SMTP mechanism. When using a Unix
    socket, LMTP generally don't support or require any authentication, but your
