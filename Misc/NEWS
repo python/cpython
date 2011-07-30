@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Make type(None), type(Ellipsis), and type(NotImplemented) callable. They
+  return the respective singleton instances.
+
 - Forbid summing bytes in sum().
 
 - Verify the types of AST strings and identifiers provided by the user before
