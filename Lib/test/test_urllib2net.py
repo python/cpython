@@ -190,9 +190,11 @@ class OtherNetworkTests(unittest.TestCase):
         # Some sites do not send Connection: close header.
         # Verify that those work properly. (#issue12576)
 
-        req = urllib2.urlopen('http://www.imdb.com')
-        res = req.read()
-        self.assertTrue(res)
+        URL = 'http://www.imdb.com' # No Connection:close
+        with test_support.transient_internet(url):
+            req = urllib2.urlopen(URL)
+            res = req.read()
+            self.assertTrue(res)
 
     def _test_urls(self, urls, handlers, retry=True):
         import time
