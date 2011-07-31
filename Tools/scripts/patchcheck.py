@@ -39,18 +39,13 @@ def status(message, modal=False, info=None):
 @status("Getting the list of files that have been added/changed",
         info=lambda x: n_files_str(len(x)))
 def changed_files():
-    """Get the list of changed or added files from the VCS."""
-    if os.path.isdir(os.path.join(SRCDIR, '.hg')):
-        cmd = 'hg status --added --modified --no-status'
-    else:
+    """Get the list of changed or added files from Mercurial."""
+    if not os.path.isdir(os.path.join(SRCDIR, '.hg')):
         sys.exit('need a checkout to get modified files')
 
-    st = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
-    try:
-        st.wait()
+    cmd = 'hg status --added --modified --no-status'
+    with subprocess.Popen(cmd.split(), stdout=subprocess.PIPE) as st:
         return [x.decode().rstrip() for x in st.stdout]
-    finally:
-        st.stdout.close()
 
 
 def report_modified_files(file_paths):
