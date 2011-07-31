@@ -37,6 +37,9 @@ Core and Builtins
 Library
 -------
 
+- Issues #11104, #8688: Fix the behavior of distutils' sdist command with
+  manually-maintained MANIFEST files.
+
 - Issue #8887: "pydoc somebuiltin.somemethod" (or help('somebuiltin.somemethod')
   in Python code) now finds the doc of the method.
 
