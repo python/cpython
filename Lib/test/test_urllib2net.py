@@ -191,7 +191,7 @@ class OtherNetworkTests(unittest.TestCase):
         # Verify that those work properly. (#issue12576)
 
         URL = 'http://www.imdb.com' # No Connection:close
-        with test_support.transient_internet(url):
+        with test_support.transient_internet(URL):
             req = urllib2.urlopen(URL)
             res = req.read()
             self.assertTrue(res)
