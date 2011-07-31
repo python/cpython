@@ -1161,6 +1161,10 @@ class PyBuildExt(build_ext):
         else:
             missing.extend(['nis', 'resource', 'termios'])
 
+        curses_defines = []
+        if curses_library == 'ncursesw':
+            curses_defines.append(('HAVE_NCURSESW', '1'))
+
         # Curses support, requiring the System V version of curses, often
         # provided by the ncurses library.
         panel_library = 'panel'
@@ -1171,6 +1175,7 @@ class PyBuildExt(build_ext):
                 panel_library = 'panelw'
             curses_libs = [curses_library]
             exts.append( Extension('_curses', ['_cursesmodule.c'],
+                                   define_macros=curses_defines,
                                    libraries = curses_libs) )
         elif curses_library == 'curses' and platform != 'darwin':
                 # OSX has an old Berkeley curses, not good enough for
@@ -1183,6 +1188,7 @@ class PyBuildExt(build_ext):
                 curses_libs = ['curses']
 
             exts.append( Extension('_curses', ['_cursesmodule.c'],
+                                   define_macros=curses_defines,
                                    libraries = curses_libs) )
         else:
             missing.append('_curses')
