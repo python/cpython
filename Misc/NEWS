@@ -41,6 +41,9 @@ Core and Builtins
 Library
 -------
 
+- Issues #11104, #8688: Fix the behavior of distutils' sdist command with
+  manually-maintained MANIFEST files.
+
 - Issue #12464: tempfile.TemporaryDirectory.cleanup() should not follow
   symlinks: fix it. Patch by Petri Lehtinen.
 
