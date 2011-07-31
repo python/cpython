@@ -140,6 +140,9 @@ Tools/Demos
 Tests
 -----
 
+- Issue #12331: The test suite for lib2to3 can now run from an installed
+  Python.
+
 - Issue #12626: In regrtest, allow to filter tests using a glob filter
   with the ``-m`` (or ``--match``) option.  This works with all test cases
   using the unittest module.  This is useful with long test suites
