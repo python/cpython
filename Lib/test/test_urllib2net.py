@@ -178,17 +178,21 @@ class OtherNetworkTests(unittest.TestCase):
         # Some sites do not send Connection: close header.
         # Verify that those work properly. (#issue12576)
 
-        try:
-            with urllib.request.urlopen('http://www.imdb.com') as res:
-                pass
-        except ValueError as e:
-            self.fail("urlopen failed for sites not sending Connection:close")
-        else:
-            self.assertTrue(res)
+        URL = 'http://www.imdb.com' # mangles Connection:close
 
-        req = urllib.request.urlopen('http://www.imdb.com')
-        res = req.read()
-        self.assertTrue(res)
+        with support.transient_internet(URL):
+            try:
+                with urllib.request.urlopen(URL) as res:
+                    pass
+            except ValueError as e:
+                self.fail("urlopen failed for site not sending \
+                           Connection:close")
+            else:
+                self.assertTrue(res)
+
+            req = urllib.request.urlopen(URL)
+            res = req.read()
+            self.assertTrue(res)
 
     def _test_urls(self, urls, handlers, retry=True):
         import time
