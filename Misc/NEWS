@@ -249,6 +249,9 @@ Core and Builtins
 Library
 -------
 
+- Issues #11104, #8688: Fix the behavior of distutils' sdist command with
+  manually-maintained MANIFEST files.
+
 - Issue #11281: smtplib.STMP gets source_address parameter, which adds the
   ability to bind to specific source address on a machine with multiple
   interfaces. Patch by Paulo Scardine.
@@ -1143,6 +1146,9 @@ Extension Modules
 
 Tests
 -----
+
+- Issue #12331: The test suite for lib2to3 can now run from an installed
+  Python.
 
 - Issue #12626: In regrtest, allow to filter tests using a glob filter
   with the ``-m`` (or ``--match``) option.  This works with all test cases
