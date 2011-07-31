@@ -749,12 +749,12 @@ $(LIBRARY_OBJS) $(MODOBJS) Modules/python.o: $(PYTHON_HEADERS)
 
 # Run a basic set of regression tests.
 # This excludes some tests that are particularly resource-intensive.
-TESTOPTS=	-j0 $(EXTRATESTOPTS)
+TESTOPTS=	$(EXTRATESTOPTS)
 TESTPROG=	$(srcdir)/Lib/test/regrtest.py
 TESTPYTHON=	$(RUNSHARED) ./$(BUILDPYTHON) -Wd -E -bb $(TESTPYTHONOPTS)
 TESTTIMEOUT=	3600
 test:		all platform
-		$(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
+		$(TESTPYTHON) $(TESTPROG) -j0 $(TESTOPTS)
 
 # Run the full test suite twice - once without .pyc files, and once with.
 # In the past, we've had problems where bugs in the marshalling or
@@ -767,8 +767,8 @@ testall:	all platform
 		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
 		$(TESTPYTHON) $(srcdir)/Lib/compileall.py
 		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
-		-$(TESTPYTHON) $(TESTPROG) -uall $(TESTOPTS)
-		$(TESTPYTHON) $(TESTPROG) -uall $(TESTOPTS)
+		-$(TESTPYTHON) $(TESTPROG) -j0 -uall $(TESTOPTS)
+		$(TESTPYTHON) $(TESTPROG) -j0 -uall $(TESTOPTS)
 
 # Run the test suite for both architectures in a Universal build on OSX.
 # Must be run on an Intel box.
@@ -777,8 +777,8 @@ testuniversal:	all platform
 			echo "This can only be used on OSX/i386" ;\
 			exit 1 ;\
 		fi
-		$(TESTPYTHON) $(TESTPROG) -uall $(TESTOPTS)
-		$(RUNSHARED) /usr/libexec/oah/translate ./$(BUILDPYTHON) -E $(TESTPROG) -uall $(TESTOPTS)
+		$(TESTPYTHON) $(TESTPROG) -j0 -uall $(TESTOPTS)
+		$(RUNSHARED) /usr/libexec/oah/translate ./$(BUILDPYTHON) -E $(TESTPROG) -j0 -uall $(TESTOPTS)
 
 # Like testall, but with only one pass.
 # Run an optional script to include information about the build environment.
@@ -794,8 +794,8 @@ QUICKTESTOPTS=	$(TESTOPTS) -x test_subprocess test_io test_lib2to3 \
 		test_select test_zipfile
 quicktest:	all platform
 		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
-		-$(TESTPYTHON) $(TESTPROG) $(QUICKTESTOPTS)
-		$(TESTPYTHON) $(TESTPROG) $(QUICKTESTOPTS)
+		-$(TESTPYTHON) $(TESTPROG) -j0 $(QUICKTESTOPTS)
+		$(TESTPYTHON) $(TESTPROG) -j0 $(QUICKTESTOPTS)
 
 
 install: altinstall bininstall
