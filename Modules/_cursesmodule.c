@@ -906,6 +906,7 @@ PyCursesWindow_GetKey(PyCursesWindowObject *self, PyObject *args)
     }
 }
 
+#ifdef HAVE_NCURSESW
 static PyObject *
 PyCursesWindow_Get_WCh(PyCursesWindowObject *self, PyObject *args)
 {
@@ -937,6 +938,7 @@ PyCursesWindow_Get_WCh(PyCursesWindowObject *self, PyObject *args)
     }
     return PyLong_FromLong(rtn);
 }
+#endif
 
 static PyObject *
 PyCursesWindow_GetStr(PyCursesWindowObject *self, PyObject *args)
@@ -1636,7 +1638,9 @@ static PyMethodDef PyCursesWindow_Methods[] = {
     {"getbkgd",         (PyCFunction)PyCursesWindow_GetBkgd, METH_NOARGS},
     {"getch",           (PyCFunction)PyCursesWindow_GetCh, METH_VARARGS},
     {"getkey",          (PyCFunction)PyCursesWindow_GetKey, METH_VARARGS},
+#ifdef HAVE_NCURSESW
     {"get_wch",         (PyCFunction)PyCursesWindow_Get_WCh, METH_VARARGS},
+#endif
     {"getmaxyx",        (PyCFunction)PyCursesWindow_getmaxyx, METH_NOARGS},
     {"getparyx",        (PyCFunction)PyCursesWindow_getparyx, METH_NOARGS},
     {"getstr",          (PyCFunction)PyCursesWindow_GetStr, METH_VARARGS},
