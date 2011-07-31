@@ -1147,6 +1147,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #12331: The test suite for the packaging module can now run from an
+  installed Python.
+
 - Issue #12331: The test suite for lib2to3 can now run from an installed
   Python.
 
