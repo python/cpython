@@ -216,12 +216,17 @@ class DebuggingServerTests(unittest.TestCase):
 
     def testSourceAddress(self):
         # connect
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=3,
-                            source_address=('127.0.0.1', 19876))
-        self.assertEqual(smtp.source_address, ('127.0.0.1', 19876))
-        self.assertEqual(smtp.local_hostname, 'localhost')
-        print(dir(smtp))
-        smtp.quit()
+        port = support.find_unused_port()
+        try:
+            smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
+                    timeout=3, source_address=('127.0.0.1', port))
+            self.assertEqual(smtp.source_address, ('127.0.0.1', port))
+            self.assertEqual(smtp.local_hostname, 'localhost')
+            smtp.quit()
+        except IOError as e:
+            if e.errno == errno.EADDRINUSE:
+                self.skipTest("couldn't bind to port %d" % port)
+            raise
 
     def testNOOP(self):
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=3)
