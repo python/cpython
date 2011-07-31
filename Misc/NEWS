@@ -161,6 +161,9 @@ Tools/Demos
 Tests
 -----
 
+- Issue #12331: The test suite for lib2to3 can now run from an installed
+  Python.
+
 - Issue #12549: Correct test_platform to not fail when OS X returns 'x86_64'
   as the processor type on some Mac systems.
 
