@@ -282,7 +282,8 @@ class SMTP:
         # This makes it simpler for SMTP_SSL to use the SMTP connect code
         # and just alter the socket connection bit.
         if self.debuglevel > 0:
-            print('connect: to', (host, port), self.source_address, file=stderr)
+            print('connect: to', (host, port), self.source_address,
+                                 file=stderr)
         return socket.create_connection((host, port), timeout,
                                         self.source_address)
 
@@ -297,7 +298,10 @@ class SMTP:
         specified during instantiation.
 
         """
-        if source_address: self.source_address = source_address
+
+        if source_address:
+            self.source_address = source_address
+
         if not port and (host.find(':') == host.rfind(':')):
             i = host.rfind(':')
             if i >= 0:
@@ -381,7 +385,8 @@ class SMTP:
 
         errmsg = b"\n".join(resp)
         if self.debuglevel > 0:
-            print('reply: retcode (%s); Msg: %s' % (errcode, errmsg), file=stderr)
+            print('reply: retcode (%s); Msg: %s' % (errcode, errmsg),
+                                                    file=stderr)
         return errcode, errmsg
 
     def docmd(self, cmd, args=""):
@@ -788,7 +793,8 @@ class SMTP:
         # TODO implement heuristics to guess the correct Resent-* block with an
         # option allowing the user to enable the heuristics.  (It should be
         # possible to guess correctly almost all of the time.)
-        resent =msg.get_all('Resent-Date')
+
+        resent = msg.get_all('Resent-Date')
         if resent is None:
             header_prefix = ''
         elif len(resent) == 1:
@@ -797,13 +803,13 @@ class SMTP:
             raise ValueError("message has more than one 'Resent-' header block")
         if from_addr is None:
             # Prefer the sender field per RFC 2822:3.6.2.
-            from_addr = (msg[header_prefix+'Sender']
-                           if (header_prefix+'Sender') in msg
-                           else msg[header_prefix+'From'])
+            from_addr = (msg[header_prefix + 'Sender']
+                           if (header_prefix + 'Sender') in msg
+                           else msg[header_prefix + 'From'])
         if to_addrs is None:
-            addr_fields = [f for f in (msg[header_prefix+'To'],
-                                       msg[header_prefix+'Bcc'],
-                                       msg[header_prefix+'Cc']) if f is not None]
+            addr_fields = [f for f in (msg[header_prefix + 'To'],
+                                       msg[header_prefix + 'Bcc'],
+                                       msg[header_prefix + 'Cc']) if f is not None]
             to_addrs = [a[1] for a in email.utils.getaddresses(addr_fields)]
         # Make a local copy so we can delete the bcc headers.
         msg_copy = copy.copy(msg)
@@ -899,13 +905,13 @@ class LMTP(SMTP):
     def __init__(self, host='', port=LMTP_PORT, local_hostname=None,
             source_address=None):
         """Initialize a new instance."""
-        SMTP.__init__(self, host, port, local_hostname = local_hostname,
-                source_address = source_address)
+        SMTP.__init__(self, host, port, local_hostname=local_hostname,
+                      source_address=source_address)
 
     def connect(self, host='localhost', port=0, source_address=None):
         """Connect to the LMTP daemon, on either a Unix or a TCP socket."""
         if host[0] != '/':
-            return SMTP.connect(self, host, port, source_address = source_address)
+            return SMTP.connect(self, host, port, source_address=source_address)
 
         # Handle Unix-domain sockets.
         try:

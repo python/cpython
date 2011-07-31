@@ -31,9 +31,9 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    like the connection attempt (if not specified, the global default timeout
    setting will be used). The optional source_address parameter allows to bind to some
    specific source address in a machine with multiple network interfaces,
-   and/or to some specific source tcp port. It takes a 2-tuple (host, port),
+   and/or to some specific source TCP port. It takes a 2-tuple (host, port),
    for the socket to bind to as its source address before connecting. If
-   ommited (or if host or port are '' and/or 0 respectively) the OS default
+   omitted (or if host or port are ``''`` and/or 0 respectively) the OS default
    behavior will be used.
 
    For normal use, you should only require the initialization/connect,
@@ -53,8 +53,8 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    .. versionchanged:: 3.3
       Support for the :keyword:`with` statement was added.
 
-   .. versionadded:: 3.3
-      source_address parameter.
+   .. versionchanged:: 3.3
+      source_address argument was added.
 
 .. class:: SMTP_SSL(host='', port=0, local_hostname=None, keyfile=None, certfile=None[, timeout], context=None, source_address=None)
 
@@ -73,14 +73,14 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    specific source address in a machine with multiple network interfaces,
    and/or to some specific source tcp port. It takes a 2-tuple (host, port),
    for the socket to bind to as its source address before connecting. If
-   ommited (or if host or port are '' and/or 0 respectively) the OS default
+   omitted (or if host or port are ``''`` and/or 0 respectively) the OS default
    behavior will be used.
 
    .. versionchanged:: 3.3
       *context* was added.
 
-   .. versionadded:: 3.3
-      source_address parameter.
+   .. versionchanged:: 3.3
+      source_address argument was added.
 
 
 .. class:: LMTP(host='', port=LMTP_PORT, local_hostname=None, source_address=None)
@@ -88,8 +88,8 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    The LMTP protocol, which is very similar to ESMTP, is heavily based on the
    standard SMTP client. It's common to use Unix sockets for LMTP, so our
    :meth:`connect` method must support that as well as a regular host:port
-   server. The optional parameters local_hostname and source_address has the
-   same meaning as that of SMTP client.To specify a Unix socket, you must use
+   server. The optional arguments local_hostname and source_address have the
+   same meaning as that of SMTP client. To specify a Unix socket, you must use
    an absolute path for *host*, starting with a '/'.
 
    Authentication is supported, using the regular SMTP mechanism. When using a Unix
