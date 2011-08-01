@@ -623,7 +623,7 @@ The :class:`SMTPHandler` class, located in the :mod:`logging.handlers` module,
 supports sending logging messages to an email address via SMTP.
 
 
-.. class:: SMTPHandler(mailhost, fromaddr, toaddrs, subject, credentials=None)
+.. class:: SMTPHandler(mailhost, fromaddr, toaddrs, subject, credentials=None, secure=None)
 
    Returns a new instance of the :class:`SMTPHandler` class. The instance is
    initialized with the from and to addresses and subject line of the email. The
@@ -632,6 +632,12 @@ supports sending logging messages to an email address via SMTP.
    the standard SMTP port is used. If your SMTP server requires authentication, you
    can specify a (username, password) tuple for the *credentials* argument.
 
+   To specify the use of a secure protocol (TLS), pass in a tuple to the
+   *secure* argument. This will only be used when authentication credentials are
+   supplied. The tuple should be either an empty tuple, or a single-value tuple
+   with the name of a keyfile, or a 2-value tuple with the names of the keyfile
+   and certificate file. (This tuple is passed to the
+   :meth:`smtplib.SMTP.starttls` method.)
 
    .. method:: emit(record)
 
