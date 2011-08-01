@@ -39,19 +39,39 @@ def record_pieces(file):
     return [path, digest, size]
 
 
-class CommonDistributionTests:
+class FakeDistsMixin:
+
+    def setUp(self):
+        super(FakeDistsMixin, self).setUp()
+        self.addCleanup(enable_cache)
+        disable_cache()
+
+        # make a copy that we can write into for our fake installed
+        # distributions
+        tmpdir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmpdir)
+        self.fake_dists_path = os.path.join(tmpdir, 'fake_dists')
+        fake_dists_src = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), 'fake_dists'))
+        shutil.copytree(fake_dists_src, self.fake_dists_path)
+        # XXX ugly workaround: revert copystat calls done by shutil behind our
+        # back (to avoid getting a read-only copy of a read-only file).  we
+        # could pass a custom copy_function to change the mode of files, but
+        # shutil gives no control over the mode of directories :(
+        for root, dirs, files in os.walk(self.fake_dists_path):
+            os.chmod(root, 0o755)
+            for f in files:
+                os.chmod(os.path.join(root, f), 0o644)
+            for d in dirs:
+                os.chmod(os.path.join(root, d), 0o755)
+
+
+class CommonDistributionTests(FakeDistsMixin):
     """Mixin used to test the interface common to both Distribution classes.
 
     Derived classes define cls, sample_dist, dirs and records.  These
     attributes are used in test methods.  See source code for details.
     """
-
-    def setUp(self):
-        super(CommonDistributionTests, self).setUp()
-        self.addCleanup(enable_cache)
-        disable_cache()
-        self.fake_dists_path = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), 'fake_dists'))
 
     def test_instantiation(self):
         # check that useful attributes are here
@@ -110,6 +130,7 @@ class TestDistribution(CommonDistributionTests, unittest.TestCase):
 
         self.records = {}
         for distinfo_dir in self.dirs:
+
             record_file = os.path.join(distinfo_dir, 'RECORD')
             with open(record_file, 'w') as file:
                 record_writer = csv.writer(
@@ -137,12 +158,6 @@ class TestDistribution(CommonDistributionTests, unittest.TestCase):
                                         [None for i in range(len(row), 3)])
                     record_data[path] = md5_, size
             self.records[distinfo_dir] = record_data
-
-    def tearDown(self):
-        for distinfo_dir in self.dirs:
-            record_file = os.path.join(distinfo_dir, 'RECORD')
-            open(record_file, 'wb').close()
-        super(TestDistribution, self).tearDown()
 
     def test_instantiation(self):
         super(TestDistribution, self).test_instantiation()
@@ -252,20 +267,13 @@ class TestEggInfoDistribution(CommonDistributionTests,
 
 
 class TestDatabase(support.LoggingCatcher,
+                   FakeDistsMixin,
                    unittest.TestCase):
 
     def setUp(self):
         super(TestDatabase, self).setUp()
-        disable_cache()
-        # Setup the path environment with our fake distributions
-        current_path = os.path.abspath(os.path.dirname(__file__))
-        self.fake_dists_path = os.path.join(current_path, 'fake_dists')
         sys.path.insert(0, self.fake_dists_path)
-
-    def tearDown(self):
-        sys.path.remove(self.fake_dists_path)
-        enable_cache()
-        super(TestDatabase, self).tearDown()
+        self.addCleanup(sys.path.remove, self.fake_dists_path)
 
     def test_distinfo_dirname(self):
         # Given a name and a version, we expect the distinfo_dirname function

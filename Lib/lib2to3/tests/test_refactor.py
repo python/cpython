@@ -177,22 +177,26 @@ from __future__ import print_function"""
         self.assertEqual(results, expected)
 
     def check_file_refactoring(self, test_file, fixers=_2TO3_FIXERS):
+        tmpdir = tempfile.mkdtemp(prefix="2to3-test_refactor")
+        self.addCleanup(shutil.rmtree, tmpdir)
+        # make a copy of the tested file that we can write to
+        shutil.copy(test_file, tmpdir)
+        test_file = os.path.join(tmpdir, os.path.basename(test_file))
+        os.chmod(test_file, 0o644)
+
         def read_file():
             with open(test_file, "rb") as fp:
                 return fp.read()
+
         old_contents = read_file()
         rt = self.rt(fixers=fixers)
 
         rt.refactor_file(test_file)
         self.assertEqual(old_contents, read_file())
 
-        try:
-            rt.refactor_file(test_file, True)
-            new_contents = read_file()
-            self.assertNotEqual(old_contents, new_contents)
-        finally:
-            with open(test_file, "wb") as fp:
-                fp.write(old_contents)
+        rt.refactor_file(test_file, True)
+        new_contents = read_file()
+        self.assertNotEqual(old_contents, new_contents)
         return new_contents
 
     def test_refactor_file(self):
