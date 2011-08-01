@@ -87,7 +87,7 @@ Example::
 
        for f in os.listdir(top):
            pathname = os.path.join(top, f)
-           mode = os.stat(pathname)[ST_MODE]
+           mode = os.stat(pathname).st_mode
            if S_ISDIR(mode):
                # It's a directory, recurse into it
                walktree(pathname, callback)
