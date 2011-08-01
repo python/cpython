@@ -1147,6 +1147,13 @@ Extension Modules
 Tests
 -----
 
+- Issue #11651: Improve the Makefile test targets to run more of the test suite
+  more quickly. The --multiprocess option is now enabled by default, reducing
+  the amount of time needed to run the tests. "make test" and "make quicktest"
+  now include some resource-intensive tests, but no longer run the test suite
+  twice to check for bugs in .pyc generation. Tools/scripts/run_test.py provides
+  as an easy platform-independent way to run test suite with sensible defaults.
+
 - Issue #12331: The test suite for the packaging module can now run from an
   installed Python.
 

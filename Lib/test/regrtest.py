@@ -133,6 +133,8 @@ resources to test.  Currently only the following are defined:
 
     all -       Enable all special resources.
 
+    none -      Disable all special resources (this is the default).
+
     audio -     Tests that use the audio device.  (There are known
                 cases of broken audio drivers that can crash Python or
                 even the Linux kernel.)
@@ -387,6 +389,9 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 if r == 'all':
                     use_resources[:] = RESOURCE_NAMES
                     continue
+                if r == 'none':
+                    del use_resources[:]
+                    continue
                 remove = False
                 if r[0] == '-':
                     remove = True
@@ -424,6 +429,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     use_mp = 2 + multiprocessing.cpu_count()
                 except (ImportError, NotImplementedError):
                     use_mp = 3
+            if use_mp == 1:
+                use_mp = None
         elif o == '--header':
             header = True
         elif o == '--slaveargs':
