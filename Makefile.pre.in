@@ -747,14 +747,15 @@ $(LIBRARY_OBJS) $(MODOBJS) Modules/python.o: $(PYTHON_HEADERS)
 
 ######################################################################
 
+TESTOPTS=	$(EXTRATESTOPTS)
+TESTPYTHON=	$(RUNSHARED) ./$(BUILDPYTHON) $(TESTPYTHONOPTS)
+TESTRUNNER=	$(TESTPYTHON) $(srcdir)/Tools/scripts/run_tests.py
+TESTTIMEOUT=	3600
+
 # Run a basic set of regression tests.
 # This excludes some tests that are particularly resource-intensive.
-TESTOPTS=	$(EXTRATESTOPTS)
-TESTPROG=	$(srcdir)/Lib/test/regrtest.py
-TESTPYTHON=	$(RUNSHARED) ./$(BUILDPYTHON) -Wd -E -bb $(TESTPYTHONOPTS)
-TESTTIMEOUT=	3600
 test:		all platform
-		$(TESTPYTHON) $(TESTPROG) -j0 $(TESTOPTS)
+		$(TESTRUNNER) $(TESTOPTS)
 
 # Run the full test suite twice - once without .pyc files, and once with.
 # In the past, we've had problems where bugs in the marshalling or
@@ -765,10 +766,10 @@ test:		all platform
 # sample data.
 testall:	all platform
 		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
-		$(TESTPYTHON) $(srcdir)/Lib/compileall.py
+		$(TESTPYTHON) -E $(srcdir)/Lib/compileall.py
 		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
-		-$(TESTPYTHON) $(TESTPROG) -j0 -uall $(TESTOPTS)
-		$(TESTPYTHON) $(TESTPROG) -j0 -uall $(TESTOPTS)
+		-$(TESTRUNNER) -u all $(TESTOPTS)
+		$(TESTRUNNER) -u all $(TESTOPTS)
 
 # Run the test suite for both architectures in a Universal build on OSX.
 # Must be run on an Intel box.
@@ -777,25 +778,24 @@ testuniversal:	all platform
 			echo "This can only be used on OSX/i386" ;\
 			exit 1 ;\
 		fi
-		$(TESTPYTHON) $(TESTPROG) -j0 -uall $(TESTOPTS)
-		$(RUNSHARED) /usr/libexec/oah/translate ./$(BUILDPYTHON) -E $(TESTPROG) -j0 -uall $(TESTOPTS)
+		$(TESTRUNNER) -u all $(TESTOPTS)
+		$(RUNSHARED) /usr/libexec/oah/translate \
+			./$(BUILDPYTHON) -E -m test -j 0 -u all $(TESTOPTS)
 
-# Like testall, but with only one pass.
+# Like testall, but with only one pass and without multiple processes.
 # Run an optional script to include information about the build environment.
 buildbottest:	all platform
 		-@if which pybuildbot.identify >/dev/null 2>&1; then \
 			pybuildbot.identify "CC='$(CC)'" "CXX='$(CXX)'"; \
 		fi
-		$(TESTPYTHON) $(TESTPROG) -uall -rwW --timeout=$(TESTTIMEOUT) $(TESTOPTS)
+		$(TESTRUNNER) -j 1 -u all -W --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 
 QUICKTESTOPTS=	$(TESTOPTS) -x test_subprocess test_io test_lib2to3 \
 		test_multibytecodec test_urllib2_localnet test_itertools \
 		test_multiprocessing test_mailbox test_socket test_poll \
-		test_select test_zipfile
+		test_select test_zipfile test_concurrent_futures
 quicktest:	all platform
-		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
-		-$(TESTPYTHON) $(TESTPROG) -j0 $(QUICKTESTOPTS)
-		$(TESTPYTHON) $(TESTPROG) -j0 $(QUICKTESTOPTS)
+		$(TESTRUNNER) $(QUICKTESTOPTS)
 
 
 install: altinstall bininstall
