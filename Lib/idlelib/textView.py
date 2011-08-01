@@ -62,14 +62,15 @@ def view_text(parent, title, text):
 
 def view_file(parent, title, filename, encoding=None):
     try:
-        textFile = open(filename, 'r', encoding=encoding)
+        with open(filename, 'r', encoding=encoding) as file:
+            contents = file.read()
     except IOError:
         import tkinter.messagebox as tkMessageBox
         tkMessageBox.showerror(title='File Load Error',
                                message='Unable to load file %r .' % filename,
                                parent=parent)
     else:
-        return view_text(parent, title, textFile.read())
+        return view_text(parent, title, contents)
 
 
 if __name__ == '__main__':
