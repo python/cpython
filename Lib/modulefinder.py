@@ -26,8 +26,7 @@ packagePathMap = {}
 
 # A Public interface
 def AddPackagePath(packagename, path):
-    paths = packagePathMap.setdefault(packagename, []).append(path)
-    packagePathMap[packagename] = paths
+    packagePathMap.setdefault(packagename, []).append(path)
 
 replacePackageMap = {}
 
