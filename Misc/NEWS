@@ -41,6 +41,9 @@ Core and Builtins
 Library
 -------
 
+- Issues #11104, #8688: Fix the behavior of distutils' sdist command with
+  manually-maintained MANIFEST files.
+
 - Issue #12464: tempfile.TemporaryDirectory.cleanup() should not follow
   symlinks: fix it. Patch by Petri Lehtinen.
 
@@ -136,6 +139,9 @@ Tools/Demos
 
 Tests
 -----
+
+- Issue #12331: The test suite for lib2to3 can now run from an installed
+  Python.
 
 - Issue #12626: In regrtest, allow to filter tests using a glob filter
   with the ``-m`` (or ``--match``) option.  This works with all test cases
