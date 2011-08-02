@@ -4923,7 +4923,7 @@ cpu_set_richcompare(Py_cpu_set *set, Py_cpu_set *other, int op)
             Py_INCREF(res); \
         } \
         else { \
-            res = make_new_cpu_set(&cpu_set_type, left->size); \
+            res = make_new_cpu_set(&cpu_set_type, left->ncpus); \
             if (!res) \
                 return NULL; \
         } \
