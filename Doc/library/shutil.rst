@@ -101,8 +101,9 @@ Directory and files operations
    :func:`copy2`.
 
    If *symlinks* is true, symbolic links in the source tree are represented as
-   symbolic links in the new tree; if false or omitted, the contents of the
-   linked files are copied to the new tree.
+   symbolic links in the new tree, but the metadata of the original links is NOT
+   copied; if false or omitted, the contents and metadata of the linked files
+   are copied to the new tree.
 
    When *symlinks* is false, if the file pointed by the symlink doesn't
    exist, a exception will be added in the list of errors raised in
