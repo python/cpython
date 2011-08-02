@@ -10950,7 +10950,7 @@ INITFUNC(void)
 #  endif
 #endif
 
-#ifdef HAVE_SCHED_H
+#if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER)
         sched_param_desc.name = MODNAME ".sched_param";
         PyStructSequence_InitType(&SchedParamType, &sched_param_desc);
         SchedParamType.tp_new = sched_param_new;
