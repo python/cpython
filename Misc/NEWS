@@ -37,6 +37,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #11933: Fix incorrect mtime comparison in distutils.
+
 - Issues #11104, #8688: Fix the behavior of distutils' sdist command with
   manually-maintained MANIFEST files.
 
