@@ -869,10 +869,10 @@ later::
 
    struct cell; /* forward declaration */
 
-   struct {
+   struct cell {
        char *name;
        struct cell *next;
-   } cell;
+   };
 
 The straightforward translation into ctypes code would be this, but it does not
 work::
