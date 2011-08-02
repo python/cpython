@@ -653,8 +653,17 @@
 /* Define to 1 if you have the <sched.h> header file. */
 #undef HAVE_SCHED_H
 
+/* Define to 1 if you have the `sched_rr_get_interval' function. */
+#undef HAVE_SCHED_RR_GET_INTERVAL
+
 /* Define to 1 if you have the `sched_setaffinity' function. */
 #undef HAVE_SCHED_SETAFFINITY
+
+/* Define to 1 if you have the `sched_setparam' function. */
+#undef HAVE_SCHED_SETPARAM
+
+/* Define to 1 if you have the `sched_setscheduler' function. */
+#undef HAVE_SCHED_SETSCHEDULER
 
 /* Define to 1 if you have the `select' function. */
 #undef HAVE_SELECT
