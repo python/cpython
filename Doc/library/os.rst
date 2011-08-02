@@ -2744,6 +2744,155 @@ used to determine the disposition of a process.
    Availability: Unix.
 
 
+Interface to the scheduler
+--------------------------
+
+These functions control how a process is allocated CPU time by the operating
+system. They are only available on some Unix platforms. For more detailed
+information, consult your Unix manpages.
+
+.. versionadded:: 3.3
+
+The following scheduling policies are exposed if they are a supported by the
+operating system.
+
+.. data:: SCHED_OTHER
+
+   The default scheduling policy.
+
+.. data:: SCHED_BATCH
+
+   Scheduling policy for CPU-intensive processes that tries to preserve
+   interactivity on the rest of the computer.
+
+.. data:: SCHED_IDLE
+
+   Scheduling policy for extremely low priority background tasks.
+
+.. data:: SCHED_SPORADIC
+
+   Scheduling policy for sporadic server programs.
+
+.. data:: SCHED_FIFO
+
+   A First In First Out scheduling policy.
+
+.. data:: SCHED_RR
+
+   A round-robin scheduling policy.
+
+.. data:: SCHED_RESET_ON_FORK
+
+   This flag can OR'ed with any other scheduling policy. When a process with
+   this flag set forks, its child's scheduling policy and priority are reset to
+   the default.
+
+
+.. class:: sched_param(sched_priority)
+
+   This class represents tunable scheduling parameters used in
+   :func:`sched_setparam`, :func:`sched_setscheduler`, and
+   :func:`sched_getparam`. It is immutable.
+
+   At the moment, there is only one possible parameter:
+
+   .. attribute:: sched_priority
+
+      The scheduling priority for a scheduling policy.
+
+
+.. function:: sched_get_priority_min(policy)
+
+   Get the minimum priority value for *policy*. *policy* is one of the
+   scheduling policy constants above.
+
+
+.. function:: sched_get_priority_max(policy)
+
+   Get the maximum priority value for *policy*. *policy* is one of the
+   scheduling policy constants above.
+
+
+.. function:: sched_setscheduler(pid, policy, param)
+
+   Set the scheduling policy for the process with PID *pid*. A *pid* of 0 means
+   the calling process. *policy* is one of the scheduling policy constants
+   above. *param* is a :class:`sched_param` instance.
+
+
+.. function:: sched_getscheduler(pid)
+
+   Return the scheduling policy for the process with PID *pid*. A *pid* of 0
+   means the calling process. The result is one of the scheduling policy
+   constants above.
+
+
+.. function:: sched_setparam(pid, param)
+
+   Set a scheduling parameters for the process with PID *pid*. A *pid* of 0 means
+   the calling process. *param* is a :class:`sched_param` instance.
+
+
+.. function:: sched_getparam(pid)
+
+   Return the scheduling parameters as a :class:`sched_param` instance for the
+   process with PID *pid*. A *pid* of 0 means the calling process.
+
+
+.. function:: sched_rr_get_interval(pid)
+
+   Return the round-robin quantum in seconds for the process with PID *pid*. A
+   *pid* of 0 means the calling process.
+
+
+.. function:: sched_yield()
+
+   Voluntarily relinquish the CPU.
+
+
+.. class:: cpu_set(ncpus)
+
+   :class:`cpu_set` represents a set of CPUs on which a process is eligible to
+   run. *ncpus* is the number of CPUs the set should describe. Methods on
+   :class:`cpu_set` allow CPUs to be add or removed.
+
+   :class:`cpu_set` supports the AND, OR, and XOR bitwise operations. For
+   example, given two cpu_sets, ``one`` and ``two``, ``one | two`` returns a
+   :class:`cpu_set` containing the cpus enabled both in ``one`` and ``two``.
+
+   .. method:: set(i)
+
+      Enable CPU *i*.
+
+   .. method:: clear(i)
+
+      Remove CPU *i*.
+
+   .. method:: isset(i)
+
+      Return ``True`` if CPU *i* is enabled in the set.
+
+   .. method:: count()
+
+      Return the number of enabled CPUs in the set.
+
+   .. method:: zero()
+
+      Clear the set completely.
+
+
+.. function:: sched_setaffinity(pid, mask)
+
+   Restrict the process with PID *pid* to a set of CPUs. *mask* is a
+   :class:`cpu_set` instance.
+
+
+.. function:: sched_getaffinity(pid, size)
+
+   Return the :class:`cpu_set` the process with PID *pid* is restricted to. The
+   result will contain *size* CPUs.
+
+
 .. _os-path:
 
 Miscellaneous System Information

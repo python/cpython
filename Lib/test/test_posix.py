@@ -829,6 +829,138 @@ class PosixTester(unittest.TestCase):
         finally:
             posix.close(f)
 
+    requires_sched_h = unittest.skipUnless(hasattr(posix, 'sched_yield'),
+                                           "don't have scheduling support")
+
+    @requires_sched_h
+    def test_sched_yield(self):
+        # This has no error conditions (at least on Linux).
+        posix.sched_yield()
+
+    @requires_sched_h
+    def test_sched_priority(self):
+        # Round-robin usually has interesting priorities.
+        pol = posix.SCHED_RR
+        lo = posix.sched_get_priority_min(pol)
+        hi = posix.sched_get_priority_max(pol)
+        self.assertIsInstance(lo, int)
+        self.assertIsInstance(hi, int)
+        self.assertGreaterEqual(hi, lo)
+        self.assertRaises(OSError, posix.sched_get_priority_min, -23)
+        self.assertRaises(OSError, posix.sched_get_priority_max, -23)
+
+    @requires_sched_h
+    def test_get_and_set_scheduler_and_param(self):
+        possible_schedulers = [sched for name, sched in posix.__dict__.items()
+                               if name.startswith("SCHED_")]
+        mine = posix.sched_getscheduler(0)
+        self.assertIn(mine, possible_schedulers)
+        try:
+            init = posix.sched_getscheduler(1)
+        except OSError as e:
+            if e.errno != errno.EPERM:
+                raise
+        else:
+            self.assertIn(init, possible_schedulers)
+        self.assertRaises(OSError, posix.sched_getscheduler, -1)
+        self.assertRaises(OSError, posix.sched_getparam, -1)
+        param = posix.sched_getparam(0)
+        self.assertIsInstance(param.sched_priority, int)
+        posix.sched_setscheduler(0, mine, param)
+        posix.sched_setparam(0, param)
+        self.assertRaises(OSError, posix.sched_setparam, -1, param)
+        self.assertRaises(OSError, posix.sched_setscheduler, -1, mine, param)
+        self.assertRaises(TypeError, posix.sched_setscheduler, 0, mine, None)
+        self.assertRaises(TypeError, posix.sched_setparam, 0, 43)
+        param = posix.sched_param(None)
+        self.assertRaises(TypeError, posix.sched_setparam, 0, param)
+        large = 214748364700
+        param = posix.sched_param(large)
+        self.assertRaises(OverflowError, posix.sched_setparam, 0, param)
+        param = posix.sched_param(sched_priority=-large)
+        self.assertRaises(OverflowError, posix.sched_setparam, 0, param)
+
+    @requires_sched_h
+    def test_sched_rr_get_interval(self):
+        interval = posix.sched_rr_get_interval(0)
+        self.assertIsInstance(interval, float)
+        # Reasonable constraints, I think.
+        self.assertGreaterEqual(interval, 0.)
+        self.assertLess(interval, 1.)
+
+    @requires_sched_h
+    def test_sched_affinity(self):
+        mask = posix.sched_getaffinity(0, 1024)
+        self.assertGreaterEqual(mask.count(), 1)
+        self.assertIsInstance(mask, posix.cpu_set)
+        self.assertRaises(OSError, posix.sched_getaffinity, -1, 1024)
+        empty = posix.cpu_set(10)
+        posix.sched_setaffinity(0, mask)
+        self.assertRaises(OSError, posix.sched_setaffinity, 0, empty)
+        self.assertRaises(OSError, posix.sched_setaffinity, -1, mask)
+
+    @requires_sched_h
+    def test_cpu_set_basic(self):
+        s = posix.cpu_set(10)
+        self.assertEqual(len(s), 10)
+        self.assertEqual(s.count(), 0)
+        s.set(0)
+        s.set(9)
+        self.assertTrue(s.isset(0))
+        self.assertTrue(s.isset(9))
+        self.assertFalse(s.isset(5))
+        self.assertEqual(s.count(), 2)
+        s.clear(0)
+        self.assertFalse(s.isset(0))
+        self.assertEqual(s.count(), 1)
+        s.zero()
+        self.assertFalse(s.isset(0))
+        self.assertFalse(s.isset(9))
+        self.assertEqual(s.count(), 0)
+        self.assertRaises(ValueError, s.set, -1)
+        self.assertRaises(ValueError, s.set, 10)
+        self.assertRaises(ValueError, s.clear, -1)
+        self.assertRaises(ValueError, s.clear, 10)
+        self.assertRaises(ValueError, s.isset, -1)
+        self.assertRaises(ValueError, s.isset, 10)
+
+    @requires_sched_h
+    def test_cpu_set_cmp(self):
+        self.assertNotEqual(posix.cpu_set(11), posix.cpu_set(12))
+        l = posix.cpu_set(10)
+        r = posix.cpu_set(10)
+        self.assertEqual(l, r)
+        l.set(1)
+        self.assertNotEqual(l, r)
+        r.set(1)
+        self.assertEqual(l, r)
+
+    @requires_sched_h
+    def test_cpu_set_bitwise(self):
+        l = posix.cpu_set(5)
+        l.set(0)
+        l.set(1)
+        r = posix.cpu_set(5)
+        r.set(1)
+        r.set(2)
+        b = l & r
+        self.assertEqual(b.count(), 1)
+        self.assertTrue(b.isset(1))
+        b = l | r
+        self.assertEqual(b.count(), 3)
+        self.assertTrue(b.isset(0))
+        self.assertTrue(b.isset(1))
+        self.assertTrue(b.isset(2))
+        b = l ^ r
+        self.assertEqual(b.count(), 2)
+        self.assertTrue(b.isset(0))
+        self.assertFalse(b.isset(1))
+        self.assertTrue(b.isset(2))
+        b = l
+        b |= r
+        self.assertIs(b, l)
+        self.assertEqual(l.count(), 3)
+
 class PosixGroupsTester(unittest.TestCase):
 
     def setUp(self):
@@ -863,7 +995,6 @@ class PosixGroupsTester(unittest.TestCase):
         for groups in [[0], list(range(16))]:
             posix.setgroups(groups)
             self.assertListEqual(groups, posix.getgroups())
-
 
 def test_main():
     try:

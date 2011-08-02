@@ -105,6 +105,10 @@ corresponding Unix manual entries for more information on calls.");
 #include <sys/sendfile.h>
 #endif
 
+#ifdef HAVE_SCHED_H
+#include <sched.h>
+#endif
+
 #if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__APPLE__)
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
@@ -1605,6 +1609,7 @@ static PyTypeObject WaitidResultType;
 static int initialized;
 static PyTypeObject StatResultType;
 static PyTypeObject StatVFSResultType;
+static PyTypeObject SchedParamType;
 static newfunc structseq_new;
 
 static PyObject *
@@ -4543,6 +4548,542 @@ posix_fork(PyObject *self, PyObject *noargs)
     return PyLong_FromPid(pid);
 }
 #endif
+
+#ifdef HAVE_SCHED_H
+
+PyDoc_STRVAR(posix_sched_get_priority_max__doc__,
+"sched_get_priority_max(policy)\n\n\
+Get the maximum scheduling priority for *policy*.");
+
+static PyObject *
+posix_sched_get_priority_max(PyObject *self, PyObject *args)
+{
+    int policy, max;
+
+    if (!PyArg_ParseTuple(args, "i:sched_get_priority_max", &policy))
+        return NULL;
+    max = sched_get_priority_max(policy);
+    if (max < 0)
+        return posix_error();
+    return PyLong_FromLong(max);
+}
+
+PyDoc_STRVAR(posix_sched_get_priority_min__doc__,
+"sched_get_priority_min(policy)\n\n\
+Get the minimum scheduling priority for *policy*.");
+
+static PyObject *
+posix_sched_get_priority_min(PyObject *self, PyObject *args)
+{
+    int policy, min;
+
+    if (!PyArg_ParseTuple(args, "i:sched_get_priority_min", &policy))
+        return NULL;
+    min = sched_get_priority_min(policy);
+    if (min < 0)
+        return posix_error();
+    return PyLong_FromLong(min);
+}
+
+PyDoc_STRVAR(posix_sched_getscheduler__doc__,
+"sched_getscheduler(pid)\n\n\
+Get the scheduling policy for the process with a PID of *pid*.\n\
+Passing a PID of 0 returns the scheduling policy for the calling process.");
+
+static PyObject *
+posix_sched_getscheduler(PyObject *self, PyObject *args)
+{
+    pid_t pid;
+    int policy;
+
+    if (!PyArg_ParseTuple(args, _Py_PARSE_PID ":sched_getscheduler", &pid))
+        return NULL;
+    policy = sched_getscheduler(pid);
+    if (policy < 0)
+        return posix_error();
+    return PyLong_FromLong(policy);
+}
+
+static PyObject *
+sched_param_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *res, *priority;
+    static char *kwlist[] = {"sched_priority"};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O:sched_param", kwlist, &priority))
+        return NULL;
+    res = PyStructSequence_New(type);
+    if (!res)
+        return NULL;
+    Py_INCREF(priority);
+    PyStructSequence_SET_ITEM(res, 0, priority);
+    return res;
+}
+
+PyDoc_STRVAR(sched_param__doc__,
+"sched_param(sched_priority): A scheduling parameter.\n\n\
+Current has only one field: sched_priority");
+
+static PyStructSequence_Field sched_param_fields[] = {
+    {"sched_priority", "the scheduling priority"},
+    {0}
+};
+
+static PyStructSequence_Desc sched_param_desc = {
+    "sched_param", /* name */
+    sched_param__doc__, /* doc */
+    sched_param_fields,
+    1
+};
+
+static int
+convert_sched_param(PyObject *param, struct sched_param *res)
+{
+    long priority;
+
+    if (Py_TYPE(param) != &SchedParamType) {
+        PyErr_SetString(PyExc_TypeError, "must have a sched_param object");
+        return 0;
+    }
+    priority = PyLong_AsLong(PyStructSequence_GET_ITEM(param, 0));
+    if (priority == -1 && PyErr_Occurred())
+        return 0;
+    if (priority > INT_MAX || priority < INT_MIN) {
+        PyErr_SetString(PyExc_OverflowError, "sched_priority out of range");
+        return 0;
+    }
+    res->sched_priority = Py_SAFE_DOWNCAST(priority, long, int);
+    return 1;
+}
+
+PyDoc_STRVAR(posix_sched_setscheduler__doc__,
+"sched_setscheduler(pid, policy, param)\n\n\
+Set the scheduling policy, *policy*, for *pid*.\n\
+If *pid* is 0, the calling process is changed.\n\
+*param* is an instance of sched_param.");
+
+static PyObject *
+posix_sched_setscheduler(PyObject *self, PyObject *args)
+{
+    pid_t pid;
+    int policy;
+    struct sched_param param;
+
+    if (!PyArg_ParseTuple(args, _Py_PARSE_PID "iO&:sched_setscheduler",
+                          &pid, &policy, &convert_sched_param, &param))
+        return NULL;
+    if (sched_setscheduler(pid, policy, &param))
+        return posix_error();
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(posix_sched_getparam__doc__,
+"sched_getparam(pid) -> sched_param\n\n\
+Returns scheduling parameters for the process with *pid* as an instance of the\n\
+sched_param class. A PID of 0 means the calling process.");
+
+static PyObject *
+posix_sched_getparam(PyObject *self, PyObject *args)
+{
+    pid_t pid;
+    struct sched_param param;
+    PyObject *res, *priority;
+
+    if (!PyArg_ParseTuple(args, _Py_PARSE_PID ":sched_getparam", &pid))
+        return NULL;
+    if (sched_getparam(pid, &param))
+        return posix_error();
+    res = PyStructSequence_New(&SchedParamType);
+    if (!res)
+        return NULL;
+    priority = PyLong_FromLong(param.sched_priority);
+    if (!priority) {
+        Py_DECREF(res);
+        return NULL;
+    }
+    PyStructSequence_SET_ITEM(res, 0, priority);
+    return res;
+}
+
+PyDoc_STRVAR(posix_sched_setparam__doc__,
+"sched_setparam(pid, param)\n\n\
+Set scheduling parameters for a process with PID *pid*.\n\
+A PID of 0 means the calling process.");
+
+static PyObject *
+posix_sched_setparam(PyObject *self, PyObject *args)
+{
+    pid_t pid;
+    struct sched_param param;
+
+    if (!PyArg_ParseTuple(args, _Py_PARSE_PID "O&:sched_setparam",
+                          &pid, &convert_sched_param, &param))
+        return NULL;
+    if (sched_setparam(pid, &param))
+        return posix_error();
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(posix_sched_rr_get_interval__doc__,
+"sched_rr_get_interval(pid) -> float\n\n\
+Return the round-robin quantum for the process with PID *pid* in seconds.");
+
+static PyObject *
+posix_sched_rr_get_interval(PyObject *self, PyObject *args)
+{
+    pid_t pid;
+    struct timespec interval;
+
+    if (!PyArg_ParseTuple(args, _Py_PARSE_PID ":sched_rr_get_interval", &pid))
+        return NULL;
+    if (sched_rr_get_interval(pid, &interval))
+        return posix_error();
+    return PyFloat_FromDouble((double)interval.tv_sec + 1e-9*interval.tv_nsec);
+}
+
+PyDoc_STRVAR(posix_sched_yield__doc__,
+"sched_yield()\n\n\
+Voluntarily relinquish the CPU.");
+
+static PyObject *
+posix_sched_yield(PyObject *self, PyObject *noargs)
+{
+    if (sched_yield())
+        return posix_error();
+    Py_RETURN_NONE;
+}
+
+typedef struct {
+    PyObject_HEAD;
+    Py_ssize_t size;
+    int ncpus;
+    cpu_set_t *set;
+} Py_cpu_set;
+
+static PyTypeObject cpu_set_type;
+
+static void
+cpu_set_dealloc(Py_cpu_set *set)
+{
+    assert(set->set);
+    CPU_FREE(set->set);
+    Py_TYPE(set)->tp_free(set);
+}
+
+static Py_cpu_set *
+make_new_cpu_set(PyTypeObject *type, Py_ssize_t size)
+{
+    Py_cpu_set *set;
+
+    if (size < 0) {
+        PyErr_SetString(PyExc_ValueError, "negative size");
+        return NULL;
+    }
+    set = (Py_cpu_set *)type->tp_alloc(type, 0);
+    if (!set)
+        return NULL;
+    set->ncpus = size;
+    set->size = CPU_ALLOC_SIZE(size);
+    set->set = CPU_ALLOC(size);
+    if (!set->set) {
+        type->tp_free(set);
+        PyErr_NoMemory();
+        return NULL;
+    }
+    CPU_ZERO_S(set->size, set->set);
+    return set;
+}
+
+static PyObject *
+cpu_set_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    int size;
+
+    if (!_PyArg_NoKeywords("cpu_set()", kwargs) ||
+        !PyArg_ParseTuple(args, "i:cpu_set", &size))
+        return NULL;
+    return (PyObject *)make_new_cpu_set(type, size);
+}
+
+static PyObject *
+cpu_set_repr(Py_cpu_set *set)
+{
+    return PyUnicode_FromFormat("<cpu_set with %li entries>", set->ncpus);
+} 
+
+static Py_ssize_t
+cpu_set_len(Py_cpu_set *set)
+{
+    return set->ncpus;
+}
+
+static int
+_get_cpu(Py_cpu_set *set, const char *requester, PyObject *args)
+{
+    int cpu;
+    if (!PyArg_ParseTuple(args, requester, &cpu))
+        return -1;
+    if (cpu < 0) {
+        PyErr_SetString(PyExc_ValueError, "cpu < 0 not valid");
+        return -1;
+    }
+    if (cpu >= set->ncpus) {
+        PyErr_SetString(PyExc_ValueError, "cpu too large for set");
+        return -1;
+    }
+    return cpu;
+}
+
+PyDoc_STRVAR(cpu_set_set_doc,
+"cpu_set.set(i)\n\n\
+Add CPU *i* to the set.");
+
+static PyObject *
+cpu_set_set(Py_cpu_set *set, PyObject *args)
+{
+    int cpu = _get_cpu(set, "i|set", args);
+    if (cpu == -1)
+        return NULL;
+    CPU_SET_S(cpu, set->size, set->set);
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(cpu_set_count_doc,
+"cpu_set.count() -> int\n\n\
+Return the number of CPUs active in the set.");
+
+static PyObject *
+cpu_set_count(Py_cpu_set *set, PyObject *noargs)
+{
+    return PyLong_FromLong(CPU_COUNT_S(set->size, set->set));
+}
+
+PyDoc_STRVAR(cpu_set_clear_doc,
+"cpu_set.clear(i)\n\n\
+Remove CPU *i* from the set.");
+
+static PyObject *
+cpu_set_clear(Py_cpu_set *set, PyObject *args)
+{
+    int cpu = _get_cpu(set, "i|clear", args);
+    if (cpu == -1)
+        return NULL;
+    CPU_CLR_S(cpu, set->size, set->set);
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(cpu_set_isset_doc,
+"cpu_set.isset(i) -> bool\n\n\
+Test if CPU *i* is in the set.");
+
+static PyObject *
+cpu_set_isset(Py_cpu_set *set, PyObject *args)
+{
+    int cpu = _get_cpu(set, "i|isset", args);
+    if (cpu == -1)
+        return NULL;
+    if (CPU_ISSET_S(cpu, set->size, set->set))
+        Py_RETURN_TRUE;
+    Py_RETURN_FALSE;
+}
+
+PyDoc_STRVAR(cpu_set_zero_doc,
+"cpu_set.zero()\n\n\
+Clear the cpu_set.");
+
+static PyObject *
+cpu_set_zero(Py_cpu_set *set, PyObject *noargs)
+{
+    CPU_ZERO_S(set->size, set->set);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+cpu_set_richcompare(Py_cpu_set *set, Py_cpu_set *other, int op)
+{
+    int eq;
+
+    if ((op != Py_EQ && op != Py_NE) || Py_TYPE(other) != &cpu_set_type) {
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    }
+    eq = set->ncpus == other->ncpus && CPU_EQUAL_S(set->size, set->set, other->set);
+    if ((op == Py_EQ) ? eq : !eq)
+        Py_RETURN_TRUE;
+    else
+        Py_RETURN_FALSE;
+}
+
+#define CPU_SET_BINOP(name, op) \
+    static PyObject * \
+    do_cpu_set_##name(Py_cpu_set *left, Py_cpu_set *right, Py_cpu_set *res) { \
+        if (res) { \
+            Py_INCREF(res); \
+        } \
+        else { \
+            res = make_new_cpu_set(&cpu_set_type, left->size); \
+            if (!res) \
+                return NULL; \
+        } \
+        if (Py_TYPE(right) != &cpu_set_type || left->size != right->size) { \
+            Py_DECREF(res); \
+            Py_INCREF(Py_NotImplemented); \
+            return Py_NotImplemented; \
+        } \
+        assert(left->size == right->size == res->size); \
+        op(res->size, res->set, left->set, right->set); \
+        return (PyObject *)res; \
+    } \
+    static PyObject * \
+    cpu_set_##name(Py_cpu_set *left, Py_cpu_set *right) { \
+        return do_cpu_set_##name(left, right, NULL); \
+    } \
+    static PyObject * \
+    cpu_set_i##name(Py_cpu_set *left, Py_cpu_set *right) { \
+        return do_cpu_set_##name(left, right, left); \
+    } \
+
+CPU_SET_BINOP(and, CPU_AND_S)
+CPU_SET_BINOP(or, CPU_OR_S)
+CPU_SET_BINOP(xor, CPU_XOR_S)
+#undef CPU_SET_BINOP
+
+PyDoc_STRVAR(cpu_set_doc,
+"cpu_set(size)\n\n\
+Create an empty mask of CPUs.");
+
+static PyNumberMethods cpu_set_as_number = {
+    0,                                  /*nb_add*/
+    0,                                  /*nb_subtract*/
+    0,                                  /*nb_multiply*/
+    0,                                  /*nb_remainder*/
+    0,                                  /*nb_divmod*/
+    0,                                  /*nb_power*/
+    0,                                  /*nb_negative*/
+    0,                                  /*nb_positive*/
+    0,                                  /*nb_absolute*/
+    0,                                  /*nb_bool*/
+    0,                                  /*nb_invert*/
+    0,                                  /*nb_lshift*/
+    0,                                  /*nb_rshift*/
+    (binaryfunc)cpu_set_and,            /*nb_and*/
+    (binaryfunc)cpu_set_xor,            /*nb_xor*/
+    (binaryfunc)cpu_set_or,             /*nb_or*/
+    0,                                  /*nb_int*/
+    0,                                  /*nb_reserved*/
+    0,                                  /*nb_float*/
+    0,                                  /*nb_inplace_add*/
+    0,                                  /*nb_inplace_subtract*/
+    0,                                  /*nb_inplace_multiply*/
+    0,                                  /*nb_inplace_remainder*/
+    0,                                  /*nb_inplace_power*/
+    0,                                  /*nb_inplace_lshift*/
+    0,                                  /*nb_inplace_rshift*/
+    (binaryfunc)cpu_set_iand,           /*nb_inplace_and*/
+    (binaryfunc)cpu_set_ixor,           /*nb_inplace_xor*/
+    (binaryfunc)cpu_set_ior,            /*nb_inplace_or*/
+};
+
+static PySequenceMethods cpu_set_as_sequence = {
+    (lenfunc)cpu_set_len,                            /* sq_length */
+};
+
+static PyMethodDef cpu_set_methods[] = {
+    {"clear", (PyCFunction)cpu_set_clear, METH_VARARGS, cpu_set_clear_doc},
+    {"count", (PyCFunction)cpu_set_count, METH_NOARGS, cpu_set_count_doc},
+    {"isset", (PyCFunction)cpu_set_isset, METH_VARARGS, cpu_set_isset_doc},
+    {"set", (PyCFunction)cpu_set_set, METH_VARARGS, cpu_set_set_doc},
+    {"zero", (PyCFunction)cpu_set_zero, METH_NOARGS, cpu_set_zero_doc},
+    {NULL, NULL}   /* sentinel */
+};
+
+static PyTypeObject cpu_set_type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "posix.cpu_set",                    /* tp_name */
+    sizeof(Py_cpu_set),                 /* tp_basicsize */
+    0,                                  /* tp_itemsize */
+    /* methods */
+    (destructor)cpu_set_dealloc,        /* tp_dealloc */
+    0,                                  /* tp_print */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_reserved */
+    (reprfunc)cpu_set_repr,             /* tp_repr */
+    &cpu_set_as_number,                 /* tp_as_number */
+    &cpu_set_as_sequence,               /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    PyObject_HashNotImplemented,        /* tp_hash */
+    0,                                  /* tp_call */
+    0,                                  /* tp_str */
+    PyObject_GenericGetAttr,            /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,                 /* tp_flags */
+    cpu_set_doc,                        /* tp_doc */
+    0,                                  /* tp_traverse */
+    0,                                  /* tp_clear */
+    (richcmpfunc)cpu_set_richcompare,   /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    0,                                  /* tp_iter */
+    0,                                  /* tp_iternext */
+    cpu_set_methods,                    /* tp_methods */
+    0,                                  /* tp_members */
+    0,                                  /* tp_getset */
+    0,                                  /* tp_base */
+    0,                                  /* tp_dict */
+    0,                                  /* tp_descr_get */
+    0,                                  /* tp_descr_set */
+    0,                                  /* tp_dictoffset */
+    0,                                  /* tp_init */
+    PyType_GenericAlloc,                /* tp_alloc */
+    cpu_set_new,                        /* tp_new */
+    PyObject_Del,                       /* tp_free */
+};
+
+PyDoc_STRVAR(posix_sched_setaffinity__doc__,
+"sched_setaffinity(pid, cpu_set)\n\n\
+Set the affinity of the process with PID *pid* to *cpu_set*.");
+
+static PyObject *
+posix_sched_setaffinity(PyObject *self, PyObject *args)
+{
+    pid_t pid;
+    Py_cpu_set *cpu_set;
+
+    if (!PyArg_ParseTuple(args, _Py_PARSE_PID "O!|sched_setaffinity",
+                          &pid, &cpu_set_type, &cpu_set))
+        return NULL;
+    if (sched_setaffinity(pid, cpu_set->size, cpu_set->set))
+        return posix_error();
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(posix_sched_getaffinity__doc__,
+"sched_getaffinity(pid, ncpus) -> cpu_set\n\n\
+Return the affinity of the process with PID *pid*.\n\
+The returned cpu_set will be of size *ncpus*.");
+
+static PyObject *
+posix_sched_getaffinity(PyObject *self, PyObject *args)
+{
+    pid_t pid;
+    int ncpus;
+    Py_cpu_set *res;
+
+    if (!PyArg_ParseTuple(args, _Py_PARSE_PID "i|sched_getaffinity",
+                          &pid, &ncpus))
+        return NULL;
+    res = make_new_cpu_set(&cpu_set_type, ncpus);
+    if (!res)
+        return NULL;
+    if (sched_getaffinity(pid, res->size, res->set)) {
+        Py_DECREF(res);
+        return posix_error();
+    }
+    return (PyObject *)res;
+}
+
+#endif /* HAVE_SCHED_H */
 
 /* AIX uses /dev/ptc but is otherwise the same as /dev/ptmx */
 /* IRIX has both /dev/ptc and /dev/ptmx, use ptmx */
@@ -9506,6 +10047,18 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_FORK
     {"fork",            posix_fork, METH_NOARGS, posix_fork__doc__},
 #endif /* HAVE_FORK */
+#ifdef HAVE_SCHED_H
+    {"sched_get_priority_max", posix_sched_get_priority_max, METH_VARARGS, posix_sched_get_priority_max__doc__},
+    {"sched_get_priority_min", posix_sched_get_priority_min, METH_VARARGS, posix_sched_get_priority_min__doc__},
+    {"sched_getparam", posix_sched_getparam, METH_VARARGS, posix_sched_getparam__doc__},
+    {"sched_getscheduler", posix_sched_getscheduler, METH_VARARGS, posix_sched_getscheduler__doc__},
+    {"sched_rr_get_interval", posix_sched_rr_get_interval, METH_VARARGS, posix_sched_rr_get_interval__doc__},
+    {"sched_setparam", posix_sched_setparam, METH_VARARGS, posix_sched_setparam__doc__},
+    {"sched_setscheduler", posix_sched_setscheduler, METH_VARARGS, posix_sched_setscheduler__doc__},
+    {"sched_yield",     posix_sched_yield, METH_NOARGS, posix_sched_yield__doc__},
+    {"sched_setaffinity", posix_sched_setaffinity, METH_VARARGS, posix_sched_setaffinity__doc__},
+    {"sched_getaffinity", posix_sched_getaffinity, METH_VARARGS, posix_sched_getaffinity__doc__},
+#endif
 #if defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX)
     {"openpty",         posix_openpty, METH_NOARGS, posix_openpty__doc__},
 #endif /* HAVE_OPENPTY || HAVE__GETPTY || HAVE_DEV_PTMX */
@@ -10243,6 +10796,24 @@ all_ins(PyObject *d)
 #endif
 #endif
 
+#ifdef HAVE_SCHED_H
+    if (ins(d, "SCHED_FIFO", (long)SCHED_FIFO)) return -1;
+    if (ins(d, "SCHED_RR", (long)SCHED_RR)) return -1;
+#ifdef SCHED_SPORADIC
+    if (ins(d, "SCHED_SPORADIC", (long)SCHED_SPORADIC) return -1;
+#endif
+    if (ins(d, "SCHED_OTHER", (long)SCHED_OTHER)) return -1;
+#ifdef SCHED_BATCH
+    if (ins(d, "SCHED_BATCH", (long)SCHED_BATCH)) return -1;
+#endif
+#ifdef SCHED_IDLE
+    if (ins(d, "SCHED_IDLE", (long)SCHED_IDLE)) return -1;
+#endif
+#ifdef SCHED_RESET_ON_FORK
+    if (ins(d, "SCHED_RESET_ON_FORK", (long)SCHED_RESET_ON_FORK)) return -1;
+#endif
+#endif
+
 #if defined(PYOS_OS2)
     if (insertvalues(d)) return -1;
 #endif
@@ -10305,6 +10876,11 @@ INITFUNC(void)
     Py_INCREF(PyExc_OSError);
     PyModule_AddObject(m, "error", PyExc_OSError);
 
+    if (PyType_Ready(&cpu_set_type) < 0)
+        return NULL;
+    Py_INCREF(&cpu_set_type);
+    PyModule_AddObject(m, "cpu_set", (PyObject *)&cpu_set_type);
+
 #ifdef HAVE_PUTENV
     if (posix_putenv_garbage == NULL)
         posix_putenv_garbage = PyDict_New();
@@ -10335,6 +10911,12 @@ INITFUNC(void)
         ticks_per_second = 60; /* magic fallback value; may be bogus */
 #  endif
 #endif
+
+#ifdef HAVE_SCHED_H
+        sched_param_desc.name = MODNAME ".sched_param";
+        PyStructSequence_InitType(&SchedParamType, &sched_param_desc);
+        SchedParamType.tp_new = sched_param_new;
+#endif
     }
 #if defined(HAVE_WAITID) && !defined(__APPLE__)
     Py_INCREF((PyObject*) &WaitidResultType);
@@ -10345,6 +10927,8 @@ INITFUNC(void)
     Py_INCREF((PyObject*) &StatVFSResultType);
     PyModule_AddObject(m, "statvfs_result",
                        (PyObject*) &StatVFSResultType);
+    Py_INCREF(&SchedParamType);
+    PyModule_AddObject(m, "sched_param", (PyObject *)&SchedParamType);
     initialized = 1;
 
 #ifdef __APPLE__
