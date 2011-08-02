@@ -1609,7 +1609,9 @@ static PyTypeObject WaitidResultType;
 static int initialized;
 static PyTypeObject StatResultType;
 static PyTypeObject StatVFSResultType;
+#if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER)
 static PyTypeObject SchedParamType;
+#endif
 static newfunc structseq_new;
 
 static PyObject *
@@ -10965,8 +10967,11 @@ INITFUNC(void)
     Py_INCREF((PyObject*) &StatVFSResultType);
     PyModule_AddObject(m, "statvfs_result",
                        (PyObject*) &StatVFSResultType);
+
+#if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER)
     Py_INCREF(&SchedParamType);
     PyModule_AddObject(m, "sched_param", (PyObject *)&SchedParamType);
+#endif
     initialized = 1;
 
 #ifdef __APPLE__
