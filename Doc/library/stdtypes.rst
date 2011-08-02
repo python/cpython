@@ -2329,7 +2329,7 @@ An example of dictionary view usage::
    >>> keys & {'eggs', 'bacon', 'salad'}
    {'bacon'}
    >>> keys ^ {'sausage', 'juice'}
-   {'juice', 'eggs', 'bacon', 'spam'}
+   {'juice', 'sausage', 'bacon', 'spam'}
 
 
 .. _typememoryview:
