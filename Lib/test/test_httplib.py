@@ -246,6 +246,13 @@ class BasicTest(TestCase):
         conn.request('GET', '/foo', body(), {'Content-Length': '11'})
         self.assertEqual(sock.data, expected)
 
+    def test_send_type_error(self):
+        # See: Issue #12676
+        conn = client.HTTPConnection('example.com')
+        conn.sock = FakeSocket('')
+        with self.assertRaises(TypeError):
+            conn.request('POST', 'test', conn)
+
     def test_chunked(self):
         chunked_start = (
             'HTTP/1.1 200 OK\r\n'
