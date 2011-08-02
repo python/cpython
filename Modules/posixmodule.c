@@ -4585,6 +4585,8 @@ posix_sched_get_priority_min(PyObject *self, PyObject *args)
     return PyLong_FromLong(min);
 }
 
+#ifdef HAVE_SCHED_SETSCHEDULER
+
 PyDoc_STRVAR(posix_sched_getscheduler__doc__,
 "sched_getscheduler(pid)\n\n\
 Get the scheduling policy for the process with a PID of *pid*.\n\
@@ -4603,6 +4605,10 @@ posix_sched_getscheduler(PyObject *self, PyObject *args)
         return posix_error();
     return PyLong_FromLong(policy);
 }
+
+#endif
+
+#if defined(HAVE_SCHED_SETSCHEDULER) || defined(HAVE_SCHED_SETPARAM)
 
 static PyObject *
 sched_param_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
@@ -4656,6 +4662,10 @@ convert_sched_param(PyObject *param, struct sched_param *res)
     return 1;
 }
 
+#endif
+
+#ifdef HAVE_SCHED_SETSCHEDULER
+
 PyDoc_STRVAR(posix_sched_setscheduler__doc__,
 "sched_setscheduler(pid, policy, param)\n\n\
 Set the scheduling policy, *policy*, for *pid*.\n\
@@ -4676,6 +4686,10 @@ posix_sched_setscheduler(PyObject *self, PyObject *args)
         return posix_error();
     Py_RETURN_NONE;
 }
+
+#endif
+
+#ifdef HAVE_SCHED_SETPARAM
 
 PyDoc_STRVAR(posix_sched_getparam__doc__,
 "sched_getparam(pid) -> sched_param\n\n\
@@ -4724,6 +4738,10 @@ posix_sched_setparam(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+#endif
+
+#ifdef HAVE_SCHED_RR_GET_INTERVAL
+
 PyDoc_STRVAR(posix_sched_rr_get_interval__doc__,
 "sched_rr_get_interval(pid) -> float\n\n\
 Return the round-robin quantum for the process with PID *pid* in seconds.");
@@ -4740,6 +4758,8 @@ posix_sched_rr_get_interval(PyObject *self, PyObject *args)
         return posix_error();
     return PyFloat_FromDouble((double)interval.tv_sec + 1e-9*interval.tv_nsec);
 }
+
+#endif
 
 PyDoc_STRVAR(posix_sched_yield__doc__,
 "sched_yield()\n\n\
@@ -10054,11 +10074,21 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_SCHED_H
     {"sched_get_priority_max", posix_sched_get_priority_max, METH_VARARGS, posix_sched_get_priority_max__doc__},
     {"sched_get_priority_min", posix_sched_get_priority_min, METH_VARARGS, posix_sched_get_priority_min__doc__},
+#ifdef HAVE_SCHED_SETPARAM
     {"sched_getparam", posix_sched_getparam, METH_VARARGS, posix_sched_getparam__doc__},
+#endif
+#ifdef HAVE_SCHED_SETSCHEDULER
     {"sched_getscheduler", posix_sched_getscheduler, METH_VARARGS, posix_sched_getscheduler__doc__},
+#endif
+#ifdef HAVE_SCHED_RR_GET_INTERVAL
     {"sched_rr_get_interval", posix_sched_rr_get_interval, METH_VARARGS, posix_sched_rr_get_interval__doc__},
+#endif
+#ifdef HAVE_SCHED_SETPARAM
     {"sched_setparam", posix_sched_setparam, METH_VARARGS, posix_sched_setparam__doc__},
+#endif
+#ifdef HAVE_SCHED_SETSCHEDULER
     {"sched_setscheduler", posix_sched_setscheduler, METH_VARARGS, posix_sched_setscheduler__doc__},
+#endif
     {"sched_yield",     posix_sched_yield, METH_NOARGS, posix_sched_yield__doc__},
 #ifdef HAVE_SCHED_SETAFFINITY
     {"sched_setaffinity", posix_sched_setaffinity, METH_VARARGS, posix_sched_setaffinity__doc__},

@@ -851,7 +851,7 @@ class PosixTester(unittest.TestCase):
         self.assertRaises(OSError, posix.sched_get_priority_min, -23)
         self.assertRaises(OSError, posix.sched_get_priority_max, -23)
 
-    @requires_sched_h
+    @unittest.skipUnless(hasattr(posix, 'sched_setscheduler'), "can't change scheduler")
     def test_get_and_set_scheduler_and_param(self):
         possible_schedulers = [sched for name, sched in posix.__dict__.items()
                                if name.startswith("SCHED_")]
@@ -882,7 +882,7 @@ class PosixTester(unittest.TestCase):
         param = posix.sched_param(sched_priority=-large)
         self.assertRaises(OverflowError, posix.sched_setparam, 0, param)
 
-    @requires_sched_h
+    @unittest.skipUnless(hasattr(posix, "sched_rr_get_interval"), "no function")
     def test_sched_rr_get_interval(self):
         interval = posix.sched_rr_get_interval(0)
         self.assertIsInstance(interval, float)
