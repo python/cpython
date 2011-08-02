@@ -55,9 +55,17 @@ class TestSupport(unittest.TestCase):
         support.rmtree(TESTDIRN)
 
     def test_forget(self):
-        import smtplib
-        support.forget("smtplib")
-        self.assertNotIn("smtplib", sys.modules)
+        mod_filename = TESTFN + '.py'
+        with open(mod_filename, 'w') as f:
+            print('foo = 1', file=f)
+        try:
+            mod = __import__(TESTFN)
+            self.assertIn(TESTFN, sys.modules)
+
+            support.forget(TESTFN)
+            self.assertNotIn(TESTFN, sys.modules)
+        finally:
+            support.unlink(mod_filename)
 
     def test_HOST(self):
         s = socket.socket()
