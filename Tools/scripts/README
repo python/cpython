@@ -15,7 +15,7 @@ db2pickle.py            Dump a database file to a pickle
 diff.py                 Print file diffs in context, unified, or ndiff formats
 dutree.py               Format du(1) output as a tree sorted by size
 eptags.py               Create Emacs TAGS file for Python modules
-find_recursionlimit.py  Find the maximum recursion limit on this machine 
+find_recursionlimit.py  Find the maximum recursion limit on this machine
 finddiv.py              A grep-like tool that looks for division operators
 findlinksto.py          Recursively find symbolic links to a given path prefix
 findnocoding.py         Find source files which need an encoding declaration
@@ -53,6 +53,7 @@ redemo.py               Basic regular expression demonstration facility
 reindent.py             Change .py files to use 4-space indents
 reindent-rst.py         Fix-up reStructuredText file whitespace
 rgrep.py                Reverse grep through a file (useful for big logfiles)
+run_tests.py            Run the test suite with more sensible default options
 serve.py                Small wsgiref-based web server, used in make serve in Doc
 suff.py                 Sort a list of files by suffix
 svneol.py               Set svn:eol-style on all files in directory
