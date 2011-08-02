@@ -1,9 +1,9 @@
 """Run Python's test suite in a fast, rigorous way.
 
-The defaults are meant to be thorough but to skip certain resources are not
-used (by default) which can consume a lot of time and resources (e.g.,
-largefile) or can be distracting (e.g., audio and gui). These defaults
-can be overridden by simply passing a -u option to this script.
+The defaults are meant to be reasonably thorough, while skipping certain
+tests that can be time-consuming or resource-intensive (e.g. largefile),
+or distracting (e.g. audio and gui). These defaults can be overridden by
+simply passing a -u option to this script.
 
 """
 
