@@ -1760,7 +1760,7 @@ Exiting methods
 .. method:: ArgumentParser.error(message)
 
    This method prints a usage message including the *message* to the
-   standard output and terminates the program with a status code of 2.
+   standard error and terminates the program with a status code of 2.
 
 
 .. _argparse-from-optparse:
