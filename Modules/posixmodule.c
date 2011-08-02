@@ -10965,8 +10965,11 @@ INITFUNC(void)
     Py_INCREF((PyObject*) &StatVFSResultType);
     PyModule_AddObject(m, "statvfs_result",
                        (PyObject*) &StatVFSResultType);
+
+#if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER)
     Py_INCREF(&SchedParamType);
     PyModule_AddObject(m, "sched_param", (PyObject *)&SchedParamType);
+#endif
     initialized = 1;
 
 #ifdef __APPLE__
