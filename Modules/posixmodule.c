@@ -4952,7 +4952,7 @@ cpu_set_richcompare(Py_cpu_set *set, Py_cpu_set *other, int op)
             Py_INCREF(Py_NotImplemented); \
             return Py_NotImplemented; \
         } \
-        assert(left->size == right->size == res->size); \
+        assert(left->size == right->size && right->size == res->size); \
         op(res->size, res->set, left->set, right->set); \
         return (PyObject *)res; \
     } \
