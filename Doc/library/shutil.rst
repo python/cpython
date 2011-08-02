@@ -105,8 +105,9 @@ Directory and files operations
    :func:`copy2`.
 
    If *symlinks* is true, symbolic links in the source tree are represented as
-   symbolic links in the new tree; if false or omitted, the contents of the
-   linked files are copied to the new tree.
+   symbolic links in the new tree, but the metadata of the original links is NOT
+   copied; if false or omitted, the contents and metadata of the linked files
+   are copied to the new tree.
 
    If *ignore* is given, it must be a callable that will receive as its
    arguments the directory being visited by :func:`copytree`, and a list of its
