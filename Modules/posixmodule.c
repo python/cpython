@@ -1609,7 +1609,9 @@ static PyTypeObject WaitidResultType;
 static int initialized;
 static PyTypeObject StatResultType;
 static PyTypeObject StatVFSResultType;
+#if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER)
 static PyTypeObject SchedParamType;
+#endif
 static newfunc structseq_new;
 
 static PyObject *
