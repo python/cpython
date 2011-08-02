@@ -831,6 +831,8 @@ class PosixTester(unittest.TestCase):
 
     requires_sched_h = unittest.skipUnless(hasattr(posix, 'sched_yield'),
                                            "don't have scheduling support")
+    requires_sched_affinity = unittest.skipUnless(hasattr(posix, 'cpu_set'),
+                                                  "dont' have sched affinity support")
 
     @requires_sched_h
     def test_sched_yield(self):
@@ -888,7 +890,7 @@ class PosixTester(unittest.TestCase):
         self.assertGreaterEqual(interval, 0.)
         self.assertLess(interval, 1.)
 
-    @requires_sched_h
+    @requires_sched_affinity
     def test_sched_affinity(self):
         mask = posix.sched_getaffinity(0, 1024)
         self.assertGreaterEqual(mask.count(), 1)
@@ -899,7 +901,7 @@ class PosixTester(unittest.TestCase):
         self.assertRaises(OSError, posix.sched_setaffinity, 0, empty)
         self.assertRaises(OSError, posix.sched_setaffinity, -1, mask)
 
-    @requires_sched_h
+    @requires_sched_affinity
     def test_cpu_set_basic(self):
         s = posix.cpu_set(10)
         self.assertEqual(len(s), 10)
@@ -924,7 +926,7 @@ class PosixTester(unittest.TestCase):
         self.assertRaises(ValueError, s.isset, -1)
         self.assertRaises(ValueError, s.isset, 10)
 
-    @requires_sched_h
+    @requires_sched_affinity
     def test_cpu_set_cmp(self):
         self.assertNotEqual(posix.cpu_set(11), posix.cpu_set(12))
         l = posix.cpu_set(10)
@@ -935,7 +937,7 @@ class PosixTester(unittest.TestCase):
         r.set(1)
         self.assertEqual(l, r)
 
-    @requires_sched_h
+    @requires_sched_affinity
     def test_cpu_set_bitwise(self):
         l = posix.cpu_set(5)
         l.set(0)
