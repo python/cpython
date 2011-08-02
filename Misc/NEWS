@@ -10,6 +10,8 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Add ThreadError to threading.__all__.
+
 - Make type(None), type(Ellipsis), and type(NotImplemented) callable. They
   return the respective singleton instances.
 
