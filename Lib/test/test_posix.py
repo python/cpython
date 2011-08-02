@@ -868,7 +868,11 @@ class PosixTester(unittest.TestCase):
         self.assertRaises(OSError, posix.sched_getparam, -1)
         param = posix.sched_getparam(0)
         self.assertIsInstance(param.sched_priority, int)
-        posix.sched_setscheduler(0, mine, param)
+        try:
+            posix.sched_setscheduler(0, mine, param)
+        except OSError as e:
+            if e.errno != errno.EPERM:
+                raise
         posix.sched_setparam(0, param)
         self.assertRaises(OSError, posix.sched_setparam, -1, param)
         self.assertRaises(OSError, posix.sched_setscheduler, -1, mine, param)
