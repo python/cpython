@@ -10,8 +10,6 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
-- Add ThreadError to threading.__all__.
-
 - Make type(None), type(Ellipsis), and type(NotImplemented) callable. They
   return the respective singleton instances.
 
@@ -255,6 +253,8 @@ Library
   sched_setscheduler(), sched_getscheduler(), sched_setparam(),
   sched_get_min_priority(), sched_get_max_priority(), sched_rr_get_interval(),
   sched_getaffinity(), sched_setaffinity().
+
+- Add ThreadError to threading.__all__.
 
 - Issues #11104, #8688: Fix the behavior of distutils' sdist command with
   manually-maintained MANIFEST files.
