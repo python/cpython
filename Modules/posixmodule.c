@@ -4753,6 +4753,8 @@ posix_sched_yield(PyObject *self, PyObject *noargs)
     Py_RETURN_NONE;
 }
 
+#ifdef HAVE_SCHED_SETAFFINITY
+
 typedef struct {
     PyObject_HEAD;
     Py_ssize_t size;
@@ -5082,6 +5084,8 @@ posix_sched_getaffinity(PyObject *self, PyObject *args)
     }
     return (PyObject *)res;
 }
+
+#endif /* HAVE_SCHED_SETAFFINITY */
 
 #endif /* HAVE_SCHED_H */
 
@@ -10056,8 +10060,10 @@ static PyMethodDef posix_methods[] = {
     {"sched_setparam", posix_sched_setparam, METH_VARARGS, posix_sched_setparam__doc__},
     {"sched_setscheduler", posix_sched_setscheduler, METH_VARARGS, posix_sched_setscheduler__doc__},
     {"sched_yield",     posix_sched_yield, METH_NOARGS, posix_sched_yield__doc__},
+#ifdef HAVE_SCHED_SETAFFINITY
     {"sched_setaffinity", posix_sched_setaffinity, METH_VARARGS, posix_sched_setaffinity__doc__},
     {"sched_getaffinity", posix_sched_getaffinity, METH_VARARGS, posix_sched_getaffinity__doc__},
+#endif
 #endif
 #if defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX)
     {"openpty",         posix_openpty, METH_NOARGS, posix_openpty__doc__},
@@ -10876,10 +10882,12 @@ INITFUNC(void)
     Py_INCREF(PyExc_OSError);
     PyModule_AddObject(m, "error", PyExc_OSError);
 
+#ifdef HAVE_SCHED_SETAFFINITY
     if (PyType_Ready(&cpu_set_type) < 0)
         return NULL;
     Py_INCREF(&cpu_set_type);
     PyModule_AddObject(m, "cpu_set", (PyObject *)&cpu_set_type);
+#endif
 
 #ifdef HAVE_PUTENV
     if (posix_putenv_garbage == NULL)
