@@ -4947,7 +4947,7 @@ cpu_set_richcompare(Py_cpu_set *set, Py_cpu_set *other, int op)
             if (!res) \
                 return NULL; \
         } \
-        if (Py_TYPE(right) != &cpu_set_type || left->size != right->size) { \
+        if (Py_TYPE(right) != &cpu_set_type || left->ncpus != right->ncpus) { \
             Py_DECREF(res); \
             Py_INCREF(Py_NotImplemented); \
             return Py_NotImplemented; \
