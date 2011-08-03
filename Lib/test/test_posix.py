@@ -848,8 +848,10 @@ class PosixTester(unittest.TestCase):
         self.assertIsInstance(lo, int)
         self.assertIsInstance(hi, int)
         self.assertGreaterEqual(hi, lo)
-        self.assertRaises(OSError, posix.sched_get_priority_min, -23)
-        self.assertRaises(OSError, posix.sched_get_priority_max, -23)
+        # OSX evidently just returns 15 without checking the argument.
+        if sys.platform != "darwin":
+               self.assertRaises(OSError, posix.sched_get_priority_min, -23)
+               self.assertRaises(OSError, posix.sched_get_priority_max, -23)
 
     @unittest.skipUnless(hasattr(posix, 'sched_setscheduler'), "can't change scheduler")
     def test_get_and_set_scheduler_and_param(self):
