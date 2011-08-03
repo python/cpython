@@ -249,6 +249,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12683: urlparse updated to include svn as schemes that uses relative
+  paths. (svn from 1.5 onwards support relative path).
+
 - Issue #12655: Expose functions from sched.h in the os module: sched_yield(),
   sched_setscheduler(), sched_getscheduler(), sched_setparam(),
   sched_get_min_priority(), sched_get_max_priority(), sched_rr_get_interval(),
