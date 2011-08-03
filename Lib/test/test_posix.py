@@ -832,7 +832,7 @@ class PosixTester(unittest.TestCase):
     requires_sched_h = unittest.skipUnless(hasattr(posix, 'sched_yield'),
                                            "don't have scheduling support")
     requires_sched_affinity = unittest.skipUnless(hasattr(posix, 'cpu_set'),
-                                                  "dont' have sched affinity support")
+                                                  "don't have sched affinity support")
 
     @requires_sched_h
     def test_sched_yield(self):
@@ -848,8 +848,10 @@ class PosixTester(unittest.TestCase):
         self.assertIsInstance(lo, int)
         self.assertIsInstance(hi, int)
         self.assertGreaterEqual(hi, lo)
-        self.assertRaises(OSError, posix.sched_get_priority_min, -23)
-        self.assertRaises(OSError, posix.sched_get_priority_max, -23)
+        # OSX evidently just returns 15 without checking the argument.
+        if sys.platform != "darwin":
+            self.assertRaises(OSError, posix.sched_get_priority_min, -23)
+            self.assertRaises(OSError, posix.sched_get_priority_max, -23)
 
     @unittest.skipUnless(hasattr(posix, 'sched_setscheduler'), "can't change scheduler")
     def test_get_and_set_scheduler_and_param(self):
@@ -888,7 +890,14 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(posix, "sched_rr_get_interval"), "no function")
     def test_sched_rr_get_interval(self):
-        interval = posix.sched_rr_get_interval(0)
+        try:
+            interval = posix.sched_rr_get_interval(0)
+        except OSError as e:
+            # This likely means that sched_rr_get_interval is only valid for
+            # processes with the SCHED_RR scheduler in effect.
+            if e.errno != errno.EINVAL:
+                raise
+            self.skipTest("only works on SCHED_RR processes")
         self.assertIsInstance(interval, float)
         # Reasonable constraints, I think.
         self.assertGreaterEqual(interval, 0.)
