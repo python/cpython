@@ -10,6 +10,7 @@ import time
 import threading
 import traceback
 import types
+import subprocess
 
 import linecache
 from code import InteractiveInterpreter
@@ -36,11 +37,6 @@ from idlelib import macosxSupport
 
 HOST = '127.0.0.1' # python execution server on localhost loopback
 PORT = 0  # someday pass in host, port for remote debug capability
-
-try:
-    from signal import SIGTERM
-except ImportError:
-    SIGTERM = 15
 
 # Override warnings module to write to warning_stream.  Initialize to send IDLE
 # internal warnings to the console.  ScriptBinding.check_syntax() will
@@ -344,13 +340,12 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.port = PORT
 
     rpcclt = None
-    rpcpid = None
+    rpcsubproc = None
 
     def spawn_subprocess(self):
         if self.subprocess_arglist is None:
             self.subprocess_arglist = self.build_subprocess_arglist()
-        args = self.subprocess_arglist
-        self.rpcpid = os.spawnv(os.P_NOWAIT, sys.executable, args)
+        self.rpcsubproc = subprocess.Popen(self.subprocess_arglist)
 
     def build_subprocess_arglist(self):
         assert (self.port!=0), (
@@ -365,12 +360,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             command = "__import__('idlelib.run').run.main(%r)" % (del_exitf,)
         else:
             command = "__import__('run').main(%r)" % (del_exitf,)
-        if sys.platform[:3] == 'win' and ' ' in sys.executable:
-            # handle embedded space in path by quoting the argument
-            decorated_exec = '"%s"' % sys.executable
-        else:
-            decorated_exec = sys.executable
-        return [decorated_exec] + w + ["-c", command, str(self.port)]
+        return [sys.executable] + w + ["-c", command, str(self.port)]
 
     def start_subprocess(self):
         addr = (HOST, self.port)
@@ -428,7 +418,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 pass
         # Kill subprocess, spawn a new one, accept connection.
         self.rpcclt.close()
-        self.unix_terminate()
+        self.terminate_subprocess()
         console = self.tkconsole
         was_executing = console.executing
         console.executing = False
@@ -469,23 +459,22 @@ class ModifiedInterpreter(InteractiveInterpreter):
             self.rpcclt.close()
         except AttributeError:  # no socket
             pass
-        self.unix_terminate()
+        self.terminate_subprocess()
         self.tkconsole.executing = False
         self.rpcclt = None
 
-    def unix_terminate(self):
-        "UNIX: make sure subprocess is terminated and collect status"
-        if hasattr(os, 'kill'):
+    def terminate_subprocess(self):
+        "Make sure subprocess is terminated"
+        try:
+            self.rpcsubproc.kill()
+        except OSError:
+            # process already terminated
+            return
+        else:
             try:
-                os.kill(self.rpcpid, SIGTERM)
+                self.rpcsubproc.wait()
             except OSError:
-                # process already terminated:
                 return
-            else:
-                try:
-                    os.waitpid(self.rpcpid, 0)
-                except OSError:
-                    return
 
     def transfer_path(self):
         self.runcommand("""if 1:
