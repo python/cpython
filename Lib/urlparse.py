@@ -35,7 +35,7 @@ __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
 uses_relative = ['ftp', 'http', 'gopher', 'nntp', 'imap',
                  'wais', 'file', 'https', 'shttp', 'mms',
                  'prospero', 'rtsp', 'rtspu', '', 'sftp',
-                 'svn']
+                 'svn', 'svn+ssh']
 uses_netloc = ['ftp', 'http', 'gopher', 'nntp', 'telnet',
                'imap', 'wais', 'file', 'mms', 'https', 'shttp',
                'snews', 'prospero', 'rtsp', 'rtspu', 'rsync', '',
