@@ -832,7 +832,7 @@ class PosixTester(unittest.TestCase):
     requires_sched_h = unittest.skipUnless(hasattr(posix, 'sched_yield'),
                                            "don't have scheduling support")
     requires_sched_affinity = unittest.skipUnless(hasattr(posix, 'cpu_set'),
-                                                  "dont' have sched affinity support")
+                                                  "don't have sched affinity support")
 
     @requires_sched_h
     def test_sched_yield(self):
