@@ -340,6 +340,7 @@ class UrlParseTestCase(unittest.TestCase):
         self.checkJoin('', 'http://a/b/c/g?y/./x','http://a/b/c/g?y/./x')
         self.checkJoin('', 'http://a/./g', 'http://a/./g')
         self.checkJoin('svn://pathtorepo/dir1','dir2','svn://pathtorepo/dir2')
+        self.checkJoin('svn+ssh://pathtorepo/dir1','dir2','svn+ssh://pathtorepo/dir2')
 
     def test_RFC2732(self):
         for url, hostname, port in [
