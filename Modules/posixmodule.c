@@ -5074,7 +5074,7 @@ posix_sched_setaffinity(PyObject *self, PyObject *args)
     pid_t pid;
     Py_cpu_set *cpu_set;
 
-    if (!PyArg_ParseTuple(args, _Py_PARSE_PID "O!|sched_setaffinity",
+    if (!PyArg_ParseTuple(args, _Py_PARSE_PID "O!:schbed_setaffinity",
                           &pid, &cpu_set_type, &cpu_set))
         return NULL;
     if (sched_setaffinity(pid, cpu_set->size, cpu_set->set))
@@ -5094,7 +5094,7 @@ posix_sched_getaffinity(PyObject *self, PyObject *args)
     int ncpus;
     Py_cpu_set *res;
 
-    if (!PyArg_ParseTuple(args, _Py_PARSE_PID "i|sched_getaffinity",
+    if (!PyArg_ParseTuple(args, _Py_PARSE_PID "i:sched_getaffinity",
                           &pid, &ncpus))
         return NULL;
     res = make_new_cpu_set(&cpu_set_type, ncpus);
