@@ -890,7 +890,14 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(posix, "sched_rr_get_interval"), "no function")
     def test_sched_rr_get_interval(self):
-        interval = posix.sched_rr_get_interval(0)
+        try:
+            interval = posix.sched_rr_get_interval(0)
+        except OSError as e:
+            # This likely means that sched_rr_get_interval is only valid for
+            # processes with the SCHED_RR scheduler in effect.
+            if e.errno != errno.EINVAL:
+                raise
+            self.skipTest("only works on SCHED_RR processes")
         self.assertIsInstance(interval, float)
         # Reasonable constraints, I think.
         self.assertGreaterEqual(interval, 0.)
