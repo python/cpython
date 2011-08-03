@@ -58,6 +58,7 @@ class TestSupport(unittest.TestCase):
         mod_filename = TESTFN + '.py'
         with open(mod_filename, 'w') as f:
             print('foo = 1', file=f)
+        sys.path.insert(0, os.curdir)
         try:
             mod = __import__(TESTFN)
             self.assertIn(TESTFN, sys.modules)
@@ -65,6 +66,7 @@ class TestSupport(unittest.TestCase):
             support.forget(TESTFN)
             self.assertNotIn(TESTFN, sys.modules)
         finally:
+            del sys.path[0]
             support.unlink(mod_filename)
 
     def test_HOST(self):
