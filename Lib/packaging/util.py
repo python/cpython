@@ -782,7 +782,7 @@ def spawn(cmd, search_path=True, verbose=0, dry_run=False, env=None):
     """
     logger.debug('spawn: running %r', cmd)
     if dry_run:
-        logging.debug('dry run, no process actually spawned')
+        logger.debug('dry run, no process actually spawned')
         return
     if sys.platform == 'darwin':
         global _cfg_target, _cfg_target_split
