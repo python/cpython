@@ -11,8 +11,6 @@
    compiler is assumed to be IBM's VisualAge C++ (VACPP).  PYCC_GCC is used
    as the compiler specific macro for the EMX port of gcc to OS/2. */
 
-/* See also ../Dos/dosmodule.c */
-
 #ifdef __APPLE__
    /*
     * Step 1 of support for weak-linking a number of symbols existing on
