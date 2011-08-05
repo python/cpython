@@ -306,19 +306,20 @@ class TestSysConfig(unittest.TestCase):
         env = os.environ.copy()
         env['MACOSX_DEPLOYMENT_TARGET'] = '10.1'
 
-        p = subprocess.Popen([
-                sys.executable, '-c',
-                'import sysconfig; print(sysconfig.get_platform())',
-            ],
-            stdout=subprocess.PIPE,
-            stderr=open('/dev/null'),
-            env=env)
-        test_platform = p.communicate()[0].strip()
-        test_platform = test_platform.decode('utf-8')
-        status = p.wait()
+        with open('/dev/null') as dev_null:
+            p = subprocess.Popen([
+                    sys.executable, '-c',
+                    'import sysconfig; print(sysconfig.get_platform())',
+                ],
+                stdout=subprocess.PIPE,
+                stderr=dev_null,
+                env=env)
+            test_platform = p.communicate()[0].strip()
+            test_platform = test_platform.decode('utf-8')
+            status = p.wait()
 
-        self.assertEqual(status, 0)
-        self.assertEqual(my_platform, test_platform)
+            self.assertEqual(status, 0)
+            self.assertEqual(my_platform, test_platform)
 
 
 class MakefileTests(unittest.TestCase):
