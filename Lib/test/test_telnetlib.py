@@ -39,6 +39,7 @@ class GeneralTests(TestCase):
     def tearDown(self):
         self.evt.wait()
         self.thread.join()
+        del self.thread  # Clear out any dangling Thread objects.
 
     def testBasic(self):
         # connects
