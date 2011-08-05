@@ -506,8 +506,7 @@ class HTTPSTest(TestCase):
     def test_local_good_hostname(self):
         # The (valid) cert validates the HTTP hostname
         import ssl
-        from test.ssl_servers import make_https_server
-        server = make_https_server(self, CERT_localhost)
+        server = self.make_server(CERT_localhost)
         context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         context.verify_mode = ssl.CERT_REQUIRED
         context.load_verify_locations(CERT_localhost)
@@ -515,12 +514,12 @@ class HTTPSTest(TestCase):
         h.request('GET', '/nonexistent')
         resp = h.getresponse()
         self.assertEqual(resp.status, 404)
+        del server
 
     def test_local_bad_hostname(self):
         # The (valid) cert doesn't validate the HTTP hostname
         import ssl
-        from test.ssl_servers import make_https_server
-        server = make_https_server(self, CERT_fakehostname)
+        server = self.make_server(CERT_fakehostname)
         context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         context.verify_mode = ssl.CERT_REQUIRED
         context.load_verify_locations(CERT_fakehostname)
@@ -538,6 +537,7 @@ class HTTPSTest(TestCase):
         h.request('GET', '/nonexistent')
         resp = h.getresponse()
         self.assertEqual(resp.status, 404)
+        del server
 
 
 class RequestBodyTest(TestCase):
