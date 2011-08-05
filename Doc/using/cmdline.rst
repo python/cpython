@@ -229,7 +229,8 @@ Miscellaneous options
 
 .. cmdoption:: -s
 
-   Don't add user site directory to sys.path
+   Don't add the :data:`user site-packages directory <site.USER_SITE>` to
+   :data:`sys.path`.
 
    .. seealso::
 
@@ -468,7 +469,8 @@ These environment variables influence Python's behavior.
 
 .. envvar:: PYTHONNOUSERSITE
 
-   If this is set, Python won't add the user site directory to sys.path
+   If this is set, Python won't add the :data:`user site-packages directory
+   <site.USER_SITE>` to :data:`sys.path`.
 
    .. seealso::
 
@@ -477,7 +479,9 @@ These environment variables influence Python's behavior.
 
 .. envvar:: PYTHONUSERBASE
 
-   Sets the base directory for the user site directory
+   Defines the :data:`user base directory <site.USER_BASE>`, which is used to
+   compute the path of the :data:`user site-packages directory <site.USER_SITE>`
+   and Distutils installation paths for ``python setup.py install --user``.
 
    .. seealso::
 

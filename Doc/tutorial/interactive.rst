@@ -156,17 +156,18 @@ symbol table.  A command to check (or even suggest) matching parentheses,
 quotes, etc., would also be useful.
 
 One alternative enhanced interactive interpreter that has been around for quite
-some time is `IPython`_, which features tab completion, object exploration and
+some time is IPython_, which features tab completion, object exploration and
 advanced history management.  It can also be thoroughly customized and embedded
 into other applications.  Another similar enhanced interactive environment is
-`bpython`_.
+bpython_.
 
 
 .. rubric:: Footnotes
 
 .. [#] Python will execute the contents of a file identified by the
    :envvar:`PYTHONSTARTUP` environment variable when you start an interactive
-   interpreter.
+   interpreter.  To customize Python even for non-interactive mode, see
+   :ref:`tut-customize`.
 
 
 .. _GNU Readline: http://tiswww.case.edu/php/chet/readline/rltop.html
