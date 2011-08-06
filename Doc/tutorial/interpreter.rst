@@ -236,6 +236,29 @@ in the script::
        exec(open(filename).read())
 
 
+.. _tut-customize:
+
+The Customization Modules
+-------------------------
+
+Python provides two hooks to let you customize it: :mod:`sitecustomize` and
+:mod:`usercustomize`.  To see how it works, you need first to find the location
+of your user site-packages directory.  Start Python and run this code:
+
+   >>> import site
+   >>> site.getusersitepackages()
+   '/home/user/.local/lib/python3.2/site-packages'
+
+Now you can create a file named :file:`usercustomize.py` in that directory and
+put anything you want in it.  It will affect every invocation of Python, unless
+it is started with the :option:`-s` option to disable the automatic import.
+
+:mod:`sitecustomize` works in the same way, but is typically created by an
+administrator of the computer in the global site-packages directory, and is
+imported before :mod:`usercustomize`.  See the documentation of the :mod:`site`
+module for more details.
+
+
 .. rubric:: Footnotes
 
 .. [#] On Unix, the Python 3.x interpreter is by default not installed with the
@@ -243,4 +266,3 @@ in the script::
    simultaneously installed Python 2.x executable.
 
 .. [#] A problem with the GNU Readline package may prevent this.
-
