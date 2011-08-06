@@ -783,8 +783,8 @@ Some smaller changes made to the core Python language are:
 
   (Contributed by Fredrik Johansson and Victor Stinner; :issue:`3439`.)
 
-* The :keyword:`import` statement will no longer try a relative import
-  if an absolute import (e.g. ``from .os import sep``) fails.  This
+* The :keyword:`import` statement will no longer try a absolute import
+  if a relative import (e.g. ``from .os import sep``) fails.  This
   fixes a bug, but could possibly break certain :keyword:`import`
   statements that were only working by accident.  (Fixed by Meador Inge;
   :issue:`7902`.)
