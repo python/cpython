@@ -129,12 +129,14 @@ empty, and the path manipulations are skipped; however the import of
    :file:`~/Library/Python/{X.Y}` for Mac framework builds, and
    :file:`{%APPDATA%}\\Python` for Windows.  This value is used by Distutils to
    compute the installation directories for scripts, data files, Python modules,
-   etc.  See also :envvar:`PYTHONUSERBASE`.
+   etc. for the :ref:`user installation scheme <inst-alt-install-user>`.  See
+   also :envvar:`PYTHONUSERBASE`.
 
 
 .. function:: addsitedir(sitedir, known_paths=None)
 
-   Add a directory to sys.path and process its :file:`.pth` files.
+   Add a directory to sys.path and process its :file:`.pth` files.  Typically
+   used in :mod:`sitecustomize` or :mod:`usercustomize` (see above).
 
 
 .. function:: getsitepackages()
