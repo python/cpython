@@ -114,6 +114,9 @@ class ProxyTests(unittest.TestCase):
         proxies = urllib.getproxies_environment()
         # getproxies_environment use lowered case truncated (no '_proxy') keys
         self.assertEqual('localhost', proxies['no'])
+        # List of no_proxies with space.
+        self.env.set('NO_PROXY', 'localhost, anotherdomain.com, newdomain.com')
+        self.assertTrue(urllib.proxy_bypass_environment('anotherdomain.com'))
 
 
 class urlopen_HttpTests(unittest.TestCase):
