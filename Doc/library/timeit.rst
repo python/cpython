@@ -195,13 +195,13 @@ interface) that compare the cost of using :func:`hasattr` vs.
 :keyword:`try`/:keyword:`except` to test for missing and present object
 attributes. ::
 
-   % timeit.py 'try:' '  str.__nonzero__' 'except AttributeError:' '  pass'
+   $ python -m timeit 'try:' '  str.__nonzero__' 'except AttributeError:' '  pass'
    100000 loops, best of 3: 15.7 usec per loop
-   % timeit.py 'if hasattr(str, "__nonzero__"): pass'
+   $ python -m timeit 'if hasattr(str, "__nonzero__"): pass'
    100000 loops, best of 3: 4.26 usec per loop
-   % timeit.py 'try:' '  int.__nonzero__' 'except AttributeError:' '  pass'
+   $ python -m timeit 'try:' '  int.__nonzero__' 'except AttributeError:' '  pass'
    1000000 loops, best of 3: 1.43 usec per loop
-   % timeit.py 'if hasattr(int, "__nonzero__"): pass'
+   $ python -m timeit 'if hasattr(int, "__nonzero__"): pass'
    100000 loops, best of 3: 2.23 usec per loop
 
 ::
@@ -242,12 +242,12 @@ To give the :mod:`timeit` module access to functions you define, you can pass a
 ``setup`` parameter which contains an import statement::
 
    def test():
-       "Stupid test function"
+       """Stupid test function"""
        L = []
        for i in range(100):
            L.append(i)
 
-   if __name__=='__main__':
+   if __name__ == '__main__':
        from timeit import Timer
        t = Timer("test()", "from __main__ import test")
        print t.timeit()
