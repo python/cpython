@@ -1599,4 +1599,3 @@ def reporthook(blocknum, blocksize, totalsize):
     # Report during remote transfers
     print "Block number: %d, Block size: %d, Total size: %d" % (
         blocknum, blocksize, totalsize)
-
