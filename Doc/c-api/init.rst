@@ -638,6 +638,16 @@ with sub-interpreters:
    .. versionadded:: 2.3
 
 
+.. c:function:: PyThreadState PyGILState_GetThisThreadState()
+
+   Get the current thread state for this thread.  May return ``NULL`` if no
+   GILState API has been used on the current thread.  Note that the main thread
+   always has such a thread-state, even if no auto-thread-state call has been
+   made on the main thread.  This is mainly a helper/diagnostic function.
+
+   .. versionadded:: 2.3
+
+
 The following macros are normally used without a trailing semicolon; look for
 example usage in the Python source distribution.
 
