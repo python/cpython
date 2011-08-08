@@ -184,6 +184,9 @@ following loop, which searches for prime numbers::
    8 equals 2 * 4
    9 equals 3 * 3
 
+(Yes, this is the correct code.  Look closely: the ``else`` clause belongs to
+the :keyword:`for` loop, **not** the :keyword:`if` statement.)
+
 
 .. _tut-pass:
 
