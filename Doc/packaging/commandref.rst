@@ -12,6 +12,12 @@ their options.
    description.  Use pysetup run <command> --help to get help about the options
    of one command.
 
+.. XXX sections from this document should be merged with other docs (e.g. check
+   and upload with uploading.rst, install_* with install/install.rst, etc.);
+   there is no value in partially duplicating information.  this file could
+   however serve as an index, i.e. just a list of all commands with links to
+   every section that describes options or usage
+
 
 Preparing distributions
 =======================
@@ -310,13 +316,8 @@ the target system.
 -----------------------
 
 Install a distribution, delegating to the other :command:`install_*` commands to
-do the work.
-
-.. program:: packaging install_dist
-
-.. cmdoption:: --user
-
-   Install in user site-packages directory (see :PEP:`370`).
+do the work.  See :ref:`packaging-how-install-works` for complete usage
+instructions.
 
 
 :command:`install_data`
