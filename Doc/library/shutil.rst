@@ -175,8 +175,9 @@ Directory and files operations
 
 .. function:: disk_usage(path)
 
-   Return disk usage statistics about the given path as a namedtuple including
-   total, used and free space expressed in bytes.
+   Return disk usage statistics about the given path as a :term:`named tuple`
+   with the attributes *total*, *used* and *free*, which are the amount of
+   total, used and free space, in bytes.
 
    .. versionadded:: 3.3
 
