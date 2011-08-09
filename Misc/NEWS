@@ -252,6 +252,8 @@ Library
 - Issue #12540: Prevent zombie IDLE processes on Windows due to changes
   in os.kill().
 
+- Add support for unary plus and unary minus to collections.Counter().
+
 - Issue #12683: urlparse updated to include svn as schemes that uses relative
   paths. (svn from 1.5 onwards support relative path).
 
