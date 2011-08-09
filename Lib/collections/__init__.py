@@ -672,6 +672,17 @@ class Counter(dict):
                 result[elem] = newcount
         return result
 
+    def __pos__(self):
+        'Adds an empty counter, effectively stripping negative and zero counts'
+        return self + Counter()
+
+    def __neg__(self):
+        '''Subtracts from an empty counter.  Strips positive and zero counts,
+        and flips the sign on negative counts.
+
+        '''
+        return Counter() - self
+
 
 ########################################################################
 ###  ChainMap (helper for configparser and string.Template)
