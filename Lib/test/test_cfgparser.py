@@ -529,6 +529,27 @@ class SafeConfigParserTestCase(ConfigParserTestCase):
 class SafeConfigParserTestCaseNoValue(SafeConfigParserTestCase):
     allow_no_value = True
 
+class TestChainMap(unittest.TestCase):
+    def test_issue_12717(self):
+        d1 = dict(red=1, green=2)
+        d2 = dict(green=3, blue=4)
+        dcomb = d2.copy()
+        dcomb.update(d1)
+        cm = ConfigParser._Chainmap(d1, d2)
+        self.assertIsInstance(cm.keys(), list)
+        self.assertEqual(set(cm.keys()), set(dcomb.keys()))      # keys()
+        self.assertEqual(set(cm.values()), set(dcomb.values()))  # values()
+        self.assertEqual(set(cm.items()), set(dcomb.items()))    # items()
+        self.assertEqual(set(cm), set(dcomb))                    # __iter__ ()
+        self.assertEqual(cm, dcomb)                              # __eq__()
+        self.assertEqual([cm[k] for k in dcomb], dcomb.values()) # __getitem__()
+        klist = 'red green blue black brown'.split()
+        self.assertEqual([cm.get(k, 10) for k in klist],
+                         [dcomb.get(k, 10) for k in klist])      # get()
+        self.assertEqual([k in cm for k in klist],
+                         [k in dcomb for k in klist])            # __contains__()
+        self.assertEqual([cm.has_key(k) for k in klist],
+                         [dcomb.has_key(k) for k in klist])      # has_key()
 
 class Issue7005TestCase(unittest.TestCase):
     """Test output when None is set() as a value and allow_no_value == False.
@@ -591,6 +612,7 @@ def test_main():
         SafeConfigParserTestCaseNoValue,
         SortedTestCase,
         Issue7005TestCase,
+        TestChainMap,
         )
 
 

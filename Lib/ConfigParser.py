@@ -570,7 +570,7 @@ class _Chainmap(_UserDict.DictMixin):
     def keys(self):
         result = []
         seen = set()
-        for mapping in self_maps:
+        for mapping in self._maps:
             for key in mapping:
                 if key not in seen:
                     result.append(key)
