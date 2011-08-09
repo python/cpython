@@ -1,10 +1,10 @@
 #! /usr/bin/env python
 """Generate C code from an ASDL description."""
-from __future__ import with_statement
 
 # TO DO
 # handle fields that have a type but no name
 
+import errno
 import os
 import sys
 import StringIO
@@ -1170,11 +1170,23 @@ def main(srcfile):
         f.write("mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);\n")
         f.write("int PyAST_Check(PyObject* obj);\n")
         s = f.getvalue()
-        with open(p, "r") as fp:
-            write = fp.read() != s
+        write = True
+        try:
+            fp = open(p, "r")
+        except IOError as e:
+            if e.errno != errno.ENOENT:
+                raise
+        else:
+            try:
+                write = fp.read() != s
+            finally:
+                fp.close()
         if write:
-            with open(p, "w") as fp:
-                f.write(s)
+            fp = open(p, "w")
+            try:
+                fp.write(s)
+            finally:
+                fp.close()
 
     if SRC_DIR:
         p = os.path.join(SRC_DIR, str(mod.name) + "-ast.c")
