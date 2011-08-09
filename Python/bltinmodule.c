@@ -604,6 +604,10 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
                 PyArena_Free(arena);
                 goto error;
             }
+            if (!PyAST_Validate(mod)) {
+                PyArena_Free(arena);
+                goto error;
+            }
             result = (PyObject*)PyAST_CompileEx(mod, filename,
                                                 &cf, optimize, arena);
             PyArena_Free(arena);

@@ -10,6 +10,8 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #12575: Validate user-generated AST before it is compiled.
+
 - Make type(None), type(Ellipsis), and type(NotImplemented) callable. They
   return the respective singleton instances.
 

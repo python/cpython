@@ -4,6 +4,7 @@
 extern "C" {
 #endif
 
+PyAPI_FUNC(int) PyAST_Validate(mod_ty);
 PyAPI_FUNC(mod_ty) PyAST_FromNode(
     const node *n,
     PyCompilerFlags *flags,
