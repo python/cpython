@@ -745,6 +745,11 @@ type objects) *must* have the :attr:`ob_size` field.
    This field is not inherited by subtypes (though the attributes defined in here
    are inherited through a different mechanism).
 
+   .. warning::
+
+      It is not safe to use :c:func:`PyDict_SetItem` on or otherwise modify
+      :attr:`tp_dict` with the dictionary C-API.
+
 
 .. c:member:: descrgetfunc PyTypeObject.tp_descr_get
 
