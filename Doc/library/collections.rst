@@ -264,7 +264,7 @@ Common patterns for working with :class:`Counter` objects::
     c.items()                       # convert to a list of (elem, cnt) pairs
     Counter(dict(list_of_pairs))    # convert from a list of (elem, cnt) pairs
     c.most_common()[:-n:-1]         # n least common elements
-    c += Counter()                  # remove zero and negative counts
+    +c                              # remove zero and negative counts
 
 Several mathematical operations are provided for combining :class:`Counter`
 objects to produce multisets (counters that have counts greater than zero).
@@ -283,6 +283,18 @@ counts, but the output will exclude results with counts of zero or less.
     Counter({'a': 1, 'b': 1})
     >>> c | d                       # union:  max(c[x], d[x])
     Counter({'a': 3, 'b': 2})
+
+Unary addition and substraction are shortcuts for adding an empty counter
+or subtracting from an empty counter.
+
+    >>> c = Counter(a=2, b=-4)
+    >>> +c
+    Counter({'a': 2})
+    >>> -c
+    Counter({'b': 4})
+
+.. versionadded:: 3.3
+   Added support for unary plus and unary minus.
 
 .. note::
 
