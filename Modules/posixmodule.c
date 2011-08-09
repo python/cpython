@@ -5072,7 +5072,7 @@ posix_sched_setaffinity(PyObject *self, PyObject *args)
     pid_t pid;
     Py_cpu_set *cpu_set;
 
-    if (!PyArg_ParseTuple(args, _Py_PARSE_PID "O!:schbed_setaffinity",
+    if (!PyArg_ParseTuple(args, _Py_PARSE_PID "O!:sched_setaffinity",
                           &pid, &cpu_set_type, &cpu_set))
         return NULL;
     if (sched_setaffinity(pid, cpu_set->size, cpu_set->set))
