@@ -1173,7 +1173,7 @@ def main(srcfile):
         write = True
         try:
             fp = open(p, "r")
-        except IOError as e:
+        except IOError, e:
             if e.errno != errno.ENOENT:
                 raise
         else:
