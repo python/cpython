@@ -943,6 +943,11 @@ class TestCounter(unittest.TestCase):
         c.subtract('aaaabbcce')
         self.assertEqual(c, Counter(a=-1, b=0, c=-1, d=1, e=-1))
 
+    def test_unary(self):
+        c = Counter(a=-5, b=0, c=5, d=10, e=15,g=40)
+        self.assertEqual(dict(+c), dict(c=5, d=10, e=15, g=40))
+        self.assertEqual(dict(-c), dict(a=5))
+
     def test_helper_function(self):
         # two paths, one for real dicts and one for other mappings
         elems = list('abracadabra')
