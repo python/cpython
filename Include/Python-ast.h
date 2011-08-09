@@ -271,7 +271,7 @@ struct _expr {
                 } Str;
                 
                 struct {
-                        string s;
+                        bytes s;
                 } Bytes;
                 
                 struct {
@@ -501,7 +501,7 @@ expr_ty _Py_Num(object n, int lineno, int col_offset, PyArena *arena);
 #define Str(a0, a1, a2, a3) _Py_Str(a0, a1, a2, a3)
 expr_ty _Py_Str(string s, int lineno, int col_offset, PyArena *arena);
 #define Bytes(a0, a1, a2, a3) _Py_Bytes(a0, a1, a2, a3)
-expr_ty _Py_Bytes(string s, int lineno, int col_offset, PyArena *arena);
+expr_ty _Py_Bytes(bytes s, int lineno, int col_offset, PyArena *arena);
 #define Ellipsis(a0, a1, a2) _Py_Ellipsis(a0, a1, a2)
 expr_ty _Py_Ellipsis(int lineno, int col_offset, PyArena *arena);
 #define Attribute(a0, a1, a2, a3, a4, a5) _Py_Attribute(a0, a1, a2, a3, a4, a5)
