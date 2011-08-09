@@ -738,7 +738,7 @@ class ASTValidatorTests(unittest.TestCase):
         l = ast.Name("x", ast.Load())
         s = ast.Name("y", ast.Store())
         for args in (s, l, l), (l, s, l), (l, l, s):
-                  self.expr(ast.IfExp(*args), "must have Load context")
+            self.expr(ast.IfExp(*args), "must have Load context")
 
     def test_dict(self):
         d = ast.Dict([], [ast.Name("x", ast.Load())])
