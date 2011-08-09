@@ -1,4 +1,6 @@
-import sys, unittest
+import os
+import sys
+import unittest
 from test import support
 import ast
 
@@ -490,8 +492,412 @@ class ASTHelpers_Test(unittest.TestCase):
         self.assertEqual(ast.literal_eval('1.5 - 2j'), 1.5 - 2j)
 
 
+class ASTValidatorTests(unittest.TestCase):
+
+    def mod(self, mod, msg=None, mode="exec", *, exc=ValueError):
+        mod.lineno = mod.col_offset = 0
+        ast.fix_missing_locations(mod)
+        with self.assertRaises(exc) as cm:
+            compile(mod, "<test>", mode)
+        if msg is not None:
+            self.assertIn(msg, str(cm.exception))
+
+    def expr(self, node, msg=None, *, exc=ValueError):
+        mod = ast.Module([ast.Expr(node)])
+        self.mod(mod, msg, exc=exc)
+
+    def stmt(self, stmt, msg=None):
+        mod = ast.Module([stmt])
+        self.mod(mod, msg)
+
+    def test_module(self):
+        m = ast.Interactive([ast.Expr(ast.Name("x", ast.Store()))])
+        self.mod(m, "must have Load context", "single")
+        m = ast.Expression(ast.Name("x", ast.Store()))
+        self.mod(m, "must have Load context", "eval")
+
+    def _check_arguments(self, fac, check):
+        def arguments(args=None, vararg=None, varargannotation=None,
+                      kwonlyargs=None, kwarg=None, kwargannotation=None,
+                      defaults=None, kw_defaults=None):
+            if args is None:
+                args = []
+            if kwonlyargs is None:
+                kwonlyargs = []
+            if defaults is None:
+                defaults = []
+            if kw_defaults is None:
+                kw_defaults = []
+            args = ast.arguments(args, vararg, varargannotation, kwonlyargs,
+                                 kwarg, kwargannotation, defaults, kw_defaults)
+            return fac(args)
+        args = [ast.arg("x", ast.Name("x", ast.Store()))]
+        check(arguments(args=args), "must have Load context")
+        check(arguments(varargannotation=ast.Num(3)),
+              "varargannotation but no vararg")
+        check(arguments(varargannotation=ast.Name("x", ast.Store()), vararg="x"),
+                         "must have Load context")
+        check(arguments(kwonlyargs=args), "must have Load context")
+        check(arguments(kwargannotation=ast.Num(42)),
+                       "kwargannotation but no kwarg")
+        check(arguments(kwargannotation=ast.Name("x", ast.Store()),
+                          kwarg="x"), "must have Load context")
+        check(arguments(defaults=[ast.Num(3)]),
+                       "more positional defaults than args")
+        check(arguments(kw_defaults=[ast.Num(4)]),
+                       "length of kwonlyargs is not the same as kw_defaults")
+        args = [ast.arg("x", ast.Name("x", ast.Load()))]
+        check(arguments(args=args, defaults=[ast.Name("x", ast.Store())]),
+                       "must have Load context")
+        args = [ast.arg("a", ast.Name("x", ast.Load())),
+                ast.arg("b", ast.Name("y", ast.Load()))]
+        check(arguments(kwonlyargs=args,
+                          kw_defaults=[None, ast.Name("x", ast.Store())]),
+                          "must have Load context")
+
+    def test_funcdef(self):
+        a = ast.arguments([], None, None, [], None, None, [], [])
+        f = ast.FunctionDef("x", a, [], [], None)
+        self.stmt(f, "empty body on FunctionDef")
+        f = ast.FunctionDef("x", a, [ast.Pass()], [ast.Name("x", ast.Store())],
+                            None)
+        self.stmt(f, "must have Load context")
+        f = ast.FunctionDef("x", a, [ast.Pass()], [],
+                            ast.Name("x", ast.Store()))
+        self.stmt(f, "must have Load context")
+        def fac(args):
+            return ast.FunctionDef("x", args, [ast.Pass()], [], None)
+        self._check_arguments(fac, self.stmt)
+
+    def test_classdef(self):
+        def cls(bases=None, keywords=None, starargs=None, kwargs=None,
+                body=None, decorator_list=None):
+            if bases is None:
+                bases = []
+            if keywords is None:
+                keywords = []
+            if body is None:
+                body = [ast.Pass()]
+            if decorator_list is None:
+                decorator_list = []
+            return ast.ClassDef("myclass", bases, keywords, starargs,
+                                kwargs, body, decorator_list)
+        self.stmt(cls(bases=[ast.Name("x", ast.Store())]),
+                  "must have Load context")
+        self.stmt(cls(keywords=[ast.keyword("x", ast.Name("x", ast.Store()))]),
+                  "must have Load context")
+        self.stmt(cls(starargs=ast.Name("x", ast.Store())),
+                  "must have Load context")
+        self.stmt(cls(kwargs=ast.Name("x", ast.Store())),
+                  "must have Load context")
+        self.stmt(cls(body=[]), "empty body on ClassDef")
+        self.stmt(cls(body=[None]), "None disallowed")
+        self.stmt(cls(decorator_list=[ast.Name("x", ast.Store())]),
+                  "must have Load context")
+
+    def test_delete(self):
+        self.stmt(ast.Delete([]), "empty targets on Delete")
+        self.stmt(ast.Delete([None]), "None disallowed")
+        self.stmt(ast.Delete([ast.Name("x", ast.Load())]),
+                  "must have Del context")
+
+    def test_assign(self):
+        self.stmt(ast.Assign([], ast.Num(3)), "empty targets on Assign")
+        self.stmt(ast.Assign([None], ast.Num(3)), "None disallowed")
+        self.stmt(ast.Assign([ast.Name("x", ast.Load())], ast.Num(3)),
+                  "must have Store context")
+        self.stmt(ast.Assign([ast.Name("x", ast.Store())],
+                                ast.Name("y", ast.Store())),
+                  "must have Load context")
+
+    def test_augassign(self):
+        aug = ast.AugAssign(ast.Name("x", ast.Load()), ast.Add(),
+                            ast.Name("y", ast.Load()))
+        self.stmt(aug, "must have Store context")
+        aug = ast.AugAssign(ast.Name("x", ast.Store()), ast.Add(),
+                            ast.Name("y", ast.Store()))
+        self.stmt(aug, "must have Load context")
+
+    def test_for(self):
+        x = ast.Name("x", ast.Store())
+        y = ast.Name("y", ast.Load())
+        p = ast.Pass()
+        self.stmt(ast.For(x, y, [], []), "empty body on For")
+        self.stmt(ast.For(ast.Name("x", ast.Load()), y, [p], []),
+                  "must have Store context")
+        self.stmt(ast.For(x, ast.Name("y", ast.Store()), [p], []),
+                  "must have Load context")
+        e = ast.Expr(ast.Name("x", ast.Store()))
+        self.stmt(ast.For(x, y, [e], []), "must have Load context")
+        self.stmt(ast.For(x, y, [p], [e]), "must have Load context")
+
+    def test_while(self):
+        self.stmt(ast.While(ast.Num(3), [], []), "empty body on While")
+        self.stmt(ast.While(ast.Name("x", ast.Store()), [ast.Pass()], []),
+                  "must have Load context")
+        self.stmt(ast.While(ast.Num(3), [ast.Pass()],
+                             [ast.Expr(ast.Name("x", ast.Store()))]),
+                             "must have Load context")
+
+    def test_if(self):
+        self.stmt(ast.If(ast.Num(3), [], []), "empty body on If")
+        i = ast.If(ast.Name("x", ast.Store()), [ast.Pass()], [])
+        self.stmt(i, "must have Load context")
+        i = ast.If(ast.Num(3), [ast.Expr(ast.Name("x", ast.Store()))], [])
+        self.stmt(i, "must have Load context")
+        i = ast.If(ast.Num(3), [ast.Pass()],
+                   [ast.Expr(ast.Name("x", ast.Store()))])
+        self.stmt(i, "must have Load context")
+
+    def test_with(self):
+        p = ast.Pass()
+        self.stmt(ast.With([], [p]), "empty items on With")
+        i = ast.withitem(ast.Num(3), None)
+        self.stmt(ast.With([i], []), "empty body on With")
+        i = ast.withitem(ast.Name("x", ast.Store()), None)
+        self.stmt(ast.With([i], [p]), "must have Load context")
+        i = ast.withitem(ast.Num(3), ast.Name("x", ast.Load()))
+        self.stmt(ast.With([i], [p]), "must have Store context")
+
+    def test_raise(self):
+        r = ast.Raise(None, ast.Num(3))
+        self.stmt(r, "Raise with cause but no exception")
+        r = ast.Raise(ast.Name("x", ast.Store()), None)
+        self.stmt(r, "must have Load context")
+        r = ast.Raise(ast.Num(4), ast.Name("x", ast.Store()))
+        self.stmt(r, "must have Load context")
+
+    def test_try(self):
+        p = ast.Pass()
+        t = ast.Try([], [], [], [p])
+        self.stmt(t, "empty body on Try")
+        t = ast.Try([ast.Expr(ast.Name("x", ast.Store()))], [], [], [p])
+        self.stmt(t, "must have Load context")
+        t = ast.Try([p], [], [], [])
+        self.stmt(t, "Try has neither except handlers nor finalbody")
+        t = ast.Try([p], [], [p], [p])
+        self.stmt(t, "Try has orelse but no except handlers")
+        t = ast.Try([p], [ast.ExceptHandler(None, "x", [])], [], [])
+        self.stmt(t, "empty body on ExceptHandler")
+        e = [ast.ExceptHandler(ast.Name("x", ast.Store()), "y", [p])]
+        self.stmt(ast.Try([p], e, [], []), "must have Load context")
+        e = [ast.ExceptHandler(None, "x", [p])]
+        t = ast.Try([p], e, [ast.Expr(ast.Name("x", ast.Store()))], [p])
+        self.stmt(t, "must have Load context")
+        t = ast.Try([p], e, [p], [ast.Expr(ast.Name("x", ast.Store()))])
+        self.stmt(t, "must have Load context")
+
+    def test_assert(self):
+        self.stmt(ast.Assert(ast.Name("x", ast.Store()), None),
+                  "must have Load context")
+        assrt = ast.Assert(ast.Name("x", ast.Load()),
+                           ast.Name("y", ast.Store()))
+        self.stmt(assrt, "must have Load context")
+
+    def test_import(self):
+        self.stmt(ast.Import([]), "empty names on Import")
+
+    def test_importfrom(self):
+        imp = ast.ImportFrom(None, [ast.alias("x", None)], -42)
+        self.stmt(imp, "level less than -1")
+        self.stmt(ast.ImportFrom(None, [], 0), "empty names on ImportFrom")
+
+    def test_global(self):
+        self.stmt(ast.Global([]), "empty names on Global")
+
+    def test_nonlocal(self):
+        self.stmt(ast.Nonlocal([]), "empty names on Nonlocal")
+
+    def test_expr(self):
+        e = ast.Expr(ast.Name("x", ast.Store()))
+        self.stmt(e, "must have Load context")
+
+    def test_boolop(self):
+        b = ast.BoolOp(ast.And(), [])
+        self.expr(b, "less than 2 values")
+        b = ast.BoolOp(ast.And(), [ast.Num(3)])
+        self.expr(b, "less than 2 values")
+        b = ast.BoolOp(ast.And(), [ast.Num(4), None])
+        self.expr(b, "None disallowed")
+        b = ast.BoolOp(ast.And(), [ast.Num(4), ast.Name("x", ast.Store())])
+        self.expr(b, "must have Load context")
+
+    def test_unaryop(self):
+        u = ast.UnaryOp(ast.Not(), ast.Name("x", ast.Store()))
+        self.expr(u, "must have Load context")
+
+    def test_lambda(self):
+        a = ast.arguments([], None, None, [], None, None, [], [])
+        self.expr(ast.Lambda(a, ast.Name("x", ast.Store())),
+                  "must have Load context")
+        def fac(args):
+            return ast.Lambda(args, ast.Name("x", ast.Load()))
+        self._check_arguments(fac, self.expr)
+
+    def test_ifexp(self):
+        l = ast.Name("x", ast.Load())
+        s = ast.Name("y", ast.Store())
+        for args in (s, l, l), (l, s, l), (l, l, s):
+                  self.expr(ast.IfExp(*args), "must have Load context")
+
+    def test_dict(self):
+        d = ast.Dict([], [ast.Name("x", ast.Load())])
+        self.expr(d, "same number of keys as values")
+        d = ast.Dict([None], [ast.Name("x", ast.Load())])
+        self.expr(d, "None disallowed")
+        d = ast.Dict([ast.Name("x", ast.Load())], [None])
+        self.expr(d, "None disallowed")
+
+    def test_set(self):
+        self.expr(ast.Set([None]), "None disallowed")
+        s = ast.Set([ast.Name("x", ast.Store())])
+        self.expr(s, "must have Load context")
+
+    def _check_comprehension(self, fac):
+        self.expr(fac([]), "comprehension with no generators")
+        g = ast.comprehension(ast.Name("x", ast.Load()),
+                              ast.Name("x", ast.Load()), [])
+        self.expr(fac([g]), "must have Store context")
+        g = ast.comprehension(ast.Name("x", ast.Store()),
+                              ast.Name("x", ast.Store()), [])
+        self.expr(fac([g]), "must have Load context")
+        x = ast.Name("x", ast.Store())
+        y = ast.Name("y", ast.Load())
+        g = ast.comprehension(x, y, [None])
+        self.expr(fac([g]), "None disallowed")
+        g = ast.comprehension(x, y, [ast.Name("x", ast.Store())])
+        self.expr(fac([g]), "must have Load context")
+
+    def _simple_comp(self, fac):
+        g = ast.comprehension(ast.Name("x", ast.Store()),
+                              ast.Name("x", ast.Load()), [])
+        self.expr(fac(ast.Name("x", ast.Store()), [g]),
+                  "must have Load context")
+        def wrap(gens):
+            return fac(ast.Name("x", ast.Store()), gens)
+        self._check_comprehension(wrap)
+
+    def test_listcomp(self):
+        self._simple_comp(ast.ListComp)
+
+    def test_setcomp(self):
+        self._simple_comp(ast.SetComp)
+
+    def test_generatorexp(self):
+        self._simple_comp(ast.GeneratorExp)
+
+    def test_dictcomp(self):
+        g = ast.comprehension(ast.Name("y", ast.Store()),
+                              ast.Name("p", ast.Load()), [])
+        c = ast.DictComp(ast.Name("x", ast.Store()),
+                         ast.Name("y", ast.Load()), [g])
+        self.expr(c, "must have Load context")
+        c = ast.DictComp(ast.Name("x", ast.Load()),
+                         ast.Name("y", ast.Store()), [g])
+        self.expr(c, "must have Load context")
+        def factory(comps):
+            k = ast.Name("x", ast.Load())
+            v = ast.Name("y", ast.Load())
+            return ast.DictComp(k, v, comps)
+        self._check_comprehension(factory)
+
+    def test_yield(self):
+        self.expr(ast.Yield(ast.Name("x", ast.Store())), "must have Load")
+
+    def test_compare(self):
+        left = ast.Name("x", ast.Load())
+        comp = ast.Compare(left, [ast.In()], [])
+        self.expr(comp, "no comparators")
+        comp = ast.Compare(left, [ast.In()], [ast.Num(4), ast.Num(5)])
+        self.expr(comp, "different number of comparators and operands")
+        comp = ast.Compare(ast.Num("blah"), [ast.In()], [left])
+        self.expr(comp, "non-numeric", exc=TypeError)
+        comp = ast.Compare(left, [ast.In()], [ast.Num("blah")])
+        self.expr(comp, "non-numeric", exc=TypeError)
+
+    def test_call(self):
+        func = ast.Name("x", ast.Load())
+        args = [ast.Name("y", ast.Load())]
+        keywords = [ast.keyword("w", ast.Name("z", ast.Load()))]
+        stararg = ast.Name("p", ast.Load())
+        kwarg = ast.Name("q", ast.Load())
+        call = ast.Call(ast.Name("x", ast.Store()), args, keywords, stararg,
+                        kwarg)
+        self.expr(call, "must have Load context")
+        call = ast.Call(func, [None], keywords, stararg, kwarg)
+        self.expr(call, "None disallowed")
+        bad_keywords = [ast.keyword("w", ast.Name("z", ast.Store()))]
+        call = ast.Call(func, args, bad_keywords, stararg, kwarg)
+        self.expr(call, "must have Load context")
+        call = ast.Call(func, args, keywords, ast.Name("z", ast.Store()), kwarg)
+        self.expr(call, "must have Load context")
+        call = ast.Call(func, args, keywords, stararg,
+                        ast.Name("w", ast.Store()))
+        self.expr(call, "must have Load context")
+
+    def test_num(self):
+        class subint(int):
+            pass
+        class subfloat(float):
+            pass
+        class subcomplex(complex):
+            pass
+        for obj in "0", "hello", subint(), subfloat(), subcomplex():
+            self.expr(ast.Num(obj), "non-numeric", exc=TypeError)
+
+    def test_attribute(self):
+        attr = ast.Attribute(ast.Name("x", ast.Store()), "y", ast.Load())
+        self.expr(attr, "must have Load context")
+
+    def test_subscript(self):
+        sub = ast.Subscript(ast.Name("x", ast.Store()), ast.Index(ast.Num(3)),
+                            ast.Load())
+        self.expr(sub, "must have Load context")
+        x = ast.Name("x", ast.Load())
+        sub = ast.Subscript(x, ast.Index(ast.Name("y", ast.Store())),
+                            ast.Load())
+        self.expr(sub, "must have Load context")
+        s = ast.Name("x", ast.Store())
+        for args in (s, None, None), (None, s, None), (None, None, s):
+            sl = ast.Slice(*args)
+            self.expr(ast.Subscript(x, sl, ast.Load()),
+                      "must have Load context")
+        sl = ast.ExtSlice([])
+        self.expr(ast.Subscript(x, sl, ast.Load()), "empty dims on ExtSlice")
+        sl = ast.ExtSlice([ast.Index(s)])
+        self.expr(ast.Subscript(x, sl, ast.Load()), "must have Load context")
+
+    def test_starred(self):
+        left = ast.List([ast.Starred(ast.Name("x", ast.Load()), ast.Store())],
+                        ast.Store())
+        assign = ast.Assign([left], ast.Num(4))
+        self.stmt(assign, "must have Store context")
+
+    def _sequence(self, fac):
+        self.expr(fac([None], ast.Load()), "None disallowed")
+        self.expr(fac([ast.Name("x", ast.Store())], ast.Load()),
+                  "must have Load context")
+
+    def test_list(self):
+        self._sequence(ast.List)
+
+    def test_tuple(self):
+        self._sequence(ast.Tuple)
+
+    def test_stdlib_validates(self):
+        stdlib = os.path.dirname(ast.__file__)
+        tests = [fn for fn in os.listdir(stdlib) if fn.endswith(".py")]
+        tests.extend(["test/test_grammar.py", "test/test_unpack_ex.py"])
+        for module in tests:
+            fn = os.path.join(stdlib, module)
+            with open(fn, "r", encoding="utf-8") as fp:
+                source = fp.read()
+            mod = ast.parse(source)
+            compile(mod, fn, "exec")
+
+
 def test_main():
-    support.run_unittest(AST_Tests, ASTHelpers_Test)
+    support.run_unittest(AST_Tests, ASTHelpers_Test, ASTValidatorTests)
 
 def main():
     if __name__ != '__main__':
