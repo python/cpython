@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 """Generate C code from an ASDL description."""
+from __future__ import with_statement
 
 # TO DO
 # handle fields that have a type but no name
