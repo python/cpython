@@ -573,6 +573,7 @@ static PyObject* ast2obj_object(void *o)
 }
 #define ast2obj_identifier ast2obj_object
 #define ast2obj_string ast2obj_object
+#define ast2obj_bytes ast2obj_object
 
 static PyObject* ast2obj_int(long b)
 {
@@ -605,6 +606,15 @@ static int obj2ast_string(PyObject* obj, PyObject** out, PyArena* arena)
 {
     if (!PyUnicode_CheckExact(obj)) {
         PyErr_SetString(PyExc_TypeError, "AST string must be of type str");
+        return 1;
+    }
+    return obj2ast_object(obj, out, arena);
+}
+
+static int obj2ast_bytes(PyObject* obj, PyObject** out, PyArena* arena)
+{
+    if (!PyBytes_CheckExact(obj)) {
+        PyErr_SetString(PyExc_TypeError, "AST bytes must be of type bytes");
         return 1;
     }
     return obj2ast_object(obj, out, arena);
@@ -1773,7 +1783,7 @@ Str(string s, int lineno, int col_offset, PyArena *arena)
 }
 
 expr_ty
-Bytes(string s, int lineno, int col_offset, PyArena *arena)
+Bytes(bytes s, int lineno, int col_offset, PyArena *arena)
 {
         expr_ty p;
         if (!s) {
@@ -2804,7 +2814,7 @@ ast2obj_expr(void* _o)
         case Bytes_kind:
                 result = PyType_GenericNew(Bytes_type, NULL, NULL);
                 if (!result) goto failed;
-                value = ast2obj_string(o->v.Bytes.s);
+                value = ast2obj_bytes(o->v.Bytes.s);
                 if (!value) goto failed;
                 if (PyObject_SetAttrString(result, "s", value) == -1)
                         goto failed;
@@ -5509,13 +5519,13 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 return 1;
         }
         if (isinstance) {
-                string s;
+                bytes s;
 
                 if (PyObject_HasAttrString(obj, "s")) {
                         int res;
                         tmp = PyObject_GetAttrString(obj, "s");
                         if (tmp == NULL) goto failed;
-                        res = obj2ast_string(tmp, &s, arena);
+                        res = obj2ast_bytes(tmp, &s, arena);
                         if (res != 0) goto failed;
                         Py_XDECREF(tmp);
                         tmp = NULL;
