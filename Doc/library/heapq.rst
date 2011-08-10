@@ -16,7 +16,7 @@ as the priority queue algorithm.
 .. seealso::
 
    Latest version of the `heapq Python source code
-   <http://svn.python.org/view/python/branches/release27-maint/Lib/heapq.py?view=markup>`_
+   <http://svn.python.org/view/*checkout*/python/branches/release27-maint/Lib/heapq.py?content-type=text%2Fplain>`_
 
 Heaps are binary trees for which every parent node has a value less than or
 equal to any of its children.  This implementation uses arrays for which
