@@ -2,6 +2,7 @@ import calendar
 import unittest
 
 from test import support
+from test.script_helper import assert_python_ok
 import time
 import locale
 
@@ -451,6 +452,11 @@ class LeapdaysTestCase(unittest.TestCase):
         self.assertEqual(calendar.leapdays(1997,2020), 5)
 
 
+class ConsoleOutputTestCase(unittest.TestCase):
+    def test_outputs_bytes(self):
+        (return_code, stdout, stderr) = assert_python_ok('-m', 'calendar', '--type=html', '2010')
+        self.assertEqual(stdout[:6], b'<?xml ')
+
 def test_main():
     support.run_unittest(
         OutputTestCase,
@@ -460,6 +466,7 @@ def test_main():
         TimegmTestCase,
         MonthRangeTestCase,
         LeapdaysTestCase,
+        ConsoleOutputTestCase
     )
 
 
