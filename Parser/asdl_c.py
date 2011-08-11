@@ -4,10 +4,7 @@
 # TO DO
 # handle fields that have a type but no name
 
-import errno
-import os
-import sys
-import StringIO
+import os, sys
 import subprocess
 
 import asdl
@@ -1158,7 +1155,7 @@ def main(srcfile):
         sys.exit(1)
     if INC_DIR:
         p = "%s/%s-ast.h" % (INC_DIR, mod.name)
-        f = StringIO.StringIO()
+        f = open(p, "w")
         f.write(auto_gen_msg)
         f.write('#include "asdl.h"\n\n')
         c = ChainOfVisitors(TypeDefVisitor(f),
@@ -1169,24 +1166,7 @@ def main(srcfile):
         f.write("PyObject* PyAST_mod2obj(mod_ty t);\n")
         f.write("mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);\n")
         f.write("int PyAST_Check(PyObject* obj);\n")
-        s = f.getvalue()
-        write = True
-        try:
-            fp = open(p, "r")
-        except IOError, e:
-            if e.errno != errno.ENOENT:
-                raise
-        else:
-            try:
-                write = fp.read() != s
-            finally:
-                fp.close()
-        if write:
-            fp = open(p, "w")
-            try:
-                fp.write(s)
-            finally:
-                fp.close()
+        f.close()
 
     if SRC_DIR:
         p = os.path.join(SRC_DIR, str(mod.name) + "-ast.c")
