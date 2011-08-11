@@ -2608,10 +2608,8 @@ dictview_richcompare(PyObject *self, PyObject *other, int op)
     assert(PyDictViewSet_Check(self));
     assert(other != NULL);
 
-    if (!PyAnySet_Check(other) && !PyDictViewSet_Check(other)) {
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
-    }
+    if (!PyAnySet_Check(other) && !PyDictViewSet_Check(other))
+        Py_RETURN_NOTIMPLEMENTED;
 
     len_self = PyObject_Size(self);
     if (len_self < 0)

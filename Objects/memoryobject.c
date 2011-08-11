@@ -773,8 +773,7 @@ _end:
 _notimpl:
     PyBuffer_Release(&vv);
     PyBuffer_Release(&ww);
-    Py_INCREF(Py_NotImplemented);
-    return Py_NotImplemented;
+    Py_RETURN_NOTIMPLEMENTED;
 }
 
 
