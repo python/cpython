@@ -187,8 +187,7 @@ static PyType_Spec Str_Type_spec = {
 static PyObject *
 null_richcompare(PyObject *self, PyObject *other, int op)
 {
-    Py_INCREF(Py_NotImplemented);
-    return Py_NotImplemented;
+    Py_RETURN_NOTIMPLEMENTED;
 }
 
 static PyType_Slot Null_Type_slots[] = {

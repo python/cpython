@@ -1212,10 +1212,8 @@ call_maybe(PyObject *o, char *name, PyObject **nameobj, char *format, ...)
     func = lookup_maybe(o, name, nameobj);
     if (func == NULL) {
         va_end(va);
-        if (!PyErr_Occurred()) {
-            Py_INCREF(Py_NotImplemented);
-            return Py_NotImplemented;
-        }
+        if (!PyErr_Occurred())
+            Py_RETURN_NOTIMPLEMENTED;
         return NULL;
     }
 
@@ -3449,8 +3447,7 @@ object_reduce_ex(PyObject *self, PyObject *args)
 static PyObject *
 object_subclasshook(PyObject *cls, PyObject *args)
 {
-    Py_INCREF(Py_NotImplemented);
-    return Py_NotImplemented;
+    Py_RETURN_NOTIMPLEMENTED;
 }
 
 PyDoc_STRVAR(object_subclasshook_doc,
@@ -4818,8 +4815,7 @@ FUNCNAME(PyObject *self, PyObject *other) \
         return call_maybe( \
             other, ROPSTR, &rcache_str, "(O)", self); \
     } \
-    Py_INCREF(Py_NotImplemented); \
-    return Py_NotImplemented; \
+    Py_RETURN_NOTIMPLEMENTED; \
 }
 
 #define SLOT1BIN(FUNCNAME, SLOTNAME, OPSTR, ROPSTR) \
@@ -4996,8 +4992,7 @@ slot_nb_power(PyObject *self, PyObject *other, PyObject *modulus)
         return call_method(self, "__pow__", &pow_str,
                            "(OO)", other, modulus);
     }
-    Py_INCREF(Py_NotImplemented);
-    return Py_NotImplemented;
+    Py_RETURN_NOTIMPLEMENTED;
 }
 
 SLOT0(slot_nb_negative, "__neg__")
@@ -5320,8 +5315,7 @@ slot_tp_richcompare(PyObject *self, PyObject *other, int op)
     func = lookup_method(self, name_op[op], &op_str[op]);
     if (func == NULL) {
         PyErr_Clear();
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
+        Py_RETURN_NOTIMPLEMENTED;
     }
     args = PyTuple_Pack(1, other);
     if (args == NULL)
