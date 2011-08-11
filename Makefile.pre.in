@@ -658,7 +658,6 @@ $(srcdir)/Objects/typeslots.inc: $(srcdir)/Include/typeslots.h $(srcdir)/Objects
 # Header files
 
 PYTHON_HEADERS= \
-		Include/Python-ast.h \
 		Include/Python.h \
 		Include/abstract.h \
 		Include/asdl.h \
