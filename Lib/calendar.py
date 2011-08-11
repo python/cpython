@@ -636,7 +636,7 @@ def main(args):
     parser.add_option(
         "-e", "--encoding",
         dest="encoding", default=None,
-        help="Encoding to use for output"
+        help="Encoding to use for output."
     )
     parser.add_option(
         "-t", "--type",
@@ -662,10 +662,11 @@ def main(args):
         if encoding is None:
             encoding = sys.getdefaultencoding()
         optdict = dict(encoding=encoding, css=options.css)
+        write = sys.stdout.buffer.write
         if len(args) == 1:
-            print(cal.formatyearpage(datetime.date.today().year, **optdict))
+            write(cal.formatyearpage(datetime.date.today().year, **optdict))
         elif len(args) == 2:
-            print(cal.formatyearpage(int(args[1]), **optdict))
+            write(cal.formatyearpage(int(args[1]), **optdict))
         else:
             parser.error("incorrect number of arguments")
             sys.exit(1)
@@ -687,9 +688,11 @@ def main(args):
         else:
             parser.error("incorrect number of arguments")
             sys.exit(1)
+        write = sys.stdout.write
         if options.encoding:
             result = result.encode(options.encoding)
-        print(result)
+            write = sys.stdout.buffer.write
+        write(result)
 
 
 if __name__ == "__main__":
