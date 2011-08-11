@@ -516,6 +516,31 @@ the system will attempt to retrieve the value from
 to ``config_dict['handlers']['myhandler']['mykey']['123']`` if that
 fails.
 
+
+.. _logging-import-resolution:
+
+Import resolution and custom importers
+""""""""""""""""""""""""""""""""""""""
+
+Import resolution, by default, uses the builtin :func:`__import__` function
+to do its importing. You may want to replace this with your own importing
+mechanism: if so, you can replace the :attr:`importer` attribute of the
+:class:`DictConfigurator` or its superclass, the
+:class:`BaseConfigurator` class. However, you need to be
+careful because of the way functions are accessed from classes via
+descriptors. If you are using a Python callable to do your imports, and you
+want to define it at class level rather than instance level, you need to wrap
+it with :func:`staticmethod`. For example::
+
+   from importlib import import_module
+   from logging.config import BaseConfigurator
+
+   BaseConfigurator.importer = staticmethod(import_module)
+
+You don't need to wrap with :func:`staticmethod` if you're setting the import
+callable on a configurator *instance*.
+
+
 .. _logging-config-fileformat:
 
 Configuration file format
