@@ -6,6 +6,19 @@ Object Protocol
 ===============
 
 
+.. c:var:: PyObject* Py_NotImplemented
+
+   The ``NotImplemented`` singleton, used to signal that an operation is
+   not implemented for the given type combination.
+
+
+.. c:macro:: Py_RETURN_NOTIMPLEMENTED
+
+   Properly handle returning :c:data:`Py_NotImplemented` from within a C
+   function (that is, increment the reference count of NotImplemented and
+   return it).
+
+
 .. c:function:: int PyObject_Print(PyObject *o, FILE *fp, int flags)
 
    Print an object *o*, on file *fp*.  Returns ``-1`` on error.  The flags argument
