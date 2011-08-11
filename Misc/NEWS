@@ -251,6 +251,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12687: Fix a possible buffering bug when unpickling text mode
+  (protocol 0, mostly) pickles.
+
 - Issue #10087: Fix the html output format of the calendar module.
 
 - Issue #12540: Prevent zombie IDLE processes on Windows due to changes

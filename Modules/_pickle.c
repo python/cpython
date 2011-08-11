@@ -1034,9 +1034,8 @@ _Unpickler_Readline(UnpicklerObject *self, char **result)
         num_read = _Unpickler_ReadFromFile(self, READ_WHOLE_LINE);
         if (num_read < 0)
             return -1;
-        *result = self->input_buffer;
         self->next_read_idx = num_read;
-        return num_read;
+        return _Unpickler_CopyLine(self, self->input_buffer, num_read, result);
     }
  
     /* If we get here, we've run off the end of the input string. Return the

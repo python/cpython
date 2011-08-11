@@ -1438,6 +1438,19 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
     def test_multiple_unpicklings_unseekable(self):
         self._check_multiple_unpicklings(UnseekableIO)
 
+    def test_unpickling_buffering_readline(self):
+        # Issue #12687: the unpickler's buffering logic could fail with
+        # text mode opcodes.
+        data = list(range(10))
+        for proto in protocols:
+            for buf_size in range(1, 11):
+                f = io.BufferedRandom(io.BytesIO(), buffer_size=buf_size)
+                pickler = self.pickler_class(f, protocol=proto)
+                pickler.dump(data)
+                f.seek(0)
+                unpickler = self.unpickler_class(f)
+                self.assertEqual(unpickler.load(), data)
+
 
 if __name__ == "__main__":
     # Print some stuff that can be used to rewrite DATA{0,1,2}
