@@ -1345,6 +1345,8 @@ Tests
 C-API
 -----
 
+- Issue #12724: Add Py_RETURN_NOTIMPLEMENTED macro for returning NotImplemented.
+
 - PY_PATCHLEVEL_REVISION has been removed, since it's meaningless with
   Mercurial.
 
