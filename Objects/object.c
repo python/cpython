@@ -1392,8 +1392,7 @@ notimplemented_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         PyErr_SetString(PyExc_TypeError, "NotImplementedType takes no arguments");
         return NULL;
     }
-    Py_INCREF(Py_NotImplemented);
-    return Py_NotImplemented;
+    Py_RETURN_NOTIMPLEMENTED;
 }
 
 static PyTypeObject PyNotImplemented_Type = {

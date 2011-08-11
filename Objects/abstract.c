@@ -793,8 +793,7 @@ binary_op1(PyObject *v, PyObject *w, const int op_slot)
             return x;
         Py_DECREF(x); /* can't do it */
     }
-    Py_INCREF(Py_NotImplemented);
-    return Py_NotImplemented;
+    Py_RETURN_NOTIMPLEMENTED;
 }
 
 static PyObject *

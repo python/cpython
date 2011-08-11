@@ -208,8 +208,7 @@ meth_richcompare(PyObject *self, PyObject *other, int op)
         !PyCFunction_Check(self) ||
         !PyCFunction_Check(other))
     {
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
+        Py_RETURN_NOTIMPLEMENTED;
     }
     a = (PyCFunctionObject *)self;
     b = (PyCFunctionObject *)other;

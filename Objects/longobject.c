@@ -1382,10 +1382,8 @@ PyLong_AsLongLongAndOverflow(PyObject *vv, int *overflow)
 
 #define CHECK_BINOP(v,w)                                \
     do {                                                \
-        if (!PyLong_Check(v) || !PyLong_Check(w)) {     \
-            Py_INCREF(Py_NotImplemented);               \
-            return Py_NotImplemented;                   \
-        }                                               \
+        if (!PyLong_Check(v) || !PyLong_Check(w))       \
+            Py_RETURN_NOTIMPLEMENTED;                   \
     } while(0)
 
 /* bits_in_digit(d) returns the unique integer k such that 2**(k-1) <= d <
@@ -3611,8 +3609,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     else {
         Py_DECREF(a);
         Py_DECREF(b);
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
+        Py_RETURN_NOTIMPLEMENTED;
     }
 
     if (Py_SIZE(b) < 0) {  /* if exponent is negative */

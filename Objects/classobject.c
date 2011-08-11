@@ -190,8 +190,7 @@ method_richcompare(PyObject *self, PyObject *other, int op)
         !PyMethod_Check(self) ||
         !PyMethod_Check(other))
     {
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
+        Py_RETURN_NOTIMPLEMENTED;
     }
     a = (PyMethodObject *)self;
     b = (PyMethodObject *)other;
@@ -516,8 +515,7 @@ instancemethod_richcompare(PyObject *self, PyObject *other, int op)
         !PyInstanceMethod_Check(self) ||
         !PyInstanceMethod_Check(other))
     {
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
+        Py_RETURN_NOTIMPLEMENTED;
     }
     a = (PyInstanceMethodObject *)self;
     b = (PyInstanceMethodObject *)other;

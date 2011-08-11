@@ -173,10 +173,9 @@ static Py_hash_t pysqlite_row_hash(pysqlite_Row *self)
 
 static PyObject* pysqlite_row_richcompare(pysqlite_Row *self, PyObject *_other, int opid)
 {
-    if (opid != Py_EQ && opid != Py_NE) {
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
-    }
+    if (opid != Py_EQ && opid != Py_NE)
+        Py_RETURN_NOTIMPLEMENTED;
+
     if (PyType_IsSubtype(Py_TYPE(_other), &pysqlite_RowType)) {
         pysqlite_Row *other = (pysqlite_Row *)_other;
         PyObject *res = PyObject_RichCompare(self->description, other->description, opid);
@@ -186,8 +185,7 @@ static PyObject* pysqlite_row_richcompare(pysqlite_Row *self, PyObject *_other, 
             return PyObject_RichCompare(self->data, other->data, opid);
         }
     }
-    Py_INCREF(Py_NotImplemented);
-    return Py_NotImplemented;
+    Py_RETURN_NOTIMPLEMENTED;
 }
 
 PyMappingMethods pysqlite_row_as_mapping = {

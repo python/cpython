@@ -517,8 +517,7 @@ float_richcompare(PyObject *v, PyObject *w, int op)
     return PyBool_FromLong(r);
 
  Unimplemented:
-    Py_INCREF(Py_NotImplemented);
-    return Py_NotImplemented;
+    Py_RETURN_NOTIMPLEMENTED;
 }
 
 static Py_hash_t

@@ -7417,8 +7417,7 @@ PyUnicode_RichCompare(PyObject *left, PyObject *right, int op)
         return v;
     }
 
-    Py_INCREF(Py_NotImplemented);
-    return Py_NotImplemented;
+    Py_RETURN_NOTIMPLEMENTED;
 }
 
 int
@@ -9291,10 +9290,8 @@ static PyMethodDef unicode_methods[] = {
 static PyObject *
 unicode_mod(PyObject *v, PyObject *w)
 {
-    if (!PyUnicode_Check(v)) {
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
-    }
+    if (!PyUnicode_Check(v))
+        Py_RETURN_NOTIMPLEMENTED;
     return PyUnicode_Format(v, w);
 }
 

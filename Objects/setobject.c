@@ -1212,10 +1212,8 @@ set_or(PySetObject *so, PyObject *other)
 {
     PySetObject *result;
 
-    if (!PyAnySet_Check(so) || !PyAnySet_Check(other)) {
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
-    }
+    if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
+        Py_RETURN_NOTIMPLEMENTED;
 
     result = (PySetObject *)set_copy(so);
     if (result == NULL)
@@ -1232,10 +1230,9 @@ set_or(PySetObject *so, PyObject *other)
 static PyObject *
 set_ior(PySetObject *so, PyObject *other)
 {
-    if (!PyAnySet_Check(other)) {
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
-    }
+    if (!PyAnySet_Check(other))
+        Py_RETURN_NOTIMPLEMENTED;
+
     if (set_update_internal(so, other) == -1)
         return NULL;
     Py_INCREF(so);
@@ -1385,10 +1382,8 @@ PyDoc_STRVAR(intersection_update_doc,
 static PyObject *
 set_and(PySetObject *so, PyObject *other)
 {
-    if (!PyAnySet_Check(so) || !PyAnySet_Check(other)) {
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
-    }
+    if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
+        Py_RETURN_NOTIMPLEMENTED;
     return set_intersection(so, other);
 }
 
@@ -1397,10 +1392,8 @@ set_iand(PySetObject *so, PyObject *other)
 {
     PyObject *result;
 
-    if (!PyAnySet_Check(other)) {
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
-    }
+    if (!PyAnySet_Check(other))
+        Py_RETURN_NOTIMPLEMENTED;
     result = set_intersection_update(so, other);
     if (result == NULL)
         return NULL;
@@ -1627,20 +1620,16 @@ PyDoc_STRVAR(difference_doc,
 static PyObject *
 set_sub(PySetObject *so, PyObject *other)
 {
-    if (!PyAnySet_Check(so) || !PyAnySet_Check(other)) {
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
-    }
+    if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
+        Py_RETURN_NOTIMPLEMENTED;
     return set_difference(so, other);
 }
 
 static PyObject *
 set_isub(PySetObject *so, PyObject *other)
 {
-    if (!PyAnySet_Check(other)) {
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
-    }
+    if (!PyAnySet_Check(other))
+        Py_RETURN_NOTIMPLEMENTED;
     if (set_difference_update_internal(so, other) == -1)
         return NULL;
     Py_INCREF(so);
@@ -1738,10 +1727,8 @@ PyDoc_STRVAR(symmetric_difference_doc,
 static PyObject *
 set_xor(PySetObject *so, PyObject *other)
 {
-    if (!PyAnySet_Check(so) || !PyAnySet_Check(other)) {
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
-    }
+    if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
+        Py_RETURN_NOTIMPLEMENTED;
     return set_symmetric_difference(so, other);
 }
 
@@ -1750,10 +1737,8 @@ set_ixor(PySetObject *so, PyObject *other)
 {
     PyObject *result;
 
-    if (!PyAnySet_Check(other)) {
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
-    }
+    if (!PyAnySet_Check(other))
+        Py_RETURN_NOTIMPLEMENTED;
     result = set_symmetric_difference_update(so, other);
     if (result == NULL)
         return NULL;
@@ -1815,10 +1800,9 @@ set_richcompare(PySetObject *v, PyObject *w, int op)
 {
     PyObject *r1, *r2;
 
-    if(!PyAnySet_Check(w)) {
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
-    }
+    if(!PyAnySet_Check(w))
+        Py_RETURN_NOTIMPLEMENTED;
+
     switch (op) {
     case Py_EQ:
         if (PySet_GET_SIZE(v) != PySet_GET_SIZE(w))
@@ -1848,8 +1832,7 @@ set_richcompare(PySetObject *v, PyObject *w, int op)
             Py_RETURN_FALSE;
         return set_issuperset(v, w);
     }
-    Py_INCREF(Py_NotImplemented);
-    return Py_NotImplemented;
+    Py_RETURN_NOTIMPLEMENTED;
 }
 
 static PyObject *
