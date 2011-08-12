@@ -649,7 +649,7 @@ the following methods:
 
    .. note::
 
-      A *character* means a C character (an ASCII code), rather then a Python
+      A *character* means a C character (an ASCII code), rather than a Python
       character (a string of length 1). (This note is true whenever the
       documentation mentions a character.) The built-in :func:`ord` is handy for
       conveying strings to codes.
