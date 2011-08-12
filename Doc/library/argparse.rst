@@ -2,7 +2,7 @@
 ===============================================================================
 
 .. module:: argparse
-   :synopsis: Command-line option and argument-parsing library.
+   :synopsis: Command-line option and argument parsing library.
 .. moduleauthor:: Steven Bethard <steven.bethard@gmail.com>
 .. sectionauthor:: Steven Bethard <steven.bethard@gmail.com>
 
@@ -107,7 +107,7 @@ or the :func:`max` function if it was not.
 Parsing arguments
 ^^^^^^^^^^^^^^^^^
 
-:class:`ArgumentParser` parses args through the
+:class:`ArgumentParser` parses arguments through the
 :meth:`~ArgumentParser.parse_args` method.  This will inspect the command line,
 convert each arg to the appropriate type and then invoke the appropriate action.
 In most cases, this means a simple :class:`Namespace` object will be built up from
@@ -118,7 +118,7 @@ attributes parsed out of the command line::
 
 In a script, :meth:`~ArgumentParser.parse_args` will typically be called with no
 arguments, and the :class:`ArgumentParser` will automatically determine the
-command-line args from :data:`sys.argv`.
+command-line arguments from :data:`sys.argv`.
 
 
 ArgumentParser objects
@@ -650,11 +650,11 @@ be positional::
 action
 ^^^^^^
 
-:class:`ArgumentParser` objects associate command-line args with actions.  These
-actions can do just about anything with the command-line args associated with
+:class:`ArgumentParser` objects associate command-line arguments with actions.  These
+actions can do just about anything with the command-line arguments associated with
 them, though most actions simply add an attribute to the object returned by
 :meth:`~ArgumentParser.parse_args`.  The ``action`` keyword argument specifies
-how the command-line args should be handled. The supported actions are:
+how the command-line arguments should be handled. The supported actions are:
 
 * ``'store'`` - This just stores the argument's value.  This is the default
   action. For example::
@@ -726,8 +726,8 @@ the Action API.  The easiest way to do this is to extend
   :meth:`~ArgumentParser.parse_args`.  Most actions add an attribute to this
   object.
 
-* ``values`` - The associated command-line args, with any type-conversions
-  applied.  (Type-conversions are specified with the type_ keyword argument to
+* ``values`` - The associated command-line arguments, with any type conversions
+  applied.  (Type conversions are specified with the type_ keyword argument to
   :meth:`~ArgumentParser.add_argument`.
 
 * ``option_string`` - The option string that was used to invoke this action.
@@ -759,7 +759,7 @@ single action to be taken.  The ``nargs`` keyword argument associates a
 different number of command-line arguments with a single action.  The supported
 values are:
 
-* N (an integer).  N args from the command line will be gathered together into a
+* N (an integer).  N arguments from the command line will be gathered together into a
   list.  For example::
 
      >>> parser = argparse.ArgumentParser()
@@ -803,7 +803,7 @@ values are:
      Namespace(infile=<_io.TextIOWrapper name='<stdin>' encoding='UTF-8'>,
                outfile=<_io.TextIOWrapper name='<stdout>' encoding='UTF-8'>)
 
-* ``'*'``.  All command-line args present are gathered into a list.  Note that
+* ``'*'``.  All command-line arguments present are gathered into a list.  Note that
   it generally doesn't make much sense to have more than one positional argument
   with ``nargs='*'``, but multiple optional arguments with ``nargs='*'`` is
   possible.  For example::
@@ -827,7 +827,7 @@ values are:
      usage: PROG [-h] foo [foo ...]
      PROG: error: too few arguments
 
-If the ``nargs`` keyword argument is not provided, the number of args consumed
+If the ``nargs`` keyword argument is not provided, the number of arguments consumed
 is determined by the action_.  Generally this means a single command-line arg
 will be consumed and a single item (not a list) will be produced.
 
@@ -845,7 +845,7 @@ the various :class:`ArgumentParser` actions.  The two most common uses of it are
 
 * When :meth:`~ArgumentParser.add_argument` is called with option strings
   (like ``-f`` or ``--foo``) and ``nargs='?'``.  This creates an optional
-  argument that can be followed by zero or one command-line args.
+  argument that can be followed by zero or one command-line arguments.
   When parsing the command line, if the option string is encountered with no
   command-line arg following it, the value of ``const`` will be assumed instead.
   See the nargs_ description for examples.
@@ -895,11 +895,11 @@ command-line argument was not present.::
 type
 ^^^^
 
-By default, :class:`ArgumentParser` objects read command-line args in as simple
+By default, :class:`ArgumentParser` objects read command-line arguments in as simple
 strings. However, quite often the command-line string should instead be
 interpreted as another type, like a :class:`float` or :class:`int`.  The
 ``type`` keyword argument of :meth:`~ArgumentParser.add_argument` allows any
-necessary type-checking and type-conversions to be performed.  Common built-in
+necessary type-checking and type conversions to be performed.  Common built-in
 types and functions can be used directly as the value of the ``type`` argument::
 
    >>> parser = argparse.ArgumentParser()
@@ -919,7 +919,7 @@ writable file::
    Namespace(bar=<_io.TextIOWrapper name='out.txt' encoding='UTF-8'>)
 
 ``type=`` can take any callable that takes a single string argument and returns
-the type-converted value::
+the converted value::
 
    >>> def perfect_square(string):
    ...     value = int(string)
@@ -954,7 +954,7 @@ See the choices_ section for more details.
 choices
 ^^^^^^^
 
-Some command-line args should be selected from a restricted set of values.
+Some command-line arguments should be selected from a restricted set of values.
 These can be handled by passing a container object as the ``choices`` keyword
 argument to :meth:`~ArgumentParser.add_argument`.  When the command line is
 parsed, arg values will be checked, and an error message will be displayed if
@@ -1312,7 +1312,7 @@ An error is produced for arguments that could produce more than one options.
 Beyond ``sys.argv``
 ^^^^^^^^^^^^^^^^^^^
 
-Sometimes it may be useful to have an ArgumentParser parse args other than those
+Sometimes it may be useful to have an ArgumentParser parse arguments other than those
 of :data:`sys.argv`.  This can be accomplished by passing a list of strings to
 :meth:`~ArgumentParser.parse_args`.  This is useful for testing at the
 interactive prompt::
@@ -1540,7 +1540,7 @@ FileType objects
 
    The :class:`FileType` factory creates objects that can be passed to the type
    argument of :meth:`ArgumentParser.add_argument`.  Arguments that have
-   :class:`FileType` objects as their type will open command-line args as files
+   :class:`FileType` objects as their type will open command-line arguments as files
    with the requested modes and buffer sizes:
 
    >>> parser = argparse.ArgumentParser()
@@ -1654,7 +1654,7 @@ Parser defaults
 .. method:: ArgumentParser.set_defaults(**kwargs)
 
    Most of the time, the attributes of the object returned by :meth:`parse_args`
-   will be fully determined by inspecting the command-line args and the argument
+   will be fully determined by inspecting the command-line arguments and the argument
    actions.  :meth:`set_defaults` allows some additional
    attributes that are determined without any inspection of the command line to
    be added::
