@@ -23,7 +23,7 @@ built-in function :func:`open`, but accepts Universal Resource Locators (URLs)
 instead of filenames.  Some restrictions apply --- it can only open URLs for
 reading, and no seek operations are available.
 
-.. warning:: When opening HTTPS URLs, it is not attempted to validate the
+.. warning:: When opening HTTPS URLs, it does not attempt to validate the
    server certificate.  Use at your own risk!
 
 
