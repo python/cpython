@@ -1330,8 +1330,8 @@ smelly: all
 
 # Find files with funny names
 funny:
-	find $(DISTDIRS) \
-		-o -type d \
+	find $(SUBDIRS) $(SUBDIRSTOO) \
+		-type d \
 		-o -name '*.[chs]' \
 		-o -name '*.py' \
 		-o -name '*.pyw' \
@@ -1359,7 +1359,7 @@ funny:
 		-o -name .hgignore \
 		-o -name .bzrignore \
 		-o -name MANIFEST \
-		-o -print
+		-print
 
 # Perform some verification checks on any modified files.
 patchcheck:
