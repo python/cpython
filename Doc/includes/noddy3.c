@@ -24,18 +24,16 @@ Noddy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self = (Noddy *)type->tp_alloc(type, 0);
     if (self != NULL) {
         self->first = PyUnicode_FromString("");
-        if (self->first == NULL)
-          {
+        if (self->first == NULL) {
             Py_DECREF(self);
             return NULL;
-          }
-        
+        }
+
         self->last = PyUnicode_FromString("");
-        if (self->last == NULL)
-          {
+        if (self->last == NULL) {
             Py_DECREF(self);
             return NULL;
-          }
+        }
 
         self->number = 0;
     }
@@ -50,10 +48,10 @@ Noddy_init(Noddy *self, PyObject *args, PyObject *kwds)
 
     static char *kwlist[] = {"first", "last", "number", NULL};
 
-    if (! PyArg_ParseTupleAndKeywords(args, kwds, "|SSi", kwlist, 
-                                      &first, &last, 
+    if (! PyArg_ParseTupleAndKeywords(args, kwds, "|SSi", kwlist,
+                                      &first, &last,
                                       &self->number))
-        return -1; 
+        return -1;
 
     if (first) {
         tmp = self->first;
@@ -88,22 +86,22 @@ Noddy_getfirst(Noddy *self, void *closure)
 static int
 Noddy_setfirst(Noddy *self, PyObject *value, void *closure)
 {
-  if (value == NULL) {
-    PyErr_SetString(PyExc_TypeError, "Cannot delete the first attribute");
-    return -1;
-  }
-  
-  if (! PyUnicode_Check(value)) {
-    PyErr_SetString(PyExc_TypeError, 
-                    "The first attribute value must be a string");
-    return -1;
-  }
-      
-  Py_DECREF(self->first);
-  Py_INCREF(value);
-  self->first = value;    
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError, "Cannot delete the first attribute");
+        return -1;
+    }
 
-  return 0;
+    if (! PyUnicode_Check(value)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "The first attribute value must be a string");
+        return -1;
+    }
+
+    Py_DECREF(self->first);
+    Py_INCREF(value);
+    self->first = value;
+
+    return 0;
 }
 
 static PyObject *
@@ -116,30 +114,30 @@ Noddy_getlast(Noddy *self, void *closure)
 static int
 Noddy_setlast(Noddy *self, PyObject *value, void *closure)
 {
-  if (value == NULL) {
-    PyErr_SetString(PyExc_TypeError, "Cannot delete the last attribute");
-    return -1;
-  }
-  
-  if (! PyUnicode_Check(value)) {
-    PyErr_SetString(PyExc_TypeError, 
-                    "The last attribute value must be a string");
-    return -1;
-  }
-      
-  Py_DECREF(self->last);
-  Py_INCREF(value);
-  self->last = value;    
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError, "Cannot delete the last attribute");
+        return -1;
+    }
 
-  return 0;
+    if (! PyUnicode_Check(value)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "The last attribute value must be a string");
+        return -1;
+    }
+
+    Py_DECREF(self->last);
+    Py_INCREF(value);
+    self->last = value;
+
+    return 0;
 }
 
 static PyGetSetDef Noddy_getseters[] = {
-    {"first", 
+    {"first",
      (getter)Noddy_getfirst, (setter)Noddy_setfirst,
      "first name",
      NULL},
-    {"last", 
+    {"last",
      (getter)Noddy_getlast, (setter)Noddy_setlast,
      "last name",
      NULL},
@@ -164,7 +162,7 @@ Noddy_name(Noddy* self)
 
     result = PyUnicode_Format(format, args);
     Py_DECREF(args);
-    
+
     return result;
 }
 
@@ -198,12 +196,12 @@ static PyTypeObject NoddyType = {
     Py_TPFLAGS_DEFAULT |
         Py_TPFLAGS_BASETYPE,   /* tp_flags */
     "Noddy objects",           /* tp_doc */
-    0,		               /* tp_traverse */
-    0,		               /* tp_clear */
-    0,		               /* tp_richcompare */
-    0,		               /* tp_weaklistoffset */
-    0,		               /* tp_iter */
-    0,		               /* tp_iternext */
+    0,                         /* tp_traverse */
+    0,                         /* tp_clear */
+    0,                         /* tp_richcompare */
+    0,                         /* tp_weaklistoffset */
+    0,                         /* tp_iter */
+    0,                         /* tp_iternext */
     Noddy_methods,             /* tp_methods */
     Noddy_members,             /* tp_members */
     Noddy_getseters,           /* tp_getset */
@@ -226,7 +224,7 @@ static PyModuleDef noddy3module = {
 };
 
 PyMODINIT_FUNC
-PyInit_noddy3(void) 
+PyInit_noddy3(void)
 {
     PyObject* m;
 

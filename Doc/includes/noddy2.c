@@ -24,18 +24,16 @@ Noddy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self = (Noddy *)type->tp_alloc(type, 0);
     if (self != NULL) {
         self->first = PyUnicode_FromString("");
-        if (self->first == NULL)
-          {
+        if (self->first == NULL) {
             Py_DECREF(self);
             return NULL;
-          }
-        
+        }
+
         self->last = PyUnicode_FromString("");
-        if (self->last == NULL)
-          {
+        if (self->last == NULL) {
             Py_DECREF(self);
             return NULL;
-          }
+        }
 
         self->number = 0;
     }
@@ -50,10 +48,10 @@ Noddy_init(Noddy *self, PyObject *args, PyObject *kwds)
 
     static char *kwlist[] = {"first", "last", "number", NULL};
 
-    if (! PyArg_ParseTupleAndKeywords(args, kwds, "|OOi", kwlist, 
-                                      &first, &last, 
+    if (! PyArg_ParseTupleAndKeywords(args, kwds, "|OOi", kwlist,
+                                      &first, &last,
                                       &self->number))
-        return -1; 
+        return -1;
 
     if (first) {
         tmp = self->first;
@@ -111,7 +109,7 @@ Noddy_name(Noddy* self)
 
     result = PyUnicode_Format(format, args);
     Py_DECREF(args);
-    
+
     return result;
 }
 
@@ -145,12 +143,12 @@ static PyTypeObject NoddyType = {
     Py_TPFLAGS_DEFAULT |
         Py_TPFLAGS_BASETYPE,   /* tp_flags */
     "Noddy objects",           /* tp_doc */
-    0,		               /* tp_traverse */
-    0,		               /* tp_clear */
-    0,		               /* tp_richcompare */
-    0,		               /* tp_weaklistoffset */
-    0,		               /* tp_iter */
-    0,		               /* tp_iternext */
+    0,                         /* tp_traverse */
+    0,                         /* tp_clear */
+    0,                         /* tp_richcompare */
+    0,                         /* tp_weaklistoffset */
+    0,                         /* tp_iter */
+    0,                         /* tp_iternext */
     Noddy_methods,             /* tp_methods */
     Noddy_members,             /* tp_members */
     0,                         /* tp_getset */
@@ -173,7 +171,7 @@ static PyModuleDef noddy2module = {
 };
 
 PyMODINIT_FUNC
-PyInit_noddy2(void) 
+PyInit_noddy2(void)
 {
     PyObject* m;
 
