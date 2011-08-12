@@ -199,7 +199,7 @@ Sequence Protocol
 
    Return the *i*\ th element of *o* or *NULL* on failure. Macro form of
    :cfunc:`PySequence_GetItem` but without checking that
-   :cfunc:`PySequence_Check(o)` is true and without adjustment for negative
+   :cfunc:`PySequence_Check` on *o* is true and without adjustment for negative
    indices.
 
    .. versionadded:: 2.3
