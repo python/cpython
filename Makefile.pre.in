@@ -1283,7 +1283,7 @@ smelly: all
 
 # Find files with funny names
 funny:
-	find $(DISTDIRS) \
+	find $(SUBDIRS) $(SUBDIRSTOO) \
 		-name .svn -prune \
 		-o -type d \
 		-o -name '*.[chs]' \
@@ -1313,7 +1313,7 @@ funny:
 		-o -name .hgignore \
 		-o -name .bzrignore \
 		-o -name MANIFEST \
-		-o -print
+		-print
 
 # Perform some verification checks on any modified files.
 patchcheck:
