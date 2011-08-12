@@ -157,8 +157,9 @@ def main():
     reported_news(special_files)
 
     # Test suite run and passed.
-    print()
-    print("Did you run the test suite?")
+    if python_files or c_files:
+        print()
+        print("Did you run the test suite?")
 
 
 if __name__ == '__main__':
