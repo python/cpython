@@ -4,7 +4,7 @@
 .. module:: email.policy
    :synopsis: Controlling the parsing and generating of messages
 
-.. versionadded: 3.3
+.. versionadded:: 3.3
 
 
 The :mod:`email` package's prime focus is the handling of email messages as
