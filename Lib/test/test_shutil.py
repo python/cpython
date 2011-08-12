@@ -59,6 +59,31 @@ def mock_rename(func):
             os.rename = builtin_rename
     return wrap
 
+def write_file(path, content, binary=False):
+    """Write *content* to a file located at *path*.
+
+    If *path* is a tuple instead of a string, os.path.join will be used to
+    make a path.  If *binary* is true, the file will be opened in binary
+    mode.
+    """
+    if isinstance(path, tuple):
+        path = os.path.join(*path)
+    with open(path, 'wb' if binary else 'w') as fp:
+        fp.write(content)
+
+def read_file(path, binary=False):
+    """Return contents from a file located at *path*.
+
+    If *path* is a tuple instead of a string, os.path.join will be used to
+    make a path.  If *binary* is true, the file will be opened in binary
+    mode.
+    """
+    if isinstance(path, tuple):
+        path = os.path.join(*path)
+    with open(path, 'rb' if binary else 'r') as fp:
+        return fp.read()
+
+
 class TestShutil(unittest.TestCase):
 
     def setUp(self):
@@ -71,19 +96,6 @@ class TestShutil(unittest.TestCase):
             d = self.tempdirs.pop()
             shutil.rmtree(d, os.name in ('nt', 'cygwin'))
 
-    def write_file(self, path, content='xxx'):
-        """Writes a file in the given path.
-
-
-        path can be a string or a sequence.
-        """
-        if isinstance(path, (list, tuple)):
-            path = os.path.join(*path)
-        f = open(path, 'w')
-        try:
-            f.write(content)
-        finally:
-            f.close()
 
     def mkdtemp(self):
         """Create a temporary directory that will be cleaned up.
@@ -159,77 +171,42 @@ class TestShutil(unittest.TestCase):
         self.assertRaises(OSError, shutil.rmtree, path)
         os.remove(path)
 
-    def _write_data(self, path, data):
-        f = open(path, "w")
-        f.write(data)
-        f.close()
-
     def test_copytree_simple(self):
-
-        def read_data(path):
-            f = open(path)
-            data = f.read()
-            f.close()
-            return data
-
         src_dir = tempfile.mkdtemp()
         dst_dir = os.path.join(tempfile.mkdtemp(), 'destination')
-        self._write_data(os.path.join(src_dir, 'test.txt'), '123')
+        self.addCleanup(shutil.rmtree, src_dir)
+        self.addCleanup(shutil.rmtree, os.path.dirname(dst_dir))
+        write_file((src_dir, 'test.txt'), '123')
         os.mkdir(os.path.join(src_dir, 'test_dir'))
-        self._write_data(os.path.join(src_dir, 'test_dir', 'test.txt'), '456')
+        write_file((src_dir, 'test_dir', 'test.txt'), '456')
 
-        try:
-            shutil.copytree(src_dir, dst_dir)
-            self.assertTrue(os.path.isfile(os.path.join(dst_dir, 'test.txt')))
-            self.assertTrue(os.path.isdir(os.path.join(dst_dir, 'test_dir')))
-            self.assertTrue(os.path.isfile(os.path.join(dst_dir, 'test_dir',
-                                                        'test.txt')))
-            actual = read_data(os.path.join(dst_dir, 'test.txt'))
-            self.assertEqual(actual, '123')
-            actual = read_data(os.path.join(dst_dir, 'test_dir', 'test.txt'))
-            self.assertEqual(actual, '456')
-        finally:
-            for path in (
-                    os.path.join(src_dir, 'test.txt'),
-                    os.path.join(dst_dir, 'test.txt'),
-                    os.path.join(src_dir, 'test_dir', 'test.txt'),
-                    os.path.join(dst_dir, 'test_dir', 'test.txt'),
-                ):
-                if os.path.exists(path):
-                    os.remove(path)
-            for path in (src_dir,
-                    os.path.dirname(dst_dir)
-                ):
-                if os.path.exists(path):
-                    shutil.rmtree(path)
+        shutil.copytree(src_dir, dst_dir)
+        self.assertTrue(os.path.isfile(os.path.join(dst_dir, 'test.txt')))
+        self.assertTrue(os.path.isdir(os.path.join(dst_dir, 'test_dir')))
+        self.assertTrue(os.path.isfile(os.path.join(dst_dir, 'test_dir',
+                                                    'test.txt')))
+        actual = read_file((dst_dir, 'test.txt'))
+        self.assertEqual(actual, '123')
+        actual = read_file((dst_dir, 'test_dir', 'test.txt'))
+        self.assertEqual(actual, '456')
 
     def test_copytree_with_exclude(self):
-
-        def read_data(path):
-            f = open(path)
-            data = f.read()
-            f.close()
-            return data
-
         # creating data
         join = os.path.join
         exists = os.path.exists
         src_dir = tempfile.mkdtemp()
         try:
             dst_dir = join(tempfile.mkdtemp(), 'destination')
-            self._write_data(join(src_dir, 'test.txt'), '123')
-            self._write_data(join(src_dir, 'test.tmp'), '123')
+            write_file((src_dir, 'test.txt'), '123')
+            write_file((src_dir, 'test.tmp'), '123')
             os.mkdir(join(src_dir, 'test_dir'))
-            self._write_data(join(src_dir, 'test_dir', 'test.txt'), '456')
+            write_file((src_dir, 'test_dir', 'test.txt'), '456')
             os.mkdir(join(src_dir, 'test_dir2'))
-            self._write_data(join(src_dir, 'test_dir2', 'test.txt'), '456')
+            write_file((src_dir, 'test_dir2', 'test.txt'), '456')
             os.mkdir(join(src_dir, 'test_dir2', 'subdir'))
             os.mkdir(join(src_dir, 'test_dir2', 'subdir2'))
-            self._write_data(join(src_dir, 'test_dir2', 'subdir', 'test.txt'),
-                             '456')
-            self._write_data(join(src_dir, 'test_dir2', 'subdir2', 'test.py'),
-                             '456')
-
+            write_file((src_dir, 'test_dir2', 'subdir', 'test.txt'), '456')
+            write_file((src_dir, 'test_dir2', 'subdir2', 'test.py'), '456')
 
             # testing glob-like patterns
             try:
@@ -237,21 +214,19 @@ class TestShutil(unittest.TestCase):
                 shutil.copytree(src_dir, dst_dir, ignore=patterns)
                 # checking the result: some elements should not be copied
                 self.assertTrue(exists(join(dst_dir, 'test.txt')))
-                self.assertTrue(not exists(join(dst_dir, 'test.tmp')))
-                self.assertTrue(not exists(join(dst_dir, 'test_dir2')))
+                self.assertFalse(exists(join(dst_dir, 'test.tmp')))
+                self.assertFalse(exists(join(dst_dir, 'test_dir2')))
             finally:
-                if os.path.exists(dst_dir):
-                    shutil.rmtree(dst_dir)
+                shutil.rmtree(dst_dir)
             try:
                 patterns = shutil.ignore_patterns('*.tmp', 'subdir*')
                 shutil.copytree(src_dir, dst_dir, ignore=patterns)
                 # checking the result: some elements should not be copied
-                self.assertTrue(not exists(join(dst_dir, 'test.tmp')))
-                self.assertTrue(not exists(join(dst_dir, 'test_dir2', 'subdir2')))
-                self.assertTrue(not exists(join(dst_dir, 'test_dir2', 'subdir')))
+                self.assertFalse(exists(join(dst_dir, 'test.tmp')))
+                self.assertFalse(exists(join(dst_dir, 'test_dir2', 'subdir2')))
+                self.assertFalse(exists(join(dst_dir, 'test_dir2', 'subdir')))
             finally:
-                if os.path.exists(dst_dir):
-                    shutil.rmtree(dst_dir)
+                shutil.rmtree(dst_dir)
 
             # testing callable-style
             try:
@@ -270,13 +245,12 @@ class TestShutil(unittest.TestCase):
                 shutil.copytree(src_dir, dst_dir, ignore=_filter)
 
                 # checking the result: some elements should not be copied
-                self.assertTrue(not exists(join(dst_dir, 'test_dir2', 'subdir2',
-                                        'test.py')))
-                self.assertTrue(not exists(join(dst_dir, 'test_dir2', 'subdir')))
+                self.assertFalse(exists(join(dst_dir, 'test_dir2', 'subdir2',
+                                             'test.py')))
+                self.assertFalse(exists(join(dst_dir, 'test_dir2', 'subdir')))
 
             finally:
-                if os.path.exists(dst_dir):
-                    shutil.rmtree(dst_dir)
+                shutil.rmtree(dst_dir)
         finally:
             shutil.rmtree(src_dir)
             shutil.rmtree(os.path.dirname(dst_dir))
@@ -371,9 +345,9 @@ class TestShutil(unittest.TestCase):
 
         src_dir = self.mkdtemp()
         dst_dir = os.path.join(self.mkdtemp(), 'destination')
-        self._write_data(os.path.join(src_dir, 'test.txt'), '123')
+        write_file((src_dir, 'test.txt'), '123')
         os.mkdir(os.path.join(src_dir, 'test_dir'))
-        self._write_data(os.path.join(src_dir, 'test_dir', 'test.txt'), '456')
+        write_file((src_dir, 'test_dir', 'test.txt'), '456')
 
         copied = []
         def _copy(src, dst):
@@ -390,7 +364,7 @@ class TestShutil(unittest.TestCase):
         dst_dir = os.path.join(self.mkdtemp(), 'destination')
         os.symlink('IDONTEXIST', os.path.join(src_dir, 'test.txt'))
         os.mkdir(os.path.join(src_dir, 'test_dir'))
-        self._write_data(os.path.join(src_dir, 'test_dir', 'test.txt'), '456')
+        write_file((src_dir, 'test_dir', 'test.txt'), '456')
         self.assertRaises(Error, shutil.copytree, src_dir, dst_dir)
 
         # a dangling symlink is ignored with the proper flag
@@ -406,7 +380,7 @@ class TestShutil(unittest.TestCase):
     def _copy_file(self, method):
         fname = 'test.txt'
         tmpdir = self.mkdtemp()
-        self.write_file([tmpdir, fname])
+        write_file((tmpdir, fname), 'xxx')
         file1 = os.path.join(tmpdir, fname)
         tmpdir2 = self.mkdtemp()
         method(file1, tmpdir2)
@@ -442,10 +416,10 @@ class TestShutil(unittest.TestCase):
     def test_make_tarball(self):
         # creating something to tar
         tmpdir = self.mkdtemp()
-        self.write_file([tmpdir, 'file1'], 'xxx')
-        self.write_file([tmpdir, 'file2'], 'xxx')
+        write_file((tmpdir, 'file1'), 'xxx')
+        write_file((tmpdir, 'file2'), 'xxx')
         os.mkdir(os.path.join(tmpdir, 'sub'))
-        self.write_file([tmpdir, 'sub', 'file3'], 'xxx')
+        write_file((tmpdir, 'sub', 'file3'), 'xxx')
 
         tmpdir2 = self.mkdtemp()
         # force shutil to create the directory
@@ -492,10 +466,10 @@ class TestShutil(unittest.TestCase):
         tmpdir = self.mkdtemp()
         dist = os.path.join(tmpdir, 'dist')
         os.mkdir(dist)
-        self.write_file([dist, 'file1'], 'xxx')
-        self.write_file([dist, 'file2'], 'xxx')
+        write_file((dist, 'file1'), 'xxx')
+        write_file((dist, 'file2'), 'xxx')
         os.mkdir(os.path.join(dist, 'sub'))
-        self.write_file([dist, 'sub', 'file3'], 'xxx')
+        write_file((dist, 'sub', 'file3'), 'xxx')
         os.mkdir(os.path.join(dist, 'sub2'))
         tmpdir2 = self.mkdtemp()
         base_name = os.path.join(tmpdir2, 'archive')
@@ -561,8 +535,8 @@ class TestShutil(unittest.TestCase):
     def test_make_zipfile(self):
         # creating something to tar
         tmpdir = self.mkdtemp()
-        self.write_file([tmpdir, 'file1'], 'xxx')
-        self.write_file([tmpdir, 'file2'], 'xxx')
+        write_file((tmpdir, 'file1'), 'xxx')
+        write_file((tmpdir, 'file2'), 'xxx')
 
         tmpdir2 = self.mkdtemp()
         # force shutil to create the directory
@@ -969,8 +943,7 @@ class TestCopyFile(unittest.TestCase):
             shutil.move(self.src_dir, dst_dir)
             self.assertTrue(os.path.isdir(dst_dir))
         finally:
-            if os.path.exists(dst_dir):
-                os.rmdir(dst_dir)
+            os.rmdir(dst_dir)
 
 
 
