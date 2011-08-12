@@ -289,18 +289,16 @@ strings, so we provide a new method::
        self = (Noddy *)type->tp_alloc(type, 0);
        if (self != NULL) {
            self->first = PyString_FromString("");
-           if (self->first == NULL)
-             {
+           if (self->first == NULL) {
                Py_DECREF(self);
                return NULL;
-             }
+           }
 
            self->last = PyString_FromString("");
-           if (self->last == NULL)
-             {
+           if (self->last == NULL) {
                Py_DECREF(self);
                return NULL;
-             }
+           }
 
            self->number = 0;
        }
