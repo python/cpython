@@ -886,9 +886,7 @@ PyZlib_unflush(compobject *self, PyObject *args)
         Py_END_ALLOW_THREADS
     }
 
-    /* If flushmode is Z_FINISH, we also have to call deflateEnd() to free
-       various data structures. Note we should only get Z_STREAM_END when
-       flushmode is Z_FINISH */
+    /* If at end of stream, clean up any memory allocated by zlib. */
     if (err == Z_STREAM_END) {
         self->eof = 1;
         self->is_initialised = 0;
