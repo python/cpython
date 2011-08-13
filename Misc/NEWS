@@ -254,6 +254,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12744: Fix inefficient representation of integers between 2**31 and
+  2**63 on systems with a 64-bit C "long".
+
 - Issue #12646: Add an 'eof' attribute to zlib.Decompress, to make it easier to
   detect truncated input streams.
 

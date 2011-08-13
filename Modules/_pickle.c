@@ -1540,7 +1540,7 @@ save_long(PicklerObject *self, PyObject *obj)
         /* out of range for int pickling */
         PyErr_Clear();
     }
-    else
+    else if (val <= 0x7fffffffL && val >= -0x80000000L)
         return save_int(self, val);
 
     if (self->proto >= 2) {
