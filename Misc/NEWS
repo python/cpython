@@ -254,6 +254,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12646: Add an 'eof' attribute to zlib.Decompress, to make it easier to
+  detect truncated input streams.
+
 - Issue #11513: Fix exception handling ``tarfile.TarFile.gzopen()`` when
   the file cannot be opened.
 
