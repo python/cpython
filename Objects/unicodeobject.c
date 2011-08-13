@@ -7972,14 +7972,30 @@ unicode_isnumeric(PyUnicodeObject *self)
     return PyBool_FromLong(1);
 }
 
+static Py_UCS4
+decode_ucs4(const Py_UNICODE *s, Py_ssize_t *i, Py_ssize_t size)
+{
+    Py_UCS4 ch;
+    assert(*i < size);
+    ch = s[(*i)++];
+#ifndef Py_UNICODE_WIDE
+    if ((ch & 0xfffffc00) == 0xd800 &&
+        *i < size
+        && (s[*i] & 0xFFFFFC00) == 0xDC00)
+        ch = ((Py_UCS4)ch << 10UL) + (Py_UCS4)(s[(*i)++]) - 0x35fdc00;
+#endif
+    return ch;
+}
+
 int
 PyUnicode_IsIdentifier(PyObject *self)
 {
-    register const Py_UNICODE *p = PyUnicode_AS_UNICODE((PyUnicodeObject*)self);
-    register const Py_UNICODE *e;
+    Py_ssize_t i = 0, size = PyUnicode_GET_SIZE(self);
+    Py_UCS4 first;
+    const Py_UNICODE *p = PyUnicode_AS_UNICODE((PyUnicodeObject*)self);
 
     /* Special case for empty strings */
-    if (PyUnicode_GET_SIZE(self) == 0)
+    if (!size)
         return 0;
 
     /* PEP 3131 says that the first character must be in
@@ -7990,14 +8006,13 @@ PyUnicode_IsIdentifier(PyObject *self)
        definition of XID_Start and XID_Continue, it is sufficient
        to check just for these, except that _ must be allowed
        as starting an identifier.  */
-    if (!_PyUnicode_IsXidStart(*p) && *p != 0x5F /* LOW LINE */)
+    first = decode_ucs4(p, &i, size);
+    if (!_PyUnicode_IsXidStart(first) && first != 0x5F /* LOW LINE */)
         return 0;
 
-    e = p + PyUnicode_GET_SIZE(self);
-    for (p++; p < e; p++) {
-        if (!_PyUnicode_IsXidContinue(*p))
+    while (i < size)
+        if (!_PyUnicode_IsXidContinue(decode_ucs4(p, &i, size)))
             return 0;
-    }
     return 1;
 }
 
