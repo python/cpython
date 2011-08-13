@@ -152,7 +152,7 @@ Compression objects support the following methods:
    compress a set of data that share a common initial prefix.
 
 
-Decompression objects support the following methods, and two attributes:
+Decompression objects support the following methods and attributes:
 
 
 .. attribute:: Decompress.unused_data
@@ -162,13 +162,6 @@ Decompression objects support the following methods, and two attributes:
    available.  If the whole bytestring turned out to contain compressed data, this is
    ``b""``, an empty bytes object.
 
-   The only way to determine where a bytestring of compressed data ends is by actually
-   decompressing it.  This means that when compressed data is contained part of a
-   larger file, you can only find the end of it by reading data and feeding it
-   followed by some non-empty bytestring into a decompression object's
-   :meth:`decompress` method until the :attr:`unused_data` attribute is no longer
-   empty.
-
 
 .. attribute:: Decompress.unconsumed_tail
 
@@ -177,6 +170,17 @@ Decompression objects support the following methods, and two attributes:
    buffer.  This data has not yet been seen by the zlib machinery, so you must feed
    it (possibly with further data concatenated to it) back to a subsequent
    :meth:`decompress` method call in order to get correct output.
+
+
+.. attribute:: Decompress.eof
+
+   A boolean indicating whether the end of the compressed data stream has been
+   reached.
+
+   This makes it possible to distinguish between a properly-formed compressed
+   stream, and an incomplete or truncated one.
+
+   .. versionadded:: 3.3
 
 
 .. method:: Decompress.decompress(data[, max_length])

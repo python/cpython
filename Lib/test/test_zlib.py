@@ -447,6 +447,26 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         y += dco.flush()
         self.assertEqual(y, b'foo')
 
+    def test_decompress_eof(self):
+        x = b'x\x9cK\xcb\xcf\x07\x00\x02\x82\x01E'  # 'foo'
+        dco = zlib.decompressobj()
+        self.assertFalse(dco.eof)
+        dco.decompress(x[:-5])
+        self.assertFalse(dco.eof)
+        dco.decompress(x[-5:])
+        self.assertTrue(dco.eof)
+        dco.flush()
+        self.assertTrue(dco.eof)
+
+    def test_decompress_eof_incomplete_stream(self):
+        x = b'x\x9cK\xcb\xcf\x07\x00\x02\x82\x01E'  # 'foo'
+        dco = zlib.decompressobj()
+        self.assertFalse(dco.eof)
+        dco.decompress(x[:-5])
+        self.assertFalse(dco.eof)
+        dco.flush()
+        self.assertFalse(dco.eof)
+
     if hasattr(zlib.compressobj(), "copy"):
         def test_compresscopy(self):
             # Test copying a compression object
