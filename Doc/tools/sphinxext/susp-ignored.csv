@@ -217,10 +217,10 @@ library/urllib.request,,:lang,"xmlns=""http://www.w3.org/1999/xhtml"" xml:lang="
 library/xmlrpc.client,103,:pass,http://user:pass@host:port/path
 library/xmlrpc.client,103,:port,http://user:pass@host:port/path
 library/xmlrpc.client,103,:pass,user:pass
-license,717,`,* THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
-license,717,`,* THIS SOFTWARE IS PROVIDED BY ERIC YOUNG ``AS IS'' AND
-license,879,`,"``Software''), to deal in the Software without restriction, including"
-license,879,`,"THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND,"
+license,,`,* THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
+license,,`,* THIS SOFTWARE IS PROVIDED BY ERIC YOUNG ``AS IS'' AND
+license,,`,"``Software''), to deal in the Software without restriction, including"
+license,,`,"THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND,"
 reference/lexical_analysis,704,`,$       ?       `
 whatsnew/2.7,735,:Sunday,'2009:4:Sunday'
 whatsnew/2.7,862,::,"export PYTHONWARNINGS=all,error:::Cookie:0"
