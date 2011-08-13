@@ -1,4 +1,5 @@
 import unittest
+import sys
 from test import support
 
 class PEP3131Test(unittest.TestCase):
@@ -8,12 +9,20 @@ class PEP3131Test(unittest.TestCase):
             ä = 1
             µ = 2 # this is a compatibility character
             蟒 = 3
-            𝔘𝔫𝔦𝔠𝔬𝔡𝔢  = 4
+            x󠄀 = 4
         self.assertEqual(getattr(T, "\xe4"), 1)
         self.assertEqual(getattr(T, "\u03bc"), 2)
         self.assertEqual(getattr(T, '\u87d2'), 3)
-        v = getattr(T, "\U0001d518\U0001d52b\U0001d526\U0001d520\U0001d52c\U0001d521\U0001d522")
-        self.assertEqual(v, 4)
+        self.assertEqual(getattr(T, 'x\U000E0100'), 4)
+
+    def test_non_bmp_normalized(self):
+        𝔘𝔫𝔦𝔠𝔬𝔡𝔢 = 1
+        # On wide builds, this is normalized, but on narrow ones it is not. See
+        # #12746.
+        try:
+            self.assertIn("𝔘𝔫𝔦𝔠𝔬𝔡𝔢", dir())
+        except AssertionError:
+            raise unittest.case._ExpectedFailure(sys.exc_info())
 
     def test_invalid(self):
         try:
