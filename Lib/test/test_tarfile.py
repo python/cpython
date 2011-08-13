@@ -1682,6 +1682,14 @@ class LinkEmulationTest(ReadTest):
 class GzipMiscReadTest(MiscReadTest):
     tarname = gzipname
     mode = "r:gz"
+
+    def test_non_existent_targz_file(self):
+        # Test for issue11513: prevent non-existent gzipped tarfiles raising
+        # multiple exceptions.
+        with self.assertRaisesRegex(IOError, "xxx") as ex:
+            tarfile.open("xxx", self.mode)
+        self.assertEqual(ex.exception.errno, errno.ENOENT)
+
 class GzipUstarReadTest(UstarReadTest):
     tarname = gzipname
     mode = "r:gz"
