@@ -43,6 +43,7 @@ typedef struct
     z_stream zst;
     PyObject *unused_data;
     PyObject *unconsumed_tail;
+    char eof;
     int is_initialised;
     #ifdef WITH_THREAD
         PyThread_type_lock lock;
@@ -89,6 +90,7 @@ newcompobject(PyTypeObject *type)
     self = PyObject_New(compobject, type);
     if (self == NULL)
         return NULL;
+    self->eof = 0;
     self->is_initialised = 0;
     self->unused_data = PyBytes_FromStringAndSize("", 0);
     if (self->unused_data == NULL) {
@@ -291,7 +293,7 @@ PyZlib_decompress(PyObject *self, PyObject *args)
 
     err = inflateEnd(&zst);
     if (err != Z_OK) {
-        zlib_error(zst, err, "while finishing data decompression");
+        zlib_error(zst, err, "while finishing decompression");
         goto error;
     }
 
@@ -476,7 +478,7 @@ PyZlib_objcompress(compobject *self, PyObject *args)
     */
 
     if (err != Z_OK && err != Z_BUF_ERROR) {
-        zlib_error(self->zst, err, "while compressing");
+        zlib_error(self->zst, err, "while compressing data");
         Py_DECREF(RetVal);
         RetVal = NULL;
         goto error;
@@ -611,12 +613,13 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
             Py_DECREF(RetVal);
             goto error;
         }
+        self->eof = 1;
         /* We will only get Z_BUF_ERROR if the output buffer was full
            but there wasn't more output when we tried again, so it is
            not an error condition.
         */
     } else if (err != Z_OK && err != Z_BUF_ERROR) {
-        zlib_error(self->zst, err, "while decompressing");
+        zlib_error(self->zst, err, "while decompressing data");
         Py_DECREF(RetVal);
         RetVal = NULL;
         goto error;
@@ -697,7 +700,7 @@ PyZlib_flush(compobject *self, PyObject *args)
     if (err == Z_STREAM_END && flushmode == Z_FINISH) {
         err = deflateEnd(&(self->zst));
         if (err != Z_OK) {
-            zlib_error(self->zst, err, "from deflateEnd()");
+            zlib_error(self->zst, err, "while finishing compression");
             Py_DECREF(RetVal);
             RetVal = NULL;
             goto error;
@@ -765,6 +768,7 @@ PyZlib_copy(compobject *self)
     Py_XDECREF(retval->unconsumed_tail);
     retval->unused_data = self->unused_data;
     retval->unconsumed_tail = self->unconsumed_tail;
+    retval->eof = self->eof;
 
     /* Mark it as being initialized */
     retval->is_initialised = 1;
@@ -816,6 +820,7 @@ PyZlib_uncopy(compobject *self)
     Py_XDECREF(retval->unconsumed_tail);
     retval->unused_data = self->unused_data;
     retval->unconsumed_tail = self->unconsumed_tail;
+    retval->eof = self->eof;
 
     /* Mark it as being initialized */
     retval->is_initialised = 1;
@@ -885,10 +890,11 @@ PyZlib_unflush(compobject *self, PyObject *args)
        various data structures. Note we should only get Z_STREAM_END when
        flushmode is Z_FINISH */
     if (err == Z_STREAM_END) {
-        err = inflateEnd(&(self->zst));
+        self->eof = 1;
         self->is_initialised = 0;
+        err = inflateEnd(&(self->zst));
         if (err != Z_OK) {
-            zlib_error(self->zst, err, "from inflateEnd()");
+            zlib_error(self->zst, err, "while finishing decompression");
             Py_DECREF(retval);
             retval = NULL;
             goto error;
@@ -936,6 +942,7 @@ static PyMethodDef Decomp_methods[] =
 static PyMemberDef Decomp_members[] = {
     {"unused_data",     T_OBJECT, COMP_OFF(unused_data), READONLY},
     {"unconsumed_tail", T_OBJECT, COMP_OFF(unconsumed_tail), READONLY},
+    {"eof",             T_BOOL,   COMP_OFF(eof), READONLY},
     {NULL},
 };
 
