@@ -28,8 +28,9 @@ Python's general purpose built-in containers, :class:`dict`, :class:`list`,
 =====================   ====================================================================  ===========================
 
 In addition to the concrete container classes, the collections module provides
-:ref:`collections-abstract-base-classes` that can be used to test whether a class provides a
-particular interface, for example, whether it is hashable or a mapping.
+:ref:`abstract base classes <collections-abstract-base-classes>` that can be
+used to test whether a class provides a particular interface, for example,
+whether it is hashable or a mapping.
 
 .. seealso::
 
