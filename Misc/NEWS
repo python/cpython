@@ -44,6 +44,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11513: Fix exception handling ``tarfile.TarFile.gzopen()`` when
+  the file cannot be opened.
+
 - Issue #12687: Fix a possible buffering bug when unpickling text mode
   (protocol 0, mostly) pickles.
 
