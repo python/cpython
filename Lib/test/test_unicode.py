@@ -404,6 +404,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertTrue("bc".isidentifier())
         self.assertTrue("b_".isidentifier())
         self.assertTrue("µ".isidentifier())
+        self.assertTrue("𝔘𝔫𝔦𝔠𝔬𝔡𝔢".isidentifier())
 
         self.assertFalse(" ".isidentifier())
         self.assertFalse("[".isidentifier())
