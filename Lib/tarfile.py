@@ -1804,11 +1804,13 @@ class TarFile(object):
             fileobj = gzip.GzipFile(name, mode + "b", compresslevel, fileobj)
             t = cls.taropen(name, mode, fileobj, **kwargs)
         except IOError:
-            if not extfileobj:
+            if not extfileobj and fileobj is not None:
                 fileobj.close()
+            if fileobj is None:
+                raise
             raise ReadError("not a gzip file")
         except:
-            if not extfileobj:
+            if not extfileobj and fileobj is not None:
                 fileobj.close()
             raise
         t._extfileobj = extfileobj
