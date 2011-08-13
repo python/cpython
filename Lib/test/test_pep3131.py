@@ -8,9 +8,12 @@ class PEP3131Test(unittest.TestCase):
             ä = 1
             µ = 2 # this is a compatibility character
             蟒 = 3
+            𝔘𝔫𝔦𝔠𝔬𝔡𝔢  = 4
         self.assertEqual(getattr(T, "\xe4"), 1)
         self.assertEqual(getattr(T, "\u03bc"), 2)
         self.assertEqual(getattr(T, '\u87d2'), 3)
+        v = getattr(T, "\U0001d518\U0001d52b\U0001d526\U0001d520\U0001d52c\U0001d521\U0001d522")
+        self.assertEqual(v, 4)
 
     def test_invalid(self):
         try:
