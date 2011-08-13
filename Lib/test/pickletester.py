@@ -1118,6 +1118,16 @@ class AbstractPickleTests(unittest.TestCase):
         empty = self.loads(b'\x80\x03U\x00q\x00.', encoding='koi8-r')
         self.assertEqual(empty, '')
 
+    def test_int_pickling_efficiency(self):
+        # Test compacity of int representation (see issue #12744)
+        for proto in protocols:
+            sizes = [len(self.dumps(2**n, proto)) for n in range(70)]
+            # the size function is monotonous
+            self.assertEqual(sorted(sizes), sizes)
+            if proto >= 2:
+                self.assertLessEqual(sizes[-1], 14)
+
+
 # Test classes for reduce_ex
 
 class REX_one(object):
