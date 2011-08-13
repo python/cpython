@@ -6,6 +6,9 @@
 #include "node.h"
 #include "code.h"
 
+#include "asdl.h"
+#include "ast.h"
+
 #include <ctype.h>
 
 #ifdef HAVE_LANGINFO_H
