@@ -1822,7 +1822,7 @@ sock_gettimeout(PySocketSockObject *s)
 PyDoc_STRVAR(gettimeout_doc,
 "gettimeout() -> timeout\n\
 \n\
-Returns the timeout in floating seconds associated with socket \n\
+Returns the timeout in seconds (float) associated with socket \n\
 operations. A timeout of None indicates that timeouts on socket \n\
 operations are disabled.");
 
@@ -4247,7 +4247,7 @@ socket_getdefaulttimeout(PyObject *self)
 PyDoc_STRVAR(getdefaulttimeout_doc,
 "getdefaulttimeout() -> timeout\n\
 \n\
-Returns the default timeout in floating seconds for new socket objects.\n\
+Returns the default timeout in seconds (float) for new socket objects.\n\
 A value of None indicates that new socket objects have no timeout.\n\
 When the socket module is first imported, the default is None.");
 
@@ -4277,7 +4277,7 @@ socket_setdefaulttimeout(PyObject *self, PyObject *arg)
 PyDoc_STRVAR(setdefaulttimeout_doc,
 "setdefaulttimeout(timeout)\n\
 \n\
-Set the default timeout in floating seconds for new socket objects.\n\
+Set the default timeout in seconds (float) for new socket objects.\n\
 A value of None indicates that new socket objects have no timeout.\n\
 When the socket module is first imported, the default is None.");
 

@@ -513,14 +513,14 @@ The module :mod:`socket` exports the following constants and functions:
 
 .. function:: getdefaulttimeout()
 
-   Return the default timeout in floating seconds for new socket objects. A value
+   Return the default timeout in seconds (float) for new socket objects. A value
    of ``None`` indicates that new socket objects have no timeout. When the socket
    module is first imported, the default is ``None``.
 
 
 .. function:: setdefaulttimeout(timeout)
 
-   Set the default timeout in floating seconds for new socket objects.  When
+   Set the default timeout in seconds (float) for new socket objects.  When
    the socket module is first imported, the default is ``None``.  See
    :meth:`~socket.settimeout` for possible values and their respective
    meanings.
@@ -675,7 +675,7 @@ correspond to Unix system calls applicable to sockets.
 
 .. method:: socket.gettimeout()
 
-   Return the timeout in floating seconds associated with socket operations,
+   Return the timeout in seconds (float) associated with socket operations,
    or ``None`` if no timeout is set.  This reflects the last call to
    :meth:`setblocking` or :meth:`settimeout`.
 
