@@ -5485,13 +5485,13 @@ int fixcapitalize(PyUnicodeObject *self)
 
     if (len == 0)
         return 0;
-    if (Py_UNICODE_ISLOWER(*s)) {
+    if (!Py_UNICODE_ISUPPER(*s)) {
         *s = Py_UNICODE_TOUPPER(*s);
         status = 1;
     }
     s++;
     while (--len > 0) {
-        if (Py_UNICODE_ISUPPER(*s)) {
+        if (!Py_UNICODE_ISLOWER(*s)) {
             *s = Py_UNICODE_TOLOWER(*s);
             status = 1;
         }
