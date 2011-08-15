@@ -2,6 +2,18 @@
 Python News
 +++++++++++
 
+What's New in Python 3.2.3?
+===========================
+
+*Release date: XX-XXX-2011*
+
+Core and Builtins
+-----------------
+
+- Issue #12266: Fix str.capitalize() to correctly uppercase/lowercase
+  titlecased and cased non-letter characters.
+
+
 What's New in Python 3.2.2?
 ===========================
 
