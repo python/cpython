@@ -412,6 +412,11 @@ class TestMiscellaneous(unittest.TestCase):
         locale.setlocale(locale.LC_CTYPE, loc)
         self.assertEqual(loc, locale.getlocale())
 
+    def test_normalize_issue12752(self):
+        # Issue #1813 caused a regression where locale.normalize() would no
+        # longer accept unicode strings.
+        self.assertEqual(locale.normalize(u'en_US'), 'en_US.ISO8859-1')
+
 
 def test_main():
     tests = [

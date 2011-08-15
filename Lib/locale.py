@@ -355,6 +355,8 @@ def normalize(localename):
 
     """
     # Normalize the locale name and extract the encoding
+    if isinstance(localename, unicode):
+        localename = localename.encode('ascii')
     fullname = localename.translate(_ascii_lower_map)
     if ':' in fullname:
         # ':' is sometimes used as encoding delimiter.
