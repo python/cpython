@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #12266: Fix str.capitalize() to correctly uppercase/lowercase
+  titlecased and cased non-letter characters.
+
 - Issue #12732: In narrow unicode builds, allow Unicode identifiers which fall
   outside the BMP.
 
