@@ -269,6 +269,25 @@ class UnicodeTest(
         # Surrogates on both sides, no fixup required
         self.assertTrue(u'\ud800\udc02' < u'\ud84d\udc56')
 
+    def test_capitalize(self):
+        string_tests.CommonTest.test_capitalize(self)
+        # check that titlecased chars are lowered correctly
+        # \u1ffc is the titlecased char
+        self.checkequal(u'\u1ffc\u1ff3\u1ff3\u1ff3',
+                        u'\u1ff3\u1ff3\u1ffc\u1ffc', 'capitalize')
+        # check with cased non-letter chars
+        self.checkequal(u'\u24c5\u24e8\u24e3\u24d7\u24de\u24dd',
+                        u'\u24c5\u24ce\u24c9\u24bd\u24c4\u24c3', 'capitalize')
+        self.checkequal(u'\u24c5\u24e8\u24e3\u24d7\u24de\u24dd',
+                        u'\u24df\u24e8\u24e3\u24d7\u24de\u24dd', 'capitalize')
+        self.checkequal(u'\u2160\u2171\u2172',
+                        u'\u2160\u2161\u2162', 'capitalize')
+        self.checkequal(u'\u2160\u2171\u2172',
+                        u'\u2170\u2171\u2172', 'capitalize')
+        # check with Ll chars with no upper - nothing changes here
+        self.checkequal(u'\u019b\u1d00\u1d86\u0221\u1fb7',
+                        u'\u019b\u1d00\u1d86\u0221\u1fb7', 'capitalize')
+
     def test_islower(self):
         string_tests.MixinStrUnicodeUserStringTest.test_islower(self)
         self.checkequalnofix(False, u'\u1FFc', 'islower')
