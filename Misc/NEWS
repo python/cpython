@@ -40,6 +40,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12752: Fix regression which prevented locale.normalize() from
+  accepting unicode strings.
+
 - Issue #12683: urlparse updated to include svn as schemes that uses relative
   paths. (svn from 1.5 onwards support relative path).
 
