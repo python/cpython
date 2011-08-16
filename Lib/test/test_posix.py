@@ -862,7 +862,7 @@ class PosixTester(unittest.TestCase):
         try:
             init = posix.sched_getscheduler(1)
         except OSError as e:
-            if e.errno != errno.EPERM:
+            if e.errno != errno.EPERM and e.errno != errno.ESRCH:
                 raise
         else:
             self.assertIn(init, possible_schedulers)
