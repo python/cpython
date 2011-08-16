@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #12766: Raise an ValueError when creating a class with a class variable
+  that conflicts with a name in __slots__.
+
 - Issue #12266: Fix str.capitalize() to correctly uppercase/lowercase
   titlecased and cased non-letter characters.
 

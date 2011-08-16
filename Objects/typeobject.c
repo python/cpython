@@ -2094,6 +2094,12 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
             if (!tmp)
                 goto bad_slots;
             PyList_SET_ITEM(newslots, j, tmp);
+            if (PyDict_GetItem(dict, tmp)) {
+                PyErr_Format(PyExc_ValueError,
+                             "%R in __slots__ conflicts with class variable",
+                             tmp);
+                goto bad_slots;
+            }
             j++;
         }
         assert(j == nslots - add_dict - add_weak);
