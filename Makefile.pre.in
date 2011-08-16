@@ -1313,7 +1313,7 @@ funny:
 		-o -name .hgignore \
 		-o -name .bzrignore \
 		-o -name MANIFEST \
-		-print
+		-o -print
 
 # Perform some verification checks on any modified files.
 patchcheck:
