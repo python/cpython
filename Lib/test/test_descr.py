@@ -4253,6 +4253,14 @@ order (MRO) for bases """
         foo = Foo()
         str(foo)
 
+    def test_slot_shadows_class(self):
+        with self.assertRaises(ValueError) as cm:
+            class X:
+                __slots__ = ["foo"]
+                foo = None
+        m = str(cm.exception)
+        self.assertEqual("'foo' in __slots__ conflicts with class variable", m)
+
 class DictProxyTests(unittest.TestCase):
     def setUp(self):
         class C(object):
