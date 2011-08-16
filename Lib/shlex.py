@@ -276,7 +276,7 @@ def split(s, comments=False, posix=True):
     return list(lex)
 
 
-_find_unsafe = re.compile(r'[^\w@%\-\+=:,\./]', re.ASCII).search
+_find_unsafe = re.compile(r'[^\w@%+=:,./-]', re.ASCII).search
 
 def quote(s):
     """Return a shell-escaped version of the string *s*."""
