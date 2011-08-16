@@ -881,7 +881,7 @@ zlib
 ----
 
 The :mod:`zlib` extension is built using an included copy of the zlib
-sources unless the zlib version found on the system is too old to be
+sources if the zlib version found on the system is too old to be
 used for the build::
 
   Copyright (C) 1995-2011 Jean-loup Gailly and Mark Adler
