@@ -6,6 +6,9 @@
 .. moduleauthor:: Raymond Hettinger <python at rcn.com>
 .. sectionauthor:: Raymond Hettinger <python at rcn.com>
 
+.. versionadded:: 3.3
+   Formerly, this module was part of the :mod:`collections` module.
+
 .. testsetup:: *
 
    from collections import *
@@ -20,8 +23,6 @@ This module provides :term:`abstract base classes <abstract base class>` that
 can be used to test whether a class provides a particular interface; for
 example, whether it is hashable or whether it is a mapping.
 
-.. versionchanged:: 3.3
-   Formerly, this module was part of the :mod:`collections` module.
 
 .. _collections-abstract-base-classes:
 
