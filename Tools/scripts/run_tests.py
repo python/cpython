@@ -32,6 +32,8 @@ def main(regrtest_args):
                  '-r',            # Randomize test order
                  '-w',            # Re-run failed tests in verbose mode
                  ])
+    if sys.platform == 'win32':
+        args.append('-n')         # Silence alerts under Windows
     if not any(is_multiprocess_flag(arg) for arg in regrtest_args):
         args.extend(['-j', '0'])  # Use all CPU cores
     if not any(is_resource_use_flag(arg) for arg in regrtest_args):
