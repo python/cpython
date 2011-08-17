@@ -4253,7 +4253,7 @@ order (MRO) for bases """
         foo = Foo()
         str(foo)
 
-    def test_slot_shadows_class(self):
+    def test_slot_shadows_class_variable(self):
         with self.assertRaises(ValueError) as cm:
             class X:
                 __slots__ = ["foo"]
