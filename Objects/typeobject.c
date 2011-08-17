@@ -201,6 +201,22 @@ static PyMemberDef type_members[] = {
     {0}
 };
 
+static int
+check_set_special_type_attr(PyTypeObject *type, PyObject *value, const char *name)
+{
+    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+        PyErr_Format(PyExc_TypeError,
+                     "can't set %s.%s", type->tp_name, name);
+        return 0;
+    }
+    if (!value) {
+        PyErr_Format(PyExc_TypeError,
+                     "can't delete %s.%s", type->tp_name, name);
+        return 0;
+    }
+    return 1;
+}
+
 static PyObject *
 type_name(PyTypeObject *type, void *context)
 {
@@ -229,16 +245,8 @@ type_set_name(PyTypeObject *type, PyObject *value, void *context)
     char *tp_name;
     PyObject *tmp;
 
-    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
-        PyErr_Format(PyExc_TypeError,
-                     "can't set %s.__name__", type->tp_name);
+    if (!check_set_special_type_attr(type, value, "__name__"))
         return -1;
-    }
-    if (!value) {
-        PyErr_Format(PyExc_TypeError,
-                     "can't delete %s.__name__", type->tp_name);
-        return -1;
-    }
     if (!PyUnicode_Check(value)) {
         PyErr_Format(PyExc_TypeError,
                      "can only assign string to %s.__name__, not '%s'",
@@ -301,16 +309,8 @@ type_module(PyTypeObject *type, void *context)
 static int
 type_set_module(PyTypeObject *type, PyObject *value, void *context)
 {
-    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
-        PyErr_Format(PyExc_TypeError,
-                     "can't set %s.__module__", type->tp_name);
+    if (!check_set_special_type_attr(type, value, "__module__"))
         return -1;
-    }
-    if (!value) {
-        PyErr_Format(PyExc_TypeError,
-                     "can't delete %s.__module__", type->tp_name);
-        return -1;
-    }
 
     PyType_Modified(type);
 
@@ -433,16 +433,8 @@ type_set_bases(PyTypeObject *type, PyObject *value, void *context)
     PyTypeObject *new_base, *old_base;
     PyObject *old_bases, *old_mro;
 
-    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
-        PyErr_Format(PyExc_TypeError,
-                     "can't set %s.__bases__", type->tp_name);
+    if (!check_set_special_type_attr(type, value, "__bases__"))
         return -1;
-    }
-    if (!value) {
-        PyErr_Format(PyExc_TypeError,
-                     "can't delete %s.__bases__", type->tp_name);
-        return -1;
-    }
     if (!PyTuple_Check(value)) {
         PyErr_Format(PyExc_TypeError,
              "can only assign tuple to %s.__bases__, not %s",
