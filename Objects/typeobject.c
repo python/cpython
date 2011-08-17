@@ -588,6 +588,15 @@ type_get_doc(PyTypeObject *type, void *context)
     return result;
 }
 
+static int
+type_set_doc(PyTypeObject *type, PyObject *value, void *context)
+{
+    if (!check_set_special_type_attr(type, value, "__doc__"))
+        return -1;
+    PyType_Modified(type);
+    return PyDict_SetItemString(type->tp_dict, "__doc__", value);
+}
+
 static PyObject *
 type___instancecheck__(PyObject *type, PyObject *inst)
 {
@@ -623,7 +632,7 @@ static PyGetSetDef type_getsets[] = {
     {"__abstractmethods__", (getter)type_abstractmethods,
      (setter)type_set_abstractmethods, NULL},
     {"__dict__",  (getter)type_dict,  NULL, NULL},
-    {"__doc__", (getter)type_get_doc, NULL, NULL},
+    {"__doc__", (getter)type_get_doc, (setter)type_set_doc, NULL},
     {0}
 };
 
