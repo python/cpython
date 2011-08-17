@@ -2091,8 +2091,10 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
                  PyUnicode_CompareWithASCIIString(tmp, "__weakref__") == 0))
                 continue;
             tmp =_Py_Mangle(name, tmp);
-            if (!tmp)
+            if (!tmp) {
+                Py_DECREF(newslots);
                 goto bad_slots;
+            }
             PyList_SET_ITEM(newslots, j, tmp);
             if (PyDict_GetItem(dict, tmp)) {
                 PyErr_Format(PyExc_ValueError,
