@@ -527,7 +527,7 @@ class HandlerTest(BaseTest):
     def test_builtin_handlers(self):
         # We can't actually *use* too many handlers in the tests,
         # but we can try instantiating them with various options
-        if sys.platform in ('linux2', 'darwin'):
+        if sys.platform.startswith('linux') or sys.platform == 'darwin':
             for existing in (True, False):
                 fd, fn = tempfile.mkstemp()
                 os.close(fd)
