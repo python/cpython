@@ -1391,8 +1391,8 @@ def printlist(x, width=70, indent=4):
 # Tests that are expected to be skipped everywhere except on one platform
 # are also handled separately.
 
-_expectations = {
-    'win32':
+_expectations = (
+    ('win32',
         """
         test__locale
         test_crypt
@@ -1420,15 +1420,15 @@ _expectations = {
         test_threadsignals
         test_wait3
         test_wait4
-        """,
-    'linux2':
+        """),
+    ('linux',
         """
         test_curses
         test_largefile
         test_kqueue
         test_ossaudiodev
-        """,
-    'unixware7':
+        """),
+    ('unixware',
         """
         test_epoll
         test_largefile
@@ -1438,8 +1438,8 @@ _expectations = {
         test_pyexpat
         test_sax
         test_sundry
-        """,
-    'openunix8':
+        """),
+    ('openunix',
         """
         test_epoll
         test_largefile
@@ -1449,8 +1449,8 @@ _expectations = {
         test_pyexpat
         test_sax
         test_sundry
-        """,
-    'sco_sv3':
+        """),
+    ('sco_sv',
         """
         test_asynchat
         test_fork1
@@ -1469,8 +1469,8 @@ _expectations = {
         test_threaded_import
         test_threadedtempfile
         test_threading
-        """,
-    'darwin':
+        """),
+    ('darwin',
         """
         test__locale
         test_curses
@@ -1482,8 +1482,8 @@ _expectations = {
         test_minidom
         test_ossaudiodev
         test_poll
-        """,
-    'sunos5':
+        """),
+    ('sunos',
         """
         test_curses
         test_dbm
@@ -1494,8 +1494,8 @@ _expectations = {
         test_openpty
         test_zipfile
         test_zlib
-        """,
-    'hp-ux11':
+        """),
+    ('hp-ux',
         """
         test_curses
         test_epoll
@@ -1510,8 +1510,8 @@ _expectations = {
         test_sax
         test_zipfile
         test_zlib
-        """,
-    'cygwin':
+        """),
+    ('cygwin',
         """
         test_curses
         test_dbm
@@ -1522,8 +1522,8 @@ _expectations = {
         test_locale
         test_ossaudiodev
         test_socketserver
-        """,
-    'os2emx':
+        """),
+    ('os2emx',
         """
         test_audioop
         test_curses
@@ -1536,8 +1536,8 @@ _expectations = {
         test_pty
         test_resource
         test_signal
-        """,
-    'freebsd4':
+        """),
+    ('freebsd',
         """
         test_epoll
         test_dbm_gnu
@@ -1553,8 +1553,8 @@ _expectations = {
         test_timeout
         test_urllibnet
         test_multiprocessing
-        """,
-    'aix5':
+        """),
+    ('aix',
         """
         test_bz2
         test_epoll
@@ -1568,8 +1568,8 @@ _expectations = {
         test_ttk_textonly
         test_zipimport
         test_zlib
-        """,
-    'openbsd3':
+        """),
+    ('openbsd',
         """
         test_ctypes
         test_epoll
@@ -1583,8 +1583,8 @@ _expectations = {
         test_ttk_guionly
         test_ttk_textonly
         test_multiprocessing
-        """,
-    'netbsd3':
+        """),
+    ('netbsd',
         """
         test_ctypes
         test_curses
@@ -1598,12 +1598,8 @@ _expectations = {
         test_ttk_guionly
         test_ttk_textonly
         test_multiprocessing
-        """,
-}
-_expectations['freebsd5'] = _expectations['freebsd4']
-_expectations['freebsd6'] = _expectations['freebsd4']
-_expectations['freebsd7'] = _expectations['freebsd4']
-_expectations['freebsd8'] = _expectations['freebsd4']
+        """),
+)
 
 class _ExpectedSkips:
     def __init__(self):
@@ -1611,9 +1607,13 @@ class _ExpectedSkips:
         from test import test_timeout
 
         self.valid = False
-        if sys.platform in _expectations:
-            s = _expectations[sys.platform]
-            self.expected = set(s.split())
+        expected = None
+        for item in _expectations:
+            if sys.platform.startswith(item[0]):
+                expected = item[1]
+                break
+        if expected is not None:
+            self.expected = set(expected.split())
 
             # These are broken tests, for now skipped on every platform.
             # XXX Fix these!

@@ -2074,7 +2074,7 @@ def test_main():
     ])
     if hasattr(socket, "socketpair"):
         tests.append(BasicSocketPairTest)
-    if sys.platform == 'linux2':
+    if sys.platform.startswith('linux'):
         tests.append(TestLinuxAbstractNamespace)
     if isTipcAvailable():
         tests.append(TIPCTest)

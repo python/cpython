@@ -20,7 +20,7 @@ has_spawnl = hasattr(os, 'spawnl')
 
 # TEST_FILES may need to be tweaked for systems depending on the maximum
 # number of files that can be opened at one time (see ulimit -n)
-if sys.platform in ('openbsd3', 'openbsd4'):
+if sys.platform.startswith('openbsd'):
     TEST_FILES = 48
 else:
     TEST_FILES = 100

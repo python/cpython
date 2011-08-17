@@ -703,7 +703,7 @@ class GNUReadTest(LongnameTest):
         # Return True if the platform knows the st_blocks stat attribute and
         # uses st_blocks units of 512 bytes, and if the filesystem is able to
         # store holes in files.
-        if sys.platform == "linux2":
+        if sys.platform.startswith("linux"):
             # Linux evidentially has 512 byte st_blocks units.
             name = os.path.join(TEMPDIR, "sparse-test")
             with open(name, "wb") as fobj:
