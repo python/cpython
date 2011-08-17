@@ -2100,6 +2100,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
                 PyErr_Format(PyExc_ValueError,
                              "%R in __slots__ conflicts with class variable",
                              tmp);
+                Py_DECREF(newslots);
                 goto bad_slots;
             }
             j++;
