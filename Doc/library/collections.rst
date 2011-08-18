@@ -1,4 +1,3 @@
-
 :mod:`collections` --- Container datatypes
 ==========================================
 
@@ -886,7 +885,7 @@ original insertion position is changed and moved to the end::
                 del self[key]
             OrderedDict.__setitem__(self, key, value)
 
-An ordered dictionary can combined with the :class:`Counter` class
+An ordered dictionary can be combined with the :class:`Counter` class
 so that the counter remembers the order elements are first encountered::
 
    class OrderedCounter(Counter, OrderedDict):
@@ -984,6 +983,7 @@ attribute.
    be an instance of :class:`bytes`, :class:`str`, :class:`UserString` (or a
    subclass) or an arbitrary sequence which can be converted into a string using
    the built-in :func:`str` function.
+
 
 .. _collections-abstract-base-classes:
 
