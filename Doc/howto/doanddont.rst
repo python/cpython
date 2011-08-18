@@ -32,8 +32,8 @@ Inside Function Definitions
 versions of Python do not check for the invalidity, it does not make it more
 valid, no more than having a smart lawyer makes a man innocent. Do not use it
 like that ever. Even in versions where it was accepted, it made the function
-execution slower, because the compiler could not be certain which names are
-local and which are global. In Python 2.1 this construct causes warnings, and
+execution slower, because the compiler could not be certain which names were
+local and which were global. In Python 2.1 this construct causes warnings, and
 sometimes even errors.
 
 
@@ -46,7 +46,7 @@ you can know where each toplevel name is defined by a simple "search" function
 in your favourite editor. You also open yourself to trouble in the future, if
 some module grows additional functions or classes.
 
-One of the most awful question asked on the newsgroup is why this code::
+One of the most awful questions asked on the newsgroup is why this code::
 
    f = open("www")
    f.read()
