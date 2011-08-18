@@ -244,7 +244,7 @@ This can be achieved by passing ``False`` as the ``add_help=`` argument to
     --foo FOO  foo help
 
 The help option is typically ``-h/--help``. The exception to this is
-if the ``prefix_chars=`` is specified and does not include ``'-'``, in
+if the ``prefix_chars=`` is specified and does not include ``-``, in
 which case ``-h`` and ``--help`` are not valid options.  In
 this case, the first character in ``prefix_chars`` is used to prefix
 the help options::
@@ -260,7 +260,7 @@ the help options::
 prefix_chars
 ^^^^^^^^^^^^
 
-Most command-line options will use ``'-'`` as the prefix, e.g. ``-f/--foo``.
+Most command-line options will use ``-`` as the prefix, e.g. ``-f/--foo``.
 Parsers that need to support different or additional prefix
 characters, e.g. for options
 like ``+f`` or ``/foo``, may specify them using the ``prefix_chars=`` argument
@@ -273,7 +273,7 @@ to the ArgumentParser constructor::
    Namespace(bar='Y', f='X')
 
 The ``prefix_chars=`` argument defaults to ``'-'``. Supplying a set of
-characters that does not include ``'-'`` will cause ``-f/--foo`` options to be
+characters that does not include ``-`` will cause ``-f/--foo`` options to be
 disallowed.
 
 
@@ -395,7 +395,7 @@ epilog_ texts in command-line help messages::
    likewise for this epilog whose whitespace will be cleaned up and whose words
    will be wrapped across a couple lines
 
-Passing :class:`~argparse.RawDescriptionHelpFormatter` as ``formatter_class=``
+Passing :class:`RawDescriptionHelpFormatter` as ``formatter_class=``
 indicates that description_ and epilog_ are already correctly formatted and
 should not be line-wrapped::
 
@@ -421,7 +421,7 @@ should not be line-wrapped::
    optional arguments:
     -h, --help  show this help message and exit
 
-:class:`RawTextHelpFormatter` maintains whitespace for all sorts of help text
+:class:`RawTextHelpFormatter` maintains whitespace for all sorts of help text,
 including argument descriptions.
 
 The other formatter class available, :class:`ArgumentDefaultsHelpFormatter`,
@@ -759,7 +759,7 @@ single action to be taken.  The ``nargs`` keyword argument associates a
 different number of command-line arguments with a single action.  The supported
 values are:
 
-* N (an integer).  N arguments from the command line will be gathered together into a
+* ``N`` (an integer).  ``N`` arguments from the command line will be gathered together into a
   list.  For example::
 
      >>> parser = argparse.ArgumentParser()
@@ -870,7 +870,7 @@ was not present at the command line::
    >>> parser.parse_args(''.split())
    Namespace(foo=42)
 
-For positional arguments with nargs_ ``='?'`` or ``'*'``, the ``default`` value
+For positional arguments with nargs_ equal to ``?`` or ``*``, the ``default`` value
 is used when no command-line argument was present::
 
    >>> parser = argparse.ArgumentParser()
@@ -1133,10 +1133,10 @@ attribute is determined by the ``dest`` keyword argument of
 
 For optional argument actions, the value of ``dest`` is normally inferred from
 the option strings.  :class:`ArgumentParser` generates the value of ``dest`` by
-taking the first long option string and stripping away the initial ``'--'``
+taking the first long option string and stripping away the initial ``--``
 string.  If no long option strings were supplied, ``dest`` will be derived from
-the first short option string by stripping the initial ``'-'`` character.  Any
-internal ``'-'`` characters will be converted to ``'_'`` characters to make sure
+the first short option string by stripping the initial ``-`` character.  Any
+internal ``-`` characters will be converted to ``_`` characters to make sure
 the string is a valid attribute name.  The examples below illustrate this
 behavior::
 
@@ -1239,15 +1239,15 @@ it exits and prints the error along with a usage message::
    PROG: error: extra arguments found: badger
 
 
-Arguments containing ``"-"``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Arguments containing ``-``
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The :meth:`~ArgumentParser.parse_args` method attempts to give errors whenever
 the user has clearly made a mistake, but some situations are inherently
-ambiguous.  For example, the command-line argument ``'-1'`` could either be an
+ambiguous.  For example, the command-line argument ``-1`` could either be an
 attempt to specify an option or an attempt to provide a positional argument.
 The :meth:`~ArgumentParser.parse_args` method is cautious here: positional
-arguments may only begin with ``'-'`` if they look like negative numbers and
+arguments may only begin with ``-`` if they look like negative numbers and
 there are no options in the parser that look like negative numbers::
 
    >>> parser = argparse.ArgumentParser(prog='PROG')
@@ -1280,7 +1280,7 @@ there are no options in the parser that look like negative numbers::
    usage: PROG [-h] [-1 ONE] [foo]
    PROG: error: argument -1: expected one argument
 
-If you have positional arguments that must begin with ``'-'`` and don't look
+If you have positional arguments that must begin with ``-`` and don't look
 like negative numbers, you can insert the pseudo-argument ``'--'`` which tells
 :meth:`~ArgumentParser.parse_args` that everything after that is a positional
 argument::
@@ -1407,8 +1407,8 @@ Sub-commands
    Note that the object returned by :meth:`parse_args` will only contain
    attributes for the main parser and the subparser that was selected by the
    command line (and not any other subparsers).  So in the example above, when
-   the ``"a"`` command is specified, only the ``foo`` and ``bar`` attributes are
-   present, and when the ``"b"`` command is specified, only the ``foo`` and
+   the ``a`` command is specified, only the ``foo`` and ``bar`` attributes are
+   present, and when the ``b`` command is specified, only the ``foo`` and
    ``baz`` attributes are present.
 
    Similarly, when a help message is requested from a subparser, only the help
