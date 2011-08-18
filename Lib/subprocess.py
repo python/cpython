@@ -424,12 +424,16 @@ try:
 except:
     MAXFD = 256
 
+# This lists holds Popen instances for which the underlying process had not
+# exited at the time its __del__ method got called: those processes are wait()ed
+# for synchronously from _cleanup() when a new Popen object is created, to avoid
+# zombie processes.
 _active = []
 
 def _cleanup():
     for inst in _active[:]:
         res = inst._internal_poll(_deadstate=sys.maxsize)
-        if res is not None and res >= 0:
+        if res is not None:
             try:
                 _active.remove(inst)
             except ValueError:
@@ -1272,6 +1276,7 @@ class Popen(object):
                             errread, errwrite,
                             errpipe_read, errpipe_write,
                             restore_signals, start_new_session, preexec_fn)
+                    self._child_created = True
                 finally:
                     # be sure the FD is closed no matter what
                     os.close(errpipe_write)
