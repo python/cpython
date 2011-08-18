@@ -13,6 +13,11 @@ Core and Builtins
 - Issue #12266: Fix str.capitalize() to correctly uppercase/lowercase
   titlecased and cased non-letter characters.
 
+Library
+-------
+
+- Issue #12650: Fix a race condition where a subprocess.Popen could leak
+  resources (FD/zombie) when killed at the wrong time.
 
 What's New in Python 3.2.2?
 ===========================
