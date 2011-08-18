@@ -40,35 +40,36 @@ _DEFAULT_CFG = '.pypkgcreate'
 
 _helptext = {
     'name': '''
-The name of the program to be packaged, usually a single word composed
-of lower-case characters such as "python", "sqlalchemy", or "CherryPy".
+The name of the project to be packaged, usually a single word composed
+of lower-case characters such as "zope.interface", "sqlalchemy" or
+"CherryPy".
 ''',
     'version': '''
-Version number of the software, typically 2 or 3 numbers separated by dots
-such as "1.00", "0.6", or "3.02.01".  "0.1.0" is recommended for initial
-development.
+Version number of the software, typically 2 or 3 numbers separated by
+dots such as "1.0", "0.6b3", or "3.2.1".  "0.1.0" is recommended for
+initial development.
 ''',
     'summary': '''
-A one-line summary of what this project is or does, typically a sentence 80
-characters or less in length.
+A one-line summary of what this project is or does, typically a sentence
+80 characters or less in length.
 ''',
     'author': '''
 The full name of the author (typically you).
 ''',
     'author_email': '''
-E-mail address of the project author (typically you).
+Email address of the project author.
 ''',
     'do_classifier': '''
 Trove classifiers are optional identifiers that allow you to specify the
 intended audience by saying things like "Beta software with a text UI
-for Linux under the PSF license".  However, this can be a somewhat involved
-process.
+for Linux under the PSF license".  However, this can be a somewhat
+involved process.
 ''',
     'packages': '''
-You can provide a package name contained in your project.
+Python packages included in the project.
 ''',
     'modules': '''
-You can provide a python module contained in your project.
+Pure Python modules included in the project.
 ''',
     'extra_files': '''
 You can provide extra files/dirs contained in your project.
@@ -76,15 +77,15 @@ It has to follow the template syntax. XXX add help here.
 ''',
 
     'home_page': '''
-The home page for the project, typically starting with "http://".
+The home page for the project, typically a public Web page.
 ''',
     'trove_license': '''
-Optionally you can specify a license.  Type a string that identifies a common
-license, and then you can select a list of license specifiers.
+Optionally you can specify a license.  Type a string that identifies a
+common license, and then you can select a list of license specifiers.
 ''',
     'trove_generic': '''
 Optionally, you can set other trove identifiers for things such as the
-human language, programming language, user interface, etc...
+human language, programming language, user interface, etc.
 ''',
     'setup.py found': '''
 The setup.py script will be executed to retrieve the metadata.
@@ -468,12 +469,12 @@ class MainProgram:
 
         self.data['version'] = ask('Current version number',
               self.data.get('version'), _helptext['version'])
-        self.data['summary'] = ask('Package summary',
+        self.data['summary'] = ask('Project description summary',
               self.data.get('summary'), _helptext['summary'],
               lengthy=True)
         self.data['author'] = ask('Author name',
               self.data.get('author'), _helptext['author'])
-        self.data['author_email'] = ask('Author e-mail address',
+        self.data['author_email'] = ask('Author email address',
               self.data.get('author_email'), _helptext['author_email'])
         self.data['home_page'] = ask('Project home page',
               self.data.get('home_page'), _helptext['home_page'],
