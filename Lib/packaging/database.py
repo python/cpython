@@ -191,7 +191,7 @@ class Distribution:
         A local absolute path is an absolute path in which occurrences of
         ``'/'`` have been replaced by the system separator given by ``os.sep``.
 
-        :parameter local: flag to say if the path should be returned a local
+        :parameter local: flag to say if the path should be returned as a local
                           absolute path
 
         :type local: boolean
