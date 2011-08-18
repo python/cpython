@@ -262,6 +262,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12650: Fix a race condition where a subprocess.Popen could leak
+  resources (FD/zombie) when killed at the wrong time.
+
 - Issue #12744: Fix inefficient representation of integers between 2**31 and
   2**63 on systems with a 64-bit C "long".
 
