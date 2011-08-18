@@ -1922,7 +1922,7 @@ PyUnicode_FSConverter(PyObject* arg, void* addr)
     size = PyBytes_GET_SIZE(output);
     data = PyBytes_AS_STRING(output);
     if (size != strlen(data)) {
-        PyErr_SetString(PyExc_TypeError, "embedded NUL character");
+        PyErr_SetString(PyExc_TypeError, "embedded NULL character");
         Py_DECREF(output);
         return 0;
     }
