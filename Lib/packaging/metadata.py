@@ -182,14 +182,6 @@ _UNICODEFIELDS = ('Author', 'Maintainer', 'Summary', 'Description')
 _MISSING = object()
 
 
-class NoDefault:
-    """Marker object used for clean representation"""
-    def __repr__(self):
-        return '<NoDefault>'
-
-_MISSING = NoDefault()
-
-
 class Metadata:
     """The metadata of a release.
 
