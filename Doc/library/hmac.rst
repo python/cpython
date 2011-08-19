@@ -1,4 +1,3 @@
-
 :mod:`hmac` --- Keyed-Hashing for Message Authentication
 ========================================================
 
@@ -9,6 +8,10 @@
 
 
 .. versionadded:: 2.2
+
+**Source code:** :source:`Lib/hmac.py`
+
+--------------
 
 This module implements the HMAC algorithm as described by :rfc:`2104`.
 

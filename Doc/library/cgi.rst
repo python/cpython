@@ -13,6 +13,10 @@
    single: URL
    single: Common Gateway Interface
 
+**Source code:** :source:`Lib/cgi.py`
+
+--------------
+
 Support module for Common Gateway Interface (CGI) scripts.
 
 This module defines a number of utilities for use by CGI scripts written in

@@ -1,4 +1,3 @@
-
 :mod:`collections` --- High-performance container datatypes
 ===========================================================
 
@@ -15,6 +14,10 @@
    import itertools
    __name__ = '<doctest>'
 
+**Source code:** :source:`Lib/collections.py` and :source:`Lib/_abcoll.py`
+
+--------------
+
 This module implements specialized container datatypes providing alternatives to
 Python's general purpose built-in containers, :class:`dict`, :class:`list`,
 :class:`set`, and :class:`tuple`.
@@ -28,13 +31,10 @@ Python's general purpose built-in containers, :class:`dict`, :class:`list`,
 =====================   ====================================================================  ===========================
 
 In addition to the concrete container classes, the collections module provides
-:ref:`collections-abstract-base-classes` that can be used to test whether a class provides a
-particular interface, for example, whether it is hashable or a mapping.
+:ref:`abstract base classes <collections-abstract-base-classes>` that can be
+used to test whether a class provides a particular interface, for example,
+whether it is hashable or a mapping.
 
-.. seealso::
-
-   Latest version of the `collections module Python source code
-   <http://svn.python.org/view/python/branches/release27-maint/Lib/collections.py?view=markup>`_
 
 :class:`Counter` objects
 ------------------------
@@ -202,14 +202,14 @@ counts, but the output will exclude results with counts of zero or less.
     * `Bag class <http://www.gnu.org/software/smalltalk/manual-base/html_node/Bag.html>`_
       in Smalltalk.
 
-    * Wikipedia entry for `Multisets <http://en.wikipedia.org/wiki/Multiset>`_\.
+    * Wikipedia entry for `Multisets <http://en.wikipedia.org/wiki/Multiset>`_.
 
     * `C++ multisets <http://www.demo2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm>`_
       tutorial with examples.
 
     * For mathematical operations on multisets and their use cases, see
       *Knuth, Donald. The Art of Computer Programming Volume II,
-      Section 4.6.3, Exercise 19*\.
+      Section 4.6.3, Exercise 19*.
 
     * To enumerate all distinct multisets of a given size over a given set of
       elements, see :func:`itertools.combinations_with_replacement`.
@@ -453,8 +453,7 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
    :class:`defaultdict` objects support the following method in addition to the
    standard :class:`dict` operations:
 
-
-   .. method:: defaultdict.__missing__(key)
+   .. method:: __missing__(key)
 
       If the :attr:`default_factory` attribute is ``None``, this raises a
       :exc:`KeyError` exception with the *key* as argument.
@@ -474,7 +473,7 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
    :class:`defaultdict` objects support the following instance variable:
 
 
-   .. attribute:: defaultdict.default_factory
+   .. attribute:: default_factory
 
       This attribute is used by the :meth:`__missing__` method; it is
       initialized from the first argument to the constructor, if present, or to
@@ -858,7 +857,7 @@ original insertion position is changed and moved to the end::
                 del self[key]
             OrderedDict.__setitem__(self, key, value)
 
-An ordered dictionary can combined with the :class:`Counter` class
+An ordered dictionary can be combined with the :class:`Counter` class
 so that the counter remembers the order elements are first encountered::
 
    class OrderedCounter(Counter, OrderedDict):
@@ -1022,9 +1021,6 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
    ``__hash__ = Set._hash``.
 
 .. seealso::
-
-   * Latest version of the `Python source code for the collections abstract base classes
-     <http://svn.python.org/view/python/branches/release27-maint/Lib/_abcoll.py?view=markup>`_
 
    * `OrderedSet recipe <http://code.activestate.com/recipes/576694/>`_ for an
      example built on :class:`MutableSet`.

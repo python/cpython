@@ -14,6 +14,10 @@
 
 .. versionadded:: 2.2
 
+**Source code:** :source:`Lib/SimpleXMLRPCServer.py`
+
+--------------
+
 The :mod:`SimpleXMLRPCServer` module provides a basic server framework for
 XML-RPC servers written in Python.  Servers can either be free standing, using
 :class:`SimpleXMLRPCServer`, or embedded in a CGI environment, using
