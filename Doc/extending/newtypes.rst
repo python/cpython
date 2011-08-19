@@ -38,8 +38,7 @@ The Python runtime sees all Python objects as variables of type
 just contains the refcount and a pointer to the object's "type object".  This is
 where the action is; the type object determines which (C) functions get called
 when, for instance, an attribute gets looked up on an object or it is multiplied
-by another object.  These C functions are called "type methods" to distinguish
-them from things like ``[].append`` (which we call "object methods").
+by another object.  These C functions are called "type methods".
 
 So, if you want to define a new object type, you need to create a new type
 object.
