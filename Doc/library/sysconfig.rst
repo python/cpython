@@ -3,14 +3,15 @@
 
 .. module:: sysconfig
    :synopsis: Python's configuration information
-.. moduleauthor:: Tarek Ziade <tarek@ziade.org>
-.. sectionauthor:: Tarek Ziade <tarek@ziade.org>
+.. moduleauthor:: Tarek Ziadé <tarek@ziade.org>
+.. sectionauthor:: Tarek Ziadé <tarek@ziade.org>
+
 .. index::
    single: configuration information
 
-**Source code:** :source:`Lib/sysconfig.py`
-
 .. versionadded:: 3.2
+
+**Source code:** :source:`Lib/sysconfig.py`
 
 --------------
 
