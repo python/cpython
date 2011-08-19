@@ -1,4 +1,3 @@
-
 :mod:`SocketServer` --- A framework for network servers
 =======================================================
 
@@ -11,6 +10,9 @@
    Python 3.0.  The :term:`2to3` tool will automatically adapt imports when
    converting your sources to 3.0.
 
+**Source code:** :source:`Lib/SocketServer.py`
+
+--------------
 
 The :mod:`SocketServer` module simplifies the task of writing network servers.
 

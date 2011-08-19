@@ -1,4 +1,3 @@
-
 :mod:`zipfile` --- Work with ZIP archives
 =========================================
 
@@ -8,6 +7,10 @@
 .. sectionauthor:: James C. Ahlstrom <jim@interet.com>
 
 .. versionadded:: 1.6
+
+**Source code:** :source:`Lib/zipfile.py`
+
+--------------
 
 The ZIP file format is a common archive and compression standard. This module
 provides tools to create, read, write, append, and list a ZIP file.  Any

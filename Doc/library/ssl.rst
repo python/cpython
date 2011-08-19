@@ -5,15 +5,18 @@
    :synopsis: TLS/SSL wrapper for socket objects
 
 .. moduleauthor:: Bill Janssen <bill.janssen@gmail.com>
-
-.. versionadded:: 2.6
-
 .. sectionauthor::  Bill Janssen <bill.janssen@gmail.com>
 
 
 .. index:: single: OpenSSL; (use in module ssl)
 
 .. index:: TLS, SSL, Transport Layer Security, Secure Sockets Layer
+
+.. versionadded:: 2.6
+
+**Source code:** :source:`Lib/ssl.py`
+
+--------------
 
 This module provides access to Transport Layer Security (often known as "Secure
 Sockets Layer") encryption and peer authentication facilities for network

@@ -10,6 +10,10 @@
 
 .. versionadded:: 1.5.2
 
+**Source code:** :source:`Lib/netrc.py`
+
+--------------
+
 The :class:`netrc` class parses and encapsulates the netrc file format used by
 the Unix :program:`ftp` program and other FTP clients.
 
