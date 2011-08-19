@@ -4,6 +4,10 @@
 .. module:: bdb
    :synopsis: Debugger framework.
 
+**Source code:** :source:`Lib/bdb.py`
+
+--------------
+
 The :mod:`bdb` module handles basic debugger functions, like setting breakpoints
 or managing execution via the debugger.
 

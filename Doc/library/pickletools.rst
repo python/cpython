@@ -8,6 +8,10 @@
 
 .. versionadded:: 2.3
 
+**Source code:** :source:`Lib/pickletools.py`
+
+--------------
+
 This module contains various constants relating to the intimate details of the
 :mod:`pickle` module, some lengthy comments about the implementation, and a few
 useful functions for analyzing pickled data.  The contents of this module are

@@ -58,11 +58,14 @@ Glossary
 
    bytecode
       Python source code is compiled into bytecode, the internal representation
-      of a Python program in the interpreter.  The bytecode is also cached in
-      ``.pyc`` and ``.pyo`` files so that executing the same file is faster the
-      second time (recompilation from source to bytecode can be avoided).  This
-      "intermediate language" is said to run on a :term:`virtual machine`
-      that executes the machine code corresponding to each bytecode.
+      of a Python program in the CPython interpreter.  The bytecode is also
+      cached in ``.pyc`` and ``.pyo`` files so that executing the same file is
+      faster the second time (recompilation from source to bytecode can be
+      avoided).  This "intermediate language" is said to run on a
+      :term:`virtual machine` that executes the machine code corresponding to
+      each bytecode. Do note that bytecodes are not expected to work between
+      different Python virtual machines, nor to be stable between Python
+      releases.
 
       A list of bytecode instructions can be found in the documentation for
       :ref:`the dis module <bytecodes>`.
@@ -128,8 +131,9 @@ Glossary
          def f(...):
              ...
 
-      See :ref:`the documentation for function definition <function>` for more
-      about decorators.
+      The same concept exists for classes, but is less commonly used there.  See
+      the documentation for :ref:`function definitions <function>` and
+      :ref:`class definitions <class>` for more about decorators.
 
    descriptor
       Any *new-style* object which defines the methods :meth:`__get__`,
@@ -165,8 +169,8 @@ Glossary
       well-designed code improves its flexibility by allowing polymorphic
       substitution.  Duck-typing avoids tests using :func:`type` or
       :func:`isinstance`.  (Note, however, that duck-typing can be complemented
-      with :term:`abstract base class`\ es.)  Instead, it typically employs
-      :func:`hasattr` tests or :term:`EAFP` programming.
+      with :term:`abstract base classes <abstract base class>`.)  Instead, it
+      typically employs :func:`hasattr` tests or :term:`EAFP` programming.
 
    EAFP
       Easier to ask for forgiveness than permission.  This common Python coding
@@ -178,16 +182,33 @@ Glossary
 
    expression
       A piece of syntax which can be evaluated to some value.  In other words,
-      an expression is an accumulation of expression elements like literals, names,
-      attribute access, operators or function calls which all return a value.
-      In contrast to many other languages, not all language constructs are expressions.
-      There are also :term:`statement`\s which cannot be used as expressions,
-      such as :keyword:`print` or :keyword:`if`.  Assignments are also statements,
-      not expressions.
+      an expression is an accumulation of expression elements like literals,
+      names, attribute access, operators or function calls which all return a
+      value.  In contrast to many other languages, not all language constructs
+      are expressions.  There are also :term:`statement`\s which cannot be used
+      as expressions, such as :keyword:`print` or :keyword:`if`.  Assignments
+      are also statements, not expressions.
 
    extension module
       A module written in C or C++, using Python's C API to interact with the
       core and with user code.
+
+   file object
+      An object exposing a file-oriented API (with methods such as
+      :meth:`read()` or :meth:`write()`) to an underlying resource.  Depending
+      on the way it was created, a file object can mediate access to a real
+      on-disk file or to another other type of storage or communication device
+      (for example standard input/output, in-memory buffers, sockets, pipes,
+      etc.).  File objects are also called :dfn:`file-like objects` or
+      :dfn:`streams`.
+
+      There are actually three categories of file objects: raw binary files,
+      buffered binary files and text files.  Their interfaces are defined in the
+      :mod:`io` module.  The canonical way to create a file object is by using
+      the :func:`open` function.
+
+   file-like object
+      A synonym for :term:`file object`.
 
    finder
       An object that tries to find the :term:`loader` for a module. It must
@@ -335,7 +356,7 @@ Glossary
       slowly.  See also :term:`interactive`.
 
    iterable
-      A container object capable of returning its members one at a
+      An object capable of returning its members one at a
       time. Examples of iterables include all sequence types (such as
       :class:`list`, :class:`str`, and :class:`tuple`) and some non-sequence
       types like :class:`dict` and :class:`file` and objects of any classes you
@@ -404,6 +425,12 @@ Glossary
       the :term:`EAFP` approach and is characterized by the presence of many
       :keyword:`if` statements.
 
+      In a multi-threaded environment, the LBYL approach can risk introducing a
+      race condition between "the looking" and "the leaping".  For example, the
+      code, ``if key in mapping: return mapping[key]`` can fail if another
+      thread removes *key* from *mapping* after the test, but before the lookup.
+      This issue can be solved with locks or by using the EAFP approach.
+
    list
       A built-in Python :term:`sequence`.  Despite its name it is more akin
       to an array in other languages than to a linked list since access to
@@ -424,7 +451,8 @@ Glossary
 
    mapping
       A container object that supports arbitrary key lookups and implements the
-      methods specified in the :class:`Mapping` or :class:`MutableMapping`
+      methods specified in the :class:`~collections.Mapping` or
+      :class:`~collections.MutableMapping`
       :ref:`abstract base classes <collections-abstract-base-classes>`.  Examples
       include :class:`dict`, :class:`collections.defaultdict`,
       :class:`collections.OrderedDict` and :class:`collections.Counter`.
@@ -447,6 +475,14 @@ Glossary
       of an instance of that class, the method will get the instance object as
       its first :term:`argument` (which is usually called ``self``).
       See :term:`function` and :term:`nested scope`.
+
+   method resolution order
+      Method Resolution Order is the order in which base classes are searched
+      for a member during lookup. See `The Python 2.3 Method Resolution Order
+      <http://www.python.org/download/releases/2.3/mro/>`_.
+
+   MRO
+      See :term:`method resolution order`.
 
    mutable
       Mutable objects can change their value but keep their :func:`id`.  See
@@ -480,10 +516,11 @@ Glossary
    nested scope
       The ability to refer to a variable in an enclosing definition.  For
       instance, a function defined inside another function can refer to
-      variables in the outer function.  Note that nested scopes work only for
-      reference and not for assignment which will always write to the innermost
-      scope.  In contrast, local variables both read and write in the innermost
-      scope.  Likewise, global variables read and write to the global namespace.
+      variables in the outer function.  Note that nested scopes by default work
+      only for reference and not for assignment.  Local variables both read and
+      write in the innermost scope.  Likewise, global variables read and write
+      to the global namespace.  The :keyword:`nonlocal` allows writing to outer
+      scopes.
 
    new-style class
       Any class which inherits from :class:`object`.  This includes all built-in
@@ -506,9 +543,9 @@ Glossary
       :term:`argument`.
 
    Python 3000
-      Nickname for the next major Python version, 3.0 (coined long ago
-      when the release of version 3 was something in the distant future.)  This
-      is also abbreviated "Py3k".
+      Nickname for the Python 3.x release line (coined long ago when the release
+      of version 3 was something in the distant future.)  This is also
+      abbreviated "Py3k".
 
    Pythonic
       An idea or piece of code which closely follows the most common idioms
@@ -531,7 +568,7 @@ Glossary
       object drops to zero, it is deallocated.  Reference counting is
       generally not visible to Python code, but it is a key element of the
       :term:`CPython` implementation.  The :mod:`sys` module defines a
-      :func:`getrefcount` function that programmers can call to return the
+      :func:`~sys.getrefcount` function that programmers can call to return the
       reference count for a particular object.
 
    __slots__
@@ -567,7 +604,15 @@ Glossary
    statement
       A statement is part of a suite (a "block" of code).  A statement is either
       an :term:`expression` or a one of several constructs with a keyword, such
-      as :keyword:`if`, :keyword:`while` or :keyword:`print`.
+      as :keyword:`if`, :keyword:`while` or :keyword:`for`.
+
+   struct sequence
+      A tuple with named elements. Struct sequences expose an interface similiar
+      to :term:`named tuple` in that elements can either be accessed either by
+      index or as an attribute. However, they do not have any of the named tuple
+      methods like :meth:`~collections.somenamedtuple._make` or
+      :meth:`~collections.somenamedtuple._asdict`. Examples of struct sequences
+      include :data:`sys.float_info` and the return value of :func:`os.stat`.
 
    triple-quoted string
       A string which is bound by three instances of either a quotation mark

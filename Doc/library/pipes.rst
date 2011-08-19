@@ -1,4 +1,3 @@
-
 :mod:`pipes` --- Interface to shell pipelines
 =============================================
 
@@ -7,6 +6,9 @@
    :synopsis: A Python interface to Unix shell pipelines.
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
+**Source code:** :source:`Lib/pipes.py`
+
+--------------
 
 The :mod:`pipes` module defines a class to abstract the concept of a *pipeline*
 --- a sequence of converters from one file to  another.

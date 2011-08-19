@@ -1,4 +1,3 @@
-
 :mod:`shutil` --- High-level file operations
 ============================================
 
@@ -11,15 +10,14 @@
    single: file; copying
    single: copying files
 
+**Source code:** :source:`Lib/shutil.py`
+
+--------------
+
 The :mod:`shutil` module offers a number of high-level operations on files and
 collections of files.  In particular, functions are provided  which support file
 copying and removal. For operations on individual files, see also the
 :mod:`os` module.
-
-.. seealso::
-
-   Latest version of the `shutil module Python source code
-   <http://svn.python.org/view/python/branches/release27-maint/Lib/shutil.py?view=markup>`_
 
 .. warning::
 

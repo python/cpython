@@ -1,4 +1,3 @@
-
 :mod:`shlex` --- Simple lexical analysis
 ========================================
 
@@ -11,6 +10,11 @@
 
 
 .. versionadded:: 1.5.2
+
+**Source code:** :source:`Lib/shlex.py`
+
+--------------
+
 
 The :class:`shlex` class makes it easy to write lexical analyzers for simple
 syntaxes resembling that of the Unix shell.  This will often be useful for
