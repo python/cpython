@@ -272,7 +272,10 @@ class DistributionTestCase(support.TempdirManager,
 
 class MetadataTestCase(support.TempdirManager,
                        support.LoggingCatcher,
+                       support.EnvironRestorer,
                        unittest.TestCase):
+
+    restore_environ = ['HOME']
 
     def setUp(self):
         super(MetadataTestCase, self).setUp()
