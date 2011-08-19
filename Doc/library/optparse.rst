@@ -7,13 +7,13 @@
 .. moduleauthor:: Greg Ward <gward@python.net>
 .. sectionauthor:: Greg Ward <gward@python.net>
 
+.. deprecated:: 3.2
+  The :mod:`optparse` module is deprecated and will not be developed further;
+  development will continue with the :mod:`argparse` module.
+
 **Source code:** :source:`Lib/optparse.py`
 
 --------------
-
-.. deprecated:: 2.7
-  The :mod:`optparse` module is deprecated and will not be developed further;
-  development will continue with the :mod:`argparse` module.
 
 :mod:`optparse` is a more convenient, flexible, and powerful library for parsing
 command-line options than the old :mod:`getopt` module.  :mod:`optparse` uses a

@@ -6,9 +6,9 @@
 .. moduleauthor:: Steven Bethard <steven.bethard@gmail.com>
 .. sectionauthor:: Steven Bethard <steven.bethard@gmail.com>
 
-**Source code:** :source:`Lib/argparse.py`
-
 .. versionadded:: 3.2
+
+**Source code:** :source:`Lib/argparse.py`
 
 --------------
 
@@ -109,7 +109,7 @@ Parsing arguments
 
 :class:`ArgumentParser` parses arguments through the
 :meth:`~ArgumentParser.parse_args` method.  This will inspect the command line,
-convert each arg to the appropriate type and then invoke the appropriate action.
+convert each argument to the appropriate type and then invoke the appropriate action.
 In most cases, this means a simple :class:`Namespace` object will be built up from
 attributes parsed out of the command line::
 
@@ -244,7 +244,7 @@ This can be achieved by passing ``False`` as the ``add_help=`` argument to
     --foo FOO  foo help
 
 The help option is typically ``-h/--help``. The exception to this is
-if the ``prefix_chars=`` is specified and does not include ``'-'``, in
+if the ``prefix_chars=`` is specified and does not include ``-``, in
 which case ``-h`` and ``--help`` are not valid options.  In
 this case, the first character in ``prefix_chars`` is used to prefix
 the help options::
@@ -260,7 +260,7 @@ the help options::
 prefix_chars
 ^^^^^^^^^^^^
 
-Most command-line options will use ``'-'`` as the prefix, e.g. ``-f/--foo``.
+Most command-line options will use ``-`` as the prefix, e.g. ``-f/--foo``.
 Parsers that need to support different or additional prefix
 characters, e.g. for options
 like ``+f`` or ``/foo``, may specify them using the ``prefix_chars=`` argument
@@ -273,7 +273,7 @@ to the ArgumentParser constructor::
    Namespace(bar='Y', f='X')
 
 The ``prefix_chars=`` argument defaults to ``'-'``. Supplying a set of
-characters that does not include ``'-'`` will cause ``-f/--foo`` options to be
+characters that does not include ``-`` will cause ``-f/--foo`` options to be
 disallowed.
 
 
@@ -778,7 +778,7 @@ single action to be taken.  The ``nargs`` keyword argument associates a
 different number of command-line arguments with a single action.  The supported
 values are:
 
-* N (an integer).  N arguments from the command line will be gathered together into a
+* ``N`` (an integer).  ``N`` arguments from the command line will be gathered together into a
   list.  For example::
 
      >>> parser = argparse.ArgumentParser()
@@ -790,11 +790,11 @@ values are:
   Note that ``nargs=1`` produces a list of one item.  This is different from
   the default, in which the item is produced by itself.
 
-* ``'?'``. One arg will be consumed from the command line if possible, and
-  produced as a single item.  If no command-line arg is present, the value from
+* ``'?'``. One argument will be consumed from the command line if possible, and
+  produced as a single item.  If no command-line argument is present, the value from
   default_ will be produced.  Note that for optional arguments, there is an
   additional case - the option string is present but not followed by a
-  command-line arg.  In this case the value from const_ will be produced.  Some
+  command-line argument.  In this case the value from const_ will be produced.  Some
   examples to illustrate this::
 
      >>> parser = argparse.ArgumentParser()
@@ -836,7 +836,7 @@ values are:
 
 * ``'+'``. Just like ``'*'``, all command-line args present are gathered into a
   list.  Additionally, an error message will be generated if there wasn't at
-  least one command-line arg present.  For example::
+  least one command-line argument present.  For example::
 
      >>> parser = argparse.ArgumentParser(prog='PROG')
      >>> parser.add_argument('foo', nargs='+')
@@ -847,7 +847,7 @@ values are:
      PROG: error: too few arguments
 
 If the ``nargs`` keyword argument is not provided, the number of arguments consumed
-is determined by the action_.  Generally this means a single command-line arg
+is determined by the action_.  Generally this means a single command-line argument
 will be consumed and a single item (not a list) will be produced.
 
 
@@ -866,7 +866,7 @@ the various :class:`ArgumentParser` actions.  The two most common uses of it are
   (like ``-f`` or ``--foo``) and ``nargs='?'``.  This creates an optional
   argument that can be followed by zero or one command-line arguments.
   When parsing the command line, if the option string is encountered with no
-  command-line arg following it, the value of ``const`` will be assumed instead.
+  command-line argument following it, the value of ``const`` will be assumed instead.
   See the nargs_ description for examples.
 
 The ``const`` keyword argument defaults to ``None``.
@@ -878,7 +878,7 @@ default
 All optional arguments and some positional arguments may be omitted at the
 command line.  The ``default`` keyword argument of
 :meth:`~ArgumentParser.add_argument`, whose value defaults to ``None``,
-specifies what value should be used if the command-line arg is not present.
+specifies what value should be used if the command-line argument is not present.
 For optional arguments, the ``default`` value is used when the option string
 was not present at the command line::
 
@@ -889,8 +889,8 @@ was not present at the command line::
    >>> parser.parse_args(''.split())
    Namespace(foo=42)
 
-For positional arguments with nargs_ ``='?'`` or ``'*'``, the ``default`` value
-is used when no command-line arg was present::
+For positional arguments with nargs_ equal to ``?`` or ``*``, the ``default`` value
+is used when no command-line argument was present::
 
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument('foo', nargs='?', default=42)
@@ -976,8 +976,8 @@ choices
 Some command-line arguments should be selected from a restricted set of values.
 These can be handled by passing a container object as the ``choices`` keyword
 argument to :meth:`~ArgumentParser.add_argument`.  When the command line is
-parsed, arg values will be checked, and an error message will be displayed if
-the arg was not one of the acceptable values::
+parsed, argument values will be checked, and an error message will be displayed if
+the argument was not one of the acceptable values::
 
    >>> parser = argparse.ArgumentParser(prog='PROG')
    >>> parser.add_argument('foo', choices='abc')
@@ -1080,7 +1080,7 @@ value as the "name" of each object.  By default, for positional argument
 actions, the dest_ value is used directly, and for optional argument actions,
 the dest_ value is uppercased.  So, a single positional argument with
 ``dest='bar'`` will that argument will be referred to as ``bar``. A single
-optional argument ``--foo`` that should be followed by a single command-line arg
+optional argument ``--foo`` that should be followed by a single command-line argument
 will be referred to as ``FOO``.  An example::
 
    >>> parser = argparse.ArgumentParser()
@@ -1152,10 +1152,10 @@ attribute is determined by the ``dest`` keyword argument of
 
 For optional argument actions, the value of ``dest`` is normally inferred from
 the option strings.  :class:`ArgumentParser` generates the value of ``dest`` by
-taking the first long option string and stripping away the initial ``'--'``
+taking the first long option string and stripping away the initial ``--``
 string.  If no long option strings were supplied, ``dest`` will be derived from
-the first short option string by stripping the initial ``'-'`` character.  Any
-internal ``'-'`` characters will be converted to ``'_'`` characters to make sure
+the first short option string by stripping the initial ``-`` character.  Any
+internal ``-`` characters will be converted to ``_`` characters to make sure
 the string is a valid attribute name.  The examples below illustrate this
 behavior::
 
@@ -1187,7 +1187,7 @@ The parse_args() method
    created and how they are assigned. See the documentation for
    :meth:`add_argument` for details.
 
-   By default, the arg strings are taken from :data:`sys.argv`, and a new empty
+   By default, the argument strings are taken from :data:`sys.argv`, and a new empty
    :class:`Namespace` object is created for the attributes.
 
 
@@ -1258,15 +1258,15 @@ it exits and prints the error along with a usage message::
    PROG: error: extra arguments found: badger
 
 
-Arguments containing ``"-"``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Arguments containing ``-``
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The :meth:`~ArgumentParser.parse_args` method attempts to give errors whenever
 the user has clearly made a mistake, but some situations are inherently
-ambiguous.  For example, the command-line arg ``'-1'`` could either be an
+ambiguous.  For example, the command-line argument ``-1`` could either be an
 attempt to specify an option or an attempt to provide a positional argument.
 The :meth:`~ArgumentParser.parse_args` method is cautious here: positional
-arguments may only begin with ``'-'`` if they look like negative numbers and
+arguments may only begin with ``-`` if they look like negative numbers and
 there are no options in the parser that look like negative numbers::
 
    >>> parser = argparse.ArgumentParser(prog='PROG')
@@ -1299,7 +1299,7 @@ there are no options in the parser that look like negative numbers::
    usage: PROG [-h] [-1 ONE] [foo]
    PROG: error: argument -1: expected one argument
 
-If you have positional arguments that must begin with ``'-'`` and don't look
+If you have positional arguments that must begin with ``-`` and don't look
 like negative numbers, you can insert the pseudo-argument ``'--'`` which tells
 :meth:`~ArgumentParser.parse_args` that everything after that is a positional
 argument::
@@ -1417,7 +1417,7 @@ Sub-commands
      >>> parser_b = subparsers.add_parser('b', help='b help')
      >>> parser_b.add_argument('--baz', choices='XYZ', help='baz help')
      >>>
-     >>> # parse some arg lists
+     >>> # parse some argument lists
      >>> parser.parse_args(['a', '12'])
      Namespace(bar=12, foo=False)
      >>> parser.parse_args(['--foo', 'b', '--baz', 'Z'])
@@ -1426,8 +1426,8 @@ Sub-commands
    Note that the object returned by :meth:`parse_args` will only contain
    attributes for the main parser and the subparser that was selected by the
    command line (and not any other subparsers).  So in the example above, when
-   the ``"a"`` command is specified, only the ``foo`` and ``bar`` attributes are
-   present, and when the ``"b"`` command is specified, only the ``foo`` and
+   the ``a`` command is specified, only the ``foo`` and ``bar`` attributes are
+   present, and when the ``b`` command is specified, only the ``foo`` and
    ``baz`` attributes are present.
 
    Similarly, when a help message is requested from a subparser, only the help
