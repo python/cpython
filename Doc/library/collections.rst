@@ -1,4 +1,3 @@
-
 :mod:`collections` --- High-performance container datatypes
 ===========================================================
 
@@ -14,6 +13,10 @@
    from collections import *
    import itertools
    __name__ = '<doctest>'
+
+**Source code:** :source:`Lib/collections.py` and :source:`Lib/_abcoll.py`
+
+--------------
 
 This module implements specialized container datatypes providing alternatives to
 Python's general purpose built-in containers, :class:`dict`, :class:`list`,
@@ -32,10 +35,6 @@ In addition to the concrete container classes, the collections module provides
 used to test whether a class provides a particular interface, for example,
 whether it is hashable or a mapping.
 
-.. seealso::
-
-   Latest version of the `collections module Python source code
-   <http://svn.python.org/view/python/branches/release27-maint/Lib/collections.py?view=markup>`_
 
 :class:`Counter` objects
 ------------------------
@@ -1023,9 +1022,6 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
    ``__hash__ = Set._hash``.
 
 .. seealso::
-
-   * Latest version of the `Python source code for the collections abstract base classes
-     <http://svn.python.org/view/python/branches/release27-maint/Lib/_abcoll.py?view=markup>`_
 
    * `OrderedSet recipe <http://code.activestate.com/recipes/576694/>`_ for an
      example built on :class:`MutableSet`.

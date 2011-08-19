@@ -1,4 +1,3 @@
-
 :mod:`calendar` --- General calendar-related functions
 ======================================================
 
@@ -7,6 +6,9 @@
               program.
 .. sectionauthor:: Drew Csillag <drew_csillag@geocities.com>
 
+**Source code:** :source:`Lib/calendar.py`
+
+--------------
 
 This module allows you to output calendars like the Unix :program:`cal` program,
 and provides additional useful functions related to the calendar. By default,
@@ -22,10 +24,6 @@ in both directions.  This matches the definition of the "proleptic Gregorian"
 calendar in Dershowitz and Reingold's book "Calendrical Calculations", where
 it's the base calendar for all computations.
 
-.. seealso::
-
-   Latest version of the `calendar module Python source code
-   <http://svn.python.org/view/python/branches/release27-maint/Lib/calendar.py?view=markup>`_
 
 .. class:: Calendar([firstweekday])
 

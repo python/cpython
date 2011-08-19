@@ -17,6 +17,10 @@
 
 .. versionadded:: 2.2
 
+**Source code:** :source:`Lib/xmlrpclib.py`
+
+--------------
+
 XML-RPC is a Remote Procedure Call method that uses XML passed via HTTP as a
 transport.  With it, a client can call methods with parameters on a remote
 server (the server is named by a URI) and get back structured data.  This module

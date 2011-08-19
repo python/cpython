@@ -18,6 +18,10 @@
    single: HTML
    single: XHTML
 
+**Source code:** :source:`Lib/HTMLParser.py`
+
+--------------
+
 This module defines a class :class:`HTMLParser` which serves as the basis for
 parsing text files formatted in HTML (HyperText Mark-up Language) and XHTML.
 Unlike the parser in :mod:`htmllib`, this parser is not based on the SGML parser
