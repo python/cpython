@@ -278,6 +278,8 @@ Archives operations
    *owner* and *group* are used when creating a tar archive. By default,
    uses the current owner and group.
 
+   *logger* is an instance of :class:`logging.Logger`.
+
    .. versionadded:: 2.7
 
 
