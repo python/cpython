@@ -1,18 +1,15 @@
-
 :mod:`random` --- Generate pseudo-random numbers
 ================================================
 
 .. module:: random
    :synopsis: Generate pseudo-random numbers with various common distributions.
 
+**Source code:** :source:`Lib/random.py`
+
+--------------
 
 This module implements pseudo-random number generators for various
 distributions.
-
-.. seealso::
-
-   Latest version of the `random module Python source code
-   <http://svn.python.org/view/python/branches/release27-maint/Lib/random.py?view=markup>`_
 
 For integers, uniform selection from a range. For sequences, uniform selection
 of a random element, a function to generate a random permutation of a list

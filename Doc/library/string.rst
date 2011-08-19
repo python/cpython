@@ -7,6 +7,10 @@
 
 .. index:: module: re
 
+**Source code:** :source:`Lib/string.py`
+
+--------------
+
 The :mod:`string` module contains a number of useful constants and
 classes, as well as some deprecated legacy functions that are also
 available as methods on strings. In addition, Python's built-in string
@@ -16,12 +20,6 @@ in the :ref:`string-methods` section. To output formatted strings use
 template strings or the ``%`` operator described in the
 :ref:`string-formatting` section. Also, see the :mod:`re` module for
 string functions based on regular expressions.
-
-.. seealso::
-
-   Latest version of the `string module Python source code
-   <http://svn.python.org/view/python/branches/release27-maint/Lib/string.py?view=markup>`_
-
 
 String constants
 ----------------

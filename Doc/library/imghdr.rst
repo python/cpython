@@ -1,10 +1,12 @@
-
 :mod:`imghdr` --- Determine the type of an image
 ================================================
 
 .. module:: imghdr
    :synopsis: Determine the type of image contained in a file or byte stream.
 
+**Source code:** :source:`Lib/imghdr.py`
+
+--------------
 
 The :mod:`imghdr` module determines the type of image contained in a file or
 byte stream.

@@ -9,6 +9,10 @@
 
 .. versionadded:: 2.6
 
+**Source code:** :source:`Lib/abc.py`
+
+--------------
+
 This module provides the infrastructure for defining :term:`abstract base
 classes <abstract base class>` (ABCs) in Python, as outlined in :pep:`3119`; see the PEP for why this
 was added to Python. (See also :pep:`3141` and the :mod:`numbers` module

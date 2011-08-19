@@ -18,6 +18,10 @@
    module: SimpleHTTPServer
    module: CGIHTTPServer
 
+**Source code:** :source:`Lib/BaseHTTPServer.py`
+
+--------------
+
 This module defines two classes for implementing HTTP servers (Web servers).
 Usually, this module isn't used directly, but is used as a basis for building
 functioning Web servers. See the :mod:`SimpleHTTPServer` and
