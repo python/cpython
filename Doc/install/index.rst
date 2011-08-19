@@ -144,7 +144,7 @@ archive file to :file:`C:\\Temp`, then it would unpack into
 :file:`C:\\Temp\\foo-1.0`; you can use either a archive manipulator with a
 graphical user interface (such as WinZip) or a command-line tool (such as
 :program:`unzip` or :program:`pkunzip`) to unpack the archive.  Then, open a
-command prompt window ("DOS box"), and run::
+command prompt window (:menuselection:`Start --> Accessories`) and run::
 
    cd c:\Temp\foo-1.0
    python setup.py install
