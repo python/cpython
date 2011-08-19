@@ -262,6 +262,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12778: Reduce memory consumption when JSON-encoding a large
+  container of many small objects.
+
 - Issue #12650: Fix a race condition where a subprocess.Popen could leak
   resources (FD/zombie) when killed at the wrong time.
 
