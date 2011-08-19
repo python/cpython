@@ -12,6 +12,10 @@
    pair: URL; parsing
    pair: relative; URL
 
+**Source code:** :source:`Lib/urllib/parse.py`
+
+--------------
+
 This module defines a standard interface to break Uniform Resource Locator (URL)
 strings up in components (addressing scheme, network location, path etc.), to
 combine the components back into a URL string, and to convert a "relative URL"
