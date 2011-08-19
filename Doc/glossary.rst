@@ -30,7 +30,10 @@ Glossary
       Abstract base classes complement :term:`duck-typing` by
       providing a way to define interfaces when other techniques like
       :func:`hasattr` would be clumsy or subtly wrong (for example with
-      :ref:`magic methods <new-style-special-lookup>`). Python comes with many built-in ABCs for
+      :ref:`magic methods <new-style-special-lookup>`).  ABCs introduce virtual
+      subclasses, which are classes that don't inherit from a class but are
+      still recognized by :func:`isinstance` and :func:`issubclass`; see the
+      :mod:`abc` module documentation.  Python comes with many built-in ABCs for
       data structures (in the :mod:`collections` module), numbers (in the
       :mod:`numbers` module), and streams (in the :mod:`io` module). You can
       create your own ABCs with the :mod:`abc` module.
