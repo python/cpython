@@ -254,7 +254,7 @@ code: it's probably better to write C code like  ::
 
 If you need to include header files from some other Python extension, you can
 take advantage of the fact that header files are installed in a consistent way
-by the Distutils :command:`install_header` command.  For example, the Numerical
+by the Distutils :command:`install_headers` command.  For example, the Numerical
 Python header files are installed (on a standard Unix installation) to
 :file:`/usr/local/include/python1.5/Numerical`. (The exact location will differ
 according to your platform and Python installation.)  Since the Python include
