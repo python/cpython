@@ -1,4 +1,3 @@
-
 :mod:`inspect` --- Inspect live objects
 =======================================
 
@@ -9,6 +8,10 @@
 
 
 .. versionadded:: 2.1
+
+**Source code:** :source:`Lib/inspect.py`
+
+--------------
 
 The :mod:`inspect` module provides several useful functions to help get
 information about live objects such as modules, classes, methods, functions,

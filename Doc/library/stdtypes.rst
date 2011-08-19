@@ -2406,7 +2406,7 @@ Files have the following methods:
 .. method:: file.readline([size])
 
    Read one entire line from the file.  A trailing newline character is kept in
-   the string (but may be absent when a file ends with an incomplete line). [#]_
+   the string (but may be absent when a file ends with an incomplete line). [6]_
    If the *size* argument is present and non-negative, it is a maximum byte
    count (including the trailing newline) and an incomplete line may be
    returned. When *size* is not 0, an empty string is returned *only* when EOF
@@ -3062,7 +3062,7 @@ The following attributes are only supported by :term:`new-style class`\ es.
 .. [5] To format only a tuple you should therefore provide a singleton tuple whose only
    element is the tuple to be formatted.
 
-.. [#] The advantage of leaving the newline on is that returning an empty string is
+.. [6] The advantage of leaving the newline on is that returning an empty string is
    then an unambiguous EOF indication.  It is also possible (in cases where it
    might matter, for example, if you want to make an exact copy of a file while
    scanning its lines) to tell whether the last line of a file ended in a newline

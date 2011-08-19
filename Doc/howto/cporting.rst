@@ -1,5 +1,7 @@
 .. highlightlang:: c
 
+.. _cporting-howto:
+
 ********************************
 Porting Extension Modules to 3.0
 ********************************

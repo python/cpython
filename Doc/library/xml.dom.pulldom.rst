@@ -1,4 +1,3 @@
-
 :mod:`xml.dom.pulldom` --- Support for building partial DOM trees
 =================================================================
 
@@ -8,6 +7,10 @@
 
 
 .. versionadded:: 2.0
+
+**Source code:** :source:`Lib/xml/dom/pulldom.py`
+
+--------------
 
 :mod:`xml.dom.pulldom` allows building only selected portions of a Document
 Object Model representation of a document from SAX events.

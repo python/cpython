@@ -1,15 +1,16 @@
-
 :mod:`modulefinder` --- Find modules used by a script
 =====================================================
 
+.. module:: modulefinder
+   :synopsis: Find modules used by a script.
 .. sectionauthor:: A.M. Kuchling <amk@amk.ca>
 
 
-.. module:: modulefinder
-   :synopsis: Find modules used by a script.
-
-
 .. versionadded:: 2.3
+
+**Source code:** :source:`Lib/modulefinder.py`
+
+--------------
 
 This module provides a :class:`ModuleFinder` class that can be used to determine
 the set of modules imported by a script. ``modulefinder.py`` can also be run as

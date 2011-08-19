@@ -84,8 +84,8 @@ terminal::
 
    python setup.py sdist
 
-For Windows, open a command prompt windows ("DOS box") and change the command
-to::
+For Windows, open a command prompt windows (:menuselection:`Start -->
+Accessories`) and change the command to::
 
    setup.py sdist
 

@@ -1,20 +1,17 @@
-
 :mod:`trace` --- Trace or track Python statement execution
 ==========================================================
 
 .. module:: trace
    :synopsis: Trace or track Python statement execution.
 
+**Source code:** :source:`Lib/trace.py`
+
+--------------
 
 The :mod:`trace` module allows you to trace program execution, generate
 annotated statement coverage listings, print caller/callee relationships and
 list functions executed during a program run.  It can be used in another program
 or from the command line.
-
-.. seealso::
-
-   Latest version of the `trace module Python source code
-   <http://svn.python.org/view/python/branches/release27-maint/Lib/trace.py?view=markup>`_
 
 .. _trace-cli:
 

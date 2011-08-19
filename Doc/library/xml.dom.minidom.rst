@@ -1,4 +1,3 @@
-
 :mod:`xml.dom.minidom` --- Lightweight DOM implementation
 =========================================================
 
@@ -10,6 +9,10 @@
 
 
 .. versionadded:: 2.0
+
+**Source code:** :source:`Lib/xml/dom/minidom.py`
+
+--------------
 
 :mod:`xml.dom.minidom` is a light-weight implementation of the Document Object
 Model interface.  It is intended to be simpler than the full DOM and also
