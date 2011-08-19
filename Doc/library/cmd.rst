@@ -205,6 +205,9 @@ Instances of :class:`Cmd` subclasses have some public instance variables:
    :mod:`readline`, on systems that support it, the interpreter will automatically
    support :program:`Emacs`\ -like line editing  and command-history keystrokes.)
 
+
+.. _cmd-example:
+
 Cmd Example
 -----------
 

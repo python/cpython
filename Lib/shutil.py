@@ -399,7 +399,7 @@ def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
 
     if not os.path.exists(archive_dir):
         if logger is not None:
-            logger.info("creating %s" % archive_dir)
+            logger.info("creating %s", archive_dir)
         if not dry_run:
             os.makedirs(archive_dir)
 

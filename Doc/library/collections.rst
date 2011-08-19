@@ -1,4 +1,3 @@
-
 :mod:`collections` --- Container datatypes
 ==========================================
 
@@ -977,7 +976,7 @@ original insertion position is changed and moved to the end::
                 del self[key]
             OrderedDict.__setitem__(self, key, value)
 
-An ordered dictionary can combined with the :class:`Counter` class
+An ordered dictionary can be combined with the :class:`Counter` class
 so that the counter remembers the order elements are first encountered::
 
    class OrderedCounter(Counter, OrderedDict):
