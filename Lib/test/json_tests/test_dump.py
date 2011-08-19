@@ -1,6 +1,7 @@
 from io import StringIO
 from test.json_tests import PyTest, CTest
 
+from test.support import precisionbigmemtest, _1G
 
 class TestDump:
     def test_dump(self):
@@ -21,4 +22,20 @@ class TestDump:
 
 
 class TestPyDump(TestDump, PyTest): pass
-class TestCDump(TestDump, CTest): pass
+
+class TestCDump(TestDump, CTest):
+
+    # The size requirement here is hopefully over-estimated (actual
+    # memory consumption depending on implementation details, and also
+    # system memory management, since this may allocate a lot of
+    # small objects).
+
+    @precisionbigmemtest(size=_1G, memuse=1)
+    def test_large_list(self, size):
+        N = int(30 * 1024 * 1024 * (size / _1G))
+        l = [1] * N
+        encoded = self.dumps(l)
+        self.assertEqual(len(encoded), N * 3)
+        self.assertEqual(encoded[:1], "[")
+        self.assertEqual(encoded[-2:], "1]")
+        self.assertEqual(encoded[1:-2], "1, " * (N - 1))
