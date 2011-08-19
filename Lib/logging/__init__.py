@@ -61,8 +61,6 @@ __date__    = "07 February 2010"
 #
 if hasattr(sys, 'frozen'): #support for py2exe
     _srcfile = "logging%s__init__%s" % (os.sep, __file__[-4:])
-elif __file__[-4:].lower() in ['.pyc', '.pyo']:
-    _srcfile = __file__[:-4] + '.py'
 else:
     _srcfile = __file__
 _srcfile = os.path.normcase(_srcfile)
