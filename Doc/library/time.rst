@@ -553,6 +553,6 @@ The module defines the following functions and data items:
    preferred  hour/minute offset is not supported by all ANSI C libraries. Also, a
    strict reading of the original 1982 :rfc:`822` standard calls for a two-digit
    year (%y rather than %Y), but practice moved to 4-digit years long before the
-   year 2000.  The 4-digit year has been mandated by :rfc:`2822`, which obsoletes
-   :rfc:`822`.
+   year 2000.  After that, :rfc:`822` became obsolete and the 4-digit year has
+   been first recommended by :rfc:`1123` and then mandated by :rfc:`2822`.
 
