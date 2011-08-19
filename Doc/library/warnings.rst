@@ -9,6 +9,10 @@
 
 .. versionadded:: 2.1
 
+**Source code:** :source:`Lib/warnings.py`
+
+--------------
+
 Warning messages are typically issued in situations where it is useful to alert
 the user of some condition in a program, where that condition (normally) doesn't
 warrant raising an exception and terminating the program.  For example, one

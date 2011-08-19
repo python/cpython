@@ -1,4 +1,3 @@
-
 :mod:`pprint` --- Data pretty printer
 =====================================
 
@@ -7,6 +6,9 @@
 .. moduleauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
+**Source code:** :source:`Lib/pprint.py`
+
+--------------
 
 The :mod:`pprint` module provides a capability to "pretty-print" arbitrary
 Python data structures in a form which can be used as input to the interpreter.
@@ -28,10 +30,6 @@ width constraint.
 .. versionchanged:: 2.6
    Added support for :class:`set` and :class:`frozenset`.
 
-.. seealso::
-
-   Latest version of the `pprint module Python source code
-   <http://svn.python.org/view/python/branches/release27-maint/Lib/pprint.py?view=markup>`_
 
 The :mod:`pprint` module defines one class:
 

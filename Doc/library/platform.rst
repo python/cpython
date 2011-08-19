@@ -9,6 +9,10 @@
 
 .. versionadded:: 2.3
 
+**Source code:** :source:`Lib/platform.py`
+
+--------------
+
 .. note::
 
    Specific platforms listed alphabetically, with Linux included in the Unix

@@ -1,4 +1,3 @@
-
 :mod:`fnmatch` --- Unix filename pattern matching
 =================================================
 
@@ -9,6 +8,10 @@
 .. index:: single: filenames; wildcard expansion
 
 .. index:: module: re
+
+**Source code:** :source:`Lib/fnmatch.py`
+
+--------------
 
 This module provides support for Unix shell-style wildcards, which are *not* the
 same as regular expressions (which are documented in the :mod:`re` module).  The
@@ -34,10 +37,6 @@ module.  See module :mod:`glob` for pathname expansion (:mod:`glob` uses
 a period are not special for this module, and are matched by the ``*`` and ``?``
 patterns.
 
-.. seealso::
-
-   Latest version of the `fnmatch Python source code
-   <http://svn.python.org/view/python/branches/release27-maint/Lib/fnmatch.py?view=markup>`_
 
 .. function:: fnmatch(filename, pattern)
 
@@ -95,4 +94,3 @@ patterns.
 
    Module :mod:`glob`
       Unix shell-style path expansion.
-

@@ -7,8 +7,9 @@
 .. moduleauthor:: Barry Warsaw <barry@zope.com>
 .. sectionauthor:: Moshe Zadka <moshez@moshez.org>
 
+**Source code:** :source:`Lib/smtpd.py`
 
-
+--------------
 
 This module offers several classes to implement SMTP servers.  One is a generic
 do-nothing implementation, which can be overridden, while the other two offer

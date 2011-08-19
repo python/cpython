@@ -10,6 +10,10 @@
    single: AIFF
    single: AIFF-C
 
+**Source code:** :source:`Lib/aifc.py`
+
+--------------
+
 This module provides support for reading and writing AIFF and AIFF-C files.
 AIFF is Audio Interchange File Format, a format for storing digital audio
 samples in a file.  AIFF-C is a newer version of the format that includes the

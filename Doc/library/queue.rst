@@ -9,6 +9,9 @@
    :term:`2to3` tool will automatically adapt imports when converting your
    sources to 3.0.
 
+**Source code:** :source:`Lib/Queue.py`
+
+--------------
 
 The :mod:`Queue` module implements multi-producer, multi-consumer queues.
 It is especially useful in threaded programming when information must be
@@ -23,11 +26,6 @@ the first retrieved. In a LIFO queue, the most recently added entry is
 the first retrieved (operating like a stack).  With a priority queue,
 the entries are kept sorted (using the :mod:`heapq` module) and the
 lowest valued entry is retrieved first.
-
-.. seealso::
-
-   Latest version of the `Queue module Python source code
-   <http://svn.python.org/view/python/branches/release27-maint/Lib/Queue.py?view=markup>`_.
 
 The :mod:`Queue` module defines the following classes and exceptions:
 

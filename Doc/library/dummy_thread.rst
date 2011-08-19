@@ -10,6 +10,9 @@
    converting your sources to 3.0; however, you should consider using the
    high-lever :mod:`dummy_threading` module instead.
 
+**Source code:** :source:`Lib/dummy_thread.py`
+
+--------------
 
 This module provides a duplicate interface to the :mod:`thread` module.  It is
 meant to be imported when the :mod:`thread` module is not provided on a

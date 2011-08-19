@@ -1,4 +1,3 @@
-
 :mod:`asynchat` --- Asynchronous socket command/response handler
 ================================================================
 
@@ -7,6 +6,9 @@
 .. moduleauthor:: Sam Rushing <rushing@nightmare.com>
 .. sectionauthor:: Steve Holden <sholden@holdenweb.com>
 
+**Source code:** :source:`Lib/asynchat.py`
+
+--------------
 
 This module builds on the :mod:`asyncore` infrastructure, simplifying
 asynchronous clients and servers and making it easier to handle protocols

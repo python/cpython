@@ -40,6 +40,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #9173: Let shutil._make_archive work if the logger argument is None.
+
 - Issue #12650: Fix a race condition where a subprocess.Popen could leak
   resources (FD/zombie) when killed at the wrong time.
 
