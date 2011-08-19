@@ -202,14 +202,14 @@ counts, but the output will exclude results with counts of zero or less.
     * `Bag class <http://www.gnu.org/software/smalltalk/manual-base/html_node/Bag.html>`_
       in Smalltalk.
 
-    * Wikipedia entry for `Multisets <http://en.wikipedia.org/wiki/Multiset>`_\.
+    * Wikipedia entry for `Multisets <http://en.wikipedia.org/wiki/Multiset>`_.
 
     * `C++ multisets <http://www.demo2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm>`_
       tutorial with examples.
 
     * For mathematical operations on multisets and their use cases, see
       *Knuth, Donald. The Art of Computer Programming Volume II,
-      Section 4.6.3, Exercise 19*\.
+      Section 4.6.3, Exercise 19*.
 
     * To enumerate all distinct multisets of a given size over a given set of
       elements, see :func:`itertools.combinations_with_replacement`.
@@ -453,8 +453,7 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
    :class:`defaultdict` objects support the following method in addition to the
    standard :class:`dict` operations:
 
-
-   .. method:: defaultdict.__missing__(key)
+   .. method:: __missing__(key)
 
       If the :attr:`default_factory` attribute is ``None``, this raises a
       :exc:`KeyError` exception with the *key* as argument.
@@ -474,7 +473,7 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
    :class:`defaultdict` objects support the following instance variable:
 
 
-   .. attribute:: defaultdict.default_factory
+   .. attribute:: default_factory
 
       This attribute is used by the :meth:`__missing__` method; it is
       initialized from the first argument to the constructor, if present, or to
@@ -858,7 +857,7 @@ original insertion position is changed and moved to the end::
                 del self[key]
             OrderedDict.__setitem__(self, key, value)
 
-An ordered dictionary can combined with the :class:`Counter` class
+An ordered dictionary can be combined with the :class:`Counter` class
 so that the counter remembers the order elements are first encountered::
 
    class OrderedCounter(Counter, OrderedDict):
