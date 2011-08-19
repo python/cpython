@@ -624,9 +624,11 @@ available.  They are listed here in alphabetical order.
 .. function:: isinstance(object, classinfo)
 
    Return true if the *object* argument is an instance of the *classinfo* argument,
-   or of a (direct or indirect) subclass thereof.  Also return true if *classinfo*
+   or of a (direct, indirect or :term:`virtual <abstract base class>`) subclass
+   thereof.  Also return true if *classinfo*
    is a type object (new-style class) and *object* is an object of that type or of
-   a (direct or indirect) subclass thereof.  If *object* is not a class instance or
+   a (direct, indirect or :term:`virtual <abstract base class>`) subclass
+   thereof.  If *object* is not a class instance or
    an object of the given type, the function always returns false.  If *classinfo*
    is neither a class object nor a type object, it may be a tuple of class or type
    objects, or may recursively contain other such tuples (other sequence types are
@@ -639,7 +641,8 @@ available.  They are listed here in alphabetical order.
 
 .. function:: issubclass(class, classinfo)
 
-   Return true if *class* is a subclass (direct or indirect) of *classinfo*.  A
+   Return true if *class* is a subclass (direct, indirect or :term:`virtual
+   <abstract base class>`) of *classinfo*.  A
    class is considered a subclass of itself. *classinfo* may be a tuple of class
    objects, in which case every entry in *classinfo* will be checked. In any other
    case, a :exc:`TypeError` exception is raised.

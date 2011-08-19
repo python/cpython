@@ -1,4 +1,3 @@
-
 :mod:`tempfile` --- Generate temporary files and directories
 ============================================================
 
@@ -12,6 +11,10 @@
 .. index::
    pair: temporary; file name
    pair: temporary; file
+
+**Source code:** :source:`Lib/tempfile.py`
+
+--------------
 
 This module generates temporary files and directories.  It works on all
 supported platforms.

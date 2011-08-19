@@ -1,4 +1,3 @@
-
 :mod:`gettext` --- Multilingual internationalization services
 =============================================================
 
@@ -7,6 +6,9 @@
 .. moduleauthor:: Barry A. Warsaw <barry@zope.com>
 .. sectionauthor:: Barry A. Warsaw <barry@zope.com>
 
+**Source code:** :source:`Lib/gettext.py`
+
+--------------
 
 The :mod:`gettext` module provides internationalization (I18N) and localization
 (L10N) services for your Python modules and applications. It supports both the

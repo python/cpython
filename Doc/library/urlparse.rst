@@ -17,6 +17,9 @@
    The :term:`2to3` tool will automatically adapt imports when converting
    your sources to 3.0.
 
+**Source code:** :source:`Lib/urlparse.py`
+
+--------------
 
 This module defines a standard interface to break Uniform Resource Locator (URL)
 strings up in components (addressing scheme, network location, path etc.), to
@@ -32,11 +35,6 @@ following URL schemes: ``file``, ``ftp``, ``gopher``, ``hdl``, ``http``,
 
 .. versionadded:: 2.5
    Support for the ``sftp`` and ``sips`` schemes.
-
-.. seealso::
-
-   Latest version of the `urlparse module Python source code
-   <http://svn.python.org/view/python/branches/release27-maint/Lib/urlparse.py?view=markup>`_
 
 The :mod:`urlparse` module defines the following functions:
 

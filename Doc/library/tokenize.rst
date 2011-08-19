@@ -1,4 +1,3 @@
-
 :mod:`tokenize` --- Tokenizer for Python source
 ===============================================
 
@@ -7,16 +6,14 @@
 .. moduleauthor:: Ka Ping Yee
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
+**Source code:** :source:`Lib/tokenize.py`
+
+--------------
 
 The :mod:`tokenize` module provides a lexical scanner for Python source code,
 implemented in Python.  The scanner in this module returns comments as tokens as
 well, making it useful for implementing "pretty-printers," including colorizers
 for on-screen displays.
-
-.. seealso::
-
-   Latest version of the `tokenize module Python source code
-   <http://svn.python.org/view/python/branches/release27-maint/Lib/tokenize.py?view=markup>`_
 
 The primary entry point is a :term:`generator`:
 

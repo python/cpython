@@ -1,4 +1,3 @@
-
 :mod:`timeit` --- Measure execution time of small code snippets
 ===============================================================
 
@@ -11,6 +10,10 @@
 .. index::
    single: Benchmarking
    single: Performance
+
+**Source code:** :source:`Lib/timeit.py`
+
+--------------
 
 This module provides a simple way to time small bits of Python code. It has both
 command line as well as callable interfaces.  It avoids a number of common traps

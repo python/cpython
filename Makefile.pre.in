@@ -1222,7 +1222,7 @@ smelly: all
 
 # Find files with funny names
 funny:
-	find $(DISTDIRS) -type d \
+	find $(SUBDIRS) $(SUBDIRSTOO) -type d \
 		-o -name '*.[chs]' \
 		-o -name '*.py' \
 		-o -name '*.doc' \

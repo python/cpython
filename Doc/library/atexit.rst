@@ -1,4 +1,3 @@
-
 :mod:`atexit` --- Exit handlers
 ===============================
 
@@ -10,16 +9,15 @@
 
 .. versionadded:: 2.0
 
+**Source code:** :source:`Lib/atexit.py`
+
+--------------
+
 The :mod:`atexit` module defines a single function to register cleanup
 functions.  Functions thus registered are automatically executed upon normal
 interpreter termination.  The order in which the functions are called is not
 defined; if you have cleanup operations that depend on each other, you should
 wrap them in a function and register that one.  This keeps :mod:`atexit` simple.
-
-.. seealso::
-
-   Latest version of the `atexit Python source code
-   <http://svn.python.org/view/python/branches/release27-maint/Lib/atexit.py?view=markup>`_
 
 Note: the functions registered via this module are not called when the program
 is killed by a signal not handled by Python, when a Python fatal internal error

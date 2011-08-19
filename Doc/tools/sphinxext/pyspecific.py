@@ -5,11 +5,12 @@
 
     Sphinx extension with Python doc-specific markup.
 
-    :copyright: 2008, 2009 by Georg Brandl.
+    :copyright: 2008-2011 by Georg Brandl.
     :license: Python license.
 """
 
 ISSUE_URI = 'http://bugs.python.org/issue%s'
+SOURCE_URI = 'http://hg.python.org/cpython/file/2.7/%s'
 
 from docutils import nodes, utils
 
@@ -41,6 +42,14 @@ def issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
     issue = utils.unescape(text)
     text = 'issue ' + issue
     refnode = nodes.reference(text, text, refuri=ISSUE_URI % issue)
+    return [refnode], []
+
+
+# Support for linking to Python source files easily
+
+def source_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
+    path = utils.unescape(text)
+    refnode = nodes.reference(path, path, refuri=SOURCE_URI % path)
     return [refnode], []
 
 
@@ -168,6 +177,7 @@ def parse_opcode_signature(env, sig, signode):
 
 def setup(app):
     app.add_role('issue', issue_role)
+    app.add_role('source', source_role)
     app.add_directive('impl-detail', ImplementationDetail)
     app.add_builder(PydocTopicsBuilder)
     app.add_builder(suspicious.CheckSuspiciousMarkupBuilder)
