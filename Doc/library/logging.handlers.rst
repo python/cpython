@@ -799,7 +799,7 @@ possible, while any potentially slow operations (such as sending an email via
 
 
 
-.. queue-listener:
+.. _queue-listener:
 
 QueueListener
 ^^^^^^^^^^^^^

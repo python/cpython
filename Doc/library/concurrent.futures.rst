@@ -4,10 +4,10 @@
 .. module:: concurrent.futures
    :synopsis: Execute computations concurrently using threads or processes.
 
+.. versionadded:: 3.2
+
 **Source code:** :source:`Lib/concurrent/futures/thread.py`
 and :source:`Lib/concurrent/futures/process.py`
-
-.. versionadded:: 3.2
 
 --------------
 

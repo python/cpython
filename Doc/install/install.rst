@@ -119,12 +119,9 @@ command::
 
    pysetup run install_dist
 
-How you actually run this command depends on the platform and the command line
-interface it provides:
-
-* **Unix**: Use a shell prompt.
-* **Windows**: Open a command prompt ("DOS console") or use :command:`Powershell`.
-* **OS X**: Open a :command:`Terminal`.
+This is a command that should be run in a terminal.  On Windows, it is called a
+command prompt and found in :menuselection:`Start --> Accessories`; Powershell
+is a popular alternative.
 
 
 .. _packaging-platform-variations:
@@ -147,8 +144,7 @@ archive file to :file:`C:\\Temp`, then it would unpack into
 :file:`C:\\Temp\\foo-1.0`. To actually unpack the archive, you can use either
 an archive manipulator with a graphical user interface (such as WinZip or 7-Zip)
 or a command-line tool (such as :program:`unzip`, :program:`pkunzip` or, again,
-:program:`7z`). Then, open a command prompt window ("DOS box" or
-Powershell), and run::
+:program:`7z`). Then, open a command prompt window and run::
 
    cd c:\Temp\foo-1.0
    pysetup run install_dist
@@ -279,7 +275,8 @@ different recipe for each platform. Under Unix, just type :command:`python` at
 the shell prompt. Under Windows (assuming the Python executable is on your
 :envvar:`PATH`, which is the usual case), you can choose :menuselection:`Start --> Run`,
 type ``python`` and press ``enter``. Alternatively, you can simply execute
-:command:`python` at a command prompt ("DOS console" or Powershell).
+:command:`python` at a command prompt (:menuselection:`Start --> Accessories`)
+or in Powershell.
 
 Once the interpreter is started, you type Python code at the prompt. For
 example, on my Linux system, I type the three Python statements shown below,

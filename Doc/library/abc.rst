@@ -194,7 +194,7 @@ It also provides the following decorators:
    .. versionadded:: 3.2
 
 
-.. function:: abstractproperty(fget=None, fset=None, fdel=None, doc=None)
+.. decorator:: abstractproperty(fget=None, fset=None, fdel=None, doc=None)
 
    A subclass of the built-in :func:`property`, indicating an abstract property.
 

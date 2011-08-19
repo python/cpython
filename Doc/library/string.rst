@@ -4,16 +4,15 @@
 .. module:: string
    :synopsis: Common string operations.
 
+**Source code:** :source:`Lib/string.py`
+
+--------------
 
 .. seealso::
 
    :ref:`typesseq`
 
    :ref:`string-methods`
-
-**Source code:** :source:`Lib/string.py`
-
---------------
 
 String constants
 ----------------
