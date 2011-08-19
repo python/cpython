@@ -547,7 +547,8 @@ These environment variables influence Python's behavior.
 
    Defines the :data:`user base directory <site.USER_BASE>`, which is used to
    compute the path of the :data:`user site-packages directory <site.USER_SITE>`
-   and Distutils installation paths for ``python setup.py install --user``.
+   and :ref:`Distutils installation paths <inst-alt-install-user>` for ``python
+   setup.py install --user``.
 
    .. versionadded:: 2.6
 

@@ -279,6 +279,12 @@ statements shown below, and get the output as shown, to find out my
    >>> sys.exec_prefix
    '/usr'
 
+A few other placeholders are used in this document: :file:`{X.Y}` stands for the
+version of Python, for example ``2.7``; :file:`{distname}` will be replaced by
+the name of the module distribution being installed.  Dots and capitalization
+are important in the paths; for example, a value that uses ``python2.7`` on UNIX
+will typically use ``Python27`` on Windows.
+
 If you don't want to install modules to the standard location, or if you don't
 have permission to write there, then you need to read about alternate
 installations in section :ref:`inst-alt-install`.  If you want to customize your
@@ -307,8 +313,61 @@ scheme*) under this base directory in which to install files.  The details
 differ across platforms, so read whichever of the following sections applies to
 you.
 
+Note that the various alternate installation schemes are mutually exclusive: you
+can pass ``--user``, or ``--home``, or ``--prefix`` and ``--exec-prefix``, or
+``--install-base`` and ``--install-platbase``, but you can't mix from these
+groups.
 
-.. _inst-alt-install-prefix:
+
+.. _inst-alt-install-user:
+
+Alternate installation: the user scheme
+---------------------------------------
+
+This scheme is designed to be the most convenient solution for users that don't
+have write permission to the global site-packages directory or don't want to
+install into it.  It is enabled with a simple option::
+
+   python setup.py install --user
+
+Files will be installed into subdirectories of :data:`site.USER_BASE` (written
+as :file:`{userbase}` hereafter).  This scheme installs pure Python modules and
+extension modules in the same location (also known as :data:`site.USER_SITE`).
+Here are the values for UNIX, including Mac OS X:
+
+=============== ===========================================================
+Type of file    Installation directory
+=============== ===========================================================
+modules         :file:`{userbase}/lib/python{X.Y}/site-packages`
+scripts         :file:`{userbase}/bin`
+data            :file:`{userbase}`
+C headers       :file:`{userbase}/include/python{X.Y}/{distname}`
+=============== ===========================================================
+
+And here are the values used on Windows:
+
+=============== ===========================================================
+Type of file    Installation directory
+=============== ===========================================================
+modules         :file:`{userbase}\\Python{XY}\\site-packages`
+scripts         :file:`{userbase}\\Scripts`
+data            :file:`{userbase}`
+C headers       :file:`{userbase}\\Python{XY}\\Include\\{distname}`
+=============== ===========================================================
+
+The advantage of using this scheme compared to the other ones described below is
+that the user site-packages directory is under normal conditions always included
+in :data:`sys.path` (see :mod:`site` for more information), which means that
+there is no additional step to perform after running the :file:`setup.py` script
+to finalize the installation.
+
+The :command:`build_ext` command also has a ``--user`` option to add
+:file:`{userbase}/include` to the compiler search path for header files and
+:file:`{userbase}/lib` to the compiler search path for libraries as well as to
+the runtime search path for shared C libraries (rpath).
+
+
+.. _inst-alt-install-home:
 
 Alternate installation: the home scheme
 ---------------------------------------
@@ -330,26 +389,30 @@ will expand this to your home directory::
 
    python setup.py install --home=~
 
+To make Python find the distributions installed with this scheme, you may have
+to :ref:`modify Python's search path <inst-search-path>` or edit
+:mod:`sitecustomize` (see :mod:`site`) to call :func:`site.addsitedir` or edit
+:data:`sys.path`.
+
 The :option:`--home` option defines the installation base directory.  Files are
 installed to the following directories under the installation base as follows:
 
-+------------------------------+---------------------------+-----------------------------+
-| Type of file                 | Installation Directory    | Override option             |
-+==============================+===========================+=============================+
-| pure module distribution     | :file:`{home}/lib/python` | :option:`--install-purelib` |
-+------------------------------+---------------------------+-----------------------------+
-| non-pure module distribution | :file:`{home}/lib/python` | :option:`--install-platlib` |
-+------------------------------+---------------------------+-----------------------------+
-| scripts                      | :file:`{home}/bin`        | :option:`--install-scripts` |
-+------------------------------+---------------------------+-----------------------------+
-| data                         | :file:`{home}/share`      | :option:`--install-data`    |
-+------------------------------+---------------------------+-----------------------------+
+=============== ===========================================================
+Type of file    Installation directory
+=============== ===========================================================
+modules         :file:`{home}/lib/python`
+scripts         :file:`{home}/bin`
+data            :file:`{home}`
+C headers       :file:`{home}/include/python/{distname}`
+=============== ===========================================================
+
+(Mentally replace slashes with backslashes if you're on Windows.)
 
 .. versionchanged:: 2.4
    The :option:`--home` option used to be supported only on Unix.
 
 
-.. _inst-alt-install-home:
+.. _inst-alt-install-prefix-unix:
 
 Alternate installation: Unix (the prefix scheme)
 ------------------------------------------------
@@ -358,7 +421,7 @@ The "prefix scheme" is useful when you wish to use one Python installation to
 perform the build/install (i.e., to run the setup script), but install modules
 into the third-party module directory of a different Python installation (or
 something that looks like a different Python installation).  If this sounds a
-trifle unusual, it is---that's why the "home scheme" comes first.  However,
+trifle unusual, it is---that's why the user and home schemes come before.  However,
 there are at least two known cases where the prefix scheme will be useful.
 
 First, consider that many Linux distributions put Python in :file:`/usr`, rather
@@ -386,17 +449,15 @@ non-pure module distributions, but could be expanded to C libraries, binary
 executables, etc.)  If :option:`--exec-prefix` is not supplied, it defaults to
 :option:`--prefix`.  Files are installed as follows:
 
-+------------------------------+-----------------------------------------------------+-----------------------------+
-| Type of file                 | Installation Directory                              | Override option             |
-+==============================+=====================================================+=============================+
-| pure module distribution     | :file:`{prefix}/lib/python{X.Y}/site-packages`      | :option:`--install-purelib` |
-+------------------------------+-----------------------------------------------------+-----------------------------+
-| non-pure module distribution | :file:`{exec-prefix}/lib/python{X.Y}/site-packages` | :option:`--install-platlib` |
-+------------------------------+-----------------------------------------------------+-----------------------------+
-| scripts                      | :file:`{prefix}/bin`                                | :option:`--install-scripts` |
-+------------------------------+-----------------------------------------------------+-----------------------------+
-| data                         | :file:`{prefix}/share`                              | :option:`--install-data`    |
-+------------------------------+-----------------------------------------------------+-----------------------------+
+================= ==========================================================
+Type of file      Installation directory
+================= ==========================================================
+Python modules    :file:`{prefix}/lib/python{X.Y}/site-packages`
+extension modules :file:`{exec-prefix}/lib/python{X.Y}/site-packages`
+scripts           :file:`{prefix}/bin`
+data              :file:`{prefix}`
+C headers         :file:`{prefix}/include/python{X.Y}/{distname}`
+================= ==========================================================
 
 There is no requirement that :option:`--prefix` or :option:`--exec-prefix`
 actually point to an alternate Python installation; if the directories listed
@@ -421,7 +482,7 @@ if your :option:`--prefix` and :option:`--exec-prefix` don't even point to an
 alternate Python installation, this is immaterial.)
 
 
-.. _inst-alt-install-windows:
+.. _inst-alt-install-prefix-windows:
 
 Alternate installation: Windows (the prefix scheme)
 ---------------------------------------------------
@@ -436,20 +497,18 @@ locations on Windows. ::
 to install modules to the :file:`\\Temp\\Python` directory on the current drive.
 
 The installation base is defined by the :option:`--prefix` option; the
-:option:`--exec-prefix` option is not supported under Windows. Files are
-installed as follows:
+:option:`--exec-prefix` option is not supported under Windows, which means that
+pure Python modules and extension modules are installed into the same location.
+Files are installed as follows:
 
-+------------------------------+---------------------------+-----------------------------+
-| Type of file                 | Installation Directory    | Override option             |
-+==============================+===========================+=============================+
-| pure module distribution     | :file:`{prefix}`          | :option:`--install-purelib` |
-+------------------------------+---------------------------+-----------------------------+
-| non-pure module distribution | :file:`{prefix}`          | :option:`--install-platlib` |
-+------------------------------+---------------------------+-----------------------------+
-| scripts                      | :file:`{prefix}\\Scripts` | :option:`--install-scripts` |
-+------------------------------+---------------------------+-----------------------------+
-| data                         | :file:`{prefix}\\Data`    | :option:`--install-data`    |
-+------------------------------+---------------------------+-----------------------------+
+=============== ==========================================================
+Type of file    Installation directory
+=============== ==========================================================
+modules         :file:`{prefix}\\Lib\\site-packages`
+scripts         :file:`{prefix}\\Scripts`
+data            :file:`{prefix}`
+C headers       :file:`{prefix}\\Include\\{distname}`
+=============== ==========================================================
 
 
 .. _inst-custom-install:
@@ -463,13 +522,29 @@ one or two directories while keeping everything under the same base directory,
 or you might want to completely redefine the installation scheme.  In either
 case, you're creating a *custom installation scheme*.
 
-You probably noticed the column of "override options" in the tables describing
-the alternate installation schemes above.  Those options are how you define a
-custom installation scheme.  These override options can be relative, absolute,
+To create a custom installation scheme, you start with one of the alternate
+schemes and override some of the installation directories used for the various
+types of files, using these options:
+
+====================== =======================
+Type of file           Override option
+====================== =======================
+Python modules         ``--install-purelib``
+extension modules      ``--install-platlib``
+all modules            ``--install-lib``
+scripts                ``--install-scripts``
+data                   ``--install-data``
+C headers              ``--install-headers``
+====================== =======================
+
+These override options can be relative, absolute,
 or explicitly defined in terms of one of the installation base directories.
 (There are two installation base directories, and they are normally the same---
 they only differ when you use the Unix "prefix scheme" and supply different
-:option:`--prefix` and :option:`--exec-prefix` options.)
+``--prefix`` and ``--exec-prefix`` options; using ``--install-lib`` will
+override values computed or given for ``--install-purelib`` and
+``--install-platlib``, and is recommended for schemes that don't make a
+difference between Python and extension modules.)
 
 For example, say you're installing a module distribution to your home directory
 under Unix---but you want scripts to go in :file:`~/scripts` rather than
@@ -496,15 +571,16 @@ If you maintain Python on Windows, you might want third-party modules to live in
 a subdirectory of :file:`{prefix}`, rather than right in :file:`{prefix}`
 itself.  This is almost as easy as customizing the script installation directory
 ---you just have to remember that there are two types of modules to worry about,
-pure modules and non-pure modules (i.e., modules from a non-pure distribution).
-For example::
+Python and extension modules, which can conveniently be both controlled by one
+option::
 
-   python setup.py install --install-purelib=Site --install-platlib=Site
+   python setup.py install --install-lib=Site
 
-The specified installation directories are relative to :file:`{prefix}`.  Of
-course, you also have to ensure that these directories are in Python's module
-search path, such as by putting a :file:`.pth` file in :file:`{prefix}`.  See
-section :ref:`inst-search-path` to find out how to modify Python's search path.
+The specified installation directory is relative to :file:`{prefix}`.  Of
+course, you also have to ensure that this directory is in Python's module
+search path, such as by putting a :file:`.pth` file in a site directory (see
+:mod:`site`).  See section :ref:`inst-search-path` to find out how to modify
+Python's search path.
 
 If you want to define an entire installation scheme, you just have to supply all
 of the installation directory options.  The recommended way to do this is to
@@ -556,8 +632,8 @@ base directory when you run the setup script.  For example, ::
 
    python setup.py install --install-base=/tmp
 
-would install pure modules to :file:`{/tmp/python/lib}` in the first case, and
-to :file:`{/tmp/lib}` in the second case.  (For the second case, you probably
+would install pure modules to :file:`/tmp/python/lib` in the first case, and
+to :file:`/tmp/lib` in the second case.  (For the second case, you probably
 want to supply an installation base of :file:`/tmp/python`.)
 
 You probably noticed the use of ``$HOME`` and ``$PLAT`` in the sample
@@ -574,7 +650,7 @@ for details.
    needed on those platforms?
 
 
-.. XXX I'm not sure where this section should go.
+.. XXX Move this to Doc/using
 
 .. _inst-search-path:
 
