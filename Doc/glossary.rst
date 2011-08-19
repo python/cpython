@@ -163,8 +163,8 @@ Glossary
       well-designed code improves its flexibility by allowing polymorphic
       substitution.  Duck-typing avoids tests using :func:`type` or
       :func:`isinstance`.  (Note, however, that duck-typing can be complemented
-      with :term:`abstract base class`\ es.)  Instead, it typically employs
-      :func:`hasattr` tests or :term:`EAFP` programming.
+      with :term:`abstract base classes <abstract base class>`.)  Instead, it
+      typically employs :func:`hasattr` tests or :term:`EAFP` programming.
 
    EAFP
       Easier to ask for forgiveness than permission.  This common Python coding

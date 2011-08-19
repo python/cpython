@@ -30,15 +30,16 @@ The module defines the following items:
 
 .. exception:: BadZipFile
 
-   The error raised for bad ZIP files (old name: ``zipfile.error``).
+   The error raised for bad ZIP files.
 
    .. versionadded:: 3.2
 
 
 .. exception:: BadZipfile
 
-   This is an alias for :exc:`BadZipFile` that exists for compatibility with
-   Python versions prior to 3.2.  Usage is deprecated.
+   Alias of :exc:`BadZipFile`, for compatibility with older Python versions.
+
+   .. deprecated:: 3.2
 
 
 .. exception:: LargeZipFile
