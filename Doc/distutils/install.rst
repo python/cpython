@@ -101,7 +101,7 @@ one command from a terminal::
 
    python setup.py install
 
-For Windows, this command should be run from a command prompt windows
+For Windows, this command should be run from a command prompt window
 (:menuselection:`Start --> Accessories`)::
 
    setup.py install
