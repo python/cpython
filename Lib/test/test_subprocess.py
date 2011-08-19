@@ -955,6 +955,8 @@ class POSIXProcessTestCase(BaseTestCase):
                               'time.sleep(0.2)'],
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
+        self.addCleanup(p.stdout.close)
+        self.addCleanup(p.stderr.close)
         ident = id(p)
         pid = p.pid
         del p
@@ -972,6 +974,8 @@ class POSIXProcessTestCase(BaseTestCase):
                               'time.sleep(3)'],
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
+        self.addCleanup(p.stdout.close)
+        self.addCleanup(p.stderr.close)
         ident = id(p)
         pid = p.pid
         del p
