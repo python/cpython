@@ -2804,11 +2804,11 @@ class SignalsTest(unittest.TestCase):
             os.close(w)
             os.close(r)
 
-    def test_interrupterd_read_retry_buffered(self):
+    def test_interrupted_read_retry_buffered(self):
         self.check_interrupted_read_retry(lambda x: x.decode('latin1'),
                                           mode="rb")
 
-    def test_interrupterd_read_retry_text(self):
+    def test_interrupted_read_retry_text(self):
         self.check_interrupted_read_retry(lambda x: x,
                                           mode="r")
 
@@ -2867,10 +2867,10 @@ class SignalsTest(unittest.TestCase):
                 if e.errno != errno.EBADF:
                     raise
 
-    def test_interrupterd_write_retry_buffered(self):
+    def test_interrupted_write_retry_buffered(self):
         self.check_interrupted_write_retry(b"x", mode="wb")
 
-    def test_interrupterd_write_retry_text(self):
+    def test_interrupted_write_retry_text(self):
         self.check_interrupted_write_retry("x", mode="w", encoding="latin1")
 
 
