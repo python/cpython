@@ -1,14 +1,13 @@
 import sys
 import os
-import shutil
 from io import StringIO
 import textwrap
 
 from distutils.core import Distribution
 from distutils.command.build_ext import build_ext
 from distutils import sysconfig
-from distutils.tests.support import TempdirManager
-from distutils.tests.support import LoggingSilencer
+from distutils.tests.support import (TempdirManager, LoggingSilencer,
+                                     copy_xxmodule_c)
 from distutils.extension import Extension
 from distutils.errors import (
     CompileError, DistutilsPlatformError, DistutilsSetupError,
@@ -16,20 +15,11 @@ from distutils.errors import (
 
 import unittest
 from test import support
-from test.support import run_unittest
 
 # http://bugs.python.org/issue4373
 # Don't load the xx module more than once.
 ALREADY_TESTED = False
 
-def _get_source_filename():
-    # use installed copy if available
-    tests_f = os.path.join(os.path.dirname(__file__), 'xxmodule.c')
-    if os.path.exists(tests_f):
-        return tests_f
-    # otherwise try using copy from build directory
-    srcdir = sysconfig.get_config_var('srcdir')
-    return os.path.join(srcdir, 'Modules', 'xxmodule.c')
 
 class BuildExtTestCase(TempdirManager,
                        LoggingSilencer,
@@ -41,9 +31,6 @@ class BuildExtTestCase(TempdirManager,
         self.tmp_dir = self.mkdtemp()
         self.sys_path = sys.path, sys.path[:]
         sys.path.append(self.tmp_dir)
-        filename = _get_source_filename()
-        if os.path.exists(filename):
-            shutil.copy(filename, self.tmp_dir)
         if sys.version > "2.6":
             import site
             self.old_user_base = site.USER_BASE
@@ -72,9 +59,8 @@ class BuildExtTestCase(TempdirManager,
 
     def test_build_ext(self):
         global ALREADY_TESTED
+        copy_xxmodule_c(self.tmp_dir)
         xx_c = os.path.join(self.tmp_dir, 'xxmodule.c')
-        if not os.path.exists(xx_c):
-            return
         xx_ext = Extension('xx', [xx_c])
         dist = Distribution({'name': 'xx', 'ext_modules': [xx_ext]})
         dist.package_dir = self.tmp_dir
@@ -518,13 +504,7 @@ class BuildExtTestCase(TempdirManager,
 
 
 def test_suite():
-    src = _get_source_filename()
-    if not os.path.exists(src):
-        if support.verbose:
-            print('test_build_ext: Cannot find source code (test'
-                  ' must run in python build dir)')
-        return unittest.TestSuite()
-    else: return unittest.makeSuite(BuildExtTestCase)
+    return unittest.makeSuite(BuildExtTestCase)
 
 if __name__ == '__main__':
     support.run_unittest(test_suite())
