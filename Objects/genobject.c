@@ -100,6 +100,17 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
 
     if (!result || f->f_stacktop == NULL) {
         /* generator can't be rerun, so release the frame */
+        /* first clean reference cycle through stored exception traceback */
+        PyObject *t, *v, *tb;
+        t = f->f_exc_type;
+        v = f->f_exc_value;
+        tb = f->f_exc_traceback;
+        f->f_exc_type = NULL;
+        f->f_exc_value = NULL;
+        f->f_exc_traceback = NULL;
+        Py_XDECREF(t);
+        Py_XDECREF(v);
+        Py_XDECREF(tb);
         Py_DECREF(f);
         gen->gi_frame = NULL;
     }
