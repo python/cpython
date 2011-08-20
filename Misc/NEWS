@@ -40,6 +40,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12326: sys.platform is now always 'linux2' on Linux, even if Python
+  is compiled on Linux 3.
+
 - Issue #9173: Let shutil._make_archive work if the logger argument is None.
 
 - Issue #12650: Fix a race condition where a subprocess.Popen could leak
