@@ -402,8 +402,8 @@ by providing an invalid URI::
 MultiCall Objects
 -----------------
 
-In http://www.xmlrpc.com/discuss/msgReader%241208, an approach is presented to
-encapsulate multiple calls to a remote server into a single request.
+The :class:`MultiCall` object provides a way to encapsulate multiple calls to a
+remote server into a single request [#]_.
 
 
 .. class:: MultiCall(server)
@@ -534,3 +534,10 @@ Example of Client and Server Usage
 See :ref:`simplexmlrpcserver-example`.
 
 
+.. rubric:: Footnotes
+
+.. [#] This approach has been first presented in `a discussion on xmlrpc.com
+   <http://web.archive.org/web/20060624230303/http://www.xmlrpc.com/discuss/msgReader$1208?mode=topic>`_.
+.. the link now points to webarchive since the one at
+.. http://www.xmlrpc.com/discuss/msgReader%241208 is broken (and webadmin
+.. doesn't reply)
