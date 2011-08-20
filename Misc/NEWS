@@ -16,6 +16,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12326: sys.platform is now always 'linux2' on Linux, even if Python
+  is compiled on Linux 3.
+
 - Issue #12650: Fix a race condition where a subprocess.Popen could leak
   resources (FD/zombie) when killed at the wrong time.
 
