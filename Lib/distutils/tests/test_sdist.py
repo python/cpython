@@ -365,6 +365,7 @@ class SDistTestCase(PyPIRCCommandTestCase):
     def test_manual_manifest(self):
         # check that a MANIFEST without a marker is left alone
         dist, cmd = self.get_cmd()
+        cmd.formats = ['gztar']
         cmd.ensure_finalized()
         self.write_file((self.tmp_dir, cmd.manifest), 'README.manual')
         self.write_file((self.tmp_dir, 'README.manual'),
