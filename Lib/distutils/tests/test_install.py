@@ -1,7 +1,6 @@
 """Tests for distutils.command.install."""
 
 import os
-import os.path
 import sys
 import unittest
 import site
@@ -167,33 +166,36 @@ class InstallTestCase(support.TempdirManager,
         self.assertRaises(DistutilsOptionError, cmd.finalize_options)
 
     def test_record(self):
-
         install_dir = self.mkdtemp()
-        pkgdir, dist = self.create_dist()
+        project_dir, dist = self.create_dist(scripts=['hello'])
+        self.addCleanup(os.chdir, os.getcwd())
+        os.chdir(project_dir)
+        self.write_file('hello', "print('o hai')")
 
-        dist = Distribution()
         cmd = install(dist)
         dist.command_obj['install'] = cmd
         cmd.root = install_dir
-        cmd.record = os.path.join(pkgdir, 'RECORD')
+        cmd.record = os.path.join(project_dir, 'RECORD')
         cmd.ensure_finalized()
-
         cmd.run()
 
-        # let's check the RECORD file was created with one
-        # line (the egg info file)
         f = open(cmd.record)
         try:
-            self.assertEqual(len(f.readlines()), 1)
+            content = f.read()
         finally:
             f.close()
+
+        found = [os.path.basename(line) for line in content.splitlines()]
+        expected = ['hello',
+                    'UNKNOWN-0.0.0-py%s.%s.egg-info' % sys.version_info[:2]]
+        self.assertEqual(found, expected)
 
     def test_debug_mode(self):
         # this covers the code called when DEBUG is set
         old_logs_len = len(self.logs)
         install_module.DEBUG = True
         try:
-            with captured_stdout() as stdout:
+            with captured_stdout():
                 self.test_record()
         finally:
             install_module.DEBUG = False
