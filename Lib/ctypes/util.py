@@ -142,9 +142,7 @@ elif os.name == "posix":
                 return None
             return res.group(1)
 
-    if (sys.platform.startswith("freebsd")
-        or sys.platform.startswith("openbsd")
-        or sys.platform.startswith("dragonfly")):
+    if sys.platform.startswith(("freebsd", "openbsd", "dragonfly")):
 
         def _num_version(libname):
             # "libxyz.so.MAJOR.MINOR" => [ MAJOR, MINOR ]

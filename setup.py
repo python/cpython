@@ -363,9 +363,8 @@ class PyBuildExt(build_ext):
 
     def get_platform(self):
         # Get value of sys.platform
-        for platform in ['cygwin', 'darwin', 'osf1']:
-            if sys.platform.startswith(platform):
-                return platform
+        if sys.platform.startswith('osf1'):
+            return 'osf1'
         return sys.platform
 
     def add_multiarch_paths(self):
