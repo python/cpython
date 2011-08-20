@@ -23,9 +23,8 @@ def get_lockdata():
     else:
         start_len = "qq"
 
-    if (any(sys.platform.startswith(prefix)
-            for prefix in ('netbsd', 'freebsd', 'openbsd', 'bsdos'))
-        or sys.platform in ('Darwin1.2', 'darwin')):
+    if (sys.platform.startswith(('netbsd', 'freebsd', 'openbsd', 'bsdos'))
+        or sys.platform == 'darwin'):
         if struct.calcsize('l') == 8:
             off_t = 'l'
             pid_t = 'i'

@@ -442,10 +442,8 @@ class GeneralModuleTests(unittest.TestCase):
         # Find one service that exists, then check all the related interfaces.
         # I've ordered this by protocols that have both a tcp and udp
         # protocol, at least for modern Linuxes.
-        if (sys.platform.startswith('linux') or
-            sys.platform.startswith('freebsd') or
-            sys.platform.startswith('netbsd') or
-            sys.platform == 'darwin'):
+        if (sys.platform.startswith(('freebsd', 'netbsd'))
+            or sys.platform in ('linux', 'darwin')):
             # avoid the 'echo' service on this platform, as there is an
             # assumption breaking non-standard port/protocol entry
             services = ('daytime', 'qotd', 'domain')
@@ -2074,7 +2072,7 @@ def test_main():
     ])
     if hasattr(socket, "socketpair"):
         tests.append(BasicSocketPairTest)
-    if sys.platform.startswith('linux'):
+    if sys.platform == 'linux':
         tests.append(TestLinuxAbstractNamespace)
     if isTipcAvailable():
         tests.append(TIPCTest)
