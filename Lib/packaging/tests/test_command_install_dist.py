@@ -6,6 +6,7 @@ from sysconfig import (get_scheme_names, get_config_vars,
                        _SCHEMES, get_config_var, get_path)
 
 from packaging.command.install_dist import install_dist
+from packaging.compiler.extension import Extension
 from packaging.dist import Distribution
 from packaging.errors import PackagingOptionError
 
@@ -176,7 +177,6 @@ class InstallTestCase(support.TempdirManager,
         # test pre-PEP 376 --record option (outside dist-info dir)
         install_dir = self.mkdtemp()
         project_dir, dist = self.create_dist(scripts=['hello'])
-        #self.addCleanup(os.chdir, os.getcwd())
         os.chdir(project_dir)
         self.write_file('hello', "print('o hai')")
 
@@ -196,6 +196,29 @@ class InstallTestCase(support.TempdirManager,
 
         # XXX test that fancy_getopt is okay with options named
         # record and no-record but unrelated
+
+    def test_old_record_extensions(self):
+        # test pre-PEP 376 --record option with ext modules
+        install_dir = self.mkdtemp()
+        project_dir, dist = self.create_dist(ext_modules=[
+            Extension('xx', ['xxmodule.c'])])
+        os.chdir(project_dir)
+        support.copy_xxmodule_c(project_dir)
+
+        cmd = install_dist(dist)
+        dist.command_obj['install_dist'] = cmd
+        cmd.root = install_dir
+        cmd.record = os.path.join(project_dir, 'filelist')
+        cmd.ensure_finalized()
+        cmd.run()
+
+        with open(cmd.record) as f:
+            content = f.read()
+
+        found = [os.path.basename(line) for line in content.splitlines()]
+        expected = ['xx%s' % get_config_var('SO'),
+                    'METADATA', 'INSTALLER', 'REQUESTED', 'RECORD']
+        self.assertEqual(found, expected)
 
 
 def test_suite():
