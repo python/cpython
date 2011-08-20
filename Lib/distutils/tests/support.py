@@ -2,11 +2,14 @@
 import os
 import shutil
 import tempfile
+import unittest
+import sysconfig
 from copy import deepcopy
 
 from distutils import log
 from distutils.log import DEBUG, INFO, WARN, ERROR, FATAL
 from distutils.core import Distribution
+
 
 class LoggingSilencer(object):
 
@@ -40,6 +43,7 @@ class LoggingSilencer(object):
 
     def clear_logs(self):
         self.logs = []
+
 
 class TempdirManager(object):
     """Mix-in class that handles temporary directories for test cases.
@@ -97,6 +101,7 @@ class TempdirManager(object):
 
         return pkg_dir, dist
 
+
 class DummyCommand:
     """Class to store options for retrieval via set_undefined_options()."""
 
@@ -106,6 +111,7 @@ class DummyCommand:
 
     def ensure_finalized(self):
         pass
+
 
 class EnvironGuard(object):
 
@@ -123,3 +129,39 @@ class EnvironGuard(object):
                 del os.environ[key]
 
         super(EnvironGuard, self).tearDown()
+
+
+def copy_xxmodule_c(directory):
+    """Helper for tests that need the xxmodule.c source file.
+
+    Example use:
+
+            def test_compile(self):
+                copy_xxmodule_c(self.tmpdir)
+                self.assertIn('xxmodule.c', os.listdir(self.tmpdir)
+
+    If the source file can be found, it will be copied to *directory*.  If not,
+    the test will be skipped.  Errors during copy are not caught.
+    """
+    filename = _get_xxmodule_path()
+    if filename is None:
+        raise unittest.SkipTest('cannot find xxmodule.c (test must run in '
+                                'the python build dir)')
+    shutil.copy(filename, directory)
+
+
+def _get_xxmodule_path():
+    srcdir = sysconfig.get_config_var('srcdir')
+    candidates = [
+        # use installed copy if available
+        os.path.join(os.path.dirname(__file__), 'xxmodule.c'),
+        # otherwise try using copy from build directory
+        os.path.join(srcdir, 'Modules', 'xxmodule.c'),
+        # srcdir mysteriously can be $srcdir/Lib/distutils/tests when
+        # this file is run from its parent directory, so walk up the
+        # tree to find the real srcdir
+        os.path.join(srcdir, '..', '..', '..', 'Modules', 'xxmodule.c'),
+    ]
+    for path in candidates:
+        if os.path.exists(path):
+            return path
