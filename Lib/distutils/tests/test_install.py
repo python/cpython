@@ -7,11 +7,14 @@ import site
 
 from test.support import captured_stdout, run_unittest
 
+from distutils import sysconfig
 from distutils.command.install import install
 from distutils.command import install as install_module
+from distutils.command.build_ext import build_ext
 from distutils.command.install import INSTALL_SCHEMES
 from distutils.core import Distribution
 from distutils.errors import DistutilsOptionError
+from distutils.extension import Extension
 
 from distutils.tests import support
 
@@ -187,6 +190,36 @@ class InstallTestCase(support.TempdirManager,
 
         found = [os.path.basename(line) for line in content.splitlines()]
         expected = ['hello',
+                    'UNKNOWN-0.0.0-py%s.%s.egg-info' % sys.version_info[:2]]
+        self.assertEqual(found, expected)
+
+    def test_record_extensions(self):
+        install_dir = self.mkdtemp()
+        project_dir, dist = self.create_dist(ext_modules=[
+            Extension('xx', ['xxmodule.c'])])
+        self.addCleanup(os.chdir, os.getcwd())
+        os.chdir(project_dir)
+        support.copy_xxmodule_c(project_dir)
+
+        buildcmd = build_ext(dist)
+        buildcmd.ensure_finalized()
+        buildcmd.run()
+
+        cmd = install(dist)
+        dist.command_obj['install'] = cmd
+        cmd.root = install_dir
+        cmd.record = os.path.join(project_dir, 'RECORD')
+        cmd.ensure_finalized()
+        cmd.run()
+
+        f = open(cmd.record)
+        try:
+            content = f.read()
+        finally:
+            f.close()
+
+        found = [os.path.basename(line) for line in content.splitlines()]
+        expected = ['xx%s' % sysconfig.get_config_var('SO'),
                     'UNKNOWN-0.0.0-py%s.%s.egg-info' % sys.version_info[:2]]
         self.assertEqual(found, expected)
 
