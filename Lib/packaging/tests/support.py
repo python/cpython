@@ -32,6 +32,7 @@ import shutil
 import logging
 import weakref
 import tempfile
+import sysconfig
 
 from packaging.dist import Distribution
 from packaging.tests import unittest
@@ -39,7 +40,7 @@ from test.support import requires_zlib, unlink
 
 __all__ = ['LoggingCatcher', 'TempdirManager', 'EnvironRestorer',
            'DummyCommand', 'unittest', 'create_distribution',
-           'skip_unless_symlink', 'requires_zlib']
+           'skip_unless_symlink', 'requires_zlib', 'copy_xxmodule_c']
 
 
 logger = logging.getLogger('packaging')
@@ -269,6 +270,38 @@ def fake_dec(*args, **kw):
             return func(*args, **kw)
         return __wrap
     return _wrap
+
+
+def copy_xxmodule_c(directory):
+    """Helper for tests that need the xxmodule.c source file.
+
+    Example use:
+
+        def test_compile(self):
+            copy_xxmodule_c(self.tmpdir)
+            self.assertIn('xxmodule.c', os.listdir(self.tmpdir)
+
+    If the source file can be found, it will be copied to *directory*.  If not,
+    the test will be skipped.  Errors during copy are not caught.
+    """
+    filename = _get_xxmodule_path()
+    if filename is None:
+        raise unittest.SkipTest('cannot find xxmodule.c (test must run in '
+                                'the python build dir)')
+    shutil.copy(filename, directory)
+
+
+def _get_xxmodule_path():
+    srcdir = sysconfig.get_config_var('srcdir')
+    candidates = [
+        # use installed copy if available
+        os.path.join(os.path.dirname(__file__), 'xxmodule.c'),
+        # otherwise try using copy from build directory
+        os.path.join(srcdir, 'Modules', 'xxmodule.c'),
+    ]
+    for path in candidates:
+        if os.path.exists(path):
+            return path
 
 
 try:

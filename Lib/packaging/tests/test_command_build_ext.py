@@ -1,7 +1,6 @@
 import os
 import sys
 import site
-import shutil
 import sysconfig
 import textwrap
 from io import StringIO
@@ -12,17 +11,7 @@ from packaging.command.build_ext import build_ext
 from packaging.compiler.extension import Extension
 from test.script_helper import assert_python_ok
 
-from packaging.tests import support, unittest, verbose, unload
-
-
-def _get_source_filename():
-    # use installed copy if available
-    tests_f = os.path.join(os.path.dirname(__file__), 'xxmodule.c')
-    if os.path.exists(tests_f):
-        return tests_f
-    # otherwise try using copy from build directory
-    srcdir = sysconfig.get_config_var('srcdir')
-    return os.path.join(srcdir, 'Modules', 'xxmodule.c')
+from packaging.tests import support, unittest, verbose
 
 
 class BuildExtTestCase(support.TempdirManager,
@@ -33,9 +22,6 @@ class BuildExtTestCase(support.TempdirManager,
         # Note that we're making changes to sys.path
         super(BuildExtTestCase, self).setUp()
         self.tmp_dir = self.mkdtemp()
-        filename = _get_source_filename()
-        if os.path.exists(filename):
-            shutil.copy(filename, self.tmp_dir)
         self.old_user_base = site.USER_BASE
         site.USER_BASE = self.mkdtemp()
         build_ext.USER_BASE = site.USER_BASE
@@ -68,10 +54,8 @@ class BuildExtTestCase(support.TempdirManager,
                 cmd.library_dirs = value.split(os.pathsep)
 
     def test_build_ext(self):
+        support.copy_xxmodule_c(self.tmp_dir)
         xx_c = os.path.join(self.tmp_dir, 'xxmodule.c')
-        if not os.path.exists(xx_c):
-            # skipping if we cannot find it
-            return
         xx_ext = Extension('xx', [xx_c])
         dist = Distribution({'name': 'xx', 'ext_modules': [xx_ext]})
         dist.package_dir = self.tmp_dir
@@ -455,14 +439,7 @@ class BuildExtTestCase(support.TempdirManager,
 
 
 def test_suite():
-    src = _get_source_filename()
-    if not os.path.exists(src):
-        if verbose:
-            print('test_command_build_ext: Cannot find source code (test'
-                  ' must run in python build dir)')
-        return unittest.TestSuite()
-    else:
-        return unittest.makeSuite(BuildExtTestCase)
+    return unittest.makeSuite(BuildExtTestCase)
 
 if __name__ == '__main__':
     unittest.main(defaultTest='test_suite')
