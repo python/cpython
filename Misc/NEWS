@@ -265,6 +265,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12213: Fix a buffering bug with interleaved reads and writes that
+  could appear on BufferedRandom streams.
+
 - Issue #12778: Reduce memory consumption when JSON-encoding a large
   container of many small objects.
 
