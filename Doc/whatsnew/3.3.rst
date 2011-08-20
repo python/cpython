@@ -274,8 +274,11 @@ Porting to Python 3.3
 This section lists previously described changes and other bugfixes
 that may require changes to your code:
 
-* Stub
-
+* Issue #12326: On Linux, sys.platform doesn't contain the major version
+  anymore. It is now always 'linux', instead of 'linux2' or 'linux3' depending
+  on the Linux version used to build Python. Replace sys.platform == 'linux2'
+  with sys.platform.startswith('linux'), or directly sys.platform == 'linux' if
+  you don't need to support older Python versions.
 
 .. Issue #11591: When :program:`python` was started with :option:`-S`,
    ``import site`` will not add site-specific paths to the module search
