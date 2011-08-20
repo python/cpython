@@ -138,6 +138,7 @@ accumulate_unicode(accumulator *acc, PyObject *obj)
 {
     int ret;
     Py_ssize_t nsmall;
+    PyObject *joined;
     assert(PyUnicode_Check(obj));
 
     if (PyList_Append(acc->small, obj))
@@ -152,7 +153,7 @@ accumulate_unicode(accumulator *acc, PyObject *obj)
      */
     if (nsmall < 100000)
         return 0;
-    PyObject *joined = join_list_unicode(acc->small);
+    joined = join_list_unicode(acc->small);
     if (joined == NULL)
         return -1;
     if (PyList_SetSlice(acc->small, 0, nsmall, NULL)) {
