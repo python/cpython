@@ -311,7 +311,7 @@ def requires_linux_version(*min_version):
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kw):
-            if sys.platform.startswith('linux'):
+            if sys.platform == 'linux':
                 version_txt = platform.release().split('-', 1)[0]
                 try:
                     version = tuple(map(int, version_txt.split('.')))
