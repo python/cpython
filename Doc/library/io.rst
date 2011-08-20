@@ -604,25 +604,6 @@ than raw I/O does.
       if the buffer needs to be written out but the raw stream blocks.
 
 
-.. class:: BufferedRWPair(reader, writer, buffer_size=DEFAULT_BUFFER_SIZE)
-
-   A buffered I/O object giving a combined, higher-level access to two
-   sequential :class:`RawIOBase` objects: one readable, the other writeable.
-   It is useful for pairs of unidirectional communication channels
-   (pipes, for instance).  It inherits :class:`BufferedIOBase`.
-
-   *reader* and *writer* are :class:`RawIOBase` objects that are readable and
-   writeable respectively.  If the *buffer_size* is omitted it defaults to
-   :data:`DEFAULT_BUFFER_SIZE`.
-
-   A fourth argument, *max_buffer_size*, is supported, but unused and
-   deprecated.
-
-   :class:`BufferedRWPair` implements all of :class:`BufferedIOBase`\'s methods
-   except for :meth:`~BufferedIOBase.detach`, which raises
-   :exc:`UnsupportedOperation`.
-
-
 .. class:: BufferedRandom(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
    A buffered interface to random access streams.  It inherits
@@ -637,6 +618,29 @@ than raw I/O does.
 
    :class:`BufferedRandom` is capable of anything :class:`BufferedReader` or
    :class:`BufferedWriter` can do.
+
+
+.. class:: BufferedRWPair(reader, writer, buffer_size=DEFAULT_BUFFER_SIZE)
+
+   A buffered I/O object combining two unidirectional :class:`RawIOBase`
+   objects -- one readable, the other writeable -- into a single bidirectional
+   endpoint.  It inherits :class:`BufferedIOBase`.
+
+   *reader* and *writer* are :class:`RawIOBase` objects that are readable and
+   writeable respectively.  If the *buffer_size* is omitted it defaults to
+   :data:`DEFAULT_BUFFER_SIZE`.
+
+   A fourth argument, *max_buffer_size*, is supported, but unused and
+   deprecated.
+
+   :class:`BufferedRWPair` implements all of :class:`BufferedIOBase`\'s methods
+   except for :meth:`~BufferedIOBase.detach`, which raises
+   :exc:`UnsupportedOperation`.
+
+   .. warning::
+      :class:`BufferedRWPair` does not attempt to synchronize accesses to
+      its underlying raw streams.  You should not pass it the same object
+      as reader and writer; use :class:`BufferedRandom` instead.
 
 
 Text I/O
