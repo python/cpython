@@ -41,6 +41,7 @@ class install_distinfo(Command):
         self.requested = None
         self.no_record = None
         self.no_resources = None
+        self.outfiles = []
 
     def finalize_options(self):
         self.set_undefined_options('install_dist',
@@ -67,7 +68,6 @@ class install_distinfo(Command):
             to_filename(safe_version(metadata['Version'])))
 
         self.distinfo_dir = os.path.join(self.distinfo_dir, basename)
-        self.outputs = []
 
     def run(self):
         # FIXME dry-run should be used at a finer level, so that people get
@@ -87,19 +87,19 @@ class install_distinfo(Command):
             metadata_path = os.path.join(self.distinfo_dir, 'METADATA')
             logger.info('creating %s', metadata_path)
             self.distribution.metadata.write(metadata_path)
-            self.outputs.append(metadata_path)
+            self.outfiles.append(metadata_path)
 
             installer_path = os.path.join(self.distinfo_dir, 'INSTALLER')
             logger.info('creating %s', installer_path)
             with open(installer_path, 'w') as f:
                 f.write(self.installer)
-            self.outputs.append(installer_path)
+            self.outfiles.append(installer_path)
 
             if self.requested:
                 requested_path = os.path.join(self.distinfo_dir, 'REQUESTED')
                 logger.info('creating %s', requested_path)
                 open(requested_path, 'wb').close()
-                self.outputs.append(requested_path)
+                self.outfiles.append(requested_path)
 
 
             if not self.no_resources:
@@ -115,7 +115,7 @@ class install_distinfo(Command):
                         for tuple in install_data.get_resources_out():
                             writer.writerow(tuple)
 
-                        self.outputs.append(resources_path)
+                        self.outfiles.append(resources_path)
 
             if not self.no_record:
                 record_path = os.path.join(self.distinfo_dir, 'RECORD')
@@ -141,10 +141,10 @@ class install_distinfo(Command):
 
                     # add the RECORD file itself
                     writer.writerow((record_path, '', ''))
-                    self.outputs.append(record_path)
+                    self.outfiles.append(record_path)
 
     def get_outputs(self):
-        return self.outputs
+        return self.outfiles
 
 
 # The following functions are taken from setuptools' pkg_resources module.
