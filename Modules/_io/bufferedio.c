@@ -721,6 +721,28 @@ _trap_eintr(void)
  */
 
 static PyObject *
+buffered_flush_and_rewind_unlocked(buffered *self)
+{
+    PyObject *res;
+
+    res = _bufferedwriter_flush_unlocked(self, 0);
+    if (res == NULL)
+        return NULL;
+    Py_DECREF(res);
+
+    if (self->readable) {
+        /* Rewind the raw stream so that its position corresponds to
+           the current logical position. */
+        Py_off_t n;
+        n = _buffered_raw_seek(self, -RAW_OFFSET(self), 1);
+        _bufferedreader_reset_buf(self);
+        if (n == -1)
+            return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 buffered_flush(buffered *self, PyObject *args)
 {
     PyObject *res;
@@ -730,16 +752,7 @@ buffered_flush(buffered *self, PyObject *args)
 
     if (!ENTER_BUFFERED(self))
         return NULL;
-    res = _bufferedwriter_flush_unlocked(self, 0);
-    if (res != NULL && self->readable) {
-        /* Rewind the raw stream so that its position corresponds to
-           the current logical position. */
-        Py_off_t n;
-        n = _buffered_raw_seek(self, -RAW_OFFSET(self), 1);
-        if (n == -1)
-            Py_CLEAR(res);
-        _bufferedreader_reset_buf(self);
-    }
+    res = buffered_flush_and_rewind_unlocked(self);
     LEAVE_BUFFERED(self)
 
     return res;
@@ -760,7 +773,7 @@ buffered_peek(buffered *self, PyObject *args)
         return NULL;
 
     if (self->writable) {
-        res = _bufferedwriter_flush_unlocked(self, 1);
+        res = buffered_flush_and_rewind_unlocked(self);
         if (res == NULL)
             goto end;
         Py_CLEAR(res);
@@ -795,19 +808,18 @@ buffered_read(buffered *self, PyObject *args)
         if (!ENTER_BUFFERED(self))
             return NULL;
         res = _bufferedreader_read_all(self);
-        LEAVE_BUFFERED(self)
     }
     else {
         res = _bufferedreader_read_fast(self, n);
-        if (res == Py_None) {
-            Py_DECREF(res);
-            if (!ENTER_BUFFERED(self))
-                return NULL;
-            res = _bufferedreader_read_generic(self, n);
-            LEAVE_BUFFERED(self)
-        }
+        if (res != Py_None)
+            return res;
+        Py_DECREF(res);
+        if (!ENTER_BUFFERED(self))
+            return NULL;
+        res = _bufferedreader_read_generic(self, n);
     }
 
+    LEAVE_BUFFERED(self)
     return res;
 }
 
@@ -833,13 +845,6 @@ buffered_read1(buffered *self, PyObject *args)
     if (!ENTER_BUFFERED(self))
         return NULL;
     
-    if (self->writable) {
-        res = _bufferedwriter_flush_unlocked(self, 1);
-        if (res == NULL)
-            goto end;
-        Py_CLEAR(res);
-    }
-
     /* Return up to n bytes.  If at least one byte is buffered, we
        only return buffered bytes.  Otherwise, we do one raw read. */
 
@@ -857,6 +862,13 @@ buffered_read1(buffered *self, PyObject *args)
             goto end;
         self->pos += n;
         goto end;
+    }
+
+    if (self->writable) {
+        res = buffered_flush_and_rewind_unlocked(self);
+        if (res == NULL)
+            goto end;
+        Py_DECREF(res);
     }
 
     /* Fill the buffer from the raw stream, and copy it to the result. */
@@ -881,24 +893,10 @@ end:
 static PyObject *
 buffered_readinto(buffered *self, PyObject *args)
 {
-    PyObject *res = NULL;
-
     CHECK_INITIALIZED(self)
     
-    /* TODO: use raw.readinto() instead! */
-    if (self->writable) {
-        if (!ENTER_BUFFERED(self))
-            return NULL;
-        res = _bufferedwriter_flush_unlocked(self, 0);
-        LEAVE_BUFFERED(self)
-        if (res == NULL)
-            goto end;
-        Py_DECREF(res);
-    }
-    res = bufferediobase_readinto((PyObject *)self, args);
-
-end:
-    return res;
+    /* TODO: use raw.readinto() (or a direct copy from our buffer) instead! */
+    return bufferediobase_readinto((PyObject *)self, args);
 }
 
 static PyObject *
@@ -936,12 +934,6 @@ _buffered_readline(buffered *self, Py_ssize_t limit)
         goto end_unlocked;
 
     /* Now we try to get some more from the raw stream */
-    if (self->writable) {
-        res = _bufferedwriter_flush_unlocked(self, 1);
-        if (res == NULL)
-            goto end;
-        Py_CLEAR(res);
-    }
     chunks = PyList_New(0);
     if (chunks == NULL)
         goto end;
@@ -955,8 +947,15 @@ _buffered_readline(buffered *self, Py_ssize_t limit)
         }
         Py_CLEAR(res);
         written += n;
+        self->pos += n;
         if (limit >= 0)
             limit -= n;
+    }
+    if (self->writable) {
+        PyObject *r = buffered_flush_and_rewind_unlocked(self);
+        if (r == NULL)
+            goto end;
+        Py_DECREF(r);
     }
 
     for (;;) {
@@ -1126,19 +1125,10 @@ buffered_truncate(buffered *self, PyObject *args)
         return NULL;
 
     if (self->writable) {
-        res = _bufferedwriter_flush_unlocked(self, 0);
+        res = buffered_flush_and_rewind_unlocked(self);
         if (res == NULL)
             goto end;
         Py_CLEAR(res);
-    }
-    if (self->readable) {
-        if (pos == Py_None) {
-            /* Rewind the raw stream so that its position corresponds to
-               the current logical position. */
-            if (_buffered_raw_seek(self, -RAW_OFFSET(self), 1) == -1)
-                goto end;
-        }
-        _bufferedreader_reset_buf(self);
     }
     res = PyObject_CallMethodObjArgs(self->raw, _PyIO_str_truncate, pos, NULL);
     if (res == NULL)
@@ -1341,17 +1331,18 @@ _bufferedreader_read_all(buffered *self)
             Py_DECREF(chunks);
             return NULL;
         }
+        self->pos += current_size;
     }
-    _bufferedreader_reset_buf(self);
     /* We're going past the buffer's bounds, flush it */
     if (self->writable) {
-        res = _bufferedwriter_flush_unlocked(self, 1);
+        res = buffered_flush_and_rewind_unlocked(self);
         if (res == NULL) {
             Py_DECREF(chunks);
             return NULL;
         }
         Py_CLEAR(res);
     }
+    _bufferedreader_reset_buf(self);
     while (1) {
         if (data) {
             if (PyList_Append(chunks, data) < 0) {
@@ -1434,6 +1425,14 @@ _bufferedreader_read_generic(buffered *self, Py_ssize_t n)
         memcpy(out, self->buffer + self->pos, current_size);
         remaining -= current_size;
         written += current_size;
+        self->pos += current_size;
+    }
+    /* Flush the write buffer if necessary */
+    if (self->writable) {
+        PyObject *r = buffered_flush_and_rewind_unlocked(self);
+        if (r == NULL)
+            goto error;
+        Py_DECREF(r);
     }
     _bufferedreader_reset_buf(self);
     while (remaining > 0) {

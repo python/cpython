@@ -40,6 +40,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12213: Fix a buffering bug with interleaved reads and writes that
+  could appear on io.BufferedRandom streams.
+
 - Issue #12326: sys.platform is now always 'linux2' on Linux, even if Python
   is compiled on Linux 3.
 
