@@ -265,6 +265,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #12326: On Linux, sys.platform doesn't contain the major version
+  anymore. It is now always 'linux', instead of 'linux2' or 'linux3' depending
+  on the Linux version used to build Python.
+
 - Issue #12213: Fix a buffering bug with interleaved reads and writes that
   could appear on BufferedRandom streams.
 
