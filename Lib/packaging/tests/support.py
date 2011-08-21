@@ -28,6 +28,7 @@ Each class or function has a docstring to explain its purpose and usage.
 """
 
 import os
+import sys
 import shutil
 import logging
 import weakref
@@ -279,7 +280,7 @@ def copy_xxmodule_c(directory):
 
         def test_compile(self):
             copy_xxmodule_c(self.tmpdir)
-            self.assertIn('xxmodule.c', os.listdir(self.tmpdir)
+            self.assertIn('xxmodule.c', os.listdir(self.tmpdir))
 
     If the source file can be found, it will be copied to *directory*.  If not,
     the test will be skipped.  Errors during copy are not caught.
@@ -303,6 +304,31 @@ def _get_xxmodule_path():
         if os.path.exists(path):
             return path
 
+
+def fixup_build_ext(cmd):
+    """Function needed to make build_ext tests pass on shared builds.
+
+    When Python was build with --enable-shared, -L. is not good enough to find
+    the libpython<blah>.so.  This is because regrtest runs it under a tempdir,
+    not in the top level where the .so lives.  By the time we've gotten here,
+    Python's already been chdir'd to the tempdir.  This function work arounds
+    that.  Example use:
+
+        cmd = build_ext(dist)
+        support.fixup_build_ext(cmd)
+        cmd.ensure_finalized()
+    """
+    # To further add to the fun, we can't just add library_dirs to the
+    # Extension() instance because that doesn't get plumbed through to the
+    # final compiler command.
+    if (sysconfig.get_config_var('Py_ENABLE_SHARED') and
+        not sys.platform.startswith('win')):
+        runshared = sysconfig.get_config_var('RUNSHARED')
+        if runshared is None:
+            cmd.library_dirs = ['.']
+        else:
+            name, equals, value = runshared.partition('=')
+            cmd.library_dirs = value.split(os.pathsep)
 
 try:
     from test.support import skip_unless_symlink
