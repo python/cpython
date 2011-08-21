@@ -7,7 +7,7 @@ from distutils.core import Distribution
 from distutils.command.build_ext import build_ext
 from distutils import sysconfig
 from distutils.tests.support import (TempdirManager, LoggingSilencer,
-                                     copy_xxmodule_c)
+                                     copy_xxmodule_c, fixup_build_ext)
 from distutils.extension import Extension
 from distutils.errors import (
     CompileError, DistutilsPlatformError, DistutilsSetupError,
@@ -38,25 +38,6 @@ class BuildExtTestCase(TempdirManager,
             from distutils.command import build_ext
             build_ext.USER_BASE = site.USER_BASE
 
-    def _fixup_command(self, cmd):
-        # When Python was build with --enable-shared, -L. is not good enough
-        # to find the libpython<blah>.so.  This is because regrtest runs it
-        # under a tempdir, not in the top level where the .so lives.  By the
-        # time we've gotten here, Python's already been chdir'd to the
-        # tempdir.
-        #
-        # To further add to the fun, we can't just add library_dirs to the
-        # Extension() instance because that doesn't get plumbed through to the
-        # final compiler command.
-        if (sysconfig.get_config_var('Py_ENABLE_SHARED') and
-            not sys.platform.startswith('win')):
-            runshared = sysconfig.get_config_var('RUNSHARED')
-            if runshared is None:
-                cmd.library_dirs = ['.']
-            else:
-                name, equals, value = runshared.partition('=')
-                cmd.library_dirs = value.split(os.pathsep)
-
     def test_build_ext(self):
         global ALREADY_TESTED
         copy_xxmodule_c(self.tmp_dir)
@@ -65,7 +46,7 @@ class BuildExtTestCase(TempdirManager,
         dist = Distribution({'name': 'xx', 'ext_modules': [xx_ext]})
         dist.package_dir = self.tmp_dir
         cmd = build_ext(dist)
-        self._fixup_command(cmd)
+        fixup_build_ext(cmd)
         if os.name == "nt":
             # On Windows, we must build a debug version iff running
             # a debug build of Python
@@ -162,9 +143,9 @@ class BuildExtTestCase(TempdirManager,
 
         # see if include_dirs and library_dirs
         # were set
-        self.assertTrue(lib in cmd.library_dirs)
-        self.assertTrue(lib in cmd.rpath)
-        self.assertTrue(incl in cmd.include_dirs)
+        self.assertIn(lib, cmd.library_dirs)
+        self.assertIn(lib, cmd.rpath)
+        self.assertIn(incl, cmd.include_dirs)
 
     def test_optional_extension(self):
 
@@ -320,7 +301,7 @@ class BuildExtTestCase(TempdirManager,
         dist = Distribution({'name': 'xx',
                              'ext_modules': [ext]})
         cmd = build_ext(dist)
-        self._fixup_command(cmd)
+        fixup_build_ext(cmd)
         cmd.ensure_finalized()
         self.assertEqual(len(cmd.get_outputs()), 1)
 
