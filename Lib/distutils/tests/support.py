@@ -138,7 +138,7 @@ def copy_xxmodule_c(directory):
 
         def test_compile(self):
             copy_xxmodule_c(self.tmpdir)
-            self.assertIn('xxmodule.c', os.listdir(self.tmpdir)
+            self.assertIn('xxmodule.c', os.listdir(self.tmpdir))
 
     If the source file can be found, it will be copied to *directory*.  If not,
     the test will be skipped.  Errors during copy are not caught.
