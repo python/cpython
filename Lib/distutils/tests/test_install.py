@@ -202,6 +202,7 @@ class InstallTestCase(support.TempdirManager,
         support.copy_xxmodule_c(project_dir)
 
         buildcmd = build_ext(dist)
+        support.fixup_build_ext(buildcmd)
         buildcmd.ensure_finalized()
         buildcmd.run()
 
