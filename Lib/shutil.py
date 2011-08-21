@@ -34,7 +34,7 @@ __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "ExecError", "make_archive", "get_archive_formats",
            "register_archive_format", "unregister_archive_format",
            "get_unpack_formats", "register_unpack_format",
-           "unregister_unpack_format", "unpack_archive"]
+           "unregister_unpack_format", "unpack_archive", "ignore_patterns"]
 
 class Error(EnvironmentError):
     pass
