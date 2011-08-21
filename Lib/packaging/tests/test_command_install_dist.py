@@ -204,6 +204,7 @@ class InstallTestCase(support.TempdirManager,
             Extension('xx', ['xxmodule.c'])])
         os.chdir(project_dir)
         support.copy_xxmodule_c(project_dir)
+        support.fixup_build_ext(dist.get_command_obj('build_ext'))
 
         cmd = install_dist(dist)
         dist.command_obj['install_dist'] = cmd
