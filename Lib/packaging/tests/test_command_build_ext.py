@@ -24,13 +24,11 @@ class BuildExtTestCase(support.TempdirManager,
         self.tmp_dir = self.mkdtemp()
         self.old_user_base = site.USER_BASE
         site.USER_BASE = self.mkdtemp()
-        build_ext.USER_BASE = site.USER_BASE
 
     def tearDown(self):
         # Get everything back to normal
         if sys.version > "2.6":
             site.USER_BASE = self.old_user_base
-            build_ext.USER_BASE = self.old_user_base
 
         super(BuildExtTestCase, self).tearDown()
 
