@@ -702,26 +702,31 @@ always available.
    This string contains a platform identifier that can be used to append
    platform-specific components to :data:`sys.path`, for instance.
 
-   For Unix systems, this is the lowercased OS name as returned by ``uname -s``
-   with the first part of the version as returned by ``uname -r`` appended,
-   e.g. ``'sunos5'`` or ``'linux2'``, *at the time when Python was built*.
-   Unless you want to test for a specific system version, it is therefore
-   recommended to use the following idiom::
+   For Unix systems, except on Linux, this is the lowercased OS name as
+   returned by ``uname -s`` with the first part of the version as returned by
+   ``uname -r`` appended, e.g. ``'sunos5'`` or ``'freebsd8'``, *at the time
+   when Python was built*.  Unless you want to test for a specific system
+   version, it is therefore recommended to use the following idiom::
 
-      if sys.platform.startswith('linux'):
-          # Linux-specific code here...
+      if sys.platform.startswith('freebsd'):
+          # FreeBSD-specific code here...
 
    For other systems, the values are:
 
    ================ ===========================
    System           :data:`platform` value
    ================ ===========================
+   Linux            ``'linux'``
    Windows          ``'win32'``
    Windows/Cygwin   ``'cygwin'``
    Mac OS X         ``'darwin'``
    OS/2             ``'os2'``
    OS/2 EMX         ``'os2emx'``
    ================ ===========================
+
+   .. versionchanged:: 3.3
+      On Linux, :attr:`sys.platform` doesn't contain the major version anymore.
+      It is always ``'linux'``, instead of ``'linux2'`` or ``'linux3'``.
 
    .. seealso::
       :attr:`os.name` has a coarser granularity.  :func:`os.uname` gives
