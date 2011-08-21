@@ -351,6 +351,7 @@ class SDistTestCase(PyPIRCCommandTestCase):
         # filling data_files by pointing files in package_data
         dist.package_data = {'somecode': ['*.txt']}
         self.write_file((self.tmp_dir, 'somecode', 'doc.txt'), '#')
+        cmd.formats = ['gztar']
         cmd.ensure_finalized()
         cmd.run()
 
