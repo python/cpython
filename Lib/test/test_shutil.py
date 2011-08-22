@@ -712,6 +712,65 @@ class TestShutil(unittest.TestCase):
         self.assertGreaterEqual(usage.total, usage.used)
         self.assertGreater(usage.total, usage.free)
 
+    @unittest.skipUnless(UID_GID_SUPPORT, "Requires grp and pwd support")
+    @unittest.skipUnless(hasattr(os, 'chown'), 'requires os.chown')
+    def test_chown(self):
+
+        # cleaned-up automatically by TestShutil.tearDown method
+        dirname = self.mkdtemp()
+        filename = tempfile.mktemp(dir=dirname)
+        write_file(filename, 'testing chown function')
+
+        with self.assertRaises(ValueError):
+            shutil.chown(filename)
+
+        with self.assertRaises(LookupError):
+            shutil.chown(filename, user='non-exising username')
+
+        with self.assertRaises(LookupError):
+            shutil.chown(filename, group='non-exising groupname')
+
+        with self.assertRaises(TypeError):
+            shutil.chown(filename, b'spam')
+
+        with self.assertRaises(TypeError):
+            shutil.chown(filename, 3.14)
+
+        uid = os.getuid()
+        gid = os.getgid()
+
+        def check_chown(path, uid=None, gid=None):
+            s = os.stat(filename)
+            if uid is not None:
+                self.assertEqual(uid, s.st_uid)
+            if gid is not None:
+                self.assertEqual(gid, s.st_gid)
+
+        shutil.chown(filename, uid, gid)
+        check_chown(filename, uid, gid)
+        shutil.chown(filename, uid)
+        check_chown(filename, uid)
+        shutil.chown(filename, user=uid)
+        check_chown(filename, uid)
+        shutil.chown(filename, group=gid)
+        check_chown(filename, gid)
+
+        shutil.chown(dirname, uid, gid)
+        check_chown(dirname, uid, gid)
+        shutil.chown(dirname, uid)
+        check_chown(dirname, uid)
+        shutil.chown(dirname, user=uid)
+        check_chown(dirname, uid)
+        shutil.chown(dirname, group=gid)
+        check_chown(dirname, gid)
+
+        user = pwd.getpwuid(uid)[0]
+        group = grp.getgrgid(gid)[0]
+        shutil.chown(filename, user, group)
+        check_chown(filename, uid, gid)
+        shutil.chown(dirname, user, group)
+        check_chown(dirname, uid, gid)
+
 
 class TestMove(unittest.TestCase):
 

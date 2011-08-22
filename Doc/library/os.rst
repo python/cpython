@@ -1530,6 +1530,9 @@ Files and Directories
    Change the owner and group id of *path* to the numeric *uid* and *gid*. To leave
    one of the ids unchanged, set it to -1.
 
+   See :func:`shutil.chown` for a higher-level function that accepts names in
+   addition to numeric ids.
+
    Availability: Unix.
 
 

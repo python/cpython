@@ -183,6 +183,20 @@ Directory and files operations
 
    Availability: Unix, Windows.
 
+.. function:: chown(path, user=None, group=None)
+
+   Change owner *user* and/or *group* of the given *path*.
+
+   *user* can be a system user name or a uid; the same applies to *group*. At
+   least one argument is required.
+
+   See also :func:`os.chown`, the underlying function.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+
 .. exception:: Error
 
    This exception collects exceptions that are raised during a multi-file
