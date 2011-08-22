@@ -1395,6 +1395,10 @@ Tests
 C-API
 -----
 
+- Issue #10542: Add 4 macros to work with surrogates: Py_UNICODE_IS_SURROGATE,
+  Py_UNICODE_IS_HIGH_SURROGATE, Py_UNICODE_IS_LOW_SURROGATE,
+  Py_UNICODE_JOIN_SURROGATES.
+
 - Issue #12724: Add Py_RETURN_NOTIMPLEMENTED macro for returning NotImplemented.
 
 - PY_PATCHLEVEL_REVISION has been removed, since it's meaningless with
