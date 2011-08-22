@@ -198,6 +198,7 @@ The module :mod:`socket` exports the following constants and functions:
           SOMAXCONN
           MSG_*
           SOL_*
+          SCM_*
           IPPROTO_*
           IPPORT_*
           INADDR_*
@@ -511,6 +512,49 @@ The module :mod:`socket` exports the following constants and functions:
    Availability: Unix (maybe not all platforms).
 
 
+..
+   XXX: Are sendmsg(), recvmsg() and CMSG_*() available on any
+   non-Unix platforms?  The old (obsolete?) 4.2BSD form of the
+   interface, in which struct msghdr has no msg_control or
+   msg_controllen members, is not currently supported.
+
+.. function:: CMSG_LEN(length)
+
+   Return the total length, without trailing padding, of an ancillary
+   data item with associated data of the given *length*.  This value
+   can often be used as the buffer size for :meth:`~socket.recvmsg` to
+   receive a single item of ancillary data, but :rfc:`3542` requires
+   portable applications to use :func:`CMSG_SPACE` and thus include
+   space for padding, even when the item will be the last in the
+   buffer.  Raises :exc:`OverflowError` if *length* is outside the
+   permissible range of values.
+
+   Availability: most Unix platforms, possibly others.
+
+   .. versionadded:: 3.3
+
+
+.. function:: CMSG_SPACE(length)
+
+   Return the buffer size needed for :meth:`~socket.recvmsg` to
+   receive an ancillary data item with associated data of the given
+   *length*, along with any trailing padding.  The buffer space needed
+   to receive multiple items is the sum of the :func:`CMSG_SPACE`
+   values for their associated data lengths.  Raises
+   :exc:`OverflowError` if *length* is outside the permissible range
+   of values.
+
+   Note that some systems might support ancillary data without
+   providing this function.  Also note that setting the buffer size
+   using the results of this function may not precisely limit the
+   amount of ancillary data that can be received, since additional
+   data may be able to fit into the padding area.
+
+   Availability: most Unix platforms, possibly others.
+
+   .. versionadded:: 3.3
+
+
 .. function:: getdefaulttimeout()
 
    Return the default timeout in seconds (float) for new socket objects. A value
@@ -742,6 +786,109 @@ correspond to Unix system calls applicable to sockets.
    to zero. (The format of *address* depends on the address family --- see above.)
 
 
+.. method:: socket.recvmsg(bufsize[, ancbufsize[, flags]])
+
+   Receive normal data (up to *bufsize* bytes) and ancillary data from
+   the socket.  The *ancbufsize* argument sets the size in bytes of
+   the internal buffer used to receive the ancillary data; it defaults
+   to 0, meaning that no ancillary data will be received.  Appropriate
+   buffer sizes for ancillary data can be calculated using
+   :func:`CMSG_SPACE` or :func:`CMSG_LEN`, and items which do not fit
+   into the buffer might be truncated or discarded.  The *flags*
+   argument defaults to 0 and has the same meaning as for
+   :meth:`recv`.
+
+   The return value is a 4-tuple: ``(data, ancdata, msg_flags,
+   address)``.  The *data* item is a :class:`bytes` object holding the
+   non-ancillary data received.  The *ancdata* item is a list of zero
+   or more tuples ``(cmsg_level, cmsg_type, cmsg_data)`` representing
+   the ancillary data (control messages) received: *cmsg_level* and
+   *cmsg_type* are integers specifying the protocol level and
+   protocol-specific type respectively, and *cmsg_data* is a
+   :class:`bytes` object holding the associated data.  The *msg_flags*
+   item is the bitwise OR of various flags indicating conditions on
+   the received message; see your system documentation for details.
+   If the receiving socket is unconnected, *address* is the address of
+   the sending socket, if available; otherwise, its value is
+   unspecified.
+
+   On some systems, :meth:`sendmsg` and :meth:`recvmsg` can be used to
+   pass file descriptors between processes over an :const:`AF_UNIX`
+   socket.  When this facility is used (it is often restricted to
+   :const:`SOCK_STREAM` sockets), :meth:`recvmsg` will return, in its
+   ancillary data, items of the form ``(socket.SOL_SOCKET,
+   socket.SCM_RIGHTS, fds)``, where *fds* is a :class:`bytes` object
+   representing the new file descriptors as a binary array of the
+   native C :c:type:`int` type.  If :meth:`recvmsg` raises an
+   exception after the system call returns, it will first attempt to
+   close any file descriptors received via this mechanism.
+
+   Some systems do not indicate the truncated length of ancillary data
+   items which have been only partially received.  If an item appears
+   to extend beyond the end of the buffer, :meth:`recvmsg` will issue
+   a :exc:`RuntimeWarning`, and will return the part of it which is
+   inside the buffer provided it has not been truncated before the
+   start of its associated data.
+
+   On systems which support the :const:`SCM_RIGHTS` mechanism, the
+   following function will receive up to *maxfds* file descriptors,
+   returning the message data and a list containing the descriptors
+   (while ignoring unexpected conditions such as unrelated control
+   messages being received).  See also :meth:`sendmsg`. ::
+
+      import socket, array
+
+      def recv_fds(sock, msglen, maxfds):
+          fds = array.array("i")   # Array of ints
+          msg, ancdata, flags, addr = sock.recvmsg(msglen, socket.CMSG_LEN(maxfds * fds.itemsize))
+          for cmsg_level, cmsg_type, cmsg_data in ancdata:
+              if (cmsg_level == socket.SOL_SOCKET and cmsg_type == socket.SCM_RIGHTS):
+                  # Append data, ignoring any truncated integers at the end.
+                  fds.fromstring(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
+          return msg, list(fds)
+
+   Availability: most Unix platforms, possibly others.
+
+   .. versionadded:: 3.3
+
+
+.. method:: socket.recvmsg_into(buffers[, ancbufsize[, flags]])
+
+   Receive normal data and ancillary data from the socket, behaving as
+   :meth:`recvmsg` would, but scatter the non-ancillary data into a
+   series of buffers instead of returning a new bytes object.  The
+   *buffers* argument must be an iterable of objects that export
+   writable buffers (e.g. :class:`bytearray` objects); these will be
+   filled with successive chunks of the non-ancillary data until it
+   has all been written or there are no more buffers.  The operating
+   system may set a limit (:func:`~os.sysconf` value ``SC_IOV_MAX``)
+   on the number of buffers that can be used.  The *ancbufsize* and
+   *flags* arguments have the same meaning as for :meth:`recvmsg`.
+
+   The return value is a 4-tuple: ``(nbytes, ancdata, msg_flags,
+   address)``, where *nbytes* is the total number of bytes of
+   non-ancillary data written into the buffers, and *ancdata*,
+   *msg_flags* and *address* are the same as for :meth:`recvmsg`.
+
+   Example::
+
+      >>> import socket
+      >>> s1, s2 = socket.socketpair()
+      >>> b1 = bytearray(b'----')
+      >>> b2 = bytearray(b'0123456789')
+      >>> b3 = bytearray(b'--------------')
+      >>> s1.send(b'Mary had a little lamb')
+      22
+      >>> s2.recvmsg_into([b1, memoryview(b2)[2:9], b3])
+      (22, [], 0, None)
+      >>> [b1, b2, b3]
+      [bytearray(b'Mary'), bytearray(b'01 had a 9'), bytearray(b'little lamb---')]
+
+   Availability: most Unix platforms, possibly others.
+
+   .. versionadded:: 3.3
+
+
 .. method:: socket.recvfrom_into(buffer[, nbytes[, flags]])
 
    Receive data from the socket, writing it into *buffer* instead of creating a
@@ -787,6 +934,41 @@ correspond to Unix system calls applicable to sockets.
    argument has the same meaning as for :meth:`recv` above.  Return the number of
    bytes sent. (The format of *address* depends on the address family --- see
    above.)
+
+
+.. method:: socket.sendmsg(buffers[, ancdata[, flags[, address]]])
+
+   Send normal and ancillary data to the socket, gathering the
+   non-ancillary data from a series of buffers and concatenating it
+   into a single message.  The *buffers* argument specifies the
+   non-ancillary data as an iterable of buffer-compatible objects
+   (e.g. :class:`bytes` objects); the operating system may set a limit
+   (:func:`~os.sysconf` value ``SC_IOV_MAX``) on the number of buffers
+   that can be used.  The *ancdata* argument specifies the ancillary
+   data (control messages) as an iterable of zero or more tuples
+   ``(cmsg_level, cmsg_type, cmsg_data)``, where *cmsg_level* and
+   *cmsg_type* are integers specifying the protocol level and
+   protocol-specific type respectively, and *cmsg_data* is a
+   buffer-compatible object holding the associated data.  Note that
+   some systems (in particular, systems without :func:`CMSG_SPACE`)
+   might support sending only one control message per call.  The
+   *flags* argument defaults to 0 and has the same meaning as for
+   :meth:`send`.  If *address* is supplied and not ``None``, it sets a
+   destination address for the message.  The return value is the
+   number of bytes of non-ancillary data sent.
+
+   The following function sends the list of file descriptors *fds*
+   over an :const:`AF_UNIX` socket, on systems which support the
+   :const:`SCM_RIGHTS` mechanism.  See also :meth:`recvmsg`. ::
+
+      import socket, array
+
+      def send_fds(sock, msg, fds):
+          return sock.sendmsg([msg], [(socket.SOL_SOCKET, socket.SCM_RIGHTS, array.array("i", fds))])
+
+   Availability: most Unix platforms, possibly others.
+
+   .. versionadded:: 3.3
 
 
 .. method:: socket.setblocking(flag)
