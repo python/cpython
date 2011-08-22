@@ -362,6 +362,15 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
     for (i_ = 0; i_ < (length); i_++) t_[i_] = v_;\
     } while (0)
 
+/* macros to work with surrogates */
+#define Py_UNICODE_IS_SURROGATE(ch) (0xD800 <= ch && ch <= 0xDFFF)
+#define Py_UNICODE_IS_HIGH_SURROGATE(ch) (0xD800 <= ch && ch <= 0xDBFF)
+#define Py_UNICODE_IS_LOW_SURROGATE(ch) (0xDC00 <= ch && ch <= 0xDFFF)
+/* Join two surrogate characters and return a single Py_UCS4 value. */
+#define Py_UNICODE_JOIN_SURROGATES(high, low)  \
+    (((((Py_UCS4)(high) & 0x03FF) << 10) |      \
+      ((Py_UCS4)(low) & 0x03FF)) + 0x10000)
+
 /* Check if substring matches at given offset.  The offset must be
    valid, and the substring must not be empty. */
 

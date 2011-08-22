@@ -195,6 +195,27 @@ These APIs can be used for fast direct character conversions:
    possible.  This macro does not raise exceptions.
 
 
+These APIs can be used to work with surrogates:
+
+.. c:macro:: Py_UNICODE_IS_SURROGATE(ch)
+
+   Check if *ch* is a surrogate (``0xD800 <= ch <= 0xDFFF``).
+
+.. c:macro:: Py_UNICODE_IS_HIGH_SURROGATE(ch)
+
+   Check if *ch* is an high surrogate (``0xD800 <= ch <= 0xDBFF``).
+
+.. c:macro:: Py_UNICODE_IS_LOW_SURROGATE(ch)
+
+   Check if *ch* is a low surrogate (``0xDC00 <= ch <= 0xDFFF``).
+
+.. c:macro:: Py_UNICODE_JOIN_SURROGATES(high, low)
+
+   Join two surrogate characters and return a single Py_UCS4 value.
+   *high* and *low* are respectively the leading and trailing surrogates in a
+   surrogate pair.
+
+
 Plain Py_UNICODE
 """"""""""""""""
 
