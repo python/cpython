@@ -1884,7 +1884,7 @@ class RecvmsgIntoTests(RecvmsgIntoMixin, RecvmsgGenericTests):
         buf = array.array("B", [0] * len(MSG))
         nbytes, ancdata, flags, addr = self.serv_sock.recvmsg_into([buf])
         self.assertEqual(nbytes, len(MSG))
-        self.assertEqual(buf.tostring(), MSG)
+        self.assertEqual(buf.tobytes(), MSG)
         self.checkRecvmsgAddress(addr, self.cli_addr)
         self.assertEqual(ancdata, [])
         self.checkFlags(flags, eor=True)
@@ -2002,7 +2002,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
             if (cmsg_level == socket.SOL_SOCKET and
                     cmsg_type == socket.SCM_RIGHTS):
                 fds = array.array("i")
-                fds.fromstring(cmsg_data[:
+                fds.frombytes(cmsg_data[:
                         len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
                 for fd in fds:
                     os.close(fd)
@@ -2039,7 +2039,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
             self.assertEqual(cmsg_type, socket.SCM_RIGHTS)
             self.assertIsInstance(cmsg_data, bytes)
             self.assertEqual(len(cmsg_data) % SIZEOF_INT, 0)
-            fds.fromstring(cmsg_data)
+            fds.frombytes(cmsg_data)
 
         self.assertEqual(len(fds), numfds)
         self.checkFDs(fds)
@@ -2055,7 +2055,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
                 [MSG],
                 [(socket.SOL_SOCKET,
                   socket.SCM_RIGHTS,
-                  array.array("i", self.newFDs(1)).tostring())]),
+                  array.array("i", self.newFDs(1)).tobytes())]),
             len(MSG))
 
     def testMultipleFDPass(self):
@@ -2173,7 +2173,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
             MSG,
             [(socket.SOL_SOCKET,
               socket.SCM_RIGHTS,
-              array.array("i", [self.badfd]).tostring()[:-1])])
+              array.array("i", [self.badfd]).tobytes()[:-1])])
 
     @requireAttrs(socket, "CMSG_SPACE")
     def testFDPassPartialIntInMiddle(self):
@@ -2189,7 +2189,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
         for cmsg_level, cmsg_type, cmsg_data in ancdata:
             self.assertEqual(cmsg_level, socket.SOL_SOCKET)
             self.assertEqual(cmsg_type, socket.SCM_RIGHTS)
-            fds.fromstring(cmsg_data[:
+            fds.frombytes(cmsg_data[:
                     len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
         self.assertLessEqual(len(fds), 2)
         self.checkFDs(fds)
@@ -2201,7 +2201,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
             MSG,
             [(socket.SOL_SOCKET,
               socket.SCM_RIGHTS,
-              array.array("i", [fd0, self.badfd]).tostring()[:-1]),
+              array.array("i", [fd0, self.badfd]).tobytes()[:-1]),
              (socket.SOL_SOCKET,
               socket.SCM_RIGHTS,
               array.array("i", [fd1]))])
@@ -2285,7 +2285,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
         self.assertGreaterEqual(len(cmsg_data), mindata)
         self.assertLessEqual(len(cmsg_data), maxdata)
         fds = array.array("i")
-        fds.fromstring(cmsg_data[:
+        fds.frombytes(cmsg_data[:
                 len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
         self.checkFDs(fds)
 
@@ -2367,7 +2367,7 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
         self.assertIsInstance(cmsg_data, bytes)
         self.assertEqual(len(cmsg_data), SIZEOF_INT)
         a = array.array("i")
-        a.fromstring(cmsg_data)
+        a.frombytes(cmsg_data)
         self.assertGreaterEqual(a[0], 0)
         self.assertLessEqual(a[0], maxhop)
 
@@ -2440,14 +2440,14 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
         tcdata = ancmap[(socket.IPPROTO_IPV6, socket.IPV6_TCLASS)]
         self.assertEqual(len(tcdata), SIZEOF_INT)
         a = array.array("i")
-        a.fromstring(tcdata)
+        a.frombytes(tcdata)
         self.assertGreaterEqual(a[0], 0)
         self.assertLessEqual(a[0], 255)
 
         hldata = ancmap[(socket.IPPROTO_IPV6, socket.IPV6_HOPLIMIT)]
         self.assertEqual(len(hldata), SIZEOF_INT)
         a = array.array("i")
-        a.fromstring(hldata)
+        a.frombytes(hldata)
         self.assertGreaterEqual(a[0], 0)
         self.assertLessEqual(a[0], maxhop)
 
@@ -2512,7 +2512,7 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
             nbytes = self.sendmsgToServer(
                 [MSG],
                 [(socket.IPPROTO_IPV6, socket.IPV6_TCLASS,
-                  array.array("i", [self.traffic_class]).tostring() + b"\x00"),
+                  array.array("i", [self.traffic_class]).tobytes() + b"\x00"),
                  (socket.IPPROTO_IPV6, socket.IPV6_HOPLIMIT,
                   array.array("i", [self.hop_limit]))])
         except socket.error as e:
@@ -2658,7 +2658,7 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
         self.assertIn(cmsg_type, {socket.IPV6_TCLASS, socket.IPV6_HOPLIMIT})
         self.assertEqual(len(cmsg_data), SIZEOF_INT)
         a = array.array("i")
-        a.fromstring(cmsg_data)
+        a.frombytes(cmsg_data)
         self.assertGreaterEqual(a[0], 0)
         self.assertLessEqual(a[0], 255)
 
@@ -2732,7 +2732,7 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
         cmsg_types.remove(cmsg_type)
         self.assertEqual(len(cmsg_data), SIZEOF_INT)
         a = array.array("i")
-        a.fromstring(cmsg_data)
+        a.frombytes(cmsg_data)
         self.assertGreaterEqual(a[0], 0)
         self.assertLessEqual(a[0], 255)
 
