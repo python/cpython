@@ -753,7 +753,7 @@ class TestShutil(unittest.TestCase):
         shutil.chown(filename, user=uid)
         check_chown(filename, uid)
         shutil.chown(filename, group=gid)
-        check_chown(filename, gid)
+        check_chown(filename, gid=gid)
 
         shutil.chown(dirname, uid, gid)
         check_chown(dirname, uid, gid)
@@ -762,7 +762,7 @@ class TestShutil(unittest.TestCase):
         shutil.chown(dirname, user=uid)
         check_chown(dirname, uid)
         shutil.chown(dirname, group=gid)
-        check_chown(dirname, gid)
+        check_chown(dirname, gid=gid)
 
         user = pwd.getpwuid(uid)[0]
         group = grp.getgrgid(gid)[0]
