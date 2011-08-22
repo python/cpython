@@ -263,7 +263,6 @@ if_indextoname(index) -- return the corresponding interface name\n\
 #ifdef HAVE_NET_IF_H
 #include <net/if.h>
 #endif
-#include <unistd.h>
 
 /* Generic socket object definitions and includes */
 #define PySocket_BUILDING_SOCKET
@@ -275,6 +274,7 @@ if_indextoname(index) -- return the corresponding interface name\n\
 
 /* Non-MS WINDOWS includes */
 # include <netdb.h>
+# include <unistd.h>
 
 /* Headers needed for inet_ntoa() and inet_addr() */
 # if defined(PYOS_OS2) && defined(PYCC_VACPP)
