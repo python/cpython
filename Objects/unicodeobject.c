@@ -6514,6 +6514,28 @@ PyUnicode_EncodeDecimal(Py_UNICODE *s,
             start = 0;                          \
     }
 
+/* _Py_UNICODE_NEXT is a private macro used to retrieve the character pointed
+ * by 'ptr', possibly combining surrogate pairs on narrow builds.
+ * 'ptr' and 'end' must be Py_UNICODE*, with 'ptr' pointing at the character
+ * that should be returned and 'end' pointing to the end of the buffer.
+ * ('end' is used on narrow builds to detect a lone surrogate at the
+ * end of the buffer that should be returned unchanged.)
+ * The ptr and end arguments should be side-effect free and ptr must an lvalue.
+ * The type of the returned char is always Py_UCS4.
+ *
+ * Note: the macro advances ptr to next char, so it might have side-effects
+ *       (especially if used with other macros).
+ */
+#ifdef Py_UNICODE_WIDE
+#define _Py_UNICODE_NEXT(ptr, end) *(ptr)++
+#else
+#define _Py_UNICODE_NEXT(ptr, end)                                     \
+     (((Py_UNICODE_IS_HIGH_SURROGATE(*(ptr)) && (ptr) < (end)) &&      \
+        Py_UNICODE_IS_LOW_SURROGATE((ptr)[1])) ?                       \
+       ((ptr) += 2,Py_UNICODE_JOIN_SURROGATES((ptr)[-2], (ptr)[-1])) : \
+       (Py_UCS4)*(ptr)++)
+#endif
+
 Py_ssize_t
 PyUnicode_Count(PyObject *str,
                 PyObject *substr,
@@ -7777,8 +7799,8 @@ unicode_islower(PyUnicodeObject *self)
 
     e = p + PyUnicode_GET_SIZE(self);
     cased = 0;
-    for (; p < e; p++) {
-        register const Py_UNICODE ch = *p;
+    while (p < e) {
+        const Py_UCS4 ch = _Py_UNICODE_NEXT(p, e);
 
         if (Py_UNICODE_ISUPPER(ch) || Py_UNICODE_ISTITLE(ch))
             return PyBool_FromLong(0);
@@ -7811,8 +7833,8 @@ unicode_isupper(PyUnicodeObject *self)
 
     e = p + PyUnicode_GET_SIZE(self);
     cased = 0;
-    for (; p < e; p++) {
-        register const Py_UNICODE ch = *p;
+    while (p < e) {
+        const Py_UCS4 ch = _Py_UNICODE_NEXT(p, e);
 
         if (Py_UNICODE_ISLOWER(ch) || Py_UNICODE_ISTITLE(ch))
             return PyBool_FromLong(0);
@@ -7849,8 +7871,8 @@ unicode_istitle(PyUnicodeObject *self)
     e = p + PyUnicode_GET_SIZE(self);
     cased = 0;
     previous_is_cased = 0;
-    for (; p < e; p++) {
-        register const Py_UNICODE ch = *p;
+    while (p < e) {
+        const Py_UCS4 ch = _Py_UNICODE_NEXT(p, e);
 
         if (Py_UNICODE_ISUPPER(ch) || Py_UNICODE_ISTITLE(ch)) {
             if (previous_is_cased)
@@ -7892,8 +7914,9 @@ unicode_isspace(PyUnicodeObject *self)
         return PyBool_FromLong(0);
 
     e = p + PyUnicode_GET_SIZE(self);
-    for (; p < e; p++) {
-        if (!Py_UNICODE_ISSPACE(*p))
+    while (p < e) {
+        const Py_UCS4 ch = _Py_UNICODE_NEXT(p, e);
+        if (!Py_UNICODE_ISSPACE(ch))
             return PyBool_FromLong(0);
     }
     return PyBool_FromLong(1);
@@ -7921,8 +7944,8 @@ unicode_isalpha(PyUnicodeObject *self)
         return PyBool_FromLong(0);
 
     e = p + PyUnicode_GET_SIZE(self);
-    for (; p < e; p++) {
-        if (!Py_UNICODE_ISALPHA(*p))
+    while (p < e) {
+        if (!Py_UNICODE_ISALPHA(_Py_UNICODE_NEXT(p, e)))
             return PyBool_FromLong(0);
     }
     return PyBool_FromLong(1);
@@ -7950,8 +7973,9 @@ unicode_isalnum(PyUnicodeObject *self)
         return PyBool_FromLong(0);
 
     e = p + PyUnicode_GET_SIZE(self);
-    for (; p < e; p++) {
-        if (!Py_UNICODE_ISALNUM(*p))
+    while (p < e) {
+        const Py_UCS4 ch = _Py_UNICODE_NEXT(p, e);
+        if (!Py_UNICODE_ISALNUM(ch))
             return PyBool_FromLong(0);
     }
     return PyBool_FromLong(1);
@@ -7979,8 +8003,8 @@ unicode_isdecimal(PyUnicodeObject *self)
         return PyBool_FromLong(0);
 
     e = p + PyUnicode_GET_SIZE(self);
-    for (; p < e; p++) {
-        if (!Py_UNICODE_ISDECIMAL(*p))
+    while (p < e) {
+        if (!Py_UNICODE_ISDECIMAL(_Py_UNICODE_NEXT(p, e)))
             return PyBool_FromLong(0);
     }
     return PyBool_FromLong(1);
@@ -8008,8 +8032,8 @@ unicode_isdigit(PyUnicodeObject *self)
         return PyBool_FromLong(0);
 
     e = p + PyUnicode_GET_SIZE(self);
-    for (; p < e; p++) {
-        if (!Py_UNICODE_ISDIGIT(*p))
+    while (p < e) {
+        if (!Py_UNICODE_ISDIGIT(_Py_UNICODE_NEXT(p, e)))
             return PyBool_FromLong(0);
     }
     return PyBool_FromLong(1);
@@ -8037,37 +8061,22 @@ unicode_isnumeric(PyUnicodeObject *self)
         return PyBool_FromLong(0);
 
     e = p + PyUnicode_GET_SIZE(self);
-    for (; p < e; p++) {
-        if (!Py_UNICODE_ISNUMERIC(*p))
+    while (p < e) {
+        if (!Py_UNICODE_ISNUMERIC(_Py_UNICODE_NEXT(p, e)))
             return PyBool_FromLong(0);
     }
     return PyBool_FromLong(1);
 }
 
-static Py_UCS4
-decode_ucs4(const Py_UNICODE *s, Py_ssize_t *i, Py_ssize_t size)
-{
-    Py_UCS4 ch;
-    assert(*i < size);
-    ch = s[(*i)++];
-#ifndef Py_UNICODE_WIDE
-    if ((ch & 0xfffffc00) == 0xd800 &&
-        *i < size
-        && (s[*i] & 0xFFFFFC00) == 0xDC00)
-        ch = ((Py_UCS4)ch << 10UL) + (Py_UCS4)(s[(*i)++]) - 0x35fdc00;
-#endif
-    return ch;
-}
-
 int
 PyUnicode_IsIdentifier(PyObject *self)
 {
-    Py_ssize_t i = 0, size = PyUnicode_GET_SIZE(self);
-    Py_UCS4 first;
     const Py_UNICODE *p = PyUnicode_AS_UNICODE((PyUnicodeObject*)self);
+    const Py_UNICODE *e;
+    Py_UCS4 first;
 
     /* Special case for empty strings */
-    if (!size)
+    if (PyUnicode_GET_SIZE(self) == 0)
         return 0;
 
     /* PEP 3131 says that the first character must be in
@@ -8078,12 +8087,13 @@ PyUnicode_IsIdentifier(PyObject *self)
        definition of XID_Start and XID_Continue, it is sufficient
        to check just for these, except that _ must be allowed
        as starting an identifier.  */
-    first = decode_ucs4(p, &i, size);
+    e = p + PyUnicode_GET_SIZE(self);
+    first = _Py_UNICODE_NEXT(p, e);
     if (!_PyUnicode_IsXidStart(first) && first != 0x5F /* LOW LINE */)
         return 0;
 
-    while (i < size)
-        if (!_PyUnicode_IsXidContinue(decode_ucs4(p, &i, size)))
+    while (p < e)
+        if (!_PyUnicode_IsXidContinue(_Py_UNICODE_NEXT(p, e)))
             return 0;
     return 1;
 }
@@ -8118,8 +8128,8 @@ unicode_isprintable(PyObject *self)
     }
 
     e = p + PyUnicode_GET_SIZE(self);
-    for (; p < e; p++) {
-        if (!Py_UNICODE_ISPRINTABLE(*p)) {
+    while (p < e) {
+        if (!Py_UNICODE_ISPRINTABLE(_Py_UNICODE_NEXT(p, e))) {
             Py_RETURN_FALSE;
         }
     }
