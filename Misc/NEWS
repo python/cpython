@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #9200: The str.is* methods now work with strings that contain non-BMP
+  characters even in narrow Unicode builds.
+
 - Issue #12791: Break reference cycles early when a generator exits with
   an exception.
 
