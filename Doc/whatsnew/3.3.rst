@@ -249,10 +249,13 @@ handle NAT with non-secure FTP without opening fixed ports.
 shutil
 ------
 
-The :mod:`shutil` module has a new :func:`~shutil.disk_usage` function providing total,
-used and free disk space statistics.
+* The :mod:`shutil` module has these new fuctions:
 
-(Contributed by Giampaolo Rodolà in :issue:`12442`)
+  * :func:`~shutil.disk_usage`: provides total, used and free disk space
+    statistics. (Contributed by Giampaolo Rodolà in :issue:`12442`)
+  * :func:`~shutil.chown`: allows one to change user and/or group of the given
+    path also specifying the user/group names and not only their numeric
+    ids. (Contributed by Sandro Tosi in :issue:`12191`)
 
 
 Optimizations
