@@ -355,6 +355,14 @@ class SSLSocket(socket):
         else:
             return socket.sendto(self, data, flags_or_addr, addr)
 
+    def sendmsg(self, *args, **kwargs):
+        self._checkClosed()
+        if self._sslobj:
+            raise ValueError("sendmsg not allowed on instances of %s" %
+                             self.__class__)
+        else:
+            return socket.sendmsg(self, *args, **kwargs)
+
     def sendall(self, data, flags=0):
         self._checkClosed()
         if self._sslobj:
@@ -412,6 +420,22 @@ class SSLSocket(socket):
                              self.__class__)
         else:
             return socket.recvfrom_into(self, buffer, nbytes, flags)
+
+    def recvmsg(self, *args, **kwargs):
+        self._checkClosed()
+        if self._sslobj:
+            raise ValueError("recvmsg not allowed on instances of %s" %
+                             self.__class__)
+        else:
+            return socket.recvmsg(self, *args, **kwargs)
+
+    def recvmsg_into(self, *args, **kwargs):
+        self._checkClosed()
+        if self._sslobj:
+            raise ValueError("recvmsg_into not allowed on instances of %s" %
+                             self.__class__)
+        else:
+            return socket.recvmsg_into(self, *args, **kwargs)
 
     def pending(self):
         self._checkClosed()

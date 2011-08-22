@@ -212,6 +212,18 @@ signal
 * :func:`signal.signal` and :func:`signal.siginterrupt` raise an OSError,
   instead of a RuntimeError: OSError has an errno attribute.
 
+socket
+------
+
+The :class:`~socket.socket` class now exposes addititonal methods to
+process ancillary data when supported by the underlying platform:
+
+* :func:`~socket.socket.sendmsg`
+* :func:`~socket.socket.recvmsg`
+* :func:`~socket.socket.recvmsg_into`
+
+(Contributed by David Watson in :issue:`6560`, based on an earlier patch
+by Heiko Wundram)
 
 ssl
 ---
