@@ -1144,6 +1144,9 @@ Library
 
 - Issue #9347: Fix formatting for tuples in argparse type= error messages.
 
+- Issue #12191: Added shutil.chown() to change user and/or group owner of a
+  given path also specifying their names.
+
 Build
 -----
 
