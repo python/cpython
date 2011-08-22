@@ -265,6 +265,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #6560: The sendmsg/recvmsg API is now exposed by the socket module
+  when provided by the underlying platform, supporting processing of
+  ancillary data in pure Python code.
+
 - Issue #12326: On Linux, sys.platform doesn't contain the major version
   anymore. It is now always 'linux', instead of 'linux2' or 'linux3' depending
   on the Linux version used to build Python.
