@@ -9,35 +9,47 @@ MAILCAPFILE = test.support.findfile("mailcap.txt")
 
 # Dict to act as mock mailcap entry for this test
 # The keys and values should match the contents of MAILCAPFILE
-MAILCAPDICT = {'application/x-movie': [{'compose': 'moviemaker %s',
-                                        'x11-bitmap': '"/usr/lib/Zmail/bitmaps/movie.xbm"',
-                                        'description': '"Movie"',
-                                        'view': 'movieplayer %s'}],
-               'application/*': [{'copiousoutput': '',
-                                  'view': 'echo "This is \\"%t\\" but        is 50 \\% Greek to me" \\; cat %s'}],
-               'audio/basic': [{'edit': 'audiocompose %s',
-                                'compose': 'audiocompose %s',
-                                'description': '"An audio fragment"',
-                                'view': 'showaudio %s'}],
-               'video/mpeg': [{'view': 'mpeg_play %s'}],
-               'application/postscript': [{'needsterminal': '',
-                                           'view': 'ps-to-terminal %s'},
-                                          {'compose': 'idraw %s',
-                                           'view': 'ps-to-terminal %s'}],
-               'application/x-dvi': [{'view': 'xdvi %s'}],
-               'message/external-body': [{'composetyped': 'extcompose %s',
-                                          'description': '"A reference to data stored in an external location"',
-                                          'needsterminal': '',
-                                          'view': 'showexternal %s %{access-type} %{name} %{site}     %{directory} %{mode} %{server}'}],
-               'text/richtext': [{'test': 'test "`echo     %{charset} | tr \'[A-Z]\' \'[a-z]\'`"  = iso-8859-8',
-                                  'copiousoutput': '',
-                                  'view': 'shownonascii iso-8859-8 -e richtext -p %s'}],
-               'image/x-xwindowdump': [{'view': 'display %s'}],
-               'audio/*': [{'view': '/usr/local/bin/showaudio %t'}],
-               'video/*': [{'view': 'animate %s'}],
-               'application/frame': [{'print': '"cat %s | lp"',
-                                      'view': 'showframe %s'}],
-               'image/rgb': [{'view': 'display %s'}]}
+MAILCAPDICT = {
+    'application/x-movie':
+        [{'compose': 'moviemaker %s',
+          'x11-bitmap': '"/usr/lib/Zmail/bitmaps/movie.xbm"',
+          'description': '"Movie"',
+          'view': 'movieplayer %s'}],
+    'application/*':
+        [{'copiousoutput': '',
+          'view': 'echo "This is \\"%t\\" but        is 50 \\% Greek to me" \\; cat %s'}],
+    'audio/basic':
+        [{'edit': 'audiocompose %s',
+          'compose': 'audiocompose %s',
+          'description': '"An audio fragment"',
+          'view': 'showaudio %s'}],
+    'video/mpeg':
+        [{'view': 'mpeg_play %s'}],
+    'application/postscript':
+        [{'needsterminal': '', 'view': 'ps-to-terminal %s'},
+         {'compose': 'idraw %s', 'view': 'ps-to-terminal %s'}],
+    'application/x-dvi':
+        [{'view': 'xdvi %s'}],
+    'message/external-body':
+        [{'composetyped': 'extcompose %s',
+          'description': '"A reference to data stored in an external location"',
+          'needsterminal': '',
+          'view': 'showexternal %s %{access-type} %{name} %{site}     %{directory} %{mode} %{server}'}],
+    'text/richtext':
+        [{'test': 'test "`echo     %{charset} | tr \'[A-Z]\' \'[a-z]\'`"  = iso-8859-8',
+          'copiousoutput': '',
+          'view': 'shownonascii iso-8859-8 -e richtext -p %s'}],
+    'image/x-xwindowdump':
+        [{'view': 'display %s'}],
+    'audio/*':
+        [{'view': '/usr/local/bin/showaudio %t'}],
+    'video/*':
+        [{'view': 'animate %s'}],
+    'application/frame':
+        [{'print': '"cat %s | lp"', 'view': 'showframe %s'}],
+    'image/rgb':
+        [{'view': 'display %s'}]
+}
 
 
 class HelperFunctionTest(unittest.TestCase):
@@ -47,8 +59,9 @@ class HelperFunctionTest(unittest.TestCase):
         # So verify that listmailcapfiles() returns a list of strings that is of
         # non-zero length.
         mcfiles = mailcap.listmailcapfiles()
-        self.assertTrue(isinstance(mcfiles, list))
-        self.assertTrue(all([isinstance(m, str) for m in mcfiles]))
+        self.assertIsInstance(mcfiles, list)
+        for m in mcfiles:
+            self.assertIsInstance(m, str)
         with test.support.EnvironmentVarGuard() as env:
             # According to RFC 1524, if MAILCAPS env variable exists, use that
             # and only that.
@@ -85,14 +98,14 @@ class HelperFunctionTest(unittest.TestCase):
         plist = ['id=1', 'number=2', 'total=3']
         # test case: ([field, MIMEtype, filename, plist=[]], <expected string>)
         test_cases = [
-                      (["", "audio/*", "foo.txt"], ""),
-                      (["echo foo", "audio/*", "foo.txt"], "echo foo"),
-                      (["echo %s", "audio/*", "foo.txt"], "echo foo.txt"),
-                      (["echo %t", "audio/*", "foo.txt"], "echo audio/*"),
-                      (["echo \%t", "audio/*", "foo.txt"], "echo %t"),
-                      (["echo foo", "audio/*", "foo.txt", plist], "echo foo"),
-                      (["echo %{total}", "audio/*", "foo.txt", plist], "echo 3")
-                      ]
+            (["", "audio/*", "foo.txt"], ""),
+            (["echo foo", "audio/*", "foo.txt"], "echo foo"),
+            (["echo %s", "audio/*", "foo.txt"], "echo foo.txt"),
+            (["echo %t", "audio/*", "foo.txt"], "echo audio/*"),
+            (["echo \%t", "audio/*", "foo.txt"], "echo %t"),
+            (["echo foo", "audio/*", "foo.txt", plist], "echo foo"),
+            (["echo %{total}", "audio/*", "foo.txt", plist], "echo 3")
+        ]
         for tc in test_cases:
             self.assertEqual(mailcap.subst(*tc[0]), tc[1])
 
@@ -111,15 +124,16 @@ class GetcapsTest(unittest.TestCase):
     def test_system_mailcap(self):
         # Test mailcap.getcaps() with mailcap file(s) on system, if any.
         caps = mailcap.getcaps()
-        self.assertTrue(isinstance(caps, dict))
+        self.assertIsInstance(caps, dict)
         mailcapfiles = mailcap.listmailcapfiles()
         existingmcfiles = [mcf for mcf in mailcapfiles if os.path.exists(mcf)]
         if existingmcfiles:
             # At least 1 mailcap file exists, so test that.
             for (k, v) in caps.items():
-                self.assertTrue(isinstance(k, str))
-                self.assertTrue(isinstance(v, list))
-                self.assertTrue(all([isinstance(e, dict) for e in v]))
+                self.assertIsInstance(k, str)
+                self.assertIsInstance(v, list)
+                for e in v:
+                    self.assertIsInstance(e, dict)
         else:
             # No mailcap files on system. getcaps() should return empty dict.
             self.assertEqual({}, caps)
@@ -134,15 +148,19 @@ class FindmatchTest(unittest.TestCase):
         fname = "foo.txt"
         plist = ["access-type=default", "name=john", "site=python.org",
                  "directory=/tmp", "mode=foo", "server=bar"]
-        audio_basic_entry = {'edit': 'audiocompose %s',
-                             'compose': 'audiocompose %s',
-                             'description': '"An audio fragment"',
-                             'view': 'showaudio %s'}
+        audio_basic_entry = {
+            'edit': 'audiocompose %s',
+            'compose': 'audiocompose %s',
+            'description': '"An audio fragment"',
+            'view': 'showaudio %s'
+        }
         audio_entry = {"view": "/usr/local/bin/showaudio %t"}
         video_entry = {'view': 'animate %s'}
-        message_entry = {'composetyped': 'extcompose %s',
-                         'description': '"A reference to data stored in an external location"', 'needsterminal': '',
-                         'view': 'showexternal %s %{access-type} %{name} %{site}     %{directory} %{mode} %{server}'}
+        message_entry = {
+            'composetyped': 'extcompose %s',
+            'description': '"A reference to data stored in an external location"', 'needsterminal': '',
+            'view': 'showexternal %s %{access-type} %{name} %{site}     %{directory} %{mode} %{server}'
+        }
 
         # test case: (findmatch args, findmatch keyword args, expected output)
         #   positional args: caps, MIMEtype
@@ -169,7 +187,7 @@ class FindmatchTest(unittest.TestCase):
             ([c, "message/external-body"],
              {"plist": plist},
              ("showexternal /dev/null default john python.org     /tmp foo bar", message_entry))
-            ]
+        ]
         self._run_cases(cases)
 
     @unittest.skipUnless(os.name == "posix", "Requires 'test' command on system")
@@ -187,7 +205,7 @@ class FindmatchTest(unittest.TestCase):
             ([caps, "test/pass", "test"], {}, ("test 1 -eq 1", {"test": "test 1 -eq 1"})),
             # findmatch will return None because test/fail evaluates to false
             ([caps, "test/fail", "test"], {}, (None, None))
-            ]
+        ]
         self._run_cases(cases)
 
     def _run_cases(self, cases):
