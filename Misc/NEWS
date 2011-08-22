@@ -265,6 +265,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12811: tabnanny.check() now promptly closes checked files. Patch by
+  Anthony Briggs.
+
 - Issue #6560: The sendmsg/recvmsg API is now exposed by the socket module
   when provided by the underlying platform, supporting processing of
   ancillary data in pure Python code.

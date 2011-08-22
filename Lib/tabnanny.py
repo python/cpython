@@ -126,6 +126,9 @@ def check(file):
             else: print(file, badline, repr(line))
         return
 
+    finally:
+        f.close()
+
     if verbose:
         print("%r: Clean bill of health." % (file,))
 
