@@ -13,6 +13,10 @@ import warnings
 from test import support, string_tests
 import _string
 
+# decorator to skip tests on narrow builds
+requires_wide_build = unittest.skipIf(sys.maxunicode == 65535,
+                                      'requires wide build')
+
 # Error handling (bad decoder return)
 def search_function(encoding):
     def decode1(input, errors="strict"):
@@ -515,69 +519,69 @@ class UnicodeTest(string_tests.CommonTest,
                 self.assertFalse(meth(s), '%a.%s() is False' % (s, meth_name))
 
 
-    @unittest.skipIf(sys.maxunicode == 65535, 'test requires wide build')
+    @requires_wide_build
     def test_lower(self):
         string_tests.CommonTest.test_lower(self)
         self.assertEqual('\U00010427'.lower(), '\U0001044F')
         self.assertEqual('\U00010427\U00010427'.lower(),
-                        '\U0001044F\U0001044F')
+                         '\U0001044F\U0001044F')
         self.assertEqual('\U00010427\U0001044F'.lower(),
-                        '\U0001044F\U0001044F')
+                         '\U0001044F\U0001044F')
         self.assertEqual('X\U00010427x\U0001044F'.lower(),
-                        'x\U0001044Fx\U0001044F')
+                         'x\U0001044Fx\U0001044F')
 
-    @unittest.skipIf(sys.maxunicode == 65535, 'test requires wide build')
+    @requires_wide_build
     def test_upper(self):
         string_tests.CommonTest.test_upper(self)
         self.assertEqual('\U0001044F'.upper(), '\U00010427')
         self.assertEqual('\U0001044F\U0001044F'.upper(),
-                        '\U00010427\U00010427')
+                         '\U00010427\U00010427')
         self.assertEqual('\U00010427\U0001044F'.upper(),
-                        '\U00010427\U00010427')
+                         '\U00010427\U00010427')
         self.assertEqual('X\U00010427x\U0001044F'.upper(),
-                        'X\U00010427X\U00010427')
+                         'X\U00010427X\U00010427')
 
-    @unittest.skipIf(sys.maxunicode == 65535, 'test requires wide build')
+    @requires_wide_build
     def test_capitalize(self):
         string_tests.CommonTest.test_capitalize(self)
         self.assertEqual('\U0001044F'.capitalize(), '\U00010427')
         self.assertEqual('\U0001044F\U0001044F'.capitalize(),
-                        '\U00010427\U0001044F')
+                         '\U00010427\U0001044F')
         self.assertEqual('\U00010427\U0001044F'.capitalize(),
-                        '\U00010427\U0001044F')
+                         '\U00010427\U0001044F')
         self.assertEqual('\U0001044F\U00010427'.capitalize(),
-                        '\U00010427\U0001044F')
+                         '\U00010427\U0001044F')
         self.assertEqual('X\U00010427x\U0001044F'.capitalize(),
-                        'X\U0001044Fx\U0001044F')
+                         'X\U0001044Fx\U0001044F')
 
-    @unittest.skipIf(sys.maxunicode == 65535, 'test requires wide build')
+    @requires_wide_build
     def test_title(self):
         string_tests.MixinStrUnicodeUserStringTest.test_title(self)
         self.assertEqual('\U0001044F'.title(), '\U00010427')
         self.assertEqual('\U0001044F\U0001044F'.title(),
-                        '\U00010427\U0001044F')
+                         '\U00010427\U0001044F')
         self.assertEqual('\U0001044F\U0001044F \U0001044F\U0001044F'.title(),
-                        '\U00010427\U0001044F \U00010427\U0001044F')
+                         '\U00010427\U0001044F \U00010427\U0001044F')
         self.assertEqual('\U00010427\U0001044F \U00010427\U0001044F'.title(),
-                        '\U00010427\U0001044F \U00010427\U0001044F')
+                         '\U00010427\U0001044F \U00010427\U0001044F')
         self.assertEqual('\U0001044F\U00010427 \U0001044F\U00010427'.title(),
-                        '\U00010427\U0001044F \U00010427\U0001044F')
+                         '\U00010427\U0001044F \U00010427\U0001044F')
         self.assertEqual('X\U00010427x\U0001044F X\U00010427x\U0001044F'.title(),
-                        'X\U0001044Fx\U0001044F X\U0001044Fx\U0001044F')
+                         'X\U0001044Fx\U0001044F X\U0001044Fx\U0001044F')
 
-    @unittest.skipIf(sys.maxunicode == 65535, 'test requires wide build')
+    @requires_wide_build
     def test_swapcase(self):
         string_tests.CommonTest.test_swapcase(self)
         self.assertEqual('\U0001044F'.swapcase(), '\U00010427')
         self.assertEqual('\U00010427'.swapcase(), '\U0001044F')
         self.assertEqual('\U0001044F\U0001044F'.swapcase(),
-                        '\U00010427\U00010427')
+                         '\U00010427\U00010427')
         self.assertEqual('\U00010427\U0001044F'.swapcase(),
-                        '\U0001044F\U00010427')
+                         '\U0001044F\U00010427')
         self.assertEqual('\U0001044F\U00010427'.swapcase(),
-                        '\U00010427\U0001044F')
+                         '\U00010427\U0001044F')
         self.assertEqual('X\U00010427x\U0001044F'.swapcase(),
-                        'x\U0001044FX\U00010427')
+                         'x\U0001044FX\U00010427')
 
     def test_contains(self):
         # Testing Unicode contains method
