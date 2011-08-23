@@ -35,13 +35,18 @@ import multiprocessing.managers
 import multiprocessing.heap
 import multiprocessing.pool
 
-from multiprocessing import util
+from multiprocessing import util, reduction
 
 try:
     from multiprocessing.sharedctypes import Value, copy
     HAS_SHAREDCTYPES = True
 except ImportError:
     HAS_SHAREDCTYPES = False
+
+try:
+    import msvcrt
+except ImportError:
+    msvcrt = None
 
 #
 #
@@ -71,6 +76,11 @@ HAVE_GETVALUE = not getattr(_multiprocessing,
                             'HAVE_BROKEN_SEM_GETVALUE', False)
 
 WIN32 = (sys.platform == "win32")
+
+try:
+    MAXFD = os.sysconf("SC_OPEN_MAX")
+except:
+    MAXFD = 256
 
 #
 # Some tests require ctypes
@@ -1537,6 +1547,76 @@ class _TestConnection(BaseTestCase):
         self.assertRaises(ValueError, a.send_bytes, msg, -1)
 
         self.assertRaises(ValueError, a.send_bytes, msg, 4, -1)
+
+    @classmethod
+    def _is_fd_assigned(cls, fd):
+        try:
+            os.fstat(fd)
+        except OSError as e:
+            if e.errno == errno.EBADF:
+                return False
+            raise
+        else:
+            return True
+
+    @classmethod
+    def _writefd(cls, conn, data, create_dummy_fds=False):
+        if create_dummy_fds:
+            for i in range(0, 256):
+                if not cls._is_fd_assigned(i):
+                    os.dup2(conn.fileno(), i)
+        fd = reduction.recv_handle(conn)
+        if msvcrt:
+            fd = msvcrt.open_osfhandle(fd, os.O_WRONLY)
+        os.write(fd, data)
+        os.close(fd)
+
+    def test_fd_transfer(self):
+        if self.TYPE != 'processes':
+            self.skipTest("only makes sense with processes")
+        conn, child_conn = self.Pipe(duplex=True)
+
+        p = self.Process(target=self._writefd, args=(child_conn, b"foo"))
+        p.start()
+        with open(test.support.TESTFN, "wb") as f:
+            fd = f.fileno()
+            if msvcrt:
+                fd = msvcrt.get_osfhandle(fd)
+            reduction.send_handle(conn, fd, p.pid)
+        p.join()
+        with open(test.support.TESTFN, "rb") as f:
+            self.assertEqual(f.read(), b"foo")
+
+    @unittest.skipIf(sys.platform == "win32",
+                     "test semantics don't make sense on Windows")
+    @unittest.skipIf(MAXFD <= 256,
+                     "largest assignable fd number is too small")
+    @unittest.skipUnless(hasattr(os, "dup2"),
+                         "test needs os.dup2()")
+    def test_large_fd_transfer(self):
+        # With fd > 256 (issue #11657)
+        if self.TYPE != 'processes':
+            self.skipTest("only makes sense with processes")
+        conn, child_conn = self.Pipe(duplex=True)
+
+        p = self.Process(target=self._writefd, args=(child_conn, b"bar", True))
+        p.start()
+        with open(test.support.TESTFN, "wb") as f:
+            fd = f.fileno()
+            for newfd in range(256, MAXFD):
+                if not self._is_fd_assigned(newfd):
+                    break
+            else:
+                self.fail("could not find an unassigned large file descriptor")
+            os.dup2(fd, newfd)
+            try:
+                reduction.send_handle(conn, newfd, p.pid)
+            finally:
+                os.close(newfd)
+        p.join()
+        with open(test.support.TESTFN, "rb") as f:
+            self.assertEqual(f.read(), b"bar")
+
 
 class _TestListenerClient(BaseTestCase):
 
