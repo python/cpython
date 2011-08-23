@@ -156,6 +156,10 @@ if_indextoname(index) -- return the corresponding interface name\n\
 # undef HAVE_GETHOSTBYNAME_R_6_ARG
 #endif
 
+#if defined(__OpenBSD__)
+# include <sys/uio.h>
+#endif
+
 #ifndef WITH_THREAD
 # undef HAVE_GETHOSTBYNAME_R
 #endif
