@@ -169,23 +169,29 @@ def _get_xxmodule_path():
 
 
 def fixup_build_ext(cmd):
-    """Function needed to make build_ext tests pass on shared builds.
+    """Function needed to make build_ext tests pass.
 
-    When Python was build with --enable-shared, -L. is not good enough to find
-    the libpython<blah>.so.  This is because regrtest runs it under a tempdir,
-    not in the top level where the .so lives.  By the time we've gotten here,
-    Python's already been chdir'd to the tempdir.  This function work arounds
-    that.  Example use:
+    When Python was build with --enable-shared on Unix, -L. is not good
+    enough to find the libpython<blah>.so.  This is because regrtest runs
+    it under a tempdir, not in the top level where the .so lives.  By the
+    time we've gotten here, Python's already been chdir'd to the tempdir.
+
+    When Python was built with in debug mode on Windows, build_ext commands
+    need their debug attribute set, and it is not done automatically for
+    some reason.
+
+    This function handles both of these things.  Example use:
 
         cmd = build_ext(dist)
         support.fixup_build_ext(cmd)
         cmd.ensure_finalized()
     """
-    # To further add to the fun, we can't just add library_dirs to the
-    # Extension() instance because that doesn't get plumbed through to the
-    # final compiler command.
-    if (sysconfig.get_config_var('Py_ENABLE_SHARED') and
-        not sys.platform.startswith('win')):
+    if os.name == 'nt':
+        cmd.debug = sys.executable.endswith('_d.exe')
+    elif sysconfig.get_config_var('Py_ENABLE_SHARED'):
+        # To further add to the shared builds fun on Unix, we can't just add
+        # library_dirs to the Extension() instance because that doesn't get
+        # plumbed through to the final compiler command.
         runshared = sysconfig.get_config_var('RUNSHARED')
         if runshared is None:
             cmd.library_dirs = ['.']
