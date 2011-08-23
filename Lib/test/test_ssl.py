@@ -186,11 +186,8 @@ class BasicSocketTests(unittest.TestCase):
         self.assertRaises(socket.error, ss.recv_into, bytearray(b'x'))
         self.assertRaises(socket.error, ss.recvfrom, 1)
         self.assertRaises(socket.error, ss.recvfrom_into, bytearray(b'x'), 1)
-        self.assertRaises(socket.error, ss.recvmsg, 1)
-        self.assertRaises(socket.error, ss.recvmsg_into, [bytearray(b'x')])
         self.assertRaises(socket.error, ss.send, b'x')
         self.assertRaises(socket.error, ss.sendto, b'x', ('0.0.0.0', 0))
-        self.assertRaises(socket.error, ss.sendmsg, [b'x'])
 
     def test_timeout(self):
         # Issue #8524: when creating an SSL socket, the timeout of the
@@ -1523,30 +1520,17 @@ else:
                     count, addr = s.recvfrom_into(b)
                     return b[:count]
 
-                def _recvmsg(*args, **kwargs):
-                    return s.recvmsg(*args, **kwargs)[0]
-
-                def _recvmsg_into(bufsize, *args, **kwargs):
-                    b = bytearray(bufsize)
-                    return bytes(b[:s.recvmsg_into([b], *args, **kwargs)[0]])
-
-                def _sendmsg(msg, *args, **kwargs):
-                    return s.sendmsg([msg])
-
                 # (name, method, whether to expect success, *args)
                 send_methods = [
                     ('send', s.send, True, []),
                     ('sendto', s.sendto, False, ["some.address"]),
-                    ('sendmsg', _sendmsg, False, []),
                     ('sendall', s.sendall, True, []),
                 ]
                 recv_methods = [
                     ('recv', s.recv, True, []),
                     ('recvfrom', s.recvfrom, False, ["some.address"]),
-                    ('recvmsg', _recvmsg, False, [100]),
                     ('recv_into', _recv_into, True, []),
                     ('recvfrom_into', _recvfrom_into, False, []),
-                    ('recvmsg_into', _recvmsg_into, False, [100]),
                 ]
                 data_prefix = "PREFIX_"
 
