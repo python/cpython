@@ -40,11 +40,6 @@ class BuildExtTestCase(support.TempdirManager,
         dist.package_dir = self.tmp_dir
         cmd = build_ext(dist)
         support.fixup_build_ext(cmd)
-
-        if os.name == "nt":
-            # On Windows, we must build a debug version iff running
-            # a debug build of Python
-            cmd.debug = sys.executable.endswith("_d.exe")
         cmd.build_lib = self.tmp_dir
         cmd.build_temp = self.tmp_dir
 
@@ -235,9 +230,6 @@ class BuildExtTestCase(support.TempdirManager,
         support.fixup_build_ext(cmd)
         cmd.ensure_finalized()
         self.assertEqual(len(cmd.get_outputs()), 1)
-
-        if os.name == "nt":
-            cmd.debug = sys.executable.endswith("_d.exe")
 
         cmd.build_lib = os.path.join(self.tmp_dir, 'build')
         cmd.build_temp = os.path.join(self.tmp_dir, 'tempt')
