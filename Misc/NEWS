@@ -183,6 +183,8 @@ Tools/Demos
 Tests
 -----
 
+- Issue #12821: Fix test_fcntl failures on OpenBSD 5.
+
 - Issue #12331: The test suite for lib2to3 can now run from an installed
   Python.
 
