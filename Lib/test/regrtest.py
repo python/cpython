@@ -515,7 +515,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         elif ok == FAILED:
             bad.append(test)
         elif ok == ENV_CHANGED:
-            bad.append(test)
             environment_changed.append(test)
         elif ok == SKIPPED:
             skipped.append(test)
