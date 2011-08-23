@@ -31,6 +31,12 @@ Library
 - Issue #12650: Fix a race condition where a subprocess.Popen could leak
   resources (FD/zombie) when killed at the wrong time.
 
+Tests
+-----
+
+- Issue #12821: Fix test_fcntl failures on OpenBSD 5.
+
+
 What's New in Python 3.2.2?
 ===========================
 
