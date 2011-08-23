@@ -18,6 +18,14 @@ from distutils.extension import Extension
 
 from distutils.tests import support
 
+
+def _make_ext_name(modname):
+    if os.name == 'nt':
+        if sys.executable.endswith('_d.exe'):
+            modname += '_d'
+    return modname + sysconfig.get_config_var('SO')
+
+
 class InstallTestCase(support.TempdirManager,
                       support.EnvironGuard,
                       support.LoggingSilencer,
@@ -201,13 +209,13 @@ class InstallTestCase(support.TempdirManager,
         os.chdir(project_dir)
         support.copy_xxmodule_c(project_dir)
 
-        buildcmd = build_ext(dist)
-        support.fixup_build_ext(buildcmd)
-        buildcmd.ensure_finalized()
-        buildcmd.run()
+        buildextcmd = build_ext(dist)
+        support.fixup_build_ext(buildextcmd)
+        buildextcmd.ensure_finalized()
 
         cmd = install(dist)
         dist.command_obj['install'] = cmd
+        dist.command_obj['build_ext'] = buildextcmd
         cmd.root = install_dir
         cmd.record = os.path.join(project_dir, 'RECORD')
         cmd.ensure_finalized()
@@ -220,7 +228,7 @@ class InstallTestCase(support.TempdirManager,
             f.close()
 
         found = [os.path.basename(line) for line in content.splitlines()]
-        expected = ['xx%s' % sysconfig.get_config_var('SO'),
+        expected = [_make_ext_name('xx'),
                     'UNKNOWN-0.0.0-py%s.%s.egg-info' % sys.version_info[:2]]
         self.assertEqual(found, expected)
 
