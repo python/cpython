@@ -5,6 +5,7 @@ import sys
 from sysconfig import (get_scheme_names, get_config_vars,
                        _SCHEMES, get_config_var, get_path)
 
+from packaging.command.build_ext import build_ext
 from packaging.command.install_dist import install_dist
 from packaging.compiler.extension import Extension
 from packaging.dist import Distribution
@@ -14,6 +15,13 @@ from packaging.tests import unittest, support
 
 
 _CONFIG_VARS = get_config_vars()
+
+
+def _make_ext_name(modname):
+    if os.name == 'nt':
+        if sys.executable.endswith('_d.exe'):
+            modname += '_d'
+    return modname + get_config_var('SO')
 
 
 class InstallTestCase(support.TempdirManager,
@@ -204,10 +212,14 @@ class InstallTestCase(support.TempdirManager,
             Extension('xx', ['xxmodule.c'])])
         os.chdir(project_dir)
         support.copy_xxmodule_c(project_dir)
-        support.fixup_build_ext(dist.get_command_obj('build_ext'))
+
+        buildextcmd = build_ext(dist)
+        support.fixup_build_ext(buildextcmd)
+        buildextcmd.ensure_finalized()
 
         cmd = install_dist(dist)
         dist.command_obj['install_dist'] = cmd
+        dist.command_obj['build_ext'] = buildextcmd
         cmd.root = install_dir
         cmd.record = os.path.join(project_dir, 'filelist')
         cmd.ensure_finalized()
@@ -217,7 +229,7 @@ class InstallTestCase(support.TempdirManager,
             content = f.read()
 
         found = [os.path.basename(line) for line in content.splitlines()]
-        expected = ['xx%s' % get_config_var('SO'),
+        expected = [_make_ext_name('xx'),
                     'METADATA', 'INSTALLER', 'REQUESTED', 'RECORD']
         self.assertEqual(found, expected)
 
