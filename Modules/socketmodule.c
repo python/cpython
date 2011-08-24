@@ -1749,7 +1749,7 @@ cmsg_min_space(struct msghdr *msg, struct cmsghdr *cmsgh, size_t space)
     static const size_t cmsg_len_end = (offsetof(struct cmsghdr, cmsg_len) +
                                         sizeof(cmsgh->cmsg_len));
 
-    if (cmsgh == NULL || msg->msg_control == NULL || msg->msg_controllen < 0)
+    if (cmsgh == NULL || msg->msg_control == NULL)
         return 0;
     if (space < cmsg_len_end)
         space = cmsg_len_end;
