@@ -757,7 +757,8 @@ class TestAPI_UseIPv6Sockets(BaseTestAPI):
 
 @unittest.skipUnless(HAS_UNIX_SOCKETS, 'Unix sockets required')
 class TestAPI_UseUnixSockets(BaseTestAPI):
-    family = socket.AF_UNIX
+    if HAS_UNIX_SOCKETS:
+        family = socket.AF_UNIX
     addr = support.TESTFN
     use_poll = False
 
