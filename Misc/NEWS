@@ -40,6 +40,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4106: Fix occasional exceptions printed out by multiprocessing on
+  interpreter shutdown.
+
 - Issue #11657: Fix sending file descriptors over 255 over a multiprocessing
   Pipe.
 
