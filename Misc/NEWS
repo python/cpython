@@ -1221,6 +1221,8 @@ Extension Modules
 Tests
 -----
 
+- Issue #12656: Add tests for IPv6 and Unix sockets to test_asyncore.
+
 - Issue #6484: Add unit tests for mailcap module (patch by Gregory Nofi)
 
 - Issue #11651: Improve the Makefile test targets to run more of the test suite

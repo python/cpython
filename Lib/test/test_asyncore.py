@@ -87,6 +87,13 @@ def capture_server(evt, buf, serv):
         serv.close()
         evt.set()
 
+def bind_af_aware(sock, addr):
+    """Helper function to bind a socket according to its family."""
+    if sock.family == socket.AF_UNIX:
+        # Make sure the path doesn't exist.
+        unlink(addr)
+    sock.bind(addr)
+
 
 class HelperFunctionTests(unittest.TestCase):
     def test_readwriteexc(self):
@@ -467,22 +474,22 @@ class BaseTestHandler(asyncore.dispatcher):
         raise
 
 
-class TCPServer(asyncore.dispatcher):
+class BaseServer(asyncore.dispatcher):
     """A server which listens on an address and dispatches the
     connection to a handler.
     """
 
-    def __init__(self, handler=BaseTestHandler, host=HOST, port=0):
+    def __init__(self, family, addr, handler=BaseTestHandler):
         asyncore.dispatcher.__init__(self)
-        self.create_socket()
+        self.create_socket(family)
         self.set_reuse_addr()
-        self.bind((host, port))
+        bind_af_aware(self.socket, addr)
         self.listen(5)
         self.handler = handler
 
     @property
     def address(self):
-        return self.socket.getsockname()[:2]
+        return self.socket.getsockname()
 
     def handle_accepted(self, sock, addr):
         self.handler(sock)
@@ -493,9 +500,9 @@ class TCPServer(asyncore.dispatcher):
 
 class BaseClient(BaseTestHandler):
 
-    def __init__(self, address):
+    def __init__(self, family, address):
         BaseTestHandler.__init__(self)
-        self.create_socket()
+        self.create_socket(family)
         self.connect(address)
 
     def handle_connect(self):
@@ -525,8 +532,8 @@ class BaseTestAPI(unittest.TestCase):
             def handle_connect(self):
                 self.flag = True
 
-        server = TCPServer()
-        client = TestClient(server.address)
+        server = BaseServer(self.family, self.addr)
+        client = TestClient(self.family, server.address)
         self.loop_waiting_for_flag(client)
 
     def test_handle_accept(self):
@@ -534,18 +541,18 @@ class BaseTestAPI(unittest.TestCase):
 
         class TestListener(BaseTestHandler):
 
-            def __init__(self):
+            def __init__(self, family, addr):
                 BaseTestHandler.__init__(self)
-                self.create_socket()
-                self.bind((HOST, 0))
+                self.create_socket(family)
+                bind_af_aware(self.socket, addr)
                 self.listen(5)
-                self.address = self.socket.getsockname()[:2]
+                self.address = self.socket.getsockname()
 
             def handle_accept(self):
                 self.flag = True
 
-        server = TestListener()
-        client = BaseClient(server.address)
+        server = TestListener(self.family, self.addr)
+        client = BaseClient(self.family, server.address)
         self.loop_waiting_for_flag(server)
 
     def test_handle_accepted(self):
@@ -553,12 +560,12 @@ class BaseTestAPI(unittest.TestCase):
 
         class TestListener(BaseTestHandler):
 
-            def __init__(self):
+            def __init__(self, family, addr):
                 BaseTestHandler.__init__(self)
-                self.create_socket()
-                self.bind((HOST, 0))
+                self.create_socket(family)
+                bind_af_aware(self.socket, addr)
                 self.listen(5)
-                self.address = self.socket.getsockname()[:2]
+                self.address = self.socket.getsockname()
 
             def handle_accept(self):
                 asyncore.dispatcher.handle_accept(self)
@@ -567,8 +574,8 @@ class BaseTestAPI(unittest.TestCase):
                 sock.close()
                 self.flag = True
 
-        server = TestListener()
-        client = BaseClient(server.address)
+        server = TestListener(self.family, self.addr)
+        client = BaseClient(self.family, server.address)
         self.loop_waiting_for_flag(server)
 
 
@@ -584,8 +591,8 @@ class BaseTestAPI(unittest.TestCase):
                 BaseTestHandler.__init__(self, conn)
                 self.send(b'x' * 1024)
 
-        server = TCPServer(TestHandler)
-        client = TestClient(server.address)
+        server = BaseServer(self.family, self.addr, TestHandler)
+        client = TestClient(self.family, server.address)
         self.loop_waiting_for_flag(client)
 
     def test_handle_write(self):
@@ -595,8 +602,8 @@ class BaseTestAPI(unittest.TestCase):
             def handle_write(self):
                 self.flag = True
 
-        server = TCPServer()
-        client = TestClient(server.address)
+        server = BaseServer(self.family, self.addr)
+        client = TestClient(self.family, server.address)
         self.loop_waiting_for_flag(client)
 
     def test_handle_close(self):
@@ -619,8 +626,8 @@ class BaseTestAPI(unittest.TestCase):
                 BaseTestHandler.__init__(self, conn)
                 self.close()
 
-        server = TCPServer(TestHandler)
-        client = TestClient(server.address)
+        server = BaseServer(self.family, self.addr, TestHandler)
+        client = TestClient(self.family, server.address)
         self.loop_waiting_for_flag(client)
 
     @unittest.skipIf(sys.platform.startswith("sunos"),
@@ -629,6 +636,8 @@ class BaseTestAPI(unittest.TestCase):
         # Make sure handle_expt is called on OOB data received.
         # Note: this might fail on some platforms as OOB data is
         # tenuously supported and rarely used.
+        if self.family == socket.AF_UNIX:
+            self.skipTest("Not applicable to AF_UNIX sockets.")
 
         class TestClient(BaseClient):
             def handle_expt(self):
@@ -639,8 +648,8 @@ class BaseTestAPI(unittest.TestCase):
                 BaseTestHandler.__init__(self, conn)
                 self.socket.send(bytes(chr(244), 'latin-1'), socket.MSG_OOB)
 
-        server = TCPServer(TestHandler)
-        client = TestClient(server.address)
+        server = BaseServer(self.family, self.addr, TestHandler)
+        client = TestClient(self.family, server.address)
         self.loop_waiting_for_flag(client)
 
     def test_handle_error(self):
@@ -657,13 +666,13 @@ class BaseTestAPI(unittest.TestCase):
                 else:
                     raise Exception("exception not raised")
 
-        server = TCPServer()
-        client = TestClient(server.address)
+        server = BaseServer(self.family, self.addr)
+        client = TestClient(self.family, server.address)
         self.loop_waiting_for_flag(client)
 
     def test_connection_attributes(self):
-        server = TCPServer()
-        client = BaseClient(server.address)
+        server = BaseServer(self.family, self.addr)
+        client = BaseClient(self.family, server.address)
 
         # we start disconnected
         self.assertFalse(server.connected)
@@ -693,25 +702,29 @@ class BaseTestAPI(unittest.TestCase):
 
     def test_create_socket(self):
         s = asyncore.dispatcher()
-        s.create_socket()
-        self.assertEqual(s.socket.family, socket.AF_INET)
+        s.create_socket(self.family)
+        self.assertEqual(s.socket.family, self.family)
         SOCK_NONBLOCK = getattr(socket, 'SOCK_NONBLOCK', 0)
         self.assertEqual(s.socket.type, socket.SOCK_STREAM | SOCK_NONBLOCK)
 
     def test_bind(self):
+        if self.family == socket.AF_UNIX:
+            self.skipTest("Not applicable to AF_UNIX sockets.")
         s1 = asyncore.dispatcher()
-        s1.create_socket()
-        s1.bind((HOST, 0))
+        s1.create_socket(self.family)
+        s1.bind(self.addr)
         s1.listen(5)
         port = s1.socket.getsockname()[1]
 
         s2 = asyncore.dispatcher()
-        s2.create_socket()
+        s2.create_socket(self.family)
         # EADDRINUSE indicates the socket was correctly bound
-        self.assertRaises(socket.error, s2.bind, (HOST, port))
+        self.assertRaises(socket.error, s2.bind, (self.addr[0], port))
 
     def test_set_reuse_addr(self):
-        sock = socket.socket()
+        if self.family == socket.AF_UNIX:
+            self.skipTest("Not applicable to AF_UNIX sockets.")
+        sock = socket.socket(self.family)
         try:
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         except socket.error:
@@ -719,11 +732,11 @@ class BaseTestAPI(unittest.TestCase):
         else:
             # if SO_REUSEADDR succeeded for sock we expect asyncore
             # to do the same
-            s = asyncore.dispatcher(socket.socket())
+            s = asyncore.dispatcher(socket.socket(self.family))
             self.assertFalse(s.socket.getsockopt(socket.SOL_SOCKET,
                                                  socket.SO_REUSEADDR))
             s.socket.close()
-            s.create_socket()
+            s.create_socket(self.family)
             s.set_reuse_addr()
             self.assertTrue(s.socket.getsockopt(socket.SOL_SOCKET,
                                                  socket.SO_REUSEADDR))
@@ -731,18 +744,44 @@ class BaseTestAPI(unittest.TestCase):
             sock.close()
 
 
-class TestAPI_UseSelect(BaseTestAPI):
+class TestAPI_UseIPv4Sockets(BaseTestAPI):
+    family = socket.AF_INET
+    addr = (HOST, 0)
+
+@unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 support required')
+class TestAPI_UseIPv6Sockets(BaseTestAPI):
+    family = socket.AF_INET6
+    addr = ('::1', 0)
+
+@unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'Unix sockets required')
+class TestAPI_UseUnixSockets(BaseTestAPI):
+    family = socket.AF_UNIX
+    addr = support.TESTFN
+    use_poll = False
+
+    def tearDown(self):
+        unlink(self.addr)
+        BaseTestAPI.tearDown(self)
+
+class TestAPI_UseIPv4Select(TestAPI_UseIPv4Sockets):
     use_poll = False
 
 @unittest.skipUnless(hasattr(select, 'poll'), 'select.poll required')
-class TestAPI_UsePoll(BaseTestAPI):
+class TestAPI_UseIPv4Poll(TestAPI_UseIPv4Sockets):
     use_poll = True
 
+class TestAPI_UseIPv6Select(TestAPI_UseIPv6Sockets):
+    use_poll = False
+
+@unittest.skipUnless(hasattr(select, 'poll'), 'select.poll required')
+class TestAPI_UseIPv6Poll(TestAPI_UseIPv6Sockets):
+    use_poll = True
 
 def test_main():
     tests = [HelperFunctionTests, DispatcherTests, DispatcherWithSendTests,
-             DispatcherWithSendTests_UsePoll, TestAPI_UseSelect,
-             TestAPI_UsePoll, FileWrapperTest]
+            DispatcherWithSendTests_UsePoll, FileWrapperTest,
+            TestAPI_UseIPv4Select, TestAPI_UseIPv4Poll, TestAPI_UseIPv6Select,
+            TestAPI_UseIPv6Poll, TestAPI_UseUnixSockets]
     run_unittest(*tests)
 
 if __name__ == "__main__":
