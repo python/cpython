@@ -2780,8 +2780,7 @@ sock_recvmsg_guts(PySocketSockObject *s, struct iovec *iov, int iovlen,
     int timeout;
     sock_addr_t addrbuf;
     socklen_t addrbuflen;
-    static const struct msghdr msg_blank;
-    struct msghdr msg;
+    struct msghdr msg = {0};
     PyObject *cmsg_list = NULL, *retval = NULL;
     void *controlbuf = NULL;
     struct cmsghdr *cmsgh;
@@ -2815,7 +2814,6 @@ sock_recvmsg_guts(PySocketSockObject *s, struct iovec *iov, int iovlen,
 
     BEGIN_SELECT_LOOP(s)
     Py_BEGIN_ALLOW_THREADS;
-    msg = msg_blank;    /* Set all members to 0 or NULL */
     msg.msg_name = SAS2SA(&addrbuf);
     msg.msg_namelen = addrbuflen;
     msg.msg_iov = iov;
@@ -3292,8 +3290,7 @@ sock_sendmsg(PySocketSockObject *s, PyObject *args)
     Py_buffer *databufs = NULL;
     struct iovec *iovs = NULL;
     sock_addr_t addrbuf;
-    static const struct msghdr msg_blank;
-    struct msghdr msg;
+    struct msghdr msg = {0};
     struct cmsginfo {
         int level;
         int type;
@@ -3309,8 +3306,6 @@ sock_sendmsg(PySocketSockObject *s, PyObject *args)
     if (!PyArg_ParseTuple(args, "O|OiO:sendmsg",
                           &data_arg, &cmsg_arg, &flags, &addr_arg))
         return NULL;
-
-    msg = msg_blank;    /* Set all members to 0 or NULL */
 
     /* Parse destination address. */
     if (addr_arg != NULL && addr_arg != Py_None) {
