@@ -20,6 +20,8 @@ except ImportError:
 
 HOST = support.HOST
 
+HAS_UNIX_SOCKETS = hasattr(socket, 'AF_UNIX')
+
 class dummysocket:
     def __init__(self):
         self.closed = False
@@ -89,7 +91,7 @@ def capture_server(evt, buf, serv):
 
 def bind_af_aware(sock, addr):
     """Helper function to bind a socket according to its family."""
-    if sock.family == socket.AF_UNIX:
+    if HAS_UNIX_SOCKETS and sock.family == socket.AF_UNIX:
         # Make sure the path doesn't exist.
         unlink(addr)
     sock.bind(addr)
@@ -636,7 +638,7 @@ class BaseTestAPI(unittest.TestCase):
         # Make sure handle_expt is called on OOB data received.
         # Note: this might fail on some platforms as OOB data is
         # tenuously supported and rarely used.
-        if self.family == socket.AF_UNIX:
+        if HAS_UNIX_SOCKETS and self.family == socket.AF_UNIX:
             self.skipTest("Not applicable to AF_UNIX sockets.")
 
         class TestClient(BaseClient):
@@ -708,7 +710,7 @@ class BaseTestAPI(unittest.TestCase):
         self.assertEqual(s.socket.type, socket.SOCK_STREAM | SOCK_NONBLOCK)
 
     def test_bind(self):
-        if self.family == socket.AF_UNIX:
+        if HAS_UNIX_SOCKETS and self.family == socket.AF_UNIX:
             self.skipTest("Not applicable to AF_UNIX sockets.")
         s1 = asyncore.dispatcher()
         s1.create_socket(self.family)
@@ -722,7 +724,7 @@ class BaseTestAPI(unittest.TestCase):
         self.assertRaises(socket.error, s2.bind, (self.addr[0], port))
 
     def test_set_reuse_addr(self):
-        if self.family == socket.AF_UNIX:
+        if HAS_UNIX_SOCKETS and self.family == socket.AF_UNIX:
             self.skipTest("Not applicable to AF_UNIX sockets.")
         sock = socket.socket(self.family)
         try:
@@ -753,7 +755,7 @@ class TestAPI_UseIPv6Sockets(BaseTestAPI):
     family = socket.AF_INET6
     addr = ('::1', 0)
 
-@unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'Unix sockets required')
+@unittest.skipUnless(HAS_UNIX_SOCKETS, 'Unix sockets required')
 class TestAPI_UseUnixSockets(BaseTestAPI):
     family = socket.AF_UNIX
     addr = support.TESTFN
