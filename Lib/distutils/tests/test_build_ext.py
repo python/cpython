@@ -1,7 +1,5 @@
 import sys
 import os
-import tempfile
-import shutil
 from StringIO import StringIO
 import textwrap
 
@@ -19,76 +17,34 @@ from test import test_support
 # Don't load the xx module more than once.
 ALREADY_TESTED = False
 
-def _get_source_filename():
-    # use installed copy if available
-    tests_f = os.path.join(os.path.dirname(__file__), 'xxmodule.c')
-    if os.path.exists(tests_f):
-        return tests_f
-    # otherwise try using copy from build directory
-    srcdir = sysconfig.get_config_var('srcdir')
-    if srcdir is None:
-        return os.path.join(sysconfig.project_base, 'Modules', 'xxmodule.c')
-    return os.path.join(srcdir, 'Modules', 'xxmodule.c')
-
-_XX_MODULE_PATH = _get_source_filename()
 
 class BuildExtTestCase(support.TempdirManager,
                        support.LoggingSilencer,
                        unittest.TestCase):
     def setUp(self):
-        # Create a simple test environment
-        # Note that we're making changes to sys.path
         super(BuildExtTestCase, self).setUp()
-        self.tmp_dir = tempfile.mkdtemp(prefix="pythontest_")
-        if os.path.exists(_XX_MODULE_PATH):
-            self.sys_path = sys.path[:]
-            sys.path.append(self.tmp_dir)
-            shutil.copy(_XX_MODULE_PATH, self.tmp_dir)
+        self.tmp_dir = self.mkdtemp()
+        self.xx_created = False
+        sys.path.append(self.tmp_dir)
+        self.addCleanup(sys.path.remove, self.tmp_dir)
 
     def tearDown(self):
-        # Get everything back to normal
-        if os.path.exists(_XX_MODULE_PATH):
+        if self.xx_created:
             test_support.unload('xx')
-            sys.path[:] = self.sys_path
             # XXX on Windows the test leaves a directory
             # with xx module in TEMP
-        shutil.rmtree(self.tmp_dir, os.name == 'nt' or
-                                    sys.platform == 'cygwin')
         super(BuildExtTestCase, self).tearDown()
 
-    def _fixup_command(self, cmd):
-        # When Python was build with --enable-shared, -L. is not good enough
-        # to find the libpython<blah>.so.  This is because regrtest runs it
-        # under a tempdir, not in the top level where the .so lives.  By the
-        # time we've gotten here, Python's already been chdir'd to the
-        # tempdir.
-        #
-        # To further add to the fun, we can't just add library_dirs to the
-        # Extension() instance because that doesn't get plumbed through to the
-        # final compiler command.
-        if (sysconfig.get_config_var('Py_ENABLE_SHARED') and
-            not sys.platform.startswith('win')):
-            runshared = sysconfig.get_config_var('RUNSHARED')
-            if runshared is None:
-                cmd.library_dirs = ['.']
-            else:
-                name, equals, value = runshared.partition('=')
-                cmd.library_dirs = value.split(os.pathsep)
-
-    @unittest.skipIf(not os.path.exists(_XX_MODULE_PATH),
-                     'xxmodule.c not found')
     def test_build_ext(self):
         global ALREADY_TESTED
+        support.copy_xxmodule_c(self.tmp_dir)
+        self.xx_created = True
         xx_c = os.path.join(self.tmp_dir, 'xxmodule.c')
         xx_ext = Extension('xx', [xx_c])
         dist = Distribution({'name': 'xx', 'ext_modules': [xx_ext]})
         dist.package_dir = self.tmp_dir
         cmd = build_ext(dist)
-        self._fixup_command(cmd)
-        if os.name == "nt":
-            # On Windows, we must build a debug version iff running
-            # a debug build of Python
-            cmd.debug = sys.executable.endswith("_d.exe")
+        support.fixup_build_ext(cmd)
         cmd.build_lib = self.tmp_dir
         cmd.build_temp = self.tmp_dir
 
@@ -149,7 +105,6 @@ class BuildExtTestCase(support.TempdirManager,
         cmd = build_ext(dist)
         cmd.finalize_options()
 
-        from distutils import sysconfig
         py_include = sysconfig.get_python_inc()
         self.assertTrue(py_include in cmd.include_dirs)
 
@@ -277,12 +232,9 @@ class BuildExtTestCase(support.TempdirManager,
         dist = Distribution({'name': 'xx',
                              'ext_modules': [ext]})
         cmd = build_ext(dist)
-        self._fixup_command(cmd)
+        support.fixup_build_ext(cmd)
         cmd.ensure_finalized()
         self.assertEqual(len(cmd.get_outputs()), 1)
-
-        if os.name == "nt":
-            cmd.debug = sys.executable.endswith("_d.exe")
 
         cmd.build_lib = os.path.join(self.tmp_dir, 'build')
         cmd.build_temp = os.path.join(self.tmp_dir, 'tempt')
@@ -509,10 +461,8 @@ class BuildExtTestCase(support.TempdirManager,
         cmd.build_temp = self.tmp_dir
 
         try:
-            old_stdout = sys.stdout
             cmd.ensure_finalized()
             cmd.run()
-
         except CompileError:
             self.fail("Wrong deployment target during compilation")
 
