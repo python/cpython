@@ -21,7 +21,7 @@
 This is a Py2.3 implementation of decimal floating point arithmetic based on
 the General Decimal Arithmetic Specification:
 
-    www2.hursley.ibm.com/decimal/decarith.html
+    http://speleotrove.com/decimal/decarith.html
 
 and IEEE standard 854-1987:
 
