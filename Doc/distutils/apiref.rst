@@ -261,6 +261,11 @@ the full reference.
    |                        | from the source extensions if  |                           |
    |                        | not provided.                  |                           |
    +------------------------+--------------------------------+---------------------------+
+   | *optional*             | specifies that a build failure | a boolean                 |
+   |                        | in the extension should not    |                           |
+   |                        | abort the build process, but   |                           |
+   |                        | simply skip the extension.     |                           |
+   +------------------------+--------------------------------+---------------------------+
 
 
 .. class:: Distribution
