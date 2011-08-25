@@ -188,6 +188,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * Joakim Sernbrant
    * Justin Sheehy
    * Charlie Shepherd
+   * Yue Shuaijie
    * SilentGhost
    * Michael Simcich
    * Ionel Simionescu
