@@ -138,7 +138,7 @@ class InstallDistinfoTestCase(support.TempdirManager,
         os.chdir(project_dir)
         self.write_file('spam', '# Python module')
         self.write_file('spamd', '# Python script')
-        extmod = '_speedspam%s' % sysconfig.get_config_var('SO')
+        extmod = '_speedspam' + sysconfig.get_config_var('SO')
         self.write_file(extmod, '')
 
         install = DummyInstallCmd(dist)
@@ -152,6 +152,16 @@ class InstallDistinfoTestCase(support.TempdirManager,
         dist.command_obj['install_distinfo'] = cmd
         cmd.run()
 
+        # checksum and size are not hard-coded for METADATA as it is
+        # platform-dependent (line endings)
+        metadata = os.path.join(modules_dest, 'Spamlib-0.1.dist-info',
+                                'METADATA')
+        with open(metadata, 'rb') as fp:
+            content = fp.read()
+
+        metadata_size = str(len(content))
+        metadata_md5 = hashlib.md5(content).hexdigest()
+
         record = os.path.join(modules_dest, 'Spamlib-0.1.dist-info', 'RECORD')
         with open(record, encoding='utf-8') as fp:
             content = fp.read()
@@ -164,9 +174,9 @@ class InstallDistinfoTestCase(support.TempdirManager,
 
         expected = [
             ('spam', '6ab2f288ef2545868effe68757448b45', '15'),
-            ('spamd','d13e6156ce78919a981e424b2fdcd974', '15'),
+            ('spamd', 'd13e6156ce78919a981e424b2fdcd974', '15'),
             (extmod, 'd41d8cd98f00b204e9800998ecf8427e', '0'),
-            ('METADATA', '846de67e49c3b92c81fb1ebd7bc07046', '172'),
+            ('METADATA', metadata_md5, metadata_size),
             ('INSTALLER', '44e3fde05f3f537ed85831969acf396d', '9'),
             ('REQUESTED', 'd41d8cd98f00b204e9800998ecf8427e', '0'),
             ('RECORD', '', ''),
