@@ -553,7 +553,7 @@ to speed up repeated connections from the same clients.
 
 :class:`SSLContext` objects have the following methods and attributes:
 
-.. method:: SSLContext.load_cert_chain(certfile, keyfile=None)
+.. method:: SSLContext.load_cert_chain(certfile, keyfile=None, password=None)
 
    Load a private key and the corresponding certificate.  The *certfile*
    string must be the path to a single file in PEM format containing the
@@ -564,8 +564,24 @@ to speed up repeated connections from the same clients.
    :ref:`ssl-certificates` for more information on how the certificate
    is stored in the *certfile*.
 
+   The *password* argument may be a function to call to get the password for
+   decrypting the private key.  It will only be called if the private key is
+   encrypted and a password is necessary.  It will be called with no arguments,
+   and it should return a string, bytes, or bytearray.  If the return value is
+   a string it will be encoded as UTF-8 before using it to decrypt the key.
+   Alternatively a string, bytes, or bytearray value may be supplied directly
+   as the *password* argument.  It will be ignored if the private key is not
+   encrypted and no password is needed.
+
+   If the *password* argument is not specified and a password is required,
+   OpenSSL's built-in password prompting mechanism will be used to
+   interactively prompt the user for a password.
+
    An :class:`SSLError` is raised if the private key doesn't
    match with the certificate.
+
+   .. versionchanged:: 3.3
+      New optional argument *password*.
 
 .. method:: SSLContext.load_verify_locations(cafile=None, capath=None)
 
