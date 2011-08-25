@@ -171,7 +171,7 @@ tick of the interpreter's mainloop using highly optimized C implementations.
 Thus to get the same effect as::
 
    L2 = []
-   for i in range[3]:
+   for i in range(3):
        L2.append(L1[i])
 
 it is much shorter and far faster to use ::
