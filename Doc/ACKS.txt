@@ -57,6 +57,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * Carl Feynman
    * Dan Finnie
    * Hernán Martínez Foffani
+   * Michael Foord
    * Stefan Franke
    * Jim Fulton
    * Peter Funk
@@ -144,6 +145,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * Ross Moore
    * Sjoerd Mullender
    * Dale Nagata
+   * Trent Nelson
    * Michal Nowikowski
    * Steffen Daode Nurpmeso
    * Ng Pheng Siong
@@ -186,6 +188,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * Joakim Sernbrant
    * Justin Sheehy
    * Charlie Shepherd
+   * Yue Shuaijie
    * SilentGhost
    * Michael Simcich
    * Ionel Simionescu
@@ -230,5 +233,3 @@ docs@python.org), and we'll be glad to correct the problem.
    * Moshe Zadka
    * Milan Zamazal
    * Cheng Zhang
-   * Trent Nelson
-   * Michael Foord
