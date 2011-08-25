@@ -54,9 +54,13 @@ class TempdirManager(object):
 
     def setUp(self):
         super().setUp()
+        self.old_cwd = os.getcwd()
         self.tempdirs = []
 
     def tearDown(self):
+        # Restore working dir, for Solaris and derivatives, where rmdir()
+        # on the current directory fails.
+        os.chdir(self.old_cwd)
         super().tearDown()
         while self.tempdirs:
             d = self.tempdirs.pop()
