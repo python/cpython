@@ -40,6 +40,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12786: Set communication pipes used by subprocess.Popen CLOEXEC to
+  avoid them being inherited by other subprocesses.
+
 - Issue #4106: Fix occasional exceptions printed out by multiprocessing on
   interpreter shutdown.
 

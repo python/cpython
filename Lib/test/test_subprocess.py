@@ -995,6 +995,37 @@ class POSIXProcessTestCase(BaseTestCase):
         self.assertRaises(OSError, os.waitpid, pid, 0)
         self.assertNotIn(ident, [id(o) for o in subprocess._active])
 
+    def test_pipe_cloexec(self):
+        # Issue 12786: check that the communication pipes' FDs are set CLOEXEC,
+        # and are not inherited by another child process.
+        p1 = subprocess.Popen([sys.executable, "-c",
+                               'import os;'
+                               'os.read(0, 1)'
+                              ],
+                              stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
+
+        p2 = subprocess.Popen([sys.executable, "-c", """if True:
+                               import os, errno, sys
+                               for fd in %r:
+                                   try:
+                                       os.close(fd)
+                                   except OSError as e:
+                                       if e.errno != errno.EBADF:
+                                           raise
+                                   else:
+                                       sys.exit(1)
+                               sys.exit(0)
+                               """ % [f.fileno() for f in (p1.stdin, p1.stdout,
+                                                           p1.stderr)]
+                              ],
+                              stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE, close_fds=False)
+        p1.communicate('foo')
+        _, stderr = p2.communicate()
+
+        self.assertEqual(p2.returncode, 0, "Unexpected error: " + repr(stderr))
+
 
 @unittest.skipUnless(mswindows, "Windows specific tests")
 class Win32ProcessTestCase(BaseTestCase):
