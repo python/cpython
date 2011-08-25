@@ -1035,7 +1035,7 @@ class Popen(object):
             if stdin is None:
                 pass
             elif stdin == PIPE:
-                p2cread, p2cwrite = os.pipe()
+                p2cread, p2cwrite = self.pipe_cloexec()
             elif isinstance(stdin, int):
                 p2cread = stdin
             else:
@@ -1045,7 +1045,7 @@ class Popen(object):
             if stdout is None:
                 pass
             elif stdout == PIPE:
-                c2pread, c2pwrite = os.pipe()
+                c2pread, c2pwrite = self.pipe_cloexec()
             elif isinstance(stdout, int):
                 c2pwrite = stdout
             else:
@@ -1055,7 +1055,7 @@ class Popen(object):
             if stderr is None:
                 pass
             elif stderr == PIPE:
-                errread, errwrite = os.pipe()
+                errread, errwrite = self.pipe_cloexec()
             elif stderr == STDOUT:
                 errwrite = c2pwrite
             elif isinstance(stderr, int):
@@ -1080,6 +1080,18 @@ class Popen(object):
                 fcntl.fcntl(fd, fcntl.F_SETFD, old | cloexec_flag)
             else:
                 fcntl.fcntl(fd, fcntl.F_SETFD, old & ~cloexec_flag)
+
+
+        def pipe_cloexec(self):
+            """Create a pipe with FDs set CLOEXEC."""
+            # Pipes' FDs are set CLOEXEC by default because we don't want them
+            # to be inherited by other subprocesses: the CLOEXEC flag is removed
+            # from the child's FDs by _dup2(), between fork() and exec().
+            # This is not atomic: we would need the pipe2() syscall for that.
+            r, w = os.pipe()
+            self._set_cloexec_flag(r)
+            self._set_cloexec_flag(w)
+            return r, w
 
 
         def _close_fds(self, but):
@@ -1120,11 +1132,9 @@ class Popen(object):
             # For transferring possible exec failure from child to parent
             # The first char specifies the exception type: 0 means
             # OSError, 1 means some other error.
-            errpipe_read, errpipe_write = os.pipe()
+            errpipe_read, errpipe_write = self.pipe_cloexec()
             try:
                 try:
-                    self._set_cloexec_flag(errpipe_write)
-
                     gc_was_enabled = gc.isenabled()
                     # Disable gc to avoid bug where gc -> file_dealloc ->
                     # write to stderr -> hang.  http://bugs.python.org/issue1336
