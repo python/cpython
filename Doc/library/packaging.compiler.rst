@@ -572,7 +572,7 @@ extension modules.
    the following keyword arguments in its constructor:
 
    +------------------------+--------------------------------+---------------------------+
-   | argument name          | value                          | type [#]_                 |
+   | argument name          | value                          | type                      |
    +========================+================================+===========================+
    | *name*                 | the full name of the           | string                    |
    |                        | extension, including any       |                           |
@@ -580,7 +580,7 @@ extension modules.
    |                        | filename or pathname, but      |                           |
    |                        | Python dotted name             |                           |
    +------------------------+--------------------------------+---------------------------+
-   | *sources*              | list of source filenames,      | string                    |
+   | *sources*              | list of source filenames,      | list of strings           |
    |                        | relative to the distribution   |                           |
    |                        | root (where the setup script   |                           |
    |                        | lives), in Unix form (slash-   |                           |
@@ -593,12 +593,12 @@ extension modules.
    |                        | as source for a Python         |                           |
    |                        | extension.                     |                           |
    +------------------------+--------------------------------+---------------------------+
-   | *include_dirs*         | list of directories to search  | string                    |
+   | *include_dirs*         | list of directories to search  | list of strings           |
    |                        | for C/C++ header files (in     |                           |
    |                        | Unix form for portability)     |                           |
    +------------------------+--------------------------------+---------------------------+
-   | *define_macros*        | list of macros to define; each | (string, string) tuple or |
-   |                        | macro is defined using a       | (name, ``None``)          |
+   | *define_macros*        | list of macros to define; each | list of tuples            |
+   |                        | macro is defined using a       |                           |
    |                        | 2-tuple ``(name, value)``,     |                           |
    |                        | where *value* is               |                           |
    |                        | either the string to define it |                           |
@@ -609,31 +609,31 @@ extension modules.
    |                        | on Unix C compiler command     |                           |
    |                        | line)                          |                           |
    +------------------------+--------------------------------+---------------------------+
-   | *undef_macros*         | list of macros to undefine     | string                    |
+   | *undef_macros*         | list of macros to undefine     | list of strings           |
    |                        | explicitly                     |                           |
    +------------------------+--------------------------------+---------------------------+
-   | *library_dirs*         | list of directories to search  | string                    |
+   | *library_dirs*         | list of directories to search  | list of strings           |
    |                        | for C/C++ libraries at link    |                           |
    |                        | time                           |                           |
    +------------------------+--------------------------------+---------------------------+
-   | *libraries*            | list of library names (not     | string                    |
+   | *libraries*            | list of library names (not     | list of strings           |
    |                        | filenames or paths) to link    |                           |
    |                        | against                        |                           |
    +------------------------+--------------------------------+---------------------------+
-   | *runtime_library_dirs* | list of directories to search  | string                    |
+   | *runtime_library_dirs* | list of directories to search  | list of strings           |
    |                        | for C/C++ libraries at run     |                           |
    |                        | time (for shared extensions,   |                           |
    |                        | this is when the extension is  |                           |
    |                        | loaded)                        |                           |
    +------------------------+--------------------------------+---------------------------+
-   | *extra_objects*        | list of extra files to link    | string                    |
+   | *extra_objects*        | list of extra files to link    | list of strings           |
    |                        | with (e.g. object files not    |                           |
    |                        | implied by 'sources', static   |                           |
    |                        | library that must be           |                           |
    |                        | explicitly specified, binary   |                           |
    |                        | resource files, etc.)          |                           |
    +------------------------+--------------------------------+---------------------------+
-   | *extra_compile_args*   | any extra platform- and        | string                    |
+   | *extra_compile_args*   | any extra platform- and        | list of strings           |
    |                        | compiler-specific information  |                           |
    |                        | to use when compiling the      |                           |
    |                        | source files in 'sources'. For |                           |
@@ -644,7 +644,7 @@ extension modules.
    |                        | for other platforms it could   |                           |
    |                        | be anything.                   |                           |
    +------------------------+--------------------------------+---------------------------+
-   | *extra_link_args*      | any extra platform- and        | string                    |
+   | *extra_link_args*      | any extra platform- and        | list of strings           |
    |                        | compiler-specific information  |                           |
    |                        | to use when linking object     |                           |
    |                        | files together to create the   |                           |
@@ -653,7 +653,7 @@ extension modules.
    |                        | Similar interpretation as for  |                           |
    |                        | 'extra_compile_args'.          |                           |
    +------------------------+--------------------------------+---------------------------+
-   | *export_symbols*       | list of symbols to be exported | string                    |
+   | *export_symbols*       | list of symbols to be exported | list of strings           |
    |                        | from a shared extension. Not   |                           |
    |                        | used on all platforms, and not |                           |
    |                        | generally necessary for Python |                           |
@@ -661,7 +661,7 @@ extension modules.
    |                        | export exactly one symbol:     |                           |
    |                        | ``init`` + extension_name.     |                           |
    +------------------------+--------------------------------+---------------------------+
-   | *depends*              | list of files that the         | string                    |
+   | *depends*              | list of files that the         | list of strings           |
    |                        | extension depends on           |                           |
    +------------------------+--------------------------------+---------------------------+
    | *language*             | extension language (i.e.       | string                    |
@@ -670,5 +670,8 @@ extension modules.
    |                        | from the source extensions if  |                           |
    |                        | not provided.                  |                           |
    +------------------------+--------------------------------+---------------------------+
-
-.. [#] For values documented as lists, the given type is the type of each element.
+   | *optional*             | specifies that a build failure | boolean                   |
+   |                        | in the extension should not    |                           |
+   |                        | abort the build process, but   |                           |
+   |                        | simply skip the extension.     |                           |
+   +------------------------+--------------------------------+---------------------------+
