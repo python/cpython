@@ -160,7 +160,7 @@ the full reference.
 .. class:: Extension
 
    The Extension class describes a single C or C++extension module in a setup
-   script. It accepts the following keyword arguments in its constructor
+   script. It accepts the following keyword arguments in its constructor:
 
    +------------------------+--------------------------------+---------------------------+
    | argument name          | value                          | type                      |
