@@ -25,10 +25,11 @@ module distribution being built/packaged/distributed/installed.
    +--------------------+--------------------------------+-------------------------------------------------------------+
    | argument name      | value                          | type                                                        |
    +====================+================================+=============================================================+
-   | *name*             | The name of the project        | string                                                      |
+   | *name*             | The name of the project        | a string                                                    |
    +--------------------+--------------------------------+-------------------------------------------------------------+
-   | *version*          | The version number of the      | See :mod:`packaging.version`                                |
-   |                    | release                        |                                                             |
+   | *version*          | The version number of the      | a string                                                    |
+   |                    | release; see                   |                                                             |
+   |                    | :mod:`packaging.version`       |                                                             |
    +--------------------+--------------------------------+-------------------------------------------------------------+
    | *summary*          | A single line describing the   | a string                                                    |
    |                    | project                        |                                                             |
@@ -45,14 +46,14 @@ module distribution being built/packaged/distributed/installed.
    |                    | maintainer, if different from  |                                                             |
    |                    | the author                     |                                                             |
    +--------------------+--------------------------------+-------------------------------------------------------------+
-   | *maintainer_email* | The email address of the       |                                                             |
+   | *maintainer_email* | The email address of the       | a string                                                    |
    |                    | current maintainer, if         |                                                             |
    |                    | different from the author      |                                                             |
    +--------------------+--------------------------------+-------------------------------------------------------------+
-   | *home_page*        | A URL for the proejct          | a URL                                                       |
+   | *home_page*        | A URL for the proejct          | a string                                                    |
    |                    | (homepage)                     |                                                             |
    +--------------------+--------------------------------+-------------------------------------------------------------+
-   | *download_url*     | A URL to download the project  | a URL                                                       |
+   | *download_url*     | A URL to download the project  | a string                                                    |
    +--------------------+--------------------------------+-------------------------------------------------------------+
    | *packages*         | A list of Python packages that | a list of strings                                           |
    |                    | packaging will manipulate      |                                                             |
@@ -63,14 +64,13 @@ module distribution being built/packaged/distributed/installed.
    | *scripts*          | A list of standalone scripts   | a list of strings                                           |
    |                    | to be built and installed      |                                                             |
    +--------------------+--------------------------------+-------------------------------------------------------------+
-   | *ext_modules*      | A list of Python extensions to | A list of instances of                                      |
+   | *ext_modules*      | A list of Python extensions to | a list of instances of                                      |
    |                    | be built                       | :class:`packaging.compiler.extension.Extension`             |
    +--------------------+--------------------------------+-------------------------------------------------------------+
-   | *classifiers*      | A list of categories for the   | The list of available                                       |
-   |                    | distribution                   | categorizations is available on `PyPI                       |
-   |                    |                                | <http://pypi.python.org/pypi?:action=list_classifiers>`_.   |
+   | *classifiers*      | A list of categories for the   | a list of strings; valid classifiers are listed on `PyPi    |
+   |                    | distribution                   | <http://pypi.python.org/pypi?:action=list_classifiers>`_.   |
    +--------------------+--------------------------------+-------------------------------------------------------------+
-   | *distclass*        | the :class:`Distribution`      | A subclass of                                               |
+   | *distclass*        | the :class:`Distribution`      | a subclass of                                               |
    |                    | class to use                   | :class:`packaging.dist.Distribution`                        |
    +--------------------+--------------------------------+-------------------------------------------------------------+
    | *script_name*      | The name of the setup.py       | a string                                                    |
@@ -83,13 +83,19 @@ module distribution being built/packaged/distributed/installed.
    | *options*          | default options for the setup  | a string                                                    |
    |                    | script                         |                                                             |
    +--------------------+--------------------------------+-------------------------------------------------------------+
-   | *license*          | The license for the            | a string; should be used when there is no suitable License  |
-   |                    | distribution                   | classifier, or to specify a classifier                      |
+   | *license*          | The license for the            | a string                                                    |
+   |                    | distribution; should be used   |                                                             |
+   |                    | when there is no suitable      |                                                             |
+   |                    | License classifier, or to      |                                                             |
+   |                    | refine a classifier            |                                                             |
    +--------------------+--------------------------------+-------------------------------------------------------------+
-   | *keywords*         | Descriptive keywords           | a list of strings; used by catalogs                         |
+   | *keywords*         | Descriptive keywords; used by  | a list of strings or a comma-separated string               |
+   |                    | catalogs such as PyPI          |                                                             |
    +--------------------+--------------------------------+-------------------------------------------------------------+
-   | *platforms*        | Platforms compatible with this | a list of strings; should be used when there is no          |
-   |                    | distribution                   | suitable Platform classifier                                |
+   | *platforms*        | Platforms compatible with this | a list of strings or a comma-separated string               |
+   |                    | distribution; should be used   |                                                             |
+   |                    | when there is no suitable      |                                                             |
+   |                    | Platform classifier            |                                                             |
    +--------------------+--------------------------------+-------------------------------------------------------------+
    | *cmdclass*         | A mapping of command names to  | a dictionary                                                |
    |                    | :class:`Command` subclasses    |                                                             |
