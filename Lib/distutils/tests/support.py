@@ -1,7 +1,10 @@
 """Support code for distutils test cases."""
 import os
+import sys
 import shutil
 import tempfile
+import unittest
+import sysconfig
 from copy import deepcopy
 import warnings
 
@@ -9,12 +12,14 @@ from distutils import log
 from distutils.log import DEBUG, INFO, WARN, ERROR, FATAL
 from distutils.core import Distribution
 
+
 def capture_warnings(func):
     def _capture_warnings(*args, **kw):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             return func(*args, **kw)
     return _capture_warnings
+
 
 class LoggingSilencer(object):
 
@@ -48,6 +53,7 @@ class LoggingSilencer(object):
 
     def clear_logs(self):
         self.logs = []
+
 
 class TempdirManager(object):
     """Mix-in class that handles temporary directories for test cases.
@@ -105,6 +111,7 @@ class TempdirManager(object):
 
         return pkg_dir, dist
 
+
 class DummyCommand:
     """Class to store options for retrieval via set_undefined_options()."""
 
@@ -114,6 +121,7 @@ class DummyCommand:
 
     def ensure_finalized(self):
         pass
+
 
 class EnvironGuard(object):
 
@@ -131,3 +139,71 @@ class EnvironGuard(object):
                 del os.environ[key]
 
         super(EnvironGuard, self).tearDown()
+
+
+def copy_xxmodule_c(directory):
+    """Helper for tests that need the xxmodule.c source file.
+
+    Example use:
+
+        def test_compile(self):
+            copy_xxmodule_c(self.tmpdir)
+            self.assertIn('xxmodule.c', os.listdir(self.tmpdir))
+
+    If the source file can be found, it will be copied to *directory*.  If not,
+    the test will be skipped.  Errors during copy are not caught.
+    """
+    filename = _get_xxmodule_path()
+    if filename is None:
+        raise unittest.SkipTest('cannot find xxmodule.c (test must run in '
+                                'the python build dir)')
+    shutil.copy(filename, directory)
+
+
+def _get_xxmodule_path():
+    srcdir = sysconfig.get_config_var('srcdir')
+    candidates = [
+        # use installed copy if available
+        os.path.join(os.path.dirname(__file__), 'xxmodule.c'),
+        # otherwise try using copy from build directory
+        os.path.join(srcdir, 'Modules', 'xxmodule.c'),
+        # srcdir mysteriously can be $srcdir/Lib/distutils/tests when
+        # this file is run from its parent directory, so walk up the
+        # tree to find the real srcdir
+        os.path.join(srcdir, '..', '..', '..', 'Modules', 'xxmodule.c'),
+    ]
+    for path in candidates:
+        if os.path.exists(path):
+            return path
+
+
+def fixup_build_ext(cmd):
+    """Function needed to make build_ext tests pass.
+
+    When Python was build with --enable-shared on Unix, -L. is not good
+    enough to find the libpython<blah>.so.  This is because regrtest runs
+    it under a tempdir, not in the top level where the .so lives.  By the
+    time we've gotten here, Python's already been chdir'd to the tempdir.
+
+    When Python was built with in debug mode on Windows, build_ext commands
+    need their debug attribute set, and it is not done automatically for
+    some reason.
+
+    This function handles both of these things.  Example use:
+
+        cmd = build_ext(dist)
+        support.fixup_build_ext(cmd)
+        cmd.ensure_finalized()
+    """
+    if os.name == 'nt':
+        cmd.debug = sys.executable.endswith('_d.exe')
+    elif sysconfig.get_config_var('Py_ENABLE_SHARED'):
+        # To further add to the shared builds fun on Unix, we can't just add
+        # library_dirs to the Extension() instance because that doesn't get
+        # plumbed through to the final compiler command.
+        runshared = sysconfig.get_config_var('RUNSHARED')
+        if runshared is None:
+            cmd.library_dirs = ['.']
+        else:
+            name, equals, value = runshared.partition('=')
+            cmd.library_dirs = value.split(os.pathsep)
