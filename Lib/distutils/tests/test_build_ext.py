@@ -27,6 +27,12 @@ class BuildExtTestCase(support.TempdirManager,
         self.xx_created = False
         sys.path.append(self.tmp_dir)
         self.addCleanup(sys.path.remove, self.tmp_dir)
+        if sys.version > "2.6":
+            import site
+            self.old_user_base = site.USER_BASE
+            site.USER_BASE = self.mkdtemp()
+            from distutils.command import build_ext
+            build_ext.USER_BASE = site.USER_BASE
 
     def tearDown(self):
         if self.xx_created:
@@ -96,6 +102,36 @@ class BuildExtTestCase(support.TempdirManager,
 
         # make sure we get some library dirs under solaris
         self.assertTrue(len(cmd.library_dirs) > 0)
+
+    def test_user_site(self):
+        # site.USER_SITE was introduced in 2.6
+        if sys.version < '2.6':
+            return
+
+        import site
+        dist = Distribution({'name': 'xx'})
+        cmd = build_ext(dist)
+
+        # making sure the user option is there
+        options = [name for name, short, label in
+                   cmd.user_options]
+        self.assertIn('user', options)
+
+        # setting a value
+        cmd.user = 1
+
+        # setting user based lib and include
+        lib = os.path.join(site.USER_BASE, 'lib')
+        incl = os.path.join(site.USER_BASE, 'include')
+        os.mkdir(lib)
+        os.mkdir(incl)
+
+        cmd.ensure_finalized()
+
+        # see if include_dirs and library_dirs were set
+        self.assertIn(lib, cmd.library_dirs)
+        self.assertIn(lib, cmd.rpath)
+        self.assertIn(incl, cmd.include_dirs)
 
     def test_finalize_options(self):
         # Make sure Python's include directories (for Python.h, pyconfig.h,
