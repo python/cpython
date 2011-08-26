@@ -161,6 +161,8 @@ def copy_xxmodule_c(directory):
 
 
 def _get_xxmodule_path():
+    # FIXME when run from regrtest, srcdir seems to be '.', which does not help
+    # us find the xxmodule.c file
     srcdir = sysconfig.get_config_var('srcdir')
     candidates = [
         # use installed copy if available
