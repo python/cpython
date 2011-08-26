@@ -25,7 +25,8 @@ except ImportError:
 __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "copytree", "move", "rmtree", "Error", "SpecialFileError",
            "ExecError", "make_archive", "get_archive_formats",
-           "register_archive_format", "unregister_archive_format"]
+           "register_archive_format", "unregister_archive_format",
+           "ignore_patterns"]
 
 class Error(EnvironmentError):
     pass
