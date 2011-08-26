@@ -18,9 +18,8 @@ _CONFIG_VARS = get_config_vars()
 
 
 def _make_ext_name(modname):
-    if os.name == 'nt':
-        if sys.executable.endswith('_d.exe'):
-            modname += '_d'
+    if os.name == 'nt' and sys.executable.endswith('_d.exe'):
+        modname += '_d'
     return modname + get_config_var('SO')
 
 
