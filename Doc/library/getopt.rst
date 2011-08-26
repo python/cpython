@@ -22,9 +22,6 @@ the special meanings of arguments of the form '``-``' and '``--``').  Long
 options similar to those supported by GNU software may be used as well via an
 optional third argument.
 
-A more convenient, flexible, and powerful alternative is the
-:mod:`optparse` module.
-
 This module provides two functions and an
 exception:
 
