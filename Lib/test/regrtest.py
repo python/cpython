@@ -468,6 +468,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         usage("-T and -j don't go together!")
     if use_mp and findleaks:
         usage("-l and -j don't go together!")
+    if use_mp and support.max_memuse:
+        usage("-M and -j don't go together!")
     if failfast and not (verbose or verbose3):
         usage("-G/--failfast needs either -v or -W")
 
