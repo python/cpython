@@ -1651,6 +1651,14 @@ else:
                         # consume data
                         s.read()
 
+                # Make sure sendmsg et al are disallowed to avoid
+                # inadvertent disclosure of data and/or corruption
+                # of the encrypted data stream
+                self.assertRaises(NotImplementedError, s.sendmsg, [b"data"])
+                self.assertRaises(NotImplementedError, s.recvmsg, 100)
+                self.assertRaises(NotImplementedError,
+                                  s.recvmsg_into, bytearray(100))
+
                 s.write(b"over\n")
                 s.close()
             finally:
