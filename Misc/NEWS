@@ -268,6 +268,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #12835: Follow up to #6560 that unconditionally prevents use of the
+  unencrypted sendmsg/recvmsg APIs on SSL wrapped sockets. Patch by David
+  Watson.
+
 - Issue #12803: SSLContext.load_cert_chain() now accepts a password argument
   to be used if the private key is encrypted.  Patch by Adam Simpkins.
 
