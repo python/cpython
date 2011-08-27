@@ -55,6 +55,7 @@ Misc/*.wpu
 PC/python_nt*.h
 PC/pythonnt_rc*.h
 PC/*.obj
+PC/*.exe
 PCbuild/*.exe
 PCbuild/*.dll
 PCbuild/*.pdb
