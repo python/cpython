@@ -169,7 +169,6 @@ class DebuggingServerTests(unittest.TestCase):
         self.output = io.StringIO()
         sys.stdout = self.output
 
-        self._threads = support.threading_setup()
         self.serv_evt = threading.Event()
         self.client_evt = threading.Event()
         # Capture SMTPChannel debug output
@@ -194,7 +193,6 @@ class DebuggingServerTests(unittest.TestCase):
         # wait for the server thread to terminate
         self.serv_evt.wait()
         self.thread.join()
-        support.threading_cleanup(*self._threads)
         # restore sys.stdout
         sys.stdout = self.old_stdout
         # restore DEBUGSTREAM
@@ -644,7 +642,6 @@ class SMTPSimTests(unittest.TestCase):
     def setUp(self):
         self.real_getfqdn = socket.getfqdn
         socket.getfqdn = mock_socket.getfqdn
-        self._threads = support.threading_setup()
         self.serv_evt = threading.Event()
         self.client_evt = threading.Event()
         # Pick a random unused port by passing 0 for the port number
@@ -666,7 +663,6 @@ class SMTPSimTests(unittest.TestCase):
         # wait for the server thread to terminate
         self.serv_evt.wait()
         self.thread.join()
-        support.threading_cleanup(*self._threads)
 
     def testBasic(self):
         # smoke test
@@ -760,6 +756,7 @@ class SMTPSimTests(unittest.TestCase):
     #test infrastructure can support it.
 
 
+@support.reap_threads
 def test_main(verbose=None):
     support.run_unittest(GeneralTests, DebuggingServerTests,
                               NonConnectingTests,
