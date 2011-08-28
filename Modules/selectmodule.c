@@ -114,7 +114,7 @@ seq2set(PyObject *seq, fd_set *set, pylist fd2obj[FD_SETSIZE + 1])
 #if defined(_MSC_VER)
         max = 0;                             /* not used for Win32 */
 #else  /* !_MSC_VER */
-        if (v < 0 || v >= FD_SETSIZE) {
+        if (!_PyIsSelectable_fd(v)) {
             PyErr_SetString(PyExc_ValueError,
                         "filedescriptor out of range in select()");
             goto finally;
@@ -164,13 +164,6 @@ set2list(fd_set *set, pylist fd2obj[FD_SETSIZE + 1])
     for (j = 0; fd2obj[j].sentinel >= 0; j++) {
         fd = fd2obj[j].fd;
         if (FD_ISSET(fd, set)) {
-#ifndef _MSC_VER
-            if (fd > FD_SETSIZE) {
-                PyErr_SetString(PyExc_SystemError,
-               "filedescriptor out of range returned in select()");
-                goto finally;
-            }
-#endif
             o = fd2obj[j].obj;
             fd2obj[j].obj = NULL;
             /* transfer ownership */

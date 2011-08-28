@@ -40,6 +40,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12287: Fix a stack corruption in ossaudiodev module when the FD is
+  greater than FD_SETSIZE.
+
 - Issue #12839: Fix crash in zlib module due to version mismatch.
   Fix by Richard M. Tew.
 
