@@ -40,6 +40,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12839: Fix crash in zlib module due to version mismatch.
+  Fix by Richard M. Tew.
+
 - Issue #12786: Set communication pipes used by subprocess.Popen CLOEXEC to
   avoid them being inherited by other subprocesses.
 

@@ -72,7 +72,13 @@ typedef struct
 static void
 zlib_error(z_stream zst, int err, char *msg)
 {
-    const char *zmsg = zst.msg;
+    const char *zmsg = Z_NULL;
+    /* In case of a version mismatch, zst.msg won't be initialized.
+       Check for this case first, before looking at zst.msg. */
+    if (err == Z_VERSION_ERROR)
+        zmsg = "library version mismatch";
+    if (zmsg == Z_NULL)
+        zmsg = zst.msg;
     if (zmsg == Z_NULL) {
         switch (err) {
         case Z_BUF_ERROR:
