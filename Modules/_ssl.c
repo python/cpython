@@ -1040,10 +1040,8 @@ check_socket_and_wait_for_timeout(PySocketSockObject *s, int writing)
 #endif
 
     /* Guard against socket too large for select*/
-#ifndef Py_SOCKET_FD_CAN_BE_GE_FD_SETSIZE
-    if (s->sock_fd >= FD_SETSIZE)
+    if (!_PyIsSelectable_fd(s->sock_fd))
         return SOCKET_TOO_LARGE_FOR_SELECT;
-#endif
 
     /* Construct the arguments to select */
     tv.tv_sec = (int)s->sock_timeout;
