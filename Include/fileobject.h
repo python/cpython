@@ -44,6 +44,13 @@ int _PyVerify_fd(int fd);
 #endif
 #endif /* Py_LIMITED_API */
 
+/* A routine to check if a file descriptor can be select()-ed. */
+#ifdef HAVE_SELECT
+ #define _PyIsSelectable_fd(FD) (((FD) >= 0) && ((FD) < FD_SETSIZE))
+#else
+ #define _PyIsSelectable_fd(FD) (1)
+#endif /* HAVE_SELECT */
+
 #ifdef __cplusplus
 }
 #endif
