@@ -17,6 +17,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #12839: Fix crash in zlib module due to version mismatch.
+  Fix by Richard M. Tew.
+
+
 
 What's New in Python 3.2.2 release candidate 1?
 ===============================================
