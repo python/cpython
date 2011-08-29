@@ -72,7 +72,7 @@ class SDistTestCase(support.TempdirManager,
         """Returns a cmd"""
         if metadata is None:
             metadata = {'name': 'fake', 'version': '1.0',
-                        'url': 'xxx', 'author': 'xxx',
+                        'home_page': 'xxx', 'author': 'xxx',
                         'author_email': 'xxx'}
         dist = Distribution(metadata)
         dist.packages = ['somecode']

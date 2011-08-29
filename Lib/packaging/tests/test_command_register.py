@@ -99,7 +99,7 @@ class RegisterTestCase(support.TempdirManager,
 
     def _get_cmd(self, metadata=None):
         if metadata is None:
-            metadata = {'url': 'xxx', 'author': 'xxx',
+            metadata = {'home-page': 'xxx', 'author': 'xxx',
                         'author_email': 'xxx',
                         'name': 'xxx', 'version': 'xxx'}
         pkg_info, dist = self.create_dist(**metadata)
