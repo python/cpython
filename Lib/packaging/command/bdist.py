@@ -64,20 +64,18 @@ class bdist(Command):
                       'os2': 'zip'}
 
     # Establish the preferred order (for the --help-formats option).
-    format_commands = ['gztar', 'bztar', 'ztar', 'tar',
+    format_commands = ['gztar', 'bztar', 'tar',
                        'wininst', 'zip', 'msi']
 
     # And the real information.
     format_command = {'gztar': ('bdist_dumb', "gzip'ed tar file"),
                       'bztar': ('bdist_dumb', "bzip2'ed tar file"),
-                      'ztar':  ('bdist_dumb', "compressed tar file"),
                       'tar':   ('bdist_dumb', "tar file"),
                       'wininst': ('bdist_wininst',
                                   "Windows executable installer"),
                       'zip':   ('bdist_dumb', "ZIP file"),
-                      'msi':   ('bdist_msi',  "Microsoft Installer")
-                      }
-
+                      'msi':   ('bdist_msi',  "Microsoft Installer"),
+                     }
 
     def initialize_options(self):
         self.bdist_base = None
@@ -109,8 +107,9 @@ class bdist(Command):
             try:
                 self.formats = [self.default_format[os.name]]
             except KeyError:
-                raise PackagingPlatformError("don't know how to create built distributions " + \
-                      "on platform %s" % os.name)
+                raise PackagingPlatformError(
+                    "don't know how to create built distributions "
+                    "on platform %s" % os.name)
 
         if self.dist_dir is None:
             self.dist_dir = "dist"
