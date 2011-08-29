@@ -1150,6 +1150,18 @@ class AbstractPickleTests(unittest.TestCase):
         # On 32-bit builds, a BINUNICODE of 2**31 or more is refused
         self.check_negative_32b_binXXX(b'\x80\x03X\xff\xff\xff\xffxyzq\x00.')
 
+    def test_negative_put(self):
+        # Issue #12847
+        dumped = b'Va\np-1\n.'
+        self.assertRaises(ValueError, self.loads, dumped)
+
+    def test_negative_32b_binput(self):
+        # Issue #12847
+        if sys.maxsize > 2**32:
+            self.skipTest("test is only meaningful on 32-bit builds")
+        dumped = b'\x80\x03X\x01\x00\x00\x00ar\xff\xff\xff\xff.'
+        self.assertRaises(ValueError, self.loads, dumped)
+
 
 class BigmemPickleTests(unittest.TestCase):
 

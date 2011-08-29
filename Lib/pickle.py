@@ -1154,16 +1154,22 @@ class _Unpickler:
 
     def load_put(self):
         i = int(self.readline()[:-1])
+        if i < 0:
+            raise ValueError("negative PUT argument")
         self.memo[i] = self.stack[-1]
     dispatch[PUT[0]] = load_put
 
     def load_binput(self):
         i = self.read(1)[0]
+        if i < 0:
+            raise ValueError("negative BINPUT argument")
         self.memo[i] = self.stack[-1]
     dispatch[BINPUT[0]] = load_binput
 
     def load_long_binput(self):
         i = mloads(b'i' + self.read(4))
+        if i < 0:
+            raise ValueError("negative LONG_BINPUT argument")
         self.memo[i] = self.stack[-1]
     dispatch[LONG_BINPUT[0]] = load_long_binput
 

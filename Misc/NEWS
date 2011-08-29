@@ -268,6 +268,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12847: Fix a crash with negative PUT and LONG_BINPUT arguments in
+  the C pickle implementation.
+
 - Issue #11564: Avoid crashes when trying to pickle huge objects or containers
   (more than 2**31 items).  Instead, in most cases, an OverflowError is raised.
 
