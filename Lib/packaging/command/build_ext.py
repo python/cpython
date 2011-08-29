@@ -606,8 +606,7 @@ class build_ext(Command):
                 template = "python%d%d"
                 if self.debug:
                     template = template + '_d'
-                pythonlib = (template %
-                       (sys.hexversion >> 24, (sys.hexversion >> 16) & 0xff))
+                pythonlib = template % sys.version_info[:2]
                 # don't extend ext.libraries, it may be shared with other
                 # extensions, it is a reference to the original list
                 return ext.libraries + [pythonlib]
@@ -621,22 +620,19 @@ class build_ext(Command):
             # not at this time - AIM Apr01
             #if self.debug:
             #    template = template + '_d'
-            pythonlib = (template %
-                   (sys.hexversion >> 24, (sys.hexversion >> 16) & 0xff))
+            pythonlib = template % sys.version_info[:2]
             # don't extend ext.libraries, it may be shared with other
             # extensions, it is a reference to the original list
             return ext.libraries + [pythonlib]
         elif sys.platform[:6] == "cygwin":
             template = "python%d.%d"
-            pythonlib = (template %
-                   (sys.hexversion >> 24, (sys.hexversion >> 16) & 0xff))
+            pythonlib = template % sys.version_info[:2]
             # don't extend ext.libraries, it may be shared with other
             # extensions, it is a reference to the original list
             return ext.libraries + [pythonlib]
         elif sys.platform[:6] == "atheos":
             template = "python%d.%d"
-            pythonlib = (template %
-                   (sys.hexversion >> 24, (sys.hexversion >> 16) & 0xff))
+            pythonlib = template % sys.version_info[:2]
             # Get SHLIBS from Makefile
             extra = []
             for lib in sysconfig.get_config_var('SHLIBS').split():
@@ -654,9 +650,8 @@ class build_ext(Command):
 
         else:
             if sysconfig.get_config_var('Py_ENABLE_SHARED'):
-                pythonlib = 'python{}.{}{}'.format(
-                    sys.hexversion >> 24, (sys.hexversion >> 16) & 0xff,
-                    sys.abiflags)
+                template = 'python%d%d' + sys.abiflags
+                pythonlib = template % sys.version_info[:2]
                 return ext.libraries + [pythonlib]
             else:
                 return ext.libraries
