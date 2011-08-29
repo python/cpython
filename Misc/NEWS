@@ -22,6 +22,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11564: Avoid crashes when trying to pickle huge objects or containers
+  (more than 2**31 items).  Instead, in most cases, an OverflowError is raised.
+
 - Issue #12287: Fix a stack corruption in ossaudiodev module when the FD is
   greater than FD_SETSIZE.
 
