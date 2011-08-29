@@ -55,7 +55,7 @@ class bdist_dumb(Command):
         self.format = None
         self.keep_temp = False
         self.dist_dir = None
-        self.skip_build = False
+        self.skip_build = None
         self.relative = False
         self.owner = None
         self.group = None
@@ -73,7 +73,8 @@ class bdist_dumb(Command):
                     "don't know how to create dumb built distributions "
                     "on platform %s" % os.name)
 
-        self.set_undefined_options('bdist', 'dist_dir', 'plat_name')
+        self.set_undefined_options('bdist',
+                                   'dist_dir', 'plat_name', 'skip_build')
 
     def run(self):
         if not self.skip_build:
