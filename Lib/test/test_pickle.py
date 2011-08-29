@@ -7,6 +7,7 @@ from test.pickletester import AbstractPickleTests
 from test.pickletester import AbstractPickleModuleTests
 from test.pickletester import AbstractPersistentPicklerTests
 from test.pickletester import AbstractPicklerUnpicklerObjectTests
+from test.pickletester import BigmemPickleTests
 
 try:
     import _pickle
@@ -37,13 +38,13 @@ class PyPicklerTests(AbstractPickleTests):
         return u.load()
 
 
-class InMemoryPickleTests(AbstractPickleTests):
+class InMemoryPickleTests(AbstractPickleTests, BigmemPickleTests):
 
     pickler = pickle._Pickler
     unpickler = pickle._Unpickler
 
-    def dumps(self, arg, proto=None):
-        return pickle.dumps(arg, proto)
+    def dumps(self, arg, protocol=None):
+        return pickle.dumps(arg, protocol)
 
     def loads(self, buf, **kwds):
         return pickle.loads(buf, **kwds)
