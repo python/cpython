@@ -35,7 +35,7 @@ class BuildDumbTestCase(support.TempdirManager,
 
         dist = Distribution({'name': 'foo', 'version': '0.1',
                              'py_modules': ['foo'],
-                             'url': 'xxx', 'author': 'xxx',
+                             'home-page': 'xxx', 'author': 'xxx',
                              'author_email': 'xxx'})
         os.chdir(pkg_dir)
         cmd = bdist_dumb(dist)
