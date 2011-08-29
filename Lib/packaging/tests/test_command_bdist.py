@@ -27,33 +27,30 @@ class BuildTestCase(support.TempdirManager,
         util.get_platform = self._get_platform
 
     def test_formats(self):
-
         # let's create a command and make sure
-        # we can fix the format
-        pkg_pth, dist = self.create_dist()
+        # we can set the format
+        dist = self.create_dist()[1]
         cmd = bdist(dist)
         cmd.formats = ['msi']
         cmd.ensure_finalized()
         self.assertEqual(cmd.formats, ['msi'])
 
-        # what format bdist offers ?
-        # XXX an explicit list in bdist is
-        # not the best way to  bdist_* commands
-        # we should add a registry
-        formats = sorted(('zip', 'gztar', 'bztar', 'ztar',
-                          'tar', 'wininst', 'msi'))
+        # what format does bdist offer?
+        # XXX hard-coded lists are not the best way to find available bdist_*
+        # commands; we should add a registry
+        formats = ['bztar', 'gztar', 'msi', 'tar', 'wininst', 'zip']
         found = sorted(cmd.format_command)
         self.assertEqual(found, formats)
 
     def test_skip_build(self):
-        pkg_pth, dist = self.create_dist()
+        dist = self.create_dist()[1]
         cmd = bdist(dist)
         cmd.skip_build = False
         cmd.formats = ['ztar']
         cmd.ensure_finalized()
         self.assertFalse(self._get_platform_called)
 
-        pkg_pth, dist = self.create_dist()
+        dist = self.create_dist()[1]
         cmd = bdist(dist)
         cmd.skip_build = True
         cmd.formats = ['ztar']
