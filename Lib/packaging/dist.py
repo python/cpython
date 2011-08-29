@@ -1,20 +1,21 @@
-"""Class representing the distribution being built/installed/etc."""
+"""Class representing the project being built/installed/etc."""
 
 import os
 import re
 
+from packaging import logger
+from packaging.util import strtobool, resolve_name
+from packaging.config import Config
 from packaging.errors import (PackagingOptionError, PackagingArgError,
                               PackagingModuleError, PackagingClassError)
-from packaging.fancy_getopt import FancyGetopt
-from packaging.util import strtobool, resolve_name
-from packaging import logger
-from packaging.metadata import Metadata
-from packaging.config import Config
 from packaging.command import get_command_class, STANDARD_COMMANDS
+from packaging.command.cmd import Command
+from packaging.metadata import Metadata
+from packaging.fancy_getopt import FancyGetopt
 
 # Regex to define acceptable Packaging command names.  This is not *quite*
-# the same as a Python NAME -- I don't allow leading underscores.  The fact
-# that they're very similar is no coincidence; the default naming scheme is
+# the same as a Python name -- leading underscores are not allowed.  The fact
+# that they're very similar is no coincidence: the default naming scheme is
 # to look for a Python module named after the command.
 command_re = re.compile(r'^[a-zA-Z]([a-zA-Z0-9_]*)$')
 
@@ -32,22 +33,16 @@ def gen_usage(script_name):
 
 
 class Distribution:
-    """The core of the Packaging.  Most of the work hiding behind 'setup'
-    is really done within a Distribution instance, which farms the work out
-    to the Packaging commands specified on the command line.
+    """Class used to represent a project and work with it.
 
-    Setup scripts will almost never instantiate Distribution directly,
-    unless the 'setup()' function is totally inadequate to their needs.
-    However, it is conceivable that a setup script might wish to subclass
-    Distribution for some specialized purpose, and then pass the subclass
-    to 'setup()' as the 'distclass' keyword argument.  If so, it is
-    necessary to respect the expectations that 'setup' has of Distribution.
-    See the code for 'setup()', in run.py, for details.
+    Most of the work hiding behind 'pysetup run' is really done within a
+    Distribution instance, which farms the work out to the commands
+    specified on the command line.
     """
 
     # 'global_options' describes the command-line options that may be
     # supplied to the setup script prior to any actual commands.
-    # Eg. "pysetup -n" or "pysetup --dry-run" both take advantage of
+    # Eg. "pysetup run -n" or "pysetup run --dry-run" both take advantage of
     # these global options.  This list should be kept to a bare minimum,
     # since every global option is also valid as a command option -- and we
     # don't want to pollute the commands with too many options that they
@@ -63,55 +58,14 @@ class Distribution:
     common_usage = """\
 Common commands: (see '--help-commands' for more)
 
-  pysetup run build      will build the package underneath 'build/'
-  pysetup run install    will install the package
+  pysetup run build      will build the project underneath 'build/'
+  pysetup run install    will install the project
 """
 
     # options that are not propagated to the commands
     display_options = [
         ('help-commands', None,
          "list all available commands"),
-        # XXX this is obsoleted by the pysetup metadata action
-        ('name', None,
-         "print package name"),
-        ('version', 'V',
-         "print package version"),
-        ('fullname', None,
-         "print <package name>-<version>"),
-        ('author', None,
-         "print the author's name"),
-        ('author-email', None,
-         "print the author's email address"),
-        ('maintainer', None,
-         "print the maintainer's name"),
-        ('maintainer-email', None,
-         "print the maintainer's email address"),
-        ('contact', None,
-         "print the maintainer's name if known, else the author's"),
-        ('contact-email', None,
-         "print the maintainer's email address if known, else the author's"),
-        ('url', None,
-         "print the URL for this package"),
-        ('license', None,
-         "print the license of the package"),
-        ('licence', None,
-         "alias for --license"),
-        ('description', None,
-         "print the package description"),
-        ('long-description', None,
-         "print the long package description"),
-        ('platforms', None,
-         "print the list of platforms"),
-        ('classifier', None,
-         "print the list of classifiers"),
-        ('keywords', None,
-         "print the list of keywords"),
-        ('provides', None,
-         "print the list of packages/modules provided"),
-        ('requires', None,
-         "print the list of packages/modules required"),
-        ('obsoletes', None,
-         "print the list of packages/modules made obsolete"),
         ('use-2to3', None,
          "use 2to3 to make source python 3.x compatible"),
         ('convert-2to3-doctests', None,
@@ -347,7 +301,6 @@ Common commands: (see '--help-commands' for more)
         self.commands = []
         parser = FancyGetopt(toplevel_options + self.display_options)
         parser.set_negative_aliases(self.negative_opt)
-        parser.set_aliases({'licence': 'license'})
         args = parser.getopt(args=self.script_args, object=self)
         option_order = parser.get_option_order()
 
@@ -372,7 +325,7 @@ Common commands: (see '--help-commands' for more)
                             commands=self.commands)
             return
 
-        return 1
+        return True
 
     def _get_toplevel_options(self):
         """Return the non-display options recognized at the top level.
@@ -496,13 +449,10 @@ Common commands: (see '--help-commands' for more)
 
         If 'global_options' is true, lists the global options:
         --dry-run, etc.  If 'display_options' is true, lists
-        the "display-only" options: --name, --version, etc.  Finally,
+        the "display-only" options: --help-commands.  Finally,
         lists per-command help for every command name or command class
         in 'commands'.
         """
-        # late import because of mutual dependence between these modules
-        from packaging.command.cmd import Command
-
         if global_options:
             if display_options:
                 options = self._get_toplevel_options()
@@ -536,9 +486,8 @@ Common commands: (see '--help-commands' for more)
 
     def handle_display_options(self, option_order):
         """If there were any non-global "display-only" options
-        (--help-commands or the metadata display options) on the command
-        line, display the requested info and return true; else return
-        false.
+        (--help-commands) on the command line, display the requested info and
+        return true; else return false.
         """
         # User just wants a list of commands -- we'll print it out and stop
         # processing now (ie. if they ran "setup --help-commands foo bar",
@@ -547,7 +496,7 @@ Common commands: (see '--help-commands' for more)
             self.print_commands()
             print()
             print(gen_usage(self.script_name))
-            return 1
+            return True
 
         # If user supplied any of the "display metadata" options, then
         # display that metadata in the order in which the user supplied the
@@ -628,18 +577,17 @@ Common commands: (see '--help-commands' for more)
         """
         cmd_obj = self.command_obj.get(command)
         if not cmd_obj and create:
-            logger.debug("Distribution.get_command_obj(): " \
+            logger.debug("Distribution.get_command_obj(): "
                          "creating %r command object", command)
 
             cls = get_command_class(command)
             cmd_obj = self.command_obj[command] = cls(self)
             self.have_run[command] = 0
 
-            # Set any options that were supplied in config files
-            # or on the command line.  (NB. support for error
-            # reporting is lame here: any errors aren't reported
-            # until 'finalize_options()' is called, which means
-            # we won't report the source of the error.)
+            # Set any options that were supplied in config files or on the
+            # command line.  (XXX support for error reporting is suboptimal
+            # here: errors aren't reported until finalize_options is called,
+            # which means we won't report the source of the error.)
             options = self.command_options.get(command)
             if options:
                 self._set_command_options(cmd_obj, options)
@@ -707,7 +655,6 @@ Common commands: (see '--help-commands' for more)
 
         Returns the reinitialized command object.
         """
-        from packaging.command.cmd import Command
         if not isinstance(command, Command):
             command_name = command
             command = self.get_command_obj(command_name)
@@ -716,6 +663,7 @@ Common commands: (see '--help-commands' for more)
 
         if not command.finalized:
             return command
+
         command.initialize_options()
         self.have_run[command_name] = 0
         command.finalized = False
