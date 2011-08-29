@@ -2,11 +2,15 @@ import io
 import unittest
 import pickle
 import pickletools
+import sys
 import copyreg
 import weakref
 from http.cookies import SimpleCookie
 
-from test.support import TestFailed, TESTFN, run_with_locale, no_tracing
+from test.support import (
+    TestFailed, TESTFN, run_with_locale, no_tracing,
+    _2G, _4G, precisionbigmemtest,
+    )
 
 from pickle import bytes_types
 
@@ -14,6 +18,8 @@ from pickle import bytes_types
 #     for proto in protocols:
 # kind of outer loop.
 protocols = range(pickle.HIGHEST_PROTOCOL + 1)
+
+character_size = 4 if sys.maxunicode > 0xFFFF else 2
 
 
 # Return True if opcode code appears in the pickle, else False.
@@ -1126,6 +1132,99 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertEqual(sorted(sizes), sizes)
             if proto >= 2:
                 self.assertLessEqual(sizes[-1], 14)
+
+    def check_negative_32b_binXXX(self, dumped):
+        if sys.maxsize > 2**32:
+            self.skipTest("test is only meaningful on 32-bit builds")
+        # XXX Pure Python pickle reads lengths as signed and passes
+        # them directly to read() (hence the EOFError)
+        with self.assertRaises((pickle.UnpicklingError, EOFError,
+                                ValueError, OverflowError)):
+            self.loads(dumped)
+
+    def test_negative_32b_binbytes(self):
+        # On 32-bit builds, a BINBYTES of 2**31 or more is refused
+        self.check_negative_32b_binXXX(b'\x80\x03B\xff\xff\xff\xffxyzq\x00.')
+
+    def test_negative_32b_binunicode(self):
+        # On 32-bit builds, a BINUNICODE of 2**31 or more is refused
+        self.check_negative_32b_binXXX(b'\x80\x03X\xff\xff\xff\xffxyzq\x00.')
+
+
+class BigmemPickleTests(unittest.TestCase):
+
+    # Binary protocols can serialize longs of up to 2GB-1
+
+    @precisionbigmemtest(size=_2G, memuse=1 + 1, dry_run=False)
+    def test_huge_long_32b(self, size):
+        data = 1 << (8 * size)
+        try:
+            for proto in protocols:
+                if proto < 2:
+                    continue
+                with self.assertRaises((ValueError, OverflowError)):
+                    self.dumps(data, protocol=proto)
+        finally:
+            data = None
+
+    # Protocol 3 can serialize up to 4GB-1 as a bytes object
+    # (older protocols don't have a dedicated opcode for bytes and are
+    # too inefficient)
+
+    @precisionbigmemtest(size=_2G, memuse=1 + 1, dry_run=False)
+    def test_huge_bytes_32b(self, size):
+        data = b"abcd" * (size // 4)
+        try:
+            for proto in protocols:
+                if proto < 3:
+                    continue
+                try:
+                    pickled = self.dumps(data, protocol=proto)
+                    self.assertTrue(b"abcd" in pickled[:15])
+                    self.assertTrue(b"abcd" in pickled[-15:])
+                finally:
+                    pickled = None
+        finally:
+            data = None
+
+    @precisionbigmemtest(size=_4G, memuse=1 + 1, dry_run=False)
+    def test_huge_bytes_64b(self, size):
+        data = b"a" * size
+        try:
+            for proto in protocols:
+                if proto < 3:
+                    continue
+                with self.assertRaises((ValueError, OverflowError)):
+                    self.dumps(data, protocol=proto)
+        finally:
+            data = None
+
+    # All protocols use 1-byte per printable ASCII character; we add another
+    # byte because the encoded form has to be copied into the internal buffer.
+
+    @precisionbigmemtest(size=_2G, memuse=2 + character_size, dry_run=False)
+    def test_huge_str_32b(self, size):
+        data = "abcd" * (size // 4)
+        try:
+            for proto in protocols:
+                try:
+                    pickled = self.dumps(data, protocol=proto)
+                    self.assertTrue(b"abcd" in pickled[:15])
+                    self.assertTrue(b"abcd" in pickled[-15:])
+                finally:
+                    pickled = None
+        finally:
+            data = None
+
+    @precisionbigmemtest(size=_4G, memuse=1 + character_size, dry_run=False)
+    def test_huge_str_64b(self, size):
+        data = "a" * size
+        try:
+            for proto in protocols:
+                with self.assertRaises((ValueError, OverflowError)):
+                    self.dumps(data, protocol=proto)
+        finally:
+            data = None
 
 
 # Test classes for reduce_ex
