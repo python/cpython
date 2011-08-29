@@ -91,6 +91,13 @@ versions.
 
 (:issue:`12100`)
 
+crypt
+-----
+
+Addition of salf and modular crypt format to the :mod:`crypt` module.
+
+(:issue:`10924`)
+
 curses
 ------
 
@@ -184,7 +191,7 @@ in Python 3.2.
 sys
 ---
 
-* The :mod:`sys` module has a new :func:`~sys.thread_info` :term:`struct
+* The :mod:`sys` module has a new :data:`~sys.thread_info` :term:`struct
   sequence` holding informations about the thread implementation.
 
   (:issue:`11223`)
