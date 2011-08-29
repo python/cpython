@@ -4853,8 +4853,12 @@ load_put(UnpicklerObject *self)
         return -1;
     idx = PyLong_AsSsize_t(key);
     Py_DECREF(key);
-    if (idx == -1 && PyErr_Occurred())
+    if (idx < 0) {
+        if (!PyErr_Occurred())
+            PyErr_SetString(PyExc_ValueError,
+                            "negative PUT argument");
         return -1;
+    }
 
     return _Unpickler_MemoPut(self, idx, value);
 }
@@ -4893,6 +4897,11 @@ load_long_binput(UnpicklerObject *self)
     value = self->stack->data[Py_SIZE(self->stack) - 1];
 
     idx = calc_binsize(s, 4);
+    if (idx < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "negative LONG_BINPUT argument");
+        return -1;
+    }
 
     return _Unpickler_MemoPut(self, idx, value);
 }
