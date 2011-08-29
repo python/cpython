@@ -221,6 +221,9 @@ whatsnew/2.7,862,::,"export PYTHONWARNINGS=all,error:::Cookie:0"
 whatsnew/2.7,862,:Cookie,"export PYTHONWARNINGS=all,error:::Cookie:0"
 whatsnew/2.7,,::,>>> urlparse.urlparse('http://[1080::8:800:200C:417A]/foo')
 whatsnew/2.7,,::,"ParseResult(scheme='http', netloc='[1080::8:800:200C:417A]',"
+howto/pyporting,75,::,# make sure to use :: Python *and* :: Python :: 3 so
+howto/pyporting,75,::,"'Programming Language :: Python',"
+howto/pyporting,75,::,'Programming Language :: Python :: 3'
 documenting/markup,33,.. sectionauthor:,.. sectionauthor:: Guido van Rossum <guido@python.org>
 documenting/markup,42,:mod,:mod:`parrot` -- Dead parrot access
 documenting/markup,42,`,:mod:`parrot` -- Dead parrot access
