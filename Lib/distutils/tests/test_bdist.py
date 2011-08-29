@@ -1,42 +1,49 @@
 """Tests for distutils.command.bdist."""
-import unittest
-import sys
 import os
-import tempfile
-import shutil
+import unittest
 
 from test.test_support import run_unittest
 
-from distutils.core import Distribution
 from distutils.command.bdist import bdist
 from distutils.tests import support
-from distutils.spawn import find_executable
-from distutils import spawn
-from distutils.errors import DistutilsExecError
+
 
 class BuildTestCase(support.TempdirManager,
                     unittest.TestCase):
 
     def test_formats(self):
-
         # let's create a command and make sure
-        # we can fix the format
-        pkg_pth, dist = self.create_dist()
+        # we can set the format
+        dist = self.create_dist()[1]
         cmd = bdist(dist)
         cmd.formats = ['msi']
         cmd.ensure_finalized()
         self.assertEqual(cmd.formats, ['msi'])
 
-        # what format bdist offers ?
-        # XXX an explicit list in bdist is
-        # not the best way to  bdist_* commands
-        # we should add a registry
-        formats = ['rpm', 'zip', 'gztar', 'bztar', 'ztar',
-                   'tar', 'wininst', 'msi']
-        formats.sort()
-        founded = cmd.format_command.keys()
-        founded.sort()
-        self.assertEqual(founded, formats)
+        # what formats does bdist offer?
+        formats = ['bztar', 'gztar', 'msi', 'rpm', 'tar',
+                   'wininst', 'zip', 'ztar']
+        found = sorted(cmd.format_command)
+        self.assertEqual(found, formats)
+
+    def test_skip_build(self):
+        # bug #10946: bdist --skip-build should trickle down to subcommands
+        dist = self.create_dist()[1]
+        cmd = bdist(dist)
+        cmd.skip_build = 1
+        cmd.ensure_finalized()
+        dist.command_obj['bdist'] = cmd
+
+        names = ['bdist_dumb', 'bdist_wininst']
+        # bdist_rpm does not support --skip-build
+        if os.name == 'nt':
+            names.append('bdist_msi')
+
+        for name in names:
+            subcmd = cmd.get_finalized_command(name)
+            self.assertTrue(subcmd.skip_build,
+                            '%s should take --skip-build from bdist' % name)
+
 
 def test_suite():
     return unittest.makeSuite(BuildTestCase)
