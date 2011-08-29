@@ -71,8 +71,8 @@ positional arguments:
 """
 
 metadata_usage = """\
-Usage: pysetup metadata [dist] [-f field ...]
-   or: pysetup metadata [dist] [--all]
+Usage: pysetup metadata [dist]
+   or: pysetup metadata [dist] [-f field ...]
    or: pysetup metadata --help
 
 Print metadata for the distribution.
@@ -81,8 +81,7 @@ positional arguments:
    dist  installed distribution name
 
 optional arguments:
-   -f     metadata field to print
-   --all  print all metadata fields
+   -f     metadata field to print; omit to get all fields
 """
 
 remove_usage = """\
@@ -252,7 +251,7 @@ def _install(dispatcher, args, **kw):
 
 @action_help(metadata_usage)
 def _metadata(dispatcher, args, **kw):
-    opts = _parse_args(args[1:], 'f:', ['all'])
+    opts = _parse_args(args[1:], 'f:', [])
     if opts['args']:
         name = opts['args'][0]
         dist = get_distribution(name, use_egg_info=True)
@@ -269,13 +268,10 @@ def _metadata(dispatcher, args, **kw):
 
     metadata = dist.metadata
 
-    if 'all' in opts:
-        keys = metadata.keys()
+    if 'f' in opts:
+        keys = (k for k in opts['f'] if k in metadata)
     else:
-        if 'f' in opts:
-            keys = (k for k in opts['f'] if k in metadata)
-        else:
-            keys = ()
+        keys = metadata.keys()
 
     for key in keys:
         if key in metadata:
