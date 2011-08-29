@@ -1142,7 +1142,7 @@ def bigmemtest(minsize, memuse):
         return wrapper
     return decorator
 
-def precisionbigmemtest(size, memuse):
+def precisionbigmemtest(size, memuse, dry_run=True):
     """Decorator for bigmem tests that need exact sizes.
 
     Like bigmemtest, but without the size scaling upward to fill available
@@ -1157,10 +1157,11 @@ def precisionbigmemtest(size, memuse):
             else:
                 maxsize = size
 
-                if real_max_memuse and real_max_memuse < maxsize * memuse:
-                    raise unittest.SkipTest(
-                        "not enough memory: %.1fG minimum needed"
-                        % (size * memuse / (1024 ** 3)))
+            if ((real_max_memuse or not dry_run)
+                and real_max_memuse < maxsize * memuse):
+                raise unittest.SkipTest(
+                    "not enough memory: %.1fG minimum needed"
+                    % (size * memuse / (1024 ** 3)))
 
             return f(self, maxsize)
         wrapper.size = size
