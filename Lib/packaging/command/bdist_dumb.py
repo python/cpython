@@ -13,6 +13,7 @@ from packaging.command.cmd import Command
 from packaging.errors import PackagingPlatformError
 from packaging import logger
 
+
 class bdist_dumb(Command):
 
     description = 'create a "dumb" built distribution'
@@ -23,7 +24,7 @@ class bdist_dumb(Command):
                      "platform name to embed in generated filenames "
                      "(default: %s)" % get_platform()),
                     ('format=', 'f',
-                     "archive format to create (tar, ztar, gztar, zip)"),
+                     "archive format to create (tar, gztar, zip)"),
                     ('keep-temp', 'k',
                      "keep the pseudo-installation tree around after " +
                      "creating the distribution archive"),
@@ -44,10 +45,9 @@ class bdist_dumb(Command):
 
     boolean_options = ['keep-temp', 'skip-build', 'relative']
 
-    default_format = { 'posix': 'gztar',
-                       'nt': 'zip',
-                       'os2': 'zip' }
-
+    default_format = {'posix': 'gztar',
+                      'nt': 'zip',
+                      'os2': 'zip'}
 
     def initialize_options(self):
         self.bdist_dir = None
@@ -55,7 +55,7 @@ class bdist_dumb(Command):
         self.format = None
         self.keep_temp = False
         self.dist_dir = None
-        self.skip_build = False
+        self.skip_build = None
         self.relative = False
         self.owner = None
         self.group = None
@@ -69,10 +69,12 @@ class bdist_dumb(Command):
             try:
                 self.format = self.default_format[os.name]
             except KeyError:
-                raise PackagingPlatformError(("don't know how to create dumb built distributions " +
-                       "on platform %s") % os.name)
+                raise PackagingPlatformError(
+                    "don't know how to create dumb built distributions "
+                    "on platform %s" % os.name)
 
-        self.set_undefined_options('bdist', 'dist_dir', 'plat_name')
+        self.set_undefined_options('bdist',
+                                   'dist_dir', 'plat_name', 'skip_build')
 
     def run(self):
         if not self.skip_build:
