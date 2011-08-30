@@ -20,6 +20,10 @@ class StringBufferTestCase(unittest.TestCase):
         self.assertEqual(b[::2], b"ac")
         self.assertEqual(b[::5], b"a")
 
+    def test_buffer_interface(self):
+        self.assertEqual(len(bytearray(create_string_buffer(0))), 0)
+        self.assertEqual(len(bytearray(create_string_buffer(1))), 1)
+
     try:
         c_wchar
     except NameError:
