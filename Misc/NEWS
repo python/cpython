@@ -22,6 +22,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10946: The distutils commands bdist_dumb, bdist_wininst and bdist_msi
+  now respect a --skip-build option given to bdist.
+
 - Issue #12847: Fix a crash with negative PUT and LONG_BINPUT arguments in
   the C pickle implementation.
 
