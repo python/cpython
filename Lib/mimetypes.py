@@ -249,7 +249,6 @@ class MimeTypes:
                     yield ctype
                 i += 1
 
-        default_encoding = sys.getdefaultencoding()
         with _winreg.OpenKey(_winreg.HKEY_CLASSES_ROOT,
                              r'MIME\Database\Content Type') as mimedb:
             for ctype in enum_types(mimedb):
