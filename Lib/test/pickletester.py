@@ -1228,11 +1228,16 @@ class BigmemPickleTests(unittest.TestCase):
         finally:
             data = None
 
+    # BINUNICODE (protocols 1, 2 and 3) cannot carry more than
+    # 2**32 - 1 bytes of utf-8 encoded unicode.
+
     @precisionbigmemtest(size=_4G, memuse=1 + character_size, dry_run=False)
     def test_huge_str_64b(self, size):
         data = "a" * size
         try:
             for proto in protocols:
+                if proto == 0:
+                    continue
                 with self.assertRaises((ValueError, OverflowError)):
                     self.dumps(data, protocol=proto)
         finally:
