@@ -212,8 +212,7 @@ def rmtree(path):
     try:
         shutil.rmtree(path)
     except OSError as error:
-        # Unix returns ENOENT, Windows returns ESRCH.
-        if error.errno not in (errno.ENOENT, errno.ESRCH):
+        if error.errno != errno.ENOENT:
             raise
 
 def make_legacy_pyc(source):
