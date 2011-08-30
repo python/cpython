@@ -20,6 +20,10 @@ class StringBufferTestCase(unittest.TestCase):
         self.assertEqual(b[::2], "ac")
         self.assertEqual(b[::5], "a")
 
+    def test_buffer_interface(self):
+        self.assertEqual(len(bytearray(create_string_buffer(0))), 0)
+        self.assertEqual(len(bytearray(create_string_buffer(1))), 1)
+
     def test_string_conversion(self):
         b = create_string_buffer(u"abc")
         self.assertEqual(len(b), 4) # trailing nul char

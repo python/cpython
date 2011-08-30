@@ -2576,8 +2576,10 @@ static int PyCData_NewGetBuffer(PyObject *_self, Py_buffer *view, int flags)
     view->ndim = dict->ndim;
     view->shape = dict->shape;
     view->itemsize = self->b_size;
-    for (i = 0; i < view->ndim; ++i) {
-        view->itemsize /= dict->shape[i];
+    if (view->itemsize) {
+        for (i = 0; i < view->ndim; ++i) {
+            view->itemsize /= dict->shape[i];
+        }
     }
     view->strides = NULL;
     view->suboffsets = NULL;

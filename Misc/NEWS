@@ -180,6 +180,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #9651: Fix a crash when ctypes.create_string_buffer(0) was passed to
+  some functions like file.write().
+
 - Issue #10309: Define _GNU_SOURCE so that mremap() gets the proper
   signature.  Without this, architectures where sizeof void* != sizeof int are
   broken.  Patch given by Hallvard B Furuseth.
