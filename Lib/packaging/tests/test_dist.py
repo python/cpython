@@ -98,7 +98,7 @@ class DistributionTestCase(support.TempdirManager,
         Distribution(attrs={'author': 'xxx',
                             'name': 'xxx',
                             'version': '1.2',
-                            'url': 'xxxx',
+                            'home-page': 'xxxx',
                             'badoptname': 'xxx'})
         logs = self.get_logs(logging.WARNING)
         self.assertEqual(1, len(logs))
@@ -108,7 +108,7 @@ class DistributionTestCase(support.TempdirManager,
         Distribution(attrs={'author': 'xxx',
                             'name': 'xxx',
                             'version': 'xxx',
-                            'url': 'xxxx'})
+                            'home-page': 'xxxx'})
         logs = self.get_logs(logging.WARNING)
         self.assertEqual(1, len(logs))
         self.assertIn('not a valid version', logs[0])
@@ -119,7 +119,7 @@ class DistributionTestCase(support.TempdirManager,
         Distribution(attrs={'author': 'xxx',
                             'name': 'xxx',
                             'version': '1.2',
-                            'url': 'xxxx',
+                            'home-page': 'xxxx',
                             'options': {}})
 
         self.assertEqual([], self.get_logs(logging.WARNING))
@@ -135,7 +135,7 @@ class DistributionTestCase(support.TempdirManager,
         dist = Distribution(attrs={'author': 'xxx',
                                    'name': 'xxx',
                                    'version': 'xxx',
-                                   'url': 'xxxx',
+                                   'home-page': 'xxxx',
                                    'options': {'sdist': {'owner': 'root'}}})
 
         self.assertIn('owner', dist.get_option_dict('sdist'))
