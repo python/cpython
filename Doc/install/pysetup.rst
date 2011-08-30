@@ -76,7 +76,7 @@ argument. ::
    Name:
        virtualenv
 
-   $ pysetup metadata virtualenv --all
+   $ pysetup metadata virtualenv
    Metadata-Version:
        1.0
    Name:

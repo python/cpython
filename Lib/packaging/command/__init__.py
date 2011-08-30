@@ -30,6 +30,8 @@ _COMMANDS = {
     'upload': 'packaging.command.upload.upload',
     'upload_docs': 'packaging.command.upload_docs.upload_docs'}
 
+# XXX use OrderedDict to preserve the grouping (build-related, install-related,
+# distribution-related)
 STANDARD_COMMANDS = set(_COMMANDS)
 
 
@@ -48,9 +50,9 @@ def get_command_class(name):
     """Return the registered command"""
     try:
         cls = _COMMANDS[name]
-        if isinstance(cls, str):
-            cls = resolve_name(cls)
-            _COMMANDS[name] = cls
-        return cls
     except KeyError:
         raise PackagingModuleError("Invalid command %s" % name)
+    if isinstance(cls, str):
+        cls = resolve_name(cls)
+        _COMMANDS[name] = cls
+    return cls
