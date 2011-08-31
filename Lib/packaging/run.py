@@ -30,118 +30,6 @@ To get more help on an action, use:
     pysetup action --help
 """
 
-create_usage = """\
-Usage: pysetup create
-   or: pysetup create --help
-
-Create a new Python project.
-"""
-
-generate_usage = """\
-Usage: pysetup generate-setup
-   or: pysetup generate-setup --help
-
-Generate a setup.py script for backward-compatibility purposes.
-"""
-
-
-graph_usage = """\
-Usage: pysetup graph dist
-   or: pysetup graph --help
-
-Print dependency graph for the distribution.
-
-positional arguments:
-   dist  installed distribution name
-"""
-
-install_usage = """\
-Usage: pysetup install [dist]
-   or: pysetup install [archive]
-   or: pysetup install [src_dir]
-   or: pysetup install --help
-
-Install a Python distribution from the indexes, source directory, or sdist.
-
-positional arguments:
-   archive  path to source distribution (zip, tar.gz)
-   dist     distribution name to install from the indexes
-   scr_dir  path to source directory
-
-"""
-
-metadata_usage = """\
-Usage: pysetup metadata [dist]
-   or: pysetup metadata [dist] [-f field ...]
-   or: pysetup metadata --help
-
-Print metadata for the distribution.
-
-positional arguments:
-   dist  installed distribution name
-
-optional arguments:
-   -f     metadata field to print; omit to get all fields
-"""
-
-remove_usage = """\
-Usage: pysetup remove dist [-y]
-   or: pysetup remove --help
-
-Uninstall a Python distribution.
-
-positional arguments:
-   dist  installed distribution name
-
-optional arguments:
-   -y  auto confirm distribution removal
-"""
-
-run_usage = """\
-Usage: pysetup run [global_opts] cmd1 [cmd1_opts] [cmd2 [cmd2_opts] ...]
-   or: pysetup run --help
-   or: pysetup run --list-commands
-   or: pysetup run cmd --help
-"""
-
-list_usage = """\
-Usage: pysetup list dist [dist ...]
-   or: pysetup list --help
-   or: pysetup list --all
-
-Print name, version and location for the matching installed distributions.
-
-positional arguments:
-   dist  installed distribution name
-
-optional arguments:
-   --all  list all installed distributions
-"""
-
-search_usage = """\
-Usage: pysetup search [project] [--simple [url]] [--xmlrpc [url] [--fieldname value ...] --operator or|and]
-   or: pysetup search --help
-
-Search the indexes for the matching projects.
-
-positional arguments:
-    project     the project pattern to search for
-
-optional arguments:
-    --xmlrpc [url]      wether to use the xmlrpc index or not. If an url is
-                        specified, it will be used rather than the default one.
-
-    --simple [url]      wether to use the simple index or not. If an url is
-                        specified, it will be used rather than the default one.
-
-    --fieldname value   Make a search on this field. Can only be used if
-                        --xmlrpc has been selected or is the default index.
-
-    --operator or|and   Defines what is the operator to use when doing xmlrpc
-                        searchs with multiple fieldnames. Can only be used if
-                        --xmlrpc has been selected or is the default index.
-"""
-
 global_options = [
     # The fourth entry for verbose means that it can be repeated.
     ('verbose', 'v', "run verbosely (default)", True),
@@ -204,19 +92,37 @@ class action_help:
         return wrapper
 
 
-@action_help(create_usage)
+@action_help("""\
+Usage: pysetup create
+   or: pysetup create --help
+
+Create a new Python project.
+""")
 def _create(distpatcher, args, **kw):
     from packaging.create import main
     return main()
 
 
-@action_help(generate_usage)
+@action_help("""\
+Usage: pysetup generate-setup
+   or: pysetup generate-setup --help
+
+Generate a setup.py script for backward-compatibility purposes.
+""")
 def _generate(distpatcher, args, **kw):
     generate_setup_py()
     logger.info('The setup.py was generated')
 
 
-@action_help(graph_usage)
+@action_help("""\
+Usage: pysetup graph dist
+   or: pysetup graph --help
+
+Print dependency graph for the distribution.
+
+positional arguments:
+   dist  installed distribution name
+""")
 def _graph(dispatcher, args, **kw):
     name = args[1]
     dist = get_distribution(name, use_egg_info=True)
@@ -229,7 +135,19 @@ def _graph(dispatcher, args, **kw):
         print(graph.repr_node(dist))
 
 
-@action_help(install_usage)
+@action_help("""\
+Usage: pysetup install [dist]
+   or: pysetup install [archive]
+   or: pysetup install [src_dir]
+   or: pysetup install --help
+
+Install a Python distribution from the indexes, source directory, or sdist.
+
+positional arguments:
+   archive  path to source distribution (zip, tar.gz)
+   dist     distribution name to install from the indexes
+   scr_dir  path to source directory
+""")
 def _install(dispatcher, args, **kw):
     # first check if we are in a source directory
     if len(args) < 2:
@@ -249,7 +167,19 @@ def _install(dispatcher, args, **kw):
         return not install(target)
 
 
-@action_help(metadata_usage)
+@action_help("""\
+Usage: pysetup metadata [dist]
+   or: pysetup metadata [dist] [-f field ...]
+   or: pysetup metadata --help
+
+Print metadata for the distribution.
+
+positional arguments:
+   dist  installed distribution name
+
+optional arguments:
+   -f     metadata field to print; omit to get all fields
+""")
 def _metadata(dispatcher, args, **kw):
     opts = _parse_args(args[1:], 'f:', [])
     if opts['args']:
@@ -284,7 +214,18 @@ def _metadata(dispatcher, args, **kw):
                 print('   ', value.replace('\n', '\n    '))
 
 
-@action_help(remove_usage)
+@action_help("""\
+Usage: pysetup remove dist [-y]
+   or: pysetup remove --help
+
+Uninstall a Python distribution.
+
+positional arguments:
+   dist  installed distribution name
+
+optional arguments:
+   -y  auto confirm distribution removal
+""")
 def _remove(distpatcher, args, **kw):
     opts = _parse_args(args[1:], 'y', [])
     if 'y' in opts:
@@ -303,7 +244,12 @@ def _remove(distpatcher, args, **kw):
     return retcode
 
 
-@action_help(run_usage)
+@action_help("""\
+Usage: pysetup run [global_opts] cmd1 [cmd1_opts] [cmd2 [cmd2_opts] ...]
+   or: pysetup run --help
+   or: pysetup run --list-commands
+   or: pysetup run cmd --help
+""")
 def _run(dispatcher, args, **kw):
     parser = dispatcher.parser
     args = args[1:]
@@ -343,7 +289,19 @@ def _run(dispatcher, args, **kw):
     return dist
 
 
-@action_help(list_usage)
+@action_help("""\
+Usage: pysetup list dist [dist ...]
+   or: pysetup list --help
+   or: pysetup list --all
+
+Print name, version and location for the matching installed distributions.
+
+positional arguments:
+   dist  installed distribution name
+
+optional arguments:
+   --all  list all installed distributions
+""")
 def _list(dispatcher, args, **kw):
     opts = _parse_args(args[1:], '', ['all'])
     dists = get_distributions(use_egg_info=True)
@@ -369,7 +327,29 @@ def _list(dispatcher, args, **kw):
         logger.info('Found %d projects installed.', number)
 
 
-@action_help(search_usage)
+@action_help("""\
+Usage: pysetup search [project] [--simple [url]] [--xmlrpc [url] [--fieldname value ...] --operator or|and]
+   or: pysetup search --help
+
+Search the indexes for the matching projects.
+
+positional arguments:
+    project     the project pattern to search for
+
+optional arguments:
+    --xmlrpc [url]      whether to use the xmlrpc index or not. If an url is
+                        specified, it will be used rather than the default one.
+
+    --simple [url]      whether to use the simple index or not. If an url is
+                        specified, it will be used rather than the default one.
+
+    --fieldname value   Make a search on this field. Can only be used if
+                        --xmlrpc has been selected or is the default index.
+
+    --operator or|and   Defines what is the operator to use when doing xmlrpc
+                        searchs with multiple fieldnames. Can only be used if
+                        --xmlrpc has been selected or is the default index.
+""")
 def _search(dispatcher, args, **kw):
     """The search action.
 

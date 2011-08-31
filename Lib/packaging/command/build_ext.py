@@ -650,7 +650,7 @@ class build_ext(Command):
 
         else:
             if sysconfig.get_config_var('Py_ENABLE_SHARED'):
-                template = 'python%d%d' + sys.abiflags
+                template = 'python%d.%d' + sys.abiflags
                 pythonlib = template % sys.version_info[:2]
                 return ext.libraries + [pythonlib]
             else:
