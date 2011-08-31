@@ -1,5 +1,5 @@
 """Subpackage containing all standard commands."""
-
+import os
 from packaging.errors import PackagingModuleError
 from packaging.util import resolve_name
 
@@ -28,7 +28,12 @@ _COMMANDS = {
     'bdist_wininst': 'packaging.command.bdist_wininst.bdist_wininst',
     'register': 'packaging.command.register.register',
     'upload': 'packaging.command.upload.upload',
-    'upload_docs': 'packaging.command.upload_docs.upload_docs'}
+    'upload_docs': 'packaging.command.upload_docs.upload_docs',
+}
+
+# XXX this is crappy
+if os.name == 'nt':
+    _COMMANDS['bdist_msi'] = 'packaging.command.bdist_msi'
 
 # XXX use OrderedDict to preserve the grouping (build-related, install-related,
 # distribution-related)
