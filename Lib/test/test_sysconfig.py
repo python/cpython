@@ -261,14 +261,14 @@ class TestSysConfig(unittest.TestCase):
             unlink(link)
 
     def test_user_similar(self):
-        # Issue 8759 : make sure the posix scheme for the users
+        # Issue #8759: make sure the posix scheme for the users
         # is similar to the global posix_prefix one
         base = get_config_var('base')
         user = get_config_var('userbase')
         for name in ('stdlib', 'platstdlib', 'purelib', 'platlib'):
             global_path = get_path(name, 'posix_prefix')
             user_path = get_path(name, 'posix_user')
-            self.assertEqual(user_path, global_path.replace(base, user))
+            self.assertEqual(user_path, global_path.replace(base, user, 1))
 
     def test_main(self):
         # just making sure _main() runs and returns things in the stdout
