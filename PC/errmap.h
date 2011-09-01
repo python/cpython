@@ -72,6 +72,7 @@ int winerror_to_errno(int winerror)
         case 202: return 8;
         case 206: return 2;
         case 215: return 11;
+        case 267: return 20;
         case 1816: return 12;
         default: return EINVAL;
     }
