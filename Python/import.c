@@ -2653,7 +2653,9 @@ PyObject *
 PyImport_ImportModuleNoBlock(const char *name)
 {
     PyObject *nameobj, *modules, *result;
+#ifdef WITH_THREAD
     long me;
+#endif
 
     /* Try to get the module from sys.modules[name] */
     modules = PyImport_GetModuleDict();
