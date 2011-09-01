@@ -434,8 +434,8 @@ Glossary
 
    mapping
       A container object that supports arbitrary key lookups and implements the
-      methods specified in the :class:`~collections.Mapping` or
-      :class:`~collections.MutableMapping`
+      methods specified in the :class:`~collections.abc.Mapping` or
+      :class:`~collections.abc.MutableMapping`
       :ref:`abstract base classes <collections-abstract-base-classes>`.  Examples
       include :class:`dict`, :class:`collections.defaultdict`,
       :class:`collections.OrderedDict` and :class:`collections.Counter`.
@@ -492,7 +492,7 @@ Glossary
       :func:`builtins.open` and :func:`os.open` are distinguished by their
       namespaces.  Namespaces also aid readability and maintainability by making
       it clear which module implements a function.  For instance, writing
-      :func:`random.seed` or :func:`itertools.izip` makes it clear that those
+      :func:`random.seed` or :func:`itertools.islice` makes it clear that those
       functions are implemented by the :mod:`random` and :mod:`itertools`
       modules, respectively.
 
