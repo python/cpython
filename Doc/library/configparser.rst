@@ -806,17 +806,17 @@ To get interpolation, use :class:`ConfigParser`::
    cfg = configparser.ConfigParser()
    cfg.read('example.cfg')
 
-   # Set the optional `raw` argument of get() to True if you wish to disable
+   # Set the optional *raw* argument of get() to True if you wish to disable
    # interpolation in a single get operation.
    print(cfg.get('Section1', 'foo', raw=False)) # -> "Python is fun!"
    print(cfg.get('Section1', 'foo', raw=True))  # -> "%(bar)s is %(baz)s!"
 
-   # The optional `vars` argument is a dict with members that will take
+   # The optional *vars* argument is a dict with members that will take
    # precedence in interpolation.
    print(cfg.get('Section1', 'foo', vars={'bar': 'Documentation',
                                              'baz': 'evil'}))
 
-   # The optional `fallback` argument can be used to provide a fallback value
+   # The optional *fallback* argument can be used to provide a fallback value
    print(cfg.get('Section1', 'foo'))
          # -> "Python is fun!"
 
