@@ -155,7 +155,7 @@ ArgumentParser objects
      conflicting optionals.
 
    * prog_ - The name of the program (default:
-     :data:`sys.argv[0]`)
+     ``sys.argv[0]``)
 
    * usage_ - The string describing the program usage (default: generated)
 
