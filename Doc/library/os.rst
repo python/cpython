@@ -751,6 +751,26 @@ as internal buffering of data.
       This function is not available on MacOS.
 
 
+.. function:: fgetxattr(fd, attr)
+
+   This works exactly like :func:`getxattr` but operates on a file descriptor,
+   *fd*, instead of a path.
+
+   Availability: Linux
+
+   .. versionadded:: 3.3
+
+
+.. function:: flistxattr(fd)
+
+   This is exactly like :func:`listxattr` but operates on a file descriptor,
+   *fd*, instead of a path.
+
+   Availability: Linux
+
+   .. versionadded:: 3.3
+
+
 .. function:: fdlistdir(fd)
 
    Like :func:`listdir`, but uses a file descriptor instead and always returns
@@ -834,6 +854,27 @@ as internal buffering of data.
    *length* bytes in size.
 
    Availability: Unix.
+
+
+.. function:: fremovexattr(fd, attr)
+
+   This works exactly like :func:`removexattr` but operates on a file
+   descriptor, *fd*, instead of a path.
+
+   Availability: Linux
+
+   .. versionadded:: 3.3
+
+
+.. function:: fsetxattr(fd, attr, value, flags=0)
+
+   This works exactly like :func:`setxattr` but on a file descriptor, *fd*,
+   instead of a path.
+
+
+   Availability: Linux
+
+   .. versionadded:: 3.3
 
 
 .. function:: futimesat(dirfd, path, (atime, mtime))
@@ -1536,6 +1577,17 @@ Files and Directories
    Availability: Unix.
 
 
+.. function:: getxattr(path, attr)
+
+   Return the value of the extended filesystem attribute *attr* for
+   *path*. *attr* can be bytes or str. If it is str, it is encoded with the
+   filesystem encoding.
+
+   Availability: Linux
+
+   .. versionadded:: 3.3
+
+
 .. function:: lchflags(path, flags)
 
    Set the flags of *path* to the numeric *flags*, like :func:`chflags`, but do not
@@ -1561,6 +1613,15 @@ Files and Directories
    Availability: Unix.
 
 
+.. function:: lgetxattr(path, attr)
+
+   This works exactly like :func:`getxattr` but doesn't follow symlinks.
+
+   Availability: Linux
+
+   .. versionadded:: 3.3
+
+
 .. function:: link(source, link_name)
 
    Create a hard link pointing to *source* named *link_name*.
@@ -1584,6 +1645,44 @@ Files and Directories
 
    .. versionchanged:: 3.2
       The *path* parameter became optional.
+
+
+.. function:: listxattr(path)
+
+   Return a list of the extended filesystem attributes on *path*. Attributes are
+   returned as string decoded with the filesystem encoding.
+
+   Availability: Linux
+
+   .. versionadded:: 3.3
+
+
+.. function:: llistxattr(path)
+
+   This works exactly like :func:`listxattr` but doesn't follow symlinks.
+
+   Availability: Linux
+
+   .. versionadded:: 3.3
+
+
+.. function:: lremoveattr(path, attr)
+
+   This works exactly like :func:`removeattr` but doesn't follow symlinks.
+
+   Availability: Linux
+
+   .. versionadded:: 3.3
+
+
+.. function:: lsetxattr(path, attr, value, flags=0)
+
+   This works exactly like :func:`setxattr` but doesn't follow symlinks.
+
+   Availability: Linux
+
+   .. versionadded:: 3.3
+
 
 .. function:: lstat(path)
 
@@ -1758,6 +1857,17 @@ Files and Directories
    successfully removed.
 
 
+.. function:: removexattr(path, attr)
+
+   Removes the extended filesystem attribute *attr* from *path*. *attr* should
+   be bytes or str. If it is a string, it is encoded with the filesystem
+   encoding.
+
+   Availability: Linux
+
+   .. versionadded:: 3.3
+
+
 .. function:: rename(src, dst)
 
    Rename the file or directory *src* to *dst*.  If *dst* is a directory,
@@ -1792,6 +1902,44 @@ Files and Directories
    directory trees, :func:`shutil.rmtree` can be used.
 
    Availability: Unix, Windows.
+
+
+.. data:: XATTR_SIZE_MAX
+
+   The maximum size the value of an extended attribute can be. Currently, this
+   is 64 kilobytes on Linux.
+
+
+.. data:: XATTR_CREATE
+
+   This is a possible value for the flags argument in :func:`setxattr`. It
+   indicates the operation must create an attribute.
+
+
+.. data:: XATTR_REPLACE
+
+   This is a possible value for the flags argument in :func:`setxattr`. It
+   indicates the operation must replace an existing attribute.
+
+
+.. function:: setxattr(path, attr, value, flags=0)
+
+   Set the extended filesystem attribute *attr* on *path* to *value*. *attr*
+   must be a bytes or str with no embedded NULs. If it is str, it is encoded
+   with the filesystem encoding. *flags* may be :data:`XATTR_REPLACE` or
+   :data:`XATTR_CREATE`. If :data:`XATTR_REPLACE` is given and the attribute
+   does not exist, ``EEXISTS`` will be raised. If :data:`XATTR_CREATE` is given
+   and the attribute already exists, the attribute will not be created and
+   ``ENODATA`` will be raised.
+
+   Availability: Linux
+
+   .. note::
+
+      A bug in Linux kernel versions less than 2.6.39 caused the flags argument
+      to be ignored on some filesystems.
+
+   .. versionadded:: 3.3
 
 
 .. function:: stat(path)

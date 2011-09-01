@@ -107,6 +107,10 @@ corresponding Unix manual entries for more information on calls.");
 #include <sched.h>
 #endif
 
+#ifdef HAVE_ATTR_XATTR_H
+#include <attr/xattr.h>
+#endif
+
 #if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__APPLE__)
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
@@ -9950,6 +9954,384 @@ posix_mkfifoat(PyObject *self, PyObject *args)
 }
 #endif
 
+#ifdef HAVE_ATTR_XATTR_H
+
+static int
+try_getxattr(const char *path, const char *name,
+             ssize_t (*get)(const char *, const char *, void *, size_t),
+             Py_ssize_t buf_size, PyObject **res)
+{
+    PyObject *value;
+    Py_ssize_t len;
+
+    assert(buf_size <= XATTR_SIZE_MAX);
+    value = PyBytes_FromStringAndSize(NULL, buf_size);
+    if (!value)
+        return 0;
+    Py_BEGIN_ALLOW_THREADS;
+    len = get(path, name, PyBytes_AS_STRING(value), buf_size);
+    Py_END_ALLOW_THREADS;
+    if (len < 0) {
+        Py_DECREF(value);
+        if (errno == ERANGE) {
+            value = NULL;
+        }
+        else {
+            posix_error();
+            return 0;
+        }
+    }
+    else if (len != buf_size) {
+        /* Can only shrink. */
+        _PyBytes_Resize(&value, len);
+    }
+    *res = value;
+    return 1;
+}
+
+static PyObject *
+getxattr_common(const char *path, PyObject *name_obj,
+                ssize_t (*get)(const char *, const char *, void *, size_t))
+{
+    PyObject *value;
+    const char *name = PyBytes_AS_STRING(name_obj);
+
+    /* Try a small value first. */
+    if (!try_getxattr(path, name, get, 128, &value))
+        return NULL;
+    if (value)
+        return value;
+    /* Now the maximum possible one. */
+    if (!try_getxattr(path, name, get, XATTR_SIZE_MAX, &value))
+        return NULL;
+    assert(value);
+    return value;
+}
+
+PyDoc_STRVAR(posix_getxattr__doc__,
+"getxattr(path, attr) -> value\n\n\
+Return the value of extended attribute *name* on *path*.");
+
+static PyObject *
+posix_getxattr(PyObject *self, PyObject *args)
+{
+    PyObject *path, *res, *name;
+
+    if (!PyArg_ParseTuple(args, "O&O&:getxattr", PyUnicode_FSConverter, &path,
+                          PyUnicode_FSConverter, &name))
+        return NULL;
+    res = getxattr_common(PyBytes_AS_STRING(path), name, getxattr);
+    Py_DECREF(path);
+    Py_DECREF(name);
+    return res;
+}
+
+PyDoc_STRVAR(posix_lgetxattr__doc__,
+"lgetxattr(path, attr) -> value\n\n\
+Like getxattr but don't follow symlinks.");
+
+static PyObject *
+posix_lgetxattr(PyObject *self, PyObject *args)
+{
+    PyObject *path, *res, *name;
+
+    if (!PyArg_ParseTuple(args, "O&O&:lgetxattr", PyUnicode_FSConverter, &path,
+                          PyUnicode_FSConverter, &name))
+        return NULL;
+    res = getxattr_common(PyBytes_AS_STRING(path), name, lgetxattr);
+    Py_DECREF(path);
+    Py_DECREF(name);
+    return res;
+}
+
+static ssize_t
+wrap_fgetxattr(const char *path, const char *name, void *value, size_t size)
+{
+    /* Hack to share code. */
+    return fgetxattr((int)(Py_uintptr_t)path, name, value, size);
+}
+
+PyDoc_STRVAR(posix_fgetxattr__doc__,
+"fgetxattr(fd, attr) -> value\n\n\
+Like getxattr but operate on a fd instead of a path.");
+
+static PyObject *
+posix_fgetxattr(PyObject *self, PyObject *args)
+{
+    PyObject *res, *name;
+    int fd;
+
+    if (!PyArg_ParseTuple(args, "iO&:fgetxattr", &fd, PyUnicode_FSConverter, &name))
+        return NULL;
+    res = getxattr_common((const char *)(Py_uintptr_t)fd, name, wrap_fgetxattr);
+    Py_DECREF(name);
+    return res;
+}
+
+PyDoc_STRVAR(posix_setxattr__doc__,
+"setxattr(path, attr, value, flags=0)\n\n\
+Set extended attribute *attr* on *path* to *value*.");
+
+static PyObject *
+posix_setxattr(PyObject *self, PyObject *args)
+{
+    PyObject *path, *name;
+    Py_buffer data;
+    int flags = 0, err;
+
+    if (!PyArg_ParseTuple(args, "O&O&y*|i:setxattr", PyUnicode_FSConverter,
+                          &path, PyUnicode_FSConverter, &name, &data, &flags))
+        return NULL;
+    Py_BEGIN_ALLOW_THREADS;
+    err = setxattr(PyBytes_AS_STRING(path), PyBytes_AS_STRING(name),
+                   data.buf, data.len, flags);
+    Py_END_ALLOW_THREADS;
+    Py_DECREF(path);
+    Py_DECREF(name);
+    PyBuffer_Release(&data);
+    if (err)
+        return posix_error();
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(posix_lsetxattr__doc__,
+"lsetxattr(path, attr, value, flags=0)\n\n\
+Like setxattr but don't follow symlinks.");
+
+static PyObject *
+posix_lsetxattr(PyObject *self, PyObject *args)
+{
+    PyObject *path, *name;
+    Py_buffer data;
+    int flags = 0, err;
+
+    if (!PyArg_ParseTuple(args, "O&O&y*|i:lsetxattr", PyUnicode_FSConverter,
+                          &path, PyUnicode_FSConverter, &name, &data, &flags))
+        return NULL;
+    Py_BEGIN_ALLOW_THREADS;
+    err = lsetxattr(PyBytes_AS_STRING(path), PyBytes_AS_STRING(name),
+                    data.buf, data.len, flags);
+    Py_END_ALLOW_THREADS;
+    Py_DECREF(path);
+    Py_DECREF(name);
+    PyBuffer_Release(&data);
+    if (err)
+        return posix_error();
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(posix_fsetxattr__doc__,
+"fsetxattr(fd, attr, value, flags=0)\n\n\
+Like setxattr but operates on *fd* instead of a path.");
+
+static PyObject *
+posix_fsetxattr(PyObject *self, PyObject *args)
+{
+    Py_buffer data;
+    const char *name;
+    int fd, flags = 0, err;
+
+    if (!PyArg_ParseTuple(args, "iO&y*|i:fsetxattr", &fd, PyUnicode_FSConverter,
+                          &name, &data, &flags))
+        return NULL;
+    Py_BEGIN_ALLOW_THREADS;
+    err = fsetxattr(fd, PyBytes_AS_STRING(name), data.buf, data.len, flags);
+    Py_END_ALLOW_THREADS;
+    Py_DECREF(name);
+    PyBuffer_Release(&data);
+    if (err)
+        return posix_error();
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(posix_removexattr__doc__,
+"removexattr(path, attr)\n\n\
+Remove extended attribute *attr* on *path*.");
+
+static PyObject *
+posix_removexattr(PyObject *self, PyObject *args)
+{
+    PyObject *path, *name;
+    int err;
+
+    if (!PyArg_ParseTuple(args, "O&O&:removexattr", PyUnicode_FSConverter, &path,
+                          PyUnicode_FSConverter, &name))
+        return NULL;
+    Py_BEGIN_ALLOW_THREADS;
+    err = removexattr(PyBytes_AS_STRING(path), PyBytes_AS_STRING(name));
+    Py_END_ALLOW_THREADS;
+    Py_DECREF(path);
+    Py_DECREF(name);
+    if (err)
+        return posix_error();
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(posix_lremovexattr__doc__,
+"lremovexattr(path, attr)\n\n\
+Like removexattr but don't follow symlinks.");
+
+static PyObject *
+posix_lremovexattr(PyObject *self, PyObject *args)
+{
+    PyObject *path, *name;
+    int err;
+
+    if (!PyArg_ParseTuple(args, "O&O&:lremovexattr", PyUnicode_FSConverter, &path,
+                          PyUnicode_FSConverter, &name))
+        return NULL;
+    Py_BEGIN_ALLOW_THREADS;
+    err = lremovexattr(PyBytes_AS_STRING(path), PyBytes_AS_STRING(name));
+    Py_END_ALLOW_THREADS;
+    Py_DECREF(path);
+    Py_DECREF(name);
+    if (err)
+        return posix_error();
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(posix_fremovexattr__doc__,
+"fremovexattr(fd, attr)\n\n\
+Like removexattr but operates on a file descriptor.");
+
+static PyObject *
+posix_fremovexattr(PyObject *self, PyObject *args)
+{
+    PyObject *name;
+    int fd, err;
+
+    if (!PyArg_ParseTuple(args, "iO&:fremovexattr", &fd,
+                          PyUnicode_FSConverter, &name))
+        return NULL;
+    Py_BEGIN_ALLOW_THREADS;
+    err = fremovexattr(fd, PyBytes_AS_STRING(name));
+    Py_END_ALLOW_THREADS;
+    Py_DECREF(name);
+    if (err)
+        return posix_error();
+    Py_RETURN_NONE;
+}
+
+static Py_ssize_t
+try_listxattr(const char *path, ssize_t (*list)(const char *, char *, size_t),
+              Py_ssize_t buf_size, char **buf)
+{
+    Py_ssize_t len;
+
+    *buf = PyMem_MALLOC(buf_size);
+    if (!*buf) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    Py_BEGIN_ALLOW_THREADS;
+    len = list(path, *buf, buf_size);
+    Py_END_ALLOW_THREADS;
+    if (len < 0) {
+        PyMem_FREE(*buf);
+        if (errno != ERANGE)
+            posix_error();
+        return -1;
+    }
+    return len;
+}
+
+static PyObject *
+listxattr_common(const char *path, ssize_t (*list)(const char *, char *, size_t))
+{
+    PyObject *res, *attr;
+    Py_ssize_t len, err, start, i;
+    char *buf;
+
+    len = try_listxattr(path, list, 256, &buf);
+    if (len < 0) {
+        if (PyErr_Occurred())
+            return NULL;
+        len = try_listxattr(path, list, XATTR_LIST_MAX, &buf);
+        if (len < 0)
+            return NULL;
+    }
+    res = PyList_New(0);
+    if (!res) {
+        PyMem_FREE(buf);
+        return NULL;
+    }
+    for (start = i = 0; i < len; i++) {
+        if (!buf[i]) {
+            attr = PyUnicode_DecodeFSDefaultAndSize(&buf[start], i - start);
+            if (!attr) {
+                Py_DECREF(res);
+                PyMem_FREE(buf);
+                return NULL;
+            }
+            err = PyList_Append(res, attr);
+            Py_DECREF(attr);
+            if (err) {
+                Py_DECREF(res);
+                PyMem_FREE(buf);
+                return NULL;
+            }
+            start = i + 1;
+        }
+    }
+    PyMem_FREE(buf);
+    return res;
+}
+
+PyDoc_STRVAR(posix_listxattr__doc__,
+"listxattr(path)\n\n\
+Return a list of extended attributes on *path*.");
+
+static PyObject *
+posix_listxattr(PyObject *self, PyObject *args)
+{
+    PyObject *path, *res;
+
+    if (!PyArg_ParseTuple(args, "O&:listxattr", PyUnicode_FSConverter, &path))
+        return NULL;
+    res = listxattr_common(PyBytes_AS_STRING(path), listxattr);
+    Py_DECREF(path);
+    return res;
+}
+
+PyDoc_STRVAR(posix_llistxattr__doc__,
+"llistxattr(path)\n\n\
+Like listxattr but don't follow symlinks..");
+
+static PyObject *
+posix_llistxattr(PyObject *self, PyObject *args)
+{
+    PyObject *path, *res;
+
+    if (!PyArg_ParseTuple(args, "O&:llistxattr", PyUnicode_FSConverter, &path))
+        return NULL;
+    res = listxattr_common(PyBytes_AS_STRING(path), llistxattr);
+    Py_DECREF(path);
+    return res;
+}
+
+static ssize_t
+wrap_flistxattr(const char *path, char *buf, size_t len)
+{
+    /* Hack to share code. */
+    return flistxattr((int)(Py_uintptr_t)path, buf, len);
+}
+
+PyDoc_STRVAR(posix_flistxattr__doc__,
+"flistxattr(path)\n\n\
+Like flistxattr but operates on a file descriptor.");
+
+static PyObject *
+posix_flistxattr(PyObject *self, PyObject *args)
+{
+    long fd;
+
+    if (!PyArg_ParseTuple(args, "i:flistxattr", &fd))
+        return NULL;
+    return listxattr_common((const char *)(Py_uintptr_t)fd, wrap_flistxattr);
+}
+
+#endif /* HAVE_ATTR_XATTR_H */
+
 static PyMethodDef posix_methods[] = {
     {"access",          posix_access, METH_VARARGS, posix_access__doc__},
 #ifdef HAVE_TTYNAME
@@ -10399,6 +10781,20 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_MKFIFOAT
     {"mkfifoat",        posix_mkfifoat, METH_VARARGS, posix_mkfifoat__doc__},
 #endif
+#ifdef HAVE_ATTR_XATTR_H
+    {"setxattr", posix_setxattr, METH_VARARGS, posix_setxattr__doc__},
+    {"lsetxattr", posix_lsetxattr, METH_VARARGS, posix_lsetxattr__doc__},
+    {"fsetxattr", posix_fsetxattr, METH_VARARGS, posix_fsetxattr__doc__},
+    {"getxattr", posix_getxattr, METH_VARARGS, posix_getxattr__doc__},
+    {"lgetxattr", posix_lgetxattr, METH_VARARGS, posix_lgetxattr__doc__},
+    {"fgetxattr", posix_fgetxattr, METH_VARARGS, posix_fgetxattr__doc__},
+    {"removexattr", posix_removexattr, METH_VARARGS, posix_removexattr__doc__},
+    {"lremovexattr", posix_lremovexattr, METH_VARARGS, posix_lremovexattr__doc__},
+    {"fremovexattr", posix_fremovexattr, METH_VARARGS, posix_fremovexattr__doc__},
+    {"listxattr", posix_listxattr, METH_VARARGS, posix_listxattr__doc__},
+    {"llistxattr", posix_llistxattr, METH_VARARGS, posix_llistxattr__doc__},
+    {"flistxattr", posix_flistxattr, METH_VARARGS, posix_flistxattr__doc__},
+#endif
     {NULL,              NULL}            /* Sentinel */
 };
 
@@ -10846,6 +11242,12 @@ all_ins(PyObject *d)
 #ifdef SCHED_RESET_ON_FORK
     if (ins(d, "SCHED_RESET_ON_FORK", (long)SCHED_RESET_ON_FORK)) return -1;
 #endif
+#endif
+
+#ifdef HAVE_ATTR_XATTR_H
+    if (ins(d, "XATTR_CREATE", (long)XATTR_CREATE)) return -1;
+    if (ins(d, "XATTR_REPLACE", (long)XATTR_REPLACE)) return -1;
+    if (ins(d, "XATTR_SIZE_MAX", (long)XATTR_SIZE_MAX)) return -1;
 #endif
 
 #if defined(PYOS_OS2)

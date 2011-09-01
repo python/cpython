@@ -64,6 +64,9 @@
 /* Define if GCC supports __attribute__((format(PyArg_ParseTuple, 2, 3))) */
 #undef HAVE_ATTRIBUTE_FORMAT_PARSETUPLE
 
+/* Define to 1 if you have the <attr/xattr.h> header file. */
+#undef HAVE_ATTR_XATTR_H
+
 /* Define to 1 if you have the `bind_textdomain_codeset' function. */
 #undef HAVE_BIND_TEXTDOMAIN_CODESET
 
