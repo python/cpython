@@ -10,6 +10,9 @@ What's New in Python 3.2.3?
 Core and Builtins
 -----------------
 
+- Accept bytes for the AST string type. This is temporary until a proper fix in
+  3.3.
+
 - Issue #9200: The str.is* methods now work with strings that contain non-BMP
   characters even in narrow Unicode builds.
 
