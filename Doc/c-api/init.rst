@@ -126,7 +126,7 @@ Process-wide parameters
    program name is ``'/usr/local/bin/python'``, the prefix is ``'/usr/local'``. The
    returned string points into static storage; the caller should not modify its
    value.  This corresponds to the :makevar:`prefix` variable in the top-level
-   :file:`Makefile` and the :option:`--prefix` argument to the :program:`configure`
+   :file:`Makefile` and the ``--prefix`` argument to the :program:`configure`
    script at build time.  The value is available to Python code as ``sys.prefix``.
    It is only useful on Unix.  See also the next function.
 
@@ -139,7 +139,7 @@ Process-wide parameters
    program name is ``'/usr/local/bin/python'``, the exec-prefix is
    ``'/usr/local'``.  The returned string points into static storage; the caller
    should not modify its value.  This corresponds to the :makevar:`exec_prefix`
-   variable in the top-level :file:`Makefile` and the :option:`--exec-prefix`
+   variable in the top-level :file:`Makefile` and the ``--exec-prefix``
    argument to the :program:`configure` script at build  time.  The value is
    available to Python code as ``sys.exec_prefix``.  It is only useful on Unix.
 
