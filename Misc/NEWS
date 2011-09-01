@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #12802: the Windows error ERROR_DIRECTORY (numbered 267) is now
+  mapped to POSIX errno ENOTDIR (previously EINVAL).
+
 - Issue #9200: The str.is* methods now work with strings that contain non-BMP
   characters even in narrow Unicode builds.
 
