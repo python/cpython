@@ -22,8 +22,8 @@ structs and the intended conversion to/from Python values.
    alignment is taken into account when unpacking.  This behavior is chosen so
    that the bytes of a packed struct correspond exactly to the layout in memory
    of the corresponding C struct.  To handle platform-independent data formats
-   or omit implicit pad bytes, use `standard` size and alignment instead of
-   `native` size and alignment: see :ref:`struct-alignment` for details.
+   or omit implicit pad bytes, use ``standard`` size and alignment instead of
+   ``native`` size and alignment: see :ref:`struct-alignment` for details.
 
 Functions and Exceptions
 ------------------------

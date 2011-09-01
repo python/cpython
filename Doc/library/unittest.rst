@@ -307,7 +307,7 @@ as the start directory.
 
     Test discovery loads tests by importing them. Once test discovery has
     found all the test files from the start directory you specify it turns the
-    paths into package names to import. For example `foo/bar/baz.py` will be
+    paths into package names to import. For example :file:`foo/bar/baz.py` will be
     imported as ``foo.bar.baz``.
 
     If you have a package installed globally and attempt test discovery on
@@ -905,11 +905,11 @@ Test cases
    +---------------------------------------------------------+--------------------------------------+------------+
    | Method                                                  | Checks that                          | New in     |
    +=========================================================+======================================+============+
-   | :meth:`assertRaises(exc, fun, *args, **kwds)            | ``fun(*args, **kwds)`` raises `exc`  |            |
+   | :meth:`assertRaises(exc, fun, *args, **kwds)            | ``fun(*args, **kwds)`` raises *exc*  |            |
    | <TestCase.assertRaises>`                                |                                      |            |
    +---------------------------------------------------------+--------------------------------------+------------+
-   | :meth:`assertRaisesRegexp(exc, re, fun, *args, **kwds)  | ``fun(*args, **kwds)`` raises `exc`  | 2.7        |
-   | <TestCase.assertRaisesRegexp>`                          | and the message matches `re`         |            |
+   | :meth:`assertRaisesRegexp(exc, re, fun, *args, **kwds)  | ``fun(*args, **kwds)`` raises *exc*  | 2.7        |
+   | <TestCase.assertRaisesRegexp>`                          | and the message matches *re*         |            |
    +---------------------------------------------------------+--------------------------------------+------------+
 
    .. method:: assertRaises(exception, callable, *args, **kwds)
@@ -995,7 +995,7 @@ Test cases
    | <TestCase.assertItemsEqual>`          | works with unhashable objs     |              |
    +---------------------------------------+--------------------------------+--------------+
    | :meth:`assertDictContainsSubset(a, b) | all the key/value pairs        | 2.7          |
-   | <TestCase.assertDictContainsSubset>`  | in `a` exist in `b`            |              |
+   | <TestCase.assertDictContainsSubset>`  | in *a* exist in *b*            |              |
    +---------------------------------------+--------------------------------+--------------+
 
 

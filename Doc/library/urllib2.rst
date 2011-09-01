@@ -36,7 +36,7 @@ The :mod:`urllib2` module defines the following functions:
    :mimetype:`application/x-www-form-urlencoded` format.  The
    :func:`urllib.urlencode` function takes a mapping or sequence of 2-tuples and
    returns a string in this format. urllib2 module sends HTTP/1.1 requests with
-   `Connection:close` header included.
+   ``Connection:close`` header included.
 
    The optional *timeout* parameter specifies a timeout in seconds for blocking
    operations like the connection attempt (if not specified, the global default
