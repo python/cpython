@@ -251,13 +251,16 @@ class Config:
 
         ext_modules = self.dist.ext_modules
         for section_key in content:
-            labels = section_key.split('=')
+            # no str.partition in 2.4 :(
+            labels = section_key.split(':')
             if len(labels) == 2 and labels[0] == 'extension':
-                # labels[1] not used from now but should be implemented
-                # for extension build dependency
                 values_dct = content[section_key]
+                if 'name' in values_dct:
+                    raise PackagingOptionError(
+                        'extension name should be given as [extension: name], '
+                        'not as key')
                 ext_modules.append(Extension(
-                    values_dct.pop('name'),
+                    labels[1].strip(),
                     _pop_values(values_dct, 'sources'),
                     _pop_values(values_dct, 'include_dirs'),
                     _pop_values(values_dct, 'define_macros'),
