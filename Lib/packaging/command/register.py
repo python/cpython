@@ -2,7 +2,6 @@
 
 # Contributed by Richard Jones
 
-import io
 import getpass
 import urllib.error
 import urllib.parse

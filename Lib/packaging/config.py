@@ -216,7 +216,7 @@ class Config:
             for data in files.get('package_data', []):
                 data = data.split('=')
                 if len(data) != 2:
-                    continue  # XXX error should never pass silently
+                    continue  # FIXME errors should never pass silently
                 key, value = data
                 self.dist.package_data[key.strip()] = value.strip()
 
