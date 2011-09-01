@@ -464,13 +464,13 @@ def call(*popenargs, timeout=None, **kwargs):
 
     retcode = call(["ls", "-l"])
     """
-    p = Popen(*popenargs, **kwargs)
-    try:
-        return p.wait(timeout=timeout)
-    except TimeoutExpired:
-        p.kill()
-        p.wait()
-        raise
+    with Popen(*popenargs, **kwargs) as p:
+        try:
+            return p.wait(timeout=timeout)
+        except:
+            p.kill()
+            p.wait()
+            raise
 
 
 def check_call(*popenargs, **kwargs):
@@ -514,16 +514,20 @@ def check_output(*popenargs, timeout=None, **kwargs):
     """
     if 'stdout' in kwargs:
         raise ValueError('stdout argument not allowed, it will be overridden.')
-    process = Popen(*popenargs, stdout=PIPE, **kwargs)
-    try:
-        output, unused_err = process.communicate(timeout=timeout)
-    except TimeoutExpired:
-        process.kill()
-        output, unused_err = process.communicate()
-        raise TimeoutExpired(process.args, timeout, output=output)
-    retcode = process.poll()
-    if retcode:
-        raise CalledProcessError(retcode, process.args, output=output)
+    with Popen(*popenargs, stdout=PIPE, **kwargs) as process:
+        try:
+            output, unused_err = process.communicate(timeout=timeout)
+        except TimeoutExpired:
+            process.kill()
+            output, unused_err = process.communicate()
+            raise TimeoutExpired(process.args, timeout, output=output)
+        except:
+            process.kill()
+            process.wait()
+            raise
+        retcode = process.poll()
+        if retcode:
+            raise CalledProcessError(retcode, process.args, output=output)
     return output
 
 
@@ -618,11 +622,19 @@ def getstatusoutput(cmd):
     >>> subprocess.getstatusoutput('/bin/junk')
     (256, 'sh: /bin/junk: not found')
     """
-    pipe = os.popen('{ ' + cmd + '; } 2>&1', 'r')
-    text = pipe.read()
-    sts = pipe.close()
-    if sts is None: sts = 0
-    if text[-1:] == '\n': text = text[:-1]
+    with os.popen('{ ' + cmd + '; } 2>&1', 'r') as pipe:
+        try:
+            text = pipe.read()
+            sts = pipe.close()
+        except:
+            process = pipe._proc
+            process.kill()
+            process.wait()
+            raise
+    if sts is None:
+        sts = 0
+    if text[-1:] == '\n':
+        text = text[:-1]
     return sts, text
 
 
