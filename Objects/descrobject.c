@@ -846,16 +846,13 @@ PyDictProxy_New(PyObject *dict)
 /* This has no reason to be in this file except that adding new files is a
    bit of a pain */
 
-/* forward */
-static PyTypeObject wrappertype;
-
 typedef struct {
     PyObject_HEAD
     PyWrapperDescrObject *descr;
     PyObject *self;
 } wrapperobject;
 
-#define Wrapper_Check(v) (Py_TYPE(v) == &wrappertype)
+#define Wrapper_Check(v) (Py_TYPE(v) == &_PyMethodWrapper_Type)
 
 static void
 wrapper_dealloc(wrapperobject *wp)
@@ -1021,7 +1018,7 @@ wrapper_traverse(PyObject *self, visitproc visit, void *arg)
     return 0;
 }
 
-static PyTypeObject wrappertype = {
+PyTypeObject _PyMethodWrapper_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "method-wrapper",                           /* tp_name */
     sizeof(wrapperobject),                      /* tp_basicsize */
@@ -1070,7 +1067,7 @@ PyWrapper_New(PyObject *d, PyObject *self)
     assert(_PyObject_RealIsSubclass((PyObject *)Py_TYPE(self),
                                     (PyObject *)PyDescr_TYPE(descr)));
 
-    wp = PyObject_GC_New(wrapperobject, &wrappertype);
+    wp = PyObject_GC_New(wrapperobject, &_PyMethodWrapper_Type);
     if (wp != NULL) {
         Py_INCREF(descr);
         wp->descr = descr;
