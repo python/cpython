@@ -83,11 +83,12 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: bool([x])
 
-   Convert a value to a Boolean, using the standard truth testing procedure.  If
-   *x* is false or omitted, this returns :const:`False`; otherwise it returns
-   :const:`True`. :class:`bool` is also a class, which is a subclass of
-   :class:`int`. Class :class:`bool` cannot be subclassed further.  Its only
-   instances are :const:`False` and :const:`True`.
+   Convert a value to a Boolean, using the standard :ref:`truth testing
+   procedure <truth>`.  If *x* is false or omitted, this returns ``False``;
+   otherwise it returns ``True``. :class:`bool` is also a class, which is a
+   subclass of :class:`int` (see :ref:`typesnumeric`).  Class :class:`bool`
+   cannot be subclassed further.  Its only instances are ``False`` and
+   ``True`` (see :ref:`bltin-boolean-values`).
 
    .. index:: pair: Boolean; type
 
@@ -1055,7 +1056,7 @@ are always available.  They are listed here in alphabetical order.
 
    Range objects implement the :class:`collections.Sequence` ABC, and provide
    features such as containment tests, element index lookup, slicing and
-   support for negative indices:
+   support for negative indices (see :ref:`typesseq`):
 
       >>> r = range(0, 20, 2)
       >>> r
