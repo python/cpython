@@ -271,6 +271,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #12494: On error, call(), check_call(), check_output() and
+  getstatusoutput() functions of the subprocess module now kill the process,
+  read its status (to avoid zombis) and close pipes.
+
 - Issue #12720: Expose low-level Linux extended file attribute functions in os.
 
 - Issue #10946: The distutils commands bdist_dumb, bdist_wininst and bdist_msi
