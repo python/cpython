@@ -575,13 +575,13 @@ properties, will be invoked and :meth:`__getattr__` and :meth:`__getattribute__`
 may be called.
 
 For cases where you want passive introspection, like documentation tools, this
-can be inconvenient. `getattr_static` has the same signature as :func:`getattr`
+can be inconvenient. :func:`getattr_static` has the same signature as :func:`getattr`
 but avoids executing code when it fetches attributes.
 
 .. function:: getattr_static(obj, attr, default=None)
 
    Retrieve attributes without triggering dynamic lookup via the
-   descriptor protocol, `__getattr__` or `__getattribute__`.
+   descriptor protocol, :meth:`__getattr__` or :meth:`__getattribute__`.
 
    Note: this function may not be able to retrieve all attributes
    that getattr can fetch (like dynamically created attributes)
@@ -589,12 +589,12 @@ but avoids executing code when it fetches attributes.
    that raise AttributeError). It can also return descriptors objects
    instead of instance members.
 
-   If the instance `__dict__` is shadowed by another member (for example a
+   If the instance :attr:`__dict__` is shadowed by another member (for example a
    property) then this function will be unable to find instance members.
 
    .. versionadded:: 3.2
 
-`getattr_static` does not resolve descriptors, for example slot descriptors or
+:func:`getattr_static` does not resolve descriptors, for example slot descriptors or
 getset descriptors on objects implemented in C. The descriptor object
 is returned instead of the underlying attribute.
 

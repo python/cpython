@@ -473,15 +473,6 @@ calling another function by using ``*`` and ``**``::
        ...
        g(x, *args, **kwargs)
 
-In the unlikely case that you care about Python versions older than 2.0, use
-:func:`apply`::
-
-   def f(x, *args, **kwargs):
-       ...
-       kwargs['width'] = '14.3c'
-       ...
-       apply(g, (x,)+args, kwargs)
-
 
 How do I write a function with output parameters (call by reference)?
 ---------------------------------------------------------------------
