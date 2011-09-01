@@ -1,16 +1,17 @@
 #! /usr/bin/env python3
 
+import getopt
 import os
 import os.path
-import sys
-import getopt
 import re
 import socket
-import time
+import subprocess
+import sys
 import threading
+import time
+import tokenize
 import traceback
 import types
-import subprocess
 
 import linecache
 from code import InteractiveInterpreter
@@ -572,7 +573,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def execfile(self, filename, source=None):
         "Execute an existing file"
         if source is None:
-            with open(filename, "r") as fp:
+            with tokenize.open(filename) as fp:
                 source = fp.read()
         try:
             code = compile(source, filename, "exec")
