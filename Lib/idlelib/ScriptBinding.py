@@ -67,25 +67,20 @@ class ScriptBinding:
 
     def tabnanny(self, filename):
         # XXX: tabnanny should work on binary files as well
-        with open(filename, 'r', encoding='iso-8859-1') as f:
-            two_lines = f.readline() + f.readline()
-        encoding = IOBinding.coding_spec(two_lines)
-        if not encoding:
-            encoding = 'utf-8'
-        f = open(filename, 'r', encoding=encoding)
-        try:
-            tabnanny.process_tokens(tokenize.generate_tokens(f.readline))
-        except tokenize.TokenError as msg:
-            msgtxt, (lineno, start) = msg
-            self.editwin.gotoline(lineno)
-            self.errorbox("Tabnanny Tokenizing Error",
-                          "Token Error: %s" % msgtxt)
-            return False
-        except tabnanny.NannyNag as nag:
-            # The error messages from tabnanny are too confusing...
-            self.editwin.gotoline(nag.get_lineno())
-            self.errorbox("Tab/space error", indent_message)
-            return False
+        with tokenize.open(filename) as f:
+            try:
+                tabnanny.process_tokens(tokenize.generate_tokens(f.readline))
+            except tokenize.TokenError as msg:
+                msgtxt, (lineno, start) = msg
+                self.editwin.gotoline(lineno)
+                self.errorbox("Tabnanny Tokenizing Error",
+                              "Token Error: %s" % msgtxt)
+                return False
+            except tabnanny.NannyNag as nag:
+                # The error messages from tabnanny are too confusing...
+                self.editwin.gotoline(nag.get_lineno())
+                self.errorbox("Tab/space error", indent_message)
+                return False
         return True
 
     def checksyntax(self, filename):
