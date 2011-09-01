@@ -492,7 +492,7 @@ Glossary
       :func:`builtins.open` and :func:`os.open` are distinguished by their
       namespaces.  Namespaces also aid readability and maintainability by making
       it clear which module implements a function.  For instance, writing
-      :func:`random.seed` or :func:`itertools.izip` makes it clear that those
+      :func:`random.seed` or :func:`itertools.islice` makes it clear that those
       functions are implemented by the :mod:`random` and :mod:`itertools`
       modules, respectively.
 
