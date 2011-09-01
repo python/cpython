@@ -1558,6 +1558,9 @@ _Py_ReadyTypes(void)
     if (PyType_Ready(&PyWrapperDescr_Type) < 0)
         Py_FatalError("Can't initialize wrapper type");
 
+    if (PyType_Ready(&_PyMethodWrapper_Type) < 0)
+        Py_FatalError("Can't initialize method wrapper type");
+
     if (PyType_Ready(&PyEllipsis_Type) < 0)
         Py_FatalError("Can't initialize ellipsis type");
 
