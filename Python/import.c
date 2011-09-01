@@ -2064,7 +2064,9 @@ PyImport_ImportModuleNoBlock(const char *name)
 {
     PyObject *result;
     PyObject *modules;
+#ifdef WITH_THREAD
     long me;
+#endif
 
     /* Try to get the module from sys.modules[name] */
     modules = PyImport_GetModuleDict();
