@@ -6090,7 +6090,7 @@ $as_echo "#define STDC_HEADERS 1" >>confdefs.h
 
 fi
 
-for ac_header in asm/types.h conio.h curses.h direct.h dlfcn.h errno.h \
+for ac_header in asm/types.h attr/xattr.h conio.h curses.h direct.h dlfcn.h errno.h \
 fcntl.h grp.h \
 ieeefp.h io.h langinfo.h libintl.h ncurses.h poll.h process.h pthread.h \
 sched.h shadow.h signal.h stdint.h stropts.h termios.h \
