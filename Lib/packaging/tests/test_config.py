@@ -6,7 +6,7 @@ from io import StringIO
 
 from packaging import command
 from packaging.dist import Distribution
-from packaging.errors import PackagingFileError
+from packaging.errors import PackagingFileError, PackagingOptionError
 from packaging.compiler import new_compiler, _COMPILERS
 from packaging.command.sdist import sdist
 
@@ -100,21 +100,20 @@ sub_commands = foo
 
 # Can not be merged with SETUP_CFG else install_dist
 # command will fail when trying to compile C sources
+# TODO use a DummyCommand to mock build_ext
 EXT_SETUP_CFG = """
 [files]
 packages = one
            two
 
-[extension=speed_coconuts]
-name = one.speed_coconuts
+[extension:one.speed_coconuts]
 sources = c_src/speed_coconuts.c
 extra_link_args = "`gcc -print-file-name=libgcc.a`" -shared
 define_macros = HAVE_CAIRO HAVE_GTK2
 libraries = gecodeint gecodekernel -- sys.platform != 'win32'
     GecodeInt GecodeKernel -- sys.platform == 'win32'
 
-[extension=fast_taunt]
-name = two.fast_taunt
+[extension: two.fast_taunt]
 sources = cxx_src/utils_taunt.cxx
           cxx_src/python_module.cxx
 include_dirs = /usr/include/gecode
@@ -123,7 +122,11 @@ extra_compile_args = -fPIC -O2
     -DGECODE_VERSION=$(./gecode_version) -- sys.platform != 'win32'
     /DGECODE_VERSION='win32' -- sys.platform == 'win32'
 language = cxx
+"""
 
+EXT_SETUP_CFG_BUGGY_1 = """
+[extension: realname]
+name = crash_here
 """
 
 HOOKS_MODULE = """
@@ -334,6 +337,9 @@ class ConfigTestCase(support.TempdirManager,
             cargs.append('-DGECODE_VERSION=$(./gecode_version)')
         self.assertEqual(ext.extra_compile_args, cargs)
         self.assertEqual(ext.language, 'cxx')
+
+        self.write_file('setup.cfg', EXT_SETUP_CFG_BUGGY_1)
+        self.assertRaises(PackagingOptionError, self.get_dist)
 
     def test_project_setup_hook_works(self):
         # Bug #11637: ensure the project directory is on sys.path to allow
