@@ -174,6 +174,9 @@ faulthandler._fatal_error(b'xyz')
             2,
             'xyz')
 
+    @unittest.skipIf(sys.platform.startswith('openbsd') and HAVE_THREADS,
+                     "Issue #12868: sigaltstack() doesn't work on "
+                     "OpenBSD if Python is compiled with pthread")
     @unittest.skipIf(not hasattr(faulthandler, '_stack_overflow'),
                      'need faulthandler._stack_overflow()')
     def test_stack_overflow(self):
