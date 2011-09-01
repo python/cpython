@@ -543,7 +543,7 @@ with multithreading-DLL options (``/MD``).
 
 If you can't change compilers or flags, try using :c:func:`Py_RunSimpleString`.
 A trick to get it to run an arbitrary file is to construct a call to
-:func:`execfile` with the name of your file as argument.
+:func:`exec` and :func:`open` with the name of your file as argument.
 
 Also note that you can not mix-and-match Debug and Release versions.  If you
 wish to use the Debug Multithreaded DLL, then your module *must* have ``_d``
