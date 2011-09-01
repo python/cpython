@@ -723,7 +723,7 @@ Test cases
    Here, we create two instances of :class:`WidgetTestCase`, each of which runs a
    single test.
 
-   .. versionchanged::
+   .. versionchanged:: 3.2
       :class:`TestCase` can be instantiated successfully without providing a method
       name. This makes it easier to experiment with :class:`TestCase` from the
       interactive interpreter.
