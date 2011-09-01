@@ -90,34 +90,6 @@ This module contains various helpers for the other modules.
    Search the path for a given executable name.
 
 
-.. function:: subst_vars(s, local_vars)
-
-   Perform shell/Perl-style variable substitution on *s*.  Every occurrence of
-   ``$`` followed by a name is considered a variable, and variable is
-   substituted by the value found in the *local_vars* dictionary, or in
-   ``os.environ`` if it's not in *local_vars*. *os.environ* is first
-   checked/augmented to guarantee that it contains certain values: see
-   :func:`check_environ`.  Raise :exc:`ValueError` for any variables not found
-   in either *local_vars* or ``os.environ``.
-
-   Note that this is not a fully-fledged string interpolation function. A valid
-   ``$variable`` can consist only of upper and lower case letters, numbers and
-   an underscore. No { } or ( ) style quoting is available.
-
-
-.. function:: split_quoted(s)
-
-   Split a string up according to Unix shell-like rules for quotes and
-   backslashes. In short: words are delimited by spaces, as long as those spaces
-   are not escaped by a backslash, or inside a quoted string. Single and double
-   quotes are equivalent, and the quote characters can be backslash-escaped.
-   The backslash is stripped from any two-character escape sequence, leaving
-   only the escaped character.  The quote characters are stripped from any
-   quoted string.  Returns a list of words.
-
-   .. TODO Should probably be moved into the standard library.
-
-
 .. function:: execute(func, args[, msg=None, verbose=0, dry_run=0])
 
    Perform some action that affects the outside world (for instance, writing to
@@ -175,12 +147,3 @@ This module contains various helpers for the other modules.
    figure out to use direct compilation or not (see the source for details).
    The *direct* flag is used by the script generated in indirect mode; unless
    you know what you're doing, leave it set to ``None``.
-
-
-.. function:: rfc822_escape(header)
-
-   Return a version of *header* escaped for inclusion in an :rfc:`822` header, by
-   ensuring there are 8 spaces space after each newline.  Note that it does no
-   other modification of the string.
-
-   .. TODO this _can_ be replaced

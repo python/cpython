@@ -15,7 +15,7 @@ from packaging.errors import (
 from packaging import util
 from packaging.dist import Distribution
 from packaging.util import (
-    convert_path, change_root, split_quoted, strtobool, rfc822_escape,
+    convert_path, change_root, split_quoted, strtobool,
     get_compiler_versions, _MAC_OS_X_LD_VERSION, byte_compile, find_packages,
     spawn, get_pypirc_path, generate_pypirc, read_pypirc, resolve_name, iglob,
     RICH_GLOB, egginfo_to_distinfo, is_setuptools, is_distutils, is_packaging,
@@ -254,13 +254,6 @@ class UtilTestCase(support.EnvironRestorer,
 
         for n in no:
             self.assertFalse(strtobool(n))
-
-    def test_rfc822_escape(self):
-        header = 'I am a\npoor\nlonesome\nheader\n'
-        res = rfc822_escape(header)
-        wanted = ('I am a%(8s)spoor%(8s)slonesome%(8s)s'
-                  'header%(8s)s') % {'8s': '\n' + 8 * ' '}
-        self.assertEqual(res, wanted)
 
     def test_find_exe_version(self):
         # the ld version scheme under MAC OS is:
