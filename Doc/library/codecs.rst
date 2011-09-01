@@ -840,7 +840,7 @@ There's another encoding that is able to encoding the full range of Unicode
 characters: UTF-8. UTF-8 is an 8-bit encoding, which means there are no issues
 with byte order in UTF-8. Each byte in a UTF-8 byte sequence consists of two
 parts: Marker bits (the most significant bits) and payload bits. The marker bits
-are a sequence of zero to six 1 bits followed by a 0 bit. Unicode characters are
+are a sequence of zero to four ``1`` bits followed by a ``0`` bit. Unicode characters are
 encoded like this (with x being payload bits, which when concatenated give the
 Unicode character):
 
@@ -853,12 +853,7 @@ Unicode character):
 +-----------------------------------+----------------------------------------------+
 | ``U-00000800`` ... ``U-0000FFFF`` | 1110xxxx 10xxxxxx 10xxxxxx                   |
 +-----------------------------------+----------------------------------------------+
-| ``U-00010000`` ... ``U-001FFFFF`` | 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx          |
-+-----------------------------------+----------------------------------------------+
-| ``U-00200000`` ... ``U-03FFFFFF`` | 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx |
-+-----------------------------------+----------------------------------------------+
-| ``U-04000000`` ... ``U-7FFFFFFF`` | 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx |
-|                                   | 10xxxxxx                                     |
+| ``U-00010000`` ... ``U-0010FFFF`` | 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx          |
 +-----------------------------------+----------------------------------------------+
 
 The least significant bit of the Unicode character is the rightmost x bit.
