@@ -5,6 +5,7 @@ import sys
 import unittest
 import pickle
 import weakref
+import errno
 
 from test.support import (TESTFN, unlink, run_unittest, captured_output,
                           gc_collect, cpython_only)
@@ -848,6 +849,13 @@ class ExceptionTests(unittest.TestCase):
         else:
             self.fail("RuntimeError not raised")
         self.assertEqual(wr(), None)
+
+    def test_errno_ENOTDIR(self):
+        # Issue #12802: "not a directory" errors are ENOTDIR even on Windows
+        with self.assertRaises(OSError) as cm:
+            os.listdir(__file__)
+        self.assertEqual(cm.exception.errno, errno.ENOTDIR, cm.exception)
+
 
 def test_main():
     run_unittest(ExceptionTests)
