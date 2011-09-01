@@ -1,16 +1,17 @@
 #! /usr/bin/env python3
 
+import getopt
 import os
 import os.path
-import sys
-import getopt
 import re
 import socket
-import time
+import subprocess
+import sys
 import threading
+import time
+import tokenize
 import traceback
 import types
-import subprocess
 
 import linecache
 from code import InteractiveInterpreter
@@ -201,18 +202,18 @@ class PyShellEditorWindow(EditorWindow):
         breaks = self.breakpoints
         filename = self.io.filename
         try:
-            lines = open(self.breakpointPath,"r").readlines()
+            with open(self.breakpointPath, "r") as fp:
+                lines = fp.readlines()
         except IOError:
             lines = []
-        new_file = open(self.breakpointPath,"w")
-        for line in lines:
-            if not line.startswith(filename + '='):
-                new_file.write(line)
-        self.update_breakpoints()
-        breaks = self.breakpoints
-        if breaks:
-            new_file.write(filename + '=' + str(breaks) + '\n')
-        new_file.close()
+        with open(self.breakpointPath, "w") as new_file:
+            for line in lines:
+                if not line.startswith(filename + '='):
+                    new_file.write(line)
+            self.update_breakpoints()
+            breaks = self.breakpoints
+            if breaks:
+                new_file.write(filename + '=' + str(breaks) + '\n')
 
     def restore_file_breaks(self):
         self.text.update()   # this enables setting "BREAK" tags to be visible
@@ -220,7 +221,8 @@ class PyShellEditorWindow(EditorWindow):
         if filename is None:
             return
         if os.path.isfile(self.breakpointPath):
-            lines = open(self.breakpointPath,"r").readlines()
+            with open(self.breakpointPath, "r") as fp:
+                lines = fp.readlines()
             for line in lines:
                 if line.startswith(filename + '='):
                     breakpoint_linenumbers = eval(line[len(filename)+1:])
@@ -571,7 +573,8 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def execfile(self, filename, source=None):
         "Execute an existing file"
         if source is None:
-            source = open(filename, "r").read()
+            with tokenize.open(filename) as fp:
+                source = fp.read()
         try:
             code = compile(source, filename, "exec")
         except (OverflowError, SyntaxError):
