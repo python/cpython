@@ -393,7 +393,7 @@ class build_py(Command, Mixin2to3):
                            self.get_command_name())
             return
 
-        from packaging.util import byte_compile
+        from packaging.util import byte_compile  # FIXME use compileall
         prefix = self.build_lib
         if prefix[-1] != os.sep:
             prefix = prefix + os.sep

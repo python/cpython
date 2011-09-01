@@ -8,8 +8,6 @@ import errno
 import shutil
 import string
 import hashlib
-import tarfile
-import zipfile
 import posixpath
 import subprocess
 import sysconfig
@@ -22,6 +20,30 @@ from packaging import logger
 from packaging.errors import (PackagingPlatformError, PackagingFileError,
                               PackagingByteCompileError, PackagingExecError,
                               InstallationException, PackagingInternalError)
+
+__all__ = [
+    # file dependencies
+    'newer', 'newer_group',
+    # helpers for commands (dry-run system)
+    'execute', 'write_file',
+    # spawning programs
+    'find_executable', 'spawn',
+    # path manipulation
+    'convert_path', 'change_root',
+    # 2to3 conversion
+    'Mixin2to3', 'run_2to3',
+    # packaging compatibility helpers
+    'cfg_to_args', 'generate_setup_py',
+    'egginfo_to_distinfo',
+    'get_install_method',
+    # misc
+    'ask', 'check_environ', 'encode_multipart', 'resolve_name',
+    # querying for information  TODO move to sysconfig
+    'get_compiler_versions', 'get_platform', 'set_platform',
+    # configuration  TODO move to packaging.config
+    'get_pypirc_path', 'read_pypirc', 'generate_pypirc',
+    'strtobool', 'split_multiline',
+]
 
 _PLATFORM = None
 _DEFAULT_INSTALLER = 'packaging'
@@ -152,31 +174,6 @@ def check_environ():
     _environ_checked = True
 
 
-def subst_vars(s, local_vars):
-    """Perform shell/Perl-style variable substitution on 'string'.
-
-    Every occurrence of '$' followed by a name is considered a variable, and
-    variable is substituted by the value found in the 'local_vars'
-    dictionary, or in 'os.environ' if it's not in 'local_vars'.
-    'os.environ' is first checked/augmented to guarantee that it contains
-    certain values: see 'check_environ()'.  Raise ValueError for any
-    variables not found in either 'local_vars' or 'os.environ'.
-    """
-    check_environ()
-
-    def _subst(match, local_vars=local_vars):
-        var_name = match.group(1)
-        if var_name in local_vars:
-            return str(local_vars[var_name])
-        else:
-            return os.environ[var_name]
-
-    try:
-        return re.sub(r'\$([a-zA-Z_][a-zA-Z_0-9]*)', _subst, s)
-    except KeyError as var:
-        raise ValueError("invalid variable '$%s'" % var)
-
-
 # Needed by 'split_quoted()'
 _wordchars_re = _squote_re = _dquote_re = None
 
@@ -187,6 +184,8 @@ def _init_regex():
     _squote_re = re.compile(r"'(?:[^'\\]|\\.)*'")
     _dquote_re = re.compile(r'"(?:[^"\\]|\\.)*"')
 
+
+# TODO replace with shlex.split after testing
 
 def split_quoted(s):
     """Split a string up according to Unix shell-like rules for quotes and
@@ -435,15 +434,6 @@ byte_compile(files, optimize=%r, force=%r,
                               file, cfile_base)
 
 
-def rfc822_escape(header):
-    """Return a form of *header* suitable for inclusion in an RFC 822-header.
-
-    This function ensures there are 8 spaces after each newline.
-    """
-    lines = header.split('\n')
-    sep = '\n' + 8 * ' '
-    return sep.join(lines)
-
 _RE_VERSION = re.compile('(\d+\.\d+(\.\d+)*)')
 _MAC_OS_X_LD_VERSION = re.compile('^@\(#\)PROGRAM:ld  '
                                   'PROJECT:ld64-((\d+)(\.\d+)*)')
@@ -543,6 +533,10 @@ def write_file(filename, contents):
     """Create *filename* and write *contents* to it.
 
     *contents* is a sequence of strings without line terminators.
+
+    This functions is not intended to replace the usual with open + write
+    idiom in all cases, only with Command.execute, which runs depending on
+    the dry_run argument and also logs its arguments).
     """
     with open(filename, "w") as f:
         for line in contents:
@@ -562,6 +556,7 @@ def _is_archive_file(name):
 
 
 def _under(path, root):
+    # XXX use os.path
     path = path.split(os.sep)
     root = root.split(os.sep)
     if len(root) > len(path):
@@ -664,102 +659,10 @@ def splitext(path):
     return base, ext
 
 
-def unzip_file(filename, location, flatten=True):
-    """Unzip the file *filename* into the *location* directory."""
-    if not os.path.exists(location):
-        os.makedirs(location)
-    with open(filename, 'rb') as zipfp:
-        zip = zipfile.ZipFile(zipfp)
-        leading = has_leading_dir(zip.namelist()) and flatten
-        for name in zip.namelist():
-            data = zip.read(name)
-            fn = name
-            if leading:
-                fn = split_leading_dir(name)[1]
-            fn = os.path.join(location, fn)
-            dir = os.path.dirname(fn)
-            if not os.path.exists(dir):
-                os.makedirs(dir)
-            if fn.endswith('/') or fn.endswith('\\'):
-                # A directory
-                if not os.path.exists(fn):
-                    os.makedirs(fn)
-            else:
-                with open(fn, 'wb') as fp:
-                    fp.write(data)
-
-
-def untar_file(filename, location):
-    """Untar the file *filename* into the *location* directory."""
-    if not os.path.exists(location):
-        os.makedirs(location)
-    if filename.lower().endswith('.gz') or filename.lower().endswith('.tgz'):
-        mode = 'r:gz'
-    elif (filename.lower().endswith('.bz2')
-          or filename.lower().endswith('.tbz')):
-        mode = 'r:bz2'
-    elif filename.lower().endswith('.tar'):
-        mode = 'r'
-    else:
-        mode = 'r:*'
-    with tarfile.open(filename, mode) as tar:
-        leading = has_leading_dir(member.name for member in tar.getmembers())
-        for member in tar.getmembers():
-            fn = member.name
-            if leading:
-                fn = split_leading_dir(fn)[1]
-            path = os.path.join(location, fn)
-            if member.isdir():
-                if not os.path.exists(path):
-                    os.makedirs(path)
-            else:
-                try:
-                    fp = tar.extractfile(member)
-                except (KeyError, AttributeError):
-                    # Some corrupt tar files seem to produce this
-                    # (specifically bad symlinks)
-                    continue
-                try:
-                    if not os.path.exists(os.path.dirname(path)):
-                        os.makedirs(os.path.dirname(path))
-                        with open(path, 'wb') as destfp:
-                            shutil.copyfileobj(fp, destfp)
-                finally:
-                    fp.close()
-
-
-def has_leading_dir(paths):
-    """Return true if all the paths have the same leading path name.
-
-    In other words, check that everything is in one subdirectory in an
-    archive.
-    """
-    common_prefix = None
-    for path in paths:
-        prefix, rest = split_leading_dir(path)
-        if not prefix:
-            return False
-        elif common_prefix is None:
-            common_prefix = prefix
-        elif prefix != common_prefix:
-            return False
-    return True
-
-
-def split_leading_dir(path):
-    path = str(path)
-    path = path.lstrip('/').lstrip('\\')
-    if '/' in path and (('\\' in path and path.find('/') < path.find('\\'))
-                        or '\\' not in path):
-        return path.split('/', 1)
-    elif '\\' in path:
-        return path.split('\\', 1)
-    else:
-        return path, ''
-
 if sys.platform == 'darwin':
     _cfg_target = None
     _cfg_target_split = None
+
 
 def spawn(cmd, search_path=True, verbose=0, dry_run=False, env=None):
     """Run another program specified as a command list 'cmd' in a new process.
@@ -1510,7 +1413,7 @@ def encode_multipart(fields, files, boundary=None):
     for key, values in fields:
         # handle multiple entries for the same name
         if not isinstance(values, (tuple, list)):
-            values=[values]
+            values = [values]
 
         for value in values:
             l.extend((
