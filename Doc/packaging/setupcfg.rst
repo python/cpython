@@ -769,7 +769,9 @@ needs to have its options defined in a dedicated section.  Here's an example::
 
 The section name must start with ``extension:``; the right-hand part is used as
 the full name (including a parent package, if any) of the extension.  Whitespace
-around the extension name is allowed.
+around the extension name is allowed.  If the extension module is not standalone
+(e.g. ``_bisect``) but part of a package (e.g. ``thing._speedups``), the parent
+package must be listed in the ``packages`` field.
 Valid fields and their values are listed in the documentation of the
 :class:`packaging.compiler.extension.Extension` class; values documented as
 Python lists translate to multi-line values in the configuration file.  In
