@@ -13,6 +13,9 @@ Core and Builtins
 - Issue #12326: sys.platform is now always 'linux2' on Linux, even if Python
   is compiled on Linux 3.
 
+- Accept bytes for the AST string type. This is temporary until a proper fix in
+  3.3.
+
 Library
 -------
 
