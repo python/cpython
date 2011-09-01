@@ -546,7 +546,7 @@ A trick to get it to run an arbitrary file is to construct a call to
 :func:`execfile` with the name of your file as argument.
 
 Also note that you can not mix-and-match Debug and Release versions.  If you
-wish to use the Debug Multithreaded DLL, then your module *must* have an "_d"
+wish to use the Debug Multithreaded DLL, then your module *must* have ``_d``
 appended to the base name.
 
 
