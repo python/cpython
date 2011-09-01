@@ -293,7 +293,7 @@ used from the command line. The basic command-line usage is::
 
    As a shortcut, ``python -m unittest`` is the equivalent of
    ``python -m unittest discover``. If you want to pass arguments to test
-   discovery the `discover` sub-command must be used explicitly.
+   discovery the ``discover`` sub-command must be used explicitly.
 
 The ``discover`` sub-command has the following options:
 
@@ -305,11 +305,11 @@ The ``discover`` sub-command has the following options:
 
 .. cmdoption:: -s directory
 
-   Directory to start discovery ('.' default)
+   Directory to start discovery (``.`` default)
 
 .. cmdoption:: -p pattern
 
-   Pattern to match test files ('test*.py' default)
+   Pattern to match test files (``test*.py`` default)
 
 .. cmdoption:: -t directory
 
@@ -724,8 +724,8 @@ Test cases
    single test.
 
    .. versionchanged::
-      `TestCase` can be instantiated successfully without providing a method
-      name. This makes it easier to experiment with `TestCase` from the
+      :class:`TestCase` can be instantiated successfully without providing a method
+      name. This makes it easier to experiment with :class:`TestCase` from the
       interactive interpreter.
 
    *methodName* defaults to :meth:`runTest`.
@@ -940,17 +940,17 @@ Test cases
    +---------------------------------------------------------+--------------------------------------+------------+
    | Method                                                  | Checks that                          | New in     |
    +=========================================================+======================================+============+
-   | :meth:`assertRaises(exc, fun, *args, **kwds)            | ``fun(*args, **kwds)`` raises `exc`  |            |
+   | :meth:`assertRaises(exc, fun, *args, **kwds)            | ``fun(*args, **kwds)`` raises *exc*  |            |
    | <TestCase.assertRaises>`                                |                                      |            |
    +---------------------------------------------------------+--------------------------------------+------------+
-   | :meth:`assertRaisesRegex(exc, re, fun, *args, **kwds)   | ``fun(*args, **kwds)`` raises `exc`  | 3.1        |
-   | <TestCase.assertRaisesRegex>`                           | and the message matches `re`         |            |
+   | :meth:`assertRaisesRegex(exc, re, fun, *args, **kwds)   | ``fun(*args, **kwds)`` raises *exc*  | 3.1        |
+   | <TestCase.assertRaisesRegex>`                           | and the message matches *re*         |            |
    +---------------------------------------------------------+--------------------------------------+------------+
-   | :meth:`assertWarns(warn, fun, *args, **kwds)            | ``fun(*args, **kwds)`` raises `warn` | 3.2        |
+   | :meth:`assertWarns(warn, fun, *args, **kwds)            | ``fun(*args, **kwds)`` raises *warn* | 3.2        |
    | <TestCase.assertWarns>`                                 |                                      |            |
    +---------------------------------------------------------+--------------------------------------+------------+
-   | :meth:`assertWarnsRegex(warn, re, fun, *args, **kwds)   | ``fun(*args, **kwds)`` raises `warn` | 3.2        |
-   | <TestCase.assertWarnsRegex>`                            | and the message matches `re`         |            |
+   | :meth:`assertWarnsRegex(warn, re, fun, *args, **kwds)   | ``fun(*args, **kwds)`` raises *warn* | 3.2        |
+   | <TestCase.assertWarnsRegex>`                            | and the message matches *re*         |            |
    +---------------------------------------------------------+--------------------------------------+------------+
 
    .. method:: assertRaises(exception, callable, *args, **kwds)
@@ -1092,7 +1092,7 @@ Test cases
    | :meth:`assertNotRegex(s, re)          | ``not regex.search(s)``        | 3.2          |
    | <TestCase.assertNotRegex>`            |                                |              |
    +---------------------------------------+--------------------------------+--------------+
-   | :meth:`assertCountEqual(a, b)         | `a` and `b` have the same      | 3.2          |
+   | :meth:`assertCountEqual(a, b)         | *a* and *b* have the same      | 3.2          |
    | <TestCase.assertCountEqual>`          | elements in the same number,   |              |
    |                                       | regardless of their order      |              |
    +---------------------------------------+--------------------------------+--------------+
@@ -1887,7 +1887,7 @@ Loading and running tests
 .. class:: TextTestRunner(stream=None, descriptions=True, verbosity=1, runnerclass=None, warnings=None)
 
    A basic test runner implementation that outputs results to a stream. If *stream*
-   is `None`, the default, `sys.stderr` is used as the output stream. This class
+   is ``None``, the default, :data:`sys.stderr` is used as the output stream. This class
    has a few configurable parameters, but is essentially very simple.  Graphical
    applications which run test suites should provide alternate implementations.
 
@@ -1904,7 +1904,7 @@ Loading and running tests
       Added the ``warnings`` argument.
 
    .. versionchanged:: 3.2
-      The default stream is set to `sys.stderr` at instantiation time rather
+      The default stream is set to :data:`sys.stderr` at instantiation time rather
       than import time.
 
    .. method:: _makeResult()
