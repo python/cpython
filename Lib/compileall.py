@@ -1,4 +1,4 @@
-"""Module/script to "compile" all .py files to .pyc (or .pyo) file.
+"""Module/script to byte-compile all .py files to .pyc (or .pyo) files.
 
 When called as a script with arguments, this compiles the directories
 given as arguments recursively; the -l option prevents it from
@@ -26,8 +26,8 @@ def compile_dir(dir, maxlevels=10, ddir=None,
 
     dir:       the directory to byte-compile
     maxlevels: maximum recursion level (default 10)
-    ddir:      if given, purported directory name (this is the
-               directory name that will show up in error messages)
+    ddir:      the directory that will be prepended to the path to the
+               file as it is compiled into each byte-code file.
     force:     if 1, force compilation, even if timestamps are up-to-date
     quiet:     if 1, be quiet during compilation
     """
@@ -64,8 +64,8 @@ def compile_file(fullname, ddir=None, force=0, rx=None, quiet=0):
     Arguments (only fullname is required):
 
     fullname:  the file to byte-compile
-    ddir:      if given, purported directory name (this is the
-               directory name that will show up in error messages)
+    ddir:      if given, the directory name compiled in to the
+               byte-code file.
     force:     if 1, force compilation, even if timestamps are up-to-date
     quiet:     if 1, be quiet during compilation
     """
@@ -157,14 +157,27 @@ def main():
         print msg
         print "usage: python compileall.py [-l] [-f] [-q] [-d destdir] " \
               "[-x regexp] [-i list] [directory|file ...]"
-        print "-l: don't recurse down"
+        print
+        print "arguments: zero or more file and directory names to compile; " \
+              "if no arguments given, "
+        print "           defaults to the equivalent of -l sys.path"
+        print
+        print "options:"
+        print "-l: don't recurse into subdirectories"
         print "-f: force rebuild even if timestamps are up-to-date"
-        print "-q: quiet operation"
-        print "-d destdir: purported directory name for error messages"
-        print "   if no directory arguments, -l sys.path is assumed"
-        print "-x regexp: skip files matching the regular expression regexp"
-        print "   the regexp is searched for in the full path of the file"
-        print "-i list: expand list with its content (file and directory names)"
+        print "-q: output only error messages"
+        print "-d destdir: directory to prepend to file paths for use in " \
+              "compile-time tracebacks and in"
+        print "            runtime tracebacks in cases where the source " \
+              "file is unavailable"
+        print "-x regexp: skip files matching the regular expression regexp; " \
+              "the regexp is searched for"
+        print "           in the full path of each file considered for " \
+              "compilation"
+        print "-i file: add all the files and directories listed in file to " \
+              "the list considered for"
+        print '         compilation; if "-", names are read from stdin'
+
         sys.exit(2)
     maxlevels = 10
     ddir = None
@@ -205,7 +218,7 @@ def main():
         else:
             success = compile_path()
     except KeyboardInterrupt:
-        print "\n[interrupt]"
+        print "\n[interrupted]"
         success = 0
     return success
 
