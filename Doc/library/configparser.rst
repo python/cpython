@@ -865,10 +865,6 @@ ConfigParser Objects
    Comments can be indented. When *inline_comment_prefixes* is given, it will be
    used as the set of substrings that prefix comments in non-empty lines.
 
-   line and inline comments.  For backwards compatibility, the default value for
-   *comment_prefixes* is a special value that indicates that ``;`` and ``#`` can
-   start whole line comments while only ``;`` can start inline comments.
-
    When *strict* is ``True`` (the default), the parser won't allow for
    any section or option duplicates while reading from a single source (file,
    string or dictionary), raising :exc:`DuplicateSectionError` or
