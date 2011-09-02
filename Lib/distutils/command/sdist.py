@@ -320,7 +320,10 @@ class sdist(Command):
 
                 try:
                     self.filelist.process_template_line(line)
-                except DistutilsTemplateError, msg:
+                # the call above can raise a DistutilsTemplateError for
+                # malformed lines, or a ValueError from the lower-level
+                # convert_path function
+                except (DistutilsTemplateError, ValueError) as msg:
                     self.warn("%s, line %d: %s" % (template.filename,
                                                    template.current_line,
                                                    msg))
