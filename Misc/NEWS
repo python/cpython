@@ -180,6 +180,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #12764: Fix a crash in ctypes when the name of a Structure field is not
+  a string.
+
 - Issue #9651: Fix a crash when ctypes.create_string_buffer(0) was passed to
   some functions like file.write().
 

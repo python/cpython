@@ -239,6 +239,14 @@ class StructureTestCase(unittest.TestCase):
             pass
         self.assertRaises(TypeError, setattr, POINT, "_fields_", [("x", 1), ("y", 2)])
 
+    def test_invalid_name(self):
+        # field name must be string
+        def declare_with_name(name):
+            class S(Structure):
+                _fields_ = [(name, c_int)]
+
+        self.assertRaises(TypeError, declare_with_name, u"x\xe9")
+
     def test_intarray_fields(self):
         class SomeInts(Structure):
             _fields_ = [("a", c_int * 4)]
