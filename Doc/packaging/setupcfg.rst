@@ -756,8 +756,7 @@ needs to have its options defined in a dedicated section.  Here's an example::
    [files]
    packages = coconut
 
-   [extension=_fastcoconut]
-   name = coconut._fastcoconut
+   [extension: coconut._fastcoconut]
    language = cxx
    sources = cxx_src/cononut_utils.cxx
              cxx_src/python_module.cxx
@@ -768,8 +767,12 @@ needs to have its options defined in a dedicated section.  Here's an example::
        -DGECODE_VERSION=$(./gecode_version) -- sys.platform != 'win32'
        /DGECODE_VERSION='win32' -- sys.platform == 'win32'
 
-The section name must start with ``extension=``; the righ-hand part is currently
-discarded.  Valid fields and their values are listed in the documentation of the
+The section name must start with ``extension:``; the right-hand part is used as
+the full name (including a parent package, if any) of the extension.  Whitespace
+around the extension name is allowed.  If the extension module is not standalone
+(e.g. ``_bisect``) but part of a package (e.g. ``thing._speedups``), the parent
+package must be listed in the ``packages`` field.
+Valid fields and their values are listed in the documentation of the
 :class:`packaging.compiler.extension.Extension` class; values documented as
 Python lists translate to multi-line values in the configuration file.  In
 addition, multi-line values accept environment markers on each line, after a

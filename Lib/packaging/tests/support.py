@@ -1,5 +1,8 @@
 """Support code for packaging test cases.
 
+*This module should not be considered public: its content and API may
+change in incompatible ways.*
+
 A few helper classes are provided: LoggingCatcher, TempdirManager and
 EnvironRestorer. They are written to be used as mixins::
 
@@ -7,6 +10,7 @@ EnvironRestorer. They are written to be used as mixins::
     from packaging.tests.support import LoggingCatcher
 
     class SomeTestCase(LoggingCatcher, unittest.TestCase):
+        ...
 
 If you need to define a setUp method on your test class, you have to
 call the mixin class' setUp method or it won't work (same thing for
@@ -14,17 +18,18 @@ tearDown):
 
         def setUp(self):
             super(SomeTestCase, self).setUp()
-            ... # other setup code
+            ...  # other setup code
 
 Also provided is a DummyCommand class, useful to mock commands in the
-tests of another command that needs them, a create_distribution function
-and a skip_unless_symlink decorator.
+tests of another command that needs them, for example to fake
+compilation in build_ext (this requires that the mock build_ext command
+be injected into the distribution object's command_obj dictionary).
 
-Also provided is a DummyCommand class, useful to mock commands in the
-tests of another command that needs them, a create_distribution function
-and a skip_unless_symlink decorator.
+For tests that need to compile an extension module, use the
+copy_xxmodule_c and fixup_build_ext functions.
 
 Each class or function has a docstring to explain its purpose and usage.
+Existing tests should also be used as examples.
 """
 
 import os
@@ -39,9 +44,17 @@ from packaging.dist import Distribution
 from packaging.tests import unittest
 from test.support import requires_zlib, unlink
 
-__all__ = ['LoggingCatcher', 'TempdirManager', 'EnvironRestorer',
-           'DummyCommand', 'unittest', 'create_distribution',
-           'skip_unless_symlink', 'requires_zlib', 'copy_xxmodule_c']
+# define __all__ to make pydoc more useful
+__all__ = [
+    # TestCase mixins
+    'LoggingCatcher', 'TempdirManager', 'EnvironRestorer',
+    # mocks
+    'DummyCommand', 'TestDistribution',
+    # misc. functions and decorators
+    'fake_dec', 'create_distribution', 'copy_xxmodule_c', 'fixup_build_ext',
+    # imported from this module for backport purposes
+    'unittest', 'requires_zlib', 'skip_unless_symlink',
+]
 
 
 logger = logging.getLogger('packaging')
@@ -233,6 +246,8 @@ class DummyCommand:
     Useful for mocking one dependency command in the tests for another
     command, see e.g. the dummy build command in test_build_scripts.
     """
+    # XXX does not work with dist.get_reinitialized_command, which typechecks
+    # and wants a finalized attribute
 
     def __init__(self, **kwargs):
         for kw, val in kwargs.items():
@@ -308,10 +323,9 @@ def _get_xxmodule_path():
 def fixup_build_ext(cmd):
     """Function needed to make build_ext tests pass.
 
-    When Python was build with --enable-shared on Unix, -L. is not good
-    enough to find the libpython<blah>.so.  This is because regrtest runs
-    it under a tempdir, not in the top level where the .so lives.  By the
-    time we've gotten here, Python's already been chdir'd to the tempdir.
+    When Python was built with --enable-shared on Unix, -L. is not enough to
+    find libpython<blah>.so, because regrtest runs in a tempdir, not in the
+    source directory where the .so lives.
 
     When Python was built with in debug mode on Windows, build_ext commands
     need their debug attribute set, and it is not done automatically for

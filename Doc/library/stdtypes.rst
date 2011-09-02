@@ -2724,6 +2724,8 @@ special operations.  There is exactly one ellipsis object, named
 It is written as ``Ellipsis`` or ``...``.
 
 
+.. _bltin-notimplemented-object:
+
 The NotImplemented Object
 -------------------------
 
@@ -2734,6 +2736,8 @@ information.  There is exactly one ``NotImplemented`` object.
 
 It is written as ``NotImplemented``.
 
+
+.. _bltin-boolean-values:
 
 Boolean Values
 --------------

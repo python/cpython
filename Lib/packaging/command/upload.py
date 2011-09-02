@@ -5,7 +5,6 @@ import socket
 import logging
 import platform
 import urllib.parse
-from io import BytesIO
 from base64 import standard_b64encode
 from hashlib import md5
 from urllib.error import HTTPError
