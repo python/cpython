@@ -482,8 +482,21 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             char *fieldfmt = dict->format ? dict->format : "B";
             char *fieldname = _PyUnicode_AsString(name);
             char *ptr;
-            Py_ssize_t len = strlen(fieldname) + strlen(fieldfmt);
-            char *buf = alloca(len + 2 + 1);
+            Py_ssize_t len; 
+            char *buf;
+
+            if (fieldname == NULL)
+            {
+                PyErr_Format(PyExc_TypeError,
+                             "structure field name must be string not %s",
+                             name->ob_type->tp_name);
+                                
+                Py_DECREF(pair);
+                return -1;
+            }
+
+            len = strlen(fieldname) + strlen(fieldfmt);
+            buf = alloca(len + 2 + 1);
 
             sprintf(buf, "%s:%s:", fieldfmt, fieldname);
 
