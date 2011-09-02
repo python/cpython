@@ -225,6 +225,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * Collin Winter
    * Blake Winton
    * Dan Wolfe
+   * Adam Woodbeck
    * Steven Work
    * Thomas Wouters
    * Ka-Ping Yee
