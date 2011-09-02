@@ -412,10 +412,10 @@ With the logger object configured, the following methods create log messages:
   :meth:`Logger.error`, and :meth:`Logger.critical` all create log records with
   a message and a level that corresponds to their respective method names. The
   message is actually a format string, which may contain the standard string
-  substitution syntax of :const:`%s`, :const:`%d`, :const:`%f`, and so on.  The
+  substitution syntax of ``%s``, ``%d``, ``%f``, and so on.  The
   rest of their arguments is a list of objects that correspond with the
-  substitution fields in the message.  With regard to :const:`**kwargs`, the
-  logging methods care only about a keyword of :const:`exc_info` and use it to
+  substitution fields in the message.  With regard to ``**kwargs``, the
+  logging methods care only about a keyword of ``exc_info`` and use it to
   determine whether to log exception information.
 
 * :meth:`Logger.exception` creates a log message similar to
