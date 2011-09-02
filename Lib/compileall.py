@@ -142,7 +142,7 @@ def compile_path(skip_curdir=1, maxlevels=0, force=False, quiet=False,
 
     Arguments (all optional):
 
-    skip_curdir: if true, skip current directory (default true)
+    skip_curdir: if true, skip current directory (default True)
     maxlevels:   max recursion level (default 0)
     force: as for compile_dir() (default False)
     quiet: as for compile_dir() (default False)
@@ -177,17 +177,17 @@ def main():
                         help='use legacy (pre-PEP3147) compiled file locations')
     parser.add_argument('-d', metavar='DESTDIR',  dest='ddir', default=None,
                         help=('directory to prepend to file paths for use in '
-                              'compile time tracebacks and in runtime '
+                              'compile-time tracebacks and in runtime '
                               'tracebacks in cases where the source file is '
                               'unavailable'))
     parser.add_argument('-x', metavar='REGEXP', dest='rx', default=None,
-                        help=('skip files matching the regular expression. '
-                              'The regexp is searched for in the full path '
-                              'to each file considered for compilation.'))
+                        help=('skip files matching the regular expression; '
+                              'the regexp is searched for in the full path '
+                              'of each file considered for compilation'))
     parser.add_argument('-i', metavar='FILE', dest='flist',
                         help=('add all the files and directories listed in '
-                              'FILE to the list considered for compilation. '
-                              'If "-", names are read from stdin.'))
+                              'FILE to the list considered for compilation; '
+                              'if "-", names are read from stdin'))
     parser.add_argument('compile_dest', metavar='FILE|DIR', nargs='*',
                         help=('zero or more file and directory names '
                               'to compile; if no arguments given, defaults '

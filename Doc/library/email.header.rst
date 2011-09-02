@@ -141,11 +141,11 @@ Here is the :class:`Header` class description:
       Returns an approximation of the :class:`Header` as a string, using an
       unlimited line length.  All pieces are converted to unicode using the
       specified encoding and joined together appropriately.  Any pieces with a
-      charset of `unknown-8bit` are decoded as `ASCII` using the `replace`
+      charset of ``'unknown-8bit'`` are decoded as ASCII using the ``'replace'``
       error handler.
 
       .. versionchanged:: 3.2
-         Added handling for the `unknown-8bit` charset.
+         Added handling for the ``'unknown-8bit'`` charset.
 
 
    .. method:: __eq__(other)
