@@ -35,7 +35,7 @@ __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "register_archive_format", "unregister_archive_format",
            "get_unpack_formats", "register_unpack_format",
            "unregister_unpack_format", "unpack_archive",
-           "ignore_patterns"]
+           "ignore_patterns", "chown"]
            # disk_usage is added later, if available on the platform
 
 class Error(EnvironmentError):
@@ -790,6 +790,7 @@ elif os.name == 'nt':
         total, free = nt._getdiskusage(path)
         used = total - free
         return _ntuple_diskusage(total, used, free)
+
 
 def chown(path, user=None, group=None):
     """Change owner user and group of the given path.

@@ -175,10 +175,9 @@ def _get_xxmodule_path():
 def fixup_build_ext(cmd):
     """Function needed to make build_ext tests pass.
 
-    When Python was build with --enable-shared on Unix, -L. is not good
-    enough to find the libpython<blah>.so.  This is because regrtest runs
-    it under a tempdir, not in the top level where the .so lives.  By the
-    time we've gotten here, Python's already been chdir'd to the tempdir.
+    When Python was built with --enable-shared on Unix, -L. is not enough to
+    find libpython<blah>.so, because regrtest runs in a tempdir, not in the
+    source directory where the .so lives.
 
     When Python was built with in debug mode on Windows, build_ext commands
     need their debug attribute set, and it is not done automatically for

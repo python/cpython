@@ -122,7 +122,7 @@ class install_lib(Command):
                            self.get_command_name())
             return
 
-        from packaging.util import byte_compile
+        from packaging.util import byte_compile  # FIXME use compileall
 
         # Get the "--root" directory supplied to the "install_dist" command,
         # and use it as a prefix to strip off the purported filename

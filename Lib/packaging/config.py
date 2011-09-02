@@ -16,6 +16,19 @@ from packaging.command import set_command
 from packaging.markers import interpret
 
 
+def _check_name(name, packages):
+    if '.' not in name:
+        return
+    parts = name.split('.')
+    modname = parts[-1]
+    parent = '.'.join(parts[:-1])
+    if parent not in packages:
+        # we could log a warning instead of raising, but what's the use
+        # of letting people build modules they can't import?
+        raise PackagingOptionError(
+            'parent package for extension %r not found' % name)
+
+
 def _pop_values(values_dct, key):
     """Remove values from the dictionary and convert them as a list"""
     vals_str = values_dct.pop(key, '')
@@ -142,7 +155,8 @@ class Config:
                         try:
                             hook = resolve_name(line)
                         except ImportError as e:
-                            logger.warning('cannot find setup hook: %s', e.args[0])
+                            logger.warning('cannot find setup hook: %s',
+                                           e.args[0])
                         else:
                             self.setup_hooks.append(hook)
                     self.run_hooks(content)
@@ -216,7 +230,7 @@ class Config:
             for data in files.get('package_data', []):
                 data = data.split('=')
                 if len(data) != 2:
-                    continue  # XXX error should never pass silently
+                    continue  # FIXME errors should never pass silently
                 key, value = data
                 self.dist.package_data[key.strip()] = value.strip()
 
@@ -251,13 +265,18 @@ class Config:
 
         ext_modules = self.dist.ext_modules
         for section_key in content:
-            labels = section_key.split('=')
+            # no str.partition in 2.4 :(
+            labels = section_key.split(':')
             if len(labels) == 2 and labels[0] == 'extension':
-                # labels[1] not used from now but should be implemented
-                # for extension build dependency
                 values_dct = content[section_key]
+                if 'name' in values_dct:
+                    raise PackagingOptionError(
+                        'extension name should be given as [extension: name], '
+                        'not as key')
+                name = labels[1].strip()
+                _check_name(name, self.dist.packages)
                 ext_modules.append(Extension(
-                    values_dct.pop('name'),
+                    name,
                     _pop_values(values_dct, 'sources'),
                     _pop_values(values_dct, 'include_dirs'),
                     _pop_values(values_dct, 'define_macros'),
