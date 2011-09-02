@@ -36,7 +36,7 @@ from packaging._trove import all_classifiers as _CLASSIFIERS_LIST
 from packaging.version import is_valid_version
 
 _FILENAME = 'setup.cfg'
-_DEFAULT_CFG = '.pypkgcreate'
+_DEFAULT_CFG = '.pypkgcreate'  # FIXME use a section in user .pydistutils.cfg
 
 _helptext = {
     'name': '''
@@ -125,6 +125,10 @@ def ask_yn(question, default=None, helptext=None):
             return answer[0].lower()
 
         print('\nERROR: You must select "Y" or "N".\n')
+
+
+# XXX use util.ask
+# FIXME: if prompt ends with '?', don't add ':'
 
 
 def ask(question, default=None, helptext=None, required=True,

@@ -513,7 +513,10 @@ in a different style:
 
 .. describe:: keyword
 
-   The name of a keyword in Python.
+   The name of a Python keyword.  Using this role will generate a link to the
+   documentation of the keyword.  ``True``, ``False`` and ``None`` do not use
+   this role, but simple code markup (````True````), given that they're
+   fundamental to the language and should be known to any programmer.
 
 .. describe:: mailheader
 
