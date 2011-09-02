@@ -1014,6 +1014,25 @@ the interface::
    s.ioctl(socket.SIO_RCVALL, socket.RCVALL_OFF)
 
 
+Running an example several times with too small delay between executions, could
+lead to this error::
+
+   socket.error: [Errno 98] Address already in use
+
+This is because the previous execution has left the socket in a ``TIME_WAIT``
+state, and can't be immediately reused.
+
+There is a :mod:`socket` flag to set, in order to prevent this,
+:data:`socket.SO_REUSEADDR`::
+
+   s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+   s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+   s.bind((HOST, PORT))
+
+the :data:`SO_REUSEADDR` flag tells the kernel to reuse a local socket in
+``TIME_WAIT`` state, without waiting for its natural timeout to expire.
+
+
 .. seealso::
 
    For an introduction to socket programming (in C), see the following papers:
