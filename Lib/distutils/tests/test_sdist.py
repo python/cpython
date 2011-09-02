@@ -78,9 +78,6 @@ class SDistTestCase(PyPIRCCommandTestCase):
         dist.include_package_data = True
         cmd = sdist(dist)
         cmd.dist_dir = 'dist'
-        def _warn(*args):
-            pass
-        cmd.warn = _warn
         return dist, cmd
 
     @unittest.skipUnless(ZLIB_SUPPORT, 'Need zlib support to run')
@@ -235,7 +232,8 @@ class SDistTestCase(PyPIRCCommandTestCase):
         # with the `check` subcommand
         cmd.ensure_finalized()
         cmd.run()
-        warnings = self.get_logs(WARN)
+        warnings = [msg for msg in self.get_logs(WARN) if
+                    msg.startswith('warning: check:')]
         self.assertEqual(len(warnings), 2)
 
         # trying with a complete set of metadata
@@ -244,7 +242,8 @@ class SDistTestCase(PyPIRCCommandTestCase):
         cmd.ensure_finalized()
         cmd.metadata_check = 0
         cmd.run()
-        warnings = self.get_logs(WARN)
+        warnings = [msg for msg in self.get_logs(WARN) if
+                    msg.startswith('warning: check:')]
         self.assertEqual(len(warnings), 0)
 
     def test_check_metadata_deprecated(self):
