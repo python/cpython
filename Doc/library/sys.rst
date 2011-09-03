@@ -699,26 +699,36 @@ always available.
    This string contains a platform identifier that can be used to append
    platform-specific components to :data:`sys.path`, for instance.
 
-   For Unix systems, this is the lowercased OS name as returned by ``uname -s``
-   with the first part of the version as returned by ``uname -r`` appended,
-   e.g. ``'sunos5'`` or ``'linux2'``, *at the time when Python was built*.
-   Unless you want to test for a specific system version, it is therefore
-   recommended to use the following idiom::
+   For most Unix systems, this is the lowercased OS name as returned by ``uname
+   -s`` with the first part of the version as returned by ``uname -r`` appended,
+   e.g. ``'sunos5'``, *at the time when Python was built*.  Unless you want to
+   test for a specific system version, it is therefore recommended to use the
+   following idiom::
 
-      if sys.platform.startswith('linux'):
+      if sys.platform.startswith('freebsd'):
+          # FreeBSD-specific code here...
+      elif sys.platform.startswith('linux'):
           # Linux-specific code here...
+
+   .. versionchanged:: 3.2.2
+      Since lots of code check for ``sys.platform == 'linux2'``, and there is
+      no essential change between Linux 2.x and 3.x, ``sys.platform`` is always
+      set to ``'linux2'``, even on Linux 3.x.  In Python 3.3 and later, the
+      value will always be set to ``'linux'``, so it is recommended to always
+      use the ``startswith`` idiom presented above.
 
    For other systems, the values are:
 
-   ================ ===========================
-   System           :data:`platform` value
-   ================ ===========================
-   Windows          ``'win32'``
-   Windows/Cygwin   ``'cygwin'``
-   Mac OS X         ``'darwin'``
-   OS/2             ``'os2'``
-   OS/2 EMX         ``'os2emx'``
-   ================ ===========================
+   ====================== ===========================
+   System                 :data:`platform` value
+   ====================== ===========================
+   Linux (2.x *and* 3.x)  ``'linux2'``
+   Windows                ``'win32'``
+   Windows/Cygwin         ``'cygwin'``
+   Mac OS X               ``'darwin'``
+   OS/2                   ``'os2'``
+   OS/2 EMX               ``'os2emx'``
+   ====================== ===========================
 
    .. seealso::
       :attr:`os.name` has a coarser granularity.  :func:`os.uname` gives
