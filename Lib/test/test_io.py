@@ -610,6 +610,17 @@ class IOTest(unittest.TestCase):
         self.assertEqual(rawio.read(2), None)
         self.assertEqual(rawio.read(2), b"")
 
+    def test_types_have_dict(self):
+        test = (
+            self.IOBase(),
+            self.RawIOBase(),
+            self.TextIOBase(),
+            self.StringIO(),
+            self.BytesIO()
+        )
+        for obj in test:
+            self.assertTrue(hasattr(obj, "__dict__"))
+
 class CIOTest(IOTest):
 
     def test_IOBase_finalize(self):
