@@ -271,6 +271,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #12878: Expose a __dict__ attribute on io.IOBase and its subclasses.
+
 - Issue #12636: IDLE reads the coding cookie when executing a Python script.
 
 - Issue #12494: On error, call(), check_call(), check_output() and
