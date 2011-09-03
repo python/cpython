@@ -19,11 +19,11 @@
 #define PY_MAJOR_VERSION	3
 #define PY_MINOR_VERSION	2
 #define PY_MICRO_VERSION	2
-#define PY_RELEASE_LEVEL	PY_RELEASE_LEVEL_GAMMA
-#define PY_RELEASE_SERIAL	1
+#define PY_RELEASE_LEVEL	PY_RELEASE_LEVEL_FINAL
+#define PY_RELEASE_SERIAL	0
 
 /* Version as a string */
-#define PY_VERSION      	"3.2.2rc1+"
+#define PY_VERSION      	"3.2.2"
 /*--end constants--*/
 
 /* Subversion Revision number of this file (not of the repository). Empty
