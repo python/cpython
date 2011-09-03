@@ -13,12 +13,17 @@ Core and Builtins
 - Issue #12326: sys.platform is now always 'linux2' on Linux, even if Python
   is compiled on Linux 3.
 
-
 Library
 -------
 
 - Issue #12839: Fix crash in zlib module due to version mismatch.
   Fix by Richard M. Tew.
+
+Extension Modules
+-----------------
+
+- Issue #9651: Fix a crash when ctypes.create_string_buffer(0) was passed to
+  some functions like file.write().
 
 
 
@@ -151,9 +156,6 @@ Library
 
 Extension Modules
 -----------------
-
-- Issue #9651: Fix a crash when ctypes.create_string_buffer(0) was passed to
-  some functions like file.write().
 
 - Issue #10309: Define _GNU_SOURCE so that mremap() gets the proper
   signature.  Without this, architectures where sizeof void* != sizeof int are
