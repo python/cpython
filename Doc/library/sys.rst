@@ -710,6 +710,8 @@ always available.
 
       if sys.platform.startswith('freebsd'):
           # FreeBSD-specific code here...
+      elif sys.platform.startswith('linux'):
+          # Linux-specific code here...
 
    For other systems, the values are:
 
@@ -726,7 +728,9 @@ always available.
 
    .. versionchanged:: 3.3
       On Linux, :attr:`sys.platform` doesn't contain the major version anymore.
-      It is always ``'linux'``, instead of ``'linux2'`` or ``'linux3'``.
+      It is always ``'linux'``, instead of ``'linux2'`` or ``'linux3'``.  Since
+      older Python versions include the version number, it is recommended to
+      always use the ``startswith`` idiom presented above.
 
    .. seealso::
       :attr:`os.name` has a coarser granularity.  :func:`os.uname` gives
@@ -734,6 +738,7 @@ always available.
 
       The :mod:`platform` module provides detailed checks for the
       system's identity.
+
 
 .. data:: prefix
 
