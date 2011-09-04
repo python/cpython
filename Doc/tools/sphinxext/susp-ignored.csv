@@ -193,10 +193,10 @@ documenting/rest,130,`,`Link text <http://target>`_
 documenting/rest,187,.. function:,.. function:: foo(x)
 documenting/rest,187,:bar,:bar: no
 documenting/rest,208,.. rubric:,.. rubric:: Footnotes
-faq/programming,762,:reduce,"print((lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+y,map(lambda y,"
-faq/programming,762,:reduce,"Sx=Sx,Sy=Sy:reduce(lambda x,y:x+y,map(lambda x,xc=Ru,yc=yc,Ru=Ru,Ro=Ro,"
-faq/programming,762,:chr,">=4.0) or 1+f(xc,yc,x*x-y*y+xc,2.0*x*y+yc,k-1,f):f(xc,yc,x,y,k,f):chr("
-faq/programming,1047,::,for x in sequence[::-1]:
+faq/programming,,:reduce,"print((lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+y,map(lambda y,"
+faq/programming,,:reduce,"Sx=Sx,Sy=Sy:reduce(lambda x,y:x+y,map(lambda x,xc=Ru,yc=yc,Ru=Ru,Ro=Ro,"
+faq/programming,,:chr,">=4.0) or 1+f(xc,yc,x*x-y*y+xc,2.0*x*y+yc,k-1,f):f(xc,yc,x,y,k,f):chr("
+faq/programming,,::,for x in sequence[::-1]:
 faq/windows,229,:EOF,@setlocal enableextensions & python -x %~f0 %* & goto :EOF
 faq/windows,393,:REG,.py :REG_SZ: c:\<path to python>\python.exe -u %s %s
 library/bisect,32,:hi,all(val >= x for val in a[i:hi])
@@ -217,10 +217,10 @@ library/urllib.request,,:lang,"xmlns=""http://www.w3.org/1999/xhtml"" xml:lang="
 library/xmlrpc.client,103,:pass,http://user:pass@host:port/path
 library/xmlrpc.client,103,:port,http://user:pass@host:port/path
 library/xmlrpc.client,103,:pass,user:pass
-license,717,`,* THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
-license,717,`,* THIS SOFTWARE IS PROVIDED BY ERIC YOUNG ``AS IS'' AND
-license,879,`,"``Software''), to deal in the Software without restriction, including"
-license,879,`,"THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND,"
+license,,`,* THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
+license,,`,* THIS SOFTWARE IS PROVIDED BY ERIC YOUNG ``AS IS'' AND
+license,,`,"``Software''), to deal in the Software without restriction, including"
+license,,`,"THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND,"
 reference/lexical_analysis,704,`,$       ?       `
 whatsnew/2.7,735,:Sunday,'2009:4:Sunday'
 whatsnew/2.7,862,::,"export PYTHONWARNINGS=all,error:::Cookie:0"
