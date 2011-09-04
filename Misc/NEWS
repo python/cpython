@@ -28,6 +28,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8286: The distutils command sdist will print a warning message instead
+  of crashing when an invalid path is given in the manifest template.
+
 - Issue #12878: Expose a __dict__ attribute on io.IOBase and its subclasses.
 
 - Issue #12636: IDLE reads the coding cookie when executing a Python script.
