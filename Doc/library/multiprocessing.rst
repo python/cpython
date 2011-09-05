@@ -552,9 +552,9 @@ For an example of the usage of queues for interprocess communication see
       Return ``True`` if the queue is full, ``False`` otherwise.  Because of
       multithreading/multiprocessing semantics, this is not reliable.
 
-   .. method:: put(item[, block[, timeout]])
+   .. method:: put(obj[, block[, timeout]])
 
-      Put item into the queue.  If the optional argument *block* is ``True``
+      Put obj into the queue.  If the optional argument *block* is ``True``
       (the default) and *timeout* is ``None`` (the default), block if necessary until
       a free slot is available.  If *timeout* is a positive number, it blocks at
       most *timeout* seconds and raises the :exc:`Queue.Full` exception if no
@@ -563,9 +563,9 @@ For an example of the usage of queues for interprocess communication see
       available, else raise the :exc:`Queue.Full` exception (*timeout* is
       ignored in that case).
 
-   .. method:: put_nowait(item)
+   .. method:: put_nowait(obj)
 
-      Equivalent to ``put(item, False)``.
+      Equivalent to ``put(obj, False)``.
 
    .. method:: get([block[, timeout]])
 
