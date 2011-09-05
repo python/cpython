@@ -271,6 +271,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12888: Fix a bug in HTMLParser.unescape that prevented it to escape
+  more than 128 entities.  Patch by Peter Otten.
+
 - Issue #12878: Expose a __dict__ attribute on io.IOBase and its subclasses.
 
 - Issue #12636: IDLE reads the coding cookie when executing a Python script.
