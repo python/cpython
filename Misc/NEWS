@@ -271,6 +271,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8286: The distutils command sdist will print a warning message instead
+  of crashing when an invalid path is given in the manifest template.
+
 - Issue #12841: tarfile unnecessarily checked the existence of numerical user
   and group ids on extraction. If one of them did not exist the respective id
   of the current user (i.e. root) was used for the file and ownership
