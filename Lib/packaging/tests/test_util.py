@@ -946,7 +946,7 @@ class PackagingLibChecks(support.TempdirManager,
 
     def _distutils_pkg_info(self):
         tmp = self._distutils_setup_py_pkg()
-        self.write_file([tmp, 'PKG-INFO'], '')
+        self.write_file([tmp, 'PKG-INFO'], '', encoding='UTF-8')
         return tmp
 
     def _setup_cfg_with_no_metadata_pkg(self):
@@ -971,7 +971,7 @@ class PackagingLibChecks(support.TempdirManager,
 
     def _pkg_info_with_no_distutils(self):
         tmp = self._random_setup_py_pkg()
-        self.write_file([tmp, 'PKG-INFO'], '')
+        self.write_file([tmp, 'PKG-INFO'], '', encoding='UTF-8')
         return tmp
 
     def _random_setup_py_pkg(self):
