@@ -271,6 +271,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9561: distutils now reads and writes egg-info files using UTF-8,
+  instead of the locale encoding.
+
 - Issue #8286: The distutils command sdist will print a warning message instead
   of crashing when an invalid path is given in the manifest template.
 
