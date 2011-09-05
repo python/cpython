@@ -29,6 +29,7 @@ from distutils.tests.test_config import PyPIRCCommandTestCase
 from distutils.errors import DistutilsOptionError
 from distutils.spawn import find_executable
 from distutils.log import WARN
+from distutils.filelist import FileList
 from distutils.archive_util import ARCHIVE_FORMATS
 
 SETUP_PY = """
@@ -85,9 +86,6 @@ class SDistTestCase(PyPIRCCommandTestCase):
         dist.include_package_data = True
         cmd = sdist(dist)
         cmd.dist_dir = 'dist'
-        def _warn(*args):
-            pass
-        cmd.warn = _warn
         return dist, cmd
 
     @unittest.skipUnless(zlib, "requires zlib")
@@ -242,7 +240,8 @@ class SDistTestCase(PyPIRCCommandTestCase):
         # with the `check` subcommand
         cmd.ensure_finalized()
         cmd.run()
-        warnings = self.get_logs(WARN)
+        warnings = [msg for msg in self.get_logs(WARN) if
+                    msg.startswith('warning: check:')]
         self.assertEqual(len(warnings), 2)
 
         # trying with a complete set of metadata
@@ -251,7 +250,8 @@ class SDistTestCase(PyPIRCCommandTestCase):
         cmd.ensure_finalized()
         cmd.metadata_check = 0
         cmd.run()
-        warnings = self.get_logs(WARN)
+        warnings = [msg for msg in self.get_logs(WARN) if
+                    msg.startswith('warning: check:')]
         self.assertEqual(len(warnings), 0)
 
     def test_check_metadata_deprecated(self):
@@ -273,7 +273,6 @@ class SDistTestCase(PyPIRCCommandTestCase):
         self.assertEqual(len(output), num_formats)
 
     def test_finalize_options(self):
-
         dist, cmd = self.get_cmd()
         cmd.finalize_options()
 
@@ -342,6 +341,32 @@ class SDistTestCase(PyPIRCCommandTestCase):
                 self.assertEqual(member.uid, os.getuid())
         finally:
             archive.close()
+
+    # the following tests make sure there is a nice error message instead
+    # of a traceback when parsing an invalid manifest template
+
+    def _test_template(self, content):
+        dist, cmd = self.get_cmd()
+        os.chdir(self.tmp_dir)
+        self.write_file('MANIFEST.in', content)
+        cmd.ensure_finalized()
+        cmd.filelist = FileList()
+        cmd.read_template()
+        warnings = self.get_logs(WARN)
+        self.assertEqual(len(warnings), 1)
+
+    def test_invalid_template_unknown_command(self):
+        self._test_template('taunt knights *')
+
+    def test_invalid_template_wrong_arguments(self):
+        # this manifest command takes one argument
+        self._test_template('prune')
+
+    @unittest.skipIf(os.name != 'nt', 'test relevant for Windows only')
+    def test_invalid_template_wrong_path(self):
+        # on Windows, trailing slashes are not allowed
+        # this used to crash instead of raising a warning: #8286
+        self._test_template('include examples/')
 
     @unittest.skipUnless(zlib, "requires zlib")
     def test_get_file_list(self):
