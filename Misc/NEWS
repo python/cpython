@@ -40,6 +40,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #12841: tarfile unnecessarily checked the existence of numerical user
+  and group ids on extraction. If one of them did not exist the respective id
+  of the current user (i.e. root) was used for the file and ownership
+  information was lost.
+
 - Issue #10946: The distutils commands bdist_dumb, bdist_wininst and bdist_msi
   now respect a --skip-build option given to bdist.
 
