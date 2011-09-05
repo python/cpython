@@ -271,6 +271,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12567: Add curses.unget_wch() function. Push a character so the next
+  get_wch() will return it.
+
 - Issue #9561: distutils and packaging now writes egg-info files using UTF-8,
   instead of the locale encoding.
 
