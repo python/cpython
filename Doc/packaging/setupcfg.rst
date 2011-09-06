@@ -72,7 +72,7 @@ Extending files
 ---------------
 
 A configuration file can be extended (i.e. included) by other files.  For this,
-a ``DEFAULT`` section must contain an ``extends`` key which value points to one
+a ``DEFAULT`` section must contain an ``extends`` key whose value points to one
 or more files which will be merged into the current files by adding new sections
 and fields.  If a file loaded by ``extends`` contains sections or keys that
 already exist in the original file, they will not override the previous values.
