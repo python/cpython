@@ -2696,6 +2696,71 @@ PyCurses_UngetCh(PyObject *self, PyObject *args)
     return PyCursesCheckERR(ungetch(ch), "ungetch");
 }
 
+#ifdef HAVE_NCURSESW
+/* Convert an object to a character (wchar_t):
+
+    - int
+    - str of length 1
+
+   Return 1 on success, 0 on error. */
+static int
+PyCurses_ConvertToWchar_t(PyObject *obj,
+                          wchar_t *wch)
+{
+    if (PyUnicode_Check(obj)) {
+        wchar_t buffer[2];
+        if (PyUnicode_AsWideChar(obj, buffer, 2) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                         "expect bytes or str of length 1, or int, "
+                         "got a str of length %zi",
+                         PyUnicode_GET_SIZE(obj));
+            return 0;
+        }
+        *wch = buffer[0];
+        return 2;
+    }
+    else if (PyLong_CheckExact(obj)) {
+        long value;
+        int overflow;
+        value = PyLong_AsLongAndOverflow(obj, &overflow);
+        if (overflow) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "int doesn't fit in long");
+            return 0;
+        }
+        *wch = (wchar_t)value;
+        if ((long)*wch != value) {
+            PyErr_Format(PyExc_OverflowError,
+                         "character doesn't fit in wchar_t");
+            return 0;
+        }
+        return 1;
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+                     "expect bytes or str of length 1, or int, got %s",
+                     Py_TYPE(obj)->tp_name);
+        return 0;
+    }
+}
+
+static PyObject *
+PyCurses_Unget_Wch(PyObject *self, PyObject *args)
+{
+    PyObject *obj;
+    wchar_t wch;
+
+    PyCursesInitialised;
+
+    if (!PyArg_ParseTuple(args,"O", &obj))
+        return NULL;
+
+    if (!PyCurses_ConvertToWchar_t(obj, &wch))
+        return NULL;
+    return PyCursesCheckERR(unget_wch(wch), "unget_wch");
+}
+#endif
+
 static PyObject *
 PyCurses_Use_Env(PyObject *self, PyObject *args)
 {
@@ -2823,6 +2888,9 @@ static PyMethodDef PyCurses_methods[] = {
     {"typeahead",           (PyCFunction)PyCurses_TypeAhead, METH_VARARGS},
     {"unctrl",              (PyCFunction)PyCurses_UnCtrl, METH_VARARGS},
     {"ungetch",             (PyCFunction)PyCurses_UngetCh, METH_VARARGS},
+#ifdef HAVE_NCURSESW
+    {"unget_wch",           (PyCFunction)PyCurses_Unget_Wch, METH_VARARGS},
+#endif
     {"use_env",             (PyCFunction)PyCurses_Use_Env, METH_VARARGS},
 #ifndef STRICT_SYSV_CURSES
     {"use_default_colors",  (PyCFunction)PyCurses_Use_Default_Colors, METH_NOARGS},
