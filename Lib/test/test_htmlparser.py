@@ -377,7 +377,8 @@ class HTMLParserTolerantTestCase(TestCaseBase):
         p = html.parser.HTMLParser()
         self.assertEqual(p.unescape('&#bad;'),'&#bad;')
         self.assertEqual(p.unescape('&#0038;'),'&')
-
+        # see #12888
+        self.assertEqual(p.unescape('&#123; ' * 1050), '{ ' * 1050)
 
 def test_main():
     support.run_unittest(HTMLParserTestCase, HTMLParserTolerantTestCase)
