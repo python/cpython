@@ -670,7 +670,7 @@ the new dictionary-based approach::
     version: 1
     formatters:
       simple:
-        format: format=%(asctime)s - %(name)s - %(levelname)s - %(message)s
+        format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     handlers:
       console:
         class: logging.StreamHandler
