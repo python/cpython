@@ -264,6 +264,22 @@ def test_issue6243(stdscr):
     curses.ungetch(1025)
     stdscr.getkey()
 
+def test_unget_wch(stdscr):
+    if not hasattr(curses, 'unget_wch'):
+        return
+    ch = 'a'
+    curses.unget_wch(ch)
+    read = stdscr.get_wch()
+    read = chr(read)
+    if read != ch:
+        raise AssertionError("%r != %r" % (read, ch))
+
+    ch = ord('a')
+    curses.unget_wch(ch)
+    read = stdscr.get_wch()
+    if read != ch:
+        raise AssertionError("%r != %r" % (read, ch))
+
 def main(stdscr):
     curses.savetty()
     try:
@@ -272,6 +288,7 @@ def main(stdscr):
         test_userptr_without_set(stdscr)
         test_resize_term(stdscr)
         test_issue6243(stdscr)
+        test_unget_wch(stdscr)
     finally:
         curses.resetty()
 

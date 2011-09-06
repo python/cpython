@@ -598,6 +598,17 @@ The module :mod:`curses` defines the following functions:
       Only one *ch* can be pushed before :meth:`getch` is called.
 
 
+.. function:: unget_wch(ch)
+
+   Push *ch* so the next :meth:`get_wch` will return it.
+
+   .. note::
+
+      Only one *ch* can be pushed before :meth:`get_wch` is called.
+
+   .. versionadded:: 3.3
+
+
 .. function:: ungetmouse(id, x, y, z, bstate)
 
    Push a :const:`KEY_MOUSE` event onto the input queue, associating the given
