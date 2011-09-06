@@ -1204,12 +1204,12 @@ PyUnicode_FromFormat(const char *format, ...)
 /* Helper function for PyUnicode_AsWideChar() and PyUnicode_AsWideCharString():
    convert a Unicode object to a wide character string.
 
-   - If w is NULL: return the number of wide characters (including the nul
+   - If w is NULL: return the number of wide characters (including the null
      character) required to convert the unicode object. Ignore size argument.
 
-   - Otherwise: return the number of wide characters (excluding the nul
+   - Otherwise: return the number of wide characters (excluding the null
      character) written into w. Write at most size wide characters (including
-     the nul character). */
+     the null character). */
 static Py_ssize_t
 unicode_aswidechar(PyUnicodeObject *unicode,
                    wchar_t *w,
@@ -1257,7 +1257,7 @@ unicode_aswidechar(PyUnicodeObject *unicode,
         return w - worig;
     }
     else {
-        nchar = 1; /* nul character at the end */
+        nchar = 1; /* null character at the end */
         while (u != uend) {
             if (0xD800 <= u[0] && u[0] <= 0xDBFF
                 && 0xDC00 <= u[1] && u[1] <= 0xDFFF)
@@ -1295,7 +1295,7 @@ unicode_aswidechar(PyUnicodeObject *unicode,
         return w - worig;
     }
     else {
-        nchar = 1; /* nul character */
+        nchar = 1; /* null character */
         while (u != uend) {
             if (*u > 0xffff)
                 nchar += 2;
