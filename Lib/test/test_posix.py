@@ -840,6 +840,8 @@ class PosixTester(unittest.TestCase):
         posix.sched_yield()
 
     @requires_sched_h
+    @unittest.skipUnless(hasattr(posix, 'sched_get_priority_max'),
+                         "requires sched_get_priority_max()")
     def test_sched_priority(self):
         # Round-robin usually has interesting priorities.
         pol = posix.SCHED_RR
