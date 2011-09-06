@@ -4555,6 +4555,8 @@ posix_fork(PyObject *self, PyObject *noargs)
 
 #ifdef HAVE_SCHED_H
 
+#ifdef HAVE_SCHED_GET_PRIORITY_MAX
+
 PyDoc_STRVAR(posix_sched_get_priority_max__doc__,
 "sched_get_priority_max(policy)\n\n\
 Get the maximum scheduling priority for *policy*.");
@@ -4588,6 +4590,8 @@ posix_sched_get_priority_min(PyObject *self, PyObject *args)
         return posix_error();
     return PyLong_FromLong(min);
 }
+
+#endif /* HAVE_SCHED_GET_PRIORITY_MAX */
 
 #ifdef HAVE_SCHED_SETSCHEDULER
 
@@ -10452,8 +10456,10 @@ static PyMethodDef posix_methods[] = {
     {"fork",            posix_fork, METH_NOARGS, posix_fork__doc__},
 #endif /* HAVE_FORK */
 #ifdef HAVE_SCHED_H
+#ifdef HAVE_SCHED_GET_PRIORITY_MAX
     {"sched_get_priority_max", posix_sched_get_priority_max, METH_VARARGS, posix_sched_get_priority_max__doc__},
     {"sched_get_priority_min", posix_sched_get_priority_min, METH_VARARGS, posix_sched_get_priority_min__doc__},
+#endif
 #ifdef HAVE_SCHED_SETPARAM
     {"sched_getparam", posix_sched_getparam, METH_VARARGS, posix_sched_getparam__doc__},
 #endif
@@ -10474,7 +10480,7 @@ static PyMethodDef posix_methods[] = {
     {"sched_setaffinity", posix_sched_setaffinity, METH_VARARGS, posix_sched_setaffinity__doc__},
     {"sched_getaffinity", posix_sched_getaffinity, METH_VARARGS, posix_sched_getaffinity__doc__},
 #endif
-#endif
+#endif /* HAVE_SCHED_H */
 #if defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX)
     {"openpty",         posix_openpty, METH_NOARGS, posix_openpty__doc__},
 #endif /* HAVE_OPENPTY || HAVE__GETPTY || HAVE_DEV_PTMX */

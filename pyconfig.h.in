@@ -653,6 +653,9 @@
 /* Define to 1 if you have the `round' function. */
 #undef HAVE_ROUND
 
+/* Define to 1 if you have the `sched_get_priority_max' function. */
+#undef HAVE_SCHED_GET_PRIORITY_MAX
+
 /* Define to 1 if you have the <sched.h> header file. */
 #undef HAVE_SCHED_H
 
