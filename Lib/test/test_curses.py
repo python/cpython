@@ -265,14 +265,16 @@ def test_issue6243(stdscr):
     stdscr.getkey()
 
 def test_unget_wch(stdscr):
-    ch = '\xe9'
+    if not hasattr(curses, 'unget_wch'):
+        return
+    ch = 'a'
     curses.unget_wch(ch)
     read = stdscr.get_wch()
     read = chr(read)
     if read != ch:
         raise AssertionError("%r != %r" % (read, ch))
 
-    ch = ord('\xe9')
+    ch = ord('a')
     curses.unget_wch(ch)
     read = stdscr.get_wch()
     if read != ch:
