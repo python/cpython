@@ -704,7 +704,7 @@ static PyMethodDef iobase_methods[] = {
 };
 
 static PyGetSetDef iobase_getset[] = {
-    {"__dict__", iobase_get_dict, NULL, NULL},
+    {"__dict__", (getter)iobase_get_dict, NULL, NULL},
     {"closed", (getter)iobase_closed_get, NULL, NULL},
     {NULL}
 };
