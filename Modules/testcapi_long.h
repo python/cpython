@@ -177,6 +177,32 @@ TESTNAME(PyObject *error(const char*))
         Py_DECREF(one);
     }
 
+    /* Test F_PY_TO_{S,U} on non-pylong input. This should raise a TypeError. */
+    {
+        TYPENAME out;
+        unsigned TYPENAME uout;
+
+        Py_INCREF(Py_None);
+
+        out = F_PY_TO_S(Py_None);
+        if (out != (TYPENAME)-1 || !PyErr_Occurred())
+            return error("PyLong_AsXXX(None) didn't complain");
+        if (!PyErr_ExceptionMatches(PyExc_TypeError))
+            return error("PyLong_AsXXX(None) raised "
+                         "something other than TypeError");
+        PyErr_Clear();
+
+        uout = F_PY_TO_U(Py_None);
+        if (uout != (unsigned TYPENAME)-1 || !PyErr_Occurred())
+            return error("PyLong_AsXXX(None) didn't complain");
+        if (!PyErr_ExceptionMatches(PyExc_TypeError))
+            return error("PyLong_AsXXX(None) raised "
+                         "something other than TypeError");
+        PyErr_Clear();
+
+        Py_DECREF(Py_None);
+    }
+
     Py_INCREF(Py_None);
     return Py_None;
 }

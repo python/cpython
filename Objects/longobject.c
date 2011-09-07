@@ -1193,8 +1193,12 @@ PyLong_AsUnsignedLongLong(PyObject *vv)
     int one = 1;
     int res;
 
-    if (vv == NULL || !PyLong_Check(vv)) {
+    if (vv == NULL) {
         PyErr_BadInternalCall();
+        return (unsigned PY_LONG_LONG)-1;
+    }
+    if (!PyLong_Check(vv)) {
+        PyErr_SetString(PyExc_TypeError, "an integer is required");
         return (unsigned PY_LONG_LONG)-1;
     }
 
@@ -2481,8 +2485,12 @@ PyLong_AsDouble(PyObject *v)
     Py_ssize_t exponent;
     double x;
 
-    if (v == NULL || !PyLong_Check(v)) {
+    if (v == NULL) {
         PyErr_BadInternalCall();
+        return -1.0;
+    }
+    if (!PyLong_Check(v)) {
+        PyErr_SetString(PyExc_TypeError, "an integer is required");
         return -1.0;
     }
     x = _PyLong_Frexp((PyLongObject *)v, &exponent);
