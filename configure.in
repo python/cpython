@@ -408,8 +408,7 @@ then
   AC_DEFINE(_XOPEN_SOURCE_EXTENDED, 1,
    	    Define to activate Unix95-and-earlier features)
 
-  AC_DEFINE(_POSIX_C_SOURCE, 200112L, Define to activate features from IEEE Stds 1003.1-2001)
-  
+  AC_DEFINE(_POSIX_C_SOURCE, 200809L, Define to activate features from IEEE Stds 1003.1-2008)
 fi
 
 #
