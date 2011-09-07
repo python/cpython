@@ -3140,8 +3140,9 @@ esac
 
 if test $define_xopen_source = yes
 then
+  # X/Open 7, incorporating POSIX.1-2008
 
-$as_echo "#define _XOPEN_SOURCE 600" >>confdefs.h
+$as_echo "#define _XOPEN_SOURCE 700" >>confdefs.h
 
 
   # On Tru64 Unix 4.0F, defining _XOPEN_SOURCE also requires
