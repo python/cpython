@@ -904,7 +904,7 @@ static PyObject *
 faulthandler_stack_overflow(PyObject *self)
 {
     size_t depth, size;
-    void *sp = &depth, *stop;
+    char *sp = (char *)&depth, *stop;
 
     depth = 0;
     stop = stack_overflow(sp - STACK_OVERFLOW_MAX_SIZE,
