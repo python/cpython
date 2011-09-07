@@ -397,7 +397,8 @@ esac
 
 if test $define_xopen_source = yes
 then
-  AC_DEFINE(_XOPEN_SOURCE, 600, 
+  # X/Open 7, incorporating POSIX.1-2008
+  AC_DEFINE(_XOPEN_SOURCE, 700,
             Define to the level of X/Open that your system supports)
 
   # On Tru64 Unix 4.0F, defining _XOPEN_SOURCE also requires

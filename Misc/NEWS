@@ -1209,6 +1209,9 @@ Library
 Build
 -----
 
+- Issue #12852: Set _XOPEN_SOURCE to 700, instead of 600, to get POSIX 2008
+  functions on OpenBSD (e.g. fdopendir).
+
 - Issue #11863: Remove support for legacy systems deprecated in Python 3.2
   (following PEP 11).  These systems are systems using Mach C Threads,
   SunOS lightweight processes, GNU pth threads and IRIX threads.
