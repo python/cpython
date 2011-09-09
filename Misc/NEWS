@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #12904: os.utime, os.futimes, os.lutimes, and os.futimesat now write
+  atime and mtime with nanosecond precision on modern POSIX platforms.
+
 - Issue #12802: the Windows error ERROR_DIRECTORY (numbered 267) is now
   mapped to POSIX errno ENOTDIR (previously EINVAL).
 
