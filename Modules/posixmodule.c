@@ -11301,12 +11301,12 @@ all_ins(PyObject *d)
 #endif
 
 #ifdef HAVE_SCHED_H
+    if (ins(d, "SCHED_OTHER", (long)SCHED_OTHER)) return -1;
     if (ins(d, "SCHED_FIFO", (long)SCHED_FIFO)) return -1;
     if (ins(d, "SCHED_RR", (long)SCHED_RR)) return -1;
 #ifdef SCHED_SPORADIC
     if (ins(d, "SCHED_SPORADIC", (long)SCHED_SPORADIC) return -1;
 #endif
-    if (ins(d, "SCHED_OTHER", (long)SCHED_OTHER)) return -1;
 #ifdef SCHED_BATCH
     if (ins(d, "SCHED_BATCH", (long)SCHED_BATCH)) return -1;
 #endif
@@ -11315,6 +11315,18 @@ all_ins(PyObject *d)
 #endif
 #ifdef SCHED_RESET_ON_FORK
     if (ins(d, "SCHED_RESET_ON_FORK", (long)SCHED_RESET_ON_FORK)) return -1;
+#endif
+#ifdef SCHED_SYS
+    if (ins(d, "SCHED_SYS", (long)SCHED_SYS)) return -1;
+#endif
+#ifdef SCHED_IA
+    if (ins(d, "SCHED_IA", (long)SCHED_IA)) return -1;
+#endif
+#ifdef SCHED_FSS
+    if (ins(d, "SCHED_FSS", (long)SCHED_FSS)) return -1;
+#endif
+#ifdef SCHED_FX
+    if (ins(d, "SCHED_FX", (long)SCHED_FSS)) return -1;
 #endif
 #endif
 
