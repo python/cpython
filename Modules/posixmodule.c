@@ -4741,7 +4741,13 @@ posix_sched_setscheduler(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, _Py_PARSE_PID "iO&:sched_setscheduler",
                           &pid, &policy, &convert_sched_param, &param))
         return NULL;
-    if (sched_setscheduler(pid, policy, &param))
+
+    /*
+    ** sched_setscheduler() returns 0 in Linux, but
+    ** the previous scheduling policy.
+    ** On error, -1 is returned in all Operative Systems.
+    */
+    if (sched_setscheduler(pid, policy, &param) == -1)
         return posix_error();
     Py_RETURN_NONE;
 }
