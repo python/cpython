@@ -244,6 +244,20 @@ class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
                            "version": "1.0",
                            "obsoletes": ["my.pkg (splat)"]})
 
+    def test_classifier(self):
+        attrs = {'name': 'Boa', 'version': '3.0',
+                 'classifiers': ['Programming Language :: Python :: 3']}
+        dist = Distribution(attrs)
+        meta = self.format_metadata(dist)
+        self.assertIn('Metadata-Version: 1.1', meta)
+
+    def test_download_url(self):
+        attrs = {'name': 'Boa', 'version': '3.0',
+                 'download_url': 'http://example.org/boa'}
+        dist = Distribution(attrs)
+        meta = self.format_metadata(dist)
+        self.assertIn('Metadata-Version: 1.1', meta)
+
     def test_long_description(self):
         long_desc = textwrap.dedent("""\
         example::
