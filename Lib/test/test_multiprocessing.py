@@ -2164,13 +2164,11 @@ class TestStdinBadfiledescriptor(unittest.TestCase):
     def test_queue_in_process(self):
         queue = multiprocessing.Queue()
         proc = multiprocessing.Process(target=_TestProcess, args=(queue,))
-        proc.daemon = True
         proc.start()
         proc.join()
 
     def test_pool_in_process(self):
         p = multiprocessing.Process(target=pool_in_process)
-        p.daemon = True
         p.start()
         p.join()
 
