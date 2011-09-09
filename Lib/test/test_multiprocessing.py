@@ -267,6 +267,7 @@ class _TestProcess(BaseTestCase):
         p = self.Process(target=time.sleep, args=(DELTA,))
         self.assertNotIn(p, self.active_children())
 
+        p.daemon = True
         p.start()
         self.assertIn(p, self.active_children())
 
@@ -337,6 +338,7 @@ class _TestSubclassingProcess(BaseTestCase):
 
     def test_subclassing(self):
         uppercaser = _UpperCaser()
+        uppercaser.daemon = True
         uppercaser.start()
         self.assertEqual(uppercaser.submit('hello'), 'HELLO')
         self.assertEqual(uppercaser.submit('world'), 'WORLD')
@@ -515,6 +517,7 @@ class _TestQueue(BaseTestCase):
 
         # fork process
         p = self.Process(target=self._test_fork, args=(queue,))
+        p.daemon = True
         p.start()
 
         # check that all expected items are in the queue
@@ -555,6 +558,7 @@ class _TestQueue(BaseTestCase):
                    for i in range(4)]
 
         for p in workers:
+            p.daemon = True
             p.start()
 
         for i in range(10):
@@ -825,7 +829,9 @@ class _TestEvent(BaseTestCase):
 
         #self.assertEqual(event.is_set(), False)
 
-        self.Process(target=self._test_event, args=(event,)).start()
+        p = self.Process(target=self._test_event, args=(event,))
+        p.daemon = True
+        p.start()
         self.assertEqual(wait(), True)
 
 #
@@ -865,6 +871,7 @@ class _TestValue(BaseTestCase):
             self.assertEqual(sv.value, cv[1])
 
         proc = self.Process(target=self._test, args=(values,))
+        proc.daemon = True
         proc.start()
         proc.join()
 
@@ -928,6 +935,7 @@ class _TestArray(BaseTestCase):
         self.f(seq)
 
         p = self.Process(target=self.f, args=(arr,))
+        p.daemon = True
         p.start()
         p.join()
 
@@ -1332,6 +1340,7 @@ class _TestRemoteManager(BaseTestCase):
         manager.start()
 
         p = self.Process(target=self._putter, args=(manager.address, authkey))
+        p.daemon = True
         p.start()
 
         manager2 = QueueManager2(
@@ -1373,6 +1382,7 @@ class _TestManagerRestart(BaseTestCase):
         manager.start()
 
         p = self.Process(target=self._putter, args=(manager.address, authkey))
+        p.daemon = True
         p.start()
         queue = manager.get_queue()
         self.assertEqual(queue.get(), 'hello world')
@@ -1505,6 +1515,7 @@ class _TestConnection(BaseTestCase):
         conn, child_conn = self.Pipe()
 
         p = self.Process(target=self._echo, args=(child_conn,))
+        p.daemon = True
         p.start()
         child_conn.close()    # this might complete before child initializes
 
@@ -1577,6 +1588,7 @@ class _TestConnection(BaseTestCase):
         conn, child_conn = self.Pipe(duplex=True)
 
         p = self.Process(target=self._writefd, args=(child_conn, b"foo"))
+        p.daemon = True
         p.start()
         with open(test.support.TESTFN, "wb") as f:
             fd = f.fileno()
@@ -1600,6 +1612,7 @@ class _TestConnection(BaseTestCase):
         conn, child_conn = self.Pipe(duplex=True)
 
         p = self.Process(target=self._writefd, args=(child_conn, b"bar", True))
+        p.daemon = True
         p.start()
         with open(test.support.TESTFN, "wb") as f:
             fd = f.fileno()
@@ -1688,11 +1701,13 @@ class _TestPicklingConnections(BaseTestCase):
 
         lconn, lconn0 = self.Pipe()
         lp = self.Process(target=self._listener, args=(lconn0, families))
+        lp.daemon = True
         lp.start()
         lconn0.close()
 
         rconn, rconn0 = self.Pipe()
         rp = self.Process(target=self._remote, args=(rconn0,))
+        rp.daemon = True
         rp.start()
         rconn0.close()
 
@@ -1830,6 +1845,7 @@ class _TestSharedCTypes(BaseTestCase):
         string.value = latin('hello')
 
         p = self.Process(target=self._double, args=(x, y, foo, arr, string))
+        p.daemon = True
         p.start()
         p.join()
 
@@ -1902,6 +1918,7 @@ class _TestFinalize(BaseTestCase):
         conn, child_conn = self.Pipe()
 
         p = self.Process(target=self._test_finalize, args=(child_conn,))
+        p.daemon = True
         p.start()
         p.join()
 
@@ -1971,12 +1988,16 @@ class _TestLogging(BaseTestCase):
         reader, writer = multiprocessing.Pipe(duplex=False)
 
         logger.setLevel(LEVEL1)
-        self.Process(target=self._test_level, args=(writer,)).start()
+        p = self.Process(target=self._test_level, args=(writer,))
+        p.daemon = True
+        p.start()
         self.assertEqual(LEVEL1, reader.recv())
 
         logger.setLevel(logging.NOTSET)
         root_logger.setLevel(LEVEL2)
-        self.Process(target=self._test_level, args=(writer,)).start()
+        p = self.Process(target=self._test_level, args=(writer,))
+        p.daemon = True
+        p.start()
         self.assertEqual(LEVEL2, reader.recv())
 
         root_logger.setLevel(root_level)
@@ -2162,6 +2183,7 @@ def _ThisSubProcess(q):
 def _TestProcess(q):
     queue = multiprocessing.Queue()
     subProc = multiprocessing.Process(target=_ThisSubProcess, args=(queue,))
+    subProc.daemon = True
     subProc.start()
     subProc.join()
 
@@ -2198,11 +2220,13 @@ class TestStdinBadfiledescriptor(unittest.TestCase):
     def test_queue_in_process(self):
         queue = multiprocessing.Queue()
         proc = multiprocessing.Process(target=_TestProcess, args=(queue,))
+        proc.daemon = True
         proc.start()
         proc.join()
 
     def test_pool_in_process(self):
         p = multiprocessing.Process(target=pool_in_process)
+        p.daemon = True
         p.start()
         p.join()
 
