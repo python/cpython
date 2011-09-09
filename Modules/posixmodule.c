@@ -4743,9 +4743,9 @@ posix_sched_setscheduler(PyObject *self, PyObject *args)
         return NULL;
 
     /*
-    ** sched_setscheduler() returns 0 in Linux, but
-    ** the previous scheduling policy.
-    ** On error, -1 is returned in all Operative Systems.
+    ** sched_setscheduler() returns 0 in Linux, but the previous
+    ** scheduling policy under Solaris/Illumos, and others.
+    ** On error, -1 is returned in all Operating Systems.
     */
     if (sched_setscheduler(pid, policy, &param) == -1)
         return posix_error();
