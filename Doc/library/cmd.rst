@@ -247,7 +247,7 @@ immediate playback::
             right(*parse(arg))
         def do_left(self, arg):
             'Turn turtle left by given number of degrees:  LEFT 90'
-            right(*parse(arg))
+            left(*parse(arg))
         def do_goto(self, arg):
             'Move turtle to an absolute position with changing orientation.  GOTO 100 200'
             goto(*parse(arg))
