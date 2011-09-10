@@ -58,6 +58,11 @@ Tests
 
 - Issue #12821: Fix test_fcntl failures on OpenBSD 5.
 
+Extension Modules
+-----------------
+ 
+- Issue #12950: Fix passing file descriptors in multiprocessing, under
+  OpenIndiana/Illumos.
 
 What's New in Python 3.2.2?
 ===========================
