@@ -188,6 +188,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #12950: Fix passing file descriptors in multiprocessing, under
+  OpenIndiana/Illumos.
+
 - Issue #12764: Fix a crash in ctypes when the name of a Structure field is not
   a string.
 
