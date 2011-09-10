@@ -186,9 +186,8 @@ class bdist_wininst(Command):
         os.remove(arcname)
 
         if not self.keep_temp:
-            if self.dry_run:
-                logger.info('removing %s', self.bdist_dir)
-            else:
+            logger.info('removing %s', self.bdist_dir)
+            if not self.dry_run:
                 rmtree(self.bdist_dir)
 
     def get_inidata(self):
