@@ -3,16 +3,16 @@
 import os
 import sys
 import shutil
-from tempfile import mkstemp
 from io import StringIO
 
 from packaging import install
 from packaging.tests import unittest, support, TESTFN
 from packaging.run import main
 
+from test.script_helper import assert_python_ok
+
 # setup script that uses __file__
 setup_using___file__ = """\
-
 __file__
 
 from packaging.run import setup
@@ -20,7 +20,6 @@ setup()
 """
 
 setup_prints_cwd = """\
-
 import os
 print os.getcwd()
 
@@ -29,11 +28,12 @@ setup()
 """
 
 
-class CoreTestCase(support.TempdirManager, support.LoggingCatcher,
-                   unittest.TestCase):
+class RunTestCase(support.TempdirManager,
+                  support.LoggingCatcher,
+                  unittest.TestCase):
 
     def setUp(self):
-        super(CoreTestCase, self).setUp()
+        super(RunTestCase, self).setUp()
         self.old_stdout = sys.stdout
         self.cleanup_testfn()
         self.old_argv = sys.argv, sys.argv[:]
@@ -43,7 +43,7 @@ class CoreTestCase(support.TempdirManager, support.LoggingCatcher,
         self.cleanup_testfn()
         sys.argv = self.old_argv[0]
         sys.argv[:] = self.old_argv[1]
-        super(CoreTestCase, self).tearDown()
+        super(RunTestCase, self).tearDown()
 
     def cleanup_testfn(self):
         path = TESTFN
@@ -77,9 +77,16 @@ class CoreTestCase(support.TempdirManager, support.LoggingCatcher,
             os.chmod(install_path, old_mod)
             install.get_path = old_get_path
 
+    def test_show_help(self):
+        # smoke test, just makes sure some help is displayed
+        status, out, err = assert_python_ok('-m', 'packaging.run', '--help')
+        self.assertEqual(status, 0)
+        self.assertGreater(out, b'')
+        self.assertEqual(err, b'')
+
 
 def test_suite():
-    return unittest.makeSuite(CoreTestCase)
+    return unittest.makeSuite(RunTestCase)
 
 if __name__ == "__main__":
     unittest.main(defaultTest="test_suite")
