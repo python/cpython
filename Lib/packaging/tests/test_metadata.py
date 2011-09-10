@@ -251,7 +251,11 @@ class MetadataTestCase(LoggingCatcher,
         self.assertNotIn('Obsoletes', metadata)
 
         metadata['Classifier'] = ['ok']
-        self.assertEqual(metadata['Metadata-Version'], '1.2')
+        self.assertEqual(metadata['Metadata-Version'], '1.1')
+
+        metadata = Metadata()
+        metadata['Download-URL'] = 'ok'
+        self.assertEqual(metadata['Metadata-Version'], '1.1')
 
         metadata = Metadata()
         metadata['Obsoletes'] = 'ok'
@@ -268,6 +272,15 @@ class MetadataTestCase(LoggingCatcher,
         del metadata['Obsoletes-Dist']
         metadata['Version'] = '1'
         self.assertEqual(metadata['Metadata-Version'], '1.0')
+
+        # make sure the _best_version function works okay with
+        # non-conflicting fields from 1.1 and 1.2 (i.e. we want only the
+        # requires/requires-dist and co. pairs to cause a conflict, not all
+        # fields in _314_MARKERS)
+        metadata = Metadata()
+        metadata['Requires-Python'] = '3'
+        metadata['Classifier'] = ['Programming language :: Python :: 3']
+        self.assertEqual(metadata['Metadata-Version'], '1.2')
 
         PKG_INFO = os.path.join(os.path.dirname(__file__),
                                 'SETUPTOOLS-PKG-INFO')

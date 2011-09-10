@@ -61,7 +61,8 @@ _314_FIELDS = ('Metadata-Version', 'Name', 'Version', 'Platform',
                'License', 'Classifier', 'Download-URL', 'Obsoletes',
                'Provides', 'Requires')
 
-_314_MARKERS = ('Obsoletes', 'Provides', 'Requires')
+_314_MARKERS = ('Obsoletes', 'Provides', 'Requires', 'Classifier',
+                'Download-URL')
 
 _345_FIELDS = ('Metadata-Version', 'Name', 'Version', 'Platform',
                'Supported-Platform', 'Summary', 'Description',
