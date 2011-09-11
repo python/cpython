@@ -274,6 +274,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12306: Expose the runtime version of the zlib C library as a constant,
+  ZLIB_RUNTIME_VERSION, in the zlib module. Patch by Torsten Landschoff.
+
 - Issue #12959: Add collections.ChainMap to collections.__all__.
 
 - Issue #12567: Add curses.unget_wch() function. Push a character so the next
