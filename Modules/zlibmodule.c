@@ -1169,6 +1169,10 @@ PyInit_zlib(void)
     if (ver != NULL)
         PyModule_AddObject(m, "ZLIB_VERSION", ver);
 
+    ver = PyUnicode_FromString(zlibVersion());
+    if (ver != NULL)
+        PyModule_AddObject(m, "ZLIB_RUNTIME_VERSION", ver);
+
     PyModule_AddStringConstant(m, "__version__", "1.0");
 
     return m;
