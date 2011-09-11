@@ -75,11 +75,11 @@ class BZ2File(io.BufferedIOBase):
         elif mode in ("w", "wb"):
             mode = "wb"
             mode_code = _MODE_WRITE
-            self._compressor = BZ2Compressor()
+            self._compressor = BZ2Compressor(compresslevel)
         elif mode in ("a", "ab"):
             mode = "ab"
             mode_code = _MODE_WRITE
-            self._compressor = BZ2Compressor()
+            self._compressor = BZ2Compressor(compresslevel)
         else:
             raise ValueError("Invalid mode: {!r}".format(mode))
 

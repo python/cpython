@@ -224,6 +224,13 @@ class BZ2FileTest(BaseTest):
         with open(self.filename, 'rb') as f:
             self.assertEqual(self.decompress(f.read()), self.TEXT)
 
+    def testWriteNonDefaultCompressLevel(self):
+        expected = bz2.compress(self.TEXT, compresslevel=5)
+        with BZ2File(self.filename, "w", compresslevel=5) as bz2f:
+            bz2f.write(self.TEXT)
+        with open(self.filename, "rb") as f:
+            self.assertEqual(f.read(), expected)
+
     def testWriteLines(self):
         with BZ2File(self.filename, "w") as bz2f:
             self.assertRaises(TypeError, bz2f.writelines)
