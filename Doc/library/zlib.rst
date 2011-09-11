@@ -228,8 +228,6 @@ the following constants:
    This may be different from the zlib library actually used at runtime, which
    is available as :const:`ZLIB_RUNTIME_VERSION`.
 
-   .. versionadded:: 3.3
-
 
 .. data:: ZLIB_RUNTIME_VERSION
 
