@@ -122,6 +122,7 @@ The available exception and functions in this module are:
    won't fit into memory at once.  The *wbits* parameter controls the size of the
    window buffer.
 
+
 Compression objects support the following methods:
 
 
@@ -215,6 +216,26 @@ Decompression objects support the following methods and attributes:
    Returns a copy of the decompression object.  This can be used to save the state
    of the decompressor midway through the data stream in order to speed up random
    seeks into the stream at a future point.
+
+
+Information about the version of the zlib library in use is available through
+the following constants:
+
+
+.. data:: ZLIB_VERSION
+
+   The version string of the zlib library that was used for building the module.
+   This may be different from the zlib library actually used at runtime, which
+   is available as :const:`ZLIB_RUNTIME_VERSION`.
+
+   .. versionadded:: 3.3
+
+
+.. data:: ZLIB_RUNTIME_VERSION
+
+   The version string of the zlib library actually loaded by the interpreter.
+
+   .. versionadded:: 3.3
 
 
 .. seealso::

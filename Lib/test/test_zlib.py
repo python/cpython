@@ -13,6 +13,17 @@ except ImportError:
     mmap = None
 
 
+class VersionTestCase(unittest.TestCase):
+
+    def test_library_version(self):
+        # On the build system, ZLIB_RUNTIME_VERSION should match ZLIB_VERSION.
+        # ZLIB_RUNTIME_VERSION is the actual library version while ZLIB_VERSION
+        # is the version from the header file. On the build system, the headers
+        # should match with the library exactly. At runtime, only the first
+        # digit is required to match.
+        self.assertEqual(zlib.ZLIB_RUNTIME_VERSION, zlib.ZLIB_VERSION)
+
+
 class ChecksumTestCase(unittest.TestCase):
     # checksum test cases
     def test_crc32start(self):
@@ -647,6 +658,7 @@ LAERTES
 
 def test_main():
     support.run_unittest(
+        VersionTestCase,
         ChecksumTestCase,
         ChecksumBigBufferTestCase,
         ExceptionTestCase,
