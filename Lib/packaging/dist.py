@@ -228,8 +228,8 @@ Common commands: (see '--help-commands' for more)
             d = self.command_options[command] = {}
         return d
 
-    def get_fullname(self):
-        return self.metadata.get_fullname()
+    def get_fullname(self, filesafe=False):
+        return self.metadata.get_fullname(filesafe)
 
     def dump_option_dicts(self, header=None, commands=None, indent=""):
         from pprint import pformat

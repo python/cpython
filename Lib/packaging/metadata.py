@@ -182,6 +182,7 @@ _UNICODEFIELDS = ('Author', 'Maintainer', 'Summary', 'Description')
 
 _MISSING = object()
 
+_FILESAFE = re.compile('[^A-Za-z0-9.]+')
 
 class Metadata:
     """The metadata of a release.
@@ -285,9 +286,18 @@ class Metadata:
     #
     # Public API
     #
-    def get_fullname(self):
-        """Return the distribution name with version"""
-        return '%s-%s' % (self['Name'], self['Version'])
+    def get_fullname(self, filesafe=False):
+        """Return the distribution name with version.
+
+        If filesafe is true, return a filename-escaped form."""
+        name, version = self['Name'], self['Version']
+        if filesafe:
+            # For both name and version any runs of non-alphanumeric or '.'
+            # characters are replaced with a single '-'.  Additionally any
+            # spaces in the version string become '.'
+            name = _FILESAFE.sub('-', name)
+            version = _FILESAFE.sub('-', version.replace(' ', '.'))
+        return '%s-%s' % (name, version)
 
     def is_metadata_field(self, name):
         """return True if name is a valid metadata key"""
