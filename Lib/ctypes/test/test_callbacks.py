@@ -140,7 +140,7 @@ class Callbacks(unittest.TestCase):
             def __del__(self):
                 gc.collect()
         CFUNCTYPE(None)(lambda x=Nasty(): None)
-        
+
 
 try:
     WINFUNCTYPE
