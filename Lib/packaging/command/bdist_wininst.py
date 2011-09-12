@@ -1,7 +1,5 @@
 """Create an executable installer for Windows."""
 
-# FIXME synchronize bytes/str use with same file in distutils
-
 import sys
 import os
 
@@ -186,9 +184,8 @@ class bdist_wininst(Command):
         os.remove(arcname)
 
         if not self.keep_temp:
-            if self.dry_run:
-                logger.info('removing %s', self.bdist_dir)
-            else:
+            logger.info('removing %s', self.bdist_dir)
+            if not self.dry_run:
                 rmtree(self.bdist_dir)
 
     def get_inidata(self):
@@ -265,14 +262,17 @@ class bdist_wininst(Command):
                 cfgdata = cfgdata.encode("mbcs")
 
             # Append the pre-install script
-            cfgdata = cfgdata + "\0"
+            cfgdata = cfgdata + b"\0"
             if self.pre_install_script:
-                with open(self.pre_install_script) as fp:
-                    script_data = fp.read()
-                cfgdata = cfgdata + script_data + "\n\0"
+                # We need to normalize newlines, so we open in text mode and
+                # convert back to bytes. "latin-1" simply avoids any possible
+                # failures.
+                with open(self.pre_install_script, encoding="latin-1") as fp:
+                    script_data = fp.read().encode("latin-1")
+                cfgdata = cfgdata + script_data + b"\n\0"
             else:
                 # empty pre-install script
-                cfgdata = cfgdata + "\0"
+                cfgdata = cfgdata + b"\0"
             file.write(cfgdata)
 
             # The 'magic number' 0x1234567B is used to make sure that the

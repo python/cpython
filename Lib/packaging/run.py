@@ -290,27 +290,23 @@ def _run(dispatcher, args, **kw):
 
 
 @action_help("""\
-Usage: pysetup list dist [dist ...]
+Usage: pysetup list [dist ...]
    or: pysetup list --help
-   or: pysetup list --all
 
 Print name, version and location for the matching installed distributions.
 
 positional arguments:
-   dist  installed distribution name
-
-optional arguments:
-   --all  list all installed distributions
+   dist  installed distribution name; omit to get all distributions
 """)
 def _list(dispatcher, args, **kw):
-    opts = _parse_args(args[1:], '', ['all'])
+    opts = _parse_args(args[1:], '', [])
     dists = get_distributions(use_egg_info=True)
-    if 'all' in opts or opts['args'] == []:
-        results = dists
-        listall = True
-    else:
+    if opts['args']:
         results = (d for d in dists if d.name.lower() in opts['args'])
         listall = False
+    else:
+        results = dists
+        listall = True
 
     number = 0
     for dist in results:
@@ -368,7 +364,7 @@ actions = [
     ('install', 'Install a project', _install),
     ('remove', 'Remove a project', _remove),
     ('search', 'Search for a project in the indexes', _search),
-    ('list', 'List installed releases', _list),
+    ('list', 'List installed projects', _list),
     ('graph', 'Display a graph', _graph),
     ('create', 'Create a project', _create),
     ('generate-setup', 'Generate a backward-comptatible setup.py', _generate),
