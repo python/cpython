@@ -490,6 +490,7 @@ class QuotingTests(unittest.TestCase):
         result = urllib.parse.quote(partial_quote)
         self.assertEqual(expected, result,
                          "using quote(): %r != %r" % (expected, result))
+        result = urllib.parse.quote_plus(partial_quote)
         self.assertEqual(expected, result,
                          "using quote_plus(): %r != %r" % (expected, result))
 
