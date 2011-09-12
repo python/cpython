@@ -407,6 +407,7 @@ class QuotingTests(unittest.TestCase):
         result = urllib.quote(partial_quote)
         self.assertEqual(expected, result,
                          "using quote(): %s != %s" % (expected, result))
+        result = urllib.quote_plus(partial_quote)
         self.assertEqual(expected, result,
                          "using quote_plus(): %s != %s" % (expected, result))
         self.assertRaises(TypeError, urllib.quote, None)
