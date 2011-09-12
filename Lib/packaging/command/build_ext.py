@@ -1,9 +1,5 @@
 """Build extension modules."""
 
-# FIXME Is this module limited to C extensions or do C++ extensions work too?
-# The docstring of this module said that C++ was not supported, but other
-# comments contradict that.
-
 import os
 import re
 import sys

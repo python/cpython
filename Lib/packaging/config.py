@@ -227,10 +227,11 @@ class Config:
                 self.dist.scripts = [self.dist.scripts]
 
             self.dist.package_data = {}
-            for data in files.get('package_data', []):
-                data = data.split('=')
+            for line in files.get('package_data', []):
+                data = line.split('=')
                 if len(data) != 2:
-                    continue  # FIXME errors should never pass silently
+                    raise ValueError('invalid line for package_data: %s '
+                                     '(misses "=")' % line)
                 key, value = data
                 self.dist.package_data[key.strip()] = value.strip()
 

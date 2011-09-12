@@ -28,7 +28,7 @@ class install_distinfo(Command):
         ('no-record', None,
          "do not generate a RECORD file"),
         ('no-resources', None,
-         "do not generate a RESSOURCES list installed file")
+         "do not generate a RESSOURCES list installed file"),
     ]
 
     boolean_options = ['requested', 'no-record', 'no-resources']
@@ -70,56 +70,56 @@ class install_distinfo(Command):
         self.distinfo_dir = os.path.join(self.distinfo_dir, basename)
 
     def run(self):
-        # FIXME dry-run should be used at a finer level, so that people get
-        # useful logging output and can have an idea of what the command would
-        # have done
-        if not self.dry_run:
-            target = self.distinfo_dir
+        target = self.distinfo_dir
 
-            if os.path.isdir(target) and not os.path.islink(target):
+        if os.path.isdir(target) and not os.path.islink(target):
+            if not self.dry_run:
                 rmtree(target)
-            elif os.path.exists(target):
-                self.execute(os.unlink, (self.distinfo_dir,),
-                             "removing " + target)
+        elif os.path.exists(target):
+            self.execute(os.unlink, (self.distinfo_dir,),
+                         "removing " + target)
 
-            self.execute(os.makedirs, (target,), "creating " + target)
+        self.execute(os.makedirs, (target,), "creating " + target)
 
-            metadata_path = os.path.join(self.distinfo_dir, 'METADATA')
-            logger.info('creating %s', metadata_path)
-            self.distribution.metadata.write(metadata_path)
-            self.outfiles.append(metadata_path)
+        metadata_path = os.path.join(self.distinfo_dir, 'METADATA')
+        self.execute(self.distribution.metadata.write, (metadata_path,),
+                     "creating " + metadata_path)
+        self.outfiles.append(metadata_path)
 
-            installer_path = os.path.join(self.distinfo_dir, 'INSTALLER')
-            logger.info('creating %s', installer_path)
+        installer_path = os.path.join(self.distinfo_dir, 'INSTALLER')
+        logger.info('creating %s', installer_path)
+        if not self.dry_run:
             with open(installer_path, 'w') as f:
                 f.write(self.installer)
-            self.outfiles.append(installer_path)
+        self.outfiles.append(installer_path)
 
-            if self.requested:
-                requested_path = os.path.join(self.distinfo_dir, 'REQUESTED')
-                logger.info('creating %s', requested_path)
+        if self.requested:
+            requested_path = os.path.join(self.distinfo_dir, 'REQUESTED')
+            logger.info('creating %s', requested_path)
+            if not self.dry_run:
                 open(requested_path, 'wb').close()
-                self.outfiles.append(requested_path)
+            self.outfiles.append(requested_path)
 
-
-            if not self.no_resources:
-                install_data = self.get_finalized_command('install_data')
-                if install_data.get_resources_out() != []:
-                    resources_path = os.path.join(self.distinfo_dir,
-                                                  'RESOURCES')
-                    logger.info('creating %s', resources_path)
+        if not self.no_resources:
+            install_data = self.get_finalized_command('install_data')
+            if install_data.get_resources_out() != []:
+                resources_path = os.path.join(self.distinfo_dir,
+                                              'RESOURCES')
+                logger.info('creating %s', resources_path)
+                if not self.dry_run:
                     with open(resources_path, 'wb') as f:
                         writer = csv.writer(f, delimiter=',',
                                             lineterminator='\n',
                                             quotechar='"')
-                        for tuple in install_data.get_resources_out():
-                            writer.writerow(tuple)
+                        for row in install_data.get_resources_out():
+                            writer.writerow(row)
 
-                        self.outfiles.append(resources_path)
+                self.outfiles.append(resources_path)
 
-            if not self.no_record:
-                record_path = os.path.join(self.distinfo_dir, 'RECORD')
-                logger.info('creating %s', record_path)
+        if not self.no_record:
+            record_path = os.path.join(self.distinfo_dir, 'RECORD')
+            logger.info('creating %s', record_path)
+            if not self.dry_run:
                 with open(record_path, 'w', encoding='utf-8') as f:
                     writer = csv.writer(f, delimiter=',',
                                         lineterminator='\n',
@@ -141,7 +141,7 @@ class install_distinfo(Command):
 
                     # add the RECORD file itself
                     writer.writerow((record_path, '', ''))
-                    self.outfiles.append(record_path)
+            self.outfiles.append(record_path)
 
     def get_outputs(self):
         return self.outfiles
