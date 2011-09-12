@@ -140,6 +140,14 @@ class Callbacks(unittest.TestCase):
                 if isinstance(x, X)]
         self.assertEqual(len(live), 0)
 
+    def test_issue12483(self):
+        import gc
+        class Nasty:
+            def __del__(self):
+                gc.collect()
+        CFUNCTYPE(None)(lambda x=Nasty(): None)
+        
+
 try:
     WINFUNCTYPE
 except NameError:

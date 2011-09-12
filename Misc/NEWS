@@ -192,6 +192,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #12483: ctypes: Fix a crash when the destruction of a callback
+  object triggers the garbage collector.
+
 - Issue #12950: Fix passing file descriptors in multiprocessing, under
   OpenIndiana/Illumos.
 
