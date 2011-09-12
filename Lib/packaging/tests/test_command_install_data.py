@@ -35,6 +35,7 @@ class InstallDataTestCase(support.TempdirManager,
         two = os.path.join(pkg_dir, 'two')
         self.write_file(two, 'xxx')
 
+        # FIXME this creates a literal \{inst2\} directory!
         cmd.data_files = {one: '{inst}/one', two: '{inst2}/two'}
         self.assertCountEqual(cmd.get_inputs(), [one, two])
 
