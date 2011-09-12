@@ -13,6 +13,7 @@ static void
 CThunkObject_dealloc(PyObject *_self)
 {
     CThunkObject *self = (CThunkObject *)_self;
+    PyObject_GC_UnTrack(self);
     Py_XDECREF(self->converters);
     Py_XDECREF(self->callable);
     Py_XDECREF(self->restype);
