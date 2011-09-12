@@ -19,13 +19,12 @@ Finding out what's installed
 
 Pysetup makes it easy to find out what Python packages are installed::
 
-   $ pysetup search virtualenv
-   virtualenv 1.6 at /opt/python3.3/lib/python3.3/site-packages/virtualenv-1.6-py3.3.egg-info
+   $ pysetup list virtualenv
+   'virtualenv' 1.6 at '/opt/python3.3/lib/python3.3/site-packages/virtualenv-1.6-py3.3.egg-info'
 
-   $ pysetup search --all
-   pyverify 0.8.1 at /opt/python3.3/lib/python3.3/site-packages/pyverify-0.8.1.dist-info
-   virtualenv 1.6 at /opt/python3.3/lib/python3.3/site-packages/virtualenv-1.6-py3.3.egg-info
-   wsgiref 0.1.2 at /opt/python3.3/lib/python3.3/wsgiref.egg-info
+   $ pysetup list
+   'pyverify' 0.8.1 at '/opt/python3.3/lib/python3.3/site-packages/pyverify-0.8.1.dist-info'
+   'virtualenv' 1.6 at '/opt/python3.3/lib/python3.3/site-packages/virtualenv-1.6-py3.3.egg-info'
    ...
 
 
@@ -146,9 +145,11 @@ Getting a list of all pysetup actions and global options::
        metadata: Display the metadata of a project
        install: Install a project
        remove: Remove a project
-       search: Search for a project
+       search: Search for a project in the indexes
+       list: List installed projects
        graph: Display a graph
-       create: Create a Project
+       create: Create a project
+       generate-setup: Generate a backward-comptatible setup.py
 
    To get more help on an action, use:
 
