@@ -64,9 +64,6 @@
 /* Define if GCC supports __attribute__((format(PyArg_ParseTuple, 2, 3))) */
 #undef HAVE_ATTRIBUTE_FORMAT_PARSETUPLE
 
-/* Define to 1 if you have the <attr/xattr.h> header file. */
-#undef HAVE_ATTR_XATTR_H
-
 /* Define to 1 if you have the `bind_textdomain_codeset' function. */
 #undef HAVE_BIND_TEXTDOMAIN_CODESET
 
@@ -948,6 +945,9 @@
 /* Define to 1 if you have the <sys/wait.h> header file. */
 #undef HAVE_SYS_WAIT_H
 
+/* Define to 1 if you have the <sys/xattr.h> header file. */
+#undef HAVE_SYS_XATTR_H
+
 /* Define to 1 if you have the `tcgetpgrp' function. */
 #undef HAVE_TCGETPGRP
 
@@ -1312,7 +1312,7 @@
    this defined. */
 #undef _POSIX_1_SOURCE
 
-/* Define to activate features from IEEE Stds 1003.1-2001 */
+/* Define to activate features from IEEE Stds 1003.1-2008 */
 #undef _POSIX_C_SOURCE
 
 /* Define to 1 if you need to in order for `stat' and other things to work. */
