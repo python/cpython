@@ -33,7 +33,7 @@ _COMMANDS = {
 
 # XXX this is crappy
 if os.name == 'nt':
-    _COMMANDS['bdist_msi'] = 'packaging.command.bdist_msi'
+    _COMMANDS['bdist_msi'] = 'packaging.command.bdist_msi.bdist_msi'
 
 # XXX use OrderedDict to preserve the grouping (build-related, install-related,
 # distribution-related)
