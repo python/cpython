@@ -25,6 +25,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #9871: Prevent IDLE 3 crash when given byte stings
+  with invalid hex escape sequences, like b'\x0'.
+  (Original patch by Claudiu Popa.)
+
 - Issue #8933: distutils' PKG-INFO files will now correctly report
   Metadata-Version: 1.1 instead of 1.0 if a Classifier or Download-URL field is
   present.
