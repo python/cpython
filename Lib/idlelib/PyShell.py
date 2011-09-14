@@ -643,9 +643,9 @@ class ModifiedInterpreter(InteractiveInterpreter):
         text = tkconsole.text
         text.tag_remove("ERROR", "1.0", "end")
         type, value, tb = sys.exc_info()
-        msg = value.msg or "<no detail available>"
-        lineno = value.lineno or 1
-        offset = value.offset or 0
+        msg = getattr(value, 'msg', '') or value or "<no detail available>"
+        lineno = getattr(value, 'lineno', '') or 1
+        offset = getattr(value, 'offset', '') or 0
         if offset == 0:
             lineno += 1 #mark end of offending line
         if lineno == 1:
