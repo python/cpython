@@ -274,6 +274,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #9871: Prevent IDLE 3 crash when given byte stings
+  with invalid hex escape sequences, like b'\x0'.
+  (Original patch by Claudiu Popa.)
+
 - Issue #12306: Expose the runtime version of the zlib C library as a constant,
   ZLIB_RUNTIME_VERSION, in the zlib module. Patch by Torsten Landschoff.
 
