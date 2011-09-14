@@ -107,7 +107,11 @@ corresponding Unix manual entries for more information on calls.");
 #include <sched.h>
 #endif
 
-#ifdef HAVE_SYS_XATTR_H
+#if defined(HAVE_SYS_XATTR_H) && defined(__GLIBC__)
+#define USE_XATTRS
+#endif
+
+#ifdef USE_XATTRS
 #include <sys/xattr.h>
 #endif
 
@@ -10032,7 +10036,7 @@ posix_mkfifoat(PyObject *self, PyObject *args)
 }
 #endif
 
-#ifdef HAVE_SYS_XATTR_H
+#ifdef USE_XATTRS
 
 static int
 try_getxattr(const char *path, const char *name,
@@ -10408,7 +10412,7 @@ posix_flistxattr(PyObject *self, PyObject *args)
     return listxattr_common((const char *)(Py_uintptr_t)fd, wrap_flistxattr);
 }
 
-#endif /* HAVE_SYS_XATTR_H */
+#endif /* USE_XATTRS */
 
 static PyMethodDef posix_methods[] = {
     {"access",          posix_access, METH_VARARGS, posix_access__doc__},
@@ -10861,7 +10865,7 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_MKFIFOAT
     {"mkfifoat",        posix_mkfifoat, METH_VARARGS, posix_mkfifoat__doc__},
 #endif
-#ifdef HAVE_SYS_XATTR_H
+#ifdef USE_XATTRS
     {"setxattr", posix_setxattr, METH_VARARGS, posix_setxattr__doc__},
     {"lsetxattr", posix_lsetxattr, METH_VARARGS, posix_lsetxattr__doc__},
     {"fsetxattr", posix_fsetxattr, METH_VARARGS, posix_fsetxattr__doc__},
@@ -11336,7 +11340,7 @@ all_ins(PyObject *d)
 #endif
 #endif
 
-#ifdef HAVE_SYS_XATTR_H
+#ifdef USE_XATTRS
     if (ins(d, "XATTR_CREATE", (long)XATTR_CREATE)) return -1;
     if (ins(d, "XATTR_REPLACE", (long)XATTR_REPLACE)) return -1;
     if (ins(d, "XATTR_SIZE_MAX", (long)XATTR_SIZE_MAX)) return -1;
