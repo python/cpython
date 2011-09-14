@@ -932,6 +932,12 @@ then
         if "$CC" -v --help 2>/dev/null |grep -- -fwrapv > /dev/null; then
            WRAP="-fwrapv"
         fi
+
+        # Clang also needs -fwrapv
+        if test "$CC" = "clang" ; then
+            WRAP="-fwrapv"
+        fi
+
 	case $ac_cv_prog_cc_g in
 	yes)
 	    if test "$Py_DEBUG" = 'true' ; then
