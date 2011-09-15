@@ -50,6 +50,7 @@ class FakeDistsMixin:
         tmpdir = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, tmpdir)
         self.fake_dists_path = os.path.join(tmpdir, 'fake_dists')
+        self.fake_dists_path = os.path.realpath(self.fake_dists_path)
         fake_dists_src = os.path.abspath(
             os.path.join(os.path.dirname(__file__), 'fake_dists'))
         shutil.copytree(fake_dists_src, self.fake_dists_path)
