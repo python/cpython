@@ -263,7 +263,9 @@ class Distribution:
         :returns: iterator of paths
         """
         for path, checksum, size in self._get_records(local):
-            yield path
+            # XXX add separator or use real relpath algo
+            if path.startswith(self.path):
+                yield path
 
     def __eq__(self, other):
         return isinstance(other, Distribution) and self.path == other.path
