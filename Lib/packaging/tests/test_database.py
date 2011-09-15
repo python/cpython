@@ -4,7 +4,6 @@ import csv
 import sys
 import shutil
 import tempfile
-from os.path import relpath  # separate import for backport concerns
 from hashlib import md5
 from textwrap import dedent
 
@@ -32,11 +31,11 @@ def get_hexdigest(filename):
     return checksum.hexdigest()
 
 
-def record_pieces(file):
-    path = relpath(file, sys.prefix)
-    digest = get_hexdigest(file)
-    size = os.path.getsize(file)
-    return [path, digest, size]
+def record_pieces(path):
+    path = os.path.join(*path)
+    digest = get_hexdigest(path)
+    size = os.path.getsize(path)
+    return path, digest, size
 
 
 class FakeDistsMixin:
@@ -141,12 +140,10 @@ class TestDistribution(CommonDistributionTests, unittest.TestCase):
 
                 for path, dirs, files in os.walk(dist_location):
                     for f in files:
-                        record_writer.writerow(record_pieces(
-                                               os.path.join(path, f)))
+                        record_writer.writerow(record_pieces((path, f)))
                 for file in ('INSTALLER', 'METADATA', 'REQUESTED'):
-                    record_writer.writerow(record_pieces(
-                                           os.path.join(distinfo_dir, file)))
-                record_writer.writerow([relpath(record_file, sys.prefix)])
+                    record_writer.writerow(record_pieces((distinfo_dir, file)))
+                record_writer.writerow([record_file])
 
             with open(record_file) as file:
                 record_reader = csv.reader(file, lineterminator='\n')
@@ -171,15 +168,17 @@ class TestDistribution(CommonDistributionTests, unittest.TestCase):
                                     distinfo_name + '.dist-info')
         true_path = [self.fake_dists_path, distinfo_name,
                      'grammar', 'utils.py']
-        true_path = relpath(os.path.join(*true_path), sys.prefix)
+        true_path = os.path.join(*true_path)
         false_path = [self.fake_dists_path, 'towel_stuff-0.1', 'towel_stuff',
                       '__init__.py']
-        false_path = relpath(os.path.join(*false_path), sys.prefix)
+        false_path = os.path.join(*false_path)
 
         # Test if the distribution uses the file in question
         dist = Distribution(distinfo_dir)
-        self.assertTrue(dist.uses(true_path))
-        self.assertFalse(dist.uses(false_path))
+        self.assertTrue(dist.uses(true_path), 'dist %r is supposed to use %r' %
+                        (dist, true_path))
+        self.assertFalse(dist.uses(false_path), 'dist %r is not supposed to '
+                         'use %r' % (dist, true_path))
 
     def test_get_distinfo_file(self):
         # Test the retrieval of dist-info file objects.
@@ -215,20 +214,23 @@ class TestDistribution(CommonDistributionTests, unittest.TestCase):
                           'MAGICFILE')
 
     def test_list_distinfo_files(self):
-        # Test for the iteration of RECORD path entries.
         distinfo_name = 'towel_stuff-0.1'
         distinfo_dir = os.path.join(self.fake_dists_path,
                                     distinfo_name + '.dist-info')
         dist = Distribution(distinfo_dir)
         # Test for the iteration of the raw path
-        distinfo_record_paths = self.records[distinfo_dir].keys()
+        distinfo_files = [os.path.join(distinfo_dir, filename) for filename in
+                          os.listdir(distinfo_dir)]
         found = dist.list_distinfo_files()
-        self.assertEqual(sorted(found), sorted(distinfo_record_paths))
+        self.assertEqual(sorted(found), sorted(distinfo_files))
         # Test for the iteration of local absolute paths
-        distinfo_record_paths = [os.path.join(sys.prefix, path)
-            for path in self.records[distinfo_dir]]
-        found = dist.list_distinfo_files(local=True)
-        self.assertEqual(sorted(found), sorted(distinfo_record_paths))
+        distinfo_files = [os.path.join(sys.prefix, distinfo_dir, path) for
+                          path in distinfo_files]
+        found = sorted(dist.list_distinfo_files(local=True))
+        if os.sep != '/':
+            self.assertNotIn('/', found[0])
+            self.assertIn(os.sep, found[0])
+        self.assertEqual(found, sorted(distinfo_files))
 
     def test_get_resources_path(self):
         distinfo_name = 'babar-0.1'
