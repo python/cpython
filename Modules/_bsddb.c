@@ -8795,7 +8795,7 @@ static PyMethodDef DBEnv_methods[] = {
     {"txn_recover",     (PyCFunction)DBEnv_txn_recover,     METH_NOARGS},
 #if (DBVER < 48)
     {"set_rpc_server",  (PyCFunction)DBEnv_set_rpc_server,
-        METH_VARARGS||METH_KEYWORDS},
+        METH_VARARGS|METH_KEYWORDS},
 #endif
 #if (DBVER >= 43)
     {"set_mp_max_openfd", (PyCFunction)DBEnv_set_mp_max_openfd, METH_VARARGS},
