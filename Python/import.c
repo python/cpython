@@ -1992,7 +1992,7 @@ find_module(PyObject *fullname, PyObject *name, PyObject *search_path_list,
 
         meta_path = PySys_GetObject("meta_path");
         if (meta_path == NULL || !PyList_Check(meta_path)) {
-            PyErr_SetString(PyExc_ImportError,
+            PyErr_SetString(PyExc_RuntimeError,
                             "sys.meta_path must be a list of "
                             "import hooks");
             return NULL;
@@ -2044,14 +2044,14 @@ find_module(PyObject *fullname, PyObject *name, PyObject *search_path_list,
     }
 
     if (search_path_list == NULL || !PyList_Check(search_path_list)) {
-        PyErr_SetString(PyExc_ImportError,
+        PyErr_SetString(PyExc_RuntimeError,
                         "sys.path must be a list of directory names");
         return NULL;
     }
 
     path_hooks = PySys_GetObject("path_hooks");
     if (path_hooks == NULL || !PyList_Check(path_hooks)) {
-        PyErr_SetString(PyExc_ImportError,
+        PyErr_SetString(PyExc_RuntimeError,
                         "sys.path_hooks must be a list of "
                         "import hooks");
         return NULL;
@@ -2059,7 +2059,7 @@ find_module(PyObject *fullname, PyObject *name, PyObject *search_path_list,
     path_importer_cache = PySys_GetObject("path_importer_cache");
     if (path_importer_cache == NULL ||
         !PyDict_Check(path_importer_cache)) {
-        PyErr_SetString(PyExc_ImportError,
+        PyErr_SetString(PyExc_RuntimeError,
                         "sys.path_importer_cache must be a dict");
         return NULL;
     }
