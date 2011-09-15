@@ -128,7 +128,7 @@ def update(file):
 def comment(object, comment=None):
     """comment: get or set the Finder-comment of the item, displayed in the 'Get Info' window."""
     object = Carbon.File.FSRef(object)
-    object_alias = object.FSNewAliasMonimal()
+    object_alias = object.FSNewAliasMinimal()
     if comment is None:
         return _getcomment(object_alias)
     else:
