@@ -1980,12 +1980,6 @@ find_module(PyObject *fullname, PyObject *name, PyObject *search_path_list,
     if (p_loader != NULL)
         *p_loader = NULL;
 
-    if (PyUnicode_GET_SIZE(name) > MAXPATHLEN) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "module name is too long");
-        return NULL;
-    }
-
     /* sys.meta_path import hook */
     if (p_loader != NULL) {
         PyObject *meta_path;
