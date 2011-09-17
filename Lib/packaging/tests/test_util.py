@@ -319,8 +319,6 @@ class UtilTestCase(support.EnvironRestorer,
         res = get_compiler_versions()
         self.assertEqual(res[2], None)
 
-    @unittest.skipUnless(hasattr(sys, 'dont_write_bytecode'),
-                         'sys.dont_write_bytecode not supported')
     def test_dont_write_bytecode(self):
         # makes sure byte_compile raise a PackagingError
         # if sys.dont_write_bytecode is True
@@ -407,7 +405,6 @@ class UtilTestCase(support.EnvironRestorer,
         finally:
             sys.path.remove(tmp_dir)
 
-    @unittest.skipIf(sys.version < '2.6', 'requires Python 2.6 or higher')
     def test_run_2to3_on_code(self):
         content = "print 'test'"
         converted_content = "print('test')"
@@ -422,7 +419,6 @@ class UtilTestCase(support.EnvironRestorer,
         file_handle.close()
         self.assertEqual(new_content, converted_content)
 
-    @unittest.skipIf(sys.version < '2.6', 'requires Python 2.6 or higher')
     def test_run_2to3_on_doctests(self):
         # to check if text files containing doctests only get converted.
         content = ">>> print 'test'\ntest\n"
