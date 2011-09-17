@@ -5,7 +5,6 @@ interface for the compiler abstraction model used by packaging.
 """
 
 import os
-import sys
 from shutil import move
 from packaging import logger
 from packaging.util import split_quoted, execute, newer_group, spawn

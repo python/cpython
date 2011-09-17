@@ -114,7 +114,7 @@ class install_lib(Command):
         return outfiles
 
     def byte_compile(self, files):
-        if getattr(sys, 'dont_write_bytecode'):
+        if sys.dont_write_bytecode:
             # XXX do we want this?  because a Python runs without bytecode
             # doesn't mean that the *dists should not contain bytecode
             #--or does it?

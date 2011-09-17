@@ -18,18 +18,13 @@ class BuildExtTestCase(support.TempdirManager,
                        support.LoggingCatcher,
                        unittest.TestCase):
     def setUp(self):
-        # Create a simple test environment
-        # Note that we're making changes to sys.path
         super(BuildExtTestCase, self).setUp()
         self.tmp_dir = self.mkdtemp()
         self.old_user_base = site.USER_BASE
         site.USER_BASE = self.mkdtemp()
 
     def tearDown(self):
-        # Get everything back to normal
-        if sys.version > "2.6":
-            site.USER_BASE = self.old_user_base
-
+        site.USER_BASE = self.old_user_base
         super(BuildExtTestCase, self).tearDown()
 
     def test_build_ext(self):
@@ -94,7 +89,6 @@ class BuildExtTestCase(support.TempdirManager,
         # make sure we get some library dirs under solaris
         self.assertGreater(len(cmd.library_dirs), 0)
 
-    @unittest.skipIf(sys.version < '2.6', 'requires Python 2.6 or higher')
     def test_user_site(self):
         dist = Distribution({'name': 'xx'})
         cmd = build_ext(dist)
