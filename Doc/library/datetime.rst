@@ -30,7 +30,7 @@ set to an instance of a subclass of the abstract :class:`tzinfo` class.  These
 :class:`tzinfo` objects capture information about the offset from UTC time, the
 time zone name, and whether Daylight Saving Time is in effect.  Note that only
 one concrete :class:`tzinfo` class, the :class:`timezone` class, is supplied by the
-:mod:`datetime` module.  The :class:`timezone` class can reprsent simple
+:mod:`datetime` module.  The :class:`timezone` class can represent simple
 timezones with fixed offset from UTC such as UTC itself or North American EST and
 EDT timezones.  Supporting timezones at whatever level of detail is
 required is up to the application.  The rules for time adjustment across the
