@@ -99,8 +99,6 @@ class BuildPyTestCase(support.TempdirManager,
             os.chdir(cwd)
             sys.stdout = old_stdout
 
-    @unittest.skipUnless(hasattr(sys, 'dont_write_bytecode'),
-                         'sys.dont_write_bytecode not supported')
     def test_dont_write_bytecode(self):
         # makes sure byte_compile is not used
         pkg_dir, dist = self.create_dist()

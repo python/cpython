@@ -2,14 +2,13 @@
 
 # Forked from the former install_egg_info command by Josip Djolonga
 
-import csv
 import os
-import re
+import csv
 import hashlib
-
-from packaging.command.cmd import Command
-from packaging import logger
 from shutil import rmtree
+
+from packaging import logger
+from packaging.command.cmd import Command
 
 
 class install_distinfo(Command):

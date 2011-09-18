@@ -3,6 +3,7 @@
 import os
 import re
 import sys
+import site
 import logging
 import sysconfig
 
@@ -14,9 +15,6 @@ from packaging.compiler import customize_compiler, show_compilers
 from packaging.util import newer_group
 from packaging.compiler.extension import Extension
 from packaging import logger
-
-import site
-HAS_USER_SITE = True
 
 if os.name == 'nt':
     from packaging.compiler.msvccompiler import get_build_version
@@ -62,6 +60,8 @@ class build_ext(Command):
         ('inplace', 'i',
          "ignore build-lib and put compiled extensions into the source " +
          "directory alongside your pure Python modules"),
+        ('user', None,
+         "add user include, library and rpath"),
         ('include-dirs=', 'I',
          "list of directories to search for header files" + sep_by),
         ('define=', 'D',
@@ -88,12 +88,8 @@ class build_ext(Command):
          "path to the SWIG executable"),
         ]
 
-    boolean_options = ['inplace', 'debug', 'force']
+    boolean_options = ['inplace', 'debug', 'force', 'user']
 
-    if HAS_USER_SITE:
-        user_options.append(('user', None,
-                             "add user include, library and rpath"))
-        boolean_options.append('user')
 
     help_options = [
         ('help-compiler', None,
@@ -120,8 +116,7 @@ class build_ext(Command):
         self.compiler = None
         self.swig = None
         self.swig_opts = None
-        if HAS_USER_SITE:
-            self.user = None
+        self.user = None
 
     def finalize_options(self):
         self.set_undefined_options('build',
@@ -270,7 +265,7 @@ class build_ext(Command):
             self.swig_opts = self.swig_opts.split(' ')
 
         # Finally add the user include and library directories if requested
-        if HAS_USER_SITE and self.user:
+        if self.user:
             user_include = os.path.join(site.USER_BASE, "include")
             user_lib = os.path.join(site.USER_BASE, "lib")
             if os.path.isdir(user_include):

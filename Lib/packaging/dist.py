@@ -537,7 +537,7 @@ Common commands: (see '--help-commands' for more)
     def _get_command_groups(self):
         """Helper function to retrieve all the command class names divided
         into standard commands (listed in
-        packaging2.command.STANDARD_COMMANDS) and extra commands (given in
+        packaging.command.STANDARD_COMMANDS) and extra commands (given in
         self.cmdclass and not standard commands).
         """
         extra_commands = [cmd for cmd in self.cmdclass
@@ -547,7 +547,7 @@ Common commands: (see '--help-commands' for more)
     def print_commands(self):
         """Print out a help message listing all available commands with a
         description of each.  The list is divided into standard commands
-        (listed in packaging2.command.STANDARD_COMMANDS) and extra commands
+        (listed in packaging.command.STANDARD_COMMANDS) and extra commands
         (given in self.cmdclass and not standard commands).  The
         descriptions come from the command class attribute
         'description'.
