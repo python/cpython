@@ -27,7 +27,7 @@ class install_distinfo(Command):
         ('no-record', None,
          "do not generate a RECORD file"),
         ('no-resources', None,
-         "do not generate a RESSOURCES list installed file"),
+         "do not generate a RESOURCES file"),
     ]
 
     boolean_options = ['requested', 'no-record', 'no-resources']
