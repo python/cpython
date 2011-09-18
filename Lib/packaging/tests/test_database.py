@@ -49,8 +49,8 @@ class FakeDistsMixin:
         # distributions
         tmpdir = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, tmpdir)
-        self.fake_dists_path = os.path.join(tmpdir, 'fake_dists')
-        self.fake_dists_path = os.path.realpath(self.fake_dists_path)
+        self.fake_dists_path = os.path.realpath(
+            os.path.join(tmpdir, 'fake_dists'))
         fake_dists_src = os.path.abspath(
             os.path.join(os.path.dirname(__file__), 'fake_dists'))
         shutil.copytree(fake_dists_src, self.fake_dists_path)
@@ -58,6 +58,7 @@ class FakeDistsMixin:
         # back (to avoid getting a read-only copy of a read-only file).  we
         # could pass a custom copy_function to change the mode of files, but
         # shutil gives no control over the mode of directories :(
+        # see http://bugs.python.org/issue1666318
         for root, dirs, files in os.walk(self.fake_dists_path):
             os.chmod(root, 0o755)
             for f in files:

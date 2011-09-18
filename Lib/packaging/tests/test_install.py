@@ -1,8 +1,8 @@
 """Tests for the packaging.install module."""
 import os
 import logging
-from sysconfig import is_python_build
 from tempfile import mkstemp
+from sysconfig import is_python_build
 
 from packaging import install
 from packaging.pypi.xmlrpc import Client

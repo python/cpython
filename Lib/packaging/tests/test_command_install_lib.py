@@ -40,7 +40,7 @@ class InstallLibTestCase(support.TempdirManager,
         cmd.finalize_options()
         self.assertEqual(cmd.optimize, 2)
 
-    @unittest.skipIf(no_bytecode, 'byte-compile not supported')
+    @unittest.skipIf(no_bytecode, 'byte-compile disabled')
     def test_byte_compile(self):
         pkg_dir, dist = self.create_dist()
         cmd = install_lib(dist)
