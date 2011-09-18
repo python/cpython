@@ -391,7 +391,7 @@ def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
         compress_ext['bzip2'] = '.bz2'
 
     # flags for compression program, each element of list will be an argument
-    if compress is not None and compress not in compress_ext.keys():
+    if compress is not None and compress not in compress_ext:
         raise ValueError("bad value for 'compress', or compression format not "
                          "supported : {0}".format(compress))
 
@@ -497,7 +497,7 @@ _ARCHIVE_FORMATS = {
     'gztar': (_make_tarball, [('compress', 'gzip')], "gzip'ed tar-file"),
     'bztar': (_make_tarball, [('compress', 'bzip2')], "bzip2'ed tar-file"),
     'tar':   (_make_tarball, [('compress', None)], "uncompressed tar file"),
-    'zip':   (_make_zipfile, [],"ZIP file")
+    'zip':   (_make_zipfile, [], "ZIP file")
     }
 
 if _BZ2_SUPPORTED:
@@ -530,7 +530,7 @@ def register_archive_format(name, function, extra_args=None, description=''):
     if not isinstance(extra_args, (tuple, list)):
         raise TypeError('extra_args needs to be a sequence')
     for element in extra_args:
-        if not isinstance(element, (tuple, list)) or len(element) !=2 :
+        if not isinstance(element, (tuple, list)) or len(element) !=2:
             raise TypeError('extra_args elements are : (arg_name, value)')
 
     _ARCHIVE_FORMATS[name] = (function, extra_args, description)
@@ -682,7 +682,7 @@ def _unpack_zipfile(filename, extract_dir):
             if not name.endswith('/'):
                 # file
                 data = zip.read(info.filename)
-                f = open(target,'wb')
+                f = open(target, 'wb')
                 try:
                     f.write(data)
                 finally:

@@ -25,10 +25,11 @@ import sys
 import glob
 import shutil
 import sysconfig
-import tokenize
 from hashlib import md5
 from textwrap import dedent
+from tokenize import detect_encoding
 from configparser import RawConfigParser
+
 # importing this with an underscore as it should be replaced by the
 # dict form or another structures for all purposes
 from packaging._trove import all_classifiers as _CLASSIFIERS_LIST
@@ -111,7 +112,7 @@ def load_setup():
     been loaded before, because we are monkey patching its setup function with
     a particular one"""
     with open("setup.py", "rb") as f:
-        encoding, lines = tokenize.detect_encoding(f.readline)
+        encoding, lines = detect_encoding(f.readline)
     with open("setup.py", encoding=encoding) as f:
         imp.load_module("setup", f, "setup.py", (".py", "r", imp.PY_SOURCE))
 
