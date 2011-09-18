@@ -1,6 +1,5 @@
 """Tests for packaging.command.upload."""
 import os
-import sys
 
 from packaging.command.upload import upload
 from packaging.dist import Distribution
@@ -103,22 +102,23 @@ class UploadTestCase(support.TempdirManager, support.EnvironRestorer,
         command, pyversion, filename = 'xxx', '3.3', path
         dist_files = [(command, pyversion, filename)]
 
-        # lets run it
-        pkg_dir, dist = self.create_dist(dist_files=dist_files, author='dédé')
+        # let's run it
+        dist = self.create_dist(dist_files=dist_files, author='dédé')[1]
         cmd = upload(dist)
         cmd.ensure_finalized()
         cmd.repository = self.pypi.full_address
         cmd.run()
 
-        # what did we send ?
+        # what did we send?
         handler, request_data = self.pypi.requests[-1]
         headers = handler.headers
-        #self.assertIn('dédé', str(request_data))
+        self.assertIn('dédé'.encode('utf-8'), request_data)
         self.assertIn(b'xxx', request_data)
 
         self.assertEqual(int(headers['content-length']), len(request_data))
         self.assertLess(int(headers['content-length']), 2500)
-        self.assertTrue(headers['content-type'].startswith('multipart/form-data'))
+        self.assertTrue(headers['content-type'].startswith(
+            'multipart/form-data'))
         self.assertEqual(handler.command, 'POST')
         self.assertNotIn('\n', headers['authorization'])
 
@@ -132,20 +132,16 @@ class UploadTestCase(support.TempdirManager, support.EnvironRestorer,
         self.write_file(os.path.join(docs_path, "index.html"), "yellow")
         self.write_file(self.rc, PYPIRC)
 
-        # lets run it
-        pkg_dir, dist = self.create_dist(dist_files=dist_files, author='dédé')
+        # let's run it
+        dist = self.create_dist(dist_files=dist_files, author='dédé')[1]
 
         cmd = upload(dist)
         cmd.get_finalized_command("build").run()
         cmd.upload_docs = True
         cmd.ensure_finalized()
         cmd.repository = self.pypi.full_address
-        prev_dir = os.getcwd()
-        try:
-            os.chdir(self.tmp_dir)
-            cmd.run()
-        finally:
-            os.chdir(prev_dir)
+        os.chdir(self.tmp_dir)
+        cmd.run()
 
         handler, request_data = self.pypi.requests[-1]
         action, name, content = request_data.split(

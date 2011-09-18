@@ -87,6 +87,7 @@ class upload_docs(Command):
         content_type, body = encode_multipart(fields, files)
 
         credentials = self.username + ':' + self.password
+        # FIXME should use explicit encoding
         auth = b"Basic " + base64.encodebytes(credentials.encode()).strip()
 
         logger.info("Submitting documentation to %s", self.repository)

@@ -40,6 +40,7 @@ from xmlrpc.server import SimpleXMLRPCServer
 
 from packaging.tests import unittest
 
+
 PYPI_DEFAULT_STATIC_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), 'pypiserver')
 
@@ -219,7 +220,7 @@ class PyPIRequestHandler(SimpleHTTPRequestHandler):
                         relative_path += "index.html"
 
                     if relative_path.endswith('.tar.gz'):
-                        with open(fs_path + relative_path, 'br') as file:
+                        with open(fs_path + relative_path, 'rb') as file:
                             data = file.read()
                         headers = [('Content-type', 'application/x-gtar')]
                     else:
@@ -260,8 +261,8 @@ class PyPIRequestHandler(SimpleHTTPRequestHandler):
             self.send_header(header, value)
         self.end_headers()
 
-        if type(data) is str:
-            data = data.encode()
+        if isinstance(data, str):
+            data = data.encode('utf-8')
 
         self.wfile.write(data)
 

@@ -4,6 +4,7 @@ import site
 import sysconfig
 import textwrap
 from io import StringIO
+from sysconfig import _CONFIG_VARS
 from packaging.dist import Distribution
 from packaging.errors import (UnknownFileError, CompileError,
                               PackagingPlatformError)
@@ -78,7 +79,6 @@ class BuildExtTestCase(support.TempdirManager,
         old = sys.platform
 
         sys.platform = 'sunos'  # fooling finalize_options
-        from sysconfig import _CONFIG_VARS
 
         old_var = _CONFIG_VARS.get('Py_ENABLE_SHARED')
         _CONFIG_VARS['Py_ENABLE_SHARED'] = 1

@@ -16,7 +16,7 @@ distribution and needed by extension modules.
 import os
 from packaging.command.cmd import Command
 from packaging.errors import PackagingSetupError
-from packaging.compiler import customize_compiler
+from packaging.compiler import customize_compiler, new_compiler
 from packaging import logger
 
 
@@ -93,7 +93,6 @@ class build_clib(Command):
             return
 
         # Yech -- this is cut 'n pasted from build_ext.py!
-        from packaging.compiler import new_compiler
         self.compiler = new_compiler(compiler=self.compiler,
                                      dry_run=self.dry_run,
                                      force=self.force)

@@ -1,8 +1,8 @@
 """Tests for packaging.create."""
-import io
 import os
 import sys
 import sysconfig
+from io import StringIO
 from textwrap import dedent
 from packaging.create import MainProgram, ask_yn, ask, main
 
@@ -20,8 +20,8 @@ class CreateTestCase(support.TempdirManager,
         super(CreateTestCase, self).setUp()
         self._stdin = sys.stdin  # TODO use Inputs
         self._stdout = sys.stdout
-        sys.stdin = io.StringIO()
-        sys.stdout = io.StringIO()
+        sys.stdin = StringIO()
+        sys.stdout = StringIO()
         self._cwd = os.getcwd()
         self.wdir = self.mkdtemp()
         os.chdir(self.wdir)
@@ -135,7 +135,8 @@ class CreateTestCase(support.TempdirManager,
         sys.stdin.seek(0)
         main()
 
-        with open(os.path.join(self.wdir, 'setup.cfg'), encoding='utf-8') as fp:
+        path = os.path.join(self.wdir, 'setup.cfg')
+        with open(path, encoding='utf-8') as fp:
             contents = fp.read()
 
         self.assertEqual(contents, dedent("""\
@@ -210,7 +211,9 @@ ho, baby!
         sys.stdin.seek(0)
         # FIXME Out of memory error.
         main()
-        with open(os.path.join(self.wdir, 'setup.cfg'), encoding='utf-8') as fp:
+
+        path = os.path.join(self.wdir, 'setup.cfg')
+        with open(path, encoding='utf-8') as fp:
             contents = fp.read()
 
         self.assertEqual(contents, dedent("""\
