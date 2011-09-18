@@ -19,7 +19,7 @@ try:
     from packaging.tests.pypi_server import PyPIServerTestCase
 except ImportError:
     threading = None
-    PyPIServerTestCase = object
+    PyPIServerTestCase = unittest.TestCase
 
 
 PYPIRC = """\
