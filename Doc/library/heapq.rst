@@ -205,8 +205,8 @@ entry as invalid and optionally add a new entry with the revised priority::
     def get_top_priority():
         while True:
             priority, count, task = heappop(pq)
-            del task_finder[task]
             if count is not INVALID:
+                del task_finder[task]
                 return task
 
     def delete_task(task):
