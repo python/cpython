@@ -3,7 +3,7 @@
 import os
 import re
 import sysconfig
-import tokenize
+from tokenize import detect_encoding
 
 from packaging.command.cmd import Command
 from packaging.util import convert_path, newer
@@ -83,7 +83,7 @@ class build_scripts(Command, Mixin2to3):
                     raise
                 f = None
             else:
-                encoding, lines = tokenize.detect_encoding(f.readline)
+                encoding, lines = detect_encoding(f.readline)
                 f.seek(0)
                 first_line = f.readline()
                 if not first_line:
