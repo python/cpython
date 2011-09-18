@@ -1,13 +1,12 @@
 """Tests for packaging.command.bdist."""
-import sys
-
 import urllib.request
 import urllib.parse
 import urllib.error
 
 try:
     import threading
-    from packaging.tests.pypi_server import PyPIServer, PYPI_DEFAULT_STATIC_PATH
+    from packaging.tests.pypi_server import (
+        PyPIServer, PYPI_DEFAULT_STATIC_PATH)
 except ImportError:
     threading = None
     PyPIServer = None
@@ -32,17 +31,18 @@ class PyPIServerTest(unittest.TestCase):
 
             headers = {"X-test-header": "Mister Iceberg"}
 
-            request = urllib.request.Request(server.full_address, data, headers)
+            request = urllib.request.Request(
+                server.full_address, data, headers)
             urllib.request.urlopen(request)
             self.assertEqual(len(server.requests), 1)
             handler, request_data = server.requests[-1]
             self.assertIn(data, request_data)
             self.assertIn("x-test-header", handler.headers)
-            self.assertEqual(handler.headers["x-test-header"], "Mister Iceberg")
+            self.assertEqual(handler.headers["x-test-header"],
+                             "Mister Iceberg")
 
         finally:
             server.stop()
-
 
     def test_serve_static_content(self):
         # PYPI Mocked server can serve static content from disk.
@@ -74,7 +74,8 @@ class PyPIServerTest(unittest.TestCase):
             self.assertTrue(uses_local_files_for(server, "/simple/index.html"))
 
             # and another one in another root path
-            self.assertTrue(uses_local_files_for(server, "/external/index.html"))
+            self.assertTrue(uses_local_files_for(server,
+                                                 "/external/index.html"))
 
         finally:
             server.stop()

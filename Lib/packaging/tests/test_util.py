@@ -15,7 +15,7 @@ from packaging.errors import (
 from packaging import util
 from packaging.dist import Distribution
 from packaging.util import (
-    convert_path, change_root, split_quoted, strtobool,
+    convert_path, change_root, split_quoted, strtobool, run_2to3,
     get_compiler_versions, _MAC_OS_X_LD_VERSION, byte_compile, find_packages,
     spawn, get_pypirc_path, generate_pypirc, read_pypirc, resolve_name, iglob,
     RICH_GLOB, egginfo_to_distinfo, is_setuptools, is_distutils, is_packaging,
@@ -374,7 +374,7 @@ class UtilTestCase(support.EnvironRestorer,
 
         res = find_packages([root], ['pkg1.pkg2'])
         self.assertEqual(set(res), set(['pkg1', 'pkg5', 'pkg1.pkg3',
-                                         'pkg1.pkg3.pkg6']))
+                                        'pkg1.pkg3.pkg6']))
 
     def test_resolve_name(self):
         self.assertIs(str, resolve_name('builtins.str'))
@@ -416,7 +416,6 @@ class UtilTestCase(support.EnvironRestorer,
         file_handle.write(content)
         file_handle.flush()
         file_handle.seek(0)
-        from packaging.util import run_2to3
         run_2to3([file_name])
         new_content = "".join(file_handle.read())
         file_handle.close()
@@ -432,7 +431,6 @@ class UtilTestCase(support.EnvironRestorer,
         file_handle.write(content)
         file_handle.flush()
         file_handle.seek(0)
-        from packaging.util import run_2to3
         run_2to3([file_name], doctests_only=True)
         new_content = "".join(file_handle.readlines())
         file_handle.close()
