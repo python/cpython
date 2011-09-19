@@ -2,11 +2,10 @@
 
 import os
 import sys
-import shutil
 from io import StringIO
 
 from packaging import install
-from packaging.tests import unittest, support, TESTFN
+from packaging.tests import unittest, support
 from packaging.run import main
 
 from test.script_helper import assert_python_ok
@@ -35,27 +34,13 @@ class RunTestCase(support.TempdirManager,
     def setUp(self):
         super(RunTestCase, self).setUp()
         self.old_stdout = sys.stdout
-        self.cleanup_testfn()
         self.old_argv = sys.argv, sys.argv[:]
 
     def tearDown(self):
         sys.stdout = self.old_stdout
-        self.cleanup_testfn()
         sys.argv = self.old_argv[0]
         sys.argv[:] = self.old_argv[1]
         super(RunTestCase, self).tearDown()
-
-    def cleanup_testfn(self):
-        path = TESTFN
-        if os.path.isfile(path):
-            os.remove(path)
-        elif os.path.isdir(path):
-            shutil.rmtree(path)
-
-    def write_setup(self, text, path=TESTFN):
-        with open(path, "w") as fp:
-            fp.write(text)
-        return path
 
     # TODO restore the tests removed six months ago and port them to pysetup
 

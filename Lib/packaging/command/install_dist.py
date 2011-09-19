@@ -14,9 +14,6 @@ from packaging.util import convert_path, change_root, get_platform
 from packaging.errors import PackagingOptionError
 
 
-HAS_USER_SITE = True
-
-
 class install_dist(Command):
 
     description = "install everything from build directory"
@@ -27,6 +24,9 @@ class install_dist(Command):
          "installation prefix"),
         ('exec-prefix=', None,
          "(Unix only) prefix for platform-specific files"),
+        ('user', None,
+         "install in user site-packages directory [%s]" %
+         get_path('purelib', '%s_user' % os.name)),
         ('home=', None,
          "(Unix only) home directory to install under"),
 
@@ -97,15 +97,7 @@ class install_dist(Command):
         ]
 
     boolean_options = ['compile', 'force', 'skip-build', 'no-distinfo',
-                       'requested', 'no-record']
-
-    if HAS_USER_SITE:
-        user_options.append(
-            ('user', None,
-             "install in user site-packages directory [%s]" %
-             get_path('purelib', '%s_user' % os.name)))
-
-        boolean_options.append('user')
+                       'requested', 'no-record', 'user']
 
     negative_opt = {'no-compile': 'compile', 'no-requested': 'requested'}
 
@@ -115,8 +107,7 @@ class install_dist(Command):
         self.prefix = None
         self.exec_prefix = None
         self.home = None
-        if HAS_USER_SITE:
-            self.user = False
+        self.user = False
 
         # These select only the installation base; it's up to the user to
         # specify the installation scheme (currently, that means supplying
@@ -135,9 +126,8 @@ class install_dist(Command):
         self.install_lib = None         # set to either purelib or platlib
         self.install_scripts = None
         self.install_data = None
-        if HAS_USER_SITE:
-            self.install_userbase = get_config_var('userbase')
-            self.install_usersite = get_path('purelib', '%s_user' % os.name)
+        self.install_userbase = get_config_var('userbase')
+        self.install_usersite = get_path('purelib', '%s_user' % os.name)
 
         self.compile = None
         self.optimize = None
@@ -219,9 +209,8 @@ class install_dist(Command):
             raise PackagingOptionError(
                 "must supply either home or prefix/exec-prefix -- not both")
 
-        if HAS_USER_SITE and self.user and (
-                self.prefix or self.exec_prefix or self.home or
-                self.install_base or self.install_platbase):
+        if self.user and (self.prefix or self.exec_prefix or self.home or
+                          self.install_base or self.install_platbase):
             raise PackagingOptionError(
                 "can't combine user with prefix/exec_prefix/home or "
                 "install_base/install_platbase")
@@ -274,11 +263,9 @@ class install_dist(Command):
             'exec_prefix': exec_prefix,
             'srcdir': srcdir,
             'projectbase': projectbase,
-            }
-
-        if HAS_USER_SITE:
-            self.config_vars['userbase'] = self.install_userbase
-            self.config_vars['usersite'] = self.install_usersite
+            'userbase': self.install_userbase,
+            'usersite': self.install_usersite,
+        }
 
         self.expand_basedirs()
 
@@ -295,9 +282,9 @@ class install_dist(Command):
 
         self.dump_dirs("post-expand_dirs()")
 
-        # Create directories in the home dir:
-        if HAS_USER_SITE and self.user:
-            self.create_home_path()
+        # Create directories under USERBASE
+        if self.user:
+            self.create_user_dirs()
 
         # Pick the actual directory to install all modules to: either
         # install_purelib or install_platlib, depending on whether this
@@ -311,10 +298,8 @@ class install_dist(Command):
 
         # Convert directories from Unix /-separated syntax to the local
         # convention.
-        self.convert_paths('lib', 'purelib', 'platlib',
-                           'scripts', 'data', 'headers')
-        if HAS_USER_SITE:
-            self.convert_paths('userbase', 'usersite')
+        self.convert_paths('lib', 'purelib', 'platlib', 'scripts',
+                           'data', 'headers', 'userbase', 'usersite')
 
         # Well, we're not actually fully completely finalized yet: we still
         # have to deal with 'extra_path', which is the hack for allowing
@@ -355,7 +340,7 @@ class install_dist(Command):
                     "installation scheme is incomplete")
             return
 
-        if HAS_USER_SITE and self.user:
+        if self.user:
             if self.install_userbase is None:
                 raise PackagingPlatformError(
                     "user base directory is not specified")
@@ -383,7 +368,7 @@ class install_dist(Command):
 
     def finalize_other(self):
         """Finalize options for non-posix platforms"""
-        if HAS_USER_SITE and self.user:
+        if self.user:
             if self.install_userbase is None:
                 raise PackagingPlatformError(
                     "user base directory is not specified")
@@ -494,10 +479,8 @@ class install_dist(Command):
             attr = "install_" + name
             setattr(self, attr, change_root(self.root, getattr(self, attr)))
 
-    def create_home_path(self):
-        """Create directories under ~."""
-        if HAS_USER_SITE and not self.user:
-            return
+    def create_user_dirs(self):
+        """Create directories under USERBASE as needed."""
         home = convert_path(os.path.expanduser("~"))
         for name, path in self.config_vars.items():
             if path.startswith(home) and not os.path.isdir(path):

@@ -23,12 +23,11 @@ from packaging.version import get_version_predicate
 from packaging import __version__ as packaging_version
 from packaging.pypi.base import BaseClient
 from packaging.pypi.dist import (ReleasesList, EXTENSIONS,
-                                  get_infos_from_url, MD5_HASH)
+                                 get_infos_from_url, MD5_HASH)
 from packaging.pypi.errors import (PackagingPyPIError, DownloadError,
-                                    UnableToDownload, CantParseArchiveName,
-                                    ReleaseNotFound, ProjectNotFound)
+                                   UnableToDownload, CantParseArchiveName,
+                                   ReleaseNotFound, ProjectNotFound)
 from packaging.pypi.mirrors import get_mirrors
-from packaging.metadata import Metadata
 
 __all__ = ['Crawler', 'DEFAULT_SIMPLE_INDEX_URL']
 

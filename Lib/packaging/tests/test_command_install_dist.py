@@ -72,7 +72,6 @@ class InstallTestCase(support.TempdirManager,
         check_path(cmd.install_scripts, os.path.join(destination, "bin"))
         check_path(cmd.install_data, destination)
 
-    @unittest.skipIf(sys.version < '2.6', 'requires Python 2.6 or higher')
     def test_user_site(self):
         # test install with --user
         # preparing the environment for the test
@@ -173,12 +172,11 @@ class InstallTestCase(support.TempdirManager,
         cmd.home = 'home'
         self.assertRaises(PackagingOptionError, cmd.finalize_options)
 
-        if sys.version >= '2.6':
-            # can't combine user with with prefix/exec_prefix/home or
-            # install_(plat)base
-            cmd.prefix = None
-            cmd.user = 'user'
-            self.assertRaises(PackagingOptionError, cmd.finalize_options)
+        # can't combine user with with prefix/exec_prefix/home or
+        # install_(plat)base
+        cmd.prefix = None
+        cmd.user = 'user'
+        self.assertRaises(PackagingOptionError, cmd.finalize_options)
 
     def test_old_record(self):
         # test pre-PEP 376 --record option (outside dist-info dir)

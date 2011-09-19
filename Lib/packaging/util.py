@@ -326,7 +326,7 @@ def byte_compile(py_files, optimize=0, force=False, prefix=None,
     """
     # nothing is done if sys.dont_write_bytecode is True
     # FIXME this should not raise an error
-    if hasattr(sys, 'dont_write_bytecode') and sys.dont_write_bytecode:
+    if sys.dont_write_bytecode:
         raise PackagingByteCompileError('byte-compiling is disabled.')
 
     # First, if the caller didn't force us into direct or indirect mode,
@@ -346,8 +346,10 @@ def byte_compile(py_files, optimize=0, force=False, prefix=None,
     # run it with the appropriate flags.
     if not direct:
         from tempfile import mkstemp
-        # XXX script_fd may leak, use something better than mkstemp
+        # XXX use something better than mkstemp
         script_fd, script_name = mkstemp(".py")
+        os.close(script_fd)
+        script_fd = None
         logger.info("writing byte-compilation script '%s'", script_name)
         if not dry_run:
             if script_fd is not None:
