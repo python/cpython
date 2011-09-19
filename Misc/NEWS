@@ -9,6 +9,11 @@ What's New in Python 2.7.3?
 Core and Builtins
 -----------------
 
+- Issue #12973: Fix overflow checks that invoked undefined behaviour in
+  int.__pow__.  These overflow checks were causing int.__pow__ to produce
+  incorrect results with recent versions of Clang, as a result of the
+  compiler optimizing the check away.
+
 - Issue #12266: Fix str.capitalize() to correctly uppercase/lowercase
   titlecased and cased non-letter characters.
 

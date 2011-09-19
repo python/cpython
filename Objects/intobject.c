@@ -751,7 +751,13 @@ int_pow(PyIntObject *v, PyIntObject *w, PyIntObject *z)
     while (iw > 0) {
         prev = ix;              /* Save value for overflow check */
         if (iw & 1) {
-            ix = ix*temp;
+            /*
+             * The (unsigned long) cast below ensures that the multiplication
+             * is interpreted as an unsigned operation rather than a signed one
+             * (C99 6.3.1.8p1), thus avoiding the perils of undefined behaviour
+             * from signed arithmetic overflow (C99 6.5p5).  See issue #12973.
+             */
+            ix = (unsigned long)ix * temp;
             if (temp == 0)
                 break; /* Avoid ix / 0 */
             if (ix / temp != prev) {
@@ -764,7 +770,7 @@ int_pow(PyIntObject *v, PyIntObject *w, PyIntObject *z)
         iw >>= 1;               /* Shift exponent down by 1 bit */
         if (iw==0) break;
         prev = temp;
-        temp *= temp;           /* Square the value of temp */
+        temp = (unsigned long)temp * temp;  /* Square the value of temp */
         if (prev != 0 && temp / prev != prev) {
             return PyLong_Type.tp_as_number->nb_power(
                 (PyObject *)v, (PyObject *)w, (PyObject *)z);
