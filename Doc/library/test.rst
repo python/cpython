@@ -399,12 +399,19 @@ The :mod:`test.support` module defines the following functions:
    otherwise.
 
 
-.. function:: skip_unless_symlink()
+.. decorator:: skip_unless_symlink()
 
    A decorator for running tests that require support for symbolic links.
 
 
-.. function:: run_with_locale(catstr, *locales)
+.. decorator:: anticipate_failure(condition)
+
+   A decorator to conditionally mark tests with
+   :func:`unittest.expectedFailure`. Any use of this decorator should
+   have an associated comment identifying the relevant tracker issue.
+
+
+.. decorator:: run_with_locale(catstr, *locales)
 
    A decorator for running a function in a different locale, correctly
    resetting it after it has finished.  *catstr* is the locale category as

@@ -57,6 +57,7 @@ __all__ = [
     "get_attribute", "swap_item", "swap_attr", "requires_IEEE_754",
     "TestHandler", "Matcher", "can_symlink", "skip_unless_symlink",
     "import_fresh_module", "requires_zlib", "PIPE_MAX_SIZE", "failfast",
+    "anticipate_failure"
     ]
 
 class Error(Exception):
@@ -125,6 +126,17 @@ def _save_and_block_module(name, orig_modules):
         saved = False
     sys.modules[name] = None
     return saved
+
+
+def anticipate_failure(condition):
+    """Decorator to mark a test that is known to be broken in some cases
+
+       Any use of this decorator should have a comment identifying the
+       associated tracker issue.
+    """
+    if condition:
+        return unittest.expectedFailure
+    return lambda f: f
 
 
 def import_fresh_module(name, fresh=(), blocked=(), deprecated=False):

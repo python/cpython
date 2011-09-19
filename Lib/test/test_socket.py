@@ -167,6 +167,9 @@ class ThreadableTest:
             raise TypeError("test_func must be a callable function")
         try:
             test_func()
+        except unittest._ExpectedFailure:
+            # We deliberately ignore expected failures
+            pass
         except BaseException as e:
             self.queue.put(e)
         finally:
@@ -2090,6 +2093,8 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
     def _testFDPassCMSG_LEN(self):
         self.createAndSendFDs(1)
 
+    # Issue #12958: The following test has problems on Mac OS X
+    @support.anticipate_failure(sys.platform == "darwin")
     @requireAttrs(socket, "CMSG_SPACE")
     def testFDPassSeparate(self):
         # Pass two FDs in two separate arrays.  Arrays may be combined
@@ -2099,6 +2104,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
                              maxcmsgs=2)
 
     @testFDPassSeparate.client_skip
+    @support.anticipate_failure(sys.platform == "darwin")
     def _testFDPassSeparate(self):
         fd0, fd1 = self.newFDs(2)
         self.assertEqual(
@@ -2110,6 +2116,8 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
                                           array.array("i", [fd1]))]),
             len(MSG))
 
+    # Issue #12958: The following test has problems on Mac OS X
+    @support.anticipate_failure(sys.platform == "darwin")
     @requireAttrs(socket, "CMSG_SPACE")
     def testFDPassSeparateMinSpace(self):
         # Pass two FDs in two separate arrays, receiving them into the
@@ -2121,6 +2129,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
                              maxcmsgs=2, ignoreflags=socket.MSG_CTRUNC)
 
     @testFDPassSeparateMinSpace.client_skip
+    @support.anticipate_failure(sys.platform == "darwin")
     def _testFDPassSeparateMinSpace(self):
         fd0, fd1 = self.newFDs(2)
         self.assertEqual(
@@ -3024,9 +3033,12 @@ class InterruptedSendTimeoutTest(InterruptedTimeoutBase,
         self.assertNotIsInstance(cm.exception, socket.timeout)
         self.assertEqual(cm.exception.errno, errno.EINTR)
 
+    # Issue #12958: The following tests have problems on Mac OS X
+    @support.anticipate_failure(sys.platform == "darwin")
     def testInterruptedSendTimeout(self):
         self.checkInterruptedSend(self.serv_conn.send, b"a"*512)
 
+    @support.anticipate_failure(sys.platform == "darwin")
     def testInterruptedSendtoTimeout(self):
         # Passing an actual address here as Python's wrapper for
         # sendto() doesn't allow passing a zero-length one; POSIX
@@ -3035,6 +3047,7 @@ class InterruptedSendTimeoutTest(InterruptedTimeoutBase,
         self.checkInterruptedSend(self.serv_conn.sendto, b"a"*512,
                                   self.serv_addr)
 
+    @support.anticipate_failure(sys.platform == "darwin")
     @requireAttrs(socket.socket, "sendmsg")
     def testInterruptedSendmsgTimeout(self):
         self.checkInterruptedSend(self.serv_conn.sendmsg, [b"a"*512])
