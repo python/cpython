@@ -121,7 +121,7 @@ def ask_yn(question, default=None, helptext=None):
     question += ' (y/n)'
     while True:
         answer = ask(question, default, helptext, required=True)
-        if answer and answer[0].lower() in 'yn':
+        if answer and answer[0].lower() in ('y', 'n'):
             return answer[0].lower()
 
         print('\nERROR: You must select "Y" or "N".\n')
