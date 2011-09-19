@@ -965,7 +965,9 @@ class saved_test_environment:
                  'warnings.filters', 'asyncore.socket_map',
                  'logging._handlers', 'logging._handlerList', 'sys.gettrace',
                  'sys.warnoptions', 'threading._dangling',
-                 'multiprocessing.process._dangling')
+                 'multiprocessing.process._dangling',
+                 'sysconfig._CONFIG_VARS', 'sysconfig._SCHEMES',
+                )
 
     def get_sys_argv(self):
         return id(sys.argv), sys.argv, sys.argv[:]
@@ -1082,6 +1084,27 @@ class saved_test_environment:
             return
         multiprocessing.process._dangling.clear()
         multiprocessing.process._dangling.update(saved)
+
+    def get_sysconfig__CONFIG_VARS(self):
+        # make sure the dict is initialized
+        sysconfig.get_config_var('prefix')
+        return (id(sysconfig._CONFIG_VARS), sysconfig._CONFIG_VARS,
+                dict(sysconfig._CONFIG_VARS))
+    def restore_sysconfig__CONFIG_VARS(self, saved):
+        sysconfig._CONFIG_VARS = saved[1]
+        sysconfig._CONFIG_VARS.clear()
+        sysconfig._CONFIG_VARS.update(saved[2])
+
+    def get_sysconfig__SCHEMES(self):
+        # it's mildly evil to look at the internal attribute, but it's easier
+        # than copying a RawConfigParser object
+        return (id(sysconfig._SCHEMES), sysconfig._SCHEMES._sections,
+                sysconfig._SCHEMES._sections.copy())
+    def restore_sysconfig__SCHEMES(self, saved):
+        sysconfig._SCHEMES._sections = saved[1]
+        sysconfig._SCHEMES._sections.clear()
+        sysconfig._SCHEMES._sections.update(saved[2])
+
 
     def resource_info(self):
         for name in self.resources:

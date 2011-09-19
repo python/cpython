@@ -1,12 +1,13 @@
 """PEP 376 implementation."""
 
-import io
 import os
 import re
 import csv
 import sys
 import zipimport
+from io import StringIO
 from hashlib import md5
+
 from packaging import logger
 from packaging.errors import PackagingError
 from packaging.version import suggest_normalized_version, VersionPredicate
@@ -173,7 +174,7 @@ class Distribution:
     def get_resource_path(self, relative_path):
         with self.get_distinfo_file('RESOURCES') as resources_file:
             resources_reader = csv.reader(resources_file, delimiter=',',
-                                           lineterminator='\n')
+                                          lineterminator='\n')
             for relative, destination in resources_reader:
                 if relative == relative_path:
                     return destination
@@ -334,7 +335,7 @@ class EggInfoDistribution:
             else:
                 # FIXME handle the case where zipfile is not available
                 zipf = zipimport.zipimporter(path)
-                fileobj = io.StringIO(
+                fileobj = StringIO(
                     zipf.get_data('EGG-INFO/PKG-INFO').decode('utf8'))
                 self.metadata = Metadata(fileobj=fileobj)
                 try:

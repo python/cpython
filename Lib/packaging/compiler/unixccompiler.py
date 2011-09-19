@@ -127,7 +127,7 @@ class UnixCCompiler(CCompiler):
         executables['ranlib'] = ["ranlib"]
 
     # Needed for the filename generation methods provided by the base
-    # class, CCompiler.  NB. whoever instantiates/uses a particular
+    # class, CCompiler.  XXX whoever instantiates/uses a particular
     # UnixCCompiler instance should set 'shared_lib_ext' -- we set a
     # reasonable common default here, but it's not necessarily used on all
     # Unices!

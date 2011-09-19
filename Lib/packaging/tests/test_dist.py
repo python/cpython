@@ -3,13 +3,14 @@ import os
 import sys
 import logging
 import textwrap
+
 import packaging.dist
 
 from packaging.dist import Distribution
 from packaging.command import set_command
 from packaging.command.cmd import Command
 from packaging.errors import PackagingModuleError, PackagingOptionError
-from packaging.tests import TESTFN, captured_stdout
+from packaging.tests import captured_stdout
 from packaging.tests import support, unittest
 from packaging.tests.support import create_distribution
 from test.support import unload
@@ -48,12 +49,13 @@ class DistributionTestCase(support.TempdirManager,
 
     @unittest.skip('needs to be updated')
     def test_debug_mode(self):
-        self.addCleanup(os.unlink, TESTFN)
-        with open(TESTFN, "w") as f:
+        tmpdir = self.mkdtemp()
+        setupcfg = os.path.join(tmpdir, 'setup.cfg')
+        with open(setupcfg, "w") as f:
             f.write("[global]\n")
             f.write("command_packages = foo.bar, splat")
 
-        files = [TESTFN]
+        files = [setupcfg]
         sys.argv.append("build")
         __, stdout = captured_stdout(create_distribution, files)
         self.assertEqual(stdout, '')
@@ -70,7 +72,7 @@ class DistributionTestCase(support.TempdirManager,
         Distribution(attrs={'author': 'xxx',
                             'name': 'xxx',
                             'version': '1.2',
-                            'home-page': 'xxxx',
+                            'home_page': 'xxxx',
                             'badoptname': 'xxx'})
         logs = self.get_logs(logging.WARNING)
         self.assertEqual(len(logs), 1)
@@ -80,7 +82,7 @@ class DistributionTestCase(support.TempdirManager,
         # an empty options dictionary should not stay in the
         # list of attributes
         dist = Distribution(attrs={'author': 'xxx', 'name': 'xxx',
-                                   'version': '1.2', 'home-page': 'xxxx',
+                                   'version': '1.2', 'home_page': 'xxxx',
                                    'options': {}})
 
         self.assertEqual([], self.get_logs(logging.WARNING))
@@ -97,7 +99,7 @@ class DistributionTestCase(support.TempdirManager,
         dist = Distribution(attrs={'author': 'xxx',
                                    'name': 'xxx',
                                    'version': 'xxx',
-                                   'home-page': 'xxxx',
+                                   'home_page': 'xxxx',
                                    'options': {'sdist': {'owner': 'root'}}})
 
         self.assertIn('owner', dist.get_option_dict('sdist'))

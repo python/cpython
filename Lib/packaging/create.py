@@ -25,11 +25,11 @@ import sys
 import glob
 import shutil
 import sysconfig
-import tokenize
 from hashlib import md5
 from textwrap import dedent
-from functools import cmp_to_key
+from tokenize import detect_encoding
 from configparser import RawConfigParser
+
 # importing this with an underscore as it should be replaced by the
 # dict form or another structures for all purposes
 from packaging._trove import all_classifiers as _CLASSIFIERS_LIST
@@ -112,7 +112,7 @@ def load_setup():
     been loaded before, because we are monkey patching its setup function with
     a particular one"""
     with open("setup.py", "rb") as f:
-        encoding, lines = tokenize.detect_encoding(f.readline)
+        encoding, lines = detect_encoding(f.readline)
     with open("setup.py", encoding=encoding) as f:
         imp.load_module("setup", f, "setup.py", (".py", "r", imp.PY_SOURCE))
 
@@ -370,21 +370,9 @@ class MainProgram:
                     dist.data_files = [('', dist.data_files)]
                 # add tokens in the destination paths
                 vars = {'distribution.name': data['name']}
-                path_tokens = list(sysconfig.get_paths(vars=vars).items())
-
-                # TODO replace this with a key function
-                def length_comparison(x, y):
-                    len_x = len(x[1])
-                    len_y = len(y[1])
-                    if len_x == len_y:
-                        return 0
-                    elif len_x < len_y:
-                        return -1
-                    else:
-                        return 1
-
+                path_tokens = sysconfig.get_paths(vars=vars).items()
                 # sort tokens to use the longest one first
-                path_tokens.sort(key=cmp_to_key(length_comparison))
+                path_tokens = sorted(path_tokens, key=lambda x: len(x[1]))
                 for dest, srcs in (dist.data_files or []):
                     dest = os.path.join(sys.prefix, dest)
                     dest = dest.replace(os.path.sep, '/')
