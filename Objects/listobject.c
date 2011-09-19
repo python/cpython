@@ -58,7 +58,7 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
     if (newsize == 0)
         new_allocated = 0;
     items = self->ob_item;
-    if (new_allocated <= ((~(size_t)0) / sizeof(PyObject *)))
+    if (new_allocated <= (PY_SIZE_MAX / sizeof(PyObject *)))
         PyMem_RESIZE(items, PyObject *, new_allocated);
     else
         items = NULL;
@@ -510,9 +510,9 @@ list_repeat(PyListObject *a, Py_ssize_t n)
     PyObject *elem;
     if (n < 0)
         n = 0;
-    size = Py_SIZE(a) * n;
-    if (n && size/n != Py_SIZE(a))
+    if (n > 0 && Py_SIZE(a) > PY_SSIZE_T_MAX / n)
         return PyErr_NoMemory();
+    size = Py_SIZE(a) * n;
     if (size == 0)
         return PyList_New(0);
     np = (PyListObject *) PyList_New(size);

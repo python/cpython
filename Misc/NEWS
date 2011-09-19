@@ -10,6 +10,10 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #12973: Fix overflow check that relied on undefined behaviour in
+  list_repeat.  This bug caused test_list to fail with recent versions
+  of Clang.
+
 - Issue #12904: os.utime, os.futimes, os.lutimes, and os.futimesat now write
   atime and mtime with nanosecond precision on modern POSIX platforms.
 
