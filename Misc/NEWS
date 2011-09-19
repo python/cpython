@@ -12,7 +12,9 @@ Core and Builtins
 - Issue #12973: Fix overflow checks that invoked undefined behaviour in
   int.__pow__.  These overflow checks were causing int.__pow__ to produce
   incorrect results with recent versions of Clang, as a result of the
-  compiler optimizing the check away.
+  compiler optimizing the check away.  Also fix similar overflow check
+  in list_repeat (which caused test_list to fail with recent versions
+  of Clang).
 
 - Issue #12266: Fix str.capitalize() to correctly uppercase/lowercase
   titlecased and cased non-letter characters.
