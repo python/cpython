@@ -72,7 +72,7 @@ class DistributionTestCase(support.TempdirManager,
         Distribution(attrs={'author': 'xxx',
                             'name': 'xxx',
                             'version': '1.2',
-                            'home-page': 'xxxx',
+                            'home_page': 'xxxx',
                             'badoptname': 'xxx'})
         logs = self.get_logs(logging.WARNING)
         self.assertEqual(len(logs), 1)
@@ -82,7 +82,7 @@ class DistributionTestCase(support.TempdirManager,
         # an empty options dictionary should not stay in the
         # list of attributes
         dist = Distribution(attrs={'author': 'xxx', 'name': 'xxx',
-                                   'version': '1.2', 'home-page': 'xxxx',
+                                   'version': '1.2', 'home_page': 'xxxx',
                                    'options': {}})
 
         self.assertEqual([], self.get_logs(logging.WARNING))
@@ -99,7 +99,7 @@ class DistributionTestCase(support.TempdirManager,
         dist = Distribution(attrs={'author': 'xxx',
                                    'name': 'xxx',
                                    'version': 'xxx',
-                                   'home-page': 'xxxx',
+                                   'home_page': 'xxxx',
                                    'options': {'sdist': {'owner': 'root'}}})
 
         self.assertIn('owner', dist.get_option_dict('sdist'))
