@@ -178,7 +178,7 @@ Your selection [default 1]: ''')
                         'will be faster.\n(the login will be stored in %s)',
                         get_pypirc_path())
                     choice = 'X'
-                    while choice.lower() not in 'yn':
+                    while choice.lower() not in ('y', 'n'):
                         choice = input('Save your login (y/N)?')
                         if not choice:
                             choice = 'n'
