@@ -375,6 +375,8 @@ static int win32_can_symlink = 0;
 #endif
 #endif
 
+/* A helper used by a number of POSIX-only functions */
+#ifndef MS_WINDOWS
 static int
 _parse_off_t(PyObject* arg, void* addr)
 {
@@ -387,6 +389,7 @@ _parse_off_t(PyObject* arg, void* addr)
         return 0;
     return 1;
 }
+#endif
 
 #if defined _MSC_VER && _MSC_VER >= 1400
 /* Microsoft CRT in VS2005 and higher will verify that a filehandle is
