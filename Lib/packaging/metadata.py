@@ -552,16 +552,17 @@ class Metadata:
         return data
 
     # Mapping API
+    # XXX these methods should return views or sets in 3.x
 
     def keys(self):
-        return _version2fieldlist(self['Metadata-Version'])
+        return list(_version2fieldlist(self['Metadata-Version']))
 
     def __iter__(self):
         for key in self.keys():
             yield key
 
     def values(self):
-        return [self[key] for key in list(self.keys())]
+        return [self[key] for key in self.keys()]
 
     def items(self):
-        return [(key, self[key]) for key in list(self.keys())]
+        return [(key, self[key]) for key in self.keys()]
