@@ -236,6 +236,8 @@ Core and Builtins
 - Issue #10829: Refactor PyUnicode_FromFormat(), use the same function to parse
   the format string in the 3 steps, fix crashs on invalid format strings.
 
+- Issue #13007: whichdb should recognize gdbm 1.9 magic numbers.
+
 - Issue #11246: Fix PyUnicode_FromFormat("%V") to decode the byte string from
   UTF-8 (with replace error handler) instead of ISO-8859-1 (in strict mode).
   Patch written by Ray Allen.
