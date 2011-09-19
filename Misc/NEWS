@@ -10,6 +10,10 @@ What's New in Python 3.2.3?
 Core and Builtins
 -----------------
 
+- Issue #12973: Fix overflow check that relied on undefined behaviour in
+  list_repeat.  This bug caused test_list to fail with recent versions
+  of Clang.
+
 - Issue #12802: the Windows error ERROR_DIRECTORY (numbered 267) is now
   mapped to POSIX errno ENOTDIR (previously EINVAL).
 
