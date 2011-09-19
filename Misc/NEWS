@@ -55,6 +55,8 @@ Library
 - Issue #11657: Fix sending file descriptors over 255 over a multiprocessing
   Pipe.
 
+- Issue #13007: whichdb should recognize gdbm 1.9 magic numbers.
+
 - Issue #12213: Fix a buffering bug with interleaved reads and writes that
   could appear on BufferedRandom streams.
 

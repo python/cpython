@@ -166,7 +166,7 @@ def whichdb(filename):
         return ""
 
     # Check for GNU dbm
-    if magic == 0x13579ace:
+    if magic in (0x13579ace, 0x13579acd, 0x13579acf):
         return "dbm.gnu"
 
     # Later versions of Berkeley db hash file have a 12-byte pad in
