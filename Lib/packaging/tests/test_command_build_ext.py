@@ -4,14 +4,13 @@ import site
 import sysconfig
 import textwrap
 from io import StringIO
-from sysconfig import _CONFIG_VARS
 from packaging.dist import Distribution
 from packaging.errors import (UnknownFileError, CompileError,
                               PackagingPlatformError)
 from packaging.command.build_ext import build_ext
 from packaging.compiler.extension import Extension
-from test.script_helper import assert_python_ok
 
+from test.script_helper import assert_python_ok
 from packaging.tests import support, unittest, verbose
 
 
@@ -75,16 +74,16 @@ class BuildExtTestCase(support.TempdirManager,
 
         sys.platform = 'sunos'  # fooling finalize_options
 
-        old_var = _CONFIG_VARS.get('Py_ENABLE_SHARED')
-        _CONFIG_VARS['Py_ENABLE_SHARED'] = 1
+        old_var = sysconfig.get_config_var('Py_ENABLE_SHARED')
+        sysconfig._CONFIG_VARS['Py_ENABLE_SHARED'] = 1
         try:
             cmd.ensure_finalized()
         finally:
             sys.platform = old
             if old_var is None:
-                del _CONFIG_VARS['Py_ENABLE_SHARED']
+                del sysconfig._CONFIG_VARS['Py_ENABLE_SHARED']
             else:
-                _CONFIG_VARS['Py_ENABLE_SHARED'] = old_var
+                sysconfig._CONFIG_VARS['Py_ENABLE_SHARED'] = old_var
 
         # make sure we get some library dirs under solaris
         self.assertGreater(len(cmd.library_dirs), 0)
