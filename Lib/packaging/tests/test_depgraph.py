@@ -1,10 +1,11 @@
 """Tests for packaging.depgraph """
-import io
 import os
 import re
 import sys
-import packaging.database
+from io import StringIO
+
 from packaging import depgraph
+from packaging.database import get_distribution, enable_cache, disable_cache
 
 from packaging.tests import unittest, support
 from packaging.tests.support import requires_zlib
@@ -30,13 +31,13 @@ class DepGraphTestCase(support.LoggingCatcher,
         path = os.path.abspath(path)
         sys.path.insert(0, path)
         self.addCleanup(sys.path.remove, path)
-        self.addCleanup(packaging.database.enable_cache)
-        packaging.database.disable_cache()
+        self.addCleanup(enable_cache)
+        disable_cache()
 
     def test_generate_graph(self):
         dists = []
         for name in self.DISTROS_DIST:
-            dist = packaging.database.get_distribution(name)
+            dist = get_distribution(name)
             self.assertNotEqual(dist, None)
             dists.append(dist)
 
@@ -61,7 +62,7 @@ class DepGraphTestCase(support.LoggingCatcher,
     def test_generate_graph_egg(self):
         dists = []
         for name in self.DISTROS_DIST + self.DISTROS_EGG:
-            dist = packaging.database.get_distribution(name, use_egg_info=True)
+            dist = get_distribution(name, use_egg_info=True)
             self.assertNotEqual(dist, None)
             dists.append(dist)
 
@@ -104,7 +105,7 @@ class DepGraphTestCase(support.LoggingCatcher,
     def test_dependent_dists(self):
         dists = []
         for name in self.DISTROS_DIST:
-            dist = packaging.database.get_distribution(name)
+            dist = get_distribution(name)
             self.assertNotEqual(dist, None)
             dists.append(dist)
 
@@ -123,7 +124,7 @@ class DepGraphTestCase(support.LoggingCatcher,
     def test_dependent_dists_egg(self):
         dists = []
         for name in self.DISTROS_DIST + self.DISTROS_EGG:
-            dist = packaging.database.get_distribution(name, use_egg_info=True)
+            dist = get_distribution(name, use_egg_info=True)
             self.assertNotEqual(dist, None)
             dists.append(dist)
 
@@ -158,12 +159,12 @@ class DepGraphTestCase(support.LoggingCatcher,
 
         dists = []
         for name in self.DISTROS_DIST + self.DISTROS_EGG:
-            dist = packaging.database.get_distribution(name, use_egg_info=True)
+            dist = get_distribution(name, use_egg_info=True)
             self.assertNotEqual(dist, None)
             dists.append(dist)
 
         graph = depgraph.generate_graph(dists)
-        buf = io.StringIO()
+        buf = StringIO()
         depgraph.graph_to_dot(graph, buf)
         buf.seek(0)
         matches = []
@@ -189,12 +190,12 @@ class DepGraphTestCase(support.LoggingCatcher,
 
         dists = []
         for name in self.DISTROS_DIST + self.DISTROS_EGG:
-            dist = packaging.database.get_distribution(name, use_egg_info=True)
+            dist = get_distribution(name, use_egg_info=True)
             self.assertNotEqual(dist, None)
             dists.append(dist)
 
         graph = depgraph.generate_graph(dists)
-        buf = io.StringIO()
+        buf = StringIO()
         depgraph.graph_to_dot(graph, buf, skip_disconnected=False)
         buf.seek(0)
         lines = buf.readlines()
@@ -250,12 +251,12 @@ class DepGraphTestCase(support.LoggingCatcher,
 
         dists = []
         for name in self.DISTROS_DIST + self.DISTROS_EGG + self.BAD_EGGS:
-            dist = packaging.database.get_distribution(name, use_egg_info=True)
+            dist = get_distribution(name, use_egg_info=True)
             self.assertNotEqual(dist, None)
             dists.append(dist)
 
         graph = depgraph.generate_graph(dists)
-        buf = io.StringIO()
+        buf = StringIO()
         depgraph.graph_to_dot(graph, buf)
         buf.seek(0)
         matches = []
@@ -273,7 +274,7 @@ class DepGraphTestCase(support.LoggingCatcher,
     def test_repr(self):
         dists = []
         for name in self.DISTROS_DIST + self.DISTROS_EGG + self.BAD_EGGS:
-            dist = packaging.database.get_distribution(name, use_egg_info=True)
+            dist = get_distribution(name, use_egg_info=True)
             self.assertNotEqual(dist, None)
             dists.append(dist)
 
@@ -282,7 +283,7 @@ class DepGraphTestCase(support.LoggingCatcher,
 
     @requires_zlib
     def test_main(self):
-        tempout = io.StringIO()
+        tempout = StringIO()
         old = sys.stdout
         sys.stdout = tempout
         oldargv = sys.argv[:]

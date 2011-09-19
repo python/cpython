@@ -15,7 +15,7 @@ from packaging.errors import (
 from packaging import util
 from packaging.dist import Distribution
 from packaging.util import (
-    convert_path, change_root, split_quoted, strtobool,
+    convert_path, change_root, split_quoted, strtobool, run_2to3,
     get_compiler_versions, _MAC_OS_X_LD_VERSION, byte_compile, find_packages,
     spawn, get_pypirc_path, generate_pypirc, read_pypirc, resolve_name, iglob,
     RICH_GLOB, egginfo_to_distinfo, is_setuptools, is_distutils, is_packaging,
@@ -319,8 +319,6 @@ class UtilTestCase(support.EnvironRestorer,
         res = get_compiler_versions()
         self.assertEqual(res[2], None)
 
-    @unittest.skipUnless(hasattr(sys, 'dont_write_bytecode'),
-                         'sys.dont_write_bytecode not supported')
     def test_dont_write_bytecode(self):
         # makes sure byte_compile raise a PackagingError
         # if sys.dont_write_bytecode is True
@@ -374,7 +372,7 @@ class UtilTestCase(support.EnvironRestorer,
 
         res = find_packages([root], ['pkg1.pkg2'])
         self.assertEqual(set(res), set(['pkg1', 'pkg5', 'pkg1.pkg3',
-                                         'pkg1.pkg3.pkg6']))
+                                        'pkg1.pkg3.pkg6']))
 
     def test_resolve_name(self):
         self.assertIs(str, resolve_name('builtins.str'))
@@ -407,7 +405,6 @@ class UtilTestCase(support.EnvironRestorer,
         finally:
             sys.path.remove(tmp_dir)
 
-    @unittest.skipIf(sys.version < '2.6', 'requires Python 2.6 or higher')
     def test_run_2to3_on_code(self):
         content = "print 'test'"
         converted_content = "print('test')"
@@ -416,13 +413,11 @@ class UtilTestCase(support.EnvironRestorer,
         file_handle.write(content)
         file_handle.flush()
         file_handle.seek(0)
-        from packaging.util import run_2to3
         run_2to3([file_name])
         new_content = "".join(file_handle.read())
         file_handle.close()
         self.assertEqual(new_content, converted_content)
 
-    @unittest.skipIf(sys.version < '2.6', 'requires Python 2.6 or higher')
     def test_run_2to3_on_doctests(self):
         # to check if text files containing doctests only get converted.
         content = ">>> print 'test'\ntest\n"
@@ -432,7 +427,6 @@ class UtilTestCase(support.EnvironRestorer,
         file_handle.write(content)
         file_handle.flush()
         file_handle.seek(0)
-        from packaging.util import run_2to3
         run_2to3([file_name], doctests_only=True)
         new_content = "".join(file_handle.readlines())
         file_handle.close()

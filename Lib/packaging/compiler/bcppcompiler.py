@@ -352,5 +352,4 @@ class BCPPCompiler(CCompiler) :
             try:
                 self.spawn(pp_args)
             except PackagingExecError as msg:
-                print(msg)
                 raise CompileError(msg)

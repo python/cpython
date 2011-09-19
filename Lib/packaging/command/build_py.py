@@ -388,7 +388,7 @@ class build_py(Command, Mixin2to3):
                 self.build_module(module, module_file, package)
 
     def byte_compile(self, files):
-        if hasattr(sys, 'dont_write_bytecode') and sys.dont_write_bytecode:
+        if sys.dont_write_bytecode:
             logger.warning('%s: byte-compiling is disabled, skipping.',
                            self.get_command_name())
             return

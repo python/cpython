@@ -101,7 +101,7 @@ class MetadataTestCase(LoggingCatcher,
 
         # XXX caveat: the keys method and friends are not 3.x-style views
         # should be changed or documented
-        self.assertEqual(list(metadata), list(metadata.keys()))
+        self.assertEqual(list(metadata), metadata.keys())
 
     def test_read_metadata(self):
         fields = {'name': 'project',
@@ -301,7 +301,7 @@ class MetadataTestCase(LoggingCatcher,
         Metadata(mapping={'author': 'xxx',
                           'name': 'xxx',
                           'version': 'xxx',
-                          'home-page': 'xxxx'})
+                          'home_page': 'xxxx'})
         logs = self.get_logs(logging.WARNING)
         self.assertEqual(1, len(logs))
         self.assertIn('not a valid version', logs[0])

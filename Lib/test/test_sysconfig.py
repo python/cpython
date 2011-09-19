@@ -39,7 +39,7 @@ class TestSysConfig(unittest.TestCase):
         self._config_vars = copy(sysconfig._CONFIG_VARS)
         self._added_envvars = []
         self._changed_envvars = []
-        for var in ('MACOSX_DEPLOYMENT_TARGET', 'Path'):
+        for var in ('MACOSX_DEPLOYMENT_TARGET', 'PATH'):
             if var in os.environ:
                 self._changed_envvars.append((var, os.environ[var]))
             else:
@@ -87,21 +87,19 @@ class TestSysConfig(unittest.TestCase):
         scheme = get_paths()
         default_scheme = _get_default_scheme()
         wanted = _expand_vars(default_scheme, None)
-        wanted = list(wanted.items())
-        wanted.sort()
-        scheme = list(scheme.items())
-        scheme.sort()
+        wanted = sorted(wanted.items())
+        scheme = sorted(scheme.items())
         self.assertEqual(scheme, wanted)
 
     def test_get_path(self):
-        # xxx make real tests here
+        # XXX make real tests here
         for scheme in _SCHEMES:
             for name in _SCHEMES[scheme]:
                 res = get_path(name, scheme)
 
     def test_get_config_vars(self):
         cvars = get_config_vars()
-        self.assertTrue(isinstance(cvars, dict))
+        self.assertIsInstance(cvars, dict)
         self.assertTrue(cvars)
 
     def test_get_platform(self):
@@ -236,8 +234,8 @@ class TestSysConfig(unittest.TestCase):
         # On Windows, the EXE needs to know where pythonXY.dll is at so we have
         # to add the directory to the path.
         if sys.platform == "win32":
-            os.environ["Path"] = "{};{}".format(
-                os.path.dirname(sys.executable), os.environ["Path"])
+            os.environ["PATH"] = "{};{}".format(
+                os.path.dirname(sys.executable), os.environ["PATH"])
 
         # Issue 7880
         def get(python):

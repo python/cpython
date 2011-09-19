@@ -1,16 +1,10 @@
-"""Compatibility helpers.
-
-This module provides classes, variables and imports which are used to
-support packaging across Python 2.x and 3.x.
-"""
+"""Compatibility helpers."""
 
 from packaging import logger
 
 
 # XXX Having two classes with the same name is not a good thing.
 # XXX 2to3-related code should move from util to this module
-
-# TODO Move common code here: PY3 (bool indicating if we're on 3.x), any, etc.
 
 try:
     from packaging.util import Mixin2to3 as _Mixin2to3
