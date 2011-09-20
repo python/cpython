@@ -422,7 +422,7 @@ class Connection(_ConnectionBase):
     def _send_bytes(self, buf):
         # For wire compatibility with 3.2 and lower
         n = len(buf)
-        self._send(struct.pack("=i", len(buf)))
+        self._send(struct.pack("!i", n))
         # The condition is necessary to avoid "broken pipe" errors
         # when sending a 0-length buffer if the other end closed the pipe.
         if n > 0:
@@ -430,7 +430,7 @@ class Connection(_ConnectionBase):
 
     def _recv_bytes(self, maxsize=None, sentinels=()):
         buf = self._recv(4, sentinels)
-        size, = struct.unpack("=i", buf.getvalue())
+        size, = struct.unpack("!i", buf.getvalue())
         if maxsize is not None and size > maxsize:
             return None
         return self._recv(size, sentinels)
