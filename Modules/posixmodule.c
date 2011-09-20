@@ -8071,16 +8071,20 @@ Perform a statvfs system call on the given path.");
 static PyObject *
 posix_statvfs(PyObject *self, PyObject *args)
 {
-    char *path;
+    PyObject *path;
     int res;
     struct statvfs st;
-    if (!PyArg_ParseTuple(args, "s:statvfs", &path))
+    if (!PyArg_ParseTuple(args, "O&:statvfs", PyUnicode_FSConverter, &path))
         return NULL;
     Py_BEGIN_ALLOW_THREADS
-    res = statvfs(path, &st);
+    res = statvfs(PyBytes_AS_STRING(path), &st);
     Py_END_ALLOW_THREADS
-    if (res != 0)
-        return posix_error_with_filename(path);
+    if (res != 0) {
+        posix_error_with_filename(PyBytes_AS_STRING(path));
+        Py_DECREF(path);
+        return NULL;
+    }
+    Py_DECREF(path);
 
     return _pystatvfs_fromstructstatvfs(st);
 }
