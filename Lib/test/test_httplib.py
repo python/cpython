@@ -588,6 +588,7 @@ class RequestBodyTest(TestCase):
         self.assertEqual(b'body\xc1', f.read())
 
     def test_file_body(self):
+        self.addCleanup(support.unlink, support.TESTFN)
         with open(support.TESTFN, "w") as f:
             f.write("body")
         with open(support.TESTFN) as f:
@@ -599,6 +600,7 @@ class RequestBodyTest(TestCase):
             self.assertEqual(b'body', f.read())
 
     def test_binary_file_body(self):
+        self.addCleanup(support.unlink, support.TESTFN)
         with open(support.TESTFN, "wb") as f:
             f.write(b"body\xc1")
         with open(support.TESTFN, "rb") as f:
