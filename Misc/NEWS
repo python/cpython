@@ -10,6 +10,9 @@ What's New in Python 3.2.3?
 Core and Builtins
 -----------------
 
+- Issue #13021: Missing decref on an error path.  Thanks to Suman Saha for
+  finding the bug and providing a patch.
+
 - Issue #12973: Fix overflow check that relied on undefined behaviour in
   list_repeat.  This bug caused test_list to fail with recent versions
   of Clang.
