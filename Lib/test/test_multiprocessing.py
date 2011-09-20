@@ -1646,6 +1646,7 @@ class _TestConnection(BaseTestCase):
         p = self.Process(target=self._writefd, args=(child_conn, b"foo"))
         p.daemon = True
         p.start()
+        self.addCleanup(test.support.unlink, test.support.TESTFN)
         with open(test.support.TESTFN, "wb") as f:
             fd = f.fileno()
             if msvcrt:
@@ -1671,6 +1672,7 @@ class _TestConnection(BaseTestCase):
         p = self.Process(target=self._writefd, args=(child_conn, b"bar", True))
         p.daemon = True
         p.start()
+        self.addCleanup(test.support.unlink, test.support.TESTFN)
         with open(test.support.TESTFN, "wb") as f:
             fd = f.fileno()
             for newfd in range(256, MAXFD):
