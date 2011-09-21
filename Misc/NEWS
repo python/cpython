@@ -1287,6 +1287,9 @@ Tools/Demos
 Extension Modules
 -----------------
 
+- Issue #13022: Fix: _multiprocessing.recvfd() doesn't check that
+  file descriptor was actually received.
+
 - Issue #1172711: Add 'long long' support to the array module.
   Initial patch by Oren Tirosh and Hirokazu Yamamoto.
 
