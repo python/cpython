@@ -176,7 +176,6 @@ class install_dist(Command):
         self.installer = None
         self.requested = None
         self.no_record = None
-        self.no_resources = None
 
     # -- Option finalizing methods -------------------------------------
     # (This is rather more involved than for most commands,
