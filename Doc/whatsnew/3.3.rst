@@ -68,6 +68,15 @@ New, Improved, and Deprecated Modules
 
 * Stub
 
+array
+-----
+
+The :mod:`array` module supports the :c:type:`long long` type using ``q`` and
+``Q`` type codes.
+
+(Contributed by Oren Tirosh and Hirokazu Yamamoto in :issue:`1172711`)
+
+
 codecs
 ------
 
@@ -255,15 +264,6 @@ The :mod:`ssl` module has new functions:
   * :func:`~ssl.RAND_bytes`: generate cryptographically strong
     pseudo-random bytes.
   * :func:`~ssl.RAND_pseudo_bytes`: generate pseudo-random bytes.
-
-
-struct
-------
-
-The :mod:`struct` module supports the :c:type:`long long` type using ``q`` and
-``Q`` type codes.
-
-(Contributed by Oren Tirosh and Hirokazu Yamamoto in :issue:`1172711`)
 
 
 shutil
