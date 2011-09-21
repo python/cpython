@@ -201,6 +201,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #13022: Fix: _multiprocessing.recvfd() doesn't check that
+  file descriptor was actually received.
+
 - Issue #12483: ctypes: Fix a crash when the destruction of a callback
   object triggers the garbage collector.
 
