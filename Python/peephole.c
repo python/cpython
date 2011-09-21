@@ -66,7 +66,7 @@
     const_stack_top = -1; \
     } while(0)
 
-#define CONST_STACK_TOP(x) \
+#define CONST_STACK_TOP() \
     const_stack[const_stack_top]
 
 #define CONST_STACK_LASTN(i) \
