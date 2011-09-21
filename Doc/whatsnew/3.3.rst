@@ -94,17 +94,21 @@ versions.
 crypt
 -----
 
-Addition of salf and modular crypt format to the :mod:`crypt` module.
+Addition of salt and modular crypt format and the :func:`~crypt.mksalt`
+function to the :mod:`crypt` module.
 
 (:issue:`10924`)
 
 curses
 ------
 
-The :class:`curses.window` class has a new :meth:`~curses.window.get_wch` method
-to get a wide character.  Patch by Iñigo Serna.
+ * The :class:`curses.window` class has a new :meth:`~curses.window.get_wch`
+   method to get a wide character
+ * The :mod:`curses` module has a new :meth:`~curses.unget_wch` function to
+   push a wide character so the next :meth:`~curses.window.get_wch` will return
+   it
 
-(:issue:`6755`)
+(Contributed by Iñigo Serna in :issue:`6755`)
 
 faulthandler
 ------------
