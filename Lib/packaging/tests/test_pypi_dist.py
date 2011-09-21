@@ -1,6 +1,7 @@
 """Tests for the packaging.pypi.dist module."""
 
 import os
+import shutil
 from packaging.version import VersionPredicate
 from packaging.pypi.dist import (ReleaseInfo, ReleasesList, DistInfo,
                                  split_archive_name, get_infos_from_url)
@@ -185,6 +186,7 @@ class TestDistInfo(TempdirManager, unittest.TestCase):
         dist2 = Dist(url=url)
         # doing an unpack
         dist2_there = dist2.unpack()
+        self.addCleanup(shutil.rmtree, dist2_there)
         dist2_result = os.listdir(dist2_there)
         self.assertIn('paf', dist2_result)
         os.remove(os.path.join(dist2_there, 'paf'))
