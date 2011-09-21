@@ -1693,6 +1693,7 @@ class _TestConnection(BaseTestCase):
     def _send_data_without_fd(self, conn):
         os.write(conn.fileno(), b"\0")
 
+    @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
     @unittest.skipIf(sys.platform == "win32", "doesn't make sense on Windows")
     def test_missing_fd_transfer(self):
         # Check that exception is raised when received data is not
