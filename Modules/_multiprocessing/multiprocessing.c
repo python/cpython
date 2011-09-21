@@ -166,6 +166,17 @@ multiprocessing_recvfd(PyObject *self, PyObject *args)
     if (res < 0)
         return PyErr_SetFromErrno(PyExc_OSError);
 
+    if (msg.msg_controllen < CMSG_LEN(sizeof(int)) ||
+        (cmsg = CMSG_FIRSTHDR(&msg)) == NULL ||
+        cmsg->cmsg_level != SOL_SOCKET ||
+        cmsg->cmsg_type != SCM_RIGHTS ||
+        cmsg->cmsg_len < CMSG_LEN(sizeof(int))) {
+        /* If at least one control message is present, there should be
+           no room for any further data in the buffer. */
+        PyErr_SetString(PyExc_RuntimeError, "No file descriptor received");
+        return NULL;
+    }
+
     fd = * (int *) CMSG_DATA(cmsg);
     return Py_BuildValue("i", fd);
 }
