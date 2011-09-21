@@ -24,7 +24,7 @@ API
                    prefer_final=False, prefer_source=True, \
                    hosts=('*',), follow_externals=False, \
                    mirrors_url=None, mirrors=None, timeout=15, \
-                   mirrors_max_tries=0, verbose=False)
+                   mirrors_max_tries=0)
 
       *index_url* is the address of the index to use for requests.
 

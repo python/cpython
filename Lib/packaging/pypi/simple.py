@@ -119,10 +119,9 @@ class Crawler(BaseClient):
     def __init__(self, index_url=DEFAULT_SIMPLE_INDEX_URL, prefer_final=False,
                  prefer_source=True, hosts=DEFAULT_HOSTS,
                  follow_externals=False, mirrors_url=None, mirrors=None,
-                 timeout=SOCKET_TIMEOUT, mirrors_max_tries=0, verbose=False):
+                 timeout=SOCKET_TIMEOUT, mirrors_max_tries=0):
         super(Crawler, self).__init__(prefer_final, prefer_source)
         self.follow_externals = follow_externals
-        self.verbose = verbose
 
         # mirroring attributes.
         parsed = urllib.parse.urlparse(index_url)
@@ -322,9 +321,8 @@ class Crawler(BaseClient):
                                 infos = get_infos_from_url(link, project_name,
                                             is_external=self.index_url not in url)
                             except CantParseArchiveName as e:
-                                if self.verbose:
-                                    logger.warning(
-                                        "version has not been parsed: %s", e)
+                                logger.warning(
+                                    "version has not been parsed: %s", e)
                             else:
                                 self._register_release(release_info=infos)
                         else:
