@@ -191,6 +191,11 @@ Power and logarithmic functions
 
    .. versionadded:: 3.3
 
+   .. seealso::
+
+      :meth:`int.bit_length` returns the number of bits necessary to represent
+      an integer in binary, excluding the sign and leading zeros.
+
 
 .. function:: log10(x)
 
