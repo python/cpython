@@ -584,6 +584,10 @@ class SimpleServerTestCase(BaseServerTestCase):
         # This avoids waiting for the socket timeout.
         self.test_simple1()
 
+    def test_unicode_host(self):
+        server = xmlrpclib.ServerProxy("http://%s:%d/RPC2" % (ADDR, PORT))
+        self.assertEqual(server.add("a", "\xe9"), "a\xe9")
+
 class MultiPathServerTestCase(BaseServerTestCase):
     threadFunc = staticmethod(http_multi_server)
     request_count = 2
