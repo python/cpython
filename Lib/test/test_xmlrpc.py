@@ -472,6 +472,9 @@ class SimpleServerTestCase(BaseServerTestCase):
                 # protocol error; provide additional information in test output
                 self.fail("%s\n%s" % (e, getattr(e, "headers", "")))
 
+    def test_unicode_host(self):
+        server = xmlrpclib.ServerProxy(u"http://%s:%d/RPC2"%(ADDR, PORT))
+        self.assertEqual(server.add("a", u"\xe9"), u"a\xe9")
 
     # [ch] The test 404 is causing lots of false alarms.
     def XXXtest_404(self):
