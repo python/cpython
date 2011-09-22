@@ -47,6 +47,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12931: xmlrpclib now encodes Unicode URI to ISO-8859-1, instead of
+  failing with a UnicodeDecodeError.
+
 - Issue #8933: distutils' PKG-INFO files will now correctly report
   Metadata-Version: 1.1 instead of 1.0 if a Classifier or Download-URL field is
   present.
