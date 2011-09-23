@@ -2845,10 +2845,8 @@ call_find_module(char *name, PyObject *path)
         return NULL;
     if (fp != NULL) {
         fob = PyFile_FromFile(fp, pathname, fdp->mode, fclose);
-        if (fob == NULL) {
-            fclose(fp);
+        if (fob == NULL)
             return NULL;
-        }
     }
     else {
         fob = Py_None;

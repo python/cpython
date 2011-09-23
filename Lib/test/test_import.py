@@ -265,6 +265,14 @@ class ImportTests(unittest.TestCase):
             """))
         script_helper.assert_python_ok(testfn)
 
+    def test_bug7732(self):
+        source = TESTFN + '.py'
+        os.mkdir(source)
+        try:
+            self.assertRaises(IOError, imp.find_module, TESTFN, ["."])
+        finally:
+            os.rmdir(source)
+
 
 class PycRewritingTests(unittest.TestCase):
     # Test that the `co_filename` attribute on code objects always points
