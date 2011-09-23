@@ -5561,6 +5561,49 @@ $as_echo "$ac_cv_no_strict_aliasing" >&6; }
       BASECFLAGS="$BASECFLAGS -fno-strict-aliasing"
     fi
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can turn off $CC unused result warning" >&5
+$as_echo_n "checking if we can turn off $CC unused result warning... " >&6; }
+     ac_save_cc="$CC"
+     CC="$CC -Wunused-result -Werror"
+     save_CFLAGS="$CFLAGS"
+     if ${ac_cv_disable_unused_result_warning+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+           ac_cv_disable_unused_result_warning=yes
+
+else
+
+           ac_cv_disable_unused_result_warning=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+
+     CFLAGS="$save_CFLAGS"
+     CC="$ac_save_cc"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_disable_unused_result_warning" >&5
+$as_echo "$ac_cv_disable_unused_result_warning" >&6; }
+
+    if test $ac_cv_disable_unused_result_warning = yes
+    then
+      BASECFLAGS="$BASECFLAGS -Wno-unused-result"
+    fi
+
     # if using gcc on alpha, use -mieee to get (near) full IEEE 754
     # support.  Without this, treatment of subnormals doesn't follow
     # the standard.
