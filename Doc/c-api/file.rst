@@ -55,7 +55,8 @@ change in future releases of Python.
 
    Create a new :ctype:`PyFileObject` from the already-open standard C file
    pointer, *fp*.  The function *close* will be called when the file should be
-   closed.  Return *NULL* on failure.
+   closed.  Return *NULL* and close the file using *close* on failure.
+   *close* is optional and can be set to *NULL*.
 
 
 .. cfunction:: FILE* PyFile_AsFile(PyObject \*p)

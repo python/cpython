@@ -468,28 +468,34 @@ close_the_file(PyFileObject *f)
 PyObject *
 PyFile_FromFile(FILE *fp, char *name, char *mode, int (*close)(FILE *))
 {
-    PyFileObject *f = (PyFileObject *)PyFile_Type.tp_new(&PyFile_Type,
-                                                         NULL, NULL);
-    if (f != NULL) {
-        PyObject *o_name = PyString_FromString(name);
-        if (o_name == NULL)
-            return NULL;
-        if (fill_file_fields(f, fp, o_name, mode, close) == NULL) {
-            Py_DECREF(f);
-            f = NULL;
-        }
-        Py_DECREF(o_name);
+    PyFileObject *f;
+    PyObject *o_name;
+
+    f = (PyFileObject *)PyFile_Type.tp_new(&PyFile_Type, NULL, NULL);
+    if (f == NULL)
+        return NULL;
+    o_name = PyString_FromString(name);
+    if (o_name == NULL) {
+        if (close != NULL && fp != NULL)
+            close(fp);
+        Py_DECREF(f);
+        return NULL;
     }
-    return (PyObject *) f;
+    if (fill_file_fields(f, fp, o_name, mode, close) == NULL) {
+        Py_DECREF(f);
+        Py_DECREF(o_name);
+        return NULL;
+    }
+    Py_DECREF(o_name);
+    return (PyObject *)f;
 }
 
 PyObject *
 PyFile_FromString(char *name, char *mode)
 {
-    extern int fclose(FILE *);
     PyFileObject *f;
 
-    f = (PyFileObject *)PyFile_FromFile((FILE *)NULL, name, mode, fclose);
+    f = (PyFileObject *)PyFile_FromFile((FILE *)NULL, name, mode, NULL);
     if (f != NULL) {
         if (open_the_file(f, name, mode) == NULL) {
             Py_DECREF(f);
