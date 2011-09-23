@@ -5298,13 +5298,12 @@ load(UnpicklerObject *self)
         case STOP:
             break;
 
-        case '\0':
-            PyErr_SetNone(PyExc_EOFError);
-            return NULL;
-
         default:
-            PyErr_Format(UnpicklingError,
-                         "invalid load key, '%c'.", s[0]);
+            if (s[0] == '\0')
+                PyErr_SetNone(PyExc_EOFError);
+            else
+                PyErr_Format(UnpicklingError,
+                             "invalid load key, '%c'.", s[0]);
             return NULL;
         }
 
