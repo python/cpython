@@ -1763,6 +1763,7 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
         saved_namelen = namelen;
 #endif /* PYOS_OS2 */
         for (fdp = _PyImport_Filetab; fdp->suffix != NULL; fdp++) {
+            struct stat statbuf;
 #if defined(PYOS_OS2) && defined(HAVE_DYNAMIC_LOADING)
             /* OS/2 limits DLLs to 8 character names (w/o
                extension)
@@ -1791,10 +1792,16 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
             strcpy(buf+len, fdp->suffix);
             if (Py_VerboseFlag > 1)
                 PySys_WriteStderr("# trying %s\n", buf);
+
             filemode = fdp->mode;
             if (filemode[0] == 'U')
                 filemode = "r" PY_STDIOTEXTMODE;
-            fp = fopen(buf, filemode);
+
+            if (stat(buf, &statbuf) == 0 && S_ISDIR(statbuf.st_mode))
+                /* it's a directory */
+                fp = NULL;
+            else
+                fp = fopen(buf, filemode);
             if (fp != NULL) {
                 if (case_ok(buf, len, namelen, name))
                     break;
