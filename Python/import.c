@@ -1892,6 +1892,8 @@ find_module_path_list(PyObject *fullname, PyObject *name,
         }
 
         for (fdp = _PyImport_Filetab; fdp->suffix != NULL; fdp++) {
+            struct stat statbuf;
+
             filemode = fdp->mode;
             if (filemode[0] == 'U')
                 filemode = "r" PY_STDIOTEXTMODE;
@@ -1904,6 +1906,13 @@ find_module_path_list(PyObject *fullname, PyObject *name,
 
             if (Py_VerboseFlag > 1)
                 PySys_FormatStderr("# trying %R\n", filename);
+
+            if (_Py_stat(filename, &statbuf) == 0 &&         /* it exists */
+                S_ISDIR(statbuf.st_mode))           /* it's a directory */
+            {
+                Py_DECREF(filename);
+                continue;
+            }
 
             fp = _Py_fopen(filename, filemode);
             if (fp == NULL) {

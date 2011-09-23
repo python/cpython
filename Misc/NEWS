@@ -10,6 +10,10 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #7732: Don't open a directory as a file anymore while importing a
+  module. Ignore the direcotry if its name matchs the module name (e.g.
+  "__init__.py") and raise a ImportError instead.
+
 - Issue #13021: Missing decref on an error path.  Thanks to Suman Saha for
   finding the bug and providing a patch.
 
@@ -291,7 +295,7 @@ Library
   ZLIB_RUNTIME_VERSION, in the zlib module. Patch by Torsten Landschoff.
 
 - Issue #12959: Add collections.ChainMap to collections.__all__.
- 
+
 - Issue #8933: distutils' PKG-INFO files and packaging's METADATA files will
   now correctly report Metadata-Version: 1.1 instead of 1.0 if a Classifier or
   Download-URL field is present.
