@@ -10,6 +10,10 @@ What's New in Python 3.2.3?
 Core and Builtins
 -----------------
 
+- Issue #7732: Don't open a directory as a file anymore while importing a
+  module. Ignore the direcotry if its name matchs the module name (e.g.
+  "__init__.py") and raise a ImportError instead.
+
 - Issue #13021: Missing decref on an error path.  Thanks to Suman Saha for
   finding the bug and providing a patch.
 
@@ -77,7 +81,7 @@ Tests
 
 Extension Modules
 -----------------
- 
+
 - Issue #13022: Fix: _multiprocessing.recvfd() doesn't check that
   file descriptor was actually received.
 
