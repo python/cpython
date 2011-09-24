@@ -1234,7 +1234,9 @@ islice_next(isliceobject *lz)
         return NULL;
     lz->cnt++;
     oldnext = lz->next;
-    lz->next += lz->step;
+    /* The (size_t) cast below avoids the danger of undefined
+       behaviour from signed integer overflow. */
+    lz->next += (size_t)lz->step;
     if (lz->next < oldnext || (stop != -1 && lz->next > stop))
         lz->next = stop;
     return item;
