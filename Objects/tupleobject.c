@@ -315,11 +315,12 @@ Done:
 static Py_hash_t
 tuplehash(PyTupleObject *v)
 {
-    register Py_hash_t x, y;
+    register Py_uhash_t x;
+    register Py_hash_t y;
     register Py_ssize_t len = Py_SIZE(v);
     register PyObject **p;
-    Py_hash_t mult = 1000003L;
-    x = 0x345678L;
+    Py_uhash_t mult = 1000003;
+    x = 0x345678;
     p = v->ob_item;
     while (--len >= 0) {
         y = PyObject_Hash(*p++);
@@ -330,7 +331,7 @@ tuplehash(PyTupleObject *v)
         mult += (Py_hash_t)(82520L + len + len);
     }
     x += 97531L;
-    if (x == -1)
+    if (x == (Py_uhash_t)-1)
         x = -2;
     return x;
 }

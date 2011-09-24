@@ -869,16 +869,16 @@ bytes_hash(PyBytesObject *a)
 {
     register Py_ssize_t len;
     register unsigned char *p;
-    register Py_hash_t x;
+    register Py_uhash_t x;
 
     if (a->ob_shash != -1)
         return a->ob_shash;
     len = Py_SIZE(a);
     p = (unsigned char *) a->ob_sval;
-    x = *p << 7;
+    x = (Py_uhash_t)*p << 7;
     while (--len >= 0)
-        x = (1000003*x) ^ *p++;
-    x ^= Py_SIZE(a);
+        x = (1000003U*x) ^ (Py_uhash_t)*p++;
+    x ^= (Py_uhash_t)Py_SIZE(a);
     if (x == -1)
         x = -2;
     a->ob_shash = x;
