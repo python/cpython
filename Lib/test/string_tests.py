@@ -47,11 +47,12 @@ class BaseTest(unittest.TestCase):
             return obj
 
     # check that obj.method(*args) returns result
-    def checkequal(self, result, obj, methodname, *args):
+    def checkequal(self, result, obj, methodname, *args, **kwargs):
         result = self.fixtype(result)
         obj = self.fixtype(obj)
         args = self.fixtype(args)
-        realresult = getattr(obj, methodname)(*args)
+        kwargs = self.fixtype(kwargs)
+        realresult = getattr(obj, methodname)(*args, **kwargs)
         self.assertEqual(
             result,
             realresult
@@ -908,7 +909,14 @@ class MixinStrUnicodeUserStringTest:
         self.checkequal(['abc', 'def', 'ghi'], "abc\ndef\r\nghi\n", 'splitlines')
         self.checkequal(['abc', 'def', 'ghi', ''], "abc\ndef\r\nghi\n\r", 'splitlines')
         self.checkequal(['', 'abc', 'def', 'ghi', ''], "\nabc\ndef\r\nghi\n\r", 'splitlines')
-        self.checkequal(['\n', 'abc\n', 'def\r\n', 'ghi\n', '\r'], "\nabc\ndef\r\nghi\n\r", 'splitlines', 1)
+        self.checkequal(['', 'abc', 'def', 'ghi', ''],
+                        "\nabc\ndef\r\nghi\n\r", 'splitlines', False)
+        self.checkequal(['\n', 'abc\n', 'def\r\n', 'ghi\n', '\r'],
+                        "\nabc\ndef\r\nghi\n\r", 'splitlines', True)
+        self.checkequal(['', 'abc', 'def', 'ghi', ''], "\nabc\ndef\r\nghi\n\r",
+                        'splitlines', keepends=False)
+        self.checkequal(['\n', 'abc\n', 'def\r\n', 'ghi\n', '\r'],
+                        "\nabc\ndef\r\nghi\n\r", 'splitlines', keepends=True)
 
         self.checkraises(TypeError, 'abc', 'splitlines', 42, 42)
 
