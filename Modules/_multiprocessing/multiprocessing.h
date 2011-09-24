@@ -3,12 +3,6 @@
 
 #define PY_SSIZE_T_CLEAN
 
-#ifdef __sun
-/* The control message API is only available on Solaris
-   if XPG 4.2 or later is requested. */
-#define _XOPEN_SOURCE 500
-#endif
-
 #include "Python.h"
 #include "structmember.h"
 #include "pythread.h"
@@ -29,10 +23,6 @@
 #  define SEM_VALUE_MAX LONG_MAX
 #else
 #  include <fcntl.h>                 /* O_CREAT and O_EXCL */
-#  include <netinet/in.h>
-#  include <sys/socket.h>
-#  include <sys/uio.h>
-#  include <arpa/inet.h>             /* htonl() and ntohl() */
 #  if defined(HAVE_SEM_OPEN) && !defined(POSIX_SEMAPHORES_NOT_ENABLED)
 #    include <semaphore.h>
      typedef sem_t *SEM_HANDLE;

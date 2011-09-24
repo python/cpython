@@ -8,11 +8,6 @@
 
 #include "multiprocessing.h"
 
-#ifdef SCM_RIGHTS
-    #define HAVE_FD_TRANSFER 1
-#else
-    #define HAVE_FD_TRANSFER 0
-#endif
 
 PyObject *create_win32_namespace(void);
 
@@ -75,115 +70,7 @@ ProcessingCtrlHandler(DWORD dwCtrlType)
     return FALSE;
 }
 
-/*
- * Unix only
- */
-
-#else /* !MS_WINDOWS */
-
-#if HAVE_FD_TRANSFER
-
-/* Functions for transferring file descriptors between processes.
-   Reimplements some of the functionality of the fdcred
-   module at http://www.mca-ltd.com/resources/fdcred_1.tgz. */
-/* Based in http://resin.csoft.net/cgi-bin/man.cgi?section=3&topic=CMSG_DATA */
-
-static PyObject *
-multiprocessing_sendfd(PyObject *self, PyObject *args)
-{
-    int conn, fd, res;
-    struct iovec dummy_iov;
-    char dummy_char;
-    struct msghdr msg;
-    struct cmsghdr *cmsg;
-    union {
-        struct cmsghdr hdr;
-        unsigned char buf[CMSG_SPACE(sizeof(int))];
-    } cmsgbuf;
-
-    if (!PyArg_ParseTuple(args, "ii", &conn, &fd))
-        return NULL;
-
-    dummy_iov.iov_base = &dummy_char;
-    dummy_iov.iov_len = 1;
-
-    memset(&msg, 0, sizeof(msg));
-    msg.msg_control = &cmsgbuf.buf;
-    msg.msg_controllen = sizeof(cmsgbuf.buf);
-    msg.msg_iov = &dummy_iov;
-    msg.msg_iovlen = 1;
-
-    cmsg = CMSG_FIRSTHDR(&msg);
-    cmsg->cmsg_len = CMSG_LEN(sizeof(int));
-    cmsg->cmsg_level = SOL_SOCKET;
-    cmsg->cmsg_type = SCM_RIGHTS;
-    * (int *) CMSG_DATA(cmsg) = fd;
-
-    Py_BEGIN_ALLOW_THREADS
-    res = sendmsg(conn, &msg, 0);
-    Py_END_ALLOW_THREADS
-
-    if (res < 0)
-        return PyErr_SetFromErrno(PyExc_OSError);
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-multiprocessing_recvfd(PyObject *self, PyObject *args)
-{
-    int conn, fd, res;
-    char dummy_char;
-    struct iovec dummy_iov;
-    struct msghdr msg = {0};
-    struct cmsghdr *cmsg;
-    union {
-        struct cmsghdr hdr;
-        unsigned char buf[CMSG_SPACE(sizeof(int))];
-    } cmsgbuf;
-
-    if (!PyArg_ParseTuple(args, "i", &conn))
-        return NULL;
-
-    dummy_iov.iov_base = &dummy_char;
-    dummy_iov.iov_len = 1;
-
-    memset(&msg, 0, sizeof(msg));
-    msg.msg_control = &cmsgbuf.buf;
-    msg.msg_controllen = sizeof(cmsgbuf.buf);
-    msg.msg_iov = &dummy_iov;
-    msg.msg_iovlen = 1;
-
-    cmsg = CMSG_FIRSTHDR(&msg);
-    cmsg->cmsg_level = SOL_SOCKET;
-    cmsg->cmsg_type = SCM_RIGHTS;
-    cmsg->cmsg_len = CMSG_LEN(sizeof(int));
-    msg.msg_controllen = cmsg->cmsg_len;
-
-    Py_BEGIN_ALLOW_THREADS
-    res = recvmsg(conn, &msg, 0);
-    Py_END_ALLOW_THREADS
-
-    if (res < 0)
-        return PyErr_SetFromErrno(PyExc_OSError);
-
-    if (msg.msg_controllen < CMSG_LEN(sizeof(int)) ||
-        (cmsg = CMSG_FIRSTHDR(&msg)) == NULL ||
-        cmsg->cmsg_level != SOL_SOCKET ||
-        cmsg->cmsg_type != SCM_RIGHTS ||
-        cmsg->cmsg_len < CMSG_LEN(sizeof(int))) {
-        /* If at least one control message is present, there should be
-           no room for any further data in the buffer. */
-        PyErr_SetString(PyExc_RuntimeError, "No file descriptor received");
-        return NULL;
-    }
-
-    fd = * (int *) CMSG_DATA(cmsg);
-    return Py_BuildValue("i", fd);
-}
-
-#endif /* HAVE_FD_TRANSFER */
-
-#endif /* !MS_WINDOWS */
+#endif /* MS_WINDOWS */
 
 
 /*
@@ -212,16 +99,6 @@ static PyMethodDef module_methods[] = {
     {"address_of_buffer", multiprocessing_address_of_buffer, METH_O,
      "address_of_buffer(obj) -> int\n"
      "Return address of obj assuming obj supports buffer inteface"},
-#if HAVE_FD_TRANSFER
-    {"sendfd", multiprocessing_sendfd, METH_VARARGS,
-     "sendfd(sockfd, fd) -> None\n"
-     "Send file descriptor given by fd over the unix domain socket\n"
-     "whose file decriptor is sockfd"},
-    {"recvfd", multiprocessing_recvfd, METH_VARARGS,
-     "recvfd(sockfd) -> fd\n"
-     "Receive a file descriptor over a unix domain socket\n"
-     "whose file decriptor is sockfd"},
-#endif
     {NULL}
 };
 
@@ -318,9 +195,6 @@ PyInit__multiprocessing(void)
 #endif
 #ifdef HAVE_SEM_TIMEDWAIT
     ADD_FLAG(HAVE_SEM_TIMEDWAIT);
-#endif
-#ifdef HAVE_FD_TRANSFER
-    ADD_FLAG(HAVE_FD_TRANSFER);
 #endif
 #ifdef HAVE_BROKEN_SEM_GETVALUE
     ADD_FLAG(HAVE_BROKEN_SEM_GETVALUE);
