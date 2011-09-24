@@ -7721,22 +7721,22 @@ unicode_getitem(PyUnicodeObject *self, Py_ssize_t index)
 }
 
 /* Believe it or not, this produces the same value for ASCII strings
-   as string_hash(). */
+   as bytes_hash(). */
 static Py_hash_t
 unicode_hash(PyUnicodeObject *self)
 {
     Py_ssize_t len;
     Py_UNICODE *p;
-    Py_hash_t x;
+    Py_uhash_t x;
 
     if (self->hash != -1)
         return self->hash;
     len = Py_SIZE(self);
     p = self->str;
-    x = *p << 7;
+    x = (Py_uhash_t)*p << 7;
     while (--len >= 0)
-        x = (1000003*x) ^ *p++;
-    x ^= Py_SIZE(self);
+        x = (1000003U*x) ^ (Py_uhash_t)*p++;
+    x ^= (Py_uhash_t)Py_SIZE(self);
     if (x == -1)
         x = -2;
     self->hash = x;
