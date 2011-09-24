@@ -2608,11 +2608,13 @@ Line breaks are not included in the resulting list unless keepends\n\
 is given and true.");
 
 static PyObject*
-bytearray_splitlines(PyObject *self, PyObject *args)
+bytearray_splitlines(PyObject *self, PyObject *args, PyObject *kwds)
 {
+    static char *kwlist[] = {"keepends", 0};
     int keepends = 0;
 
-    if (!PyArg_ParseTuple(args, "|i:splitlines", &keepends))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|i:splitlines",
+                                     kwlist, &keepends))
         return NULL;
 
     return stringlib_splitlines(
@@ -2801,8 +2803,8 @@ bytearray_methods[] = {
     {"rsplit", (PyCFunction)bytearray_rsplit, METH_VARARGS, rsplit__doc__},
     {"rstrip", (PyCFunction)bytearray_rstrip, METH_VARARGS, rstrip__doc__},
     {"split", (PyCFunction)bytearray_split, METH_VARARGS, split__doc__},
-    {"splitlines", (PyCFunction)bytearray_splitlines, METH_VARARGS,
-     splitlines__doc__},
+    {"splitlines", (PyCFunction)bytearray_splitlines,
+     METH_VARARGS | METH_KEYWORDS, splitlines__doc__},
     {"startswith", (PyCFunction)bytearray_startswith, METH_VARARGS ,
      startswith__doc__},
     {"strip", (PyCFunction)bytearray_strip, METH_VARARGS, strip__doc__},

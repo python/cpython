@@ -17,11 +17,11 @@ class UserStringTest(
     # Overwrite the three testing methods, because UserString
     # can't cope with arguments propagated to UserString
     # (and we don't test with subclasses)
-    def checkequal(self, result, object, methodname, *args):
+    def checkequal(self, result, object, methodname, *args, **kwargs):
         result = self.fixtype(result)
         object = self.fixtype(object)
         # we don't fix the arguments, because UserString can't cope with it
-        realresult = getattr(object, methodname)(*args)
+        realresult = getattr(object, methodname)(*args, **kwargs)
         self.assertEqual(
             result,
             realresult

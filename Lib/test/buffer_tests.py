@@ -200,7 +200,13 @@ class MixinBytesBufferCommonTests(object):
                          self.marshal(b'abc\ndef\r\nghi\n\r').splitlines())
         self.assertEqual([b'', b'abc', b'def', b'ghi', b''],
                          self.marshal(b'\nabc\ndef\r\nghi\n\r').splitlines())
+        self.assertEqual([b'', b'abc', b'def', b'ghi', b''],
+                         self.marshal(b'\nabc\ndef\r\nghi\n\r').splitlines(False))
         self.assertEqual([b'\n', b'abc\n', b'def\r\n', b'ghi\n', b'\r'],
-                         self.marshal(b'\nabc\ndef\r\nghi\n\r').splitlines(1))
+                         self.marshal(b'\nabc\ndef\r\nghi\n\r').splitlines(True))
+        self.assertEqual([b'', b'abc', b'def', b'ghi', b''],
+                         self.marshal(b'\nabc\ndef\r\nghi\n\r').splitlines(keepends=False))
+        self.assertEqual([b'\n', b'abc\n', b'def\r\n', b'ghi\n', b'\r'],
+                         self.marshal(b'\nabc\ndef\r\nghi\n\r').splitlines(keepends=True))
 
         self.assertRaises(TypeError, self.marshal(b'abc').splitlines, 42, 42)
