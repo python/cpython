@@ -77,7 +77,7 @@ NULL if the rich comparison returns an error.
 static setentry *
 set_lookkey(PySetObject *so, PyObject *key, register Py_hash_t hash)
 {
-    register Py_ssize_t i;
+    register size_t i;
     register size_t perturb;
     register setentry *freeslot;
     register size_t mask = so->mask;
@@ -86,7 +86,7 @@ set_lookkey(PySetObject *so, PyObject *key, register Py_hash_t hash)
     register int cmp;
     PyObject *startkey;
 
-    i = hash & mask;
+    i = (size_t)hash & mask;
     entry = &table[i];
     if (entry->key == NULL || entry->key == key)
         return entry;
@@ -159,7 +159,7 @@ set_lookkey(PySetObject *so, PyObject *key, register Py_hash_t hash)
 static setentry *
 set_lookkey_unicode(PySetObject *so, PyObject *key, register Py_hash_t hash)
 {
-    register Py_ssize_t i;
+    register size_t i;
     register size_t perturb;
     register setentry *freeslot;
     register size_t mask = so->mask;
@@ -174,7 +174,7 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, register Py_hash_t hash)
         so->lookup = set_lookkey;
         return set_lookkey(so, key, hash);
     }
-    i = hash & mask;
+    i = (size_t)hash & mask;
     entry = &table[i];
     if (entry->key == NULL || entry->key == key)
         return entry;
@@ -256,7 +256,7 @@ set_insert_clean(register PySetObject *so, PyObject *key, Py_hash_t hash)
     setentry *table = so->table;
     register setentry *entry;
 
-    i = hash & mask;
+    i = (size_t)hash & mask;
     entry = &table[i];
     for (perturb = hash; entry->key != NULL; perturb >>= PERTURB_SHIFT) {
         i = (i << 2) + i + perturb + 1;
@@ -770,14 +770,14 @@ static Py_hash_t
 frozenset_hash(PyObject *self)
 {
     PySetObject *so = (PySetObject *)self;
-    Py_hash_t h, hash = 1927868237L;
+    Py_uhash_t h, hash = 1927868237U;
     setentry *entry;
     Py_ssize_t pos = 0;
 
     if (so->hash != -1)
         return so->hash;
 
-    hash *= PySet_GET_SIZE(self) + 1;
+    hash *= (Py_uhash_t)PySet_GET_SIZE(self) + 1;
     while (set_next(so, &pos, &entry)) {
         /* Work to increase the bit dispersion for closely spaced hash
            values.  The is important because some use cases have many
@@ -785,11 +785,11 @@ frozenset_hash(PyObject *self)
            hashes so that many distinct combinations collapse to only
            a handful of distinct hash values. */
         h = entry->hash;
-        hash ^= (h ^ (h << 16) ^ 89869747L)  * 3644798167u;
+        hash ^= (h ^ (h << 16) ^ 89869747U)  * 3644798167U;
     }
-    hash = hash * 69069L + 907133923L;
+    hash = hash * 69069U + 907133923U;
     if (hash == -1)
-        hash = 590923713L;
+        hash = 590923713U;
     so->hash = hash;
     return hash;
 }

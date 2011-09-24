@@ -418,7 +418,7 @@ lookdict_unicode(PyDictObject *mp, PyObject *key, register Py_hash_t hash)
         mp->ma_lookup = lookdict;
         return lookdict(mp, key, hash);
     }
-    i = hash & mask;
+    i = (size_t)hash & mask;
     ep = &ep0[i];
     if (ep->me_key == NULL || ep->me_key == key)
         return ep;
@@ -572,7 +572,7 @@ insertdict_clean(register PyDictObject *mp, PyObject *key, Py_hash_t hash,
     register PyDictEntry *ep;
 
     MAINTAIN_TRACKING(mp, key, value);
-    i = hash & mask;
+    i = (size_t)hash & mask;
     ep = &ep0[i];
     for (perturb = hash; ep->me_key != NULL; perturb >>= PERTURB_SHIFT) {
         i = (i << 2) + i + perturb + 1;
