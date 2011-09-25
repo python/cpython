@@ -2351,7 +2351,7 @@ array_ass_subscr(arrayobject* self, PyObject* item, PyObject* value)
                 self->ob_item + (cur + 1) * itemsize,
                 lim * itemsize);
         }
-        cur = start + slicelength * step;
+        cur = start + (size_t)slicelength * step;
         if (cur < (size_t)Py_SIZE(self)) {
             memmove(self->ob_item + (cur-slicelength) * itemsize,
                 self->ob_item + cur * itemsize,

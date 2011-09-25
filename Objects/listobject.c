@@ -2434,7 +2434,7 @@ list_subscript(PyListObject* self, PyObject* item)
             src = self->ob_item;
             dest = ((PyListObject *)result)->ob_item;
             for (cur = start, i = 0; i < slicelength;
-                 cur += step, i++) {
+                 cur += (size_t)step, i++) {
                 it = src[cur];
                 Py_INCREF(it);
                 dest[i] = it;
@@ -2525,7 +2525,7 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
                     self->ob_item + cur + 1,
                     lim * sizeof(PyObject *));
             }
-            cur = start + slicelength*step;
+            cur = start + (size_t)slicelength * step;
             if (cur < (size_t)Py_SIZE(self)) {
                 memmove(self->ob_item + cur - slicelength,
                     self->ob_item + cur,
@@ -2589,7 +2589,7 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
             selfitems = self->ob_item;
             seqitems = PySequence_Fast_ITEMS(seq);
             for (cur = start, i = 0; i < slicelength;
-                 cur += step, i++) {
+                 cur += (size_t)step, i++) {
                 garbage[i] = selfitems[cur];
                 ins = seqitems[i];
                 Py_INCREF(ins);
