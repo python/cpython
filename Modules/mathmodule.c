@@ -239,7 +239,8 @@ m_tgamma(double x)
     }
     if (x == 0.0) {
         errno = EDOM;
-        return 1.0/x; /* tgamma(+-0.0) = +-inf, divide-by-zero */
+        /* tgamma(+-0.0) = +-inf, divide-by-zero */
+        return copysign(Py_HUGE_VAL, x);
     }
 
     /* integer arguments */
