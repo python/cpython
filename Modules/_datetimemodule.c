@@ -2746,13 +2746,13 @@ static Py_hash_t
 generic_hash(unsigned char *data, int len)
 {
     register unsigned char *p;
-    register Py_hash_t x;
+    register Py_uhash_t x;
 
     p = (unsigned char *) data;
-    x = *p << 7;
+    x = (Py_uhash_t)*p << 7;
     while (--len >= 0)
-        x = (1000003*x) ^ *p++;
-    x ^= len;
+        x = (1000003U*x) ^ (Py_uhash_t)*p++;
+    x ^= (Py_uhash_t)len;
     if (x == -1)
         x = -2;
 
