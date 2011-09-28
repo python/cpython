@@ -857,12 +857,10 @@ class SizeofTest(unittest.TestCase):
         s = chr(0x4000)   # 4 bytes canonical representation
         check(s, size(compactfields) + 4)
         try:
-            # FIXME: codecs.lookup(str) calls encoding.search_function() which
-            # calls __import__ using str in the module name. __import__ encodes
-            # the module name to the file system encoding (which is the locale
-            # encoding), so test_sys fails if the locale encoding is not UTF-8.
-            codecs.lookup(s) # produces 4 bytes UTF-8
-        except LookupError:
+            # eval() will trigger the generation of the UTF-8 representation
+            # as a side effect
+            eval(s)
+        except NameError:
             check(s, size(compactfields) + 4 + 4)
         # TODO: add check that forces the presence of wchar_t representation
         # TODO: add check that forces layout of unicodefields
