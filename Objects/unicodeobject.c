@@ -117,6 +117,9 @@ extern "C" {
     (assert(PyUnicode_Check(op)),               \
      ((PyASCIIObject *)(op))->length)
 
+/* The Unicode string has been modified: reset the hash */
+#define _PyUnicode_DIRTY(op) do { _PyUnicode_HASH(op) = -1; } while (0)
+
 
 /* This dictionary holds all interned unicode strings.  Note that references
    to strings in this dictionary are *not* counted in the string's ob_refcnt.
@@ -356,7 +359,7 @@ unicode_resize(register PyUnicodeObject *unicode,
         _PyUnicode_STATE(unicode).interned = _PyUnicode_STATE(unicode).interned;
         _PyUnicode_STATE(unicode).kind = PyUnicode_WCHAR_KIND;
     }
-    _PyUnicode_HASH(unicode) = -1;
+    _PyUnicode_DIRTY(unicode);
 
     return 0;
 }
@@ -639,6 +642,7 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
                         "Cannot modify a string having more than 1 reference");
         return -1;
     }
+    _PyUnicode_DIRTY(unicode);
 
     from_kind = PyUnicode_KIND(from);
     to_kind = PyUnicode_KIND(to);
