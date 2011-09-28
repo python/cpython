@@ -631,6 +631,14 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
                      how_many, to_start, PyUnicode_GET_LENGTH(to));
         return -1;
     }
+    if (how_many == 0)
+        return 0;
+
+    if (Py_REFCNT(to) != 1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Cannot modify a string having more than 1 reference");
+        return -1;
+    }
 
     from_kind = PyUnicode_KIND(from);
     to_kind = PyUnicode_KIND(to);
