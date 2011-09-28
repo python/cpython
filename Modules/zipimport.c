@@ -88,7 +88,7 @@ zipimporter_init(ZipImporter *self, PyObject *args, PyObject *kwds)
                         "archive path too long");
         goto error;
     }
-    if (!PyUnicode_AsUCS4(pathobj, buf, PY_ARRAY_LENGTH(buf), 1))
+    if (!PyUnicode_AsUCS4(pathobj, buf, Py_ARRAY_LENGTH(buf), 1))
         goto error;
 
 #ifdef ALTSEP
@@ -473,7 +473,7 @@ zipimporter_get_data(PyObject *obj, PyObject *args)
         PyErr_SetString(ZipImportError, "path too long");
         return NULL;
     }
-    if (!PyUnicode_AsUCS4(pathobj, buf, PY_ARRAY_LENGTH(buf), 1))
+    if (!PyUnicode_AsUCS4(pathobj, buf, Py_ARRAY_LENGTH(buf), 1))
         return NULL;
     path = buf;
 #ifdef ALTSEP
@@ -484,7 +484,7 @@ zipimporter_get_data(PyObject *obj, PyObject *args)
 #endif
     len = PyUnicode_GET_LENGTH(self->archive);
     if ((size_t)len < Py_UCS4_strlen(path)) {
-        if (!PyUnicode_AsUCS4(self->archive, archive, PY_ARRAY_LENGTH(archive), 1))
+        if (!PyUnicode_AsUCS4(self->archive, archive, Py_ARRAY_LENGTH(archive), 1))
             return NULL;
         if (Py_UCS4_strncmp(path, archive, len) == 0 &&
             path[len] == SEP) {
@@ -771,7 +771,7 @@ read_directory(PyObject *archive)
                         "Zip path name is too long");
         return NULL;
     }
-    if (!PyUnicode_AsUCS4(archive, path, PY_ARRAY_LENGTH(path), 1))
+    if (!PyUnicode_AsUCS4(archive, path, Py_ARRAY_LENGTH(path), 1))
         return NULL;
 
     fp = _Py_fopen(archive, "rb");
