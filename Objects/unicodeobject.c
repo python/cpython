@@ -622,7 +622,7 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
     if (PyUnicode_READY(to))
         return -1;
 
-    how_many = PY_MIN(PyUnicode_GET_LENGTH(from), how_many);
+    how_many = Py_MIN(PyUnicode_GET_LENGTH(from), how_many);
     if (to_start + how_many > PyUnicode_GET_LENGTH(to)) {
         PyErr_Format(PyExc_ValueError,
                      "Cannot write %zi characters at %zi "
@@ -9472,7 +9472,7 @@ PyUnicode_Concat(PyObject *left, PyObject *right)
         goto onError;
 
     maxchar = PyUnicode_MAX_CHAR_VALUE(u);
-    maxchar = PY_MAX(maxchar, PyUnicode_MAX_CHAR_VALUE(v));
+    maxchar = Py_MAX(maxchar, PyUnicode_MAX_CHAR_VALUE(v));
 
     /* Concat the two Unicode strings */
     w = PyUnicode_New(
