@@ -780,6 +780,13 @@ class ReTests(unittest.TestCase):
         self.assertRaises(OverflowError, _sre.compile, "abc", 0, [long_overflow])
         self.assertRaises(TypeError, _sre.compile, {}, 0, [])
 
+    def test_search_dot_unicode(self):
+        self.assertIsNotNone(re.search("123.*-", '123abc-'))
+        self.assertIsNotNone(re.search("123.*-", '123\xe9-'))
+        self.assertIsNotNone(re.search("123.*-", '123\u20ac-'))
+        self.assertIsNotNone(re.search("123.*-", '123\U0010ffff-'))
+        self.assertIsNotNone(re.search("123.*-", '123\xe9\u20ac\U0010ffff-'))
+
 def run_re_tests():
     from test.re_tests import tests, SUCCEED, FAIL, SYNTAX_ERROR
     if verbose:

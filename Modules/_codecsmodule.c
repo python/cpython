@@ -700,12 +700,10 @@ utf_8_encode(PyObject *self,
         return NULL;
 
     str = PyUnicode_FromObject(str);
-    if (str == NULL)
+    if (str == NULL || PyUnicode_READY(str) == -1)
         return NULL;
-    v = codec_tuple(PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(str),
-                                         PyUnicode_GET_SIZE(str),
-                                         errors),
-                    PyUnicode_GET_SIZE(str));
+    v = codec_tuple(PyUnicode_AsEncodedString(str, "utf-8", errors),
+                    PyUnicode_GET_LENGTH(str));
     Py_DECREF(str);
     return v;
 }

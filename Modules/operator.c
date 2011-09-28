@@ -402,7 +402,8 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     for (idx = 0; idx < nattrs; ++idx) {
         PyObject *item = PyTuple_GET_ITEM(args, idx);
         Py_ssize_t item_len;
-        Py_UNICODE *item_buffer;
+        void *data;
+        unsigned int kind;
         int dot_count;
 
         if (!PyUnicode_Check(item)) {
@@ -411,13 +412,18 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             Py_DECREF(attr);
             return NULL;
         }
-        item_len = PyUnicode_GET_SIZE(item);
-        item_buffer = PyUnicode_AS_UNICODE(item);
+        if (PyUnicode_READY(item)) {
+            Py_DECREF(attr);
+            return NULL;
+        }
+        item_len = PyUnicode_GET_LENGTH(item);
+        kind = PyUnicode_KIND(item);
+        data = PyUnicode_DATA(item);
 
         /* check whethere the string is dotted */
         dot_count = 0;
         for (char_idx = 0; char_idx < item_len; ++char_idx) {
-            if (item_buffer[char_idx] == (Py_UNICODE)'.')
+            if (PyUnicode_READ(kind, data, char_idx) == '.')
                 ++dot_count;
         }
 
@@ -438,12 +444,12 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             }
 
             for (; dot_count > 0; --dot_count) {
-                while (item_buffer[unibuff_till] != (Py_UNICODE)'.') {
+                while (PyUnicode_READ(kind, data, unibuff_till) != '.') {
                     ++unibuff_till;
                 }
-                attr_chain_item = PyUnicode_FromUnicode(
-                                      item_buffer + unibuff_from,
-                                      unibuff_till - unibuff_from);
+                attr_chain_item = PyUnicode_Substring(item,
+                                      unibuff_from,
+                                      unibuff_till);
                 if (attr_chain_item == NULL) {
                     Py_DECREF(attr_chain);
                     Py_DECREF(attr);
@@ -456,9 +462,8 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             }
 
             /* now add the last dotless name */
-            attr_chain_item = PyUnicode_FromUnicode(
-                                  item_buffer + unibuff_from,
-                                  item_len - unibuff_from);
+            attr_chain_item = PyUnicode_Substring(item,
+                                                  unibuff_from, item_len);
             if (attr_chain_item == NULL) {
                 Py_DECREF(attr_chain);
                 Py_DECREF(attr);

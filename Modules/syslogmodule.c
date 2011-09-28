@@ -70,7 +70,7 @@ syslog_get_argv(void)
 
     Py_ssize_t argv_len, scriptlen;
     PyObject *scriptobj;
-    Py_UNICODE *atslash, *atstart;
+    Py_ssize_t slash;
     PyObject *argv = PySys_GetObject("argv");
 
     if (argv == NULL) {
@@ -95,11 +95,13 @@ syslog_get_argv(void)
         return(NULL);
     }
 
-    atstart = PyUnicode_AS_UNICODE(scriptobj);
-    atslash = Py_UNICODE_strrchr(atstart, SEP);
-    if (atslash) {
-        return(PyUnicode_FromUnicode(atslash + 1,
-                                     scriptlen - (atslash - atstart) - 1));
+    slash = PyUnicode_FindChar(scriptobj, SEP,
+                               0, PyUnicode_GET_LENGTH(scriptobj), -1);
+    if (slash == -2)
+        return NULL;
+    if (slash != -1) {
+        return PyUnicode_Substring(scriptobj, slash,
+                                   PyUnicode_GET_LENGTH(scriptobj));
     } else {
         Py_INCREF(scriptobj);
         return(scriptobj);

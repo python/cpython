@@ -1072,6 +1072,15 @@ They all return *NULL* or ``-1`` if an exception occurs.
    occurred and an exception has been set.
 
 
+.. c:function:: Py_ssize_t PyUnicode_FindChar(PyObject *str, Py_UCS4 ch, Py_ssize_t start, Py_ssize_t end, int direction)
+
+   Return the first position of the character *ch* in ``str[start:end]`` using
+   the given *direction* (*direction* == 1 means to do a forward search,
+   *direction* == -1 a backward search).  The return value is the index of the
+   first match; a value of ``-1`` indicates that no match was found, and ``-2``
+   indicates that an error occurred and an exception has been set.
+
+
 .. c:function:: Py_ssize_t PyUnicode_Count(PyObject *str, PyObject *substr, Py_ssize_t start, Py_ssize_t end)
 
    Return the number of non-overlapping occurrences of *substr* in

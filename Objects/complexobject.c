@@ -702,9 +702,8 @@ complex__format__(PyObject* self, PyObject* args)
 
     if (!PyArg_ParseTuple(args, "U:__format__", &format_spec))
     return NULL;
-    return _PyComplex_FormatAdvanced(self,
-                                     PyUnicode_AS_UNICODE(format_spec),
-                                     PyUnicode_GET_SIZE(format_spec));
+    return _PyComplex_FormatAdvanced(self, format_spec, 0,
+                                     PyUnicode_GET_LENGTH(format_spec));
 }
 
 #if 0
@@ -755,20 +754,10 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
     Py_ssize_t len;
 
     if (PyUnicode_Check(v)) {
-        Py_ssize_t i, buflen = PyUnicode_GET_SIZE(v);
-        Py_UNICODE *bufptr;
-        s_buffer = PyUnicode_TransformDecimalToASCII(
-            PyUnicode_AS_UNICODE(v), buflen);
+        s_buffer = _PyUnicode_TransformDecimalAndSpaceToASCII(v);
         if (s_buffer == NULL)
             return NULL;
-        /* Replace non-ASCII whitespace with ' ' */
-        bufptr = PyUnicode_AS_UNICODE(s_buffer);
-        for (i = 0; i < buflen; i++) {
-            Py_UNICODE ch = bufptr[i];
-            if (ch > 127 && Py_UNICODE_ISSPACE(ch))
-                bufptr[i] = ' ';
-        }
-        s = _PyUnicode_AsStringAndSize(s_buffer, &len);
+        s = PyUnicode_AsUTF8AndSize(s_buffer, &len);
         if (s == NULL)
             goto error;
     }

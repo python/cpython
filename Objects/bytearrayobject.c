@@ -854,83 +854,79 @@ bytearray_repr(PyByteArrayObject *self)
     const char *quote_prefix = "bytearray(b";
     const char *quote_postfix = ")";
     Py_ssize_t length = Py_SIZE(self);
-    /* 14 == strlen(quote_prefix) + 2 + strlen(quote_postfix) */
+    /* 15 == strlen(quote_prefix) + 2 + strlen(quote_postfix) + 1 */
     size_t newsize;
     PyObject *v;
-    if (length > (PY_SSIZE_T_MAX - 14) / 4) {
+    register Py_ssize_t i;
+    register char c;
+    register char *p;
+    int quote;
+    char *test, *start;
+    char *buffer;
+
+    if (length > (PY_SSIZE_T_MAX - 15) / 4) {
         PyErr_SetString(PyExc_OverflowError,
             "bytearray object is too large to make repr");
         return NULL;
     }
-    newsize = 14 + 4 * length;
-    v = PyUnicode_FromUnicode(NULL, newsize);
-    if (v == NULL) {
+
+    newsize = 15 + length * 4;
+    buffer = PyMem_Malloc(newsize);
+    if (buffer == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
-    else {
-        register Py_ssize_t i;
-        register Py_UNICODE c;
-        register Py_UNICODE *p;
-        int quote;
 
-        /* Figure out which quote to use; single is preferred */
-        quote = '\'';
-        {
-            char *test, *start;
-            start = PyByteArray_AS_STRING(self);
-            for (test = start; test < start+length; ++test) {
-                if (*test == '"') {
-                    quote = '\''; /* back to single */
-                    goto decided;
-                }
-                else if (*test == '\'')
-                    quote = '"';
-            }
-          decided:
-            ;
+    /* Figure out which quote to use; single is preferred */
+    quote = '\'';
+    start = PyByteArray_AS_STRING(self);
+    for (test = start; test < start+length; ++test) {
+        if (*test == '"') {
+            quote = '\''; /* back to single */
+            break;
         }
-
-        p = PyUnicode_AS_UNICODE(v);
-        while (*quote_prefix)
-            *p++ = *quote_prefix++;
-        *p++ = quote;
-
-        for (i = 0; i < length; i++) {
-            /* There's at least enough room for a hex escape
-               and a closing quote. */
-            assert(newsize - (p - PyUnicode_AS_UNICODE(v)) >= 5);
-            c = self->ob_bytes[i];
-            if (c == '\'' || c == '\\')
-                *p++ = '\\', *p++ = c;
-            else if (c == '\t')
-                *p++ = '\\', *p++ = 't';
-            else if (c == '\n')
-                *p++ = '\\', *p++ = 'n';
-            else if (c == '\r')
-                *p++ = '\\', *p++ = 'r';
-            else if (c == 0)
-                *p++ = '\\', *p++ = 'x', *p++ = '0', *p++ = '0';
-            else if (c < ' ' || c >= 0x7f) {
-                *p++ = '\\';
-                *p++ = 'x';
-                *p++ = hexdigits[(c & 0xf0) >> 4];
-                *p++ = hexdigits[c & 0xf];
-            }
-            else
-                *p++ = c;
-        }
-        assert(newsize - (p - PyUnicode_AS_UNICODE(v)) >= 1);
-        *p++ = quote;
-        while (*quote_postfix) {
-           *p++ = *quote_postfix++;
-        }
-        *p = '\0';
-        if (PyUnicode_Resize(&v, (p - PyUnicode_AS_UNICODE(v)))) {
-            Py_DECREF(v);
-            return NULL;
-        }
-        return v;
+        else if (*test == '\'')
+            quote = '"';
     }
+
+    p = buffer;
+    while (*quote_prefix)
+        *p++ = *quote_prefix++;
+    *p++ = quote;
+
+    for (i = 0; i < length; i++) {
+        /* There's at least enough room for a hex escape
+           and a closing quote. */
+        assert(newsize - (p - buffer) >= 5);
+        c = self->ob_bytes[i];
+        if (c == '\'' || c == '\\')
+            *p++ = '\\', *p++ = c;
+        else if (c == '\t')
+            *p++ = '\\', *p++ = 't';
+        else if (c == '\n')
+            *p++ = '\\', *p++ = 'n';
+        else if (c == '\r')
+            *p++ = '\\', *p++ = 'r';
+        else if (c == 0)
+            *p++ = '\\', *p++ = 'x', *p++ = '0', *p++ = '0';
+        else if (c < ' ' || c >= 0x7f) {
+            *p++ = '\\';
+            *p++ = 'x';
+            *p++ = hexdigits[(c & 0xf0) >> 4];
+            *p++ = hexdigits[c & 0xf];
+        }
+        else
+            *p++ = c;
+    }
+    assert(newsize - (p - buffer) >= 1);
+    *p++ = quote;
+    while (*quote_postfix) {
+       *p++ = *quote_postfix++;
+    }
+
+    v = PyUnicode_DecodeASCII(buffer, p - buffer, NULL);
+    PyMem_Free(buffer);
+    return v;
 }
 
 static PyObject *
@@ -1034,6 +1030,8 @@ bytearray_dealloc(PyByteArrayObject *self)
 /* -------------------------------------------------------------------- */
 /* Methods */
 
+#define FASTSEARCH fastsearch
+#define STRINGLIB(F) stringlib_##F
 #define STRINGLIB_CHAR char
 #define STRINGLIB_LEN PyByteArray_GET_SIZE
 #define STRINGLIB_STR PyByteArray_AS_STRING
@@ -2651,15 +2649,20 @@ bytearray_fromhex(PyObject *cls, PyObject *args)
 {
     PyObject *newbytes, *hexobj;
     char *buf;
-    Py_UNICODE *hex;
     Py_ssize_t hexlen, byteslen, i, j;
     int top, bot;
+    void *data;
+    unsigned int kind;
 
     if (!PyArg_ParseTuple(args, "U:fromhex", &hexobj))
         return NULL;
     assert(PyUnicode_Check(hexobj));
-    hexlen = PyUnicode_GET_SIZE(hexobj);
-    hex = PyUnicode_AS_UNICODE(hexobj);
+    if (PyUnicode_READY(hexobj))
+        return NULL;
+    kind = PyUnicode_KIND(hexobj);
+    data = PyUnicode_DATA(hexobj);
+    hexlen = PyUnicode_GET_LENGTH(hexobj);
+
     byteslen = hexlen/2; /* This overestimates if there are spaces */
     newbytes = PyByteArray_FromStringAndSize(NULL, byteslen);
     if (!newbytes)
@@ -2667,12 +2670,12 @@ bytearray_fromhex(PyObject *cls, PyObject *args)
     buf = PyByteArray_AS_STRING(newbytes);
     for (i = j = 0; i < hexlen; i += 2) {
         /* skip over spaces in the input */
-        while (hex[i] == ' ')
+        while (PyUnicode_READ(kind, data, i) == ' ')
             i++;
         if (i >= hexlen)
             break;
-        top = hex_digit_to_int(hex[i]);
-        bot = hex_digit_to_int(hex[i+1]);
+        top = hex_digit_to_int(PyUnicode_READ(kind, data, i));
+        bot = hex_digit_to_int(PyUnicode_READ(kind, data, i+1));
         if (top == -1 || bot == -1) {
             PyErr_Format(PyExc_ValueError,
                          "non-hexadecimal number found in "

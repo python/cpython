@@ -962,21 +962,18 @@ SyntaxError_traverse(PySyntaxErrorObject *self, visitproc visit, void *arg)
 static PyObject*
 my_basename(PyObject *name)
 {
-    Py_UNICODE *unicode;
     Py_ssize_t i, size, offset;
-
-    unicode = PyUnicode_AS_UNICODE(name);
-    size = PyUnicode_GET_SIZE(name);
+    int kind = PyUnicode_KIND(name);
+    void *data = PyUnicode_DATA(name);
+    size = PyUnicode_GET_LENGTH(name);
     offset = 0;
     for(i=0; i < size; i++) {
-        if (unicode[i] == SEP)
+        if (PyUnicode_READ(kind, data, i) == SEP)
             offset = i + 1;
     }
-    if (offset != 0) {
-        return PyUnicode_FromUnicode(
-            PyUnicode_AS_UNICODE(name) + offset,
-            size - offset);
-    } else {
+    if (offset != 0)
+        return PyUnicode_Substring(name, offset, size);
+    else {
         Py_INCREF(name);
         return name;
     }
@@ -1712,6 +1709,7 @@ static PyTypeObject _PyExc_UnicodeTranslateError = {
 };
 PyObject *PyExc_UnicodeTranslateError = (PyObject *)&_PyExc_UnicodeTranslateError;
 
+/* Deprecated. */
 PyObject *
 PyUnicodeTranslateError_Create(
     const Py_UNICODE *object, Py_ssize_t length,
@@ -1721,6 +1719,14 @@ PyUnicodeTranslateError_Create(
                                  object, length, start, end, reason);
 }
 
+PyObject *
+_PyUnicodeTranslateError_Create(
+    PyObject *object,
+    Py_ssize_t start, Py_ssize_t end, const char *reason)
+{
+    return PyObject_CallFunction(PyExc_UnicodeTranslateError, "Ons",
+                                 object, start, end, reason);
+}
 
 /*
  *    AssertionError extends Exception

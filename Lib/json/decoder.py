@@ -121,8 +121,7 @@ def py_scanstring(s, end, strict=True,
                 msg = "Invalid \\uXXXX escape"
                 raise ValueError(errmsg(msg, s, end))
             uni = int(esc, 16)
-            # Check for surrogate pair on UCS-4 systems
-            if 0xd800 <= uni <= 0xdbff and sys.maxunicode > 65535:
+            if 0xd800 <= uni <= 0xdbff:
                 msg = "Invalid \\uXXXX\\uXXXX surrogate pair"
                 if not s[end + 5:end + 7] == '\\u':
                     raise ValueError(errmsg(msg, s, end))

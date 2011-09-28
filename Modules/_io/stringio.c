@@ -9,7 +9,7 @@
 
 typedef struct {
     PyObject_HEAD
-    Py_UNICODE *buf;
+    Py_UCS4 *buf;
     Py_ssize_t pos;
     Py_ssize_t string_size;
     size_t buf_size;
@@ -21,7 +21,7 @@ typedef struct {
     PyObject *decoder;
     PyObject *readnl;
     PyObject *writenl;
-    
+
     PyObject *dict;
     PyObject *weakreflist;
 } stringio;
@@ -56,7 +56,7 @@ resize_buffer(stringio *self, size_t size)
     /* Here, unsigned types are used to avoid dealing with signed integer
        overflow, which is undefined in C. */
     size_t alloc = self->buf_size;
-    Py_UNICODE *new_buf = NULL;
+    Py_UCS4 *new_buf = NULL;
 
     assert(self->buf != NULL);
 
@@ -84,10 +84,9 @@ resize_buffer(stringio *self, size_t size)
         alloc = size + 1;
     }
 
-    if (alloc > ((size_t)-1) / sizeof(Py_UNICODE))
+    if (alloc > PY_SIZE_MAX / sizeof(Py_UCS4))
         goto overflow;
-    new_buf = (Py_UNICODE *)PyMem_Realloc(self->buf,
-                                          alloc * sizeof(Py_UNICODE));
+    new_buf = (Py_UCS4 *)PyMem_Realloc(self->buf, alloc * sizeof(Py_UCS4));
     if (new_buf == NULL) {
         PyErr_NoMemory();
         return -1;
@@ -108,9 +107,9 @@ resize_buffer(stringio *self, size_t size)
 static Py_ssize_t
 write_str(stringio *self, PyObject *obj)
 {
-    Py_UNICODE *str;
     Py_ssize_t len;
     PyObject *decoded = NULL;
+
     assert(self->buf != NULL);
     assert(self->pos >= 0);
 
@@ -132,8 +131,7 @@ write_str(stringio *self, PyObject *obj)
         return -1;
 
     assert(PyUnicode_Check(decoded));
-    str = PyUnicode_AS_UNICODE(decoded);
-    len = PyUnicode_GET_SIZE(decoded);
+    len = PyUnicode_GET_LENGTH(decoded);
 
     assert(len >= 0);
 
@@ -161,18 +159,21 @@ write_str(stringio *self, PyObject *obj)
 
         */
         memset(self->buf + self->string_size, '\0',
-               (self->pos - self->string_size) * sizeof(Py_UNICODE));
+               (self->pos - self->string_size) * sizeof(Py_UCS4));
     }
 
     /* Copy the data to the internal buffer, overwriting some of the
        existing data if self->pos < self->string_size. */
-    memcpy(self->buf + self->pos, str, len * sizeof(Py_UNICODE));
-    self->pos += len;
+    if (!PyUnicode_AsUCS4(decoded,
+                          self->buf + self->pos,
+                          self->buf_size - self->pos,
+                          0))
+        goto fail;
 
     /* Set the new length of the internal string if it has changed. */
-    if (self->string_size < self->pos) {
+    self->pos += len;
+    if (self->string_size < self->pos)
         self->string_size = self->pos;
-    }
 
     Py_DECREF(decoded);
     return 0;
@@ -190,7 +191,8 @@ stringio_getvalue(stringio *self)
 {
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
-    return PyUnicode_FromUnicode(self->buf, self->string_size);
+    return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, self->buf,
+                                     self->string_size);
 }
 
 PyDoc_STRVAR(stringio_tell_doc,
@@ -214,7 +216,7 @@ static PyObject *
 stringio_read(stringio *self, PyObject *args)
 {
     Py_ssize_t size, n;
-    Py_UNICODE *output;
+    Py_UCS4 *output;
     PyObject *arg = Py_None;
 
     CHECK_INITIALIZED(self);
@@ -247,19 +249,19 @@ stringio_read(stringio *self, PyObject *args)
 
     output = self->buf + self->pos;
     self->pos += size;
-    return PyUnicode_FromUnicode(output, size);
+    return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, output, size);
 }
 
 /* Internal helper, used by stringio_readline and stringio_iternext */
 static PyObject *
 _stringio_readline(stringio *self, Py_ssize_t limit)
 {
-    Py_UNICODE *start, *end, old_char;
+    Py_UCS4 *start, *end, old_char;
     Py_ssize_t len, consumed;
 
     /* In case of overseek, return the empty string */
     if (self->pos >= self->string_size)
-        return PyUnicode_FromString("");
+        return PyUnicode_New(0, 0);
 
     start = self->buf + self->pos;
     if (limit < 0 || limit > self->string_size - self->pos)
@@ -270,14 +272,14 @@ _stringio_readline(stringio *self, Py_ssize_t limit)
     *end = '\0';
     len = _PyIO_find_line_ending(
         self->readtranslate, self->readuniversal, self->readnl,
-        start, end, &consumed);
+        PyUnicode_4BYTE_KIND, (char*)start, (char*)end, &consumed);
     *end = old_char;
     /* If we haven't found any line ending, we just return everything
        (`consumed` is ignored). */
     if (len < 0)
         len = limit;
     self->pos += len;
-    return PyUnicode_FromUnicode(start, len);
+    return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, start, len);
 }
 
 PyDoc_STRVAR(stringio_readline_doc,
@@ -462,8 +464,10 @@ stringio_write(stringio *self, PyObject *obj)
                      Py_TYPE(obj)->tp_name);
         return NULL;
     }
+    if (PyUnicode_READY(obj))
+        return NULL;
     CHECK_CLOSED(self);
-    size = PyUnicode_GET_SIZE(obj);
+    size = PyUnicode_GET_LENGTH(obj);
 
     if (size > 0 && write_str(self, obj) < 0)
         return NULL;
@@ -535,7 +539,7 @@ stringio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     /* tp_alloc initializes all the fields to zero. So we don't have to
        initialize them here. */
 
-    self->buf = (Py_UNICODE *)PyMem_Malloc(0);
+    self->buf = (Py_UCS4 *)PyMem_Malloc(0);
     if (self->buf == NULL) {
         Py_DECREF(self);
         return PyErr_NoMemory();
@@ -747,11 +751,22 @@ stringio_setstate(stringio *self, PyObject *state)
        once by __init__. So we do not take any chance and replace object's
        buffer completely. */
     {
-        Py_UNICODE *buf = PyUnicode_AS_UNICODE(PyTuple_GET_ITEM(state, 0));
-        Py_ssize_t bufsize = PyUnicode_GET_SIZE(PyTuple_GET_ITEM(state, 0));
-        if (resize_buffer(self, bufsize) < 0)
+        PyObject *item;
+        Py_UCS4 *buf;
+        Py_ssize_t bufsize;
+
+        item = PyTuple_GET_ITEM(state, 0);
+        buf = PyUnicode_AsUCS4Copy(item);
+        if (buf == NULL)
             return NULL;
-        memcpy(self->buf, buf, bufsize * sizeof(Py_UNICODE));
+        bufsize = PyUnicode_GET_LENGTH(item);
+
+        if (resize_buffer(self, bufsize) < 0) {
+            PyMem_Free(buf);
+            return NULL;
+        }
+        memcpy(self->buf, buf, bufsize * sizeof(Py_UCS4));
+        PyMem_Free(buf);
         self->string_size = bufsize;
     }
 

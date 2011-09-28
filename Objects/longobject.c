@@ -1551,7 +1551,7 @@ long_to_decimal_string(PyObject *aa)
     PyObject *str;
     Py_ssize_t size, strlen, size_a, i, j;
     digit *pout, *pin, rem, tenpow;
-    Py_UNICODE *p;
+    unsigned char *p;
     int negative;
 
     a = (PyLongObject *)aa;
@@ -1619,14 +1619,15 @@ long_to_decimal_string(PyObject *aa)
         tenpow *= 10;
         strlen++;
     }
-    str = PyUnicode_FromUnicode(NULL, strlen);
+    str = PyUnicode_New(strlen, '9');
     if (str == NULL) {
         Py_DECREF(scratch);
         return NULL;
     }
 
     /* fill the string right-to-left */
-    p = PyUnicode_AS_UNICODE(str) + strlen;
+    assert(PyUnicode_KIND(str) == PyUnicode_1BYTE_KIND);
+    p = PyUnicode_1BYTE_DATA(str) + strlen;
     *p = '\0';
     /* pout[0] through pout[size-2] contribute exactly
        _PyLong_DECIMAL_SHIFT digits each */
@@ -1649,7 +1650,7 @@ long_to_decimal_string(PyObject *aa)
         *--p = '-';
 
     /* check we've counted correctly */
-    assert(p == PyUnicode_AS_UNICODE(str));
+    assert(p == PyUnicode_1BYTE_DATA(str));
     Py_DECREF(scratch);
     return (PyObject *)str;
 }
@@ -1662,10 +1663,12 @@ PyObject *
 _PyLong_Format(PyObject *aa, int base)
 {
     register PyLongObject *a = (PyLongObject *)aa;
-    PyObject *str;
+    PyObject *v;
     Py_ssize_t i, sz;
     Py_ssize_t size_a;
-    Py_UNICODE *p, sign = '\0';
+    char *p;
+    char sign = '\0';
+    char *buffer;
     int bits;
 
     assert(base == 2 || base == 8 || base == 10 || base == 16);
@@ -1695,7 +1698,7 @@ _PyLong_Format(PyObject *aa, int base)
     }
     /* compute length of output string: allow 2 characters for prefix and
        1 for possible '-' sign. */
-    if (size_a > (PY_SSIZE_T_MAX - 3) / PyLong_SHIFT) {
+    if (size_a > (PY_SSIZE_T_MAX - 3) / PyLong_SHIFT / sizeof(Py_UCS4)) {
         PyErr_SetString(PyExc_OverflowError,
                         "int is too large to format");
         return NULL;
@@ -1704,11 +1707,12 @@ _PyLong_Format(PyObject *aa, int base)
        is safe from overflow */
     sz = 3 + (size_a * PyLong_SHIFT + (bits - 1)) / bits;
     assert(sz >= 0);
-    str = PyUnicode_FromUnicode(NULL, sz);
-    if (str == NULL)
+    buffer = PyMem_Malloc(sz);
+    if (buffer == NULL) {
+        PyErr_NoMemory();
         return NULL;
-    p = PyUnicode_AS_UNICODE(str) + sz;
-    *p = '\0';
+    }
+    p = &buffer[sz];
     if (Py_SIZE(a) < 0)
         sign = '-';
 
@@ -1724,10 +1728,10 @@ _PyLong_Format(PyObject *aa, int base)
             accumbits += PyLong_SHIFT;
             assert(accumbits >= bits);
             do {
-                Py_UNICODE cdigit;
-                cdigit = (Py_UNICODE)(accum & (base - 1));
+                char cdigit;
+                cdigit = (char)(accum & (base - 1));
                 cdigit += (cdigit < 10) ? '0' : 'a'-10;
-                assert(p > PyUnicode_AS_UNICODE(str));
+                assert(p > buffer);
                 *--p = cdigit;
                 accumbits -= bits;
                 accum >>= bits;
@@ -1744,19 +1748,9 @@ _PyLong_Format(PyObject *aa, int base)
     *--p = '0';
     if (sign)
         *--p = sign;
-    if (p != PyUnicode_AS_UNICODE(str)) {
-        Py_UNICODE *q = PyUnicode_AS_UNICODE(str);
-        assert(p > q);
-        do {
-        } while ((*q++ = *p++) != '\0');
-        q--;
-        if (PyUnicode_Resize(&str,(Py_ssize_t) (q -
-                                        PyUnicode_AS_UNICODE(str)))) {
-            Py_DECREF(str);
-            return NULL;
-        }
-    }
-    return (PyObject *)str;
+    v = PyUnicode_DecodeASCII(p, &buffer[sz] - p, NULL);
+    PyMem_Free(buffer);
+    return v;
 }
 
 /* Table of digit values for 8-bit string -> integer conversion.
@@ -2134,23 +2128,26 @@ digit beyond the first.
 PyObject *
 PyLong_FromUnicode(Py_UNICODE *u, Py_ssize_t length, int base)
 {
+    PyObject *v, *unicode = PyUnicode_FromUnicode(u, length);
+    if (unicode == NULL)
+        return NULL;
+    v = PyLong_FromUnicodeObject(unicode, base);
+    Py_DECREF(unicode);
+    return v;
+}
+
+PyObject *
+PyLong_FromUnicodeObject(PyObject *u, int base)
+{
     PyObject *result;
     PyObject *asciidig;
     char *buffer, *end;
-    Py_ssize_t i, buflen;
-    Py_UNICODE *ptr;
+    Py_ssize_t buflen;
 
-    asciidig = PyUnicode_TransformDecimalToASCII(u, length);
+    asciidig = _PyUnicode_TransformDecimalAndSpaceToASCII(u);
     if (asciidig == NULL)
         return NULL;
-    /* Replace non-ASCII whitespace with ' ' */
-    ptr = PyUnicode_AS_UNICODE(asciidig);
-    for (i = 0; i < length; i++) {
-        Py_UNICODE ch = ptr[i];
-        if (ch > 127 && Py_UNICODE_ISSPACE(ch))
-            ptr[i] = ' ';
-    }
-    buffer = _PyUnicode_AsStringAndSize(asciidig, &buflen);
+    buffer = PyUnicode_AsUTF8AndSize(asciidig, &buflen);
     if (buffer == NULL) {
         Py_DECREF(asciidig);
         return NULL;
@@ -4144,9 +4141,7 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     if (PyUnicode_Check(x))
-        return PyLong_FromUnicode(PyUnicode_AS_UNICODE(x),
-                                  PyUnicode_GET_SIZE(x),
-                                  (int)base);
+        return PyLong_FromUnicodeObject(x, (int)base);
     else if (PyByteArray_Check(x) || PyBytes_Check(x)) {
         /* Since PyLong_FromString doesn't have a length parameter,
          * check here for possible NULs in the string. */
@@ -4228,9 +4223,8 @@ long__format__(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "U:__format__", &format_spec))
         return NULL;
-    return _PyLong_FormatAdvanced(self,
-                                  PyUnicode_AS_UNICODE(format_spec),
-                                  PyUnicode_GET_SIZE(format_spec));
+    return _PyLong_FormatAdvanced(self, format_spec, 0,
+                                  PyUnicode_GET_LENGTH(format_spec));
 }
 
 /* Return a pair (q, r) such that a = b * q + r, and

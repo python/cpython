@@ -51,6 +51,8 @@ _type_unsigned_char_ptr = gdb.lookup_type('unsigned char').pointer() # unsigned 
 _type_void_ptr = gdb.lookup_type('void').pointer() # void*
 _type_size_t = gdb.lookup_type('size_t')
 
+_is_pep393 = 'data' in [f.name for f in gdb.lookup_type('PyUnicodeObject').target().fields()]
+
 SIZEOF_VOID_P = _type_void_ptr.sizeof
 
 
@@ -1123,11 +1125,30 @@ class PyUnicodeObjectPtr(PyObjectPtr):
         #     Py_ssize_t length;  /* Length of raw Unicode data in buffer */
         #     Py_UNICODE *str;    /* Raw Unicode buffer */
         field_length = long(self.field('length'))
-        field_str = self.field('str')
+        if _is_pep393:
+            # Python 3.3 and newer
+            may_have_surrogates = False
+            field_state = long(self.field('state'))
+            repr_kind = (field_state & 0xC) >> 2
+            if repr_kind == 0:
+                # string is not ready
+                may_have_surrogates = True
+                field_str = self.field('wstr')
+                field_length = self.field('wstr_length')
+            elif repr_kind == 1:
+                field_str = self.field('data')['latin1']
+            elif repr_kind == 2:
+                field_str = self.field('data')['ucs2']
+            elif repr_kind == 3:
+                field_str = self.field('data')['ucs4']
+        else:
+            # Python 3.2 and earlier
+            field_str = self.field('str')
+            may_have_surrogates = self.char_width() == 2
 
         # Gather a list of ints from the Py_UNICODE array; these are either
-        # UCS-2 or UCS-4 code points:
-        if self.char_width() > 2:
+        # UCS-1, UCS-2 or UCS-4 code points:
+        if not may_have_surrogates:
             Py_UNICODEs = [int(field_str[i]) for i in safe_range(field_length)]
         else:
             # A more elaborate routine if sizeof(Py_UNICODE) is 2 in the

@@ -1,6 +1,5 @@
 /* stringlib: fastsearch implementation */
 
-#ifndef STRINGLIB_FASTSEARCH_H
 #define STRINGLIB_FASTSEARCH_H
 
 /* fast search/count implementation, based on a mix between boyer-
@@ -34,7 +33,7 @@
     ((mask &  (1UL << ((ch) & (STRINGLIB_BLOOM_WIDTH -1)))))
 
 Py_LOCAL_INLINE(Py_ssize_t)
-fastsearch(const STRINGLIB_CHAR* s, Py_ssize_t n,
+FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
            const STRINGLIB_CHAR* p, Py_ssize_t m,
            Py_ssize_t maxcount, int mode)
 {
@@ -157,4 +156,3 @@ fastsearch(const STRINGLIB_CHAR* s, Py_ssize_t n,
     return count;
 }
 
-#endif

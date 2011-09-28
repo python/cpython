@@ -1867,9 +1867,7 @@ save_unicode(PicklerObject *self, PyObject *obj)
     if (self->bin) {
         char pdata[5];
 
-        encoded = PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(obj),
-                                    PyUnicode_GET_SIZE(obj),
-                                    "surrogatepass");
+        encoded = PyUnicode_AsEncodedString(obj, "utf-8", "surrogatepass");
         if (encoded == NULL)
             goto error;
 

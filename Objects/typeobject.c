@@ -20,10 +20,11 @@
          >> (8*sizeof(unsigned int) - MCACHE_SIZE_EXP))
 #define MCACHE_HASH_METHOD(type, name)                                  \
         MCACHE_HASH((type)->tp_version_tag,                     \
-                    ((PyUnicodeObject *)(name))->hash)
+                    ((PyASCIIObject *)(name))->hash)
 #define MCACHE_CACHEABLE_NAME(name)                                     \
         PyUnicode_CheckExact(name) &&                            \
-        PyUnicode_GET_SIZE(name) <= MCACHE_MAX_ATTR_SIZE
+        PyUnicode_READY(name) != -1 &&                      \
+        PyUnicode_GET_LENGTH(name) <= MCACHE_MAX_ATTR_SIZE
 
 struct method_cache_entry {
     unsigned int version;
@@ -3489,7 +3490,7 @@ object_format(PyObject *self, PyObject *args)
     if (self_as_str != NULL) {
         /* Issue 7994: If we're converting to a string, we
            should reject format specifications */
-        if (PyUnicode_GET_SIZE(format_spec) > 0) {
+        if (PyUnicode_GET_LENGTH(format_spec) > 0) {
             if (PyErr_WarnEx(PyExc_DeprecationWarning,
                              "object.__format__ with a non-empty format "
                              "string is deprecated", 1) < 0) {
@@ -5122,14 +5123,21 @@ slot_tp_str(PyObject *self)
         return res;
     }
     else {
-        PyObject *ress;
+        /* PyObject *ress; */
         PyErr_Clear();
         res = slot_tp_repr(self);
         if (!res)
             return NULL;
+        /* XXX this is non-sensical. Why should we return
+           a bytes object from __str__. Is this code even
+           used? - mvl */
+        assert(0);
+        return res;
+        /*
         ress = _PyUnicode_AsDefaultEncodedString(res);
         Py_DECREF(res);
         return ress;
+        */
     }
 }
 
@@ -6206,7 +6214,7 @@ super_getattro(PyObject *self, PyObject *name)
         /* We want __class__ to return the class of the super object
            (i.e. super, or a subclass), not the class of su->obj. */
         skip = (PyUnicode_Check(name) &&
-            PyUnicode_GET_SIZE(name) == 9 &&
+            PyUnicode_GET_LENGTH(name) == 9 &&
             PyUnicode_CompareWithASCIIString(name, "__class__") == 0);
     }
 

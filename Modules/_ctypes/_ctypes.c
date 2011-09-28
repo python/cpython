@@ -1843,11 +1843,9 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     if (PyUnicode_Check(proto)) {
-        PyObject *v = _PyUnicode_AsDefaultEncodedString(proto);
-        if (!v)
+        proto_str = PyUnicode_AsUTF8AndSize(proto, &proto_len);
+        if (!proto_str)
             goto error;
-        proto_str = PyBytes_AS_STRING(v);
-        proto_len = PyBytes_GET_SIZE(v);
     } else {
         PyErr_SetString(PyExc_TypeError,
             "class must define a '_type_' string attribute");

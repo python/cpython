@@ -203,8 +203,11 @@ PyCurses_ConvertToChtype(PyObject *obj, chtype *ch)
     } else if(PyBytes_Check(obj)
               && (PyBytes_Size(obj) == 1)) {
         *ch = (chtype) *PyBytes_AsString(obj);
-    } else if (PyUnicode_Check(obj) && PyUnicode_GetSize(obj) == 1) {
-        *ch = (chtype) *PyUnicode_AS_UNICODE(obj);
+    } else if (PyUnicode_Check(obj) && PyUnicode_GET_LENGTH(obj) == 1) {
+        Py_UCS4 ucs = PyUnicode_READ(PyUnicode_KIND(obj),
+                                     PyUnicode_DATA(obj),
+                                     0);
+        *ch = (chtype)ucs;
     } else {
         return 0;
     }

@@ -395,7 +395,7 @@ PyErr_SetFromErrnoWithFilenameObject(PyObject *exc, PyObject *filenameObject)
                 /* remove trailing cr/lf and dots */
                 while (len > 0 && (s_buf[len-1] <= L' ' || s_buf[len-1] == L'.'))
                     s_buf[--len] = L'\0';
-                message = PyUnicode_FromUnicode(s_buf, len);
+                message = PyUnicode_FromWideChar(s_buf, len);
             }
         }
     }
@@ -487,7 +487,7 @@ PyObject *PyErr_SetExcFromWindowsErrWithFilenameObject(
         /* remove trailing cr/lf and dots */
         while (len > 0 && (s_buf[len-1] <= L' ' || s_buf[len-1] == L'.'))
             s_buf[--len] = L'\0';
-        message = PyUnicode_FromUnicode(s_buf, len);
+        message = PyUnicode_FromWideChar(s_buf, len);
     }
 
     if (message == NULL)

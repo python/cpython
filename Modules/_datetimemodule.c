@@ -985,9 +985,8 @@ append_keyword_tzinfo(PyObject *repr, PyObject *tzinfo)
     if (tzinfo == Py_None)
         return repr;
     /* Get rid of the trailing ')'. */
-    assert(PyUnicode_AS_UNICODE(repr)[PyUnicode_GET_SIZE(repr)-1] == ')');
-    temp = PyUnicode_FromUnicode(PyUnicode_AS_UNICODE(repr),
-                                      PyUnicode_GET_SIZE(repr) - 1);
+    assert(PyUnicode_READ_CHAR(repr, PyUnicode_GET_LENGTH(repr)-1) == ')');
+    temp = PyUnicode_Substring(repr, 0, PyUnicode_GET_LENGTH(repr) - 1);
     Py_DECREF(repr);
     if (temp == NULL)
         return NULL;
@@ -4214,9 +4213,9 @@ static PyObject *
 datetime_strptime(PyObject *cls, PyObject *args)
 {
     static PyObject *module = NULL;
-    const Py_UNICODE *string, *format;
+    PyObject *string, *format;
 
-    if (!PyArg_ParseTuple(args, "uu:strptime", &string, &format))
+    if (!PyArg_ParseTuple(args, "UU:strptime", &string, &format))
         return NULL;
 
     if (module == NULL) {
@@ -4224,7 +4223,7 @@ datetime_strptime(PyObject *cls, PyObject *args)
         if (module == NULL)
             return NULL;
     }
-    return PyObject_CallMethod(module, "_strptime_datetime", "Ouu",
+    return PyObject_CallMethod(module, "_strptime_datetime", "OOO",
                                cls, string, format);
 }
 

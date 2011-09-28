@@ -508,8 +508,8 @@ source_as_string(PyObject *cmd, char *funcname, char *what, PyCompilerFlags *cf)
 
     if (PyUnicode_Check(cmd)) {
         cf->cf_flags |= PyCF_IGNORE_COOKIE;
-        cmd = _PyUnicode_AsDefaultEncodedString(cmd);
-        if (cmd == NULL)
+        str = PyUnicode_AsUTF8AndSize(cmd, &size);
+        if (str == NULL)
             return NULL;
     }
     else if (!PyObject_CheckReadBuffer(cmd)) {
@@ -518,9 +518,10 @@ source_as_string(PyObject *cmd, char *funcname, char *what, PyCompilerFlags *cf)
           funcname, what);
         return NULL;
     }
-    if (PyObject_AsReadBuffer(cmd, (const void **)&str, &size) < 0) {
+    else if (PyObject_AsReadBuffer(cmd, (const void **)&str, &size) < 0) {
         return NULL;
     }
+
     if (strlen(str) != size) {
         PyErr_SetString(PyExc_TypeError,
                         "source code string cannot contain null bytes");
@@ -1395,24 +1396,13 @@ builtin_ord(PyObject *self, PyObject* obj)
         }
     }
     else if (PyUnicode_Check(obj)) {
-        size = PyUnicode_GET_SIZE(obj);
+        if (PyUnicode_READY(obj) == -1)
+            return NULL;
+        size = PyUnicode_GET_LENGTH(obj);
         if (size == 1) {
-            ord = (long)*PyUnicode_AS_UNICODE(obj);
+            ord = (long)PyUnicode_READ_CHAR(obj, 0);
             return PyLong_FromLong(ord);
         }
-#ifndef Py_UNICODE_WIDE
-        if (size == 2) {
-            /* Decode a valid surrogate pair */
-            int c0 = PyUnicode_AS_UNICODE(obj)[0];
-            int c1 = PyUnicode_AS_UNICODE(obj)[1];
-            if (0xD800 <= c0 && c0 <= 0xDBFF &&
-                0xDC00 <= c1 && c1 <= 0xDFFF) {
-                ord = ((((c0 & 0x03FF) << 10) | (c1 & 0x03FF)) +
-                       0x00010000);
-                return PyLong_FromLong(ord);
-            }
-        }
-#endif
     }
     else if (PyByteArray_Check(obj)) {
         /* XXX Hopefully this is temporary */

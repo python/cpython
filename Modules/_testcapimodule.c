@@ -1355,7 +1355,7 @@ static PyObject *
 test_Z_code(PyObject *self)
 {
     PyObject *tuple, *obj;
-    Py_UNICODE *value1, *value2;
+    const Py_UNICODE *value1, *value2;
     Py_ssize_t len1, len2;
 
     tuple = PyTuple_New(2);

@@ -55,7 +55,7 @@ extern PyObject *_PyIncrementalNewlineDecoder_decode(
    Otherwise, the function will scan further and return garbage. */
 extern Py_ssize_t _PyIO_find_line_ending(
     int translated, int universal, PyObject *readnl,
-    Py_UNICODE *start, Py_UNICODE *end, Py_ssize_t *consumed);
+    int kind, char *start, char *end, Py_ssize_t *consumed);
 
 
 #define DEFAULT_BUFFER_SIZE (8 * 1024)  /* bytes */

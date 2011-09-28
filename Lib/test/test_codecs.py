@@ -622,6 +622,10 @@ class UTF8Test(ReadTest):
                          b"abc\xed\xa0\x80def")
         self.assertEqual(b"abc\xed\xa0\x80def".decode("utf-8", "surrogatepass"),
                          "abc\ud800def")
+        self.assertEqual("\U00010fff\uD800".encode("utf-8", "surrogatepass"),
+                         b"\xf0\x90\xbf\xbf\xed\xa0\x80")
+        self.assertEqual(b"\xf0\x90\xbf\xbf\xed\xa0\x80".decode("utf-8", "surrogatepass"),
+                         "\U00010fff\uD800")
         self.assertTrue(codecs.lookup_error("surrogatepass"))
 
 class UTF7Test(ReadTest):
