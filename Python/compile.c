@@ -245,8 +245,14 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
         return 0;
     /* ident = "_" + priv[ipriv:] + ident # i.e. 1+plen+nlen bytes */
     PyUnicode_WRITE(PyUnicode_KIND(result), PyUnicode_DATA(result), 0, '_');
-    PyUnicode_CopyCharacters(result, 1, privateobj, ipriv, plen);
-    PyUnicode_CopyCharacters(result, plen+1, ident, 0, nlen);
+    if (PyUnicode_CopyCharacters(result, 1, privateobj, ipriv, plen) < 0) {
+        Py_DECREF(result);
+        return NULL;
+    }
+    if (PyUnicode_CopyCharacters(result, plen+1, ident, 0, nlen) < 0) {
+        Py_DECREF(result);
+        return NULL;
+    }
     return result;
 }
 

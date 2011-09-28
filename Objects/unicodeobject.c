@@ -1784,9 +1784,10 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                 (void) va_arg(vargs, char *);
                 size = PyUnicode_GET_LENGTH(*callresult);
                 assert(PyUnicode_KIND(*callresult) <= PyUnicode_KIND(string));
-                PyUnicode_CopyCharacters((PyObject*)string, i,
-                                         *callresult, 0,
-                                         size);
+                if (PyUnicode_CopyCharacters((PyObject*)string, i,
+                                             *callresult, 0,
+                                             size) < 0)
+                    goto fail;
                 i += size;
                 /* We're done with the unicode()/repr() => forget it */
                 Py_DECREF(*callresult);
@@ -1800,9 +1801,10 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                 Py_ssize_t size;
                 assert(PyUnicode_KIND(obj) <= PyUnicode_KIND(string));
                 size = PyUnicode_GET_LENGTH(obj);
-                PyUnicode_CopyCharacters((PyObject*)string, i,
-                                         obj, 0,
-                                         size);
+                if (PyUnicode_CopyCharacters((PyObject*)string, i,
+                                             obj, 0,
+                                             size) < 0)
+                    goto fail;
                 i += size;
                 break;
             }
@@ -1814,17 +1816,19 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                 if (obj) {
                     size = PyUnicode_GET_LENGTH(obj);
                     assert(PyUnicode_KIND(obj) <= PyUnicode_KIND(string));
-                    PyUnicode_CopyCharacters((PyObject*)string, i,
-                                             obj, 0,
-                                             size);
+                    if (PyUnicode_CopyCharacters((PyObject*)string, i,
+                                                 obj, 0,
+                                                 size) < 0)
+                        goto fail;
                     i += size;
                 } else {
                     size = PyUnicode_GET_LENGTH(*callresult);
                     assert(PyUnicode_KIND(*callresult) <=
                            PyUnicode_KIND(string));
-                    PyUnicode_CopyCharacters((PyObject*)string, i,
-                                             *callresult,
-                                             0, size);
+                    if (PyUnicode_CopyCharacters((PyObject*)string, i,
+                                                 *callresult,
+                                                 0, size) < 0)
+                        goto fail;
                     i += size;
                     Py_DECREF(*callresult);
                 }
@@ -1838,9 +1842,10 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                 /* unused, since we already have the result */
                 (void) va_arg(vargs, PyObject *);
                 assert(PyUnicode_KIND(*callresult) <= PyUnicode_KIND(string));
-                PyUnicode_CopyCharacters((PyObject*)string, i,
-                                         *callresult, 0,
-                                         PyUnicode_GET_LENGTH(*callresult));
+                if (PyUnicode_CopyCharacters((PyObject*)string, i,
+                                             *callresult, 0,
+                                             PyUnicode_GET_LENGTH(*callresult)) < 0)
+                    goto fail;
                 i += PyUnicode_GET_LENGTH(*callresult);
                 /* We're done with the unicode()/repr() => forget it */
                 Py_DECREF(*callresult);
@@ -8141,8 +8146,7 @@ fixup(PyUnicodeObject *self,
     else {
         /* In case the maximum character changed, we need to
            convert the string to the new category. */
-        PyObject *v = PyUnicode_New(
-                             PyUnicode_GET_LENGTH(self), maxchar_new);
+        PyObject *v = PyUnicode_New(PyUnicode_GET_LENGTH(self), maxchar_new);
         if (v == NULL) {
             Py_DECREF(u);
             return NULL;
@@ -8151,12 +8155,25 @@ fixup(PyUnicodeObject *self,
             /* If the maxchar increased so that the kind changed, not all
                characters are representable anymore and we need to fix the
                string again. This only happens in very few cases. */
-            PyUnicode_CopyCharacters(v, 0, (PyObject*)self, 0, PyUnicode_GET_LENGTH(self));
+            if (PyUnicode_CopyCharacters(v, 0, 
+                                         (PyObject*)self, 0, 
+                                         PyUnicode_GET_LENGTH(self)) < 0)
+            {
+                Py_DECREF(u);
+                return NULL;
+            }
             maxchar_old = fixfct((PyUnicodeObject*)v);
             assert(maxchar_old > 0 && maxchar_old <= maxchar_new);
         }
-        else
-            PyUnicode_CopyCharacters(v, 0, u, 0, PyUnicode_GET_LENGTH(self));
+        else {
+            if (PyUnicode_CopyCharacters(v, 0, 
+                                         u, 0, 
+                                         PyUnicode_GET_LENGTH(self)) < 0)
+            {
+                Py_DECREF(u);
+                return NULL;
+            }
+        }
 
         Py_DECREF(u);
         return v;
@@ -8455,12 +8472,14 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
         itemlen = PyUnicode_GET_LENGTH(item);
         /* Copy item, and maybe the separator. */
         if (i) {
-            PyUnicode_CopyCharacters(res, res_offset,
-                                     sep, 0, seplen);
+            if (PyUnicode_CopyCharacters(res, res_offset,
+                                         sep, 0, seplen) < 0)
+                goto onError;
             res_offset += seplen;
         }
-        PyUnicode_CopyCharacters(res, res_offset,
-                                 item, 0, itemlen);
+        if (PyUnicode_CopyCharacters(res, res_offset,
+                                     item, 0, itemlen) < 0)
+            goto onError;
         res_offset += itemlen;
     }
     assert(res_offset == PyUnicode_GET_LENGTH(res));
@@ -8508,6 +8527,8 @@ pad(PyUnicodeObject *self,
 {
     PyObject *u;
     Py_UCS4 maxchar;
+    int kind;
+    void *data;
 
     if (left < 0)
         left = 0;
@@ -8528,14 +8549,21 @@ pad(PyUnicodeObject *self,
     if (fill > maxchar)
         maxchar = fill;
     u = PyUnicode_New(left + _PyUnicode_LENGTH(self) + right, maxchar);
-    if (u) {
-        int kind = PyUnicode_KIND(u);
-        void *data = PyUnicode_DATA(u);
-        if (left)
-            FILL(kind, data, fill, 0, left);
-        if (right)
-            FILL(kind, data, fill, left + _PyUnicode_LENGTH(self), right);
-        PyUnicode_CopyCharacters(u, left, (PyObject*)self, 0, _PyUnicode_LENGTH(self));
+    if (!u)
+        return NULL;
+
+    kind = PyUnicode_KIND(u);
+    data = PyUnicode_DATA(u);
+    if (left)
+        FILL(kind, data, fill, 0, left);
+    if (right)
+        FILL(kind, data, fill, left + _PyUnicode_LENGTH(self), right);
+    if (PyUnicode_CopyCharacters(u, left, 
+                                 (PyObject*)self, 0, 
+                                 _PyUnicode_LENGTH(self)) < 0)
+    {
+        Py_DECREF(u);
+        return NULL;
     }
 
     return (PyUnicodeObject*)u;
@@ -8821,8 +8849,12 @@ replace(PyObject *self, PyObject *str1,
             u = PyUnicode_New(slen, maxchar);
             if (!u)
                 goto error;
-            PyUnicode_CopyCharacters(u, 0,
-                                     (PyObject*)self, 0, slen);
+            if (PyUnicode_CopyCharacters(u, 0,
+                                         (PyObject*)self, 0, slen) < 0)
+            {
+                Py_DECREF(u);
+                return NULL;
+            }
             rkind = PyUnicode_KIND(u);
             for (i = 0; i < PyUnicode_GET_LENGTH(u); i++)
                 if (PyUnicode_READ(rkind, PyUnicode_DATA(u), i) == u1) {
@@ -9437,8 +9469,7 @@ PyUnicode_Concat(PyObject *left, PyObject *right)
         goto onError;
 
     maxchar = PyUnicode_MAX_CHAR_VALUE(u);
-    if (PyUnicode_MAX_CHAR_VALUE(v) > maxchar)
-        maxchar = PyUnicode_MAX_CHAR_VALUE(v);
+    maxchar = PY_MAX(maxchar, PyUnicode_MAX_CHAR_VALUE(v));
 
     /* Concat the two Unicode strings */
     w = PyUnicode_New(
@@ -9446,9 +9477,12 @@ PyUnicode_Concat(PyObject *left, PyObject *right)
         maxchar);
     if (w == NULL)
         goto onError;
-    PyUnicode_CopyCharacters(w, 0, u, 0, PyUnicode_GET_LENGTH(u));
-    PyUnicode_CopyCharacters(w, PyUnicode_GET_LENGTH(u), v, 0,
-                             PyUnicode_GET_LENGTH(v));
+    if (PyUnicode_CopyCharacters(w, 0, u, 0, PyUnicode_GET_LENGTH(u)) < 0)
+        goto onError;
+    if (PyUnicode_CopyCharacters(w, PyUnicode_GET_LENGTH(u), 
+                                 v, 0,
+                                 PyUnicode_GET_LENGTH(v)) < 0)
+        goto onError;
     Py_DECREF(u);
     Py_DECREF(v);
     return w;
@@ -10396,8 +10430,12 @@ substring(PyUnicodeObject *self, Py_ssize_t start, Py_ssize_t len)
     unicode = PyUnicode_New(len, maxchar);
     if (unicode == NULL)
         return NULL;
-    PyUnicode_CopyCharacters(unicode, 0,
-                             (PyObject*)self, start, len);
+    if (PyUnicode_CopyCharacters(unicode, 0,
+                                 (PyObject*)self, start, len) < 0)
+    {
+        Py_DECREF(unicode);
+        return NULL;
+    }
     return unicode;
 }
 
