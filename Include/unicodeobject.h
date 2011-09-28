@@ -468,21 +468,6 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
      (PyUnicode_IS_READY(op) ?                          \
       0 : _PyUnicode_Ready((PyUnicodeObject *)(op))))
 
-/* Generic helper macro to convert characters of different types.
-   from_type and to_type have to be valid type names, begin and end
-   are pointers to the source characters which should be of type
-   "from_type *".  to is a pointer of type "to_type *" and points to the
-   buffer where the result characters are written to. */
-#define PyUnicode_CONVERT_BYTES(from_type, to_type, begin, end, to) \
-    do { \
-        const from_type *iter_; to_type *to_; \
-        for (iter_ = (begin), to_ = (to_type *)(to); \
-             iter_ < (end); \
-             ++iter_, ++to_) { \
-            *to_ = (to_type)*iter_; \
-        } \
-    } while (0)
-
 /* Return a maximum character value which is suitable for creating another
    string based on op.  This is always an approximation but more efficient
    than interating over the string. */
