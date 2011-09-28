@@ -1261,7 +1261,7 @@ float_repr_style -- string indicating the style of repr() output for floats\n\
 hexversion -- version information encoded as a single integer\n\
 int_info -- a struct sequence with information about the int implementation.\n\
 maxsize -- the largest supported length of containers.\n\
-maxunicode -- the largest supported character\n\
+maxunicode -- the value of the largest Unicode codepoint\n\
 platform -- platform identifier\n\
 prefix -- prefix used to find the Python library\n\
 thread_info -- a struct sequence with information about the thread implementation.\n\
@@ -1536,7 +1536,7 @@ _PySys_Init(void)
     SET_SYS_FROM_STRING("hash_info",
                         get_hash_info());
     SET_SYS_FROM_STRING("maxunicode",
-                        PyLong_FromLong(PyUnicode_GetMax()));
+                        PyLong_FromLong(0x10FFFF));
     SET_SYS_FROM_STRING("builtin_module_names",
                         list_builtin_module_names());
     {

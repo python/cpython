@@ -55,6 +55,17 @@ PEP XXX: Stub
 =============
 
 
+PEP 393: Flexible String Representation
+=======================================
+
+XXX Add list of changes introduced by :pep:`393` here:
+
+* The value of :data:`sys.maxunicode` is now always ``1114111`` (``0x10FFFF``
+  in hexadecimal).  The :c:func:`PyUnicode_GetMax` function still returns
+  either ``0xFFFF`` or ``0x10FFFF`` for backward compatibility, and it should
+  not be used with the new Unicode API (see :issue:`13054`).
+
+
 Other Language Changes
 ======================
 

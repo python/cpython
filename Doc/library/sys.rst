@@ -625,9 +625,13 @@ always available.
 
 .. data:: maxunicode
 
-   An integer giving the largest supported code point for a Unicode character.  The
-   value of this depends on the configuration option that specifies whether Unicode
-   characters are stored as UCS-2 or UCS-4.
+   An integer giving the value of the largest Unicode code point,
+   i.e. ``1114111`` (``0x10FFFF`` in hexadecimal).
+
+   .. versionchanged:: 3.3
+      Before :pep:`393`, :data:`sys.maxunicode` used to return either ``0xFFFF``
+      or ``0x10FFFF``, depending on the configuration option that specified
+      whether Unicode characters were stored as UCS-2 or UCS-4.
 
 
 .. data:: meta_path
