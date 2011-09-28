@@ -522,7 +522,8 @@ PyAPI_FUNC(int) _PyUnicode_Ready(
    character conversion when necessary and falls back to memcpy if possible.
 
    Fail if 'to' is smaller than how_many or smaller than len(from)-from_start,
-   or if kind(from[from_start:from_start+how_many]) > kind(to).
+   or if kind(from[from_start:from_start+how_many]) > kind(to), or if to has
+   more than 1 reference.
 
    Return the number of written character, or return -1 and raise an exception
    on error.
