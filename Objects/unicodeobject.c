@@ -643,7 +643,7 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
                   PyUnicode_KIND_SIZE(to_kind, how_many));
         return how_many;
     }
-    
+
     if (from_kind > to_kind) {
         /* slow path to check for character overflow */
         const Py_UCS4 to_maxchar = PyUnicode_MAX_CHAR_VALUE(to);
@@ -678,7 +678,7 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
             );
         return how_many;
     }
-    else if (from_kind == PyUnicode_1BYTE_KIND 
+    else if (from_kind == PyUnicode_1BYTE_KIND
              && to_kind == PyUnicode_4BYTE_KIND)
     {
         _PyUnicode_CONVERT_BYTES(
@@ -703,7 +703,7 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
     PyErr_Format(PyExc_ValueError,
                  "Cannot copy UCS%u characters "
                  "into a string of UCS%u characters",
-                 1 << (from_kind - 1), 
+                 1 << (from_kind - 1),
                  1 << (to_kind -1));
     return -1;
 }
@@ -8155,8 +8155,8 @@ fixup(PyUnicodeObject *self,
             /* If the maxchar increased so that the kind changed, not all
                characters are representable anymore and we need to fix the
                string again. This only happens in very few cases. */
-            if (PyUnicode_CopyCharacters(v, 0, 
-                                         (PyObject*)self, 0, 
+            if (PyUnicode_CopyCharacters(v, 0,
+                                         (PyObject*)self, 0,
                                          PyUnicode_GET_LENGTH(self)) < 0)
             {
                 Py_DECREF(u);
@@ -8166,8 +8166,8 @@ fixup(PyUnicodeObject *self,
             assert(maxchar_old > 0 && maxchar_old <= maxchar_new);
         }
         else {
-            if (PyUnicode_CopyCharacters(v, 0, 
-                                         u, 0, 
+            if (PyUnicode_CopyCharacters(v, 0,
+                                         u, 0,
                                          PyUnicode_GET_LENGTH(self)) < 0)
             {
                 Py_DECREF(u);
@@ -8558,8 +8558,8 @@ pad(PyUnicodeObject *self,
         FILL(kind, data, fill, 0, left);
     if (right)
         FILL(kind, data, fill, left + _PyUnicode_LENGTH(self), right);
-    if (PyUnicode_CopyCharacters(u, left, 
-                                 (PyObject*)self, 0, 
+    if (PyUnicode_CopyCharacters(u, left,
+                                 (PyObject*)self, 0,
                                  _PyUnicode_LENGTH(self)) < 0)
     {
         Py_DECREF(u);
@@ -9479,7 +9479,7 @@ PyUnicode_Concat(PyObject *left, PyObject *right)
         goto onError;
     if (PyUnicode_CopyCharacters(w, 0, u, 0, PyUnicode_GET_LENGTH(u)) < 0)
         goto onError;
-    if (PyUnicode_CopyCharacters(w, PyUnicode_GET_LENGTH(u), 
+    if (PyUnicode_CopyCharacters(w, PyUnicode_GET_LENGTH(u),
                                  v, 0,
                                  PyUnicode_GET_LENGTH(v)) < 0)
         goto onError;
