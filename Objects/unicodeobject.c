@@ -90,6 +90,21 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 extern "C" {
 #endif
 
+/* Generic helper macro to convert characters of different types.
+   from_type and to_type have to be valid type names, begin and end
+   are pointers to the source characters which should be of type
+   "from_type *".  to is a pointer of type "to_type *" and points to the
+   buffer where the result characters are written to. */
+#define _PyUnicode_CONVERT_BYTES(from_type, to_type, begin, end, to) \
+    do { \
+        const from_type *iter_; to_type *to_; \
+        for (iter_ = (begin), to_ = (to_type *)(to); \
+             iter_ < (end); \
+             ++iter_, ++to_) { \
+            *to_ = (to_type)*iter_; \
+        } \
+    } while (0)
+
 #define _PyUnicode_WSTR(op) (((PyASCIIObject*)(op))->wstr)
 #define _PyUnicode_WSTR_LENGTH(op) (((PyCompactUnicodeObject*)(op))->wstr_length)
 #define _PyUnicode_LENGTH(op) (((PyASCIIObject *)(op))->length)
@@ -622,7 +637,7 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
         case PyUnicode_1BYTE_KIND:
             switch (to_kind) {
                 case PyUnicode_2BYTE_KIND:
-                    PyUnicode_CONVERT_BYTES(
+                    _PyUnicode_CONVERT_BYTES(
                         unsigned char, Py_UCS2,
                         PyUnicode_1BYTE_DATA(from) + from_start,
                         PyUnicode_1BYTE_DATA(from) + from_start + how_many,
@@ -630,7 +645,7 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
                         );
                     break;
                 case PyUnicode_4BYTE_KIND:
-                    PyUnicode_CONVERT_BYTES(
+                    _PyUnicode_CONVERT_BYTES(
                         unsigned char, Py_UCS4,
                         PyUnicode_1BYTE_DATA(from) + from_start,
                         PyUnicode_1BYTE_DATA(from) + from_start + how_many,
@@ -644,7 +659,7 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
         case PyUnicode_2BYTE_KIND:
             switch (to_kind) {
                 case PyUnicode_1BYTE_KIND:
-                    PyUnicode_CONVERT_BYTES(
+                    _PyUnicode_CONVERT_BYTES(
                         Py_UCS2, unsigned char,
                         PyUnicode_2BYTE_DATA(from) + from_start,
                         PyUnicode_2BYTE_DATA(from) + from_start + how_many,
@@ -652,7 +667,7 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
                         );
                     break;
                 case PyUnicode_4BYTE_KIND:
-                    PyUnicode_CONVERT_BYTES(
+                    _PyUnicode_CONVERT_BYTES(
                         Py_UCS2, Py_UCS4,
                         PyUnicode_2BYTE_DATA(from) + from_start,
                         PyUnicode_2BYTE_DATA(from) + from_start + how_many,
@@ -666,7 +681,7 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
         case PyUnicode_4BYTE_KIND:
             switch (to_kind) {
                 case PyUnicode_1BYTE_KIND:
-                    PyUnicode_CONVERT_BYTES(
+                    _PyUnicode_CONVERT_BYTES(
                         Py_UCS4, unsigned char,
                         PyUnicode_4BYTE_DATA(from) + from_start,
                         PyUnicode_4BYTE_DATA(from) + from_start + how_many,
@@ -674,7 +689,7 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
                         );
                     break;
                 case PyUnicode_2BYTE_KIND:
-                    PyUnicode_CONVERT_BYTES(
+                    _PyUnicode_CONVERT_BYTES(
                         Py_UCS4, Py_UCS2,
                         PyUnicode_4BYTE_DATA(from) + from_start,
                         PyUnicode_4BYTE_DATA(from) + from_start + how_many,
@@ -792,7 +807,7 @@ _PyUnicode_Ready(PyUnicodeObject *unicode)
             PyErr_NoMemory();
             return -1;
         }
-        PyUnicode_CONVERT_BYTES(wchar_t, unsigned char,
+        _PyUnicode_CONVERT_BYTES(wchar_t, unsigned char,
                                 _PyUnicode_WSTR(unicode), end,
                                 PyUnicode_1BYTE_DATA(unicode));
         PyUnicode_1BYTE_DATA(unicode)[_PyUnicode_WSTR_LENGTH(unicode)] = '\0';
@@ -834,7 +849,7 @@ _PyUnicode_Ready(PyUnicodeObject *unicode)
                 PyErr_NoMemory();
                 return -1;
             }
-            PyUnicode_CONVERT_BYTES(wchar_t, Py_UCS2,
+            _PyUnicode_CONVERT_BYTES(wchar_t, Py_UCS2,
                                     _PyUnicode_WSTR(unicode), end,
                                     PyUnicode_2BYTE_DATA(unicode));
             PyUnicode_2BYTE_DATA(unicode)[_PyUnicode_WSTR_LENGTH(unicode)] = '\0';
@@ -1023,14 +1038,14 @@ PyUnicode_FromUnicode(const Py_UNICODE *u, Py_ssize_t size)
 
     switch (PyUnicode_KIND(unicode)) {
     case PyUnicode_1BYTE_KIND:
-        PyUnicode_CONVERT_BYTES(Py_UNICODE, unsigned char,
+        _PyUnicode_CONVERT_BYTES(Py_UNICODE, unsigned char,
                                 u, u + size, PyUnicode_1BYTE_DATA(unicode));
         break;
     case PyUnicode_2BYTE_KIND:
 #if Py_UNICODE_SIZE == 2
         Py_MEMCPY(PyUnicode_2BYTE_DATA(unicode), u, size * 2);
 #else
-        PyUnicode_CONVERT_BYTES(Py_UNICODE, Py_UCS2,
+        _PyUnicode_CONVERT_BYTES(Py_UNICODE, Py_UCS2,
                                 u, u + size, PyUnicode_2BYTE_DATA(unicode));
 #endif
         break;
