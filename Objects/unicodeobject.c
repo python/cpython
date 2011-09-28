@@ -708,11 +708,14 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
     return -1;
 }
 
-int
-_PyUnicode_FindMaxCharAndNumSurrogatePairs(const wchar_t *begin,
-                                           const wchar_t *end,
-                                           Py_UCS4 *maxchar,
-                                           Py_ssize_t *num_surrogates)
+/* Find the maximum code point and count the number of surrogate pairs so a
+   correct string length can be computed before converting a string to UCS4.
+   This function counts single surrogates as a character and not as a pair.
+
+   Return 0 on success, or -1 on error. */
+static int
+find_maxchar_surrogates(const wchar_t *begin, const wchar_t *end,
+                        Py_UCS4 *maxchar, Py_ssize_t *num_surrogates)
 {
     const wchar_t *iter;
 
@@ -789,7 +792,7 @@ _PyUnicode_Ready(PyUnicodeObject *unicode)
 #endif
 
     end = _PyUnicode_WSTR(unicode) + _PyUnicode_WSTR_LENGTH(unicode);
-    if (_PyUnicode_FindMaxCharAndNumSurrogatePairs(_PyUnicode_WSTR(unicode), end,
+    if (find_maxchar_surrogates(_PyUnicode_WSTR(unicode), end,
                                                   &maxchar,
                                                   &num_surrogates) == -1) {
         assert(0 && "PyUnicode_FindMaxCharAndNumSurrogatePairs failed");
@@ -1022,7 +1025,7 @@ PyUnicode_FromUnicode(const Py_UNICODE *u, Py_ssize_t size)
 
     /* If not empty and not single character, copy the Unicode data
        into the new object */
-    if (_PyUnicode_FindMaxCharAndNumSurrogatePairs(u, u + size, &maxchar,
+    if (find_maxchar_surrogates(u, u + size, &maxchar,
                                                   &num_surrogates) == -1)
         return NULL;
 
