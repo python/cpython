@@ -800,7 +800,7 @@ class Differ:
     ...   2. Explicit is better than implicit.
     ...   3. Simple is better than complex.
     ...   4. Complex is better than complicated.
-    ... '''.splitlines(1)
+    ... '''.splitlines(keepends=True)
     >>> len(text1)
     4
     >>> text1[0][-1]
@@ -809,7 +809,7 @@ class Differ:
     ...   3.   Simple is better than complex.
     ...   4. Complicated is better than complex.
     ...   5. Flat is better than nested.
-    ... '''.splitlines(1)
+    ... '''.splitlines(keepends=True)
 
     Next we instantiate a Differ object:
 
@@ -896,8 +896,8 @@ class Differ:
 
         Example:
 
-        >>> print(''.join(Differ().compare('one\ntwo\nthree\n'.splitlines(1),
-        ...                                'ore\ntree\nemu\n'.splitlines(1))),
+        >>> print(''.join(Differ().compare('one\ntwo\nthree\n'.splitlines(True),
+        ...                                'ore\ntree\nemu\n'.splitlines(True))),
         ...       end="")
         - one
         ?  ^
@@ -1269,8 +1269,8 @@ def context_diff(a, b, fromfile='', tofile='',
 
     Example:
 
-    >>> print(''.join(context_diff('one\ntwo\nthree\nfour\n'.splitlines(1),
-    ...       'zero\none\ntree\nfour\n'.splitlines(1), 'Original', 'Current')),
+    >>> print(''.join(context_diff('one\ntwo\nthree\nfour\n'.splitlines(True),
+    ...       'zero\none\ntree\nfour\n'.splitlines(True), 'Original', 'Current')),
     ...       end="")
     *** Original
     --- Current
@@ -1339,8 +1339,8 @@ def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK):
 
     Example:
 
-    >>> diff = ndiff('one\ntwo\nthree\n'.splitlines(1),
-    ...              'ore\ntree\nemu\n'.splitlines(1))
+    >>> diff = ndiff('one\ntwo\nthree\n'.splitlines(keepends=True),
+    ...              'ore\ntree\nemu\n'.splitlines(keepends=True))
     >>> print(''.join(diff), end="")
     - one
     ?  ^
@@ -2034,8 +2034,8 @@ def restore(delta, which):
 
     Examples:
 
-    >>> diff = ndiff('one\ntwo\nthree\n'.splitlines(1),
-    ...              'ore\ntree\nemu\n'.splitlines(1))
+    >>> diff = ndiff('one\ntwo\nthree\n'.splitlines(keepends=True),
+    ...              'ore\ntree\nemu\n'.splitlines(keepends=True))
     >>> diff = list(diff)
     >>> print(''.join(restore(diff, 1)), end="")
     one

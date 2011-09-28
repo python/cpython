@@ -177,7 +177,7 @@ class OutputTestCase(unittest.TestCase):
             return not c.isspace() and not c.isdigit()
 
         lines = []
-        for line in s.splitlines(False):
+        for line in s.splitlines(keepends=False):
             # Drop texts, as they are locale dependent
             if line and not filter(neitherspacenordigit, line):
                 lines.append(line)

@@ -139,7 +139,7 @@ class TestGzip(unittest.TestCase):
             with io.BufferedReader(f) as r:
                 lines = [line for line in r]
 
-        self.assertEqual(lines, 50 * data1.splitlines(True))
+        self.assertEqual(lines, 50 * data1.splitlines(keepends=True))
 
     def test_readline(self):
         self.test_write()
@@ -340,7 +340,7 @@ class TestGzip(unittest.TestCase):
 
     def test_textio_readlines(self):
         # Issue #10791: TextIOWrapper.readlines() fails when wrapping GzipFile.
-        lines = (data1 * 50).decode("ascii").splitlines(True)
+        lines = (data1 * 50).decode("ascii").splitlines(keepends=True)
         self.test_write()
         with gzip.GzipFile(self.filename, 'r') as f:
             with io.TextIOWrapper(f, encoding="ascii") as t:
