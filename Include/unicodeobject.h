@@ -543,18 +543,6 @@ PyAPI_FUNC(Py_ssize_t) PyUnicode_CopyCharacters(
     );
 #endif
 
-/* Find the maximum code point and count the number of surrogate pairs so a
-   correct string length can be computed before converting a string to UCS4.
-   This function counts single surrogates as a character and not as a pair. */
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(int) _PyUnicode_FindMaxCharAndNumSurrogatePairs(
-    const wchar_t *begin,
-    const wchar_t *end,
-    Py_UCS4 *maxchar,
-    Py_ssize_t *num_surrogates
-    );
-#endif
-
 /* Create a Unicode Object from the Py_UNICODE buffer u of the given
    size.
 
