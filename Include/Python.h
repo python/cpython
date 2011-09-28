@@ -160,9 +160,9 @@ PyAPI_FUNC(PyObject*) _Py_Mangle(PyObject *p, PyObject *name);
 #define PyDoc_STR(str) ""
 #endif
 
-#define PY_ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
+#define Py_ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
 
-#define PY_MIN(x, y) (((x) > (y)) ? (y) : (x))
-#define PY_MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define Py_MIN(x, y) (((x) > (y)) ? (y) : (x))
+#define Py_MAX(x, y) (((x) > (y)) ? (x) : (y))
 
 #endif /* !Py_PYTHON_H */

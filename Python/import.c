@@ -1784,7 +1784,7 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
         return 0;
 
     len = PyUnicode_GET_LENGTH(path_unicode);
-    if (!PyUnicode_AsUCS4(path_unicode, buf, PY_ARRAY_LENGTH(buf), 1)) {
+    if (!PyUnicode_AsUCS4(path_unicode, buf, Py_ARRAY_LENGTH(buf), 1)) {
         Py_DECREF(path_unicode);
         PyErr_Clear();
         return 0;
@@ -1828,7 +1828,7 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
 #endif
         )
         buf[len++] = SEP;
-    if (!PyUnicode_AsUCS4(name, buf+len, PY_ARRAY_LENGTH(buf)-len, 1)) {
+    if (!PyUnicode_AsUCS4(name, buf+len, Py_ARRAY_LENGTH(buf)-len, 1)) {
         PyErr_Clear();
         return 0;
     }
@@ -2787,7 +2787,7 @@ import_module_level(PyObject *name, PyObject *globals, PyObject *locals,
     if (PyUnicode_READY(parent_name))
         return NULL;
     buflen = PyUnicode_GET_LENGTH(parent_name);
-    if (!PyUnicode_AsUCS4(parent_name, buf, PY_ARRAY_LENGTH(buf), 1)) {
+    if (!PyUnicode_AsUCS4(parent_name, buf, Py_ARRAY_LENGTH(buf), 1)) {
         Py_DECREF(parent_name);
         PyErr_SetString(PyExc_ValueError,
                         "Module name too long");

@@ -1521,7 +1521,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
             case 'c':
             {
                 Py_UCS4 ordinal = va_arg(count, int);
-                maxchar = PY_MAX(maxchar, ordinal);
+                maxchar = Py_MAX(maxchar, ordinal);
                 n++;
                 break;
             }
@@ -1617,7 +1617,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                 /* since PyUnicode_DecodeUTF8 returns already flexible
                    unicode objects, there is no need to call ready on them */
                 argmaxchar = PyUnicode_MAX_CHAR_VALUE(str);
-                maxchar = PY_MAX(maxchar, argmaxchar);
+                maxchar = Py_MAX(maxchar, argmaxchar);
                 n += PyUnicode_GET_LENGTH(str);
                 /* Remember the str and switch to the next slot */
                 *callresult++ = str;
@@ -1630,7 +1630,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                 if (PyUnicode_READY(obj) == -1)
                     goto fail;
                 argmaxchar = PyUnicode_MAX_CHAR_VALUE(obj);
-                maxchar = PY_MAX(maxchar, argmaxchar);
+                maxchar = Py_MAX(maxchar, argmaxchar);
                 n += PyUnicode_GET_LENGTH(obj);
                 break;
             }
@@ -1645,7 +1645,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                     if (PyUnicode_READY(obj) == -1)
                         goto fail;
                     argmaxchar = PyUnicode_MAX_CHAR_VALUE(obj);
-                    maxchar = PY_MAX(maxchar, argmaxchar);
+                    maxchar = Py_MAX(maxchar, argmaxchar);
                     n += PyUnicode_GET_LENGTH(obj);
                     *callresult++ = NULL;
                 }
@@ -1654,7 +1654,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                     if (!str_obj)
                         goto fail;
                     argmaxchar = PyUnicode_MAX_CHAR_VALUE(str_obj);
-                    maxchar = PY_MAX(maxchar, argmaxchar);
+                    maxchar = Py_MAX(maxchar, argmaxchar);
                     n += PyUnicode_GET_LENGTH(str_obj);
                     *callresult++ = str_obj;
                 }
@@ -1669,7 +1669,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                 if (!str || PyUnicode_READY(str) == -1)
                     goto fail;
                 argmaxchar = PyUnicode_MAX_CHAR_VALUE(str);
-                maxchar = PY_MAX(maxchar, argmaxchar);
+                maxchar = Py_MAX(maxchar, argmaxchar);
                 n += PyUnicode_GET_LENGTH(str);
                 /* Remember the str and switch to the next slot */
                 *callresult++ = str;
@@ -1684,7 +1684,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                 if (!repr || PyUnicode_READY(repr) == -1)
                     goto fail;
                 argmaxchar = PyUnicode_MAX_CHAR_VALUE(repr);
-                maxchar = PY_MAX(maxchar, argmaxchar);
+                maxchar = Py_MAX(maxchar, argmaxchar);
                 n += PyUnicode_GET_LENGTH(repr);
                 /* Remember the repr and switch to the next slot */
                 *callresult++ = repr;
@@ -1699,7 +1699,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                 if (!ascii || PyUnicode_READY(ascii) == -1)
                     goto fail;
                 argmaxchar = PyUnicode_MAX_CHAR_VALUE(ascii);
-                maxchar = PY_MAX(maxchar, argmaxchar);
+                maxchar = Py_MAX(maxchar, argmaxchar);
                 n += PyUnicode_GET_LENGTH(ascii);
                 /* Remember the repr and switch to the next slot */
                 *callresult++ = ascii;
@@ -11051,7 +11051,7 @@ PyUnicode_RPartition(PyObject *str_in, PyObject *sep_in)
 
     kind1 = PyUnicode_KIND(str_in);
     kind2 = PyUnicode_KIND(sep_obj);
-    kind = PY_MAX(kind1, kind2);
+    kind = Py_MAX(kind1, kind2);
     buf1 = PyUnicode_DATA(str_in);
     if (kind1 != kind)
         buf1 = _PyUnicode_AsKind(str_in, kind);
