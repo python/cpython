@@ -723,13 +723,16 @@ checkpath(PyObject* tag)
     (ch == '/' || ch == '*' || ch == '[' || ch == '@' || ch == '.')
 
     if (PyUnicode_Check(tag)) {
-        Py_UNICODE *p = PyUnicode_AS_UNICODE(tag);
-        for (i = 0; i < PyUnicode_GET_SIZE(tag); i++) {
-            if (p[i] == '{')
+        const Py_ssize_t len = PyUnicode_GET_LENGTH(tag);
+        void *data = PyUnicode_DATA(tag);
+        unsigned int kind = PyUnicode_KIND(tag);
+        for (i = 0; i < len; i++) {
+            Py_UCS4 ch = PyUnicode_READ(kind, data, i);
+            if (ch == '{')
                 check = 0;
-            else if (p[i] == '}')
+            else if (ch == '}')
                 check = 1;
-            else if (check && PATHCHAR(p[i]))
+            else if (check && PATHCHAR(ch))
                 return 1;
         }
         return 0;
@@ -2401,9 +2404,10 @@ expat_unknown_encoding_handler(XMLParserObject *self, const XML_Char *name,
                                XML_Encoding *info)
 {
     PyObject* u;
-    Py_UNICODE* p;
     unsigned char s[256];
     int i;
+    void *data;
+    unsigned int kind;
 
     memset(info, 0, sizeof(XML_Encoding));
 
@@ -2413,17 +2417,20 @@ expat_unknown_encoding_handler(XMLParserObject *self, const XML_Char *name,
     u = PyUnicode_Decode((char*) s, 256, name, "replace");
     if (!u)
         return XML_STATUS_ERROR;
+    if (PyUnicode_READY(u))
+        return XML_STATUS_ERROR;
 
-    if (PyUnicode_GET_SIZE(u) != 256) {
+    if (PyUnicode_GET_LENGTH(u) != 256) {
         Py_DECREF(u);
         return XML_STATUS_ERROR;
     }
 
-    p = PyUnicode_AS_UNICODE(u);
-
+    kind = PyUnicode_KIND(u);
+    data = PyUnicode_DATA(u);
     for (i = 0; i < 256; i++) {
-        if (p[i] != Py_UNICODE_REPLACEMENT_CHARACTER)
-            info->map[i] = p[i];
+        Py_UCS4 ch = PyUnicode_READ(kind, data, i);
+        if (ch != Py_UNICODE_REPLACEMENT_CHARACTER)
+            info->map[i] = ch;
         else
             info->map[i] = -1;
     }

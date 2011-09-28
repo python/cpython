@@ -1379,9 +1379,7 @@ PyNumber_Long(PyObject *o)
                                 PyBytes_GET_SIZE(o));
     if (PyUnicode_Check(o))
         /* The above check is done in PyLong_FromUnicode(). */
-        return PyLong_FromUnicode(PyUnicode_AS_UNICODE(o),
-                                  PyUnicode_GET_SIZE(o),
-                                  10);
+        return PyLong_FromUnicodeObject(o, 10);
     if (!PyObject_AsCharBuffer(o, &buffer, &buffer_len))
         return long_from_string(buffer, buffer_len);
 

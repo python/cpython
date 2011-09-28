@@ -285,8 +285,8 @@ _PyModule_Clear(PyObject *m)
     pos = 0;
     while (PyDict_Next(d, &pos, &key, &value)) {
         if (value != Py_None && PyUnicode_Check(key)) {
-            Py_UNICODE *u = PyUnicode_AS_UNICODE(key);
-            if (u[0] == '_' && u[1] != '_') {
+            if (PyUnicode_READ_CHAR(key, 0) == '_' && 
+                PyUnicode_READ_CHAR(key, 1) != '_') {
                 if (Py_VerboseFlag > 1) {
                     const char *s = _PyUnicode_AsString(key);
                     if (s != NULL)
@@ -303,9 +303,8 @@ _PyModule_Clear(PyObject *m)
     pos = 0;
     while (PyDict_Next(d, &pos, &key, &value)) {
         if (value != Py_None && PyUnicode_Check(key)) {
-            Py_UNICODE *u = PyUnicode_AS_UNICODE(key);
-            if (u[0] != '_'
-                || PyUnicode_CompareWithASCIIString(key, "__builtins__") != 0)
+            if (PyUnicode_READ_CHAR(key, 0) != '_' ||
+                PyUnicode_CompareWithASCIIString(key, "__builtins__") != 0)
             {
                 if (Py_VerboseFlag > 1) {
                     const char *s = _PyUnicode_AsString(key);

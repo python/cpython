@@ -2810,9 +2810,9 @@ PyMODINIT_FUNC
 PyInit_array(void)
 {
     PyObject *m;
+    char buffer[PY_ARRAY_LENGTH(descriptors)], *p;
     PyObject *typecodes;
     Py_ssize_t size = 0;
-    register Py_UNICODE *p;
     struct arraydescr *descr;
 
     if (PyType_Ready(&Arraytype) < 0)
@@ -2831,13 +2831,13 @@ PyInit_array(void)
         size++;
     }
 
-    typecodes = PyUnicode_FromStringAndSize(NULL, size);
-    p = PyUnicode_AS_UNICODE(typecodes);
+    p = buffer;
     for (descr = descriptors; descr->typecode != '\0'; descr++) {
         *p++ = (char)descr->typecode;
     }
+    typecodes = PyUnicode_DecodeASCII(buffer, p - buffer, NULL);
 
-    PyModule_AddObject(m, "typecodes", (PyObject *)typecodes);
+    PyModule_AddObject(m, "typecodes", typecodes);
 
     if (PyErr_Occurred()) {
         Py_DECREF(m);

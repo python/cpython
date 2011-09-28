@@ -1,5 +1,6 @@
 import test.support, unittest
 import sys, codecs, html.entities, unicodedata
+import ctypes
 
 class PosReturn:
     # this can be used for configurable callbacks
@@ -577,8 +578,10 @@ class CodecCallbackTest(unittest.TestCase):
                 UnicodeEncodeError("ascii", "\uffff", 0, 1, "ouch")),
             ("\\uffff", 1)
         )
-        # 1 on UCS-4 builds, 2 on UCS-2
-        len_wide = len("\U00010000")
+        if ctypes.sizeof(ctypes.c_wchar) == 2:
+            len_wide = 2
+        else:
+            len_wide = 1
         self.assertEqual(
             codecs.backslashreplace_errors(
                 UnicodeEncodeError("ascii", "\U00010000",

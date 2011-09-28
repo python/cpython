@@ -92,16 +92,13 @@ new_previous_version(const char*name, const change_record* (*getrecord)(Py_UCS4)
 
 static Py_UCS4 getuchar(PyUnicodeObject *obj)
 {
-    Py_UNICODE *v = PyUnicode_AS_UNICODE(obj);
-
-    if (PyUnicode_GET_SIZE(obj) == 1)
-        return *v;
-#ifndef Py_UNICODE_WIDE
-    else if ((PyUnicode_GET_SIZE(obj) == 2) &&
-             (0xD800 <= v[0] && v[0] <= 0xDBFF) &&
-             (0xDC00 <= v[1] && v[1] <= 0xDFFF))
-        return (((v[0] & 0x3FF)<<10) | (v[1] & 0x3FF)) + 0x10000;
-#endif
+    if (PyUnicode_READY(obj))
+        return (Py_UCS4)-1;
+    if (PyUnicode_GET_LENGTH(obj) == 1) {
+        if (PyUnicode_READY(obj))
+            return (Py_UCS4)-1;
+        return PyUnicode_READ_CHAR(obj, 0);
+    }
     PyErr_SetString(PyExc_TypeError,
                     "need a single Unicode character as parameter");
     return (Py_UCS4)-1;
@@ -1142,7 +1139,6 @@ static PyObject *
 unicodedata_lookup(PyObject* self, PyObject* args)
 {
     Py_UCS4 code;
-    Py_UNICODE str[2];
 
     char* name;
     int namelen;
@@ -1155,15 +1151,7 @@ unicodedata_lookup(PyObject* self, PyObject* args)
         return NULL;
     }
 
-#ifndef Py_UNICODE_WIDE
-    if (code >= 0x10000) {
-        str[0] = 0xd800 + ((code - 0x10000) >> 10);
-        str[1] = 0xdc00 + ((code - 0x10000) & 0x3ff);
-        return PyUnicode_FromUnicode(str, 2);
-    }
-#endif
-    str[0] = (Py_UNICODE) code;
-    return PyUnicode_FromUnicode(str, 1);
+    return PyUnicode_FromOrdinal(code);
 }
 
 /* XXX Add doc strings. */

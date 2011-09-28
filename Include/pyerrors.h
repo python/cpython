@@ -301,6 +301,12 @@ PyAPI_FUNC(PyObject *) PyUnicodeTranslateError_Create(
     Py_ssize_t end,
     const char *reason          /* UTF-8 encoded string */
     );
+PyAPI_FUNC(PyObject *) _PyUnicodeTranslateError_Create(
+    PyObject *object,
+    Py_ssize_t start,
+    Py_ssize_t end,
+    const char *reason          /* UTF-8 encoded string */
+    );
 #endif
 
 /* get the encoding attribute */

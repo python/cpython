@@ -445,7 +445,7 @@ SHA256_hexdigest(SHAobject *self, PyObject *unused)
     unsigned char digest[SHA_DIGESTSIZE];
     SHAobject temp;
     PyObject *retval;
-    Py_UNICODE *hex_digest;
+    Py_UCS1 *hex_digest;
     int i, j;
 
     /* Get the raw (binary) digest value */
@@ -453,14 +453,10 @@ SHA256_hexdigest(SHAobject *self, PyObject *unused)
     sha_final(digest, &temp);
 
     /* Create a new string */
-    retval = PyUnicode_FromStringAndSize(NULL, self->digestsize * 2);
+    retval = PyUnicode_New(self->digestsize * 2, 127);
     if (!retval)
             return NULL;
-    hex_digest = PyUnicode_AS_UNICODE(retval);
-    if (!hex_digest) {
-            Py_DECREF(retval);
-            return NULL;
-    }
+    hex_digest = PyUnicode_1BYTE_DATA(retval);
 
     /* Make hex version of the digest */
     for(i=j=0; i<self->digestsize; i++) {

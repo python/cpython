@@ -93,7 +93,7 @@ _PyWin_FindRegisteredModule(PyObject *moduleName,
     }
     if (fdp->suffix == NULL)
         return NULL;
-    path = PyUnicode_FromUnicode(pathBuf, wcslen(pathBuf));
+    path = PyUnicode_FromWideChar(pathBuf, wcslen(pathBuf));
     if (path == NULL)
         return NULL;
     fp = _Py_fopen(path, fdp->mode);

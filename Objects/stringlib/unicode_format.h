@@ -1,15 +1,7 @@
 /*
-    string_format.h -- implementation of string.format().
-
-    It uses the Objects/stringlib conventions, so that it can be
-    compiled for both unicode and string objects.
+    unicode_format.h -- implementation of str.format().
 */
 
-
-/* Defines for Python 2.6 compatibility */
-#if PY_VERSION_HEX < 0x03000000
-#define PyLong_FromSsize_t _PyLong_FromSsize_t
-#endif
 
 /* Defines for more efficiently reallocating the string buffer */
 #define INITIAL_SIZE_INCREMENT 100
@@ -26,8 +18,8 @@
    unicode pointers.
 */
 typedef struct {
-    STRINGLIB_CHAR *ptr;
-    STRINGLIB_CHAR *end;
+    PyObject *str; /* borrowed reference */
+    Py_ssize_t start, end;
 } SubString;
 
 
@@ -64,34 +56,32 @@ AutoNumber_Init(AutoNumber *auto_number)
 
 /* fill in a SubString from a pointer and length */
 Py_LOCAL_INLINE(void)
-SubString_init(SubString *str, STRINGLIB_CHAR *p, Py_ssize_t len)
+SubString_init(SubString *str, PyObject *s, int start, int end)
 {
-    str->ptr = p;
-    if (p == NULL)
-        str->end = NULL;
-    else
-        str->end = str->ptr + len;
+    str->str = s;
+    str->start = start;
+    str->end = end;
 }
 
-/* return a new string.  if str->ptr is NULL, return None */
+/* return a new string.  if str->str is NULL, return None */
 Py_LOCAL_INLINE(PyObject *)
 SubString_new_object(SubString *str)
 {
-    if (str->ptr == NULL) {
+    if (str->str == NULL) {
         Py_INCREF(Py_None);
         return Py_None;
     }
-    return STRINGLIB_NEW(str->ptr, str->end - str->ptr);
+    return PyUnicode_Substring(str->str, str->start, str->end);
 }
 
-/* return a new string.  if str->ptr is NULL, return None */
+/* return a new string.  if str->str is NULL, return None */
 Py_LOCAL_INLINE(PyObject *)
 SubString_new_object_or_empty(SubString *str)
 {
-    if (str->ptr == NULL) {
-        return STRINGLIB_NEW(NULL, 0);
+    if (str->str == NULL) {
+        return PyUnicode_FromUnicode(NULL, 0);
     }
-    return STRINGLIB_NEW(str->ptr, str->end - str->ptr);
+    return SubString_new_object(str);
 }
 
 /* Return 1 if an error has been detected switching between automatic
@@ -125,9 +115,10 @@ autonumber_state_error(AutoNumberState state, int field_name_is_empty)
 /************************************************************************/
 
 typedef struct {
-    STRINGLIB_CHAR *ptr;
-    STRINGLIB_CHAR *end;
-    PyObject *obj;
+    char *data;
+    Py_UCS4 maxchar;
+    unsigned int kind;
+    Py_ssize_t pos, size;
     Py_ssize_t size_increment;
 } OutputString;
 
@@ -135,12 +126,16 @@ typedef struct {
 static int
 output_initialize(OutputString *output, Py_ssize_t size)
 {
-    output->obj = STRINGLIB_NEW(NULL, size);
-    if (output->obj == NULL)
+    output->data = PyMem_Malloc(size);
+    if (output->data == NULL) {
+        PyErr_NoMemory();
         return 0;
+    }
 
-    output->ptr = STRINGLIB_STR(output->obj);
-    output->end = STRINGLIB_LEN(output->obj) + output->ptr;
+    output->maxchar = 127;
+    output->kind = PyUnicode_1BYTE_KIND;
+    output->pos = 0;
+    output->size = size;
     output->size_increment = INITIAL_SIZE_INCREMENT;
 
     return 1;
@@ -155,17 +150,48 @@ output_initialize(OutputString *output, Py_ssize_t size)
 static int
 output_extend(OutputString *output, Py_ssize_t count)
 {
-    STRINGLIB_CHAR *startptr = STRINGLIB_STR(output->obj);
-    Py_ssize_t curlen = output->ptr - startptr;
-    Py_ssize_t maxlen = curlen + count + output->size_increment;
+    Py_ssize_t maxlen = output->size + count + output->size_increment;
 
-    if (STRINGLIB_RESIZE(&output->obj, maxlen) < 0)
+    output->data = PyMem_Realloc(output->data, maxlen << (output->kind-1));
+    output->size = maxlen;
+    if (output->data == 0) {
+        PyErr_NoMemory();
         return 0;
-    startptr = STRINGLIB_STR(output->obj);
-    output->ptr = startptr + curlen;
-    output->end = startptr + maxlen;
+    }
     if (output->size_increment < MAX_SIZE_INCREMENT)
         output->size_increment *= SIZE_MULTIPLIER;
+    return 1;
+}
+
+static int
+output_widen(OutputString *output, Py_UCS4 maxchar)
+{
+    int kind;
+    void *data; 
+    Py_ssize_t i;
+    if (maxchar <= output->maxchar)
+        return 1;
+    if (maxchar < 256) {
+        output->maxchar = 255;
+        return 1;
+    }
+    if (maxchar < 65536) {
+        output->maxchar = 65535;
+        kind = 2;
+    }
+    else {
+        output->maxchar = 1<<21;
+        kind = 3;
+    }
+    data = PyMem_Malloc(output->size << (kind-1));
+    if (data == 0)
+        return 0;
+    for (i = 0; i < output->size; i++)
+        PyUnicode_WRITE(kind, data, i,
+                        PyUnicode_READ(output->kind, output->data, i));
+    PyMem_Free(output->data);
+    output->data = data;
+    output->kind = kind;
     return 1;
 }
 
@@ -179,12 +205,25 @@ output_extend(OutputString *output, Py_ssize_t count)
     1 for success.
 */
 static int
-output_data(OutputString *output, const STRINGLIB_CHAR *s, Py_ssize_t count)
+output_data(OutputString *output, PyObject *s, Py_ssize_t start, Py_ssize_t end)
 {
-    if ((count > output->end - output->ptr) && !output_extend(output, count))
+    Py_ssize_t i;
+    int kind;
+    if ((output->pos + end - start > output->size) && 
+        !output_extend(output, end - start))
         return 0;
-    memcpy(output->ptr, s, count * sizeof(STRINGLIB_CHAR));
-    output->ptr += count;
+    kind = PyUnicode_KIND(s);
+    if (PyUnicode_MAX_CHAR_VALUE(s) > output->maxchar) {
+        Py_UCS4 maxchar = output->maxchar;
+        for (i = start; i < end; i++)
+            if (PyUnicode_READ(kind, PyUnicode_DATA(s), i) > maxchar)
+                maxchar = PyUnicode_READ(kind, PyUnicode_DATA(s), i);
+        if (!output_widen(output, maxchar))
+            return 0;
+    }
+    for (i = start; i < end; i++)
+        PyUnicode_WRITE(output->kind, output->data, output->pos++,
+                        PyUnicode_READ(kind, PyUnicode_DATA(s), i));
     return 1;
 }
 
@@ -197,15 +236,14 @@ get_integer(const SubString *str)
 {
     Py_ssize_t accumulator = 0;
     Py_ssize_t digitval;
-    Py_ssize_t oldaccumulator;
-    STRINGLIB_CHAR *p;
+    Py_ssize_t i;
 
     /* empty string is an error */
-    if (str->ptr >= str->end)
+    if (str->start >= str->end)
         return -1;
 
-    for (p = str->ptr; p < str->end; p++) {
-        digitval = STRINGLIB_TODECIMAL(*p);
+    for (i = str->start; i < str->end; i++) {
+        digitval = Py_UNICODE_TODECIMAL(PyUnicode_READ_CHAR(str->str, i));
         if (digitval < 0)
             return -1;
         /*
@@ -280,34 +318,36 @@ typedef struct {
        lifetime of the iterator.  can be empty */
     SubString str;
 
-    /* pointer to where we are inside field_name */
-    STRINGLIB_CHAR *ptr;
+    /* index to where we are inside field_name */
+    Py_ssize_t index;
 } FieldNameIterator;
 
 
 static int
-FieldNameIterator_init(FieldNameIterator *self, STRINGLIB_CHAR *ptr,
-                       Py_ssize_t len)
+FieldNameIterator_init(FieldNameIterator *self, PyObject *s,
+                       Py_ssize_t start, Py_ssize_t end)
 {
-    SubString_init(&self->str, ptr, len);
-    self->ptr = self->str.ptr;
+    SubString_init(&self->str, s, start, end);
+    self->index = start;
     return 1;
 }
 
 static int
 _FieldNameIterator_attr(FieldNameIterator *self, SubString *name)
 {
-    STRINGLIB_CHAR c;
+    Py_UCS4 c;
 
-    name->ptr = self->ptr;
+    name->str = self->str.str;
+    name->start = self->index;
 
     /* return everything until '.' or '[' */
-    while (self->ptr < self->str.end) {
-        switch (c = *self->ptr++) {
+    while (self->index < self->str.end) {
+        c = PyUnicode_READ_CHAR(self->str.str, self->index++);
+        switch (c) {
         case '[':
         case '.':
             /* backup so that we this character will be seen next time */
-            self->ptr--;
+            self->index--;
             break;
         default:
             continue;
@@ -315,7 +355,7 @@ _FieldNameIterator_attr(FieldNameIterator *self, SubString *name)
         break;
     }
     /* end of string is okay */
-    name->end = self->ptr;
+    name->end = self->index;
     return 1;
 }
 
@@ -323,13 +363,15 @@ static int
 _FieldNameIterator_item(FieldNameIterator *self, SubString *name)
 {
     int bracket_seen = 0;
-    STRINGLIB_CHAR c;
+    Py_UCS4 c;
 
-    name->ptr = self->ptr;
+    name->str = self->str.str;
+    name->start = self->index;
 
     /* return everything until ']' */
-    while (self->ptr < self->str.end) {
-        switch (c = *self->ptr++) {
+    while (self->index < self->str.end) {
+        c = PyUnicode_READ_CHAR(self->str.str, self->index++);
+        switch (c) {
         case ']':
             bracket_seen = 1;
             break;
@@ -346,7 +388,7 @@ _FieldNameIterator_item(FieldNameIterator *self, SubString *name)
 
     /* end of string is okay */
     /* don't include the ']' */
-    name->end = self->ptr-1;
+    name->end = self->index-1;
     return 1;
 }
 
@@ -356,10 +398,10 @@ FieldNameIterator_next(FieldNameIterator *self, int *is_attribute,
                        Py_ssize_t *name_idx, SubString *name)
 {
     /* check at end of input */
-    if (self->ptr >= self->str.end)
+    if (self->index >= self->str.end)
         return 1;
 
-    switch (*self->ptr++) {
+    switch (PyUnicode_READ_CHAR(self->str.str, self->index++)) {
     case '.':
         *is_attribute = 1;
         if (_FieldNameIterator_attr(self, name) == 0)
@@ -382,7 +424,7 @@ FieldNameIterator_next(FieldNameIterator *self, int *is_attribute,
     }
 
     /* empty string is an error */
-    if (name->ptr == name->end) {
+    if (name->start == name->end) {
         PyErr_SetString(PyExc_ValueError, "Empty attribute in format string");
         return 0;
     }
@@ -398,24 +440,23 @@ FieldNameIterator_next(FieldNameIterator *self, int *is_attribute,
            'rest' is an iterator to return the rest
 */
 static int
-field_name_split(STRINGLIB_CHAR *ptr, Py_ssize_t len, SubString *first,
+field_name_split(PyObject *str, Py_ssize_t start, Py_ssize_t end, SubString *first,
                  Py_ssize_t *first_idx, FieldNameIterator *rest,
                  AutoNumber *auto_number)
 {
-    STRINGLIB_CHAR c;
-    STRINGLIB_CHAR *p = ptr;
-    STRINGLIB_CHAR *end = ptr + len;
+    Py_UCS4 c;
+    Py_ssize_t i = start;
     int field_name_is_empty;
     int using_numeric_index;
 
     /* find the part up until the first '.' or '[' */
-    while (p < end) {
-        switch (c = *p++) {
+    while (i < end) {
+        switch (c = PyUnicode_READ_CHAR(str, i++)) {
         case '[':
         case '.':
             /* backup so that we this character is available to the
                "rest" iterator */
-            p--;
+            i--;
             break;
         default:
             continue;
@@ -424,15 +465,15 @@ field_name_split(STRINGLIB_CHAR *ptr, Py_ssize_t len, SubString *first,
     }
 
     /* set up the return values */
-    SubString_init(first, ptr, p - ptr);
-    FieldNameIterator_init(rest, p, end - p);
+    SubString_init(first, str, start, i);
+    FieldNameIterator_init(rest, str, i, end);
 
     /* see if "first" is an integer, in which case it's used as an index */
     *first_idx = get_integer(first);
     if (*first_idx == -1 && PyErr_Occurred())
         return 0;
 
-    field_name_is_empty = first->ptr >= first->end;
+    field_name_is_empty = first->start >= first->end;
 
     /* If the field name is omitted or if we have a numeric index
        specified, then we're doing numeric indexing into args. */
@@ -487,7 +528,7 @@ get_field_object(SubString *input, PyObject *args, PyObject *kwargs,
     Py_ssize_t index;
     FieldNameIterator rest;
 
-    if (!field_name_split(input->ptr, input->end - input->ptr, &first,
+    if (!field_name_split(input->str, input->start, input->end, &first,
                           &index, &rest, auto_number)) {
         goto error;
     }
@@ -576,12 +617,8 @@ render_field(PyObject *fieldobj, SubString *format_spec, OutputString *output)
     int ok = 0;
     PyObject *result = NULL;
     PyObject *format_spec_object = NULL;
-    PyObject *(*formatter)(PyObject *, STRINGLIB_CHAR *, Py_ssize_t) = NULL;
-    STRINGLIB_CHAR* format_spec_start = format_spec->ptr ?
-            format_spec->ptr : NULL;
-    Py_ssize_t format_spec_len = format_spec->ptr ?
-            format_spec->end - format_spec->ptr : 0;
-
+    PyObject *(*formatter)(PyObject *, PyObject *, Py_ssize_t, Py_ssize_t) = NULL;
+    
     /* If we know the type exactly, skip the lookup of __format__ and just
        call the formatter directly. */
     if (PyUnicode_CheckExact(fieldobj))
@@ -597,39 +634,28 @@ render_field(PyObject *fieldobj, SubString *format_spec, OutputString *output)
     if (formatter) {
         /* we know exactly which formatter will be called when __format__ is
            looked up, so call it directly, instead. */
-        result = formatter(fieldobj, format_spec_start, format_spec_len);
+        result = formatter(fieldobj, format_spec->str,
+                           format_spec->start, format_spec->end);
     }
     else {
         /* We need to create an object out of the pointers we have, because
            __format__ takes a string/unicode object for format_spec. */
-        format_spec_object = STRINGLIB_NEW(format_spec_start,
-                                           format_spec_len);
+        if (format_spec->str)
+            format_spec_object = PyUnicode_Substring(format_spec->str,
+                                                     format_spec->start,
+                                                     format_spec->end);
+        else
+            format_spec_object = PyUnicode_New(0, 0);
         if (format_spec_object == NULL)
             goto done;
 
         result = PyObject_Format(fieldobj, format_spec_object);
     }
-    if (result == NULL)
+    if (result == NULL || PyUnicode_READY(result) == -1)
         goto done;
 
-#if PY_VERSION_HEX >= 0x03000000
     assert(PyUnicode_Check(result));
-#else
-    assert(PyBytes_Check(result) || PyUnicode_Check(result));
-
-    /* Convert result to our type.  We could be str, and result could
-       be unicode */
-    {
-        PyObject *tmp = STRINGLIB_TOSTR(result);
-        if (tmp == NULL)
-            goto done;
-        Py_DECREF(result);
-        result = tmp;
-    }
-#endif
-
-    ok = output_data(output,
-                     STRINGLIB_STR(result), STRINGLIB_LEN(result));
+    ok = output_data(output, result, 0, PyUnicode_GET_LENGTH(result));
 done:
     Py_XDECREF(format_spec_object);
     Py_XDECREF(result);
@@ -638,23 +664,24 @@ done:
 
 static int
 parse_field(SubString *str, SubString *field_name, SubString *format_spec,
-            STRINGLIB_CHAR *conversion)
+            Py_UCS4 *conversion)
 {
     /* Note this function works if the field name is zero length,
        which is good.  Zero length field names are handled later, in
        field_name_split. */
 
-    STRINGLIB_CHAR c = 0;
+    Py_UCS4 c = 0;
 
     /* initialize these, as they may be empty */
     *conversion = '\0';
-    SubString_init(format_spec, NULL, 0);
+    SubString_init(format_spec, NULL, 0, 0);
 
     /* Search for the field name.  it's terminated by the end of
        the string, or a ':' or '!' */
-    field_name->ptr = str->ptr;
-    while (str->ptr < str->end) {
-        switch (c = *(str->ptr++)) {
+    field_name->str = str->str;
+    field_name->start = str->start;
+    while (str->start < str->end) {
+        switch ((c = PyUnicode_READ_CHAR(str->str, str->start++))) {
         case ':':
         case '!':
             break;
@@ -667,26 +694,27 @@ parse_field(SubString *str, SubString *field_name, SubString *format_spec,
     if (c == '!' || c == ':') {
         /* we have a format specifier and/or a conversion */
         /* don't include the last character */
-        field_name->end = str->ptr-1;
+        field_name->end = str->start-1;
 
         /* the format specifier is the rest of the string */
-        format_spec->ptr = str->ptr;
+        format_spec->str = str->str;
+        format_spec->start = str->start;
         format_spec->end = str->end;
 
         /* see if there's a conversion specifier */
         if (c == '!') {
             /* there must be another character present */
-            if (format_spec->ptr >= format_spec->end) {
+            if (format_spec->start >= format_spec->end) {
                 PyErr_SetString(PyExc_ValueError,
                                 "end of format while looking for conversion "
                                 "specifier");
                 return 0;
             }
-            *conversion = *(format_spec->ptr++);
+            *conversion = PyUnicode_READ_CHAR(format_spec->str, format_spec->start++);
 
             /* if there is another character, it must be a colon */
-            if (format_spec->ptr < format_spec->end) {
-                c = *(format_spec->ptr++);
+            if (format_spec->start < format_spec->end) {
+                c = PyUnicode_READ_CHAR(format_spec->str, format_spec->start++);
                 if (c != ':') {
                     PyErr_SetString(PyExc_ValueError,
                                     "expected ':' after format specifier");
@@ -697,7 +725,7 @@ parse_field(SubString *str, SubString *field_name, SubString *format_spec,
     }
     else
         /* end of string, there's no format_spec or conversion */
-        field_name->end = str->ptr;
+        field_name->end = str->start;
 
     return 1;
 }
@@ -716,9 +744,10 @@ typedef struct {
 } MarkupIterator;
 
 static int
-MarkupIterator_init(MarkupIterator *self, STRINGLIB_CHAR *ptr, Py_ssize_t len)
+MarkupIterator_init(MarkupIterator *self, PyObject *str, 
+                    Py_ssize_t start, Py_ssize_t end)
 {
-    SubString_init(&self->str, ptr, len);
+    SubString_init(&self->str, str, start, end);
     return 1;
 }
 
@@ -727,30 +756,30 @@ MarkupIterator_init(MarkupIterator *self, STRINGLIB_CHAR *ptr, Py_ssize_t len)
 static int
 MarkupIterator_next(MarkupIterator *self, SubString *literal,
                     int *field_present, SubString *field_name,
-                    SubString *format_spec, STRINGLIB_CHAR *conversion,
+                    SubString *format_spec, Py_UCS4 *conversion,
                     int *format_spec_needs_expanding)
 {
     int at_end;
-    STRINGLIB_CHAR c = 0;
-    STRINGLIB_CHAR *start;
+    Py_UCS4 c = 0;
+    Py_ssize_t start;
     int count;
     Py_ssize_t len;
     int markup_follows = 0;
 
     /* initialize all of the output variables */
-    SubString_init(literal, NULL, 0);
-    SubString_init(field_name, NULL, 0);
-    SubString_init(format_spec, NULL, 0);
+    SubString_init(literal, NULL, 0, 0);
+    SubString_init(field_name, NULL, 0, 0);
+    SubString_init(format_spec, NULL, 0, 0);
     *conversion = '\0';
     *format_spec_needs_expanding = 0;
     *field_present = 0;
 
     /* No more input, end of iterator.  This is the normal exit
        path. */
-    if (self->str.ptr >= self->str.end)
+    if (self->str.start >= self->str.end)
         return 1;
 
-    start = self->str.ptr;
+    start = self->str.start;
 
     /* First read any literal text. Read until the end of string, an
        escaped '{' or '}', or an unescaped '{'.  In order to never
@@ -759,8 +788,8 @@ MarkupIterator_next(MarkupIterator *self, SubString *literal,
        including the brace, but no format object.  The next time
        through, we'll return the rest of the literal, skipping past
        the second consecutive brace. */
-    while (self->str.ptr < self->str.end) {
-        switch (c = *(self->str.ptr++)) {
+    while (self->str.start < self->str.end) {
+        switch (c = PyUnicode_READ_CHAR(self->str.str, self->str.start++)) {
         case '{':
         case '}':
             markup_follows = 1;
@@ -771,10 +800,12 @@ MarkupIterator_next(MarkupIterator *self, SubString *literal,
         break;
     }
 
-    at_end = self->str.ptr >= self->str.end;
-    len = self->str.ptr - start;
+    at_end = self->str.start >= self->str.end;
+    len = self->str.start - start;
 
-    if ((c == '}') && (at_end || (c != *self->str.ptr))) {
+    if ((c == '}') && (at_end || 
+                       (c != PyUnicode_READ_CHAR(self->str.str, 
+                                                 self->str.start)))) {
         PyErr_SetString(PyExc_ValueError, "Single '}' encountered "
                         "in format string");
         return 0;
@@ -785,10 +816,10 @@ MarkupIterator_next(MarkupIterator *self, SubString *literal,
         return 0;
     }
     if (!at_end) {
-        if (c == *self->str.ptr) {
+        if (c == PyUnicode_READ_CHAR(self->str.str, self->str.start)) {
             /* escaped } or {, skip it in the input.  there is no
                markup object following us, just this literal text */
-            self->str.ptr++;
+            self->str.start++;
             markup_follows = 0;
         }
         else
@@ -796,7 +827,8 @@ MarkupIterator_next(MarkupIterator *self, SubString *literal,
     }
 
     /* record the literal text */
-    literal->ptr = start;
+    literal->str = self->str.str;
+    literal->start = start;
     literal->end = start + len;
 
     if (!markup_follows)
@@ -808,12 +840,12 @@ MarkupIterator_next(MarkupIterator *self, SubString *literal,
     *field_present = 1;
     count = 1;
 
-    start = self->str.ptr;
+    start = self->str.start;
 
     /* we know we can't have a zero length string, so don't worry
        about that case */
-    while (self->str.ptr < self->str.end) {
-        switch (c = *(self->str.ptr++)) {
+    while (self->str.start < self->str.end) {
+        switch (c = PyUnicode_READ_CHAR(self->str.str, self->str.start++)) {
         case '{':
             /* the format spec needs to be recursively expanded.
                this is an optimization, and not strictly needed */
@@ -826,7 +858,7 @@ MarkupIterator_next(MarkupIterator *self, SubString *literal,
                 /* we're done.  parse and get out */
                 SubString s;
 
-                SubString_init(&s, start, self->str.ptr - 1 - start);
+                SubString_init(&s, self->str.str, start, self->str.start - 1);
                 if (parse_field(&s, field_name, format_spec, conversion) == 0)
                     return 0;
 
@@ -845,7 +877,7 @@ MarkupIterator_next(MarkupIterator *self, SubString *literal,
 
 /* do the !r or !s conversion on obj */
 static PyObject *
-do_conversion(PyObject *obj, STRINGLIB_CHAR conversion)
+do_conversion(PyObject *obj, Py_UCS4 conversion)
 {
     /* XXX in pre-3.0, do we need to convert this to unicode, since it
        might have returned a string? */
@@ -853,11 +885,9 @@ do_conversion(PyObject *obj, STRINGLIB_CHAR conversion)
     case 'r':
         return PyObject_Repr(obj);
     case 's':
-        return STRINGLIB_TOSTR(obj);
-#if PY_VERSION_HEX >= 0x03000000
+        return PyObject_Str(obj);
     case 'a':
-        return STRINGLIB_TOASCII(obj);
-#endif
+        return PyObject_ASCII(obj);
     default:
         if (conversion > 32 && conversion < 127) {
                 /* It's the ASCII subrange; casting to char is safe
@@ -889,7 +919,7 @@ do_conversion(PyObject *obj, STRINGLIB_CHAR conversion)
 
 static int
 output_markup(SubString *field_name, SubString *format_spec,
-              int format_spec_needs_expanding, STRINGLIB_CHAR conversion,
+              int format_spec_needs_expanding, Py_UCS4 conversion,
               OutputString *output, PyObject *args, PyObject *kwargs,
               int recursion_depth, AutoNumber *auto_number)
 {
@@ -906,7 +936,7 @@ output_markup(SubString *field_name, SubString *format_spec,
 
     if (conversion != '\0') {
         tmp = do_conversion(fieldobj, conversion);
-        if (tmp == NULL)
+        if (tmp == NULL || PyUnicode_READY(tmp) == -1)
             goto done;
 
         /* do the assignment, transferring ownership: fieldobj = tmp */
@@ -919,14 +949,13 @@ output_markup(SubString *field_name, SubString *format_spec,
     if (format_spec_needs_expanding) {
         tmp = build_string(format_spec, args, kwargs, recursion_depth-1,
                            auto_number);
-        if (tmp == NULL)
+        if (tmp == NULL || PyUnicode_READY(tmp) == -1)
             goto done;
 
         /* note that in the case we're expanding the format string,
            tmp must be kept around until after the call to
            render_field. */
-        SubString_init(&expanded_format_spec,
-                       STRINGLIB_STR(tmp), STRINGLIB_LEN(tmp));
+        SubString_init(&expanded_format_spec, tmp, 0, PyUnicode_GET_LENGTH(tmp));
         actual_format_spec = &expanded_format_spec;
     }
     else
@@ -961,14 +990,14 @@ do_markup(SubString *input, PyObject *args, PyObject *kwargs,
     SubString literal;
     SubString field_name;
     SubString format_spec;
-    STRINGLIB_CHAR conversion;
+    Py_UCS4 conversion;
 
-    MarkupIterator_init(&iter, input->ptr, input->end - input->ptr);
+    MarkupIterator_init(&iter, input->str, input->start, input->end);
     while ((result = MarkupIterator_next(&iter, &literal, &field_present,
                                          &field_name, &format_spec,
                                          &conversion,
                                          &format_spec_needs_expanding)) == 2) {
-        if (!output_data(output, literal.ptr, literal.end - literal.ptr))
+        if (!output_data(output, literal.str, literal.start, literal.end))
             return 0;
         if (field_present)
             if (!output_markup(&field_name, &format_spec,
@@ -990,9 +1019,8 @@ build_string(SubString *input, PyObject *args, PyObject *kwargs,
 {
     OutputString output;
     PyObject *result = NULL;
-    Py_ssize_t count;
 
-    output.obj = NULL; /* needed so cleanup code always works */
+    output.data = NULL; /* needed so cleanup code always works */
 
     /* check the recursion level */
     if (recursion_depth <= 0) {
@@ -1004,7 +1032,7 @@ build_string(SubString *input, PyObject *args, PyObject *kwargs,
     /* initial size is the length of the format string, plus the size
        increment.  seems like a reasonable default */
     if (!output_initialize(&output,
-                           input->end - input->ptr +
+                           input->end - input->start +
                            INITIAL_SIZE_INCREMENT))
         goto done;
 
@@ -1013,17 +1041,14 @@ build_string(SubString *input, PyObject *args, PyObject *kwargs,
         goto done;
     }
 
-    count = output.ptr - STRINGLIB_STR(output.obj);
-    if (STRINGLIB_RESIZE(&output.obj, count) < 0) {
+    result = PyUnicode_New(output.pos, output.maxchar);
+    if (!result)
         goto done;
-    }
-
-    /* transfer ownership to result */
-    result = output.obj;
-    output.obj = NULL;
+    memcpy(PyUnicode_DATA(result), output.data, output.pos << (output.kind-1));
 
 done:
-    Py_XDECREF(output.obj);
+    if (output.data)
+        PyMem_Free(output.data);
     return result;
 }
 
@@ -1045,8 +1070,11 @@ do_string_format(PyObject *self, PyObject *args, PyObject *kwargs)
 
     AutoNumber auto_number;
 
+    if (PyUnicode_READY(self) == -1)
+        return NULL;
+
     AutoNumber_Init(&auto_number);
-    SubString_init(&input, STRINGLIB_STR(self), STRINGLIB_LEN(self));
+    SubString_init(&input, self, 0, PyUnicode_GET_LENGTH(self));
     return build_string(&input, args, kwargs, recursion_depth, &auto_number);
 }
 
@@ -1069,7 +1097,7 @@ do_string_format_map(PyObject *self, PyObject *obj)
 typedef struct {
     PyObject_HEAD
 
-    STRINGLIB_OBJECT *str;
+    PyUnicodeObject *str;
 
     MarkupIterator it_markup;
 } formatteriterobject;
@@ -1095,7 +1123,7 @@ formatteriter_next(formatteriterobject *it)
     SubString literal;
     SubString field_name;
     SubString format_spec;
-    STRINGLIB_CHAR conversion;
+    Py_UCS4 conversion;
     int format_spec_needs_expanding;
     int field_present;
     int result = MarkupIterator_next(&it->it_markup, &literal, &field_present,
@@ -1139,7 +1167,8 @@ formatteriter_next(formatteriterobject *it)
             Py_INCREF(conversion_str);
         }
         else
-            conversion_str = STRINGLIB_NEW(&conversion, 1);
+            conversion_str = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
+                                                       &conversion, 1);
         if (conversion_str == NULL)
             goto done;
 
@@ -1196,7 +1225,7 @@ static PyTypeObject PyFormatterIter_Type = {
    describing the parsed elements.  It's a wrapper around
    stringlib/string_format.h's MarkupIterator */
 static PyObject *
-formatter_parser(PyObject *ignored, STRINGLIB_OBJECT *self)
+formatter_parser(PyObject *ignored, PyUnicodeObject *self)
 {
     formatteriterobject *it;
 
@@ -1204,6 +1233,9 @@ formatter_parser(PyObject *ignored, STRINGLIB_OBJECT *self)
         PyErr_Format(PyExc_TypeError, "expected str, got %s", Py_TYPE(self)->tp_name);
         return NULL;
     }
+
+    if (PyUnicode_READY(self) == -1)
+        return NULL;
 
     it = PyObject_New(formatteriterobject, &PyFormatterIter_Type);
     if (it == NULL)
@@ -1214,10 +1246,7 @@ formatter_parser(PyObject *ignored, STRINGLIB_OBJECT *self)
     it->str = self;
 
     /* initialize the contained MarkupIterator */
-    MarkupIterator_init(&it->it_markup,
-                        STRINGLIB_STR(self),
-                        STRINGLIB_LEN(self));
-
+    MarkupIterator_init(&it->it_markup, (PyObject*)self, 0, PyUnicode_GET_LENGTH(self));
     return (PyObject *)it;
 }
 
@@ -1234,7 +1263,7 @@ formatter_parser(PyObject *ignored, STRINGLIB_OBJECT *self)
 typedef struct {
     PyObject_HEAD
 
-    STRINGLIB_OBJECT *str;
+    PyUnicodeObject *str;
 
     FieldNameIterator it_field;
 } fieldnameiterobject;
@@ -1336,7 +1365,7 @@ static PyTypeObject PyFieldNameIter_Type = {
    field_name_split.  The iterator it returns is a
    FieldNameIterator */
 static PyObject *
-formatter_field_name_split(PyObject *ignored, STRINGLIB_OBJECT *self)
+formatter_field_name_split(PyObject *ignored, PyUnicodeObject *self)
 {
     SubString first;
     Py_ssize_t first_idx;
@@ -1350,6 +1379,9 @@ formatter_field_name_split(PyObject *ignored, STRINGLIB_OBJECT *self)
         return NULL;
     }
 
+    if (PyUnicode_READY(self) == -1)
+        return NULL;
+
     it = PyObject_New(fieldnameiterobject, &PyFieldNameIter_Type);
     if (it == NULL)
         return NULL;
@@ -1361,8 +1393,7 @@ formatter_field_name_split(PyObject *ignored, STRINGLIB_OBJECT *self)
 
     /* Pass in auto_number = NULL. We'll return an empty string for
        first_obj in that case. */
-    if (!field_name_split(STRINGLIB_STR(self),
-                          STRINGLIB_LEN(self),
+    if (!field_name_split((PyObject*)self, 0, PyUnicode_GET_LENGTH(self),
                           &first, &first_idx, &it->it_field, NULL))
         goto done;
 

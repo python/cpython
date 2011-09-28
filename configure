@@ -767,7 +767,6 @@ with_fpectl
 with_libm
 with_libc
 enable_big_digits
-with_wide_unicode
 with_computed_gotos
 '
       ac_precious_vars='build_alias
@@ -778,7 +777,8 @@ CFLAGS
 LDFLAGS
 LIBS
 CPPFLAGS
-CPP'
+CPP
+CPPFLAGS'
 
 
 # Initialize some variables set by options.
@@ -1438,7 +1438,6 @@ Optional Packages:
   --with-fpectl           enable SIGFPE catching
   --with-libm=STRING      math library
   --with-libc=STRING      C library
-  --with-wide-unicode     Use 4-byte Unicode characters (default is 2 bytes)
   --with(out)-computed-gotos
                           Use computed gotos in evaluation loop (enabled by
                           default on supported compilers)
@@ -12370,65 +12369,19 @@ fi
 $as_echo "$ac_cv_wchar_t_signed" >&6; }
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking what type to use for str" >&5
-$as_echo_n "checking what type to use for str... " >&6; }
-
-# Check whether --with-wide-unicode was given.
-if test "${with_wide_unicode+set}" = set; then :
-  withval=$with_wide_unicode;
-if test "$withval" != no
-then unicode_size="4"
-else unicode_size="2"
-fi
-
-else
-
-case "$have_ucs4_tcl" in
-  yes) unicode_size="4";;
-  *)   unicode_size="2" ;;
-esac
-
-fi
-
-
-
-case "$unicode_size" in
-  4)
-     $as_echo "#define Py_UNICODE_SIZE 4" >>confdefs.h
-
-     ABIFLAGS="${ABIFLAGS}u"
-     ;;
-  *) $as_echo "#define Py_UNICODE_SIZE 2" >>confdefs.h
- ;;
-esac
-
-
-
 # wchar_t is only usable if it maps to an unsigned type
-if test "$unicode_size" = "$ac_cv_sizeof_wchar_t" \
+if test "$ac_cv_sizeof_wchar_t" -ge 2 \
           -a "$ac_cv_wchar_t_signed" = "no"
 then
-  PY_UNICODE_TYPE="wchar_t"
+  HAVE_USABLE_WCHAR_T="yes"
 
 $as_echo "#define HAVE_USABLE_WCHAR_T 1" >>confdefs.h
 
-  $as_echo "#define PY_UNICODE_TYPE wchar_t" >>confdefs.h
-
-elif test "$ac_cv_sizeof_short" = "$unicode_size"
-then
-     PY_UNICODE_TYPE="unsigned short"
-     $as_echo "#define PY_UNICODE_TYPE unsigned short" >>confdefs.h
-
-elif test "$ac_cv_sizeof_long" = "$unicode_size"
-then
-     PY_UNICODE_TYPE="unsigned long"
-     $as_echo "#define PY_UNICODE_TYPE unsigned long" >>confdefs.h
-
 else
-     PY_UNICODE_TYPE="no type found"
+  HAVE_USABLE_WCHAR_T="no usable wchar_t found"
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $PY_UNICODE_TYPE" >&5
-$as_echo "$PY_UNICODE_TYPE" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAVE_USABLE_WCHAR_T" >&5
+$as_echo "$HAVE_USABLE_WCHAR_T" >&6; }
 
 # check for endianness
  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether byte ordering is bigendian" >&5

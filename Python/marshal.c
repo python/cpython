@@ -311,9 +311,7 @@ w_object(PyObject *v, WFILE *p)
     }
     else if (PyUnicode_CheckExact(v)) {
         PyObject *utf8;
-        utf8 = PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(v),
-                                    PyUnicode_GET_SIZE(v),
-                                    "surrogatepass");
+        utf8 = PyUnicode_AsEncodedString(v, "utf8", "surrogatepass");
         if (utf8 == NULL) {
             p->depth--;
             p->error = WFERR_UNMARSHALLABLE;

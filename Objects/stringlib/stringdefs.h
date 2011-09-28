@@ -6,6 +6,8 @@
    compiled as unicode. */
 #define STRINGLIB_IS_UNICODE     0
 
+#define FASTSEARCH fastsearch
+#define STRINGLIB(F) stringlib_##F
 #define STRINGLIB_OBJECT         PyBytesObject
 #define STRINGLIB_CHAR           char
 #define STRINGLIB_TYPE_NAME      "string"

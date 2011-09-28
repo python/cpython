@@ -212,6 +212,7 @@ dbm_contains(PyObject *self, PyObject *arg)
 {
     dbmobject *dp = (dbmobject *)self;
     datum key, val;
+    Py_ssize_t size;
 
     if ((dp)->di_dbm == NULL) {
         PyErr_SetString(DbmError,
@@ -219,8 +220,9 @@ dbm_contains(PyObject *self, PyObject *arg)
          return -1;
     }
     if (PyUnicode_Check(arg)) {
-        arg = _PyUnicode_AsDefaultEncodedString(arg);
-        if (arg == NULL)
+        key.dptr = PyUnicode_AsUTF8AndSize(arg, &size);
+        key.dsize = size;
+        if (key.dptr == NULL)
             return -1;
     }
     if (!PyBytes_Check(arg)) {
@@ -229,8 +231,10 @@ dbm_contains(PyObject *self, PyObject *arg)
                      arg->ob_type->tp_name);
         return -1;
     }
-    key.dptr = PyBytes_AS_STRING(arg);
-    key.dsize = PyBytes_GET_SIZE(arg);
+    else {
+        key.dptr = PyBytes_AS_STRING(arg);
+        key.dsize = PyBytes_GET_SIZE(arg);
+    }
     val = dbm_fetch(dp->di_dbm, key);
     return val.dptr != NULL;
 }
