@@ -641,7 +641,7 @@ class RawDescriptionHelpFormatter(HelpFormatter):
     """
 
     def _fill_text(self, text, width, indent):
-        return ''.join([indent + line for line in text.splitlines(True)])
+        return ''.join(indent + line for line in text.splitlines(keepends=True))
 
 
 class RawTextHelpFormatter(RawDescriptionHelpFormatter):

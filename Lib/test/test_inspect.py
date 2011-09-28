@@ -304,7 +304,7 @@ class TestRetrievingSourceCode(GetSourceBase):
         getlines = linecache.getlines
         def monkey(filename, module_globals=None):
             if filename == fn:
-                return source.splitlines(True)
+                return source.splitlines(keepends=True)
             else:
                 return getlines(filename, module_globals)
         linecache.getlines = monkey

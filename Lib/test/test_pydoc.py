@@ -238,8 +238,8 @@ def get_pydoc_text(module):
 def print_diffs(text1, text2):
     "Prints unified diffs for two texts"
     # XXX now obsolete, use unittest built-in support
-    lines1 = text1.splitlines(True)
-    lines2 = text2.splitlines(True)
+    lines1 = text1.splitlines(keepends=True)
+    lines2 = text2.splitlines(keepends=True)
     diffs = difflib.unified_diff(lines1, lines2, n=0, fromfile='expected',
                                  tofile='got')
     print('\n' + ''.join(diffs))
