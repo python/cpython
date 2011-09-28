@@ -606,13 +606,13 @@ unicode_convert_wchar_to_ucs4(const wchar_t *begin, const wchar_t *end,
 }
 #endif
 
-int
+Py_ssize_t
 PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
                          PyObject *from, Py_ssize_t from_start,
                          Py_ssize_t how_many)
 {
-    int from_kind;
-    int to_kind;
+    unsigned int from_kind;
+    unsigned int to_kind;
 
     assert(PyUnicode_Check(from));
     assert(PyUnicode_Check(to));
@@ -622,94 +622,89 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
     if (PyUnicode_READY(to))
         return -1;
 
+    how_many = PY_MIN(PyUnicode_GET_LENGTH(from), how_many);
+    if (to_start + how_many > PyUnicode_GET_LENGTH(to)) {
+        PyErr_Format(PyExc_ValueError,
+                     "Cannot write %zi characters at %zi "
+                     "in a string of %zi characters",
+                     how_many, to_start, PyUnicode_GET_LENGTH(to));
+        return -1;
+    }
+
     from_kind = PyUnicode_KIND(from);
     to_kind = PyUnicode_KIND(to);
 
     if (from_kind == to_kind) {
-        const Py_ssize_t char_size = PyUnicode_CHARACTER_SIZE(to);
-        Py_MEMCPY(PyUnicode_1BYTE_DATA(to) + (to_start * char_size),
-                  PyUnicode_1BYTE_DATA(from) + (from_start * char_size),
-                  how_many * char_size);
-        return 0;
+        /* fast path */
+        Py_MEMCPY((char*)PyUnicode_DATA(to)
+                      + PyUnicode_KIND_SIZE(to_kind, to_start),
+                  (char*)PyUnicode_DATA(from)
+                      + PyUnicode_KIND_SIZE(from_kind, from_start),
+                  PyUnicode_KIND_SIZE(to_kind, how_many));
+        return how_many;
     }
+    
+    if (from_kind > to_kind) {
+        /* slow path to check for character overflow */
+        const Py_UCS4 to_maxchar = PyUnicode_MAX_CHAR_VALUE(to);
+        void *from_data = PyUnicode_DATA(from);
+        void *to_data = PyUnicode_DATA(to);
+        Py_UCS4 ch, maxchar;
+        Py_ssize_t i;
+        int overflow;
 
-    switch (from_kind) {
-        case PyUnicode_1BYTE_KIND:
-            switch (to_kind) {
-                case PyUnicode_2BYTE_KIND:
-                    _PyUnicode_CONVERT_BYTES(
-                        unsigned char, Py_UCS2,
-                        PyUnicode_1BYTE_DATA(from) + from_start,
-                        PyUnicode_1BYTE_DATA(from) + from_start + how_many,
-                        PyUnicode_2BYTE_DATA(to) + to_start
-                        );
+        maxchar = 0;
+        for (i=0; i < how_many; i++) {
+            ch = PyUnicode_READ(from_kind, from_data, from_start + i);
+            if (ch > maxchar) {
+                maxchar = ch;
+                if (maxchar > to_maxchar) {
+                    overflow = 1;
                     break;
-                case PyUnicode_4BYTE_KIND:
-                    _PyUnicode_CONVERT_BYTES(
-                        unsigned char, Py_UCS4,
-                        PyUnicode_1BYTE_DATA(from) + from_start,
-                        PyUnicode_1BYTE_DATA(from) + from_start + how_many,
-                        PyUnicode_4BYTE_DATA(to) + to_start
-                        );
-                    break;
-                default:
-                    goto invalid_state;
+                }
             }
-            break;
-        case PyUnicode_2BYTE_KIND:
-            switch (to_kind) {
-                case PyUnicode_1BYTE_KIND:
-                    _PyUnicode_CONVERT_BYTES(
-                        Py_UCS2, unsigned char,
-                        PyUnicode_2BYTE_DATA(from) + from_start,
-                        PyUnicode_2BYTE_DATA(from) + from_start + how_many,
-                        PyUnicode_1BYTE_DATA(to) + to_start
-                        );
-                    break;
-                case PyUnicode_4BYTE_KIND:
-                    _PyUnicode_CONVERT_BYTES(
-                        Py_UCS2, Py_UCS4,
-                        PyUnicode_2BYTE_DATA(from) + from_start,
-                        PyUnicode_2BYTE_DATA(from) + from_start + how_many,
-                        PyUnicode_4BYTE_DATA(to) + to_start
-                        );
-                    break;
-                default:
-                    goto invalid_state;
-            }
-            break;
-        case PyUnicode_4BYTE_KIND:
-            switch (to_kind) {
-                case PyUnicode_1BYTE_KIND:
-                    _PyUnicode_CONVERT_BYTES(
-                        Py_UCS4, unsigned char,
-                        PyUnicode_4BYTE_DATA(from) + from_start,
-                        PyUnicode_4BYTE_DATA(from) + from_start + how_many,
-                        PyUnicode_1BYTE_DATA(to) + to_start
-                        );
-                    break;
-                case PyUnicode_2BYTE_KIND:
-                    _PyUnicode_CONVERT_BYTES(
-                        Py_UCS4, Py_UCS2,
-                        PyUnicode_4BYTE_DATA(from) + from_start,
-                        PyUnicode_4BYTE_DATA(from) + from_start + how_many,
-                        PyUnicode_2BYTE_DATA(to) + to_start
-                        );
-                    break;
-                default:
-                    goto invalid_state;
-            }
-            break;
-        default:
-            goto invalid_state;
+            PyUnicode_WRITE(to_kind, to_data, to_start + i, ch);
+        }
+        if (!overflow)
+            return how_many;
     }
-    return 0;
-
-invalid_state:
+    else if (from_kind == PyUnicode_1BYTE_KIND && to_kind == PyUnicode_2BYTE_KIND)
+    {
+        _PyUnicode_CONVERT_BYTES(
+            Py_UCS1, Py_UCS2,
+            PyUnicode_1BYTE_DATA(from) + from_start,
+            PyUnicode_1BYTE_DATA(from) + from_start + how_many,
+            PyUnicode_2BYTE_DATA(to) + to_start
+            );
+        return how_many;
+    }
+    else if (from_kind == PyUnicode_1BYTE_KIND 
+             && to_kind == PyUnicode_4BYTE_KIND)
+    {
+        _PyUnicode_CONVERT_BYTES(
+            Py_UCS1, Py_UCS4,
+            PyUnicode_1BYTE_DATA(from) + from_start,
+            PyUnicode_1BYTE_DATA(from) + from_start + how_many,
+            PyUnicode_4BYTE_DATA(to) + to_start
+            );
+        return how_many;
+    }
+    else if (from_kind == PyUnicode_2BYTE_KIND
+             && to_kind == PyUnicode_4BYTE_KIND)
+    {
+        _PyUnicode_CONVERT_BYTES(
+            Py_UCS2, Py_UCS4,
+            PyUnicode_2BYTE_DATA(from) + from_start,
+            PyUnicode_2BYTE_DATA(from) + from_start + how_many,
+            PyUnicode_4BYTE_DATA(to) + to_start
+            );
+        return how_many;
+    }
     PyErr_Format(PyExc_ValueError,
-                 "Impossible kind state (from=%i, to=%i) "
-                 "in PyUnicode_CopyCharacters",
-                 from_kind, to_kind);
+                 "Cannot copy UCS%u characters "
+                 "into a string of UCS%u characters",
+                 1 << (from_kind - 1), 
+                 1 << (to_kind -1));
     return -1;
 }
 
