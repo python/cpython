@@ -642,7 +642,7 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
                         "Cannot modify a string having more than 1 reference");
         return -1;
     }
-    _PyUnicode_DIRTY(unicode);
+    _PyUnicode_DIRTY(to);
 
     from_kind = PyUnicode_KIND(from);
     to_kind = PyUnicode_KIND(to);
@@ -4881,7 +4881,7 @@ static _PyUnicode_Name_CAPI *ucnhash_CAPI = NULL;
 PyObject *
 PyUnicode_DecodeUnicodeEscape(const char *s,
                               Py_ssize_t size,
-                              const char *errors) 
+                              const char *errors)
 {
     const char *starts = s;
     Py_ssize_t startinpos;
