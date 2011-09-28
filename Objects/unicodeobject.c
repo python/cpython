@@ -654,6 +654,7 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
         int overflow;
 
         maxchar = 0;
+        overflow = 0;
         for (i=0; i < how_many; i++) {
             ch = PyUnicode_READ(from_kind, from_data, from_start + i);
             if (ch > maxchar) {
