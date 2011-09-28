@@ -830,36 +830,34 @@ _PyUnicode_Ready(PyUnicodeObject *unicode)
         assert(num_surrogates == 0 &&
                "FindMaxCharAndNumSurrogatePairs() messed up");
 
-        if (sizeof(wchar_t) == 2) {
-            /* We can share representations and are done. */
-            unicode->data.any = _PyUnicode_WSTR(unicode);
-            PyUnicode_2BYTE_DATA(unicode)[_PyUnicode_WSTR_LENGTH(unicode)] = '\0';
-            _PyUnicode_LENGTH(unicode) = _PyUnicode_WSTR_LENGTH(unicode);
-            _PyUnicode_STATE(unicode).kind = PyUnicode_2BYTE_KIND;
-            unicode->_base.utf8 = NULL;
-            unicode->_base.utf8_length = 0;
+#if SIZEOF_WCHAR_T == 2
+        /* We can share representations and are done. */
+        unicode->data.any = _PyUnicode_WSTR(unicode);
+        PyUnicode_2BYTE_DATA(unicode)[_PyUnicode_WSTR_LENGTH(unicode)] = '\0';
+        _PyUnicode_LENGTH(unicode) = _PyUnicode_WSTR_LENGTH(unicode);
+        _PyUnicode_STATE(unicode).kind = PyUnicode_2BYTE_KIND;
+        unicode->_base.utf8 = NULL;
+        unicode->_base.utf8_length = 0;
+#else
+        /* sizeof(wchar_t) == 4 */
+        unicode->data.any = PyObject_MALLOC(
+            2 * (_PyUnicode_WSTR_LENGTH(unicode) + 1));
+        if (!unicode->data.any) {
+            PyErr_NoMemory();
+            return -1;
         }
-        else {
-            assert(sizeof(wchar_t) == 4);
-
-            unicode->data.any = PyObject_MALLOC(
-                2 * (_PyUnicode_WSTR_LENGTH(unicode) + 1));
-            if (!unicode->data.any) {
-                PyErr_NoMemory();
-                return -1;
-            }
-            _PyUnicode_CONVERT_BYTES(wchar_t, Py_UCS2,
-                                    _PyUnicode_WSTR(unicode), end,
-                                    PyUnicode_2BYTE_DATA(unicode));
-            PyUnicode_2BYTE_DATA(unicode)[_PyUnicode_WSTR_LENGTH(unicode)] = '\0';
-            _PyUnicode_LENGTH(unicode) = _PyUnicode_WSTR_LENGTH(unicode);
-            _PyUnicode_STATE(unicode).kind = PyUnicode_2BYTE_KIND;
-            unicode->_base.utf8 = NULL;
-            unicode->_base.utf8_length = 0;
-            PyObject_FREE(_PyUnicode_WSTR(unicode));
-            _PyUnicode_WSTR(unicode) = NULL;
-            _PyUnicode_WSTR_LENGTH(unicode) = 0;
-        }
+        _PyUnicode_CONVERT_BYTES(wchar_t, Py_UCS2,
+                                _PyUnicode_WSTR(unicode), end,
+                                PyUnicode_2BYTE_DATA(unicode));
+        PyUnicode_2BYTE_DATA(unicode)[_PyUnicode_WSTR_LENGTH(unicode)] = '\0';
+        _PyUnicode_LENGTH(unicode) = _PyUnicode_WSTR_LENGTH(unicode);
+        _PyUnicode_STATE(unicode).kind = PyUnicode_2BYTE_KIND;
+        unicode->_base.utf8 = NULL;
+        unicode->_base.utf8_length = 0;
+        PyObject_FREE(_PyUnicode_WSTR(unicode));
+        _PyUnicode_WSTR(unicode) = NULL;
+        _PyUnicode_WSTR_LENGTH(unicode) = 0;
+#endif
     }
     /* maxchar exeeds 16 bit, wee need 4 bytes for unicode characters */
     else {
