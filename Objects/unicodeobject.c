@@ -12254,7 +12254,7 @@ PyUnicode_Format(PyObject *format, PyObject *args)
             case 'c':
                 pbuf = formatbuf;
                 kind = PyUnicode_4BYTE_KIND;
-                len = formatchar(pbuf, sizeof(formatbuf)/sizeof(Py_UNICODE), v);
+                len = formatchar(pbuf, Py_ARRAY_LENGTH(formatbuf), v);
                 if (len < 0)
                     goto onError;
                 break;
