@@ -12552,7 +12552,7 @@ void _PyUnicode_Init(void)
     /* initialize the linebreak bloom filter */
     bloom_linebreak = make_bloom_mask(
         PyUnicode_2BYTE_KIND, linebreak,
-        sizeof(linebreak) / sizeof(linebreak[0]));
+        Py_ARRAY_LENGTH(linebreak));
 
     PyType_Ready(&EncodingMapType);
 }

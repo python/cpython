@@ -530,7 +530,7 @@ oss_self(PyObject *self, PyObject *unused)
     return self;
 }
 
-static PyObject * 
+static PyObject *
 oss_exit(PyObject *self, PyObject *unused)
 {
     PyObject *ret = PyObject_CallMethod(self, "close", NULL);
@@ -1061,8 +1061,8 @@ build_namelists (PyObject *module)
     int num_controls;
     int i;
 
-    num_controls = sizeof(control_labels) / sizeof(control_labels[0]);
-    assert(num_controls == sizeof(control_names) / sizeof(control_names[0]));
+    num_controls = Py_ARRAY_LENGTH(control_labels);
+    assert(num_controls == Py_ARRAY_LENGTH(control_names));
 
     labels = PyList_New(num_controls);
     names = PyList_New(num_controls);

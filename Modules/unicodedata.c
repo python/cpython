@@ -439,7 +439,7 @@ unicodedata_decomposition(PyObject *self, PyObject *args)
        from Tools/unicode/makeunicodedata.py, it should not be possible
        to overflow decomp_prefix. */
     prefix_index = decomp_data[index] & 255;
-    assert(prefix_index < (sizeof(decomp_prefix)/sizeof(*decomp_prefix)));
+    assert(prefix_index < Py_ARRAY_LENGTH(decomp_prefix));
 
     /* copy prefix */
     i = strlen(decomp_prefix[prefix_index]);
