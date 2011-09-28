@@ -1585,12 +1585,12 @@ class UnicodeTest(string_tests.CommonTest,
     def test_raiseMemError(self):
         if struct.calcsize('P') == 8:
             # 64 bits pointers
-            ascii_struct_size = 64
-            compact_struct_size = 88
+            ascii_struct_size = 48
+            compact_struct_size = 72
         else:
             # 32 bits pointers
-            ascii_struct_size = 32
-            compact_struct_size = 44
+            ascii_struct_size = 24
+            compact_struct_size = 36
 
         for char in ('a', '\xe9', '\u20ac', '\U0010ffff'):
             code = ord(char)
@@ -1604,8 +1604,9 @@ class UnicodeTest(string_tests.CommonTest,
                 char_size = 4  # sizeof(Py_UCS4)
                 struct_size = compact_struct_size
             # Note: sys.maxsize is half of the actual max allocation because of
-            # the signedness of Py_ssize_t. -1 because of the null character.
-            maxlen = ((sys.maxsize - struct_size) // char_size) - 1
+            # the signedness of Py_ssize_t. Strings of maxlen-1 should in principle
+            # be allocatable, given enough memory.
+            maxlen = ((sys.maxsize - struct_size) // char_size)
             alloc = lambda: char * maxlen
             self.assertRaises(MemoryError, alloc)
             self.assertRaises(MemoryError, alloc)
