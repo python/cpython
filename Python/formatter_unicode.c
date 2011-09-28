@@ -566,7 +566,10 @@ fill_number(PyObject *out, Py_ssize_t pos, const NumberFieldWidths *spec,
         PyUnicode_WRITE(kind, data, pos++, spec->sign);
     }
     if (spec->n_prefix) {
-        PyUnicode_CopyCharacters(out, pos, prefix, p_start, spec->n_prefix);
+        if (PyUnicode_CopyCharacters(out, pos,
+                                     prefix, p_start,
+                                     spec->n_prefix) < 0)
+            return -1;
         if (toupper) {
             Py_ssize_t t;
             /* XXX if the upper-case prefix is wider than the target
@@ -632,7 +635,8 @@ fill_number(PyObject *out, Py_ssize_t pos, const NumberFieldWidths *spec,
     }
 
     if (spec->n_remainder) {
-        PyUnicode_CopyCharacters(out, pos, digits, d_pos, spec->n_remainder);
+        if (PyUnicode_CopyCharacters(out, pos, digits, d_pos, spec->n_remainder) < 0)
+            return -1;
         pos += spec->n_remainder;
         d_pos += spec->n_remainder;
     }
@@ -735,7 +739,8 @@ format_string_internal(PyObject *value, const InternalFormatSpec *format)
                        lpad, rpad);
 
     /* Then the source string. */
-    PyUnicode_CopyCharacters(result, pos, value, 0, len);
+    if (PyUnicode_CopyCharacters(result, pos, value, 0, len) < 0)
+        Py_CLEAR(result);
 
 done:
     return result;
