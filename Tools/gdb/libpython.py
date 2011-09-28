@@ -50,6 +50,8 @@ _type_char_ptr = gdb.lookup_type('char').pointer() # char*
 _type_unsigned_char_ptr = gdb.lookup_type('unsigned char').pointer() # unsigned char*
 _type_void_ptr = gdb.lookup_type('void').pointer() # void*
 _type_size_t = gdb.lookup_type('size_t')
+_type_unsigned_short_ptr = gdb.lookup_type('unsigned short').pointer()
+_type_unsigned_int_ptr = gdb.lookup_type('unsigned int').pointer()
 
 _is_pep393 = 'data' in [f.name for f in gdb.lookup_type('PyUnicodeObject').target().fields()]
 
@@ -1124,25 +1126,36 @@ class PyUnicodeObjectPtr(PyObjectPtr):
         # From unicodeobject.h:
         #     Py_ssize_t length;  /* Length of raw Unicode data in buffer */
         #     Py_UNICODE *str;    /* Raw Unicode buffer */
-        field_length = long(self.field('length'))
         if _is_pep393:
             # Python 3.3 and newer
             may_have_surrogates = False
-            field_state = long(self.field('state'))
-            repr_kind = (field_state & 0xC) >> 2
-            if repr_kind == 0:
+            compact = self.field('_base')
+            ascii = compact['_base']
+            state = ascii['state']
+            field_length = long(ascii['length'])
+            if not int(state['ready']):
                 # string is not ready
                 may_have_surrogates = True
-                field_str = self.field('wstr')
-                field_length = self.field('wstr_length')
-            elif repr_kind == 1:
-                field_str = self.field('data')['latin1']
-            elif repr_kind == 2:
-                field_str = self.field('data')['ucs2']
-            elif repr_kind == 3:
-                field_str = self.field('data')['ucs4']
+                field_str = ascii['wstr']
+                if not int(state['ascii']):
+                    field_length = compact('wstr_length')
+            else:
+                if int(state['ascii']):
+                    field_str = ascii.address + 1
+                elif int(state['compact']):
+                    field_str = compact.address + 1
+                else:
+                    field_str = self.field('data')['any']
+                repr_kind = int(state['kind'])
+                if repr_kind == 1:
+                    field_str = field_str.cast(_type_unsigned_char_ptr)
+                elif repr_kind == 2:
+                    field_str = field_str.cast(_type_unsigned_short_ptr)
+                elif repr_kind == 3:
+                    field_str = field_str.cast(_type_unsigned_int_ptr)
         else:
             # Python 3.2 and earlier
+            field_length = long(self.field('length'))
             field_str = self.field('str')
             may_have_surrogates = self.char_width() == 2
 
