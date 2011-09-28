@@ -356,13 +356,13 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 #define PyUnicode_IS_COMPACT(op) \
     (((PyASCIIObject*)(op))->state.compact)
 
-/* Return one of the PyUnicode_*_KIND values defined above. */ 
+/* Return one of the PyUnicode_*_KIND values defined above. */
 #define PyUnicode_KIND(op) \
     (assert(PyUnicode_Check(op)), \
      assert(PyUnicode_IS_READY(op)),            \
      ((PyASCIIObject *)(op))->state.kind)
 
-/* Return a void pointer to the raw unicode buffer. */ 
+/* Return a void pointer to the raw unicode buffer. */
 #define _PyUnicode_COMPACT_DATA(op)                     \
     (PyUnicode_IS_COMPACT_ASCII(op) ?                   \
      ((void*)((PyASCIIObject*)(op) + 1)) :              \
@@ -509,7 +509,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_New(
 
 /* Initializes the canonical string representation from a the deprected
    wstr/Py_UNICODE representation.  This function is used to convert
-   unicode objects which were created using the old API to the new flexible 
+   unicode objects which were created using the old API to the new flexible
    format introduced with PEP 393.  The PyUnicode_READY() macro can be
    more efficient if the string is already ready. */
 #ifndef Py_LIMITED_API
@@ -641,7 +641,7 @@ PyAPI_FUNC(Py_ssize_t) PyUnicode_GetLength(
     PyObject *unicode
 );
 
-/* Get the number of Py_UNICODE units in the 
+/* Get the number of Py_UNICODE units in the
    string representation. */
 
 PyAPI_FUNC(Py_ssize_t) PyUnicode_GetSize(
@@ -857,7 +857,7 @@ PyAPI_FUNC(int) PyUnicode_ClearFreeList(void);
 
    In case of an error, no *size is set.
 
-   This funcation caches the UTF-8 encoded string in the unicodeobject 
+   This funcation caches the UTF-8 encoded string in the unicodeobject
    and subsequent calls will return the same string.  The memory is relased
    when the unicodeobject is deallocated.
 
