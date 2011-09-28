@@ -1080,6 +1080,8 @@ They all return *NULL* or ``-1`` if an exception occurs.
    first match; a value of ``-1`` indicates that no match was found, and ``-2``
    indicates that an error occurred and an exception has been set.
 
+   .. versionadded:: 3.3
+
 
 .. c:function:: Py_ssize_t PyUnicode_Count(PyObject *str, PyObject *substr, Py_ssize_t start, Py_ssize_t end)
 
