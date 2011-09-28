@@ -251,7 +251,7 @@ getpythonregpath(HKEY keyBase, int skipcore)
     if (keyBuf==NULL) goto done;
 
     memcpy(keyBufPtr, keyPrefix, sizeof(keyPrefix)-sizeof(WCHAR));
-    keyBufPtr += sizeof(keyPrefix)/sizeof(WCHAR) - 1;
+    keyBufPtr += Py_ARRAY_LENGTH(keyPrefix) - 1;
     mbstowcs(keyBufPtr, PyWin_DLLVersionString, versionLen);
     keyBufPtr += versionLen;
     /* NULL comes with this one! */
@@ -708,8 +708,8 @@ Py_GetProgramFullPath(void)
     return progpath;
 }
 
-/* Load python3.dll before loading any extension module that might refer 
-   to it. That way, we can be sure that always the python3.dll corresponding 
+/* Load python3.dll before loading any extension module that might refer
+   to it. That way, we can be sure that always the python3.dll corresponding
    to this python DLL is loaded, not a python3.dll that might be on the path
    by chance.
    Return whether the DLL was found.

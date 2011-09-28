@@ -3812,7 +3812,7 @@ socket_gethostname(PyObject *self, PyObject *unused)
        version of the hostname, whereas we need a Unicode string.
        Otherwise, gethostname apparently also returns the DNS name. */
     wchar_t buf[MAX_COMPUTERNAME_LENGTH + 1];
-    DWORD size = sizeof(buf) / sizeof(wchar_t);
+    DWORD size = Py_ARRAY_LENGTH(buf);
     PyObject *result;
     if (!GetComputerNameExW(ComputerNamePhysicalDnsHostname, buf, &size)) {
         if (GetLastError() == ERROR_MORE_DATA) {
@@ -6281,7 +6281,7 @@ PyInit__socket(void)
         DWORD codes[] = {SIO_RCVALL, SIO_KEEPALIVE_VALS};
         const char *names[] = {"SIO_RCVALL", "SIO_KEEPALIVE_VALS"};
         int i;
-        for(i = 0; i<sizeof(codes)/sizeof(*codes); ++i) {
+        for(i = 0; i<Py_ARRAY_LENGTH(codes); ++i) {
             PyObject *tmp;
             tmp = PyLong_FromUnsignedLong(codes[i]);
             if (tmp == NULL)
