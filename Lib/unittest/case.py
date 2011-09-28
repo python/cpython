@@ -1010,8 +1010,8 @@ class TestCase(object):
             if (len(first) > self._diffThreshold or
                 len(second) > self._diffThreshold):
                 self._baseAssertEqual(first, second, msg)
-            firstlines = first.splitlines(True)
-            secondlines = second.splitlines(True)
+            firstlines = first.splitlines(keepends=True)
+            secondlines = second.splitlines(keepends=True)
             if len(firstlines) == 1 and first.strip('\r\n') == first:
                 firstlines = [first + '\n']
                 secondlines = [second + '\n']

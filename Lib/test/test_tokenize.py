@@ -600,7 +600,7 @@ def roundtrip(f):
         f.close()
     tokens1 = [tok[:2] for tok in token_list]
     new_bytes = untokenize(tokens1)
-    readline = (line for line in new_bytes.splitlines(1)).__next__
+    readline = (line for line in new_bytes.splitlines(keepends=True)).__next__
     tokens2 = [tok[:2] for tok in tokenize(readline)]
     return tokens1 == tokens2
 
