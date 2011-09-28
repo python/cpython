@@ -3776,7 +3776,7 @@ static PyMethodDef scanner_methods[] = {
 
 #define SCAN_OFF(x) offsetof(ScannerObject, x)
 static PyMemberDef scanner_members[] = {
-    {"pattern", T_OBJECT,       SCAN_OFF(pattern),      READONLY},
+    {"pattern", T_OBJECT, SCAN_OFF(pattern), READONLY},
     {NULL}  /* Sentinel */
 };
 
