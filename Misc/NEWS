@@ -1295,6 +1295,9 @@ Tools/Demos
 Extension Modules
 -----------------
 
+- Issue #13013: ctypes: Fix a reference leak in PyCArrayType_from_ctype.
+  Thanks to Suman Saha for finding the bug and providing a patch.
+
 - Issue #13022: Fix: _multiprocessing.recvfd() doesn't check that
   file descriptor was actually received.
 
