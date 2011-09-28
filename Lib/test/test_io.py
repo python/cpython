@@ -1935,8 +1935,8 @@ class TextIOWrapperTest(unittest.TestCase):
         testdata = b"AAA\nBB\x00B\nCCC\rDDD\rEEE\r\nFFF\r\nGGG"
         normalized = testdata.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
         for newline, expected in [
-            (None, normalized.decode("ascii").splitlines(True)),
-            ("", testdata.decode("ascii").splitlines(True)),
+            (None, normalized.decode("ascii").splitlines(keepends=True)),
+            ("", testdata.decode("ascii").splitlines(keepends=True)),
             ("\n", ["AAA\n", "BB\x00B\n", "CCC\rDDD\rEEE\r\n", "FFF\r\n", "GGG"]),
             ("\r\n", ["AAA\nBB\x00B\nCCC\rDDD\rEEE\r\n", "FFF\r\n", "GGG"]),
             ("\r",  ["AAA\nBB\x00B\nCCC\r", "DDD\r", "EEE\r", "\nFFF\r", "\nGGG"]),

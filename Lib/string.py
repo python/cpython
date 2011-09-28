@@ -84,7 +84,7 @@ class Template(metaclass=_TemplateMetaclass):
 
     def _invalid(self, mo):
         i = mo.start('invalid')
-        lines = self.template[:i].splitlines(True)
+        lines = self.template[:i].splitlines(keepends=True)
         if not lines:
             colno = 1
             lineno = 1

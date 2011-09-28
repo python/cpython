@@ -1332,7 +1332,7 @@ class DocTestRunner:
         m = self.__LINECACHE_FILENAME_RE.match(filename)
         if m and m.group('name') == self.test.name:
             example = self.test.examples[int(m.group('examplenum'))]
-            return example.source.splitlines(True)
+            return example.source.splitlines(keepends=True)
         else:
             return self.save_linecache_getlines(filename, module_globals)
 
@@ -1595,8 +1595,8 @@ class OutputChecker:
         # Check if we should use diff.
         if self._do_a_fancy_diff(want, got, optionflags):
             # Split want & got into lines.
-            want_lines = want.splitlines(True)  # True == keep line ends
-            got_lines = got.splitlines(True)
+            want_lines = want.splitlines(keepends=True)
+            got_lines = got.splitlines(keepends=True)
             # Use difflib to find their differences.
             if optionflags & REPORT_UDIFF:
                 diff = difflib.unified_diff(want_lines, got_lines, n=2)
