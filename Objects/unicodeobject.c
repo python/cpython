@@ -10196,7 +10196,7 @@ PyUnicode_IsIdentifier(PyObject *self)
     if (!_PyUnicode_IsXidStart(first) && first != 0x5F /* LOW LINE */)
         return 0;
 
-    for (i = 0; i < PyUnicode_GET_LENGTH(self); i++)
+    for (i = 1; i < PyUnicode_GET_LENGTH(self); i++)
         if (!_PyUnicode_IsXidContinue(PyUnicode_READ(kind, data, i)))
             return 0;
     return 1;
