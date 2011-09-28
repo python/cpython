@@ -174,10 +174,10 @@ unicode_encode_call_errorhandler(const char *errors,
 
 static void
 raise_encode_exception(PyObject **exceptionObject,
-		       const char *encoding,
-		       const Py_UNICODE *unicode, Py_ssize_t size,
-		       Py_ssize_t startpos, Py_ssize_t endpos,
-		       const char *reason);
+                       const char *encoding,
+                       const Py_UNICODE *unicode, Py_ssize_t size,
+                       Py_ssize_t startpos, Py_ssize_t endpos,
+                       const char *reason);
 
 /* Same for linebreaks */
 static unsigned char ascii_linebreak[] = {
@@ -2035,8 +2035,8 @@ PyUnicode_FromObject(register PyObject *obj)
 
 PyObject *
 PyUnicode_FromEncodedObject(register PyObject *obj,
-			    const char *encoding,
-			    const char *errors)
+                            const char *encoding,
+                            const char *errors)
 {
     Py_buffer buffer;
     PyObject *v;
@@ -2121,9 +2121,9 @@ normalize_encoding(const char *encoding,
 
 PyObject *
 PyUnicode_Decode(const char *s,
-		 Py_ssize_t size,
-		 const char *encoding,
-		 const char *errors)
+                 Py_ssize_t size,
+                 const char *encoding,
+                 const char *errors)
 {
     PyObject *buffer = NULL, *unicode;
     Py_buffer info;
@@ -2184,8 +2184,8 @@ PyUnicode_Decode(const char *s,
 
 PyObject *
 PyUnicode_AsDecodedObject(PyObject *unicode,
-			  const char *encoding,
-			  const char *errors)
+                          const char *encoding,
+                          const char *errors)
 {
     PyObject *v;
 
@@ -2209,8 +2209,8 @@ PyUnicode_AsDecodedObject(PyObject *unicode,
 
 PyObject *
 PyUnicode_AsDecodedUnicode(PyObject *unicode,
-			   const char *encoding,
-			   const char *errors)
+                           const char *encoding,
+                           const char *errors)
 {
     PyObject *v;
 
@@ -2241,9 +2241,9 @@ PyUnicode_AsDecodedUnicode(PyObject *unicode,
 
 PyObject *
 PyUnicode_Encode(const Py_UNICODE *s,
-		 Py_ssize_t size,
-		 const char *encoding,
-		 const char *errors)
+                 Py_ssize_t size,
+                 const char *encoding,
+                 const char *errors)
 {
     PyObject *v, *unicode;
 
@@ -2257,8 +2257,8 @@ PyUnicode_Encode(const Py_UNICODE *s,
 
 PyObject *
 PyUnicode_AsEncodedObject(PyObject *unicode,
-			  const char *encoding,
-			  const char *errors)
+                          const char *encoding,
+                          const char *errors)
 {
     PyObject *v;
 
@@ -2345,8 +2345,8 @@ PyUnicode_EncodeFSDefault(PyObject *unicode)
 
 PyObject *
 PyUnicode_AsEncodedString(PyObject *unicode,
-			  const char *encoding,
-			  const char *errors)
+                          const char *encoding,
+                          const char *errors)
 {
     PyObject *v;
     char lower[11];  /* Enough for any encoding shortcut */
@@ -2423,8 +2423,8 @@ PyUnicode_AsEncodedString(PyObject *unicode,
 
 PyObject *
 PyUnicode_AsEncodedUnicode(PyObject *unicode,
-			   const char *encoding,
-			   const char *errors)
+                           const char *encoding,
+                           const char *errors)
 {
     PyObject *v;
 
@@ -2841,10 +2841,10 @@ onError:
 
 static int
 unicode_decode_call_errorhandler(const char *errors, PyObject **errorHandler,
-				 const char *encoding, const char *reason,
-				 const char **input, const char **inend, Py_ssize_t *startinpos,
-				 Py_ssize_t *endinpos, PyObject **exceptionObject, const char **inptr,
-				 PyUnicodeObject **output, Py_ssize_t *outpos, Py_UNICODE **outptr)
+                                 const char *encoding, const char *reason,
+                                 const char **input, const char **inend, Py_ssize_t *startinpos,
+                                 Py_ssize_t *endinpos, PyObject **exceptionObject, const char **inptr,
+                                 PyUnicodeObject **output, Py_ssize_t *outpos, Py_UNICODE **outptr)
 {
     static char *argparse = "O!n;decoding error handler must return (str, int) tuple";
 
@@ -3016,8 +3016,8 @@ char utf7_category[128] = {
 
 PyObject *
 PyUnicode_DecodeUTF7(const char *s,
-		     Py_ssize_t size,
-		     const char *errors)
+                     Py_ssize_t size,
+                     const char *errors)
 {
     return PyUnicode_DecodeUTF7Stateful(s, size, errors, NULL);
 }
@@ -3031,9 +3031,9 @@ PyUnicode_DecodeUTF7(const char *s,
 
 PyObject *
 PyUnicode_DecodeUTF7Stateful(const char *s,
-			     Py_ssize_t size,
-			     const char *errors,
-			     Py_ssize_t *consumed)
+                             Py_ssize_t size,
+                             const char *errors,
+                             Py_ssize_t *consumed)
 {
     const char *starts = s;
     Py_ssize_t startinpos;
@@ -3226,10 +3226,10 @@ utf7Error:
 
 PyObject *
 PyUnicode_EncodeUTF7(const Py_UNICODE *s,
-		     Py_ssize_t size,
-		     int base64SetO,
-		     int base64WhiteSpace,
-		     const char *errors)
+                     Py_ssize_t size,
+                     int base64SetO,
+                     int base64WhiteSpace,
+                     const char *errors)
 {
     PyObject *v;
     /* It might be possible to tighten this worst case */
@@ -3352,8 +3352,8 @@ char utf8_code_length[256] = {
 
 PyObject *
 PyUnicode_DecodeUTF8(const char *s,
-		     Py_ssize_t size,
-		     const char *errors)
+                     Py_ssize_t size,
+                     const char *errors)
 {
     return PyUnicode_DecodeUTF8Stateful(s, size, errors, NULL);
 }
@@ -4868,8 +4868,8 @@ static _PyUnicode_Name_CAPI *ucnhash_CAPI = NULL;
 
 PyObject *
 PyUnicode_DecodeUnicodeEscape(const char *s,
-			      Py_ssize_t size,
-			      const char *errors)
+                              Py_ssize_t size,
+                              const char *errors) 
 {
     const char *starts = s;
     Py_ssize_t startinpos;
@@ -5172,7 +5172,7 @@ static const char *hexdigits = "0123456789abcdef";
 
 PyObject *
 PyUnicode_EncodeUnicodeEscape(const Py_UNICODE *s,
-			      Py_ssize_t size)
+                              Py_ssize_t size)
 {
     PyObject *repr;
     char *p;
@@ -5329,8 +5329,8 @@ PyUnicode_AsUnicodeEscapeString(PyObject *unicode)
 
 PyObject *
 PyUnicode_DecodeRawUnicodeEscape(const char *s,
-				 Py_ssize_t size,
-				 const char *errors)
+                                 Py_ssize_t size,
+                                 const char *errors)
 {
     const char *starts = s;
     Py_ssize_t startinpos;
@@ -5451,7 +5451,7 @@ PyUnicode_DecodeRawUnicodeEscape(const char *s,
 
 PyObject *
 PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s,
-				 Py_ssize_t size)
+                                 Py_ssize_t size)
 {
     PyObject *repr;
     char *p;
@@ -5556,8 +5556,8 @@ PyUnicode_AsRawUnicodeEscapeString(PyObject *unicode)
 
 PyObject *
 _PyUnicode_DecodeUnicodeInternal(const char *s,
-				 Py_ssize_t size,
-				 const char *errors)
+                                 Py_ssize_t size,
+                                 const char *errors)
 {
     const char *starts = s;
     Py_ssize_t startinpos;
@@ -5641,8 +5641,8 @@ _PyUnicode_DecodeUnicodeInternal(const char *s,
 
 PyObject *
 PyUnicode_DecodeLatin1(const char *s,
-		       Py_ssize_t size,
-		       const char *errors)
+                       Py_ssize_t size,
+                       const char *errors)
 {
     /* Latin-1 is equivalent to the first 256 ordinals in Unicode. */
     return _PyUnicode_FromUCS1((unsigned char*)s, size);
@@ -5651,10 +5651,10 @@ PyUnicode_DecodeLatin1(const char *s,
 /* create or adjust a UnicodeEncodeError */
 static void
 make_encode_exception(PyObject **exceptionObject,
-		      const char *encoding,
-		      const Py_UNICODE *unicode, Py_ssize_t size,
-		      Py_ssize_t startpos, Py_ssize_t endpos,
-		      const char *reason)
+                      const char *encoding,
+                      const Py_UNICODE *unicode, Py_ssize_t size,
+                      Py_ssize_t startpos, Py_ssize_t endpos,
+                      const char *reason)
 {
     if (*exceptionObject == NULL) {
         *exceptionObject = PyUnicodeEncodeError_Create(
@@ -5677,10 +5677,10 @@ make_encode_exception(PyObject **exceptionObject,
 /* raises a UnicodeEncodeError */
 static void
 raise_encode_exception(PyObject **exceptionObject,
-		       const char *encoding,
-		       const Py_UNICODE *unicode, Py_ssize_t size,
-		       Py_ssize_t startpos, Py_ssize_t endpos,
-		       const char *reason)
+                       const char *encoding,
+                       const Py_UNICODE *unicode, Py_ssize_t size,
+                       Py_ssize_t startpos, Py_ssize_t endpos,
+                       const char *reason)
 {
     make_encode_exception(exceptionObject,
                           encoding, unicode, size, startpos, endpos, reason);
@@ -5694,11 +5694,11 @@ raise_encode_exception(PyObject **exceptionObject,
    has to be freed by the caller */
 static PyObject *
 unicode_encode_call_errorhandler(const char *errors,
-				 PyObject **errorHandler,
-				 const char *encoding, const char *reason,
-				 const Py_UNICODE *unicode, Py_ssize_t size, PyObject **exceptionObject,
-				 Py_ssize_t startpos, Py_ssize_t endpos,
-				 Py_ssize_t *newpos)
+                                 PyObject **errorHandler,
+                                 const char *encoding, const char *reason,
+                                 const Py_UNICODE *unicode, Py_ssize_t size, PyObject **exceptionObject,
+                                 Py_ssize_t startpos, Py_ssize_t endpos,
+                                 Py_ssize_t *newpos)
 {
     static char *argparse = "On;encoding error handler must return (str/bytes, int) tuple";
 
@@ -5749,9 +5749,9 @@ unicode_encode_call_errorhandler(const char *errors,
 
 static PyObject *
 unicode_encode_ucs1(const Py_UNICODE *p,
-		    Py_ssize_t size,
-		    const char *errors,
-		    int limit)
+                    Py_ssize_t size,
+                    const char *errors,
+                    int limit)
 {
     /* output object */
     PyObject *res;
@@ -5946,8 +5946,8 @@ unicode_encode_ucs1(const Py_UNICODE *p,
 
 PyObject *
 PyUnicode_EncodeLatin1(const Py_UNICODE *p,
-		       Py_ssize_t size,
-		       const char *errors)
+                       Py_ssize_t size,
+                       const char *errors)
 {
     return unicode_encode_ucs1(p, size, errors, 256);
 }
