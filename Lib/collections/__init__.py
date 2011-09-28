@@ -1045,7 +1045,7 @@ class UserString(Sequence):
         return self.data.split(sep, maxsplit)
     def rsplit(self, sep=None, maxsplit=-1):
         return self.data.rsplit(sep, maxsplit)
-    def splitlines(self, keepends=0): return self.data.splitlines(keepends)
+    def splitlines(self, keepends=False): return self.data.splitlines(keepends)
     def startswith(self, prefix, start=0, end=_sys.maxsize):
         return self.data.startswith(prefix, start, end)
     def strip(self, chars=None): return self.__class__(self.data.strip(chars))

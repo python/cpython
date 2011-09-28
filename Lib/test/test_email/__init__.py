@@ -38,7 +38,7 @@ class TestEmailBase(unittest.TestCase):
             return email.message_from_file(fp)
 
     def _bytes_repr(self, b):
-        return [repr(x) for x in b.splitlines(True)]
+        return [repr(x) for x in b.splitlines(keepends=True)]
 
     def assertBytesEqual(self, first, second, msg):
         """Our byte strings are really encoded strings; improve diff output"""
