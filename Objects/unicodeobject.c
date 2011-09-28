@@ -1117,8 +1117,8 @@ PyUnicode_FromString(const char *u)
     return PyUnicode_FromStringAndSize(u, size);
 }
 
-PyObject*
-PyUnicode_FromUCS1(const unsigned char* u, Py_ssize_t size)
+static PyObject*
+_PyUnicode_FromUCS1(const unsigned char* u, Py_ssize_t size)
 {
     PyObject *res;
     unsigned char max = 127;
@@ -1136,8 +1136,8 @@ PyUnicode_FromUCS1(const unsigned char* u, Py_ssize_t size)
     return res;
 }
 
-PyObject*
-PyUnicode_FromUCS2(const Py_UCS2 *u, Py_ssize_t size)
+static PyObject*
+_PyUnicode_FromUCS2(const Py_UCS2 *u, Py_ssize_t size)
 {
     PyObject *res;
     Py_UCS2 max = 0;
@@ -1156,8 +1156,8 @@ PyUnicode_FromUCS2(const Py_UCS2 *u, Py_ssize_t size)
     return res;
 }
 
-PyObject*
-PyUnicode_FromUCS4(const Py_UCS4 *u, Py_ssize_t size)
+static PyObject*
+_PyUnicode_FromUCS4(const Py_UCS4 *u, Py_ssize_t size)
 {
     PyObject *res;
     Py_UCS4 max = 0;
@@ -1184,11 +1184,11 @@ PyUnicode_FromKindAndData(int kind, const void *buffer, Py_ssize_t size)
 {
     switch(kind) {
     case PyUnicode_1BYTE_KIND:
-        return PyUnicode_FromUCS1(buffer, size);
+        return _PyUnicode_FromUCS1(buffer, size);
     case PyUnicode_2BYTE_KIND:
-        return PyUnicode_FromUCS2(buffer, size);
+        return _PyUnicode_FromUCS2(buffer, size);
     case PyUnicode_4BYTE_KIND:
-        return PyUnicode_FromUCS4(buffer, size);
+        return _PyUnicode_FromUCS4(buffer, size);
     }
     assert(0);
     return NULL;
@@ -5645,7 +5645,7 @@ PyUnicode_DecodeLatin1(const char *s,
 		       const char *errors)
 {
     /* Latin-1 is equivalent to the first 256 ordinals in Unicode. */
-    return PyUnicode_FromUCS1((unsigned char*)s, size);
+    return _PyUnicode_FromUCS1((unsigned char*)s, size);
 }
 
 /* create or adjust a UnicodeEncodeError */
