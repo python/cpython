@@ -587,7 +587,10 @@ fill_number(PyObject *out, Py_ssize_t pos, const NumberFieldWidths *spec,
     /* Only for type 'c' special case, it has no digits. */
     if (spec->n_digits != 0) {
         /* Fill the digits with InsertThousandsGrouping. */
-        char *pdigits = PyUnicode_DATA(digits);
+        char *pdigits;
+        if (PyUnicode_READY(digits))
+            return -1;
+        pdigits = PyUnicode_DATA(digits);
         if (PyUnicode_KIND(digits) < kind) {
             pdigits = _PyUnicode_AsKind(digits, kind);
             if (pdigits == NULL)
