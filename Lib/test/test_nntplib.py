@@ -1033,12 +1033,12 @@ class NNTPv1v2TestsMixin:
         self.assertEqual(resp, success_resp)
         # With an iterable of terminated lines
         def iterlines(b):
-            return iter(b.splitlines(True))
+            return iter(b.splitlines(keepends=True))
         resp = self._check_post_ihave_sub(func, *args, file_factory=iterlines)
         self.assertEqual(resp, success_resp)
         # With an iterable of non-terminated lines
         def iterlines(b):
-            return iter(b.splitlines(False))
+            return iter(b.splitlines(keepends=False))
         resp = self._check_post_ihave_sub(func, *args, file_factory=iterlines)
         self.assertEqual(resp, success_resp)
 
