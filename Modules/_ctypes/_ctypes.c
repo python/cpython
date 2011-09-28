@@ -4474,6 +4474,7 @@ PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length)
     if (!PyType_Check(itemtype)) {
         PyErr_SetString(PyExc_TypeError,
                         "Expected a type object");
+        Py_DECREF(key);
         return NULL;
     }
 #ifdef MS_WIN64
