@@ -218,10 +218,6 @@ class TestTranforms(unittest.TestCase):
         # out of range
         asm = dis_single('"fuu"[10]')
         self.assertIn('BINARY_SUBSCR', asm)
-        # non-BMP char (see #5057)
-        asm = dis_single('"\U00012345"[0]')
-        self.assertIn('BINARY_SUBSCR', asm)
-
 
     def test_folding_of_unaryops_on_constants(self):
         for line, elem in (

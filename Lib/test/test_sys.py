@@ -833,13 +833,39 @@ class SizeofTest(unittest.TestCase):
         class newstyleclass(object): pass
         check(newstyleclass, s)
         # unicode
-        usize = len('\0'.encode('unicode-internal'))
-        samples = ['', '1'*100]
-        # we need to test for both sizes, because we don't know if the string
-        # has been cached
+        # each tuple contains a string and its expected character size
+        # don't put any static strings here, as they may contain
+        # wchar_t or UTF-8 representations
+        samples = ['1'*100, '\xff'*50,
+                   '\u0100'*40, '\uffff'*100,
+                   '\U00010000'*30, '\U0010ffff'*100]
+        asciifields = h + "PPiP"
+        compactfields = asciifields + "PPP"
+        unicodefields = compactfields + "P"
         for s in samples:
-            basicsize =  size(h + 'PPPiP') + usize * (len(s) + 1)
-            check(s, basicsize)
+            maxchar = ord(max(s))
+            if maxchar < 128:
+                L = size(asciifields) + len(s) + 1
+            elif maxchar < 256:
+                L = size(compactfields) + len(s) + 1
+            elif maxchar < 65536:
+                L = size(compactfields) + 2*(len(s) + 1)
+            else:
+                L = size(compactfields) + 4*(len(s) + 1)
+            check(s, L)
+        # verify that the UTF-8 size is accounted for
+        s = chr(0x4000)   # 4 bytes canonical representation
+        check(s, size(compactfields) + 4)
+        try:
+            # FIXME: codecs.lookup(str) calls encoding.search_function() which
+            # calls __import__ using str in the module name. __import__ encodes
+            # the module name to the file system encoding (which is the locale
+            # encoding), so test_sys fails if the locale encoding is not UTF-8.
+            codecs.lookup(s) # produces 4 bytes UTF-8
+        except LookupError:
+            check(s, size(compactfields) + 4 + 4)
+        # TODO: add check that forces the presence of wchar_t representation
+        # TODO: add check that forces layout of unicodefields
         # weakref
         import weakref
         check(weakref.ref(int), size(h + '2Pl2P'))

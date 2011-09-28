@@ -386,7 +386,7 @@ set_add_key(register PySetObject *so, PyObject *key)
     register Py_ssize_t n_used;
 
     if (!PyUnicode_CheckExact(key) ||
-        (hash = ((PyUnicodeObject *) key)->hash) == -1) {
+        (hash = ((PyASCIIObject *) key)->hash) == -1) {
         hash = PyObject_Hash(key);
         if (hash == -1)
             return -1;
@@ -434,7 +434,7 @@ set_discard_key(PySetObject *so, PyObject *key)
     assert (PyAnySet_Check(so));
 
     if (!PyUnicode_CheckExact(key) ||
-        (hash = ((PyUnicodeObject *) key)->hash) == -1) {
+        (hash = ((PyASCIIObject *) key)->hash) == -1) {
         hash = PyObject_Hash(key);
         if (hash == -1)
             return -1;
@@ -579,11 +579,8 @@ set_dealloc(PySetObject *so)
 static PyObject *
 set_repr(PySetObject *so)
 {
-    PyObject *keys, *result=NULL;
-    Py_UNICODE *u;
+    PyObject *result=NULL, *keys, *listrepr, *tmp;
     int status = Py_ReprEnter((PyObject*)so);
-    PyObject *listrepr;
-    Py_ssize_t newsize;
 
     if (status != 0) {
         if (status < 0)
@@ -601,31 +598,24 @@ set_repr(PySetObject *so)
     if (keys == NULL)
         goto done;
 
+    /* repr(keys)[1:-1] */
     listrepr = PyObject_Repr(keys);
     Py_DECREF(keys);
     if (listrepr == NULL)
         goto done;
-    newsize = PyUnicode_GET_SIZE(listrepr);
-    result = PyUnicode_FromUnicode(NULL, newsize);
-    if (result == NULL)
-        goto done;
-
-    u = PyUnicode_AS_UNICODE(result);
-    *u++ = '{';
-    /* Omit the brackets from the listrepr */
-    Py_UNICODE_COPY(u, PyUnicode_AS_UNICODE(listrepr)+1,
-                       newsize-2);
-    u += newsize-2;
-    *u++ = '}';
+    tmp = PyUnicode_Substring(listrepr, 1, PyUnicode_GET_LENGTH(listrepr)-1);
     Py_DECREF(listrepr);
+    if (tmp == NULL)
+        goto done;
+    listrepr = tmp;
 
-    if (Py_TYPE(so) != &PySet_Type) {
-        PyObject *tmp = PyUnicode_FromFormat("%s(%U)",
-                                             Py_TYPE(so)->tp_name,
-                                             result);
-        Py_DECREF(result);
-        result = tmp;
-    }
+    if (Py_TYPE(so) != &PySet_Type)
+        result = PyUnicode_FromFormat("%s({%U})",
+                                      Py_TYPE(so)->tp_name,
+                                      listrepr);
+    else
+        result = PyUnicode_FromFormat("{%U}", listrepr);
+    Py_DECREF(listrepr);
 done:
     Py_ReprLeave((PyObject*)so);
     return result;
@@ -684,7 +674,7 @@ set_contains_key(PySetObject *so, PyObject *key)
     setentry *entry;
 
     if (!PyUnicode_CheckExact(key) ||
-        (hash = ((PyUnicodeObject *) key)->hash) == -1) {
+        (hash = ((PyASCIIObject *) key)->hash) == -1) {
         hash = PyObject_Hash(key);
         if (hash == -1)
             return -1;

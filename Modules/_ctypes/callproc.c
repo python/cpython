@@ -658,13 +658,6 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
 
 #ifdef CTYPES_UNICODE
     if (PyUnicode_Check(obj)) {
-#if Py_UNICODE_SIZE == SIZEOF_WCHAR_T
-        pa->ffi_type = &ffi_type_pointer;
-        pa->value.p = PyUnicode_AS_UNICODE(obj);
-        Py_INCREF(obj);
-        pa->keep = obj;
-        return 0;
-#else
         pa->ffi_type = &ffi_type_pointer;
         pa->value.p = PyUnicode_AsWideCharString(obj, NULL);
         if (pa->value.p == NULL)
@@ -675,7 +668,6 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
             return -1;
         }
         return 0;
-#endif
     }
 #endif
 

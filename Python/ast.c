@@ -528,26 +528,21 @@ static identifier
 new_identifier(const char* n, PyArena *arena)
 {
     PyObject* id = PyUnicode_DecodeUTF8(n, strlen(n), NULL);
-    Py_UNICODE *u;
-    if (!id)
+    if (!id || PyUnicode_READY(id) == -1)
         return NULL;
-    u = PyUnicode_AS_UNICODE(id);
     /* Check whether there are non-ASCII characters in the
        identifier; if so, normalize to NFKC. */
-    for (; *u; u++) {
-        if (*u >= 128) {
-            PyObject *m = PyImport_ImportModuleNoBlock("unicodedata");
-            PyObject *id2;
-            if (!m)
-                return NULL;
-            id2 = PyObject_CallMethod(m, "normalize", "sO", "NFKC", id);
-            Py_DECREF(m);
-            if (!id2)
-                return NULL;
-            Py_DECREF(id);
-            id = id2;
-            break;
-        }
+    if (PyUnicode_MAX_CHAR_VALUE((PyUnicodeObject *)id) >= 128) {
+        PyObject *m = PyImport_ImportModuleNoBlock("unicodedata");
+        PyObject *id2;
+        if (!m)
+            return NULL;
+        id2 = PyObject_CallMethod(m, "normalize", "sO", "NFKC", id);
+        Py_DECREF(m);
+        if (!id2)
+            return NULL;
+        Py_DECREF(id);
+        id = id2;
     }
     PyUnicode_InternInPlace(&id);
     PyArena_AddPyObject(arena, id);
@@ -3660,20 +3655,14 @@ parsenumber(struct compiling *c, const char *s)
 }
 
 static PyObject *
-decode_utf8(struct compiling *c, const char **sPtr, const char *end, char* encoding)
+decode_utf8(struct compiling *c, const char **sPtr, const char *end)
 {
-    PyObject *u, *v;
     char *s, *t;
     t = s = (char *)*sPtr;
     /* while (s < end && *s != '\\') s++; */ /* inefficient for u".." */
     while (s < end && (*s & 0x80)) s++;
     *sPtr = s;
-    u = PyUnicode_DecodeUTF8(t, s - t, NULL);
-    if (u == NULL)
-        return NULL;
-    v = PyUnicode_AsEncodedString(u, encoding, NULL);
-    Py_DECREF(u);
-    return v;
+    return PyUnicode_DecodeUTF8(t, s - t, NULL);
 }
 
 static PyObject *
@@ -3707,22 +3696,20 @@ decode_unicode(struct compiling *c, const char *s, size_t len, int rawmode, cons
             }
             if (*s & 0x80) { /* XXX inefficient */
                 PyObject *w;
-                char *r;
-                Py_ssize_t rn, i;
-                w = decode_utf8(c, &s, end, "utf-32-be");
+                int kind;
+                void *data;
+                Py_ssize_t len, i;
+                w = decode_utf8(c, &s, end);
                 if (w == NULL) {
                     Py_DECREF(u);
                     return NULL;
                 }
-                r = PyBytes_AS_STRING(w);
-                rn = Py_SIZE(w);
-                assert(rn % 4 == 0);
-                for (i = 0; i < rn; i += 4) {
-                    sprintf(p, "\\U%02x%02x%02x%02x",
-                            r[i + 0] & 0xFF,
-                            r[i + 1] & 0xFF,
-                            r[i + 2] & 0xFF,
-                            r[i + 3] & 0xFF);
+                kind = PyUnicode_KIND(w);
+                data = PyUnicode_DATA(w);
+                len = PyUnicode_GET_LENGTH(w);
+                for (i = 0; i < len; i++) {
+                    Py_UCS4 chr = PyUnicode_READ(kind, data, i);
+                    sprintf(p, "\\U%08x", chr);
                     p += 10;
                 }
                 /* Should be impossible to overflow */

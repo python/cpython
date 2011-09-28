@@ -1111,17 +1111,11 @@
 /* Define to printf format modifier for Py_ssize_t */
 #undef PY_FORMAT_SIZE_T
 
-/* Define as the integral type used for Unicode representation. */
-#undef PY_UNICODE_TYPE
-
 /* Define if you want to build an interpreter with many run-time checks. */
 #undef Py_DEBUG
 
 /* Defined if Python is built as a shared library. */
 #undef Py_ENABLE_SHARED
-
-/* Define as the size of the unicode type. */
-#undef Py_UNICODE_SIZE
 
 /* assume C89 semantics that RETSIGTYPE is always void */
 #undef RETSIGTYPE

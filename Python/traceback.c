@@ -229,8 +229,8 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
     PyObject *lineobj = NULL;
     PyObject *res;
     char buf[MAXPATHLEN+1];
-    Py_UNICODE *u, *p;
-    Py_ssize_t len;
+    int kind;
+    void *data;
 
     /* open the file */
     if (filename == NULL)
@@ -285,13 +285,16 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
     }
 
     /* remove the indentation of the line */
-    u = PyUnicode_AS_UNICODE(lineobj);
-    len = PyUnicode_GET_SIZE(lineobj);
-    for (p=u; *p == ' ' || *p == '\t' || *p == '\014'; p++)
-        len--;
-    if (u != p) {
+    kind = PyUnicode_KIND(lineobj);
+    data = PyUnicode_DATA(lineobj);
+    for (i=0; i < PyUnicode_GET_LENGTH(lineobj); i++) {
+        Py_UCS4 ch = PyUnicode_READ(kind, data, i);
+        if (ch != ' ' && ch != '\t' && ch != '\014')
+            break;
+    }
+    if (i) {
         PyObject *truncated;
-        truncated = PyUnicode_FromUnicode(p, len);
+        truncated = PyUnicode_Substring(lineobj, i, PyUnicode_GET_LENGTH(lineobj));
         if (truncated) {
             Py_DECREF(lineobj);
             lineobj = truncated;
@@ -476,13 +479,26 @@ dump_hexadecimal(int width, unsigned long value, int fd)
 static void
 dump_ascii(int fd, PyObject *text)
 {
+    PyASCIIObject *ascii = (PyASCIIObject *)text;
     Py_ssize_t i, size;
     int truncated;
-    Py_UNICODE *u;
-    char c;
+    int kind;
+    void *data;
+    Py_UCS4 ch;
 
-    size = PyUnicode_GET_SIZE(text);
-    u = PyUnicode_AS_UNICODE(text);
+    size = ascii->length;
+    kind = ascii->state.kind;
+    if (ascii->state.compact) {
+        if (ascii->state.ascii)
+            data = ((PyASCIIObject*)text) + 1;
+        else
+            data = ((PyCompactUnicodeObject*)text) + 1;
+    }
+    else {
+        data = ((PyUnicodeObject *)text)->data.any;
+        if (data == NULL)
+            return;
+    }
 
     if (MAX_STRING_LENGTH < size) {
         size = MAX_STRING_LENGTH;
@@ -491,27 +507,28 @@ dump_ascii(int fd, PyObject *text)
     else
         truncated = 0;
 
-    for (i=0; i < size; i++, u++) {
-        if (*u < 128) {
-            c = (char)*u;
+    for (i=0; i < size; i++) {
+        ch = PyUnicode_READ(kind, data, i);
+        if (ch < 128) {
+            char c = (char)ch;
             write(fd, &c, 1);
         }
-        else if (*u < 256) {
+        else if (ch < 256) {
             PUTS(fd, "\\x");
-            dump_hexadecimal(2, *u, fd);
+            dump_hexadecimal(2, ch, fd);
         }
         else
 #ifdef Py_UNICODE_WIDE
-        if (*u < 65536)
+        if (ch < 65536)
 #endif
         {
             PUTS(fd, "\\u");
-            dump_hexadecimal(4, *u, fd);
+            dump_hexadecimal(4, ch, fd);
 #ifdef Py_UNICODE_WIDE
         }
         else {
             PUTS(fd, "\\U");
-            dump_hexadecimal(8, *u, fd);
+            dump_hexadecimal(8, ch, fd);
 #endif
         }
     }
@@ -542,7 +559,7 @@ dump_frame(int fd, PyFrameObject *frame)
     }
 
     /* PyFrame_GetLineNumber() was introduced in Python 2.7.0 and 3.2.0 */
-    lineno = PyCode_Addr2Line(frame->f_code, frame->f_lasti);
+    lineno = PyCode_Addr2Line(code, frame->f_lasti);
     PUTS(fd, ", line ");
     dump_decimal(fd, lineno);
     PUTS(fd, " in ");

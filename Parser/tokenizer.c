@@ -1258,14 +1258,16 @@ indenterror(struct tok_state *tok)
 #ifdef PGEN
 #define verify_identifier(tok) 1
 #else
-/* Verify that the identifier follows PEP 3131. */
+/* Verify that the identifier follows PEP 3131.
+   All identifier strings are guaranteed to be "ready" unicode objects.
+ */
 static int
 verify_identifier(struct tok_state *tok)
 {
     PyObject *s;
     int result;
     s = PyUnicode_DecodeUTF8(tok->start, tok->cur - tok->start, NULL);
-    if (s == NULL) {
+    if (s == NULL || PyUnicode_READY(s) == -1) {
         if (PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
             PyErr_Clear();
             tok->done = E_IDENTIFIER;

@@ -1583,16 +1583,32 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertRaises(OverflowError, 't\tt\t'.expandtabs, sys.maxsize)
 
     def test_raiseMemError(self):
-        # Ensure that the freelist contains a consistent object, even
-        # when a string allocation fails with a MemoryError.
-        # This used to crash the interpreter,
-        # or leak references when the number was smaller.
-        charwidth = 4 if sys.maxunicode >= 0x10000 else 2
-        # Note: sys.maxsize is half of the actual max allocation because of
-        # the signedness of Py_ssize_t.
-        alloc = lambda: "a" * (sys.maxsize // charwidth * 2)
-        self.assertRaises(MemoryError, alloc)
-        self.assertRaises(MemoryError, alloc)
+        if struct.calcsize('P') == 8:
+            # 64 bits pointers
+            ascii_struct_size = 64
+            compact_struct_size = 88
+        else:
+            # 32 bits pointers
+            ascii_struct_size = 32
+            compact_struct_size = 44
+
+        for char in ('a', '\xe9', '\u20ac', '\U0010ffff'):
+            code = ord(char)
+            if code < 0x100:
+                char_size = 1  # sizeof(Py_UCS1)
+                struct_size = ascii_struct_size
+            elif code < 0x10000:
+                char_size = 2  # sizeof(Py_UCS2)
+                struct_size = compact_struct_size
+            else:
+                char_size = 4  # sizeof(Py_UCS4)
+                struct_size = compact_struct_size
+            # Note: sys.maxsize is half of the actual max allocation because of
+            # the signedness of Py_ssize_t. -1 because of the null character.
+            maxlen = ((sys.maxsize - struct_size) // char_size) - 1
+            alloc = lambda: char * maxlen
+            self.assertRaises(MemoryError, alloc)
+            self.assertRaises(MemoryError, alloc)
 
     def test_format_subclass(self):
         class S(str):
@@ -1608,10 +1624,7 @@ class UnicodeTest(string_tests.CommonTest,
         from ctypes import (pythonapi, py_object,
             c_int, c_long, c_longlong, c_ssize_t,
             c_uint, c_ulong, c_ulonglong, c_size_t)
-        if sys.maxunicode == 65535:
-            name = "PyUnicodeUCS2_FromFormat"
-        else:
-            name = "PyUnicodeUCS4_FromFormat"
+        name = "PyUnicode_FromFormat"
         _PyUnicode_FromFormat = getattr(pythonapi, name)
         _PyUnicode_FromFormat.restype = py_object
 

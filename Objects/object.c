@@ -295,9 +295,7 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
             }
             else if (PyUnicode_Check(s)) {
                 PyObject *t;
-                t = PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(s),
-                                         PyUnicode_GET_SIZE(s),
-                                         "backslashreplace");
+                t = PyUnicode_AsEncodedString(s, "utf-8", "backslashreplace");
                 if (t == NULL)
                     ret = 0;
                 else {
@@ -439,11 +437,7 @@ PyObject_ASCII(PyObject *v)
         return NULL;
 
     /* repr is guaranteed to be a PyUnicode object by PyObject_Repr */
-    ascii = PyUnicode_EncodeASCII(
-        PyUnicode_AS_UNICODE(repr),
-        PyUnicode_GET_SIZE(repr),
-        "backslashreplace");
-
+    ascii = _PyUnicode_AsASCIIString(repr, "backslashreplace");
     Py_DECREF(repr);
     if (ascii == NULL)
         return NULL;

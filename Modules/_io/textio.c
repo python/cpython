@@ -274,18 +274,28 @@ _PyIncrementalNewlineDecoder_decode(PyObject *_self,
         goto error;
     }
 
-    output_len = PyUnicode_GET_SIZE(output);
+    if (PyUnicode_READY(output) == -1)
+        goto error;
+
+    output_len = PyUnicode_GET_LENGTH(output);
     if (self->pendingcr && (final || output_len > 0)) {
-        Py_UNICODE *out;
-        PyObject *modified = PyUnicode_FromUnicode(NULL, output_len + 1);
+        /* Prefix output with CR */
+        int kind;
+        PyObject *modified;
+        char *out;
+
+        modified = PyUnicode_New(output_len + 1,
+                                 PyUnicode_MAX_CHAR_VALUE(output));
         if (modified == NULL)
             goto error;
-        out = PyUnicode_AS_UNICODE(modified);
-        out[0] = '\r';
-        memcpy(out + 1, PyUnicode_AS_UNICODE(output),
-               output_len * sizeof(Py_UNICODE));
+        kind = PyUnicode_KIND(modified);
+        out = PyUnicode_DATA(modified);
+        PyUnicode_WRITE(kind, PyUnicode_DATA(modified), 0, '\r');
+        memcpy(out + PyUnicode_KIND_SIZE(kind, 1),
+               PyUnicode_DATA(output),
+               PyUnicode_KIND_SIZE(kind, output_len));
         Py_DECREF(output);
-        output = modified;
+        output = modified; /* output remains ready */
         self->pendingcr = 0;
         output_len++;
     }
@@ -295,21 +305,13 @@ _PyIncrementalNewlineDecoder_decode(PyObject *_self,
      */
     if (!final) {
         if (output_len > 0
-            && PyUnicode_AS_UNICODE(output)[output_len - 1] == '\r') {
-
-            if (Py_REFCNT(output) == 1) {
-                if (PyUnicode_Resize(&output, output_len - 1) < 0)
-                    goto error;
-            }
-            else {
-                PyObject *modified = PyUnicode_FromUnicode(
-                    PyUnicode_AS_UNICODE(output),
-                    output_len - 1);
-                if (modified == NULL)
-                    goto error;
-                Py_DECREF(output);
-                output = modified;
-            }
+            && PyUnicode_READ_CHAR(output, output_len - 1) == '\r')
+        {
+            PyObject *modified = PyUnicode_Substring(output, 0, output_len -1);
+            if (modified == NULL)
+                goto error;
+            Py_DECREF(output);
+            output = modified;
             self->pendingcr = 1;
         }
     }
@@ -317,13 +319,15 @@ _PyIncrementalNewlineDecoder_decode(PyObject *_self,
     /* Record which newlines are read and do newline translation if desired,
        all in one pass. */
     {
-        Py_UNICODE *in_str;
+        void *in_str;
         Py_ssize_t len;
         int seennl = self->seennl;
         int only_lf = 0;
+        int kind;
 
-        in_str = PyUnicode_AS_UNICODE(output);
-        len = PyUnicode_GET_SIZE(output);
+        in_str = PyUnicode_DATA(output);
+        len = PyUnicode_GET_LENGTH(output);
+        kind = PyUnicode_KIND(output);
 
         if (len == 0)
             return output;
@@ -332,7 +336,7 @@ _PyIncrementalNewlineDecoder_decode(PyObject *_self,
            for the \r *byte* with the libc's optimized memchr.
            */
         if (seennl == SEEN_LF || seennl == 0) {
-            only_lf = (memchr(in_str, '\r', len * sizeof(Py_UNICODE)) == NULL);
+            only_lf = (memchr(in_str, '\r', PyUnicode_KIND_SIZE(kind, len)) == NULL);
         }
 
         if (only_lf) {
@@ -340,21 +344,19 @@ _PyIncrementalNewlineDecoder_decode(PyObject *_self,
                (there's nothing else to be done, even when in translation mode)
             */
             if (seennl == 0 &&
-                memchr(in_str, '\n', len * sizeof(Py_UNICODE)) != NULL) {
-                Py_UNICODE *s, *end;
-                s = in_str;
-                end = in_str + len;
+                memchr(in_str, '\n', PyUnicode_KIND_SIZE(kind, len)) != NULL) {
+                Py_ssize_t i = 0;
                 for (;;) {
                     Py_UNICODE c;
                     /* Fast loop for non-control characters */
-                    while (*s > '\n')
-                        s++;
-                    c = *s++;
+                    while (PyUnicode_READ(kind, in_str, i) > '\n')
+                        i++;
+                    c = PyUnicode_READ(kind, in_str, i++);
                     if (c == '\n') {
                         seennl |= SEEN_LF;
                         break;
                     }
-                    if (s > end)
+                    if (i >= len)
                         break;
                 }
             }
@@ -362,29 +364,27 @@ _PyIncrementalNewlineDecoder_decode(PyObject *_self,
                need translating */
         }
         else if (!self->translate) {
-            Py_UNICODE *s, *end;
+            Py_ssize_t i = 0;
             /* We have already seen all newline types, no need to scan again */
             if (seennl == SEEN_ALL)
                 goto endscan;
-            s = in_str;
-            end = in_str + len;
             for (;;) {
-                Py_UNICODE c;
+                Py_UCS4 c;
                 /* Fast loop for non-control characters */
-                while (*s > '\r')
-                    s++;
-                c = *s++;
+                while (PyUnicode_READ(kind, in_str, i) > '\r')
+                    i++;
+                c = PyUnicode_READ(kind, in_str, i++);
                 if (c == '\n')
                     seennl |= SEEN_LF;
                 else if (c == '\r') {
-                    if (*s == '\n') {
+                    if (PyUnicode_READ(kind, in_str, i) == '\n') {
                         seennl |= SEEN_CRLF;
-                        s++;
+                        i++;
                     }
                     else
                         seennl |= SEEN_CR;
                 }
-                if (s > end)
+                if (i >= len)
                     break;
                 if (seennl == SEEN_ALL)
                     break;
@@ -393,61 +393,50 @@ _PyIncrementalNewlineDecoder_decode(PyObject *_self,
             ;
         }
         else {
-            PyObject *translated = NULL;
-            Py_UNICODE *out_str;
-            Py_UNICODE *in, *out, *end;
-            if (Py_REFCNT(output) != 1) {
-                /* We could try to optimize this so that we only do a copy
-                   when there is something to translate. On the other hand,
-                   most decoders should only output non-shared strings, i.e.
-                   translation is done in place. */
-                translated = PyUnicode_FromUnicode(NULL, len);
-                if (translated == NULL)
-                    goto error;
-                assert(Py_REFCNT(translated) == 1);
-                memcpy(PyUnicode_AS_UNICODE(translated),
-                       PyUnicode_AS_UNICODE(output),
-                       len * sizeof(Py_UNICODE));
+            void *translated;
+            int kind = PyUnicode_KIND(output);
+            void *in_str = PyUnicode_DATA(output);
+            Py_ssize_t in, out;
+            /* XXX: Previous in-place translation here is disabled as
+               resizing is not possible anymore */
+            /* We could try to optimize this so that we only do a copy
+               when there is something to translate. On the other hand,
+               we already know there is a \r byte, so chances are high
+               that something needs to be done. */
+            translated = PyMem_Malloc(PyUnicode_KIND_SIZE(kind, len));
+            if (translated == NULL) {
+                PyErr_NoMemory();
+                goto error;
             }
-            else {
-                translated = output;
-            }
-            out_str = PyUnicode_AS_UNICODE(translated);
-            in = in_str;
-            out = out_str;
-            end = in_str + len;
+            in = out = 0;
             for (;;) {
-                Py_UNICODE c;
+                Py_UCS4 c;
                 /* Fast loop for non-control characters */
-                while ((c = *in++) > '\r')
-                    *out++ = c;
+                while ((c = PyUnicode_READ(kind, in_str, in++)) > '\r')
+                    PyUnicode_WRITE(kind, translated, out++, c);
                 if (c == '\n') {
-                    *out++ = c;
+                    PyUnicode_WRITE(kind, translated, out++, c);
                     seennl |= SEEN_LF;
                     continue;
                 }
                 if (c == '\r') {
-                    if (*in == '\n') {
+                    if (PyUnicode_READ(kind, in_str, in) == '\n') {
                         in++;
                         seennl |= SEEN_CRLF;
                     }
                     else
                         seennl |= SEEN_CR;
-                    *out++ = '\n';
+                    PyUnicode_WRITE(kind, translated, out++, '\n');
                     continue;
                 }
-                if (in > end)
+                if (in > len)
                     break;
-                *out++ = c;
+                PyUnicode_WRITE(kind, translated, out++, c);
             }
-            if (translated != output) {
-                Py_DECREF(output);
-                output = translated;
-            }
-            if (out - out_str != len) {
-                if (PyUnicode_Resize(&output, out - out_str) < 0)
-                    goto error;
-            }
+            Py_DECREF(output);
+            output = PyUnicode_FromKindAndData(kind, translated, out);
+            if (!output)
+                goto error;
         }
         self->seennl |= seennl;
     }
@@ -705,9 +694,7 @@ typedef struct
 static PyObject *
 ascii_encode(textio *self, PyObject *text)
 {
-    return PyUnicode_EncodeASCII(PyUnicode_AS_UNICODE(text),
-                                 PyUnicode_GET_SIZE(text),
-                                 PyBytes_AS_STRING(self->errors));
+    return _PyUnicode_AsASCIIString(text, PyBytes_AS_STRING(self->errors));
 }
 
 static PyObject *
@@ -777,17 +764,13 @@ utf32_encode(textio *self, PyObject *text)
 static PyObject *
 utf8_encode(textio *self, PyObject *text)
 {
-    return PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(text),
-                                PyUnicode_GET_SIZE(text),
-                                PyBytes_AS_STRING(self->errors));
+    return _PyUnicode_AsUTF8String(text, PyBytes_AS_STRING(self->errors));
 }
 
 static PyObject *
 latin1_encode(textio *self, PyObject *text)
 {
-    return PyUnicode_EncodeLatin1(PyUnicode_AS_UNICODE(text),
-                                  PyUnicode_GET_SIZE(text),
-                                  PyBytes_AS_STRING(self->errors));
+    return _PyUnicode_AsLatin1String(text, PyBytes_AS_STRING(self->errors));
 }
 
 /* Map normalized encoding names onto the specialized encoding funcs */
@@ -1213,18 +1196,6 @@ textiowrapper_detach(textio *self)
     return buffer;
 }
 
-Py_LOCAL_INLINE(const Py_UNICODE *)
-findchar(const Py_UNICODE *s, Py_ssize_t size, Py_UNICODE ch)
-{
-    /* like wcschr, but doesn't stop at NULL characters */
-    while (size-- > 0) {
-        if (*s == ch)
-            return s;
-        s++;
-    }
-    return NULL;
-}
-
 /* Flush the internal write buffer. This doesn't explicitly flush the
    underlying buffered object, though. */
 static int
@@ -1269,6 +1240,9 @@ textiowrapper_write(textio *self, PyObject *args)
         return NULL;
     }
 
+    if (PyUnicode_READY(text) == -1)
+        return NULL;
+
     CHECK_CLOSED(self);
 
     if (self->encoder == NULL)
@@ -1276,11 +1250,10 @@ textiowrapper_write(textio *self, PyObject *args)
 
     Py_INCREF(text);
 
-    textlen = PyUnicode_GetSize(text);
+    textlen = PyUnicode_GET_LENGTH(text);
 
     if ((self->writetranslate && self->writenl != NULL) || self->line_buffering)
-        if (findchar(PyUnicode_AS_UNICODE(text),
-                     PyUnicode_GET_SIZE(text), '\n'))
+        if (PyUnicode_FindChar(text, '\n', 0, PyUnicode_GET_LENGTH(text), 1) != -1)
             haslf = 1;
 
     if (haslf && self->writetranslate && self->writenl != NULL) {
@@ -1296,8 +1269,7 @@ textiowrapper_write(textio *self, PyObject *args)
         needflush = 1;
     else if (self->line_buffering &&
         (haslf ||
-         findchar(PyUnicode_AS_UNICODE(text),
-                  PyUnicode_GET_SIZE(text), '\r')))
+         PyUnicode_FindChar(text, '\r', 0, PyUnicode_GET_LENGTH(text), 1) != -1))
         needflush = 1;
 
     /* XXX What if we were just reading? */
@@ -1369,7 +1341,8 @@ textiowrapper_get_decoded_chars(textio *self, Py_ssize_t n)
     if (self->decoded_chars == NULL)
         return PyUnicode_FromStringAndSize(NULL, 0);
 
-    avail = (PyUnicode_GET_SIZE(self->decoded_chars)
+    /* decoded_chars is guaranteed to be "ready". */
+    avail = (PyUnicode_GET_LENGTH(self->decoded_chars)
              - self->decoded_chars_used);
 
     assert(avail >= 0);
@@ -1378,9 +1351,9 @@ textiowrapper_get_decoded_chars(textio *self, Py_ssize_t n)
         n = avail;
 
     if (self->decoded_chars_used > 0 || n < avail) {
-        chars = PyUnicode_FromUnicode(
-            PyUnicode_AS_UNICODE(self->decoded_chars)
-            + self->decoded_chars_used, n);
+        chars = PyUnicode_Substring(self->decoded_chars,
+                                    self->decoded_chars_used,
+                                    self->decoded_chars_used + n);
         if (chars == NULL)
             return NULL;
     }
@@ -1464,8 +1437,10 @@ textiowrapper_read_chunk(textio *self)
     /* TODO sanity check: isinstance(decoded_chars, unicode) */
     if (decoded_chars == NULL)
         goto fail;
+    if (PyUnicode_READY(decoded_chars) == -1)
+        goto fail;
     textiowrapper_set_decoded_chars(self, decoded_chars);
-    nchars = PyUnicode_GET_SIZE(decoded_chars);
+    nchars = PyUnicode_GET_LENGTH(decoded_chars);
     if (nchars > 0)
         self->b2cratio = (double) nbytes / nchars;
     else
@@ -1553,7 +1528,9 @@ textiowrapper_read(textio *self, PyObject *args)
         result = textiowrapper_get_decoded_chars(self, n);
         if (result == NULL)
             goto fail;
-        remaining -= PyUnicode_GET_SIZE(result);
+        if (PyUnicode_READY(result) == -1)
+            goto fail;
+        remaining -= PyUnicode_GET_LENGTH(result);
 
         /* Keep reading chunks until we have n characters to return */
         while (remaining > 0) {
@@ -1573,7 +1550,7 @@ textiowrapper_read(textio *self, PyObject *args)
             result = textiowrapper_get_decoded_chars(self, remaining);
             if (result == NULL)
                 goto fail;
-            remaining -= PyUnicode_GET_SIZE(result);
+            remaining -= PyUnicode_GET_LENGTH(result);
         }
         if (chunks != NULL) {
             if (result != NULL && PyList_Append(chunks, result) < 0)
@@ -1596,33 +1573,34 @@ textiowrapper_read(textio *self, PyObject *args)
 /* NOTE: `end` must point to the real end of the Py_UNICODE storage,
    that is to the NUL character. Otherwise the function will produce
    incorrect results. */
-static Py_UNICODE *
-find_control_char(Py_UNICODE *start, Py_UNICODE *end, Py_UNICODE ch)
+static char *
+find_control_char(int kind, char *s, char *end, Py_UCS4 ch)
 {
-    Py_UNICODE *s = start;
+    int size = PyUnicode_KIND_SIZE(kind, 1);
     for (;;) {
-        while (*s > ch)
-            s++;
-        if (*s == ch)
+        while (PyUnicode_READ(kind, s, 0) > ch)
+            s += size;
+        if (PyUnicode_READ(kind, s, 0) == ch)
             return s;
         if (s == end)
             return NULL;
-        s++;
+        s += size;
     }
 }
 
 Py_ssize_t
 _PyIO_find_line_ending(
     int translated, int universal, PyObject *readnl,
-    Py_UNICODE *start, Py_UNICODE *end, Py_ssize_t *consumed)
+    int kind, char *start, char *end, Py_ssize_t *consumed)
 {
-    Py_ssize_t len = end - start;
+    int size = PyUnicode_KIND_SIZE(kind, 1);
+    Py_ssize_t len = ((char*)end - (char*)start)/size;
 
     if (translated) {
         /* Newlines are already translated, only search for \n */
-        Py_UNICODE *pos = find_control_char(start, end, '\n');
+        char *pos = find_control_char(kind, start, end, '\n');
         if (pos != NULL)
-            return pos - start + 1;
+            return (pos - start)/size + 1;
         else {
             *consumed = len;
             return -1;
@@ -1632,63 +1610,66 @@ _PyIO_find_line_ending(
         /* Universal newline search. Find any of \r, \r\n, \n
          * The decoder ensures that \r\n are not split in two pieces
          */
-        Py_UNICODE *s = start;
+        char *s = start;
         for (;;) {
-            Py_UNICODE ch;
+            Py_UCS4 ch;
             /* Fast path for non-control chars. The loop always ends
                since the Py_UNICODE storage is NUL-terminated. */
-            while (*s > '\r')
-                s++;
+            while (PyUnicode_READ(kind, s, 0) > '\r')
+                s += size;
             if (s >= end) {
                 *consumed = len;
                 return -1;
             }
-            ch = *s++;
+            ch = PyUnicode_READ(kind, s, 0);
+            s += size;
             if (ch == '\n')
-                return s - start;
+                return (s - start)/size;
             if (ch == '\r') {
-                if (*s == '\n')
-                    return s - start + 1;
+                if (PyUnicode_READ(kind, s, 0) == '\n')
+                    return (s - start)/size + 1;
                 else
-                    return s - start;
+                    return (s - start)/size;
             }
         }
     }
     else {
         /* Non-universal mode. */
-        Py_ssize_t readnl_len = PyUnicode_GET_SIZE(readnl);
-        Py_UNICODE *nl = PyUnicode_AS_UNICODE(readnl);
+        Py_ssize_t readnl_len = PyUnicode_GET_LENGTH(readnl);
+        char *nl = PyUnicode_DATA(readnl);
+        /* Assume that readnl is an ASCII character. */
+        assert(PyUnicode_KIND(readnl) == PyUnicode_1BYTE_KIND);
         if (readnl_len == 1) {
-            Py_UNICODE *pos = find_control_char(start, end, nl[0]);
+            char *pos = find_control_char(kind, start, end, nl[0]);
             if (pos != NULL)
-                return pos - start + 1;
+                return (pos - start)/size + 1;
             *consumed = len;
             return -1;
         }
         else {
-            Py_UNICODE *s = start;
-            Py_UNICODE *e = end - readnl_len + 1;
-            Py_UNICODE *pos;
+            char *s = start;
+            char *e = end - (readnl_len - 1)*size;
+            char *pos;
             if (e < s)
                 e = s;
             while (s < e) {
                 Py_ssize_t i;
-                Py_UNICODE *pos = find_control_char(s, end, nl[0]);
+                char *pos = find_control_char(kind, s, end, nl[0]);
                 if (pos == NULL || pos >= e)
                     break;
                 for (i = 1; i < readnl_len; i++) {
-                    if (pos[i] != nl[i])
+                    if (PyUnicode_READ(kind, pos, i) != nl[i])
                         break;
                 }
                 if (i == readnl_len)
-                    return pos - start + readnl_len;
-                s = pos + 1;
+                    return (pos - start)/size + readnl_len;
+                s = pos + size;
             }
-            pos = find_control_char(e, end, nl[0]);
+            pos = find_control_char(kind, e, end, nl[0]);
             if (pos == NULL)
                 *consumed = len;
             else
-                *consumed = pos - start;
+                *consumed = (pos - start)/size;
             return -1;
         }
     }
@@ -1709,14 +1690,15 @@ _textiowrapper_readline(textio *self, Py_ssize_t limit)
     chunked = 0;
 
     while (1) {
-        Py_UNICODE *ptr;
+        char *ptr;
         Py_ssize_t line_len;
+        int kind;
         Py_ssize_t consumed = 0;
 
         /* First, get some data if necessary */
         res = 1;
         while (!self->decoded_chars ||
-               !PyUnicode_GET_SIZE(self->decoded_chars)) {
+               !PyUnicode_GET_LENGTH(self->decoded_chars)) {
             res = textiowrapper_read_chunk(self);
             if (res < 0)
                 goto error;
@@ -1741,18 +1723,24 @@ _textiowrapper_readline(textio *self, Py_ssize_t limit)
             assert(self->decoded_chars_used == 0);
             line = PyUnicode_Concat(remaining, self->decoded_chars);
             start = 0;
-            offset_to_buffer = PyUnicode_GET_SIZE(remaining);
+            offset_to_buffer = PyUnicode_GET_LENGTH(remaining);
             Py_CLEAR(remaining);
             if (line == NULL)
                 goto error;
+            if (PyUnicode_READY(line) == -1)
+                goto error;
         }
 
-        ptr = PyUnicode_AS_UNICODE(line);
-        line_len = PyUnicode_GET_SIZE(line);
+        ptr = PyUnicode_DATA(line);
+        line_len = PyUnicode_GET_LENGTH(line);
+        kind = PyUnicode_KIND(line);
 
         endpos = _PyIO_find_line_ending(
             self->readtranslate, self->readuniversal, self->readnl,
-            ptr + start, ptr + line_len, &consumed);
+            kind,
+            ptr + PyUnicode_KIND_SIZE(kind, start),
+            ptr + PyUnicode_KIND_SIZE(kind, line_len),
+            &consumed);
         if (endpos >= 0) {
             endpos += start;
             if (limit >= 0 && (endpos - start) + chunked >= limit)
@@ -1776,21 +1764,20 @@ _textiowrapper_readline(textio *self, Py_ssize_t limit)
                 if (chunks == NULL)
                     goto error;
             }
-            s = PyUnicode_FromUnicode(ptr + start, endpos - start);
+            s = PyUnicode_Substring(line, start, endpos);
             if (s == NULL)
                 goto error;
             if (PyList_Append(chunks, s) < 0) {
                 Py_DECREF(s);
                 goto error;
             }
-            chunked += PyUnicode_GET_SIZE(s);
+            chunked += PyUnicode_GET_LENGTH(s);
             Py_DECREF(s);
         }
         /* There may be some remaining bytes we'll have to prepend to the
            next chunk of data */
         if (endpos < line_len) {
-            remaining = PyUnicode_FromUnicode(
-                    ptr + endpos, line_len - endpos);
+            remaining = PyUnicode_Substring(line, endpos, line_len);
             if (remaining == NULL)
                 goto error;
         }
@@ -1802,19 +1789,12 @@ _textiowrapper_readline(textio *self, Py_ssize_t limit)
     if (line != NULL) {
         /* Our line ends in the current buffer */
         self->decoded_chars_used = endpos - offset_to_buffer;
-        if (start > 0 || endpos < PyUnicode_GET_SIZE(line)) {
-            if (start == 0 && Py_REFCNT(line) == 1) {
-                if (PyUnicode_Resize(&line, endpos) < 0)
-                    goto error;
-            }
-            else {
-                PyObject *s = PyUnicode_FromUnicode(
-                        PyUnicode_AS_UNICODE(line) + start, endpos - start);
-                Py_CLEAR(line);
-                if (s == NULL)
-                    goto error;
-                line = s;
-            }
+        if (start > 0 || endpos < PyUnicode_GET_LENGTH(line)) {
+            PyObject *s = PyUnicode_Substring(line, start, endpos);
+            Py_CLEAR(line);
+            if (s == NULL)
+                goto error;
+            line = s;
         }
     }
     if (remaining != NULL) {
@@ -1828,16 +1808,20 @@ _textiowrapper_readline(textio *self, Py_ssize_t limit)
         Py_CLEAR(remaining);
     }
     if (chunks != NULL) {
-        if (line != NULL && PyList_Append(chunks, line) < 0)
-            goto error;
-        Py_CLEAR(line);
+        if (line != NULL) {
+            if (PyList_Append(chunks, line) < 0)
+                goto error;
+            Py_DECREF(line);
+        }
         line = PyUnicode_Join(_PyIO_empty_str, chunks);
         if (line == NULL)
             goto error;
-        Py_DECREF(chunks);
+        Py_CLEAR(chunks);
     }
-    if (line == NULL)
-        line = PyUnicode_FromStringAndSize(NULL, 0);
+    if (line == NULL) {
+        Py_INCREF(_PyIO_empty_str);
+        line = _PyIO_empty_str;
+    }
 
     return line;
 
@@ -2128,6 +2112,10 @@ textiowrapper_seek(textio *self, PyObject *args)
 
         if (decoded == NULL)
             goto fail;
+        if (PyUnicode_READY(decoded) == -1) {
+            Py_DECREF(decoded);
+            goto fail;
+        }
 
         textiowrapper_set_decoded_chars(self, decoded);
 
@@ -2250,7 +2238,7 @@ textiowrapper_tell(textio *self, PyObject *args)
         if (_decoded == NULL) \
             goto fail; \
         assert (PyUnicode_Check(_decoded)); \
-        res = PyUnicode_GET_SIZE(_decoded); \
+        res = PyUnicode_GET_LENGTH(_decoded); \
         Py_DECREF(_decoded); \
     } while (0)
 
@@ -2333,7 +2321,7 @@ textiowrapper_tell(textio *self, PyObject *args)
         if (decoded == NULL)
             goto fail;
         assert (PyUnicode_Check(decoded));
-        chars_decoded += PyUnicode_GET_SIZE(decoded);
+        chars_decoded += PyUnicode_GET_LENGTH(decoded);
         Py_DECREF(decoded);
         cookie.need_eof = 1;
 
@@ -2559,10 +2547,10 @@ textiowrapper_iternext(textio *self)
         }
     }
 
-    if (line == NULL)
+    if (line == NULL || PyUnicode_READY(line) == -1)
         return NULL;
 
-    if (PyUnicode_GET_SIZE(line) == 0) {
+    if (PyUnicode_GET_LENGTH(line) == 0) {
         /* Reached EOF or would have blocked */
         Py_DECREF(line);
         Py_CLEAR(self->snapshot);

@@ -1102,17 +1102,22 @@ PyUnknownEncodingHandler(void *encodingHandlerData,
     PyUnicodeObject *_u_string = NULL;
     int result = 0;
     int i;
+    int kind;
+    void *data;
 
     /* Yes, supports only 8bit encodings */
     _u_string = (PyUnicodeObject *)
         PyUnicode_Decode(template_buffer, 256, name, "replace");
 
-    if (_u_string == NULL)
+    if (_u_string == NULL || PyUnicode_READY(_u_string) == -1)
         return result;
+
+    kind = PyUnicode_KIND(_u_string);
+    data = PyUnicode_DATA(_u_string);
 
     for (i = 0; i < 256; i++) {
         /* Stupid to access directly, but fast */
-        Py_UNICODE c = _u_string->str[i];
+        Py_UCS4 c = PyUnicode_READ(kind, data, i);
         if (c == Py_UNICODE_REPLACEMENT_CHARACTER)
             info->map[i] = -1;
         else
@@ -1229,7 +1234,7 @@ get_pybool(int istrue)
 static PyObject *
 xmlparse_getattro(xmlparseobject *self, PyObject *nameobj)
 {
-    Py_UNICODE *name;
+    const Py_UNICODE *name;
     int handlernum = -1;
 
     if (!PyUnicode_Check(nameobj))

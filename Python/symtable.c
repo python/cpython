@@ -1525,10 +1525,10 @@ symtable_visit_alias(struct symtable *st, alias_ty a)
     */
     PyObject *store_name;
     PyObject *name = (a->asname == NULL) ? a->name : a->asname;
-    const Py_UNICODE *base = PyUnicode_AS_UNICODE(name);
-    Py_UNICODE *dot = Py_UNICODE_strchr(base, '.');
-    if (dot) {
-        store_name = PyUnicode_FromUnicode(base, dot - base);
+    Py_ssize_t dot = PyUnicode_FindChar(name, '.', 0,
+                                        PyUnicode_GET_LENGTH(name), 1);
+    if (dot != -1) {
+        store_name = PyUnicode_Substring(name, 0, dot);
         if (!store_name)
             return 0;
     }

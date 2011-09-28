@@ -118,12 +118,12 @@ typedef unsigned short mode_t;
 #define MAGIC (3190 | ((long)'\r'<<16) | ((long)'\n'<<24))
 #define TAG "cpython-" MAJOR MINOR;
 #define CACHEDIR "__pycache__"
-static const Py_UNICODE CACHEDIR_UNICODE[] = {
+static const Py_UCS4 CACHEDIR_UNICODE[] = {
     '_', '_', 'p', 'y', 'c', 'a', 'c', 'h', 'e', '_', '_', '\0'};
 /* Current magic word and string tag as globals. */
 static long pyc_magic = MAGIC;
 static const char *pyc_tag = TAG;
-static const Py_UNICODE PYC_TAG_UNICODE[] = {
+static const Py_UCS4 PYC_TAG_UNICODE[] = {
     'c', 'p', 'y', 't', 'h', 'o', 'n', '-', PY_MAJOR_VERSION + 48, PY_MINOR_VERSION + 48, '\0'};
 #undef QUOTE
 #undef STRIFY
@@ -762,7 +762,7 @@ remove_module(PyObject *name)
 
 static PyObject * get_sourcefile(PyObject *filename);
 static PyObject *make_source_pathname(PyObject *pathname);
-static PyObject* make_compiled_pathname(Py_UNICODE *pathname, int debug);
+static PyObject* make_compiled_pathname(PyObject *pathname, int debug);
 
 /* Execute a code object in a module and return the module object
  * WITH INCREMENTED REFERENCE COUNT.  If an error occurs, name is
@@ -886,10 +886,10 @@ PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname,
 /* Like strrchr(string, '/') but searches for the rightmost of either SEP
    or ALTSEP, if the latter is defined.
 */
-static Py_UNICODE*
-rightmost_sep(Py_UNICODE *s)
+static Py_UCS4*
+rightmost_sep(Py_UCS4 *s)
 {
-    Py_UNICODE *found, c;
+    Py_UCS4 *found, c;
     for (found = NULL; (c = *s); s++) {
         if (c == SEP
 #ifdef ALTSEP
@@ -912,14 +912,20 @@ rightmost_sep(Py_UNICODE *s)
    foo.py -> __pycache__/foo.<tag>.pyc */
 
 static PyObject*
-make_compiled_pathname(Py_UNICODE *pathname, int debug)
+make_compiled_pathname(PyObject *pathstr, int debug)
 {
-    Py_UNICODE buf[MAXPATHLEN];
+    Py_UCS4 *pathname;
+    Py_UCS4 buf[MAXPATHLEN];
     size_t buflen = (size_t)MAXPATHLEN;
-    size_t len = Py_UNICODE_strlen(pathname);
+    size_t len;
     size_t i, save;
-    Py_UNICODE *pos;
+    Py_UCS4 *pos;
     int sep = SEP;
+
+    pathname = PyUnicode_AsUCS4Copy(pathstr);
+    if (!pathname)
+        return NULL;
+    len = Py_UCS4_strlen(pathname);
 
     /* Sanity check that the buffer has roughly enough space to hold what
        will eventually be the full path to the compiled file.  The 5 extra
@@ -930,8 +936,10 @@ make_compiled_pathname(Py_UNICODE *pathname, int debug)
        sanity check before writing the extension to ensure we do not
        overflow the buffer.
     */
-    if (len + Py_UNICODE_strlen(CACHEDIR_UNICODE) + Py_UNICODE_strlen(PYC_TAG_UNICODE) + 5 > buflen)
+    if (len + Py_UCS4_strlen(CACHEDIR_UNICODE) + Py_UCS4_strlen(PYC_TAG_UNICODE) + 5 > buflen) {
+        PyMem_Free(pathname);
         return NULL;
+    }
 
     /* Find the last path separator and copy everything from the start of
        the source string up to and including the separator.
@@ -943,24 +951,28 @@ make_compiled_pathname(Py_UNICODE *pathname, int debug)
     else {
         sep = *pos;
         i = pos - pathname + 1;
-        Py_UNICODE_strncpy(buf, pathname, i);
+        Py_UCS4_strncpy(buf, pathname, i);
     }
 
     save = i;
     buf[i++] = '\0';
     /* Add __pycache__/ */
-    Py_UNICODE_strcat(buf, CACHEDIR_UNICODE);
-    i += Py_UNICODE_strlen(CACHEDIR_UNICODE) - 1;
+    Py_UCS4_strcat(buf, CACHEDIR_UNICODE);
+    i += Py_UCS4_strlen(CACHEDIR_UNICODE) - 1;
     buf[i++] = sep;
     buf[i] = '\0';
     /* Add the base filename, but remove the .py or .pyw extension, since
        the tag name must go before the extension.
     */
-    Py_UNICODE_strcat(buf, pathname + save);
-    pos = Py_UNICODE_strrchr(buf + i, '.');
+    Py_UCS4_strcat(buf, pathname + save);
+    pos = Py_UCS4_strrchr(buf + i, '.');
     if (pos != NULL)
         *++pos = '\0';
-    Py_UNICODE_strcat(buf, PYC_TAG_UNICODE);
+
+    /* pathname is not used from here on. */
+    PyMem_Free(pathname);
+
+    Py_UCS4_strcat(buf, PYC_TAG_UNICODE);
     /* The length test above assumes that we're only adding one character
        to the end of what would normally be the extension.  What if there
        is no extension, or the string ends in '.' or '.p', and otherwise
@@ -1010,7 +1022,7 @@ make_compiled_pathname(Py_UNICODE *pathname, int debug)
 #if 0
     printf("strlen(buf): %d; buflen: %d\n", (int)strlen(buf), (int)buflen);
 #endif
-    len = Py_UNICODE_strlen(buf);
+    len = Py_UCS4_strlen(buf);
     if (len + 5 > buflen)
         return NULL;
     buf[len] = '.'; len++;
@@ -1018,7 +1030,7 @@ make_compiled_pathname(Py_UNICODE *pathname, int debug)
     buf[len] = 'y'; len++;
     buf[len] = debug ? 'c' : 'o'; len++;
     assert(len <= buflen);
-    return PyUnicode_FromUnicode(buf, len);
+    return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, buf, len);
 }
 
 
@@ -1033,14 +1045,16 @@ make_compiled_pathname(Py_UNICODE *pathname, int debug)
 static PyObject*
 make_source_pathname(PyObject *pathobj)
 {
-    Py_UNICODE buf[MAXPATHLEN];
-    Py_UNICODE *pathname;
-    Py_UNICODE *left, *right, *dot0, *dot1, sep;
+    Py_UCS4 buf[MAXPATHLEN];
+    Py_UCS4 *pathname;
+    Py_UCS4 *left, *right, *dot0, *dot1, sep;
     size_t i, j;
 
-    if (PyUnicode_GET_SIZE(pathobj) > MAXPATHLEN)
+    if (PyUnicode_GET_LENGTH(pathobj) > MAXPATHLEN)
         return NULL;
-    pathname = PyUnicode_AS_UNICODE(pathobj);
+    pathname = PyUnicode_AsUCS4Copy(pathobj);
+    if (!pathname)
+        return NULL;
 
     /* Look back two slashes from the end.  In between these two slashes
        must be the string __pycache__ or this is not a PEP 3147 style
@@ -1057,31 +1071,35 @@ make_source_pathname(PyObject *pathobj)
         left = pathname;
     else
         left++;
-    if (right-left != Py_UNICODE_strlen(CACHEDIR_UNICODE) ||
-        Py_UNICODE_strncmp(left, CACHEDIR_UNICODE, right-left) != 0)
-        return NULL;
+    if (right-left != Py_UCS4_strlen(CACHEDIR_UNICODE) ||
+        Py_UCS4_strncmp(left, CACHEDIR_UNICODE, right-left) != 0)
+        goto error;
 
     /* Now verify that the path component to the right of the last slash
        has two dots in it.
     */
-    if ((dot0 = Py_UNICODE_strchr(right + 1, '.')) == NULL)
-        return NULL;
-    if ((dot1 = Py_UNICODE_strchr(dot0 + 1, '.')) == NULL)
-        return NULL;
+    if ((dot0 = Py_UCS4_strchr(right + 1, '.')) == NULL)
+       goto error;
+    if ((dot1 = Py_UCS4_strchr(dot0 + 1, '.')) == NULL)
+        goto error;
     /* Too many dots? */
-    if (Py_UNICODE_strchr(dot1 + 1, '.') != NULL)
-        return NULL;
+    if (Py_UCS4_strchr(dot1 + 1, '.') != NULL)
+        goto error;
 
     /* This is a PEP 3147 path.  Start by copying everything from the
        start of pathname up to and including the leftmost slash.  Then
        copy the file's basename, removing the magic tag and adding a .py
        suffix.
     */
-    Py_UNICODE_strncpy(buf, pathname, (i=left-pathname));
-    Py_UNICODE_strncpy(buf+i, right+1, (j=dot0-right));
+    Py_UCS4_strncpy(buf, pathname, (i=left-pathname));
+    Py_UCS4_strncpy(buf+i, right+1, (j=dot0-right));
     buf[i+j] = 'p';
     buf[i+j+1] = 'y';
-    return PyUnicode_FromUnicode(buf, i+j+2);
+    PyMem_Free(pathname);
+    return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, buf, i+j+2);
+  error:
+    PyMem_Free(pathname);
+    return NULL;
 }
 
 /* Given a pathname for a Python source file, its time of last
@@ -1250,6 +1268,7 @@ static void
 write_compiled_module(PyCodeObject *co, PyObject *cpathname,
                       struct stat *srcstat)
 {
+    Py_UCS4 *cpathname_ucs4;
     FILE *fp;
     time_t mtime = srcstat->st_mtime;
 #ifdef MS_WINDOWS   /* since Windows uses different permissions  */
@@ -1267,18 +1286,23 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
     PyObject *cpathbytes;
 #endif
     PyObject *dirname;
-    Py_UNICODE *dirsep;
+    Py_UCS4 *dirsep;
     int res, ok;
 
     /* Ensure that the __pycache__ directory exists. */
-    dirsep = rightmost_sep(PyUnicode_AS_UNICODE(cpathname));
+    cpathname_ucs4 = PyUnicode_AsUCS4Copy(cpathname);
+    if (!cpathname_ucs4)
+        return;
+    dirsep = rightmost_sep(cpathname_ucs4);
     if (dirsep == NULL) {
         if (Py_VerboseFlag)
             PySys_FormatStderr("# no %s path found %R\n", CACHEDIR, cpathname);
         return;
     }
-    dirname = PyUnicode_FromUnicode(PyUnicode_AS_UNICODE(cpathname),
-                                    dirsep - PyUnicode_AS_UNICODE(cpathname));
+    dirname = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
+                                        cpathname_ucs4,
+                                        dirsep - cpathname_ucs4);
+    PyMem_Free(cpathname_ucs4);
     if (dirname == NULL) {
         PyErr_Clear();
         return;
@@ -1461,9 +1485,7 @@ load_source_module(PyObject *name, PyObject *pathname, FILE *fp)
         goto error;
     }
 #endif
-    cpathname = make_compiled_pathname(
-        PyUnicode_AS_UNICODE(pathname),
-        !Py_OptimizeFlag);
+    cpathname = make_compiled_pathname(pathname, !Py_OptimizeFlag);
 
     if (cpathname != NULL)
         fpc = check_compiled_module(pathname, st.st_mtime, cpathname);
@@ -1512,16 +1534,18 @@ static PyObject *
 get_sourcefile(PyObject *filename)
 {
     Py_ssize_t len;
-    Py_UNICODE *fileuni;
+    Py_UCS4 *fileuni;
     PyObject *py;
     struct stat statbuf;
 
-    len = PyUnicode_GET_SIZE(filename);
+    len = PyUnicode_GET_LENGTH(filename);
     if (len == 0)
         Py_RETURN_NONE;
 
     /* don't match *.pyc or *.pyo? */
-    fileuni = PyUnicode_AS_UNICODE(filename);
+    fileuni = PyUnicode_AsUCS4Copy(filename);
+    if (!fileuni)
+        return NULL;
     if (len < 5
         || fileuni[len-4] != '.'
         || (fileuni[len-3] != 'p' && fileuni[len-3] != 'P')
@@ -1535,7 +1559,7 @@ get_sourcefile(PyObject *filename)
     py = make_source_pathname(filename);
     if (py == NULL) {
         PyErr_Clear();
-        py = PyUnicode_FromUnicode(fileuni, len - 1);
+        py = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, fileuni, len - 1);
     }
     if (py == NULL)
         goto error;
@@ -1548,6 +1572,7 @@ get_sourcefile(PyObject *filename)
 error:
     PyErr_Clear();
 unchanged:
+    PyMem_Free(fileuni);
     Py_INCREF(filename);
     return filename;
 }
@@ -1739,8 +1764,7 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
                  PyObject *path_hooks, PyObject *path_importer_cache,
                  PyObject **p_path, PyObject **p_loader, struct filedescr **p_fd)
 {
-    Py_UNICODE buf[MAXPATHLEN+1];
-    Py_ssize_t buflen = MAXPATHLEN+1;
+    Py_UCS4 buf[MAXPATHLEN+1];
     PyObject *path_unicode, *filename;
     Py_ssize_t len;
     struct stat statbuf;
@@ -1759,15 +1783,15 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
     else
         return 0;
 
-    len = PyUnicode_GET_SIZE(path_unicode);
-    if (len + 2 + PyUnicode_GET_SIZE(name) + MAXSUFFIXSIZE >= buflen) {
+    len = PyUnicode_GET_LENGTH(path_unicode);
+    if (!PyUnicode_AsUCS4(path_unicode, buf, PY_ARRAY_LENGTH(buf), 1)) {
         Py_DECREF(path_unicode);
-        return 0; /* Too long */
+        PyErr_Clear();
+        return 0;
     }
-    Py_UNICODE_strcpy(buf, PyUnicode_AS_UNICODE(path_unicode));
     Py_DECREF(path_unicode);
 
-    if (Py_UNICODE_strlen(buf) != len)
+    if (Py_UCS4_strlen(buf) != len)
         return 0; /* path contains '\0' */
 
     /* sys.path_hooks import hook */
@@ -1804,10 +1828,14 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
 #endif
         )
         buf[len++] = SEP;
-    Py_UNICODE_strcpy(buf+len, PyUnicode_AS_UNICODE(name));
-    len += PyUnicode_GET_SIZE(name);
+    if (!PyUnicode_AsUCS4(name, buf+len, PY_ARRAY_LENGTH(buf)-len, 1)) {
+        PyErr_Clear();
+        return 0;
+    }
+    len += PyUnicode_GET_LENGTH(name);
 
-    filename = PyUnicode_FromUnicode(buf, len);
+    filename = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
+                                         buf, len);
     if (filename == NULL)
         return -1;
 
@@ -1988,6 +2016,12 @@ find_module(PyObject *fullname, PyObject *name, PyObject *search_path_list,
     *p_fp = NULL;
     if (p_loader != NULL)
         *p_loader = NULL;
+
+    if (PyUnicode_GET_LENGTH(name) > MAXPATHLEN) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "module name is too long");
+        return NULL;
+    }
 
     /* sys.meta_path import hook */
     if (p_loader != NULL) {
@@ -2704,7 +2738,7 @@ static PyObject *get_parent(PyObject *globals,
                             int level);
 static PyObject *load_next(PyObject *mod, PyObject *altmod,
                            PyObject *inputname, PyObject **p_outputname,
-                           Py_UNICODE *buf, Py_ssize_t *p_buflen,
+                           Py_UCS4 *buf, Py_ssize_t *p_buflen,
                            Py_ssize_t bufsize);
 static int mark_miss(PyObject *name);
 static int ensure_fromlist(PyObject *mod, PyObject *fromlist,
@@ -2718,37 +2752,47 @@ static PyObject *
 import_module_level(PyObject *name, PyObject *globals, PyObject *locals,
                     PyObject *fromlist, int level)
 {
-    Py_UNICODE buf[MAXPATHLEN+1];
+    Py_UCS4 buf[MAXPATHLEN+1];
     Py_ssize_t buflen;
     Py_ssize_t bufsize = MAXPATHLEN+1;
     PyObject *parent, *head, *next, *tail, *inputname, *outputname;
     PyObject *parent_name, *ensure_name;
-    const Py_UNICODE *nameunicode;
+    Py_ssize_t sep, altsep;
 
-    nameunicode = PyUnicode_AS_UNICODE(name);
+    if (PyUnicode_READY(name))
+        return NULL;
 
-    if (Py_UNICODE_strchr(nameunicode, SEP) != NULL
+    sep = PyUnicode_FindChar(name, SEP, 0, PyUnicode_GET_LENGTH(name), 1);
+    if (sep == -2)
+        return NULL;
 #ifdef ALTSEP
-        || Py_UNICODE_strchr(nameunicode, ALTSEP) != NULL
+    altsep = PyUnicode_FindChar(name, ALTSEP, 0, PyUnicode_GET_LENGTH(name), 1);
+    if (altsep == -2)
+        return NULL;
+#else
+    altsep = -1;
 #endif
-        ) {
+    if (sep != -1 || altsep != -1)
+    {
         PyErr_SetString(PyExc_ImportError,
                         "Import by filename is not supported.");
         return NULL;
     }
 
     parent = get_parent(globals, &parent_name, level);
-    if (parent == NULL)
+    if (parent == NULL) {
         return NULL;
+    }
 
-    buflen = PyUnicode_GET_SIZE(parent_name);
-    if (buflen+1 > bufsize) {
+    if (PyUnicode_READY(parent_name))
+        return NULL;
+    buflen = PyUnicode_GET_LENGTH(parent_name);
+    if (!PyUnicode_AsUCS4(parent_name, buf, PY_ARRAY_LENGTH(buf), 1)) {
         Py_DECREF(parent_name);
         PyErr_SetString(PyExc_ValueError,
                         "Module name too long");
         return NULL;
     }
-    Py_UNICODE_strcpy(buf, PyUnicode_AS_UNICODE(parent_name));
     Py_DECREF(parent_name);
 
     head = load_next(parent, level < 0 ? Py_None : parent, name, &outputname,
@@ -2799,7 +2843,8 @@ import_module_level(PyObject *name, PyObject *globals, PyObject *locals,
 
     Py_DECREF(head);
 
-    ensure_name = PyUnicode_FromUnicode(buf, Py_UNICODE_strlen(buf));
+    ensure_name = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
+                                            buf, Py_UCS4_strlen(buf));
     if (ensure_name == NULL) {
         Py_DECREF(tail);
         return NULL;
@@ -2859,8 +2904,6 @@ PyImport_ImportModuleLevel(const char *name, PyObject *globals, PyObject *locals
 static PyObject *
 get_parent(PyObject *globals, PyObject **p_name, int level)
 {
-    Py_UNICODE name[MAXPATHLEN+1];
-    const Py_ssize_t bufsize = MAXPATHLEN+1;
     PyObject *nameobj;
 
     static PyObject *namestr = NULL;
@@ -2897,7 +2940,7 @@ get_parent(PyObject *globals, PyObject **p_name, int level)
                             "__package__ set to non-string");
             return NULL;
         }
-        if (PyUnicode_GET_SIZE(pkgname) == 0) {
+        if (PyUnicode_GET_LENGTH(pkgname) == 0) {
             if (level > 0) {
                 PyErr_SetString(PyExc_ValueError,
                     "Attempted relative import in non-package");
@@ -2905,12 +2948,8 @@ get_parent(PyObject *globals, PyObject **p_name, int level)
             }
             goto return_none;
         }
-        if (PyUnicode_GET_SIZE(pkgname)+1 > bufsize) {
-            PyErr_SetString(PyExc_ValueError,
-                            "Package name too long");
-            return NULL;
-        }
-        Py_UNICODE_strcpy(name, PyUnicode_AS_UNICODE(pkgname));
+        Py_INCREF(pkgname);
+        nameobj = pkgname;
     } else {
         /* __package__ not set, so figure it out and set it */
         modname = PyDict_GetItem(globals, namestr);
@@ -2922,73 +2961,70 @@ get_parent(PyObject *globals, PyObject **p_name, int level)
             /* __path__ is set, so modname is already the package name */
             int error;
 
-            if (PyUnicode_GET_SIZE(modname)+1 > bufsize) {
-                PyErr_SetString(PyExc_ValueError,
-                                "Module name too long");
-                return NULL;
-            }
-            Py_UNICODE_strcpy(name, PyUnicode_AS_UNICODE(modname));
             error = PyDict_SetItem(globals, pkgstr, modname);
             if (error) {
                 PyErr_SetString(PyExc_ValueError,
                                 "Could not set __package__");
                 return NULL;
             }
+            Py_INCREF(modname);
+            nameobj = modname;
         } else {
             /* Normal module, so work out the package name if any */
-            Py_UNICODE *start = PyUnicode_AS_UNICODE(modname);
-            Py_UNICODE *lastdot = Py_UNICODE_strrchr(start, '.');
             Py_ssize_t len;
-            int error;
-            if (lastdot == NULL && level > 0) {
-                PyErr_SetString(PyExc_ValueError,
-                    "Attempted relative import in non-package");
+            len = PyUnicode_FindChar(modname, '.',
+                                     0, PyUnicode_GET_LENGTH(modname), -1);
+            if (len == -2)
                 return NULL;
-            }
-            if (lastdot == NULL) {
-                error = PyDict_SetItem(globals, pkgstr, Py_None);
-                if (error) {
+            if (len < 0) {
+                if (level > 0) {
+                    PyErr_SetString(PyExc_ValueError,
+                        "Attempted relative import in non-package");
+                    return NULL;
+                }
+                if (PyDict_SetItem(globals, pkgstr, Py_None)) {
                     PyErr_SetString(PyExc_ValueError,
                         "Could not set __package__");
                     return NULL;
                 }
                 goto return_none;
             }
-            len = lastdot - start;
-            if (len+1 > bufsize) {
-                PyErr_SetString(PyExc_ValueError,
-                                "Module name too long");
+            pkgname = PyUnicode_Substring(modname, 0, len);
+            if (pkgname == NULL)
                 return NULL;
-            }
-            Py_UNICODE_strncpy(name, start, len);
-            name[len] = '\0';
-            pkgname = PyUnicode_FromUnicode(name, len);
-            if (pkgname == NULL) {
-                return NULL;
-            }
-            error = PyDict_SetItem(globals, pkgstr, pkgname);
-            Py_DECREF(pkgname);
-            if (error) {
+            if (PyDict_SetItem(globals, pkgstr, pkgname)) {
+                Py_DECREF(pkgname);
                 PyErr_SetString(PyExc_ValueError,
                                 "Could not set __package__");
                 return NULL;
             }
+            nameobj = pkgname;
         }
     }
-    while (--level > 0) {
-        Py_UNICODE *dot = Py_UNICODE_strrchr(name, '.');
-        if (dot == NULL) {
-            PyErr_SetString(PyExc_ValueError,
-                "Attempted relative import beyond "
-                "toplevel package");
+    if (level > 1) {
+        Py_ssize_t dot, end = PyUnicode_GET_LENGTH(nameobj);
+        PyObject *newname;
+        while (--level > 0) {
+            dot = PyUnicode_FindChar(nameobj, '.', 0, end, -1);
+            if (dot == -2) {
+                Py_DECREF(nameobj);
+                return NULL;
+            }
+            if (dot < 0) {
+                Py_DECREF(nameobj);
+                PyErr_SetString(PyExc_ValueError,
+                    "Attempted relative import beyond "
+                    "toplevel package");
+                return NULL;
+            }
+            end = dot;
+        }
+        newname = PyUnicode_Substring(nameobj, 0, end);
+        Py_DECREF(nameobj);
+        if (newname == NULL)
             return NULL;
-        }
-        *dot = '\0';
+        nameobj = newname;
     }
-
-    nameobj = PyUnicode_FromUnicode(name, Py_UNICODE_strlen(name));
-    if (nameobj == NULL)
-        return NULL;
 
     modules = PyImport_GetModuleDict();
     parent = PyDict_GetItem(modules, nameobj);
@@ -3021,7 +3057,7 @@ get_parent(PyObject *globals, PyObject **p_name, int level)
        If this is violated...  Who cares? */
 
 return_none:
-    nameobj = PyUnicode_FromUnicode(NULL, 0);
+    nameobj = PyUnicode_New(0, 0);
     if (nameobj == NULL)
         return NULL;
     *p_name = nameobj;
@@ -3032,28 +3068,28 @@ return_none:
 static PyObject *
 load_next(PyObject *mod, PyObject *altmod,
           PyObject *inputname, PyObject **p_outputname,
-          Py_UNICODE *buf, Py_ssize_t *p_buflen, Py_ssize_t bufsize)
+          Py_UCS4 *buf, Py_ssize_t *p_buflen, Py_ssize_t bufsize)
 {
-    const Py_UNICODE *dot;
+    Py_UCS4 *dot;
     Py_ssize_t len;
-    Py_UNICODE *p;
+    Py_UCS4 *p;
     PyObject *fullname, *name, *result, *mark_name;
-    const Py_UNICODE *nameuni;
+    const Py_UCS4 *nameuni;
 
     *p_outputname = NULL;
 
-    if (PyUnicode_GET_SIZE(inputname) == 0) {
+    if (PyUnicode_GET_LENGTH(inputname) == 0) {
         /* completely empty module name should only happen in
            'from . import' (or '__import__("")')*/
         Py_INCREF(mod);
         return mod;
     }
 
-    nameuni = PyUnicode_AS_UNICODE(inputname);
+    nameuni = PyUnicode_AsUCS4Copy(inputname);
     if (nameuni == NULL)
         return NULL;
 
-    dot = Py_UNICODE_strchr(nameuni, '.');
+    dot = Py_UCS4_strchr(nameuni, '.');
     if (dot != NULL) {
         len = dot - nameuni;
         if (len == 0) {
@@ -3063,7 +3099,7 @@ load_next(PyObject *mod, PyObject *altmod,
         }
     }
     else
-        len = PyUnicode_GET_SIZE(inputname);
+        len = PyUnicode_GET_LENGTH(inputname);
 
     if (*p_buflen+len+1 >= bufsize) {
         PyErr_SetString(PyExc_ValueError,
@@ -3076,14 +3112,16 @@ load_next(PyObject *mod, PyObject *altmod,
         *p++ = '.';
         *p_buflen += 1;
     }
-    Py_UNICODE_strncpy(p, nameuni, len);
+    Py_UCS4_strncpy(p, nameuni, len);
     p[len] = '\0';
     *p_buflen += len;
 
-    fullname = PyUnicode_FromUnicode(buf, *p_buflen);
+    fullname = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
+                                         buf, *p_buflen);
     if (fullname == NULL)
         return NULL;
-    name = PyUnicode_FromUnicode(p, len);
+    name = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
+                                     p, len);
     if (name == NULL) {
         Py_DECREF(fullname);
         return NULL;
@@ -3096,7 +3134,8 @@ load_next(PyObject *mod, PyObject *altmod,
         result = import_submodule(altmod, name, name);
         Py_DECREF(name);
         if (result != NULL && result != Py_None) {
-            mark_name = PyUnicode_FromUnicode(buf, *p_buflen);
+            mark_name = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
+                                                  buf, *p_buflen);
             if (mark_name == NULL) {
                 Py_DECREF(result);
                 return NULL;
@@ -3107,7 +3146,7 @@ load_next(PyObject *mod, PyObject *altmod,
                 return NULL;
             }
             Py_DECREF(mark_name);
-            Py_UNICODE_strncpy(buf, nameuni, len);
+            Py_UCS4_strncpy(buf, nameuni, len);
             buf[len] = '\0';
             *p_buflen = len;
         }
@@ -3125,7 +3164,8 @@ load_next(PyObject *mod, PyObject *altmod,
     }
 
     if (dot != NULL) {
-        *p_outputname = PyUnicode_FromUnicode(dot+1, Py_UNICODE_strlen(dot+1));
+        *p_outputname = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
+                                                  dot+1, Py_UCS4_strlen(dot+1));
         if (*p_outputname == NULL) {
             Py_DECREF(result);
             return NULL;
@@ -3166,7 +3206,7 @@ ensure_fromlist(PyObject *mod, PyObject *fromlist, PyObject *name,
             Py_DECREF(item);
             return 0;
         }
-        if (PyUnicode_AS_UNICODE(item)[0] == '*') {
+        if (PyUnicode_READ_CHAR(item, 0) == '*') {
             PyObject *all;
             Py_DECREF(item);
             /* See if the package defines __all__ */
@@ -3304,7 +3344,7 @@ PyImport_ReloadModule(PyObject *m)
     PyObject *modules = PyImport_GetModuleDict();
     PyObject *path_list = NULL, *loader = NULL, *existing_m = NULL;
     PyObject *nameobj, *bufobj, *subnameobj;
-    Py_UNICODE *name, *subname;
+    Py_UCS4 *name = NULL, *subname;
     struct filedescr *fdp;
     FILE *fp = NULL;
     PyObject *newm = NULL;
@@ -3321,7 +3361,7 @@ PyImport_ReloadModule(PyObject *m)
         return NULL;
     }
     nameobj = PyModule_GetNameObject(m);
-    if (nameobj == NULL)
+    if (nameobj == NULL || PyUnicode_READY(nameobj) == -1)
         return NULL;
     if (m != PyDict_GetItem(modules, nameobj)) {
         PyErr_Format(PyExc_ImportError,
@@ -3343,8 +3383,12 @@ PyImport_ReloadModule(PyObject *m)
         return NULL;
     }
 
-    name = PyUnicode_AS_UNICODE(nameobj);
-    subname = Py_UNICODE_strrchr(name, '.');
+    name = PyUnicode_AsUCS4Copy(nameobj);
+    if (!name) {
+        Py_DECREF(nameobj);
+        return NULL;
+    }
+    subname = Py_UCS4_strrchr(name, '.');
     if (subname == NULL) {
         Py_INCREF(nameobj);
         subnameobj = nameobj;
@@ -3353,7 +3397,8 @@ PyImport_ReloadModule(PyObject *m)
         PyObject *parentname, *parent;
         Py_ssize_t len;
         len = subname - name;
-        parentname = PyUnicode_FromUnicode(name, len);
+        parentname = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
+                                               name, len);
         if (parentname == NULL) {
             goto error;
         }
@@ -3370,8 +3415,9 @@ PyImport_ReloadModule(PyObject *m)
         if (path_list == NULL)
             PyErr_Clear();
         subname++;
-        len = PyUnicode_GET_SIZE(nameobj) - (len + 1);
-        subnameobj = PyUnicode_FromUnicode(subname, len);
+        len = PyUnicode_GET_LENGTH(nameobj) - (len + 1);
+        subnameobj = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
+                                               subname, len);
     }
     if (subnameobj == NULL)
         goto error;
@@ -3403,6 +3449,7 @@ PyImport_ReloadModule(PyObject *m)
 error:
     imp_modules_reloading_clear();
     Py_DECREF(nameobj);
+    PyMem_Free(name);
     return newm;
 }
 
@@ -3910,9 +3957,7 @@ imp_cache_from_source(PyObject *self, PyObject *args, PyObject *kws)
         return NULL;
     }
 
-    cpathname = make_compiled_pathname(
-        PyUnicode_AS_UNICODE(pathname),
-        debug);
+    cpathname = make_compiled_pathname(pathname, debug);
     Py_DECREF(pathname);
 
     if (cpathname == NULL) {
@@ -4105,7 +4150,7 @@ NullImporter_init(NullImporter *self, PyObject *args, PyObject *kwds)
                           &pathobj))
         return -1;
 
-    if (PyUnicode_GET_SIZE(pathobj) == 0) {
+    if (PyUnicode_GET_LENGTH(pathobj) == 0) {
         PyErr_SetString(PyExc_ImportError, "empty pathname");
         return -1;
     }

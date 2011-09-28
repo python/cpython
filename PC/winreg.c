@@ -882,7 +882,7 @@ Reg2Py(BYTE *retDataBuf, DWORD retDataSize, DWORD typ)
                     retDataSize -= 2;
                 if (retDataSize <= 0)
                     data = L"";
-                obData = PyUnicode_FromUnicode(data, retDataSize/2);
+                obData = PyUnicode_FromWideChar(data, retDataSize/2);
                 break;
             }
         case REG_MULTI_SZ:
@@ -913,7 +913,7 @@ Reg2Py(BYTE *retDataBuf, DWORD retDataSize, DWORD typ)
                     }
                     PyList_SetItem(obData,
                                    index,
-                                   PyUnicode_FromUnicode(str[index], len));
+                                   PyUnicode_FromWideChar(str[index], len));
                 }
                 free(str);
 
@@ -1123,7 +1123,7 @@ PyEnumKey(PyObject *self, PyObject *args)
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegEnumKeyEx");
 
-    retStr = PyUnicode_FromUnicode(tmpbuf, len);
+    retStr = PyUnicode_FromWideChar(tmpbuf, len);
     return retStr;  /* can be NULL */
 }
 
@@ -1394,7 +1394,7 @@ PyQueryValue(PyObject *self, PyObject *args)
                                                    "RegQueryValue");
     }
 
-    retStr = PyUnicode_FromUnicode(retBuf, wcslen(retBuf));
+    retStr = PyUnicode_FromWideChar(retBuf, wcslen(retBuf));
     PyMem_Free(retBuf);
     return retStr;
 }

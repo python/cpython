@@ -128,7 +128,7 @@ get_nullchar_as_None(Py_UNICODE c)
         return Py_None;
     }
     else
-        return PyUnicode_FromUnicode((Py_UNICODE *)&c, 1);
+        return PyUnicode_FromOrdinal(c);
 }
 
 static PyObject *

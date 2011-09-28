@@ -163,8 +163,6 @@ static unsigned int sre_lower_locale(unsigned int ch)
 
 /* unicode-specific character predicates */
 
-#if defined(HAVE_UNICODE)
-
 #define SRE_UNI_IS_DIGIT(ch) Py_UNICODE_ISDECIMAL((Py_UNICODE)(ch))
 #define SRE_UNI_IS_SPACE(ch) Py_UNICODE_ISSPACE((Py_UNICODE)(ch))
 #define SRE_UNI_IS_LINEBREAK(ch) Py_UNICODE_ISLINEBREAK((Py_UNICODE)(ch))
@@ -175,8 +173,6 @@ static unsigned int sre_lower_unicode(unsigned int ch)
 {
     return (unsigned int) Py_UNICODE_TOLOWER((Py_UNICODE)(ch));
 }
-
-#endif
 
 LOCAL(int)
 sre_category(SRE_CODE category, unsigned int ch)
@@ -205,7 +201,6 @@ sre_category(SRE_CODE category, unsigned int ch)
     case SRE_CATEGORY_LOC_NOT_WORD:
         return !SRE_LOC_IS_WORD(ch);
 
-#if defined(HAVE_UNICODE)
     case SRE_CATEGORY_UNI_DIGIT:
         return SRE_UNI_IS_DIGIT(ch);
     case SRE_CATEGORY_UNI_NOT_DIGIT:
@@ -222,24 +217,6 @@ sre_category(SRE_CODE category, unsigned int ch)
         return SRE_UNI_IS_LINEBREAK(ch);
     case SRE_CATEGORY_UNI_NOT_LINEBREAK:
         return !SRE_UNI_IS_LINEBREAK(ch);
-#else
-    case SRE_CATEGORY_UNI_DIGIT:
-        return SRE_IS_DIGIT(ch);
-    case SRE_CATEGORY_UNI_NOT_DIGIT:
-        return !SRE_IS_DIGIT(ch);
-    case SRE_CATEGORY_UNI_SPACE:
-        return SRE_IS_SPACE(ch);
-    case SRE_CATEGORY_UNI_NOT_SPACE:
-        return !SRE_IS_SPACE(ch);
-    case SRE_CATEGORY_UNI_WORD:
-        return SRE_LOC_IS_WORD(ch);
-    case SRE_CATEGORY_UNI_NOT_WORD:
-        return !SRE_LOC_IS_WORD(ch);
-    case SRE_CATEGORY_UNI_LINEBREAK:
-        return SRE_IS_LINEBREAK(ch);
-    case SRE_CATEGORY_UNI_NOT_LINEBREAK:
-        return !SRE_IS_LINEBREAK(ch);
-#endif
     }
     return 0;
 }
@@ -280,6 +257,7 @@ data_stack_grow(SRE_STATE* state, Py_ssize_t size)
 /* generate 8-bit version */
 
 #define SRE_CHAR unsigned char
+#define SRE_CHARGET(state, buf, index) ((unsigned char*)buf)[index]
 #define SRE_AT sre_at
 #define SRE_COUNT sre_count
 #define SRE_CHARSET sre_charset
@@ -287,15 +265,11 @@ data_stack_grow(SRE_STATE* state, Py_ssize_t size)
 #define SRE_MATCH sre_match
 #define SRE_MATCH_CONTEXT sre_match_context
 #define SRE_SEARCH sre_search
-#define SRE_LITERAL_TEMPLATE sre_literal_template
-
-#if defined(HAVE_UNICODE)
 
 #define SRE_RECURSIVE
 #include "_sre.c"
 #undef SRE_RECURSIVE
 
-#undef SRE_LITERAL_TEMPLATE
 #undef SRE_SEARCH
 #undef SRE_MATCH
 #undef SRE_MATCH_CONTEXT
@@ -304,10 +278,15 @@ data_stack_grow(SRE_STATE* state, Py_ssize_t size)
 #undef SRE_COUNT
 #undef SRE_AT
 #undef SRE_CHAR
+#undef SRE_CHARGET
 
-/* generate 16-bit unicode version */
+/* generate 8/16/32-bit unicode version */
 
-#define SRE_CHAR Py_UNICODE
+#define SRE_CHAR void
+#define SRE_CHARGET(state, buf, index) \
+    ((state->charsize==1) ? ((Py_UCS1*)buf)[index] : \
+     (state->charsize==2) ? ((Py_UCS2*)buf)[index] : \
+     ((Py_UCS4*)buf)[index])
 #define SRE_AT sre_uat
 #define SRE_COUNT sre_ucount
 #define SRE_CHARSET sre_ucharset
@@ -315,8 +294,6 @@ data_stack_grow(SRE_STATE* state, Py_ssize_t size)
 #define SRE_MATCH sre_umatch
 #define SRE_MATCH_CONTEXT sre_umatch_context
 #define SRE_SEARCH sre_usearch
-#define SRE_LITERAL_TEMPLATE sre_uliteral_template
-#endif
 
 #endif /* SRE_RECURSIVE */
 
@@ -327,7 +304,7 @@ data_stack_grow(SRE_STATE* state, Py_ssize_t size)
    settings */
 
 LOCAL(int)
-SRE_AT(SRE_STATE* state, SRE_CHAR* ptr, SRE_CODE at)
+SRE_AT(SRE_STATE* state, char* ptr, SRE_CODE at)
 {
     /* check if pointer is at given position */
 
@@ -341,16 +318,16 @@ SRE_AT(SRE_STATE* state, SRE_CHAR* ptr, SRE_CODE at)
 
     case SRE_AT_BEGINNING_LINE:
         return ((void*) ptr == state->beginning ||
-                SRE_IS_LINEBREAK((int) ptr[-1]));
+                SRE_IS_LINEBREAK((int) SRE_CHARGET(state, ptr, -1)));
 
     case SRE_AT_END:
-        return (((void*) (ptr+1) == state->end &&
-                 SRE_IS_LINEBREAK((int) ptr[0])) ||
+        return (((void*) (ptr+state->charsize) == state->end &&
+                 SRE_IS_LINEBREAK((int) SRE_CHARGET(state, ptr, 0))) ||
                 ((void*) ptr == state->end));
 
     case SRE_AT_END_LINE:
         return ((void*) ptr == state->end ||
-                SRE_IS_LINEBREAK((int) ptr[0]));
+                SRE_IS_LINEBREAK((int) SRE_CHARGET(state, ptr, 0)));
 
     case SRE_AT_END_STRING:
         return ((void*) ptr == state->end);
@@ -359,57 +336,55 @@ SRE_AT(SRE_STATE* state, SRE_CHAR* ptr, SRE_CODE at)
         if (state->beginning == state->end)
             return 0;
         thatp = ((void*) ptr > state->beginning) ?
-            SRE_IS_WORD((int) ptr[-1]) : 0;
+            SRE_IS_WORD((int) SRE_CHARGET(state, ptr, -1)) : 0;
         thisp = ((void*) ptr < state->end) ?
-            SRE_IS_WORD((int) ptr[0]) : 0;
+            SRE_IS_WORD((int) SRE_CHARGET(state, ptr, 0)) : 0;
         return thisp != thatp;
 
     case SRE_AT_NON_BOUNDARY:
         if (state->beginning == state->end)
             return 0;
         thatp = ((void*) ptr > state->beginning) ?
-            SRE_IS_WORD((int) ptr[-1]) : 0;
+            SRE_IS_WORD((int) SRE_CHARGET(state, ptr, -1)) : 0;
         thisp = ((void*) ptr < state->end) ?
-            SRE_IS_WORD((int) ptr[0]) : 0;
+            SRE_IS_WORD((int) SRE_CHARGET(state, ptr, 0)) : 0;
         return thisp == thatp;
 
     case SRE_AT_LOC_BOUNDARY:
         if (state->beginning == state->end)
             return 0;
         thatp = ((void*) ptr > state->beginning) ?
-            SRE_LOC_IS_WORD((int) ptr[-1]) : 0;
+            SRE_LOC_IS_WORD((int) SRE_CHARGET(state, ptr, -1)) : 0;
         thisp = ((void*) ptr < state->end) ?
-            SRE_LOC_IS_WORD((int) ptr[0]) : 0;
+            SRE_LOC_IS_WORD((int) SRE_CHARGET(state, ptr, 0)) : 0;
         return thisp != thatp;
 
     case SRE_AT_LOC_NON_BOUNDARY:
         if (state->beginning == state->end)
             return 0;
         thatp = ((void*) ptr > state->beginning) ?
-            SRE_LOC_IS_WORD((int) ptr[-1]) : 0;
+            SRE_LOC_IS_WORD((int) SRE_CHARGET(state, ptr, -1)) : 0;
         thisp = ((void*) ptr < state->end) ?
-            SRE_LOC_IS_WORD((int) ptr[0]) : 0;
+            SRE_LOC_IS_WORD((int) SRE_CHARGET(state, ptr, 0)) : 0;
         return thisp == thatp;
 
-#if defined(HAVE_UNICODE)
     case SRE_AT_UNI_BOUNDARY:
         if (state->beginning == state->end)
             return 0;
         thatp = ((void*) ptr > state->beginning) ?
-            SRE_UNI_IS_WORD((int) ptr[-1]) : 0;
+            SRE_UNI_IS_WORD((int) SRE_CHARGET(state, ptr, -1)) : 0;
         thisp = ((void*) ptr < state->end) ?
-            SRE_UNI_IS_WORD((int) ptr[0]) : 0;
+            SRE_UNI_IS_WORD((int) SRE_CHARGET(state, ptr, 0)) : 0;
         return thisp != thatp;
 
     case SRE_AT_UNI_NON_BOUNDARY:
         if (state->beginning == state->end)
             return 0;
         thatp = ((void*) ptr > state->beginning) ?
-            SRE_UNI_IS_WORD((int) ptr[-1]) : 0;
+            SRE_UNI_IS_WORD((int) SRE_CHARGET(state, ptr, -1)) : 0;
         thisp = ((void*) ptr < state->end) ?
-            SRE_UNI_IS_WORD((int) ptr[0]) : 0;
+            SRE_UNI_IS_WORD((int) SRE_CHARGET(state, ptr, 0)) : 0;
         return thisp == thatp;
-#endif
 
     }
 
@@ -476,7 +451,7 @@ SRE_CHARSET(SRE_CODE* set, SRE_CODE ch)
             count = *(set++);
 
             if (sizeof(SRE_CODE) == 2) {
-                block = ((unsigned char*)set)[ch >> 8];
+                block = ((char*)set)[ch >> 8];
                 set += 128;
                 if (set[block*16 + ((ch & 255)>>4)] & (1 << (ch & 15)))
                     return ok;
@@ -486,7 +461,7 @@ SRE_CHARSET(SRE_CODE* set, SRE_CODE ch)
                 /* !(c & ~N) == (c < N+1) for any unsigned c, this avoids
                  * warnings when c's type supports only numbers < N+1 */
                 if (!(ch & ~65535))
-                    block = ((unsigned char*)set)[ch >> 8];
+                    block = ((char*)set)[ch >> 8];
                 else
                     block = -1;
                 set += 64;
@@ -512,28 +487,29 @@ LOCAL(Py_ssize_t)
 SRE_COUNT(SRE_STATE* state, SRE_CODE* pattern, Py_ssize_t maxcount)
 {
     SRE_CODE chr;
-    SRE_CHAR* ptr = (SRE_CHAR *)state->ptr;
-    SRE_CHAR* end = (SRE_CHAR *)state->end;
+    char* ptr = (char *)state->ptr;
+    char* end = (char *)state->end;
     Py_ssize_t i;
 
     /* adjust end */
     if (maxcount < end - ptr && maxcount != 65535)
-        end = ptr + maxcount;
+        end = ptr + maxcount*state->charsize;
 
     switch (pattern[0]) {
 
     case SRE_OP_IN:
         /* repeated set */
         TRACE(("|%p|%p|COUNT IN\n", pattern, ptr));
-        while (ptr < end && SRE_CHARSET(pattern + 2, *ptr))
-            ptr++;
+        while (ptr < end && 
+               SRE_CHARSET(pattern + 2, SRE_CHARGET(state, ptr, 0)))
+            ptr += state->charsize;
         break;
 
     case SRE_OP_ANY:
         /* repeated dot wildcard. */
         TRACE(("|%p|%p|COUNT ANY\n", pattern, ptr));
-        while (ptr < end && !SRE_IS_LINEBREAK(*ptr))
-            ptr++;
+        while (ptr < end && !SRE_IS_LINEBREAK(SRE_CHARGET(state, ptr, 0)))
+            ptr += state->charsize;
         break;
 
     case SRE_OP_ANY_ALL:
@@ -547,38 +523,38 @@ SRE_COUNT(SRE_STATE* state, SRE_CODE* pattern, Py_ssize_t maxcount)
         /* repeated literal */
         chr = pattern[1];
         TRACE(("|%p|%p|COUNT LITERAL %d\n", pattern, ptr, chr));
-        while (ptr < end && (SRE_CODE) *ptr == chr)
-            ptr++;
+        while (ptr < end && (SRE_CODE) SRE_CHARGET(state, ptr, 0) == chr)
+            ptr += state->charsize;
         break;
 
     case SRE_OP_LITERAL_IGNORE:
         /* repeated literal */
         chr = pattern[1];
         TRACE(("|%p|%p|COUNT LITERAL_IGNORE %d\n", pattern, ptr, chr));
-        while (ptr < end && (SRE_CODE) state->lower(*ptr) == chr)
-            ptr++;
+        while (ptr < end && (SRE_CODE) state->lower(SRE_CHARGET(state, ptr, 0)) == chr)
+            ptr += state->charsize;
         break;
 
     case SRE_OP_NOT_LITERAL:
         /* repeated non-literal */
         chr = pattern[1];
         TRACE(("|%p|%p|COUNT NOT_LITERAL %d\n", pattern, ptr, chr));
-        while (ptr < end && (SRE_CODE) *ptr != chr)
-            ptr++;
+        while (ptr < end && (SRE_CODE) SRE_CHARGET(state, ptr, 0) != chr)
+            ptr += state->charsize;
         break;
 
     case SRE_OP_NOT_LITERAL_IGNORE:
         /* repeated non-literal */
         chr = pattern[1];
         TRACE(("|%p|%p|COUNT NOT_LITERAL_IGNORE %d\n", pattern, ptr, chr));
-        while (ptr < end && (SRE_CODE) state->lower(*ptr) != chr)
-            ptr++;
+        while (ptr < end && (SRE_CODE) state->lower(SRE_CHARGET(state, ptr, 0)) != chr)
+            ptr += state->charsize;
         break;
 
     default:
         /* repeated single character pattern */
         TRACE(("|%p|%p|COUNT SUBPATTERN\n", pattern, ptr));
-        while ((SRE_CHAR*) state->ptr < end) {
+        while ((char*) state->ptr < end) {
             i = SRE_MATCH(state, pattern);
             if (i < 0)
                 return i;
@@ -586,12 +562,12 @@ SRE_COUNT(SRE_STATE* state, SRE_CODE* pattern, Py_ssize_t maxcount)
                 break;
         }
         TRACE(("|%p|%p|COUNT %d\n", pattern, ptr,
-               (SRE_CHAR*) state->ptr - ptr));
-        return (SRE_CHAR*) state->ptr - ptr;
+               ((char*)state->ptr - ptr)/state->charsize));
+        return ((char*)state->ptr - ptr)/state->charsize;
     }
 
-    TRACE(("|%p|%p|COUNT %d\n", pattern, ptr, ptr - (SRE_CHAR*) state->ptr));
-    return ptr - (SRE_CHAR*) state->ptr;
+    TRACE(("|%p|%p|COUNT %d\n", pattern, ptr, (ptr - (char*) state->ptr)/state->charsize));
+    return (ptr - (char*) state->ptr)/state->charsize;
 }
 
 #if 0 /* not used in this release */
@@ -602,8 +578,8 @@ SRE_INFO(SRE_STATE* state, SRE_CODE* pattern)
        returns the number of SRE_CODE objects to skip if successful, 0
        if no match */
 
-    SRE_CHAR* end = state->end;
-    SRE_CHAR* ptr = state->ptr;
+    char* end = state->end;
+    char* ptr = state->ptr;
     Py_ssize_t i;
 
     /* check minimal length */
@@ -614,7 +590,7 @@ SRE_INFO(SRE_STATE* state, SRE_CODE* pattern)
     if (pattern[2] & SRE_INFO_PREFIX && pattern[5] > 1) {
         /* <length> <skip> <prefix data> <overlap data> */
         for (i = 0; i < pattern[5]; i++)
-            if ((SRE_CODE) ptr[i] != pattern[7 + i])
+            if ((SRE_CODE) SRE_CHARGET(state, ptr, i) != pattern[7 + i])
                 return 0;
         return pattern[0] + 2 * pattern[6];
     }
@@ -783,7 +759,7 @@ do { \
 typedef struct {
     Py_ssize_t last_ctx_pos;
     Py_ssize_t jump;
-    SRE_CHAR* ptr;
+    char* ptr;
     SRE_CODE* pattern;
     Py_ssize_t count;
     Py_ssize_t lastmark;
@@ -799,7 +775,7 @@ typedef struct {
 LOCAL(Py_ssize_t)
 SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 {
-    SRE_CHAR* end = (SRE_CHAR *)state->end;
+    char* end = (char*)state->end;
     Py_ssize_t alloc_pos, ctx_pos = -1;
     Py_ssize_t i, ret = 0;
     Py_ssize_t jump;
@@ -818,12 +794,12 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 
 entrance:
 
-    ctx->ptr = (SRE_CHAR *)state->ptr;
+    ctx->ptr = (char *)state->ptr;
 
     if (ctx->pattern[0] == SRE_OP_INFO) {
         /* optimization info block */
         /* <INFO> <1=skip> <2=flags> <3=min> ... */
-        if (ctx->pattern[3] && (end - ctx->ptr) < ctx->pattern[3]) {
+        if (ctx->pattern[3] && (end - ctx->ptr)/state->charsize < ctx->pattern[3]) {
             TRACE(("reject (got %d chars, need %d)\n",
                    (end - ctx->ptr), ctx->pattern[3]));
             RETURN_FAILURE;
@@ -865,10 +841,10 @@ entrance:
             /* <LITERAL> <code> */
             TRACE(("|%p|%p|LITERAL %d\n", ctx->pattern,
                    ctx->ptr, *ctx->pattern));
-            if (ctx->ptr >= end || (SRE_CODE) ctx->ptr[0] != ctx->pattern[0])
+            if (ctx->ptr >= end || (SRE_CODE) SRE_CHARGET(state, ctx->ptr, 0) != ctx->pattern[0])
                 RETURN_FAILURE;
             ctx->pattern++;
-            ctx->ptr++;
+            ctx->ptr += state->charsize;
             break;
 
         case SRE_OP_NOT_LITERAL:
@@ -876,10 +852,10 @@ entrance:
             /* <NOT_LITERAL> <code> */
             TRACE(("|%p|%p|NOT_LITERAL %d\n", ctx->pattern,
                    ctx->ptr, *ctx->pattern));
-            if (ctx->ptr >= end || (SRE_CODE) ctx->ptr[0] == ctx->pattern[0])
+            if (ctx->ptr >= end || (SRE_CODE) SRE_CHARGET(state, ctx->ptr, 0) == ctx->pattern[0])
                 RETURN_FAILURE;
             ctx->pattern++;
-            ctx->ptr++;
+            ctx->ptr += state->charsize;
             break;
 
         case SRE_OP_SUCCESS:
@@ -902,19 +878,19 @@ entrance:
             /* <CATEGORY> <code> */
             TRACE(("|%p|%p|CATEGORY %d\n", ctx->pattern,
                    ctx->ptr, *ctx->pattern));
-            if (ctx->ptr >= end || !sre_category(ctx->pattern[0], ctx->ptr[0]))
+            if (ctx->ptr >= end || !sre_category(ctx->pattern[0], SRE_CHARGET(state, ctx->ptr, 0)))
                 RETURN_FAILURE;
             ctx->pattern++;
-            ctx->ptr++;
+            ctx->ptr += state->charsize;
             break;
 
         case SRE_OP_ANY:
             /* match anything (except a newline) */
             /* <ANY> */
             TRACE(("|%p|%p|ANY\n", ctx->pattern, ctx->ptr));
-            if (ctx->ptr >= end || SRE_IS_LINEBREAK(ctx->ptr[0]))
-                RETURN_FAILURE;
-            ctx->ptr++;
+                if (ctx->ptr >= end || SRE_IS_LINEBREAK(SRE_CHARGET(state, ctx->ptr, 0)))
+                    RETURN_FAILURE;
+            ctx->ptr += state->charsize;
             break;
 
         case SRE_OP_ANY_ALL:
@@ -923,47 +899,47 @@ entrance:
             TRACE(("|%p|%p|ANY_ALL\n", ctx->pattern, ctx->ptr));
             if (ctx->ptr >= end)
                 RETURN_FAILURE;
-            ctx->ptr++;
+            ctx->ptr += state->charsize;
             break;
 
         case SRE_OP_IN:
             /* match set member (or non_member) */
             /* <IN> <skip> <set> */
             TRACE(("|%p|%p|IN\n", ctx->pattern, ctx->ptr));
-            if (ctx->ptr >= end || !SRE_CHARSET(ctx->pattern + 1, *ctx->ptr))
-                RETURN_FAILURE;
+                if (ctx->ptr >= end || !SRE_CHARSET(ctx->pattern + 1, SRE_CHARGET(state, ctx->ptr, 0)))
+                    RETURN_FAILURE;
             ctx->pattern += ctx->pattern[0];
-            ctx->ptr++;
+            ctx->ptr += state->charsize;
             break;
 
         case SRE_OP_LITERAL_IGNORE:
             TRACE(("|%p|%p|LITERAL_IGNORE %d\n",
                    ctx->pattern, ctx->ptr, ctx->pattern[0]));
             if (ctx->ptr >= end ||
-                state->lower(*ctx->ptr) != state->lower(*ctx->pattern))
+                state->lower(SRE_CHARGET(state, ctx->ptr, 0)) != state->lower(*ctx->pattern))
                 RETURN_FAILURE;
             ctx->pattern++;
-            ctx->ptr++;
+            ctx->ptr += state->charsize;
             break;
 
         case SRE_OP_NOT_LITERAL_IGNORE:
             TRACE(("|%p|%p|NOT_LITERAL_IGNORE %d\n",
                    ctx->pattern, ctx->ptr, *ctx->pattern));
             if (ctx->ptr >= end ||
-                state->lower(*ctx->ptr) == state->lower(*ctx->pattern))
+                state->lower(SRE_CHARGET(state, ctx->ptr, 0)) == state->lower(*ctx->pattern))
                 RETURN_FAILURE;
             ctx->pattern++;
-            ctx->ptr++;
+            ctx->ptr += state->charsize;
             break;
 
         case SRE_OP_IN_IGNORE:
             TRACE(("|%p|%p|IN_IGNORE\n", ctx->pattern, ctx->ptr));
             if (ctx->ptr >= end
                 || !SRE_CHARSET(ctx->pattern+1,
-                                (SRE_CODE)state->lower(*ctx->ptr)))
+                                (SRE_CODE)state->lower(SRE_CHARGET(state, ctx->ptr, 0))))
                 RETURN_FAILURE;
             ctx->pattern += ctx->pattern[0];
-            ctx->ptr++;
+            ctx->ptr += state->charsize;
             break;
 
         case SRE_OP_JUMP:
@@ -986,11 +962,11 @@ entrance:
             for (; ctx->pattern[0]; ctx->pattern += ctx->pattern[0]) {
                 if (ctx->pattern[1] == SRE_OP_LITERAL &&
                     (ctx->ptr >= end ||
-                     (SRE_CODE) *ctx->ptr != ctx->pattern[2]))
+                     (SRE_CODE) SRE_CHARGET(state, ctx->ptr, 0) != ctx->pattern[2]))
                     continue;
                 if (ctx->pattern[1] == SRE_OP_IN &&
                     (ctx->ptr >= end ||
-                     !SRE_CHARSET(ctx->pattern + 3, (SRE_CODE) *ctx->ptr)))
+                     !SRE_CHARSET(ctx->pattern + 3, (SRE_CODE) SRE_CHARGET(state, ctx->ptr, 0))))
                     continue;
                 state->ptr = ctx->ptr;
                 DO_JUMP(JUMP_BRANCH, jump_branch, ctx->pattern+1);
@@ -1021,7 +997,7 @@ entrance:
             TRACE(("|%p|%p|REPEAT_ONE %d %d\n", ctx->pattern, ctx->ptr,
                    ctx->pattern[1], ctx->pattern[2]));
 
-            if (ctx->ptr + ctx->pattern[1] > end)
+            if (ctx->ptr + state->charsize * ctx->pattern[1] > end)
                 RETURN_FAILURE; /* cannot match */
 
             state->ptr = ctx->ptr;
@@ -1030,7 +1006,7 @@ entrance:
             RETURN_ON_ERROR(ret);
             DATA_LOOKUP_AT(SRE_MATCH_CONTEXT, ctx, ctx_pos);
             ctx->count = ret;
-            ctx->ptr += ctx->count;
+            ctx->ptr += state->charsize * ctx->count;
 
             /* when we arrive here, count contains the number of
                matches, and ctx->ptr points to the tail of the target
@@ -1054,8 +1030,9 @@ entrance:
                 ctx->u.chr = ctx->pattern[ctx->pattern[0]+1];
                 for (;;) {
                     while (ctx->count >= (Py_ssize_t) ctx->pattern[1] &&
-                           (ctx->ptr >= end || *ctx->ptr != ctx->u.chr)) {
-                        ctx->ptr--;
+                           (ctx->ptr >= end || 
+                            SRE_CHARGET(state, ctx->ptr, 0) != ctx->u.chr)) {
+                        ctx->ptr -= state->charsize;
                         ctx->count--;
                     }
                     if (ctx->count < (Py_ssize_t) ctx->pattern[1])
@@ -1070,7 +1047,7 @@ entrance:
 
                     LASTMARK_RESTORE();
 
-                    ctx->ptr--;
+                    ctx->ptr -= state->charsize;
                     ctx->count--;
                 }
 
@@ -1084,7 +1061,7 @@ entrance:
                         RETURN_ON_ERROR(ret);
                         RETURN_SUCCESS;
                     }
-                    ctx->ptr--;
+                    ctx->ptr -= state->charsize;
                     ctx->count--;
                     LASTMARK_RESTORE();
                 }
@@ -1104,7 +1081,7 @@ entrance:
             TRACE(("|%p|%p|MIN_REPEAT_ONE %d %d\n", ctx->pattern, ctx->ptr,
                    ctx->pattern[1], ctx->pattern[2]));
 
-            if (ctx->ptr + ctx->pattern[1] > end)
+            if (ctx->ptr + state->charsize * ctx->pattern[1] > end)
                 RETURN_FAILURE; /* cannot match */
 
             state->ptr = ctx->ptr;
@@ -1121,7 +1098,7 @@ entrance:
                     RETURN_FAILURE;
                 /* advance past minimum matches of repeat */
                 ctx->count = ret;
-                ctx->ptr += ctx->count;
+                ctx->ptr += state->charsize * ctx->count;
             }
 
             if (ctx->pattern[ctx->pattern[0]] == SRE_OP_SUCCESS) {
@@ -1148,7 +1125,7 @@ entrance:
                     if (ret == 0)
                         break;
                     assert(ret == 1);
-                    ctx->ptr++;
+                    ctx->ptr += state->charsize;
                     ctx->count++;
                     LASTMARK_RESTORE();
                 }
@@ -1320,14 +1297,16 @@ entrance:
                 if (groupref >= state->lastmark) {
                     RETURN_FAILURE;
                 } else {
-                    SRE_CHAR* p = (SRE_CHAR*) state->mark[groupref];
-                    SRE_CHAR* e = (SRE_CHAR*) state->mark[groupref+1];
+                    char* p = (char*) state->mark[groupref];
+                    char* e = (char*) state->mark[groupref+1];
                     if (!p || !e || e < p)
                         RETURN_FAILURE;
                     while (p < e) {
-                        if (ctx->ptr >= end || *ctx->ptr != *p)
+                        if (ctx->ptr >= end || 
+                            SRE_CHARGET(state, ctx->ptr, 0) != SRE_CHARGET(state, p, 0))
                             RETURN_FAILURE;
-                        p++; ctx->ptr++;
+                        p += state->charsize;
+                        ctx->ptr += state->charsize;
                     }
                 }
             }
@@ -1344,15 +1323,16 @@ entrance:
                 if (groupref >= state->lastmark) {
                     RETURN_FAILURE;
                 } else {
-                    SRE_CHAR* p = (SRE_CHAR*) state->mark[groupref];
-                    SRE_CHAR* e = (SRE_CHAR*) state->mark[groupref+1];
+                    char* p = (char*) state->mark[groupref];
+                    char* e = (char*) state->mark[groupref+1];
                     if (!p || !e || e < p)
                         RETURN_FAILURE;
                     while (p < e) {
                         if (ctx->ptr >= end ||
-                            state->lower(*ctx->ptr) != state->lower(*p))
+                            state->lower(SRE_CHARGET(state, ctx->ptr, 0)) != state->lower(*p))
                             RETURN_FAILURE;
-                        p++; ctx->ptr++;
+                        p++;
+                        ctx->ptr += state->charsize;
                     }
                 }
             }
@@ -1386,7 +1366,7 @@ entrance:
             /* <ASSERT> <skip> <back> <pattern> */
             TRACE(("|%p|%p|ASSERT %d\n", ctx->pattern,
                    ctx->ptr, ctx->pattern[1]));
-            state->ptr = ctx->ptr - ctx->pattern[1];
+            state->ptr = ctx->ptr - state->charsize * ctx->pattern[1];
             if (state->ptr < state->beginning)
                 RETURN_FAILURE;
             DO_JUMP(JUMP_ASSERT, jump_assert, ctx->pattern+2);
@@ -1399,7 +1379,7 @@ entrance:
             /* <ASSERT_NOT> <skip> <back> <pattern> */
             TRACE(("|%p|%p|ASSERT_NOT %d\n", ctx->pattern,
                    ctx->ptr, ctx->pattern[1]));
-            state->ptr = ctx->ptr - ctx->pattern[1];
+            state->ptr = ctx->ptr - state->charsize * ctx->pattern[1];
             if (state->ptr >= state->beginning) {
                 DO_JUMP(JUMP_ASSERT_NOT, jump_assert_not, ctx->pattern+2);
                 if (ret) {
@@ -1481,8 +1461,8 @@ exit:
 LOCAL(Py_ssize_t)
 SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
 {
-    SRE_CHAR* ptr = (SRE_CHAR *)state->start;
-    SRE_CHAR* end = (SRE_CHAR *)state->end;
+    char* ptr = (char*)state->start;
+    char* end = (char*)state->end;
     Py_ssize_t status = 0;
     Py_ssize_t prefix_len = 0;
     Py_ssize_t prefix_skip = 0;
@@ -1500,9 +1480,9 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
         if (pattern[3] > 1) {
             /* adjust end point (but make sure we leave at least one
                character in there, so literal search will work) */
-            end -= pattern[3]-1;
+            end -= (pattern[3]-1) * state->charsize;
             if (end <= ptr)
-                end = ptr+1;
+                end = ptr + state->charsize;
         }
 
         if (flags & SRE_INFO_PREFIX) {
@@ -1528,10 +1508,10 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
         /* pattern starts with a known prefix.  use the overlap
            table to skip forward as fast as we possibly can */
         Py_ssize_t i = 0;
-        end = (SRE_CHAR *)state->end;
+        end = (char *)state->end;
         while (ptr < end) {
             for (;;) {
-                if ((SRE_CODE) ptr[0] != prefix[i]) {
+                if ((SRE_CODE) SRE_CHARGET(state, ptr, 0) != prefix[i]) {
                     if (!i)
                         break;
                     else
@@ -1540,8 +1520,8 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
                     if (++i == prefix_len) {
                         /* found a potential match */
                         TRACE(("|%p|%p|SEARCH SCAN\n", pattern, ptr));
-                        state->start = ptr + 1 - prefix_len;
-                        state->ptr = ptr + 1 - prefix_len + prefix_skip;
+                        state->start = ptr - (prefix_len - 1) * state->charsize;
+                        state->ptr = ptr - (prefix_len - prefix_skip - 1) * state->charsize;
                         if (flags & SRE_INFO_LITERAL)
                             return 1; /* we got all of it */
                         status = SRE_MATCH(state, pattern + 2*prefix_skip);
@@ -1553,7 +1533,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
                     break;
                 }
             }
-            ptr++;
+            ptr += state->charsize;
         }
         return 0;
     }
@@ -1563,15 +1543,16 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
         /* pattern starts with a literal character.  this is used
            for short prefixes, and if fast search is disabled */
         SRE_CODE chr = pattern[1];
-        end = (SRE_CHAR *)state->end;
+        end = (char*)state->end;
         for (;;) {
-            while (ptr < end && (SRE_CODE) ptr[0] != chr)
-                ptr++;
+            while (ptr < end && (SRE_CODE) SRE_CHARGET(state, ptr, 0) != chr)
+                ptr += state->charsize;
             if (ptr >= end)
                 return 0;
             TRACE(("|%p|%p|SEARCH LITERAL\n", pattern, ptr));
             state->start = ptr;
-            state->ptr = ++ptr;
+            ptr += state->charsize;
+            state->ptr = ptr;
             if (flags & SRE_INFO_LITERAL)
                 return 1; /* we got all of it */
             status = SRE_MATCH(state, pattern + 2);
@@ -1580,10 +1561,10 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
         }
     } else if (charset) {
         /* pattern starts with a character from a known set */
-        end = (SRE_CHAR *)state->end;
+        end = (char*)state->end;
         for (;;) {
-            while (ptr < end && !SRE_CHARSET(charset, ptr[0]))
-                ptr++;
+            while (ptr < end && !SRE_CHARSET(charset, SRE_CHARGET(state, ptr, 0)))
+                ptr += state->charsize;
             if (ptr >= end)
                 return 0;
             TRACE(("|%p|%p|SEARCH CHARSET\n", pattern, ptr));
@@ -1592,29 +1573,20 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
             status = SRE_MATCH(state, pattern);
             if (status != 0)
                 break;
-            ptr++;
+            ptr += state->charsize;
         }
     } else
         /* general case */
         while (ptr <= end) {
             TRACE(("|%p|%p|SEARCH\n", pattern, ptr));
-            state->start = state->ptr = ptr++;
+            state->start = state->ptr = ptr;
+            ptr += state->charsize;
             status = SRE_MATCH(state, pattern);
             if (status != 0)
                 break;
         }
 
     return status;
-}
-
-LOCAL(int)
-SRE_LITERAL_TEMPLATE(SRE_CHAR* ptr, Py_ssize_t len)
-{
-    /* check if given string is a literal template (i.e. no escapes) */
-    while (len-- > 0)
-        if (*ptr++ == '\\')
-            return 0;
-    return 1;
 }
 
 #if !defined(SRE_RECURSIVE)
@@ -1625,6 +1597,23 @@ SRE_LITERAL_TEMPLATE(SRE_CHAR* ptr, Py_ssize_t len)
 /* see sre.h for object declarations */
 static PyObject*pattern_new_match(PatternObject*, SRE_STATE*, int);
 static PyObject*pattern_scanner(PatternObject*, PyObject*);
+
+static int
+sre_literal_template(int charsize, char* ptr, Py_ssize_t len)
+{
+    /* check if given string is a literal template (i.e. no escapes) */
+    struct {
+        int charsize;
+    } state = {
+        charsize
+    };
+    while (len-- > 0) {
+        if (SRE_CHARGET((&state), ptr, 0) == '\\')
+            return 0;
+        ptr += charsize;
+    }
+    return 1;
+}
 
 static PyObject *
 sre_codesize(PyObject* self, PyObject *unused)
@@ -1641,11 +1630,7 @@ sre_getlower(PyObject* self, PyObject* args)
     if (flags & SRE_FLAG_LOCALE)
         return Py_BuildValue("i", sre_lower_locale(character));
     if (flags & SRE_FLAG_UNICODE)
-#if defined(HAVE_UNICODE)
         return Py_BuildValue("i", sre_lower_unicode(character));
-#else
-        return Py_BuildValue("i", sre_lower_locale(character));
-#endif
     return Py_BuildValue("i", sre_lower(character));
 }
 
@@ -1664,7 +1649,8 @@ state_reset(SRE_STATE* state)
 }
 
 static void*
-getstring(PyObject* string, Py_ssize_t* p_length, int* p_charsize)
+getstring(PyObject* string, Py_ssize_t* p_length,
+          int* p_logical_charsize, int* p_charsize)
 {
     /* given a python object, return a data pointer, a length (in
        characters), and a character size.  return NULL if the object
@@ -1679,9 +1665,12 @@ getstring(PyObject* string, Py_ssize_t* p_length, int* p_charsize)
     /* Unicode objects do not support the buffer API. So, get the data
        directly instead. */
     if (PyUnicode_Check(string)) {
-        ptr = (void *)PyUnicode_AS_DATA(string);
-        *p_length = PyUnicode_GET_SIZE(string);
-        *p_charsize = sizeof(Py_UNICODE);
+        if (PyUnicode_READY(string) == -1)
+            return NULL;
+        ptr = PyUnicode_DATA(string);
+        *p_length = PyUnicode_GET_LENGTH(string);
+        *p_charsize = PyUnicode_CHARACTER_SIZE(string);
+        *p_logical_charsize = 4;
         return ptr;
     }
 
@@ -1713,10 +1702,8 @@ getstring(PyObject* string, Py_ssize_t* p_length, int* p_charsize)
 
     if (PyBytes_Check(string) || bytes == size)
         charsize = 1;
-#if defined(HAVE_UNICODE)
     else if (bytes == (Py_ssize_t) (size * sizeof(Py_UNICODE)))
         charsize = sizeof(Py_UNICODE);
-#endif
     else {
         PyErr_SetString(PyExc_TypeError, "buffer size mismatch");
         return NULL;
@@ -1724,6 +1711,7 @@ getstring(PyObject* string, Py_ssize_t* p_length, int* p_charsize)
 
     *p_length = size;
     *p_charsize = charsize;
+    *p_logical_charsize = charsize;
 
     if (ptr == NULL) {
             PyErr_SetString(PyExc_ValueError,
@@ -1739,7 +1727,7 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     /* prepare state object */
 
     Py_ssize_t length;
-    int charsize;
+    int logical_charsize, charsize;
     void* ptr;
 
     memset(state, 0, sizeof(SRE_STATE));
@@ -1747,16 +1735,16 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     state->lastmark = -1;
     state->lastindex = -1;
 
-    ptr = getstring(string, &length, &charsize);
+    ptr = getstring(string, &length, &logical_charsize, &charsize);
     if (!ptr)
         return NULL;
 
-	if (charsize == 1 && pattern->charsize > 1) {
+	if (logical_charsize == 1 && pattern->logical_charsize > 1) {
 		PyErr_SetString(PyExc_TypeError,
 			"can't use a string pattern on a bytes-like object");
 		return NULL;
 	}
-	if (charsize > 1 && pattern->charsize == 1) {
+	if (logical_charsize > 1 && pattern->logical_charsize == 1) {
 		PyErr_SetString(PyExc_TypeError,
 			"can't use a bytes pattern on a string-like object");
 		return NULL;
@@ -1773,6 +1761,7 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     else if (end > length)
         end = length;
 
+    state->logical_charsize = logical_charsize;
     state->charsize = charsize;
 
     state->beginning = ptr;
@@ -1788,11 +1777,7 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     if (pattern->flags & SRE_FLAG_LOCALE)
         state->lower = sre_lower_locale;
     else if (pattern->flags & SRE_FLAG_UNICODE)
-#if defined(HAVE_UNICODE)
         state->lower = sre_lower_unicode;
-#else
-        state->lower = sre_lower_locale;
-#endif
     else
         state->lower = sre_lower;
 
@@ -1891,12 +1876,10 @@ pattern_match(PatternObject* self, PyObject* args, PyObject* kw)
 
     TRACE(("|%p|%p|MATCH\n", PatternObject_GetCode(self), state.ptr));
 
-    if (state.charsize == 1) {
+    if (state.logical_charsize == 1) {
         status = sre_match(&state, PatternObject_GetCode(self));
     } else {
-#if defined(HAVE_UNICODE)
         status = sre_umatch(&state, PatternObject_GetCode(self));
-#endif
     }
 
     TRACE(("|%p|%p|END\n", PatternObject_GetCode(self), state.ptr));
@@ -1928,12 +1911,10 @@ pattern_search(PatternObject* self, PyObject* args, PyObject* kw)
 
     TRACE(("|%p|%p|SEARCH\n", PatternObject_GetCode(self), state.ptr));
 
-    if (state.charsize == 1) {
+    if (state.logical_charsize == 1) {
         status = sre_search(&state, PatternObject_GetCode(self));
     } else {
-#if defined(HAVE_UNICODE)
         status = sre_usearch(&state, PatternObject_GetCode(self));
-#endif
     }
 
     TRACE(("|%p|%p|END\n", PatternObject_GetCode(self), state.ptr));
@@ -2075,12 +2056,10 @@ pattern_findall(PatternObject* self, PyObject* args, PyObject* kw)
 
         state.ptr = state.start;
 
-        if (state.charsize == 1) {
+        if (state.logical_charsize == 1) {
             status = sre_search(&state, PatternObject_GetCode(self));
         } else {
-#if defined(HAVE_UNICODE)
             status = sre_usearch(&state, PatternObject_GetCode(self));
-#endif
         }
 
 	if (PyErr_Occurred())
@@ -2205,12 +2184,10 @@ pattern_split(PatternObject* self, PyObject* args, PyObject* kw)
 
         state.ptr = state.start;
 
-        if (state.charsize == 1) {
+        if (state.logical_charsize == 1) {
             status = sre_search(&state, PatternObject_GetCode(self));
         } else {
-#if defined(HAVE_UNICODE)
             status = sre_usearch(&state, PatternObject_GetCode(self));
-#endif
         }
 
 	if (PyErr_Occurred())
@@ -2295,7 +2272,7 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
     int status;
     Py_ssize_t n;
     Py_ssize_t i, b, e;
-    int bint;
+    int logical_charsize, charsize;
     int filter_is_callable;
 
     if (PyCallable_Check(ptemplate)) {
@@ -2306,16 +2283,10 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
     } else {
         /* if not callable, check if it's a literal string */
         int literal;
-        ptr = getstring(ptemplate, &n, &bint);
-        b = bint;
+        ptr = getstring(ptemplate, &n, &logical_charsize, &charsize);
+        b = charsize;
         if (ptr) {
-            if (b == 1) {
-		    literal = sre_literal_template((unsigned char *)ptr, n);
-            } else {
-#if defined(HAVE_UNICODE)
-		    literal = sre_uliteral_template((Py_UNICODE *)ptr, n);
-#endif
-            }
+            literal = sre_literal_template(b, ptr, n);
         } else {
             PyErr_Clear();
             literal = 0;
@@ -2357,12 +2328,10 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
 
         state.ptr = state.start;
 
-        if (state.charsize == 1) {
+        if (state.logical_charsize == 1) {
             status = sre_search(&state, PatternObject_GetCode(self));
         } else {
-#if defined(HAVE_UNICODE)
             status = sre_usearch(&state, PatternObject_GetCode(self));
-#endif
         }
 
 	if (PyErr_Occurred())
@@ -2694,15 +2663,18 @@ _compile(PyObject* self_, PyObject* args)
         return NULL;
     }
 
-	if (pattern == Py_None)
-		self->charsize = -1;
-	else {
-		Py_ssize_t p_length;
-		if (!getstring(pattern, &p_length, &self->charsize)) {
-			Py_DECREF(self);
-			return NULL;
-		}
-	}
+    if (pattern == Py_None) {
+        self->logical_charsize = -1;
+        self->charsize = -1;
+    } 
+    else {
+        Py_ssize_t p_length;
+        if (!getstring(pattern, &p_length, &self->logical_charsize,
+                       &self->charsize)) {
+            Py_DECREF(self);
+            return NULL;
+        }
+    }
 
     Py_INCREF(pattern);
     self->pattern = pattern;
@@ -3746,12 +3718,10 @@ scanner_match(ScannerObject* self, PyObject *unused)
 
     state->ptr = state->start;
 
-    if (state->charsize == 1) {
+    if (state->logical_charsize == 1) {
         status = sre_match(state, PatternObject_GetCode(self->pattern));
     } else {
-#if defined(HAVE_UNICODE)
         status = sre_umatch(state, PatternObject_GetCode(self->pattern));
-#endif
     }
     if (PyErr_Occurred())
         return NULL;
@@ -3779,12 +3749,10 @@ scanner_search(ScannerObject* self, PyObject *unused)
 
     state->ptr = state->start;
 
-    if (state->charsize == 1) {
+    if (state->logical_charsize == 1) {
         status = sre_search(state, PatternObject_GetCode(self->pattern));
     } else {
-#if defined(HAVE_UNICODE)
         status = sre_usearch(state, PatternObject_GetCode(self->pattern));
-#endif
     }
     if (PyErr_Occurred())
         return NULL;

@@ -80,18 +80,6 @@ Copyright (C) 1994 Steen Lumholt.
 #error "Tk older than 8.3.1 not supported"
 #endif
 
-/* Unicode conversion assumes that Tcl_UniChar is two bytes.
-   We cannot test this directly, so we test UTF-8 size instead,
-   expecting that TCL_UTF_MAX is changed if Tcl ever supports
-   either UTF-16 or UCS-4.
-   Redhat 8 sets TCL_UTF_MAX to 6, and uses wchar_t for
-   Tcl_Unichar. This is also ok as long as Python uses UCS-4,
-   as well.
-*/
-#if TCL_UTF_MAX != 3 && !(defined(Py_UNICODE_WIDE) && TCL_UTF_MAX==6)
-#error "unsupported Tcl configuration"
-#endif
-
 #if !(defined(MS_WINDOWS) || defined(__CYGWIN__))
 #define HAVE_CREATEFILEHANDLER
 #endif
@@ -975,38 +963,44 @@ AsObj(PyObject *value)
         return result;
     }
     else if (PyUnicode_Check(value)) {
-        Py_UNICODE *inbuf = PyUnicode_AS_UNICODE(value);
-        Py_ssize_t size = PyUnicode_GET_SIZE(value);
-        /* This #ifdef assumes that Tcl uses UCS-2.
-           See TCL_UTF_MAX test above. */
-#if defined(Py_UNICODE_WIDE) && TCL_UTF_MAX == 3
+        void *inbuf;
+        Py_ssize_t size;
+        int kind;
         Tcl_UniChar *outbuf = NULL;
         Py_ssize_t i;
-        size_t allocsize = ((size_t)size) * sizeof(Tcl_UniChar);
-        if (allocsize >= size)
-            outbuf = (Tcl_UniChar*)ckalloc(allocsize);
+        size_t allocsize;
+
+        if (PyUnicode_READY(value) == -1)
+            return NULL;
+
+        inbuf = PyUnicode_DATA(value);
+        size = PyUnicode_GET_LENGTH(value);
+        kind = PyUnicode_KIND(value);
+        allocsize = ((size_t)size) * sizeof(Tcl_UniChar);
+        outbuf = (Tcl_UniChar*)ckalloc(allocsize);
         /* Else overflow occurred, and we take the next exit */
         if (!outbuf) {
             PyErr_NoMemory();
             return NULL;
         }
         for (i = 0; i < size; i++) {
-            if (inbuf[i] >= 0x10000) {
+            Py_UCS4 ch = PyUnicode_READ(kind, inbuf, i);
+            /* We cannot test for sizeof(Tcl_UniChar) directly,
+               so we test for UTF-8 size instead. */
+#if TCL_UTF_MAX == 3
+            if (ch >= 0x10000) {
                 /* Tcl doesn't do UTF-16, yet. */
                 PyErr_SetString(PyExc_ValueError,
                                 "unsupported character");
                 ckfree(FREECAST outbuf);
                 return NULL;
+#endif
             }
-            outbuf[i] = inbuf[i];
+            outbuf[i] = ch;
         }
         result = Tcl_NewUnicodeObj(outbuf, size);
         ckfree(FREECAST outbuf);
         return result;
-#else
-        return Tcl_NewUnicodeObj(inbuf, size);
-#endif
-
     }
     else if(PyTclObject_Check(value)) {
         Tcl_Obj *v = ((PyTclObject*)value)->value;
@@ -1088,24 +1082,14 @@ FromObj(PyObject* tkapp, Tcl_Obj *value)
     }
 
     if (value->typePtr == app->StringType) {
-#if defined(Py_UNICODE_WIDE) && TCL_UTF_MAX==3
-        PyObject *result;
-        int size;
-        Tcl_UniChar *input;
-        Py_UNICODE *output;
-
-        size = Tcl_GetCharLength(value);
-        result = PyUnicode_FromUnicode(NULL, size);
-        if (!result)
-            return NULL;
-        input = Tcl_GetUnicode(value);
-        output = PyUnicode_AS_UNICODE(result);
-        while (size--)
-            *output++ = *input++;
-        return result;
+#if TCL_UTF_MAX==3
+        return PyUnicode_FromKindAndData(
+            PyUnicode_2BYTE_KIND, Tcl_GetUnicode(value),
+            Tcl_GetCharLength(value));
 #else
-        return PyUnicode_FromUnicode(Tcl_GetUnicode(value),
-                                     Tcl_GetCharLength(value));
+        return PyUnicode_FromKindAndData(
+            PyUnicode_4BYTE_KIND, Tcl_GetUnicode(value),
+            Tcl_GetCharLength(value));
 #endif
     }
 

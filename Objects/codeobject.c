@@ -8,19 +8,24 @@
 /* all_name_chars(s): true iff all chars in s are valid NAME_CHARS */
 
 static int
-all_name_chars(Py_UNICODE *s)
+all_name_chars(PyObject *o)
 {
     static char ok_name_char[256];
     static unsigned char *name_chars = (unsigned char *)NAME_CHARS;
+    PyUnicodeObject *u = (PyUnicodeObject *)o;
+    const unsigned char *s;
+
+    if (!PyUnicode_Check(o) || PyUnicode_READY(u) == -1 ||
+        PyUnicode_MAX_CHAR_VALUE(u) >= 128)
+        return 0;
 
     if (ok_name_char[*name_chars] == 0) {
         unsigned char *p;
         for (p = name_chars; *p; p++)
             ok_name_char[*p] = 1;
     }
+    s = PyUnicode_1BYTE_DATA(u);
     while (*s) {
-        if (*s >= 128)
-            return 0;
         if (ok_name_char[*s++] == 0)
             return 0;
     }
@@ -77,9 +82,7 @@ PyCode_New(int argcount, int kwonlyargcount,
     /* Intern selected string constants */
     for (i = PyTuple_GET_SIZE(consts); --i >= 0; ) {
         PyObject *v = PyTuple_GetItem(consts, i);
-        if (!PyUnicode_Check(v))
-            continue;
-        if (!all_name_chars(PyUnicode_AS_UNICODE(v)))
+        if (!all_name_chars(v))
             continue;
         PyUnicode_InternInPlace(&PyTuple_GET_ITEM(consts, i));
     }

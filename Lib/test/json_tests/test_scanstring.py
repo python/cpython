@@ -9,14 +9,9 @@ class TestScanstring:
             scanstring('"z\\ud834\\udd20x"', 1, True),
             ('z\U0001d120x', 16))
 
-        if sys.maxunicode == 65535:
-            self.assertEqual(
-                scanstring('"z\U0001d120x"', 1, True),
-                ('z\U0001d120x', 6))
-        else:
-            self.assertEqual(
-                scanstring('"z\U0001d120x"', 1, True),
-                ('z\U0001d120x', 5))
+        self.assertEqual(
+            scanstring('"z\U0001d120x"', 1, True),
+            ('z\U0001d120x', 5))
 
         self.assertEqual(
             scanstring('"\\u007b"', 1, True),

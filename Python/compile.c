@@ -197,16 +197,17 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
 {
     /* Name mangling: __private becomes _classname__private.
        This is independent from how the name is used. */
-    const Py_UNICODE *p, *name = PyUnicode_AS_UNICODE(ident);
-    Py_UNICODE *buffer;
-    size_t nlen, plen;
+    PyObject *result;
+    size_t nlen, plen, ipriv;
+    Py_UCS4 maxchar;
     if (privateobj == NULL || !PyUnicode_Check(privateobj) ||
-        name == NULL || name[0] != '_' || name[1] != '_') {
+        PyUnicode_READ_CHAR(ident, 0) != '_' ||
+        PyUnicode_READ_CHAR(ident, 1) != '_') {
         Py_INCREF(ident);
         return ident;
     }
-    p = PyUnicode_AS_UNICODE(privateobj);
-    nlen = Py_UNICODE_strlen(name);
+    nlen = PyUnicode_GET_LENGTH(ident);
+    plen = PyUnicode_GET_LENGTH(privateobj);
     /* Don't mangle __id__ or names with dots.
 
        The only time a name with a dot can occur is when
@@ -216,32 +217,37 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
        TODO(jhylton): Decide whether we want to support
        mangling of the module name, e.g. __M.X.
     */
-    if ((name[nlen-1] == '_' && name[nlen-2] == '_')
-        || Py_UNICODE_strchr(name, '.')) {
+    if ((PyUnicode_READ_CHAR(ident, nlen-1) == '_' &&
+         PyUnicode_READ_CHAR(ident, nlen-2) == '_') ||
+        PyUnicode_FindChar(ident, '.', 0, nlen, 1) != -1) {
         Py_INCREF(ident);
         return ident; /* Don't mangle __whatever__ */
     }
     /* Strip leading underscores from class name */
-    while (*p == '_')
-        p++;
-    if (*p == 0) {
+    ipriv = 0;
+    while (PyUnicode_READ_CHAR(privateobj, ipriv) == '_')
+        ipriv++;
+    if (ipriv == plen) {
         Py_INCREF(ident);
         return ident; /* Don't mangle if class is just underscores */
     }
-    plen = Py_UNICODE_strlen(p);
+    plen -= ipriv;
 
     assert(1 <= PY_SSIZE_T_MAX - nlen);
     assert(1 + nlen <= PY_SSIZE_T_MAX - plen);
 
-    ident = PyUnicode_FromStringAndSize(NULL, 1 + nlen + plen);
-    if (!ident)
+    maxchar = PyUnicode_MAX_CHAR_VALUE(ident);
+    if (PyUnicode_MAX_CHAR_VALUE(privateobj) > maxchar)
+        maxchar = PyUnicode_MAX_CHAR_VALUE(privateobj);
+
+    result = PyUnicode_New(1 + nlen + plen, maxchar);
+    if (!result)
         return 0;
-    /* ident = "_" + p[:plen] + name # i.e. 1+plen+nlen bytes */
-    buffer = PyUnicode_AS_UNICODE(ident);
-    buffer[0] = '_';
-    Py_UNICODE_strncpy(buffer+1, p, plen);
-    Py_UNICODE_strcpy(buffer+1+plen, name);
-    return ident;
+    /* ident = "_" + priv[ipriv:] + ident # i.e. 1+plen+nlen bytes */
+    PyUnicode_WRITE(PyUnicode_KIND(result), PyUnicode_DATA(result), 0, '_');
+    PyUnicode_CopyCharacters(result, 1, privateobj, ipriv, plen);
+    PyUnicode_CopyCharacters(result, plen+1, ident, 0, nlen);
+    return result;
 }
 
 static int
@@ -2085,22 +2091,27 @@ compiler_import_as(struct compiler *c, identifier name, identifier asname)
        If there is a dot in name, we need to split it and emit a
        LOAD_ATTR for each name.
     */
-    const Py_UNICODE *src = PyUnicode_AS_UNICODE(name);
-    const Py_UNICODE *dot = Py_UNICODE_strchr(src, '.');
-    if (dot) {
+    Py_ssize_t dot = PyUnicode_FindChar(name, '.', 0,
+                                        PyUnicode_GET_LENGTH(name), 1);
+    if (dot == -2)
+        return -1;
+    if (dot != -1) {
         /* Consume the base module name to get the first attribute */
-        src = dot + 1;
-        while (dot) {
-            /* NB src is only defined when dot != NULL */
+        Py_ssize_t pos = dot + 1;
+        while (dot != -1) {
             PyObject *attr;
-            dot = Py_UNICODE_strchr(src, '.');
-            attr = PyUnicode_FromUnicode(src,
-                                dot ? dot - src : Py_UNICODE_strlen(src));
+            dot = PyUnicode_FindChar(name, '.', pos,
+                                     PyUnicode_GET_LENGTH(name), 1);
+            if (dot == -2)
+                return -1;
+            attr = PyUnicode_Substring(name, pos,
+                                       (dot != -1) ? dot :
+                                       PyUnicode_GET_LENGTH(name));
             if (!attr)
                 return -1;
             ADDOP_O(c, LOAD_ATTR, attr, names);
             Py_DECREF(attr);
-            src = dot + 1;
+            pos = dot + 1;
         }
     }
     return compiler_nameop(c, asname, Store);
@@ -2139,13 +2150,12 @@ compiler_import(struct compiler *c, stmt_ty s)
         }
         else {
             identifier tmp = alias->name;
-            const Py_UNICODE *base = PyUnicode_AS_UNICODE(alias->name);
-            Py_UNICODE *dot = Py_UNICODE_strchr(base, '.');
-            if (dot)
-                tmp = PyUnicode_FromUnicode(base,
-                                            dot - base);
+            Py_ssize_t dot = PyUnicode_FindChar(
+                alias->name, '.', 0, PyUnicode_GET_LENGTH(alias->name), 1);
+            if (dot != -1)
+                tmp = PyUnicode_Substring(alias->name, 0, dot);
             r = compiler_nameop(c, tmp, Store);
-            if (dot) {
+            if (dot != -1) {
                 Py_DECREF(tmp);
             }
             if (!r)
@@ -2208,7 +2218,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
         alias_ty alias = (alias_ty)asdl_seq_GET(s->v.ImportFrom.names, i);
         identifier store_name;
 
-        if (i == 0 && *PyUnicode_AS_UNICODE(alias->name) == '*') {
+        if (i == 0 && PyUnicode_READ_CHAR(alias->name, 0) == '*') {
             assert(n == 1);
             ADDOP(c, IMPORT_STAR);
             return 1;
@@ -2522,7 +2532,7 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
     }
 
     /* XXX Leave assert here, but handle __doc__ and the like better */
-    assert(scope || PyUnicode_AS_UNICODE(name)[0] == '_');
+    assert(scope || PyUnicode_READ_CHAR(name, 0) == '_');
 
     switch (optype) {
     case OP_DEREF:
@@ -3045,8 +3055,7 @@ expr_constant(struct compiler *c, expr_ty e)
         return PyObject_IsTrue(e->v.Str.s);
     case Name_kind:
         /* optimize away names that can't be reassigned */
-        id = PyBytes_AS_STRING(
-            _PyUnicode_AsDefaultEncodedString(e->v.Name.id));
+        id = PyUnicode_AsUTF8(e->v.Name.id);
         if (strcmp(id, "True") == 0) return 1;
         if (strcmp(id, "False") == 0) return 0;
         if (strcmp(id, "None") == 0) return 0;

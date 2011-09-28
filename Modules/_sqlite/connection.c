@@ -1436,10 +1436,11 @@ pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
     PyObject* uppercase_name = 0;
     PyObject* name;
     PyObject* retval;
-    Py_UNICODE* chk;
     Py_ssize_t i, len;
     char *uppercase_name_str;
     int rc;
+    unsigned int kind;
+    void *data;
 
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         goto finally;
@@ -1454,12 +1455,16 @@ pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
         goto finally;
     }
 
-    len = PyUnicode_GET_SIZE(uppercase_name);
-    chk = PyUnicode_AS_UNICODE(uppercase_name);
-    for (i=0; i<len; i++, chk++) {
-        if ((*chk >= '0' && *chk <= '9')
-         || (*chk >= 'A' && *chk <= 'Z')
-         || (*chk == '_'))
+    if (PyUnicode_READY(uppercase_name))
+        goto finally;
+    len = PyUnicode_GET_LENGTH(uppercase_name);
+    kind = PyUnicode_KIND(uppercase_name);
+    data = PyUnicode_DATA(uppercase_name);
+    for (i=0; i<len; i++) {
+        Py_UCS4 ch = PyUnicode_READ(kind, data, i);
+        if ((ch >= '0' && ch <= '9')
+         || (ch >= 'A' && ch <= 'Z')
+         || (ch == '_'))
         {
             continue;
         } else {

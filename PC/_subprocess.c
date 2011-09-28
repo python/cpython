@@ -329,12 +329,9 @@ gethandle(PyObject* obj, char* name)
 static PyObject*
 getenvironment(PyObject* environment)
 {
-    int i;
-    Py_ssize_t envsize;
-    PyObject* out = NULL;
-    PyObject* keys;
-    PyObject* values;
-    Py_UNICODE* p;
+    Py_ssize_t i, envsize, totalsize;
+    Py_UCS4 *buffer = NULL, *p, *end;
+    PyObject *keys, *values, *res;
 
     /* convert environment dictionary to windows enviroment string */
     if (! PyMapping_Check(environment)) {
@@ -350,14 +347,8 @@ getenvironment(PyObject* environment)
     if (!keys || !values)
         goto error;
 
-    out = PyUnicode_FromUnicode(NULL, 2048);
-    if (! out)
-        goto error;
-
-    p = PyUnicode_AS_UNICODE(out);
-
+    totalsize = 1; /* trailing null character */
     for (i = 0; i < envsize; i++) {
-        Py_ssize_t ksize, vsize, totalsize;
         PyObject* key = PyList_GET_ITEM(keys, i);
         PyObject* value = PyList_GET_ITEM(values, i);
 
@@ -366,36 +357,42 @@ getenvironment(PyObject* environment)
                 "environment can only contain strings");
             goto error;
         }
-        ksize = PyUnicode_GET_SIZE(key);
-        vsize = PyUnicode_GET_SIZE(value);
-        totalsize = (p - PyUnicode_AS_UNICODE(out)) + ksize + 1 +
-                                                     vsize + 1 + 1;
-        if (totalsize > PyUnicode_GET_SIZE(out)) {
-            Py_ssize_t offset = p - PyUnicode_AS_UNICODE(out);
-            PyUnicode_Resize(&out, totalsize + 1024);
-            p = PyUnicode_AS_UNICODE(out) + offset;
-        }
-        Py_UNICODE_COPY(p, PyUnicode_AS_UNICODE(key), ksize);
-        p += ksize;
+        totalsize += PyUnicode_GET_LENGTH(key) + 1;    /* +1 for '=' */
+        totalsize += PyUnicode_GET_LENGTH(value) + 1;  /* +1 for '\0' */
+    }
+
+    buffer = PyMem_Malloc(totalsize * sizeof(Py_UCS4));
+    if (! buffer)
+        goto error;
+    p = buffer;
+    end = buffer + totalsize;
+
+    for (i = 0; i < envsize; i++) {
+        PyObject* key = PyList_GET_ITEM(keys, i);
+        PyObject* value = PyList_GET_ITEM(values, i);
+        if (!PyUnicode_AsUCS4(key, p, end - p, 0))
+            goto error;
+        p += PyUnicode_GET_LENGTH(key);
         *p++ = '=';
-        Py_UNICODE_COPY(p, PyUnicode_AS_UNICODE(value), vsize);
-        p += vsize;
+        if (!PyUnicode_AsUCS4(value, p, end - p, 0))
+            goto error;
+        p += PyUnicode_GET_LENGTH(value);
         *p++ = '\0';
     }
 
     /* add trailing null byte */
     *p++ = '\0';
-    PyUnicode_Resize(&out, p - PyUnicode_AS_UNICODE(out));
-
-    /* PyObject_Print(out, stdout, 0); */
+    assert(p == end);
 
     Py_XDECREF(keys);
     Py_XDECREF(values);
 
-    return out;
+    res = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, buffer, p - buffer);
+    PyMem_Free(buffer);
+    return res;
 
  error:
-    Py_XDECREF(out);
+    PyMem_Free(buffer);
     Py_XDECREF(keys);
     Py_XDECREF(values);
     return NULL;
@@ -609,7 +606,7 @@ sp_GetModuleFileName(PyObject* self, PyObject* args)
     if (! result)
         return PyErr_SetFromWindowsErr(GetLastError());
 
-    return PyUnicode_FromUnicode(filename, Py_UNICODE_strlen(filename));
+    return PyUnicode_FromWideChar(filename, wcslen(filename));
 }
 
 static PyMethodDef sp_functions[] = {

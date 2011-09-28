@@ -2054,7 +2054,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                 /* Inline the PyDict_GetItem() calls.
                    WARNING: this is an extreme speed hack.
                    Do not try this at home. */
-                Py_hash_t hash = ((PyUnicodeObject *)w)->hash;
+                Py_hash_t hash = ((PyASCIIObject *)w)->hash;
                 if (hash != -1) {
                     PyDictObject *d;
                     PyDictEntry *e;
@@ -4456,7 +4456,8 @@ import_all_from(PyObject *locals, PyObject *v)
         }
         if (skip_leading_underscores &&
             PyUnicode_Check(name) &&
-            PyUnicode_AS_UNICODE(name)[0] == '_')
+            PyUnicode_READY(name) != -1 &&
+            PyUnicode_READ_CHAR(name, 0) == '_')
         {
             Py_DECREF(name);
             continue;
@@ -4520,6 +4521,14 @@ unicode_concatenate(PyObject *v, PyObject *w,
 {
     /* This function implements 'variable += expr' when both arguments
        are (Unicode) strings. */
+
+    w = PyUnicode_Concat(v, w);
+    Py_DECREF(v);
+    return w;
+
+    /* XXX: This optimization is currently disabled as unicode objects in the
+       new flexible representation are not in-place resizable anymore. */
+#if 0
     Py_ssize_t v_len = PyUnicode_GET_SIZE(v);
     Py_ssize_t w_len = PyUnicode_GET_SIZE(w);
     Py_ssize_t new_len = v_len + w_len;
@@ -4570,7 +4579,8 @@ unicode_concatenate(PyObject *v, PyObject *w,
         }
     }
 
-    if (Py_REFCNT(v) == 1 && !PyUnicode_CHECK_INTERNED(v)) {
+    if (Py_REFCNT(v) == 1 && !PyUnicode_CHECK_INTERNED(v) &&
+        !PyUnicode_IS_COMPACT((PyUnicodeObject *)v)) {
         /* Now we own the last reference to 'v', so we can resize it
          * in-place.
          */
@@ -4594,6 +4604,7 @@ unicode_concatenate(PyObject *v, PyObject *w,
         Py_DECREF(v);
         return w;
     }
+#endif
 }
 
 #ifdef DYNAMIC_EXECUTION_PROFILE
