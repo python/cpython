@@ -2810,7 +2810,7 @@ PyMODINIT_FUNC
 PyInit_array(void)
 {
     PyObject *m;
-    char buffer[PY_ARRAY_LENGTH(descriptors)], *p;
+    char buffer[Py_ARRAY_LENGTH(descriptors)], *p;
     PyObject *typecodes;
     Py_ssize_t size = 0;
     struct arraydescr *descr;
