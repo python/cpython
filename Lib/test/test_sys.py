@@ -856,12 +856,10 @@ class SizeofTest(unittest.TestCase):
         # verify that the UTF-8 size is accounted for
         s = chr(0x4000)   # 4 bytes canonical representation
         check(s, size(compactfields) + 4)
-        try:
-            # eval() will trigger the generation of the UTF-8 representation
-            # as a side effect
-            eval(s)
-        except NameError:
-            check(s, size(compactfields) + 4 + 4)
+        # compile() will trigger the generation of the UTF-8
+        # representation as a side effect
+        compile(s, "<stdin>", "eval")
+        check(s, size(compactfields) + 4 + 4)
         # TODO: add check that forces the presence of wchar_t representation
         # TODO: add check that forces layout of unicodefields
         # weakref
