@@ -48,6 +48,7 @@
 #include <assert.h>
 
 #include "pyport.h"
+#include "pymacro.h"
 
 #include "pyatomic.h"
 
@@ -126,24 +127,6 @@
 #include "pystrcmp.h"
 #include "dtoa.h"
 #include "fileutils.h"
-
-/* Argument must be a char or an int in [-128, 127] or [0, 255]. */
-#define Py_CHARMASK(c) ((unsigned char)((c) & 0xff))
-
 #include "pyfpe.h"
-
-/* Define macros for inline documentation. */
-#define PyDoc_VAR(name) static char name[]
-#define PyDoc_STRVAR(name,str) PyDoc_VAR(name) = PyDoc_STR(str)
-#ifdef WITH_DOC_STRINGS
-#define PyDoc_STR(str) str
-#else
-#define PyDoc_STR(str) ""
-#endif
-
-#define Py_ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
-
-#define Py_MIN(x, y) (((x) > (y)) ? (y) : (x))
-#define Py_MAX(x, y) (((x) > (y)) ? (x) : (y))
 
 #endif /* !Py_PYTHON_H */
