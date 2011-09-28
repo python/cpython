@@ -1435,7 +1435,7 @@ math_factorial(PyObject *self, PyObject *arg)
     }
 
     /* use lookup table if x is small */
-    if (x < (long)(sizeof(SmallFactorials)/sizeof(SmallFactorials[0])))
+    if (x < (long)Py_ARRAY_LENGTH(SmallFactorials))
         return PyLong_FromUnsignedLong(SmallFactorials[x]);
 
     /* else express in the form odd_part * 2**two_valuation, and compute as

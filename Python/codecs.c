@@ -1044,7 +1044,7 @@ static int _PyCodecRegistry_Init(void)
     interp->codec_error_registry = PyDict_New();
 
     if (interp->codec_error_registry) {
-        for (i = 0; i < sizeof(methods)/sizeof(methods[0]); ++i) {
+        for (i = 0; i < Py_ARRAY_LENGTH(methods); ++i) {
             PyObject *func = PyCFunction_New(&methods[i].def, NULL);
             int res;
             if (!func)

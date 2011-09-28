@@ -112,7 +112,7 @@ static fault_handler_t faulthandler_handlers[] = {
     {SIGSEGV, 0, "Segmentation fault", }
 };
 static const unsigned char faulthandler_nsignals = \
-    sizeof(faulthandler_handlers) / sizeof(faulthandler_handlers[0]);
+    Py_ARRAY_LENGTH(faulthandler_handlers);
 
 #ifdef HAVE_SIGALTSTACK
 static stack_t stack;

@@ -1771,7 +1771,7 @@ sys_update_path(int argc, wchar_t **argv)
         the argument must be the full path anyway. */
         wchar_t *ptemp;
         if (GetFullPathNameW(argv0,
-                           sizeof(fullpath)/sizeof(fullpath[0]),
+                           Py_ARRAY_LENGTH(fullpath),
                            fullpath,
                            &ptemp)) {
             argv0 = fullpath;

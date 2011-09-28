@@ -2355,7 +2355,7 @@ PyObject* PyType_FromSpec(PyType_Spec *spec)
     res->ht_type.tp_flags = spec->flags | Py_TPFLAGS_HEAPTYPE;
 
     for (slot = spec->slots; slot->slot; slot++) {
-        if (slot->slot >= sizeof(slotoffsets)/sizeof(slotoffsets[0])) {
+        if (slot->slot >= Py_ARRAY_LENGTH(slotoffsets)) {
             PyErr_SetString(PyExc_RuntimeError, "invalid slot offset");
             goto fail;
         }
@@ -2583,7 +2583,7 @@ type_prepare(PyObject *self, PyObject *args, PyObject *kwds)
     return PyDict_New();
 }
 
-/* 
+/*
    Merge the __dict__ of aclass into dict, and recursively also all
    the __dict__s of aclass's base classes.  The order of merging isn't
    defined, as it's expected that only the final set of dict keys is

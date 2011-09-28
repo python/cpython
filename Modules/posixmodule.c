@@ -2895,9 +2895,9 @@ posix__getfullpathname(PyObject *self, PyObject *args)
         DWORD result;
         PyObject *v;
         result = GetFullPathNameW(wpath,
-                                  sizeof(woutbuf)/sizeof(woutbuf[0]),
+                                  Py_ARRAY_LENGTH(woutbuf),
                                   woutbuf, &wtemp);
-        if (result > sizeof(woutbuf)/sizeof(woutbuf[0])) {
+        if (result > Py_ARRAY_LENGTH(woutbuf)) {
             woutbufp = malloc(result * sizeof(Py_UNICODE));
             if (!woutbufp)
                 return PyErr_NoMemory();
@@ -2920,7 +2920,7 @@ posix__getfullpathname(PyObject *self, PyObject *args)
                            PyUnicode_FSConverter, &opath))
         return NULL;
     path = PyBytes_AsString(opath);
-    if (!GetFullPathName(path, sizeof(outbuf)/sizeof(outbuf[0]),
+    if (!GetFullPathName(path, Py_ARRAY_LENGTH(outbuf),
                          outbuf, &temp)) {
         win32_error("GetFullPathName", path);
         Py_DECREF(opath);
@@ -4903,7 +4903,7 @@ static PyObject *
 cpu_set_repr(Py_cpu_set *set)
 {
     return PyUnicode_FromFormat("<cpu_set with %li entries>", set->ncpus);
-} 
+}
 
 static Py_ssize_t
 cpu_set_len(Py_cpu_set *set)
@@ -5656,7 +5656,7 @@ posix_getlogin(PyObject *self, PyObject *noargs)
     PyObject *result = NULL;
 #ifdef MS_WINDOWS
     wchar_t user_name[UNLEN + 1];
-    DWORD num_chars = sizeof(user_name)/sizeof(user_name[0]);
+    DWORD num_chars = Py_ARRAY_LENGTH(user_name);
 
     if (GetUserNameW(user_name, &num_chars)) {
         /* num_chars is the number of unicode chars plus null terminator */

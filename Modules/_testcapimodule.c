@@ -1593,7 +1593,7 @@ test_long_numbits(PyObject *self)
              {-0xfffffffL, 28, -1}};
     int i;
 
-    for (i = 0; i < sizeof(testcases) / sizeof(struct triple); ++i) {
+    for (i = 0; i < Py_ARRAY_LENGTH(testcases); ++i) {
         PyObject *plong = PyLong_FromLong(testcases[i].input);
         size_t nbits = _PyLong_NumBits(plong);
         int sign = _PyLong_Sign(plong);

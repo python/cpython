@@ -77,7 +77,7 @@ void PyWinFreeze_ExeTerm(void)
 {
     // Must go backwards
     char **modName;
-    for (modName = possibleModules+(sizeof(possibleModules) / sizeof(char *))-2;
+    for (modName = possibleModules+Py_ARRAY_LENGTH(possibleModules)-2;
          modName >= possibleModules;
          *modName--) {
 /*              printf("Terminating '%s'\n", *modName);*/
@@ -103,7 +103,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
         {
             // Must go backwards
             char **modName;
-            for (modName = possibleModules+(sizeof(possibleModules) / sizeof(char *))-2;
+            for (modName = possibleModules+Py_ARRAY_LENGTH(possibleModules)-2;
                  modName >= possibleModules;
                  *modName--)
                 CallModuleDllMain(*modName, DLL_PROCESS_DETACH);
