@@ -447,6 +447,7 @@ class SysModuleTest(unittest.TestCase):
 
         self.assertIsInstance(sys.maxsize, int)
         self.assertIsInstance(sys.maxunicode, int)
+        self.assertEqual(sys.maxunicode, 0x10FFFF)
         self.assertIsInstance(sys.platform, str)
         self.assertIsInstance(sys.prefix, str)
         self.assertIsInstance(sys.version, str)

@@ -207,7 +207,8 @@ static unsigned char ascii_linebreak[] = {
     0, 0, 0, 0, 0, 0, 0, 0
 };
 
-
+/* The max unicode value is always 0x10FFFF while using the PEP-393 API.
+   This function is kept for backward compatibility with the old API. */
 Py_UNICODE
 PyUnicode_GetMax(void)
 {
