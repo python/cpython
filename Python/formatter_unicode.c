@@ -341,7 +341,7 @@ fill_padding(PyObject *s, Py_ssize_t start, Py_ssize_t nchars,
 
     /* Pad on right. */
     if (n_rpadding)
-        unicode_fill(s, start + nchars + n_lpadding, 
+        unicode_fill(s, start + nchars + n_lpadding,
                      start + nchars + n_lpadding + n_rpadding, fill_char);
 
     /* Pointer to the user content. */
@@ -501,7 +501,7 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
         spec->n_grouped_digits = 0;
     else
         spec->n_grouped_digits = _PyUnicode_InsertThousandsGrouping(
-            PyUnicode_1BYTE_KIND, NULL, 0, NULL, 
+            PyUnicode_1BYTE_KIND, NULL, 0, NULL,
             spec->n_digits, spec->n_min_width,
             locale->grouping, locale->thousands_sep);
 
@@ -541,11 +541,12 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
 
 /* Fill in the digit parts of a numbers's string representation,
    as determined in calc_number_widths().
-   No error checking, since we know the buffer is the correct size. */
-static void
+   Return -1 on error, or 0 on success. */
+static int
 fill_number(PyObject *out, Py_ssize_t pos, const NumberFieldWidths *spec,
             PyObject *digits, Py_ssize_t d_start, Py_ssize_t d_end,
-            PyObject *prefix, Py_ssize_t p_start, Py_UCS4 fill_char,
+            PyObject *prefix, Py_ssize_t p_start,
+            Py_UCS4 fill_char,
             LocaleInfo *locale, int toupper)
 {
     /* Used to keep track of digits, decimal, and remainder. */
@@ -589,11 +590,8 @@ fill_number(PyObject *out, Py_ssize_t pos, const NumberFieldWidths *spec,
         char *pdigits = PyUnicode_DATA(digits);
         if (PyUnicode_KIND(digits) < kind) {
             pdigits = _PyUnicode_AsKind(digits, kind);
-            if (pdigits == NULL) {
-                /* XXX report exception */
-                Py_FatalError("out of memory");
-                return;
-            }
+            if (pdigits == NULL)
+                return -1;
         }
 #ifndef NDEBUG
         r =
@@ -640,6 +638,7 @@ fill_number(PyObject *out, Py_ssize_t pos, const NumberFieldWidths *spec,
         unicode_fill(out, pos, pos + spec->n_rpadding, fill_char);
         pos += spec->n_rpadding;
     }
+    return 0;
 }
 
 static char no_grouping[1] = {CHAR_MAX};
@@ -765,6 +764,7 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
     Py_ssize_t prefix;
     NumberFieldWidths spec;
     long x;
+    int err;
 
     /* Locale settings, either from the actual locale or
        from a hard-code pseudo-locale */
@@ -886,10 +886,13 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
         goto done;
 
     /* Populate the memory. */
-    fill_number(result, 0, &spec, tmp, inumeric_chars, inumeric_chars + n_digits,
-                tmp, prefix,
-                format->fill_char == '\0' ? ' ' : format->fill_char,
-                &locale, format->type == 'X');
+    err = fill_number(result, 0, &spec,
+                      tmp, inumeric_chars, inumeric_chars + n_digits,
+                      tmp, prefix,
+                      format->fill_char == '\0' ? ' ' : format->fill_char,
+                      &locale, format->type == 'X');
+    if (err)
+        Py_CLEAR(result);
 
 done:
     Py_XDECREF(tmp);
@@ -929,6 +932,7 @@ format_float_internal(PyObject *value,
     Py_UCS4 sign_char = '\0';
     int float_type; /* Used to see if we have a nan, inf, or regular float. */
     PyObject *unicode_tmp = NULL;
+    int err;
 
     /* Locale settings, either from the actual locale or
        from a hard-code pseudo-locale */
@@ -1010,7 +1014,7 @@ format_float_internal(PyObject *value,
                     &locale);
 
     /* Calculate how much memory we'll need. */
-    n_total = calc_number_widths(&spec, 0, sign_char, unicode_tmp, index, 
+    n_total = calc_number_widths(&spec, 0, sign_char, unicode_tmp, index,
                                  index + n_digits, n_remainder, has_decimal,
                                  &locale, format);
 
@@ -1020,10 +1024,13 @@ format_float_internal(PyObject *value,
         goto done;
 
     /* Populate the memory. */
-    fill_number(result, 0, &spec, unicode_tmp, index, index + n_digits,
-                NULL, 0,
-                format->fill_char == '\0' ? ' ' : format->fill_char, &locale,
-                0);
+    err = fill_number(result, 0, &spec,
+                      unicode_tmp, index, index + n_digits,
+                      NULL, 0,
+                      format->fill_char == '\0' ? ' ' : format->fill_char,
+                      &locale, 0);
+    if (err)
+        Py_CLEAR(result);
 
 done:
     PyMem_Free(buf);
@@ -1077,6 +1084,7 @@ format_complex_internal(PyObject *value,
     Py_ssize_t total;
     PyObject *re_unicode_tmp = NULL;
     PyObject *im_unicode_tmp = NULL;
+    int err;
 
     /* Locale settings, either from the actual locale or
        from a hard-code pseudo-locale */
@@ -1170,9 +1178,9 @@ format_complex_internal(PyObject *value,
 
     /* Determine if we have any "remainder" (after the digits, might include
        decimal or exponent or both (or neither)) */
-    parse_number(re_unicode_tmp, i_re, i_re + n_re_digits, 
+    parse_number(re_unicode_tmp, i_re, i_re + n_re_digits,
                  &n_re_remainder, &re_has_decimal);
-    parse_number(im_unicode_tmp, i_im, i_im + n_im_digits, 
+    parse_number(im_unicode_tmp, i_im, i_im + n_im_digits,
                  &n_im_remainder, &im_has_decimal);
 
     /* Determine the grouping, separator, and decimal point, if any. */
@@ -1225,12 +1233,26 @@ format_complex_internal(PyObject *value,
         PyUnicode_WRITE(rkind, rdata, index++, '(');
 
     if (!skip_re) {
-        fill_number(result, index, &re_spec, re_unicode_tmp, 
-                    i_re, i_re + n_re_digits, NULL, 0, 0, &locale, 0);
+        err = fill_number(result, index, &re_spec,
+                          re_unicode_tmp, i_re, i_re + n_re_digits,
+                          NULL, 0,
+                          0,
+                          &locale, 0);
+        if (err) {
+            Py_CLEAR(result);
+            goto done;
+        }
         index += n_re_total;
     }
-    fill_number(result, index, &im_spec, im_unicode_tmp,
-                i_im, i_im + n_im_digits, NULL, 0, 0, &locale, 0);
+    err = fill_number(result, index, &im_spec,
+                      im_unicode_tmp, i_im, i_im + n_im_digits,
+                      NULL, 0,
+                      0,
+                      &locale, 0);
+    if (err) {
+        Py_CLEAR(result);
+        goto done;
+    }
     index += n_im_total;
     PyUnicode_WRITE(rkind, rdata, index++, 'j');
 
