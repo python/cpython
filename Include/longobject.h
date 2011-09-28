@@ -12,7 +12,7 @@ typedef struct _longobject PyLongObject; /* Revealed in longintrepr.h */
 PyAPI_DATA(PyTypeObject) PyLong_Type;
 
 #define PyLong_Check(op) \
-		PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_LONG_SUBCLASS)
+        PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_LONG_SUBCLASS)
 #define PyLong_CheckExact(op) (Py_TYPE(op) == &PyLong_Type)
 
 PyAPI_FUNC(PyObject *) PyLong_FromLong(long);
@@ -122,8 +122,8 @@ PyAPI_FUNC(PyObject *) _PyLong_DivmodNear(PyObject *, PyObject *);
      enough memory to create the Python long.
 */
 PyAPI_FUNC(PyObject *) _PyLong_FromByteArray(
-	const unsigned char* bytes, size_t n,
-	int little_endian, int is_signed);
+    const unsigned char* bytes, size_t n,
+    int little_endian, int is_signed);
 
 /* _PyLong_AsByteArray: Convert the least-significant 8*n bits of long
    v to a base-256 integer, stored in array bytes.  Normally return 0,
@@ -145,8 +145,8 @@ PyAPI_FUNC(PyObject *) _PyLong_FromByteArray(
      case, but bytes holds the least-signficant n bytes of the true value.
 */
 PyAPI_FUNC(int) _PyLong_AsByteArray(PyLongObject* v,
-	unsigned char* bytes, size_t n,
-	int little_endian, int is_signed);
+    unsigned char* bytes, size_t n,
+    int little_endian, int is_signed);
 
 
 /* _PyLong_Format: Convert the long to a string object with given base,
@@ -156,9 +156,9 @@ PyAPI_FUNC(PyObject *) _PyLong_Format(PyObject *aa, int base);
 /* Format the object based on the format_spec, as defined in PEP 3101
    (Advanced String Formatting). */
 PyAPI_FUNC(PyObject *) _PyLong_FormatAdvanced(PyObject *obj,
-					      PyObject *format_spec,
-					      Py_ssize_t start,
-					      Py_ssize_t end);
+                                              PyObject *format_spec,
+                                              Py_ssize_t start,
+                                              Py_ssize_t end);
 #endif /* Py_LIMITED_API */
 
 /* These aren't really part of the long object, but they're handy. The
