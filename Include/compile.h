@@ -1,7 +1,7 @@
-#ifndef Py_LIMITED_API
 #ifndef Py_COMPILE_H
 #define Py_COMPILE_H
 
+#ifndef Py_LIMITED_API
 #include "code.h"
 
 #ifdef __cplusplus
@@ -38,9 +38,19 @@ PyAPI_FUNC(PyCodeObject *) PyAST_CompileEx(
     PyArena *arena);
 PyAPI_FUNC(PyFutureFeatures *) PyFuture_FromAST(struct _mod *, const char *);
 
+/* _Py_Mangle is defined in compile.c */
+PyAPI_FUNC(PyObject*) _Py_Mangle(PyObject *p, PyObject *name);
 
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_COMPILE_H */
+
 #endif /* !Py_LIMITED_API */
+
+/* These definitions must match corresponding definitions in graminit.h.
+   There's code in compile.c that checks that they are the same. */
+#define Py_single_input 256
+#define Py_file_input 257
+#define Py_eval_input 258
+
+#endif /* !Py_COMPILE_H */
