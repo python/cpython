@@ -127,29 +127,10 @@
 #include "dtoa.h"
 #include "fileutils.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/* _Py_Mangle is defined in compile.c */
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject*) _Py_Mangle(PyObject *p, PyObject *name);
-#endif
-
-#ifdef __cplusplus
-}
-#endif
-
 /* Argument must be a char or an int in [-128, 127] or [0, 255]. */
 #define Py_CHARMASK(c) ((unsigned char)((c) & 0xff))
 
 #include "pyfpe.h"
-
-/* These definitions must match corresponding definitions in graminit.h.
-   There's code in compile.c that checks that they are the same. */
-#define Py_single_input 256
-#define Py_file_input 257
-#define Py_eval_input 258
 
 /* Define macros for inline documentation. */
 #define PyDoc_VAR(name) static char name[]
