@@ -10,7 +10,8 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
-- PEP 393: flexible string representation.
+- PEP 393: flexible string representation. Thanks to Torsten Becker for the
+  initial implementation, and Victor Stinner for various bug fixes.
 
 - Issue #13012: The 'keepends' parameter to str.splitlines may now be passed
   as a keyword argument:  "my_string.splitlines(keepends=True)".  The same
