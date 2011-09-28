@@ -506,7 +506,7 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
    Unicode character U+FFFD is the official REPLACEMENT CHARACTER in
    Unicode 3.0. */
 
-#define Py_UNICODE_REPLACEMENT_CHARACTER ((Py_UNICODE) 0xFFFD)
+#define Py_UNICODE_REPLACEMENT_CHARACTER ((Py_UCS4) 0xFFFD)
 
 /* === Public API ========================================================= */
 
