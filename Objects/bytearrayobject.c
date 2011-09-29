@@ -1147,7 +1147,7 @@ PyDoc_STRVAR(clear__doc__,
 \n\
 Remove all items from B.");
 
-static PyObject * 
+static PyObject *
 bytearray_clear(PyByteArrayObject *self)
 {
     if (PyByteArray_Resize((PyObject *)self, 0) < 0)
@@ -2629,7 +2629,7 @@ Spaces between two numbers are accepted.\n\
 Example: bytearray.fromhex('B9 01EF') -> bytearray(b'\\xb9\\x01\\xef').");
 
 static int
-hex_digit_to_int(Py_UNICODE c)
+hex_digit_to_int(Py_UCS4 c)
 {
     if (c >= 128)
         return -1;
