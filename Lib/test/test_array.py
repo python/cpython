@@ -218,10 +218,14 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(bi[1], len(a))
 
     def test_byteswap(self):
-        a = array.array(self.typecode, self.example)
+        if self.typecode == 'u':
+            example = '\U00100100'
+        else:
+            example = self.example
+        a = array.array(self.typecode, example)
         self.assertRaises(TypeError, a.byteswap, 42)
         if a.itemsize in (1, 2, 4, 8):
-            b = array.array(self.typecode, self.example)
+            b = array.array(self.typecode, example)
             b.byteswap()
             if a.itemsize==1:
                 self.assertEqual(a, b)
