@@ -377,16 +377,6 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
      PyUnicode_IS_COMPACT(op) ? _PyUnicode_COMPACT_DATA(op) :   \
      _PyUnicode_NONCOMPACT_DATA(op))
 
-#define _PyUnicode_UTF8(op)                     \
-    (PyUnicode_IS_COMPACT_ASCII(op) ?           \
-     ((char*)((PyASCIIObject*)(op) + 1)) :      \
-     ((PyCompactUnicodeObject*)(op))->utf8)
-
-#define _PyUnicode_UTF8_LENGTH(op)                      \
-    (PyUnicode_IS_COMPACT_ASCII(op) ?                   \
-     ((PyASCIIObject*)(op))->length :                   \
-     ((PyCompactUnicodeObject*)(op))->utf8_length)
-
 /* Compute (index * char_size) where char_size is 2 ** (kind - 1).
 
    The index is a character index, the result is a size in bytes. */
@@ -466,7 +456,7 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 #define PyUnicode_READY(op)                        \
     (assert(PyUnicode_Check(op)),                       \
      (PyUnicode_IS_READY(op) ?                          \
-      0 : _PyUnicode_Ready((PyUnicodeObject *)(op))))
+      0 : _PyUnicode_Ready((PyObject *)(op))))
 
 /* Return a maximum character value which is suitable for creating another
    string based on op.  This is always an approximation but more efficient
@@ -507,14 +497,16 @@ PyAPI_FUNC(PyObject*) PyUnicode_New(
     );
 #endif
 
-/* Initializes the canonical string representation from a the deprected
-   wstr/Py_UNICODE representation.  This function is used to convert
-   unicode objects which were created using the old API to the new flexible
-   format introduced with PEP 393.  The PyUnicode_READY() macro can be
-   more efficient if the string is already ready. */
+/* Initializes the canonical string representation from a the deprecated
+   wstr/Py_UNICODE representation. This function is used to convert Unicode
+   objects which were created using the old API to the new flexible format
+   introduced with PEP 393.
+
+   Don't call this function directly, use the public PyUnicode_READY() macro
+   instead. */
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyUnicode_Ready(
-    PyUnicodeObject *unicode    /* Unicode object */
+    PyObject *unicode           /* Unicode object */
     );
 #endif
 
