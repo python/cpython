@@ -2,6 +2,8 @@ import test.support, unittest
 import sys, codecs, html.entities, unicodedata
 import ctypes
 
+SIZEOF_WCHAR_T = ctypes.sizeof(ctypes.c_wchar)
+
 class PosReturn:
     # this can be used for configurable callbacks
 
@@ -206,7 +208,7 @@ class CodecCallbackTest(unittest.TestCase):
             b"\x00\x00\x00\x00\x00".decode,
             "unicode-internal",
         )
-        if sys.maxunicode > 0xffff:
+        if SIZEOF_WCHAR_T == 4:
             def handler_unicodeinternal(exc):
                 if not isinstance(exc, UnicodeDecodeError):
                     raise TypeError("don't know how to handle %r" % exc)
@@ -356,7 +358,7 @@ class CodecCallbackTest(unittest.TestCase):
             ["ascii", "\uffffx", 0, 1, "ouch"],
             "'ascii' codec can't encode character '\\uffff' in position 0: ouch"
         )
-        if sys.maxunicode > 0xffff:
+        if SIZEOF_WCHAR_T == 4:
             self.check_exceptionobjectargs(
                 UnicodeEncodeError,
                 ["ascii", "\U00010000x", 0, 1, "ouch"],
@@ -391,7 +393,7 @@ class CodecCallbackTest(unittest.TestCase):
             ["g\uffffrk", 1, 2, "ouch"],
             "can't translate character '\\uffff' in position 1: ouch"
         )
-        if sys.maxunicode > 0xffff:
+        if SIZEOF_WCHAR_T == 4:
             self.check_exceptionobjectargs(
                 UnicodeTranslateError,
                 ["g\U00010000rk", 1, 2, "ouch"],
@@ -682,7 +684,7 @@ class CodecCallbackTest(unittest.TestCase):
         # Python/codecs.c::PyCodec_XMLCharRefReplaceErrors()
         # and inline implementations
         v = (1, 5, 10, 50, 100, 500, 1000, 5000, 10000, 50000)
-        if sys.maxunicode>=100000:
+        if SIZEOF_WCHAR_T == 4:
             v += (100000, 500000, 1000000)
         s = "".join([chr(x) for x in v])
         codecs.register_error("test.xmlcharrefreplace", codecs.xmlcharrefreplace_errors)
