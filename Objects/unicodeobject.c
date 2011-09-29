@@ -781,8 +781,9 @@ int unicode_ready_calls = 0;
 #endif
 
 int
-_PyUnicode_Ready(PyUnicodeObject *unicode)
+_PyUnicode_Ready(PyObject *obj)
 {
+    PyUnicodeObject *unicode = (PyUnicodeObject *)obj;
     wchar_t *end;
     Py_UCS4 maxchar = 0;
     Py_ssize_t num_surrogates;
@@ -790,25 +791,19 @@ _PyUnicode_Ready(PyUnicodeObject *unicode)
     Py_ssize_t length_wo_surrogates;
 #endif
 
-    assert(PyUnicode_Check(unicode));
-
-    if (unicode->data.any != NULL) {
-        assert(PyUnicode_KIND(unicode) != PyUnicode_WCHAR_KIND);
-        return 0;
-    }
-
     /* _PyUnicode_Ready() is only intented for old-style API usage where
-     * strings were created using _PyObject_New() and where no canonical
-     * representation (the str field) has been set yet aka strings
-     * which are not yet ready.
-     */
+       strings were created using _PyObject_New() and where no canonical
+       representation (the str field) has been set yet aka strings
+       which are not yet ready. */
+    assert(PyUnicode_Check(obj));
+    assert(!PyUnicode_IS_READY(obj));
+    assert(!PyUnicode_IS_COMPACT(obj));
+    assert(_PyUnicode_KIND(obj) == PyUnicode_WCHAR_KIND);
     assert(_PyUnicode_WSTR(unicode) != NULL);
-    assert(_PyUnicode_KIND(unicode) == PyUnicode_WCHAR_KIND);
-    assert(!PyUnicode_IS_COMPACT(unicode));
-    assert(!PyUnicode_IS_READY(unicode));
-    /* Actually, it should neither be interned nor be anything else: */
-    assert(_PyUnicode_STATE(unicode).interned == 0);
+    assert(unicode->data.any == NULL);
     assert(unicode->_base.utf8 == NULL);
+    /* Actually, it should neither be interned nor be anything else: */
+    assert(_PyUnicode_STATE(unicode).interned == SSTATE_NOT_INTERNED);
 
 #ifdef Py_DEBUG
     ++unicode_ready_calls;
@@ -816,11 +811,8 @@ _PyUnicode_Ready(PyUnicodeObject *unicode)
 
     end = _PyUnicode_WSTR(unicode) + _PyUnicode_WSTR_LENGTH(unicode);
     if (find_maxchar_surrogates(_PyUnicode_WSTR(unicode), end,
-                                                  &maxchar,
-                                                  &num_surrogates) == -1) {
-        assert(0 && "PyUnicode_FindMaxCharAndNumSurrogatePairs failed");
+                                &maxchar, &num_surrogates) == -1)
         return -1;
-    }
 
     if (maxchar < 256) {
         unicode->data.any = PyObject_MALLOC(_PyUnicode_WSTR_LENGTH(unicode) + 1);
@@ -1046,8 +1038,8 @@ PyUnicode_FromUnicode(const Py_UNICODE *u, Py_ssize_t size)
 
     /* If not empty and not single character, copy the Unicode data
        into the new object */
-    if (find_maxchar_surrogates(u, u + size, &maxchar,
-                                                  &num_surrogates) == -1)
+    if (find_maxchar_surrogates(u, u + size,
+                                &maxchar, &num_surrogates) == -1)
         return NULL;
 
     unicode = (PyUnicodeObject *) PyUnicode_New(size - num_surrogates,
