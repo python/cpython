@@ -347,7 +347,7 @@ _PyIncrementalNewlineDecoder_decode(PyObject *_self,
                 memchr(in_str, '\n', PyUnicode_KIND_SIZE(kind, len)) != NULL) {
                 Py_ssize_t i = 0;
                 for (;;) {
-                    Py_UNICODE c;
+                    Py_UCS4 c;
                     /* Fast loop for non-control characters */
                     while (PyUnicode_READ(kind, in_str, i) > '\n')
                         i++;
@@ -1570,7 +1570,7 @@ textiowrapper_read(textio *self, PyObject *args)
 }
 
 
-/* NOTE: `end` must point to the real end of the Py_UNICODE storage,
+/* NOTE: `end` must point to the real end of the Py_UCS4 storage,
    that is to the NUL character. Otherwise the function will produce
    incorrect results. */
 static char *
@@ -1614,7 +1614,7 @@ _PyIO_find_line_ending(
         for (;;) {
             Py_UCS4 ch;
             /* Fast path for non-control chars. The loop always ends
-               since the Py_UNICODE storage is NUL-terminated. */
+               since the Unicode string is NUL-terminated. */
             while (PyUnicode_READ(kind, s, 0) > '\r')
                 s += size;
             if (s >= end) {
