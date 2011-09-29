@@ -17,10 +17,7 @@ class PEP3131Test(unittest.TestCase):
 
     def test_non_bmp_normalized(self):
         𝔘𝔫𝔦𝔠𝔬𝔡𝔢 = 1
-        try:
-            self.assertIn("Unicode", dir())
-        except AssertionError:
-            raise unittest._ExpectedFailure("doesn't work yet")
+        self.assertIn("Unicode", dir())
 
     def test_invalid(self):
         try:
