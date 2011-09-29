@@ -22,7 +22,7 @@ struct arrayobject; /* Forward */
  * functions aren't visible yet.
  */
 struct arraydescr {
-    Py_UNICODE typecode;
+    char typecode;
     int itemsize;
     PyObject * (*getitem)(struct arrayobject *, Py_ssize_t);
     int (*setitem)(struct arrayobject *, Py_ssize_t, PyObject *);
@@ -1510,7 +1510,7 @@ array_fromunicode(arrayobject *self, PyObject *args)
 {
     Py_UNICODE *ustr;
     Py_ssize_t n;
-    Py_UNICODE typecode;
+    char typecode;
 
     if (!PyArg_ParseTuple(args, "u#:fromunicode", &ustr, &n))
         return NULL;
@@ -1545,7 +1545,7 @@ append Unicode data to an array of some other type.");
 static PyObject *
 array_tounicode(arrayobject *self, PyObject *unused)
 {
-    Py_UNICODE typecode;
+    char typecode;
     typecode = self->ob_descr->typecode;
     if ((typecode != 'u')) {
         PyErr_SetString(PyExc_ValueError,
@@ -1642,7 +1642,7 @@ static const struct mformatdescr {
  * be found.
  */
 static enum machine_format_code
-typecode_to_mformat_code(int typecode)
+typecode_to_mformat_code(char typecode)
 {
 #ifdef WORDS_BIGENDIAN
     const int is_big_endian = 1;
@@ -1721,7 +1721,7 @@ typecode_to_mformat_code(int typecode)
         intsize = sizeof(PY_LONG_LONG);
         is_signed = 0;
         break;
-#endif 
+#endif
     default:
         return UNKNOWN_FORMAT;
     }
@@ -1752,7 +1752,7 @@ static PyObject *array_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
  * NULL is returned to indicate a failure.
  */
 static PyObject *
-make_array(PyTypeObject *arraytype, Py_UNICODE typecode, PyObject *items)
+make_array(PyTypeObject *arraytype, char typecode, PyObject *items)
 {
     PyObject *new_args;
     PyObject *array_obj;
@@ -1761,7 +1761,7 @@ make_array(PyTypeObject *arraytype, Py_UNICODE typecode, PyObject *items)
     assert(arraytype != NULL);
     assert(items != NULL);
 
-    typecode_obj = PyUnicode_FromUnicode(&typecode, 1);
+    typecode_obj = PyUnicode_FromOrdinal(typecode);
     if (typecode_obj == NULL)
         return NULL;
 
@@ -1791,16 +1791,13 @@ array_reconstructor(PyObject *self, PyObject *args)
     PyObject *items;
     PyObject *converted_items;
     PyObject *result;
-    int typecode_int;
-    Py_UNICODE typecode;
+    int typecode;
     enum machine_format_code mformat_code;
     struct arraydescr *descr;
 
     if (!PyArg_ParseTuple(args, "OCiO:array._array_reconstructor",
-                    &arraytype, &typecode_int, &mformat_code, &items))
+                    &arraytype, &typecode, &mformat_code, &items))
         return NULL;
-
-    typecode = (Py_UNICODE)typecode_int;
 
     if (!PyType_Check(arraytype)) {
         PyErr_Format(PyExc_TypeError,
@@ -1815,7 +1812,7 @@ array_reconstructor(PyObject *self, PyObject *args)
         return NULL;
     }
     for (descr = descriptors; descr->typecode != '\0'; descr++) {
-        if (descr->typecode == typecode)
+        if ((int)descr->typecode == typecode)
             break;
     }
     if (descr->typecode == '\0') {
@@ -1837,9 +1834,9 @@ array_reconstructor(PyObject *self, PyObject *args)
     }
 
     /* Fast path: No decoding has to be done. */
-    if (mformat_code == typecode_to_mformat_code(typecode) ||
+    if (mformat_code == typecode_to_mformat_code((char)typecode) ||
         mformat_code == UNKNOWN_FORMAT) {
-        return make_array(arraytype, typecode, items);
+        return make_array(arraytype, (char)typecode, items);
     }
 
     /* Slow path: Decode the byte string according to the given machine
@@ -1985,7 +1982,7 @@ array_reconstructor(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    result = make_array(arraytype, typecode, converted_items);
+    result = make_array(arraytype, (char)typecode, converted_items);
     Py_DECREF(converted_items);
     return result;
 }
@@ -2074,8 +2071,8 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 static PyObject *
 array_get_typecode(arrayobject *a, void *closure)
 {
-    Py_UNICODE tc = a->ob_descr->typecode;
-    return PyUnicode_FromUnicode(&tc, 1);
+    char typecode = a->ob_descr->typecode;
+    return PyUnicode_FromOrdinal(typecode);
 }
 
 static PyObject *
@@ -2147,7 +2144,7 @@ static PyMethodDef array_methods[] = {
 static PyObject *
 array_repr(arrayobject *a)
 {
-    Py_UNICODE typecode;
+    char typecode;
     PyObject *s, *v = NULL;
     Py_ssize_t len;
 
