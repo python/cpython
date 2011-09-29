@@ -259,9 +259,11 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
     }
 
 #ifdef MS_WINDOWS
-    if (PyUnicode_Check(nameobj))
-        widename = PyUnicode_AS_UNICODE(nameobj);
-    if (widename == NULL)
+    if (PyUnicode_Check(nameobj)) {
+        widename = PyUnicode_AsUnicode(nameobj);
+        if (widename == NULL)
+            return -1;
+    } else
 #endif
     if (fd < 0)
     {
@@ -378,7 +380,7 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
         if (self->fd < 0) {
 #ifdef MS_WINDOWS
             if (widename != NULL)
-                PyErr_SetFromErrnoWithUnicodeFilename(PyExc_IOError, widename);
+                PyErr_SetFromErrnoWithFilenameObject(PyExc_IOError, nameobj);
             else
 #endif
                 PyErr_SetFromErrnoWithFilename(PyExc_IOError, name);
