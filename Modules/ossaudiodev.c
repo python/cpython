@@ -129,6 +129,7 @@ newossobject(PyObject *arg)
     }
 
     if (ioctl(fd, SNDCTL_DSP_GETFMTS, &afmts) == -1) {
+        close(fd);
         PyErr_SetFromErrnoWithFilename(PyExc_IOError, devicename);
         return NULL;
     }

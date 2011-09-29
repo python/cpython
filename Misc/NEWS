@@ -50,6 +50,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13058: ossaudiodev: fix a file descriptor leak on error. Patch by
+  Thomas Jarosch.
+
 - Issue #12931: xmlrpclib now encodes Unicode URI to ISO-8859-1, instead of
   failing with a UnicodeDecodeError.
 
