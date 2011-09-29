@@ -1769,33 +1769,37 @@ save_bytes(PicklerObject *self, PyObject *obj)
 /* A copy of PyUnicode_EncodeRawUnicodeEscape() that also translates
    backslash and newline characters to \uXXXX escapes. */
 static PyObject *
-raw_unicode_escape(const Py_UNICODE *s, Py_ssize_t size)
+raw_unicode_escape(PyObject *obj)
 {
+    static const char *hexdigits = "0123456789abcdef";
     PyObject *repr, *result;
     char *p;
-    char *q;
+    Py_ssize_t i, size, expandsize;
+    void *data;
+    unsigned int kind;
 
-    static const char *hexdigits = "0123456789abcdef";
+    if (PyUnicode_READY(obj))
+        return NULL;
 
-#ifdef Py_UNICODE_WIDE
-    const Py_ssize_t expandsize = 10;
-#else
-    const Py_ssize_t expandsize = 6;
-#endif
+    size = PyUnicode_GET_LENGTH(obj);
+    data = PyUnicode_DATA(obj);
+    kind = PyUnicode_KIND(obj);
+    if (kind == PyUnicode_4BYTE_KIND)
+        expandsize = 10;
+    else
+        expandsize = 6;
 
     if (size > PY_SSIZE_T_MAX / expandsize)
         return PyErr_NoMemory();
-
     repr = PyByteArray_FromStringAndSize(NULL, expandsize * size);
     if (repr == NULL)
         return NULL;
     if (size == 0)
         goto done;
 
-    p = q = PyByteArray_AS_STRING(repr);
-    while (size-- > 0) {
-        Py_UNICODE ch = *s++;
-#ifdef Py_UNICODE_WIDE
+    p = PyByteArray_AS_STRING(repr);
+    for (i=0; i < size; i++) {
+        Py_UCS4 ch = PyUnicode_READ(kind, data, i);
         /* Map 32-bit characters to '\Uxxxxxxxx' */
         if (ch >= 0x10000) {
             *p++ = '\\';
@@ -1809,36 +1813,8 @@ raw_unicode_escape(const Py_UNICODE *s, Py_ssize_t size)
             *p++ = hexdigits[(ch >> 4) & 0xf];
             *p++ = hexdigits[ch & 15];
         }
-        else
-#else
-            /* Map UTF-16 surrogate pairs to '\U00xxxxxx' */
-            if (ch >= 0xD800 && ch < 0xDC00) {
-                Py_UNICODE ch2;
-                Py_UCS4 ucs;
-
-                ch2 = *s++;
-                size--;
-                if (ch2 >= 0xDC00 && ch2 <= 0xDFFF) {
-                    ucs = (((ch & 0x03FF) << 10) | (ch2 & 0x03FF)) + 0x00010000;
-                    *p++ = '\\';
-                    *p++ = 'U';
-                    *p++ = hexdigits[(ucs >> 28) & 0xf];
-                    *p++ = hexdigits[(ucs >> 24) & 0xf];
-                    *p++ = hexdigits[(ucs >> 20) & 0xf];
-                    *p++ = hexdigits[(ucs >> 16) & 0xf];
-                    *p++ = hexdigits[(ucs >> 12) & 0xf];
-                    *p++ = hexdigits[(ucs >> 8) & 0xf];
-                    *p++ = hexdigits[(ucs >> 4) & 0xf];
-                    *p++ = hexdigits[ucs & 0xf];
-                    continue;
-                }
-                /* Fall through: isolated surrogates are copied as-is */
-                s--;
-                size++;
-            }
-#endif
         /* Map 16-bit characters to '\uxxxx' */
-        if (ch >= 256 || ch == '\\' || ch == '\n') {
+        else if (ch >= 256 || ch == '\\' || ch == '\n') {
             *p++ = '\\';
             *p++ = 'u';
             *p++ = hexdigits[(ch >> 12) & 0xf];
@@ -1850,9 +1826,9 @@ raw_unicode_escape(const Py_UNICODE *s, Py_ssize_t size)
         else
             *p++ = (char) ch;
     }
-    size = p - q;
+    size = p - PyByteArray_AS_STRING(repr);
 
-  done:
+done:
     result = PyBytes_FromStringAndSize(PyByteArray_AS_STRING(repr), size);
     Py_DECREF(repr);
     return result;
@@ -1893,8 +1869,7 @@ save_unicode(PicklerObject *self, PyObject *obj)
     else {
         const char unicode_op = UNICODE;
 
-        encoded = raw_unicode_escape(PyUnicode_AS_UNICODE(obj),
-                                     PyUnicode_GET_SIZE(obj));
+        encoded = raw_unicode_escape(obj);
         if (encoded == NULL)
             goto error;
 
