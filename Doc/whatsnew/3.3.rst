@@ -65,6 +65,28 @@ XXX Add list of changes introduced by :pep:`393` here:
   either ``0xFFFF`` or ``0x10FFFF`` for backward compatibility, and it should
   not be used with the new Unicode API (see :issue:`13054`).
 
+* Non-BMP characters (U+10000-U+10FFFF range) are no more special cases.
+  ``'\U0010FFFF'[0]`` is now ``'\U0010FFFF'`` on any platform, instead of
+  ``'\uDFFF'`` on narrow build or ``'\U0010FFFF'`` on wide build. And
+  ``len('\U0010FFFF')`` is now ``1`` on any platform, instead of ``2`` on
+  narrow build or ``1`` on wide build. More generally, most bugs related to
+  non-BMP characters are now fixed. For example, :func:`unicodedata.normalize`
+  handles correctly non-BMP characters on all platforms.
+
+* The storage of Unicode string is now adapted on the content of the string.
+  Pure ASCII and Latin1 strings (U+0000-U+00FF) use 1 byte per character, BMP
+  strings (U+0000-U+FFFF) use 2 bytes per character, and non-BMP characters
+  (U+10000-U+10FFFF range) use 4 bytes per characters. The memory usage of
+  Python 3.3 is two to three times smaller than Python 3.2, and a little bit
+  better than Python 2.7, on a `Django benchmark
+  <http://mail.python.org/pipermail/python-dev/2011-September/113714.html>`_.
+
+* The PEP 393 is fully backward compatible. The legacy API should remain
+  available at least five years. Applications using the legacy API will not
+  fully benefit of the memory reduction, or worse may use a little bit more
+  memory, because Python may have to maintain two versions of each string (in
+  the legacy format and in the new efficient storage).
+
 
 Other Language Changes
 ======================
@@ -334,3 +356,9 @@ that may require changes to your code:
 .. Issue #10998: -Q command-line flags are related artifacts have been
    removed.  Code checking sys.flags.division_warning will need updating.
    Contributed by Éric Araujo.
+
+* :pep:`393`: The :c:type:`Py_UNICODE` type and all functions using this type
+  are deprecated. To fully benefit of the memory footprint reduction provided
+  by the PEP 393, you have to convert your code to the new Unicode API. Read
+  the porting guide: XXX.
+
