@@ -82,6 +82,9 @@ Tests
 Extension Modules
 -----------------
 
+- Issue #13058: ossaudiodev: fix a file descriptor leak on error. Patch by
+  Thomas Jarosch.
+
 - Issue #13013: ctypes: Fix a reference leak in PyCArrayType_from_ctype.
   Thanks to Suman Saha for finding the bug and providing a patch.
 
