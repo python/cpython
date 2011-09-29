@@ -19,19 +19,9 @@
        ((char *)(foo)        \
         + Py_BUILD_ASSERT(offsetof(struct foo, string) == 0))
 
-   Written by Rusty Russell, public domain. */
+   Written by Rusty Russell, public domain, http://ccodearchive.net/ */
 #define Py_BUILD_ASSERT(cond) \
     (sizeof(char [1 - 2*!(cond)]) - 1)
-
-#if defined(__GNUC__)
-/* Two gcc extensions.
-   &a[0] degrades to a pointer: a different type from an array */
-#define _Py_ARRAY_LENGTH_CHECK(array) \
-    Py_BUILD_ASSERT(!__builtin_types_compatible_p(typeof(array), \
-                                                  typeof(&(array)[0])))
-#else
-#define _Py_ARRAY_LENGTH_CHECK(array) 0
-#endif
 
 
 /* Get the number of elements in a visible array
@@ -40,9 +30,18 @@
    parameters. With correct compiler support, such usage will cause a build
    error (see Py_BUILD_ASSERT).
 
-   Written by Rusty Russell, public domain. */
+   Written by Rusty Russell, public domain, http://ccodearchive.net/ */
+#if defined(__GNUC__)
+/* Two gcc extensions.
+   &a[0] degrades to a pointer: a different type from an array */
 #define Py_ARRAY_LENGTH(array) \
-    (sizeof(array) / sizeof((array)[0]) + _Py_ARRAY_LENGTH_CHECK(array))
+    (sizeof(array) / sizeof((array)[0]) \
+     + Py_BUILD_ASSERT(!__builtin_types_compatible_p(typeof(array), \
+                                                     typeof(&(array)[0]))))
+#else
+#define Py_ARRAY_LENGTH(array) \
+    (sizeof(array) / sizeof((array)[0]))
+#endif
 
 
 /* Define macros for inline documentation. */
