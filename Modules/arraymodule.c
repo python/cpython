@@ -2538,7 +2538,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 if (n > 0) {
                     arrayobject *self = (arrayobject *)a;
                     Py_UCS4 *item = (Py_UCS4 *)self->ob_item;
-                    item = (char *)PyMem_Realloc(item, n * sizeof(Py_UCS4));
+                    item = (Py_UCS4 *)PyMem_Realloc(item, n * sizeof(Py_UCS4));
                     if (item == NULL) {
                         PyErr_NoMemory();
                         Py_DECREF(a);
