@@ -2529,19 +2529,25 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 Py_DECREF(v);
             }
             else if (initial != NULL && PyUnicode_Check(initial))  {
-                Py_ssize_t n = PyUnicode_GET_DATA_SIZE(initial);
+                Py_ssize_t n;
+                if (PyUnicode_READY(initial)) {
+                    Py_DECREF(a);
+                    return NULL;
+                }
+                n = PyUnicode_GET_LENGTH(initial);
                 if (n > 0) {
                     arrayobject *self = (arrayobject *)a;
-                    char *item = self->ob_item;
-                    item = (char *)PyMem_Realloc(item, n);
+                    Py_UCS4 *item = (Py_UCS4 *)self->ob_item;
+                    item = (char *)PyMem_Realloc(item, n * sizeof(Py_UCS4));
                     if (item == NULL) {
                         PyErr_NoMemory();
                         Py_DECREF(a);
                         return NULL;
                     }
-                    self->ob_item = item;
-                    Py_SIZE(self) = n / sizeof(Py_UCS4);
-                    memcpy(item, PyUnicode_AS_DATA(initial), n);
+                    self->ob_item = (char*)item;
+                    Py_SIZE(self) = n;
+                    if (!PyUnicode_AsUCS4(initial, item, n, 0))
+                        return NULL;
                     self->allocated = Py_SIZE(self);
                 }
             }
