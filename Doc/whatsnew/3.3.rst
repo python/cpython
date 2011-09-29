@@ -58,35 +58,56 @@ PEP XXX: Stub
 PEP 393: Flexible String Representation
 =======================================
 
+XXX Give a short introduction about :pep:`393`.
+
+PEP 393 is fully backward compatible. The legacy API should remain
+available at least five years. Applications using the legacy API will not
+fully benefit of the memory reduction, or worse may use a little bit more
+memory, because Python may have to maintain two versions of each string (in
+the legacy format and in the new efficient storage).
+
 XXX Add list of changes introduced by :pep:`393` here:
+
+* Python now always supports the full range of Unicode codepoints, including
+  non-BMP ones (i.e. from ``U+0000`` to ``U+10FFFF``).  The distinction between
+  narrow and wide builds no longer exists and Python now behaves like a wide
+  build.
+
+* The storage of Unicode strings now depends on the highest codepoint in the string:
+
+  * pure ASCII and Latin1 strings (``U+0000-U+00FF``) use 1 byte per codepoint;
+
+  * BMP strings (``U+0000-U+FFFF``) use 2 bytes per codepoint;
+
+  * non-BMP strings (``U+10000-U+10FFFF``) use 4 bytes per codepoint.
+
+.. The memory usage of Python 3.3 is two to three times smaller than Python 3.2,
+   and a little bit better than Python 2.7, on a `Django benchmark
+   <http://mail.python.org/pipermail/python-dev/2011-September/113714.html>`_.
+   XXX The result should be moved in the PEP and a small summary about
+   performances and a link to the PEP should be added here.
+
+* Some of the problems visible on narrow builds have been fixed, for example:
+
+  * :func:`len` now always returns 1 for non-BMP characters,
+    so ``len('\U0010FFFF') == 1``;
+
+  * surrogate pairs are not recombined in string literals,
+    so ``'\uDBFF\uDFFF' != '\U0010FFFF'``;
+
+  * indexing or slicing a non-BMP characters doesn't return surrogates anymore,
+    so ``'\U0010FFFF'[0]`` now returns ``'\U0010FFFF'`` and not ``'\uDBFF'``;
+
+  * several other functions in the stdlib now handle correctly non-BMP codepoints.
 
 * The value of :data:`sys.maxunicode` is now always ``1114111`` (``0x10FFFF``
   in hexadecimal).  The :c:func:`PyUnicode_GetMax` function still returns
   either ``0xFFFF`` or ``0x10FFFF`` for backward compatibility, and it should
   not be used with the new Unicode API (see :issue:`13054`).
 
-* Non-BMP characters (U+10000-U+10FFFF range) are no more special cases.
-  ``'\U0010FFFF'[0]`` is now ``'\U0010FFFF'`` on any platform, instead of
-  ``'\uDFFF'`` on narrow build or ``'\U0010FFFF'`` on wide build. And
-  ``len('\U0010FFFF')`` is now ``1`` on any platform, instead of ``2`` on
-  narrow build or ``1`` on wide build. More generally, most bugs related to
-  non-BMP characters are now fixed. For example, :func:`unicodedata.normalize`
-  handles correctly non-BMP characters on all platforms.
+* The :file:`./configure` flag ``--with-wide-unicode`` has been removed.
 
-* The storage of Unicode string is now adapted on the content of the string.
-  Pure ASCII and Latin1 strings (U+0000-U+00FF) use 1 byte per character, BMP
-  strings (U+0000-U+FFFF) use 2 bytes per character, and non-BMP characters
-  (U+10000-U+10FFFF range) use 4 bytes per characters. The memory usage of
-  Python 3.3 is two to three times smaller than Python 3.2, and a little bit
-  better than Python 2.7, on a `Django benchmark
-  <http://mail.python.org/pipermail/python-dev/2011-September/113714.html>`_.
-
-* The PEP 393 is fully backward compatible. The legacy API should remain
-  available at least five years. Applications using the legacy API will not
-  fully benefit of the memory reduction, or worse may use a little bit more
-  memory, because Python may have to maintain two versions of each string (in
-  the legacy format and in the new efficient storage).
-
+XXX mention new and deprecated functions and macros
 
 Other Language Changes
 ======================
