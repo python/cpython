@@ -3,6 +3,9 @@ import unittest
 import codecs
 import locale
 import sys, _testcapi, io
+import ctypes
+
+SIZEOF_WCHAR_T = ctypes.sizeof(ctypes.c_wchar)
 
 class Queue(object):
     """
@@ -888,53 +891,53 @@ class PunycodeTest(unittest.TestCase):
             self.assertEqual(uni, puny.decode("punycode"))
 
 class UnicodeInternalTest(unittest.TestCase):
+    @unittest.skipUnless(SIZEOF_WCHAR_T == 4, 'specific to 32-bit wchar_t')
     def test_bug1251300(self):
         # Decoding with unicode_internal used to not correctly handle "code
         # points" above 0x10ffff on UCS-4 builds.
-        if sys.maxunicode > 0xffff:
-            ok = [
-                (b"\x00\x10\xff\xff", "\U0010ffff"),
-                (b"\x00\x00\x01\x01", "\U00000101"),
-                (b"", ""),
-            ]
-            not_ok = [
-                b"\x7f\xff\xff\xff",
-                b"\x80\x00\x00\x00",
-                b"\x81\x00\x00\x00",
-                b"\x00",
-                b"\x00\x00\x00\x00\x00",
-            ]
-            for internal, uni in ok:
-                if sys.byteorder == "little":
-                    internal = bytes(reversed(internal))
-                self.assertEqual(uni, internal.decode("unicode_internal"))
-            for internal in not_ok:
-                if sys.byteorder == "little":
-                    internal = bytes(reversed(internal))
-                self.assertRaises(UnicodeDecodeError, internal.decode,
-                    "unicode_internal")
+        ok = [
+            (b"\x00\x10\xff\xff", "\U0010ffff"),
+            (b"\x00\x00\x01\x01", "\U00000101"),
+            (b"", ""),
+        ]
+        not_ok = [
+            b"\x7f\xff\xff\xff",
+            b"\x80\x00\x00\x00",
+            b"\x81\x00\x00\x00",
+            b"\x00",
+            b"\x00\x00\x00\x00\x00",
+        ]
+        for internal, uni in ok:
+            if sys.byteorder == "little":
+                internal = bytes(reversed(internal))
+            self.assertEqual(uni, internal.decode("unicode_internal"))
+        for internal in not_ok:
+            if sys.byteorder == "little":
+                internal = bytes(reversed(internal))
+            self.assertRaises(UnicodeDecodeError, internal.decode,
+                "unicode_internal")
 
+    @unittest.skipUnless(SIZEOF_WCHAR_T == 4, 'specific to 32-bit wchar_t')
     def test_decode_error_attributes(self):
-        if sys.maxunicode > 0xffff:
-            try:
-                b"\x00\x00\x00\x00\x00\x11\x11\x00".decode("unicode_internal")
-            except UnicodeDecodeError as ex:
-                self.assertEqual("unicode_internal", ex.encoding)
-                self.assertEqual(b"\x00\x00\x00\x00\x00\x11\x11\x00", ex.object)
-                self.assertEqual(4, ex.start)
-                self.assertEqual(8, ex.end)
-            else:
-                self.fail()
+        try:
+            b"\x00\x00\x00\x00\x00\x11\x11\x00".decode("unicode_internal")
+        except UnicodeDecodeError as ex:
+            self.assertEqual("unicode_internal", ex.encoding)
+            self.assertEqual(b"\x00\x00\x00\x00\x00\x11\x11\x00", ex.object)
+            self.assertEqual(4, ex.start)
+            self.assertEqual(8, ex.end)
+        else:
+            self.fail()
 
+    @unittest.skipUnless(SIZEOF_WCHAR_T == 4, 'specific to 32-bit wchar_t')
     def test_decode_callback(self):
-        if sys.maxunicode > 0xffff:
-            codecs.register_error("UnicodeInternalTest", codecs.ignore_errors)
-            decoder = codecs.getdecoder("unicode_internal")
-            ab = "ab".encode("unicode_internal").decode()
-            ignored = decoder(bytes("%s\x22\x22\x22\x22%s" % (ab[:4], ab[4:]),
-                                    "ascii"),
-                              "UnicodeInternalTest")
-            self.assertEqual(("ab", 12), ignored)
+        codecs.register_error("UnicodeInternalTest", codecs.ignore_errors)
+        decoder = codecs.getdecoder("unicode_internal")
+        ab = "ab".encode("unicode_internal").decode()
+        ignored = decoder(bytes("%s\x22\x22\x22\x22%s" % (ab[:4], ab[4:]),
+                                "ascii"),
+                          "UnicodeInternalTest")
+        self.assertEqual(("ab", 12), ignored)
 
     def test_encode_length(self):
         # Issue 3739
