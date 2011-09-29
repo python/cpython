@@ -615,8 +615,8 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
                          PyObject *from, Py_ssize_t from_start,
                          Py_ssize_t how_many)
 {
-    unsigned int from_kind;
-    unsigned int to_kind;
+    unsigned int from_kind, to_kind;
+    void *from_data, *to_data;
 
     assert(PyUnicode_Check(from));
     assert(PyUnicode_Check(to));
@@ -645,44 +645,20 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
     _PyUnicode_DIRTY(to);
 
     from_kind = PyUnicode_KIND(from);
+    from_data = PyUnicode_DATA(from);
     to_kind = PyUnicode_KIND(to);
+    to_data = PyUnicode_DATA(to);
 
     if (from_kind == to_kind) {
         /* fast path */
-        Py_MEMCPY((char*)PyUnicode_DATA(to)
+        Py_MEMCPY((char*)to_data
                       + PyUnicode_KIND_SIZE(to_kind, to_start),
-                  (char*)PyUnicode_DATA(from)
+                  (char*)from_data
                       + PyUnicode_KIND_SIZE(from_kind, from_start),
                   PyUnicode_KIND_SIZE(to_kind, how_many));
-        return how_many;
     }
-
-    if (from_kind > to_kind) {
-        /* slow path to check for character overflow */
-        const Py_UCS4 to_maxchar = PyUnicode_MAX_CHAR_VALUE(to);
-        void *from_data = PyUnicode_DATA(from);
-        void *to_data = PyUnicode_DATA(to);
-        Py_UCS4 ch, maxchar;
-        Py_ssize_t i;
-        int overflow;
-
-        maxchar = 0;
-        overflow = 0;
-        for (i=0; i < how_many; i++) {
-            ch = PyUnicode_READ(from_kind, from_data, from_start + i);
-            if (ch > maxchar) {
-                maxchar = ch;
-                if (maxchar > to_maxchar) {
-                    overflow = 1;
-                    break;
-                }
-            }
-            PyUnicode_WRITE(to_kind, to_data, to_start + i, ch);
-        }
-        if (!overflow)
-            return how_many;
-    }
-    else if (from_kind == PyUnicode_1BYTE_KIND && to_kind == PyUnicode_2BYTE_KIND)
+    else if (from_kind == PyUnicode_1BYTE_KIND
+             && to_kind == PyUnicode_2BYTE_KIND)
     {
         _PyUnicode_CONVERT_BYTES(
             Py_UCS1, Py_UCS2,
@@ -690,7 +666,6 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
             PyUnicode_1BYTE_DATA(from) + from_start + how_many,
             PyUnicode_2BYTE_DATA(to) + to_start
             );
-        return how_many;
     }
     else if (from_kind == PyUnicode_1BYTE_KIND
              && to_kind == PyUnicode_4BYTE_KIND)
@@ -701,7 +676,6 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
             PyUnicode_1BYTE_DATA(from) + from_start + how_many,
             PyUnicode_4BYTE_DATA(to) + to_start
             );
-        return how_many;
     }
     else if (from_kind == PyUnicode_2BYTE_KIND
              && to_kind == PyUnicode_4BYTE_KIND)
@@ -712,14 +686,41 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
             PyUnicode_2BYTE_DATA(from) + from_start + how_many,
             PyUnicode_4BYTE_DATA(to) + to_start
             );
-        return how_many;
     }
-    PyErr_Format(PyExc_ValueError,
-                 "Cannot copy UCS%u characters "
-                 "into a string of UCS%u characters",
-                 1 << (from_kind - 1),
-                 1 << (to_kind -1));
-    return -1;
+    else {
+        int invalid_kinds;
+        if (from_kind > to_kind) {
+            /* slow path to check for character overflow */
+            const Py_UCS4 to_maxchar = PyUnicode_MAX_CHAR_VALUE(to);
+            Py_UCS4 ch, maxchar;
+            Py_ssize_t i;
+
+            maxchar = 0;
+            invalid_kinds = 0;
+            for (i=0; i < how_many; i++) {
+                ch = PyUnicode_READ(from_kind, from_data, from_start + i);
+                if (ch > maxchar) {
+                    maxchar = ch;
+                    if (maxchar > to_maxchar) {
+                        invalid_kinds = 1;
+                        break;
+                    }
+                }
+                PyUnicode_WRITE(to_kind, to_data, to_start + i, ch);
+            }
+        }
+        else
+            invalid_kinds = 1;
+        if (invalid_kinds) {
+            PyErr_Format(PyExc_ValueError,
+                         "Cannot copy UCS%u characters "
+                         "into a string of UCS%u characters",
+                         1 << (from_kind - 1),
+                         1 << (to_kind -1));
+            return -1;
+        }
+    }
+    return how_many;
 }
 
 /* Find the maximum code point and count the number of surrogate pairs so a
