@@ -105,6 +105,14 @@ extern "C" {
         } \
     } while (0)
 
+#define _PyUnicode_UTF8(op)                     \
+    (PyUnicode_IS_COMPACT_ASCII(op) ?           \
+     ((char*)((PyASCIIObject*)(op) + 1)) :      \
+     ((PyCompactUnicodeObject*)(op))->utf8)
+#define _PyUnicode_UTF8_LENGTH(op)                      \
+    (PyUnicode_IS_COMPACT_ASCII(op) ?                   \
+     ((PyASCIIObject*)(op))->length :                   \
+     ((PyCompactUnicodeObject*)(op))->utf8_length)
 #define _PyUnicode_WSTR(op) (((PyASCIIObject*)(op))->wstr)
 #define _PyUnicode_WSTR_LENGTH(op) (((PyCompactUnicodeObject*)(op))->wstr_length)
 #define _PyUnicode_LENGTH(op) (((PyASCIIObject *)(op))->length)

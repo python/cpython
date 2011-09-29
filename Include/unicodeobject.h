@@ -377,16 +377,6 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
      PyUnicode_IS_COMPACT(op) ? _PyUnicode_COMPACT_DATA(op) :   \
      _PyUnicode_NONCOMPACT_DATA(op))
 
-#define _PyUnicode_UTF8(op)                     \
-    (PyUnicode_IS_COMPACT_ASCII(op) ?           \
-     ((char*)((PyASCIIObject*)(op) + 1)) :      \
-     ((PyCompactUnicodeObject*)(op))->utf8)
-
-#define _PyUnicode_UTF8_LENGTH(op)                      \
-    (PyUnicode_IS_COMPACT_ASCII(op) ?                   \
-     ((PyASCIIObject*)(op))->length :                   \
-     ((PyCompactUnicodeObject*)(op))->utf8_length)
-
 /* Compute (index * char_size) where char_size is 2 ** (kind - 1).
 
    The index is a character index, the result is a size in bytes. */
