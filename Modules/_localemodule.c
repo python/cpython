@@ -271,31 +271,22 @@ Return a string that can be used as a key for locale-aware comparisons.");
 static PyObject*
 PyLocale_strxfrm(PyObject* self, PyObject* args)
 {
-    Py_UNICODE *s0;
-    Py_ssize_t n0;
-    wchar_t *s, *buf = NULL;
-    size_t n1, n2;
+    PyObject *str;
+    Py_ssize_t n1;
+    wchar_t *s = NULL, *buf = NULL;
+    size_t n2;
     PyObject *result = NULL;
-#if Py_UNICODE_SIZE != SIZEOF_WCHAR_T
-    Py_ssize_t i;
-#endif
 
-    if (!PyArg_ParseTuple(args, "u#:strxfrm", &s0, &n0))
+    if (!PyArg_ParseTuple(args, "U:strxfrm", &str))
         return NULL;
 
-#if Py_UNICODE_SIZE == SIZEOF_WCHAR_T
-    s = (wchar_t *) s0;
-#else
-    s = PyMem_Malloc((n0+1)*sizeof(wchar_t));
-    if (!s)
-        return PyErr_NoMemory();
-    for (i=0; i<=n0; i++)
-        s[i] = s0[i];
-#endif
+    s = PyUnicode_AsWideCharString(str, &n1);
+    if (s == NULL)
+        goto exit;
 
     /* assume no change in size, first */
-    n1 = wcslen(s) + 1;
-    buf = PyMem_Malloc(n1*sizeof(wchar_t));
+    n1 = n1 + 1;
+    buf = PyMem_Malloc(n1 * sizeof(wchar_t));
     if (!buf) {
         PyErr_NoMemory();
         goto exit;
@@ -311,11 +302,11 @@ PyLocale_strxfrm(PyObject* self, PyObject* args)
         n2 = wcsxfrm(buf, s, n2+1);
     }
     result = PyUnicode_FromWideChar(buf, n2);
- exit:
-    if (buf) PyMem_Free(buf);
-#if Py_UNICODE_SIZE != SIZEOF_WCHAR_T
-    PyMem_Free(s);
-#endif
+exit:
+    if (buf)
+        PyMem_Free(buf);
+    if (s)
+        PyMem_Free(s);
     return result;
 }
 #endif
