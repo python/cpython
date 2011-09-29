@@ -163,15 +163,15 @@ static unsigned int sre_lower_locale(unsigned int ch)
 
 /* unicode-specific character predicates */
 
-#define SRE_UNI_IS_DIGIT(ch) Py_UNICODE_ISDECIMAL((Py_UNICODE)(ch))
-#define SRE_UNI_IS_SPACE(ch) Py_UNICODE_ISSPACE((Py_UNICODE)(ch))
-#define SRE_UNI_IS_LINEBREAK(ch) Py_UNICODE_ISLINEBREAK((Py_UNICODE)(ch))
-#define SRE_UNI_IS_ALNUM(ch) Py_UNICODE_ISALNUM((Py_UNICODE)(ch))
-#define SRE_UNI_IS_WORD(ch) (SRE_UNI_IS_ALNUM((ch)) || (ch) == '_')
+#define SRE_UNI_IS_DIGIT(ch) Py_UNICODE_ISDECIMAL(ch)
+#define SRE_UNI_IS_SPACE(ch) Py_UNICODE_ISSPACE(ch)
+#define SRE_UNI_IS_LINEBREAK(ch) Py_UNICODE_ISLINEBREAK(ch)
+#define SRE_UNI_IS_ALNUM(ch) Py_UNICODE_ISALNUM(ch)
+#define SRE_UNI_IS_WORD(ch) (SRE_UNI_IS_ALNUM(ch) || (ch) == '_')
 
 static unsigned int sre_lower_unicode(unsigned int ch)
 {
-    return (unsigned int) Py_UNICODE_TOLOWER((Py_UNICODE)(ch));
+    return (unsigned int) Py_UNICODE_TOLOWER(ch);
 }
 
 LOCAL(int)
@@ -1674,7 +1674,7 @@ getstring(PyObject* string, Py_ssize_t* p_length,
         return ptr;
     }
 
-    /* get pointer to string buffer */
+    /* get pointer to byte string buffer */
     view.len = -1;
     buffer = Py_TYPE(string)->tp_as_buffer;
     if (!buffer || !buffer->bf_getbuffer ||
@@ -1702,8 +1702,6 @@ getstring(PyObject* string, Py_ssize_t* p_length,
 
     if (PyBytes_Check(string) || bytes == size)
         charsize = 1;
-    else if (bytes == (Py_ssize_t) (size * sizeof(Py_UNICODE)))
-        charsize = sizeof(Py_UNICODE);
     else {
         PyErr_SetString(PyExc_TypeError, "buffer size mismatch");
         return NULL;
