@@ -593,7 +593,7 @@ PyBytes_Repr(PyObject *obj, int smartquotes)
         quote = '"';
     if (squotes && quote == '\'')
         newsize += squotes;
-    
+
     if (newsize > (PY_SSIZE_T_MAX - sizeof(PyUnicodeObject) - 1)) {
         PyErr_SetString(PyExc_OverflowError,
             "bytes object is too large to make repr");
@@ -2330,7 +2330,7 @@ Spaces between two numbers are accepted.\n\
 Example: bytes.fromhex('B9 01EF') -> b'\\xb9\\x01\\xef'.");
 
 static int
-hex_digit_to_int(Py_UNICODE c)
+hex_digit_to_int(Py_UCS4 c)
 {
     if (c >= 128)
         return -1;
