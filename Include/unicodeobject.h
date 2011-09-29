@@ -521,9 +521,9 @@ PyAPI_FUNC(int) _PyUnicode_Ready(
 /* Copy character from one unicode object into another, this function performs
    character conversion when necessary and falls back to memcpy if possible.
 
-   Fail if 'to' is smaller than how_many or smaller than len(from)-from_start,
-   or if kind(from[from_start:from_start+how_many]) > kind(to), or if to has
-   more than 1 reference.
+   Fail if to is too small (smaller than how_many or smaller than
+   len(from)-from_start), or if kind(from[from_start:from_start+how_many]) >
+   kind(to), or if to has more than 1 reference.
 
    Return the number of written character, or return -1 and raise an exception
    on error.
@@ -533,6 +533,8 @@ PyAPI_FUNC(int) _PyUnicode_Ready(
        how_many = min(how_many, len(from) - from_start)
        to[to_start:to_start+how_many] = from[from_start:from_start+how_many]
        return how_many
+
+   Note: The function doesn't write a terminating null character.
    */
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(Py_ssize_t) PyUnicode_CopyCharacters(
