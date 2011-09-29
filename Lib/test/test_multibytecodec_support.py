@@ -264,21 +264,6 @@ class TestBase:
 
                 self.assertEqual(ostream.getvalue(), self.tstring[0])
 
-if len('\U00012345') == 2: # ucs2 build
-    _unichr = chr
-    def chr(v):
-        if v >= 0x10000:
-            return _unichr(0xd800 + ((v - 0x10000) >> 10)) + \
-                   _unichr(0xdc00 + ((v - 0x10000) & 0x3ff))
-        else:
-            return _unichr(v)
-    _ord = ord
-    def ord(c):
-        if len(c) == 2:
-            return 0x10000 + ((_ord(c[0]) - 0xd800) << 10) + \
-                          (ord(c[1]) - 0xdc00)
-        else:
-            return _ord(c)
 
 class TestBase_Mapping(unittest.TestCase):
     pass_enctest = []
