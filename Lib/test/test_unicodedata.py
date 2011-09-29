@@ -108,6 +108,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.digit('\u215b', None), None)
         self.assertEqual(self.db.digit('\u2468'), 9)
         self.assertEqual(self.db.digit('\U00020000', None), None)
+        self.assertEqual(self.db.digit('\U0001D7FD'), 7)
 
         self.assertRaises(TypeError, self.db.digit)
         self.assertRaises(TypeError, self.db.digit, 'xx')
@@ -120,6 +121,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.numeric('\u2468'), 9.0)
         self.assertEqual(self.db.numeric('\ua627'), 7.0)
         self.assertEqual(self.db.numeric('\U00020000', None), None)
+        self.assertEqual(self.db.numeric('\U0001012A'), 9000)
 
         self.assertRaises(TypeError, self.db.numeric)
         self.assertRaises(TypeError, self.db.numeric, 'xx')
@@ -131,6 +133,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.decimal('\u215b', None), None)
         self.assertEqual(self.db.decimal('\u2468', None), None)
         self.assertEqual(self.db.decimal('\U00020000', None), None)
+        self.assertEqual(self.db.decimal('\U0001D7FD'), 7)
 
         self.assertRaises(TypeError, self.db.decimal)
         self.assertRaises(TypeError, self.db.decimal, 'xx')
@@ -141,6 +144,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.category('a'), 'Ll')
         self.assertEqual(self.db.category('A'), 'Lu')
         self.assertEqual(self.db.category('\U00020000'), 'Lo')
+        self.assertEqual(self.db.category('\U0001012A'), 'No')
 
         self.assertRaises(TypeError, self.db.category)
         self.assertRaises(TypeError, self.db.category, 'xx')
@@ -307,14 +311,6 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
             else:
                 self.assertEqual(len(lines), 1,
                                  r"\u%.4x should not be a linebreak" % i)
-
-    def test_UCS4(self):
-        # unicodedata should work with code points outside the BMP
-        # even on a narrow Unicode build
-        self.assertEqual(self.db.category("\U0001012A"), "No")
-        self.assertEqual(self.db.numeric("\U0001012A"), 9000)
-        self.assertEqual(self.db.decimal("\U0001D7FD"), 7)
-        self.assertEqual(self.db.digit("\U0001D7FD"), 7)
 
 def test_main():
     test.support.run_unittest(
