@@ -136,8 +136,6 @@ static PyObject * import_from(PyObject *, PyObject *);
 static int import_all_from(PyObject *, PyObject *);
 static void format_exc_check_arg(PyObject *, const char *, PyObject *);
 static void format_exc_unbound(PyCodeObject *co, int oparg);
-static PyObject * unicode_concatenate(PyObject *, PyObject *,
-                                      PyFrameObject *, unsigned char *);
 static PyObject * special_lookup(PyObject *, char *, PyObject **);
 
 #define NAME_ERROR_MSG \
@@ -1509,17 +1507,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         TARGET(BINARY_ADD)
             w = POP();
             v = TOP();
-            if (PyUnicode_CheckExact(v) &&
-                     PyUnicode_CheckExact(w)) {
-                x = unicode_concatenate(v, w, f, next_instr);
-                /* unicode_concatenate consumed the ref to v */
-                goto skip_decref_vx;
-            }
-            else {
+            if (PyUnicode_Check(v) && PyUnicode_Check(w))
+                x = PyUnicode_Concat(v, w);
+            else
                 x = PyNumber_Add(v, w);
-            }
             Py_DECREF(v);
-          skip_decref_vx:
             Py_DECREF(w);
             SET_TOP(x);
             if (x != NULL) DISPATCH();
@@ -1670,17 +1662,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         TARGET(INPLACE_ADD)
             w = POP();
             v = TOP();
-            if (PyUnicode_CheckExact(v) &&
-                     PyUnicode_CheckExact(w)) {
-                x = unicode_concatenate(v, w, f, next_instr);
-                /* unicode_concatenate consumed the ref to v */
-                goto skip_decref_v;
-            }
-            else {
+            if (PyUnicode_Check(v) && PyUnicode_Check(w))
+                x = PyUnicode_Concat(v, w);
+            else
                 x = PyNumber_InPlaceAdd(v, w);
-            }
             Py_DECREF(v);
-          skip_decref_v:
             Py_DECREF(w);
             SET_TOP(x);
             if (x != NULL) DISPATCH();
@@ -4513,98 +4499,6 @@ format_exc_unbound(PyCodeObject *co, int oparg)
         format_exc_check_arg(PyExc_NameError,
                              UNBOUNDFREE_ERROR_MSG, name);
     }
-}
-
-static PyObject *
-unicode_concatenate(PyObject *v, PyObject *w,
-                   PyFrameObject *f, unsigned char *next_instr)
-{
-    /* This function implements 'variable += expr' when both arguments
-       are (Unicode) strings. */
-
-    w = PyUnicode_Concat(v, w);
-    Py_DECREF(v);
-    return w;
-
-    /* XXX: This optimization is currently disabled as unicode objects in the
-       new flexible representation are not in-place resizable anymore. */
-#if 0
-    Py_ssize_t v_len = PyUnicode_GET_SIZE(v);
-    Py_ssize_t w_len = PyUnicode_GET_SIZE(w);
-    Py_ssize_t new_len = v_len + w_len;
-    if (new_len < 0) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "strings are too large to concat");
-        return NULL;
-    }
-
-    if (Py_REFCNT(v) == 2) {
-        /* In the common case, there are 2 references to the value
-         * stored in 'variable' when the += is performed: one on the
-         * value stack (in 'v') and one still stored in the
-         * 'variable'.  We try to delete the variable now to reduce
-         * the refcnt to 1.
-         */
-        switch (*next_instr) {
-        case STORE_FAST:
-        {
-            int oparg = PEEKARG();
-            PyObject **fastlocals = f->f_localsplus;
-            if (GETLOCAL(oparg) == v)
-                SETLOCAL(oparg, NULL);
-            break;
-        }
-        case STORE_DEREF:
-        {
-            PyObject **freevars = (f->f_localsplus +
-                                   f->f_code->co_nlocals);
-            PyObject *c = freevars[PEEKARG()];
-            if (PyCell_GET(c) == v)
-                PyCell_Set(c, NULL);
-            break;
-        }
-        case STORE_NAME:
-        {
-            PyObject *names = f->f_code->co_names;
-            PyObject *name = GETITEM(names, PEEKARG());
-            PyObject *locals = f->f_locals;
-            if (PyDict_CheckExact(locals) &&
-                PyDict_GetItem(locals, name) == v) {
-                if (PyDict_DelItem(locals, name) != 0) {
-                    PyErr_Clear();
-                }
-            }
-            break;
-        }
-        }
-    }
-
-    if (Py_REFCNT(v) == 1 && !PyUnicode_CHECK_INTERNED(v) &&
-        !PyUnicode_IS_COMPACT((PyUnicodeObject *)v)) {
-        /* Now we own the last reference to 'v', so we can resize it
-         * in-place.
-         */
-        if (PyUnicode_Resize(&v, new_len) != 0) {
-            /* XXX if PyUnicode_Resize() fails, 'v' has been
-             * deallocated so it cannot be put back into
-             * 'variable'.  The MemoryError is raised when there
-             * is no value in 'variable', which might (very
-             * remotely) be a cause of incompatibilities.
-             */
-            return NULL;
-        }
-        /* copy 'w' into the newly allocated area of 'v' */
-        memcpy(PyUnicode_AS_UNICODE(v) + v_len,
-               PyUnicode_AS_UNICODE(w), w_len*sizeof(Py_UNICODE));
-        return v;
-    }
-    else {
-        /* When in-place resizing is not an option. */
-        w = PyUnicode_Concat(v, w);
-        Py_DECREF(v);
-        return w;
-    }
-#endif
 }
 
 #ifdef DYNAMIC_EXECUTION_PROFILE
