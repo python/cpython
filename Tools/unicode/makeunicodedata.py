@@ -816,15 +816,15 @@ class UnicodeData:
                  expand=1,
                  cjk_check=True):
         self.changed = []
-        file = open_data(UNICODE_DATA, version)
         table = [None] * 0x110000
-        while 1:
-            s = file.readline()
-            if not s:
-                break
-            s = s.strip().split(";")
-            char = int(s[0], 16)
-            table[char] = s
+        with open_data(UNICODE_DATA, version) as file:
+            while 1:
+                s = file.readline()
+                if not s:
+                    break
+                s = s.strip().split(";")
+                char = int(s[0], 16)
+                table[char] = s
 
         cjk_ranges_found = []
 
@@ -855,32 +855,34 @@ class UnicodeData:
         self.table = table
         self.chars = list(range(0x110000)) # unicode 3.2
 
-        file = open_data(COMPOSITION_EXCLUSIONS, version)
         self.exclusions = {}
-        for s in file:
-            s = s.strip()
-            if not s:
-                continue
-            if s[0] == '#':
-                continue
-            char = int(s.split()[0],16)
-            self.exclusions[char] = 1
+        with open_data(COMPOSITION_EXCLUSIONS, version) as file:
+            for s in file:
+                s = s.strip()
+                if not s:
+                    continue
+                if s[0] == '#':
+                    continue
+                char = int(s.split()[0],16)
+                self.exclusions[char] = 1
 
         widths = [None] * 0x110000
-        for s in open_data(EASTASIAN_WIDTH, version):
-            s = s.strip()
-            if not s:
-                continue
-            if s[0] == '#':
-                continue
-            s = s.split()[0].split(';')
-            if '..' in s[0]:
-                first, last = [int(c, 16) for c in s[0].split('..')]
-                chars = list(range(first, last+1))
-            else:
-                chars = [int(s[0], 16)]
-            for char in chars:
-                widths[char] = s[1]
+        with open_data(EASTASIAN_WIDTH, version) as file:
+            for s in file:
+                s = s.strip()
+                if not s:
+                    continue
+                if s[0] == '#':
+                    continue
+                s = s.split()[0].split(';')
+                if '..' in s[0]:
+                    first, last = [int(c, 16) for c in s[0].split('..')]
+                    chars = list(range(first, last+1))
+                else:
+                    chars = [int(s[0], 16)]
+                for char in chars:
+                    widths[char] = s[1]
+
         for i in range(0, 0x110000):
             if table[i] is not None:
                 table[i].append(widths[i])
@@ -888,36 +890,39 @@ class UnicodeData:
         for i in range(0, 0x110000):
             if table[i] is not None:
                 table[i].append(set())
-        for s in open_data(DERIVED_CORE_PROPERTIES, version):
-            s = s.split('#', 1)[0].strip()
-            if not s:
-                continue
 
-            r, p = s.split(";")
-            r = r.strip()
-            p = p.strip()
-            if ".." in r:
-                first, last = [int(c, 16) for c in r.split('..')]
-                chars = list(range(first, last+1))
-            else:
-                chars = [int(r, 16)]
-            for char in chars:
-                if table[char]:
-                    # Some properties (e.g. Default_Ignorable_Code_Point)
-                    # apply to unassigned code points; ignore them
-                    table[char][-1].add(p)
+        with open_data(DERIVED_CORE_PROPERTIES, version) as file:
+            for s in file:
+                s = s.split('#', 1)[0].strip()
+                if not s:
+                    continue
 
-        for s in open_data(LINE_BREAK, version):
-            s = s.partition('#')[0]
-            s = [i.strip() for i in s.split(';')]
-            if len(s) < 2 or s[1] not in MANDATORY_LINE_BREAKS:
-                continue
-            if '..' not in s[0]:
-                first = last = int(s[0], 16)
-            else:
-                first, last = [int(c, 16) for c in s[0].split('..')]
-            for char in range(first, last+1):
-                table[char][-1].add('Line_Break')
+                r, p = s.split(";")
+                r = r.strip()
+                p = p.strip()
+                if ".." in r:
+                    first, last = [int(c, 16) for c in r.split('..')]
+                    chars = list(range(first, last+1))
+                else:
+                    chars = [int(r, 16)]
+                for char in chars:
+                    if table[char]:
+                        # Some properties (e.g. Default_Ignorable_Code_Point)
+                        # apply to unassigned code points; ignore them
+                        table[char][-1].add(p)
+
+        with open_data(LINE_BREAK, version) as file:
+            for s in file:
+                s = s.partition('#')[0]
+                s = [i.strip() for i in s.split(';')]
+                if len(s) < 2 or s[1] not in MANDATORY_LINE_BREAKS:
+                    continue
+                if '..' not in s[0]:
+                    first = last = int(s[0], 16)
+                else:
+                    first, last = [int(c, 16) for c in s[0].split('..')]
+                for char in range(first, last+1):
+                    table[char][-1].add('Line_Break')
 
         # We only want the quickcheck properties
         # Format: NF?_QC; Y(es)/N(o)/M(aybe)
@@ -928,31 +933,33 @@ class UnicodeData:
         # for older versions, and no delta records will be created.
         quickchecks = [0] * 0x110000
         qc_order = 'NFD_QC NFKD_QC NFC_QC NFKC_QC'.split()
-        for s in open_data(DERIVEDNORMALIZATION_PROPS, version):
-            if '#' in s:
-                s = s[:s.index('#')]
-            s = [i.strip() for i in s.split(';')]
-            if len(s) < 2 or s[1] not in qc_order:
-                continue
-            quickcheck = 'MN'.index(s[2]) + 1 # Maybe or No
-            quickcheck_shift = qc_order.index(s[1])*2
-            quickcheck <<= quickcheck_shift
-            if '..' not in s[0]:
-                first = last = int(s[0], 16)
-            else:
-                first, last = [int(c, 16) for c in s[0].split('..')]
-            for char in range(first, last+1):
-                assert not (quickchecks[char]>>quickcheck_shift)&3
-                quickchecks[char] |= quickcheck
+        with open_data(DERIVEDNORMALIZATION_PROPS, version) as file:
+            for s in file:
+                if '#' in s:
+                    s = s[:s.index('#')]
+                s = [i.strip() for i in s.split(';')]
+                if len(s) < 2 or s[1] not in qc_order:
+                    continue
+                quickcheck = 'MN'.index(s[2]) + 1 # Maybe or No
+                quickcheck_shift = qc_order.index(s[1])*2
+                quickcheck <<= quickcheck_shift
+                if '..' not in s[0]:
+                    first = last = int(s[0], 16)
+                else:
+                    first, last = [int(c, 16) for c in s[0].split('..')]
+                for char in range(first, last+1):
+                    assert not (quickchecks[char]>>quickcheck_shift)&3
+                    quickchecks[char] |= quickcheck
         for i in range(0, 0x110000):
             if table[i] is not None:
                 table[i].append(quickchecks[i])
 
-        zip = zipfile.ZipFile(open_data(UNIHAN, version))
-        if version == '3.2.0':
-            data = zip.open('Unihan-3.2.0.txt').read()
-        else:
-            data = zip.open('Unihan_NumericValues.txt').read()
+        with open_data(UNIHAN, version) as file:
+            zip = zipfile.ZipFile(file)
+            if version == '3.2.0':
+                data = zip.open('Unihan-3.2.0.txt').read()
+            else:
+                data = zip.open('Unihan_NumericValues.txt').read()
         for line in data.decode("utf-8").splitlines():
             if not line.startswith('U+'):
                 continue
