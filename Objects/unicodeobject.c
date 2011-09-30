@@ -2052,9 +2052,7 @@ PyUnicode_FromObject(register PyObject *obj)
     if (PyUnicode_Check(obj)) {
         /* For a Unicode subtype that's not a Unicode object,
            return a true Unicode object with the same data. */
-        if (PyUnicode_READY(obj) == -1)
-            return NULL;
-        return substring((PyUnicodeObject *)obj, 0, PyUnicode_GET_LENGTH(obj));
+        return PyUnicode_Copy(obj);
     }
     PyErr_Format(PyExc_TypeError,
                  "Can't convert '%.100s' object to str implicitly",
@@ -11465,7 +11463,7 @@ unicode_zfill(PyUnicodeObject *self, PyObject *args)
             return (PyObject*) self;
         }
         else
-            return PyUnicode_Copy(self);
+            return PyUnicode_Copy((PyObject*)self);
     }
 
     fill = width - _PyUnicode_LENGTH(self);
