@@ -729,8 +729,7 @@ convert_to_unicode(PyObject **param)
     else if (PyUnicode_Check(*param))
         /* For a Unicode subtype that's not a Unicode object,
            return a true Unicode object with the same data. */
-        *param = PyUnicode_FromUnicode(PyUnicode_AS_UNICODE(*param),
-                                       PyUnicode_GET_SIZE(*param));
+        *param = PyUnicode_Copy(*param);
     else
         *param = PyUnicode_FromEncodedObject(*param,
                                              Py_FileSystemDefaultEncoding,
