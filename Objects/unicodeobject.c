@@ -283,9 +283,6 @@ make_bloom_mask(int kind, void* ptr, Py_ssize_t len)
 /* --- Unicode Object ----------------------------------------------------- */
 
 static PyObject *
-substring(PyUnicodeObject *self, Py_ssize_t start, Py_ssize_t len);
-
-static PyObject *
 fixup(PyUnicodeObject *self, Py_UCS4 (*fixfct)(PyUnicodeObject *s));
 
 Py_LOCAL_INLINE(char *) findchar(void *s, int kind,
@@ -10445,51 +10442,7 @@ _PyUnicode_XStrip(PyUnicodeObject *self, int striptype, PyObject *sepobj)
         j++;
     }
 
-    if (i == 0 && j == len && PyUnicode_CheckExact(self)) {
-        Py_INCREF(self);
-        return (PyObject*)self;
-    }
-    else
-        return PyUnicode_Substring((PyObject*)self, i, j);
-}
-
-/* Assumes an already ready self string. */
-
-static PyObject *
-substring(PyUnicodeObject *self, Py_ssize_t start, Py_ssize_t len)
-{
-    const int kind = PyUnicode_KIND(self);
-    void *data = PyUnicode_DATA(self);
-    Py_UCS4 maxchar = 0;
-    Py_ssize_t i;
-    PyObject *unicode;
-
-    if (start < 0 || len < 0 || (start + len) > PyUnicode_GET_LENGTH(self)) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
-
-    if (len == PyUnicode_GET_LENGTH(self) && PyUnicode_CheckExact(self)) {
-        Py_INCREF(self);
-        return (PyObject*)self;
-    }
-
-    for (i = 0; i < len; ++i) {
-        const Py_UCS4 ch = PyUnicode_READ(kind, data, start + i);
-        if (ch > maxchar)
-            maxchar = ch;
-    }
-
-    unicode = PyUnicode_New(len, maxchar);
-    if (unicode == NULL)
-        return NULL;
-    if (PyUnicode_CopyCharacters(unicode, 0,
-                                 (PyObject*)self, start, len) < 0)
-    {
-        Py_DECREF(unicode);
-        return NULL;
-    }
-    return unicode;
+    return PyUnicode_Substring((PyObject*)self, i, j);
 }
 
 PyObject*
@@ -10497,16 +10450,26 @@ PyUnicode_Substring(PyObject *self, Py_ssize_t start, Py_ssize_t end)
 {
     unsigned char *data;
     int kind;
+    Py_ssize_t length;
 
-    if (start == 0 && end == PyUnicode_GET_LENGTH(self)
-        && PyUnicode_CheckExact(self))
+    if (start == 0 && end == PyUnicode_GET_LENGTH(self))
     {
-        Py_INCREF(self);
-        return (PyObject *)self;
+        if (PyUnicode_CheckExact(self)) {
+            Py_INCREF(self);
+            return self;
+        }
+        else
+            return PyUnicode_Copy(self);
     }
 
-    if ((end - start) == 1)
+    length = end - start;
+    if (length == 1)
         return unicode_getitem((PyUnicodeObject*)self, start);
+
+    if (start < 0 || end < 0 || end > PyUnicode_GET_LENGTH(self)) {
+        PyErr_SetString(PyExc_IndexError, "string index out of range");
+        return NULL;
+    }
 
     if (PyUnicode_READY(self) == -1)
         return NULL;
@@ -10514,7 +10477,7 @@ PyUnicode_Substring(PyObject *self, Py_ssize_t start, Py_ssize_t end)
     data = PyUnicode_1BYTE_DATA(self);
     return PyUnicode_FromKindAndData(kind,
                                      data + PyUnicode_KIND_SIZE(kind, start),
-                                     end-start);
+                                     length);
 }
 
 static PyObject *
@@ -10546,12 +10509,7 @@ do_strip(PyUnicodeObject *self, int striptype)
         j++;
     }
 
-    if (i == 0 && j == len && PyUnicode_CheckExact(self)) {
-        Py_INCREF(self);
-        return (PyObject*)self;
-    }
-    else
-        return substring(self, i, j-i);
+    return PyUnicode_Substring((PyObject*)self, i, j);
 }
 
 
@@ -11814,7 +11772,8 @@ unicode_subscript(PyUnicodeObject* self, PyObject* item)
             Py_INCREF(self);
             return (PyObject *)self;
         } else if (step == 1) {
-            return substring(self, start, slicelength);
+            return PyUnicode_Substring((PyObject*)self,
+                                       start, start + slicelength);
         } else {
             source_buf = PyUnicode_AS_UNICODE((PyObject*)self);
             result_buf = (Py_UNICODE *)PyObject_MALLOC(slicelength*
@@ -12051,7 +12010,8 @@ PyUnicode_Format(PyObject *format, PyObject *args)
                                     "incomplete format key");
                     goto onError;
                 }
-                key = substring(uformat, keystart, keylen);
+                key = PyUnicode_Substring((PyObject*)uformat,
+                                          keystart, keystart + keylen);
                 if (key == NULL)
                     goto onError;
                 if (args_owned) {
