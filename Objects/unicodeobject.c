@@ -1212,15 +1212,40 @@ PyUnicode_FromKindAndData(int kind, const void *buffer, Py_ssize_t size)
 PyObject*
 PyUnicode_Copy(PyObject *unicode)
 {
+    Py_ssize_t size;
+    PyObject *copy;
+    void *data;
+
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadInternalCall();
         return NULL;
     }
     if (PyUnicode_READY(unicode))
         return NULL;
-    return PyUnicode_FromKindAndData(PyUnicode_KIND(unicode),
-                                     PyUnicode_DATA(unicode),
-                                     PyUnicode_GET_LENGTH(unicode));
+
+    size = PyUnicode_GET_LENGTH(unicode);
+    copy = PyUnicode_New(size, PyUnicode_MAX_CHAR_VALUE(unicode));
+    if (!copy)
+        return NULL;
+    assert(PyUnicode_KIND(copy) == PyUnicode_KIND(unicode));
+
+    data = PyUnicode_DATA(unicode);
+    switch (PyUnicode_KIND(unicode))
+    {
+    case PyUnicode_1BYTE_KIND:
+        memcpy(PyUnicode_1BYTE_DATA(copy), data, size);
+        break;
+    case PyUnicode_2BYTE_KIND:
+        memcpy(PyUnicode_2BYTE_DATA(copy), data, sizeof(Py_UCS2) * size);
+        break;
+    case PyUnicode_4BYTE_KIND:
+        memcpy(PyUnicode_4BYTE_DATA(copy), data, sizeof(Py_UCS4) * size);
+        break;
+    default:
+        assert(0);
+        break;
+    }
+    return copy;
 }
 
 
