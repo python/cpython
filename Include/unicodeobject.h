@@ -510,6 +510,11 @@ PyAPI_FUNC(int) _PyUnicode_Ready(
     );
 #endif
 
+/* Get a copy of a Unicode string. */
+PyAPI_FUNC(PyObject*) PyUnicode_Copy(
+    PyObject *unicode
+    );
+
 /* Copy character from one unicode object into another, this function performs
    character conversion when necessary and falls back to memcpy if possible.
 

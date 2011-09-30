@@ -1209,6 +1209,20 @@ PyUnicode_FromKindAndData(int kind, const void *buffer, Py_ssize_t size)
     return NULL;
 }
 
+PyObject*
+PyUnicode_Copy(PyObject *unicode)
+{
+    if (!PyUnicode_Check(unicode)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+    if (PyUnicode_READY(unicode))
+        return NULL;
+    return PyUnicode_FromKindAndData(PyUnicode_KIND(unicode),
+                                     PyUnicode_DATA(unicode),
+                                     PyUnicode_GET_LENGTH(unicode));
+}
+
 
 /* Widen Unicode objects to larger buffers.
    Return NULL if the string is too wide already. */
@@ -9061,9 +9075,7 @@ replace(PyObject *self, PyObject *str1,
         Py_INCREF(self);
         return (PyObject *) self;
     }
-    return PyUnicode_FromKindAndData(PyUnicode_KIND(self),
-                                     PyUnicode_DATA(self),
-                                     PyUnicode_GET_LENGTH(self));
+    return PyUnicode_Copy(self);
   error:
     if (srelease && sbuf)
         PyMem_FREE(sbuf);
@@ -10477,7 +10489,8 @@ PyUnicode_Substring(PyObject *self, Py_ssize_t start, Py_ssize_t end)
         return NULL;
     kind = PyUnicode_KIND(self);
     data = PyUnicode_1BYTE_DATA(self);
-    return PyUnicode_FromKindAndData(kind, data + PyUnicode_KIND_SIZE(kind, start),
+    return PyUnicode_FromKindAndData(kind,
+                                     data + PyUnicode_KIND_SIZE(kind, start),
                                      end-start);
 }
 
@@ -11267,8 +11280,7 @@ PyObject *unicode_str(PyObject *self)
         return self;
     } else
         /* Subtype -- return genuine unicode string with the same value. */
-        return PyUnicode_FromUnicode(PyUnicode_AS_UNICODE(self),
-                                     PyUnicode_GET_SIZE(self));
+        return PyUnicode_Copy(self);
 }
 
 PyDoc_STRVAR(swapcase__doc__,
@@ -11453,10 +11465,7 @@ unicode_zfill(PyUnicodeObject *self, PyObject *args)
             return (PyObject*) self;
         }
         else
-            return PyUnicode_FromUnicode(
-                PyUnicode_AS_UNICODE(self),
-                PyUnicode_GET_SIZE(self)
-                );
+            return PyUnicode_Copy(self);
     }
 
     fill = width - _PyUnicode_LENGTH(self);
@@ -11652,16 +11661,9 @@ PyDoc_STRVAR(sizeof__doc__,
              "S.__sizeof__() -> size of S in memory, in bytes");
 
 static PyObject *
-unicode_getnewargs(PyUnicodeObject *v)
+unicode_getnewargs(PyObject *v)
 {
-    PyObject *copy;
-    unsigned char *data;
-    int kind;
-    if (PyUnicode_READY(v) == -1)
-        return NULL;
-    kind = PyUnicode_KIND(v);
-    data = PyUnicode_1BYTE_DATA(v);
-    copy = PyUnicode_FromKindAndData(kind, data, PyUnicode_GET_LENGTH(v));
+    PyObject *copy = PyUnicode_Copy(v);
     if (!copy)
         return NULL;
     return Py_BuildValue("(N)", copy);
