@@ -1234,11 +1234,13 @@ get_pybool(int istrue)
 static PyObject *
 xmlparse_getattro(xmlparseobject *self, PyObject *nameobj)
 {
-    const Py_UNICODE *name;
+    Py_UCS4 first_char;
     int handlernum = -1;
 
     if (!PyUnicode_Check(nameobj))
         goto generic;
+    if (PyUnicode_READY(nameobj))
+        return NULL;
 
     handlernum = handlername2int(nameobj);
 
@@ -1250,8 +1252,8 @@ xmlparse_getattro(xmlparseobject *self, PyObject *nameobj)
         return result;
     }
 
-    name = PyUnicode_AS_UNICODE(nameobj);
-    if (name[0] == 'E') {
+    first_char = PyUnicode_READ_CHAR(nameobj, 0);
+    if (first_char == 'E') {
         if (PyUnicode_CompareWithASCIIString(nameobj, "ErrorCode") == 0)
             return PyLong_FromLong((long)
                                   XML_GetErrorCode(self->itself));
@@ -1265,7 +1267,7 @@ xmlparse_getattro(xmlparseobject *self, PyObject *nameobj)
             return PyLong_FromLong((long)
                                   XML_GetErrorByteIndex(self->itself));
     }
-    if (name[0] == 'C') {
+    if (first_char == 'C') {
         if (PyUnicode_CompareWithASCIIString(nameobj, "CurrentLineNumber") == 0)
             return PyLong_FromLong((long)
                                   XML_GetCurrentLineNumber(self->itself));
@@ -1276,7 +1278,7 @@ xmlparse_getattro(xmlparseobject *self, PyObject *nameobj)
             return PyLong_FromLong((long)
                                   XML_GetCurrentByteIndex(self->itself));
     }
-    if (name[0] == 'b') {
+    if (first_char == 'b') {
         if (PyUnicode_CompareWithASCIIString(nameobj, "buffer_size") == 0)
             return PyLong_FromLong((long) self->buffer_size);
         if (PyUnicode_CompareWithASCIIString(nameobj, "buffer_text") == 0)
