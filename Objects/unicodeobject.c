@@ -626,8 +626,10 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
     unsigned int from_kind, to_kind;
     void *from_data, *to_data;
 
-    assert(PyUnicode_Check(from));
-    assert(PyUnicode_Check(to));
+    if (!PyUnicode_Check(from) || !PyUnicode_Check(to)) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
 
     if (PyUnicode_READY(from))
         return -1;
