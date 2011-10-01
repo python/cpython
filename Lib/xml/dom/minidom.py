@@ -836,7 +836,9 @@ class Element(Node):
             _write_data(writer, attrs[a_name].value)
             writer.write("\"")
         if self.childNodes:
-            writer.write(">%s"%(newl))
+            writer.write(">")
+            if self.childNodes[0].nodeType != Node.TEXT_NODE:
+                writer.write(newl)
             for node in self.childNodes:
                 node.writexml(writer,indent+addindent,addindent,newl)
             writer.write("%s</%s>%s" % (indent,self.tagName,newl))
@@ -1061,7 +1063,7 @@ class Text(CharacterData):
         return newText
 
     def writexml(self, writer, indent="", addindent="", newl=""):
-        _write_data(writer, "%s%s%s"%(indent, self.data, newl))
+        _write_data(writer, self.data)
 
     # DOM Level 3 (WD 9 April 2002)
 
