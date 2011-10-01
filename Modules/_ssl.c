@@ -702,7 +702,7 @@ _get_peer_alt_names (X509 *certificate) {
     /* get a memory buffer */
     biobuf = BIO_new(BIO_s_mem());
 
-    i = 0;
+    i = -1;
     while ((i = X509_get_ext_by_NID(
                     certificate, NID_subject_alt_name, i)) >= 0) {
 

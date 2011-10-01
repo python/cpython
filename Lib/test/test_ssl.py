@@ -110,6 +110,23 @@ class BasicSocketTests(unittest.TestCase):
         p = ssl._ssl._test_decode_cert(CERTFILE, False)
         if test_support.verbose:
             sys.stdout.write("\n" + pprint.pformat(p) + "\n")
+        self.assertEqual(p['subject'],
+                         ((('countryName', u'US'),),
+                          (('stateOrProvinceName', u'Delaware'),),
+                          (('localityName', u'Wilmington'),),
+                          (('organizationName', u'Python Software Foundation'),),
+                          (('organizationalUnitName', u'SSL'),),
+                          (('commonName', u'somemachine.python.org'),)),
+                        )
+        # Issue #13034: the subjectAltName in some certificates
+        # (notably projects.developer.nokia.com:443) wasn't parsed
+        p = ssl._ssl._test_decode_cert(NOKIACERT)
+        if test_support.verbose:
+            sys.stdout.write("\n" + pprint.pformat(p) + "\n")
+        self.assertEqual(p['subjectAltName'],
+                         (('DNS', 'projects.developer.nokia.com'),
+                          ('DNS', 'projects.forum.nokia.com'))
+                        )
 
     def test_DER_to_PEM(self):
         with open(SVN_PYTHON_ORG_ROOT_CERT, 'r') as f:
@@ -1329,15 +1346,18 @@ else:
 
 
 def test_main(verbose=False):
-    global CERTFILE, SVN_PYTHON_ORG_ROOT_CERT
+    global CERTFILE, SVN_PYTHON_ORG_ROOT_CERT, NOKIACERT
     CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir,
                             "keycert.pem")
     SVN_PYTHON_ORG_ROOT_CERT = os.path.join(
         os.path.dirname(__file__) or os.curdir,
         "https_svn_python_org_root.pem")
+    NOKIACERT = os.path.join(os.path.dirname(__file__) or os.curdir,
+                             "nokia.pem")
 
     if (not os.path.exists(CERTFILE) or
-        not os.path.exists(SVN_PYTHON_ORG_ROOT_CERT)):
+        not os.path.exists(SVN_PYTHON_ORG_ROOT_CERT) or
+        not os.path.exists(NOKIACERT)):
         raise test_support.TestFailed("Can't read certificate files!")
 
     tests = [BasicTests, BasicSocketTests]
