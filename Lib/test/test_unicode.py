@@ -1760,6 +1760,18 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual(size, nchar)
         self.assertEqual(wchar, nonbmp + '\0')
 
+    def test_subclass_add(self):
+        class S(str):
+            def __add__(self, o):
+                return "3"
+        self.assertEqual(S("4") + S("5"), "3")
+        class S(str):
+            def __iadd__(self, o):
+                return "3"
+        s = S("1")
+        s += "4"
+        self.assertEqual(s, "3")
+
 
 class StringModuleTest(unittest.TestCase):
     def test_formatter_parser(self):

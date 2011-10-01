@@ -1507,10 +1507,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         TARGET(BINARY_ADD)
             w = POP();
             v = TOP();
-            if (PyUnicode_Check(v) && PyUnicode_Check(w))
-                x = PyUnicode_Concat(v, w);
-            else
-                x = PyNumber_Add(v, w);
+            x = PyNumber_Add(v, w);
             Py_DECREF(v);
             Py_DECREF(w);
             SET_TOP(x);
@@ -1662,10 +1659,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         TARGET(INPLACE_ADD)
             w = POP();
             v = TOP();
-            if (PyUnicode_Check(v) && PyUnicode_Check(w))
-                x = PyUnicode_Concat(v, w);
-            else
-                x = PyNumber_InPlaceAdd(v, w);
+            x = PyNumber_InPlaceAdd(v, w);
             Py_DECREF(v);
             Py_DECREF(w);
             SET_TOP(x);
