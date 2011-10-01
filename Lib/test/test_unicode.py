@@ -1010,10 +1010,13 @@ class UnicodeTest(string_tests.CommonTest,
         class UnicodeSubclass(str):
             pass
 
-        self.assertEqual(
-            str(UnicodeSubclass('unicode subclass becomes unicode')),
-            'unicode subclass becomes unicode'
-        )
+        for text in ('ascii', '\xe9', '\u20ac', '\U0010FFFF'):
+            subclass = UnicodeSubclass(text)
+            self.assertEqual(str(subclass), text)
+            self.assertEqual(len(subclass), len(text))
+            if text == 'ascii':
+                self.assertEqual(subclass.encode('ascii'), b'ascii')
+                self.assertEqual(subclass.encode('utf-8'), b'ascii')
 
         self.assertEqual(
             str('strings are converted to unicode'),
