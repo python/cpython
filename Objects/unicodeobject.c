@@ -9075,6 +9075,7 @@ replace(PyObject *self, PyObject *str1,
                    PyUnicode_KIND_SIZE(rkind, slen-i));
         }
         u = PyUnicode_FromKindAndData(rkind, res, new_size);
+        PyMem_Free(res);
     }
     if (srelease)
         PyMem_FREE(sbuf);
