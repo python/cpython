@@ -338,7 +338,9 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 
 
 /* Return the number of bytes the string uses to represent single characters,
-   this can be 1, 2 or 4. */
+   this can be 1, 2 or 4.
+
+   See also PyUnicode_KIND_SIZE(). */
 #define PyUnicode_CHARACTER_SIZE(op) \
     (1 << (PyUnicode_KIND(op) - 1))
 
@@ -378,8 +380,9 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
      _PyUnicode_NONCOMPACT_DATA(op))
 
 /* Compute (index * char_size) where char_size is 2 ** (kind - 1).
+   The index is a character index, the result is a size in bytes.
 
-   The index is a character index, the result is a size in bytes. */
+   See also PyUnicode_CHARACTER_SIZE(). */
 #define PyUnicode_KIND_SIZE(kind, index) ((index) << ((kind) - 1))
 
 /* In the access macros below, "kind" may be evaluated more than once.
