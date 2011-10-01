@@ -1264,43 +1264,61 @@ PyUnicode_Copy(PyObject *unicode)
 }
 
 
-/* Widen Unicode objects to larger buffers.
-   Return NULL if the string is too wide already. */
+/* Widen Unicode objects to larger buffers. Don't write terminating null
+   character. Return NULL on error. */
 
 void*
 _PyUnicode_AsKind(PyObject *s, unsigned int kind)
 {
-    Py_ssize_t i;
-    Py_ssize_t len = PyUnicode_GET_LENGTH(s);
-    void *d = PyUnicode_DATA(s);
-    unsigned int skind = PyUnicode_KIND(s);
-    if (PyUnicode_KIND(s) >= kind) {
+    Py_ssize_t len;
+    void *result;
+    unsigned int skind;
+
+    if (PyUnicode_READY(s))
+        return NULL;
+
+    len = PyUnicode_GET_LENGTH(s);
+    skind = PyUnicode_KIND(s);
+    if (skind >= kind) {
         PyErr_SetString(PyExc_RuntimeError, "invalid widening attempt");
         return NULL;
     }
     switch(kind) {
-    case PyUnicode_2BYTE_KIND: {
-        Py_UCS2 *result = PyMem_Malloc(PyUnicode_GET_LENGTH(s) * sizeof(Py_UCS2));
-        if (!result) {
-            PyErr_NoMemory();
-            return 0;
-        }
-        for (i = 0; i < len; i++)
-            result[i] = ((Py_UCS1*)d)[i];
+    case PyUnicode_2BYTE_KIND:
+        result = PyMem_Malloc(len * sizeof(Py_UCS2));
+        if (!result)
+            return PyErr_NoMemory();
+        assert(skind == PyUnicode_1BYTE_KIND);
+        _PyUnicode_CONVERT_BYTES(
+            Py_UCS1, Py_UCS2,
+            PyUnicode_1BYTE_DATA(s),
+            PyUnicode_1BYTE_DATA(s) + len,
+            result);
         return result;
-    }
-    case PyUnicode_4BYTE_KIND: {
-        Py_UCS4 *result = PyMem_Malloc(PyUnicode_GET_LENGTH(s) * sizeof(Py_UCS4));
-        if (!result) {
-            PyErr_NoMemory();
-            return 0;
+    case PyUnicode_4BYTE_KIND:
+        result = PyMem_Malloc(len * sizeof(Py_UCS4));
+        if (!result)
+            return PyErr_NoMemory();
+        if (skind == PyUnicode_2BYTE_KIND) {
+            _PyUnicode_CONVERT_BYTES(
+                Py_UCS2, Py_UCS4,
+                PyUnicode_2BYTE_DATA(s),
+                PyUnicode_2BYTE_DATA(s) + len,
+                result);
         }
-        for (i = 0; i < len; i++)
-            result[i] = PyUnicode_READ(skind, d, i);
+        else {
+            assert(skind == PyUnicode_1BYTE_KIND);
+            _PyUnicode_CONVERT_BYTES(
+                Py_UCS1, Py_UCS4,
+                PyUnicode_1BYTE_DATA(s),
+                PyUnicode_1BYTE_DATA(s) + len,
+                result);
+        }
         return result;
+    default:
+        break;
     }
-    }
-    Py_FatalError("invalid kind");
+    PyErr_SetString(PyExc_ValueError, "invalid kind");
     return NULL;
 }
 
