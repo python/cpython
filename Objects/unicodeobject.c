@@ -10583,7 +10583,6 @@ unicode_repeat(PyUnicodeObject *str, Py_ssize_t len)
 {
     PyUnicodeObject *u;
     Py_ssize_t nchars, n;
-    size_t nbytes, char_size;
 
     if (len < 1) {
         Py_INCREF(unicode_empty);
@@ -10599,32 +10598,28 @@ unicode_repeat(PyUnicodeObject *str, Py_ssize_t len)
     if (PyUnicode_READY(str) == -1)
         return NULL;
 
-    /* ensure # of chars needed doesn't overflow int and # of bytes
-     * needed doesn't overflow size_t
-     */
+    if (len > PY_SSIZE_T_MAX / PyUnicode_GET_LENGTH(str)) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "repeated string is too long");
+        return NULL;
+    }
     nchars = len * PyUnicode_GET_LENGTH(str);
-    if (nchars / len != PyUnicode_GET_LENGTH(str)) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "repeated string is too long");
-        return NULL;
-    }
-    char_size = PyUnicode_CHARACTER_SIZE(str);
-    nbytes = (nchars + 1) * char_size;
-    if (nbytes / char_size != (size_t)(nchars + 1)) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "repeated string is too long");
-        return NULL;
-    }
+
     u = (PyUnicodeObject *)PyUnicode_New(nchars, PyUnicode_MAX_CHAR_VALUE(str));
     if (!u)
         return NULL;
+    assert(PyUnicode_KIND(u) == PyUnicode_KIND(str));
 
     if (PyUnicode_GET_LENGTH(str) == 1) {
         const int kind = PyUnicode_KIND(str);
         const Py_UCS4 fill_char = PyUnicode_READ(kind, PyUnicode_DATA(str), 0);
         void *to = PyUnicode_DATA(u);
-        for (n = 0; n < len; ++n)
-            PyUnicode_WRITE(kind, to, n, fill_char);
+        if (kind == PyUnicode_1BYTE_KIND)
+            memset(to, (unsigned char)fill_char, len);
+        else {
+            for (n = 0; n < len; ++n)
+                PyUnicode_WRITE(kind, to, n, fill_char);
+        }
     }
     else {
         /* number of characters copied this far */
