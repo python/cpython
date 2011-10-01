@@ -10447,6 +10447,11 @@ PyUnicode_Substring(PyObject *self, Py_ssize_t start, Py_ssize_t end)
     int kind;
     Py_ssize_t length;
 
+    if (PyUnicode_READY(self) == -1)
+        return NULL;
+
+    end = Py_MIN(end, PyUnicode_GET_LENGTH(self));
+
     if (start == 0 && end == PyUnicode_GET_LENGTH(self))
     {
         if (PyUnicode_CheckExact(self)) {
@@ -10461,13 +10466,11 @@ PyUnicode_Substring(PyObject *self, Py_ssize_t start, Py_ssize_t end)
     if (length == 1)
         return unicode_getitem((PyUnicodeObject*)self, start);
 
-    if (start < 0 || end < 0 || end > PyUnicode_GET_LENGTH(self)) {
+    if (start < 0 || end < 0) {
         PyErr_SetString(PyExc_IndexError, "string index out of range");
         return NULL;
     }
 
-    if (PyUnicode_READY(self) == -1)
-        return NULL;
     kind = PyUnicode_KIND(self);
     data = PyUnicode_1BYTE_DATA(self);
     return PyUnicode_FromKindAndData(kind,
