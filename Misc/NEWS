@@ -36,6 +36,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13034: When decoding some SSL certificates, the subjectAltName
+  extension could be unreported.
+
 - Issue #9871: Prevent IDLE 3 crash when given byte stings
   with invalid hex escape sequences, like b'\x0'.
   (Original patch by Claudiu Popa.)
