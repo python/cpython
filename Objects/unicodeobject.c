@@ -10600,7 +10600,7 @@ unicode_repeat(PyUnicodeObject *str, Py_ssize_t len)
     if (PyUnicode_READY(str) == -1)
         return NULL;
 
-    if (len > PY_SSIZE_T_MAX / PyUnicode_GET_LENGTH(str)) {
+    if (PyUnicode_GET_LENGTH(str) > PY_SSIZE_T_MAX / len) {
         PyErr_SetString(PyExc_OverflowError,
                         "repeated string is too long");
         return NULL;
