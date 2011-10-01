@@ -7933,7 +7933,7 @@ PyUnicode_Count(PyObject *str,
     if (!str_obj || PyUnicode_READY(str_obj) == -1)
         return -1;
     sub_obj = (PyUnicodeObject*) PyUnicode_FromObject(substr);
-    if (!sub_obj || PyUnicode_READY(str_obj) == -1) {
+    if (!sub_obj || PyUnicode_READY(sub_obj) == -1) {
         Py_DECREF(str_obj);
         return -1;
     }
@@ -8460,7 +8460,7 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
         if (separator == NULL) {
             /* fall back to a blank space separator */
             sep = PyUnicode_FromOrdinal(' ');
-            if (!sep || PyUnicode_READY(sep) == -1)
+            if (!sep)
                 goto onError;
         }
         else {
@@ -9190,10 +9190,6 @@ convert_uc(PyObject *obj, void *addr)
         Py_DECREF(uniobj);
         return 0;
     }
-    if (PyUnicode_READY(uniobj)) {
-        Py_DECREF(uniobj);
-        return 0;
-    }
     *fillcharloc = PyUnicode_READ_CHAR(uniobj, 0);
     Py_DECREF(uniobj);
     return 1;
@@ -9212,10 +9208,10 @@ unicode_center(PyUnicodeObject *self, PyObject *args)
     Py_ssize_t width;
     Py_UCS4 fillchar = ' ';
 
-    if (PyUnicode_READY(self) == -1)
+    if (!PyArg_ParseTuple(args, "n|O&:center", &width, convert_uc, &fillchar))
         return NULL;
 
-    if (!PyArg_ParseTuple(args, "n|O&:center", &width, convert_uc, &fillchar))
+    if (PyUnicode_READY(self) == -1)
         return NULL;
 
     if (_PyUnicode_LENGTH(self) >= width && PyUnicode_CheckExact(self)) {
@@ -9437,7 +9433,7 @@ PyUnicode_Contains(PyObject *container, PyObject *element)
         return -1;
 
     str = PyUnicode_FromObject(container);
-    if (!str || PyUnicode_READY(container) == -1) {
+    if (!str || PyUnicode_READY(str) == -1) {
         Py_DECREF(sub);
         return -1;
     }
@@ -9514,9 +9510,6 @@ PyUnicode_Concat(PyObject *left, PyObject *right)
         Py_DECREF(u);
         return v;
     }
-
-    if (PyUnicode_READY(u) == -1 || PyUnicode_READY(v) == -1)
-        goto onError;
 
     maxchar = PyUnicode_MAX_CHAR_VALUE(u);
     maxchar = Py_MAX(maxchar, PyUnicode_MAX_CHAR_VALUE(v));
@@ -10662,15 +10655,15 @@ PyUnicode_Replace(PyObject *obj,
     PyObject *result;
 
     self = PyUnicode_FromObject(obj);
-    if (self == NULL || PyUnicode_READY(obj) == -1)
+    if (self == NULL || PyUnicode_READY(self) == -1)
         return NULL;
     str1 = PyUnicode_FromObject(subobj);
-    if (str1 == NULL || PyUnicode_READY(obj) == -1) {
+    if (str1 == NULL || PyUnicode_READY(str1) == -1) {
         Py_DECREF(self);
         return NULL;
     }
     str2 = PyUnicode_FromObject(replobj);
-    if (str2 == NULL || PyUnicode_READY(obj)) {
+    if (str2 == NULL || PyUnicode_READY(str2)) {
         Py_DECREF(self);
         Py_DECREF(str1);
         return NULL;
@@ -10705,7 +10698,7 @@ unicode_replace(PyObject *self, PyObject *args)
     if (str1 == NULL || PyUnicode_READY(str1) == -1)
         return NULL;
     str2 = PyUnicode_FromObject(str2);
-    if (str2 == NULL || PyUnicode_READY(str1) == -1) {
+    if (str2 == NULL || PyUnicode_READY(str2) == -1) {
         Py_DECREF(str1);
         return NULL;
     }
@@ -10958,10 +10951,10 @@ unicode_rjust(PyUnicodeObject *self, PyObject *args)
     Py_ssize_t width;
     Py_UCS4 fillchar = ' ';
 
-    if (PyUnicode_READY(self) == -1)
+    if (!PyArg_ParseTuple(args, "n|O&:rjust", &width, convert_uc, &fillchar))
         return NULL;
 
-    if (!PyArg_ParseTuple(args, "n|O&:rjust", &width, convert_uc, &fillchar))
+    if (PyUnicode_READY(self) == -1)
         return NULL;
 
     if (_PyUnicode_LENGTH(self) >= width && PyUnicode_CheckExact(self)) {
@@ -11032,7 +11025,7 @@ PyUnicode_Partition(PyObject *str_in, PyObject *sep_in)
     Py_ssize_t len1, len2;
 
     str_obj = PyUnicode_FromObject(str_in);
-    if (!str_obj || PyUnicode_READY(str_in) == -1)
+    if (!str_obj || PyUnicode_READY(str_obj) == -1)
         return NULL;
     sep_obj = PyUnicode_FromObject(sep_in);
     if (!sep_obj || PyUnicode_READY(sep_obj) == -1) {
