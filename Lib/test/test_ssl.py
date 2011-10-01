@@ -51,6 +51,7 @@ EMPTYCERT = data_file("nullcert.pem")
 BADCERT = data_file("badcert.pem")
 WRONGCERT = data_file("XXXnonexisting.pem")
 BADKEY = data_file("badkey.pem")
+NOKIACERT = data_file("nokia.pem")
 
 
 def handle_error(prefix):
@@ -117,6 +118,31 @@ class BasicSocketTests(unittest.TestCase):
         p = ssl._ssl._test_decode_cert(CERTFILE)
         if support.verbose:
             sys.stdout.write("\n" + pprint.pformat(p) + "\n")
+        self.assertEqual(p['issuer'],
+                         ((('countryName', 'XY'),),
+                          (('localityName', 'Castle Anthrax'),),
+                          (('organizationName', 'Python Software Foundation'),),
+                          (('commonName', 'localhost'),))
+                        )
+        self.assertEqual(p['notAfter'], 'Oct  5 23:01:56 2020 GMT')
+        self.assertEqual(p['notBefore'], 'Oct  8 23:01:56 2010 GMT')
+        self.assertEqual(p['serialNumber'], 'D7C7381919AFC24E')
+        self.assertEqual(p['subject'],
+                         ((('countryName', 'XY'),),
+                          (('localityName', 'Castle Anthrax'),),
+                          (('organizationName', 'Python Software Foundation'),),
+                          (('commonName', 'localhost'),))
+                        )
+        self.assertEqual(p['subjectAltName'], (('DNS', 'localhost'),))
+        # Issue #13034: the subjectAltName in some certificates
+        # (notably projects.developer.nokia.com:443) wasn't parsed
+        p = ssl._ssl._test_decode_cert(NOKIACERT)
+        if support.verbose:
+            sys.stdout.write("\n" + pprint.pformat(p) + "\n")
+        self.assertEqual(p['subjectAltName'],
+                         (('DNS', 'projects.developer.nokia.com'),
+                          ('DNS', 'projects.forum.nokia.com'))
+                        )
 
     def test_DER_to_PEM(self):
         with open(SVN_PYTHON_ORG_ROOT_CERT, 'r') as f:
