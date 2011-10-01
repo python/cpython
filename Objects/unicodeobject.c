@@ -1,8 +1,7 @@
 /*
 
 Unicode implementation based on original code by Fredrik Lundh,
-modified by Marc-Andre Lemburg <mal@lemburg.com> according to the
-Unicode Integration Proposal (see file Misc/unicode.txt).
+modified by Marc-Andre Lemburg <mal@lemburg.com>.
 
 Major speed upgrades to the method implementations at the Reykjavik
 NeedForSpeed sprint, by Fredrik Lundh and Andrew Dalke.
