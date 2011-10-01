@@ -2068,6 +2068,8 @@ PyUnicode_FromObject(register PyObject *obj)
     /* XXX Perhaps we should make this API an alias of
        PyObject_Str() instead ?! */
     if (PyUnicode_CheckExact(obj)) {
+        if (PyUnicode_READY(obj))
+            return NULL;
         Py_INCREF(obj);
         return obj;
     }
