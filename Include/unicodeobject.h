@@ -795,7 +795,9 @@ PyAPI_FUNC(wchar_t*) PyUnicode_AsWideCharString(
     Py_ssize_t *size            /* number of characters of the result */
     );
 
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(void*) _PyUnicode_AsKind(PyObject *s, unsigned int kind);
+#endif
 
 #endif
 
