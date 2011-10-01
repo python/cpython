@@ -2840,8 +2840,12 @@ PyUnicode_GetLength(PyObject *unicode)
 Py_UCS4
 PyUnicode_ReadChar(PyObject *unicode, Py_ssize_t index)
 {
-    if (!PyUnicode_Check(unicode) || PyUnicode_READY(unicode) != -1) {
-        return PyErr_BadArgument();
+    if (!PyUnicode_Check(unicode) || PyUnicode_READY(unicode) == -1) {
+        PyErr_BadArgument();
+        return (Py_UCS4)-1;
+    }
+    if (index < 0 || index >= _PyUnicode_LENGTH(unicode)) {
+        PyErr_SetString(PyExc_IndexError, "string index out of range");
         return (Py_UCS4)-1;
     }
     return PyUnicode_READ_CHAR(unicode, index);
@@ -9808,18 +9812,11 @@ unicode_find(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-unicode_getitem(PyUnicodeObject *self, Py_ssize_t index)
+unicode_getitem(PyObject *self, Py_ssize_t index)
 {
-    Py_UCS4 ch;
-
-    if (PyUnicode_READY(self) == -1)
+    Py_UCS4 ch = PyUnicode_ReadChar(self, index);
+    if (ch == (Py_UCS4)-1)
         return NULL;
-    if (index < 0 || index >= _PyUnicode_LENGTH(self)) {
-        PyErr_SetString(PyExc_IndexError, "string index out of range");
-        return NULL;
-    }
-
-    ch = PyUnicode_READ(PyUnicode_KIND(self), PyUnicode_DATA(self), index);
     return PyUnicode_FromOrdinal(ch);
 }
 
@@ -10475,7 +10472,7 @@ PyUnicode_Substring(PyObject *self, Py_ssize_t start, Py_ssize_t end)
 
     length = end - start;
     if (length == 1)
-        return unicode_getitem((PyUnicodeObject*)self, start);
+        return unicode_getitem(self, start);
 
     if (start < 0 || end < 0) {
         PyErr_SetString(PyExc_IndexError, "string index out of range");
@@ -11758,7 +11755,7 @@ unicode_subscript(PyUnicodeObject* self, PyObject* item)
             return NULL;
         if (i < 0)
             i += PyUnicode_GET_LENGTH(self);
-        return unicode_getitem(self, i);
+        return unicode_getitem((PyObject*)self, i);
     } else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelength, cur, i;
         const Py_UNICODE* source_buf;
