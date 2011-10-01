@@ -104,14 +104,22 @@ extern "C" {
         } \
     } while (0)
 
-#define _PyUnicode_UTF8(op)                     \
-    (PyUnicode_IS_COMPACT_ASCII(op) ?           \
-     ((char*)((PyASCIIObject*)(op) + 1)) :      \
-     ((PyCompactUnicodeObject*)(op))->utf8)
+#define _PyUnicode_UTF8(op)                             \
+    (((PyCompactUnicodeObject*)(op))->utf8)
+#define PyUnicode_UTF8(op)                              \
+    (assert(PyUnicode_Check(op)),                       \
+     assert(PyUnicode_IS_READY(op)),                    \
+     PyUnicode_IS_COMPACT_ASCII(op) ?                   \
+         ((char*)((PyASCIIObject*)(op) + 1)) :          \
+         _PyUnicode_UTF8(op))
 #define _PyUnicode_UTF8_LENGTH(op)                      \
-    (PyUnicode_IS_COMPACT_ASCII(op) ?                   \
-     ((PyASCIIObject*)(op))->length :                   \
-     ((PyCompactUnicodeObject*)(op))->utf8_length)
+    (((PyCompactUnicodeObject*)(op))->utf8_length)
+#define PyUnicode_UTF8_LENGTH(op)                       \
+    (assert(PyUnicode_Check(op)),                       \
+     assert(PyUnicode_IS_READY(op)),                    \
+     PyUnicode_IS_COMPACT_ASCII(op) ?                   \
+         ((PyASCIIObject*)(op))->length :               \
+         _PyUnicode_UTF8_LENGTH(op))
 #define _PyUnicode_WSTR(op) (((PyASCIIObject*)(op))->wstr)
 #define _PyUnicode_WSTR_LENGTH(op) (((PyCompactUnicodeObject*)(op))->wstr_length)
 #define _PyUnicode_LENGTH(op) (((PyASCIIObject *)(op))->length)
@@ -353,11 +361,11 @@ unicode_resize(register PyUnicodeObject *unicode,
   reset:
     if (unicode->data.any != NULL) {
         PyObject_FREE(unicode->data.any);
-        if (unicode->_base.utf8 && unicode->_base.utf8 != unicode->data.any) {
-            PyObject_FREE(unicode->_base.utf8);
+        if (_PyUnicode_UTF8(unicode) && _PyUnicode_UTF8(unicode) != unicode->data.any) {
+            PyObject_FREE(_PyUnicode_UTF8(unicode));
         }
-        unicode->_base.utf8 = NULL;
-        unicode->_base.utf8_length = 0;
+        _PyUnicode_UTF8(unicode) = NULL;
+        _PyUnicode_UTF8_LENGTH(unicode) = 0;
         unicode->data.any = NULL;
         _PyUnicode_LENGTH(unicode) = 0;
         _PyUnicode_STATE(unicode).interned = _PyUnicode_STATE(unicode).interned;
@@ -435,8 +443,8 @@ _PyUnicode_New(Py_ssize_t length)
     _PyUnicode_STATE(unicode).ascii = 0;
     unicode->data.any = NULL;
     _PyUnicode_LENGTH(unicode) = 0;
-    unicode->_base.utf8 = NULL;
-    unicode->_base.utf8_length = 0;
+    _PyUnicode_UTF8(unicode) = NULL;
+    _PyUnicode_UTF8_LENGTH(unicode) = 0;
     return unicode;
 
   onError:
@@ -452,7 +460,7 @@ int unicode_new_new_calls = 0;
 
 /* Functions wrapping macros for use in debugger */
 char *_PyUnicode_utf8(void *unicode){
-    return _PyUnicode_UTF8(unicode);
+    return PyUnicode_UTF8(unicode);
 }
 
 void *_PyUnicode_compact_data(void *unicode) {
@@ -799,7 +807,7 @@ _PyUnicode_Ready(PyObject *obj)
     assert(_PyUnicode_KIND(obj) == PyUnicode_WCHAR_KIND);
     assert(_PyUnicode_WSTR(unicode) != NULL);
     assert(unicode->data.any == NULL);
-    assert(unicode->_base.utf8 == NULL);
+    assert(_PyUnicode_UTF8(unicode) == NULL);
     /* Actually, it should neither be interned nor be anything else: */
     assert(_PyUnicode_STATE(unicode).interned == SSTATE_NOT_INTERNED);
 
@@ -825,12 +833,12 @@ _PyUnicode_Ready(PyObject *obj)
         _PyUnicode_LENGTH(unicode) = _PyUnicode_WSTR_LENGTH(unicode);
         _PyUnicode_STATE(unicode).kind = PyUnicode_1BYTE_KIND;
         if (maxchar < 128) {
-            unicode->_base.utf8 = unicode->data.any;
-            unicode->_base.utf8_length = _PyUnicode_WSTR_LENGTH(unicode);
+            _PyUnicode_UTF8(unicode) = unicode->data.any;
+            _PyUnicode_UTF8_LENGTH(unicode) = _PyUnicode_WSTR_LENGTH(unicode);
         }
         else {
-            unicode->_base.utf8 = NULL;
-            unicode->_base.utf8_length = 0;
+            _PyUnicode_UTF8(unicode) = NULL;
+            _PyUnicode_UTF8_LENGTH(unicode) = 0;
         }
         PyObject_FREE(_PyUnicode_WSTR(unicode));
         _PyUnicode_WSTR(unicode) = NULL;
@@ -848,8 +856,8 @@ _PyUnicode_Ready(PyObject *obj)
         PyUnicode_2BYTE_DATA(unicode)[_PyUnicode_WSTR_LENGTH(unicode)] = '\0';
         _PyUnicode_LENGTH(unicode) = _PyUnicode_WSTR_LENGTH(unicode);
         _PyUnicode_STATE(unicode).kind = PyUnicode_2BYTE_KIND;
-        unicode->_base.utf8 = NULL;
-        unicode->_base.utf8_length = 0;
+        _PyUnicode_UTF8(unicode) = NULL;
+        _PyUnicode_UTF8_LENGTH(unicode) = 0;
 #else
         /* sizeof(wchar_t) == 4 */
         unicode->data.any = PyObject_MALLOC(
@@ -864,8 +872,8 @@ _PyUnicode_Ready(PyObject *obj)
         PyUnicode_2BYTE_DATA(unicode)[_PyUnicode_WSTR_LENGTH(unicode)] = '\0';
         _PyUnicode_LENGTH(unicode) = _PyUnicode_WSTR_LENGTH(unicode);
         _PyUnicode_STATE(unicode).kind = PyUnicode_2BYTE_KIND;
-        unicode->_base.utf8 = NULL;
-        unicode->_base.utf8_length = 0;
+        _PyUnicode_UTF8(unicode) = NULL;
+        _PyUnicode_UTF8_LENGTH(unicode) = 0;
         PyObject_FREE(_PyUnicode_WSTR(unicode));
         _PyUnicode_WSTR(unicode) = NULL;
         _PyUnicode_WSTR_LENGTH(unicode) = 0;
@@ -884,8 +892,8 @@ _PyUnicode_Ready(PyObject *obj)
         }
         _PyUnicode_LENGTH(unicode) = length_wo_surrogates;
         _PyUnicode_STATE(unicode).kind = PyUnicode_4BYTE_KIND;
-        unicode->_base.utf8 = NULL;
-        unicode->_base.utf8_length = 0;
+        _PyUnicode_UTF8(unicode) = NULL;
+        _PyUnicode_UTF8_LENGTH(unicode) = 0;
         if (unicode_convert_wchar_to_ucs4(_PyUnicode_WSTR(unicode), end,
                                           unicode) < 0) {
             assert(0 && "ConvertWideCharToUCS4 failed");
@@ -899,8 +907,8 @@ _PyUnicode_Ready(PyObject *obj)
 
         unicode->data.any = _PyUnicode_WSTR(unicode);
         _PyUnicode_LENGTH(unicode) = _PyUnicode_WSTR_LENGTH(unicode);
-        unicode->_base.utf8 = NULL;
-        unicode->_base.utf8_length = 0;
+        _PyUnicode_UTF8(unicode) = NULL;
+        _PyUnicode_UTF8_LENGTH(unicode) = 0;
         _PyUnicode_STATE(unicode).kind = PyUnicode_4BYTE_KIND;
 #endif
         PyUnicode_4BYTE_DATA(unicode)[_PyUnicode_LENGTH(unicode)] = '\0';
@@ -935,8 +943,10 @@ unicode_dealloc(register PyUnicodeObject *unicode)
         (!PyUnicode_IS_READY(unicode) ||
          _PyUnicode_WSTR(unicode) != PyUnicode_DATA(unicode)))
         PyObject_DEL(_PyUnicode_WSTR(unicode));
-    if (_PyUnicode_UTF8(unicode) && _PyUnicode_UTF8(unicode) != PyUnicode_DATA(unicode))
-        PyObject_DEL(unicode->_base.utf8);
+    if (!PyUnicode_IS_COMPACT_ASCII(unicode)
+        && _PyUnicode_UTF8(unicode)
+        && _PyUnicode_UTF8(unicode) != PyUnicode_DATA(unicode))
+        PyObject_DEL(_PyUnicode_UTF8(unicode));
 
     if (PyUnicode_IS_COMPACT(unicode)) {
         Py_TYPE(unicode)->tp_free((PyObject *)unicode);
@@ -2648,23 +2658,24 @@ PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *psize)
     if (PyUnicode_READY(u) == -1)
         return NULL;
 
-    if (_PyUnicode_UTF8(unicode) == NULL) {
+    if (PyUnicode_UTF8(unicode) == NULL) {
+        assert(!PyUnicode_IS_COMPACT_ASCII(unicode));
         bytes = _PyUnicode_AsUTF8String(unicode, "strict");
         if (bytes == NULL)
             return NULL;
-        u->_base.utf8 = PyObject_MALLOC(PyBytes_GET_SIZE(bytes) + 1);
-        if (u->_base.utf8 == NULL) {
+        _PyUnicode_UTF8(u) = PyObject_MALLOC(PyBytes_GET_SIZE(bytes) + 1);
+        if (_PyUnicode_UTF8(u) == NULL) {
             Py_DECREF(bytes);
             return NULL;
         }
-        u->_base.utf8_length = PyBytes_GET_SIZE(bytes);
-        Py_MEMCPY(u->_base.utf8, PyBytes_AS_STRING(bytes), u->_base.utf8_length + 1);
+        _PyUnicode_UTF8_LENGTH(u) = PyBytes_GET_SIZE(bytes);
+        Py_MEMCPY(_PyUnicode_UTF8(u), PyBytes_AS_STRING(bytes), _PyUnicode_UTF8_LENGTH(u) + 1);
         Py_DECREF(bytes);
     }
 
     if (psize)
-        *psize = _PyUnicode_UTF8_LENGTH(unicode);
-    return _PyUnicode_UTF8(unicode);
+        *psize = PyUnicode_UTF8_LENGTH(unicode);
+    return PyUnicode_UTF8(unicode);
 }
 
 char*
@@ -3997,9 +4008,9 @@ _PyUnicode_AsUTF8String(PyObject *obj, const char *errors)
     if (PyUnicode_READY(unicode) == -1)
         return NULL;
 
-    if (_PyUnicode_UTF8(unicode))
-        return PyBytes_FromStringAndSize(_PyUnicode_UTF8(unicode),
-                                         _PyUnicode_UTF8_LENGTH(unicode));
+    if (PyUnicode_UTF8(unicode))
+        return PyBytes_FromStringAndSize(PyUnicode_UTF8(unicode),
+                                         PyUnicode_UTF8_LENGTH(unicode));
 
     kind = PyUnicode_KIND(unicode);
     data = PyUnicode_DATA(unicode);
@@ -11625,8 +11636,10 @@ unicode__sizeof__(PyUnicodeObject *v)
         (!PyUnicode_IS_READY(v) ||
          (PyUnicode_DATA(v) != _PyUnicode_WSTR(v))))
         size += (PyUnicode_WSTR_LENGTH(v) + 1) * sizeof(wchar_t);
-    if (_PyUnicode_UTF8(v) && _PyUnicode_UTF8(v) != PyUnicode_DATA(v))
-        size += _PyUnicode_UTF8_LENGTH(v) + 1;
+    if (!PyUnicode_IS_COMPACT_ASCII(v)
+        && _PyUnicode_UTF8(v)
+        && _PyUnicode_UTF8(v) != PyUnicode_DATA(v))
+        size += PyUnicode_UTF8_LENGTH(v) + 1;
 
     return PyLong_FromSsize_t(size);
 }
