@@ -1211,7 +1211,7 @@ PyUnicode_FromKindAndData(int kind, const void *buffer, Py_ssize_t size)
     case PyUnicode_4BYTE_KIND:
         return _PyUnicode_FromUCS4(buffer, size);
     }
-    assert(0);
+    PyErr_SetString(PyExc_ValueError, "invalid kind");
     return NULL;
 }
 
