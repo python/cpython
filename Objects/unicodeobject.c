@@ -8089,6 +8089,10 @@ PyUnicode_FindChar(PyObject *str, Py_UCS4 ch,
     int kind;
     if (PyUnicode_READY(str) == -1)
         return -2;
+    if (start < 0 || end < 0) {
+        PyErr_SetString(PyExc_IndexError, "string index out of range");
+        return -2;
+    }
     if (end > PyUnicode_GET_LENGTH(str))
         end = PyUnicode_GET_LENGTH(str);
     kind = PyUnicode_KIND(str);
