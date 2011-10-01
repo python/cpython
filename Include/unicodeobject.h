@@ -417,7 +417,7 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 #define PyUnicode_READ(kind, data, index) \
     ((Py_UCS4) \
     ((kind) == PyUnicode_1BYTE_KIND ? \
-        ((const unsigned char *)(data))[(index)] : \
+        ((const Py_UCS1 *)(data))[(index)] : \
         ((kind) == PyUnicode_2BYTE_KIND ? \
             ((const Py_UCS2 *)(data))[(index)] : \
             ((const Py_UCS4 *)(data))[(index)] \
@@ -431,7 +431,7 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 #define PyUnicode_READ_CHAR(unicode, index) \
     ((Py_UCS4) \
     (PyUnicode_KIND((unicode)) == PyUnicode_1BYTE_KIND ? \
-        ((const unsigned char *)(PyUnicode_DATA((unicode))))[(index)] : \
+        ((const Py_UCS1 *)(PyUnicode_DATA((unicode))))[(index)] : \
         (PyUnicode_KIND((unicode)) == PyUnicode_2BYTE_KIND ? \
             ((const Py_UCS2 *)(PyUnicode_DATA((unicode))))[(index)] : \
             ((const Py_UCS4 *)(PyUnicode_DATA((unicode))))[(index)] \
