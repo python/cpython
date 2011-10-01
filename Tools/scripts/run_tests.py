@@ -37,7 +37,7 @@ def main(regrtest_args):
     if not any(is_multiprocess_flag(arg) for arg in regrtest_args):
         args.extend(['-j', '0'])  # Use all CPU cores
     if not any(is_resource_use_flag(arg) for arg in regrtest_args):
-        args.extend(['-u', 'all,-largefile,-network,-urlfetch,-audio,-gui'])
+        args.extend(['-u', 'all,-largefile,-audio,-gui'])
     args.extend(regrtest_args)
     print(' '.join(args))
     os.execv(sys.executable, args)
