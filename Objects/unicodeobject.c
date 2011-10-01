@@ -2838,7 +2838,7 @@ PyUnicode_GetSize(PyObject *unicode)
 Py_ssize_t
 PyUnicode_GetLength(PyObject *unicode)
 {
-    if (!PyUnicode_Check(unicode) || PyUnicode_READY(unicode) != -1) {
+    if (!PyUnicode_Check(unicode) || PyUnicode_READY(unicode) == -1) {
         PyErr_BadArgument();
         return -1;
     }
