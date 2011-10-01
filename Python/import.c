@@ -1564,8 +1564,10 @@ get_sourcefile(PyObject *filename)
     if (py == NULL)
         goto error;
 
-    if (_Py_stat(py, &statbuf) == 0 && S_ISREG(statbuf.st_mode))
+    if (_Py_stat(py, &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
+        PyMem_Free(fileuni);
         return py;
+    }
     Py_DECREF(py);
     goto unchanged;
 
@@ -3074,7 +3076,7 @@ load_next(PyObject *mod, PyObject *altmod,
     Py_ssize_t len;
     Py_UCS4 *p;
     PyObject *fullname, *name, *result, *mark_name;
-    const Py_UCS4 *nameuni;
+    Py_UCS4 *nameuni;
 
     *p_outputname = NULL;
 
@@ -3095,7 +3097,7 @@ load_next(PyObject *mod, PyObject *altmod,
         if (len == 0) {
             PyErr_SetString(PyExc_ValueError,
                             "Empty module name");
-            return NULL;
+            goto error;
         }
     }
     else
@@ -3104,7 +3106,7 @@ load_next(PyObject *mod, PyObject *altmod,
     if (*p_buflen+len+1 >= bufsize) {
         PyErr_SetString(PyExc_ValueError,
                         "Module name too long");
-        return NULL;
+        goto error;
     }
 
     p = buf + *p_buflen;
@@ -3119,12 +3121,12 @@ load_next(PyObject *mod, PyObject *altmod,
     fullname = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
                                          buf, *p_buflen);
     if (fullname == NULL)
-        return NULL;
+        goto error;
     name = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
                                      p, len);
     if (name == NULL) {
         Py_DECREF(fullname);
-        return NULL;
+        goto error;
     }
     result = import_submodule(mod, name, fullname);
     Py_DECREF(fullname);
@@ -3138,12 +3140,12 @@ load_next(PyObject *mod, PyObject *altmod,
                                                   buf, *p_buflen);
             if (mark_name == NULL) {
                 Py_DECREF(result);
-                return NULL;
+                goto error;
             }
             if (mark_miss(mark_name) != 0) {
                 Py_DECREF(result);
                 Py_DECREF(mark_name);
-                return NULL;
+                goto error;
             }
             Py_DECREF(mark_name);
             Py_UCS4_strncpy(buf, nameuni, len);
@@ -3154,13 +3156,13 @@ load_next(PyObject *mod, PyObject *altmod,
     else
         Py_DECREF(name);
     if (result == NULL)
-        return NULL;
+        goto error;
 
     if (result == Py_None) {
         Py_DECREF(result);
         PyErr_Format(PyExc_ImportError,
                      "No module named %R", inputname);
-        return NULL;
+        goto error;
     }
 
     if (dot != NULL) {
@@ -3168,11 +3170,17 @@ load_next(PyObject *mod, PyObject *altmod,
                                                   dot+1, Py_UCS4_strlen(dot+1));
         if (*p_outputname == NULL) {
             Py_DECREF(result);
-            return NULL;
+            goto error;
         }
     }
 
+out:
+    PyMem_Free(nameuni);
     return result;
+
+error:
+    PyMem_Free(nameuni);
+    return NULL;
 }
 
 static int
