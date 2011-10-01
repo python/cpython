@@ -467,6 +467,13 @@ class MinidomTest(unittest.TestCase):
         dom.unlink()
         self.confirm(domstr == str.replace("\n", "\r\n"))
 
+    def test_toPrettyXML_perserves_content_of_text_node(self):
+        str = '<A>B</A>'
+        dom = parseString(str)
+        dom2 = parseString(dom.toprettyxml())
+        self.assertEqual(dom.childNodes[0].childNodes[0].toxml(),
+                         dom2.childNodes[0].childNodes[0].toxml())
+
     def testProcessingInstruction(self):
         dom = parseString('<e><?mypi \t\n data \t\n ?></e>')
         pi = dom.documentElement.firstChild
