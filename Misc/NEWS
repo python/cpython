@@ -294,6 +294,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #4147: minidom's toprettyxml no longer adds whitespace to text nodes.
+
 - Issue #13034: When decoding some SSL certificates, the subjectAltName
   extension could be unreported.
 
