@@ -12410,56 +12410,91 @@ unicode_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 unicode_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    PyUnicodeObject *tmp, *pnew;
-    Py_ssize_t n;
-    PyObject *err = NULL;
+    PyUnicodeObject *unicode, *self;
+    Py_ssize_t length, char_size;
+    int share_wstr, share_utf8;
+    unsigned int kind;
+    void *data;
 
     assert(PyType_IsSubtype(type, &PyUnicode_Type));
-    tmp = (PyUnicodeObject *)unicode_new(&PyUnicode_Type, args, kwds);
-    if (tmp == NULL)
+
+    unicode = (PyUnicodeObject *)unicode_new(&PyUnicode_Type, args, kwds);
+    if (unicode == NULL)
         return NULL;
-    assert(PyUnicode_Check(tmp));
-    // TODO: Verify the PyUnicode_GET_SIZE does the right thing.
-    //       it seems kind of strange that tp_alloc gets passed the size
-    //       of the unicode string because there will follow another
-    //       malloc.
-    pnew = (PyUnicodeObject *) type->tp_alloc(type,
-                                              n = PyUnicode_GET_SIZE(tmp));
-    if (pnew == NULL) {
-        Py_DECREF(tmp);
+    assert(PyUnicode_Check(unicode));
+    if (PyUnicode_READY(unicode))
+        return NULL;
+
+    self = (PyUnicodeObject *) type->tp_alloc(type, 0);
+    if (self == NULL) {
+        Py_DECREF(unicode);
         return NULL;
     }
-    _PyUnicode_WSTR(pnew) = (Py_UNICODE*) PyObject_MALLOC(sizeof(Py_UNICODE) * (n+1));
-    if (_PyUnicode_WSTR(pnew) == NULL) {
-        err = PyErr_NoMemory();
+    kind = PyUnicode_KIND(unicode);
+    length = PyUnicode_GET_LENGTH(unicode);
+
+    _PyUnicode_LENGTH(self) = length;
+    _PyUnicode_HASH(self) = _PyUnicode_HASH(unicode);
+    _PyUnicode_STATE(self).interned = 0;
+    _PyUnicode_STATE(self).kind = kind;
+    _PyUnicode_STATE(self).compact = 0;
+    _PyUnicode_STATE(self).ascii = 0;
+    _PyUnicode_STATE(self).ready = 1;
+    _PyUnicode_WSTR(self) = NULL;
+    _PyUnicode_UTF8_LENGTH(self) = 0;
+    _PyUnicode_UTF8(self) = NULL;
+    _PyUnicode_WSTR_LENGTH(self) = 0;
+    self->data.any = NULL;
+
+    share_utf8 = 0;
+    share_wstr = 0;
+    if (kind == PyUnicode_1BYTE_KIND) {
+        char_size = 1;
+        if (PyUnicode_MAX_CHAR_VALUE(unicode) < 128)
+            share_utf8 = 1;
+    }
+    else if (kind == PyUnicode_2BYTE_KIND) {
+        char_size = 2;
+        if (sizeof(wchar_t) == 2)
+            share_wstr = 1;
+    }
+    else {
+        assert(kind == PyUnicode_4BYTE_KIND);
+        char_size = 4;
+        if (sizeof(wchar_t) == 4)
+            share_wstr = 1;
+    }
+
+    /* Ensure we won't overflow the length. */
+    if (length > (PY_SSIZE_T_MAX / char_size - 1)) {
+        PyErr_NoMemory();
         goto onError;
     }
-    Py_UNICODE_COPY(_PyUnicode_WSTR(pnew), PyUnicode_AS_UNICODE(tmp), n+1);
-    _PyUnicode_WSTR_LENGTH(pnew) = n;
-    _PyUnicode_HASH(pnew) = _PyUnicode_HASH(tmp);
-    _PyUnicode_STATE(pnew).interned = 0;
-    _PyUnicode_STATE(pnew).kind = 0;
-    _PyUnicode_STATE(pnew).compact = 0;
-    _PyUnicode_STATE(pnew).ready = 0;
-    _PyUnicode_STATE(pnew).ascii = 0;
-    pnew->data.any = NULL;
-    _PyUnicode_LENGTH(pnew) = 0;
-    pnew->_base.utf8 = NULL;
-    pnew->_base.utf8_length = 0;
-
-    if (PyUnicode_READY(pnew) == -1) {
-        PyObject_FREE(_PyUnicode_WSTR(pnew));
+    data = PyObject_MALLOC((length + 1) * char_size);
+    if (data == NULL) {
+        PyErr_NoMemory();
         goto onError;
     }
 
-    Py_DECREF(tmp);
-    return (PyObject *)pnew;
+    self->data.any = data;
+    if (share_utf8) {
+        _PyUnicode_UTF8_LENGTH(self) = length;
+        _PyUnicode_UTF8(self) = data;
+    }
+    if (share_wstr) {
+        _PyUnicode_WSTR_LENGTH(self) = length;
+        _PyUnicode_WSTR(self) = (wchar_t *)data;
+    }
 
-  onError:
-    _Py_ForgetReference((PyObject *)pnew);
-    PyObject_Del(pnew);
-    Py_DECREF(tmp);
-    return err;
+    Py_MEMCPY(data, PyUnicode_DATA(unicode),
+              PyUnicode_KIND_SIZE(kind, length + 1));
+    Py_DECREF(unicode);
+    return (PyObject *)self;
+
+onError:
+    Py_DECREF(unicode);
+    Py_DECREF(self);
+    return NULL;
 }
 
 PyDoc_STRVAR(unicode_doc,
