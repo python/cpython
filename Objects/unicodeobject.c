@@ -622,6 +622,19 @@ unicode_convert_wchar_to_ucs4(const wchar_t *begin, const wchar_t *end,
 }
 #endif
 
+static int
+_PyUnicode_Dirty(PyObject *unicode)
+{
+    assert(PyUnicode_Check(unicode));
+    if (Py_REFCNT(unicode) != 1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Cannot modify a string having more than 1 reference");
+        return -1;
+    }
+    _PyUnicode_DIRTY(unicode);
+    return 0;
+}
+
 Py_ssize_t
 PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
                          PyObject *from, Py_ssize_t from_start,
@@ -651,12 +664,8 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
     if (how_many == 0)
         return 0;
 
-    if (Py_REFCNT(to) != 1) {
-        PyErr_SetString(PyExc_ValueError,
-                        "Cannot modify a string having more than 1 reference");
+    if (_PyUnicode_Dirty(to))
         return -1;
-    }
-    _PyUnicode_DIRTY(to);
 
     from_kind = PyUnicode_KIND(from);
     from_data = PyUnicode_DATA(from);
@@ -2855,10 +2864,15 @@ int
 PyUnicode_WriteChar(PyObject *unicode, Py_ssize_t index, Py_UCS4 ch)
 {
     if (!PyUnicode_Check(unicode) || !PyUnicode_IS_COMPACT(unicode)) {
-        return PyErr_BadArgument();
+        PyErr_BadArgument();
         return -1;
     }
-
+    if (index < 0 || index >= _PyUnicode_LENGTH(unicode)) {
+        PyErr_SetString(PyExc_IndexError, "string index out of range");
+        return -1;
+    }
+    if (_PyUnicode_Dirty(unicode))
+        return -1;
     PyUnicode_WRITE(PyUnicode_KIND(unicode), PyUnicode_DATA(unicode),
                     index, ch);
     return 0;

@@ -647,7 +647,9 @@ PyAPI_FUNC(Py_UCS4) PyUnicode_ReadChar(
     );
 
 /* Write a character to the string. The string must have been created through
-   PyUnicode_New, must not be shared, and must not have been hashed yet. */
+   PyUnicode_New, must not be shared, and must not have been hashed yet.
+
+   Return 0 on success, -1 on error. */
 
 PyAPI_FUNC(int) PyUnicode_WriteChar(
     PyObject *unicode,
