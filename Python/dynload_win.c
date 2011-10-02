@@ -187,7 +187,7 @@ dl_funcptr _PyImport_GetDynLoadWindows(const char *shortname,
         HINSTANCE hDLL = NULL;
         unsigned int old_mode;
         ULONG_PTR cookie = 0;
-        
+
         /* Don't display a message box when Python can't load a DLL */
         old_mode = SetErrorMode(SEM_FAILCRITICALERRORS);
 
@@ -248,8 +248,10 @@ dl_funcptr _PyImport_GetDynLoadWindows(const char *shortname,
                         theInfo,
                         theLength));
             }
-            PyErr_SetObject(PyExc_ImportError, message);
-            Py_XDECREF(message);
+            if (message != NULL) {
+                PyErr_SetObject(PyExc_ImportError, message);
+                Py_DECREF(message);
+            }
             return NULL;
         } else {
             char buffer[256];

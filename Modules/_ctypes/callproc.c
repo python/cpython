@@ -944,9 +944,9 @@ void _ctypes_extend_error(PyObject *exc_class, char *fmt, ...)
     else {
         PyErr_Clear();
         PyUnicode_AppendAndDel(&s, PyUnicode_FromString("???"));
-        if (s == NULL)
-            goto error;
     }
+    if (s == NULL)
+        goto error;
     PyErr_SetObject(exc_class, s);
 error:
     Py_XDECREF(tp);
