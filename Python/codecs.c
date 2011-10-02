@@ -534,10 +534,11 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
         return Py_BuildValue("(Nn)", res, end);
     }
     else if (PyObject_IsInstance(exc, PyExc_UnicodeDecodeError)) {
-        Py_UNICODE res = Py_UNICODE_REPLACEMENT_CHARACTER;
         if (PyUnicodeDecodeError_GetEnd(exc, &end))
             return NULL;
-        return Py_BuildValue("(u#n)", &res, 1, end);
+        return Py_BuildValue("(Cn)",
+                             (int)Py_UNICODE_REPLACEMENT_CHARACTER,
+                             end);
     }
     else if (PyObject_IsInstance(exc, PyExc_UnicodeTranslateError)) {
         PyObject *res;
