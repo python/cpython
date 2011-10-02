@@ -224,7 +224,7 @@ class WindowsSignalTests(unittest.TestCase):
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
 class WakeupSignalTests(unittest.TestCase):
-    def check_wakeup(self, test_body, *signals):
+    def check_wakeup(self, test_body, *signals, ordered=True):
         # use a subprocess to have only one thread
         code = """if 1:
         import fcntl
@@ -240,6 +240,9 @@ class WakeupSignalTests(unittest.TestCase):
         def check_signum(signals):
             data = os.read(read, len(signals)+1)
             raised = struct.unpack('%uB' % len(data), data)
+            if not {!r}:
+                raised = set(raised)
+                signals = set(signals)
             if raised != signals:
                 raise Exception("%r != %r" % (raised, signals))
 
@@ -258,7 +261,7 @@ class WakeupSignalTests(unittest.TestCase):
 
         os.close(read)
         os.close(write)
-        """.format(signals, test_body)
+        """.format(signals, ordered, test_body)
 
         assert_python_ok('-c', code)
 
@@ -319,11 +322,6 @@ class WakeupSignalTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
                          'need signal.pthread_sigmask()')
     def test_pending(self):
-        signals = (signal.SIGUSR1, signal.SIGUSR2)
-        # when signals are unblocked, pending signal ared delivered in the
-        # reverse order of their number
-        signals = tuple(sorted(signals, reverse=True))
-
         self.check_wakeup("""def test():
             signum1 = signal.SIGUSR1
             signum2 = signal.SIGUSR2
@@ -336,7 +334,7 @@ class WakeupSignalTests(unittest.TestCase):
             os.kill(os.getpid(), signum2)
             # Unblocking the 2 signals calls the C signal handler twice
             signal.pthread_sigmask(signal.SIG_UNBLOCK, (signum1, signum2))
-        """,  *signals)
+        """,  signal.SIGUSR1, signal.SIGUSR2, ordered=False)
 
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
