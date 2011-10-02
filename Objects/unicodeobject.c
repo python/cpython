@@ -455,6 +455,46 @@ _PyUnicode_New(Py_ssize_t length)
     return NULL;
 }
 
+static const char*
+unicode_kind_name(PyObject *unicode)
+{
+    assert(PyUnicode_Check(unicode));
+    if (!PyUnicode_IS_COMPACT(unicode))
+    {
+        if (!PyUnicode_IS_READY(unicode))
+            return "wstr";
+        switch(PyUnicode_KIND(unicode))
+        {
+        case PyUnicode_1BYTE_KIND:
+            if (PyUnicode_IS_COMPACT_ASCII(unicode))
+                return "legacy ascii";
+            else
+                return "legacy latin1";
+        case PyUnicode_2BYTE_KIND:
+            return "legacy UCS2";
+        case PyUnicode_4BYTE_KIND:
+            return "legacy UCS4";
+        default:
+            return "<legacy invalid kind>";
+        }
+    }
+    assert(PyUnicode_IS_READY(unicode));
+    switch(PyUnicode_KIND(unicode))
+    {
+    case PyUnicode_1BYTE_KIND:
+        if (PyUnicode_IS_COMPACT_ASCII(unicode))
+            return "ascii";
+        else
+            return "compact latin1";
+    case PyUnicode_2BYTE_KIND:
+        return "compact UCS2";
+    case PyUnicode_4BYTE_KIND:
+        return "compact UCS4";
+    default:
+        return "<invalid compact kind>";
+    }
+}
+
 #ifdef Py_DEBUG
 int unicode_new_new_calls = 0;
 
@@ -672,8 +712,10 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
     to_kind = PyUnicode_KIND(to);
     to_data = PyUnicode_DATA(to);
 
-    if (from_kind == to_kind) {
-        /* fast path */
+    if (from_kind == to_kind
+        /* deny latin1 => ascii */
+        && PyUnicode_MAX_CHAR_VALUE(to) >= PyUnicode_MAX_CHAR_VALUE(from))
+    {
         Py_MEMCPY((char*)to_data
                       + PyUnicode_KIND_SIZE(to_kind, to_start),
                   (char*)from_data
@@ -712,7 +754,14 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
     }
     else {
         int invalid_kinds;
-        if (from_kind > to_kind) {
+
+        /* check if max_char(from substring) <= max_char(to) */
+        if (from_kind > to_kind
+                /* latin1 => ascii */
+            || (PyUnicode_IS_COMPACT_ASCII(to)
+                && to_kind == PyUnicode_1BYTE_KIND
+                && !PyUnicode_IS_COMPACT_ASCII(from)))
+        {
             /* slow path to check for character overflow */
             const Py_UCS4 to_maxchar = PyUnicode_MAX_CHAR_VALUE(to);
             Py_UCS4 ch, maxchar;
@@ -736,10 +785,10 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
             invalid_kinds = 1;
         if (invalid_kinds) {
             PyErr_Format(PyExc_ValueError,
-                         "Cannot copy UCS%u characters "
-                         "into a string of UCS%u characters",
-                         1 << (from_kind - 1),
-                         1 << (to_kind -1));
+                         "Cannot copy %s characters "
+                         "into a string of %s characters",
+                         unicode_kind_name(from),
+                         unicode_kind_name(to));
             return -1;
         }
     }
