@@ -1164,19 +1164,19 @@ Class attributes:
 
 .. attribute:: time.min
 
-   The earliest representable :class:`time`, ``time(0, 0, 0, 0)``.
+   The earliest representable :class:`.time`, ``time(0, 0, 0, 0)``.
 
 
 .. attribute:: time.max
 
-   The latest representable :class:`time`, ``time(23, 59, 59, 999999)``.
+   The latest representable :class:`.time`, ``time(23, 59, 59, 999999)``.
 
 
 .. attribute:: time.resolution
 
-   The smallest possible difference between non-equal :class:`time` objects,
-   ``timedelta(microseconds=1)``, although note that arithmetic on :class:`time`
-   objects is not supported.
+   The smallest possible difference between non-equal :class:`.time` objects,
+   ``timedelta(microseconds=1)``, although note that arithmetic on
+   :class:`.time` objects is not supported.
 
 
 Instance attributes (read-only):
@@ -1203,7 +1203,7 @@ Instance attributes (read-only):
 
 .. attribute:: time.tzinfo
 
-   The object passed as the tzinfo argument to the :class:`time` constructor, or
+   The object passed as the tzinfo argument to the :class:`.time` constructor, or
    ``None`` if none was passed.
 
 
@@ -1234,10 +1234,10 @@ Instance methods:
 
 .. method:: time.replace([hour[, minute[, second[, microsecond[, tzinfo]]]]])
 
-   Return a :class:`time` with the same value, except for those attributes given
+   Return a :class:`.time` with the same value, except for those attributes given
    new values by whichever keyword arguments are specified.  Note that
-   ``tzinfo=None`` can be specified to create a naive :class:`time` from an
-   aware :class:`time`, without conversion of the time data.
+   ``tzinfo=None`` can be specified to create a naive :class:`.time` from an
+   aware :class:`.time`, without conversion of the time data.
 
 
 .. method:: time.isoformat()
