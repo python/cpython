@@ -590,7 +590,7 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
 
    This function assumes that unicode can hold one more code point than wstr
    characters for a terminating null character. */
-static int
+static void
 unicode_convert_wchar_to_ucs4(const wchar_t *begin, const wchar_t *end,
                               PyUnicodeObject *unicode)
 {
@@ -757,6 +757,7 @@ find_maxchar_surrogates(const wchar_t *begin, const wchar_t *end,
 {
     const wchar_t *iter;
 
+    assert(num_surrogates != NULL && maxchar != NULL);
     if (num_surrogates == NULL || maxchar == NULL) {
         PyErr_SetString(PyExc_SystemError,
                         "unexpected NULL arguments to "
@@ -903,11 +904,7 @@ _PyUnicode_Ready(PyObject *obj)
         _PyUnicode_STATE(unicode).kind = PyUnicode_4BYTE_KIND;
         _PyUnicode_UTF8(unicode) = NULL;
         _PyUnicode_UTF8_LENGTH(unicode) = 0;
-        if (unicode_convert_wchar_to_ucs4(_PyUnicode_WSTR(unicode), end,
-                                          unicode) < 0) {
-            assert(0 && "ConvertWideCharToUCS4 failed");
-            return -1;
-        }
+        unicode_convert_wchar_to_ucs4(_PyUnicode_WSTR(unicode), end, unicode);
         PyObject_FREE(_PyUnicode_WSTR(unicode));
         _PyUnicode_WSTR(unicode) = NULL;
         _PyUnicode_WSTR_LENGTH(unicode) = 0;
@@ -1081,10 +1078,7 @@ PyUnicode_FromUnicode(const Py_UNICODE *u, Py_ssize_t size)
 #if SIZEOF_WCHAR_T == 2
         /* This is the only case which has to process surrogates, thus
            a simple copy loop is not enough and we need a function. */
-        if (unicode_convert_wchar_to_ucs4(u, u + size, unicode) < 0) {
-            Py_DECREF(unicode);
-            return NULL;
-        }
+        unicode_convert_wchar_to_ucs4(u, u + size, unicode);
 #else
         assert(num_surrogates == 0);
         Py_MEMCPY(PyUnicode_4BYTE_DATA(unicode), u, size * 4);
