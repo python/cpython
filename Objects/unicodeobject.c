@@ -147,11 +147,11 @@ extern "C" {
 static PyObject *interned;
 
 /* The empty Unicode object is shared to improve performance. */
-static PyUnicodeObject *unicode_empty;
+static PyObject *unicode_empty;
 
 /* Single character Unicode strings in the Latin-1 range are being
    shared as well. */
-static PyUnicodeObject *unicode_latin1[256];
+static PyObject *unicode_latin1[256];
 
 /* Fast detection of the most frequent whitespace characters */
 const unsigned char _Py_ascii_whitespace[] = {
@@ -398,7 +398,7 @@ _PyUnicode_New(Py_ssize_t length)
     /* Optimization for empty strings */
     if (length == 0 && unicode_empty != NULL) {
         Py_INCREF(unicode_empty);
-        return unicode_empty;
+        return (PyUnicodeObject*)unicode_empty;
     }
 
     /* Ensure we won't overflow the size. */
@@ -491,7 +491,7 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
     /* Optimization for empty strings */
     if (size == 0 && unicode_empty != NULL) {
         Py_INCREF(unicode_empty);
-        return (PyObject *)unicode_empty;
+        return unicode_empty;
     }
 
 #ifdef Py_DEBUG
@@ -1017,16 +1017,16 @@ PyUnicode_Resize(PyObject **unicode, Py_ssize_t length)
 static PyObject*
 get_latin1_char(unsigned char ch)
 {
-    PyUnicodeObject *unicode = unicode_latin1[ch];
+    PyObject *unicode = unicode_latin1[ch];
     if (!unicode) {
-        unicode = (PyUnicodeObject *)PyUnicode_New(1, ch);
+        unicode = PyUnicode_New(1, ch);
         if (!unicode)
             return NULL;
         PyUnicode_1BYTE_DATA(unicode)[0] = ch;
         unicode_latin1[ch] = unicode;
     }
     Py_INCREF(unicode);
-    return (PyObject *)unicode;
+    return unicode;
 }
 
 PyObject *
@@ -1045,7 +1045,7 @@ PyUnicode_FromUnicode(const Py_UNICODE *u, Py_ssize_t size)
     /* Optimization for empty strings */
     if (size == 0 && unicode_empty != NULL) {
         Py_INCREF(unicode_empty);
-        return (PyObject *)unicode_empty;
+        return unicode_empty;
     }
 
     /* Single character Unicode objects in the Latin-1 range are
@@ -1117,7 +1117,7 @@ PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
         /* Optimization for empty strings */
         if (size == 0 && unicode_empty != NULL) {
             Py_INCREF(unicode_empty);
-            return (PyObject *)unicode_empty;
+            return unicode_empty;
         }
 
         /* Single characters are shared when using this constructor.
@@ -2137,7 +2137,7 @@ PyUnicode_FromEncodedObject(register PyObject *obj,
     if (PyBytes_Check(obj)) {
         if (PyBytes_GET_SIZE(obj) == 0) {
             Py_INCREF(unicode_empty);
-            v = (PyObject *) unicode_empty;
+            v = unicode_empty;
         }
         else {
             v = PyUnicode_Decode(
@@ -2164,7 +2164,7 @@ PyUnicode_FromEncodedObject(register PyObject *obj,
 
     if (buffer.len == 0) {
         Py_INCREF(unicode_empty);
-        v = (PyObject *) unicode_empty;
+        v = unicode_empty;
     }
     else
         v = PyUnicode_Decode((char*) buffer.buf, buffer.len, encoding, errors);
@@ -9555,11 +9555,11 @@ PyUnicode_Concat(PyObject *left, PyObject *right)
         goto onError;
 
     /* Shortcuts */
-    if (v == (PyObject*)unicode_empty) {
+    if (v == unicode_empty) {
         Py_DECREF(v);
         return u;
     }
-    if (u == (PyObject*)unicode_empty) {
+    if (u == unicode_empty) {
         Py_DECREF(u);
         return v;
     }
@@ -10635,7 +10635,7 @@ unicode_repeat(PyUnicodeObject *str, Py_ssize_t len)
 
     if (len < 1) {
         Py_INCREF(unicode_empty);
-        return (PyObject *)unicode_empty;
+        return unicode_empty;
     }
 
     if (len == 1 && PyUnicode_CheckExact(str)) {
@@ -12602,7 +12602,7 @@ void _PyUnicode_Init(void)
     };
 
     /* Init the implementation */
-    unicode_empty = (PyUnicodeObject *) PyUnicode_New(0, 0);
+    unicode_empty = PyUnicode_New(0, 0);
     if (!unicode_empty)
         Py_FatalError("Can't create empty string");
 
