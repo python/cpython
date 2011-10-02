@@ -429,14 +429,16 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
    PyUnicode_READ_CHAR, for multiple consecutive reads callers should
    cache kind and use PyUnicode_READ instead. */
 #define PyUnicode_READ_CHAR(unicode, index) \
-    ((Py_UCS4) \
-    (PyUnicode_KIND((unicode)) == PyUnicode_1BYTE_KIND ? \
-        ((const Py_UCS1 *)(PyUnicode_DATA((unicode))))[(index)] : \
-        (PyUnicode_KIND((unicode)) == PyUnicode_2BYTE_KIND ? \
-            ((const Py_UCS2 *)(PyUnicode_DATA((unicode))))[(index)] : \
-            ((const Py_UCS4 *)(PyUnicode_DATA((unicode))))[(index)] \
-        ) \
-    ))
+    (assert(PyUnicode_Check(unicode)),          \
+     assert(PyUnicode_IS_READY(unicode)),       \
+     (Py_UCS4)                                  \
+        (PyUnicode_KIND((unicode)) == PyUnicode_1BYTE_KIND ? \
+            ((const Py_UCS1 *)(PyUnicode_DATA((unicode))))[(index)] : \
+            (PyUnicode_KIND((unicode)) == PyUnicode_2BYTE_KIND ? \
+                ((const Py_UCS2 *)(PyUnicode_DATA((unicode))))[(index)] : \
+                ((const Py_UCS4 *)(PyUnicode_DATA((unicode))))[(index)] \
+            ) \
+        ))
 
 /* Returns the length of the unicode string. The caller has to make sure that
    the string has it's canonical representation set before calling
