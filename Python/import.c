@@ -3174,7 +3174,6 @@ load_next(PyObject *mod, PyObject *altmod,
         }
     }
 
-out:
     PyMem_Free(nameuni);
     return result;
 
