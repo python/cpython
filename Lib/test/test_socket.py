@@ -1869,10 +1869,12 @@ def isTipcAvailable():
         print("TIPC module is not loaded, please 'sudo modprobe tipc'")
     return False
 
-class TIPCTest (unittest.TestCase):
+class TIPCTest(unittest.TestCase):
     def testRDM(self):
         srv = socket.socket(socket.AF_TIPC, socket.SOCK_RDM)
         cli = socket.socket(socket.AF_TIPC, socket.SOCK_RDM)
+        self.addCleanup(srv.close)
+        self.addCleanup(cli.close)
 
         srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         srvaddr = (socket.TIPC_ADDR_NAMESEQ, TIPC_STYPE,
@@ -1889,13 +1891,14 @@ class TIPCTest (unittest.TestCase):
         self.assertEqual(msg, MSG)
 
 
-class TIPCThreadableTest (unittest.TestCase, ThreadableTest):
+class TIPCThreadableTest(unittest.TestCase, ThreadableTest):
     def __init__(self, methodName = 'runTest'):
         unittest.TestCase.__init__(self, methodName = methodName)
         ThreadableTest.__init__(self)
 
     def setUp(self):
         self.srv = socket.socket(socket.AF_TIPC, socket.SOCK_STREAM)
+        self.addCleanup(self.srv.close)
         self.srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         srvaddr = (socket.TIPC_ADDR_NAMESEQ, TIPC_STYPE,
                 TIPC_LOWER, TIPC_UPPER)
@@ -1903,6 +1906,7 @@ class TIPCThreadableTest (unittest.TestCase, ThreadableTest):
         self.srv.listen(5)
         self.serverExplicitReady()
         self.conn, self.connaddr = self.srv.accept()
+        self.addCleanup(self.conn.close)
 
     def clientSetUp(self):
         # The is a hittable race between serverExplicitReady() and the
@@ -1910,6 +1914,7 @@ class TIPCThreadableTest (unittest.TestCase, ThreadableTest):
         # we could get an exception
         time.sleep(0.1)
         self.cli = socket.socket(socket.AF_TIPC, socket.SOCK_STREAM)
+        self.addCleanup(self.cli.close)
         addr = (socket.TIPC_ADDR_NAME, TIPC_STYPE,
                 TIPC_LOWER + int((TIPC_UPPER - TIPC_LOWER) / 2), 0)
         self.cli.connect(addr)
