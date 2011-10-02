@@ -133,6 +133,15 @@ extern "C" {
      ((PyASCIIObject *)(op))->length)
 #define _PyUnicode_DATA_ANY(op) (((PyUnicodeObject*)(op))->data.any)
 
+/* true if the Unicode object has an allocated UTF-8 memory block
+   (not shared with other data) */
+#define _PyUnicode_HAS_UTF8_MEMORY(op) \
+    (assert(PyUnicode_Check(op)),                       \
+     (!PyUnicode_IS_COMPACT_ASCII(op) \
+      && _PyUnicode_UTF8(op) \
+      && _PyUnicode_UTF8(op) != PyUnicode_DATA(op)))
+
+
 /* The Unicode string has been modified: reset the hash */
 #define _PyUnicode_DIRTY(op) do { _PyUnicode_HASH(op) = -1; } while (0)
 
@@ -1021,9 +1030,7 @@ unicode_dealloc(register PyUnicodeObject *unicode)
         (!PyUnicode_IS_READY(unicode) ||
          _PyUnicode_WSTR(unicode) != PyUnicode_DATA(unicode)))
         PyObject_DEL(_PyUnicode_WSTR(unicode));
-    if (!PyUnicode_IS_COMPACT_ASCII(unicode)
-        && _PyUnicode_UTF8(unicode)
-        && _PyUnicode_UTF8(unicode) != PyUnicode_DATA(unicode))
+    if (_PyUnicode_HAS_UTF8_MEMORY(unicode))
         PyObject_DEL(_PyUnicode_UTF8(unicode));
 
     if (PyUnicode_IS_COMPACT(unicode)) {
@@ -11735,9 +11742,7 @@ unicode__sizeof__(PyUnicodeObject *v)
         (!PyUnicode_IS_READY(v) ||
          (PyUnicode_DATA(v) != _PyUnicode_WSTR(v))))
         size += (PyUnicode_WSTR_LENGTH(v) + 1) * sizeof(wchar_t);
-    if (!PyUnicode_IS_COMPACT_ASCII(v)
-        && _PyUnicode_UTF8(v)
-        && _PyUnicode_UTF8(v) != PyUnicode_DATA(v))
+    if (_PyUnicode_HAS_UTF8_MEMORY(v))
         size += PyUnicode_UTF8_LENGTH(v) + 1;
 
     return PyLong_FromSsize_t(size);
