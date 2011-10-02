@@ -136,6 +136,8 @@ static PyObject * import_from(PyObject *, PyObject *);
 static int import_all_from(PyObject *, PyObject *);
 static void format_exc_check_arg(PyObject *, const char *, PyObject *);
 static void format_exc_unbound(PyCodeObject *co, int oparg);
+static PyObject * unicode_concatenate(PyObject *, PyObject *,
+                                      PyFrameObject *, unsigned char *);
 static PyObject * special_lookup(PyObject *, char *, PyObject **);
 
 #define NAME_ERROR_MSG \
@@ -1507,8 +1509,17 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         TARGET(BINARY_ADD)
             w = POP();
             v = TOP();
-            x = PyNumber_Add(v, w);
+            if (PyUnicode_CheckExact(v) &&
+                     PyUnicode_CheckExact(w)) {
+                x = unicode_concatenate(v, w, f, next_instr);
+                /* unicode_concatenate consumed the ref to v */
+                goto skip_decref_vx;
+            }
+            else {
+                x = PyNumber_Add(v, w);
+            }
             Py_DECREF(v);
+          skip_decref_vx:
             Py_DECREF(w);
             SET_TOP(x);
             if (x != NULL) DISPATCH();
@@ -1659,8 +1670,17 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         TARGET(INPLACE_ADD)
             w = POP();
             v = TOP();
-            x = PyNumber_InPlaceAdd(v, w);
+            if (PyUnicode_CheckExact(v) &&
+                     PyUnicode_CheckExact(w)) {
+                x = unicode_concatenate(v, w, f, next_instr);
+                /* unicode_concatenate consumed the ref to v */
+                goto skip_decref_v;
+            }
+            else {
+                x = PyNumber_InPlaceAdd(v, w);
+            }
             Py_DECREF(v);
+          skip_decref_v:
             Py_DECREF(w);
             SET_TOP(x);
             if (x != NULL) DISPATCH();
@@ -3399,7 +3419,7 @@ save_exc_state(PyThreadState *tstate, PyFrameObject *f)
     f->f_exc_traceback = tstate->exc_traceback;
     Py_XDECREF(type);
     Py_XDECREF(value);
-    Py_XDECREF(traceback); 
+    Py_XDECREF(traceback);
 }
 
 static void
@@ -4493,6 +4513,56 @@ format_exc_unbound(PyCodeObject *co, int oparg)
         format_exc_check_arg(PyExc_NameError,
                              UNBOUNDFREE_ERROR_MSG, name);
     }
+}
+
+static PyObject *
+unicode_concatenate(PyObject *v, PyObject *w,
+                    PyFrameObject *f, unsigned char *next_instr)
+{
+    PyObject *res;
+    if (Py_REFCNT(v) == 2) {
+        /* In the common case, there are 2 references to the value
+         * stored in 'variable' when the += is performed: one on the
+         * value stack (in 'v') and one still stored in the
+         * 'variable'.  We try to delete the variable now to reduce
+         * the refcnt to 1.
+         */
+        switch (*next_instr) {
+        case STORE_FAST:
+        {
+            int oparg = PEEKARG();
+            PyObject **fastlocals = f->f_localsplus;
+            if (GETLOCAL(oparg) == v)
+                SETLOCAL(oparg, NULL);
+            break;
+        }
+        case STORE_DEREF:
+        {
+            PyObject **freevars = (f->f_localsplus +
+                                   f->f_code->co_nlocals);
+            PyObject *c = freevars[PEEKARG()];
+            if (PyCell_GET(c) == v)
+                PyCell_Set(c, NULL);
+            break;
+        }
+        case STORE_NAME:
+        {
+            PyObject *names = f->f_code->co_names;
+            PyObject *name = GETITEM(names, PEEKARG());
+            PyObject *locals = f->f_locals;
+            if (PyDict_CheckExact(locals) &&
+                PyDict_GetItem(locals, name) == v) {
+                if (PyDict_DelItem(locals, name) != 0) {
+                    PyErr_Clear();
+                }
+            }
+            break;
+        }
+        }
+    }
+    res = v;
+    PyUnicode_Append(&res, w);
+    return res;
 }
 
 #ifdef DYNAMIC_EXECUTION_PROFILE
