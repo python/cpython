@@ -443,13 +443,14 @@ resize_inplace(register PyUnicodeObject *unicode, Py_ssize_t length)
     if (PyUnicode_IS_READY(unicode)) {
         Py_ssize_t char_size;
         Py_ssize_t new_size;
-        int share_wstr;
+        int share_wstr, share_utf8;
         void *data;
 
         data = _PyUnicode_DATA_ANY(unicode);
         assert(data != NULL);
         char_size = PyUnicode_CHARACTER_SIZE(unicode);
         share_wstr = (_PyUnicode_WSTR(unicode) == data);
+        share_utf8 = (_PyUnicode_UTF8(unicode) == data);
 
         if (length > (PY_SSIZE_T_MAX / char_size - 1)) {
             PyErr_NoMemory();
@@ -465,6 +466,8 @@ resize_inplace(register PyUnicodeObject *unicode, Py_ssize_t length)
         _PyUnicode_DATA_ANY(unicode) = data;
         if (share_wstr)
             _PyUnicode_WSTR(unicode) = data;
+        if (share_utf8)
+            _PyUnicode_UTF8(unicode) = data;
         _PyUnicode_LENGTH(unicode) = length;
         PyUnicode_WRITE(PyUnicode_KIND(unicode), data, length, 0);
         if (share_wstr)
