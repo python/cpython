@@ -9931,9 +9931,11 @@ PyUnicode_Append(PyObject **p_left, PyObject *right)
         && (_PyUnicode_KIND(right) <= _PyUnicode_KIND(left)
             || _PyUnicode_WSTR(left) != NULL))
     {
-        Py_ssize_t u_len, v_len, new_len, copied;
+        Py_ssize_t left_len, right_len, new_len;
+#ifdef Py_DEBUG
+        Py_ssize_t copied;
+#endif
 
-        /* FIXME: don't make wstr string ready */
         if (PyUnicode_READY(left))
             goto error;
         if (PyUnicode_READY(right))
@@ -9942,14 +9944,14 @@ PyUnicode_Append(PyObject **p_left, PyObject *right)
         /* FIXME: support ascii+latin1, PyASCIIObject => PyCompactUnicodeObject */
         if (PyUnicode_MAX_CHAR_VALUE(right) <= PyUnicode_MAX_CHAR_VALUE(left))
         {
-            u_len = PyUnicode_GET_LENGTH(left);
-            v_len = PyUnicode_GET_LENGTH(right);
-            if (u_len > PY_SSIZE_T_MAX - v_len) {
+            left_len = PyUnicode_GET_LENGTH(left);
+            right_len = PyUnicode_GET_LENGTH(right);
+            if (left_len > PY_SSIZE_T_MAX - right_len) {
                 PyErr_SetString(PyExc_OverflowError,
                                 "strings are too large to concat");
                 goto error;
             }
-            new_len = u_len + v_len;
+            new_len = left_len + right_len;
 
             /* Now we own the last reference to 'left', so we can resize it
              * in-place.
@@ -9964,10 +9966,14 @@ PyUnicode_Append(PyObject **p_left, PyObject *right)
                 goto error;
             }
             /* copy 'right' into the newly allocated area of 'left' */
-            copied = PyUnicode_CopyCharacters(left, u_len,
+#ifdef Py_DEBUG
+            copied = PyUnicode_CopyCharacters(left, left_len,
                                               right, 0,
-                                              v_len);
+                                              right_len);
             assert(0 <= copied);
+#else
+            PyUnicode_CopyCharacters(left, left_len, right, 0, right_len);
+#endif
             *p_left = left;
             return;
         }
