@@ -627,7 +627,8 @@ _PyUnicode_New(Py_ssize_t length)
 static const char*
 unicode_kind_name(PyObject *unicode)
 {
-    assert(_PyUnicode_CHECK(unicode));
+    /* don't check consistency: unicode_kind_name() is called from
+       _PyUnicode_Dump() */
     if (!PyUnicode_IS_COMPACT(unicode))
     {
         if (!PyUnicode_IS_READY(unicode))
