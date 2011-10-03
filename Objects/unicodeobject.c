@@ -9775,19 +9775,80 @@ PyUnicode_Concat(PyObject *left, PyObject *right)
 }
 
 void
-PyUnicode_Append(PyObject **pleft, PyObject *right)
+PyUnicode_Append(PyObject **p_left, PyObject *right)
 {
-    PyObject *new;
-    if (*pleft == NULL)
-        return;
-    if (right == NULL || !PyUnicode_Check(*pleft)) {
-        Py_DECREF(*pleft);
-        *pleft = NULL;
+    PyObject *left, *res;
+
+    if (p_left == NULL) {
+        if (!PyErr_Occurred())
+            PyErr_BadInternalCall();
         return;
     }
-    new = PyUnicode_Concat(*pleft, right);
-    Py_DECREF(*pleft);
-    *pleft = new;
+    left = *p_left;
+    if (right == NULL || !PyUnicode_Check(left)) {
+        if (!PyErr_Occurred())
+            PyErr_BadInternalCall();
+        goto error;
+    }
+
+    if (PyUnicode_CheckExact(left) && left != unicode_empty
+        && PyUnicode_CheckExact(right) && right != unicode_empty
+        && unicode_resizable(left)
+        && (_PyUnicode_KIND(right) <= _PyUnicode_KIND(left)
+            || _PyUnicode_WSTR(left) != NULL))
+    {
+        Py_ssize_t u_len, v_len, new_len, copied;
+
+        /* FIXME: don't make wstr string ready */
+        if (PyUnicode_READY(left))
+            goto error;
+        if (PyUnicode_READY(right))
+            goto error;
+
+        /* FIXME: support ascii+latin1, PyASCIIObject => PyCompactUnicodeObject */
+        if (PyUnicode_MAX_CHAR_VALUE(right) <= PyUnicode_MAX_CHAR_VALUE(left))
+        {
+            u_len = PyUnicode_GET_LENGTH(left);
+            v_len = PyUnicode_GET_LENGTH(right);
+            if (u_len > PY_SSIZE_T_MAX - v_len) {
+                PyErr_SetString(PyExc_OverflowError,
+                                "strings are too large to concat");
+                goto error;
+            }
+            new_len = u_len + v_len;
+
+            /* Now we own the last reference to 'left', so we can resize it
+             * in-place.
+             */
+            if (unicode_resize(&left, new_len) != 0) {
+                /* XXX if _PyUnicode_Resize() fails, 'left' has been
+                 * deallocated so it cannot be put back into
+                 * 'variable'.  The MemoryError is raised when there
+                 * is no value in 'variable', which might (very
+                 * remotely) be a cause of incompatibilities.
+                 */
+                goto error;
+            }
+            /* copy 'right' into the newly allocated area of 'left' */
+            copied = PyUnicode_CopyCharacters(left, u_len,
+                                              right, 0,
+                                              v_len);
+            assert(0 <= copied);
+            *p_left = left;
+            return;
+        }
+    }
+
+    res = PyUnicode_Concat(left, right);
+    if (res == NULL)
+        goto error;
+    Py_DECREF(left);
+    *p_left = res;
+    return;
+
+error:
+    Py_DECREF(*p_left);
+    *p_left = NULL;
 }
 
 void
