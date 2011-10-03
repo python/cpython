@@ -369,6 +369,12 @@ _PyUnicode_CheckConsistency(void *op)
     }
     return 1;
 }
+#else
+static int
+_PyUnicode_CheckConsistency(void *op)
+{
+    return 1;
+}
 #endif
 
 /* --- Bloom Filters ----------------------------------------------------- */
@@ -536,7 +542,7 @@ resize_inplace(PyUnicodeObject *unicode, Py_ssize_t length)
         _PyUnicode_LENGTH(unicode) = length;
         PyUnicode_WRITE(PyUnicode_KIND(unicode), data, length, 0);
         if (share_wstr || _PyUnicode_WSTR(unicode) == NULL) {
-            _PyUnicode_CHECK(unicode);
+            _PyUnicode_CheckConsistency(unicode);
             return 0;
         }
     }
@@ -556,7 +562,7 @@ resize_inplace(PyUnicodeObject *unicode, Py_ssize_t length)
     _PyUnicode_WSTR(unicode) = wstr;
     _PyUnicode_WSTR(unicode)[length] = 0;
     _PyUnicode_WSTR_LENGTH(unicode) = length;
-    _PyUnicode_CHECK(unicode);
+    _PyUnicode_CheckConsistency(unicode);
     return 0;
 }
 
@@ -1354,7 +1360,7 @@ unicode_resize(PyObject **p_unicode, Py_ssize_t length)
         *p_unicode = resize_compact(unicode, length);
         if (*p_unicode == NULL)
             return -1;
-        _PyUnicode_CHECK(*p_unicode);
+        _PyUnicode_CheckConsistency(*p_unicode);
         return 0;
     } else
         return resize_inplace((PyUnicodeObject*)unicode, length);
