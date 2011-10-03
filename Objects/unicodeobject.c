@@ -288,16 +288,14 @@ _PyUnicode_CheckConsistency(void *op)
     ascii = (PyASCIIObject *)op;
     kind = ascii->state.kind;
 
-    if (ascii->state.ascii == 1) {
+    if (ascii->state.ascii == 1 && ascii->state.compact == 1) {
         assert(kind == PyUnicode_1BYTE_KIND);
-        assert(ascii->state.compact == 1);
         assert(ascii->state.ready == 1);
     }
     else if (ascii->state.compact == 1) {
         assert(kind == PyUnicode_1BYTE_KIND
                || kind == PyUnicode_2BYTE_KIND
                || kind == PyUnicode_4BYTE_KIND);
-        assert(ascii->state.compact == 1);
         assert(ascii->state.ascii == 0);
         assert(ascii->state.ready == 1);
     } else {
@@ -305,9 +303,9 @@ _PyUnicode_CheckConsistency(void *op)
         PyUnicodeObject *unicode = (PyUnicodeObject *)op;
 
         if (kind == PyUnicode_WCHAR_KIND) {
-            assert(!ascii->state.compact == 1);
+            assert(ascii->state.compact == 0);
             assert(ascii->state.ascii == 0);
-            assert(!ascii->state.ready == 1);
+            assert(ascii->state.ready == 0);
             assert(ascii->wstr != NULL);
             assert(unicode->data.any == NULL);
             assert(compact->utf8 == NULL);
@@ -317,10 +315,9 @@ _PyUnicode_CheckConsistency(void *op)
             assert(kind == PyUnicode_1BYTE_KIND
                    || kind == PyUnicode_2BYTE_KIND
                    || kind == PyUnicode_4BYTE_KIND);
-            assert(!ascii->state.compact == 1);
+            assert(ascii->state.compact == 0);
             assert(ascii->state.ready == 1);
             assert(unicode->data.any != NULL);
-            assert(ascii->state.ascii == 0);
         }
     }
     return 1;
@@ -638,7 +635,7 @@ unicode_kind_name(PyObject *unicode)
         switch(PyUnicode_KIND(unicode))
         {
         case PyUnicode_1BYTE_KIND:
-            if (PyUnicode_IS_COMPACT_ASCII(unicode))
+            if (PyUnicode_IS_ASCII(unicode))
                 return "legacy ascii";
             else
                 return "legacy latin1";
@@ -654,14 +651,14 @@ unicode_kind_name(PyObject *unicode)
     switch(PyUnicode_KIND(unicode))
     {
     case PyUnicode_1BYTE_KIND:
-        if (PyUnicode_IS_COMPACT_ASCII(unicode))
+        if (PyUnicode_IS_ASCII(unicode))
             return "ascii";
         else
-            return "compact latin1";
+            return "latin1";
     case PyUnicode_2BYTE_KIND:
-        return "compact UCS2";
+        return "UCS2";
     case PyUnicode_4BYTE_KIND:
-        return "compact UCS4";
+        return "UCS4";
     default:
         return "<invalid compact kind>";
     }
@@ -703,7 +700,7 @@ _PyUnicode_Dump(PyObject *op)
     if (ascii->wstr == data)
         printf("shared ");
     printf("wstr=%p", ascii->wstr);
-    if (!ascii->state.ascii) {
+    if (!(ascii->state.ascii == 1 && ascii->state.compact == 1)) {
         printf(" (%zu), ", compact->wstr_length);
         if (!ascii->state.compact && compact->utf8 == unicode->data.any)
             printf("shared ");
@@ -954,9 +951,9 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
         /* check if max_char(from substring) <= max_char(to) */
         if (from_kind > to_kind
                 /* latin1 => ascii */
-            || (PyUnicode_IS_COMPACT_ASCII(to)
+            || (PyUnicode_IS_ASCII(to)
                 && to_kind == PyUnicode_1BYTE_KIND
-                && !PyUnicode_IS_COMPACT_ASCII(from)))
+                && !PyUnicode_IS_ASCII(from)))
         {
             /* slow path to check for character overflow */
             const Py_UCS4 to_maxchar = PyUnicode_MAX_CHAR_VALUE(to);
@@ -1115,10 +1112,12 @@ unicode_ready(PyObject **p_obj, int replace)
         _PyUnicode_LENGTH(unicode) = _PyUnicode_WSTR_LENGTH(unicode);
         _PyUnicode_STATE(unicode).kind = PyUnicode_1BYTE_KIND;
         if (maxchar < 128) {
+            _PyUnicode_STATE(unicode).ascii = 1;
             _PyUnicode_UTF8(unicode) = _PyUnicode_DATA_ANY(unicode);
             _PyUnicode_UTF8_LENGTH(unicode) = _PyUnicode_WSTR_LENGTH(unicode);
         }
         else {
+            _PyUnicode_STATE(unicode).ascii = 0;
             _PyUnicode_UTF8(unicode) = NULL;
             _PyUnicode_UTF8_LENGTH(unicode) = 0;
         }
