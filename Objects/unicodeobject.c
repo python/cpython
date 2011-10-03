@@ -1181,18 +1181,23 @@ unicode_dealloc(register PyUnicodeObject *unicode)
 static int
 unicode_resizable(PyObject *unicode)
 {
+    Py_ssize_t len;
     if (Py_REFCNT(unicode) != 1)
         return 0;
     if (PyUnicode_CHECK_INTERNED(unicode))
         return 0;
     if (unicode == unicode_empty)
         return 0;
-    if (PyUnicode_WSTR_LENGTH(unicode) == 1) {
+    if (_PyUnicode_KIND(unicode) == PyUnicode_WCHAR_KIND)
+        len = PyUnicode_WSTR_LENGTH(unicode);
+    else
+        len = PyUnicode_GET_LENGTH(unicode);
+    if (len == 1) {
         Py_UCS4 ch;
-        if (PyUnicode_IS_COMPACT(unicode))
-            ch = PyUnicode_READ_CHAR(unicode, 0);
-        else
+        if (_PyUnicode_KIND(unicode) == PyUnicode_WCHAR_KIND)
             ch = _PyUnicode_WSTR(unicode)[0];
+        else
+            ch = PyUnicode_READ_CHAR(unicode, 0);
         if (ch < 256 && unicode_latin1[ch] == unicode)
             return 0;
     }
@@ -11969,12 +11974,9 @@ unicode__sizeof__(PyUnicodeObject *v)
                 PyUnicode_CHARACTER_SIZE(v);
     }
     /* If the wstr pointer is present, account for it unless it is shared
-       with the data pointer. Since PyUnicode_DATA will crash if the object
-       is not ready, check whether it's either not ready (in which case the
-       data is entirely in wstr) or if the data is not shared. */
+       with the data pointer. Check if the data is not shared. */
     if (_PyUnicode_WSTR(v) &&
-        (!PyUnicode_IS_READY(v) ||
-         (PyUnicode_DATA(v) != _PyUnicode_WSTR(v))))
+        (PyUnicode_DATA(v) != _PyUnicode_WSTR(v)))
         size += (PyUnicode_WSTR_LENGTH(v) + 1) * sizeof(wchar_t);
     if (_PyUnicode_HAS_UTF8_MEMORY(v))
         size += PyUnicode_UTF8_LENGTH(v) + 1;
