@@ -1362,8 +1362,8 @@ unicode_resize(PyObject **p_unicode, Py_ssize_t length)
             return -1;
         _PyUnicode_CheckConsistency(*p_unicode);
         return 0;
-    } else
-        return resize_inplace((PyUnicodeObject*)unicode, length);
+    }
+    return resize_inplace((PyUnicodeObject*)unicode, length);
 }
 
 int
