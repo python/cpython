@@ -12893,9 +12893,13 @@ PyUnicode_InternInPlace(PyObject **p)
 {
     register PyUnicodeObject *s = (PyUnicodeObject *)(*p);
     PyObject *t;
+#ifdef Py_DEBUG
+    assert(s != NULL);
+    assert(_PyUnicode_CHECK(s));
+#else
     if (s == NULL || !PyUnicode_Check(s))
-        Py_FatalError(
-            "PyUnicode_InternInPlace: unicode strings only please!");
+        return;
+#endif
     /* If it's a subclass, we don't really know what putting
        it in the interned dict might do. */
     if (!PyUnicode_CheckExact(s))
@@ -12903,7 +12907,7 @@ PyUnicode_InternInPlace(PyObject **p)
     if (PyUnicode_CHECK_INTERNED(s))
         return;
     if (PyUnicode_READY(s) == -1) {
-        assert(0 && "ready fail in intern...");
+        assert(0 && "PyUnicode_READY fail in PyUnicode_InternInPlace");
         return;
     }
     if (interned == NULL) {
