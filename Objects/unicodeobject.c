@@ -898,7 +898,7 @@ _PyUnicode_Dirty(PyObject *unicode)
 {
     assert(_PyUnicode_CHECK(unicode));
     if (Py_REFCNT(unicode) != 1) {
-        PyErr_SetString(PyExc_ValueError,
+        PyErr_SetString(PyExc_SystemError,
                         "Cannot modify a string having more than 1 reference");
         return -1;
     }
@@ -926,7 +926,7 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
 
     how_many = Py_MIN(PyUnicode_GET_LENGTH(from), how_many);
     if (to_start + how_many > PyUnicode_GET_LENGTH(to)) {
-        PyErr_Format(PyExc_ValueError,
+        PyErr_Format(PyExc_SystemError,
                      "Cannot write %zi characters at %zi "
                      "in a string of %zi characters",
                      how_many, to_start, PyUnicode_GET_LENGTH(to));
@@ -1015,7 +1015,7 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
         else
             invalid_kinds = 1;
         if (invalid_kinds) {
-            PyErr_Format(PyExc_ValueError,
+            PyErr_Format(PyExc_SystemError,
                          "Cannot copy %s characters "
                          "into a string of %s characters",
                          unicode_kind_name(from),
@@ -1562,7 +1562,7 @@ PyUnicode_FromKindAndData(int kind, const void *buffer, Py_ssize_t size)
     case PyUnicode_4BYTE_KIND:
         return _PyUnicode_FromUCS4(buffer, size);
     }
-    PyErr_SetString(PyExc_ValueError, "invalid kind");
+    PyErr_SetString(PyExc_SystemError, "invalid kind");
     return NULL;
 }
 
@@ -1622,7 +1622,7 @@ _PyUnicode_AsKind(PyObject *s, unsigned int kind)
     len = PyUnicode_GET_LENGTH(s);
     skind = PyUnicode_KIND(s);
     if (skind >= kind) {
-        PyErr_SetString(PyExc_RuntimeError, "invalid widening attempt");
+        PyErr_SetString(PyExc_SystemError, "invalid widening attempt");
         return NULL;
     }
     switch(kind) {
@@ -1660,7 +1660,7 @@ _PyUnicode_AsKind(PyObject *s, unsigned int kind)
     default:
         break;
     }
-    PyErr_SetString(PyExc_ValueError, "invalid kind");
+    PyErr_SetString(PyExc_SystemError, "invalid kind");
     return NULL;
 }
 
