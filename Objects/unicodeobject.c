@@ -12846,7 +12846,7 @@ unicode_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     _PyUnicode_STATE(self).interned = 0;
     _PyUnicode_STATE(self).kind = kind;
     _PyUnicode_STATE(self).compact = 0;
-    _PyUnicode_STATE(self).ascii = 0;
+    _PyUnicode_STATE(self).ascii = _PyUnicode_STATE(unicode).ascii;
     _PyUnicode_STATE(self).ready = 1;
     _PyUnicode_WSTR(self) = NULL;
     _PyUnicode_UTF8_LENGTH(self) = 0;
