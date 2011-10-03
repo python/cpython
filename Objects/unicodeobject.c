@@ -111,24 +111,31 @@ extern "C" {
      PyUnicode_IS_COMPACT_ASCII(op) ?                   \
          ((PyASCIIObject*)(op))->length :               \
          _PyUnicode_UTF8_LENGTH(op))
-#define _PyUnicode_WSTR(op) (((PyASCIIObject*)(op))->wstr)
-#define _PyUnicode_WSTR_LENGTH(op) (((PyCompactUnicodeObject*)(op))->wstr_length)
-#define _PyUnicode_LENGTH(op) (((PyASCIIObject *)(op))->length)
-#define _PyUnicode_STATE(op) (((PyASCIIObject *)(op))->state)
-#define _PyUnicode_HASH(op) (((PyASCIIObject *)(op))->hash)
+#define _PyUnicode_WSTR(op)                             \
+    (((PyASCIIObject*)(op))->wstr)
+#define _PyUnicode_WSTR_LENGTH(op)                      \
+    (((PyCompactUnicodeObject*)(op))->wstr_length)
+#define _PyUnicode_LENGTH(op)                           \
+    (((PyASCIIObject *)(op))->length)
+#define _PyUnicode_STATE(op)                            \
+    (((PyASCIIObject *)(op))->state)
+#define _PyUnicode_HASH(op)                             \
+    (((PyASCIIObject *)(op))->hash)
 #define _PyUnicode_KIND(op)                             \
     (assert(_PyUnicode_CHECK(op)),                      \
      ((PyASCIIObject *)(op))->state.kind)
 #define _PyUnicode_GET_LENGTH(op)                       \
     (assert(_PyUnicode_CHECK(op)),                      \
      ((PyASCIIObject *)(op))->length)
-#define _PyUnicode_DATA_ANY(op) (((PyUnicodeObject*)(op))->data.any)
+#define _PyUnicode_DATA_ANY(op)                         \
+    (((PyUnicodeObject*)(op))->data.any)
 
 #undef PyUnicode_READY
 #define PyUnicode_READY(op)                             \
     (assert(_PyUnicode_CHECK(op)),                      \
      (PyUnicode_IS_READY(op) ?                          \
-      0 : _PyUnicode_Ready((PyObject *)(op))))
+      0 :                                               \
+      _PyUnicode_Ready((PyObject *)(op))))
 
 #define _PyUnicode_READY_REPLACE(p_obj)                 \
     (assert(_PyUnicode_CHECK(*p_obj)),                  \
