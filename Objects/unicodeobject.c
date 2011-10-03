@@ -9967,6 +9967,54 @@ PyUnicode_Concat(PyObject *left, PyObject *right)
     return NULL;
 }
 
+static void
+unicode_append_inplace(PyObject **p_left, PyObject *right)
+{
+    Py_ssize_t left_len, right_len, new_len;
+#ifdef Py_DEBUG
+    Py_ssize_t copied;
+#endif
+
+    assert(PyUnicode_IS_READY(*p_left));
+    assert(PyUnicode_IS_READY(right));
+
+    left_len = PyUnicode_GET_LENGTH(*p_left);
+    right_len = PyUnicode_GET_LENGTH(right);
+    if (left_len > PY_SSIZE_T_MAX - right_len) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "strings are too large to concat");
+        goto error;
+    }
+    new_len = left_len + right_len;
+
+    /* Now we own the last reference to 'left', so we can resize it
+     * in-place.
+     */
+    if (unicode_resize(p_left, new_len) != 0) {
+        /* XXX if _PyUnicode_Resize() fails, 'left' has been
+         * deallocated so it cannot be put back into
+         * 'variable'.  The MemoryError is raised when there
+         * is no value in 'variable', which might (very
+         * remotely) be a cause of incompatibilities.
+         */
+        goto error;
+    }
+    /* copy 'right' into the newly allocated area of 'left' */
+#ifdef Py_DEBUG
+    copied = PyUnicode_CopyCharacters(*p_left, left_len,
+                                      right, 0,
+                                      right_len);
+    assert(0 <= copied);
+#else
+    PyUnicode_CopyCharacters(*p_left, left_len, right, 0, right_len);
+#endif
+    return;
+
+error:
+    Py_DECREF(*p_left);
+    *p_left = NULL;
+}
+
 void
 PyUnicode_Append(PyObject **p_left, PyObject *right)
 {
@@ -9990,50 +10038,18 @@ PyUnicode_Append(PyObject **p_left, PyObject *right)
         && (_PyUnicode_KIND(right) <= _PyUnicode_KIND(left)
             || _PyUnicode_WSTR(left) != NULL))
     {
-        Py_ssize_t left_len, right_len, new_len;
-#ifdef Py_DEBUG
-        Py_ssize_t copied;
-#endif
-
         if (PyUnicode_READY(left))
             goto error;
         if (PyUnicode_READY(right))
             goto error;
 
-        /* FIXME: support ascii+latin1, PyASCIIObject => PyCompactUnicodeObject */
-        if (PyUnicode_MAX_CHAR_VALUE(right) <= PyUnicode_MAX_CHAR_VALUE(left))
+        /* Don't resize for ascii += latin1. Convert ascii to latin1 requires
+           to change the structure size, but characters are stored just after
+           the structure, and so it requires to move all charactres which is
+           not so different than duplicating the string. */
+        if (!(PyUnicode_IS_ASCII(left) && !PyUnicode_IS_ASCII(right)))
         {
-            left_len = PyUnicode_GET_LENGTH(left);
-            right_len = PyUnicode_GET_LENGTH(right);
-            if (left_len > PY_SSIZE_T_MAX - right_len) {
-                PyErr_SetString(PyExc_OverflowError,
-                                "strings are too large to concat");
-                goto error;
-            }
-            new_len = left_len + right_len;
-
-            /* Now we own the last reference to 'left', so we can resize it
-             * in-place.
-             */
-            if (unicode_resize(&left, new_len) != 0) {
-                /* XXX if _PyUnicode_Resize() fails, 'left' has been
-                 * deallocated so it cannot be put back into
-                 * 'variable'.  The MemoryError is raised when there
-                 * is no value in 'variable', which might (very
-                 * remotely) be a cause of incompatibilities.
-                 */
-                goto error;
-            }
-            /* copy 'right' into the newly allocated area of 'left' */
-#ifdef Py_DEBUG
-            copied = PyUnicode_CopyCharacters(left, left_len,
-                                              right, 0,
-                                              right_len);
-            assert(0 <= copied);
-#else
-            PyUnicode_CopyCharacters(left, left_len, right, 0, right_len);
-#endif
-            *p_left = left;
+            unicode_append_inplace(p_left, right);
             return;
         }
     }
