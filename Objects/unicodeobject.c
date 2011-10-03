@@ -1185,6 +1185,10 @@ static int
 unicode_resizable(PyObject *unicode)
 {
     Py_ssize_t len;
+#if SIZEOF_WCHAR_T == 2
+    /* FIXME: unicode_resize() is buggy on Windows */
+    return 0;
+#endif
     if (Py_REFCNT(unicode) != 1)
         return 0;
     if (PyUnicode_CHECK_INTERNED(unicode))
