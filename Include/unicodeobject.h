@@ -225,6 +225,7 @@ typedef struct {
          * compact = 1
          * ready = 1
          * ascii = 0
+         * utf8 != data
 
        - string created by the legacy API (not ready):
 
@@ -246,6 +247,7 @@ typedef struct {
          * compact = 0
          * ready = 1
          * data.any is not NULL
+         * utf8 = data if ascii is 1
 
        String created by the legacy API becomes ready when calling
        PyUnicode_READY().
