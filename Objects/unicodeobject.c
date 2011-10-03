@@ -89,25 +89,16 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 extern "C" {
 #endif
 
-/* Generic helper macro to convert characters of different types.
-   from_type and to_type have to be valid type names, begin and end
-   are pointers to the source characters which should be of type
-   "from_type *".  to is a pointer of type "to_type *" and points to the
-   buffer where the result characters are written to. */
-#define _PyUnicode_CONVERT_BYTES(from_type, to_type, begin, end, to) \
-    do { \
-        const from_type *iter_; to_type *to_; \
-        for (iter_ = (begin), to_ = (to_type *)(to); \
-             iter_ < (end); \
-             ++iter_, ++to_) { \
-            *to_ = (to_type)*iter_; \
-        } \
-    } while (0)
+#ifdef Py_DEBUG
+#  define _PyUnicode_CHECK(op) _PyUnicode_CheckConsistency(op)
+#else
+#  define _PyUnicode_CHECK(op) PyUnicode_Check(op)
+#endif
 
 #define _PyUnicode_UTF8(op)                             \
     (((PyCompactUnicodeObject*)(op))->utf8)
 #define PyUnicode_UTF8(op)                              \
-    (assert(PyUnicode_Check(op)),                       \
+    (assert(_PyUnicode_CHECK(op)),                      \
      assert(PyUnicode_IS_READY(op)),                    \
      PyUnicode_IS_COMPACT_ASCII(op) ?                   \
          ((char*)((PyASCIIObject*)(op) + 1)) :          \
@@ -115,7 +106,7 @@ extern "C" {
 #define _PyUnicode_UTF8_LENGTH(op)                      \
     (((PyCompactUnicodeObject*)(op))->utf8_length)
 #define PyUnicode_UTF8_LENGTH(op)                       \
-    (assert(PyUnicode_Check(op)),                       \
+    (assert(_PyUnicode_CHECK(op)),                      \
      assert(PyUnicode_IS_READY(op)),                    \
      PyUnicode_IS_COMPACT_ASCII(op) ?                   \
          ((PyASCIIObject*)(op))->length :               \
@@ -125,22 +116,42 @@ extern "C" {
 #define _PyUnicode_LENGTH(op) (((PyASCIIObject *)(op))->length)
 #define _PyUnicode_STATE(op) (((PyASCIIObject *)(op))->state)
 #define _PyUnicode_HASH(op) (((PyASCIIObject *)(op))->hash)
-#define _PyUnicode_KIND(op) \
-    (assert(PyUnicode_Check(op)), \
+#define _PyUnicode_KIND(op)                             \
+    (assert(_PyUnicode_CHECK(op)),                      \
      ((PyASCIIObject *)(op))->state.kind)
-#define _PyUnicode_GET_LENGTH(op)                \
-    (assert(PyUnicode_Check(op)),               \
+#define _PyUnicode_GET_LENGTH(op)                       \
+    (assert(_PyUnicode_CHECK(op)),                      \
      ((PyASCIIObject *)(op))->length)
 #define _PyUnicode_DATA_ANY(op) (((PyUnicodeObject*)(op))->data.any)
 
+#undef PyUnicode_READY
+#define PyUnicode_READY(op)                             \
+    (assert(_PyUnicode_CHECK(op)),                      \
+     (PyUnicode_IS_READY(op) ?                          \
+      0 : _PyUnicode_Ready((PyObject *)(op))))
+
 /* true if the Unicode object has an allocated UTF-8 memory block
    (not shared with other data) */
-#define _PyUnicode_HAS_UTF8_MEMORY(op) \
-    (assert(PyUnicode_Check(op)),                       \
-     (!PyUnicode_IS_COMPACT_ASCII(op) \
-      && _PyUnicode_UTF8(op) \
+#define _PyUnicode_HAS_UTF8_MEMORY(op)                  \
+    (assert(_PyUnicode_CHECK(op)),                      \
+     (!PyUnicode_IS_COMPACT_ASCII(op)                   \
+      && _PyUnicode_UTF8(op)                            \
       && _PyUnicode_UTF8(op) != PyUnicode_DATA(op)))
 
+/* Generic helper macro to convert characters of different types.
+   from_type and to_type have to be valid type names, begin and end
+   are pointers to the source characters which should be of type
+   "from_type *".  to is a pointer of type "to_type *" and points to the
+   buffer where the result characters are written to. */
+#define _PyUnicode_CONVERT_BYTES(from_type, to_type, begin, end, to) \
+    do {                                                \
+        const from_type *iter_; to_type *to_;           \
+        for (iter_ = (begin), to_ = (to_type *)(to);    \
+             iter_ < (end);                             \
+             ++iter_, ++to_) {                          \
+            *to_ = (to_type)*iter_;                     \
+        }                                               \
+    } while (0)
 
 /* The Unicode string has been modified: reset the hash */
 #define _PyUnicode_DIRTY(op) do { _PyUnicode_HASH(op) = -1; } while (0)
@@ -249,6 +260,57 @@ PyUnicode_GetMax(void)
     return 0xFFFF;
 #endif
 }
+
+#ifdef Py_DEBUG
+static int
+_PyUnicode_CheckConsistency(void *op)
+{
+    PyASCIIObject *ascii;
+    unsigned int kind;
+
+    assert(PyUnicode_Check(op));
+
+    ascii = (PyASCIIObject *)op;
+    kind = ascii->state.kind;
+
+    if (ascii->state.ascii == 1) {
+        assert(kind == PyUnicode_1BYTE_KIND);
+        assert(ascii->state.compact == 1);
+        assert(ascii->state.ready == 1);
+    }
+    else if (ascii->state.compact == 1) {
+        assert(kind == PyUnicode_1BYTE_KIND
+               || kind == PyUnicode_2BYTE_KIND
+               || kind == PyUnicode_4BYTE_KIND);
+        assert(ascii->state.compact == 1);
+        assert(ascii->state.ascii == 0);
+        assert(ascii->state.ready == 1);
+    } else {
+        PyCompactUnicodeObject *compact = (PyCompactUnicodeObject *)op;
+        PyUnicodeObject *unicode = (PyUnicodeObject *)op;
+
+        if (kind == PyUnicode_WCHAR_KIND) {
+            assert(!ascii->state.compact == 1);
+            assert(ascii->state.ascii == 0);
+            assert(!ascii->state.ready == 1);
+            assert(ascii->wstr != NULL);
+            assert(unicode->data.any == NULL);
+            assert(compact->utf8 == NULL);
+            assert(ascii->state.interned == SSTATE_NOT_INTERNED);
+        }
+        else {
+            assert(kind == PyUnicode_1BYTE_KIND
+                   || kind == PyUnicode_2BYTE_KIND
+                   || kind == PyUnicode_4BYTE_KIND);
+            assert(!ascii->state.compact == 1);
+            assert(ascii->state.ready == 1);
+            assert(unicode->data.any != NULL);
+            assert(ascii->state.ascii == 0);
+        }
+    }
+    return 1;
+}
+#endif
 
 /* --- Bloom Filters ----------------------------------------------------- */
 
@@ -542,7 +604,7 @@ _PyUnicode_New(Py_ssize_t length)
 static const char*
 unicode_kind_name(PyObject *unicode)
 {
-    assert(PyUnicode_Check(unicode));
+    assert(_PyUnicode_CHECK(unicode));
     if (!PyUnicode_IS_COMPACT(unicode))
     {
         if (!PyUnicode_IS_READY(unicode))
@@ -744,7 +806,8 @@ unicode_convert_wchar_to_ucs4(const wchar_t *begin, const wchar_t *end,
     const wchar_t *iter;
     Py_UCS4 *ucs4_out;
 
-    assert(unicode && PyUnicode_Check(unicode));
+    assert(unicode != NULL);
+    assert(_PyUnicode_CHECK(unicode));
     assert(_PyUnicode_KIND(unicode) == PyUnicode_4BYTE_KIND);
     ucs4_out = PyUnicode_4BYTE_DATA(unicode);
 
@@ -771,7 +834,7 @@ unicode_convert_wchar_to_ucs4(const wchar_t *begin, const wchar_t *end,
 static int
 _PyUnicode_Dirty(PyObject *unicode)
 {
-    assert(PyUnicode_Check(unicode));
+    assert(_PyUnicode_CHECK(unicode));
     if (Py_REFCNT(unicode) != 1) {
         PyErr_SetString(PyExc_ValueError,
                         "Cannot modify a string having more than 1 reference");
@@ -966,10 +1029,8 @@ _PyUnicode_Ready(PyObject *obj)
        strings were created using _PyObject_New() and where no canonical
        representation (the str field) has been set yet aka strings
        which are not yet ready. */
-    assert(PyUnicode_Check(obj));
-    assert(!PyUnicode_IS_READY(obj));
-    assert(!PyUnicode_IS_COMPACT(obj));
-    assert(_PyUnicode_KIND(obj) == PyUnicode_WCHAR_KIND);
+    assert(_PyUnicode_CHECK(unicode));
+    assert(_PyUnicode_KIND(unicode) == PyUnicode_WCHAR_KIND);
     assert(_PyUnicode_WSTR(unicode) != NULL);
     assert(_PyUnicode_DATA_ANY(unicode) == NULL);
     assert(_PyUnicode_UTF8(unicode) == NULL);
@@ -1154,7 +1215,7 @@ unicode_resize(PyObject **p_unicode, Py_ssize_t length)
     assert(PyUnicode_Check(unicode));
     assert(0 <= length);
 
-    if (!PyUnicode_IS_COMPACT(unicode) && !PyUnicode_IS_READY(unicode))
+    if (_PyUnicode_KIND(unicode) == PyUnicode_WCHAR_KIND)
         old_length = PyUnicode_WSTR_LENGTH(unicode);
     else
         old_length = PyUnicode_GET_LENGTH(unicode);
@@ -1907,7 +1968,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
             case 'U':
             {
                 PyObject *obj = va_arg(count, PyObject *);
-                assert(obj && PyUnicode_Check(obj));
+                assert(obj && _PyUnicode_CHECK(obj));
                 if (PyUnicode_READY(obj) == -1)
                     goto fail;
                 argmaxchar = PyUnicode_MAX_CHAR_VALUE(obj);
@@ -1921,7 +1982,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                 const char *str = va_arg(count, const char *);
                 PyObject *str_obj;
                 assert(obj || str);
-                assert(!obj || PyUnicode_Check(obj));
+                assert(!obj || _PyUnicode_CHECK(obj));
                 if (obj) {
                     if (PyUnicode_READY(obj) == -1)
                         goto fail;
@@ -9570,7 +9631,7 @@ PyUnicode_CompareWithASCIIString(PyObject* uni, const char* str)
     void *data;
     Py_UCS4 chr;
 
-    assert(PyUnicode_Check(uni));
+    assert(_PyUnicode_CHECK(uni));
     if (PyUnicode_READY(uni) == -1)
         return -1;
     kind = PyUnicode_KIND(uni);
@@ -12698,7 +12759,7 @@ unicode_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     unicode = (PyUnicodeObject *)unicode_new(&PyUnicode_Type, args, kwds);
     if (unicode == NULL)
         return NULL;
-    assert(PyUnicode_Check(unicode));
+    assert(_PyUnicode_CHECK(unicode));
     if (PyUnicode_READY(unicode))
         return NULL;
 
@@ -13054,7 +13115,7 @@ unicodeiter_next(unicodeiterobject *it)
     seq = it->it_seq;
     if (seq == NULL)
         return NULL;
-    assert(PyUnicode_Check(seq));
+    assert(_PyUnicode_CHECK(seq));
 
     if (it->it_index < PyUnicode_GET_LENGTH(seq)) {
         int kind = PyUnicode_KIND(seq);
