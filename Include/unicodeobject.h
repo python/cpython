@@ -206,6 +206,52 @@ extern "C" {
    immediately follow the structure. utf8_length and wstr_length can be found
    in the length field; the utf8 pointer is equal to the data pointer. */
 typedef struct {
+    /* Unicode strings can be in 4 states:
+
+       - compact ascii:
+
+         * structure = PyASCIIObject
+         * kind = PyUnicode_1BYTE_KIND
+         * compact = 1
+         * ascii = 1
+         * ready = 1
+         * utf8 = data
+
+       - compact:
+
+         * structure = PyCompactUnicodeObject
+         * kind = PyUnicode_1BYTE_KIND, PyUnicode_2BYTE_KIND or
+           PyUnicode_4BYTE_KIND
+         * compact = 1
+         * ready = 1
+         * (ascii = 0)
+
+       - string created by the legacy API (not ready):
+
+         * structure = PyUnicodeObject
+         * kind = PyUnicode_WCHAR_KIND
+         * compact = 0
+         * ready = 0
+         * wstr is not NULL
+         * data.any is NULL
+         * utf8 is NULL
+         * interned = SSTATE_NOT_INTERNED
+         * (ascii = 0)
+
+       - string created by the legacy API, ready:
+
+         * structure = PyUnicodeObject structure
+         * kind = PyUnicode_1BYTE_KIND, PyUnicode_2BYTE_KIND or
+           PyUnicode_4BYTE_KIND
+         * compact = 0
+         * ready = 1
+         * data.any is not NULL
+         * (ascii = 0)
+
+       String created by the legacy API becomes ready when calling
+       PyUnicode_READY().
+
+       See also _PyUnicode_CheckConsistency(). */
     PyObject_HEAD
     Py_ssize_t length;          /* Number of code points in the string */
     Py_hash_t hash;             /* Hash value; -1 if not set */
