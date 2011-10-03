@@ -515,6 +515,29 @@ void *_PyUnicode_data(void *unicode){
     printf("compact data %p\n", _PyUnicode_COMPACT_DATA(unicode));
     return PyUnicode_DATA(unicode);
 }
+
+void
+_PyUnicode_Dump(PyObject *op)
+{
+    PyASCIIObject *ascii = (PyASCIIObject *)op;
+    printf("%s: len=%zu, wstr=%p",
+           unicode_kind_name(op),
+           ascii->length,
+           ascii->wstr);
+    if (!ascii->state.ascii) {
+        PyCompactUnicodeObject *compact = (PyCompactUnicodeObject *)op;
+        printf(" (%zu), utf8=%p (%zu)",
+               compact->wstr_length,
+               compact->utf8,
+               compact->utf8_length);
+    }
+    if (!ascii->state.compact) {
+        PyUnicodeObject *unicode = (PyUnicodeObject *)op;
+        printf(", data=%p",
+               unicode->data.any);
+    }
+    printf("\n");
+}
 #endif
 
 PyObject *
