@@ -1212,9 +1212,6 @@ unicode_resizable(PyObject *unicode)
         if (ch < 256 && unicode_latin1[ch] == unicode)
             return 0;
     }
-    /* FIXME: reenable resize_inplace */
-    if (!PyUnicode_IS_COMPACT(unicode))
-        return 0;
     return 1;
 }
 
