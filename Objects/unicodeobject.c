@@ -509,9 +509,10 @@ resize_copy(PyObject *unicode, Py_ssize_t length)
         }
         return copy;
     } else {
+        PyUnicodeObject *w;
         assert(_PyUnicode_WSTR(unicode) != NULL);
         assert(_PyUnicode_DATA_ANY(unicode) == NULL);
-        PyUnicodeObject *w = _PyUnicode_New(length);
+        w = _PyUnicode_New(length);
         if (w == NULL)
             return NULL;
         copy_length = _PyUnicode_WSTR_LENGTH(unicode);
@@ -6521,7 +6522,7 @@ decode_mbcs(PyUnicodeObject **v,
     else {
         /* Extend unicode object */
         n = PyUnicode_GET_SIZE(*v);
-        if (PyUnicode_Resize(v, n + usize) < 0)
+        if (PyUnicode_Resize((PyObject**)v, n + usize) < 0)
             return -1;
     }
 
