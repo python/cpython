@@ -755,7 +755,7 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
     PyCompactUnicodeObject *unicode;
     void *data;
     int kind_state;
-    int is_sharing = 0, is_ascii = 0;
+    int is_sharing, is_ascii;
     Py_ssize_t char_size;
     Py_ssize_t struct_size;
 
@@ -769,6 +769,8 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
     ++unicode_new_new_calls;
 #endif
 
+    is_ascii = 0;
+    is_sharing = 0;
     struct_size = sizeof(PyCompactUnicodeObject);
     if (maxchar < 128) {
         kind_state = PyUnicode_1BYTE_KIND;
@@ -833,11 +835,12 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
         ((char*)data)[size] = 0;
         _PyUnicode_WSTR(unicode) = NULL;
         _PyUnicode_WSTR_LENGTH(unicode) = 0;
-        unicode->utf8_length = 0;
         unicode->utf8 = NULL;
+        unicode->utf8_length = 0;
         }
     else {
         unicode->utf8 = NULL;
+        unicode->utf8_length = 0;
         if (kind_state == PyUnicode_2BYTE_KIND)
             ((Py_UCS2*)data)[size] = 0;
         else /* kind_state == PyUnicode_4BYTE_KIND */
