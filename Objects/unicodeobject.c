@@ -151,6 +151,14 @@ extern "C" {
       && _PyUnicode_UTF8(op)                            \
       && _PyUnicode_UTF8(op) != PyUnicode_DATA(op)))
 
+/* true if the Unicode object has an allocated wstr memory block
+   (not shared with other data) */
+#define _PyUnicode_HAS_WSTR_MEMORY(op)                  \
+    (assert(_PyUnicode_CHECK(op)),                      \
+     (_PyUnicode_WSTR(op) &&                            \
+      (!PyUnicode_IS_READY(op) ||                       \
+       _PyUnicode_WSTR(op) != PyUnicode_DATA(op))))
+
 /* Generic helper macro to convert characters of different types.
    from_type and to_type have to be valid type names, begin and end
    are pointers to the source characters which should be of type
@@ -1238,9 +1246,7 @@ unicode_dealloc(register PyUnicodeObject *unicode)
         Py_FatalError("Inconsistent interned string state.");
     }
 
-    if (_PyUnicode_WSTR(unicode) &&
-        (!PyUnicode_IS_READY(unicode) ||
-         _PyUnicode_WSTR(unicode) != PyUnicode_DATA(unicode)))
+    if (_PyUnicode_HAS_WSTR_MEMORY(unicode))
         PyObject_DEL(_PyUnicode_WSTR(unicode));
     if (_PyUnicode_HAS_UTF8_MEMORY(unicode))
         PyObject_DEL(_PyUnicode_UTF8(unicode));
@@ -12061,8 +12067,7 @@ unicode__sizeof__(PyUnicodeObject *v)
     }
     /* If the wstr pointer is present, account for it unless it is shared
        with the data pointer. Check if the data is not shared. */
-    if (_PyUnicode_WSTR(v) &&
-        (PyUnicode_DATA(v) != _PyUnicode_WSTR(v)))
+    if (_PyUnicode_HAS_WSTR_MEMORY(v))
         size += (PyUnicode_WSTR_LENGTH(v) + 1) * sizeof(wchar_t);
     if (_PyUnicode_HAS_UTF8_MEMORY(v))
         size += PyUnicode_UTF8_LENGTH(v) + 1;
