@@ -215,7 +215,9 @@ typedef struct {
          * compact = 1
          * ascii = 1
          * ready = 1
-         * utf8 = data
+         * (length is the length of the utf8 and wstr strings)
+         * (data starts just after the structure)
+         * (since ASCII is decoded from UTF-8, the utf8 string are the data)
 
        - compact:
 
@@ -225,25 +227,26 @@ typedef struct {
          * compact = 1
          * ready = 1
          * ascii = 0
-         * utf8 != data
+         * utf8 is not shared with data
          * utf8_length = 0 if utf8 is NULL
          * wstr is shared with data and wstr_length=length
            if kind=PyUnicode_2BYTE_KIND and sizeof(wchar_t)=2
            or if kind=PyUnicode_4BYTE_KIND and sizeof(wchar_4)=4
          * wstr_length = 0 if wstr is NULL
+         * (data starts just after the structure)
 
        - legacy string, not ready:
 
          * structure = PyUnicodeObject
          * kind = PyUnicode_WCHAR_KIND
          * compact = 0
+         * ascii = 0
          * ready = 0
          * wstr is not NULL
          * data.any is NULL
          * utf8 is NULL
          * utf8_length = 0
          * interned = SSTATE_NOT_INTERNED
-         * ascii = 0
 
        - legacy string, ready:
 
