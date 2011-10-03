@@ -130,6 +130,14 @@ extern "C" {
      (PyUnicode_IS_READY(op) ?                          \
       0 : _PyUnicode_Ready((PyObject *)(op))))
 
+#define _PyUnicode_SHARE_UTF8(op)                       \
+    (assert(_PyUnicode_CHECK(op)),                      \
+     assert(!PyUnicode_IS_COMPACT_ASCII(op)),           \
+     (_PyUnicode_UTF8(op) == PyUnicode_DATA(op)))
+#define _PyUnicode_SHARE_WSTR(op)                       \
+    (assert(_PyUnicode_CHECK(op)),                      \
+     (_PyUnicode_WSTR(unicode) == PyUnicode_DATA(op)))
+
 /* true if the Unicode object has an allocated UTF-8 memory block
    (not shared with other data) */
 #define _PyUnicode_HAS_UTF8_MEMORY(op)                  \
@@ -398,7 +406,7 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
         struct_size = sizeof(PyASCIIObject);
     else
         struct_size = sizeof(PyCompactUnicodeObject);
-    share_wstr = (_PyUnicode_WSTR(unicode) == PyUnicode_DATA(unicode));
+    share_wstr = _PyUnicode_SHARE_WSTR(unicode);
 
     _Py_DEC_REFTOTAL;
     _Py_ForgetReference(unicode);
@@ -417,8 +425,11 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
     }
     _Py_NewReference(unicode);
     _PyUnicode_LENGTH(unicode) = length;
-    if (share_wstr)
+    if (share_wstr) {
         _PyUnicode_WSTR(unicode) = PyUnicode_DATA(unicode);
+        if (!PyUnicode_IS_COMPACT_ASCII(unicode))
+            _PyUnicode_WSTR_LENGTH(unicode) = length;
+    }
     PyUnicode_WRITE(PyUnicode_KIND(unicode), PyUnicode_DATA(unicode),
                     length, 0);
     return unicode;
@@ -449,8 +460,8 @@ resize_inplace(register PyUnicodeObject *unicode, Py_ssize_t length)
         data = _PyUnicode_DATA_ANY(unicode);
         assert(data != NULL);
         char_size = PyUnicode_CHARACTER_SIZE(unicode);
-        share_wstr = (_PyUnicode_WSTR(unicode) == data);
-        share_utf8 = (_PyUnicode_UTF8(unicode) == data);
+        share_wstr = _PyUnicode_SHARE_WSTR(unicode);
+        share_utf8 = _PyUnicode_SHARE_UTF8(unicode);
 
         if (length > (PY_SSIZE_T_MAX / char_size - 1)) {
             PyErr_NoMemory();
@@ -464,10 +475,14 @@ resize_inplace(register PyUnicodeObject *unicode, Py_ssize_t length)
             return -1;
         }
         _PyUnicode_DATA_ANY(unicode) = data;
-        if (share_wstr)
+        if (share_wstr) {
             _PyUnicode_WSTR(unicode) = data;
-        if (share_utf8)
+            _PyUnicode_WSTR_LENGTH(unicode) = length;
+        }
+        if (share_utf8) {
             _PyUnicode_UTF8(unicode) = data;
+            _PyUnicode_UTF8_LENGTH(unicode) = length;
+        }
         _PyUnicode_LENGTH(unicode) = length;
         PyUnicode_WRITE(PyUnicode_KIND(unicode), data, length, 0);
         if (share_wstr)
@@ -1189,10 +1204,6 @@ static int
 unicode_resizable(PyObject *unicode)
 {
     Py_ssize_t len;
-#if SIZEOF_WCHAR_T == 2
-    /* FIXME: unicode_resize() is buggy on Windows */
-    return 0;
-#endif
     if (Py_REFCNT(unicode) != 1)
         return 0;
     if (PyUnicode_CHECK_INTERNED(unicode))
