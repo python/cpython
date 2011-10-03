@@ -8890,20 +8890,32 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
 
     /* Catenate everything. */
     for (i = 0, res_offset = 0; i < seqlen; ++i) {
-        Py_ssize_t itemlen;
+        Py_ssize_t itemlen, copied;
         item = items[i];
-        itemlen = PyUnicode_GET_LENGTH(item);
         /* Copy item, and maybe the separator. */
-        if (i) {
-            if (PyUnicode_CopyCharacters(res, res_offset,
-                                         sep, 0, seplen) < 0)
+        if (i && seplen != 0) {
+            copied = PyUnicode_CopyCharacters(res, res_offset,
+                                              sep, 0, seplen);
+            if (copied < 0)
                 goto onError;
+#ifdef Py_DEBUG
+            res_offset += copied;
+#else
             res_offset += seplen;
+#endif
         }
-        if (PyUnicode_CopyCharacters(res, res_offset,
-                                     item, 0, itemlen) < 0)
-            goto onError;
-        res_offset += itemlen;
+        itemlen = PyUnicode_GET_LENGTH(item);
+        if (itemlen != 0) {
+            copied = PyUnicode_CopyCharacters(res, res_offset,
+                                              item, 0, itemlen);
+            if (copied < 0)
+                goto onError;
+#ifdef Py_DEBUG
+            res_offset += copied;
+#else
+            res_offset += itemlen;
+#endif
+        }
     }
     assert(res_offset == PyUnicode_GET_LENGTH(res));
 
