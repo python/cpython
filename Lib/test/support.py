@@ -44,8 +44,8 @@ __all__ = [
     "Error", "TestFailed", "ResourceDenied", "import_module",
     "verbose", "use_resources", "max_memuse", "record_original_stdout",
     "get_original_stdout", "unload", "unlink", "rmtree", "forget",
-    "is_resource_enabled", "requires", "requires_linux_version",
-    "requires_mac_ver", "find_unused_port", "bind_port",
+    "is_resource_enabled", "requires", "requires_freebsd_version",
+    "requires_linux_version", "requires_mac_ver", "find_unused_port", "bind_port",
     "IPV6_ENABLED", "is_jython", "TESTFN", "HOST", "SAVEDCWD", "temp_cwd",
     "findfile", "create_empty_file", "sortdict", "check_syntax_error", "open_urlresource",
     "check_warnings", "CleanImport", "EnvironmentVarGuard", "TransientResource",
@@ -312,17 +312,17 @@ def requires(resource, msg=None):
             msg = "Use of the %r resource not enabled" % resource
         raise ResourceDenied(msg)
 
-def requires_linux_version(*min_version):
-    """Decorator raising SkipTest if the OS is Linux and the kernel version is
-    less than min_version.
+def _requires_unix_version(sysname, min_version):
+    """Decorator raising SkipTest if the OS is `sysname` and the version is less
+    than `min_version`.
 
-    For example, @requires_linux_version(2, 6, 35) raises SkipTest if the Linux
-    kernel version is less than 2.6.35.
+    For example, @_requires_unix_version('FreeBSD', (7, 2)) raises SkipTest if
+    the FreeBSD version is less than 7.2.
     """
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kw):
-            if sys.platform == 'linux':
+            if platform.system() == sysname:
                 version_txt = platform.release().split('-', 1)[0]
                 try:
                     version = tuple(map(int, version_txt.split('.')))
@@ -332,12 +332,28 @@ def requires_linux_version(*min_version):
                     if version < min_version:
                         min_version_txt = '.'.join(map(str, min_version))
                         raise unittest.SkipTest(
-                            "Linux kernel %s or higher required, not %s"
-                            % (min_version_txt, version_txt))
-            return func(*args, **kw)
-        wrapper.min_version = min_version
+                            "%s version %s or higher required, not %s"
+                            % (sysname, min_version_txt, version_txt))
         return wrapper
     return decorator
+
+def requires_freebsd_version(*min_version):
+    """Decorator raising SkipTest if the OS is FreeBSD and the FreeBSD version is
+    less than `min_version`.
+
+    For example, @requires_freebsd_version(7, 2) raises SkipTest if the FreeBSD
+    version is less than 7.2.
+    """
+    return _requires_unix_version('FreeBSD', min_version)
+
+def requires_linux_version(*min_version):
+    """Decorator raising SkipTest if the OS is Linux and the Linux version is
+    less than `min_version`.
+
+    For example, @requires_linux_version(2, 6, 32) raises SkipTest if the Linux
+    version is less than 2.6.32.
+    """
+    return _requires_unix_version('Linux', min_version)
 
 def requires_mac_ver(*min_version):
     """Decorator raising SkipTest if the OS is Mac OS X and the OS X
