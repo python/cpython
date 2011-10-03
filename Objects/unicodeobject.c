@@ -1314,7 +1314,7 @@ unicode_resizable(PyObject *unicode)
         return 0;
     if (PyUnicode_CHECK_INTERNED(unicode))
         return 0;
-    assert (unicode != unicode_empty);
+    assert(unicode != unicode_empty);
 #ifdef Py_DEBUG
     if (_PyUnicode_KIND(unicode) != PyUnicode_WCHAR_KIND
         && PyUnicode_GET_LENGTH(unicode) == 1)
