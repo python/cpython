@@ -206,7 +206,7 @@ extern "C" {
    immediately follow the structure. utf8_length and wstr_length can be found
    in the length field; the utf8 pointer is equal to the data pointer. */
 typedef struct {
-    /* Unicode strings can be in 4 states:
+    /* There a 4 forms of Unicode strings:
 
        - compact ascii:
 
@@ -227,7 +227,7 @@ typedef struct {
          * ascii = 0
          * utf8 != data
 
-       - string created by the legacy API (not ready):
+       - legacy string, not ready:
 
          * structure = PyUnicodeObject
          * kind = PyUnicode_WCHAR_KIND
@@ -239,7 +239,7 @@ typedef struct {
          * interned = SSTATE_NOT_INTERNED
          * ascii = 0
 
-       - string created by the legacy API, ready:
+       - legacy string, ready:
 
          * structure = PyUnicodeObject structure
          * kind = PyUnicode_1BYTE_KIND, PyUnicode_2BYTE_KIND or
@@ -249,10 +249,16 @@ typedef struct {
          * data.any is not NULL
          * utf8 = data if ascii is 1
 
-       String created by the legacy API becomes ready when calling
-       PyUnicode_READY().
+       Compact strings use only one memory block (structure + characters),
+       whereas legacy strings use one block for the structure and one block
+       for characters.
 
-       See also _PyUnicode_CheckConsistency(). */
+       Legacy strings are created by PyUnicode_FromUnicode() and
+       PyUnicode_FromStringAndSize(NULL, size) functions. They become ready
+       when PyUnicode_READY() is called.
+
+       See also _PyUnicode_CheckConsistency().
+    */
     PyObject_HEAD
     Py_ssize_t length;          /* Number of code points in the string */
     Py_hash_t hash;             /* Hash value; -1 if not set */
@@ -721,19 +727,22 @@ PyAPI_FUNC(int) PyUnicode_WriteChar(
 PyAPI_FUNC(Py_UNICODE) PyUnicode_GetMax(void);
 #endif
 
-/* Resize an already allocated Unicode object to the new size length.
+/* Resize an Unicode object allocated by the legacy API (e.g.
+   PyUnicode_FromUnicode). Unicode objects allocated by the new API (e.g.
+   PyUnicode_New) cannot be resized by this function.
+
+   The length is a number of Py_UNICODE characters (and not the number of code
+   points).
 
    *unicode is modified to point to the new (resized) object and 0
    returned on success.
 
-   This API may only be called by the function which also called the
-   Unicode constructor. The refcount on the object must be 1. Otherwise,
-   an error is returned.
+   If the refcount on the object is 1, the function resizes the string in
+   place, which is usually faster than allocating a new string (and copy
+   characters).
 
    Error handling is implemented as follows: an exception is set, -1
-   is returned and *unicode left untouched.
-
-*/
+   is returned and *unicode left untouched. */
 
 PyAPI_FUNC(int) PyUnicode_Resize(
     PyObject **unicode,         /* Pointer to the Unicode object */

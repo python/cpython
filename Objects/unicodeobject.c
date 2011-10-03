@@ -536,7 +536,8 @@ resize_copy(PyObject *unicode, Py_ssize_t length)
             return NULL;
         }
         return copy;
-    } else {
+    }
+    else {
         PyUnicodeObject *w;
         assert(_PyUnicode_WSTR(unicode) != NULL);
         assert(_PyUnicode_DATA_ANY(unicode) == NULL);
@@ -1294,7 +1295,6 @@ unicode_resize(PyObject **p_unicode, Py_ssize_t length)
     if (old_length == length)
         return 0;
 
-    /* FIXME: really create a new object? */
     if (!unicode_resizable(unicode)) {
         PyObject *copy = resize_copy(unicode, length);
         if (copy == NULL)
