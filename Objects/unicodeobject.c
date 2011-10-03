@@ -476,20 +476,13 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
 }
 
 static int
-resize_inplace(register PyUnicodeObject *unicode, Py_ssize_t length)
+resize_inplace(PyUnicodeObject *unicode, Py_ssize_t length)
 {
-    void *oldstr;
-
+    wchar_t *wstr;
     assert(!PyUnicode_IS_COMPACT(unicode));
-
     assert(Py_REFCNT(unicode) == 1);
-    _PyUnicode_DIRTY(unicode);
 
-    if (_PyUnicode_HAS_UTF8_MEMORY(unicode))
-    {
-        PyObject_DEL(_PyUnicode_UTF8(unicode));
-        _PyUnicode_UTF8(unicode) = NULL;
-    }
+    _PyUnicode_DIRTY(unicode);
 
     if (PyUnicode_IS_READY(unicode)) {
         Py_ssize_t char_size;
@@ -502,6 +495,12 @@ resize_inplace(register PyUnicodeObject *unicode, Py_ssize_t length)
         char_size = PyUnicode_CHARACTER_SIZE(unicode);
         share_wstr = _PyUnicode_SHARE_WSTR(unicode);
         share_utf8 = _PyUnicode_SHARE_UTF8(unicode);
+        if (!share_utf8 && _PyUnicode_HAS_UTF8_MEMORY(unicode))
+        {
+            PyObject_DEL(_PyUnicode_UTF8(unicode));
+            _PyUnicode_UTF8(unicode) = NULL;
+            _PyUnicode_UTF8_LENGTH(unicode) = 0;
+        }
 
         if (length > (PY_SSIZE_T_MAX / char_size - 1)) {
             PyErr_NoMemory();
@@ -525,23 +524,28 @@ resize_inplace(register PyUnicodeObject *unicode, Py_ssize_t length)
         }
         _PyUnicode_LENGTH(unicode) = length;
         PyUnicode_WRITE(PyUnicode_KIND(unicode), data, length, 0);
-        if (share_wstr)
+        if (share_wstr || _PyUnicode_WSTR(unicode) == NULL) {
+            _PyUnicode_CHECK(unicode);
             return 0;
-    }
-    if (_PyUnicode_WSTR(unicode) != NULL) {
-        assert(_PyUnicode_WSTR(unicode) != NULL);
-
-        oldstr = _PyUnicode_WSTR(unicode);
-        _PyUnicode_WSTR(unicode) = PyObject_REALLOC(_PyUnicode_WSTR(unicode),
-                                         sizeof(Py_UNICODE) * (length + 1));
-        if (!_PyUnicode_WSTR(unicode)) {
-            _PyUnicode_WSTR(unicode) = (Py_UNICODE *)oldstr;
-            PyErr_NoMemory();
-            return -1;
         }
-        _PyUnicode_WSTR(unicode)[length] = 0;
-        _PyUnicode_WSTR_LENGTH(unicode) = length;
     }
+    assert(_PyUnicode_WSTR(unicode) != NULL);
+
+    /* check for integer overflow */
+    if (length > PY_SSIZE_T_MAX / sizeof(wchar_t) - 1) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    wstr =  _PyUnicode_WSTR(unicode);
+    wstr = PyObject_REALLOC(wstr, sizeof(wchar_t) * (length + 1));
+    if (!wstr) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    _PyUnicode_WSTR(unicode) = wstr;
+    _PyUnicode_WSTR(unicode)[length] = 0;
+    _PyUnicode_WSTR_LENGTH(unicode) = length;
+    _PyUnicode_CHECK(unicode);
     return 0;
 }
 
@@ -1339,6 +1343,7 @@ unicode_resize(PyObject **p_unicode, Py_ssize_t length)
         *p_unicode = resize_compact(unicode, length);
         if (*p_unicode == NULL)
             return -1;
+        _PyUnicode_CHECK(*p_unicode);
         return 0;
     } else
         return resize_inplace((PyUnicodeObject*)unicode, length);
