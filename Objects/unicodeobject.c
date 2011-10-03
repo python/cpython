@@ -1257,26 +1257,20 @@ unicode_dealloc(register PyUnicodeObject *unicode)
 static int
 unicode_resizable(PyObject *unicode)
 {
-    Py_ssize_t len;
     if (Py_REFCNT(unicode) != 1)
         return 0;
     if (PyUnicode_CHECK_INTERNED(unicode))
         return 0;
-    if (unicode == unicode_empty)
-        return 0;
-    if (_PyUnicode_KIND(unicode) == PyUnicode_WCHAR_KIND)
-        len = PyUnicode_WSTR_LENGTH(unicode);
-    else
-        len = PyUnicode_GET_LENGTH(unicode);
-    if (len == 1) {
-        Py_UCS4 ch;
-        if (_PyUnicode_KIND(unicode) == PyUnicode_WCHAR_KIND)
-            ch = _PyUnicode_WSTR(unicode)[0];
-        else
-            ch = PyUnicode_READ_CHAR(unicode, 0);
+    assert (unicode != unicode_empty);
+#ifdef Py_DEBUG
+    if (_PyUnicode_KIND(unicode) != PyUnicode_WCHAR_KIND
+        && PyUnicode_GET_LENGTH(unicode) == 1)
+    {
+        Py_UCS4 ch = PyUnicode_READ_CHAR(unicode, 0);
         if (ch < 256 && unicode_latin1[ch] == unicode)
             return 0;
     }
+#endif
     return 1;
 }
 
