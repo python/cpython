@@ -1121,6 +1121,8 @@ _PyUnicode_Ready(PyObject *obj)
         _PyUnicode_STATE(unicode).kind = PyUnicode_4BYTE_KIND;
         _PyUnicode_UTF8(unicode) = NULL;
         _PyUnicode_UTF8_LENGTH(unicode) = 0;
+        /* unicode_convert_wchar_to_ucs4() requires a ready string */
+        _PyUnicode_STATE(unicode).ready = 1;
         unicode_convert_wchar_to_ucs4(_PyUnicode_WSTR(unicode), end, unicode);
         PyObject_FREE(_PyUnicode_WSTR(unicode));
         _PyUnicode_WSTR(unicode) = NULL;
