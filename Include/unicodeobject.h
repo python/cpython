@@ -224,7 +224,7 @@ typedef struct {
            PyUnicode_4BYTE_KIND
          * compact = 1
          * ready = 1
-         * (ascii = 0)
+         * ascii = 0
 
        - string created by the legacy API (not ready):
 
@@ -236,7 +236,7 @@ typedef struct {
          * data.any is NULL
          * utf8 is NULL
          * interned = SSTATE_NOT_INTERNED
-         * (ascii = 0)
+         * ascii = 0
 
        - string created by the legacy API, ready:
 
@@ -246,7 +246,6 @@ typedef struct {
          * compact = 0
          * ready = 1
          * data.any is not NULL
-         * (ascii = 0)
 
        String created by the legacy API becomes ready when calling
        PyUnicode_READY().
@@ -278,8 +277,9 @@ typedef struct {
            one block for the PyUnicodeObject struct and another for its data
            buffer. */
         unsigned int compact:1;
-        /* Compact objects which are ASCII-only also have the state.compact
-           flag set, and use the PyASCIIObject struct. */
+        /* kind is PyUnicode_1BYTE_KIND but data contains only ASCII
+           characters. If ascii is 1 and compact is 1, use the PyASCIIObject
+           structure. */
         unsigned int ascii:1;
         /* The ready flag indicates whether the object layout is initialized
            completely. This means that this is either a compact object, or
@@ -304,7 +304,7 @@ typedef struct {
 
 /* Strings allocated through PyUnicode_FromUnicode(NULL, len) use the
    PyUnicodeObject structure. The actual string data is initially in the wstr
-   block, and copied into the data block using PyUnicode_Ready. */
+   block, and copied into the data block using _PyUnicode_Ready. */
 typedef struct {
     PyCompactUnicodeObject _base;
     union {
@@ -327,7 +327,7 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 #ifndef Py_LIMITED_API
 
 #define PyUnicode_WSTR_LENGTH(op) \
-    (((PyASCIIObject*)op)->state.ascii ?    \
+    (PyUnicode_IS_COMPACT_ASCII(op) ?                  \
      ((PyASCIIObject*)op)->length :                    \
      ((PyCompactUnicodeObject*)op)->wstr_length)
 
@@ -369,10 +369,24 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 #define SSTATE_INTERNED_MORTAL 1
 #define SSTATE_INTERNED_IMMORTAL 2
 
-#define PyUnicode_IS_COMPACT_ASCII(op) (((PyASCIIObject*)op)->state.ascii)
+/* Return true if the string contains only ASCII characters, or 0 if not. The
+   string may be compact (PyUnicode_IS_COMPACT_ASCII) or not. No type checks
+   or Ready calls are performed. */
+#define PyUnicode_IS_ASCII(op)                 \
+    (((PyASCIIObject*)op)->state.ascii)
+
+/* Return true if the string is compact or 0 if not.
+   No type checks or Ready calls are performed. */
+#define PyUnicode_IS_COMPACT(op) \
+    (((PyASCIIObject*)(op))->state.compact)
+
+/* Return true if the string is a compact ASCII string (use PyASCIIObject
+   structure), or 0 if not.  No type checks or Ready calls are performed. */
+#define PyUnicode_IS_COMPACT_ASCII(op)                 \
+    (PyUnicode_IS_ASCII(op) && PyUnicode_IS_COMPACT(op))
 
 /* String contains only wstr byte characters.  This is only possible
-   when the string was created with a legacy API and PyUnicode_Ready()
+   when the string was created with a legacy API and _PyUnicode_Ready()
    has not been called yet.  */
 #define PyUnicode_WCHAR_KIND 0
 
@@ -398,11 +412,6 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 #define PyUnicode_1BYTE_DATA(op) ((Py_UCS1*)PyUnicode_DATA(op))
 #define PyUnicode_2BYTE_DATA(op) ((Py_UCS2*)PyUnicode_DATA(op))
 #define PyUnicode_4BYTE_DATA(op) ((Py_UCS4*)PyUnicode_DATA(op))
-
-/* Return true if the string is compact or 0 if not.
-   No type checks or Ready calls are performed. */
-#define PyUnicode_IS_COMPACT(op) \
-    (((PyASCIIObject*)(op))->state.compact)
 
 /* Return one of the PyUnicode_*_KIND values defined above. */
 #define PyUnicode_KIND(op) \
@@ -500,9 +509,9 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 
 #define PyUnicode_IS_READY(op) (((PyASCIIObject*)op)->state.ready)
 
-/* PyUnicode_READY() does less work than PyUnicode_Ready() in the best
+/* PyUnicode_READY() does less work than _PyUnicode_Ready() in the best
    case.  If the canonical representation is not yet set, it will still call
-   PyUnicode_Ready().
+   _PyUnicode_Ready().
    Returns 0 on success and -1 on errors. */
 #define PyUnicode_READY(op)                        \
     (assert(PyUnicode_Check(op)),                       \
