@@ -293,11 +293,13 @@ _PyUnicode_CheckConsistency(void *op)
         assert(ascii->state.ready == 1);
     }
     else if (ascii->state.compact == 1) {
+        PyCompactUnicodeObject *compact = (PyCompactUnicodeObject *)op;
         assert(kind == PyUnicode_1BYTE_KIND
                || kind == PyUnicode_2BYTE_KIND
                || kind == PyUnicode_4BYTE_KIND);
         assert(ascii->state.ascii == 0);
         assert(ascii->state.ready == 1);
+        assert (compact->utf8 != (void*)(compact + 1));
     } else {
         PyCompactUnicodeObject *compact = (PyCompactUnicodeObject *)op;
         PyUnicodeObject *unicode = (PyUnicodeObject *)op;
@@ -318,6 +320,10 @@ _PyUnicode_CheckConsistency(void *op)
             assert(ascii->state.compact == 0);
             assert(ascii->state.ready == 1);
             assert(unicode->data.any != NULL);
+            if (ascii->state.ascii)
+                assert (compact->utf8 == unicode->data.any);
+            else
+                assert (compact->utf8 != unicode->data.any);
         }
     }
     return 1;
