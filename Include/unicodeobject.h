@@ -226,9 +226,11 @@ typedef struct {
          * ready = 1
          * ascii = 0
          * utf8 != data
-         * wstr is shared with data if kind=PyUnicode_2BYTE_KIND
-           and sizeof(wchar_t)=2 or if kind=PyUnicode_4BYTE_KIND and
-           sizeof(wchar_4)=4
+         * utf8_length = 0 if utf8 is NULL
+         * wstr is shared with data and wstr_length=length
+           if kind=PyUnicode_2BYTE_KIND and sizeof(wchar_t)=2
+           or if kind=PyUnicode_4BYTE_KIND and sizeof(wchar_4)=4
+         * wstr_length = 0 if wstr is NULL
 
        - legacy string, not ready:
 
@@ -239,6 +241,7 @@ typedef struct {
          * wstr is not NULL
          * data.any is NULL
          * utf8 is NULL
+         * utf8_length = 0
          * interned = SSTATE_NOT_INTERNED
          * ascii = 0
 
@@ -250,10 +253,12 @@ typedef struct {
          * compact = 0
          * ready = 1
          * data.any is not NULL
-         * utf8 is shared with data.any if ascii = 1
-         * wstr is shared with data.any if kind=PyUnicode_2BYTE_KIND
-           and sizeof(wchar_t)=2 or if kind=PyUnicode_4BYTE_KIND and
-           sizeof(wchar_4)=4
+         * utf8 is shared and utf8_length = length with data.any if ascii = 1
+         * utf8_length = 0 if utf8 is NULL
+         * wstr is shared and wstr_length = length with data.any
+           if kind=PyUnicode_2BYTE_KIND and sizeof(wchar_t)=2
+           or if kind=PyUnicode_4BYTE_KIND and sizeof(wchar_4)=4
+         * wstr_length = 0 if wstr is NULL
 
        Compact strings use only one memory block (structure + characters),
        whereas legacy strings use one block for the structure and one block
