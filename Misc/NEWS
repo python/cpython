@@ -36,6 +36,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #7689: Allow pickling of dynamically created classes when their
+  metaclass is registered with copyreg.  Patch by Nicolas M. Thiéry and Craig
+  Citro.
+
 - Issue #4147: minidom's toprettyxml no longer adds whitespace to text nodes.
 
 - Issue #13034: When decoding some SSL certificates, the subjectAltName
