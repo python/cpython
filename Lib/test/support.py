@@ -187,8 +187,7 @@ def get_attribute(obj, name):
     try:
         attribute = getattr(obj, name)
     except AttributeError:
-        raise unittest.SkipTest("module %s has no attribute %s" % (
-            repr(obj), name))
+        raise unittest.SkipTest("object %r has no attribute %r" % (obj, name))
     else:
         return attribute
 
