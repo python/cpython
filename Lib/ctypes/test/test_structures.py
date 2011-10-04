@@ -332,6 +332,18 @@ class StructureTestCase(unittest.TestCase):
         else:
             self.assertEqual(msg, "(Phone) exceptions.TypeError: too many initializers")
 
+    def test_huge_field_name(self):
+        # issue12881: segfault with large structure field names
+        def create_class(length):
+            class S(Structure):
+                _fields_ = [('x' * length, c_int)]
+
+        for length in [10 ** i for i in range(0, 8)]:
+            try:
+                create_class(length)
+            except MemoryError:
+                # MemoryErrors are OK, we just don't want to segfault
+                pass
 
     def get_except(self, func, *args):
         try:
