@@ -249,8 +249,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(chr(0xff), '\xff')
         self.assertRaises(ValueError, chr, 1<<24)
         self.assertEqual(chr(sys.maxunicode),
-                         str(('\\U%08x' % (sys.maxunicode)).encode("ascii"),
-                             'unicode-escape'))
+                         str('\\U0010ffff'.encode("ascii"), 'unicode-escape'))
         self.assertRaises(TypeError, chr)
         self.assertEqual(chr(0x0000FFFF), "\U0000FFFF")
         self.assertEqual(chr(0x00010000), "\U00010000")

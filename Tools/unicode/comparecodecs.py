@@ -14,7 +14,7 @@ def compare_codecs(encoding1, encoding2):
     print('Comparing encoding/decoding of   %r and   %r' % (encoding1, encoding2))
     mismatch = 0
     # Check encoding
-    for i in range(sys.maxunicode):
+    for i in range(sys.maxunicode+1):
         u = chr(i)
         try:
             c1 = u.encode(encoding1)
