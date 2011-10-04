@@ -154,6 +154,10 @@ class AbstractCompatTests(AbstractPickleTests):
     def test_unicode_high_plane(self):
         pass
 
+    # This tests a fix that's in 2.7 only
+    def test_dynamic_class(self):
+        pass
+
     if test_support.have_unicode:
         # This is a cut-down version of pickletester's test_unicode. Backwards
         # compatibility was explicitly broken in r67934 to fix a bug.
