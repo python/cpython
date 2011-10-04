@@ -12258,7 +12258,8 @@ unicode_subscript(PyUnicodeObject* self, PyObject* item)
         Py_ssize_t start, stop, step, slicelength, cur, i;
         PyObject *result;
         void *src_data, *dest_data;
-        int kind;
+        int src_kind, dest_kind;
+        Py_UCS4 ch, max_char;
 
         if (PySlice_GetIndicesEx(item, PyUnicode_GET_LENGTH(self),
                                  &start, &stop, &step, &slicelength) < 0) {
@@ -12276,17 +12277,24 @@ unicode_subscript(PyUnicodeObject* self, PyObject* item)
             return PyUnicode_Substring((PyObject*)self,
                                        start, start + slicelength);
         }
-        /* General (less optimized) case */
-        result = PyUnicode_New(slicelength, PyUnicode_MAX_CHAR_VALUE(self));
+        /* General case */
+        max_char = 127;
+        src_kind = PyUnicode_KIND(self);
+        src_data = PyUnicode_DATA(self);
+        for (cur = start, i = 0; i < slicelength; cur += step, i++) {
+            ch = PyUnicode_READ(src_kind, src_data, cur);
+            if (ch > max_char)
+                max_char = ch;
+        }
+        result = PyUnicode_New(slicelength, max_char);
         if (result == NULL)
             return NULL;
-        kind = PyUnicode_KIND(self);
-        src_data = PyUnicode_DATA(self);
+        dest_kind = PyUnicode_KIND(result);
         dest_data = PyUnicode_DATA(result);
 
         for (cur = start, i = 0; i < slicelength; cur += step, i++) {
-            Py_UCS4 ch = PyUnicode_READ(kind, src_data, cur);
-            PyUnicode_WRITE(kind, dest_data, i, ch);
+            Py_UCS4 ch = PyUnicode_READ(src_kind, src_data, cur);
+            PyUnicode_WRITE(dest_kind, dest_data, i, ch);
         }
         return result;
     } else {
