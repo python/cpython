@@ -13,6 +13,7 @@
 
 #ifdef WITH_THREAD
 #  define FAULTHANDLER_LATER
+#  define FAULTHANDLER_WATCHDOG
 #endif
 
 #ifndef MS_WINDOWS
@@ -63,6 +64,20 @@ static struct {
     /* released by child thread when joined */
     PyThread_type_lock running;
 } thread;
+#endif
+
+#ifdef FAULTHANDLER_WATCHDOG
+static struct {
+    int rfd;
+    int wfd;
+    PY_TIMEOUT_T period_us;   /* period in microseconds */
+    /* The main thread always holds this lock. It is only released when
+       faulthandler_watchdog() is interrupted before this thread exits, or at
+       Python exit. */
+    PyThread_type_lock cancel_event;
+    /* released by child thread when joined */
+    PyThread_type_lock running;
+} watchdog;
 #endif
 
 #ifdef FAULTHANDLER_USER
@@ -587,6 +602,138 @@ faulthandler_cancel_dump_tracebacks_later_py(PyObject *self)
 }
 #endif  /* FAULTHANDLER_LATER */
 
+#ifdef FAULTHANDLER_WATCHDOG
+
+static void
+file_watchdog(void *unused)
+{
+    PyLockStatus st;
+    PY_TIMEOUT_T timeout;
+
+    const int MAXDATA = 1024;
+    char buf1[MAXDATA], buf2[MAXDATA];
+    char *data = buf1, *old_data = buf2;
+    Py_ssize_t data_len, old_data_len = -1;
+
+#if defined(HAVE_PTHREAD_SIGMASK) && !defined(HAVE_BROKEN_PTHREAD_SIGMASK)
+    sigset_t set;
+
+    /* we don't want to receive any signal */
+    sigfillset(&set);
+    pthread_sigmask(SIG_SETMASK, &set, NULL);
+#endif
+
+    /* On first pass, feed file contents immediately */
+    timeout = 0;
+    do {
+        st = PyThread_acquire_lock_timed(watchdog.cancel_event,
+                                         timeout, 0);
+        timeout = watchdog.period_us;
+        if (st == PY_LOCK_ACQUIRED) {
+            PyThread_release_lock(watchdog.cancel_event);
+            break;
+        }
+        /* Timeout => read and write data */
+        assert(st == PY_LOCK_FAILURE);
+
+        if (lseek(watchdog.rfd, 0, SEEK_SET) < 0) {
+            break;
+        }
+        data_len = read(watchdog.rfd, data, MAXDATA);
+        if (data_len < 0) {
+            break;
+        }
+        if (data_len != old_data_len || memcmp(data, old_data, data_len)) {
+            char *tdata;
+            Py_ssize_t tlen;
+            /* Contents changed, feed them to wfd */
+            long x = (long) data_len;
+            /* We can't do anything if the consumer is too slow, just bail out */
+            if (write(watchdog.wfd, (void *) &x, sizeof(x)) < sizeof(x))
+                break;
+            if (write(watchdog.wfd, data, data_len) < data_len)
+                break;
+            tdata = data;
+            data = old_data;
+            old_data = tdata;
+            tlen = data_len;
+            data_len = old_data_len;
+            old_data_len = tlen;
+        }
+    } while (1);
+
+    close(watchdog.rfd);
+    close(watchdog.wfd);
+
+    /* The only way out */
+    PyThread_release_lock(watchdog.running);
+}
+
+static void
+cancel_file_watchdog(void)
+{
+    /* Notify cancellation */
+    PyThread_release_lock(watchdog.cancel_event);
+
+    /* Wait for thread to join */
+    PyThread_acquire_lock(watchdog.running, 1);
+    PyThread_release_lock(watchdog.running);
+
+    /* The main thread should always hold the cancel_event lock */
+    PyThread_acquire_lock(watchdog.cancel_event, 1);
+}
+
+static PyObject*
+faulthandler_file_watchdog(PyObject *self,
+                           PyObject *args, PyObject *kwargs)
+{
+    static char *kwlist[] = {"rfd", "wfd", "period", NULL};
+    double period;
+    PY_TIMEOUT_T period_us;
+    int rfd, wfd;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+        "iid:_file_watchdog", kwlist,
+        &rfd, &wfd, &period))
+        return NULL;
+    if ((period * 1e6) >= (double) PY_TIMEOUT_MAX) {
+        PyErr_SetString(PyExc_OverflowError,  "period value is too large");
+        return NULL;
+    }
+    period_us = (PY_TIMEOUT_T)(period * 1e6);
+    if (period_us <= 0) {
+        PyErr_SetString(PyExc_ValueError, "period must be greater than 0");
+        return NULL;
+    }
+
+    /* Cancel previous thread, if running */
+    cancel_file_watchdog();
+
+    watchdog.rfd = rfd;
+    watchdog.wfd = wfd;
+    watchdog.period_us = period_us;
+
+    /* Arm these locks to serve as events when released */
+    PyThread_acquire_lock(watchdog.running, 1);
+
+    if (PyThread_start_new_thread(file_watchdog, NULL) == -1) {
+        PyThread_release_lock(watchdog.running);
+        PyErr_SetString(PyExc_RuntimeError,
+                        "unable to start file watchdog thread");
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+static PyObject*
+faulthandler_cancel_file_watchdog(PyObject *self)
+{
+    cancel_file_watchdog();
+    Py_RETURN_NONE;
+}
+#endif  /* FAULTHANDLER_WATCHDOG */
+
 #ifdef FAULTHANDLER_USER
 static int
 faulthandler_register(int signum, int chain, _Py_sighandler_t *p_previous)
@@ -973,6 +1120,18 @@ static PyMethodDef module_methods[] = {
                "to dump_tracebacks_later().")},
 #endif
 
+#ifdef FAULTHANDLER_WATCHDOG
+    {"_file_watchdog",
+     (PyCFunction)faulthandler_file_watchdog, METH_VARARGS|METH_KEYWORDS,
+     PyDoc_STR("_file_watchdog(rfd, wfd, period):\n"
+               "feed the contents of 'rfd' to 'wfd', if changed,\n"
+               "every 'period seconds'.")},
+    {"_cancel_file_watchdog",
+     (PyCFunction)faulthandler_cancel_file_watchdog, METH_NOARGS,
+     PyDoc_STR("_cancel_file_watchdog():\ncancel the previous call "
+               "to _file_watchdog().")},
+#endif
+
 #ifdef FAULTHANDLER_USER
     {"register",
      (PyCFunction)faulthandler_register_py, METH_VARARGS|METH_KEYWORDS,
@@ -1097,6 +1256,16 @@ int _PyFaulthandler_Init(void)
     }
     PyThread_acquire_lock(thread.cancel_event, 1);
 #endif
+#ifdef FAULTHANDLER_WATCHDOG
+    watchdog.cancel_event = PyThread_allocate_lock();
+    watchdog.running = PyThread_allocate_lock();
+    if (!watchdog.cancel_event || !watchdog.running) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "could not allocate locks for faulthandler");
+        return -1;
+    }
+    PyThread_acquire_lock(watchdog.cancel_event, 1);
+#endif
 
     return faulthandler_env_options();
 }
@@ -1118,6 +1287,20 @@ void _PyFaulthandler_Fini(void)
     if (thread.running) {
         PyThread_free_lock(thread.running);
         thread.running = NULL;
+    }
+#endif
+
+#ifdef FAULTHANDLER_WATCHDOG
+    /* file watchdog */
+    cancel_file_watchdog();
+    if (watchdog.cancel_event) {
+        PyThread_release_lock(watchdog.cancel_event);
+        PyThread_free_lock(watchdog.cancel_event);
+        watchdog.cancel_event = NULL;
+    }
+    if (watchdog.running) {
+        PyThread_free_lock(watchdog.running);
+        watchdog.running = NULL;
     }
 #endif
 
