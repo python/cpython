@@ -19,7 +19,7 @@ from pickle import bytes_types
 # kind of outer loop.
 protocols = range(pickle.HIGHEST_PROTOCOL + 1)
 
-character_size = 4 if sys.maxunicode > 0xFFFF else 2
+ascii_char_size = 1
 
 
 # Return True if opcode code appears in the pickle, else False.
@@ -1235,7 +1235,7 @@ class BigmemPickleTests(unittest.TestCase):
     # All protocols use 1-byte per printable ASCII character; we add another
     # byte because the encoded form has to be copied into the internal buffer.
 
-    @bigmemtest(size=_2G, memuse=2 + character_size, dry_run=False)
+    @bigmemtest(size=_2G, memuse=2 + ascii_char_size, dry_run=False)
     def test_huge_str_32b(self, size):
         data = "abcd" * (size // 4)
         try:
@@ -1252,7 +1252,7 @@ class BigmemPickleTests(unittest.TestCase):
     # BINUNICODE (protocols 1, 2 and 3) cannot carry more than
     # 2**32 - 1 bytes of utf-8 encoded unicode.
 
-    @bigmemtest(size=_4G, memuse=1 + character_size, dry_run=False)
+    @bigmemtest(size=_4G, memuse=1 + ascii_char_size, dry_run=False)
     def test_huge_str_64b(self, size):
         data = "a" * size
         try:
