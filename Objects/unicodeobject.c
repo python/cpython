@@ -10196,6 +10196,7 @@ unicode_expandtabs(PyUnicodeObject *self, PyObject *args)
     void *src_data, *dest_data;
     int tabsize = 8;
     int kind;
+    int found;
 
     if (!PyArg_ParseTuple(args, "|i:expandtabs", &tabsize))
         return NULL;
@@ -10205,9 +10206,11 @@ unicode_expandtabs(PyUnicodeObject *self, PyObject *args)
     i = j = line_pos = 0;
     kind = PyUnicode_KIND(self);
     src_data = PyUnicode_DATA(self);
+    found = 0;
     for (; i < src_len; i++) {
         ch = PyUnicode_READ(kind, src_data, i);
         if (ch == '\t') {
+            found = 1;
             if (tabsize > 0) {
                 incr = tabsize - (line_pos % tabsize); /* cannot overflow */
                 if (j > PY_SSIZE_T_MAX - incr)
@@ -10224,6 +10227,10 @@ unicode_expandtabs(PyUnicodeObject *self, PyObject *args)
             if (ch == '\n' || ch == '\r')
                 line_pos = 0;
         }
+    }
+    if (!found && PyUnicode_CheckExact(self)) {
+        Py_INCREF((PyObject *) self);
+        return (PyObject *) self;
     }
 
     /* Second pass: create output string and fill it */
