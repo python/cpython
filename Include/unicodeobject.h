@@ -288,10 +288,26 @@ typedef struct {
         unsigned int interned:2;
         /* Character size:
 
-           PyUnicode_WCHAR_KIND (0): wchar_t*
-           PyUnicode_1BYTE_KIND (1): Py_UCS1*
-           PyUnicode_2BYTE_KIND (2): Py_UCS2*
-           PyUnicode_4BYTE_KIND (3): Py_UCS4*
+           - PyUnicode_WCHAR_KIND (0):
+
+             * character type = wchar_t (16 or 32 bits, depending on the
+               platform)
+
+           - PyUnicode_1BYTE_KIND (1):
+
+             * character type = Py_UCS1 (8 bits, unsigned)
+             * if ascii is 1, at least one character must be in range
+               U+80-U+FF, otherwise all characters must be in range U+00-U+7F
+
+           - PyUnicode_2BYTE_KIND (2):
+
+             * character type = Py_UCS2 (16 bits, unsigned)
+             * at least one character must be in range U+0100-U+1FFFF
+
+           - PyUnicode_4BYTE_KIND (3):
+
+             * character type = Py_UCS4 (32 bits, unsigned)
+             * at least one character must be in range U+10000-U+10FFFF
          */
         unsigned int kind:2;
         /* Compact is with respect to the allocation scheme. Compact unicode
