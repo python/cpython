@@ -629,7 +629,7 @@ always available.
    i.e. ``1114111`` (``0x10FFFF`` in hexadecimal).
 
    .. versionchanged:: 3.3
-      Before :pep:`393`, :data:`sys.maxunicode` used to return either ``0xFFFF``
+      Before :pep:`393`, ``sys.maxunicode`` used to be either ``0xFFFF``
       or ``0x10FFFF``, depending on the configuration option that specified
       whether Unicode characters were stored as UCS-2 or UCS-4.
 
