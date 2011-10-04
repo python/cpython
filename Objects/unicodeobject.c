@@ -2120,6 +2120,10 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                     str_obj = PyUnicode_DecodeUTF8(str, strlen(str), "replace");
                     if (!str_obj)
                         goto fail;
+                    if (PyUnicode_READY(str_obj)) {
+                        Py_DECREF(str_obj);
+                        goto fail;
+                    }
                     argmaxchar = PyUnicode_MAX_CHAR_VALUE(str_obj);
                     maxchar = Py_MAX(maxchar, argmaxchar);
                     n += PyUnicode_GET_LENGTH(str_obj);
@@ -10062,17 +10066,17 @@ PyUnicode_Append(PyObject **p_left, PyObject *right)
         goto error;
     }
 
+    if (PyUnicode_READY(left))
+        goto error;
+    if (PyUnicode_READY(right))
+        goto error;
+
     if (PyUnicode_CheckExact(left) && left != unicode_empty
         && PyUnicode_CheckExact(right) && right != unicode_empty
         && unicode_resizable(left)
         && (_PyUnicode_KIND(right) <= _PyUnicode_KIND(left)
             || _PyUnicode_WSTR(left) != NULL))
     {
-        if (PyUnicode_READY(left))
-            goto error;
-        if (PyUnicode_READY(right))
-            goto error;
-
         /* Don't resize for ascii += latin1. Convert ascii to latin1 requires
            to change the structure size, but characters are stored just after
            the structure, and so it requires to move all charactres which is
