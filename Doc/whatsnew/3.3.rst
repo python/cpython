@@ -6,8 +6,7 @@
 :Release: |release|
 :Date: |today|
 
-.. $Id$
-   Rules for maintenance:
+.. Rules for maintenance:
 
    * Anyone can add text to this document.  Do not spend very much time
    on the wording of your changes, because your text will probably
@@ -40,12 +39,11 @@
 
    * It's helpful to add the bug/patch number as a comment:
 
-   % Patch 12345
    XXX Describe the transmogrify() function added to the socket
    module.
-   (Contributed by P.Y. Developer.)
+   (Contributed by P.Y. Developer in :issue:`12345`.)
 
-   This saves the maintainer the effort of going through the SVN log
+   This saves the maintainer the effort of going through the Mercurial log
    when researching a change.
 
 This article explains the new features in Python 3.3, compared to 3.2.
@@ -108,6 +106,7 @@ XXX Add list of changes introduced by :pep:`393` here:
 * The :file:`./configure` flag ``--with-wide-unicode`` has been removed.
 
 XXX mention new and deprecated functions and macros
+
 
 Other Language Changes
 ======================
