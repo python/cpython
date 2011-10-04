@@ -2697,11 +2697,6 @@ save(Picklerobject *self, PyObject *args, int pers_save)
         }
     }
 
-    if (PyType_IsSubtype(type, &PyType_Type)) {
-        res = save_global(self, args, NULL);
-        goto finally;
-    }
-
     /* Get a reduction callable, and call it.  This may come from
      * copy_reg.dispatch_table, the object's __reduce_ex__ method,
      * or the object's __reduce__ method.
@@ -2717,6 +2712,11 @@ save(Picklerobject *self, PyObject *args, int pers_save)
         }
     }
     else {
+        if (PyType_IsSubtype(type, &PyType_Type)) {
+            res = save_global(self, args, NULL);
+            goto finally;
+        }
+
         /* Check for a __reduce_ex__ method. */
         __reduce__ = PyObject_GetAttr(args, __reduce_ex___str);
         if (__reduce__ != NULL) {
