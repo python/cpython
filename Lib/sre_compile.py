@@ -318,11 +318,13 @@ def _optimize_unicode(charset, fixup):
                 # XXX: could expand category
                 return charset # cannot compress
     except IndexError:
-        # non-BMP characters
+        # non-BMP characters; XXX now they should work
         return charset
     if negate:
         if sys.maxunicode != 65535:
             # XXX: negation does not work with big charsets
+            # XXX2: now they should work, but removing this will make the
+            # charmap 17 times bigger
             return charset
         for i in range(65536):
             charmap[i] = not charmap[i]
