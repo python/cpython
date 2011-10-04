@@ -1585,6 +1585,10 @@ class UnicodeTest(string_tests.CommonTest,
             return
         self.assertRaises(OverflowError, 't\tt\t'.expandtabs, sys.maxsize)
 
+    def test_expandtabs_optimization(self):
+        s = 'abc'
+        self.assertIs(s.expandtabs(), s)
+
     def test_raiseMemError(self):
         if struct.calcsize('P') == 8:
             # 64 bits pointers
