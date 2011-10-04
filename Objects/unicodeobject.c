@@ -13131,7 +13131,7 @@ PyUnicode_InternInPlace(PyObject **p)
     if (PyUnicode_CHECK_INTERNED(s))
         return;
     if (_PyUnicode_READY_REPLACE(p)) {
-        assert(0 && "PyUnicode_READY fail in PyUnicode_InternInPlace");
+        assert(0 && "_PyUnicode_READY_REPLACE fail in PyUnicode_InternInPlace");
         return;
     }
     s = (PyUnicodeObject *)(*p);
@@ -13217,8 +13217,10 @@ _Py_ReleaseInternedUnicodeStrings(void)
             n);
     for (i = 0; i < n; i++) {
         s = (PyUnicodeObject *) PyList_GET_ITEM(keys, i);
-        if (PyUnicode_READY(s) == -1)
+        if (PyUnicode_READY(s) == -1) {
+            assert(0 && "could not ready string");
             fprintf(stderr, "could not ready string\n");
+        }
         switch (PyUnicode_CHECK_INTERNED(s)) {
         case SSTATE_NOT_INTERNED:
             /* XXX Shouldn't happen */
