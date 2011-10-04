@@ -1186,7 +1186,7 @@ class _MemoryWatchdog:
         pipe_fd, wfd = os.pipe()
         # _file_watchdog() doesn't take the GIL in its child thread, and
         # therefore collects statistics timely
-        faulthandler._file_watchdog(rfd, wfd, 3.0)
+        faulthandler._file_watchdog(rfd, wfd, 1.0)
         self.started = True
         self.thread = threading.Thread(target=self.consumer, args=(pipe_fd,))
         self.thread.daemon = True
