@@ -46,6 +46,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <windows.h>
 #endif
 
+#ifdef Py_DEBUG
+#  define DONT_MAKE_RESULT_READY
+#endif
+
 /* Limit for the Unicode object free list */
 
 #define PyUnicode_MAXFREELIST       1024
