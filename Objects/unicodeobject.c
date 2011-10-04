@@ -10201,6 +10201,9 @@ unicode_expandtabs(PyUnicodeObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "|i:expandtabs", &tabsize))
         return NULL;
 
+    if (PyUnicode_READY(self) == -1)
+        return NULL;
+
     /* First pass: determine size of output string */
     src_len = PyUnicode_GET_LENGTH(self);
     i = j = line_pos = 0;
