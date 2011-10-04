@@ -3134,10 +3134,6 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
         status = save_global(self, obj, NULL);
         goto done;
     }
-    else if (PyType_IsSubtype(type, &PyType_Type)) {
-        status = save_global(self, obj, NULL);
-        goto done;
-    }
 
     /* XXX: This part needs some unit tests. */
 
@@ -3155,6 +3151,10 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
         Py_INCREF(reduce_func);
         Py_INCREF(obj);
         reduce_value = _Pickler_FastCall(self, reduce_func, obj);
+    }
+    else if (PyType_IsSubtype(type, &PyType_Type)) {
+        status = save_global(self, obj, NULL);
+        goto done;
     }
     else {
         static PyObject *reduce_str = NULL;
