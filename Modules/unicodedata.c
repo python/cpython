@@ -830,7 +830,7 @@ _gethash(const char *s, int len, int scale)
     unsigned long h = 0;
     unsigned long ix;
     for (i = 0; i < len; i++) {
-        h = (h * scale) + (unsigned char) toupper(Py_CHARMASK(s[i]));
+        h = (h * scale) + (unsigned char) Py_TOUPPER(Py_CHARMASK(s[i]));
         ix = h & 0xff000000;
         if (ix)
             h = (h ^ ((ix>>24) & 0xff)) & 0x00ffffff;
@@ -978,7 +978,7 @@ _cmpname(PyObject *self, int code, const char* name, int namelen)
     if (!_getucname(self, code, buffer, sizeof(buffer)))
         return 0;
     for (i = 0; i < namelen; i++) {
-        if (toupper(Py_CHARMASK(name[i])) != buffer[i])
+        if (Py_TOUPPER(Py_CHARMASK(name[i])) != buffer[i])
             return 0;
     }
     return buffer[namelen] == '\0';
