@@ -610,7 +610,7 @@ file_watchdog(void *unused)
     PyLockStatus st;
     PY_TIMEOUT_T timeout;
 
-    const int MAXDATA = 1024;
+#define MAXDATA 1024
     char buf1[MAXDATA], buf2[MAXDATA];
     char *data = buf1, *old_data = buf2;
     Py_ssize_t data_len, old_data_len = -1;
@@ -667,6 +667,7 @@ file_watchdog(void *unused)
 
     /* The only way out */
     PyThread_release_lock(watchdog.running);
+#undef MAXDATA
 }
 
 static void
