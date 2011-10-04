@@ -294,6 +294,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #13087: BufferedReader.seek() now always raises UnsupportedOperation
+  if the underlying raw stream is unseekable, even if the seek could be
+  satisfied using the internal buffer.  Patch by John O'Connor.
+
 - Issue #7689: Allow pickling of dynamically created classes when their
   metaclass is registered with copyreg.  Patch by Nicolas M. Thiéry and Craig
   Citro.
