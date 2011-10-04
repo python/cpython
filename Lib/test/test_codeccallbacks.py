@@ -138,22 +138,14 @@ class CodecCallbackTest(unittest.TestCase):
     def test_backslashescape(self):
         # Does the same as the "unicode-escape" encoding, but with different
         # base encodings.
-        sin = "a\xac\u1234\u20ac\u8000"
-        if sys.maxunicode > 0xffff:
-            sin += chr(sys.maxunicode)
-        sout = b"a\\xac\\u1234\\u20ac\\u8000"
-        if sys.maxunicode > 0xffff:
-            sout += bytes("\\U%08x" % sys.maxunicode, "ascii")
+        sin = "a\xac\u1234\u20ac\u8000\U0010ffff"
+        sout = b"a\\xac\\u1234\\u20ac\\u8000\\U0010ffff"
         self.assertEqual(sin.encode("ascii", "backslashreplace"), sout)
 
-        sout = b"a\xac\\u1234\\u20ac\\u8000"
-        if sys.maxunicode > 0xffff:
-            sout += bytes("\\U%08x" % sys.maxunicode, "ascii")
+        sout = b"a\xac\\u1234\\u20ac\\u8000\\U0010ffff"
         self.assertEqual(sin.encode("latin-1", "backslashreplace"), sout)
 
-        sout = b"a\xac\\u1234\xa4\\u8000"
-        if sys.maxunicode > 0xffff:
-            sout += bytes("\\U%08x" % sys.maxunicode, "ascii")
+        sout = b"a\xac\\u1234\xa4\\u8000\\U0010ffff"
         self.assertEqual(sin.encode("iso-8859-15", "backslashreplace"), sout)
 
     def test_decoding_callbacks(self):

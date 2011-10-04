@@ -107,6 +107,7 @@ def get_machine_details():
         print('Getting machine details...')
     buildno, builddate = platform.python_build()
     python = platform.python_version()
+    # XXX this is now always UCS4, maybe replace it with 'PEP393' in 3.3+?
     if sys.maxunicode == 65535:
         # UCS2 build (standard)
         unitype = 'UCS2'
