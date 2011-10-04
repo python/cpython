@@ -3,7 +3,7 @@ from test import support
 import binascii
 import random
 import sys
-from test.support import precisionbigmemtest, _1G, _4G
+from test.support import bigmemtest, _1G, _4G
 
 zlib = support.import_module('zlib')
 
@@ -188,16 +188,16 @@ class CompressTestCase(BaseCompressTestCase, unittest.TestCase):
 
     # Memory use of the following functions takes into account overallocation
 
-    @precisionbigmemtest(size=_1G + 1024 * 1024, memuse=3)
+    @bigmemtest(size=_1G + 1024 * 1024, memuse=3)
     def test_big_compress_buffer(self, size):
         compress = lambda s: zlib.compress(s, 1)
         self.check_big_compress_buffer(size, compress)
 
-    @precisionbigmemtest(size=_1G + 1024 * 1024, memuse=2)
+    @bigmemtest(size=_1G + 1024 * 1024, memuse=2)
     def test_big_decompress_buffer(self, size):
         self.check_big_decompress_buffer(size, zlib.decompress)
 
-    @precisionbigmemtest(size=_4G + 100, memuse=1)
+    @bigmemtest(size=_4G + 100, memuse=1)
     def test_length_overflow(self, size):
         if size < _4G + 100:
             self.skipTest("not enough free memory, need at least 4 GB")
@@ -542,19 +542,19 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
 
     # Memory use of the following functions takes into account overallocation
 
-    @precisionbigmemtest(size=_1G + 1024 * 1024, memuse=3)
+    @bigmemtest(size=_1G + 1024 * 1024, memuse=3)
     def test_big_compress_buffer(self, size):
         c = zlib.compressobj(1)
         compress = lambda s: c.compress(s) + c.flush()
         self.check_big_compress_buffer(size, compress)
 
-    @precisionbigmemtest(size=_1G + 1024 * 1024, memuse=2)
+    @bigmemtest(size=_1G + 1024 * 1024, memuse=2)
     def test_big_decompress_buffer(self, size):
         d = zlib.decompressobj()
         decompress = lambda s: d.decompress(s) + d.flush()
         self.check_big_decompress_buffer(size, decompress)
 
-    @precisionbigmemtest(size=_4G + 100, memuse=1)
+    @bigmemtest(size=_4G + 100, memuse=1)
     def test_length_overflow(self, size):
         if size < _4G + 100:
             self.skipTest("not enough free memory, need at least 4 GB")

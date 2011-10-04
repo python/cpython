@@ -1133,47 +1133,51 @@ def set_memlimit(limit):
         raise ValueError('Memory limit %r too low to be useful' % (limit,))
     max_memuse = memlimit
 
-def bigmemtest(minsize, memuse):
+def _memory_watchdog(start_evt, finish_evt, period=10.0):
+    """A function which periodically watches the process' memory consumption
+    and prints it out.
+    """
+    # XXX: because of the GIL, and because the very long operations tested
+    # in most bigmem tests are uninterruptible, the loop below gets woken up
+    # much less often than expected.
+    # The polling code should be rewritten in raw C, without holding the GIL,
+    # and push results onto an anonymous pipe.
+    try:
+        page_size = os.sysconf('SC_PAGESIZE')
+    except (ValueError, AttributeError):
+        try:
+            page_size = os.sysconf('SC_PAGE_SIZE')
+        except (ValueError, AttributeError):
+            page_size = 4096
+    procfile = '/proc/{pid}/statm'.format(pid=os.getpid())
+    try:
+        f = open(procfile, 'rb')
+    except IOError as e:
+        warnings.warn('/proc not available for stats: {}'.format(e),
+                      RuntimeWarning)
+        sys.stderr.flush()
+        return
+    with f:
+        start_evt.set()
+        old_data = -1
+        while not finish_evt.wait(period):
+            f.seek(0)
+            statm = f.read().decode('ascii')
+            data = int(statm.split()[5])
+            if data != old_data:
+                old_data = data
+                print(" ... process data size: {data:.1f}G"
+                       .format(data=data * page_size / (1024 ** 3)))
+
+def bigmemtest(size, memuse, dry_run=True):
     """Decorator for bigmem tests.
 
     'minsize' is the minimum useful size for the test (in arbitrary,
     test-interpreted units.) 'memuse' is the number of 'bytes per size' for
     the test, or a good estimate of it.
 
-    The decorator tries to guess a good value for 'size' and passes it to
-    the decorated test function. If minsize * memuse is more than the
-    allowed memory use (as defined by max_memuse), the test is skipped.
-    Otherwise, minsize is adjusted upward to use up to max_memuse.
-    """
-    def decorator(f):
-        def wrapper(self):
-            # Retrieve values in case someone decided to adjust them
-            minsize = wrapper.minsize
-            memuse = wrapper.memuse
-            if not max_memuse:
-                # If max_memuse is 0 (the default),
-                # we still want to run the tests with size set to a few kb,
-                # to make sure they work. We still want to avoid using
-                # too much memory, though, but we do that noisily.
-                maxsize = 5147
-                self.assertFalse(maxsize * memuse > 20 * _1M)
-            else:
-                maxsize = int(max_memuse / memuse)
-                if maxsize < minsize:
-                    raise unittest.SkipTest(
-                        "not enough memory: %.1fG minimum needed"
-                        % (minsize * memuse / (1024 ** 3)))
-            return f(self, maxsize)
-        wrapper.minsize = minsize
-        wrapper.memuse = memuse
-        return wrapper
-    return decorator
-
-def precisionbigmemtest(size, memuse, dry_run=True):
-    """Decorator for bigmem tests that need exact sizes.
-
-    Like bigmemtest, but without the size scaling upward to fill available
-    memory.
+    if 'dry_run' is False, it means the test doesn't support dummy runs
+    when -M is not specified.
     """
     def decorator(f):
         def wrapper(self):
@@ -1190,7 +1194,28 @@ def precisionbigmemtest(size, memuse, dry_run=True):
                     "not enough memory: %.1fG minimum needed"
                     % (size * memuse / (1024 ** 3)))
 
-            return f(self, maxsize)
+            if real_max_memuse and verbose and threading:
+                print()
+                print(" ... expected peak memory use: {peak:.1f}G"
+                      .format(peak=size * memuse / (1024 ** 3)))
+                sys.stdout.flush()
+                start_evt = threading.Event()
+                finish_evt = threading.Event()
+                t = threading.Thread(target=_memory_watchdog,
+                                     args=(start_evt, finish_evt, 0.5))
+                t.daemon = True
+                t.start()
+                start_evt.set()
+            else:
+                t = None
+
+            try:
+                return f(self, maxsize)
+            finally:
+                if t:
+                    finish_evt.set()
+                    t.join()
+
         wrapper.size = size
         wrapper.memuse = memuse
         return wrapper
