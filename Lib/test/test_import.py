@@ -4,6 +4,7 @@ from importlib.test.import_ import test_relative_imports
 from importlib.test.import_ import util as importlib_util
 import marshal
 import os
+import platform
 import py_compile
 import random
 import stat
@@ -544,6 +545,8 @@ class PycacheTests(unittest.TestCase):
 
     @unittest.skipUnless(os.name == 'posix',
                          "test meaningful only on posix systems")
+    @unittest.skipIf(platform.system() == 'FreeBSD' and os.geteuid() == 0,
+        "due to non-standard filesystem permission semantics (issue #11956)")
     def test_unwritable_directory(self):
         # When the umask causes the new __pycache__ directory to be
         # unwritable, the import still succeeds but no .pyc file is written.
