@@ -12949,7 +12949,7 @@ unicode_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (unicode == NULL)
         return NULL;
     assert(_PyUnicode_CHECK(unicode));
-    if (_PyUnicode_READY_REPLACE(&unicode))
+    if (PyUnicode_READY(unicode))
         return NULL;
 
     self = (PyUnicodeObject *) type->tp_alloc(type, 0);
