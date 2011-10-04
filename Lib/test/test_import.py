@@ -547,7 +547,7 @@ class PycacheTests(unittest.TestCase):
 
     @unittest.skipUnless(os.name == 'posix',
                          "test meaningful only on posix systems")
-    @unittest.skipIf(os.geteuid() == 0,
+    @unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
             "due to varying filesystem permission semantics (issue #11956)")
     def test_unwritable_directory(self):
         # When the umask causes the new __pycache__ directory to be
