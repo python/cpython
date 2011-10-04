@@ -493,13 +493,19 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             }
 
             len = strlen(fieldname) + strlen(fieldfmt);
-            buf = alloca(len + 2 + 1);
 
+            buf = PyMem_Malloc(len + 2 + 1);
+            if (buf == NULL) {
+                Py_DECREF(pair);
+                PyErr_NoMemory();
+                return -1;
+            }
             sprintf(buf, "%s:%s:", fieldfmt, fieldname);
 
             ptr = stgdict->format;
             stgdict->format = _ctypes_alloc_format_string(stgdict->format, buf);
             PyMem_Free(ptr);
+            PyMem_Free(buf);
 
             if (stgdict->format == NULL) {
                 Py_DECREF(pair);
