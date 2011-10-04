@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from test import support
-from test.support import TESTFN, precisionbigmemtest, _4G
+from test.support import TESTFN, bigmemtest, _4G
 
 import unittest
 from io import BytesIO
@@ -497,7 +497,7 @@ class BZ2CompressorTest(BaseTest):
         data += bz2c.flush()
         self.assertEqual(self.decompress(data), self.TEXT)
 
-    @precisionbigmemtest(size=_4G + 100, memuse=2)
+    @bigmemtest(size=_4G + 100, memuse=2)
     def testCompress4G(self, size):
         # "Test BZ2Compressor.compress()/flush() with >4GiB input"
         bz2c = BZ2Compressor()
@@ -548,7 +548,7 @@ class BZ2DecompressorTest(BaseTest):
         text = bz2d.decompress(self.DATA)
         self.assertRaises(EOFError, bz2d.decompress, b"anything")
 
-    @precisionbigmemtest(size=_4G + 100, memuse=3)
+    @bigmemtest(size=_4G + 100, memuse=3)
     def testDecompress4G(self, size):
         # "Test BZ2Decompressor.decompress() with >4GiB input"
         blocksize = 10 * 1024 * 1024
