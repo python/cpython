@@ -87,6 +87,8 @@ Tests
 Extension Modules
 -----------------
 
+- Issue #12881: ctypes: Fix segfault with large structure field names.
+
 - Issue #13058: ossaudiodev: fix a file descriptor leak on error. Patch by
   Thomas Jarosch.
 
