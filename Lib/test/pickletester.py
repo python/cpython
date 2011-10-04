@@ -8,7 +8,7 @@ from http.cookies import SimpleCookie
 
 from test.support import (
     TestFailed, TESTFN, run_with_locale,
-    _2G, _4G, precisionbigmemtest,
+    _2G, _4G, bigmemtest,
     )
 
 from pickle import bytes_types
@@ -1159,7 +1159,7 @@ class BigmemPickleTests(unittest.TestCase):
 
     # Binary protocols can serialize longs of up to 2GB-1
 
-    @precisionbigmemtest(size=_2G, memuse=1 + 1, dry_run=False)
+    @bigmemtest(size=_2G, memuse=1 + 1, dry_run=False)
     def test_huge_long_32b(self, size):
         data = 1 << (8 * size)
         try:
@@ -1175,7 +1175,7 @@ class BigmemPickleTests(unittest.TestCase):
     # (older protocols don't have a dedicated opcode for bytes and are
     # too inefficient)
 
-    @precisionbigmemtest(size=_2G, memuse=1 + 1, dry_run=False)
+    @bigmemtest(size=_2G, memuse=1 + 1, dry_run=False)
     def test_huge_bytes_32b(self, size):
         data = b"abcd" * (size // 4)
         try:
@@ -1191,7 +1191,7 @@ class BigmemPickleTests(unittest.TestCase):
         finally:
             data = None
 
-    @precisionbigmemtest(size=_4G, memuse=1 + 1, dry_run=False)
+    @bigmemtest(size=_4G, memuse=1 + 1, dry_run=False)
     def test_huge_bytes_64b(self, size):
         data = b"a" * size
         try:
@@ -1206,7 +1206,7 @@ class BigmemPickleTests(unittest.TestCase):
     # All protocols use 1-byte per printable ASCII character; we add another
     # byte because the encoded form has to be copied into the internal buffer.
 
-    @precisionbigmemtest(size=_2G, memuse=2 + character_size, dry_run=False)
+    @bigmemtest(size=_2G, memuse=2 + character_size, dry_run=False)
     def test_huge_str_32b(self, size):
         data = "abcd" * (size // 4)
         try:
@@ -1223,7 +1223,7 @@ class BigmemPickleTests(unittest.TestCase):
     # BINUNICODE (protocols 1, 2 and 3) cannot carry more than
     # 2**32 - 1 bytes of utf-8 encoded unicode.
 
-    @precisionbigmemtest(size=_4G, memuse=1 + character_size, dry_run=False)
+    @bigmemtest(size=_4G, memuse=1 + character_size, dry_run=False)
     def test_huge_str_64b(self, size):
         data = "a" * size
         try:

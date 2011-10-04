@@ -1,7 +1,7 @@
 # xml.etree test for cElementTree
 
 from test import support
-from test.support import precisionbigmemtest, _2G
+from test.support import bigmemtest, _2G
 import unittest
 
 cET = support.import_module('xml.etree.cElementTree')
@@ -35,7 +35,7 @@ def sanity():
 
 class MiscTests(unittest.TestCase):
     # Issue #8651.
-    @support.precisionbigmemtest(size=support._2G + 100, memuse=1)
+    @support.bigmemtest(size=support._2G + 100, memuse=1)
     def test_length_overflow(self, size):
         if size < support._2G + 100:
             self.skipTest("not enough free memory, need at least 2 GB")
