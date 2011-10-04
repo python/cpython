@@ -2625,10 +2625,12 @@ PyUnicode_Decode(const char *s,
         goto onError;
     }
     Py_DECREF(buffer);
+#ifndef DONT_MAKE_RESULT_READY
     if (_PyUnicode_READY_REPLACE(&unicode)) {
         Py_DECREF(unicode);
         return NULL;
     }
+#endif
     return unicode;
 
   onError:
@@ -3674,10 +3676,12 @@ utf7Error:
 
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
+#ifndef DONT_MAKE_RESULT_READY
     if (_PyUnicode_READY_REPLACE(&unicode)) {
         Py_DECREF(unicode);
         return NULL;
     }
+#endif
     return (PyObject *)unicode;
 
   onError:
@@ -4244,10 +4248,12 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
 
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
+#ifndef DONT_MAKE_RESULT_READY
     if (_PyUnicode_READY_REPLACE(&unicode)) {
         Py_DECREF(unicode);
         return NULL;
     }
+#endif
     return (PyObject *)unicode;
 
   onError:
@@ -4747,10 +4753,12 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
 
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
+#ifndef DONT_MAKE_RESULT_READY
     if (_PyUnicode_READY_REPLACE(&unicode)) {
         Py_DECREF(unicode);
         return NULL;
     }
+#endif
     return (PyObject *)unicode;
 
   onError:
@@ -5145,10 +5153,12 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
 
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
+#ifndef DONT_MAKE_RESULT_READY
     if (_PyUnicode_READY_REPLACE(&unicode)) {
         Py_DECREF(unicode);
         return NULL;
     }
+#endif
     return (PyObject *)unicode;
 
   onError:
@@ -5604,10 +5614,12 @@ PyUnicode_DecodeUnicodeEscape(const char *s,
     }
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
+#ifndef DONT_MAKE_RESULT_READY
     if (_PyUnicode_READY_REPLACE(&v)) {
         Py_DECREF(v);
         return NULL;
     }
+#endif
     return (PyObject *)v;
 
   ucnhashError:
@@ -5905,10 +5917,12 @@ PyUnicode_DecodeRawUnicodeEscape(const char *s,
         goto onError;
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
+#ifndef DONT_MAKE_RESULT_READY
     if (_PyUnicode_READY_REPLACE(&v)) {
         Py_DECREF(v);
         return NULL;
     }
+#endif
     return (PyObject *)v;
 
   onError:
@@ -6093,10 +6107,12 @@ _PyUnicode_DecodeUnicodeInternal(const char *s,
         goto onError;
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
+#ifndef DONT_MAKE_RESULT_READY
     if (_PyUnicode_READY_REPLACE(&v)) {
         Py_DECREF(v);
         return NULL;
     }
+#endif
     return (PyObject *)v;
 
   onError:
@@ -6519,10 +6535,12 @@ PyUnicode_DecodeASCII(const char *s,
             goto onError;
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
+#ifndef DONT_MAKE_RESULT_READY
     if (_PyUnicode_READY_REPLACE(&v)) {
         Py_DECREF(v);
         return NULL;
     }
+#endif
     return (PyObject *)v;
 
   onError:
@@ -6713,10 +6731,12 @@ PyUnicode_DecodeMBCSStateful(const char *s,
         goto retry;
     }
 #endif
+#ifndef DONT_MAKE_RESULT_READY
     if (_PyUnicode_READY_REPLACE(&v)) {
         Py_DECREF(v);
         return NULL;
     }
+#endif
     return (PyObject *)v;
 }
 
@@ -7012,10 +7032,12 @@ PyUnicode_DecodeCharmap(const char *s,
             goto onError;
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
+#ifndef DONT_MAKE_RESULT_READY
     if (_PyUnicode_READY_REPLACE(&v)) {
         Py_DECREF(v);
         return NULL;
     }
+#endif
     return (PyObject *)v;
 
   onError:
@@ -8057,10 +8079,12 @@ PyUnicode_TransformDecimalToASCII(Py_UNICODE *s,
                 p[i] = '0' + decimal;
         }
     }
-    if (PyUnicode_READY((PyUnicodeObject*)result) == -1) {
+#ifndef DONT_MAKE_RESULT_READY
+    if (_PyUnicode_READY_REPLACE(&result)) {
         Py_DECREF(result);
         return NULL;
     }
+#endif
     return result;
 }
 /* --- Decimal Encoder ---------------------------------------------------- */
@@ -10265,10 +10289,12 @@ unicode_expandtabs(PyUnicodeObject *self, PyObject *args)
         }
     }
     assert (j == PyUnicode_GET_LENGTH(u));
-    if (PyUnicode_READY(u)) {
+#ifndef DONT_MAKE_RESULT_READY
+    if (_PyUnicode_READY_REPLACE(&u)) {
         Py_DECREF(u);
         return NULL;
     }
+#endif
     return (PyObject*) u;
 
   overflow:
