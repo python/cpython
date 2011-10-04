@@ -1,7 +1,7 @@
 from io import StringIO
 from test.json_tests import PyTest, CTest
 
-from test.support import precisionbigmemtest, _1G
+from test.support import bigmemtest, _1G
 
 class TestDump:
     def test_dump(self):
@@ -30,7 +30,7 @@ class TestCDump(TestDump, CTest):
     # system memory management, since this may allocate a lot of
     # small objects).
 
-    @precisionbigmemtest(size=_1G, memuse=1)
+    @bigmemtest(size=_1G, memuse=1)
     def test_large_list(self, size):
         N = int(30 * 1024 * 1024 * (size / _1G))
         l = [1] * N
