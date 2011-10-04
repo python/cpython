@@ -432,7 +432,7 @@ make_bloom_mask(int kind, void* ptr, Py_ssize_t len)
 /* --- Unicode Object ----------------------------------------------------- */
 
 static PyObject *
-fixup(PyUnicodeObject *self, Py_UCS4 (*fixfct)(PyUnicodeObject *s));
+fixup(PyObject *self, Py_UCS4 (*fixfct)(PyObject *s));
 
 Py_LOCAL_INLINE(char *) findchar(void *s, int kind,
                                  Py_ssize_t size, Py_UCS4 ch,
@@ -8066,7 +8066,7 @@ PyUnicode_Translate(PyObject *str,
 }
 
 static Py_UCS4
-fix_decimal_and_space_to_ascii(PyUnicodeObject *self)
+fix_decimal_and_space_to_ascii(PyObject *self)
 {
     /* No need to call PyUnicode_READY(self) because this function is only
        called as a callback from fixup() which does it already. */
@@ -8116,7 +8116,7 @@ _PyUnicode_TransformDecimalAndSpaceToASCII(PyObject *unicode)
         Py_INCREF(unicode);
         return unicode;
     }
-    return fixup((PyUnicodeObject *)unicode, fix_decimal_and_space_to_ascii);
+    return fixup(unicode, fix_decimal_and_space_to_ascii);
 }
 
 PyObject *
@@ -8661,8 +8661,8 @@ PyUnicode_Tailmatch(PyObject *str,
    reference to the modified object */
 
 static PyObject *
-fixup(PyUnicodeObject *self,
-      Py_UCS4 (*fixfct)(PyUnicodeObject *s))
+fixup(PyObject *self,
+      Py_UCS4 (*fixfct)(PyObject *s))
 {
     PyObject *u;
     Py_UCS4 maxchar_old, maxchar_new = 0;
@@ -8682,7 +8682,7 @@ fixup(PyUnicodeObject *self,
        if the kind of the resulting unicode object does not change,
        everything is fine.  Otherwise we need to change the string kind
        and re-run the fix function. */
-    maxchar_new = fixfct((PyUnicodeObject*)u);
+    maxchar_new = fixfct(u);
     if (maxchar_new == 0)
         /* do nothing, keep maxchar_new at 0 which means no changes. */;
     else if (maxchar_new <= 127)
@@ -8724,7 +8724,7 @@ fixup(PyUnicodeObject *self,
                 Py_DECREF(u);
                 return NULL;
             }
-            maxchar_old = fixfct((PyUnicodeObject*)v);
+            maxchar_old = fixfct(v);
             assert(maxchar_old > 0 && maxchar_old <= maxchar_new);
         }
         else {
@@ -8743,7 +8743,7 @@ fixup(PyUnicodeObject *self,
 }
 
 static Py_UCS4
-fixupper(PyUnicodeObject *self)
+fixupper(PyObject *self)
 {
     /* No need to call PyUnicode_READY(self) because this function is only
        called as a callback from fixup() which does it already. */
@@ -8774,7 +8774,7 @@ fixupper(PyUnicodeObject *self)
 }
 
 static Py_UCS4
-fixlower(PyUnicodeObject *self)
+fixlower(PyObject *self)
 {
     /* No need to call PyUnicode_READY(self) because fixup() which does it. */
     const Py_ssize_t len = PyUnicode_GET_LENGTH(self);
@@ -8804,7 +8804,7 @@ fixlower(PyUnicodeObject *self)
 }
 
 static Py_UCS4
-fixswapcase(PyUnicodeObject *self)
+fixswapcase(PyObject *self)
 {
     /* No need to call PyUnicode_READY(self) because fixup() which does it. */
     const Py_ssize_t len = PyUnicode_GET_LENGTH(self);
@@ -8840,7 +8840,7 @@ fixswapcase(PyUnicodeObject *self)
 }
 
 static Py_UCS4
-fixcapitalize(PyUnicodeObject *self)
+fixcapitalize(PyObject *self)
 {
     /* No need to call PyUnicode_READY(self) because fixup() which does it. */
     const Py_ssize_t len = PyUnicode_GET_LENGTH(self);
@@ -8881,7 +8881,7 @@ fixcapitalize(PyUnicodeObject *self)
 }
 
 static Py_UCS4
-fixtitle(PyUnicodeObject *self)
+fixtitle(PyObject *self)
 {
     /* No need to call PyUnicode_READY(self) because fixup() which does it. */
     const Py_ssize_t len = PyUnicode_GET_LENGTH(self);
@@ -9093,8 +9093,8 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
         } \
     } while (0)
 
-static PyUnicodeObject *
-pad(PyUnicodeObject *self,
+static PyObject *
+pad(PyObject *self,
     Py_ssize_t left,
     Py_ssize_t right,
     Py_UCS4 fill)
@@ -9178,8 +9178,8 @@ PyUnicode_Splitlines(PyObject *string, int keepends)
 }
 
 static PyObject *
-split(PyUnicodeObject *self,
-      PyUnicodeObject *substring,
+split(PyObject *self,
+      PyObject *substring,
       Py_ssize_t maxcount)
 {
     int kind1, kind2, kind;
@@ -9260,8 +9260,8 @@ split(PyUnicodeObject *self,
 }
 
 static PyObject *
-rsplit(PyUnicodeObject *self,
-       PyUnicodeObject *substring,
+rsplit(PyObject *self,
+       PyObject *substring,
        Py_ssize_t maxcount)
 {
     int kind1, kind2, kind;
@@ -9639,7 +9639,7 @@ Return a titlecased version of S, i.e. words start with title case\n\
 characters, all remaining cased characters have lower case.");
 
 static PyObject*
-unicode_title(PyUnicodeObject *self)
+unicode_title(PyObject *self)
 {
     return fixup(self, fixtitle);
 }
@@ -9651,7 +9651,7 @@ Return a capitalized version of S, i.e. make the first character\n\
 have upper case and the rest lower case.");
 
 static PyObject*
-unicode_capitalize(PyUnicodeObject *self)
+unicode_capitalize(PyObject *self)
 {
     return fixup(self, fixcapitalize);
 }
@@ -9726,7 +9726,7 @@ Return S centered in a string of length width. Padding is\n\
 done using the specified fill character (default is a space)");
 
 static PyObject *
-unicode_center(PyUnicodeObject *self, PyObject *args)
+unicode_center(PyObject *self, PyObject *args)
 {
     Py_ssize_t marg, left;
     Py_ssize_t width;
@@ -9746,7 +9746,7 @@ unicode_center(PyUnicodeObject *self, PyObject *args)
     marg = width - _PyUnicode_LENGTH(self);
     left = marg / 2 + (marg & width & 1);
 
-    return (PyObject*) pad(self, left, marg - left, fillchar);
+    return pad(self, left, marg - left, fillchar);
 }
 
 #if 0
@@ -10963,7 +10963,7 @@ Return S left-justified in a Unicode string of length width. Padding is\n\
 done using the specified fill character (default is a space).");
 
 static PyObject *
-unicode_ljust(PyUnicodeObject *self, PyObject *args)
+unicode_ljust(PyObject *self, PyObject *args)
 {
     Py_ssize_t width;
     Py_UCS4 fillchar = ' ';
@@ -10988,7 +10988,7 @@ PyDoc_STRVAR(lower__doc__,
 Return a copy of the string S converted to lowercase.");
 
 static PyObject*
-unicode_lower(PyUnicodeObject *self)
+unicode_lower(PyObject *self)
 {
     return fixup(self, fixlower);
 }
@@ -11554,7 +11554,7 @@ Return S right-justified in a string of length width. Padding is\n\
 done using the specified fill character (default is a space).");
 
 static PyObject *
-unicode_rjust(PyUnicodeObject *self, PyObject *args)
+unicode_rjust(PyObject *self, PyObject *args)
 {
     Py_ssize_t width;
     Py_UCS4 fillchar = ' ';
@@ -11589,7 +11589,7 @@ PyUnicode_Split(PyObject *s, PyObject *sep, Py_ssize_t maxsplit)
         }
     }
 
-    result = split((PyUnicodeObject *)s, (PyUnicodeObject *)sep, maxsplit);
+    result = split(s, sep, maxsplit);
 
     Py_DECREF(s);
     Py_XDECREF(sep);
@@ -11606,7 +11606,7 @@ whitespace string is a separator and empty strings are\n\
 removed from the result.");
 
 static PyObject*
-unicode_split(PyUnicodeObject *self, PyObject *args)
+unicode_split(PyObject *self, PyObject *args)
 {
     PyObject *substring = Py_None;
     Py_ssize_t maxcount = -1;
@@ -11617,7 +11617,7 @@ unicode_split(PyUnicodeObject *self, PyObject *args)
     if (substring == Py_None)
         return split(self, NULL, maxcount);
     else if (PyUnicode_Check(substring))
-        return split(self, (PyUnicodeObject *)substring, maxcount);
+        return split(self, substring, maxcount);
     else
         return PyUnicode_Split((PyObject *)self, substring, maxcount);
 }
@@ -11767,9 +11767,9 @@ the separator itself, and the part after it.  If the separator is not\n\
 found, return S and two empty strings.");
 
 static PyObject*
-unicode_partition(PyUnicodeObject *self, PyObject *separator)
+unicode_partition(PyObject *self, PyObject *separator)
 {
-    return PyUnicode_Partition((PyObject *)self, separator);
+    return PyUnicode_Partition(self, separator);
 }
 
 PyDoc_STRVAR(rpartition__doc__,
@@ -11780,9 +11780,9 @@ the part before it, the separator itself, and the part after it.  If the\n\
 separator is not found, return two empty strings and S.");
 
 static PyObject*
-unicode_rpartition(PyUnicodeObject *self, PyObject *separator)
+unicode_rpartition(PyObject *self, PyObject *separator)
 {
-    return PyUnicode_RPartition((PyObject *)self, separator);
+    return PyUnicode_RPartition(self, separator);
 }
 
 PyObject *
@@ -11801,7 +11801,7 @@ PyUnicode_RSplit(PyObject *s, PyObject *sep, Py_ssize_t maxsplit)
         }
     }
 
-    result = rsplit((PyUnicodeObject *)s, (PyUnicodeObject *)sep, maxsplit);
+    result = rsplit(s, sep, maxsplit);
 
     Py_DECREF(s);
     Py_XDECREF(sep);
@@ -11818,7 +11818,7 @@ splits are done. If sep is not specified, any whitespace string\n\
 is a separator.");
 
 static PyObject*
-unicode_rsplit(PyUnicodeObject *self, PyObject *args)
+unicode_rsplit(PyObject *self, PyObject *args)
 {
     PyObject *substring = Py_None;
     Py_ssize_t maxcount = -1;
@@ -11829,9 +11829,9 @@ unicode_rsplit(PyUnicodeObject *self, PyObject *args)
     if (substring == Py_None)
         return rsplit(self, NULL, maxcount);
     else if (PyUnicode_Check(substring))
-        return rsplit(self, (PyUnicodeObject *)substring, maxcount);
+        return rsplit(self, substring, maxcount);
     else
-        return PyUnicode_RSplit((PyObject *)self, substring, maxcount);
+        return PyUnicode_RSplit(self, substring, maxcount);
 }
 
 PyDoc_STRVAR(splitlines__doc__,
@@ -11872,7 +11872,7 @@ Return a copy of S with uppercase characters converted to lowercase\n\
 and vice versa.");
 
 static PyObject*
-unicode_swapcase(PyUnicodeObject *self)
+unicode_swapcase(PyObject *self)
 {
     return fixup(self, fixswapcase);
 }
@@ -12014,7 +12014,7 @@ PyDoc_STRVAR(upper__doc__,
 Return a copy of S converted to uppercase.");
 
 static PyObject*
-unicode_upper(PyUnicodeObject *self)
+unicode_upper(PyObject *self)
 {
     return fixup(self, fixupper);
 }
@@ -12026,10 +12026,10 @@ Pad a numeric string S with zeros on the left, to fill a field\n\
 of the specified width. The string S is never truncated.");
 
 static PyObject *
-unicode_zfill(PyUnicodeObject *self, PyObject *args)
+unicode_zfill(PyObject *self, PyObject *args)
 {
     Py_ssize_t fill;
-    PyUnicodeObject *u;
+    PyObject *u;
     Py_ssize_t width;
     int kind;
     void *data;
