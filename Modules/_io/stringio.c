@@ -131,6 +131,10 @@ write_str(stringio *self, PyObject *obj)
         return -1;
 
     assert(PyUnicode_Check(decoded));
+    if (PyUnicode_READY(decoded)) {
+        Py_DECREF(decoded);
+        return -1;
+    }
     len = PyUnicode_GET_LENGTH(decoded);
 
     assert(len >= 0);
