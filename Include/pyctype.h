@@ -9,7 +9,7 @@
 #define PY_CTF_SPACE  0x08
 #define PY_CTF_XDIGIT 0x10
 
-extern const unsigned int _Py_ctype_table[256];
+PyAPI_DATA(const unsigned int) _Py_ctype_table[256];
 
 /* Unlike their C counterparts, the following macros are not meant to
  * handle an int with any of the values [EOF, 0-UCHAR_MAX]. The argument
@@ -22,8 +22,8 @@ extern const unsigned int _Py_ctype_table[256];
 #define Py_ISALNUM(c)  (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_ALNUM)
 #define Py_ISSPACE(c)  (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_SPACE)
 
-extern const unsigned char _Py_ctype_tolower[256];
-extern const unsigned char _Py_ctype_toupper[256];
+PyAPI_DATA(const unsigned char) _Py_ctype_tolower[256];
+PyAPI_DATA(const unsigned char) _Py_ctype_toupper[256];
 
 #define Py_TOLOWER(c) (_Py_ctype_tolower[Py_CHARMASK(c)])
 #define Py_TOUPPER(c) (_Py_ctype_toupper[Py_CHARMASK(c)])
