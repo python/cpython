@@ -64,7 +64,7 @@ import functools
 
 ascii_char_size = 1
 ucs2_char_size = 2
-ucs4_char_size = 2
+ucs4_char_size = 4
 
 
 class BaseStrTest:
