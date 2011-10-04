@@ -1086,6 +1086,9 @@ buffered_seek(buffered *self, PyObject *args)
 
     CHECK_CLOSED(self, "seek of closed file")
 
+    if (_PyIOBase_check_seekable(self->raw, Py_True) == NULL)
+        return NULL;
+
     target = PyNumber_AsOff_t(targetobj, PyExc_ValueError);
     if (target == -1 && PyErr_Occurred())
         return NULL;
