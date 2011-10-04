@@ -10190,87 +10190,78 @@ If tabsize is not given, a tab size of 8 characters is assumed.");
 static PyObject*
 unicode_expandtabs(PyUnicodeObject *self, PyObject *args)
 {
-    Py_UNICODE *e;
-    Py_UNICODE *p;
-    Py_UNICODE *q;
-    Py_UNICODE *qe;
-    Py_ssize_t i, j, incr, wstr_length;
-    PyUnicodeObject *u;
+    Py_ssize_t i, j, line_pos, src_len, incr;
+    Py_UCS4 ch;
+    PyObject *u;
+    void *src_data, *dest_data;
     int tabsize = 8;
+    int kind;
 
     if (!PyArg_ParseTuple(args, "|i:expandtabs", &tabsize))
         return NULL;
 
-    if (PyUnicode_AsUnicodeAndSize((PyObject *)self, &wstr_length) == NULL)
-        return NULL;
-
     /* First pass: determine size of output string */
-    i = 0; /* chars up to and including most recent \n or \r */
-    j = 0; /* chars since most recent \n or \r (use in tab calculations) */
-    e = _PyUnicode_WSTR(self) + wstr_length; /* end of input */
-    for (p = _PyUnicode_WSTR(self); p < e; p++)
-        if (*p == '\t') {
+    src_len = PyUnicode_GET_LENGTH(self);
+    i = j = line_pos = 0;
+    kind = PyUnicode_KIND(self);
+    src_data = PyUnicode_DATA(self);
+    for (; i < src_len; i++) {
+        ch = PyUnicode_READ(kind, src_data, i);
+        if (ch == '\t') {
             if (tabsize > 0) {
-                incr = tabsize - (j % tabsize); /* cannot overflow */
+                incr = tabsize - (line_pos % tabsize); /* cannot overflow */
                 if (j > PY_SSIZE_T_MAX - incr)
-                    goto overflow1;
+                    goto overflow;
+                line_pos += incr;
                 j += incr;
             }
         }
         else {
             if (j > PY_SSIZE_T_MAX - 1)
-                goto overflow1;
+                goto overflow;
+            line_pos++;
             j++;
-            if (*p == '\n' || *p == '\r') {
-                if (i > PY_SSIZE_T_MAX - j)
-                    goto overflow1;
-                i += j;
-                j = 0;
-            }
+            if (ch == '\n' || ch == '\r')
+                line_pos = 0;
         }
-
-    if (i > PY_SSIZE_T_MAX - j)
-        goto overflow1;
+    }
 
     /* Second pass: create output string and fill it */
-    u = _PyUnicode_New(i + j);
+    u = PyUnicode_New(j, PyUnicode_MAX_CHAR_VALUE(self));
     if (!u)
         return NULL;
+    dest_data = PyUnicode_DATA(u);
 
-    j = 0; /* same as in first pass */
-    q = _PyUnicode_WSTR(u); /* next output char */
-    qe = _PyUnicode_WSTR(u) + PyUnicode_GET_SIZE(u); /* end of output */
+    i = j = line_pos = 0;
 
-    for (p = _PyUnicode_WSTR(self); p < e; p++)
-        if (*p == '\t') {
+    for (; i < src_len; i++) {
+        ch = PyUnicode_READ(kind, src_data, i);
+        if (ch == '\t') {
             if (tabsize > 0) {
-                i = tabsize - (j % tabsize);
-                j += i;
-                while (i--) {
-                    if (q >= qe)
-                        goto overflow2;
-                    *q++ = ' ';
+                incr = tabsize - (line_pos % tabsize);
+                line_pos += incr;
+                while (incr--) {
+                    PyUnicode_WRITE(kind, dest_data, j, ' ');
+                    j++;
                 }
             }
         }
         else {
-            if (q >= qe)
-                goto overflow2;
-            *q++ = *p;
+            line_pos++;
+            PyUnicode_WRITE(kind, dest_data, j, ch);
             j++;
-            if (*p == '\n' || *p == '\r')
-                j = 0;
+            if (ch == '\n' || ch == '\r')
+                line_pos = 0;
         }
-
-    if (_PyUnicode_READY_REPLACE(&u)) {
+    }
+    assert (j == PyUnicode_GET_LENGTH(u));
+    if (PyUnicode_READY(u)) {
         Py_DECREF(u);
         return NULL;
     }
     return (PyObject*) u;
 
-  overflow2:
-    Py_DECREF(u);
-  overflow1:
+  overflow:
     PyErr_SetString(PyExc_OverflowError, "new string is too long");
     return NULL;
 }
