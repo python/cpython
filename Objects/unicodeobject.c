@@ -10201,6 +10201,9 @@ unicode_expandtabs(PyUnicodeObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "|i:expandtabs", &tabsize))
         return NULL;
 
+    if (PyUnicode_READY(self) == -1)
+        return NULL;
+
     /* First pass: determine size of output string */
     src_len = PyUnicode_GET_LENGTH(self);
     i = j = line_pos = 0;
@@ -12253,9 +12256,9 @@ unicode_subscript(PyUnicodeObject* self, PyObject* item)
         return unicode_getitem((PyObject*)self, i);
     } else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelength, cur, i;
-        const Py_UNICODE* source_buf;
-        Py_UNICODE* result_buf;
-        PyObject* result;
+        PyObject *result;
+        void *src_data, *dest_data;
+        int kind;
 
         if (PySlice_GetIndicesEx(item, PyUnicode_GET_LENGTH(self),
                                  &start, &stop, &step, &slicelength) < 0) {
@@ -12272,22 +12275,20 @@ unicode_subscript(PyUnicodeObject* self, PyObject* item)
         } else if (step == 1) {
             return PyUnicode_Substring((PyObject*)self,
                                        start, start + slicelength);
-        } else {
-            source_buf = PyUnicode_AS_UNICODE((PyObject*)self);
-            result_buf = (Py_UNICODE *)PyObject_MALLOC(slicelength*
-                                                       sizeof(Py_UNICODE));
-
-            if (result_buf == NULL)
-                return PyErr_NoMemory();
-
-            for (cur = start, i = 0; i < slicelength; cur += step, i++) {
-                result_buf[i] = source_buf[cur];
-            }
-
-            result = PyUnicode_FromUnicode(result_buf, slicelength);
-            PyObject_FREE(result_buf);
-            return result;
         }
+        /* General (less optimized) case */
+        result = PyUnicode_New(slicelength, PyUnicode_MAX_CHAR_VALUE(self));
+        if (result == NULL)
+            return NULL;
+        kind = PyUnicode_KIND(self);
+        src_data = PyUnicode_DATA(self);
+        dest_data = PyUnicode_DATA(result);
+
+        for (cur = start, i = 0; i < slicelength; cur += step, i++) {
+            Py_UCS4 ch = PyUnicode_READ(kind, src_data, cur);
+            PyUnicode_WRITE(kind, dest_data, i, ch);
+        }
+        return result;
     } else {
         PyErr_SetString(PyExc_TypeError, "string indices must be integers");
         return NULL;
