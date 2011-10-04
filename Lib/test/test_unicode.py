@@ -13,10 +13,6 @@ import warnings
 from test import support, string_tests
 import _string
 
-# decorator to skip tests on narrow builds
-requires_wide_build = unittest.skipIf(sys.maxunicode == 65535,
-                                      'requires wide build')
-
 # Error handling (bad decoder return)
 def search_function(encoding):
     def decode1(input, errors="strict"):
@@ -519,7 +515,6 @@ class UnicodeTest(string_tests.CommonTest,
                 self.assertFalse(meth(s), '%a.%s() is False' % (s, meth_name))
 
 
-    @requires_wide_build
     def test_lower(self):
         string_tests.CommonTest.test_lower(self)
         self.assertEqual('\U00010427'.lower(), '\U0001044F')
@@ -530,7 +525,6 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('X\U00010427x\U0001044F'.lower(),
                          'x\U0001044Fx\U0001044F')
 
-    @requires_wide_build
     def test_upper(self):
         string_tests.CommonTest.test_upper(self)
         self.assertEqual('\U0001044F'.upper(), '\U00010427')
@@ -541,7 +535,6 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('X\U00010427x\U0001044F'.upper(),
                          'X\U00010427X\U00010427')
 
-    @requires_wide_build
     def test_capitalize(self):
         string_tests.CommonTest.test_capitalize(self)
         self.assertEqual('\U0001044F'.capitalize(), '\U00010427')
@@ -554,7 +547,6 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('X\U00010427x\U0001044F'.capitalize(),
                          'X\U0001044Fx\U0001044F')
 
-    @requires_wide_build
     def test_title(self):
         string_tests.MixinStrUnicodeUserStringTest.test_title(self)
         self.assertEqual('\U0001044F'.title(), '\U00010427')
@@ -569,7 +561,6 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('X\U00010427x\U0001044F X\U00010427x\U0001044F'.title(),
                          'X\U0001044Fx\U0001044F X\U0001044Fx\U0001044F')
 
-    @requires_wide_build
     def test_swapcase(self):
         string_tests.CommonTest.test_swapcase(self)
         self.assertEqual('\U0001044F'.swapcase(), '\U00010427')
@@ -1114,15 +1105,12 @@ class UnicodeTest(string_tests.CommonTest,
     def test_codecs_utf8(self):
         self.assertEqual(''.encode('utf-8'), b'')
         self.assertEqual('\u20ac'.encode('utf-8'), b'\xe2\x82\xac')
-        if sys.maxunicode == 65535:
-            self.assertEqual('\ud800\udc02'.encode('utf-8'), b'\xf0\x90\x80\x82')
-            self.assertEqual('\ud84d\udc56'.encode('utf-8'), b'\xf0\xa3\x91\x96')
+        self.assertEqual('\U00010002'.encode('utf-8'), b'\xf0\x90\x80\x82')
+        self.assertEqual('\U00023456'.encode('utf-8'), b'\xf0\xa3\x91\x96')
         self.assertEqual('\ud800'.encode('utf-8', 'surrogatepass'), b'\xed\xa0\x80')
         self.assertEqual('\udc00'.encode('utf-8', 'surrogatepass'), b'\xed\xb0\x80')
-        if sys.maxunicode == 65535:
-            self.assertEqual(
-                ('\ud800\udc02'*1000).encode('utf-8'),
-                b'\xf0\x90\x80\x82'*1000)
+        self.assertEqual(('\U00010002'*10).encode('utf-8'),
+                         b'\xf0\x90\x80\x82'*10)
         self.assertEqual(
             '\u6b63\u78ba\u306b\u8a00\u3046\u3068\u7ffb\u8a33\u306f'
             '\u3055\u308c\u3066\u3044\u307e\u305b\u3093\u3002\u4e00'
