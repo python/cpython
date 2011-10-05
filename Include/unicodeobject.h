@@ -654,6 +654,8 @@ PyAPI_FUNC(PyObject*) PyUnicode_FromString(
     const char *u              /* UTF-8 encoded string */
     );
 
+/* Create a new string from a buffer of Py_UCS1, Py_UCS2 or Py_UCS4 characters.
+   Scan the string to find the maximum character. */
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject*) PyUnicode_FromKindAndData(
     int kind,
