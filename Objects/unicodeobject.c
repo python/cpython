@@ -1520,6 +1520,22 @@ unicode_fromascii(const unsigned char* u, Py_ssize_t size)
     return res;
 }
 
+static Py_UCS4
+kind_maxchar_limit(unsigned int kind)
+{
+    switch(kind) {
+    case PyUnicode_1BYTE_KIND:
+        return 0x80;
+    case PyUnicode_2BYTE_KIND:
+        return 0x100;
+    case PyUnicode_4BYTE_KIND:
+        return 0x10000;
+    default:
+        assert(0 && "invalid kind");
+        return 0x10ffff;
+    }
+}
+
 static PyObject*
 _PyUnicode_FromUCS1(const unsigned char* u, Py_ssize_t size)
 {
@@ -12335,7 +12351,7 @@ unicode_subscript(PyUnicodeObject* self, PyObject* item)
         PyObject *result;
         void *src_data, *dest_data;
         int src_kind, dest_kind;
-        Py_UCS4 ch, max_char;
+        Py_UCS4 ch, max_char, kind_limit;
 
         if (PySlice_GetIndicesEx(item, PyUnicode_GET_LENGTH(self),
                                  &start, &stop, &step, &slicelength) < 0) {
@@ -12354,13 +12370,17 @@ unicode_subscript(PyUnicodeObject* self, PyObject* item)
                                        start, start + slicelength);
         }
         /* General case */
-        max_char = 127;
+        max_char = 0;
         src_kind = PyUnicode_KIND(self);
+        kind_limit = kind_maxchar_limit(src_kind);
         src_data = PyUnicode_DATA(self);
         for (cur = start, i = 0; i < slicelength; cur += step, i++) {
             ch = PyUnicode_READ(src_kind, src_data, cur);
-            if (ch > max_char)
+            if (ch > max_char) {
                 max_char = ch;
+                if (max_char >= kind_limit)
+                    break;
+            }
         }
         result = PyUnicode_New(slicelength, max_char);
         if (result == NULL)
