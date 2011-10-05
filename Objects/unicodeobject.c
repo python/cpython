@@ -11694,12 +11694,12 @@ PyUnicode_Partition(PyObject *str_in, PyObject *sep_in)
         return NULL;
     }
 
-    kind1 = PyUnicode_KIND(str_in);
+    kind1 = PyUnicode_KIND(str_obj);
     kind2 = PyUnicode_KIND(sep_obj);
-    kind = kind1 > kind2 ? kind1 : kind2;
-    buf1 = PyUnicode_DATA(str_in);
+    kind = Py_MAX(kind1, kind2);
+    buf1 = PyUnicode_DATA(str_obj);
     if (kind1 != kind)
-        buf1 = _PyUnicode_AsKind(str_in, kind);
+        buf1 = _PyUnicode_AsKind(str_obj, kind);
     if (!buf1)
         goto onError;
     buf2 = PyUnicode_DATA(sep_obj);
@@ -11710,7 +11710,7 @@ PyUnicode_Partition(PyObject *str_in, PyObject *sep_in)
     len1 = PyUnicode_GET_LENGTH(str_obj);
     len2 = PyUnicode_GET_LENGTH(sep_obj);
 
-    switch(PyUnicode_KIND(str_in)) {
+    switch(PyUnicode_KIND(str_obj)) {
     case PyUnicode_1BYTE_KIND:
         out = ucs1lib_partition(str_obj, buf1, len1, sep_obj, buf2, len2);
         break;
