@@ -1060,19 +1060,17 @@ find_maxchar_surrogates(const wchar_t *begin, const wchar_t *end,
     const wchar_t *iter;
 
     assert(num_surrogates != NULL && maxchar != NULL);
-    if (num_surrogates == NULL || maxchar == NULL) {
-        PyErr_SetString(PyExc_SystemError,
-                        "unexpected NULL arguments to "
-                        "PyUnicode_FindMaxCharAndNumSurrogatePairs");
-        return -1;
-    }
-
     *num_surrogates = 0;
     *maxchar = 0;
 
     for (iter = begin; iter < end; ) {
-        if (*iter > *maxchar)
+        if (*iter > *maxchar) {
             *maxchar = *iter;
+#if SIZEOF_WCHAR_T != 2
+            if (*maxchar >= 0x10000)
+                return 0;
+#endif
+        }
 #if SIZEOF_WCHAR_T == 2
         if (*iter >= 0xD800 && *iter <= 0xDBFF
             && (iter+1) < end && iter[1] >= 0xDC00 && iter[1] <= 0xDFFF)
