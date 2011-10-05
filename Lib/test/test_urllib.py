@@ -1058,6 +1058,10 @@ class Utility_Tests(unittest.TestCase):
         self.assertEqual(('user', 'a\vb'),urllib.parse.splitpasswd('user:a\vb'))
         self.assertEqual(('user', 'a:b'),urllib.parse.splitpasswd('user:a:b'))
 
+    def test_thishost(self):
+        """Test the urllib.request.thishost utility function returns a tuple"""
+        self.assertIsInstance(urllib.request.thishost(), tuple)
+
 
 class URLopener_Tests(unittest.TestCase):
     """Testcase to test the open method of URLopener class."""
