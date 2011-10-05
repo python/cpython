@@ -3,9 +3,14 @@ import unittest
 import codecs
 import locale
 import sys, _testcapi, io
-import ctypes
 
-SIZEOF_WCHAR_T = ctypes.sizeof(ctypes.c_wchar)
+try:
+    import ctypes
+except ImportError:
+    ctypes = None
+    SIZEOF_WCHAR_T = -1
+else:
+    SIZEOF_WCHAR_T = ctypes.sizeof(ctypes.c_wchar)
 
 class Queue(object):
     """
