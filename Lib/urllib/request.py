@@ -2125,7 +2125,7 @@ def thishost():
     """Return the IP addresses of the current host."""
     global _thishost
     if _thishost is None:
-        _thishost = tuple(socket.gethostbyname_ex(socket.gethostname()[2]))
+        _thishost = tuple(socket.gethostbyname_ex(socket.gethostname())[2])
     return _thishost
 
 _ftperrors = None
