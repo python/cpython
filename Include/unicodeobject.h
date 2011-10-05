@@ -85,7 +85,7 @@ Copyright (c) Corporation for National Research Initiatives.
 
 /* Py_UNICODE was the native Unicode storage format (code unit) used by
    Python and represents a single Unicode element in the Unicode type.
-   With PEP 393, Py_UNICODE is deprected and replaced with a
+   With PEP 393, Py_UNICODE is deprecated and replaced with a
    typedef to wchar_t. */
 
 #ifndef Py_LIMITED_API
@@ -115,7 +115,7 @@ typedef wchar_t Py_UNICODE;
 #  include <wchar.h>
 #endif
 
-/* Py_UCS4 and Py_UCS2 are typdefs for the respecitve
+/* Py_UCS4 and Py_UCS2 are typedefs for the respective
    unicode representations. */
 #if SIZEOF_INT >= 4
 typedef unsigned int Py_UCS4;
@@ -313,7 +313,7 @@ typedef struct {
 } PyASCIIObject;
 
 /* Non-ASCII strings allocated through PyUnicode_New use the
-   PyCompactUnicodeOject structure. state.compact is set, and the data
+   PyCompactUnicodeObject structure. state.compact is set, and the data
    immediately follow the structure. */
 typedef struct {
     PyASCIIObject _base;
@@ -382,7 +382,7 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
     ((const char *)(PyUnicode_AS_UNICODE(op)))
 
 
-/* --- Flexible String Representaion Helper Macros (PEP 393) -------------- */
+/* --- Flexible String Representation Helper Macros (PEP 393) -------------- */
 
 /* Values for PyUnicodeObject.state: */
 
@@ -468,9 +468,9 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 
 /* Write into the canonical representation, this macro does not do any sanity
    checks and is intended for usage in loops.  The caller should cache the
-   kind and data pointers optained form other macro calls.
+   kind and data pointers obtained form other macro calls.
    index is the index in the string (starts at 0) and value is the new
-   code point value which shoule be written to that location. */
+   code point value which should be written to that location. */
 #define PyUnicode_WRITE(kind, data, index, value) \
     do { \
         switch ((kind)) { \
@@ -542,7 +542,7 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 
 /* Return a maximum character value which is suitable for creating another
    string based on op.  This is always an approximation but more efficient
-   than interating over the string. */
+   than iterating over the string. */
 #define PyUnicode_MAX_CHAR_VALUE(op) \
     (assert(PyUnicode_IS_READY(op)),                                    \
      (PyUnicode_IS_COMPACT_ASCII(op) ? 0x7f:                            \
@@ -936,8 +936,8 @@ PyAPI_FUNC(int) PyUnicode_ClearFreeList(void);
 
    In case of an error, no *size is set.
 
-   This funcation caches the UTF-8 encoded string in the unicodeobject
-   and subsequent calls will return the same string.  The memory is relased
+   This function caches the UTF-8 encoded string in the unicodeobject
+   and subsequent calls will return the same string.  The memory is released
    when the unicodeobject is deallocated.
 
    _PyUnicode_AsStringAndSize is a #define for PyUnicode_AsUTF8AndSize to
@@ -1587,7 +1587,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeFSDefault(
 
    These are capable of handling Unicode objects and strings on input
    (we refer to them as strings in the descriptions) and return
-   Unicode objects or integers as apporpriate. */
+   Unicode objects or integers as appropriate. */
 
 /* Concat two strings giving a new Unicode string. */
 
@@ -1767,7 +1767,7 @@ PyAPI_FUNC(int) PyUnicode_CompareWithASCIIString(
 /* Rich compare two strings and return one of the following:
 
    - NULL in case an exception was raised
-   - Py_True or Py_False for successfuly comparisons
+   - Py_True or Py_False for successfully comparisons
    - Py_NotImplemented in case the type combination is unknown
 
    Note that Py_EQ and Py_NE comparisons can cause a UnicodeWarning in
