@@ -9708,7 +9708,10 @@ replace(PyObject *self, PyObject *str1,
                    sbuf + PyUnicode_KIND_SIZE(rkind, i),
                    PyUnicode_KIND_SIZE(rkind, slen-i));
         }
-        u = PyUnicode_FromKindAndData(rkind, res, new_size);
+        if (PyUnicode_IS_ASCII(self) && PyUnicode_IS_ASCII(str2))
+            u = unicode_fromascii((unsigned char*)res, new_size);
+        else
+            u = PyUnicode_FromKindAndData(rkind, res, new_size);
         PyMem_Free(res);
     }
     if (srelease)
