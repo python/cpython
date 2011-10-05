@@ -501,7 +501,7 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
         spec->n_grouped_digits = 0;
     else
         spec->n_grouped_digits = _PyUnicode_InsertThousandsGrouping(
-            PyUnicode_1BYTE_KIND, NULL, 0, NULL,
+            NULL, PyUnicode_1BYTE_KIND, NULL, 0, NULL,
             spec->n_digits, spec->n_min_width,
             locale->grouping, locale->thousands_sep);
 
@@ -603,7 +603,7 @@ fill_number(PyObject *out, Py_ssize_t pos, const NumberFieldWidths *spec,
         r =
 #endif
             _PyUnicode_InsertThousandsGrouping(
-                kind,
+                out, kind,
                 (char*)data + PyUnicode_KIND_SIZE(kind, pos),
                 spec->n_grouped_digits,
                 pdigits + PyUnicode_KIND_SIZE(kind, d_pos),
