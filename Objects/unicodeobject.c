@@ -11589,7 +11589,7 @@ unicode_repr(PyObject *unicode)
         }
     }
     /* Closing quote already added at the beginning */
-    assert(_PyUnicode_CheckConsistency(unicode, 1));
+    assert(_PyUnicode_CheckConsistency(repr, 1));
     return repr;
 }
 
