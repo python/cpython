@@ -494,11 +494,14 @@ also send your request step by step, by using the four functions below.
 
 .. method:: HTTPConnection.endheaders(message_body=None)
 
-   Send a blank line to the server, signalling the end of the headers.
-   The optional message_body argument can be used to pass message body
-   associated with the request.  The message body will be sent in
-   the same packet as the message headers if possible.  The
-   message_body should be a string.
+   Send a blank line to the server, signalling the end of the headers. The
+   optional *message_body* argument can be used to pass a message body
+   associated with the request.  The message body will be sent in the same
+   packet as the message headers if it is string, otherwise it is sent in a
+   separate packet.
+
+   .. versionchanged:: 2.7
+      *message_body* was added.
 
 
 .. method:: HTTPConnection.send(data)
