@@ -282,11 +282,11 @@ class TraceTestCase(unittest.TestCase):
         self.compare_events(func.func_code.co_firstlineno,
                             tracer.events, func.events)
 
-    def set_and_retrieve_none(self):
+    def test_set_and_retrieve_none(self):
         sys.settrace(None)
         assert sys.gettrace() is None
 
-    def set_and_retrieve_func(self):
+    def test_set_and_retrieve_func(self):
         def fn(*args):
             pass
 
