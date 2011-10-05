@@ -2030,6 +2030,13 @@ PyAPI_FUNC(Py_UNICODE*) PyUnicode_AsUnicodeCopy(
     );
 #endif /* Py_LIMITED_API */
 
+#if defined(Py_DEBUG) && !defined(Py_LIMITED_API)
+/* FIXME: use PyObject* type for op */
+PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
+    void *op,
+    int check_content);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
