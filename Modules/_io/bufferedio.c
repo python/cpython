@@ -2212,6 +2212,11 @@ bufferedrwpair_isatty(rwpair *self, PyObject *args)
 static PyObject *
 bufferedrwpair_closed_get(rwpair *self, void *context)
 {
+    if (self->writer == NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                "the BufferedRWPair object is being garbage-collected");
+        return NULL;
+    }
     return PyObject_GetAttr((PyObject *) self->writer, _PyIO_str_closed);
 }
 
