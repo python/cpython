@@ -881,7 +881,7 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
 #if SIZEOF_WCHAR_T == 2
 /* Helper function to convert a 16-bits wchar_t representation to UCS4, this
    will decode surrogate pairs, the other conversions are implemented as macros
-   for efficency.
+   for efficiency.
 
    This function assumes that unicode can hold one more code point than wstr
    characters for a terminating null character. */
@@ -1110,7 +1110,7 @@ unicode_ready(PyObject **p_obj, int replace)
     assert(p_obj != NULL);
     unicode = (PyUnicodeObject *)*p_obj;
 
-    /* _PyUnicode_Ready() is only intented for old-style API usage where
+    /* _PyUnicode_Ready() is only intended for old-style API usage where
        strings were created using _PyObject_New() and where no canonical
        representation (the str field) has been set yet aka strings
        which are not yet ready. */
@@ -1950,8 +1950,8 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
      * (we call PyObject_Str()/PyObject_Repr()/PyObject_ASCII()/
      * PyUnicode_DecodeUTF8() for these objects once during step 3 and put the
      * result in an array)
-     * also esimate a upper bound for all the number formats in the string,
-     * numbers will be formated in step 3 and be keept in a '\0'-separated
+     * also estimate a upper bound for all the number formats in the string,
+     * numbers will be formatted in step 3 and be kept in a '\0'-separated
      * buffer before putting everything together. */
     for (f = format; *f; f++) {
         if (*f == '%') {
@@ -3967,7 +3967,7 @@ utf8_max_char_size_and_has_errors(const char *s, Py_ssize_t string_size,
                 err = 1;
             }
             /* Instead of number of overall bytes for this code point,
-               n containts the number of following bytes: */
+               n contains the number of following bytes: */
             --n;
             /* Check if the follow up chars are all valid continuation bytes */
             if (n >= 1) {
@@ -8982,7 +8982,7 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
             sep = separator;
             seplen = PyUnicode_GET_LENGTH(separator);
             maxchar = PyUnicode_MAX_CHAR_VALUE(separator);
-            /* inc refcount to keep this code path symetric with the
+            /* inc refcount to keep this code path symmetric with the
                above case of a blank separator */
             Py_INCREF(sep);
         }
@@ -10134,7 +10134,7 @@ PyUnicode_Append(PyObject **p_left, PyObject *right)
     {
         /* Don't resize for ascii += latin1. Convert ascii to latin1 requires
            to change the structure size, but characters are stored just after
-           the structure, and so it requires to move all charactres which is
+           the structure, and so it requires to move all characters which is
            not so different than duplicating the string. */
         if (!(PyUnicode_IS_ASCII(left) && !PyUnicode_IS_ASCII(right)))
         {
