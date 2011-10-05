@@ -969,7 +969,7 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
 
     if (from_kind == to_kind
         /* deny latin1 => ascii */
-        && PyUnicode_MAX_CHAR_VALUE(to) >= PyUnicode_MAX_CHAR_VALUE(from))
+        && !(!PyUnicode_IS_ASCII(from) && PyUnicode_IS_ASCII(to)))
     {
         Py_MEMCPY((char*)to_data
                       + PyUnicode_KIND_SIZE(to_kind, to_start),
@@ -1013,9 +1013,7 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
         /* check if max_char(from substring) <= max_char(to) */
         if (from_kind > to_kind
                 /* latin1 => ascii */
-            || (PyUnicode_IS_ASCII(to)
-                && to_kind == PyUnicode_1BYTE_KIND
-                && !PyUnicode_IS_ASCII(from)))
+            || (!PyUnicode_IS_ASCII(from) && PyUnicode_IS_ASCII(to)))
         {
             /* slow path to check for character overflow */
             const Py_UCS4 to_maxchar = PyUnicode_MAX_CHAR_VALUE(to);
@@ -1528,15 +1526,17 @@ static PyObject*
 _PyUnicode_FromUCS1(const unsigned char* u, Py_ssize_t size)
 {
     PyObject *res;
-    unsigned char max = 127;
+    unsigned char max_char = 127;
     Py_ssize_t i;
+
+    assert(size >= 0);
     for (i = 0; i < size; i++) {
         if (u[i] & 0x80) {
-            max = 255;
+            max_char = 255;
             break;
         }
     }
-    res = PyUnicode_New(size, max);
+    res = PyUnicode_New(size, max_char);
     if (!res)
         return NULL;
     memcpy(PyUnicode_1BYTE_DATA(res), u, size);
@@ -1547,15 +1547,21 @@ static PyObject*
 _PyUnicode_FromUCS2(const Py_UCS2 *u, Py_ssize_t size)
 {
     PyObject *res;
-    Py_UCS2 max = 0;
+    Py_UCS2 max_char = 0;
     Py_ssize_t i;
-    for (i = 0; i < size; i++)
-        if (u[i] > max)
-            max = u[i];
-    res = PyUnicode_New(size, max);
+
+    assert(size >= 0);
+    for (i = 0; i < size; i++) {
+        if (u[i] > max_char) {
+            max_char = u[i];
+            if (max_char >= 256)
+                break;
+        }
+    }
+    res = PyUnicode_New(size, max_char);
     if (!res)
         return NULL;
-    if (max >= 256)
+    if (max_char >= 256)
         memcpy(PyUnicode_2BYTE_DATA(res), u, sizeof(Py_UCS2)*size);
     else
         for (i = 0; i < size; i++)
@@ -1567,15 +1573,21 @@ static PyObject*
 _PyUnicode_FromUCS4(const Py_UCS4 *u, Py_ssize_t size)
 {
     PyObject *res;
-    Py_UCS4 max = 0;
+    Py_UCS4 max_char = 0;
     Py_ssize_t i;
-    for (i = 0; i < size; i++)
-        if (u[i] > max)
-            max = u[i];
-    res = PyUnicode_New(size, max);
+
+    assert(size >= 0);
+    for (i = 0; i < size; i++) {
+        if (u[i] > max_char) {
+            max_char = u[i];
+            if (max_char >= 0x10000)
+                break;
+        }
+    }
+    res = PyUnicode_New(size, max_char);
     if (!res)
         return NULL;
-    if (max >= 0x10000)
+    if (max_char >= 0x10000)
         memcpy(PyUnicode_4BYTE_DATA(res), u, sizeof(Py_UCS4)*size);
     else {
         int kind = PyUnicode_KIND(res);
@@ -1596,9 +1608,11 @@ PyUnicode_FromKindAndData(int kind, const void *buffer, Py_ssize_t size)
         return _PyUnicode_FromUCS2(buffer, size);
     case PyUnicode_4BYTE_KIND:
         return _PyUnicode_FromUCS4(buffer, size);
+    default:
+        assert(0 && "invalid kind");
+        PyErr_SetString(PyExc_SystemError, "invalid kind");
+        return NULL;
     }
-    PyErr_SetString(PyExc_SystemError, "invalid kind");
-    return NULL;
 }
 
 PyObject*
@@ -9383,11 +9397,12 @@ replace(PyObject *self, PyObject *str1,
             maxchar = PyUnicode_MAX_CHAR_VALUE(self);
             /* Replacing u1 with u2 may cause a maxchar reduction in the
                result string. */
-            mayshrink = maxchar > 127;
             if (u2 > maxchar) {
                 maxchar = u2;
                 mayshrink = 0;
             }
+            else
+                mayshrink = maxchar > 127;
             u = PyUnicode_New(slen, maxchar);
             if (!u)
                 goto error;
@@ -11039,11 +11054,18 @@ PyUnicode_Substring(PyObject *self, Py_ssize_t start, Py_ssize_t end)
         return NULL;
     }
 
-    kind = PyUnicode_KIND(self);
-    data = PyUnicode_1BYTE_DATA(self);
-    return PyUnicode_FromKindAndData(kind,
-                                     data + PyUnicode_KIND_SIZE(kind, start),
-                                     length);
+    if (PyUnicode_IS_ASCII(self)) {
+        kind = PyUnicode_KIND(self);
+        data = PyUnicode_1BYTE_DATA(self);
+        return unicode_fromascii(data + start, length);
+    }
+    else {
+        kind = PyUnicode_KIND(self);
+        data = PyUnicode_1BYTE_DATA(self);
+        return PyUnicode_FromKindAndData(kind,
+                                         data + PyUnicode_KIND_SIZE(kind, start),
+                                         length);
+    }
 }
 
 static PyObject *
