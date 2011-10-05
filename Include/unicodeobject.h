@@ -1851,6 +1851,7 @@ PyAPI_FUNC(Py_ssize_t) _PyUnicode_InsertThousandsGroupingLocale(Py_UNICODE *buff
    see Objects/stringlib/localeutil.h */
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(Py_ssize_t) _PyUnicode_InsertThousandsGrouping(
+    PyObject *unicode,
     int kind,
     void *buffer,
     Py_ssize_t n_buffer,
