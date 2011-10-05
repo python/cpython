@@ -483,7 +483,8 @@ dump_ascii(int fd, PyObject *text)
     Py_ssize_t i, size;
     int truncated;
     int kind;
-    void *data;
+    void *data = NULL;
+    wchar_t *wstr = NULL;
     Py_UCS4 ch;
 
     size = ascii->length;
@@ -494,10 +495,16 @@ dump_ascii(int fd, PyObject *text)
         else
             data = ((PyCompactUnicodeObject*)text) + 1;
     }
-    else {
+    else if (kind != PyUnicode_WCHAR_KIND) {
         data = ((PyUnicodeObject *)text)->data.any;
         if (data == NULL)
             return;
+    }
+    else {
+        wstr = ((PyASCIIObject *)text)->wstr;
+        if (wstr == NULL)
+            return;
+        size = ((PyCompactUnicodeObject *)text)->wstr_length;
     }
 
     if (MAX_STRING_LENGTH < size) {
@@ -508,7 +515,10 @@ dump_ascii(int fd, PyObject *text)
         truncated = 0;
 
     for (i=0; i < size; i++) {
-        ch = PyUnicode_READ(kind, data, i);
+        if (kind != PyUnicode_WCHAR_KIND)
+            ch = PyUnicode_READ(kind, data, i);
+        else
+            ch = wstr[i];
         if (ch < 128) {
             char c = (char)ch;
             write(fd, &c, 1);
