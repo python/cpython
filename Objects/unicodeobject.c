@@ -1515,6 +1515,16 @@ PyUnicode_FromString(const char *u)
 }
 
 static PyObject*
+unicode_fromascii(const unsigned char* u, Py_ssize_t size)
+{
+    PyObject *res = PyUnicode_New(size, 127);
+    if (!res)
+        return NULL;
+    memcpy(PyUnicode_1BYTE_DATA(res), u, size);
+    return res;
+}
+
+static PyObject*
 _PyUnicode_FromUCS1(const unsigned char* u, Py_ssize_t size)
 {
     PyObject *res;
@@ -6477,65 +6487,81 @@ PyUnicode_DecodeASCII(const char *s,
 {
     const char *starts = s;
     PyUnicodeObject *v;
-    Py_UNICODE *p;
+    Py_UNICODE *u;
     Py_ssize_t startinpos;
     Py_ssize_t endinpos;
     Py_ssize_t outpos;
     const char *e;
-    unsigned char* d;
+    int has_error;
+    const unsigned char *p = (const unsigned char *)s;
+    const unsigned char *end = p + size;
+    const unsigned char *aligned_end = (const unsigned char *) ((size_t) end & ~LONG_PTR_MASK);
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
-    Py_ssize_t i;
 
     /* ASCII is equivalent to the first 128 ordinals in Unicode. */
-    if (size == 1 && *(unsigned char*)s < 128)
-        return PyUnicode_FromOrdinal(*(unsigned char*)s);
+    if (size == 1 && (unsigned char)s[0] < 128)
+        return get_latin1_char((unsigned char)s[0]);
 
-    /* Fast path. Assume the input actually *is* ASCII, and allocate
-       a single-block Unicode object with that assumption. If there is
-       an error, drop the object and start over. */
-    v = (PyUnicodeObject*)PyUnicode_New(size, 127);
-    if (v == NULL)
-        goto onError;
-    d = PyUnicode_1BYTE_DATA(v);
-    for (i = 0; i < size; i++) {
-        unsigned char ch = ((unsigned char*)s)[i];
-        if (ch < 128)
-            d[i] = ch;
-        else
+    has_error = 0;
+    while (p < end && !has_error) {
+        /* Fast path, see below in PyUnicode_DecodeUTF8Stateful for
+           an explanation. */
+        if (!((size_t) p & LONG_PTR_MASK)) {
+            /* Help register allocation */
+            register const unsigned char *_p = p;
+            while (_p < aligned_end) {
+                unsigned long value = *(unsigned long *) _p;
+                if (value & ASCII_CHAR_MASK) {
+                    has_error = 1;
+                    break;
+                }
+                _p += SIZEOF_LONG;
+            }
+            if (_p == end)
+                break;
+            if (has_error)
+                break;
+            p = _p;
+        }
+        if (*p & 0x80) {
+            has_error = 1;
             break;
+        }
+        else {
+            ++p;
+        }
     }
-    if (i == size)
-        return (PyObject*)v;
-    Py_DECREF(v); /* start over */
+    if (!has_error)
+        return unicode_fromascii((const unsigned char *)s, size);
 
     v = _PyUnicode_New(size);
     if (v == NULL)
         goto onError;
     if (size == 0)
         return (PyObject *)v;
-    p = PyUnicode_AS_UNICODE(v);
+    u = PyUnicode_AS_UNICODE(v);
     e = s + size;
     while (s < e) {
         register unsigned char c = (unsigned char)*s;
         if (c < 128) {
-            *p++ = c;
+            *u++ = c;
             ++s;
         }
         else {
             startinpos = s-starts;
             endinpos = startinpos + 1;
-            outpos = p - (Py_UNICODE *)PyUnicode_AS_UNICODE(v);
+            outpos = u - (Py_UNICODE *)PyUnicode_AS_UNICODE(v);
             if (unicode_decode_call_errorhandler(
                     errors, &errorHandler,
                     "ascii", "ordinal not in range(128)",
                     &starts, &e, &startinpos, &endinpos, &exc, &s,
-                    &v, &outpos, &p))
+                    &v, &outpos, &u))
                 goto onError;
         }
     }
-    if (p - PyUnicode_AS_UNICODE(v) < PyUnicode_GET_SIZE(v))
-        if (PyUnicode_Resize((PyObject**)&v, p - PyUnicode_AS_UNICODE(v)) < 0)
+    if (u - PyUnicode_AS_UNICODE(v) < PyUnicode_GET_SIZE(v))
+        if (PyUnicode_Resize((PyObject**)&v, u - PyUnicode_AS_UNICODE(v)) < 0)
             goto onError;
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
