@@ -963,8 +963,13 @@ static PyObject*
 my_basename(PyObject *name)
 {
     Py_ssize_t i, size, offset;
-    int kind = PyUnicode_KIND(name);
-    void *data = PyUnicode_DATA(name);
+    int kind;
+    void *data;
+
+    if (PyUnicode_READY(name))
+        return NULL;
+    kind = PyUnicode_KIND(name);
+    data = PyUnicode_DATA(name);
     size = PyUnicode_GET_LENGTH(name);
     offset = 0;
     for(i=0; i < size; i++) {
