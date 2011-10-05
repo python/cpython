@@ -296,13 +296,14 @@ typedef struct {
            - PyUnicode_1BYTE_KIND (1):
 
              * character type = Py_UCS1 (8 bits, unsigned)
-             * if ascii is 1, at least one character must be in range
-               U+80-U+FF, otherwise all characters must be in range U+00-U+7F
+             * if ascii is set, all characters must be in range
+               U+0000-U+007F, otherwise at least one character must be in range
+               U+0080-U+00FF
 
            - PyUnicode_2BYTE_KIND (2):
 
              * character type = Py_UCS2 (16 bits, unsigned)
-             * at least one character must be in range U+0100-U+1FFFF
+             * at least one character must be in range U+0100-U+FFFF
 
            - PyUnicode_4BYTE_KIND (3):
 
@@ -315,9 +316,9 @@ typedef struct {
            one block for the PyUnicodeObject struct and another for its data
            buffer. */
         unsigned int compact:1;
-        /* kind is PyUnicode_1BYTE_KIND but data contains only ASCII
-           characters. If ascii is 1 and compact is 1, use the PyASCIIObject
-           structure. */
+        /* The string only contains characters in range U+0000-U+007F (ASCII)
+           and the kind is PyUnicode_1BYTE_KIND. If ascii is set and compact is
+           set, use the PyASCIIObject structure. */
         unsigned int ascii:1;
         /* The ready flag indicates whether the object layout is initialized
            completely. This means that this is either a compact object, or
