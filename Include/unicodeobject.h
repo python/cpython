@@ -468,7 +468,7 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 
 /* Write into the canonical representation, this macro does not do any sanity
    checks and is intended for usage in loops.  The caller should cache the
-   kind and data pointers obtained form other macro calls.
+   kind and data pointers obtained from other macro calls.
    index is the index in the string (starts at 0) and value is the new
    code point value which should be written to that location. */
 #define PyUnicode_WRITE(kind, data, index, value) \
@@ -489,7 +489,7 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
         } \
     } while (0)
 
-/* Read a code point form the string's canonical representation.  No checks
+/* Read a code point from the string's canonical representation.  No checks
    or ready calls are performed. */
 #define PyUnicode_READ(kind, data, index) \
     ((Py_UCS4) \
