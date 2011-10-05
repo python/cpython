@@ -426,7 +426,7 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 #define PyUnicode_CHARACTER_SIZE(op) \
     (1 << (PyUnicode_KIND(op) - 1))
 
-/* Return pointers to the canonical representation casted as unsigned char,
+/* Return pointers to the canonical representation cast to unsigned char,
    Py_UCS2, or Py_UCS4 for direct character access.
    No checks are performed, use PyUnicode_CHARACTER_SIZE or
    PyUnicode_KIND() before to ensure these will work correctly. */
