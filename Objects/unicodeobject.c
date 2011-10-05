@@ -1537,12 +1537,20 @@ PyUnicode_FromString(const char *u)
 }
 
 static PyObject*
-unicode_fromascii(const unsigned char* u, Py_ssize_t size)
+unicode_fromascii(const unsigned char* s, Py_ssize_t size)
 {
-    PyObject *res = PyUnicode_New(size, 127);
+    PyObject *res;
+#ifdef Py_DEBUG
+    const unsigned char *p;
+    const unsigned char *end = s + size;
+    for (p=s; p < end; p++) {
+        assert(*p < 128);
+    }
+#endif
+    res = PyUnicode_New(size, 127);
     if (!res)
         return NULL;
-    memcpy(PyUnicode_1BYTE_DATA(res), u, size);
+    memcpy(PyUnicode_1BYTE_DATA(res), s, size);
     return res;
 }
 
