@@ -95,6 +95,17 @@ always available.
    customized by assigning another one-argument function to ``sys.displayhook``.
 
 
+.. data:: dont_write_bytecode
+
+   If this is true, Python won't try to write ``.pyc`` or ``.pyo`` files on the
+   import of source modules.  This value is initially set to ``True`` or
+   ``False`` depending on the :option:`-B` command line option and the
+   :envvar:`PYTHONDONTWRITEBYTECODE` environment variable, but you can set it
+   yourself to control bytecode file generation.
+
+   .. versionadded:: 2.6
+
+
 .. function:: excepthook(type, value, traceback)
 
    This function prints out a given traceback and exception to ``sys.stderr``.
@@ -782,17 +793,6 @@ always available.
    when Python is started with the -3 option.  (This should be considered
    read-only; setting it to a different value doesn't have an effect on
    Python 3.0 warnings.)
-
-   .. versionadded:: 2.6
-
-
-.. data:: dont_write_bytecode
-
-   If this is true, Python won't try to write ``.pyc`` or ``.pyo`` files on the
-   import of source modules.  This value is initially set to ``True`` or ``False``
-   depending on the ``-B`` command line option and the ``PYTHONDONTWRITEBYTECODE``
-   environment variable, but you can set it yourself to control bytecode file
-   generation.
 
    .. versionadded:: 2.6
 
