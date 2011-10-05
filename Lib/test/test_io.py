@@ -2414,6 +2414,21 @@ class CTextIOWrapperTest(TextIOWrapperTest):
         with self.open(support.TESTFN, "rb") as f:
             self.assertEqual(f.read(), b"456def")
 
+    def test_rwpair_cleared_before_textio(self):
+        # Issue 13070: TextIOWrapper's finalization would crash when called
+        # after the reference to the underlying BufferedRWPair's writer got
+        # cleared by the GC.
+        for i in range(1000):
+            b1 = self.BufferedRWPair(self.MockRawIO(), self.MockRawIO())
+            t1 = self.TextIOWrapper(b1, encoding="ascii")
+            b2 = self.BufferedRWPair(self.MockRawIO(), self.MockRawIO())
+            t2 = self.TextIOWrapper(b2, encoding="ascii")
+            # circular references
+            t1.buddy = t2
+            t2.buddy = t1
+        support.gc_collect()
+
+
 class PyTextIOWrapperTest(TextIOWrapperTest):
     pass
 
