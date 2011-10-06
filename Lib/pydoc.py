@@ -52,7 +52,7 @@ Richard Chamberlain, for the first implementation of textdoc.
 #     the current directory is changed with os.chdir(), an incorrect
 #     path will be displayed.
 
-import sys, imp, os, re, types, inspect, __builtin__, pkgutil
+import sys, imp, os, re, types, inspect, __builtin__, pkgutil, warnings
 from repr import Repr
 from string import expandtabs, find, join, lower, split, strip, rfind, rstrip
 from traceback import extract_tb
@@ -1968,10 +1968,11 @@ def apropos(key):
         if modname[-9:] == '.__init__':
             modname = modname[:-9] + ' (package)'
         print modname, desc and '- ' + desc
-    try: import warnings
-    except ImportError: pass
-    else: warnings.filterwarnings('ignore') # ignore problems during import
-    ModuleScanner().run(callback, key)
+    def onerror(modname):
+        pass
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore') # ignore problems during import
+        ModuleScanner().run(callback, key, onerror=onerror)
 
 # --------------------------------------------------- web browser interface
 
