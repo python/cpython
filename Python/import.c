@@ -1785,6 +1785,9 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
     else
         return 0;
 
+    if (PyUnicode_READY(path_unicode))
+        return -1;
+
     len = PyUnicode_GET_LENGTH(path_unicode);
     if (!PyUnicode_AsUCS4(path_unicode, buf, Py_ARRAY_LENGTH(buf), 1)) {
         Py_DECREF(path_unicode);
