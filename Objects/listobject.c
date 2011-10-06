@@ -321,70 +321,59 @@ static PyObject *
 list_repr(PyListObject *v)
 {
     Py_ssize_t i;
-    PyObject *s, *temp;
-    PyObject *pieces = NULL, *result = NULL;
+    PyObject *s = NULL;
+    _PyAccu acc;
+    static PyObject *sep = NULL;
+
+    if (Py_SIZE(v) == 0) {
+        return PyUnicode_FromString("[]");
+    }
+
+    if (sep == NULL) {
+        sep = PyUnicode_FromString(", ");
+        if (sep == NULL)
+            return NULL;
+    }
 
     i = Py_ReprEnter((PyObject*)v);
     if (i != 0) {
         return i > 0 ? PyUnicode_FromString("[...]") : NULL;
     }
 
-    if (Py_SIZE(v) == 0) {
-        result = PyUnicode_FromString("[]");
-        goto Done;
-    }
+    if (_PyAccu_Init(&acc))
+        goto error;
 
-    pieces = PyList_New(0);
-    if (pieces == NULL)
-        goto Done;
+    s = PyUnicode_FromString("[");
+    if (s == NULL || _PyAccu_Accumulate(&acc, s))
+        goto error;
+    Py_CLEAR(s);
 
     /* Do repr() on each element.  Note that this may mutate the list,
        so must refetch the list size on each iteration. */
     for (i = 0; i < Py_SIZE(v); ++i) {
-        int status;
         if (Py_EnterRecursiveCall(" while getting the repr of a list"))
-            goto Done;
+            goto error;
         s = PyObject_Repr(v->ob_item[i]);
         Py_LeaveRecursiveCall();
-        if (s == NULL)
-            goto Done;
-        status = PyList_Append(pieces, s);
-        Py_DECREF(s);  /* append created a new ref */
-        if (status < 0)
-            goto Done;
+        if (i > 0 && _PyAccu_Accumulate(&acc, sep))
+            goto error;
+        if (s == NULL || _PyAccu_Accumulate(&acc, s))
+            goto error;
+        Py_CLEAR(s);
     }
-
-    /* Add "[]" decorations to the first and last items. */
-    assert(PyList_GET_SIZE(pieces) > 0);
-    s = PyUnicode_FromString("[");
-    if (s == NULL)
-        goto Done;
-    temp = PyList_GET_ITEM(pieces, 0);
-    PyUnicode_AppendAndDel(&s, temp);
-    PyList_SET_ITEM(pieces, 0, s);
-    if (s == NULL)
-        goto Done;
-
     s = PyUnicode_FromString("]");
-    if (s == NULL)
-        goto Done;
-    temp = PyList_GET_ITEM(pieces, PyList_GET_SIZE(pieces) - 1);
-    PyUnicode_AppendAndDel(&temp, s);
-    PyList_SET_ITEM(pieces, PyList_GET_SIZE(pieces) - 1, temp);
-    if (temp == NULL)
-        goto Done;
+    if (s == NULL || _PyAccu_Accumulate(&acc, s))
+        goto error;
+    Py_CLEAR(s);
 
-    /* Paste them all together with ", " between. */
-    s = PyUnicode_FromString(", ");
-    if (s == NULL)
-        goto Done;
-    result = PyUnicode_Join(s, pieces);
-    Py_DECREF(s);
-
-Done:
-    Py_XDECREF(pieces);
     Py_ReprLeave((PyObject *)v);
-    return result;
+    return _PyAccu_Finish(&acc);
+
+error:
+    _PyAccu_Destroy(&acc);
+    Py_XDECREF(s);
+    Py_ReprLeave((PyObject *)v);
+    return NULL;
 }
 
 static Py_ssize_t
