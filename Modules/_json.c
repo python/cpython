@@ -75,17 +75,6 @@ static PyMemberDef encoder_members[] = {
     {NULL}
 };
 
-/*
- * A two-level accumulator of unicode objects that avoids both the overhead
- * of keeping a huge number of small separate objects, and the quadratic
- * behaviour of using a naive repeated concatenation scheme.
- */
-
-typedef struct {
-    PyObject *large;  /* A list of previously accumulated large strings */
-    PyObject *small;  /* Pending small strings */
-} accumulator;
-
 static PyObject *
 join_list_unicode(PyObject *lst)
 {
@@ -97,96 +86,6 @@ join_list_unicode(PyObject *lst)
             return NULL;
     }
     return PyUnicode_Join(sep, lst);
-}
-
-static int
-init_accumulator(accumulator *acc)
-{
-    acc->large = PyList_New(0);
-    if (acc->large == NULL)
-        return -1;
-    acc->small = PyList_New(0);
-    if (acc->small == NULL) {
-        Py_CLEAR(acc->large);
-        return -1;
-    }
-    return 0;
-}
-
-static int
-flush_accumulator(accumulator *acc)
-{
-    Py_ssize_t nsmall = PyList_GET_SIZE(acc->small);
-    if (nsmall) {
-        int ret;
-        PyObject *joined = join_list_unicode(acc->small);
-        if (joined == NULL)
-            return -1;
-        if (PyList_SetSlice(acc->small, 0, nsmall, NULL)) {
-            Py_DECREF(joined);
-            return -1;
-        }
-        ret = PyList_Append(acc->large, joined);
-        Py_DECREF(joined);
-        return ret;
-    }
-    return 0;
-}
-
-static int
-accumulate_unicode(accumulator *acc, PyObject *obj)
-{
-    int ret;
-    Py_ssize_t nsmall;
-    PyObject *joined;
-    assert(PyUnicode_Check(obj));
-
-    if (PyList_Append(acc->small, obj))
-        return -1;
-    nsmall = PyList_GET_SIZE(acc->small);
-    /* Each item in a list of unicode objects has an overhead (in 64-bit
-     * builds) of:
-     *   - 8 bytes for the list slot
-     *   - 56 bytes for the header of the unicode object
-     * that is, 64 bytes.  100000 such objects waste more than 6MB
-     * compared to a single concatenated string.
-     */
-    if (nsmall < 100000)
-        return 0;
-    joined = join_list_unicode(acc->small);
-    if (joined == NULL)
-        return -1;
-    if (PyList_SetSlice(acc->small, 0, nsmall, NULL)) {
-        Py_DECREF(joined);
-        return -1;
-    }
-    ret = PyList_Append(acc->large, joined);
-    Py_DECREF(joined);
-    return ret;
-}
-
-static PyObject *
-finish_accumulator(accumulator *acc)
-{
-    int ret;
-    PyObject *res;
-
-    ret = flush_accumulator(acc);
-    Py_CLEAR(acc->small);
-    if (ret) {
-        Py_CLEAR(acc->large);
-        return NULL;
-    }
-    res = acc->large;
-    acc->large = NULL;
-    return res;
-}
-
-static void
-destroy_accumulator(accumulator *acc)
-{
-    Py_CLEAR(acc->small);
-    Py_CLEAR(acc->large);
 }
 
 /* Forward decls */
@@ -217,11 +116,11 @@ encoder_dealloc(PyObject *self);
 static int
 encoder_clear(PyObject *self);
 static int
-encoder_listencode_list(PyEncoderObject *s, accumulator *acc, PyObject *seq, Py_ssize_t indent_level);
+encoder_listencode_list(PyEncoderObject *s, _PyAccu *acc, PyObject *seq, Py_ssize_t indent_level);
 static int
-encoder_listencode_obj(PyEncoderObject *s, accumulator *acc, PyObject *obj, Py_ssize_t indent_level);
+encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc, PyObject *obj, Py_ssize_t indent_level);
 static int
-encoder_listencode_dict(PyEncoderObject *s, accumulator *acc, PyObject *dct, Py_ssize_t indent_level);
+encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc, PyObject *dct, Py_ssize_t indent_level);
 static PyObject *
 _encoded_const(PyObject *obj);
 static void
@@ -1383,20 +1282,20 @@ encoder_call(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *obj;
     Py_ssize_t indent_level;
     PyEncoderObject *s;
-    accumulator acc;
+    _PyAccu acc;
 
     assert(PyEncoder_Check(self));
     s = (PyEncoderObject *)self;
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO&:_iterencode", kwlist,
         &obj, _convertPyInt_AsSsize_t, &indent_level))
         return NULL;
-    if (init_accumulator(&acc))
+    if (_PyAccu_Init(&acc))
         return NULL;
     if (encoder_listencode_obj(s, &acc, obj, indent_level)) {
-        destroy_accumulator(&acc);
+        _PyAccu_Destroy(&acc);
         return NULL;
     }
-    return finish_accumulator(&acc);
+    return _PyAccu_FinishAsList(&acc);
 }
 
 static PyObject *
@@ -1468,16 +1367,16 @@ encoder_encode_string(PyEncoderObject *s, PyObject *obj)
 }
 
 static int
-_steal_accumulate(accumulator *acc, PyObject *stolen)
+_steal_accumulate(_PyAccu *acc, PyObject *stolen)
 {
     /* Append stolen and then decrement its reference count */
-    int rval = accumulate_unicode(acc, stolen);
+    int rval = _PyAccu_Accumulate(acc, stolen);
     Py_DECREF(stolen);
     return rval;
 }
 
 static int
-encoder_listencode_obj(PyEncoderObject *s, accumulator *acc,
+encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc,
                        PyObject *obj, Py_ssize_t indent_level)
 {
     /* Encode Python object obj to a JSON term */
@@ -1570,7 +1469,7 @@ encoder_listencode_obj(PyEncoderObject *s, accumulator *acc,
 }
 
 static int
-encoder_listencode_dict(PyEncoderObject *s, accumulator *acc,
+encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
                         PyObject *dct, Py_ssize_t indent_level)
 {
     /* Encode Python dict dct a JSON term */
@@ -1593,7 +1492,7 @@ encoder_listencode_dict(PyEncoderObject *s, accumulator *acc,
             return -1;
     }
     if (Py_SIZE(dct) == 0)
-        return accumulate_unicode(acc, empty_dict);
+        return _PyAccu_Accumulate(acc, empty_dict);
 
     if (s->markers != Py_None) {
         int has_key;
@@ -1611,7 +1510,7 @@ encoder_listencode_dict(PyEncoderObject *s, accumulator *acc,
         }
     }
 
-    if (accumulate_unicode(acc, open_dict))
+    if (_PyAccu_Accumulate(acc, open_dict))
         goto bail;
 
     if (s->indent != Py_None) {
@@ -1698,7 +1597,7 @@ encoder_listencode_dict(PyEncoderObject *s, accumulator *acc,
         }
 
         if (idx) {
-            if (accumulate_unicode(acc, s->item_separator))
+            if (_PyAccu_Accumulate(acc, s->item_separator))
                 goto bail;
         }
 
@@ -1706,12 +1605,12 @@ encoder_listencode_dict(PyEncoderObject *s, accumulator *acc,
         Py_CLEAR(kstr);
         if (encoded == NULL)
             goto bail;
-        if (accumulate_unicode(acc, encoded)) {
+        if (_PyAccu_Accumulate(acc, encoded)) {
             Py_DECREF(encoded);
             goto bail;
         }
         Py_DECREF(encoded);
-        if (accumulate_unicode(acc, s->key_separator))
+        if (_PyAccu_Accumulate(acc, s->key_separator))
             goto bail;
 
         value = PyTuple_GET_ITEM(item, 1);
@@ -1735,7 +1634,7 @@ encoder_listencode_dict(PyEncoderObject *s, accumulator *acc,
 
         yield '\n' + (' ' * (_indent * _current_indent_level))
     }*/
-    if (accumulate_unicode(acc, close_dict))
+    if (_PyAccu_Accumulate(acc, close_dict))
         goto bail;
     return 0;
 
@@ -1749,7 +1648,7 @@ bail:
 
 
 static int
-encoder_listencode_list(PyEncoderObject *s, accumulator *acc,
+encoder_listencode_list(PyEncoderObject *s, _PyAccu *acc,
                         PyObject *seq, Py_ssize_t indent_level)
 {
     /* Encode Python list seq to a JSON term */
@@ -1776,7 +1675,7 @@ encoder_listencode_list(PyEncoderObject *s, accumulator *acc,
     num_items = PySequence_Fast_GET_SIZE(s_fast);
     if (num_items == 0) {
         Py_DECREF(s_fast);
-        return accumulate_unicode(acc, empty_array);
+        return _PyAccu_Accumulate(acc, empty_array);
     }
 
     if (s->markers != Py_None) {
@@ -1796,7 +1695,7 @@ encoder_listencode_list(PyEncoderObject *s, accumulator *acc,
     }
 
     seq_items = PySequence_Fast_ITEMS(s_fast);
-    if (accumulate_unicode(acc, open_array))
+    if (_PyAccu_Accumulate(acc, open_array))
         goto bail;
     if (s->indent != Py_None) {
         /* TODO: DOES NOT RUN */
@@ -1810,7 +1709,7 @@ encoder_listencode_list(PyEncoderObject *s, accumulator *acc,
     for (i = 0; i < num_items; i++) {
         PyObject *obj = seq_items[i];
         if (i) {
-            if (accumulate_unicode(acc, s->item_separator))
+            if (_PyAccu_Accumulate(acc, s->item_separator))
                 goto bail;
         }
         if (encoder_listencode_obj(s, acc, obj, indent_level))
@@ -1828,7 +1727,7 @@ encoder_listencode_list(PyEncoderObject *s, accumulator *acc,
 
         yield '\n' + (' ' * (_indent * _current_indent_level))
     }*/
-    if (accumulate_unicode(acc, close_array))
+    if (_PyAccu_Accumulate(acc, close_array))
         goto bail;
     Py_DECREF(s_fast);
     return 0;
