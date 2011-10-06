@@ -1,15 +1,12 @@
-"""Tests for the uninstall command."""
+"""Tests for the packaging.uninstall module."""
 import os
 import sys
-from io import StringIO
-import stat
+import logging
 import packaging.util
 
-from packaging.database import disable_cache, enable_cache
-from packaging.run import main
 from packaging.errors import PackagingError
 from packaging.install import remove
-from packaging.command.install_dist import install_dist
+from packaging.database import disable_cache, enable_cache
 
 from packaging.tests import unittest, support
 
@@ -47,16 +44,12 @@ class UninstallTestCase(support.TempdirManager,
         packaging.util._path_created.clear()
         super(UninstallTestCase, self).tearDown()
 
-    def run_setup(self, *args):
-        # run setup with args
-        args = ['run'] + list(args)
-        dist = main(args)
-        return dist
-
     def get_path(self, dist, name):
-        cmd = install_dist(dist)
-        cmd.prefix = self.root_dir
-        cmd.finalize_options()
+        # the dist argument must contain an install_dist command correctly
+        # initialized with a prefix option and finalized befored this method
+        # can be called successfully; practically, this means that you should
+        # call self.install_dist before self.get_path
+        cmd = dist.get_command_obj('install_dist')
         return getattr(cmd, 'install_' + name)
 
     def make_dist(self, name='Foo', **kw):
@@ -83,43 +76,56 @@ class UninstallTestCase(support.TempdirManager,
         if not dirname:
             dirname = self.make_dist(name, **kw)
         os.chdir(dirname)
-        old_out = sys.stderr
-        sys.stderr = StringIO()
-        dist = self.run_setup('install_dist', '--prefix=' + self.root_dir)
-        install_lib = self.get_path(dist, 'purelib')
-        return dist, install_lib
 
-    def test_uninstall_unknow_distribution(self):
+        dist = support.TestDistribution()
+        # for some unfathomable reason, the tests will fail horribly if the
+        # parse_config_files method is not called, even if it doesn't do
+        # anything useful; trying to build and use a command object manually
+        # also fails
+        dist.parse_config_files()
+        dist.finalize_options()
+        dist.run_command('install_dist',
+                         {'prefix': ('command line', self.root_dir)})
+
+        site_packages = self.get_path(dist, 'purelib')
+        return dist, site_packages
+
+    def test_uninstall_unknown_distribution(self):
+        dist, site_packages = self.install_dist('Foospam')
         self.assertRaises(PackagingError, remove, 'Foo',
-                          paths=[self.root_dir])
+                          paths=[site_packages])
 
     def test_uninstall(self):
-        dist, install_lib = self.install_dist()
-        self.assertIsFile(install_lib, 'foo', '__init__.py')
-        self.assertIsFile(install_lib, 'foo', 'sub', '__init__.py')
-        self.assertIsFile(install_lib, 'Foo-0.1.dist-info', 'RECORD')
-        self.assertTrue(remove('Foo', paths=[install_lib]))
-        self.assertIsNotFile(install_lib, 'foo', 'sub', '__init__.py')
-        self.assertIsNotFile(install_lib, 'Foo-0.1.dist-info', 'RECORD')
+        dist, site_packages = self.install_dist()
+        self.assertIsFile(site_packages, 'foo', '__init__.py')
+        self.assertIsFile(site_packages, 'foo', 'sub', '__init__.py')
+        self.assertIsFile(site_packages, 'Foo-0.1.dist-info', 'RECORD')
+        self.assertTrue(remove('Foo', paths=[site_packages]))
+        self.assertIsNotFile(site_packages, 'foo', 'sub', '__init__.py')
+        self.assertIsNotFile(site_packages, 'Foo-0.1.dist-info', 'RECORD')
 
-    def test_remove_issue(self):
+    def test_uninstall_error_handling(self):
         # makes sure if there are OSErrors (like permission denied)
-        # remove() stops and display a clean error
-        dist, install_lib = self.install_dist('Meh')
+        # remove() stops and displays a clean error
+        dist, site_packages = self.install_dist('Meh')
 
         # breaking os.rename
         old = os.rename
 
         def _rename(source, target):
-            raise OSError
+            raise OSError(42, 'impossible operation')
 
         os.rename = _rename
         try:
-            self.assertFalse(remove('Meh', paths=[install_lib]))
+            self.assertFalse(remove('Meh', paths=[site_packages]))
         finally:
             os.rename = old
 
-        self.assertTrue(remove('Meh', paths=[install_lib]))
+        logs = [log for log in self.get_logs(logging.INFO)
+                if log.startswith('Error:')]
+        self.assertEqual(logs, ['Error: [Errno 42] impossible operation'])
+
+        self.assertTrue(remove('Meh', paths=[site_packages]))
 
 
 def test_suite():

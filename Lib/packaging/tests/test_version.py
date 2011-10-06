@@ -101,7 +101,17 @@ class VersionTestCase(unittest.TestCase):
         True
         >>> V('1.2.0') >= V('1.2.3')
         False
-        >>> (V('1.0') > V('1.0b2'))
+        >>> V('1.2.0rc1') >= V('1.2.0')
+        False
+        >>> V('1.0') > V('1.0b2')
+        True
+        >>> V('1.0') > V('1.0c2')
+        True
+        >>> V('1.0') > V('1.0rc2')
+        True
+        >>> V('1.0rc2') > V('1.0rc1')
+        True
+        >>> V('1.0c4') > V('1.0c1')
         True
         >>> (V('1.0') > V('1.0c2') > V('1.0c1') > V('1.0b2') > V('1.0b1')
         ...  > V('1.0a2') > V('1.0a1'))
@@ -129,6 +139,8 @@ class VersionTestCase(unittest.TestCase):
         ...  < V('1.0.dev18')
         ...  < V('1.0.dev456')
         ...  < V('1.0.dev1234')
+        ...  < V('1.0rc1')
+        ...  < V('1.0rc2')
         ...  < V('1.0')
         ...  < V('1.0.post456.dev623')  # development version of a post release
         ...  < V('1.0.post456'))
@@ -236,9 +248,9 @@ class VersionWhiteBoxTestCase(unittest.TestCase):
     def test_parse_numdots(self):
         # For code coverage completeness, as pad_zeros_length can't be set or
         # influenced from the public interface
-        self.assertEqual(V('1.0')._parse_numdots('1.0', '1.0',
-                                                  pad_zeros_length=3),
-                          [1, 0, 0])
+        self.assertEqual(
+            V('1.0')._parse_numdots('1.0', '1.0', pad_zeros_length=3),
+            [1, 0, 0])
 
 
 def test_suite():

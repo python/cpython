@@ -6,8 +6,7 @@
 :Release: |release|
 :Date: |today|
 
-.. $Id$
-   Rules for maintenance:
+.. Rules for maintenance:
 
    * Anyone can add text to this document.  Do not spend very much time
    on the wording of your changes, because your text will probably
@@ -40,25 +39,25 @@
 
    * It's helpful to add the bug/patch number as a comment:
 
-   % Patch 12345
    XXX Describe the transmogrify() function added to the socket
    module.
-   (Contributed by P.Y. Developer.)
+   (Contributed by P.Y. Developer in :issue:`12345`.)
 
-   This saves the maintainer the effort of going through the SVN log
+   This saves the maintainer the effort of going through the Mercurial log
    when researching a change.
 
 This article explains the new features in Python 3.3, compared to 3.2.
 
 
-PEP XXX: Stub
-=============
-
-
 PEP 393: Flexible String Representation
 =======================================
 
-XXX Give a short introduction about :pep:`393`.
+[Abstract copied from the PEP: The Unicode string type is changed to support
+multiple internal representations, depending on the character with the largest
+Unicode ordinal (1, 2, or 4 bytes).  This allows a space-efficient
+representation in common cases, but gives access to full UCS-4 on all systems.
+For compatibility with existing APIs, several representations may exist in
+parallel; over time, this compatibility should be phased out.]
 
 PEP 393 is fully backward compatible. The legacy API should remain
 available at least five years. Applications using the legacy API will not
@@ -108,6 +107,7 @@ XXX Add list of changes introduced by :pep:`393` here:
 * The :file:`./configure` flag ``--with-wide-unicode`` has been removed.
 
 XXX mention new and deprecated functions and macros
+
 
 Other Language Changes
 ======================
