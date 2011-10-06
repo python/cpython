@@ -173,6 +173,7 @@ import io
 import json
 import logging
 import os
+import packaging.database
 import platform
 import random
 import re
@@ -967,6 +968,7 @@ class saved_test_environment:
                  'sys.warnoptions', 'threading._dangling',
                  'multiprocessing.process._dangling',
                  'sysconfig._CONFIG_VARS', 'sysconfig._SCHEMES',
+                 'packaging.database_caches',
                 )
 
     def get_sys_argv(self):
@@ -1053,6 +1055,28 @@ class saved_test_environment:
     def restore_logging__handlerList(self, saved_handlerList):
         # Can't easily revert the logging state
         pass
+
+    def get_packaging_database_caches(self):
+        # caching system used by the PEP 376 implementation
+        # we have one boolean and four dictionaries, initially empty
+        switch = packaging.database._cache_enabled
+        saved = []
+        for name in ('_cache_name', '_cache_name_egg',
+                     '_cache_path', '_cache_path_egg'):
+            cache = getattr(packaging.database, name)
+            saved.append((id(cache), cache, cache.copy()))
+        return switch, saved
+    def restore_packaging_database_caches(self, saved):
+        switch, saved_caches = saved
+        packaging.database._cache_enabled = switch
+        for offset, name in enumerate(('_cache_name', '_cache_name_egg',
+                                       '_cache_path', '_cache_path_egg')):
+            _, cache, items = saved_caches[offset]
+            # put back the same object in place
+            setattr(packaging.database, name, cache)
+            # now restore its items
+            cache.clear()
+            cache.update(items)
 
     def get_sys_warnoptions(self):
         return id(sys.warnoptions), sys.warnoptions, sys.warnoptions[:]
