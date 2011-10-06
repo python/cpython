@@ -100,7 +100,7 @@
 #include "warnings.h"
 #include "weakrefobject.h"
 #include "structseq.h"
-
+#include "accu.h"
 
 #include "codecs.h"
 #include "pyerrors.h"
@@ -141,7 +141,7 @@ PyAPI_FUNC(PyObject*) _Py_Mangle(PyObject *p, PyObject *name);
 #endif
 
 /* Argument must be a char or an int in [-128, 127] or [0, 255]. */
-#define Py_CHARMASK(c)		((unsigned char)((c) & 0xff))
+#define Py_CHARMASK(c)          ((unsigned char)((c) & 0xff))
 
 #include "pyfpe.h"
 

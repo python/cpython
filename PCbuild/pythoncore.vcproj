@@ -635,6 +635,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Include\accu.h"
+				>
+			</File>
+			<File
 				RelativePath="..\Include\asdl.h"
 				>
 			</File>
@@ -1444,6 +1448,10 @@
 			>
 			<File
 				RelativePath="..\Objects\abstract.c"
+				>
+			</File>
+			<File
+				RelativePath="..\Objects\accu.c"
 				>
 			</File>
 			<File
