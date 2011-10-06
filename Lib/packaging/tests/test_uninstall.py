@@ -1,6 +1,7 @@
 """Tests for the uninstall command."""
 import os
 import sys
+import logging
 from io import StringIO
 import stat
 import packaging.util
@@ -105,20 +106,24 @@ class UninstallTestCase(support.TempdirManager,
 
     def test_remove_issue(self):
         # makes sure if there are OSErrors (like permission denied)
-        # remove() stops and display a clean error
+        # remove() stops and displays a clean error
         dist, site_packages = self.install_dist('Meh')
 
         # breaking os.rename
         old = os.rename
 
         def _rename(source, target):
-            raise OSError
+            raise OSError(42, 'impossible operation')
 
         os.rename = _rename
         try:
             self.assertFalse(remove('Meh', paths=[site_packages]))
         finally:
             os.rename = old
+
+        logs = [log for log in self.get_logs(logging.INFO)
+                if log.startswith('Error:')]
+        self.assertEqual(logs, ['Error: [Errno 42] impossible operation'])
 
         self.assertTrue(remove('Meh', paths=[site_packages]))
 
