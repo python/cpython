@@ -1052,20 +1052,32 @@ _copy_characters(PyObject *to, Py_ssize_t to_start,
             Py_UCS4 ch;
             Py_ssize_t i;
 
+#ifdef Py_DEBUG
             for (i=0; i < how_many; i++) {
                 ch = PyUnicode_READ(from_kind, from_data, from_start + i);
-                if (check_maxchar) {
-                    if (ch > to_maxchar)
-                        return 1;
-                }
-                else {
-                    assert(ch <= to_maxchar);
-                }
+                assert(ch <= to_maxchar);
                 PyUnicode_WRITE(to_kind, to_data, to_start + i, ch);
             }
+#else
+            if (!check_maxchar) {
+                for (i=0; i < how_many; i++) {
+                    ch = PyUnicode_READ(from_kind, from_data, from_start + i);
+                    PyUnicode_WRITE(to_kind, to_data, to_start + i, ch);
+                }
+            }
+            else {
+                for (i=0; i < how_many; i++) {
+                    ch = PyUnicode_READ(from_kind, from_data, from_start + i);
+                    if (ch > to_maxchar)
+                        return 1;
+                    PyUnicode_WRITE(to_kind, to_data, to_start + i, ch);
+                }
+            }
+#endif
         }
         else {
-            return -1;
+            assert(0 && "inconsistent state");
+            return 1;
         }
     }
     return 0;
