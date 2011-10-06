@@ -701,7 +701,13 @@ class StrTest(unittest.TestCase, BaseStrTest):
         self.assertEqual(s.count('\\'), size)
         self.assertEqual(s.count('0'), size * 2)
 
-    @bigmemtest(size=_2G // 5 + 1, memuse=ucs2_char_size + ascii_char_size * 6)
+    # ascii() calls encode('ascii', 'backslashreplace'), which itself
+    # creates a temporary Py_UNICODE representation in addition to the
+    # original (Py_UCS2) one
+    # There's also some overallocation when resizing the ascii() result
+    # that isn't taken into account here.
+    @bigmemtest(size=_2G // 5 + 1, memuse=ucs2_char_size +
+                                          ucs4_char_size + ascii_char_size * 6)
     def test_unicode_repr(self, size):
         # Use an assigned, but not printable code point.
         # It is in the range of the low surrogates \uDC00-\uDFFF.
