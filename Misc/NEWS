@@ -10,6 +10,9 @@ What's New in Python 3.2.3?
 Core and Builtins
 -----------------
 
+- Issue #12911: Fix memory consumption when calculating the repr() of huge
+  tuples or lists.
+
 - Issue #7732: Don't open a directory as a file anymore while importing a
   module. Ignore the direcotry if its name matchs the module name (e.g.
   "__init__.py") and raise a ImportError instead.
