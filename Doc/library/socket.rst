@@ -80,6 +80,11 @@ Socket addresses are represented as follows:
     If *addr_type* is TIPC_ADDR_ID, then *v1* is the node, *v2* is the
     reference, and *v3* should be set to 0.
 
+- A tuple ``(interface, )`` is used for the :const:`AF_CAN` address family,
+  where *interface* is a string representing a network interface name like
+  ``'can0'``. The network interface name ``''`` can be used to receive packets
+  from all network interfaces of this family.
+
 - Certain other address families (:const:`AF_BLUETOOTH`, :const:`AF_PACKET`)
   support specific representations.
 
@@ -215,6 +220,19 @@ The module :mod:`socket` exports the following constants and functions:
    methods of socket objects.  In most cases, only those symbols that are defined
    in the Unix header files are defined; for a few symbols, default values are
    provided.
+
+.. data:: AF_CAN
+          PF_CAN
+          SOL_CAN_*
+          CAN_*
+
+   Many constants of these forms, documented in the Linux documentation, are
+   also defined in the socket module.
+
+   Availability: Linux >= 2.6.25.
+
+   .. versionadded:: 3.3
+
 
 .. data:: SIO_*
           RCVALL_*
@@ -387,10 +405,14 @@ The module :mod:`socket` exports the following constants and functions:
 
    Create a new socket using the given address family, socket type and protocol
    number.  The address family should be :const:`AF_INET` (the default),
-   :const:`AF_INET6` or :const:`AF_UNIX`.  The socket type should be
-   :const:`SOCK_STREAM` (the default), :const:`SOCK_DGRAM` or perhaps one of the
-   other ``SOCK_`` constants.  The protocol number is usually zero and may be
-   omitted in that case.
+   :const:`AF_INET6`, :const:`AF_UNIX` or :const:`AF_CAN`. The socket type
+   should be :const:`SOCK_STREAM` (the default), :const:`SOCK_DGRAM`,
+   :const:`SOCK_RAW` or perhaps one of the other ``SOCK_`` constants. The
+   protocol number is usually zero and may be omitted in that case or
+   :const:`CAN_RAW` in case the address family is :const:`AF_CAN`.
+
+   .. versionchanged:: 3.3
+      The AF_CAN family was added.
 
 
 .. function:: socketpair([family[, type[, proto]]])
@@ -1213,7 +1235,7 @@ sends traffic to the first one connected successfully. ::
    print('Received', repr(data))
 
 
-The last example shows how to write a very simple network sniffer with raw
+The next example shows how to write a very simple network sniffer with raw
 sockets on Windows. The example requires administrator privileges to modify
 the interface::
 
@@ -1238,6 +1260,45 @@ the interface::
    # disabled promiscuous mode
    s.ioctl(socket.SIO_RCVALL, socket.RCVALL_OFF)
 
+The last example shows how to use the socket interface to communicate to a CAN
+network. This example might require special priviledge::
+
+   import socket
+   import struct
+
+
+   # CAN frame packing/unpacking (see `struct can_frame` in <linux/can.h>)
+
+   can_frame_fmt = "=IB3x8s"
+
+   def build_can_frame(can_id, data):
+       can_dlc = len(data)
+       data = data.ljust(8, b'\x00')
+       return struct.pack(can_frame_fmt, can_id, can_dlc, data)
+
+   def dissect_can_frame(frame):
+       can_id, can_dlc, data = struct.unpack(can_frame_fmt, frame)
+       return (can_id, can_dlc, data[:can_dlc])
+
+
+   # create a raw socket and bind it to the `vcan0` interface
+   s = socket.socket(socket.AF_CAN, socket.SOCK_RAW, socket.CAN_RAW)
+   s.bind(('vcan0',))
+
+   while True:
+       cf, addr = s.recvfrom(16)
+
+       print('Received: can_id=%x, can_dlc=%x, data=%s' % dissect_can_frame(cf))
+
+       try:
+           s.send(cf)
+       except socket.error:
+           print('Error sending CAN frame')
+
+       try:
+           s.send(build_can_frame(0x01, b'\x01\x02\x03'))
+       except socket.error:
+           print('Error sending CAN frame')
 
 Running an example several times with too small delay between executions, could
 lead to this error::

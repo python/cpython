@@ -1322,6 +1322,9 @@ Tools/Demos
 Extension Modules
 -----------------
 
+- Issue #10141: socket: Add SocketCAN (PF_CAN) support. Initial patch by
+  Matthias Fuchs, updated by Tiago Gonçalves.
+
 - Issue #13070: Fix a crash when a TextIOWrapper caught in a reference cycle
   would be finalized after the reference to its underlying BufferedRWPair's
   writer got cleared by the GC.

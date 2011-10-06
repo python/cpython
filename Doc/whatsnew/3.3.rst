@@ -300,15 +300,22 @@ signal
 socket
 ------
 
-The :class:`~socket.socket` class now exposes addititonal methods to
-process ancillary data when supported by the underlying platform:
+* The :class:`~socket.socket` class now exposes additional methods to process
+  ancillary data when supported by the underlying platform:
 
-* :func:`~socket.socket.sendmsg`
-* :func:`~socket.socket.recvmsg`
-* :func:`~socket.socket.recvmsg_into`
+  * :func:`~socket.socket.sendmsg`
+  * :func:`~socket.socket.recvmsg`
+  * :func:`~socket.socket.recvmsg_into`
 
-(Contributed by David Watson in :issue:`6560`, based on an earlier patch
-by Heiko Wundram)
+  (Contributed by David Watson in :issue:`6560`, based on an earlier patch by
+  Heiko Wundram)
+
+* The :class:`~socket.socket` class now supports the PF_CAN protocol family
+  (http://en.wikipedia.org/wiki/Socketcan), on Linux
+  (http://lwn.net/Articles/253425).
+
+  (Contributed by Matthias Fuchs, updated by Tiago Gonçalves in :issue:`10141`)
+
 
 ssl
 ---

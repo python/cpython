@@ -1376,6 +1376,13 @@ AC_CHECK_HEADERS(linux/netlink.h,,,[
 #endif
 ])
 
+# On Linux, can.h and can/raw.h require sys/socket.h
+AC_CHECK_HEADERS(linux/can.h linux/can/raw.h,,,[
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+])
+
 # checks for typedefs
 was_it_defined=no
 AC_MSG_CHECKING(for clock_t in time.h)

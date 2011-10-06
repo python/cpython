@@ -72,6 +72,14 @@ typedef int socklen_t;
 # include <linux/tipc.h>
 #endif
 
+#ifdef HAVE_LINUX_CAN_H
+#include <linux/can.h>
+#endif
+
+#ifdef HAVE_LINUX_CAN_RAW_H
+#include <linux/can/raw.h>
+#endif
+
 #ifndef Py__SOCKET_H
 #define Py__SOCKET_H
 #ifdef __cplusplus
@@ -125,6 +133,9 @@ typedef union sock_addr {
 #endif
 #ifdef HAVE_NETPACKET_PACKET_H
     struct sockaddr_ll ll;
+#endif
+#ifdef HAVE_LINUX_CAN_H
+    struct sockaddr_can can;
 #endif
 } sock_addr_t;
 
