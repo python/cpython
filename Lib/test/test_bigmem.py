@@ -615,26 +615,28 @@ class StrTest(unittest.TestCase, BaseStrTest):
         for name, memuse in self._adjusted.items():
             getattr(type(self), name).memuse = memuse
 
-    # the utf8 encoder preallocates big time (4x the number of characters)
-    @bigmemtest(size=_2G + 2, memuse=ascii_char_size + 4)
+    # Many codecs convert to the legacy representation first, explaining
+    # why we add 'ucs4_char_size' to the 'memuse' below.
+
+    @bigmemtest(size=_2G + 2, memuse=ascii_char_size + 1)
     def test_encode(self, size):
         return self.basic_encode_test(size, 'utf-8')
 
-    @bigmemtest(size=_4G // 6 + 2, memuse=ascii_char_size + 1)
+    @bigmemtest(size=_4G // 6 + 2, memuse=ascii_char_size + ucs4_char_size + 1)
     def test_encode_raw_unicode_escape(self, size):
         try:
             return self.basic_encode_test(size, 'raw_unicode_escape')
         except MemoryError:
             pass # acceptable on 32-bit
 
-    @bigmemtest(size=_4G // 5 + 70, memuse=ascii_char_size + 1)
+    @bigmemtest(size=_4G // 5 + 70, memuse=ascii_char_size + ucs4_char_size + 1)
     def test_encode_utf7(self, size):
         try:
             return self.basic_encode_test(size, 'utf7')
         except MemoryError:
             pass # acceptable on 32-bit
 
-    @bigmemtest(size=_4G // 4 + 5, memuse=ascii_char_size + 4)
+    @bigmemtest(size=_4G // 4 + 5, memuse=ascii_char_size + ucs4_char_size + 4)
     def test_encode_utf32(self, size):
         try:
             return self.basic_encode_test(size, 'utf32', expectedsize=4 * size + 4)
