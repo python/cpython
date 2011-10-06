@@ -647,7 +647,9 @@ class StrTest(unittest.TestCase, BaseStrTest):
     def test_encode_ascii(self, size):
         return self.basic_encode_test(size, 'ascii', c='A')
 
-    @bigmemtest(size=_2G + 10, memuse=ascii_char_size * 2)
+    # str % (...) uses a Py_UCS4 intermediate representation
+
+    @bigmemtest(size=_2G + 10, memuse=ascii_char_size * 2 + ucs4_char_size)
     def test_format(self, size):
         s = '-' * size
         sf = '%s' % (s,)
