@@ -50,6 +50,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #7367: Fix pkgutil.walk_paths to skip directories whose
+  contents cannot be read.
+
+- Issue #7425: Prevent pydoc -k failures due to module import errors.
+  (Backport to 2.7 of existing 3.x fix)
+
 - Issue #13099: Fix sqlite3.Cursor.lastrowid under a Turkish locale.
   Reported and diagnosed by Thomas Kluyver.
 
