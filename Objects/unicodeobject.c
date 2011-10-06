@@ -9154,6 +9154,7 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
             return res;
         }
         sep = NULL;
+        maxchar = 0;
     }
     else {
         /* Set up sep and seplen */
@@ -9203,8 +9204,7 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
             goto onError;
         sz += PyUnicode_GET_LENGTH(item);
         item_maxchar = PyUnicode_MAX_CHAR_VALUE(item);
-        if (item_maxchar > maxchar)
-            maxchar = item_maxchar;
+        maxchar = Py_MAX(maxchar, item_maxchar);
         if (i != 0)
             sz += seplen;
         if (sz < old_sz || sz > PY_SSIZE_T_MAX) {
