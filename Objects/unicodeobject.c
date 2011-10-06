@@ -1780,8 +1780,9 @@ unicode_adjust_maxchar(PyObject **p_unicode)
         }
     }
     else {
+        const Py_UCS4 *u;
         assert(kind == PyUnicode_4BYTE_KIND);
-        const Py_UCS4 *u = PyUnicode_4BYTE_DATA(unicode);
+        u = PyUnicode_4BYTE_DATA(unicode);
         max_char = 0;
         for (i = 0; i < len; i++) {
             if (u[i] > max_char) {
