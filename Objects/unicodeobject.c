@@ -243,7 +243,9 @@ static void copy_characters(
     PyObject *to, Py_ssize_t to_start,
     PyObject *from, Py_ssize_t from_start,
     Py_ssize_t how_many);
+#ifdef Py_DEBUG
 static int unicode_is_singleton(PyObject *unicode);
+#endif
 
 static PyObject *
 unicode_encode_call_errorhandler(const char *errors,
