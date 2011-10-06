@@ -12693,17 +12693,13 @@ formatlong(PyObject *val, int flags, int prec, int type)
     return result;
 }
 
-static int
-formatchar(Py_UCS4 *buf,
-           size_t buflen,
-           PyObject *v)
+static Py_UCS4
+formatchar(PyObject *v)
 {
     /* presume that the buffer is at least 3 characters long */
     if (PyUnicode_Check(v)) {
         if (PyUnicode_GET_LENGTH(v) == 1) {
-            buf[0] = PyUnicode_READ_CHAR(v, 0);
-            buf[1] = '\0';
-            return 1;
+            return PyUnicode_READ_CHAR(v, 0);
         }
         goto onError;
     }
@@ -12717,24 +12713,17 @@ formatchar(Py_UCS4 *buf,
         if (x < 0 || x > 0x10ffff) {
             PyErr_SetString(PyExc_OverflowError,
                             "%c arg not in range(0x110000)");
-            return -1;
+            return (Py_UCS4) -1;
         }
 
-        buf[0] = (Py_UCS4) x;
-        buf[1] = '\0';
-        return 1;
+        return (Py_UCS4) x;
     }
 
   onError:
     PyErr_SetString(PyExc_TypeError,
                     "%c requires int or char");
-    return -1;
+    return (Py_UCS4) -1;
 }
-
-/* fmt%(v1,v2,...) is roughly equivalent to sprintf(fmt, v1, v2, ...)
-   FORMATBUFLEN is the length of the buffer in which chars are formatted.
-*/
-#define FORMATBUFLEN (size_t)10
 
 PyObject *
 PyUnicode_Format(PyObject *format, PyObject *args)
@@ -12742,13 +12731,27 @@ PyUnicode_Format(PyObject *format, PyObject *args)
     void *fmt;
     int fmtkind;
     PyObject *result;
-    Py_UCS4 *res, *res0;
-    Py_UCS4 max;
     int kind;
-    Py_ssize_t fmtcnt, fmtpos, rescnt, reslen, arglen, argidx;
+    int r;
+    Py_ssize_t fmtcnt, fmtpos, arglen, argidx;
     int args_owned = 0;
     PyObject *dict = NULL;
+    PyObject *temp = NULL;
+    PyObject *second = NULL;
     PyUnicodeObject *uformat;
+    _PyAccu acc;
+    static PyObject *plus, *minus, *blank, *zero, *percent;
+
+    if (!plus && !(plus = get_latin1_char('+')))
+        return NULL;
+    if (!minus && !(minus = get_latin1_char('-')))
+        return NULL;
+    if (!blank && !(blank = get_latin1_char(' ')))
+        return NULL;
+    if (!zero && !(zero = get_latin1_char('0')))
+        return NULL;
+    if (!percent && !(percent = get_latin1_char('%')))
+        return NULL;
 
     if (format == NULL || args == NULL) {
         PyErr_BadInternalCall();
@@ -12757,17 +12760,12 @@ PyUnicode_Format(PyObject *format, PyObject *args)
     uformat = (PyUnicodeObject*)PyUnicode_FromObject(format);
     if (uformat == NULL || PyUnicode_READY(uformat) == -1)
         return NULL;
+    if (_PyAccu_Init(&acc))
+        goto onError;
     fmt = PyUnicode_DATA(uformat);
     fmtkind = PyUnicode_KIND(uformat);
     fmtcnt = PyUnicode_GET_LENGTH(uformat);
     fmtpos = 0;
-
-    reslen = rescnt = fmtcnt + 100;
-    res = res0 = PyMem_Malloc(reslen * sizeof(Py_UCS4));
-    if (res0 == NULL) {
-        PyErr_NoMemory();
-        goto onError;
-    }
 
     if (PyTuple_Check(args)) {
         arglen = PyTuple_Size(args);
@@ -12783,18 +12781,21 @@ PyUnicode_Format(PyObject *format, PyObject *args)
 
     while (--fmtcnt >= 0) {
         if (PyUnicode_READ(fmtkind, fmt, fmtpos) != '%') {
-            if (--rescnt < 0) {
-                rescnt = fmtcnt + 100;
-                reslen += rescnt;
-                res0 = PyMem_Realloc(res0, reslen*sizeof(Py_UCS4));
-                if (res0 == NULL){
-                    PyErr_NoMemory();
-                    goto onError;
-                }
-                res = res0 + reslen - rescnt;
-                --rescnt;
+            PyObject *nonfmt;
+            Py_ssize_t nonfmtpos;
+            nonfmtpos = fmtpos++;
+            while (fmtcnt >= 0 &&
+                   PyUnicode_READ(fmtkind, fmt, fmtpos) != '%') {
+                fmtpos++;
+                fmtcnt--;
             }
-            *res++ = PyUnicode_READ(fmtkind, fmt, fmtpos++);
+            nonfmt = PyUnicode_Substring((PyObject *) uformat, nonfmtpos, fmtpos);
+            if (nonfmt == NULL)
+                goto onError;
+            r = _PyAccu_Accumulate(&acc, nonfmt);
+            Py_DECREF(nonfmt);
+            if (r)
+                goto onError;
         }
         else {
             /* Got a format specifier */
@@ -12802,15 +12803,12 @@ PyUnicode_Format(PyObject *format, PyObject *args)
             Py_ssize_t width = -1;
             int prec = -1;
             Py_UCS4 c = '\0';
-            Py_UCS4 fill;
+            Py_UCS4 fill, sign;
             int isnumok;
             PyObject *v = NULL;
-            PyObject *temp = NULL;
-            void *pbuf;
-            Py_ssize_t pindex;
-            Py_UNICODE sign;
-            Py_ssize_t len, len1;
-            Py_UCS4 formatbuf[FORMATBUFLEN]; /* For formatchar() */
+            void *pbuf = NULL;
+            Py_ssize_t pindex, len;
+            PyObject *signobj = NULL, *fillobj = NULL;
 
             fmtpos++;
             if (PyUnicode_READ(fmtkind, fmt, fmtpos) == '(') {
@@ -12955,15 +12953,12 @@ PyUnicode_Format(PyObject *format, PyObject *args)
             }
             sign = 0;
             fill = ' ';
+            fillobj = blank;
             switch (c) {
 
             case '%':
-                pbuf = formatbuf;
-                kind = PyUnicode_4BYTE_KIND;
-                /* presume that buffer length is at least 1 */
-                PyUnicode_WRITE(kind, pbuf, 0, '%');
-                len = 1;
-                break;
+                _PyAccu_Accumulate(&acc, percent);
+                continue;
 
             case 's':
             case 'r':
@@ -13045,8 +13040,10 @@ PyUnicode_Format(PyObject *format, PyObject *args)
                                  "not %.200s", (char)c, Py_TYPE(v)->tp_name);
                     goto onError;
                 }
-                if (flags & F_ZERO)
+                if (flags & F_ZERO) {
                     fill = '0';
+                    fillobj = zero;
+                }
                 break;
 
             case 'e':
@@ -13066,17 +13063,25 @@ PyUnicode_Format(PyObject *format, PyObject *args)
                 kind = PyUnicode_KIND(temp);
                 len = PyUnicode_GET_LENGTH(temp);
                 sign = 1;
-                if (flags & F_ZERO)
+                if (flags & F_ZERO) {
                     fill = '0';
+                    fillobj = zero;
+                }
                 break;
 
             case 'c':
-                pbuf = formatbuf;
-                kind = PyUnicode_4BYTE_KIND;
-                len = formatchar(pbuf, Py_ARRAY_LENGTH(formatbuf), v);
-                if (len < 0)
+            {
+                Py_UCS4 ch = formatchar(v);
+                if (ch == (Py_UCS4) -1)
                     goto onError;
+                temp = _PyUnicode_FromUCS4(&ch, 1);
+                if (temp == NULL)
+                    goto onError;
+                pbuf = PyUnicode_DATA(temp);
+                kind = PyUnicode_KIND(temp);
+                len = PyUnicode_GET_LENGTH(temp);
                 break;
+            }
 
             default:
                 PyErr_Format(PyExc_ValueError,
@@ -13090,90 +13095,105 @@ PyUnicode_Format(PyObject *format, PyObject *args)
             /* pbuf is initialized here. */
             pindex = 0;
             if (sign) {
-                if (PyUnicode_READ(kind, pbuf, pindex) == '-' ||
-                    PyUnicode_READ(kind, pbuf, pindex) == '+') {
-                    sign = PyUnicode_READ(kind, pbuf, pindex++);
+                if (PyUnicode_READ(kind, pbuf, pindex) == '-') {
+                    signobj = minus;
                     len--;
+                    pindex++;
+                }
+                else if (PyUnicode_READ(kind, pbuf, pindex) == '+') {
+                    signobj = plus;
+                    len--;
+                    pindex++;
                 }
                 else if (flags & F_SIGN)
-                    sign = '+';
+                    signobj = plus;
                 else if (flags & F_BLANK)
-                    sign = ' ';
+                    signobj = blank;
                 else
                     sign = 0;
             }
             if (width < len)
                 width = len;
-            if (rescnt - (sign != 0) < width) {
-                reslen -= rescnt;
-                rescnt = width + fmtcnt + 100;
-                reslen += rescnt;
-                if (reslen < 0) {
-                    Py_XDECREF(temp);
-                    PyErr_NoMemory();
-                    goto onError;
-                }
-                res0 = PyMem_Realloc(res0, reslen*sizeof(Py_UCS4));
-                if (res0 == 0) {
-                    PyErr_NoMemory();
-                    Py_XDECREF(temp);
-                    goto onError;
-                }
-                res = res0 + reslen - rescnt;
-            }
             if (sign) {
-                if (fill != ' ')
-                    *res++ = sign;
-                rescnt--;
+                if (fill != ' ') {
+                    assert(signobj != NULL);
+                    if (_PyAccu_Accumulate(&acc, signobj))
+                        goto onError;
+                }
                 if (width > len)
                     width--;
             }
             if ((flags & F_ALT) && (c == 'x' || c == 'X' || c == 'o')) {
                 assert(PyUnicode_READ(kind, pbuf, pindex) == '0');
-                assert(PyUnicode_READ(kind, pbuf, pindex+1) == c);
+                assert(PyUnicode_READ(kind, pbuf, pindex + 1) == c);
                 if (fill != ' ') {
-                    *res++ = PyUnicode_READ(kind, pbuf, pindex++);
-                    *res++ = PyUnicode_READ(kind, pbuf, pindex++);
+                    second = get_latin1_char(
+                        PyUnicode_READ(kind, pbuf, pindex + 1));
+                    pindex += 2;
+                    if (second == NULL ||
+                        _PyAccu_Accumulate(&acc, zero) ||
+                        _PyAccu_Accumulate(&acc, second))
+                        goto onError;
+                    Py_CLEAR(second);
                 }
-                rescnt -= 2;
                 width -= 2;
                 if (width < 0)
                     width = 0;
                 len -= 2;
             }
             if (width > len && !(flags & F_LJUST)) {
+                assert(fillobj != NULL);
                 do {
-                    --rescnt;
-                    *res++ = fill;
+                    if (_PyAccu_Accumulate(&acc, fillobj))
+                        goto onError;
                 } while (--width > len);
             }
             if (fill == ' ') {
-                if (sign)
-                    *res++ = sign;
+                if (sign) {
+                    assert(signobj != NULL);
+                    if (_PyAccu_Accumulate(&acc, signobj))
+                        goto onError;
+                }
                 if ((flags & F_ALT) && (c == 'x' || c == 'X' || c == 'o')) {
                     assert(PyUnicode_READ(kind, pbuf, pindex) == '0');
                     assert(PyUnicode_READ(kind, pbuf, pindex+1) == c);
-                    *res++ = PyUnicode_READ(kind, pbuf, pindex++);
-                    *res++ = PyUnicode_READ(kind, pbuf, pindex++);
+                    second = get_latin1_char(
+                        PyUnicode_READ(kind, pbuf, pindex + 1));
+                    pindex += 2;
+                    if (second == NULL ||
+                        _PyAccu_Accumulate(&acc, zero) ||
+                        _PyAccu_Accumulate(&acc, second))
+                        goto onError;
+                    Py_CLEAR(second);
                 }
             }
             /* Copy all characters, preserving len */
-            len1 = len;
-            while (len1--) {
-                *res++ = PyUnicode_READ(kind, pbuf, pindex++);
-                rescnt--;
+            if (temp != NULL) {
+                assert(pbuf == PyUnicode_DATA(temp));
+                v = PyUnicode_Substring(temp, pindex, pindex + len);
             }
+            else {
+                const char *p = (const char *) pbuf;
+                assert(pbuf != NULL);
+                p = p + PyUnicode_KIND_SIZE(kind, pindex);
+                v = PyUnicode_FromKindAndData(kind, p, len);
+            }
+            if (v == NULL)
+                goto onError;
+            r = _PyAccu_Accumulate(&acc, v);
+            Py_DECREF(v);
+            if (r)
+                goto onError;
             while (--width >= len) {
-                --rescnt;
-                *res++ = ' ';
+                if (_PyAccu_Accumulate(&acc, blank))
+                    goto onError;
             }
             if (dict && (argidx < arglen) && c != '%') {
                 PyErr_SetString(PyExc_TypeError,
                                 "not all arguments converted during string formatting");
-                Py_XDECREF(temp);
                 goto onError;
             }
-            Py_XDECREF(temp);
+            Py_CLEAR(temp);
         } /* '%' */
     } /* until end */
     if (argidx < arglen && !dict) {
@@ -13182,27 +13202,20 @@ PyUnicode_Format(PyObject *format, PyObject *args)
         goto onError;
     }
 
-
-    for (max=0, res = res0; res < res0+reslen-rescnt; res++)
-        if (*res > max)
-            max = *res;
-    result = PyUnicode_New(reslen - rescnt, max);
-    if (!result)
-        goto onError;
-    kind = PyUnicode_KIND(result);
-    for (res = res0; res < res0+reslen-rescnt; res++)
-        PyUnicode_WRITE(kind, PyUnicode_DATA(result), res-res0, *res);
-    PyMem_Free(res0);
+    result = _PyAccu_Finish(&acc);
     if (args_owned) {
         Py_DECREF(args);
     }
     Py_DECREF(uformat);
-    assert(_PyUnicode_CheckConsistency(result, 1));
+    Py_XDECREF(temp);
+    Py_XDECREF(second);
     return (PyObject *)result;
 
   onError:
-    PyMem_Free(res0);
     Py_DECREF(uformat);
+    Py_XDECREF(temp);
+    Py_XDECREF(second);
+    _PyAccu_Destroy(&acc);
     if (args_owned) {
         Py_DECREF(args);
     }
