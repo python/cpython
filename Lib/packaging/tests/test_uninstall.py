@@ -86,26 +86,26 @@ class UninstallTestCase(support.TempdirManager,
         old_out = sys.stderr
         sys.stderr = StringIO()
         dist = self.run_setup('install_dist', '--prefix=' + self.root_dir)
-        install_lib = self.get_path(dist, 'purelib')
-        return dist, install_lib
+        site_packages = self.get_path(dist, 'purelib')
+        return dist, site_packages
 
     def test_uninstall_unknow_distribution(self):
         self.assertRaises(PackagingError, remove, 'Foo',
                           paths=[self.root_dir])
 
     def test_uninstall(self):
-        dist, install_lib = self.install_dist()
-        self.assertIsFile(install_lib, 'foo', '__init__.py')
-        self.assertIsFile(install_lib, 'foo', 'sub', '__init__.py')
-        self.assertIsFile(install_lib, 'Foo-0.1.dist-info', 'RECORD')
-        self.assertTrue(remove('Foo', paths=[install_lib]))
-        self.assertIsNotFile(install_lib, 'foo', 'sub', '__init__.py')
-        self.assertIsNotFile(install_lib, 'Foo-0.1.dist-info', 'RECORD')
+        dist, site_packages = self.install_dist()
+        self.assertIsFile(site_packages, 'foo', '__init__.py')
+        self.assertIsFile(site_packages, 'foo', 'sub', '__init__.py')
+        self.assertIsFile(site_packages, 'Foo-0.1.dist-info', 'RECORD')
+        self.assertTrue(remove('Foo', paths=[site_packages]))
+        self.assertIsNotFile(site_packages, 'foo', 'sub', '__init__.py')
+        self.assertIsNotFile(site_packages, 'Foo-0.1.dist-info', 'RECORD')
 
     def test_remove_issue(self):
         # makes sure if there are OSErrors (like permission denied)
         # remove() stops and display a clean error
-        dist, install_lib = self.install_dist('Meh')
+        dist, site_packages = self.install_dist('Meh')
 
         # breaking os.rename
         old = os.rename
@@ -115,11 +115,11 @@ class UninstallTestCase(support.TempdirManager,
 
         os.rename = _rename
         try:
-            self.assertFalse(remove('Meh', paths=[install_lib]))
+            self.assertFalse(remove('Meh', paths=[site_packages]))
         finally:
             os.rename = old
 
-        self.assertTrue(remove('Meh', paths=[install_lib]))
+        self.assertTrue(remove('Meh', paths=[site_packages]))
 
 
 def test_suite():
