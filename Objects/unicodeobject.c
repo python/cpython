@@ -1622,6 +1622,8 @@ unicode_fromascii(const unsigned char* s, Py_ssize_t size)
         assert(*p < 128);
     }
 #endif
+    if (size == 1)
+        return get_latin1_char(s[0]);
     res = PyUnicode_New(size, 127);
     if (!res)
         return NULL;
@@ -1653,6 +1655,8 @@ _PyUnicode_FromUCS1(const unsigned char* u, Py_ssize_t size)
     Py_ssize_t i;
 
     assert(size >= 0);
+    if (size == 1)
+        return get_latin1_char(u[0]);
     for (i = 0; i < size; i++) {
         if (u[i] & 0x80) {
             max_char = 255;
@@ -1675,6 +1679,8 @@ _PyUnicode_FromUCS2(const Py_UCS2 *u, Py_ssize_t size)
     Py_ssize_t i;
 
     assert(size >= 0);
+    if (size == 1 && u[0] < 256)
+        return get_latin1_char(u[0]);
     for (i = 0; i < size; i++) {
         if (u[i] > max_char) {
             max_char = u[i];
@@ -1702,6 +1708,8 @@ _PyUnicode_FromUCS4(const Py_UCS4 *u, Py_ssize_t size)
     Py_ssize_t i;
 
     assert(size >= 0);
+    if (size == 1 && u[0] < 256)
+        return get_latin1_char(u[0]);
     for (i = 0; i < size; i++) {
         if (u[i] > max_char) {
             max_char = u[i];
