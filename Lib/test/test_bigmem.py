@@ -446,14 +446,7 @@ class BaseStrTest:
     def test_translate(self, size):
         _ = self.from_latin1
         SUBSTR = _('aZz.z.Aaz.')
-        if isinstance(SUBSTR, str):
-            trans = {
-                ord(_('.')): _('-'),
-                ord(_('a')): _('!'),
-                ord(_('Z')): _('$'),
-            }
-        else:
-            trans = bytes.maketrans(b'.aZ', b'-!$')
+        trans = bytes.maketrans(b'.aZ', b'-!$')
         sublen = len(SUBSTR)
         repeats = size // sublen + 2
         s = SUBSTR * repeats
@@ -734,6 +727,30 @@ class StrTest(unittest.TestCase, BaseStrTest):
                 r = None
         finally:
             r = s = None
+
+    # The original test_translate is overriden here, so as to get the
+    # correct size estimate: str.translate() uses an intermediate Py_UCS4
+    # representation.
+
+    @bigmemtest(size=_2G, memuse=ascii_char_size * 2 + ucs4_char_size)
+    def test_translate(self, size):
+        _ = self.from_latin1
+        SUBSTR = _('aZz.z.Aaz.')
+        trans = {
+            ord(_('.')): _('-'),
+            ord(_('a')): _('!'),
+            ord(_('Z')): _('$'),
+        }
+        sublen = len(SUBSTR)
+        repeats = size // sublen + 2
+        s = SUBSTR * repeats
+        s = s.translate(trans)
+        self.assertEqual(len(s), repeats * sublen)
+        self.assertEqual(s[:sublen], SUBSTR.translate(trans))
+        self.assertEqual(s[-sublen:], SUBSTR.translate(trans))
+        self.assertEqual(s.count(_('.')), 0)
+        self.assertEqual(s.count(_('!')), repeats * 2)
+        self.assertEqual(s.count(_('z')), repeats * 3)
 
 
 class BytesTest(unittest.TestCase, BaseStrTest):
