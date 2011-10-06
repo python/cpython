@@ -616,13 +616,13 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
 static int
 find_nfc_index(PyObject *self, struct reindex* nfc, Py_UCS4 code)
 {
-    int index;
+    unsigned int index;
     for (index = 0; nfc[index].start; index++) {
-        int start = nfc[index].start;
+        unsigned int start = nfc[index].start;
         if (code < start)
             return -1;
         if (code <= start + nfc[index].count) {
-            int delta = code - start;
+            unsigned int delta = code - start;
             return nfc[index].index + delta;
         }
     }
@@ -1038,7 +1038,7 @@ find_syllable(const char *str, int *len, int *pos, int count, int column)
     *len = -1;
     for (i = 0; i < count; i++) {
         char *s = hangul_syllables[i][column];
-        len1 = strlen(s);
+        len1 = Py_SAFE_DOWNCAST(strlen(s), size_t, int);
         if (len1 <= *len)
             continue;
         if (strncmp(str, s, len1) == 0) {
