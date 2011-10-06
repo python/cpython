@@ -205,6 +205,10 @@ SOURCE=..\..\Objects\abstract.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Objects\accu.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Parser\acceler.c
 # End Source File
 # Begin Source File

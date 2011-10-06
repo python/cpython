@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #12911: Fix memory consumption when calculating the repr() of huge
+  tuples or lists.
+
 - PEP 393: flexible string representation. Thanks to Torsten Becker for the
   initial implementation, and Victor Stinner for various bug fixes.
 
