@@ -497,9 +497,16 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     /* Setup filename. */
     *filename = PyDict_GetItemString(globals, "__file__");
     if (*filename != NULL && PyUnicode_Check(*filename)) {
-        Py_ssize_t len = PyUnicode_GetSize(*filename);
-        int kind = PyUnicode_KIND(*filename);
-        void *data = PyUnicode_DATA(*filename);
+        Py_ssize_t len;
+        int kind;
+        void *data;
+
+        if (PyUnicode_READY(*filename))
+            goto handle_error;
+
+        len = PyUnicode_GetSize(*filename);
+        kind = PyUnicode_KIND(*filename);
+        data = PyUnicode_DATA(*filename);
 
         /* if filename.lower().endswith((".pyc", ".pyo")): */
         if (len >= 4 &&
