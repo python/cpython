@@ -374,7 +374,7 @@ class BaseStrTest:
     # suffer for the list size. (Otherwise, it'd cost another 48 times
     # size in bytes!) Nevertheless, a list of size takes
     # 8*size bytes.
-    @bigmemtest(size=_2G + 5, memuse=10)
+    @bigmemtest(size=_2G + 5, memuse=2 * ascii_char_size + 8)
     def test_split_large(self, size):
         _ = self.from_latin1
         s = _(' a') * size + _(' ')
