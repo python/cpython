@@ -4,12 +4,9 @@ import sys
 import logging
 import packaging.util
 
-from io import StringIO
-from packaging.run import main
 from packaging.errors import PackagingError
 from packaging.install import remove
 from packaging.database import disable_cache, enable_cache
-from packaging.command.install_dist import install_dist
 
 from packaging.tests import unittest, support
 
@@ -47,16 +44,12 @@ class UninstallTestCase(support.TempdirManager,
         packaging.util._path_created.clear()
         super(UninstallTestCase, self).tearDown()
 
-    def run_setup(self, *args):
-        # run setup with args
-        args = ['run'] + list(args)
-        dist = main(args)
-        return dist
-
     def get_path(self, dist, name):
-        cmd = install_dist(dist)
-        cmd.prefix = self.root_dir
-        cmd.finalize_options()
+        # the dist argument must contain an install_dist command correctly
+        # initialized with a prefix option and finalized befored this method
+        # can be called successfully; practically, this means that you should
+        # call self.install_dist before self.get_path
+        cmd = dist.get_command_obj('install_dist')
         return getattr(cmd, 'install_' + name)
 
     def make_dist(self, name='Foo', **kw):
@@ -83,8 +76,17 @@ class UninstallTestCase(support.TempdirManager,
         if not dirname:
             dirname = self.make_dist(name, **kw)
         os.chdir(dirname)
-        sys.stderr = StringIO()
-        dist = self.run_setup('install_dist', '--prefix=' + self.root_dir)
+
+        dist = support.TestDistribution()
+        # for some unfathomable reason, the tests will fail horribly if the
+        # parse_config_files method is not called, even if it doesn't do
+        # anything useful; trying to build and use a command object manually
+        # also fails
+        dist.parse_config_files()
+        dist.finalize_options()
+        dist.run_command('install_dist',
+                         {'prefix': ('command line', self.root_dir)})
+
         site_packages = self.get_path(dist, 'purelib')
         return dist, site_packages
 
