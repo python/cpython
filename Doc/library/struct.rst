@@ -187,16 +187,23 @@ platform-dependent.
 | ``Q``  | :c:type:`unsigned long   | integer            | 8              | \(2), \(3) |
 |        | long`                    |                    |                |            |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``f``  | :c:type:`float`          | float              | 4              | \(4)       |
+| ``n``  | :c:type:`ssize_t`        | integer            |                | \(4)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``d``  | :c:type:`double`         | float              | 8              | \(4)       |
+| ``N``  | :c:type:`size_t`         | integer            |                | \(4)       |
++--------+--------------------------+--------------------+----------------+------------+
+| ``f``  | :c:type:`float`          | float              | 4              | \(5)       |
++--------+--------------------------+--------------------+----------------+------------+
+| ``d``  | :c:type:`double`         | float              | 8              | \(5)       |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``s``  | :c:type:`char[]`         | bytes              |                |            |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``p``  | :c:type:`char[]`         | bytes              |                |            |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``P``  | :c:type:`void \*`        | integer            |                | \(5)       |
+| ``P``  | :c:type:`void \*`        | integer            |                | \(6)       |
 +--------+--------------------------+--------------------+----------------+------------+
+
+.. versionchanged:: 3.3
+   Added support for the ``'n'`` and ``'N'`` formats.
 
 Notes:
 
@@ -219,11 +226,17 @@ Notes:
       Use of the :meth:`__index__` method for non-integers is new in 3.2.
 
 (4)
+   The ``'n'`` and ``'N'`` conversion codes are only available for the native
+   size (selected as the default or with the ``'@'`` byte order character).
+   For the standard size, you can use whichever of the other integer formats
+   fits your application.
+
+(5)
    For the ``'f'`` and ``'d'`` conversion codes, the packed representation uses
    the IEEE 754 binary32 (for ``'f'``) or binary64 (for ``'d'``) format,
    regardless of the floating-point format used by the platform.
 
-(5)
+(6)
    The ``'P'`` format character is only available for the native byte ordering
    (selected as the default or with the ``'@'`` byte order character). The byte
    order character ``'='`` chooses to use little- or big-endian ordering based

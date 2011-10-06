@@ -8,8 +8,18 @@ from test.support import run_unittest
 ISBIGENDIAN = sys.byteorder == "big"
 IS32BIT = sys.maxsize == 0x7fffffff
 
-integer_codes = 'b', 'B', 'h', 'H', 'i', 'I', 'l', 'L', 'q', 'Q'
+integer_codes = 'b', 'B', 'h', 'H', 'i', 'I', 'l', 'L', 'q', 'Q', 'n', 'N'
 byteorders = '', '@', '=', '<', '>', '!'
+
+def iter_integer_formats(byteorders=byteorders):
+    for code in integer_codes:
+        for byteorder in byteorders:
+            if (byteorder in ('', '@') and code in ('q', 'Q') and
+                not HAVE_LONG_LONG):
+                continue
+            if (byteorder not in ('', '@') and code in ('n', 'N')):
+                continue
+            yield code, byteorder
 
 # Native 'q' packing isn't available on systems that don't have the C
 # long long type.
@@ -141,14 +151,13 @@ class StructTest(unittest.TestCase):
             }
 
         # standard integer sizes
-        for code in integer_codes:
-            for byteorder in '=', '<', '>', '!':
-                format = byteorder+code
-                size = struct.calcsize(format)
-                self.assertEqual(size, expected_size[code])
+        for code, byteorder in iter_integer_formats(('=', '<', '>', '!')):
+            format = byteorder+code
+            size = struct.calcsize(format)
+            self.assertEqual(size, expected_size[code])
 
         # native integer sizes
-        native_pairs = 'bB', 'hH', 'iI', 'lL'
+        native_pairs = 'bB', 'hH', 'iI', 'lL', 'nN'
         if HAVE_LONG_LONG:
             native_pairs += 'qQ',
         for format_pair in native_pairs:
@@ -166,9 +175,11 @@ class StructTest(unittest.TestCase):
         if HAVE_LONG_LONG:
             self.assertLessEqual(8, struct.calcsize('q'))
             self.assertLessEqual(struct.calcsize('l'), struct.calcsize('q'))
+        self.assertGreaterEqual(struct.calcsize('n'), struct.calcsize('i'))
+        self.assertGreaterEqual(struct.calcsize('n'), struct.calcsize('P'))
 
     def test_integers(self):
-        # Integer tests (bBhHiIlLqQ).
+        # Integer tests (bBhHiIlLqQnN).
         import binascii
 
         class IntTester(unittest.TestCase):
@@ -182,11 +193,11 @@ class StructTest(unittest.TestCase):
                                      self.byteorder)
                 self.bytesize = struct.calcsize(format)
                 self.bitsize = self.bytesize * 8
-                if self.code in tuple('bhilq'):
+                if self.code in tuple('bhilqn'):
                     self.signed = True
                     self.min_value = -(2**(self.bitsize-1))
                     self.max_value = 2**(self.bitsize-1) - 1
-                elif self.code in tuple('BHILQ'):
+                elif self.code in tuple('BHILQN'):
                     self.signed = False
                     self.min_value = 0
                     self.max_value = 2**self.bitsize - 1
@@ -316,14 +327,23 @@ class StructTest(unittest.TestCase):
                                       struct.pack, self.format,
                                       obj)
 
-        for code in integer_codes:
-            for byteorder in byteorders:
-                if (byteorder in ('', '@') and code in ('q', 'Q') and
-                    not HAVE_LONG_LONG):
-                    continue
+        for code, byteorder in iter_integer_formats():
+            format = byteorder+code
+            t = IntTester(format)
+            t.run()
+
+    def test_nN_code(self):
+        # n and N don't exist in standard sizes
+        def assertStructError(func, *args, **kwargs):
+            with self.assertRaises(struct.error) as cm:
+                func(*args, **kwargs)
+            self.assertIn("bad char in struct format", str(cm.exception))
+        for code in 'nN':
+            for byteorder in ('=', '<', '>', '!'):
                 format = byteorder+code
-                t = IntTester(format)
-                t.run()
+                assertStructError(struct.calcsize, format)
+                assertStructError(struct.pack, format, 0)
+                assertStructError(struct.unpack, format, b"")
 
     def test_p_code(self):
         # Test p ("Pascal string") code.
@@ -377,14 +397,10 @@ class StructTest(unittest.TestCase):
         self.assertRaises(OverflowError, struct.pack, ">f", big)
 
     def test_1530559(self):
-        for byteorder in '', '@', '=', '<', '>', '!':
-            for code in integer_codes:
-                if (byteorder in ('', '@') and code in ('q', 'Q') and
-                    not HAVE_LONG_LONG):
-                    continue
-                format = byteorder + code
-                self.assertRaises(struct.error, struct.pack, format, 1.0)
-                self.assertRaises(struct.error, struct.pack, format, 1.5)
+        for code, byteorder in iter_integer_formats():
+            format = byteorder + code
+            self.assertRaises(struct.error, struct.pack, format, 1.0)
+            self.assertRaises(struct.error, struct.pack, format, 1.5)
         self.assertRaises(struct.error, struct.pack, 'P', 1.0)
         self.assertRaises(struct.error, struct.pack, 'P', 1.5)
 
