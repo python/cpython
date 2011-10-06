@@ -297,6 +297,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7367: Fix pkgutil.walk_paths to skip directories whose
+  contents cannot be read.
+
 - Issue #3163: The struct module gets new format characters 'n' and 'N'
   supporting C integer types ``ssize_t`` and ``size_t``, respectively.
 
