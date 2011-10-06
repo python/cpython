@@ -529,13 +529,13 @@ parse_grow_buff(ReaderObj *self)
         self->field = PyMem_New(Py_UNICODE, self->field_size);
     }
     else {
+        Py_UNICODE *field = self->field;
         if (self->field_size > PY_SSIZE_T_MAX / 2) {
             PyErr_NoMemory();
             return 0;
         }
         self->field_size *= 2;
-        self->field = PyMem_Resize(self->field, Py_UNICODE,
-                                   self->field_size);
+        self->field = PyMem_Resize(field, Py_UNICODE, self->field_size);
     }
     if (self->field == NULL) {
         PyErr_NoMemory();
@@ -1055,8 +1055,7 @@ join_check_rec_size(WriterObj *self, Py_ssize_t rec_len)
             Py_UNICODE* old_rec = self->rec;
 
             self->rec_size = (rec_len / MEM_INCR + 1) * MEM_INCR;
-            self->rec = PyMem_Resize(self->rec, Py_UNICODE,
-                         self->rec_size);
+            self->rec = PyMem_Resize(old_rec, Py_UNICODE, self->rec_size);
             if (self->rec == NULL)
                 PyMem_Free(old_rec);
         }
