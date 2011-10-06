@@ -1270,6 +1270,7 @@ network. This example might require special priviledge::
    # CAN frame packing/unpacking (see `struct can_frame` in <linux/can.h>)
 
    can_frame_fmt = "=IB3x8s"
+   can_frame_size = struct.calcsize(can_frame_fmt)
 
    def build_can_frame(can_id, data):
        can_dlc = len(data)
@@ -1286,7 +1287,7 @@ network. This example might require special priviledge::
    s.bind(('vcan0',))
 
    while True:
-       cf, addr = s.recvfrom(16)
+       cf, addr = s.recvfrom(can_frame_size)
 
        print('Received: can_id=%x, can_dlc=%x, data=%s' % dissect_can_frame(cf))
 
