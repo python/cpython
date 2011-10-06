@@ -1,15 +1,14 @@
-"""Tests for the uninstall command."""
+"""Tests for the packaging.uninstall module."""
 import os
 import sys
 import logging
-from io import StringIO
-import stat
 import packaging.util
 
-from packaging.database import disable_cache, enable_cache
+from io import StringIO
 from packaging.run import main
 from packaging.errors import PackagingError
 from packaging.install import remove
+from packaging.database import disable_cache, enable_cache
 from packaging.command.install_dist import install_dist
 
 from packaging.tests import unittest, support
@@ -84,7 +83,6 @@ class UninstallTestCase(support.TempdirManager,
         if not dirname:
             dirname = self.make_dist(name, **kw)
         os.chdir(dirname)
-        old_out = sys.stderr
         sys.stderr = StringIO()
         dist = self.run_setup('install_dist', '--prefix=' + self.root_dir)
         site_packages = self.get_path(dist, 'purelib')
@@ -104,7 +102,7 @@ class UninstallTestCase(support.TempdirManager,
         self.assertIsNotFile(site_packages, 'foo', 'sub', '__init__.py')
         self.assertIsNotFile(site_packages, 'Foo-0.1.dist-info', 'RECORD')
 
-    def test_remove_issue(self):
+    def test_uninstall_error_handling(self):
         # makes sure if there are OSErrors (like permission denied)
         # remove() stops and displays a clean error
         dist, site_packages = self.install_dist('Meh')
