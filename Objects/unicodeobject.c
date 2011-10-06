@@ -9145,37 +9145,41 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
 
     /* If singleton sequence with an exact Unicode, return that. */
     items = PySequence_Fast_ITEMS(fseq);
-    if (seqlen == 1 && PyUnicode_CheckExact(items[0])) {
-        res = items[0];
-        Py_INCREF(res);
-        Py_DECREF(fseq);
-        return res;
-    }
-
-    /* Set up sep and seplen */
-    if (separator == NULL) {
-        /* fall back to a blank space separator */
-        sep = PyUnicode_FromOrdinal(' ');
-        if (!sep)
-            goto onError;
-        maxchar = 32;
+    if (seqlen == 1) {
+        if (PyUnicode_CheckExact(items[0])) {
+            res = items[0];
+            Py_INCREF(res);
+            Py_DECREF(fseq);
+            return res;
+        }
+        sep = NULL;
     }
     else {
-        if (!PyUnicode_Check(separator)) {
-            PyErr_Format(PyExc_TypeError,
-                         "separator: expected str instance,"
-                         " %.80s found",
-                         Py_TYPE(separator)->tp_name);
-            goto onError;
+        /* Set up sep and seplen */
+        if (separator == NULL) {
+            /* fall back to a blank space separator */
+            sep = PyUnicode_FromOrdinal(' ');
+            if (!sep)
+                goto onError;
+            maxchar = 32;
         }
-        if (PyUnicode_READY(separator))
-            goto onError;
-        sep = separator;
-        seplen = PyUnicode_GET_LENGTH(separator);
-        maxchar = PyUnicode_MAX_CHAR_VALUE(separator);
-        /* inc refcount to keep this code path symmetric with the
-           above case of a blank separator */
-        Py_INCREF(sep);
+        else {
+            if (!PyUnicode_Check(separator)) {
+                PyErr_Format(PyExc_TypeError,
+                             "separator: expected str instance,"
+                             " %.80s found",
+                             Py_TYPE(separator)->tp_name);
+                goto onError;
+            }
+            if (PyUnicode_READY(separator))
+                goto onError;
+            sep = separator;
+            seplen = PyUnicode_GET_LENGTH(separator);
+            maxchar = PyUnicode_MAX_CHAR_VALUE(separator);
+            /* inc refcount to keep this code path symmetric with the
+               above case of a blank separator */
+            Py_INCREF(sep);
+        }
     }
 
     /* There are at least two things to join, or else we have a subclass
