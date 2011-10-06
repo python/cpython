@@ -240,12 +240,19 @@ static PyObject *
 tuplerepr(PyTupleObject *v)
 {
     Py_ssize_t i, n;
-    PyObject *s, *temp;
-    PyObject *pieces, *result = NULL;
+    PyObject *s = NULL;
+    _PyAccu acc;
+    static PyObject *sep = NULL;
 
     n = Py_SIZE(v);
     if (n == 0)
         return PyUnicode_FromString("()");
+
+    if (sep == NULL) {
+        sep = PyUnicode_FromString(", ");
+        if (sep == NULL)
+            return NULL;
+    }
 
     /* While not mutable, it is still possible to end up with a cycle in a
        tuple through an object that stores itself within a tuple (and thus
@@ -256,52 +263,42 @@ tuplerepr(PyTupleObject *v)
         return i > 0 ? PyUnicode_FromString("(...)") : NULL;
     }
 
-    pieces = PyTuple_New(n);
-    if (pieces == NULL)
-        return NULL;
+    if (_PyAccu_Init(&acc))
+        goto error;
+
+    s = PyUnicode_FromString("(");
+    if (s == NULL || _PyAccu_Accumulate(&acc, s))
+        goto error;
+    Py_CLEAR(s);
 
     /* Do repr() on each element. */
     for (i = 0; i < n; ++i) {
         if (Py_EnterRecursiveCall(" while getting the repr of a tuple"))
-            goto Done;
+            goto error;
         s = PyObject_Repr(v->ob_item[i]);
         Py_LeaveRecursiveCall();
-        if (s == NULL)
-            goto Done;
-        PyTuple_SET_ITEM(pieces, i, s);
+        if (i > 0 && _PyAccu_Accumulate(&acc, sep))
+            goto error;
+        if (s == NULL || _PyAccu_Accumulate(&acc, s))
+            goto error;
+        Py_CLEAR(s);
     }
+    if (n > 1)
+        s = PyUnicode_FromString(")");
+    else
+        s = PyUnicode_FromString(",)");
+    if (s == NULL || _PyAccu_Accumulate(&acc, s))
+        goto error;
+    Py_CLEAR(s);
 
-    /* Add "()" decorations to the first and last items. */
-    assert(n > 0);
-    s = PyUnicode_FromString("(");
-    if (s == NULL)
-        goto Done;
-    temp = PyTuple_GET_ITEM(pieces, 0);
-    PyUnicode_AppendAndDel(&s, temp);
-    PyTuple_SET_ITEM(pieces, 0, s);
-    if (s == NULL)
-        goto Done;
-
-    s = PyUnicode_FromString(n == 1 ? ",)" : ")");
-    if (s == NULL)
-        goto Done;
-    temp = PyTuple_GET_ITEM(pieces, n-1);
-    PyUnicode_AppendAndDel(&temp, s);
-    PyTuple_SET_ITEM(pieces, n-1, temp);
-    if (temp == NULL)
-        goto Done;
-
-    /* Paste them all together with ", " between. */
-    s = PyUnicode_FromString(", ");
-    if (s == NULL)
-        goto Done;
-    result = PyUnicode_Join(s, pieces);
-    Py_DECREF(s);
-
-Done:
-    Py_DECREF(pieces);
     Py_ReprLeave((PyObject *)v);
-    return result;
+    return _PyAccu_Finish(&acc);
+
+error:
+    _PyAccu_Destroy(&acc);
+    Py_XDECREF(s);
+    Py_ReprLeave((PyObject *)v);
+    return NULL;
 }
 
 /* The addend 82520, was selected from the range(0, 1000000) for

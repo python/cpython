@@ -445,6 +445,9 @@
 			RelativePath="..\..\Objects\abstract.c">
 		</File>
 		<File
+			RelativePath="..\..\Objects\accu.c">
+		</File>
+		<File
 			RelativePath="..\..\Parser\acceler.c">
 		</File>
 		<File
