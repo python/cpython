@@ -58,6 +58,7 @@ typedef struct { char c; long x; } st_long;
 typedef struct { char c; float x; } st_float;
 typedef struct { char c; double x; } st_double;
 typedef struct { char c; void *x; } st_void_p;
+typedef struct { char c; size_t x; } st_size_t;
 
 #define SHORT_ALIGN (sizeof(st_short) - sizeof(short))
 #define INT_ALIGN (sizeof(st_int) - sizeof(int))
@@ -65,6 +66,7 @@ typedef struct { char c; void *x; } st_void_p;
 #define FLOAT_ALIGN (sizeof(st_float) - sizeof(float))
 #define DOUBLE_ALIGN (sizeof(st_double) - sizeof(double))
 #define VOID_P_ALIGN (sizeof(st_void_p) - sizeof(void *))
+#define SIZE_T_ALIGN (sizeof(st_size_t) - sizeof(size_t))
 
 /* We can't support q and Q in native mode unless the compiler does;
    in std mode, they're 8 bytes on all platforms. */
@@ -212,6 +214,52 @@ get_ulonglong(PyObject *v, unsigned PY_LONG_LONG *p)
 }
 
 #endif
+
+/* Same, but handling Py_ssize_t */
+
+static int
+get_ssize_t(PyObject *v, Py_ssize_t *p)
+{
+    Py_ssize_t x;
+
+    v = get_pylong(v);
+    if (v == NULL)
+        return -1;
+    assert(PyLong_Check(v));
+    x = PyLong_AsSsize_t(v);
+    Py_DECREF(v);
+    if (x == (Py_ssize_t)-1 && PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError))
+            PyErr_SetString(StructError,
+                            "argument out of range");
+        return -1;
+    }
+    *p = x;
+    return 0;
+}
+
+/* Same, but handling size_t */
+
+static int
+get_size_t(PyObject *v, size_t *p)
+{
+    size_t x;
+
+    v = get_pylong(v);
+    if (v == NULL)
+        return -1;
+    assert(PyLong_Check(v));
+    x = PyLong_AsSize_t(v);
+    Py_DECREF(v);
+    if (x == (size_t)-1 && PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError))
+            PyErr_SetString(StructError,
+                            "argument out of range");
+        return -1;
+    }
+    *p = x;
+    return 0;
+}
 
 
 #define RANGE_ERROR(x, f, flag, mask) return _range_error(f, flag)
@@ -368,6 +416,23 @@ nu_ulong(const char *p, const formatdef *f)
         return PyLong_FromLong((long)x);
     return PyLong_FromUnsignedLong(x);
 }
+
+static PyObject *
+nu_ssize_t(const char *p, const formatdef *f)
+{
+    Py_ssize_t x;
+    memcpy((char *)&x, p, sizeof x);
+    return PyLong_FromSsize_t(x);
+}
+
+static PyObject *
+nu_size_t(const char *p, const formatdef *f)
+{
+    size_t x;
+    memcpy((char *)&x, p, sizeof x);
+    return PyLong_FromSize_t(x);
+}
+
 
 /* Native mode doesn't support q or Q unless the platform C supports
    long long (or, on Windows, __int64). */
@@ -558,6 +623,26 @@ np_ulong(char *p, PyObject *v, const formatdef *f)
     return 0;
 }
 
+static int
+np_ssize_t(char *p, PyObject *v, const formatdef *f)
+{
+    Py_ssize_t x;
+    if (get_ssize_t(v, &x) < 0)
+        return -1;
+    memcpy(p, (char *)&x, sizeof x);
+    return 0;
+}
+
+static int
+np_size_t(char *p, PyObject *v, const formatdef *f)
+{
+    size_t x;
+    if (get_size_t(v, &x) < 0)
+        return -1;
+    memcpy(p, (char *)&x, sizeof x);
+    return 0;
+}
+
 #ifdef HAVE_LONG_LONG
 
 static int
@@ -651,6 +736,8 @@ static formatdef native_table[] = {
     {'I',       sizeof(int),    INT_ALIGN,      nu_uint,        np_uint},
     {'l',       sizeof(long),   LONG_ALIGN,     nu_long,        np_long},
     {'L',       sizeof(long),   LONG_ALIGN,     nu_ulong,       np_ulong},
+    {'n',       sizeof(size_t), SIZE_T_ALIGN,   nu_ssize_t,     np_ssize_t},
+    {'N',       sizeof(size_t), SIZE_T_ALIGN,   nu_size_t,      np_size_t},
 #ifdef HAVE_LONG_LONG
     {'q',       sizeof(PY_LONG_LONG), LONG_LONG_ALIGN, nu_longlong, np_longlong},
     {'Q',       sizeof(PY_LONG_LONG), LONG_LONG_ALIGN, nu_ulonglong,np_ulonglong},
@@ -1951,7 +2038,8 @@ these can be preceded by a decimal repeat count:\n\
   l:long; L:unsigned long; f:float; d:double.\n\
 Special cases (preceding decimal count indicates length):\n\
   s:string (array of char); p: pascal string (with count byte).\n\
-Special case (only available in native format):\n\
+Special cases (only available in native format):\n\
+  n:ssize_t; N:size_t;\n\
   P:an integer type that is wide enough to hold a pointer.\n\
 Special case (not in native mode unless 'long long' in platform C):\n\
   q:long long; Q:unsigned long long\n\
