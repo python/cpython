@@ -56,7 +56,7 @@ AutoNumber_Init(AutoNumber *auto_number)
 
 /* fill in a SubString from a pointer and length */
 Py_LOCAL_INLINE(void)
-SubString_init(SubString *str, PyObject *s, int start, int end)
+SubString_init(SubString *str, PyObject *s, Py_ssize_t start, Py_ssize_t end)
 {
     str->str = s;
     str->start = start;
