@@ -342,6 +342,7 @@ PYTHON_OBJS=	\
 # Objects
 OBJECT_OBJS=	\
 		Objects/abstract.o \
+		Objects/accu.o \
 		Objects/boolobject.o \
 		Objects/bytes_methods.o \
 		Objects/bytearrayobject.o \
@@ -664,6 +665,7 @@ PYTHON_HEADERS= \
 		Include/Python-ast.h \
 		Include/Python.h \
 		Include/abstract.h \
+		Include/accu.h \
 		Include/asdl.h \
 		Include/ast.h \
                 Include/bltinmodule.h \

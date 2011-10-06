@@ -59,6 +59,17 @@ class ListTest(list_tests.CommonTest):
         self.assertRaises((MemoryError, OverflowError), mul, lst, n)
         self.assertRaises((MemoryError, OverflowError), imul, lst, n)
 
+    def test_repr_large(self):
+        # Check the repr of large list objects
+        def check(n):
+            l = [0] * n
+            s = repr(l)
+            self.assertEqual(s,
+                '[' + ', '.join(['0'] * n) + ']')
+        check(10)       # check our checking code
+        check(1000000)
+
+
 def test_main(verbose=None):
     support.run_unittest(ListTest)
 
