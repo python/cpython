@@ -393,9 +393,9 @@ class BaseStrTest:
         # take up an inordinate amount of memory
         chunksize = int(size ** 0.5 + 2) // 2
         SUBSTR = _(' ') * chunksize + _('\n') + _(' ') * chunksize + _('\r\n')
-        s = SUBSTR * chunksize
+        s = SUBSTR * (chunksize * 2)
         l = s.splitlines()
-        self.assertEqual(len(l), chunksize * 2)
+        self.assertEqual(len(l), chunksize * 4)
         expected = _(' ') * chunksize
         for item in l:
             self.assertEqual(item, expected)
