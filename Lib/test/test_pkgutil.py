@@ -78,6 +78,17 @@ class PkgutilTests(unittest.TestCase):
 
         del sys.modules[pkg]
 
+    def test_unreadable_dir_on_syspath(self):
+        # issue7367 - walk_packages failed if unreadable dir on sys.path
+        package_name = "unreadable_package"
+        d = os.path.join(self.dirname, package_name)
+        # this does not appear to create an unreadable dir on Windows
+        #   but the test should not fail anyway
+        os.mkdir(d, 0)
+        for t in pkgutil.walk_packages(path=[self.dirname]):
+            self.fail("unexpected package found")
+        os.rmdir(d)
+
 class PkgutilPEP302Tests(unittest.TestCase):
 
     class MyTestLoader(object):
