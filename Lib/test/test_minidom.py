@@ -446,7 +446,7 @@ class MinidomTest(unittest.TestCase):
         dom.unlink()
         self.confirm(domstr == str.replace("\n", "\r\n"))
 
-    def test_toPrettyXML_perserves_content_of_text_node(self):
+    def test_toprettyxml_preserves_content_of_text_node(self):
         str = '<A>B</A>'
         dom = parseString(str)
         dom2 = parseString(dom.toprettyxml())
