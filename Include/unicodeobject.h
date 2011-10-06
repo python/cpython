@@ -206,7 +206,7 @@ extern "C" {
    immediately follow the structure. utf8_length and wstr_length can be found
    in the length field; the utf8 pointer is equal to the data pointer. */
 typedef struct {
-    /* There a 4 forms of Unicode strings:
+    /* There are 4 forms of Unicode strings:
 
        - compact ascii:
 

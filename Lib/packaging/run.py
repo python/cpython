@@ -283,10 +283,11 @@ def _run(dispatcher, args, **kw):
     dist.parse_config_files()
 
     for cmd in dispatcher.commands:
+        # FIXME need to catch MetadataMissingError here (from the check command
+        # e.g.)--or catch any exception, print an error message and exit with 1
         dist.run_command(cmd, dispatcher.command_options[cmd])
 
-    # XXX this is crappy
-    return dist
+    return 0
 
 
 @action_help("""\
