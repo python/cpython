@@ -1741,6 +1741,63 @@ PyUnicode_FromKindAndData(int kind, const void *buffer, Py_ssize_t size)
     }
 }
 
+/* Ensure that a string uses the most efficient storage, if it is not the
+   case: create a new string with of the right kind. Write NULL into *p_unicode
+   on error. */
+void
+unicode_adjust_maxchar(PyObject **p_unicode)
+{
+    PyObject *unicode, *copy;
+    Py_UCS4 max_char;
+    Py_ssize_t i, len;
+    unsigned int kind;
+
+    assert(p_unicode != NULL);
+    unicode = *p_unicode;
+    assert(PyUnicode_IS_READY(unicode));
+    if (PyUnicode_IS_ASCII(unicode))
+        return;
+
+    len = PyUnicode_GET_LENGTH(unicode);
+    kind = PyUnicode_KIND(unicode);
+    if (kind == PyUnicode_1BYTE_KIND) {
+        const Py_UCS1 *u = PyUnicode_1BYTE_DATA(unicode);
+        for (i = 0; i < len; i++) {
+            if (u[i] & 0x80)
+                return;
+        }
+        max_char = 127;
+    }
+    else if (kind == PyUnicode_2BYTE_KIND) {
+        const Py_UCS2 *u = PyUnicode_2BYTE_DATA(unicode);
+        max_char = 0;
+        for (i = 0; i < len; i++) {
+            if (u[i] > max_char) {
+                max_char = u[i];
+                if (max_char >= 256)
+                    return;
+            }
+        }
+    }
+    else {
+        assert(kind == PyUnicode_4BYTE_KIND);
+        const Py_UCS4 *u = PyUnicode_4BYTE_DATA(unicode);
+        max_char = 0;
+        for (i = 0; i < len; i++) {
+            if (u[i] > max_char) {
+                max_char = u[i];
+                if (max_char >= 0x10000)
+                    return;
+            }
+        }
+    }
+    assert(max_char > PyUnicode_MAX_CHAR_VALUE(unicode));
+    copy = PyUnicode_New(len, max_char);
+    copy_characters(copy, 0, unicode, 0, len);
+    Py_DECREF(unicode);
+    *p_unicode = copy;
+}
+
 PyObject*
 PyUnicode_Copy(PyObject *unicode)
 {
@@ -9573,14 +9630,16 @@ replace(PyObject *self, PyObject *str1,
                     PyUnicode_WRITE(rkind, PyUnicode_DATA(u), i, u2);
                 }
             if (mayshrink) {
-                PyObject *tmp = u;
-                u = PyUnicode_FromKindAndData(rkind, PyUnicode_DATA(tmp),
-                                              PyUnicode_GET_LENGTH(tmp));
-                Py_DECREF(tmp);
+                unicode_adjust_maxchar(&u);
+                if (u == NULL)
+                    goto error;
             }
         } else {
             int rkind = skind;
             char *res;
+            PyObject *rstr;
+            Py_UCS4 maxchar;
+
             if (kind1 < rkind) {
                 /* widen substring */
                 buf1 = _PyUnicode_AsKind(str1, rkind);
@@ -9607,11 +9666,13 @@ replace(PyObject *self, PyObject *str1,
                 if (!buf1) goto error;
                 release1 = 1;
             }
-            res = PyMem_Malloc(PyUnicode_KIND_SIZE(rkind, slen));
-            if (!res) {
-                PyErr_NoMemory();
+            maxchar = PyUnicode_MAX_CHAR_VALUE(self);
+            maxchar = Py_MAX(maxchar, PyUnicode_MAX_CHAR_VALUE(str2));
+            rstr = PyUnicode_New(slen, maxchar);
+            if (!rstr)
                 goto error;
-            }
+            res = PyUnicode_DATA(rstr);
+
             memcpy(res, sbuf, PyUnicode_KIND_SIZE(rkind, slen));
             /* change everything in-place, starting with this one */
             memcpy(res + PyUnicode_KIND_SIZE(rkind, i),
@@ -9631,16 +9692,19 @@ replace(PyObject *self, PyObject *str1,
                 i += len1;
             }
 
-            u = PyUnicode_FromKindAndData(rkind, res, slen);
-            PyMem_Free(res);
-            if (!u) goto error;
+            u = rstr;
+            unicode_adjust_maxchar(&u);
+            if (!u)
+                goto error;
         }
     } else {
 
         Py_ssize_t n, i, j, ires;
         Py_ssize_t product, new_size;
         int rkind = skind;
+        PyObject *rstr;
         char *res;
+        Py_UCS4 maxchar;
 
         if (kind1 < rkind) {
             buf1 = _PyUnicode_AsKind(str1, rkind);
@@ -9679,9 +9743,12 @@ replace(PyObject *self, PyObject *str1,
                             "replace string is too long");
             goto error;
         }
-        res = PyMem_Malloc(PyUnicode_KIND_SIZE(rkind, new_size));
-        if (!res)
+        maxchar = PyUnicode_MAX_CHAR_VALUE(self);
+        maxchar = Py_MAX(maxchar, PyUnicode_MAX_CHAR_VALUE(str2));
+        rstr = PyUnicode_New(new_size, maxchar);
+        if (!rstr)
             goto error;
+        res = PyUnicode_DATA(rstr);
         ires = i = 0;
         if (len1 > 0) {
             while (n-- > 0) {
@@ -9731,11 +9798,10 @@ replace(PyObject *self, PyObject *str1,
                    sbuf + PyUnicode_KIND_SIZE(rkind, i),
                    PyUnicode_KIND_SIZE(rkind, slen-i));
         }
-        if (PyUnicode_IS_ASCII(self) && PyUnicode_IS_ASCII(str2))
-            u = unicode_fromascii((unsigned char*)res, new_size);
-        else
-            u = PyUnicode_FromKindAndData(rkind, res, new_size);
-        PyMem_Free(res);
+        u = rstr;
+        unicode_adjust_maxchar(&u);
+        if (u == NULL)
+            goto error;
     }
     if (srelease)
         PyMem_FREE(sbuf);
