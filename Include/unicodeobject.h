@@ -441,7 +441,7 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 
    See also PyUnicode_KIND_SIZE(). */
 #define PyUnicode_CHARACTER_SIZE(op) \
-    ((Py_ssize_t) (1 << (PyUnicode_KIND(op) - 1)))
+    (((Py_ssize_t)1 << (PyUnicode_KIND(op) - 1)))
 
 /* Return pointers to the canonical representation cast to unsigned char,
    Py_UCS2, or Py_UCS4 for direct character access.
@@ -478,7 +478,7 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 
    See also PyUnicode_CHARACTER_SIZE(). */
 #define PyUnicode_KIND_SIZE(kind, index) \
-    ((Py_ssize_t) ((index) << ((kind) - 1)))
+    (((Py_ssize_t)(index)) << ((kind) - 1))
 
 /* In the access macros below, "kind" may be evaluated more than once.
    All other macro parameters are evaluated exactly once, so it is safe
