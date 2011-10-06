@@ -467,6 +467,12 @@
 /* Define to 1 if you have the `linkat' function. */
 #undef HAVE_LINKAT
 
+/* Define to 1 if you have the <linux/can.h> header file. */
+#undef HAVE_LINUX_CAN_H
+
+/* Define to 1 if you have the <linux/can/raw.h> header file. */
+#undef HAVE_LINUX_CAN_RAW_H
+
 /* Define to 1 if you have the <linux/netlink.h> header file. */
 #undef HAVE_LINUX_NETLINK_H
 
