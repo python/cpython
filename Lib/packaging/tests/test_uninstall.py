@@ -89,9 +89,10 @@ class UninstallTestCase(support.TempdirManager,
         site_packages = self.get_path(dist, 'purelib')
         return dist, site_packages
 
-    def test_uninstall_unknow_distribution(self):
+    def test_uninstall_unknown_distribution(self):
+        dist, site_packages = self.install_dist('Foospam')
         self.assertRaises(PackagingError, remove, 'Foo',
-                          paths=[self.root_dir])
+                          paths=[site_packages])
 
     def test_uninstall(self):
         dist, site_packages = self.install_dist()
