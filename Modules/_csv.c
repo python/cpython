@@ -1127,6 +1127,7 @@ csv_writerow(WriterObj *self, PyObject *seq)
 {
     DialectObj *dialect = self->dialect;
     Py_ssize_t len, i;
+    PyObject *line, *result;
 
     if (!PySequence_Check(seq))
         return PyErr_Format(error_obj, "sequence expected");
@@ -1186,9 +1187,13 @@ csv_writerow(WriterObj *self, PyObject *seq)
     if (!join_append_lineterminator(self))
         return 0;
 
-    return PyObject_CallFunction(self->writeline,
-                                 "(u#)", self->rec,
-                                 self->rec_len);
+    line = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
+                                     (void *) self->rec, self->rec_len);
+    if (line == NULL)
+        return NULL;
+    result = PyObject_CallFunctionObjArgs(self->writeline, line, NULL);
+    Py_DECREF(line);
+    return result;
 }
 
 PyDoc_STRVAR(csv_writerows_doc,
