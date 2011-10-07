@@ -686,7 +686,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_Substring(
     Py_ssize_t start,
     Py_ssize_t end);
 
-/* Copy the string into a UCS4 buffer including the null character is copy_null
+/* Copy the string into a UCS4 buffer including the null character if copy_null
    is set. Return NULL and raise an exception on error. Raise a ValueError if
    the buffer is smaller than the string. Return buffer on success.
 
