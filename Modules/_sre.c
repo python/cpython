@@ -1669,7 +1669,7 @@ getstring(PyObject* string, Py_ssize_t* p_length,
             return NULL;
         ptr = PyUnicode_DATA(string);
         *p_length = PyUnicode_GET_LENGTH(string);
-        *p_charsize = PyUnicode_CHARACTER_SIZE(string);
+        *p_charsize = PyUnicode_KIND(string);
         *p_logical_charsize = 4;
         return ptr;
     }

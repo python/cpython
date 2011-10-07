@@ -365,7 +365,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
             APPEND_OLD_CHUNK
                 chunk = PyUnicode_FromKindAndData(
                     kind,
-                    (char*)buf + PyUnicode_KIND_SIZE(kind, end),
+                    (char*)buf + kind * end,
                     next - end);
             if (chunk == NULL) {
                 goto bail;
@@ -931,7 +931,7 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
     if (custom_func) {
         /* copy the section we determined to be a number */
         numstr = PyUnicode_FromKindAndData(kind,
-                                           (char*)str + PyUnicode_KIND_SIZE(kind, start),
+                                           (char*)str + kind * start,
                                            idx - start);
         if (numstr == NULL)
             return NULL;
