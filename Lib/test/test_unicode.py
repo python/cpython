@@ -277,9 +277,9 @@ class UnicodeTest(string_tests.CommonTest,
 
     @support.cpython_only
     def test_replace_id(self):
-        a = 'a' # single ascii letters are singletons
-        text = 'abc'
-        self.assertIs(text.replace('a', 'a'), text)
+        pattern = 'abc'
+        text = 'abc def'
+        self.assertIs(text.replace(pattern, pattern), text)
 
     def test_bytes_comparison(self):
         with support.check_warnings():
@@ -1579,6 +1579,7 @@ class UnicodeTest(string_tests.CommonTest,
             return
         self.assertRaises(OverflowError, 't\tt\t'.expandtabs, sys.maxsize)
 
+    @support.cpython_only
     def test_expandtabs_optimization(self):
         s = 'abc'
         self.assertIs(s.expandtabs(), s)
