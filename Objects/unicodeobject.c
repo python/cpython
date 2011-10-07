@@ -12727,6 +12727,29 @@ formatchar(PyObject *v)
     return (Py_UCS4) -1;
 }
 
+static int
+repeat_accumulate(_PyAccu *acc, PyObject *obj, Py_ssize_t count)
+{
+    int r;
+    assert(count > 0);
+    assert(PyUnicode_Check(obj));
+    if (count > 5) {
+        PyObject *repeated = unicode_repeat((PyUnicodeObject *) obj, count);
+        if (repeated == NULL)
+            return -1;
+        r = _PyAccu_Accumulate(acc, repeated);
+        Py_DECREF(repeated);
+        return r;
+    }
+    else {
+        do {
+            if (_PyAccu_Accumulate(acc, obj))
+                return -1;
+        } while (--count);
+        return 0;
+    }
+}
+
 PyObject *
 PyUnicode_Format(PyObject *format, PyObject *args)
 {
@@ -13145,10 +13168,9 @@ PyUnicode_Format(PyObject *format, PyObject *args)
             }
             if (width > len && !(flags & F_LJUST)) {
                 assert(fillobj != NULL);
-                do {
-                    if (_PyAccu_Accumulate(&acc, fillobj))
-                        goto onError;
-                } while (--width > len);
+                if (repeat_accumulate(&acc, fillobj, width - len))
+                    goto onError;
+                width = len;
             }
             if (fill == ' ') {
                 if (sign) {
@@ -13186,10 +13208,8 @@ PyUnicode_Format(PyObject *format, PyObject *args)
             Py_DECREF(v);
             if (r)
                 goto onError;
-            while (--width >= len) {
-                if (_PyAccu_Accumulate(&acc, blank))
-                    goto onError;
-            }
+            if (width > len && repeat_accumulate(&acc, blank, width - len))
+                goto onError;
             if (dict && (argidx < arglen) && c != '%') {
                 PyErr_SetString(PyExc_TypeError,
                                 "not all arguments converted during string formatting");
