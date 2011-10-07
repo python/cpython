@@ -1382,6 +1382,9 @@ Extension Modules
 Tests
 -----
 
+- Re-enable lib2to3's test_parser.py tests, though with an expected failure
+  (see issue 13125).
+
 - Issue #12656: Add tests for IPv6 and Unix sockets to test_asyncore.
 
 - Issue #6484: Add unit tests for mailcap module (patch by Gregory Nofi)
