@@ -305,12 +305,12 @@ typedef struct {
              * character type = Py_UCS2 (16 bits, unsigned)
              * at least one character must be in range U+0100-U+FFFF
 
-           - PyUnicode_4BYTE_KIND (3):
+           - PyUnicode_4BYTE_KIND (4):
 
              * character type = Py_UCS4 (32 bits, unsigned)
              * at least one character must be in range U+10000-U+10FFFF
          */
-        unsigned int kind:2;
+        unsigned int kind:3;
         /* Compact is with respect to the allocation scheme. Compact unicode
            objects only require one memory block while non-compact objects use
            one block for the PyUnicodeObject struct and another for its data
@@ -424,29 +424,21 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 #define PyUnicode_IS_COMPACT_ASCII(op)                 \
     (PyUnicode_IS_ASCII(op) && PyUnicode_IS_COMPACT(op))
 
+enum PyUnicode_Kind {
 /* String contains only wstr byte characters.  This is only possible
    when the string was created with a legacy API and _PyUnicode_Ready()
    has not been called yet.  */
-#define PyUnicode_WCHAR_KIND 0
-
+    PyUnicode_WCHAR_KIND = 0,
 /* Return values of the PyUnicode_KIND() macro: */
-
-#define PyUnicode_1BYTE_KIND 1
-#define PyUnicode_2BYTE_KIND 2
-#define PyUnicode_4BYTE_KIND 3
-
-
-/* Return the number of bytes the string uses to represent single characters,
-   this can be 1, 2 or 4.
-
-   See also PyUnicode_KIND_SIZE(). */
-#define PyUnicode_CHARACTER_SIZE(op) \
-    (((Py_ssize_t)1 << (PyUnicode_KIND(op) - 1)))
+    PyUnicode_1BYTE_KIND = 1,
+    PyUnicode_2BYTE_KIND = 2,
+    PyUnicode_4BYTE_KIND = 4
+};
 
 /* Return pointers to the canonical representation cast to unsigned char,
    Py_UCS2, or Py_UCS4 for direct character access.
-   No checks are performed, use PyUnicode_CHARACTER_SIZE or
-   PyUnicode_KIND() before to ensure these will work correctly. */
+   No checks are performed, use PyUnicode_KIND() before to ensure
+   these will work correctly. */
 
 #define PyUnicode_1BYTE_DATA(op) ((Py_UCS1*)PyUnicode_DATA(op))
 #define PyUnicode_2BYTE_DATA(op) ((Py_UCS2*)PyUnicode_DATA(op))
@@ -472,13 +464,6 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
     (assert(PyUnicode_Check(op)), \
      PyUnicode_IS_COMPACT(op) ? _PyUnicode_COMPACT_DATA(op) :   \
      _PyUnicode_NONCOMPACT_DATA(op))
-
-/* Compute (index * char_size) where char_size is 2 ** (kind - 1).
-   The index is a character index, the result is a size in bytes.
-
-   See also PyUnicode_CHARACTER_SIZE(). */
-#define PyUnicode_KIND_SIZE(kind, index) \
-    (((Py_ssize_t)(index)) << ((kind) - 1))
 
 /* In the access macros below, "kind" may be evaluated more than once.
    All other macro parameters are evaluated exactly once, so it is safe
