@@ -275,6 +275,12 @@ class UnicodeTest(string_tests.CommonTest,
         self.checkequalnofix('one@two!three!', 'one!two!three!', 'replace', '!', '@', 1)
         self.assertRaises(TypeError, 'replace'.replace, "r", 42)
 
+    @support.cpython_only
+    def test_replace_id(self):
+        a = 'a' # single ascii letters are singletons
+        text = 'abc'
+        self.assertIs(text.replace('a', 'a'), text)
+
     def test_bytes_comparison(self):
         with support.check_warnings():
             warnings.simplefilter('ignore', BytesWarning)

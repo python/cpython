@@ -9604,6 +9604,8 @@ replace(PyObject *self, PyObject *str1,
     else if (maxcount == 0 || slen == 0)
         goto nothing;
 
+    if (str1 == str2)
+        goto nothing;
     if (skind < kind1)
         /* substring too wide to be present */
         goto nothing;
