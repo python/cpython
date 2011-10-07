@@ -19,6 +19,9 @@ int main()
             /* Issue #12802 */
             if (i == ERROR_DIRECTORY)
                 errno = ENOTDIR;
+            /* Issue #13063 */
+            else if (i == ERROR_NO_DATA)
+                errno = EPIPE;
             else
                 continue;
         }
