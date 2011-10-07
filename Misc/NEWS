@@ -10,6 +10,10 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #13063: the Windows error ERROR_NO_DATA (numbered 232 and described
+  as "The pipe is being closed") is now mapped to POSIX errno EPIPE
+  (previously EINVAL).
+
 - Issue #12911: Fix memory consumption when calculating the repr() of huge
   tuples or lists.
 
