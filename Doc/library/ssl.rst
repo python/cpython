@@ -990,8 +990,8 @@ not SSLv2.
    Class :class:`socket.socket`
             Documentation of underlying :mod:`socket` class
 
-   `Introducing SSL and Certificates using OpenSSL <http://old.pseudonym.org/ssl/wwwj-index.html>`_
-       Frederick J. Hirsch
+   `TLS (Transport Layer Security) and SSL (Secure Socket Layer) <http://www3.rad.com/networks/applications/secure/tls.htm>`_
+      Debby Koren
 
    `RFC 1422: Privacy Enhancement for Internet Electronic Mail: Part II: Certificate-Based Key Management <http://www.ietf.org/rfc/rfc1422>`_
        Steve Kent
