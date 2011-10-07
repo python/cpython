@@ -149,7 +149,7 @@ access internal read-only data of Unicode objects:
    Return a pointer to the canonical representation cast to UCS1, UCS2 or UCS4
    integer types for direct character access.  No checks are performed if the
    canonical representation has the correct character size; use
-   :c:func:`PyUnicode_KIND` to select the right macro.  Make sure 
+   :c:func:`PyUnicode_KIND` to select the right macro.  Make sure
    :c:func:`PyUnicode_READY` has been called before accessing this.
 
    .. versionadded:: 3.3
