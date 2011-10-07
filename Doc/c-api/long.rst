@@ -100,6 +100,20 @@ All integers are implemented as "long" integer objects of arbitrary size.
    string is first encoded to a byte string using :c:func:`PyUnicode_EncodeDecimal`
    and then converted using :c:func:`PyLong_FromString`.
 
+   .. deprecated-removed:: 3.3 4.0
+      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
+      :c:func:`PyLong_FromUnicodeObject`.
+
+
+.. c:function:: PyObject* PyLong_FromUnicodeObject(PyObject *u, int base)
+
+   Convert a sequence of Unicode digits in the string *u* to a Python integer
+   value.  The Unicode string is first encoded to a byte string using
+   :c:func:`PyUnicode_EncodeDecimal` and then converted using
+   :c:func:`PyLong_FromString`.
+
+   .. versionadded:: 3.3
+
 
 .. c:function:: PyObject* PyLong_FromVoidPtr(void *p)
 
