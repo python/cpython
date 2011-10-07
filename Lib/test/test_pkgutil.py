@@ -15,11 +15,11 @@ class PkgutilTests(unittest.TestCase):
 
     def setUp(self):
         self.dirname = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.dirname)
         sys.path.insert(0, self.dirname)
 
     def tearDown(self):
         del sys.path[0]
-        shutil.rmtree(self.dirname)
 
     def test_getdata_filesys(self):
         pkg = 'test_getdata_filesys'
@@ -85,9 +85,9 @@ class PkgutilTests(unittest.TestCase):
         # this does not appear to create an unreadable dir on Windows
         #   but the test should not fail anyway
         os.mkdir(d, 0)
+        self.addCleanup(os.rmdir, d)
         for t in pkgutil.walk_packages(path=[self.dirname]):
             self.fail("unexpected package found")
-        os.rmdir(d)
 
 class PkgutilPEP302Tests(unittest.TestCase):
 
