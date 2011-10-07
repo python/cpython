@@ -43,6 +43,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #11250: Back port fix from 3.3 branch, so that 2to3 can handle files
+  with line feeds.  This was ported from the sandbox to the 3.3 branch, but
+  didn't make it into 3.2.
+
 - Issue #7367: Fix pkgutil.walk_paths to skip directories whose
   contents cannot be read.
 
@@ -104,6 +108,9 @@ Tests
 -----
 
 - Issue #12821: Fix test_fcntl failures on OpenBSD 5.
+
+- Re-enable lib2to3's test_parser.py tests, though with an expected failure
+  (see issue 13125).
 
 Extension Modules
 -----------------
