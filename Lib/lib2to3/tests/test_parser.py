@@ -166,7 +166,7 @@ class TestParserIdempotency(support.TestCase):
                 encoding = tokenize.detect_encoding(fp.readline)[0]
             self.assertTrue(encoding is not None,
                             "can't detect encoding for %s" % filepath)
-            with open(filepath, "r") as fp:
+            with open(filepath, "r", encoding=encoding) as fp:
                 source = fp.read()
             try:
                 tree = driver.parse_string(source)
@@ -174,8 +174,6 @@ class TestParserIdempotency(support.TestCase):
                 print('ParseError on file', filepath, err)
                 continue
             new = str(tree)
-            if encoding:
-                new = new.encode(encoding)
             if diff(filepath, new):
                 self.fail("Idempotency failed: %s" % filepath)
 
