@@ -9124,7 +9124,7 @@ PyObject *
 PyUnicode_Join(PyObject *separator, PyObject *seq)
 {
     PyObject *sep = NULL;
-    Py_ssize_t seplen = 1;
+    Py_ssize_t seplen;
     PyObject *res = NULL; /* the result */
     PyObject *fseq;          /* PySequence_Fast(seq) */
     Py_ssize_t seqlen;       /* len(fseq) -- number of items in sequence */
@@ -9133,6 +9133,10 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
     Py_ssize_t sz, i, res_offset;
     Py_UCS4 maxchar;
     Py_UCS4 item_maxchar;
+    int use_memcpy;
+    unsigned char *res_data = NULL, *sep_data = NULL;
+    PyObject *last_obj;
+    unsigned int kind = 0;
 
     fseq = PySequence_Fast(seq, "");
     if (fseq == NULL) {
@@ -9153,6 +9157,7 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
     }
 
     /* If singleton sequence with an exact Unicode, return that. */
+    last_obj = NULL;
     items = PySequence_Fast_ITEMS(fseq);
     if (seqlen == 1) {
         if (PyUnicode_CheckExact(items[0])) {
@@ -9161,7 +9166,7 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
             Py_DECREF(fseq);
             return res;
         }
-        sep = NULL;
+        seplen = 0;
         maxchar = 0;
     }
     else {
@@ -9171,6 +9176,7 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
             sep = PyUnicode_FromOrdinal(' ');
             if (!sep)
                 goto onError;
+            seplen = 1;
             maxchar = 32;
         }
         else {
@@ -9190,6 +9196,7 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
                above case of a blank separator */
             Py_INCREF(sep);
         }
+        last_obj = sep;
     }
 
     /* There are at least two things to join, or else we have a subclass
@@ -9198,6 +9205,11 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
      * need (sz), and see whether all argument are strings.
      */
     sz = 0;
+#ifdef Py_DEBUG
+    use_memcpy = 0;
+#else
+    use_memcpy = 1;
+#endif
     for (i = 0; i < seqlen; i++) {
         const Py_ssize_t old_sz = sz;
         item = items[i];
@@ -9220,6 +9232,11 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
                             "join() result is too long for a Python string");
             goto onError;
         }
+        if (use_memcpy && last_obj != NULL) {
+            if (PyUnicode_KIND(last_obj) != PyUnicode_KIND(item))
+                use_memcpy = 0;
+        }
+        last_obj = item;
     }
 
     res = PyUnicode_New(sz, maxchar);
@@ -9227,21 +9244,51 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
         goto onError;
 
     /* Catenate everything. */
+#ifdef Py_DEBUG
+    use_memcpy = 0;
+#else
+    if (use_memcpy) {
+        res_data = PyUnicode_1BYTE_DATA(res);
+        kind = PyUnicode_KIND(res);
+        if (seplen != 0)
+            sep_data = PyUnicode_1BYTE_DATA(sep);
+    }
+#endif
     for (i = 0, res_offset = 0; i < seqlen; ++i) {
         Py_ssize_t itemlen;
         item = items[i];
         /* Copy item, and maybe the separator. */
         if (i && seplen != 0) {
-            copy_characters(res, res_offset, sep, 0, seplen);
-            res_offset += seplen;
+            if (use_memcpy) {
+                Py_MEMCPY(res_data,
+                          sep_data,
+                          PyUnicode_KIND_SIZE(kind, seplen));
+                res_data += PyUnicode_KIND_SIZE(kind, seplen);
+            }
+            else {
+                copy_characters(res, res_offset, sep, 0, seplen);
+                res_offset += seplen;
+            }
         }
         itemlen = PyUnicode_GET_LENGTH(item);
         if (itemlen != 0) {
-            copy_characters(res, res_offset, item, 0, itemlen);
-            res_offset += itemlen;
+            if (use_memcpy) {
+                Py_MEMCPY(res_data,
+                          PyUnicode_DATA(item),
+                          PyUnicode_KIND_SIZE(kind, itemlen));
+                res_data += PyUnicode_KIND_SIZE(kind, itemlen);
+            }
+            else {
+                copy_characters(res, res_offset, item, 0, itemlen);
+                res_offset += itemlen;
+            }
         }
     }
-    assert(res_offset == PyUnicode_GET_LENGTH(res));
+    if (use_memcpy)
+        assert(res_data == PyUnicode_1BYTE_DATA(res)
+                           + PyUnicode_KIND_SIZE(kind, PyUnicode_GET_LENGTH(res)));
+    else
+        assert(res_offset == PyUnicode_GET_LENGTH(res));
 
     Py_DECREF(fseq);
     Py_XDECREF(sep);
