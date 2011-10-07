@@ -130,15 +130,15 @@ except AttributeError:
 
 ### Platform specific APIs
 
-_libc_search = re.compile(r'(__libc_init)'
-                          '|'
-                          '(GLIBC_([0-9.]+))'
-                          '|'
-                          '(libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)', re.ASCII)
+_libc_search = re.compile(b'(__libc_init)'
+                          b'|'
+                          b'(GLIBC_([0-9.]+))'
+                          b'|'
+                          br'(libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)', re.ASCII)
 
 def libc_ver(executable=sys.executable,lib='',version='',
 
-             chunksize=2048):
+             chunksize=16384):
 
     """ Tries to determine the libc version that the file executable
         (which defaults to the Python interpreter) is linked against.
@@ -159,17 +159,22 @@ def libc_ver(executable=sys.executable,lib='',version='',
         # able to open symlinks for reading
         executable = os.path.realpath(executable)
     f = open(executable,'rb')
-    binary = f.read(chunksize).decode('latin-1')
+    binary = f.read(chunksize)
     pos = 0
     while 1:
-        m = _libc_search.search(binary,pos)
+        if b'libc' in binary or b'GLIBC' in binary:
+            m = _libc_search.search(binary,pos)
+        else:
+            m = None
         if not m:
-            binary = f.read(chunksize).decode('latin-1')
+            binary = f.read(chunksize)
             if not binary:
                 break
             pos = 0
             continue
-        libcinit,glibc,glibcversion,so,threads,soversion = m.groups()
+        libcinit,glibc,glibcversion,so,threads,soversion = [
+            s.decode('latin1') if s is not None else s
+            for s in m.groups()]
         if libcinit and not lib:
             lib = 'libc'
         elif glibc:
