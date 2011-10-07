@@ -87,7 +87,7 @@ There are only a few functions special to module objects.
    Return the name of the file from which *module* was loaded using *module*'s
    :attr:`__file__` attribute.  If this is not defined, or if it is not a
    unicode string, raise :exc:`SystemError` and return *NULL*; otherwise return
-   a reference to a :c:type:`PyUnicodeObject`.
+   a reference to a Unicode object.
 
    .. versionadded:: 3.2
 
