@@ -99,7 +99,7 @@ access internal read-only data of Unicode objects:
 
    .. deprecated-removed:: 3.3 4.0
       Part of the old-style Unicode API, please migrate to using
-      :c:func:`PyUnicode_GET_LENGTH` or :c:func:`PyUnicode_KIND_SIZE`.
+      :c:func:`PyUnicode_GET_LENGTH`.
 
 
 .. c:function:: Py_UNICODE* PyUnicode_AS_UNICODE(PyObject *o)
@@ -149,9 +149,8 @@ access internal read-only data of Unicode objects:
    Return a pointer to the canonical representation cast to UCS1, UCS2 or UCS4
    integer types for direct character access.  No checks are performed if the
    canonical representation has the correct character size; use
-   :c:func:`PyUnicode_CHARACTER_SIZE` or :c:func:`PyUnicode_KIND` to select the
-   right macro.  Make sure :c:func:`PyUnicode_READY` has been called before
-   accessing this.
+   :c:func:`PyUnicode_KIND` to select the right macro.  Make sure 
+   :c:func:`PyUnicode_READY` has been called before accessing this.
 
    .. versionadded:: 3.3
 
@@ -176,27 +175,10 @@ access internal read-only data of Unicode objects:
    .. versionadded:: 3.3
 
 
-.. c:function:: int PyUnicode_CHARACTER_SIZE(PyObject *o)
-
-   Return the number of bytes the string uses to represent single characters;
-   this can be 1, 2 or 4.  *o* has to be a Unicode object in the "canonical"
-   representation (not checked).
-
-   .. versionadded:: 3.3
-
-
 .. c:function:: void* PyUnicode_DATA(PyObject *o)
 
    Return a void pointer to the raw unicode buffer.  *o* has to be a Unicode
    object in the "canonical" representation (not checked).
-
-   .. versionadded:: 3.3
-
-
-.. c:function:: int PyUnicode_KIND_SIZE(int kind, Py_ssize_t index)
-
-   Compute ``index * char_size`` where ``char_size`` is ``2**(kind - 1)``.  The
-   index is a character index, the result is a size in bytes.
 
    .. versionadded:: 3.3
 
