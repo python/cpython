@@ -530,27 +530,60 @@ def _tokenize(readline, encoding):
 def generate_tokens(readline):
     return _tokenize(readline, None)
 
+def main():
+    import argparse
+
+    # Helper error handling routines
+    def perror(message):
+        print(message, file=sys.stderr)
+
+    def error(message, filename=None, location=None):
+        if location:
+            args = (filename,) + location + (message,)
+            perror("%s:%d:%d: error: %s" % args)
+        elif filename:
+            perror("%s: error: %s" % (filename, message))
+        else:
+            perror("error: %s" % message)
+        sys.exit(1)
+
+    # Parse the arguments and options
+    parser = argparse.ArgumentParser(prog='python -m tokenize')
+    parser.add_argument(dest='filename', nargs='?',
+                        metavar='filename.py',
+                        help='the file to tokenize; defaults to stdin')
+    args = parser.parse_args()
+
+    try:
+        # Tokenize the input
+        if args.filename:
+            filename = args.filename
+            with builtins.open(filename, 'rb') as f:
+                tokens = list(tokenize(f.readline))
+        else:
+            filename = "<stdin>"
+            tokens = _tokenize(sys.stdin.readline, None)
+
+        # Output the tokenization
+        for token in tokens:
+            token_range = "%d,%d-%d,%d:" % (token.start + token.end)
+            print("%-20s%-15s%-15r" %
+                  (token_range, tok_name[token.type], token.string))
+    except IndentationError as err:
+        line, column = err.args[1][1:3]
+        error(err.args[0], filename, (line, column))
+    except TokenError as err:
+        line, column = err.args[1]
+        error(err.args[0], filename, (line, column))
+    except SyntaxError as err:
+        error(err, filename)
+    except IOError as err:
+        error(err)
+    except KeyboardInterrupt:
+        print("interrupted\n")
+    except Exception as err:
+        perror("unexpected error: %s" % err)
+        raise
+
 if __name__ == "__main__":
-    # Quick sanity check
-    s = b'''def parseline(self, line):
-            """Parse the line into a command name and a string containing
-            the arguments.  Returns a tuple containing (command, args, line).
-            'command' and 'args' may be None if the line couldn't be parsed.
-            """
-            line = line.strip()
-            if not line:
-                return None, None, line
-            elif line[0] == '?':
-                line = 'help ' + line[1:]
-            elif line[0] == '!':
-                if hasattr(self, 'do_shell'):
-                    line = 'shell ' + line[1:]
-                else:
-                    return None, None, line
-            i, n = 0, len(line)
-            while i < n and line[i] in self.identchars: i = i+1
-            cmd, arg = line[:i], line[i:].strip()
-            return cmd, arg, line
-    '''
-    for tok in tokenize(iter(s.splitlines()).__next__):
-        print(tok)
+    main()

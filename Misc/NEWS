@@ -2520,6 +2520,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #12943: python -m tokenize support has been added to tokenize.
+
 - Issue #10465: fix broken delegating of attributes by gzip._PaddedFile.
 
 - Issue #10356: Decimal.__hash__(-1) should return -2.

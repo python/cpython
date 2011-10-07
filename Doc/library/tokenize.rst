@@ -15,6 +15,9 @@ implemented in Python.  The scanner in this module returns comments as tokens
 as well, making it useful for implementing "pretty-printers," including
 colorizers for on-screen displays.
 
+Tokenizing Input
+----------------
+
 The primary entry point is a :term:`generator`:
 
 .. function:: tokenize(readline)
@@ -116,6 +119,26 @@ function it uses to do this is available:
    .. versionadded:: 3.2
 
 
+.. _tokenize-cli:
+
+Command-Line Usage
+------------------
+
+.. versionadded:: 3.3
+
+The :mod:`tokenize` module can be executed as a script from the command line.
+It is as simple as:
+
+.. code-block:: sh
+
+   python -m tokenize [filename.py]
+
+If :file:`filename.py` is specified its contents are tokenized to stdout.
+Otherwise, tokenization is performed on stdin.
+
+Examples
+------------------
+
 Example of a script rewriter that transforms float literals into Decimal
 objects::
 
@@ -158,3 +181,37 @@ objects::
                 result.append((toknum, tokval))
         return untokenize(result).decode('utf-8')
 
+Example of tokenizing from the command line.  The script::
+
+    def say_hello():
+        print("Hello, World!")
+
+    say_hello()
+
+will be tokenized to the following output where the first column is the range
+of the line/column coordinates where the token is found, the second column is
+the name of the token, and the final column is the value of the token (if any)
+
+.. code-block:: sh
+
+    $ python -m tokenize hello.py
+    0,0-0,0:            ENCODING       'utf-8'
+    1,0-1,3:            NAME           'def'
+    1,4-1,13:           NAME           'say_hello'
+    1,13-1,14:          OP             '('
+    1,14-1,15:          OP             ')'
+    1,15-1,16:          OP             ':'
+    1,16-1,17:          NEWLINE        '\n'
+    2,0-2,4:            INDENT         '    '
+    2,4-2,9:            NAME           'print'
+    2,9-2,10:           OP             '('
+    2,10-2,25:          STRING         '"Hello, World!"'
+    2,25-2,26:          OP             ')'
+    2,26-2,27:          NEWLINE        '\n'
+    3,0-3,1:            NL             '\n'
+    4,0-4,0:            DEDENT         ''
+    4,0-4,9:            NAME           'say_hello'
+    4,9-4,10:           OP             '('
+    4,10-4,11:          OP             ')'
+    4,11-4,12:          NEWLINE        '\n'
+    5,0-5,0:            ENDMARKER      ''
