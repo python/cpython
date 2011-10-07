@@ -114,87 +114,6 @@ autonumber_state_error(AutoNumberState state, int field_name_is_empty)
 /***********    Output string management functions       ****************/
 /************************************************************************/
 
-typedef struct {
-    char *data;
-    Py_UCS4 maxchar;
-    unsigned int kind;
-    Py_ssize_t pos, size;
-    Py_ssize_t size_increment;
-} OutputString;
-
-/* initialize an OutputString object, reserving size characters */
-static int
-output_initialize(OutputString *output, Py_ssize_t size)
-{
-    output->data = PyMem_Malloc(size);
-    if (output->data == NULL) {
-        PyErr_NoMemory();
-        return 0;
-    }
-
-    output->maxchar = 127;
-    output->kind = PyUnicode_1BYTE_KIND;
-    output->pos = 0;
-    output->size = size;
-    output->size_increment = INITIAL_SIZE_INCREMENT;
-
-    return 1;
-}
-
-/*
-    output_extend reallocates the output string buffer.
-    It returns a status:  0 for a failed reallocation,
-    1 for success.
-*/
-
-static int
-output_extend(OutputString *output, Py_ssize_t count)
-{
-    Py_ssize_t maxlen = output->size + count + output->size_increment;
-
-    output->data = PyMem_Realloc(output->data, maxlen << (output->kind-1));
-    output->size = maxlen;
-    if (output->data == 0) {
-        PyErr_NoMemory();
-        return 0;
-    }
-    if (output->size_increment < MAX_SIZE_INCREMENT)
-        output->size_increment *= SIZE_MULTIPLIER;
-    return 1;
-}
-
-static int
-output_widen(OutputString *output, Py_UCS4 maxchar)
-{
-    int kind;
-    void *data; 
-    Py_ssize_t i;
-    if (maxchar <= output->maxchar)
-        return 1;
-    if (maxchar < 256) {
-        output->maxchar = 255;
-        return 1;
-    }
-    if (maxchar < 65536) {
-        output->maxchar = 65535;
-        kind = 2;
-    }
-    else {
-        output->maxchar = 1<<21;
-        kind = 3;
-    }
-    data = PyMem_Malloc(output->size << (kind-1));
-    if (data == 0)
-        return 0;
-    for (i = 0; i < output->size; i++)
-        PyUnicode_WRITE(kind, data, i,
-                        PyUnicode_READ(output->kind, output->data, i));
-    PyMem_Free(output->data);
-    output->data = data;
-    output->kind = kind;
-    return 1;
-}
-
 /*
     output_data dumps characters into our output string
     buffer.
@@ -205,26 +124,17 @@ output_widen(OutputString *output, Py_UCS4 maxchar)
     1 for success.
 */
 static int
-output_data(OutputString *output, PyObject *s, Py_ssize_t start, Py_ssize_t end)
+output_data(_PyAccu *acc, PyObject *s, Py_ssize_t start, Py_ssize_t end)
 {
-    Py_ssize_t i;
-    int kind;
-    if ((output->pos + end - start > output->size) && 
-        !output_extend(output, end - start))
+    PyObject *substring;
+    int r;
+
+    substring = PyUnicode_Substring(s, start, end);
+    if (substring == NULL)
         return 0;
-    kind = PyUnicode_KIND(s);
-    if (PyUnicode_MAX_CHAR_VALUE(s) > output->maxchar) {
-        Py_UCS4 maxchar = output->maxchar;
-        for (i = start; i < end; i++)
-            if (PyUnicode_READ(kind, PyUnicode_DATA(s), i) > maxchar)
-                maxchar = PyUnicode_READ(kind, PyUnicode_DATA(s), i);
-        if (!output_widen(output, maxchar))
-            return 0;
-    }
-    for (i = start; i < end; i++)
-        PyUnicode_WRITE(output->kind, output->data, output->pos++,
-                        PyUnicode_READ(kind, PyUnicode_DATA(s), i));
-    return 1;
+    r = _PyAccu_Accumulate(acc, substring);
+    Py_DECREF(substring);
+    return r == 0;
 }
 
 /************************************************************************/
@@ -612,7 +522,7 @@ error:
     appends to the output.
 */
 static int
-render_field(PyObject *fieldobj, SubString *format_spec, OutputString *output)
+render_field(PyObject *fieldobj, SubString *format_spec, _PyAccu *acc)
 {
     int ok = 0;
     PyObject *result = NULL;
@@ -655,7 +565,7 @@ render_field(PyObject *fieldobj, SubString *format_spec, OutputString *output)
         goto done;
 
     assert(PyUnicode_Check(result));
-    ok = output_data(output, result, 0, PyUnicode_GET_LENGTH(result));
+    ok = output_data(acc, result, 0, PyUnicode_GET_LENGTH(result));
 done:
     Py_XDECREF(format_spec_object);
     Py_XDECREF(result);
@@ -920,7 +830,7 @@ do_conversion(PyObject *obj, Py_UCS4 conversion)
 static int
 output_markup(SubString *field_name, SubString *format_spec,
               int format_spec_needs_expanding, Py_UCS4 conversion,
-              OutputString *output, PyObject *args, PyObject *kwargs,
+              _PyAccu *acc, PyObject *args, PyObject *kwargs,
               int recursion_depth, AutoNumber *auto_number)
 {
     PyObject *tmp = NULL;
@@ -961,7 +871,7 @@ output_markup(SubString *field_name, SubString *format_spec,
     else
         actual_format_spec = format_spec;
 
-    if (render_field(fieldobj, actual_format_spec, output) == 0)
+    if (render_field(fieldobj, actual_format_spec, acc) == 0)
         goto done;
 
     result = 1;
@@ -981,7 +891,7 @@ done:
 */
 static int
 do_markup(SubString *input, PyObject *args, PyObject *kwargs,
-          OutputString *output, int recursion_depth, AutoNumber *auto_number)
+          _PyAccu *acc, int recursion_depth, AutoNumber *auto_number)
 {
     MarkupIterator iter;
     int format_spec_needs_expanding;
@@ -997,11 +907,11 @@ do_markup(SubString *input, PyObject *args, PyObject *kwargs,
                                          &field_name, &format_spec,
                                          &conversion,
                                          &format_spec_needs_expanding)) == 2) {
-        if (!output_data(output, literal.str, literal.start, literal.end))
+        if (!output_data(acc, literal.str, literal.start, literal.end))
             return 0;
         if (field_present)
             if (!output_markup(&field_name, &format_spec,
-                               format_spec_needs_expanding, conversion, output,
+                               format_spec_needs_expanding, conversion, acc,
                                args, kwargs, recursion_depth, auto_number))
                 return 0;
     }
@@ -1017,39 +927,25 @@ static PyObject *
 build_string(SubString *input, PyObject *args, PyObject *kwargs,
              int recursion_depth, AutoNumber *auto_number)
 {
-    OutputString output;
-    PyObject *result = NULL;
-
-    output.data = NULL; /* needed so cleanup code always works */
+    _PyAccu acc;
 
     /* check the recursion level */
     if (recursion_depth <= 0) {
         PyErr_SetString(PyExc_ValueError,
                         "Max string recursion exceeded");
-        goto done;
+        return NULL;
     }
 
-    /* initial size is the length of the format string, plus the size
-       increment.  seems like a reasonable default */
-    if (!output_initialize(&output,
-                           input->end - input->start +
-                           INITIAL_SIZE_INCREMENT))
-        goto done;
+    if (_PyAccu_Init(&acc))
+        return NULL;
 
-    if (!do_markup(input, args, kwargs, &output, recursion_depth,
+    if (!do_markup(input, args, kwargs, &acc, recursion_depth,
                    auto_number)) {
-        goto done;
+        _PyAccu_Destroy(&acc);
+        return NULL;
     }
 
-    result = PyUnicode_New(output.pos, output.maxchar);
-    if (!result)
-        goto done;
-    memcpy(PyUnicode_DATA(result), output.data, output.pos << (output.kind-1));
-
-done:
-    if (output.data)
-        PyMem_Free(output.data);
-    return result;
+    return _PyAccu_Finish(&acc);
 }
 
 /************************************************************************/
