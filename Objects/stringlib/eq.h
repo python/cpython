@@ -30,5 +30,5 @@ unicode_eq(PyObject *aa, PyObject *bb)
         PyUnicode_GET_LENGTH(a) == 1)
         return 1;
     return memcmp(PyUnicode_1BYTE_DATA(a), PyUnicode_1BYTE_DATA(b),
-                  PyUnicode_GET_LENGTH(a) * PyUnicode_CHARACTER_SIZE(a)) == 0;
+                  PyUnicode_GET_LENGTH(a) * PyUnicode_KIND(a)) == 0;
 }
