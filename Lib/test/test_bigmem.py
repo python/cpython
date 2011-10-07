@@ -715,7 +715,7 @@ class StrTest(unittest.TestCase, BaseStrTest):
         finally:
             r = s = None
 
-    @bigmemtest(size=_2G // 5 + 1, memuse=ucs4_char_size + ascii_char_size * 10)
+    @bigmemtest(size=_2G // 5 + 1, memuse=ucs4_char_size * 2 + ascii_char_size * 10)
     def test_unicode_repr_wide(self, size):
         char = "\U0001DCBA"
         s = char * size
