@@ -43,6 +43,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11254: Teach distutils to compile .pyc and .pyo files in
+  PEP 3147-compliant __pycache__ directories.
+
 - Issue #7367: Fix pkgutil.walk_paths to skip directories whose
   contents cannot be read.
 
