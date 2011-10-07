@@ -604,9 +604,9 @@ fill_number(PyObject *out, Py_ssize_t pos, const NumberFieldWidths *spec,
 #endif
             _PyUnicode_InsertThousandsGrouping(
                 out, kind,
-                (char*)data + PyUnicode_KIND_SIZE(kind, pos),
+                (char*)data + kind * pos,
                 spec->n_grouped_digits,
-                pdigits + PyUnicode_KIND_SIZE(kind, d_pos),
+                pdigits + kind * d_pos,
                 spec->n_digits, spec->n_min_width,
                 locale->grouping, locale->thousands_sep);
 #ifndef NDEBUG

@@ -291,9 +291,7 @@ _PyIncrementalNewlineDecoder_decode(PyObject *_self,
         kind = PyUnicode_KIND(modified);
         out = PyUnicode_DATA(modified);
         PyUnicode_WRITE(kind, PyUnicode_DATA(modified), 0, '\r');
-        memcpy(out + PyUnicode_KIND_SIZE(kind, 1),
-               PyUnicode_DATA(output),
-               PyUnicode_KIND_SIZE(kind, output_len));
+        memcpy(out + kind, PyUnicode_DATA(output), kind * output_len);
         Py_DECREF(output);
         output = modified; /* output remains ready */
         self->pendingcr = 0;
@@ -336,7 +334,7 @@ _PyIncrementalNewlineDecoder_decode(PyObject *_self,
            for the \r *byte* with the libc's optimized memchr.
            */
         if (seennl == SEEN_LF || seennl == 0) {
-            only_lf = (memchr(in_str, '\r', PyUnicode_KIND_SIZE(kind, len)) == NULL);
+            only_lf = (memchr(in_str, '\r', kind * len) == NULL);
         }
 
         if (only_lf) {
@@ -344,7 +342,7 @@ _PyIncrementalNewlineDecoder_decode(PyObject *_self,
                (there's nothing else to be done, even when in translation mode)
             */
             if (seennl == 0 &&
-                memchr(in_str, '\n', PyUnicode_KIND_SIZE(kind, len)) != NULL) {
+                memchr(in_str, '\n', kind * len) != NULL) {
                 Py_ssize_t i = 0;
                 for (;;) {
                     Py_UCS4 c;
@@ -403,7 +401,7 @@ _PyIncrementalNewlineDecoder_decode(PyObject *_self,
                when there is something to translate. On the other hand,
                we already know there is a \r byte, so chances are high
                that something needs to be done. */
-            translated = PyMem_Malloc(PyUnicode_KIND_SIZE(kind, len));
+            translated = PyMem_Malloc(kind * len);
             if (translated == NULL) {
                 PyErr_NoMemory();
                 goto error;
@@ -1576,15 +1574,14 @@ textiowrapper_read(textio *self, PyObject *args)
 static char *
 find_control_char(int kind, char *s, char *end, Py_UCS4 ch)
 {
-    int size = PyUnicode_KIND_SIZE(kind, 1);
     for (;;) {
         while (PyUnicode_READ(kind, s, 0) > ch)
-            s += size;
+            s += kind;
         if (PyUnicode_READ(kind, s, 0) == ch)
             return s;
         if (s == end)
             return NULL;
-        s += size;
+        s += kind;
     }
 }
 
@@ -1593,14 +1590,13 @@ _PyIO_find_line_ending(
     int translated, int universal, PyObject *readnl,
     int kind, char *start, char *end, Py_ssize_t *consumed)
 {
-    int size = PyUnicode_KIND_SIZE(kind, 1);
-    Py_ssize_t len = ((char*)end - (char*)start)/size;
+    Py_ssize_t len = ((char*)end - (char*)start)/kind;
 
     if (translated) {
         /* Newlines are already translated, only search for \n */
         char *pos = find_control_char(kind, start, end, '\n');
         if (pos != NULL)
-            return (pos - start)/size + 1;
+            return (pos - start)/kind + 1;
         else {
             *consumed = len;
             return -1;
@@ -1616,20 +1612,20 @@ _PyIO_find_line_ending(
             /* Fast path for non-control chars. The loop always ends
                since the Unicode string is NUL-terminated. */
             while (PyUnicode_READ(kind, s, 0) > '\r')
-                s += size;
+                s += kind;
             if (s >= end) {
                 *consumed = len;
                 return -1;
             }
             ch = PyUnicode_READ(kind, s, 0);
-            s += size;
+            s += kind;
             if (ch == '\n')
-                return (s - start)/size;
+                return (s - start)/kind;
             if (ch == '\r') {
                 if (PyUnicode_READ(kind, s, 0) == '\n')
-                    return (s - start)/size + 1;
+                    return (s - start)/kind + 1;
                 else
-                    return (s - start)/size;
+                    return (s - start)/kind;
             }
         }
     }
@@ -1642,13 +1638,13 @@ _PyIO_find_line_ending(
         if (readnl_len == 1) {
             char *pos = find_control_char(kind, start, end, nl[0]);
             if (pos != NULL)
-                return (pos - start)/size + 1;
+                return (pos - start)/kind + 1;
             *consumed = len;
             return -1;
         }
         else {
             char *s = start;
-            char *e = end - (readnl_len - 1)*size;
+            char *e = end - (readnl_len - 1)*kind;
             char *pos;
             if (e < s)
                 e = s;
@@ -1662,14 +1658,14 @@ _PyIO_find_line_ending(
                         break;
                 }
                 if (i == readnl_len)
-                    return (pos - start)/size + readnl_len;
-                s = pos + size;
+                    return (pos - start)/kind + readnl_len;
+                s = pos + kind;
             }
             pos = find_control_char(kind, e, end, nl[0]);
             if (pos == NULL)
                 *consumed = len;
             else
-                *consumed = (pos - start)/size;
+                *consumed = (pos - start)/kind;
             return -1;
         }
     }
@@ -1738,8 +1734,8 @@ _textiowrapper_readline(textio *self, Py_ssize_t limit)
         endpos = _PyIO_find_line_ending(
             self->readtranslate, self->readuniversal, self->readnl,
             kind,
-            ptr + PyUnicode_KIND_SIZE(kind, start),
-            ptr + PyUnicode_KIND_SIZE(kind, line_len),
+            ptr + kind * start,
+            ptr + kind * line_len,
             &consumed);
         if (endpos >= 0) {
             endpos += start;
