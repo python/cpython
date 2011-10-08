@@ -2,6 +2,7 @@
 
 import os
 import sys
+import imp
 
 from packaging.command.build_py import build_py
 from packaging.dist import Distribution
@@ -58,13 +59,15 @@ class BuildPyTestCase(support.TempdirManager,
         self.assertEqual(len(cmd.get_outputs()), 3)
         pkgdest = os.path.join(destination, "pkg")
         files = os.listdir(pkgdest)
+        pycache_dir = os.path.join(pkgdest, "__pycache__")
         self.assertIn("__init__.py", files)
         self.assertIn("README.txt", files)
-        # XXX even with -O, distutils writes pyc, not pyo; bug?
         if sys.dont_write_bytecode:
-            self.assertNotIn("__init__.pyc", files)
+            self.assertFalse(os.path.exists(pycache_dir))
         else:
-            self.assertIn("__init__.pyc", files)
+            # XXX even with -O, packaging writes pyc, not pyo; bug?
+            pyc_files = os.listdir(pycache_dir)
+            self.assertIn("__init__.%s.pyc" % imp.get_tag(), pyc_files)
 
     def test_empty_package_dir(self):
         # See SF 1668596/1720897.
