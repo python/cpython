@@ -29,10 +29,10 @@ class ConfigTestCase(support.LoggingCatcher,
         cmd = config(dist)
 
         # simple pattern searches
-        match = cmd.search_cpp(pattern='xxx', body='// xxx')
+        match = cmd.search_cpp(pattern='xxx', body='/* xxx */')
         self.assertEqual(match, 0)
 
-        match = cmd.search_cpp(pattern='_configtest', body='// xxx')
+        match = cmd.search_cpp(pattern='_configtest', body='/* xxx */')
         self.assertEqual(match, 1)
 
     def test_finalize_options(self):
