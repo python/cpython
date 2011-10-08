@@ -8730,7 +8730,7 @@ PyUnicode_Find(PyObject *str,
             );
     else
         result = any_find_slice(
-            asciilib_find_slice, ucs1lib_rfind_slice,
+            asciilib_rfind_slice, ucs1lib_rfind_slice,
             ucs2lib_rfind_slice, ucs4lib_rfind_slice,
             str, sub, start, end
             );
