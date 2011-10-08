@@ -3,6 +3,7 @@
 import os
 import re
 import csv
+import imp
 import sys
 import errno
 import shutil
@@ -296,7 +297,7 @@ def strtobool(val):
 def byte_compile(py_files, optimize=0, force=False, prefix=None,
                  base_dir=None, verbose=0, dry_run=False, direct=None):
     """Byte-compile a collection of Python source files to either .pyc
-    or .pyo files in the same directory.
+    or .pyo files in a __pycache__ subdirectory.
 
     'py_files' is a list of files to compile; any files that don't end in
     ".py" are silently skipped. 'optimize' must be one of the following:
@@ -415,7 +416,10 @@ byte_compile(files, optimize=%r, force=%r,
             # Terminology from the py_compile module:
             #   cfile - byte-compiled file
             #   dfile - purported source filename (same as 'file' by default)
-            cfile = file + (__debug__ and "c" or "o")
+            if optimize >= 0:
+                cfile = imp.cache_from_source(file, debug_override=not optimize)
+            else:
+                cfile = imp.cache_from_source(file)
             dfile = file
             if prefix:
                 if file[:len(prefix)] != prefix:
