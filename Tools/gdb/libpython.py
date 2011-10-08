@@ -1152,7 +1152,7 @@ class PyUnicodeObjectPtr(PyObjectPtr):
                     field_str = field_str.cast(_type_unsigned_char_ptr)
                 elif repr_kind == 2:
                     field_str = field_str.cast(_type_unsigned_short_ptr)
-                elif repr_kind == 3:
+                elif repr_kind == 4:
                     field_str = field_str.cast(_type_unsigned_int_ptr)
         else:
             # Python 3.2 and earlier
