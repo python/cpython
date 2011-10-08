@@ -358,7 +358,7 @@ def run_all_tests(options):
             with text_open(name, "r") as f:
                 return f.read()
         run_test_family(modify_tests, "b", text_files,
-            lambda fn: open(fn, "r+"), make_test_source)
+            lambda fn: text_open(fn, "r+"), make_test_source)
 
 
 def prepare_files():
