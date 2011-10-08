@@ -2329,16 +2329,16 @@ PyDoc_STRVAR(clear_doc,
 PyDoc_STRVAR(copy_doc,
 "L.copy() -> list -- a shallow copy of L");
 PyDoc_STRVAR(append_doc,
-"L.append(object) -- append object to end");
+"L.append(object) -> None -- append object to end");
 PyDoc_STRVAR(extend_doc,
-"L.extend(iterable) -- extend list by appending elements from the iterable");
+"L.extend(iterable) -> None -- extend list by appending elements from the iterable");
 PyDoc_STRVAR(insert_doc,
 "L.insert(index, object) -- insert object before index");
 PyDoc_STRVAR(pop_doc,
 "L.pop([index]) -> item -- remove and return item at index (default last).\n"
 "Raises IndexError if list is empty or index is out of range.");
 PyDoc_STRVAR(remove_doc,
-"L.remove(value) -- remove first occurrence of value.\n"
+"L.remove(value) -> None -- remove first occurrence of value.\n"
 "Raises ValueError if the value is not present.");
 PyDoc_STRVAR(index_doc,
 "L.index(value, [start, [stop]]) -> integer -- return first index of value.\n"
@@ -2348,7 +2348,7 @@ PyDoc_STRVAR(count_doc,
 PyDoc_STRVAR(reverse_doc,
 "L.reverse() -- reverse *IN PLACE*");
 PyDoc_STRVAR(sort_doc,
-"L.sort(key=None, reverse=False) -- stable sort *IN PLACE*");
+"L.sort(key=None, reverse=False) -> None -- stable sort *IN PLACE*");
 
 static PyObject *list_subscript(PyListObject*, PyObject*);
 
