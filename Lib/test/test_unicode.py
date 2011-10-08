@@ -170,6 +170,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.checkequalnofix(0, 'aaa', 'count',  'a', 0, -10)
 
     def test_find(self):
+        string_tests.CommonTest.test_find(self)
         self.checkequalnofix(0,  'abcdefghiabc', 'find', 'abc')
         self.checkequalnofix(9,  'abcdefghiabc', 'find', 'abc', 1)
         self.checkequalnofix(-1, 'abcdefghiabc', 'find', 'def', 4)
