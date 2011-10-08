@@ -218,7 +218,7 @@ def get_makefile_filename():
     """Return full pathname of installed Makefile from the Python build."""
     if python_build:
         return os.path.join(os.path.dirname(sys.executable), "Makefile")
-    lib_dir = get_python_lib(plat_specific=1, standard_lib=1)
+    lib_dir = get_python_lib(plat_specific=0, standard_lib=1)
     config_file = 'config-{}{}'.format(get_python_version(), build_flags)
     return os.path.join(lib_dir, config_file, 'Makefile')
 
