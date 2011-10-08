@@ -419,9 +419,9 @@ def byte_compile (py_files,
                   verbose=1, dry_run=0,
                   direct=None):
     """Byte-compile a collection of Python source files to either .pyc
-    or .pyo files in the same directory.  'py_files' is a list of files
-    to compile; any files that don't end in ".py" are silently skipped.
-    'optimize' must be one of the following:
+    or .pyo files in a __pycache__ subdirectory.  'py_files' is a list
+    of files to compile; any files that don't end in ".py" are silently
+    skipped.  'optimize' must be one of the following:
       0 - don't optimize (generate .pyc)
       1 - normal optimization (like "python -O")
       2 - extra optimization (like "python -OO")
