@@ -1952,7 +1952,7 @@ The version of the ElementTree library included with Python was updated to
 version 1.3.  Some of the new features are:
 
 * The various parsing functions now take a *parser* keyword argument
-  giving an :class:`XMLParser` instance that will
+  giving an :class:`~xml.etree.ElementTree.XMLParser` instance that will
   be used.  This makes it possible to override the file's internal encoding::
 
     p = ET.XMLParser(encoding='utf-8')
@@ -1964,8 +1964,8 @@ version 1.3.  Some of the new features are:
 
 * ElementTree's code for converting trees to a string has been
   significantly reworked, making it roughly twice as fast in many
-  cases.  The :class:`ElementTree` :meth:`write` and :class:`Element`
-  :meth:`write` methods now have a *method* parameter that can be
+  cases.  The :meth:`ElementTree.write() <xml.etree.ElementTree.ElementTree.write>`
+  and :meth:`Element.write` methods now have a *method* parameter that can be
   "xml" (the default), "html", or "text".  HTML mode will output empty
   elements as ``<empty></empty>`` instead of ``<empty/>``, and text
   mode will skip over elements and only output the text chunks.  If
@@ -1978,11 +1978,12 @@ version 1.3.  Some of the new features are:
   declarations are now output on the root element, not scattered throughout
   the resulting XML.  You can set the default namespace for a tree
   by setting the :attr:`default_namespace` attribute and can
-  register new prefixes with :meth:`register_namespace`.  In XML mode,
+  register new prefixes with :meth:`~xml.etree.ElementTree.register_namespace`.  In XML mode,
   you can use the true/false *xml_declaration* parameter to suppress the
   XML declaration.
 
-* New :class:`Element` method: :meth:`extend` appends the items from a
+* New :class:`~xml.etree.ElementTree.Element` method:
+  :meth:`~xml.etree.ElementTree.Element.extend` appends the items from a
   sequence to the element's children.  Elements themselves behave like
   sequences, so it's easy to move children from one element to
   another::
@@ -1998,13 +1999,15 @@ version 1.3.  Some of the new features are:
     # Outputs <root><item>1</item>...</root>
     print ET.tostring(new)
 
-* New :class:`Element` method: :meth:`iter` yields the children of the
+* New :class:`Element` method:
+  :meth:`~xml.etree.ElementTree.Element.iter` yields the children of the
   element as a generator.  It's also possible to write ``for child in
   elem:`` to loop over an element's children.  The existing method
   :meth:`getiterator` is now deprecated, as is :meth:`getchildren`
   which constructs and returns a list of children.
 
-* New :class:`Element` method: :meth:`itertext` yields all chunks of
+* New :class:`Element` method:
+  :meth:`~xml.etree.ElementTree.Element.itertext` yields all chunks of
   text that are descendants of the element.  For example::
 
     t = ET.XML("""<list>
