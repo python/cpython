@@ -209,6 +209,58 @@ both 2.x and 3.0 is tricky.  The following simple example demonstrates how. ::
    }
 
 
+CObject replaced with Capsule
+=============================
+
+The :ctype:`Capsule` object was introduced in Python 3.1 and 2.7 to replace
+:ctype:`CObject`.  CObjects were useful,
+but the :ctype:`CObject` API was problematic: it didn't permit distinguishing
+between valid CObjects, which allowed mismatched CObjects to crash the
+interpreter, and some of its APIs relied on undefined behavior in C.
+(For further reading on the rationale behind Capsules, please see :issue:`5630`.)
+
+If you're currently using CObjects, and you want to migrate to 3.1 or newer,
+you'll need to switch to Capsules.
+:ctype:`CObject` was deprecated in 3.1 and 2.7 and completely removed in
+Python 3.2.  If you only support 2.7, or 3.1 and above, you
+can simply switch to :ctype:`Capsule`.  If you need to support 3.0 or
+versions of Python earlier than 2.7 you'll have to support both CObjects
+and Capsules.
+
+The following example header file :file:`capsulethunk.h` may
+solve the problem for you;
+simply write your code against the :ctype:`Capsule` API, include
+this header file after ``"Python.h"``, and you'll automatically use CObjects
+in Python 3.0 or versions earlier than 2.7.
+
+:file:`capsulethunk.h` simulates Capsules using CObjects.  However,
+:ctype:`CObject` provides no place to store the capsule's "name".  As a
+result the simulated :ctype:`Capsule` objects created by :file:`capsulethunk.h`
+behave slightly differently from real Capsules.  Specifically:
+
+  * The name parameter passed in to :cfunc:`PyCapsule_New` is ignored.
+
+  * The name parameter passed in to :cfunc:`PyCapsule_IsValid` and
+    :cfunc:`PyCapsule_GetPointer` is ignored, and no error checking
+    of the name is performed.
+
+  * :cfunc:`PyCapsule_GetName` always returns NULL.
+
+  * :cfunc:`PyCapsule_SetName` always throws an exception and
+    returns failure.  (Since there's no way to store a name
+    in a CObject, noisy failure of :cfunc:`PyCapsule_SetName`
+    was deemed preferable to silent failure here.  If this is
+    inconveient, feel free to modify your local
+    copy as you see fit.)
+
+You can find :file:`capsulethunk.h` in the Python source distribution
+in the :file:`Doc/includes` directory.  We also include it here for
+your reference; here is :file:`capsulethunk.h`:
+
+.. literalinclude:: ../includes/capsulethunk.h
+
+
+
 Other options
 =============
 
