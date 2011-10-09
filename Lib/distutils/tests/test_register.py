@@ -1,5 +1,5 @@
-"""Tests for distutils.command.register."""
 # -*- encoding: utf8 -*-
+"""Tests for distutils.command.register."""
 import sys
 import os
 import unittest
@@ -238,6 +238,24 @@ class RegisterTestCase(PyPIRCCommandTestCase):
         # strict is not by default
         cmd = self._get_cmd()
         cmd.ensure_finalized()
+        inputs = RawInputs('1', 'tarek', 'y')
+        register_module.raw_input = inputs.__call__
+        # let's run the command
+        try:
+            cmd.run()
+        finally:
+            del register_module.raw_input
+
+        # and finally a Unicode test (bug #12114)
+        metadata = {'url': u'xxx', 'author': u'\u00c9ric',
+                    'author_email': u'xxx', u'name': 'xxx',
+                    'version': u'xxx',
+                    'description': u'Something about esszet \u00df',
+                    'long_description': u'More things about esszet \u00df'}
+
+        cmd = self._get_cmd(metadata)
+        cmd.ensure_finalized()
+        cmd.strict = 1
         inputs = RawInputs('1', 'tarek', 'y')
         register_module.raw_input = inputs.__call__
         # let's run the command

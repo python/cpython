@@ -5,6 +5,7 @@ Implements the Distutils 'check' command.
 __revision__ = "$Id$"
 
 from distutils.core import Command
+from distutils.dist import PKG_INFO_ENCODING
 from distutils.errors import DistutilsSetupError
 
 try:
@@ -108,6 +109,8 @@ class check(Command):
     def check_restructuredtext(self):
         """Checks if the long string fields are reST-compliant."""
         data = self.distribution.get_long_description()
+        if not isinstance(data, unicode):
+            data = data.decode(PKG_INFO_ENCODING)
         for warning in self._check_rst_data(data):
             line = warning[-1].get('line')
             if line is None:

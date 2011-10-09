@@ -50,6 +50,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13114: Fix the distutils commands check and register when the
+  long description is a Unicode string with non-ASCII characters.
+
 - Issue #7367: Fix pkgutil.walk_paths to skip directories whose
   contents cannot be read.
 
