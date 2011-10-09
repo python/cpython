@@ -335,6 +335,8 @@ Element Objects
       elements whose tag equals *tag* are returned from the iterator.  If the
       tree structure is modified during iteration, the result is undefined.
 
+      .. versionadded:: 3.2
+
 
    .. method:: iterfind(match)
 
