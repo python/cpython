@@ -2707,10 +2707,12 @@ dictviews_sub(PyObject* self, PyObject *other)
 {
     PyObject *result = PySet_New(self);
     PyObject *tmp;
+    _Py_identifier(difference_update);
+
     if (result == NULL)
         return NULL;
 
-    tmp = PyObject_CallMethod(result, "difference_update", "O", other);
+    tmp = _PyObject_CallMethodId(result, &PyId_difference_update, "O", other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;
@@ -2725,10 +2727,12 @@ dictviews_and(PyObject* self, PyObject *other)
 {
     PyObject *result = PySet_New(self);
     PyObject *tmp;
+    _Py_identifier(intersection_update);
+
     if (result == NULL)
         return NULL;
 
-    tmp = PyObject_CallMethod(result, "intersection_update", "O", other);
+    tmp = _PyObject_CallMethodId(result, &PyId_intersection_update, "O", other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;
@@ -2761,10 +2765,12 @@ dictviews_xor(PyObject* self, PyObject *other)
 {
     PyObject *result = PySet_New(self);
     PyObject *tmp;
+    _Py_identifier(symmetric_difference_update);
+
     if (result == NULL)
         return NULL;
 
-    tmp = PyObject_CallMethod(result, "symmetric_difference_update", "O",
+    tmp = _PyObject_CallMethodId(result, &PyId_symmetric_difference_update, "O",
                               other);
     if (tmp == NULL) {
         Py_DECREF(result);

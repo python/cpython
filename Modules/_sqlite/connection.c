@@ -675,6 +675,7 @@ void _pysqlite_final_callback(sqlite3_context* context)
 {
     PyObject* function_result = NULL;
     PyObject** aggregate_instance;
+    _Py_identifier(finalize);
 
 #ifdef WITH_THREAD
     PyGILState_STATE threadstate;
@@ -690,7 +691,7 @@ void _pysqlite_final_callback(sqlite3_context* context)
         goto error;
     }
 
-    function_result = PyObject_CallMethod(*aggregate_instance, "finalize", "");
+    function_result = _PyObject_CallMethodId(*aggregate_instance, &PyId_finalize, "");
     if (!function_result) {
         if (_enable_callback_tracebacks) {
             PyErr_Print();
@@ -1230,8 +1231,9 @@ PyObject* pysqlite_connection_execute(pysqlite_Connection* self, PyObject* args,
     PyObject* cursor = 0;
     PyObject* result = 0;
     PyObject* method = 0;
+    _Py_identifier(cursor);
 
-    cursor = PyObject_CallMethod((PyObject*)self, "cursor", "");
+    cursor = _PyObject_CallMethodId((PyObject*)self, &PyId_cursor, "");
     if (!cursor) {
         goto error;
     }
@@ -1259,8 +1261,9 @@ PyObject* pysqlite_connection_executemany(pysqlite_Connection* self, PyObject* a
     PyObject* cursor = 0;
     PyObject* result = 0;
     PyObject* method = 0;
+    _Py_identifier(cursor);
 
-    cursor = PyObject_CallMethod((PyObject*)self, "cursor", "");
+    cursor = _PyObject_CallMethodId((PyObject*)self, &PyId_cursor, "");
     if (!cursor) {
         goto error;
     }
@@ -1288,8 +1291,9 @@ PyObject* pysqlite_connection_executescript(pysqlite_Connection* self, PyObject*
     PyObject* cursor = 0;
     PyObject* result = 0;
     PyObject* method = 0;
+    _Py_identifier(cursor);
 
-    cursor = PyObject_CallMethod((PyObject*)self, "cursor", "");
+    cursor = _PyObject_CallMethodId((PyObject*)self, &PyId_cursor, "");
     if (!cursor) {
         goto error;
     }
@@ -1437,6 +1441,7 @@ pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
     PyObject* name;
     PyObject* retval;
     Py_ssize_t i, len;
+    _Py_identifier(upper);
     char *uppercase_name_str;
     int rc;
     unsigned int kind;
@@ -1450,7 +1455,7 @@ pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
         goto finally;
     }
 
-    uppercase_name = PyObject_CallMethod(name, "upper", "");
+    uppercase_name = _PyObject_CallMethodId(name, &PyId_upper, "");
     if (!uppercase_name) {
         goto finally;
     }

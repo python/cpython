@@ -201,6 +201,9 @@ static PyObject *interned;
 /* The empty Unicode object is shared to improve performance. */
 static PyObject *unicode_empty;
 
+/* List of static strings. */
+static _Py_Identifier *static_strings;
+
 /* Single character Unicode strings in the Latin-1 range are being
    shared as well. */
 static PyObject *unicode_latin1[256];
@@ -1607,6 +1610,33 @@ PyUnicode_FromString(const char *u)
     }
 
     return PyUnicode_FromStringAndSize(u, size);
+}
+
+PyObject *
+_PyUnicode_FromId(_Py_Identifier *id)
+{
+    if (!id->object) {
+        id->object = PyUnicode_FromString(id->string);
+        if (!id->object)
+            return NULL;
+        PyUnicode_InternInPlace(&id->object);
+        assert(!id->next);
+        id->next = static_strings;
+        static_strings = id;
+    }
+    Py_INCREF(id->object);
+    return id->object;
+}
+
+void
+_PyUnicode_ClearStaticStrings()
+{
+    _Py_Identifier *i;
+    for (i = static_strings; i; i = i->next) {
+        Py_DECREF(i->object);
+        i->object = NULL;
+        i->next = NULL;
+    }
 }
 
 static PyObject*
@@ -13523,6 +13553,7 @@ _PyUnicode_Fini(void)
             unicode_latin1[i] = NULL;
         }
     }
+    _PyUnicode_ClearStaticStrings();
     (void)PyUnicode_ClearFreeList();
 }
 

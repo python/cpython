@@ -10,6 +10,8 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Add internal API for static strings (_Py_identifier et.al.).
+
 - Issue #13063: the Windows error ERROR_NO_DATA (numbered 232 and described
   as "The pipe is being closed") is now mapped to POSIX errno EPIPE
   (previously EINVAL).

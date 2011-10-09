@@ -480,7 +480,9 @@ r_string(char *s, int n, RFILE *p)
         }
     }
     else {
-        PyObject *data = PyObject_CallMethod(p->readable, "read", "i", n);
+        _Py_identifier(read);
+
+        PyObject *data = _PyObject_CallMethodId(p->readable, &PyId_read, "i", n);
         read = 0;
         if (data != NULL) {
             if (!PyBytes_Check(data)) {
@@ -1290,12 +1292,14 @@ marshal_dump(PyObject *self, PyObject *args)
     int version = Py_MARSHAL_VERSION;
     PyObject *s;
     PyObject *res;
+    _Py_identifier(write);
+
     if (!PyArg_ParseTuple(args, "OO|i:dump", &x, &f, &version))
         return NULL;
     s = PyMarshal_WriteObjectToString(x, version);
     if (s == NULL)
         return NULL;
-    res = PyObject_CallMethod(f, "write", "O", s);
+    res = _PyObject_CallMethodId(f, &PyId_write, "O", s);
     Py_DECREF(s);
     return res;
 }
@@ -1317,6 +1321,7 @@ static PyObject *
 marshal_load(PyObject *self, PyObject *f)
 {
     PyObject *data, *result;
+    _Py_identifier(read);
     RFILE rf;
 
     /*
@@ -1324,7 +1329,7 @@ marshal_load(PyObject *self, PyObject *f)
      * This is to ensure that the object passed in at least
      * has a read method which returns bytes.
      */
-    data = PyObject_CallMethod(f, "read", "i", 0);
+    data = _PyObject_CallMethodId(f, &PyId_read, "i", 0);
     if (data == NULL)
         return NULL;
     if (!PyBytes_Check(data)) {

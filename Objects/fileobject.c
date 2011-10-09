@@ -30,11 +30,12 @@ PyFile_FromFd(int fd, char *name, char *mode, int buffering, char *encoding,
               char *errors, char *newline, int closefd)
 {
     PyObject *io, *stream;
+    _Py_identifier(open);
 
     io = PyImport_ImportModule("io");
     if (io == NULL)
         return NULL;
-    stream = PyObject_CallMethod(io, "open", "isisssi", fd, mode,
+    stream = _PyObject_CallMethodId(io, &PyId_open, "isisssi", fd, mode,
                                  buffering, encoding, errors,
                                  newline, closefd);
     Py_DECREF(io);

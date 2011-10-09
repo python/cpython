@@ -179,13 +179,14 @@ static PyObject* module_register_converter(PyObject* self, PyObject* args)
     PyObject* name = NULL;
     PyObject* callable;
     PyObject* retval = NULL;
+    _Py_identifier(upper);
 
     if (!PyArg_ParseTuple(args, "UO", &orig_name, &callable)) {
         return NULL;
     }
 
     /* convert the name to upper case */
-    name = PyObject_CallMethod(orig_name, "upper", "");
+    name = _PyObject_CallMethodId(orig_name, &PyId_upper, "");
     if (!name) {
         goto error;
     }

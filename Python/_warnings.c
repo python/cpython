@@ -18,11 +18,12 @@ static int
 check_matched(PyObject *obj, PyObject *arg)
 {
     PyObject *result;
+    _Py_identifier(match);
     int rc;
 
     if (obj == Py_None)
         return 1;
-    result = PyObject_CallMethod(obj, "match", "O", arg);
+    result = _PyObject_CallMethodId(obj, &PyId_match, "O", arg);
     if (result == NULL)
         return -1;
 

@@ -527,6 +527,7 @@ static PyObject *parsestrplus(struct compiling *, const node *n,
 static identifier
 new_identifier(const char* n, PyArena *arena)
 {
+    _Py_identifier(normalize);
     PyObject* id = PyUnicode_DecodeUTF8(n, strlen(n), NULL);
     if (!id || PyUnicode_READY(id) == -1)
         return NULL;
@@ -537,7 +538,7 @@ new_identifier(const char* n, PyArena *arena)
         PyObject *id2;
         if (!m)
             return NULL;
-        id2 = PyObject_CallMethod(m, "normalize", "sO", "NFKC", id);
+        id2 = _PyObject_CallMethodId(m, &PyId_normalize, "sO", "NFKC", id);
         Py_DECREF(m);
         if (!id2)
             return NULL;

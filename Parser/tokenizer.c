@@ -462,6 +462,7 @@ static int
 fp_setreadl(struct tok_state *tok, const char* enc)
 {
     PyObject *readline = NULL, *stream = NULL, *io = NULL;
+    _Py_identifier(open);
     int fd;
 
     io = PyImport_ImportModuleNoBlock("io");
@@ -474,7 +475,7 @@ fp_setreadl(struct tok_state *tok, const char* enc)
         goto cleanup;
     }
 
-    stream = PyObject_CallMethod(io, "open", "isisOOO",
+    stream = _PyObject_CallMethodId(io, &PyId_open, "isisOOO",
                     fd, "r", -1, enc, Py_None, Py_None, Py_False);
     if (stream == NULL)
         goto cleanup;

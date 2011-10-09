@@ -1334,13 +1334,15 @@ defdict_reduce(defdictobject *dd)
     PyObject *items;
     PyObject *iter;
     PyObject *result;
+    _Py_identifier(items);
+
     if (dd->default_factory == NULL || dd->default_factory == Py_None)
         args = PyTuple_New(0);
     else
         args = PyTuple_Pack(1, dd->default_factory);
     if (args == NULL)
         return NULL;
-    items = PyObject_CallMethod((PyObject *)dd, "items", "()");
+    items = _PyObject_CallMethodId((PyObject *)dd, &PyId_items, "()");
     if (items == NULL) {
         Py_DECREF(args);
         return NULL;

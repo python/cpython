@@ -308,6 +308,9 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
 
     PyObject *raw, *modeobj = NULL, *buffer = NULL, *wrapper = NULL;
 
+    _Py_identifier(isatty);
+    _Py_identifier(fileno);
+
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|sizzzi:open", kwlist,
                                      &file, &mode, &buffering,
                                      &encoding, &errors, &newline,
@@ -421,7 +424,7 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
 
     /* buffering */
     {
-        PyObject *res = PyObject_CallMethod(raw, "isatty", NULL);
+        PyObject *res = _PyObject_CallMethodId(raw, &PyId_isatty, NULL);
         if (res == NULL)
             goto error;
         isatty = PyLong_AsLong(res);
@@ -443,7 +446,7 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
         {
             struct stat st;
             long fileno;
-            PyObject *res = PyObject_CallMethod(raw, "fileno", NULL);
+            PyObject *res = _PyObject_CallMethodId(raw, &PyId_fileno, NULL);
             if (res == NULL)
                 goto error;
 
