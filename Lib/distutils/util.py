@@ -4,7 +4,11 @@ Miscellaneous utility functions -- anything that doesn't fit into
 one of the other *util.py modules.
 """
 
-import sys, os, string, re
+import os
+import re
+import imp
+import sys
+import string
 from distutils.errors import DistutilsPlatformError
 from distutils.dep_util import newer
 from distutils.spawn import spawn
@@ -529,7 +533,10 @@ byte_compile(files, optimize=%r, force=%r,
             # Terminology from the py_compile module:
             #   cfile - byte-compiled file
             #   dfile - purported source filename (same as 'file' by default)
-            cfile = file + (__debug__ and "c" or "o")
+            if optimize >= 0:
+                cfile = imp.cache_from_source(file, debug_override=not optimize)
+            else:
+                cfile = imp.cache_from_source(file)
             dfile = file
             if prefix:
                 if file[:len(prefix)] != prefix:
