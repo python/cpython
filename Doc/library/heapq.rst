@@ -187,36 +187,36 @@ changes to its priority or removing it entirely.  Finding a task can be done
 with a dictionary pointing to an entry in the queue.
 
 Removing the entry or changing its priority is more difficult because it would
-break the heap structure invariants.  So, a possible solution is to mark an
-entry as invalid and optionally add a new entry with the revised priority::
+break the heap structure invariants.  So, a possible solution is to mark the
+existing entry as removed and add a new entry with the revised priority::
 
-    pq = []                         # the priority queue list
-    counter = itertools.count(1)    # unique sequence count
-    task_finder = {}                # mapping of tasks to entries
-    INVALID = 0                     # mark an entry as deleted
+    pq = []                         # list of entries arranged in a heap
+    entry_finder = {}               # mapping of tasks to entries
+    REMOVED = '<removed-task>'      # placeholder for a removed task
+    counter = itertools.count()     # unique sequence count
 
-    def add_task(priority, task, count=None):
-        if count is None:
-            count = next(counter)
+    def add_task(task, priority=0):
+        'Add a new task or update the priority of an existing task'
+        if task in entry_finder:
+            remove_task(task)
+        count = next(counter)
         entry = [priority, count, task]
-        task_finder[task] = entry
+        entry_finder[task] = entry
         heappush(pq, entry)
 
-    def get_top_priority():
-        while True:
+    def remove_task(task):
+        'Mark an existing task as REMOVED.  Raise KeyError if not found.'
+        entry = entry_finder.pop(task)
+        entry[-1] = REMOVED
+
+    def pop_task():
+        'Remove and return the lowest priority task. Raise KeyError if empty.'
+        while pq:
             priority, count, task = heappop(pq)
-            if count is not INVALID:
-                del task_finder[task]
+            if task is not REMOVED:
+                del entry_finder[task]
                 return task
-
-    def delete_task(task):
-        entry = task_finder[task]
-        entry[1] = INVALID
-
-    def reprioritize(priority, task):
-        entry = task_finder[task]
-        add_task(priority, task, entry[1])
-        entry[1] = INVALID
+        raise KeyError('pop from an empty priority queue')
 
 
 Theory
