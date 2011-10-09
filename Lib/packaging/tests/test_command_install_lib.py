@@ -1,6 +1,7 @@
 """Tests for packaging.command.install_data."""
-import sys
 import os
+import sys
+import imp
 
 from packaging.tests import unittest, support
 from packaging.command.install_lib import install_lib
@@ -36,6 +37,7 @@ class InstallLibTestCase(support.TempdirManager,
     @unittest.skipIf(sys.dont_write_bytecode, 'byte-compile disabled')
     def test_byte_compile(self):
         pkg_dir, dist = self.create_dist()
+        os.chdir(pkg_dir)
         cmd = install_lib(dist)
         cmd.compile = True
         cmd.optimize = 1
@@ -43,8 +45,10 @@ class InstallLibTestCase(support.TempdirManager,
         f = os.path.join(pkg_dir, 'foo.py')
         self.write_file(f, '# python file')
         cmd.byte_compile([f])
-        self.assertTrue(os.path.exists(os.path.join(pkg_dir, 'foo.pyc')))
-        self.assertTrue(os.path.exists(os.path.join(pkg_dir, 'foo.pyo')))
+        pyc_file = imp.cache_from_source('foo.py')
+        pyo_file = imp.cache_from_source('foo.py', debug_override=False)
+        self.assertTrue(os.path.exists(pyc_file))
+        self.assertTrue(os.path.exists(pyo_file))
 
     def test_get_outputs(self):
         pkg_dir, dist = self.create_dist()
