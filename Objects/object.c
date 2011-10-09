@@ -811,6 +811,42 @@ PyObject_SetAttrString(PyObject *v, const char *name, PyObject *w)
 }
 
 PyObject *
+_PyObject_GetAttrId(PyObject *v, _Py_Identifier *name)
+{
+    PyObject *result;
+    PyObject *oname = _PyUnicode_FromId(name);
+    if (!oname)
+        return NULL;
+    result = PyObject_GetAttr(v, oname);
+    Py_DECREF(oname);
+    return result;
+}
+
+int
+_PyObject_HasAttrId(PyObject *v, _Py_Identifier *name)
+{
+    int result;
+    PyObject *oname = _PyUnicode_FromId(name);
+    if (!oname)
+        return -1;
+    result = PyObject_HasAttr(v, oname);
+    Py_DECREF(oname);
+    return result;
+}
+
+int
+_PyObject_SetAttrId(PyObject *v, _Py_Identifier *name, PyObject *w)
+{
+    int result;
+    PyObject *oname = _PyUnicode_FromId(name);
+    if (!oname)
+        return -1;
+    result = PyObject_SetAttr(v, oname, w);
+    Py_DECREF(oname);
+    return result;
+}
+
+PyObject *
 PyObject_GetAttr(PyObject *v, PyObject *name)
 {
     PyTypeObject *tp = Py_TYPE(v);

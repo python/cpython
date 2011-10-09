@@ -13,6 +13,18 @@
 #include "pythread.h"
 #include "_iomodule.h"
 
+_Py_identifier(close);
+_Py_identifier(_dealloc_warn);
+_Py_identifier(flush);
+_Py_identifier(isatty);
+_Py_identifier(peek);
+_Py_identifier(read);
+_Py_identifier(read1);
+_Py_identifier(readable);
+_Py_identifier(readinto);
+_Py_identifier(writable);
+_Py_identifier(write);
+
 /*
  * BufferedIOBase class, inherits from IOBase.
  */
@@ -38,12 +50,13 @@ bufferediobase_readinto(PyObject *self, PyObject *args)
     Py_buffer buf;
     Py_ssize_t len;
     PyObject *data;
+    _Py_identifier(read);
 
     if (!PyArg_ParseTuple(args, "w*:readinto", &buf)) {
         return NULL;
     }
 
-    data = PyObject_CallMethod(self, "read", "n", buf.len);
+    data = _PyObject_CallMethodId(self, &PyId_read, "n", buf.len);
     if (data == NULL)
         goto error;
 
@@ -410,7 +423,7 @@ buffered_dealloc_warn(buffered *self, PyObject *source)
 {
     if (self->ok && self->raw) {
         PyObject *r;
-        r = PyObject_CallMethod(self->raw, "_dealloc_warn", "O", source);
+        r = _PyObject_CallMethodId(self->raw, &PyId__dealloc_warn, "O", source);
         if (r)
             Py_DECREF(r);
         else
@@ -2216,13 +2229,13 @@ bufferedrwpair_dealloc(rwpair *self)
 }
 
 static PyObject *
-_forward_call(buffered *self, const char *name, PyObject *args)
+_forward_call(buffered *self, _Py_Identifier *name, PyObject *args)
 {
-    PyObject *func = PyObject_GetAttrString((PyObject *)self, name);
+    PyObject *func = _PyObject_GetAttrId((PyObject *)self, name);
     PyObject *ret;
 
     if (func == NULL) {
-        PyErr_SetString(PyExc_AttributeError, name);
+        PyErr_SetString(PyExc_AttributeError, name->string);
         return NULL;
     }
 
@@ -2234,66 +2247,66 @@ _forward_call(buffered *self, const char *name, PyObject *args)
 static PyObject *
 bufferedrwpair_read(rwpair *self, PyObject *args)
 {
-    return _forward_call(self->reader, "read", args);
+    return _forward_call(self->reader, &PyId_read, args);
 }
 
 static PyObject *
 bufferedrwpair_peek(rwpair *self, PyObject *args)
 {
-    return _forward_call(self->reader, "peek", args);
+    return _forward_call(self->reader, &PyId_peek, args);
 }
 
 static PyObject *
 bufferedrwpair_read1(rwpair *self, PyObject *args)
 {
-    return _forward_call(self->reader, "read1", args);
+    return _forward_call(self->reader, &PyId_read1, args);
 }
 
 static PyObject *
 bufferedrwpair_readinto(rwpair *self, PyObject *args)
 {
-    return _forward_call(self->reader, "readinto", args);
+    return _forward_call(self->reader, &PyId_readinto, args);
 }
 
 static PyObject *
 bufferedrwpair_write(rwpair *self, PyObject *args)
 {
-    return _forward_call(self->writer, "write", args);
+    return _forward_call(self->writer, &PyId_write, args);
 }
 
 static PyObject *
 bufferedrwpair_flush(rwpair *self, PyObject *args)
 {
-    return _forward_call(self->writer, "flush", args);
+    return _forward_call(self->writer, &PyId_flush, args);
 }
 
 static PyObject *
 bufferedrwpair_readable(rwpair *self, PyObject *args)
 {
-    return _forward_call(self->reader, "readable", args);
+    return _forward_call(self->reader, &PyId_readable, args);
 }
 
 static PyObject *
 bufferedrwpair_writable(rwpair *self, PyObject *args)
 {
-    return _forward_call(self->writer, "writable", args);
+    return _forward_call(self->writer, &PyId_writable, args);
 }
 
 static PyObject *
 bufferedrwpair_close(rwpair *self, PyObject *args)
 {
-    PyObject *ret = _forward_call(self->writer, "close", args);
+    PyObject *ret = _forward_call(self->writer, &PyId_close, args);
     if (ret == NULL)
         return NULL;
     Py_DECREF(ret);
 
-    return _forward_call(self->reader, "close", args);
+    return _forward_call(self->reader, &PyId_close, args);
 }
 
 static PyObject *
 bufferedrwpair_isatty(rwpair *self, PyObject *args)
 {
-    PyObject *ret = _forward_call(self->writer, "isatty", args);
+    PyObject *ret = _forward_call(self->writer, &PyId_isatty, args);
 
     if (ret != Py_False) {
         /* either True or exception */
@@ -2301,7 +2314,7 @@ bufferedrwpair_isatty(rwpair *self, PyObject *args)
     }
     Py_DECREF(ret);
 
-    return _forward_call(self->reader, "isatty", args);
+    return _forward_call(self->reader, &PyId_isatty, args);
 }
 
 static PyObject *

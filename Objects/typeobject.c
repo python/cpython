@@ -2897,6 +2897,7 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         PyObject *sorted;
         PyObject *sorted_methods = NULL;
         PyObject *joined = NULL;
+        _Py_identifier(join);
 
         /* Compute ", ".join(sorted(type.__abstractmethods__))
            into joined. */
@@ -2919,7 +2920,7 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             if (comma == NULL)
                 goto error;
         }
-        joined = PyObject_CallMethod(comma, "join",
+        joined = _PyObject_CallMethodId(comma, &PyId_join,
                                      "O",  sorted_methods);
         if (joined == NULL)
             goto error;
@@ -3184,6 +3185,7 @@ slotnames(PyObject *cls)
     PyObject *copyreg;
     PyObject *slotnames;
     static PyObject *str_slotnames;
+    _Py_identifier(_slotnames);
 
     if (str_slotnames == NULL) {
         str_slotnames = PyUnicode_InternFromString("__slotnames__");
@@ -3202,7 +3204,7 @@ slotnames(PyObject *cls)
     if (copyreg == NULL)
         return NULL;
 
-    slotnames = PyObject_CallMethod(copyreg, "_slotnames", "O", cls);
+    slotnames = _PyObject_CallMethodId(copyreg, &PyId__slotnames, "O", cls);
     Py_DECREF(copyreg);
     if (slotnames != NULL &&
         slotnames != Py_None &&
@@ -3323,7 +3325,8 @@ reduce_2(PyObject *obj)
         Py_INCREF(dictitems);
     }
     else {
-        PyObject *items = PyObject_CallMethod(obj, "items", "");
+        _Py_identifier(items);
+        PyObject *items = _PyObject_CallMethodId(obj, &PyId_items, "");
         if (items == NULL)
             goto end;
         dictitems = PyObject_GetIter(items);

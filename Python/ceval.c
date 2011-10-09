@@ -372,6 +372,7 @@ PyEval_ReleaseThread(PyThreadState *tstate)
 void
 PyEval_ReInitThreads(void)
 {
+    _Py_identifier(_after_fork);
     PyObject *threading, *result;
     PyThreadState *tstate = PyThreadState_GET();
 
@@ -392,7 +393,7 @@ PyEval_ReInitThreads(void)
         PyErr_Clear();
         return;
     }
-    result = PyObject_CallMethod(threading, "_after_fork", NULL);
+    result = _PyObject_CallMethodId(threading, &PyId__after_fork, NULL);
     if (result == NULL)
         PyErr_WriteUnraisable(threading);
     else

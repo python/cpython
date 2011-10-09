@@ -97,7 +97,9 @@ PyDoc_STRVAR(iobase_tell_doc,
 static PyObject *
 iobase_tell(PyObject *self, PyObject *args)
 {
-    return PyObject_CallMethod(self, "seek", "ii", 0, 1);
+    _Py_identifier(seek);
+
+    return _PyObject_CallMethodId(self, &PyId_seek, "ii", 0, 1);
 }
 
 PyDoc_STRVAR(iobase_truncate_doc,
@@ -464,6 +466,7 @@ iobase_readline(PyObject *self, PyObject *args)
     int has_peek = 0;
     PyObject *buffer, *result;
     Py_ssize_t old_size = -1;
+    _Py_identifier(read);
 
     if (!PyArg_ParseTuple(args, "|O&:readline", &_PyIO_ConvertSsize_t, &limit)) {
         return NULL;
@@ -481,7 +484,9 @@ iobase_readline(PyObject *self, PyObject *args)
         PyObject *b;
 
         if (has_peek) {
-            PyObject *readahead = PyObject_CallMethod(self, "peek", "i", 1);
+            _Py_identifier(peek);
+            PyObject *readahead = _PyObject_CallMethodId(self, &PyId_peek, "i", 1);
+
             if (readahead == NULL)
                 goto fail;
             if (!PyBytes_Check(readahead)) {
@@ -515,7 +520,7 @@ iobase_readline(PyObject *self, PyObject *args)
             Py_DECREF(readahead);
         }
 
-        b = PyObject_CallMethod(self, "read", "n", nreadahead);
+        b = _PyObject_CallMethodId(self, &PyId_read, "n", nreadahead);
         if (b == NULL)
             goto fail;
         if (!PyBytes_Check(b)) {
@@ -601,7 +606,9 @@ iobase_readlines(PyObject *self, PyObject *args)
         /* XXX special-casing this made sense in the Python version in order
            to remove the bytecode interpretation overhead, but it could
            probably be removed here. */
-        PyObject *ret = PyObject_CallMethod(result, "extend", "O", self);
+        _Py_identifier(extend);
+        PyObject *ret = _PyObject_CallMethodId(result, &PyId_extend, "O", self);
+
         if (ret == NULL) {
             Py_DECREF(result);
             return NULL;
@@ -781,8 +788,11 @@ rawiobase_read(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    if (n < 0)
-        return PyObject_CallMethod(self, "readall", NULL);
+    if (n < 0) {
+        _Py_identifier(readall);
+
+        return _PyObject_CallMethodId(self, &PyId_readall, NULL);
+    }
 
     /* TODO: allocate a bytes object directly instead and manually construct
        a writable memoryview pointing to it. */
@@ -823,8 +833,9 @@ rawiobase_readall(PyObject *self, PyObject *args)
         return NULL;
 
     while (1) {
-        PyObject *data = PyObject_CallMethod(self, "read",
-                                             "i", DEFAULT_BUFFER_SIZE);
+        _Py_identifier(read);
+        PyObject *data = _PyObject_CallMethodId(self, &PyId_read,
+                                                "i", DEFAULT_BUFFER_SIZE);
         if (!data) {
             Py_DECREF(chunks);
             return NULL;

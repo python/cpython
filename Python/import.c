@@ -1801,6 +1801,7 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
 
     /* sys.path_hooks import hook */
     if (p_loader != NULL) {
+        _Py_identifier(find_module);
         PyObject *importer;
 
         importer = get_path_importer(path_importer_cache,
@@ -1811,8 +1812,8 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
         /* Note: importer is a borrowed reference */
         if (importer != Py_None) {
             PyObject *loader;
-            loader = PyObject_CallMethod(importer,
-                                         "find_module", "O", fullname);
+            loader = _PyObject_CallMethodId(importer,
+                                            &PyId_find_module, "O", fullname);
             if (loader == NULL)
                 return -1;  /* error */
             if (loader != Py_None) {
@@ -2030,6 +2031,7 @@ find_module(PyObject *fullname, PyObject *name, PyObject *search_path_list,
 
     /* sys.meta_path import hook */
     if (p_loader != NULL) {
+        _Py_identifier(find_module);
         PyObject *meta_path;
 
         meta_path = PySys_GetObject("meta_path");
@@ -2044,7 +2046,7 @@ find_module(PyObject *fullname, PyObject *name, PyObject *search_path_list,
         for (i = 0; i < npath; i++) {
             PyObject *loader;
             PyObject *hook = PyList_GetItem(meta_path, i);
-            loader = PyObject_CallMethod(hook, "find_module",
+            loader = _PyObject_CallMethodId(hook, &PyId_find_module,
                                          "OO", fullname,
                                          search_path_list != NULL ?
                                          search_path_list : Py_None);
@@ -2454,12 +2456,13 @@ load_module(PyObject *name, FILE *fp, PyObject *pathname, int type, PyObject *lo
         break;
 
     case IMP_HOOK: {
+        _Py_identifier(load_module);
         if (loader == NULL) {
             PyErr_SetString(PyExc_ImportError,
                             "import hook without loader");
             return NULL;
         }
-        m = PyObject_CallMethod(loader, "load_module", "O", name);
+        m = _PyObject_CallMethodId(loader, &PyId_load_module, "O", name);
         break;
     }
 

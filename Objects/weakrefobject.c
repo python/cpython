@@ -440,8 +440,9 @@ proxy_checkref(PyWeakReference *proxy)
 #define WRAP_METHOD(method, special) \
     static PyObject * \
     method(PyObject *proxy) { \
+            _Py_identifier(special); \
             UNWRAP(proxy); \
-                return PyObject_CallMethod(proxy, special, ""); \
+                return _PyObject_CallMethodId(proxy, &PyId_##special, ""); \
         }
 
 
@@ -584,7 +585,7 @@ proxy_iternext(PyWeakReference *proxy)
 }
 
 
-WRAP_METHOD(proxy_bytes, "__bytes__")
+WRAP_METHOD(proxy_bytes, __bytes__)
 
 
 static PyMethodDef proxy_methods[] = {

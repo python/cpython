@@ -352,9 +352,10 @@ flush_std_files(void)
     PyObject *fout = PySys_GetObject("stdout");
     PyObject *ferr = PySys_GetObject("stderr");
     PyObject *tmp;
+    _Py_identifier(flush);
 
     if (fout != NULL && fout != Py_None) {
-        tmp = PyObject_CallMethod(fout, "flush", "");
+        tmp = _PyObject_CallMethodId(fout, &PyId_flush, "");
         if (tmp == NULL)
             PyErr_WriteUnraisable(fout);
         else
@@ -362,7 +363,7 @@ flush_std_files(void)
     }
 
     if (ferr != NULL && ferr != Py_None) {
-        tmp = PyObject_CallMethod(ferr, "flush", "");
+        tmp = _PyObject_CallMethodId(ferr, &PyId_flush, "");
         if (tmp == NULL)
             PyErr_Clear();
         else
@@ -805,6 +806,9 @@ create_stdio(PyObject* io,
     const char* newline;
     PyObject *line_buffering;
     int buffering, isatty;
+    _Py_identifier(open);
+    _Py_identifier(isatty);
+    _Py_identifier(TextIOWrapper);
 
     /* stdin is always opened in buffered mode, first because it shouldn't
        make a difference in common use cases, second because TextIOWrapper
@@ -819,9 +823,9 @@ create_stdio(PyObject* io,
         mode = "wb";
     else
         mode = "rb";
-    buf = PyObject_CallMethod(io, "open", "isiOOOi",
-                              fd, mode, buffering,
-                              Py_None, Py_None, Py_None, 0);
+    buf = _PyObject_CallMethodId(io, &PyId_open, "isiOOOi",
+                                 fd, mode, buffering,
+                                 Py_None, Py_None, Py_None, 0);
     if (buf == NULL)
         goto error;
 
@@ -838,7 +842,7 @@ create_stdio(PyObject* io,
     text = PyUnicode_FromString(name);
     if (text == NULL || PyObject_SetAttrString(raw, "name", text) < 0)
         goto error;
-    res = PyObject_CallMethod(raw, "isatty", "");
+    res = _PyObject_CallMethodId(raw, &PyId_isatty, "");
     if (res == NULL)
         goto error;
     isatty = PyObject_IsTrue(res);
@@ -861,9 +865,9 @@ create_stdio(PyObject* io,
     }
 #endif
 
-    stream = PyObject_CallMethod(io, "TextIOWrapper", "OsssO",
-                                 buf, encoding, errors,
-                                 newline, line_buffering);
+    stream = _PyObject_CallMethodId(io, &PyId_TextIOWrapper, "OsssO",
+                                    buf, encoding, errors,
+                                    newline, line_buffering);
     Py_CLEAR(buf);
     if (stream == NULL)
         goto error;
@@ -1759,13 +1763,14 @@ flush_io(void)
 {
     PyObject *f, *r;
     PyObject *type, *value, *traceback;
+    _Py_identifier(flush);
 
     /* Save the current exception */
     PyErr_Fetch(&type, &value, &traceback);
 
     f = PySys_GetObject("stderr");
     if (f != NULL) {
-        r = PyObject_CallMethod(f, "flush", "");
+        r = _PyObject_CallMethodId(f, &PyId_flush, "");
         if (r)
             Py_DECREF(r);
         else
@@ -1773,7 +1778,7 @@ flush_io(void)
     }
     f = PySys_GetObject("stdout");
     if (f != NULL) {
-        r = PyObject_CallMethod(f, "flush", "");
+        r = _PyObject_CallMethodId(f, &PyId_flush, "");
         if (r)
             Py_DECREF(r);
         else
@@ -2205,6 +2210,7 @@ static void
 wait_for_thread_shutdown(void)
 {
 #ifdef WITH_THREAD
+    _Py_identifier(_shutdown);
     PyObject *result;
     PyThreadState *tstate = PyThreadState_GET();
     PyObject *threading = PyMapping_GetItemString(tstate->interp->modules,
@@ -2214,7 +2220,7 @@ wait_for_thread_shutdown(void)
         PyErr_Clear();
         return;
     }
-    result = PyObject_CallMethod(threading, "_shutdown", "");
+    result = _PyObject_CallMethodId(threading, &PyId__shutdown, "");
     if (result == NULL) {
         PyErr_WriteUnraisable(threading);
     }
