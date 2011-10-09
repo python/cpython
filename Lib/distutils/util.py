@@ -4,7 +4,11 @@ Miscellaneous utility functions -- anything that doesn't fit into
 one of the other *util.py modules.
 """
 
-import sys, os, string, re
+import os
+import re
+import imp
+import sys
+import string
 from distutils.errors import DistutilsPlatformError
 from distutils.dep_util import newer
 from distutils.spawn import spawn
@@ -415,9 +419,9 @@ def byte_compile (py_files,
                   verbose=1, dry_run=0,
                   direct=None):
     """Byte-compile a collection of Python source files to either .pyc
-    or .pyo files in the same directory.  'py_files' is a list of files
-    to compile; any files that don't end in ".py" are silently skipped.
-    'optimize' must be one of the following:
+    or .pyo files in a __pycache__ subdirectory.  'py_files' is a list
+    of files to compile; any files that don't end in ".py" are silently
+    skipped.  'optimize' must be one of the following:
       0 - don't optimize (generate .pyc)
       1 - normal optimization (like "python -O")
       2 - extra optimization (like "python -OO")
@@ -529,7 +533,10 @@ byte_compile(files, optimize=%r, force=%r,
             # Terminology from the py_compile module:
             #   cfile - byte-compiled file
             #   dfile - purported source filename (same as 'file' by default)
-            cfile = file + (__debug__ and "c" or "o")
+            if optimize >= 0:
+                cfile = imp.cache_from_source(file, debug_override=not optimize)
+            else:
+                cfile = imp.cache_from_source(file)
             dfile = file
             if prefix:
                 if file[:len(prefix)] != prefix:
