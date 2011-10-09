@@ -2050,7 +2050,7 @@ typedef struct _Py_Identifier {
     PyObject *object;
 } _Py_Identifier;
 
-#define _Py_static_string(varname, value)  static _Py_Identifier varname = { 0, value, 0 };
+#define _Py_static_string(varname, value)  static _Py_Identifier varname = { 0, value, 0 }
 #define _Py_identifier(varname) _Py_static_string(PyId_##varname, #varname)
 
 /* Return an interned Unicode object for an Identifier; may fail if there is no memory.*/
