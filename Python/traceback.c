@@ -152,6 +152,7 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
     const char* filepath;
     Py_ssize_t len;
     PyObject* result;
+    _Py_identifier(open);
 
     filebytes = PyUnicode_EncodeFSDefault(filename);
     if (filebytes == NULL) {
@@ -199,7 +200,7 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
             namebuf[len++] = SEP;
         strcpy(namebuf+len, tail);
 
-        binary = PyObject_CallMethod(io, "open", "ss", namebuf, "rb");
+        binary = _PyObject_CallMethodId(io, &PyId_open, "ss", namebuf, "rb");
         if (binary != NULL) {
             result = binary;
             goto finally;
@@ -231,6 +232,9 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
     char buf[MAXPATHLEN+1];
     int kind;
     void *data;
+    _Py_identifier(close);
+    _Py_identifier(open);
+    _Py_identifier(TextIOWrapper);
 
     /* open the file */
     if (filename == NULL)
@@ -239,7 +243,7 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
     io = PyImport_ImportModuleNoBlock("io");
     if (io == NULL)
         return -1;
-    binary = PyObject_CallMethod(io, "open", "Os", filename, "rb");
+    binary = _PyObject_CallMethodId(io, &PyId_open, "Os", filename, "rb");
 
     if (binary == NULL) {
         binary = _Py_FindSourceFile(filename, buf, sizeof(buf), io);
@@ -254,7 +258,7 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
     found_encoding = PyTokenizer_FindEncodingFilename(fd, filename);
     encoding = (found_encoding != NULL) ? found_encoding : "utf-8";
     lseek(fd, 0, 0); /* Reset position */
-    fob = PyObject_CallMethod(io, "TextIOWrapper", "Os", binary, encoding);
+    fob = _PyObject_CallMethodId(io, &PyId_TextIOWrapper, "Os", binary, encoding);
     Py_DECREF(io);
     Py_DECREF(binary);
     PyMem_FREE(found_encoding);
@@ -273,7 +277,7 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
             break;
         }
     }
-    res = PyObject_CallMethod(fob, "close", "");
+    res = _PyObject_CallMethodId(fob, &PyId_close, "");
     if (res)
         Py_DECREF(res);
     else

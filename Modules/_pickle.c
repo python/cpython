@@ -2488,7 +2488,9 @@ save_dict(PicklerObject *self, PyObject *obj)
             status = batch_dict_exact(self, obj);
             Py_LeaveRecursiveCall();
         } else {
-            items = PyObject_CallMethod(obj, "items", "()");
+            _Py_identifier(items);
+
+            items = _PyObject_CallMethodId(obj, &PyId_items, "()");
             if (items == NULL)
                 goto error;
             iter = PyObject_GetIter(items);
@@ -3774,8 +3776,10 @@ static PyTypeObject Pickler_Type = {
 static PyObject *
 find_class(UnpicklerObject *self, PyObject *module_name, PyObject *global_name)
 {
-    return PyObject_CallMethod((PyObject *)self, "find_class", "OO",
-                               module_name, global_name);
+    _Py_identifier(find_class);
+
+    return _PyObject_CallMethodId((PyObject *)self, &PyId_find_class, "OO",
+                                  module_name, global_name);
 }
 
 static Py_ssize_t
@@ -4388,7 +4392,9 @@ instantiate(PyObject *cls, PyObject *args)
         result = PyObject_CallObject(cls, args);
     }
     else {
-        result = PyObject_CallMethod(cls, "__new__", "O", cls);
+        _Py_identifier(__new__);
+
+        result = _PyObject_CallMethodId(cls, &PyId___new__, "O", cls);
     }
     return result;
 }

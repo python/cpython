@@ -146,6 +146,8 @@ static PyObject*
 faulthandler_get_fileno(PyObject *file, int *p_fd)
 {
     PyObject *result;
+    _Py_identifier(fileno);
+    _Py_identifier(flush);
     long fd_long;
     int fd;
 
@@ -157,7 +159,7 @@ faulthandler_get_fileno(PyObject *file, int *p_fd)
         }
     }
 
-    result = PyObject_CallMethod(file, "fileno", "");
+    result = _PyObject_CallMethodId(file, &PyId_fileno, "");
     if (result == NULL)
         return NULL;
 
@@ -175,7 +177,7 @@ faulthandler_get_fileno(PyObject *file, int *p_fd)
         return NULL;
     }
 
-    result = PyObject_CallMethod(file, "flush", "");
+    result = _PyObject_CallMethodId(file, &PyId_flush, "");
     if (result != NULL)
         Py_DECREF(result);
     else {
@@ -1197,6 +1199,7 @@ static int
 faulthandler_env_options(void)
 {
     PyObject *xoptions, *key, *module, *res;
+    _Py_identifier(enable);
 
     if (!Py_GETENV("PYTHONFAULTHANDLER")) {
         int has_key;
@@ -1219,7 +1222,7 @@ faulthandler_env_options(void)
     if (module == NULL) {
         return -1;
     }
-    res = PyObject_CallMethod(module, "enable", "");
+    res = _PyObject_CallMethodId(module, &PyId_enable, "");
     Py_DECREF(module);
     if (res == NULL)
         return -1;

@@ -2024,6 +2024,40 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
     int check_content);
 #endif
 
+/********************* String Literals ****************************************/
+/* This structure helps managing static strings. The basic usage goes like this:
+   Instead of doing
+
+       r = PyObject_CallMethod(o, "foo", "args", ...);
+
+   do
+
+       _Py_identifier(foo);
+       ...
+       r = _PyObject_CallMethodId(o, &PyId_foo, "args", ...);
+
+   PyId_foo is a static variable, either on block level or file level. On first
+   usage, the string "foo" is interned, and the structures are linked. On interpreter
+   shutdown, all strings are released (through _PyUnicode_ClearStaticStrings).
+
+   Alternatively, _Py_static_string allows to choose the variable name.
+   _PyUnicode_FromId returns a new reference to the interned string.
+   _PyObject_{Get,Set,Has}AttrId are __getattr__ versions using _Py_Identifier*.
+*/
+typedef struct _Py_Identifier {
+    struct _Py_Identifier *next;
+    const char* string;
+    PyObject *object;
+} _Py_Identifier;
+
+#define _Py_static_string(varname, value)  static _Py_Identifier varname = { 0, value, 0 };
+#define _Py_identifier(varname) _Py_static_string(PyId_##varname, #varname)
+
+/* Return an interned Unicode object for an Identifier; may fail if there is no memory.*/
+PyAPI_FUNC(PyObject*) _PyUnicode_FromId(_Py_Identifier*);
+/* Clear all static strings. */
+PyAPI_FUNC(void) _PyUnicode_ClearStaticStrings(void);
+
 #ifdef __cplusplus
 }
 #endif

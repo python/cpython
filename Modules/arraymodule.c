@@ -1253,6 +1253,7 @@ array_fromfile(arrayobject *self, PyObject *args)
     PyObject *f, *b, *res;
     Py_ssize_t itemsize = self->ob_descr->itemsize;
     Py_ssize_t n, nbytes;
+    _Py_identifier(read);
     int not_enough_bytes;
 
     if (!PyArg_ParseTuple(args, "On:fromfile", &f, &n))
@@ -1264,7 +1265,7 @@ array_fromfile(arrayobject *self, PyObject *args)
         return NULL;
     }
 
-    b = PyObject_CallMethod(f, "read", "n", nbytes);
+    b = _PyObject_CallMethodId(f, &PyId_read, "n", nbytes);
     if (b == NULL)
         return NULL;
 
@@ -1321,12 +1322,14 @@ array_tofile(arrayobject *self, PyObject *f)
         char* ptr = self->ob_item + i*BLOCKSIZE;
         Py_ssize_t size = BLOCKSIZE;
         PyObject *bytes, *res;
+        _Py_identifier(write);
+
         if (i*BLOCKSIZE + size > nbytes)
             size = nbytes - i*BLOCKSIZE;
         bytes = PyBytes_FromStringAndSize(ptr, size);
         if (bytes == NULL)
             return NULL;
-        res = PyObject_CallMethod(f, "write", "O", bytes);
+        res = _PyObject_CallMethodId(f, &PyId_write, "O", bytes);
         Py_DECREF(bytes);
         if (res == NULL)
             return NULL;

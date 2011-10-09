@@ -86,7 +86,9 @@ insort_right(PyObject *self, PyObject *args, PyObject *kw)
         if (PyList_Insert(list, index, item) < 0)
             return NULL;
     } else {
-        result = PyObject_CallMethod(list, "insert", "nO", index, item);
+        _Py_identifier(insert);
+
+        result = _PyObject_CallMethodId(list, &PyId_insert, "nO", index, item);
         if (result == NULL)
             return NULL;
         Py_DECREF(result);
@@ -186,7 +188,9 @@ insort_left(PyObject *self, PyObject *args, PyObject *kw)
         if (PyList_Insert(list, index, item) < 0)
             return NULL;
     } else {
-        result = PyObject_CallMethod(list, "insert", "iO", index, item);
+        _Py_identifier(insert);
+
+        result = _PyObject_CallMethodId(list, &PyId_insert, "iO", index, item);
         if (result == NULL)
             return NULL;
         Py_DECREF(result);

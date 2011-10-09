@@ -769,7 +769,9 @@ get_time(void)
 {
     double result = 0;
     if (tmod != NULL) {
-        PyObject *f = PyObject_CallMethod(tmod, "time", NULL);
+        _Py_identifier(time);
+
+        PyObject *f = _PyObject_CallMethodId(tmod, &PyId_time, NULL);
         if (f == NULL) {
             PyErr_Clear();
         }

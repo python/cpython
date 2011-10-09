@@ -790,16 +790,18 @@ static PyObject*
 element_find(ElementObject* self, PyObject* args)
 {
     int i;
-
     PyObject* tag;
     PyObject* namespaces = Py_None;
+
     if (!PyArg_ParseTuple(args, "O|O:find", &tag, &namespaces))
         return NULL;
 
-    if (checkpath(tag) || namespaces != Py_None)
-        return PyObject_CallMethod(
-            elementpath_obj, "find", "OOO", self, tag, namespaces
+    if (checkpath(tag) || namespaces != Py_None) {
+        _Py_identifier(find);
+        return _PyObject_CallMethodId(
+            elementpath_obj, &PyId_find, "OOO", self, tag, namespaces
             );
+    }
 
     if (!self->extra)
         Py_RETURN_NONE;
@@ -820,16 +822,17 @@ static PyObject*
 element_findtext(ElementObject* self, PyObject* args)
 {
     int i;
-
     PyObject* tag;
     PyObject* default_value = Py_None;
     PyObject* namespaces = Py_None;
+    _Py_identifier(findtext);
+
     if (!PyArg_ParseTuple(args, "O|OO:findtext", &tag, &default_value, &namespaces))
         return NULL;
 
     if (checkpath(tag) || namespaces != Py_None)
-        return PyObject_CallMethod(
-            elementpath_obj, "findtext", "OOOO", self, tag, default_value, namespaces
+        return _PyObject_CallMethodId(
+            elementpath_obj, &PyId_findtext, "OOOO", self, tag, default_value, namespaces
             );
 
     if (!self->extra) {
@@ -858,16 +861,18 @@ element_findall(ElementObject* self, PyObject* args)
 {
     int i;
     PyObject* out;
-
     PyObject* tag;
     PyObject* namespaces = Py_None;
+
     if (!PyArg_ParseTuple(args, "O|O:findall", &tag, &namespaces))
         return NULL;
 
-    if (checkpath(tag) || namespaces != Py_None)
-        return PyObject_CallMethod(
-            elementpath_obj, "findall", "OOO", self, tag, namespaces
+    if (checkpath(tag) || namespaces != Py_None) {
+        _Py_identifier(findall);
+        return _PyObject_CallMethodId(
+            elementpath_obj, &PyId_findall, "OOO", self, tag, namespaces
             );
+    }
 
     out = PyList_New(0);
     if (!out)
@@ -895,11 +900,13 @@ element_iterfind(ElementObject* self, PyObject* args)
 {
     PyObject* tag;
     PyObject* namespaces = Py_None;
+    _Py_identifier(iterfind);
+
     if (!PyArg_ParseTuple(args, "O|O:iterfind", &tag, &namespaces))
         return NULL;
 
-    return PyObject_CallMethod(
-        elementpath_obj, "iterfind", "OOO", self, tag, namespaces
+    return _PyObject_CallMethodId(
+        elementpath_obj, &PyId_iterfind, "OOO", self, tag, namespaces
         );
 }
 

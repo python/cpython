@@ -702,7 +702,9 @@ mmap__enter__method(mmap_object *self, PyObject *args)
 static PyObject *
 mmap__exit__method(PyObject *self, PyObject *args)
 {
-    return PyObject_CallMethod(self, "close", NULL);
+    _Py_identifier(close);
+
+    return _PyObject_CallMethodId(self, &PyId_close, NULL);
 }
 
 static struct PyMethodDef mmap_object_methods[] = {

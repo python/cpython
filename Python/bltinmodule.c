@@ -32,6 +32,9 @@ const char *Py_FileSystemDefaultEncoding = NULL; /* set by initfsencoding() */
 int Py_HasFileSystemDefaultEncoding = 0;
 #endif
 
+_Py_identifier(fileno);
+_Py_identifier(flush);
+
 static PyObject *
 builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
 {
@@ -1567,7 +1570,7 @@ builtin_input(PyObject *self, PyObject *args)
     }
 
     /* First of all, flush stderr */
-    tmp = PyObject_CallMethod(ferr, "flush", "");
+    tmp = _PyObject_CallMethodId(ferr, &PyId_flush, "");
     if (tmp == NULL)
         PyErr_Clear();
     else
@@ -1576,7 +1579,7 @@ builtin_input(PyObject *self, PyObject *args)
     /* We should only use (GNU) readline if Python's sys.stdin and
        sys.stdout are the same as C's stdin and stdout, because we
        need to pass it those. */
-    tmp = PyObject_CallMethod(fin, "fileno", "");
+    tmp = _PyObject_CallMethodId(fin, &PyId_fileno, "");
     if (tmp == NULL) {
         PyErr_Clear();
         tty = 0;
@@ -1589,7 +1592,7 @@ builtin_input(PyObject *self, PyObject *args)
         tty = fd == fileno(stdin) && isatty(fd);
     }
     if (tty) {
-        tmp = PyObject_CallMethod(fout, "fileno", "");
+        tmp = _PyObject_CallMethodId(fout, &PyId_fileno, "");
         if (tmp == NULL)
             PyErr_Clear();
         else {
@@ -1621,7 +1624,7 @@ builtin_input(PyObject *self, PyObject *args)
             Py_DECREF(stdin_encoding);
             return NULL;
         }
-        tmp = PyObject_CallMethod(fout, "flush", "");
+        tmp = _PyObject_CallMethodId(fout, &PyId_flush, "");
         if (tmp == NULL)
             PyErr_Clear();
         else
@@ -1703,7 +1706,7 @@ builtin_input(PyObject *self, PyObject *args)
         if (PyFile_WriteObject(promptarg, fout, Py_PRINT_RAW) != 0)
             return NULL;
     }
-    tmp = PyObject_CallMethod(fout, "flush", "");
+    tmp = _PyObject_CallMethodId(fout, &PyId_flush, "");
     if (tmp == NULL)
         PyErr_Clear();
     else

@@ -1687,13 +1687,15 @@ unpickle(PyObject *self, PyObject *args)
     PyObject *state;
     PyObject *result;
     PyObject *tmp;
+    _Py_identifier(__new__);
+    _Py_identifier(__setstate__);
 
     if (!PyArg_ParseTuple(args, "OO", &typ, &state))
         return NULL;
-    result = PyObject_CallMethod(typ, "__new__", "O", typ);
+    result = _PyObject_CallMethodId(typ, &PyId___new__, "O", typ);
     if (result == NULL)
         return NULL;
-    tmp = PyObject_CallMethod(result, "__setstate__", "O", state);
+    tmp = _PyObject_CallMethodId(result, &PyId___setstate__, "O", state);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;

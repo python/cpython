@@ -703,34 +703,39 @@ static PyObject *
 proxy_get(proxyobject *pp, PyObject *args)
 {
     PyObject *key, *def = Py_None;
+    _Py_identifier(get);
 
     if (!PyArg_UnpackTuple(args, "get", 1, 2, &key, &def))
         return NULL;
-    return PyObject_CallMethod(pp->dict, "get", "(OO)", key, def);
+    return _PyObject_CallMethodId(pp->dict, &PyId_get, "(OO)", key, def);
 }
 
 static PyObject *
 proxy_keys(proxyobject *pp)
 {
-    return PyObject_CallMethod(pp->dict, "keys", NULL);
+    _Py_identifier(keys);
+    return _PyObject_CallMethodId(pp->dict, &PyId_keys, NULL);
 }
 
 static PyObject *
 proxy_values(proxyobject *pp)
 {
-    return PyObject_CallMethod(pp->dict, "values", NULL);
+    _Py_identifier(values);
+    return _PyObject_CallMethodId(pp->dict, &PyId_values, NULL);
 }
 
 static PyObject *
 proxy_items(proxyobject *pp)
 {
-    return PyObject_CallMethod(pp->dict, "items", NULL);
+    _Py_identifier(items);
+    return _PyObject_CallMethodId(pp->dict, &PyId_items, NULL);
 }
 
 static PyObject *
 proxy_copy(proxyobject *pp)
 {
-    return PyObject_CallMethod(pp->dict, "copy", NULL);
+    _Py_identifier(copy);
+    return _PyObject_CallMethodId(pp->dict, &PyId_copy, NULL);
 }
 
 static PyMethodDef proxy_methods[] = {

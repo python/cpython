@@ -1418,10 +1418,12 @@ PyCursesWindow_PutWin(PyCursesWindowObject *self, PyObject *stream)
     while (1) {
         char buf[BUFSIZ];
         Py_ssize_t n = fread(buf, 1, BUFSIZ, fp);
+        _Py_identifier(write);
+
         if (n <= 0)
             break;
         Py_DECREF(res);
-        res = PyObject_CallMethod(stream, "write", "y#", buf, n);
+        res = _PyObject_CallMethodId(stream, &PyId_write, "y#", buf, n);
         if (res == NULL)
             break;
     }
@@ -1911,6 +1913,7 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
     WINDOW *win;
 
     PyCursesInitialised;
+    _Py_identifier(read);
 
     strcpy(fn, "/tmp/py.curses.getwin.XXXXXX");
     fd = mkstemp(fn);
@@ -1922,7 +1925,7 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
         remove(fn);
         return PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
     }
-    data = PyObject_CallMethod(stream, "read", "");
+    data = _PyObject_CallMethodId(stream, &PyId_read, "");
     if (data == NULL) {
         fclose(fp);
         remove(fn);
