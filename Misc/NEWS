@@ -43,6 +43,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #11171: Fix distutils.sysconfig.get_makefile_filename when Python was
+  configured with different prefix and exec-prefix.
+
+- Issue #11254: Teach distutils to compile .pyc and .pyo files in
+  PEP 3147-compliant __pycache__ directories.
+
 - Issue #11250: Back port fix from 3.3 branch, so that 2to3 can handle files
   with line feeds.  This was ported from the sandbox to the 3.3 branch, but
   didn't make it into 3.2.
