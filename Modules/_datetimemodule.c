@@ -3077,12 +3077,14 @@ tzinfo_reduce(PyObject *self)
 {
     PyObject *args, *state, *tmp;
     PyObject *getinitargs, *getstate;
+    _Py_identifier(__getinitargs__);
+    _Py_identifier(__getstate__);
 
     tmp = PyTuple_New(0);
     if (tmp == NULL)
         return NULL;
 
-    getinitargs = PyObject_GetAttrString(self, "__getinitargs__");
+    getinitargs = _PyObject_GetAttrId(self, &PyId___getinitargs__);
     if (getinitargs != NULL) {
         args = PyObject_CallObject(getinitargs, tmp);
         Py_DECREF(getinitargs);
@@ -3097,7 +3099,7 @@ tzinfo_reduce(PyObject *self)
         Py_INCREF(args);
     }
 
-    getstate = PyObject_GetAttrString(self, "__getstate__");
+    getstate = _PyObject_GetAttrId(self, &PyId___getstate__);
     if (getstate != NULL) {
         state = PyObject_CallObject(getstate, tmp);
         Py_DECREF(getstate);

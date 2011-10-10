@@ -2699,13 +2699,15 @@ static PyObject *
 bytearray_reduce(PyByteArrayObject *self)
 {
     PyObject *latin1, *dict;
+    _Py_identifier(__dict__);
+
     if (self->ob_bytes)
         latin1 = PyUnicode_DecodeLatin1(self->ob_bytes,
                                         Py_SIZE(self), NULL);
     else
         latin1 = PyUnicode_FromString("");
 
-    dict = PyObject_GetAttrString((PyObject *)self, "__dict__");
+    dict = _PyObject_GetAttrId((PyObject *)self, &PyId___dict__);
     if (dict == NULL) {
         PyErr_Clear();
         dict = Py_None;

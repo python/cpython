@@ -908,6 +908,7 @@ get_decompress_func(void)
     static int importing_zlib = 0;
     PyObject *zlib;
     PyObject *decompress;
+    _Py_identifier(decompress);
 
     if (importing_zlib != 0)
         /* Someone has a zlib.py[co] in their Zip file;
@@ -917,8 +918,8 @@ get_decompress_func(void)
     zlib = PyImport_ImportModuleNoBlock("zlib");
     importing_zlib = 0;
     if (zlib != NULL) {
-        decompress = PyObject_GetAttrString(zlib,
-                                            "decompress");
+        decompress = _PyObject_GetAttrId(zlib,
+                                         &PyId_decompress);
         Py_DECREF(zlib);
     }
     else {

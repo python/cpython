@@ -826,8 +826,9 @@ _Pickler_SetProtocol(PicklerObject *self, PyObject *proto_obj,
 static int
 _Pickler_SetOutputStream(PicklerObject *self, PyObject *file)
 {
+    _Py_identifier(write);
     assert(file != NULL);
-    self->write = PyObject_GetAttrString(file, "write");
+    self->write = _PyObject_GetAttrId(file, &PyId_write);
     if (self->write == NULL) {
         if (PyErr_ExceptionMatches(PyExc_AttributeError))
             PyErr_SetString(PyExc_TypeError,
@@ -1173,15 +1174,19 @@ _Unpickler_New(void)
 static int
 _Unpickler_SetInputStream(UnpicklerObject *self, PyObject *file)
 {
-    self->peek = PyObject_GetAttrString(file, "peek");
+    _Py_identifier(peek);
+    _Py_identifier(read);
+    _Py_identifier(readline);
+
+    self->peek = _PyObject_GetAttrId(file, &PyId_peek);
     if (self->peek == NULL) {
         if (PyErr_ExceptionMatches(PyExc_AttributeError))
             PyErr_Clear();
         else
             return -1;
     }
-    self->read = PyObject_GetAttrString(file, "read");
-    self->readline = PyObject_GetAttrString(file, "readline");
+    self->read = _PyObject_GetAttrId(file, &PyId_read);
+    self->readline = _PyObject_GetAttrId(file, &PyId_readline);
     if (self->readline == NULL || self->read == NULL) {
         if (PyErr_ExceptionMatches(PyExc_AttributeError))
             PyErr_SetString(PyExc_TypeError,
@@ -3390,6 +3395,7 @@ Pickler_init(PicklerObject *self, PyObject *args, PyObject *kwds)
     PyObject *file;
     PyObject *proto_obj = NULL;
     PyObject *fix_imports = Py_True;
+    _Py_identifier(persistent_id);
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|OO:Pickler",
                                      kwlist, &file, &proto_obj, &fix_imports))
@@ -3425,9 +3431,9 @@ Pickler_init(PicklerObject *self, PyObject *args, PyObject *kwds)
     self->fast_nesting = 0;
     self->fast_memo = NULL;
     self->pers_func = NULL;
-    if (PyObject_HasAttrString((PyObject *)self, "persistent_id")) {
-        self->pers_func = PyObject_GetAttrString((PyObject *)self,
-                                                 "persistent_id");
+    if (_PyObject_HasAttrId((PyObject *)self, &PyId_persistent_id)) {
+        self->pers_func = _PyObject_GetAttrId((PyObject *)self,
+                                              &PyId_persistent_id);
         if (self->pers_func == NULL)
             return -1;
     }
@@ -4935,8 +4941,9 @@ do_append(UnpicklerObject *self, Py_ssize_t x)
     }
     else {
         PyObject *append_func;
+        _Py_identifier(append);
 
-        append_func = PyObject_GetAttrString(list, "append");
+        append_func = _PyObject_GetAttrId(list, &PyId_append);
         if (append_func == NULL)
             return -1;
         for (i = x; i < len; i++) {
@@ -5023,6 +5030,7 @@ load_build(UnpicklerObject *self)
     PyObject *state, *inst, *slotstate;
     PyObject *setstate;
     int status = 0;
+    _Py_identifier(__setstate__);
 
     /* Stack is ... instance, state.  We want to leave instance at
      * the stack top, possibly mutated via instance.__setstate__(state).
@@ -5036,7 +5044,7 @@ load_build(UnpicklerObject *self)
 
     inst = self->stack->data[Py_SIZE(self->stack) - 1];
 
-    setstate = PyObject_GetAttrString(inst, "__setstate__");
+    setstate = _PyObject_GetAttrId(inst, &PyId___setstate__);
     if (setstate == NULL) {
         if (PyErr_ExceptionMatches(PyExc_AttributeError))
             PyErr_Clear();
@@ -5079,12 +5087,13 @@ load_build(UnpicklerObject *self)
         PyObject *dict;
         PyObject *d_key, *d_value;
         Py_ssize_t i;
+        _Py_identifier(__dict__);
 
         if (!PyDict_Check(state)) {
             PyErr_SetString(UnpicklingError, "state is not a dictionary");
             goto error;
         }
-        dict = PyObject_GetAttrString(inst, "__dict__");
+        dict = _PyObject_GetAttrId(inst, &PyId___dict__);
         if (dict == NULL)
             goto error;
 
@@ -5584,8 +5593,9 @@ Unpickler_init(UnpicklerObject *self, PyObject *args, PyObject *kwds)
         return -1;
 
     if (PyObject_HasAttrString((PyObject *)self, "persistent_load")) {
-        self->pers_func = PyObject_GetAttrString((PyObject *)self,
-                                                 "persistent_load");
+        _Py_identifier(persistent_load);
+        self->pers_func = _PyObject_GetAttrId((PyObject *)self,
+                                              &PyId_persistent_load);
         if (self->pers_func == NULL)
             return -1;
     }

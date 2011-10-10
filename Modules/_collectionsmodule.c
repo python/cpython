@@ -767,8 +767,9 @@ static PyObject *
 deque_reduce(dequeobject *deque)
 {
     PyObject *dict, *result, *aslist;
+    _Py_identifier(__dict__);
 
-    dict = PyObject_GetAttrString((PyObject *)deque, "__dict__");
+    dict = _PyObject_GetAttrId((PyObject *)deque, &PyId___dict__);
     if (dict == NULL)
         PyErr_Clear();
     aslist = PySequence_List((PyObject *)deque);

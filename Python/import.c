@@ -154,7 +154,7 @@ static const struct filedescr _PyImport_StandardFiletab[] = {
 };
 
 static PyObject *initstr = NULL;
-
+_Py_identifier(__path__);
 
 /* Initialize things */
 
@@ -248,8 +248,9 @@ _PyImportHooks_Init(void)
             PySys_WriteStderr("# can't import zipimport\n");
     }
     else {
-        PyObject *zipimporter = PyObject_GetAttrString(zimpimport,
-                                                       "zipimporter");
+        _Py_identifier(zipimporter);
+        PyObject *zipimporter = _PyObject_GetAttrId(zimpimport,
+                                                    &PyId_zipimporter);
         Py_DECREF(zimpimport);
         if (zipimporter == NULL) {
             PyErr_Clear(); /* No zipimporter object -- okay */
@@ -3203,7 +3204,7 @@ ensure_fromlist(PyObject *mod, PyObject *fromlist, PyObject *name,
     PyObject *fullname;
     Py_ssize_t fromlist_len;
 
-    if (!PyObject_HasAttrString(mod, "__path__"))
+    if (!_PyObject_HasAttrId(mod, &PyId___path__))
         return 1;
 
     fromlist_len = PySequence_Size(fromlist);
@@ -3221,11 +3222,12 @@ ensure_fromlist(PyObject *mod, PyObject *fromlist, PyObject *name,
         }
         if (PyUnicode_READ_CHAR(item, 0) == '*') {
             PyObject *all;
+            _Py_identifier(__all__);
             Py_DECREF(item);
             /* See if the package defines __all__ */
             if (recursive)
                 continue; /* Avoid endless recursion */
-            all = PyObject_GetAttrString(mod, "__all__");
+            all = _PyObject_GetAttrId(mod, &PyId___all__);
             if (all == NULL)
                 PyErr_Clear();
             else {
@@ -3313,7 +3315,7 @@ import_submodule(PyObject *mod, PyObject *subname, PyObject *fullname)
     if (mod == Py_None)
         path_list = NULL;
     else {
-        path_list = PyObject_GetAttrString(mod, "__path__");
+        path_list = _PyObject_GetAttrId(mod, &PyId___path__);
         if (path_list == NULL) {
             PyErr_Clear();
             Py_INCREF(Py_None);
@@ -3424,7 +3426,7 @@ PyImport_ReloadModule(PyObject *m)
             goto error;
         }
         Py_DECREF(parentname);
-        path_list = PyObject_GetAttrString(parent, "__path__");
+        path_list = _PyObject_GetAttrId(parent, &PyId___path__);
         if (path_list == NULL)
             PyErr_Clear();
         subname++;

@@ -247,10 +247,11 @@ show_warning(PyObject *filename, int lineno, PyObject *text, PyObject
     PyObject *f_stderr;
     PyObject *name;
     char lineno_str[128];
+    _Py_identifier(__name__);
 
     PyOS_snprintf(lineno_str, sizeof(lineno_str), ":%d: ", lineno);
 
-    name = PyObject_GetAttrString(category, "__name__");
+    name = _PyObject_GetAttrId(category, &PyId___name__);
     if (name == NULL)  /* XXX Can an object lack a '__name__' attribute? */
         return;
 

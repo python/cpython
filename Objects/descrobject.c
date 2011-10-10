@@ -1299,7 +1299,8 @@ property_init(PyObject *self, PyObject *args, PyObject *kwds)
 
     /* if no docstring given and the getter has one, use that one */
     if ((doc == NULL || doc == Py_None) && get != NULL) {
-        PyObject *get_doc = PyObject_GetAttrString(get, "__doc__");
+        _Py_identifier(__doc__);
+        PyObject *get_doc = _PyObject_GetAttrId(get, &PyId___doc__);
         if (get_doc) {
             if (Py_TYPE(self) == &PyProperty_Type) {
                 Py_XDECREF(prop->prop_doc);
