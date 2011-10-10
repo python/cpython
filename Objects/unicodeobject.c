@@ -641,7 +641,7 @@ resize_copy(PyObject *unicode, Py_ssize_t length)
 */
 
 #ifdef Py_DEBUG
-int unicode_old_new_calls = 0;
+static int unicode_old_new_calls = 0;
 #endif
 
 static PyUnicodeObject *
@@ -752,7 +752,7 @@ unicode_kind_name(PyObject *unicode)
 }
 
 #ifdef Py_DEBUG
-int unicode_new_new_calls = 0;
+static int unicode_new_new_calls = 0;
 
 /* Functions wrapping macros for use in debugger */
 char *_PyUnicode_utf8(void *unicode){
@@ -1181,7 +1181,7 @@ find_maxchar_surrogates(const wchar_t *begin, const wchar_t *end,
 }
 
 #ifdef Py_DEBUG
-int unicode_ready_calls = 0;
+static int unicode_ready_calls = 0;
 #endif
 
 static int
@@ -1780,7 +1780,7 @@ PyUnicode_FromKindAndData(int kind, const void *buffer, Py_ssize_t size)
 /* Ensure that a string uses the most efficient storage, if it is not the
    case: create a new string with of the right kind. Write NULL into *p_unicode
    on error. */
-void
+static void
 unicode_adjust_maxchar(PyObject **p_unicode)
 {
     PyObject *unicode, *copy;
@@ -3321,7 +3321,7 @@ PyUnicode_AsUTF8(PyObject *unicode)
 }
 
 #ifdef Py_DEBUG
-int unicode_as_unicode_calls = 0;
+static int unicode_as_unicode_calls = 0;
 #endif
 
 
@@ -5517,7 +5517,7 @@ PyUnicode_AsUTF16String(PyObject *unicode)
    pop out of ASCII range.  Otherwise returns the length of the
    required buffer to hold the string.
    */
-Py_ssize_t
+static Py_ssize_t
 length_of_escaped_ascii_string(const char *s, Py_ssize_t size)
 {
     const unsigned char *p = (const unsigned char *)s;
