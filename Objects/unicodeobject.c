@@ -8531,19 +8531,7 @@ PyUnicode_EncodeDecimal(Py_UNICODE *s,
 #include "stringlib/undef.h"
 
 static Py_ssize_t
-any_find_slice(Py_ssize_t Py_LOCAL_CALLBACK(ascii)(const Py_UCS1*, Py_ssize_t,
-                                  const Py_UCS1*, Py_ssize_t,
-                                  Py_ssize_t, Py_ssize_t),
-               Py_ssize_t Py_LOCAL_CALLBACK(ucs1)(const Py_UCS1*, Py_ssize_t,
-                                  const Py_UCS1*, Py_ssize_t,
-                                  Py_ssize_t, Py_ssize_t),
-               Py_ssize_t Py_LOCAL_CALLBACK(ucs2)(const Py_UCS2*, Py_ssize_t,
-                                  const Py_UCS2*, Py_ssize_t,
-                                  Py_ssize_t, Py_ssize_t),
-               Py_ssize_t Py_LOCAL_CALLBACK(ucs4)(const Py_UCS4*, Py_ssize_t,
-                                  const Py_UCS4*, Py_ssize_t,
-                                  Py_ssize_t, Py_ssize_t),
-               PyObject* s1, PyObject* s2,
+any_find_slice(int direction, PyObject* s1, PyObject* s2,
                Py_ssize_t start,
                Py_ssize_t end)
 {
@@ -8569,21 +8557,41 @@ any_find_slice(Py_ssize_t Py_LOCAL_CALLBACK(ascii)(const Py_UCS1*, Py_ssize_t,
     len1 = PyUnicode_GET_LENGTH(s1);
     len2 = PyUnicode_GET_LENGTH(s2);
 
-    switch(kind) {
-    case PyUnicode_1BYTE_KIND:
-        if (PyUnicode_IS_ASCII(s1) && PyUnicode_IS_ASCII(s2))
-            result = ascii(buf1, len1, buf2, len2, start, end);
-        else
-            result = ucs1(buf1, len1, buf2, len2, start, end);
-        break;
-    case PyUnicode_2BYTE_KIND:
-        result = ucs2(buf1, len1, buf2, len2, start, end);
-        break;
-    case PyUnicode_4BYTE_KIND:
-        result = ucs4(buf1, len1, buf2, len2, start, end);
-        break;
-    default:
-        assert(0); result = -2;
+    if (direction > 0) {
+        switch(kind) {
+        case PyUnicode_1BYTE_KIND:
+            if (PyUnicode_IS_ASCII(s1) && PyUnicode_IS_ASCII(s2))
+                result = asciilib_find_slice(buf1, len1, buf2, len2, start, end);
+            else
+                result = ucs1lib_find_slice(buf1, len1, buf2, len2, start, end);
+            break;
+        case PyUnicode_2BYTE_KIND:
+            result = ucs2lib_find_slice(buf1, len1, buf2, len2, start, end);
+            break;
+        case PyUnicode_4BYTE_KIND:
+            result = ucs4lib_find_slice(buf1, len1, buf2, len2, start, end);
+            break;
+        default:
+            assert(0); result = -2;
+        }
+    }
+    else {
+        switch(kind) {
+        case PyUnicode_1BYTE_KIND:
+            if (PyUnicode_IS_ASCII(s1) && PyUnicode_IS_ASCII(s2))
+                result = asciilib_rfind_slice(buf1, len1, buf2, len2, start, end);
+            else
+                result = ucs1lib_rfind_slice(buf1, len1, buf2, len2, start, end);
+            break;
+        case PyUnicode_2BYTE_KIND:
+            result = ucs2lib_rfind_slice(buf1, len1, buf2, len2, start, end);
+            break;
+        case PyUnicode_4BYTE_KIND:
+            result = ucs4lib_rfind_slice(buf1, len1, buf2, len2, start, end);
+            break;
+        default:
+            assert(0); result = -2;
+        }
     }
 
     if (kind1 != kind)
@@ -8752,18 +8760,9 @@ PyUnicode_Find(PyObject *str,
         return -2;
     }
 
-    if (direction > 0)
-        result = any_find_slice(
-            asciilib_find_slice, ucs1lib_find_slice,
-            ucs2lib_find_slice, ucs4lib_find_slice,
-            str, sub, start, end
-            );
-    else
-        result = any_find_slice(
-            asciilib_rfind_slice, ucs1lib_rfind_slice,
-            ucs2lib_rfind_slice, ucs4lib_rfind_slice,
-            str, sub, start, end
-            );
+    result = any_find_slice(direction,
+        str, sub, start, end
+        );
 
     Py_DECREF(str);
     Py_DECREF(sub);
@@ -10677,9 +10676,7 @@ unicode_find(PyObject *self, PyObject *args)
     if (PyUnicode_READY(substring) == -1)
         return NULL;
 
-    result = any_find_slice(
-        asciilib_find_slice, ucs1lib_find_slice,
-        ucs2lib_find_slice, ucs4lib_find_slice,
+    result = any_find_slice(1,
         self, (PyObject*)substring, start, end
         );
 
@@ -10771,9 +10768,7 @@ unicode_index(PyObject *self, PyObject *args)
     if (PyUnicode_READY(substring) == -1)
         return NULL;
 
-    result = any_find_slice(
-        asciilib_find_slice, ucs1lib_find_slice,
-        ucs2lib_find_slice, ucs4lib_find_slice,
+    result = any_find_slice(1,
         self, (PyObject*)substring, start, end
         );
 
@@ -11784,9 +11779,7 @@ unicode_rfind(PyObject *self, PyObject *args)
     if (PyUnicode_READY(substring) == -1)
         return NULL;
 
-    result = any_find_slice(
-        asciilib_rfind_slice, ucs1lib_rfind_slice,
-        ucs2lib_rfind_slice, ucs4lib_rfind_slice,
+    result = any_find_slice(-1,
         self, (PyObject*)substring, start, end
         );
 
@@ -11820,9 +11813,7 @@ unicode_rindex(PyObject *self, PyObject *args)
     if (PyUnicode_READY(substring) == -1)
         return NULL;
 
-    result = any_find_slice(
-        asciilib_rfind_slice, ucs1lib_rfind_slice,
-        ucs2lib_rfind_slice, ucs4lib_rfind_slice,
+    result = any_find_slice(-1,
         self, (PyObject*)substring, start, end
         );
 
