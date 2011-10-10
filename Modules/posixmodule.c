@@ -6103,6 +6103,7 @@ wait_helper(pid_t pid, int status, struct rusage *ru)
 {
     PyObject *result;
     static PyObject *struct_rusage;
+    _Py_identifier(struct_rusage);
 
     if (pid == -1)
         return posix_error();
@@ -6111,7 +6112,7 @@ wait_helper(pid_t pid, int status, struct rusage *ru)
         PyObject *m = PyImport_ImportModuleNoBlock("resource");
         if (m == NULL)
             return NULL;
-        struct_rusage = PyObject_GetAttrString(m, "struct_rusage");
+        struct_rusage = _PyObject_GetAttrId(m, &PyId_struct_rusage);
         Py_DECREF(m);
         if (struct_rusage == NULL)
             return NULL;

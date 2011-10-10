@@ -14,6 +14,8 @@ static int numfree = 0;
 #define PyMethod_MAXFREELIST 256
 #endif
 
+_Py_identifier(__name__);
+
 PyObject *
 PyMethod_Function(PyObject *im)
 {
@@ -226,7 +228,7 @@ method_repr(PyMethodObject *a)
         return NULL;
     }
 
-    funcname = PyObject_GetAttrString(func, "__name__");
+    funcname = _PyObject_GetAttrId(func, &PyId___name__);
     if (funcname == NULL) {
         if (!PyErr_ExceptionMatches(PyExc_AttributeError))
             return NULL;
@@ -240,7 +242,7 @@ method_repr(PyMethodObject *a)
     if (klass == NULL)
         klassname = NULL;
     else {
-        klassname = PyObject_GetAttrString(klass, "__name__");
+        klassname = _PyObject_GetAttrId(klass, &PyId___name__);
         if (klassname == NULL) {
             if (!PyErr_ExceptionMatches(PyExc_AttributeError))
                 return NULL;
@@ -542,7 +544,7 @@ instancemethod_repr(PyObject *self)
         return NULL;
     }
 
-    funcname = PyObject_GetAttrString(func, "__name__");
+    funcname = _PyObject_GetAttrId(func, &PyId___name__);
     if (funcname == NULL) {
         if (!PyErr_ExceptionMatches(PyExc_AttributeError))
             return NULL;

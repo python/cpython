@@ -59,8 +59,9 @@ PyFile_GetLine(PyObject *f, int n)
     {
         PyObject *reader;
         PyObject *args;
+        _Py_identifier(readline);
 
-        reader = PyObject_GetAttrString(f, "readline");
+        reader = _PyObject_GetAttrId(f, &PyId_readline);
         if (reader == NULL)
             return NULL;
         if (n <= 0)
@@ -127,11 +128,13 @@ int
 PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
 {
     PyObject *writer, *value, *args, *result;
+    _Py_identifier(write);
+
     if (f == NULL) {
         PyErr_SetString(PyExc_TypeError, "writeobject with NULL file");
         return -1;
     }
-    writer = PyObject_GetAttrString(f, "write");
+    writer = _PyObject_GetAttrId(f, &PyId_write);
     if (writer == NULL)
         return -1;
     if (flags & Py_PRINT_RAW) {
@@ -194,11 +197,12 @@ PyObject_AsFileDescriptor(PyObject *o)
 {
     int fd;
     PyObject *meth;
+    _Py_identifier(fileno);
 
     if (PyLong_Check(o)) {
         fd = PyLong_AsLong(o);
     }
-    else if ((meth = PyObject_GetAttrString(o, "fileno")) != NULL)
+    else if ((meth = _PyObject_GetAttrId(o, &PyId_fileno)) != NULL)
     {
         PyObject *fno = PyEval_CallObject(meth, NULL);
         Py_DECREF(meth);

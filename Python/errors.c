@@ -707,6 +707,7 @@ PyErr_NewExceptionWithDoc(const char *name, const char *doc,
 void
 PyErr_WriteUnraisable(PyObject *obj)
 {
+    _Py_identifier(__module__);
     PyObject *f, *t, *v, *tb;
     PyErr_Fetch(&t, &v, &tb);
     f = PySys_GetObject("stderr");
@@ -723,7 +724,7 @@ PyErr_WriteUnraisable(PyObject *obj)
                     className = dot+1;
             }
 
-            moduleName = PyObject_GetAttrString(t, "__module__");
+            moduleName = _PyObject_GetAttrId(t, &PyId___module__);
             if (moduleName == NULL)
                 PyFile_WriteString("<unknown>", f);
             else {

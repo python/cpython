@@ -35,6 +35,9 @@ struct method_cache_entry {
 static struct method_cache_entry method_cache[1 << MCACHE_SIZE_EXP];
 static unsigned int next_version_tag = 0;
 
+_Py_identifier(__dict__);
+_Py_identifier(__class__);
+
 unsigned int
 PyType_ClearCache(void)
 {
@@ -1281,7 +1284,8 @@ tail_contains(PyObject *list, int whence, PyObject *o) {
 static PyObject *
 class_name(PyObject *cls)
 {
-    PyObject *name = PyObject_GetAttrString(cls, "__name__");
+    _Py_identifier(__name__);
+    PyObject *name = _PyObject_GetAttrId(cls, &PyId___name__);
     if (name == NULL) {
         PyErr_Clear();
         Py_XDECREF(name);
@@ -1709,15 +1713,14 @@ get_builtin_base_with_dict(PyTypeObject *type)
 static PyObject *
 get_dict_descriptor(PyTypeObject *type)
 {
-    static PyObject *dict_str;
+    PyObject *dict_str;
     PyObject *descr;
 
-    if (dict_str == NULL) {
-        dict_str = PyUnicode_InternFromString("__dict__");
-        if (dict_str == NULL)
-            return NULL;
-    }
+    dict_str = _PyUnicode_FromId(&PyId___dict__);
+    if (dict_str == NULL)
+        return NULL;
     descr = _PyType_Lookup(type, dict_str);
+    Py_DECREF(dict_str);
     if (descr == NULL || !PyDescr_IsData(descr))
         return NULL;
 
@@ -2596,12 +2599,13 @@ merge_class_dict(PyObject *dict, PyObject *aclass)
 {
     PyObject *classdict;
     PyObject *bases;
+    _Py_identifier(__bases__);
 
     assert(PyDict_Check(dict));
     assert(aclass);
 
     /* Merge in the type's dict (if any). */
-    classdict = PyObject_GetAttrString(aclass, "__dict__");
+    classdict = _PyObject_GetAttrId(aclass, &PyId___dict__);
     if (classdict == NULL)
         PyErr_Clear();
     else {
@@ -2612,7 +2616,7 @@ merge_class_dict(PyObject *dict, PyObject *aclass)
     }
 
     /* Recursively merge in the base types' (if any) dicts. */
-    bases = PyObject_GetAttrString(aclass, "__bases__");
+    bases = _PyObject_GetAttrId(aclass, &PyId___bases__);
     if (bases == NULL)
         PyErr_Clear();
     else {
@@ -3540,7 +3544,7 @@ object_dir(PyObject *self, PyObject *args)
     PyObject *itsclass = NULL;
 
     /* Get __dict__ (which may or may not be a real dict...) */
-    dict = PyObject_GetAttrString(self, "__dict__");
+    dict = _PyObject_GetAttrId(self, &PyId___dict__);
     if (dict == NULL) {
         PyErr_Clear();
         dict = PyDict_New();
@@ -3560,7 +3564,7 @@ object_dir(PyObject *self, PyObject *args)
         goto error;
 
     /* Merge in attrs reachable from its class. */
-    itsclass = PyObject_GetAttrString(self, "__class__");
+    itsclass = _PyObject_GetAttrId(self, &PyId___class__);
     if (itsclass == NULL)
         /* XXX(tomer): Perhaps fall back to obj->ob_type if no
                        __class__ exists? */
@@ -6304,16 +6308,15 @@ supercheck(PyTypeObject *type, PyObject *obj)
     }
     else {
         /* Try the slow way */
-        static PyObject *class_str = NULL;
+        PyObject *class_str = NULL;
         PyObject *class_attr;
 
-        if (class_str == NULL) {
-            class_str = PyUnicode_FromString("__class__");
-            if (class_str == NULL)
-                return NULL;
-        }
+        class_str = _PyUnicode_FromId(&PyId___class__);
+        if (class_str == NULL)
+            return NULL;
 
         class_attr = PyObject_GetAttr(obj, class_str);
+        Py_DECREF(class_str);
 
         if (class_attr != NULL &&
             PyType_Check(class_attr) &&

@@ -41,6 +41,7 @@ builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *func, *name, *bases, *mkw, *meta, *prep, *ns, *cell;
     PyObject *cls = NULL;
     Py_ssize_t nargs;
+    _Py_identifier(__prepare__);
 
     assert(args != NULL);
     if (!PyTuple_Check(args)) {
@@ -95,7 +96,7 @@ builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
         }
         Py_INCREF(meta);
     }
-    prep = PyObject_GetAttrString(meta, "__prepare__");
+    prep = _PyObject_GetAttrId(meta, &PyId___prepare__);
     if (prep == NULL) {
         if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
             PyErr_Clear();
@@ -1613,8 +1614,9 @@ builtin_input(PyObject *self, PyObject *args)
         char *stdin_encoding_str;
         PyObject *result;
         size_t len;
+        _Py_identifier(encoding);
 
-        stdin_encoding = PyObject_GetAttrString(fin, "encoding");
+        stdin_encoding = _PyObject_GetAttrId(fin, &PyId_encoding);
         if (!stdin_encoding)
             /* stdin is a text stream, so it must have an
                encoding. */
@@ -1633,7 +1635,7 @@ builtin_input(PyObject *self, PyObject *args)
             PyObject *stringpo;
             PyObject *stdout_encoding;
             char *stdout_encoding_str;
-            stdout_encoding = PyObject_GetAttrString(fout, "encoding");
+            stdout_encoding = _PyObject_GetAttrId(fout, &PyId_encoding);
             if (stdout_encoding == NULL) {
                 Py_DECREF(stdin_encoding);
                 return NULL;
@@ -1788,6 +1790,7 @@ builtin_sorted(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *callable;
     static char *kwlist[] = {"iterable", "key", "reverse", 0};
     int reverse;
+    _Py_identifier(sort);
 
     /* args 1-3 should match listsort in Objects/listobject.c */
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|Oi:sorted",
@@ -1798,7 +1801,7 @@ builtin_sorted(PyObject *self, PyObject *args, PyObject *kwds)
     if (newlist == NULL)
         return NULL;
 
-    callable = PyObject_GetAttrString(newlist, "sort");
+    callable = _PyObject_GetAttrId(newlist, &PyId_sort);
     if (callable == NULL) {
         Py_DECREF(newlist);
         return NULL;
@@ -1844,7 +1847,8 @@ builtin_vars(PyObject *self, PyObject *args)
             Py_INCREF(d);
     }
     else {
-        d = PyObject_GetAttrString(v, "__dict__");
+        _Py_identifier(__dict__);
+        d = _PyObject_GetAttrId(v, &PyId___dict__);
         if (d == NULL) {
             PyErr_SetString(PyExc_TypeError,
                 "vars() argument must have __dict__ attribute");
