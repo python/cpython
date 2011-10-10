@@ -465,9 +465,11 @@ PyObject *PyCodec_LookupError(const char *name)
 
 static void wrong_exception_type(PyObject *exc)
 {
-    PyObject *type = PyObject_GetAttrString(exc, "__class__");
+    _Py_identifier(__class__);
+    _Py_identifier(__name__);
+    PyObject *type = _PyObject_GetAttrId(exc, &PyId___class__);
     if (type != NULL) {
-        PyObject *name = PyObject_GetAttrString(type, "__name__");
+        PyObject *name = _PyObject_GetAttrId(type, &PyId___name__);
         Py_DECREF(type);
         if (name != NULL) {
             PyErr_Format(PyExc_TypeError,

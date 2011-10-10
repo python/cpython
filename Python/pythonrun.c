@@ -141,12 +141,13 @@ get_codec_name(const char *encoding)
 {
     char *name_utf8, *name_str;
     PyObject *codec, *name = NULL;
+    _Py_identifier(name);
 
     codec = _PyCodec_Lookup(encoding);
     if (!codec)
         goto error;
 
-    name = PyObject_GetAttrString(codec, "name");
+    name = _PyObject_GetAttrId(codec, &PyId_name);
     Py_CLEAR(codec);
     if (!name)
         goto error;
@@ -830,7 +831,8 @@ create_stdio(PyObject* io,
         goto error;
 
     if (buffering) {
-        raw = PyObject_GetAttrString(buf, "raw");
+        _Py_identifier(raw);
+        raw = _PyObject_GetAttrId(buf, &PyId_raw);
         if (raw == NULL)
             goto error;
     }
@@ -1115,13 +1117,14 @@ PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags
     PyArena *arena;
     char *ps1 = "", *ps2 = "", *enc = NULL;
     int errcode = 0;
+    _Py_identifier(encoding);
 
     if (fp == stdin) {
         /* Fetch encoding from sys.stdin */
         v = PySys_GetObject("stdin");
         if (v == NULL || v == Py_None)
             return -1;
-        oenc = PyObject_GetAttrString(v, "encoding");
+        oenc = _PyObject_GetAttrId(v, &PyId_encoding);
         if (!oenc)
             return -1;
         enc = _PyUnicode_AsString(oenc);
@@ -1318,6 +1321,11 @@ parse_syntax_error(PyObject *err, PyObject **message, const char **filename,
 {
     long hold;
     PyObject *v;
+    _Py_identifier(msg);
+    _Py_identifier(filename);
+    _Py_identifier(lineno);
+    _Py_identifier(offset);
+    _Py_identifier(text);
 
     /* old style errors */
     if (PyTuple_Check(err))
@@ -1326,11 +1334,11 @@ parse_syntax_error(PyObject *err, PyObject **message, const char **filename,
 
     /* new style errors.  `err' is an instance */
 
-    if (! (v = PyObject_GetAttrString(err, "msg")))
+    if (! (v = _PyObject_GetAttrId(err, &PyId_msg)))
         goto finally;
     *message = v;
 
-    if (!(v = PyObject_GetAttrString(err, "filename")))
+    if (!(v = _PyObject_GetAttrId(err, &PyId_filename)))
         goto finally;
     if (v == Py_None)
         *filename = NULL;
@@ -1338,7 +1346,7 @@ parse_syntax_error(PyObject *err, PyObject **message, const char **filename,
         goto finally;
 
     Py_DECREF(v);
-    if (!(v = PyObject_GetAttrString(err, "lineno")))
+    if (!(v = _PyObject_GetAttrId(err, &PyId_lineno)))
         goto finally;
     hold = PyLong_AsLong(v);
     Py_DECREF(v);
@@ -1347,7 +1355,7 @@ parse_syntax_error(PyObject *err, PyObject **message, const char **filename,
         goto finally;
     *lineno = (int)hold;
 
-    if (!(v = PyObject_GetAttrString(err, "offset")))
+    if (!(v = _PyObject_GetAttrId(err, &PyId_offset)))
         goto finally;
     if (v == Py_None) {
         *offset = -1;
@@ -1362,7 +1370,7 @@ parse_syntax_error(PyObject *err, PyObject **message, const char **filename,
         *offset = (int)hold;
     }
 
-    if (!(v = PyObject_GetAttrString(err, "text")))
+    if (!(v = _PyObject_GetAttrId(err, &PyId_text)))
         goto finally;
     if (v == Py_None)
         *text = NULL;
@@ -1431,7 +1439,8 @@ handle_system_exit(void)
         goto done;
     if (PyExceptionInstance_Check(value)) {
         /* The error code should be in the `code' attribute. */
-        PyObject *code = PyObject_GetAttrString(value, "code");
+        _Py_identifier(code);
+        PyObject *code = _PyObject_GetAttrId(value, &PyId_code);
         if (code) {
             Py_DECREF(value);
             value = code;
@@ -1588,6 +1597,7 @@ print_exception(PyObject *f, PyObject *value)
     else {
         PyObject* moduleName;
         char* className;
+        _Py_identifier(__module__);
         assert(PyExceptionClass_Check(type));
         className = PyExceptionClass_Name(type);
         if (className != NULL) {
@@ -1596,7 +1606,7 @@ print_exception(PyObject *f, PyObject *value)
                 className = dot+1;
         }
 
-        moduleName = PyObject_GetAttrString(type, "__module__");
+        moduleName = _PyObject_GetAttrId(type, &PyId___module__);
         if (moduleName == NULL || !PyUnicode_Check(moduleName))
         {
             Py_XDECREF(moduleName);

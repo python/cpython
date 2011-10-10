@@ -7,6 +7,7 @@ static PyTypeObject AST_type;
 static PyTypeObject *mod_type;
 static PyObject* ast2obj_mod(void*);
 static PyTypeObject *Module_type;
+_Py_identifier(body);
 static char *Module_fields[]={
         "body",
 };
@@ -23,12 +24,18 @@ static char *Suite_fields[]={
         "body",
 };
 static PyTypeObject *stmt_type;
+_Py_identifier(lineno);
+_Py_identifier(col_offset);
 static char *stmt_attributes[] = {
         "lineno",
         "col_offset",
 };
 static PyObject* ast2obj_stmt(void*);
 static PyTypeObject *FunctionDef_type;
+_Py_identifier(name);
+_Py_identifier(args);
+_Py_identifier(decorator_list);
+_Py_identifier(returns);
 static char *FunctionDef_fields[]={
         "name",
         "args",
@@ -37,6 +44,10 @@ static char *FunctionDef_fields[]={
         "returns",
 };
 static PyTypeObject *ClassDef_type;
+_Py_identifier(bases);
+_Py_identifier(keywords);
+_Py_identifier(starargs);
+_Py_identifier(kwargs);
 static char *ClassDef_fields[]={
         "name",
         "bases",
@@ -47,10 +58,12 @@ static char *ClassDef_fields[]={
         "decorator_list",
 };
 static PyTypeObject *Return_type;
+_Py_identifier(value);
 static char *Return_fields[]={
         "value",
 };
 static PyTypeObject *Delete_type;
+_Py_identifier(targets);
 static char *Delete_fields[]={
         "targets",
 };
@@ -60,12 +73,16 @@ static char *Assign_fields[]={
         "value",
 };
 static PyTypeObject *AugAssign_type;
+_Py_identifier(target);
+_Py_identifier(op);
 static char *AugAssign_fields[]={
         "target",
         "op",
         "value",
 };
 static PyTypeObject *For_type;
+_Py_identifier(iter);
+_Py_identifier(orelse);
 static char *For_fields[]={
         "target",
         "iter",
@@ -73,6 +90,7 @@ static char *For_fields[]={
         "orelse",
 };
 static PyTypeObject *While_type;
+_Py_identifier(test);
 static char *While_fields[]={
         "test",
         "body",
@@ -85,16 +103,21 @@ static char *If_fields[]={
         "orelse",
 };
 static PyTypeObject *With_type;
+_Py_identifier(items);
 static char *With_fields[]={
         "items",
         "body",
 };
 static PyTypeObject *Raise_type;
+_Py_identifier(exc);
+_Py_identifier(cause);
 static char *Raise_fields[]={
         "exc",
         "cause",
 };
 static PyTypeObject *Try_type;
+_Py_identifier(handlers);
+_Py_identifier(finalbody);
 static char *Try_fields[]={
         "body",
         "handlers",
@@ -102,15 +125,19 @@ static char *Try_fields[]={
         "finalbody",
 };
 static PyTypeObject *Assert_type;
+_Py_identifier(msg);
 static char *Assert_fields[]={
         "test",
         "msg",
 };
 static PyTypeObject *Import_type;
+_Py_identifier(names);
 static char *Import_fields[]={
         "names",
 };
 static PyTypeObject *ImportFrom_type;
+_Py_identifier(module);
+_Py_identifier(level);
 static char *ImportFrom_fields[]={
         "module",
         "names",
@@ -138,17 +165,21 @@ static char *expr_attributes[] = {
 };
 static PyObject* ast2obj_expr(void*);
 static PyTypeObject *BoolOp_type;
+_Py_identifier(values);
 static char *BoolOp_fields[]={
         "op",
         "values",
 };
 static PyTypeObject *BinOp_type;
+_Py_identifier(left);
+_Py_identifier(right);
 static char *BinOp_fields[]={
         "left",
         "op",
         "right",
 };
 static PyTypeObject *UnaryOp_type;
+_Py_identifier(operand);
 static char *UnaryOp_fields[]={
         "op",
         "operand",
@@ -165,15 +196,19 @@ static char *IfExp_fields[]={
         "orelse",
 };
 static PyTypeObject *Dict_type;
+_Py_identifier(keys);
 static char *Dict_fields[]={
         "keys",
         "values",
 };
 static PyTypeObject *Set_type;
+_Py_identifier(elts);
 static char *Set_fields[]={
         "elts",
 };
 static PyTypeObject *ListComp_type;
+_Py_identifier(elt);
+_Py_identifier(generators);
 static char *ListComp_fields[]={
         "elt",
         "generators",
@@ -184,6 +219,7 @@ static char *SetComp_fields[]={
         "generators",
 };
 static PyTypeObject *DictComp_type;
+_Py_identifier(key);
 static char *DictComp_fields[]={
         "key",
         "value",
@@ -199,12 +235,15 @@ static char *Yield_fields[]={
         "value",
 };
 static PyTypeObject *Compare_type;
+_Py_identifier(ops);
+_Py_identifier(comparators);
 static char *Compare_fields[]={
         "left",
         "ops",
         "comparators",
 };
 static PyTypeObject *Call_type;
+_Py_identifier(func);
 static char *Call_fields[]={
         "func",
         "args",
@@ -213,10 +252,12 @@ static char *Call_fields[]={
         "kwargs",
 };
 static PyTypeObject *Num_type;
+_Py_identifier(n);
 static char *Num_fields[]={
         "n",
 };
 static PyTypeObject *Str_type;
+_Py_identifier(s);
 static char *Str_fields[]={
         "s",
 };
@@ -226,12 +267,15 @@ static char *Bytes_fields[]={
 };
 static PyTypeObject *Ellipsis_type;
 static PyTypeObject *Attribute_type;
+_Py_identifier(attr);
+_Py_identifier(ctx);
 static char *Attribute_fields[]={
         "value",
         "attr",
         "ctx",
 };
 static PyTypeObject *Subscript_type;
+_Py_identifier(slice);
 static char *Subscript_fields[]={
         "value",
         "slice",
@@ -243,6 +287,7 @@ static char *Starred_fields[]={
         "ctx",
 };
 static PyTypeObject *Name_type;
+_Py_identifier(id);
 static char *Name_fields[]={
         "id",
         "ctx",
@@ -270,12 +315,16 @@ static PyTypeObject *Param_type;
 static PyTypeObject *slice_type;
 static PyObject* ast2obj_slice(void*);
 static PyTypeObject *Slice_type;
+_Py_identifier(lower);
+_Py_identifier(upper);
+_Py_identifier(step);
 static char *Slice_fields[]={
         "lower",
         "upper",
         "step",
 };
 static PyTypeObject *ExtSlice_type;
+_Py_identifier(dims);
 static char *ExtSlice_fields[]={
         "dims",
 };
@@ -331,6 +380,7 @@ static PyTypeObject *In_type;
 static PyTypeObject *NotIn_type;
 static PyTypeObject *comprehension_type;
 static PyObject* ast2obj_comprehension(void*);
+_Py_identifier(ifs);
 static char *comprehension_fields[]={
         "target",
         "iter",
@@ -343,6 +393,7 @@ static char *excepthandler_attributes[] = {
 };
 static PyObject* ast2obj_excepthandler(void*);
 static PyTypeObject *ExceptHandler_type;
+_Py_identifier(type);
 static char *ExceptHandler_fields[]={
         "type",
         "name",
@@ -350,6 +401,13 @@ static char *ExceptHandler_fields[]={
 };
 static PyTypeObject *arguments_type;
 static PyObject* ast2obj_arguments(void*);
+_Py_identifier(vararg);
+_Py_identifier(varargannotation);
+_Py_identifier(kwonlyargs);
+_Py_identifier(kwarg);
+_Py_identifier(kwargannotation);
+_Py_identifier(defaults);
+_Py_identifier(kw_defaults);
 static char *arguments_fields[]={
         "args",
         "vararg",
@@ -362,6 +420,8 @@ static char *arguments_fields[]={
 };
 static PyTypeObject *arg_type;
 static PyObject* ast2obj_arg(void*);
+_Py_identifier(arg);
+_Py_identifier(annotation);
 static char *arg_fields[]={
         "arg",
         "annotation",
@@ -374,12 +434,15 @@ static char *keyword_fields[]={
 };
 static PyTypeObject *alias_type;
 static PyObject* ast2obj_alias(void*);
+_Py_identifier(asname);
 static char *alias_fields[]={
         "name",
         "asname",
 };
 static PyTypeObject *withitem_type;
 static PyObject* ast2obj_withitem(void*);
+_Py_identifier(context_expr);
+_Py_identifier(optional_vars);
 static char *withitem_fields[]={
         "context_expr",
         "optional_vars",
@@ -389,10 +452,11 @@ static char *withitem_fields[]={
 static int
 ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 {
+    _Py_identifier(_fields);
     Py_ssize_t i, numfields = 0;
     int res = -1;
     PyObject *key, *value, *fields;
-    fields = PyObject_GetAttrString((PyObject*)Py_TYPE(self), "_fields");
+    fields = _PyObject_GetAttrId((PyObject*)Py_TYPE(self), &PyId__fields);
     if (!fields)
         PyErr_Clear();
     if (fields) {
@@ -442,7 +506,8 @@ static PyObject *
 ast_type_reduce(PyObject *self, PyObject *unused)
 {
     PyObject *res;
-    PyObject *dict = PyObject_GetAttrString(self, "__dict__");
+    _Py_identifier(__dict__);
+    PyObject *dict = _PyObject_GetAttrId(self, &PyId___dict__);
     if (dict == NULL) {
         if (PyErr_ExceptionMatches(PyExc_AttributeError))
             PyErr_Clear();
@@ -3415,11 +3480,11 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
         if (isinstance) {
                 asdl_seq* body;
 
-                if (PyObject_HasAttrString(obj, "body")) {
+                if (_PyObject_HasAttrId(obj, &PyId_body)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "body");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_body);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "Module field \"body\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -3451,11 +3516,11 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
         if (isinstance) {
                 asdl_seq* body;
 
-                if (PyObject_HasAttrString(obj, "body")) {
+                if (_PyObject_HasAttrId(obj, &PyId_body)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "body");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_body);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "Interactive field \"body\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -3487,9 +3552,9 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
         if (isinstance) {
                 expr_ty body;
 
-                if (PyObject_HasAttrString(obj, "body")) {
+                if (_PyObject_HasAttrId(obj, &PyId_body)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "body");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_body);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &body, arena);
                         if (res != 0) goto failed;
@@ -3510,11 +3575,11 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
         if (isinstance) {
                 asdl_seq* body;
 
-                if (PyObject_HasAttrString(obj, "body")) {
+                if (_PyObject_HasAttrId(obj, &PyId_body)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "body");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_body);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "Suite field \"body\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -3559,9 +3624,9 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 *out = NULL;
                 return 0;
         }
-        if (PyObject_HasAttrString(obj, "lineno")) {
+        if (_PyObject_HasAttrId(obj, &PyId_lineno)) {
                 int res;
-                tmp = PyObject_GetAttrString(obj, "lineno");
+                tmp = _PyObject_GetAttrId(obj, &PyId_lineno);
                 if (tmp == NULL) goto failed;
                 res = obj2ast_int(tmp, &lineno, arena);
                 if (res != 0) goto failed;
@@ -3571,9 +3636,9 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from stmt");
                 return 1;
         }
-        if (PyObject_HasAttrString(obj, "col_offset")) {
+        if (_PyObject_HasAttrId(obj, &PyId_col_offset)) {
                 int res;
-                tmp = PyObject_GetAttrString(obj, "col_offset");
+                tmp = _PyObject_GetAttrId(obj, &PyId_col_offset);
                 if (tmp == NULL) goto failed;
                 res = obj2ast_int(tmp, &col_offset, arena);
                 if (res != 0) goto failed;
@@ -3594,9 +3659,9 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 asdl_seq* decorator_list;
                 expr_ty returns;
 
-                if (PyObject_HasAttrString(obj, "name")) {
+                if (_PyObject_HasAttrId(obj, &PyId_name)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "name");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_name);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_identifier(tmp, &name, arena);
                         if (res != 0) goto failed;
@@ -3606,9 +3671,9 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"name\" missing from FunctionDef");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "args")) {
+                if (_PyObject_HasAttrId(obj, &PyId_args)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "args");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_args);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_arguments(tmp, &args, arena);
                         if (res != 0) goto failed;
@@ -3618,11 +3683,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"args\" missing from FunctionDef");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "body")) {
+                if (_PyObject_HasAttrId(obj, &PyId_body)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "body");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_body);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "FunctionDef field \"body\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -3643,11 +3708,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from FunctionDef");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "decorator_list")) {
+                if (_PyObject_HasAttrId(obj, &PyId_decorator_list)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "decorator_list");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_decorator_list);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "FunctionDef field \"decorator_list\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -3668,9 +3733,9 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"decorator_list\" missing from FunctionDef");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "returns")) {
+                if (_PyObject_HasAttrId(obj, &PyId_returns)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "returns");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_returns);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &returns, arena);
                         if (res != 0) goto failed;
@@ -3697,9 +3762,9 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 asdl_seq* body;
                 asdl_seq* decorator_list;
 
-                if (PyObject_HasAttrString(obj, "name")) {
+                if (_PyObject_HasAttrId(obj, &PyId_name)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "name");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_name);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_identifier(tmp, &name, arena);
                         if (res != 0) goto failed;
@@ -3709,11 +3774,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"name\" missing from ClassDef");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "bases")) {
+                if (_PyObject_HasAttrId(obj, &PyId_bases)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "bases");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_bases);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "ClassDef field \"bases\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -3734,11 +3799,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"bases\" missing from ClassDef");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "keywords")) {
+                if (_PyObject_HasAttrId(obj, &PyId_keywords)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "keywords");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_keywords);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "ClassDef field \"keywords\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -3759,9 +3824,9 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"keywords\" missing from ClassDef");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "starargs")) {
+                if (_PyObject_HasAttrId(obj, &PyId_starargs)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "starargs");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_starargs);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &starargs, arena);
                         if (res != 0) goto failed;
@@ -3770,9 +3835,9 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 } else {
                         starargs = NULL;
                 }
-                if (PyObject_HasAttrString(obj, "kwargs")) {
+                if (_PyObject_HasAttrId(obj, &PyId_kwargs)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "kwargs");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_kwargs);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &kwargs, arena);
                         if (res != 0) goto failed;
@@ -3781,11 +3846,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 } else {
                         kwargs = NULL;
                 }
-                if (PyObject_HasAttrString(obj, "body")) {
+                if (_PyObject_HasAttrId(obj, &PyId_body)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "body");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_body);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "ClassDef field \"body\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -3806,11 +3871,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from ClassDef");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "decorator_list")) {
+                if (_PyObject_HasAttrId(obj, &PyId_decorator_list)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "decorator_list");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_decorator_list);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "ClassDef field \"decorator_list\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -3843,9 +3908,9 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         if (isinstance) {
                 expr_ty value;
 
-                if (PyObject_HasAttrString(obj, "value")) {
+                if (_PyObject_HasAttrId(obj, &PyId_value)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "value");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_value);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &value, arena);
                         if (res != 0) goto failed;
@@ -3865,11 +3930,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         if (isinstance) {
                 asdl_seq* targets;
 
-                if (PyObject_HasAttrString(obj, "targets")) {
+                if (_PyObject_HasAttrId(obj, &PyId_targets)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "targets");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_targets);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "Delete field \"targets\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -3902,11 +3967,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 asdl_seq* targets;
                 expr_ty value;
 
-                if (PyObject_HasAttrString(obj, "targets")) {
+                if (_PyObject_HasAttrId(obj, &PyId_targets)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "targets");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_targets);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "Assign field \"targets\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -3927,9 +3992,9 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"targets\" missing from Assign");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "value")) {
+                if (_PyObject_HasAttrId(obj, &PyId_value)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "value");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_value);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &value, arena);
                         if (res != 0) goto failed;
@@ -3952,9 +4017,9 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 operator_ty op;
                 expr_ty value;
 
-                if (PyObject_HasAttrString(obj, "target")) {
+                if (_PyObject_HasAttrId(obj, &PyId_target)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "target");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_target);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &target, arena);
                         if (res != 0) goto failed;
@@ -3964,9 +4029,9 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"target\" missing from AugAssign");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "op")) {
+                if (_PyObject_HasAttrId(obj, &PyId_op)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "op");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_op);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_operator(tmp, &op, arena);
                         if (res != 0) goto failed;
@@ -3976,9 +4041,9 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"op\" missing from AugAssign");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "value")) {
+                if (_PyObject_HasAttrId(obj, &PyId_value)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "value");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_value);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &value, arena);
                         if (res != 0) goto failed;
@@ -4002,9 +4067,9 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 asdl_seq* body;
                 asdl_seq* orelse;
 
-                if (PyObject_HasAttrString(obj, "target")) {
+                if (_PyObject_HasAttrId(obj, &PyId_target)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "target");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_target);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &target, arena);
                         if (res != 0) goto failed;
@@ -4014,9 +4079,9 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"target\" missing from For");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "iter")) {
+                if (_PyObject_HasAttrId(obj, &PyId_iter)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "iter");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_iter);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &iter, arena);
                         if (res != 0) goto failed;
@@ -4026,11 +4091,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"iter\" missing from For");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "body")) {
+                if (_PyObject_HasAttrId(obj, &PyId_body)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "body");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_body);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "For field \"body\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -4051,11 +4116,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from For");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "orelse")) {
+                if (_PyObject_HasAttrId(obj, &PyId_orelse)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "orelse");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_orelse);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "For field \"orelse\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -4090,9 +4155,9 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 asdl_seq* body;
                 asdl_seq* orelse;
 
-                if (PyObject_HasAttrString(obj, "test")) {
+                if (_PyObject_HasAttrId(obj, &PyId_test)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "test");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_test);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &test, arena);
                         if (res != 0) goto failed;
@@ -4102,11 +4167,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"test\" missing from While");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "body")) {
+                if (_PyObject_HasAttrId(obj, &PyId_body)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "body");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_body);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "While field \"body\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -4127,11 +4192,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from While");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "orelse")) {
+                if (_PyObject_HasAttrId(obj, &PyId_orelse)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "orelse");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_orelse);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "While field \"orelse\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -4165,9 +4230,9 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 asdl_seq* body;
                 asdl_seq* orelse;
 
-                if (PyObject_HasAttrString(obj, "test")) {
+                if (_PyObject_HasAttrId(obj, &PyId_test)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "test");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_test);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &test, arena);
                         if (res != 0) goto failed;
@@ -4177,11 +4242,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"test\" missing from If");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "body")) {
+                if (_PyObject_HasAttrId(obj, &PyId_body)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "body");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_body);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "If field \"body\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -4202,11 +4267,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from If");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "orelse")) {
+                if (_PyObject_HasAttrId(obj, &PyId_orelse)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "orelse");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_orelse);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "If field \"orelse\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -4239,11 +4304,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 asdl_seq* items;
                 asdl_seq* body;
 
-                if (PyObject_HasAttrString(obj, "items")) {
+                if (_PyObject_HasAttrId(obj, &PyId_items)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "items");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_items);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "With field \"items\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -4264,11 +4329,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"items\" missing from With");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "body")) {
+                if (_PyObject_HasAttrId(obj, &PyId_body)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "body");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_body);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "With field \"body\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -4301,9 +4366,9 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 expr_ty exc;
                 expr_ty cause;
 
-                if (PyObject_HasAttrString(obj, "exc")) {
+                if (_PyObject_HasAttrId(obj, &PyId_exc)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "exc");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_exc);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &exc, arena);
                         if (res != 0) goto failed;
@@ -4312,9 +4377,9 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 } else {
                         exc = NULL;
                 }
-                if (PyObject_HasAttrString(obj, "cause")) {
+                if (_PyObject_HasAttrId(obj, &PyId_cause)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "cause");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_cause);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &cause, arena);
                         if (res != 0) goto failed;
@@ -4337,11 +4402,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 asdl_seq* orelse;
                 asdl_seq* finalbody;
 
-                if (PyObject_HasAttrString(obj, "body")) {
+                if (_PyObject_HasAttrId(obj, &PyId_body)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "body");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_body);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "Try field \"body\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -4362,11 +4427,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from Try");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "handlers")) {
+                if (_PyObject_HasAttrId(obj, &PyId_handlers)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "handlers");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_handlers);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "Try field \"handlers\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -4387,11 +4452,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"handlers\" missing from Try");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "orelse")) {
+                if (_PyObject_HasAttrId(obj, &PyId_orelse)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "orelse");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_orelse);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "Try field \"orelse\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -4412,11 +4477,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"orelse\" missing from Try");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "finalbody")) {
+                if (_PyObject_HasAttrId(obj, &PyId_finalbody)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "finalbody");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_finalbody);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "Try field \"finalbody\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -4450,9 +4515,9 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 expr_ty test;
                 expr_ty msg;
 
-                if (PyObject_HasAttrString(obj, "test")) {
+                if (_PyObject_HasAttrId(obj, &PyId_test)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "test");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_test);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &test, arena);
                         if (res != 0) goto failed;
@@ -4462,9 +4527,9 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"test\" missing from Assert");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "msg")) {
+                if (_PyObject_HasAttrId(obj, &PyId_msg)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "msg");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_msg);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &msg, arena);
                         if (res != 0) goto failed;
@@ -4484,11 +4549,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         if (isinstance) {
                 asdl_seq* names;
 
-                if (PyObject_HasAttrString(obj, "names")) {
+                if (_PyObject_HasAttrId(obj, &PyId_names)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "names");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_names);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "Import field \"names\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -4522,9 +4587,9 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 asdl_seq* names;
                 int level;
 
-                if (PyObject_HasAttrString(obj, "module")) {
+                if (_PyObject_HasAttrId(obj, &PyId_module)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "module");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_module);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_identifier(tmp, &module, arena);
                         if (res != 0) goto failed;
@@ -4533,11 +4598,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 } else {
                         module = NULL;
                 }
-                if (PyObject_HasAttrString(obj, "names")) {
+                if (_PyObject_HasAttrId(obj, &PyId_names)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "names");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_names);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "ImportFrom field \"names\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -4558,9 +4623,9 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"names\" missing from ImportFrom");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "level")) {
+                if (_PyObject_HasAttrId(obj, &PyId_level)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "level");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_level);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_int(tmp, &level, arena);
                         if (res != 0) goto failed;
@@ -4581,11 +4646,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         if (isinstance) {
                 asdl_seq* names;
 
-                if (PyObject_HasAttrString(obj, "names")) {
+                if (_PyObject_HasAttrId(obj, &PyId_names)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "names");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_names);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "Global field \"names\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -4617,11 +4682,11 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         if (isinstance) {
                 asdl_seq* names;
 
-                if (PyObject_HasAttrString(obj, "names")) {
+                if (_PyObject_HasAttrId(obj, &PyId_names)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "names");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_names);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "Nonlocal field \"names\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -4653,9 +4718,9 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         if (isinstance) {
                 expr_ty value;
 
-                if (PyObject_HasAttrString(obj, "value")) {
+                if (_PyObject_HasAttrId(obj, &PyId_value)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "value");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_value);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &value, arena);
                         if (res != 0) goto failed;
@@ -4719,9 +4784,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 *out = NULL;
                 return 0;
         }
-        if (PyObject_HasAttrString(obj, "lineno")) {
+        if (_PyObject_HasAttrId(obj, &PyId_lineno)) {
                 int res;
-                tmp = PyObject_GetAttrString(obj, "lineno");
+                tmp = _PyObject_GetAttrId(obj, &PyId_lineno);
                 if (tmp == NULL) goto failed;
                 res = obj2ast_int(tmp, &lineno, arena);
                 if (res != 0) goto failed;
@@ -4731,9 +4796,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from expr");
                 return 1;
         }
-        if (PyObject_HasAttrString(obj, "col_offset")) {
+        if (_PyObject_HasAttrId(obj, &PyId_col_offset)) {
                 int res;
-                tmp = PyObject_GetAttrString(obj, "col_offset");
+                tmp = _PyObject_GetAttrId(obj, &PyId_col_offset);
                 if (tmp == NULL) goto failed;
                 res = obj2ast_int(tmp, &col_offset, arena);
                 if (res != 0) goto failed;
@@ -4751,9 +4816,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 boolop_ty op;
                 asdl_seq* values;
 
-                if (PyObject_HasAttrString(obj, "op")) {
+                if (_PyObject_HasAttrId(obj, &PyId_op)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "op");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_op);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_boolop(tmp, &op, arena);
                         if (res != 0) goto failed;
@@ -4763,11 +4828,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"op\" missing from BoolOp");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "values")) {
+                if (_PyObject_HasAttrId(obj, &PyId_values)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "values");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_values);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "BoolOp field \"values\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -4801,9 +4866,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 operator_ty op;
                 expr_ty right;
 
-                if (PyObject_HasAttrString(obj, "left")) {
+                if (_PyObject_HasAttrId(obj, &PyId_left)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "left");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_left);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &left, arena);
                         if (res != 0) goto failed;
@@ -4813,9 +4878,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"left\" missing from BinOp");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "op")) {
+                if (_PyObject_HasAttrId(obj, &PyId_op)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "op");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_op);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_operator(tmp, &op, arena);
                         if (res != 0) goto failed;
@@ -4825,9 +4890,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"op\" missing from BinOp");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "right")) {
+                if (_PyObject_HasAttrId(obj, &PyId_right)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "right");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_right);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &right, arena);
                         if (res != 0) goto failed;
@@ -4849,9 +4914,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 unaryop_ty op;
                 expr_ty operand;
 
-                if (PyObject_HasAttrString(obj, "op")) {
+                if (_PyObject_HasAttrId(obj, &PyId_op)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "op");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_op);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_unaryop(tmp, &op, arena);
                         if (res != 0) goto failed;
@@ -4861,9 +4926,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"op\" missing from UnaryOp");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "operand")) {
+                if (_PyObject_HasAttrId(obj, &PyId_operand)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "operand");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_operand);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &operand, arena);
                         if (res != 0) goto failed;
@@ -4885,9 +4950,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 arguments_ty args;
                 expr_ty body;
 
-                if (PyObject_HasAttrString(obj, "args")) {
+                if (_PyObject_HasAttrId(obj, &PyId_args)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "args");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_args);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_arguments(tmp, &args, arena);
                         if (res != 0) goto failed;
@@ -4897,9 +4962,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"args\" missing from Lambda");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "body")) {
+                if (_PyObject_HasAttrId(obj, &PyId_body)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "body");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_body);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &body, arena);
                         if (res != 0) goto failed;
@@ -4922,9 +4987,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 expr_ty body;
                 expr_ty orelse;
 
-                if (PyObject_HasAttrString(obj, "test")) {
+                if (_PyObject_HasAttrId(obj, &PyId_test)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "test");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_test);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &test, arena);
                         if (res != 0) goto failed;
@@ -4934,9 +4999,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"test\" missing from IfExp");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "body")) {
+                if (_PyObject_HasAttrId(obj, &PyId_body)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "body");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_body);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &body, arena);
                         if (res != 0) goto failed;
@@ -4946,9 +5011,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from IfExp");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "orelse")) {
+                if (_PyObject_HasAttrId(obj, &PyId_orelse)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "orelse");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_orelse);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &orelse, arena);
                         if (res != 0) goto failed;
@@ -4970,11 +5035,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 asdl_seq* keys;
                 asdl_seq* values;
 
-                if (PyObject_HasAttrString(obj, "keys")) {
+                if (_PyObject_HasAttrId(obj, &PyId_keys)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "keys");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_keys);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "Dict field \"keys\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -4995,11 +5060,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"keys\" missing from Dict");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "values")) {
+                if (_PyObject_HasAttrId(obj, &PyId_values)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "values");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_values);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "Dict field \"values\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -5031,11 +5096,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         if (isinstance) {
                 asdl_seq* elts;
 
-                if (PyObject_HasAttrString(obj, "elts")) {
+                if (_PyObject_HasAttrId(obj, &PyId_elts)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "elts");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_elts);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "Set field \"elts\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -5068,9 +5133,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 expr_ty elt;
                 asdl_seq* generators;
 
-                if (PyObject_HasAttrString(obj, "elt")) {
+                if (_PyObject_HasAttrId(obj, &PyId_elt)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "elt");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_elt);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &elt, arena);
                         if (res != 0) goto failed;
@@ -5080,11 +5145,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"elt\" missing from ListComp");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "generators")) {
+                if (_PyObject_HasAttrId(obj, &PyId_generators)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "generators");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_generators);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "ListComp field \"generators\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -5117,9 +5182,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 expr_ty elt;
                 asdl_seq* generators;
 
-                if (PyObject_HasAttrString(obj, "elt")) {
+                if (_PyObject_HasAttrId(obj, &PyId_elt)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "elt");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_elt);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &elt, arena);
                         if (res != 0) goto failed;
@@ -5129,11 +5194,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"elt\" missing from SetComp");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "generators")) {
+                if (_PyObject_HasAttrId(obj, &PyId_generators)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "generators");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_generators);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "SetComp field \"generators\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -5167,9 +5232,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 expr_ty value;
                 asdl_seq* generators;
 
-                if (PyObject_HasAttrString(obj, "key")) {
+                if (_PyObject_HasAttrId(obj, &PyId_key)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "key");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_key);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &key, arena);
                         if (res != 0) goto failed;
@@ -5179,9 +5244,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"key\" missing from DictComp");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "value")) {
+                if (_PyObject_HasAttrId(obj, &PyId_value)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "value");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_value);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &value, arena);
                         if (res != 0) goto failed;
@@ -5191,11 +5256,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from DictComp");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "generators")) {
+                if (_PyObject_HasAttrId(obj, &PyId_generators)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "generators");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_generators);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "DictComp field \"generators\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -5229,9 +5294,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 expr_ty elt;
                 asdl_seq* generators;
 
-                if (PyObject_HasAttrString(obj, "elt")) {
+                if (_PyObject_HasAttrId(obj, &PyId_elt)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "elt");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_elt);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &elt, arena);
                         if (res != 0) goto failed;
@@ -5241,11 +5306,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"elt\" missing from GeneratorExp");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "generators")) {
+                if (_PyObject_HasAttrId(obj, &PyId_generators)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "generators");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_generators);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "GeneratorExp field \"generators\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -5277,9 +5342,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         if (isinstance) {
                 expr_ty value;
 
-                if (PyObject_HasAttrString(obj, "value")) {
+                if (_PyObject_HasAttrId(obj, &PyId_value)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "value");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_value);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &value, arena);
                         if (res != 0) goto failed;
@@ -5301,9 +5366,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 asdl_int_seq* ops;
                 asdl_seq* comparators;
 
-                if (PyObject_HasAttrString(obj, "left")) {
+                if (_PyObject_HasAttrId(obj, &PyId_left)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "left");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_left);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &left, arena);
                         if (res != 0) goto failed;
@@ -5313,11 +5378,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"left\" missing from Compare");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "ops")) {
+                if (_PyObject_HasAttrId(obj, &PyId_ops)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "ops");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_ops);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "Compare field \"ops\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -5338,11 +5403,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"ops\" missing from Compare");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "comparators")) {
+                if (_PyObject_HasAttrId(obj, &PyId_comparators)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "comparators");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_comparators);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "Compare field \"comparators\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -5379,9 +5444,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 expr_ty starargs;
                 expr_ty kwargs;
 
-                if (PyObject_HasAttrString(obj, "func")) {
+                if (_PyObject_HasAttrId(obj, &PyId_func)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "func");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_func);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &func, arena);
                         if (res != 0) goto failed;
@@ -5391,11 +5456,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"func\" missing from Call");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "args")) {
+                if (_PyObject_HasAttrId(obj, &PyId_args)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "args");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_args);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "Call field \"args\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -5416,11 +5481,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"args\" missing from Call");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "keywords")) {
+                if (_PyObject_HasAttrId(obj, &PyId_keywords)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "keywords");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_keywords);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "Call field \"keywords\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -5441,9 +5506,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"keywords\" missing from Call");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "starargs")) {
+                if (_PyObject_HasAttrId(obj, &PyId_starargs)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "starargs");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_starargs);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &starargs, arena);
                         if (res != 0) goto failed;
@@ -5452,9 +5517,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 } else {
                         starargs = NULL;
                 }
-                if (PyObject_HasAttrString(obj, "kwargs")) {
+                if (_PyObject_HasAttrId(obj, &PyId_kwargs)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "kwargs");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_kwargs);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &kwargs, arena);
                         if (res != 0) goto failed;
@@ -5475,9 +5540,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         if (isinstance) {
                 object n;
 
-                if (PyObject_HasAttrString(obj, "n")) {
+                if (_PyObject_HasAttrId(obj, &PyId_n)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "n");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_n);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_object(tmp, &n, arena);
                         if (res != 0) goto failed;
@@ -5498,9 +5563,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         if (isinstance) {
                 string s;
 
-                if (PyObject_HasAttrString(obj, "s")) {
+                if (_PyObject_HasAttrId(obj, &PyId_s)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "s");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_s);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_string(tmp, &s, arena);
                         if (res != 0) goto failed;
@@ -5521,9 +5586,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         if (isinstance) {
                 bytes s;
 
-                if (PyObject_HasAttrString(obj, "s")) {
+                if (_PyObject_HasAttrId(obj, &PyId_s)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "s");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_s);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_bytes(tmp, &s, arena);
                         if (res != 0) goto failed;
@@ -5556,9 +5621,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 identifier attr;
                 expr_context_ty ctx;
 
-                if (PyObject_HasAttrString(obj, "value")) {
+                if (_PyObject_HasAttrId(obj, &PyId_value)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "value");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_value);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &value, arena);
                         if (res != 0) goto failed;
@@ -5568,9 +5633,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Attribute");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "attr")) {
+                if (_PyObject_HasAttrId(obj, &PyId_attr)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "attr");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_attr);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_identifier(tmp, &attr, arena);
                         if (res != 0) goto failed;
@@ -5580,9 +5645,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"attr\" missing from Attribute");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "ctx")) {
+                if (_PyObject_HasAttrId(obj, &PyId_ctx)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "ctx");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_ctx);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr_context(tmp, &ctx, arena);
                         if (res != 0) goto failed;
@@ -5605,9 +5670,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 slice_ty slice;
                 expr_context_ty ctx;
 
-                if (PyObject_HasAttrString(obj, "value")) {
+                if (_PyObject_HasAttrId(obj, &PyId_value)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "value");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_value);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &value, arena);
                         if (res != 0) goto failed;
@@ -5617,9 +5682,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Subscript");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "slice")) {
+                if (_PyObject_HasAttrId(obj, &PyId_slice)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "slice");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_slice);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_slice(tmp, &slice, arena);
                         if (res != 0) goto failed;
@@ -5629,9 +5694,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"slice\" missing from Subscript");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "ctx")) {
+                if (_PyObject_HasAttrId(obj, &PyId_ctx)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "ctx");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_ctx);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr_context(tmp, &ctx, arena);
                         if (res != 0) goto failed;
@@ -5653,9 +5718,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 expr_ty value;
                 expr_context_ty ctx;
 
-                if (PyObject_HasAttrString(obj, "value")) {
+                if (_PyObject_HasAttrId(obj, &PyId_value)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "value");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_value);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &value, arena);
                         if (res != 0) goto failed;
@@ -5665,9 +5730,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Starred");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "ctx")) {
+                if (_PyObject_HasAttrId(obj, &PyId_ctx)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "ctx");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_ctx);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr_context(tmp, &ctx, arena);
                         if (res != 0) goto failed;
@@ -5689,9 +5754,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 identifier id;
                 expr_context_ty ctx;
 
-                if (PyObject_HasAttrString(obj, "id")) {
+                if (_PyObject_HasAttrId(obj, &PyId_id)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "id");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_id);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_identifier(tmp, &id, arena);
                         if (res != 0) goto failed;
@@ -5701,9 +5766,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"id\" missing from Name");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "ctx")) {
+                if (_PyObject_HasAttrId(obj, &PyId_ctx)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "ctx");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_ctx);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr_context(tmp, &ctx, arena);
                         if (res != 0) goto failed;
@@ -5725,11 +5790,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 asdl_seq* elts;
                 expr_context_ty ctx;
 
-                if (PyObject_HasAttrString(obj, "elts")) {
+                if (_PyObject_HasAttrId(obj, &PyId_elts)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "elts");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_elts);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "List field \"elts\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -5750,9 +5815,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"elts\" missing from List");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "ctx")) {
+                if (_PyObject_HasAttrId(obj, &PyId_ctx)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "ctx");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_ctx);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr_context(tmp, &ctx, arena);
                         if (res != 0) goto failed;
@@ -5774,11 +5839,11 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 asdl_seq* elts;
                 expr_context_ty ctx;
 
-                if (PyObject_HasAttrString(obj, "elts")) {
+                if (_PyObject_HasAttrId(obj, &PyId_elts)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "elts");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_elts);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "Tuple field \"elts\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -5799,9 +5864,9 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"elts\" missing from Tuple");
                         return 1;
                 }
-                if (PyObject_HasAttrString(obj, "ctx")) {
+                if (_PyObject_HasAttrId(obj, &PyId_ctx)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "ctx");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_ctx);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr_context(tmp, &ctx, arena);
                         if (res != 0) goto failed;
@@ -5900,9 +5965,9 @@ obj2ast_slice(PyObject* obj, slice_ty* out, PyArena* arena)
                 expr_ty upper;
                 expr_ty step;
 
-                if (PyObject_HasAttrString(obj, "lower")) {
+                if (_PyObject_HasAttrId(obj, &PyId_lower)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "lower");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_lower);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &lower, arena);
                         if (res != 0) goto failed;
@@ -5911,9 +5976,9 @@ obj2ast_slice(PyObject* obj, slice_ty* out, PyArena* arena)
                 } else {
                         lower = NULL;
                 }
-                if (PyObject_HasAttrString(obj, "upper")) {
+                if (_PyObject_HasAttrId(obj, &PyId_upper)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "upper");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_upper);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &upper, arena);
                         if (res != 0) goto failed;
@@ -5922,9 +5987,9 @@ obj2ast_slice(PyObject* obj, slice_ty* out, PyArena* arena)
                 } else {
                         upper = NULL;
                 }
-                if (PyObject_HasAttrString(obj, "step")) {
+                if (_PyObject_HasAttrId(obj, &PyId_step)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "step");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_step);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &step, arena);
                         if (res != 0) goto failed;
@@ -5944,11 +6009,11 @@ obj2ast_slice(PyObject* obj, slice_ty* out, PyArena* arena)
         if (isinstance) {
                 asdl_seq* dims;
 
-                if (PyObject_HasAttrString(obj, "dims")) {
+                if (_PyObject_HasAttrId(obj, &PyId_dims)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "dims");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_dims);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "ExtSlice field \"dims\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -5980,9 +6045,9 @@ obj2ast_slice(PyObject* obj, slice_ty* out, PyArena* arena)
         if (isinstance) {
                 expr_ty value;
 
-                if (PyObject_HasAttrString(obj, "value")) {
+                if (_PyObject_HasAttrId(obj, &PyId_value)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "value");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_value);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &value, arena);
                         if (res != 0) goto failed;
@@ -6275,9 +6340,9 @@ obj2ast_comprehension(PyObject* obj, comprehension_ty* out, PyArena* arena)
         expr_ty iter;
         asdl_seq* ifs;
 
-        if (PyObject_HasAttrString(obj, "target")) {
+        if (_PyObject_HasAttrId(obj, &PyId_target)) {
                 int res;
-                tmp = PyObject_GetAttrString(obj, "target");
+                tmp = _PyObject_GetAttrId(obj, &PyId_target);
                 if (tmp == NULL) goto failed;
                 res = obj2ast_expr(tmp, &target, arena);
                 if (res != 0) goto failed;
@@ -6287,9 +6352,9 @@ obj2ast_comprehension(PyObject* obj, comprehension_ty* out, PyArena* arena)
                 PyErr_SetString(PyExc_TypeError, "required field \"target\" missing from comprehension");
                 return 1;
         }
-        if (PyObject_HasAttrString(obj, "iter")) {
+        if (_PyObject_HasAttrId(obj, &PyId_iter)) {
                 int res;
-                tmp = PyObject_GetAttrString(obj, "iter");
+                tmp = _PyObject_GetAttrId(obj, &PyId_iter);
                 if (tmp == NULL) goto failed;
                 res = obj2ast_expr(tmp, &iter, arena);
                 if (res != 0) goto failed;
@@ -6299,11 +6364,11 @@ obj2ast_comprehension(PyObject* obj, comprehension_ty* out, PyArena* arena)
                 PyErr_SetString(PyExc_TypeError, "required field \"iter\" missing from comprehension");
                 return 1;
         }
-        if (PyObject_HasAttrString(obj, "ifs")) {
+        if (_PyObject_HasAttrId(obj, &PyId_ifs)) {
                 int res;
                 Py_ssize_t len;
                 Py_ssize_t i;
-                tmp = PyObject_GetAttrString(obj, "ifs");
+                tmp = _PyObject_GetAttrId(obj, &PyId_ifs);
                 if (tmp == NULL) goto failed;
                 if (!PyList_Check(tmp)) {
                         PyErr_Format(PyExc_TypeError, "comprehension field \"ifs\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -6344,9 +6409,9 @@ obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
                 *out = NULL;
                 return 0;
         }
-        if (PyObject_HasAttrString(obj, "lineno")) {
+        if (_PyObject_HasAttrId(obj, &PyId_lineno)) {
                 int res;
-                tmp = PyObject_GetAttrString(obj, "lineno");
+                tmp = _PyObject_GetAttrId(obj, &PyId_lineno);
                 if (tmp == NULL) goto failed;
                 res = obj2ast_int(tmp, &lineno, arena);
                 if (res != 0) goto failed;
@@ -6356,9 +6421,9 @@ obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
                 PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from excepthandler");
                 return 1;
         }
-        if (PyObject_HasAttrString(obj, "col_offset")) {
+        if (_PyObject_HasAttrId(obj, &PyId_col_offset)) {
                 int res;
-                tmp = PyObject_GetAttrString(obj, "col_offset");
+                tmp = _PyObject_GetAttrId(obj, &PyId_col_offset);
                 if (tmp == NULL) goto failed;
                 res = obj2ast_int(tmp, &col_offset, arena);
                 if (res != 0) goto failed;
@@ -6377,9 +6442,9 @@ obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
                 identifier name;
                 asdl_seq* body;
 
-                if (PyObject_HasAttrString(obj, "type")) {
+                if (_PyObject_HasAttrId(obj, &PyId_type)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "type");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_type);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_expr(tmp, &type, arena);
                         if (res != 0) goto failed;
@@ -6388,9 +6453,9 @@ obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
                 } else {
                         type = NULL;
                 }
-                if (PyObject_HasAttrString(obj, "name")) {
+                if (_PyObject_HasAttrId(obj, &PyId_name)) {
                         int res;
-                        tmp = PyObject_GetAttrString(obj, "name");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_name);
                         if (tmp == NULL) goto failed;
                         res = obj2ast_identifier(tmp, &name, arena);
                         if (res != 0) goto failed;
@@ -6399,11 +6464,11 @@ obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
                 } else {
                         name = NULL;
                 }
-                if (PyObject_HasAttrString(obj, "body")) {
+                if (_PyObject_HasAttrId(obj, &PyId_body)) {
                         int res;
                         Py_ssize_t len;
                         Py_ssize_t i;
-                        tmp = PyObject_GetAttrString(obj, "body");
+                        tmp = _PyObject_GetAttrId(obj, &PyId_body);
                         if (tmp == NULL) goto failed;
                         if (!PyList_Check(tmp)) {
                                 PyErr_Format(PyExc_TypeError, "ExceptHandler field \"body\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -6449,11 +6514,11 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
         asdl_seq* defaults;
         asdl_seq* kw_defaults;
 
-        if (PyObject_HasAttrString(obj, "args")) {
+        if (_PyObject_HasAttrId(obj, &PyId_args)) {
                 int res;
                 Py_ssize_t len;
                 Py_ssize_t i;
-                tmp = PyObject_GetAttrString(obj, "args");
+                tmp = _PyObject_GetAttrId(obj, &PyId_args);
                 if (tmp == NULL) goto failed;
                 if (!PyList_Check(tmp)) {
                         PyErr_Format(PyExc_TypeError, "arguments field \"args\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -6474,9 +6539,9 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
                 PyErr_SetString(PyExc_TypeError, "required field \"args\" missing from arguments");
                 return 1;
         }
-        if (PyObject_HasAttrString(obj, "vararg")) {
+        if (_PyObject_HasAttrId(obj, &PyId_vararg)) {
                 int res;
-                tmp = PyObject_GetAttrString(obj, "vararg");
+                tmp = _PyObject_GetAttrId(obj, &PyId_vararg);
                 if (tmp == NULL) goto failed;
                 res = obj2ast_identifier(tmp, &vararg, arena);
                 if (res != 0) goto failed;
@@ -6485,9 +6550,9 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
         } else {
                 vararg = NULL;
         }
-        if (PyObject_HasAttrString(obj, "varargannotation")) {
+        if (_PyObject_HasAttrId(obj, &PyId_varargannotation)) {
                 int res;
-                tmp = PyObject_GetAttrString(obj, "varargannotation");
+                tmp = _PyObject_GetAttrId(obj, &PyId_varargannotation);
                 if (tmp == NULL) goto failed;
                 res = obj2ast_expr(tmp, &varargannotation, arena);
                 if (res != 0) goto failed;
@@ -6496,11 +6561,11 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
         } else {
                 varargannotation = NULL;
         }
-        if (PyObject_HasAttrString(obj, "kwonlyargs")) {
+        if (_PyObject_HasAttrId(obj, &PyId_kwonlyargs)) {
                 int res;
                 Py_ssize_t len;
                 Py_ssize_t i;
-                tmp = PyObject_GetAttrString(obj, "kwonlyargs");
+                tmp = _PyObject_GetAttrId(obj, &PyId_kwonlyargs);
                 if (tmp == NULL) goto failed;
                 if (!PyList_Check(tmp)) {
                         PyErr_Format(PyExc_TypeError, "arguments field \"kwonlyargs\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -6521,9 +6586,9 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
                 PyErr_SetString(PyExc_TypeError, "required field \"kwonlyargs\" missing from arguments");
                 return 1;
         }
-        if (PyObject_HasAttrString(obj, "kwarg")) {
+        if (_PyObject_HasAttrId(obj, &PyId_kwarg)) {
                 int res;
-                tmp = PyObject_GetAttrString(obj, "kwarg");
+                tmp = _PyObject_GetAttrId(obj, &PyId_kwarg);
                 if (tmp == NULL) goto failed;
                 res = obj2ast_identifier(tmp, &kwarg, arena);
                 if (res != 0) goto failed;
@@ -6532,9 +6597,9 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
         } else {
                 kwarg = NULL;
         }
-        if (PyObject_HasAttrString(obj, "kwargannotation")) {
+        if (_PyObject_HasAttrId(obj, &PyId_kwargannotation)) {
                 int res;
-                tmp = PyObject_GetAttrString(obj, "kwargannotation");
+                tmp = _PyObject_GetAttrId(obj, &PyId_kwargannotation);
                 if (tmp == NULL) goto failed;
                 res = obj2ast_expr(tmp, &kwargannotation, arena);
                 if (res != 0) goto failed;
@@ -6543,11 +6608,11 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
         } else {
                 kwargannotation = NULL;
         }
-        if (PyObject_HasAttrString(obj, "defaults")) {
+        if (_PyObject_HasAttrId(obj, &PyId_defaults)) {
                 int res;
                 Py_ssize_t len;
                 Py_ssize_t i;
-                tmp = PyObject_GetAttrString(obj, "defaults");
+                tmp = _PyObject_GetAttrId(obj, &PyId_defaults);
                 if (tmp == NULL) goto failed;
                 if (!PyList_Check(tmp)) {
                         PyErr_Format(PyExc_TypeError, "arguments field \"defaults\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -6568,11 +6633,11 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
                 PyErr_SetString(PyExc_TypeError, "required field \"defaults\" missing from arguments");
                 return 1;
         }
-        if (PyObject_HasAttrString(obj, "kw_defaults")) {
+        if (_PyObject_HasAttrId(obj, &PyId_kw_defaults)) {
                 int res;
                 Py_ssize_t len;
                 Py_ssize_t i;
-                tmp = PyObject_GetAttrString(obj, "kw_defaults");
+                tmp = _PyObject_GetAttrId(obj, &PyId_kw_defaults);
                 if (tmp == NULL) goto failed;
                 if (!PyList_Check(tmp)) {
                         PyErr_Format(PyExc_TypeError, "arguments field \"kw_defaults\" must be a list, not a %.200s", tmp->ob_type->tp_name);
@@ -6608,9 +6673,9 @@ obj2ast_arg(PyObject* obj, arg_ty* out, PyArena* arena)
         identifier arg;
         expr_ty annotation;
 
-        if (PyObject_HasAttrString(obj, "arg")) {
+        if (_PyObject_HasAttrId(obj, &PyId_arg)) {
                 int res;
-                tmp = PyObject_GetAttrString(obj, "arg");
+                tmp = _PyObject_GetAttrId(obj, &PyId_arg);
                 if (tmp == NULL) goto failed;
                 res = obj2ast_identifier(tmp, &arg, arena);
                 if (res != 0) goto failed;
@@ -6620,9 +6685,9 @@ obj2ast_arg(PyObject* obj, arg_ty* out, PyArena* arena)
                 PyErr_SetString(PyExc_TypeError, "required field \"arg\" missing from arg");
                 return 1;
         }
-        if (PyObject_HasAttrString(obj, "annotation")) {
+        if (_PyObject_HasAttrId(obj, &PyId_annotation)) {
                 int res;
-                tmp = PyObject_GetAttrString(obj, "annotation");
+                tmp = _PyObject_GetAttrId(obj, &PyId_annotation);
                 if (tmp == NULL) goto failed;
                 res = obj2ast_expr(tmp, &annotation, arena);
                 if (res != 0) goto failed;
@@ -6645,9 +6710,9 @@ obj2ast_keyword(PyObject* obj, keyword_ty* out, PyArena* arena)
         identifier arg;
         expr_ty value;
 
-        if (PyObject_HasAttrString(obj, "arg")) {
+        if (_PyObject_HasAttrId(obj, &PyId_arg)) {
                 int res;
-                tmp = PyObject_GetAttrString(obj, "arg");
+                tmp = _PyObject_GetAttrId(obj, &PyId_arg);
                 if (tmp == NULL) goto failed;
                 res = obj2ast_identifier(tmp, &arg, arena);
                 if (res != 0) goto failed;
@@ -6657,9 +6722,9 @@ obj2ast_keyword(PyObject* obj, keyword_ty* out, PyArena* arena)
                 PyErr_SetString(PyExc_TypeError, "required field \"arg\" missing from keyword");
                 return 1;
         }
-        if (PyObject_HasAttrString(obj, "value")) {
+        if (_PyObject_HasAttrId(obj, &PyId_value)) {
                 int res;
-                tmp = PyObject_GetAttrString(obj, "value");
+                tmp = _PyObject_GetAttrId(obj, &PyId_value);
                 if (tmp == NULL) goto failed;
                 res = obj2ast_expr(tmp, &value, arena);
                 if (res != 0) goto failed;
@@ -6683,9 +6748,9 @@ obj2ast_alias(PyObject* obj, alias_ty* out, PyArena* arena)
         identifier name;
         identifier asname;
 
-        if (PyObject_HasAttrString(obj, "name")) {
+        if (_PyObject_HasAttrId(obj, &PyId_name)) {
                 int res;
-                tmp = PyObject_GetAttrString(obj, "name");
+                tmp = _PyObject_GetAttrId(obj, &PyId_name);
                 if (tmp == NULL) goto failed;
                 res = obj2ast_identifier(tmp, &name, arena);
                 if (res != 0) goto failed;
@@ -6695,9 +6760,9 @@ obj2ast_alias(PyObject* obj, alias_ty* out, PyArena* arena)
                 PyErr_SetString(PyExc_TypeError, "required field \"name\" missing from alias");
                 return 1;
         }
-        if (PyObject_HasAttrString(obj, "asname")) {
+        if (_PyObject_HasAttrId(obj, &PyId_asname)) {
                 int res;
-                tmp = PyObject_GetAttrString(obj, "asname");
+                tmp = _PyObject_GetAttrId(obj, &PyId_asname);
                 if (tmp == NULL) goto failed;
                 res = obj2ast_identifier(tmp, &asname, arena);
                 if (res != 0) goto failed;
@@ -6720,9 +6785,9 @@ obj2ast_withitem(PyObject* obj, withitem_ty* out, PyArena* arena)
         expr_ty context_expr;
         expr_ty optional_vars;
 
-        if (PyObject_HasAttrString(obj, "context_expr")) {
+        if (_PyObject_HasAttrId(obj, &PyId_context_expr)) {
                 int res;
-                tmp = PyObject_GetAttrString(obj, "context_expr");
+                tmp = _PyObject_GetAttrId(obj, &PyId_context_expr);
                 if (tmp == NULL) goto failed;
                 res = obj2ast_expr(tmp, &context_expr, arena);
                 if (res != 0) goto failed;
@@ -6732,9 +6797,9 @@ obj2ast_withitem(PyObject* obj, withitem_ty* out, PyArena* arena)
                 PyErr_SetString(PyExc_TypeError, "required field \"context_expr\" missing from withitem");
                 return 1;
         }
-        if (PyObject_HasAttrString(obj, "optional_vars")) {
+        if (_PyObject_HasAttrId(obj, &PyId_optional_vars)) {
                 int res;
-                tmp = PyObject_GetAttrString(obj, "optional_vars");
+                tmp = _PyObject_GetAttrId(obj, &PyId_optional_vars);
                 if (tmp == NULL) goto failed;
                 res = obj2ast_expr(tmp, &optional_vars, arena);
                 if (res != 0) goto failed;

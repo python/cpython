@@ -3241,10 +3241,13 @@ PyInit_parser(void)
     copyreg = PyImport_ImportModuleNoBlock("copyreg");
     if (copyreg != NULL) {
         PyObject *func, *pickler;
+        _Py_identifier(pickle);
+        _Py_identifier(sequence2st);
+        _Py_identifier(_pickler);
 
-        func = PyObject_GetAttrString(copyreg, "pickle");
-        pickle_constructor = PyObject_GetAttrString(module, "sequence2st");
-        pickler = PyObject_GetAttrString(module, "_pickler");
+        func = _PyObject_GetAttrId(copyreg, &PyId_pickle);
+        pickle_constructor = _PyObject_GetAttrId(module, &PyId_sequence2st);
+        pickler = _PyObject_GetAttrId(module, &PyId__pickler);
         Py_XINCREF(pickle_constructor);
         if ((func != NULL) && (pickle_constructor != NULL)
             && (pickler != NULL)) {

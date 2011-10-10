@@ -157,11 +157,12 @@ static PyObject *
 weakref_repr(PyWeakReference *self)
 {
     PyObject *name, *repr;
+    _Py_identifier(__name__);
 
     if (PyWeakref_GET_OBJECT(self) == Py_None)
         return PyUnicode_FromFormat("<weakref at %p; dead>", self);
 
-    name = PyObject_GetAttrString(PyWeakref_GET_OBJECT(self), "__name__");
+    name = _PyObject_GetAttrId(PyWeakref_GET_OBJECT(self), &PyId___name__);
     if (name == NULL || !PyUnicode_Check(name)) {
         if (name == NULL)
             PyErr_Clear();

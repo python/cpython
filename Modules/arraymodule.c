@@ -2003,14 +2003,16 @@ array_reduce_ex(arrayobject *array, PyObject *value)
     int mformat_code;
     static PyObject *array_reconstructor = NULL;
     long protocol;
+    _Py_identifier(_array_reconstructor);
+    _Py_identifier(__dict__);
 
     if (array_reconstructor == NULL) {
         PyObject *array_module = PyImport_ImportModule("array");
         if (array_module == NULL)
             return NULL;
-        array_reconstructor = PyObject_GetAttrString(
+        array_reconstructor = _PyObject_GetAttrId(
             array_module,
-            "_array_reconstructor");
+            &PyId__array_reconstructor);
         Py_DECREF(array_module);
         if (array_reconstructor == NULL)
             return NULL;
@@ -2025,7 +2027,7 @@ array_reduce_ex(arrayobject *array, PyObject *value)
     if (protocol == -1 && PyErr_Occurred())
         return NULL;
 
-    dict = PyObject_GetAttrString((PyObject *)array, "__dict__");
+    dict = _PyObject_GetAttrId((PyObject *)array, &PyId___dict__);
     if (dict == NULL) {
         if (!PyErr_ExceptionMatches(PyExc_AttributeError))
             return NULL;
