@@ -106,16 +106,12 @@ class SocketCANTest(unittest.TestCase):
 
     def setUp(self):
         self.s = socket.socket(socket.PF_CAN, socket.SOCK_RAW, socket.CAN_RAW)
+        self.addCleanup(self.s.close)
         try:
             self.s.bind((self.interface,))
         except socket.error:
             self.skipTest('network interface `%s` does not exist' %
                            self.interface)
-            self.s.close()
-
-    def tearDown(self):
-        self.s.close()
-        self.s = None
 
 class ThreadableTest:
     """Threadable Test class
@@ -174,6 +170,7 @@ class ThreadableTest:
         self.client_ready = threading.Event()
         self.done = threading.Event()
         self.queue = queue.Queue(1)
+        self.server_crashed = False
 
         # Do some munging to start the client test.
         methodname = self.id()
@@ -183,8 +180,12 @@ class ThreadableTest:
         self.client_thread = thread.start_new_thread(
             self.clientRun, (test_method,))
 
-        self.__setUp()
-        if not self.server_ready.is_set():
+        try:
+            self.__setUp()
+        except:
+            self.server_crashed = True
+            raise
+        finally:
             self.server_ready.set()
         self.client_ready.wait()
 
@@ -200,6 +201,9 @@ class ThreadableTest:
         self.server_ready.wait()
         self.clientSetUp()
         self.client_ready.set()
+        if self.server_crashed:
+            self.clientTearDown()
+            return
         if not hasattr(test_func, '__call__'):
             raise TypeError("test_func must be a callable function")
         try:
@@ -258,9 +262,9 @@ class ThreadedCANSocketTest(SocketCANTest, ThreadableTest):
         try:
             self.cli.bind((self.interface,))
         except socket.error:
-            self.skipTest('network interface `%s` does not exist' %
-                           self.interface)
-            self.cli.close()
+            # skipTest should not be called here, and will be called in the
+            # server instead
+            pass
 
     def clientTearDown(self):
         self.cli.close()
