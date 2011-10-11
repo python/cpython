@@ -24,7 +24,7 @@ __all__ = [
 # XXX _CONFIG_DIR will be set by the Makefile later
 _CONFIG_DIR = os.path.normpath(os.path.dirname(__file__))
 _CONFIG_FILE = os.path.join(_CONFIG_DIR, 'sysconfig.cfg')
-_SCHEMES = RawConfigParser()
+_SCHEMES = RawConfigParser(dict_type=dict)   # Faster than OrderedDict
 _SCHEMES.read(_CONFIG_FILE)
 _VAR_REPL = re.compile(r'\{([^{]*?)\}')
 
