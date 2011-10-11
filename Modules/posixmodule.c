@@ -2529,10 +2529,9 @@ posix_listdir(PyObject *self, PyObject *args)
             po_wchars = L".";
             len = 1;
         } else {
-            po_wchars = PyUnicode_AsUnicode(po);
+            po_wchars = PyUnicode_AsUnicodeAndSize(po, &len);
             if (po_wchars == NULL)
                 return NULL;
-            len = PyUnicode_GET_SIZE(po);
         }
         /* Overallocate for \\*.*\0 */
         wnamebuf = malloc((len + 5) * sizeof(wchar_t));
