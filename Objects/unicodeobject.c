@@ -177,12 +177,21 @@ extern "C" {
    buffer where the result characters are written to. */
 #define _PyUnicode_CONVERT_BYTES(from_type, to_type, begin, end, to) \
     do {                                                \
-        const from_type *iter_; to_type *to_;           \
-        for (iter_ = (begin), to_ = (to_type *)(to);    \
-             iter_ < (end);                             \
-             ++iter_, ++to_) {                          \
-            *to_ = (to_type)*iter_;                     \
+        to_type *_to = (to_type *) to;                  \
+        const from_type *_iter = (begin);               \
+        const from_type *_end = (end);                  \
+        Py_ssize_t n = (_end) - (_iter);                \
+        const from_type *_unrolled_end =                \
+            _iter + (n & ~ (Py_ssize_t) 3);             \
+        while (_iter < (_unrolled_end)) {               \
+            _to[0] = (to_type) _iter[0];                \
+            _to[1] = (to_type) _iter[1];                \
+            _to[2] = (to_type) _iter[2];                \
+            _to[3] = (to_type) _iter[3];                \
+            _iter += 4; _to += 4;                       \
         }                                               \
+        while (_iter < (_end))                          \
+            *_to++ = (to_type) *_iter++;                \
     } while (0)
 
 /* The Unicode string has been modified: reset the hash */
