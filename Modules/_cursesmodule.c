@@ -2719,7 +2719,7 @@ PyCurses_ConvertToWchar_t(PyObject *obj,
             PyErr_Format(PyExc_TypeError,
                          "expect bytes or str of length 1, or int, "
                          "got a str of length %zi",
-                         PyUnicode_GET_SIZE(obj));
+                         PyUnicode_GET_LENGTH(obj));
             return 0;
         }
         *wch = buffer[0];
