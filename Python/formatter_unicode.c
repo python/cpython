@@ -693,7 +693,7 @@ format_string_internal(PyObject *value, const InternalFormatSpec *format)
     Py_ssize_t rpad;
     Py_ssize_t total;
     Py_ssize_t pos;
-    Py_ssize_t len = PyUnicode_GET_SIZE(value);
+    Py_ssize_t len = PyUnicode_GET_LENGTH(value);
     PyObject *result = NULL;
     int maxchar = 127;
 

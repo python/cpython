@@ -90,18 +90,16 @@ syslog_get_argv(void)
     if (!PyUnicode_Check(scriptobj)) {
         return(NULL);
     }
-    scriptlen = PyUnicode_GET_SIZE(scriptobj);
+    scriptlen = PyUnicode_GET_LENGTH(scriptobj);
     if (scriptlen == 0) {
         return(NULL);
     }
 
-    slash = PyUnicode_FindChar(scriptobj, SEP,
-                               0, PyUnicode_GET_LENGTH(scriptobj), -1);
+    slash = PyUnicode_FindChar(scriptobj, SEP, 0, scriptlen, -1);
     if (slash == -2)
         return NULL;
     if (slash != -1) {
-        return PyUnicode_Substring(scriptobj, slash,
-                                   PyUnicode_GET_LENGTH(scriptobj));
+        return PyUnicode_Substring(scriptobj, slash, scriptlen);
     } else {
         Py_INCREF(scriptobj);
         return(scriptobj);
