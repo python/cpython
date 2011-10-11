@@ -2283,7 +2283,7 @@ case_ok(PyObject *filename, Py_ssize_t prefix_delta, PyObject *name)
     HANDLE h;
     int cmp;
     wchar_t *wname;
-    Py_ssizet wname_len;
+    Py_ssize_t wname_len;
 
     if (Py_GETENV("PYTHONCASEOK") != NULL)
         return 1;
