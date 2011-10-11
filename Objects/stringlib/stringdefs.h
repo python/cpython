@@ -9,6 +9,7 @@
 #define FASTSEARCH fastsearch
 #define STRINGLIB(F) stringlib_##F
 #define STRINGLIB_OBJECT         PyBytesObject
+#define STRINGLIB_SIZEOF_CHAR    1
 #define STRINGLIB_CHAR           char
 #define STRINGLIB_TYPE_NAME      "string"
 #define STRINGLIB_PARSE_CODE     "S"

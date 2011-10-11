@@ -6,6 +6,7 @@
 #define FASTSEARCH               ucs2lib_fastsearch
 #define STRINGLIB(F)             ucs2lib_##F
 #define STRINGLIB_OBJECT         PyUnicodeObject
+#define STRINGLIB_SIZEOF_CHAR    2
 #define STRINGLIB_CHAR           Py_UCS2
 #define STRINGLIB_TYPE_NAME      "unicode"
 #define STRINGLIB_PARSE_CODE     "U"
