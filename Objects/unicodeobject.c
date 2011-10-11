@@ -1757,14 +1757,14 @@ _PyUnicode_FromUCS4(const Py_UCS4 *u, Py_ssize_t size)
     res = PyUnicode_New(size, max_char);
     if (!res)
         return NULL;
-    if (max_char >= 0x10000)
+    if (max_char < 256)
+        _PyUnicode_CONVERT_BYTES(Py_UCS4, Py_UCS1, u, u + size,
+                                 PyUnicode_1BYTE_DATA(res));
+    else if (max_char < 0x10000)
+        _PyUnicode_CONVERT_BYTES(Py_UCS4, Py_UCS2, u, u + size,
+                                 PyUnicode_2BYTE_DATA(res));
+    else
         memcpy(PyUnicode_4BYTE_DATA(res), u, sizeof(Py_UCS4)*size);
-    else {
-        int kind = PyUnicode_KIND(res);
-        void *data = PyUnicode_DATA(res);
-        for (i = 0; i < size; i++)
-            PyUnicode_WRITE(kind, data, i, u[i]);
-    }
     assert(_PyUnicode_CheckConsistency(res, 1));
     return res;
 }
@@ -1978,13 +1978,18 @@ as_ucs4(PyObject *string, Py_UCS4 *target, Py_ssize_t targetsize,
             return NULL;
         }
     }
-    if (kind != PyUnicode_4BYTE_KIND) {
-        Py_ssize_t i;
-        for (i = 0; i < len; i++)
-            target[i] = PyUnicode_READ(kind, data, i);
+    if (kind == PyUnicode_1BYTE_KIND) {
+        Py_UCS1 *start = (Py_UCS1 *) data;
+        _PyUnicode_CONVERT_BYTES(Py_UCS1, Py_UCS4, start, start + len, target);
     }
-    else
+    else if (kind == PyUnicode_2BYTE_KIND) {
+        Py_UCS2 *start = (Py_UCS2 *) data;
+        _PyUnicode_CONVERT_BYTES(Py_UCS2, Py_UCS4, start, start + len, target);
+    }
+    else {
+        assert(kind == PyUnicode_4BYTE_KIND);
         Py_MEMCPY(target, data, len * sizeof(Py_UCS4));
+    }
     if (copy_null)
         target[len] = 0;
     return target;
