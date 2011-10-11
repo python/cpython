@@ -564,7 +564,11 @@ new_buffersize(fileio *self, size_t currentsize
         */
         if (end >= SMALLCHUNK && end >= pos && pos >= 0) {
             /* Add 1 so if the file were to grow we'd notice. */
-            return currentsize + end - pos + 1;
+            Py_off_t bufsize = currentsize + end - pos + 1;
+            if (bufsize < PY_SSIZE_T_MAX)
+                return (size_t)bufsize;
+            else
+                return PY_SSIZE_T_MAX;
         }
     }
 #endif
