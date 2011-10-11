@@ -1717,7 +1717,7 @@ _PyUnicode_FromUCS2(const Py_UCS2 *u, Py_ssize_t size)
 
     assert(size >= 0);
     if (size == 1 && u[0] < 256)
-        return get_latin1_char(u[0]);
+        return get_latin1_char((unsigned char)u[0]);
     for (i = 0; i < size; i++) {
         if (u[i] > max_char) {
             max_char = u[i];
