@@ -239,10 +239,10 @@ Number Protocol
 
 .. c:function:: PyObject* PyNumber_ToBase(PyObject *n, int base)
 
-   Returns the integer *n* converted to *base* as a string with a base
-   marker of ``'0b'``, ``'0o'``, or ``'0x'`` if applicable.  When
-   *base* is not 2, 8, 10, or 16, the format is ``'x#num'`` where x is the
-   base. If *n* is not an int object, it is converted with
+   Returns the integer *n* converted to base *base* as a string.  The *base*
+   argument must be one of 2, 8, 10, or 16.  For base 2, 8, or 16, the
+   returned string is prefixed with a base marker of ``'0b'``, ``'0o'``, or
+   ``'0x'``, respectively.  If *n* is not a Python int, it is converted with
    :c:func:`PyNumber_Index` first.
 
 
