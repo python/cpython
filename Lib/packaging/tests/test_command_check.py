@@ -56,6 +56,15 @@ class CheckTestCase(support.LoggingCatcher,
         cmd = self._run(metadata, strict=True)
         self.assertEqual([], self.get_logs(logging.WARNING))
 
+        # now a test with non-ASCII characters
+        metadata = {'home_page': 'xxx', 'author': '\u00c9ric',
+                    'author_email': 'xxx', 'name': 'xxx',
+                    'version': '1.2',
+                    'summary': 'Something about esszet \u00df',
+                    'description': 'More things about esszet \u00df'}
+        cmd = self._run(metadata)
+        self.assertEqual([], self.get_logs(logging.WARNING))
+
     def test_check_metadata_1_2(self):
         # let's run the command with no metadata at all
         # by default, check is checking the metadata
@@ -95,14 +104,26 @@ class CheckTestCase(support.LoggingCatcher,
 
     @unittest.skipUnless(_HAS_DOCUTILS, "requires docutils")
     def test_check_restructuredtext(self):
-        # let's see if it detects broken rest in long_description
+        # let's see if it detects broken rest in description
         broken_rest = 'title\n===\n\ntest'
         pkg_info, dist = self.create_dist(description=broken_rest)
         cmd = check(dist)
         cmd.check_restructuredtext()
         self.assertEqual(len(self.get_logs(logging.WARNING)), 1)
+        # clear warnings from the previous call
+        self.loghandler.flush()
 
-        pkg_info, dist = self.create_dist(description='title\n=====\n\ntest')
+        # let's see if we have an error with strict=1
+        metadata = {'home_page': 'xxx', 'author': 'xxx',
+                    'author_email': 'xxx',
+                    'name': 'xxx', 'version': '1.2',
+                    'description': broken_rest}
+        self.assertRaises(PackagingSetupError, self._run, metadata,
+                          strict=True, all=True)
+        self.loghandler.flush()
+
+        # and non-broken rest, including a non-ASCII character to test #12114
+        dist = self.create_dist(description='title\n=====\n\ntest \u00df')[1]
         cmd = check(dist)
         cmd.check_restructuredtext()
         self.assertEqual([], self.get_logs(logging.WARNING))
