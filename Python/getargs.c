@@ -982,10 +982,11 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 STORE_SIZE(0);
             }
             else if (PyUnicode_Check(arg)) {
-                *p = PyUnicode_AS_UNICODE(arg);
+                Py_ssize_t len;
+                *p = PyUnicode_AsUnicodeAndSize(arg, &len);
                 if (*p == NULL)
                     RETURN_ERR_OCCURRED;
-                STORE_SIZE(PyUnicode_GET_SIZE(arg));
+                STORE_SIZE(len);
             }
             else
                 return converterr("str or None", arg, msgbuf, bufsize);
@@ -995,10 +996,11 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             if (c == 'Z' && arg == Py_None)
                 *p = NULL;
             else if (PyUnicode_Check(arg)) {
-                *p = PyUnicode_AS_UNICODE(arg);
+                Py_ssize_t len;
+                *p = PyUnicode_AsUnicodeAndSize(arg, &len);
                 if (*p == NULL)
                     RETURN_ERR_OCCURRED;
-                if (Py_UNICODE_strlen(*p) != PyUnicode_GET_SIZE(arg))
+                if (Py_UNICODE_strlen(*p) != len)
                     return converterr(
                         "str without null character or None",
                         arg, msgbuf, bufsize);

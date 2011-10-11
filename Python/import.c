@@ -2282,6 +2282,8 @@ case_ok(PyObject *filename, Py_ssize_t prefix_delta, PyObject *name)
     WIN32_FIND_DATAW data;
     HANDLE h;
     int cmp;
+    wchar_t *wname;
+    Py_ssizet wname_len;
 
     if (Py_GETENV("PYTHONCASEOK") != NULL)
         return 1;
@@ -2294,9 +2296,12 @@ case_ok(PyObject *filename, Py_ssize_t prefix_delta, PyObject *name)
         return 0;
     }
     FindClose(h);
-    cmp = wcsncmp(data.cFileName,
-                  PyUnicode_AS_UNICODE(name),
-                  PyUnicode_GET_SIZE(name));
+
+    wname = PyUnicode_AsUnicodeAndSize(name, &wname_len);
+    if (wname == NULL)
+        return -1;
+
+    cmp = wcsncmp(data.cFileName, wname, wname_len);
     return cmp == 0;
 #elif defined(USE_CASE_OK_BYTES)
     int match;
