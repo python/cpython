@@ -303,6 +303,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13150: The tokenize module doesn't compile large regular expressions
+  at startup anymore.
+
 - Issue #11171: Fix distutils.sysconfig.get_makefile_filename when Python was
   configured with different prefix and exec-prefix.
 
