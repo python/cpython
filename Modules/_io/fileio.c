@@ -552,12 +552,12 @@ fileio_readinto(fileio *self, PyObject *args)
 static size_t
 new_buffersize(fileio *self, size_t currentsize
 #ifdef HAVE_FSTAT
-               , off_t pos, off_t end
+               , Py_off_t pos, Py_off_t end
 #endif
                )
 {
 #ifdef HAVE_FSTAT
-    if (end != (off_t)-1) {
+    if (end != (Py_off_t)-1) {
         /* Files claiming a size smaller than SMALLCHUNK may
            actually be streaming pseudo-files. In this case, we
            apply the more aggressive algorithm below.
@@ -584,7 +584,7 @@ fileio_readall(fileio *self)
 {
 #ifdef HAVE_FSTAT
     struct stat st;
-    off_t pos, end;
+    Py_off_t pos, end;
 #endif
     PyObject *result;
     Py_ssize_t total = 0;
@@ -609,7 +609,7 @@ fileio_readall(fileio *self)
     if (fstat(self->fd, &st) == 0)
         end = st.st_size;
     else
-        end = (off_t)-1;
+        end = (Py_off_t)-1;
 #endif
     while (1) {
 #ifdef HAVE_FSTAT
