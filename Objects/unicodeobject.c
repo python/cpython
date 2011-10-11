@@ -10043,58 +10043,6 @@ unicode_center(PyObject *self, PyObject *args)
     return pad(self, left, marg - left, fillchar);
 }
 
-#if 0
-
-/* This code should go into some future Unicode collation support
-   module. The basic comparison should compare ordinals on a naive
-   basis (this is what Java does and thus Jython too). */
-
-/* speedy UTF-16 code point order comparison */
-/* gleaned from: */
-/* http://www-4.ibm.com/software/developer/library/utf16.html?dwzone=unicode */
-
-static short utf16Fixup[32] =
-{
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0x2000, -0x800, -0x800, -0x800, -0x800
-};
-
-static int
-unicode_compare(PyUnicodeObject *str1, PyUnicodeObject *str2)
-{
-    Py_ssize_t len1, len2;
-
-    Py_UNICODE *s1 = str1->str;
-    Py_UNICODE *s2 = str2->str;
-
-    len1 = str1->_base._base.length;
-    len2 = str2->_base._base.length;
-
-    while (len1 > 0 && len2 > 0) {
-        Py_UNICODE c1, c2;
-
-        c1 = *s1++;
-        c2 = *s2++;
-
-        if (c1 > (1<<11) * 26)
-            c1 += utf16Fixup[c1>>11];
-        if (c2 > (1<<11) * 26)
-            c2 += utf16Fixup[c2>>11];
-        /* now c1 and c2 are in UTF-32-compatible order */
-
-        if (c1 != c2)
-            return (c1 < c2) ? -1 : 1;
-
-        len1--; len2--;
-    }
-
-    return (len1 < len2) ? -1 : (len1 != len2);
-}
-
-#else
-
 /* This function assumes that str1 and str2 are readied by the caller. */
 
 static int
@@ -10122,8 +10070,6 @@ unicode_compare(PyUnicodeObject *str1, PyUnicodeObject *str2)
 
     return (len1 < len2) ? -1 : (len1 != len2);
 }
-
-#endif
 
 int
 PyUnicode_Compare(PyObject *left, PyObject *right)
