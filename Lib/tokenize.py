@@ -114,19 +114,17 @@ PseudoToken = Whitespace + group(PseudoExtras, Number, Funny, ContStr, Name)
 def _compile(expr):
     return re.compile(expr, re.UNICODE)
 
-tokenprog, pseudoprog, single3prog, double3prog = map(
-    _compile, (Token, PseudoToken, Single3, Double3))
-endprogs = {"'": _compile(Single), '"': _compile(Double),
-            "'''": single3prog, '"""': double3prog,
-            "r'''": single3prog, 'r"""': double3prog,
-            "b'''": single3prog, 'b"""': double3prog,
-            "br'''": single3prog, 'br"""': double3prog,
-            "R'''": single3prog, 'R"""': double3prog,
-            "B'''": single3prog, 'B"""': double3prog,
-            "bR'''": single3prog, 'bR"""': double3prog,
-            "Br'''": single3prog, 'Br"""': double3prog,
-            "BR'''": single3prog, 'BR"""': double3prog,
-            'r': None, 'R': None, 'b': None, 'B': None}
+endpats = {"'": Single, '"': Double,
+           "'''": Single3, '"""': Double3,
+           "r'''": Single3, 'r"""': Double3,
+           "b'''": Single3, 'b"""': Double3,
+           "br'''": Single3, 'br"""': Double3,
+           "R'''": Single3, 'R"""': Double3,
+           "B'''": Single3, 'B"""': Double3,
+           "bR'''": Single3, 'bR"""': Double3,
+           "Br'''": Single3, 'Br"""': Double3,
+           "BR'''": Single3, 'BR"""': Double3,
+           'r': None, 'R': None, 'b': None, 'B': None}
 
 triple_quoted = {}
 for t in ("'''", '"""',
@@ -142,8 +140,6 @@ for t in ("'", '"',
           "br'", 'br"', "Br'", 'Br"',
           "bR'", 'bR"', "BR'", 'BR"' ):
     single_quoted[t] = t
-
-del _compile
 
 tabsize = 8
 
@@ -466,7 +462,7 @@ def _tokenize(readline, encoding):
             continued = 0
 
         while pos < max:
-            pseudomatch = pseudoprog.match(line, pos)
+            pseudomatch = _compile(PseudoToken).match(line, pos)
             if pseudomatch:                                # scan for tokens
                 start, end = pseudomatch.span(1)
                 spos, epos, pos = (lnum, start), (lnum, end), end
@@ -482,7 +478,7 @@ def _tokenize(readline, encoding):
                     assert not token.endswith("\n")
                     yield TokenInfo(COMMENT, token, spos, epos, line)
                 elif token in triple_quoted:
-                    endprog = endprogs[token]
+                    endprog = _compile(endpats[token])
                     endmatch = endprog.match(line, pos)
                     if endmatch:                           # all on one line
                         pos = endmatch.end(0)
@@ -498,8 +494,9 @@ def _tokenize(readline, encoding):
                     token[:3] in single_quoted:
                     if token[-1] == '\n':                  # continued string
                         strstart = (lnum, start)
-                        endprog = (endprogs[initial] or endprogs[token[1]] or
-                                   endprogs[token[2]])
+                        endprog = _compile(endpats[initial] or
+                                           endpats[token[1]] or
+                                           endpats[token[2]])
                         contstr, needcont = line[start:], 1
                         contline = line
                         break
