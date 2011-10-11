@@ -1126,7 +1126,6 @@ scanner_init(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *ctx;
     static char *kwlist[] = {"context", NULL};
     PyScannerObject *s;
-    _Py_identifier(strict);
 
     assert(PyScanner_Check(self));
     s = (PyScannerObject *)self;
