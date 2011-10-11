@@ -115,11 +115,17 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
             unsigned char needle;
             int use_needle = 1;
             needle = p[0] & 0xff;
-            if (needle == 0 && sizeof(STRINGLIB_CHAR) > 1) {
+#if STRINGLIB_SIZEOF_CHAR > 1
+            if (needle == 0) {
                 needle = (p[0] >> 8) & 0xff;
-                if (needle >= 32)
+#if STRINGLIB_SIZEOF_CHAR > 2
+                if (needle == 0)
+                    needle = (p[0] >> 16) & 0xff;
+#endif
+                if (needle >= 32 || needle == 0)
                     use_needle = 0;
             }
+#endif
             if (use_needle)
                 return STRINGLIB(fastsearch_memchr_1char)
                        (s, n, p[0], needle, maxcount, mode);
