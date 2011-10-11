@@ -147,7 +147,9 @@ class Manifest(object):
 
     def _parse_template_line(self, line):
         words = line.split()
-        if len(words) == 1:
+        if len(words) == 1 and words[0] not in (
+              'include', 'exclude', 'global-include', 'global-exclude',
+              'recursive-include', 'recursive-exclude', 'graft', 'prune'):
             # no action given, let's use the default 'include'
             words.insert(0, 'include')
 
