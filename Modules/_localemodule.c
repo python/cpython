@@ -292,7 +292,7 @@ PyLocale_strxfrm(PyObject* self, PyObject* args)
         goto exit;
     }
     n2 = wcsxfrm(buf, s, n1);
-    if (n2 >= n1) {
+    if (n2 >= (size_t)n1) {
         /* more space needed */
         buf = PyMem_Realloc(buf, (n2+1)*sizeof(wchar_t));
         if (!buf) {
