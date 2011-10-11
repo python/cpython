@@ -18,7 +18,7 @@
 #define STRINGLIB_TOUPPER        Py_UNICODE_TOUPPER
 #define STRINGLIB_TOLOWER        Py_UNICODE_TOLOWER
 #define STRINGLIB_FILL           Py_UNICODE_FILL
-#define STRINGLIB_STR            PyUnicode_1BYTE_DATA
+#define STRINGLIB_STR            PyUnicode_4BYTE_DATA
 #define STRINGLIB_LEN            PyUnicode_GET_LENGTH
 #define STRINGLIB_NEW            _PyUnicode_FromUCS4
 #define STRINGLIB_RESIZE         not_supported
