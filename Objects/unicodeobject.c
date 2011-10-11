@@ -13775,13 +13775,16 @@ Py_UNICODE*
 PyUnicode_AsUnicodeCopy(PyObject *object)
 {
     PyUnicodeObject *unicode = (PyUnicodeObject *)object;
-    Py_UNICODE *copy;
+    Py_UNICODE *u, *copy;
     Py_ssize_t size;
 
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
         return NULL;
     }
+    u = PyUnicode_AsUnicode(object);
+    if (u == NULL)
+        return NULL;
     /* Ensure we won't overflow the size. */
     if (PyUnicode_GET_SIZE(unicode) > ((PY_SSIZE_T_MAX / sizeof(Py_UNICODE)) - 1)) {
         PyErr_NoMemory();
@@ -13794,7 +13797,7 @@ PyUnicode_AsUnicodeCopy(PyObject *object)
         PyErr_NoMemory();
         return NULL;
     }
-    memcpy(copy, PyUnicode_AS_UNICODE(unicode), size);
+    memcpy(copy, u, size);
     return copy;
 }
 
