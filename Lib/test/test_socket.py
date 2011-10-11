@@ -1152,8 +1152,8 @@ class BasicCANTest(unittest.TestCase):
     def testTooLongInterfaceName(self):
         # most systems limit IFNAMSIZ to 16, take 1024 to be sure
         with socket.socket(socket.PF_CAN, socket.SOCK_RAW, socket.CAN_RAW) as s:
-            self.assertRaisesRegexp(socket.error, 'interface name too long',
-                                    s.bind, ('x' * 1024,))
+            self.assertRaisesRegex(socket.error, 'interface name too long',
+                                   s.bind, ('x' * 1024,))
 
     @unittest.skipUnless(hasattr(socket, "CAN_RAW_LOOPBACK"),
                          'socket.CAN_RAW_LOOPBACK required for this test.')
