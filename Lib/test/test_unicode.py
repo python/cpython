@@ -171,6 +171,15 @@ class UnicodeTest(string_tests.CommonTest,
 
     def test_find(self):
         string_tests.CommonTest.test_find(self)
+        # test implementation details of the memchr fast path
+        self.checkequal(100, 'a' * 100 + '\u0102', 'find', '\u0102')
+        self.checkequal(-1, 'a' * 100 + '\u0102', 'find', '\u0201')
+        self.checkequal(-1, 'a' * 100 + '\u0102', 'find', '\u0120')
+        self.checkequal(-1, 'a' * 100 + '\u0102', 'find', '\u0220')
+        self.checkequal(100, 'a' * 100 + '\U00100304', 'find', '\U00100304')
+        self.checkequal(-1, 'a' * 100 + '\U00100304', 'find', '\U00100204')
+        self.checkequal(-1, 'a' * 100 + '\U00100304', 'find', '\U00102004')
+        # check mixed argument types
         self.checkequalnofix(0,  'abcdefghiabc', 'find', 'abc')
         self.checkequalnofix(9,  'abcdefghiabc', 'find', 'abc', 1)
         self.checkequalnofix(-1, 'abcdefghiabc', 'find', 'def', 4)
@@ -180,6 +189,14 @@ class UnicodeTest(string_tests.CommonTest,
 
     def test_rfind(self):
         string_tests.CommonTest.test_rfind(self)
+        # test implementation details of the memrchr fast path
+        self.checkequal(0, '\u0102' + 'a' * 100 , 'rfind', '\u0102')
+        self.checkequal(-1, '\u0102' + 'a' * 100 , 'rfind', '\u0201')
+        self.checkequal(-1, '\u0102' + 'a' * 100 , 'rfind', '\u0120')
+        self.checkequal(-1, '\u0102' + 'a' * 100 , 'rfind', '\u0220')
+        self.checkequal(0, '\U00100304' + 'a' * 100, 'rfind', '\U00100304')
+        self.checkequal(-1, '\U00100304' + 'a' * 100, 'rfind', '\U00100204')
+        self.checkequal(-1, '\U00100304' + 'a' * 100, 'rfind', '\U00102004')
         # check mixed argument types
         self.checkequalnofix(9,   'abcdefghiabc', 'rfind', 'abc')
         self.checkequalnofix(12,  'abcdefghiabc', 'rfind', '')
