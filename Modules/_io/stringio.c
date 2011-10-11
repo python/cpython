@@ -343,7 +343,7 @@ stringio_iternext(stringio *self)
     if (line == NULL)
         return NULL;
 
-    if (PyUnicode_GET_SIZE(line) == 0) {
+    if (PyUnicode_GET_LENGTH(line) == 0) {
         /* Reached EOF */
         Py_DECREF(line);
         return NULL;

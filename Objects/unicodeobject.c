@@ -12181,7 +12181,7 @@ unicode_maketrans(PyUnicodeObject *null, PyObject *args)
         if (z != NULL) {
             z_kind = PyUnicode_KIND(z);
             z_data = PyUnicode_DATA(z);
-            for (i = 0; i < PyUnicode_GET_SIZE(z); i++) {
+            for (i = 0; i < PyUnicode_GET_LENGTH(z); i++) {
                 key = PyLong_FromLong(PyUnicode_READ(z_kind, z_data, i));
                 if (!key)
                     goto err;
@@ -12206,7 +12206,7 @@ unicode_maketrans(PyUnicodeObject *null, PyObject *args)
             if (PyUnicode_Check(key)) {
                 /* convert string keys to integer keys */
                 PyObject *newkey;
-                if (PyUnicode_GET_SIZE(key) != 1) {
+                if (PyUnicode_GET_LENGTH(key) != 1) {
                     PyErr_SetString(PyExc_ValueError, "string keys in translate "
                                     "table must be of length 1");
                     goto err;
@@ -13694,7 +13694,7 @@ unicodeiter_len(unicodeiterobject *it)
 {
     Py_ssize_t len = 0;
     if (it->it_seq)
-        len = PyUnicode_GET_SIZE(it->it_seq) - it->it_index;
+        len = PyUnicode_GET_LENGTH(it->it_seq) - it->it_index;
     return PyLong_FromSsize_t(len);
 }
 
