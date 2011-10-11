@@ -1837,7 +1837,7 @@ unicode_adjust_maxchar(PyObject **p_unicode)
             }
         }
     }
-    assert(max_char < PyUnicode_MAX_CHAR_VALUE(unicode));
+    assert(max_char <= PyUnicode_MAX_CHAR_VALUE(unicode));
     copy = PyUnicode_New(len, max_char);
     copy_characters(copy, 0, unicode, 0, len);
     Py_DECREF(unicode);
