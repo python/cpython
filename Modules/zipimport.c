@@ -868,7 +868,7 @@ read_directory(PyObject *archive)
                     PY_MAJOR_VERSION, PY_MINOR_VERSION);
             goto error;
         }
-        for (i = 0; (i < MAXPATHLEN - length - 1) &&
+        for (i = 0; (i < (MAXPATHLEN - (Py_ssize_t)length - 1)) &&
                  (i < PyUnicode_GET_LENGTH(nameobj)); i++)
             path[length + 1 + i] = PyUnicode_READ_CHAR(nameobj, i);
         path[length + 1 + i] = 0;
