@@ -218,7 +218,7 @@ ascii_escape_unicode(PyObject *pystr)
             output_size++;
         else {
             switch(c) {
-            case '\\': case '"': case '\b': case '\f': 
+            case '\\': case '"': case '\b': case '\f':
             case '\n': case '\r': case '\t':
                 output_size += 2; break;
             default:
@@ -434,7 +434,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
                     raise_errmsg("Unpaired high surrogate", pystr, end - 5);
                     goto bail;
                 }
-                if (PyUnicode_READ(kind, buf, next++) != '\\' || 
+                if (PyUnicode_READ(kind, buf, next++) != '\\' ||
                     PyUnicode_READ(kind, buf, next++) != 'u') {
                     raise_errmsg("Unpaired high surrogate", pystr, end - 5);
                     goto bail;
@@ -1027,9 +1027,9 @@ scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_
             break;
         case 'f':
             /* false */
-            if ((idx + 4 < length) && PyUnicode_READ(kind, str, idx + 1) == 'a' && 
-                PyUnicode_READ(kind, str, idx + 2) == 'l' && 
-                PyUnicode_READ(kind, str, idx + 3) == 's' && 
+            if ((idx + 4 < length) && PyUnicode_READ(kind, str, idx + 1) == 'a' &&
+                PyUnicode_READ(kind, str, idx + 2) == 'l' &&
+                PyUnicode_READ(kind, str, idx + 3) == 's' &&
                 PyUnicode_READ(kind, str, idx + 4) == 'e') {
                 Py_INCREF(Py_False);
                 *next_idx_ptr = idx + 5;
@@ -1038,32 +1038,32 @@ scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_
             break;
         case 'N':
             /* NaN */
-            if ((idx + 2 < length) && PyUnicode_READ(kind, str, idx + 1) == 'a' && 
+            if ((idx + 2 < length) && PyUnicode_READ(kind, str, idx + 1) == 'a' &&
                 PyUnicode_READ(kind, str, idx + 2) == 'N') {
                 return _parse_constant(s, "NaN", idx, next_idx_ptr);
             }
             break;
         case 'I':
             /* Infinity */
-            if ((idx + 7 < length) && PyUnicode_READ(kind, str, idx + 1) == 'n' && 
-                PyUnicode_READ(kind, str, idx + 2) == 'f' && 
-                PyUnicode_READ(kind, str, idx + 3) == 'i' && 
+            if ((idx + 7 < length) && PyUnicode_READ(kind, str, idx + 1) == 'n' &&
+                PyUnicode_READ(kind, str, idx + 2) == 'f' &&
+                PyUnicode_READ(kind, str, idx + 3) == 'i' &&
                 PyUnicode_READ(kind, str, idx + 4) == 'n' &&
-                PyUnicode_READ(kind, str, idx + 5) == 'i' && 
-                PyUnicode_READ(kind, str, idx + 6) == 't' && 
+                PyUnicode_READ(kind, str, idx + 5) == 'i' &&
+                PyUnicode_READ(kind, str, idx + 6) == 't' &&
                 PyUnicode_READ(kind, str, idx + 7) == 'y') {
                 return _parse_constant(s, "Infinity", idx, next_idx_ptr);
             }
             break;
         case '-':
             /* -Infinity */
-            if ((idx + 8 < length) && PyUnicode_READ(kind, str, idx + 1) == 'I' && 
+            if ((idx + 8 < length) && PyUnicode_READ(kind, str, idx + 1) == 'I' &&
                 PyUnicode_READ(kind, str, idx + 2) == 'n' &&
                 PyUnicode_READ(kind, str, idx + 3) == 'f' &&
-                PyUnicode_READ(kind, str, idx + 4) == 'i' && 
+                PyUnicode_READ(kind, str, idx + 4) == 'i' &&
                 PyUnicode_READ(kind, str, idx + 5) == 'n' &&
-                PyUnicode_READ(kind, str, idx + 6) == 'i' && 
-                PyUnicode_READ(kind, str, idx + 7) == 't' && 
+                PyUnicode_READ(kind, str, idx + 6) == 'i' &&
+                PyUnicode_READ(kind, str, idx + 7) == 't' &&
                 PyUnicode_READ(kind, str, idx + 8) == 'y') {
                 return _parse_constant(s, "-Infinity", idx, next_idx_ptr);
             }
