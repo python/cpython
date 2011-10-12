@@ -260,6 +260,15 @@ static int unicode_is_singleton(PyObject *unicode);
 #endif
 
 static PyObject *
+unicode_fromascii(const unsigned char *s, Py_ssize_t size);
+static PyObject *
+_PyUnicode_FromUCS1(const unsigned char *s, Py_ssize_t size);
+static PyObject *
+_PyUnicode_FromUCS2(const Py_UCS2 *s, Py_ssize_t size);
+static PyObject *
+_PyUnicode_FromUCS4(const Py_UCS4 *s, Py_ssize_t size);
+
+static PyObject *
 unicode_encode_call_errorhandler(const char *errors,
        PyObject **errorHandler,const char *encoding, const char *reason,
        const Py_UNICODE *unicode, Py_ssize_t size, PyObject **exceptionObject,
@@ -467,6 +476,48 @@ make_bloom_mask(int kind, void* ptr, Py_ssize_t len)
 #define BLOOM_MEMBER(mask, chr, str) \
     (BLOOM(mask, chr) \
      && (PyUnicode_FindChar(str, chr, 0, PyUnicode_GET_LENGTH(str), 1) >= 0))
+
+/* Compilation of templated routines */
+
+#include "stringlib/asciilib.h"
+#include "stringlib/fastsearch.h"
+#include "stringlib/partition.h"
+#include "stringlib/split.h"
+#include "stringlib/count.h"
+#include "stringlib/find.h"
+#include "stringlib/find_max_char.h"
+#include "stringlib/localeutil.h"
+#include "stringlib/undef.h"
+
+#include "stringlib/ucs1lib.h"
+#include "stringlib/fastsearch.h"
+#include "stringlib/partition.h"
+#include "stringlib/split.h"
+#include "stringlib/count.h"
+#include "stringlib/find.h"
+#include "stringlib/find_max_char.h"
+#include "stringlib/localeutil.h"
+#include "stringlib/undef.h"
+
+#include "stringlib/ucs2lib.h"
+#include "stringlib/fastsearch.h"
+#include "stringlib/partition.h"
+#include "stringlib/split.h"
+#include "stringlib/count.h"
+#include "stringlib/find.h"
+#include "stringlib/find_max_char.h"
+#include "stringlib/localeutil.h"
+#include "stringlib/undef.h"
+
+#include "stringlib/ucs4lib.h"
+#include "stringlib/fastsearch.h"
+#include "stringlib/partition.h"
+#include "stringlib/split.h"
+#include "stringlib/count.h"
+#include "stringlib/find.h"
+#include "stringlib/find_max_char.h"
+#include "stringlib/localeutil.h"
+#include "stringlib/undef.h"
 
 /* --- Unicode Object ----------------------------------------------------- */
 
@@ -1689,17 +1740,11 @@ _PyUnicode_FromUCS1(const unsigned char* u, Py_ssize_t size)
 {
     PyObject *res;
     unsigned char max_char = 127;
-    Py_ssize_t i;
 
     assert(size >= 0);
     if (size == 1)
         return get_latin1_char(u[0]);
-    for (i = 0; i < size; i++) {
-        if (u[i] & 0x80) {
-            max_char = 255;
-            break;
-        }
-    }
+    max_char = ucs1lib_find_max_char(u, u + size);
     res = PyUnicode_New(size, max_char);
     if (!res)
         return NULL;
@@ -1713,26 +1758,20 @@ _PyUnicode_FromUCS2(const Py_UCS2 *u, Py_ssize_t size)
 {
     PyObject *res;
     Py_UCS2 max_char = 0;
-    Py_ssize_t i;
 
     assert(size >= 0);
     if (size == 1 && u[0] < 256)
         return get_latin1_char((unsigned char)u[0]);
-    for (i = 0; i < size; i++) {
-        if (u[i] > max_char) {
-            max_char = u[i];
-            if (max_char >= 256)
-                break;
-        }
-    }
+    max_char = ucs2lib_find_max_char(u, u + size);
     res = PyUnicode_New(size, max_char);
     if (!res)
         return NULL;
     if (max_char >= 256)
         memcpy(PyUnicode_2BYTE_DATA(res), u, sizeof(Py_UCS2)*size);
-    else
-        for (i = 0; i < size; i++)
-            PyUnicode_1BYTE_DATA(res)[i] = (Py_UCS1)u[i];
+    else {
+        _PyUnicode_CONVERT_BYTES(
+            Py_UCS2, Py_UCS1, u, u + size, PyUnicode_1BYTE_DATA(res));
+    }
     assert(_PyUnicode_CheckConsistency(res, 1));
     return res;
 }
@@ -1742,18 +1781,11 @@ _PyUnicode_FromUCS4(const Py_UCS4 *u, Py_ssize_t size)
 {
     PyObject *res;
     Py_UCS4 max_char = 0;
-    Py_ssize_t i;
 
     assert(size >= 0);
     if (size == 1 && u[0] < 256)
         return get_latin1_char(u[0]);
-    for (i = 0; i < size; i++) {
-        if (u[i] > max_char) {
-            max_char = u[i];
-            if (max_char >= 0x10000)
-                break;
-        }
-    }
+    max_char = ucs4lib_find_max_char(u, u + size);
     res = PyUnicode_New(size, max_char);
     if (!res)
         return NULL;
@@ -1794,7 +1826,7 @@ unicode_adjust_maxchar(PyObject **p_unicode)
 {
     PyObject *unicode, *copy;
     Py_UCS4 max_char;
-    Py_ssize_t i, len;
+    Py_ssize_t len;
     unsigned int kind;
 
     assert(p_unicode != NULL);
@@ -1807,37 +1839,23 @@ unicode_adjust_maxchar(PyObject **p_unicode)
     kind = PyUnicode_KIND(unicode);
     if (kind == PyUnicode_1BYTE_KIND) {
         const Py_UCS1 *u = PyUnicode_1BYTE_DATA(unicode);
-        for (i = 0; i < len; i++) {
-            if (u[i] & 0x80)
-                return;
-        }
-        max_char = 127;
+        max_char = ucs1lib_find_max_char(u, u + len);
+        if (max_char >= 128)
+            return;
     }
     else if (kind == PyUnicode_2BYTE_KIND) {
         const Py_UCS2 *u = PyUnicode_2BYTE_DATA(unicode);
-        max_char = 0;
-        for (i = 0; i < len; i++) {
-            if (u[i] > max_char) {
-                max_char = u[i];
-                if (max_char >= 256)
-                    return;
-            }
-        }
+        max_char = ucs2lib_find_max_char(u, u + len);
+        if (max_char >= 256)
+            return;
     }
     else {
-        const Py_UCS4 *u;
+        const Py_UCS4 *u = PyUnicode_4BYTE_DATA(unicode);
         assert(kind == PyUnicode_4BYTE_KIND);
-        u = PyUnicode_4BYTE_DATA(unicode);
-        max_char = 0;
-        for (i = 0; i < len; i++) {
-            if (u[i] > max_char) {
-                max_char = u[i];
-                if (max_char >= 0x10000)
-                    return;
-            }
-        }
+        max_char = ucs4lib_find_max_char(u, u + len);
+        if (max_char >= 0x10000)
+            return;
     }
-    assert(max_char < PyUnicode_MAX_CHAR_VALUE(unicode));
     copy = PyUnicode_New(len, max_char);
     copy_characters(copy, 0, unicode, 0, len);
     Py_DECREF(unicode);
@@ -8507,42 +8525,6 @@ PyUnicode_EncodeDecimal(Py_UNICODE *s,
 }
 
 /* --- Helpers ------------------------------------------------------------ */
-
-#include "stringlib/asciilib.h"
-#include "stringlib/fastsearch.h"
-#include "stringlib/partition.h"
-#include "stringlib/split.h"
-#include "stringlib/count.h"
-#include "stringlib/find.h"
-#include "stringlib/localeutil.h"
-#include "stringlib/undef.h"
-
-#include "stringlib/ucs1lib.h"
-#include "stringlib/fastsearch.h"
-#include "stringlib/partition.h"
-#include "stringlib/split.h"
-#include "stringlib/count.h"
-#include "stringlib/find.h"
-#include "stringlib/localeutil.h"
-#include "stringlib/undef.h"
-
-#include "stringlib/ucs2lib.h"
-#include "stringlib/fastsearch.h"
-#include "stringlib/partition.h"
-#include "stringlib/split.h"
-#include "stringlib/count.h"
-#include "stringlib/find.h"
-#include "stringlib/localeutil.h"
-#include "stringlib/undef.h"
-
-#include "stringlib/ucs4lib.h"
-#include "stringlib/fastsearch.h"
-#include "stringlib/partition.h"
-#include "stringlib/split.h"
-#include "stringlib/count.h"
-#include "stringlib/find.h"
-#include "stringlib/localeutil.h"
-#include "stringlib/undef.h"
 
 static Py_ssize_t
 any_find_slice(int direction, PyObject* s1, PyObject* s2,
