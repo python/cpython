@@ -18,9 +18,10 @@ The module defines the following:
 
 .. exception:: error
 
-   The exception raised when an error occurs.  The accompanying value is a pair
-   containing the numeric error code from :c:data:`errno` and the corresponding
-   string, as would be printed by the C function :c:func:`perror`.
+   A deprecated alias of :exc:`OSError`.
+
+   .. versionchanged:: 3.3
+      Following :pep:`3151`, this class was made an alias of :exc:`OSError`.
 
 
 .. function:: epoll(sizehint=-1)
@@ -164,11 +165,6 @@ Edge and Level Trigger Polling (epoll) Objects
 .. method:: epoll.register(fd[, eventmask])
 
    Register a fd descriptor with the epoll object.
-
-   .. note::
-
-     Registering a file descriptor that's already registered raises an
-     IOError -- contrary to :ref:`poll-objects`'s register.
 
 
 .. method:: epoll.modify(fd, eventmask)
