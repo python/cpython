@@ -10257,7 +10257,7 @@ PyObject *
 PyUnicode_Concat(PyObject *left, PyObject *right)
 {
     PyObject *u = NULL, *v = NULL, *w;
-    Py_UCS4 maxchar;
+    Py_UCS4 maxchar, maxchar2;
 
     /* Coerce the two arguments */
     u = PyUnicode_FromObject(left);
@@ -10278,7 +10278,8 @@ PyUnicode_Concat(PyObject *left, PyObject *right)
     }
 
     maxchar = PyUnicode_MAX_CHAR_VALUE(u);
-    maxchar = Py_MAX(maxchar, PyUnicode_MAX_CHAR_VALUE(v));
+    maxchar2 = PyUnicode_MAX_CHAR_VALUE(v);
+    maxchar = Py_MAX(maxchar, maxchar2);
 
     /* Concat the two Unicode strings */
     w = PyUnicode_New(
