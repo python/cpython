@@ -120,20 +120,15 @@ The module :mod:`socket` exports the following constants and functions:
 
 .. exception:: error
 
-   .. index:: module: errno
+   A deprecated alias of :exc:`OSError`.
 
-   A subclass of :exc:`IOError`, this exception is raised for socket-related
-   errors.  It is recommended that you inspect its ``errno`` attribute to
-   discriminate between different kinds of errors.
-
-   .. seealso::
-      The :mod:`errno` module contains symbolic names for the error codes
-      defined by the underlying operating system.
+   .. versionchanged:: 3.3
+      Following :pep:`3151`, this class was made an alias of :exc:`OSError`.
 
 
 .. exception:: herror
 
-   A subclass of :exc:`socket.error`, this exception is raised for
+   A subclass of :exc:`OSError`, this exception is raised for
    address-related errors, i.e. for functions that use *h_errno* in the POSIX
    C API, including :func:`gethostbyname_ex` and :func:`gethostbyaddr`.
    The accompanying value is a pair ``(h_errno, string)`` representing an
@@ -141,10 +136,12 @@ The module :mod:`socket` exports the following constants and functions:
    *string* represents the description of *h_errno*, as returned by the
    :c:func:`hstrerror` C function.
 
+   .. versionchanged:: 3.3
+      This class was made a subclass of :exc:`OSError`.
 
 .. exception:: gaierror
 
-   A subclass of :exc:`socket.error`, this exception is raised for
+   A subclass of :exc:`OSError`, this exception is raised for
    address-related errors by :func:`getaddrinfo` and :func:`getnameinfo`.
    The accompanying value is a pair ``(error, string)`` representing an error
    returned by a library call.  *string* represents the description of
@@ -152,15 +149,19 @@ The module :mod:`socket` exports the following constants and functions:
    numeric *error* value will match one of the :const:`EAI_\*` constants
    defined in this module.
 
+   .. versionchanged:: 3.3
+      This class was made a subclass of :exc:`OSError`.
 
 .. exception:: timeout
 
-   A subclass of :exc:`socket.error`, this exception is raised when a timeout
+   A subclass of :exc:`OSError`, this exception is raised when a timeout
    occurs on a socket which has had timeouts enabled via a prior call to
    :meth:`~socket.settimeout` (or implicitly through
    :func:`~socket.setdefaulttimeout`).  The accompanying value is a string
    whose value is currently always "timed out".
 
+   .. versionchanged:: 3.3
+      This class was made a subclass of :exc:`OSError`.
 
 .. data:: AF_UNIX
           AF_INET
