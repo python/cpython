@@ -784,8 +784,13 @@ Connection objects usually created using :func:`Pipe` -- see also
       to receive and the other end has closed.
 
       If *maxlength* is specified and the message is longer than *maxlength*
-      then :exc:`IOError` is raised and the connection will no longer be
+      then :exc:`OSError` is raised and the connection will no longer be
       readable.
+
+      .. versionchanged:: 3.3
+         This function used to raise a :exc:`IOError`, which is now an
+         alias of :exc:`OSError`.
+
 
    .. method:: recv_bytes_into(buffer[, offset])
 

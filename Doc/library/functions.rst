@@ -783,7 +783,7 @@ are always available.  They are listed here in alphabetical order.
 .. function:: open(file, mode='r', buffering=-1, encoding=None, errors=None, newline=None, closefd=True)
 
    Open *file* and return a corresponding stream.  If the file cannot be opened,
-   an :exc:`IOError` is raised.
+   an :exc:`OSError` is raised.
 
    *file* is either a string or bytes object giving the pathname (absolute or
    relative to the current working directory) of the file to be opened or
@@ -911,6 +911,9 @@ are always available.  They are listed here in alphabetical order.
    See also the file handling modules, such as, :mod:`fileinput`, :mod:`io`
    (where :func:`open` is declared), :mod:`os`, :mod:`os.path`, :mod:`tempfile`,
    and :mod:`shutil`.
+
+   .. versionchanged:: 3.3
+      :exc:`IOError` used to be raised, it is now an alias of :exc:`OSError`.
 
 
 .. XXX works for bytes too, but should it?

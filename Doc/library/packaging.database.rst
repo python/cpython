@@ -213,7 +213,7 @@ information that can be obtained using functions provided in this module::
    # first create the Distribution instance
    try:
        dist = packaging.database.Distribution(path)
-   except IOError:
+   except FileNotFoundError:
        sys.exit('No such distribution')
 
    print('Information about %r' % dist.name)

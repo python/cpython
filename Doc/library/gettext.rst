@@ -185,9 +185,12 @@ class can also install themselves in the built-in namespace as the function
    translation object from the cache; the actual instance data is still shared with
    the cache.
 
-   If no :file:`.mo` file is found, this function raises :exc:`IOError` if
+   If no :file:`.mo` file is found, this function raises :exc:`OSError` if
    *fallback* is false (which is the default), and returns a
    :class:`NullTranslations` instance if *fallback* is true.
+
+   .. versionchanged:: 3.3
+      :exc:`IOError` used to be raised instead of :exc:`OSError`.
 
 
 .. function:: install(domain, localedir=None, codeset=None, names=None)
@@ -342,7 +345,7 @@ The entire set of key/value pairs are placed into a dictionary and set as the
 
 If the :file:`.mo` file's magic number is invalid, or if other problems occur
 while reading the file, instantiating a :class:`GNUTranslations` class can raise
-:exc:`IOError`.
+:exc:`OSError`.
 
 The following methods are overridden from the base class implementation:
 

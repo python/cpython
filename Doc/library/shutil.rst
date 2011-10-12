@@ -51,10 +51,13 @@ Directory and files operations
    *dst* must be the complete target file name; look at :func:`copy` for a copy that
    accepts a target directory path.  If *src* and *dst* are the same files,
    :exc:`Error` is raised.
-   The destination location must be writable; otherwise,  an :exc:`IOError` exception
+   The destination location must be writable; otherwise,  an :exc:`OSError` exception
    will be raised. If *dst* already exists, it will be replaced.   Special files
    such as character or block devices and pipes cannot be copied with this
    function.  *src* and *dst* are path names given as strings.
+
+   .. versionchanged:: 3.3
+      :exc:`IOError` used to be raised instead of :exc:`OSError`.
 
 
 .. function:: copymode(src, dst)

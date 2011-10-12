@@ -40,7 +40,11 @@ The module defines the following exception:
 .. exception:: LoadError
 
    Instances of :class:`FileCookieJar` raise this exception on failure to load
-   cookies from a file.  :exc:`LoadError` is a subclass of :exc:`IOError`.
+   cookies from a file.  :exc:`LoadError` is a subclass of :exc:`OSError`.
+
+   .. versionchanged:: 3.3
+      LoadError was made a subclass of :exc:`OSError` instead of
+      :exc:`IOError`.
 
 
 The following classes are provided:
@@ -257,8 +261,11 @@ contained :class:`Cookie` objects.
    Arguments are as for :meth:`save`.
 
    The named file must be in the format understood by the class, or
-   :exc:`LoadError` will be raised.  Also, :exc:`IOError` may be raised, for
+   :exc:`LoadError` will be raised.  Also, :exc:`OSError` may be raised, for
    example if the file does not exist.
+
+   .. versionchanged:: 3.3
+      :exc:`IOError` used to be raised, it is now an alias of :exc:`OSError`.
 
 
 .. method:: FileCookieJar.revert(filename=None, ignore_discard=False, ignore_expires=False)

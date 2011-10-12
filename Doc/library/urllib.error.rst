@@ -8,20 +8,23 @@
 
 
 The :mod:`urllib.error` module defines the exception classes for exceptions
-raised by :mod:`urllib.request`.  The base exception class is :exc:`URLError`,
-which inherits from :exc:`IOError`.
+raised by :mod:`urllib.request`.  The base exception class is :exc:`URLError`.
 
 The following exceptions are raised by :mod:`urllib.error` as appropriate:
 
 .. exception:: URLError
 
    The handlers raise this exception (or derived exceptions) when they run into
-   a problem.  It is a subclass of :exc:`IOError`.
+   a problem.  It is a subclass of :exc:`OSError`.
 
    .. attribute:: reason
 
       The reason for this error.  It can be a message string or another
-      exception instance such as :exc:`OSError`.
+      exception instance.
+
+   .. versionchanged:: 3.3
+      :exc:`URLError` has been made a subclass of :exc:`OSError` instead
+      of :exc:`IOError`.
 
 
 .. exception:: HTTPError

@@ -199,7 +199,7 @@ normally be executed automatically during interactive sessions from the user's
    histfile = os.path.join(os.path.expanduser("~"), ".pyhist")
    try:
        readline.read_history_file(histfile)
-   except IOError:
+   except FileNotFoundError:
        pass
    import atexit
    atexit.register(readline.write_history_file, histfile)
@@ -224,7 +224,7 @@ support history save/restore. ::
            if hasattr(readline, "read_history_file"):
                try:
                    readline.read_history_file(histfile)
-               except IOError:
+               except FileNotFoundError:
                    pass
                atexit.register(self.save_history, histfile)
 
