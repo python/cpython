@@ -53,9 +53,11 @@ Functions, Constants, and Exceptions
    (currently provided by the OpenSSL library).  This signifies some
    problem in the higher-level encryption and authentication layer that's
    superimposed on the underlying network connection.  This error
-   is a subtype of :exc:`socket.error`, which in turn is a subtype of
-   :exc:`IOError`.  The error code and message of :exc:`SSLError` instances
-   are provided by the OpenSSL library.
+   is a subtype of :exc:`OSError`.  The error code and message of
+   :exc:`SSLError` instances are provided by the OpenSSL library.
+
+   .. versionchanged:: 3.3
+      :exc:`SSLError` used to be a subtype of :exc:`socket.error`.
 
 .. exception:: CertificateError
 
