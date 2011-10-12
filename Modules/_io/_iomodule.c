@@ -91,89 +91,6 @@ PyDoc_STRVAR(module_doc,
 
 
 /*
- * BlockingIOError extends IOError
- */
-
-static int
-blockingioerror_init(PyBlockingIOErrorObject *self, PyObject *args,
-                     PyObject *kwds)
-{
-    PyObject *myerrno = NULL, *strerror = NULL;
-    PyObject *baseargs = NULL;
-    Py_ssize_t written = 0;
-
-    assert(PyTuple_Check(args));
-
-    self->written = 0;
-    if (!PyArg_ParseTuple(args, "OO|n:BlockingIOError",
-                          &myerrno, &strerror, &written))
-        return -1;
-
-    baseargs = PyTuple_Pack(2, myerrno, strerror);
-    if (baseargs == NULL)
-        return -1;
-    /* This will take care of initializing of myerrno and strerror members */
-    if (((PyTypeObject *)PyExc_IOError)->tp_init(
-                (PyObject *)self, baseargs, kwds) == -1) {
-        Py_DECREF(baseargs);
-        return -1;
-    }
-    Py_DECREF(baseargs);
-
-    self->written = written;
-    return 0;
-}
-
-static PyMemberDef blockingioerror_members[] = {
-    {"characters_written", T_PYSSIZET, offsetof(PyBlockingIOErrorObject, written), 0},
-    {NULL}  /* Sentinel */
-};
-
-static PyTypeObject _PyExc_BlockingIOError = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "BlockingIOError", /*tp_name*/
-    sizeof(PyBlockingIOErrorObject), /*tp_basicsize*/
-    0,                          /*tp_itemsize*/
-    0,                          /*tp_dealloc*/
-    0,                          /*tp_print*/
-    0,                          /*tp_getattr*/
-    0,                          /*tp_setattr*/
-    0,                          /*tp_compare */
-    0,                          /*tp_repr*/
-    0,                          /*tp_as_number*/
-    0,                          /*tp_as_sequence*/
-    0,                          /*tp_as_mapping*/
-    0,                          /*tp_hash */
-    0,                          /*tp_call*/
-    0,                          /*tp_str*/
-    0,                          /*tp_getattro*/
-    0,                          /*tp_setattro*/
-    0,                          /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
-    PyDoc_STR("Exception raised when I/O would block "
-              "on a non-blocking I/O stream"), /* tp_doc */
-    0,                          /* tp_traverse */
-    0,                          /* tp_clear */
-    0,                          /* tp_richcompare */
-    0,                          /* tp_weaklistoffset */
-    0,                          /* tp_iter */
-    0,                          /* tp_iternext */
-    0,                          /* tp_methods */
-    blockingioerror_members,    /* tp_members */
-    0,                          /* tp_getset */
-    0,                          /* tp_base */
-    0,                          /* tp_dict */
-    0,                          /* tp_descr_get */
-    0,                          /* tp_descr_set */
-    0,                          /* tp_dictoffset */
-    (initproc)blockingioerror_init, /* tp_init */
-    0,                          /* tp_alloc */
-    0,                          /* tp_new */
-};
-PyObject *PyExc_BlockingIOError = (PyObject *)&_PyExc_BlockingIOError;
-
-
-/*
  * The main open() function
  */
 PyDoc_STRVAR(open_doc,
@@ -694,9 +611,11 @@ PyInit__io(void)
                            state->unsupported_operation) < 0)
         goto fail;
 
-    /* BlockingIOError */
-    _PyExc_BlockingIOError.tp_base = (PyTypeObject *) PyExc_IOError;
-    ADD_TYPE(&_PyExc_BlockingIOError, "BlockingIOError");
+    /* BlockingIOError, for compatibility */
+    Py_INCREF(PyExc_BlockingIOError);
+    if (PyModule_AddObject(m, "BlockingIOError",
+                           (PyObject *) PyExc_BlockingIOError) < 0)
+        goto fail;
 
     /* Concrete base types of the IO ABCs.
        (the ABCs themselves are declared through inheritance in io.py)

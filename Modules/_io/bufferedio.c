@@ -622,14 +622,14 @@ static Py_ssize_t *
 _buffered_check_blocking_error(void)
 {
     PyObject *t, *v, *tb;
-    PyBlockingIOErrorObject *err;
+    PyOSErrorObject *err;
 
     PyErr_Fetch(&t, &v, &tb);
     if (v == NULL || !PyErr_GivenExceptionMatches(v, PyExc_BlockingIOError)) {
         PyErr_Restore(t, v, tb);
         return NULL;
     }
-    err = (PyBlockingIOErrorObject *) v;
+    err = (PyOSErrorObject *) v;
     /* TODO: sanity check (err->written >= 0) */
     PyErr_Restore(t, v, tb);
     return &err->written;

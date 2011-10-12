@@ -2643,12 +2643,6 @@ class MiscIOTest(unittest.TestCase):
 
     def test_blockingioerror(self):
         # Various BlockingIOError issues
-        self.assertRaises(TypeError, self.BlockingIOError)
-        self.assertRaises(TypeError, self.BlockingIOError, 1)
-        self.assertRaises(TypeError, self.BlockingIOError, 1, 2, 3, 4)
-        self.assertRaises(TypeError, self.BlockingIOError, 1, "", None)
-        b = self.BlockingIOError(1, "")
-        self.assertEqual(b.characters_written, 0)
         class C(str):
             pass
         c = C("")

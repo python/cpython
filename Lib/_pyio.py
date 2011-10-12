@@ -23,16 +23,8 @@ DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
 # defined in io.py. We don't use real inheritance though, because we don't
 # want to inherit the C implementations.
 
-
-class BlockingIOError(IOError):
-
-    """Exception raised when I/O would block on a non-blocking I/O stream."""
-
-    def __init__(self, errno, strerror, characters_written=0):
-        super().__init__(errno, strerror)
-        if not isinstance(characters_written, int):
-            raise TypeError("characters_written must be a integer")
-        self.characters_written = characters_written
+# Rebind for compatibility
+BlockingIOError = BlockingIOError
 
 
 def open(file, mode="r", buffering=-1, encoding=None, errors=None,

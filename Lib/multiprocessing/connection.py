@@ -321,7 +321,7 @@ if win32:
                     firstchunk = overlapped.getbuffer()
                     assert lenfirstchunk == len(firstchunk)
                 except IOError as e:
-                    if e.errno == win32.ERROR_BROKEN_PIPE:
+                    if e.winerror == win32.ERROR_BROKEN_PIPE:
                         raise EOFError
                     raise
                 buf.write(firstchunk)
@@ -669,7 +669,7 @@ if sys.platform == 'win32':
             try:
                 win32.ConnectNamedPipe(handle, win32.NULL)
             except WindowsError as e:
-                if e.args[0] != win32.ERROR_PIPE_CONNECTED:
+                if e.winerror != win32.ERROR_PIPE_CONNECTED:
                     raise
             return PipeConnection(handle)
 
@@ -692,8 +692,8 @@ if sys.platform == 'win32':
                     0, win32.NULL, win32.OPEN_EXISTING, 0, win32.NULL
                     )
             except WindowsError as e:
-                if e.args[0] not in (win32.ERROR_SEM_TIMEOUT,
-                                     win32.ERROR_PIPE_BUSY) or _check_timeout(t):
+                if e.winerror not in (win32.ERROR_SEM_TIMEOUT,
+                                      win32.ERROR_PIPE_BUSY) or _check_timeout(t):
                     raise
             else:
                 break

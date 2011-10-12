@@ -10,6 +10,20 @@
 #include "osdefs.h"
 
 
+/* Compatibility aliases */
+PyObject *PyExc_EnvironmentError = NULL;
+PyObject *PyExc_IOError = NULL;
+#ifdef MS_WINDOWS
+PyObject *PyExc_WindowsError = NULL;
+#endif
+#ifdef __VMS
+PyObject *PyExc_VMSError = NULL;
+#endif
+
+/* The dict map from errno codes to OSError subclasses */
+static PyObject *errnomap = NULL;
+
+
 /* NOTE: If the exception class hierarchy changes, don't forget to update
  * Lib/test/exception_hierarchy.txt
  */
@@ -433,11 +447,13 @@ static PyTypeObject _PyExc_ ## EXCNAME = { \
     PyDoc_STR(EXCDOC), (traverseproc)EXCSTORE ## _traverse, \
     (inquiry)EXCSTORE ## _clear, 0, 0, 0, 0, 0, 0, 0, &_ ## EXCBASE, \
     0, 0, 0, offsetof(Py ## EXCSTORE ## Object, dict), \
-    (initproc)EXCSTORE ## _init, 0, BaseException_new,\
+    (initproc)EXCSTORE ## _init, 0, 0, \
 }; \
 PyObject *PyExc_ ## EXCNAME = (PyObject *)&_PyExc_ ## EXCNAME
 
-#define ComplexExtendsException(EXCBASE, EXCNAME, EXCSTORE, EXCDEALLOC, EXCMETHODS, EXCMEMBERS, EXCSTR, EXCDOC) \
+#define ComplexExtendsException(EXCBASE, EXCNAME, EXCSTORE, EXCNEW, \
+                                EXCMETHODS, EXCMEMBERS, EXCGETSET, \
+                                EXCSTR, EXCDOC) \
 static PyTypeObject _PyExc_ ## EXCNAME = { \
     PyVarObject_HEAD_INIT(NULL, 0) \
     # EXCNAME, \
@@ -447,9 +463,9 @@ static PyTypeObject _PyExc_ ## EXCNAME = { \
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, \
     PyDoc_STR(EXCDOC), (traverseproc)EXCSTORE ## _traverse, \
     (inquiry)EXCSTORE ## _clear, 0, 0, 0, 0, EXCMETHODS, \
-    EXCMEMBERS, 0, &_ ## EXCBASE, \
+    EXCMEMBERS, EXCGETSET, &_ ## EXCBASE, \
     0, 0, 0, offsetof(Py ## EXCSTORE ## Object, dict), \
-    (initproc)EXCSTORE ## _init, 0, BaseException_new,\
+    (initproc)EXCSTORE ## _init, 0, EXCNEW,\
 }; \
 PyObject *PyExc_ ## EXCNAME = (PyObject *)&_PyExc_ ## EXCNAME
 
@@ -534,7 +550,7 @@ static PyMemberDef SystemExit_members[] = {
 };
 
 ComplexExtendsException(PyExc_BaseException, SystemExit, SystemExit,
-                        SystemExit_dealloc, 0, SystemExit_members, 0,
+                        0, 0, SystemExit_members, 0, 0,
                         "Request to exit from the interpreter.");
 
 /*
@@ -552,124 +568,233 @@ SimpleExtendsException(PyExc_Exception, ImportError,
 
 
 /*
- *    EnvironmentError extends Exception
+ *    OSError extends Exception
  */
+
+#ifdef MS_WINDOWS
+#include "errmap.h"
+#endif
 
 /* Where a function has a single filename, such as open() or some
  * of the os module functions, PyErr_SetFromErrnoWithFilename() is
  * called, giving a third argument which is the filename.  But, so
  * that old code using in-place unpacking doesn't break, e.g.:
  *
- * except IOError, (errno, strerror):
+ * except OSError, (errno, strerror):
  *
  * we hack args so that it only contains two items.  This also
  * means we need our own __str__() which prints out the filename
  * when it was supplied.
  */
-static int
-EnvironmentError_init(PyEnvironmentErrorObject *self, PyObject *args,
-    PyObject *kwds)
+
+static PyObject *
+OSError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
+    PyOSErrorObject *self = NULL;
+    Py_ssize_t nargs;
+
     PyObject *myerrno = NULL, *strerror = NULL, *filename = NULL;
     PyObject *subslice = NULL;
+#ifdef MS_WINDOWS
+    PyObject *winerror = NULL;
+    long winerrcode = 0;
+#endif
 
-    if (BaseException_init((PyBaseExceptionObject *)self, args, kwds) == -1)
-        return -1;
+    if (!_PyArg_NoKeywords(type->tp_name, kwds))
+        return NULL;
+    Py_INCREF(args);
+    nargs = PyTuple_GET_SIZE(args);
 
-    if (PyTuple_GET_SIZE(args) <= 1 || PyTuple_GET_SIZE(args) > 3) {
-        return 0;
+#ifdef MS_WINDOWS
+    if (nargs >= 2 && nargs <= 4) {
+        if (!PyArg_UnpackTuple(args, "OSError", 2, 4,
+                               &myerrno, &strerror, &filename, &winerror))
+            goto error;
+        if (winerror && PyLong_Check(winerror)) {
+            long errcode;
+            PyObject *newargs;
+            Py_ssize_t i;
+
+            winerrcode = PyLong_AsLong(winerror);
+            if (winerrcode == -1 && PyErr_Occurred())
+                goto error;
+            /* Set errno to the corresponding POSIX errno (overriding
+               first argument).  Windows Socket error codes (>= 10000)
+               have the same value as their POSIX counterparts.
+            */
+            if (winerrcode < 10000)
+                errcode = winerror_to_errno(winerrcode);
+            else
+                errcode = winerrcode;
+            myerrno = PyLong_FromLong(errcode);
+            if (!myerrno)
+                goto error;
+            newargs = PyTuple_New(nargs);
+            if (!newargs)
+                goto error;
+            PyTuple_SET_ITEM(newargs, 0, myerrno);
+            for (i = 1; i < nargs; i++) {
+                PyObject *val = PyTuple_GET_ITEM(args, i);
+                Py_INCREF(val);
+                PyTuple_SET_ITEM(newargs, i, val);
+            }
+            Py_DECREF(args);
+            args = newargs;
+        }
+    }
+#else
+    if (nargs >= 2 && nargs <= 3) {
+        if (!PyArg_UnpackTuple(args, "OSError", 2, 3,
+                               &myerrno, &strerror, &filename))
+            goto error;
+    }
+#endif
+    if (myerrno && PyLong_Check(myerrno) &&
+        errnomap && (PyObject *) type == PyExc_OSError) {
+        PyObject *newtype;
+        newtype = PyDict_GetItem(errnomap, myerrno);
+        if (newtype) {
+            assert(PyType_Check(newtype));
+            type = (PyTypeObject *) newtype;
+        }
+        else if (PyErr_Occurred())
+            goto error;
     }
 
-    if (!PyArg_UnpackTuple(args, "EnvironmentError", 2, 3,
-                           &myerrno, &strerror, &filename)) {
-        return -1;
-    }
-    Py_CLEAR(self->myerrno);       /* replacing */
-    self->myerrno = myerrno;
-    Py_INCREF(self->myerrno);
+    self = (PyOSErrorObject *) type->tp_alloc(type, 0);
+    if (!self)
+        goto error;
 
-    Py_CLEAR(self->strerror);      /* replacing */
-    self->strerror = strerror;
-    Py_INCREF(self->strerror);
+    self->dict = NULL;
+    self->traceback = self->cause = self->context = NULL;
+    self->written = -1;
 
     /* self->filename will remain Py_None otherwise */
-    if (filename != NULL) {
-        Py_CLEAR(self->filename);      /* replacing */
-        self->filename = filename;
-        Py_INCREF(self->filename);
+    if (filename && filename != Py_None) {
+        if ((PyObject *) type == PyExc_BlockingIOError &&
+            PyNumber_Check(filename)) {
+            /* BlockingIOError's 3rd argument can be the number of
+             * characters written.
+             */
+            self->written = PyNumber_AsSsize_t(filename, PyExc_ValueError);
+            if (self->written == -1 && PyErr_Occurred())
+                goto error;
+        }
+        else {
+            Py_INCREF(filename);
+            self->filename = filename;
 
-        subslice = PyTuple_GetSlice(args, 0, 2);
-        if (!subslice)
-            return -1;
+            if (nargs >= 2 && nargs <= 3) {
+                /* filename is removed from the args tuple (for compatibility
+                   purposes, see test_exceptions.py) */
+                subslice = PyTuple_GetSlice(args, 0, 2);
+                if (!subslice)
+                    goto error;
 
-        Py_DECREF(self->args);  /* replacing args */
-        self->args = subslice;
+                Py_DECREF(args);  /* replacing args */
+                args = subslice;
+            }
+        }
     }
+
+    /* Steals the reference to args */
+    self->args = args;
+    args = NULL;
+
+    Py_XINCREF(myerrno);
+    self->myerrno = myerrno;
+
+    Py_XINCREF(strerror);
+    self->strerror = strerror;
+
+#ifdef MS_WINDOWS
+    Py_XINCREF(winerror);
+    self->winerror = winerror;
+#endif
+
+    return (PyObject *) self;
+
+error:
+    Py_XDECREF(args);
+    Py_XDECREF(self);
+    return NULL;
+}
+
+static int
+OSError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
+{
+    /* Everything already done in OSError_new */
     return 0;
 }
 
 static int
-EnvironmentError_clear(PyEnvironmentErrorObject *self)
+OSError_clear(PyOSErrorObject *self)
 {
     Py_CLEAR(self->myerrno);
     Py_CLEAR(self->strerror);
     Py_CLEAR(self->filename);
+#ifdef MS_WINDOWS
+    Py_CLEAR(self->winerror);
+#endif
     return BaseException_clear((PyBaseExceptionObject *)self);
 }
 
 static void
-EnvironmentError_dealloc(PyEnvironmentErrorObject *self)
+OSError_dealloc(PyOSErrorObject *self)
 {
     _PyObject_GC_UNTRACK(self);
-    EnvironmentError_clear(self);
+    OSError_clear(self);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static int
-EnvironmentError_traverse(PyEnvironmentErrorObject *self, visitproc visit,
+OSError_traverse(PyOSErrorObject *self, visitproc visit,
         void *arg)
 {
     Py_VISIT(self->myerrno);
     Py_VISIT(self->strerror);
     Py_VISIT(self->filename);
+#ifdef MS_WINDOWS
+    Py_VISIT(self->winerror);
+#endif
     return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
 }
 
 static PyObject *
-EnvironmentError_str(PyEnvironmentErrorObject *self)
+OSError_str(PyOSErrorObject *self)
 {
+#ifdef MS_WINDOWS
+    /* If available, winerror has the priority over myerrno */
+    if (self->winerror && self->filename)
+        return PyUnicode_FromFormat("[Error %S] %S: %R",
+                                    self->winerror ? self->winerror: Py_None,
+                                    self->strerror ? self->strerror: Py_None,
+                                    self->filename);
+    if (self->winerror && self->strerror)
+        return PyUnicode_FromFormat("[Error %S] %S",
+                                    self->winerror ? self->winerror: Py_None,
+                                    self->strerror ? self->strerror: Py_None);
+#endif
     if (self->filename)
         return PyUnicode_FromFormat("[Errno %S] %S: %R",
                                     self->myerrno ? self->myerrno: Py_None,
                                     self->strerror ? self->strerror: Py_None,
                                     self->filename);
-    else if (self->myerrno && self->strerror)
+    if (self->myerrno && self->strerror)
         return PyUnicode_FromFormat("[Errno %S] %S",
                                     self->myerrno ? self->myerrno: Py_None,
                                     self->strerror ? self->strerror: Py_None);
-    else
-        return BaseException_str((PyBaseExceptionObject *)self);
+    return BaseException_str((PyBaseExceptionObject *)self);
 }
 
-static PyMemberDef EnvironmentError_members[] = {
-    {"errno", T_OBJECT, offsetof(PyEnvironmentErrorObject, myerrno), 0,
-        PyDoc_STR("exception errno")},
-    {"strerror", T_OBJECT, offsetof(PyEnvironmentErrorObject, strerror), 0,
-        PyDoc_STR("exception strerror")},
-    {"filename", T_OBJECT, offsetof(PyEnvironmentErrorObject, filename), 0,
-        PyDoc_STR("exception filename")},
-    {NULL}  /* Sentinel */
-};
-
-
 static PyObject *
-EnvironmentError_reduce(PyEnvironmentErrorObject *self)
+OSError_reduce(PyOSErrorObject *self)
 {
     PyObject *args = self->args;
     PyObject *res = NULL, *tmp;
 
     /* self->args is only the first two real arguments if there was a
-     * file name given to EnvironmentError. */
+     * file name given to OSError. */
     if (PyTuple_GET_SIZE(args) == 2 && self->filename) {
         args = PyTuple_New(3);
         if (!args) return NULL;
@@ -695,144 +820,93 @@ EnvironmentError_reduce(PyEnvironmentErrorObject *self)
     return res;
 }
 
+static PyObject *
+OSError_written_get(PyOSErrorObject *self, void *context)
+{
+    if (self->written == -1) {
+        PyErr_SetString(PyExc_AttributeError, "characters_written");
+        return NULL;
+    }
+    return PyLong_FromSsize_t(self->written);
+}
 
-static PyMethodDef EnvironmentError_methods[] = {
-    {"__reduce__", (PyCFunction)EnvironmentError_reduce, METH_NOARGS},
+static int
+OSError_written_set(PyOSErrorObject *self, PyObject *arg, void *context)
+{
+    Py_ssize_t n;
+    n = PyNumber_AsSsize_t(arg, PyExc_ValueError);
+    if (n == -1 && PyErr_Occurred())
+        return -1;
+    self->written = n;
+    return 0;
+}
+
+static PyMemberDef OSError_members[] = {
+    {"errno", T_OBJECT, offsetof(PyOSErrorObject, myerrno), 0,
+        PyDoc_STR("POSIX exception code")},
+    {"strerror", T_OBJECT, offsetof(PyOSErrorObject, strerror), 0,
+        PyDoc_STR("exception strerror")},
+    {"filename", T_OBJECT, offsetof(PyOSErrorObject, filename), 0,
+        PyDoc_STR("exception filename")},
+#ifdef MS_WINDOWS
+    {"winerror", T_OBJECT, offsetof(PyOSErrorObject, winerror), 0,
+        PyDoc_STR("Win32 exception code")},
+#endif
+    {NULL}  /* Sentinel */
+};
+
+static PyMethodDef OSError_methods[] = {
+    {"__reduce__", (PyCFunction)OSError_reduce, METH_NOARGS},
     {NULL}
 };
 
-ComplexExtendsException(PyExc_Exception, EnvironmentError,
-                        EnvironmentError, EnvironmentError_dealloc,
-                        EnvironmentError_methods, EnvironmentError_members,
-                        EnvironmentError_str,
+static PyGetSetDef OSError_getset[] = {
+    {"characters_written", (getter) OSError_written_get,
+                           (setter) OSError_written_set, NULL},
+    {NULL}
+};
+
+
+ComplexExtendsException(PyExc_Exception, OSError,
+                        OSError, OSError_new,
+                        OSError_methods, OSError_members, OSError_getset,
+                        OSError_str,
                         "Base class for I/O related errors.");
 
 
 /*
- *    IOError extends EnvironmentError
+ *    Various OSError subclasses
  */
-MiddlingExtendsException(PyExc_EnvironmentError, IOError,
-                         EnvironmentError, "I/O operation failed.");
-
-
-/*
- *    OSError extends EnvironmentError
- */
-MiddlingExtendsException(PyExc_EnvironmentError, OSError,
-                         EnvironmentError, "OS system call failed.");
-
-
-/*
- *    WindowsError extends OSError
- */
-#ifdef MS_WINDOWS
-#include "errmap.h"
-
-static int
-WindowsError_clear(PyWindowsErrorObject *self)
-{
-    Py_CLEAR(self->myerrno);
-    Py_CLEAR(self->strerror);
-    Py_CLEAR(self->filename);
-    Py_CLEAR(self->winerror);
-    return BaseException_clear((PyBaseExceptionObject *)self);
-}
-
-static void
-WindowsError_dealloc(PyWindowsErrorObject *self)
-{
-    _PyObject_GC_UNTRACK(self);
-    WindowsError_clear(self);
-    Py_TYPE(self)->tp_free((PyObject *)self);
-}
-
-static int
-WindowsError_traverse(PyWindowsErrorObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(self->myerrno);
-    Py_VISIT(self->strerror);
-    Py_VISIT(self->filename);
-    Py_VISIT(self->winerror);
-    return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
-}
-
-static int
-WindowsError_init(PyWindowsErrorObject *self, PyObject *args, PyObject *kwds)
-{
-    PyObject *o_errcode = NULL;
-    long errcode;
-    long posix_errno;
-
-    if (EnvironmentError_init((PyEnvironmentErrorObject *)self, args, kwds)
-            == -1)
-        return -1;
-
-    if (self->myerrno == NULL)
-        return 0;
-
-    /* Set errno to the POSIX errno, and winerror to the Win32
-       error code. */
-    errcode = PyLong_AsLong(self->myerrno);
-    if (errcode == -1 && PyErr_Occurred())
-        return -1;
-    posix_errno = winerror_to_errno(errcode);
-
-    Py_CLEAR(self->winerror);
-    self->winerror = self->myerrno;
-
-    o_errcode = PyLong_FromLong(posix_errno);
-    if (!o_errcode)
-        return -1;
-
-    self->myerrno = o_errcode;
-
-    return 0;
-}
-
-
-static PyObject *
-WindowsError_str(PyWindowsErrorObject *self)
-{
-    if (self->filename)
-        return PyUnicode_FromFormat("[Error %S] %S: %R",
-                                    self->winerror ? self->winerror: Py_None,
-                                    self->strerror ? self->strerror: Py_None,
-                                    self->filename);
-    else if (self->winerror && self->strerror)
-        return PyUnicode_FromFormat("[Error %S] %S",
-                                    self->winerror ? self->winerror: Py_None,
-                                    self->strerror ? self->strerror: Py_None);
-    else
-        return EnvironmentError_str((PyEnvironmentErrorObject *)self);
-}
-
-static PyMemberDef WindowsError_members[] = {
-    {"errno", T_OBJECT, offsetof(PyWindowsErrorObject, myerrno), 0,
-        PyDoc_STR("POSIX exception code")},
-    {"strerror", T_OBJECT, offsetof(PyWindowsErrorObject, strerror), 0,
-        PyDoc_STR("exception strerror")},
-    {"filename", T_OBJECT, offsetof(PyWindowsErrorObject, filename), 0,
-        PyDoc_STR("exception filename")},
-    {"winerror", T_OBJECT, offsetof(PyWindowsErrorObject, winerror), 0,
-        PyDoc_STR("Win32 exception code")},
-    {NULL}  /* Sentinel */
-};
-
-ComplexExtendsException(PyExc_OSError, WindowsError, WindowsError,
-                        WindowsError_dealloc, 0, WindowsError_members,
-                        WindowsError_str, "MS-Windows OS system call failed.");
-
-#endif /* MS_WINDOWS */
-
-
-/*
- *    VMSError extends OSError (I think)
- */
-#ifdef __VMS
-MiddlingExtendsException(PyExc_OSError, VMSError, EnvironmentError,
-                         "OpenVMS OS system call failed.");
-#endif
-
+MiddlingExtendsException(PyExc_OSError, BlockingIOError, OSError,
+                         "I/O operation would block.");
+MiddlingExtendsException(PyExc_OSError, ConnectionError, OSError,
+                         "Connection error.");
+MiddlingExtendsException(PyExc_OSError, ChildProcessError, OSError,
+                         "Child process error.");
+MiddlingExtendsException(PyExc_ConnectionError, BrokenPipeError, OSError,
+                         "Broken pipe.");
+MiddlingExtendsException(PyExc_ConnectionError, ConnectionAbortedError, OSError,
+                         "Connection aborted.");
+MiddlingExtendsException(PyExc_ConnectionError, ConnectionRefusedError, OSError,
+                         "Connection refused.");
+MiddlingExtendsException(PyExc_ConnectionError, ConnectionResetError, OSError,
+                         "Connection reset.");
+MiddlingExtendsException(PyExc_OSError, FileExistsError, OSError,
+                         "File already exists.");
+MiddlingExtendsException(PyExc_OSError, FileNotFoundError, OSError,
+                         "File not found.");
+MiddlingExtendsException(PyExc_OSError, IsADirectoryError, OSError,
+                         "Operation doesn't work on directories.");
+MiddlingExtendsException(PyExc_OSError, NotADirectoryError, OSError,
+                         "Operation only works on directories.");
+MiddlingExtendsException(PyExc_OSError, InterruptedError, OSError,
+                         "Interrupted by signal.");
+MiddlingExtendsException(PyExc_OSError, PermissionError, OSError,
+                         "Not enough permissions.");
+MiddlingExtendsException(PyExc_OSError, ProcessLookupError, OSError,
+                         "Process not found.");
+MiddlingExtendsException(PyExc_OSError, TimeoutError, OSError,
+                         "Timeout expired.");
 
 /*
  *    EOFError extends Exception
@@ -1046,7 +1120,7 @@ static PyMemberDef SyntaxError_members[] = {
 };
 
 ComplexExtendsException(PyExc_Exception, SyntaxError, SyntaxError,
-                        SyntaxError_dealloc, 0, SyntaxError_members,
+                        0, 0, SyntaxError_members, 0,
                         SyntaxError_str, "Invalid syntax.");
 
 
@@ -1100,7 +1174,7 @@ KeyError_str(PyBaseExceptionObject *self)
 }
 
 ComplexExtendsException(PyExc_LookupError, KeyError, BaseException,
-                        0, 0, 0, KeyError_str, "Mapping key not found.");
+                        0, 0, 0, 0, KeyError_str, "Mapping key not found.");
 
 
 /*
@@ -1977,6 +2051,45 @@ PyObject *PyExc_RecursionErrorInst = NULL;
     if (PyDict_SetItemString(bdict, # TYPE, PyExc_ ## TYPE)) \
         Py_FatalError("Module dictionary insertion problem.");
 
+#define INIT_ALIAS(NAME, TYPE) Py_INCREF(PyExc_ ## TYPE); \
+    PyExc_ ## NAME = PyExc_ ## TYPE; \
+    if (PyDict_SetItemString(bdict, # NAME, PyExc_ ## NAME)) \
+        Py_FatalError("Module dictionary insertion problem.");
+
+#define ADD_ERRNO(TYPE, CODE) { \
+    PyObject *_code = PyLong_FromLong(CODE); \
+    assert(_PyObject_RealIsSubclass(PyExc_ ## TYPE, PyExc_OSError)); \
+    if (!_code || PyDict_SetItem(errnomap, _code, PyExc_ ## TYPE)) \
+        Py_FatalError("errmap insertion problem."); \
+    }
+
+#ifdef MS_WINDOWS
+#include <Winsock2.h>
+#if defined(WSAEALREADY) && !defined(EALREADY)
+#define EALREADY WSAEALREADY
+#endif
+#if defined(WSAECONNABORTED) && !defined(ECONNABORTED)
+#define ECONNABORTED WSAECONNABORTED
+#endif
+#if defined(WSAECONNREFUSED) && !defined(ECONNREFUSED)
+#define ECONNREFUSED WSAECONNREFUSED
+#endif
+#if defined(WSAECONNRESET) && !defined(ECONNRESET)
+#define ECONNRESET WSAECONNRESET
+#endif
+#if defined(WSAEINPROGRESS) && !defined(EINPROGRESS)
+#define EINPROGRESS WSAEINPROGRESS
+#endif
+#if defined(WSAESHUTDOWN) && !defined(ESHUTDOWN)
+#define ESHUTDOWN WSAESHUTDOWN
+#endif
+#if defined(WSAETIMEDOUT) && !defined(ETIMEDOUT)
+#define ETIMEDOUT WSAETIMEDOUT
+#endif
+#if defined(WSAEWOULDBLOCK) && !defined(EWOULDBLOCK)
+#define EWOULDBLOCK WSAEWOULDBLOCK
+#endif
+#endif /* MS_WINDOWS */
 
 void
 _PyExc_Init(void)
@@ -1991,15 +2104,7 @@ _PyExc_Init(void)
     PRE_INIT(SystemExit)
     PRE_INIT(KeyboardInterrupt)
     PRE_INIT(ImportError)
-    PRE_INIT(EnvironmentError)
-    PRE_INIT(IOError)
     PRE_INIT(OSError)
-#ifdef MS_WINDOWS
-    PRE_INIT(WindowsError)
-#endif
-#ifdef __VMS
-    PRE_INIT(VMSError)
-#endif
     PRE_INIT(EOFError)
     PRE_INIT(RuntimeError)
     PRE_INIT(NotImplementedError)
@@ -2039,6 +2144,24 @@ _PyExc_Init(void)
     PRE_INIT(BytesWarning)
     PRE_INIT(ResourceWarning)
 
+    /* OSError subclasses */
+    PRE_INIT(ConnectionError);
+
+    PRE_INIT(BlockingIOError);
+    PRE_INIT(BrokenPipeError);
+    PRE_INIT(ChildProcessError);
+    PRE_INIT(ConnectionAbortedError);
+    PRE_INIT(ConnectionRefusedError);
+    PRE_INIT(ConnectionResetError);
+    PRE_INIT(FileExistsError);
+    PRE_INIT(FileNotFoundError);
+    PRE_INIT(IsADirectoryError);
+    PRE_INIT(NotADirectoryError);
+    PRE_INIT(InterruptedError);
+    PRE_INIT(PermissionError);
+    PRE_INIT(ProcessLookupError);
+    PRE_INIT(TimeoutError);
+
     bltinmod = PyImport_ImportModule("builtins");
     if (bltinmod == NULL)
         Py_FatalError("exceptions bootstrapping error.");
@@ -2054,14 +2177,14 @@ _PyExc_Init(void)
     POST_INIT(SystemExit)
     POST_INIT(KeyboardInterrupt)
     POST_INIT(ImportError)
-    POST_INIT(EnvironmentError)
-    POST_INIT(IOError)
     POST_INIT(OSError)
+    INIT_ALIAS(EnvironmentError, OSError)
+    INIT_ALIAS(IOError, OSError)
 #ifdef MS_WINDOWS
-    POST_INIT(WindowsError)
+    INIT_ALIAS(WindowsError, OSError)
 #endif
 #ifdef __VMS
-    POST_INIT(VMSError)
+    INIT_ALIAS(VMSError, OSError)
 #endif
     POST_INIT(EOFError)
     POST_INIT(RuntimeError)
@@ -2102,6 +2225,47 @@ _PyExc_Init(void)
     POST_INIT(BytesWarning)
     POST_INIT(ResourceWarning)
 
+    errnomap = PyDict_New();
+    if (!errnomap)
+        Py_FatalError("Cannot allocate map from errnos to OSError subclasses");
+
+    /* OSError subclasses */
+    POST_INIT(ConnectionError);
+
+    POST_INIT(BlockingIOError);
+    ADD_ERRNO(BlockingIOError, EAGAIN);
+    ADD_ERRNO(BlockingIOError, EALREADY);
+    ADD_ERRNO(BlockingIOError, EINPROGRESS);
+    ADD_ERRNO(BlockingIOError, EWOULDBLOCK);
+    POST_INIT(BrokenPipeError);
+    ADD_ERRNO(BrokenPipeError, EPIPE);
+    ADD_ERRNO(BrokenPipeError, ESHUTDOWN);
+    POST_INIT(ChildProcessError);
+    ADD_ERRNO(ChildProcessError, ECHILD);
+    POST_INIT(ConnectionAbortedError);
+    ADD_ERRNO(ConnectionAbortedError, ECONNABORTED);
+    POST_INIT(ConnectionRefusedError);
+    ADD_ERRNO(ConnectionRefusedError, ECONNREFUSED);
+    POST_INIT(ConnectionResetError);
+    ADD_ERRNO(ConnectionResetError, ECONNRESET);
+    POST_INIT(FileExistsError);
+    ADD_ERRNO(FileExistsError, EEXIST);
+    POST_INIT(FileNotFoundError);
+    ADD_ERRNO(FileNotFoundError, ENOENT);
+    POST_INIT(IsADirectoryError);
+    ADD_ERRNO(IsADirectoryError, EISDIR);
+    POST_INIT(NotADirectoryError);
+    ADD_ERRNO(NotADirectoryError, ENOTDIR);
+    POST_INIT(InterruptedError);
+    ADD_ERRNO(InterruptedError, EINTR);
+    POST_INIT(PermissionError);
+    ADD_ERRNO(PermissionError, EACCES);
+    ADD_ERRNO(PermissionError, EPERM);
+    POST_INIT(ProcessLookupError);
+    ADD_ERRNO(ProcessLookupError, ESRCH);
+    POST_INIT(TimeoutError);
+    ADD_ERRNO(TimeoutError, ETIMEDOUT);
+
     preallocate_memerrors();
 
     PyExc_RecursionErrorInst = BaseException_new(&_PyExc_RuntimeError, NULL, NULL);
@@ -2135,4 +2299,5 @@ _PyExc_Fini(void)
 {
     Py_CLEAR(PyExc_RecursionErrorInst);
     free_preallocated_memerrors();
+    Py_CLEAR(errnomap);
 }
