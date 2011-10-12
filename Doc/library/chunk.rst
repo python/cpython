@@ -84,8 +84,9 @@ instance will fail with a :exc:`EOFError` exception.
       Close and skip to the end of the chunk.  This does not close the
       underlying file.
 
-   The remaining methods will raise :exc:`IOError` if called after the
-   :meth:`close` method has been called.
+   The remaining methods will raise :exc:`OSError` if called after the
+   :meth:`close` method has been called.  Before Python 3.3, they used to
+   raise :exc:`IOError`, now an alias of :exc:`OSError`.
 
 
    .. method:: isatty()

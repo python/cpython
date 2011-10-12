@@ -1172,7 +1172,7 @@ some point in the future.
    *key_file* and *cert_file* are supported to provide an  SSL key and certificate;
    both are needed to support client authentication.
 
-   :class:`URLopener` objects will raise an :exc:`IOError` exception if the server
+   :class:`URLopener` objects will raise an :exc:`OSError` exception if the server
    returns an error code.
 
     .. method:: open(fullurl, data=None)
