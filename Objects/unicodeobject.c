@@ -530,6 +530,14 @@ Py_LOCAL_INLINE(char *) findchar(void *s, int kind,
 {
     /* like wcschr, but doesn't stop at NULL characters */
     Py_ssize_t i;
+    if (kind == 1) {
+        if (direction == 1)
+            return memchr(s, ch, size);
+#ifdef HAVE_MEMRCHR
+        else
+            return memrchr(s, ch, size);
+#endif
+    }
     if (direction == 1) {
         for(i = 0; i < size; i++)
             if (PyUnicode_READ(kind, s, i) == ch)
