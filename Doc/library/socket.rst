@@ -104,8 +104,9 @@ resolution and/or the host configuration.  For deterministic behavior use a
 numeric address in *host* portion.
 
 All errors raise exceptions.  The normal exceptions for invalid argument types
-and out-of-memory conditions can be raised; errors related to socket or address
-semantics raise :exc:`socket.error` or one of its subclasses.
+and out-of-memory conditions can be raised; starting from Python 3.3, errors
+related to socket or address semantics raise :exc:`OSError` or one of its
+subclasses (they used to raise :exc:`socket.error`).
 
 Non-blocking mode is supported through :meth:`~socket.setblocking`.  A
 generalization of this based on timeouts is supported through
@@ -481,7 +482,7 @@ The module :mod:`socket` exports the following constants and functions:
    Unix manual page :manpage:`inet(3)` for details.
 
    If the IPv4 address string passed to this function is invalid,
-   :exc:`socket.error` will be raised. Note that exactly what is valid depends on
+   :exc:`OSError` will be raised. Note that exactly what is valid depends on
    the underlying C implementation of :c:func:`inet_aton`.
 
    :func:`inet_aton` does not support IPv6, and :func:`inet_pton` should be used
@@ -498,7 +499,7 @@ The module :mod:`socket` exports the following constants and functions:
    argument.
 
    If the byte sequence passed to this function is not exactly 4 bytes in
-   length, :exc:`socket.error` will be raised. :func:`inet_ntoa` does not
+   length, :exc:`OSError` will be raised. :func:`inet_ntoa` does not
    support IPv6, and :func:`inet_ntop` should be used instead for IPv4/v6 dual
    stack support.
 
@@ -512,7 +513,7 @@ The module :mod:`socket` exports the following constants and functions:
 
    Supported values for *address_family* are currently :const:`AF_INET` and
    :const:`AF_INET6`. If the IP address string *ip_string* is invalid,
-   :exc:`socket.error` will be raised. Note that exactly what is valid depends on
+   :exc:`OSError` will be raised. Note that exactly what is valid depends on
    both the value of *address_family* and the underlying implementation of
    :c:func:`inet_pton`.
 
@@ -530,7 +531,7 @@ The module :mod:`socket` exports the following constants and functions:
    Supported values for *address_family* are currently :const:`AF_INET` and
    :const:`AF_INET6`. If the string *packed_ip* is not the correct length for the
    specified address family, :exc:`ValueError` will be raised.  A
-   :exc:`socket.error` is raised for errors from the call to :func:`inet_ntop`.
+   :exc:`OSError` is raised for errors from the call to :func:`inet_ntop`.
 
    Availability: Unix (maybe not all platforms).
 
@@ -596,7 +597,7 @@ The module :mod:`socket` exports the following constants and functions:
 .. function:: sethostname(name)
 
    Set the machine's hostname to *name*.  This will raise a
-   :exc:`socket.error` if you don't have enough rights.
+   :exc:`OSError` if you don't have enough rights.
 
    Availability: Unix.
 
@@ -607,7 +608,7 @@ The module :mod:`socket` exports the following constants and functions:
 
    Return a list of network interface information
    (index int, name string) tuples.
-   :exc:`socket.error` if the system call fails.
+   :exc:`OSError` if the system call fails.
 
    Availability: Unix.
 
@@ -618,7 +619,7 @@ The module :mod:`socket` exports the following constants and functions:
 
    Return a network interface index number corresponding to an
    interface name.
-   :exc:`socket.error` if no interface with the given name exists.
+   :exc:`OSError` if no interface with the given name exists.
 
    Availability: Unix.
 
@@ -629,7 +630,7 @@ The module :mod:`socket` exports the following constants and functions:
 
    Return a network interface name corresponding to a
    interface index number.
-   :exc:`socket.error` if no interface with the given index exists.
+   :exc:`OSError` if no interface with the given index exists.
 
    Availability: Unix.
 
@@ -1182,13 +1183,13 @@ sends traffic to the first one connected successfully. ::
        af, socktype, proto, canonname, sa = res
        try:
            s = socket.socket(af, socktype, proto)
-       except socket.error as msg:
+       except OSError as msg:
            s = None
            continue
        try:
            s.bind(sa)
            s.listen(1)
-       except socket.error as msg:
+       except OSError as msg:
            s.close()
            s = None
            continue
@@ -1217,12 +1218,12 @@ sends traffic to the first one connected successfully. ::
        af, socktype, proto, canonname, sa = res
        try:
            s = socket.socket(af, socktype, proto)
-       except socket.error as msg:
+       except OSError as msg:
            s = None
            continue
        try:
            s.connect(sa)
-       except socket.error as msg:
+       except OSError as msg:
            s.close()
            s = None
            continue
@@ -1294,18 +1295,18 @@ network. This example might require special priviledge::
 
        try:
            s.send(cf)
-       except socket.error:
+       except OSError:
            print('Error sending CAN frame')
 
        try:
            s.send(build_can_frame(0x01, b'\x01\x02\x03'))
-       except socket.error:
+       except OSError:
            print('Error sending CAN frame')
 
 Running an example several times with too small delay between executions, could
 lead to this error::
 
-   socket.error: [Errno 98] Address already in use
+   OSError: [Errno 98] Address already in use
 
 This is because the previous execution has left the socket in a ``TIME_WAIT``
 state, and can't be immediately reused.
