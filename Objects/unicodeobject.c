@@ -12614,18 +12614,22 @@ unicode_subscript(PyUnicodeObject* self, PyObject* item)
                                        start, start + slicelength);
         }
         /* General case */
-        max_char = 0;
         src_kind = PyUnicode_KIND(self);
-        kind_limit = kind_maxchar_limit(src_kind);
         src_data = PyUnicode_DATA(self);
-        for (cur = start, i = 0; i < slicelength; cur += step, i++) {
-            ch = PyUnicode_READ(src_kind, src_data, cur);
-            if (ch > max_char) {
-                max_char = ch;
-                if (max_char >= kind_limit)
-                    break;
+        if (!PyUnicode_IS_ASCII(self)) {
+            kind_limit = kind_maxchar_limit(src_kind);
+            max_char = 0;
+            for (cur = start, i = 0; i < slicelength; cur += step, i++) {
+                ch = PyUnicode_READ(src_kind, src_data, cur);
+                if (ch > max_char) {
+                    max_char = ch;
+                    if (max_char >= kind_limit)
+                        break;
+                }
             }
         }
+        else
+            max_char = 127;
         result = PyUnicode_New(slicelength, max_char);
         if (result == NULL)
             return NULL;
