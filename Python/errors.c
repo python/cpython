@@ -341,7 +341,7 @@ PyObject *
 PyErr_SetFromErrnoWithFilenameObject(PyObject *exc, PyObject *filenameObject)
 {
     PyObject *message;
-    PyObject *v;
+    PyObject *v, *args;
     int i = errno;
 #ifndef MS_WINDOWS
     char *s;
@@ -410,14 +410,18 @@ PyErr_SetFromErrnoWithFilenameObject(PyObject *exc, PyObject *filenameObject)
     }
 
     if (filenameObject != NULL)
-        v = Py_BuildValue("(iOO)", i, message, filenameObject);
+        args = Py_BuildValue("(iOO)", i, message, filenameObject);
     else
-        v = Py_BuildValue("(iO)", i, message);
+        args = Py_BuildValue("(iO)", i, message);
     Py_DECREF(message);
 
-    if (v != NULL) {
-        PyErr_SetObject(exc, v);
-        Py_DECREF(v);
+    if (args != NULL) {
+        v = PyObject_Call(exc, args, NULL);
+        Py_DECREF(args);
+        if (v != NULL) {
+            PyErr_SetObject((PyObject *) Py_TYPE(v), v);
+            Py_DECREF(v);
+        }
     }
 #ifdef MS_WINDOWS
     LocalFree(s_buf);
