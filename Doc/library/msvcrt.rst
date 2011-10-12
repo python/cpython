@@ -20,6 +20,11 @@ api. The normal API deals only with ASCII characters and is of limited use
 for internationalized applications. The wide char API should be used where
 ever possible
 
+.. versionchanged:: 3.3
+   Operations in this module now raise :exc:`OSError` where :exc:`IOError`
+   was raised.
+
+
 .. _msvcrt-files:
 
 File Operations
@@ -29,7 +34,7 @@ File Operations
 .. function:: locking(fd, mode, nbytes)
 
    Lock part of a file based on file descriptor *fd* from the C runtime.  Raises
-   :exc:`IOError` on failure.  The locked region of the file extends from the
+   :exc:`OSError` on failure.  The locked region of the file extends from the
    current file position for *nbytes* bytes, and may continue beyond the end of the
    file.  *mode* must be one of the :const:`LK_\*` constants listed below. Multiple
    regions in a file may be locked at the same time, but may not overlap.  Adjacent
@@ -41,13 +46,13 @@ File Operations
 
    Locks the specified bytes. If the bytes cannot be locked, the program
    immediately tries again after 1 second.  If, after 10 attempts, the bytes cannot
-   be locked, :exc:`IOError` is raised.
+   be locked, :exc:`OSError` is raised.
 
 
 .. data:: LK_NBLCK
           LK_NBRLCK
 
-   Locks the specified bytes. If the bytes cannot be locked, :exc:`IOError` is
+   Locks the specified bytes. If the bytes cannot be locked, :exc:`OSError` is
    raised.
 
 
@@ -73,7 +78,7 @@ File Operations
 
 .. function:: get_osfhandle(fd)
 
-   Return the file handle for the file descriptor *fd*.  Raises :exc:`IOError` if
+   Return the file handle for the file descriptor *fd*.  Raises :exc:`OSError` if
    *fd* is not recognized.
 
 
@@ -144,4 +149,4 @@ Other Functions
 .. function:: heapmin()
 
    Force the :c:func:`malloc` heap to clean itself up and return unused blocks to
-   the operating system.  On failure, this raises :exc:`IOError`.
+   the operating system.  On failure, this raises :exc:`OSError`.

@@ -85,8 +85,11 @@ zipimporter Objects
 
    .. method:: get_data(pathname)
 
-      Return the data associated with *pathname*. Raise :exc:`IOError` if the
+      Return the data associated with *pathname*. Raise :exc:`OSError` if the
       file wasn't found.
+
+      .. versionchanged:: 3.3
+         :exc:`IOError` used to be raised instead of :exc:`OSError`.
 
 
    .. method:: get_filename(fullname)

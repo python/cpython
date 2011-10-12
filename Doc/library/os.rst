@@ -1426,11 +1426,8 @@ Files and Directories
 
          try:
              fp = open("myfile")
-         except IOError as e:
-             if e.errno == errno.EACCESS:
-                 return "some default data"
-             # Not a permission error.
-             raise
+         except PermissionError:
+             return "some default data"
          else:
              with fp:
                  return fp.read()
