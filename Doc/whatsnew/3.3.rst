@@ -109,6 +109,69 @@ XXX Add list of changes introduced by :pep:`393` here:
 XXX mention new and deprecated functions and macros
 
 
+PEP 3151: Reworking the OS and IO exception hierarchy
+=====================================================
+
+:pep:`3151` - Reworking the OS and IO exception hierarchy
+PEP written and implemented by Antoine Pitrou.
+
+New subclasses of :exc:`OSError` exceptions:
+
+ * :exc:`BlockingIOError`
+ * :exc:`ChildProcessError`
+ * :exc:`ConnectionError`
+
+   * :exc:`BrokenPipeError`
+   * :exc:`ConnectionAbortedError`
+   * :exc:`ConnectionRefusedError`
+   * :exc:`ConnectionResetError`
+
+ * :exc:`FileExistsError`
+ * :exc:`FileNotFoundError`
+ * :exc:`InterruptedError`
+ * :exc:`IsADirectoryError`
+ * :exc:`NotADirectoryError`
+ * :exc:`PermissionError`
+ * :exc:`ProcessLookupError`
+ * :exc:`TimeoutError`
+
+The following exceptions have been merged into :exc:`OSError`:
+
+ * :exc:`EnvironmentError`
+ * :exc:`IOError`
+ * :exc:`WindowsError`
+ * :exc:`VMSError`
+ * :exc:`socket.error`
+ * :exc:`select.error`
+ * :exc:`mmap.error`
+
+Thanks to the new exceptions, common usages of the :mod:`errno` can now be
+avoided. For example, the following code written for Python 3.2: ::
+
+    from errno import ENOENT, EACCES, EPERM
+
+    try:
+        with open("document.txt") as f:
+            content = f.read()
+    except IOError as err:
+        if err.errno == ENOENT:
+            print("document.txt file is missing")
+        elif err.errno in (EACCES, EPERM):
+            print("You are not allowed to read document.txt")
+        else:
+            raise
+
+can now be written without the :mod:`errno` import: ::
+
+    try:
+        with open("document.txt") as f:
+            content = f.read()
+    except FileNotFoundError:
+        print("document.txt file is missing")
+    except PermissionError:
+        print("You are not allowed to read document.txt")
+
+
 Other Language Changes
 ======================
 
