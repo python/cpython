@@ -216,6 +216,11 @@ The following exceptions are the exceptions that are usually raised.
    :func:`os.unlink`), the exception instance will contain an additional
    attribute, :attr:`filename`, which is the file name passed to the function.
 
+   .. versionchanged:: 3.3
+      :exc:`EnvironmentError`, :exc:`IOError`, :exc:`WindowsError`,
+      :exc:`VMSError`, :exc:`socket.error`, :exc:`select.error` and
+      :exc:`mmap.error` have been merged into :exc:`OSError`.
+
 
 .. exception:: OverflowError
 
