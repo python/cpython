@@ -1339,7 +1339,7 @@ def xinclude_loader(href, parse="xml", encoding=None):
     try:
         data = XINCLUDE[href]
     except KeyError:
-        raise IOError("resource not found")
+        raise OSError("resource not found")
     if parse == "xml":
         from xml.etree.ElementTree import XML
         return XML(data)
@@ -1404,7 +1404,7 @@ def xinclude():
     >>> document = xinclude_loader("C5.xml")
     >>> ElementInclude.include(document, xinclude_loader)
     Traceback (most recent call last):
-    IOError: resource not found
+    OSError: resource not found
     >>> # print(serialize(document)) # C5
     """
 
@@ -1611,7 +1611,7 @@ def bug_xmltoolkit55():
 
 class ExceptionFile:
     def read(self, x):
-        raise IOError
+        raise OSError
 
 def xmltoolkit60():
     """
@@ -1619,7 +1619,7 @@ def xmltoolkit60():
     Handle crash in stream source.
     >>> tree = ET.parse(ExceptionFile())
     Traceback (most recent call last):
-    IOError
+    OSError
 
     """
 

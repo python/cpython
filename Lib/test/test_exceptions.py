@@ -46,8 +46,8 @@ class ExceptionTests(unittest.TestCase):
             fp.close()
             unlink(TESTFN)
 
-        self.raise_catch(IOError, "IOError")
-        self.assertRaises(IOError, open, 'this file does not exist', 'r')
+        self.raise_catch(OSError, "OSError")
+        self.assertRaises(OSError, open, 'this file does not exist', 'r')
 
         self.raise_catch(ImportError, "ImportError")
         self.assertRaises(ImportError, __import__, "undefined_module")
@@ -192,11 +192,35 @@ class ExceptionTests(unittest.TestCase):
         except NameError:
             pass
         else:
-            self.assertEqual(str(WindowsError(1001)), "1001")
-            self.assertEqual(str(WindowsError(1001, "message")),
-                             "[Error 1001] message")
-            self.assertEqual(WindowsError(1001, "message").errno, 22)
-            self.assertEqual(WindowsError(1001, "message").winerror, 1001)
+            self.assertIs(WindowsError, OSError)
+            self.assertEqual(str(OSError(1001)), "1001")
+            self.assertEqual(str(OSError(1001, "message")),
+                             "[Errno 1001] message")
+            # POSIX errno (9 aka EBADF) is untranslated
+            w = OSError(9, 'foo', 'bar')
+            self.assertEqual(w.errno, 9)
+            self.assertEqual(w.winerror, None)
+            self.assertEqual(str(w), "[Errno 9] foo: 'bar'")
+            # ERROR_PATH_NOT_FOUND (win error 3) becomes ENOENT (2)
+            w = OSError(0, 'foo', 'bar', 3)
+            self.assertEqual(w.errno, 2)
+            self.assertEqual(w.winerror, 3)
+            self.assertEqual(w.strerror, 'foo')
+            self.assertEqual(w.filename, 'bar')
+            self.assertEqual(str(w), "[Error 3] foo: 'bar'")
+            # Unknown win error becomes EINVAL (22)
+            w = OSError(0, 'foo', None, 1001)
+            self.assertEqual(w.errno, 22)
+            self.assertEqual(w.winerror, 1001)
+            self.assertEqual(w.strerror, 'foo')
+            self.assertEqual(w.filename, None)
+            self.assertEqual(str(w), "[Error 1001] foo")
+            # Non-numeric "errno"
+            w = OSError('bar', 'foo')
+            self.assertEqual(w.errno, 'bar')
+            self.assertEqual(w.winerror, None)
+            self.assertEqual(w.strerror, 'foo')
+            self.assertEqual(w.filename, None)
 
     def testAttributes(self):
         # test that exception attributes are happy
@@ -274,11 +298,12 @@ class ExceptionTests(unittest.TestCase):
                  'start' : 0, 'end' : 1}),
         ]
         try:
+            # More tests are in test_WindowsError
             exceptionList.append(
                 (WindowsError, (1, 'strErrorStr', 'filenameStr'),
                     {'args' : (1, 'strErrorStr'),
-                     'strerror' : 'strErrorStr', 'winerror' : 1,
-                     'errno' : 22, 'filename' : 'filenameStr'})
+                     'strerror' : 'strErrorStr', 'winerror' : None,
+                     'errno' : 1, 'filename' : 'filenameStr'})
             )
         except NameError:
             pass

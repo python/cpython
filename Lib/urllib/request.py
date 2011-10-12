@@ -1547,6 +1547,8 @@ class URLopener:
                 return getattr(self, name)(url)
             else:
                 return getattr(self, name)(url, data)
+        except HTTPError:
+            raise
         except socket.error as msg:
             raise IOError('socket error', msg).with_traceback(sys.exc_info()[2])
 

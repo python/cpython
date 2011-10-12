@@ -11,11 +11,6 @@ BaseException
       +-- AssertionError
       +-- AttributeError
       +-- BufferError
-      +-- EnvironmentError
-      |    +-- IOError
-      |    +-- OSError
-      |         +-- WindowsError (Windows)
-      |         +-- VMSError (VMS)
       +-- EOFError
       +-- ImportError
       +-- LookupError
@@ -24,6 +19,22 @@ BaseException
       +-- MemoryError
       +-- NameError
       |    +-- UnboundLocalError
+      +-- OSError
+      |    +-- BlockingIOError
+      |    +-- ChildProcessError
+      |    +-- ConnectionError
+      |    |    +-- BrokenPipeError
+      |    |    +-- ConnectionAbortedError
+      |    |    +-- ConnectionRefusedError
+      |    |    +-- ConnectionResetError
+      |    +-- FileExistsError
+      |    +-- FileNotFoundError
+      |    +-- InterruptedError
+      |    +-- IsADirectoryError
+      |    +-- NotADirectoryError
+      |    +-- PermissionError
+      |    +-- ProcessLookupError
+      |    +-- TimeoutError
       +-- ReferenceError
       +-- RuntimeError
       |    +-- NotImplementedError

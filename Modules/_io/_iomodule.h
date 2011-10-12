@@ -60,15 +60,6 @@ extern Py_ssize_t _PyIO_find_line_ending(
 
 #define DEFAULT_BUFFER_SIZE (8 * 1024)  /* bytes */
 
-typedef struct {
-    PyException_HEAD
-    PyObject *myerrno;
-    PyObject *strerror;
-    PyObject *filename; /* Not used, but part of the IOError object */
-    Py_ssize_t written;
-} PyBlockingIOErrorObject;
-PyAPI_DATA(PyObject *) PyExc_BlockingIOError;
-
 /*
  * Offset type for positioning.
  */
