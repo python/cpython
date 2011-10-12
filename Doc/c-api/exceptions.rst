@@ -700,28 +700,42 @@ These are compatibility aliases to :c:data:`PyExc_OSError`:
    single: PyExc_LookupError
    single: PyExc_AssertionError
    single: PyExc_AttributeError
+   single: PyExc_BlockingIOError
+   single: PyExc_BrokenPipeError
+   single: PyExc_ConnectionError
+   single: PyExc_ConnectionAbortedError
+   single: PyExc_ConnectionRefusedError
+   single: PyExc_ConnectionResetError
    single: PyExc_EOFError
-   single: PyExc_EnvironmentError
+   single: PyExc_FileExistsError
+   single: PyExc_FileNotFoundError
    single: PyExc_FloatingPointError
-   single: PyExc_IOError
    single: PyExc_ImportError
    single: PyExc_IndexError
+   single: PyExc_InterruptedError
+   single: PyExc_IsADirectoryError
    single: PyExc_KeyError
    single: PyExc_KeyboardInterrupt
    single: PyExc_MemoryError
    single: PyExc_NameError
+   single: PyExc_NotADirectoryError
    single: PyExc_NotImplementedError
    single: PyExc_OSError
    single: PyExc_OverflowError
+   single: PyExc_PermissionError
+   single: PyExc_ProcessLookupError
    single: PyExc_ReferenceError
    single: PyExc_RuntimeError
    single: PyExc_SyntaxError
    single: PyExc_SystemError
    single: PyExc_SystemExit
+   single: PyExc_TimeoutError
    single: PyExc_TypeError
    single: PyExc_ValueError
-   single: PyExc_WindowsError
    single: PyExc_ZeroDivisionError
+   single: PyExc_EnvironmentError
+   single: PyExc_IOError
+   single: PyExc_WindowsError
 
 Notes:
 
