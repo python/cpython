@@ -34,6 +34,10 @@ programmers are encouraged to at least derive new exceptions from the
 defining exceptions is available in the Python Tutorial under
 :ref:`tut-userexceptions`.
 
+
+Base classes
+------------
+
 The following exceptions are used mostly as base classes for other exceptions.
 
 .. exception:: BaseException
@@ -90,27 +94,8 @@ The following exceptions are used mostly as base classes for other exceptions.
    can be raised directly by :func:`codecs.lookup`.
 
 
-.. exception:: EnvironmentError
-
-   The base class for exceptions that can occur outside the Python system:
-   :exc:`IOError`, :exc:`OSError`.  When exceptions of this type are created with a
-   2-tuple, the first item is available on the instance's :attr:`errno` attribute
-   (it is assumed to be an error number), and the second item is available on the
-   :attr:`strerror` attribute (it is usually the associated error message).  The
-   tuple itself is also available on the :attr:`args` attribute.
-
-   When an :exc:`EnvironmentError` exception is instantiated with a 3-tuple, the
-   first two items are available as above, while the third item is available on the
-   :attr:`filename` attribute.  However, for backwards compatibility, the
-   :attr:`args` attribute contains only a 2-tuple of the first two constructor
-   arguments.
-
-   The :attr:`filename` attribute is ``None`` when this exception is created with
-   other than 3 arguments.  The :attr:`errno` and :attr:`strerror` attributes are
-   also ``None`` when the instance was created with other than 2 or 3 arguments.
-   In this last case, :attr:`args` contains the verbatim constructor arguments as a
-   tuple.
-
+Concrete exceptions
+-------------------
 
 The following exceptions are the exceptions that are usually raised.
 
@@ -149,16 +134,6 @@ The following exceptions are the exceptions that are usually raised.
    Raise when a :term:`generator`\'s :meth:`close` method is called.  It
    directly inherits from :exc:`BaseException` instead of :exc:`Exception` since
    it is technically not an error.
-
-
-.. exception:: IOError
-
-   Raised when an I/O operation (such as the built-in :func:`print` or
-   :func:`open` functions or a method of a :term:`file object`) fails for an
-   I/O-related reason, e.g., "file not found" or "disk full".
-
-   This class is derived from :exc:`EnvironmentError`.  See the discussion above
-   for more information on exception instance attributes.
 
 
 .. exception:: ImportError
@@ -221,17 +196,25 @@ The following exceptions are the exceptions that are usually raised.
 
    .. index:: module: errno
 
-   This exception is derived from :exc:`EnvironmentError`.  It is raised when a
-   function returns a system-related error (not for illegal argument types or
-   other incidental errors).  The :attr:`errno` attribute is a numeric error
-   code from :c:data:`errno`, and the :attr:`strerror` attribute is the
-   corresponding string, as would be printed by the C function :c:func:`perror`.
-   See the module :mod:`errno`, which contains names for the error codes defined
-   by the underlying operating system.
+   This exception is raised when a system function returns a system-related
+   error, including I/O failures such as "file not found" or "disk full"
+   (not for illegal argument types or other incidental errors).  Often a
+   subclass of :exc:`OSError` will actually be raised as described in
+   `OS exceptions`_ below.  The :attr:`errno` attribute is a numeric error
+   code from the C variable :c:data:`errno`.
 
-   For exceptions that involve a file system path (such as :func:`chdir` or
-   :func:`unlink`), the exception instance will contain a third attribute,
-   :attr:`filename`, which is the file name passed to the function.
+   Under Windows, the :attr:`winerror` attribute gives you the native
+   Windows error code.  The :attr:`errno` attribute is then an approximate
+   translation, in POSIX terms, of that native error code.
+
+   Under all platforms, the :attr:`strerror` attribute is the corresponding
+   error message as provided by the operating system (as formatted by the C
+   functions :c:func:`perror` under POSIX, and :c:func:`FormatMessage`
+   Windows).
+
+   For exceptions that involve a file system path (such as :func:`open` or
+   :func:`os.unlink`), the exception instance will contain an additional
+   attribute, :attr:`filename`, which is the file name passed to the function.
 
 
 .. exception:: OverflowError
@@ -372,27 +355,133 @@ The following exceptions are the exceptions that are usually raised.
    more precise exception such as :exc:`IndexError`.
 
 
-.. exception:: VMSError
-
-   Only available on VMS.  Raised when a VMS-specific error occurs.
-
-
-.. exception:: WindowsError
-
-   Raised when a Windows-specific error occurs or when the error number does not
-   correspond to an :c:data:`errno` value.  The :attr:`winerror` and
-   :attr:`strerror` values are created from the return values of the
-   :c:func:`GetLastError` and :c:func:`FormatMessage` functions from the Windows
-   Platform API. The :attr:`errno` value maps the :attr:`winerror` value to
-   corresponding ``errno.h`` values. This is a subclass of :exc:`OSError`.
-
-
 .. exception:: ZeroDivisionError
 
    Raised when the second argument of a division or modulo operation is zero.  The
    associated value is a string indicating the type of the operands and the
    operation.
 
+
+The following exceptions are kept for compatibility with previous versions;
+starting from Python 3.3, they are aliases of :exc:`OSError`.
+
+.. exception:: EnvironmentError
+
+.. exception:: IOError
+
+.. exception:: VMSError
+
+   Only available on VMS.
+
+.. exception:: WindowsError
+
+   Only available on Windows.
+
+
+OS exceptions
+^^^^^^^^^^^^^
+
+The following exceptions are subclasses of :exc:`OSError`, they get raised
+depending on the system error code.
+
+.. exception:: BlockingIOError
+
+   Raised when an operation would block on an object (e.g. socket) set
+   for non-blocking operation.
+   Corresponds to :c:data:`errno` ``EAGAIN``, ``EALREADY``,
+   ``EWOULDBLOCK`` and ``EINPROGRESS``.
+
+.. exception:: ChildProcessError
+
+   Raised when an operation on a child process failed.
+   Corresponds to :c:data:`errno` ``ECHILD``.
+
+.. exception:: ConnectionError
+
+   A base class for connection-related issues.  Subclasses are
+   :exc:`BrokenPipeError`, :exc:`ConnectionAbortedError`,
+   :exc:`ConnectionRefusedError` and :exc:`ConnectionResetError`.
+
+   .. exception:: BrokenPipeError
+
+      A subclass of :exc:`ConnectionError`, raised when trying to write on a
+      pipe while the other end has been closed, or trying to write on a socket
+      which has been shutdown for writing.
+      Corresponds to :c:data:`errno` ``EPIPE`` and ``ESHUTDOWN``.
+
+   .. exception:: ConnectionAbortedError
+
+      A subclass of :exc:`ConnectionError`, raised when a connection attempt
+      is aborted by the peer.
+      Corresponds to :c:data:`errno` ``ECONNABORTED``.
+
+   .. exception:: ConnectionRefusedError
+
+      A subclass of :exc:`ConnectionError`, raised when a connection attempt
+      is refused by the peer.
+      Corresponds to :c:data:`errno` ``ECONNREFUSED``.
+
+   .. exception:: ConnectionResetError
+
+      A subclass of :exc:`ConnectionError`, raised when a connection is
+      reset by the peer.
+      Corresponds to :c:data:`errno` ``ECONNRESET``.
+
+.. exception:: FileExistsError
+
+   Raised when trying to create a file or directory which already exists.
+   Corresponds to :c:data:`errno` ``EEXIST``.
+
+.. exception:: FileNotFoundError
+
+   Raised when a file or directory is requested but doesn't exist.
+   Corresponds to :c:data:`errno` ``ENOENT``.
+
+.. exception:: InterruptedError
+
+   Raised when a system call is interrupted by an incoming signal.
+   Corresponds to :c:data:`errno` ``EEINTR``.
+
+.. exception:: IsADirectoryError
+
+   Raised when a file operation (such as :func:`os.remove`) is requested
+   on a directory.
+   Corresponds to :c:data:`errno` ``EISDIR``.
+
+.. exception:: NotADirectoryError
+
+   Raised when a directory operation (such as :func:`os.listdir`) is requested
+   on something which is not a directory.
+   Corresponds to :c:data:`errno` ``ENOTDIR``.
+
+.. exception:: PermissionError
+
+   Raised when trying to run an operation without the adequate access
+   rights - for example filesystem permissions.
+   Corresponds to :c:data:`errno` ``EACCES`` and ``EPERM``.
+
+.. exception:: ProcessLookupError
+
+   Raised when a given process doesn't exist.
+   Corresponds to :c:data:`errno` ``ESRCH``.
+
+.. exception:: TimeoutError
+
+   Raised when a system function timed out at the system level.
+   Corresponds to :c:data:`errno` ``ETIMEDOUT``.
+
+.. versionadded:: 3.3
+   All the above :exc:`OSError` subclasses were added.
+
+
+.. seealso::
+
+   :pep:`3151` - Reworking the OS and IO exception hierarchy
+      PEP written and implemented by Antoine Pitrou.
+
+
+Warnings
+--------
 
 The following exceptions are used as warning categories; see the :mod:`warnings`
 module for more information.
