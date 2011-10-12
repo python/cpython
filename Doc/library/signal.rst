@@ -145,7 +145,11 @@ The :mod:`signal` module defines one exception:
    Raised to signal an error from the underlying :func:`setitimer` or
    :func:`getitimer` implementation. Expect this error if an invalid
    interval timer or a negative time is passed to :func:`setitimer`.
-   This error is a subtype of :exc:`IOError`.
+   This error is a subtype of :exc:`OSError`.
+
+   .. versionadded:: 3.3
+      This error used to be a subtype of :exc:`IOError`, which is now an
+      alias of :exc:`OSError`.
 
 
 The :mod:`signal` module defines the following functions:
@@ -396,7 +400,7 @@ be sent, and the handler raises an exception. ::
 
    def handler(signum, frame):
        print('Signal handler called with signal', signum)
-       raise IOError("Couldn't open device!")
+       raise OSError("Couldn't open device!")
 
    # Set the signal handler and a 5-second alarm
    signal.signal(signal.SIGALRM, handler)
