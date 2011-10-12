@@ -258,9 +258,9 @@ PGOBJS=		\
 		Parser/pgenmain.o
 
 PARSER_HEADERS= \
-		Parser/parser.h \
-		Include/parsetok.h \
-		Parser/tokenizer.h
+		$(srcdir)/Parser/parser.h \
+		$(srcdir)/Include/parsetok.h \
+		$(srcdir)/Parser/tokenizer.h
 
 PGENOBJS=	$(PGENMAIN) $(POBJS) $(PGOBJS)
 
@@ -370,7 +370,7 @@ OBJECT_OBJS=	\
 		Objects/obmalloc.o \
 		Objects/capsule.o \
 		Objects/rangeobject.o \
-                Objects/setobject.o \
+		Objects/setobject.o \
 		Objects/sliceobject.o \
 		Objects/structseq.o \
 		Objects/tupleobject.o \
@@ -571,6 +571,9 @@ Modules/getpath.o: $(srcdir)/Modules/getpath.c Makefile
 Modules/python.o: $(srcdir)/Modules/python.c
 	$(MAINCC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Modules/python.c
 
+Modules/_testembed.o: $(srcdir)/Modules/_testembed.c
+	$(MAINCC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Modules/_testembed.c
+
 Python/dynload_shlib.o: $(srcdir)/Python/dynload_shlib.c Makefile
 	$(CC) -c $(PY_CORE_CFLAGS) \
 		-DSOABI='"$(SOABI)"' \
@@ -600,6 +603,7 @@ Parser/metagrammar.o:	$(srcdir)/Parser/metagrammar.c
 
 Parser/tokenizer_pgen.o:	$(srcdir)/Parser/tokenizer.c
 Parser/parsetok_pgen.o:	$(srcdir)/Parser/parsetok.c
+Parser/printgrammar.o: $(srcdir)/Parser/printgrammar.c
 
 Parser/pgenmain.o:	$(srcdir)/Include/parsetok.h
 
@@ -647,7 +651,7 @@ Objects/setobject.o: $(srcdir)/Objects/stringlib/eq.h
 $(OPCODETARGETS_H): $(OPCODETARGETGEN_FILES)
 	$(OPCODETARGETGEN) $(OPCODETARGETS_H)
 
-Python/ceval.o: $(OPCODETARGETS_H) Python/ceval_gil.h
+Python/ceval.o: $(OPCODETARGETS_H) $(srcdir)/Python/ceval_gil.h
 
 Python/formatter_unicode.o: $(srcdir)/Python/formatter_unicode.c \
 				$(BYTESTR_DEPS)
@@ -660,88 +664,88 @@ $(srcdir)/Objects/typeslots.inc: $(srcdir)/Include/typeslots.h $(srcdir)/Objects
 # Header files
 
 PYTHON_HEADERS= \
-		Include/Python.h \
-		Include/abstract.h \
-		Include/accu.h \
-		Include/asdl.h \
-		Include/ast.h \
-                Include/bltinmodule.h \
-		Include/bitset.h \
-		Include/boolobject.h \
-		Include/bytes_methods.h \
-		Include/bytearrayobject.h \
-		Include/bytesobject.h \
-		Include/cellobject.h \
-		Include/ceval.h \
-		Include/classobject.h \
-		Include/code.h \
-		Include/codecs.h \
-		Include/compile.h \
-		Include/complexobject.h \
-		Include/descrobject.h \
-		Include/dictobject.h \
-		Include/dtoa.h \
-		Include/dynamic_annotations.h \
-		Include/enumobject.h \
-		Include/errcode.h \
-		Include/eval.h \
-		Include/fileobject.h \
-		Include/fileutils.h \
-		Include/floatobject.h \
-		Include/frameobject.h \
-		Include/funcobject.h \
-		Include/genobject.h \
-		Include/import.h \
-		Include/intrcheck.h \
-		Include/iterobject.h \
-		Include/listobject.h \
-		Include/longintrepr.h \
-		Include/longobject.h \
-		Include/marshal.h \
-		Include/memoryobject.h \
-		Include/metagrammar.h \
-		Include/methodobject.h \
-		Include/modsupport.h \
-		Include/moduleobject.h \
-		Include/node.h \
-		Include/object.h \
-		Include/objimpl.h \
-		Include/opcode.h \
-		Include/osdefs.h \
-		Include/patchlevel.h \
-		Include/pgen.h \
-		Include/pgenheaders.h \
-		Include/pyarena.h \
-		Include/pyatomic.h \
-		Include/pycapsule.h \
-		Include/pyctype.h \
-		Include/pydebug.h \
-		Include/pyerrors.h \
-		Include/pyfpe.h \
-		Include/pymath.h \
-		Include/pygetopt.h \
-		Include/pymacro.h \
-		Include/pymem.h \
-		Include/pyport.h \
-		Include/pystate.h \
-		Include/pystrcmp.h \
-		Include/pystrtod.h \
-		Include/pythonrun.h \
-		Include/pythread.h \
-		Include/pytime.h \
-		Include/rangeobject.h \
-		Include/setobject.h \
-		Include/sliceobject.h \
-		Include/structmember.h \
-		Include/structseq.h \
-		Include/symtable.h \
-		Include/sysmodule.h \
-		Include/traceback.h \
-		Include/tupleobject.h \
-		Include/ucnhash.h \
-		Include/unicodeobject.h \
-		Include/warnings.h \
-		Include/weakrefobject.h \
+		$(srcdir)/Include/Python.h \
+		$(srcdir)/Include/abstract.h \
+		$(srcdir)/Include/accu.h \
+		$(srcdir)/Include/asdl.h \
+		$(srcdir)/Include/ast.h \
+		$(srcdir)/Include/bltinmodule.h \
+		$(srcdir)/Include/bitset.h \
+		$(srcdir)/Include/boolobject.h \
+		$(srcdir)/Include/bytes_methods.h \
+		$(srcdir)/Include/bytearrayobject.h \
+		$(srcdir)/Include/bytesobject.h \
+		$(srcdir)/Include/cellobject.h \
+		$(srcdir)/Include/ceval.h \
+		$(srcdir)/Include/classobject.h \
+		$(srcdir)/Include/code.h \
+		$(srcdir)/Include/codecs.h \
+		$(srcdir)/Include/compile.h \
+		$(srcdir)/Include/complexobject.h \
+		$(srcdir)/Include/descrobject.h \
+		$(srcdir)/Include/dictobject.h \
+		$(srcdir)/Include/dtoa.h \
+		$(srcdir)/Include/dynamic_annotations.h \
+		$(srcdir)/Include/enumobject.h \
+		$(srcdir)/Include/errcode.h \
+		$(srcdir)/Include/eval.h \
+		$(srcdir)/Include/fileobject.h \
+		$(srcdir)/Include/fileutils.h \
+		$(srcdir)/Include/floatobject.h \
+		$(srcdir)/Include/frameobject.h \
+		$(srcdir)/Include/funcobject.h \
+		$(srcdir)/Include/genobject.h \
+		$(srcdir)/Include/import.h \
+		$(srcdir)/Include/intrcheck.h \
+		$(srcdir)/Include/iterobject.h \
+		$(srcdir)/Include/listobject.h \
+		$(srcdir)/Include/longintrepr.h \
+		$(srcdir)/Include/longobject.h \
+		$(srcdir)/Include/marshal.h \
+		$(srcdir)/Include/memoryobject.h \
+		$(srcdir)/Include/metagrammar.h \
+		$(srcdir)/Include/methodobject.h \
+		$(srcdir)/Include/modsupport.h \
+		$(srcdir)/Include/moduleobject.h \
+		$(srcdir)/Include/node.h \
+		$(srcdir)/Include/object.h \
+		$(srcdir)/Include/objimpl.h \
+		$(srcdir)/Include/opcode.h \
+		$(srcdir)/Include/osdefs.h \
+		$(srcdir)/Include/patchlevel.h \
+		$(srcdir)/Include/pgen.h \
+		$(srcdir)/Include/pgenheaders.h \
+		$(srcdir)/Include/pyarena.h \
+		$(srcdir)/Include/pyatomic.h \
+		$(srcdir)/Include/pycapsule.h \
+		$(srcdir)/Include/pyctype.h \
+		$(srcdir)/Include/pydebug.h \
+		$(srcdir)/Include/pyerrors.h \
+		$(srcdir)/Include/pyfpe.h \
+		$(srcdir)/Include/pymath.h \
+		$(srcdir)/Include/pygetopt.h \
+		$(srcdir)/Include/pymacro.h \
+		$(srcdir)/Include/pymem.h \
+		$(srcdir)/Include/pyport.h \
+		$(srcdir)/Include/pystate.h \
+		$(srcdir)/Include/pystrcmp.h \
+		$(srcdir)/Include/pystrtod.h \
+		$(srcdir)/Include/pythonrun.h \
+		$(srcdir)/Include/pythread.h \
+		$(srcdir)/Include/pytime.h \
+		$(srcdir)/Include/rangeobject.h \
+		$(srcdir)/Include/setobject.h \
+		$(srcdir)/Include/sliceobject.h \
+		$(srcdir)/Include/structmember.h \
+		$(srcdir)/Include/structseq.h \
+		$(srcdir)/Include/symtable.h \
+		$(srcdir)/Include/sysmodule.h \
+		$(srcdir)/Include/traceback.h \
+		$(srcdir)/Include/tupleobject.h \
+		$(srcdir)/Include/ucnhash.h \
+		$(srcdir)/Include/unicodeobject.h \
+		$(srcdir)/Include/warnings.h \
+		$(srcdir)/Include/weakrefobject.h \
 		pyconfig.h \
 		$(PARSER_HEADERS)
 
@@ -1231,7 +1235,7 @@ scriptsinstall:
 	--root=$(DESTDIR)/
 
 # Build the toplevel Makefile
-Makefile.pre: Makefile.pre.in config.status
+Makefile.pre: $(srcdir)/Makefile.pre.in config.status
 	CONFIG_FILES=Makefile.pre CONFIG_HEADERS= $(SHELL) config.status
 	$(MAKE) -f Makefile.pre Makefile
 
