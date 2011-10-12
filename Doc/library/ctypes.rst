@@ -39,8 +39,13 @@ loads libraries which export functions using the standard ``cdecl`` calling
 convention, while *windll* libraries call functions using the ``stdcall``
 calling convention. *oledll* also uses the ``stdcall`` calling convention, and
 assumes the functions return a Windows :c:type:`HRESULT` error code. The error
-code is used to automatically raise a :class:`WindowsError` exception when the
+code is used to automatically raise a :class:`OSError` exception when the
 function call fails.
+
+.. versionchanged:: 3.3
+   Windows errors used to raise :exc:`WindowsError`, which is now an alias
+   of :exc:`OSError`.
+
 
 Here are some examples for Windows. Note that ``msvcrt`` is the MS standard C
 library containing most standard C functions, and uses the cdecl calling
@@ -189,7 +194,7 @@ argument values::
    >>> windll.kernel32.GetModuleHandleA(32) # doctest: +WINDOWS
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
-   WindowsError: exception: access violation reading 0x00000020
+   OSError: exception: access violation reading 0x00000020
    >>>
 
 There are, however, enough ways to crash Python with :mod:`ctypes`, so you
@@ -491,7 +496,7 @@ useful to check for error return values and automatically raise an exception::
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
      File "<stdin>", line 3, in ValidHandle
-   WindowsError: [Errno 126] The specified module could not be found.
+   OSError: [Errno 126] The specified module could not be found.
    >>>
 
 ``WinError`` is a function which will call Windows ``FormatMessage()`` api to
@@ -1345,7 +1350,10 @@ way is to instantiate one of the following classes:
    assumed to return the windows specific :class:`HRESULT` code.  :class:`HRESULT`
    values contain information specifying whether the function call failed or
    succeeded, together with additional error code.  If the return value signals a
-   failure, an :class:`WindowsError` is automatically raised.
+   failure, an :class:`OSError` is automatically raised.
+
+   .. versionchanged:: 3.3
+      :exc:`WindowsError` used to be raised.
 
 
 .. class:: WinDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False)
@@ -1966,10 +1974,13 @@ Utility functions
 .. function:: WinError(code=None, descr=None)
 
    Windows only: this function is probably the worst-named thing in ctypes. It
-   creates an instance of WindowsError.  If *code* is not specified,
+   creates an instance of OSError.  If *code* is not specified,
    ``GetLastError`` is called to determine the error code. If *descr* is not
    specified, :func:`FormatError` is called to get a textual description of the
    error.
+
+   .. versionchanged:: 3.3
+      An instance of :exc:`WindowsError` used to be created.
 
 
 .. function:: wstring_at(address, size=-1)
