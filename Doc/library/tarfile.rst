@@ -262,9 +262,9 @@ be finalized; only the internally used file object will be closed. See the
 
    If *errorlevel* is ``0``, all errors are ignored when using :meth:`TarFile.extract`.
    Nevertheless, they appear as error messages in the debug output, when debugging
-   is enabled.  If ``1``, all *fatal* errors are raised as :exc:`OSError` or
-   :exc:`IOError` exceptions. If ``2``, all *non-fatal* errors are raised as
-   :exc:`TarError` exceptions as well.
+   is enabled.  If ``1``, all *fatal* errors are raised as :exc:`OSError`
+   exceptions. If ``2``, all *non-fatal* errors are raised as :exc:`TarError`
+   exceptions as well.
 
    The *encoding* and *errors* arguments define the character encoding to be
    used for reading or writing the archive and how conversion errors are going

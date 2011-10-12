@@ -318,7 +318,7 @@ of which this module provides three different variants:
       response if the :func:`listdir` fails.
 
       If the request was mapped to a file, it is opened and the contents are
-      returned.  Any :exc:`IOError` exception in opening the requested file is
+      returned.  Any :exc:`OSError` exception in opening the requested file is
       mapped to a ``404``, ``'File not found'`` error. Otherwise, the content
       type is guessed by calling the :meth:`guess_type` method, which in turn
       uses the *extensions_map* variable.

@@ -19,6 +19,11 @@ argument.  This can be an integer file descriptor, such as returned by
 ``sys.stdin.fileno()``, or a :class:`io.IOBase` object, such as ``sys.stdin``
 itself, which provides a :meth:`fileno` that returns a genuine file descriptor.
 
+.. versionchanged:: 3.3
+   Operations in this module used to raise a :exc:`IOError` where they now
+   raise a :exc:`OSError`.
+
+
 The module defines the following functions:
 
 
@@ -40,7 +45,7 @@ The module defines the following functions:
    larger than 1024 bytes, this is most likely to result in a segmentation
    violation or a more subtle data corruption.
 
-   If the :c:func:`fcntl` fails, an :exc:`IOError` is raised.
+   If the :c:func:`fcntl` fails, an :exc:`OSError` is raised.
 
 
 .. function:: ioctl(fd, op[, arg[, mutate_flag]])
@@ -107,7 +112,7 @@ The module defines the following functions:
    When *operation* is :const:`LOCK_SH` or :const:`LOCK_EX`, it can also be
    bitwise ORed with :const:`LOCK_NB` to avoid blocking on lock acquisition.
    If :const:`LOCK_NB` is used and the lock cannot be acquired, an
-   :exc:`IOError` will be raised and the exception will have an *errno*
+   :exc:`OSError` will be raised and the exception will have an *errno*
    attribute set to :const:`EACCES` or :const:`EAGAIN` (depending on the
    operating system; for portability, check for both values).  On at least some
    systems, :const:`LOCK_EX` can only be used if the file descriptor refers to a

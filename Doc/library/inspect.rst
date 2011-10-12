@@ -355,16 +355,24 @@ Retrieving source code
    argument may be a module, class, method, function, traceback, frame, or code
    object.  The source code is returned as a list of the lines corresponding to the
    object and the line number indicates where in the original source file the first
-   line of code was found.  An :exc:`IOError` is raised if the source code cannot
+   line of code was found.  An :exc:`OSError` is raised if the source code cannot
    be retrieved.
+
+   .. versionchanged:: 3.3
+      :exc:`OSError` is raised instead of :exc:`IOError`, now an alias of the
+      former.
 
 
 .. function:: getsource(object)
 
    Return the text of the source code for an object. The argument may be a module,
    class, method, function, traceback, frame, or code object.  The source code is
-   returned as a single string.  An :exc:`IOError` is raised if the source code
+   returned as a single string.  An :exc:`OSError` is raised if the source code
    cannot be retrieved.
+
+   .. versionchanged:: 3.3
+      :exc:`OSError` is raised instead of :exc:`IOError`, now an alias of the
+      former.
 
 
 .. function:: cleandoc(doc)
