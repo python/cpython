@@ -21,8 +21,7 @@ The following exceptions are raised by :mod:`urllib.error` as appropriate:
    .. attribute:: reason
 
       The reason for this error.  It can be a message string or another
-      exception instance (:exc:`socket.error` for remote URLs, :exc:`OSError`
-      for local URLs).
+      exception instance such as :exc:`OSError`.
 
 
 .. exception:: HTTPError
