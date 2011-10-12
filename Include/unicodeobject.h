@@ -548,14 +548,13 @@ enum PyUnicode_Kind {
    than iterating over the string. */
 #define PyUnicode_MAX_CHAR_VALUE(op) \
     (assert(PyUnicode_IS_READY(op)),                                    \
-     (PyUnicode_IS_COMPACT_ASCII(op) ? 0x7f:                            \
+     (PyUnicode_IS_ASCII(op) ?                                          \
+      (0x7f) :                                                          \
       (PyUnicode_KIND(op) == PyUnicode_1BYTE_KIND ?                     \
-       (PyUnicode_DATA(op) == (((PyCompactUnicodeObject *)(op))->utf8) ? \
-        (0x7fU) : (0xffU)                                                 \
-           ) :                                                          \
+       (0xffU) :                                                        \
        (PyUnicode_KIND(op) == PyUnicode_2BYTE_KIND ?                    \
-        (0xffffU) : (0x10ffffU)                                           \
-           ))))
+        (0xffffU) :                                                     \
+        (0x10ffffU)))))
 
 #endif
 
