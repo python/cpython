@@ -79,6 +79,18 @@ class HierarchyTest(unittest.TestCase):
         e = SubOSError(EEXIST, "Bad file descriptor")
         self.assertIs(type(e), SubOSError)
 
+    def test_try_except(self):
+        # This checks that try .. except checks the concrete exception
+        # (FileNotFoundError) and not the base type specified when
+        # PyErr_SetFromErrnoWithFilenameObject was called.
+        # (it is therefore deliberate that it doesn't use assertRaises)
+        try:
+            open("some_hopefully_non_existing_file")
+        except FileNotFoundError:
+            pass
+        else:
+            self.fail("should have raised a FileNotFoundError")
+
 
 class AttributesTest(unittest.TestCase):
 
