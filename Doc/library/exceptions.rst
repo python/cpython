@@ -396,6 +396,15 @@ depending on the system error code.
    Corresponds to :c:data:`errno` ``EAGAIN``, ``EALREADY``,
    ``EWOULDBLOCK`` and ``EINPROGRESS``.
 
+   In addition to those of :exc:`OSError`, :exc:`BlockingIOError` can have
+   one more attribute:
+
+   .. attribute:: characters_written
+
+      An integer containing the number of characters written to the stream
+      before it blocked.  This attribute is available when using the
+      buffered I/O classes from the :mod:`io` module.
+
 .. exception:: ChildProcessError
 
    Raised when an operation on a child process failed.

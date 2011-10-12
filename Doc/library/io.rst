@@ -109,16 +109,8 @@ High-level Module Interface
 
 .. exception:: BlockingIOError
 
-   Error raised when blocking would occur on a non-blocking stream.  It inherits
-   :exc:`IOError`.
-
-   In addition to those of :exc:`IOError`, :exc:`BlockingIOError` has one
-   attribute:
-
-   .. attribute:: characters_written
-
-      An integer containing the number of characters written to the stream
-      before it blocked.
+   This is a compatibility alias for the builtin :exc:`BlockingIOError`
+   exception.
 
 
 .. exception:: UnsupportedOperation
