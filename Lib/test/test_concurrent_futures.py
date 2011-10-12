@@ -34,7 +34,7 @@ PENDING_FUTURE = create_future(state=PENDING)
 RUNNING_FUTURE = create_future(state=RUNNING)
 CANCELLED_FUTURE = create_future(state=CANCELLED)
 CANCELLED_AND_NOTIFIED_FUTURE = create_future(state=CANCELLED_AND_NOTIFIED)
-EXCEPTION_FUTURE = create_future(state=FINISHED, exception=IOError())
+EXCEPTION_FUTURE = create_future(state=FINISHED, exception=OSError())
 SUCCESSFUL_FUTURE = create_future(state=FINISHED, result=42)
 
 
@@ -501,7 +501,7 @@ class FutureTests(unittest.TestCase):
                          '<Future at 0x[0-9a-f]+ state=cancelled>')
         self.assertRegex(
                 repr(EXCEPTION_FUTURE),
-                '<Future at 0x[0-9a-f]+ state=finished raised IOError>')
+                '<Future at 0x[0-9a-f]+ state=finished raised OSError>')
         self.assertRegex(
                 repr(SUCCESSFUL_FUTURE),
                 '<Future at 0x[0-9a-f]+ state=finished returned int>')
@@ -512,7 +512,7 @@ class FutureTests(unittest.TestCase):
         f2 = create_future(state=RUNNING)
         f3 = create_future(state=CANCELLED)
         f4 = create_future(state=CANCELLED_AND_NOTIFIED)
-        f5 = create_future(state=FINISHED, exception=IOError())
+        f5 = create_future(state=FINISHED, exception=OSError())
         f6 = create_future(state=FINISHED, result=5)
 
         self.assertTrue(f1.cancel())
@@ -566,7 +566,7 @@ class FutureTests(unittest.TestCase):
                           CANCELLED_FUTURE.result, timeout=0)
         self.assertRaises(futures.CancelledError,
                           CANCELLED_AND_NOTIFIED_FUTURE.result, timeout=0)
-        self.assertRaises(IOError, EXCEPTION_FUTURE.result, timeout=0)
+        self.assertRaises(OSError, EXCEPTION_FUTURE.result, timeout=0)
         self.assertEqual(SUCCESSFUL_FUTURE.result(timeout=0), 42)
 
     def test_result_with_success(self):
@@ -605,7 +605,7 @@ class FutureTests(unittest.TestCase):
         self.assertRaises(futures.CancelledError,
                           CANCELLED_AND_NOTIFIED_FUTURE.exception, timeout=0)
         self.assertTrue(isinstance(EXCEPTION_FUTURE.exception(timeout=0),
-                                   IOError))
+                                   OSError))
         self.assertEqual(SUCCESSFUL_FUTURE.exception(timeout=0), None)
 
     def test_exception_with_success(self):
@@ -614,14 +614,14 @@ class FutureTests(unittest.TestCase):
             time.sleep(1)
             with f1._condition:
                 f1._state = FINISHED
-                f1._exception = IOError()
+                f1._exception = OSError()
                 f1._condition.notify_all()
 
         f1 = create_future(state=PENDING)
         t = threading.Thread(target=notification)
         t.start()
 
-        self.assertTrue(isinstance(f1.exception(timeout=5), IOError))
+        self.assertTrue(isinstance(f1.exception(timeout=5), OSError))
 
 @test.support.reap_threads
 def test_main():

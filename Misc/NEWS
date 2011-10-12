@@ -10,6 +10,8 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- PEP 3151 / issue #12555: reworking the OS and IO exception hierarchy.
+
 - Add internal API for static strings (_Py_identifier et.al.).
 
 - Issue #13063: the Windows error ERROR_NO_DATA (numbered 232 and described

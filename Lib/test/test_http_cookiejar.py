@@ -248,18 +248,19 @@ class FileCookieJarTests(unittest.TestCase):
         self.assertEqual(c._cookies["www.acme.com"]["/"]["boo"].value, None)
 
     def test_bad_magic(self):
-        # IOErrors (eg. file doesn't exist) are allowed to propagate
+        # OSErrors (eg. file doesn't exist) are allowed to propagate
         filename = test.support.TESTFN
         for cookiejar_class in LWPCookieJar, MozillaCookieJar:
             c = cookiejar_class()
             try:
                 c.load(filename="for this test to work, a file with this "
                                 "filename should not exist")
-            except IOError as exc:
-                # exactly IOError, not LoadError
-                self.assertIs(exc.__class__, IOError)
+            except OSError as exc:
+                # an OSError subclass (likely FileNotFoundError), but not
+                # LoadError
+                self.assertIsNot(exc.__class__, LoadError)
             else:
-                self.fail("expected IOError for invalid filename")
+                self.fail("expected OSError for invalid filename")
         # Invalid contents of cookies file (eg. bad magic string)
         # causes a LoadError.
         try:

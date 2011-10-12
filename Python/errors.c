@@ -496,10 +496,11 @@ PyObject *PyErr_SetExcFromWindowsErrWithFilenameObject(
         return NULL;
     }
 
-    if (filenameObject != NULL)
-        v = Py_BuildValue("(iOO)", err, message, filenameObject);
-    else
-        v = Py_BuildValue("(iO)", err, message);
+    if (filenameObject == NULL)
+        filenameObject = Py_None;
+    /* This is the constructor signature for passing a Windows error code.
+       The POSIX translation will be figured out by the constructor. */
+    v = Py_BuildValue("(iOOi)", 0, message, filenameObject, err);
     Py_DECREF(message);
 
     if (v != NULL) {
