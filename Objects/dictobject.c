@@ -2747,10 +2747,12 @@ dictviews_or(PyObject* self, PyObject *other)
 {
     PyObject *result = PySet_New(self);
     PyObject *tmp;
+    _Py_identifier(update);
+
     if (result == NULL)
         return NULL;
 
-    tmp = PyObject_CallMethod(result, "update", "O", other);
+    tmp = _PyObject_CallMethodId(result, &PyId_update, "O", other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;
