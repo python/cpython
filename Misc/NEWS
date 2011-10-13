@@ -1342,6 +1342,9 @@ Tools/Demos
 Extension Modules
 -----------------
 
+- Issue #13159: FileIO and BZ2Compressor/BZ2Decompressor now use a linear-time
+  buffer growth strategy instead of a quadratic-time one.
+
 - Issue #10141: socket: Add SocketCAN (PF_CAN) support. Initial patch by
   Matthias Fuchs, updated by Tiago Gonçalves.
 
