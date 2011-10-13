@@ -115,6 +115,9 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
             unsigned char needle;
             needle = p[0] & 0xff;
 #if STRINGLIB_SIZEOF_CHAR > 1
+            /* If looking for a multiple of 256, we'd have two
+               many false positives looking for the '\0' byte in UCS2
+               and UCS4 representations. */
             if (needle != 0)
 #endif
                 return STRINGLIB(fastsearch_memchr_1char)
