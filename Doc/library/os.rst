@@ -1658,9 +1658,9 @@ Files and Directories
    .. versionadded:: 3.3
 
 
-.. function:: lremoveattr(path, attr)
+.. function:: lremovexattr(path, attr)
 
-   This works exactly like :func:`removeattr` but doesn't follow symlinks.
+   This works exactly like :func:`removexattr` but doesn't follow symlinks.
 
    Availability: Linux
 
