@@ -6308,16 +6308,9 @@ supercheck(PyTypeObject *type, PyObject *obj)
     }
     else {
         /* Try the slow way */
-        PyObject *class_str = NULL;
         PyObject *class_attr;
 
-        class_str = _PyUnicode_FromId(&PyId___class__);
-        if (class_str == NULL)
-            return NULL;
-
-        class_attr = PyObject_GetAttr(obj, class_str);
-        Py_DECREF(class_str);
-
+        class_attr = _PyObject_GetAttrId(obj, &PyId___class__);
         if (class_attr != NULL &&
             PyType_Check(class_attr) &&
             (PyTypeObject *)class_attr != Py_TYPE(obj))
