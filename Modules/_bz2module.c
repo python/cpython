@@ -116,22 +116,14 @@ catch_bz2_error(int bzerror)
 #define SMALLCHUNK BUFSIZ
 #endif
 
-#if SIZEOF_INT < 4
-#define BIGCHUNK  (512 * 32)
-#else
-#define BIGCHUNK  (512 * 1024)
-#endif
-
 static int
 grow_buffer(PyObject **buf)
 {
+    /* Expand the buffer by an amount proportional to the current size,
+       giving us amortized linear-time behavior. Use a less-than-double
+       growth factor to avoid excessive allocation. */
     size_t size = PyBytes_GET_SIZE(*buf);
-    if (size <= SMALLCHUNK)
-        return _PyBytes_Resize(buf, size + SMALLCHUNK);
-    else if (size <= BIGCHUNK)
-        return _PyBytes_Resize(buf, size * 2);
-    else
-        return _PyBytes_Resize(buf, size + BIGCHUNK);
+    return _PyBytes_Resize(buf, size + (size >> 3) + 6);
 }
 
 
