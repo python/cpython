@@ -113,20 +113,10 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
             /* use memchr if we can choose a needle without two many likely
                false positives */
             unsigned char needle;
-            int use_needle = 1;
             needle = p[0] & 0xff;
 #if STRINGLIB_SIZEOF_CHAR > 1
-            if (needle == 0) {
-                needle = (p[0] >> 8) & 0xff;
-#if STRINGLIB_SIZEOF_CHAR > 2
-                if (needle == 0)
-                    needle = (p[0] >> 16) & 0xff;
+            if (needle != 0)
 #endif
-                if (needle >= 32 || needle == 0)
-                    use_needle = 0;
-            }
-#endif
-            if (use_needle)
                 return STRINGLIB(fastsearch_memchr_1char)
                        (s, n, p[0], needle, maxcount, mode);
         }
