@@ -121,6 +121,9 @@ Tests
 Extension Modules
 -----------------
 
+- Issue #13159: FileIO and BZ2File now use a linear-time buffer growth
+  strategy instead of a quadratic-time one.
+
 - Issue #13070: Fix a crash when a TextIOWrapper caught in a reference cycle
   would be finalized after the reference to its underlying BufferedRWPair's
   writer got cleared by the GC.
