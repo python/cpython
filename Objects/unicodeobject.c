@@ -519,36 +519,45 @@ make_bloom_mask(int kind, void* ptr, Py_ssize_t len)
 #include "stringlib/localeutil.h"
 #include "stringlib/undef.h"
 
+#include "stringlib/unicodedefs.h"
+#include "stringlib/fastsearch.h"
+#include "stringlib/count.h"
+#include "stringlib/find.h"
+
 /* --- Unicode Object ----------------------------------------------------- */
 
 static PyObject *
 fixup(PyObject *self, Py_UCS4 (*fixfct)(PyObject *s));
 
-Py_LOCAL_INLINE(char *) findchar(void *s, int kind,
-                                 Py_ssize_t size, Py_UCS4 ch,
-                                 int direction)
+Py_LOCAL_INLINE(Py_ssize_t) findchar(void *s, int kind,
+                                     Py_ssize_t size, Py_UCS4 ch,
+                                     int direction)
 {
-    /* like wcschr, but doesn't stop at NULL characters */
-    Py_ssize_t i;
-    if (kind == 1) {
-        if (direction == 1)
-            return memchr(s, ch, size);
-#ifdef HAVE_MEMRCHR
-        else
-            return memrchr(s, ch, size);
-#endif
+    int mode = (direction == 1) ? FAST_SEARCH : FAST_RSEARCH;
+
+    switch (kind) {
+    case PyUnicode_1BYTE_KIND:
+        {
+            Py_UCS1 ch1 = (Py_UCS1) ch;
+            if (ch1 == ch)
+                return ucs1lib_fastsearch((Py_UCS1 *) s, size, &ch1, 1, 0, mode);
+            else
+                return -1;
+        }
+    case PyUnicode_2BYTE_KIND:
+        {
+            Py_UCS2 ch2 = (Py_UCS2) ch;
+            if (ch2 == ch)
+                return ucs2lib_fastsearch((Py_UCS2 *) s, size, &ch2, 1, 0, mode);
+            else
+                return -1;
+        }
+    case PyUnicode_4BYTE_KIND:
+        return ucs4lib_fastsearch((Py_UCS4 *) s, size, &ch, 1, 0, mode);
+    default:
+        assert(0);
+        return -1;
     }
-    if (direction == 1) {
-        for(i = 0; i < size; i++)
-            if (PyUnicode_READ(kind, s, i) == ch)
-                return (char*)s + kind * i;
-    }
-    else {
-        for(i = size-1; i >= 0; i--)
-            if (PyUnicode_READ(kind, s, i) == ch)
-                return (char*)s + kind * i;
-    }
-    return NULL;
 }
 
 static PyObject*
@@ -3311,7 +3320,7 @@ PyUnicode_FSDecoder(PyObject* arg, void* addr)
         }
     }
     if (findchar(PyUnicode_DATA(output), PyUnicode_KIND(output),
-                 PyUnicode_GET_LENGTH(output), 0, 1)) {
+                 PyUnicode_GET_LENGTH(output), 0, 1) >= 0) {
         PyErr_SetString(PyExc_TypeError, "embedded NUL character");
         Py_DECREF(output);
         return 0;
@@ -8638,12 +8647,6 @@ _PyUnicode_InsertThousandsGrouping(PyObject *unicode, int kind, void *data,
 }
 
 
-#include "stringlib/unicodedefs.h"
-#include "stringlib/fastsearch.h"
-
-#include "stringlib/count.h"
-#include "stringlib/find.h"
-
 /* helper macro to fixup start/end slice values */
 #define ADJUST_INDICES(start, end, len)         \
     if (end > len)                              \
@@ -8779,8 +8782,8 @@ PyUnicode_FindChar(PyObject *str, Py_UCS4 ch,
                    Py_ssize_t start, Py_ssize_t end,
                    int direction)
 {
-    char *result;
     int kind;
+    Py_ssize_t result;
     if (PyUnicode_READY(str) == -1)
         return -2;
     if (start < 0 || end < 0) {
@@ -8790,13 +8793,12 @@ PyUnicode_FindChar(PyObject *str, Py_UCS4 ch,
     if (end > PyUnicode_GET_LENGTH(str))
         end = PyUnicode_GET_LENGTH(str);
     kind = PyUnicode_KIND(str);
-    result = findchar(PyUnicode_1BYTE_DATA(str)
-                      + kind*start,
-                      kind,
-                      end-start, ch, direction);
-    if (!result)
+    result = findchar(PyUnicode_1BYTE_DATA(str) + kind*start,
+                      kind, end-start, ch, direction);
+    if (result == -1)
         return -1;
-    return (result-(char*)PyUnicode_DATA(str)) >> (kind-1);
+    else
+        return start + result;
 }
 
 static int
@@ -9707,8 +9709,8 @@ replace(PyObject *self, PyObject *str1,
             Py_UCS4 u1, u2;
             int rkind;
             u1 = PyUnicode_READ_CHAR(str1, 0);
-            if (!findchar(sbuf, PyUnicode_KIND(self),
-                          slen, u1, 1))
+            if (findchar(sbuf, PyUnicode_KIND(self),
+                         slen, u1, 1) < 0)
                 goto nothing;
             u2 = PyUnicode_READ_CHAR(str2, 0);
             u = PyUnicode_New(slen, maxchar);
