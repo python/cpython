@@ -961,8 +961,8 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                                   arg, msgbuf, bufsize);
             if (*p != NULL && sarg != NULL && (Py_ssize_t) strlen(*p) != len)
                 return converterr(
-                    c == 'z' ? "str without null bytes or None"
-                             : "str without null bytes",
+                    c == 'z' ? "str without null characters or None"
+                             : "str without null characters",
                     arg, msgbuf, bufsize);
         }
         break;
@@ -1002,7 +1002,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                     RETURN_ERR_OCCURRED;
                 if (Py_UNICODE_strlen(*p) != len)
                     return converterr(
-                        "str without null character or None",
+                        "str without null characters or None",
                         arg, msgbuf, bufsize);
             } else
                 return converterr(c == 'Z' ? "str or None" : "str",
