@@ -93,8 +93,7 @@ class CygwinCCompiler(UnixCCompiler):
     exe_extension = ".exe"
 
     def __init__(self, verbose=0, dry_run=False, force=False):
-
-        UnixCCompiler.__init__(self, verbose, dry_run, force)
+        super(CygwinCCompiler, self).__init__(verbose, dry_run, force)
 
         status, details = check_config_h()
         logger.debug("Python's GCC status: %s (details: %s)", status, details)
@@ -255,14 +254,14 @@ class CygwinCCompiler(UnixCCompiler):
             if ext not in (self.src_extensions + ['.rc','.res']):
                 raise UnknownFileError("unknown file type '%s' (from '%s')" % (ext, src_name))
             if strip_dir:
-                base = os.path.basename (base)
+                base = os.path.basename(base)
             if ext in ('.res', '.rc'):
                 # these need to be compiled to object files
-                obj_names.append (os.path.join(output_dir,
+                obj_names.append(os.path.join(output_dir,
                                               base + ext + self.obj_extension))
             else:
-                obj_names.append (os.path.join(output_dir,
-                                               base + self.obj_extension))
+                obj_names.append(os.path.join(output_dir,
+                                              base + self.obj_extension))
         return obj_names
 
 # the same as cygwin plus some additional parameters
@@ -273,8 +272,7 @@ class Mingw32CCompiler(CygwinCCompiler):
     description = 'MinGW32 compiler'
 
     def __init__(self, verbose=0, dry_run=False, force=False):
-
-        CygwinCCompiler.__init__ (self, verbose, dry_run, force)
+        super(Mingw32CCompiler, self).__init__(verbose, dry_run, force)
 
         # ld_version >= "2.13" support -shared so use it instead of
         # -mdll -static

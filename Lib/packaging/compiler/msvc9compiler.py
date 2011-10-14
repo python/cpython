@@ -310,7 +310,7 @@ class MSVCCompiler(CCompiler) :
     exe_extension = '.exe'
 
     def __init__(self, verbose=0, dry_run=False, force=False):
-        CCompiler.__init__(self, verbose, dry_run, force)
+        super(MSVCCompiler, self).__init__(verbose, dry_run, force)
         self.__version = VERSION
         self.__root = r"Software\Microsoft\VisualStudio"
         # self.__macros = MACROS

@@ -103,7 +103,7 @@ class PyPIServer(threading.Thread):
         """
         # we want to launch the server in a new dedicated thread, to not freeze
         # tests.
-        threading.Thread.__init__(self)
+        super(PyPIServer, self).__init__()
         self._run = True
         self._serve_xmlrpc = serve_xmlrpc
         if static_filesystem_paths is None:

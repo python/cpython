@@ -237,7 +237,7 @@ class MSVCCompiler(CCompiler):
     exe_extension = '.exe'
 
     def __init__(self, verbose=0, dry_run=False, force=False):
-        CCompiler.__init__(self, verbose, dry_run, force)
+        super(MSVCCompiler, self).__init__(verbose, dry_run, force)
         self.__version = get_build_version()
         self.__arch = get_build_architecture()
         if self.__arch == "Intel":
