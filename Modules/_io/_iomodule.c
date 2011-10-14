@@ -233,6 +233,7 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
 
     _Py_IDENTIFIER(isatty);
     _Py_IDENTIFIER(fileno);
+    _Py_IDENTIFIER(mode);
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|sizzziO:open", kwlist,
                                      &file, &mode, &buffering,
@@ -440,7 +441,7 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
     if (wrapper == NULL)
         goto error;
 
-    if (PyObject_SetAttrString(wrapper, "mode", modeobj) < 0)
+    if (_PyObject_SetAttrId(wrapper, &PyId_mode, modeobj) < 0)
         goto error;
     Py_DECREF(modeobj);
     return wrapper;
