@@ -200,12 +200,10 @@ class RegisterTestCase(support.TempdirManager,
 
     @unittest.skipUnless(DOCUTILS_SUPPORT, 'needs docutils')
     def test_strict(self):
-        # testing the script option
-        # when on, the register command stops if
-        # the metadata is incomplete or if
-        # long_description is not reSt compliant
+        # testing the strict option: when on, the register command stops if the
+        # metadata is incomplete or if description contains bad reST
 
-        # empty metadata
+        # empty metadata  # XXX this is not really empty..
         cmd = self._get_cmd({'name': 'xxx', 'version': 'xxx'})
         cmd.ensure_finalized()
         cmd.strict = True
@@ -213,16 +211,15 @@ class RegisterTestCase(support.TempdirManager,
         register_module.input = inputs
         self.assertRaises(PackagingSetupError, cmd.run)
 
-        # metadata is OK but long_description is broken
+        # metadata is OK but description is broken
         metadata = {'home_page': 'xxx', 'author': 'xxx',
                     'author_email': 'éxéxé',
-                    'name': 'xxx', 'version': 'xxx',
+                    'name': 'xxx', 'version': '4.2',
                     'description': 'title\n==\n\ntext'}
 
         cmd = self._get_cmd(metadata)
         cmd.ensure_finalized()
         cmd.strict = True
-
         self.assertRaises(PackagingSetupError, cmd.run)
 
         # now something that works
@@ -238,6 +235,21 @@ class RegisterTestCase(support.TempdirManager,
         # strict is not by default
         cmd = self._get_cmd()
         cmd.ensure_finalized()
+        inputs = Inputs('1', 'tarek', 'y')
+        register_module.input = inputs
+        cmd.ensure_finalized()
+        cmd.run()
+
+        # and finally a Unicode test (bug #12114)
+        metadata = {'home_page': 'xxx', 'author': '\u00c9ric',
+                    'author_email': 'xxx', 'name': 'xxx',
+                    'version': 'xxx',
+                    'summary': 'Something about esszet \u00df',
+                    'description': 'More things about esszet \u00df'}
+
+        cmd = self._get_cmd(metadata)
+        cmd.ensure_finalized()
+        cmd.strict = True
         inputs = Inputs('1', 'tarek', 'y')
         register_module.input = inputs
         cmd.ensure_finalized()
