@@ -480,7 +480,7 @@ r_string(char *s, int n, RFILE *p)
         }
     }
     else {
-        _Py_identifier(read);
+        _Py_IDENTIFIER(read);
 
         PyObject *data = _PyObject_CallMethodId(p->readable, &PyId_read, "i", n);
         read = 0;
@@ -1292,7 +1292,7 @@ marshal_dump(PyObject *self, PyObject *args)
     int version = Py_MARSHAL_VERSION;
     PyObject *s;
     PyObject *res;
-    _Py_identifier(write);
+    _Py_IDENTIFIER(write);
 
     if (!PyArg_ParseTuple(args, "OO|i:dump", &x, &f, &version))
         return NULL;
@@ -1321,7 +1321,7 @@ static PyObject *
 marshal_load(PyObject *self, PyObject *f)
 {
     PyObject *data, *result;
-    _Py_identifier(read);
+    _Py_IDENTIFIER(read);
     RFILE rf;
 
     /*

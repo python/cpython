@@ -767,7 +767,7 @@ static PyObject *
 deque_reduce(dequeobject *deque)
 {
     PyObject *dict, *result, *aslist;
-    _Py_identifier(__dict__);
+    _Py_IDENTIFIER(__dict__);
 
     dict = _PyObject_GetAttrId((PyObject *)deque, &PyId___dict__);
     if (dict == NULL)
@@ -1335,7 +1335,7 @@ defdict_reduce(defdictobject *dd)
     PyObject *items;
     PyObject *iter;
     PyObject *result;
-    _Py_identifier(items);
+    _Py_IDENTIFIER(items);
 
     if (dd->default_factory == NULL || dd->default_factory == Py_None)
         args = PyTuple_New(0);

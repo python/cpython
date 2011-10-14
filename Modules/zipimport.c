@@ -908,7 +908,7 @@ get_decompress_func(void)
     static int importing_zlib = 0;
     PyObject *zlib;
     PyObject *decompress;
-    _Py_identifier(decompress);
+    _Py_IDENTIFIER(decompress);
 
     if (importing_zlib != 0)
         /* Someone has a zlib.py[co] in their Zip file;

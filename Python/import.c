@@ -154,7 +154,7 @@ static const struct filedescr _PyImport_StandardFiletab[] = {
 };
 
 static PyObject *initstr = NULL;
-_Py_identifier(__path__);
+_Py_IDENTIFIER(__path__);
 
 /* Initialize things */
 
@@ -248,7 +248,7 @@ _PyImportHooks_Init(void)
             PySys_WriteStderr("# can't import zipimport\n");
     }
     else {
-        _Py_identifier(zipimporter);
+        _Py_IDENTIFIER(zipimporter);
         PyObject *zipimporter = _PyObject_GetAttrId(zimpimport,
                                                     &PyId_zipimporter);
         Py_DECREF(zimpimport);
@@ -1802,7 +1802,7 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
 
     /* sys.path_hooks import hook */
     if (p_loader != NULL) {
-        _Py_identifier(find_module);
+        _Py_IDENTIFIER(find_module);
         PyObject *importer;
 
         importer = get_path_importer(path_importer_cache,
@@ -2032,7 +2032,7 @@ find_module(PyObject *fullname, PyObject *name, PyObject *search_path_list,
 
     /* sys.meta_path import hook */
     if (p_loader != NULL) {
-        _Py_identifier(find_module);
+        _Py_IDENTIFIER(find_module);
         PyObject *meta_path;
 
         meta_path = PySys_GetObject("meta_path");
@@ -2462,7 +2462,7 @@ load_module(PyObject *name, FILE *fp, PyObject *pathname, int type, PyObject *lo
         break;
 
     case IMP_HOOK: {
-        _Py_identifier(load_module);
+        _Py_IDENTIFIER(load_module);
         if (loader == NULL) {
             PyErr_SetString(PyExc_ImportError,
                             "import hook without loader");
@@ -3227,7 +3227,7 @@ ensure_fromlist(PyObject *mod, PyObject *fromlist, PyObject *name,
         }
         if (PyUnicode_READ_CHAR(item, 0) == '*') {
             PyObject *all;
-            _Py_identifier(__all__);
+            _Py_IDENTIFIER(__all__);
             Py_DECREF(item);
             /* See if the package defines __all__ */
             if (recursive)

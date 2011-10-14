@@ -18,7 +18,7 @@ static int
 check_matched(PyObject *obj, PyObject *arg)
 {
     PyObject *result;
-    _Py_identifier(match);
+    _Py_IDENTIFIER(match);
     int rc;
 
     if (obj == Py_None)
@@ -247,7 +247,7 @@ show_warning(PyObject *filename, int lineno, PyObject *text, PyObject
     PyObject *f_stderr;
     PyObject *name;
     char lineno_str[128];
-    _Py_identifier(__name__);
+    _Py_IDENTIFIER(__name__);
 
     PyOS_snprintf(lineno_str, sizeof(lineno_str), ":%d: ", lineno);
 

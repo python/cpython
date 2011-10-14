@@ -843,7 +843,7 @@ xmlparse_ParseFile(xmlparseobject *self, PyObject *f)
 {
     int rv = 1;
     PyObject *readmethod = NULL;
-    _Py_identifier(read);
+    _Py_IDENTIFIER(read);
 
     readmethod = _PyObject_GetAttrId(f, &PyId_read);
     if (readmethod == NULL) {

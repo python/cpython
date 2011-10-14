@@ -675,7 +675,7 @@ void _pysqlite_final_callback(sqlite3_context* context)
 {
     PyObject* function_result = NULL;
     PyObject** aggregate_instance;
-    _Py_identifier(finalize);
+    _Py_IDENTIFIER(finalize);
 
 #ifdef WITH_THREAD
     PyGILState_STATE threadstate;
@@ -1231,7 +1231,7 @@ PyObject* pysqlite_connection_execute(pysqlite_Connection* self, PyObject* args,
     PyObject* cursor = 0;
     PyObject* result = 0;
     PyObject* method = 0;
-    _Py_identifier(cursor);
+    _Py_IDENTIFIER(cursor);
 
     cursor = _PyObject_CallMethodId((PyObject*)self, &PyId_cursor, "");
     if (!cursor) {
@@ -1261,7 +1261,7 @@ PyObject* pysqlite_connection_executemany(pysqlite_Connection* self, PyObject* a
     PyObject* cursor = 0;
     PyObject* result = 0;
     PyObject* method = 0;
-    _Py_identifier(cursor);
+    _Py_IDENTIFIER(cursor);
 
     cursor = _PyObject_CallMethodId((PyObject*)self, &PyId_cursor, "");
     if (!cursor) {
@@ -1291,7 +1291,7 @@ PyObject* pysqlite_connection_executescript(pysqlite_Connection* self, PyObject*
     PyObject* cursor = 0;
     PyObject* result = 0;
     PyObject* method = 0;
-    _Py_identifier(cursor);
+    _Py_IDENTIFIER(cursor);
 
     cursor = _PyObject_CallMethodId((PyObject*)self, &PyId_cursor, "");
     if (!cursor) {
@@ -1441,7 +1441,7 @@ pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
     PyObject* name;
     PyObject* retval;
     Py_ssize_t i, len;
-    _Py_identifier(upper);
+    _Py_IDENTIFIER(upper);
     char *uppercase_name_str;
     int rc;
     unsigned int kind;

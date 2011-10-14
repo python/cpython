@@ -79,8 +79,8 @@ sys_displayhook_unencodable(PyObject *outf, PyObject *o)
     PyObject *encoded, *escaped_str, *repr_str, *buffer, *result;
     char *stdout_encoding_str;
     int ret;
-    _Py_identifier(encoding);
-    _Py_identifier(buffer);
+    _Py_IDENTIFIER(encoding);
+    _Py_IDENTIFIER(buffer);
 
     stdout_encoding = _PyObject_GetAttrId(outf, &PyId_encoding);
     if (stdout_encoding == NULL)
@@ -101,7 +101,7 @@ sys_displayhook_unencodable(PyObject *outf, PyObject *o)
 
     buffer = _PyObject_GetAttrId(outf, &PyId_buffer);
     if (buffer) {
-        _Py_identifier(write);
+        _Py_IDENTIFIER(write);
         result = _PyObject_CallMethodId(buffer, &PyId_write, "(O)", encoded);
         Py_DECREF(buffer);
         Py_DECREF(encoded);
@@ -1843,7 +1843,7 @@ sys_pyfile_write_unicode(PyObject *unicode, PyObject *file)
 {
     PyObject *writer = NULL, *args = NULL, *result = NULL;
     int err;
-    _Py_identifier(write);
+    _Py_IDENTIFIER(write);
 
     if (file == NULL)
         return -1;

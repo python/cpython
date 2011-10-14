@@ -797,7 +797,7 @@ element_find(ElementObject* self, PyObject* args)
         return NULL;
 
     if (checkpath(tag) || namespaces != Py_None) {
-        _Py_identifier(find);
+        _Py_IDENTIFIER(find);
         return _PyObject_CallMethodId(
             elementpath_obj, &PyId_find, "OOO", self, tag, namespaces
             );
@@ -825,7 +825,7 @@ element_findtext(ElementObject* self, PyObject* args)
     PyObject* tag;
     PyObject* default_value = Py_None;
     PyObject* namespaces = Py_None;
-    _Py_identifier(findtext);
+    _Py_IDENTIFIER(findtext);
 
     if (!PyArg_ParseTuple(args, "O|OO:findtext", &tag, &default_value, &namespaces))
         return NULL;
@@ -868,7 +868,7 @@ element_findall(ElementObject* self, PyObject* args)
         return NULL;
 
     if (checkpath(tag) || namespaces != Py_None) {
-        _Py_identifier(findall);
+        _Py_IDENTIFIER(findall);
         return _PyObject_CallMethodId(
             elementpath_obj, &PyId_findall, "OOO", self, tag, namespaces
             );
@@ -900,7 +900,7 @@ element_iterfind(ElementObject* self, PyObject* args)
 {
     PyObject* tag;
     PyObject* namespaces = Py_None;
-    _Py_identifier(iterfind);
+    _Py_IDENTIFIER(iterfind);
 
     if (!PyArg_ParseTuple(args, "O|O:iterfind", &tag, &namespaces))
         return NULL;

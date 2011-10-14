@@ -6102,7 +6102,7 @@ wait_helper(pid_t pid, int status, struct rusage *ru)
 {
     PyObject *result;
     static PyObject *struct_rusage;
-    _Py_identifier(struct_rusage);
+    _Py_IDENTIFIER(struct_rusage);
 
     if (pid == -1)
         return posix_error();
