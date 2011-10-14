@@ -1058,7 +1058,7 @@ static char
 char_from_hex(int x)
 {
     assert(0 <= x && x < 16);
-    return "0123456789abcdef"[x];
+    return Py_hexdigits[x];
 }
 
 static int

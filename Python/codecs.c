@@ -11,6 +11,8 @@ Copyright (c) Corporation for National Research Initiatives.
 #include "Python.h"
 #include <ctype.h>
 
+const char *Py_hexdigits = "0123456789abcdef";
+
 /* --- Codec Registry ----------------------------------------------------- */
 
 /* Import the standard encodings package which will register the first
@@ -673,8 +675,6 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
     }
 }
 
-static const char *hexdigits = "0123456789abcdef";
-
 PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
 {
 #ifndef Py_UNICODE_WIDE
@@ -731,22 +731,22 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
             }
             if (c >= 0x00010000) {
                 *outp++ = 'U';
-                *outp++ = hexdigits[(c>>28)&0xf];
-                *outp++ = hexdigits[(c>>24)&0xf];
-                *outp++ = hexdigits[(c>>20)&0xf];
-                *outp++ = hexdigits[(c>>16)&0xf];
-                *outp++ = hexdigits[(c>>12)&0xf];
-                *outp++ = hexdigits[(c>>8)&0xf];
+                *outp++ = Py_hexdigits[(c>>28)&0xf];
+                *outp++ = Py_hexdigits[(c>>24)&0xf];
+                *outp++ = Py_hexdigits[(c>>20)&0xf];
+                *outp++ = Py_hexdigits[(c>>16)&0xf];
+                *outp++ = Py_hexdigits[(c>>12)&0xf];
+                *outp++ = Py_hexdigits[(c>>8)&0xf];
             }
             else if (c >= 0x100) {
                 *outp++ = 'u';
-                *outp++ = hexdigits[(c>>12)&0xf];
-                *outp++ = hexdigits[(c>>8)&0xf];
+                *outp++ = Py_hexdigits[(c>>12)&0xf];
+                *outp++ = Py_hexdigits[(c>>8)&0xf];
             }
             else
                 *outp++ = 'x';
-            *outp++ = hexdigits[(c>>4)&0xf];
-            *outp++ = hexdigits[c&0xf];
+            *outp++ = Py_hexdigits[(c>>4)&0xf];
+            *outp++ = Py_hexdigits[c&0xf];
         }
 
         restuple = Py_BuildValue("(On)", res, end);

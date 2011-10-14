@@ -850,7 +850,6 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 bytearray_repr(PyByteArrayObject *self)
 {
-    static const char *hexdigits = "0123456789abcdef";
     const char *quote_prefix = "bytearray(b";
     const char *quote_postfix = ")";
     Py_ssize_t length = Py_SIZE(self);
@@ -912,8 +911,8 @@ bytearray_repr(PyByteArrayObject *self)
         else if (c < ' ' || c >= 0x7f) {
             *p++ = '\\';
             *p++ = 'x';
-            *p++ = hexdigits[(c & 0xf0) >> 4];
-            *p++ = hexdigits[c & 0xf];
+            *p++ = Py_hexdigits[(c & 0xf0) >> 4];
+            *p++ = Py_hexdigits[c & 0xf];
         }
         else
             *p++ = c;
