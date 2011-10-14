@@ -164,8 +164,6 @@ Sphinx-formatted documentation, Python library modules, example programs, and
 several useful pieces of freely distributable software.  The source will compile
 and run out of the box on most UNIX platforms.
 
-.. XXX update link once the dev faq is relocated
-
 Consult the `Developer FAQ <http://docs.python.org/devguide/faq>`__ for more
 information on getting the source code and compiling it.
 
@@ -221,8 +219,6 @@ releases are announced on the comp.lang.python and comp.lang.python.announce
 newsgroups and on the Python home page at http://www.python.org/; an RSS feed of
 news is available.
 
-.. XXX update link once the dev faq is relocated
-
 You can also access the development version of Python through Subversion.  See
 http://docs.python.org/devguide/faq for details.
 
@@ -238,8 +234,6 @@ contact you if we have follow-up questions.  It will also enable Roundup to send
 you updates as we act on your bug. If you had previously used SourceForge to
 report bugs to Python, you can obtain your Roundup password through Roundup's
 `password reset procedure <http://bugs.python.org/user?@template=forgotten>`_.
-
-.. XXX adapt link to dev guide
 
 For more information on how Python is developed, consult `the Python Developer's
 Guide <http://docs.python.org/devguide/>`_.
