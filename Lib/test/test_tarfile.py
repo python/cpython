@@ -1582,9 +1582,31 @@ class MiscTest(unittest.TestCase):
         self.assertEqual(tarfile.nts(b"foo\0\0\0\0\0", "ascii", "strict"), "foo")
         self.assertEqual(tarfile.nts(b"foo\0bar\0", "ascii", "strict"), "foo")
 
-    def test_number_fields(self):
+    def test_read_number_fields(self):
+        # Issue 13158: Test if GNU tar specific base-256 number fields
+        # are decoded correctly.
+        self.assertEqual(tarfile.nti(b"0000001\x00"), 1)
+        self.assertEqual(tarfile.nti(b"7777777\x00"), 0o7777777)
+        self.assertEqual(tarfile.nti(b"\x80\x00\x00\x00\x00\x20\x00\x00"), 0o10000000)
+        self.assertEqual(tarfile.nti(b"\x80\x00\x00\x00\xff\xff\xff\xff"), 0xffffffff)
+        self.assertEqual(tarfile.nti(b"\xff\xff\xff\xff\xff\xff\xff\xff"), -1)
+        self.assertEqual(tarfile.nti(b"\xff\xff\xff\xff\xff\xff\xff\x9c"), -100)
+        self.assertEqual(tarfile.nti(b"\xff\x00\x00\x00\x00\x00\x00\x00"), -0x100000000000000)
+
+    def test_write_number_fields(self):
         self.assertEqual(tarfile.itn(1), b"0000001\x00")
+        self.assertEqual(tarfile.itn(0o7777777), b"7777777\x00")
+        self.assertEqual(tarfile.itn(0o10000000), b"\x80\x00\x00\x00\x00\x20\x00\x00")
         self.assertEqual(tarfile.itn(0xffffffff), b"\x80\x00\x00\x00\xff\xff\xff\xff")
+        self.assertEqual(tarfile.itn(-1), b"\xff\xff\xff\xff\xff\xff\xff\xff")
+        self.assertEqual(tarfile.itn(-100), b"\xff\xff\xff\xff\xff\xff\xff\x9c")
+        self.assertEqual(tarfile.itn(-0x100000000000000), b"\xff\x00\x00\x00\x00\x00\x00\x00")
+
+    def test_number_field_limits(self):
+        self.assertRaises(ValueError, tarfile.itn, -1, 8, tarfile.USTAR_FORMAT)
+        self.assertRaises(ValueError, tarfile.itn, 0o10000000, 8, tarfile.USTAR_FORMAT)
+        self.assertRaises(ValueError, tarfile.itn, -0x10000000001, 6, tarfile.GNU_FORMAT)
+        self.assertRaises(ValueError, tarfile.itn, 0x10000000000, 6, tarfile.GNU_FORMAT)
 
 
 class ContextManagerTest(unittest.TestCase):
