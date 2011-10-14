@@ -4820,7 +4820,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
     if (hobj == Py_None) {
         hptr = NULL;
     } else if (PyUnicode_Check(hobj)) {
-        _Py_identifier(encode);
+        _Py_IDENTIFIER(encode);
 
         idna = _PyObject_CallMethodId(hobj, &PyId_encode, "s", "idna");
         if (!idna)

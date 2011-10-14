@@ -1579,7 +1579,7 @@ mbstreamwriter_iwrite(MultibyteStreamWriterObject *self,
                       PyObject *unistr)
 {
     PyObject *str, *wr;
-    _Py_identifier(write);
+    _Py_IDENTIFIER(write);
 
     str = encoder_encode_stateful(STATEFUL_ECTX(self), unistr, 0);
     if (str == NULL)
@@ -1651,7 +1651,7 @@ mbstreamwriter_reset(MultibyteStreamWriterObject *self)
     assert(PyBytes_Check(pwrt));
     if (PyBytes_Size(pwrt) > 0) {
         PyObject *wr;
-        _Py_identifier(write);
+        _Py_IDENTIFIER(write);
 
         wr = _PyObject_CallMethodId(self->stream, &PyId_write, "O", pwrt);
         if (wr == NULL) {

@@ -2082,7 +2082,7 @@ PyMapping_Keys(PyObject *o)
 {
     PyObject *keys;
     PyObject *fast;
-    _Py_identifier(keys);
+    _Py_IDENTIFIER(keys);
 
     if (PyDict_CheckExact(o))
         return PyDict_Keys(o);
@@ -2099,7 +2099,7 @@ PyMapping_Items(PyObject *o)
 {
     PyObject *items;
     PyObject *fast;
-    _Py_identifier(items);
+    _Py_IDENTIFIER(items);
 
     if (PyDict_CheckExact(o))
         return PyDict_Items(o);
@@ -2116,7 +2116,7 @@ PyMapping_Values(PyObject *o)
 {
     PyObject *values;
     PyObject *fast;
-    _Py_identifier(values);
+    _Py_IDENTIFIER(values);
 
     if (PyDict_CheckExact(o))
         return PyDict_Values(o);

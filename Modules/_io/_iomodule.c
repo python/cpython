@@ -225,8 +225,8 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
 
     PyObject *raw, *modeobj = NULL, *buffer = NULL, *wrapper = NULL;
 
-    _Py_identifier(isatty);
-    _Py_identifier(fileno);
+    _Py_IDENTIFIER(isatty);
+    _Py_IDENTIFIER(fileno);
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|sizzzi:open", kwlist,
                                      &file, &mode, &buffering,

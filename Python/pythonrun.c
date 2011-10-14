@@ -141,7 +141,7 @@ get_codec_name(const char *encoding)
 {
     char *name_utf8, *name_str;
     PyObject *codec, *name = NULL;
-    _Py_identifier(name);
+    _Py_IDENTIFIER(name);
 
     codec = _PyCodec_Lookup(encoding);
     if (!codec)
@@ -353,7 +353,7 @@ flush_std_files(void)
     PyObject *fout = PySys_GetObject("stdout");
     PyObject *ferr = PySys_GetObject("stderr");
     PyObject *tmp;
-    _Py_identifier(flush);
+    _Py_IDENTIFIER(flush);
 
     if (fout != NULL && fout != Py_None) {
         tmp = _PyObject_CallMethodId(fout, &PyId_flush, "");
@@ -807,9 +807,9 @@ create_stdio(PyObject* io,
     const char* newline;
     PyObject *line_buffering;
     int buffering, isatty;
-    _Py_identifier(open);
-    _Py_identifier(isatty);
-    _Py_identifier(TextIOWrapper);
+    _Py_IDENTIFIER(open);
+    _Py_IDENTIFIER(isatty);
+    _Py_IDENTIFIER(TextIOWrapper);
 
     /* stdin is always opened in buffered mode, first because it shouldn't
        make a difference in common use cases, second because TextIOWrapper
@@ -831,7 +831,7 @@ create_stdio(PyObject* io,
         goto error;
 
     if (buffering) {
-        _Py_identifier(raw);
+        _Py_IDENTIFIER(raw);
         raw = _PyObject_GetAttrId(buf, &PyId_raw);
         if (raw == NULL)
             goto error;
@@ -1117,7 +1117,7 @@ PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags
     PyArena *arena;
     char *ps1 = "", *ps2 = "", *enc = NULL;
     int errcode = 0;
-    _Py_identifier(encoding);
+    _Py_IDENTIFIER(encoding);
 
     if (fp == stdin) {
         /* Fetch encoding from sys.stdin */
@@ -1321,11 +1321,11 @@ parse_syntax_error(PyObject *err, PyObject **message, const char **filename,
 {
     long hold;
     PyObject *v;
-    _Py_identifier(msg);
-    _Py_identifier(filename);
-    _Py_identifier(lineno);
-    _Py_identifier(offset);
-    _Py_identifier(text);
+    _Py_IDENTIFIER(msg);
+    _Py_IDENTIFIER(filename);
+    _Py_IDENTIFIER(lineno);
+    _Py_IDENTIFIER(offset);
+    _Py_IDENTIFIER(text);
 
     /* old style errors */
     if (PyTuple_Check(err))
@@ -1439,7 +1439,7 @@ handle_system_exit(void)
         goto done;
     if (PyExceptionInstance_Check(value)) {
         /* The error code should be in the `code' attribute. */
-        _Py_identifier(code);
+        _Py_IDENTIFIER(code);
         PyObject *code = _PyObject_GetAttrId(value, &PyId_code);
         if (code) {
             Py_DECREF(value);
@@ -1597,7 +1597,7 @@ print_exception(PyObject *f, PyObject *value)
     else {
         PyObject* moduleName;
         char* className;
-        _Py_identifier(__module__);
+        _Py_IDENTIFIER(__module__);
         assert(PyExceptionClass_Check(type));
         className = PyExceptionClass_Name(type);
         if (className != NULL) {
@@ -1773,7 +1773,7 @@ flush_io(void)
 {
     PyObject *f, *r;
     PyObject *type, *value, *traceback;
-    _Py_identifier(flush);
+    _Py_IDENTIFIER(flush);
 
     /* Save the current exception */
     PyErr_Fetch(&type, &value, &traceback);
@@ -2220,7 +2220,7 @@ static void
 wait_for_thread_shutdown(void)
 {
 #ifdef WITH_THREAD
-    _Py_identifier(_shutdown);
+    _Py_IDENTIFIER(_shutdown);
     PyObject *result;
     PyThreadState *tstate = PyThreadState_GET();
     PyObject *threading = PyMapping_GetItemString(tstate->interp->modules,

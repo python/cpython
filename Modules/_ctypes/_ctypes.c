@@ -3679,7 +3679,7 @@ _build_result(PyObject *result, PyObject *callargs,
             PyTuple_SET_ITEM(tup, index, v);
             index++;
         } else if (bit & outmask) {
-            _Py_identifier(__ctypes_from_outparam__);
+            _Py_IDENTIFIER(__ctypes_from_outparam__);
 
             v = PyTuple_GET_ITEM(callargs, i);
             v = _PyObject_CallMethodId(v, &PyId___ctypes_from_outparam__, NULL);

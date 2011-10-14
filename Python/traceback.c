@@ -152,7 +152,7 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
     const char* filepath;
     Py_ssize_t len;
     PyObject* result;
-    _Py_identifier(open);
+    _Py_IDENTIFIER(open);
 
     filebytes = PyUnicode_EncodeFSDefault(filename);
     if (filebytes == NULL) {
@@ -232,9 +232,9 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
     char buf[MAXPATHLEN+1];
     int kind;
     void *data;
-    _Py_identifier(close);
-    _Py_identifier(open);
-    _Py_identifier(TextIOWrapper);
+    _Py_IDENTIFIER(close);
+    _Py_IDENTIFIER(open);
+    _Py_IDENTIFIER(TextIOWrapper);
 
     /* open the file */
     if (filename == NULL)

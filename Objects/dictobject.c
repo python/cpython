@@ -2707,7 +2707,7 @@ dictviews_sub(PyObject* self, PyObject *other)
 {
     PyObject *result = PySet_New(self);
     PyObject *tmp;
-    _Py_identifier(difference_update);
+    _Py_IDENTIFIER(difference_update);
 
     if (result == NULL)
         return NULL;
@@ -2727,7 +2727,7 @@ dictviews_and(PyObject* self, PyObject *other)
 {
     PyObject *result = PySet_New(self);
     PyObject *tmp;
-    _Py_identifier(intersection_update);
+    _Py_IDENTIFIER(intersection_update);
 
     if (result == NULL)
         return NULL;
@@ -2767,7 +2767,7 @@ dictviews_xor(PyObject* self, PyObject *other)
 {
     PyObject *result = PySet_New(self);
     PyObject *tmp;
-    _Py_identifier(symmetric_difference_update);
+    _Py_IDENTIFIER(symmetric_difference_update);
 
     if (result == NULL)
         return NULL;

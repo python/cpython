@@ -97,7 +97,7 @@ PyDoc_STRVAR(iobase_tell_doc,
 static PyObject *
 iobase_tell(PyObject *self, PyObject *args)
 {
-    _Py_identifier(seek);
+    _Py_IDENTIFIER(seek);
 
     return _PyObject_CallMethodId(self, &PyId_seek, "ii", 0, 1);
 }
@@ -466,7 +466,7 @@ iobase_readline(PyObject *self, PyObject *args)
     int has_peek = 0;
     PyObject *buffer, *result;
     Py_ssize_t old_size = -1;
-    _Py_identifier(read);
+    _Py_IDENTIFIER(read);
 
     if (!PyArg_ParseTuple(args, "|O&:readline", &_PyIO_ConvertSsize_t, &limit)) {
         return NULL;
@@ -484,7 +484,7 @@ iobase_readline(PyObject *self, PyObject *args)
         PyObject *b;
 
         if (has_peek) {
-            _Py_identifier(peek);
+            _Py_IDENTIFIER(peek);
             PyObject *readahead = _PyObject_CallMethodId(self, &PyId_peek, "i", 1);
 
             if (readahead == NULL)
@@ -606,7 +606,7 @@ iobase_readlines(PyObject *self, PyObject *args)
         /* XXX special-casing this made sense in the Python version in order
            to remove the bytecode interpretation overhead, but it could
            probably be removed here. */
-        _Py_identifier(extend);
+        _Py_IDENTIFIER(extend);
         PyObject *ret = _PyObject_CallMethodId(result, &PyId_extend, "O", self);
 
         if (ret == NULL) {
@@ -789,7 +789,7 @@ rawiobase_read(PyObject *self, PyObject *args)
     }
 
     if (n < 0) {
-        _Py_identifier(readall);
+        _Py_IDENTIFIER(readall);
 
         return _PyObject_CallMethodId(self, &PyId_readall, NULL);
     }
@@ -833,7 +833,7 @@ rawiobase_readall(PyObject *self, PyObject *args)
         return NULL;
 
     while (1) {
-        _Py_identifier(read);
+        _Py_IDENTIFIER(read);
         PyObject *data = _PyObject_CallMethodId(self, &PyId_read,
                                                 "i", DEFAULT_BUFFER_SIZE);
         if (!data) {

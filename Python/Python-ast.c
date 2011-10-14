@@ -7,7 +7,7 @@ static PyTypeObject AST_type;
 static PyTypeObject *mod_type;
 static PyObject* ast2obj_mod(void*);
 static PyTypeObject *Module_type;
-_Py_identifier(body);
+_Py_IDENTIFIER(body);
 static char *Module_fields[]={
         "body",
 };
@@ -24,18 +24,18 @@ static char *Suite_fields[]={
         "body",
 };
 static PyTypeObject *stmt_type;
-_Py_identifier(lineno);
-_Py_identifier(col_offset);
+_Py_IDENTIFIER(lineno);
+_Py_IDENTIFIER(col_offset);
 static char *stmt_attributes[] = {
         "lineno",
         "col_offset",
 };
 static PyObject* ast2obj_stmt(void*);
 static PyTypeObject *FunctionDef_type;
-_Py_identifier(name);
-_Py_identifier(args);
-_Py_identifier(decorator_list);
-_Py_identifier(returns);
+_Py_IDENTIFIER(name);
+_Py_IDENTIFIER(args);
+_Py_IDENTIFIER(decorator_list);
+_Py_IDENTIFIER(returns);
 static char *FunctionDef_fields[]={
         "name",
         "args",
@@ -44,10 +44,10 @@ static char *FunctionDef_fields[]={
         "returns",
 };
 static PyTypeObject *ClassDef_type;
-_Py_identifier(bases);
-_Py_identifier(keywords);
-_Py_identifier(starargs);
-_Py_identifier(kwargs);
+_Py_IDENTIFIER(bases);
+_Py_IDENTIFIER(keywords);
+_Py_IDENTIFIER(starargs);
+_Py_IDENTIFIER(kwargs);
 static char *ClassDef_fields[]={
         "name",
         "bases",
@@ -58,12 +58,12 @@ static char *ClassDef_fields[]={
         "decorator_list",
 };
 static PyTypeObject *Return_type;
-_Py_identifier(value);
+_Py_IDENTIFIER(value);
 static char *Return_fields[]={
         "value",
 };
 static PyTypeObject *Delete_type;
-_Py_identifier(targets);
+_Py_IDENTIFIER(targets);
 static char *Delete_fields[]={
         "targets",
 };
@@ -73,16 +73,16 @@ static char *Assign_fields[]={
         "value",
 };
 static PyTypeObject *AugAssign_type;
-_Py_identifier(target);
-_Py_identifier(op);
+_Py_IDENTIFIER(target);
+_Py_IDENTIFIER(op);
 static char *AugAssign_fields[]={
         "target",
         "op",
         "value",
 };
 static PyTypeObject *For_type;
-_Py_identifier(iter);
-_Py_identifier(orelse);
+_Py_IDENTIFIER(iter);
+_Py_IDENTIFIER(orelse);
 static char *For_fields[]={
         "target",
         "iter",
@@ -90,7 +90,7 @@ static char *For_fields[]={
         "orelse",
 };
 static PyTypeObject *While_type;
-_Py_identifier(test);
+_Py_IDENTIFIER(test);
 static char *While_fields[]={
         "test",
         "body",
@@ -103,21 +103,21 @@ static char *If_fields[]={
         "orelse",
 };
 static PyTypeObject *With_type;
-_Py_identifier(items);
+_Py_IDENTIFIER(items);
 static char *With_fields[]={
         "items",
         "body",
 };
 static PyTypeObject *Raise_type;
-_Py_identifier(exc);
-_Py_identifier(cause);
+_Py_IDENTIFIER(exc);
+_Py_IDENTIFIER(cause);
 static char *Raise_fields[]={
         "exc",
         "cause",
 };
 static PyTypeObject *Try_type;
-_Py_identifier(handlers);
-_Py_identifier(finalbody);
+_Py_IDENTIFIER(handlers);
+_Py_IDENTIFIER(finalbody);
 static char *Try_fields[]={
         "body",
         "handlers",
@@ -125,19 +125,19 @@ static char *Try_fields[]={
         "finalbody",
 };
 static PyTypeObject *Assert_type;
-_Py_identifier(msg);
+_Py_IDENTIFIER(msg);
 static char *Assert_fields[]={
         "test",
         "msg",
 };
 static PyTypeObject *Import_type;
-_Py_identifier(names);
+_Py_IDENTIFIER(names);
 static char *Import_fields[]={
         "names",
 };
 static PyTypeObject *ImportFrom_type;
-_Py_identifier(module);
-_Py_identifier(level);
+_Py_IDENTIFIER(module);
+_Py_IDENTIFIER(level);
 static char *ImportFrom_fields[]={
         "module",
         "names",
@@ -165,21 +165,21 @@ static char *expr_attributes[] = {
 };
 static PyObject* ast2obj_expr(void*);
 static PyTypeObject *BoolOp_type;
-_Py_identifier(values);
+_Py_IDENTIFIER(values);
 static char *BoolOp_fields[]={
         "op",
         "values",
 };
 static PyTypeObject *BinOp_type;
-_Py_identifier(left);
-_Py_identifier(right);
+_Py_IDENTIFIER(left);
+_Py_IDENTIFIER(right);
 static char *BinOp_fields[]={
         "left",
         "op",
         "right",
 };
 static PyTypeObject *UnaryOp_type;
-_Py_identifier(operand);
+_Py_IDENTIFIER(operand);
 static char *UnaryOp_fields[]={
         "op",
         "operand",
@@ -196,19 +196,19 @@ static char *IfExp_fields[]={
         "orelse",
 };
 static PyTypeObject *Dict_type;
-_Py_identifier(keys);
+_Py_IDENTIFIER(keys);
 static char *Dict_fields[]={
         "keys",
         "values",
 };
 static PyTypeObject *Set_type;
-_Py_identifier(elts);
+_Py_IDENTIFIER(elts);
 static char *Set_fields[]={
         "elts",
 };
 static PyTypeObject *ListComp_type;
-_Py_identifier(elt);
-_Py_identifier(generators);
+_Py_IDENTIFIER(elt);
+_Py_IDENTIFIER(generators);
 static char *ListComp_fields[]={
         "elt",
         "generators",
@@ -219,7 +219,7 @@ static char *SetComp_fields[]={
         "generators",
 };
 static PyTypeObject *DictComp_type;
-_Py_identifier(key);
+_Py_IDENTIFIER(key);
 static char *DictComp_fields[]={
         "key",
         "value",
@@ -235,15 +235,15 @@ static char *Yield_fields[]={
         "value",
 };
 static PyTypeObject *Compare_type;
-_Py_identifier(ops);
-_Py_identifier(comparators);
+_Py_IDENTIFIER(ops);
+_Py_IDENTIFIER(comparators);
 static char *Compare_fields[]={
         "left",
         "ops",
         "comparators",
 };
 static PyTypeObject *Call_type;
-_Py_identifier(func);
+_Py_IDENTIFIER(func);
 static char *Call_fields[]={
         "func",
         "args",
@@ -252,12 +252,12 @@ static char *Call_fields[]={
         "kwargs",
 };
 static PyTypeObject *Num_type;
-_Py_identifier(n);
+_Py_IDENTIFIER(n);
 static char *Num_fields[]={
         "n",
 };
 static PyTypeObject *Str_type;
-_Py_identifier(s);
+_Py_IDENTIFIER(s);
 static char *Str_fields[]={
         "s",
 };
@@ -267,15 +267,15 @@ static char *Bytes_fields[]={
 };
 static PyTypeObject *Ellipsis_type;
 static PyTypeObject *Attribute_type;
-_Py_identifier(attr);
-_Py_identifier(ctx);
+_Py_IDENTIFIER(attr);
+_Py_IDENTIFIER(ctx);
 static char *Attribute_fields[]={
         "value",
         "attr",
         "ctx",
 };
 static PyTypeObject *Subscript_type;
-_Py_identifier(slice);
+_Py_IDENTIFIER(slice);
 static char *Subscript_fields[]={
         "value",
         "slice",
@@ -287,7 +287,7 @@ static char *Starred_fields[]={
         "ctx",
 };
 static PyTypeObject *Name_type;
-_Py_identifier(id);
+_Py_IDENTIFIER(id);
 static char *Name_fields[]={
         "id",
         "ctx",
@@ -315,16 +315,16 @@ static PyTypeObject *Param_type;
 static PyTypeObject *slice_type;
 static PyObject* ast2obj_slice(void*);
 static PyTypeObject *Slice_type;
-_Py_identifier(lower);
-_Py_identifier(upper);
-_Py_identifier(step);
+_Py_IDENTIFIER(lower);
+_Py_IDENTIFIER(upper);
+_Py_IDENTIFIER(step);
 static char *Slice_fields[]={
         "lower",
         "upper",
         "step",
 };
 static PyTypeObject *ExtSlice_type;
-_Py_identifier(dims);
+_Py_IDENTIFIER(dims);
 static char *ExtSlice_fields[]={
         "dims",
 };
@@ -380,7 +380,7 @@ static PyTypeObject *In_type;
 static PyTypeObject *NotIn_type;
 static PyTypeObject *comprehension_type;
 static PyObject* ast2obj_comprehension(void*);
-_Py_identifier(ifs);
+_Py_IDENTIFIER(ifs);
 static char *comprehension_fields[]={
         "target",
         "iter",
@@ -393,7 +393,7 @@ static char *excepthandler_attributes[] = {
 };
 static PyObject* ast2obj_excepthandler(void*);
 static PyTypeObject *ExceptHandler_type;
-_Py_identifier(type);
+_Py_IDENTIFIER(type);
 static char *ExceptHandler_fields[]={
         "type",
         "name",
@@ -401,13 +401,13 @@ static char *ExceptHandler_fields[]={
 };
 static PyTypeObject *arguments_type;
 static PyObject* ast2obj_arguments(void*);
-_Py_identifier(vararg);
-_Py_identifier(varargannotation);
-_Py_identifier(kwonlyargs);
-_Py_identifier(kwarg);
-_Py_identifier(kwargannotation);
-_Py_identifier(defaults);
-_Py_identifier(kw_defaults);
+_Py_IDENTIFIER(vararg);
+_Py_IDENTIFIER(varargannotation);
+_Py_IDENTIFIER(kwonlyargs);
+_Py_IDENTIFIER(kwarg);
+_Py_IDENTIFIER(kwargannotation);
+_Py_IDENTIFIER(defaults);
+_Py_IDENTIFIER(kw_defaults);
 static char *arguments_fields[]={
         "args",
         "vararg",
@@ -420,8 +420,8 @@ static char *arguments_fields[]={
 };
 static PyTypeObject *arg_type;
 static PyObject* ast2obj_arg(void*);
-_Py_identifier(arg);
-_Py_identifier(annotation);
+_Py_IDENTIFIER(arg);
+_Py_IDENTIFIER(annotation);
 static char *arg_fields[]={
         "arg",
         "annotation",
@@ -434,15 +434,15 @@ static char *keyword_fields[]={
 };
 static PyTypeObject *alias_type;
 static PyObject* ast2obj_alias(void*);
-_Py_identifier(asname);
+_Py_IDENTIFIER(asname);
 static char *alias_fields[]={
         "name",
         "asname",
 };
 static PyTypeObject *withitem_type;
 static PyObject* ast2obj_withitem(void*);
-_Py_identifier(context_expr);
-_Py_identifier(optional_vars);
+_Py_IDENTIFIER(context_expr);
+_Py_IDENTIFIER(optional_vars);
 static char *withitem_fields[]={
         "context_expr",
         "optional_vars",
@@ -452,7 +452,7 @@ static char *withitem_fields[]={
 static int
 ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 {
-    _Py_identifier(_fields);
+    _Py_IDENTIFIER(_fields);
     Py_ssize_t i, numfields = 0;
     int res = -1;
     PyObject *key, *value, *fields;
@@ -506,7 +506,7 @@ static PyObject *
 ast_type_reduce(PyObject *self, PyObject *unused)
 {
     PyObject *res;
-    _Py_identifier(__dict__);
+    _Py_IDENTIFIER(__dict__);
     PyObject *dict = _PyObject_GetAttrId(self, &PyId___dict__);
     if (dict == NULL) {
         if (PyErr_ExceptionMatches(PyExc_AttributeError))

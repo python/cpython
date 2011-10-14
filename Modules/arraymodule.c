@@ -1253,7 +1253,7 @@ array_fromfile(arrayobject *self, PyObject *args)
     PyObject *f, *b, *res;
     Py_ssize_t itemsize = self->ob_descr->itemsize;
     Py_ssize_t n, nbytes;
-    _Py_identifier(read);
+    _Py_IDENTIFIER(read);
     int not_enough_bytes;
 
     if (!PyArg_ParseTuple(args, "On:fromfile", &f, &n))
@@ -1322,7 +1322,7 @@ array_tofile(arrayobject *self, PyObject *f)
         char* ptr = self->ob_item + i*BLOCKSIZE;
         Py_ssize_t size = BLOCKSIZE;
         PyObject *bytes, *res;
-        _Py_identifier(write);
+        _Py_IDENTIFIER(write);
 
         if (i*BLOCKSIZE + size > nbytes)
             size = nbytes - i*BLOCKSIZE;
@@ -2003,8 +2003,8 @@ array_reduce_ex(arrayobject *array, PyObject *value)
     int mformat_code;
     static PyObject *array_reconstructor = NULL;
     long protocol;
-    _Py_identifier(_array_reconstructor);
-    _Py_identifier(__dict__);
+    _Py_IDENTIFIER(_array_reconstructor);
+    _Py_IDENTIFIER(__dict__);
 
     if (array_reconstructor == NULL) {
         PyObject *array_module = PyImport_ImportModule("array");

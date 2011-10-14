@@ -86,7 +86,7 @@ insort_right(PyObject *self, PyObject *args, PyObject *kw)
         if (PyList_Insert(list, index, item) < 0)
             return NULL;
     } else {
-        _Py_identifier(insert);
+        _Py_IDENTIFIER(insert);
 
         result = _PyObject_CallMethodId(list, &PyId_insert, "nO", index, item);
         if (result == NULL)
@@ -188,7 +188,7 @@ insort_left(PyObject *self, PyObject *args, PyObject *kw)
         if (PyList_Insert(list, index, item) < 0)
             return NULL;
     } else {
-        _Py_identifier(insert);
+        _Py_IDENTIFIER(insert);
 
         result = _PyObject_CallMethodId(list, &PyId_insert, "iO", index, item);
         if (result == NULL)

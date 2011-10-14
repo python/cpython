@@ -703,7 +703,7 @@ static PyObject *
 proxy_get(proxyobject *pp, PyObject *args)
 {
     PyObject *key, *def = Py_None;
-    _Py_identifier(get);
+    _Py_IDENTIFIER(get);
 
     if (!PyArg_UnpackTuple(args, "get", 1, 2, &key, &def))
         return NULL;
@@ -713,28 +713,28 @@ proxy_get(proxyobject *pp, PyObject *args)
 static PyObject *
 proxy_keys(proxyobject *pp)
 {
-    _Py_identifier(keys);
+    _Py_IDENTIFIER(keys);
     return _PyObject_CallMethodId(pp->dict, &PyId_keys, NULL);
 }
 
 static PyObject *
 proxy_values(proxyobject *pp)
 {
-    _Py_identifier(values);
+    _Py_IDENTIFIER(values);
     return _PyObject_CallMethodId(pp->dict, &PyId_values, NULL);
 }
 
 static PyObject *
 proxy_items(proxyobject *pp)
 {
-    _Py_identifier(items);
+    _Py_IDENTIFIER(items);
     return _PyObject_CallMethodId(pp->dict, &PyId_items, NULL);
 }
 
 static PyObject *
 proxy_copy(proxyobject *pp)
 {
-    _Py_identifier(copy);
+    _Py_IDENTIFIER(copy);
     return _PyObject_CallMethodId(pp->dict, &PyId_copy, NULL);
 }
 
@@ -1299,7 +1299,7 @@ property_init(PyObject *self, PyObject *args, PyObject *kwds)
 
     /* if no docstring given and the getter has one, use that one */
     if ((doc == NULL || doc == Py_None) && get != NULL) {
-        _Py_identifier(__doc__);
+        _Py_IDENTIFIER(__doc__);
         PyObject *get_doc = _PyObject_GetAttrId(get, &PyId___doc__);
         if (get_doc) {
             if (Py_TYPE(self) == &PyProperty_Type) {

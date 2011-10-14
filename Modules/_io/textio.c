@@ -11,23 +11,23 @@
 #include "structmember.h"
 #include "_iomodule.h"
 
-_Py_identifier(close);
-_Py_identifier(_dealloc_warn);
-_Py_identifier(decode);
-_Py_identifier(device_encoding);
-_Py_identifier(fileno);
-_Py_identifier(flush);
-_Py_identifier(getpreferredencoding);
-_Py_identifier(isatty);
-_Py_identifier(read);
-_Py_identifier(readable);
-_Py_identifier(replace);
-_Py_identifier(reset);
-_Py_identifier(seek);
-_Py_identifier(seekable);
-_Py_identifier(setstate);
-_Py_identifier(tell);
-_Py_identifier(writable);
+_Py_IDENTIFIER(close);
+_Py_IDENTIFIER(_dealloc_warn);
+_Py_IDENTIFIER(decode);
+_Py_IDENTIFIER(device_encoding);
+_Py_IDENTIFIER(fileno);
+_Py_IDENTIFIER(flush);
+_Py_IDENTIFIER(getpreferredencoding);
+_Py_IDENTIFIER(isatty);
+_Py_IDENTIFIER(read);
+_Py_IDENTIFIER(readable);
+_Py_IDENTIFIER(replace);
+_Py_IDENTIFIER(reset);
+_Py_IDENTIFIER(seek);
+_Py_IDENTIFIER(seekable);
+_Py_IDENTIFIER(setstate);
+_Py_IDENTIFIER(tell);
+_Py_IDENTIFIER(writable);
 
 /* TextIOBase */
 

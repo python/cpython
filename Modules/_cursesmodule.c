@@ -1418,7 +1418,7 @@ PyCursesWindow_PutWin(PyCursesWindowObject *self, PyObject *stream)
     while (1) {
         char buf[BUFSIZ];
         Py_ssize_t n = fread(buf, 1, BUFSIZ, fp);
-        _Py_identifier(write);
+        _Py_IDENTIFIER(write);
 
         if (n <= 0)
             break;
@@ -1913,7 +1913,7 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
     WINDOW *win;
 
     PyCursesInitialised;
-    _Py_identifier(read);
+    _Py_IDENTIFIER(read);
 
     strcpy(fn, "/tmp/py.curses.getwin.XXXXXX");
     fd = mkstemp(fn);

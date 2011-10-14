@@ -157,7 +157,7 @@ static PyObject *
 weakref_repr(PyWeakReference *self)
 {
     PyObject *name, *repr;
-    _Py_identifier(__name__);
+    _Py_IDENTIFIER(__name__);
 
     if (PyWeakref_GET_OBJECT(self) == Py_None)
         return PyUnicode_FromFormat("<weakref at %p; dead>", self);
@@ -441,7 +441,7 @@ proxy_checkref(PyWeakReference *proxy)
 #define WRAP_METHOD(method, special) \
     static PyObject * \
     method(PyObject *proxy) { \
-            _Py_identifier(special); \
+            _Py_IDENTIFIER(special); \
             UNWRAP(proxy); \
                 return _PyObject_CallMethodId(proxy, &PyId_##special, ""); \
         }

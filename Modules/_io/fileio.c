@@ -122,7 +122,7 @@ internal_close(fileio *self)
 static PyObject *
 fileio_close(fileio *self)
 {
-    _Py_identifier(close);
+    _Py_IDENTIFIER(close);
     if (!self->closefd) {
         self->fd = -1;
         Py_RETURN_NONE;

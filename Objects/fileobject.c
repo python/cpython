@@ -30,7 +30,7 @@ PyFile_FromFd(int fd, char *name, char *mode, int buffering, char *encoding,
               char *errors, char *newline, int closefd)
 {
     PyObject *io, *stream;
-    _Py_identifier(open);
+    _Py_IDENTIFIER(open);
 
     io = PyImport_ImportModule("io");
     if (io == NULL)
@@ -59,7 +59,7 @@ PyFile_GetLine(PyObject *f, int n)
     {
         PyObject *reader;
         PyObject *args;
-        _Py_identifier(readline);
+        _Py_IDENTIFIER(readline);
 
         reader = _PyObject_GetAttrId(f, &PyId_readline);
         if (reader == NULL)
@@ -128,7 +128,7 @@ int
 PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
 {
     PyObject *writer, *value, *args, *result;
-    _Py_identifier(write);
+    _Py_IDENTIFIER(write);
 
     if (f == NULL) {
         PyErr_SetString(PyExc_TypeError, "writeobject with NULL file");
@@ -197,7 +197,7 @@ PyObject_AsFileDescriptor(PyObject *o)
 {
     int fd;
     PyObject *meth;
-    _Py_identifier(fileno);
+    _Py_IDENTIFIER(fileno);
 
     if (PyLong_Check(o)) {
         fd = PyLong_AsLong(o);

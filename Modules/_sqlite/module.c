@@ -179,7 +179,7 @@ static PyObject* module_register_converter(PyObject* self, PyObject* args)
     PyObject* name = NULL;
     PyObject* callable;
     PyObject* retval = NULL;
-    _Py_identifier(upper);
+    _Py_IDENTIFIER(upper);
 
     if (!PyArg_ParseTuple(args, "UO", &orig_name, &callable)) {
         return NULL;

@@ -462,8 +462,8 @@ static int
 fp_setreadl(struct tok_state *tok, const char* enc)
 {
     PyObject *readline = NULL, *stream = NULL, *io = NULL;
-    _Py_identifier(open);
-    _Py_identifier(readline);
+    _Py_IDENTIFIER(open);
+    _Py_IDENTIFIER(readline);
     int fd;
 
     io = PyImport_ImportModuleNoBlock("io");

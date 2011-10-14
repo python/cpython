@@ -32,8 +32,8 @@ const char *Py_FileSystemDefaultEncoding = NULL; /* set by initfsencoding() */
 int Py_HasFileSystemDefaultEncoding = 0;
 #endif
 
-_Py_identifier(fileno);
-_Py_identifier(flush);
+_Py_IDENTIFIER(fileno);
+_Py_IDENTIFIER(flush);
 
 static PyObject *
 builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
@@ -41,7 +41,7 @@ builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *func, *name, *bases, *mkw, *meta, *prep, *ns, *cell;
     PyObject *cls = NULL;
     Py_ssize_t nargs;
-    _Py_identifier(__prepare__);
+    _Py_IDENTIFIER(__prepare__);
 
     assert(args != NULL);
     if (!PyTuple_Check(args)) {
@@ -1614,7 +1614,7 @@ builtin_input(PyObject *self, PyObject *args)
         char *stdin_encoding_str;
         PyObject *result;
         size_t len;
-        _Py_identifier(encoding);
+        _Py_IDENTIFIER(encoding);
 
         stdin_encoding = _PyObject_GetAttrId(fin, &PyId_encoding);
         if (!stdin_encoding)
@@ -1790,7 +1790,7 @@ builtin_sorted(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *callable;
     static char *kwlist[] = {"iterable", "key", "reverse", 0};
     int reverse;
-    _Py_identifier(sort);
+    _Py_IDENTIFIER(sort);
 
     /* args 1-3 should match listsort in Objects/listobject.c */
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|Oi:sorted",
@@ -1847,7 +1847,7 @@ builtin_vars(PyObject *self, PyObject *args)
             Py_INCREF(d);
     }
     else {
-        _Py_identifier(__dict__);
+        _Py_IDENTIFIER(__dict__);
         d = _PyObject_GetAttrId(v, &PyId___dict__);
         if (d == NULL) {
             PyErr_SetString(PyExc_TypeError,
