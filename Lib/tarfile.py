@@ -194,16 +194,18 @@ def nti(s):
     """
     # There are two possible encodings for a number field, see
     # itn() below.
-    if s[0] != chr(0o200):
+    if s[0] in (0o200, 0o377):
+        n = 0
+        for i in range(len(s) - 1):
+            n <<= 8
+            n += s[i + 1]
+        if s[0] == 0o377:
+            n = -(256 ** (len(s) - 1) - n)
+    else:
         try:
             n = int(nts(s, "ascii", "strict") or "0", 8)
         except ValueError:
             raise InvalidHeaderError("invalid header")
-    else:
-        n = 0
-        for i in range(len(s) - 1):
-            n <<= 8
-            n += ord(s[i + 1])
     return n
 
 def itn(n, digits=8, format=DEFAULT_FORMAT):
@@ -212,25 +214,26 @@ def itn(n, digits=8, format=DEFAULT_FORMAT):
     # POSIX 1003.1-1988 requires numbers to be encoded as a string of
     # octal digits followed by a null-byte, this allows values up to
     # (8**(digits-1))-1. GNU tar allows storing numbers greater than
-    # that if necessary. A leading 0o200 byte indicates this particular
-    # encoding, the following digits-1 bytes are a big-endian
-    # representation. This allows values up to (256**(digits-1))-1.
+    # that if necessary. A leading 0o200 or 0o377 byte indicate this
+    # particular encoding, the following digits-1 bytes are a big-endian
+    # base-256 representation. This allows values up to (256**(digits-1))-1.
+    # A 0o200 byte indicates a positive number, a 0o377 byte a negative
+    # number.
     if 0 <= n < 8 ** (digits - 1):
         s = bytes("%0*o" % (digits - 1, n), "ascii") + NUL
-    else:
-        if format != GNU_FORMAT or n >= 256 ** (digits - 1):
-            raise ValueError("overflow in number field")
+    elif format == GNU_FORMAT and -256 ** (digits - 1) <= n < 256 ** (digits - 1):
+        if n >= 0:
+            s = bytearray([0o200])
+        else:
+            s = bytearray([0o377])
+            n = 256 ** digits + n
 
-        if n < 0:
-            # XXX We mimic GNU tar's behaviour with negative numbers,
-            # this could raise OverflowError.
-            n = struct.unpack("L", struct.pack("l", n))[0]
-
-        s = bytearray()
         for i in range(digits - 1):
-            s.insert(0, n & 0o377)
+            s.insert(1, n & 0o377)
             n >>= 8
-        s.insert(0, 0o200)
+    else:
+        raise ValueError("overflow in number field")
+
     return s
 
 def calc_chksums(buf):
