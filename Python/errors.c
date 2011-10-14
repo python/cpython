@@ -780,6 +780,12 @@ void
 PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
 {
     PyObject *exc, *v, *tb, *tmp;
+    _Py_IDENTIFIER(filename);
+    _Py_IDENTIFIER(lineno);
+    _Py_IDENTIFIER(msg);
+    _Py_IDENTIFIER(offset);
+    _Py_IDENTIFIER(print_file_and_line);
+    _Py_IDENTIFIER(text);
 
     /* add attributes for the line number and filename for the error */
     PyErr_Fetch(&exc, &v, &tb);
@@ -790,7 +796,7 @@ PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
     if (tmp == NULL)
         PyErr_Clear();
     else {
-        if (PyObject_SetAttrString(v, "lineno", tmp))
+        if (_PyObject_SetAttrId(v, &PyId_lineno, tmp))
             PyErr_Clear();
         Py_DECREF(tmp);
     }
@@ -799,7 +805,7 @@ PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
         if (tmp == NULL)
             PyErr_Clear();
         else {
-            if (PyObject_SetAttrString(v, "offset", tmp))
+            if (_PyObject_SetAttrId(v, &PyId_offset, tmp))
                 PyErr_Clear();
             Py_DECREF(tmp);
         }
@@ -809,35 +815,35 @@ PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
         if (tmp == NULL)
             PyErr_Clear();
         else {
-            if (PyObject_SetAttrString(v, "filename", tmp))
+            if (_PyObject_SetAttrId(v, &PyId_filename, tmp))
                 PyErr_Clear();
             Py_DECREF(tmp);
         }
 
         tmp = PyErr_ProgramText(filename, lineno);
         if (tmp) {
-            if (PyObject_SetAttrString(v, "text", tmp))
+            if (_PyObject_SetAttrId(v, &PyId_text, tmp))
                 PyErr_Clear();
             Py_DECREF(tmp);
         }
     }
-    if (PyObject_SetAttrString(v, "offset", Py_None)) {
+    if (_PyObject_SetAttrId(v, &PyId_offset, Py_None)) {
         PyErr_Clear();
     }
     if (exc != PyExc_SyntaxError) {
-        if (!PyObject_HasAttrString(v, "msg")) {
+        if (!_PyObject_HasAttrId(v, &PyId_msg)) {
             tmp = PyObject_Str(v);
             if (tmp) {
-                if (PyObject_SetAttrString(v, "msg", tmp))
+                if (_PyObject_SetAttrId(v, &PyId_msg, tmp))
                     PyErr_Clear();
                 Py_DECREF(tmp);
             } else {
                 PyErr_Clear();
             }
         }
-        if (!PyObject_HasAttrString(v, "print_file_and_line")) {
-            if (PyObject_SetAttrString(v, "print_file_and_line",
-                                       Py_None))
+        if (!_PyObject_HasAttrId(v, &PyId_print_file_and_line)) {
+            if (_PyObject_SetAttrId(v, &PyId_print_file_and_line,
+                                    Py_None))
                 PyErr_Clear();
         }
     }

@@ -2454,6 +2454,8 @@ update_lines_cols(void)
 {
     PyObject *o;
     PyObject *m = PyImport_ImportModuleNoBlock("curses");
+    _Py_IDENTIFIER(LINES);
+    _Py_IDENTIFIER(COLS);
 
     if (!m)
         return 0;
@@ -2463,12 +2465,13 @@ update_lines_cols(void)
         Py_DECREF(m);
         return 0;
     }
-    if (PyObject_SetAttrString(m, "LINES", o)) {
+    if (_PyObject_SetAttrId(m, &PyId_LINES, o)) {
         Py_DECREF(m);
         Py_DECREF(o);
         return 0;
     }
-    if (PyDict_SetItemString(ModDict, "LINES", o)) {
+    /* PyId_LINES.object will be initialized here. */
+    if (PyDict_SetItem(ModDict, PyId_LINES.object, o)) {
         Py_DECREF(m);
         Py_DECREF(o);
         return 0;
@@ -2479,12 +2482,12 @@ update_lines_cols(void)
         Py_DECREF(m);
         return 0;
     }
-    if (PyObject_SetAttrString(m, "COLS", o)) {
+    if (_PyObject_SetAttrId(m, &PyId_COLS, o)) {
         Py_DECREF(m);
         Py_DECREF(o);
         return 0;
     }
-    if (PyDict_SetItemString(ModDict, "COLS", o)) {
+    if (PyDict_SetItem(ModDict, PyId_COLS.object, o)) {
         Py_DECREF(m);
         Py_DECREF(o);
         return 0;

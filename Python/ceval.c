@@ -4422,7 +4422,9 @@ import_from(PyObject *v, PyObject *name)
 static int
 import_all_from(PyObject *locals, PyObject *v)
 {
-    PyObject *all = PyObject_GetAttrString(v, "__all__");
+    _Py_IDENTIFIER(__all__);
+    _Py_IDENTIFIER(__dict__);
+    PyObject *all = _PyObject_GetAttrId(v, &PyId___all__);
     PyObject *dict, *name, *value;
     int skip_leading_underscores = 0;
     int pos, err;
@@ -4431,7 +4433,7 @@ import_all_from(PyObject *locals, PyObject *v)
         if (!PyErr_ExceptionMatches(PyExc_AttributeError))
             return -1; /* Unexpected error */
         PyErr_Clear();
-        dict = PyObject_GetAttrString(v, "__dict__");
+        dict = _PyObject_GetAttrId(v, &PyId___dict__);
         if (dict == NULL) {
             if (!PyErr_ExceptionMatches(PyExc_AttributeError))
                 return -1;

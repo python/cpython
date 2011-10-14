@@ -1311,7 +1311,7 @@ property_init(PyObject *self, PyObject *args, PyObject *kwds)
                 in dict of the subclass instance instead,
                 otherwise it gets shadowed by __doc__ in the
                 class's dict. */
-                int err = PyObject_SetAttrString(self, "__doc__", get_doc);
+                int err = _PyObject_SetAttrId(self, &PyId___doc__, get_doc);
                 Py_DECREF(get_doc);
                 if (err < 0)
                     return -1;

@@ -4388,12 +4388,13 @@ static PyObject *
 instantiate(PyObject *cls, PyObject *args)
 {
     PyObject *result = NULL;
+    _Py_IDENTIFIER(__getinitargs__);
     /* Caller must assure args are a tuple.  Normally, args come from
        Pdata_poptuple which packs objects from the top of the stack
        into a newly created tuple. */
     assert(PyTuple_Check(args));
     if (Py_SIZE(args) > 0 || !PyType_Check(cls) ||
-        PyObject_HasAttrString(cls, "__getinitargs__")) {
+        _PyObject_HasAttrId(cls, &PyId___getinitargs__)) {
         result = PyObject_CallObject(cls, args);
     }
     else {
@@ -5557,6 +5558,7 @@ Unpickler_init(UnpicklerObject *self, PyObject *args, PyObject *kwds)
     PyObject *fix_imports = Py_True;
     char *encoding = NULL;
     char *errors = NULL;
+    _Py_IDENTIFIER(persistent_load);
 
     /* XXX: That is an horrible error message. But, I don't know how to do
        better... */
@@ -5591,8 +5593,7 @@ Unpickler_init(UnpicklerObject *self, PyObject *args, PyObject *kwds)
     if (self->fix_imports == -1)
         return -1;
 
-    if (PyObject_HasAttrString((PyObject *)self, "persistent_load")) {
-        _Py_IDENTIFIER(persistent_load);
+    if (_PyObject_HasAttrId((PyObject *)self, &PyId_persistent_load)) {
         self->pers_func = _PyObject_GetAttrId((PyObject *)self,
                                               &PyId_persistent_load);
         if (self->pers_func == NULL)
