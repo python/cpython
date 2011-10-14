@@ -1,7 +1,8 @@
-import mimetypes
 import io
-import unittest
+import locale
+import mimetypes
 import sys
+import unittest
 
 from test import support
 
@@ -61,6 +62,18 @@ class MimeTypesTestCase(unittest.TestCase):
         # And now for no hits
         all = self.db.guess_all_extensions('image/jpg', strict=True)
         eq(all, [])
+
+    def test_encoding(self):
+        getpreferredencoding = locale.getpreferredencoding
+        self.addCleanup(setattr, locale, 'getpreferredencoding',
+                                 getpreferredencoding)
+        locale.getpreferredencoding = lambda: 'ascii'
+
+        filename = support.findfile("mime.types")
+        mimes = mimetypes.MimeTypes([filename])
+        exts = mimes.guess_all_extensions('application/vnd.geocube+xml',
+                                          strict=True)
+        self.assertEqual(exts, ['.g3', '.g\xb3'])
 
 
 @unittest.skipUnless(sys.platform.startswith("win"), "Windows only")
