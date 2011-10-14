@@ -712,7 +712,7 @@ PyErr_NewExceptionWithDoc(const char *name, const char *doc,
 void
 PyErr_WriteUnraisable(PyObject *obj)
 {
-    _Py_identifier(__module__);
+    _Py_IDENTIFIER(__module__);
     PyObject *f, *t, *v, *tb;
     PyErr_Fetch(&t, &v, &tb);
     f = PySys_GetObject("stderr");

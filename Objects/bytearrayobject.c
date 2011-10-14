@@ -2698,7 +2698,7 @@ static PyObject *
 bytearray_reduce(PyByteArrayObject *self)
 {
     PyObject *latin1, *dict;
-    _Py_identifier(__dict__);
+    _Py_IDENTIFIER(__dict__);
 
     if (self->ob_bytes)
         latin1 = PyUnicode_DecodeLatin1(self->ob_bytes,

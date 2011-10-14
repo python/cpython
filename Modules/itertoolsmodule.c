@@ -654,7 +654,7 @@ tee(PyObject *self, PyObject *args)
         copyable = it;
     PyTuple_SET_ITEM(result, 0, copyable);
     for (i=1 ; i<n ; i++) {
-        _Py_identifier(__copy__);
+        _Py_IDENTIFIER(__copy__);
 
         copyable = _PyObject_CallMethodId(copyable, &PyId___copy__, NULL);
         if (copyable == NULL) {

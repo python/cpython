@@ -415,7 +415,7 @@ module_clear(PyModuleObject *m)
 static PyObject *
 module_dir(PyObject *self, PyObject *args)
 {
-    _Py_identifier(__dict__);
+    _Py_IDENTIFIER(__dict__);
     PyObject *result = NULL;
     PyObject *dict = _PyObject_GetAttrId(self, &PyId___dict__);
 

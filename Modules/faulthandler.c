@@ -146,8 +146,8 @@ static PyObject*
 faulthandler_get_fileno(PyObject *file, int *p_fd)
 {
     PyObject *result;
-    _Py_identifier(fileno);
-    _Py_identifier(flush);
+    _Py_IDENTIFIER(fileno);
+    _Py_IDENTIFIER(flush);
     long fd_long;
     int fd;
 
@@ -1199,7 +1199,7 @@ static int
 faulthandler_env_options(void)
 {
     PyObject *xoptions, *key, *module, *res;
-    _Py_identifier(enable);
+    _Py_IDENTIFIER(enable);
 
     if (!Py_GETENV("PYTHONFAULTHANDLER")) {
         int has_key;

@@ -372,7 +372,7 @@ PyEval_ReleaseThread(PyThreadState *tstate)
 void
 PyEval_ReInitThreads(void)
 {
-    _Py_identifier(_after_fork);
+    _Py_IDENTIFIER(_after_fork);
     PyObject *threading, *result;
     PyThreadState *tstate = PyThreadState_GET();
 

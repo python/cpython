@@ -1933,7 +1933,7 @@ static PyObject *
 set_reduce(PySetObject *so)
 {
     PyObject *keys=NULL, *args=NULL, *result=NULL, *dict=NULL;
-    _Py_identifier(__dict__);
+    _Py_IDENTIFIER(__dict__);
 
     keys = PySequence_List((PyObject *)so);
     if (keys == NULL)

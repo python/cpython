@@ -95,7 +95,7 @@ pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
 
     /* try to have the protocol adapt this object*/
     if (PyObject_HasAttrString(proto, "__adapt__")) {
-        _Py_identifier(__adapt__);
+        _Py_IDENTIFIER(__adapt__);
         PyObject *adapted = _PyObject_CallMethodId(proto, &PyId___adapt__, "O", obj);
 
         if (adapted) {
@@ -112,7 +112,7 @@ pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
 
     /* and finally try to have the object adapt itself */
     if (PyObject_HasAttrString(obj, "__conform__")) {
-        _Py_identifier(__conform__);
+        _Py_IDENTIFIER(__conform__);
         PyObject *adapted = _PyObject_CallMethodId(obj, &PyId___conform__,"O", proto);
 
         if (adapted) {

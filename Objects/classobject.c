@@ -14,7 +14,7 @@ static int numfree = 0;
 #define PyMethod_MAXFREELIST 256
 #endif
 
-_Py_identifier(__name__);
+_Py_IDENTIFIER(__name__);
 
 PyObject *
 PyMethod_Function(PyObject *im)

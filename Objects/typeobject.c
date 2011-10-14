@@ -35,8 +35,8 @@ struct method_cache_entry {
 static struct method_cache_entry method_cache[1 << MCACHE_SIZE_EXP];
 static unsigned int next_version_tag = 0;
 
-_Py_identifier(__dict__);
-_Py_identifier(__class__);
+_Py_IDENTIFIER(__dict__);
+_Py_IDENTIFIER(__class__);
 
 unsigned int
 PyType_ClearCache(void)
@@ -1284,7 +1284,7 @@ tail_contains(PyObject *list, int whence, PyObject *o) {
 static PyObject *
 class_name(PyObject *cls)
 {
-    _Py_identifier(__name__);
+    _Py_IDENTIFIER(__name__);
     PyObject *name = _PyObject_GetAttrId(cls, &PyId___name__);
     if (name == NULL) {
         PyErr_Clear();
@@ -2599,7 +2599,7 @@ merge_class_dict(PyObject *dict, PyObject *aclass)
 {
     PyObject *classdict;
     PyObject *bases;
-    _Py_identifier(__bases__);
+    _Py_IDENTIFIER(__bases__);
 
     assert(PyDict_Check(dict));
     assert(aclass);
@@ -2901,7 +2901,7 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         PyObject *sorted;
         PyObject *sorted_methods = NULL;
         PyObject *joined = NULL;
-        _Py_identifier(join);
+        _Py_IDENTIFIER(join);
 
         /* Compute ", ".join(sorted(type.__abstractmethods__))
            into joined. */
@@ -3189,7 +3189,7 @@ slotnames(PyObject *cls)
     PyObject *copyreg;
     PyObject *slotnames;
     static PyObject *str_slotnames;
-    _Py_identifier(_slotnames);
+    _Py_IDENTIFIER(_slotnames);
 
     if (str_slotnames == NULL) {
         str_slotnames = PyUnicode_InternFromString("__slotnames__");
@@ -3329,7 +3329,7 @@ reduce_2(PyObject *obj)
         Py_INCREF(dictitems);
     }
     else {
-        _Py_identifier(items);
+        _Py_IDENTIFIER(items);
         PyObject *items = _PyObject_CallMethodId(obj, &PyId_items, "");
         if (items == NULL)
             goto end;

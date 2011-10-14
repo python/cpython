@@ -826,7 +826,7 @@ _Pickler_SetProtocol(PicklerObject *self, PyObject *proto_obj,
 static int
 _Pickler_SetOutputStream(PicklerObject *self, PyObject *file)
 {
-    _Py_identifier(write);
+    _Py_IDENTIFIER(write);
     assert(file != NULL);
     self->write = _PyObject_GetAttrId(file, &PyId_write);
     if (self->write == NULL) {
@@ -1174,9 +1174,9 @@ _Unpickler_New(void)
 static int
 _Unpickler_SetInputStream(UnpicklerObject *self, PyObject *file)
 {
-    _Py_identifier(peek);
-    _Py_identifier(read);
-    _Py_identifier(readline);
+    _Py_IDENTIFIER(peek);
+    _Py_IDENTIFIER(read);
+    _Py_IDENTIFIER(readline);
 
     self->peek = _PyObject_GetAttrId(file, &PyId_peek);
     if (self->peek == NULL) {
@@ -2492,7 +2492,7 @@ save_dict(PicklerObject *self, PyObject *obj)
             status = batch_dict_exact(self, obj);
             Py_LeaveRecursiveCall();
         } else {
-            _Py_identifier(items);
+            _Py_IDENTIFIER(items);
 
             items = _PyObject_CallMethodId(obj, &PyId_items, "()");
             if (items == NULL)
@@ -3394,7 +3394,7 @@ Pickler_init(PicklerObject *self, PyObject *args, PyObject *kwds)
     PyObject *file;
     PyObject *proto_obj = NULL;
     PyObject *fix_imports = Py_True;
-    _Py_identifier(persistent_id);
+    _Py_IDENTIFIER(persistent_id);
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|OO:Pickler",
                                      kwlist, &file, &proto_obj, &fix_imports))
@@ -3781,7 +3781,7 @@ static PyTypeObject Pickler_Type = {
 static PyObject *
 find_class(UnpicklerObject *self, PyObject *module_name, PyObject *global_name)
 {
-    _Py_identifier(find_class);
+    _Py_IDENTIFIER(find_class);
 
     return _PyObject_CallMethodId((PyObject *)self, &PyId_find_class, "OO",
                                   module_name, global_name);
@@ -4397,7 +4397,7 @@ instantiate(PyObject *cls, PyObject *args)
         result = PyObject_CallObject(cls, args);
     }
     else {
-        _Py_identifier(__new__);
+        _Py_IDENTIFIER(__new__);
 
         result = _PyObject_CallMethodId(cls, &PyId___new__, "O", cls);
     }
@@ -4940,7 +4940,7 @@ do_append(UnpicklerObject *self, Py_ssize_t x)
     }
     else {
         PyObject *append_func;
-        _Py_identifier(append);
+        _Py_IDENTIFIER(append);
 
         append_func = _PyObject_GetAttrId(list, &PyId_append);
         if (append_func == NULL)
@@ -5029,7 +5029,7 @@ load_build(UnpicklerObject *self)
     PyObject *state, *inst, *slotstate;
     PyObject *setstate;
     int status = 0;
-    _Py_identifier(__setstate__);
+    _Py_IDENTIFIER(__setstate__);
 
     /* Stack is ... instance, state.  We want to leave instance at
      * the stack top, possibly mutated via instance.__setstate__(state).
@@ -5086,7 +5086,7 @@ load_build(UnpicklerObject *self)
         PyObject *dict;
         PyObject *d_key, *d_value;
         Py_ssize_t i;
-        _Py_identifier(__dict__);
+        _Py_IDENTIFIER(__dict__);
 
         if (!PyDict_Check(state)) {
             PyErr_SetString(UnpicklingError, "state is not a dictionary");
@@ -5592,7 +5592,7 @@ Unpickler_init(UnpicklerObject *self, PyObject *args, PyObject *kwds)
         return -1;
 
     if (PyObject_HasAttrString((PyObject *)self, "persistent_load")) {
-        _Py_identifier(persistent_load);
+        _Py_IDENTIFIER(persistent_load);
         self->pers_func = _PyObject_GetAttrId((PyObject *)self,
                                               &PyId_persistent_load);
         if (self->pers_func == NULL)

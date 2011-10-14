@@ -1687,8 +1687,8 @@ unpickle(PyObject *self, PyObject *args)
     PyObject *state;
     PyObject *result;
     PyObject *tmp;
-    _Py_identifier(__new__);
-    _Py_identifier(__setstate__);
+    _Py_IDENTIFIER(__new__);
+    _Py_IDENTIFIER(__setstate__);
 
     if (!PyArg_ParseTuple(args, "OO", &typ, &state))
         return NULL;

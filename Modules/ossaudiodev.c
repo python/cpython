@@ -534,7 +534,7 @@ oss_self(PyObject *self, PyObject *unused)
 static PyObject *
 oss_exit(PyObject *self, PyObject *unused)
 {
-    _Py_identifier(close);
+    _Py_IDENTIFIER(close);
 
     PyObject *ret = _PyObject_CallMethodId(self, &PyId_close, NULL);
     if (!ret)
