@@ -1387,7 +1387,8 @@ dict_update_common(PyObject *self, PyObject *args, PyObject *kwds, char *methnam
         result = -1;
 
     else if (arg != NULL) {
-        if (PyObject_HasAttrString(arg, "keys"))
+        _Py_IDENTIFIER(keys);
+        if (_PyObject_HasAttrId(arg, &PyId_keys))
             result = PyDict_Merge(self, arg, 1);
         else
             result = PyDict_MergeFromSeq2(self, arg, 1);
@@ -2747,7 +2748,7 @@ dictviews_or(PyObject* self, PyObject *other)
 {
     PyObject *result = PySet_New(self);
     PyObject *tmp;
-    _Py_identifier(update);
+    _Py_IDENTIFIER(update);
 
     if (result == NULL)
         return NULL;
