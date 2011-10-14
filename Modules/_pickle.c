@@ -1776,7 +1776,6 @@ save_bytes(PicklerObject *self, PyObject *obj)
 static PyObject *
 raw_unicode_escape(PyObject *obj)
 {
-    static const char *hexdigits = "0123456789abcdef";
     PyObject *repr, *result;
     char *p;
     Py_ssize_t i, size, expandsize;
@@ -1809,23 +1808,23 @@ raw_unicode_escape(PyObject *obj)
         if (ch >= 0x10000) {
             *p++ = '\\';
             *p++ = 'U';
-            *p++ = hexdigits[(ch >> 28) & 0xf];
-            *p++ = hexdigits[(ch >> 24) & 0xf];
-            *p++ = hexdigits[(ch >> 20) & 0xf];
-            *p++ = hexdigits[(ch >> 16) & 0xf];
-            *p++ = hexdigits[(ch >> 12) & 0xf];
-            *p++ = hexdigits[(ch >> 8) & 0xf];
-            *p++ = hexdigits[(ch >> 4) & 0xf];
-            *p++ = hexdigits[ch & 15];
+            *p++ = Py_hexdigits[(ch >> 28) & 0xf];
+            *p++ = Py_hexdigits[(ch >> 24) & 0xf];
+            *p++ = Py_hexdigits[(ch >> 20) & 0xf];
+            *p++ = Py_hexdigits[(ch >> 16) & 0xf];
+            *p++ = Py_hexdigits[(ch >> 12) & 0xf];
+            *p++ = Py_hexdigits[(ch >> 8) & 0xf];
+            *p++ = Py_hexdigits[(ch >> 4) & 0xf];
+            *p++ = Py_hexdigits[ch & 15];
         }
         /* Map 16-bit characters to '\uxxxx' */
         else if (ch >= 256 || ch == '\\' || ch == '\n') {
             *p++ = '\\';
             *p++ = 'u';
-            *p++ = hexdigits[(ch >> 12) & 0xf];
-            *p++ = hexdigits[(ch >> 8) & 0xf];
-            *p++ = hexdigits[(ch >> 4) & 0xf];
-            *p++ = hexdigits[ch & 15];
+            *p++ = Py_hexdigits[(ch >> 12) & 0xf];
+            *p++ = Py_hexdigits[(ch >> 8) & 0xf];
+            *p++ = Py_hexdigits[(ch >> 4) & 0xf];
+            *p++ = Py_hexdigits[ch & 15];
         }
         /* Copy everything else as-is */
         else

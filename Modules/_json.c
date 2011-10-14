@@ -175,18 +175,18 @@ ascii_escape_unichar(Py_UCS4 c, unsigned char *output, Py_ssize_t chars)
                 Py_UCS4 v = c - 0x10000;
                 c = 0xd800 | ((v >> 10) & 0x3ff);
                 output[chars++] = 'u';
-                output[chars++] = "0123456789abcdef"[(c >> 12) & 0xf];
-                output[chars++] = "0123456789abcdef"[(c >>  8) & 0xf];
-                output[chars++] = "0123456789abcdef"[(c >>  4) & 0xf];
-                output[chars++] = "0123456789abcdef"[(c      ) & 0xf];
+                output[chars++] = Py_hexdigits[(c >> 12) & 0xf];
+                output[chars++] = Py_hexdigits[(c >>  8) & 0xf];
+                output[chars++] = Py_hexdigits[(c >>  4) & 0xf];
+                output[chars++] = Py_hexdigits[(c      ) & 0xf];
                 c = 0xdc00 | (v & 0x3ff);
                 output[chars++] = '\\';
             }
             output[chars++] = 'u';
-            output[chars++] = "0123456789abcdef"[(c >> 12) & 0xf];
-            output[chars++] = "0123456789abcdef"[(c >>  8) & 0xf];
-            output[chars++] = "0123456789abcdef"[(c >>  4) & 0xf];
-            output[chars++] = "0123456789abcdef"[(c      ) & 0xf];
+            output[chars++] = Py_hexdigits[(c >> 12) & 0xf];
+            output[chars++] = Py_hexdigits[(c >>  8) & 0xf];
+            output[chars++] = Py_hexdigits[(c >>  4) & 0xf];
+            output[chars++] = Py_hexdigits[(c      ) & 0xf];
     }
     return chars;
 }

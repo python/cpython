@@ -162,7 +162,6 @@ static PyObject *
 escape_encode(PyObject *self,
               PyObject *args)
 {
-    static const char *hexdigits = "0123456789abcdef";
     PyObject *str;
     Py_ssize_t size;
     Py_ssize_t newsize;
@@ -205,8 +204,8 @@ escape_encode(PyObject *self,
             else if (c < ' ' || c >= 0x7f) {
                 *p++ = '\\';
                 *p++ = 'x';
-                *p++ = hexdigits[(c & 0xf0) >> 4];
-                *p++ = hexdigits[c & 0xf];
+                *p++ = Py_hexdigits[(c & 0xf0) >> 4];
+                *p++ = Py_hexdigits[c & 0xf];
             }
             else
                 *p++ = c;

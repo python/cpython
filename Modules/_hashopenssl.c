@@ -201,13 +201,11 @@ EVP_hexdigest(EVPobject *self, PyObject *unused)
 
     /* Make hex version of the digest */
     for(i=j=0; i<digest_size; i++) {
-        char c;
+        unsigned char c;
         c = (digest[i] >> 4) & 0xf;
-        c = (c>9) ? c+'a'-10 : c + '0';
-        hex_digest[j++] = c;
+        hex_digest[j++] = Py_hexdigits[c];
         c = (digest[i] & 0xf);
-        c = (c>9) ? c+'a'-10 : c + '0';
-        hex_digest[j++] = c;
+        hex_digest[j++] = Py_hexdigits[c];
     }
     retval = PyUnicode_FromStringAndSize(hex_digest, digest_size * 2);
     PyMem_Free(hex_digest);

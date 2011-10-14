@@ -564,7 +564,6 @@ PyBytes_AsStringAndSize(register PyObject *obj,
 PyObject *
 PyBytes_Repr(PyObject *obj, int smartquotes)
 {
-    static const char *hexdigits = "0123456789abcdef";
     register PyBytesObject* op = (PyBytesObject*) obj;
     Py_ssize_t i, length = Py_SIZE(op);
     size_t newsize, squotes, dquotes;
@@ -620,8 +619,8 @@ PyBytes_Repr(PyObject *obj, int smartquotes)
         else if (c < ' ' || c >= 0x7f) {
             *p++ = '\\';
             *p++ = 'x';
-            *p++ = hexdigits[(c & 0xf0) >> 4];
-            *p++ = hexdigits[c & 0xf];
+            *p++ = Py_hexdigits[(c & 0xf0) >> 4];
+            *p++ = Py_hexdigits[c & 0xf];
         }
         else
             *p++ = c;

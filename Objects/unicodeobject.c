@@ -5943,8 +5943,6 @@ PyUnicode_DecodeUnicodeEscape(const char *s,
 
 */
 
-static const char *hexdigits = "0123456789abcdef";
-
 PyObject *
 PyUnicode_EncodeUnicodeEscape(const Py_UNICODE *s,
                               Py_ssize_t size)
@@ -6006,14 +6004,14 @@ PyUnicode_EncodeUnicodeEscape(const Py_UNICODE *s,
         else if (ch >= 0x10000) {
             *p++ = '\\';
             *p++ = 'U';
-            *p++ = hexdigits[(ch >> 28) & 0x0000000F];
-            *p++ = hexdigits[(ch >> 24) & 0x0000000F];
-            *p++ = hexdigits[(ch >> 20) & 0x0000000F];
-            *p++ = hexdigits[(ch >> 16) & 0x0000000F];
-            *p++ = hexdigits[(ch >> 12) & 0x0000000F];
-            *p++ = hexdigits[(ch >> 8) & 0x0000000F];
-            *p++ = hexdigits[(ch >> 4) & 0x0000000F];
-            *p++ = hexdigits[ch & 0x0000000F];
+            *p++ = Py_hexdigits[(ch >> 28) & 0x0000000F];
+            *p++ = Py_hexdigits[(ch >> 24) & 0x0000000F];
+            *p++ = Py_hexdigits[(ch >> 20) & 0x0000000F];
+            *p++ = Py_hexdigits[(ch >> 16) & 0x0000000F];
+            *p++ = Py_hexdigits[(ch >> 12) & 0x0000000F];
+            *p++ = Py_hexdigits[(ch >> 8) & 0x0000000F];
+            *p++ = Py_hexdigits[(ch >> 4) & 0x0000000F];
+            *p++ = Py_hexdigits[ch & 0x0000000F];
             continue;
         }
 #else
@@ -6028,14 +6026,14 @@ PyUnicode_EncodeUnicodeEscape(const Py_UNICODE *s,
                 ucs = (((ch & 0x03FF) << 10) | (ch2 & 0x03FF)) + 0x00010000;
                 *p++ = '\\';
                 *p++ = 'U';
-                *p++ = hexdigits[(ucs >> 28) & 0x0000000F];
-                *p++ = hexdigits[(ucs >> 24) & 0x0000000F];
-                *p++ = hexdigits[(ucs >> 20) & 0x0000000F];
-                *p++ = hexdigits[(ucs >> 16) & 0x0000000F];
-                *p++ = hexdigits[(ucs >> 12) & 0x0000000F];
-                *p++ = hexdigits[(ucs >> 8) & 0x0000000F];
-                *p++ = hexdigits[(ucs >> 4) & 0x0000000F];
-                *p++ = hexdigits[ucs & 0x0000000F];
+                *p++ = Py_hexdigits[(ucs >> 28) & 0x0000000F];
+                *p++ = Py_hexdigits[(ucs >> 24) & 0x0000000F];
+                *p++ = Py_hexdigits[(ucs >> 20) & 0x0000000F];
+                *p++ = Py_hexdigits[(ucs >> 16) & 0x0000000F];
+                *p++ = Py_hexdigits[(ucs >> 12) & 0x0000000F];
+                *p++ = Py_hexdigits[(ucs >> 8) & 0x0000000F];
+                *p++ = Py_hexdigits[(ucs >> 4) & 0x0000000F];
+                *p++ = Py_hexdigits[ucs & 0x0000000F];
                 continue;
             }
             /* Fall through: isolated surrogates are copied as-is */
@@ -6048,10 +6046,10 @@ PyUnicode_EncodeUnicodeEscape(const Py_UNICODE *s,
         if (ch >= 256) {
             *p++ = '\\';
             *p++ = 'u';
-            *p++ = hexdigits[(ch >> 12) & 0x000F];
-            *p++ = hexdigits[(ch >> 8) & 0x000F];
-            *p++ = hexdigits[(ch >> 4) & 0x000F];
-            *p++ = hexdigits[ch & 0x000F];
+            *p++ = Py_hexdigits[(ch >> 12) & 0x000F];
+            *p++ = Py_hexdigits[(ch >> 8) & 0x000F];
+            *p++ = Py_hexdigits[(ch >> 4) & 0x000F];
+            *p++ = Py_hexdigits[ch & 0x000F];
         }
 
         /* Map special whitespace to '\t', \n', '\r' */
@@ -6072,8 +6070,8 @@ PyUnicode_EncodeUnicodeEscape(const Py_UNICODE *s,
         else if (ch < ' ' || ch >= 0x7F) {
             *p++ = '\\';
             *p++ = 'x';
-            *p++ = hexdigits[(ch >> 4) & 0x000F];
-            *p++ = hexdigits[ch & 0x000F];
+            *p++ = Py_hexdigits[(ch >> 4) & 0x000F];
+            *p++ = Py_hexdigits[ch & 0x000F];
         }
 
         /* Copy everything else as-is */
@@ -6258,14 +6256,14 @@ PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s,
         if (ch >= 0x10000) {
             *p++ = '\\';
             *p++ = 'U';
-            *p++ = hexdigits[(ch >> 28) & 0xf];
-            *p++ = hexdigits[(ch >> 24) & 0xf];
-            *p++ = hexdigits[(ch >> 20) & 0xf];
-            *p++ = hexdigits[(ch >> 16) & 0xf];
-            *p++ = hexdigits[(ch >> 12) & 0xf];
-            *p++ = hexdigits[(ch >> 8) & 0xf];
-            *p++ = hexdigits[(ch >> 4) & 0xf];
-            *p++ = hexdigits[ch & 15];
+            *p++ = Py_hexdigits[(ch >> 28) & 0xf];
+            *p++ = Py_hexdigits[(ch >> 24) & 0xf];
+            *p++ = Py_hexdigits[(ch >> 20) & 0xf];
+            *p++ = Py_hexdigits[(ch >> 16) & 0xf];
+            *p++ = Py_hexdigits[(ch >> 12) & 0xf];
+            *p++ = Py_hexdigits[(ch >> 8) & 0xf];
+            *p++ = Py_hexdigits[(ch >> 4) & 0xf];
+            *p++ = Py_hexdigits[ch & 15];
         }
         else
 #else
@@ -6280,14 +6278,14 @@ PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s,
                     ucs = (((ch & 0x03FF) << 10) | (ch2 & 0x03FF)) + 0x00010000;
                     *p++ = '\\';
                     *p++ = 'U';
-                    *p++ = hexdigits[(ucs >> 28) & 0xf];
-                    *p++ = hexdigits[(ucs >> 24) & 0xf];
-                    *p++ = hexdigits[(ucs >> 20) & 0xf];
-                    *p++ = hexdigits[(ucs >> 16) & 0xf];
-                    *p++ = hexdigits[(ucs >> 12) & 0xf];
-                    *p++ = hexdigits[(ucs >> 8) & 0xf];
-                    *p++ = hexdigits[(ucs >> 4) & 0xf];
-                    *p++ = hexdigits[ucs & 0xf];
+                    *p++ = Py_hexdigits[(ucs >> 28) & 0xf];
+                    *p++ = Py_hexdigits[(ucs >> 24) & 0xf];
+                    *p++ = Py_hexdigits[(ucs >> 20) & 0xf];
+                    *p++ = Py_hexdigits[(ucs >> 16) & 0xf];
+                    *p++ = Py_hexdigits[(ucs >> 12) & 0xf];
+                    *p++ = Py_hexdigits[(ucs >> 8) & 0xf];
+                    *p++ = Py_hexdigits[(ucs >> 4) & 0xf];
+                    *p++ = Py_hexdigits[ucs & 0xf];
                     continue;
                 }
                 /* Fall through: isolated surrogates are copied as-is */
@@ -6299,10 +6297,10 @@ PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s,
         if (ch >= 256) {
             *p++ = '\\';
             *p++ = 'u';
-            *p++ = hexdigits[(ch >> 12) & 0xf];
-            *p++ = hexdigits[(ch >> 8) & 0xf];
-            *p++ = hexdigits[(ch >> 4) & 0xf];
-            *p++ = hexdigits[ch & 15];
+            *p++ = Py_hexdigits[(ch >> 12) & 0xf];
+            *p++ = Py_hexdigits[(ch >> 8) & 0xf];
+            *p++ = Py_hexdigits[(ch >> 4) & 0xf];
+            *p++ = Py_hexdigits[ch & 15];
         }
         /* Copy everything else as-is */
         else
@@ -11648,8 +11646,8 @@ unicode_repr(PyObject *unicode)
         else if (ch < ' ' || ch == 0x7F) {
             PyUnicode_WRITE(okind, odata, o++, '\\');
             PyUnicode_WRITE(okind, odata, o++, 'x');
-            PyUnicode_WRITE(okind, odata, o++, hexdigits[(ch >> 4) & 0x000F]);
-            PyUnicode_WRITE(okind, odata, o++, hexdigits[ch & 0x000F]);
+            PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 4) & 0x000F]);
+            PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[ch & 0x000F]);
         }
 
         /* Copy ASCII characters as-is */
@@ -11667,30 +11665,30 @@ unicode_repr(PyObject *unicode)
                 if (ch <= 0xff) {
                     PyUnicode_WRITE(okind, odata, o++, '\\');
                     PyUnicode_WRITE(okind, odata, o++, 'x');
-                    PyUnicode_WRITE(okind, odata, o++, hexdigits[(ch >> 4) & 0x000F]);
-                    PyUnicode_WRITE(okind, odata, o++, hexdigits[ch & 0x000F]);
+                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 4) & 0x000F]);
+                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[ch & 0x000F]);
                 }
                 /* Map 21-bit characters to '\U00xxxxxx' */
                 else if (ch >= 0x10000) {
                     PyUnicode_WRITE(okind, odata, o++, '\\');
                     PyUnicode_WRITE(okind, odata, o++, 'U');
-                    PyUnicode_WRITE(okind, odata, o++, hexdigits[(ch >> 28) & 0xF]);
-                    PyUnicode_WRITE(okind, odata, o++, hexdigits[(ch >> 24) & 0xF]);
-                    PyUnicode_WRITE(okind, odata, o++, hexdigits[(ch >> 20) & 0xF]);
-                    PyUnicode_WRITE(okind, odata, o++, hexdigits[(ch >> 16) & 0xF]);
-                    PyUnicode_WRITE(okind, odata, o++, hexdigits[(ch >> 12) & 0xF]);
-                    PyUnicode_WRITE(okind, odata, o++, hexdigits[(ch >> 8) & 0xF]);
-                    PyUnicode_WRITE(okind, odata, o++, hexdigits[(ch >> 4) & 0xF]);
-                    PyUnicode_WRITE(okind, odata, o++, hexdigits[ch & 0xF]);
+                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 28) & 0xF]);
+                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 24) & 0xF]);
+                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 20) & 0xF]);
+                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 16) & 0xF]);
+                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 12) & 0xF]);
+                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 8) & 0xF]);
+                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 4) & 0xF]);
+                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[ch & 0xF]);
                 }
                 /* Map 16-bit characters to '\uxxxx' */
                 else {
                     PyUnicode_WRITE(okind, odata, o++, '\\');
                     PyUnicode_WRITE(okind, odata, o++, 'u');
-                    PyUnicode_WRITE(okind, odata, o++, hexdigits[(ch >> 12) & 0xF]);
-                    PyUnicode_WRITE(okind, odata, o++, hexdigits[(ch >> 8) & 0xF]);
-                    PyUnicode_WRITE(okind, odata, o++, hexdigits[(ch >> 4) & 0xF]);
-                    PyUnicode_WRITE(okind, odata, o++, hexdigits[ch & 0xF]);
+                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 12) & 0xF]);
+                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 8) & 0xF]);
+                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 4) & 0xF]);
+                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[ch & 0xF]);
                 }
             }
             /* Copy characters as-is */
