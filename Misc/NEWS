@@ -43,6 +43,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13025: mimetypes is now reading MIME types using the UTF-8 encoding,
+  instead of the locale encoding.
+
 - Issue #10653: On Windows, use strftime() instead of wcsftime() because
   wcsftime() doesn't format time zone correctly.
 

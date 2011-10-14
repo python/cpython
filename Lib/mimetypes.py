@@ -199,7 +199,7 @@ class MimeTypes:
         list of standard types, else to the list of non-standard
         types.
         """
-        with open(filename) as fp:
+        with open(filename, encoding='utf-8') as fp:
             self.readfp(fp, strict)
 
     def readfp(self, fp, strict=True):
