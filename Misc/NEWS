@@ -305,6 +305,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10653: On Windows, use strftime() instead of wcsftime() because
+  wcsftime() doesn't format time zone correctly.
+
 - Issue #13150: The tokenize module doesn't compile large regular expressions
   at startup anymore.
 
