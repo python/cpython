@@ -463,12 +463,11 @@ dump_decimal(int fd, int value)
 static void
 dump_hexadecimal(int width, unsigned long value, int fd)
 {
-    const char *hexdigits = "0123456789abcdef";
     int len;
     char buffer[sizeof(unsigned long) * 2 + 1];
     len = 0;
     do {
-        buffer[len] = hexdigits[value & 15];
+        buffer[len] = Py_hexdigits[value & 15];
         value >>= 4;
         len++;
     } while (len < width || value);

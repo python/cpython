@@ -1078,13 +1078,11 @@ binascii_hexlify(PyObject *self, PyObject *args)
 
     /* make hex version of string, taken from shamodule.c */
     for (i=j=0; i < arglen; i++) {
-        char c;
+        unsigned char c;
         c = (argbuf[i] >> 4) & 0xf;
-        c = (c>9) ? c+'a'-10 : c + '0';
-        retbuf[j++] = c;
+        retbuf[j++] = Py_hexdigits[c];
         c = argbuf[i] & 0xf;
-        c = (c>9) ? c+'a'-10 : c + '0';
-        retbuf[j++] = c;
+        retbuf[j++] = Py_hexdigits[c];
     }
     PyBuffer_Release(&parg);
     return retval;

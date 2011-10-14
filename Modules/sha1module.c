@@ -367,13 +367,11 @@ SHA1_hexdigest(SHA1object *self, PyObject *unused)
 
     /* Make hex version of the digest */
     for(i=j=0; i<SHA1_DIGESTSIZE; i++) {
-        char c;
+        unsigned char c;
         c = (digest[i] >> 4) & 0xf;
-        c = (c>9) ? c+'a'-10 : c + '0';
-        hex_digest[j++] = c;
+        hex_digest[j++] = Py_hexdigits[c];
         c = (digest[i] & 0xf);
-        c = (c>9) ? c+'a'-10 : c + '0';
-        hex_digest[j++] = c;
+        hex_digest[j++] = Py_hexdigits[c];
     }
     return retval;
 }
