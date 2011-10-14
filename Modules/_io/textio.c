@@ -19,7 +19,11 @@ _Py_IDENTIFIER(fileno);
 _Py_IDENTIFIER(flush);
 _Py_IDENTIFIER(getpreferredencoding);
 _Py_IDENTIFIER(isatty);
+_Py_IDENTIFIER(mode);
+_Py_IDENTIFIER(name);
+_Py_IDENTIFIER(raw);
 _Py_IDENTIFIER(read);
+_Py_IDENTIFIER(read1);
 _Py_IDENTIFIER(readable);
 _Py_IDENTIFIER(replace);
 _Py_IDENTIFIER(reset);
@@ -999,7 +1003,7 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
         ci = _PyCodec_Lookup(encoding);
         if (ci == NULL)
             goto error;
-        res = PyObject_GetAttrString(ci, "name");
+        res = _PyObject_GetAttrId(ci, &PyId_name);
         Py_DECREF(ci);
         if (res == NULL) {
             if (PyErr_ExceptionMatches(PyExc_AttributeError))
@@ -1026,7 +1030,7 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
     if (Py_TYPE(buffer) == &PyBufferedReader_Type ||
         Py_TYPE(buffer) == &PyBufferedWriter_Type ||
         Py_TYPE(buffer) == &PyBufferedRandom_Type) {
-        raw = PyObject_GetAttrString(buffer, "raw");
+        raw = _PyObject_GetAttrId(buffer, &PyId_raw);
         /* Cache the raw FileIO object to speed up 'closed' checks */
         if (raw == NULL) {
             if (PyErr_ExceptionMatches(PyExc_AttributeError))
@@ -1046,7 +1050,7 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
     self->seekable = self->telling = PyObject_IsTrue(res);
     Py_DECREF(res);
 
-    self->has_read1 = PyObject_HasAttrString(buffer, "read1");
+    self->has_read1 = _PyObject_HasAttrId(buffer, &PyId_read1);
 
     self->encoding_start_of_stream = 0;
     if (self->seekable && self->encoder) {
@@ -2401,7 +2405,7 @@ textiowrapper_repr(textio *self)
     res = PyUnicode_FromString("<_io.TextIOWrapper");
     if (res == NULL)
         return NULL;
-    nameobj = PyObject_GetAttrString((PyObject *) self, "name");
+    nameobj = _PyObject_GetAttrId((PyObject *) self, &PyId_name);
     if (nameobj == NULL) {
         if (PyErr_ExceptionMatches(PyExc_AttributeError))
             PyErr_Clear();
@@ -2417,7 +2421,7 @@ textiowrapper_repr(textio *self)
         if (res == NULL)
             return NULL;
     }
-    modeobj = PyObject_GetAttrString((PyObject *) self, "mode");
+    modeobj = _PyObject_GetAttrId((PyObject *) self, &PyId_mode);
     if (modeobj == NULL) {
         if (PyErr_ExceptionMatches(PyExc_AttributeError))
             PyErr_Clear();
@@ -2578,7 +2582,7 @@ static PyObject *
 textiowrapper_name_get(textio *self, void *context)
 {
     CHECK_INITIALIZED(self);
-    return PyObject_GetAttrString(self->buffer, "name");
+    return _PyObject_GetAttrId(self->buffer, &PyId_name);
 }
 
 static PyObject *

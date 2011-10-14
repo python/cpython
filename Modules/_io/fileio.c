@@ -993,12 +993,13 @@ mode_string(fileio *self)
 static PyObject *
 fileio_repr(fileio *self)
 {
+    _Py_IDENTIFIER(name);
     PyObject *nameobj, *res;
 
     if (self->fd < 0)
         return PyUnicode_FromFormat("<_io.FileIO [closed]>");
 
-    nameobj = PyObject_GetAttrString((PyObject *) self, "name");
+    nameobj = _PyObject_GetAttrId((PyObject *) self, &PyId_name);
     if (nameobj == NULL) {
         if (PyErr_ExceptionMatches(PyExc_AttributeError))
             PyErr_Clear();

@@ -17,6 +17,8 @@ _Py_IDENTIFIER(close);
 _Py_IDENTIFIER(_dealloc_warn);
 _Py_IDENTIFIER(flush);
 _Py_IDENTIFIER(isatty);
+_Py_IDENTIFIER(mode);
+_Py_IDENTIFIER(name);
 _Py_IDENTIFIER(peek);
 _Py_IDENTIFIER(read);
 _Py_IDENTIFIER(read1);
@@ -556,14 +558,14 @@ static PyObject *
 buffered_name_get(buffered *self, void *context)
 {
     CHECK_INITIALIZED(self)
-    return PyObject_GetAttrString(self->raw, "name");
+    return _PyObject_GetAttrId(self->raw, &PyId_name);
 }
 
 static PyObject *
 buffered_mode_get(buffered *self, void *context)
 {
     CHECK_INITIALIZED(self)
-    return PyObject_GetAttrString(self->raw, "mode");
+    return _PyObject_GetAttrId(self->raw, &PyId_mode);
 }
 
 /* Lower-level APIs */
@@ -1301,7 +1303,7 @@ buffered_repr(buffered *self)
 {
     PyObject *nameobj, *res;
 
-    nameobj = PyObject_GetAttrString((PyObject *) self, "name");
+    nameobj = _PyObject_GetAttrId((PyObject *) self, &PyId_name);
     if (nameobj == NULL) {
         if (PyErr_ExceptionMatches(PyExc_AttributeError))
             PyErr_Clear();

@@ -59,8 +59,9 @@ PyDoc_STRVAR(iobase_doc,
    of the IOBase object rather than the virtual `closed` attribute as returned
    by whatever subclass. */
 
+_Py_IDENTIFIER(__IOBase_closed);
 #define IS_CLOSED(self) \
-    PyObject_HasAttrString(self, "__IOBase_closed")
+    _PyObject_HasAttrId(self, &PyId___IOBase_closed)
 
 /* Internal methods */
 static PyObject *
@@ -192,12 +193,13 @@ static PyObject *
 iobase_close(PyObject *self, PyObject *args)
 {
     PyObject *res;
+    _Py_IDENTIFIER(__IOBase_closed);
 
     if (IS_CLOSED(self))
         Py_RETURN_NONE;
 
     res = PyObject_CallMethodObjArgs(self, _PyIO_str_flush, NULL);
-    PyObject_SetAttrString(self, "__IOBase_closed", Py_True);
+    _PyObject_SetAttrId(self, &PyId___IOBase_closed, Py_True);
     if (res == NULL) {
         return NULL;
     }
@@ -467,12 +469,13 @@ iobase_readline(PyObject *self, PyObject *args)
     PyObject *buffer, *result;
     Py_ssize_t old_size = -1;
     _Py_IDENTIFIER(read);
+    _Py_IDENTIFIER(peek);
 
     if (!PyArg_ParseTuple(args, "|O&:readline", &_PyIO_ConvertSsize_t, &limit)) {
         return NULL;
     }
 
-    if (PyObject_HasAttrString(self, "peek"))
+    if (_PyObject_HasAttrId(self, &PyId_peek))
         has_peek = 1;
 
     buffer = PyByteArray_FromStringAndSize(NULL, 0);
