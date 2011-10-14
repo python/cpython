@@ -1,4 +1,7 @@
-"""Tests for ``packaging.command.install_distinfo``. """
+"""Tests for ``packaging.command.install_distinfo``.
+
+Writing of the RESOURCES file is tested in test_command_install_data.
+"""
 
 import os
 import csv

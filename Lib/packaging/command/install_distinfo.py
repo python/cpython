@@ -104,7 +104,7 @@ class install_distinfo(Command):
                                               'RESOURCES')
                 logger.info('creating %s', resources_path)
                 if not self.dry_run:
-                    with open(resources_path, 'wb') as f:
+                    with open(resources_path, 'w') as f:
                         writer = csv.writer(f, delimiter=',',
                                             lineterminator='\n',
                                             quotechar='"')
