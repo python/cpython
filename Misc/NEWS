@@ -12,7 +12,7 @@ Core and Builtins
 
 - PEP 3151 / issue #12555: reworking the OS and IO exception hierarchy.
 
-- Add internal API for static strings (_Py_identifier et.al.).
+- Add internal API for static strings (_Py_identifier et al.).
 
 - Issue #13063: the Windows error ERROR_NO_DATA (numbered 232 and described
   as "The pipe is being closed") is now mapped to POSIX errno EPIPE
@@ -304,6 +304,8 @@ Core and Builtins
 
 Library
 -------
+- Issue #12386: packaging does not fail anymore when writing the RESOURCES
+  file.
 
 - Issue #13158: Fix decoding and encoding of GNU tar specific base-256 number
   fields in tarfile.
