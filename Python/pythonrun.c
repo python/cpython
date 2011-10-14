@@ -810,6 +810,8 @@ create_stdio(PyObject* io,
     _Py_IDENTIFIER(open);
     _Py_IDENTIFIER(isatty);
     _Py_IDENTIFIER(TextIOWrapper);
+    _Py_IDENTIFIER(name);
+    _Py_IDENTIFIER(mode);
 
     /* stdin is always opened in buffered mode, first because it shouldn't
        make a difference in common use cases, second because TextIOWrapper
@@ -842,7 +844,7 @@ create_stdio(PyObject* io,
     }
 
     text = PyUnicode_FromString(name);
-    if (text == NULL || PyObject_SetAttrString(raw, "name", text) < 0)
+    if (text == NULL || _PyObject_SetAttrId(raw, &PyId_name, text) < 0)
         goto error;
     res = _PyObject_CallMethodId(raw, &PyId_isatty, "");
     if (res == NULL)
@@ -879,7 +881,7 @@ create_stdio(PyObject* io,
     else
         mode = "r";
     text = PyUnicode_FromString(mode);
-    if (!text || PyObject_SetAttrString(stream, "mode", text) < 0)
+    if (!text || _PyObject_SetAttrId(stream, &PyId_mode, text) < 0)
         goto error;
     Py_CLEAR(text);
     return stream;
@@ -1547,6 +1549,7 @@ print_exception(PyObject *f, PyObject *value)
 {
     int err = 0;
     PyObject *type, *tb;
+    _Py_IDENTIFIER(print_file_and_line);
 
     if (!PyExceptionInstance_Check(value)) {
         PyFile_WriteString("TypeError: print_exception(): Exception expected for value, ", f);
@@ -1562,7 +1565,7 @@ print_exception(PyObject *f, PyObject *value)
     if (tb && tb != Py_None)
         err = PyTraceBack_Print(tb, f);
     if (err == 0 &&
-        PyObject_HasAttrString(value, "print_file_and_line"))
+        _PyObject_HasAttrId(value, &PyId_print_file_and_line))
     {
         PyObject *message;
         const char *filename, *text;

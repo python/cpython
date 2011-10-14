@@ -747,6 +747,7 @@ static PyTypeObject* make_type(char *type, PyTypeObject* base, char**fields, int
 static int add_attributes(PyTypeObject* type, char**attrs, int num_fields)
 {
     int i, result;
+    _Py_IDENTIFIER(_attributes);
     PyObject *s, *l = PyTuple_New(num_fields);
     if (!l)
         return 0;
@@ -758,7 +759,7 @@ static int add_attributes(PyTypeObject* type, char**attrs, int num_fields)
         }
         PyTuple_SET_ITEM(l, i, s);
     }
-    result = PyObject_SetAttrString((PyObject*)type, "_attributes", l) >= 0;
+    result = _PyObject_SetAttrId((PyObject*)type, &PyId__attributes, l) >= 0;
     Py_DECREF(l);
     return result;
 }
@@ -1024,7 +1025,7 @@ class ObjVisitor(PickleVisitor):
         for a in sum.attributes:
             self.emit("value = ast2obj_%s(o->%s);" % (a.type, a.name), 1)
             self.emit("if (!value) goto failed;", 1)
-            self.emit('if (PyObject_SetAttrString(result, "%s", value) < 0)' % a.name, 1)
+            self.emit('if (_PyObject_SetAttrId(result, &PyId_%s, value) < 0)' % a.name, 1)
             self.emit('goto failed;', 2)
             self.emit('Py_DECREF(value);', 1)
         self.func_end()
@@ -1070,7 +1071,7 @@ class ObjVisitor(PickleVisitor):
             value = "o->v.%s.%s" % (name, field.name)
         self.set(field, value, depth)
         emit("if (!value) goto failed;", 0)
-        emit('if (PyObject_SetAttrString(result, "%s", value) == -1)' % field.name, 0)
+        emit('if (_PyObject_SetAttrId(result, &PyId_%s, value) == -1)' % field.name, 0)
         emit("goto failed;", 1)
         emit("Py_DECREF(value);", 0)
 

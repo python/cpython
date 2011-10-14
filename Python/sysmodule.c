@@ -139,6 +139,7 @@ sys_displayhook(PyObject *self, PyObject *o)
     PyObject *modules = interp->modules;
     PyObject *builtins = PyDict_GetItemString(modules, "builtins");
     int err;
+    _Py_IDENTIFIER(_);
 
     if (builtins == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "lost builtins module");
@@ -152,7 +153,7 @@ sys_displayhook(PyObject *self, PyObject *o)
         Py_INCREF(Py_None);
         return Py_None;
     }
-    if (PyObject_SetAttrString(builtins, "_", Py_None) != 0)
+    if (_PyObject_SetAttrId(builtins, &PyId__, Py_None) != 0)
         return NULL;
     outf = PySys_GetObject("stdout");
     if (outf == NULL || outf == Py_None) {
@@ -174,7 +175,7 @@ sys_displayhook(PyObject *self, PyObject *o)
     }
     if (PyFile_WriteString("\n", outf) != 0)
         return NULL;
-    if (PyObject_SetAttrString(builtins, "_", o) != 0)
+    if (_PyObject_SetAttrId(builtins, &PyId__, o) != 0)
         return NULL;
     Py_INCREF(Py_None);
     return Py_None;
