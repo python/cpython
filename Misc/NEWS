@@ -43,6 +43,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10653: On Windows, use strftime() instead of wcsftime() because
+  wcsftime() doesn't format time zone correctly.
+
 - Issue #11171: Fix distutils.sysconfig.get_makefile_filename when Python was
   configured with different prefix and exec-prefix.
 
