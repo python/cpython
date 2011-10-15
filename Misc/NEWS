@@ -9,6 +9,9 @@ What's New in Python 2.7.3?
 Core and Builtins
 -----------------
 
+- Issue #13186: Fix __delitem__ on old-style instances when invoked through
+  PySequence_DelItem.
+
 - Issue #13156: Revert the patch for issue #10517 (reset TLS upon fork()),
   which was only relevant for the native pthread TLS implementation.
 
