@@ -1639,6 +1639,19 @@ make_exception_with_doc(PyObject *self, PyObject *args, PyObject *kwargs)
     return PyErr_NewExceptionWithDoc(name, doc, base, dict);
 }
 
+static PyObject *
+sequence_delitem(PyObject *self, PyObject *args)
+{
+    PyObject *seq;
+    Py_ssize_t i;
+
+    if (!PyArg_ParseTuple(args, "On", &seq, &i))
+        return NULL;
+    if (PySequence_DelItem(seq, i) < 0)
+        return NULL;
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"test_config",             (PyCFunction)test_config,        METH_NOARGS},
@@ -1695,6 +1708,7 @@ static PyMethodDef TestMethods[] = {
     {"code_newempty", code_newempty,                     METH_VARARGS},
     {"make_exception_with_doc", (PyCFunction)make_exception_with_doc,
      METH_VARARGS | METH_KEYWORDS},
+    {"sequence_delitem", (PyCFunction)sequence_delitem, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 

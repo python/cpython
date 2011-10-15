@@ -350,6 +350,19 @@ class ClassTests(unittest.TestCase):
         AllTests.__delslice__ = delslice
 
 
+    @test_support.cpython_only
+    def testDelItem(self):
+        class A:
+            ok = False
+            def __delitem__(self, key):
+                self.ok = True
+        a = A()
+        # Subtle: we need to call PySequence_SetItem, not PyMapping_SetItem.
+        from _testcapi import sequence_delitem
+        sequence_delitem(a, 2)
+        self.assertTrue(a.ok)
+
+
     def testUnaryOps(self):
         testme = AllTests()
 
