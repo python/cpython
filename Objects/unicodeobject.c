@@ -2838,6 +2838,10 @@ normalize_encoding(const char *encoding,
     char *l;
     char *l_end;
 
+    if (encoding == NULL) {
+        strcpy(lower, "utf-8");
+        return 1;
+    }
     e = encoding;
     l = lower;
     l_end = &lower[lower_len - 1];
@@ -2868,9 +2872,6 @@ PyUnicode_Decode(const char *s,
     PyObject *buffer = NULL, *unicode;
     Py_buffer info;
     char lower[11];  /* Enough for any encoding shortcut */
-
-    if (encoding == NULL)
-        return PyUnicode_DecodeUTF8(s, size, errors);
 
     /* Shortcuts for common default encodings */
     if (normalize_encoding(encoding, lower, sizeof(lower))) {
@@ -3099,13 +3100,6 @@ PyUnicode_AsEncodedString(PyObject *unicode,
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
         return NULL;
-    }
-
-    if (encoding == NULL) {
-        if (errors == NULL || strcmp(errors, "strict") == 0)
-            return _PyUnicode_AsUTF8String(unicode, NULL);
-        else
-            return _PyUnicode_AsUTF8String(unicode, errors);
     }
 
     /* Shortcuts for common default encodings */
