@@ -28,7 +28,7 @@ class SelectTestCase(unittest.TestCase):
             fd = fp.fileno()
             fp.close()
             try:
-                select.select([fd], [], [])
+                select.select([fd], [], [], 0)
             except select.error as err:
                 self.assertEqual(err.errno, errno.EBADF)
             else:
