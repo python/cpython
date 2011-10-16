@@ -146,7 +146,7 @@ def lru_cache(maxsize=100):
 
         hits = misses = 0
         kwd_mark = (object(),)          # separates positional and keyword args
-        lock = Lock()                   # needed because ordereddicts aren't threadsafe
+        lock = Lock()                   # needed because OrderedDict isn't threadsafe
 
         if maxsize is None:
             cache = dict()              # simple cache without ordering or size limit
@@ -160,13 +160,15 @@ def lru_cache(maxsize=100):
                 try:
                     result = cache[key]
                     hits += 1
+                    return result
                 except KeyError:
-                    result = user_function(*args, **kwds)
-                    cache[key] = result
-                    misses += 1
+                    pass
+                result = user_function(*args, **kwds)
+                cache[key] = result
+                misses += 1
                 return result
         else:
-            cache = OrderedDict()       # ordered least recent to most recent
+            cache = OrderedDict()           # ordered least recent to most recent
             cache_popitem = cache.popitem
             cache_renew = cache.move_to_end
 
@@ -176,18 +178,20 @@ def lru_cache(maxsize=100):
                 key = args
                 if kwds:
                     key += kwd_mark + tuple(sorted(kwds.items()))
-                try:
-                    with lock:
+                with lock:
+                    try:
                         result = cache[key]
-                        cache_renew(key)        # record recent use of this key
+                        cache_renew(key)    # record recent use of this key
                         hits += 1
-                except KeyError:
-                    result = user_function(*args, **kwds)
-                    with lock:
-                        cache[key] = result     # record recent use of this key
-                        misses += 1
-                        if len(cache) > maxsize:
-                            cache_popitem(0)    # purge least recently used cache entry
+                        return result
+                    except KeyError:
+                        pass
+                result = user_function(*args, **kwds)
+                with lock:
+                    cache[key] = result     # record recent use of this key
+                    misses += 1
+                    if len(cache) > maxsize:
+                        cache_popitem(0)    # purge least recently used cache entry
                 return result
 
         def cache_info():

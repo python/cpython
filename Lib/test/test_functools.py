@@ -718,6 +718,22 @@ class TestLRU(unittest.TestCase):
         self.assertEqual(fib.cache_info(),
             functools._CacheInfo(hits=0, misses=0, maxsize=None, currsize=0))
 
+    def test_lru_with_exceptions(self):
+        # Verify that user_function exceptions get passed through without
+        # creating a hard-to-read chained exception.
+        # http://bugs.python.org/issue13177
+        for maxsize in (None, 100):
+            @functools.lru_cache(maxsize)
+            def func(i):
+                return 'abc'[i]
+            self.assertEqual(func(0), 'a')
+            with self.assertRaises(IndexError) as cm:
+                func(15)
+            self.assertIsNone(cm.exception.__context__)
+            # Verify that the previous exception did not result in a cached entry
+            with self.assertRaises(IndexError):
+                func(15)
+
 def test_main(verbose=None):
     test_classes = (
         TestPartial,
