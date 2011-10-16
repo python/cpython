@@ -46,6 +46,10 @@ Library
 - Issue #13158: Fix decoding and encoding of GNU tar specific base-256 number
   fields in tarfile.
 
+- Issue #13177:  Functools lru_cache() no longer calls the original function
+  inside an exception handler.  This makes tracebacks easier to read because
+  chained exceptions are avoided.
+
 - Issue #13025: mimetypes is now reading MIME types using the UTF-8 encoding,
   instead of the locale encoding.
 
