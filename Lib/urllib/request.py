@@ -177,7 +177,8 @@ def request_host(request):
 class Request:
 
     def __init__(self, url, data=None, headers={},
-                 origin_req_host=None, unverifiable=False):
+                 origin_req_host=None, unverifiable=False,
+                 method=None):
         # unwrap('<URL:type://host/path>') --> 'type://host/path'
         self.full_url = unwrap(url)
         self.full_url, self.fragment = splittag(self.full_url)
@@ -191,6 +192,7 @@ class Request:
             origin_req_host = request_host(self)
         self.origin_req_host = origin_req_host
         self.unverifiable = unverifiable
+        self.method = method
         self._parse()
 
     def _parse(self):
@@ -202,7 +204,10 @@ class Request:
             self.host = unquote(self.host)
 
     def get_method(self):
-        if self.data is not None:
+        """Return a string indicating the HTTP request method."""
+        if self.method is not None:
+            return self.method
+        elif self.data is not None:
             return "POST"
         else:
             return "GET"

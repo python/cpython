@@ -132,7 +132,7 @@ The :mod:`urllib.request` module defines the following functions:
 
 The following classes are provided:
 
-.. class:: Request(url, data=None, headers={}, origin_req_host=None, unverifiable=False)
+.. class:: Request(url, data=None, headers={}, origin_req_host=None, unverifiable=False, method=None)
 
    This class is an abstraction of a URL request.
 
@@ -140,8 +140,8 @@ The following classes are provided:
 
    *data* may be a string specifying additional data to send to the
    server, or ``None`` if no such data is needed.  Currently HTTP
-   requests are the only ones that use *data*; the HTTP request will
-   be a POST instead of a GET when the *data* parameter is provided.
+   requests are the only ones that use *data*, in order to choose between
+   ``'GET'`` and ``'POST'`` when *method* is not specified.
    *data* should be a buffer in the standard
    :mimetype:`application/x-www-form-urlencoded` format.  The
    :func:`urllib.parse.urlencode` function takes a mapping or sequence
@@ -157,8 +157,8 @@ The following classes are provided:
    :mod:`urllib`'s default user agent string is
    ``"Python-urllib/2.6"`` (on Python 2.6).
 
-   The final two arguments are only of interest for correct handling
-   of third-party HTTP cookies:
+   The following two arguments, *origin_req_host* and *unverifiable*,
+   are only of interest for correct handling of third-party HTTP cookies:
 
    *origin_req_host* should be the request-host of the origin
    transaction, as defined by :rfc:`2965`.  It defaults to
@@ -174,6 +174,13 @@ The following classes are provided:
    approve.  For example, if the request is for an image in an HTML
    document, and the user had no option to approve the automatic
    fetching of the image, this should be true.
+
+   *method* should be a string that indicates the HTTP request method that
+   will be used (e.g. ``'HEAD'``).  Its value is stored in the
+   :attr:`Request.method` attribute and is used by :meth:`Request.get_method()`.
+
+   .. versionchanged:: 3.3
+    :attr:`Request.method` argument is added to the Request class.
 
 
 .. class:: OpenerDirector()
@@ -369,6 +376,15 @@ request.
    boolean, indicates whether the request is unverifiable as defined
    by RFC 2965.
 
+.. attribute:: Request.method
+
+   The HTTP request method to use.  This value is used by
+   :meth:`Request.get_method` to override the computed HTTP request
+   method that would otherwise be returned.  This attribute is
+   initialized with the value of the *method* argument passed to the constructor.
+
+   ..versionadded:: 3.3
+
 .. method:: Request.add_data(data)
 
    Set the :class:`Request` data to *data*.  This is ignored by all handlers except
@@ -378,8 +394,13 @@ request.
 
 .. method:: Request.get_method()
 
-   Return a string indicating the HTTP request method.  This is only meaningful for
-   HTTP requests, and currently always returns ``'GET'`` or ``'POST'``.
+   Return a string indicating the HTTP request method.  If
+   :attr:`Request.method` is not ``None``, return its value, otherwise return
+   ``'GET'`` if :attr:`Request.data` is ``None``, or ``'POST'`` if it's not.
+   This is only meaningful for HTTP requests.
+
+    .. versionchanged:: 3.3
+    get_method now looks at the value of :attr:`Request.method` first.
 
 
 .. method:: Request.has_data()
