@@ -463,16 +463,16 @@ time_strftime(PyObject *self, PyObject *args)
     fmt = PyBytes_AS_STRING(format);
 #endif
 
-#if defined(MS_WINDOWS) && defined(HAVE_WCSFTIME)
+#if defined(MS_WINDOWS)
     /* check that the format string contains only valid directives */
-    for(outbuf = wcschr(fmt, L'%');
+    for(outbuf = strchr(fmt, '%');
         outbuf != NULL;
-        outbuf = wcschr(outbuf+2, L'%'))
+        outbuf = strchr(outbuf+2, '%'))
     {
         if (outbuf[1]=='#')
             ++outbuf; /* not documented by python, */
         if (outbuf[1]=='\0' ||
-            !wcschr(L"aAbBcdHIjmMpSUwWxXyYzZ%", outbuf[1]))
+            !strchr("aAbBcdHIjmMpSUwWxXyYzZ%", outbuf[1]))
         {
             PyErr_SetString(PyExc_ValueError, "Invalid format string");
             return 0;
