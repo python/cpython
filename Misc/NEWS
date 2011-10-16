@@ -304,6 +304,10 @@ Core and Builtins
 
 Library
 -------
+
+- issue #1673007: urllib2  to support HEAD request via new method argument.
+  Patch contributions by David Stanek, Patrick Westerhoff and Ezio Melotti.
+
 - Issue #12386: packaging does not fail anymore when writing the RESOURCES
   file.
 
