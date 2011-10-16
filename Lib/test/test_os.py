@@ -1540,9 +1540,12 @@ class ExtendedAttributeTests(unittest.TestCase):
         with self.assertRaises(OSError) as cm:
             getxattr(fn, s("user.test"))
         self.assertEqual(cm.exception.errno, errno.ENODATA)
-        self.assertEqual(listxattr(fn), [])
+        init_xattr = listxattr(fn)
+        self.assertIsInstance(init_xattr, list)
         setxattr(fn, s("user.test"), b"")
-        self.assertEqual(listxattr(fn), ["user.test"])
+        xattr = set(init_xattr)
+        xattr.add("user.test")
+        self.assertEqual(set(listxattr(fn)), xattr)
         self.assertEqual(getxattr(fn, b"user.test"), b"")
         setxattr(fn, s("user.test"), b"hello", os.XATTR_REPLACE)
         self.assertEqual(getxattr(fn, b"user.test"), b"hello")
@@ -1553,12 +1556,14 @@ class ExtendedAttributeTests(unittest.TestCase):
             setxattr(fn, s("user.test2"), b"bye", os.XATTR_REPLACE)
         self.assertEqual(cm.exception.errno, errno.ENODATA)
         setxattr(fn, s("user.test2"), b"foo", os.XATTR_CREATE)
-        self.assertEqual(sorted(listxattr(fn)), ["user.test", "user.test2"])
+        xattr.add("user.test2")
+        self.assertEqual(set(listxattr(fn)), xattr)
         removexattr(fn, s("user.test"))
         with self.assertRaises(OSError) as cm:
             getxattr(fn, s("user.test"))
         self.assertEqual(cm.exception.errno, errno.ENODATA)
-        self.assertEqual(listxattr(fn), ["user.test2"])
+        xattr.remove("user.test")
+        self.assertEqual(set(listxattr(fn)), xattr)
         self.assertEqual(getxattr(fn, s("user.test2")), b"foo")
         setxattr(fn, s("user.test"), b"a"*1024)
         self.assertEqual(getxattr(fn, s("user.test")), b"a"*1024)
@@ -1566,7 +1571,7 @@ class ExtendedAttributeTests(unittest.TestCase):
         many = sorted("user.test{}".format(i) for i in range(100))
         for thing in many:
             setxattr(fn, thing, b"x")
-        self.assertEqual(sorted(listxattr(fn)), many)
+        self.assertEqual(set(listxattr(fn)), set(init_xattr) | set(many))
 
     def _check_xattrs(self, *args):
         def make_bytes(s):
