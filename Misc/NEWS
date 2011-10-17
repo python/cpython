@@ -60,6 +60,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13194: zlib.compressobj().copy() and zlib.decompressobj().copy() are
+  now available on Windows.
+
 - Issue #13114: Fix the distutils commands check and register when the
   long description is a Unicode string with non-ASCII characters.
 
