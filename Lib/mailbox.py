@@ -1108,8 +1108,7 @@ class MH(Mailbox):
     def get_sequences(self):
         """Return a name-to-key-list dictionary to define each sequence."""
         results = {}
-        f = open(os.path.join(self._path, '.mh_sequences'), 'r')
-        try:
+        with open(os.path.join(self._path, '.mh_sequences'), 'r', encoding='ASCII') as f:
             all_keys = set(self.keys())
             for line in f:
                 try:
@@ -1128,13 +1127,11 @@ class MH(Mailbox):
                 except ValueError:
                     raise FormatError('Invalid sequence specification: %s' %
                                       line.rstrip())
-        finally:
-            f.close()
         return results
 
     def set_sequences(self, sequences):
         """Set sequences using the given name-to-key-list dictionary."""
-        f = open(os.path.join(self._path, '.mh_sequences'), 'r+')
+        f = open(os.path.join(self._path, '.mh_sequences'), 'r+', encoding='ASCII')
         try:
             os.close(os.open(f.name, os.O_WRONLY | os.O_TRUNC))
             for name, keys in sequences.items():
