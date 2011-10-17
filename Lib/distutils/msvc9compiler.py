@@ -685,7 +685,7 @@ class MSVCCompiler(CCompiler) :
     def manifest_get_embed_info(self, target_desc, ld_args):
         # If a manifest should be embedded, return a tuple of
         # (manifest_filename, resource_id).  Returns None if no manifest
-        # should be embedded.  See http://bugs.python.org/issue7833 for why 
+        # should be embedded.  See http://bugs.python.org/issue7833 for why
         # we want to avoid any manifest for extension modules if we can)
         for arg in ld_args:
             if arg.startswith("/MANIFESTFILE:"):
@@ -728,7 +728,7 @@ class MSVCCompiler(CCompiler) :
             manifest_buf = re.sub(pattern, "", manifest_buf)
             pattern = "<dependentAssembly>\s*</dependentAssembly>"
             manifest_buf = re.sub(pattern, "", manifest_buf)
-            # Now see if any other assemblies are referenced - if not, we 
+            # Now see if any other assemblies are referenced - if not, we
             # don't want a manifest embedded.
             pattern = re.compile(
                 r"""<assemblyIdentity.*?name=(?:"|')(.+?)(?:"|')"""
