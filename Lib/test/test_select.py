@@ -23,6 +23,9 @@ class SelectTestCase(unittest.TestCase):
         self.assertRaises(TypeError, select.select, [], [], [], "not a number")
         self.assertRaises(ValueError, select.select, [], [], [], -1)
 
+    # Issue #12367: http://www.freebsd.org/cgi/query-pr.cgi?pr=kern/155606
+    @unittest.skipIf(sys.platform.startswith('freebsd'),
+                     'skip because of a FreeBSD bug: kern/155606')
     def test_errno(self):
         with open(__file__, 'rb') as fp:
             fd = fp.fileno()
