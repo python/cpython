@@ -80,6 +80,27 @@ def _path_absolute(path):
             return _path_join(_os.getcwd(), path)
 
 
+def _write_atomic(path, data):
+    """Best-effort function to write data to a path atomically."""
+    if not sys.platform.startswith('win'):
+        # On POSIX-like platforms, renaming is atomic
+        path_tmp = path + '.tmp'
+        try:
+            fd = _os.open(path_tmp, _os.O_EXCL | _os.O_CREAT | _os.O_WRONLY)
+            with _io.FileIO(fd, 'wb') as file:
+                file.write(data)
+            _os.rename(path_tmp, path)
+        except OSError:
+            try:
+                _os.unlink(path_tmp)
+            except OSError:
+                pass
+            raise
+    else:
+        with _io.FileIO(path, 'wb') as file:
+            file.write(data)
+
+
 def _wrap(new, old):
     """Simple substitute for functools.wraps."""
     for replace in ['__module__', '__name__', '__doc__']:
@@ -494,9 +515,8 @@ class _SourceFileLoader(_FileLoader, SourceLoader):
                 else:
                     raise
         try:
-            with _io.FileIO(path, 'wb') as file:
-                file.write(data)
-        except IOError as exc:
+            _write_atomic(path, data)
+        except OSError as exc:
             # Don't worry if you can't write bytecode.
             if exc.errno == errno.EACCES:
                 return
