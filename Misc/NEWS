@@ -10,6 +10,10 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #7833: Extension modules built using distutils on Windows will no
+  longer include a "manifest" to prevent them failing at import time in some
+  embedded situations.
+
 - PEP 3151 / issue #12555: reworking the OS and IO exception hierarchy.
 
 - Add internal API for static strings (_Py_identifier et al.).
