@@ -9,6 +9,10 @@ What's New in Python 2.7.3?
 Core and Builtins
 -----------------
 
+- Issue #7833: Extension modules built using distutils on Windows will no
+  longer include a "manifest" to prevent them failing at import time in some
+  embedded situations.
+
 - Issue #13186: Fix __delitem__ on old-style instances when invoked through
   PySequence_DelItem.
 
