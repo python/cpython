@@ -468,7 +468,7 @@ PyObject *PyErr_SetExcFromWindowsErrWithFilenameObject(
     int len;
     WCHAR *s_buf = NULL; /* Free via LocalFree */
     PyObject *message;
-    PyObject *v;
+    PyObject *args, *v;
     DWORD err = (DWORD)ierr;
     if (err==0) err = GetLastError();
     len = FormatMessageW(
@@ -504,12 +504,16 @@ PyObject *PyErr_SetExcFromWindowsErrWithFilenameObject(
         filenameObject = Py_None;
     /* This is the constructor signature for passing a Windows error code.
        The POSIX translation will be figured out by the constructor. */
-    v = Py_BuildValue("(iOOi)", 0, message, filenameObject, err);
+    args = Py_BuildValue("(iOOi)", 0, message, filenameObject, err);
     Py_DECREF(message);
 
-    if (v != NULL) {
-        PyErr_SetObject(exc, v);
-        Py_DECREF(v);
+    if (args != NULL) {
+        v = PyObject_Call(exc, args, NULL);
+        Py_DECREF(args);
+        if (v != NULL) {
+            PyErr_SetObject((PyObject *) Py_TYPE(v), v);
+            Py_DECREF(v);
+        }
     }
     LocalFree(s_buf);
     return NULL;
