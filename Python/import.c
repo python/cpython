@@ -1284,7 +1284,8 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
 #ifdef MS_WINDOWS
     int fd;
 #else
-    PyObject *cpathbytes;
+    PyObject *cpathbytes, *cpathbytes_tmp;
+    Py_ssize_t cpathbytes_len;
 #endif
     PyObject *dirname;
     Py_UCS4 *dirsep;
@@ -1345,13 +1346,25 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
     else
         fp = NULL;
 #else
+    /* Under POSIX, we first write to a tmp file and then take advantage
+       of atomic renaming. */
     cpathbytes = PyUnicode_EncodeFSDefault(cpathname);
     if (cpathbytes == NULL) {
         PyErr_Clear();
         return;
     }
+    cpathbytes_len = PyBytes_GET_SIZE(cpathbytes);
+    cpathbytes_tmp = PyBytes_FromStringAndSize(NULL, cpathbytes_len + 4);
+    if (cpathbytes_tmp == NULL) {
+        Py_DECREF(cpathbytes);
+        PyErr_Clear();
+        return;
+    }
+    memcpy(PyBytes_AS_STRING(cpathbytes_tmp), PyBytes_AS_STRING(cpathbytes),
+           cpathbytes_len);
+    memcpy(PyBytes_AS_STRING(cpathbytes_tmp) + cpathbytes_len, ".tmp", 4);
 
-    fp = open_exclusive(PyBytes_AS_STRING(cpathbytes), mode);
+    fp = open_exclusive(PyBytes_AS_STRING(cpathbytes_tmp), mode);
 #endif
     if (fp == NULL) {
         if (Py_VerboseFlag)
@@ -1359,6 +1372,7 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
                 "# can't create %R\n", cpathname);
 #ifndef MS_WINDOWS
         Py_DECREF(cpathbytes);
+        Py_DECREF(cpathbytes_tmp);
 #endif
         return;
     }
@@ -1366,6 +1380,11 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
     /* First write a 0 for mtime */
     PyMarshal_WriteLongToFile(0L, fp, Py_MARSHAL_VERSION);
     PyMarshal_WriteObjectToFile((PyObject *)co, fp, Py_MARSHAL_VERSION);
+    fflush(fp);
+    /* Now write the true mtime */
+    fseek(fp, 4L, 0);
+    assert(mtime < LONG_MAX);
+    PyMarshal_WriteLongToFile((long)mtime, fp, Py_MARSHAL_VERSION);
     if (fflush(fp) != 0 || ferror(fp)) {
         if (Py_VerboseFlag)
             PySys_FormatStderr("# can't write %R\n", cpathname);
@@ -1374,20 +1393,28 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
 #ifdef MS_WINDOWS
         (void)DeleteFileW(PyUnicode_AS_UNICODE(cpathname));
 #else
-        (void) unlink(PyBytes_AS_STRING(cpathbytes));
+        (void) unlink(PyBytes_AS_STRING(cpathbytes_tmp));
         Py_DECREF(cpathbytes);
+        Py_DECREF(cpathbytes_tmp);
 #endif
         return;
     }
-#ifndef MS_WINDOWS
-    Py_DECREF(cpathbytes);
-#endif
-    /* Now write the true mtime */
-    fseek(fp, 4L, 0);
-    assert(mtime < LONG_MAX);
-    PyMarshal_WriteLongToFile((long)mtime, fp, Py_MARSHAL_VERSION);
-    fflush(fp);
     fclose(fp);
+    /* Under POSIX, do an atomic rename */
+#ifndef MS_WINDOWS
+    if (rename(PyBytes_AS_STRING(cpathbytes_tmp),
+               PyBytes_AS_STRING(cpathbytes))) {
+        if (Py_VerboseFlag)
+            PySys_FormatStderr("# can't write %R\n", cpathname);
+        /* Don't keep tmp file */
+        unlink(PyBytes_AS_STRING(cpathbytes_tmp));
+        Py_DECREF(cpathbytes);
+        Py_DECREF(cpathbytes_tmp);
+        return;
+    }
+    Py_DECREF(cpathbytes);
+    Py_DECREF(cpathbytes_tmp);
+#endif
     if (Py_VerboseFlag)
         PySys_FormatStderr("# wrote %R\n", cpathname);
 }
