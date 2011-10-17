@@ -10,6 +10,10 @@ What's New in Python 3.2.3?
 Core and Builtins
 -----------------
 
+- Issue #7833: Extension modules built using distutils on Windows will no
+  longer include a "manifest" to prevent them failing at import time in some
+  embedded situations.
+
 - Issue #13063: the Windows error ERROR_NO_DATA (numbered 232 and described
   as "The pipe is being closed") is now mapped to POSIX errno EPIPE
   (previously EINVAL).
