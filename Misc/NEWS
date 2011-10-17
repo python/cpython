@@ -311,6 +311,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12454: The mailbox module is now using ASCII, instead of the locale
+  encoding, to read and write MH mailboxes (.mh_sequences files).
+
 - Issue #13194: zlib.compressobj().copy() and zlib.decompressobj().copy() are
   now available on Windows.
 
