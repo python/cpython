@@ -311,6 +311,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13194: zlib.compressobj().copy() and zlib.decompressobj().copy() are
+  now available on Windows.
+
 - issue #1673007: urllib2  to support HEAD request via new method argument.
   Patch contributions by David Stanek, Patrick Westerhoff and Ezio Melotti.
 
