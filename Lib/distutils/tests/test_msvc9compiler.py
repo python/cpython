@@ -7,7 +7,36 @@ from distutils.errors import DistutilsPlatformError
 from distutils.tests import support
 from test.support import run_unittest
 
-_MANIFEST = """\
+# A manifest with the only assembly reference being the msvcrt assembly, so
+# should have the assembly completely stripped.  Note that although the
+# assembly has a <security> reference the assembly is removed - that is
+# currently a "feature", not a bug :)
+_MANIFEST_WITH_ONLY_MSVC_REFERENCE = """\
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1"
+          manifestVersion="1.0">
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
+    <security>
+      <requestedPrivileges>
+        <requestedExecutionLevel level="asInvoker" uiAccess="false">
+        </requestedExecutionLevel>
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+  <dependency>
+    <dependentAssembly>
+      <assemblyIdentity type="win32" name="Microsoft.VC90.CRT"
+         version="9.0.21022.8" processorArchitecture="x86"
+         publicKeyToken="XXXX">
+      </assemblyIdentity>
+    </dependentAssembly>
+  </dependency>
+</assembly>
+"""
+
+# A manifest with references to assemblies other than msvcrt.  When processed,
+# this assembly should be returned with just the msvcrt part removed.
+_MANIFEST_WITH_MULTIPLE_REFERENCES = """\
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1"
           manifestVersion="1.0">
@@ -115,7 +144,7 @@ class msvc9compilerTestCase(support.TempdirManager,
         manifest = os.path.join(tempdir, 'manifest')
         f = open(manifest, 'w')
         try:
-            f.write(_MANIFEST)
+            f.write(_MANIFEST_WITH_MULTIPLE_REFERENCES)
         finally:
             f.close()
 
@@ -132,6 +161,20 @@ class msvc9compilerTestCase(support.TempdirManager,
 
         # makes sure the manifest was properly cleaned
         self.assertEqual(content, _CLEANED_MANIFEST)
+
+    def test_remove_entire_manifest(self):
+        from distutils.msvc9compiler import MSVCCompiler
+        tempdir = self.mkdtemp()
+        manifest = os.path.join(tempdir, 'manifest')
+        f = open(manifest, 'w')
+        try:
+            f.write(_MANIFEST_WITH_ONLY_MSVC_REFERENCE)
+        finally:
+            f.close()
+
+        compiler = MSVCCompiler()
+        got = compiler._remove_visual_c_ref(manifest)
+        self.assertIs(got, None)
 
 
 def test_suite():
