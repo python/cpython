@@ -47,6 +47,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13194: zlib.compressobj().copy() and zlib.decompressobj().copy() are
+  now available on Windows.
+
 - Issue #13158: Fix decoding and encoding of GNU tar specific base-256 number
   fields in tarfile.
 
