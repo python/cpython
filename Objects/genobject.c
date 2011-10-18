@@ -261,6 +261,11 @@ gen_throw(PyGenObject *gen, PyObject *args)
             val = typ;
             typ = PyExceptionInstance_Class(typ);
             Py_INCREF(typ);
+
+            if (tb == NULL) {
+                /* Returns NULL if there's no traceback */
+                tb = PyException_GetTraceback(val);
+            }
         }
     }
     else {
