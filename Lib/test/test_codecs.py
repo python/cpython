@@ -1744,9 +1744,13 @@ class TransformCodecTest(unittest.TestCase):
             self.assertEqual(sout, b"\x80")
 
 
+@unittest.skipUnless(sys.platform == 'win32',
+                     'code pages are specific to Windows')
 class CodePageTest(unittest.TestCase):
     CP_UTF8 = 65001
-    vista_or_later = (sys.getwindowsversion().major >= 6)
+
+    def vista_or_later(self):
+        return (sys.getwindowsversion().major >= 6)
 
     def test_invalid_code_page(self):
         self.assertRaises(ValueError, codecs.code_page_encode, -1, 'a')
@@ -1816,7 +1820,7 @@ class CodePageTest(unittest.TestCase):
             (b'\x81\x00abc', 'strict', None),
             (b'\x81\x00abc', 'ignore', '\x00abc'),
         ]
-        if self.vista_or_later:
+        if self.vista_or_later():
             tests.append((b'\x81\x00abc', 'replace', '\ufffd\x00abc'))
         else:
             tests.append((b'\x81\x00abc', 'replace', '\x00\x00abc'))
@@ -1865,7 +1869,7 @@ class CodePageTest(unittest.TestCase):
             ('\xe9\u20ac', 'strict',  b'\xc3\xa9\xe2\x82\xac'),
             ('\U0010ffff', 'strict', b'\xf4\x8f\xbf\xbf'),
         ]
-        if self.vista_or_later:
+        if self.vista_or_later():
             tests.append(('\udc80', 'strict', None))
             tests.append(('\udc80', 'ignore', b''))
             tests.append(('\udc80', 'replace', b'?'))
@@ -1884,7 +1888,7 @@ class CodePageTest(unittest.TestCase):
             (b'[\xff]', 'ignore', '[]'),
             (b'[\xff]', 'replace', '[\ufffd]'),
         ]
-        if self.vista_or_later:
+        if self.vista_or_later():
             tests.extend((
                 (b'[\xed\xb2\x80]', 'strict', None),
                 (b'[\xed\xb2\x80]', 'ignore', '[]'),
@@ -1904,7 +1908,7 @@ class CodePageTest(unittest.TestCase):
         self.check_decode(932, (
             (b'\xff', 'surrogateescape', '\udcff'),
         ))
-        if self.vista_or_later:
+        if self.vista_or_later():
             self.check_encode(self.CP_UTF8, (
                 ('\udc80', 'surrogatepass', b'\xed\xb2\x80'),
             ))
@@ -1918,7 +1922,7 @@ class CodePageTest(unittest.TestCase):
             (b'\xff\xf4\x8f\xbf\xbf', 'ignore', '\U0010ffff'),
             (b'\xff\xf4\x8f\xbf\xbf', 'replace', '\ufffd\U0010ffff'),
         ))
-        if self.vista_or_later:
+        if self.vista_or_later():
             self.check_encode(self.CP_UTF8, (
                 ('[\U0010ffff\uDC80]', 'ignore', b'[\xf4\x8f\xbf\xbf]'),
                 ('[\U0010ffff\uDC80]', 'replace', b'[\xf4\x8f\xbf\xbf?]'),
