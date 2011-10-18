@@ -137,6 +137,9 @@ Library
 - Issue #12650: Fix a race condition where a subprocess.Popen could leak
   resources (FD/zombie) when killed at the wrong time.
 
+- Issue #10860: http.client now correctly handles an empty port after port
+  delimiter in URLs.
+
 Tests
 -----
 
