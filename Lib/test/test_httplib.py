@@ -161,14 +161,16 @@ class BasicTest(TestCase):
     def test_host_port(self):
         # Check invalid host_port
 
-        for hp in ("www.python.org:abc", "www.python.org:"):
+        for hp in ("www.python.org:abc", "user:password@www.python.org"):
             self.assertRaises(client.InvalidURL, client.HTTPConnection, hp)
 
         for hp, h, p in (("[fe80::207:e9ff:fe9b]:8000",
                           "fe80::207:e9ff:fe9b", 8000),
                          ("www.python.org:80", "www.python.org", 80),
+                         ("www.python.org:", "www.python.org", 80),
                          ("www.python.org", "www.python.org", 80),
-                         ("[fe80::207:e9ff:fe9b]", "fe80::207:e9ff:fe9b", 80)):
+                         ("[fe80::207:e9ff:fe9b]", "fe80::207:e9ff:fe9b", 80),
+                         ("[fe80::207:e9ff:fe9b]:", "fe80::207:e9ff:fe9b", 80)):
             c = client.HTTPConnection(hp)
             self.assertEqual(h, c.host)
             self.assertEqual(p, c.port)
@@ -538,6 +540,24 @@ class HTTPSTest(TestCase):
         h.request('GET', '/nonexistent')
         resp = h.getresponse()
         self.assertEqual(resp.status, 404)
+
+    def test_host_port(self):
+        # Check invalid host_port
+
+        for hp in ("www.python.org:abc", "user:password@www.python.org"):
+            self.assertRaises(client.InvalidURL, client.HTTPSConnection, hp)
+
+        for hp, h, p in (("[fe80::207:e9ff:fe9b]:8000",
+                          "fe80::207:e9ff:fe9b", 8000),
+                         ("www.python.org:443", "www.python.org", 443),
+                         ("www.python.org:", "www.python.org", 443),
+                         ("www.python.org", "www.python.org", 443),
+                         ("[fe80::207:e9ff:fe9b]", "fe80::207:e9ff:fe9b", 443),
+                         ("[fe80::207:e9ff:fe9b]:", "fe80::207:e9ff:fe9b",
+                             443)):
+            c = client.HTTPSConnection(hp)
+            self.assertEqual(h, c.host)
+            self.assertEqual(p, c.port)
 
 
 class RequestBodyTest(TestCase):
