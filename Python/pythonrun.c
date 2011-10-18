@@ -67,7 +67,7 @@ static void initsigs(void);
 static void call_py_exitfuncs(void);
 static void wait_for_thread_shutdown(void);
 static void call_ll_exitfuncs(void);
-extern void _PyUnicode_Init(void);
+extern int _PyUnicode_Init(void);
 extern void _PyUnicode_Fini(void);
 extern int _PyLong_Init(void);
 extern void PyLong_Fini(void);
@@ -261,7 +261,8 @@ Py_InitializeEx(int install_sigs)
         Py_FatalError("Py_Initialize: can't make modules_reloading dictionary");
 
     /* Init Unicode implementation; relies on the codec registry */
-    _PyUnicode_Init();
+    if (_PyUnicode_Init() < 0)
+        Py_FatalError("Py_Initialize: can't initialize unicode");
 
     bimod = _PyBuiltin_Init();
     if (bimod == NULL)

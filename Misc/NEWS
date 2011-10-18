@@ -10,6 +10,10 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #12281: Rewrite the MBCS codec to handle correctly replace and ignore
+  error handlers on all Windows versions. The MBCS codec is now supporting all
+  error handlers, instead of only replace to encode and ignore to decode.
+
 - Issue #13188: When called without an explicit traceback argument,
   generator.throw() now gets the traceback from the passed exception's
   ``__traceback__`` attribute.  Patch by Petri Lehtinen.

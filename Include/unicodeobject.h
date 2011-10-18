@@ -1466,6 +1466,14 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeMBCSStateful(
     Py_ssize_t *consumed        /* bytes consumed */
     );
 
+PyAPI_FUNC(PyObject*) PyUnicode_DecodeCodePageStateful(
+    int code_page,              /* code page number */
+    const char *string,         /* encoded string */
+    Py_ssize_t length,          /* size of string */
+    const char *errors,         /* error handling */
+    Py_ssize_t *consumed        /* bytes consumed */
+    );
+
 PyAPI_FUNC(PyObject*) PyUnicode_AsMBCSString(
     PyObject *unicode           /* Unicode object */
     );
@@ -1473,10 +1481,16 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsMBCSString(
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject*) PyUnicode_EncodeMBCS(
     const Py_UNICODE *data,     /* Unicode char buffer */
-    Py_ssize_t length,          /* Number of Py_UNICODE chars to encode */
+    Py_ssize_t length,          /* number of Py_UNICODE chars to encode */
     const char *errors          /* error handling */
     );
 #endif
+
+PyAPI_FUNC(PyObject*) PyUnicode_EncodeCodePage(
+    int code_page,              /* code page number */
+    PyObject *unicode,          /* Unicode object */
+    const char *errors          /* error handling */
+    );
 
 #endif /* HAVE_MBCS */
 
