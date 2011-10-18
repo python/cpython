@@ -781,6 +781,7 @@ _PyUnicode_New(Py_ssize_t length)
     _PyUnicode_LENGTH(unicode) = 0;
     _PyUnicode_UTF8(unicode) = NULL;
     _PyUnicode_UTF8_LENGTH(unicode) = 0;
+    assert(_PyUnicode_CheckConsistency(unicode, 0));
     return unicode;
 
   onError:
