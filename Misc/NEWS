@@ -10,6 +10,10 @@ What's New in Python 3.2.3?
 Core and Builtins
 -----------------
 
+- Issue #13188: When called without an explicit traceback argument,
+  generator.throw() now gets the traceback from the passed exception's
+  ``__traceback__`` attribute.  Patch by Petri Lehtinen.
+
 - Issue #7833: Extension modules built using distutils on Windows will no
   longer include a "manifest" to prevent them failing at import time in some
   embedded situations.
