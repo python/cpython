@@ -1744,6 +1744,203 @@ class TransformCodecTest(unittest.TestCase):
             self.assertEqual(sout, b"\x80")
 
 
+class CodePageTest(unittest.TestCase):
+    CP_UTF8 = 65001
+    vista_or_later = (sys.getwindowsversion().major >= 6)
+
+    def test_invalid_code_page(self):
+        self.assertRaises(ValueError, codecs.code_page_encode, -1, 'a')
+        self.assertRaises(ValueError, codecs.code_page_decode, -1, b'a')
+        self.assertRaises(WindowsError, codecs.code_page_encode, 123, 'a')
+        self.assertRaises(WindowsError, codecs.code_page_decode, 123, b'a')
+
+    def test_code_page_name(self):
+        self.assertRaisesRegex(UnicodeEncodeError, 'cp932',
+            codecs.code_page_encode, 932, '\xff')
+        self.assertRaisesRegex(UnicodeDecodeError, 'cp932',
+            codecs.code_page_decode, 932, b'\x81\x00')
+        self.assertRaisesRegex(UnicodeDecodeError, 'CP_UTF8',
+            codecs.code_page_decode, self.CP_UTF8, b'\xff')
+
+    def check_decode(self, cp, tests):
+        for raw, errors, expected in tests:
+            if expected is not None:
+                try:
+                    decoded = codecs.code_page_decode(cp, raw, errors)
+                except UnicodeDecodeError as err:
+                    self.fail('Unable to decode %a from "cp%s" with '
+                              'errors=%r: %s' % (raw, cp, errors, err))
+                self.assertEqual(decoded[0], expected,
+                    '%a.decode("cp%s", %r)=%a != %a'
+                    % (raw, cp, errors, decoded[0], expected))
+                # assert 0 <= decoded[1] <= len(raw)
+                self.assertGreaterEqual(decoded[1], 0)
+                self.assertLessEqual(decoded[1], len(raw))
+            else:
+                self.assertRaises(UnicodeDecodeError,
+                    codecs.code_page_decode, cp, raw, errors)
+
+    def check_encode(self, cp, tests):
+        for text, errors, expected in tests:
+            if expected is not None:
+                try:
+                    encoded = codecs.code_page_encode(cp, text, errors)
+                except UnicodeEncodeError as err:
+                    self.fail('Unable to encode %a to "cp%s" with '
+                              'errors=%r: %s' % (text, cp, errors, err))
+                self.assertEqual(encoded[0], expected,
+                    '%a.encode("cp%s", %r)=%a != %a'
+                    % (text, cp, errors, encoded[0], expected))
+                self.assertEqual(encoded[1], len(text))
+            else:
+                self.assertRaises(UnicodeEncodeError,
+                    codecs.code_page_encode, cp, text, errors)
+
+    def test_cp932(self):
+        self.check_encode(932, (
+            ('abc', 'strict', b'abc'),
+            ('\uff44\u9a3e', 'strict', b'\x82\x84\xe9\x80'),
+            # not encodable
+            ('\xff', 'strict', None),
+            ('[\xff]', 'ignore', b'[]'),
+            ('[\xff]', 'replace', b'[y]'),
+            ('[\u20ac]', 'replace', b'[?]'),
+        ))
+        tests = [
+            (b'abc', 'strict', 'abc'),
+            (b'\x82\x84\xe9\x80', 'strict', '\uff44\u9a3e'),
+            # invalid bytes
+            (b'\xff', 'strict', None),
+            (b'\xff', 'ignore', ''),
+            (b'\xff', 'replace', '\ufffd'),
+            (b'\x81\x00abc', 'strict', None),
+            (b'\x81\x00abc', 'ignore', '\x00abc'),
+        ]
+        if self.vista_or_later:
+            tests.append((b'\x81\x00abc', 'replace', '\ufffd\x00abc'))
+        else:
+            tests.append((b'\x81\x00abc', 'replace', '\x00\x00abc'))
+        self.check_decode(932, tests)
+
+    def test_cp1252(self):
+        self.check_encode(1252, (
+            ('abc', 'strict', b'abc'),
+            ('\xe9\u20ac', 'strict',  b'\xe9\x80'),
+            ('\xff', 'strict', b'\xff'),
+            ('\u0141', 'strict', None),
+            ('\u0141', 'ignore', b''),
+            ('\u0141', 'replace', b'L'),
+        ))
+        self.check_decode(1252, (
+            (b'abc', 'strict', 'abc'),
+            (b'\xe9\x80', 'strict', '\xe9\u20ac'),
+            (b'\xff', 'strict', '\xff'),
+        ))
+
+    def test_cp_utf7(self):
+        cp = 65000
+        self.check_encode(cp, (
+            ('abc', 'strict', b'abc'),
+            ('\xe9\u20ac', 'strict',  b'+AOkgrA-'),
+            ('\U0010ffff', 'strict',  b'+2//f/w-'),
+            ('\udc80', 'strict', b'+3IA-'),
+            ('\ufffd', 'strict', b'+//0-'),
+        ))
+        self.check_decode(cp, (
+            (b'abc', 'strict', 'abc'),
+            (b'+AOkgrA-', 'strict', '\xe9\u20ac'),
+            (b'+2//f/w-', 'strict', '\U0010ffff'),
+            (b'+3IA-', 'strict', '\udc80'),
+            (b'+//0-', 'strict', '\ufffd'),
+            # invalid bytes
+            (b'[+/]', 'strict', '[]'),
+            (b'[\xff]', 'strict', '[\xff]'),
+        ))
+
+    def test_cp_utf8(self):
+        cp = self.CP_UTF8
+
+        tests = [
+            ('abc', 'strict', b'abc'),
+            ('\xe9\u20ac', 'strict',  b'\xc3\xa9\xe2\x82\xac'),
+            ('\U0010ffff', 'strict', b'\xf4\x8f\xbf\xbf'),
+        ]
+        if self.vista_or_later:
+            tests.append(('\udc80', 'strict', None))
+            tests.append(('\udc80', 'ignore', b''))
+            tests.append(('\udc80', 'replace', b'?'))
+        else:
+            tests.append(('\udc80', 'strict', b'\xed\xb2\x80'))
+        self.check_encode(cp, tests)
+
+        tests = [
+            (b'abc', 'strict', 'abc'),
+            (b'\xc3\xa9\xe2\x82\xac', 'strict', '\xe9\u20ac'),
+            (b'\xf4\x8f\xbf\xbf', 'strict', '\U0010ffff'),
+            (b'\xef\xbf\xbd', 'strict', '\ufffd'),
+            (b'[\xc3\xa9]', 'strict', '[\xe9]'),
+            # invalid bytes
+            (b'[\xff]', 'strict', None),
+            (b'[\xff]', 'ignore', '[]'),
+            (b'[\xff]', 'replace', '[\ufffd]'),
+        ]
+        if self.vista_or_later:
+            tests.extend((
+                (b'[\xed\xb2\x80]', 'strict', None),
+                (b'[\xed\xb2\x80]', 'ignore', '[]'),
+                (b'[\xed\xb2\x80]', 'replace', '[\ufffd\ufffd\ufffd]'),
+            ))
+        else:
+            tests.extend((
+                (b'[\xed\xb2\x80]', 'strict', '[\udc80]'),
+            ))
+        self.check_decode(cp, tests)
+
+    def test_error_handlers(self):
+        self.check_encode(932, (
+            ('\xff', 'backslashreplace', b'\\xff'),
+            ('\xff', 'xmlcharrefreplace', b'&#255;'),
+        ))
+        self.check_decode(932, (
+            (b'\xff', 'surrogateescape', '\udcff'),
+        ))
+        if self.vista_or_later:
+            self.check_encode(self.CP_UTF8, (
+                ('\udc80', 'surrogatepass', b'\xed\xb2\x80'),
+            ))
+
+    def test_multibyte_encoding(self):
+        self.check_decode(932, (
+            (b'\x84\xe9\x80', 'ignore', '\u9a3e'),
+            (b'\x84\xe9\x80', 'replace', '\ufffd\u9a3e'),
+        ))
+        self.check_decode(self.CP_UTF8, (
+            (b'\xff\xf4\x8f\xbf\xbf', 'ignore', '\U0010ffff'),
+            (b'\xff\xf4\x8f\xbf\xbf', 'replace', '\ufffd\U0010ffff'),
+        ))
+        if self.vista_or_later:
+            self.check_encode(self.CP_UTF8, (
+                ('[\U0010ffff\uDC80]', 'ignore', b'[\xf4\x8f\xbf\xbf]'),
+                ('[\U0010ffff\uDC80]', 'replace', b'[\xf4\x8f\xbf\xbf?]'),
+            ))
+
+    def test_incremental(self):
+        decoded = codecs.code_page_decode(932,
+                                          b'\xe9\x80\xe9', 'strict',
+                                          False)
+        self.assertEqual(decoded, ('\u9a3e', 2))
+
+        decoded = codecs.code_page_decode(932,
+                                          b'\xe9\x80\xe9\x80', 'strict',
+                                          False)
+        self.assertEqual(decoded, ('\u9a3e\u9a3e', 4))
+
+        decoded = codecs.code_page_decode(932,
+                                          b'abc', 'strict',
+                                          False)
+        self.assertEqual(decoded, ('abc', 3))
+
+
 def test_main():
     support.run_unittest(
         UTF32Test,
@@ -1772,6 +1969,7 @@ def test_main():
         SurrogateEscapeTest,
         BomTest,
         TransformCodecTest,
+        CodePageTest,
     )
 
 

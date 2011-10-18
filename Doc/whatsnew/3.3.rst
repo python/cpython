@@ -197,6 +197,11 @@ The :mod:`array` module supports the :c:type:`long long` type using ``q`` and
 codecs
 ------
 
+The :mod:`~encodings.mbcs` codec has be rewritten to handle correclty
+``replace`` and ``ignore`` error handlers on all Windows versions. The
+:mod:`~encodings.mbcs` codec is now supporting all error handlers, instead of
+only ``replace`` to encode and ``ignore`` to decode.
+
 Multibyte CJK decoders now resynchronize faster. They only ignore the first
 byte of an invalid byte sequence. For example, ``b'\xff\n'.decode('gb2312',
 'replace')`` now returns a ``\n`` after the replacement character.
