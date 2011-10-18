@@ -912,6 +912,7 @@ if __name__ == '__main__':
 
     def prompt(prompt):
         sys.stdout.write(prompt + ": ")
+        sys.stdout.flush()
         return sys.stdin.readline().strip()
 
     fromaddr = prompt("From")
