@@ -1810,7 +1810,7 @@ class CodePageTest(unittest.TestCase):
             ('[\xff]', 'replace', b'[y]'),
             ('[\u20ac]', 'replace', b'[?]'),
         ))
-        tests = [
+        self.check_decode(932, (
             (b'abc', 'strict', 'abc'),
             (b'\x82\x84\xe9\x80', 'strict', '\uff44\u9a3e'),
             # invalid bytes
@@ -1819,12 +1819,8 @@ class CodePageTest(unittest.TestCase):
             (b'\xff', 'replace', '\ufffd'),
             (b'\x81\x00abc', 'strict', None),
             (b'\x81\x00abc', 'ignore', '\x00abc'),
-        ]
-        if self.vista_or_later():
-            tests.append((b'\x81\x00abc', 'replace', '\ufffd\x00abc'))
-        else:
-            tests.append((b'\x81\x00abc', 'replace', '\x00\x00abc'))
-        self.check_decode(932, tests)
+            (b'\x81\x00abc', 'replace', '\ufffd\x00abc'),
+        ))
 
     def test_cp1252(self):
         self.check_encode(1252, (
