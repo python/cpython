@@ -47,6 +47,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12448: smtplib now flushes stdout while running ``python -m smtplib``
+  in order to display the prompt correctly.
+
 - Issue #13194: zlib.compressobj().copy() and zlib.decompressobj().copy() are
   now available on Windows.
 
