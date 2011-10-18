@@ -2168,7 +2168,7 @@ Files and Directories
    ineffective, because in bottom-up mode the directories in *dirnames* are
    generated before *dirpath* itself is generated.
 
-   By default errors from the :func:`listdir` call are ignored.  If optional
+   By default, errors from the :func:`listdir` call are ignored.  If optional
    argument *onerror* is specified, it should be a function; it will be called with
    one argument, an :exc:`OSError` instance.  It can report the error to continue
    with the walk, or raise the exception to abort the walk.  Note that the filename
