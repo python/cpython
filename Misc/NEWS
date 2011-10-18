@@ -10,6 +10,10 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #13188: When called without an explicit traceback argument,
+  generator.throw() now gets the traceback from the passed exception's
+  ``__traceback__`` attribute.  Patch by Petri Lehtinen.
+
 - Issue #13146: Writing a pyc file is now atomic under POSIX.
 
 - Issue #7833: Extension modules built using distutils on Windows will no

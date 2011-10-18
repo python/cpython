@@ -1673,6 +1673,32 @@ Traceback (most recent call last):
   ...
 ValueError: 7
 
+Plain "raise" inside a generator should preserve the traceback (#13188).
+The traceback should have 3 levels:
+- g.throw()
+- f()
+- 1/0
+
+>>> def f():
+...     try:
+...         yield
+...     except:
+...         raise
+>>> g = f()
+>>> try:
+...     1/0
+... except ZeroDivisionError as v:
+...     try:
+...         g.throw(v)
+...     except Exception as w:
+...         tb = w.__traceback__
+>>> levels = 0
+>>> while tb:
+...     levels += 1
+...     tb = tb.tb_next
+>>> levels
+3
+
 Now let's try closing a generator:
 
 >>> def f():
