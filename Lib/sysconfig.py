@@ -319,9 +319,11 @@ def get_makefile_filename():
         config_dir_name = 'config'
     return os.path.join(get_path('stdlib'), config_dir_name, 'Makefile')
 
-
-def _init_posix(vars):
-    """Initialize the module as appropriate for POSIX systems."""
+def _generate_posix_vars():
+    """Generate the Python module containing build-time variables."""
+    import pprint
+    vars = {}
+    destfile = os.path.join(os.path.dirname(__file__), '_sysconfigdata.py')
     # load the installed Makefile:
     makefile = get_makefile_filename()
     try:
@@ -346,7 +348,15 @@ def _init_posix(vars):
     # the scripts are in another directory.
     if _PYTHON_BUILD:
         vars['LDSHARED'] = vars['BLDSHARED']
+    with open(destfile, 'w', encoding='utf8') as f:
+        f.write('build_time_vars = ')
+        pprint.pprint(vars, stream=f)
 
+def _init_posix(vars):
+    """Initialize the module as appropriate for POSIX systems."""
+    # _sysconfigdata is generated at build time, see _generate_posix_vars()
+    from _sysconfigdata import build_time_vars
+    vars.update(build_time_vars)
 
 def _init_non_posix(vars):
     """Initialize the module as appropriate for NT"""
@@ -753,6 +763,9 @@ def _print_dict(title, data):
 
 def _main():
     """Display all information sysconfig detains."""
+    if '--generate-posix-vars' in sys.argv:
+        _generate_posix_vars()
+        return
     print('Platform: "%s"' % get_platform())
     print('Python version: "%s"' % get_python_version())
     print('Current installation scheme: "%s"' % _get_default_scheme())

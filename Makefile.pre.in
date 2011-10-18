@@ -396,7 +396,7 @@ LIBRARY_OBJS=	\
 
 # Default target
 all:		build_all
-build_all:	$(BUILDPYTHON) oldsharedmods sharedmods gdbhooks Modules/_testembed
+build_all:	$(BUILDPYTHON) sysconfig oldsharedmods sharedmods gdbhooks Modules/_testembed
 
 # Compile a binary with gcc profile guided optimization.
 profile-opt:
@@ -429,12 +429,15 @@ coverage:
 $(BUILDPYTHON):	Modules/python.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY)
 	$(LINKCC) $(PY_LDFLAGS) $(LINKFORSHARED) -o $@ Modules/python.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
 
-platform: $(BUILDPYTHON)
+platform: $(BUILDPYTHON) sysconfig
 	$(RUNSHARED) ./$(BUILDPYTHON) -E -c 'import sys ; from sysconfig import get_platform ; print(get_platform()+"-"+sys.version[0:3])' >platform
 
+# Generate the sysconfig build-time data
+sysconfig: $(BUILDPYTHON)
+	$(RUNSHARED) ./$(BUILDPYTHON) -SE -m sysconfig --generate-posix-vars
 
 # Build the shared modules
-sharedmods: $(BUILDPYTHON)
+sharedmods: $(BUILDPYTHON) sysconfig
 	@case $$MAKEFLAGS in \
 	*s*) $(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' ./$(BUILDPYTHON) -E $(srcdir)/setup.py -q build;; \
 	*) $(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' ./$(BUILDPYTHON) -E $(srcdir)/setup.py build;; \
@@ -1379,7 +1382,7 @@ patchcheck:
 Python/thread.o: @THREADHEADERS@
 
 # Declare targets that aren't real files
-.PHONY: all build_all sharedmods oldsharedmods test quicktest
+.PHONY: all build_all sysconfig sharedmods oldsharedmods test quicktest
 .PHONY: install altinstall oldsharedinstall bininstall altbininstall
 .PHONY: maninstall libinstall inclinstall libainstall sharedinstall
 .PHONY: frameworkinstall frameworkinstallframework frameworkinstallstructure
