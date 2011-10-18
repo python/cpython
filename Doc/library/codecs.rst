@@ -1280,11 +1280,12 @@ functions can be used directly if desired.
 .. module:: encodings.mbcs
    :synopsis: Windows ANSI codepage
 
-Encode operand according to the ANSI codepage (CP_ACP). This codec only
-supports ``'strict'`` and ``'replace'`` error handlers to encode, and
-``'strict'`` and ``'ignore'`` error handlers to decode.
+Encode operand according to the ANSI codepage (CP_ACP).
 
 Availability: Windows only.
+
+.. versionchanged:: 3.3
+   Support any error handler.
 
 .. versionchanged:: 3.2
    Before 3.2, the *errors* argument was ignored; ``'replace'`` was always used

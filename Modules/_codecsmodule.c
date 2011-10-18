@@ -612,6 +612,31 @@ mbcs_decode(PyObject *self,
     return codec_tuple(decoded, consumed);
 }
 
+static PyObject *
+code_page_decode(PyObject *self,
+                 PyObject *args)
+{
+    Py_buffer pbuf;
+    const char *errors = NULL;
+    int final = 0;
+    Py_ssize_t consumed;
+    PyObject *decoded = NULL;
+    int code_page;
+
+    if (!PyArg_ParseTuple(args, "iy*|zi:code_page_decode",
+                          &code_page, &pbuf, &errors, &final))
+        return NULL;
+    consumed = pbuf.len;
+
+    decoded = PyUnicode_DecodeCodePageStateful(code_page,
+                                               pbuf.buf, pbuf.len, errors,
+                                               final ? NULL : &consumed);
+    PyBuffer_Release(&pbuf);
+    if (decoded == NULL)
+        return NULL;
+    return codec_tuple(decoded, consumed);
+}
+
 #endif /* HAVE_MBCS */
 
 /* --- Encoder ------------------------------------------------------------ */
@@ -1011,6 +1036,29 @@ mbcs_encode(PyObject *self,
     return v;
 }
 
+static PyObject *
+code_page_encode(PyObject *self,
+                 PyObject *args)
+{
+    PyObject *str, *v;
+    const char *errors = NULL;
+    int code_page;
+
+    if (!PyArg_ParseTuple(args, "iO|z:code_page_encode",
+                          &code_page, &str, &errors))
+        return NULL;
+
+    str = PyUnicode_FromObject(str);
+    if (str == NULL)
+        return NULL;
+    v = codec_tuple(PyUnicode_EncodeCodePage(code_page,
+                                             str,
+                                             errors),
+                    PyUnicode_GET_LENGTH(str));
+    Py_DECREF(str);
+    return v;
+}
+
 #endif /* HAVE_MBCS */
 
 /* --- Error handler registry --------------------------------------------- */
@@ -1101,6 +1149,8 @@ static PyMethodDef _codecs_functions[] = {
 #ifdef HAVE_MBCS
     {"mbcs_encode",             mbcs_encode,                    METH_VARARGS},
     {"mbcs_decode",             mbcs_decode,                    METH_VARARGS},
+    {"code_page_encode",        code_page_encode,               METH_VARARGS},
+    {"code_page_decode",        code_page_decode,               METH_VARARGS},
 #endif
     {"register_error",          register_error,                 METH_VARARGS,
         register_error__doc__},
