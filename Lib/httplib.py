@@ -715,7 +715,10 @@ class HTTPConnection:
                 try:
                     port = int(host[i+1:])
                 except ValueError:
-                    raise InvalidURL("nonnumeric port: '%s'" % host[i+1:])
+                    if host[i+1:] == "":  # http://foo.com:/ == http://foo.com/
+                        port = self.default_port
+                    else:
+                        raise InvalidURL("nonnumeric port: '%s'" % host[i+1:])
                 host = host[:i]
             else:
                 port = self.default_port

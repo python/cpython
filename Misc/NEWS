@@ -54,6 +54,9 @@ Core and Builtins
   the following case: sys.stdin.read() stopped with CTRL+d (end of file),
   raw_input() interrupted by CTRL+c.
 
+- Issue #10860: httplib now correctly handles an empty port after port
+  delimiter in URLs.
+
 - dict_proxy objects now display their contents rather than just the class
   name.
 

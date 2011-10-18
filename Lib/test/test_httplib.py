@@ -152,13 +152,15 @@ class BasicTest(TestCase):
     def test_host_port(self):
         # Check invalid host_port
 
-        for hp in ("www.python.org:abc", "www.python.org:"):
+        # Note that httplib does not accept user:password@ in the host-port.
+        for hp in ("www.python.org:abc", "user:password@www.python.org"):
             self.assertRaises(httplib.InvalidURL, httplib.HTTP, hp)
 
         for hp, h, p in (("[fe80::207:e9ff:fe9b]:8000", "fe80::207:e9ff:fe9b",
                           8000),
                          ("www.python.org:80", "www.python.org", 80),
                          ("www.python.org", "www.python.org", 80),
+                         ("www.python.org:", "www.python.org", 80),
                          ("[fe80::207:e9ff:fe9b]", "fe80::207:e9ff:fe9b", 80)):
             http = httplib.HTTP(hp)
             c = http._conn
@@ -438,6 +440,27 @@ class HTTPSTimeoutTest(TestCase):
         if hasattr(httplib, 'HTTPSConnection'):
             h = httplib.HTTPSConnection(HOST, TimeoutTest.PORT, timeout=30)
             self.assertEqual(h.timeout, 30)
+
+    def test_host_port(self):
+        # Check invalid host_port
+
+        # Note that httplib does not accept user:password@ in the host-port.
+        for hp in ("www.python.org:abc", "user:password@www.python.org"):
+            self.assertRaises(httplib.InvalidURL, httplib.HTTP, hp)
+
+        for hp, h, p in (("[fe80::207:e9ff:fe9b]:8000", "fe80::207:e9ff:fe9b",
+                          8000),
+                         ("pypi.python.org:443", "pypi.python.org", 443),
+                         ("pypi.python.org", "pypi.python.org", 443),
+                         ("pypi.python.org:", "pypi.python.org", 443),
+                         ("[fe80::207:e9ff:fe9b]", "fe80::207:e9ff:fe9b", 443)):
+            http = httplib.HTTPS(hp)
+            c = http._conn
+            if h != c.host:
+                self.fail("Host incorrectly parsed: %s != %s" % (h, c.host))
+            if p != c.port:
+                self.fail("Port incorrectly parsed: %s != %s" % (p, c.host))
+
 
 def test_main(verbose=None):
     test_support.run_unittest(HeaderTests, OfflineTest, BasicTest, TimeoutTest,
