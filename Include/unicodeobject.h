@@ -452,7 +452,7 @@ enum PyUnicode_Kind {
 
 /* Return a void pointer to the raw unicode buffer. */
 #define _PyUnicode_COMPACT_DATA(op)                     \
-    (PyUnicode_IS_COMPACT_ASCII(op) ?                   \
+    (PyUnicode_IS_ASCII(op) ?                   \
      ((void*)((PyASCIIObject*)(op) + 1)) :              \
      ((void*)((PyCompactUnicodeObject*)(op) + 1)))
 
