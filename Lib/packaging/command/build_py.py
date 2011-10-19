@@ -1,6 +1,7 @@
 """Build pure Python modules (just copy to build directory)."""
 
 import os
+import imp
 import sys
 from glob import glob
 
@@ -330,9 +331,10 @@ class build_py(Command, Mixin2to3):
             outputs.append(filename)
             if include_bytecode:
                 if self.compile:
-                    outputs.append(filename + "c")
+                    outputs.append(imp.cache_from_source(filename))
                 if self.optimize > 0:
-                    outputs.append(filename + "o")
+                    outputs.append(imp.cache_from_source(filename,
+                                                         debug_override=False))
 
         outputs += [
             os.path.join(build_dir, filename)
