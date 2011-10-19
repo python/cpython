@@ -1325,7 +1325,7 @@ as internal buffering of data.
 
 .. function:: writev(fd, buffers)
 
-   Write the the contents of *buffers* to file descriptor *fd*, where *buffers*
+   Write the contents of *buffers* to file descriptor *fd*, where *buffers*
    is an arbitrary sequence of buffers.
    Returns the total number of bytes written.
 

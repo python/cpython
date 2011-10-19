@@ -37,7 +37,7 @@ def _load_tile(master):
         import os
         tilelib = os.environ.get('TILE_LIBRARY')
         if tilelib:
-            # append custom tile path to the the list of directories that
+            # append custom tile path to the list of directories that
             # Tcl uses when attempting to resolve packages with the package
             # command
             master.tk.eval(

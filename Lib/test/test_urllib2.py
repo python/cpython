@@ -879,7 +879,7 @@ class HandlerTests(unittest.TestCase):
     def test_http_doubleslash(self):
         # Checks the presence of any unnecessary double slash in url does not
         # break anything. Previously, a double slash directly after the host
-        # could could cause incorrect parsing.
+        # could cause incorrect parsing.
         h = urllib.request.AbstractHTTPHandler()
         o = h.parent = MockOpener()
 

@@ -443,7 +443,7 @@ default values to each of the argument help messages::
     --foo FOO   FOO! (default: 42)
 
 :class:`MetavarTypeHelpFormatter` uses the name of the type_ argument for each
-argument as as the display name for its values (rather than using the dest_
+argument as the display name for its values (rather than using the dest_
 as the regular formatter does)::
 
    >>> parser = argparse.ArgumentParser(

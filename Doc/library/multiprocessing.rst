@@ -1518,7 +1518,7 @@ itself.  This means, for example, that one shared object can contain a second:
       a new shared object -- see documentation for the *method_to_typeid*
       argument of :meth:`BaseManager.register`.
 
-      If an exception is raised by the call, then then is re-raised by
+      If an exception is raised by the call, then is re-raised by
       :meth:`_callmethod`.  If some other exception is raised in the manager's
       process then this is converted into a :exc:`RemoteError` exception and is
       raised by :meth:`_callmethod`.
@@ -1655,7 +1655,7 @@ with the :class:`Pool` class.
 
       The *chunksize* argument is the same as the one used by the :meth:`.map`
       method.  For very long iterables using a large value for *chunksize* can
-      make make the job complete **much** faster than using the default value of
+      make the job complete **much** faster than using the default value of
       ``1``.
 
       Also if *chunksize* is ``1`` then the :meth:`!next` method of the iterator

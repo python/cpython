@@ -1744,7 +1744,7 @@ Subclasses of :class:`Command` must define the following methods.
    Set final values for all the options that this command supports. This is
    always called as late as possible, ie.  after any option assignments from the
    command-line or from other commands have been done.  Thus, this is the place
-   to to code option dependencies: if *foo* depends on *bar*, then it is safe to
+   to code option dependencies: if *foo* depends on *bar*, then it is safe to
    set *foo* from *bar* as long as *foo* still has the same value it was
    assigned in :meth:`initialize_options`.
 

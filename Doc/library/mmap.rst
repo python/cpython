@@ -263,7 +263,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
    .. method:: write_byte(byte)
 
-      Write the the integer *byte* into memory at the current
+      Write the integer *byte* into memory at the current
       position of the file pointer; the file position is advanced by ``1``. If
       the mmap was created with :const:`ACCESS_READ`, then writing to it will
       raise a :exc:`TypeError` exception.
