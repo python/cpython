@@ -111,6 +111,6 @@ string argument to :func:`eval` must have the following form:
    single: input; raw
    single: readline() (file method)
 
-Note: to read 'raw' input line without interpretation, you can use the the
+Note: to read 'raw' input line without interpretation, you can use the
 :meth:`readline` method of file objects, including ``sys.stdin``.
 

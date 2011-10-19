@@ -828,7 +828,7 @@ are always available.  They are listed here in alphabetical order.
    .. note::
 
       Python doesn't depend on the underlying operating system's notion of text
-      files; all the the processing is done by Python itself, and is therefore
+      files; all the processing is done by Python itself, and is therefore
       platform-independent.
 
    *buffering* is an optional integer used to set the buffering policy.  Pass 0

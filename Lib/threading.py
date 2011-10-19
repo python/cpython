@@ -435,7 +435,7 @@ class _Event(_Verbose):
 # to be cyclic.  Threads are not allowed into it until it has fully drained
 # since the previous cycle.  In addition, a 'resetting' state exists which is
 # similar to 'draining' except that threads leave with a BrokenBarrierError,
-# and a 'broken' state in which all threads get get the exception.
+# and a 'broken' state in which all threads get the exception.
 class Barrier(_Verbose):
     """
     Barrier.  Useful for synchronizing a fixed number of threads

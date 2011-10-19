@@ -1958,7 +1958,7 @@ Utility functions
 
 .. function:: string_at(address, size=-1)
 
-   This function returns the C string starting at memory address address as a bytes
+   This function returns the C string starting at memory address *address* as a bytes
    object. If size is specified, it is used as size, otherwise the string is assumed
    to be zero-terminated.
 
