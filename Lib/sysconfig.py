@@ -323,7 +323,6 @@ def _generate_posix_vars():
     """Generate the Python module containing build-time variables."""
     import pprint
     vars = {}
-    destfile = os.path.join(os.path.dirname(__file__), '_sysconfigdata.py')
     # load the installed Makefile:
     makefile = get_makefile_filename()
     try:
@@ -348,7 +347,11 @@ def _generate_posix_vars():
     # the scripts are in another directory.
     if _PYTHON_BUILD:
         vars['LDSHARED'] = vars['BLDSHARED']
+
+    destfile = os.path.join(os.path.dirname(__file__), '_sysconfigdata.py')
     with open(destfile, 'w', encoding='utf8') as f:
+        f.write('# system configuration generated and used by'
+                ' the sysconfig module\n')
         f.write('build_time_vars = ')
         pprint.pprint(vars, stream=f)
 
