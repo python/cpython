@@ -2362,7 +2362,7 @@ A number of small performance enhancements have been added:
   (Patch by Florent Xicluna in :issue:`7622` and :issue:`7462`.)
 
 
-* String to integer conversions now work two "digits" at a time, reducing the
+* Integer to string conversions now work two "digits" at a time, reducing the
   number of division and modulo operations.
 
   (:issue:`6713` by Gawain Bolton, Mark Dickinson, and Victor Stinner.)
