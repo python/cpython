@@ -14,7 +14,7 @@ and :source:`Lib/concurrent/futures/process.py`
 The :mod:`concurrent.futures` module provides a high-level interface for
 asynchronously executing callables.
 
-The asynchronous execution can be be performed with threads, using
+The asynchronous execution can be performed with threads, using
 :class:`ThreadPoolExecutor`, or separate processes, using
 :class:`ProcessPoolExecutor`.  Both implement the same interface, which is
 defined by the abstract :class:`Executor` class.

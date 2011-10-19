@@ -27,7 +27,7 @@ to bind a :c:data:`PyCFunction` to a class object. It replaces the former call
 .. c:function:: PyObject* PyInstanceMethod_New(PyObject *func)
 
    Return a new instance method object, with *func* being any callable object
-   *func* is is the function that will be called when the instance method is
+   *func* is the function that will be called when the instance method is
    called.
 
 
@@ -70,7 +70,7 @@ no longer available.
 .. c:function:: PyObject* PyMethod_New(PyObject *func, PyObject *self)
 
    Return a new method object, with *func* being any callable object and *self*
-   the instance the method should be bound. *func* is is the function that will
+   the instance the method should be bound. *func* is the function that will
    be called when the method is called. *self* must not be *NULL*.
 
 
