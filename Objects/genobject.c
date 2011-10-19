@@ -232,8 +232,9 @@ gen_throw(PyGenObject *gen, PyObject *args)
 
     /* First, check the traceback argument, replacing None with
        NULL. */
-    if (tb == Py_None)
+    if (tb == Py_None) {
         tb = NULL;
+    }
     else if (tb != NULL && !PyTraceBack_Check(tb)) {
         PyErr_SetString(PyExc_TypeError,
             "throw() third argument must be a traceback object");
@@ -244,9 +245,8 @@ gen_throw(PyGenObject *gen, PyObject *args)
     Py_XINCREF(val);
     Py_XINCREF(tb);
 
-    if (PyExceptionClass_Check(typ)) {
+    if (PyExceptionClass_Check(typ))
         PyErr_NormalizeException(&typ, &val, &tb);
-    }
 
     else if (PyExceptionInstance_Check(typ)) {
         /* Raising an instance.  The value should be a dummy. */
@@ -262,10 +262,9 @@ gen_throw(PyGenObject *gen, PyObject *args)
             typ = PyExceptionInstance_Class(typ);
             Py_INCREF(typ);
 
-            if (tb == NULL) {
+            if (tb == NULL)
                 /* Returns NULL if there's no traceback */
                 tb = PyException_GetTraceback(val);
-            }
         }
     }
     else {
