@@ -500,6 +500,18 @@ class TestsWithSourceFile(unittest.TestCase):
         except zipfile.BadZipFile:
             self.assertTrue(zipfp2.fp is None, 'zipfp is not closed')
 
+    def test_add_file_before_1980(self):
+        # Set atime and mtime to 1970-01-01
+        os.utime(TESTFN, (0, 0))
+        with zipfile.ZipFile(TESTFN2, "w") as zipfp:
+            self.assertRaises(ValueError, zipfp.write, TESTFN)
+
+
+
+
+
+
+
     @requires_zlib
     def test_unicode_filenames(self):
         # bug #10801
@@ -1045,6 +1057,10 @@ class OtherTests(unittest.TestCase):
         f = open(TESTFN, 'w')
         f.close()
         self.assertRaises(zipfile.BadZipFile, zipfile.ZipFile, TESTFN, 'r')
+
+    def test_create_zipinfo_before_1980(self):
+        self.assertRaises(ValueError,
+                          zipfile.ZipInfo, 'seventies', (1979, 1, 1, 0, 0, 0))
 
     def tearDown(self):
         unlink(TESTFN)
