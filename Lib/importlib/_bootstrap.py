@@ -81,7 +81,9 @@ def _path_absolute(path):
 
 
 def _write_atomic(path, data):
-    """Best-effort function to write data to a path atomically."""
+    """Best-effort function to write data to a path atomically.
+    Be prepared to handle a FileExistsError if concurrent writing of the
+    temporary file is attempted."""
     if not sys.platform.startswith('win'):
         # On POSIX-like platforms, renaming is atomic
         path_tmp = path + '.tmp'
@@ -516,12 +518,10 @@ class _SourceFileLoader(_FileLoader, SourceLoader):
                     raise
         try:
             _write_atomic(path, data)
-        except OSError as exc:
-            # Don't worry if you can't write bytecode.
-            if exc.errno == errno.EACCES:
-                return
-            else:
-                raise
+        except (PermissionError, FileExistsError):
+            # Don't worry if you can't write bytecode or someone is writing
+            # it at the same time.
+            pass
 
 
 class _SourcelessFileLoader(_FileLoader, _LoaderBasics):
