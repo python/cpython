@@ -80,7 +80,7 @@ Some characters, like ``'|'`` or ``'('``, are special. Special
 characters either stand for classes of ordinary characters, or affect
 how the regular expressions around them are interpreted. Regular
 expression pattern strings may not contain null bytes, but can specify
-the null byte using the ``\number`` notation, e.g., ``'\x00'``.
+the null byte using a ``\number`` notation such as ``'\x00'``.
 
 
 The special characters are:
@@ -405,7 +405,7 @@ accepted by the regular expression parser::
    \r      \t      \v      \x
    \\
 
-Octal escapes are included in a limited form: If the first digit is a 0, or if
+Octal escapes are included in a limited form.  If the first digit is a 0, or if
 there are three octal digits, it is considered an octal escape. Otherwise, it is
 a group reference.  As for string literals, octal escapes are always at most
 three digits in length.
@@ -413,8 +413,8 @@ three digits in length.
 
 .. _matching-searching:
 
-Matching vs Searching
----------------------
+Matching vs. Searching
+----------------------
 
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
@@ -595,8 +595,7 @@ form.
       ['', '...', 'words', ', ', 'words', '...', '']
 
    That way, separator components are always found at the same relative
-   indices within the result list (e.g., if there's one capturing group
-   in the separator, the 0th, the 2nd and so forth).
+   indices within the result list.
 
    Note that *split* will never split a string on an empty pattern match.
    For example:
@@ -713,7 +712,7 @@ Regular Expression Objects
 --------------------------
 
 Compiled regular expression objects support the following methods and
-attributes.
+attributes:
 
 .. method:: regex.search(string[, pos[, endpos]])
 
@@ -732,7 +731,7 @@ attributes.
    The optional parameter *endpos* limits how far the string will be searched; it
    will be as if the string is *endpos* characters long, so only the characters
    from *pos* to ``endpos - 1`` will be searched for a match.  If *endpos* is less
-   than *pos*, no match will be found, otherwise, if *rx* is a compiled regular
+   than *pos*, no match will be found; otherwise, if *rx* is a compiled regular
    expression object, ``rx.search(string, 0, 50)`` is equivalent to
    ``rx.search(string[:50], 0)``.
 
@@ -820,8 +819,8 @@ attributes.
 Match Objects
 -------------
 
-Match objects always have a boolean value of :const:`True`, so that you can test
-whether e.g. :func:`match` resulted in a match with a simple if statement.  They
+Match objects always have a boolean value of :const:`True`.  This lets you
+use a simple if-statement to test whether a match was found.  Match objects
 support the following methods and attributes:
 
 
@@ -998,7 +997,7 @@ Regular Expression Examples
 ---------------------------
 
 
-Checking For a Pair
+Checking for a Pair
 ^^^^^^^^^^^^^^^^^^^
 
 In this example, we'll use the following helper function to display match
@@ -1106,7 +1105,7 @@ Avoiding recursion
 
 If you create regular expressions that require the engine to perform a lot of
 recursion, you may encounter a :exc:`RuntimeError` exception with the message
-``maximum recursion limit`` exceeded. For example, ::
+``maximum recursion limit exceeded``. For example, ::
 
    >>> s = 'Begin ' + 1000*'a very long string ' + 'end'
    >>> re.match('Begin (\w| )*? end', s).end()
