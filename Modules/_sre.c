@@ -2744,7 +2744,7 @@ _compile(PyObject* self_, PyObject* args)
 #if defined(VVERBOSE)
 #define VTRACE(v) printf v
 #else
-#define VTRACE(v)
+#define VTRACE(v) do {} while(0)  /* do nothing */
 #endif
 
 /* Report failure */
