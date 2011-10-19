@@ -2,7 +2,6 @@ import os
 import re
 import sys
 import shutil
-import logging
 import unittest as ut1
 import packaging.database
 
@@ -149,7 +148,7 @@ class TestTest(TempdirManager,
         phony_project = 'ohno_ohno-impossible_1234-name_stop-that!'
         cmd.tests_require = [phony_project]
         cmd.ensure_finalized()
-        logs = self.get_logs(logging.WARNING)
+        logs = self.get_logs()
         self.assertIn(phony_project, logs[-1])
 
     def prepare_a_module(self):

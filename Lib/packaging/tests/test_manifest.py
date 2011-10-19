@@ -1,7 +1,6 @@
 """Tests for packaging.manifest."""
 import os
 import re
-import logging
 from io import StringIO
 from packaging.errors import PackagingTemplateError
 from packaging.manifest import Manifest, _translate_pattern, _glob_to_re
@@ -37,10 +36,10 @@ class ManifestTestCase(support.TempdirManager,
         super(ManifestTestCase, self).tearDown()
 
     def assertNoWarnings(self):
-        self.assertEqual(self.get_logs(logging.WARNING), [])
+        self.assertEqual(self.get_logs(), [])
 
     def assertWarnings(self):
-        self.assertGreater(len(self.get_logs(logging.WARNING)), 0)
+        self.assertNotEqual(self.get_logs(), [])
 
     def test_manifest_reader(self):
         tmpdir = self.mkdtemp()
@@ -51,7 +50,7 @@ class ManifestTestCase(support.TempdirManager,
         manifest = Manifest()
         manifest.read_template(MANIFEST)
 
-        warnings = self.get_logs(logging.WARNING)
+        warnings = self.get_logs()
         # the manifest should have been read and 3 warnings issued
         # (we didn't provide the files)
         self.assertEqual(3, len(warnings))
