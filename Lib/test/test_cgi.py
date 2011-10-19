@@ -342,6 +342,10 @@ this is the content of the fake file
         self.assertEqual(
             cgi.parse_header('attachment; filename="strange;name";size=123;'),
             ("attachment", {"filename": "strange;name", "size": "123"}))
+        self.assertEqual(
+            cgi.parse_header('form-data; name="files"; filename="fo\\"o;bar"'),
+            ("form-data", {"name": "files", "filename": 'fo"o;bar'}))
+
 
 BOUNDARY = "---------------------------721837373350705526688164684"
 
