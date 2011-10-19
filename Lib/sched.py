@@ -94,7 +94,7 @@ class scheduler:
         restarted.
 
         It is legal for both the delay function and the action
-        function to to modify the queue or to raise an exception;
+        function to modify the queue or to raise an exception;
         exceptions are not caught but the scheduler's state remains
         well-defined so run() may be called again.
 

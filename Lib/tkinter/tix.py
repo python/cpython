@@ -1554,8 +1554,8 @@ class Tree(TixWidget):
         '''This command is used to indicate whether the entry given by
      entryPath has children entries and whether the children are visible. mode
      must be one of open, close or none. If mode is set to open, a (+)
-     indicator is drawn next the the entry. If mode is set to close, a (-)
-     indicator is drawn next the the entry. If mode is set to none, no
+     indicator is drawn next the entry. If mode is set to close, a (-)
+     indicator is drawn next the entry. If mode is set to none, no
      indicators will be drawn for this entry. The default mode is none. The
      open mode indicates the entry has hidden children and this entry can be
      opened by the user. The close mode indicates that all the children of the
@@ -1873,13 +1873,13 @@ class Grid(TixWidget, XView, YView):
         return self.tk.call(self, 'info', 'bbox', x, y)
 
     def move_column(self, from_, to, offset):
-        """Moves the the range of columns from position FROM through TO by
+        """Moves the range of columns from position FROM through TO by
         the distance indicated by OFFSET. For example, move_column(2, 4, 1)
         moves the columns 2,3,4 to columns 3,4,5."""
         self.tk.call(self, 'move', 'column', from_, to, offset)
 
     def move_row(self, from_, to, offset):
-        """Moves the the range of rows from position FROM through TO by
+        """Moves the range of rows from position FROM through TO by
         the distance indicated by OFFSET.
         For example, move_row(2, 4, 1) moves the rows 2,3,4 to rows 3,4,5."""
         self.tk.call(self, 'move', 'row', from_, to, offset)
@@ -1938,7 +1938,7 @@ class Grid(TixWidget, XView, YView):
               pad0 pixels
                      Specifies the paddings to the top of a row.
               pad1 pixels
-                     Specifies the paddings to the the bottom of a row.
+                     Specifies the paddings to the bottom of a row.
               size val
                      Specifies  the height of a row.
                      Val may be: "auto" -- the height of the row  is  set  the

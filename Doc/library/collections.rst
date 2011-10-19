@@ -317,7 +317,7 @@ or subtracting from an empty counter.
    * The multiset methods are designed only for use cases with positive values.
      The inputs may be negative or zero, but only outputs with positive values
      are created.  There are no type restrictions, but the value type needs to
-     support support addition, subtraction, and comparison.
+     support addition, subtraction, and comparison.
 
    * The :meth:`elements` method requires integer counts.  It ignores zero and
      negative counts.
