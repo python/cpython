@@ -356,24 +356,20 @@ class UtilTestCase(support.EnvironRestorer,
         #
         root = self.mkdtemp()
         pkg1 = os.path.join(root, 'pkg1')
-        os.mkdir(pkg1)
-        self.write_file(os.path.join(pkg1, '__init__.py'))
-        os.mkdir(os.path.join(pkg1, 'pkg2'))
-        self.write_file(os.path.join(pkg1, 'pkg2', '__init__.py'))
-        os.mkdir(os.path.join(pkg1, 'pkg3'))
-        self.write_file(os.path.join(pkg1, 'pkg3', '__init__.py'))
-        os.mkdir(os.path.join(pkg1, 'pkg3', 'pkg6'))
-        self.write_file(os.path.join(pkg1, 'pkg3', 'pkg6', '__init__.py'))
-        os.mkdir(os.path.join(pkg1, 'pkg4'))
-        os.mkdir(os.path.join(pkg1, 'pkg4', 'pkg8'))
-        self.write_file(os.path.join(pkg1, 'pkg4', 'pkg8', '__init__.py'))
-        pkg5 = os.path.join(root, 'pkg5')
-        os.mkdir(pkg5)
-        self.write_file(os.path.join(pkg5, '__init__.py'))
+        os.makedirs(os.path.join(pkg1, 'pkg2'))
+        os.makedirs(os.path.join(pkg1, 'pkg3', 'pkg6'))
+        os.makedirs(os.path.join(pkg1, 'pkg4', 'pkg8'))
+        os.makedirs(os.path.join(root, 'pkg5'))
+        self.write_file((pkg1, '__init__.py'))
+        self.write_file((pkg1, 'pkg2', '__init__.py'))
+        self.write_file((pkg1, 'pkg3', '__init__.py'))
+        self.write_file((pkg1, 'pkg3', 'pkg6', '__init__.py'))
+        self.write_file((pkg1, 'pkg4', 'pkg8', '__init__.py'))
+        self.write_file((root, 'pkg5', '__init__.py'))
 
         res = find_packages([root], ['pkg1.pkg2'])
-        self.assertEqual(set(res), set(['pkg1', 'pkg5', 'pkg1.pkg3',
-                                        'pkg1.pkg3.pkg6']))
+        self.assertEqual(sorted(res),
+                         ['pkg1', 'pkg1.pkg3', 'pkg1.pkg3.pkg6', 'pkg5'])
 
     def test_resolve_name(self):
         # test raw module name

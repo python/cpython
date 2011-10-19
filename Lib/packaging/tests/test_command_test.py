@@ -139,7 +139,8 @@ class TestTest(TempdirManager,
         cmd.run()
         self.assertEqual(['build has run'], record)
 
-    def _test_works_with_2to3(self):
+    @unittest.skip('needs to be written')
+    def test_works_with_2to3(self):
         pass
 
     def test_checks_requires(self):

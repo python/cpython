@@ -117,6 +117,11 @@ class InstallDataTestCase(support.TempdirManager,
         dist.command_obj['install_distinfo'] = cmd
         cmd.run()
 
+        # first a few sanity checks
+        self.assertEqual(os.listdir(scripts_dir), ['spamd'])
+        self.assertEqual(os.listdir(install_dir), ['Spamlib-0.1.dist-info'])
+
+        # now the real test
         fn = os.path.join(install_dir, 'Spamlib-0.1.dist-info', 'RESOURCES')
         with open(fn, encoding='utf-8') as fp:
             content = fp.read().strip()

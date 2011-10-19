@@ -93,21 +93,20 @@ class InstallTestCase(support.TempdirManager,
         self.old_expand = os.path.expanduser
         os.path.expanduser = _expanduser
 
-        try:
-            # this is the actual test
-            self._test_user_site()
-        finally:
+        def cleanup():
             _CONFIG_VARS['userbase'] = self.old_user_base
             _SCHEMES.set(scheme, 'purelib', self.old_user_site)
             os.path.expanduser = self.old_expand
 
-    def _test_user_site(self):
+        self.addCleanup(cleanup)
+
         schemes = get_scheme_names()
         for key in ('nt_user', 'posix_user', 'os2_home'):
             self.assertIn(key, schemes)
 
         dist = Distribution({'name': 'xx'})
         cmd = install_dist(dist)
+
         # making sure the user option is there
         options = [name for name, short, lable in
                    cmd.user_options]
