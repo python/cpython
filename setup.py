@@ -1380,8 +1380,7 @@ class PyBuildExt(build_ext):
         # End multiprocessing
 
         # Platform-specific libraries
-        if any(platform.startswith(prefix)
-               for prefix in ("linux", "freebsd", "gnukfreebsd")):
+        if platform.startswith(('linux', 'freebsd', 'gnukfreebsd')):
             exts.append( Extension('ossaudiodev', ['ossaudiodev.c']) )
         else:
             missing.append('ossaudiodev')
