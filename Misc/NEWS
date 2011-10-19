@@ -319,6 +319,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6090: zipfile raises a ValueError when a document with a timestamp
+  earlier than 1980 is provided. Patch contributed by Petri Lehtinen.
+
 - Issue #13150: sysconfig no longer parses the Makefile and config.h files
   when imported, instead doing it at build time.  This makes importing
   sysconfig faster and reduces Python startup time by 20%.

@@ -300,6 +300,10 @@ class ZipInfo (object):
 
         self.filename = filename        # Normalized file name
         self.date_time = date_time      # year, month, day, hour, min, sec
+
+        if date_time[0] < 1980:
+            raise ValueError('ZIP does not support timestamps before 1980')
+
         # Standard values:
         self.compress_type = ZIP_STORED # Type of compression for the file
         self.comment = b""              # Comment for each file
