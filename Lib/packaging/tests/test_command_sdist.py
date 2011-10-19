@@ -2,7 +2,6 @@
 import os
 import zipfile
 import tarfile
-import logging
 
 from packaging.tests.support import requires_zlib
 
@@ -221,7 +220,7 @@ class SDistTestCase(support.TempdirManager,
         # with the check subcommand
         cmd.ensure_finalized()
         cmd.run()
-        warnings = self.get_logs(logging.WARN)
+        warnings = self.get_logs()
         self.assertEqual(len(warnings), 4)
 
         # trying with a complete set of metadata
@@ -230,13 +229,10 @@ class SDistTestCase(support.TempdirManager,
         cmd.ensure_finalized()
         cmd.metadata_check = False
         cmd.run()
-        warnings = self.get_logs(logging.WARN)
-        # removing manifest generated warnings
-        warnings = [warn for warn in warnings if
-                    not warn.endswith('-- skipping')]
-        # the remaining warnings are about the use of the default file list and
-        # the absence of setup.cfg
+        warnings = self.get_logs()
         self.assertEqual(len(warnings), 2)
+        self.assertIn('using default file list', warnings[0])
+        self.assertIn("'setup.cfg' file not found", warnings[1])
 
     def test_show_formats(self):
         __, stdout = captured_stdout(show_formats)

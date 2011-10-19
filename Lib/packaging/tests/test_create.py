@@ -80,8 +80,7 @@ class CreateTestCase(support.TempdirManager,
             os.mkdir(os.path.join(tempdir, dir_))
 
         for file_ in files:
-            path = os.path.join(tempdir, file_)
-            self.write_file(path, 'xxx')
+            self.write_file((tempdir, file_), 'xxx')
 
         mainprogram._find_files()
         mainprogram.data['packages'].sort()

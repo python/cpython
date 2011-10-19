@@ -82,10 +82,13 @@ class LoggingCatcher:
     configured to record all messages logged to the 'packaging' logger.
 
     Use get_logs to retrieve messages and self.loghandler.flush to discard
-    them.  get_logs automatically flushes the logs; if you test code that
-    generates logging messages but don't use get_logs, you have to flush
-    manually before doing other checks on logging message, otherwise you
-    will get irrelevant results.  See example in test_command_check.
+    them.  get_logs automatically flushes the logs, unless you pass
+    *flush=False*, for example to make multiple calls to the method with
+    different level arguments.  If your test calls some code that generates
+    logging message and then you don't call get_logs, you will need to flush
+    manually before testing other code in the same test_* method, otherwise
+    get_logs in the next lines will see messages from the previous lines.
+    See example in test_command_check.
     """
 
     def setUp(self):
@@ -109,25 +112,23 @@ class LoggingCatcher:
         logger2to3.setLevel(self._old_levels[1])
         super(LoggingCatcher, self).tearDown()
 
-    def get_logs(self, *levels):
-        """Return all log messages with level in *levels*.
+    def get_logs(self, level=logging.WARNING, flush=True):
+        """Return all log messages with given level.
 
-        Without explicit levels given, returns all messages.  *levels* defaults
-        to all levels.  For log calls with arguments (i.e.
-        logger.info('bla bla %r', arg)), the messages will be formatted before
-        being returned (e.g. "bla bla 'thing'").
+        *level* defaults to logging.WARNING.
+
+        For log calls with arguments (i.e.  logger.info('bla bla %r', arg)),
+        the messages will be formatted before being returned (e.g. "bla bla
+        'thing'").
 
         Returns a list.  Automatically flushes the loghandler after being
-        called.
-
-        Example: self.get_logs(logging.WARN, logging.DEBUG).
+        called, unless *flush* is False (this is useful to get e.g. all
+        warnings then all info messages).
         """
-        if not levels:
-            messages = [log.getMessage() for log in self.loghandler.buffer]
-        else:
-            messages = [log.getMessage() for log in self.loghandler.buffer
-                        if log.levelno in levels]
-        self.loghandler.flush()
+        messages = [log.getMessage() for log in self.loghandler.buffer
+                    if log.levelno == level]
+        if flush:
+            self.loghandler.flush()
         return messages
 
 

@@ -61,8 +61,7 @@ class UninstallTestCase(support.TempdirManager,
         kw['pkg'] = pkg
 
         pkg_dir = os.path.join(project_dir, pkg)
-        os.mkdir(pkg_dir)
-        os.mkdir(os.path.join(pkg_dir, 'sub'))
+        os.makedirs(os.path.join(pkg_dir, 'sub'))
 
         self.write_file((project_dir, 'setup.cfg'), SETUP_CFG % kw)
         self.write_file((pkg_dir, '__init__.py'), '#')
