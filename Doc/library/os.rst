@@ -1369,6 +1369,8 @@ or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Window
 
    These constants are only available on Unix.
 
+   .. versionchanged:: 3.3
+      Add :data:`O_CLOEXEC` constant.
 
 .. data:: O_BINARY
           O_NOINHERIT
