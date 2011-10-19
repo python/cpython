@@ -484,7 +484,7 @@ urllib
 
 The :class:`~urllib.request.Request` class, now accepts a *method* argument
 used by :meth:`~urllib.request.Request.get_method` to determine what HTTP method
-should be used.  For example, this will send an ``'HEAD'`` request::
+should be used.  For example, this will send a ``'HEAD'`` request::
 
    >>> urlopen(Request('http://www.python.org', method='HEAD'))
 

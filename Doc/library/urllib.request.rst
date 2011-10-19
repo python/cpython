@@ -177,7 +177,7 @@ The following classes are provided:
 
    *method* should be a string that indicates the HTTP request method that
    will be used (e.g. ``'HEAD'``).  Its value is stored in the
-   :attr:`Request.method` attribute and is used by :meth:`Request.get_method()`.
+   :attr:`~Request.method` attribute and is used by :meth:`get_method()`.
 
    .. versionchanged:: 3.3
     :attr:`Request.method` argument is added to the Request class.
@@ -379,11 +379,11 @@ request.
 .. attribute:: Request.method
 
    The HTTP request method to use.  This value is used by
-   :meth:`Request.get_method` to override the computed HTTP request
-   method that would otherwise be returned.  This attribute is
-   initialized with the value of the *method* argument passed to the constructor.
+   :meth:`~Request.get_method` to override the computed HTTP request
+   method that would otherwise be returned.  This attribute is initialized with
+   the value of the *method* argument passed to the constructor.
 
-   ..versionadded:: 3.3
+   .. versionadded:: 3.3
 
 .. method:: Request.add_data(data)
 
@@ -400,7 +400,7 @@ request.
    This is only meaningful for HTTP requests.
 
    .. versionchanged:: 3.3
-      get_method now looks at the value of :attr:`Request.method` first.
+      get_method now looks at the value of :attr:`Request.method`.
 
 
 .. method:: Request.has_data()
