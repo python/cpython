@@ -92,7 +92,7 @@ thing in all languages that support your hardware's floating-point arithmetic
 (although some languages may not *display* the difference by default, or in all
 output modes).
 
-For more pleasant output, you may may wish to use string formatting to produce a limited number of significant digits::
+For more pleasant output, you may wish to use string formatting to produce a limited number of significant digits::
 
    >>> format(math.pi, '.12g')  # give 12 significant digits
    '3.14159265359'

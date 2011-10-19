@@ -9,7 +9,7 @@ RFC2396_BASE = "http://a/b/c/d;p?q"
 RFC3986_BASE = 'http://a/b/c/d;p?q'
 SIMPLE_BASE  = 'http://a/b/c/d'
 
-# A list of test cases.  Each test case is a a two-tuple that contains
+# A list of test cases.  Each test case is a two-tuple that contains
 # a string with the query and a dictionary with the expected result.
 
 parse_qsl_test_cases = [
