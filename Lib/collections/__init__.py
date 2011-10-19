@@ -683,6 +683,69 @@ class Counter(dict):
         '''
         return Counter() - self
 
+    def _keep_positive(self):
+        '''Internal method to strip elements with a negative or zero count'''
+        nonpositive = [elem for elem, count in self.items() if not count > 0]
+        for elem in nonpositive:
+            del self[elem]
+        return self
+
+    def __iadd__(self, other):
+        '''Inplace add from another counter, keeping only positive counts.
+
+        >>> c = Counter('abbb')
+        >>> c += Counter('bcc')
+        >>> c
+        Counter({'b': 4, 'c': 2, 'a': 1})
+
+        '''
+        for elem, count in other.items():
+            self[elem] += count
+        return self._keep_positive()
+
+    def __isub__(self, other):
+        '''Inplace subtract counter, but keep only results with positive counts.
+
+        >>> c = Counter('abbbc')
+        >>> c -= Counter('bccd')
+        >>> c
+        Counter({'b': 2, 'a': 1})
+
+        '''
+        for elem, count in other.items():
+            self[elem] -= count
+        return self._keep_positive()
+
+    def __ior__(self, other):
+        '''Inplace union is the maximum of value from either counter.
+
+        >>> c = Counter('abbb')
+        >>> c |= Counter('bcc')
+        >>> c
+        Counter({'b': 3, 'c': 2, 'a': 1})
+
+        '''
+        for elem, other_count in other.items():
+            count = self[elem]
+            if other_count > count:
+                self[elem] = other_count
+        return self._keep_positive()
+
+    def __iand__(self, other):
+        '''Inplace intersection is the minimum of corresponding counts.
+
+        >>> c = Counter('abbb')
+        >>> c &= Counter('bcc')
+        >>> c
+        Counter({'b': 1})
+
+        '''
+        for elem, count in self.items():
+            other_count = other[elem]
+            if other_count < count:
+                self[elem] = other_count
+        return self._keep_positive()
+
 
 ########################################################################
 ###  ChainMap (helper for configparser and string.Template)
