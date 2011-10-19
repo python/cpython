@@ -4,6 +4,7 @@ import sys
 import time
 import logging
 import tempfile
+import textwrap
 import subprocess
 from io import StringIO
 
@@ -375,35 +376,48 @@ class UtilTestCase(support.EnvironRestorer,
                                         'pkg1.pkg3.pkg6']))
 
     def test_resolve_name(self):
-        self.assertIs(str, resolve_name('builtins.str'))
-        self.assertEqual(
-            UtilTestCase.__name__,
-            resolve_name("packaging.tests.test_util.UtilTestCase").__name__)
-        self.assertEqual(
-            UtilTestCase.test_resolve_name.__name__,
-            resolve_name("packaging.tests.test_util.UtilTestCase."
-                         "test_resolve_name").__name__)
+        # test raw module name
+        tmpdir = self.mkdtemp()
+        sys.path.append(tmpdir)
+        self.addCleanup(sys.path.remove, tmpdir)
+        self.write_file((tmpdir, 'hello.py'), '')
 
-        self.assertRaises(ImportError, resolve_name,
-                          "packaging.tests.test_util.UtilTestCaseNot")
-        self.assertRaises(ImportError, resolve_name,
-                          "packaging.tests.test_util.UtilTestCase."
-                          "nonexistent_attribute")
+        os.makedirs(os.path.join(tmpdir, 'a', 'b'))
+        self.write_file((tmpdir, 'a', '__init__.py'), '')
+        self.write_file((tmpdir, 'a', 'b', '__init__.py'), '')
+        self.write_file((tmpdir, 'a', 'b', 'c.py'), 'class Foo: pass')
+        self.write_file((tmpdir, 'a', 'b', 'd.py'), textwrap.dedent("""\
+                         class FooBar:
+                             class Bar:
+                                 def baz(self):
+                                     pass
+                            """))
 
-    def test_import_nested_first_time(self):
-        tmp_dir = self.mkdtemp()
-        os.makedirs(os.path.join(tmp_dir, 'a', 'b'))
-        self.write_file(os.path.join(tmp_dir, 'a', '__init__.py'), '')
-        self.write_file(os.path.join(tmp_dir, 'a', 'b', '__init__.py'), '')
-        self.write_file(os.path.join(tmp_dir, 'a', 'b', 'c.py'),
-                                    'class Foo: pass')
+        # check Python, C and built-in module
+        self.assertEqual(resolve_name('hello').__name__, 'hello')
+        self.assertEqual(resolve_name('_csv').__name__, '_csv')
+        self.assertEqual(resolve_name('sys').__name__, 'sys')
 
-        try:
-            sys.path.append(tmp_dir)
-            resolve_name("a.b.c.Foo")
-            # assert nothing raised
-        finally:
-            sys.path.remove(tmp_dir)
+        # test module.attr
+        self.assertIs(resolve_name('builtins.str'), str)
+        self.assertIsNone(resolve_name('hello.__doc__'))
+        self.assertEqual(resolve_name('a.b.c.Foo').__name__, 'Foo')
+        self.assertEqual(resolve_name('a.b.d.FooBar.Bar.baz').__name__, 'baz')
+
+        # error if module not found
+        self.assertRaises(ImportError, resolve_name, 'nonexistent')
+        self.assertRaises(ImportError, resolve_name, 'non.existent')
+        self.assertRaises(ImportError, resolve_name, 'a.no')
+        self.assertRaises(ImportError, resolve_name, 'a.b.no')
+        self.assertRaises(ImportError, resolve_name, 'a.b.no.no')
+        self.assertRaises(ImportError, resolve_name, 'inva-lid')
+
+        # looking up built-in names is not supported
+        self.assertRaises(ImportError, resolve_name, 'str')
+
+        # error if module found but not attr
+        self.assertRaises(ImportError, resolve_name, 'a.b.Spam')
+        self.assertRaises(ImportError, resolve_name, 'a.b.c.Spam')
 
     def test_run_2to3_on_code(self):
         content = "print 'test'"
