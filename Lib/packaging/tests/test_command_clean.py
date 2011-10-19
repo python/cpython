@@ -23,7 +23,7 @@ class cleanTestCase(support.TempdirManager, support.LoggingCatcher,
             if name == 'build_base':
                 continue
             for f in ('one', 'two', 'three'):
-                self.write_file(os.path.join(path, f))
+                self.write_file((path, f))
 
         # let's run the command
         cmd.all = True

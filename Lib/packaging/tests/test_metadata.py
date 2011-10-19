@@ -1,7 +1,6 @@
 """Tests for packaging.metadata."""
 import os
 import sys
-import logging
 from textwrap import dedent
 from io import StringIO
 
@@ -302,7 +301,7 @@ class MetadataTestCase(LoggingCatcher,
                           'name': 'xxx',
                           'version': 'xxx',
                           'home_page': 'xxxx'})
-        logs = self.get_logs(logging.WARNING)
+        logs = self.get_logs()
         self.assertEqual(1, len(logs))
         self.assertIn('not a valid version', logs[0])
 
@@ -418,7 +417,7 @@ class MetadataTestCase(LoggingCatcher,
         # XXX check PEP and see if 3 == 3.0
         metadata['Requires-Python'] = '>=2.6, <3.0'
         metadata['Requires-Dist'] = ['Foo (>=2.6, <3.0)']
-        self.assertEqual([], self.get_logs(logging.WARNING))
+        self.assertEqual(self.get_logs(), [])
 
     @unittest.skip('needs to be implemented')
     def test_requires_illegal(self):

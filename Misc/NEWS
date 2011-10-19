@@ -1455,7 +1455,7 @@ Tests
   the amount of time needed to run the tests. "make test" and "make quicktest"
   now include some resource-intensive tests, but no longer run the test suite
   twice to check for bugs in .pyc generation. Tools/scripts/run_test.py provides
-  as an easy platform-independent way to run test suite with sensible defaults.
+  an easy platform-independent way to run test suite with sensible defaults.
 
 - Issue #12331: The test suite for the packaging module can now run from an
   installed Python.

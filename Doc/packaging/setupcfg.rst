@@ -19,6 +19,8 @@ information that's already documented for Python in the
    :local:
 
 
+.. _setupcfg-syntax:
+
 Syntax
 ======
 
@@ -117,6 +119,8 @@ from most specialized to most common.
 file**.  This will be useful to let users publish a single file.
 
 
+.. _setupcfg-sections:
+
 Description of sections and fields
 ==================================
 
@@ -148,6 +152,8 @@ command sections
    Options given for specific commands, identical to those that can be given
    on the command line.
 
+
+.. _setupcfg-section-global:
 
 Global options
 --------------
@@ -193,6 +199,9 @@ setup_hooks
       [global]
       setup_hooks = _setuphooks.customize_config
 
+
+
+.. _setupcfg-section-metadata:
 
 Metadata
 --------
@@ -318,6 +327,8 @@ You should not give any explicit value for metadata-version: it will be guessed
 from the fields present in the file.
 
 
+.. _setupcfg-section-files:
+
 Files
 -----
 
@@ -325,7 +336,8 @@ This section describes the files included in the project.
 
 packages_root
    the root directory containing all packages and modules
-   (default: current directory).  *optional*
+   (default: current directory, i.e. the project's top-level
+   directory where :file:`setup.cfg` lives).  *optional*
 
 packages
    a list of packages the project includes *optional*, *multi*
@@ -337,8 +349,8 @@ scripts
    a list of scripts the project includes *optional*, *multi*
 
 extra_files
-   a list of patterns to include extra files *optional*,
-   *multi*
+   a list of patterns for additional files to include in source distributions
+   (see :ref:`packaging-manifest`) *optional*, *multi*
 
 Example::
 
@@ -747,8 +759,10 @@ We use brace expansion syntax to place all the shell and batch scripts into
 {scripts} category.
 
 
-Extension sections
-------------------
+.. _setupcfg-section-extensions:
+
+Extension modules sections
+--------------------------
 
 If a project includes extension modules written in C or C++, each one of them
 needs to have its options defined in a dedicated section.  Here's an example::
@@ -779,8 +793,10 @@ addition, multi-line values accept environment markers on each line, after a
 ``--``.
 
 
-Command sections
-----------------
+.. _setupcfg-section-commands:
+
+Commands sections
+-----------------
 
 To pass options to commands without having to type them on the command line
 for each invocation, you can write them in the :file:`setup.cfg` file, in a
@@ -803,6 +819,11 @@ section named after the command.  Example::
 Option values given in the configuration file can be overriden on the command
 line.  See :ref:`packaging-setup-config` for more information.
 
+These sections are also used to define :ref:`command hooks
+<packaging-command-hooks>`.
+
+
+.. _setupcfg-extensibility:
 
 Extensibility
 =============
@@ -816,6 +837,8 @@ An extension field starts with ``X-``.  Example::
    name = Distribute
    X-Debian-Name = python-distribute
 
+
+.. _setupcfg-changes:
 
 Changes in the specification
 ============================
@@ -851,6 +874,8 @@ A tool written to produce 1.x should have these properties:
 - Writes all mandatory fields.
 - May write optional fields.
 
+
+.. _setupcfg-acks:
 
 Acknowledgments
 ===============
