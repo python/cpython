@@ -6,7 +6,7 @@ import textwrap
 import packaging.dist
 
 from packaging.dist import Distribution
-from packaging.command import set_command
+from packaging.command import set_command, _COMMANDS
 from packaging.command.cmd import Command
 from packaging.errors import PackagingModuleError, PackagingOptionError
 from packaging.tests import captured_stdout
@@ -28,6 +28,9 @@ class test_dist(Command):
     def finalize_options(self):
         pass
 
+    def run(self):
+        pass
+
 
 class DistributionTestCase(support.TempdirManager,
                            support.LoggingCatcher,
@@ -38,12 +41,18 @@ class DistributionTestCase(support.TempdirManager,
 
     def setUp(self):
         super(DistributionTestCase, self).setUp()
+        # XXX this is ugly, we should fix the functions to accept args
+        # (defaulting to sys.argv)
         self.argv = sys.argv, sys.argv[:]
         del sys.argv[1:]
+        self._commands = _COMMANDS.copy()
 
     def tearDown(self):
         sys.argv = self.argv[0]
         sys.argv[:] = self.argv[1]
+        # XXX maybe we need a public API to remove commands
+        _COMMANDS.clear()
+        _COMMANDS.update(self._commands)
         super(DistributionTestCase, self).tearDown()
 
     @unittest.skip('needs to be updated')

@@ -1,6 +1,5 @@
 """Tests for packaging.version."""
 import doctest
-import os
 
 from packaging.version import NormalizedVersion as V
 from packaging.version import HugeMajorVersionNumError, IrrationalVersionError
@@ -46,7 +45,6 @@ class VersionTestCase(unittest.TestCase):
     def test_from_parts(self):
 
         for v, s in self.versions:
-            parts = v.parts
             v2 = V.from_parts(*v.parts)
             self.assertEqual(v, v2)
             self.assertEqual(str(v), str(v2))
@@ -192,7 +190,7 @@ class VersionTestCase(unittest.TestCase):
                       'Hey (>=2.5,<2.7)')
 
         for predicate in predicates:
-            v = VersionPredicate(predicate)
+            VersionPredicate(predicate)
 
         self.assertTrue(VersionPredicate('Hey (>=2.5,<2.7)').match('2.6'))
         self.assertTrue(VersionPredicate('Ho').match('2.6'))
