@@ -293,7 +293,7 @@ or subtracting from an empty counter.
     Counter({'b': 4})
 
 .. versionadded:: 3.3
-   Added support for unary plus and unary minus.
+   Added support for unary plus, unary minus, and in-place multiset operations.
 
 .. note::
 

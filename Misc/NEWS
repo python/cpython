@@ -488,6 +488,7 @@ Library
   in os.kill().
 
 - Add support for unary plus and unary minus to collections.Counter().
+  Issue #13121: Also an support for inplace math operators.
 
 - Issue #12683: urlparse updated to include svn as schemes that uses relative
   paths. (svn from 1.5 onwards support relative path).
