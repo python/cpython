@@ -630,22 +630,35 @@ def find_packages(paths=(os.curdir,), exclude=()):
 def resolve_name(name):
     """Resolve a name like ``module.object`` to an object and return it.
 
-    Raise ImportError if the module or name is not found.
+    This functions supports packages and attributes without depth limitation:
+    ``package.package.module.class.class.function.attr`` is valid input.
+    However, looking up builtins is not directly supported: use
+    ``builtins.name``.
+
+    Raises ImportError if importing the module fails or if one requested
+    attribute is not found.
     """
+    if '.' not in name:
+        # shortcut
+        __import__(name)
+        return sys.modules[name]
+
+    # FIXME clean up this code!
     parts = name.split('.')
     cursor = len(parts)
     module_name = parts[:cursor]
+    ret = ''
 
     while cursor > 0:
         try:
             ret = __import__('.'.join(module_name))
             break
         except ImportError:
-            if cursor == 0:
-                raise
             cursor -= 1
             module_name = parts[:cursor]
-            ret = ''
+
+    if ret == '':
+        raise ImportError(parts[0])
 
     for part in parts[1:]:
         try:
