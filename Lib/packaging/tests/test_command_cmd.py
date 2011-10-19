@@ -1,5 +1,6 @@
 """Tests for distutils.cmd."""
 import os
+import logging
 
 from packaging.command.cmd import Command
 from packaging.dist import Distribution
@@ -43,7 +44,7 @@ class CommandTestCase(support.LoggingCatcher,
 
         wanted = ["command options for 'MyCmd':", '  option1 = 1',
                   '  option2 = 1']
-        msgs = self.get_logs()
+        msgs = self.get_logs(logging.INFO)
         self.assertEqual(msgs, wanted)
 
     def test_ensure_string(self):

@@ -1,4 +1,3 @@
-import sys
 import textwrap
 
 from packaging.tests import unittest, support

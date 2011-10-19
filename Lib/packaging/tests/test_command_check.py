@@ -1,6 +1,5 @@
 """Tests for distutils.command.check."""
 
-import logging
 from packaging.command.check import check
 from packaging.metadata import _HAS_DOCUTILS
 from packaging.errors import PackagingSetupError, MetadataMissingError
@@ -27,11 +26,11 @@ class CheckTestCase(support.LoggingCatcher,
         # let's run the command with no metadata at all
         # by default, check is checking the metadata
         # should have some warnings
-        cmd = self._run()
+        self._run()
         # trick: using assertNotEqual with an empty list will give us a more
         # useful error message than assertGreater(.., 0) when the code change
         # and the test fails
-        self.assertNotEqual([], self.get_logs(logging.WARNING))
+        self.assertNotEqual(self.get_logs(), [])
 
         # now let's add the required fields
         # and run it again, to make sure we don't get
@@ -40,8 +39,8 @@ class CheckTestCase(support.LoggingCatcher,
                     'author_email': 'xxx',
                     'name': 'xxx', 'version': '4.2',
                     }
-        cmd = self._run(metadata)
-        self.assertEqual([], self.get_logs(logging.WARNING))
+        self._run(metadata)
+        self.assertEqual(self.get_logs(), [])
 
         # now with the strict mode, we should
         # get an error if there are missing metadata
@@ -53,8 +52,8 @@ class CheckTestCase(support.LoggingCatcher,
         self.loghandler.flush()
 
         # and of course, no error when all metadata fields are present
-        cmd = self._run(metadata, strict=True)
-        self.assertEqual([], self.get_logs(logging.WARNING))
+        self._run(metadata, strict=True)
+        self.assertEqual(self.get_logs(), [])
 
         # now a test with non-ASCII characters
         metadata = {'home_page': 'xxx', 'author': '\u00c9ric',
@@ -62,15 +61,15 @@ class CheckTestCase(support.LoggingCatcher,
                     'version': '1.2',
                     'summary': 'Something about esszet \u00df',
                     'description': 'More things about esszet \u00df'}
-        cmd = self._run(metadata)
-        self.assertEqual([], self.get_logs(logging.WARNING))
+        self._run(metadata)
+        self.assertEqual(self.get_logs(), [])
 
     def test_check_metadata_1_2(self):
         # let's run the command with no metadata at all
         # by default, check is checking the metadata
         # should have some warnings
-        cmd = self._run()
-        self.assertNotEqual([], self.get_logs(logging.WARNING))
+        self._run()
+        self.assertNotEqual(self.get_logs(), [])
 
         # now let's add the required fields and run it again, to make sure we
         # don't get any warning anymore let's use requires_python as a marker
@@ -80,8 +79,8 @@ class CheckTestCase(support.LoggingCatcher,
                     'name': 'xxx', 'version': '4.2',
                     'requires_python': '2.4',
                     }
-        cmd = self._run(metadata)
-        self.assertEqual([], self.get_logs(logging.WARNING))
+        self._run(metadata)
+        self.assertEqual(self.get_logs(), [])
 
         # now with the strict mode, we should
         # get an error if there are missing metadata
@@ -99,8 +98,8 @@ class CheckTestCase(support.LoggingCatcher,
 
         # now with correct version format again
         metadata['version'] = '4.2'
-        cmd = self._run(metadata, strict=True)
-        self.assertEqual([], self.get_logs(logging.WARNING))
+        self._run(metadata, strict=True)
+        self.assertEqual(self.get_logs(), [])
 
     @unittest.skipUnless(_HAS_DOCUTILS, "requires docutils")
     def test_check_restructuredtext(self):
@@ -109,9 +108,7 @@ class CheckTestCase(support.LoggingCatcher,
         pkg_info, dist = self.create_dist(description=broken_rest)
         cmd = check(dist)
         cmd.check_restructuredtext()
-        self.assertEqual(len(self.get_logs(logging.WARNING)), 1)
-        # clear warnings from the previous call
-        self.loghandler.flush()
+        self.assertEqual(len(self.get_logs()), 1)
 
         # let's see if we have an error with strict=1
         metadata = {'home_page': 'xxx', 'author': 'xxx',
@@ -126,7 +123,7 @@ class CheckTestCase(support.LoggingCatcher,
         dist = self.create_dist(description='title\n=====\n\ntest \u00df')[1]
         cmd = check(dist)
         cmd.check_restructuredtext()
-        self.assertEqual([], self.get_logs(logging.WARNING))
+        self.assertEqual(self.get_logs(), [])
 
     def test_check_all(self):
         self.assertRaises(PackagingSetupError, self._run,
@@ -143,18 +140,18 @@ class CheckTestCase(support.LoggingCatcher,
         }
         cmd = check(dist)
         cmd.check_hooks_resolvable()
-        self.assertEqual(len(self.get_logs(logging.WARNING)), 1)
+        self.assertEqual(len(self.get_logs()), 1)
 
     def test_warn(self):
         _, dist = self.create_dist()
         cmd = check(dist)
-        self.assertEqual([], self.get_logs())
+        self.assertEqual(self.get_logs(), [])
         cmd.warn('hello')
-        self.assertEqual(['check: hello'], self.get_logs())
+        self.assertEqual(self.get_logs(), ['check: hello'])
         cmd.warn('hello %s', 'world')
-        self.assertEqual(['check: hello world'], self.get_logs())
+        self.assertEqual(self.get_logs(), ['check: hello world'])
         cmd.warn('hello %s %s', 'beautiful', 'world')
-        self.assertEqual(['check: hello beautiful world'], self.get_logs())
+        self.assertEqual(self.get_logs(), ['check: hello beautiful world'])
 
 
 def test_suite():
