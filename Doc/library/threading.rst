@@ -886,7 +886,7 @@ As an example, here is a simple way to synchronize a client and server thread::
 
       Pass the barrier.  When all the threads party to the barrier have called
       this function, they are all released simultaneously.  If a *timeout* is
-      provided, is is used in preference to any that was supplied to the class
+      provided, it is used in preference to any that was supplied to the class
       constructor.
 
       The return value is an integer in the range 0 to *parties* -- 1, different

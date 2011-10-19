@@ -32,7 +32,7 @@ Public functions
                         prefer_final=True)
 
    Return information about what's going to be installed and upgraded.
-   *requirements* is a string string containing the requirements for this
+   *requirements* is a string containing the requirements for this
    project, for example ``'FooBar 1.1'`` or ``'BarBaz (<1.2)'``.
 
    .. XXX are requirements comma-separated?

@@ -958,7 +958,7 @@ _Validation_records = [
 ('ServiceInstall','StartType','N',0,4,None, None, None, None, 'Type of the service',),
 ('Shortcut','Name','N',None, None, None, None, 'Filename',None, 'The name of the shortcut to be created.',),
 ('Shortcut','Description','Y',None, None, None, None, 'Text',None, 'The description for the shortcut.',),
-('Shortcut','Component_','N',None, None, 'Component',1,'Identifier',None, 'Foreign key into the Component table denoting the component whose selection gates the the shortcut creation/deletion.',),
+('Shortcut','Component_','N',None, None, 'Component',1,'Identifier',None, 'Foreign key into the Component table denoting the component whose selection gates the shortcut creation/deletion.',),
 ('Shortcut','Icon_','Y',None, None, 'Icon',1,'Identifier',None, 'Foreign key into the File table denoting the external icon file for the shortcut.',),
 ('Shortcut','IconIndex','Y',-32767,32767,None, None, None, None, 'The icon index for the shortcut.',),
 ('Shortcut','Directory_','N',None, None, 'Directory',1,'Identifier',None, 'Foreign key into the Directory table denoting the directory where the shortcut file is created.',),
