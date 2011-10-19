@@ -2000,7 +2000,7 @@ Utility functions
 
 .. function:: string_at(address[, size])
 
-   This function returns the string starting at memory address address. If size
+   This function returns the string starting at memory address *address*. If size
    is specified, it is used as size, otherwise the string is assumed to be
    zero-terminated.
 

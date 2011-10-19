@@ -265,7 +265,7 @@
 #      intervening.  If there are other threads waiting to write, they
 #      are allowed to proceed only if the current thread calls
 #      .read_out; threads waiting to read are only allowed to proceed
-#      if there are are no threads waiting to write.  (This is a
+#      if there are no threads waiting to write.  (This is a
 #      weakness of the interface!)
 
 import thread

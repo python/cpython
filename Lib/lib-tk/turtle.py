@@ -96,7 +96,7 @@ Roughly it has the following features added:
   docstrings to disc, so it can serve as a template for translations.
 
 Behind the scenes there are some features included with possible
-extensions in in mind. These will be commented and documented elsewhere.
+extensions in mind. These will be commented and documented elsewhere.
 
 """
 

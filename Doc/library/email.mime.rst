@@ -196,6 +196,6 @@ Here are the classes:
 
    .. versionchanged:: 2.4
       The previously deprecated *_encoding* argument has been removed.  Content
-      Transfer Encoding now happens happens implicitly based on the *_charset*
+      Transfer Encoding now happens implicitly based on the *_charset*
       argument.
 

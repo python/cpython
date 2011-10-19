@@ -34,7 +34,7 @@ The optional `seekable' argument is provided as a workaround for certain stdio
 libraries in which tell() discards buffered data before discovering that the
 lseek() system call doesn't work.  For maximum portability, you should set the
 seekable argument to zero to prevent that initial \code{tell} when passing in
-an unseekable object such as a a file object created from a socket object.  If
+an unseekable object such as a file object created from a socket object.  If
 it is 1 on entry -- which it is by default -- the tell() method of the open
 file object is called once; if this raises an exception, seekable is reset to
 0.  For other nonzero values of seekable, this test is not made.

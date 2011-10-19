@@ -947,7 +947,7 @@ Optimizations
   :meth:`__len__` method.  (Contributed by Raymond Hettinger.)
 
 * The methods :meth:`list.__getitem__`, :meth:`dict.__getitem__`, and
-  :meth:`dict.__contains__` are are now implemented as :class:`method_descriptor`
+  :meth:`dict.__contains__` are now implemented as :class:`method_descriptor`
   objects rather than :class:`wrapper_descriptor` objects.  This form of  access
   doubles their performance and makes them more suitable for use as arguments to
   functionals: ``map(mydict.__getitem__, keylist)``. (Contributed by Raymond
