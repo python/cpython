@@ -1,6 +1,7 @@
 """Tests for packaging.command.upload_docs."""
 import os
 import shutil
+import logging
 import zipfile
 try:
     import _ssl
@@ -141,13 +142,16 @@ class UploadDocsTestCase(support.TempdirManager,
         self.pypi.default_response_status = '403 Forbidden'
         self.prepare_command()
         self.cmd.run()
-        self.assertIn('Upload failed (403): Forbidden', self.get_logs()[-1])
+        errors = self.get_logs(logging.ERROR)
+        self.assertEqual(len(errors), 1)
+        self.assertIn('Upload failed (403): Forbidden', errors[0])
 
         self.pypi.default_response_status = '301 Moved Permanently'
         self.pypi.default_response_headers.append(
             ("Location", "brand_new_location"))
         self.cmd.run()
-        self.assertIn('brand_new_location', self.get_logs()[-1])
+        lastlog = self.get_logs(logging.INFO)[-1]
+        self.assertIn('brand_new_location', lastlog)
 
     def test_reads_pypirc_data(self):
         self.write_file(self.rc, PYPIRC % self.pypi.full_address)
@@ -171,7 +175,7 @@ class UploadDocsTestCase(support.TempdirManager,
         self.prepare_command()
         self.cmd.show_response = True
         self.cmd.run()
-        record = self.get_logs()[-1]
+        record = self.get_logs(logging.INFO)[-1]
         self.assertTrue(record, "should report the response")
         self.assertIn(self.pypi.default_response_data, record)
 

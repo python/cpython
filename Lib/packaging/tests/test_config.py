@@ -1,7 +1,6 @@
 """Tests for packaging.config."""
 import os
 import sys
-import logging
 from io import StringIO
 
 from packaging import command
@@ -375,15 +374,14 @@ class ConfigTestCase(support.TempdirManager,
         self.write_file('README', 'yeah')
         self.write_file('hooks.py', HOOKS_MODULE)
         self.get_dist()
-        logs = self.get_logs(logging.WARNING)
-        self.assertEqual(['logging_hook called'], logs)
+        self.assertEqual(['logging_hook called'], self.get_logs())
         self.assertIn('hooks', sys.modules)
 
     def test_missing_setup_hook_warns(self):
         self.write_setup({'setup-hooks': 'this.does._not.exist'})
         self.write_file('README', 'yeah')
         self.get_dist()
-        logs = self.get_logs(logging.WARNING)
+        logs = self.get_logs()
         self.assertEqual(1, len(logs))
         self.assertIn('cannot find setup hook', logs[0])
 
@@ -397,7 +395,7 @@ class ConfigTestCase(support.TempdirManager,
         dist = self.get_dist()
 
         self.assertEqual(['haven', 'first', 'third'], dist.py_modules)
-        logs = self.get_logs(logging.WARNING)
+        logs = self.get_logs()
         self.assertEqual(1, len(logs))
         self.assertIn('cannot find setup hook', logs[0])
 
