@@ -9,7 +9,7 @@
 # wrapper for 'threading'.
 #
 # Try calling `multiprocessing.doc.main()` to read the html
-# documentation in in a webbrowser.
+# documentation in a webbrowser.
 #
 #
 # Copyright (c) 2006-2008, R Oudkerk

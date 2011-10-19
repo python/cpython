@@ -1874,13 +1874,13 @@ class Grid(TixWidget, XView, YView):
         return self.tk.call(self, 'info', 'bbox', x, y)
 
     def move_column(self, from_, to, offset):
-        """Moves the the range of columns from position FROM through TO by
+        """Moves the range of columns from position FROM through TO by
         the distance indicated by OFFSET. For example, move_column(2, 4, 1)
         moves the columns 2,3,4 to columns 3,4,5."""
         self.tk.call(self, 'move', 'column', from_, to, offset)
 
     def move_row(self, from_, to, offset):
-        """Moves the the range of rows from position FROM through TO by
+        """Moves the range of rows from position FROM through TO by
         the distance indicated by OFFSET.
         For example, move_row(2, 4, 1) moves the rows 2,3,4 to rows 3,4,5."""
         self.tk.call(self, 'move', 'row', from_, to, offset)
@@ -1939,7 +1939,7 @@ class Grid(TixWidget, XView, YView):
               pad0 pixels
                      Specifies the paddings to the top of a row.
               pad1 pixels
-                     Specifies the paddings to the the bottom of a row.
+                     Specifies the paddings to the bottom of a row.
               size val
                      Specifies  the height of a row.
                      Val may be: "auto" -- the height of the row  is  set  the

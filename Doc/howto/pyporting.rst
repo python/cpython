@@ -328,7 +328,7 @@ the bytes/string dichotomy. Because Python 2 allowed the ``str`` type to hold
 textual data, people have over the years been rather loose in their delineation
 of what ``str`` instances held text compared to bytes. In Python 3 you cannot
 be so care-free anymore and need to properly handle the difference. The key
-handling this issue to to make sure that **every** string literal in your
+handling this issue to make sure that **every** string literal in your
 Python 2 code is either syntactically of functionally marked as either bytes or
 text data. After this is done you then need to make sure your APIs are designed
 to either handle a specific type or made to be properly polymorphic.

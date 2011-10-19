@@ -264,7 +264,7 @@ used for the deployment of WSGI applications.
 
    * `FastCGI, SCGI, and Apache: Background and Future
      <http://www.vmunix.com/mark/blog/archives/2006/01/02/fastcgi-scgi-and-apache-background-and-future/>`_
-     is a discussion on why the concept of FastCGI and SCGI is better that that
+     is a discussion on why the concept of FastCGI and SCGI is better than that
      of mod_python.
 
 

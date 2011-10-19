@@ -659,7 +659,7 @@ Hi,
 I have implemented a new image type called "compound". It allows you
 to glue together a bunch of bitmaps, images and text strings together
 to form a bigger image. Then you can use this image with widgets that
-support the -image option. For example, you can display a text string string
+support the -image option. For example, you can display a text string
 together with a bitmap, at the same time, inside a TK button widget.
 """)
     list.pack(expand=1, fill=Tix.BOTH, padx=4, pady=6)

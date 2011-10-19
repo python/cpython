@@ -1311,7 +1311,7 @@ The following methods are present only on unicode objects:
 
    Return ``True`` if there are only decimal characters in S, ``False``
    otherwise. Decimal characters include digit characters, and all characters
-   that that can be used to form decimal-radix numbers, e.g. U+0660,
+   that can be used to form decimal-radix numbers, e.g. U+0660,
    ARABIC-INDIC DIGIT ZERO.
 
 
