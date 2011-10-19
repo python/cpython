@@ -399,8 +399,8 @@ request.
    ``'GET'`` if :attr:`Request.data` is ``None``, or ``'POST'`` if it's not.
    This is only meaningful for HTTP requests.
 
-    .. versionchanged:: 3.3
-    get_method now looks at the value of :attr:`Request.method` first.
+   .. versionchanged:: 3.3
+      get_method now looks at the value of :attr:`Request.method` first.
 
 
 .. method:: Request.has_data()
