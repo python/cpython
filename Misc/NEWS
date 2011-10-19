@@ -63,6 +63,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6090: zipfile raises a ValueError when a document with a timestamp
+  earlier than 1980 is provided. Patch contributed by Petri Lehtinen.
+
 - Issue #13194: zlib.compressobj().copy() and zlib.decompressobj().copy() are
   now available on Windows.
 
