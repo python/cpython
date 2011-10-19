@@ -388,7 +388,7 @@ Instances have the following attributes:
    +-------+--------------------------+
    | Index | Value                    |
    +=======+==========================+
-   | ``0`` | Year                     |
+   | ``0`` | Year (>= 1980)           |
    +-------+--------------------------+
    | ``1`` | Month (one-based)        |
    +-------+--------------------------+
@@ -400,6 +400,10 @@ Instances have the following attributes:
    +-------+--------------------------+
    | ``5`` | Seconds (zero-based)     |
    +-------+--------------------------+
+
+   .. note::
+
+      The ZIP file format does not support timestamps before 1980.
 
 
 .. attribute:: ZipInfo.compress_type
