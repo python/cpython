@@ -1,6 +1,7 @@
 """Install all modules (extensions and pure Python)."""
 
 import os
+import imp
 import sys
 import logging
 
@@ -172,9 +173,10 @@ class install_lib(Command):
             if ext != PYTHON_SOURCE_EXTENSION:
                 continue
             if self.compile:
-                bytecode_files.append(py_file + "c")
+                bytecode_files.append(imp.cache_from_source(py_file))
             if self.optimize > 0:
-                bytecode_files.append(py_file + "o")
+                bytecode_files.append(imp.cache_from_source(
+                    py_file, debug_override=False))
 
         return bytecode_files
 

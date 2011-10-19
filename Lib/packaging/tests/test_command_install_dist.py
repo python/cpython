@@ -1,6 +1,7 @@
 """Tests for packaging.command.install."""
 
 import os
+import imp
 import sys
 from sysconfig import (get_scheme_names, get_config_vars,
                        _SCHEMES, get_config_var, get_path)
@@ -181,9 +182,11 @@ class InstallTestCase(support.TempdirManager,
     def test_old_record(self):
         # test pre-PEP 376 --record option (outside dist-info dir)
         install_dir = self.mkdtemp()
-        project_dir, dist = self.create_dist(scripts=['hello'])
+        project_dir, dist = self.create_dist(py_modules=['hello'],
+                                             scripts=['sayhi'])
         os.chdir(project_dir)
-        self.write_file('hello', "print('o hai')")
+        self.write_file('hello.py', "def main(): print('o hai')")
+        self.write_file('sayhi', 'from hello import main; main()')
 
         cmd = install_dist(dist)
         dist.command_obj['install_dist'] = cmd
@@ -196,8 +199,9 @@ class InstallTestCase(support.TempdirManager,
             content = f.read()
 
         found = [os.path.basename(line) for line in content.splitlines()]
-        expected = ['hello', 'METADATA', 'INSTALLER', 'REQUESTED', 'RECORD']
-        self.assertEqual(found, expected)
+        expected = ['hello.py', 'hello.%s.pyc' % imp.get_tag(), 'sayhi',
+                    'METADATA', 'INSTALLER', 'REQUESTED', 'RECORD']
+        self.assertEqual(sorted(found), sorted(expected))
 
         # XXX test that fancy_getopt is okay with options named
         # record and no-record but unrelated
