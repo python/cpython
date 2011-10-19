@@ -557,12 +557,11 @@ class HTTPRedirectHandler(BaseHandler):
         # For security reasons we don't allow redirection to anything other
         # than http, https or ftp.
 
-        if not urlparts.scheme in ('http', 'https', 'ftp'):
-            raise HTTPError(newurl, code,
-                            msg +
-                            " - Redirection to url '%s' is not allowed" %
-                            newurl,
-                            headers, fp)
+        if urlparts.scheme not in ('http', 'https', 'ftp'):
+            raise HTTPError(
+                newurl, code,
+                "%s - Redirection to url '%s' is not allowed" % (msg, newurl),
+                headers, fp)
 
         if not urlparts.path:
             urlparts = list(urlparts)
@@ -727,7 +726,7 @@ class HTTPPasswordMgr:
         # uri could be a single URI or a sequence
         if isinstance(uri, str):
             uri = [uri]
-        if not realm in self.passwd:
+        if realm not in self.passwd:
             self.passwd[realm] = {}
         for default_port in True, False:
             reduced_uri = tuple(
@@ -831,7 +830,7 @@ class AbstractBasicAuthHandler:
 
         if authreq:
             scheme = authreq.split()[0]
-            if not scheme.lower() == 'basic':
+            if scheme.lower() != 'basic':
                 raise ValueError("AbstractBasicAuthHandler does not"
                                  " support the following scheme: '%s'" %
                                  scheme)
@@ -929,7 +928,7 @@ class AbstractDigestAuthHandler:
             scheme = authreq.split()[0]
             if scheme.lower() == 'digest':
                 return self.retry_http_digest_auth(req, authreq)
-            elif not scheme.lower() == 'basic':
+            elif scheme.lower() != 'basic':
                 raise ValueError("AbstractDigestAuthHandler does not support"
                                  " the following scheme: '%s'" % scheme)
 
@@ -1839,7 +1838,7 @@ class URLopener:
                     del self.ftpcache[k]
                     v.close()
         try:
-            if not key in self.ftpcache:
+            if key not in self.ftpcache:
                 self.ftpcache[key] = \
                     ftpwrapper(user, passwd, host, port, dirs)
             if not file: type = 'D'
@@ -1954,7 +1953,7 @@ class FancyURLopener(URLopener):
         # We are using newer HTTPError with older redirect_internal method
         # This older method will get deprecated in 3.3
 
-        if not urlparts.scheme in ('http', 'https', 'ftp'):
+        if urlparts.scheme not in ('http', 'https', 'ftp'):
             raise HTTPError(newurl, errcode,
                             errmsg +
                             " Redirection to url '%s' is not allowed." % newurl,
@@ -1981,7 +1980,7 @@ class FancyURLopener(URLopener):
             retry=False):
         """Error 401 -- authentication required.
         This function supports Basic authentication only."""
-        if not 'www-authenticate' in headers:
+        if 'www-authenticate' not in headers:
             URLopener.http_error_default(self, url, fp,
                                          errcode, errmsg, headers)
         stuff = headers['www-authenticate']
@@ -2007,7 +2006,7 @@ class FancyURLopener(URLopener):
             retry=False):
         """Error 407 -- proxy authentication required.
         This function supports Basic authentication only."""
-        if not 'proxy-authenticate' in headers:
+        if 'proxy-authenticate' not in headers:
             URLopener.http_error_default(self, url, fp,
                                          errcode, errmsg, headers)
         stuff = headers['proxy-authenticate']
