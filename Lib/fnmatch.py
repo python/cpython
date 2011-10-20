@@ -35,9 +35,9 @@ def fnmatch(name, pat):
     pat = os.path.normcase(pat)
     return fnmatchcase(name, pat)
 
-@functools.lru_cache(maxsize=250)
-def _compile_pattern(pat, is_bytes=False):
-    if is_bytes:
+@functools.lru_cache(maxsize=250, typed=True)
+def _compile_pattern(pat):
+    if isinstance(pat, bytes):
         pat_str = str(pat, 'ISO-8859-1')
         res_str = translate(pat_str)
         res = bytes(res_str, 'ISO-8859-1')
@@ -49,7 +49,7 @@ def filter(names, pat):
     """Return the subset of the list NAMES that match PAT."""
     result = []
     pat = os.path.normcase(pat)
-    match = _compile_pattern(pat, isinstance(pat, bytes))
+    match = _compile_pattern(pat)
     if os.path is posixpath:
         # normcase on posix is NOP. Optimize it away from the loop.
         for name in names:
@@ -67,7 +67,7 @@ def fnmatchcase(name, pat):
     This is a version of fnmatch() which doesn't case-normalize
     its arguments.
     """
-    match = _compile_pattern(pat, isinstance(pat, bytes))
+    match = _compile_pattern(pat)
     return match(name) is not None
 
 
