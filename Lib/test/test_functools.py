@@ -734,6 +734,22 @@ class TestLRU(unittest.TestCase):
             with self.assertRaises(IndexError):
                 func(15)
 
+    def test_lru_with_types(self):
+        for maxsize in (None, 100):
+            @functools.lru_cache(maxsize=maxsize, typed=True)
+            def square(x):
+                return x * x
+            self.assertEqual(square(3), 9)
+            self.assertEqual(type(square(3)), type(9))
+            self.assertEqual(square(3.0), 9.0)
+            self.assertEqual(type(square(3.0)), type(9.0))
+            self.assertEqual(square(x=3), 9)
+            self.assertEqual(type(square(x=3)), type(9))
+            self.assertEqual(square(x=3.0), 9.0)
+            self.assertEqual(type(square(x=3.0)), type(9.0))
+            self.assertEqual(square.cache_info().hits, 4)
+            self.assertEqual(square.cache_info().misses, 4)
+
 def test_main(verbose=None):
     test_classes = (
         TestPartial,
