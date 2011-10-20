@@ -1230,31 +1230,42 @@ Py_LOCAL_INLINE(Py_ssize_t)
 bytes_find_internal(PyBytesObject *self, PyObject *args, int dir)
 {
     PyObject *subobj;
+    char byte;
+    Py_buffer subbuf;
     const char *sub;
     Py_ssize_t sub_len;
     Py_ssize_t start=0, end=PY_SSIZE_T_MAX;
+    Py_ssize_t res;
 
-    if (!stringlib_parse_args_finds("find/rfind/index/rindex",
-                                    args, &subobj, &start, &end))
+    if (!stringlib_parse_args_finds_byte("find/rfind/index/rindex",
+                                         args, &subobj, &byte, &start, &end))
         return -2;
 
-    if (PyBytes_Check(subobj)) {
-        sub = PyBytes_AS_STRING(subobj);
-        sub_len = PyBytes_GET_SIZE(subobj);
+    if (subobj) {
+        if (_getbuffer(subobj, &subbuf) < 0)
+            return -2;
+
+        sub = subbuf.buf;
+        sub_len = subbuf.len;
     }
-    else if (PyObject_AsCharBuffer(subobj, &sub, &sub_len))
-        /* XXX - the "expected a character buffer object" is pretty
-           confusing for a non-expert.  remap to something else ? */
-        return -2;
+    else {
+        sub = &byte;
+        sub_len = 1;
+    }
 
     if (dir > 0)
-        return stringlib_find_slice(
+        res = stringlib_find_slice(
             PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
             sub, sub_len, start, end);
     else
-        return stringlib_rfind_slice(
+        res = stringlib_rfind_slice(
             PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
             sub, sub_len, start, end);
+
+    if (subobj)
+        PyBuffer_Release(&subbuf);
+
+    return res;
 }
 
 
@@ -1480,23 +1491,38 @@ bytes_count(PyBytesObject *self, PyObject *args)
     PyObject *sub_obj;
     const char *str = PyBytes_AS_STRING(self), *sub;
     Py_ssize_t sub_len;
+    char byte;
     Py_ssize_t start = 0, end = PY_SSIZE_T_MAX;
 
-    if (!stringlib_parse_args_finds("count", args, &sub_obj, &start, &end))
+    Py_buffer vsub;
+    PyObject *count_obj;
+
+    if (!stringlib_parse_args_finds_byte("count", args, &sub_obj, &byte,
+                                         &start, &end))
         return NULL;
 
-    if (PyBytes_Check(sub_obj)) {
-        sub = PyBytes_AS_STRING(sub_obj);
-        sub_len = PyBytes_GET_SIZE(sub_obj);
+    if (sub_obj) {
+        if (_getbuffer(sub_obj, &vsub) < 0)
+            return NULL;
+
+        sub = vsub.buf;
+        sub_len = vsub.len;
     }
-    else if (PyObject_AsCharBuffer(sub_obj, &sub, &sub_len))
-        return NULL;
+    else {
+        sub = &byte;
+        sub_len = 1;
+    }
 
     ADJUST_INDICES(start, end, PyBytes_GET_SIZE(self));
 
-    return PyLong_FromSsize_t(
+    count_obj = PyLong_FromSsize_t(
         stringlib_count(str + start, end - start, sub, sub_len, PY_SSIZE_T_MAX)
         );
+
+    if (sub_obj)
+        PyBuffer_Release(&vsub);
+
+    return count_obj;
 }
 
 

@@ -1805,6 +1805,12 @@ the objects to strings, they have a :func:`decode` method.
 Wherever one of these methods needs to interpret the bytes as characters
 (e.g. the :func:`is...` methods), the ASCII character set is assumed.
 
+.. versionadded:: 3.3
+   The functions :func:`count`, :func:`find`, :func:`index`,
+   :func:`rfind` and :func:`rindex` have additional semantics compared to
+   the corresponding string functions: They also accept an integer in
+   range 0 to 255 (a byte) as their first argument.
+
 .. note::
 
    The methods on bytes and bytearray objects don't accept strings as their

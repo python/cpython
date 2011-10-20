@@ -167,4 +167,47 @@ STRINGLIB(parse_args_finds_unicode)(const char * function_name, PyObject *args,
     return 0;
 }
 
+#else /* !STRINGLIB_IS_UNICODE */
+
+/*
+Wraps stringlib_parse_args_finds() and additionally checks whether the
+first argument is an integer in range(0, 256).
+
+If this is the case, writes the integer value to the byte parameter
+and sets subobj to NULL. Otherwise, sets the first argument to subobj
+and doesn't touch byte. The other parameters are similar to those of
+stringlib_parse_args_finds().
+*/
+
+Py_LOCAL_INLINE(int)
+STRINGLIB(parse_args_finds_byte)(const char *function_name, PyObject *args,
+                                 PyObject **subobj, char *byte,
+                                 Py_ssize_t *start, Py_ssize_t *end)
+{
+    PyObject *tmp_subobj;
+    Py_ssize_t ival;
+
+    if(!STRINGLIB(parse_args_finds)(function_name, args, &tmp_subobj,
+                                    start, end))
+        return 0;
+
+    ival = PyNumber_AsSsize_t(tmp_subobj, PyExc_ValueError);
+    if (ival == -1 && PyErr_Occurred()) {
+        PyErr_Clear();
+        *subobj = tmp_subobj;
+    }
+    else {
+        /* The first argument was an integer */
+        if(ival < 0 || ival > 255) {
+            PyErr_SetString(PyExc_ValueError, "byte must be in range(0, 256)");
+            return 0;
+        }
+
+        *subobj = NULL;
+        *byte = (char)ival;
+    }
+
+    return 1;
+}
+
 #endif /* STRINGLIB_IS_UNICODE */

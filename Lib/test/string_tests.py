@@ -28,6 +28,11 @@ class BaseTest(unittest.TestCase):
     # Change in subclasses to change the behaviour of fixtesttype()
     type2test = None
 
+    # Whether the "contained items" of the container are integers in
+    # range(0, 256) (i.e. bytes, bytearray) or strings of length 1
+    # (str)
+    contains_bytes = False
+
     # All tests pass their arguments to the testing methods
     # as str objects. fixtesttype() can be used to propagate
     # these arguments to the appropriate type
@@ -117,7 +122,11 @@ class BaseTest(unittest.TestCase):
         self.checkequal(0, '', 'count', 'xx', sys.maxsize, 0)
 
         self.checkraises(TypeError, 'hello', 'count')
-        self.checkraises(TypeError, 'hello', 'count', 42)
+
+        if self.contains_bytes:
+            self.checkequal(0, 'hello', 'count', 42)
+        else:
+            self.checkraises(TypeError, 'hello', 'count', 42)
 
         # For a variety of combinations,
         #    verify that str.count() matches an equivalent function
@@ -163,7 +172,11 @@ class BaseTest(unittest.TestCase):
         self.checkequal( 2, 'rrarrrrrrrrra', 'find', 'a', None, 6)
 
         self.checkraises(TypeError, 'hello', 'find')
-        self.checkraises(TypeError, 'hello', 'find', 42)
+
+        if self.contains_bytes:
+            self.checkequal(-1, 'hello', 'find', 42)
+        else:
+            self.checkraises(TypeError, 'hello', 'find', 42)
 
         self.checkequal(0, '', 'find', '')
         self.checkequal(-1, '', 'find', '', 1, 1)
@@ -217,7 +230,11 @@ class BaseTest(unittest.TestCase):
         self.checkequal( 2, 'rrarrrrrrrrra', 'rfind', 'a', None, 6)
 
         self.checkraises(TypeError, 'hello', 'rfind')
-        self.checkraises(TypeError, 'hello', 'rfind', 42)
+
+        if self.contains_bytes:
+            self.checkequal(-1, 'hello', 'rfind', 42)
+        else:
+            self.checkraises(TypeError, 'hello', 'rfind', 42)
 
         # For a variety of combinations,
         #    verify that str.rfind() matches __contains__
@@ -264,7 +281,11 @@ class BaseTest(unittest.TestCase):
         self.checkequal( 2, 'rrarrrrrrrrra', 'index', 'a', None, 6)
 
         self.checkraises(TypeError, 'hello', 'index')
-        self.checkraises(TypeError, 'hello', 'index', 42)
+
+        if self.contains_bytes:
+            self.checkraises(ValueError, 'hello', 'index', 42)
+        else:
+            self.checkraises(TypeError, 'hello', 'index', 42)
 
     def test_rindex(self):
         self.checkequal(12, 'abcdefghiabc', 'rindex', '')
@@ -286,7 +307,11 @@ class BaseTest(unittest.TestCase):
         self.checkequal( 2, 'rrarrrrrrrrra', 'rindex', 'a', None, 6)
 
         self.checkraises(TypeError, 'hello', 'rindex')
-        self.checkraises(TypeError, 'hello', 'rindex', 42)
+
+        if self.contains_bytes:
+            self.checkraises(ValueError, 'hello', 'rindex', 42)
+        else:
+            self.checkraises(TypeError, 'hello', 'rindex', 42)
 
     def test_lower(self):
         self.checkequal('hello', 'HeLLo', 'lower')
