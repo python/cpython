@@ -1071,24 +1071,41 @@ Py_LOCAL_INLINE(Py_ssize_t)
 bytearray_find_internal(PyByteArrayObject *self, PyObject *args, int dir)
 {
     PyObject *subobj;
+    char byte;
     Py_buffer subbuf;
+    const char *sub;
+    Py_ssize_t sub_len;
     Py_ssize_t start=0, end=PY_SSIZE_T_MAX;
     Py_ssize_t res;
 
-    if (!stringlib_parse_args_finds("find/rfind/index/rindex",
-                                    args, &subobj, &start, &end))
+    if (!stringlib_parse_args_finds_byte("find/rfind/index/rindex",
+                                         args, &subobj, &byte, &start, &end))
         return -2;
-    if (_getbuffer(subobj, &subbuf) < 0)
-        return -2;
+
+    if (subobj) {
+        if (_getbuffer(subobj, &subbuf) < 0)
+            return -2;
+
+        sub = subbuf.buf;
+        sub_len = subbuf.len;
+    }
+    else {
+        sub = &byte;
+        sub_len = 1;
+    }
+
     if (dir > 0)
         res = stringlib_find_slice(
             PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
-            subbuf.buf, subbuf.len, start, end);
+            sub, sub_len, start, end);
     else
         res = stringlib_rfind_slice(
             PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
-            subbuf.buf, subbuf.len, start, end);
-    PyBuffer_Release(&subbuf);
+            sub, sub_len, start, end);
+
+    if (subobj)
+        PyBuffer_Release(&subbuf);
+
     return res;
 }
 
@@ -1121,23 +1138,39 @@ static PyObject *
 bytearray_count(PyByteArrayObject *self, PyObject *args)
 {
     PyObject *sub_obj;
-    const char *str = PyByteArray_AS_STRING(self);
+    const char *str = PyByteArray_AS_STRING(self), *sub;
+    Py_ssize_t sub_len;
+    char byte;
     Py_ssize_t start = 0, end = PY_SSIZE_T_MAX;
+
     Py_buffer vsub;
     PyObject *count_obj;
 
-    if (!stringlib_parse_args_finds("count", args, &sub_obj, &start, &end))
+    if (!stringlib_parse_args_finds_byte("count", args, &sub_obj, &byte,
+                                         &start, &end))
         return NULL;
 
-    if (_getbuffer(sub_obj, &vsub) < 0)
-        return NULL;
+    if (sub_obj) {
+        if (_getbuffer(sub_obj, &vsub) < 0)
+            return NULL;
+
+        sub = vsub.buf;
+        sub_len = vsub.len;
+    }
+    else {
+        sub = &byte;
+        sub_len = 1;
+    }
 
     ADJUST_INDICES(start, end, PyByteArray_GET_SIZE(self));
 
     count_obj = PyLong_FromSsize_t(
-        stringlib_count(str + start, end - start, vsub.buf, vsub.len, PY_SSIZE_T_MAX)
+        stringlib_count(str + start, end - start, sub, sub_len, PY_SSIZE_T_MAX)
         );
-    PyBuffer_Release(&vsub);
+
+    if (sub_obj)
+        PyBuffer_Release(&vsub);
+
     return count_obj;
 }
 

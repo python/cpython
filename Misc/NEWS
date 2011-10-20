@@ -10,6 +10,10 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #12170: The count(), find(), rfind(), index() and rindex() methods
+  of bytes and bytearray objects now accept an integer between 0 and 255
+  as their first argument.  Patch by Petri Lehtinen.
+
 - Issue #12604: VTRACE macro expanded to no-op in _sre.c to avoid compiler
   warnings. Patch by Josh Triplett and Petri Lehtinen.
 
