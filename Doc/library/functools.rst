@@ -40,7 +40,7 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.2
 
 
-.. decorator:: lru_cache(maxsize=100)
+.. decorator:: lru_cache(maxsize=100, typed=False)
 
    Decorator to wrap a function with a memoizing callable that saves up to the
    *maxsize* most recent calls.  It can save time when an expensive or I/O bound
@@ -51,6 +51,10 @@ The :mod:`functools` module defines the following functions:
 
    If *maxsize* is set to None, the LRU feature is disabled and the cache
    can grow without bound.
+
+   If *typed* is set to True, function arguments of different types will be
+   cached separately.  For example, ``f(3)`` and ``f(3.0)`` will be treated
+   as distinct calls with distinct results.
 
    To help measure the effectiveness of the cache and tune the *maxsize*
    parameter, the wrapped function is instrumented with a :func:`cache_info`
@@ -67,8 +71,8 @@ The :mod:`functools` module defines the following functions:
 
    An `LRU (least recently used) cache
    <http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used>`_ works
-   best when more recent calls are the best predictors of upcoming calls (for
-   example, the most popular articles on a news server tend to change daily).
+   best when the most recent calls are the best predictors of upcoming calls (for
+   example, the most popular articles on a news server tend to change each day).
    The cache's size limit assures that the cache does not grow without bound on
    long-running processes such as web servers.
 
@@ -110,6 +114,9 @@ The :mod:`functools` module defines the following functions:
         CacheInfo(hits=28, misses=16, maxsize=None, currsize=16)
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.3
+      Added the *typed* option.
 
 .. decorator:: total_ordering
 
