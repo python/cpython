@@ -156,30 +156,36 @@ The special characters are:
    raw strings for all but the simplest expressions.
 
 ``[]``
-   Used to indicate a set of characters.  Characters can be listed individually, or
-   a range of characters can be indicated by giving two characters and separating
-   them by a ``'-'``.  Special characters are not active inside sets.  For example,
-   ``[akm$]`` will match any of the characters ``'a'``, ``'k'``,
-   ``'m'``, or ``'$'``; ``[a-z]`` will match any lowercase letter, and
-   ``[a-zA-Z0-9]`` matches any letter or digit.  Character classes such
-   as ``\w`` or ``\S`` (defined below) are also acceptable inside a
-   range, although the characters they match depends on whether :const:`LOCALE`
-   or  :const:`UNICODE` mode is in force.  If you want to include a
-   ``']'`` or a ``'-'`` inside a set, precede it with a backslash, or
-   place it as the first character.  The pattern ``[]]`` will match
-   ``']'``, for example.
+   Used to indicate a set of characters.  In a set:
 
-   You can match the characters not within a range by :dfn:`complementing` the set.
-   This is indicated by including a ``'^'`` as the first character of the set;
-   ``'^'`` elsewhere will simply match the ``'^'`` character.  For example,
-   ``[^5]`` will match any character except ``'5'``, and ``[^^]`` will match any
-   character except ``'^'``.
+   * Characters can be listed individually, e.g. ``[amk]`` will match ``'a'``,
+     ``'m'``, or ``'k'``.
 
-   Note that inside ``[]`` the special forms and special characters lose
-   their meanings and only the syntaxes described here are valid. For
-   example, ``+``, ``*``, ``(``, ``)``, and so on are treated as
-   literals inside ``[]``, and backreferences cannot be used inside
-   ``[]``.
+   * Ranges of characters can be indicated by giving two characters and separating
+     them by a ``'-'``, for example ``[a-z]`` will match any lowercase ASCII letter,
+     ``[0-5][0-9]`` will match all the two-digits numbers from ``00`` to ``59``, and
+     ``[0-9A-Fa-f]`` will match any hexadecimal digit.  If ``-`` is escaped (e.g.
+     ``[a\-z]``) or if it's placed as the first or last character (e.g. ``[a-]``),
+     it will match a literal ``'-'``.
+
+   * Special characters lose their special meaning inside sets.  For example,
+     ``[(+*)]`` will match any of the literal characters ``'('``, ``'+'``,
+     ``'*'``, or ``')'``.
+
+   * Character classes such as ``\w`` or ``\S`` (defined below) are also accepted
+     inside a set, although the characters they match depends on whether
+     :const:`LOCALE` or  :const:`UNICODE` mode is in force.
+
+   * Characters that are not within a range can be matched by :dfn:`complementing`
+     the set.  If the first character of the set is ``'^'``, all the characters
+     that are *not* in the set will be matched.  For example, ``[^5]`` will match
+     any character except ``'5'``, and ``[^^]`` will match any character except
+     ``'^'``.  ``^`` has no special meaning if it's not the first character in
+     the set.
+
+   * To match a literal ``']'`` inside a set, precede it with a backslash, or
+     place it at the beginning of the set.  For example, both ``[()[\]{}]`` and
+     ``[]()[{}]`` will both match a parenthesis.
 
 ``'|'``
    ``A|B``, where A and B can be arbitrary REs, creates a regular expression that
