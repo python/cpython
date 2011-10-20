@@ -9,6 +9,9 @@ What's New in Python 2.7.3?
 Core and Builtins
 -----------------
 
+- Issue #12604: VTRACE macro expanded to no-op in _sre.c to avoid compiler
+  warnings. Patch by Josh Triplett and Petri Lehtinen.
+
 - Issue #7833: Extension modules built using distutils on Windows will no
   longer include a "manifest" to prevent them failing at import time in some
   embedded situations.
@@ -62,6 +65,9 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #12529: fix cgi.parse_header issue on strings with double-quotes and
+  semicolons together. Patch by Ben Darnell and Petri Lehtinen.
 
 - Issue #6090: zipfile raises a ValueError when a document with a timestamp
   earlier than 1980 is provided. Patch contributed by Petri Lehtinen.
