@@ -319,6 +319,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13227: functools.lru_cache() now has a option to distinguish
+  calls with different argument types.
+
 - Issue #6090: zipfile raises a ValueError when a document with a timestamp
   earlier than 1980 is provided. Patch contributed by Petri Lehtinen.
 
