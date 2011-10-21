@@ -677,5 +677,5 @@ extension modules.
    +------------------------+--------------------------------+---------------------------+
 
 To distribute extension modules that live in a package (e.g. ``package.ext``),
-you need to create you need to create a :file:`{package}/__init__.py` file to
-let Python recognize and import your module.
+you need to create a :file:`{package}/__init__.py` file to let Python recognize
+and import your module.
