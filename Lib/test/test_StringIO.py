@@ -129,7 +129,7 @@ class TestcStringIO(TestGenericStringIO):
     MODULE = cStringIO
 
     def test_array_support(self):
-        # Issue
+        # Issue #1730114: cStringIO should accept array objects
         a = array.array('B', [0,1,2])
         f = self.MODULE.StringIO(a)
         self.assertEqual(f.getvalue(), '\x00\x01\x02')
