@@ -7382,7 +7382,6 @@ encode_code_page_errors(UINT code_page, PyObject **outbytes,
     PyObject *exc = NULL;
     PyObject *encoding_obj = NULL;
     char *encoding;
-    int err;
     Py_ssize_t startpos, newpos, newoutsize;
     PyObject *rep;
     int ret = -1;
