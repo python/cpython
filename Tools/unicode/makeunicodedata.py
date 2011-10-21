@@ -21,11 +21,17 @@
 # 2004-05-29 perky add east asian width information
 # 2006-03-10 mvl  update to Unicode 4.1; add UCD 3.2 delta
 # 2008-06-11 gb   add PRINTABLE_MASK for Atsuo Ishimoto's ascii() patch
+# 2011-10-21 ezio add support for name aliases and named sequences
 #
 # written by Fredrik Lundh (fredrik@pythonware.com)
 #
 
-import sys, os, zipfile
+import os
+import sys
+import zipfile
+
+from textwrap import dedent
+from operator import itemgetter
 
 SCRIPT = sys.argv[0]
 VERSION = "3.2"
@@ -39,6 +45,17 @@ UNIHAN = "Unihan%s.zip"
 DERIVED_CORE_PROPERTIES = "DerivedCoreProperties%s.txt"
 DERIVEDNORMALIZATION_PROPS = "DerivedNormalizationProps%s.txt"
 LINE_BREAK = "LineBreak%s.txt"
+NAME_ALIASES = "NameAliases%s.txt"
+NAMED_SEQUENCES = "NamedSequences%s.txt"
+
+# Private Use Areas -- in planes 1, 15, 16
+PUA_1 = range(0xE000, 0xF900)
+PUA_15 = range(0xF0000, 0xFFFFE)
+PUA_16 = range(0x100000, 0x10FFFE)
+
+# we use this ranges of PUA_15 to store name aliases and named sequences
+NAME_ALIASES_START = 0xF0000
+NAMED_SEQUENCES_START = 0xF0100
 
 old_versions = ["3.2.0"]
 
@@ -692,6 +709,39 @@ def makeunicodename(unicode, trace):
     print("/* name->code dictionary */", file=fp)
     codehash.dump(fp, trace)
 
+    print(file=fp)
+    print('static const unsigned int aliases_start = %#x;' %
+          NAME_ALIASES_START, file=fp)
+    print('static const unsigned int aliases_end = %#x;' %
+          (NAME_ALIASES_START + len(unicode.aliases)), file=fp)
+
+    print('static const unsigned int name_aliases[] = {', file=fp)
+    for name, codepoint in unicode.aliases:
+        print('    0x%04X,' % codepoint, file=fp)
+    print('};', file=fp)
+
+    # In Unicode 6.0.0, the sequences contain at most 4 BMP chars,
+    # so we are using Py_UCS2 seq[4].  This needs to be updated if longer
+    # sequences or sequences with non-BMP chars are added.
+    # unicodedata_lookup should be adapted too.
+    print(dedent("""
+        typedef struct NamedSequence {
+            int seqlen;
+            Py_UCS2 seq[4];
+        } named_sequence;
+        """), file=fp)
+
+    print('static const unsigned int named_sequences_start = %#x;' %
+          NAMED_SEQUENCES_START, file=fp)
+    print('static const unsigned int named_sequences_end = %#x;' %
+          (NAMED_SEQUENCES_START + len(unicode.named_sequences)), file=fp)
+
+    print('static const named_sequence named_sequences[] = {', file=fp)
+    for name, sequence in unicode.named_sequences:
+        seq_str = ', '.join('0x%04X' % cp for cp in sequence)
+        print('    {%d, {%s}},' % (len(sequence), seq_str), file=fp)
+    print('};', file=fp)
+
     fp.close()
 
 
@@ -726,7 +776,11 @@ def merge_old_version(version, new, old):
             for k in range(len(old.table[i])):
                 if old.table[i][k] != new.table[i][k]:
                     value = old.table[i][k]
-                    if k == 2:
+                    if k == 1 and i in PUA_15:
+                        # the name is not set in the old.table, but in the
+                        # new.table we are using it for aliases and named seq
+                        assert value == ''
+                    elif k == 2:
                         #print "CATEGORY",hex(i), old.table[i][k], new.table[i][k]
                         category_changes[i] = CATEGORY_NAMES.index(value)
                     elif k == 4:
@@ -854,6 +908,50 @@ class UnicodeData:
         self.filename = UNICODE_DATA % ''
         self.table = table
         self.chars = list(range(0x110000)) # unicode 3.2
+
+        # check for name aliases and named sequences, see #12753
+        # aliases and named sequences are not in 3.2.0
+        if version != '3.2.0':
+            self.aliases = []
+            # store aliases in the Private Use Area 15, in range U+F0000..U+F00FF,
+            # in order to take advantage of the compression and lookup
+            # algorithms used for the other characters
+            pua_index = NAME_ALIASES_START
+            with open_data(NAME_ALIASES, version) as file:
+                for s in file:
+                    s = s.strip()
+                    if not s or s.startswith('#'):
+                        continue
+                    char, name = s.split(';')
+                    char = int(char, 16)
+                    self.aliases.append((name, char))
+                    # also store the name in the PUA 1
+                    self.table[pua_index][1] = name
+                    pua_index += 1
+            assert pua_index - NAME_ALIASES_START == len(self.aliases)
+
+            self.named_sequences = []
+            # store named seqences in the PUA 1, in range U+F0100..,
+            # in order to take advantage of the compression and lookup
+            # algorithms used for the other characters.
+
+            pua_index = NAMED_SEQUENCES_START
+            with open_data(NAMED_SEQUENCES, version) as file:
+                for s in file:
+                    s = s.strip()
+                    if not s or s.startswith('#'):
+                        continue
+                    name, chars = s.split(';')
+                    chars = tuple(int(char, 16) for char in chars.split())
+                    # check that the structure defined in makeunicodename is OK
+                    assert 2 <= len(chars) <= 4, "change the Py_UCS2 array size"
+                    assert all(c <= 0xFFFF for c in chars), ("use Py_UCS4 in "
+                        "the NamedSequence struct and in unicodedata_lookup")
+                    self.named_sequences.append((name, chars))
+                    # also store these in the PUA 1
+                    self.table[pua_index][1] = name
+                    pua_index += 1
+            assert pua_index - NAMED_SEQUENCES_START == len(self.named_sequences)
 
         self.exclusions = {}
         with open_data(COMPOSITION_EXCLUSIONS, version) as file:

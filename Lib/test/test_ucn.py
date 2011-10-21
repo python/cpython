@@ -8,8 +8,11 @@ Modified for Python 2.0 by Fredrik Lundh (fredrik@pythonware.com)
 """#"
 
 import unittest
+import unicodedata
 
 from test import support
+from http.client import HTTPException
+from test.test_normalization import check_version
 
 class UnicodeNamesTest(unittest.TestCase):
 
@@ -59,8 +62,6 @@ class UnicodeNamesTest(unittest.TestCase):
         )
 
     def test_ascii_letters(self):
-        import unicodedata
-
         for char in "".join(map(chr, range(ord("a"), ord("z")))):
             name = "LATIN SMALL LETTER %s" % char.upper()
             code = unicodedata.lookup(name)
@@ -81,7 +82,6 @@ class UnicodeNamesTest(unittest.TestCase):
         self.checkletter("HANGUL SYLLABLE HWEOK", "\ud6f8")
         self.checkletter("HANGUL SYLLABLE HIH", "\ud7a3")
 
-        import unicodedata
         self.assertRaises(ValueError, unicodedata.name, "\ud7a4")
 
     def test_cjk_unified_ideographs(self):
@@ -97,14 +97,11 @@ class UnicodeNamesTest(unittest.TestCase):
         self.checkletter("CJK UNIFIED IDEOGRAPH-2B81D", "\U0002B81D")
 
     def test_bmp_characters(self):
-        import unicodedata
-        count = 0
         for code in range(0x10000):
             char = chr(code)
             name = unicodedata.name(char, None)
             if name is not None:
                 self.assertEqual(unicodedata.lookup(name), char)
-                count += 1
 
     def test_misc_symbols(self):
         self.checkletter("PILCROW SIGN", "\u00b6")
@@ -112,8 +109,85 @@ class UnicodeNamesTest(unittest.TestCase):
         self.checkletter("HALFWIDTH KATAKANA SEMI-VOICED SOUND MARK", "\uFF9F")
         self.checkletter("FULLWIDTH LATIN SMALL LETTER A", "\uFF41")
 
+    def test_aliases(self):
+        # Check that the aliases defined in the NameAliases.txt file work.
+        # This should be updated when new aliases are added or the file
+        # should be downloaded and parsed instead.  See #12753.
+        aliases = [
+            ('LATIN CAPITAL LETTER GHA', 0x01A2),
+            ('LATIN SMALL LETTER GHA', 0x01A3),
+            ('KANNADA LETTER LLLA', 0x0CDE),
+            ('LAO LETTER FO FON', 0x0E9D),
+            ('LAO LETTER FO FAY', 0x0E9F),
+            ('LAO LETTER RO', 0x0EA3),
+            ('LAO LETTER LO', 0x0EA5),
+            ('TIBETAN MARK BKA- SHOG GI MGO RGYAN', 0x0FD0),
+            ('YI SYLLABLE ITERATION MARK', 0xA015),
+            ('PRESENTATION FORM FOR VERTICAL RIGHT WHITE LENTICULAR BRACKET', 0xFE18),
+            ('BYZANTINE MUSICAL SYMBOL FTHORA SKLIRON CHROMA VASIS', 0x1D0C5)
+        ]
+        for alias, codepoint in aliases:
+            self.checkletter(alias, chr(codepoint))
+            name = unicodedata.name(chr(codepoint))
+            self.assertNotEqual(name, alias)
+            self.assertEqual(unicodedata.lookup(alias),
+                             unicodedata.lookup(name))
+            with self.assertRaises(KeyError):
+                unicodedata.ucd_3_2_0.lookup(alias)
+
+    def test_aliases_names_in_pua_range(self):
+        # We are storing aliases in the PUA 15, but their names shouldn't leak
+        for cp in range(0xf0000, 0xf0100):
+            with self.assertRaises(ValueError) as cm:
+                unicodedata.name(chr(cp))
+            self.assertEqual(str(cm.exception), 'no such name')
+
+    def test_named_sequences_names_in_pua_range(self):
+        # We are storing named seq in the PUA 15, but their names shouldn't leak
+        for cp in range(0xf0100, 0xf0fff):
+            with self.assertRaises(ValueError) as cm:
+                unicodedata.name(chr(cp))
+            self.assertEqual(str(cm.exception), 'no such name')
+
+    def test_named_sequences_sample(self):
+        # Check a few named sequences.  See #12753.
+        sequences = [
+            ('LATIN SMALL LETTER R WITH TILDE', '\u0072\u0303'),
+            ('TAMIL SYLLABLE SAI', '\u0BB8\u0BC8'),
+            ('TAMIL SYLLABLE MOO', '\u0BAE\u0BCB'),
+            ('TAMIL SYLLABLE NNOO', '\u0BA3\u0BCB'),
+            ('TAMIL CONSONANT KSS', '\u0B95\u0BCD\u0BB7\u0BCD'),
+        ]
+        for seqname, codepoints in sequences:
+            self.assertEqual(unicodedata.lookup(seqname), codepoints)
+            with self.assertRaises(SyntaxError):
+                self.checkletter(seqname, None)
+            with self.assertRaises(KeyError):
+                unicodedata.ucd_3_2_0.lookup(seqname)
+
+    def test_named_sequences_full(self):
+        # Check all the named sequences
+        url = ("http://www.unicode.org/Public/%s/ucd/NamedSequences.txt" %
+               unicodedata.unidata_version)
+        try:
+            testdata = support.open_urlresource(url, encoding="utf-8",
+                                                check=check_version)
+        except (IOError, HTTPException):
+            self.skipTest("Could not retrieve " + url)
+        self.addCleanup(testdata.close)
+        for line in testdata:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            seqname, codepoints = line.split(';')
+            codepoints = ''.join(chr(int(cp, 16)) for cp in codepoints.split())
+            self.assertEqual(unicodedata.lookup(seqname), codepoints)
+            with self.assertRaises(SyntaxError):
+                self.checkletter(seqname, None)
+            with self.assertRaises(KeyError):
+                unicodedata.ucd_3_2_0.lookup(seqname)
+
     def test_errors(self):
-        import unicodedata
         self.assertRaises(TypeError, unicodedata.name)
         self.assertRaises(TypeError, unicodedata.name, 'xx')
         self.assertRaises(TypeError, unicodedata.lookup)

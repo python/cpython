@@ -29,6 +29,9 @@ following functions:
    Look up character by name.  If a character with the given name is found, return
    the corresponding character.  If not found, :exc:`KeyError` is raised.
 
+   .. versionchanged:: 3.3
+      Support for name aliases [#]_ and named sequences [#]_ has been added.
+
 
 .. function:: name(chr[, default])
 
@@ -160,3 +163,9 @@ Examples:
    >>> unicodedata.bidirectional('\u0660') # 'A'rabic, 'N'umber
    'AN'
 
+
+.. rubric:: Footnotes
+
+.. [#] http://www.unicode.org/Public/6.0.0/ucd/NameAliases.txt
+
+.. [#] http://www.unicode.org/Public/6.0.0/ucd/NamedSequences.txt
