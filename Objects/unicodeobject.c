@@ -5857,7 +5857,7 @@ PyUnicode_DecodeUnicodeEscape(const char *s,
                     message = "unknown Unicode character name";
                     s++;
                     if (ucnhash_CAPI->getcode(NULL, start, (int)(s-start-1),
-                                              &chr))
+                                              &chr, 0))
                         goto store;
                 }
             }
