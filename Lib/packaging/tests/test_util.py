@@ -5,11 +5,10 @@ import time
 import logging
 import tempfile
 import textwrap
+import warnings
 import subprocess
 from io import StringIO
 
-from packaging.tests import support, unittest
-from packaging.tests.test_config import SETUP_CFG
 from packaging.errors import (
     PackagingPlatformError, PackagingByteCompileError, PackagingFileError,
     PackagingExecError, InstallationException)
@@ -20,7 +19,11 @@ from packaging.util import (
     get_compiler_versions, _MAC_OS_X_LD_VERSION, byte_compile, find_packages,
     spawn, get_pypirc_path, generate_pypirc, read_pypirc, resolve_name, iglob,
     RICH_GLOB, egginfo_to_distinfo, is_setuptools, is_distutils, is_packaging,
-    get_install_method, cfg_to_args, encode_multipart)
+    get_install_method, cfg_to_args, generate_setup_py, encode_multipart)
+
+from packaging.tests import support, unittest
+from packaging.tests.test_config import SETUP_CFG
+from test.script_helper import assert_python_ok, assert_python_failure
 
 
 PYPIRC = """\
@@ -513,7 +516,9 @@ class UtilTestCase(support.EnvironRestorer,
         self.write_file('setup.cfg', SETUP_CFG % opts, encoding='utf-8')
         self.write_file('README', 'loooong description')
 
-        args = cfg_to_args()
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            args = cfg_to_args()
         # use Distribution to get the contents of the setup.cfg file
         dist = Distribution()
         dist.parse_config_files()
@@ -538,6 +543,26 @@ class UtilTestCase(support.EnvironRestorer,
         self.assertEqual(args['packages'], dist.packages)
         self.assertEqual(args['scripts'], dist.scripts)
         self.assertEqual(args['py_modules'], dist.py_modules)
+
+    def test_generate_setup_py(self):
+        # undo subprocess.Popen monkey-patching before using assert_python_*
+        subprocess.Popen = self.old_popen
+        os.chdir(self.mkdtemp())
+        self.write_file('setup.cfg', textwrap.dedent("""\
+            [metadata]
+            name = SPAM
+            classifier = Programming Language :: Python
+            """))
+        generate_setup_py()
+        self.assertTrue(os.path.exists('setup.py'), 'setup.py not created')
+        rc, out, err = assert_python_ok('setup.py', '--name')
+        self.assertEqual(out, b'SPAM\n')
+        self.assertEqual(err, b'')
+
+        # a generated setup.py should complain if no setup.cfg is present
+        os.unlink('setup.cfg')
+        rc, out, err = assert_python_failure('setup.py', '--name')
+        self.assertIn(b'setup.cfg', err)
 
     def test_encode_multipart(self):
         fields = [('username', 'wok'), ('password', 'secret')]
@@ -590,7 +615,6 @@ class GlobTestCase(GlobTestCaseBase):
         super(GlobTestCase, self).tearDown()
 
     def assertGlobMatch(self, glob, spec):
-        """"""
         tempdir = self.build_files_tree(spec)
         expected = self.clean_tree(spec)
         os.chdir(tempdir)
