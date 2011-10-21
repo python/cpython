@@ -953,9 +953,10 @@ _getucname(PyObject *self, Py_UCS4 code, char* buffer, int buflen,
 
     if (self && UCD_Check(self)) {
         /* in 3.2.0 there are no aliases and named sequences */
+        const change_record *old;
         if (IS_ALIAS(code) || IS_NAMED_SEQ(code))
             return 0;
-        const change_record *old = get_old_record(self, code);
+        old = get_old_record(self, code);
         if (old->category_changed == 0) {
             /* unassigned */
             return 0;
