@@ -189,6 +189,9 @@ instantiated directly, but always through the module-level function
    Logs a message with level :const:`WARNING` on this logger. The arguments are
    interpreted as for :meth:`debug`.
 
+   .. note:: There is an obsolete method `warn()` which is functionally
+      identical to `warning()`. As `warn()` is deprecated, please do not use
+      it - use `warning()` instead.
 
 .. method:: Logger.error(msg, *args, **kwargs)
 
@@ -880,8 +883,12 @@ functions.
 
 .. function:: warning(msg, *args, **kwargs)
 
-   Logs a message with level :const:`WARNING` on the root logger. The arguments are
-   interpreted as for :func:`debug`.
+   Logs a message with level :const:`WARNING` on the root logger. The arguments
+   are interpreted as for :func:`debug`.
+
+   .. note:: There is an obsolete function `warn()` which is functionally
+      identical to `warning()`. As `warn()` is deprecated, please do not use
+      it - use `warning()` instead.
 
 
 .. function:: error(msg, *args, **kwargs)
