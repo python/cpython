@@ -1243,7 +1243,10 @@ class Logger(Filterer):
         if self.isEnabledFor(WARNING):
             self._log(WARNING, msg, args, **kwargs)
 
-    warn = warning
+    def warn(self, msg, *args, **kwargs):
+        warnings.warn("The 'warn' method is deprecated, "
+            "use 'warning' instead", PendingDeprecationWarning, 2)
+        self.warning(msg, *args, **kwargs)
 
     def error(self, msg, *args, **kwargs):
         """
@@ -1556,7 +1559,10 @@ class LoggerAdapter(object):
         """
         self.log(WARNING, msg, *args, **kwargs)
 
-    warn = warning
+    def warn(self, msg, *args, **kwargs):
+        warnings.warn("The 'warn' method is deprecated, "
+            "use 'warning' instead", PendingDeprecationWarning, 2)
+        self.warning(msg, *args, **kwargs)
 
     def error(self, msg, *args, **kwargs):
         """
@@ -1766,7 +1772,10 @@ def warning(msg, *args, **kwargs):
         basicConfig()
     root.warning(msg, *args, **kwargs)
 
-warn = warning
+def warn(msg, *args, **kwargs):
+    warnings.warn("The 'warn' function is deprecated, "
+        "use 'warning' instead", PendingDeprecationWarning, 2)
+    warning(msg, *args, **kwargs)
 
 def info(msg, *args, **kwargs):
     """
