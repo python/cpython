@@ -177,6 +177,10 @@ resulting object code are identical in both cases; the only difference is where
 in the filesystem (and therefore where in Python's namespace hierarchy) the
 resulting extension lives.
 
+If your distribution contains only one or more extension modules in a package,
+you need to create a :file:`{package}/__init__.py` file anyway, otherwise Python
+won't be able to import anything.
+
 If you have a number of extensions all in the same package (or all under the
 same base package), use the :option:`ext_package` keyword argument to
 :func:`setup`.  For example, ::
