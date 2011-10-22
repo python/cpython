@@ -92,7 +92,7 @@ class EmitVisitor(asdl.VisitorBase):
         name = str(name)
         if name in self.identifiers:
             return
-        self.emit("_Py_identifier(%s);" % name, 0)
+        self.emit("_Py_IDENTIFIER(%s);" % name, 0)
         self.identifiers.add(name)
 
     def emit(self, s, depth, reflow=True):
@@ -606,7 +606,7 @@ class PyTypesVisitor(PickleVisitor):
 static int
 ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 {
-    _Py_identifier(_fields);
+    _Py_IDENTIFIER(_fields);
     Py_ssize_t i, numfields = 0;
     int res = -1;
     PyObject *key, *value, *fields;
@@ -660,7 +660,7 @@ static PyObject *
 ast_type_reduce(PyObject *self, PyObject *unused)
 {
     PyObject *res;
-    _Py_identifier(__dict__);
+    _Py_IDENTIFIER(__dict__);
     PyObject *dict = _PyObject_GetAttrId(self, &PyId___dict__);
     if (dict == NULL) {
         if (PyErr_ExceptionMatches(PyExc_AttributeError))
