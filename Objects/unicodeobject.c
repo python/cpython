@@ -13825,11 +13825,11 @@ unicode_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     Py_MEMCPY(data, PyUnicode_DATA(unicode),
               kind * (length + 1));
-    Py_DECREF(unicode);
     assert(_PyUnicode_CheckConsistency(self, 1));
 #ifdef Py_DEBUG
     _PyUnicode_HASH(self) = _PyUnicode_HASH(unicode);
 #endif
+    Py_DECREF(unicode);
     return (PyObject *)self;
 
 onError:
