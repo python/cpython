@@ -819,8 +819,8 @@ UCS4 Support
                 Py_UCS4* Py_UCS4_strcat(Py_UCS4 *s1, const Py_UCS4 *s2)
                 int Py_UCS4_strcmp(const Py_UCS4 *s1, const Py_UCS4 *s2)
                 int Py_UCS4_strncmp(const Py_UCS4 *s1, const Py_UCS4 *s2, size_t n)
-                Py_UCS4* strchr(const Py_UCS4 *s, Py_UCS4 c)
-                Py_UCS4* strrchr(const Py_UCS4 *s, Py_UCS4 c)
+                Py_UCS4* Py_UCS4_strchr(const Py_UCS4 *s, Py_UCS4 c)
+                Py_UCS4* Py_UCS4_strrchr(const Py_UCS4 *s, Py_UCS4 c)
 
    These utility functions work on strings of :c:type:`Py_UCS4` characters and
    otherwise behave like the C standard library functions with the same name.
