@@ -251,7 +251,7 @@ class LogRecord(object):
         # during formatting, we test to see if the arg is present using
         # 'if self.args:'. If the event being logged is e.g. 'Value is %d'
         # and if the passed arg fails 'if self.args:' then no formatting
-        # is done. For example, logger.warn('Value is %d', 0) would log
+        # is done. For example, logger.warning('Value is %d', 0) would log
         # 'Value is %d' instead of 'Value is 0'.
         # For the use case of passing a dictionary, this should not be a
         # problem.
@@ -1245,7 +1245,7 @@ class Logger(Filterer):
 
     def warn(self, msg, *args, **kwargs):
         warnings.warn("The 'warn' method is deprecated, "
-            "use 'warning' instead", PendingDeprecationWarning, 2)
+            "use 'warning' instead", DeprecationWarning, 2)
         self.warning(msg, *args, **kwargs)
 
     def error(self, msg, *args, **kwargs):
@@ -1561,7 +1561,7 @@ class LoggerAdapter(object):
 
     def warn(self, msg, *args, **kwargs):
         warnings.warn("The 'warn' method is deprecated, "
-            "use 'warning' instead", PendingDeprecationWarning, 2)
+            "use 'warning' instead", DeprecationWarning, 2)
         self.warning(msg, *args, **kwargs)
 
     def error(self, msg, *args, **kwargs):
@@ -1774,7 +1774,7 @@ def warning(msg, *args, **kwargs):
 
 def warn(msg, *args, **kwargs):
     warnings.warn("The 'warn' function is deprecated, "
-        "use 'warning' instead", PendingDeprecationWarning, 2)
+        "use 'warning' instead", DeprecationWarning, 2)
     warning(msg, *args, **kwargs)
 
 def info(msg, *args, **kwargs):
