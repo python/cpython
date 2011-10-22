@@ -18,7 +18,21 @@ for strings where all code points are below 128, 256, or 65536; otherwise, code
 points must be below 1114112 (which is the full Unicode range).
 
 :c:type:`Py_UNICODE*` and UTF-8 representations are created on demand and cached
-in the Unicode object.
+in the Unicode object.  The :c:type:`Py_UNICODE*` representation is deprecated
+and inefficient; it should be avoided in performance- or memory-sensitive
+situations.
+
+Due to the transition between the old APIs and the new APIs, unicode objects
+can internally be in two states depending on how they were created:
+
+* "canonical" unicode objects are all objects created by a non-deprecated
+  unicode API.  They use the most efficient representation allowed by the
+  implementation.
+
+* "legacy" unicode objects have been created through one of the deprecated
+  APIs (typically :c:func:`PyUnicode_FromUnicode`) and only bear the
+  :c:type:`Py_UNICODE*` representation; you will have to call
+  :c:func:`PyUnicode_READY` on them before calling any other API.
 
 
 Unicode Type
