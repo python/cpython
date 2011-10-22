@@ -2334,7 +2334,7 @@ PyInit__ssl(void)
 
     /* Add symbols to module dict */
     PySSLErrorObject = PyErr_NewException("ssl.SSLError",
-                                          PySocketModule.error,
+                                          PyExc_OSError,
                                           NULL);
     if (PySSLErrorObject == NULL)
         return NULL;
