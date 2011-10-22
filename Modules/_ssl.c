@@ -2297,6 +2297,10 @@ parse_openssl_version(unsigned long libver,
     *major = libver & 0xFF;
 }
 
+PyDoc_STRVAR(SSLError_doc,
+"An error occurred in the SSL implementation.");
+
+
 PyMODINIT_FUNC
 PyInit__ssl(void)
 {
@@ -2333,9 +2337,10 @@ PyInit__ssl(void)
     OpenSSL_add_all_algorithms();
 
     /* Add symbols to module dict */
-    PySSLErrorObject = PyErr_NewException("ssl.SSLError",
-                                          PyExc_OSError,
-                                          NULL);
+    PySSLErrorObject = PyErr_NewExceptionWithDoc("ssl.SSLError",
+                                                 SSLError_doc,
+                                                 PyExc_OSError,
+                                                 NULL);
     if (PySSLErrorObject == NULL)
         return NULL;
     if (PyDict_SetItemString(d, "SSLError", PySSLErrorObject) != 0)
