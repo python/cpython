@@ -137,7 +137,7 @@ instantiated directly, but always through the module-level function
 
        Stack (most recent call last):
 
-   This mimics the `Traceback (most recent call last):` which is used when
+   This mimics the ``Traceback (most recent call last):`` which is used when
    displaying exception frames.
 
    The third keyword argument is *extra* which can be used to pass a
@@ -189,9 +189,9 @@ instantiated directly, but always through the module-level function
    Logs a message with level :const:`WARNING` on this logger. The arguments are
    interpreted as for :meth:`debug`.
 
-   .. note:: There is an obsolete method `warn()` which is functionally
-      identical to `warning()`. As `warn()` is deprecated, please do not use
-      it - use `warning()` instead.
+   .. note:: There is an obsolete method ``warn`` which is functionally
+      identical to ``warning``. As ``warn`` is deprecated, please do not use
+      it - use ``warning`` instead.
 
 .. method:: Logger.error(msg, *args, **kwargs)
 
@@ -836,7 +836,7 @@ functions.
 
        Stack (most recent call last):
 
-   This mimics the `Traceback (most recent call last):` which is used when
+   This mimics the ``Traceback (most recent call last):`` which is used when
    displaying exception frames.
 
    The third optional keyword argument is *extra* which can be used to pass a
@@ -886,9 +886,9 @@ functions.
    Logs a message with level :const:`WARNING` on the root logger. The arguments
    are interpreted as for :func:`debug`.
 
-   .. note:: There is an obsolete function `warn()` which is functionally
-      identical to `warning()`. As `warn()` is deprecated, please do not use
-      it - use `warning()` instead.
+   .. note:: There is an obsolete function ``warn`` which is functionally
+      identical to ``warning``. As ``warn`` is deprecated, please do not use
+      it - use ``warning`` instead.
 
 
 .. function:: error(msg, *args, **kwargs)
@@ -1094,11 +1094,11 @@ with the :mod:`warnings` module.
    If *capture* is ``True``, warnings issued by the :mod:`warnings` module will
    be redirected to the logging system. Specifically, a warning will be
    formatted using :func:`warnings.formatwarning` and the resulting string
-   logged to a logger named 'py.warnings' with a severity of `WARNING`.
+   logged to a logger named ``'py.warnings'`` with a severity of ``'WARNING'``.
 
    If *capture* is ``False``, the redirection of warnings to the logging system
    will stop, and warnings will be redirected to their original destinations
-   (i.e. those in effect before `captureWarnings(True)` was called).
+   (i.e. those in effect before ``captureWarnings(True)`` was called).
 
 
 .. seealso::
