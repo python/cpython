@@ -82,10 +82,7 @@ instead.
    those cases.
 
    Unlike the :mod:`StringIO` module, this module is not able to accept Unicode
-   strings that cannot be encoded as plain ASCII strings.  Calling
-   :func:`StringIO` with a Unicode string parameter populates the object with
-   the buffer representation of the Unicode string instead of encoding the
-   string.
+   strings that cannot be encoded as plain ASCII strings.
 
    Another difference from the :mod:`StringIO` module is that calling
    :func:`StringIO` with a string parameter creates a read-only object. Unlike an

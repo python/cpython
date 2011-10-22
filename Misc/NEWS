@@ -66,6 +66,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #1548891: The cStringIO.StringIO() constructor now encodes unicode
+  arguments with the system default encoding just like the write() method
+  does, instead of converting it to a raw buffer.
+
 - Issue #9168: now smtpd is able to bind privileged port.
 
 - Issue #12529: fix cgi.parse_header issue on strings with double-quotes and

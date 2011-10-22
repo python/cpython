@@ -134,6 +134,27 @@ class TestcStringIO(TestGenericStringIO):
         f = self.MODULE.StringIO(a)
         self.assertEqual(f.getvalue(), '\x00\x01\x02')
 
+    def test_unicode(self):
+
+        if not test_support.have_unicode: return
+
+        # The cStringIO module converts Unicode strings to character
+        # strings when writing them to cStringIO objects.
+        # Check that this works.
+
+        f = self.MODULE.StringIO()
+        f.write(u'abcde')
+        s = f.getvalue()
+        self.assertEqual(s, 'abcde')
+        self.assertEqual(type(s), str)
+
+        f = self.MODULE.StringIO(u'abcde')
+        s = f.getvalue()
+        self.assertEqual(s, 'abcde')
+        self.assertEqual(type(s), str)
+
+        self.assertRaises(UnicodeEncodeError, self.MODULE.StringIO, u'\xf4')
+
 
 import sys
 if sys.platform.startswith('java'):
