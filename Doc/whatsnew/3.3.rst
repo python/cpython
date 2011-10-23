@@ -113,40 +113,44 @@ PEP 3151: Reworking the OS and IO exception hierarchy
 =====================================================
 
 :pep:`3151` - Reworking the OS and IO exception hierarchy
-PEP written and implemented by Antoine Pitrou.
+ PEP written and implemented by Antoine Pitrou.
 
-New subclasses of :exc:`OSError` exceptions:
+The hierarchy of exceptions raised by operating system errors is now both
+simplified and finer-grained.
 
- * :exc:`BlockingIOError`
- * :exc:`ChildProcessError`
- * :exc:`ConnectionError`
+You don't have to worry anymore about choosing the appropriate exception
+type between :exc:`OSError`, :exc:`IOError`, :exc:`EnvironmentError`,
+:exc:`WindowsError`, :exc:`mmap.error`, :exc:`socket.error` or
+:exc:`select.error`.  All these exception types are now only one:
+:exc:`OSError`.  The other names are kept as aliases for compatibility
+reasons.
 
-   * :exc:`BrokenPipeError`
-   * :exc:`ConnectionAbortedError`
-   * :exc:`ConnectionRefusedError`
-   * :exc:`ConnectionResetError`
+Also, it is now easier to catch a specific error condition.  Instead of
+inspecting the ``errno`` attribute (or ``args[0]``) for a particular
+constant from the :mod:`errno` module, you can catch the adequate
+:exc:`OSError` subclass.  The available subclasses are the following:
 
- * :exc:`FileExistsError`
- * :exc:`FileNotFoundError`
- * :exc:`InterruptedError`
- * :exc:`IsADirectoryError`
- * :exc:`NotADirectoryError`
- * :exc:`PermissionError`
- * :exc:`ProcessLookupError`
- * :exc:`TimeoutError`
+* :exc:`BlockingIOError`
+* :exc:`ChildProcessError`
+* :exc:`ConnectionError`
+* :exc:`FileExistsError`
+* :exc:`FileNotFoundError`
+* :exc:`InterruptedError`
+* :exc:`IsADirectoryError`
+* :exc:`NotADirectoryError`
+* :exc:`PermissionError`
+* :exc:`ProcessLookupError`
+* :exc:`TimeoutError`
 
-The following exceptions have been merged into :exc:`OSError`:
+And the :exc:`ConnectionError` itself has finer-grained subclasses:
 
- * :exc:`EnvironmentError`
- * :exc:`IOError`
- * :exc:`WindowsError`
- * :exc:`VMSError`
- * :exc:`socket.error`
- * :exc:`select.error`
- * :exc:`mmap.error`
+* :exc:`BrokenPipeError`
+* :exc:`ConnectionAbortedError`
+* :exc:`ConnectionRefusedError`
+* :exc:`ConnectionResetError`
 
 Thanks to the new exceptions, common usages of the :mod:`errno` can now be
-avoided. For example, the following code written for Python 3.2: ::
+avoided.  For example, the following code written for Python 3.2::
 
     from errno import ENOENT, EACCES, EPERM
 
@@ -161,7 +165,8 @@ avoided. For example, the following code written for Python 3.2: ::
         else:
             raise
 
-can now be written without the :mod:`errno` import: ::
+can now be written without the :mod:`errno` import and without manual
+inspection of exception attributes::
 
     try:
         with open("document.txt") as f:
