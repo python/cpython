@@ -107,8 +107,7 @@ class DefaultIterSeq(object):
         return self.seq[index]
 
 class HashBuiltinsTestCase(unittest.TestCase):
-    hashes_to_check = [range(10),
-                       enumerate(range(10)),
+    hashes_to_check = [enumerate(range(10)),
                        iter(DefaultIterSeq()),
                        iter(lambda: 0, 0),
                       ]
