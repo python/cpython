@@ -50,29 +50,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #  define DONT_MAKE_RESULT_READY
 #endif
 
-/* Limit for the Unicode object free list */
-
-#define PyUnicode_MAXFREELIST       1024
-
-/* Limit for the Unicode object free list stay alive optimization.
-
-   The implementation will keep allocated Unicode memory intact for
-   all objects on the free list having a size less than this
-   limit. This reduces malloc() overhead for small Unicode objects.
-
-   At worst this will result in PyUnicode_MAXFREELIST *
-   (sizeof(PyUnicodeObject) + KEEPALIVE_SIZE_LIMIT +
-   malloc()-overhead) bytes of unused garbage.
-
-   Setting the limit to 0 effectively turns the feature off.
-
-   Note: This is an experimental feature ! If you get core dumps when
-   using Unicode objects, turn this feature off.
-
-*/
-
-#define KEEPALIVE_SIZE_LIMIT       9
-
 /* Endianness switches; defaults to little endian */
 
 #ifdef WORDS_BIGENDIAN
