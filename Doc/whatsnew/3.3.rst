@@ -49,6 +49,8 @@
 This article explains the new features in Python 3.3, compared to 3.2.
 
 
+.. _pep-393:
+
 PEP 393: Flexible String Representation
 =======================================
 
@@ -540,13 +542,34 @@ Porting to Python 3.3
 =====================
 
 This section lists previously described changes and other bugfixes
-that may require changes to your code:
+that may require changes to your code.
+
+Porting Python code
+-------------------
 
 * Issue #12326: On Linux, sys.platform doesn't contain the major version
   anymore. It is now always 'linux', instead of 'linux2' or 'linux3' depending
   on the Linux version used to build Python. Replace sys.platform == 'linux2'
   with sys.platform.startswith('linux'), or directly sys.platform == 'linux' if
   you don't need to support older Python versions.
+
+Porting C code
+--------------
+
+* Due to :ref:`PEP 393 <pep-393>`, the :c:type:`Py_UNICODE` type and all
+  functions using this type are deprecated (but will stay available for
+  at least five years).  If you were using low-level Unicode APIs to
+  construct and access unicode objects and you want to benefit of the
+  memory footprint reduction provided by the PEP 393, you have to convert
+  your code to the new :doc:`Unicode API <../c-api/unicode>`.
+
+  However, if you only have been using high-level functions such as
+  :c:func:`PyUnicode_Concat()`, :c:func:`PyUnicode_Join` or
+  :c:func:`PyUnicode_FromFormat()`, your code will automatically take
+  advantage of the new unicode representations.
+
+Other issues
+------------
 
 .. Issue #11591: When :program:`python` was started with :option:`-S`,
    ``import site`` will not add site-specific paths to the module search
@@ -556,9 +579,4 @@ that may require changes to your code:
 .. Issue #10998: -Q command-line flags are related artifacts have been
    removed.  Code checking sys.flags.division_warning will need updating.
    Contributed by Éric Araujo.
-
-* :pep:`393`: The :c:type:`Py_UNICODE` type and all functions using this type
-  are deprecated. To fully benefit of the memory footprint reduction provided
-  by the PEP 393, you have to convert your code to the new Unicode API. Read
-  the porting guide: XXX.
 
