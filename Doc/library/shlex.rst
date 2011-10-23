@@ -21,9 +21,7 @@ syntaxes resembling that of the Unix shell.  This will often be useful for
 writing minilanguages, (for example, in run control files for Python
 applications) or for parsing quoted strings.
 
-.. note::
-
-   The :mod:`shlex` module currently does not support Unicode input.
+Prior to Python 2.7.3, this module did not support Unicode input.
 
 The :mod:`shlex` module defines the following functions:
 

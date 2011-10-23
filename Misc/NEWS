@@ -68,7 +68,8 @@ Library
 
 - Issue #1548891: The cStringIO.StringIO() constructor now encodes unicode
   arguments with the system default encoding just like the write() method
-  does, instead of converting it to a raw buffer.
+  does, instead of converting it to a raw buffer.  This also fixes handling of
+  unicode input in the shlex module (#6988, #1170).
 
 - Issue #9168: now smtpd is able to bind privileged port.
 
