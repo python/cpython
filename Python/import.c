@@ -108,8 +108,8 @@ typedef unsigned short mode_t;
 /* MAGIC must change whenever the bytecode emitted by the compiler may no
    longer be understood by older implementations of the eval loop (usually
    due to the addition of new opcodes)
-   TAG and PYC_TAG_UNICODE must change for each major Python release. The magic
-   number will take care of any bytecode changes that occur during development.
+   TAG must change for each major Python release. The magic number will take
+   care of any bytecode changes that occur during development.
 */
 #define QUOTE(arg) #arg
 #define STRIFY(name) QUOTE(name)
@@ -118,13 +118,9 @@ typedef unsigned short mode_t;
 #define MAGIC (3190 | ((long)'\r'<<16) | ((long)'\n'<<24))
 #define TAG "cpython-" MAJOR MINOR;
 #define CACHEDIR "__pycache__"
-static const Py_UCS4 CACHEDIR_UNICODE[] = {
-    '_', '_', 'p', 'y', 'c', 'a', 'c', 'h', 'e', '_', '_', '\0'};
 /* Current magic word and string tag as globals. */
 static long pyc_magic = MAGIC;
 static const char *pyc_tag = TAG;
-static const Py_UCS4 PYC_TAG_UNICODE[] = {
-    'c', 'p', 'y', 't', 'h', 'o', 'n', '-', PY_MAJOR_VERSION + 48, PY_MINOR_VERSION + 48, '\0'};
 #undef QUOTE
 #undef STRIFY
 #undef MAJOR
@@ -939,7 +935,7 @@ make_compiled_pathname(PyObject *pathstr, int debug)
 {
     PyObject *result;
     Py_ssize_t fname, ext, len, i, pos, taglen;
-    Py_ssize_t pycache_len = sizeof("__pycache__/") - 1;
+    Py_ssize_t pycache_len = sizeof(CACHEDIR) - 1;
     int kind;
     void *data;
 
@@ -968,7 +964,7 @@ make_compiled_pathname(PyObject *pathstr, int debug)
     PyUnicode_CopyCharacters(result, 0, pathstr, 0, fname);
     pos = fname;
     for (i = 0; i < pycache_len - 1; i++)
-        PyUnicode_WRITE(kind, data, pos++, "__pycache__"[i]);
+        PyUnicode_WRITE(kind, data, pos++, CACHEDIR[i]);
     PyUnicode_WRITE(kind, data, pos++, SEP);
     PyUnicode_CopyCharacters(result, pos, pathstr,
                              fname, ext - fname);
