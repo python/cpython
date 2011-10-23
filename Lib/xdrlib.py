@@ -141,11 +141,7 @@ class Unpacker:
         data = self.__buf[i:j]
         if len(data) < 4:
             raise EOFError
-        x = struct.unpack('>L', data)[0]
-        try:
-            return int(x)
-        except OverflowError:
-            return x
+        return struct.unpack('>L', data)[0]
 
     def unpack_int(self):
         i = self.__pos
