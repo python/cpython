@@ -1743,11 +1743,11 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
                  PyObject *path_hooks, PyObject *path_importer_cache,
                  PyObject **p_path, PyObject **p_loader, struct filedescr **p_fd)
 {
-    Py_UCS4 buf[MAXPATHLEN+1];
-    PyObject *path_unicode, *filename;
-    Py_ssize_t len;
+    PyObject *path_unicode, *filename = NULL;
+    Py_ssize_t len, pos;
     struct stat statbuf;
     static struct filedescr fd_package = {"", "", PKG_DIRECTORY};
+    int result, addsep;
 
     if (PyUnicode_Check(path)) {
         Py_INCREF(path);
@@ -1766,15 +1766,10 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
         return -1;
 
     len = PyUnicode_GET_LENGTH(path_unicode);
-    if (!PyUnicode_AsUCS4(path_unicode, buf, Py_ARRAY_LENGTH(buf), 1)) {
-        Py_DECREF(path_unicode);
-        PyErr_Clear();
-        return 0;
+    if (PyUnicode_FindChar(path_unicode, 0, 0, len, 1) != -1) {
+        result = 0;
+        goto out;  /* path contains '\0' */
     }
-    Py_DECREF(path_unicode);
-
-    if (Py_UCS4_strlen(buf) != len)
-        return 0; /* path contains '\0' */
 
     /* sys.path_hooks import hook */
     if (p_loader != NULL) {
@@ -1784,43 +1779,54 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
         importer = get_path_importer(path_importer_cache,
                                      path_hooks, path);
         if (importer == NULL) {
-            return -1;
+            result = -1;
+            goto out;
         }
         /* Note: importer is a borrowed reference */
         if (importer != Py_None) {
             PyObject *loader;
             loader = _PyObject_CallMethodId(importer,
                                             &PyId_find_module, "O", fullname);
-            if (loader == NULL)
-                return -1;  /* error */
+            if (loader == NULL) {
+                result = -1; /* error */
+                goto out;
+            }
             if (loader != Py_None) {
                 /* a loader was found */
                 *p_loader = loader;
                 *p_fd = &importhookdescr;
-                return 2;
+                result = 2;
+                goto out;
             }
             Py_DECREF(loader);
-            return 0;
+            result = 0;
+            goto out;
         }
     }
     /* no hook was found, use builtin import */
 
-    if (len > 0 && buf[len-1] != SEP
+    addsep = 0;
+    if (len > 0 && PyUnicode_READ_CHAR(path_unicode, len-1) != SEP
 #ifdef ALTSEP
-        && buf[len-1] != ALTSEP
+        && PyUnicode_READ_CHAR(path_unicode, len-1) != ALTSEP
 #endif
         )
-        buf[len++] = SEP;
-    if (!PyUnicode_AsUCS4(name, buf+len, Py_ARRAY_LENGTH(buf)-len, 1)) {
-        PyErr_Clear();
-        return 0;
+        addsep = 1;
+    filename = PyUnicode_New(len + PyUnicode_GET_LENGTH(name) + addsep,
+                             Py_MAX(PyUnicode_MAX_CHAR_VALUE(path_unicode),
+                                    PyUnicode_MAX_CHAR_VALUE(name)));
+    if (filename == NULL) {
+        result = -1;
+        goto out;
     }
-    len += PyUnicode_GET_LENGTH(name);
-
-    filename = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
-                                         buf, len);
-    if (filename == NULL)
-        return -1;
+    PyUnicode_CopyCharacters(filename, 0, path_unicode, 0, len);
+    pos = len;
+    if (addsep)
+        PyUnicode_WRITE(PyUnicode_KIND(filename), 
+                        PyUnicode_DATA(filename),
+                        pos++, SEP);
+    PyUnicode_CopyCharacters(filename, pos, name, 0, 
+                             PyUnicode_GET_LENGTH(name));
 
     /* Check for package import (buf holds a directory name,
        and there's an __init__ module in that directory */
@@ -1832,14 +1838,16 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
 
         match = case_ok(filename, 0, name);
         if (match < 0) {
-            Py_DECREF(filename);
-            return -1;
+            result = -1;
+            goto out;
         }
         if (match) { /* case matches */
             if (find_init_module(filename)) { /* and has __init__.py */
                 *p_path = filename;
+                filename = NULL;
                 *p_fd = &fd_package;
-                return 2;
+                result = 2;
+                goto out;
             }
             else {
                 int err;
@@ -1847,15 +1855,20 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
                     "Not importing directory %R: missing __init__.py",
                     filename);
                 if (err) {
-                    Py_DECREF(filename);
-                    return -1;
+                    result = -1;
+                    goto out;
                 }
             }
         }
     }
 #endif
     *p_path = filename;
-    return 1;
+    filename = NULL;
+    result = 1;
+  out:
+    Py_DECREF(path_unicode);
+    Py_XDECREF(filename);
+    return result;
 }
 
 /* Find a module in search_path_list. For each path, try
