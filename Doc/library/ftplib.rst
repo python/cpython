@@ -427,7 +427,7 @@ FTP_TLS Objects
 
 .. method:: FTP_TLS.ccc()
 
-   Revert control channel back to plaintex.  This can be useful to take
+   Revert control channel back to plaintext.  This can be useful to take
    advantage of firewalls that know how to handle NAT with non-secure FTP
    without opening fixed ports.
 
