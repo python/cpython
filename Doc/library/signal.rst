@@ -353,8 +353,8 @@ The :mod:`signal` module defines the following functions:
    signals in *sigset* is already pending for the calling thread, the function
    will return immediately with information about that signal. The signal
    handler is not called for the delivered signal. The function raises an
-   :exc:`OSError` with error number set to :const:`errno.EINTR` if it is
-   interrupted by a signal that is not in *sigset*.
+   :exc:`InterruptedError` if it is interrupted by a signal that is not in
+   *sigset*.
 
    The return value is an object representing the data contained in the
    :c:type:`siginfo_t` structure, namely: :attr:`si_signo`, :attr:`si_code`,
