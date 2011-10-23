@@ -342,6 +342,11 @@ Tests
 - Issue #12057: Add tests for ISO 2022 codecs (iso2022_jp, iso2022_jp_2,
   iso2022_kr).
 
+Documentation
+-------------
+
+- Issue #13141: Demonstrate recommended style for SocketServer examples.
+
 
 What's New in Python 2.7.2?
 ===========================
