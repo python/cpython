@@ -904,6 +904,25 @@ rightmost_sep(Py_UCS4 *s)
     return found;
 }
 
+/* Like rightmost_sep, but operate on unicode objects. */
+static Py_ssize_t
+rightmost_sep_obj(PyObject* o)
+{
+    Py_ssize_t found, i;
+    Py_UCS4 c;
+    for (found = -1, i = 0; i < PyUnicode_GET_LENGTH(o); i++) {
+        c = PyUnicode_READ_CHAR(o, i);
+        if (c == SEP
+#ifdef ALTSEP
+            || c == ALTSEP
+#endif
+            )
+        {
+            found = i;
+        }
+    }
+    return found;
+}
 
 /* Given a pathname for a Python source file, fill a buffer with the
    pathname for the corresponding compiled file.  Return the pathname
@@ -915,123 +934,49 @@ rightmost_sep(Py_UCS4 *s)
 static PyObject*
 make_compiled_pathname(PyObject *pathstr, int debug)
 {
-    Py_UCS4 *pathname;
-    Py_UCS4 buf[MAXPATHLEN];
-    size_t buflen = (size_t)MAXPATHLEN;
-    size_t len;
-    size_t i, save;
-    Py_UCS4 *pos;
-    int sep = SEP;
+    PyObject *result;
+    Py_ssize_t fname, ext, len, i, pos, taglen;
+    Py_ssize_t pycache_len = sizeof("__pycache__/") - 1;
+    int kind;
+    void *data;
 
-    pathname = PyUnicode_AsUCS4Copy(pathstr);
-    if (!pathname)
+    /* Compute the output string size. */
+    len = PyUnicode_GET_LENGTH(pathstr);
+    /* If there is no separator, this returns -1, so
+       lastsep will be 0. */
+    fname = rightmost_sep_obj(pathstr) + 1;
+    ext = fname - 1;
+    for(i = fname; i < len; i++)
+        if (PyUnicode_READ_CHAR(pathstr, i) == '.')
+            ext = i + 1;
+    if (ext < fname)
+        /* No dot in filename; use entire filename */
+        ext = len;
+
+    /* result = pathstr[:fname] + "__pycache__" + SEP +
+                pathstr[fname:ext] + tag + ".py[co]" */
+    taglen = strlen(pyc_tag);
+    result = PyUnicode_New(ext + pycache_len + taglen + 4,
+                           PyUnicode_MAX_CHAR_VALUE(pathstr));
+    if (!result)
         return NULL;
-    len = Py_UCS4_strlen(pathname);
-
-    /* Sanity check that the buffer has roughly enough space to hold what
-       will eventually be the full path to the compiled file.  The 5 extra
-       bytes include the slash afer __pycache__, the two extra dots, the
-       extra trailing character ('c' or 'o') and null.  This isn't exact
-       because the contents of the buffer can affect how many actual
-       characters of the string get into the buffer.  We'll do a final
-       sanity check before writing the extension to ensure we do not
-       overflow the buffer.
-    */
-    if (len + Py_UCS4_strlen(CACHEDIR_UNICODE) + Py_UCS4_strlen(PYC_TAG_UNICODE) + 5 > buflen) {
-        PyMem_Free(pathname);
-        return NULL;
-    }
-
-    /* Find the last path separator and copy everything from the start of
-       the source string up to and including the separator.
-    */
-    pos = rightmost_sep(pathname);
-    if (pos == NULL) {
-        i = 0;
-    }
-    else {
-        sep = *pos;
-        i = pos - pathname + 1;
-        Py_UCS4_strncpy(buf, pathname, i);
-    }
-
-    save = i;
-    buf[i++] = '\0';
-    /* Add __pycache__/ */
-    Py_UCS4_strcat(buf, CACHEDIR_UNICODE);
-    i += Py_UCS4_strlen(CACHEDIR_UNICODE) - 1;
-    buf[i++] = sep;
-    buf[i] = '\0';
-    /* Add the base filename, but remove the .py or .pyw extension, since
-       the tag name must go before the extension.
-    */
-    Py_UCS4_strcat(buf, pathname + save);
-    pos = Py_UCS4_strrchr(buf + i, '.');
-    if (pos != NULL)
-        *++pos = '\0';
-
-    /* pathname is not used from here on. */
-    PyMem_Free(pathname);
-
-    Py_UCS4_strcat(buf, PYC_TAG_UNICODE);
-    /* The length test above assumes that we're only adding one character
-       to the end of what would normally be the extension.  What if there
-       is no extension, or the string ends in '.' or '.p', and otherwise
-       fills the buffer?  By appending 4 more characters onto the string
-       here, we could overrun the buffer.
-
-       As a simple example, let's say buflen=32 and the input string is
-       'xxx.py'.  strlen() would be 6 and the test above would yield:
-
-       (6 + 11 + 10 + 5 == 32) > 32
-
-       which is false and so the name mangling would continue.  This would
-       be fine because we'd end up with this string in buf:
-
-       __pycache__/xxx.cpython-32.pyc\0
-
-       strlen(of that) == 30 + the nul fits inside a 32 character buffer.
-       We can even handle an input string of say 'xxxxx' above because
-       that's (5 + 11 + 10 + 5 == 31) > 32 which is also false.  Name
-       mangling that yields:
-
-       __pycache__/xxxxxcpython-32.pyc\0
-
-       which is 32 characters including the nul, and thus fits in the
-       buffer. However, an input string of 'xxxxxx' would yield a result
-       string of:
-
-       __pycache__/xxxxxxcpython-32.pyc\0
-
-       which is 33 characters long (including the nul), thus overflowing
-       the buffer, even though the first test would fail, i.e.: the input
-       string is also 6 characters long, so 32 > 32 is false.
-
-       The reason the first test fails but we still overflow the buffer is
-       that the test above only expects to add one extra character to be
-       added to the extension, and here we're adding three (pyc).  We
-       don't add the first dot, so that reclaims one of expected
-       positions, leaving us overflowing by 1 byte (3 extra - 1 reclaimed
-       dot - 1 expected extra == 1 overflowed).
-
-       The best we can do is ensure that we still have enough room in the
-       target buffer before we write the extension.  Because it's always
-       only the extension that can cause the overflow, and never the other
-       path bytes we've written, it's sufficient to just do one more test
-       here.  Still, the assertion that follows can't hurt.
-    */
-#if 0
-    printf("strlen(buf): %d; buflen: %d\n", (int)strlen(buf), (int)buflen);
-#endif
-    len = Py_UCS4_strlen(buf);
-    if (len + 5 > buflen)
-        return NULL;
-    buf[len] = '.'; len++;
-    buf[len] = 'p'; len++;
-    buf[len] = 'y'; len++;
-    buf[len] = debug ? 'c' : 'o'; len++;
-    assert(len <= buflen);
-    return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, buf, len);
+    kind = PyUnicode_KIND(result);
+    data = PyUnicode_DATA(result);
+    PyUnicode_CopyCharacters(result, 0, pathstr, 0, fname);
+    pos = fname;
+    for (i = 0; i < pycache_len - 1; i++)
+        PyUnicode_WRITE(kind, data, pos++, "__pycache__"[i]);
+    PyUnicode_WRITE(kind, data, pos++, SEP);
+    PyUnicode_CopyCharacters(result, pos, pathstr,
+                             fname, ext - fname);
+    pos += ext - fname;
+    for (i = 0; pyc_tag[i]; i++)
+        PyUnicode_WRITE(kind, data, pos++, pyc_tag[i]);
+    PyUnicode_WRITE(kind, data, pos++, '.');
+    PyUnicode_WRITE(kind, data, pos++, 'p');
+    PyUnicode_WRITE(kind, data, pos++, 'y');
+    PyUnicode_WRITE(kind, data, pos++, debug ? 'c' : 'o');
+    return result;
 }
 
 
