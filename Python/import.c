@@ -929,7 +929,10 @@ rightmost_sep_obj(PyObject* o)
    for the compiled file, or NULL if there's no space in the buffer.
    Doesn't set an exception.
 
-   foo.py -> __pycache__/foo.<tag>.pyc */
+   foo.py -> __pycache__/foo.<tag>.pyc
+
+   pathstr is assumed to be "ready".
+*/
 
 static PyObject*
 make_compiled_pathname(PyObject *pathstr, int debug)
@@ -1458,6 +1461,8 @@ load_source_module(PyObject *name, PyObject *pathname, FILE *fp)
         goto error;
     }
 #endif
+    if (PyUnicode_READY(pathname) < 0)
+        return NULL;
     cpathname = make_compiled_pathname(pathname, !Py_OptimizeFlag);
 
     if (cpathname != NULL)
@@ -3948,6 +3953,9 @@ imp_cache_from_source(PyObject *self, PyObject *args, PyObject *kws)
         Py_DECREF(pathname);
         return NULL;
     }
+
+    if (PyUnicode_READY(pathname) < 0)
+        return NULL;
 
     cpathname = make_compiled_pathname(pathname, debug);
     Py_DECREF(pathname);
