@@ -376,6 +376,8 @@ PyEval_EvalCode:PyCodeObject*:co:0:
 PyEval_EvalCode:PyObject*:globals:0:
 PyEval_EvalCode:PyObject*:locals:0:
 
+PyException_GetTraceback:PyObject*::+1:
+
 PyFile_AsFile:FILE*:::
 PyFile_AsFile:PyFileObject*:p:0:
 
