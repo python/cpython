@@ -1652,8 +1652,8 @@ PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
 
         /* Single characters are shared when using this constructor.
            Restrict to ASCII, since the input must be UTF-8. */
-        if (size == 1 && Py_CHARMASK(*u) < 128)
-            return get_latin1_char(Py_CHARMASK(*u));
+        if (size == 1 && (unsigned char)*u < 128)
+            return get_latin1_char((unsigned char)*u);
 
         return PyUnicode_DecodeUTF8(u, size, NULL);
     }
