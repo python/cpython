@@ -838,14 +838,22 @@ _PyUnicode_Dump(PyObject *op)
     PyCompactUnicodeObject *compact = (PyCompactUnicodeObject *)op;
     PyUnicodeObject *unicode = (PyUnicodeObject *)op;
     void *data;
-    printf("%s: len=%zu, ",unicode_kind_name(op), ascii->length);
+
     if (ascii->state.compact)
-        data = (compact + 1);
+    {
+        if (ascii->state.ascii)
+            data = (ascii + 1);
+        else
+            data = (compact + 1);
+    }
     else
         data = unicode->data.any;
+    printf("%s: len=%zu, ",unicode_kind_name(op), ascii->length);
+
     if (ascii->wstr == data)
         printf("shared ");
     printf("wstr=%p", ascii->wstr);
+
     if (!(ascii->state.ascii == 1 && ascii->state.compact == 1)) {
         printf(" (%zu), ", compact->wstr_length);
         if (!ascii->state.compact && compact->utf8 == unicode->data.any)
