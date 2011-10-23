@@ -955,7 +955,7 @@ make_compiled_pathname(PyObject *pathstr, int debug)
     /* result = pathstr[:fname] + "__pycache__" + SEP +
                 pathstr[fname:ext] + tag + ".py[co]" */
     taglen = strlen(pyc_tag);
-    result = PyUnicode_New(ext + pycache_len + taglen + 4,
+    result = PyUnicode_New(ext + pycache_len + 1 + taglen + 4,
                            PyUnicode_MAX_CHAR_VALUE(pathstr));
     if (!result)
         return NULL;
@@ -963,7 +963,7 @@ make_compiled_pathname(PyObject *pathstr, int debug)
     data = PyUnicode_DATA(result);
     PyUnicode_CopyCharacters(result, 0, pathstr, 0, fname);
     pos = fname;
-    for (i = 0; i < pycache_len - 1; i++)
+    for (i = 0; i < pycache_len; i++)
         PyUnicode_WRITE(kind, data, pos++, CACHEDIR[i]);
     PyUnicode_WRITE(kind, data, pos++, SEP);
     PyUnicode_CopyCharacters(result, pos, pathstr,
