@@ -180,7 +180,7 @@ Some smaller changes made to the core Python language are:
 * Stub
 
 Added support for Unicode name aliases and named sequences.
-Both :func:`unicodedata.lookup()` and ``\N{...}`` now resolve name aliases,
+Both :func:`unicodedata.lookup()` and ``'\N{...}'`` now resolve name aliases,
 and :func:`unicodedata.lookup()` resolves named sequences too.
 
 (Contributed by Ezio Melotti in :issue:`12753`)
