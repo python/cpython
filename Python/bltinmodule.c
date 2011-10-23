@@ -35,9 +35,10 @@ int Py_HasFileSystemDefaultEncoding = 1;
 static PyObject *
 builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    PyObject *func, *name, *bases, *mkw, *meta, *prep, *ns, *cell;
+    PyObject *func, *name, *bases, *mkw, *meta, *winner, *prep, *ns, *cell;
     PyObject *cls = NULL;
     Py_ssize_t nargs, nbases;
+    int isclass;
 
     assert(args != NULL);
     if (!PyTuple_Check(args)) {
@@ -82,17 +83,42 @@ builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
                 Py_DECREF(bases);
                 return NULL;
             }
+            /* metaclass is explicitly given, check if it's indeed a class */
+            isclass = PyType_Check(meta);
         }
     }
     if (meta == NULL) {
-        if (PyTuple_GET_SIZE(bases) == 0)
+        /* if there are no bases, use type: */
+        if (PyTuple_GET_SIZE(bases) == 0) {
             meta = (PyObject *) (&PyType_Type);
+        }
+        /* else get the type of the first base */
         else {
             PyObject *base0 = PyTuple_GET_ITEM(bases, 0);
             meta = (PyObject *) (base0->ob_type);
         }
         Py_INCREF(meta);
+        isclass = 1;  /* meta is really a class */
     }
+    if (isclass) {
+        /* meta is really a class, so check for a more derived
+           metaclass, or possible metaclass conflicts: */
+        winner = (PyObject *)_PyType_CalculateMetaclass((PyTypeObject *)meta,
+                                                        bases);
+        if (winner == NULL) {
+            Py_DECREF(meta);
+            Py_XDECREF(mkw);
+            Py_DECREF(bases);
+            return NULL;
+        }
+        if (winner != meta) {
+            Py_DECREF(meta);
+            meta = winner;
+            Py_INCREF(meta);
+        }
+    }
+    /* else: meta is not a class, so we cannot do the metaclass
+       calculation, so we will use the explicitly given object as it is */
     prep = PyObject_GetAttrString(meta, "__prepare__");
     if (prep == NULL) {
         if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
