@@ -95,7 +95,7 @@ This function is a helper for the "find" family (find, rfind, index,
 rindex) and for count, startswith and endswith, because they all have
 the same behaviour for the arguments.
 
-It does not touch the variables received until it knows everything 
+It does not touch the variables received until it knows everything
 is ok.
 */
 
@@ -145,13 +145,13 @@ first argument is a unicode object.
 
 Note that we receive a pointer to the pointer of the substring object,
 so when we create that object in this function we don't DECREF it,
-because it continues living in the caller functions (those functions, 
+because it continues living in the caller functions (those functions,
 after finishing using the substring, must DECREF it).
 */
 
 Py_LOCAL_INLINE(int)
 STRINGLIB(parse_args_finds_unicode)(const char * function_name, PyObject *args,
-                                   PyUnicodeObject **substring,
+                                   PyObject **substring,
                                    Py_ssize_t *start, Py_ssize_t *end)
 {
     PyObject *tmp_substring;
@@ -161,7 +161,7 @@ STRINGLIB(parse_args_finds_unicode)(const char * function_name, PyObject *args,
         tmp_substring = PyUnicode_FromObject(tmp_substring);
         if (!tmp_substring)
             return 0;
-        *substring = (PyUnicodeObject *)tmp_substring;
+        *substring = tmp_substring;
         return 1;
     }
     return 0;

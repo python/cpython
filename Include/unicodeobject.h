@@ -1828,7 +1828,7 @@ PyAPI_FUNC(int) PyUnicode_IsIdentifier(PyObject *s);
 #ifndef Py_LIMITED_API
 /* Externally visible for str.strip(unicode) */
 PyAPI_FUNC(PyObject *) _PyUnicode_XStrip(
-    PyUnicodeObject *self,
+    PyObject *self,
     int striptype,
     PyObject *sepobj
     );
