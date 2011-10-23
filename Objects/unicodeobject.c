@@ -14001,11 +14001,9 @@ PyUnicode_InternInPlace(PyObject **p)
 void
 PyUnicode_InternImmortal(PyObject **p)
 {
-    PyUnicodeObject *u = (PyUnicodeObject *)*p;
-
     PyUnicode_InternInPlace(p);
     if (PyUnicode_CHECK_INTERNED(*p) != SSTATE_INTERNED_IMMORTAL) {
-        _PyUnicode_STATE(u).interned = SSTATE_INTERNED_IMMORTAL;
+        _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL;
         Py_INCREF(*p);
     }
 }
