@@ -54,7 +54,7 @@ import warnings
 
 import os
 from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, EINVAL, \
-     ENOTCONN, ESHUTDOWN, EINTR, EISCONN, EBADF, ECONNABORTED, EPIPE, EAGAIN, \
+     ENOTCONN, ESHUTDOWN, EISCONN, EBADF, ECONNABORTED, EPIPE, EAGAIN, \
      errorcode
 
 _DISCONNECTED = frozenset((ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED, EPIPE,
@@ -143,11 +143,8 @@ def poll(timeout=0.0, map=None):
 
         try:
             r, w, e = select.select(r, w, e, timeout)
-        except select.error as err:
-            if err.args[0] != EINTR:
-                raise
-            else:
-                return
+        except InterruptedError:
+            return
 
         for fd in r:
             obj = map.get(fd)
@@ -190,9 +187,7 @@ def poll2(timeout=0.0, map=None):
                 pollster.register(fd, flags)
         try:
             r = pollster.poll(timeout)
-        except select.error as err:
-            if err.args[0] != EINTR:
-                raise
+        except InterruptedError:
             r = []
         for fd, flags in r:
             obj = map.get(fd)

@@ -14,7 +14,6 @@ except ImportError:
 
 import io
 from io import (__all__, SEEK_SET, SEEK_CUR, SEEK_END)
-from errno import EINTR
 
 # open() uses st_blksize whenever we can
 DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
@@ -948,9 +947,7 @@ class BufferedReader(_BufferedIOMixin):
                 # Read until EOF or until read() would block.
                 try:
                     chunk = self.raw.read()
-                except IOError as e:
-                    if e.errno != EINTR:
-                        raise
+                except InterruptedError:
                     continue
                 if chunk in empty_values:
                     nodata_val = chunk
@@ -972,9 +969,7 @@ class BufferedReader(_BufferedIOMixin):
         while avail < n:
             try:
                 chunk = self.raw.read(wanted)
-            except IOError as e:
-                if e.errno != EINTR:
-                    raise
+            except InterruptedError:
                 continue
             if chunk in empty_values:
                 nodata_val = chunk
@@ -1007,9 +1002,7 @@ class BufferedReader(_BufferedIOMixin):
             while True:
                 try:
                     current = self.raw.read(to_read)
-                except IOError as e:
-                    if e.errno != EINTR:
-                        raise
+                except InterruptedError:
                     continue
                 break
             if current:
@@ -1120,9 +1113,7 @@ class BufferedWriter(_BufferedIOMixin):
             while self._write_buf:
                 try:
                     n = self.raw.write(self._write_buf)
-                except IOError as e:
-                    if e.errno != EINTR:
-                        raise
+                except InterruptedError:
                     continue
                 if n > len(self._write_buf) or n < 0:
                     raise IOError("write() returned incorrect number of bytes")
